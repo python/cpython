@@ -545,6 +545,25 @@ Library
   and 'stop' arguments so long as each is in the range of Python's
   bounded integers.
 
+- Thanks to Raymond Hettinger, random.random() now uses a new core
+  generator.  The Mersenne Twister algorithm is implemented in C,
+  threadsafe, faster than the previous generator, has an astronomically
+  large period (2**19937-1), creates random floats to full 53-bit
+  precision, and may be the most widely tested random number generator
+  in existence.
+
+  The random.jumpahead(n) method has different semantics for the new
+  generator.  Instead of jumping n steps ahead, it uses n and the
+  existing state to create a new state.  This means that jumpahead()
+  continues to support multi-threaded code needing generators of
+  non-overlapping sequences.  However, it will break code which relies
+  on jumpahead moving a specific number of steps forward.
+
+  The attributes random.whseed and random.__whseed have no meaning for
+  the new generator.  Code using these attributes should switch to a
+  new class, random.WichmannHill which is provided for backward
+  compatibility and to make an alternate generator available.
+
 - New "algorithms" module: heapq, implements a heap queue.  Thanks to
   Kevin O'Connor for the code and François Pinard for an entertaining
   write-up explaining the theory and practical uses of heaps.

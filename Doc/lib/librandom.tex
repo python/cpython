@@ -8,30 +8,26 @@
 
 This module implements pseudo-random number generators for various
 distributions.
+
 For integers, uniform selection from a range.
-For sequences, uniform selection of a random element, and a function to
-generate a random permutation of a list in-place.
+For sequences, uniform selection of a random element, a function to
+generate a random permutation of a list in-place, and a function for
+random sampling without replacement.
+
 On the real line, there are functions to compute uniform, normal (Gaussian),
 lognormal, negative exponential, gamma, and beta distributions.
-For generating distribution of angles, the circular uniform and
-von Mises distributions are available.
+For generating distributions of angles, the von Mises distribution
+is available.
 
 Almost all module functions depend on the basic function
 \function{random()}, which generates a random float uniformly in
-the semi-open range [0.0, 1.0).  Python uses the standard Wichmann-Hill
-generator, combining three pure multiplicative congruential
-generators of modulus 30269, 30307 and 30323.  Its period (how many
-numbers it generates before repeating the sequence exactly) is
-6,953,607,871,644.  While of much higher quality than the \function{rand()}
-function supplied by most C libraries, the theoretical properties
-are much the same as for a single linear congruential generator of
-large modulus.  It is not suitable for all purposes, and is completely
-unsuitable for cryptographic purposes.
-
-The functions in this module are not threadsafe:  if you want to call these
-functions from multiple threads, you should explicitly serialize the calls.
-Else, because no critical sections are implemented internally, calls
-from different threads may see the same return values.
+the semi-open range [0.0, 1.0).  Python uses the Mersenne Twister as
+the core generator.  It produces 53-bit precision floats and has a
+period of 2**19937-1.  The underlying implementation in C 
+is both fast and threadsafe.  The Mersenne Twister is one of the most
+extensively tested random number generators in existence.  However, being
+completely deterministic, it is not suitable for all purposes, and is
+completely unsuitable for cryptographic purposes.
 
 The functions supplied by this module are actually bound methods of a
 hidden instance of the \class{random.Random} class.  You can
@@ -39,58 +35,19 @@ instantiate your own instances of \class{Random} to get generators
 that don't share state.  This is especially useful for multi-threaded
 programs, creating a different instance of \class{Random} for each
 thread, and using the \method{jumpahead()} method to ensure that the
-generated sequences seen by each thread don't overlap (see example
-below).
+generated sequences seen by each thread don't overlap.
 
 Class \class{Random} can also be subclassed if you want to use a
 different basic generator of your own devising: in that case, override
 the \method{random()}, \method{seed()}, \method{getstate()},
 \method{setstate()} and \method{jumpahead()} methods.
 
-Here's one way to create threadsafe distinct and non-overlapping generators:
-
-\begin{verbatim}
-def create_generators(num, delta, firstseed=None):
-    """Return list of num distinct generators.
-    Each generator has its own unique segment of delta elements
-    from Random.random()'s full period.
-    Seed the first generator with optional arg firstseed (default
-    is None, to seed from current time).
-    """
-
-    from random import Random
-    g = Random(firstseed)
-    result = [g]
-    for i in range(num - 1):
-        laststate = g.getstate()
-        g = Random()
-        g.setstate(laststate)
-        g.jumpahead(delta)
-        result.append(g)
-    return result
-
-gens = create_generators(10, 1000000)
-\end{verbatim}
-
-That creates 10 distinct generators, which can be passed out to 10
-distinct threads.  The generators don't share state so can be called
-safely in parallel.  So long as no thread calls its \code{g.random()}
-more than a million times (the second argument to
-\function{create_generators()}, the sequences seen by each thread will
-not overlap.  The period of the underlying Wichmann-Hill generator
-limits how far this technique can be pushed.
-
-Just for fun, note that since we know the period, \method{jumpahead()}
-can also be used to ``move backward in time:''
-
-\begin{verbatim}
->>> g = Random(42)  # arbitrary
->>> g.random()
-0.25420336316883324
->>> g.jumpahead(6953607871644L - 1) # move *back* one
->>> g.random()
-0.25420336316883324
-\end{verbatim}
+As an example of subclassing, the \module{random} module provides
+the \class{WichmannHill} class which implements an alternative generator
+in pure Python.  The class provides a backward compatible way to
+reproduce results from earlier versions of Python which used the
+Wichmann-Hill algorithm as the core generator.
+\versionchanged[Substituted MersenneTwister for Wichmann-Hill]{2.3}
 
 
 Bookkeeping functions:
@@ -104,18 +61,6 @@ Bookkeeping functions:
   If \var{x} is not \code{None} or an int or long,
   \code{hash(\var{x})} is used instead.
   If \var{x} is an int or long, \var{x} is used directly.
-  Distinct values between 0 and 27814431486575L inclusive are guaranteed
-  to yield distinct internal states (this guarantee is specific to the
-  default Wichmann-Hill generator, and may not apply to subclasses
-  supplying their own basic generator).
-\end{funcdesc}
-
-\begin{funcdesc}{whseed}{\optional{x}}
-  This is obsolete, supplied for bit-level compatibility with versions
-  of Python prior to 2.1.
-  See \function{seed} for details.  \function{whseed} does not guarantee
-  that distinct integer arguments yield distinct internal states, and can
-  yield no more than about 2**24 distinct internal states in all.
 \end{funcdesc}
 
 \begin{funcdesc}{getstate}{}
@@ -134,16 +79,19 @@ Bookkeeping functions:
 \end{funcdesc}
 
 \begin{funcdesc}{jumpahead}{n}
-  Change the internal state to what it would be if \function{random()}
-  were called \var{n} times, but do so quickly.  \var{n} is a
-  non-negative integer.  This is most useful in multi-threaded
+  Change the internal state to one different from and likely far away from
+  the current state.  \var{n} is a non-negative integer which is used to
+  scramble the current state vector.  This is most useful in multi-threaded
   programs, in conjuction with multiple instances of the \class{Random}
-  class: \method{setstate()} or \method{seed()} can be used to force
-  all instances into the same internal state, and then
-  \method{jumpahead()} can be used to force the instances' states as
-  far apart as you like (up to the period of the generator).
+  class: \method{setstate()} or \method{seed()} can be used to force all
+  instances into the same internal state, and then \method{jumpahead()}
+  can be used to force the instances' states far apart.
   \versionadded{2.1}
+  \versionchanged[Instead of jumping to a specific state, \var{n} steps
+  ahead, \method{jumpahead(\var{n})} jumps to another state likely to be
+  separated by many steps.]{2.3}
  \end{funcdesc}
+
 
 Functions for integers:
 
@@ -279,8 +227,32 @@ these equations can be found in any statistics text.
   \var{beta} is the shape parameter.
 \end{funcdesc}
 
+Alternative Generator
+
+\begin{classdesc}{WichmannHill}{\optional{seed}}
+Class that implements the Wichmann-Hill algorithm as the core generator.
+Has all of the same methods as \class{Random} plus the \method{whseed}
+method described below.  Because this class is implemented in pure
+Python, it is not threadsafe and may require locks between calls.  The
+period of the generator is 6,953,607,871,644 which is small enough to
+require care that two independent random sequences do not overlap.
+\end{classdesc}
+
+\begin{funcdesc}{whseed}{\optional{x}}
+  This is obsolete, supplied for bit-level compatibility with versions
+  of Python prior to 2.1.
+  See \function{seed} for details.  \function{whseed} does not guarantee
+  that distinct integer arguments yield distinct internal states, and can
+  yield no more than about 2**24 distinct internal states in all.
+\end{funcdesc}
 
 \begin{seealso}
+  \seetext{M. Matsumoto and T. Nishimura, ``Mersenne Twister: A
+	   623-dimensionally equidistributed uniform pseudorandom
+	   number generator'',
+	   \citetitle{ACM Transactions on Modeling and Computer Simulation}
+	   Vol. 8, No. 1, January pp.3-30 1998.}
+		  
   \seetext{Wichmann, B. A. \& Hill, I. D., ``Algorithm AS 183:
            An efficient and portable pseudo-random number generator'',
            \citetitle{Applied Statistics} 31 (1982) 188-190.}
