@@ -422,8 +422,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
     if ((arg = PyTuple_New(1)) == NULL)
         goto finally;
 
-    if (PyTuple_SET_ITEM(arg, 0, bytes) < 0)
-        goto finally;
+    PyTuple_SET_ITEM(arg, 0, bytes);
 
     if ((str = PyObject_CallObject(meth, arg)) == NULL)
         goto finally;
