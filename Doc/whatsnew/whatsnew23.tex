@@ -15,6 +15,10 @@
 % MacOS framework-related changes (section of its own, probably)
 %
 % New sorting code
+%
+% Karatsuba multiplication for long ints (#560379)
+%
+% xreadlines obsolete; files are their own iterator
 
 %\section{Introduction \label{intro}}
 
@@ -480,9 +484,11 @@ class FakeSeq:
             return self.calc_item(i)
 \end{verbatim}
 
-From this example you can also see that the builtin ``\var{slice}''
-object is now the type of slice objects, not a function (so is now
-consistent with \var{int}, \var{str}, etc from 2.2).
+From this example you can also see that the builtin ``\class{slice}''
+object is now the type object for the slice type, and is no longer a
+function.  This is consistent with Python 2.2, where \class{int},
+\class{str}, etc., underwent the same change.
+
 
 %======================================================================
 \section{Other Language Changes}
@@ -493,6 +499,26 @@ language.
 \begin{itemize}
 \item The \keyword{yield} statement is now always a keyword, as
 described in section~\ref{section-generators} of this document.
+
+\item The \code{in} operator now works differently for strings.
+Previously, when evaluating \code{\var{X} in \var{Y}} where \var{X}
+and \var{Y} are strings, \var{X} could only be a single character.
+That's now changed; \var{X} can be a string of any length, and
+\code{\var{X} in \var{Y}} will return \constant{True} if \var{X} is a
+substring of \var{Y}.  If \var{X} is the empty string, the result is
+always \constant{True}.
+
+\begin{verbatim}
+>>> 'ab' in 'abcd'
+True
+>>> 'ad' in 'abcd'
+False
+>>> '' in 'abcd'
+True
+\end{verbatim}
+
+Note that this doesn't tell you where the substring starts; the
+\method{find()} method is still necessary to figure that out.
 
 \item A new built-in function \function{enumerate()} 
 was added, as described in section~\ref{section-enumerate} of this
