@@ -65,7 +65,7 @@
   Before calling any of the functions or macros, you must initialize
   the routines with:
 
-    PycStringIO_IMPORT
+    PycString_IMPORT
 
   This would typically be done in your init function.
 
