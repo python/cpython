@@ -10,7 +10,7 @@
 %
 
 \section{\module{parser} ---
-         Access parse trees for Python code}
+         Access Python parse trees}
 
 \declaremodule{builtin}{parser}
 \modulesynopsis{Access parse trees for Python source code.}
@@ -67,7 +67,7 @@ keywords used to identify the parent node type, such as the keyword
 \keyword{if} in an \constant{if_stmt}, are included in the node tree without
 any special treatment.  For example, the \keyword{if} keyword is
 represented by the tuple \code{(1, 'if')}, where \code{1} is the
-numeric value associated with all \code{NAME} tokens, including
+numeric value associated with all \constant{NAME} tokens, including
 variable and function names defined by the user.  In an alternate form
 returned when line number information is requested, the same token
 might be represented as \code{(1, 'if', 12)}, where the \code{12}
@@ -104,15 +104,14 @@ query the type of parse tree represented by an AST object.
 \end{seealso}
 
 
-\subsection{Creating AST Objects}
-\label{Creating ASTs}
+\subsection{Creating AST Objects \label{Creating ASTs}}
 
 AST objects may be created from source code or from a parse tree.
 When creating an AST object from source, different functions are used
 to create the \code{'eval'} and \code{'exec'} forms.
 
 \begin{funcdesc}{expr}{string}
-The \function{expr()} function parses the parameter \code{\var{string}}
+The \function{expr()} function parses the parameter \var{string}
 as if it were an input to \samp{compile(\var{string}, 'eval')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
@@ -120,7 +119,7 @@ thrown.
 \end{funcdesc}
 
 \begin{funcdesc}{suite}{string}
-The \function{suite()} function parses the parameter \code{\var{string}}
+The \function{suite()} function parses the parameter \var{string}
 as if it were an input to \samp{compile(\var{string}, 'exec')}.  If
 the parse succeeds, an AST object is created to hold the internal
 parse tree representation, otherwise an appropriate exception is
@@ -157,8 +156,7 @@ is maintained for backward compatibility.
 \end{funcdesc}
 
 
-\subsection{Converting AST Objects}
-\label{Converting ASTs}
+\subsection{Converting AST Objects \label{Converting ASTs}}
 
 AST objects, regardless of the input used to create them, may be
 converted to parse trees represented as list- or tuple- trees, or may
@@ -167,7 +165,7 @@ extracted with or without line numbering information.
 
 \begin{funcdesc}{ast2list}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
-\code{\var{ast}} and returns a Python list representing the
+\var{ast} and returns a Python list representing the
 equivelent parse tree.  The resulting list representation can be used
 for inspection or the creation of a new parse tree in list form.  This
 function does not fail so long as memory is available to build the
@@ -177,7 +175,7 @@ consumption and fragmentation.  When the list representation is
 required, this function is significantly faster than retrieving a
 tuple representation and converting that to nested lists.
 
-If \code{\var{line_info}} is true, line number information will be
+If \var{line_info} is true, line number information will be
 included for all terminal tokens as a third element of the list
 representing the token.  Note that the line number provided specifies
 the line on which the token \emph{ends}.  This information is
@@ -186,11 +184,11 @@ omitted if the flag is false or omitted.
 
 \begin{funcdesc}{ast2tuple}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
-\code{\var{ast}} and returns a Python tuple representing the
+\var{ast} and returns a Python tuple representing the
 equivelent parse tree.  Other than returning a tuple instead of a
 list, this function is identical to \function{ast2list()}.
 
-If \code{\var{line_info}} is true, line number information will be
+If \var{line_info} is true, line number information will be
 included for all terminal tokens as a third element of the list
 representing the token.  This information is omitted if the flag is
 false or omitted.
@@ -198,12 +196,12 @@ false or omitted.
 
 \begin{funcdesc}{compileast}{ast\optional{, filename\code{ = '<ast>'}}}
 The Python byte compiler can be invoked on an AST object to produce
-code objects which can be used as part of an \code{exec} statement or
+code objects which can be used as part of an \keyword{exec} statement or
 a call to the built-in \function{eval()}\bifuncindex{eval} function.
 This function provides the interface to the compiler, passing the
-internal parse tree from \code{\var{ast}} to the parser, using the
-source file name specified by the \code{\var{filename}} parameter.
-The default value supplied for \code{\var{filename}} indicates that
+internal parse tree from \var{ast} to the parser, using the
+source file name specified by the \var{filename} parameter.
+The default value supplied for \var{filename} indicates that
 the source was an AST object.
 
 Compiling an AST object may result in exceptions related to
@@ -218,8 +216,7 @@ inspection of the parse tree.
 \end{funcdesc}
 
 
-\subsection{Queries on AST Objects}
-\label{Querying ASTs}
+\subsection{Queries on AST Objects \label{Querying ASTs}}
 
 Two functions are provided which allow an application to determine if
 an AST was created as an expression or a suite.  Neither of these
@@ -228,7 +225,7 @@ code via \function{expr()} or \function{suite()} or from a parse tree
 via \function{sequence2ast()}.
 
 \begin{funcdesc}{isexpr}{ast}
-When \code{\var{ast}} represents an \code{'eval'} form, this function
+When \var{ast} represents an \code{'eval'} form, this function
 returns true, otherwise it returns false.  This is useful, since code
 objects normally cannot be queried for this information using existing
 built-in functions.  Note that the code objects created by
@@ -247,8 +244,7 @@ be supported in the future.
 \end{funcdesc}
 
 
-\subsection{Exceptions and Error Handling}
-\label{AST Errors}
+\subsection{Exceptions and Error Handling \label{AST Errors}}
 
 The parser module defines a single exception, but may also pass other
 built-in exceptions from other portions of the Python runtime
@@ -276,8 +272,7 @@ exceptions carry all the meaning normally associated with them.  Refer
 to the descriptions of each function for detailed information.
 
 
-\subsection{AST Objects}
-\label{AST Objects}
+\subsection{AST Objects \label{AST Objects}}
 
 AST objects returned by \function{expr()}, \function{suite()} and
 \function{sequence2ast()} have no methods of their own.
@@ -316,8 +311,7 @@ Same as \code{ast2tuple(\var{ast}, \var{line_info})}.
 \end{methoddesc}
 
 
-\subsection{Examples}
-\nodename{AST Examples}
+\subsection{Examples \label{AST Examples}}
 
 The parser modules allows operations to be performed on the parse tree
 of Python source code before the bytecode is generated, and provides
@@ -348,7 +342,7 @@ as an AST object:
 \begin{verbatim}
 >>> import parser
 >>> ast = parser.expr('a + 5')
->>> code = parser.compileast(ast)
+>>> code = ast.compile()
 >>> a = 5
 >>> eval(code)
 10
@@ -362,23 +356,22 @@ import parser
 
 def load_suite(source_string):
     ast = parser.suite(source_string)
-    code = parser.compileast(ast)
-    return ast, code
+    return ast, ast.compile()
 
 def load_expression(source_string):
     ast = parser.expr(source_string)
-    code = parser.compileast(ast)
-    return ast, code
+    return ast, ast.compile()
 \end{verbatim}
 
 \subsubsection{Information Discovery}
 
 Some applications benefit from direct access to the parse tree.  The
 remainder of this section demonstrates how the parse tree provides
-access to module documentation defined in docstrings without requiring
-that the code being examined be loaded into a running interpreter via
-\keyword{import}.  This can be very useful for performing analyses of
-untrusted code.
+access to module documentation defined in
+docstrings\index{string!documentation}\index{docstrings} without
+requiring that the code being examined be loaded into a running
+interpreter via \keyword{import}.  This can be very useful for
+performing analyses of untrusted code.
 
 Generally, the example will demonstrate how the parse tree may be
 traversed to distill interesting information.  Two functions and a set
@@ -398,7 +391,7 @@ defining classes, functions, and methods.  In this example, the only
 definitions that will be considered are those which are defined in the
 top level of their context, e.g., a function defined by a \keyword{def}
 statement at column zero of a module, but not a function defined
-within a branch of an \code{if} ... \code{else} construct, though
+within a branch of an \keyword{if} ... \keyword{else} construct, though
 there are some good reasons for doing so in some situations.  Nesting
 of definitions will be handled by the code developed in the example.
 
@@ -425,7 +418,7 @@ buried deep in nested tuples.
 >>> import parser
 >>> import pprint
 >>> ast = parser.suite(open('docstring.py').read())
->>> tup = parser.ast2tuple(ast)
+>>> tup = ast.totuple()
 >>> pprint.pprint(tup)
 (257,
  (264,
@@ -709,13 +702,13 @@ of information from a source file.  (See file \file{example.py}.)
 
 \begin{verbatim}
 def get_docs(fileName):
-    source = open(fileName).read()
     import os
-    basename = os.path.basename(os.path.splitext(fileName)[0])
     import parser
+
+    source = open(fileName).read()
+    basename = os.path.basename(os.path.splitext(fileName)[0])
     ast = parser.suite(source)
-    tup = parser.ast2tuple(ast)
-    return ModuleInfo(tup, basename)
+    return ModuleInfo(ast.totuple(), basename)
 \end{verbatim}
 
 This provides an easy-to-use interface to the documentation of a
