@@ -208,7 +208,7 @@ Highest             Operator                             Comment
                                           calls
         +x, -x, ~x                        Unary operators
         x**y                              Power
-        x*y  x/y  x%y                     mult, division, modulo
+        x*y  x/y  x%y x//y                mult, division, modulo, floor division
         x+y  x-y                          addition, substraction
         x<<y   x>>y                       Bit shifting
         x&y                               Bitwise and
@@ -332,13 +332,15 @@ OverflowError
      numeric bounds exceeded
 ZeroDivisionError
      raised when zero second argument of div or modulo op
+FloatingPointError
+     raised when a floating point operation fails
 
 Operations on all sequence types (lists, tuples, strings)
 
                 Operations on all sequence types
 Operation                     Result                     Notes
-x in s     1 if an item of s is equal to x, else 0
-x not in s 0 if an item of s is equal to x, else 1
+x in s     True if an item of s is equal to x, else False
+x not in s False if an item of s is equal to x, else True
 for x in s: loops over the sequence
 s + t      the concatenation of s and t
 s * n, n*s n copies of s concatenated
@@ -368,7 +370,7 @@ s[i:j] = t       slice of s from i to j is replaced by t
 del s[i:j]       same as s[i:j] = []
 s.append(x)      same as s[len(s) : len(s)] = [x]
 s.count(x)       return number of i's for which s[i] == x
-s.extend(x)      same as s[len(s):len(s)]= x   
+s.extend(x)      same as s[len(s):len(s)]= x
 s.index(x)       return smallest i such that s[i] == x      (1)
 s.insert(i, x)   same as s[i:i] = [x] if i >= 0
 s.pop([i])       same as x = s[i]; del s[i]; return x       (4)
@@ -404,7 +406,7 @@ del d[k]                   remove d[k] from d                       (1)
 d.clear()                  remove all items from d
 d.copy()                   a shallow copy of d
 d.get(k,defaultval)        the item of d with key k                 (4)
-d.has_key(k)               1 if d has key k, else 0
+d.has_key(k)               True if d has key k, else False
 d.items()                  a copy of d's list of (key, item) pairs  (2)
 d.iteritems()              an iterator over (key, value) pairs      (7)
 d.iterkeys()               an iterator over the keys of d           (7)
@@ -599,7 +601,7 @@ Operators on file objects
 f.close()         Close file f.
 f.fileno()        Get fileno (fd) for file f.
 f.flush()         Flush file f's internal buffer.
-f.isatty()        1 if file f is connected to a tty-like dev, else 0.
+f.isatty()        True if file f is connected to a tty-like dev, else False.
 f.read([size])    Read at most size bytes from file f and return as a string
                   object. If size omitted, read to EOF.
 f.readline()      Read one entire line from file f.
@@ -619,7 +621,9 @@ File Exceptions
      End-of-file hit when reading (may be raised many times, e.g. if f is a
     tty).
   IOError
-     Other I/O-related I/O operation failure
+     Other I/O-related I/O operation failure.
+  OSError
+     OS system call failed.
 
 
     Advanced Types
@@ -717,6 +721,10 @@ File Exceptions
     continue        -- immediately does next iteration of "for" or "while" loop
     return [result] -- Exits from function (or method) and returns result (use a tuple to
                        return more than one value). If no result given, then returns None.
+    yield result    -- Freezes the execution frame of a generator and returns the result
+                       to the iterator's .next() method.  Upon the next call to next(),
+                       resumes execution at the frozen point with all of the local variables
+                       still intact.
 
     Exception Statements
 
@@ -919,8 +927,12 @@ fromlist]]])
 abs(x)              Return the absolute value of number x.
 apply(f, args[,     Calls func/method f with arguments args and optional
 keywords])          keywords.
-callable(x)         Returns 1 if x callable, else 0.
+bool(x)             Returns True when the argument x is true and False otherwise.
+buffer(obj)         Creates a buffer reference to an object.
+callable(x)         Returns True if x callable, else False.
 chr(i)              Returns one-character string whose ASCII code isinteger i
+classmethod(f)      Converts a function f, into a method with the class as the
+                    first argument.  Useful for creating alternative constructors.
 cmp(x,y)            Returns negative, 0, positive if x <, ==, > to y
 coerce(x,y)         Returns a tuple of the two numeric arguments converted to a
                     common type.
@@ -934,15 +946,18 @@ complex(real[,      Builds a complex object (can also be done using J or j
 image])             suffix,e.g. 1+3J)
 delattr(obj, name)  deletes attribute named name of object obj <=> del obj.name
                     If no args, returns the list of names in current
+dict([items])       Create a new dictionary from the specified item list.
 dir([object])       localsymbol table. With a module, class or class
                     instanceobject as arg, returns list of names in its attr.
                     dict.
 divmod(a,b)         Returns tuple of (a/b, a%b)
+enumerate(seq)      Return a iterator giving:  (0, seq[0]), (1, seq[1]), ...
 eval(s[, globals[,  Eval string s in (optional) globals, locals contexts.s must
 locals]])           have no NUL's or newlines. s can also be acode object.
                     Example: x = 1; incr_x = eval('x + 1')
 execfile(file[,     Executes a file without creating a new module, unlike
 globals[, locals]]) import.
+file()              Synonym for open().
 filter(function,    Constructs a list from those elements of sequence for which
 sequence)           function returns true. function takes one parameter.
 float(x)            Converts a number or a string to floating point.
@@ -953,6 +968,7 @@ globals()           Returns a dictionary containing current global variables.
 hasattr(object,     Returns true if object has attr called name.
 name)
 hash(object)        Returns the hash value of the object (if it has one)
+help(f)             Display documentation on object f.
 hex(x)              Converts a number x to a hexadecimal string.
 id(object)          Returns a unique 'identity' integer for an object.
 input([prompt])     Prints prompt if given. Reads input and evaluates it.
@@ -966,6 +982,7 @@ class)              (A,B) then isinstance(x,A) => isinstance(x,B)
 issubclass(class1,  returns true if class1 is derived from class2
 class2)
                     Returns the length (the number of items) of an object
+iter(collection)    Returns an iterator over the collection.
 len(obj)            (sequence, dictionary, or instance of class implementing
                     __len__).
 list(sequence)      Converts sequence into a list. If already a list,returns a
@@ -987,7 +1004,12 @@ implementation      1 for line-buffered, negative forsys-default, all else, of
 dependent]])        (about) given size.
 ord(c)              Returns integer ASCII value of c (a string of len 1). Works
                     with Unicode char.
+object()            Create a base type.  Used as a superclass for new-style objects.
+open(name           Open a file.
+  [, mode
+  [, buffering]])
 pow(x, y [, z])     Returns x to power y [modulo z]. See also ** operator.
+property()          Created a property with access controlled by functions.
 range(start [,end   Returns list of ints from >= start and < end.With 1 arg,
 [, step]])          list from 0..arg-1With 2 args, list from start..end-1With 3
                     args, list from start up to end by step
@@ -1012,8 +1034,13 @@ name, value)        3) <=> o.foobar = 3Creates attribute if it doesn't exist!
 slice([start,] stop Returns a slice object representing a range, with R/
 [, step])           Oattributes: start, stop, step.
                     Returns a string containing a nicely
+staticmethod()      Convert a function to method with no self or class
+                    argument.  Useful for methods associated with a class that
+                    do not need access to an object's internal state.
 str(object)         printablerepresentation of an object. Class overridable
                     (__str__).See also repr().
+super(type)         Create an unbound super object.  Used to call cooperative
+                    superclass methods.
 tuple(sequence)     Creates a tuple with same elements as sequence. If already
                     a tuple, return itself (not a copy).
                     Returns a type object [see module types] representing
@@ -1045,6 +1072,8 @@ Exception>
          Root class for all exceptions
     SystemExit
          On 'sys.exit()'
+    StopIteration
+         Signal the end from iterator.next()
     StandardError
                  Base class for all built-in exceptions; derived from Exception
     root class.
@@ -1099,6 +1128,14 @@ Exception>
          On passing inappropriate type to built-in op or func
         ValueError
          On arg error not covered by TypeError or more precise
+    Warning
+              UserWarning
+              DeprecationWarning
+              PendingDeprecationWarning
+              SyntaxWarning
+              OverflowWarning
+              RuntimeWarning
+              FutureWarning
 
 
 
@@ -1122,7 +1159,7 @@ Special methods for any class
         __cmp__(s, o)     Compares s to o and returns <0, 0, or >0.
                           Implements >, <, == etc...
         __hash__(s)       Compute a 32 bit hash code; hash() and dictionary ops
-        __nonzero__(s)    Returns 0 or 1 for truth value testing
+        __nonzero__(s)    Returns False or True for truth value testing
         __getattr__(s, name)  called when attr lookup doesn't find <name>
         __setattr__(s, name, val) called when setting an attr
                                   (inside, don't use "self.name = value"
@@ -1188,19 +1225,16 @@ Operators
 
 Special informative state attributes for some types:
 
-    Lists & Dictionaries:
-        __methods__ (list, R/O): list of method names of the object
-
     Modules:
         __doc__ (string/None, R/O): doc string (<=> __dict__['__doc__'])
         __name__(string, R/O): module name (also in __dict__['__name__'])
         __dict__ (dict, R/O): module's name space
         __file__(string/undefined, R/O): pathname of .pyc, .pyo or .pyd (undef for
                  modules statically linked to the interpreter)
-        __path__(string/undefined, R/O): fully qualified package name when applies.
 
     Classes:    [in bold: writable since 1.5.2]
         __doc__ (string/None, R/W): doc string (<=> __dict__['__doc__'])
+        __module__ is the module name in which the class was defined
         __name__(string, R/W): class name (also in __dict__['__name__'])
         __bases__ (tuple, R/W): parent classes
         __dict__ (dict, R/W): attributes (class name space)
@@ -1208,6 +1242,7 @@ Special informative state attributes for some types:
     Instances:
         __class__ (class, R/W): instance's class
         __dict__ (dict, R/W): attributes
+
     User-defined functions: [bold: writable since 1.5.2]
         __doc__ (string/None, R/W): doc string
         __name__(string, R/O): function name
@@ -1216,6 +1251,11 @@ Special informative state attributes for some types:
         func_defaults (tuple/None, R/W): default args values if any
         func_code (code, R/W): code object representing the compiled function body
         func_globals (dict, R/O): ref to dictionary of func global variables
+        func_dict (dict, R/W):  same as __dict__ contains the namespace supporting
+            arbitrary function attributes
+        func_closure (R/O): None or a tuple of cells that contain bindings
+            for the function's free variables.
+
 
     User-defined Methods:
         __doc__ (string/None, R/O): doc string
@@ -1223,16 +1263,20 @@ Special informative state attributes for some types:
         im_class (class, R/O): class defining the method (may be a base class)
         im_self (instance/None, R/O): target instance object (None if unbound)
         im_func (function, R/O): function object
+
     Built-in Functions & methods:
         __doc__ (string/None, R/O): doc string
         __name__ (string, R/O): function name
         __self__ : [methods only] target object
-        __members__ = list of attr names: ['__doc__','__name__','__self__'])
+
     Codes:
         co_name (string, R/O): function name
         co_argcount (int, R/0): number of positional args
         co_nlocals (int, R/O): number of local vars (including args)
         co_varnames (tuple, R/O): names of local vars (starting with args)
+        co_cellvars (tuple, R/O)) the names of local variables referenced by
+            nested functions
+        co_freevars (tuple, R/O)) names of free variables
         co_code (string, R/O): sequence of bytecode instructions
         co_consts (tuple, R/O): litterals used by the bytecode, 1st one is
                                 fct doc (or None)
@@ -1241,7 +1285,6 @@ Special informative state attributes for some types:
         co_firstlineno (int, R/O): first line number of the function
         co_lnotab (string, R/O): string encoding bytecode offsets to line numbers.
         co_stacksize (int, R/O): required stack size (including local vars)
-        co_firstlineno (int, R/O): first line number of the function
         co_flags (int, R/O): flags for the interpreter
                            bit 2 set if fct uses "*arg" syntax
                            bit 3 set if fct uses '**keywords' syntax
@@ -1274,8 +1317,6 @@ Special informative state attributes for some types:
     Complex numbers:
         real (float, R/O): real part
         imag (float, R/O): imaginary part
-    XRanges:
-        tolist (Built-in method, R/O): ?
 
 
 Important Modules
@@ -1316,18 +1357,18 @@ version_info         tuple containing Python version info - (major, minor,
      Function                                 Result
 exit(n)            Exits with status n. Raises SystemExit exception.(Hence can
                    be caught and ignored by program)
-getrefcount(object Returns the reference count of the object. Generally 1
-)                  higherthan you might expect, because of object arg temp
+getrefcount(object Returns the reference count of the object. Generally one
+)                  higher than you might expect, because of object arg temp
                    reference.
 setcheckinterval(  Sets the interpreter's thread switching interval (in number
-interval)          ofvirtualcode instructions, default:10).
+interval)          of virtual code instructions, default:10).
 settrace(func)     Sets a trace function: called before each line ofcode is
                    exited.
 setprofile(func)   Sets a profile function for performance profiling.
                    Info on exception currently being handled; this is atuple
                    (exc_type, exc_value, exc_traceback).Warning: assigning the
 exc_info()         traceback return value to a loca variable in a
-                   functionhandling an exception will cause a circular
+                   function handling an exception will cause a circular
                    reference.
 setdefaultencoding Change default Unicode encoding - defaults to 7-bit ASCII.
 (encoding)
@@ -1754,16 +1795,18 @@ atan2(x, y)
 ceil(x)
 cos(x)
 cosh(x)
+degrees(x)
 exp(x)
 fabs(x)
 floor(x)
 fmod(x, y)
 frexp(x)        -- Unlike C: (float, int) = frexp(float)
 ldexp(x, y)
-log(x)
+log(x [,base])
 log10(x)
 modf(x)         -- Unlike C: (float, float) = modf(float)
 pow(x, y)
+radians(x)
 sin(x)
 sinh(x)
 sqrt(x)
@@ -1804,13 +1847,13 @@ Bastion          "Bastionification" utility (control access to instance vars)
 bdb              A generic Python debugger base class.
 binhex           Macintosh binhex compression/decompression.
 bisect           List bisection algorithms.
-bz2		 Support for bz2 compression/decompression.									
+bz2              Support for bz2 compression/decompression.
 calendar         Calendar printing functions.
 cgi              Wraps the WWW Forms Common Gateway Interface (CGI).
-cgitb		 Utility for handling CGI tracebacks.									
+cgitb            Utility for handling CGI tracebacks.
 CGIHTTPServer    CGI http services.
 cmd              A generic class to build line-oriented command interpreters.
-datetime	 Basic date and time types.
+datetime         Basic date and time types.
 code             Utilities needed to emulate Python's interactive interpreter
 codecs           Lookup existing Unicode encodings and register new ones.
 colorsys         Conversion functions between RGB and other color systems.
@@ -1822,14 +1865,14 @@ copy_reg         Helper to provide extensibility for pickle/cPickle.
 dbhash           (g)dbm-compatible interface to bsdhash.hashopen.
 dircache         Sorted list of files in a dir, using a cache.
 [DEL:dircmp:DEL] [DEL:Defines a class to build directory diff tools on.:DEL]
-difflib		 Tool for creating delta between sequences.
+difflib          Tool for creating delta between sequences.
 dis              Bytecode disassembler.
 distutils        Package installation system.
-doctest		 Tool for running and verifying tests inside doc strings.
+doctest          Tool for running and verifying tests inside doc strings.
 dospath          Common operations on DOS pathnames.
 dumbdbm          A dumb and slow but simple dbm clone.
 [DEL:dump:DEL]   [DEL:Print python code that reconstructs a variable.:DEL]
-email            Comprehensive support for internet email.									
+email            Comprehensive support for internet email.
 exceptions       Class based built-in exception hierarchy.
 filecmp          File comparison.
 fileinput        Helper class to quickly write a loop over all standard input
@@ -1848,24 +1891,24 @@ glob             filename globbing.
 gopherlib        Gopher protocol client interface.
 [DEL:grep:DEL]   [DEL:'grep' utilities.:DEL]
 gzip             Read & write gzipped files.
-heapq		 Priority queue implemented using lists organized as heaps.
-HMAC		 Keyed-Hashing for Message Authentication -- RFC 2104.
+heapq            Priority queue implemented using lists organized as heaps.
+HMAC             Keyed-Hashing for Message Authentication -- RFC 2104.
 htmlentitydefs   Proposed entity definitions for HTML.
 htmllib          HTML parsing utilities.
-HTMLParser	 A parser for HTML and XHTML.									
+HTMLParser       A parser for HTML and XHTML.
 httplib          HTTP client class.
 ihooks           Hooks into the "import" mechanism.
 imaplib          IMAP4 client.Based on RFC 2060.
 imghdr           Recognizing image files based on their first few bytes.
 imputil          Privides a way of writing customised import hooks.
-inspect		 Tool for probing live Python objects.									
+inspect          Tool for probing live Python objects.
 keyword          List of Python keywords.
 knee             A Python re-implementation of hierarchical module import.
 linecache        Cache lines from files.
 linuxaudiodev    Lunix /dev/audio support.
 locale           Support for number formatting using the current locale
                  settings.
-logging		 Python logging facility.									
+logging          Python logging facility.
 macpath          Pathname (or related) operations for the Macintosh.
 macurl2path      Mac specific module for conversion between pathnames and URLs.
 mailbox          A class to handle a unix-style or mmdf-style mailbox.
@@ -1883,7 +1926,7 @@ netrc
 nntplib          An NNTP client class. Based on RFC 977.
 ntpath           Common operations on DOS pathnames.
 nturl2path       Mac specific module for conversion between pathnames and URLs.
-optparse	 A comprehensive tool for processing command line options.									
+optparse         A comprehensive tool for processing command line options.
 os               Either mac, dos or posix depending system.
 [DEL:packmail:   [DEL:Create a self-unpacking shell archive.:DEL]
 DEL]
@@ -1891,7 +1934,7 @@ pdb              A Python debugger.
 pickle           Pickling (save and restore) of Python objects (a faster
                  Cimplementation exists in built-in module: cPickle).
 pipes            Conversion pipeline templates.
-pkgunil		 Utilities for working with Python packages.
+pkgunil          Utilities for working with Python packages.
 popen2           variations on pipe open.
 poplib           A POP3 client class. Based on the J. Myers POP3 draft.
 posixfile        Extended (posix) file operations.
@@ -1900,7 +1943,7 @@ pprint           Support to pretty-print lists, tuples, & dictionaries
                  recursively.
 profile          Class for profiling python code.
 pstats           Class for printing reports on profiled python code.
-pydoc		 Utility for generating documentation from source files.									
+pydoc            Utility for generating documentation from source files.
 pty              Pseudo terminal utilities.
 pyexpat          Interface to the Expay XML parser.
 py_compile       Routine to "compile" a .py file to a .pyc file.
@@ -1918,7 +1961,7 @@ rfc822           RFC-822 message manipulation class.
 rlcompleter      Word completion for GNU readline 2.0.
 robotparser      Parse robot.txt files, useful for web spiders.
 sched            A generally useful event scheduler class.
-sets		 Module for a set datatype.									
+sets             Module for a set datatype.
 sgmllib          A parser for SGML.
 shelve           Manage shelves of pickled objects.
 shlex            Lexical analyzer class for simple shell-like syntaxes.
@@ -1940,10 +1983,10 @@ sunau            Stuff to parse Sun and NeXT audio files.
 sunaudio         Interpret sun audio headers.
 symbol           Non-terminal symbols of Python grammar (from "graminit.h").
 tabnanny,/font>  Check Python source for ambiguous indentation.
-tarfile		 Facility for reading and writing to the *nix tarfile format.									
+tarfile          Facility for reading and writing to the *nix tarfile format.
 telnetlib        TELNET client class. Based on RFC 854.
 tempfile         Temporary file name allocation.
-textwrap	 Object for wrapping and filling text.									
+textwrap         Object for wrapping and filling text.
 threading        Proposed new higher-level threading interfaces
 threading_api    (doc of the threading module)
 toaiff           Convert "arbitrary" sound files to AIFF files .
@@ -1963,9 +2006,9 @@ UserList         A wrapper to allow subclassing of built-in list class.
 UserString       A wrapper to allow subclassing of built-in string class.
 [DEL:util:DEL]   [DEL:some useful functions that don't fit elsewhere !!:DEL]
 uu               UUencode/UUdecode.
-unittest	 Utilities for implementing unit testing.		  
+unittest         Utilities for implementing unit testing.
 wave             Stuff to parse WAVE files.
-weakref		 Tools for creating and managing weakly referenced objects.		  
+weakref          Tools for creating and managing weakly referenced objects.
 webbrowser       Platform independent URL launcher.
 [DEL:whatsound:  [DEL:Several routines that help recognizing sound files.:DEL]
 DEL]
@@ -1975,13 +2018,11 @@ xdrlib           Implements (a subset of) Sun XDR (eXternal Data
 xmllib           A parser for XML, using the derived class as static DTD.
 xml.dom          Classes for processing XML using the Document Object Model.
 xml.sax          Classes for processing XML using the SAX API.
-xmlrpclib	 Support for remote procedure calls using XML.		  
+xmlrpclib        Support for remote procedure calls using XML.
 zipfile          Read & write PK zipped files.
 [DEL:zmod:DEL]   [DEL:Demonstration of abstruse mathematical concepts.:DEL]
 
 
-
-(following list not revised)
 
 * Built-ins *
 
@@ -1990,7 +2031,7 @@ zipfile          Read & write PK zipped files.
             __main__            Scope of the interpreters main program, script or stdin
             array               Obj efficiently representing arrays of basic values
             math                Math functions of C standard
-            time                Time-related functions
+            time                Time-related functions (also the newer datetime module)
             regex               Regular expression matching operations
             marshal             Read and write some python values in binary format
             struct              Convert between python values and C structs
@@ -2001,7 +2042,7 @@ zipfile          Read & write PK zipped files.
             os                  A more portable interface to OS dependent functionality
             re                  Functions useful for working with regular expressions
             string              Useful string and characters functions and exceptions
-            whrandom            Wichmann-Hill pseudo-random number generator
+            random              Mersenne Twister pseudo-random number generator
             thread              Low-level primitives for working with process threads
             threading           idem, new recommanded interface.
 
@@ -2030,7 +2071,8 @@ zipfile          Read & write PK zipped files.
 
             md5         Interface to RSA's MD5 message digest algorithm
             mpz         Interface to int part of GNU multiple precision library
-            rotor               Implementation of a rotor-based encryption algorithm
+            rotor       Implementation of a rotor-based encryption algorithm
+            HMAC        Keyed-Hashing for Message Authentication -- RFC 2104.
 
 * Stdwin * Standard Window System
 
@@ -2060,8 +2102,6 @@ Workspace exploration and idiom hints
 
         dir(<module>)   list functions, variables in <module>
         dir()           get object keys, defaults to local name space
-        X.__methods__   list of methods supported by X (if any)
-        X.__members__   List of X's data attributes
         if __name__ == '__main__': main()            invoke main if running as script
         map(None, lst1, lst2, ...)                   merge lists
         b = a[:]                                     create copy of seq structure
@@ -2107,6 +2147,8 @@ C-c C-c sends the entire buffer to the Python interpreter
 C-c |   sends the current region
 C-c !   starts a Python interpreter window; this will be used by
         subsequent C-c C-c or C-c | commands
+C-c C-w runs PyChecker
+
 VARIABLES
 py-indent-offset        indentation increment
 py-block-comment-prefix comment string used by py-comment-region
@@ -2169,6 +2211,8 @@ r, return
         can be printed or manipulated from debugger)
 c, continue
         continue until next breakpoint
+j, jump lineno
+        Set the next line that will be executed
 a, args
         print args to current function
 rv, retval
