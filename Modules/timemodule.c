@@ -68,6 +68,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <errno.h>
 #endif
 
+#ifdef _SEQUENT_
+#include <sys/select.h>
+struct timezone {
+    int tz_minuteswest;
+    int tz_dsttime;
+};
+#endif
+
 /* Time methods */
 
 static object *
