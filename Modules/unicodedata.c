@@ -227,7 +227,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
                              (code&((1<<DECOMP_SHIFT)-1))];
     }
 
-    /* high byte is of hex bytes (usually one or two), low byte
+    /* high byte is number of hex bytes (usually one or two), low byte
        is prefix code (from*/
     count = decomp_data[index] >> 8;
 
@@ -241,7 +241,9 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
     while (count-- > 0) {
         if (i)
             decomp[i++] = ' ';
-        sprintf(decomp + i, "%04X", decomp_data[++index]);
+        assert((size_t)i < sizeof(decomp));
+        PyOS_snprintf(decomp + i, sizeof(decomp) - i, "%04X",
+                      decomp_data[++index]);
         i += strlen(decomp + i);
     }
     
