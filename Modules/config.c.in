@@ -88,6 +88,9 @@ extern void initmarshal();
 #ifdef USE_AUDIO
 extern void initaudio();
 #endif
+#ifdef USE_AL
+extern void inital();
+#endif
 #ifdef USE_AMOEBA
 extern void initamoeba();
 #endif
@@ -130,6 +133,10 @@ struct {
 
 #ifdef USE_AUDIO
 	{"audio",	initaudio},
+#endif
+
+#ifdef USE_AL
+	{"al",		inital},
 #endif
 
 #ifdef USE_AMOEBA
