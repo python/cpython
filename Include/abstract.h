@@ -299,7 +299,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 					 PyObject *args, PyObject *kw);
 
        /*
-
 	 Call a callable Python object, callable_object, with
 	 arguments and keywords arguments.  The 'args' argument can not be
 	 NULL, but the 'kw' argument can be NULL.
@@ -310,7 +309,6 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
                                                PyObject *args);
 
        /*
-
 	 Call a callable Python object, callable_object, with
 	 arguments given by the tuple, args.  If no arguments are
 	 needed, then args may be NULL.  Returns the result of the
@@ -343,11 +341,31 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 	 arguments are provided. Returns the result of the call on
 	 success, or NULL on failure.  This is the equivalent of the
 	 Python expression: o.method(args).
+       */
 
-         Note that Special method names, such as "__add__",
-	 "__getitem__", and so on are not supported. The specific
-	 abstract-object routines for these must be used.
 
+     DL_IMPORT(PyObject *) PyObject_CallFunctionObArgs(PyObject *callable,
+                                                       ...);
+
+       /*
+	 Call a callable Python object, callable_object, with a
+	 variable number of C arguments.  The C arguments are provided
+	 as PyObject * values; 'n' specifies the number of arguments
+	 present.  Returns the result of the call on success, or NULL
+	 on failure.  This is the equivalent of the Python expression:
+	 apply(o,args).
+       */
+
+
+     DL_IMPORT(PyObject *) PyObject_CallMethodObArgs(PyObject *o,
+                                                     PyObject *m, ...);
+
+       /*
+	 Call the method named m of object o with a variable number of
+	 C arguments.  The C arguments are provided as PyObject * values;
+	 'n' specifies the number of arguments present.  Returns the
+	 result of the call on success, or NULL on failure.  This is the
+	 equivalent of the Python expression: o.method(args).
        */
 
 
