@@ -49,7 +49,8 @@ Library
   format string properly.
 
 - The email package handles some RFC 2231 parameters with missing
-  CHARSET fields better.
+  CHARSET fields better.  It also includes a patch to parameter
+  parsing when semicolons appear inside quotes.
 
 - sets.py now runs under Py2.2.  In addition, the argument restrictions
   for most set methods (but not the operators) have been relaxed to
