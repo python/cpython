@@ -34,7 +34,9 @@ POBJS=		acceler.o grammar1.o \
 		parsetok.o tokenizer.o bitset.o \
 		metagrammar.o
 
-OBJS=		$(POBJS) intrcheck.o myreadline.o
+AROBJS=		$(POBJS) myreadline.o
+OBJS=		$(AROBJS) intrcheck.o
+
 
 PGENMAIN=	pgenmain.o
 
@@ -54,7 +56,10 @@ all:		$(PGEN) $(OBJS)
 
 # This target is used by the master Makefile to add the objects to the library
 add2lib:	$(OBJS)
-		$(AR) cr $(LIBRARY) $(OBJS)
+		$(AR) cr $(LIBRARY) $(AROBJS)
+		if test ! -f ../Modules/hassignal; \
+		then echo adding intrcheck.o; $(AR) r $(LIBRARY) intrcheck.o; \
+		else echo leaving intrcheck.o out; fi
 		touch add2lib
 
 $(PGEN):	$(PGENOBJS)

@@ -34,7 +34,7 @@ SHELL=		/bin/sh
 
 # === Fixed definitions ===
 
-OBJS=		\
+AROBJS=		\
 		bltinmodule.o \
 		ceval.o compile.o \
 		errors.o \
@@ -44,9 +44,10 @@ OBJS=		\
 		import.o importdl.o \
 		marshal.o modsupport.o mystrtoul.o \
 		pyfpe.o pystate.o pythonrun.o \
-		sigcheck.o structmember.o sysmodule.o \
+		structmember.o sysmodule.o \
 		traceback.o \
 		$(LIBOBJS)
+OBJS=		$(AROBJS) sigcheck.o
 
 LIBRARY=	../libpython$(VERSION).a
 
@@ -57,7 +58,10 @@ all:		$(OBJS)
 
 # This target is used by the master Makefile to add the objects to the library
 add2lib:	$(OBJS)
-		$(AR) cr $(LIBRARY) $(OBJS)
+		$(AR) cr $(LIBRARY) $(AROBJS)
+		if test ! -f ../Modules/hassignal; \
+		then echo adding sigcheck.o; $(AR) r $(LIBRARY) sigcheck.o; \
+		else echo leaving sigcheck.o out; fi
 		touch add2lib
 
 clean:

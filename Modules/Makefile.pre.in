@@ -110,12 +110,10 @@ all:		$(OBJS)
 # To deal with the conflict between signalmodule.o and
 # sigcheck.o+intrcheck.o, we remove the latter two if we have the former.
 add2lib:	$(OBJS)
-		-for i in $(OBJS); do \
-		     if test "$$i" = "signalmodule.o"; then \
-		        $(AR) d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; \
-			break; \
-		     fi; \
-		done
+		-if test -f hassignal; \
+		then echo removing sigcheck.o intrcheck.o; \
+		     $(AR) d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; \
+		else echo leaving sigcheck.o intrcheck.o in; fi
 		$(AR) cr $(LIBRARY) $(OBJS)
 		touch add2lib
 
@@ -151,6 +149,14 @@ config.c Makefile: Setup.thread Setup Setup.local
 config.c Makefile:
 		-rm -f $(LIBRARY)
 		$(SHELL) $(MAKESETUP) Setup.thread Setup.local Setup
+
+hassignal:
+		-rm -f hassignal
+		-for i in $(OBJS); do \
+		    if test "$$i" = "signalmodule.o"; then \
+		       echo yes >hassignal; break; \
+		    fi; \
+		done
 
 Setup:
 		cp $(srcdir)/Setup.in Setup
