@@ -477,6 +477,14 @@ the existing '\%s' format style, which inserts the \function{str()} of
 its argument.  For example, \code{'\%r \%s' \% ('abc', 'abc')} returns a
 string containing \verb|'abc' abc|.
 
+A new built-in, \function{zip(\var{seq1}, \var{seq2}, ...)}, has been
+added.  \function{zip()} returns a list of tuples where each tuple
+contains the i-th element from each of the argument sequences.  The
+difference between \function{zip()} and \code{map(None, \var{seq1},
+\var{seq2})} is that \function{map()} raises an error if the sequences
+aren't all of the same length, while \function{zip()} truncates the
+returned list to the length of the shortest argument sequence.
+
 The \function{int()} and \function{long()} functions now accept an
 optional ``base'' parameter when the first argument is a string.
 \code{int('123', 10)} returns 123, while \code{int('123', 16)} returns
