@@ -98,7 +98,7 @@ range_print(r, fp, flags)
 			if (j > 0 || i > 0)
 				fprintf(fp, ", ");
 
-			fprintf(fp, "%d", r->start + j * r->step);
+			fprintf(fp, "%ld", r->start + j * r->step);
 		}
 
 	if (r->len == 1 && r->reps == 1)

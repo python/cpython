@@ -669,17 +669,17 @@ formatstring(format, args)
 		else {
 			/* Got a format specifier */
 			int flags = 0;
-			char *fmtstart = fmt++;
 			int width = -1;
 			int prec = -1;
 			int size = 0;
 			int c = '\0';
 			int fill;
-			object *v;
+			object *v = NULL;
 			object *temp = NULL;
 			char *buf;
 			int sign;
 			int len;
+			fmt++;
 			if (*fmt == '(') {
 				char *keystart;
 				int keylen;
