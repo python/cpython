@@ -7,6 +7,9 @@
 extern "C" {
 #endif
 
+#define NESTED_SCOPES_DEFAULT 0
+#define FUTURE_NESTED_SCOPES "nested_scopes"
+
 /* Bytecode object */
 typedef struct {
     PyObject_HEAD

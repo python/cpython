@@ -1,3 +1,5 @@
+from __future__ import nested_scopes
+
 from test.test_support import verify, TestFailed, check_syntax
 
 print "1. simple nesting"
