@@ -35,12 +35,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "token.h"
 
-typedef struct {
-	PyObject_HEAD
-	PyMethodDef *m_ml;
-	PyObject    *m_self;
-} PyCFunctionObject;
-
 static PyCFunctionObject *free_list = NULL;
 
 PyObject *
