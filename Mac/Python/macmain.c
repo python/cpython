@@ -351,6 +351,12 @@ Py_Main(argc, argv)
 		}
 	}
 	
+	/*
+	** For reasons I don't fully understand we cannot insert our
+	** menu earlier. Leave it here, we hope to be rid of Sioux soon anyway.
+	*/
+	PyMac_InitMenuBar();
+	
 	Py_Initialize();
 	
 	PySys_SetArgv(argc-1, argv+1);

@@ -56,6 +56,9 @@
 /* Dialog for 'Bad preference file' */
 #define BADPREFFILE_ID	135
 
+/* About box */
+#define ABOUT_ID		136
+
 /*
 ** The following are valid both in the binary (or shared library)
 ** and in the Preferences file.
@@ -82,6 +85,9 @@
 #define POPT_DEBUGGING	4
 #define POPT_KEEPNORM	5
 #define POPT_KEEPERR	6
+
+/* Our menu bar */
+#define MENUBAR_ID 128
 
 /* From macgetpath.c: */
 void PyMac_PreferenceOptions Py_PROTO((int *inspect, int *verbose, int *suppress_print, 

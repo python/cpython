@@ -68,6 +68,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <GUSI.h>
 #endif
 
+/* The ID of the Sioux apple menu */
+#define SIOUX_APPLEID	32000
+
 #ifndef HAVE_UNIVERSAL_HEADERS
 #define GetResourceSizeOnDisk(x) SizeResource(x)
 typedef DlgHookYDProcPtr DlgHookYDUPP;
@@ -516,6 +519,35 @@ PyMac_Idle()
 	return intrpeek();
 }
 #endif
+
+/*
+** Install our menu bar.
+*/
+void
+PyMac_InitMenuBar()
+{
+	Handle bar;
+	MenuHandle applemenu;
+	
+	if ( (bar=GetMenuBar()) == NULL ) return;
+	if ( (applemenu=GetMHandle(SIOUX_APPLEID)) == NULL ) return;
+	SetMenuItemText(applemenu, 1, "\pAbout Python...");
+}
+
+/*
+** Our replacement about box
+*/
+void
+SIOUXDoAboutBox(void)
+{
+	DialogPtr theDialog;
+	short item;
+	
+	if( (theDialog = GetNewDialog(ABOUT_ID, NULL, (WindowPtr)-1)) == NULL )
+		return;
+	ModalDialog(NULL, &item);
+	DisposeDialog(theDialog);
+}
 
 /*
 ** Returns true if the argument has a resource fork, and it contains
