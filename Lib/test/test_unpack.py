@@ -47,6 +47,18 @@ a, b, c = Seq()
 if a <> 0 or b <> 1 or c <> 2:
     raise TestFailed
 
+# single element unpacking, with extra syntax
+if verbose:
+    print 'unpack single tuple/list'
+st = (99,)
+sl = [100]
+a, = st
+if a <> 99:
+    raise TestFailed
+b, = sl
+if b <> 100:
+    raise TestFailed
+
 # now for some failures
 
 # unpacking non-sequence
