@@ -653,33 +653,58 @@ I_getattr(Iobject *self, char *name) {
   return Py_FindMethod(I_methods, (PyObject *)self, name);
 }
 
+static PyObject *
+I_getiter(Iobject *self)
+{
+	PyObject *myreadline = PyObject_GetAttrString((PyObject*)self,
+						      "readline");
+	PyObject *emptystring = PyString_FromString("");
+	PyObject *iter = NULL;
+	if (!myreadline || !emptystring)
+		goto finally;
+
+	iter = PyCallIter_New(myreadline, emptystring);
+  finally:
+	Py_XDECREF(myreadline);
+	Py_XDECREF(emptystring);
+	return iter;
+}
+
+
 static char Itype__doc__[] = 
 "Simple type for treating strings as input file streams"
 ;
 
 static PyTypeObject Itype = {
   PyObject_HEAD_INIT(NULL)
-  0,		       	/*ob_size*/
-  "StringI",	       	/*tp_name*/
-  sizeof(Iobject),       	/*tp_basicsize*/
-  0,		       	/*tp_itemsize*/
+  0,					/*ob_size*/
+  "StringI",				/*tp_name*/
+  sizeof(Iobject),			/*tp_basicsize*/
+  0,					/*tp_itemsize*/
   /* methods */
-  (destructor)I_dealloc,	/*tp_dealloc*/
-  (printfunc)0,		/*tp_print*/
-  (getattrfunc)I_getattr,	/*tp_getattr*/
-  (setattrfunc)0,		/*tp_setattr*/
-  (cmpfunc)0,		/*tp_compare*/
-  (reprfunc)0,		/*tp_repr*/
-  0,			/*tp_as_number*/
-  0,			/*tp_as_sequence*/
-  0,			/*tp_as_mapping*/
-  (hashfunc)0,		/*tp_hash*/
-  (ternaryfunc)0,		/*tp_call*/
-  (reprfunc)0,		/*tp_str*/
-  
-  /* Space for future expansion */
-  0L,0L,0L,0L,
-  Itype__doc__ 		/* Documentation string */
+  (destructor)I_dealloc,		/*tp_dealloc*/
+  (printfunc)0,				/*tp_print*/
+  (getattrfunc)I_getattr,		/*tp_getattr*/
+  (setattrfunc)0,			/*tp_setattr*/
+  (cmpfunc)0,				/*tp_compare*/
+  (reprfunc)0,				/*tp_repr*/
+  0,					/*tp_as_number*/
+  0,					/*tp_as_sequence*/
+  0,					/*tp_as_mapping*/
+  (hashfunc)0,				/*tp_hash*/
+  (ternaryfunc)0,			/*tp_call*/
+  (reprfunc)0,				/*tp_str*/
+  0,					/* tp_getattro */
+  0,					/* tp_setattro */
+  0,					/* tp_as_buffer */
+  Py_TPFLAGS_DEFAULT,			/* tp_flags */
+  Itype__doc__,				/* tp_doc */
+  0,					/* tp_traverse */
+  0,					/* tp_clear */
+  0,					/* tp_richcompare */
+  0,					/* tp_weaklistoffset */
+  (getiterfunc)I_getiter,		/* tp_iter */
+  0,					/* tp_iternext */
 };
 
 static PyObject *
