@@ -89,7 +89,7 @@ typedef struct {
 
 staticforward PyTypeObject Xmlparsetype;
 
-typedef void (*xmlhandlersetter)(XML_Parser *self, void *meth);
+typedef void (*xmlhandlersetter)(XML_Parser self, void *meth);
 typedef void* xmlhandler;
 
 struct HandlerInfo {
