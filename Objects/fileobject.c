@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* File object implementation */
 
 #include "allobjects.h"
+#include "modsupport.h"
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
 
