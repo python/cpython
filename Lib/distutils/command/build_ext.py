@@ -43,8 +43,13 @@ class build_ext (Command):
     #     in between initialize_options() and finalize_options())
 
     user_options = [
-        ('build-dir=', 'd',
+        ('build-lib=', 'b',
          "directory for compiled extension modules"),
+        ('build-temp=', 't',
+         "directory for temporary files (build by-products)"),
+        ('inplace', 'i',
+         "ignore build-lib and put compiled extensions into the source" +
+         "directory alongside your pure Python modules"),
         ('include-dirs=', 'I',
          "list of directories to search for header files"),
         ('define=', 'D',
@@ -66,7 +71,9 @@ class build_ext (Command):
 
     def initialize_options (self):
         self.extensions = None
-        self.build_dir = None
+        self.build_lib = None
+        self.build_temp = None
+        self.inplace = 0
         self.package = None
 
         self.include_dirs = None
@@ -83,7 +90,8 @@ class build_ext (Command):
         from distutils import sysconfig
 
         self.set_undefined_options ('build',
-                                    ('build_platlib', 'build_dir'),
+                                    ('build_lib', 'build_lib'),
+                                    ('build_temp', 'build_temp'),
                                     ('debug', 'debug'))
 
         if self.package is None:
@@ -227,15 +235,15 @@ class build_ext (Command):
             # precedent!)
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
-            self.compiler.compile (sources,
-                                   macros=macros,
-                                   include_dirs=include_dirs,
-                                   debug=self.debug)
+            objects = self.compiler.compile (sources,
+                                             output_dir=self.build_temp,
+                                             macros=macros,
+                                             include_dirs=include_dirs,
+                                             debug=self.debug)
 
             # Now link the object files together into a "shared object" --
             # of course, first we have to figure out all the other things
             # that go into the mix.
-            objects = self.compiler.object_filenames (sources)
             extra_objects = build_info.get ('extra_objects')
             if extra_objects:
                 objects.extend (extra_objects)
@@ -257,12 +265,25 @@ class build_ext (Command):
                 else:
                     modname = string.split (extension_name, '.')[-1]
                     extra_args.append('/export:init%s'%modname)
+            # end if MSVC
 
-            ext_filename = self.extension_filename \
-                           (extension_name, self.package)
-            ext_filename = os.path.join (self.build_dir, ext_filename)
-            dest_dir = os.path.dirname (ext_filename)
-            self.mkpath (dest_dir)
+            fullname = self.get_ext_fullname (extension_name)
+            if self.inplace:
+                # ignore build-lib -- put the compiled extension into
+                # the source tree along with pure Python modules
+
+                modpath = string.split (fullname, '.')
+                package = string.join (modpath[0:-1], '.')
+                base = modpath[-1]
+
+                build_py = self.find_peer ('build_py')
+                package_dir = build_py.get_package_dir (package)
+                ext_filename = os.path.join (package_dir,
+                                             self.get_ext_filename(base))
+            else:
+                ext_filename = os.path.join (self.build_lib,
+                                             self.get_ext_filename(fullname))
+
             self.compiler.link_shared_object (objects, ext_filename, 
                                               libraries=libraries,
                                               library_dirs=library_dirs,
@@ -272,10 +293,14 @@ class build_ext (Command):
     # build_extensions ()
 
 
-    def extension_filename (self, ext_name, package=None):
+    def get_ext_fullname (self, ext_name):
+        if self.package is None:
+            return ext_name
+        else:
+            return self.package + '.' + ext_name
+
+    def get_ext_filename (self, ext_name):
         from distutils import sysconfig
-        if package:
-            ext_name = package + '.' + ext_name
         ext_path = string.split (ext_name, '.')
         return apply (os.path.join, ext_path) + sysconfig.SO
 
