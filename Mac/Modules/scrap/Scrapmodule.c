@@ -14,6 +14,8 @@
 #include <Carbon/Carbon.h>
 #endif
 
+#if !TARGET_API_MAC_CARBON
+
 /*
 ** Generate ScrapInfo records
 */
@@ -26,6 +28,7 @@ SCRRec_New(itself)
 		ResObj_New, itself->scrapHandle, itself->scrapCount, itself->scrapState,
 		PyMac_BuildStr255, itself->scrapName);
 }
+#endif
 
 static PyObject *Scrap_Error;
 
