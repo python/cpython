@@ -222,21 +222,6 @@ def parse_makefile(fp, g=None):
                 # bogus variable reference; just drop it since we can't deal
                 del notdone[name]
 
-    # "Fix" all pathnames in the Makefile that are explicitly relative,
-    # ie. that start with "./".  This is a kludge to fix the "./ld_so_aix"
-    # problem, the nature of which is that Python's installed Makefile
-    # refers to "./ld_so_aix", but when we are building extensions we are
-    # far from the directory where Python's Makefile (and ld_so_aix, for
-    # that matter) is installed.  Unfortunately, there are several other
-    # relative pathnames in the Makefile, and this fix doesn't fix them,
-    # because the layout of Python's source tree -- which is what the
-    # Makefile refers to -- is not fully preserved in the Python
-    # installation.  Grumble.
-    from os.path import normpath, join, dirname
-    for (name, value) in done.items():
-        if value[0:2] == "./":
-            done[name] = normpath(join(dirname(fp.name), value))
-
     # save the results in the global dictionary
     g.update(done)
     return g
@@ -257,6 +242,18 @@ def _init_posix():
         raise DistutilsPlatformError, my_msg
               
     parse_makefile(file, g)
+    
+    # On AIX, there are wrong paths to the linker scripts in the Makefile
+    # -- these paths are relative to the Python source, but when installed
+    # the scripts are in another directory.
+    if sys.platform: # == 'aix4':          # what about AIX 3.x ?
+        # Linker script is in the config directory, not in Modules as the
+        # Makefile says.
+        python_lib = get_python_lib(standard_lib=1)
+        ld_so_aix = os.path.join(python_lib, 'config', 'ld_so_aix')
+        python_exp = os.path.join(python_lib, 'config', 'python.exp')
+
+        g['LDSHARED'] = "%s %s -bI:%s" % (ld_so_aix, g['CC'], python_exp)
 
 
 def _init_nt():
