@@ -441,11 +441,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_READYING (1L<<13)
 
 /* Objects support garbage collection (see objimp.h) */
-#ifdef WITH_CYCLE_GC
 #define Py_TPFLAGS_HAVE_GC (1L<<14)
-#else
-#define Py_TPFLAGS_HAVE_GC 0
-#endif
 
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \

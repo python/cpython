@@ -226,10 +226,6 @@ extern DL_IMPORT(PyVarObject *) _PyObject_NewVar(PyTypeObject *, int);
 /*
  * Garbage Collection Support
  * ==========================
- *
- * Some of the functions and macros below are always defined; when
- * WITH_CYCLE_GC is undefined, they simply don't do anything different
- * than their non-GC counterparts.
  */
 
 /* Test if a type has a GC head */
@@ -245,8 +241,6 @@ extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 
 /* for source compatibility with 2.2 */
 #define _PyObject_GC_Del PyObject_GC_Del
-
-#ifdef WITH_CYCLE_GC
 
 /* GC information is stored BEFORE the object structure. */
 typedef union _gc_head {
@@ -304,19 +298,6 @@ extern DL_IMPORT(void) PyObject_GC_Del(void *);
 #define PyObject_GC_NewVar(type, typeobj, n) \
 		( (type *) _PyObject_GC_NewVar((typeobj), (n)) )
 
-
-#else /* !WITH_CYCLE_GC */
-
-#define _PyObject_GC_Malloc	PyObject_Malloc
-#define PyObject_GC_New		PyObject_New
-#define PyObject_GC_NewVar	PyObject_NewVar
-#define PyObject_GC_Del		PyObject_Del
-#define _PyObject_GC_TRACK(op)
-#define _PyObject_GC_UNTRACK(op)
-#define PyObject_GC_Track(op)
-#define PyObject_GC_UnTrack(op)
-
-#endif
 
 /* This is here for the sake of backwards compatibility.  Extensions that
  * use the old GC API will still compile but the objects will not be

@@ -170,6 +170,11 @@ Extension modules
 
 Library
 
+- binascii.crc32() and the zipfile module had problems on some 64-bit
+  platforms.  These have been fixed.  On a platform with 8-byte C longs,
+  crc32() now returns a signed-extended 4-byte result, so that its value
+  as a Python int is equal to the value computed a 32-bit platform.
+
 - xml.dom.minidom.toxml and toprettyxml now take an optional encoding
   argument.
 
@@ -288,6 +293,15 @@ Tools/Demos
   the generated binary.
 
 Build
+
+- Compiling out the cyclic garbage collector is no longer an option.
+  The old symbol WITH_CYCLE_GC is now ignored, and Python.h arranges
+  that it's always defined (for the benefit of any extension modules
+  that may be conditionalizing on it).  A bonus is that any extension
+  type participating in cyclic gc can choose to participate in the
+  Py_TRASHCAN mechanism now too; in the absence of cyclic gc, this used
+  to require editing the core to teach the trashcan mechanism about the
+  new type.
 
 - Accoring to Annex F of the current C standard,
 

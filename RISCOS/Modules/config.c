@@ -65,10 +65,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"sys", NULL},
 	{"exceptions", NULL},
 
-#ifdef WITH_CYCLE_GC
 	/* This lives in gcmodule.c */
 	{"gc", initgc},
-#endif
 
 	/* Sentinel */
 	{0, 0}

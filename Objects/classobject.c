@@ -678,9 +678,6 @@ instance_dealloc(register PyInstanceObject *inst)
 	/* compensate for increment in _Py_ForgetReference */
 	inst->ob_type->tp_frees--;
 #endif
-#ifndef WITH_CYCLE_GC
-	inst->ob_type = NULL;
-#endif
 #endif
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);

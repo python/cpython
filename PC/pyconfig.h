@@ -499,9 +499,6 @@ typedef int pid_t;
 #define HAVE_USABLE_WCHAR_T
 #endif
 
-/* Define if you want cycle garbage collection */
-#define WITH_CYCLE_GC 1
-
 /* Use Python's own small-block memory-allocator. */
 #define WITH_PYMALLOC 1
 
