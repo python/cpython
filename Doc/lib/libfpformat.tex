@@ -38,8 +38,11 @@ Return value is a string.
 \end{funcdesc}
 
 \begin{excdesc}{NotANumber}
-Exception raised when a string does not look like a number when the 
-documentation says it should.
+Exception raised when a string passed to \function{fix()} or
+\function{sci()} as the \var{x} parameter does not look like a number.
+This is a subclass of \exception{ValueError} when the standard
+exceptions are strings.  The exception value is the improperly
+formatted string that caused the exception to be raised.
 \end{excdesc}
 
 Example:
