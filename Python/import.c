@@ -81,15 +81,15 @@ struct filedescr * _PyImport_Filetab = NULL;
 
 #ifdef RISCOS
 static const struct filedescr _PyImport_StandardFiletab[] = {
-	{"/py", "r" PY_STDIOTEXTMODE, PY_SOURCE},
+	{"/py", "U", PY_SOURCE},
 	{"/pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
 #else
 static const struct filedescr _PyImport_StandardFiletab[] = {
-	{".py", "r" PY_STDIOTEXTMODE, PY_SOURCE},
+	{".py", "U", PY_SOURCE},
 #ifdef MS_WIN32
-	{".pyw", "r" PY_STDIOTEXTMODE, PY_SOURCE},
+	{".pyw", "U", PY_SOURCE},
 #endif
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}
@@ -892,6 +892,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	int i, npath;
 	size_t len, namelen;
 	struct filedescr *fdp = NULL;
+	char *filemode;
 	FILE *fp = NULL;
 #ifndef RISCOS
 	struct stat statbuf;
@@ -1065,7 +1066,9 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 			if (Py_VerboseFlag > 1)
 				PySys_WriteStderr("# trying %s\n", buf);
 #endif /* !macintosh */
-			fp = fopen(buf, fdp->mode);
+			filemode = fdp->mode;
+			if (filemode[0] == 'U') filemode = "r" PY_STDIOTEXTMODE;
+			fp = fopen(buf, filemode);
 			if (fp != NULL) {
 				if (case_ok(buf, len, namelen, name))
 					break;
