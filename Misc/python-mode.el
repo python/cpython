@@ -93,7 +93,7 @@ preceding line's indentation.  When this flag is nil, continuation
 lines are aligned to column zero.")
 
 (defvar py-block-comment-prefix "##"
-  "*String used by `py-comment-region' to comment out a block of code.
+  "*String used by \\[comment-region] to comment out a block of code.
 This should follow the convention for non-indenting comment lines so
 that the indentation commands won't get confused (i.e., the string
 should be of the form `#x...' where `x' is not a blank or a tab, and
@@ -282,7 +282,7 @@ Currently-active file is at the head of the list.")
 	    ("\C-c\C-p"  . py-previous-statement)
 	    ("\C-c\C-u"  . py-goto-block-up)
 	    ("\C-c\C-m"  . py-mark-block)
-	    ("\C-c#"	 . py-comment-region)
+	    ("\C-c#"	 . comment-region)
 	    ("\C-c?"	 . py-describe-mode)
 	    ("\C-c\C-hm" . py-describe-mode)
 	    ("\e\C-a"	 . beginning-of-python-def-or-class)
@@ -397,7 +397,7 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	  '((paragraph-separate . "^[ \t]*$")
 	    (paragraph-start	 . "^[ \t]*$")
 	    (require-final-newline . t)
-	    (comment-start .		"# ")
+	    (comment-start .		"## ")
 	    (comment-start-skip .	"# *")
 	    (comment-column . 40)
 	    (indent-region-function . py-indent-region)
@@ -981,13 +981,14 @@ many columns."
 
 (defun py-indent-region (start end &optional indent-offset)
   "Reindent a region of Python code.
+
 The lines from the line containing the start of the current region up
 to (but not including) the line containing the end of the region are
 reindented.  If the first line of the region has a non-whitespace
 character in the first column, the first line is left alone and the
 rest of the region is reindented with respect to it.  Else the entire
-region is reindented with respect to the (closest code or
-indenting-comment) statement immediately preceding the region.
+region is reindented with respect to the (closest code or indenting
+comment) statement immediately preceding the region.
 
 This is useful when code blocks are moved or yanked, when enclosing
 control structures are introduced or removed, or to reformat code
@@ -1400,29 +1401,6 @@ pleasant."
 		     (forward-line 1))
 		  ;; no comment, so go back
 		  (goto-char start))))))))
-
-(defun py-comment-region (start end &optional uncomment-p)
-  "Comment out region of code; with prefix arg, uncomment region.
-The lines from the line containing the start of the current region up
-to (but not including) the line containing the end of the region are
-commented out, by inserting the string `py-block-comment-prefix' at
-the start of each line.  With a prefix arg, removes
-`py-block-comment-prefix' from the start of each line instead."
-  (interactive "*r\nP")   ; region; raw prefix arg
-  (goto-char end)   (beginning-of-line) (setq end (point))
-  (goto-char start) (beginning-of-line) (setq start (point))
-  (let ((prefix-len (length py-block-comment-prefix)) )
-    (save-excursion
-      (save-restriction
-	(narrow-to-region start end)
-	(while (not (eobp))
-	  (if uncomment-p
-	      (and (string= py-block-comment-prefix
-			    (buffer-substring
-			     (point) (+ (point) prefix-len)))
-		   (delete-char prefix-len))
-	    (insert py-block-comment-prefix))
-	  (forward-line 1))))))
 
 
 ;; Documentation functions
