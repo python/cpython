@@ -5,7 +5,7 @@ import __future__
 
 GOOD_SERIALS = ("alpha", "beta", "candidate", "final")
 
-features = [x for x in dir(__future__) if x[:1] != "_"]
+features = __future__.all_feature_names
 for feature in features:
     value = getattr(__future__, feature)
     if verbose:
@@ -39,3 +39,8 @@ for feature in features:
         verify(type(serial) is IntType, "mandatory serial isn't int")
         verify(optional < mandatory,
                "optional not less than mandatory, and mandatory not None")
+
+    verify(hasattr(value, "compiler_flag"),
+           "feature is missing a .compiler_flag attr")
+    verify(type(getattr(value, "compiler_flag")) is IntType,
+           ".compiler_flag isn't int")
