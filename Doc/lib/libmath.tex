@@ -86,8 +86,10 @@ Return the Euclidean distance, \code{sqrt(\var{x}*\var{x} + \var{y}*\var{y})}.
 Return \code{\var{x} * (2**\var{i})}.
 \end{funcdesc}
 
-\begin{funcdesc}{log}{x}
-Return the natural logarithm of \var{x}.
+\begin{funcdesc}{log}{x\optional{, base}}
+Returns the logarithm of \var{x} to the given base.
+If the base is not specified, returns the natural logarithm of \var{x}.
+\versionchanged[\var{base} argument added]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{log10}{x}

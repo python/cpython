@@ -221,18 +221,8 @@ PyDoc_STRVAR(math_modf_doc,
 */
 
 static PyObject*
-loghelper(PyObject* args, double (*func)(double), char *name)
+loghelper(PyObject* args, double (*func)(double), char *format, PyObject *arg)
 {
-	PyObject *arg;
-	char format[16];
-
-	/* See whether this is a long. */
-	format[0] = 'O';
-	format[1] = ':';
-	strcpy(format + 2, name);
-	if (! PyArg_ParseTuple(args, format, &arg))
-		return NULL;
-
 	/* If it is long, do it ourselves. */
 	if (PyLong_Check(arg)) {
 		double x;
@@ -252,23 +242,65 @@ loghelper(PyObject* args, double (*func)(double), char *name)
 	}
 
 	/* Else let libm handle it by itself. */
-	format[0] = 'd';
 	return math_1(args, func, format);
 }
 
 static PyObject *
 math_log(PyObject *self, PyObject *args)
 {
-	return loghelper(args, log, "log");
+	PyObject *arg;
+	PyObject *base = NULL;
+	PyObject *num, *den;
+	PyObject *ans;
+	PyObject *newargs;
+
+	if (! PyArg_ParseTuple(args, "O|O:log", &arg, &base))
+		return NULL;
+	if (base == NULL)
+		return loghelper(args, log, "d:log", arg);
+
+	newargs = PyTuple_New(1);
+	if (newargs == NULL)
+		return NULL;
+	Py_INCREF(arg);
+	PyTuple_SET_ITEM(newargs, 0, arg);
+	num = loghelper(newargs, log, "d:log", arg);
+	Py_DECREF(newargs);
+	if (num == NULL)
+		return NULL;
+
+	newargs = PyTuple_New(1);
+	if (newargs == NULL) {
+		Py_DECREF(num);
+		return NULL;
+	}
+	Py_INCREF(base);
+	PyTuple_SET_ITEM(newargs, 0, base);
+	den = loghelper(newargs, log, "d:log", base);
+	Py_DECREF(newargs);
+	if (den == NULL) {
+		Py_DECREF(num);
+		return NULL;
+	}
+
+	ans = PyNumber_Divide(num, den);
+	Py_DECREF(num);
+	Py_DECREF(den);
+	return ans;
 }
 
 PyDoc_STRVAR(math_log_doc,
-"log(x) -> the natural logarithm (base e) of x.");
+"log(x[, base]) -> the logarithm of x to the given base.\n\
+If the base not specified, returns the natural logarithm (base e) of x.");
 
 static PyObject *
 math_log10(PyObject *self, PyObject *args)
 {
-	return loghelper(args, log10, "log10");
+	PyObject *arg;
+
+	if (! PyArg_ParseTuple(args, "O:log10", &arg))
+		return NULL;
+	return loghelper(args, log10, "d:log10", arg);
 }
 
 PyDoc_STRVAR(math_log10_doc,
