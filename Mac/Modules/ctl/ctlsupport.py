@@ -89,18 +89,33 @@ extern void clrtrackfunc(void);	/* forward */
 """
 
 finalstuff = finalstuff + """
+PyObject *CtlObj_NewUnmanaged(itself)
+	ControlHandle itself;
+{
+	ControlObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	it = PyObject_NEW(ControlObject, &Control_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	return (PyObject *)it;
+}
+
 PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;
 	
-	/* XXX What if we find a control belonging to some other package? */
 	if (c == NULL)
-		it = NULL;
-	else
-		it = (PyObject *) GetControlReference(c);
-	if (it == NULL || ((ControlObject *)it)->ob_itself != c)
 		it = Py_None;
+	else {
+		it = (PyObject *) GetControlReference(c);
+		/*
+		** If the refcon is zero or doesn't point back to the Python object
+		** the control is not ours. Return a temporary object.
+		*/
+		if (it == NULL || ((ControlObject *)it)->ob_itself != c)
+			return CtlObj_NewUnmanaged(c);
+	}
 	Py_INCREF(it);
 	return it;
 }
@@ -147,7 +162,7 @@ initstuff = initstuff + """
 mytracker_upp = NewControlActionProc(mytracker);
 """
 
-class MyObjectDefinition(GlobalObjectDefinition):
+class MyObjectDefinition(ObjectIdentityMixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 	def outputInitStructMembers(self):
