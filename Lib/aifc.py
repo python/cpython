@@ -134,7 +134,6 @@
 # writeframesraw.
 
 import builtin
-import AL
 try:
 	import CL
 except ImportError:
@@ -146,16 +145,6 @@ _AIFC_version = 0xA2805140		# Version 1 of AIFF-C
 
 _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
 	  'APPL', 'NAME', 'AUTH', '(c) ', 'ANNO'
-
-_nchannelslist = [(1, AL.MONO), (2, AL.STEREO)]
-_sampwidthlist = [(8, AL.SAMPLE_8), (16, AL.SAMPLE_16), (24, AL.SAMPLE_24)]
-_frameratelist = [(48000, AL.RATE_48000),
-		  (44100, AL.RATE_44100),
-		  (32000, AL.RATE_32000),
-		  (22050, AL.RATE_22050),
-		  (16000, AL.RATE_16000),
-		  (11025, AL.RATE_11025),
-		  ( 8000,  AL.RATE_8000)]
 
 def _convert1(value, list):
 	for t in list:
@@ -420,19 +409,15 @@ class Aifc_read:
 		if not self._comm_chunk_read or not self._ssnd_chunk:
 			raise Error, 'COMM chunk and/or SSND chunk missing'
 		if self._aifc and self._decomp:
-			params = [CL.ORIGINAL_FORMAT, 0, \
-				  CL.BITS_PER_COMPONENT, 0, \
+			params = [CL.ORIGINAL_FORMAT, 0,
+				  CL.BITS_PER_COMPONENT, self._sampwidth * 8,
 				  CL.FRAME_RATE, self._framerate]
-			if self._nchannels == AL.MONO:
+			if self._nchannels == 1:
 				params[1] = CL.MONO
-			else:
+			elif self._nchannels == 2:
 				params[1] = CL.STEREO_INTERLEAVED
-			if self._sampwidth == AL.SAMPLE_8:
-				params[3] = 8
-			elif self._sampwidth == AL.SAMPLE_16:
-				params[3] = 16
 			else:
-				params[3] = 24
+				raise Error, 'cannot compress more than 2 channels'
 			self._decomp.SetParams(params)
 
 	def __init__(self, f):
@@ -539,13 +524,10 @@ class Aifc_read:
 		return audioop.ulaw2lin(data, 2)
 
 	def _read_comm_chunk(self, chunk):
-		nchannels = _read_short(chunk)
-		self._nchannels = _convert1(nchannels, _nchannelslist)
+		self._nchannels = _read_short(chunk)
 		self._nframes = _read_long(chunk)
-		sampwidth = _read_short(chunk)
-		self._sampwidth = _convert1(sampwidth, _sampwidthlist)
-		framerate = _read_float(chunk)
-		self._framerate = _convert1(framerate, _frameratelist)
+		self._sampwidth = (_read_short(chunk) + 7) / 8
+		self._framerate = _read_float(chunk)
 		self._framesize = self._nchannels * self._sampwidth
 		if self._aifc:
 			#DEBUG: SGI's soundeditor produces a bad size :-(
@@ -694,7 +676,8 @@ class Aifc_write:
 	def setnchannels(self, nchannels):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		dummy = _convert2(nchannels, _nchannelslist)
+		if nchannels < 1:
+			raise Error, 'bad # of channels'
 		self._nchannels = nchannels
 
 	def getnchannels(self):
@@ -705,7 +688,8 @@ class Aifc_write:
 	def setsampwidth(self, sampwidth):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		dummy = _convert2(sampwidth, _sampwidthlist)
+		if sampwidth < 1 or sampwidth > 4:
+			raise Error, 'bad sample width'
 		self._sampwidth = sampwidth
 
 	def getsampwidth(self):
@@ -716,7 +700,8 @@ class Aifc_write:
 	def setframerate(self, framerate):
 		if self._nframeswritten:
 			raise Error, 'cannot change parameters after starting to write'
-		dummy = _convert2(framerate, _frameratelist)
+		if framerate <= 0:
+			raise Error, 'bad frame rate'
 		self._framerate = framerate
 
 	def getframerate(self):
@@ -756,15 +741,11 @@ class Aifc_write:
 			raise Error, 'cannot change parameters after starting to write'
 		if comptype not in ('NONE', 'ULAW', 'ALAW'):
 			raise Error, 'unsupported compression type'
-		dummy = _convert2(nchannels, _nchannelslist)
-		dummy = _convert2(sampwidth, _sampwidthlist)
-		dummy = _convert2(framerate, _frameratelist)
-		self._nchannels = nchannels
-		self._sampwidth = sampwidth
-		self._framerate = framerate
-		self._nframes = nframes
-		self._comptype = comptype
-		self._compname = compname
+		self.setnchannels(nchannels)
+		self.setsampwidth(sampwidth)
+		self.setframerate(framerate)
+		self.setnframes(nframes)
+		self.setcomptype(comptype, compname)
 
 	def getparams(self):
 		if not self._nchannels or not self._sampwidth or not self._framerate:
@@ -849,8 +830,8 @@ class Aifc_write:
 		if not self._nframeswritten:
 			if self._comptype in ('ULAW', 'ALAW'):
 				if not self._sampwidth:
-					self._sampwidth = AL.SAMPLE_16
-				if self._sampwidth != AL.SAMPLE_16:
+					self._sampwidth = 2
+				if self._sampwidth != 2:
 					raise Error, 'sample width must be 2 when compressing with ULAW or ALAW'
 			if not self._nchannels:
 				raise Error, '# channels not specified'
@@ -879,21 +860,17 @@ class Aifc_write:
 		else:
 			raise Error, 'unsupported compression type'
 		self._comp = cl.OpenCompressor(scheme)
-		params = [CL.ORIGINAL_FORMAT, 0, \
-			  CL.BITS_PER_COMPONENT, 0, \
-			  CL.FRAME_RATE, self._framerate, \
-			  CL.FRAME_BUFFER_SIZE, 100, \
+		params = [CL.ORIGINAL_FORMAT, 0,
+			  CL.BITS_PER_COMPONENT, self._sampwidth * 8,
+			  CL.FRAME_RATE, self._framerate,
+			  CL.FRAME_BUFFER_SIZE, 100,
 			  CL.COMPRESSED_BUFFER_SIZE, 100]
-		if self._nchannels == AL.MONO:
+		if self._nchannels == 1:
 			params[1] = CL.MONO
-		else:
+		elif self._nchannels == 2:
 			params[1] = CL.STEREO_INTERLEAVED
-		if self._sampwidth == AL.SAMPLE_8:
-			params[3] = 8
-		elif self._sampwidth == AL.SAMPLE_16:
-			params[3] = 16
 		else:
-			params[3] = 24
+			raise Error, 'cannot compress more than 2 channels'
 		self._comp.SetParams(params)
 		# the compressor produces a header which we ignore
 		dummy = self._comp.Compress(0, '')
@@ -923,11 +900,11 @@ class Aifc_write:
 			self._file.write('AIFF')
 		self._file.write('COMM')
 		_write_long(self._file, commlength)
-		_write_short(self._file, _convert2(self._nchannels, _nchannelslist))
+		_write_short(self._file, self._nchannels)
 		self._nframes_pos = self._file.tell()
 		_write_long(self._file, self._nframes)
-		_write_short(self._file, _convert2(self._sampwidth, _sampwidthlist))
-		_write_float(self._file, _convert2(self._framerate, _frameratelist))
+		_write_short(self._file, self._sampwidth * 8)
+		_write_float(self._file, self._framerate)
 		if self._aifc:
 			self._file.write(self._comptype)
 			_write_string(self._file, self._compname)
