@@ -392,7 +392,7 @@ Check 1202 is for $823.14
 27
 
 >>> reportlines = ['EuroPython', 'Roster', '', 'alex', '', 'laura', '', 'martin', '', 'walter', '', 'samuele']
->>> for name in islice(reportlines, 3, len(reportlines), 2):
+>>> for name in islice(reportlines, 3, None, 2):
 ...    print name.title()
 ...
 Alex
@@ -449,6 +449,9 @@ Samuele
 ...         result = result[1:] + (elem,)
 ...         yield result
 
+>>> def take(n, seq):
+...     return list(islice(seq, n))
+
 This is not part of the examples but it tests to make sure the definitions
 perform as purported.
 
@@ -493,6 +496,9 @@ False
 
 >>> dotproduct([1,2,3], [4,5,6])
 32
+
+>>> take(10, count())
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 """
 
