@@ -92,7 +92,7 @@ parsetok.o: parsetok.c
 tokenizer.o: tokenizer.c
 bitset.o: bitset.c
 firstsets.o: firstsets.c
-grammar.o: grammar.c
+grammar.o: grammar.c assert.h ../Include/token.h ../Include/grammar.h
 metagrammar.o: metagrammar.c
 pgen.o: pgen.c
 printgrammar.o: printgrammar.c
