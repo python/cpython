@@ -195,12 +195,11 @@ SRE_INFO_LITERAL = 2 # entire pattern is literal (given by prefix)
 SRE_INFO_CHARSET = 4 # pattern starts with character from given set
 
 if __name__ == "__main__":
-    import string
     def dump(f, d, prefix):
         items = d.items()
         items.sort(lambda a, b: cmp(a[1], b[1]))
         for k, v in items:
-            f.write("#define %s_%s %s\n" % (prefix, string.upper(k), v))
+            f.write("#define %s_%s %s\n" % (prefix, k.upper(), v))
     f = open("sre_constants.h", "w")
     f.write("""\
 /*
