@@ -203,13 +203,35 @@ float_divmod(v, w)
 	floatobject *v;
 	object *w;
 {
-	double wx;
+	double vx, wx;
+	double div, mod;
+	object *t;
 	if (!is_floatobject(w)) {
 		err_badarg();
 		return NULL;
 	}
-	err_setstr(RuntimeError, "divmod() on float not implemented");
-	return NULL;
+	wx = ((floatobject *)w) -> ob_fval;
+	if (wx == 0.0) {
+		err_setstr(ZeroDivisionError, "float division by zero");
+		return NULL;
+	}
+	vx = v->ob_fval;
+	mod = fmod(vx, wx);
+	div = (vx - mod) / wx;
+	if (wx*mod < 0) {
+		mod += wx;
+		div -= 1.0;
+	}
+	t = newtupleobject(2);
+	if (t != NULL) {
+		settupleitem(t, 0, newfloatobject(div));
+		settupleitem(t, 1, newfloatobject(mod));
+		if (err_occurred()) {
+			DECREF(t);
+			t = NULL;
+		}
+	}
+	return t;
 }
 
 static object *
