@@ -245,7 +245,7 @@ _ssl
         C:\Code\openssl-0.9.6g>set OPTS=no-asm
         Out of environment space
 
-    then you're in trouble, and will probable also see these errors near
+    then you're in trouble, and will probably also see these errors near
     the end of the process:
 
         NMAKE : fatal error U1073: don't know how to make
