@@ -31,6 +31,7 @@ Other options:
 import getopt
 import glob
 import os
+import re
 import shutil
 import string
 import sys
@@ -166,6 +167,7 @@ class Options:
 class Job:
     def __init__(self, options, path):
         self.options = options
+        self.doctype = get_doctype(path)
         self.filedir, self.doc = split_pathname(path)
         self.log_filename = self.doc + ".how"
         if os.path.exists(self.log_filename):
@@ -243,25 +245,42 @@ class Job:
             indfix.process(self.doc + ".ind")
         if self.use_bibtex:
             self.run("%s %s" % (BIBTEX_BINARY, self.doc))
-        synopsis_file = self.doc + ".syn"
-        if os.path.isfile(synopsis_file):
-            # impose uniq requirement on last line....
-            uniqify_module_table(synopsis_file)
+        self.process_synopsis_files()
+        #
+        # let the doctype-specific handler do some intermediate work:
+        #
+        if self.doctype == "manual":
+            self.use_latex_manual(binary=binary)
+        elif self.doctype == "howto":
+            self.use_latex_howto(binary=binary)
+        else:
+            raise RuntimeError, "unsupported document type: " + self.doctype
+        #
+        # and now finish it off:
+        #
+        if os.path.isfile(self.doc + ".toc") and binary == PDFLATEX_BINARY:
+            import toc2bkm
+            toc2bkm.process(self.doc + ".toc", self.doc + ".bkm", "section")
+        if self.use_bibtex:
+            self.run("%s %s" % (BIBTEX_BINARY, self.doc))
+        self.run("%s %s" % (binary, self.doc))
+
+    def use_latex_howto(self, binary):
         self.run("%s %s" % (binary, self.doc))
         if os.path.isfile("mod%s.idx" % self.doc):
             self.run("%s -s %s mod%s.idx"
                      % (MAKEINDEX_BINARY, ISTFILE, self.doc))
         if os.path.isfile(self.doc + ".idx"):
             self.run("%s -s %s %s.idx" % (MAKEINDEX_BINARY, ISTFILE, self.doc))
-        if os.path.isfile(self.doc + ".toc") and binary == PDFLATEX_BINARY:
-            import toc2bkm
-            toc2bkm.process(self.doc + ".toc", self.doc + ".bkm", "section")
-        if os.path.isfile(synopsis_file):
-            # impose uniq requirement on last line....
-            uniqify_module_table(synopsis_file)
-        if self.use_bibtex:
-            self.run("%s %s" % (BIBTEX_BINARY, self.doc))
-        self.run("%s %s" % (binary, self.doc))
+        self.process_synopsis_files()
+
+    def use_latex_manual(self, binary):
+        pass
+
+    def process_synopsis_files(self):
+        synopsis_files = glob.glob(self.doc + "*.syn")
+        for path in synopsis_files:
+            uniqify_module_table(path)
 
     def build_ps(self):
         self.run("%s -N0 -o %s.ps %s" % (DVIPS_BINARY, self.doc, self.doc))
@@ -338,11 +357,12 @@ class Job:
     def cleanup(self):
         self.__have_temps = 0
         for pattern in ("%s.aux", "%s.log", "%s.out", "%s.toc", "%s.bkm",
-                        "%s.idx", "%s.ilg", "%s.ind", "%s.syn", "%s.pla",
+                        "%s.idx", "%s.ilg", "%s.ind", "%s.pla",
                         "%s.bbl", "%s.blg",
                         "mod%s.idx", "mod%s.ind", "mod%s.ilg",
                         ):
             safe_unlink(pattern % self.doc)
+        map(safe_unlink, glob.glob(self.doc + "*.syn"))
         for spec in ("IMG*", "*.pl", "WARNINGS", "index.dat", "modindex.dat"):
             pattern = os.path.join(self.doc, spec)
             map(safe_unlink, glob.glob(pattern))
@@ -381,12 +401,28 @@ def safe_unlink(path):
         pass
 
 
-def split_pathname(pathname):
-    pathname = os.path.normpath(os.path.join(os.getcwd(), pathname))
-    dirname, basename = os.path.split(pathname)
+def split_pathname(path):
+    path = os.path.normpath(os.path.join(os.getcwd(), path))
+    dirname, basename = os.path.split(path)
     if basename[-4:] == ".tex":
         basename = basename[:-4]
     return dirname, basename
+
+
+_doctype_rx = re.compile(r"\\documentclass(?:\[[^]]*\])?{([a-zA-Z]*)}")
+def get_doctype(path):
+    fp = open(path)
+    doctype = None
+    while 1:
+        line = fp.readline()
+        if not line:
+            break
+        m = _doctype_rx.match(line)
+        if m:
+            doctype = m.group(1)
+            break
+    fp.close()
+    return doctype
 
 
 def main():
