@@ -2307,6 +2307,17 @@ A very long line that must get split to something other than at the
         h = Header(u'\u83ca\u5730\u6642\u592b', 'utf-8')
         eq(h.encode(), '=?utf-8?b?6I+K5Zyw5pmC5aSr?=')
 
+    def test_bad_8bit_header(self):
+        raises = self.assertRaises
+        eq = self.assertEqual
+        x = 'Ynwp4dUEbay Auction Semiar- No Charge \x96 Earn Big'
+        raises(UnicodeError, Header, x)
+        h = Header()
+        raises(UnicodeError, h.append, x)
+        eq(str(Header(x, errors='replace')), x)
+        h.append(x, errors='replace')
+        eq(str(h), x)
+
 
 
 # Test RFC 2231 header parameters (en/de)coding
