@@ -260,6 +260,9 @@
 /* Define to 1 if you have the `mkfifo' function. */
 #undef HAVE_MKFIFO
 
+/* Define to 1 if you have the `mknod' function. */
+#undef HAVE_MKNOD
+
 /* Define to 1 if you have the `mktime' function. */
 #undef HAVE_MKTIME
 

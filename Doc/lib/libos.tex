@@ -644,6 +644,17 @@ the client opens it for writing.  Note that \function{mkfifo()}
 doesn't open the FIFO --- it just creates the rendezvous point.
 \end{funcdesc}
 
+\begin{funcdesc}{mknod}{path\optional{, mode=0600, major, minor}}
+Create a filesystem node (file, device special file or named pipe)
+named filename. mode specifies both the permissions to use and the
+type of node to be created, being combined (bitwise OR) with one of
+S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO (those constants are available
+in \module{stat}). For S_IFCHR and S_IFBLK, major and minor define the
+newly created device special file, otherwise they are ignored.
+
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{mkdir}{path\optional{, mode}}
 Create a directory named \var{path} with numeric mode \var{mode}.
 The default \var{mode} is \code{0777} (octal).  On some systems,
