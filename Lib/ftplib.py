@@ -5,7 +5,7 @@
 # Example:
 #
 # >>> from ftplib import FTP
-# >>> ftp = FTP().init('ftp.cwi.nl') # connect to host, default port
+# >>> ftp = FTP('ftp.cwi.nl') # connect to host, default port
 # >>> ftp.login() # default, i.e.: user anonymous, passwd user@hostname
 # >>> def handle_one_line(line): # callback for ftp.retrlines
 # ...     print line
@@ -109,8 +109,9 @@ class FTP:
 	# 0: no debugging output (default)
 	# 1: print commands and responses but not body text etc.
 	# 2: also print raw lines read and sent before stripping CR/LF
-	def debug(self, level):
+	def set_debuglevel(self, level):
 		self.debugging = level
+	debug = set_debuglevel
 
 	# Internal: send one line to the server, appending CRLF
 	def putline(self, line):
@@ -405,8 +406,8 @@ def test():
 			debugging = debugging+1
 			del sys.argv[1]
 		host = sys.argv[1]
-		ftp = FTP().init(host)
-		ftp.debug(debugging)
+		ftp = FTP(host)
+		ftp.set_debuglevel(debugging)
 		ftp.login()
 		def writeln(line): print line
 		for file in sys.argv[2:]:

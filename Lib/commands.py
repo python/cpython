@@ -23,8 +23,8 @@ def getoutput(cmd):
 # Returns a pair (sts, output)
 #
 def getstatusoutput(cmd):
-	import posix
-	pipe = posix.popen('{ ' + cmd + '; } 2>&1', 'r')
+	import os
+	pipe = os.popen('{ ' + cmd + '; } 2>&1', 'r')
 	text = pipe.read()
 	sts = pipe.close()
 	if sts == None: sts = 0
@@ -35,8 +35,8 @@ def getstatusoutput(cmd):
 # Make command argument from directory and pathname (prefix space, add quotes).
 #
 def mk2arg(head, x):
-	import posixpath
-	return mkarg(posixpath.join(head, x))
+	import os
+	return mkarg(os.path.join(head, x))
 
 
 # Make a shell command argument from a string.
