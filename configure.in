@@ -111,6 +111,19 @@ fi
 AC_AIX
 AC_MINIX
 
+AC_MSG_CHECKING(whether $CC accepts -Olimit 1500)
+AC_CACHE_VAL(ac_cv_olimit_ok,
+[ac_save_cc="$CC"
+CC="$CC -Olimit 1500"
+AC_TRY_COMPILE([], [;],
+  ac_cv_olimit_ok=yes,
+  ac_cv_olimit_ok=no)
+CC="$ac_save_cc"])
+AC_MSG_RESULT($ac_cv_olimit_ok)
+if test $ac_cv_olimit_ok = yes; then
+  OPT="$OPT -Olimit 1500"
+fi
+
 # check for ANSI or K&R ("traditional") preprocessor
 AC_MSG_CHECKING(for C preprocessor type)
 AC_TRY_COMPILE([
