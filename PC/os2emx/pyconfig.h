@@ -26,6 +26,18 @@
 /*#define Py_DEBUG 1*/
 #endif
 
+/* if building an extension or wrapper executable,
+ * mark Python API symbols "extern" so that symbols
+ * imported from the Python core DLL aren't duplicated.
+ */
+#ifdef Py_BUILD_CORE
+#  define PyAPI_FUNC(RTYPE)     RTYPE
+#else
+#  define PyAPI_FUNC(RTYPE)     extern RTYPE
+#endif
+#define PyAPI_DATA(RTYPE)       extern RTYPE
+#define PyMODINIT_FUNC  void
+
 /* Use OS/2 flavour of threads */
 #define WITH_THREAD	1
 #define OS2_THREADS	1
