@@ -19,6 +19,7 @@
  * 00-06-25 fl	major changes to better deal with nested repeats (0.9)
  * 00-06-28 fl	fixed findall (0.9.1)
  * 00-06-29 fl	fixed split, added more scanner features (0.9.2)
+ * 00-06-30 fl	tuning, fast search (0.9.3)
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -29,8 +30,7 @@
 
 #ifndef SRE_RECURSIVE
 
-static char
-copyright[] = " SRE 0.9.2 Copyright (c) 1997-2000 by Secret Labs AB ";
+char copyright[] = " SRE 0.9.3 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -55,12 +55,15 @@ copyright[] = " SRE 0.9.2 Copyright (c) 1997-2000 by Secret Labs AB ";
 #define HAVE_UNICODE
 #endif
 
+/* optional features */
+#define USE_FAST_SEARCH
+
 #if defined(_MSC_VER)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
 #else
-#define LOCAL(type) static type
+#define LOCAL(type) static inline type
 #endif
 
 /* error codes */
@@ -395,6 +398,17 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
     void* mark = NULL;
 
     TRACE(("%8d: enter\n", PTR(ptr)));
+
+    if (pattern[0] == SRE_OP_INFO) {
+        /* optimization info block */
+        /* args: <1=skip> <2=flags> <3=min> ... */
+        if (pattern[3] && (end - ptr) < pattern[3]) {
+            TRACE(("reject (got %d chars, need %d)\n",
+                   (end - ptr), pattern[3]));
+            return 0;
+        }
+        pattern += pattern[1] + 1;
+    }
 
     stackbase = stack = state->stackbase;
     lastmark = state->lastmark;
@@ -917,20 +931,72 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 	SRE_CHAR* end = state->end;
 	int status = 0;
     int prefix_len = 0;
-    SRE_CODE* prefix = NULL;
+    SRE_CODE* prefix;
+    SRE_CODE* overlap;
+    int literal = 0;
 
     if (pattern[0] == SRE_OP_INFO) {
-        /* args: <skip> <min> <max> <prefix> <prefix data...> */
-        end -= pattern[2];
-        prefix_len = pattern[4];
-        prefix = pattern + 5;
-        pattern += pattern[1];
+        /* optimization info block */
+        /* args: <1=skip> <2=flags> <3=min> <4=max> <5=prefix> <6=data...> */
+
+        if (pattern[3] > 0) {
+            /* adjust end point (but make sure we leave at least one
+               character in there) */
+            end -= pattern[3]-1;
+            if (end <= ptr)
+                end = ptr+1;
+        }
+
+        literal = pattern[2];
+
+        prefix = pattern + 6;
+        prefix_len = pattern[5];
+
+        overlap = prefix + prefix_len - 1;
+
+        pattern += 1 + pattern[1];
     }
 
-    /* if (prefix_len > 0) ... */
+#if defined(USE_FAST_SEARCH)
+    if (prefix_len > 1) {
+        /* pattern starts with a known prefix.  use the overlap
+           table to skip forward as fast as we possibly can */
+        int i = 0;
+        end = state->end;
+        while (ptr < end) {
+            for (;;) {
+                if (*ptr != (SRE_CHAR) prefix[i]) {
+                    if (!i)
+                        break;
+                    else
+                        i = overlap[i];
+                } else {
+                    if (++i == prefix_len) {
+                        /* found a potential match */
+                        TRACE(("%8d: === SEARCH === hit\n", PTR(ptr)));
+                        state->start = ptr - prefix_len + 1;
+                        state->ptr = ptr + 1;
+                        if (literal)
+                            return 1; /* all of it */
+                        status = SRE_MATCH(state, pattern + 2*prefix_len);
+                        if (status != 0)
+                            return status;
+                        /* close but no cigar -- try again */
+                        i = overlap[i];
+                    }
+                    break;
+                }
+                
+            }
+            ptr++;
+        }
+        return 0;
+    }
+#endif
 
 	if (pattern[0] == SRE_OP_LITERAL) {
-		/* pattern starts with a literal */
+		/* pattern starts with a literal character.  this is used for
+           short prefixes, and if fast search is disabled*/
 		SRE_CHAR chr = (SRE_CHAR) pattern[1];
 		for (;;) {
 			while (ptr < end && *ptr != chr)
@@ -944,8 +1010,8 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 			if (status != 0)
 				break;
 		}
-
 	} else
+		/* general case */
 		while (ptr <= end) {
 			TRACE(("%8d: === SEARCH ===\n", PTR(ptr))); 
 			state->start = state->ptr = ptr++;
