@@ -3606,7 +3606,7 @@ _PyPopenCreateProcess(char *cmdstring,
 	if (i = GetEnvironmentVariable("COMSPEC",NULL,0)) {
 		char *comshell;
 
-		s1 = (char *)_alloca(i);
+		s1 = (char *)alloca(i);
 		if (!(x = GetEnvironmentVariable("COMSPEC", s1, i)))
 			return x;
 
@@ -3622,7 +3622,7 @@ _PyPopenCreateProcess(char *cmdstring,
 		    _stricmp(comshell, "command.com") != 0) {
 			/* NT/2000 and not using command.com. */
 			x = i + strlen(s3) + strlen(cmdstring) + 1;
-			s2 = (char *)_alloca(x);
+			s2 = (char *)alloca(x);
 			ZeroMemory(s2, x);
 			PyOS_snprintf(s2, x, "%s%s%s", s1, s3, cmdstring);
 		}
@@ -3675,7 +3675,7 @@ _PyPopenCreateProcess(char *cmdstring,
 				strlen(modulepath) +
 				strlen(szConsoleSpawn) + 1;
 
-			s2 = (char *)_alloca(x);
+			s2 = (char *)alloca(x);
 			ZeroMemory(s2, x);
 			/* To maintain correct argument passing semantics,
 			   we pass the command-line as it stands, and allow

@@ -1450,9 +1450,9 @@ int
 PyOS_CheckStack(void)
 {
 	__try {
-		/* _alloca throws a stack overflow exception if there's
+		/* alloca throws a stack overflow exception if there's
 		   not enough space left on the stack */
-		_alloca(PYOS_STACK_MARGIN * sizeof(void*));
+		alloca(PYOS_STACK_MARGIN * sizeof(void*));
 		return 0;
 	} __except (EXCEPTION_EXECUTE_HANDLER) {
 		/* just ignore all errors */
