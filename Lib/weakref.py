@@ -146,6 +146,13 @@ class WeakKeyDictionary(UserDict.UserDict):
             del data[k]
         self._remove = remove
 
+    def __delitem__(self, key):
+        for ref in self.data.iterkeys():
+            o = ref()
+            if o == key:
+                del self.data[ref]
+                return
+
     def __getitem__(self, key):
         return self.data[ref(key)]
 
