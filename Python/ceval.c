@@ -1666,17 +1666,14 @@ eval_frame(PyFrameObject *f)
 
 		case LOAD_FAST:
 			x = GETLOCAL(oparg);
-			if (x == NULL) {
-				format_exc_check_arg(
-					PyExc_UnboundLocalError,
-					UNBOUNDLOCAL_ERROR_MSG,
-					PyTuple_GetItem(co->co_varnames, oparg)
-					);
-				break;
+			if (x != NULL) {
+				Py_INCREF(x);
+				PUSH(x);
+				continue;
 			}
-			Py_INCREF(x);
-			PUSH(x);
-			if (x != NULL) continue;
+			format_exc_check_arg(PyExc_UnboundLocalError,
+				UNBOUNDLOCAL_ERROR_MSG,
+				PyTuple_GetItem(co->co_varnames, oparg));
 			break;
 
 		case STORE_FAST:
