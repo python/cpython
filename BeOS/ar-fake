@@ -1,0 +1,153 @@
+#! /bin/sh
+#
+# Fake "ar" to build the Python shared library on BeOS.  This "ar"
+# manipulates a .ar-libname file listing all the objects and regenerates
+# the shared lib every time it's called.  This is probably only suitable
+# for things that get built like Python, and you'll probably have to make
+# some small modifications here and there.
+#
+# This stupid hackery is necessary due to the brain-damaged __declspec()
+# semantics on x86; on PowerPC, we could just build a static library
+# and turn that into a shared library using an exports list.  On x86, you'd
+# need to use a fake table of pointers to every symbol you wanted to
+# export, otherwise you'd end up with an empty shared lib.  This is
+# progress?
+#
+# Called via:
+#
+# ar-fake cr lib-name objects
+# ar-fake d lib-name objects
+#
+# This fake "ar" DOES NOT support any other POSIX "ar" commands!  DO NOT
+# expect it to behave very intelligently, it's designed to build Python,
+# not any old shared lib.
+
+AR_COMMAND=$1 ; shift
+AR_LIB=$1 ; shift
+AR_LIB_NAME=$(basename $AR_LIB)
+AR_SO_LIB_NAME=${AR_LIB_NAME/.a/.so}
+AR_LIB_PATH=${AR_LIB/$AR_LIB_NAME/}
+if [ "$AR_LIB_PATH" = "" ] ; then
+	AR_LIB_PATH="."
+fi
+AR_CRUD=${AR_LIB_PATH}/.ar-${AR_LIB_NAME}
+
+AR_CWD=$(pwd)
+
+# Function to tell is if the arg is an absolute path.  Use it like this:
+#
+# if is_abs pathname ; then ...
+is_abs() {
+	if [ "$1" != "$(echo $1 | sed -e "s,^/,,")" ] ; then
+		return 0
+	fi
+	return 1
+}
+
+# Function to build the shared library.  It does the right thing for
+# PowerPC or x86 systems running BeOS.
+build_lib() {
+	LIB=$1 ; shift
+	SO_NAME=$1 ; shift
+	CRUD_NAME=$1 ; shift
+
+	# maybe too much...	
+	EXTRA_LIBS="-lroot -lbe -lnet"
+
+	case $BE_HOST_CPU in
+		ppc)
+			AR_CC="mwcc -xms -export pragma -nodup"
+			GLUE_LOC=/boot/develop/lib/ppc
+			AR_GLUE="${GLUE_LOC}/glue-noinit.a ${GLUE_LOC}/init_term_dyn.o ${GLUE_LOC}/start_dyn.o"
+			;;
+
+		x86)
+			AR_CC="gcc -nostart -Wl,-soname=${SO_NAME}"
+			AR_GLUE=
+			;;
+
+		*)
+			# Send me the mystery system (soo-pah aitch!), then we'll talk...
+			echo "No, no, no... $0 doesn't support $BE_HOST_CPU"
+			exit 2
+			;;
+	esac
+
+	# Build a list of the objects...
+	PARTS=""
+	while read OBJ_FILE OBJ_PATH ; do
+		PARTS="$PARTS ${OBJ_PATH}${OBJ_FILE}"
+	done < $CRUD_NAME
+
+	$AR_CC -o ${LIB%.a}.so $PARTS $AR_GLUE $EXTRA_LIBS > /dev/null 2>&1
+
+	return 0
+}
+
+# Make a backup of the old AR_CRUD file, just to be nice, and clean up
+# any of our temp files that may be laying around.
+if [ -e $AR_CRUD ] ; then
+	mv -f $AR_CRUD ${AR_CRUD}.old
+	cp ${AR_CRUD}.old $AR_CRUD
+else
+	touch $AR_CRUD
+fi
+
+if [ -e ${AR_CRUD}.grepper ] ; then
+	rm -f ${AR_CRUD}.grepper
+fi
+
+case $AR_COMMAND in
+	cr)
+		# Add the extra bits to the $AR_CRUD file.
+		for OBJECT in "$@" ; do
+			OBJ_NAME=$(basename $OBJECT)
+			OBJ_PATH=${OBJECT%$OBJ_NAME}
+			if ! is_abs $OBJ_PATH ; then
+				OBJ_PATH=${AR_CWD}/${OBJECT}
+				OBJ_PATH=${OBJ_PATH%$OBJ_NAME}
+			fi
+			
+			# If this is already in there, we have to blow it away so
+			# we can replace it with the new one.
+			if egrep -q "^$OBJ_NAME " $AR_CRUD ; then
+				egrep -v "^$OBJ_NAME " < $AR_CRUD > ${AR_CRUD}.grepper
+				mv -f ${AR_CRUD}.grepper $AR_CRUD
+			fi
+
+			echo $OBJ_NAME $OBJ_PATH >> $AR_CRUD
+		done
+		
+		# Now build a library from the files.
+		build_lib $AR_LIB $AR_SO_LIB_NAME $AR_CRUD
+		;;
+
+	d)
+		# Remove files from the $AR_CRUD file.  This isn't terribly
+		# efficient.
+		for OBJECT in "$@" ; do
+			OBJ_NAME=$(basename $OBJECT)
+			OBJ_PATH=${OBJECT%$OBJ_NAME}
+			if ! is_abs $OBJ_PATH ; then
+				OBJ_PATH=${AR_CWD}/${OBJECT}
+				OBJ_PATH=${OBJ_PATH%$OBJ_NAME}
+			fi
+
+			# Strip the objects from the list, if they're in there.
+			egrep -v "^$OBJ_NAME " < $AR_CRUD > ${AR_CRUD}.grepper
+			mv -f ${AR_CRUD}.grepper $AR_CRUD
+		done
+			
+		# Now build a library from the remaining objects.
+		build_lib $AR_LIB $AR_SO_LIB_NAME $AR_CRUD
+		;;
+
+	*)
+		echo "$0 error:"
+		echo "	Unsupported command: $AR_COMMAND"
+		exit 1
+		;;
+esac
+
+# If we make it here, all went well.  Hopefully.
+exit 0
