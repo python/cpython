@@ -438,8 +438,8 @@ def openfile(file):
     return p
 
 def usage():
-        print usage_mode
-        sys.exit(0)
+    print usage_mode
+    sys.exit(0)
 
 def do_it(args = None):
     if not args:

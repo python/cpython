@@ -118,7 +118,7 @@ def main():
             # all outputs (debug/nondebug/dll/lib).  So we filter the file
             # to exclude any "nmake" commands and then execute.
             tempname = "ms\\32all_py.bat"
-            
+
             in_bat  = open("ms\\32all.bat")
             temp_bat = open(tempname,"w")
             while 1:
