@@ -60,7 +60,7 @@ compileall=$(srcdir)/Lib/compileall.py
 bundlebuilder=$(srcdir)/Lib/plat-mac/bundlebuilder.py
 
 installapps: install_PythonLauncher install_Python install_BuildApplet install_IDE \
-	install_IDLE install_PackageManager
+	install_IDLE install_PackageManager checkapplepython
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
@@ -257,3 +257,10 @@ installextras:
 		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Demo
 	$(BUILDPYTHON) $(srcdir)/Mac/OSX/Extras.install.py $(srcdir)/Tools \
 		$(DESTDIR)$(PYTHONAPPSDIR)/Extras/Tools
+
+checkapplepython:
+	@if ! $(BUILDPYTHON) $(srcdir)/Mac/OSX/fixapplepython23.py -n; then \
+		echo "* WARNING: Apple-installed Python 2.3 will have trouble building extensions from now on."; \
+		echo "* WARNING: Run $(srcdir)/Mac/OSX/fixapplepython23.py with \"sudo\" to fix this."; \
+	fi
+    
