@@ -627,6 +627,7 @@ _PyMalloc_Realloc(void *p, size_t nbytes)
 
 /*==========================================================================*/
 /* pymalloc not enabled:  Redirect the entry points to the PyMem family. */
+
 void *
 _PyMalloc_Malloc(size_t n)
 {
@@ -645,6 +646,11 @@ _PyMalloc_Free(void *p)
 	PyMem_FREE(p);
 }
 #endif /* WITH_PYMALLOC */
+
+/*==========================================================================*/
+/* Regardless of whether pymalloc is enabled, export entry points for
+ * the object-oriented pymalloc functions.
+ */
 
 PyObject *
 _PyMalloc_New(PyTypeObject *tp)
@@ -675,7 +681,9 @@ _PyMalloc_Del(PyObject *op)
 
 #ifdef PYMALLOC_DEBUG
 /*==========================================================================*/
-/* A x-platform debugging allocator. */
+/* A x-platform debugging allocator.  This doesn't manage memory directly,
+ * it wraps a real allocator, adding extra debugging info to the memory blocks.
+ */
 
 #define PYMALLOC_CLEANBYTE      0xCB    /* uninitialized memory */
 #define PYMALLOC_DEADBYTE       0xDB    /* free()ed memory */
@@ -687,7 +695,7 @@ static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
 static ulong
 read4(const void *p)
 {
-	const unsigned char *q = (unsigned char *)p;
+	const uchar *q = (const uchar *)p;
 	return ((ulong)q[0] << 24) |
 	       ((ulong)q[1] << 16) |
 	       ((ulong)q[2] <<  8) |
@@ -699,11 +707,11 @@ read4(const void *p)
 static void
 write4(void *p, ulong n)
 {
-	unsigned char *q = (unsigned char *)p;
-	q[0] = (unsigned char)((n >> 24) & 0xff);
-	q[1] = (unsigned char)((n >> 16) & 0xff);
-	q[2] = (unsigned char)((n >>  8) & 0xff);
-	q[3] = (unsigned char)( n        & 0xff);
+	uchar *q = (uchar *)p;
+	q[0] = (uchar)((n >> 24) & 0xff);
+	q[1] = (uchar)((n >> 16) & 0xff);
+	q[2] = (uchar)((n >>  8) & 0xff);
+	q[3] = (uchar)( n        & 0xff);
 }
 
 static void
@@ -758,7 +766,7 @@ void *
 _PyMalloc_DebugMalloc(size_t nbytes, int family)
 {
 	uchar *p;	/* base address of malloc'ed block */
-	uchar *q;	/* p + 8 + nbytes +  */
+	uchar *tail;	/* p + 8 + nbytes == pointer to tail pad bytes */
 	size_t total;	/* nbytes + 16 */
 
 	assert(family == 0);
@@ -785,24 +793,22 @@ _PyMalloc_DebugMalloc(size_t nbytes, int family)
 	if (nbytes > 0)
 		memset(p+8, PYMALLOC_CLEANBYTE, nbytes);
 
-	q = p + 8 + nbytes;
-	q[0] = q[1] = q[2] = q[3] = PYMALLOC_FORBIDDENBYTE;
-	write4(q+4, serialno);
+	tail = p + 8 + nbytes;
+	tail[0] = tail[1] = tail[2] = tail[3] = PYMALLOC_FORBIDDENBYTE;
+	write4(tail + 4, serialno);
 
 	return p+8;
 }
 
-/* The debug free first uses the address to find the number of bytes
-   originally asked for, then checks the 8 bytes on each end for
-   sanity (in particular, that the PYMALLOC_FORBIDDENBYTEs are still
-   intact).
+/* The debug free first checks the 8 bytes on each end for sanity (in
+   particular, that the PYMALLOC_FORBIDDENBYTEs are still intact).
    Then fills the original bytes with PYMALLOC_DEADBYTE.
    Then calls the underlying free.
 */
 void
 _PyMalloc_DebugFree(void *p, int family)
 {
-	uchar *q = (uchar*)p;
+	uchar *q = (uchar *)p;
 	size_t nbytes;
 
 	assert(family == 0);
@@ -914,11 +920,11 @@ _PyMalloc_DebugDumpAddress(const void *p)
 	/* In case this is nuts, check the pad bytes before trying to read up
 	   the serial number (the address deref could blow up). */
 
-	fprintf(stderr, "    the 3 pad bytes at p-3 are ");
+	fputs("    the 3 pad bytes at p-3 are ", stderr);
 	if (*(q-3) == PYMALLOC_FORBIDDENBYTE &&
 	    *(q-2) == PYMALLOC_FORBIDDENBYTE &&
 	    *(q-1) == PYMALLOC_FORBIDDENBYTE) {
-		fprintf(stderr, "PYMALLOC_FORBIDDENBYTE, as expected\n");
+		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
 		int i;
@@ -939,7 +945,7 @@ _PyMalloc_DebugDumpAddress(const void *p)
 	    tail[1] == PYMALLOC_FORBIDDENBYTE &&
 	    tail[2] == PYMALLOC_FORBIDDENBYTE &&
 	    tail[3] == PYMALLOC_FORBIDDENBYTE) {
-		fprintf(stderr, "PYMALLOC_FORBIDDENBYTE, as expected\n");
+		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
 		int i;
@@ -961,7 +967,7 @@ _PyMalloc_DebugDumpAddress(const void *p)
 
 	if (nbytes > 0) {
 		int i = 0;
-		fprintf(stderr, "    data at p:");
+		fputs("    data at p:", stderr);
 		/* print up to 8 bytes at the start */
 		while (q < tail && i < 8) {
 			fprintf(stderr, " %02x", *q);
@@ -971,7 +977,7 @@ _PyMalloc_DebugDumpAddress(const void *p)
 		/* and up to 8 at the end */
 		if (q < tail) {
 			if (tail - q > 8) {
-				fprintf(stderr, " ...");
+				fputs(" ...", stderr);
 				q = tail - 8;
 			}
 			while (q < tail) {
@@ -979,7 +985,7 @@ _PyMalloc_DebugDumpAddress(const void *p)
 				++q;
 			}
 		}
-		fprintf(stderr, "\n");
+		fputc('\n', stderr);
 	}
 }
 
