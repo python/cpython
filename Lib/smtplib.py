@@ -135,7 +135,7 @@ class SMTP:
         """Connect to a host on a given port.
 
         If the hostname ends with a colon (`:') followed by a number,
-	and there is no port specified,  that suffix will be stripped 
+        and there is no port specified,  that suffix will be stripped 
         off and the number interpreted as the port number to use.
 
         Note:  This method is automatically invoked by __init__,
@@ -161,9 +161,9 @@ class SMTP:
         """Send `str' to the server."""
         if self.debuglevel > 0: print 'send:', `str`
         if self.sock:
-	    try:
+            try:
                 self.sock.send(str)
-	    except socket.error:
+            except socket.error:
                 raise SMTPServerDisconnected
         else:
             raise SMTPServerDisconnected
@@ -241,9 +241,9 @@ class SMTP:
             return code
         self.does_esmtp=1
         #parse the ehlo responce -ddm
-	resp=string.split(self.ehlo_resp,'\n')
+        resp=string.split(self.ehlo_resp,'\n')
         del resp[0]
-	for each in resp:
+        for each in resp:
             m=re.match(r'(?P<feature>[A-Za-z0-9][A-Za-z0-9\-]*)',each)
             if m:
                 feature=string.lower(m.group("feature"))
@@ -327,8 +327,8 @@ class SMTP:
                                 for the mail command
                - rcpt_options : List of ESMTP options (such as DSN commands)
                                for all the rcpt commands
-	If there has been no previous EHLO or HELO command this session,
-	this method tries ESMTP EHLO first. If the server does ESMTP, message
+        If there has been no previous EHLO or HELO command this session,
+        this method tries ESMTP EHLO first. If the server does ESMTP, message
         size and each of the specified options will be passed to it.  
         If EHLO fails, HELO will be tried and ESMTP options suppressed.
 
@@ -431,5 +431,3 @@ if __name__ == '__main__':
     server.set_debuglevel(1)
     server.sendmail(fromaddr, toaddrs, msg)
     server.quit()
-
-
