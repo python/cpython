@@ -82,6 +82,17 @@
   \@doing@page@targetstrue
 }  
 
+% Fix the theindex environment to add an entry to the Table of
+% Contents; this is much nicer than just having to jump to the end of
+% the book and flip around, especially with multiple indexes.
+%
+\let\OldTheindex=\theindex
+\renewcommand{\theindex}{
+  \clearpage
+  \OldTheindex
+  \addcontentsline{toc}{section}{\indexname}
+}
+
 \@ifundefined{fancyhf}{
   \pagestyle{plain}}{
   \pagestyle{normal}}		% start this way; change for
