@@ -7,7 +7,8 @@ are always available.  They are listed here in alphabetical order.
 \renewcommand{\indexsubitem}{(built-in function)}
 \begin{funcdesc}{abs}{x}
   Return the absolute value of a number.  The argument may be a plain
-  or long integer or a floating point number.
+  or long integer or a floating point number.  If the argument is a
+  complex number, its magnitude is returned. 
 \end{funcdesc}
 
 \begin{funcdesc}{apply}{function\, args\optional{, keywords}}
@@ -221,7 +222,8 @@ module from which it is called).
 
 \begin{funcdesc}{input}{\optional{prompt}}
   Almost equivalent to \code{eval(raw_input(\var{prompt}))}.  Like
-  \code{raw_input()}, the \var{prompt} argument is optional.  The difference
+  \code{raw_input()}, the \var{prompt} argument is optional, and GNU
+  readline is used when configured.  The difference
   is that a long input expression may be broken over multiple lines using
   the backslash convention.
 \end{funcdesc}
@@ -254,6 +256,15 @@ module from which it is called).
 \begin{funcdesc}{len}{s}
   Return the length (the number of items) of an object.  The argument
   may be a sequence (string, tuple or list) or a mapping (dictionary).
+\end{funcdesc}
+
+\begin{funcdesc}{list}{sequence}
+Return a list whose items are the same and in the same order as
+\var{sequence}'s items.  If \var{sequence} is already a list,
+a copy is made and returned, similar to \code{\var{sequence}[:]}.  
+For instance, \code{list('abc')} returns
+returns \code{['a', 'b', 'c']} and \code{list( (1, 2, 3) )} returns
+\code{[1, 2, 3]}.
 \end{funcdesc}
 
 \begin{funcdesc}{locals}{}
@@ -400,6 +411,10 @@ there's no reliable way to determine whether this is the case.}
 "Monty Python's Flying Circus"
 >>> 
 \end{verbatim}\ecode
+
+If the interpreter was built to use the GNU readline library, then
+\code{raw_input()} will use it to provide elaborate
+line editing and history features.
 \end{funcdesc}
 
 \begin{funcdesc}{reduce}{function\, list\optional{\, initializer}}
@@ -494,7 +509,7 @@ its goal is to return a printable string.
 
 \begin{funcdesc}{tuple}{sequence}
 Return a tuple whose items are the same and in the same order as
-\var{sequence}'s items.  If \var{sequence} is alread a tuple, it
+\var{sequence}'s items.  If \var{sequence} is already a tuple, it
 is returned unchanged.  For instance, \code{tuple('abc')} returns
 returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
 \code{(1, 2, 3)}.
