@@ -99,7 +99,9 @@ class TypeinWidget(Pmw.MegaWidget):
     # called whenever a text entry is modified
     def __modified(self, force=None):
 	# these are guaranteed to be valid, right?
-	vals = map(lambda x: x.get(), (self.__x, self.__y, self.__z))
+	vals = []
+	for field in (self.__x, self.__y, self.__z):
+	    vals.append(field.get())
 	rgbs = tuple(map(self.__str_to_int, vals))
 	valids = map(self.__validate, vals)
 	delegate = self['delegate']
