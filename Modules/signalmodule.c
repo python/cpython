@@ -312,7 +312,7 @@ A signal handler function is called with two arguments:\n\
 the first is the signal number, the second is the interrupted stack frame.";
 
 DL_EXPORT(void)
-initsignal()
+initsignal(void)
 {
 	PyObject *m, *d, *x;
 	int i;
@@ -553,7 +553,7 @@ initsignal()
 }
 
 static void
-finisignal()
+finisignal(void)
 {
 	int i;
 	PyObject *func;
@@ -583,7 +583,7 @@ finisignal()
 
 /* Declared in pyerrors.h */
 int
-PyErr_CheckSignals()
+PyErr_CheckSignals(void)
 {
 	int i;
 	PyObject *f;
@@ -623,7 +623,7 @@ PyErr_CheckSignals()
  * Declared in pyerrors.h
  */
 void
-PyErr_SetInterrupt()
+PyErr_SetInterrupt(void)
 {
 	is_tripped++;
 	Handlers[SIGINT].tripped = 1;
@@ -631,20 +631,20 @@ PyErr_SetInterrupt()
 }
 
 void
-PyOS_InitInterrupts()
+PyOS_InitInterrupts(void)
 {
 	initsignal();
 	_PyImport_FixupExtension("signal", "signal");
 }
 
 void
-PyOS_FiniInterrupts()
+PyOS_FiniInterrupts(void)
 {
 	finisignal();
 }
 
 int
-PyOS_InterruptOccurred()
+PyOS_InterruptOccurred(void)
 {
 	if (Handlers[SIGINT].tripped) {
 #ifdef WITH_THREAD
@@ -658,7 +658,7 @@ PyOS_InterruptOccurred()
 }
 
 void
-PyOS_AfterFork()
+PyOS_AfterFork(void)
 {
 #ifdef WITH_THREAD
 	main_thread = PyThread_get_thread_ident();

@@ -7633,7 +7633,7 @@ static struct PyMethodDef gl_methods[] = {
 };
 
 void
-initgl()
+initgl(void)
 {
 	(void) Py_InitModule("gl", gl_methods);
 }

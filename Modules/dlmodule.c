@@ -191,7 +191,7 @@ static PyMethodDef dl_methods[] = {
 };
 
 void
-initdl()
+initdl(void)
 {
 	PyObject *m, *d, *x;
 

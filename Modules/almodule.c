@@ -2037,7 +2037,7 @@ static char al_module_documentation[] =
 ;
 
 void
-inital()
+inital(void)
 {
 	PyObject *m, *d, *x;
 

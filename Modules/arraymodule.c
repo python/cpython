@@ -1407,7 +1407,7 @@ statichere PyTypeObject Arraytype = {
 };
 
 DL_EXPORT(void)
-initarray()
+initarray(void)
 {
 	PyObject *m, *d;
 

@@ -34,7 +34,7 @@ typedef struct {
 staticforward PyTypeObject Locktype;
 
 static lockobject *
-newlockobject()
+newlockobject(void)
 {
 	lockobject *self;
 	self = PyObject_New(lockobject, &Locktype);
@@ -377,7 +377,7 @@ unlock it.  A thread attempting to lock a lock that it has already locked\n\
 will block until another thread unlocks it.  Deadlocks may ensue.";
 
 DL_EXPORT(void)
-initthread()
+initthread(void)
 {
 	PyObject *m, *d;
 

@@ -629,7 +629,7 @@ insint(PyObject *d, char *name, int value)
 /* Initialization function for the module (*must* be called initpcre) */
 
 DL_EXPORT(void)
-initpcre()
+initpcre(void)
 {
 	PyObject *m, *d;
 

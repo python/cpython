@@ -509,7 +509,7 @@ static PyMethodDef imgfile_methods[] = {
 
 
 void
-initimgfile()
+initimgfile(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule("imgfile", imgfile_methods);

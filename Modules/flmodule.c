@@ -2133,7 +2133,7 @@ static PyMethodDef forms_methods[] = {
 };
 
 DL_EXPORT(void)
-initfl()
+initfl(void)
 {
 	Py_InitModule("fl", forms_methods);
 	foreground();

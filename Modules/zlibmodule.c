@@ -829,7 +829,7 @@ static char zlib_module_documentation[]=
 ;
 
 DL_EXPORT(void)
-PyInit_zlib()
+PyInit_zlib(void)
 {
         PyObject *m, *d, *ver;
         Comptype.ob_type = &PyType_Type;

@@ -183,7 +183,7 @@ ins(PyObject *dict, char *name, int value)
 	/* errors will be checked by initresource() */
 }
 
-void initresource()
+void initresource(void)
 {
 	PyObject *m, *d;
 

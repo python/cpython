@@ -137,7 +137,7 @@ static PyMethodDef pwd_methods[] = {
 };
 
 DL_EXPORT(void)
-initpwd()
+initpwd(void)
 {
 	Py_InitModule4("pwd", pwd_methods, pwd__doc__,
                        (PyObject *)NULL, PYTHON_API_VERSION);

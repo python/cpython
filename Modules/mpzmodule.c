@@ -94,7 +94,7 @@ static const char initialiser_name[] = "mpz";
 /* #define MPZ_DEBUG */
 
 static mpzobject *
-newmpzobject()
+newmpzobject(void)
 {
 	mpzobject *mpzp;
 
@@ -1632,8 +1632,7 @@ static PyMethodDef mpz_functions[] = {
 #ifdef MP_TEST_ALLOC
 #define MP_TEST_SIZE		4
 static const char mp_test_magic[MP_TEST_SIZE] = {'\xAA','\xAA','\xAA','\xAA'};
-static mp_test_error( location )
-	int *location;
+static mp_test_error(int *location)
 {
 	/* assumptions: *alloc returns address divisible by 4,
 	mpz_* routines allocate in chunks divisible by four */
@@ -1716,7 +1715,7 @@ void mp_free(void *ptr, size_t size)
 /* Initialize this module. */
 
 DL_EXPORT(void)
-initmpz()
+initmpz(void)
 {
 	PyObject *module;
 	PyObject *dict;

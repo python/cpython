@@ -70,7 +70,7 @@ To map error codes to error messages, use the function os.strerror(),\n\
 e.g. os.strerror(2) could return 'No such file or directory'.";
 
 DL_EXPORT(void)
-initerrno()
+initerrno(void)
 {
 	PyObject *m, *d, *de;
 	m = Py_InitModule3("errno", errno_methods, errno__doc__);

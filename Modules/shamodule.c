@@ -350,7 +350,7 @@ staticforward PyTypeObject SHAtype;
 
 
 static SHAobject *
-newSHAobject()
+newSHAobject(void)
 {
     return (SHAobject *)PyObject_New(SHAobject, &SHAtype);
 }
@@ -538,7 +538,7 @@ static struct PyMethodDef SHA_functions[] = {
 	Py_XDECREF(o); }
 
 void
-initsha()
+initsha(void)
 {
     PyObject *d, *m;
 

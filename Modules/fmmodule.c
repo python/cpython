@@ -278,7 +278,7 @@ static PyMethodDef fm_methods[] = {
 
 
 void
-initfm()
+initfm(void)
 {
 	Py_InitModule("fm", fm_methods);
 	fminit();

@@ -337,7 +337,7 @@ static char module_doc[] =
 On Windows, only sockets are supported; on Unix, all file descriptors.";
 
 DL_EXPORT(void)
-initselect()
+initselect(void)
 {
 	PyObject *m, *d;
 	m = Py_InitModule3("select", select_methods, module_doc);

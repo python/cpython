@@ -31,7 +31,7 @@ staticforward PyTypeObject MD5type;
 #define is_md5object(v)		((v)->ob_type == &MD5type)
 
 static md5object *
-newmd5object()
+newmd5object(void)
 {
 	md5object *md5p;
 
@@ -236,7 +236,7 @@ static PyMethodDef md5_functions[] = {
 /* Initialize this module. */
 
 DL_EXPORT(void)
-initmd5()
+initmd5(void)
 {
 	PyObject *m, *d;
 

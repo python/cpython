@@ -36,7 +36,7 @@ static PyMethodDef crypt_methods[] = {
 };
 
 DL_EXPORT(void)
-initcrypt()
+initcrypt(void)
 {
 	Py_InitModule("crypt", crypt_methods);
 }

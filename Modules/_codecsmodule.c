@@ -624,7 +624,7 @@ static PyMethodDef _codecs_functions[] = {
 };
 
 DL_EXPORT(void)
-init_codecs()
+init_codecs(void)
 {
     Py_InitModule("_codecs", _codecs_functions);
 }

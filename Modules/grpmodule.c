@@ -132,7 +132,7 @@ complete membership information.)";
 
 
 DL_EXPORT(void)
-initgrp()
+initgrp(void)
 {
     Py_InitModule3("grp", grp_methods, grp__doc__);
 }

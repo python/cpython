@@ -202,7 +202,7 @@ static PyMethodDef xx_methods[] = {
 /* Initialization function for the module (*must* be called initxx) */
 
 DL_EXPORT(void)
-initxx()
+initxx(void)
 {
 	PyObject *m, *d;
 

@@ -168,7 +168,7 @@ ins(PyObject *d, char *s, long x)
 /* Initialization function for the module */
 
 DL_EXPORT(void)
-initsyslog()
+initsyslog(void)
 {
 	PyObject *m, *d;
 

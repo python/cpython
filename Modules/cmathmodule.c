@@ -316,7 +316,7 @@ Return the hyperbolic tangent of x.";
 /* And now the glue to make them available from Python: */
 
 static PyObject *
-math_error()
+math_error(void)
 {
 	if (errno == EDOM)
 		PyErr_SetString(PyExc_ValueError, "math domain error");
@@ -394,7 +394,7 @@ static PyMethodDef cmath_methods[] = {
 };
 
 DL_EXPORT(void)
-initcmath()
+initcmath(void)
 {
 	PyObject *m, *d, *v;
 	
