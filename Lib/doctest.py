@@ -200,7 +200,6 @@ __all__ = [
     'Tester',
     # 8. Unittest Support
     'DocTestCase',
-    'nooutput',
     'DocTestSuite',
     'DocFileCase',
     'DocFileTest',
@@ -2105,7 +2104,7 @@ class DocTestCase(unittest.TestCase):
 
         runner = DebugRunner(optionflags=self._dt_optionflags,
                              checker=self._dt_checker, verbose=False)
-        runner.run(self._dt_test, out=nooutput)
+        runner.run(self._dt_test)
 
     def id(self):
         return self._dt_test.name
@@ -2118,9 +2117,6 @@ class DocTestCase(unittest.TestCase):
 
     def shortDescription(self):
         return "Doctest: " + self._dt_test.name
-
-def nooutput(*args):
-    pass
 
 def DocTestSuite(module=None, globs=None, extraglobs=None,
                  optionflags=0, test_finder=None,
