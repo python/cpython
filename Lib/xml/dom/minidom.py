@@ -378,6 +378,9 @@ class NamedNodeMap:
         self.setNamedItem(node)
 
     def setNamedItem(self, node):
+        if not isinstance(node, Attr):
+            raise HierarchyRequestErr, \
+                  "%s cannot be child of %s" % (repr(node), repr(self))
         old = self._attrs.get(node.name)
         if old:
             old.unlink()

@@ -98,6 +98,17 @@ def testLegalChildren():
     else:
         print "dom.appendChild didn't raise HierarchyRequestErr"
 
+    nodemap = elem.attributes 
+    try: nodemap.setNamedItem(text)
+    except HierarchyRequestErr: pass
+    else:
+        print "NamedNodeMap.setNamedItem didn't raise HierarchyRequestErr"
+
+    try: nodemap.setNamedItemNS(text)
+    except HierarchyRequestErr: pass
+    else:
+        print "NamedNodeMap.setNamedItemNS didn't raise HierarchyRequestErr"
+
     elem.appendChild(text)
     dom.unlink()
 
