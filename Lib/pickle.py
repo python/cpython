@@ -233,6 +233,7 @@ class Pickler:
         # growable) array, indexed by memo key.
         if self.fast:
             return
+        assert id(obj) not in self.memo
         memo_len = len(self.memo)
         self.write(self.put(memo_len))
         self.memo[id(obj)] = memo_len, obj
@@ -386,7 +387,7 @@ class Pickler:
         save = self.save
         write = self.write
 
-        self.save_global(t)
+        self.save(t)
         save(args)
         write(NEWOBJ)
         self.memoize(obj)
