@@ -45,10 +45,6 @@ extern char *getenv(const char *);
 #define SUN_LWP
 #endif
 
-#if defined(__MWERKS__) && !defined(__BEOS__)
-#define _POSIX_THREADS
-#endif
-
 #endif /* _POSIX_THREADS */
 
 

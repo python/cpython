@@ -41,15 +41,6 @@ static PyObject *StructError;
 
 /* Define various structs to figure out the alignments of types */
 
-#ifdef __MWERKS__
-/*
-** XXXX We have a problem here. There are no unique alignment rules
-** on the PowerPC mac.
-*/
-#ifdef __powerc
-#pragma options align=mac68k
-#endif
-#endif /* __MWERKS__ */
 
 typedef struct { char c; short x; } st_short;
 typedef struct { char c; int x; } st_int;

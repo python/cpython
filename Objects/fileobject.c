@@ -21,17 +21,6 @@
 #include <windows.h>
 #endif /* _MSC_VER */
 
-#ifdef macintosh
-#ifdef USE_GUSI
-#define HAVE_FTRUNCATE
-#endif
-#endif
-
-#ifdef __MWERKS__
-/* Mwerks fopen() doesn't always set errno */
-#define NO_FOPEN_ERRNO
-#endif
-
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 #include <io.h>
 #endif
@@ -209,18 +198,6 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 		}
 	}
 	if (f->f_fp == NULL) {
-#ifdef NO_FOPEN_ERRNO
-		/* Metroworks only, wich does not always sets errno */
-		if (errno == 0) {
-			PyObject *v;
-			v = Py_BuildValue("(is)", 0, "Cannot open file");
-			if (v != NULL) {
-				PyErr_SetObject(PyExc_IOError, v);
-				Py_DECREF(v);
-			}
-			return NULL;
-		}
-#endif
 #ifdef _MSC_VER
 		/* MSVC 6 (Microsoft) leaves errno at 0 for bad mode strings,
 		 * across all Windows flavors.  When it sets EINVAL varies
@@ -739,12 +716,7 @@ new_buffersize(PyFileObject *f, size_t currentsize)
 		   works.  We can't use the lseek() value either, because we
 		   need to take the amount of buffered data into account.
 		   (Yet another reason why stdio stinks. :-) */
-#ifdef USE_GUSI2
-		pos = lseek(fileno(f->f_fp), 1L, SEEK_CUR);
-		pos = lseek(fileno(f->f_fp), -1L, SEEK_CUR);
-#else
 		pos = lseek(fileno(f->f_fp), 0L, SEEK_CUR);
-#endif
 		if (pos >= 0) {
 			pos = ftell(f->f_fp);
 		}
