@@ -482,25 +482,49 @@ class addinfo(addbase):
 
 def basejoin(base, url):
 	type, path = splittype(url)
+	if type:
+		# if url is complete (i.e., it contains a type), return it
+		return url
 	host, path = splithost(path)
-	if type and host: return url
-	basetype, basepath = splittype(base)
-	basehost, basepath = splithost(basepath)
-	basepath, basetag = splittag(basepath)
-	basepath, basequery = splitquery(basepath)
-	if not type: type = basetype or 'file'
+	type, basepath = splittype(base) # inherit type from base
+	if host:
+		# if url contains host, just inherit type
+		if type: return type + '://' + host + path
+		else:
+			# no type inherited, so url must have started with //
+			# just return it
+			return url
+	host, basepath = splithost(basepath) # inherit host
+	basepath, basetag = splittag(basepath) # remove extraneuous cruft
+	basepath, basequery = splitquery(basepath) # idem
 	if path[:1] != '/':
-		i = string.rfind(basepath, '/')
-		if i < 0: basepath = '/'
-		else: basepath = basepath[:i+1]
+		# non-absolute path name
+		if path[:1] in ('#', '?'):
+			# path is just a tag or query, attach to basepath
+			i = len(basepath)
+		else:
+			# else replace last component
+			i = string.rfind(basepath, '/')
+		if i < 0:
+			# basepath not absolute
+			if host:
+				# host present, make absolute
+				basepath = '/'
+			else:
+				# else keep non-absolute
+				basepath = ''
+		else:
+			# remove last file component
+			basepath = basepath[:i+1]
 		path = basepath + path
-	if not host: host = basehost
-	if host: return type + '://' + host + path
-	else: return type + ':' + path
+	if type and host: return type + '://' + host + path
+	elif type: return type + ':' + path
+	elif host: return '//' + host + path # don't know what this means
+	else: return path
 
 
 # Utilities to parse URLs (most of these return None for missing parts):
-# unwrap('<URL:type//host/path>') --> 'type//host/path'
+# unwrap('<URL:type://host/path>') --> 'type://host/path'
 # splittype('type:opaquestring') --> 'type', 'opaquestring'
 # splithost('//host[:port]/path') --> 'host[:port]', '/path'
 # splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'
