@@ -367,14 +367,33 @@ setpythonargv(argc, argv)
 		fatal("can't assign sys.argv");
 	if (path != NULL) {
 		char *p = NULL;
-		int n;
+		int n = 0;
 		object *a;
+#if SEP == '\\' /* Special case for MS filename syntax */
+		if (argc > 0 && argv[0] != NULL) {
+			char *q;
+			p = strrchr(argv[0], SEP);
+			/* Test for alternate separator */
+			q = strrchr(p ? p : argv[0], '/');
+			if (q != NULL)
+				p = q;
+			if (p != NULL) {
+				n = p + 1 - argv[0];
+				if (n > 1 && p[-1] != ':')
+					n--; /* Drop trailing separator */
+			}
+		}
+#else /* All other filename syntaxes */
 		if (argc > 0 && argv[0] != NULL)
 			p = strrchr(argv[0], SEP);
-		if (p == NULL)
-			n = 0;
-		else
+		if (p != NULL) {
 			n = p + 1 - argv[0];
+#if SEP == '/' /* Special case for Unix filename syntax */
+			if (n > 1)
+				n--; /* Drop trailing separator */
+#endif /* Unix */
+		}
+#endif /* All others */
 		a = newsizedstringobject(argv[0], n);
 		if (a == NULL)
 			fatal("no mem for sys.path insertion");
