@@ -1,14 +1,20 @@
-"""tokenize.py (Ka-Ping Yee, 4 March 1997)
+"""Tokenization help for Python programs.
 
-This module compiles a regular expression that recognizes Python tokens
-in individual lines of text.  The regular expression handles everything
-except indentation, continuations, and triple-quoted strings.  The function
-'tokenize.tokenize()' takes care of these things for streams of text.  It
-accepts a file-like object and a function, uses the readline() method to
-scan the file, and calls the function called once for each token found
-passing its type, a string containing the token, the line number, the line,
-and the starting and ending positions of the token within the line.
-It is designed to match the working of the Python tokenizer exactly."""
+This module compiles a regular expression that recognizes Python
+tokens in individual lines of text.  The regular expression handles
+everything except indentation, continuations, and triple-quoted
+strings.  The function 'tokenize.tokenize()' takes care of these
+things for streams of text.  It accepts a readline-like function which
+is called repeatedly to come up with the next input line (or "" for
+EOF), and a "token-eater" function which is called for each token
+found, passing its type, a string containing the token, the line
+number, the line, and the starting and ending positions of the token
+within the line.  It is designed to match the working of the Python
+tokenizer exactly.
+
+"""
+
+__version__ = "Ka-Ping Yee, 4 March 1997, updated by GvR, 6 March 1997"
 
 import string, regex
 from token import *
@@ -117,6 +123,7 @@ def tokenize(readline, tokeneater = printtoken):
                     endprog = endprogs[token]
                     if endprog.search(line, pos) >= 0:     # all on one line
                         pos = endprog.regs[0][1]
+			token = line[start:pos]
                         tokeneater(STRING, token, linenum, line, start, pos)
                     else:
                         contstr = line[start:]             # multiple lines
