@@ -2012,7 +2012,7 @@ abstract_issubclass(derived, cls, err, first)
 {
 	static PyObject *__bases__ = NULL;
 	PyObject *bases;
-	int i, l, n;
+	int i, n;
 	int r = 0;
 
 	if (__bases__ == NULL) {
