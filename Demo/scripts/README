@@ -20,6 +20,7 @@ fact.py			Factorize numbers
 findlinksto.py		Recursively find symbolic links to a given path prefix
 fixps.py		Fix Python scripts' first line (if #!)
 fixcid.py		Massive identifier substitution on C source files
+fixheader.py		Add some cpp magic to a C include file
 freeze.py		Convert a Python script into a free-standing binary
 from.py			Summarize mailbox
 ftpstats.py		Summarize ftp daemon log file
