@@ -30,8 +30,8 @@ For example:
 	gb: United Kingdom
 
 
-[*] Note that regular expressions must conform to Python 1.5's re.py module
-syntax.  The comparison is done with the search() method.
+ [*] Note that regular expressions must conform to Python 1.5's re.py module
+ syntax.  The comparison is done with the search() method.
 
 Country codes are maintained by the RIPE Network Coordination Centre,
 in coordination with the ISO 3166 Maintenance Agency at DIN Berlin.  The
@@ -79,7 +79,7 @@ Usage: %s [-d] [-p|-P file] [-h] addr [addr ...]
         Print this message.
 
 """
-__version__ = '3.0'
+__version__ = '$Revision$'
 __author__ = 'Barry Warsaw <bwarsaw@python.org>'
 __source__ = '<url:http://www.python.org/~bwarsaw/pyware/>'
 
