@@ -650,14 +650,20 @@ Availability: \UNIX.
 
 \begin{funcdesc}{readlink}{path}
 Return a string representing the path to which the symbolic link
-points.
+points.  The result may be either an absolute or relative pathname; if
+it is relative, it may be converted to an absolute pathname using
+\code{os.path.join(os.path.dirname(\var{path}), \var{result})}.
 Availability: \UNIX{}.
 \end{funcdesc}
 
 \begin{funcdesc}{remove}{path}
-Remove the file \var{path}.  See \function{rmdir()} below to remove a
-directory.  This is identical to the \function{unlink()} function
-documented below.
+Remove the file \var{path}.  If \var{path} is a directory,
+\exception{OSError} is raised; see \function{rmdir()} below to remove
+a directory.  This is identical to the \function{unlink()} function
+documented below.  On Windows, attempting to remove a file that is in
+use causes an exception to be raised; on \UNIX, the directory entry is
+removed but the storage allocated to the file is not made available
+until the original file is no longer in use.
 Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
 
@@ -674,7 +680,16 @@ exception if the leaf directory could not be successfully removed.
 \end{funcdesc}
 
 \begin{funcdesc}{rename}{src, dst}
-Rename the file or directory \var{src} to \var{dst}.
+Rename the file or directory \var{src} to \var{dst}.  If \var{dst} is
+a directory, \exception{OSError} will be raised.  On \UNIX, if
+\var{dst} exists and is a file, it will be removed silently if the
+user has permission.  The operation may fail on some \UNIX{} flavors
+is \var{src} and \var{dst} are on different filesystems.  If
+successful, the renaming will be an atomic operation (this is a
+\POSIX{} requirement).  On Windows, if \var{dst} already exists,
+\exception{OSError} will be raised even if it is a file; there may be
+no way to implement an atomic rename when \var{dst} names an existing
+file.
 Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
 
