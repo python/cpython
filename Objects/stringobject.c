@@ -1,4 +1,3 @@
-
 /* String object implementation */
 
 #include "Python.h"
@@ -17,29 +16,30 @@ static PyStringObject *characters[UCHAR_MAX + 1];
 static PyStringObject *nullstring;
 
 /*
-   For both PyString_FromString() and PyString_FromStringAndSize(), the 
-   parameter `size' denotes number of characters to allocate, not counting any 
+   For both PyString_FromString() and PyString_FromStringAndSize(), the
+   parameter `size' denotes number of characters to allocate, not counting any
    null terminating character.
 
-   For PyString_FromString(), the parameter `str' points to a null-terminated 
+   For PyString_FromString(), the parameter `str' points to a null-terminated
    string containing exactly `size' bytes.
 
-   For PyString_FromStringAndSize(), the parameter the parameter `str' is 
-   either NULL or else points to a string containing at least `size' bytes.  For
-   PyString_FromStringAndSize(), the string in the `str' parameter does not 
-   have to be null-terminated.  (Therefore it is safe to construct a substring 
-   by calling `PyString_FromStringAndSize(origstring, substrlen)'.)  If `str' 
-   is NULL then PyString_FromStringAndSize() will allocate `size+1' bytes 
-   (setting the last byte to the null terminating character) and you can fill in 
-   the data yourself.  If `str' is non-NULL then the resulting PyString object 
-   must be treated as immutable and you must not fill in nor alter the data 
-   yourself, since the strings may be shared.
+   For PyString_FromStringAndSize(), the parameter the parameter `str' is
+   either NULL or else points to a string containing at least `size' bytes.
+   For PyString_FromStringAndSize(), the string in the `str' parameter does
+   not have to be null-terminated.  (Therefore it is safe to construct a
+   substring by calling `PyString_FromStringAndSize(origstring, substrlen)'.)
+   If `str' is NULL then PyString_FromStringAndSize() will allocate `size+1'
+   bytes (setting the last byte to the null terminating character) and you can
+   fill in the data yourself.  If `str' is non-NULL then the resulting
+   PyString object must be treated as immutable and you must not fill in nor
+   alter the data yourself, since the strings may be shared.
 
-   The PyObject member `op->ob_size', which denotes the number of "extra items" 
-   in a variable-size object, will contain the number of bytes allocated for 
-   string data, not counting the null terminating character.  It is therefore 
-   equal to the equal to the `size' parameter (for PyString_FromStringAndSize()) 
-   or the length of the string in the `str' parameter (for PyString_FromString()).
+   The PyObject member `op->ob_size', which denotes the number of "extra
+   items" in a variable-size object, will contain the number of bytes
+   allocated for string data, not counting the null terminating character.  It
+   is therefore equal to the equal to the `size' parameter (for
+   PyString_FromStringAndSize()) or the length of the string in the `str'
+   parameter (for PyString_FromString()).
 */
 PyObject *
 PyString_FromStringAndSize(const char *str, int size)
@@ -171,7 +171,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			   added */
 			if (*f == 'l' && *(f+1) == 'd')
 				++f;
-			
+
 			switch (*f) {
 			case 'c':
 				(void)va_arg(count, int);
@@ -205,7 +205,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				   the format string to the output
 				   string. (we cannot just skip the
 				   code, since there's no way to know
-				   what's in the argument list) */ 
+				   what's in the argument list) */
 				n += strlen(p);
 				goto expand;
 			}
@@ -219,7 +219,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	string = PyString_FromStringAndSize(NULL, n);
 	if (!string)
 		return NULL;
-	
+
 	s = PyString_AsString(string);
 
 	for (f = format; *f; f++) {
@@ -245,7 +245,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				longflag = 1;
 				++f;
 			}
-			
+
 			switch (*f) {
 			case 'c':
 				*s++ = va_arg(vargs, int);
@@ -296,14 +296,14 @@ PyString_FromFormatV(const char *format, va_list vargs)
 		} else
 			*s++ = *f;
 	}
-	
+
  end:
 	_PyString_Resize(&string, s - PyString_AS_STRING(string));
 	return string;
 }
-	
+
 PyObject *
-PyString_FromFormat(const char *format, ...) 
+PyString_FromFormat(const char *format, ...)
 {
 	PyObject* ret;
 	va_list vargs;
@@ -538,7 +538,7 @@ PyString_AsStringAndSize(register PyObject *obj,
 			if (obj == NULL)
 				return -1;
 		}
-		else 
+		else
 #endif
 		{
 			PyErr_Format(PyExc_TypeError,
@@ -586,7 +586,8 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 
 	/* figure out which quote to use; single is preferred */
 	quote = '\'';
-	if (memchr(op->ob_sval, '\'', op->ob_size) && !memchr(op->ob_sval, '"', op->ob_size))
+	if (memchr(op->ob_sval, '\'', op->ob_size) &&
+	    !memchr(op->ob_sval, '"', op->ob_size))
 		quote = '"';
 
 	fputc(quote, fp);
@@ -630,7 +631,8 @@ string_repr(register PyStringObject *op)
 
 		/* figure out which quote to use; single is preferred */
 		quote = '\'';
-		if (memchr(op->ob_sval, '\'', op->ob_size) && !memchr(op->ob_sval, '"', op->ob_size))
+		if (memchr(op->ob_sval, '\'', op->ob_size) &&
+		    !memchr(op->ob_sval, '"', op->ob_size))
 			quote = '"';
 
 		p = PyString_AS_STRING(v);
@@ -868,7 +870,7 @@ string_richcompare(PyStringObject *a, PyStringObject *b, int op)
 		   much time, since Py_NE is rarely used.  */
 		if (a->ob_size == b->ob_size
 		    && (a->ob_sval[0] == b->ob_sval[0]
-			&& memcmp(a->ob_sval, b->ob_sval, 
+			&& memcmp(a->ob_sval, b->ob_sval,
 				  a->ob_size) == 0)) {
 			result = Py_True;
 		} else {
@@ -2392,7 +2394,7 @@ string_zfill(PyStringObject *self, PyObject *args)
 {
     int fill;
     PyObject *s;
-    const char *p;
+    char *p;
 
     int width;
     if (!PyArg_ParseTuple(args, "i:zfill", &width))
@@ -2738,10 +2740,10 @@ static PyMethodDef
 string_methods[] = {
 	/* Counterparts of the obsolete stropmodule functions; except
 	   string.maketrans(). */
-	{"join",       (PyCFunction)string_join,   METH_O, join__doc__},
-	{"split",       (PyCFunction)string_split, METH_VARARGS, split__doc__},
-	{"lower",      (PyCFunction)string_lower,  METH_NOARGS, lower__doc__},
-	{"upper",       (PyCFunction)string_upper, METH_NOARGS, upper__doc__},
+	{"join", (PyCFunction)string_join, METH_O, join__doc__},
+	{"split", (PyCFunction)string_split, METH_VARARGS, split__doc__},
+	{"lower", (PyCFunction)string_lower, METH_NOARGS, lower__doc__},
+	{"upper", (PyCFunction)string_upper, METH_NOARGS, upper__doc__},
 	{"islower", (PyCFunction)string_islower, METH_NOARGS, islower__doc__},
 	{"isupper", (PyCFunction)string_isupper, METH_NOARGS, isupper__doc__},
 	{"isspace", (PyCFunction)string_isspace, METH_NOARGS, isspace__doc__},
@@ -2749,32 +2751,36 @@ string_methods[] = {
 	{"istitle", (PyCFunction)string_istitle, METH_NOARGS, istitle__doc__},
 	{"isalpha", (PyCFunction)string_isalpha, METH_NOARGS, isalpha__doc__},
 	{"isalnum", (PyCFunction)string_isalnum, METH_NOARGS, isalnum__doc__},
-	{"capitalize", (PyCFunction)string_capitalize,  METH_NOARGS, capitalize__doc__},
-	{"count",      (PyCFunction)string_count,       METH_VARARGS, count__doc__},
-	{"endswith",   (PyCFunction)string_endswith,    METH_VARARGS, endswith__doc__},
-	{"find",       (PyCFunction)string_find,        METH_VARARGS, find__doc__},
-	{"index",      (PyCFunction)string_index,       METH_VARARGS, index__doc__},
-	{"lstrip",     (PyCFunction)string_lstrip,      METH_VARARGS, lstrip__doc__},
-	{"replace",     (PyCFunction)string_replace,    METH_VARARGS, replace__doc__},
-	{"rfind",       (PyCFunction)string_rfind,      METH_VARARGS, rfind__doc__},
-	{"rindex",      (PyCFunction)string_rindex,     METH_VARARGS, rindex__doc__},
-	{"rstrip",      (PyCFunction)string_rstrip,     METH_VARARGS, rstrip__doc__},
-	{"startswith",  (PyCFunction)string_startswith, METH_VARARGS, startswith__doc__},
-	{"strip",       (PyCFunction)string_strip,      METH_VARARGS, strip__doc__},
-	{"swapcase",    (PyCFunction)string_swapcase,   METH_NOARGS, swapcase__doc__},
-	{"translate",   (PyCFunction)string_translate,  METH_VARARGS, translate__doc__},
-	{"title",       (PyCFunction)string_title,      METH_NOARGS, title__doc__},
-	{"ljust",       (PyCFunction)string_ljust,      METH_VARARGS, ljust__doc__},
-	{"rjust",       (PyCFunction)string_rjust,      METH_VARARGS, rjust__doc__},
-	{"center",      (PyCFunction)string_center,     METH_VARARGS, center__doc__},
-	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
-	{"encode",      (PyCFunction)string_encode,     METH_VARARGS, encode__doc__},
-	{"decode",      (PyCFunction)string_decode,     METH_VARARGS, decode__doc__},
-	{"expandtabs",  (PyCFunction)string_expandtabs, METH_VARARGS, expandtabs__doc__},
-	{"splitlines",  (PyCFunction)string_splitlines, METH_VARARGS, splitlines__doc__},
-#if 0
-	{"zfill",       (PyCFunction)string_zfill,      METH_VARARGS, zfill__doc__},
-#endif
+	{"capitalize", (PyCFunction)string_capitalize, METH_NOARGS,
+	 capitalize__doc__},
+	{"count", (PyCFunction)string_count, METH_VARARGS, count__doc__},
+	{"endswith", (PyCFunction)string_endswith, METH_VARARGS,
+	 endswith__doc__},
+	{"find", (PyCFunction)string_find, METH_VARARGS, find__doc__},
+	{"index", (PyCFunction)string_index, METH_VARARGS, index__doc__},
+	{"lstrip", (PyCFunction)string_lstrip, METH_VARARGS, lstrip__doc__},
+	{"replace", (PyCFunction)string_replace, METH_VARARGS, replace__doc__},
+	{"rfind", (PyCFunction)string_rfind, METH_VARARGS, rfind__doc__},
+	{"rindex", (PyCFunction)string_rindex, METH_VARARGS, rindex__doc__},
+	{"rstrip", (PyCFunction)string_rstrip, METH_VARARGS, rstrip__doc__},
+	{"startswith", (PyCFunction)string_startswith, METH_VARARGS,
+	 startswith__doc__},
+	{"strip", (PyCFunction)string_strip, METH_VARARGS, strip__doc__},
+	{"swapcase", (PyCFunction)string_swapcase, METH_NOARGS,
+	 swapcase__doc__},
+	{"translate", (PyCFunction)string_translate, METH_VARARGS,
+	 translate__doc__},
+	{"title", (PyCFunction)string_title, METH_NOARGS, title__doc__},
+	{"ljust", (PyCFunction)string_ljust, METH_VARARGS, ljust__doc__},
+	{"rjust", (PyCFunction)string_rjust, METH_VARARGS, rjust__doc__},
+	{"center", (PyCFunction)string_center, METH_VARARGS, center__doc__},
+	{"zfill", (PyCFunction)string_zfill, METH_VARARGS, zfill__doc__},
+	{"encode", (PyCFunction)string_encode, METH_VARARGS, encode__doc__},
+	{"decode", (PyCFunction)string_decode, METH_VARARGS, decode__doc__},
+	{"expandtabs", (PyCFunction)string_expandtabs, METH_VARARGS,
+	 expandtabs__doc__},
+	{"splitlines", (PyCFunction)string_splitlines, METH_VARARGS,
+	 splitlines__doc__},
 	{NULL,     NULL}		     /* sentinel */
 };
 
@@ -3154,7 +3160,7 @@ formatint(char *buf, size_t buflen, int flags,
 
 	if ((flags & F_ALT) &&
 	    (type == 'x' || type == 'X')) {
-		/* When converting under %#x or %#X, there are a number 
+		/* When converting under %#x or %#X, there are a number
 		 * of issues that cause pain:
 		 * - when 0 is being converted, the C standard leaves off
 		 *   the '0x' or '0X', which is inconsistent with other
@@ -3164,9 +3170,9 @@ formatint(char *buf, size_t buflen, int flags,
 		 *   convert 0 with the '0x' or '0X'
 		 *   (Metrowerks, Compaq Tru64)
 		 * - there are platforms that give '0x' when converting
-		 *   under %#X, but convert 0 in accordance with the 
+		 *   under %#X, but convert 0 in accordance with the
 		 *   standard (OS/2 EMX)
-		 * 
+		 *
 		 * We can achieve the desired consistency by inserting our
 		 * own '0x' or '0X' prefix, and substituting %x/%X in place
 		 * of %#x/%#X.
@@ -3174,12 +3180,12 @@ formatint(char *buf, size_t buflen, int flags,
 		 * Note that this is the same approach as used in
 		 * formatint() in unicodeobject.c
 		 */
-		PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c", 
+		PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c",
 			      type, prec, type);
 	}
 	else {
 		PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
-			      (flags&F_ALT) ? "#" : "", 
+			      (flags&F_ALT) ? "#" : "",
 			      prec, type);
 	}
 
@@ -3188,7 +3194,7 @@ formatint(char *buf, size_t buflen, int flags,
 	 */
 	if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
-			"formatted integer is too long (precision too large?)");
+		    "formatted integer is too long (precision too large?)");
 		return -1;
 	}
 	PyOS_snprintf(buf, buflen, fmt, x);
@@ -3280,7 +3286,8 @@ PyString_Format(PyObject *format, PyObject *args)
 			char *pbuf;
 			int sign;
 			int len;
-			char formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
+			char formatbuf[FORMATBUFLEN];
+			     /* For format{float,int,char}() */
 #ifdef Py_USING_UNICODE
 			char *fmt_start = fmt;
 		        int argidx_start = argidx;
@@ -3478,7 +3485,8 @@ PyString_Format(PyObject *format, PyObject *args)
 				}
 				else {
 					pbuf = formatbuf;
-					len = formatint(pbuf, sizeof(formatbuf),
+					len = formatint(pbuf,
+							sizeof(formatbuf),
 							flags, prec, c, v);
 					if (len < 0)
 						goto error;
@@ -3494,7 +3502,8 @@ PyString_Format(PyObject *format, PyObject *args)
 			case 'g':
 			case 'G':
 				pbuf = formatbuf;
-				len = formatfloat(pbuf, sizeof(formatbuf), flags, prec, c, v);
+				len = formatfloat(pbuf, sizeof(formatbuf),
+						  flags, prec, c, v);
 				if (len < 0)
 					goto error;
 				sign = 1;
