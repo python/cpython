@@ -6,7 +6,7 @@ This module implements some useful functions on POSIX pathnames.
 
 \strong{Do not import this module directly.}  Instead, import the
 module \code{os} and use \code{os.path}.
-\stmodindex{os}
+\refstmodindex{os}
 
 \renewcommand{\indexsubitem}{(in module posixpath)}
 
@@ -38,6 +38,7 @@ initial \samp{\~{}} is replaced by the environment variable \code{\${}HOME};
 an initial \samp{\~\var{user}} is looked up in the password directory through
 the built-in module \code{pwd}.  If the expansion fails, or if the
 path does not begin with a tilde, the path is returned unchanged.
+\refbimodindex{pwd}
 \end{funcdesc}
 
 \begin{funcdesc}{expandvars}{p}
@@ -54,14 +55,14 @@ Return true if \var{p} is an absolute pathname (begins with a slash).
 
 \begin{funcdesc}{isfile}{p}
 Return true if \var{p} is an existing regular file.  This follows
-symbolic links, so both \code{islink()} and \code{isfile()} can be true for the same
-path.
+symbolic links, so both \code{islink()} and \code{isfile()} can be
+true for the same path.
 \end{funcdesc}
 
 \begin{funcdesc}{isdir}{p}
 Return true if \var{p} is an existing directory.  This follows
-symbolic links, so both \code{islink()} and \code{isdir()} can be true for the same
-path.
+symbolic links, so both \code{islink()} and \code{isdir()} can be true
+for the same path.
 \end{funcdesc}
 
 \begin{funcdesc}{islink}{p}
@@ -97,7 +98,7 @@ lower case.
 \begin{funcdesc}{samefile}{p\, q}
 Return true if both pathname arguments refer to the same file or directory
 (as indicated by device number and i-node number).
-Raise an exception if a stat call on either pathname fails.
+Raise an exception if a \code{stat()} call on either pathname fails.
 \end{funcdesc}
 
 \begin{funcdesc}{split}{p}
