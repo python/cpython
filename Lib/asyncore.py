@@ -263,14 +263,20 @@ class dispatcher:
     def set_reuse_addr(self):
         # try to re-use a server port if possible
         try:
+            # Windows SO_REUSEADDR is very broken (from a unixy perspective)
+            if sys.platform == 'win32':
+                reuse_constant = socket.SO_EXCLUSIVEADDRUSE
+            else:
+                reuse_constant = socket.SO_REUSEADDR
+                
             self.socket.setsockopt(
-                socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                socket.SOL_SOCKET, reuse_constant,
                 self.socket.getsockopt(socket.SOL_SOCKET,
-                                       socket.SO_REUSEADDR) | 1
+                                       reuse_constant) | 1
                 )
         except socket.error:
             pass
-
+        
     # ==================================================
     # predicates for select()
     # these are used as filters for the lists of sockets
