@@ -14,8 +14,6 @@
 %
 % MacOS framework-related changes (section of its own, probably)
 %
-% New sorting code
-%
 % xreadlines obsolete; files are their own iterator
 
 %\section{Introduction \label{intro}}
@@ -700,7 +698,7 @@ KeyError: pop(): dictionary is empty
 
 (Patch contributed by Raymond Hettinger.)
 
-\item The \keyword{assert} statement no longer  checks the \code{__debug__}
+\item The \keyword{assert} statement no longer checks the \code{__debug__}
 flag, so you can no longer disable assertions by assigning to \code{__debug__}.
 Running Python with the \programopt{-O} switch will still generate 
 code that doesn't execute any assertions.
@@ -804,7 +802,7 @@ u'\u4001abc'
 >>>
 \end{verbatim}
 
-(Contributed by Simon Brunning.)
+(Suggested by Simon Brunning, and implemented by Walter D\"orwald.)
 
 \item The \method{startswith()} and \method{endswith()}
 string methods now accept negative numbers for the start and end
@@ -1301,7 +1299,12 @@ Python now supports AtheOS (\url{http://www.atheos.cx}) and GNU/Hurd.
 %======================================================================
 \section{Other Changes and Fixes}
 
-Finally, there are various miscellaneous fixes:
+As usual, there were a bunch of other improvements and bugfixes
+scattered throughout the source tree.  A search through the CVS change
+logs finds there were 289 patches applied and 323 bugs fixed between
+Python 2.2 and 2.3.  Both figures are likely to be underestimates.
+
+Some of the more notable changes are:
 
 \begin{itemize}
 
@@ -1317,8 +1320,8 @@ using a different mechanism that works with ``python -O''.  For Python
 call the trace function, removing the need for \code{SET_LINENO}
 entirely.
 
-Python code will be hard pushed to notice a difference from this
-change, apart from a slight speed up when python is run without
+It would be difficult to detect any resulting difference from Python
+code, apart from a slight speed up when Python is run without
 \programopt{-O}.
 
 C extensions that access the \member{f_lineno} field of frame objects
@@ -1340,7 +1343,7 @@ XXX write this
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
+article: Simon Brunning, Michael Chermside, Scott David Daniels, Fred~L. Drake, Jr.,
 Michael Hudson, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre,
 Lalo Martins, Gustavo Niemeyer, Neal Norwitz, Jason Tishler.
 
