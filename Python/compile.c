@@ -4624,7 +4624,7 @@ com_classdef(struct compiling *c, node *n)
 	char *name;
 
 	REQ(n, classdef);
-	/* classdef: class NAME ['(' testlist ')'] ':' suite */
+	/* classdef: class NAME ['(' [testlist] ')'] ':' suite */
 	if ((v = PyString_InternFromString(STR(CHILD(n, 1)))) == NULL) {
 		c->c_errors++;
 		return;
@@ -4635,7 +4635,8 @@ com_classdef(struct compiling *c, node *n)
 	com_push(c, 1);
 	Py_DECREF(v);
 	/* Push the tuple of base classes on the stack */
-	if (TYPE(CHILD(n, 2)) != LPAR) {
+	if (TYPE(CHILD(n, 2)) != LPAR ||
+			TYPE(CHILD(n, 3)) == RPAR) {
 		com_addoparg(c, BUILD_TUPLE, 0);
 		com_push(c, 1);
 	}
