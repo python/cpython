@@ -6,13 +6,24 @@ import string
 
 def bgenone(dirname, shortname):
 	os.chdir(dirname)
+	print '%s:'%shortname
+	# Sigh, we don't want to lose CVS history, so two
+	# modules have funny names:
+	if shortname == 'carbonevt':
+		modulename = 'CarbonEvtscan'
+	elif shortname == 'ibcarbon':
+		modulename = 'IBCarbonscan'
+	else:
+		modulename = shortname + 'scan'
 	try:
-		m = __import__(shortname+'scan')
+		m = __import__(modulename)
 	except:
+		print "Error:", shortname, sys.exc_info()[1]
 		return 0
 	try:
 		m.main()
 	except:
+		print "Error:", shortname, sys.exc_info()[1]
 		return 0
 	return 1
 	
