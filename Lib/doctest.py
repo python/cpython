@@ -1492,10 +1492,10 @@ class OutputChecker:
         compare `want` and `got`.  `indent` is the indentation of the
         original example.
         """
-        # If <BLANKLINE>s are being used, then replace <BLANKLINE>
-        # with blank lines in the expected output string.
+        # If <BLANKLINE>s are being used, then replace blank lines
+        # with <BLANKLINE> in the actual output string.
         if not (optionflags & DONT_ACCEPT_BLANKLINE):
-            want = re.sub('(?m)^%s$' % re.escape(BLANKLINE_MARKER), '', want)
+            got = re.sub('(?m)^[ ]*(?=\n)', BLANKLINE_MARKER, got)
 
         # Check if we should use diff.  Don't use diff if the actual
         # or expected outputs are too short, or if the expected output
