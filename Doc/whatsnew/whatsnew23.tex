@@ -24,6 +24,8 @@
 %
 % Docstrings now optional (with --without-doc-strings)
 %
+% New dependency argument to distutils.Extension
+%
 
 %\section{Introduction \label{intro}}
 
@@ -109,8 +111,8 @@ Here's a sample usage of the \function{generate_ints} generator:
 2
 >>> gen.next()
 Traceback (most recent call last):
-  File "<stdin>", line 1, in ?
-  File "<stdin>", line 2, in generate_ints
+  File "stdin", line 1, in ?
+  File "stdin", line 2, in generate_ints
 StopIteration
 \end{verbatim}
 
@@ -534,7 +536,7 @@ KeyError: 4
 2
 >>> d.pop(1)
 Traceback (most recent call last):
-  File ``<stdin>'', line 1, in ?
+  File ``stdin'', line 1, in ?
 KeyError: pop(): dictionary is empty
 >>> d
 {}
@@ -550,9 +552,9 @@ convert between radians and degrees.  Other functions in the
 \function{math.sin()} and \function{math.cos()} have always required
 input values measured in radians. (Contributed by Raymond Hettinger.)
 
-\item Two new functions, \function{killpg()} and \function{mknod()},
-were added to the \module{posix} module that underlies the \module{os}
-module.
+\item Three new functions, \function{getpgid()}, \function{killpg()},
+and \function{mknod()}, were added to the \module{posix} module that
+underlies the \module{os} module.
 
 \item Two new binary packagers were added to the Distutils.
 \code{bdist_pkgtool} builds \file{.pkg} files to use with Solaris
