@@ -190,6 +190,9 @@ if d != {1:1, 2:2, 3:3}: raise TestFailed, 'dict update'
 if d.copy() != {1:1, 2:2, 3:3}: raise TestFailed, 'dict copy'
 if {}.copy() != {}: raise TestFailed, 'empty dict copy'
 # dict.get()
+d = {}
+if d.get('c') != None: raise TestFailed, 'missing {} get, no 2nd arg'
+if d.get('c', 3) != 3: raise TestFailed, 'missing {} get, w/ 2nd arg'
 d = {'a' : 1, 'b' : 2}
 if d.get('c') != None: raise TestFailed, 'missing dict get, no 2nd arg'
 if d.get('c', 3) != 3: raise TestFailed, 'missing dict get, w/ 2nd arg'
