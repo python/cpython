@@ -87,7 +87,7 @@ FUNC1(math_cosh, cosh)
 FUNC1(math_exp, exp)
 FUNC1(math_fabs, fabs)
 FUNC1(math_floor, floor)
-#if 0
+#ifndef AMOEBA
 /* XXX This one is not in the Amoeba library yet, so what the heck... */
 FUNC2(math_fmod, fmod)
 #endif
@@ -104,12 +104,77 @@ FUNC1(math_sqrt, sqrt)
 FUNC1(math_tan, tan)
 FUNC1(math_tanh, tanh)
 
-#if 0
-/* What about these? */
-double	frexp(double x, int *i);
-double	ldexp(double x, int n);
-double	modf(double x, double *i);
-#endif
+double	frexp(double, int *);
+double	ldexp(double, int);
+double	modf(double, double *);
+
+static object *
+math_frexp(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	double x;
+	int i;
+	if (!getdoublearg(args, &x))
+		return NULL;
+	errno = 0;
+	x = frexp(x, &i);
+	if (errno != 0)
+		return err_errno(RuntimeError);
+	v = newtupleobject(2);
+	if (v != NULL) {
+		settupleitem(v, 0, newfloatobject(x));
+		settupleitem(v, 1, newintobject((long)i));
+		if (err_occurred()) {
+			DECREF(v);
+			v = NULL;
+		}
+	}
+	return v;
+}
+
+static object *
+math_ldexp(self, args)
+	object *self;
+	object *args;
+{
+	double x, y;
+	/* Cheat -- allow float as second argument */
+	if (!get2doublearg(args, &x, &y))
+		return NULL;
+	errno = 0;
+	x = ldexp(x, (int)y);
+	if (errno != 0)
+		return err_errno(RuntimeError);
+	else
+		return newfloatobject(x);
+}
+
+static object *
+math_modf(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	double x, y;
+	if (!getdoublearg(args, &x))
+		return NULL;
+	errno = 0;
+	x = modf(x, &y);
+	if (errno != 0)
+		return err_errno(RuntimeError);
+	v = newtupleobject(2);
+	if (v != NULL) {
+		settupleitem(v, 0, newfloatobject(x));
+		settupleitem(v, 1, newfloatobject(y));
+		if (err_occurred()) {
+			DECREF(v);
+			v = NULL;
+		}
+	}
+	return v;
+}
 
 static struct methodlist math_methods[] = {
 	{"acos", math_acos},
@@ -122,16 +187,14 @@ static struct methodlist math_methods[] = {
 	{"exp", math_exp},
 	{"fabs", math_fabs},
 	{"floor", math_floor},
-#if 0
+#ifndef AMOEBA
 	{"fmod", math_fmod},
-	{"frexp", math_freqp},
-	{"ldexp", math_ldexp},
 #endif
+	{"frexp", math_frexp},
+	{"ldexp", math_ldexp},
 	{"log", math_log},
 	{"log10", math_log10},
-#if 0
 	{"modf", math_modf},
-#endif
 	{"pow", math_pow},
 	{"sin", math_sin},
 	{"sinh", math_sinh},
