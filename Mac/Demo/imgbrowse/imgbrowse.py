@@ -49,7 +49,7 @@ def dumppixmap(data):
 def mk16pixmap(w, h, data):
 	"""kludge a pixmap together"""
 	rv = struct.pack("lhhhhhhhlllhhhhlll",
-		id(data),
+		id(data)+12,
 		w*2 + 0x8000,
 		0, 0, h, w,
 		0,
@@ -128,7 +128,7 @@ class imgwindow(FrameWork.Window):
 				currect, QuickDraw.srcCopy, None)
 		self.info()
 		Qd.CopyBits(self.pixmap, self.wid.GetWindowPort().portBits, self.pictrect,
-				currect, QuickDraw.srcCopy, None)
+				currect, QuickDraw.srcCopy+QuickDraw.ditherCopy, None)
 ##		Qd.DrawPicture(self.picture, currect)
 		
 	def fitrect(self):
