@@ -12,6 +12,7 @@ import getopt
 import tokenize
 
 verbose = 0
+filename_only = 0
 
 def errprint(*args):
     sep = ""
@@ -21,13 +22,15 @@ def errprint(*args):
     sys.stderr.write("\n")
 
 def main():
-    global verbose
+    global verbose, filename_only
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "v")
+        opts, args = getopt.getopt(sys.argv[1:], "qv")
     except getopt.error, msg:
         errprint(msg)
         return
     for o, a in opts:
+        if o == '-q':
+            filename_only = filename_only + 1
         if o == '-v':
             verbose = verbose + 1
     if not args:
@@ -85,7 +88,8 @@ def check(file):
             print "offending line:", `line`
             print nag.get_msg()
         else:
-            print file, badline, `line`
+            if filename_only: print file
+            else: print file, badline, `line`
         return
 
     if verbose:
