@@ -780,20 +780,17 @@ class AbstractHTTPHandler(BaseHandler):
         if not host:
             raise URLError('no host given')
 
-        try:
-            h = http_class(host) # will parse host:port
-            if req.has_data():
-                data = req.get_data()
-                h.putrequest('POST', req.get_selector())
-                if not req.headers.has_key('Content-type'):
-                    h.putheader('Content-type',
-                                'application/x-www-form-urlencoded')
-                if not req.headers.has_key('Content-length'):
-                    h.putheader('Content-length', '%d' % len(data))
-            else:
-                h.putrequest('GET', req.get_selector())
-        except socket.error, err:
-            raise URLError(err)
+        h = http_class(host) # will parse host:port
+        if req.has_data():
+            data = req.get_data()
+            h.putrequest('POST', req.get_selector())
+            if not req.headers.has_key('Content-type'):
+                h.putheader('Content-type',
+                            'application/x-www-form-urlencoded')
+            if not req.headers.has_key('Content-length'):
+                h.putheader('Content-length', '%d' % len(data))
+        else:
+            h.putrequest('GET', req.get_selector())
 
         scheme, sel = splittype(req.get_selector())
         sel_host, sel_path = splithost(sel)
@@ -802,7 +799,12 @@ class AbstractHTTPHandler(BaseHandler):
             h.putheader(*args)
         for k, v in req.headers.items():
             h.putheader(k, v)
-        h.endheaders()
+        # httplib will attempt to connect() here.  be prepared
+        # to convert a socket error to a URLError.
+        try:
+            h.endheaders()
+        except socket.error, err:
+            raise URLError(err)
         if req.has_data():
             h.send(data)
 
