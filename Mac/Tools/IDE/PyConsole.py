@@ -10,6 +10,7 @@ import traceback
 import MacOS
 import MacPrefs
 from Carbon import Qd
+import EasyDialogs
 import PyInteractive
 
 if not hasattr(sys, 'ps1'):
@@ -85,10 +86,11 @@ class ConsoleTextWidget(W.EditText):
 	
 	def domenu_save_as(self, *args):
 		import macfs
-		fss, ok = macfs.StandardPutFile('Save console text as:', 'console.txt')
-		if not ok:
+		filename = EasyDialogs.AskFileForSave(message='Save console text as:', 
+			savedFileName='console.txt')
+		if not filename:
 			return
-		f = open(fss.as_pathname(), 'wb')
+		f = open(filename, 'wb')
 		f.write(self.get())
 		f.close()
 		fss.SetCreatorType(W._signature, 'TEXT')
@@ -241,10 +243,11 @@ class OutputTextWidget(W.EditText):
 	def domenu_save_as(self, *args):
 		title = self._parentwindow.gettitle()
 		import macfs
-		fss, ok = macfs.StandardPutFile('Save %s text as:' % title, title + '.txt')
-		if not ok:
+		filename = EasyDialogs.AskFileForSave(message='Save %s text as:' % title, 
+			savedFileName=title + '.txt')
+		if not filename:
 			return
-		f = open(fss.as_pathname(), 'wb')
+		f = open(filename, 'wb')
 		f.write(self.get())
 		f.close()
 		fss.SetCreatorType(W._signature, 'TEXT')

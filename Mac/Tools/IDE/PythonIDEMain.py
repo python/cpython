@@ -9,6 +9,7 @@ import os
 import sys
 import macfs
 import MacOS
+import EasyDialogs
 
 if MacOS.runtimemodel == 'macho':
 	ELIPSES = '...'
@@ -189,8 +190,9 @@ class PythonIDE(Wapplication.Application):
 		Splash.about()
 	
 	def do_setscriptsfolder(self, *args):
-		fss, ok = macfs.GetDirectory("Select Scripts Folder")
-		if ok:
+		fss = EasyDialogs.AskFolder(message="Select Scripts Folder",
+			wanted=macfs.FSSpec)
+		if fss:
 			prefs = self.getprefs()
 			alis = fss.NewAlias()
 			prefs.scriptsfolder = alis.data
@@ -204,9 +206,9 @@ class PythonIDE(Wapplication.Application):
 		ModuleBrowser.ModuleBrowser()
 	
 	def domenu_open(self, *args):
-		fss, ok = macfs.StandardGetFile("TEXT")
-		if ok:
-			self.openscript(fss.as_pathname())
+		filename = EasyDialogs.AskFileForOpen(typeList=("TEXT",))
+		if filename:
+			self.openscript(filename)
 	
 	def domenu_new(self, *args):
 		W.SetCursor('watch')
@@ -344,7 +346,6 @@ class PythonIDE(Wapplication.Application):
 		# This is a cop-out. We should have disabled the menus
 		# if there is no selection, but the can_ methods only seem
 		# to work for Windows. Or not for the Help menu, maybe?
-		import EasyDialogs
 		text = EasyDialogs.AskString("Search documentation for", ok="Search")
 		return text
 		
