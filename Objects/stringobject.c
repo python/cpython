@@ -749,24 +749,27 @@ string_join(PyStringObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:join", &orig))
 		return NULL;
 
-	seq = PySequence_Fast(orig, "");
-	if (seq == NULL) {
+	if (!(seq = PySequence_Fast(orig, ""))) {
 		if (PyErr_ExceptionMatches(PyExc_TypeError))
 			PyErr_Format(PyExc_TypeError,
 				     "sequence expected, %.80s found",
 				     orig->ob_type->tp_name);
 		return NULL;
 	}
-
+	/* From here on out, errors go through finally: for proper
+	 * reference count manipulations.
+	 */
 	seqlen = PySequence_Length(seq);
 	if (seqlen == 1) {
 		item = PySequence_Fast_GET_ITEM(seq, 0);
 		Py_INCREF(item);
+		Py_DECREF(seq);
 		return item;
 	}
 
 	if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
-		return NULL;
+		goto finally;
+
 	p = PyString_AsString(res);
 
 	for (i = 0; i < seqlen; i++) {
@@ -774,8 +777,8 @@ string_join(PyStringObject *self, PyObject *args)
 		if (!PyString_Check(item)){
 			if (PyUnicode_Check(item)) {
 				Py_DECREF(res);
-				return PyUnicode_Join((PyObject *)self, 
-						      seq);
+				Py_DECREF(seq);
+				return PyUnicode_Join((PyObject *)self, seq);
 			}
 			PyErr_Format(PyExc_TypeError,
 			     "sequence item %i: expected string, %.80s found",
@@ -806,7 +809,7 @@ string_join(PyStringObject *self, PyObject *args)
 
   finally:
 	Py_DECREF(seq);
-	Py_DECREF(res);
+	Py_XDECREF(res);
 	return NULL;
 }
 
