@@ -59,10 +59,10 @@ def compile(file, cfile=None, dfile=None):
     try:
         codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
     except SyntaxError, detail:
-        import traceback, sys, string
+        import traceback, sys
         lines = traceback.format_exception_only(SyntaxError, detail)
         for line in lines:
-            sys.stderr.write(string.replace(line, 'File "<string>"',
+            sys.stderr.write(line.replace('File "<string>"',
                                             'File "%s"' % (dfile or file)))
         return
     if not cfile:

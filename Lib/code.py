@@ -6,7 +6,6 @@
 
 
 import sys
-import string
 import traceback
 from codeop import compile_command
 
@@ -260,7 +259,7 @@ class InteractiveConsole(InteractiveInterpreter):
 
         """
         self.buffer.append(line)
-        source = string.join(self.buffer, "\n")
+        source = "\n".join(self.buffer)
         more = self.runsource(source, self.filename)
         if not more:
             self.resetbuffer()
