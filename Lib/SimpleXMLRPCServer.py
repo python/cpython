@@ -306,7 +306,7 @@ class SimpleXMLRPCDispatcher:
             return ""
         else:
             import pydoc
-	    return pydoc.getdoc(method)
+            return pydoc.getdoc(method)
 
     def system_multicall(self, call_list):
         """system.multicall([{'methodName': 'add', 'params': [2, 2]}, ...]) => \
