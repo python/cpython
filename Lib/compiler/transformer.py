@@ -1,16 +1,20 @@
+"""Parse tree transformation module.
+
+Transforms Python source code into an abstract syntax tree (AST)
+defined in the ast module.
+
+The simplest ways to invoke this module are via parse and parseFile.
+parse(buf) -> AST
+parseFile(path) -> AST
+"""
+
 # Copyright 1997-1998 Greg Stein and Bill Tutt
-#
-# transformer.py -- transforms Python parse trees
-#
-# Takes an input parse tree and transforms it into a higher-level parse
-# tree that is a bit more amenable to code generation. Essentially, it
-# simply introduces some additional semantics.
 #
 # Written by Greg Stein (gstein@lyra.org)
 #        and Bill Tutt (rassilon@lima.mudlib.org)
 # February 1997.
 #
-# Support for Node subclasses written by
+# Support for Node subclasses written and other revisions by
 #  Jeremy Hylton (jeremy@cnri.reston.va.us)
 #
 # The output tree has the following nodes:
@@ -83,12 +87,6 @@
 # invert:     node
 #
 
-"""Parse tree transformation module.
-
-Exposes the Transformer class with a number of methods for returning a
-"cleansed AST" instead of the parse tree that the parser exposes.
-"""
-
 import ast
 import parser
 import symbol
@@ -101,6 +99,15 @@ error = 'walker.error'
 
 from consts import CO_VARARGS, CO_VARKEYWORDS
 from consts import OP_ASSIGN, OP_DELETE, OP_APPLY
+
+def parseFile(path):
+    f = open(path)
+    src = f.read()
+    f.close()
+    return parse(src)
+
+def parse(buf):
+    return Transformer().parsesuite(buf)
 
 def asList(nodes):
   l = []
@@ -262,7 +269,7 @@ class Transformer:
     # code for class
     code = self.com_node(nodelist[-1])
 
-    n = Node('classdef', name, bases, doc, code)
+    n = Node('class', name, bases, doc, code)
     n.lineno = nodelist[1][2]
     return n
 
@@ -1191,10 +1198,4 @@ _assign_types = [
   symbol.factor,
   ]
 
-# Local Variables: 
-# mode: python     
-# indent-tabs-mode: nil 
-# py-indent-offset: 2 
-# py-smart-indentation: nil 
-# End: 
 
