@@ -555,7 +555,12 @@ class Wave_write:
 		self._file.seek(curpos, 0)
 		self._datalength = self._datawritten
 
-def open(f, mode):
+def open(f, mode=None):
+	if mode is None:
+		if hasattr(f, 'mode'):
+			mode = f.mode
+		else:
+			mode = 'rb'
 	if mode in ('r', 'rb'):
 		return Wave_read(f)
 	elif mode in ('w', 'wb'):
