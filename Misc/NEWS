@@ -4,7 +4,7 @@ What's New in Python 2.2a2?
 Tools
 
 - The new Tools/scripts/cleanfuture.py can be used to automatically
-  edit out obsolute future statements from Python source code.  See
+  edit out obsolete future statements from Python source code.  See
   the module docstring for details.
 
 Tests
