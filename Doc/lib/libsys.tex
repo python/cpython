@@ -20,16 +20,6 @@ It is always available.
   modules.)
 \end{datadesc}
 
-\begin{datadesc}{check_interval}
-When this variable is set to an integer value, it determines how often
-the interpreter checks for periodic things such as thread switches and
-signal handlers.  The default is 10, meaning the check is performed
-every 10 Python virtual instructions.  Setting this to a large value
-may increase performance for programs using threads.  Setting it to a
-value <= 0 checks every virtual instruction, maximizing responsiveness
-as well as overhead.
-\end{datadesc}
-
 \begin{datadesc}{exc_type}
 \dataline{exc_value}
 \dataline{exc_traceback}
@@ -90,6 +80,16 @@ as well as overhead.
   interpreter.  These are only defined if the interpreter is in
   interactive mode.  Their initial values in this case are
   \code{'>>> '} and \code{'... '}.
+\end{datadesc}
+
+\begin{funcdesc}{setcheckinterval}{interval}
+Set the interpreter's ``check interval''.  This integer value
+determines how often the interpreter checks for periodic things such
+as thread switches and signal handlers.  The default is 10, meaning
+the check is performed every 10 Python virtual instructions.  Setting
+it to a larger value may increase performance for programs using
+threads.  Setting it to a value <= 0 checks every virtual instruction,
+maximizing responsiveness as well as overhead.
 \end{datadesc}
 
 \begin{funcdesc}{settrace}{tracefunc}
