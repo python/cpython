@@ -1,0 +1,149 @@
+\chapter{Appendix: Future statements and nested scopes}
+
+The semantics of Python's static scoping will change in version 2.2 to
+support resolution of unbound local names in enclosing functions'
+namespaces.  The new semantics will be available in Python 2.1 through
+the use of a future statement.  This appendix documents these two
+features for Python 2.1; it will be removed in Python 2.2 and the
+features will be documented in the main sections of this manual.
+
+\section{Future statements}
+\indexii{future}{statement}
+
+A \dfn{future statement} is a directive to the compiler that a
+particular module should be compiled using syntax or semantics that
+will be available in a specified future release of Python.  The future
+statement is intended to ease migration to future versions of Python
+that introduce incompatible changes to the language.  It allows use of
+the new features on a per-module basis before the release in which the
+feature becomes standard.
+
+\begin{verbatim}
+future_statement: "from" "__future__" "import" feature ["as" name]
+                 ("," feature ["as" name])*
+
+feature: identifier
+name: identifier
+\end{verbatim}
+
+A future statement must appear near the top of the module.  The only
+lines that can appear before a future statement are:
+
+\begin{itemize}
+
+\item the module docstring (if any),
+\item comments,
+\item blank lines, and
+\item other future statements.
+
+\end{itemize}
+
+The only feature recognized by Python 2.1 is \samp{nested_scopes}.
+
+A future statement is recognized and treated specially at compile time:
+Changes to the semantics of core constructs are often implemented by
+generating different code.  It may even be the case that a new feature
+introduces new incompatible syntax (such as a new reserved word), in
+which case the compiler may need to parse the module differently.  Such
+decisions cannot be pushed off until runtime.
+
+For any given release, the compiler knows which feature names have been
+defined, and raises a compile-time error if a future statement contains
+a feature not known to it.
+
+The direct runtime semantics are the same as for any import statement:
+there is a standard module \file{__future__.py}, described later, and
+it will be imported in the usual way at the time the future statement
+is executed.
+
+The interesting runtime semantics depend on the specific feature
+enabled by the future statement.
+
+Note that there is nothing special about the statement:
+
+\begin{verbatim}
+import __future__ [as name]
+\end{verbatim}
+
+That is not a future statement; it's an ordinary import statement, with
+no special semantics or syntax restrictions.
+
+Code compiled by an exec statement or calls to the builtin functions
+\function{compile} and \function{execfile} that occur in a module M
+containing a future statement will use the new syntax or semantics
+associated with the future statement.
+
+A future statement typed at an interactive interpreter prompt will
+take effect for the rest of the interpreter session.  If an
+interpreter is started with the \emph{-i} option, is passed a
+script name to execute, and the script includes a future statement, it
+will be in effect in the interactive session started after the script
+is executed.
+
+\section{\module{__future__} ---
+	 Future statement definitions}
+
+\declaremodule{standard}{__future__}
+\modulesynopsis{Future statement definitions}
+
+\file{__future__.py} is a real module, and serves three purposes:
+
+\begin{itemize}
+
+\item To avoid confusing existing tools that analyze import statements
+      and expect to find the modules they're importing.
+
+\item To ensure that future_statements run under releases prior to 2.1
+      at least yield runtime exceptions (the import of
+      \code{__future__} will fail, because there was no module of
+      that name prior to 2.1). 
+
+\item To document when incompatible changes were introduced, and when they
+      will be --- or were --- made mandatory.  This is a form of executable
+      documentation, and can be inspected programatically via importing
+      \code{__future__} and examining its contents.
+
+\end{itemize}
+
+Each statment in \file{__future__.py} is of the form:
+
+\begin{verbatim}
+FeatureName = "_Feature(" OptionalRelease "," MandatoryRelease ")"
+\end{verbatim}
+
+where, normally, OptionalRelease <  MandatoryRelease, and both are
+5-tuples of the same form as \code{sys.version_info}:
+
+\begin{verbatim}
+    (PY_MAJOR_VERSION, # the 2 in 2.1.0a3; an int
+     PY_MINOR_VERSION, # the 1; an int
+     PY_MICRO_VERSION, # the 0; an int
+     PY_RELEASE_LEVEL, # "alpha", "beta", "candidate" or "final"; string
+     PY_RELEASE_SERIAL # the 3; an int
+    )
+\end{verbatim}
+
+OptionalRelease records the first release in which the feature was
+accepted. 
+
+In the case of MandatoryReleases that have not yet occurred,
+MandatoryRelease predicts the release in which the feature will become
+part of the language.
+
+Else MandatoryRelease records when the feature became part of the
+language; in releases at or after that, modules no longer need a
+future statement to use the feature in question, but may continue to
+use such imports. 
+
+MandatoryRelease may also be None, meaning that a planned feature got
+dropped.
+
+Instances of class \class{_Feature} have two corresponding methods,
+\member{getOptionalRelease()} and \member{getMandatoryRelease()}.
+
+No feature line will ever be deleted from \file{__future__.py}.
+
+\section{Nested scopes}
+\indexii{nested}{scopes}
+
+Nested scopes are left as an exercise for the reader.
