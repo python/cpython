@@ -1,5 +1,5 @@
-IDLE 0.4 - 7 April 1999
------------------------
+IDLE 0.5 - February 2000
+------------------------
 
 For news about this release, see the file NEWS.txt.  (For a more
 detailed change log, see the file ChangeLog.)
@@ -13,9 +13,9 @@ IDE for Python.  It has the following features:
 - debugger (not complete, but you can set breakpoints and step)
 - works on Windows and Unix (probably works on Mac too)
 
-The main program is in the file "idle"; on Windows you can use idle.pyw
-to avoid popping up a DOS console.  Any arguments passed are interpreted
-as files that will be opened for editing.
+The main program is in the file "idle"; on Windows you can use
+idle.pyw to avoid popping up a DOS console.  Any arguments passed are
+interpreted as files that will be opened for editing.
 
 IDLE requires Python 1.5.2, so it is currently only usable with the
 Python 1.5.2 distribution (luckily, IDLE is bundled with Python
