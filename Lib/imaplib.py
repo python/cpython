@@ -15,8 +15,9 @@ Public functions:       Internaldate2tuple
 # Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
 # String method conversion by ESR, February 2001.
 # GET/SETACL contributed by Anthony Baxter <anthony@interlink.com.au> April 2001.
+# IMAP4_SSL contributed by Tino Lange <Tino.Lange@isg.de> March 2002.
 
-__version__ = "2.50"
+__version__ = "2.51"
 
 import binascii, re, socket, time, random, sys
 
@@ -979,6 +980,78 @@ class IMAP4:
                 if i >= self._cmd_log_len:
                     i = 0
                 n -= 1
+
+
+
+class IMAP4_SSL(IMAP4):
+
+    """IMAP4 client class over SSL connection
+
+    Instantiate with: IMAP4_SSL([, host[, port[, keyfile[, certfile]]]])
+
+            host - host's name (default: localhost);
+            port - port number (default: standard IMAP4 SSL port).
+            keyfile - PEM formatted file that contains your private key (default: None);
+            certfile - PEM formatted certificate chain file (default: None);
+
+    for more documentation see the docstring of the parent class IMAP4.
+    """
+
+
+    def __init__(self, host = '', port = IMAP4_SSL_PORT, keyfile = None, certfile = None):
+        self.keyfile = keyfile
+        self.certfile = certfile
+        IMAP4.__init__(self, host, port)
+
+
+    def open(self, host, port):
+        """Setup connection to remote server on "host:port".
+        This connection will be used by the routines:
+            read, readline, send, shutdown.
+        """
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect((self.host, self.port))
+        self.sslobj = socket.ssl(self.sock,self.keyfile, self.certfile) 
+
+
+    def read(self, size):
+        """Read 'size' bytes from remote."""
+        return self.sslobj.read(size)
+
+
+    def readline(self):
+        """Read line from remote."""
+        line = ""
+        while 1:
+            char = self.sslobj.read(1)
+            line += char
+            if char == "\n": return line
+
+
+    def send(self, data):
+        """Send data to remote."""
+        self.sslobj.write(data)
+
+
+    def shutdown(self):
+        """Close I/O established in "open"."""
+        self.sock.close()
+
+
+    def socket(self):
+        """Return socket instance used to connect to IMAP4 server.
+
+        socket = <instance>.socket()
+        """
+        return self.sock
+
+
+    def ssl(self):
+        """Return SSLObject instance used to communicate with the IMAP4 server.
+
+        ssl = <instance>.socket.ssl()
+        """
+        return self.sslobj
 
 
 

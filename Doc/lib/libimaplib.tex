@@ -9,16 +9,18 @@
 % Based on HTML documentation by Piers Lauder <piers@staff.cs.usyd.edu.au>;
 % converted by Fred L. Drake, Jr. <fdrake@acm.org>.
 % Revised by ESR, January 2000.
+% Changes for IMAP4_SSL by Tino Lange <Tino.Lange@isg.de>, March 2002 
 
 \indexii{IMAP4}{protocol}
+\indexii{IMAP4_SSL}{protocol}
 
-This module defines a class, \class{IMAP4}, which encapsulates a
-connection to an IMAP4 server and implements a large subset of the
+This module defines two classes, \class{IMAP4} and \class{IMAP4_SSL}, which encapsulate a
+connection to an IMAP4 server and implement a large subset of the
 IMAP4rev1 client protocol as defined in \rfc{2060}. It is backward
 compatible with IMAP4 (\rfc{1730}) servers, but note that the
 \samp{STATUS} command is not supported in IMAP4.
 
-A single class is provided by the \module{imaplib} module:
+Two classes are provided by the \module{imaplib} module, \class{IMAP4} is the base class:
 
 \begin{classdesc}{IMAP4}{\optional{host\optional{, port}}}
 This class implements the actual IMAP4 protocol.  The connection is
@@ -47,6 +49,17 @@ This exception is raised when a writable mailbox has its status changed by the s
 sub-class of \exception{IMAP4.error}.  Some other client now has write permission,
 and the mailbox will need to be re-opened to re-obtain write permission.
 \end{excdesc}
+
+There's also a subclass for secure connections:
+
+\begin{classdesc}{IMAP4_SSL}{\optional{host\optional{, port\optional{, keyfile\optional{, certfile}}}}}
+This is a subclass derived from \class{IMAP4} that connects over an SSL encrypted socket 
+(to use this class you need a socket module that was compiled with SSL support).
+If \var{host} is not specified, \code{''} (the local host) is used.
+If \var{port} is omitted, the standard IMAP4-over-SSL port (993) is used.
+\var{keyfile} and \var{certfile} are also optional - they can contain a PEM formatted
+private key and certificate chain file for the SSL connection. 
+\end{classdesc}
 
 The following utility functions are defined:
 
@@ -308,6 +321,13 @@ msgnums = M.search(None, '(FROM "LDJ")')
 \begin{methoddesc}{xatom}{name\optional{, arg\optional{, ...}}}
   Allow simple extension commands notified by server in
   \samp{CAPABILITY} response.
+\end{methoddesc}
+
+
+Instances of \class{IMAP4_SSL} have just one additional method:
+
+\begin{methoddesc}{ssl}{}
+  Returns SSLObject instance used for the secure connection with the server.
 \end{methoddesc}
 
 
