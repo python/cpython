@@ -28,25 +28,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Include nearly all Python header files */
 
-/* Some systems (well, NT anyway!) require special declarations for
- data items imported from dynamic modules.  Note that this defn is
- only turned on for the modules built as DL modules, not for python
- itself.
-*/
-#define DL_IMPORT( RTYPE ) RTYPE /* Save lots of #else/#if's */
-#ifdef USE_DL_IMPORT
-#ifdef NT
-#undef DL_IMPORT
-#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#endif /* NT */
-#ifdef __BORLANDC__
-#undef DL_IMPORT
-#define DL_IMPORT(RTYPE)  RTYPE __import
-#endif /* BORLANDC */
-#endif /* USE_DL_IMPORT */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
+
+/* config.h may or may not define DL_IMPORT */
+#ifndef DL_IMPORT	/* declarations for DLL import/export */
+#define DL_IMPORT(RTYPE) RTYPE
 #endif
 
 #ifdef SYMANTEC__CFM68K__
@@ -56,6 +44,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 
 #include "myproto.h"
 
@@ -65,6 +56,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "object.h"
 #include "objimpl.h"
+
+#include "pydebug.h"
 
 #include "accessobject.h"
 #include "intobject.h"
@@ -84,12 +77,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "classobject.h"
 #include "fileobject.h"
 #include "cobject.h"
+#include "traceback.h"
 
 #include "errors.h"
 #include "mymalloc.h"
 
 #include "modsupport.h"
 #include "ceval.h"
+#include "pythonrun.h"
+#include "sysmodule.h"
+#include "intrcheck.h"
+#include "import.h"
+#include "bltinmodule.h"
 
 #include "abstract.h"
 
