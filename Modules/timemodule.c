@@ -59,14 +59,18 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef __WATCOMC__
 #include <i86.h>
 #else
-#ifdef _M_IX86
+#ifdef MS_WINDOWS
 #include <windows.h>
 #define timezone _timezone
+#ifndef tzname
 #define tzname _tzname
+#endif
+#ifndef daylight
 #define daylight _daylight
+#endif
 #define altzone _altzone
-#endif
-#endif
+#endif /* MS_WINDOWS */
+#endif /* !__WATCOMC__ */
 
 /* Forward declarations */
 static int floatsleep PROTO((double));
@@ -263,7 +267,7 @@ time_ctime(self, args)
 	char *p;
 	if (!getargs(args, "d", &dt))
 		return NULL;
-	tt = dt;
+	tt = (time_t)dt;
 	p = ctime(&tt);
 	if (p[24] == '\n')
 		p[24] = '\0';
@@ -469,13 +473,13 @@ floatsleep(secs)
 			break;
 	}
 #else /* !MSDOS */
-#ifdef _M_IX86
+#ifdef MS_WINDOWS
 	/* XXX Can't interrupt this sleep */
 	Sleep((int)(secs*1000));
-#else /* _M_IX86 */
+#else /* !MS_WINDOWS */
 	/* XXX Can't interrupt this sleep */
 	sleep((int)secs);
-#endif /* _M_IX86 */
+#endif /* !MS_WINDOWS */
 #endif /* !MSDOS */
 #endif /* !__WATCOMC__ */
 #endif /* !macintosh */
