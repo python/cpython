@@ -1022,7 +1022,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="2"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=46"/>
+					PreprocessorDefinitions="BUILD=54"/>
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Debug|Win32">
@@ -1030,7 +1030,7 @@
 					Name="VCCLCompilerTool"
 					Optimization="0"
 					AdditionalIncludeDirectories=""
-					PreprocessorDefinitions="BUILD=47"/>
+					PreprocessorDefinitions="BUILD=54"/>
 			</FileConfiguration>
 		</File>
 		<File
