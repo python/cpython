@@ -17,13 +17,17 @@ COPYRIGHT	The Python copyright notice
 FAQ		Frequently Asked Questions about Python (and answers)
 Fixcprt.py	Fix the copyright message (a yearly chore :-)
 HISTORY		News from previous releases -- oldest last
+HPUX-NOTES	Notes about dynamic loading under HP-UX
+HYPE		More hype about Python
 Makefile	Used for administrative chores like cleaning up
 NEWS		News for this release
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
 cheatsheet	Quick summary of Python by Ken Mannheimer
+dlMakefile	Generic Makefile for dynamically loadable modules by Ken M.
 fixfuncptrs.sh	Shell script to fix function pointer initializers
+indent.pro	GNU indent profile approximating my C style (by Steen Lumholt)
 python-mode.el	Emacs mode for editing Python programs (thanks, Tim!)
-python.gif	4-level grayscale image of a Python (snake)
+python.gif	4-level grayscale image of a Python snake
 python.man	UNIX man page for the python interpreter
 renumber.py	Script to renumber the sections in the FAQ

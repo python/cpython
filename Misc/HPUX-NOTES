@@ -1,0 +1,21 @@
+Subject: Dynamic Linking under HP-UX
+From: "C. Derek Fields" <derek@gamekeeper.bellcore.com>
+Date: Thu, 08 Sep 94 14:14:07 -0400
+
+There are two important points.  First, the python executable must be
+linked with the -E option to explicitly export all symbols.  This
+works with the vanilla interpreter, but I am not sure how friendly it
+will be when I try to embed the interpreter in a larger application.
+It may be necessary to hand tune the exports using the -e option.
+Anyway, the additional flag to $(CC) is "-Wl,-E", which passes the -E
+flag to the compiler.  My link line (from an actual run) looks like
+this:
+
+cc config.o -Wl,-E libModules.a  ../Python/libPython.a  ../Objects/libObjects.a ../Parser/libParser.a   -lm  -ldld -o python
+
+Second, the dynamic module must be compiled with the +z option to make
+it position independent and then linked into a shared library:
+
+ld -b -o <modName>module.sl <object list>
+
+The -b tells the linker to produce a shared library.
