@@ -570,10 +570,11 @@
   \index{#1@{\$#1}}%                    $
   \index{environment variables!{\$#1}}% $
 }
+\newcommand{\makevar}[1]{#1}
 \let\character=\samp
 
 % constants defined in Python modules or C headers, not language constants:
-\let\constant=\code
+\let\constant=\sectcode
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
