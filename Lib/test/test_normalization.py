@@ -84,5 +84,8 @@ def test_main():
             continue
         assert X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c
 
+    # Check for bug 834676
+    normalize('NFC',u'\ud55c\uae00')
+
 if __name__ == "__main__":
     test_main()
