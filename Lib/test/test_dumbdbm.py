@@ -38,6 +38,13 @@ class DumbDBMTestCase(unittest.TestCase):
         self.read_helper(f)
         f.close()
 
+    def test_close_twice(self):
+        f = dumbdbm.open(_fname)
+        f['a'] = 'b'
+        self.assertEqual(f['a'], 'b')
+        f.close()
+        f.close()
+
     def test_dumbdbm_modification(self):
         self.init_db()
         f = dumbdbm.open(_fname, 'w')
