@@ -4,6 +4,10 @@ import struct
 import string
 import types
 import re
+from Carbon import Qd, Icn, Fm, QuickDraw
+from Carbon.List import GetListPort
+from Carbon.QuickDraw import hilitetransfermode
+
 
 nullid = '\0\0'
 closedid = struct.pack('h', 468)
@@ -44,9 +48,62 @@ def double_repr(key, value, truncvalue = 0,
 	return key + '\t' + value
 
 
-class BrowserWidget(W.List):
+def truncString(s, maxwid):
+	if maxwid < 1:
+		return 1, ""
+	strlen = len(s)
+	strwid = Qd.TextWidth(s, 0, strlen);
+	if strwid <= maxwid:
+		return 0, s
 	
-	LDEF_ID = 471
+	Qd.TextFace(QuickDraw.condense)
+	strwid = Qd.TextWidth(s, 0, strlen)
+	ellipsis = Qd.StringWidth('\xc9')
+	
+	if strwid <= maxwid:
+		Qd.TextFace(0)
+		return 1, s
+	if strwid < 1:
+		Qd.TextFace(0)
+		return 1, ""
+	
+	mid = int(strlen * maxwid / strwid)
+	while 1:
+		if mid <= 0:
+			mid = 0
+			break
+		strwid = Qd.TextWidth(s, 0, mid) + ellipsis
+		strwid2 = Qd.TextWidth(s, 0, mid + 1) + ellipsis
+		if strwid <= maxwid and maxwid <= strwid2:
+			if maxwid == strwid2:
+				mid += 1
+			break
+		if strwid > maxwid:
+			mid -= 1
+			if mid <= 0:
+				mid = 0
+				break
+		elif strwid2 < maxwid:
+			mid += 1
+	Qd.TextFace(0)
+	return 1, s[:mid] + '\xc9'
+
+
+def drawTextCell(text, cellRect, ascent, theList):
+	l, t, r, b = cellRect
+	cellwidth = r - l
+	Qd.MoveTo(l + 2, t + ascent)
+	condense, text = truncString(text, cellwidth - 3)
+	if condense:
+		Qd.TextFace(QuickDraw.condense)
+	Qd.DrawText(text, 0, len(text))
+	Qd.TextFace(0)
+
+
+PICTWIDTH = 16
+
+
+class BrowserWidget(W.CustomList):
 	
 	def __init__(self, possize, object = None, col = 100, closechildren = 0):
 		W.List.__init__(self, possize, callback = self.listhit)
@@ -298,6 +355,89 @@ class BrowserWidget(W.List):
 				Scrap.ClearCurrentScrap()
 				sc = Scrap.GetCurrentScrap()
 				sc.PutScrapFlavor('TEXT', 0, text)
+
+	def listDefDraw(self, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList):
+		self.myDrawCell(0, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList)
+	
+	def listDefHighlight(self, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList):
+		self.myDrawCell(1, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList)
+	
+	def myDrawCell(self, onlyHilite, selected, cellRect, theCell, 
+			dataOffset, dataLen, theList):
+		savedPort = Qd.GetPort()
+		Qd.SetPort(GetListPort(theList))
+		savedClip = Qd.NewRgn()
+		Qd.GetClip(savedClip)
+		Qd.ClipRect(cellRect)
+		savedPenState = Qd.GetPenState()
+		Qd.PenNormal()
+		
+		l, t, r, b = cellRect
+		
+		if not onlyHilite:
+			Qd.EraseRect(cellRect)
+			
+			ascent, descent, leading, size, hm = Fm.FontMetrics()
+			linefeed = ascent + descent + leading
+			
+			if dataLen >= 6:
+				data = theList.LGetCell(dataLen, theCell)
+				iconId, indent, tab = struct.unpack("hhh", data[:6])
+				key, value = data[6:].split("\t", 1)
+				
+				if iconId:
+					theIcon = Icn.GetCIcon(iconId)
+					rect = (0, 0, 16, 16)
+					rect = Qd.OffsetRect(rect, l, t)
+					rect = Qd.OffsetRect(rect, 0, (theList.cellSize[1] - (rect[3] - rect[1])) / 2)
+					Icn.PlotCIcon(rect, theIcon)
+				
+				if len(key) >= 0:
+					cl, ct, cr, cb = cellRect
+					vl, vt, vr, vb = self._viewbounds
+					cl = vl + PICTWIDTH + indent
+					cr = vl + tab
+					if cr > vr:
+						cr = vr
+					if cl < cr:
+						drawTextCell(key, (cl, ct, cr, cb), ascent, theList)
+					cl = vl + tab
+					cr = vr
+					if cl < cr:
+						drawTextCell(value, (cl, ct, cr, cb), ascent, theList)
+			#elif dataLen != 0:
+			#	drawTextCell("???", 3, cellRect, ascent, theList)
+			
+			# draw nice dotted line
+			l, t, r, b = cellRect
+			l = self._viewbounds[0] + tab
+			r = l + 1;
+			if not (theList.cellSize[1] & 0x01) or (t & 0x01):
+				myPat = "\xff\x00\xff\x00\xff\x00\xff\x00"
+			else:
+				myPat = "\x00\xff\x00\xff\x00\xff\x00\xff"
+			Qd.PenPat(myPat)
+			Qd.PenMode(QuickDraw.srcCopy)
+			Qd.PaintRect((l, t, r, b))
+			Qd.PenNormal()
+		
+		if selected or onlyHilite:
+			l, t, r, b = cellRect
+			l = self._viewbounds[0] + PICTWIDTH
+			r = self._viewbounds[2]
+			Qd.PenMode(hilitetransfermode)
+			Qd.PaintRect((l, t, r, b))
+		
+		# restore graphics environment
+		Qd.SetPort(savedPort)
+		Qd.SetClip(savedClip)
+		Qd.DisposeRgn(savedClip)
+		Qd.SetPenState(savedPenState)
+
 
 
 class Browser:
