@@ -1436,6 +1436,8 @@ static PyObject *Res_FSResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
 static PyObject *Res_FSCreateResourceFile(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1473,6 +1475,9 @@ static PyObject *Res_FSCreateResourceFile(PyObject *_self, PyObject *_args)
 	                     PyMac_BuildFSSpec, newSpec);
 	return _res;
 }
+#endif
+
+#if TARGET_API_MAC_CARBON
 
 static PyObject *Res_FSOpenResourceFile(PyObject *_self, PyObject *_args)
 {
@@ -1503,6 +1508,7 @@ static PyObject *Res_FSOpenResourceFile(PyObject *_self, PyObject *_args)
 	                     refNum);
 	return _res;
 }
+#endif
 
 static PyObject *Res_Resource(PyObject *_self, PyObject *_args)
 {
@@ -1671,10 +1677,16 @@ static PyMethodDef Res_methods[] = {
 	 "(FSRef parentRef, Buffer nameLength) -> (FSRef newRef, FSSpec newSpec)"},
 	{"FSResourceFileAlreadyOpen", (PyCFunction)Res_FSResourceFileAlreadyOpen, 1,
 	 "(FSRef resourceFileRef) -> (Boolean _rv, Boolean inChain, SInt16 refNum)"},
+
+#if TARGET_API_MAC_CARBON
 	{"FSCreateResourceFile", (PyCFunction)Res_FSCreateResourceFile, 1,
 	 "(FSRef parentRef, Buffer nameLength, Buffer forkNameLength) -> (OSErr _rv, FSRef newRef, FSSpec newSpec)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
 	{"FSOpenResourceFile", (PyCFunction)Res_FSOpenResourceFile, 1,
 	 "(FSRef ref, Buffer forkNameLength, SignedByte permissions) -> (OSErr _rv, SInt16 refNum)"},
+#endif
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n"},
 	{"Handle", (PyCFunction)Res_Handle, 1,
