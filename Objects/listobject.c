@@ -368,6 +368,13 @@ list_ass_slice(a, ilow, ihigh, v)
 	int ilow, ihigh;
 	object *v;
 {
+	/* Because [X]DECREF can recursively invoke list operations on
+	   this list, we must postpone all [X]DECREF activity until
+	   after the list is back in its canonical shape.  Therefore
+	   we must allocate an additional array, 'recycle', into which
+	   we temporarily copy the items that are deleted from the
+	   list. :-( */
+	object **recycle, **p;
 	object **item;
 	int n; /* Size of replacement list */
 	int d; /* Change in size */
@@ -402,9 +409,13 @@ list_ass_slice(a, ilow, ihigh, v)
 		ihigh = a->ob_size;
 	item = a->ob_item;
 	d = n - (ihigh-ilow);
-	if (d <= 0) { /* Delete -d items; XDECREF ihigh-ilow items */
+	if (ihigh > ilow)
+		p = recycle = NEW(object *, (ihigh-ilow));
+	else
+		p = recycle = NULL;
+	if (d <= 0) { /* Delete -d items; recycle ihigh-ilow items */
 		for (k = ilow; k < ihigh; k++)
-			XDECREF(item[k]);  /* bug: reentrant side effects */
+			*p++ = item[k];
 		if (d < 0) {
 			for (/*k = ihigh*/; k < a->ob_size; k++)
 				item[k+d] = item[k];
@@ -413,7 +424,7 @@ list_ass_slice(a, ilow, ihigh, v)
 			a->ob_item = item;
 		}
 	}
-	else { /* Insert d items; XDECREF ihigh-ilow items */
+	else { /* Insert d items; recycle ihigh-ilow items */
 		RESIZE(item, object *, a->ob_size + d);
 		if (item == NULL) {
 			err_nomem();
@@ -422,7 +433,7 @@ list_ass_slice(a, ilow, ihigh, v)
 		for (k = a->ob_size; --k >= ihigh; )
 			item[k+d] = item[k];
 		for (/*k = ihigh-1*/; k >= ilow; --k)
-			XDECREF(item[k]); /* bug: side effects :-( */
+			*p++ = item[k];
 		a->ob_item = item;
 		a->ob_size += d;
 	}
@@ -430,6 +441,11 @@ list_ass_slice(a, ilow, ihigh, v)
 		object *w = b->ob_item[k];
 		XINCREF(w);
 		item[ilow] = w;
+	}
+	if (recycle) {
+		while (--p >= recycle)
+			XDECREF(*p);
+		DEL(recycle);
 	}
 	return 0;
 #undef b
