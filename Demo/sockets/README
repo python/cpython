@@ -1,7 +1,10 @@
-Contents of this directory:
+This directory contains some demonstrations of the socket module:
 
+broadcast.py	 	Broadcast the time to radio.py.
 echosvr.py		About the simplest TCP server possible.
 finger.py		Client for the 'finger' protocol.
+ftp.py			A simple ftp client.
 telnet.py		Client for the 'telnet' protocol.
 throughput.py		Client and server to measure TCP throughput.
 udpecho.py		Client and server for the UDP echo protocol.
+radio.py		Receive time broadcasts from broadcast.py.
