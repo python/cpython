@@ -47,6 +47,17 @@ class ResourcesScanner(Scanner):
 ##			"SizeResource",		# GetResourceSizeOnDisk
 ##			"MaxSizeRsrc",		# GetMaxResourceSize
 			]
+			
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'RGetResource',
+				'OpenResFile',
+				'CreateResFile',
+				'RsrcZoneInit',
+				'InitResources',
+				'RsrcMapEntry',
+			])]
 
 	def makerepairinstructions(self):
 		return [

@@ -713,6 +713,7 @@ mfs_ResolveAliasFile(self, args)
 	return Py_BuildValue("Oii", newmfssobject(&fss), (int)isfolder, (int)wasaliased);
 }
 
+#ifndef TARGET_API_MAC_CARBON
 static PyObject *
 mfs_StandardGetFile(self, args)
 	PyObject *self;	/* Not used */
@@ -803,6 +804,7 @@ mfs_SetFolder(self, args)
 	LMSetCurDirStore(spec.parID);
 	return (PyObject *)newmfssobject(&ospec);
 }
+#endif
 
 static PyObject *
 mfs_FSSpec(self, args)
@@ -950,11 +952,13 @@ mfs_NewAliasMinimalFromFullPath(self, args)
 
 static struct PyMethodDef mfs_methods[] = {
 	{"ResolveAliasFile",	mfs_ResolveAliasFile,	1},
+#ifndef TARGET_API_MAC_CARBON
 	{"StandardGetFile",		mfs_StandardGetFile,	1},
 	{"PromptGetFile",		mfs_PromptGetFile,		1},
 	{"StandardPutFile",		mfs_StandardPutFile,	1},
 	{"GetDirectory",		mfs_GetDirectory,		1},
 	{"SetFolder",			mfs_SetFolder,			1},
+#endif
 	{"FSSpec",				mfs_FSSpec,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},

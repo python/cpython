@@ -154,7 +154,7 @@ PyObject *DlgObj_New(itself)
 	it = PyObject_NEW(DialogObject, &Dialog_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
-	SetWRefCon(itself, (long)it);
+	SetWRefCon(GetDialogWindow(itself), (long)it);
 	return (PyObject *)it;
 }
 DlgObj_Convert(v, p_itself)
@@ -692,12 +692,12 @@ static PyObject *DlgObj_GetDialogWindow(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	DialogPtr _rv;
+	WindowPtr _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_rv = GetDialogWindow(_self->ob_itself);
 	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, _rv);
+	                     WinObj_New, _rv);
 	return _res;
 }
 
@@ -743,6 +743,8 @@ static PyObject *DlgObj_GetDialogKeyboardFocusItem(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *DlgObj_SetGrafPortOfDialog(_self, _args)
 	DialogObject *_self;
 	PyObject *_args;
@@ -755,6 +757,7 @@ static PyObject *DlgObj_SetGrafPortOfDialog(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyMethodDef DlgObj_methods[] = {
 	{"DrawDialog", (PyCFunction)DlgObj_DrawDialog, 1,
@@ -814,15 +817,18 @@ static PyMethodDef DlgObj_methods[] = {
 	{"GetModalDialogEventMask", (PyCFunction)DlgObj_GetModalDialogEventMask, 1,
 	 "() -> (EventMask outMask)"},
 	{"GetDialogWindow", (PyCFunction)DlgObj_GetDialogWindow, 1,
-	 "() -> (DialogPtr _rv)"},
+	 "() -> (WindowPtr _rv)"},
 	{"GetDialogDefaultItem", (PyCFunction)DlgObj_GetDialogDefaultItem, 1,
 	 "() -> (SInt16 _rv)"},
 	{"GetDialogCancelItem", (PyCFunction)DlgObj_GetDialogCancelItem, 1,
 	 "() -> (SInt16 _rv)"},
 	{"GetDialogKeyboardFocusItem", (PyCFunction)DlgObj_GetDialogKeyboardFocusItem, 1,
 	 "() -> (SInt16 _rv)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetGrafPortOfDialog", (PyCFunction)DlgObj_SetGrafPortOfDialog, 1,
 	 "() -> None"},
+#endif
 	{NULL, NULL, 0}
 };
 

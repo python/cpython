@@ -1,5 +1,6 @@
 f = Function(void, 'OpenDeskAcc',
 	(Str255, 'name', InMode),
+	condition='#ifndef TARGET_API_MAC_CARBON'
 )
 functions.append(f)
 

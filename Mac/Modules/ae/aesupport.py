@@ -126,7 +126,7 @@ AEIdleUPP upp_AEIdleProc;
 
 finalstuff = finalstuff + """
 static pascal OSErr
-GenericEventHandler(AppleEvent *request, AppleEvent *reply, long refcon)
+GenericEventHandler(const AppleEvent *request, AppleEvent *reply, unsigned long refcon)
 {
 	PyObject *handler = (PyObject *)refcon;
 	AEDescObject *requestObject, *replyObject;
@@ -178,6 +178,7 @@ if (strcmp(name, "type") == 0)
 	return PyMac_BuildOSType(self->ob_itself.descriptorType);
 if (strcmp(name, "data") == 0) {
 	PyObject *res;
+#ifndef TARGET_API_MAC_CARBON
 	char state;
 	state = HGetState(self->ob_itself.dataHandle);
 	HLock(self->ob_itself.dataHandle);
@@ -186,6 +187,19 @@ if (strcmp(name, "data") == 0) {
 		GetHandleSize(self->ob_itself.dataHandle));
 	HUnlock(self->ob_itself.dataHandle);
 	HSetState(self->ob_itself.dataHandle, state);
+#else
+	Size size;
+	char *ptr;
+	OSErr err;
+	
+	size = AEGetDescDataSize(&self->ob_itself);
+	if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
+		return NULL;
+	if ( (ptr = PyString_AsString(res)) == NULL )
+		return NULL;
+	if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
+		return PyMac_Error(err);	
+#endif
 	return res;
 }
 if (strcmp(name, "__members__") == 0)

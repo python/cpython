@@ -55,6 +55,12 @@ class MyScanner(Scanner):
 			'GetDialogControlNotificationProc',
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'SetGrafPortOfDialog',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			"AlertStdAlertParamPtr",	# Too much work, for now

@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:AEObjects.h'
+# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:AEObjects.h'
 
 def FOUR_CHAR_CODE(x): return x
 kAEAND = FOUR_CHAR_CODE('AND ')

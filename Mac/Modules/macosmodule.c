@@ -31,6 +31,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Files.h>
 #include <LowMem.h>
 #include <Sound.h>
+#include <Events.h>
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 
@@ -312,14 +313,14 @@ static char getcrtp_doc[] = "Obsolete, use macfs module";
 static PyObject *
 MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 {
-	Str255 name;
+	FSSpec fss;
 	FInfo info;
 	PyObject *creator, *type, *res;
 	OSErr err;
 	
-	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, &name))
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSSpec, &fss))
 		return NULL;
-	if ((err = GetFInfo(name, 0, &info)) != noErr)
+	if ((err = FSpGetFInfo(&fss, &info)) != noErr)
 		return PyErr_Mac(MacOS_Error, err);
 	creator = PyString_FromStringAndSize((char *)&info.fdCreator, 4);
 	type = PyString_FromStringAndSize((char *)&info.fdType, 4);
@@ -334,19 +335,19 @@ static char setcrtp_doc[] = "Obsolete, use macfs module";
 static PyObject *
 MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
 {
-	Str255 name;
+	FSSpec fss;
 	ResType creator, type;
 	FInfo info;
 	OSErr err;
 	
 	if (!PyArg_ParseTuple(args, "O&O&O&",
-			PyMac_GetStr255, &name, PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
+			PyMac_GetFSSpec, &fss, PyMac_GetOSType, &creator, PyMac_GetOSType, &type))
 		return NULL;
-	if ((err = GetFInfo(name, 0, &info)) != noErr)
+	if ((err = FSpGetFInfo(&fss, &info)) != noErr)
 		return PyErr_Mac(MacOS_Error, err);
 	info.fdCreator = creator;
 	info.fdType = type;
-	if ((err = SetFInfo(name, 0, &info)) != noErr)
+	if ((err = FSpSetFInfo(&fss, &info)) != noErr)
 		return PyErr_Mac(MacOS_Error, err);
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -413,6 +414,7 @@ MacOS_SetHighLevelEventHandler(self, args)
 
 #endif /* USE_STDWIN */
 
+#ifndef TARGET_API_MAC_CARBON
 static char accepthle_doc[] = "Get arguments of pending high-level event";
 
 static PyObject *
@@ -447,7 +449,7 @@ MacOS_AcceptHighLevelEvent(self, args)
 	free(buf);
 	return res;
 }
-
+#endif
 static char schedparams_doc[] = "Set/return mainloop interrupt check flag, etc";
 
 /*
@@ -559,7 +561,9 @@ MacOS_splash(PyObject *self, PyObject *args)
 	DialogPtr olddialog;
 	WindowRef theWindow;
 	CGrafPtr thePort;
+#if 0
 	short xpos, ypos, width, height, swidth, sheight;
+#endif
 	
 	if (!PyArg_ParseTuple(args, "|i", &resid))
 		return NULL;
@@ -571,6 +575,7 @@ MacOS_splash(PyObject *self, PyObject *args)
 		if ( curdialog ) {
 			theWindow = GetDialogWindow(curdialog);
 			thePort = GetWindowPort(theWindow);
+#if 0
 			width = thePort->portRect.right - thePort->portRect.left;
 			height = thePort->portRect.bottom - thePort->portRect.top;
 			swidth = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
@@ -579,6 +584,7 @@ MacOS_splash(PyObject *self, PyObject *args)
 			ypos = (sheight-height)/5 + LMGetMBarHeight();
 			MoveWindow(theWindow, xpos, ypos, 0);
 			ShowWindow(theWindow);
+#endif
 			DrawDialog(curdialog);
 		}
 	}
@@ -622,7 +628,7 @@ static char GetTicks_doc[] = "Return number of ticks since bootup";
 static PyObject *
 MacOS_GetTicks(PyObject *self, PyObject *args)
 {
-	return Py_BuildValue("i", (int)LMGetTicks());
+	return Py_BuildValue("i", (int)TickCount());
 }
 
 static char openrf_doc[] = "Open resource fork of a file";
@@ -726,7 +732,9 @@ MacOS_CompactMem(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef MacOS_Methods[] = {
+#ifndef TARGET_API_MAC_CARBON
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
+#endif
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
 	{"SetCreatorAndType",		MacOS_SetCreatorAndType, 1,	setcrtp_doc},
 #ifdef USE_STDWIN

@@ -48,17 +48,17 @@ class MyScanner(Scanner):
 			'kControlBevelButtonCenterPopupGlyphTag', # Constant with funny definition
 			'kControlProgressBarIndeterminateTag', # ditto
 			# The following are unavailable for static 68k (appearance manager)
-			'GetBevelButtonMenuValue',
-			'SetBevelButtonMenuValue',
-			'GetBevelButtonMenuHandle',
-			'SetBevelButtonTransform',
+##			'GetBevelButtonMenuValue',
+##			'SetBevelButtonMenuValue',
+##			'GetBevelButtonMenuHandle',
+##			'SetBevelButtonTransform',
 			'SetBevelButtonGraphicAlignment',
 			'SetBevelButtonTextAlignment',
 			'SetBevelButtonTextPlacement',
-			'SetImageWellTransform',
-			'GetTabContentRect',
-			'SetTabEnabled',
-			'SetDisclosureTriangleLastValue',
+##			'SetImageWellTransform',
+##			'GetTabContentRect',
+##			'SetTabEnabled',
+##			'SetDisclosureTriangleLastValue',
 ## 			# Unavailable in CW Pro 3 libraries
 ## 			'SetUpControlTextColor',
 ## 			# Unavailable in Jack's CW Pro 5.1 libraries
@@ -79,6 +79,13 @@ class MyScanner(Scanner):
 			'GetControlPropertySize',
 			]
 
+	def makegreylist(self):
+		return [
+			('#ifndef TARGET_API_MAC_CARBON', [
+				'GetAuxiliaryControlRecord',
+				'SetControlColor',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',

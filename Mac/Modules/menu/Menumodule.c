@@ -118,6 +118,8 @@ static PyObject *MenuObj_CalcMenuSize(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *MenuObj_CountMItems(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -131,6 +133,7 @@ static PyObject *MenuObj_CountMItems(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *MenuObj_GetMenuFont(_self, _args)
 	MenuObject *_self;
@@ -410,6 +413,8 @@ static PyObject *MenuObj_MacInsertMenu(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *MenuObj_CheckItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -428,6 +433,7 @@ static PyObject *MenuObj_CheckItem(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *MenuObj_SetMenuItemText(_self, _args)
 	MenuObject *_self;
@@ -614,6 +620,8 @@ static PyObject *MenuObj_GetItemStyle(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *MenuObj_DisableItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -629,6 +637,9 @@ static PyObject *MenuObj_DisableItem(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *MenuObj_EnableItem(_self, _args)
 	MenuObject *_self;
@@ -645,6 +656,7 @@ static PyObject *MenuObj_EnableItem(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *MenuObj_SetMenuItemCommandID(_self, _args)
 	MenuObject *_self;
@@ -939,6 +951,8 @@ static PyObject *MenuObj_GetMenuItemRefCon(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *MenuObj_SetMenuItemRefCon2(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
@@ -959,6 +973,9 @@ static PyObject *MenuObj_SetMenuItemRefCon2(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *MenuObj_GetMenuItemRefCon2(_self, _args)
 	MenuObject *_self;
@@ -979,6 +996,7 @@ static PyObject *MenuObj_GetMenuItemRefCon2(_self, _args)
 	                     outRefCon2);
 	return _res;
 }
+#endif
 
 static PyObject *MenuObj_SetMenuItemKeyGlyph(_self, _args)
 	MenuObject *_self;
@@ -1189,8 +1207,11 @@ static PyMethodDef MenuObj_methods[] = {
 	 "() -> None"},
 	{"CalcMenuSize", (PyCFunction)MenuObj_CalcMenuSize, 1,
 	 "() -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"CountMItems", (PyCFunction)MenuObj_CountMItems, 1,
 	 "() -> (short _rv)"},
+#endif
 	{"GetMenuFont", (PyCFunction)MenuObj_GetMenuFont, 1,
 	 "() -> (SInt16 outFontID, UInt16 outFontSize)"},
 	{"SetMenuFont", (PyCFunction)MenuObj_SetMenuFont, 1,
@@ -1221,8 +1242,11 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short top, short left, short popUpItem) -> (long _rv)"},
 	{"MacInsertMenu", (PyCFunction)MenuObj_MacInsertMenu, 1,
 	 "(short beforeID) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"CheckItem", (PyCFunction)MenuObj_CheckItem, 1,
 	 "(short item, Boolean checked) -> None"},
+#endif
 	{"SetMenuItemText", (PyCFunction)MenuObj_SetMenuItemText, 1,
 	 "(short item, Str255 itemString) -> None"},
 	{"GetMenuItemText", (PyCFunction)MenuObj_GetMenuItemText, 1,
@@ -1243,10 +1267,16 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short item, StyleParameter chStyle) -> None"},
 	{"GetItemStyle", (PyCFunction)MenuObj_GetItemStyle, 1,
 	 "(short item) -> (Style chStyle)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"DisableItem", (PyCFunction)MenuObj_DisableItem, 1,
 	 "(short item) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"EnableItem", (PyCFunction)MenuObj_EnableItem, 1,
 	 "(short item) -> None"},
+#endif
 	{"SetMenuItemCommandID", (PyCFunction)MenuObj_SetMenuItemCommandID, 1,
 	 "(SInt16 inItem, UInt32 inCommandID) -> None"},
 	{"GetMenuItemCommandID", (PyCFunction)MenuObj_GetMenuItemCommandID, 1,
@@ -1275,10 +1305,16 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(SInt16 inItem, UInt32 inRefCon) -> None"},
 	{"GetMenuItemRefCon", (PyCFunction)MenuObj_GetMenuItemRefCon, 1,
 	 "(SInt16 inItem) -> (UInt32 outRefCon)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetMenuItemRefCon2", (PyCFunction)MenuObj_SetMenuItemRefCon2, 1,
 	 "(SInt16 inItem, UInt32 inRefCon2) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"GetMenuItemRefCon2", (PyCFunction)MenuObj_GetMenuItemRefCon2, 1,
 	 "(SInt16 inItem) -> (UInt32 outRefCon2)"},
+#endif
 	{"SetMenuItemKeyGlyph", (PyCFunction)MenuObj_SetMenuItemKeyGlyph, 1,
 	 "(SInt16 inItem, SInt16 inGlyph) -> None"},
 	{"GetMenuItemKeyGlyph", (PyCFunction)MenuObj_GetMenuItemKeyGlyph, 1,
@@ -1345,6 +1381,8 @@ PyTypeObject Menu_Type = {
 /* ---------------------- End object type Menu ---------------------- */
 
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Menu_InitProcMenu(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1359,6 +1397,9 @@ static PyObject *Menu_InitProcMenu(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Menu_InitMenus(_self, _args)
 	PyObject *_self;
@@ -1372,6 +1413,7 @@ static PyObject *Menu_InitMenus(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Menu_NewMenu(_self, _args)
 	PyObject *_self;
@@ -1614,6 +1656,8 @@ static PyObject *Menu_ClearMenuBar(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Menu_SetMenuFlash(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1628,6 +1672,7 @@ static PyObject *Menu_SetMenuFlash(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Menu_FlashMenuBar(_self, _args)
 	PyObject *_self;
@@ -1644,6 +1689,8 @@ static PyObject *Menu_FlashMenuBar(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Menu_SystemEdit(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1659,6 +1706,9 @@ static PyObject *Menu_SystemEdit(_self, _args)
 	                     _rv);
 	return _res;
 }
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 
 static PyObject *Menu_SystemMenu(_self, _args)
 	PyObject *_self;
@@ -1674,6 +1724,7 @@ static PyObject *Menu_SystemMenu(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Menu_IsMenuBarVisible(_self, _args)
 	PyObject *_self;
@@ -1764,6 +1815,8 @@ static PyObject *Menu_IsShowContextualMenuClick(_self, _args)
 	return _res;
 }
 
+#ifndef TARGET_API_MAC_CARBON
+
 static PyObject *Menu_OpenDeskAcc(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1778,6 +1831,7 @@ static PyObject *Menu_OpenDeskAcc(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+#endif
 
 static PyObject *Menu_as_Menu(_self, _args)
 	PyObject *_self;
@@ -1840,10 +1894,16 @@ static PyObject *Menu_DrawMenuBar(_self, _args)
 }
 
 static PyMethodDef Menu_methods[] = {
+
+#ifndef TARGET_API_MAC_CARBON
 	{"InitProcMenu", (PyCFunction)Menu_InitProcMenu, 1,
 	 "(short resID) -> None"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"InitMenus", (PyCFunction)Menu_InitMenus, 1,
 	 "() -> None"},
+#endif
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
 	 "(short menuID, Str255 menuTitle) -> (MenuHandle _rv)"},
 	{"MacGetMenu", (PyCFunction)Menu_MacGetMenu, 1,
@@ -1876,14 +1936,23 @@ static PyMethodDef Menu_methods[] = {
 	 "(short menuID) -> None"},
 	{"ClearMenuBar", (PyCFunction)Menu_ClearMenuBar, 1,
 	 "() -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SetMenuFlash", (PyCFunction)Menu_SetMenuFlash, 1,
 	 "(short count) -> None"},
+#endif
 	{"FlashMenuBar", (PyCFunction)Menu_FlashMenuBar, 1,
 	 "(short menuID) -> None"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SystemEdit", (PyCFunction)Menu_SystemEdit, 1,
 	 "(short editCmd) -> (Boolean _rv)"},
+#endif
+
+#ifndef TARGET_API_MAC_CARBON
 	{"SystemMenu", (PyCFunction)Menu_SystemMenu, 1,
 	 "(long menuResult) -> None"},
+#endif
 	{"IsMenuBarVisible", (PyCFunction)Menu_IsMenuBarVisible, 1,
 	 "() -> (Boolean _rv)"},
 	{"ShowMenuBar", (PyCFunction)Menu_ShowMenuBar, 1,
@@ -1896,8 +1965,11 @@ static PyMethodDef Menu_methods[] = {
 	 "() -> None"},
 	{"IsShowContextualMenuClick", (PyCFunction)Menu_IsShowContextualMenuClick, 1,
 	 "(EventRecord inEvent) -> (Boolean _rv)"},
+
+#ifndef TARGET_API_MAC_CARBON
 	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
 	 "(Str255 name) -> None"},
+#endif
 	{"as_Menu", (PyCFunction)Menu_as_Menu, 1,
 	 "(Handle h) -> (MenuHandle _rv)"},
 	{"GetMenu", (PyCFunction)Menu_GetMenu, 1,

@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Controls.h'
+# Generated from 'Macintosh HD:SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Controls.h'
 
 def FOUR_CHAR_CODE(x): return x
 from TextEdit import *
