@@ -93,7 +93,7 @@ conv_atts_using_string(XML_Char **atts)
 static PyObject *
 conv_atts_using_unicode(XML_Char **atts)
 {
-    PyObject *attrs_obj = NULL;
+    PyObject *attrs_obj;
     XML_Char **attrs_p, **attrs_k = NULL;
     int attrs_len;
 
@@ -121,6 +121,8 @@ conv_atts_using_unicode(XML_Char **atts)
             }
             if (PyDict_SetItem(attrs_obj, attr_str, value_str) < 0) {
                 Py_DECREF(attrs_obj);
+                Py_DECREF(attr_str);
+                Py_DECREF(value_str);
                 attrs_obj = NULL;
                 goto finally;
             }
@@ -275,11 +277,11 @@ VOID_HANDLER(ProcessingInstruction,
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
 VOID_HANDLER(CharacterData, 
 	      (void *userData, const XML_Char *data, int len), 
-	      ("(O)", conv_string_len_to_utf8(data,len)))
+	      ("(N)", conv_string_len_to_utf8(data,len)))
 #else
 VOID_HANDLER(CharacterData, 
 	      (void *userData, const XML_Char *data, int len), 
-	      ("(O)", (self->returns_unicode 
+	      ("(N)", (self->returns_unicode 
 		       ? conv_string_len_to_unicode(data,len) 
 		       : conv_string_len_to_utf8(data,len))))
 #endif
@@ -332,21 +334,21 @@ VOID_HANDLER(EndCdataSection,
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
 VOID_HANDLER(Default,
 	      (void *userData,  const XML_Char *s, int len),
-	      ("(O)", conv_string_len_to_utf8(s,len)))
+	      ("(N)", conv_string_len_to_utf8(s,len)))
 
 VOID_HANDLER(DefaultHandlerExpand,
 	      (void *userData,  const XML_Char *s, int len),
-	      ("(O)", conv_string_len_to_utf8(s,len)))
+	      ("(N)", conv_string_len_to_utf8(s,len)))
 #else
 VOID_HANDLER(Default,
 	      (void *userData,  const XML_Char *s, int len),
-	      ("(O)", (self->returns_unicode 
+	      ("(N)", (self->returns_unicode 
 		       ? conv_string_len_to_unicode(s,len) 
 		       : conv_string_len_to_utf8(s,len))))
 
 VOID_HANDLER(DefaultHandlerExpand,
 	      (void *userData,  const XML_Char *s, int len),
-	      ("(O)", (self->returns_unicode 
+	      ("(N)", (self->returns_unicode 
 		       ? conv_string_len_to_unicode(s,len) 
 		       : conv_string_len_to_utf8(s,len))))
 #endif
@@ -368,49 +370,6 @@ RC_HANDLER(int, ExternalEntityRef,
 		rc = PyInt_AsLong(rv);, rc,
 		XML_GetUserData(parser))
 		
-
-
-/* File reading copied from cPickle */
-
-#define UNLESS(E) if (!(E))
-
-/*
-static int 
-read_other(xmlparseobject *self, char **s, int  n) {
-    PyObject *bytes=NULL, *str=NULL, *arg=NULL;
-    int res = -1;
-
-    UNLESS(bytes = PyInt_FromLong(n)) {
-        if (!PyErr_Occurred())
-            PyErr_SetNone(PyExc_EOFError);
-
-        goto finally;
-    }
-
-    UNLESS(arg)
-        UNLESS(arg = PyTuple_New(1))
-            goto finally;
-
-    Py_INCREF(bytes);
-    if (PyTuple_SetItem(arg, 0, bytes) < 0)
-        goto finally;
-
-    UNLESS(str = PyObject_CallObject(self->read, arg))
-        goto finally;
-
-    *s = PyString_AsString(str);
-
-    res = n;
-
-finally:
-     Py_XDECREF(arg);
-     Py_XDECREF(bytes);
-
-     return res;
-}
-
-*/
-
 
 
 /* ---------------------------------------------------------------- */
@@ -443,6 +402,8 @@ xmlparse_Parse(xmlparseobject *self, PyObject *args)
     return PyInt_FromLong(rv);
 }
 
+/* File reading copied from cPickle */
+
 #define BUF_SIZE 2048
 
 static int
@@ -453,23 +414,24 @@ readinst(char *buf, int buf_size, PyObject *meth)
     PyObject *str = NULL;
     int len = -1;
 
-    UNLESS(bytes = PyInt_FromLong(buf_size)) {
+    fprintf(stderr, "calling readinst()\n");
+
+    if ((bytes = PyInt_FromLong(buf_size)) == NULL) {
         if (!PyErr_Occurred())
             PyErr_SetNone(PyExc_EOFError);
         goto finally;
     }
-    UNLESS(arg)
-        UNLESS(arg = PyTuple_New(1))
+    if ((arg = PyTuple_New(1)) == NULL)
         goto finally;
 
-    if (PyTuple_SetItem(arg, 0, bytes) < 0)
+    if (PyTuple_SET_ITEM(arg, 0, bytes) < 0)
         goto finally;
 
-    UNLESS(str = PyObject_CallObject(meth, arg))
+    if ((str = PyObject_CallObject(meth, arg)) == NULL)
         goto finally;
 
     /* XXX what to do if it returns a Unicode string? */
-    UNLESS(PyString_Check(str)) {
+    if (!PyString_Check(str)) {
         PyErr_Format(PyExc_TypeError, 
                      "read() did not return a string object (type=%.400s)",
                      str->ob_type->tp_name);
@@ -485,9 +447,9 @@ readinst(char *buf, int buf_size, PyObject *meth)
         goto finally;
     }
     memcpy(buf, PyString_AsString(str), len);
-    Py_XDECREF(str);
 finally:
     Py_XDECREF(arg);
+    Py_XDECREF(str);
     return len;
 }
 
@@ -511,7 +473,8 @@ xmlparse_ParseFile(xmlparseobject *self, PyObject *args)
     }
     else{
         fp = NULL;
-        UNLESS(readmethod = PyObject_GetAttrString(f, "read")) {
+        readmethod = PyObject_GetAttrString(f, "read");
+        if (readmethod == NULL) {
             PyErr_Clear();
             PyErr_SetString(PyExc_TypeError, 
                             "argument must have 'read' attribute");
