@@ -309,7 +309,7 @@ class build_ext (Command):
 
 
     def get_source_files (self):
-
+        self.check_extension_list()
         filenames = []
 
         # Wouldn't it be neat if we knew the names of header files too...
