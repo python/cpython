@@ -97,7 +97,7 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         try:
             list = os.listdir(path)
         except os.error:
-            self.send_error(404, "No permission to list directory");
+            self.send_error(404, "No permission to list directory")
             return None
         list.sort(lambda a, b: cmp(a.lower(), b.lower()))
         f = StringIO()
