@@ -137,6 +137,8 @@ typedef unsigned short Py_UNICODE;
 #define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
 #define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
 
+#define Py_UNICODE_ISALPHA(ch) iswalpha(ch)
+
 #else
 
 #define Py_UNICODE_ISSPACE(ch) _PyUnicode_IsWhitespace(ch)
@@ -158,12 +160,9 @@ typedef unsigned short Py_UNICODE;
 #define Py_UNICODE_TODIGIT(ch) _PyUnicode_ToDigit(ch)
 #define Py_UNICODE_TONUMERIC(ch) _PyUnicode_ToNumeric(ch)
 
-#endif
+#define Py_UNICODE_ISALPHA(ch) _PyUnicode_IsAlpha(ch)
 
-#define Py_UNICODE_ISALPHA(ch) \
-       (Py_UNICODE_ISLOWER(ch) || \
-        Py_UNICODE_ISUPPER(ch) || \
-        Py_UNICODE_ISTITLE(ch))
+#endif
 
 #define Py_UNICODE_ISALNUM(ch) \
        (Py_UNICODE_ISALPHA(ch) || \
@@ -868,6 +867,10 @@ extern DL_IMPORT(int) _PyUnicode_IsDigit(
     );
 
 extern DL_IMPORT(int) _PyUnicode_IsNumeric(
+    register const Py_UNICODE ch 	/* Unicode character */
+    );
+
+extern DL_IMPORT(int) _PyUnicode_IsAlpha(
     register const Py_UNICODE ch 	/* Unicode character */
     );
 
