@@ -1,9 +1,213 @@
+Thu Jun 23 00:17:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref4.tex: clarify that global name space is almost always
+	containing module's name space
+
+	* Lib/profile.{py,doc}: totally new versions by James Roskind;
+	also edited source & doc to replace 'jprofile' by 'profile'
+
+	* Modules/posixmodule.c: don't mess with SIGPIPE any more -- this
+	is now done in Python/pythonrun.c (saves NT dependency here)
+
+	* Modules/Setup.*: removed all except Setup.in (keeping them up to
+	date was too much of a pain)
+
+	* Python/import.c: don't rely on three-line "dl.h", just copy the
+	contents.
+
+	* Doc/libtypes.tex (subsubsection{More String Operations.}):
+	clarified tuple vs non-tuple argument to format strings.
+
+Wed Jun 22 10:38:22 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libsocket.tex: clarify the meaning of address for those
+	methods that or return addresses.
+
+	* Doc/libtypes.tex (subsubsection{File Objects.}): documented
+	writelines.
+
+Tue Jun 21 15:54:36 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/aifc.py: avoid calling read(0)
+
+	* Lib/sgi/cddp.py: added some functionality (Sjoerd)
+
+	* Include/modsupport.h: added decl for initmodule2().
+
+	* Parser/myreadline.c (my_readline): fixed typo in MPW-specific
+	hack; removed debug fprintfs; added two needed #includes.
+
+Mon Jun 20 23:46:04 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/fileobject.c (file_read): test for negative read count
+	was misplaced.
+
+Mon Jun 18 11:20:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* acconfig.h: changed GETPGRP_HAVE_ARGS into GETPGRP_HAVE_ARG
+
+	* Lib/posixpath.py(walk): don't descend down symbolic links
+
+Thu Jun 16 16:20:12 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/imgformatmodule.c: new module for Jack by Jack
+
+Tue Jun 14 21:07:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Fix bug in 3quoted strings where string ends in quote followed
+	by newline
+
+Mon Jun 13 00:24:06 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/multifile.py: added readlines() and read() methods
+
+	* Lib/mimetools.py: added functions to encode/decode standard MIME
+	Content-transfer-encoding types (as well as uuencode)
+
+	* Lib/mhlib.py: new interface to MH folders and messages
+
+Sun Jun 12 17:38:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/socketmodule.c (sock_listen): fix typo (== instead of =)
+
+Thu Jun  9 23:33:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/compile.c (parsenumber), Python/marshal.c (r_object):
+	replace strtod() by atof()
+
+Tue Jun  7 11:41:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/lib.tex: added warning about lineii, libposixfile and parparse
+
+	* Lib/bdb.py (clear_all_breaks): this was defined with two
+	arguments that weren't used and shouldn't have been there
+
+Mon Jun  6 14:53:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (call_trace): Added call to fast_2_locals so
+	locals_2_fast won't zap locals if the trace function never looks
+	in f.f_locals; don't XDECREF(f->f_trace)
+
+Sun Jun  5 13:18:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/rfc822.py: Accept lines ending in CR LF as well
+
+Fri Jun  3 16:37:58 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/profile.py: unspecified improvements by Sjoerd
+
+	* Lib/{bdb,pwd,stdwin/wdb}.py: remove debugger overhead when
+	continuing with no breakpoints; add set_trace() method and
+	functions to forcibly enter the debugger
+
+	* Python/ceval.c(eval_code): give the name of the local variable
+	when LOAD_FAST or DELETE_FAST fails
+
+	* frameobject.[ch], ceval.c: made fast_2_locals and locals_2_fast
+	global and moved them to frameobject.c.  getattr(f, "f_locals")
+	now calls fast_2_locals and there are fewer other calls to it
+
+Thu Jun  2 13:50:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (call_trace): *p_trace can now be cleared by the
+	trace function!
+
+	* Modules/{{pwd,grp}module.c,Setup.in}: split pwdmodule.c into pwd
+	and grp modules (e.g. OS2 seems to have pwd but not grp)
+
+	* Modules/posixmodule.c: OS/2 mods: add #include <io.h>
+
+	* configure.in: test for existence of link, chown, setuid, setgid;
+	use std macros for output; require autoconf 1.8
+
+	* Python/sigcheck.c: sigcheck() for use without signalmodule.c
+
+	* Modules/signalmodule.c: added thread compatibility (only main
+	thread uses signals); much improved efficiency; intrcheck()
+	doesn't call sigcheck() but only tests and clears the SIGINT
+	tripped flag.
+
+	* Lots of places: replace intrcheck() by sigcheck() and remove
+	following err_set(KeyboardInterrupt).
+
+Wed Jun  1 11:33:34 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/regexmodule.c (reg_dealloc): remove bogus XDEL's.
+
+Tue May 31 11:22:47 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/intrcheck.c: removed sigcheck()
+
+	* Python/structmember.c (setmember): test for NULL value
+
+	* frameobject, Python/ceval.c (eval_code): moved trace variable to
+	frame object so debugging can be switched on later
+
+Mon May 23 14:44:46 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Modules/newmodule.c: new module, create empty new objects (by
+	Tommy)
+
+Fri May 20 09:46:50 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/Makefile: add DVIPS variable with default "dvips -f"
+
+	* Parser/myreadline.c (my_fgets): Fix position of #endif EINTR
+
+Wed May 18 00:21:05 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/lib.tex: added libfcntl and libposixfile (by Jaap V)
+
+	* Objects/funcobject.c (func_compare): take argcount and argdefs
+	into account
+
+Wed May 17 00:00:00 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/import.c: bump MAGIC because of changes below
+
+	* Python/{ceval,compile}.c, Include/frameobject.h: changes to code
+	objects -- consts/names are tuples, RESERVE_LOCALS instruction
+	gets tuple of names instead of dictionary -- so code objects are
+	immutable and thus code and function objects are hashable
+
+	* Objects/listobject.c, Include/listobject.h: added listtuple() --
+	convert list to tuple
+
+Tue May 17 15:40:12 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (getframe): cast current_frame to (object *)
+
+	* Lib/ftplib.py (login): default user='' is translated explicitly
+	to 'anonymous'
+
+Wed May 11 10:29:22 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Parser/tokenizer.c (tok_nextc): fix inf loop when file does not
+	end in newline
+
+	* Modules/sybasemodule.c: new, interface to sybase (John Redford)
+
+	* Modules/signalmodule.c: new, catch unix signals (Lance)
+
+	* Parser/intrcheck.c, Python/ceval.c, Include/ceval.h,
+	Python/pythonrun.c: prepare for signalmodule.c; add sigcheck()
+	interface to intrcheck.c, add getframe() interface to ceval.c;
+	don't override signal handlers in pythonrun.c
+
+Tue May 10 09:01:06 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/import.c (get_module): print dlopen debug message only of
+	verbose
+
 Mon May  9 10:37:48 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* acconfig.h: added _POSIX_THREADS define
 
 	* configure.in: test for -lpthreads; add directory argument to
 	--with-thread to LIBS as -L option
+
+	* Python/thread.c: split in per-system files (thread.c includes
+	thread_foobar.h for foobar threads)
 
 	* Objects/stringobject.c (formatstring): don't DECREF result of
 	strobject() before using it
@@ -24,7 +228,7 @@ Fri May  6 11:25:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 Thu May  5 12:33:31 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
-	* Modules/{cryptmodule.c,Setup.*}: new crypt(3) interface (Steve M)
+	* Modules/{cryptmodule.c,Setup.in}: new crypt(3) interface (Steve M)
 
 	* Python/bltinmodule.c, Include/bltinmodule.h: new fn setbuiltin()
 	to set a built-in variable
