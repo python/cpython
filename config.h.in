@@ -392,6 +392,9 @@
 /* Define if you have the hypot function.  */
 #undef HAVE_HYPOT
 
+/* Define if you have the inet_pton function.  */
+#undef HAVE_INET_PTON
+
 /* Define if you have the kill function.  */
 #undef HAVE_KILL
 

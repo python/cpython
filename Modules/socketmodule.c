@@ -208,6 +208,11 @@ Socket methods:
    in those files, though, which will never compile on Windows. */
 #ifndef MS_WINDOWS
 
+#ifndef HAVE_INET_PTON
+int inet_pton (int af, const char *src, void *dst);
+char *inet_ntop(int af, void *src, char *dst, socklen_t size);
+#endif
+
 /* I know this is a bad practice, but it is the easiest... */
 #ifndef HAVE_GETADDRINFO
 #include "getaddrinfo.c"
@@ -2943,3 +2948,39 @@ init_socket(void)
 	gethostbyname_lock = PyThread_allocate_lock();
 #endif
 }
+
+/* Simplistic emulation code for inet_pton that only works for IPv4 */
+#ifndef HAVE_INET_PTON
+int my_inet_pton (int af, char *src, void *dst)
+{
+	if(af == AF_INET){
+		long packed_addr;
+#ifdef USE_GUSI1
+		packed_addr = (long)inet_addr(src).s_addr;
+#else
+		packed_addr = inet_addr(src);
+#endif
+		if (packed_addr == INADDR_NONE)
+			return 0;
+		memcpy(dst, &packed_addr, 4);
+		return 1;
+	}
+	/* Should set errno to EAFNOSUPPORT */
+	return -1;
+}
+
+char *
+my_inet_ntop(int af, void *src, char *dst, socklen_t size)
+{
+	if (af == AF_INET) {
+		struct in_addr packed_addr;
+		if (size < 16)
+			/* Should set errno to ENOSPC. */
+			return NULL;
+		memcpy(&packed_addr, src, sizeof(packed_addr));
+		return strncpy(dst, inet_ntoa(packed_addr), size);
+	}
+	/* Should set errno to EAFNOSUPPORT */
+	return NULL;
+}
+#endif
