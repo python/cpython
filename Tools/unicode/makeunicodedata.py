@@ -223,15 +223,21 @@ def makeunicodetype(unicode, trace):
                 flags |= UPPER_MASK
             # use delta predictor for upper/lower/title
             if record[12]:
-                upper = (int(record[12], 16) - char) & 0xffff
+                upper = int(record[12], 16) - char
+                assert -32768 <= upper <= 32767
+                upper = upper & 0xffff
             else:
                 upper = 0
             if record[13]:
-                lower = (int(record[13], 16) - char) & 0xffff
+                lower = int(record[13], 16) - char
+                assert -32768 <= lower <= 32767
+                lower = lower & 0xffff
             else:
                 lower = 0
             if record[14]:
-                title = (int(record[14], 16) - char) & 0xffff
+                title = int(record[14], 16) - char
+                assert -32768 <= lower <= 32767
+                title = title & 0xffff
             else:
                 title = 0
             # decimal digit, integer digit
@@ -322,6 +328,8 @@ def makeunicodename(unicode, trace):
     wordlist = words.items()
 
     # sort on falling frequency
+    # XXX: different Python versions produce a different order
+    # for words with equal frequency
     wordlist.sort(lambda a, b: len(b[1])-len(a[1]))
 
     # figure out how many phrasebook escapes we need
