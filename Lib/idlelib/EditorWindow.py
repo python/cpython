@@ -259,9 +259,6 @@ class EditorWindow:
 
     def postwindowsmenu(self):
         # Only called when Windows menu exists
-        # XXX Actually, this Just-In-Time updating interferes badly
-        # XXX with the tear-off feature.  It would be better to update
-        # XXX all Windows menus whenever the list of windows changes.
         menu = self.menudict['windows']
         end = menu.index("end")
         if end is None:
