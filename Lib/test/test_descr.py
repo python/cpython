@@ -1092,6 +1092,37 @@ def getsets():
 ##    C.x.__set__(a)
 ##    verify(not hasattr(a, "x"))
 
+def supers():
+    if verify: print "Testing super..."
+
+    class A(object):
+        def meth(self, a):
+            return "A(%r)" % a
+
+    verify(A().meth(1) == "A(1)")
+
+    class B(A):
+        def __init__(self):
+            self.__super = super(B, self)
+        def meth(self, a):
+            return "B(%r)" % a + self.__super.meth(a)
+
+    verify(B().meth(2) == "B(2)A(2)")
+
+    class C(A):
+        __dynamic__ = 1
+        def meth(self, a):
+            return "C(%r)" % a + self.__super.meth(a)
+    C._C__super = super(C)
+
+    verify(C().meth(3) == "C(3)A(3)")
+
+    class D(C, B):
+        def meth(self, a):
+            return "D(%r)" % a + super(D, self).meth(a)
+
+    verify (D().meth(4) == "D(4)C(4)B(4)A(4)")
+
 def all():
     lists()
     dicts()
@@ -1122,6 +1153,7 @@ def all():
     specials()
     weakrefs()
     getsets()
+    supers()
 
 all()
 
