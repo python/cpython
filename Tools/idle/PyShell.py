@@ -20,6 +20,7 @@ class PyShellEditorWindow(MultiEditorWindow):
       
     def fixedwindowsmenu(self, wmenu):
         wmenu.add_command(label="Python Shell", command=self.flist.open_shell)
+        wmenu.add_separator()
 
 
 class PyShellFileList(FileList):
@@ -138,12 +139,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
             if key[:1] + key[-1:] != "<>":
                 del c[key]
 
+    debugger = None
+    
+    def setdebugger(self, debugger):
+        self.debugger = debugger
+    
+    def getdebugger(self):
+        return self.debugger
+
     def runcode(self, code):
         # Override base class method
+        debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
             try:
-                exec code in self.locals
+                if debugger:
+                    debugger.run(code, self.locals)
+                else:
+                    exec code in self.locals
             except SystemExit:
                 if tkMessageBox.askyesno(
                     "Exit?",
@@ -200,6 +213,7 @@ class PyShell(PyShellEditorWindow):
         text.bind("<<end-of-file>>", self.eof_callback)
         text.bind("<<goto-traceback-line>>", self.goto_traceback_line)
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
+        text.bind("<<toggle-debugger>>", self.toggle_debugger)
 
         sys.stdout = PseudoFile(self, "stdout")
         sys.stderr = PseudoFile(self, "stderr")
@@ -229,6 +243,28 @@ class PyShell(PyShellEditorWindow):
     executing = 0
     canceled = 0
     endoffile = 0
+    
+    def toggle_debugger(self, event=None):
+        if self.executing:
+            tkMessageBox.showerror("Don't debug now",
+                "You can only toggle the debugger when idle",
+                master=self.text)
+            return "break"
+        db = self.interp.getdebugger()
+        if db:
+            db.close()
+            self.resetoutput()
+            self.console.write("[DEBUG OFF]\n")
+            sys.ps1 = ">>> "
+            self.showprompt()
+            self.interp.setdebugger(None)
+        else:
+            import Debugger
+            self.interp.setdebugger(Debugger.Debugger(self))
+            sys.ps1 = "[DEBUG ON]>>> "
+            self.showprompt()
+            self.top.tkraise()
+            self.text.focus_set()
 
     def beginexecuting(self):
         # Helper for ModifiedInterpreter
