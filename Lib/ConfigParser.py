@@ -286,6 +286,42 @@ class ConfigParser:
     def optionxform(self, optionstr):
         return string.lower(optionstr)
 
+    def has_option(self, section, option):
+        """Check for the existence of a given option in a given section."""
+        if not section or section == "DEFAULT":
+            return self.__defaults.has_key(option)
+        elif not self.has_section(section):
+            return 0
+        else:
+            return self.__sections[section].has_key(option)
+
+    def set(self, section, option, value):
+        """Set an option."""
+        if not section or section == "DEFAULT":
+            sectdict = self.__defaults
+        else:
+            try:
+                sectdict = self.__sections[section]
+            except KeyError:
+                raise NoSectionError(section)
+        sectdict[option] = value
+
+    def write(self, fp):
+        """Write an .ini-format representation of the configuration state."""
+        if self.__defaults:
+            fp.write("[DEFAULT]\n")
+            for key in self.__defaults.keys():
+                fp.write(key + " = " + self.__defaults[key] + "\n")
+            fp.write("\n")
+        for section in self.sections():
+            fp.write("[" + section + "]\n")
+            sectdict = self.__sections[section]
+            for key in sectdict.keys():
+                if key == "__name__":
+                    continue
+                fp.write(key + " = " + str(sectdict[key]) + "\n")
+            fp.write("\n")
+
     #
     # Regular expressions for parsing section headers and options.  Note a
     # slight semantic change from the previous version, because of the use
