@@ -2212,6 +2212,12 @@ all_ins(d)
 #ifdef O_TRUNC
         if (ins(d, "O_TRUNC", (long)O_TRUNC)) return -1;
 #endif
+#ifdef O_BINARY
+        if (ins(d, "O_BINARY", (long)O_BINARY)) return -1;
+#endif
+#ifdef O_TEXT
+        if (ins(d, "O_TEXT", (long)O_TEXT)) return -1;
+#endif
         return 0;
 }
 
