@@ -2710,16 +2710,19 @@ socket_inet_aton(PyObject *self, PyObject *args)
 #ifndef INADDR_NONE
 #define INADDR_NONE (-1)
 #endif
-
-	/* Have to use inet_addr() instead */
-	char *ip_addr;
 #ifdef HAVE_INET_ATON
 	struct in_addr buf;
+#else
+	/* Have to use inet_addr() instead */
+	unsigned long packed_addr;
+#endif
+	char *ip_addr;
 
-	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr)) {
+	if (!PyArg_ParseTuple(args, "s:inet_aton", &ip_addr))
 		return NULL;
-	}
 
+
+#ifdef HAVE_INET_ATON
 	if (inet_aton(ip_addr, &buf))
 		return PyString_FromStringAndSize((char *)(&buf),
 						  sizeof(buf));
@@ -2728,11 +2731,9 @@ socket_inet_aton(PyObject *self, PyObject *args)
 			"illegal IP address string passed to inet_aton");
 	return NULL;
 
-#else /* In case you don't have inet_aton() */
+#else /* ! HAVE_INET_ATON */
 	/* XXX Problem here: inet_aton('255.255.255.255') raises
 	   an exception while it should be a valid address. */
-	unsigned long packed_addr;
-
 	packed_addr = inet_addr(ip_addr);
 
 	if (packed_addr == INADDR_NONE) {	/* invalid address */
@@ -2740,7 +2741,6 @@ socket_inet_aton(PyObject *self, PyObject *args)
 			"illegal IP address string passed to inet_aton");
 		return NULL;
 	}
-
 	return PyString_FromStringAndSize((char *) &packed_addr,
 					  sizeof(packed_addr));
 #endif
