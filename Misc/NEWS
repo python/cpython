@@ -1,6 +1,15 @@
 What's Fixed in Python 2.0.1
 ============================
 
+- A few references to Python 2.1 in the LICENSE were changed to 2.0.1.
+
+- Bogus indentation in Lib/statcache.py was fixed.
+
+- A few small nits in the documentation were fixed.
+
+What's Fixed in Python 2.0.1c1
+==============================
+
 Critical Patches (from MoinMoin)
 
 - Core dumps in _tkinter
