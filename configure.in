@@ -5,41 +5,46 @@ AC_INIT(Include/object.h)
 AC_CONFIG_HEADER(config.h)
 
 # NEXTSTEP stuff
-AC_MSG_CHECKING(for --with-next-archs)
-AC_ARG_WITH(next-archs,
- [--with-next-archs='arch1 arch2 ..'   build MAB binary], [
-	if test -n "$withval"; then
-		ac_sys_cpu=_`/usr/lib/arch_tool -choose_obj_dir $withval`
-		ac_arch_flags=`/usr/lib/arch_tool -archify_list $withval`
-	else
-		ac_sys_cpu=_`arch`
+if test -f /usr/lib/NextStep/software_version; then
+
+	AC_MSG_CHECKING(for --with-next-archs)
+	AC_ARG_WITH(next-archs,
+	 [--with-next-archs='arch1 arch2 ..'   build MAB binary], [
+		if test -n "$withval"; then
+			ac_arch_flags=`/usr/lib/arch_tool -archify_list $withval`
+        	        # GCC does not currently support multi archs on the NeXT
+                	with_gcc=no
+		fi
+		AC_MSG_RESULT($with_next_archs)
+	], [AC_MSG_RESULT(none: using `arch`)])
+	
+	if test -z "$MACHDEP"
+	then
+		set X `hostinfo | grep 'NeXT Mach.*:' | \
+ 			sed -e 's/://' -e 's/\./_/'` && \
+			ac_sys_system=next && ac_sys_release=$4
+
+		MACHDEP="$ac_sys_system$ac_sys_release"
 	fi
-], [])
-AC_MSG_RESULT($with_next_archs)
+fi
 
 # Set name for machine-dependent library files
 AC_SUBST(MACHDEP)
 AC_MSG_CHECKING(MACHDEP)
 if test -z "$MACHDEP"
 then
-	if test -f /usr/lib/NextStep/software_version; then
-		set X `hostinfo | grep 'NeXT Mach.*:' | \
-			sed -e 's/://' -e 's/\./_/'` && \
-		ac_sys_system=next && ac_sys_release=$4
-		MACHDEP="$ac_sys_system$ac_sys_release$ac_sys_cpu"
+	ac_sys_system=`uname -s`
+	if test "$ac_sys_system" = "AIX" ; then
+		ac_sys_release=`uname -v`
 	else
-		ac_sys_system=`uname -s`
-		if test "$ac_sys_system" = "AIX" ; then
-			ac_sys_release=`uname -v`
-		else
-			ac_sys_release=`uname -r`
-		fi
-		ac_md_system=`echo $ac_sys_system |
-				   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
-		ac_md_release=`echo $ac_sys_release |
-				   tr -d '[/ ]' | sed 's/\..*//'`
-		MACHDEP="$ac_md_system$ac_md_release"
+		ac_sys_release=`uname -r`
 	fi
+	ac_md_system=`echo $ac_sys_system |
+			   tr -d '[/ ]' | tr '[[A-Z]]' '[[a-z]]'`
+	ac_md_release=`echo $ac_sys_release |
+			   tr -d '[/ ]' | sed 's/\..*//'`
+	MACHDEP="$ac_md_system$ac_md_release"
+
 	case MACHDEP in
 	'')	MACHDEP=unknown;;
 	esac
@@ -94,7 +99,6 @@ AC_SUBST(OPT)
 if test -z "$OPT"
 then
 	case $ac_sys_system in
-	NeXT|next) OPT="-g -Wall -O3 -fomit-frame-pointer";;
 	*)	OPT="-O";;
 	esac
 fi
@@ -156,9 +160,8 @@ AC_MSG_CHECKING(SO)
 if test -z "$SO"
 then
 	case $ac_sys_system in
-	hp*|HP*) SO=.sl;;
-	NeXT|next) SO=.a;; # no shared libs on NeXT 3.3 and less
-	*)	SO=.so;;
+	hp*|HP*)   SO=.sl;;
+	*)	   SO=.so;;
 	esac
 fi
 AC_MSG_RESULT($SO)
@@ -175,9 +178,9 @@ then
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
+	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
 	Linux*) LDSHARED="gcc -shared";;
 	FreeBSD*) LDSHARED="ld -Bshareable";;
-	NeXT|next/3*) LDSHARED="ld -u libsys_s";;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
 	esac
@@ -208,6 +211,7 @@ then
 	AIX*)	LINKFORSHARED="-Wl,-bE:python.exp";;
 	hp*|HP*) LINKFORSHARED="-Wl,-E";;
 	Linux*) LINKFORSHARED="-rdynamic";;
+	next) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	esac
 fi
@@ -443,7 +447,10 @@ AC_CHECK_LIB(ieee, __fpu_control)
 
 # check for --with-libm=...
 AC_SUBST(LIBM)
-LIBM=-lm
+case $ac_sys_system in
+next) ;;
+*) LIBM=-lm
+esac
 AC_ARG_WITH(libm, [--with-libm=STRING        math library], [
 if test "$withval" != yes
 then LIBM=$withval
