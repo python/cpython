@@ -602,22 +602,20 @@ class ReferencesTestCase(TestBase):
         thresholds = gc.get_threshold()
         gc.set_threshold(1, 1, 1)
         gc.collect()
-        class A:
-            pass
 
         def callback(*args):
             pass
 
-        referenced = A()
+        referenced = C()
 
-        a = A()
+        a = C()
         a.a = a
         a.wr = makeref(referenced)
 
         try:
             # now make sure the object and the ref get labeled as
             # cyclic trash:
-            a = A()
+            a = C()
             a.wrc = weakref.ref(referenced, callback)
 
         finally:
