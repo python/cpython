@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Windows.h'
+# Generated from 'Moes:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Windows.h'
 
 kWindowDefProcType = 'WDEF'
 kStandardWindowDefinition = 0
