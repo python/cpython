@@ -219,11 +219,6 @@ Py_Finalize(void)
 	/* Disable signal handling */
 	PyOS_FiniInterrupts();
 
-#ifdef Py_USING_UNICODE
-	/* Cleanup Unicode implementation */
-	_PyUnicode_Fini();
-#endif
-
 	/* Cleanup Codec registry */
 	_PyCodecRegistry_Fini();
 
@@ -267,6 +262,11 @@ Py_Finalize(void)
 	PyString_Fini();
 	PyInt_Fini();
 	PyFloat_Fini();
+
+#ifdef Py_USING_UNICODE
+	/* Cleanup Unicode implementation */
+	_PyUnicode_Fini();
+#endif
 
 	/* XXX Still allocated:
 	   - various static ad-hoc pointers to interned strings
