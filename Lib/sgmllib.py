@@ -36,7 +36,7 @@ commentopen = re.compile('<!--')
 commentclose = re.compile(r'--\s*>')
 tagfind = re.compile('[a-zA-Z][-_.a-zA-Z0-9]*')
 attrfind = re.compile(
-    r'\s*([a-zA-Z_][-.a-zA-Z_0-9]*)(\s*=\s*'
+    r'\s*([a-zA-Z_][-:.a-zA-Z_0-9]*)(\s*=\s*'
     r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:;+*%?!&$\(\)_#=~\'"]*))?')
 
 declname = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*')
