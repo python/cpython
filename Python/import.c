@@ -38,6 +38,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 #include "osdefs.h"
 
+extern int verbose; /* Defined in pythonmain.c */
+
 #ifdef DEBUG
 #define D(x) x
 #else
@@ -186,6 +188,10 @@ get_module(m, name, m_ret)
 				D(fprintf(stderr, "dl_loadmod failed\n"));
 			}
 			else {
+				if (verbose)
+					fprintf(stderr,
+				"import %s # dynamically loaded from \"%s\"\n",
+						name, namebuf);
 				(*p)();
 				*m_ret = m = dictlookup(modules, name);
 				if (m == NULL) {
@@ -234,10 +240,25 @@ get_module(m, name, m_ret)
 				co = (codeobject *)v;
 		}
 		fclose(fpc);
+		if (verbose) {
+			if (co != NULL)
+				fprintf(stderr,
+				"import %s # precompiled from \"%s\"\n",
+					name, namebuf);
+			else
+				fprintf(stderr,
+					"# invalid precompiled file \"%s\"\n",
+					namebuf);
+		}
 	}
 	namebuf[namelen] = '\0';
-	if (co == NULL)
+	if (co == NULL) {
+		if (verbose)
+			fprintf(stderr,
+				"import %s # from \"%s\"\n",
+				name, namebuf);
 		err = parse_file(fp, namebuf, file_input, &n);
+	}
 	else
 		err = E_DONE;
 	fclose(fp);
@@ -307,7 +328,8 @@ import_module(name)
 	if ((m = dictlookup(modules, name)) == NULL) {
 		if (init_builtin(name)) {
 			if ((m = dictlookup(modules, name)) == NULL)
-				err_setstr(SystemError, "builtin module missing");
+				err_setstr(SystemError,
+					   "builtin module missing");
 		}
 		else {
 			m = load_module(name);
@@ -385,6 +407,9 @@ init_builtin(name)
 	int i;
 	for (i = 0; inittab[i].name != NULL; i++) {
 		if (strcmp(name, inittab[i].name) == 0) {
+			if (verbose)
+				fprintf(stderr, "import %s # builtin\n",
+					name);
 			(*inittab[i].initfunc)();
 			return 1;
 		}
