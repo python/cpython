@@ -9,15 +9,19 @@ from scantools import Scanner
 LONG = "QuickTime"
 SHORT = "qt"
 HEADERFILES= (
+#	"Components.h"  -- In Carbon.Cm
 	"Movies.h", 
 	"ImageCompression.h", 
 	"QuickTimeComponents.h",
 #	"ImageCodec.h"  -- seems not too useful, and difficult.
+#	"IsochronousDataHandlers.h" -- Is this useful?
 	"MediaHandlers.h",
 #	"QTML.h", -- Windows only, needs separate module
 #	"QuickTimeStreaming.h", -- Difficult
 #	"QTStreamingComponents.h", -- Needs QTStreaming
 	"QuickTimeMusic.h",
+#	"QuickTimeVR.h", -- Not done yet
+#	"Sound.h", -- In Carbon.Snd
 	)
 OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", 
 	"IdleManager", "SGOutput")
