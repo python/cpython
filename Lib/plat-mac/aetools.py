@@ -83,7 +83,7 @@ def unpackevent(ae, formodulename=""):
 			desc = ae.AEGetAttributeDesc(key, '****')
 		except (AE.Error, MacOS.Error), msg:
 			if msg[0] != -1701 and msg[0] != -1704:
-				raise sys.exc_type, sys.exc_value
+				raise
 			continue
 		attributes[key] = unpack(desc, formodulename)
 	return parameters, attributes
