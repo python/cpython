@@ -42,6 +42,3 @@ f = Function(void, 'GetKeys',
 )
 functions.append(f)
 
-f = Function(long, 'TickCount',
-)
-functions.append(f)

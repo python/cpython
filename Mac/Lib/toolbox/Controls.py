@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Controls.h'
+
 pushButProc = 0
 checkBoxProc = 1
 radioButProc = 2

@@ -240,3 +240,4 @@ f = Function(void, 'DelMCEntries',
     (short, 'menuItem', InMode),
 )
 functions.append(f)
+

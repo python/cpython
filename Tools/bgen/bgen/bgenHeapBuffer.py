@@ -20,17 +20,19 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
 		Output("%s *%s__out__;", self.datatype, name)
 
 	def getargsCheck(self, name):
-		Output("if ((%s__out__ = malloc(%s__len__)) == NULL)", name, name)
+		Output("if ((%s__out__ = malloc(%s__in_len__)) == NULL)", name, name)
 		OutLbrace()
 		Output('PyErr_NoMemory();')
 		Output("goto %s__error__;", name)
 		OutRbrace()
+		Output("%s__len__ = %s__in_len__;", name, name)
 
 	def passOutput(self, name):
-		return "%s__in__, %s__out__, %s__len__" % (name, name, name)
+		return "%s__in__, %s__out__, (%s)%s__len__" % \
+			(name, name, self.sizetype, name)
 
 	def mkvalueArgs(self, name):
-		return "%s__out__, %s__len__" % (name, name)
+		return "%s__out__, (int)%s__len__" % (name, name)
 
 	def cleanup(self, name):
 		Output("free(%s__out__);", name)
@@ -75,10 +77,10 @@ class HeapOutputBufferType(OutputOnlyMixIn, HeapInputOutputBufferType):
 		pass
 	
 	def getargsFormat(self):
-		return self.sizeformat
+		return "i"
 	
 	def getargsArgs(self, name):
-		return "&%s__len__" % name
+		return "&%s__in_len__" % name
 	
 	def passOutput(self, name):
 		return "%s__out__, %s__len__" % (name, name)

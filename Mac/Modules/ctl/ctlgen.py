@@ -170,3 +170,4 @@ f = Method(short, 'GetCVariant',
     (ControlHandle, 'theControl', InMode),
 )
 methods.append(f)
+

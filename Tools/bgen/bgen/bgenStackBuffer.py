@@ -29,7 +29,7 @@ class VarStackOutputBufferType(StackOutputBufferType):
 		return "%s__out__, &%s__len__" % (name, name)
 
 	def mkvalueArgs(self, name):
-		return "%s__out__, %s__len__" % (name, name)
+		return "%s__out__, (int)%s__len__" % (name, name)
 
 
 class VarVarStackOutputBufferType(VarStackOutputBufferType):
@@ -56,4 +56,4 @@ class ReturnVarStackOutputBufferType(VarStackOutputBufferType):
 		return "%s__out__, %s__len__" % (name, name)
 
 	def mkvalueArgs(self, name):
-		return "%s__out__, _rv" % name
+		return "%s__out__, (int)_rv" % name

@@ -50,7 +50,7 @@ typedef struct MenuObject {
 } MenuObject;
 
 PyObject *MenuObj_New(itself)
-	const MenuHandle itself;
+	MenuHandle itself;
 {
 	MenuObject *it;
 	it = PyObject_NEW(MenuObject, &Menu_Type);

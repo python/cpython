@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Dialogs.h'
+
 ctrlItem = 4
 btnCtrl = 0
 chkCtrl = 1

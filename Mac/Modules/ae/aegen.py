@@ -312,3 +312,4 @@ f = AEFunction(OSErr, 'AEManagerInfo',
     (long, 'result', OutMode),
 )
 functions.append(f)
+

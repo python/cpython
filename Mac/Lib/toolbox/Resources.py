@@ -1,4 +1,5 @@
 # Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Resources.h'
+
 resSysHeap = 64
 resPurgeable = 32
 resLocked = 16
