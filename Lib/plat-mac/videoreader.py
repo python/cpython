@@ -12,11 +12,20 @@ from Carbon import Qd
 from Carbon import Qdoffs
 from Carbon import QDOffscreen
 from Carbon import Res
-import MediaDescr
-import imgformat
+try:
+	import MediaDescr
+except ImportError:
+	def _audiodescr(data):
+		return None
+else:
+	def _audiodescr(data):
+		return MediaDescr.SoundDescription.decode(data)
+try:
+	from imgformat import macrgb
+except ImportError:
+	macrgb = "Macintosh RGB format"
 import os
 # import audio.format
-import macfs
 
 class VideoFormat:
 	def __init__(self, name, descr, width, height, format):
@@ -40,8 +49,7 @@ class VideoFormat:
 		
 class _Reader:
 	def __init__(self, path):
-		fsspec = macfs.FSSpec(path)
-		fd = Qt.OpenMovieFile(fsspec, 0)
+		fd = Qt.OpenMovieFile(path, 0)
 		self.movie, d1, d2 = Qt.NewMovieFromFile(fd, 0, 0)
 		self.movietimescale = self.movie.GetMovieTimeScale()
 		try:
@@ -55,7 +63,7 @@ class _Reader:
 			handle = Res.Handle('')
 			n = self.audiomedia.GetMediaSampleDescriptionCount()
 			self.audiomedia.GetMediaSampleDescription(1, handle)
-			self.audiodescr = MediaDescr.SoundDescription.decode(handle.data)
+			self.audiodescr = _audiodescr(handle.data)
 			self.audiotimescale = self.audiomedia.GetMediaTimeScale()
 			del handle
 	
@@ -139,6 +147,8 @@ class _Reader:
 		return self._gettrackduration_ms(self.videotrack)
 		
 	def GetAudioFormat(self):
+		if not self.audiodescr:
+			return None, None, None, None, None
 		bps = self.audiodescr['sampleSize']
 		nch = self.audiodescr['numChannels']
 		if nch == 1:
@@ -167,12 +177,14 @@ class _Reader:
 		return channels, encoding, blocksize, fpb, bps
 			
 	def GetAudioFrameRate(self):
+		if not self.audiodescr:
+			return None
 		return int(self.audiodescr['sampleRate'])
 		
 	def GetVideoFormat(self):
 		width = self.videodescr['width']
 		height = self.videodescr['height']
-		return VideoFormat('dummy_format', 'Dummy Video Format', width, height, imgformat.macrgb)
+		return VideoFormat('dummy_format', 'Dummy Video Format', width, height, macrgb)
 		
 	def GetVideoFrameRate(self):
 		tv = self.videocurtime
@@ -236,18 +248,20 @@ def reader(url):
 	return rdr
 
 def _test():
-	import img
+	import EasyDialogs
+	try:
+		import img
+	except ImportError:
+		img = None
 	import MacOS
 	Qt.EnterMovies()
-	fss, ok = macfs.PromptGetFile('Video to convert')
-	if not ok: sys.exit(0)
-	path = fss.as_pathname()
+	path = EasyDialogs.AskFileForOpen(message='Video to convert')
+	if not path: sys.exit(0)
 	rdr = reader(path)
 	if not rdr:
 		sys.exit(1)
-	dstfss, ok = macfs.StandardPutFile('Name for output folder')
-	if not ok: sys.exit(0)
-	dstdir = dstfss.as_pathname()
+	dstdir = EasyDialogs.AskFileForSave(message='Name for output folder')
+	if not dstdir: sys.exit(0)
 	num = 0
 	os.mkdir(dstdir)
 	videofmt = rdr.GetVideoFormat()
@@ -258,16 +272,18 @@ def _test():
 		fname = 'frame%04.4d.jpg'%num
 		num = num+1
 		pname = os.path.join(dstdir, fname)
-		print 'Writing', fname, imgw, imgh, len(data)
-		wrt = img.writer(imgfmt, pname)
-		wrt.width = imgw
-		wrt.height = imgh
-		wrt.write(data)
-		timestamp, data = rdr.ReadVideo()
-		MacOS.SetCreatorAndType(pname, 'ogle', 'JPEG')
-		if num > 20: 
-			print 'stopping at 20 frames so your disk does not fill up:-)'
-			break
+		if not img: print 'Not',
+		print 'Writing %s, size %dx%d, %d bytes'%(fname, imgw, imgh, len(data))
+		if img:
+			wrt = img.writer(imgfmt, pname)
+			wrt.width = imgw
+			wrt.height = imgh
+			wrt.write(data)
+			timestamp, data = rdr.ReadVideo()
+			MacOS.SetCreatorAndType(pname, 'ogle', 'JPEG')
+			if num > 20: 
+				print 'stopping at 20 frames so your disk does not fill up:-)'
+				break
 	print 'Total frames:', num
 		
 if __name__ == '__main__':
