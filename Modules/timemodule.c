@@ -616,7 +616,7 @@ inittime()
 	/* Squirrel away the module's dictionary for the y2k check */
 	Py_INCREF(d);
 	moddict = d;
-#if defined(HAVE_TZNAME) && !defined(__GNU_LIBRARY__)
+#if defined(HAVE_TZNAME) && !defined(__GLIBC__)
 	tzset();
 #ifdef PYOS_OS2
 	ins(d, "timezone", PyInt_FromLong((long)_timezone));
@@ -634,7 +634,7 @@ inittime()
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-#else /* !HAVE_TZNAME || __GNU_LIBRARY__ */
+#else /* !HAVE_TZNAME || __GLIBC__ */
 #ifdef HAVE_TM_ZONE
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
@@ -683,7 +683,7 @@ inittime()
 	ins(d, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
-#endif /* !HAVE_TZNAME || __GNU_LIBRARY__ */
+#endif /* !HAVE_TZNAME || __GLIBC__ */
 	if (PyErr_Occurred())
 		Py_FatalError("Can't initialize time module");
 }
