@@ -4,12 +4,15 @@
 __version__ = "$Revision$"
 
 import sys, os, getopt, imp, re
+
+from distutils import log
 from distutils import sysconfig
 from distutils import text_file
 from distutils.errors import *
 from distutils.core import Extension, setup
 from distutils.command.build_ext import build_ext
 from distutils.command.install import install
+from distutils.command.install_lib import install_lib
 
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
@@ -992,13 +995,51 @@ class PyBuildInstall(install):
         install.initialize_options(self)
         self.warn_dir=0
 
+class PyBuildInstallLib(install_lib):
+    # Do exactly what install_lib does but make sure correct access modes get
+    # set on installed directories and files. All installed files with get
+    # mode 644 unless they are a shared library in which case they will get
+    # mode 755. All installed directories will get mode 755.
+
+    so_ext = sysconfig.get_config_var("SO")
+
+    def install(self):
+        outfiles = install_lib.install(self)
+        self.set_file_modes(outfiles, 0644, 0755)
+        self.set_dir_modes(self.install_dir, 0755)
+        return outfiles
+
+    def set_file_modes(self, files, defaultMode, sharedLibMode):
+        if not self.is_chmod_supported(): return
+        if not files: return
+
+        for filename in files:
+            if os.path.islink(filename): continue
+            mode = defaultMode
+            if filename.endswith(self.so_ext): mode = sharedLibMode
+            log.info("changing mode of %s to %o", filename, mode)
+            if not self.dry_run: os.chmod(filename, mode)
+
+    def set_dir_modes(self, dirname, mode):
+        if not self.is_chmod_supported(): return
+        os.path.walk(dirname, self.set_dir_modes_visitor, mode)
+
+    def set_dir_modes_visitor(self, mode, dirname, names):
+        if os.path.islink(dirname): return
+        log.info("changing mode of %s to %o", dirname, mode)
+        if not self.dry_run: os.chmod(dirname, mode)
+
+    def is_chmod_supported(self):
+        return hasattr(os, 'chmod')
+
 def main():
     # turn off warnings when deprecated modules are imported
     import warnings
     warnings.filterwarnings("ignore",category=DeprecationWarning)
     setup(name = 'Python standard library',
           version = '%d.%d' % sys.version_info[:2],
-          cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall},
+          cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall,
+                      'install_lib':PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
           # called unless there's at least one extension module defined.
           ext_modules=[Extension('struct', ['structmodule.c'])],
