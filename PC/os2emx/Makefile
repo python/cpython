@@ -300,6 +300,7 @@ SRC.PYTHON=	$(addprefix $(TOP), \
 		Python/thread.c)
 SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/abstract.c \
+		Objects/boolobject.c \
 		Objects/bufferobject.c \
 		Objects/cellobject.c \
 		Objects/classobject.c \
@@ -318,6 +319,7 @@ SRC.OBJECT=	$(addprefix $(TOP), \
 		Objects/methodobject.c \
 		Objects/moduleobject.c \
 		Objects/object.c \
+		Objects/obmalloc.c \
 		Objects/rangeobject.c \
 		Objects/sliceobject.c \
 		Objects/stringobject.c \

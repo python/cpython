@@ -167,6 +167,14 @@ EXPORTS
   "PyObject_IsInstance"
   "PyObject_IsSubclass"
 
+; From python23_s.lib(boolobject)
+  "bool_repr"
+  "PyBool_FromLong"
+  "bool_new"
+  "_Py_ZeroStruct"
+  "_Py_TrueStruct"
+  "PyBool_Type"
+
 ; From python23_s.lib(bufferobject)
   "PyBuffer_FromObject"
   "PyBuffer_FromReadWriteObject"
@@ -302,9 +310,7 @@ EXPORTS
   "PyInt_FromString"
   "PyInt_FromUnicode"
   "PyInt_Fini"
-  "_Py_ZeroStruct"
   "PyInt_Type"
-  "_Py_TrueStruct"
 
 ; From python23_s.lib(iterobject)
   "PySeqIter_New"
@@ -404,9 +410,6 @@ EXPORTS
   "PyMem_Malloc"
   "PyMem_Realloc"
   "PyMem_Free"
-  "PyObject_Malloc"
-  "PyObject_Realloc"
-  "PyObject_Free"
   "Py_ReprEnter"
   "Py_ReprLeave"
   "_PyTrash_deposit_object"
@@ -417,6 +420,11 @@ EXPORTS
   "_Py_abstract_hack"
   "_PyTrash_delete_nesting"
   "_PyTrash_delete_later"
+
+; From python23_s.lib(obmalloc)
+  "PyObject_Malloc"
+  "PyObject_Realloc"
+  "PyObject_Free"
 
 ; From python23_s.lib(rangeobject)
   "PyRange_New"
@@ -903,12 +911,15 @@ EXPORTS
 ; From python23_s.lib(gcmodule)
 ;  "initgc"
   "_PyGC_Dump"
+  "PyObject_GC_Track"
   "_PyObject_GC_Track"
+  "PyObject_GC_UnTrack"
   "_PyObject_GC_UnTrack"
   "_PyObject_GC_Malloc"
   "_PyObject_GC_New"
   "_PyObject_GC_NewVar"
   "_PyObject_GC_Resize"
+  "PyObject_GC_Del"
   "_PyObject_GC_Del"
   "_PyGC_generation0"
 
