@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
                         All Rights Reserved
@@ -27,10 +27,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* XXX The functional organization of this file is terrible */
 
 #include "allobjects.h"
-#include "intrcheck.h"
 #include "longintrepr.h"
 #include <math.h>
 #include <assert.h>
+#include <ctype.h>
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
@@ -43,10 +43,10 @@ static object *long_format PROTO((object *aa, int base));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 
-#define INTRCHECK(block) \
+#define SIGCHECK(block) \
 	if (--ticker < 0) { \
 		ticker = 100; \
-		if (intrcheck()) { block; } \
+		if (sigcheck()) { block; } \
 	}
 
 /* Normalize (remove leading zeros from) a long int object.
@@ -84,6 +84,7 @@ newlongobject(ival)
 	long ival;
 {
 	/* Assume a C long fits in at most 3 'digits' */
+	/* XXX On 64 bit machines this isn't true!!! */
 	longobject *v = alloclongobject(3);
 	if (v != NULL) {
 		if (ival < 0) {
@@ -92,7 +93,7 @@ newlongobject(ival)
 		}
 		v->ob_digit[0] = ival & MASK;
 		v->ob_digit[1] = (ival >> SHIFT) & MASK;
-		v->ob_digit[2] = (ival >> (2*SHIFT)) & MASK;
+		v->ob_digit[2] = ((unsigned long)ival >> (2*SHIFT)) & MASK;
 		v = long_normalize(v);
 	}
 	return (object *)v;
@@ -190,7 +191,7 @@ dgetlongvalue(vv)
 		i = -(i);
 	}
 	while (--i >= 0) {
-		x = x*multiplier + v->ob_digit[i];
+		x = x*multiplier + (double)v->ob_digit[i];
 	}
 	return x * sign;
 }
@@ -315,10 +316,9 @@ long_format(aa, base)
 		*--p = rem;
 		DECREF(a);
 		a = temp;
-		INTRCHECK({
+		SIGCHECK({
 			DECREF(a);
 			DECREF(str);
-			err_set(KeyboardInterrupt);
 			return NULL;
 		})
 	} while (ABS(a->ob_size) != 0);
@@ -352,23 +352,39 @@ long_format(aa, base)
 
 /* Convert a string to a long int object, in a given base.
    Base zero implies a default depending on the number.
-   External linkage: used in compile.c for literals. */
+   External linkage: used in compile.c and stropmodule.c. */
 
 object *
 long_scan(str, base)
 	char *str;
 	int base;
 {
+	return long_escan(str, (char **)NULL, base);
+}
+
+object *
+long_escan(str, pend, base)
+	char *str;
+	char **pend;
+	int base;
+{
 	int sign = 1;
 	longobject *z;
 	
-	assert(base == 0 || base >= 2 && base <= 36);
+	if (base != 0 && base < 2 || base > 36) {
+		err_setstr(ValueError, "invalid base for long literal");
+		return NULL;
+	}
+	while (*str != '\0' && isspace(*str))
+		str++;
 	if (*str == '+')
 		++str;
 	else if (*str == '-') {
 		++str;
 		sign = -1;
 	}
+	while (*str != '\0' && isspace(*str))
+		str++;
 	if (base == 0) {
 		if (str[0] != '0')
 			base = 10;
@@ -398,6 +414,8 @@ long_scan(str, base)
 	}
 	if (sign < 0 && z != NULL && z->ob_size != 0)
 		z->ob_size = -(z->ob_size);
+	if (pend)
+		*pend = str;
 	return (object *) z;
 }
 
@@ -487,10 +505,9 @@ x_divrem(v1, w1, prem)
 		stwodigits carry = 0;
 		int i;
 		
-		INTRCHECK({
+		SIGCHECK({
 			DECREF(a);
 			a = NULL;
-			err_set(KeyboardInterrupt);
 			break;
 		})
 		if (vj == w->ob_digit[size_w-1])
@@ -564,7 +581,7 @@ static object *long_mul PROTO((longobject *, longobject *));
 static object *long_div PROTO((longobject *, longobject *));
 static object *long_mod PROTO((longobject *, longobject *));
 static object *long_divmod PROTO((longobject *, longobject *));
-static object *long_pow PROTO((longobject *, longobject *));
+static object *long_pow PROTO((longobject *, longobject *, longobject *));
 static object *long_neg PROTO((longobject *));
 static object *long_pos PROTO((longobject *));
 static object *long_abs PROTO((longobject *));
@@ -720,7 +737,7 @@ x_sub(a, b)
 	for (i = 0; i < size_b; ++i) {
 		/* The following assumes unsigned arithmetic
 		   works module 2**N for some N>SHIFT. */
-		borrow = a->ob_digit[i] - b->ob_digit[i] - borrow; 
+		borrow = a->ob_digit[i] - b->ob_digit[i] - borrow;
 		z->ob_digit[i] = borrow & MASK;
 		borrow >>= SHIFT;
 		borrow &= 1; /* Keep only one sign bit */
@@ -807,9 +824,8 @@ long_mul(a, b)
 		twodigits f = a->ob_digit[i];
 		int j;
 		
-		INTRCHECK({
+		SIGCHECK({
 			DECREF(z);
-			err_set(KeyboardInterrupt);
 			return NULL;
 		})
 		for (j = 0; j < size_b; ++j) {
@@ -933,11 +949,12 @@ long_divmod(v, w)
 }
 
 static object *
-long_pow(a, b)
+long_pow(a, b, c)
 	longobject *a;
 	longobject *b;
+	longobject *c;
 {
-	longobject *z;
+	longobject *z, *div, *mod;
 	int size_b, i;
 	
 	size_b = b->ob_size;
@@ -945,21 +962,25 @@ long_pow(a, b)
 		err_setstr(ValueError, "long integer to the negative power");
 		return NULL;
 	}
-
 	z = (longobject *)newlongobject(1L);
-	
 	INCREF(a);
 	for (i = 0; i < size_b; ++i) {
 		digit bi = b->ob_digit[i];
 		int j;
-		
+	
 		for (j = 0; j < SHIFT; ++j) {
 			longobject *temp;
-			
+		
 			if (bi & 1) {
 				temp = (longobject *)long_mul(z, a);
 				DECREF(z);
-				z = temp;
+			 	if ((object*)c!=None && temp!=NULL) {
+			 		l_divmod(temp, c, &div, &mod);
+				 	XDECREF(div);
+				 	DECREF(temp);
+				 	temp = mod;
+				}
+			 	z = temp;
 				if (z == NULL)
 					break;
 			}
@@ -968,6 +989,12 @@ long_pow(a, b)
 				break;
 			temp = (longobject *)long_mul(a, a);
 			DECREF(a);
+		 	if ((object*)c!=None && temp!=NULL) {
+			 	l_divmod(temp, c, &div, &mod);
+			 	XDECREF(div);
+			 	DECREF(temp);
+			 	temp = mod;
+			}
 			a = temp;
 			if (a == NULL) {
 				DECREF(z);
@@ -979,6 +1006,12 @@ long_pow(a, b)
 			break;
 	}
 	XDECREF(a);
+	if ((object*)c!=None && z!=NULL) {
+			l_divmod(z, c, &div, &mod);
+			XDECREF(div);
+			DECREF(z);
+			z=mod;
+	}
 	return (object *)z;
 }
 
@@ -1214,7 +1247,7 @@ long_bitwise(a, op, b)
 			negz = -1;
 		}
 		break;
-	case '&': 
+	case '&':
 		if (maska && maskb) {
 			op = '|';
 			maska ^= MASK;
@@ -1330,9 +1363,10 @@ long_hex(v)
 }
 
 
-#define UF (object* (*) FPROTO((object *))) /* Unary function */
-#define BF (object* (*) FPROTO((object *, object *))) /* Binary function */
-#define IF (int (*) FPROTO((object *))) /* Int function */
+#define UF (unaryfunc)
+#define BF (binaryfunc)
+#define TF (ternaryfunc)
+#define IF (inquiry)
 
 static number_methods long_as_number = {
 	BF long_add,	/*nb_add*/
@@ -1341,7 +1375,7 @@ static number_methods long_as_number = {
 	BF long_div,	/*nb_divide*/
 	BF long_mod,	/*nb_remainder*/
 	BF long_divmod,	/*nb_divmod*/
-	BF long_pow,	/*nb_power*/
+	TF long_pow,	/*nb_power*/
 	UF long_neg,	/*nb_negative*/
 	UF long_pos,	/*tp_positive*/
 	UF long_abs,	/*tp_absolute*/
@@ -1353,7 +1387,7 @@ static number_methods long_as_number = {
 	BF long_xor,	/*nb_xor*/
 	BF long_or,	/*nb_or*/
 	(int (*) FPROTO((object **, object **)))
-	long_coerce,	/*nb_coerce*/
+	(coercion)long_coerce, /*nb_coerce*/
 	UF long_int,	/*nb_int*/
 	UF long_long,	/*nb_long*/
 	UF long_float,	/*nb_float*/
@@ -1367,16 +1401,16 @@ typeobject Longtype = {
 	"long int",
 	sizeof(longobject) - sizeof(digit),
 	sizeof(digit),
-	long_dealloc,	/*tp_dealloc*/
+	(destructor)long_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	(int (*) FPROTO((object *, object *)))
-	long_compare,	/*tp_compare*/
-	long_repr,	/*tp_repr*/
+	(cmpfunc)long_compare, /*tp_compare*/
+	(reprfunc)long_repr, /*tp_repr*/
 	&long_as_number,/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 	(long (*) FPROTO((object *)))
-	long_hash,	/*tp_hash*/
+	(hashfunc)long_hash, /*tp_hash*/
 };
