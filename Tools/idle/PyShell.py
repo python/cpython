@@ -275,7 +275,7 @@ class PyShell(OutputWindow):
     menu_specs.insert(len(menu_specs)-2, ("debug", "_Debug"))
 
     # New classes
-    from History import History
+    from IdleHistory import History
 
     def __init__(self, flist=None):
         self.interp = ModifiedInterpreter(self)
@@ -438,6 +438,9 @@ class PyShell(OutputWindow):
             self.endoffile = 0
             return ""
         return line
+
+    def isatty(self):
+        return 1
 
     def cancel_callback(self, event):
         try:
@@ -633,6 +636,9 @@ class PseudoFile:
 
     def flush(self):
         pass
+
+    def isatty(self):
+        return 1
 
 
 usage_msg = """\
