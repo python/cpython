@@ -475,7 +475,11 @@ else:
   the Python debugger.\index{debugger}  The function is
   thread-specific; for a debugger to support multiple threads, it must
   be registered using \function{settrace()} for each thread being
-  debugged.
+  debugged.  \note{The \function{settrace()} function is intended only
+  for implementing debuggers, profilers, coverage tools and the like.
+  Its behavior is part of the implementation platform, rather than 
+  part of the language definition, and thus may not be available in
+  all Python implementations.}
 \end{funcdesc}
 
 \begin{funcdesc}{settscdump}{on_flag}
