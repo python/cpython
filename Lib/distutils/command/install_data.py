@@ -38,10 +38,10 @@ class install_data (Command):
 
     def finalize_options (self):
         self.set_undefined_options('install',
-	                           ('install_data', 'install_dir'),
-				   ('root', 'root'),
+                                   ('install_data', 'install_dir'),
+                                   ('root', 'root'),
                                    ('force', 'force'),
-				  )
+                                  )
 
     def run (self):
         self.mkpath(self.install_dir)
