@@ -479,6 +479,12 @@ class TestDateOnly(unittest.TestCase):
         dt2 = dt - delta
         self.assertEqual(dt2, dt - days)
 
+    def test_subclass_date(self):
+        class C(date):
+            theAnswer = 42
+        dt = C(2003, 4, 14)
+        self.assertEqual(dt.__class__, C)
+
 class TestDate(HarmlessMixedComparison):
     # Tests here should pass for both dates and datetimes, except for a
     # few tests that TestDateTime overrides.
