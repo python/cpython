@@ -23,6 +23,7 @@ from email.MIMEText import MIMEText
 from email.MIMEImage import MIMEImage
 from email.MIMEBase import MIMEBase
 from email.MIMEMessage import MIMEMessage
+from email.MIMEMultipart import MIMEMultipart
 from email import Utils
 from email import Errors
 from email import Encoders
@@ -51,13 +52,18 @@ def openfile(filename):
 
 # Base test class
 class TestEmailBase(unittest.TestCase):
-    def ndiffAssertEqual(self, first, second):
-        """Like failUnlessEqual except use ndiff to produce readable output."""
-        if first <> second:
-            diff = difflib.ndiff(first.splitlines(), second.splitlines())
-            fp = StringIO()
-            print >> fp, NL, NL.join(diff)
-            raise self.failureException, fp.getvalue()
+    if hasattr(difflib, 'ndiff'):
+        # Python 2.2 and beyond
+        def ndiffAssertEqual(self, first, second):
+            """Like failUnlessEqual except use ndiff for readable output."""
+            if first <> second:
+                diff = difflib.ndiff(first.splitlines(), second.splitlines())
+                fp = StringIO()
+                print >> fp, NL, NL.join(diff)
+                raise self.failureException, fp.getvalue()
+    else:
+        # Python 2.1
+        ndiffAssertEqual = unittest.TestCase.assertEqual
 
     def _msgobj(self, filename):
         fp = openfile(findfile(filename))
@@ -906,7 +912,11 @@ class TestNonConformant(TestEmailBase):
 
     def test_multipart_no_boundary(self):
         fp = openfile(findfile('msg_25.txt'))
-        self.assertRaises(Errors.BoundaryError, email.message_from_file, fp)
+        try:
+            self.assertRaises(Errors.BoundaryError,
+                              email.message_from_file, fp)
+        finally:
+            fp.close()
 
 
 
@@ -948,8 +958,10 @@ class TestRFC2047(unittest.TestCase):
 class TestMIMEMessage(TestEmailBase):
     def setUp(self):
         fp = openfile('msg_11.txt')
-        self._text = fp.read()
-        fp.close()
+        try:
+            self._text = fp.read()
+        finally:
+            fp.close()
 
     def test_type_error(self):
         self.assertRaises(TypeError, MIMEMessage, 'a plain string')
@@ -1091,6 +1103,120 @@ Your message cannot be delivered to the following recipients:
         g.flatten(msg)
         self.assertEqual(sfp.getvalue(), text)
 
+    def test_default_type(self):
+        eq = self.assertEqual
+        fp = openfile('msg_30.txt')
+        try:
+            msg = email.message_from_file(fp)
+        finally:
+            fp.close()
+        container1 = msg.get_payload(0)
+        eq(container1.get_default_type(), 'message/rfc822')
+        eq(container1.get_type(), None)
+        container2 = msg.get_payload(1)
+        eq(container2.get_default_type(), 'message/rfc822')
+        eq(container2.get_type(), None)
+        container1a = container1.get_payload(0)
+        eq(container1a.get_default_type(), 'text/plain')
+        eq(container1a.get_type(), 'text/plain')
+        container2a = container2.get_payload(0)
+        eq(container2a.get_default_type(), 'text/plain')
+        eq(container2a.get_type(), 'text/plain')
+
+    def test_default_type_with_explicit_container_type(self):
+        eq = self.assertEqual
+        fp = openfile('msg_28.txt')
+        try:
+            msg = email.message_from_file(fp)
+        finally:
+            fp.close()
+        container1 = msg.get_payload(0)
+        eq(container1.get_default_type(), 'message/rfc822')
+        eq(container1.get_type(), 'message/rfc822')
+        container2 = msg.get_payload(1)
+        eq(container2.get_default_type(), 'message/rfc822')
+        eq(container2.get_type(), 'message/rfc822')
+        container1a = container1.get_payload(0)
+        eq(container1a.get_default_type(), 'text/plain')
+        eq(container1a.get_type(), 'text/plain')
+        container2a = container2.get_payload(0)
+        eq(container2a.get_default_type(), 'text/plain')
+        eq(container2a.get_type(), 'text/plain')
+
+    def test_default_type_non_parsed(self):
+        eq = self.assertEqual
+        neq = self.ndiffAssertEqual
+        # Set up container
+        container = MIMEMultipart('digest', 'BOUNDARY')
+        container.epilogue = '\n'
+        # Set up subparts
+        subpart1a = MIMEText('message 1\n')
+        subpart2a = MIMEText('message 2\n')
+        subpart1 = MIMEMessage(subpart1a)
+        subpart2 = MIMEMessage(subpart2a)
+        container.attach(subpart1)
+        container.attach(subpart2)
+        eq(subpart1.get_type(), 'message/rfc822')
+        eq(subpart1.get_default_type(), 'message/rfc822')
+        eq(subpart2.get_type(), 'message/rfc822')
+        eq(subpart2.get_default_type(), 'message/rfc822')
+        neq(container.as_string(0), '''\
+Content-Type: multipart/digest; boundary="BOUNDARY"
+MIME-Version: 1.0
+
+--BOUNDARY
+Content-Type: message/rfc822
+MIME-Version: 1.0
+
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+message 1
+
+--BOUNDARY
+Content-Type: message/rfc822
+MIME-Version: 1.0
+
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+message 2
+
+--BOUNDARY--
+''')
+        del subpart1['content-type']
+        del subpart1['mime-version']
+        del subpart2['content-type']
+        del subpart2['mime-version']
+        eq(subpart1.get_type(), None)
+        eq(subpart1.get_default_type(), 'message/rfc822')
+        eq(subpart2.get_type(), None)
+        eq(subpart2.get_default_type(), 'message/rfc822')
+        neq(container.as_string(0), '''\
+Content-Type: multipart/digest; boundary="BOUNDARY"
+MIME-Version: 1.0
+
+--BOUNDARY
+
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+message 1
+
+--BOUNDARY
+
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+message 2
+
+--BOUNDARY--
+''')
+
 
 
 # A general test of parser->model->generator idempotency.  IOW, read a message
@@ -1147,9 +1273,9 @@ class TestIdempotent(TestEmailBase):
         msg, text = self._msgobj('msg_27.txt')
         self._idempotent(msg, text)
 
-##    def test_MIME_digest_with_part_headers(self):
-##        msg, text = self._msgobj('msg_28.txt')
-##        self._idempotent(msg, text)
+    def test_MIME_digest_with_part_headers(self):
+        msg, text = self._msgobj('msg_28.txt')
+        self._idempotent(msg, text)
 
     def test_mixed_with_image(self):
         msg, text = self._msgobj('msg_06.txt')
@@ -1400,7 +1526,11 @@ class TestIterators(TestEmailBase):
         it = Iterators.body_line_iterator(msg)
         lines = list(it)
         eq(len(lines), 43)
-        eq(EMPTYSTRING.join(lines), openfile('msg_19.txt').read())
+        fp = openfile('msg_19.txt')
+        try:
+            eq(EMPTYSTRING.join(lines), fp.read())
+        finally:
+            fp.close()
 
     def test_typed_subpart_iterator(self):
         eq = self.assertEqual
@@ -1440,13 +1570,15 @@ Do you like this message?
 
 
 
-class TestParsers(unittest.TestCase):
+class TestParsers(TestEmailBase):
     def test_header_parser(self):
         eq = self.assertEqual
         # Parse only the headers of a complex multipart MIME document
-        p = HeaderParser()
         fp = openfile('msg_02.txt')
-        msg = p.parse(fp)
+        try:
+            msg = HeaderParser().parse(fp)
+        finally:
+            fp.close()
         eq(msg['from'], 'ppp-request@zzz.org')
         eq(msg['to'], 'ppp@zzz.org')
         eq(msg.get_type(), 'multipart/mixed')
@@ -1474,8 +1606,10 @@ Here's the message body
     def test_crlf_separation(self):
         eq = self.assertEqual
         fp = openfile('msg_26.txt')
-        p = Parser()
-        msg = p.parse(fp)
+        try:
+            msg = Parser().parse(fp)
+        finally:
+            fp.close()
         eq(len(msg.get_payload()), 2)
         part1 = msg.get_payload(0)
         eq(part1.get_type(), 'text/plain')
@@ -1483,19 +1617,39 @@ Here's the message body
         part2 = msg.get_payload(1)
         eq(part2.get_type(), 'application/riscos')
 
-##    def test_multipart_digest_with_extra_mime_headers(self):
-##        eq = self.assertEqual
-##        fp = openfile('msg_28.txt')
-##        p = Parser()
-##        msg = p.parse(fp)
-##        self.failUnless(msg.is_multipart())
-##        eq(len(msg.get_payload()), 2)
-##        part1 = msg.get_payload(0)
-##        eq(part1.get_type(), 'text/plain')
-##        eq(part1.get_payload(), 'message 1')
-##        part2 = msg.get_payload(1)
-##        eq(part2.get_type(), 'text/plain')
-##        eq(part2.get_payload(), 'message 2')
+    def test_multipart_digest_with_extra_mime_headers(self):
+        eq = self.assertEqual
+        neq = self.ndiffAssertEqual
+        fp = openfile('msg_28.txt')
+        try:
+            msg = email.message_from_file(fp)
+        finally:
+            fp.close()
+        # Structure is:
+        # multipart/digest
+        #   message/rfc822
+        #     text/plain
+        #   message/rfc822
+        #     text/plain
+        eq(msg.is_multipart(), 1)
+        eq(len(msg.get_payload()), 2)
+        part1 = msg.get_payload(0)
+        eq(part1.get_type(), 'message/rfc822')
+        eq(part1.is_multipart(), 1)
+        eq(len(part1.get_payload()), 1)
+        part1a = part1.get_payload(0)
+        eq(part1a.is_multipart(), 0)
+        eq(part1a.get_type(), 'text/plain')
+        neq(part1a.get_payload(), 'message 1\n')
+        # next message/rfc822
+        part2 = msg.get_payload(1)
+        eq(part2.get_type(), 'message/rfc822')
+        eq(part2.is_multipart(), 1)
+        eq(len(part2.get_payload()), 1)
+        part2a = part2.get_payload(0)
+        eq(part2a.is_multipart(), 0)
+        eq(part2a.get_type(), 'text/plain')
+        neq(part2a.get_payload(), 'message 2\n')
 
 
 
