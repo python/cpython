@@ -65,7 +65,10 @@ class ControlWidget(Wbase.ClickableWidget):
 	def activate(self, onoff):
 		self._activated = onoff
 		if self._enabled:
-			self._control.HiliteControl((not onoff) and 255)
+			if onoff:
+				self._control.ActivateControl()
+			else:
+				self._control.DeactivateControl()
 	
 	def draw(self, visRgn = None):
 		if self._visible:
@@ -105,7 +108,7 @@ class Button(ControlWidget):
 		if not self._enabled:
 			return
 		import time
-		self._control.HiliteControl(1)
+		self._control.HiliteControl(Controls.kControlButtonPart)
 		time.sleep(0.1)
 		self._control.HiliteControl(0)
 		if self._callback:
@@ -115,11 +118,6 @@ class Button(ControlWidget):
 		if self._control and self._enabled <> onoff:
 			self._control.HiliteControl((not onoff) and 255)
 			self._enabled = onoff
-	
-	def activate(self, onoff):
-		self._activated = onoff
-		if self._enabled:
-			self._control.HiliteControl((not onoff) and 255)
 	
 	def show(self, onoff):
 		ControlWidget.show(self, onoff)
@@ -332,16 +330,6 @@ class Scrollbar(ControlWidget):
 				Qd.FrameRect(self._bounds)
 			self.GetWindow().ValidWindowRect(self._bounds)
 	
-	def activate(self, onoff):
-		self._activated = onoff
-		if self._visible:
-			if onoff:
-				self._control.ShowControl()
-			else:
-				self._control.HideControl()
-				self.draw(None)
-				self.GetWindow().ValidWindowRect(self._bounds)
-		
 	def set(self, value):
 		if self._control:
 			self._control.SetControlValue(value)
