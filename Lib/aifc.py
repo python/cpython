@@ -153,12 +153,12 @@ _skiplist = 'COMT', 'INST', 'MIDI', 'AESD', \
 
 _nchannelslist = [(1, AL.MONO), (2, AL.STEREO)]
 _sampwidthlist = [(8, AL.SAMPLE_8), (16, AL.SAMPLE_16), (24, AL.SAMPLE_24)]
-_frameratelist = [(48000, AL.RATE_48000), \
-		  (44100, AL.RATE_44100), \
-		  (32000, AL.RATE_32000), \
-		  (22050, AL.RATE_22050), \
-		  (16000, AL.RATE_16000), \
-		  (11025, AL.RATE_11025), \
+_frameratelist = [(48000, AL.RATE_48000),
+		  (44100, AL.RATE_44100),
+		  (32000, AL.RATE_32000),
+		  (22050, AL.RATE_22050),
+		  (16000, AL.RATE_16000),
+		  (11025, AL.RATE_11025),
 		  ( 8000,  AL.RATE_8000)]
 
 def _convert1(value, list):
@@ -456,7 +456,6 @@ class Aifc_read:
 		if self._decomp:
 			self._decomp.CloseDecompressor()
 			self._decomp = None
-		self._file.close()
 		self._file = None
 
 	def tell(self):
@@ -816,7 +815,7 @@ class Aifc_write:
 		if self._comp:
 			self._comp.CloseCompressor()
 			self._comp = None
-		self._file.close()
+		self._file.flush()
 		self._file = None
 
 	#
