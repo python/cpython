@@ -176,20 +176,10 @@ Reverse the samples in a fragment and returns the modified fragment.
 
 \begin{funcdesc}{rms}{fragment, width}
 Return the root-mean-square of the fragment, i.e.
-%begin{latexonly}
-\iftexi
-%end{latexonly}
-the square root of the quotient of the sum of all squared sample value,
-divided by the sumber of samples.
-%begin{latexonly}
-\else
-% in eqn: sqrt { sum S sub i sup 2  over n }
 \begin{displaymath}
 \catcode`_=8
 \sqrt{\frac{\sum{{S_{i}}^{2}}}{n}}
 \end{displaymath}
-\fi
-%end{latexonly}
 This is a measure of the power in an audio signal.
 \end{funcdesc}
 
