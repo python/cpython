@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=9.0
-  Title=Python 2.3.1
+  Title=Python 2.3.2c1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -20,14 +20,14 @@ item: Global
   Patch Memory=4000
   MIF PDF Version=1.0
   MIF SMS Version=2.0
-  EXE Filename=Python-2.3.1.exe
+  EXE Filename=Python-2.3.2c1.exe
   Dialogs Version=8
-  Version File=2.3.1
+  Version File=2.3.2c1
   Version Description=Python Programming Language
   Version Copyright=©2001-2003 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\Programme\Wise Installation System
@@ -76,7 +76,7 @@ item: Global
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.3.1
+  Value=2.3.2c1
 end
 item: Remark
 end
@@ -3041,11 +3041,11 @@ item: Custom Script Item
   Variable Value4=C:\Programme\Wise for Windows Installer\HELP\Express.chm
   Variable Name5=_OPTION_
   Variable Value5=B
-  Variable Name6=_Y_POS_
+  Variable Name6=_HEIGHT_
+  Variable Value6=80
   Variable Name7=_MSG_TEXT_
   Variable Value7=Please wait while Python modules are compiled
-  Variable Name8=_HEIGHT_
-  Variable Value8=80
+  Variable Name8=_Y_POS_
   Variable Name9=_X_POS_
 end
 item: Execute Program
