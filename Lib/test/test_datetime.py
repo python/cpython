@@ -443,6 +443,37 @@ class TestTimeDelta(HarmlessMixedComparison):
         self.failUnless(timedelta(microseconds=1))
         self.failUnless(not timedelta(0))
 
+    def test_subclass_timedelta(self):
+
+        class T(timedelta):
+            def from_td(td):
+                return T(td.days, td.seconds, td.microseconds)
+            from_td = staticmethod(from_td)
+
+            def as_hours(self):
+                sum = (self.days * 24 +
+                       self.seconds / 3600.0 +
+                       self.microseconds / 3600e6)
+                return round(sum)
+
+        t1 = T(days=1)
+        self.assert_(type(t1) is T)
+        self.assertEqual(t1.as_hours(), 24)
+
+        t2 = T(days=-1, seconds=-3600)
+        self.assert_(type(t2) is T)
+        self.assertEqual(t2.as_hours(), -25)
+
+        t3 = t1 + t2
+        self.assert_(type(t3) is timedelta)
+        t4 = T.from_td(t3)
+        self.assert_(type(t4) is T)
+        self.assertEqual(t3.days, t4.days)
+        self.assertEqual(t3.seconds, t4.seconds)
+        self.assertEqual(t3.microseconds, t4.microseconds)
+        self.assertEqual(str(t3), str(t4))
+        self.assertEqual(t4.as_hours(), -1)
+
 #############################################################################
 # date tests
 

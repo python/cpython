@@ -562,6 +562,168 @@ normalize_datetime(int *year, int *month, int *day,
 }
 
 /* ---------------------------------------------------------------------------
+ * Basic object allocation:  tp_alloc implementations.  These allocate
+ * Python objects of the right size and type, and do the Python object-
+ * initialization bit.  If there's not enough memory, they return NULL after
+ * setting MemoryError.  All data members remain uninitialized trash.
+ *
+ * We abuse the tp_alloc "nitems" argument to communicate whether a tzinfo
+ * member is needed.  This is ugly.
+ */
+
+static PyObject *
+time_alloc(PyTypeObject *type, int aware)
+{
+	PyObject *self;
+
+	self = (PyObject *)
+		PyObject_MALLOC(aware ?
+				sizeof(PyDateTime_Time) :
+				sizeof(_PyDateTime_BaseTime));
+	if (self == NULL)
+		return (PyObject *)PyErr_NoMemory();
+	PyObject_INIT(self, type);
+	return self;
+}
+
+static PyObject *
+datetime_alloc(PyTypeObject *type, int aware)
+{
+	PyObject *self;
+
+	self = (PyObject *)
+		PyObject_MALLOC(aware ?
+				sizeof(PyDateTime_DateTime) :
+				sizeof(_PyDateTime_BaseDateTime));
+	if (self == NULL)
+		return (PyObject *)PyErr_NoMemory();
+	PyObject_INIT(self, type);
+	return self;
+}
+
+/* ---------------------------------------------------------------------------
+ * Helpers for setting object fields.  These work on pointers to the
+ * appropriate base class.
+ */
+
+/* For date and datetime. */
+static void
+set_date_fields(PyDateTime_Date *self, int y, int m, int d)
+{
+	self->hashcode = -1;
+	SET_YEAR(self, y);
+	SET_MONTH(self, m);
+	SET_DAY(self, d);
+}
+
+/* ---------------------------------------------------------------------------
+ * Create various objects, mostly without range checking.
+ */
+
+/* Create a date instance with no range checking. */
+static PyObject *
+new_date_ex(int year, int month, int day, PyTypeObject *type)
+{
+	PyDateTime_Date *self;
+
+	self = (PyDateTime_Date *) (type->tp_alloc(type, 0));
+	if (self != NULL)
+		set_date_fields(self, year, month, day);
+	return (PyObject *) self;
+}
+
+#define new_date(year, month, day) \
+	new_date_ex(year, month, day, &PyDateTime_DateType)
+
+/* Create a datetime instance with no range checking. */
+static PyObject *
+new_datetime_ex(int year, int month, int day, int hour, int minute,
+	     int second, int usecond, PyObject *tzinfo, PyTypeObject *type)
+{
+	PyDateTime_DateTime *self;
+	char aware = tzinfo != Py_None;
+
+	self = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
+	if (self != NULL) {
+		self->hastzinfo = aware;
+		set_date_fields((PyDateTime_Date *)self, year, month, day);
+		DATE_SET_HOUR(self, hour);
+		DATE_SET_MINUTE(self, minute);
+		DATE_SET_SECOND(self, second);
+		DATE_SET_MICROSECOND(self, usecond);
+		if (aware) {
+			Py_INCREF(tzinfo);
+			self->tzinfo = tzinfo;
+		}
+	}
+	return (PyObject *)self;
+}
+
+#define new_datetime(y, m, d, hh, mm, ss, us, tzinfo)		\
+	new_datetime_ex(y, m, d, hh, mm, ss, us, tzinfo,	\
+			&PyDateTime_DateTimeType)
+
+/* Create a time instance with no range checking. */
+static PyObject *
+new_time_ex(int hour, int minute, int second, int usecond,
+	    PyObject *tzinfo, PyTypeObject *type)
+{
+	PyDateTime_Time *self;
+	char aware = tzinfo != Py_None;
+
+	self = (PyDateTime_Time *) (type->tp_alloc(type, aware));
+	if (self != NULL) {
+		self->hastzinfo = aware;
+		self->hashcode = -1;
+		TIME_SET_HOUR(self, hour);
+		TIME_SET_MINUTE(self, minute);
+		TIME_SET_SECOND(self, second);
+		TIME_SET_MICROSECOND(self, usecond);
+		if (aware) {
+			Py_INCREF(tzinfo);
+			self->tzinfo = tzinfo;
+		}
+	}
+	return (PyObject *)self;
+}
+
+#define new_time(hh, mm, ss, us, tzinfo)		\
+	new_time_ex(hh, mm, ss, us, tzinfo, &PyDateTime_TimeType)
+
+/* Create a timedelta instance.  Normalize the members iff normalize is
+ * true.  Passing false is a speed optimization, if you know for sure
+ * that seconds and microseconds are already in their proper ranges.  In any
+ * case, raises OverflowError and returns NULL if the normalized days is out
+ * of range).
+ */
+static PyObject *
+new_delta_ex(int days, int seconds, int microseconds, int normalize,
+	     PyTypeObject *type)
+{
+	PyDateTime_Delta *self;
+
+	if (normalize)
+		normalize_d_s_us(&days, &seconds, &microseconds);
+	assert(0 <= seconds && seconds < 24*3600);
+	assert(0 <= microseconds && microseconds < 1000000);
+
+ 	if (check_delta_day_range(days) < 0)
+ 		return NULL;
+
+	self = (PyDateTime_Delta *) (type->tp_alloc(type, 0));
+	if (self != NULL) {
+		self->hashcode = -1;
+		SET_TD_DAYS(self, days);
+		SET_TD_SECONDS(self, seconds);
+		SET_TD_MICROSECONDS(self, microseconds);
+	}
+	return (PyObject *) self;
+}
+
+#define new_delta(d, s, us, normalize)	\
+	new_delta_ex(d, s, us, normalize, &PyDateTime_DeltaType)
+
+/* ---------------------------------------------------------------------------
  * tzinfo helpers.
  */
 
@@ -694,8 +856,6 @@ call_utcoffset(PyObject *tzinfo, PyObject *tzinfoarg, int *none)
 {
 	return call_utc_tzinfo_method(tzinfo, "utcoffset", tzinfoarg, none);
 }
-
-static PyObject *new_delta(int d, int sec, int usec, int normalize);
 
 /* Call tzinfo.name(tzinfoarg), and return the offset as a timedelta or None.
  */
@@ -1235,165 +1395,6 @@ cmperror(PyObject *a, PyObject *b)
 }
 
 /* ---------------------------------------------------------------------------
- * Basic object allocation:  tp_alloc implementatiosn.  These allocate
- * Python objects of the right size and type, and do the Python object-
- * initialization bit.  If there's not enough memory, they return NULL after
- * setting MemoryError.  All data members remain uninitialized trash.
- *
- * We abuse the tp_alloc "nitems" argument to communicate whether a tzinfo
- * member is needed.  This is ugly.
- */
-
-static PyObject *
-time_alloc(PyTypeObject *type, int aware)
-{
-	PyObject *self;
-
-	self = (PyObject *)
-		PyObject_MALLOC(aware ?
-				sizeof(PyDateTime_Time) :
-				sizeof(_PyDateTime_BaseTime));
-	if (self == NULL)
-		return (PyObject *)PyErr_NoMemory();
-	PyObject_INIT(self, type);
-	return self;
-}
-
-static PyObject *
-datetime_alloc(PyTypeObject *type, int aware)
-{
-	PyObject *self;
-
-	self = (PyObject *)
-		PyObject_MALLOC(aware ?
-				sizeof(PyDateTime_DateTime) :
-				sizeof(_PyDateTime_BaseDateTime));
-	if (self == NULL)
-		return (PyObject *)PyErr_NoMemory();
-	PyObject_INIT(self, type);
-	return self;
-}
-
-/* ---------------------------------------------------------------------------
- * Helpers for setting object fields.  These work on pointers to the
- * appropriate base class.
- */
-
-/* For date and datetime. */
-static void
-set_date_fields(PyDateTime_Date *self, int y, int m, int d)
-{
-	self->hashcode = -1;
-	SET_YEAR(self, y);
-	SET_MONTH(self, m);
-	SET_DAY(self, d);
-}
-
-/* ---------------------------------------------------------------------------
- * Create various objects, mostly without range checking.
- */
-
-/* Create a date instance with no range checking. */
-static PyObject *
-new_date_ex(int year, int month, int day, PyTypeObject *type)
-{
-	PyDateTime_Date *self;
-
-	self = (PyDateTime_Date *) (type->tp_alloc(type, 0));
-	if (self != NULL)
-		set_date_fields(self, year, month, day);
-	return (PyObject *) self;
-}
-
-#define new_date(year, month, day) \
-	new_date_ex(year, month, day, &PyDateTime_DateType)
-
-/* Create a datetime instance with no range checking. */
-static PyObject *
-new_datetime_ex(int year, int month, int day, int hour, int minute,
-	     int second, int usecond, PyObject *tzinfo, PyTypeObject *type)
-{
-	PyDateTime_DateTime *self;
-	char aware = tzinfo != Py_None;
-
-	self = (PyDateTime_DateTime *) (type->tp_alloc(type, aware));
-	if (self != NULL) {
-		self->hastzinfo = aware;
-		set_date_fields((PyDateTime_Date *)self, year, month, day);
-		DATE_SET_HOUR(self, hour);
-		DATE_SET_MINUTE(self, minute);
-		DATE_SET_SECOND(self, second);
-		DATE_SET_MICROSECOND(self, usecond);
-		if (aware) {
-			Py_INCREF(tzinfo);
-			self->tzinfo = tzinfo;
-		}
-	}
-	return (PyObject *)self;
-}
-
-#define new_datetime(y, m, d, hh, mm, ss, us, tzinfo)		\
-	new_datetime_ex(y, m, d, hh, mm, ss, us, tzinfo,	\
-			&PyDateTime_DateTimeType)
-
-/* Create a time instance with no range checking. */
-static PyObject *
-new_time_ex(int hour, int minute, int second, int usecond,
-	    PyObject *tzinfo, PyTypeObject *type)
-{
-	PyDateTime_Time *self;
-	char aware = tzinfo != Py_None;
-
-	self = (PyDateTime_Time *) (type->tp_alloc(type, aware));
-	if (self != NULL) {
-		self->hastzinfo = aware;
-		self->hashcode = -1;
-		TIME_SET_HOUR(self, hour);
-		TIME_SET_MINUTE(self, minute);
-		TIME_SET_SECOND(self, second);
-		TIME_SET_MICROSECOND(self, usecond);
-		if (aware) {
-			Py_INCREF(tzinfo);
-			self->tzinfo = tzinfo;
-		}
-	}
-	return (PyObject *)self;
-}
-
-#define new_time(hh, mm, ss, us, tzinfo)		\
-	new_time_ex(hh, mm, ss, us, tzinfo, &PyDateTime_TimeType)
-
-/* Create a timedelta instance.  Normalize the members iff normalize is
- * true.  Passing false is a speed optimization, if you know for sure
- * that seconds and microseconds are already in their proper ranges.  In any
- * case, raises OverflowError and returns NULL if the normalized days is out
- * of range).
- */
-static PyObject *
-new_delta(int days, int seconds, int microseconds, int normalize)
-{
-	PyDateTime_Delta *self;
-
-	if (normalize)
-		normalize_d_s_us(&days, &seconds, &microseconds);
-	assert(0 <= seconds && seconds < 24*3600);
-	assert(0 <= microseconds && microseconds < 1000000);
-
- 	if (check_delta_day_range(days) < 0)
- 		return NULL;
-
-	self = PyObject_New(PyDateTime_Delta, &PyDateTime_DeltaType);
-	if (self != NULL) {
-		self->hashcode = -1;
-		SET_TD_DAYS(self, days);
-		SET_TD_SECONDS(self, seconds);
-		SET_TD_MICROSECONDS(self, microseconds);
-	}
-	return (PyObject *) self;
-}
-
-
-/* ---------------------------------------------------------------------------
  * Cached Python objects; these are set by the module init function.
  */
 
@@ -1472,7 +1473,7 @@ Done:
 /* Convert a number of us (as a Python int or long) to a timedelta.
  */
 static PyObject *
-microseconds_to_delta(PyObject *pyus)
+microseconds_to_delta_ex(PyObject *pyus, PyTypeObject *type)
 {
 	int us;
 	int s;
@@ -1542,13 +1543,16 @@ microseconds_to_delta(PyObject *pyus)
 				"large to fit in a C int");
 		goto Done;
 	}
-	result = new_delta(d, s, us, 0);
+	result = new_delta_ex(d, s, us, 0, type);
 
 Done:
 	Py_XDECREF(tuple);
 	Py_XDECREF(num);
 	return result;
 }
+
+#define microseconds_to_delta(pymicros)	\
+	microseconds_to_delta_ex(pymicros, &PyDateTime_DeltaType)
 
 static PyObject *
 multiply_int_timedelta(PyObject *intobj, PyDateTime_Delta *delta)
@@ -1924,7 +1928,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 		CLEANUP;
 	}
 
-	self = microseconds_to_delta(x);
+	self = microseconds_to_delta_ex(x, type);
 	Py_DECREF(x);
 Done:
 	return self;
@@ -2110,7 +2114,8 @@ static PyTypeObject PyDateTime_DeltaType = {
 	PyObject_GenericGetAttr,			/* tp_getattro */
 	0,						/* tp_setattro */
 	0,						/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES,	/* tp_flags */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES |
+	        Py_TPFLAGS_BASETYPE,			/* tp_flags */
 	delta_doc,					/* tp_doc */
 	0,						/* tp_traverse */
 	0,						/* tp_clear */

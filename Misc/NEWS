@@ -26,8 +26,8 @@ Core and builtins
 Extension modules
 -----------------
 
-- The datetime.datetime and datetime.time classes are now properly
-  subclassable.
+- The datetime module classes datetime, time, and timedelta are now
+  properly subclassable.
 
 - _tkinter.{get|set}busywaitinterval was added.
 
