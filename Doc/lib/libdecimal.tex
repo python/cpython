@@ -935,8 +935,8 @@ def pi():
     3.141592653589793238462643383279502887
     """
     getcontext().prec += 9  # extra digits for intermediate steps
-    one = Decimal(1)        # substitute "one=1.0" for regular floats
-    lastc, t, c, n, na, d, da = 0*one, 3*one, 3*one, 1, 0, 0, 24*one
+    three = Decimal(3)        # substitute "three=3.0" for regular floats
+    lastc, t, c, n, na, d, da = 0, three, 3, 1, 0, 0, 24
     while c != lastc:
         lastc = c
         n, na = n+na, na+8
@@ -955,7 +955,6 @@ def exp(x):
     7.389056098930650227230427460575007813
     """
     getcontext().prec += 9  # extra digits for intermediate steps
-    one = Decimal(1)        # substitute "one=1.0" for regular floats
     i, laste, e, fact, num = 0, 0, 1, 1, 1
     while e != laste:
         laste = e    
@@ -973,7 +972,6 @@ def cos(x):
     0.8775825618903727161162815826038296521
     """
     getcontext().prec += 9  # extra digits for intermediate steps
-    one = Decimal(1)        # substitute "one=1.0" for regular floats
     i, laste, e, fact, num, sign = 0, 0, 1, 1, 1, 1
     while e != laste:
         laste = e    
@@ -992,7 +990,6 @@ def sin(x):
     0.4794255386042030002732879352155713880
     """
     getcontext().prec += 9  # extra digits for intermediate steps
-    one = Decimal(1)        # substitute "one=1.0" for regular floats
     i, laste, e, fact, num, sign = 1, 0, x, 1, x, 1
     while e != laste:
         laste = e    
