@@ -27,7 +27,10 @@ def copyfileobj(fsrc, fdst, length=16*1024):
 def _samefile(src, dst):
     # Macintosh, Unix.
     if hasattr(os.path,'samefile'):
-        return os.path.samefile(src, dst)
+        try:
+            return os.path.samefile(src, dst)
+        except OSError:
+            return False
 
     # All other platforms: check for same pathname.
     return (os.path.normcase(os.path.abspath(src)) ==
