@@ -38,6 +38,11 @@ Extension modules
 Library
 -------
 
+- More fixes to urllib (SF 549151): (a) When redirecting, always use
+  GET.  This is common practice and more-or-less sanctioned by the
+  HTTP standard. (b) Add a handler for 307 redirection, which becomes
+  an error for POST, but a regular redirect for GET and HEAD
+
 - Added optional 'onerror' argument to os.walk(), to control error
   handling.
 
