@@ -95,8 +95,7 @@ def scanfile(filename):
 
 builtins = sys.builtin_module_names
 if 'sys' not in builtins: builtins.append('sys')
-# XXX this table may have to be changed depending on your platform:
-tails = ['.so', 'module.so', '.py', '.pyc']
+tails = ['.py', '.pyc']
 
 def findmodule(modname, path = sys.path):
 	if modname in builtins: return '<builtin>'
