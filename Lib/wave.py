@@ -15,9 +15,9 @@
 #	getsampwidth()	-- returns sample width in bytes
 #	getframerate()	-- returns sampling frequency
 #	getnframes()	-- returns number of audio frames
-#	getcomptype()	-- returns compression type ('NONE' for AIFF files)
+#	getcomptype()	-- returns compression type ('NONE' for linear samples)
 #	getcompname()	-- returns human-readable version of
-#			   compression type ('not compressed' for AIFF files)
+#			   compression type ('not compressed' linear samples)
 #	getparams()	-- returns a tuple consisting of all of the
 #			   above in the above order
 #	getmarkers()	-- returns None (for compatibility with the
@@ -49,7 +49,7 @@
 #	setcomptype(type, name)
 #			-- set the compression type and the
 #			   human-readable compression type
-#	setparams(nchannels, sampwidth, framerate, nframes, comptype, compname)
+#	setparams(tuple)
 #			-- set all parameters at once
 #	tell()		-- return current position in output file
 #	writeframesraw(data)
@@ -332,7 +332,7 @@ class Wave_read:
 		if wFormatTag == WAVE_FORMAT_PCM:
 			self._sampwidth = (_read_short(chunk) + 7) / 8
 		else:
-			raise Error, 'unknown format'
+			raise Error, 'unknown format: ' + `wFormatTag`
 		self._framesize = self._nchannels * self._sampwidth
 		self._comptype = 'NONE'
 		self._compname = 'not compressed'
