@@ -6,6 +6,8 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The optional object allocator has been enabled by default.
+
 - If you try to pickle an instance of a class that has __slots__ but
   doesn't define or override __getstate__, a TypeError is now raised.
   This is done by adding a bozo __getstate__ to the class that always
@@ -77,6 +79,13 @@ Tools/Demos
 Build
 
 C API
+
+- Objects allocated using the new PyMalloc_New and PyMalloc_NewVar
+  functions will be allocated using pymalloc if it is enabled.  These
+  objects should be deallocated using PyMalloc_Del.  The PyObject_{New,
+  NewVar,NEW_VAR,Del,DEL} APIs have been changed to always use
+  PyMem_MALLOC and PyMem_FREE, even if pymalloc is enabled.  The
+  PyCore_* family of APIs have been removed.
 
 - The "u#" parser marker will now pass through Unicode object as-is
   without going through the buffer API.
