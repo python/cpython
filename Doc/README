@@ -7,12 +7,14 @@ and a published article about Python.
 The following are the LaTeX source files:
 
 	tut.tex				The tutorial
-	lib.tex, lib[1-5].tex		The library reference
+	lib.tex, lib*.tex		The library reference
 	ref.tex, ref[1-8].tex		The reference manual
+	ext.tex				How to extend Python
 	qua.tex, quabib.bib		Article published in CWI Quarterly
 
-All except qua.tex use the style option file "myformat.sty".  This
-contains some macro definitions and sets some style parameters.
+All except qua.tex (which isn't built by the default target) use the
+style option file "myformat.sty".  This contains some macro
+definitions and sets some style parameters.
 
 The style parameters are set up for European paper size (21 x 29.7 cm,
 a.k.a. A4, or roughly 8.27 x 11.7 inch) by default.  To use US paper,
@@ -33,8 +35,10 @@ local conventions; at my site, I use dvips and lpr.  For example:
 	dvips -Ppsc ref | lpr -Ppsc	# print it on printer "psc".
 
 If you don't have latex, you can ftp the pre-formatted PosytScript
-versions of the documents; see "../misc/FTP" for information about
-ftp-ing Python files.
+versions of the documents.  It should be in the same place where you
+fetched the main Python distribution, if you got it by ftp.  (See
+"../Misc/FAQ" for information about ftp-ing Python files.)
+
 
 Making the INFO version of the Library Reference
 ------------------------------------------------
@@ -43,44 +47,35 @@ The Library Reference can now also be read in hypertext form using the
 Emacs INFO system.  This uses Texinfo format as an intermediate step.
 It requires texinfo version 2 (we have used 2.14).
 
-To build the info files (python-lib.info*), say "make libinfo".  This
+To build the info files (python-lib.info*), say "make lib.info".  This
 takes a while, even on machines with 33 MIPS and 16 Mbytes :-) You can
 ignore the output.
 
 But first you'll have to change a site dependency in fix.el: if
-texinfo 2.xx is installed by default at your site, comment out the two
-lines starting with "(setq load-path"; if it isn't, change the path!
-(I'm afraid that if you don't have texinfo 2.xx this won't work -- use
-archie to locate a version and ftp to fetch it.)
+texinfo 2.xx isn't installed by default at your site, you'll have to
+install it (use archie to locate a version and ftp to fetch it).  If
+you can't install it in the standard Emacs load path, uncomment the
+line containing a "(setq load-path ...)" statement, and fill in the
+path where you put it.
 
 The files used by the conversion process are:
 
-partparse.py            the dirty-written Python script that converts
-                        LaTeX sources to texi files. Output is left in
-                        `@out.texi'
+partparse.py            Python script that converts LaTeX sources to
+			texi files.
 
-texi{pre,post}.dat      these files will be put before and after the
-                        result
+texi{pre,post}.dat      Files placed before and after the result.
 
-fix.sh                  calls emacs in order to update all the nodes and
-                        menus. After this, makeinfo will convert the
-                        texinfo-source to the info-file(s). Assumption:
-                        the texi-source is called `@out.texi'
-
-fix.el                  the elisp-file executed by emacs. Two calls to
+fix.el                  Elisp file executed by Emacs. Two calls to
                         'texinfo-all-menus-update are necessary in
-			some cases
+			some cases.
 
-fix_hack                executable shell script that fixes the results
-                        of the underscore hack. {\ptt \char'137} is
-                        back-translated to a simple underscore. This is
-                        needed for the texindex program
+fix_hack		Shell script to fix the results of the
+                        "underscore hack". {\ptt \char'137} is
+                        back-translated to a simple underscore.  This
+                        is needed for the texindex program.
 
-handy.el                some handy Emacs-macro's that helped converting
-                        ``old'' documentation to a format that could be
-                        understood by the converter scipt (partparse.py).
-			(You don't really need this, but, as the name
-			says, these macros are "handy")
+whichlibs		Shell script to print a list of lib*.tex files
+			to be processed.
 
 A Million thanks for Jan-Hein B\"uhrman for writing and debugging the
 convertor and related scripts, and for fixing the LaTeX sources and
