@@ -14,10 +14,6 @@ Todo:
  * SAX 2 namespaces
 """
 
-import string
-_string = string
-del string
-
 from xml.dom import HierarchyRequestErr, EMPTY_NAMESPACE
 
 # localize the types, and allow support for Unicode values if available:
@@ -284,11 +280,10 @@ class Node(xml.dom.Node):
 
 def _write_data(writer, data):
     "Writes datachars to writer."
-    replace = _string.replace
-    data = replace(data, "&", "&amp;")
-    data = replace(data, "<", "&lt;")
-    data = replace(data, "\"", "&quot;")
-    data = replace(data, ">", "&gt;")
+    data = data.replace("&", "&amp;")
+    data = data.replace("<", "&lt;")
+    data = data.replace("\"", "&quot;")
+    data = data.replace(">", "&gt;")
     writer.write(data)
 
 def _getElementsByTagNameHelper(parent, name, rc):
@@ -758,7 +753,7 @@ class CDATASection(Text):
 
 
 def _nssplit(qualifiedName):
-    fields = _string.split(qualifiedName, ':', 1)
+    fields = qualifiedName.split(':', 1)
     if len(fields) == 2:
         return fields
     elif len(fields) == 1:
@@ -787,7 +782,7 @@ class DOMImplementation:
     def hasFeature(self, feature, version):
         if version not in ("1.0", "2.0"):
             return 0
-        feature = _string.lower(feature)
+        feature = feature.lower()
         return feature == "core"
 
     def createDocument(self, namespaceURI, qualifiedName, doctype):
