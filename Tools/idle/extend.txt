@@ -28,7 +28,7 @@ variables:
 
 The extension class must not bind key events.  Rather, it must define
 one or more virtual events, e.g. <<zoom-height>>, and corresponding
-methods, e.g. zoom_height(), and have one or more class (or instance)
+methods, e.g. zoom_height_event(), and have one or more class (or instance)
 variables that define mappings between virtual events and key sequences,
 e.g. <Alt-F2>.  When the extension is loaded, these key sequences will
 be bound to the corresponding virtual events, and the virtual events
@@ -83,7 +83,7 @@ class ZoomHeight:
     def __init__(self, editwin):
         self.editwin = editwin
 
-    def zoom_height(self, event):
+    def zoom_height_event(self, event):
         "...Do what you want here..."
 
 The final piece of the puzzle is the file "extend.py", which contains a
