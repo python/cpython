@@ -340,7 +340,7 @@ html/modindex.html: html/lib/lib.html html/mac/mac.html
 html:	$(ALLHTMLFILES) $(HTMLCSSFILES)
 
 api: html/api/api.html html/api/api.css
-html/api/api.html: $(APIFILES)
+html/api/api.html: $(APIFILES) api/refcounts.dat
 	$(MKHTML) --dir html/api api/api.tex
 
 doc: html/doc/doc.html html/doc/doc.css
@@ -446,7 +446,7 @@ isilo/python-whatsnew-$(RELEASE).pdb: isilo/whatsnew/$(WHATSNEW).html isilo/what
 	$(MKISILO) "-iWhat's New in Python X.Y" \
 		isilo/whatsnew/$(WHATSNEW).html $@
 
-isilo/api/api.html: $(APIFILES)
+isilo/api/api.html: $(APIFILES) api/refcounts.dat
 	$(MKISILOHTML) --dir isilo/api api/api.tex
 
 isilo/doc/doc.html: $(DOCFILES)
