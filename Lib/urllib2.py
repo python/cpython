@@ -477,8 +477,8 @@ class ProxyHandler(BaseHandler):
         host, XXX = splithost(r_type)
         if '@' in host:
             user_pass, host = host.split('@', 1)
-            user_pass = base64.encode_string(unquote(user_passw)).strip()
-            req.addheader('Proxy-Authorization', user_pass)
+            user_pass = base64.encodestring(unquote(user_pass)).strip()
+            req.add_header('Proxy-Authorization', 'Basic '+user_pass)
         host = unquote(host)
         req.set_proxy(host, type)
         if orig_type == type:
@@ -781,7 +781,7 @@ def encode_digest(digest):
 class AbstractHTTPHandler(BaseHandler):
 
     def do_open(self, http_class, req):
-        host = req.get_host()
+        host = urlparse.urlparse(req.get_full_url())[1]
         if not host:
             raise URLError('no host given')
 
@@ -790,15 +790,16 @@ class AbstractHTTPHandler(BaseHandler):
             if req.has_data():
                 data = req.get_data()
                 h.putrequest('POST', req.get_selector())
-                h.putheader('Content-type',
-                            'application/x-www-form-urlencoded')
-                h.putheader('Content-length', '%d' % len(data))
+                if not req.headers.has_key('Content-type'):
+                    h.putheader('Content-type',
+                                'application/x-www-form-urlencoded')
+                if not req.headers.has_key('Content-length'):
+                    h.putheader('Content-length', '%d' % len(data))
             else:
                 h.putrequest('GET', req.get_selector())
         except socket.error, err:
             raise URLError(err)
 
-        # XXX proxies would have different host here
         h.putheader('Host', host)
         for args in self.parent.addheaders:
             h.putheader(*args)
