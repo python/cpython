@@ -122,6 +122,7 @@ parsetok(tok, g, start, n_ret)
 {
 	parser_state *ps;
 	int ret;
+	int started = 0;
 	
 	if ((ps = newparser(g, start)) == NULL) {
 		fprintf(stderr, "no mem for new parser\n");
@@ -139,6 +140,12 @@ parsetok(tok, g, start, n_ret)
 			ret = tok->done;
 			break;
 		}
+		if (type == ENDMARKER && started) {
+			type = NEWLINE; /* Add an extra newline */
+			started = 0;
+		}
+		else
+			started = 1;
 		len = b - a;
 		str = NEW(char, len + 1);
 		if (str == NULL) {
