@@ -698,7 +698,7 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			     's' (recode all objects via Unicode) or
 			     't' (only recode non-string objects) 
 			*/
-			if (*format != 's')
+			if (*format == 's')
 			    	recode_strings = 1;
 			else if (*format == 't')
 			    	recode_strings = 0;

@@ -63,6 +63,10 @@ if os.name == 'java':
     TESTFN = '$test'
 elif os.name != 'riscos':
     TESTFN = '@test'
+    # Unicode name only used if TEST_FN_ENCODING exists for the platform.
+    TESTFN_UNICODE=u"@test-\xe0\xf2" # 2 latin characters.
+    if os.name=="nt":
+        TESTFN_ENCODING="mbcs"
 else:
     TESTFN = 'test'
 del os

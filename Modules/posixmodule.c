@@ -233,6 +233,16 @@ extern int lstat(const char *, struct stat *);
 #endif /* MS_WIN32 */
 #endif /* _MSC_VER */
 
+/* The default encoding used by the platform file system APIs
+   If non-NULL, this is almost certainly different than the default 
+   encoding for strings (otherwise it can remain NULL!)
+*/
+#ifdef MS_WIN32
+const char *Py_FileSystemDefaultEncoding = "mbcs";
+#else
+const char *Py_FileSystemDefaultEncoding = NULL; /* use default */
+#endif
+
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <io.h>
 #endif /* OS2 */
@@ -354,6 +364,14 @@ posix_error_with_filename(char* name)
 	return PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
 }
 
+static PyObject *
+posix_error_with_allocated_filename(char* name)
+{
+	PyObject *rc = PyErr_SetFromErrnoWithFilename(PyExc_OSError, name);
+	PyMem_Free(name);
+	return rc;
+}
+
 #ifdef MS_WIN32
 static PyObject *
 win32_error(char* function, char* filename)
@@ -468,15 +486,17 @@ posix_int(PyObject *args, char *format, int (*func)(int))
 static PyObject *
 posix_1str(PyObject *args, char *format, int (*func)(const char*))
 {
-	char *path1;
+	char *path1 = NULL;
 	int res;
-	if (!PyArg_ParseTuple(args, format, &path1))
+	if (!PyArg_ParseTuple(args, format, 
+	                      Py_FileSystemDefaultEncoding, &path1))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error_with_filename(path1);
+		return posix_error_with_allocated_filename(path1);
+	PyMem_Free(path1);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -485,13 +505,17 @@ static PyObject *
 posix_2str(PyObject *args, char *format,
 	   int (*func)(const char *, const char *))
 {
-	char *path1, *path2;
+	char *path1 = NULL, *path2 = NULL;
 	int res;
-	if (!PyArg_ParseTuple(args, format, &path1, &path2))
+	if (!PyArg_ParseTuple(args, format,
+	                      Py_FileSystemDefaultEncoding, &path1, 
+	                      Py_FileSystemDefaultEncoding, &path2))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1, path2);
 	Py_END_ALLOW_THREADS
+	PyMem_Free(path1);
+	PyMem_Free(path2);
 	if (res != 0)
 		/* XXX how to report both path1 and path2??? */
 		return posix_error();
@@ -551,7 +575,7 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	      int (*statfunc)(const char *, STRUCT_STAT *))
 {
 	STRUCT_STAT st;
-	char *path;
+	char *path = NULL;
 	int res;
 
 #ifdef MS_WIN32
@@ -559,13 +583,15 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
       char pathcopy[MAX_PATH];
 #endif /* MS_WIN32 */
 
-	if (!PyArg_ParseTuple(args, format, &path))
+	if (!PyArg_ParseTuple(args, format, 
+	                      Py_FileSystemDefaultEncoding, &path))
 		return NULL;
 
 #ifdef MS_WIN32
 	pathlen = strlen(path);
 	/* the library call can blow up if the file name is too long! */
 	if (pathlen > MAX_PATH) {
+		PyMem_Free(path);
 		errno = ENAMETOOLONG;
 		return posix_error();
 	}
@@ -588,8 +614,9 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	res = (*statfunc)(path, &st);
 	Py_END_ALLOW_THREADS
 	if (res != 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
 
+	PyMem_Free(path);
 	return _pystat_fromstructstat(st);
 }
 
@@ -681,7 +708,7 @@ Change the current working directory to the specified path.";
 static PyObject *
 posix_chdir(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "s:chdir", chdir);
+	return posix_1str(args, "et:chdir", chdir);
 }
 
 
@@ -692,16 +719,18 @@ Change the access permissions of a file.";
 static PyObject *
 posix_chmod(PyObject *self, PyObject *args)
 {
-	char *path;
+	char *path = NULL;
 	int i;
 	int res;
-	if (!PyArg_ParseTuple(args, "si", &path, &i))
+	if (!PyArg_ParseTuple(args, "eti", Py_FileSystemDefaultEncoding, 
+	                      &path, &i))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = chmod(path, i);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -746,16 +775,19 @@ Change the owner and group id of path to the numeric uid and gid.";
 static PyObject *
 posix_chown(PyObject *self, PyObject *args)
 {
-	char *path;
+	char *path = NULL;
 	int uid, gid;
 	int res;
-	if (!PyArg_ParseTuple(args, "sii:chown", &path, &uid, &gid))
+	if (!PyArg_ParseTuple(args, "etii:chown", 
+	                      Py_FileSystemDefaultEncoding, &path, 
+	                      &uid, &gid))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = chown(path, (uid_t) uid, (gid_t) gid);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -792,7 +824,7 @@ Create a hard link to a file.";
 static PyObject *
 posix_link(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "ss:link", link);
+	return posix_2str(args, "etet:link", link);
 }
 #endif /* HAVE_LINK */
 
@@ -813,21 +845,18 @@ posix_listdir(PyObject *self, PyObject *args)
 	   in separate files instead of having them all here... */
 #if defined(MS_WIN32) && !defined(HAVE_OPENDIR)
 
-	char *name;
-	int len;
 	PyObject *d, *v;
 	HANDLE hFindFile;
 	WIN32_FIND_DATA FileData;
-	char namebuf[MAX_PATH+5];
+	/* MAX_PATH characters could mean a bigger encoded string */
+	char namebuf[MAX_PATH*2+5];
+	char *bufptr = namebuf;
+	int len = sizeof(namebuf)/sizeof(namebuf[0]);
 	char ch;
 
-	if (!PyArg_ParseTuple(args, "t#:listdir", &name, &len))
+	if (!PyArg_ParseTuple(args, "et#:listdir", 
+	                      Py_FileSystemDefaultEncoding, &bufptr, &len))
 		return NULL;
-	if (len >= MAX_PATH) {
-		PyErr_SetString(PyExc_ValueError, "path too long");
-		return NULL;
-	}
-	strcpy(namebuf, name);
 	ch = namebuf[len-1];
 	if (ch != '/' && ch != '\\' && ch != ':')
 		namebuf[len++] = '/';
@@ -841,7 +870,7 @@ posix_listdir(PyObject *self, PyObject *args)
 		errno = GetLastError();
 		if (errno == ERROR_FILE_NOT_FOUND)
 			return PyList_New(0);
-		return win32_error("FindFirstFile", name);
+		return win32_error("FindFirstFile", namebuf);
 	}
 	do {
 		if (FileData.cFileName[0] == '.' &&
@@ -865,7 +894,7 @@ posix_listdir(PyObject *self, PyObject *args)
 	} while (FindNextFile(hFindFile, &FileData) == TRUE);
 
 	if (FindClose(hFindFile) == FALSE)
-		return win32_error("FindClose", name);
+		return win32_error("FindClose", namebuf);
 
 	return d;
 
@@ -1042,6 +1071,28 @@ posix_listdir(PyObject *self, PyObject *args)
 #endif /* which OS */
 }  /* end of posix_listdir */
 
+#ifdef MS_WIN32
+/* A helper function for abspath on win32 */
+static PyObject *
+posix__getfullpathname(PyObject *self, PyObject *args)
+{
+	/* assume encoded strings wont more than double no of chars */
+	char inbuf[MAX_PATH*2];
+	char *inbufp = inbuf;
+	int insize = sizeof(inbuf)/sizeof(inbuf[0]);
+	char outbuf[MAX_PATH*2];
+	char *temp;
+	if (!PyArg_ParseTuple (args, "et#:_getfullpathname", 
+	                       Py_FileSystemDefaultEncoding, &inbufp, 
+	                       &insize))
+		return NULL;
+	if (!GetFullPathName(inbuf, sizeof(outbuf)/sizeof(outbuf[0]),
+	                     outbuf, &temp))
+		return win32_error("GetFullPathName", inbuf);
+	return PyString_FromString(outbuf);
+} /* end of posix__getfullpathname */
+#endif /* MS_WIN32 */
+
 static char posix_mkdir__doc__[] =
 "mkdir(path [, mode=0777]) -> None\n\
 Create a directory.";
@@ -1050,9 +1101,10 @@ static PyObject *
 posix_mkdir(PyObject *self, PyObject *args)
 {
 	int res;
-	char *path;
+	char *path = NULL;
 	int mode = 0777;
-	if (!PyArg_ParseTuple(args, "s|i:mkdir", &path, &mode))
+	if (!PyArg_ParseTuple(args, "et|i:mkdir", 
+	                      Py_FileSystemDefaultEncoding, &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #if ( defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP) ) && !defined(__QNX__)
@@ -1062,7 +1114,8 @@ posix_mkdir(PyObject *self, PyObject *args)
 #endif
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return posix_error_with_filename(path);
+		return posix_error_with_allocated_filename(path);
+	PyMem_Free(path);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1095,7 +1148,7 @@ Rename a file or directory.";
 static PyObject *
 posix_rename(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "ss:rename", rename);
+	return posix_2str(args, "etet:rename", rename);
 }
 
 
@@ -1106,7 +1159,7 @@ Remove a directory.";
 static PyObject *
 posix_rmdir(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "s:rmdir", rmdir);
+	return posix_1str(args, "et:rmdir", rmdir);
 }
 
 
@@ -1117,7 +1170,7 @@ Perform a stat system call on the given path.";
 static PyObject *
 posix_stat(PyObject *self, PyObject *args)
 {
-	return posix_do_stat(self, args, "s:stat", STAT);
+	return posix_do_stat(self, args, "et:stat", STAT);
 }
 
 
@@ -1169,7 +1222,7 @@ Remove a file (same as unlink(path)).";
 static PyObject *
 posix_unlink(PyObject *self, PyObject *args)
 {
-	return posix_1str(args, "s:remove", unlink);
+	return posix_1str(args, "et:remove", unlink);
 }
 
 
@@ -3113,9 +3166,9 @@ static PyObject *
 posix_lstat(PyObject *self, PyObject *args)
 {
 #ifdef HAVE_LSTAT
-	return posix_do_stat(self, args, "s:lstat", lstat);
+	return posix_do_stat(self, args, "et:lstat", lstat);
 #else /* !HAVE_LSTAT */
-	return posix_do_stat(self, args, "s:lstat", STAT);
+	return posix_do_stat(self, args, "et:lstat", STAT);
 #endif /* !HAVE_LSTAT */
 }
 
@@ -3151,7 +3204,7 @@ Create a symbolic link.";
 static PyObject *
 posix_symlink(PyObject *self, PyObject *args)
 {
-	return posix_2str(args, "ss:symlink", symlink);
+	return posix_2str(args, "etet:symlink", symlink);
 }
 #endif /* HAVE_SYMLINK */
 
@@ -3328,18 +3381,21 @@ Open a file (for low level IO).";
 static PyObject *
 posix_open(PyObject *self, PyObject *args)
 {
-	char *file;
+	char *file = NULL;
 	int flag;
 	int mode = 0777;
 	int fd;
-	if (!PyArg_ParseTuple(args, "si|i", &file, &flag, &mode))
+	if (!PyArg_ParseTuple(args, "eti|i", 
+	                      Py_FileSystemDefaultEncoding, &file,
+	                      &flag, &mode))
 		return NULL;
 
 	Py_BEGIN_ALLOW_THREADS
 	fd = open(file, flag, mode);
 	Py_END_ALLOW_THREADS
 	if (fd < 0)
-		return posix_error_with_filename(file);
+		return posix_error_with_allocated_filename(file);
+	PyMem_Free(file);
 	return PyInt_FromLong((long)fd);
 }
 
@@ -5458,6 +5514,9 @@ static PyMethodDef posix_methods[] = {
 	{"pathconf",	posix_pathconf, METH_VARARGS, posix_pathconf__doc__},
 #endif
 	{"abort",	posix_abort, METH_VARARGS, posix_abort__doc__},
+#ifdef MS_WIN32
+	{"_getfullpathname",	posix__getfullpathname, METH_VARARGS, NULL},
+#endif
 	{NULL,		NULL}		 /* Sentinel */
 };
 
