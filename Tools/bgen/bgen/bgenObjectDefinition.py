@@ -137,7 +137,7 @@ class ObjectDefinition(GeneratorGroup):
 		if self.basetype:
 			Output("%s.tp_dealloc(self)", self.basetype)
 		else:
-			Output("PyObject_Del(self);")
+			Output("self->ob_type->tp_free((PyObject *)self);")
 		OutRbrace()
 
 	def outputCleanupStructMembers(self):
