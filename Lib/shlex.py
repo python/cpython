@@ -158,6 +158,14 @@ class shlex:
             newfile = newfile[1:-1]
         return (newfile, open(newfile, "r"))
 
+    def error_leader(self, infile=None, lineno=None):
+        "Emit a C-compiler-like, Emacs-friendly error-message leader."
+        if not infile:
+            infile = self.infile
+        if not lineno:
+            lineno = self.lineno
+        return "\"%s\", line %d: " % (infile, lineno)
+
 if __name__ == '__main__': 
 
     lexer = shlex()
