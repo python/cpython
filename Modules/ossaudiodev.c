@@ -94,7 +94,7 @@ static PyObject *OSSAudioError;
 static oss_audio_t *
 newossobject(PyObject *arg)
 {
-    oss_audio_t *xp;
+    oss_audio_t *self;
     int fd, afmts, imode;
     char *basedev = NULL;
     char *mode = NULL;
@@ -139,24 +139,24 @@ newossobject(PyObject *arg)
         return NULL;
     }
     /* Create and initialize the object */
-    if ((xp = PyObject_New(oss_audio_t, &OSSAudioType)) == NULL) {
+    if ((self = PyObject_New(oss_audio_t, &OSSAudioType)) == NULL) {
         close(fd);
         return NULL;
     }
-    xp->fd = fd;
-    xp->mode = imode;
-    xp->icount = xp->ocount = 0;
-    xp->afmts  = afmts;
-    return xp;
+    self->fd = fd;
+    self->mode = imode;
+    self->icount = self->ocount = 0;
+    self->afmts  = afmts;
+    return self;
 }
 
 static void
-oss_dealloc(oss_audio_t *xp)
+oss_dealloc(oss_audio_t *self)
 {
     /* if already closed, don't reclose it */
-    if (xp->fd != -1)
-        close(xp->fd);
-    PyObject_Del(xp);
+    if (self->fd != -1)
+        close(self->fd);
+    PyObject_Del(self);
 }
 
 
@@ -169,7 +169,7 @@ newossmixerobject(PyObject *arg)
 {
     char *basedev = NULL, *mode = NULL;
     int fd, imode;
-    oss_mixer_t *xp;
+    oss_mixer_t *self;
     
     if (!PyArg_ParseTuple(arg, "|ss", &basedev, &mode)) {
         return NULL;
@@ -197,23 +197,23 @@ newossmixerobject(PyObject *arg)
         return NULL;
     }
     
-    if ((xp = PyObject_New(oss_mixer_t, &OSSMixerType)) == NULL) {
+    if ((self = PyObject_New(oss_mixer_t, &OSSMixerType)) == NULL) {
         close(fd);
         return NULL;
     }
     
-    xp->fd = fd;
+    self->fd = fd;
     
-    return xp;
+    return self;
 }
 
 static void
-oss_mixer_dealloc(oss_mixer_t *xp)
+oss_mixer_dealloc(oss_mixer_t *self)
 {
     /* if already closed, don't reclose it */
-    if (xp->fd != -1)
-        close(xp->fd);
-    PyObject_Del(xp);
+    if (self->fd != -1)
+        close(self->fd);
+    PyObject_Del(self);
 }
 
 
@@ -830,15 +830,15 @@ static PyMethodDef oss_mixer_methods[] = {
 };
 
 static PyObject *
-oss_getattr(oss_audio_t *xp, char *name)
+oss_getattr(oss_audio_t *self, char *name)
 {
-    return Py_FindMethod(oss_methods, (PyObject *)xp, name);
+    return Py_FindMethod(oss_methods, (PyObject *)self, name);
 }
 
 static PyObject *
-oss_mixer_getattr(oss_mixer_t *xp, char *name)
+oss_mixer_getattr(oss_mixer_t *self, char *name)
 {
-    return Py_FindMethod(oss_mixer_methods, (PyObject *)xp, name);
+    return Py_FindMethod(oss_mixer_methods, (PyObject *)self, name);
 }
 
 static PyTypeObject OSSAudioType = {
