@@ -616,9 +616,10 @@ libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 	done
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(LIBDEST)/LICENSE.txt
 	PYTHONPATH=$(LIBDEST) \
-		./$(PYTHON) -tt $(LIBDEST)/compileall.py $(LIBDEST)
+		./$(PYTHON) -tt $(LIBDEST)/compileall.py -x badsyntax \
+	        $(LIBDEST)
 	PYTHONPATH=$(LIBDEST) \
-		./$(PYTHON) -O $(LIBDEST)/compileall.py $(LIBDEST)
+		./$(PYTHON) -O $(LIBDEST)/compileall.py -x badsyntax $(LIBDEST)
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):
