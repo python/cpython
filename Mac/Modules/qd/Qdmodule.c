@@ -438,192 +438,6 @@ static PyObject *Qd_Line(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_TextFont(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short font;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &font))
-		return NULL;
-	TextFont(font);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_TextFace(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short face;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &face))
-		return NULL;
-	TextFace(face);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_TextMode(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short mode;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &mode))
-		return NULL;
-	TextMode(mode);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_TextSize(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short size;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &size))
-		return NULL;
-	TextSize(size);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_SpaceExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long extra;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &extra))
-		return NULL;
-	SpaceExtra(extra);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_DrawChar(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short ch;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &ch))
-		return NULL;
-	DrawChar(ch);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_DrawString(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Str255 s;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetStr255, s))
-		return NULL;
-	DrawString(s);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Qd_DrawText(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	char *textBuf__in__;
-	int textBuf__len__;
-	int textBuf__in_len__;
-	short firstByte;
-	short byteCount;
-	if (!PyArg_ParseTuple(_args, "s#hh",
-	                      &textBuf__in__, &textBuf__in_len__,
-	                      &firstByte,
-	                      &byteCount))
-		return NULL;
-	DrawText(textBuf__in__,
-	         firstByte,
-	         byteCount);
-	Py_INCREF(Py_None);
-	_res = Py_None;
- textBuf__error__: ;
-	return _res;
-}
-
-static PyObject *Qd_CharWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	short ch;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &ch))
-		return NULL;
-	_rv = CharWidth(ch);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_StringWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	Str255 s;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetStr255, s))
-		return NULL;
-	_rv = StringWidth(s);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_TextWidth(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	char *textBuf__in__;
-	int textBuf__len__;
-	int textBuf__in_len__;
-	short firstByte;
-	short byteCount;
-	if (!PyArg_ParseTuple(_args, "s#hh",
-	                      &textBuf__in__, &textBuf__in_len__,
-	                      &firstByte,
-	                      &byteCount))
-		return NULL;
-	_rv = TextWidth(textBuf__in__,
-	                firstByte,
-	                byteCount);
-	_res = Py_BuildValue("h",
-	                     _rv);
- textBuf__error__: ;
-	return _res;
-}
-
 static PyObject *Qd_ForeColor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1989,6 +1803,24 @@ static PyObject *Qd_PtToAngle(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_SubPt(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Point src;
+	Point dst;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &src,
+	                      PyMac_GetPoint, &dst))
+		return NULL;
+	SubPt(src,
+	      &dst);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildPoint, dst);
+	return _res;
+}
+
 static PyObject *Qd_PtInRgn(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2019,21 +1851,6 @@ static PyObject *Qd_NewPixMap(_self, _args)
 	_rv = NewPixMap();
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_DisposPixMap(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	PixMapHandle pm;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &pm))
-		return NULL;
-	DisposPixMap(pm);
-	Py_INCREF(Py_None);
-	_res = Py_None;
 	return _res;
 }
 
@@ -2081,21 +1898,6 @@ static PyObject *Qd_NewPixPat(_self, _args)
 	_rv = NewPixPat();
 	_res = Py_BuildValue("O&",
 	                     ResObj_New, _rv);
-	return _res;
-}
-
-static PyObject *Qd_DisposPixPat(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	PixPatHandle pp;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &pp))
-		return NULL;
-	DisposPixPat(pp);
-	Py_INCREF(Py_None);
-	_res = Py_None;
 	return _res;
 }
 
@@ -2326,21 +2128,6 @@ static PyObject *Qd_AllocCursor(_self, _args)
 	return _res;
 }
 
-static PyObject *Qd_CharExtra(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	long extra;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &extra))
-		return NULL;
-	CharExtra(extra);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *Qd_GetCTSeed(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2352,24 +2139,6 @@ static PyObject *Qd_GetCTSeed(_self, _args)
 	_rv = GetCTSeed();
 	_res = Py_BuildValue("l",
 	                     _rv);
-	return _res;
-}
-
-static PyObject *Qd_SubPt(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Point src;
-	Point dst;
-	if (!PyArg_ParseTuple(_args, "O&O&",
-	                      PyMac_GetPoint, &src,
-	                      PyMac_GetPoint, &dst))
-		return NULL;
-	SubPt(src,
-	      &dst);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildPoint, dst);
 	return _res;
 }
 
@@ -2438,6 +2207,207 @@ static PyObject *Qd_QDError(_self, _args)
 	return _res;
 }
 
+static PyObject *Qd_TextFont(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short font;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &font))
+		return NULL;
+	TextFont(font);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_TextFace(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short face;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &face))
+		return NULL;
+	TextFace(face);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_TextMode(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short mode;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &mode))
+		return NULL;
+	TextMode(mode);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_TextSize(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short size;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &size))
+		return NULL;
+	TextSize(size);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_SpaceExtra(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long extra;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &extra))
+		return NULL;
+	SpaceExtra(extra);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_DrawChar(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short ch;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &ch))
+		return NULL;
+	DrawChar(ch);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_DrawString(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Str255 s;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, s))
+		return NULL;
+	DrawString(s);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Qd_DrawText(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	char *textBuf__in__;
+	int textBuf__len__;
+	int textBuf__in_len__;
+	short firstByte;
+	short byteCount;
+	if (!PyArg_ParseTuple(_args, "s#hh",
+	                      &textBuf__in__, &textBuf__in_len__,
+	                      &firstByte,
+	                      &byteCount))
+		return NULL;
+	DrawText(textBuf__in__,
+	         firstByte,
+	         byteCount);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+ textBuf__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_CharWidth(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	short ch;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &ch))
+		return NULL;
+	_rv = CharWidth(ch);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_StringWidth(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	Str255 s;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetStr255, s))
+		return NULL;
+	_rv = StringWidth(s);
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qd_TextWidth(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	char *textBuf__in__;
+	int textBuf__len__;
+	int textBuf__in_len__;
+	short firstByte;
+	short byteCount;
+	if (!PyArg_ParseTuple(_args, "s#hh",
+	                      &textBuf__in__, &textBuf__in_len__,
+	                      &firstByte,
+	                      &byteCount))
+		return NULL;
+	_rv = TextWidth(textBuf__in__,
+	                firstByte,
+	                byteCount);
+	_res = Py_BuildValue("h",
+	                     _rv);
+ textBuf__error__: ;
+	return _res;
+}
+
+static PyObject *Qd_CharExtra(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long extra;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &extra))
+		return NULL;
+	CharExtra(extra);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef Qd_methods[] = {
 	{"OpenPort", (PyCFunction)Qd_OpenPort, 1,
 	 "(WindowPtr port) -> None"},
@@ -2491,28 +2461,6 @@ static PyMethodDef Qd_methods[] = {
 	 "(short h, short v) -> None"},
 	{"Line", (PyCFunction)Qd_Line, 1,
 	 "(short dh, short dv) -> None"},
-	{"TextFont", (PyCFunction)Qd_TextFont, 1,
-	 "(short font) -> None"},
-	{"TextFace", (PyCFunction)Qd_TextFace, 1,
-	 "(short face) -> None"},
-	{"TextMode", (PyCFunction)Qd_TextMode, 1,
-	 "(short mode) -> None"},
-	{"TextSize", (PyCFunction)Qd_TextSize, 1,
-	 "(short size) -> None"},
-	{"SpaceExtra", (PyCFunction)Qd_SpaceExtra, 1,
-	 "(long extra) -> None"},
-	{"DrawChar", (PyCFunction)Qd_DrawChar, 1,
-	 "(short ch) -> None"},
-	{"DrawString", (PyCFunction)Qd_DrawString, 1,
-	 "(Str255 s) -> None"},
-	{"DrawText", (PyCFunction)Qd_DrawText, 1,
-	 "(Buffer textBuf, short firstByte, short byteCount) -> None"},
-	{"CharWidth", (PyCFunction)Qd_CharWidth, 1,
-	 "(short ch) -> (short _rv)"},
-	{"StringWidth", (PyCFunction)Qd_StringWidth, 1,
-	 "(Str255 s) -> (short _rv)"},
-	{"TextWidth", (PyCFunction)Qd_TextWidth, 1,
-	 "(Buffer textBuf, short firstByte, short byteCount) -> (short _rv)"},
 	{"ForeColor", (PyCFunction)Qd_ForeColor, 1,
 	 "(long color) -> None"},
 	{"BackColor", (PyCFunction)Qd_BackColor, 1,
@@ -2665,20 +2613,18 @@ static PyMethodDef Qd_methods[] = {
 	 "(Point pt1, Point pt2) -> (Rect dstRect)"},
 	{"PtToAngle", (PyCFunction)Qd_PtToAngle, 1,
 	 "(Rect r, Point pt) -> (short angle)"},
+	{"SubPt", (PyCFunction)Qd_SubPt, 1,
+	 "(Point src, Point dst) -> (Point dst)"},
 	{"PtInRgn", (PyCFunction)Qd_PtInRgn, 1,
 	 "(Point pt, RgnHandle rgn) -> (Boolean _rv)"},
 	{"NewPixMap", (PyCFunction)Qd_NewPixMap, 1,
 	 "() -> (PixMapHandle _rv)"},
-	{"DisposPixMap", (PyCFunction)Qd_DisposPixMap, 1,
-	 "(PixMapHandle pm) -> None"},
 	{"DisposePixMap", (PyCFunction)Qd_DisposePixMap, 1,
 	 "(PixMapHandle pm) -> None"},
 	{"CopyPixMap", (PyCFunction)Qd_CopyPixMap, 1,
 	 "(PixMapHandle srcPM, PixMapHandle dstPM) -> None"},
 	{"NewPixPat", (PyCFunction)Qd_NewPixPat, 1,
 	 "() -> (PixPatHandle _rv)"},
-	{"DisposPixPat", (PyCFunction)Qd_DisposPixPat, 1,
-	 "(PixPatHandle pp) -> None"},
 	{"DisposePixPat", (PyCFunction)Qd_DisposePixPat, 1,
 	 "(PixPatHandle pp) -> None"},
 	{"CopyPixPat", (PyCFunction)Qd_CopyPixPat, 1,
@@ -2705,12 +2651,8 @@ static PyMethodDef Qd_methods[] = {
 	 "(PixMapHandle pm) -> None"},
 	{"AllocCursor", (PyCFunction)Qd_AllocCursor, 1,
 	 "() -> None"},
-	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
-	 "(long extra) -> None"},
 	{"GetCTSeed", (PyCFunction)Qd_GetCTSeed, 1,
 	 "() -> (long _rv)"},
-	{"SubPt", (PyCFunction)Qd_SubPt, 1,
-	 "(Point src, Point dst) -> (Point dst)"},
 	{"SetClientID", (PyCFunction)Qd_SetClientID, 1,
 	 "(short id) -> None"},
 	{"ProtectEntry", (PyCFunction)Qd_ProtectEntry, 1,
@@ -2719,6 +2661,30 @@ static PyMethodDef Qd_methods[] = {
 	 "(short index, Boolean reserve) -> None"},
 	{"QDError", (PyCFunction)Qd_QDError, 1,
 	 "() -> (short _rv)"},
+	{"TextFont", (PyCFunction)Qd_TextFont, 1,
+	 "(short font) -> None"},
+	{"TextFace", (PyCFunction)Qd_TextFace, 1,
+	 "(short face) -> None"},
+	{"TextMode", (PyCFunction)Qd_TextMode, 1,
+	 "(short mode) -> None"},
+	{"TextSize", (PyCFunction)Qd_TextSize, 1,
+	 "(short size) -> None"},
+	{"SpaceExtra", (PyCFunction)Qd_SpaceExtra, 1,
+	 "(long extra) -> None"},
+	{"DrawChar", (PyCFunction)Qd_DrawChar, 1,
+	 "(short ch) -> None"},
+	{"DrawString", (PyCFunction)Qd_DrawString, 1,
+	 "(Str255 s) -> None"},
+	{"DrawText", (PyCFunction)Qd_DrawText, 1,
+	 "(Buffer textBuf, short firstByte, short byteCount) -> None"},
+	{"CharWidth", (PyCFunction)Qd_CharWidth, 1,
+	 "(short ch) -> (short _rv)"},
+	{"StringWidth", (PyCFunction)Qd_StringWidth, 1,
+	 "(Str255 s) -> (short _rv)"},
+	{"TextWidth", (PyCFunction)Qd_TextWidth, 1,
+	 "(Buffer textBuf, short firstByte, short byteCount) -> (short _rv)"},
+	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
+	 "(long extra) -> None"},
 	{NULL, NULL, 0}
 };
 

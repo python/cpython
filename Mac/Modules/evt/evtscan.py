@@ -1,5 +1,7 @@
 # Scan an Apple header file, generating a Python file of generator calls.
 
+import addpack
+addpack.addpack(':tools:bgen:bgen')
 from scantools import Scanner
 
 LONG = "Events"
@@ -32,10 +34,12 @@ class MyScanner(Scanner):
 
 	def makeblacklistnames(self):
 		return [
+			"KeyTranslate"
 			]
 
 	def makeblacklisttypes(self):
 		return [
+			"EvQElPtr", "QHdrPtr"
 			]
 
 	def makerepairinstructions(self):
@@ -53,7 +57,11 @@ class MyScanner(Scanner):
 			# GetKeys
 			([('KeyMap', 'theKeys', 'InMode')],
 			 [('*', '*', 'OutMode')]),
+			 
+			# GetTicker
+			([('unsigned long', '*', '*')],
+			 [('unsigned_long', '*', '*')]),
 			]
-
+			
 if __name__ == "__main__":
 	main()

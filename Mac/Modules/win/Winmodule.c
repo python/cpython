@@ -346,7 +346,7 @@ static PyObject *WinObj_ClipAbove(_self, _args)
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	ClipAbove((WindowPeek)(_self->ob_itself));
+	ClipAbove(_self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -359,7 +359,7 @@ static PyObject *WinObj_SaveOld(_self, _args)
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	SaveOld((WindowPeek)(_self->ob_itself));
+	SaveOld(_self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -374,7 +374,7 @@ static PyObject *WinObj_DrawNew(_self, _args)
 	if (!PyArg_ParseTuple(_args, "b",
 	                      &update))
 		return NULL;
-	DrawNew((WindowPeek)(_self->ob_itself),
+	DrawNew(_self->ob_itself,
 	        update);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -388,7 +388,7 @@ static PyObject *WinObj_CalcVis(_self, _args)
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	CalcVis((WindowPeek)(_self->ob_itself));
+	CalcVis(_self->ob_itself);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -870,5 +870,4 @@ void initWin()
 }
 
 /* ========================= End module Win ========================= */
-
 

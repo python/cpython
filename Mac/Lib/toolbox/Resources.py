@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Resources.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Resources.h'
 
 resSysHeap = 64
 resPurgeable = 32
@@ -9,5 +9,5 @@ resChanged = 2
 mapReadOnly = 128
 mapCompact = 64
 mapChanged = 32
-mapTrue = 0xFFFF
-mapFalse = 0xFF00
+kResFileNotOpened = -1
+kSystemResFile = 0

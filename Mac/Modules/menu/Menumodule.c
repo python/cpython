@@ -109,7 +109,7 @@ static PyObject *MenuObj_AppendMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_AddResMenu(_self, _args)
+static PyObject *MenuObj_AppendResMenu(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -118,8 +118,8 @@ static PyObject *MenuObj_AddResMenu(_self, _args)
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetOSType, &theType))
 		return NULL;
-	AddResMenu(_self->ob_itself,
-	           theType);
+	AppendResMenu(_self->ob_itself,
+	              theType);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -160,7 +160,7 @@ static PyObject *MenuObj_InsertMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *MenuObj_InsMenuItem(_self, _args)
+static PyObject *MenuObj_InsertMenuItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -171,15 +171,15 @@ static PyObject *MenuObj_InsMenuItem(_self, _args)
 	                      PyMac_GetStr255, itemString,
 	                      &afterItem))
 		return NULL;
-	InsMenuItem(_self->ob_itself,
-	            itemString,
-	            afterItem);
+	InsertMenuItem(_self->ob_itself,
+	               itemString,
+	               afterItem);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *MenuObj_DelMenuItem(_self, _args)
+static PyObject *MenuObj_DeleteMenuItem(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -188,14 +188,14 @@ static PyObject *MenuObj_DelMenuItem(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &item))
 		return NULL;
-	DelMenuItem(_self->ob_itself,
-	            item);
+	DeleteMenuItem(_self->ob_itself,
+	               item);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *MenuObj_SetItem(_self, _args)
+static PyObject *MenuObj_SetMenuItemText(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -206,15 +206,15 @@ static PyObject *MenuObj_SetItem(_self, _args)
 	                      &item,
 	                      PyMac_GetStr255, itemString))
 		return NULL;
-	SetItem(_self->ob_itself,
-	        item,
-	        itemString);
+	SetMenuItemText(_self->ob_itself,
+	                item,
+	                itemString);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
 }
 
-static PyObject *MenuObj_GetItem(_self, _args)
+static PyObject *MenuObj_GetMenuItemText(_self, _args)
 	MenuObject *_self;
 	PyObject *_args;
 {
@@ -224,9 +224,9 @@ static PyObject *MenuObj_GetItem(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &item))
 		return NULL;
-	GetItem(_self->ob_itself,
-	        item,
-	        itemString);
+	GetMenuItemText(_self->ob_itself,
+	                item,
+	                itemString);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildStr255, itemString);
 	return _res;
@@ -382,7 +382,7 @@ static PyObject *MenuObj_GetItemStyle(_self, _args)
 {
 	PyObject *_res = NULL;
 	short item;
-	Style chStyle;
+	unsigned char chStyle;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &item))
 		return NULL;
@@ -481,24 +481,65 @@ static PyObject *MenuObj_PopUpMenuSelect(_self, _args)
 	return _res;
 }
 
+static PyObject *MenuObj_InsertFontResMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short afterItem;
+	short scriptFilter;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &afterItem,
+	                      &scriptFilter))
+		return NULL;
+	InsertFontResMenu(_self->ob_itself,
+	                  afterItem,
+	                  scriptFilter);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *MenuObj_InsertIntlResMenu(_self, _args)
+	MenuObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	ResType theType;
+	short afterItem;
+	short scriptFilter;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetOSType, &theType,
+	                      &afterItem,
+	                      &scriptFilter))
+		return NULL;
+	InsertIntlResMenu(_self->ob_itself,
+	                  theType,
+	                  afterItem,
+	                  scriptFilter);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef MenuObj_methods[] = {
 	{"DisposeMenu", (PyCFunction)MenuObj_DisposeMenu, 1,
 	 "() -> None"},
 	{"AppendMenu", (PyCFunction)MenuObj_AppendMenu, 1,
 	 "(Str255 data) -> None"},
-	{"AddResMenu", (PyCFunction)MenuObj_AddResMenu, 1,
+	{"AppendResMenu", (PyCFunction)MenuObj_AppendResMenu, 1,
 	 "(ResType theType) -> None"},
 	{"InsertResMenu", (PyCFunction)MenuObj_InsertResMenu, 1,
 	 "(ResType theType, short afterItem) -> None"},
 	{"InsertMenu", (PyCFunction)MenuObj_InsertMenu, 1,
 	 "(short beforeID) -> None"},
-	{"InsMenuItem", (PyCFunction)MenuObj_InsMenuItem, 1,
+	{"InsertMenuItem", (PyCFunction)MenuObj_InsertMenuItem, 1,
 	 "(Str255 itemString, short afterItem) -> None"},
-	{"DelMenuItem", (PyCFunction)MenuObj_DelMenuItem, 1,
+	{"DeleteMenuItem", (PyCFunction)MenuObj_DeleteMenuItem, 1,
 	 "(short item) -> None"},
-	{"SetItem", (PyCFunction)MenuObj_SetItem, 1,
+	{"SetMenuItemText", (PyCFunction)MenuObj_SetMenuItemText, 1,
 	 "(short item, Str255 itemString) -> None"},
-	{"GetItem", (PyCFunction)MenuObj_GetItem, 1,
+	{"GetMenuItemText", (PyCFunction)MenuObj_GetMenuItemText, 1,
 	 "(short item) -> (Str255 itemString)"},
 	{"DisableItem", (PyCFunction)MenuObj_DisableItem, 1,
 	 "(short item) -> None"},
@@ -517,7 +558,7 @@ static PyMethodDef MenuObj_methods[] = {
 	{"SetItemStyle", (PyCFunction)MenuObj_SetItemStyle, 1,
 	 "(short item, short chStyle) -> None"},
 	{"GetItemStyle", (PyCFunction)MenuObj_GetItemStyle, 1,
-	 "(short item) -> (Style chStyle)"},
+	 "(short item) -> (unsigned char chStyle)"},
 	{"CalcMenuSize", (PyCFunction)MenuObj_CalcMenuSize, 1,
 	 "() -> None"},
 	{"CountMItems", (PyCFunction)MenuObj_CountMItems, 1,
@@ -528,6 +569,10 @@ static PyMethodDef MenuObj_methods[] = {
 	 "(short item, short cmdChar) -> None"},
 	{"PopUpMenuSelect", (PyCFunction)MenuObj_PopUpMenuSelect, 1,
 	 "(short top, short left, short popUpItem) -> (long _rv)"},
+	{"InsertFontResMenu", (PyCFunction)MenuObj_InsertFontResMenu, 1,
+	 "(short afterItem, short scriptFilter) -> None"},
+	{"InsertIntlResMenu", (PyCFunction)MenuObj_InsertIntlResMenu, 1,
+	 "(ResType theType, short afterItem, short scriptFilter) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -557,6 +602,20 @@ PyTypeObject Menu_Type = {
 
 /* ---------------------- End object type Menu ---------------------- */
 
+
+static PyObject *Menu_GetMBarHeight(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetMBarHeight();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
 
 static PyObject *Menu_InitMenus(_self, _args)
 	PyObject *_self;
@@ -736,7 +795,7 @@ static PyObject *Menu_HiliteMenu(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_GetMHandle(_self, _args)
+static PyObject *Menu_GetMenuHandle(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -746,7 +805,7 @@ static PyObject *Menu_GetMHandle(_self, _args)
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &menuID))
 		return NULL;
-	_rv = GetMHandle(menuID);
+	_rv = GetMenuHandle(menuID);
 	_res = Py_BuildValue("O&",
 	                     MenuObj_New, _rv);
 	return _res;
@@ -827,7 +886,7 @@ static PyObject *Menu_MenuChoice(_self, _args)
 	return _res;
 }
 
-static PyObject *Menu_DelMCEntries(_self, _args)
+static PyObject *Menu_DeleteMCEntries(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
@@ -838,8 +897,39 @@ static PyObject *Menu_DelMCEntries(_self, _args)
 	                      &menuID,
 	                      &menuItem))
 		return NULL;
-	DelMCEntries(menuID,
-	             menuItem);
+	DeleteMCEntries(menuID,
+	                menuItem);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Menu_SystemEdit(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	short editCmd;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &editCmd))
+		return NULL;
+	_rv = SystemEdit(editCmd);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Menu_SystemMenu(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long menuResult;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &menuResult))
+		return NULL;
+	SystemMenu(menuResult);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -861,6 +951,8 @@ static PyObject *Menu_OpenDeskAcc(_self, _args)
 }
 
 static PyMethodDef Menu_methods[] = {
+	{"GetMBarHeight", (PyCFunction)Menu_GetMBarHeight, 1,
+	 "() -> (short _rv)"},
 	{"InitMenus", (PyCFunction)Menu_InitMenus, 1,
 	 "() -> None"},
 	{"NewMenu", (PyCFunction)Menu_NewMenu, 1,
@@ -885,7 +977,7 @@ static PyMethodDef Menu_methods[] = {
 	 "(short ch) -> (long _rv)"},
 	{"HiliteMenu", (PyCFunction)Menu_HiliteMenu, 1,
 	 "(short menuID) -> None"},
-	{"GetMHandle", (PyCFunction)Menu_GetMHandle, 1,
+	{"GetMenuHandle", (PyCFunction)Menu_GetMenuHandle, 1,
 	 "(short menuID) -> (MenuHandle _rv)"},
 	{"FlashMenuBar", (PyCFunction)Menu_FlashMenuBar, 1,
 	 "(short menuID) -> None"},
@@ -897,8 +989,12 @@ static PyMethodDef Menu_methods[] = {
 	 "(short resID) -> None"},
 	{"MenuChoice", (PyCFunction)Menu_MenuChoice, 1,
 	 "() -> (long _rv)"},
-	{"DelMCEntries", (PyCFunction)Menu_DelMCEntries, 1,
+	{"DeleteMCEntries", (PyCFunction)Menu_DeleteMCEntries, 1,
 	 "(short menuID, short menuItem) -> None"},
+	{"SystemEdit", (PyCFunction)Menu_SystemEdit, 1,
+	 "(short editCmd) -> (Boolean _rv)"},
+	{"SystemMenu", (PyCFunction)Menu_SystemMenu, 1,
+	 "(long menuResult) -> None"},
 	{"OpenDeskAcc", (PyCFunction)Menu_OpenDeskAcc, 1,
 	 "(Str255 name) -> None"},
 	{NULL, NULL, 0}

@@ -1,4 +1,6 @@
 # Scan an Apple header file, generating a Python file of generator calls.
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
 
@@ -20,7 +22,7 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t in ("WindowPtr", "WindowPeek") and m == "InMode":
+			if t in ("WindowPtr", "WindowPeek", "WindowRef") and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname
@@ -62,8 +64,12 @@ class MyScanner(Scanner):
 			
 			([("WindowPtr", "*", "OutMode")],
 			 [("ExistingWindowPtr", "*", "*")]),
+			([("WindowRef", "*", "OutMode")],	# Same, but other style headerfiles
+			 [("ExistingWindowPtr", "*", "*")]),
 			
 			([("WindowPtr", "FrontWindow", "ReturnMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
+			([("WindowRef", "FrontWindow", "ReturnMode")],	# Ditto
 			 [("ExistingWindowPtr", "*", "*")]),
 			]
 

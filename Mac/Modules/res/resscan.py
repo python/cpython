@@ -8,6 +8,8 @@ import string
 import regex
 import regsub
 import MacOS
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
 
@@ -57,6 +59,9 @@ class ResourcesScanner(Scanner):
 			([("void", "*", "OutMode"), ("long", "*", "InMode"),
 			                            ("long", "*", "OutMode")],
 			 [("OutBuffer", "*", "InOutMode")]),
+			 
+			([("SInt8", "*", "*")],
+			 [("SignedByte", "*", "*")])
 			]
 
 if __name__ == "__main__":

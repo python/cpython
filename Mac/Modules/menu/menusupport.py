@@ -6,7 +6,7 @@
 import string
 
 import addpack
-addpack.addpack('D:python:Tools:bgen:bgen')
+addpack.addpack(':Tools:bgen:bgen')
 
 # Declarations that change for each manager
 MACHEADERFILE = 'Menus.h'		# The Apple header file
@@ -26,6 +26,9 @@ from macsupport import *
 # Create the type objects
 
 MenuHandle = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
+MenuRef = MenuHandle
+
+unsigned_char = Type('unsigned char', 'b')
 
 includestuff = includestuff + """
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */

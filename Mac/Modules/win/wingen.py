@@ -1,69 +1,69 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Windows.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Windows.h'
 
 f = Function(void, 'InitWindows',
 )
 functions.append(f)
 
-f = Function(WindowPtr, 'NewWindow',
+f = Function(WindowRef, 'NewWindow',
     (NullStorage, 'wStorage', InMode),
     (Rect_ptr, 'boundsRect', InMode),
     (ConstStr255Param, 'title', InMode),
     (Boolean, 'visible', InMode),
     (short, 'theProc', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
     (Boolean, 'goAwayFlag', InMode),
     (long, 'refCon', InMode),
 )
 functions.append(f)
 
-f = Function(WindowPtr, 'GetNewWindow',
+f = Function(WindowRef, 'GetNewWindow',
     (short, 'windowID', InMode),
     (NullStorage, 'wStorage', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'GetWTitle',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Str255, 'title', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'SelectWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'HideWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'ShowWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'ShowHide',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Boolean, 'showFlag', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'HiliteWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Boolean, 'fHilite', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'BringToFront',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SendBehind',
-    (WindowPtr, 'theWindow', InMode),
-    (WindowPtr, 'behindWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
+    (WindowRef, 'behindWindow', InMode),
 )
 methods.append(f)
 
@@ -72,12 +72,12 @@ f = Function(ExistingWindowPtr, 'FrontWindow',
 functions.append(f)
 
 f = Method(void, 'DrawGrowIcon',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'MoveWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (short, 'hGlobal', InMode),
     (short, 'vGlobal', InMode),
     (Boolean, 'front', InMode),
@@ -85,7 +85,7 @@ f = Method(void, 'MoveWindow',
 methods.append(f)
 
 f = Method(void, 'SizeWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (short, 'w', InMode),
     (short, 'h', InMode),
     (Boolean, 'fUpdate', InMode),
@@ -93,7 +93,7 @@ f = Method(void, 'SizeWindow',
 methods.append(f)
 
 f = Method(void, 'ZoomWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (short, 'partCode', InMode),
     (Boolean, 'front', InMode),
 )
@@ -110,23 +110,23 @@ f = Function(void, 'ValidRect',
 functions.append(f)
 
 f = Method(void, 'BeginUpdate',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'EndUpdate',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetWRefCon',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (long, 'data', InMode),
 )
 methods.append(f)
 
 f = Method(long, 'GetWRefCon',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
@@ -136,28 +136,28 @@ f = Function(Boolean, 'CheckUpdate',
 functions.append(f)
 
 f = Method(void, 'ClipAbove',
-    (WindowPeek, 'window', InMode),
+    (WindowRef, 'window', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SaveOld',
-    (WindowPeek, 'window', InMode),
+    (WindowRef, 'window', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'DrawNew',
-    (WindowPeek, 'window', InMode),
+    (WindowRef, 'window', InMode),
     (Boolean, 'update', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'CalcVis',
-    (WindowPeek, 'window', InMode),
+    (WindowRef, 'window', InMode),
 )
 methods.append(f)
 
 f = Method(long, 'GrowWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Point, 'startPt', InMode),
     (Rect_ptr, 'bBox', InMode),
 )
@@ -176,53 +176,52 @@ f = Function(long, 'PinRect',
 functions.append(f)
 
 f = Method(Boolean, 'TrackBox',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Point, 'thePt', InMode),
     (short, 'partCode', InMode),
 )
 methods.append(f)
 
-f = Function(WindowPtr, 'NewCWindow',
+f = Function(WindowRef, 'NewCWindow',
     (NullStorage, 'wStorage', InMode),
     (Rect_ptr, 'boundsRect', InMode),
     (ConstStr255Param, 'title', InMode),
     (Boolean, 'visible', InMode),
     (short, 'procID', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
     (Boolean, 'goAwayFlag', InMode),
     (long, 'refCon', InMode),
 )
 functions.append(f)
 
-f = Function(WindowPtr, 'GetNewCWindow',
+f = Function(WindowRef, 'GetNewCWindow',
     (short, 'windowID', InMode),
     (NullStorage, 'wStorage', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
 )
 functions.append(f)
 
 f = Method(short, 'GetWVariant',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetWTitle',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (ConstStr255Param, 'title', InMode),
 )
 methods.append(f)
 
 f = Method(Boolean, 'TrackGoAway',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Point, 'thePt', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'DragWindow',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (Point, 'startPt', InMode),
     (Rect_ptr, 'boundsRect', InMode),
 )
 methods.append(f)
-
 

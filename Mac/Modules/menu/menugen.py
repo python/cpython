@@ -1,46 +1,50 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Menus.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Menus.h'
+
+f = Function(short, 'GetMBarHeight',
+)
+functions.append(f)
 
 f = Function(void, 'InitMenus',
 )
 functions.append(f)
 
-f = Function(MenuHandle, 'NewMenu',
+f = Function(MenuRef, 'NewMenu',
     (short, 'menuID', InMode),
-    (Str255, 'menuTitle', InMode),
+    (ConstStr255Param, 'menuTitle', InMode),
 )
 functions.append(f)
 
-f = Function(MenuHandle, 'GetMenu',
+f = Function(MenuRef, 'GetMenu',
     (short, 'resourceID', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'DisposeMenu',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'AppendMenu',
-    (MenuHandle, 'menu', InMode),
+    (MenuRef, 'menu', InMode),
     (ConstStr255Param, 'data', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'AddResMenu',
-    (MenuHandle, 'theMenu', InMode),
+f = Method(void, 'AppendResMenu',
+    (MenuRef, 'theMenu', InMode),
     (ResType, 'theType', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'InsertResMenu',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (ResType, 'theType', InMode),
     (short, 'afterItem', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'InsertMenu',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'beforeID', InMode),
 )
 methods.append(f)
@@ -76,15 +80,15 @@ f = Function(void, 'SetMenuBar',
 )
 functions.append(f)
 
-f = Method(void, 'InsMenuItem',
-    (MenuHandle, 'theMenu', InMode),
+f = Method(void, 'InsertMenuItem',
+    (MenuRef, 'theMenu', InMode),
     (ConstStr255Param, 'itemString', InMode),
     (short, 'afterItem', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'DelMenuItem',
-    (MenuHandle, 'theMenu', InMode),
+f = Method(void, 'DeleteMenuItem',
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
 )
 methods.append(f)
@@ -99,92 +103,92 @@ f = Function(void, 'HiliteMenu',
 )
 functions.append(f)
 
-f = Method(void, 'SetItem',
-    (MenuHandle, 'theMenu', InMode),
+f = Method(void, 'SetMenuItemText',
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (ConstStr255Param, 'itemString', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'GetItem',
-    (MenuHandle, 'theMenu', InMode),
+f = Method(void, 'GetMenuItemText',
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (Str255, 'itemString', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'DisableItem',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'EnableItem',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'CheckItem',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (Boolean, 'checked', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetItemMark',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'markChar', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'GetItemMark',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'markChar', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetItemIcon',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'iconIndex', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'GetItemIcon',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'iconIndex', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetItemStyle',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'chStyle', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'GetItemStyle',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
-    (Style, 'chStyle', OutMode),
+    (unsigned_char, 'chStyle', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'CalcMenuSize',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
 )
 methods.append(f)
 
 f = Method(short, 'CountMItems',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
 )
 methods.append(f)
 
-f = Function(MenuHandle, 'GetMHandle',
+f = Function(MenuRef, 'GetMenuHandle',
     (short, 'menuID', InMode),
 )
 functions.append(f)
@@ -210,21 +214,21 @@ f = Function(void, 'InitProcMenu',
 functions.append(f)
 
 f = Method(void, 'GetItemCmd',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'cmdChar', OutMode),
 )
 methods.append(f)
 
 f = Method(void, 'SetItemCmd',
-    (MenuHandle, 'theMenu', InMode),
+    (MenuRef, 'theMenu', InMode),
     (short, 'item', InMode),
     (short, 'cmdChar', InMode),
 )
 methods.append(f)
 
 f = Method(long, 'PopUpMenuSelect',
-    (MenuHandle, 'menu', InMode),
+    (MenuRef, 'menu', InMode),
     (short, 'top', InMode),
     (short, 'left', InMode),
     (short, 'popUpItem', InMode),
@@ -235,9 +239,34 @@ f = Function(long, 'MenuChoice',
 )
 functions.append(f)
 
-f = Function(void, 'DelMCEntries',
+f = Function(void, 'DeleteMCEntries',
     (short, 'menuID', InMode),
     (short, 'menuItem', InMode),
+)
+functions.append(f)
+
+f = Method(void, 'InsertFontResMenu',
+    (MenuRef, 'theMenu', InMode),
+    (short, 'afterItem', InMode),
+    (short, 'scriptFilter', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'InsertIntlResMenu',
+    (MenuRef, 'theMenu', InMode),
+    (ResType, 'theType', InMode),
+    (short, 'afterItem', InMode),
+    (short, 'scriptFilter', InMode),
+)
+methods.append(f)
+
+f = Function(Boolean, 'SystemEdit',
+    (short, 'editCmd', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'SystemMenu',
+    (long, 'menuResult', InMode),
 )
 functions.append(f)
 
