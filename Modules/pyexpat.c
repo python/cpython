@@ -926,6 +926,13 @@ initpyexpat(void)
 
     PyModule_AddObject(m, "__version__",
                        PyString_FromStringAndSize(rev+11, strlen(rev+11)-2));
+#ifdef XML_MAJOR_VERSION
+    PyModule_AddStringConstant(m, "EXPAT_VERSION",
+                               (char *) XML_ExpatVersion());
+    PyModule_AddObject(m, "version_info",
+                       Py_BuildValue("(iii)", XML_MAJOR_VERSION,
+                                     XML_MINOR_VERSION, XML_MICRO_VERSION));
+#endif
 
     /* XXX When Expat supports some way of figuring out how it was
        compiled, this should check and set native_encoding 
