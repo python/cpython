@@ -358,7 +358,7 @@ tcps_wait(self, args)
 	if (!newgetargs(args, ""))
 		return NULL;
 	while ( self->async_busy ) {
-		if ( !PyMac_Idle() ) {
+		if ( PyMac_Idle() ) {
 			INCREF(None);
 			return None;
 		}
