@@ -115,6 +115,12 @@ sys_exc_info(self, args)
 			tstate->exc_traceback : Py_None);
 }
 
+static char exc_info_doc[] =
+"exc_info() -> (type, value, traceback)\n\
+\n\
+Return information about the exception that is currently being handled.\n\
+This should be called from inside an except clause only.";
+
 static PyObject *
 sys_exit(self, args)
 	PyObject *self;
@@ -124,6 +130,15 @@ sys_exit(self, args)
 	PyErr_SetObject(PyExc_SystemExit, args);
 	return NULL;
 }
+
+static char exit_doc[] =
+"exit([status])\n\
+\n\
+Exit the interpreter by raising SystemExit(status).\n\
+If the status is omitted or None, it defaults to zero (i.e., success).\n\
+If the status numeric, it will be used as the system exit status.\n\
+If it is another kind of object, it will be printed and the system\n\
+exit status will be one (i.e., failure).";
 
 static PyObject *
 sys_settrace(self, args)
@@ -141,6 +156,12 @@ sys_settrace(self, args)
 	return Py_None;
 }
 
+static char settrace_doc[] =
+"settrace(function)\n\
+\n\
+Set the global debug tracing function.  It will be called on each\n\
+function call.  See the debugger chapter in the library manual.";
+
 static PyObject *
 sys_setprofile(self, args)
 	PyObject *self;
@@ -157,6 +178,12 @@ sys_setprofile(self, args)
 	return Py_None;
 }
 
+static char setprofile_doc[] =
+"setprofile(function)\n\
+\n\
+Set the profiling function.  It will be called on each function call\n\
+and return.  See the profiler chapter in the library manual.";
+
 static PyObject *
 sys_setcheckinterval(self, args)
 	PyObject *self;
@@ -168,6 +195,12 @@ sys_setcheckinterval(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+static char setcheckinterval_doc[] =
+"setcheckinterval(n)\n\
+\n\
+Tell the Python interpreter to check for asynchronous events every\n\
+n instructions.  This also affects how often thread switches occur.";
 
 #ifdef USE_MALLOPT
 /* Link with -lmalloc (or -lmpc) on an SGI */
@@ -198,6 +231,12 @@ sys_getrefcount(self, args)
 	return PyInt_FromLong((long) arg->ob_refcnt);
 }
 
+static char getrefcount_doc[] =
+"getrefcount(object) -> integer\n\
+\n\
+Return the current reference count for the object.  This includes the\n\
+temporary reference in the argument list, so it is at least 2.";
+
 #ifdef COUNT_ALLOCS
 static PyObject *
 sys_getcounts(self, args)
@@ -223,8 +262,8 @@ extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
-	{"exc_info",	sys_exc_info, 0},
-	{"exit",	sys_exit, 0},
+	{"exc_info",	sys_exc_info, 0, exc_info_doc},
+	{"exit",	sys_exit, 0, exit_doc},
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 0},
 #endif
@@ -234,13 +273,13 @@ static PyMethodDef sys_methods[] = {
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, 1},
 #endif
-	{"getrefcount",	sys_getrefcount, 0},
+	{"getrefcount",	sys_getrefcount, 0, getrefcount_doc},
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, 0},
 #endif
-	{"setcheckinterval",	sys_setcheckinterval, 1},
-	{"setprofile",	sys_setprofile, 0},
-	{"settrace",	sys_settrace, 0},
+	{"setcheckinterval",	sys_setcheckinterval, 1, setcheckinterval_doc},
+	{"setprofile",	sys_setprofile, 0, setprofile_doc},
+	{"settrace",	sys_settrace, 0, settrace_doc},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -271,6 +310,62 @@ list_builtin_module_names()
 	return list;
 }
 
+/* XXX If your compiler doesn't like strings this long, edit it. */
+static char sys_doc[] =
+"This module provides access to some objects used or maintained by the\n\
+interpreter and to functions that interact strongly with the interpreter.\n\
+\n\
+Dynamic objects:\n\
+\n\
+argv -- command line arguments; argv[0] is the script pathname if known\n\
+path -- module search path; path[0] is the script directory, else ''\n\
+modules -- dictionary of loaded modules\n\
+exitfunc -- you may set this to a function to be called when Python exits\n\
+\n\
+stdin -- standard input file object; used by raw_input() and input()\n\
+stdout -- standard output file object; used by the print statement\n\
+stderr -- standard error object; used for error messages\n\
+  By assigning another file object (or an object that behaves like a file)\n\
+  to one of these, it is possible to redirect all of the interpreter's I/O.\n\
+\n\
+last_type -- type of last uncaught exception\n\
+last_value -- value of last uncaught exception\n\
+last_traceback -- traceback of last uncaught exception\n\
+  These three are only available in an interactive session after a\n\
+  traceback has been printed.\n\
+\n\
+exc_type -- type of exception currently being handled\n\
+exc_value -- value of exception currently being handled\n\
+exc_traceback -- traceback of exception currently being handled\n\
+  The function exc_info() should be used instead of these three,\n\
+  because it is thread-safe.\n\
+\n\
+Static objects:\n\
+\n\
+maxint -- the largest supported integer (the smallest is -maxint-1)\n\
+builtin_module_names -- tuple of module names built into this intepreter\n\
+version -- the version of this interpreter\n\
+copyright -- copyright notice pertaining to this interpreter\n\
+platform -- platform identifier\n\
+executable -- pathname of this Python interpreter\n\
+prefix -- prefix used to find the Python library\n\
+exec_prefix -- prefix used to find the machine-specific Python library\n\
+dllhandle -- [Windows only] integer handle of the Python DLL\n\
+winver -- [Windows only] version number of the Python DLL\n\
+__stdin__ -- the original stdin; don't use!\n\
+__stdout__ -- the original stdout; don't use!\n\
+__stderr__ -- the original stderr; don't use!\n\
+\n\
+Functions:\n\
+\n\
+exc_info() -- return thread-safe information about the current exception\n\
+exit() -- exit the interpreter by raising SystemExit\n\
+getrefcount() -- return the reference count for an object (plus one :-)\n\
+setcheckinterval() -- control how often the interpreter checks for events\n\
+setprofile() -- set the global profiling function\n\
+settrace() -- set the global debug tracing function\n\
+";
+
 PyObject *
 _PySys_Init()
 {
@@ -278,7 +373,7 @@ _PySys_Init()
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
 
-	m = Py_InitModule("sys", sys_methods);
+	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
 
 	sysin = PyFile_FromFile(stdin, "<stdin>", "r", NULL);
