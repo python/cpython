@@ -117,7 +117,7 @@ class Random:
     Class Random can also be subclassed if you want to use a different basic
     generator of your own devising: in that case, override the following
     methods:  random(), seed(), getstate(), setstate() and jumpahead().
-    
+
     """
 
     VERSION = 1     # used by getstate/setstate
@@ -374,7 +374,7 @@ class Random:
         """Normal distribution.
 
         mu is the mean, and sigma is the standard deviation.
-        
+
         """
         # mu = mean, sigma = standard deviation
 
@@ -401,7 +401,7 @@ class Random:
         If you take the natural logarithm of this distribution, you'll get a
         normal distribution with mean mu and standard deviation sigma.
         mu can have any value, and sigma must be greater than zero.
-        
+
         """
         return _exp(self.normalvariate(mu, sigma))
 
@@ -417,7 +417,7 @@ class Random:
 
         Deprecated in version 2.3.  Use:
             (mean + arc * (Random.random() - 0.5)) % Math.pi
-        
+
         """
         # mean: mean angle (in radians between 0 and pi)
         # arc:  range of distribution (in radians between 0 and pi)
@@ -436,7 +436,7 @@ class Random:
         lambd is 1.0 divided by the desired mean.  (The parameter would be
         called "lambda", but that is a reserved word in Python.)  Returned
         values range from 0 to positive infinity.
-        
+
         """
         # lambd: rate lambd = 1/mean
         # ('lambda' is a Python reserved word)
@@ -451,12 +451,12 @@ class Random:
 
     def vonmisesvariate(self, mu, kappa):
         """Circular data distribution.
-        
+
         mu is the mean angle, expressed in radians between 0 and 2*pi, and
         kappa is the concentration parameter, which must be greater than or
         equal to zero.  If kappa is equal to zero, this distribution reduces
         to a uniform random angle over the range 0 to 2*pi.
-        
+
         """
         # mu:    mean angle (in radians between 0 and 2*pi)
         # kappa: concentration parameter kappa (>= 0)
@@ -590,7 +590,7 @@ class Random:
         slightly faster than the normalvariate() function.
 
         Not thread-safe without a lock around calls.
-        
+
         """
 
         # When x and y are two variables from [0, 1), uniformly
@@ -641,9 +641,9 @@ class Random:
 
         Conditions on the parameters are alpha > -1 and beta} > -1.
         Returned values range between 0 and 1.
-        
+
         """
-        
+
         # This version due to Janne Sinkkonen, and matches all the std
         # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
         y = self.gammavariate(alpha, 1.)
@@ -667,7 +667,7 @@ class Random:
         """Weibull distribution.
 
         alpha is the scale parameter and beta is the shape parameter.
-        
+
         """
         # Jain, pg. 499; bug fix courtesy Bill Arms
 
