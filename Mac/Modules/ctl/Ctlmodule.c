@@ -75,12 +75,12 @@ ControlFontStyle_Convert(v, itself)
 	ControlFontStyleRec *itself;
 {
 	return PyArg_ParseTuple(v, "hhhhhhO&O&", &itself->flags,
-		&itself->font, &itself->size, &itself->style, &itself->mode, 
-		&itself->just, QdRGB_Convert, &itself->foreColor, 
+		&itself->font, &itself->size, &itself->style, &itself->mode,
+		&itself->just, QdRGB_Convert, &itself->foreColor,
 		QdRGB_Convert, &itself->backColor);
 }
 
-/* TrackControl callback support */
+/* TrackControl and HandleControlClick callback support */
 static PyObject *tracker;
 static ControlActionUPP mytracker_upp;
 
@@ -127,7 +127,7 @@ CtlObj_Convert(v, p_itself)
 static void CtlObj_dealloc(self)
 	ControlObject *self;
 {
-	if (self->ob_itself) SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
+	if (self->ob_itself)SetControlReference(self->ob_itself, (long)0); /* Make it forget about us */
 	PyMem_DEL(self);
 }
 
@@ -717,7 +717,7 @@ static PyObject *CtlObj_CountSubControls(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	SInt16 outNumChildren;
+	UInt16 outNumChildren;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = CountSubControls(_self->ob_itself,
@@ -734,7 +734,7 @@ static PyObject *CtlObj_GetIndexedSubControl(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	SInt16 inIndex;
+	UInt16 inIndex;
 	ControlHandle outSubControl;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &inIndex))
@@ -867,6 +867,119 @@ static PyObject *CtlObj_TrackControl(_self, _args)
 
 }
 
+static PyObject *CtlObj_HandleControlClick(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	ControlPartCode _rv;
+	Point startPoint;
+	SInt16 modifiers;
+	ControlActionUPP upp = 0;
+	PyObject *callback = 0;
+
+	if (!PyArg_ParseTuple(_args, "O&h|O",
+	                      PyMac_GetPoint, &startPoint,
+	                      &modifiers,
+	                      &callback))
+		return NULL;
+	if (callback && callback != Py_None) {
+		if (PyInt_Check(callback) && PyInt_AS_LONG(callback) == -1)
+			upp = (ControlActionUPP)-1;
+		else {
+			settrackfunc(callback);
+			upp = mytracker_upp;
+		}
+	}
+	_rv = HandleControlClick(_self->ob_itself,
+	                   startPoint,
+	                   modifiers,
+	                   upp);
+	clrtrackfunc();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+
+}
+
+static PyObject *CtlObj_SetControlData(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	Size bufferSize;
+	Ptr buffer;
+
+	if (!PyArg_ParseTuple(_args, "hO&s#",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName,
+	                      &buffer, &bufferSize))
+		return NULL;
+
+	_err = SetControlData(_self->ob_itself,
+		              inPart,
+		              inTagName,
+		              bufferSize,
+	                      buffer);
+
+	if (_err != noErr)
+		return PyMac_Error(_err);
+	_res = Py_None;
+	return _res;
+
+}
+
+static PyObject *CtlObj_GetControlData(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	OSErr _err;
+	ControlPartCode inPart;
+	ResType inTagName;
+	Size bufferSize;
+	Ptr buffer;
+	Size outSize;
+
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &inPart,
+	                      PyMac_GetOSType, &inTagName))
+		return NULL;
+
+	/* allocate a buffer for the data */
+	_err = GetControlDataSize(_self->ob_itself,
+		                  inPart,
+		                  inTagName,
+	                          &bufferSize);
+	if (_err != noErr)
+		return PyMac_Error(_err);
+	buffer = PyMem_NEW(char, bufferSize);
+	if (buffer == NULL)
+		return PyErr_NoMemory();
+
+	_err = GetControlData(_self->ob_itself,
+		              inPart,
+		              inTagName,
+		              bufferSize,
+	                      buffer,
+	                      &outSize);
+
+	if (_err != noErr) {
+		PyMem_DEL(buffer);
+		return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("s#", buffer, outSize);
+	PyMem_DEL(buffer);
+	return _res;
+
+}
+
 static PyObject *CtlObj_GetPopupData(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -983,9 +1096,9 @@ static PyMethodDef CtlObj_methods[] = {
 	{"GetSuperControl", (PyCFunction)CtlObj_GetSuperControl, 1,
 	 "() -> (ControlHandle outParent)"},
 	{"CountSubControls", (PyCFunction)CtlObj_CountSubControls, 1,
-	 "() -> (SInt16 outNumChildren)"},
+	 "() -> (UInt16 outNumChildren)"},
 	{"GetIndexedSubControl", (PyCFunction)CtlObj_GetIndexedSubControl, 1,
-	 "(SInt16 inIndex) -> (ControlHandle outSubControl)"},
+	 "(UInt16 inIndex) -> (ControlHandle outSubControl)"},
 	{"SetControlSupervisor", (PyCFunction)CtlObj_SetControlSupervisor, 1,
 	 "(ControlHandle inBoss) -> None"},
 	{"GetControlFeatures", (PyCFunction)CtlObj_GetControlFeatures, 1,
@@ -997,7 +1110,13 @@ static PyMethodDef CtlObj_methods[] = {
 	{"DisposeControl", (PyCFunction)CtlObj_DisposeControl, 1,
 	 "() -> None"},
 	{"TrackControl", (PyCFunction)CtlObj_TrackControl, 1,
-	 NULL},
+	 "(Point startPoint [,trackercallback]) -> (ControlPartCode _rv)"},
+	{"HandleControlClick", (PyCFunction)CtlObj_HandleControlClick, 1,
+	 "(Point startPoint, Integer modifiers, [,trackercallback]) -> (ControlPartCode _rv)"},
+	{"SetControlData", (PyCFunction)CtlObj_SetControlData, 1,
+	 "(stuff) -> None"},
+	{"GetControlData", (PyCFunction)CtlObj_GetControlData, 1,
+	 "(part, type) -> String"},
 	{"GetPopupData", (PyCFunction)CtlObj_GetPopupData, 1,
 	 NULL},
 	{"SetPopupData", (PyCFunction)CtlObj_SetPopupData, 1,
@@ -1437,7 +1556,7 @@ PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;
-	
+
 	if (c == NULL)
 		it = Py_None;
 	else {
@@ -1478,7 +1597,7 @@ mytracker(ctl, part)
 	short part;
 {
 	PyObject *args, *rv=0;
-	
+
 	args = Py_BuildValue("(O&i)", CtlObj_WhichControl, ctl, (int)part);
 	if (args && tracker) {
 		rv = PyEval_CallObject(tracker, args);
@@ -1487,7 +1606,7 @@ mytracker(ctl, part)
 	if (rv)
 		Py_DECREF(rv);
 	else
-		PySys_WriteStderr("TrackControl: exception in tracker function\n");
+		PySys_WriteStderr("TrackControl or HandleControlClick: exception in tracker function\n");
 }
 
 

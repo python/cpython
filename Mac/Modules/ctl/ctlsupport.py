@@ -218,7 +218,7 @@ return _res;
 """
 
 f = ManualGenerator("TrackControl", trackcontrol_body);
-#f.docstring = "(Point startPoint [,trackercallback]) -> (ControlPartCode _rv)"
+f.docstring = lambda: "(Point startPoint [,trackercallback]) -> (ControlPartCode _rv)"
 object.add(f)
 
 # CJW - added 5/12/99
@@ -254,8 +254,7 @@ return _res;
 """
 
 f = ManualGenerator("HandleControlClick", handlecontrolclick_body);
-#f.docstring = "(Point startPoint, Integer modifiers, [,trackercallback])
--> (ControlPartCode _rv)"
+f.docstring = lambda: "(Point startPoint, Integer modifiers, [,trackercallback]) -> (ControlPartCode _rv)"
 object.add(f)
 
 # Manual Generator for SetControlData
@@ -285,7 +284,7 @@ return _res;
 """
 
 f = ManualGenerator("SetControlData", setcontroldata_body);
-#f.docstring = "(stuff) -> None"
+f.docstring = lambda: "(stuff) -> None"
 object.add(f)
 
 # Manual Generator for GetControlData
@@ -330,7 +329,7 @@ return _res;
 """
 
 f = ManualGenerator("GetControlData", getcontroldata_body);
-#f.docstring = "(part, type) -> String"
+f.docstring = lambda: "(part, type) -> String"
 object.add(f)
 # end CJW
 
