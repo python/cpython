@@ -724,6 +724,10 @@ typedef struct {
 XMLPARSEAPI(XML_Expat_Version)
 XML_ExpatVersionInfo(void);
 
+/* VERSION is not defined in expat.h.in, but it really belongs here,
+   and defining it on the command line gives difficulties with MSVC. */
+#define VERSION "1.95.2"
+
 #define XML_MAJOR_VERSION 1
 #define XML_MINOR_VERSION 95
 #define XML_MICRO_VERSION 2
