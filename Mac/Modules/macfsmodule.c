@@ -1283,7 +1283,7 @@ initmacfs()
 {
 	PyObject *m, *d;
 
-		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(Handle, PyMac_GetFSSpec);
+		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("macfs", mfs_methods);
