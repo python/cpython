@@ -36,8 +36,14 @@ import re
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
 
-format_version = "1.3"                     # File format version we write
-compatible_formats = ["1.0", "1.1", "1.2"] # Old format versions we can read
+# These are purely informational; no code usues these
+format_version = "2.0"                  # File format version we write
+compatible_formats = ["1.0",            # Original protocol 0
+                      "1.1",            # Protocol 0 with class supprt added
+                      "1.2",            # Original protocol 1
+                      "1.3",            # Protocol 1 with BINFLOAT added
+                      "2.0",            # Protocol 2
+                      ]                 # Old format versions we can read
 
 mdumps = marshal.dumps
 mloads = marshal.loads
@@ -151,12 +157,18 @@ _quotes = ["'", '"']
 
 class Pickler:
 
-    def __init__(self, file, bin = 0):
+    def __init__(self, file, proto=1):
         """This takes a file-like object for writing a pickle data stream.
 
-        The optional bin parameter if true, tells the pickler to use the more
-        efficient binary pickle format, otherwise the ASCII format is used
-        (this is the default).
+        The optional proto argument tells the pickler to use the given
+        protocol; supported protocols are 0, 1, 2.  The default
+        protocol is 1 (in previous Python versions the default was 0).
+
+        Protocol 1 is more efficient than protocol 0; protocol 2 is
+        more efficient than protocol 1.  Protocol 2 is not the default
+        because it is not supported by older Python versions.
+
+        XXX Protocol 2 is not yet implemented.
 
         The file parameter must have a write() method that accepts a single
         string argument.  It can thus be an open file object, a StringIO
@@ -165,7 +177,8 @@ class Pickler:
         """
         self.write = file.write
         self.memo = {}
-        self.bin = bin
+        self.proto = proto
+        self.bin = proto >= 1
 
     def clear_memo(self):
         """Clears the pickler's "memo".
@@ -1070,12 +1083,12 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(object, file, bin = 0):
-    Pickler(file, bin).dump(object)
+def dump(object, file, proto=1):
+    Pickler(file, proto).dump(object)
 
-def dumps(object, bin = 0):
+def dumps(object, proto=1):
     file = StringIO()
-    Pickler(file, bin).dump(object)
+    Pickler(file, proto).dump(object)
     return file.getvalue()
 
 def load(file):
