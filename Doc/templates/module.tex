@@ -1,0 +1,40 @@
+% Template for library sections.
+% Replace text in ALL CAPS by your own text.
+% Comments starting with %** give additional directions.
+
+%** Choose one of the following two section headings:
+\section{Built-in module {\tt YOUR-MODULE-NAME}} % If written in C
+\section{Standard module {\tt YOUR-MODULE-NAME}} % If written in Python
+
+PUT A SHORT INTRODUCTION AND DESCRIPTION OF THE MODULE HERE.
+
+%** change this sentence to taste:
+The module defines the following variables and functions:
+
+\begin{description}
+
+\renewcommand{\indexsubitem}{(in module YOUR-MODULE-NAME)}
+
+
+%** You can mix exceptions, variables and functions below; often it is a
+%** good idea to alphabetize them all.
+
+
+%** repeat the following for each exception:
+\excitem{NAME}
+DESCRIPTION OF THE EXCEPTION GOES HERE.
+
+
+%** repeat the following for each variable (or constant):
+\dataitem{NAME}
+DESCRIPTION OF THE VARIABLE/CONSTANT GOES HERE.
+
+
+%** repeat the following for each function:
+\funcitem{NAME}{PARAMETERS} % Don't include the parentheses
+DESCRIPTION OF THE FUNCTION GOES HERE.
+
+
+\end{description}
+
+ADDITIONAL HINTS FOR USING THE MODULE MAY GO HERE.
