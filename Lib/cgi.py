@@ -213,7 +213,11 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
         if len(nv) != 2:
             if strict_parsing:
                 raise ValueError, "bad query field: %r" % (name_value,)
-            continue
+            # Handle case of a control-name with no equal sign
+            if keep_blank_values:
+                nv.append('')
+            else:
+                continue
         if len(nv[1]) or keep_blank_values:
             name = urllib.unquote(nv[0].replace('+', ' '))
             value = urllib.unquote(nv[1].replace('+', ' '))
