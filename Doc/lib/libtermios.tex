@@ -104,24 +104,3 @@ def getpass(prompt = "Password: "):
         termios.tcsetattr(fd, termios.TCSADRAIN, old)
     return passwd
 \end{verbatim}
-
-
-\section{\module{TERMIOS} ---
-         Constants used with the \module{termios} module}
-
-\declaremodule[TERMIOSuppercase]{standard}{TERMIOS}
-  \platform{Unix}
-\modulesynopsis{Symbolic constants required to use the
-  \module{termios} module.}
-
-
-\indexii{\POSIX}{I/O control}
-\indexii{tty}{I/O control}
-
-\deprecated{2.1}{Import needed constants from \refmodule{termios}
-                 instead.}
-
-This module defines the symbolic constants required to use the
-\refmodule{termios}\refbimodindex{termios} module (see the previous
-section).  See the \POSIX{} or \UNIX{} manual pages for a list of
-those constants.
