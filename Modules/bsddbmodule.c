@@ -1,4 +1,3 @@
-
 /* Berkeley DB interface.
    Author: Michael McLay
    Hacked: Guido van Rossum
@@ -42,14 +41,16 @@ staticforward PyTypeObject Bsddbtype;
 
 #define is_bsddbobject(v) ((v)->ob_type == &Bsddbtype)
 #define check_bsddbobject_open(v) if ((v)->di_bsddb == NULL) \
-               { PyErr_SetString(BsddbError, "BSDDB object has already been closed"); \
+               { PyErr_SetString(BsddbError, \
+				 "BSDDB object has already been closed"); \
                  return NULL; }
 
 static PyObject *BsddbError;
 
 static PyObject *
 newdbhashobject(char *file, int flags, int mode,
-		int bsize, int ffactor, int nelem, int cachesize, int hash, int lorder)
+		int bsize, int ffactor, int nelem, int cachesize,
+		int hash, int lorder)
 {
 	bsddbobject *dp;
 	HASHINFO info;
@@ -94,7 +95,8 @@ newdbhashobject(char *file, int flags, int mode,
 
 static PyObject *
 newdbbtobject(char *file, int flags, int mode,
-	      int btflags, int cachesize, int maxkeypage, int minkeypage, int psize, int lorder)
+	      int btflags, int cachesize, int maxkeypage,
+	      int minkeypage, int psize, int lorder)
 {
 	bsddbobject *dp;
 	BTREEINFO info;
@@ -141,7 +143,8 @@ newdbbtobject(char *file, int flags, int mode,
 
 static PyObject *
 newdbrnobject(char *file, int flags, int mode,
-	      int rnflags, int cachesize, int psize, int lorder, size_t reclen, u_char bval, char *bfname)
+	      int rnflags, int cachesize, int psize, int lorder,
+	      size_t reclen, u_char bval, char *bfname)
 {
 	bsddbobject *dp;
 	RECNOINFO info;
@@ -210,8 +213,10 @@ bsddb_dealloc(bsddbobject *dp)
 }
 
 #ifdef WITH_THREAD
-#define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS PyThread_acquire_lock(_dp->di_lock,1);
-#define BSDDB_END_SAVE(_dp) PyThread_release_lock(_dp->di_lock); Py_END_ALLOW_THREADS
+#define BSDDB_BGN_SAVE(_dp) \
+	Py_BEGIN_ALLOW_THREADS PyThread_acquire_lock(_dp->di_lock,1);
+#define BSDDB_END_SAVE(_dp) \
+	PyThread_release_lock(_dp->di_lock); Py_END_ALLOW_THREADS
 #else
 #define BSDDB_BGN_SAVE(_dp) Py_BEGIN_ALLOW_THREADS 
 #define BSDDB_END_SAVE(_dp) Py_END_ALLOW_THREADS
@@ -221,7 +226,8 @@ static int
 bsddb_length(bsddbobject *dp)
 {
         if (dp->di_bsddb == NULL) {
-                 PyErr_SetString(BsddbError, "BSDDB object has already been closed"); 
+                 PyErr_SetString(BsddbError,
+				 "BSDDB object has already been closed"); 
                  return -1; 
         }
 	if (dp->di_size < 0) {
@@ -297,7 +303,8 @@ bsddb_ass_sub(bsddbobject *dp, PyObject *key, PyObject *value)
 		return -1;
 	}
         if (dp->di_bsddb == NULL) {
-                 PyErr_SetString(BsddbError, "BSDDB object has already been closed"); 
+                 PyErr_SetString(BsddbError,
+				 "BSDDB object has already been closed"); 
                  return -1; 
         }
 	krec.data = data;
@@ -406,14 +413,17 @@ bsddb_keys(bsddbobject *dp, PyObject *args)
 			return NULL;
 		}
 		BSDDB_BGN_SAVE(dp)
-		status = (dp->di_bsddb->seq)(dp->di_bsddb, &krec, &drec, R_NEXT);
+		status = (dp->di_bsddb->seq)
+			(dp->di_bsddb, &krec, &drec, R_NEXT);
 		if (status == 0) {
-			if (krec.size > sizeof(buf)) data = malloc(krec.size);
+			if (krec.size > sizeof(buf))
+				data = malloc(krec.size);
 			else data = buf;
-			if (data!=NULL) memcpy(data,krec.data,krec.size);
+			if (data != NULL)
+				memcpy(data,krec.data,krec.size);
 		}
 		BSDDB_END_SAVE(dp)
-		if (data==NULL) return PyErr_NoMemory();
+		if (data == NULL) return PyErr_NoMemory();
 	}
 	if (status < 0) {
 		PyErr_SetFromErrno(BsddbError);
