@@ -6181,7 +6181,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 	arglen = -1;
 	argidx = -2;
     }
-    if (args->ob_type->tp_as_mapping && !PyTuple_Check(args))
+    if (args->ob_type->tp_as_mapping && !PyTuple_Check(args) &&
+        !PyObject_TypeCheck(args, &PyBaseString_Type))
 	dict = args;
 
     while (--fmtcnt >= 0) {
