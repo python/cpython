@@ -12,7 +12,8 @@ def _cleanup():
 
 class Popen3:
     def __init__(self, cmd, capturestderr=0):
-	cmd = ['/bin/sh', '-c', cmd]
+	if type(cmd) == type(''):
+	    cmd = ['/bin/sh', '-c', cmd]
 	p2cread, p2cwrite = os.pipe()
 	c2pread, c2pwrite = os.pipe()
 	if capturestderr:
@@ -34,7 +35,7 @@ class Popen3:
 		    os.close(i)
 		except: pass
 	    try:
-		os.execv(cmd[0], cmd)
+		os.execvp(cmd[0], cmd)
 	    finally:
 		os._exit(1)
 	    # Shouldn't come here, I guess
@@ -85,7 +86,7 @@ def _test():
     w.close()
     assert r.read() == teststr
     print "testing popen3..."
-    r, w, e = popen3('cat')
+    r, w, e = popen3(['cat'])
     w.write(teststr)
     w.close()
     assert r.read() == teststr
