@@ -1996,6 +1996,11 @@ def dis(pickle, out=None, memo=None, indentlevel=4):
     if stack:
         raise ValueError("stack not empty after STOP: %r" % stack)
 
+# For use in the doctest, simply as an example of a class to pickle.
+class _Example:
+    def __init__(self, value):
+        self.value = value
+
 _dis_test = r"""
 >>> import pickle
 >>> x = [1, 2, (3, 4), {'abc': u"def"}]
@@ -2060,27 +2065,27 @@ Exercise the INST/OBJ/BUILD family.
    18: .    STOP
 highest protocol among opcodes = 0
 
->>> x = [pickle.PicklingError()] * 2
+>>> from pickletools import _Example
+>>> x = [_Example(42)] * 2
 >>> dis(pickle.dumps(x, 0))
     0: (    MARK
     1: l        LIST       (MARK at 0)
     2: p    PUT        0
     5: (    MARK
-    6: i        INST       'pickle PicklingError' (MARK at 5)
+    6: i        INST       'pickletools _Example' (MARK at 5)
    28: p    PUT        1
    31: (    MARK
    32: d        DICT       (MARK at 31)
    33: p    PUT        2
-   36: S    STRING     'args'
-   44: p    PUT        3
-   47: (    MARK
-   48: t        TUPLE      (MARK at 47)
-   49: s    SETITEM
-   50: b    BUILD
-   51: a    APPEND
-   52: g    GET        1
-   55: a    APPEND
-   56: .    STOP
+   36: S    STRING     'value'
+   45: p    PUT        3
+   48: I    INT        42
+   52: s    SETITEM
+   53: b    BUILD
+   54: a    APPEND
+   55: g    GET        1
+   58: a    APPEND
+   59: .    STOP
 highest protocol among opcodes = 0
 
 >>> dis(pickle.dumps(x, 1))
@@ -2088,20 +2093,20 @@ highest protocol among opcodes = 0
     1: q    BINPUT     0
     3: (    MARK
     4: (        MARK
-    5: c            GLOBAL     'pickle PicklingError'
+    5: c            GLOBAL     'pickletools _Example'
    27: q            BINPUT     1
    29: o            OBJ        (MARK at 4)
    30: q        BINPUT     2
    32: }        EMPTY_DICT
    33: q        BINPUT     3
-   35: U        SHORT_BINSTRING 'args'
-   41: q        BINPUT     4
-   43: )        EMPTY_TUPLE
-   44: s        SETITEM
-   45: b        BUILD
-   46: h        BINGET     2
-   48: e        APPENDS    (MARK at 3)
-   49: .    STOP
+   35: U        SHORT_BINSTRING 'value'
+   42: q        BINPUT     4
+   44: K        BININT1    42
+   46: s        SETITEM
+   47: b        BUILD
+   48: h        BINGET     2
+   50: e        APPENDS    (MARK at 3)
+   51: .    STOP
 highest protocol among opcodes = 1
 
 Try "the canonical" recursive-object test.
