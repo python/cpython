@@ -9,10 +9,13 @@ verbose = 0
 if __name__ == '__main__':
     verbose = 1
 
-now = time.time()
-fp = os.popen('date')
-fromdate = string.strip(fp.readline())
-fp.close()
+now = 850499890.282			  # time.time()
+fromdate = 'Fri Dec 13 12:58:10 EST 1996' # os.popen('date')
+
+## now = time.time()
+## fp = os.popen('date')
+## fromdate = string.strip(fp.readline())
+## fp.close()
 nowsecs = int(now)
 gmt = time.gmtime(now)
 now = time.localtime(now)
@@ -26,7 +29,7 @@ wk1offset = jan1[6] - 6
 if now[8]: tz = time.tzname[1]
 else: tz = time.tzname[0]
 
-if now[3] >=12: clock12 = now[3] - 12
+if now[3] > 12: clock12 = now[3] - 12
 else: clock12 = now[3]
 
 # descriptions are a mixture of those from the BSD/OS v2.0 man page
@@ -44,7 +47,7 @@ expectations = (
     ('%d', '%02d' % now[2], 'day of month as number (00-31)'),
     ('%e', '%2d' % now[2], 'day of month as number, blank padded ( 0-31)'),
     ('%H', '%02d' % now[3], 'hour (00-23)'),
-    ('%I', '%02d' % clock12, 'hour (00-12)'),
+    ('%I', '%02d' % clock12, 'hour (01-12)'),
     ('%j', '%03d' % now[7], 'julian day (001-366)'),
     ('%M', '%02d' % now[4], 'minute, (00-59)'),
     ('%m', '%02d' % now[1], 'month as number (01-12)'),
@@ -86,7 +89,8 @@ for e in expectations:
     result = time.strftime(e[0], now)
     if result == e[1]: continue
     if result[0] == '%':
-	print "Does not appear to support '%s' format" % e[0]
+	if verbose:
+	    print "Does not appear to support '%s' format" % e[0]
     else:
 	print "Conflict for %s (%s):" % (e[0], e[2])
 	print "  Expected %s, but got %s" % (e[1], result)
