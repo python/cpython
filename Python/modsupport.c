@@ -423,12 +423,12 @@ PyEval_CallFunction(obj, format, va_alist)
 
 #ifdef HAVE_STDARG_PROTOTYPES
 object *
-PyEval_CallMethod(object *obj, char *method, char *format, ...)
+PyEval_CallMethod(object *obj, char *methonname, char *format, ...)
 #else
 object *
-PyEval_CallMethod(obj, method, format, va_alist)
+PyEval_CallMethod(obj, methonname, format, va_alist)
 	object *obj;
-	char *method;
+	char *methonname;
 	char *format;
 	va_dcl
 #endif
@@ -438,7 +438,7 @@ PyEval_CallMethod(obj, method, format, va_alist)
 	object *args;
 	object *res;
 
-	meth = getattr(obj, method);
+	meth = getattr(obj, methonname);
 	if (meth == NULL)
 		return NULL;
 
