@@ -1284,10 +1284,11 @@ is inserted at the end.  See also the command `py-clear-queue'."
     ;; Write the contents of the buffer, watching out for indented regions.
     (save-excursion
       (goto-char start)
-      (when (/= (py-point 'bol) (py-point 'boi))
+      (let ((needs-if (/= (py-point 'bol) (py-point 'boi))))
 	(set-buffer buf)
-	(insert "if 1:\n"))
-      (insert-buffer-substring cur start end))
+	(when needs-if
+	  (insert "if 1:\n"))
+	(insert-buffer-substring cur start end)))
     (cond
      ;; always run the code in its own asynchronous subprocess
      (async
