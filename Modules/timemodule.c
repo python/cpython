@@ -179,6 +179,53 @@ gettmarg(args, p)
 	return 1;
 }
 
+#ifdef HAVE_STRFTIME
+static object *
+time_strftime(self, args)
+	object *self;
+	object *args;
+{
+	struct tm buf;
+	const char *fmt;
+	char *outbuf = 0;
+	int i;
+
+	if (!PyArg_ParseTuple(args, "s(iiiiiiiii)",
+			      &fmt,
+			      &(buf.tm_year),
+			      &(buf.tm_mon),
+			      &(buf.tm_mday),
+			      &(buf.tm_hour),
+			      &(buf.tm_min),
+			      &(buf.tm_sec),
+			      &(buf.tm_wday),
+			      &(buf.tm_yday),
+			      &(buf.tm_isdst)))
+		return NULL;
+	if (buf.tm_year >= 1900)
+		buf.tm_year -= 1900;
+	buf.tm_mon--;
+	buf.tm_wday = (buf.tm_wday + 1) % 7;
+	buf.tm_yday--;
+	/* I hate these functions that presume you know how big the output */
+	/* will be ahead of time... */
+	for (i = 1024 ; i < 8192 ; i += 1024) {
+		outbuf = malloc(i);
+		if (outbuf == NULL) {
+			return err_nomem();
+		}
+		if (strftime(outbuf, i-1, fmt, &buf) != 0) {
+			object *ret;
+			ret = newstringobject(outbuf);
+			free(outbuf);
+			return ret;
+		}
+		free(outbuf);
+	}
+	return err_nomem();
+}
+#endif /* HAVE_STRFTIME */
+
 static object *
 time_asctime(self, args)
 	object *self;
@@ -233,6 +280,9 @@ static struct methodlist time_methods[] = {
 	{"asctime",	time_asctime},
 	{"ctime",	time_ctime},
 	{"mktime",	time_mktime},
+#ifdef HAVE_STRFTIME
+	{"strftime",	time_strftime},
+#endif
 	{NULL,		NULL}		/* sentinel */
 };
 
