@@ -245,6 +245,12 @@ typedef struct _typeobject {
 
 	char *tp_doc; /* Documentation string */
 
+	/* More spares */
+	long tp_xxx5;
+	long tp_xxx6;
+	long tp_xxx7;
+	long tp_xxx8;
+
 #ifdef COUNT_ALLOCS
 	/* these must be last */
 	int tp_alloc;
