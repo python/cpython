@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=9.0
-  Title=Python 2.3.5c1
+  Title=Python 2.3.5
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -20,9 +20,9 @@ item: Global
   Patch Memory=4000
   MIF PDF Version=1.0
   MIF SMS Version=2.0
-  EXE Filename=Python-2.3.5c1.exe
+  EXE Filename=Python-2.3.5.exe
   Dialogs Version=8
-  Version File=2.3.5c1
+  Version File=2.3.5
   Version Description=Python Programming Language
   Version Copyright=©2001-2005 Python Software Foundation
   Version Company=Python Software Foundation
@@ -81,7 +81,7 @@ item: Remark
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.3.5c1
+  Value=2.3.5
 end
 item: Remark
 end
