@@ -256,7 +256,7 @@ class WidgetDialog(Dialog):
 		self.configuration = self.widget.config()
 		self.current = {}
 		self.options = {}
-		options['.class'] = (None, 'Class')
+		self.options['.class'] = (None, 'Class')
 		self.current['.class'] = self.widget.winfo_class()
 		for k, v in self.configuration.items():
 			if len(v) > 4:
