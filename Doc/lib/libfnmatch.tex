@@ -1,14 +1,15 @@
 \section{\module{fnmatch} ---
-         \UNIX{} shell style pathname pattern matching.}
-\declaremodule{standard}{fnmatch}
+         \UNIX{} style filename pattern matching}
 
-\modulesynopsis{\UNIX{} shell style pathname pattern matching.}
+\declaremodule{standard}{fnmatch}
+\modulesynopsis{\UNIX{} shell style filename pattern matching.}
 
 
 This module provides support for \UNIX{} shell-style wildcards, which
 are \emph{not} the same as regular expressions (which are documented
-in the \module{re}\refstmodindex{re} module).  The special characters
-used in shell-style wildcards are:
+in the \refmodule{re}\refstmodindex{re} module).  The special
+characters used in shell-style wildcards are:
+\index{filenames!wildcard expansion}
 
 \begin{list}{}{\leftmargin 0.5in \labelwidth 0.45in}
 \item[\code{*}] matches everything
@@ -38,6 +39,7 @@ Test whether \var{filename} matches \var{pattern}, returning true or
 false; the comparision is case-sensitive.
 \end{funcdesc}
 
+
 \begin{seealso}
-\seemodule{glob}{Shell-style path expansion}
+  \seemodule{glob}{Shell-style path expansion}
 \end{seealso}
