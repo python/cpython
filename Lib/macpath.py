@@ -7,7 +7,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "basename","dirname","commonprefix","getsize","getmtime",
            "getatime","islink","exists","isdir","isfile",
            "walk","expanduser","expandvars","normpath","abspath",
-           "realpath","supports_unicode_filenames"]
+           "realpath"]
 
 # Normalize the case of a pathname.  Dummy in Posix, but <s>.lower() here.
 
