@@ -117,6 +117,12 @@ test(r"""sre.sub(r'a', 'b', 'aaaaa', 1)""", 'baaaa')
 # bug 114660
 test(r"""sre.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there')""", 'hello there')
 
+# Test for sub() on escaped characters, see SF bug #449000
+test(r"""sre.sub(r'\r\n', r'\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
+test(r"""sre.sub('\r\n', r'\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
+test(r"""sre.sub(r'\r\n', '\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
+test(r"""sre.sub('\r\n', '\n', 'abc\r\ndef\r\n')""", 'abc\ndef\n')
+
 if verbose:
     print 'Running tests on symbolic references'
 
