@@ -35,7 +35,7 @@ Extension modules
 
 - The sre module (which underlies the re module) now uses a non-recursive
   algorithm for matching. A bunch of ugly REs that used to fail with a 
-  RuntimeError will now work.
+  RuntimeError will now work. See Bug #757624
 
 Library
 -------
