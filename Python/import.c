@@ -23,11 +23,6 @@
 #include <fcntl.h>
 #endif
 
-#if defined(PYCC_VACPP)
-/* VisualAge C/C++ Failed to Define MountType Field in sys/stat.h */
-#define S_IFMT (S_IFDIR|S_IFCHR|S_IFREG)
-#endif
-
 extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 						/* In getmtime.c */
 
