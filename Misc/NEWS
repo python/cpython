@@ -124,6 +124,8 @@ Core
 
 Library
 
+- A new function fnmatch.filter to filter lists of file names was added.
+
 - calendar.py uses month and day names based on the current locale.
 
 - strop is now *really* obsolete (this was announced before with 1.6),
