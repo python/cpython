@@ -33,15 +33,6 @@ while \code{"\e n"} is a one-character string containing a newline.
 Usually patterns will be expressed in Python code using this raw
 string notation.
 
-\strong{Implementation note:}
-The \module{re}\refstmodindex{pre} module has two distinct
-implementations: \module{sre} is the default implementation and
-includes Unicode support, but may run into stack limitations for some
-patterns.  Though this will be fixed for a future release of Python,
-the older implementation (without Unicode support) is still available
-as the \module{pre}\refstmodindex{pre} module.
-
-
 \begin{seealso}
   \seetitle{Mastering Regular Expressions}{Book on regular expressions
             by Jeffrey Friedl, published by O'Reilly.  The Python
