@@ -60,6 +60,6 @@ PyMac_AddLibResources()
 	
 	if ( !library_fss_valid ) 
 		return;
-	fd = FSpOpenResFile(&library_fss, fsRdWrShPerm);
+	fd = FSpOpenResFile(&library_fss, fsRdPerm);
 }
    	
