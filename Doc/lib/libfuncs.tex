@@ -806,21 +806,21 @@ class C(object):
 
 \begin{itemize}
 
-    \item{Python modules' code is recompiled and the module-level code
+    \item Python modules' code is recompiled and the module-level code
     reexecuted, defining a new set of objects which are bound to names in
     the module's dictionary.  The \code{init} function of extension
-    modules is not called a second time.}
+    modules is not called a second time.
 
-    \item{As with all other objects in Python the old objects are only
-    reclaimed after their reference counts drop to zero.}
+    \item As with all other objects in Python the old objects are only
+    reclaimed after their reference counts drop to zero.
 
-    \item{The names in the module namespace are updated to point to
-    any new or changed objects.}
+    \item The names in the module namespace are updated to point to
+    any new or changed objects.
 
-    \item{Other references to the old objects (such as names external
+    \item Other references to the old objects (such as names external
     to the module) are not rebound to refer to the new objects and
     must be updated in each namespace where they occur if that is
-    desired.}
+    desired.
 
 \end{itemize}
 
