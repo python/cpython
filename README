@@ -106,6 +106,10 @@ Linux:	Once you've built Python, use it to run the regen.py script in
 	don't match the system headers on some Linux versions.
 
 AIX:	Read the files Misc/AIX-NOTES* before trying to build.
+	WARNING!  In some versions of AIX, you get errors about
+	Invalid Indent when running the Python test set.  This appears
+	to be a bug in the AIX compiler.  Rebuild Parser/tokenizer.c
+	using OPT="" or OPT=-g, or use gcc.
 
 HP-UX:	Read the file Misc/HPUX-NOTES if you want to be able to
 	use shared libraries for dynamically loaded modules.
@@ -122,6 +126,9 @@ SCO:	1) Everything works much better if you add -U__STDC__ to the
 	needed be set to:
 
 		LIBS=' -lsocket -lcrypt_i'
+
+	3) According to at least one report, the above apply only to
+	SCO 3 -- Python builds out of the box on SCO 5.
 
 
 Configuring the set of built-in modules
