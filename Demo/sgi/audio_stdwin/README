@@ -1,0 +1,19 @@
+Three programs that provide a user interface based upon STDWIN to the
+audio device of the SGI 4D/25.  These scripts also demonstrate the power
+of a set of window interface classes implemented in Python that simplify
+the construction of all sorts of buttons, etc.
+
+XXX This hardware is already obsolete; see ../al for examples of audio
+XXX on the Indigo and 4D/35.
+
+jukebox		Browses a directory full of sound samples and lets you
+		play selected ones.  (Probably not fully functional, it
+		requires a conversion program.)
+
+rec		A tape recorder that lets you record a sound sample,
+		play it back, and save it to a file.  Various options to
+		set sampling rate, volume etc.  When idle it doubles
+		as a VU meter.
+
+vumeter		A VU meter that displays a history of the volume of
+		sound recently sampled from the microphone.

@@ -1,0 +1,8 @@
+Programs that demonstrate the use of the audio device on the SGI 4D/25.
+These require the built-in module 'audio'.
+
+XXX This hardware is already obsolete; see ../al for examples of audio
+XXX on the Indigo and 4D/35.
+
+play		Read a sound sample from a file and play it through the
+		speaker.  Options to set volume, sampling rate etc.
