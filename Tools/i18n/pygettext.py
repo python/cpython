@@ -449,3 +449,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # some more test strings
+    _(u'a unicode string')
