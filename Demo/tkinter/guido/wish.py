@@ -1,8 +1,9 @@
 # This is about all it requires to write a wish shell in Python!
 
 import tkinter
+import os
 
-tk = tkinter.create(':0', 'wish', 'Tk', 1)
+tk = tkinter.create(os.environ['DISPLAY'], 'wish', 'Tk', 1)
 tk.call('update')
 
 cmd = ''
