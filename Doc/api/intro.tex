@@ -277,7 +277,7 @@ set_all(PyObject *target, PyObject *item)
 The situation is slightly different for function return values.  
 While passing a reference to most functions does not change your 
 ownership responsibilities for that reference, many functions that 
-return a referece to an object give you ownership of the reference.
+return a reference to an object give you ownership of the reference.
 The reason is simple: in many cases, the returned object is created 
 on the fly, and the reference you get is the only reference to the 
 object.  Therefore, the generic functions that return object 
