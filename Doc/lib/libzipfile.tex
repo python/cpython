@@ -77,13 +77,14 @@ The available attributes of this module are:
 
 \subsection{ZipFile Objects \label{zipfile-objects}}
 
-\begin{classdesc}{ZipFile}{filename\optional{, mode\optional{, compression}}} 
-  Open a ZIP file named \var{filename}.  The \var{mode} parameter
+\begin{classdesc}{ZipFile}{file\optional{, mode\optional{, compression}}} 
+  Open a ZIP file, where \var{file} can be either a path to a file
+  (i.e. a string) or a file-like object.  The \var{mode} parameter
   should be \code{'r'} to read an existing file, \code{'w'} to
   truncate and write a new file, or \code{'a'} to append to an
-  existing file.  For \var{mode} is \code{'a'} and \var{filename}
+  existing file.  For \var{mode} is \code{'a'} and \var{file}
   refers to an existing ZIP file, then additional files are added to
-  it.  If \var{filename} does not refer to a ZIP file, then a new ZIP
+  it.  If \var{file} does not refer to a ZIP file, then a new ZIP
   archive is appended to the file.  This is meant for adding a ZIP
   archive to another file, such as \file{python.exe}.  Using
 
