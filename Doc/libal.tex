@@ -111,52 +111,52 @@ methods:
 
 \begin{methoddesc}[audio port]{closeport}{}
 Close the port.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getfd}{}
 Return the file descriptor as an int.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getfilled}{}
 Return the number of filled samples.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getfillable}{}
 Return the number of fillable samples.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{readsamps}{nsamples}
 Read a number of samples from the queue, blocking if necessary.
 Return the data as a string containing the raw data, (e.g., 2 bytes per
 sample in big-endian byte order (high byte, low byte) if you have set
 the sample width to 2 bytes).
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{writesamps}{samples}
 Write samples into the queue, blocking if necessary.  The samples are
 encoded as described for the \method{readsamps()} return value.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getfillpoint}{}
 Return the `fill point'.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{setfillpoint}{fillpoint}
 Set the `fill point'.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getconfig}{}
 Return a configuration object containing the current configuration of
 the port.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{setconfig}{config}
 Set the configuration from the argument, a configuration object.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 \begin{methoddesc}[audio port]{getstatus}{list}
 Get status information on last error.
-\end{methoddesc}[audio port]
+\end{methoddesc}
 
 
 \section{Standard Module \module{AL}}
