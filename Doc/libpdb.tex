@@ -258,8 +258,16 @@ or \code{'exception'}
 
 \end{description}
 
-A trace function should return a new trace function or None.
-Class methods are accepted (and most useful!) as trace methods.
+The global trace function is invoked (with \var{event} set to
+\code{'call'}) whenever a new local scope is entered; it should return
+a reference to the local trace function to be used that scope, or
+\code{None} if the scope shouldn't be traced.
+
+The local trace function should return a reference to itself (or to
+another function for further tracing in that scope), or \code{None} to
+turn off tracing in that scope.
+
+Instance methods are accepted (and very useful!) as trace functions.
 
 The events have the following meaning:
 
