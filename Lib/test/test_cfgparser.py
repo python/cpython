@@ -149,7 +149,13 @@ class TestCaseBase(unittest.TestCase):
         self.get_error(ConfigParser.NoOptionError, "foo", "bar")
 
     def get_error(self, exc, section, option):
-        self.assertRaises(exc, self.cf.get, section, option)
+        try:
+            self.cf.get(section, option)
+        except exc, e:
+            return e
+        else:
+            self.fail("expected exception type %s.%s"
+                      % (exc.__module__, exc.__name__))
 
     def test_boolean(self):
         cf = self.fromstring(
@@ -227,7 +233,11 @@ class TestCaseBase(unittest.TestCase):
             "\n"
             "[Mutual Recursion]\n"
             "foo=%(bar)s\n"
-            "bar=%(foo)s\n",
+            "bar=%(foo)s\n"
+            "\n"
+            "[Interpolation Error]\n"
+            "name=%(reference)s\n",
+            # no definition for 'reference'
             defaults={"getname": "%(__name__)s"})
 
     def check_items_config(self, expected):
@@ -256,6 +266,14 @@ class ConfigParserTestCase(TestCaseBase):
         eq(cf.get("Foo", "bar10"),
            "something with lots of interpolation (10 steps)")
         self.get_error(ConfigParser.InterpolationDepthError, "Foo", "bar11")
+
+    def test_interpolation_missing_value(self):
+        cf = self.get_interpolation_config()
+        e = self.get_error(ConfigParser.InterpolationError,
+                           "Interpolation Error", "name")
+        self.assertEqual(e.reference, "reference")
+        self.assertEqual(e.section, "Interpolation Error")
+        self.assertEqual(e.option, "name")
 
     def test_items(self):
         self.check_items_config([('default', '<default>'),
