@@ -554,16 +554,34 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	extras = code->co_stacksize + code->co_nlocals + ncells + nfrees;
 	if (back == NULL || back->f_globals != globals) {
 		builtins = PyDict_GetItem(globals, builtin_object);
-		if (builtins != NULL && PyModule_Check(builtins))
-			builtins = PyModule_GetDict(builtins);
+		if (builtins) {
+			if (PyModule_Check(builtins)) {
+				builtins = PyModule_GetDict(builtins);
+				assert(!builtins || PyDict_Check(builtins));
+			}
+			else if (!PyDict_Check(builtins))
+				builtins = NULL;
+		}
+		if (builtins == NULL) {
+			/* No builtins!  Make up a minimal one 
+			   Give them 'None', at least. */
+			builtins = PyDict_New();
+			if (builtins == NULL || 
+			    PyDict_SetItemString(
+				    builtins, "None", Py_None) < 0)
+				return NULL;
+		}
+		else
+			Py_INCREF(builtins);
+
 	}
 	else {
 		/* If we share the globals, we share the builtins.
 		   Save a lookup and a call. */
 		builtins = back->f_builtins;
+		assert(builtins != NULL && PyDict_Check(builtins));
+		Py_INCREF(builtins);
 	}
-	if (builtins != NULL && !PyDict_Check(builtins))
-		builtins = NULL;
 	if (free_list == NULL) {
 		f = PyObject_GC_NewVar(PyFrameObject, &PyFrame_Type, extras);
 		if (f == NULL)
@@ -581,17 +599,6 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		}
 		_Py_NewReference((PyObject *)f);
 	}
-	if (builtins == NULL) {
-		/* No builtins!  Make up a minimal one. */
-		builtins = PyDict_New();
-		if (builtins == NULL || /* Give them 'None', at least. */
-		    PyDict_SetItemString(builtins, "None", Py_None) < 0) {
-			Py_DECREF(f);
-			return NULL;
-		}
-	}
-	else
-		Py_INCREF(builtins);
 	f->f_builtins = builtins;
 	Py_XINCREF(back);
 	f->f_back = back;
@@ -599,15 +606,15 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	f->f_code = code;
 	Py_INCREF(globals);
 	f->f_globals = globals;
-	if (code->co_flags & CO_NEWLOCALS) {
-		if (code->co_flags & CO_OPTIMIZED)
-			locals = NULL; /* Let fast_2_locals handle it */
-		else {
-			locals = PyDict_New();
-			if (locals == NULL) {
-				Py_DECREF(f);
-				return NULL;
-			}
+	/* Most functions have CO_NEWLOCALS and CO_OPTIMIZED set. */
+	if ((code->co_flags & (CO_NEWLOCALS | CO_OPTIMIZED)) == 
+		(CO_NEWLOCALS | CO_OPTIMIZED))
+		locals = NULL; /* PyFrame_Fast2Locals() will set. */
+	else if (code->co_flags & CO_NEWLOCALS) {
+		locals = PyDict_New();
+		if (locals == NULL) {
+			Py_DECREF(f);
+			return NULL;
 		}
 	}
 	else {
