@@ -3049,7 +3049,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
 /* gleaned from: */
 /* http://www-4.ibm.com/software/developer/library/utf16.html?dwzone=unicode */
 
-static unsigned short utf16Fixup[32] =
+static unsigned long utf16Fixup[32] =
 {
     0, 0, 0, 0, 0, 0, 0, 0, 
     0, 0, 0, 0, 0, 0, 0, 0,
@@ -3069,8 +3069,8 @@ unicode_compare(PyUnicodeObject *str1, PyUnicodeObject *str2)
     len2 = str2->length;
     
     while (len1 > 0 && len2 > 0) {
-	unsigned short c1, c2; /* 16 bits */
-	long diff; /* >=32 bits */
+	unsigned long c1, c2;
+	long diff;
 
         c1 = *s1++;
         c2 = *s2++;
