@@ -11,6 +11,7 @@ from Tkinter import *
 import tkMessageBox, tkColorChooser, tkFont
 
 from configHandler import idleConf
+from dynOptionMenuWidget import DynOptionMenu
 
 class ConfigDialog(Toplevel):
     """
@@ -202,15 +203,11 @@ class ConfigDialog(Toplevel):
                 exportselection=FALSE)
         self.listFontName.bind('<<ListboxSelect>>',self.SetFontSampleBinding)
         scrollFont=Scrollbar(frameFontName)
-        #self.LoadFontList()
         scrollFont.config(command=self.listFontName.yview)
         self.listFontName.config(yscrollcommand=scrollFont.set)
         labelFontSizeTitle=Label(frameFontSize,text='Size :')
-        sizes=('10','11','12','13','14','16','18','20','22')
-        args=(frameFontSize,self.fontSize)+sizes
-        keyArgs={'command':self.SetFontSampleBinding}
-        optFontSize=apply(OptionMenu,args,keyArgs)
-        #optFontSize.bind('<<MenuSelect>>',self.SetFontSample)
+        self.optMenuFontSize=DynOptionMenu(frameFontSize,self.fontSize,None,
+            command=self.SetFontSampleBinding)
         frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1)
         self.labelFontSample=Label(frameFontSample,
                 text='AaBbCcDdEe\nFfGgHhIiJjK\n1234567890\n#:+=(){}[]',
@@ -248,7 +245,7 @@ class ConfigDialog(Toplevel):
         self.listFontName.pack(side=LEFT,fill=Y)
         scrollFont.pack(side=LEFT,fill=Y)
         labelFontSizeTitle.pack(side=TOP,anchor=W)
-        optFontSize.pack(side=TOP,anchor=W,fill=X)
+        self.optMenuFontSize.pack(side=TOP,anchor=W,fill=X)
         frameFontSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         self.labelFontSample.pack(expand=TRUE,fill=BOTH)
         #frameIndent
@@ -515,79 +512,35 @@ class ConfigDialog(Toplevel):
         fonts.sort()
         for font in fonts:
             self.listFontName.insert(END,font)
-        configuredFont=idleConf.GetDefault('main','EditorWindow','font',
+        configuredFont=idleConf.GetOption('main','EditorWindow','font',
                 default='courier')
         if configuredFont in fonts:
             currentFontIndex=fonts.index(configuredFont)
             self.listFontName.see(currentFontIndex)
             self.listFontName.select_set(currentFontIndex)
         ##font size dropdown
-        fontSize=idleConf.GetDefault('main','EditorWindow','font-size',default='12')
-        self.fontSize.set(fontSize)
+        fontSize=idleConf.GetOption('main','EditorWindow','font-size',default='12')
+        self.optMenuFontSize.SetMenu(('10','11','12','13','14',
+                '16','18','20','22'),fontSize )
         ##font sample 
         self.SetFontSample()
     
     def LoadTabCfg(self):
         ##indent type radibuttons
-        spaceIndent=idleConf.GetDefault('main','Indent','use-spaces',
+        spaceIndent=idleConf.GetOption('main','Indent','use-spaces',
                 default=1,type='bool')
         self.indentType.set(spaceIndent)
         ##indent sizes
-        spaceNum=idleConf.GetDefault('main','Indent','num-spaces',
+        spaceNum=idleConf.GetOption('main','Indent','num-spaces',
                 default=4,type='int')
-        tabCols=idleConf.GetDefault('main','Indent','tab-cols',
+        tabCols=idleConf.GetOption('main','Indent','tab-cols',
                 default=4,type='int')
         self.spaceNum.set(spaceNum)
         self.tabCols.set(tabCols)
     
-    #def LoadOptionMenu(self, optMenu, optList, optVar, optVal=None, 
-    #            command=None):
-    def LoadOptionMenu(self, optMenu, optVar, optVal=None, command=None):
-        """
-        Load the relevant list of values into an OptionMenu and set 
-        selected value if required.
-        """
-        params={'cfg':None,
-                'section':None,
-                'optList':None,
-                'optVar':None,
-                'optVal':None,
-                'command':None}
-        if optMenu == self.optMenuHighlightTarget:
-            params['cfg']=idleConf.userCfg['highlight']
-#             if 
-#             params['section']=idleconf.userCfg['main'].GetDef('EditorWindow',
-#                     'theme')
-#             
-#             params['optVar']=self.HighlightTarget
-#             params['optList']=idleconf.defaultCfg['main'].options(params.Section)
-#             else: # a default theme
-#                 pass
-            #params.optList=idleConf
-            
-
-        #if not params.optVar.get(): #no value set yet (initial load)
-        #    params.optVal=   
-
-        #if params.section: #we're asking to load a list of option names
-        #    optList=params.cfg
-        #elif optMenu == xx:
-        #else:
-        
-        #if self.HighlightTarget.get(): #if there was a value set (reload)
-        #    params.optVal=self.HighlightTarget.get() 
-        #else: #no value set yet (initial load)
-        #if not params.optVar.get(): #no value set yet (initial load)   
-            
-        menu=optMenu['menu']
-        print menu
-        menu.delete(0,END)
-        for item in optList:
-            menu.add_command(label=item,command=command)
-        if optVal:
-            optVar.set(optVal)
-        elif optList:
-            optVar.set(optList[0])
+    def LoadThemeLists(self):
+        ##default themes
+        pass
 
     def LoadConfigs(self):
         """
@@ -598,6 +551,7 @@ class ConfigDialog(Toplevel):
         self.LoadFontCfg()        
         self.LoadTabCfg()        
         ### highlighting page
+        self.LoadThemeLists()
         ### keys page
         ### help page
         ### general page
