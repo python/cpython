@@ -3176,12 +3176,12 @@ err_args(PyObject *func, int flags, int nargs)
 {
 	if (flags & METH_NOARGS)
 		PyErr_Format(PyExc_TypeError, 
-			     "%.200s() takes 1 argument (%d given)",
+			     "%.200s() takes no arguments (%d given)",
 			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
 			     nargs);
 	else
 		PyErr_Format(PyExc_TypeError, 
-			     "%.200s() takes no arguments (%d given)",
+			     "%.200s() takes exactly one argument (%d given)",
 			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
 			     nargs);
 }
