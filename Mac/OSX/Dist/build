@@ -89,6 +89,7 @@ fi
 $PYTHONSRC/configure -C --enable-framework LDFLAGS=-Wl,-x
 make
 make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstall
+make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstallextras
 
 if [ "$builddocs" = "y" -o "$builddocs" = "Y" ]; then
     ./python.exe $PYTHONSRC/Mac/OSX/setupDocs.py build
