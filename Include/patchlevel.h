@@ -46,19 +46,20 @@ PERFORMANCE OF THIS SOFTWARE.
 #define PY_RELEASE_LEVEL_BETA	0xB
 #define PY_RELEASE_LEVEL_GAMMA	0xC
 #define PY_RELEASE_LEVEL_FINAL	0xF	/* Serial should be 0 here */
+					/* Higher for patch releases */
 
 /* Version parsed out into numeric values */
 #define PY_MAJOR_VERSION	1
 #define PY_MINOR_VERSION	5
 #define PY_MICRO_VERSION	2
-#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_GAMMA
-#define PY_RELEASE_SERIAL	1
+#define PY_RELEASE_LEVEL	PY_RELEASE_LEVEL_FINAL
+#define PY_RELEASE_SERIAL	0
 
 /* Version as a string */
-#define PY_VERSION		"1.5.2c1"
+#define PY_VERSION		"1.5.2"
 
 /* Historic */
-#define PATCHLEVEL		"1.5.2c1"
+#define PATCHLEVEL		"1.5.2"
 
 /* Version as a single 4-byte hex number, e.g. 0x010502B2 == 1.5.2b2.
    Use this for numeric comparisons, e.g. #if PY_VERSION_HEX >= ... */
