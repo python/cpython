@@ -376,16 +376,12 @@ file_read(f, args)
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (args == NULL)
-		n = 0;
+		n = -1;
 	else {
 		if (!getargs(args, "i", &n))
 			return NULL;
-		if (n < 0) {
-			err_setstr(ValueError, "negative read count");
-			return NULL;
-		}
 	}
-	n2 = n != 0 ? n : BUFSIZ;
+	n2 = n >= 0 ? n : BUFSIZ;
 	v = newsizedstringobject((char *)NULL, n2);
 	if (v == NULL)
 		return NULL;
@@ -399,7 +395,7 @@ file_read(f, args)
 		n1 += n3;
 		if (n1 == n)
 			break;
-		if (n == 0) {
+		if (n < 0) {
 			n2 = n1 + BUFSIZ;
 			RET_SAVE
 			if (resizestring(&v, n2) < 0)
@@ -561,10 +557,10 @@ file_readline(f, args)
 	else {
 		if (!getintarg(args, &n))
 			return NULL;
-		if (n < 0) {
-			err_setstr(ValueError, "negative readline count");
-			return NULL;
-		}
+		if (n == 0)
+			return newstringobject("");
+		if (n < 0)
+			n = 0;
 	}
 
 	return getline(f, n);
@@ -783,7 +779,7 @@ writeobject(v, f, flags)
 	object *f;
 	int flags;
 {
-	object *writer, *value, *result;
+	object *writer, *value, *args, *result;
 	if (f == NULL) {
 		err_setstr(TypeError, "writeobject with NULL file");
 		return -1;
@@ -807,9 +803,16 @@ writeobject(v, f, flags)
 		DECREF(writer);
 		return -1;
 	}
-	result = call_object(writer, value);
-	DECREF(writer);
+	args = mkvalue("(O)", value);
+	if (value == NULL) {
+		DECREF(value);
+		DECREF(writer);
+		return -1;
+	}
+	result = call_object(writer, args);
+	DECREF(args);
 	DECREF(value);
+	DECREF(writer);
 	if (result == NULL)
 		return -1;
 	DECREF(result);
