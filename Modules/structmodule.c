@@ -22,9 +22,11 @@ these can be preceded by a decimal repeat count:\n\
  h:short; H:unsigned short; i:int; I:unsigned int;\n\
  l:long; L:unsigned long; f:float; d:double.\n\
 Special cases (preceding decimal count indicates length):\n\
- s:string (array of char); p: pascal string (w. count byte).\n\
+ s:string (array of char); p: pascal string (with count byte).\n\
 Special case (only available in native format):\n\
  P:an integer type that is wide enough to hold a pointer.\n\
+Special case (not in native mode unless 'long long' in platform C):\n\
+ q:long long; Q:unsigned long long\n\
 Whitespace between formats is ignored.\n\
 \n\
 The variable struct.error is an exception raised on errors.";
@@ -64,6 +66,18 @@ typedef struct { char c; void *x; } s_void_p;
 #define FLOAT_ALIGN (sizeof(s_float) - sizeof(float))
 #define DOUBLE_ALIGN (sizeof(s_double) - sizeof(double))
 #define VOID_P_ALIGN (sizeof(s_void_p) - sizeof(void *))
+
+/* We can't support q and Q in native mode unless the compiler does;
+   in std mode, they're 8 bytes on all platforms. */
+#ifdef HAVE_LONG_LONG
+typedef struct { char c; LONG_LONG x; } s_long_long;
+#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(LONG_LONG))
+
+#else
+static char qQ_error_msg[] =
+"q and Q unavailable in native mode on this platform; use a standard mode.\0";
+
+#endif
 
 #define STRINGIFY(x)    #x
 
@@ -106,6 +120,93 @@ get_ulong(PyObject *v, unsigned long *p)
 	}
 }
 
+#ifdef HAVE_LONG_LONG
+
+/* Same, but handling native long long. */
+
+static int
+get_longlong(PyObject *v, LONG_LONG *p)
+{
+	LONG_LONG x;
+	int v_needs_decref = 0;
+
+	if (PyInt_Check(v)) {
+		x = (LONG_LONG)PyInt_AS_LONG(v);
+		*p = x;
+		return 0;
+	}
+	if (!PyLong_Check(v)) {
+		PyNumberMethods *m = v->ob_type->tp_as_number;
+		if (m != NULL && m->nb_long != NULL) {
+			v = m->nb_long(v);
+			if (v == NULL)
+				return -1;
+			v_needs_decref = 1;
+		}
+		if (!PyLong_Check(v)) {
+			PyErr_SetString(StructError,
+					"cannot convert argument to long");
+			if (v_needs_decref)
+				Py_DECREF(v);
+			return -1;
+		}
+	}
+	assert(PyLong_Check(v));
+	x = PyLong_AsLongLong(v);
+	if (v_needs_decref)
+		Py_DECREF(v);
+	if (x == (LONG_LONG)-1 && PyErr_Occurred())
+		return -1;
+	*p = x;
+	return 0;
+}
+
+/* Same, but handling native unsigned long long. */
+
+static int
+get_ulonglong(PyObject *v, unsigned LONG_LONG *p)
+{
+	unsigned LONG_LONG x;
+	int v_needs_decref = 0;
+
+	if (PyInt_Check(v)) {
+		long i = PyInt_AS_LONG(v);
+		if (i < 0) {
+			PyErr_SetString(StructError, "can't convert negative "
+					"int to unsigned");
+			return -1;
+		}
+		x = (unsigned LONG_LONG)i;
+		*p = x;
+		return 0;
+	}
+	if (!PyLong_Check(v)) {
+		PyNumberMethods *m = v->ob_type->tp_as_number;
+		if (m != NULL && m->nb_long != NULL) {
+			v = m->nb_long(v);
+			if (v == NULL)
+				return -1;
+			v_needs_decref = 1;
+		}
+		if (!PyLong_Check(v)) {
+			PyErr_SetString(StructError,
+					"cannot convert argument to long");
+			if (v_needs_decref)
+				Py_DECREF(v);
+			return -1;
+		}
+	}
+	assert(PyLong_Check(v));
+	x = PyLong_AsUnsignedLongLong(v);
+	if (v_needs_decref)
+		Py_DECREF(v);
+	if (x == (unsigned LONG_LONG)-1 && PyErr_Occurred())
+		return -1;
+	*p = x;
+	return 0;
+}
+
+#endif
 
 /* Floating point helpers */
 
@@ -395,6 +496,17 @@ typedef struct _formatdef {
 		    const struct _formatdef *);
 } formatdef;
 
+/* A large number of small routines follow, with names of the form
+
+	[bln][up]_TYPE
+
+   [bln] distiguishes among big-endian, little-endian and native.
+   [pu] distiguishes between pack (to struct) and unpack (from struct).
+   TYPE is one of char, byte, ubyte, etc.
+*/
+
+/* Native mode routines. */
+
 static PyObject *
 nu_char(const char *p, const formatdef *f)
 {
@@ -449,6 +561,34 @@ nu_ulong(const char *p, const formatdef *f)
 {
 	return PyLong_FromUnsignedLong(*(unsigned long *)p);
 }
+
+/* Native mode doesn't support q or Q unless the platform C supports
+   long long (or, on Windows, __int64). */
+
+#ifdef HAVE_LONG_LONG
+
+static PyObject *
+nu_longlong(const char *p, const formatdef *f)
+{
+	return PyLong_FromLongLong(*(LONG_LONG *)p);
+}
+
+static PyObject *
+nu_ulonglong(const char *p, const formatdef *f)
+{
+	return PyLong_FromUnsignedLongLong(*(unsigned LONG_LONG *)p);
+}
+
+#else
+ 
+static PyObject *
+nu_qQerror(const char *p, const formatdef *f)
+{
+	PyErr_SetString(StructError, qQ_error_msg);
+	return NULL;
+}
+
+#endif
 
 static PyObject *
 nu_float(const char *p, const formatdef *f)
@@ -585,6 +725,39 @@ np_ulong(char *p, PyObject *v, const formatdef *f)
 	return 0;
 }
 
+#ifdef HAVE_LONG_LONG
+
+static int
+np_longlong(char *p, PyObject *v, const formatdef *f)
+{
+	LONG_LONG x;
+	if (get_longlong(v, &x) < 0)
+		return -1;
+	* (LONG_LONG *)p = x;
+	return 0;
+}
+
+static int
+np_ulonglong(char *p, PyObject *v, const formatdef *f)
+{
+	unsigned LONG_LONG x;
+	if (get_ulonglong(v, &x) < 0)
+		return -1;
+	* (unsigned LONG_LONG *)p = x;
+	return 0;
+}
+
+#else
+
+static int
+np_qQerror(char *p, PyObject *v, const formatdef *f)
+{
+	PyErr_SetString(StructError, qQ_error_msg);
+ 	return -1;
+}
+
+#endif
+
 static int
 np_float(char *p, PyObject *v, const formatdef *f)
 {
@@ -642,6 +815,18 @@ static formatdef native_table[] = {
 	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
 	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
 	{'P',	sizeof(void *),	VOID_P_ALIGN,	nu_void_p,	np_void_p},
+#ifdef HAVE_LONG_LONG
+	{'q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_longlong, np_longlong},
+	{'Q',	sizeof(LONG_LONG), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
+#else
+	/* n[pu]_qQerror just raise errors, but give them "the expected" size
+	   and alignment anyway so that calcsize returns something reasonable,
+	   and so unpack code that works on a 'long long' platform ends up in
+	   the error routine instead of with a mysterious "unpack str size
+	   does not match format" msg when run on a non-'long long' box. */
+	{'q',	8,		8, 		nu_qQerror,	 np_qQerror},
+	{'Q',	8,		8, 		nu_qQerror,	 np_qQerror},
+#endif
 	{0}
 };
 

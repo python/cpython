@@ -53,9 +53,11 @@ C and Python values should be obvious given their types:
   \lineiv{h}{\ctype{short}}{integer}{}
   \lineiv{H}{\ctype{unsigned short}}{integer}{}
   \lineiv{i}{\ctype{int}}{integer}{}
-  \lineiv{I}{\ctype{unsigned int}}{long}{(1)}
+  \lineiv{I}{\ctype{unsigned int}}{long}{}
   \lineiv{l}{\ctype{long}}{integer}{}
   \lineiv{L}{\ctype{unsigned long}}{long}{}
+  \lineiv{q}{\ctype{long long}}{long}{(1)}
+  \lineiv{Q}{\ctype{unsigned long long}}{long}{(1)}
   \lineiv{f}{\ctype{float}}{float}{}
   \lineiv{d}{\ctype{double}}{float}{}
   \lineiv{s}{\ctype{char[]}}{string}{}
@@ -68,10 +70,9 @@ Notes:
 
 \begin{description}
 \item[(1)]
-  The \character{I} conversion code will convert to a Python long if
-  the C \ctype{int} is the same size as a C \ctype{long}, which is
-  typical on most modern systems.  If a C \ctype{int} is smaller than
-  a C \ctype{long}, an Python integer will be created instead.
+  The \character{q} and \character{Q} conversion codes are available in
+  native mode only if the platform C compiler supports C \ctype{long long},
+  or, on Windows, \ctype{__int64}.
 \end{description}
 
 

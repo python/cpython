@@ -1,4 +1,4 @@
-from test_support import TestFailed, verbose
+from test_support import TestFailed, verbose, verify
 import struct
 ## import pdb
 
@@ -12,7 +12,7 @@ def simple_err(func, *args):
             func.__name__, args)
 ##      pdb.set_trace()
 
-simple_err(struct.calcsize, 'Q')
+simple_err(struct.calcsize, 'Z')
 
 sz = struct.calcsize('i')
 if sz * 3 != struct.calcsize('iii'):
@@ -93,14 +93,7 @@ tests = [
                '\000\000\000\000\000\000\000\300', 0),
 ]
 
-def badpack(fmt, arg, got, exp):
-    return
-
-def badunpack(fmt, arg, got, exp):
-    return "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
-        `fmt`, `arg`, `got`, `exp`)
-
-isbigendian = struct.pack('=h', 1) == '\0\1'
+isbigendian = struct.pack('=i', 1)[0] == chr(0)
 
 for fmt, arg, big, lil, asy in tests:
     if verbose:
@@ -119,3 +112,47 @@ for fmt, arg, big, lil, asy in tests:
         if rev != arg and not asy:
             raise TestFailed, "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
                 `fmt`, `res`, `rev`, `arg`)
+
+# Some q/Q sanity checks.
+
+has_native_qQ = 1
+try:
+    struct.pack("q", 5)
+except struct.error:
+    has_native_qQ = 0
+
+if verbose:
+    print "Platform has native q/Q?", has_native_qQ and "Yes." or "No."
+
+simple_err(struct.pack, "Q", -1)   # can't pack -1 as unsigned regardless
+simple_err(struct.pack, "q", "a")  # can't pack string as 'q' regardless
+simple_err(struct.pack, "Q", "a")  # ditto, but 'Q'
+
+def force_bigendian(value):
+    if isbigendian:
+        return value
+    chars = list(value)
+    chars.reverse()
+    return "".join(chars)
+
+if has_native_qQ:
+    bytes = struct.calcsize('q')
+    # The expected values here are in big-endian format, primarily because
+    # I'm on a little-endian machine and so this is the clearest way (for
+    # me) to force the code to get exercised.
+    for format, input, expected in (
+            ('q', -1, '\xff' * bytes),
+            ('q', 0, '\x00' * bytes),
+            ('Q', 0, '\x00' * bytes),
+            ('q', 1L, '\x00' * (bytes-1) + '\x01'),
+            ('Q', (1L << (8*bytes))-1, '\xff' * bytes),
+            ('q', (1L << (8*bytes-1))-1, '\x7f' + '\xff' * (bytes - 1))):
+        got = struct.pack(format, input)
+        bigexpected = force_bigendian(expected)
+        verify(got == bigexpected,
+               "%r-pack of %r gave %r, not %r" %
+                    (format, input, got, bigexpected))
+        retrieved = struct.unpack(format, got)[0]
+        verify(retrieved == input,
+               "%r-unpack of %r gave %r, not %r" %
+                    (format, got, retrieved, input))
