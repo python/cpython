@@ -240,18 +240,6 @@ class TestCaseBase(unittest.TestCase):
             cf.set("sect", "option1", unicode("splat"))
             cf.set("sect", "option2", unicode("splat"))
 
-    def test_set_nonstring_types(self):
-        cf = self.fromstring("[sect]\n"
-                             "option1=foo\n")
-        # Check that we get a TypeError when setting non-string values
-        # in an existing section:
-        self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
-        self.assertRaises(TypeError, cf.set, "sect", "option1", 1.0)
-        self.assertRaises(TypeError, cf.set, "sect", "option1", object())
-        self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
-        self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
-        self.assertRaises(TypeError, cf.set, "sect", "option2", object())
-
     def test_read_returns_file_list(self):
         file1 = test_support.findfile("cfgparser.1")
         # check when we pass a mix of readable and non-readable files:
@@ -344,6 +332,27 @@ class ConfigParserTestCase(TestCaseBase):
                                  ('key', '|value|'),
                                  ('name', 'value')])
 
+    def test_set_nonstring_types(self):
+        cf = self.newconfig()
+        cf.add_section('non-string')
+        cf.set('non-string', 'int', 1)
+        cf.set('non-string', 'list', [0, 1, 1, 2, 3, 5, 8, 13, '%('])
+        cf.set('non-string', 'dict', {'pi': 3.14159, '%(': 1,
+                                      '%(list)': '%(list)'})
+        cf.set('non-string', 'string_with_interpolation', '%(list)s')
+        self.assertEqual(cf.get('non-string', 'int', raw=True), 1)
+        self.assertRaises(TypeError, cf.get, 'non-string', 'int')
+        self.assertEqual(cf.get('non-string', 'list', raw=True),
+                         [0, 1, 1, 2, 3, 5, 8, 13, '%('])
+        self.assertRaises(TypeError, cf.get, 'non-string', 'list')
+        self.assertEqual(cf.get('non-string', 'dict', raw=True),
+                         {'pi': 3.14159, '%(': 1, '%(list)': '%(list)'})
+        self.assertRaises(TypeError, cf.get, 'non-string', 'dict')
+        self.assertEqual(cf.get('non-string', 'string_with_interpolation',
+                                raw=True), '%(list)s')
+        self.assertRaises(ValueError, cf.get, 'non-string',
+                          'string_with_interpolation', raw=False)
+
 
 class RawConfigParserTestCase(TestCaseBase):
     config_class = ConfigParser.RawConfigParser
@@ -368,6 +377,17 @@ class RawConfigParserTestCase(TestCaseBase):
                                  ('key', '|%(name)s|'),
                                  ('name', 'value')])
 
+    def test_set_nonstring_types(self):
+        cf = self.newconfig()
+        cf.add_section('non-string')
+        cf.set('non-string', 'int', 1)
+        cf.set('non-string', 'list', [0, 1, 1, 2, 3, 5, 8, 13])
+        cf.set('non-string', 'dict', {'pi': 3.14159})
+        self.assertEqual(cf.get('non-string', 'int'), 1)
+        self.assertEqual(cf.get('non-string', 'list'),
+                         [0, 1, 1, 2, 3, 5, 8, 13])
+        self.assertEqual(cf.get('non-string', 'dict'), {'pi': 3.14159})
+        
 
 class SafeConfigParserTestCase(ConfigParserTestCase):
     config_class = ConfigParser.SafeConfigParser
@@ -381,6 +401,18 @@ class SafeConfigParserTestCase(ConfigParserTestCase):
                              "not_ok=%(option2)s/%%s")
         self.assertEqual(cf.get("section", "ok"), "xxx/%s")
         self.assertEqual(cf.get("section", "not_ok"), "xxx/xxx/%s")
+
+    def test_set_nonstring_types(self):
+        cf = self.fromstring("[sect]\n"
+                             "option1=foo\n")
+        # Check that we get a TypeError when setting non-string values
+        # in an existing section:
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option1", object())
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", 1.0)
+        self.assertRaises(TypeError, cf.set, "sect", "option2", object())
 
 
 def test_main():

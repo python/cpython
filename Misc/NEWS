@@ -99,6 +99,12 @@ Library
   consistent with the handling of config file entries and runtime-set
   options.
 
+- SF bug #997050: Document, test, & check for non-string values in
+  ConfigParser.  Moved the new string-only restriction added in
+  rev. 1.65 to the SafeConfigParser class, leaving existing
+  ConfigParser & RawConfigParser behavior alone, and documented the
+  conditions under which non-string values work.
+
 Build
 -----
 

@@ -92,7 +92,8 @@ import re
 __all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
            "InterpolationError", "InterpolationDepthError",
            "InterpolationSyntaxError", "ParsingError",
-           "MissingSectionHeaderError", "ConfigParser", "SafeConfigParser",
+           "MissingSectionHeaderError",
+           "ConfigParser", "SafeConfigParser", "RawConfigParser",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
 DEFAULTSECT = "DEFAULT"
@@ -348,8 +349,6 @@ class RawConfigParser:
 
     def set(self, section, option, value):
         """Set an option."""
-        if not isinstance(value, basestring):
-            raise TypeError("option values must be strings")
         if not section or section == DEFAULTSECT:
             sectdict = self._defaults
         else:
@@ -633,3 +632,9 @@ class SafeConfigParser(ConfigParser):
                 raise InterpolationSyntaxError(
                     option, section,
                     "'%%' must be followed by '%%' or '(', found: %r" % (rest,))
+
+    def set(self, section, option, value):
+        """Set an option.  Extend ConfigParser.set: check for string values."""
+        if not isinstance(value, basestring):
+            raise TypeError("option values must be strings")
+        ConfigParser.set(self, section, option, value)
