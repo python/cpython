@@ -42,7 +42,7 @@ exactly one argument.)
 
 \begin{funcdesc}{compile}{string\, filename\, kind}
   Compile the \var{string} into a code object.  Code objects can be
-  executed by a \code{exec()} statement or evaluated by a call to
+  executed by an \code{exec} statement or evaluated by a call to
   \code{eval()}.  The \var{filename} argument should
   give the file from which the code was read; pass e.g. \code{'<string>'}
   if it wasn't read from a file.  The \var{kind} argument specifies
@@ -56,7 +56,7 @@ exactly one argument.)
   object and a string.  The string must be the name
   of one of the object's attributes.  The function deletes
   the named attribute, provided the object allows it.  For example,
-  \code{setattr(\var{x}, '\var{foobar}')} is equivalent to
+  \code{delattr(\var{x}, '\var{foobar}')} is equivalent to
   \code{del \var{x}.\var{foobar}}.
 \end{funcdesc}
 
@@ -106,13 +106,15 @@ exactly one argument.)
 \end{verbatim}\ecode
 
   This function can also be used to execute arbitrary code objects
-  (e.g. created by \code{compile()}).  In this case pass a code
+  (e.g.\ created by \code{compile()}).  In this case pass a code
   object instead of a string.  The code object must have been compiled
   passing \code{'eval'} to the \var{kind} argument.
 
-  Note: dynamic execution of statements is supported by the
+  Hints: dynamic execution of statements is supported by the
   \code{exec} statement.  Execution of statements from a file is
-  supported by the \code{execfile()} function.
+  supported by the \code{execfile()} function.  The \code{vars()}
+  function returns the current local dictionary, which may be useful
+  to pass around for use by \code{eval()} or \code{execfile()}.
 
 \end{funcdesc}
 
@@ -138,7 +140,7 @@ Construct a list from those elements of \var{list} for which
 \var{function} returns true.  If \var{list} is a string or a tuple,
 the result also has that type; otherwise it is always a list.  If
 \var{function} is \code{None}, the identity function is assumed,
-i.e. all elements of \var{list} that are false (zero or empty) are
+i.e.\ all elements of \var{list} that are false (zero or empty) are
 removed.
 \end{funcdesc}
 
@@ -268,7 +270,7 @@ there's no reliable way to determine whether this is the case.}
 \begin{funcdesc}{pow}{x\, y\optional{\, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
-  efficiently that \code{pow(\var{x}, \var{y}) \% \var{z}}).
+  efficiently than \code{pow(\var{x}, \var{y}) \% \var{z}}).
   The arguments must have
   numeric types.  With mixed operand types, the rules for binary
   arithmetic operators apply.  The effective operand type is also the
@@ -378,7 +380,7 @@ when passed to \code{eval()}.
 \begin{funcdesc}{str}{object}
 Return a string containing a nicely printable representation of an
 object.  For strings, this returns the string itself.  The difference
-with \code{repr(\var{object}} is that \code{str(\var{object}} does not
+with \code{repr(\var{object})} is that \code{str(\var{object})} does not
 always attempt to return a string that is acceptable to \code{eval()};
 its goal is to return a printable string.
 \end{funcdesc}
@@ -412,7 +414,7 @@ The returned dictionary should not be modified: the effects on the
 corresponding symbol table are undefined.%
 \footnote{In the current implementation, local variable bindings
 cannot normally be affected this way, but variables retrieved from
-other scopes can be.  This may change.}
+other scopes (e.g. modules) can be.  This may change.}
 \end{funcdesc}
 
 \begin{funcdesc}{xrange}{\optional{start\,} end\optional{\, step}}

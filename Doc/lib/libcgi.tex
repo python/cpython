@@ -62,7 +62,9 @@ most once per script invocation, as it may consume standard input (if
 the form was submitted through a POST request).  The keys in the
 resulting dictionary are the field names used in the submission; the
 values are {\em lists} of the field values (since field name may be
-used multiple times in a single form).  As a side effect, it sets
+used multiple times in a single form).  \samp{\%} escapes in the
+values are translated to their single-character equivalent using
+\code{urllib.unquote()}.  As a side effect, this function sets
 \code{environ['QUERY_STRING']} to the raw query string, if it isn't
 already set.
 \end{funcdesc}
@@ -79,7 +81,9 @@ environment.  This is mainly useful when debugging a CGI script.
 \end{funcdesc}
 
 \begin{funcdesc}{print_form}{form}
-Print a piece of HTML text showing the contents of the \var{form}.
+Print a piece of HTML text showing the contents of the \var{form} (a
+dictionary, an instance of the \code{FormContentDict} class defined
+below, or a subclass thereof).
 This is mainly useful when debugging a CGI script.
 \end{funcdesc}
 

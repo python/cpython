@@ -6,7 +6,7 @@
 
 This module defines a class which implements the client side of the
 HTTP protocol.  It is normally not used directly --- the module
-\code{urlllib} module uses it to handle URLs that use HTTP.
+\code{urllib} uses it to handle URLs that use HTTP.
 \stmodindex{urllib}
 
 The module defines one class, \code{HTTP}.  An \code{HTTP} instance
@@ -80,7 +80,7 @@ Send a blank line to the server, signalling the end of the headers.
 Complete the request by shutting down the sending end of the socket,
 read the reply from the server, and return a triple (\var{replycode},
 \var{message}, \var{headers}).  Here \var{replycode} is the integer
-reply code from the request (e.g. \code{200} if the request was
+reply code from the request (e.g.\ \code{200} if the request was
 handled properly); \var{message} is the message string corresponding
 to the reply code; and \var{header} is an instance of the class
 \code{rfc822.Message} containing the headers received from the server.

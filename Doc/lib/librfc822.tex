@@ -29,7 +29,7 @@ object is seekable.
 \end{funcdesc}
 
 \begin{funcdesc}{getallmatchingheaders}{name}
-Return a list of lines consisting of all headers whose header matches
+Return a list of lines consisting of all headers matching
 \var{name}, if any.  Each physical line, whether it is a continuation
 line or not, is a separate list item.  Return the empty list if no
 header matches \var{name}.
@@ -60,12 +60,12 @@ returned by \code{getheader(\var{name})}.  If no header matching
 \var{name} exists, return \code{None, None}; otherwise both the full
 name and the address are (possibly empty )strings.
 
-Example: if \code{m}'s first \code{From} header contains the string
+Example: If \code{m}'s first \code{From} header contains the string
 \code{'guido@cwi.nl (Guido van Rossum)'}, then
 \code{m.getaddr('From')} will yield the pair
-\code{('Guido van Rossum', 'guido\@cwi.nl')}.
+\code{('Guido van Rossum', 'guido@cwi.nl')}.
 If the header contained
-\code{'Guido van Rossum <guido\@cwi.nl>'} instead, it would yield the
+\code{'Guido van Rossum <guido@cwi.nl>'} instead, it would yield the
 exact same result.
 \end{funcdesc}
 
@@ -82,7 +82,7 @@ yields bogus results if a full name contains a comma.
 
 \begin{funcdesc}{getdate}{name}
 Retrieve a header using \code{getheader} and parse it into a 9-tuple
-compatible with \code{time.kmtime()}.  If there is no header matching
+compatible with \code{time.mktime()}.  If there is no header matching
 \var{name}, or it is unparsable, return \code{None}.
 
 Date parsing appears to be a black art, and not all mailers adhere to

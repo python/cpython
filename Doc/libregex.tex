@@ -19,7 +19,7 @@ is because Python doesn't remove backslashes from string literals if
 they are followed by an unrecognized escape character.
 \emph{However}, if you want to include a literal \dfn{backslash} in a
 regular expression represented as a string literal, you have to
-\emph{quadruple} it.  E.g.  to extract LaTeX \samp{\e section\{{\rm
+\emph{quadruple} it.  E.g.\  to extract \LaTeX\ \samp{\e section\{{\rm
 \ldots}\}} headers from a document, you can use this pattern:
 \code{'\e \e \e\e section\{\e (.*\e )\}'}.
 
@@ -84,7 +84,7 @@ expressions.)
 
 \begin{funcdesc}{symcomp}{pattern\optional{\, translate}}
 This is like \code{compile}, but supports symbolic group names: if a
-parentheses-enclosed group begins with a group name in angular
+parenthesis-enclosed group begins with a group name in angular
 brackets, e.g. \code{'\e(<id>[a-z][a-z0-9]*\e)'}, the group can
 be referenced by its name in arguments to the \code{group} method of
 the resulting compiled regular expression object, like this:

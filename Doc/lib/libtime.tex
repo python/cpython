@@ -30,7 +30,7 @@ in this respect.
 \item
 The precision of the various real-time functions may be less than
 suggested by the units in which their value or argument is expressed.
-E.g. on most UNIX systems, the clock ``ticks'' only every 1/50th or
+E.g.\ on most UNIX systems, the clock ``ticks'' only every 1/50th or
 1/100th of a second, and on the Mac, it ticks 60 times a second.
 
 \end{itemize}
@@ -73,9 +73,9 @@ Nonzero if a DST timezone is defined.
 
 \begin{funcdesc}{gmtime}{secs}
 Convert a time expressed in seconds since the epoch to a tuple of 9
-integers, in UTC: year (e.g. 1993), month (1-12), day (1-31), hour
-(0-23), minute (0-59), second (0-59), weekday (0-6, monday is 0),
-julian day (1-366), dst flag (always zero).  Fractions of a second are
+integers, in UTC: year (e.g.\ 1993), month (1--12), day (1--31), hour
+(0--23), minute (0--59), second (0--59), weekday (0--6, monday is 0),
+Julian day (1--366), dst flag (always zero).  Fractions of a second are
 ignored.  Note subtle differences with the C function of this name.
 \end{funcdesc}
 

@@ -49,7 +49,7 @@ and Python values should be obvious given their types:
   \lineiii{d}{double}{float}
 \end{tableiii}
 
-A format character may be preceded by an integral repeat count; e.g.
+A format character may be preceded by an integral repeat count; e.g.\
 the format string \code{'4h'} means exactly the same as \code{'hhhh'}.
 
 C numbers are represented in the machine's native format and byte
@@ -66,10 +66,10 @@ calcsize('hhl') == 8
 
 Hint: to align the end of a structure to the alignment requirement of
 a particular type, end the format with the code for that type with a
-repeat count of zero, e.g. the format \code{'llh0l'} specifies two
+repeat count of zero, e.g.\ the format \code{'llh0l'} specifies two
 pad bytes at the end, assuming longs are aligned on 4-byte boundaries.
 
-(More format characters are planned, e.g. \code{'s'} for character
+(More format characters are planned, e.g.\ \code{'s'} for character
 arrays, upper case for unsigned variants, and a way to specify the
 byte order, which is useful for [de]constructing network packets and
 reading/writing portable binary file formats like TIFF and AIFF.)
