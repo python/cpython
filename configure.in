@@ -1164,7 +1164,7 @@ case "$ac_sys_system" in
 esac
 
 # Most SVR4 platforms (e.g. Solaris) need -lsocket and -lnsl.
-# However on SGI IRIX, these exist but are broken.
+# However on SGI IRIX 4, these exist but are broken.
 # BeOS' sockets are stashed in libnet.
 case "$ac_sys_system" in
 IRIX*) ;;
