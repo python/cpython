@@ -422,7 +422,8 @@ class build_ext (Command):
             ext_filename = os.path.join(self.build_lib,
                                         self.get_ext_filename(fullname))
 
-        if not (self.force or newer_group(sources, ext_filename, 'newer')):
+        depends = sources + ext.depends
+        if not (self.force or newer_group(depends, ext_filename, 'newer')):
             log.debug("skipping '%s' extension (up-to-date)", ext.name)
             return
         else:

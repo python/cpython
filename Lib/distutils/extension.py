@@ -73,6 +73,8 @@ class Extension:
         used on all platforms, and not generally necessary for Python
         extensions, which typically export exactly one symbol: "init" +
         extension_name.
+      depends : [string]
+        list of files that the extension depends on
     """
 
     def __init__ (self, name, sources,
@@ -86,6 +88,7 @@ class Extension:
                   extra_compile_args=None,
                   extra_link_args=None,
                   export_symbols=None,
+                  depends=None,
                  ):
 
         assert type(name) is StringType, "'name' must be a string"
@@ -105,6 +108,7 @@ class Extension:
         self.extra_compile_args = extra_compile_args or []
         self.extra_link_args = extra_link_args or []
         self.export_symbols = export_symbols or []
+        self.depends = depends or []
 
 # class Extension
 
