@@ -407,94 +407,6 @@ Currently-active file is at the head of the list.")
 
 
 
-;; Utilities
-
-(defmacro py-safe (&rest body)
-  "Safely execute BODY, return nil if an error occurred."
-  (` (condition-case nil
-	 (progn (,@ body))
-       (error nil))))
-
-(defsubst py-keep-region-active ()
-  "Keep the region active in XEmacs."
-  ;; Ignore byte-compiler warnings you might see.  Also note that
-  ;; FSF's Emacs 19 does it differently; its policy doesn't require us
-  ;; to take explicit action.
-  (and (boundp 'zmacs-region-stays)
-       (setq zmacs-region-stays t)))
-
-(defsubst py-point (position)
-  "Returns the value of point at certain commonly referenced POSITIONs.
-POSITION can be one of the following symbols:
-
-  bol  -- beginning of line
-  eol  -- end of line
-  bod  -- beginning of def or class
-  eod  -- end of def or class
-  bob  -- beginning of buffer
-  eob  -- end of buffer
-  boi  -- back to indentation
-  bos  -- beginning of statement
-
-This function does not modify point or mark."
-  (let ((here (point)))
-    (cond
-     ((eq position 'bol) (beginning-of-line))
-     ((eq position 'eol) (end-of-line))
-     ((eq position 'bod) (py-beginning-of-def-or-class))
-     ((eq position 'eod) (py-end-of-def-or-class))
-     ;; Kind of funny, I know, but useful for py-up-exception.
-     ((eq position 'bob) (beginning-of-buffer))
-     ((eq position 'eob) (end-of-buffer))
-     ((eq position 'boi) (back-to-indentation))
-     ((eq position 'bos) (py-goto-initial-line))
-     (t (error "Unknown buffer position requested: %s" position))
-     )
-    (prog1
-	(point)
-      (goto-char here))))
-
-(defsubst py-highlight-line (from to file line)
-  (cond
-   ((fboundp 'make-extent)
-    ;; XEmacs
-    (let ((e (make-extent from to)))
-      (set-extent-property e 'mouse-face 'highlight)
-      (set-extent-property e 'py-exc-info (cons file line))
-      (set-extent-property e 'keymap py-mode-output-map)))
-   (t
-    ;; Emacs -- Please port this!
-    )
-   ))
-
-(defun py-in-literal (&optional lim)
-  "Return non-nil if point is in a Python literal (a comment or string).
-Optional argument LIM indicates the beginning of the containing form,
-i.e. the limit on how far back to scan."
-  ;; This is the version used for non-XEmacs, which has a nicer
-  ;; interface.
-  ;;
-  ;; WARNING: Watch out for infinite recursion.
-  (let* ((lim (or lim (py-point 'bod)))
-	 (state (parse-partial-sexp lim (point))))
-    (cond
-     ((nth 3 state) 'string)
-     ((nth 4 state) 'comment)
-     (t nil))))
-
-;; XEmacs has a built-in function that should make this much quicker.
-;; In this case, lim is ignored
-(defun py-fast-in-literal (&optional lim)
-  "Fast version of `py-in-literal', used only by XEmacs.
-Optional LIM is ignored."
-  ;; don't have to worry about context == 'block-comment
-  (buffer-syntactic-context))
-
-(if (fboundp 'buffer-syntactic-context)
-    (defalias 'py-in-literal 'py-fast-in-literal))
-
-
-
 ;; Major mode boilerplate
 
 ;; define a mode-specific abbrev table for those who use such things
@@ -644,6 +556,94 @@ Optional LIM is ignored."
   (modify-syntax-entry ?\# "<"  py-mode-syntax-table)
   (modify-syntax-entry ?\n ">"  py-mode-syntax-table)
   )
+
+
+
+;; Utilities
+
+(defmacro py-safe (&rest body)
+  "Safely execute BODY, return nil if an error occurred."
+  (` (condition-case nil
+	 (progn (,@ body))
+       (error nil))))
+
+(defsubst py-keep-region-active ()
+  "Keep the region active in XEmacs."
+  ;; Ignore byte-compiler warnings you might see.  Also note that
+  ;; FSF's Emacs 19 does it differently; its policy doesn't require us
+  ;; to take explicit action.
+  (and (boundp 'zmacs-region-stays)
+       (setq zmacs-region-stays t)))
+
+(defsubst py-point (position)
+  "Returns the value of point at certain commonly referenced POSITIONs.
+POSITION can be one of the following symbols:
+
+  bol  -- beginning of line
+  eol  -- end of line
+  bod  -- beginning of def or class
+  eod  -- end of def or class
+  bob  -- beginning of buffer
+  eob  -- end of buffer
+  boi  -- back to indentation
+  bos  -- beginning of statement
+
+This function does not modify point or mark."
+  (let ((here (point)))
+    (cond
+     ((eq position 'bol) (beginning-of-line))
+     ((eq position 'eol) (end-of-line))
+     ((eq position 'bod) (py-beginning-of-def-or-class))
+     ((eq position 'eod) (py-end-of-def-or-class))
+     ;; Kind of funny, I know, but useful for py-up-exception.
+     ((eq position 'bob) (beginning-of-buffer))
+     ((eq position 'eob) (end-of-buffer))
+     ((eq position 'boi) (back-to-indentation))
+     ((eq position 'bos) (py-goto-initial-line))
+     (t (error "Unknown buffer position requested: %s" position))
+     )
+    (prog1
+	(point)
+      (goto-char here))))
+
+(defsubst py-highlight-line (from to file line)
+  (cond
+   ((fboundp 'make-extent)
+    ;; XEmacs
+    (let ((e (make-extent from to)))
+      (set-extent-property e 'mouse-face 'highlight)
+      (set-extent-property e 'py-exc-info (cons file line))
+      (set-extent-property e 'keymap py-mode-output-map)))
+   (t
+    ;; Emacs -- Please port this!
+    )
+   ))
+
+(defun py-in-literal (&optional lim)
+  "Return non-nil if point is in a Python literal (a comment or string).
+Optional argument LIM indicates the beginning of the containing form,
+i.e. the limit on how far back to scan."
+  ;; This is the version used for non-XEmacs, which has a nicer
+  ;; interface.
+  ;;
+  ;; WARNING: Watch out for infinite recursion.
+  (let* ((lim (or lim (py-point 'bod)))
+	 (state (parse-partial-sexp lim (point))))
+    (cond
+     ((nth 3 state) 'string)
+     ((nth 4 state) 'comment)
+     (t nil))))
+
+;; XEmacs has a built-in function that should make this much quicker.
+;; In this case, lim is ignored
+(defun py-fast-in-literal (&optional lim)
+  "Fast version of `py-in-literal', used only by XEmacs.
+Optional LIM is ignored."
+  ;; don't have to worry about context == 'block-comment
+  (buffer-syntactic-context))
+
+(if (fboundp 'buffer-syntactic-context)
+    (defalias 'py-in-literal 'py-fast-in-literal))
 
 
 
