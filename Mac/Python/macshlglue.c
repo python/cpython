@@ -83,6 +83,23 @@ __initialize_with_resources(CFragInitBlockPtr data)
 }
 
 /*
+** compare two FSSpecs, return true if equal, false if different
+** XXX where could this function live? (jvr)
+*/
+
+static int
+FSpCompare(FSSpec *fss1, FSSpec *fss2) {
+	if (fss1->vRefNum != fss2->vRefNum)
+		return 0;
+	if (fss1->parID != fss2->parID)
+		return 0;
+	return !PLstrcmp(fss1->name, fss2->name);
+}
+
+/* XXX can't include "macglue.h" somehow (jvr) */
+extern FSSpec PyMac_ApplicationFSSpec;		/* Application location (from macargv.c) */
+
+/*
 ** Insert the library resources into the search path. Put them after
 ** the resources from the application (which we assume is the current
 ** resource file). Again, we ignore errors.
@@ -90,7 +107,7 @@ __initialize_with_resources(CFragInitBlockPtr data)
 void
 PyMac_AddLibResources()
 {
-	if ( !library_fss_valid ) 
+	if ( !library_fss_valid || FSpCompare(&library_fss, &PyMac_ApplicationFSSpec))
 		return;
 	(void)FSpOpenResFile(&library_fss, fsRdPerm);
 }
