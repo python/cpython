@@ -28,10 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifndef DEBUG
-#define NDEBUG
-#endif
-
 /* Object and type object interface */
 
 /*
@@ -81,7 +77,7 @@ whose size is determined when the object is allocated.
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 */
 
-#ifndef NDEBUG
+#ifdef DEBUG
 
 /* Turn on heavy reference debugging */
 #define Py_TRACE_REFS
@@ -89,7 +85,7 @@ whose size is determined when the object is allocated.
 /* Turn on reference counting */
 #define Py_REF_DEBUG
 
-#endif /* NDEBUG */
+#endif /* DEBUG */
 
 #ifdef Py_TRACE_REFS
 #define PyObject_HEAD \
