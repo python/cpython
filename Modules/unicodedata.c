@@ -33,7 +33,7 @@ static const _PyUnicode_DatabaseRecord*
 _getrecord_ex(Py_UCS4 code)
 {
     int index;
-    if (code < 0 || code >= 0x110000)
+    if (code >= 0x110000)
         index = 0;
     else {
         index = index1[(code>>SHIFT)];
@@ -258,7 +258,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
 void
 get_decomp_record(Py_UCS4 code, int *index, int *prefix, int *count)
 {
-    if (code < 0 || code >= 0x110000) {
+    if (code >= 0x110000) {
         *index = 0;
     } 
     else {
