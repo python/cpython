@@ -101,6 +101,8 @@ Extension modules
 Library
 -------
 
+- poplib.POP3_SSL has been added.
+
 - tmpfile.mkstemp now returns an absolute path even if dir is relative.
 
 - urlparse is RFC 2396 compliant.

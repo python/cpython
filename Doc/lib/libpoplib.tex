@@ -13,9 +13,12 @@
 \indexii{POP3}{protocol}
 
 This module defines a class, \class{POP3}, which encapsulates a
-connection to an POP3 server and implements the protocol as defined in
+connection to a POP3 server and implements the protocol as defined in
 \rfc{1725}.  The \class{POP3} class supports both the minimal and
-optional command sets.
+optional command sets. Additionally, this module provides a class
+\class{POP3_SSL}, which provides support for connecting to POP3
+servers that use SSL as an underlying protocol layer.
+
 
 Note that POP3, though widely supported, is obsolescent.  The
 implementation quality of POP3 servers varies widely, and too many are
@@ -29,6 +32,16 @@ A single class is provided by the \module{poplib} module:
 This class implements the actual POP3 protocol.  The connection is
 created when the instance is initialized.
 If \var{port} is omitted, the standard POP3 port (110) is used.
+\end{classdesc}
+
+\begin{classdesc}{POP3_SSL}{host\optional{, port\optional{, keyfile\optional{, certfile}}}}
+This is a subclass of \class{POP3} that connects to the server over an
+SSL encrypted socket.  If \var{port} is not specified, 995, the
+standard POP3-over-SSL port is used.  \var{keyfile} and \var{certfile}
+are also optional - they can contain a PEM formatted private key and
+certificate chain file for the SSL connection.
+
+\versionadded{2.4}
 \end{classdesc}
 
 One exception is defined as an attribute of the \module{poplib} module:
@@ -142,6 +155,9 @@ message in the form \code{'\var{response}\ \var{mesgnum}\ \var{uid}},
 otherwise result is list \code{(\var{response}, ['mesgnum uid', ...],
 \var{octets})}.
 \end{methoddesc}
+
+Instances of \class{POP3_SSL} have no additional methods. The
+interface of this subclass is identical to its parent.
 
 
 \subsection{POP3 Example \label{pop3-example}}
