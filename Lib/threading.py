@@ -60,7 +60,7 @@ _trace_hook = None
 def setprofile(func):
     global _profile_hook
     _profile_hook = func
-    
+
 def settrace(func):
     global _trace_hook
     _trace_hook = func
@@ -427,7 +427,7 @@ class Thread(_Verbose):
             if _profile_hook:
                 self._note("%s.__bootstrap(): registering profile hook", self)
                 _sys.setprofile(_profile_hook)
-                
+
             try:
                 self.run()
             except SystemExit:
