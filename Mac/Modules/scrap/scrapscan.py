@@ -35,13 +35,28 @@ class MyScanner(Scanner):
 		return [
 			]
 
+	def makegreylist(self):
+		return [
+			('#if !TARGET_API_MAC_CARBON', [
+				'InfoScrap',
+				'GetScrap',
+				'ZeroScrap',
+				'PutScrap',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'CallInScrapPromises',
+				'ClearCurrentScrap',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
+			"ScrapRef",		# For now -- This is the Carbon scrap main object
 			]
 
 	def makerepairinstructions(self):
 		return [
 			([('void', '*', 'OutMode')], [('putscrapbuffer', '*', 'InMode')]),
+			([('void_ptr', '*', 'InMode')], [('putscrapbuffer', '*', 'InMode')]),
 			]
 			
 if __name__ == "__main__":
