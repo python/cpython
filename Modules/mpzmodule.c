@@ -94,7 +94,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "gmp.h"
 #include "gmp-impl.h"
 
-#if __GNU_MP__ == 2
+#if __GNU_MP__ + 0 == 2
 #define GMP2
 #else
 #define MPZ_GET_STR_BUG
