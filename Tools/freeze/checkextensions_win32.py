@@ -9,11 +9,13 @@ options anyway (eg, to enable or disable specific functionality)
 
 So my basic stragtegy is:
 
-* Have a Windows INI file which "describes" an extension module.
+* Have some Windows INI files which "describe" one or more extension modules.
+  (Freeze comes with a default one for all known modules - but you can specify
+  your own).
 * This description can include:
   - The MSVC .dsp file for the extension.  The .c source file names
     are extraced from there.
-  - Specific compiler options
+  - Specific compiler/linker options
   - Flag to indicate if Unicode compilation is expected.
 
 At the moment the name and location of this INI file is hardcoded,
@@ -52,31 +54,52 @@ class CExtension:
 	def GetLinkerLibs(self):
 		return self.linkerLibs
 
-def checkextensions(unknown, ignored):
+def checkextensions(unknown, extra_inis):
         # Create a table of frozen extensions
 
-	mapFileName = os.path.join( os.path.split(sys.argv[0])[0], "extensions_win32.ini")
+	defaultMapName = os.path.join( os.path.split(sys.argv[0])[0], "extensions_win32.ini")
+	if not os.path.isfile(defaultMapName):
+		sys.stderr.write("WARNING: %s can not be found - standard extensions may not be found" % mapFileName)
+	else:
+		# must go on end, so other inis can override.
+		extra_inis.append(defaultMapName)
+
 	ret = []
 	for mod in unknown:
-		defn = get_extension_defn( mod, mapFileName )
-		if defn is not None:
-			ret.append( defn )
+		for ini in extra_inis:
+#			print "Looking for", mod, "in", win32api.GetFullPathName(ini),"...",
+			defn = get_extension_defn( mod, ini )
+			if defn is not None:
+#				print "Yay - found it!"
+				ret.append( defn )
+				break
+#			print "Nope!"
+		else: # For not broken!
+			sys.stderr.write("No definition of module %s in any specified map file.\n" % (mod))
+		
 	return ret
 
 def get_extension_defn(moduleName, mapFileName):
 	if win32api is None: return None
 	dsp = win32api.GetProfileVal(moduleName, "dsp", "", mapFileName)
 	if dsp=="":
-		sys.stderr.write("No definition of module %s in map file '%s'\n" % (moduleName, mapFileName))
 		return None
 
 	# We allow environment variables in the file name
 	dsp = win32api.ExpandEnvironmentStrings(dsp)
+	# If the path to the .DSP file is not absolute, assume it is relative
+	# to the description file.
+	if not os.path.isabs(dsp):
+		dsp = os.path.join( os.path.split(mapFileName)[0], dsp)
+	# Parse it to extract the source files.
 	sourceFiles = parse_dsp(dsp)
 	if sourceFiles is None:
 		return None
 
 	module = CExtension(moduleName, sourceFiles)
+	# Put the path to the DSP into the environment so entries can reference it.
+	os.environ['dsp_path'] = os.path.split(dsp)[0]
+	os.environ['ini_path'] = os.path.split(mapFileName)[0]
 
 	cl_options = win32api.GetProfileVal(moduleName, "cl", "", mapFileName)
 	if cl_options:
@@ -90,7 +113,7 @@ def get_extension_defn(moduleName, mapFileName):
 
 	libs = string.split(win32api.GetProfileVal(moduleName, "libs", "", mapFileName))
 	for lib in libs:
-		module.AddLinkerLib(lib)
+		module.AddLinkerLib(win32api.ExpandEnvironmentStrings(lib))
 
 	for exc in exclude:
 		if exc in module.sourceFiles:
