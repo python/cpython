@@ -1042,6 +1042,87 @@ marking, as well as interline differences.
         ?     +              ++    ^
     <BLANKLINE>
     (1, 1)
+
+The REPORT_ONLY_FIRST_FAILURE supresses result output after the first
+failing example:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> print 1 # first success
+    ...     1
+    ...     >>> print 2 # first failure
+    ...     200
+    ...     >>> print 3 # second failure
+    ...     300
+    ...     >>> print 4 # second success
+    ...     4
+    ...     >>> print 5 # third failure
+    ...     500
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.REPORT_ONLY_FIRST_FAILURE
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    **********************************************************************
+    Line 4, in f
+    Failed example:
+        print 2 # first failure
+    Expected:
+        200
+    Got:
+        2
+    (3, 5)
+
+However, output from `report_start` is not supressed:
+
+    >>> doctest.DocTestRunner(verbose=True, optionflags=flags).run(test)
+    Trying:
+        print 1 # first success
+    Expecting:
+        1
+    ok
+    Trying:
+        print 2 # first failure
+    Expecting:
+        200
+    **********************************************************************
+    Line 4, in f
+    Failed example:
+        print 2 # first failure
+    Expected:
+        200
+    Got:
+        2
+    (3, 5)
+
+For the purposes of REPORT_ONLY_FIRST_FAILURE, unexpected exceptions
+count as failures:
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> print 1 # first success
+    ...     1
+    ...     >>> raise ValueError(2) # first failure
+    ...     200
+    ...     >>> print 3 # second failure
+    ...     300
+    ...     >>> print 4 # second success
+    ...     4
+    ...     >>> print 5 # third failure
+    ...     500
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.REPORT_ONLY_FIRST_FAILURE
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    Line 4, in f
+    Failed example:
+        raise ValueError(2) # first failure
+    Exception raised:
+        ...
+        ValueError: 2
+    (3, 5)
+
     """
 
     def option_directives(): r"""
