@@ -5048,6 +5048,12 @@ posix_fdopen(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "i|si", &fd, &mode, &bufsize))
 		return NULL;
 
+	if (mode[0] != 'r' && mode[0] != 'w' && mode[0] != 'a') {
+		PyErr_Format(PyExc_ValueError,
+			     "invalid file mode '%s'", mode);
+		return NULL;
+	}
+
 	Py_BEGIN_ALLOW_THREADS
 	fp = fdopen(fd, mode);
 	Py_END_ALLOW_THREADS
