@@ -86,7 +86,7 @@ def buildapplet():
 			verbose = 'default'
 		# Loop over all files to be processed
 		for filename in args:
-			cr, tp = MacOS.GetCreatorAndType(filename)
+			cr, tp = MacOS.GetCreatorAndType(macfs.FSRef(filename))
 			if tp == 'APPL':
 				buildtools.update(template, filename, dstfilename)
 			else:
