@@ -58,17 +58,23 @@ def main():
 		if not ok:
 			return
 		filename = srcfss.as_pathname()
-		if not sys.argv: sys.argv.append('')
-		sys.argv.append(filename)
-	
-	# Loop over all files to be processed
-	
-	for filename in sys.argv[1:]:
-		process(template, filename)
+		tp, tf = os.path.split(filename)
+		if tf[-3:] == '.py':
+			tf = tf[:-3]
+		else:
+			tf = tf + '.applet'
+		dstfss, ok = macfs.StandardPutFile('Save application as:', tf)
+		if not ok: return
+		process(template, filename, dstfss.as_pathname())
+	else:
+		
+		# Loop over all files to be processed
+		for filename in sys.argv[1:]:
+			process(template, filename, '')
 
 undefs = ('????', '    ', '\0\0\0\0', 'BINA')
 
-def process(template, filename):
+def process(template, filename, output):
 	
 	print "Processing", `filename`, "..."
 	
@@ -93,6 +99,8 @@ def process(template, filename):
 		destname = filename + ".applet"
 		rsrcname = filename + '.rsrc'
 	
+	if output:
+		destname = output
 	# Copy the data from the template (creating the file as well)
 	
 	tmpl = open(template, "rb")
