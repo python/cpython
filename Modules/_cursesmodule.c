@@ -43,7 +43,7 @@ char *PyCursesVersion = "1.6";
 
 #ifdef __osf__
 #define _XOPEN_SOURCE_EXTENDED  /* Define macro for OSF/1 */
-#define STRICT_SYSV_CURSES 
+#define STRICT_SYSV_CURSES      /* Don't use ncurses extensions */
 #endif
 
 #ifdef HAVE_NCURSES_H
@@ -53,7 +53,7 @@ char *PyCursesVersion = "1.6";
 #endif
 
 #if defined(__sgi__) || defined(__sun__)
-#define STRICT_SYSV_CURSES 
+#define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
 
@@ -1590,7 +1590,7 @@ PyCurses_HalfDelay(PyObject *self, PyObject *args)
   return PyCursesCheckERR(halfdelay(tenths), "halfdelay");
 }
 
-#if !defined(__sgi__) && !defined(__sun__)
+#ifndef STRICT_SYSV_CURSES
  /* No has_key! */
 static PyObject * PyCurses_has_key(PyObject *self, PyObject *args)
 {
@@ -1607,7 +1607,7 @@ static PyObject * PyCurses_has_key(PyObject *self, PyObject *args)
   Py_INCREF(Py_True);
   return Py_True; 
 }
-#endif
+#endif /* STRICT_SYSV_CURSES */
 
 static PyObject *
 PyCurses_Init_Color(PyObject *self, PyObject *args)
@@ -2111,7 +2111,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"has_colors",          (PyCFunction)PyCurses_has_colors},
   {"has_ic",              (PyCFunction)PyCurses_has_ic},
   {"has_il",              (PyCFunction)PyCurses_has_il},
-#if !defined(__sgi__) && !defined(__sun__)
+#ifndef STRICT_SYSV_CURSES
   {"has_key",             (PyCFunction)PyCurses_has_key},
 #endif
   {"halfdelay",           (PyCFunction)PyCurses_HalfDelay},
