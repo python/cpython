@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.74 
+# From configure.in Revision: 1.76 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -1182,7 +1182,7 @@ fi
 else
   REALLIBRARY='libpython$(VERSION).so'
   OPT="$OPT -pic"
-  DGUX_IS_BROKEN="make $REALLIBRARY"
+  DGUX_IS_BROKEN="		make $REALLIBRARY"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor

@@ -216,7 +216,7 @@ fi
 else
   REALLIBRARY='libpython$(VERSION).so'
   OPT="$OPT -pic"
-  DGUX_IS_BROKEN="make $REALLIBRARY"
+  DGUX_IS_BROKEN="		make $REALLIBRARY"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor
