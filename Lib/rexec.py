@@ -143,8 +143,8 @@ class RExec(ihooks._Verbose):
                       'stat', 'times', 'uname', 'getpid', 'getppid',
                       'getcwd', 'getuid', 'getgid', 'geteuid', 'getegid')
 
-    ok_sys_names = ('copyright', 'exit', 'hexversion', 'version',
-                    'maxint', 'platform', 'ps1', 'ps2')
+    ok_sys_names = ('copyright', 'exit', 'hexversion', 'maxint', 'platform',
+                    'ps1', 'ps2', 'version')
 
     nok_builtin_names = ('open', 'file', 'reload', '__import__')
 
