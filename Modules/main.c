@@ -99,6 +99,7 @@ Py_Main(int argc, char **argv)
 	int stdin_is_interactive = 0;
 	int help = 0;
 	int version = 0;
+	PyCompilerFlags cf;
 
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
@@ -293,6 +294,8 @@ Py_Main(int argc, char **argv)
 			Py_DECREF(v);
 	}
 
+	cf.cf_nested_scopes = 0;
+
 	if (command) {
 		sts = PyRun_SimpleString(command) != 0;
 		free(command);
@@ -309,15 +312,17 @@ Py_Main(int argc, char **argv)
 				}
 			}
 		}
-		sts = PyRun_AnyFileEx(
+		/* XXX */
+		sts = PyRun_AnyFileExFlags(
 			fp,
 			filename == NULL ? "<stdin>" : filename,
-			filename != NULL) != 0;
+			filename != NULL, &cf) != 0;
 	}
 
 	if (inspect && stdin_is_interactive &&
 	    (filename != NULL || command != NULL))
-		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
+		/* XXX */
+		sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
 
 	Py_Finalize();
 #ifdef RISCOS

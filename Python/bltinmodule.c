@@ -373,7 +373,12 @@ builtin_compile(PyObject *self, PyObject *args)
 		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
 		return NULL;
 	}
-	return Py_CompileString(str, filename, start);
+	if (PyEval_GetNestedScopes()) {
+		PyCompilerFlags cf;
+		cf.cf_nested_scopes = 1;
+		return Py_CompileStringFlags(str, filename, start, &cf);
+	} else
+		return Py_CompileString(str, filename, start);
 }
 
 static char compile_doc[] =
@@ -808,7 +813,14 @@ builtin_execfile(PyObject *self, PyObject *args)
 		PyErr_SetFromErrno(PyExc_IOError);
 		return NULL;
 	}
-	res = PyRun_FileEx(fp, filename, Py_file_input, globals, locals, 1);
+	if (PyEval_GetNestedScopes()) {
+		PyCompilerFlags cf;
+		cf.cf_nested_scopes = 1;
+		res = PyRun_FileExFlags(fp, filename, Py_file_input, globals, 
+				   locals, 1, &cf);
+	} else 
+		res = PyRun_FileEx(fp, filename, Py_file_input, globals, 
+				   locals, 1);
 	return res;
 }
 
