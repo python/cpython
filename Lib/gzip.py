@@ -80,7 +80,6 @@ class GzipFile:
 	    self._write_gzip_header()
 	elif self.mode == READ:
 	    self._read_gzip_header()
-	    
 
     def __repr__(self):
 	s = repr(self.fileobj)
@@ -161,19 +160,20 @@ class GzipFile:
     def read(self,size=None):
 	if self.extrasize <= 0 and self.fileobj is None:
 	    return ''
-	
-	if not size:
-	    # get the whole thing
+
+	readsize = 1024
+	if not size:	    # get the whole thing
 	    try:
 		while 1:
-		    self._read()
+		    self._read(readsize)
+		    readsize = readsize * 2
 	    except EOFError:
 		size = self.extrasize
-	else:
-	    # just get some more of it
+	else:	            # just get some more of it
 	    try:
 		while size > self.extrasize:
-		    self._read()
+		    self._read(readsize)
+		    readsize = readsize * 2
 	    except EOFError:
 		pass
 	
@@ -183,8 +183,15 @@ class GzipFile:
 
 	return chunk
 
-    def _read(self):
-	buf = self.fileobj.read(1024)
+    def _unread(self, buf):
+	self.extrabuf = buf + self.extrabuf
+	self.extrasize = len(buf) + self.extrasize
+
+    def _read(self, size=1024):
+	try:
+	    buf = self.fileobj.read(size)
+	except AttributeError:
+	    raise EOFError, "Reached EOF"
 	if buf == "":
 	    uncompress = self.decompress.flush()
 	    if uncompress == "":
@@ -237,21 +244,21 @@ class GzipFile:
 	return 0
 
     def readline(self):
-	# XXX This function isn't implemented in a very efficient way
-	line=""
+	bufs = []
+	readsize = 100
 	while 1:
-	    c = self.read(1)
-	    line = line + c
-	    if c=='\n' or c=="": break
-	return line
+	    c = self.read(readsize)
+	    i = string.find(c, '\n')
+	    if i >= 0 or c == '':
+		bufs.append(c[:i])
+		self._unread(c[i+1:])
+		return string.join(bufs, '')
+	    bufs.append(c)
+	    readsize = readsize * 2
 
     def readlines(self):
-	L=[]
-	line = self.readline()
-	while line!="":
-	    L.append(line)
-	    line = self.readline()
-	return L
+	buf = self.read()
+	return string.split(buf, '\n')
 
     def writelines(self, L):
 	for line in L:
