@@ -266,17 +266,21 @@ PyThreadState_Swap(PyThreadState *new)
 /* An extension mechanism to store arbitrary additional per-thread state.
    PyThreadState_GetDict() returns a dictionary that can be used to hold such
    state; the caller should pick a unique key and store its state there.  If
-   PyThreadState_GetDict() returns NULL, an exception has been raised (most
-   likely MemoryError) and the caller should pass on the exception. */
+   PyThreadState_GetDict() returns NULL, an exception has *not* been raised
+   and the caller should assume no per-thread state is available. */
 
 PyObject *
 PyThreadState_GetDict(void)
 {
 	if (_PyThreadState_Current == NULL)
-		Py_FatalError("PyThreadState_GetDict: no current thread");
+		return NULL;
 
-	if (_PyThreadState_Current->dict == NULL)
-		_PyThreadState_Current->dict = PyDict_New();
+	if (_PyThreadState_Current->dict == NULL) {
+		PyObject *d;
+		_PyThreadState_Current->dict = d = PyDict_New();
+		if (d == NULL)
+			PyErr_Clear();
+	}
 	return _PyThreadState_Current->dict;
 }
 
