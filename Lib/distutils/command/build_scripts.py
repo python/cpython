@@ -45,7 +45,7 @@ class build_scripts (Command):
             return
         self.copy_scripts()
 
-        
+
     def copy_scripts (self):
         """Copy each script listed in 'self.scripts'; if it's marked as a
         Python script in the Unix way (first line matches 'first_line_re',
@@ -59,7 +59,7 @@ class build_scripts (Command):
             outfile = os.path.join(self.build_dir, os.path.basename(script))
 
             if not self.force and not newer(script, outfile):
-                self.announce("not copying %s (output up-to-date)" % script)
+                self.announce("not copying %s (up-to-date)" % script)
                 continue
 
             # Always open the file, but ignore failures in dry-run mode --
