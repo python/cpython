@@ -2,7 +2,7 @@ Pynche - The PYthonically Natural Color and Hue Editor
 
 Contact: Barry A. Warsaw
 Email:   bwarsaw@python.org
-Version: 0.1
+Version: 1.0
 
 Introduction
 
@@ -16,19 +16,21 @@ Introduction
     changed the name because these days, too many other systems have
     the acronym `ICE'.
 
-    Pynche has been tested with Python 1.5.1 using Tk 8.0.  It
+    Pynche has been tested with Python 1.5.x using Tk 8.0.x.  It
     probably works with Python 1.5.  I've tested it on both Solaris
     2.6 and Windows NT.  There are some funky things that happen on
     Windows but I think they are primarily Tk problems.  You'll want
-    to be sure to have Tk 8.0.3 for Windows.  Also, Pynche is very
-    colormap intensive, so it doesn't work very well on 8-bit graphics
-    cards.  I'll probably fix that in the future.
+    to be sure to have at least Tk 8.0.3 for Windows.  Also, Pynche is
+    very colormap intensive, so it doesn't work very well on 8-bit
+    graphics cards.  I'll probably fix that in the future.
 
-    Pynche must find a text database of colors, in the X11 format.
-    Pynche is distributed with an rgb.txt file from the X11R6.4
-    distribution for this reason, but you can use a different file
-    with the -d option.  The file xlicense.txt contains the license
-    only for rgb.txt and both files are in the X/ subdirectory.
+    Pynche must find a text database of colors names in order to
+    provide `nearest' color matching.  Pynche is distributed with an
+    rgb.txt file from the X11R6.4 distribution for this reason, along
+    with other "Web related" database (see below).  You can use a
+    different file with the -d option.  The file xlicense.txt contains
+    the license only for rgb.txt and both files are in the X/
+    subdirectory.
 
     Pynche is pronounced `Pinch-ee'.
 
@@ -41,8 +43,7 @@ Running Standalone
     --database file
     -d file
         Alternate location of the color database file.  Without this
-        option, the first of /usr/openwin/lib/rgb.txt or X/rgb.txt
-        will be used.
+        option, the first valid file found will be used (see below).
 
     --initfile file
     -i file
@@ -68,10 +69,12 @@ Running Standalone
 
 Running as a Modal Dialog
 
-    Pynche can be run as a modal dialog, inside another application.
-    It supports the API implemented by the Tkinter standard
-    tkColorChooser module, with a few changes.  By importing
-    pyColorChooser from the Pynche package, you can run
+    Pynche can be run as a modal dialog, inside another application,
+    say as a general color chooser.  In fact, Grail 0.6 already uses
+    Pynche and a future version of IDLE may as well.  Pynche supports
+    the API implemented by the Tkinter standard tkColorChooser module,
+    with a few changes as described below.  By importing pyColorChooser
+    from the Pynche package, you can run
 
         pyColorChooser.askcolor()
 
@@ -79,8 +82,9 @@ Running as a Modal Dialog
     color.
 
     There are some UI differences when running as a modal
-    vs. standalone.  When running as a modal, there is no "File" menu,
-    but instead there are "Okay" and "Cancel" buttons.
+    vs. standalone.  When running as a modal, there is no "Quit" menu
+    item under the "File" menu.  Instead there are "Okay" and "Cancel"
+    buttons.
 
     When "Okay" is hit, askcolor() returns the tuple
 
@@ -148,6 +152,9 @@ The Colorstrip Window
     be slower).  Click on "Hexadecimal" to display the arrow numbers
     in hex.
 
+    There are also two shortcut buttons in this window, which
+    auto-select Black (0/0/0) and White (255/255/255).
+
 The Proof Window
 
     In the lower left corner of the main window you see two larger
@@ -164,7 +171,7 @@ The Proof Window
     RGB value.  In that case, the first one found in the text database
     is designated the "primary" name, and this is shown under the
     Nearest chip.  The other names are "aliases" and they are visible
-    in other Pynche windows.
+    in the Color List Window (see below).
 
 The Type-in Window
 
@@ -210,15 +217,15 @@ The Text Window
 
 The Color List Window
 
-    The "Color List" window shows every color in the text database
-    (this window may take a while to come up).  In the upper part of
-    the window you see a scrolling list of all the color names in the
-    database, in alphabetical order.  Click on any color to select it.
-    In the bottom part of the window is displayed any aliases for the
-    selected color (those color names that have the same RGB value,
-    but were found later in the text database).  For example, find the
-    color "Black" and you'll see that its aliases are "gray0" and
-    "grey0".
+    The "Color List" window shows every named color in the color name
+    database (this window may take a while to come up).  In the upper
+    part of the window you see a scrolling list of all the color names
+    in the database, in alphabetical order.  Click on any color to
+    select it.  In the bottom part of the window is displayed any
+    aliases for the selected color (those color names that have the
+    same RGB value, but were found later in the text database).  For
+    example, find the color "Black" and you'll see that its aliases
+    are "gray0" and "grey0".
 
     If the color has no aliases you'll see "<no aliases>" here.  If you
     just want to see if a color has an alias, and do not want to select a
@@ -258,7 +265,7 @@ The Details Window
         around to the other side.  Thus if red were at 238 and +25
         were clicked, red would have the value 7.
 
-    Preseve Distance
+    Preserve Distance
         When the increment or decrement would send any of the tied
         variations out of bounds, all tied variations are wrapped as
         one, so as to preserve the distance between them.  Thus if
@@ -299,7 +306,7 @@ Persistency
     When Pynche exits, it saves these values in the init file, and
     re-reads them when it starts up.  There is no locking on this
     file, so if you run multiple instances of Pynche at a time, you
-    will override the init file.
+    may clobber the init file.
 
     The actual options stored include
 
@@ -311,11 +318,31 @@ Persistency
       insertion point, and all current text widget element color
       settings.
 
+    - the name of the color database file (but not its contents)
+
     You can inhibit Pynche from reading the init file by supplying the
     --ignore option on the command line.  However, you cannot suppress
     the storing of the settings in the init file on Pynche exit.  If
     you really want to do this, use /dev/null as the init file, using
     --initfile.
+
+Color Name Database Files
+
+    Pynche uses a color name database file to calculate the nearest
+    color to the selected color, and to display in the Color List
+    view.  Several files are distributed with Pynche, described
+    below.  By default, the X11 color name database file is selected.
+    Other files:
+
+    html40colors.txt -- the HTML 4.0 guaranteed color names
+
+    websafe.txt -- the 216 "Web-safe" colors that Netscape and MSIE
+    guarantee will not be dithered.  These are specified in #rrggbb
+    format for both values and names
+
+    webcolors.txt -- The 140 color names that Tim Peters and his
+    sister say NS and MSIE both understand (with some controversy over 
+    AliceBlue).
 
 To Do
 
