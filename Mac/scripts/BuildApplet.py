@@ -20,6 +20,7 @@ import MACFS
 import MacOS
 from Res import *
 import macostools
+import EasyDialogs
 
 # .pyc file (and 'PYC ' resource magic number)
 MAGIC = imp.get_magic()
@@ -55,13 +56,13 @@ def findtemplate():
 	return template
 
 def main():
+	global DEBUG
+	DEBUG=1
 	
 	# Find the template
 	# (there's no point in proceeding if we can't find it)
 	
 	template = findtemplate()
-	if DEBUG:
-		print 'Using template', template
 			
 	# Ask for source text if not specified in sys.argv[1:]
 	
@@ -87,7 +88,10 @@ def main():
 def process(template, filename, output):
 	
 	if DEBUG:
-		print "Processing", `filename`, "..."
+		progress = EasyDialogs.ProgressBar("Processing %s..."%os.path.split(filename)[1], 120)
+		progress.label("Compiling...")
+	else:
+		progress = None
 	
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
@@ -127,6 +131,9 @@ def process(template, filename, output):
 	dest_fss = macfs.FSSpec(destname)
 	
 	# Copy data (not resources, yet) from the template
+	if DEBUG:
+		progress.label("Copy data fork...")
+		progress.set(10)
 	
 	tmpl = open(template, "rb")
 	dest = open(destname, "wb")
@@ -138,11 +145,12 @@ def process(template, filename, output):
 	
 	# Open the output resource fork
 	
+	if DEBUG:
+		progress.label("Copy resources...")
+		progress.set(20)
 	try:
 		output = FSpOpenResFile(dest_fss, WRITE)
 	except MacOS.Error:
-		if DEBUG:
-			print "Creating resource fork..."
 		CreateResFile(destname)
 		output = FSpOpenResFile(dest_fss, WRITE)
 		
@@ -152,8 +160,10 @@ def process(template, filename, output):
 		input = FSpOpenResFile(rsrcname, READ)
 	except (MacOS.Error, ValueError):
 		pass
+		if DEBUG:
+			progress.inc(50)
 	else:
-		typesfound, ownertype = copyres(input, output, [], 0)
+		typesfound, ownertype = copyres(input, output, [], 0, progress)
 		CloseResFile(input)
 		
 	# Check which resource-types we should not copy from the template
@@ -166,7 +176,7 @@ def process(template, filename, output):
 	# Copy the resources from the template
 	
 	input = FSpOpenResFile(template_fss, READ)
-	dummy, tmplowner = copyres(input, output, skiptypes, skipowner)
+	dummy, tmplowner = copyres(input, output, skiptypes, skipowner, progress)
 	if ownertype == None:
 		ownertype = tmplowner
 	CloseResFile(input)
@@ -194,6 +204,9 @@ def process(template, filename, output):
 		pass
 	
 	# Create the raw data for the resource from the code object
+	if DEBUG:
+		progress.label("Write PYC resource...")
+		progress.set(120)
 	
 	data = marshal.dumps(code)
 	del code
@@ -215,24 +228,26 @@ def process(template, filename, output):
 	
 	macostools.touched(dest_fss)
 	if DEBUG:
-		print "Applet created:", destname
+		progress.label("Done.")
 
 
 # Copy resources between two resource file descriptors.
 # skip a resource named '__main__' or (if skipowner is set) 'Owner resource'.
 # Also skip resources with a type listed in skiptypes.
 #
-def copyres(input, output, skiptypes, skipowner):
+def copyres(input, output, skiptypes, skipowner, progress=None):
 	ctor = None
 	alltypes = []
 	UseResFile(input)
 	ntypes = Count1Types()
+	progress_type_inc = 50/ntypes
 	for itype in range(1, 1+ntypes):
 		type = Get1IndType(itype)
 		if type in skiptypes:
 			continue
 		alltypes.append(type)
 		nresources = Count1Resources(type)
+		progress_cur_inc = progress_type_inc/nresources
 		for ires in range(1, 1+nresources):
 			res = Get1IndResource(type, ires)
 			id, type, name = res.GetResInfo()
@@ -247,8 +262,9 @@ def copyres(input, output, skiptypes, skipowner):
 					ctor = type
 			size = res.size
 			attrs = res.GetResAttrs()
-			if DEBUG:
-				print id, type, name, size, hex(attrs)
+			if DEBUG and progress:
+				progress.label("Copy %s %d %s"%(type, id, name))
+				progress.inc(progress_cur_inc)
 			res.LoadResource()
 			res.DetachResource()
 			UseResFile(output)
@@ -257,14 +273,12 @@ def copyres(input, output, skiptypes, skipowner):
 			except MacOS.Error:
 				res2 = None
 			if res2:
-				if DEBUG:
-					print "Overwriting..."
+				if DEBUG and progress:
+					progress.label("Overwrite %s %d %s"%(type, id, name))
 				res2.RemoveResource()
 			res.AddResource(type, id, name)
 			res.WriteResource()
 			attrs = attrs | res.GetResAttrs()
-			if DEBUG:
-				print "New attrs =", hex(attrs)
 			res.SetResAttrs(attrs)
 			UseResFile(input)
 	return alltypes, ctor
