@@ -630,7 +630,7 @@ softspace(f, newflag)
 	if (f == NULL) {
 		/* Do nothing */
 	}
-	if (is_fileobject(f)) {
+	else if (is_fileobject(f)) {
 		oldflag = ((fileobject *)f)->f_softspace;
 		((fileobject *)f)->f_softspace = newflag;
 	}
