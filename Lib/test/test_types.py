@@ -130,7 +130,9 @@ if len([1,]) <> 1: raise TestFailed, 'len([1,])'
 if len([1,2,3,4,5,6]) <> 6: raise TestFailed, 'len([1,2,3,4,5,6])'
 if [1,2]+[3,4] <> [1,2,3,4]: raise TestFailed, 'list concatenation'
 if [1,2]*3 <> [1,2,1,2,1,2]: raise TestFailed, 'list repetition *3'
+if [1,2]*3L <> [1,2,1,2,1,2]: raise TestFailed, 'list repetition *3L'
 if 0*[1,2,3] <> []: raise TestFailed, 'list repetition 0*'
+if 0L*[1,2,3] <> []: raise TestFailed, 'list repetition 0L*'
 if min([1,2]) <> 1 or max([1,2]) <> 2: raise TestFailed, 'min/max list'
 if 0 in [0,1,2] and 1 in [0,1,2] and 2 in [0,1,2] and 3 not in [0,1,2]: pass
 else: raise TestFailed, 'in/not in list'
@@ -150,10 +152,17 @@ if a != [1, 1, 2, 3, 4, 5, 5]:
 
 print '6.5.3a Additional list operations'
 a = [0,1,2,3,4]
+a[0L] = 1
+a[1L] = 2
+a[2L] = 3
+if a <> [1,2,3,3,4]: raise TestFailed, 'list item assignment [0L], [1L], [2L]'
 a[0] = 5
 a[1] = 6
 a[2] = 7
 if a <> [5,6,7,3,4]: raise TestFailed, 'list item assignment [0], [1], [2]'
+a[-2L] = 88
+a[-1L] = 99
+if a <> [5,6,7,88,99]: raise TestFailed, 'list item assignment [-2L], [-1L]'
 a[-2] = 8
 a[-1] = 9
 if a <> [5,6,7,8,9]: raise TestFailed, 'list item assignment [-2], [-1]'
@@ -161,11 +170,20 @@ a[:2] = [0,4]
 a[-3:] = []
 a[1:1] = [1,2,3]
 if a <> [0,1,2,3,4]: raise TestFailed, 'list slice assignment'
+a[ 1L : 4L] = [7,8,9]
+if a <> [0,7,8,9,4]: raise TestFailed, 'list slice assignment using long ints'
 del a[1:4]
 if a <> [0,4]: raise TestFailed, 'list slice deletion'
 del a[0]
 if a <> [4]: raise TestFailed, 'list item deletion [0]'
 del a[-1]
+if a <> []: raise TestFailed, 'list item deletion [-1]'
+a=range(0,5)
+del a[1L:4L]
+if a <> [0,4]: raise TestFailed, 'list slice deletion'
+del a[0L]
+if a <> [4]: raise TestFailed, 'list item deletion [0]'
+del a[-1L]
 if a <> []: raise TestFailed, 'list item deletion [-1]'
 a.append(0)
 a.append(1)
@@ -191,6 +209,13 @@ def myComparison(x,y):
     return cmp(x%3, y%7)
 z = range(12)
 z.sort(myComparison)
+
+# Test extreme cases with long ints
+a = [0,1,2,3,4]
+if a[ -pow(2,128L): 3 ] != [0,1,2]: 
+	raise TestFailed, "list slicing with too-small long integer"
+if a[ 3: pow(2,145L) ] != [3,4]: 
+	raise TestFailed, "list slicing with too-large long integer"
 
 print '6.6 Mappings == Dictionaries'
 d = {}
