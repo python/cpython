@@ -41,6 +41,10 @@ Extension modules
 Library
 -------
 
+- bug #570300: Fix inspect to resolve file locations using os.path.realpath()
+  so as to properly list all functions in a module when the module itself is
+  reached through a symlink.  Thanks Johannes Gijsbers.
+
 - doctest refactoring continued.  See the docs for details.  As part of
   this effort, some old and little- (never?) used features are now
   deprecated:  the Tester class, the module is_private() function, and the
