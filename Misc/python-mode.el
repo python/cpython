@@ -963,7 +963,8 @@ You cannot outdent the region if any line is already at column zero."
     (goto-char start)
     (while (< (point) end)
       (back-to-indentation)
-      (if (zerop (current-column))
+      (if (and (zerop (current-column))
+	       (not (looking-at "\\s *$")))
 	  (error "Region is at left edge."))
       (forward-line 1)))
   (py-shift-region start end (- (prefix-numeric-value
