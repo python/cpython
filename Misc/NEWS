@@ -12,6 +12,9 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- New format codes B, H, I, k and K have been implemented for
+  PyArg_ParseTuple and PyBuild_Value.
+
 - New builtin function sum(seq, start=0) returns the sum of all the
   items in iterable object seq, plus start (items are normally numbers,
   and cannot be strings).
