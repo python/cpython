@@ -418,7 +418,8 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 	d.SetDialogCancelItem(ARGV_ITEM_CANCEL)
 	d.GetDialogWindow().ShowWindow()
 	d.DrawDialog()
-	appsw = MacOS.SchedParams(1, 0)
+	if hasattr(MacOS, 'SchedParams'):
+		appsw = MacOS.SchedParams(1, 0)
 	try:
 		while 1:
 			stringstoadd = []
@@ -522,7 +523,8 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 			newlist.append(item)
 		return newlist
 	finally:
-		apply(MacOS.SchedParams, appsw)
+		if hasattr(MacOS, 'SchedParams'):
+			apply(MacOS.SchedParams, appsw)
 		del d
 	
 def test():
@@ -550,7 +552,8 @@ def test():
 			"So far, so good!", "Keep on truckin'" )
 	bar = ProgressBar("Progress, progress...", 0, label="Ramping up...")
 	try:
-		appsw = MacOS.SchedParams(1, 0)
+		if hasattr(MacOS, 'SchedParams'):
+			appsw = MacOS.SchedParams(1, 0)
 		for i in xrange(20):
 			bar.inc()
 			time.sleep(0.05)
@@ -564,7 +567,8 @@ def test():
 		time.sleep(1.0) 	# give'em a chance to see "Done."
 	finally:
 		del bar
-		apply(MacOS.SchedParams, appsw)
+		if hasattr(MacOS, 'SchedParams'):
+			apply(MacOS.SchedParams, appsw)
 
 if __name__ == '__main__':
 	try:
