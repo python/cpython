@@ -615,36 +615,6 @@ SOURCE=..\Objects\floatobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\fpectlmodule.c
-
-!IF  "$(CFG)" == "pythoncore - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
-SOURCE=..\Modules\fpetestmodule.c
-
-!IF  "$(CFG)" == "pythoncore - Win32 Release"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
-
-!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
-
-!ENDIF 
-
-# End Source File
-# Begin Source File
-
 SOURCE=..\Objects\frameobject.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
