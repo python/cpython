@@ -225,7 +225,7 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="\$(srcdir)/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	   LINKCC="\$(srcdir)/Modules/makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir \$(PURIFY) \$(CC)";;
 	Monterey64*)
@@ -532,7 +532,7 @@ AC_MSG_CHECKING(LDSHARED)
 if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
-	AIX*) LDSHARED="\$(srcdir)/ld_so_aix \$(CC)";;
+	AIX*) LDSHARED="\$(srcdir)/Modules/ld_so_aix \$(CC)";;
 	BeOS*) LDSHARED="\$(srcdir)/../BeOS/linkmodule -L.. -lpython\$(VERSION)";;
 	IRIX/5*) LDSHARED="ld -shared";;
 	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
