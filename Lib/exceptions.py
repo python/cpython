@@ -33,6 +33,8 @@ Exception(*)
       |    |
       |    +-- IOError
       |    +-- OSError(*)
+      |         |
+      |         +-- WindowsError(*)
       |
       +-- EOFError
       +-- RuntimeError
@@ -137,6 +139,10 @@ class IOError(EnvironmentError):
 
 class OSError(EnvironmentError):
     """OS system call failed."""
+    pass
+
+class WindowsError(OSError):
+    """MS-Windows OS system call failed."""
     pass
 
 class RuntimeError(StandardError):
