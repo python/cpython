@@ -1158,7 +1158,7 @@ PySequence_Contains(w, v) /* v in w */
 	for (i = 0; ; i++) {
 		x = (*sq->sq_item)(w, i);
 		if (x == NULL) {
-			if (PyErr_Occurred() == PyExc_IndexError) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError)) {
 				PyErr_Clear();
 				break;
 			}
