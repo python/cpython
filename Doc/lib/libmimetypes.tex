@@ -47,6 +47,20 @@ IANA types are supported; when \var{strict} is false, some additional
 non-standard but commonly used MIME types are also recognized.
 \end{funcdesc}
 
+\begin{funcdesc}{guess_all_extensions}{type\optional{, strict}}
+Guess the extensions for a file based on its MIME type, given by
+\var{type}.
+The return value is a list of strings giving all possible filename extensions,
+including the leading dot (\character{.}).  The extensions are not guaranteed
+to have been associated with any particular data stream, but would be mapped
+to the MIME type \var{type} by \function{guess_type()}.  If no extension can
+be guessed for \var{type}, \code{None} is returned.
+
+Optional \var{strict} has the same meaning as with the
+\function{guess_type()} function.
+\end{funcdesc}
+
+
 \begin{funcdesc}{guess_extension}{type\optional{, strict}}
 Guess the extension for a file based on its MIME type, given by
 \var{type}.
@@ -80,6 +94,17 @@ type map is returned as a dictionary mapping filename extensions,
 including the leading dot (\character{.}), to strings of the form
 \code{'\var{type}/\var{subtype}'}.  If the file \var{filename} does
 not exist or cannot be read, \code{None} is returned.
+\end{funcdesc}
+
+
+\begin{funcdesc}{add_type}{type, ext\optional{, strict}}
+Add a mapping from the mimetype \var{type} to the extension \var{ext}.
+When the extension is already known, the new type will replace the old
+one. When the type is already known the extension will be added
+to the list of known extensions.
+
+When \var{strict} is the mapping will added to the official
+MIME types, otherwise to the non-standard ones.
 \end{funcdesc}
 
 

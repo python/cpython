@@ -26,16 +26,20 @@ import os
 import posixpath
 import urllib
 
-__all__ = ["guess_type","guess_extension","read_mime_types","init"]
+__all__ = [
+    "guess_type","guess_extension","guess_all_extensions",
+    "add_type","read_mime_types","init"
+]
 
 knownfiles = [
+    "/etc/mime.types",
     "/usr/local/etc/httpd/conf/mime.types",
     "/usr/local/lib/netscape/mime.types",
     "/usr/local/etc/httpd/conf/mime.types",     # Apache 1.2
     "/usr/local/etc/mime.types",                # Apache 1.3
     ]
 
-inited = 0
+inited = False
 
 
 class MimeTypes:
@@ -46,17 +50,38 @@ class MimeTypes:
     URL, and can guess a reasonable extension given a MIME type.
     """
 
-    def __init__(self, filenames=()):
+    def __init__(self, filenames=(), strict=True):
         if not inited:
             init()
         self.encodings_map = encodings_map.copy()
         self.suffix_map = suffix_map.copy()
-        self.types_map = types_map.copy()
-        self.common_types = common_types.copy()
+        self.types_map = ({}, {}) # dict for (non-strict, strict)
+        self.types_map_inv = ({}, {})
+        for (ext, type) in types_map.items():
+            self.add_type(type, ext, True)
+        for (ext, type) in common_types.items():
+            self.add_type(type, ext, False)
         for name in filenames:
-            self.read(name)
+            self.read(name, strict)
 
-    def guess_type(self, url, strict=1):
+    def add_type(self, type, ext, strict=True):
+        """Add a mapping between a type and and extension.
+
+        When the extension is already known, the new
+        type will replace the old one. When the type
+        is already known the extension will be added
+        to the list of known extensions.
+
+        If strict is true, information will be added to
+        list of standard types, else to the list of non-standard
+        types.
+        """
+        self.types_map[strict][ext] = type
+        exts = self.types_map_inv[strict].setdefault(type, [])
+        if ext not in exts:
+            exts.append(ext)
+
+    def guess_type(self, url, strict=True):
         """Guess the type of a file based on its URL.
 
         Return value is a tuple (type, encoding) where type is None if
@@ -72,7 +97,7 @@ class MimeTypes:
         mapped to '.tar.gz'.  (This is table-driven too, using the
         dictionary suffix_map.)
 
-        Optional `strict' argument when false adds a bunch of commonly found,
+        Optional `strict' argument when False adds a bunch of commonly found,
         but non-standard types.
         """
         scheme, url = urllib.splittype(url)
@@ -103,22 +128,44 @@ class MimeTypes:
             base, ext = posixpath.splitext(base)
         else:
             encoding = None
-        types_map = self.types_map
-        common_types = self.common_types
+        types_map = self.types_map[True]
         if ext in types_map:
             return types_map[ext], encoding
         elif ext.lower() in types_map:
             return types_map[ext.lower()], encoding
         elif strict:
             return None, encoding
-        elif ext in common_types:
-            return common_types[ext], encoding
-        elif ext.lower() in common_types:
-            return common_types[ext.lower()], encoding
+        types_map = self.types_map[False]
+        if ext in types_map:
+            return types_map[ext], encoding
+        elif ext.lower() in types_map:
+            return types_map[ext.lower()], encoding
         else:
             return None, encoding
 
-    def guess_extension(self, type, strict=1):
+    def guess_all_extensions(self, type, strict=True):
+        """Guess the extensions for a file based on its MIME type.
+
+        Return value is a list of strings giving the possible filename
+        extensions, including the leading dot ('.').  The extension is not
+        guaranteed to have been associated with any particular data
+        stream, but would be mapped to the MIME type `type' by
+        guess_type().  If no extension can be guessed for `type', None
+        is returned.
+
+        Optional `strict' argument when false adds a bunch of commonly found,
+        but non-standard types.
+        """
+        type = type.lower()
+        extensions = self.types_map_inv[True].get(type, [])
+        if not strict:
+            for ext in self.types_map_inv[False].get(type, []):
+                if ext not in extensions:
+                    extensions.append(ext)
+        if len(extensions):
+            return extensions
+
+    def guess_extension(self, type, strict=True):
         """Guess the extension for a file based on its MIME type.
 
         Return value is a string giving a filename extension,
@@ -131,25 +178,31 @@ class MimeTypes:
         Optional `strict' argument when false adds a bunch of commonly found,
         but non-standard types.
         """
-        type = type.lower()
-        for ext, stype in self.types_map.items():
-            if type == stype:
-                return ext
-        if not strict:
-            for ext, stype in common_types.items():
-                if type == stype:
-                    return ext
-        return None
+        extensions = self.guess_all_extensions(type, strict)
+        if extensions is not None:
+            extensions = extensions[0]
+        return extensions
 
-    def read(self, filename):
-        """Read a single mime.types-format file, specified by pathname."""
+    def read(self, filename, strict=True):
+        """
+        Read a single mime.types-format file, specified by pathname.
+
+        If strict is true, information will be added to
+        list of standard types, else to the list of non-standard
+        types.
+        """
         fp = open(filename)
         self.readfp(fp)
         fp.close()
 
-    def readfp(self, fp):
-        """Read a single mime.types-format file."""
-        map = self.types_map
+    def readfp(self, fp, strict=True):
+        """
+        Read a single mime.types-format file.
+
+        If strict is true, information will be added to
+        list of standard types, else to the list of non-standard
+        types.
+        """
         while 1:
             line = fp.readline()
             if not line:
@@ -162,11 +215,11 @@ class MimeTypes:
             if not words:
                 continue
             type, suffixes = words[0], words[1:]
+            suffixes = [ '.' + suff for suff in suffixes ]
             for suff in suffixes:
-                map['.' + suff] = type
+                self.add_type(type, suff, strict)
 
-
-def guess_type(url, strict=1):
+def guess_type(url, strict=True):
     """Guess the type of a file based on its URL.
 
     Return value is a tuple (type, encoding) where type is None if the
@@ -188,7 +241,23 @@ def guess_type(url, strict=1):
     return guess_type(url, strict)
 
 
-def guess_extension(type, strict=1):
+def guess_all_extensions(type, strict=True):
+    """Guess the extensions for a file based on its MIME type.
+
+    Return value is a list of strings giving the possible filename
+    extensions, including the leading dot ('.').  The extension is not
+    guaranteed to have been associated with any particular data
+    stream, but would be mapped to the MIME type `type' by
+    guess_type().  If no extension can be guessed for `type', None
+    is returned.
+
+    Optional `strict' argument when false adds a bunch of commonly found,
+    but non-standard types.
+    """
+    init()
+    return guess_all_extensions(type, strict)
+
+def guess_extension(type, strict=True):
     """Guess the extension for a file based on its MIME type.
 
     Return value is a string giving a filename extension, including the
@@ -203,12 +272,27 @@ def guess_extension(type, strict=1):
     init()
     return guess_extension(type, strict)
 
+def add_type(self, type, ext, strict=True):
+    """Add a mapping between a type and and extension.
+
+    When the extension is already known, the new
+    type will replace the old one. When the type
+    is already known the extension will be added
+    to the list of known extensions.
+
+    If strict is true, information will be added to
+    list of standard types, else to the list of non-standard
+    types.
+    """
+    init()
+    return add_type(type, ext, strict)
+
 
 def init(files=None):
-    global guess_extension, guess_type
+    global guess_all_extensions, guess_extension, guess_type
     global suffix_map, types_map, encodings_map, common_types
-    global inited
-    inited = 1
+    global add_type, inited
+    inited = True
     db = MimeTypes()
     if files is None:
         files = knownfiles
@@ -217,10 +301,12 @@ def init(files=None):
             db.readfp(open(file))
     encodings_map = db.encodings_map
     suffix_map = db.suffix_map
-    types_map = db.types_map
+    types_map = db.types_map[True]
+    guess_all_extensions = db.guess_all_extensions
     guess_extension = db.guess_extension
     guess_type = db.guess_type
-    common_types = db.common_types
+    add_type = db.add_type
+    common_types = db.types_map[False]
 
 
 def read_mime_types(file):
