@@ -211,21 +211,12 @@ class FeedParser:
                 lines.append(line)
             self._cur.set_payload(EMPTYSTRING.join(lines))
             return
-        # So now the input is sitting at the first body line.  If the message
-        # claims to be a message/rfc822 type, then what follows is another RFC
-        # 2822 message.
-        if self._cur.get_content_type() == 'message/rfc822':
-            for retval in self._parsegen():
-                if retval is NeedMoreData:
-                    yield NeedMoreData
-                    continue
-                break
-            self._pop_message()
-            return
         if self._cur.get_content_type() == 'message/delivery-status':
             # message/delivery-status contains blocks of headers separated by
             # a blank line.  We'll represent each header block as a separate
-            # nested message object.  A blank line separates the subparts.
+            # nested message object, but the processing is a bit different
+            # than standard message/* types because there is no body for the
+            # nested messages.  A blank line separates the subparts.
             while True:
                 self._input.push_eof_matcher(NLCRE.match)
                 for retval in self._parsegen():
@@ -248,6 +239,16 @@ class FeedParser:
                     break
                 # Not at EOF so this is a line we're going to need.
                 self._input.unreadline(line)
+            return
+        if self._cur.get_content_maintype() == 'message':
+            # The message claims to be a message/* type, then what follows is
+            # another RFC 2822 message.
+            for retval in self._parsegen():
+                if retval is NeedMoreData:
+                    yield NeedMoreData
+                    continue
+                break
+            self._pop_message()
             return
         if self._cur.get_content_maintype() == 'multipart':
             boundary = self._cur.get_boundary()
