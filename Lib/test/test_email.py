@@ -1235,6 +1235,13 @@ class TestMiscellaneous(unittest.TestCase):
         eq(cset1, cset2)
         eq(cset2, cset1)
 
+    def test_getaddresses(self):
+        eq = self.assertEqual
+        eq(Utils.getaddresses(['aperson@dom.ain (Al Person)',
+                               'Bud Person <bperson@dom.ain>']),
+           [('Al Person', 'aperson@dom.ain'),
+            ('Bud Person', 'bperson@dom.ain')])
+
 
 
 # Test the iterator/generators

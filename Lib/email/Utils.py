@@ -113,7 +113,7 @@ def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
     all = COMMASPACE.join(fieldvalues)
     a = _AddressList(all)
-    return a.getaddrlist()
+    return a.addresslist
 
 
 
