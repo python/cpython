@@ -81,15 +81,15 @@ struct filedescr * _PyImport_Filetab = NULL;
 
 #ifdef RISCOS
 static const struct filedescr _PyImport_StandardFiletab[] = {
-	{"/py", "r", PY_SOURCE},
+	{"/py", "r" PY_STDIOTEXTMODE, PY_SOURCE},
 	{"/pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
 #else
 static const struct filedescr _PyImport_StandardFiletab[] = {
-	{".py", "r", PY_SOURCE},
+	{".py", "r" PY_STDIOTEXTMODE, PY_SOURCE},
 #ifdef MS_WIN32
-	{".pyw", "r", PY_SOURCE},
+	{".pyw", "r" PY_STDIOTEXTMODE, PY_SOURCE},
 #endif
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}

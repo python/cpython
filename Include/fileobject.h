@@ -14,8 +14,13 @@ typedef struct {
 	PyObject *f_mode;
 	int (*f_close)(FILE *);
 	int f_softspace; /* Flag used by 'print' command */
-	int f_binary; /* Flag which indicates whether the file is
+	int f_binary; /* Flag which indicates whether the file is open
 			 open in binary (1) or test (0) mode */
+#ifdef WITH_UNIVERSAL_NEWLINES
+	int f_univ_newline;	/* Handle any newline convention */
+	int f_newlinetypes;	/* Types of newlines seen */
+	int f_skipnextlf;	/* Skip next \n */
+#endif
 } PyFileObject;
 
 extern DL_IMPORT(PyTypeObject) PyFile_Type;
@@ -40,6 +45,19 @@ extern DL_IMPORT(int) PyObject_AsFileDescriptor(PyObject *);
 */
 extern DL_IMPORT(const char *) Py_FileSystemDefaultEncoding;
 
+#ifdef WITH_UNIVERSAL_NEWLINES
+/* Routines to replace fread() and fgets() which accept any of \r, \n
+   or \r\n as line terminators.
+*/
+#define PY_STDIOTEXTMODE "b"
+char *Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
+size_t Py_UniversalNewlineFread(void *, size_t, FILE *, PyObject *);
+#else
+#define PY_STDIOTEXTMODE ""
+#define Py_UniversalNewlineFgets(buf, len, fp, obj) (fgets((buf), (len), (fp)))
+#define Py_UniversalNewlineFread(buf, len, fp, obj) \
+		(fread((buf), 1, (len), (fp)))
+#endif /* WITH_UNIVERSAL_NEWLINES */
 #ifdef __cplusplus
 }
 #endif
