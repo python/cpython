@@ -354,38 +354,236 @@ float_str(PyFloatObject *v)
 	return PyString_FromString(buf);
 }
 
+/* Comparison is pretty much a nightmare.  When comparing float to float,
+ * we do it as straightforwardly (and long-windedly) as conceivable, so
+ * that, e.g., Python x == y delivers the same result as the platform
+ * C x == y when x and/or y is a NaN.
+ * When mixing float with an integer type, there's no good *uniform* approach.
+ * Converting the double to an integer obviously doesn't work, since we
+ * may lose info from fractional bits.  Converting the integer to a double
+ * also has two failure modes:  (1) a long int may trigger overflow (too
+ * large to fit in the dynamic range of a C double); (2) even a C long may have
+ * more bits than fit in a C double (e.g., on a a 64-bit box long may have
+ * 63 bits of precision, but a C double probably has only 53), and then
+ * we can falsely claim equality when low-order integer bits are lost by
+ * coercion to double.  So this part is painful too.
+ */
+
 static PyObject*
 float_richcompare(PyObject *v, PyObject *w, int op)
 {
 	double i, j;
 	int r = 0;
 
-	CONVERT_TO_DOUBLE(v, i);
-	CONVERT_TO_DOUBLE(w, j);
+	assert(PyFloat_Check(v));
+	i = PyFloat_AS_DOUBLE(v);
 
+	/* Switch on the type of w.  Set i and j to doubles to be compared,
+	 * and op to the richcomp to use.
+	 */
+	if (PyFloat_Check(w))
+		j = PyFloat_AS_DOUBLE(w);
+
+	else if (Py_IS_INFINITY(i)) {
+		/* XXX If we had a reliable way to check whether i is a
+		 * XXX NaN, it would belong in this branch too.
+		 */
+		if (PyInt_Check(w) || PyLong_Check(w))
+			/* The magnitude of i exceeds any finite integer,
+			 * so it doesn't matter which int we compare i with.
+			 */
+			j = 0.0;
+		else
+			goto Unimplemented;
+	}
+
+	else if (PyInt_Check(w)) {
+		long jj = PyInt_AS_LONG(w);
+		/* In the worst realistic case I can imagine, C double is a
+		 * Cray single with 48 bits of precision, and long has 64
+		 * bits.
+		 */
+#if SIZEOF_LONG > 4
+		unsigned long abs = (unsigned long)(jj < 0 ? -jj : jj);
+		if (abs >> 48) {
+			/* Needs more than 48 bits.  Make it take the
+			 * PyLong path.
+			 */
+			PyObject *result;
+			PyObject *ww = PyLong_FromLong(jj);
+
+			if (ww == NULL)
+				return NULL;
+			result = float_richcompare(v, ww, op);
+			Py_DECREF(ww);
+			return result;
+		}
+#endif
+		j = (double)jj;
+		assert((long)j == jj);
+	}
+
+	else if (PyLong_Check(w)) {
+		int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
+		int wsign = _PyLong_Sign(w);
+		size_t nbits;
+		double mant;
+		int exponent;
+
+		if (vsign != wsign) {
+			/* Magnitudes are irrelevant -- the signs alone
+			 * determine the outcome.
+			 */
+			i = (double)vsign;
+			j = (double)wsign;
+			goto Compare;
+		}
+		/* The signs are the same. */
+		/* Convert w to a double if it fits.  In particular, 0 fits. */
+		nbits = _PyLong_NumBits(w);
+		if (nbits == (size_t)-1 && PyErr_Occurred()) {
+			/* This long is so large that size_t isn't big enough
+			 * to hold the # of Python digits.  Replace with
+			 * little doubles that give the same outcome --
+			 * w is so large that its magnitude must exceed
+			 * the magnitude of any finite float.
+			 */
+			PyErr_Clear();
+			i = (double)vsign;
+			assert(wsign != 0);
+			j = wsign * 2.0;
+			goto Compare;
+		}
+		if (nbits <= 48) {
+			j = PyLong_AsDouble(w);
+			/* It's impossible that <= 48 bits overflowed. */
+			assert(j != -1.0 || ! PyErr_Occurred());
+			goto Compare;
+		}
+		assert(wsign != 0); /* else nbits was 0 */
+		assert(vsign != 0); /* if vsign were 0, then since wsign is
+		                     * not 0, we would have taken the
+		                     * vsign != wsign branch at the start */
+		/* We want to work with non-negative numbers. */
+		if (vsign < 0) {
+			/* "Multiply both sides" by -1; this also swaps the
+			 * comparator.
+			 */
+			i = -i;
+			op = _Py_SwappedOp[op];
+		}
+		assert(i > 0.0);
+		mant = frexp(i, &exponent);
+		/* exponent is the # of bits in v before the radix point;
+		 * we know that nbits (the # of bits in w) > 48 at this point
+		 */
+		if (exponent < 0 || (size_t)exponent < nbits) {
+			i = 1.0;
+			j = 2.0;
+			goto Compare;
+		}
+		if ((size_t)exponent > nbits) {
+			i = 2.0;
+			j = 1.0;
+			goto Compare;
+		}
+		/* v and w have the same number of bits before the radix
+		 * point.  Construct two longs that have the same comparison
+		 * outcome.
+		 */
+		{
+			double fracpart;
+			double intpart;
+			PyObject *result = NULL;
+			PyObject *one = NULL;
+			PyObject *vv = NULL;
+			PyObject *ww = w;
+
+			if (wsign < 0) {
+				ww = PyNumber_Negative(w);
+				if (ww == NULL)
+					goto Error;
+			}
+			else
+				Py_INCREF(ww);
+
+			fracpart = modf(i, &intpart);
+			vv = PyLong_FromDouble(intpart);
+			if (vv == NULL)
+				goto Error;
+
+			if (fracpart != 0.0) {
+				/* Shift left, and or a 1 bit into vv
+				 * to represent the lost fraction.
+				 */
+				PyObject *temp;
+
+				one = PyInt_FromLong(1);
+				if (one == NULL)
+					goto Error;
+
+				temp = PyNumber_Lshift(ww, one);
+				if (temp == NULL)
+					goto Error;
+				Py_DECREF(ww);
+				ww = temp;
+
+				temp = PyNumber_Lshift(vv, one);
+				if (temp == NULL)
+					goto Error;
+				Py_DECREF(vv);
+				vv = temp;
+
+				temp = PyNumber_Or(vv, one);
+				if (temp == NULL)
+					goto Error;
+				Py_DECREF(vv);
+				vv = temp;
+			}
+
+			r = PyObject_RichCompareBool(vv, ww, op);
+			if (r < 0)
+				goto Error;
+			result = PyBool_FromLong(r);
+ 		 Error:
+ 		 	Py_XDECREF(vv);
+ 		 	Py_XDECREF(ww);
+ 		 	Py_XDECREF(one);
+ 		 	return result;
+		}
+	} /* else if (PyLong_Check(w)) */
+
+	else	/* w isn't float, int, or long */
+		goto Unimplemented;
+
+ Compare:
 	PyFPE_START_PROTECT("richcompare", return NULL)
 	switch (op) {
 	case Py_EQ:
-		r = i==j;
+		r = i == j;
 		break;
 	case Py_NE:
-		r = i!=j;
+		r = i != j;
 		break;
 	case Py_LE:
-		r = i<=j;
+		r = i <= j;
 		break;
 	case Py_GE:
-		r = i>=j;
+		r = i >= j;
 		break;
 	case Py_LT:
-		r = i<j;
+		r = i < j;
 		break;
 	case Py_GT:
-		r = i>j;
+		r = i > j;
 		break;
 	}
 	PyFPE_END_PROTECT(r)
 	return PyBool_FromLong(r);
+
+ Unimplemented:
+	Py_INCREF(Py_NotImplemented);
+	return Py_NotImplemented;
 }
 
 static long
