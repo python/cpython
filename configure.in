@@ -332,7 +332,7 @@ AC_AIX
 
 # Check for unsupported systems
 case $ac_sys_system/$ac_sys_release in
-SunOS/4*|DYNIX/*|dgux*/*|IRIX/4*|Linux*/1*)
+SunOS/4*|DYNIX/*|IRIX/4*|Linux*/1*)
    echo This system \($ac_sys_system/$ac_sys_release\) is no longer supported.
    echo See README for details.
    exit 1;;
@@ -457,8 +457,6 @@ then
 	       exp_extra="."
 	   fi
 	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
-	dgux*)
-	   LINKCC="LD_RUN_PATH=$libdir $LINKCC";;
 	Monterey64*)
 	   LINKCC="$LINKCC -L/usr/lib/ia64l64";;
 	esac
@@ -536,13 +534,6 @@ if test $enable_shared = "yes"; then
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
 	  RUNSHARED=DLL_PATH=`pwd`:${DLL_PATH:-/atheos/sys/libs:/atheos/autolnk/lib}
 	  ;;
-  esac
-  # DG/UX requires some fancy ld contortions to produce a .so from an .a
-  case $MACHDEP in
-  dguxR4)
-        LDLIBRARY='libpython$(VERSION).so'
-        BASECFLAGS="$BASECFLAGS -pic"
-        ;;
   esac
 else # shared is disabled
   case $ac_sys_system in
@@ -1278,7 +1269,6 @@ then
 			LDSHARED="$LDSHARED "'-bundle_loader $(BINDIR)/python$(VERSION)$(EXE)'
 		fi ;;
 	Linux*|GNU*) LDSHARED='$(CC) -shared';;
-	dgux*) LDSHARED="ld -G";;
 	BSD/OS*/4*) LDSHARED="gcc -shared";;
 	OpenBSD*|FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
