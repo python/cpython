@@ -5,7 +5,9 @@
 	Copyright © 1993-1998 Marco Piovanelli
 	All Rights Reserved
 */
-
+#ifndef WITHOUT_FRAMEWORKS
+#include <Carbon/Carbon.h>
+#endif
 #ifndef _WASTE_
 #include "WASTE.h"
 #endif

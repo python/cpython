@@ -634,7 +634,25 @@ class PyBuildExt(build_ext):
 ##              exts.append( Extension('_Scrap', ['scrap/_Scrapmodule.c']) )
                 exts.append( Extension('_TE', ['te/_TEmodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
-##              exts.append( Extension('waste', ['waste/wastemodule.c']) )
+                # As there is no standardized place (yet) to put user-installed
+                # Mac libraries on OSX you should put a symlink to your Waste
+                # installation in the same folder as your python source tree.
+                # Or modify the next two lines:-)
+                waste_incs = find_file("WASTE.h", [], ["../waste/C_C++ Headers"])
+                waste_libs = find_library_file(self.compiler, "WASTE", [],
+                        ["../waste/Static Libraries"])
+                if waste_incs != None and waste_libs != None:
+                    exts.append( Extension('waste', 
+                                   ['waste/wastemodule.c',
+                                    'Mac/Wastemods/WEObjectHandlers.c',
+                                    'Mac/Wastemods/WETabHooks.c',
+                                    'Mac/Wastemods/WETabs.c'
+                                   ],
+                                   include_dirs = waste_incs + ['Mac/Wastemods'],
+                                   library_dirs = waste_libs,
+                                   libraries = ['WASTE'],
+                                   extra_link_args = ['-framework', 'Carbon'],
+                    ) )
                 exts.append( Extension('_Win', ['win/_Winmodule.c'],
             		extra_link_args=['-framework', 'Carbon']) )
             
