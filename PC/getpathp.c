@@ -50,24 +50,11 @@ extern BOOL PyWin_IsWin32s();
 
 /* Search in some common locations for the associated Python libraries.
  *
- * This version always returns "" for both prefix and exec_prefix.
- *
  * Py_GetPath() tries to return a sensible Python module search path.
  *
- * First, we look to see if the executable is in a subdirectory of
- * the Python build directory.  We calculate the full path of the
- * directory containing the executable as progpath.  We work backwards
- * along progpath and look for $dir/Modules/Setup.in, a distinctive
- * landmark.  If found, we use $dir/Lib as $root.  The returned
- * Python path is the compiled #define PYTHONPATH with all the initial
- * "./lib" replaced by $root.
- *
- * Otherwise, if there is a PYTHONPATH environment variable, we return that.
- *
- * Otherwise we try to find $progpath/lib/string.py, and if found, then
- * root is $progpath/lib, and we return Python path as compiled PYTHONPATH
- * with all "./lib" replaced by $root (as above).
- *
+ * The approach is an adaptation for Windows of the strategy used in
+ * ../Modules/getpath.c; it uses the Windows Registry as one of its
+ * information sources.
  */
 
 #ifndef LANDMARK
@@ -395,6 +382,12 @@ calculate_path()
 			fprintf(stderr, "Using environment $PYTHONPATH.\n");
 			module_search_path = PYTHONPATH;
 		}
+#ifdef MS_WIN32
+		if (machinepath)
+			free(machinepath);
+		if (userpath)
+			free(userpath);
+#endif /* MS_WIN32 */
 		return;
 	}
 
@@ -408,11 +401,13 @@ calculate_path()
 		strcpy(buf, machinepath);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
+		free(machinepath);
 	}
 	if (userpath) {
 		strcpy(buf, userpath);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
+		free(userpath);
 	}
 #endif
 	if (pythonhome == NULL) {
