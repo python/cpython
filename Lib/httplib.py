@@ -67,7 +67,6 @@ Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
 import socket
-import string
 import mimetools
 
 try:
@@ -112,10 +111,10 @@ class HTTPResponse:
         if self.debuglevel > 0:
             print "reply:", repr(line)
         try:
-            [version, status, reason] = string.split(line, None, 2)
+            [version, status, reason] = line.split(None, 2)
         except ValueError:
             try:
-                [version, status] = string.split(line, None, 1)
+                [version, status] = line.split(None, 1)
                 reason = ""
             except ValueError:
                 version = "HTTP/0.9"
@@ -126,7 +125,7 @@ class HTTPResponse:
             raise BadStatusLine(line)
 
         self.status = status = int(status)
-        self.reason = string.strip(reason)
+        self.reason = reason.strip()
 
         if version == 'HTTP/1.0':
             self.version = 10
@@ -152,7 +151,7 @@ class HTTPResponse:
         # are we using the chunked-style of transfer encoding?
         tr_enc = self.msg.getheader('transfer-encoding')
         if tr_enc:
-            if string.lower(tr_enc) != 'chunked':
+            if tr_enc.lower() != 'chunked':
                 raise UnknownTransferEncoding()
             self.chunked = 1
             self.chunk_left = None
@@ -162,11 +161,11 @@ class HTTPResponse:
         # will the connection close at the end of the response?
         conn = self.msg.getheader('connection')
         if conn:
-            conn = string.lower(conn)
+            conn = conn.lower()
             # a "Connection: close" will always close the connection. if we
             # don't see that and this is not HTTP/1.1, then the connection will
             # close unless we see a Keep-Alive header.
-            self.will_close = string.find(conn, 'close') != -1 or \
+            self.will_close = conn.find('close') != -1 or \
                               ( self.version != 11 and \
                                 not self.msg.getheader('keep-alive') )
         else:
@@ -224,10 +223,10 @@ class HTTPResponse:
             while 1:
                 if chunk_left is None:
                     line = self.fp.readline()
-                    i = string.find(line, ';')
+                    i = line.find(';')
                     if i >= 0:
                         line = line[:i]	# strip chunk-extensions
-                    chunk_left = string.atoi(line, 16)
+                    chunk_left = int(line, 16)
                     if chunk_left == 0:
                         break
                 if amt is None:
@@ -331,7 +330,7 @@ class HTTPConnection:
 
     def _set_hostport(self, host, port):
         if port is None:
-            i = string.find(host, ':')
+            i = host.find(':')
             if i >= 0:
                 port = int(host[i+1:])
                 host = host[:i]
@@ -671,8 +670,7 @@ class HTTP:
 
     def putheader(self, header, *values):
         "The superclass allows only one value argument."
-        self._conn.putheader(header,
-                             string.joinfields(values, '\r\n\t'))
+        self._conn.putheader(header, '\r\n\t'.join(values))
 
     def getreply(self):
         """Compat definition since superclass does not define it.
@@ -798,7 +796,7 @@ def test():
     print 'reason =', reason
     print
     if headers:
-        for header in headers.headers: print string.strip(header)
+        for header in headers.headers: print header.strip()
     print
     print h.getfile().read()
 
@@ -813,7 +811,7 @@ def test():
         print 'reason =', reason
         print
         if headers:
-            for header in headers.headers: print string.strip(header)
+            for header in headers.headers: print header.strip()
         print
         print hs.getfile().read()
 
