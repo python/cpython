@@ -150,6 +150,9 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	res = (PyStructSequence*) PyStructSequence_New(type);
+	if (res == NULL) {
+		return NULL;
+	}
 	for (i = 0; i < len; ++i) {
 		PyObject *v = PySequence_Fast_GET_ITEM(arg, i);
 		Py_INCREF(v);
@@ -360,6 +363,8 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 	type->tp_itemsize = 0;
 
 	members = PyMem_NEW(PyMemberDef, n_members-n_unnamed_members+1);
+	if (members == NULL)
+		return;
 	
 	for (i = k = 0; i < n_members; ++i) {
 		if (desc->fields[i].name == PyStructSequence_UnnamedField)
@@ -387,6 +392,5 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 		       PyInt_FromLong((long) n_members));
 	PyDict_SetItemString(dict, unnamed_fields_key, 
 		       PyInt_FromLong((long) n_unnamed_members));
-	PyDict_SetItemString(dict, "__safe_for_unpickling__", 
-		       PyInt_FromLong(1));
+	PyDict_SetItemString(dict, "__safe_for_unpickling__", Py_True);
 }
