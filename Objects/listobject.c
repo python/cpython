@@ -1866,7 +1866,7 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
 	if (compare != NULL && keyfunc != NULL) {
 		compare = build_cmpwrapper(compare);
 		if (compare == NULL)
-			goto dsu_fail;
+			return NULL;
 	} else
 		Py_XINCREF(compare);
 
