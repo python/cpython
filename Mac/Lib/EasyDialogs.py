@@ -217,10 +217,10 @@ class ProgressBar:
 		self.maxval = maxval
 		self.curval = -1
 		self.d = GetNewDialog(id, -1)
-		self.title(title)
 		self.label(label)
 		self._update(0)
 		self.d.AutoSizeDialog()
+		self.title(title)
 		self.d.ShowWindow()
 		self.d.DrawDialog()
 
@@ -231,13 +231,13 @@ class ProgressBar:
 		
 	def title(self, newstr=""):
 		"""title(text) - Set title of progress window"""
-		self.d.BringToFront()
 		w = self.d.GetDialogWindow()
+		w.BringToFront()
 		w.SetWTitle(newstr)
 		
 	def label( self, *newstr ):
 		"""label(text) - Set text in progress box"""
-		self.d.BringToFront()
+		self.d.GetDialogWindow().BringToFront()
 		if newstr:
 			self._label = lf2cr(newstr[0])
 		text_h = self.d.GetDialogItemAsControl(2)
