@@ -299,7 +299,7 @@ charmap_decode(PyObject *self,
 		       size);
 }
 
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && defined(HAVE_USABLE_WCHAR_T)
 
 static PyObject *
 mbcs_decode(PyObject *self,
@@ -595,7 +595,7 @@ charmap_encode(PyObject *self,
     return v;
 }
 
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && defined(HAVE_USABLE_WCHAR_T)
 
 static PyObject *
 mbcs_encode(PyObject *self,
@@ -650,7 +650,7 @@ static PyMethodDef _codecs_functions[] = {
     {"charmap_decode", 		charmap_decode,			1},
     {"readbuffer_encode",	readbuffer_encode,		1},
     {"charbuffer_encode",	charbuffer_encode,		1},
-#ifdef MS_WIN32
+#if defined(MS_WIN32) && defined(HAVE_USABLE_WCHAR_T)
     {"mbcs_encode", 		mbcs_encode,			1},
     {"mbcs_decode", 		mbcs_decode,			1},
 #endif
