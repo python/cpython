@@ -262,6 +262,7 @@ class AbstractFormatter:
 class NullWriter:
     """Minimal writer interface to use in testing.
     """
+    def __init__(self): pass
     def new_alignment(self, align): pass
     def new_font(self, font): pass
     def new_margin(self, margin, level): pass
@@ -275,7 +276,7 @@ class NullWriter:
     def send_literal_data(self, data): pass
 
 
-class AbstractWriter:
+class AbstractWriter(NullWriter):
 
     def __init__(self):
 	pass
@@ -314,12 +315,12 @@ class AbstractWriter:
 	print "send_literal_data(%s)" % `data`
 
 
-class DumbWriter(AbstractWriter):
+class DumbWriter(NullWriter):
 
     def __init__(self, file=None, maxcol=72):
 	self.file = file or sys.stdout
 	self.maxcol = maxcol
-	AbstractWriter.__init__(self)
+	NullWriter.__init__(self)
 	self.reset()
 
     def reset(self):
