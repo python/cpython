@@ -3906,7 +3906,8 @@ newUnpicklerobject(PyObject *f) {
     self->marks_size = 0;
     self->buf_size = 0;
     self->read = NULL;
-    self->readline = NULL;    
+    self->readline = NULL;
+    self->class_map = NULL;
 
     UNLESS(self->memo = PyDict_New()) {
        Py_XDECREF((PyObject *)self);
