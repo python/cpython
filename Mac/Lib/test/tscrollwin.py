@@ -47,7 +47,7 @@ class MyWindow(ScrolledWindow):
 				self.vy = value
 			else:
 				self.vy = self.vy + delta
-		Win.InvalWindowRect(self.ourrect)
+		self.wid.InvalWindowRect(self.ourrect)
 
 	def do_update(self, wid, event):
 		Qd.EraseRect(self.ourrect)

@@ -213,11 +213,11 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 	def adjust(self, oldbounds):
 		self.SetPort()
 		if self._selected and self._parentwindow._hasselframes:
-			Win.InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
-			Win.InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
+			self.GetWindow().InvalWindowRect(Qd.InsetRect(oldbounds, -3, -3))
+			self.GetWindow().InvalWindowRect(Qd.InsetRect(self._bounds, -3, -3))
 		else:
-			Win.InvalWindowRect(oldbounds)
-			Win.InvalWindowRect(self._bounds)
+			self.GetWindow().InvalWindowRect(oldbounds)
+			self.GetWindow().InvalWindowRect(self._bounds)
 		viewrect, destrect = self._calctextbounds()
 		self.ted.WESetViewRect(viewrect)
 		self.ted.WESetDestRect(destrect)
@@ -305,7 +305,7 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 			Qd.RectRgn(rgn, viewrect)
 			Qd.EraseRect(viewrect)
 			self.draw(rgn)
-			#Win.InvalWindowRect(self.ted.WEGetViewRect())
+			#self.GetWindow().InvalWindowRect(self.ted.WEGetViewRect())
 			self.updatescrollbars()
 	
 	def get(self):

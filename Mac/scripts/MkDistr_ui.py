@@ -115,7 +115,7 @@ class ListWindow(DialogWindow):
 				self.list.LSetCell(contents[i], (0, i))
 		self.list.LSetDrawingMode(1)
 		##self.list.LUpdate(self.wid.GetWindowPort().visRgn)
-		Win.InvalWindowRect(self.listrect)
+		self.wid.InvalWindowRect(self.listrect)
 		
 	def additem(self, item):
 		where = self.list.LAddRow(1, 0)
