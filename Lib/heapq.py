@@ -154,9 +154,10 @@ def heapreplace(heap, item):
     This is more efficient than heappop() followed by heappush(), and can be
     more appropriate when using a fixed-size heap.  Note that the value
     returned may be larger than item!  That constrains reasonable uses of
-    this routine unless written as part of a larger expression:
+    this routine unless written as part of a conditional replacement:
 
-        result = item <= heap[0] and item  or  heapreplace(heap, item)
+        if item > heap[0]:
+            item = heapreplace(heap, item)
     """
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
     heap[0] = item
