@@ -24,8 +24,20 @@ class PullDOM(xml.sax.ContentHandler):
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
         self.lastEvent = self.firstEvent
+        self.elementStack = []
+        self.push = self.elementStack.append
+        try:
+            self.pop = self.elementStack.pop
+        except AttributeError:
+            # use class' pop instead
+            pass
         self._ns_contexts = [{}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
+
+    def pop(self):
+        result = self.elementStack[-1]
+        del self.elementStack[-1] 
+        return result
 
     def setDocumentLocator(self, locator):
         self._locator = locator
@@ -61,21 +73,13 @@ class PullDOM(xml.sax.ContentHandler):
             attr.value = value
             node.setAttributeNode(attr)
 
-##        print self.curNode, self.curNode.childNodes, node, node.parentNode
-        self.curNode.appendChild(node)
-#        node.parentNode = self.curNode
-        self.curNode = node
-
         self.lastEvent[1] = [(START_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((START_ELEMENT, node))
+        self.push(node)
 
     def endElementNS(self, name, tagName):
-        node = self.curNode
-        self.lastEvent[1] = [(END_ELEMENT, node), None]
+        self.lastEvent[1] = [(END_ELEMENT, self.pop()), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((END_ELEMENT, node))
-        self.curNode = self.curNode.parentNode
 
     def startElement(self, name, attrs):
         node = self.document.createElement(name)
@@ -85,54 +89,32 @@ class PullDOM(xml.sax.ContentHandler):
             attr.value = value
             node.setAttributeNode(attr)
 
-        #node.parentNode = self.curNode
-        self.curNode.appendChild(node)
-        self.curNode = node
-
         self.lastEvent[1] = [(START_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((START_ELEMENT, node))
+        self.push(node)
 
     def endElement(self, name):
-        node = self.curNode
-        self.lastEvent[1] = [(END_ELEMENT, node), None]
+        self.lastEvent[1] = [(END_ELEMENT, self.pop()), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((END_ELEMENT, node))
-        self.curNode = node.parentNode
 
     def comment(self, s):
         node = self.document.createComment(s)
-        self.curNode.appendChild(node)
-#        parent = self.curNode
-#        node.parentNode = parent
         self.lastEvent[1] = [(COMMENT, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((COMMENT, node))
 
     def processingInstruction(self, target, data):
         node = self.document.createProcessingInstruction(target, data)
 
-        self.curNode.appendChild(node)
-#        parent = self.curNode
-#        node.parentNode = parent
         self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((PROCESSING_INSTRUCTION, node))
 
     def ignorableWhitespace(self, chars):
         node = self.document.createTextNode(chars)
-        self.curNode.appendChild(node)
-#        parent = self.curNode
-#        node.parentNode = parent
         self.lastEvent[1] = [(IGNORABLE_WHITESPACE, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((IGNORABLE_WHITESPACE, node))
 
     def characters(self, chars):
         node = self.document.createTextNode(chars)
-        self.curNode.appendChild(node)
-#        parent = self.curNode
-#        node.parentNode = parent
         self.lastEvent[1] = [(CHARACTERS, node), None]
         self.lastEvent = self.lastEvent[1]
 
@@ -145,19 +127,14 @@ class PullDOM(xml.sax.ContentHandler):
             import xml.dom.minidom
             self.documentFactory = xml.dom.minidom.Document.implementation
         node = self.documentFactory.createDocument(None, publicId, systemId)
-        self.curNode = self.document = node
+        self.document = node
         self.lastEvent[1] = [(START_DOCUMENT, node), None]
         self.lastEvent = self.lastEvent[1]
-        #self.events.append((START_DOCUMENT, node))
+        self.push(node)
 
     def endDocument(self):
-        assert self.curNode.parentNode is None, \
-               "not all elements have been properly closed"
-        assert self.curNode.documentElement is not None, \
-               "document does not contain a root element"
-        node = self.curNode.documentElement
-        self.lastEvent[1] = [(END_DOCUMENT, node), None]
-        #self.events.append((END_DOCUMENT, self.curNode))
+        self.lastEvent[1] = [(END_DOCUMENT, self.document), None]
+        self.pop()
 
 class ErrorHandler:
     def warning(self, exception):
@@ -188,12 +165,17 @@ class DOMEventStream:
 
     def expandNode(self, node):
         event = self.getEvent()
+        parents = [node]
         while event:
             token, cur_node = event
             if cur_node is node:
                 return
             if token != END_ELEMENT:
-                cur_node.parentNode.appendChild(cur_node)
+                parents[-1].appendChild(cur_node)
+            if token == START_ELEMENT:
+                parents.append(cur_node)
+            elif token == END_ELEMENT:
+                del parents[-1]
             event = self.getEvent()
 
     def getEvent(self):
@@ -214,26 +196,33 @@ class SAX2DOM(PullDOM):
 
     def startElementNS(self, name, tagName , attrs):
         PullDOM.startElementNS(self, name, tagName, attrs)
-        self.curNode.parentNode.appendChild(self.curNode)
+        curNode = self.elementStack[-1]
+        parentNode = self.elementStack[-2]
+        parentNode.appendChild(curNode)
 
     def startElement(self, name, attrs):
         PullDOM.startElement(self, name, attrs)
-        self.curNode.parentNode.appendChild(self.curNode)
+        curNode = self.elementStack[-1]
+        parentNode = self.elementStack[-2]
+        parentNode.appendChild(curNode)
 
     def processingInstruction(self, target, data):
         PullDOM.processingInstruction(self, target, data)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)
+        parentNode = self.elementStack[-1]
+        parentNode.appendChild(node)
 
     def ignorableWhitespace(self, chars):
         PullDOM.ignorableWhitespace(self, chars)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)
+        parentNode = self.elementStack[-1]
+        parentNode.appendChild(node)
 
     def characters(self, chars):
         PullDOM.characters(self, chars)
         node = self.lastEvent[0][1]
-        node.parentNode.appendChild(node)
+        parentNode = self.elementStack[-1]
+        parentNode.appendChild(node)
 
 
 default_bufsize = (2 ** 14) - 20
