@@ -76,7 +76,10 @@ class CallTips:
         return "" #so the event is handled normally.
 
     def get_object_at_cursor(self,
-                             wordchars="._" + string.uppercase + string.lowercase + string.digits):
+                             wordchars="._" + string.ascii_letters + string.digits):
+        # Usage of ascii_letters is necessary to avoid UnicodeErrors
+        # if chars contains non-ASCII.
+        
         # XXX - This needs to be moved to a better place
         # so the "." attribute lookup code can also use it.
         text = self.text
