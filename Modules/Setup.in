@@ -80,7 +80,7 @@ SITEPATH=
 TESTPATH=:test
 
 # Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:$(MACHDEP):sharedmodules
+MACHDEPPATH=:$(MACHDEP)
 
 COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
