@@ -507,13 +507,15 @@ current line."
      (if m
 	 (list (min p m) (max p m) arg)
        (list p m arg))))
-  (let ((pos (- (point-max) (point)))
-	(end (save-excursion
-	       (goto-char (or end (1+ start)))
-	       (and (not (bolp))
-		    (forward-line 1))
-	       (set-marker (make-marker) (point))))
-	col want indent)
+  (let* ((dir (= (point) start))
+	 (pos (if dir (point)
+		(- (point-max) (point))))
+	 (end (save-excursion
+		(goto-char (or end (1+ start)))
+		(and (not (bolp))
+		     (forward-line 1))
+		(set-marker (make-marker) (point))))
+	 col want indent)
     (goto-char start)
     (beginning-of-line)
     (unwind-protect
@@ -528,7 +530,8 @@ current line."
 		(indent-to (+ col want))))
 	  (forward-line 1))
       (set-marker end nil))
-    (goto-char (- (point-max) pos))
+    (goto-char (if dir pos
+		 (- (point-max) pos)))
     (py-keep-region-active)))
 
 (defun py-outdent-left (start end arg)
@@ -543,13 +546,15 @@ the current line."
      (if m
 	 (list (min p m) (max p m) arg)
        (list p m arg))))
-  (let ((pos (- (point-max) (point)))
-	(end (save-excursion
-	       (goto-char (or end (1+ start)))
-	       (and (not (bolp))
-		    (forward-line 1))
-	       (set-marker (make-marker) (point))))
-	col want)
+  (let* ((dir (= (point) start))
+	 (pos (if dir (point)
+		(- (point-max) (point))))
+	 (end (save-excursion
+		(goto-char (or end (1+ start)))
+		(and (not (bolp))
+		     (forward-line 1))
+		(set-marker (make-marker) (point))))
+	 col want)
     (goto-char start)
     (beginning-of-line)
     (unwind-protect
@@ -563,7 +568,8 @@ the current line."
 		(indent-to (- col want))))
 	  (forward-line 1))
       (set-marker end nil))
-    (goto-char (- (point-max) pos))
+    (goto-char (if dir pos
+		 (- (point-max) pos)))
     (py-keep-region-active)))
 
 
