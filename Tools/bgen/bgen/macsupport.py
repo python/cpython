@@ -32,11 +32,15 @@ ResType = OSTypeType("ResType")
 # Handles (always resources in our case)
 Handle = OpaqueByValueType("Handle", "ResObj")
 MenuHandle = OpaqueByValueType("MenuHandle", "MenuObj")
+MenuRef = MenuHandle
 ControlHandle = OpaqueByValueType("ControlHandle", "CtlObj")
+ControlRef = ControlHandle
 
 # Windows and Dialogs
 WindowPtr = OpaqueByValueType("WindowPtr", "WinObj")
+WindowRef = WindowPtr
 DialogPtr = OpaqueByValueType("DialogPtr", "DlgObj")
+DialogRef = DialogPtr
 ExistingWindowPtr = OpaqueByValueType("WindowPtr", "WinObj_WhichWindow", "BUG")
 ExistingDialogPtr = OpaqueByValueType("DialogPtr", "WinObj_WhichWindow", "BUG")
 
@@ -137,8 +141,8 @@ class MacModule(Module):
 
 _SetOutputFileName = SetOutputFileName # Save original
 def SetOutputFileName(file = None):
-	"Set the output file name and set its creator&type to KAHL&TEXT"
+	"Set the output file name and set its creator&type to MPCC&TEXT"
 	_SetOutputFileName(file)
 	if file:
 		import MacOS
-		MacOS.SetCreatorAndType(file, 'KAHL', 'TEXT')
+		MacOS.SetCreatorAndType(file, 'MPCC', 'TEXT')

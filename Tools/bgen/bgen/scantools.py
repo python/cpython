@@ -27,8 +27,10 @@ except ImportError:
 	MacOS = None
 
 # Default preferences
-CREATOR = 'KAHL'		# My favorite text editor on the Mac
-INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
+#CREATOR = 'KAHL'		# Guido's favorite text editor on the Mac
+#INCLUDEDIR = "D:Development:THINK C:Mac #includes:Apple #includes:"
+CREATOR = 'MPCC'		# Jack's favorite text editor on the Mac
+INCLUDEDIR = "Moes:CW5 GOLD Ä:Metrowerks C/C++ Ä:Headers Ä:Universal Headers 2.0a3 Ä:"
 
 
 Error = "scantools.Error"
@@ -203,9 +205,9 @@ class Scanner:
 		self.includepath = [':', INCLUDEDIR]
 
 	def initpatterns(self):
-		self.head_pat = "^pascal[ \t]+" # XXX Mac specific!
+		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
 		self.tail_pat = "[;={}]"
-		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_]+\)[ \t\n]+"
+		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
 		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
 		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat

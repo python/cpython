@@ -1,7 +1,7 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Controls.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Controls.h'
 
-f = Function(ControlHandle, 'NewControl',
-    (WindowPtr, 'theWindow', InMode),
+f = Function(ControlRef, 'NewControl',
+    (WindowRef, 'theWindow', InMode),
     (Rect_ptr, 'boundsRect', InMode),
     (ConstStr255Param, 'title', InMode),
     (Boolean, 'visible', InMode),
@@ -13,132 +13,132 @@ f = Function(ControlHandle, 'NewControl',
 )
 functions.append(f)
 
-f = Method(void, 'SetCTitle',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'SetControlTitle',
+    (ControlRef, 'theControl', InMode),
     (ConstStr255Param, 'title', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'GetCTitle',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'GetControlTitle',
+    (ControlRef, 'theControl', InMode),
     (Str255, 'title', InMode),
 )
 methods.append(f)
 
-f = Function(ControlHandle, 'GetNewControl',
+f = Function(ControlRef, 'GetNewControl',
     (short, 'controlID', InMode),
-    (WindowPtr, 'owner', InMode),
+    (WindowRef, 'owner', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'DisposeControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
 f = Function(void, 'KillControls',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'HideControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'ShowControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
 f = Function(void, 'DrawControls',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'Draw1Control',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'HiliteControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
     (short, 'hiliteState', InMode),
 )
 methods.append(f)
 
-f = Function(void, 'UpdtControl',
-    (WindowPtr, 'theWindow', InMode),
-    (RgnHandle, 'updateRgn', InMode),
-)
-functions.append(f)
-
 f = Function(void, 'UpdateControls',
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (RgnHandle, 'updateRgn', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'MoveControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
     (short, 'h', InMode),
     (short, 'v', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'SizeControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
     (short, 'w', InMode),
     (short, 'h', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'SetCtlValue',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'SetControlValue',
+    (ControlRef, 'theControl', InMode),
     (short, 'theValue', InMode),
 )
 methods.append(f)
 
-f = Method(short, 'GetCtlValue',
-    (ControlHandle, 'theControl', InMode),
+f = Method(short, 'GetControlValue',
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'SetCtlMin',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'SetControlMinimum',
+    (ControlRef, 'theControl', InMode),
     (short, 'minValue', InMode),
 )
 methods.append(f)
 
-f = Method(short, 'GetCtlMin',
-    (ControlHandle, 'theControl', InMode),
+f = Method(short, 'GetControlMinimum',
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'SetCtlMax',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'SetControlMaximum',
+    (ControlRef, 'theControl', InMode),
     (short, 'maxValue', InMode),
 )
 methods.append(f)
 
-f = Method(short, 'GetCtlMax',
-    (ControlHandle, 'theControl', InMode),
+f = Method(short, 'GetControlMaximum',
+    (ControlRef, 'theControl', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'SetCRefCon',
-    (ControlHandle, 'theControl', InMode),
+f = Method(void, 'SetControlReference',
+    (ControlRef, 'theControl', InMode),
     (long, 'data', InMode),
 )
 methods.append(f)
 
-f = Method(long, 'GetCRefCon',
-    (ControlHandle, 'theControl', InMode),
+f = Method(long, 'GetControlReference',
+    (ControlRef, 'theControl', InMode),
+)
+methods.append(f)
+
+f = Method(void, 'SetControlAction',
+    (ControlRef, 'theControl', InMode),
+    (FakeType('(ControlActionUPP)0'), 'actionProc', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'DragControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
     (Point, 'startPt', InMode),
     (Rect_ptr, 'limitRect', InMode),
     (Rect_ptr, 'slopRect', InMode),
@@ -147,27 +147,27 @@ f = Method(void, 'DragControl',
 methods.append(f)
 
 f = Method(short, 'TestControl',
-    (ControlHandle, 'theControl', InMode),
+    (ControlRef, 'theControl', InMode),
     (Point, 'thePt', InMode),
-)
-methods.append(f)
-
-f = Method(short, 'TrackControl',
-    (ControlHandle, 'theControl', InMode),
-    (Point, 'thePoint', InMode),
-    (FakeType('(ControlActionUPP)0'), 'actionProc', InMode),
 )
 methods.append(f)
 
 f = Function(short, 'FindControl',
     (Point, 'thePoint', InMode),
-    (WindowPtr, 'theWindow', InMode),
+    (WindowRef, 'theWindow', InMode),
     (ExistingControlHandle, 'theControl', OutMode),
 )
 functions.append(f)
 
-f = Method(short, 'GetCVariant',
-    (ControlHandle, 'theControl', InMode),
+f = Method(short, 'GetControlVariant',
+    (ControlRef, 'theControl', InMode),
+)
+methods.append(f)
+
+f = Method(short, 'TrackControl',
+    (ControlRef, 'theControl', InMode),
+    (Point, 'thePoint', InMode),
+    (FakeType('(ControlActionUPP)0'), 'actionProc', InMode),
 )
 methods.append(f)
 

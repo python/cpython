@@ -68,9 +68,9 @@ class FixedInputOutputBufferType(InputOnlyType):
 		       self.size)
 		Output("goto %s__error__;", name)
 		OutRbrace()
-		self.transferSize()
+		self.transferSize(name)
 	
-	def transferSize():
+	def transferSize(self, name):
 		Output("%s__len__ = %s__in_len__;", name, name)
 
 	def passOutput(self, name):
@@ -174,7 +174,7 @@ class StructInputOutputBufferType(FixedInputOutputBufferType):
 	def getargsArgs(self, name):
 		return "(char **)&%s__in__, &%s__in_len__" % (name, name)
 	
-	def transferSize(self):
+	def transferSize(self, name):
 		pass
 	
 	def passInput(self, name):

@@ -1,22 +1,22 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Dialogs.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Dialogs.h'
 
-f = Function(DialogPtr, 'NewDialog',
+f = Function(DialogRef, 'NewDialog',
     (NullStorage, 'wStorage', InMode),
     (Rect_ptr, 'boundsRect', InMode),
     (ConstStr255Param, 'title', InMode),
     (Boolean, 'visible', InMode),
     (short, 'procID', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
     (Boolean, 'goAwayFlag', InMode),
     (long, 'refCon', InMode),
     (Handle, 'itmLstHndl', InMode),
 )
 functions.append(f)
 
-f = Function(DialogPtr, 'GetNewDialog',
+f = Function(DialogRef, 'GetNewDialog',
     (short, 'dialogID', InMode),
     (NullStorage, 'dStorage', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
 )
 functions.append(f)
 
@@ -29,7 +29,7 @@ f = Function(void, 'ParamText',
 functions.append(f)
 
 f = Function(void, 'ModalDialog',
-    (ModalFilterProcPtr, 'filterProc', InMode),
+    (ModalFilterUPP, 'modalFilter', InMode),
     (short, 'itemHit', OutMode),
 )
 functions.append(f)
@@ -47,42 +47,42 @@ f = Function(Boolean, 'DialogSelect',
 functions.append(f)
 
 f = Method(void, 'DrawDialog',
-    (DialogPtr, 'theDialog', InMode),
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'UpdateDialog',
-    (DialogPtr, 'theDialog', InMode),
+    (DialogRef, 'theDialog', InMode),
     (RgnHandle, 'updateRgn', InMode),
 )
 methods.append(f)
 
 f = Function(short, 'Alert',
     (short, 'alertID', InMode),
-    (ModalFilterProcPtr, 'filterProc', InMode),
+    (ModalFilterUPP, 'modalFilter', InMode),
 )
 functions.append(f)
 
 f = Function(short, 'StopAlert',
     (short, 'alertID', InMode),
-    (ModalFilterProcPtr, 'filterProc', InMode),
+    (ModalFilterUPP, 'modalFilter', InMode),
 )
 functions.append(f)
 
 f = Function(short, 'NoteAlert',
     (short, 'alertID', InMode),
-    (ModalFilterProcPtr, 'filterProc', InMode),
+    (ModalFilterUPP, 'modalFilter', InMode),
 )
 functions.append(f)
 
 f = Function(short, 'CautionAlert',
     (short, 'alertID', InMode),
-    (ModalFilterProcPtr, 'filterProc', InMode),
+    (ModalFilterUPP, 'modalFilter', InMode),
 )
 functions.append(f)
 
-f = Method(void, 'GetDItem',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'GetDialogItem',
+    (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
     (short, 'itemType', OutMode),
     (Handle, 'item', OutMode),
@@ -90,8 +90,8 @@ f = Method(void, 'GetDItem',
 )
 methods.append(f)
 
-f = Method(void, 'SetDItem',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'SetDialogItem',
+    (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
     (short, 'itemType', InMode),
     (Handle, 'item', InMode),
@@ -99,101 +99,130 @@ f = Method(void, 'SetDItem',
 )
 methods.append(f)
 
-f = Method(void, 'HideDItem',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'HideDialogItem',
+    (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'ShowDItem',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'ShowDialogItem',
+    (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'SelIText',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'SelectDialogItemText',
+    (DialogRef, 'theDialog', InMode),
     (short, 'itemNo', InMode),
     (short, 'strtSel', InMode),
     (short, 'endSel', InMode),
 )
 methods.append(f)
 
-f = Function(void, 'GetIText',
+f = Function(void, 'GetDialogItemText',
     (Handle, 'item', InMode),
     (Str255, 'text', OutMode),
 )
 functions.append(f)
 
-f = Function(void, 'SetIText',
+f = Function(void, 'SetDialogItemText',
     (Handle, 'item', InMode),
     (ConstStr255Param, 'text', InMode),
 )
 functions.append(f)
 
-f = Method(short, 'FindDItem',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(short, 'FindDialogItem',
+    (DialogRef, 'theDialog', InMode),
     (Point, 'thePt', InMode),
 )
 methods.append(f)
 
-f = Function(DialogPtr, 'NewCDialog',
+f = Function(DialogRef, 'NewColorDialog',
     (NullStorage, 'dStorage', InMode),
     (Rect_ptr, 'boundsRect', InMode),
     (ConstStr255Param, 'title', InMode),
     (Boolean, 'visible', InMode),
     (short, 'procID', InMode),
-    (WindowPtr, 'behind', InMode),
+    (WindowRef, 'behind', InMode),
     (Boolean, 'goAwayFlag', InMode),
     (long, 'refCon', InMode),
     (Handle, 'items', InMode),
 )
 functions.append(f)
 
-f = Function(void, 'ResetAlrtStage',
+f = Function(short, 'GetAlertStage',
 )
 functions.append(f)
 
-f = Method(void, 'DlgCut',
-    (DialogPtr, 'theDialog', InMode),
+f = Function(void, 'ResetAlertStage',
+)
+functions.append(f)
+
+f = Method(void, 'DialogCut',
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'DlgPaste',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'DialogPaste',
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'DlgCopy',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'DialogCopy',
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
-f = Method(void, 'DlgDelete',
-    (DialogPtr, 'theDialog', InMode),
+f = Method(void, 'DialogDelete',
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
-f = Function(void, 'SetDAFont',
-    (short, 'fontNum', InMode),
+f = Function(void, 'SetDialogFont',
+    (short, 'value', InMode),
 )
 functions.append(f)
 
 f = Method(void, 'AppendDITL',
-    (DialogPtr, 'theDialog', InMode),
+    (DialogRef, 'theDialog', InMode),
     (Handle, 'theHandle', InMode),
     (DITLMethod, 'method', InMode),
 )
 methods.append(f)
 
 f = Method(short, 'CountDITL',
-    (DialogPtr, 'theDialog', InMode),
+    (DialogRef, 'theDialog', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'ShortenDITL',
-    (DialogPtr, 'theDialog', InMode),
+    (DialogRef, 'theDialog', InMode),
     (short, 'numberItems', InMode),
+)
+methods.append(f)
+
+f = Method(Boolean, 'StdFilterProc',
+    (DialogRef, 'theDialog', InMode),
+    (EventRecord, 'event', OutMode),
+    (short, 'itemHit', OutMode),
+)
+methods.append(f)
+
+f = Method(OSErr, 'SetDialogDefaultItem',
+    (DialogRef, 'theDialog', InMode),
+    (short, 'newItem', InMode),
+)
+methods.append(f)
+
+f = Method(OSErr, 'SetDialogCancelItem',
+    (DialogRef, 'theDialog', InMode),
+    (short, 'newItem', InMode),
+)
+methods.append(f)
+
+f = Method(OSErr, 'SetDialogTracksCursor',
+    (DialogRef, 'theDialog', InMode),
+    (Boolean, 'tracks', InMode),
 )
 methods.append(f)
 
