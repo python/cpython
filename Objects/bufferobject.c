@@ -97,7 +97,8 @@ _PyBuffer_FromObject(base, offset, size, proc, readonly)
 
 	if ( (*pb->bf_getsegcount)(base, NULL) != 1 )
 	{
-		PyErr_SetString(PyExc_TypeError, "single-segment buffer object expected");
+		PyErr_SetString(PyExc_TypeError,
+				"single-segment buffer object expected");
 		return NULL;
 	}
 	if ( (count = (*proc)(base, 0, &p)) < 0 )
@@ -135,7 +136,8 @@ PyBuffer_FromObject(base, offset, size)
 		return NULL;
 	}
 
-	return _PyBuffer_FromObject(base, offset, size, pb->bf_getreadbuffer, 1);
+	return _PyBuffer_FromObject(base, offset, size,
+				    pb->bf_getreadbuffer, 1);
 }
 
 PyObject *
@@ -154,7 +156,9 @@ PyBuffer_FromReadWriteObject(base, offset, size)
 		return NULL;
 	}
 
-	return _PyBuffer_FromObject(base, offset, size, (getreadbufferproc)pb->bf_getwritebuffer, 0);
+	return _PyBuffer_FromObject(base, offset, size,
+				    (getreadbufferproc)pb->bf_getwritebuffer,
+				    0);
 }
 
 PyObject *
@@ -322,7 +326,8 @@ buffer_concat(self, other)
 	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
 	{
 		/* ### use a different exception type/message? */
-		PyErr_SetString(PyExc_TypeError, "single-segment buffer object expected");
+		PyErr_SetString(PyExc_TypeError,
+				"single-segment buffer object expected");
 		return NULL;
 	}
 
@@ -416,7 +421,8 @@ buffer_slice(self, left, right)
 	}
 	if ( right < left )
 		right = left;
-	return PyString_FromStringAndSize((char *)self->b_ptr + left, right - left);
+	return PyString_FromStringAndSize((char *)self->b_ptr + left,
+					  right - left);
 }
 
 static int
@@ -452,7 +458,8 @@ buffer_ass_item(self, idx, other)
 	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
 	{
 		/* ### use a different exception type/message? */
-		PyErr_SetString(PyExc_TypeError, "single-segment buffer object expected");
+		PyErr_SetString(PyExc_TypeError,
+				"single-segment buffer object expected");
 		return -1;
 	}
 
@@ -497,7 +504,8 @@ buffer_ass_slice(self, left, right, other)
 	if ( (*pb->bf_getsegcount)(other, NULL) != 1 )
 	{
 		/* ### use a different exception type/message? */
-		PyErr_SetString(PyExc_TypeError, "single-segment buffer object expected");
+		PyErr_SetString(PyExc_TypeError,
+				"single-segment buffer object expected");
 		return -1;
 	}
 	if ( (count = (*pb->bf_getreadbuffer)(other, 0, &p)) < 0 )
@@ -514,8 +522,9 @@ buffer_ass_slice(self, left, right, other)
 	slice_len = right - left;
 
 	if ( count != slice_len ) {
-		PyErr_SetString(PyExc_TypeError,
-				"right operand length must match slice length");
+		PyErr_SetString(
+			PyExc_TypeError,
+			"right operand length must match slice length");
 		return -1;
 	}
 
