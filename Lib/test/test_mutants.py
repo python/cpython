@@ -60,7 +60,7 @@ def maybe_mutate():
         mutate = 0   # disable mutation until key inserted
         while 1:
             newkey = Horrid(random.randrange(100))
-            if newkey not in target:
+            if not target.has_key(newkey):
                 break
         target[newkey] = Horrid(random.randrange(100))
         keys.append(newkey)
