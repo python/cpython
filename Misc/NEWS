@@ -22,6 +22,10 @@ Library
   "anonymous@" as default password, rather than the real user and host
   name.
 
+- webbrowser: tightened up the command passed to os.system() so that
+  arbitrary shell code can't be executed because a bogus URL was
+  passed in.
+
 Tools/Demos
 
 Build
