@@ -26,7 +26,7 @@ from GNU regexp.
 
 #include "config.h" /* For Win* specific redefinition of printf c.s. */
 
-#include "myproto.h" /* For PROTO macro --Guido */
+#include "myproto.h" /* For Py_PROTO macro --Guido */
 
 #include <stdio.h>
 #include <assert.h>
@@ -152,7 +152,7 @@ static char re_syntax_table[256];
 
 #endif /* emacs */
 
-static void re_compile_initialize PROTO((void));
+static void re_compile_initialize Py_PROTO((void));
 static void re_compile_initialize()
 {
   int a;
@@ -262,7 +262,7 @@ int syntax;
   return ret;
 }
 
-static int hex_char_to_decimal PROTO((int));
+static int hex_char_to_decimal Py_PROTO((int));
 static int hex_char_to_decimal(ch)
 int ch;
 {
@@ -773,7 +773,7 @@ regexp_t bufp;
 #undef SET_FIELDS
 
 static void re_compile_fastmap_aux
-	PROTO((char *, int, char *, char *, char *));
+	Py_PROTO((char *, int, char *, char *, char *));
 static void re_compile_fastmap_aux(code, pos, visited, can_be_null, fastmap)
 char *code, *visited, *can_be_null, *fastmap;
 int pos;
@@ -870,7 +870,7 @@ int pos;
       }
 }
 
-static int re_do_compile_fastmap PROTO((char *, int, int, char *, char *));
+static int re_do_compile_fastmap Py_PROTO((char *, int, int, char *, char *));
 static int re_do_compile_fastmap(buffer, used, pos, can_be_null, fastmap)
 char *buffer, *fastmap, *can_be_null;
 int used, pos;
