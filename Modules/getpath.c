@@ -45,86 +45,86 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Search in some common locations for the associated Python libraries.
  *
  * Two directories must be found, the platform independent directory
- * (prefix), containing the common .py and .pyc files, and the
- * platform dependent directory (exec_prefix), containing the shared
- * library modules.  Note that prefix and exec_prefix can be the same
- * directory, but for some installations, they are different.
+ * (prefix), containing the common .py and .pyc files, and the platform
+ * dependent directory (exec_prefix), containing the shared library
+ * modules.  Note that prefix and exec_prefix can be the same directory,
+ * but for some installations, they are different.
  *
- * Py_GetPath() carries out separate searches for prefix and
- * exec_prefix.  Each search tries a number of different locations
- * until a ``landmark'' file or directory is found.  If no prefix or
- * exec_prefix is found, a warning message is issued and the
- * preprocessor defines PREFIX and EXEC_PREFIX are used (even though
- * they will not work); python carries on as best as is possible, but
- * most imports will fail.
+ * Py_GetPath() carries out separate searches for prefix and exec_prefix.
+ * Each search tries a number of different locations until a ``landmark''
+ * file or directory is found.  If no prefix or exec_prefix is found, a
+ * warning message is issued and the preprocessor defined PREFIX and
+ * EXEC_PREFIX are used (even though they will not work); python carries on
+ * as best as is possible, but most imports will fail.
  *
  * Before any searches are done, the location of the executable is
- * determined.  If argv[0] has a slash in it (or more), this is it;
- * otherwise, it must have been invoked from the shell's path, so we
- * search $PATH for the named executable and use that.  If the
- * executable was not found on $PATH (or there was no $PATH
- * environment variable), the original argv[0] string is used.
+ * determined.  If argv[0] has one or more slashs in it, it is used
+ * unchanged.  Otherwise, it must have been invoked from the shell's path,
+ * so we search $PATH for the named executable and use that.  If the
+ * executable was not found on $PATH (or there was no $PATH environment
+ * variable), the original argv[0] string is used.
  *
- * Next, either the executable location is examined to see if it is a
- * symbolic link.  If so, the link is chased (correctly interpreting a
- * relative pathname if one is found) and the directory of the link
- * target is used as instead.
+ * Next, the executable location is examined to see if it is a symbolic
+ * link.  If so, the link is chased (correctly interpreting a relative
+ * pathname if one is found) and the directory of the link target is used.
  *
- * Finally, argv0_path is set to the directory containing the
- * executable (i.e. the last component is stripped).
+ * Finally, argv0_path is set to the directory containing the executable
+ * (i.e. the last component is stripped).
  *
- * With argv0_path in hand, we perform a number of steps.  The same
- * steps are performed for prefix and for exec_prefix, but with a
- * different landmark.
+ * With argv0_path in hand, we perform a number of steps.  The same steps
+ * are performed for prefix and for exec_prefix, but with a different
+ * landmark.
  *
  * Step 1. Are we running python out of the build directory?  This is
  * checked by looking for a different kind of landmark relative to
- * argv0_path.  For prefix, the landmark's path is derived from the
- * VPATH preprocessor variable (taking into account that its value is
- * almost, but not quite, what we need).  If the landmark is found,
- * we're done.
+ * argv0_path.  For prefix, the landmark's path is derived from the VPATH
+ * preprocessor variable (taking into account that its value is almost, but
+ * not quite, what we need).  For exec_prefix, the landmark is
+ * Modules/Setup.  If the landmark is found, we're done.
  *
  * For the remaining steps, the prefix landmark will always be
  * lib/python$VERSION/string.py and the exec_prefix will always be
- * lib/python$VERSION/sharedmodules, where $VERSION is Python's
- * version number as supplied by the Makefile.  Note that this means
- * that no more build directory checking is performed; if the first
- * two steps did not find the landmarks, the assumption is that python
- * is running from an installed setup.
+ * lib/python$VERSION/sharedmodules, where $VERSION is Python's version
+ * number as supplied by the Makefile.  Note that this means that no more
+ * build directory checking is performed; if the first step did not find
+ * the landmarks, the assumption is that python is running from an
+ * installed setup.
  *
  * Step 2. See if the $PYTHONHOME environment variable points to the
- * installed location of the Python libraries.  If $PYTHONHOME is set,
- * then it points to prefix and exec_prefix.  $PYTHONHOME can be a
- * single directory, which is used for both, or the prefix and
- * exec_prefix directories separated by a colon.
+ * installed location of the Python libraries.  If $PYTHONHOME is set, then
+ * it points to prefix and exec_prefix.  $PYTHONHOME can be a single
+ * directory, which is used for both, or the prefix and exec_prefix
+ * directories separated by a colon.
  *
  * Step 3. Try to find prefix and exec_prefix relative to argv0_path,
- * backtracking up the path until it is exhausted.  This is the most
- * common step to succeed.  Note that if prefix and exec_prefix are
- * different, exec_prefix is more likely to be found; however if
- * exec_prefix is a subdirectory of prefix, both will be found.
+ * backtracking up the path until it is exhausted.  This is the most common
+ * step to succeed.  Note that if prefix and exec_prefix are different,
+ * exec_prefix is more likely to be found; however if exec_prefix is a
+ * subdirectory of prefix, both will be found.
  *
- * Step 4. Search the directories pointed to by the preprocessor
- * variables PREFIX and EXEC_PREFIX.  These are supplied by the
- * Makefile but can be passed in as options to the configure script.
+ * Step 4. Search the directories pointed to by the preprocessor variables
+ * PREFIX and EXEC_PREFIX.  These are supplied by the Makefile but can be
+ * passed in as options to the configure script.
  *
- * Step 5. Search some `standard' directories, namely: /usr/local,
- * /usr, then finally /.
+ * Step 5. Search some `standard' directories, namely: /usr/local, /usr,
+ * then finally /.
  *
- * That's it!  Well, almost.  Once we have determined prefix and
- * exec_prefix, the preprocesor variable PYTHONPATH is used to
- * construct a path.  Each relative path on PYTHONPATH is prefixed
- * with prefix.  Then the directory containing the shared library
- * modules is appended.  The environment variable $PYTHONPATH is
- * inserted in front of it all.  Finally, the prefix and exec_prefix
- * globals are tweaked so the reflect the values expected by other
- * code, by stripping the "lib/python$VERSION/..." stuff off.  If
- * either points to the build directory, the globals are reset to the
- * corresponding preprocessor variables (so sys.prefix will reflect
- * the installation location, even though sys.path points into the
- * build directory).  This seems to make more sense given that
- * currently the only known use of sys.prefix and sys.exec_prefix is
- * for the ILU installation process to find the installed Python tree.  */
+ * That's it!
+ *
+ * Well, almost.  Once we have determined prefix and exec_prefix, the
+ * preprocesor variable PYTHONPATH is used to construct a path.  Each
+ * relative path on PYTHONPATH is prefixed with prefix.  Then the directory
+ * containing the shared library modules is appended.  The environment
+ * variable $PYTHONPATH is inserted in front of it all.  Finally, the
+ * prefix and exec_prefix globals are tweaked so they reflect the values
+ * expected by other code, by stripping the "lib/python$VERSION/..." stuff
+ * off.  If either points to the build directory, the globals are reset to
+ * the corresponding preprocessor variables (so sys.prefix will reflect the
+ * installation location, even though sys.path points into the build
+ * directory).  This seems to make more sense given that currently the only
+ * known use of sys.prefix and sys.exec_prefix is for the ILU installation
+ * process to find the installed Python tree.
+ */
 
 #ifndef VERSION
 #define VERSION "1.5"
@@ -198,43 +198,6 @@ join(buffer, stuff)
 		k = MAXPATHLEN - n;
 	strncpy(buffer+n, stuff, k);
 	buffer[n+k] = '\0';
-}
-
-
-/* Make sure path ends in a slash.
- * Assume path is MAXPATHLEN+1 sized buffer.
- */
-static void
-string_addsep(path)
-	char *path;
-{
-	int len = strlen(path);
-
-	if (path[len-1] != SEP) {
-		path[len] = SEP;
-		if (len < MAXPATHLEN)
-			len++;
-		path[len] = '\0';
-	}
-}
-
-
-/* Append a source string onto the destination string, watching for
- * buffer overruns.  Assumes dest is MAXPATHLEN+1 sized buffer.
- */
-static void
-string_append(dest, source)
-	char *dest;
-	char *source;
-{
-	int dlen = strlen(dest);
-	int slen = strlen(source);
-	int len = dlen + slen;
-
-	strncat(dest, source, MAXPATHLEN - dlen);
-	if (len < MAXPATHLEN)
-		len++;
-	dest[len] = '\0';
 }
 
 
