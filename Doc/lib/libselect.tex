@@ -6,7 +6,13 @@
 
 
 This module provides access to the function \cfunction{select()}
-available in most \UNIX{} versions.  It defines the following:
+available in most operating systems.  Note that on Windows, it only
+works for sockets; on other operating systems, it also works for other
+file types (in particular, on \UNIX{}, it works on pipes).  It cannot
+be used or regular files to determine whether a file has grown since
+it was last read.
+
+The module defines the following:
 
 \begin{excdesc}{error}
 The exception raised when an error occurs.  The accompanying value is
