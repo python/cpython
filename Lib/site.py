@@ -92,6 +92,8 @@ del dir, dircase, L
 
 # Append ./build/lib.<platform> in case we're running in the build dir
 # (especially for Guido :-)
+# XXX This should not be part of site.py, since it is needed even when
+# using the -S option for Python.  See http://www.python.org/sf/586680
 if os.name == "posix" and os.path.basename(sys.path[-1]) == "Modules":
     from distutils.util import get_platform
     s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
