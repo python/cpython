@@ -72,10 +72,13 @@ def main(tests=None, testdir=None):
         # Strip trailing ".py" from arguments
         if args[i][-3:] == '.py':
             args[i] = args[i][:-3]
-    stdtests = STDTESTS
-    nottests = NOTTESTS
+    stdtests = STDTESTS[:]
+    nottests = NOTTESTS[:]
     if exclude:
-        nottests = args
+        for arg in args:
+            if arg in stdtests:
+                stdtests.remove(arg)
+        nottests[:0] = args
         args = []
     tests = tests or args or findtests(testdir, stdtests, nottests)
     test_support.verbose = verbose      # Tell tests to be moderately quiet
