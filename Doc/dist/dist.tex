@@ -1,5 +1,6 @@
 \documentclass{howto}
 \usepackage{ltxmarkup}
+\usepackage{times}
 \usepackage{distutils}
 
 \title{Distributing Python Modules}
@@ -13,6 +14,8 @@
 
 \begin{document}
 
+\maketitle
+\tableofcontents
 
 \section{Introduction}
 \label{sec:intro}
@@ -37,7 +40,7 @@ you're looking for information on installing Python modules, you should
 refer to the ``Installing Python Modules'' manual.
 
 
-\section{Concepts & Terminology}
+\section{Concepts \& Terminology}
 \label{sec:concepts}
 
 Using the Distutils is quite simple, both for module developers and for
@@ -80,7 +83,7 @@ setup (name = "foo",
 Some observations:
 \begin{itemize}
 \item all information that you supply to the Distutils is supplied as
-  keyword arguments to the \func{setup()} function
+  keyword arguments to the \function{setup()} function
 \item those keyword arguments fall into two categories: package
   meta-data (name, version number) and information about what's in the
   package (list of pure modules, in this case)
@@ -130,7 +133,7 @@ it's available from \url{http://foo/bar/baz}.  For example:
 \begin{verbatim}
 python setup.py bdist_wise
 \end{verbatim}
-will create an executable installer, \file{Foo-1_0.exe}, in the current
+will create an executable installer, \file{Foo-1\_0.exe}, in the current
 directory.
 
 \XXX{not implemented yet}
@@ -199,9 +202,9 @@ distributing, and installing modules using the Distutils.  The main
 purpose of the setup script is to describe your module distribution to
 the Distutils, so that the various commands that operate on your modules 
 do the right thing.  As we saw in section~\ref{sec:simple-example}
-above, the setup script consists mainly of a call to \func{setup()}, and 
+above, the setup script consists mainly of a call to \function{setup()}, and 
 all information supplied to the Distutils is suppled as keyword
-arguments to \func{setup()}.
+arguments to \function{setup()}.
 
 Here's a slightly more involved example, which we'll follow for the next
 couple of sections: the Distutils' own setup script.  (Keep in mind that
@@ -276,8 +279,8 @@ Note that a \code{\var{package}: \var{dir}} entry in the
 \option{package\_dir} option implicitly applies to all packages below
 \var{package}, so the \package{foo.bar} case is automatically handled
 here.  In this example, having \code{packages = ['foo', 'foo.bar']}
-tells the Distutils to look for \file{lib/__init__.py} and
-\file{lib/bar/__init__.py}.
+tells the Distutils to look for \file{lib/\_\_init\_\_.py} and
+\file{lib/bar/\_\_init\_\_.py}.
 
 
 \subsection{Listing individual modules}
@@ -294,7 +297,7 @@ py_modules = ['mod1', 'pkg.mod2']
 This describes two modules, one of them in the ``root'' package, the
 other in the \package{pkg} package.  Again, the default
 package/directory layout implies that these two modules can be found in
-\file{mod1.py} and \file{pkg/mod2.py}, and that \file{pkg/__init__.py}
+\file{mod1.py} and \file{pkg/mod2.py}, and that \file{pkg/\_\_init\_\_.py}
 exists as well.  And again, you can override the package/directory
 layout using the \option{package\_dir} option.  \XXX{not sure if this is
   actually true---must check!}
@@ -364,11 +367,11 @@ to create a gzipped tarball and a zip file.  The available formats are:
 Without any additional information, the \command{sdist} command puts a
 minimal set of files into the source distribution:
 \begin{itemize}
-\item all Python source files implied by the \option{py_modules} and
+\item all Python source files implied by the \option{py\_modules} and
   \option{packages} options
-\item all C source files mentioned in the \option{ext_modules} or
+\item all C source files mentioned in the \option{ext\_modules} or
   \option{libraries} options (\XXX{getting C library sources currently
-    broken -- no get_source_files() method in build_clib.py!})
+    broken -- no get\_source\_files() method in build\_clib.py!})
 \item anything that looks like a test script: \file{test/test*.py}
   (currently, the Distutils don't do anything with test scripts except
   include them in source distributions, but in the future there will be
@@ -428,7 +431,7 @@ files to include in the Distutils source distribution:
   previous two steps, so it's important that the \code{prune} command in
   the manifest template comes after the two \code{recursive-include}
   commands
-\end{itemize}
+\end{enumerate}
 
 
 \subsection{Manifest-related options}
@@ -500,31 +503,31 @@ patterns in it), then your source distribution will be empty.
 \label{sec:ref}
 
 
-\subsection{Building modules: the \command{build} command family}
+\subsection{Building modules: the \protect\command{build} command family}
 \label{sec:build-cmds}
 
-\subsubsection{\command{build}}
+\subsubsection{\protect\command{build}}
 \label{sec:build-cmd}
 
-\subsubsection{\command{build\_py}}
+\subsubsection{\protect\command{build\_py}}
 \label{sec:build-py-cmd}
 
-\subsubsection{\command{build\_ext}}
+\subsubsection{\protect\command{build\_ext}}
 \label{sec:build-ext-cmd}
 
-\subsubsection{\command{build\_clib}}
+\subsubsection{\protect\command{build\_clib}}
 \label{sec:build-clib-cmd}
 
 
-\subsection{Installing modules: the \command{install} command family}
+\subsection{Installing modules: the \protect\command{install} command family}
 \label{sec:install-cmd}
 
 
-\subsection{Cleaning up: the \command{clean} command}
+\subsection{Cleaning up: the \protect\command{clean} command}
 \label{sec:clean-cmd}
 
 
-\subsection{Creating a source distribution: the \command{sdist} command}
+\subsection{Creating a source distribution: the \protect\command{sdist} command}
 \label{sec:sdist-cmd}
 
 
@@ -548,24 +551,24 @@ The patterns here are Unix-style ``glob'' patterns: \code{*} matches any
 sequence of regular filename characters, \code{?} matches any single
 regular filename character, and \code{[\var{range}]} matches any of the
 characters in \var{range} (e.g., \code{a-z}, \code{a-zA-Z},
-\code{a-f0-9_.}).  The definition of ``regular filename character'' is
+\code{a-f0-9\_.}).  The definition of ``regular filename character'' is
 platform-specific: on Unix it is anything except slash; on Windows
 anything except backslash or colon; on Mac OS anything except colon.
 \XXX{Windows and Mac OS support not there yet}
 
 
-\subsection{Creating a ``built'' distribution: the \command{bdist} command
+\subsection{Creating a ``built'' distribution: the \protect\command{bdist} command
   family}
 \label{sec:bdist-cmds}
 
 
-\subsubsection{\command{blib}}
+\subsubsection{\protect\command{blib}}
 
-\subsubsection{\command{blib\_dumb}}
+\subsubsection{\protect\command{blib\_dumb}}
 
-\subsubsection{\command{blib\_rpm}}
+\subsubsection{\protect\command{blib\_rpm}}
 
-\subsubsection{\command{blib\_wise}}
+\subsubsection{\protect\command{blib\_wise}}
 
 
 
