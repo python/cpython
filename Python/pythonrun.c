@@ -1035,7 +1035,7 @@ Py_FatalError(msg)
 int _PyThread_Started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
-/* NEXITFUNCS is defined in pystate.h */
+#define NEXITFUNCS 32
 static void (*exitfuncs[NEXITFUNCS])();
 static int nexitfuncs = 0;
 
