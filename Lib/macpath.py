@@ -8,7 +8,7 @@ __all__ = ["normcase","isabs","join","splitdrive","split","splitext",
            "getatime","getctime", "islink","exists","isdir","isfile",
            "walk","expanduser","expandvars","normpath","abspath",
            "curdir","pardir","sep","pathsep","defpath","altsep","extsep",
-           "realpath","supports_unicode_filenames"]
+           "devnull","realpath","supports_unicode_filenames"]
 
 # strings representing various path-related bits and pieces
 curdir = ':'
@@ -18,6 +18,7 @@ sep = ':'
 pathsep = '\n'
 defpath = ':'
 altsep = None
+devnull = 'Dev:Null'
 
 # Normalize the case of a pathname.  Dummy in Posix, but <s>.lower() here.
 

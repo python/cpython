@@ -334,6 +334,14 @@ class MakedirTests (unittest.TestCase):
 
         os.removedirs(path)
 
+class DevNullTests (unittest.TestCase):
+    def test_devnull(self):
+        f = file(os.devnull, 'w')
+        f.write('hello')
+        f.close()
+        f = file(os.devnull, 'r')
+        assert f.read() == ''
+        f.close()
 
 def test_main():
     test_support.run_unittest(
@@ -342,6 +350,7 @@ def test_main():
         EnvironTests,
         WalkTests,
         MakedirTests,
+        DevNullTests,
     )
 
 if __name__ == "__main__":
