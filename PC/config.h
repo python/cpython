@@ -31,7 +31,7 @@ compiler specific".  Therefore, these should be very rare.
    compiler don't exhibit this bug.
 */
 #if (__GNUC__==2) && (__GNUC_MINOR__<=91)
-#error "Please use an up-to-date version of gcc"
+#warning "Please use an up-to-date version of gcc! (>2.91 recommended)"
 #endif
 
 /*
