@@ -6,9 +6,6 @@ MimeWriter - the only thing here.
 
 """
 
-__version__ = '$Revision$'
-# $Source$
-
 
 import string
 import mimetools
