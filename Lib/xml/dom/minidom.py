@@ -218,6 +218,13 @@ class Node(_Node):
                 clone.appendChild(child.cloneNode(1))
         return clone
 
+    # DOM Level 3 (Working Draft 2001-Jan-26)
+
+    def isSameNode(self, other):
+        return self is other
+
+    # minidom-specific API:
+
     def unlink(self):
         self.parentNode = None
         for child in self.childNodes:
