@@ -16,7 +16,7 @@
 #include <setjmp.h>
 #include <stdio.h>
 
-void	*__local_destructor_chain;	/*	chain of local objects that need destruction	*/
+/* void	*__local_destructor_chain;	/*	chain of local objects that need destruction	*/
 
 	/*	public data		*/
 
@@ -38,7 +38,7 @@ static FSSpec library_fss;
 ** loaded. We always return noErr (we just continue without the resources).
 */
 OSErr pascal
-__sinit(InitBlockPtr data)
+PythonCore_init(InitBlockPtr data)
 {
 	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kOnDiskFlat ) {
