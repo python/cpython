@@ -75,7 +75,7 @@ Ideally, you should be able to use it as follows:
 
 where hello.py is your program and freeze.py is the main file of
 Freeze (in actuality, you'll probably specify an absolute pathname
-such as /ufs/guido/src/python/Demo/freeze/freeze.py).
+such as /ufs/guido/src/python/Tools/freeze/freeze.py).
 
 Unfortunately, this doesn't work.  Well, it might, but somehow it's
 extremely unlikely that it'll work on the first try.  (If it does,
@@ -107,7 +107,7 @@ How do I configure Freeze?
 
 It's a good idea to change the line marked with XXX in freeze.py (an
 assignment to variable PACK) to point to the absolute pathname of the
-directory where Freeze lives (Demo/freeze in the Python source tree.)
+directory where Freeze lives (Tools/freeze in the Python source tree.)
 This makes it possible to call Freeze from other directories.
 
 You can also edit the assignment to variable PREFIX -- this saves a
