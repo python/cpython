@@ -33,7 +33,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 
 	// Calculate the size for the sprintf buffer.
 	// Get the size of the chars only, plus 1 NULL.
-	int bufSize = sizeof(keyPrefix)-1 + strlen(PyWin_DLLVersionString) + sizeof(keySuffix) + strlen(moduleName) + sizeof(debugString) - 1;
+	size_t bufSize = sizeof(keyPrefix)-1 + strlen(PyWin_DLLVersionString) + sizeof(keySuffix) + strlen(moduleName) + sizeof(debugString) - 1;
 	// alloca == no free required, but memory only local to fn, also no heap fragmentation!
 	moduleKey = alloca(bufSize); 
 	sprintf(moduleKey, "Software\\Python\\PythonCore\\%s\\Modules\\%s%s", PyWin_DLLVersionString, moduleName, debugString);
@@ -44,7 +44,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 		return NULL;
 	// use the file extension to locate the type entry.
 	for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
-		int extLen=strlen(fdp->suffix);
+		size_t extLen = strlen(fdp->suffix);
 		if (modNameSize>extLen && strnicmp(pathBuf+(modNameSize-extLen-1),fdp->suffix,extLen)==0)
 			break;
 	}
