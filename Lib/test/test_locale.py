@@ -36,7 +36,7 @@ try:
     testformat("%f", -42, grouping=1, output='-42.000000')
     testformat("%+f", -42, grouping=1, output='-42.000000')
     testformat("%20.f", -42, grouping=1, output='                 -42')
-    testformat("%+10.f", -4200, grouping=1, output='    -4,200')    
-    testformat("%-10.f", 4200, grouping=1, output='4,200     ')    
+    testformat("%+10.f", -4200, grouping=1, output='    -4,200')
+    testformat("%-10.f", 4200, grouping=1, output='4,200     ')
 finally:
     locale.setlocale(locale.LC_NUMERIC, oldlocale)
