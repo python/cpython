@@ -179,7 +179,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 			/* skip the 'l' in %ld, since it doesn't change the
 			   width.  although only %d is supported (see
 			   "expand" section below), others can be easily
-			   add */
+			   added */
 			if (*f == 'l' && *(f+1) == 'd')
 				++f;
 			
@@ -192,8 +192,9 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				break;
 			case 'd': case 'i': case 'x':
 				(void) va_arg(count, int);
-				/* 20 bytes should be enough to hold a 64-bit
-				   integer */
+				/* 20 bytes is enough to hold a 64-bit
+				   integer.  Decimal takes the most space.
+				   This isn't enough for octal. */
 				n += 20;
 				break;
 			case 's':
@@ -205,6 +206,7 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				/* maximum 64-bit pointer representation:
 				 * 0xffffffffffffffff
 				 * so 19 characters is enough.
+				 * XXX I count 18 -- what's the extra for?
 				 */
 				n += 19;
 				break;
@@ -223,6 +225,8 @@ PyString_FromFormatV(const char *format, va_list vargs)
 	}
  expand:
 	/* step 2: fill the buffer */
+	/* Since we've analyzed how much space we need for the worst case,
+	   use sprintf directly instead of the slower PyOS_snprintf. */
 	string = PyString_FromStringAndSize(NULL, n);
 	if (!string)
 		return NULL;
@@ -640,9 +644,12 @@ string_repr(register PyStringObject *op)
 		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
 			quote = '"';
 
-		p = ((PyStringObject *)v)->ob_sval;
+		p = PyString_AS_STRING(v);
 		*p++ = quote;
 		for (i = 0; i < op->ob_size; i++) {
+			/* There's at least enough room for a hex escape
+			   and a closing quote. */
+			assert(newsize - (p - PyString_AS_STRING(v)) >= 5);
 			c = op->ob_sval[i];
 			if (c == quote || c == '\\')
 				*p++ = '\\', *p++ = c;
@@ -653,16 +660,20 @@ string_repr(register PyStringObject *op)
 			else if (c == '\r')
 				*p++ = '\\', *p++ = 'r';
 			else if (c < ' ' || c >= 0x7f) {
+				/* For performance, we don't want to call
+				   PyOS_snprintf here (extra layers of
+				   function call). */
 				sprintf(p, "\\x%02x", c & 0xff);
                                 p += 4;
 			}
 			else
 				*p++ = c;
 		}
+		assert(newsize - (p - PyString_AS_STRING(v)) >= 1);
 		*p++ = quote;
 		*p = '\0';
 		_PyString_Resize(
-			&v, (int) (p - ((PyStringObject *)v)->ob_sval));
+			&v, (int) (p - PyString_AS_STRING(v)));
 		return v;
 	}
 }
