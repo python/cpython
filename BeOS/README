@@ -1,19 +1,12 @@
-Python 1.5.1 for BeOS
+Python 1.5.x (x > 1) for BeOS
 
 This directory contains several useful things to help you build your own
 version of Python for BeOS.
 
-At this time, Python only supports BeOS on the PowerPC platform; if you'd
-like to help me port it to the x86 platform, please let me know (I only
-have limited access to BeOS on an x86 system).  If you'd like to lend
-me an x86 laptop running BeOS to do the port, _definitely_ let me know! :-)
-I'll even give it back when I'm done.
-
 What's Here?
 
-ar-1.1 - An "ar" command with a POSIX 1003.2 interface; you'll need
-         this for building the Python libraries under BeOS
-         (/bin/ar just won't cut it).
+ar-fake - A shell script used by the build process to emulate a "real"
+          POSIX ar command; helps to build the Python shared library.
 
 linkcc - A shell script used by the build process to build the Python
          shared library.
@@ -41,100 +34,59 @@ README.readline-2.2 - Instructions for compiling/installing GNU readline 2.2.
 
 Compiling Your Own Version
 
-To compile your own version of Python 1.5.1 for BeOS (with any luck,
-Python 1.6 will compile "out of the box" on BeOS), try this:
+To compile your own version of Python 1.5.x for BeOS (with any luck,
+Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
-1) Get the Python 1.5.1 source code from ftp.python.org.
+1) Get the latest Python source code from ftp.python.org.
 
-2) Get the Python 1.5.1 diffs from my web pages 
-   (http://www.qnx.com/~chrish/Be/software/); if you can't get them through
-   a web browser, send me email and I'll mail them back to you.  These
-   diffs should also be available at ftp.python.org along with the BeOS
-   binary archive.
-   
-   Run autoconf.  If you don't have autoconf, you can get a precompiled
-   version from GeekGadgets (ftp://ftp.ninemoons.com/pub/geekgadgets/...).
+2) Configure with:
 
-3) Compile and install the POSIX ar from the ar-1.1 directory; see the
-   README in there for details.
-
-4) Configure with:
-
-   AR=ar-posix RANLIB=: ./configure --verbose --without-gcc \
+   AR=$(pwd)/BeOS/ar-fake RANLIB=: ./configure --verbose --without-gcc \
    --prefix=/boot/home/config --with-thread
    
-   The only strange thing that happens during the configure is that
-   we fail the "genuine getopt()" test; this is odd because we've got
-   a real live GNU getopt() in the system libs.  Other packages built
-   using configure (such as all of the goodies in GeekGadgets) suffer
-   the same fate though, so it's not a Python problem.
+3) Copy Modules/Setup.in to Modules/Setup.
 
-5) Copy Modules/Setup.in to Modules/Setup.
+4) Edit Modules/Setup to turn on all the modules you want built.
 
-6) Edit Modules/Setup to turn on all the modules you want built.  I've
-   personally built the following modules:
-
-   array, audioop, binascii, cPickle, cStringIO, cmath, crypt, curses,
-   errno, fcntl, gdbm, grp, imageop, math, md5, new, operator, parser,
-   pcre, posix, pwd, readline, regex, reop, rgbimg, rotor, select,
-   signal, socket, soundex, strop, struct, syslog, termios, thread,
-   time, timing, zlib
-
-   Newly compiled/tested with 1.5.1:
-   
-   _locale
-
-   You can get precompiled gdbm, ncurses, and zlib libraries from the
-   GeekGadgets repository (ftp://ftp.ninemoons.com/pub/geekgadgets/...).
-   
    Make sure you use _socket instead of socket for the name of the
    socketmodule on BeOS.
 
-7) Make:
+   If you want the modules to be built as shared libraries, instead of as
+   part of the Python shared library, be sure to uncomment the #*shared*
+   line.
 
-   make
-   
-   or, if you feel the need for speed:
-   
-   make OPT="-O7 -opt schedule604"
-   
-   You can safely ignore any warnings you see during the build (and you'll
-   see several if you use full warnings; I compiled the distribution with
-   -w9 -ansi strict and cleaned up any errors...).
+5) Make sure Modules/Makefile.pre has REALLIBRARY set to:
 
-8) Test:
+   REALLIBRARY=../libpython$(VERSION).so
 
-   make test
+6) Make:
+
+   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
+   CCSHARED=-UUSE_DL_EXPORT
+   
+7) Test:
+
+   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
+   CCSHARED=-UUSE_DL_EXPORT test
 
    Expect the following errors:
 
-   test_builtin failed -- round(1000000000.0)
-   test_fcntl skipped -- an optional feature could not be imported
    test_grp crashed -- exceptions.KeyError : getgrnam(): name not found
    test_pwd failed -- Writing: 'fakename', expected: 'caught e'
    test_socket crashed -- exceptions.AttributeError : SOCK_RAW
 
    These are all due to either partial support for certain things (like
-   sockets), or valid differences between systems (like the round()
-   error; different CPUs represent floating point numbers differently,
-   which can cause minor rounding errors).
+   sockets), or valid differences between systems.
 
-9) Install:
+   NOTE: On R4/x86, the pause() function is broken; expect the signal
+         module test to crash Python!
 
-   make install
+8) Install:
 
-10) Enjoy!
+   make AR=$(pwd)/BeOS/ar-fake RANLIB=: OPT=-DUSE_DL_EXPORT \
+   CCSHARED=-UUSE_DL_EXPORT install
 
-NOTE
-
-If you're going to build your own C/C++-based Python modules, link them
-against the libpython1.5.so shared library (in /boot/home/config/lib)
-instead of the libpython1.5.a (in /boot/home/config/lib/python1.5/config),
-unless you're building a statically-linked python interpreter (then you
-could try linking against _APP_ instead).
-
-Mixing modules linked against the shared library with a statically-linked
-interpreter is a bad idea (and it'll fail in _interesting_ ways).
+9) Enjoy!
 
 - Chris Herborth (chrish@qnx.com)
-  April 25, 1998
+  December 17, 1998

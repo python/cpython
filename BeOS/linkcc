@@ -24,23 +24,20 @@
 # For BeOS we should set $(LINKCC) to this in configure (similar to the
 # AIX situation):
 #
-# $(srcdir)../BeOS/linkcc $(LIBRARY) $(PURIFY) $(CC) -nodup $(OPT)
+# $(srcdir)../BeOS/linkcc $(LIBRARY) $(PURIFY) $(CC) $(OPT)
 #
 # -L.. -lpython$(VERSION) will automagically pick up the shared library.
-
-# Check to make sure we know what we're doing.
-system="`uname -m`"
-if [ "$system" != "BeMac" ] && [ "$system" != "BeBox" ] ; then
-	echo "Sorry, BeOS Python doesn't support x86 yet."
-	exit 1
-fi
+#
+# As of Python 1.5.2, this isn't strictly necessary, but it makes me
+# feel safer.  It makes sure we've got all the BeOS-specific libraries,
+# and it creates the "lib" symlink that we'll need for chance of running
+# "make test" successfully.
 
 LIBRARY="$1"; shift
 
 # What we want to end up with.
-EXPORTS=${LIBRARY%.a}.exp
 DYNAMIC=${LIBRARY%.a}.so
-LINK_DYNAMIC="-l`echo ${DYNAMIC%.so} | sed -e s,\\\.\\\./,, -e s,lib,,`"
+LINK_DYNAMIC="-l$(basename ${DYNAMIC%.so} | sed -e s,lib,,)"
 
 # Grab the rest of the args and build them into the command used to
 # link the python binary.  Make sure we link against the shared lib
@@ -52,6 +49,7 @@ while [ "$#" != "0" ] ; do
 			LINK_CMD="$LINK_CMD -L.. $LINK_DYNAMIC"
 			shift
 			;;
+
 		*)
 			LINK_CMD="$LINK_CMD $1"
 			shift
@@ -59,42 +57,12 @@ while [ "$#" != "0" ] ; do
 	esac
 done
 
-# The shared libraries and glue objects we need to link against.
+# The shared libraries and glue objects we need to link against; this is
+# a little overkill, but it'll be OK.
 LIBS="-lbe -lnet -lroot"
-GLUE="/boot/develop/lib/ppc/glue-noinit.a /boot/develop/lib/ppc/init_term_dyn.o"
 
-# Unwanted symbols we need to eliminate; these are regular expressions
-# passed to egrep.
-SYMS="opterr optind optarg getopt __.* longjmp _.*_"
-
-# Check to see if we've already got an exports file, and delete it if
-# it's older than the lib.
-if [ -e $EXPORTS ] && [ $LIBRARY -nt $EXPORTS ] ; then
-	echo "Deleting old exports file for $DYNAMIC..."
-	rm -f $EXPORTS
-fi
-
-if [ ! -e $EXPORTS ] ; then
-	# First link; create the exports file with the unwanted global symbols
-	# in it.  It's a pity we don't have "nm" or something like that...
-	rm -f temp-exports.exp
-	mwcc -xms -f temp-exports.exp -o $DYNAMIC $LIBRARY $GLUE $LIBS -nodup
-
-	# Now clean out those bad symbols.
-	for sym in $SYMS ; do 
-		rm -f temp-exports.exp2
-		egrep -v "^$sym$" < temp-exports.exp > temp-exports.exp2
-		mv -f temp-exports.exp2 temp-exports.exp
-	done
-
-	rm -f temp-exports.exp2
-	mv -f temp-exports.exp $EXPORTS
-fi
-
-# Now link against the clean exports file.
-mwcc -xms -f $EXPORTS -o $DYNAMIC $LIBRARY $GLUE $LIBS -nodup
-
-# We'll need this or the python binary won't load libpython.so...
+# We'll need this or the python binary won't load libpython.so... handy
+# for testing.
 ( cd .. ; ln -sf `pwd` lib )
 
 # Now build the python binary.

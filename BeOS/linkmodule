@@ -4,12 +4,11 @@
 # Chris Herborth (chrish@qnx.com)
 #
 # This is covered by the same copyright/licensing terms as the rest of
-# Python
+# Python.
 #
-# Shell script to build shared library versions of the modules; the
-# idea is to build an export list containing only the init*() function
-# for the module.  We _could_ assume for foomodule.o it was initfoo, but
-# that's asking for trouble... this is a little less efficient but correct.
+# Shell script to build shared library versions of the modules; since
+# the change to the *ahem* "proper" import/export mechanism, this script
+# is much simpler.  It handles PowerPC and x86, too.
 #
 # This is called by the Modules/Makefile as $(LDSHARED):
 #
@@ -19,13 +18,8 @@
 #
 # $(LDSHARED)  readline.o  -L/boot/home/config/lib -lreadline -ltermcap \
 # -o readline$(SO)
-
-# Check to make sure we know what we're doing.
-system="`uname -m`"
-if [ "$system" != "BeMac" ] && [ "$system" != "BeBox" ] ; then
-	echo "Sorry, BeOS Python doesn't support x86 yet."
-	exit 1
-fi
+#
+# so we need to preserve the arguments, sort of.
 
 # Make sure we got reasonable arguments.
 TARGET=""
@@ -45,26 +39,37 @@ if [ "$TARGET" = "" ] ; then
 	echo
 	echo "Where:"
 	echo
-	echo "	[args]	normal mwcc arguments"
+	echo "	[args]	normal compiler arguments"
 	exit 1
 fi
-
-EXPORTS=${TARGET%.so}.exp
 
 # The shared libraries and glue objects we need to link against; these
 # libs are overkill for most of the standard modules, but it makes life
 # in this shell script easier.
 LIBS="-L.. -lpython1.5 -lbe -lnet -lroot"
-GLUE="/boot/develop/lib/ppc/glue-noinit.a /boot/develop/lib/ppc/init_term_dyn.o"
 
-# Check to see if we've already got an exports file; we don't need to
-# update this once we've got it because we only ever want to export
-# one symbol.
-if [ ! -e $EXPORTS ] ; then
-	# The init*() function has to be related to the module's .so name
-	# for importdl to work.
-	echo init${TARGET%.so} | sed -e s/module// > $EXPORTS
-fi
+case $BE_HOST_CPU in
+	ppc)
+		# Boy, do we need a lot of crap...
+		GLUE_LOC=/boot/develop/lib/ppc
+		GLUE="${GLUE_LOC}/glue-noinit.a ${GLUE_LOC}/init_term_dyn.o"
+		CC="mwcc -xms -export pragma -nodup"
+		;;
 
-# Now link against the clean exports file.
-mwcc -xms -f $EXPORTS -o $TARGET $ARGS $GLUE $LIBS -nodup
+	x86)
+		# We don't need as much crap here...
+		GLUE=""
+		CC="gcc -nostart -Wl,-soname=${TARGET}"
+		;;
+
+	*)
+		# What the?!?
+		echo "$0 doesn't support $BE_HOST_CPU systems..."
+		echo "You're on your own... I'd be surprised if this works."
+		GLUE=""
+		CC="cc"
+		;;
+esac
+
+# Now link that shared lib...
+$CC -o $TARGET $ARGS $GLUE $LIBS
