@@ -176,36 +176,38 @@ class bdist_wininst (Command):
         lines = []
         metadata = self.distribution.metadata
 
-        # Write the [metadata] section.  Values are written with
-        # repr()[1:-1], so they do not contain unprintable characters, and
-        # are not surrounded by quote chars.
+        # Write the [metadata] section.
         lines.append("[metadata]")
 
         # 'info' will be displayed in the installer's dialog box,
         # describing the items to be installed.
         info = (metadata.long_description or '') + '\n'
 
+        # Escape newline characters
+        def escape(s):
+            return string.replace(s, "\n", "\\n")
+
         for name in ["author", "author_email", "description", "maintainer",
                      "maintainer_email", "name", "url", "version"]:
             data = getattr(metadata, name, "")
             if data:
                 info = info + ("\n    %s: %s" % \
-                               (string.capitalize(name), data))
-                lines.append("%s=%s" % (name, repr(data)[1:-1]))
+                               (string.capitalize(name), escape(data)))
+                lines.append("%s=%s" % (name, escape(data)))
 
         # The [setup] section contains entries controlling
         # the installer runtime.
         lines.append("\n[Setup]")
         if self.install_script:
             lines.append("install_script=%s" % self.install_script)
-        lines.append("info=%s" % repr(info)[1:-1])
+        lines.append("info=%s" % escape(info))
         lines.append("target_compile=%d" % (not self.no_target_compile))
         lines.append("target_optimize=%d" % (not self.no_target_optimize))
         if self.target_version:
             lines.append("target_version=%s" % self.target_version)
 
         title = self.title or self.distribution.get_fullname()
-        lines.append("title=%s" % repr(title)[1:-1])
+        lines.append("title=%s" % escape(title))
         import time
         import distutils
         build_info = "Built %s with distutils-%s" % \
@@ -243,6 +245,15 @@ class bdist_wininst (Command):
         file.write(self.get_exe_bytes())
         if bitmap:
             file.write(bitmapdata)
+
+        # Convert cfgdata from unicode to ascii, mbcs encoded
+        try:
+            unicode
+        except NameError:
+            pass
+        else:
+            if isinstance(cfgdata, unicode):
+                cfgdata = cfgdata.encode("mbcs")
 
         # Append the pre-install script
         cfgdata = cfgdata + "\0"
