@@ -40,21 +40,22 @@ static PyObject *
 mkpwent(p)
 	struct passwd *p;
 {
-	return Py_BuildValue("(ssllsss)",
-		       p->pw_name,
-		       p->pw_passwd,
+	return Py_BuildValue(
+		"(ssllsss)",
+		p->pw_name,
+		p->pw_passwd,
 #if defined(NeXT) && defined(_POSIX_SOURCE) && defined(__LITTLE_ENDIAN__)
 /* Correct a bug present on Intel machines in NextStep 3.2 and 3.3;
    for later versions you may have to remove this */
-		       (long)p->pw_short_pad1, /* ugh-NeXT broke the padding */
-		       (long)p->pw_short_pad2,
+		(long)p->pw_short_pad1,	     /* ugh-NeXT broke the padding */
+		(long)p->pw_short_pad2,
 #else
-		       (long)p->pw_uid,
-		       (long)p->pw_gid,
+		(long)p->pw_uid,
+		(long)p->pw_gid,
 #endif
-		       p->pw_gecos,
-		       p->pw_dir,
-		       p->pw_shell);
+		p->pw_gecos,
+		p->pw_dir,
+		p->pw_shell);
 }
 
 static PyObject *
