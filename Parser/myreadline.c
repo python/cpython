@@ -100,6 +100,7 @@ my_fgets(buf, len, fp)
 #endif /* WITH_READLINE */
 
 
+#ifdef WITH_READLINE
 void
 PyOS_ReadlineInit()
 {
@@ -111,6 +112,7 @@ PyOS_ReadlineInit()
 		been_here++;
 	}
 }
+#endif
 
 
 char *
