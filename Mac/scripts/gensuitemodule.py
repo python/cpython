@@ -20,15 +20,56 @@ import distutils.sysconfig
 import OSATerminology
 from Carbon.Res import *
 import MacOS
+import getopt
 
 _MAC_LIB_FOLDER=os.path.dirname(aetools.__file__)
 DEFAULT_STANDARD_PACKAGEFOLDER=os.path.join(_MAC_LIB_FOLDER, 'lib-scriptpackages')
 DEFAULT_USER_PACKAGEFOLDER=distutils.sysconfig.get_python_lib()
 
+def usage():
+	sys.stderr.write("Usage: %s [opts] application-or-resource-file\n" % sys.argv[0])
+	sys.stderr.write("""Options:
+--output pkgdir  Pathname of the output package (short: -o)  
+--resource       Parse resource file in stead of launching application (-r)
+--base package   Use another base package in stead of default StdSuites (-b)
+--edit old=new   Edit suite names, use empty new to skip a suite (-e)
+""")
+	sys.exit(1)
+
 def main():
 	if len(sys.argv) > 1:
-		for filename in sys.argv[1:]:
-			processfile(filename)
+		SHORTOPTS = "rb:o:e:"
+		LONGOPTS = ("resource", "base=", "output=", "edit=")
+		try:
+			opts, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
+		except getopt.GetoptError:
+			usage()
+		
+		process_func = processfile
+		basepkgname = 'StdSuites'
+		output = None
+		edit_modnames = []
+		
+		for o, a in opts:
+			if o in ('-r', '--resource'):
+				process_func = processfile_fromresource
+			if o in ('-b', '--base'):
+				basepkgname = a
+			if o in ('-o', '--output'):
+				output = a
+			if o in ('-e', '--edit'):
+				split = a.split('=')
+				if len(split) != 2:
+					usage()
+				edit_modnames.append(split)
+					
+		if output and len(args) > 1:
+			sys.stderr.write("%s: cannot specify --output with multiple inputs\n" % sys.argv[0])
+			sys.exit(1)
+			
+		for filename in args:
+			process_func(filename, output=output, basepkgname=basepkgname, 
+				edit_modnames=edit_modnames)
 	else:
 		# The dialogOptionFlags below allows selection of .app bundles.
 		filename = EasyDialogs.AskFileForOpen(
@@ -43,7 +84,7 @@ def main():
 			print "Retry, manually parsing resources"
 			processfile_fromresource(filename)
 
-def processfile_fromresource(fullname):
+def processfile_fromresource(fullname, output=None, basepkgname=None, edit_modnames=None):
 	"""Process all resources in a single file"""
 	cur = CurResFile()
 	print "Processing", fullname
@@ -70,9 +111,10 @@ def processfile_fromresource(fullname):
 			UseResFile(cur)
 	# switch back (needed for dialogs in Python)
 	UseResFile(cur)
-	compileaetelist(aetelist, fullname)
+	compileaetelist(aetelist, fullname, output=output, 
+		basepkgname=basepkgname, edit_modnames=edit_modnames)
 
-def processfile(fullname):
+def processfile(fullname, output=None, basepkgname=None, edit_modnames=None):
 	"""Ask an application for its terminology and process that"""
 	aedescobj, launched = OSATerminology.GetSysTerminology(fullname)
 	if launched:
@@ -86,11 +128,12 @@ def processfile(fullname):
 		return
 	aedata = raw[0]
 	aete = decode(aedata.data)
-	compileaete(aete, None, fullname)
+	compileaete(aete, None, fullname, output=output, basepkgname=basepkgname)
 
-def compileaetelist(aetelist, fullname):
+def compileaetelist(aetelist, fullname, output=None, basepkgname=None, edit_modnames=None):
 	for aete, resinfo in aetelist:
-		compileaete(aete, resinfo, fullname)
+		compileaete(aete, resinfo, fullname, output=output, 
+			basepkgname=basepkgname, edit_modnames=edit_modnames)
 		
 def decode(data):
 	"""Decode a resource into a python data structure"""
@@ -255,7 +298,7 @@ getaete = [
 	(getlist, "suites", getsuite)
 	]
 
-def compileaete(aete, resinfo, fname):
+def compileaete(aete, resinfo, fname, output=None, basepkgname=None, edit_modnames=None):
 	"""Generate code for a full aete resource. fname passed for doc purposes"""
 	[version, language, script, suites] = aete
 	major, minor = divmod(version, 256)
@@ -267,16 +310,23 @@ def compileaete(aete, resinfo, fname):
 		packagename = packagename+'_script%d'%script
 	if len(packagename) > 27:
 		packagename = packagename[:27]
-	pathname = EasyDialogs.AskFolder(message='Create and select package folder for %s'%packagename,
-		defaultLocation=DEFAULT_USER_PACKAGEFOLDER)
+	if output:
+		# XXXX Put this in site-packages if it isn't a full pathname?
+		if not os.path.exists(output):
+			os.mkdir(output)
+		pathname = output
+	else:
+		pathname = EasyDialogs.AskFolder(message='Create and select package folder for %s'%packagename,
+			defaultLocation=DEFAULT_USER_PACKAGEFOLDER)
 	if not pathname:
 		return
 	packagename = os.path.split(os.path.normpath(pathname))[1]
-	basepkgname = EasyDialogs.AskFolder(message='Package folder for base suite (usually StdSuites)',
-		defaultLocation=DEFAULT_STANDARD_PACKAGEFOLDER)
+	if not basepkgname:
+		basepkgname = EasyDialogs.AskFolder(message='Package folder for base suite (usually StdSuites)',
+			defaultLocation=DEFAULT_STANDARD_PACKAGEFOLDER)
 	if basepkgname:
 		dirname, basepkgname = os.path.split(os.path.normpath(basepkgname))
-		if not dirname in sys.path:
+		if dirname and not dirname in sys.path:
 			sys.path.insert(0, dirname)
 		basepackage = __import__(basepkgname)
 	else:
@@ -285,7 +335,8 @@ def compileaete(aete, resinfo, fname):
 	allprecompinfo = []
 	allsuites = []
 	for suite in suites:
-		code, suite, pathname, modname, precompinfo = precompilesuite(suite, basepackage)
+		code, suite, pathname, modname, precompinfo = precompilesuite(suite, basepackage, 
+				output=output, edit_modnames=edit_modnames)
 		if not code:
 			continue
 		allprecompinfo = allprecompinfo + precompinfo
@@ -294,10 +345,7 @@ def compileaete(aete, resinfo, fname):
 		allsuites.append(suiteinfo)
 	for suiteinfo in allsuites:
 		compilesuite(suiteinfo, major, minor, language, script, fname, basepackage, allprecompinfo)
-	initfilename = EasyDialogs.AskFileForSave(message='Package module', 
-		savedFileName='__init__.py')
-	if not initfilename:
-		return
+	initfilename = os.path.join(output, '__init__.py')
 	fp = open(initfilename, 'w')
 	MacOS.SetCreatorAndType(initfilename, 'Pyth', 'TEXT')
 	fp.write('"""\n')
@@ -358,7 +406,7 @@ def compileaete(aete, resinfo, fname):
 		fp.write("\t_moduleName = '%s'\n\n"%packagename)
 	fp.close()
 	
-def precompilesuite(suite, basepackage=None):
+def precompilesuite(suite, basepackage=None, edit_modnames=None, output=None):
 	"""Parse a single suite without generating the output. This step is needed
 	so we can resolve recursive references by suites to enums/comps/etc declared
 	in other suites"""
@@ -367,8 +415,17 @@ def precompilesuite(suite, basepackage=None):
 	modname = identify(name)
 	if len(modname) > 28:
 		modname = modname[:27]
-	pathname = EasyDialogs.AskFileForSave(message='Python output file',
-		savedFileName=modname+'.py')
+	if edit_modnames is None:
+		pathname = EasyDialogs.AskFileForSave(message='Python output file',
+			savedFileName=modname+'.py')
+	else:
+		for old, new in edit_modnames:
+			if old == modname:
+				modname = new
+		if modname:
+			pathname = os.path.join(output, modname + '.py')
+		else:
+			pathname = None
 	if not pathname:
 		return None, None, None, None, None
 
