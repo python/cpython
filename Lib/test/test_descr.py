@@ -3452,6 +3452,7 @@ def mutable_bases():
         pass
     d = D()
     e = E()
+    D.__bases__ = (C,)
     D.__bases__ = (C2,)
     vereq(d.meth(), 1)
     vereq(e.meth(), 1)
@@ -3490,6 +3491,13 @@ def mutable_bases():
         pass
     else:
         # actually, we'll have crashed by here...
+        raise TestFailed, "shouldn't be able to create inheritance cycles"
+
+    try:
+        D.__bases__ = (E,)
+    except TypeError:
+        pass
+    else:
         raise TestFailed, "shouldn't be able to create inheritance cycles"
 
     # let's throw a classic class into the mix:
