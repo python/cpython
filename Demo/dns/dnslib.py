@@ -101,7 +101,7 @@ class Packer:
 			label = list[j]
 			n = len(label)
 			if offset + len(buf) < 0x3FFF:
-				index.append(keys[j], offset + len(buf))
+				index.append( (keys[j], offset + len(buf)) )
 			else:
 				print 'dnslib.Packer.addname:',
 				print 'warning: pointer too big'
