@@ -6,7 +6,7 @@
 
 */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "osdefs.h"
 #include <windows.h>
 #include "importdl.h"
