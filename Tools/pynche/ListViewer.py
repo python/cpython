@@ -16,8 +16,10 @@ class ListViewer:
         #
         # create the canvas which holds everything, and its scrollbar
         #
-        canvas = self.__canvas = Canvas(root, width=160, height=300)
-        self.__scrollbar = Scrollbar(root)
+        frame = self.__frame = Frame(root)
+        frame.pack()
+        canvas = self.__canvas = Canvas(frame, width=160, height=300)
+        self.__scrollbar = Scrollbar(frame)
         self.__scrollbar.pack(fill=Y, side=RIGHT)
         canvas.pack(fill=BOTH, expand=1)
         canvas.configure(yscrollcommand=(self.__scrollbar, 'set'))
@@ -43,7 +45,8 @@ class ListViewer:
                                             textend+3, row*20 + 23,
                                             outline='',
                                             tags=(exactcolor,))
-            canvas.tag_bind(boxid, '<ButtonPress>', self.__onselection)
+            canvas.bind('<ButtonRelease>', self.__onrelease)
+            canvas.bind('<Motion>', self.__onmotion)
             bboxes.append(boxid)
             if textend+3 > widest:
                 widest = textend+3
@@ -53,8 +56,16 @@ class ListViewer:
         for box in bboxes:
             x1, y1, x2, y2 = canvas.coords(box)
             canvas.coords(box, x1, y1, widest, y2)
+        #
+        # Update while dragging?
+        #
+        self.__uwd = BooleanVar()
+        self.__uwdbtn = Checkbutton(root,
+                                    text='Update while dragging',
+                                    variable=self.__uwd)
+        self.__uwdbtn.pack()
 
-    def __onselection(self, event=None):
+    def __onmotion(self, event=None):
         canvas = self.__canvas
         # find the current box
         x = canvas.canvasx(event.x)
@@ -64,17 +75,12 @@ class ListViewer:
             if boxid in self.__bboxes:
                 break
         else:
-            print 'No box found!'
+##            print 'No box found!'
             return
-        tags = canvas.gettags(boxid)
-        for t in tags:
-            if t[0] == '#':
-                break
+        if self.__uwd.get():
+            self.__onrelease(event)
         else:
-            print 'No color tag found!'
-            return
-        red, green, blue = ColorDB.rrggbb_to_triplet(t)
-        self.__sb.update_views(red, green, blue)
+            self.__selectbox(boxid)
 
     def __selectbox(self, boxid):
         canvas = self.__canvas
@@ -83,6 +89,18 @@ class ListViewer:
             canvas.itemconfigure(self.__lastbox, outline='')
         self.__lastbox = boxid
         canvas.itemconfigure(boxid, outline='black')
+
+    def __onrelease(self, event=None):
+        if self.__lastbox:
+            tags = self.__canvas.gettags(self.__lastbox)
+            for t in tags:
+                if t[0] == '#':
+                    break
+            else:
+##                print 'No color tag found!'
+                return
+            red, green, blue = ColorDB.rrggbb_to_triplet(t)
+            self.__sb.update_views(red, green, blue)
 
     def __quit(self, event=None):
         sys.exit(0)
