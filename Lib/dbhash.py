@@ -2,7 +2,7 @@
 
 import bsddb
 
-error = bsddb.error
+error = bsddb.error                     # Exported for anydbm
 
 def open(file, flag, mode=0666):
     return bsddb.hashopen(file, flag, mode)
