@@ -612,7 +612,7 @@ drawing_setfont(self, args)
 	char style = '\0';
 	int size = 0;
 	if (args == NULL || !is_tupleobject(args)) {
-		if (!getargs(args, "z", font))
+		if (!getargs(args, "z", &font))
 			return NULL;
 	}
 	else {
@@ -1596,12 +1596,16 @@ window_setwincursor(self, args)
 {
 	char *name;
 	CURSOR *c;
-	if (!getstrarg(args, &name))
+	if (!getargs(args, "z", &name))
 		return NULL;
-	c = wfetchcursor(name);
-	if (c == NULL) {
-		err_setstr(StdwinError, "no such cursor");
-		return NULL;
+	if (name == NULL)
+		c = NULL;
+	else {
+		c = wfetchcursor(name);
+		if (c == NULL) {
+			err_setstr(StdwinError, "no such cursor");
+			return NULL;
+		}
 	}
 	wsetwincursor(self->w_win, c);
 	INCREF(None);
