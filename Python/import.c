@@ -570,7 +570,17 @@ find_module(name, path, buf, buflen, p_fp)
 		if ((int)strlen(buf) != len)
 			continue; /* v contains '\0' */
 #ifdef macintosh
-		if ( PyMac_FindResourceModule(name, buf) ) {
+#ifdef INTERN_STRINGS
+		/* 
+		** Speedup: each sys.path item is interned, and
+		** FindResourceModule remembers which items refer to
+		** folders (so we don't have to bother trying to look
+		** into them for resources). 
+		*/
+		PyString_InternInPlace(&PyList_GET_ITEM(path, i));
+		v = PyList_GET_ITEM(path, i);
+#endif
+		if ( PyMac_FindResourceModule((PyStringObject *)v, name, buf) ) {
 			static struct filedescr resfiledescr =
 				{"", "", PY_RESOURCE};
 			
@@ -579,6 +589,11 @@ find_module(name, path, buf, buflen, p_fp)
 #endif
 		if (len > 0 && buf[len-1] != SEP)
 			buf[len++] = SEP;
+#ifdef macintosh
+		fdp = PyMac_FindModuleExtension(buf, &len, name);
+		if ( fdp )
+			fp = fopen(buf, fdp->mode);
+#else
 #ifdef IMPORT_8x3_NAMES
 		/* see if we are searching in directory dos_8x3 */
 		if (len > 7 && !strncmp(buf + len - 8, "dos_8x3", 7)){
@@ -604,6 +619,7 @@ find_module(name, path, buf, buflen, p_fp)
 			if (fp != NULL)
 				break;
 		}
+#endif /* !macintosh */
 		if (fp != NULL)
 			break;
 	}
