@@ -312,6 +312,9 @@ binascii binascii.c
 # Fred Drake's interface to the Python parser
 parser parsermodule.c
 
+# Digital Creations' cStringIO and cPickle
+cStringIO cStringIO.c
+cPickle cPickle.c
 
 # Example -- included for reference only:
 # xx xxmodule.c
