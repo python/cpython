@@ -829,7 +829,6 @@ if __name__ == "__main__":
     for k, v in opts:
         if k == '-v':
             ASTVisitor.VERBOSE = ASTVisitor.VERBOSE + 1
-            print k
         if k == '-q':
             f = open('/dev/null', 'wb')
             sys.stdout = f
