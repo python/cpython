@@ -74,7 +74,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "stringobject.h"
 #include "tupleobject.h"
 #include "listobject.h"
-#include "mappingobject.h"
+#include "dictobject.h"
 #include "methodobject.h"
 #include "moduleobject.h"
 #include "funcobject.h"
