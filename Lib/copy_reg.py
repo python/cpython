@@ -46,7 +46,7 @@ _HEAPTYPE = 1<<9
 
 def _reduce(self):
     for base in self.__class__.__mro__:
-        if not base.__flags__ & _HEAPTYPE:
+        if hasattr(base, '__flags__') and not base.__flags__ & _HEAPTYPE:
             break
     else:
         base = object # not really reachable
@@ -56,9 +56,14 @@ def _reduce(self):
         state = base(self)
     args = (self.__class__, base, state)
     try:
-        dict = self.__dict__
+        getstate = self.__getstate__
     except AttributeError:
-        dict = None
+        try:
+            dict = self.__dict__
+        except AttributeError:
+            dict = None
+    else:
+        dict = getstate()
     if dict:
         return _reconstructor, args, dict
     else:
