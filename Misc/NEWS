@@ -14,7 +14,7 @@ Release date: 30-May-2003
   for new-style class instances.
 
 - Backport SF 742860: new, improved __delitem__ for WeakKeyDictionary.
-  This old __delitem__ wasn't threadsafe, was very inefficient (expected
+  The old __delitem__ wasn't threadsafe, was very inefficient (expected
   time O(len(dict)) instead of O(1)), and could raise a spurious
   RuntimeError if another thread mutated the dict during __delitem__, or if
   a comparison function mutated it.  It also neglected to raise KeyError
@@ -24,7 +24,7 @@ Release date: 30-May-2003
   whole set of dict keys instead of computing the key's hash code to
   narrow the search to those keys with the same hash code.  All of these
   are considered to be bugs.  A new implementation of __delitem__ repairs
-  all  that, but note that fixing these bugs may change visible behavior
+  all that, but note that fixing these bugs may change visible behavior
   in code relying (whether intentionally or accidentally) on old behavior.
 
 - RPM spec file update from Sean Reifschneider.
