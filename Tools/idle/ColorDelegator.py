@@ -165,7 +165,6 @@ class ColorDelegator(Delegator):
 
     def recolorize_main(self):
         next = "1.0"
-        was_ok = is_ok = 0
         while 1:
             item = self.tag_nextrange("TODO", next)
             if not item:
@@ -179,14 +178,15 @@ class ColorDelegator(Delegator):
                 head = "1.0"
 
             chars = ""
-            mark = head
+            next = head
             lines_to_get = 1
-            is_ok = was_ok = 0
-            while not (was_ok and is_ok):
+            ok = 0
+            while not ok:
+                mark = next
                 next = self.index(mark + "+%d lines linestart" %
                                          lines_to_get)
                 lines_to_get = min(lines_to_get * 2, 100)
-                was_ok = "SYNC" in self.tag_names(next + "-1c")
+                ok = "SYNC" in self.tag_names(next + "-1c")
                 line = self.get(mark, next)
                 ##print head, "get", mark, next, "->", `line`
                 if not line:
@@ -196,7 +196,6 @@ class ColorDelegator(Delegator):
                 chars = chars + line
                 m = self.prog.search(chars)
                 while m:
-                    i, j = m.span()
                     for key, value in m.groupdict().items():
                         if value:
                             a, b = m.span(key)
@@ -210,12 +209,20 @@ class ColorDelegator(Delegator):
                                     self.tag_add("DEFINITION",
                                                  head + "+%dc" % a,
                                                  head + "+%dc" % b)
-                    m = self.prog.search(chars, j)
-                is_ok = "SYNC" in self.tag_names(next + "-1c")
-                mark = next
-                if is_ok:
-                    head = mark
+                    m = self.prog.search(chars, m.end())
+                if "SYNC" in self.tag_names(next + "-1c"):
+                    head = next
                     chars = ""
+                else:
+                    ok = 0
+                if not ok:
+                    # We're in an inconsistent state, and the call to
+                    # update may tell us to stop.  It may also change
+                    # the correct value for "next" (since this is a
+                    # line.col string, not a true mark).  So leave a
+                    # crumb telling the next invocation to resume here
+                    # in case update tells us to leave.
+                    self.tag_add("TODO", next)
                 self.update()
                 if self.stop_colorizing:
                     if __debug__: print "colorizing stopped"
