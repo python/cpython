@@ -2,13 +2,13 @@ test_mmap
 <type 'mmap'>
   Position of foo: 1.0 pages
   Length of file: 2.0 pages
-  Contents of byte 0: '\000'
-  Contents of first 3 bytes: '\000\000\000'
+  Contents of byte 0: '\x00'
+  Contents of first 3 bytes: '\x00\x00\x00'
 
   Modifying file's content...
   Contents of byte 0: '3'
-  Contents of first 3 bytes: '3\000\000'
-  Contents of second page: '\000foobar\000'
+  Contents of first 3 bytes: '3\x00\x00'
+  Contents of second page: '\x00foobar\x00'
   Regex match on mmap (page start, length of match): 1.0 6
   Seek to zeroth byte
   Seek to 42nd byte
