@@ -695,7 +695,9 @@ same limitations.  Changes to \code{posix.environ}, \code{sys.stdin},
 etc.\ are not reflected in the environment of the executed command.
 The return value is the exit status of the process encoded in the
 format specified for \function{wait()}, except on Windows 95 and 98,
-where it is always \code{0}.
+where it is always \code{0}.  Note that \POSIX{} does not specify the
+meaning of the return value of the C \cfunction{system()} function,
+so the return value of the Python function is system-dependent.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
