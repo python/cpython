@@ -77,6 +77,25 @@ class QueryTestCase(unittest.TestCase):
                                       (native, got, function))
 
 
+    def test_basic_line_wrap(self):
+        """verify basic line-wrapping operation"""
+        o = {'RPM_cal': 0,
+             'RPM_cal2': 48059,
+             'Speed_cal': 0,
+             'controldesk_runtime_us': 0,
+             'main_code_runtime_us': 0,
+             'read_io_runtime_us': 0,
+             'write_io_runtime_us': 43690}
+        exp = """\
+{'RPM_cal': 0,
+ 'RPM_cal2': 48059,
+ 'Speed_cal': 0,
+ 'controldesk_runtime_us': 0,
+ 'main_code_runtime_us': 0,
+ 'read_io_runtime_us': 0,
+ 'write_io_runtime_us': 43690}"""
+        self.assertEqual(pprint.pformat(o), exp)
+
 def test_main():
     test_support.run_unittest(QueryTestCase)
 
