@@ -1,0 +1,6 @@
+#! /bin/sh
+set -v
+h2py /usr/include/sys/fcntl.h
+h2py /usr/include/sys/socket.h
+h2py -i '(u_long)' /usr/include/netinet/in.h
+h2py /usr/include/termios.h
