@@ -19,6 +19,8 @@ tuple (etype, evalue, etb) just like the value of sys.exc_info()."""
 __author__ = 'Ka-Ping Yee'
 __version__ = '$Revision$'
 
+import sys
+
 def reset():
     """Return a string that resets the CGI and browser to a known state."""
     return '''<!--: spam
@@ -66,7 +68,7 @@ def scanvars(reader, frame, locals):
 
 def html((etype, evalue, etb), context=5):
     """Return a nice HTML document describing a given traceback."""
-    import sys, os, types, time, traceback, linecache, inspect, pydoc
+    import os, types, time, traceback, linecache, inspect, pydoc
 
     if type(etype) is types.ClassType:
         etype = etype.__name__
@@ -149,18 +151,18 @@ function calls leading up to the error, in the order they occurred.'''
 class Hook:
     """A hook to replace sys.excepthook that shows tracebacks in HTML."""
 
-    def __init__(self, display=1, logdir=None, context=5):
+    def __init__(self, display=1, logdir=None, context=5, file=None):
         self.display = display          # send tracebacks to browser if true
         self.logdir = logdir            # log tracebacks to files if not None
         self.context = context          # number of source code lines per frame
+        self.file = file or sys.stdout  # place to send the output
 
     def __call__(self, etype, evalue, etb):
         self.handle((etype, evalue, etb))
 
     def handle(self, info=None):
-        import sys
         info = info or sys.exc_info()
-        print reset()
+        self.file.write(reset())
 
         try:
             text, doc = 0, html(info, self.context)
@@ -171,11 +173,11 @@ class Hook:
         if self.display:
             if text:
                 doc = doc.replace('&', '&amp;').replace('<', '&lt;')
-                print '<pre>' + doc + '</pre>'
+                self.file.write('<pre>' + doc + '</pre>\n')
             else:
-                print doc
+                self.file.write(doc + '\n')
         else:
-            print '<p>A problem occurred in a Python script.'
+            self.file.write('<p>A problem occurred in a Python script.\n')
 
         if self.logdir is not None:
             import os, tempfile
@@ -185,9 +187,13 @@ class Hook:
                 file = open(path, 'w')
                 file.write(doc)
                 file.close()
-                print '<p> %s contains the description of this error.' % path
+                msg = '<p> %s contains the description of this error.' % path
             except:
-                print '<p> Tried to save traceback to %s, but failed.' % path
+                msg = '<p> Tried to save traceback to %s, but failed.' % path
+            self.file.write(msg + '\n')
+        try:
+            self.file.flush()
+        except: pass
 
 handler = Hook().handle
 def enable(display=1, logdir=None, context=5):
@@ -196,5 +202,4 @@ def enable(display=1, logdir=None, context=5):
     The optional argument 'display' can be set to 0 to suppress sending the
     traceback to the browser, and 'logdir' can be set to a directory to cause
     tracebacks to be written to files there."""
-    import sys
     sys.excepthook = Hook(display, logdir, context)
