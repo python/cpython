@@ -90,22 +90,22 @@ names for the error codes defined by the underlying operating system.
 
 \begin{excdesc}{herror}
 This exception is raised for address-related errors, i.e. for
-functions that use \var{h_errno} in C API, including
-\function{gethostbyname_ex} and \function{gethostbyaddr}.
+functions that use \var{h_errno} in the C API, including
+\function{gethostbyname_ex()} and \function{gethostbyaddr()}.
 
 The accompanying value is a pair \code{(\var{h_errno}, \var{string})}
 representing an error returned by a library call. \var{string}
 represents the description of \var{h_errno}, as returned by
-\cfunction{hstrerror} C API. 
+the \cfunction{hstrerror()} C function.
 \end{excdesc}
 
 \begin{excdesc}{gaierror}
 This exception is raised for address-related errors, for
-\function{getaddrinfo} and \function{getnameinfo}.
+\function{getaddrinfo()} and \function{getnameinfo()}.
 The accompanying value is a pair \code{(\var{error}, \var{string})}
 representing an error returned by a library call.
 \var{string} represents the description of \var{error}, as returned
-by \cfunction{gai_strerror} C API.
+by the \cfunction{gai_strerror()} C function.
 \end{excdesc}
 
 \begin{datadesc}{AF_UNIX}
@@ -140,6 +140,7 @@ used for the second argument to \function{socket()}.
 \dataline{EAI_*}
 \dataline{AI_*}
 \dataline{NI_*}
+\dataline{TCP_*}
 Many constants of these forms, documented in the \UNIX{} documentation on
 sockets and/or the IP protocol, are also defined in the socket module.
 They are generally used in arguments to the \method{setsockopt()} and
@@ -189,7 +190,7 @@ returned.
 
 \begin{funcdesc}{gethostbyname}{hostname}
 Translate a host name to IPv4 address format.  The IPv4 address is
-returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
+returned as a string, such as  \code{'100.50.200.5'}.  If the host name
 is an IPv4 address itself it is returned unchanged.  See
 \function{gethostbyname_ex()} for a more complete interface.
 \function{gethostbyname()} does not support IPv6 name resolution, and
@@ -243,7 +244,7 @@ numeric port number.
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
-Translate an Internet protocol name (e.g.\ \code{'icmp'}) to a constant
+Translate an Internet protocol name (for example, \code{'icmp'}) to a constant
 suitable for passing as the (optional) third argument to the
 \function{socket()} function.  This is usually only needed for sockets
 opened in ``raw'' mode (\constant{SOCK_RAW}); for the normal socket
@@ -282,8 +283,9 @@ above.  The file descriptor should refer to a socket, but this is not
 checked --- subsequent operations on the object may fail if the file
 descriptor is invalid.  This function is rarely needed, but can be
 used to get or set socket options on a socket passed to a program as
-standard input or output (e.g.\ a server started by the \UNIX{} inet
+standard input or output (such as a server started by the \UNIX{} inet
 daemon).
+Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{ntohl}{x}
@@ -311,8 +313,8 @@ no-op; otherwise, it performs a 2-byte swap operation.
 \end{funcdesc}
 
 \begin{funcdesc}{inet_aton}{ip_string}
-Convert an IPv4 address from dotted-quad string format
-(e.g.\ '123.45.67.89') to 32-bit packed binary format, as a string four
+Convert an IPv4 address from dotted-quad string format (for example,
+'123.45.67.89') to 32-bit packed binary format, as a string four
 characters in length.
 
 Useful when conversing with a program that uses the standard C library
@@ -324,14 +326,15 @@ If the IPv4 address string passed to this function is invalid,
 valid depends on the underlying C implementation of
 \cfunction{inet_aton()}.
 
-\function{inet_aton} does not support IPv6, and
-\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
+\function{inet_aton()} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack
+support.
 \end{funcdesc}
 
 \begin{funcdesc}{inet_ntoa}{packed_ip}
 Convert a 32-bit packed IPv4 address (a string four characters in
 length) to its standard dotted-quad string representation
-(e.g. '123.45.67.89').
+(for example, '123.45.67.89').
 
 Useful when conversing with a program that uses the standard C library
 and needs objects of type \ctype{struct in_addr}, which is the C type
@@ -340,8 +343,9 @@ for the 32-bit packed binary this function takes as an argument.
 If the string passed to this function is not exactly 4 bytes in
 length, \exception{socket.error} will be raised.
 
-\function{inet_ntoa} does not support IPv6, and
-\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
+\function{inet_ntoa()} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack
+support.
 \end{funcdesc}
 
 \begin{datadesc}{SocketType}
@@ -400,7 +404,7 @@ instead of raising an exception for errors returned by the C-level
 \cfunction{connect()} call (other problems, such as ``host not found,''
 can still raise exceptions).  The error indicator is \code{0} if the
 operation succeeded, otherwise the value of the \cdata{errno}
-variable.  This is useful, e.g., for asynchronous connects.
+variable.  This is useful to support, for example, asynchronous connects.
 \note{This method has historically accepted a pair of
 parameters for \constant{AF_INET} addresses instead of only a tuple.
 This was never intentional and is no longer be available in Python
