@@ -1,0 +1,524 @@
+\section{Standard module \sectcode{dis}}	% If implemented in Python
+\stmodindex{dis}
+
+\label{module-dis}
+
+The \code{dis} module supports the analysis of Python byte code by
+disassembling it.  Since there is no Python assembler, this module
+defines the Python assembly language.  The Python byte code which
+this module takes as an input is defined in the file 
+\code{Include/opcode.h} and used by the compiler and the interpreter.
+
+Example: Given the function myfunc
+
+\bcode\begin{verbatim}
+def myfunc(alist):
+  return len(alist)
+\end{verbatim}\ecode
+
+the following command can be used to get the disassembly of myfunc:
+
+\begin{verbatim}
+>>> dis.dis(myfunc)
+          0 SET_LINENO          1
+
+          3 SET_LINENO          2
+          6 LOAD_GLOBAL         0 (len)
+          9 LOAD_FAST           0 (alist)
+         12 CALL_FUNCTION       1
+         15 RETURN_VALUE   
+         16 LOAD_CONST          0 (None)
+         19 RETURN_VALUE   
+\end{verbatim}
+
+The \code{dis} module defines the following functions:
+
+\renewcommand{\indexsubitem}{(in module dis)}
+
+% ---- 3.2. ----
+% For each function, use a ``funcdesc'' block.  This has exactly two
+% parameters (each parameters is contained in a set of curly braces):
+% the first parameter is the function name (this automatically
+% generates an index entry); the second parameter is the function's
+% argument list.  If there are no arguments, use an empty pair of
+% curly braces.  If there is more than one argument, separate the
+% arguments with backslash-comma.  Optional parts of the parameter
+% list are contained in \optional{...} (this generates a set of square
+% brackets around its parameter).  Arguments are automatically set in
+% italics in the parameter list.  Each argument should be mentioned at
+% least once in the description; each usage (even inside \code{...})
+% should be enclosed in \var{...}.
+
+\begin{funcdesc}{dis}{\optional{bytesource}}
+Disassemble the \var{bytesource} object. \var{bytesource} can denote
+either a class, a method, a function, or a code object.  For a class,
+it disassembles all methods.  For a single code sequence, it prints
+one line per byte code instruction.  If no object is provided, it
+disassembles the last traceback.
+\end{funcdesc}
+
+\begin{funcdesc}{distb}{\optional{tb}}
+Disassembles the top-of-stack function of a traceback, using the last
+traceback if none was passed.  The instruction causing the exception
+is indicated.
+\end{funcdesc}
+
+\begin{funcdesc}{disassemble}{code\optional{\, lasti}}
+Disassembles a code object, indicating the last instruction if \var{lasti}
+was provided.  The output is divided in the following columns:
+\begin{itemize}
+\item the current instruction, indicated as \code{-->},
+\item a labelled instruction, indicated with \code{>>},
+\item the address of the instruction,
+\item the operation code name,
+\item operation parameters, and
+\item interpretation of the parameters in parentheses.
+\end{itemize}
+The parameter interpretation recognizes local and global
+variable names, constant values, branch targets, and compare
+operators.
+\end{funcdesc}
+
+\begin{funcdesc}{disco}{code\optional{\, lasti}}
+A synonym for disassemble.  It is more convenient to type, and kept
+for compatibility with earlier Python releases.
+\end{funcdesc}
+
+\begin{datadesc}{opname}
+Sequence of a operation names, indexable using the byte code.
+\end{datadesc}
+
+\begin{datadesc}{cmp_op}
+Sequence of all compare operation names.
+\end{datadesc}
+
+\begin{datadesc}{hasconst}
+Sequence of byte codes that have a constant parameter.
+\end{datadesc}
+
+\begin{datadesc}{hasname}
+Sequence of byte codes that access a attribute by name.
+\end{datadesc}
+
+\begin{datadesc}{hasjrel}
+Sequence of byte codes that have a relative jump target.
+\end{datadesc}
+
+\begin{datadesc}{hasjabs}
+Sequence of byte codes that have an absolute jump target.
+\end{datadesc}
+
+\begin{datadesc}{haslocal}
+Sequence of byte codes that access a a local variable.
+\end{datadesc}
+
+\begin{datadesc}{hascompare}
+Sequence of byte codes of boolean operations.
+\end{datadesc}
+
+\subsection{Python Byte Code Instructions}
+
+The Python compiler currently generates the following byte code
+instructions.
+
+\renewcommand{\indexsubitem}{(byte code insns)}
+
+\begin{funcdesc}{STOP_CODE}{}
+Indicates end-of-code to the compiler, not used by the interpreter.
+\end{funcdesc}
+
+\begin{funcdesc}{POP_TOP}{}
+Removes the top-of-stack (TOS) item.
+\end{funcdesc}
+
+\begin{funcdesc}{ROT_TWO}{}
+Swaps the two top-most stack items.
+\end{funcdesc}
+
+\begin{funcdesc}{ROT_THREE}{}
+Lifts second and third stack item on position up, moves top down
+to position three.
+\end{funcdesc}
+
+\begin{funcdesc}{DUP_TOP}{}
+Duplicates the reference on top of the stack.
+\end{funcdesc}
+
+Unary Operations take the top of the stack, apply the operation, and
+push the result back on the stack.
+
+\begin{funcdesc}{UNARY_POSITIVE}{}
+Implements \code{TOS = +TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{UNARY_NEG}{}
+Implements \code{TOS = -TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{UNARY_NOT}{}
+Implements \code{TOS = not TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{UNARY_CONVERT}{}
+Implements \code{TOS = `TOS`}.
+\end{funcdesc}
+
+\begin{funcdesc}{UNARY_INVERT}{}
+Implements \code{TOS = ~TOS}.
+\end{funcdesc}
+
+Binary operations remove the top of the stack (TOS) and the second top-most
+stack item (TOS1) from the stack.  They perform the operation, and put the
+result back on the stack.
+
+\begin{funcdesc}{BINARY_POWER}{}
+Implements \code{TOS = TOS1 ** TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_MULTIPLY}{}
+Implements \code{TOS = TOS1 * TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_DIVIDE}{}
+Implements \code{TOS = TOS1 / TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_MODULO}{}
+Implements \code{TOS = TOS1 \% TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_ADD}{}
+Implements \code{TOS = TOS1 + TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_SUBTRACT}{}
+Implements \code{TOS = TOS1 - TOS}.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_SUBSCR}{}
+Implements \code{TOS = TOS1[TOS] }.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_LSHIFT}{}
+Implements \code{TOS = TOS1 << TOS }.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_RSHIFT}{}
+Implements \code{TOS = TOS1 << TOS }.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_AND}{}
+Implements \code{TOS = TOS1 and TOS }.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_XOR}{}
+Implements \code{TOS = TOS1 \^{ }TOS }.
+\end{funcdesc}
+
+\begin{funcdesc}{BINARY_OR}{}
+Implements \code{TOS = TOS1 or TOS }.
+\end{funcdesc}
+
+The slice opcodes take up to three parameters.
+
+\begin{funcdesc}{SLICE+0}{}
+Implements \code{TOS = TOS[:]}.
+\end{funcdesc}
+
+\begin{funcdesc}{SLICE+1}{}
+Implements \code{TOS = TOS1[TOS:]}.
+\end{funcdesc}
+
+\begin{funcdesc}{SLICE+2}{}
+Implements \code{TOS = TOS1[:TOS1]}.
+\end{funcdesc}
+
+\begin{funcdesc}{SLICE+3}{}
+Implements \code{TOS = TOS2[TOS1:TOS]}.
+\end{funcdesc}
+
+Slice assignment needs even an additional parameter.  As any statement,
+they put nothing on the stack.
+
+\begin{funcdesc}{STORE_SLICE+0}{}
+Implements \code{TOS[:]=TOS1}.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_SLICE+1}{}
+Implements \code{TOS1[TOS:]=TOS2}.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_SLICE+2}{}
+Implements \code{TOS1[:TOS]=TOS2}.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_SLICE+3}{}
+Implements \code{TOS2[TOS1:TOS]=TOS3}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_SLICE+0}{}
+Implements \code{del TOS[:]}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_SLICE+1}{}
+Implements \code{del TOS1[TOS:]}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_SLICE+2}{}
+Implements \code{del TOS1[:TOS]}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_SLICE+3}{}
+Implements \code{del TOS2[TOS1:TOS]}.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_SUBSCR}{}
+Implements \code{TOS1[TOS]=TOS2}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_SUBSCR}{}
+Implements \code{del TOS1[TOS]}.
+\end{funcdesc}
+
+\begin{funcdesc}{PRINT_EXPR}{}
+Implements the expression statement for the interactive mode.  TOS is
+removed from the stack and printed.  In non-interactive mode, an
+expression statement is terminated with POP_STACK.
+\end{funcdesc}
+
+\begin{funcdesc}{PRINT_ITEM}{}
+Prints TOS.  There is one such instruction for
+each item in the print statement.
+\end{funcdesc}
+
+\begin{funcdesc}{PRINT_NEWLINE}{}
+Prints a new line on \code{sys.stdout}.  This is generated as the
+last operation of a print statement, unless the statement ends
+with a comma.
+\end{funcdesc}
+
+\begin{funcdesc}{BREAK_LOOP}{}
+Terminates a loop due to a break statement.
+\end{funcdesc}
+
+\begin{funcdesc}{LOAD_LOCALS}{}
+Pushes a reference to the locals of the current scope on the stack.
+This is used in the code for a class definition: After the class body
+is evaluated, the locals are passed to the class definition.
+\end{funcdesc}
+
+\begin{funcdesc}{RETURN_VALUE}{}
+Returns with TOS to the caller of the function.
+\end{funcdesc}
+
+\begin{funcdesc}{EXEC_STMT}{}
+Implements \code{exec TOS2,TOS1,TOS}.  The compiler fills
+missing optional parameters with None.
+\end{funcdesc}
+
+\begin{funcdesc}{POP_BLOCK}{}
+Removes one block from the block stack.  Per frame, there is a 
+stack of blocks, denoting nested loops, try statements, and such.
+\end{funcdesc}
+
+\begin{funcdesc}{END_FINALLY}{}
+Terminates a finally-block.  The interpreter recalls whether the
+exception has to be re-raised, or whether the function returns,
+and continues with the outer-next block.
+\end{funcdesc}
+
+\begin{funcdesc}{BUILD_CLASS}{}
+Creates a new class object.  TOS is the methods dictionary, TOS1
+the tuple of the names of the base classes, and TOS2 the class name.
+\end{funcdesc}
+
+All of the following opcodes expect arguments.  An argument is two
+bytes, with the more significant byte last.
+
+\begin{funcdesc}{STORE_NAME}{namei}
+Implements \code{name = TOS}. \var{namei} is the index of \var{name}
+in the attribute \code{co_names} of the code object.
+The compiler tries to use STORE_LOCAL or STORE_GLOBAL if possible.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_NAME}{namei}
+Implements \code{del name}, where \var{namei} is the index into
+\code{co_names} attribute of the code object.
+\end{funcdesc}
+
+\begin{funcdesc}{UNPACK_TUPLE}{count}
+Unpacks TOS into \var{count} individual values, which are put onto
+the stack right-to-left.
+\end{funcdesc}
+
+\begin{funcdesc}{UNPACK_LIST}{count}
+Unpacks TOS into \var{count} individual values.
+\end{funcdesc}
+
+%\begin{funcdesc}{UNPACK_ARG}{count}
+%This opcode is obsolete.
+%\end{funcdesc}
+
+\begin{funcdesc}{STORE_ATTR}{namei}
+Implements \code{TOS.name = TOS1}, where \var{namei} is the index
+of name in \code{co_names}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_ATTR}{namei}
+Implements \code{del TOS.name}, using \var{namei} as index into
+\code{co_names}.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_GLOBAL}{namei}
+Works as STORE_NAME, but stores the name as a global.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_GLOBAL}{namei}
+Works as DELETE_NAME, but deletes a global name.
+\end{funcdesc}
+
+%\begin{funcdesc}{UNPACK_VARARG}{argc}
+%This opcode is obsolete.
+%\end{funcdesc}
+
+\begin{funcdesc}{LOAD_CONST}{consti}
+Pushes \code{co_consts[consti]} onto the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{LOAD_NAME}{namei}
+Pushes the value associated with \code{co_names[namei]} onto the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{BUILD_TUPLE}{count}
+Creates a tuple consuming \var{count} items from the stack, and pushes
+the resulting tuple onto the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{BUILD_LIST}{count}
+Works as \code{BUILD_TUPLE}, but creates a list.
+\end{funcdesc}
+
+\begin{funcdesc}{BUILD_MAP}{zero}
+Pushes an empty dictionary object onto the stack.  The argument is ignored
+and set to zero by the compiler.
+\end{funcdesc}
+
+\begin{funcdesc}{LOAD_ATTR}{namei}
+Replaces TOS with \code{getattr(TOS,co_names[namei]}.
+\end{funcdesc}
+
+\begin{funcdesc}{COMPARE_OP}{opname}
+Performs a boolean operation.  The operation name can be found
+in \code{cmp_op[opname]}.
+\end{funcdesc}
+
+\begin{funcdesc}{IMPORT_NAME}{namei}
+Imports the module \code{co_names[namei]}.  The module object is
+pushed onto the stack.  The current name space is not affect: for a
+proper import statement, a subsequent \code{STORE_FAST} instruction
+modifies the name space.
+\end{funcdesc}
+
+\begin{funcdesc}{IMPORT_FROM}{namei}
+Imports the attribute \code{co_names[namei]}.  The module to import
+from is found in TOS and left there.
+\end{funcdesc}
+
+\begin{funcdesc}{JUMP_FORWARD}{delta}
+Increments byte code counter by \var{delta}.
+\end{funcdesc}
+
+\begin{funcdesc}{JUMP_IF_TRUE}{delta}
+If TOS is true, increment the byte code counter by \var{delta}.  TOS is
+left on the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{JUMP_IF_FALSE}{delta}
+If TOS is false, increment the byte code counter by \var{delta}.  TOS
+is not changed. 
+\end{funcdesc}
+
+\begin{funcdesc}{JUMP_ABSOLUTE}{target}
+Set byte code counter to \var{target}.
+\end{funcdesc}
+
+\begin{funcdesc}{FOR_LOOP}{delta}
+Iterate over a sequence.  TOS is the current index, TOS1 the sequence.
+First, the next element is computed.  If the sequence is exhausted,
+increment byte code counter by \var{delta}.  Otherwise, push the
+sequence, the incremented counter, and the current item onto the stack.
+\end{funcdesc}
+
+%\begin{funcdesc}{LOAD_LOCAL}{namei}
+%This opcode is obsolete.
+%\end{funcdesc}
+
+\begin{funcdesc}{LOAD_GLOBAL}{namei}
+Loads the global named \code{co_names[namei]} onto the stack.
+\end{funcdesc}
+
+%\begin{funcdesc}{SET_FUNC_ARGS}{argc}
+%This opcode is obsolete.
+%\end{funcdesc}
+
+\begin{funcdesc}{SETUP_LOOP}{delta}
+Pushes a block for a loop onto the block stack.  The block spans
+from the current instruction with a size of \var{delta} bytes.
+\end{funcdesc}
+
+\begin{funcdesc}{SETUP_EXCEPT}{delta}
+Pushes a try block from a try-except clause onto the block stack.
+\var{delta} points to the first except block.
+\end{funcdesc}
+
+\begin{funcdesc}{SETUP_FINALLY}{delta}
+Pushes a try block from a try-except clause onto the block stack.
+\var{delta} points to the finally block.
+\end{funcdesc}
+
+\begin{funcdesc}{LOAD_FAST}{var_num}
+Pushes a reference to the local \code{co_varnames[var_num]} onto
+the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{STORE_FAST}{var_num}
+Stores TOS into the local \code{co_varnames[var_num]}.
+\end{funcdesc}
+
+\begin{funcdesc}{DELETE_FAST}{var_num}
+Deletes local \code{co_varnames[var_num]}.
+\end{funcdesc}
+
+\begin{funcdesc}{SET_LINE_NO}{lineno}
+Sets the current line number to \var{lineno}.
+\end{funcdesc}
+
+\begin{funcdesc}{RAISE_VARARGS}{argc}
+Raises an exception. \var{argc} indicates the number of parameters
+to the raise statement, ranging from 1 to 3.  The handler will find
+the traceback as TOS2, the parameter as TOS1, and the exception
+as TOS.
+\end{funcdesc}
+
+\begin{funcdesc}{CALL_FUNCTION}{argc}
+Calls a function.  The low byte of \var{argc} indicates the number of
+positional parameters, the high byte the number of keyword parameters.
+On the stack, the opcode finds the keyword parameters first.  For each
+keyword argument, the value is on top of the key.  Below the keyword
+parameters, the positional parameters are on the stack, with the
+right-most parameter on top.  Below the parameters, the function object
+to call is on the stack.
+\end{funcdesc}
+
+\begin{funcdesc}{MAKE_FUNCTION}{argc}
+Pushes a new function object on the stack.  TOS is the code associated
+with the function.  The function object is defined to have \var{argc}
+default parameters, which are found below TOS.
+\end{funcdesc}
+
+\begin{funcdesc}{BUILD_SLICE}{argc}
+Pushes a slice object on the stack.  If \var{argc} is three, creates
+\code{TOS3[TOS2:TOS1:TOS]}.  Otherwise, expects three arguments.
+\end{funcdesc}
+
+
