@@ -310,6 +310,19 @@ extern "C" {
 			errno = 0;					\
 	} while(0)
 
+/* Py_DEPRECATED(version)
+ * Declare a macro or function deprecated.
+ * Usage:
+ *    extern int old_var Py_DEPRECATED(2.3);
+ *    typedef int T1 Py_DEPRECATED(2.4);
+ *    extern int x() Py_DEPRECATED(2.5);
+ */
+#if defined(__GNUC__) && (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)
+#define Py_DEPRECATED(VERSION_UNUSED) __attribute__((__deprecated__))
+#else
+#define Py_DEPRECATED(VERSION_UNUSED) 
+#endif
+
 /**************************************************************************
 Prototypes that are missing from the standard include files on some systems
 (and possibly only some versions of such systems.)
