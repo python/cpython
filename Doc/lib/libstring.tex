@@ -79,7 +79,7 @@ Convert string \var{s} to a long integer in the given \var{base}.  The
 string must consist of one or more digits, optionally preceded by a
 sign (\samp{+} or \samp{-}).  The \var{base} argument has the same
 meaning as for \code{atoi()}.  A trailing \samp{l} or \samp{L} is not
-allowed.
+allowed, except if the base is 0.
 \end{funcdesc}
 
 \begin{funcdesc}{expandtabs}{s\, tabsize}
