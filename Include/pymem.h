@@ -52,13 +52,19 @@ extern DL_IMPORT(void) PyMem_Free(void *);
    no longer supported. They used to call PyErr_NoMemory() on failure. */
 
 /* Macros. */
-#ifndef PyMem_MALLOC
+#ifdef PYMALLOC_DEBUG
+/* Redirect all memory operations to Python's debugging allocator. */
+#define PyMem_MALLOC		PyObject_MALLOC
+#define PyMem_REALLOC		PyObject_REALLOC
+#define PyMem_FREE		PyObject_FREE
+
+#else	/* ! PYMALLOC_DEBUG */
+
 #ifdef MALLOC_ZERO_RETURNS_NULL
 #define PyMem_MALLOC(n)         malloc((n) ? (n) : 1)
 #else
 #define PyMem_MALLOC		malloc
 #endif
-
 /* Caution:  whether MALLOC_ZERO_RETURNS_NULL is #defined has nothing to
    do with whether platform realloc(non-NULL, 0) normally frees the memory
    or returns NULL.  Rather than introduce yet another config variation,
@@ -66,7 +72,7 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 #define PyMem_REALLOC(p, n)     realloc((p), (n) ? (n) : 1)
 
 #define PyMem_FREE           	free
-#endif	/* PyMem_MALLOC */
+#endif	/* PYMALLOC_DEBUG */
 
 /*
  * Type-oriented memory interface
@@ -85,12 +91,7 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 /* In order to avoid breaking old code mixing PyObject_{New, NEW} with
    PyMem_{Del, DEL} (there was no choice about this in 1.5.2), the latter
    have to be redirected to the object allocator. */
-/* XXX The parser module needs rework before this can be enabled. */
-#if 0
 #define PyMem_Del  PyObject_Free
-#else
-#define PyMem_Del  PyMem_Free
-#endif
 
 /* Macros */
 #define PyMem_NEW(type, n) \
@@ -98,12 +99,7 @@ extern DL_IMPORT(void) PyMem_Free(void *);
 #define PyMem_RESIZE(p, type, n) \
 	( (p) = (type *) PyMem_REALLOC((p), (n) * sizeof(type)) )
 
-/* XXX The parser module needs rework before this can be enabled. */
-#if 0
 #define PyMem_DEL PyObject_FREE
-#else
-#define PyMem_DEL  PyMem_FREE
-#endif
 
 #ifdef __cplusplus
 }
