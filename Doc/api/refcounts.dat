@@ -174,9 +174,9 @@ PyErr_Occurred:PyObject*::0:
 PyErr_Print:void:::
 
 PyErr_Restore:void:::
-PyErr_Restore:PyObject*:type:0:
-PyErr_Restore:PyObject*:value:0:
-PyErr_Restore:PyObject*:traceback:0:
+PyErr_Restore:PyObject*:type:-1:
+PyErr_Restore:PyObject*:value:-1:
+PyErr_Restore:PyObject*:traceback:-1:
 
 PyErr_SetFromErrno:PyObject*::null:
 PyErr_SetFromErrno:PyObject*:type:0:
