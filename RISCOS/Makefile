@@ -74,7 +74,6 @@ MODULES_DYNAMIC =\
 	@.^.Lib.md5/pyd\
 	@.^.Lib.operator/pyd\
 	@.^.Lib.parser/pyd\
-	@.^.Lib.pcre/pyd\
 	@.^.Lib.regex/pyd\
 	@.^.Lib.rgbimg/pyd\
 	@.^.Lib.rotor/pyd\
@@ -286,10 +285,6 @@ $(LIB_PYTHON):	$(OBJECTS)
 
 @.^.Lib.parser/pyd: @.^.Modules.o.parsermodule s.linktab
 	$(MAKEDLK) -d @.^.Lib.parser/pyd -s s.linktab -o @.^.Modules.o.parsermodule -e initparser
-
-@.^.Lib.pcre/pyd: @.^.Modules.o.pcremodule @.^.Modules.o.pypcre s.linktab
-	$(LINK) -aof -o @.^.Modules.o.pcrelink @.^.Modules.o.pcremodule @.^.Modules.o.pypcre
-	$(MAKEDLK) -d @.^.Lib.pcre/pyd -s s.linktab -o @.^.Modules.o.pcrelink -e initpcre
 
 @.^.Lib.regex/pyd: @.^.Modules.o.regexmodule @.^.Modules.o.regexpr s.linktab
 	$(LINK) -aof -o @.^.Modules.o.regexlink @.^.Modules.o.regexmodule @.^.Modules.o.regexpr
