@@ -58,7 +58,7 @@ AC_MINIX
 
 # checks for header files
 AC_HEADER_STDC
-AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h sys/wait.h)
+AC_CHECK_HEADERS(dlfcn.h fcntl.h limits.h ncurses.h signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h sys/wait.h)
 AC_HEADER_DIRENT
 
 # checks for typedefs
@@ -123,6 +123,7 @@ then
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
 	DYNIX/ptx*) LDSHARED="ld -G";;
 	Linux*) LDSHARED="gcc-elf -shared";;
+	FreeBSD*) LDSHARED="ld -Bshareable";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -138,6 +139,7 @@ then
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
+	FreeBSD*) CCSHARED="-fpic";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -170,6 +172,8 @@ AC_CHECK_LIB(inet, gethostbyname, [LIBS="-linet $LIBS"], [], -lnsl) # Sequent
 AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 fi
 
+# XXX need to check whether libreadline.a actually exists there!
+# XXX Also, on some systems, it's libreadline.so...
 AC_MSG_CHECKING(for --with-readline)
 AC_ARG_WITH(readline, [--with-readline=DIRECTORY GNU readline], [
 AC_MSG_RESULT($withval)
@@ -209,7 +213,7 @@ LIBS="$LIBS -lthread"
 LIBOBJS="$LIBOBJS thread.o"])
 ], AC_MSG_RESULT(no))
 
-# -I${DLINCLDIR} is added to the compile rule for import.o
+# -I${DLINCLDIR} is added to the compile rule for importdl.o
 AC_SUBST(DLINCLDIR)
 DLINCLDIR=/
 
@@ -239,7 +243,12 @@ DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
-AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate gethostname_r gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt strftime symlink tcgetpgrp tcsetpgrp times truncate uname waitpid)
+AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate \
+ gethostname_r getpeername getpgrp getpid gettimeofday getwd \
+ link lstat mkfifo nice readlink \
+ select setgid setuid setsid setpgid setpgrp setvbuf \
+ sigaction siginterrupt sigrelse strftime symlink \
+ tcgetpgrp tcsetpgrp times truncate uname waitpid) \
 AC_REPLACE_FUNCS(dup2 getcwd strerror memmove)
 AC_CHECK_FUNC(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
 AC_CHECK_FUNC(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
