@@ -175,6 +175,7 @@ then the method will open a file object with that name, write to it
 then close it.  If \var{file} is a file object, then it will start
 calling \method{write()} on it to store the lines of the command output.
 If \var{file} is supplied, then the returned \var{list} is an empty list.
+\end{methoddesc}
 
 \begin{methoddesc}{descriptions}{grouppattern}
 Send a \samp{LIST NEWSGROUPS} command, where \var{grouppattern} is a wildmat
@@ -182,16 +183,19 @@ string as specified in RFC2980 (it's essentially the same as DOS or UNIX
 shell wildcard strings).  Return a pair \code{(\var{response},
 \var{list})}, where \var{list} is a list of tuples containing
 \code{(\var{name}, \var{title})}.
+
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{description}{group}
 Get a description for a single group \var{group}.  If more than one group
-matches (if 'group' is a real wildmat string), return the first match.  If no group
-matches, return an empty string.
+matches (if 'group' is a real wildmat string), return the first match.  
+If no group matches, return an empty string.
 
 This elides the response code from the server.  If the response code is
 needed, use \method{descriptions()}.
 
+\versionadded{2.4}
 \end{methoddesc}
 
 \begin{methoddesc}{group}{name}
