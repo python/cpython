@@ -13,7 +13,7 @@ SGMLTARGETS=	$(patsubst %.tex,%.sgml,$(wildcard *.tex))
 XMLTARGETS=	$(patsubst %.tex,%.xml,$(wildcard *.tex))
 
 
-all:	sgml
+all:	xml
 
 esis:	$(ESISTARGETS)
 sgml:	$(SGMLTARGETS)
@@ -29,7 +29,9 @@ $(XMLTARGETS): $(ESIS2ML) $(FIXGES)
 .SUFFIXES: .esis .sgml .tex .xml
 
 .tex.esis:
-	$(LATEX2ESIS) $< | $(DOCFIXER) > $@
+	$(LATEX2ESIS) $< temp.esis
+	$(DOCFIXER) temp.esis $@
+	rm temp.esis
 
 .esis.sgml:
 	$(ESIS2ML) --sgml --autoclose para $< | $(FIXGES) > $@
