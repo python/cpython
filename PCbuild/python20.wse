@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=8.14
-  Title=Python 2.2
+  Title=Python 2.3 alpha 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -18,14 +18,14 @@ item: Global
   Patch Flags=0000000000001001
   Patch Threshold=85
   Patch Memory=4000
-  EXE Filename=Python-2.2.exe
+  EXE Filename=Python-2.3a1.exe
   Dialogs Version=8
-  Version File=2.2
+  Version File=2.3a1
   Version Description=Python Programming Language
   Version Copyright=©2001 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&All
+  Step View=&Properties
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -50,7 +50,7 @@ item: Global
   Variable Flags5=00001000
   Variable Name6=_PYMINOR_
   Variable Description6=Python minor version number; the 3 in 2.3
-  Variable Default6=2
+  Variable Default6=3
   Variable Flags6=00001000
   Variable Name7=_DOADMIN_
   Variable Description7=The initial value for %DOADMIN%.
@@ -64,7 +64,7 @@ item: Global
 end
 item: Set Variable
   Variable=PYVER_STRING
-  Value=2.2
+  Value=2.3a1
 end
 item: Remark
 end
