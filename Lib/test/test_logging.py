@@ -31,8 +31,9 @@ import logging, logging.handlers, logging.config
 
 try:
     locale.setlocale(locale.LC_ALL, '')
-except ValueError:
+except (ValueError, locale.Error):
     # this happens on a Solaris box which only supports "C" locale
+    # or a Mac OS X box which supports very little locale stuff at all
     pass
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
