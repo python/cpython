@@ -100,12 +100,12 @@ class TestCaseBase(unittest.TestCase):
 
 class HTMLParserTestCase(TestCaseBase):
 
-    def check_processing_instruction_only(self):
+    def test_processing_instruction_only(self):
         self._run_check("<?processing instruction>", [
             ("pi", "processing instruction"),
             ])
 
-    def check_simple_html(self):
+    def test_simple_html(self):
         self._run_check("""
 <!DOCTYPE html PUBLIC 'foo'>
 <HTML>&entity;&#32;
@@ -114,6 +114,7 @@ class HTMLParserTestCase(TestCaseBase):
 comment1b-->
 <Img sRc='Bar' isMAP>sample
 text
+&#x201C;
 <!--comment2a-- --comment2b-->
 </Html>
 """, [
@@ -128,13 +129,18 @@ text
     ("data", "\n"),
     ("starttag", "img", [("src", "Bar"), ("ismap", None)]),
     ("data", "sample\ntext\n"),
+    ("charref", "x201C"),
+    ("data", "\n"),
     ("comment", "comment2a-- --comment2b"),
     ("data", "\n"),
     ("endtag", "html"),
     ("data", "\n"),
     ])
 
-    def check_bad_nesting(self):
+    def test_bad_nesting(self):
+        # Strangely, this *is* supposed to test that overlapping
+        # elements are allowed.  HTMLParser is more geared toward
+        # lexing the input that parsing the structure.
         self._run_check("<a><b></a></b>", [
             ("starttag", "a", []),
             ("starttag", "b", []),
@@ -142,7 +148,7 @@ text
             ("endtag", "b"),
             ])
 
-    def check_attr_syntax(self):
+    def test_attr_syntax(self):
         output = [
           ("starttag", "a", [("b", "v"), ("c", "v"), ("d", "v"), ("e", None)])
           ]
@@ -151,7 +157,7 @@ text
         self._run_check("""<a\nb\n=\n'v'\nc\n=\n"v"\nd\n=\nv\ne>""", output)
         self._run_check("""<a\tb\t=\t'v'\tc\t=\t"v"\td\t=\tv\te>""", output)
 
-    def check_attr_values(self):
+    def test_attr_values(self):
         self._run_check("""<a b='xxx\n\txxx' c="yyy\t\nyyy" d='\txyz\n'>""",
                         [("starttag", "a", [("b", "xxx\n\txxx"),
                                             ("c", "yyy\t\nyyy"),
@@ -161,21 +167,21 @@ text
             ("starttag", "a", [("b", ""), ("c", "")]),
             ])
 
-    def check_attr_entity_replacement(self):
+    def test_attr_entity_replacement(self):
         self._run_check("""<a b='&amp;&gt;&lt;&quot;&apos;'>""", [
             ("starttag", "a", [("b", "&><\"'")]),
             ])
 
-    def check_attr_funky_names(self):
+    def test_attr_funky_names(self):
         self._run_check("""<a a.b='v' c:d=v e-f=v>""", [
             ("starttag", "a", [("a.b", "v"), ("c:d", "v"), ("e-f", "v")]),
             ])
 
-    def check_starttag_end_boundary(self):
+    def test_starttag_end_boundary(self):
         self._run_check("""<a b='<'>""", [("starttag", "a", [("b", "<")])])
         self._run_check("""<a b='>'>""", [("starttag", "a", [("b", ">")])])
 
-    def check_buffer_artefacts(self):
+    def test_buffer_artefacts(self):
         output = [("starttag", "a", [("b", "<")])]
         self._run_check(["<a b='<'>"], output)
         self._run_check(["<a ", "b='<'>"], output)
@@ -192,7 +198,7 @@ text
         self._run_check(["<a b='>", "'>"], output)
         self._run_check(["<a b='>'", ">"], output)
 
-    def check_starttag_junk_chars(self):
+    def test_starttag_junk_chars(self):
         self._parse_error("<")
         self._parse_error("<>")
         self._parse_error("</>")
@@ -212,10 +218,10 @@ text
         self._parse_error("<a foo='>")
         self._parse_error("<a foo=>")
 
-    def check_declaration_junk_chars(self):
+    def test_declaration_junk_chars(self):
         self._parse_error("<!DOCTYPE foo $ >")
 
-    def check_startendtag(self):
+    def test_startendtag(self):
         self._run_check("<p/>", [
             ("startendtag", "p", []),
             ])
@@ -229,13 +235,13 @@ text
             ("endtag", "p"),
             ])
 
-    def check_get_starttag_text(self):
+    def test_get_starttag_text(self):
         s = """<foo:bar   \n   one="1"\ttwo=2   >"""
         self._run_check_extra(s, [
             ("starttag", "foo:bar", [("one", "1"), ("two", "2")]),
             ("starttag_text", s)])
 
-    def check_cdata_content(self):
+    def test_cdata_content(self):
         s = """<script> <!-- not a comment --> &not-an-entity-ref; </script>"""
         self._run_check(s, [
             ("starttag", "script", []),
