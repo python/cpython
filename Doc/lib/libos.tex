@@ -788,7 +788,7 @@ a list or a tuple.  \var{mode} is a magic operational constant.  See
 the Visual \Cpp{} Runtime Library documentation for further
 information; the constants are exposed to the Python programmer as
 listed below.
-Availability: Windows.
+Availability: \UNIX{}, Windows.
 \versionadded{1.5.2}
 \end{funcdesc}
 
@@ -799,17 +799,24 @@ the mapping \var{env} as the environment.  \var{args} may be a list or
 a tuple.  \var{mode} is a magic operational constant.  See the Visual
 \Cpp{} Runtime Library documentation for further information; the
 constants are exposed to the Python programmer as listed below.
-Availability: Windows.
+Availability: \UNIX{}, Windows.
 \versionadded{1.5.2}
 \end{funcdesc}
 
 \begin{datadesc}{P_WAIT}
 \dataline{P_NOWAIT}
 \dataline{P_NOWAITO}
-\dataline{P_OVERLAY}
-\dataline{P_DETACH}
 Possible values for the \var{mode} parameter to \function{spawnv()}
 and \function{spawnve()}.
+Availability: \UNIX{}, Windows.
+\versionadded{1.5.2}
+\end{datadesc}
+
+\begin{datadesc}{P_OVERLAY}
+\dataline{P_DETACH}
+Possible values for the \var{mode} parameter to \function{spawnv()}
+and \function{spawnve()}.  These are less portable than those listed
+above.
 Availability: Windows.
 \versionadded{1.5.2}
 \end{datadesc}
