@@ -89,7 +89,7 @@ inc_count(PyTypeObject *tp)
 		 */
 		Py_INCREF(tp);
 		type_list = tp;
-#ifdef Py_REF_DEBUG
+#ifdef Py_TRACE_REFS
 		/* Also insert in the doubly-linked list of all objects. */
 		if (tp->_ob_next == NULL) {
 			PyObject *op = (PyObject *)tp;
