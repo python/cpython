@@ -1,9 +1,3 @@
-##---------------------------------------------------------------------------##
-##
-## idle - about box 
-## elguavas
-## 
-##---------------------------------------------------------------------------##
 """
 about box for idle
 """
@@ -21,12 +15,8 @@ class AboutDialog(Toplevel):
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+30,
                 parent.winfo_rooty()+30))
-        self.bg="#777777"
+        self.bg="#707070"
         self.fg="#ffffff"
-        #no ugly bold default font on *nix 
-        font=tkFont.Font(self,Label(self).cget('font'))
-        if os.name=='posix': font.config(weight=NORMAL)
-        self.textFont=font
         
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
@@ -61,33 +51,33 @@ class AboutDialog(Toplevel):
         #image=self.picture,bg=self.bg)
         #labelPicture.grid(row=0,column=1,sticky=W,rowspan=2,padx=0,pady=3)
         labelVersion = Label(frameBg,text='version  '+idlever.IDLE_VERSION,
-                fg=self.fg,bg=self.bg,font=self.textFont)
+                fg=self.fg,bg=self.bg)
         labelVersion.grid(row=1,column=0,sticky=W,padx=10,pady=5)
         labelDesc = Label(frameBg,
                 text="A development version of Python's lightweight\n"+
                 'Integrated DeveLopment Environment, IDLE.',
-                justify=LEFT,fg=self.fg,bg=self.bg,font=self.textFont)
+                justify=LEFT,fg=self.fg,bg=self.bg)
         labelDesc.grid(row=2,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         labelCopyright = Label(frameBg,
                 text="Copyright (c) 2001 Python Software Foundation;\nAll Rights Reserved",
-                justify=LEFT,fg=self.fg,bg=self.bg,font=self.textFont)
+                justify=LEFT,fg=self.fg,bg=self.bg)
         labelCopyright.grid(row=3,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         labelLicense = Label(frameBg,
                 text='Released under the Python 2.1.1 PSF Licence',
-                justify=LEFT,fg=self.fg,bg=self.bg,font=self.textFont)
+                justify=LEFT,fg=self.fg,bg=self.bg)
         labelLicense.grid(row=4,column=0,sticky=W,columnspan=3,padx=10,pady=5)
         framePad = Frame(frameBg,height=5,bg=self.bg).grid(row=5,column=0)
         labelEmail = Label(frameBg,text='email:  idle-dev@python.org',
-                justify=LEFT,fg=self.fg,bg=self.bg,font=self.textFont)
+                justify=LEFT,fg=self.fg,bg=self.bg)
         labelEmail.grid(row=6,column=0,columnspan=2,sticky=W,padx=10,pady=0)
         labelWWW = Label(frameBg,text='www:  http://idlefork.sourceforge.net',
-                justify=LEFT,fg=self.fg,bg=self.bg,font=self.textFont)
+                justify=LEFT,fg=self.fg,bg=self.bg)
         labelWWW.grid(row=7,column=0,columnspan=2,sticky=W,padx=10,pady=0)
         frameDivider = Frame(frameBg,borderwidth=1,relief=SUNKEN,
                 height=2,bg=self.bg).grid(row=8,column=0,sticky=(E,W),columnspan=3,
                 padx=5,pady=5)
         labelPythonVer = Label(frameBg,text='Python version:  '+
-                sys.version.split()[0],fg=self.fg,bg=self.bg,font=self.textFont)
+                sys.version.split()[0],fg=self.fg,bg=self.bg)
         labelPythonVer.grid(row=9,column=0,sticky=W,padx=10,pady=0)
         #handle weird tk version num in windoze python >= 1.6 (?!?)
         tkVer = `TkVersion`.split('.')
@@ -95,8 +85,8 @@ class AboutDialog(Toplevel):
         if tkVer[len(tkVer)-1] == '': 
             tkVer[len(tkVer)-1] = '0'
         tkVer = string.join(tkVer,'.')
-        labelTkVer = Label(frameBg,text='Tk version:  '+tkVer,fg=self.fg,bg=self.bg,
-                font=self.textFont)
+        labelTkVer = Label(frameBg,text='Tk version:  '+
+                tkVer,fg=self.fg,bg=self.bg)
         labelTkVer.grid(row=9,column=1,sticky=W,padx=2,pady=0)
 
         self.buttonLicense = Button(frameBg,text='View License',underline=5,
