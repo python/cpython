@@ -504,20 +504,18 @@ static char weakref_getweakrefcount__doc__[] =
 "to 'object'.";
 
 static PyObject *
-weakref_getweakrefcount(PyObject *self, PyObject *args)
+weakref_getweakrefcount(PyObject *self, PyObject *object)
 {
     PyObject *result = NULL;
-    PyObject *object;
 
-    if (PyArg_ParseTuple(args, "O:getweakrefcount", &object)) {
-        if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
-            PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
+    if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
+        PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
 
-            result = PyInt_FromLong(getweakrefcount(*list));
-        }
-        else
-            result = PyInt_FromLong(0);
+        result = PyInt_FromLong(getweakrefcount(*list));
     }
+    else
+        result = PyInt_FromLong(0);
+
     return result;
 }
 
@@ -527,30 +525,27 @@ static char weakref_getweakrefs__doc__[] =
 "that point to 'object'.";
 
 static PyObject *
-weakref_getweakrefs(PyObject *self, PyObject *args)
+weakref_getweakrefs(PyObject *self, PyObject *object)
 {
     PyObject *result = NULL;
-    PyObject *object;
 
-    if (PyArg_ParseTuple(args, "O:getweakrefs", &object)) {
-        if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
-            PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
-            long count = getweakrefcount(*list);
+    if (PyType_SUPPORTS_WEAKREFS(object->ob_type)) {
+        PyWeakReference **list = GET_WEAKREFS_LISTPTR(object);
+        long count = getweakrefcount(*list);
 
-            result = PyList_New(count);
-            if (result != NULL) {
-                PyWeakReference *current = *list;
-                long i;
-                for (i = 0; i < count; ++i) {
-                    PyList_SET_ITEM(result, i, (PyObject *) current);
-                    Py_INCREF(current);
-                    current = current->wr_next;
-                }
+        result = PyList_New(count);
+        if (result != NULL) {
+            PyWeakReference *current = *list;
+            long i;
+            for (i = 0; i < count; ++i) {
+                PyList_SET_ITEM(result, i, (PyObject *) current);
+                Py_INCREF(current);
+                current = current->wr_next;
             }
         }
-        else {
-            result = PyList_New(0);
-        }
+    }
+    else {
+        result = PyList_New(0);
     }
     return result;
 }
@@ -796,9 +791,9 @@ cleanup_helper(PyObject *object)
 
 static PyMethodDef
 weakref_functions[] =  {
-    {"getweakrefcount", weakref_getweakrefcount,        METH_VARARGS,
+    {"getweakrefcount", weakref_getweakrefcount,        METH_O,
      weakref_getweakrefcount__doc__},
-    {"getweakrefs",     weakref_getweakrefs,            METH_VARARGS,
+    {"getweakrefs",     weakref_getweakrefs,            METH_O,
      weakref_getweakrefs__doc__},
     {"proxy",           weakref_proxy,                  METH_VARARGS,
      weakref_proxy__doc__},
