@@ -2,6 +2,7 @@
 
 import sys
 import copy
+import copy_reg
 
 import unittest
 from test import test_support
@@ -31,6 +32,19 @@ class TestCopy(unittest.TestCase):
         y = copy.copy(x)
         self.assertEqual(y.__class__, x.__class__)
         self.assertEqual(y.foo, x.foo)
+
+    def test_copy_registry(self):
+        class C(object):
+            def __new__(cls, foo):
+                obj = object.__new__(cls)
+                obj.foo = foo
+                return obj
+        def pickle_C(obj):
+            return (C, (obj.foo,))
+        x = C(42)
+        self.assertRaises(TypeError, copy.copy, x)
+        copy_reg.pickle(C, pickle_C, C)
+        y = copy.copy(x)
 
     def test_copy_reduce(self):
         class C(object):
@@ -181,6 +195,19 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertEqual(y.__class__, x.__class__)
         self.assertEqual(y.foo, x.foo)
+
+    def test_deepcopy_registry(self):
+        class C(object):
+            def __new__(cls, foo):
+                obj = object.__new__(cls)
+                obj.foo = foo
+                return obj
+        def pickle_C(obj):
+            return (C, (obj.foo,))
+        x = C(42)
+        self.assertRaises(TypeError, copy.deepcopy, x)
+        copy_reg.pickle(C, pickle_C, C)
+        y = copy.deepcopy(x)
 
     def test_deepcopy_reduce(self):
         class C(object):
