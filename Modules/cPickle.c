@@ -2021,14 +2021,16 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 	mod = PyImport_ImportModule(module_str);
 	if (mod == NULL) {
 		cPickle_ErrFormat(PicklingError,
-				  "Can't pickle %s: it's not found as %s.%s",
-				  "OSS", args, module, global_name);
+				  "Can't pickle %s: import of module %s "
+				  "failed",
+				  "OS", args, module);
 		goto finally;
 	}
 	klass = PyObject_GetAttrString(mod, name_str);
 	if (klass == NULL) {
 		cPickle_ErrFormat(PicklingError,
-				  "Can't pickle %s: it's not found as %s.%s",
+				  "Can't pickle %s: attribute lookup %s.%s "
+				  "failed",
 				  "OSS", args, module, global_name);
 		goto finally;
 	}
