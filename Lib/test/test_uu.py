@@ -122,3 +122,37 @@ try:
     raise TestFailed("No exception thrown")
 except uu.Error, e:
     verify(str(e) == 'No valid begin line found in input file')
+
+# Test to verify that decode() will refuse to overwrite an existing file
+import tempfile
+outfile = tempfile.mktemp()
+inp = StringIO('Here is a message to be uuencoded')
+out = StringIO()
+uu.encode(inp, out, outfile)
+out.seek(0)
+try:
+    if verbose:
+        print '9. decode w/file not exists is okay'
+    uu.decode(out)
+    if not os.path.exists(outfile):
+        raise TestFailed('uudecode w/ out_file=None failed')
+    fp = open(outfile)
+    data = fp.read()
+    fp.close()
+    if data <> inp.getvalue():
+        raise TestFailed('uudecode stored something weird')
+    # Try to write it again, which should cause a failure
+    if verbose:
+        print '10. uudecode w/file exists fails'
+    out.seek(0)
+    try:
+        uu.decode(out)
+    except uu.Error:
+        pass
+    else:
+        raise TestFailed('expected to get a "file exists" error')
+finally:
+    try:
+        os.unlink(outfile)
+    except OSError:
+        pass
