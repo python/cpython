@@ -1205,7 +1205,7 @@ Py_FdIsInteractive(FILE *fp, char *filename)
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
 int
-PyOS_CheckStack()
+PyOS_CheckStack(void)
 {
 	__try {
 		/* _alloca throws a stack overflow exception if there's
