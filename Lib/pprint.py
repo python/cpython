@@ -1,5 +1,5 @@
 #  Author:      Fred L. Drake, Jr.
-#               fdrake@cnri.reston.va.us, fdrake@acm.org
+#               fdrake@acm.org
 #
 #  This is a simple little module I wrote to make life easier.  I didn't
 #  see anything quite like it in the library, though I may have overlooked
