@@ -81,9 +81,29 @@ sub do_cmd_cfunction{ &do_cmd_code(@_); }
 sub do_cmd_cdata{ &do_cmd_code(@_); }
 sub do_cmd_ctype{ &do_cmd_code(@_); }
 
+sub do_cmd_character{ &do_cmd_samp(@_); }
+
+sub do_cmd_regexp{
+    local($_) = @_;
+    s|$next_pair_pr_rx|<tt>\2</tt>|;
+    $_;
+}
+
+sub do_cmd_envvar{
+    local($_) = @_;
+    s/$next_pair_pr_rx/\$\2/;
+    $_;
+}
+
+sub do_cmd_mimetype{
+    local($_) = @_;
+    s|$next_pair_pr_rx|<font face=sans-serif>\2</font>|;
+    $_;
+}
+
 sub do_cmd_email{
     local($_) = @_;
-    s/$any_next_pair_pr_rx/<tt><font face=sans-serif>\2<\/font><\/tt>/;
+    s|$any_next_pair_pr_rx|<tt><font face=sans-serif>\2</font></tt>|;
     $_;
 }
 
@@ -99,7 +119,7 @@ sub do_cmd_url{
 sub do_cmd_manpage{
     # two parameters:  \manpage{name}{section}
     local($_) = @_;
-#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     s/$next_pair_pr_rx$any_next_pair_pr_rx3/<i>\2<\/i>(\4)/;
     $_;
 }
@@ -154,7 +174,7 @@ sub do_cmd_strong{
 sub do_cmd_deprecated{
     # two parameters:  \deprecated{version}{whattodo}
     local($_) = @_;
-#    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
     local($release,$action) = ($2, $4);
     s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
     "<b>Deprecated since release $release.</b>"
@@ -169,7 +189,8 @@ sub do_cmd_deprecated{
 $INDEX_SUBITEM = "";
 
 sub get_indexsubitem{
-  $INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
+    #$INDEX_SUBITEM ? " $INDEX_SUBITEM" : '';
+    '';
 }
 
 sub do_cmd_setindexsubitem{
@@ -178,6 +199,18 @@ sub do_cmd_setindexsubitem{
     $INDEX_SUBITEM = $2;
     $_;
 }
+
+sub do_cmd_withsubitem{
+    # We can't really do the right right thing, because LaTeX2HTML doesn't
+    # do things in the right order, but we need to at least strip this stuff
+    # out, and leave anything that the second argument expanded out to.
+    #
+    local($_) = @_;
+    s/$next_pair_pr_rx$any_next_pair_pr_rx3/\4/;
+    $_;
+}
+
+sub do_cmd_makemodindex{ @_[0]; }
 
 sub do_cmd_indexii{
     local($_) = @_;
@@ -313,10 +346,10 @@ sub init_myformat{
     $any_next_pair_rx7 = "$O(\\d+)$C([\\s\\S]*)$O\\7$C";
     $any_next_pair_rx9 = "$O(\\d+)$C([\\s\\S]*)$O\\9$C";
     # <#2#>...<#2#>
-    $any_next_pair_pr_rx_3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
-    $any_next_pair_pr_rx_5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
-    $any_next_pair_pr_rx_7 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP";
-    $any_next_pair_pr_rx_9 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP";
+    $any_next_pair_pr_rx3 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    $any_next_pair_pr_rx5 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
+    $any_next_pair_pr_rx7 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\7$CP";
+    $any_next_pair_pr_rx9 = "$OP(\\d+)$CP([\\s\\S]*)$OP\\9$CP";
 #     if (defined &process_commands_wrap_deferred) {
 # 	&process_commands_wrap_deferred(<<THESE_COMMANDS);
 # indexii # {} # {}
@@ -386,6 +419,8 @@ sub replace_verbatim_hook{
 sub do_env_cfuncdesc{
     local($_) = @_;
     local($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
+    local($any_next_pair_rx3) = "$O(\\d+)$C([\\s\\S]*)$O\\3$C";
+    local($any_next_pair_rx5) = "$O(\\d+)$C([\\s\\S]*)$O\\5$C";
     local($cfuncdesc_rx) =
       "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
     if (/$cfuncdesc_rx/o) {
@@ -632,6 +667,7 @@ sub do_cmd_seemodule{
     local($_) = @_;
     local($opt_arg) = "(\\[([^\\]]*)])?";
 #    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+#    local($any_next_pair_pr_rx5) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\5$CP";
     s/$opt_arg$any_next_pair_pr_rx3$any_next_pair_pr_rx5//;
     local($module,$text,$key) = ($4, $6, $2);
     $key = $module if not $key;
@@ -683,7 +719,14 @@ sub do_cmd_maketitle {
 }
 
 
-# These are located down here since they screw up fontlock.
+sub do_cmd_inputindex{
+    local($_) = @_;
+    s/$next_pair_pr_rx//;
+    &do_cmd_input($2);
+}
+
+
+# These are located down here since they screw up fontlock.  -- used to.
 
 sub do_cmd_file{
     # This uses a weird HTML construct to adjust the font to be
