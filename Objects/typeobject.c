@@ -146,7 +146,7 @@ mro_subclasses(PyTypeObject *type)
 {
 	PyTypeObject *subclass;
 	PyObject *ref, *subclasses, *old_mro;
-	int i, n, r;
+	int i, n, r = 0;
 
 	subclasses = type->tp_subclasses;
 	if (subclasses == NULL)
