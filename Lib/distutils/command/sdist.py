@@ -59,7 +59,7 @@ class sdist (Command):
          "forcibly regenerate the manifest and carry on as usual"),
         ('formats=', None,
          "formats for source distribution (comma-separated list)"),
-        ('keep-tree', 'k',
+        ('keep-temp', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),
         ('dist-dir=', 'd',
@@ -69,7 +69,7 @@ class sdist (Command):
 
     boolean_options = ['use-defaults', 'prune',
                        'manifest-only', 'force-manifest',
-                       'keep-tree']
+                       'keep-temp']
 
     help_options = [
         ('help-formats', None,
@@ -97,7 +97,7 @@ class sdist (Command):
         self.force_manifest = 0
 
         self.formats = None
-        self.keep_tree = 0
+        self.keep_temp = 0
         self.dist_dir = None
 
         self.archive_files = None
@@ -357,7 +357,7 @@ class sdist (Command):
         by 'read_template()', but really don't belong there:
           * the build tree (typically "build")
           * the release tree itself (only an issue if we ran "sdist"
-            previously with --keep-tree, or it aborted)
+            previously with --keep-temp, or it aborted)
           * any RCS or CVS directories
         """
         build = self.get_finalized_command('build')
@@ -447,7 +447,7 @@ class sdist (Command):
         tree with 'make_release_tree()'; then, we create all required
         archive files (according to 'self.formats') from the release tree.
         Finally, we clean up by blowing away the release tree (unless
-        'self.keep_tree' is true).  The list of archive files created is
+        'self.keep_temp' is true).  The list of archive files created is
         stored so it can be retrieved later by 'get_archive_files()'.
         """
         # Don't warn about missing meta-data here -- should be (and is!)
@@ -463,7 +463,7 @@ class sdist (Command):
 
         self.archive_files = archive_files
 
-        if not self.keep_tree:
+        if not self.keep_temp:
             dir_util.remove_tree (base_dir, self.verbose, self.dry_run)
 
     def get_archive_files (self):
