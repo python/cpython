@@ -1053,30 +1053,30 @@ words and expected output are converted to comments:
     >>> import test.test_doctest
     >>> name = 'test.test_doctest.sample_func'
     >>> print doctest.testsource(test.test_doctest, name)
-    #      Blah blah
+    # Blah blah
     #
     print sample_func(22)
     # Expected:
-    #     44
+    ## 44
     #
-    #      Yee ha!
+    # Yee ha!
 
     >>> name = 'test.test_doctest.SampleNewStyleClass'
     >>> print doctest.testsource(test.test_doctest, name)
     print '1\n2\n3'
     # Expected:
-    #     1
-    #     2
-    #     3
+    ## 1
+    ## 2
+    ## 3
 
     >>> name = 'test.test_doctest.SampleClass.a_classmethod'
     >>> print doctest.testsource(test.test_doctest, name)
     print SampleClass.a_classmethod(10)
     # Expected:
-    #     12
+    ## 12
     print SampleClass(0).a_classmethod(10)
     # Expected:
-    #     12
+    ## 12
 """
 
 def test_debug(): r"""
