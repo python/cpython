@@ -135,12 +135,14 @@ Here are some notes on the parsing semantics:
       message object with a string payload.  These objects will return
       \code{False} for \method{is_multipart()}.  Their
       \method{get_payload()} method will return a string object.
+
 \item All \mimetype{multipart} type messages will be parsed as a
       container message object with a list of sub-message objects for
       their payload.  The outer container message will return
       \code{True} for \method{is_multipart()} and their
       \method{get_payload()} method will return the list of
       \class{Message} subparts.
+
 \item Most messages with a content type of \mimetype{message/*}
       (e.g. \mimetype{message/deliver-status} and
       \mimetype{message/rfc822}) will also be parsed as container
