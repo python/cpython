@@ -256,7 +256,6 @@ class Form:
 
 
 
-
 Tkinter.Widget.__bases__ = Tkinter.Widget.__bases__ + (Form,)
 
 class TixWidget(Tkinter.Widget):
@@ -377,6 +376,26 @@ class TixWidget(Tkinter.Widget):
         names = self._subwidget_names()
         for name in names:
             self.tk.call(name, 'configure', '-' + option, value)
+    # These are missing from Tkinter
+    def image_create(self, imgtype, cnf={}, master=None, **kw):
+        if not master:
+            master = Tkinter._default_root
+            if not master:
+                raise RuntimeError, 'Too early to create image'
+        if kw and cnf: cnf = _cnfmerge((cnf, kw))
+        elif kw: cnf = kw
+        options = ()
+        for k, v in cnf.items():
+            if callable(v):
+                v = self._register(v)
+            options = options + ('-'+k, v)
+        return master.tk.call(('image', 'create', imgtype,) + options)
+    def image_delete(self, imgname):
+        try:
+            self.tk.call('image', 'delete', imgname)
+        except TclError:
+            # May happen if the root was destroyed
+            pass
 
 # Subwidgets are child widgets created automatically by mega-widgets.
 # In python, we have to create these subwidgets manually to mirror their
@@ -565,6 +584,8 @@ class ComboBox(TixWidget):
             # unavailable when -fancy not specified
             pass
 
+    # align
+    
     def add_history(self, str):
         self.tk.call(self._w, 'addhistory', str)
 
@@ -1247,8 +1268,6 @@ class PopupMenu(TixWidget):
 
 class ResizeHandle(TixWidget):
     """Internal widget to draw resize handles on Scrolled widgets."""
-    # FIXME: This is dangerous to expose to be called on its own.
-    # Perhaps rename ResizeHandle to _ResizeHandle
     def __init__(self, master, cnf={}, **kw):
         # There seems to be a Tix bug rejecting the configure method
         # Let's try making the flags -static
