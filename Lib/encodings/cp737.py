@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP737.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP737.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0080: 0x0391,	# GREEK CAPITAL LETTER ALPHA
 	0x0081: 0x0392,	# GREEK CAPITAL LETTER BETA
 	0x0082: 0x0393,	# GREEK CAPITAL LETTER GAMMA
@@ -165,7 +165,7 @@ decoding_map = {
 	0x00fd: 0x00b2,	# SUPERSCRIPT TWO
 	0x00fe: 0x25a0,	# BLACK SQUARE
 	0x00ff: 0x00a0,	# NO-BREAK SPACE
-}
+})
 
 ### Encoding Map
 

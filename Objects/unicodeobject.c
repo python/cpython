@@ -1970,11 +1970,11 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	Py_DECREF(w);
 	if (x == NULL) {
 	    if (PyErr_ExceptionMatches(PyExc_LookupError)) {
-		/* No mapping found: default to Latin-1 mapping */
+		/* No mapping found means: mapping is undefined. */
 		PyErr_Clear();
-		*p++ = (Py_UNICODE)ch;
-		continue;
-	    }
+		x = Py_None;
+		Py_INCREF(x);
+	    } else
 	    goto onError;
 	}
 
@@ -2086,16 +2086,11 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
 	Py_DECREF(w);
 	if (x == NULL) {
 	    if (PyErr_ExceptionMatches(PyExc_LookupError)) {
-		/* No mapping found: default to Latin-1 mapping if possible */
+		/* No mapping found means: mapping is undefined. */
 		PyErr_Clear();
-		if (ch < 256) {
-		    *s++ = (char)ch;
-		    continue;
-		}
-		else if (!charmap_encoding_error(&p, &s, errors,
-				     "missing character mapping"))
-		    continue;
-	    }
+		x = Py_None;
+		Py_INCREF(x);
+	    } else
 	    goto onError;
 	}
 

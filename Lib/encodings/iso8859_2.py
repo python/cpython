@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from '8859-2.TXT'.
-
+""" Python Character Mapping Codec generated from '8859-2.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x00a1: 0x0104,	# 	LATIN CAPITAL LETTER A WITH OGONEK
 	0x00a2: 0x02d8,	# 	BREVE
 	0x00a3: 0x0141,	# 	LATIN CAPITAL LETTER L WITH STROKE
@@ -94,7 +94,7 @@ decoding_map = {
 	0x00fb: 0x0171,	# 	LATIN SMALL LETTER U WITH DOUBLE ACUTE
 	0x00fe: 0x0163,	# 	LATIN SMALL LETTER T WITH CEDILLA
 	0x00ff: 0x02d9,	# 	DOT ABOVE
-}
+})
 
 ### Encoding Map
 

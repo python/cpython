@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'ROMAN.TXT'.
-
+""" Python Character Mapping Codec generated from 'ROMAN.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x0080: 0x00c4,	# LATIN CAPITAL LETTER A WITH DIAERESIS
 	0x0081: 0x00c5,	# LATIN CAPITAL LETTER A WITH RING ABOVE
 	0x0082: 0x00c7,	# LATIN CAPITAL LETTER C WITH CEDILLA
@@ -160,7 +160,7 @@ decoding_map = {
 	0x00fd: 0x02dd,	# DOUBLE ACUTE ACCENT
 	0x00fe: 0x02db,	# OGONEK
 	0x00ff: 0x02c7,	# CARON
-}
+})
 
 ### Encoding Map
 

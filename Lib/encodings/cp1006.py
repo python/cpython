@@ -1,9 +1,9 @@
-""" Python Character Mapping Codec generated from 'CP1006.TXT'.
-
+""" Python Character Mapping Codec generated from 'CP1006.TXT' with gencodec.py.
 
 Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
+(c) Copyright 2000 Guido van Rossum.
 
 """#"
 
@@ -35,8 +35,8 @@ def getregentry():
 
 ### Decoding Map
 
-decoding_map = {
-
+decoding_map = codecs.make_identity_dict(range(256))
+decoding_map.update({
 	0x00a1: 0x06f0,	# 	EXTENDED ARABIC-INDIC DIGIT ZERO
 	0x00a2: 0x06f1,	# 	EXTENDED ARABIC-INDIC DIGIT ONE
 	0x00a3: 0x06f2,	# 	EXTENDED ARABIC-INDIC DIGIT TWO
@@ -131,7 +131,7 @@ decoding_map = {
 	0x00fd: 0xfbae,	# 	ARABIC LETTER YEH BARREE ISOLATED FORM
 	0x00fe: 0xfe7c,	# 	ARABIC SHADDA ISOLATED FORM
 	0x00ff: 0xfe7d,	# 	ARABIC SHADDA MEDIAL FORM
-}
+})
 
 ### Encoding Map
 
