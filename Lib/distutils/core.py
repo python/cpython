@@ -849,7 +849,7 @@ class Command:
         # If 'outfile' must be regenerated (either because it doesn't
         # exist, is out-of-date, or the 'force' flag is true) then
         # perform the action that presumably regenerates it
-        if self.force or newer_group (infiles, outfile):
+        if self.force or util.newer_group (infiles, outfile):
             self.execute (func, args, exec_msg, level)
 
         # Otherwise, print the "skip" message
