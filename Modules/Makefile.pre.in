@@ -125,7 +125,7 @@ clean:
 
 clobber:	clean
 		-rm -f *.a tags TAGS config.c glmodule.c Makefile.pre
-		-rm -f *.so so_locations
+		-rm -f *.so *.sl so_locations
 
 getpath.o:	getpath.c Makefile
 		$(CC) -c $(CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
