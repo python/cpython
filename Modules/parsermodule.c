@@ -17,6 +17,12 @@
  *  Unlike the prior interface, the ability to give a parse tree
  *  produced by Python code as a tuple to the compiler is enabled by
  *  this module.  See the documentation for more details.
+ *
+ *  I've added some annotations that help with the lint code-checking
+ *  program, but they're not complete by a long shot.  The real errors
+ *  that lint detects are gone, but there are still warnings with
+ *  Py_[X]DECREF() and Py_[X]INCREF() macros.  The lint annotations
+ *  look like "NOTE(...)".
  */
 
 #include "Python.h"			/* general Python API		  */
@@ -25,6 +31,12 @@
 #include "token.h"			/* token definitions		  */
 					/* ISTERMINAL() / ISNONTERMINAL() */
 #include "compile.h"			/* PyNode_Compile()		  */
+
+#ifdef lint
+#include <note.h>
+#else
+#define NOTE(x)
+#endif
 
 #ifdef macintosh
 char *strdup Py_PROTO((char *));
@@ -50,9 +62,9 @@ parser_version_string = "0.4";
 
 
 typedef PyObject* (*SeqMaker) Py_PROTO((int length));
-typedef void (*SeqInserter) Py_PROTO((PyObject* sequence,
-				      int index,
-				      PyObject* element));
+typedef int (*SeqInserter) Py_PROTO((PyObject* sequence,
+				     int index,
+				     PyObject* element));
 
 /*  The function below is copyrigthed by Stichting Mathematisch Centrum.  The
  *  original copyright statement is included below, and continues to apply
@@ -103,44 +115,46 @@ node2tuple(n, mkseq, addelem, lineno)
 {
     if (n == NULL) {
 	Py_INCREF(Py_None);
-	return Py_None;
+	return (Py_None);
     }
     if (ISNONTERMINAL(TYPE(n))) {
 	int i;
-	PyObject *v, *w;
+	PyObject *v;
+	PyObject *w;
+
 	v = mkseq(1 + NCH(n));
 	if (v == NULL)
-	    return v;
+	    return (v);
 	w = PyInt_FromLong(TYPE(n));
 	if (w == NULL) {
 	    Py_DECREF(v);
-	    return NULL;
+	    return ((PyObject*) NULL);
 	}
-	addelem(v, 0, w);
+	(void) addelem(v, 0, w);
 	for (i = 0; i < NCH(n); i++) {
 	    w = node2tuple(CHILD(n, i), mkseq, addelem, lineno);
 	    if (w == NULL) {
 		Py_DECREF(v);
-		return NULL;
+		return ((PyObject*) NULL);
 	    }
-	    addelem(v, i+1, w);
+	    (void) addelem(v, i+1, w);
 	}
 	return (v);
     }
     else if (ISTERMINAL(TYPE(n))) {
 	PyObject *result = mkseq(2 + lineno);
 	if (result != NULL) {
-	    addelem(result, 0, PyInt_FromLong(TYPE(n)));
-	    addelem(result, 1, PyString_FromString(STR(n)));
+	    (void) addelem(result, 0, PyInt_FromLong(TYPE(n)));
+	    (void) addelem(result, 1, PyString_FromString(STR(n)));
 	    if (lineno == 1)
-		addelem(result, 2, PyInt_FromLong(n->n_lineno));
+		(void) addelem(result, 2, PyInt_FromLong(n->n_lineno));
 	}
 	return (result);
     }
     else {
 	PyErr_SetString(PyExc_SystemError,
 			"unrecognized parse tree node type");
-	return NULL;
+	return ((PyObject*) NULL);
     }
 }   /* node2tuple() */
 /*
@@ -182,20 +196,23 @@ typedef struct _PyAST_Object {
 } PyAST_Object;
 
 
-staticforward void parser_free Py_PROTO((PyAST_Object *ast));
-staticforward int  parser_compare Py_PROTO((PyAST_Object *left,
-					    PyAST_Object *right));
+staticforward void
+parser_free Py_PROTO((PyAST_Object *ast));
 
-staticforward PyObject *parser_getattr Py_PROTO((PyObject *self, char *name));
+staticforward int
+parser_compare Py_PROTO((PyAST_Object *left, PyAST_Object *right));
+
+staticforward PyObject *
+parser_getattr Py_PROTO((PyObject *self, char *name));
 
 
-/* static */
+static
 PyTypeObject PyAST_Type = {
 
-    PyObject_HEAD_INIT(NULL)
+    PyObject_HEAD_INIT(&PyType_Type)
     0,
     "ast",				/* tp_name		*/
-    sizeof(PyAST_Object),		/* tp_basicsize		*/
+    (int) sizeof(PyAST_Object),		/* tp_basicsize		*/
     0,					/* tp_itemsize		*/
     (destructor)parser_free,		/* tp_dealloc		*/
     0,					/* tp_print		*/
@@ -249,7 +266,7 @@ parser_compare_nodes(left, right)
     for (j = 0; j < NCH(left); ++j) {
 	int v = parser_compare_nodes(CHILD(left, j), CHILD(right, j));
 
-	if (v)
+	if (v != NULL)
 	    return (v);
     }
     return (0);
@@ -298,6 +315,9 @@ parser_newastobject(ast, type)
 	o->ast_node = ast;
 	o->ast_type = type;
     }
+    else {
+	PyNode_Free(ast);
+    }
     return ((PyObject*)o);
 
 }   /* parser_newastobject() */
@@ -333,15 +353,16 @@ parser_ast2tuple(self, args)
     PyObject *res = 0;
     int ok;
 
-    if (self == NULL)
+    if (self == NULL) {
 	ok = PyArg_ParseTuple(
 		args, "O!|O:ast2tuple", &PyAST_Type, &self, &line_option);
+    }
     else
 	ok = PyArg_ParseTuple(args, "|O:totuple", &line_option);
-    if (ok) {
+    if (ok != 0) {
 	int lineno = 0;
 	if (line_option != NULL) {
-	    lineno = PyObject_IsTrue(line_option) ? 1 : 0;
+	    lineno = (PyObject_IsTrue(line_option) != 0) ? 1 : 0;
 	}
 	/*
 	 *  Convert AST into a tuple representation.  Use Guido's function,
@@ -384,7 +405,7 @@ parser_ast2list(self, args)
 	 *  Convert AST into a tuple representation.  Use Guido's function,
 	 *  since it's known to work already.
 	 */
-	res = node2tuple(((PyAST_Object *)self)->ast_node,
+	res = node2tuple(self->ast_node,
 			 PyList_New, PyList_SetItem, lineno);
     }
     return (res);
@@ -487,7 +508,7 @@ parser_methods[] = {
     {"totuple",		(PyCFunction)parser_ast2tuple,	METH_VARARGS,
 	"Creates a tuple-tree representation of this AST."},
 
-    {NULL}
+    {NULL, NULL, 0, NULL}
 };
 
 static PyObject*
@@ -564,6 +585,7 @@ parser_expr(self, args)
      PyObject *self;
      PyObject *args;
 {
+    NOTE(ARGUNUSED(self))
     return (parser_do_parse(args, PyAST_EXPR));
 
 }   /* parser_expr() */
@@ -574,6 +596,7 @@ parser_suite(self, args)
      PyObject *self;
      PyObject *args;
 {
+    NOTE(ARGUNUSED(self))
     return (parser_do_parse(args, PyAST_SUITE));
 
 }   /* parser_suite() */
@@ -620,6 +643,7 @@ parser_tuple2ast(self, args)
      PyObject *self;
      PyObject *args;
 {
+    NOTE(ARGUNUSED(self))
     PyObject *ast = 0;
     PyObject *tuple = 0;
     PyObject *temp = 0;
@@ -804,7 +828,7 @@ build_node_children(tuple, root, line_num)
 		/* check_terminal_tuple() already verified it's a string */
 		strn = (char *)malloc(PyString_GET_SIZE(temp) + 1);
 		if (strn != NULL)
-		    strcpy(strn, PyString_AS_STRING(temp));
+		    (void) strcpy(strn, PyString_AS_STRING(temp));
 		Py_XDECREF(temp);
 
 		if (PyObject_Length(elem) == 3) {
@@ -913,9 +937,9 @@ staticforward int validate_terminal Py_PROTO((node *terminal,
 #define validate_comma(ch)	validate_terminal(ch,	   COMMA, ",")
 #define validate_dedent(ch)	validate_terminal(ch,	  DEDENT, "")
 #define	validate_equal(ch)	validate_terminal(ch,	   EQUAL, "=")
-#define validate_indent(ch)	validate_terminal(ch,	  INDENT, 0)
+#define validate_indent(ch)	validate_terminal(ch,	  INDENT, (char*)NULL)
 #define validate_lparen(ch)	validate_terminal(ch,	    LPAR, "(")
-#define	validate_newline(ch)	validate_terminal(ch,	 NEWLINE, 0)
+#define	validate_newline(ch)	validate_terminal(ch,	 NEWLINE, (char*)NULL)
 #define validate_rparen(ch)	validate_terminal(ch,	    RPAR, ")")
 #define validate_semi(ch)	validate_terminal(ch,	    SEMI, ";")
 #define	validate_star(ch)	validate_terminal(ch,	    STAR, "*")
@@ -965,7 +989,7 @@ validate_ntype(n, t)
 
     if (!res) {
 	char buffer[128];
-	sprintf(buffer, "Expected node type %d, got %d.", t, TYPE(n));
+	(void) sprintf(buffer, "Expected node type %d, got %d.", t, TYPE(n));
 	err_string(buffer);
     }
     return (res);
@@ -981,7 +1005,7 @@ validate_numnodes(n, num, name)
 {
     if (NCH(n) != num) {
 	char buff[60];
-	sprintf(buff, "Illegal number of children for %s node.", name);
+	(void) sprintf(buff, "Illegal number of children for %s node.", name);
 	err_string(buff);
     }
     return (NCH(n) == num);
@@ -1000,7 +1024,7 @@ validate_terminal(terminal, type, string)
 
     if (!res && !PyErr_Occurred()) {
 	char buffer[60];
-	sprintf(buffer, "Illegal terminal: expected \"%s\"", string);
+	(void) sprintf(buffer, "Illegal terminal: expected \"%s\"", string);
 	err_string(buffer);
     }
     return (res);
@@ -1022,7 +1046,7 @@ validate_repeating_list(tree, ntype, vfunc, name)
 	       && vfunc(CHILD(tree, 0)));
 
     if (!res && !PyErr_Occurred())
-	validate_numnodes(tree, 1, name);
+	(void) validate_numnodes(tree, 1, name);
     else {
 	if (is_even(nch))
 	    res = validate_comma(CHILD(tree, --nch));
@@ -1057,7 +1081,7 @@ validate_class(tree)
 	       && validate_suite(CHILD(tree, nch - 1)));
     }
     else
-	validate_numnodes(tree, 4, "class");
+	(void) validate_numnodes(tree, 4, "class");
     if (res && (nch == 7)) {
 	res = (validate_lparen(CHILD(tree, 2))
 	       && validate_testlist(CHILD(tree, 3))
@@ -1091,7 +1115,7 @@ validate_if(tree)
 	nch -= 3;
     }
     else if (!res && !PyErr_Occurred())
-	validate_numnodes(tree, 4, "if");
+	(void) validate_numnodes(tree, 4, "if");
     if ((nch % 4) != 0)
 	/* Will catch the case for nch < 4 */
 	res = validate_numnodes(tree, 0, "if");
@@ -1129,7 +1153,7 @@ validate_parameters(tree)
 	    res = validate_varargslist(CHILD(tree, 1));
     }
     else
-	validate_numnodes(tree, 2, "parameters");
+	(void) validate_numnodes(tree, 2, "parameters");
 
     return (res);
 
@@ -1165,7 +1189,7 @@ validate_suite(tree)
 		res = validate_stmt(CHILD(tree, i));
 	}
 	else if (nch < 4)
-	    validate_numnodes(tree, 4, "suite");
+	    res = validate_numnodes(tree, 4, "suite");
     }
     return (res);
 
@@ -1224,7 +1248,7 @@ validate_varargslist(tree)
 	    res = ((remaining == 2) || (remaining == 3)
 		   || (remaining == 5) || (remaining == 6));
 	    if (!res)
-		validate_numnodes(tree, 2, "varargslist");
+		(void) validate_numnodes(tree, 2, "varargslist");
 	    else if (TYPE(CHILD(tree, pos)) == DOUBLESTAR)
 		return ((remaining == 2)
 			&& validate_ntype(CHILD(tree, pos+1), NAME));
@@ -1246,7 +1270,7 @@ validate_varargslist(tree)
 			res = (validate_star(CHILD(tree, pos + 1))
 			       && validate_star(CHILD(tree, pos + 2)));
 		    else
-			validate_ntype(CHILD(tree, pos + 1), DOUBLESTAR);
+			res = validate_ntype(CHILD(tree, pos + 1), DOUBLESTAR);
 		}
 	    }
 	}
@@ -1312,7 +1336,7 @@ validate_fpdef(tree)
 		   && validate_fplist(CHILD(tree, 1))
 		   && validate_rparen(CHILD(tree, 2)));
 	else
-	    validate_numnodes(tree, 1, "fpdef");
+	    res = validate_numnodes(tree, 1, "fpdef");
     }
     return (res);
 
@@ -1402,8 +1426,8 @@ validate_small_stmt(tree)
 	res = validate_node(CHILD(tree, 0));
     else if (nch == 1) {
 	char buffer[60];
-	sprintf(buffer, "Unrecognized child node of small_stmt: %d.",
-		TYPE(CHILD(tree, 0)));
+	(void) sprintf(buffer, "Unrecognized child node of small_stmt: %d.",
+		       TYPE(CHILD(tree, 0)));
 	err_string(buffer);
     }
     return (res);
@@ -1435,7 +1459,8 @@ validate_compound_stmt(tree)
 	res = validate_node(tree);
     else {
 	char buffer[60];
-	sprintf(buffer, "Illegal compound statement type: %d.", TYPE(tree));
+	(void) sprintf(buffer, "Illegal compound statement type: %d.",
+		       TYPE(tree));
 	err_string(buffer);
     }
     return (res);
@@ -1482,7 +1507,7 @@ validate_print_stmt(tree)
 	--nch;
     }
     else if (!res && !PyErr_Occurred())
-	validate_numnodes(tree, 1, "print_stmt");
+	(void) validate_numnodes(tree, 1, "print_stmt");
     for (j = 1; res && (j < nch); j += 2)
 	res = (validate_test(CHILD(tree, j))
 	       && validate_ntype(CHILD(tree, j + 1), COMMA));
@@ -1541,7 +1566,7 @@ validate_raise_stmt(tree)
 	}
     }
     else
-	validate_numnodes(tree, 2, "raise");
+	(void) validate_numnodes(tree, 2, "raise");
     if (res && (nch == 4))
 	res = (validate_comma(CHILD(tree, 2))
 	       && validate_test(CHILD(tree, 3)));
@@ -1745,7 +1770,8 @@ validate_try(tree)
 	char buffer[60];
 	if (TYPE(CHILD(tree, nch - 3)) != except_clause)
 	    name = STR(CHILD(tree, nch - 3));
-	sprintf(buffer, "Illegal number of children for try/%s node.", name);
+	(void) sprintf(buffer,
+		       "Illegal number of children for try/%s node.", name);
 	err_string(buffer);
     }
     /*	Skip past except_clause sections:  */
@@ -1912,7 +1938,7 @@ validate_comp_op(tree)
 		     || (strcmp(STR(tree), "is") == 0));
 	      if (!res) {
 		  char buff[128];
-		  sprintf(buff, "Illegal operator: '%s'.", STR(tree));
+		  (void) sprintf(buff, "Illegal operator: '%s'.", STR(tree));
 		  err_string(buff);
 	      }
 	      break;
@@ -2196,7 +2222,7 @@ validate_lambdef(tree)
     if (res && (nch == 4))
 	res = validate_varargslist(CHILD(tree, 1));
     else if (!res && !PyErr_Occurred())
-	validate_numnodes(tree, 3, "lambdef");
+	(void) validate_numnodes(tree, 3, "lambdef");
 
     return (res);
 
@@ -2274,7 +2300,7 @@ validate_trailer(tree)
 	}
     }
     else
-	validate_numnodes(tree, 2, "trailer");
+	(void) validate_numnodes(tree, 2, "trailer");
 
     return (res);
 
@@ -2360,8 +2386,7 @@ validate_sliceop(tree)
     int res = ((nch == 1) || validate_numnodes(tree, 2, "sliceop"))
 	      && validate_ntype(tree, sliceop);
     if (!res && !PyErr_Occurred()) {
-	validate_numnodes(tree, 1, "sliceop");
-	res = 0;
+	res = validate_numnodes(tree, 1, "sliceop");
     }
     if (res)
 	res = validate_colon(CHILD(tree, 0));
@@ -2664,6 +2689,7 @@ parser__pickler(self, args)
     PyObject *self;
     PyObject *args;
 {
+    NOTE(ARGUNUSED(self))
     PyObject *result = NULL;
     PyObject *ast = NULL;
 
@@ -2673,7 +2699,7 @@ parser__pickler(self, args)
 
 	if ((newargs = Py_BuildValue("Oi", ast, 1)) == NULL)
 	    goto finally;
-	tuple = parser_ast2tuple(NULL, newargs);
+	tuple = parser_ast2tuple((PyAST_Object*)NULL, newargs);
 	if (tuple != NULL) {
 	    result = Py_BuildValue("O(O)", pickle_constructor, tuple);
 	    Py_DECREF(tuple);
@@ -2716,7 +2742,7 @@ static PyMethodDef parser_functions[] =  {
     {"_pickler",	(PyCFunction)parser__pickler,	METH_VARARGS,
         "Returns the pickle magic to allow ast objects to be pickled."},
 
-    {0, 0, 0}
+    {NULL, NULL, 0, NULL}
     };
 
 
