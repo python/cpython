@@ -479,6 +479,7 @@ class test_mkdtemp(TC):
         dir = self.do_create()
         try:
             mode = stat.S_IMODE(os.stat(dir).st_mode)
+            mode &= 0777 # Mask off sticky bits inherited from /tmp
             expected = 0700
             if sys.platform in ('win32', 'os2emx', 'mac'):
                 # There's no distinction among 'user', 'group' and 'world';
