@@ -218,7 +218,7 @@ class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
     def parse_request(self):
         """Parse a request (internal).
 
-        The request should be stored in self.raw_request; the results
+        The request should be stored in self.raw_requestline; the results
         are in self.command, self.path, self.request_version and
         self.headers.
 
