@@ -266,12 +266,12 @@ callcallback(ControlObject *self, OSType which, PyObject *arglist)
 	sprintf(keybuf, "%x", (unsigned)which);
 	if ( self->ob_callbackdict == NULL ||
 			(func = PyDict_GetItemString(self->ob_callbackdict, keybuf)) == NULL ) {
-		PySys_WriteStderr("Control callback %x without callback object\\n", which);
+		PySys_WriteStderr("Control callback %x without callback object\\n", (unsigned)which);
 		return NULL;
 	}
 	rv = PyEval_CallObject(func, arglist);
 	if ( rv == NULL )
-		PySys_WriteStderr("Exception in control callback %x handler\\n", which);
+		PySys_WriteStderr("Exception in control callback %x handler\\n", (unsigned)which);
 	return rv;
 }
 
