@@ -67,7 +67,7 @@ class Scanner:
 		for type in types:
 			modes = self.usedtypes[type].keys()
 			modes.sort()
-			print type, string.join(modes)
+			self.report("%s %s", type, string.join(modes))
 			
 	def gentypetest(self, file):
 		fp = open(file, "w")
@@ -89,7 +89,7 @@ if missing: raise "Missing Types"
 		fp.close()
 
 	def initsilent(self):
-		self.silent = 0
+		self.silent = 1
 
 	def error(self, format, *args):
 		if self.silent >= 0:
@@ -486,7 +486,7 @@ if missing: raise "Missing Types"
 			return
 		self.report("==> %s %s <==", type, name)
 		if self.blacklisted(type, name):
-			self.error("*** %s %s blacklisted", type, name)
+			self.report("*** %s %s blacklisted", type, name)
 			return
 		returnlist = [(type, name, 'ReturnMode')]
 		returnlist = self.repairarglist(name, returnlist)
@@ -496,7 +496,7 @@ if missing: raise "Missing Types"
 		if self.unmanageable(type, name, arglist):
 			##for arg in arglist:
 			##	self.report("    %s", `arg`)
-			self.error("*** %s %s unmanageable", type, name)
+			self.report("*** %s %s unmanageable", type, name)
 			return
 		self.alreadydone.append(name)
 		self.generate(type, name, arglist)
