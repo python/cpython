@@ -48,7 +48,7 @@ class TracebackCases(unittest.TestCase):
         try:
             sys.path.insert(0, testdir)
             testfile = os.path.join(testdir, 'test_bug737473.py')
-            print >> open(testfile, 'w'), """\
+            print >> open(testfile, 'w'), """
 def test():
     raise ValueError"""
 
@@ -62,12 +62,15 @@ def test():
                 # this loads source code to linecache
                 traceback.extract_tb(sys.exc_traceback)
 
-            # If this test runs fast, test_bug737473.py will stay in a mtime
-            # even if it's rewrited and it'll not reloaded in result.  So wait
-            # until new timestamp comes.
-            time.sleep(2)
+            # If this test runs too quickly, test_bug737473.py's mtime
+            # attribute will remain unchanged even if the file is rewritten.
+            # Consequently, the file would not reload.  So, added a sleep()
+            # delay to assure that a new, distinct timestamp is written.
+            # Since WinME with FAT32 has multisecond resolution, more than
+            # three seconds are needed for this test to pass reliably :-(
+            time.sleep(4)
 
-            print >> open(testfile, 'w'), """\
+            print >> open(testfile, 'w'), """
 def test():
     raise NotImplementedError"""
             reload(test_bug737473)
