@@ -2232,6 +2232,7 @@ PyObject *PyExc_NotImplementedError;
 PyObject *PyExc_SyntaxError;
 PyObject *PyExc_SystemError;
 PyObject *PyExc_SystemExit;
+PyObject *PyExc_UnboundLocalError;
 PyObject *PyExc_TypeError;
 PyObject *PyExc_ValueError;
 PyObject *PyExc_ZeroDivisionError;
@@ -2261,6 +2262,11 @@ bltin_exc[] = {
 	{"KeyError",           &PyExc_KeyError,           1},
 	{"KeyboardInterrupt",  &PyExc_KeyboardInterrupt,  1},
 	{"MemoryError",        &PyExc_MemoryError,        1},
+	/* Note: NameError is not a leaf in exceptions.py, but unlike
+	   the other non-leafs NameError is meant to be raised directly
+	   at times -- the leaf_exc member really seems to mean something
+	   like "this is an abstract base class" when false.
+	*/
 	{"NameError",          &PyExc_NameError,          1},
 	{"OverflowError",      &PyExc_OverflowError,      1},
 	{"RuntimeError",       &PyExc_RuntimeError,       1},
@@ -2268,6 +2274,7 @@ bltin_exc[] = {
 	{"SyntaxError",        &PyExc_SyntaxError,        1},
 	{"SystemError",        &PyExc_SystemError,        1},
 	{"SystemExit",         &PyExc_SystemExit,         1},
+	{"UnboundLocalError",  &PyExc_UnboundLocalError,  1},
 	{"TypeError",          &PyExc_TypeError,          1},
 	{"ValueError",         &PyExc_ValueError,         1},
 	{"ZeroDivisionError",  &PyExc_ZeroDivisionError,  1},
@@ -2419,6 +2426,14 @@ initerrors(dict)
 	Py_INCREF(PyExc_OSError);
 	PyTuple_SET_ITEM(PyExc_EnvironmentError, 1, PyExc_OSError);
 	PyDict_SetItemString(dict, "EnvironmentError", PyExc_EnvironmentError);
+
+	/* Make UnboundLocalError an alias for NameError */
+	Py_INCREF(PyExc_NameError);
+	Py_DECREF(PyExc_UnboundLocalError);
+	PyExc_UnboundLocalError = PyExc_NameError;
+	if (PyDict_SetItemString(dict, "UnboundLocalError",
+				 PyExc_NameError) != 0)
+		Py_FatalError("Cannot create string-based exceptions");
 
 	/* missing from the StandardError tuple: Exception, StandardError,
 	 * and SystemExit

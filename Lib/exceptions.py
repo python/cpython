@@ -40,6 +40,8 @@ Exception(*)
       |    +-- NotImplementedError(*)
       |
       +-- NameError
+      |    |
+      |    +-- UnboundLocalError(*)
       +-- AttributeError
       +-- SyntaxError
       +-- TypeError
@@ -208,7 +210,11 @@ class AttributeError(StandardError):
     pass
 
 class NameError(StandardError):
-    """Name not found locally or globally."""
+    """Name not found globally."""
+    pass
+
+class UnboundLocalError(NameError):
+    """Local name referenced but not bound to a value."""
     pass
 
 class MemoryError(StandardError):
