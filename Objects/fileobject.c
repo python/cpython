@@ -90,7 +90,8 @@ dircheck(PyFileObject* f)
 #else
 		char *msg = "Is a directory";
 #endif
-		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)", EISDIR, msg);
+		PyObject *exc = PyObject_CallFunction(PyExc_IOError, "(is)", 
+						      EISDIR, msg);
 		PyErr_SetObject(PyExc_IOError, exc);
 		return NULL;
 	}
@@ -143,7 +144,7 @@ open_the_file(PyFileObject *f, char *name, char *mode)
 	   type(f).  Here we prevent them from doing damage with it. */
 	if (PyEval_GetRestricted()) {
 		PyErr_SetString(PyExc_IOError,
-			"file() constructor not accessible in restricted mode");
+		"file() constructor not accessible in restricted mode");
 		return NULL;
 	}
 	errno = 0;
@@ -705,7 +706,7 @@ file_read(PyFileObject *f, PyObject *args)
 		buffersize = bytesrequested;
 	if (buffersize > INT_MAX) {
 		PyErr_SetString(PyExc_OverflowError,
-			"requested number of bytes is more than a Python string can hold");
+	"requested number of bytes is more than a Python string can hold");
 		return NULL;
 	}
 	v = PyString_FromStringAndSize((char *)NULL, buffersize);
@@ -716,7 +717,7 @@ file_read(PyFileObject *f, PyObject *args)
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
 		chunksize = Py_UniversalNewlineFread(BUF(v) + bytesread,
-				  buffersize - bytesread, f->f_fp, (PyObject *)f);
+			  buffersize - bytesread, f->f_fp, (PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (chunksize == 0) {
 			if (!ferror(f->f_fp))
@@ -755,7 +756,8 @@ file_readinto(PyFileObject *f, PyObject *args)
 	while (ntodo > 0) {
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		nnow = Py_UniversalNewlineFread(ptr+ndone, ntodo, f->f_fp, (PyObject *)f);
+		nnow = Py_UniversalNewlineFread(ptr+ndone, ntodo, f->f_fp, 
+						(PyObject *)f);
 		Py_END_ALLOW_THREADS
 		if (nnow == 0) {
 			if (!ferror(f->f_fp))
@@ -1025,9 +1027,10 @@ get_line(PyFileObject *f, int n)
 				if (skipnextlf ) {
 					skipnextlf = 0;
 					if (c == '\n') {
-						/* Seeing a \n here with skipnextlf true
-						** means we saw a \r before.
-						*/
+						/* Seeing a \n here with 
+						 * skipnextlf true means we 
+						 * saw a \r before.
+						 */
 						newlinetypes |= NEWLINE_CRLF;
 						c = GETC(fp);
 						if (c == EOF) break;
@@ -1400,7 +1403,7 @@ file_writelines(PyFileObject *f, PyObject *seq)
 							   &buffer,
 							   &len))) {
 					PyErr_SetString(PyExc_TypeError,
-				"writelines() argument must be a sequence of strings");
+			"writelines() argument must be a sequence of strings");
 					goto error;
 				}
 				line = PyString_FromStringAndSize(buffer,
@@ -1534,23 +1537,23 @@ PyDoc_STRVAR(isatty_doc,
 "isatty() -> true or false.  True if the file is connected to a tty device.");
 
 static PyMethodDef file_methods[] = {
-	{"readline",	(PyCFunction)file_readline,   METH_VARARGS, readline_doc},
-	{"read",	(PyCFunction)file_read,       METH_VARARGS, read_doc},
-	{"write",	(PyCFunction)file_write,      METH_VARARGS, write_doc},
-	{"fileno",	(PyCFunction)file_fileno,     METH_NOARGS,  fileno_doc},
-	{"seek",	(PyCFunction)file_seek,       METH_VARARGS, seek_doc},
+	{"readline",  (PyCFunction)file_readline, METH_VARARGS, readline_doc},
+	{"read",      (PyCFunction)file_read,     METH_VARARGS, read_doc},
+	{"write",     (PyCFunction)file_write,    METH_VARARGS, write_doc},
+	{"fileno",    (PyCFunction)file_fileno,   METH_NOARGS,  fileno_doc},
+	{"seek",      (PyCFunction)file_seek,     METH_VARARGS, seek_doc},
 #ifdef HAVE_FTRUNCATE
-	{"truncate",	(PyCFunction)file_truncate,   METH_VARARGS, truncate_doc},
+	{"truncate",  (PyCFunction)file_truncate, METH_VARARGS, truncate_doc},
 #endif
-	{"tell",	(PyCFunction)file_tell,       METH_NOARGS,  tell_doc},
-	{"readinto",	(PyCFunction)file_readinto,   METH_VARARGS, readinto_doc},
-	{"readlines",	(PyCFunction)file_readlines,  METH_VARARGS, readlines_doc},
-	{"xreadlines",	(PyCFunction)file_getiter,    METH_NOARGS,  xreadlines_doc},
-	{"writelines",	(PyCFunction)file_writelines, METH_O,	    writelines_doc},
-	{"flush",	(PyCFunction)file_flush,      METH_NOARGS,  flush_doc},
-	{"close",	(PyCFunction)file_close,      METH_NOARGS,  close_doc},
-	{"isatty",	(PyCFunction)file_isatty,     METH_NOARGS,  isatty_doc},
-	{NULL,		NULL}		/* sentinel */
+	{"tell",      (PyCFunction)file_tell,     METH_NOARGS,  tell_doc},
+	{"readinto",  (PyCFunction)file_readinto, METH_VARARGS, readinto_doc},
+	{"readlines", (PyCFunction)file_readlines,METH_VARARGS, readlines_doc},
+	{"xreadlines",(PyCFunction)file_getiter,  METH_NOARGS, xreadlines_doc},
+	{"writelines",(PyCFunction)file_writelines, METH_O,    writelines_doc},
+	{"flush",     (PyCFunction)file_flush,    METH_NOARGS,  flush_doc},
+	{"close",     (PyCFunction)file_close,    METH_NOARGS,  close_doc},
+	{"isatty",    (PyCFunction)file_isatty,   METH_NOARGS,  isatty_doc},
+	{NULL,	      NULL}		/* sentinel */
 };
 
 #define OFF(x) offsetof(PyFileObject, x)
@@ -1594,7 +1597,9 @@ get_newlines(PyFileObject *f, void *closure)
 	case NEWLINE_CR|NEWLINE_LF|NEWLINE_CRLF:
 		return Py_BuildValue("(sss)", "\r", "\n", "\r\n");
 	default:
-		PyErr_Format(PyExc_SystemError, "Unknown newlines value 0x%x\n", f->f_newlinetypes);
+		PyErr_Format(PyExc_SystemError, 
+			     "Unknown newlines value 0x%x\n", 
+			     f->f_newlinetypes);
 		return NULL;
 	}
 }
@@ -1603,7 +1608,8 @@ get_newlines(PyFileObject *f, void *closure)
 static PyGetSetDef file_getsetlist[] = {
 	{"closed", (getter)get_closed, NULL, "True if the file is closed"},
 #ifdef WITH_UNIVERSAL_NEWLINES
-	{"newlines", (getter)get_newlines, NULL, "end-of-line convention used in this file"},
+	{"newlines", (getter)get_newlines, NULL, 
+	 "end-of-line convention used in this file"},
 #endif
 	{0},
 };
