@@ -61,7 +61,7 @@ class Scanner:
 
 	def initblacklists(self):
 		self.blacklistnames = self.makeblacklistnames()
-		self.blacklisttypes = ["unknown"] + self.makeblacklisttypes()
+		self.blacklisttypes = ["unknown", "-"] + self.makeblacklisttypes()
 
 	def makeblacklistnames(self):
 		return []
@@ -73,7 +73,103 @@ class Scanner:
 		self.repairinstructions = self.makerepairinstructions()
 
 	def makerepairinstructions(self):
-		return []
+		"""Parse the repair file into repair instructions.
+		
+		The file format is simple:
+		1) use \ to split a long logical line in multiple physical lines
+		2) everything after the first # on a line is ignored (as comment)
+		3) empty lines are ignored
+		4) remaining lines must have exactly 3 colon-separated fields:
+		   functionpattern : argumentspattern : argumentsreplacement
+		5) all patterns use shell style pattern matching
+		6) an empty functionpattern means the same as *
+		7) the other two fields are each comma-separated lists of triples
+		8) a triple is a space-separated list of 1-3 words
+		9) a triple with less than 3 words is padded at the end with "*" words
+		10) when used as a pattern, a triple matches the type, name, and mode
+		    of an argument, respectively
+		11) when used as a replacement, the words of a triple specify
+		    replacements for the corresponding words of the argument,
+		    with "*" as a word by itself meaning leave the original word
+		    (no other uses of "*" is allowed)
+		12) the replacement need not have the same number of triples
+		    as the pattern
+		"""
+		f = self.openrepairfile()
+		if not f: return []
+		print "Reading repair file", `f.name`, "..."
+		list = []
+		lineno = 0
+		while 1:
+			line = f.readline()
+			if not line: break
+			lineno = lineno + 1
+			startlineno = lineno
+			while line[-2:] == '\\\n':
+				line = line[:-2] + ' ' + f.readline()
+				lineno = lineno + 1
+			i = string.find(line, '#')
+			if i >= 0: line = line[:i]
+			words = map(string.strip, string.splitfields(line, ':'))
+			if words == ['']: continue
+			if len(words) <> 3:
+				print "Line", startlineno,
+				print ": bad line (not 3 colon-separated fields)"
+				print `line`
+				continue
+			[fpat, pat, rep] = words
+			if not fpat: fpat = "*"
+			if not pat:
+				print "Line", startlineno,
+				print "Empty pattern"
+				print `line`
+				continue
+			patparts = map(string.strip, string.splitfields(pat, ','))
+			repparts = map(string.strip, string.splitfields(rep, ','))
+			patterns = []
+			for p in patparts:
+				if not p:
+					print "Line", startlineno,
+					print "Empty pattern part"
+					print `line`
+					continue
+				pattern = string.split(p)
+				if len(pattern) > 3:
+					print "Line", startlineno,
+					print "Pattern part has > 3 words"
+					print `line`
+					pattern = pattern[:3]
+				else:
+					while len(pattern) < 3:
+						pattern.append("*")
+				patterns.append(pattern)
+			replacements = []
+			for p in repparts:
+				if not p:
+					print "Line", startlineno,
+					print "Empty replacement part"
+					print `line`
+					continue
+				replacement = string.split(p)
+				if len(replacement) > 3:
+					print "Line", startlineno,
+					print "Pattern part has > 3 words"
+					print `line`
+					replacement = replacement[:3]
+				else:
+					while len(replacement) < 3:
+						replacement.append("*")
+				replacements.append(replacement)
+			list.append((fpat, patterns, replacements))
+		return list
+	
+	def openrepairfile(self, filename = "REPAIR"):
+		try:
+			return open(filename, "r")
+		except IOError, msg:
+			print `filename`, ":", msg
+			print "Cannot open repair file -- assume no repair needed"
+			return None
 
 	def initfiles(self):
 		self.specmine = 0
@@ -90,11 +186,13 @@ class Scanner:
 
 	def initpatterns(self):
 		self.head_pat = "^pascal[ \t]+" # XXX Mac specific!
-		self.tail_pat = "[);]"
-		self.whole_pat = "\(<type>[a-zA-Z0-9_]+\)[ \t\n]+" + \
-		                 "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*(\(<args>[^()]*\))"
+		self.tail_pat = "[;={}]"
+		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_]+\)[ \t\n]+"
+		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
+		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
+		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,}]*\),?"
+		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
 
 	def compilepatterns(self):
@@ -212,12 +310,12 @@ class Scanner:
 			self.report("(No interface specifications will be written)")
 		else:
 			self.report("specfile = %s", `self.specfile.name`)
-			self.specfile.write("# Generated from %s\n" % `inputname`)
+			self.specfile.write("# Generated from %s\n\n" % `inputname`)
 		if not self.defsfile:
 			self.report("(No symbol definitions will be written)")
 		else:
 			self.report("defsfile = %s", `self.defsfile.name`)
-			self.defsfile.write("# Generated from %s\n" % `inputname`)
+			self.defsfile.write("# Generated from %s\n\n" % `inputname`)
 		self.alreadydone = []
 		try:
 			while 1:
@@ -237,7 +335,7 @@ class Scanner:
 		self.defsfile.write("%s = %s\n" % (name, defn))
 
 	def dofuncspec(self):
-		raw = self.line[len(self.head.group(0)):]
+		raw = self.line
 		while self.tail.search(raw) < 0:
 			line = self.getline()
 			raw = raw + line
@@ -256,7 +354,7 @@ class Scanner:
 			self.error("*** %s %s blacklisted", type, name)
 			return
 		arglist = self.extractarglist(args)
-		arglist = self.repairarglist(arglist)
+		arglist = self.repairarglist(name, arglist)
 		if self.unmanageable(type, name, arglist):
 			##for arg in arglist:
 			##	self.report("    %s", `arg`)
@@ -285,18 +383,30 @@ class Scanner:
 		type = regsub.gsub("\*", " ptr ", type)
 		type = string.strip(type)
 		type = regsub.gsub("[ \t]+", "_", type)
+		return self.modifyarg(type, name, mode)
+	
+	def modifyarg(self, type, name, mode):
 		if type[:6] == "const_":
 			type = type[6:]
 		elif type[-4:] == "_ptr":
 			type = type[:-4]
 			mode = "OutMode"
+		if type[-4:] == "_far":
+			type = type[:-4]
 		return type, name, mode
 
-	def repairarglist(self, arglist):
+	def repairarglist(self, functionname, arglist):
 		arglist = arglist[:]
 		i = 0
 		while i < len(arglist):
-			for pattern, replacement in self.repairinstructions:
+			for item in self.repairinstructions:
+				if len(item) == 2:
+					pattern, replacement = item
+					functionpat = "*"
+				else:
+					functionpat, pattern, replacement = item
+				if not fnmatch.fnmatchcase(functionname, functionpat):
+					continue
 				n = len(pattern)
 				if i+n > len(arglist): continue
 				current = arglist[i:i+n]
@@ -336,12 +446,12 @@ class Scanner:
 	def generate(self, type, name, arglist):
 		classname, listname = self.destination(type, name, arglist)
 		if not self.specfile: return
-		self.specfile.write("\nf = %s(%s, %s,\n" % (classname, type, `name`))
+		self.specfile.write("f = %s(%s, %s,\n" % (classname, type, `name`))
 		for atype, aname, amode in arglist:
 			self.specfile.write("    (%s, %s, %s),\n" %
 			                    (atype, `aname`, amode))
 		self.specfile.write(")\n")
-		self.specfile.write("%s.append(f)\n" % listname)
+		self.specfile.write("%s.append(f)\n\n" % listname)
 
 	def destination(self, type, name, arglist):
 		return "FunctionGenerator", "functions"
