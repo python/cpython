@@ -2846,7 +2846,7 @@ static PyMethodDef parser_functions[] =  {
     };
 
 
-DL_IMPORT(void) initparser(void);
+DL_EXPORT(void) initparser(void);  /* supply a prototype */
 
 DL_EXPORT(void)
 initparser(void)
