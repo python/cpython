@@ -116,11 +116,11 @@ def choose_boundary():
         hostid = socket.gethostbyname(socket.gethostname())
         try:
             uid = `os.getuid()`
-        except:
+        except AttributeError:
             uid = '1'
         try:
             pid = `os.getpid()`
-        except:
+        except AttributeError:
             pid = '1'
         _prefix = hostid + '.' + uid + '.' + pid
     timestamp = '%.3f' % time.time()
