@@ -187,6 +187,42 @@ builtin_exec(self, v)
 }
 
 static object *
+builtin_execfile(self, v)
+	object *self;
+	object *v;
+{
+	object *str = NULL, *globals = NULL, *locals = NULL, *w;
+	FILE* fp;
+	int n;
+	if (v != NULL) {
+		if (is_stringobject(v))
+			str = v;
+		else if (is_tupleobject(v) &&
+				((n = gettuplesize(v)) == 2 || n == 3)) {
+			str = gettupleitem(v, 0);
+			globals = gettupleitem(v, 1);
+			if (n == 3)
+				locals = gettupleitem(v, 2);
+		}
+	}
+	if (str == NULL || !is_stringobject(str) ||
+			globals != NULL && !is_dictobject(globals) ||
+			locals != NULL && !is_dictobject(locals)) {
+		err_setstr(TypeError,
+		    "execfile arguments must be filename[,dict[,dict]]");
+		return NULL;
+	}
+	fp = fopen(getstringvalue(str), "r");
+	if (fp == NULL) {
+		err_setstr(IOError, "execfile cannot open the file argument");
+		return NULL;
+	}
+	w = run_file(fp, getstringvalue(str), file_input, globals, locals);
+	fclose(fp);
+	return w;
+}
+
+static object *
 builtin_float(self, v)
 	object *self;
 	object *v;
@@ -603,6 +639,7 @@ static struct methodlist builtin_methods[] = {
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
 	{"exec",	builtin_exec},
+	{"execfile",	builtin_execfile},
 	{"float",	builtin_float},
 	{"getattr",	builtin_getattr},
 	{"hex",		builtin_hex},
