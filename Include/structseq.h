@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-               
+
 typedef struct PyStructSequence_Field {
 	char *name;
 	char *doc;
@@ -21,9 +21,9 @@ typedef struct PyStructSequence_Desc {
 
 extern char* PyStructSequence_UnnamedField;
 
-PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type, 
-						 PyStructSequence_Desc *desc);
-       
+PyAPI_FUNC(void) PyStructSequence_InitType(PyTypeObject *type,
+					   PyStructSequence_Desc *desc);
+
 PyAPI_FUNC(PyObject *) PyStructSequence_New(PyTypeObject* type);
 
 typedef struct {
