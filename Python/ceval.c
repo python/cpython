@@ -2529,6 +2529,9 @@ call_function(func, arg, kw)
 	return result;
 }
 
+#define SLICE_ERROR_MSG \
+	"standard sequence type does not support step size other than one"
+
 static object *
 apply_subscript(v, w)
 	object *v, *w;
@@ -2543,8 +2546,13 @@ apply_subscript(v, w)
 	}
 	else {
 		int i;
-		if (!is_intobject(w)) {
-			err_setstr(TypeError, "sequence subscript not int");
+		if (!is_intobject(w)) {		  
+			if (PySlice_Check(w)) {
+			        err_setstr(ValueError, SLICE_ERROR_MSG); 
+			} else {
+				err_setstr(TypeError,
+					   "sequence subscript not int");
+			}	
 			return NULL;
 		}
 		i = getintvalue(w);
