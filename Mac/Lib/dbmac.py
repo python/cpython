@@ -14,6 +14,9 @@ updates, they can mess up the index)
 
 - support efficient access to large databases (currently, the whole index
 is read when the database is opened, and some updates rewrite the whole index)
+
+- support opening for read-only (flag = 'm')
+
 """
 
 _os = __import__('os')
@@ -132,5 +135,6 @@ class _Database:
 		self._index = self._datfile = self._dirfile = self._bakfile = None
 
 
-def open(file, mode = None):
+def open(file, flag = None, mode = None):
+	# flag, mode arguments are currently ignored
 	return _Database(file)
