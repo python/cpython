@@ -59,9 +59,15 @@ This is what a Noddy object will contain.  In this case nothing more
 than every Python object contains - a refcount and a pointer to a type
 object.  These are the fields the \code{PyObject_HEAD} macro brings
 in.  The reason for the macro is to standardize the layout and to
-enable special debugging fields to be brought in debug builds.
+enable special debugging fields in debug builds.  Note that there is
+no semicolon after the \code{PyObject_HEAD} macro; one is included in
+the macro definition.  Be wary of adding one by accident; it's easy to
+do from habit, and your compiler might not complain, but someone
+else's probably will!  (On Windows, MSVC is known to call this an
+error and refuse to produce compiled code.)
 
-For contrast
+For contrast, let's take a look at the corresponding definition for
+standard Python integers:
 
 \begin{verbatim}
 typedef struct {
@@ -69,8 +75,6 @@ typedef struct {
     long ob_ival;
 } PyIntObject;
 \end{verbatim}
-
-is the corresponding definition for standard Python integers.
 
 Next up is:
 
@@ -491,7 +495,7 @@ newdatatype_print(newdatatypeobject *obj, FILE *fp, int flags)
 \end{verbatim}
 
 
-\subsection{Attribute Management Functions}
+\subsection{Attribute Management}
 
 For every object which can support attributes, the corresponding type
 must provide the functions that control how the attributes are
