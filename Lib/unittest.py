@@ -192,7 +192,7 @@ class TestCase:
         return "%s.%s" % (_strclass(self.__class__), self.__testMethodName)
 
     def __str__(self):
-        return "%s (%s)" % (self.__testMethodName, self.__class__)
+        return "%s (%s)" % (self.__testMethodName, _strclass(self.__class__))
 
     def __repr__(self):
         return "<%s testMethod=%s>" % \
