@@ -195,29 +195,6 @@ static PyObject *Evt_GetNextEvent(_self, _args)
 	return _res;
 }
 
-static PyObject *Evt_WaitNextEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	EventMask eventMask;
-	EventRecord theEvent;
-	UInt32 sleep;
-	if (!PyArg_ParseTuple(_args, "hl",
-	                      &eventMask,
-	                      &sleep))
-		return NULL;
-	_rv = WaitNextEvent(eventMask,
-	                    &theEvent,
-	                    sleep,
-	                    (RgnHandle)0);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &theEvent);
-	return _res;
-}
-
 static PyObject *Evt_EventAvail(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -360,6 +337,34 @@ static PyObject *Evt_SystemEvent(_self, _args)
 	return _res;
 }
 
+static PyObject *Evt_WaitNextEvent(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	Boolean _rv;
+	EventMask eventMask;
+	EventRecord theEvent;
+	UInt32 sleep;
+	Handle mouseregion = (Handle)0;
+
+	if (!PyArg_ParseTuple(_args, "hl|O&",
+	                      &eventMask,
+	                      &sleep,
+	                      OptResObj_Convert, &mouseregion))
+		return NULL;
+	_rv = WaitNextEvent(eventMask,
+	                    &theEvent,
+	                    sleep,
+	                    (RgnHandle)mouseregion);
+	_res = Py_BuildValue("bO&",
+	                     _rv,
+	                     PyMac_BuildEventRecord, &theEvent);
+	return _res;
+
+}
+
 static PyMethodDef Evt_methods[] = {
 	{"GetMouse", (PyCFunction)Evt_GetMouse, 1,
 	 "() -> (Point mouseLoc)"},
@@ -381,8 +386,6 @@ static PyMethodDef Evt_methods[] = {
 	 "(EventMask value) -> None"},
 	{"GetNextEvent", (PyCFunction)Evt_GetNextEvent, 1,
 	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
-	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
-	 "(EventMask eventMask, UInt32 sleep) -> (Boolean _rv, EventRecord theEvent)"},
 	{"EventAvail", (PyCFunction)Evt_EventAvail, 1,
 	 "(EventMask eventMask) -> (Boolean _rv, EventRecord theEvent)"},
 	{"PostEvent", (PyCFunction)Evt_PostEvent, 1,
@@ -399,6 +402,8 @@ static PyMethodDef Evt_methods[] = {
 	 "() -> None"},
 	{"SystemEvent", (PyCFunction)Evt_SystemEvent, 1,
 	 "(EventRecord theEvent) -> (Boolean _rv)"},
+	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
+	 "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"},
 	{NULL, NULL, 0}
 };
 

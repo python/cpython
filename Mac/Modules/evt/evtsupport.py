@@ -74,6 +74,31 @@ execfile(INPUTFILE)
 for f in functions: module.add(f)
 ##for f in methods: object.add(f)
 
+WaitNextEvent_body = """
+Boolean _rv;
+EventMask eventMask;
+EventRecord theEvent;
+UInt32 sleep;
+Handle mouseregion = (Handle)0;
+
+if (!PyArg_ParseTuple(_args, "hl|O&",
+                      &eventMask,
+                      &sleep,
+                      OptResObj_Convert, &mouseregion))
+	return NULL;
+_rv = WaitNextEvent(eventMask,
+                    &theEvent,
+                    sleep,
+                    (RgnHandle)mouseregion);
+_res = Py_BuildValue("bO&",
+                     _rv,
+                     PyMac_BuildEventRecord, &theEvent);
+return _res;
+"""
+f = ManualGenerator("WaitNextEvent", WaitNextEvent_body);
+f.docstring = lambda: "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"
+module.add(f)
+
 # generate output (open the output file as late as possible)
 SetOutputFileName(OUTPUTFILE)
 module.generate()
