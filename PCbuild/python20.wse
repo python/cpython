@@ -1147,11 +1147,15 @@ end
 item: Add Text to INSTALL.LOG
   Text=File Tree: %MAINDIR%\Lib\*.*
 end
+item: Remark
+end
 item: Install File
   Source=..\lib\*.py
   Destination=%MAINDIR%\Lib
   Description=Library Modules
   Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\lib\lib-tk\*.py
@@ -1159,29 +1163,64 @@ item: Install File
   Description=Tkinter related library modules
   Flags=0000000000000010
 end
+item: Remark
+end
 item: Install File
   Source=..\lib\encodings\*.py
   Destination=%MAINDIR%\Lib\encodings
   Description=Unicode encoding tables
   Flags=0000000000000010
 end
+item: Remark
+end
 item: Install File
   Source=..\lib\distutils\*.py
   Destination=%MAINDIR%\Lib\distutils
   Description=Distribution utility modules
-  Flags=0000000100000010
+  Flags=0000000000000010
 end
 item: Install File
-  Source=..\lib\xml\*.py
+  Source=..\lib\distutils\README
+  Destination=%MAINDIR%\Lib\distutils\README.txt
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\distutils\command\*.*
+  Destination=%MAINDIR%\Lib\distutils\command
+  Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
+  Source=..\lib\xml\*.*
   Destination=%MAINDIR%\Lib\xml
   Description=XML support packages
-  Flags=0000000100000010
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\xml\dom\*.*
+  Destination=%MAINDIR%\Lib\xml\dom
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\xml\parsers\*.*
+  Destination=%MAINDIR%\Lib\xml\parsers
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\xml\sax\*.*
+  Destination=%MAINDIR%\Lib\xml\sax
+  Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\lib\lib-old\*.py
   Destination=%MAINDIR%\Lib\lib-old
   Description=Obsolete modules
   Flags=0000000000000010
+end
+item: Remark
 end
 item: Install File
   Source=..\lib\site-packages\readme
