@@ -104,15 +104,15 @@ This section is provided for users that ``don't want to read the
 manual.'' It provides a very brief overview, and allows a user to
 rapidly perform profiling on an existing application.
 
-To profile an application with a main entry point of \samp{foo()}, you
-would add the following to your module:
+To profile an application with a main entry point of \function{foo()},
+you would add the following to your module:
 
 \begin{verbatim}
 import profile
 profile.run('foo()')
 \end{verbatim}
 
-The above action would cause \samp{foo()} to be run, and a series of
+The above action would cause \function{foo()} to be run, and a series of
 informative lines (the profile) to be printed.  The above approach is
 most useful when working with the interpreter.  If you would like to
 save the results of a profile into a file for later examination, you
@@ -137,8 +137,9 @@ python /usr/local/lib/python1.5/profile.py myscript.py
 profile.py [-o output_file] [-s sort_order]
 \end{verbatim}
 
-\samp{-s} only applies to stdout (i.e. \samp{-o} is not supplied.
-Look in the \class{Stats} documentation for valid sort values.
+\programopt{-s} only applies to standard output (\programopt{-o} is
+not supplied).  Look in the \class{Stats} documentation for valid sort
+values.
 
 When you wish to review the profile, you should use the methods in the
 \module{pstats} module.  Typically you would load the statistics data as
@@ -151,7 +152,7 @@ p = pstats.Stats('fooprof')
 
 The class \class{Stats} (the above code just created an instance of
 this class) has a variety of methods for manipulating and printing the
-data that was just read into \samp{p}.  When you ran
+data that was just read into \code{p}.  When you ran
 \function{profile.run()} above, what was printed was the result of three
 method calls:
 
@@ -199,8 +200,8 @@ p.sort_stats('file').print_stats('__init__')
 \end{verbatim}
 
 This will sort all the statistics by file name, and then print out
-statistics for only the class init methods ('cause they are spelled
-with \samp{__init__} in them).  As one final example, you could try:
+statistics for only the class init methods (since they are spelled
+with \code{__init__} in them).  As one final example, you could try:
 
 \begin{verbatim}
 p.sort_stats('time', 'cum').print_stats(.5, 'init')
@@ -213,7 +214,7 @@ of its original size, then only lines containing \code{init} are
 maintained, and that sub-sub-list is printed.
 
 If you wondered what functions called the above functions, you could
-now (\samp{p} is still sorted according to the last criteria) do:
+now (\code{p} is still sorted according to the last criteria) do:
 
 \begin{verbatim}
 p.print_callers(.5, 'init')
@@ -423,7 +424,7 @@ identifying the basis of a sort (example: \code{'time'} or
 
 When more than one key is provided, then additional keys are used as
 secondary criteria when there is equality in all keys selected
-before them.  For example, \samp{sort_stats('name', 'file')} will sort
+before them.  For example, \code{sort_stats('name', 'file')} will sort
 all the entries according to their function name, and resolve all ties
 (identical function names) by sorting by file name.
 
@@ -495,14 +496,14 @@ print_stats(.1, 'foo:')
 \end{verbatim}
 
 would first limit the printing to first 10\% of list, and then only
-print functions that were part of filename \samp{.*foo:}.  In
+print functions that were part of filename \file{.*foo:}.  In
 contrast, the command:
 
 \begin{verbatim}
 print_stats('foo:', .1)
 \end{verbatim}
 
-would limit the list to all functions having file names \samp{.*foo:},
+would limit the list to all functions having file names \file{.*foo:},
 and then proceed to only print the first 10\% of them.
 \end{methoddesc}
 
