@@ -314,19 +314,19 @@ specified, it specifies the buffer size for the I/O pipes.
 objects should be opened in binary or text mode.  The default value
 for \var{mode} is \code{'t'}.
 
-\begin{funcdesc}{popen2}{cmd\optional{, bufsize\optional{, mode}}}
+\begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout})}.
 \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{popen3}{cmd\optional{, bufsize\optional{, mode}}}
+\begin{funcdesc}{popen3}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout}, \var{child_stderr})}.
 \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{popen4}{cmd\optional{, bufsize\optional{, mode}}}
+\begin{funcdesc}{popen4}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout_and_stderr})}.
 \versionadded{2.0}
@@ -927,6 +927,14 @@ Lock program segments into memory.  The value of \var{op}
 (defined in \code{<sys/lock.h>}) determines which segments are locked.
 Availability: \UNIX{}.
 \end{funcdesc}
+
+\begin{funcdescni}{popen}{\unspecified}
+\funclineni{popen2}{\unspecified}
+\funclineni{popen3}{\unspecified}
+\funclineni{popen4}{\unspecified}
+Run child processes, returning opened pipes for communications.  These
+functions are described in section \ref{os-newstreams}.
+\end{funcdescni}
 
 \begin{funcdesc}{spawnv}{mode, path, args}
 Execute the program \var{path} in a new process, passing the arguments 
