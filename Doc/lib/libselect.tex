@@ -5,7 +5,8 @@
 \modulesynopsis{Wait for I/O completion on multiple streams.}
 
 
-This module provides access to the function \cfunction{select()}
+This module provides access to the \cfunction{select()}
+and \cfunction{poll()} functions
 available in most operating systems.  Note that on Windows, it only
 works for sockets; on other operating systems, it also works for other
 file types (in particular, on \UNIX{}, it works on pipes).  It cannot
@@ -20,6 +21,14 @@ a pair containing the numeric error code from \cdata{errno} and the
 corresponding string, as would be printed by the \C{} function
 \cfunction{perror()}.
 \end{excdesc}
+
+\begin{funcdesc}{poll}{}
+(Not supported by all operating systems.)  Returns a polling object, 
+which supports registering and unregistering file descriptors, and
+then polling them for I/O events; 
+see section~\ref{poll-objects} below for the methods supported by 
+polling objects.
+\end{funcdesc}
 
 \begin{funcdesc}{select}{iwtd, owtd, ewtd\optional{, timeout}}
 This is a straightforward interface to the \UNIX{} \cfunction{select()}
@@ -52,3 +61,69 @@ also define a \dfn{wrapper} class yourself, as long as it has an
 appropriate \method{fileno()} method (that really returns a \UNIX{}
 file descriptor, not just a random integer).
 \end{funcdesc}
+
+\subsection{Polling Objects
+            \label{poll-objects}}
+
+The \cfunction{poll()} system call, supported on most Unix systems,
+provides better scalability for network servers that service many,
+many clients at the same time.
+\cfunction{poll()} scales better because the system call only
+requires listing the file descriptors of interest, while \cfunction{select()}
+builds a bitmap, turns on bits for the fds of interest, and then
+afterward the whole bitmap has to be linearly scanned again.
+\cfunction{select()} is O(highest file descriptor), while
+\cfunction{poll()} is O(number of file descriptors).
+
+\begin{methoddesc}{register}{fd\optional{, eventmask}}
+Register a file descriptor with the polling object.  Future calls to
+the \method{poll()} method will then check whether the file descriptor
+has any pending I/O events.  \var{fd} can be either an integer, or an
+object with a \method{fileno()} method that returns an integer.  File
+objects implement
+\method{fileno()}, so they can also be used as the argument.
+
+\var{eventmask} is an optional bitmask describing the type of events you
+want to check for, and can be a combination of the constants
+\constant{POLLIN}, \constant{POLLPRI}, and \constant{POLLOUT},
+described in the table below.  If not specified, the default value
+used will check for all 3 types of events.
+
+\begin{tableii}{l|l}{code}{Constant}{Meaning}
+  \lineii{POLLIN}{There is data to read}
+  \lineii{POLLPRI}{There is urgent data to read}
+  \lineii{POLLOUT}{Ready for output: writing will not block}
+  \lineii{POLLERR}{Error condition of some sort}
+  \lineii{POLLHUP}{Hung up}
+  \lineii{POLLNVAL}{Invalid request: descriptor not open}
+\end{tableii}
+
+Registering a file descriptor that's already registered is not an
+error, and has the same effect as registering the descriptor exactly
+once. 
+ 
+\end{methoddesc}
+
+\begin{methoddesc}{unregister}{fd}
+Remove a file descriptor being tracked by a polling object.  Just like
+the \method{register()} method, \var{fd} can be an integer or an
+object with a \method{fileno()} method that returns an integer.
+
+Attempting to remove a file descriptor that was never registered
+causes a \exception{KeyError} exception to be raised.
+\end{methoddesc}
+
+\begin{methoddesc}{poll}{\optional{timeout}}
+Polls the set of registered file descriptors, and returns a
+possibly-empty list containing \code{(\var{fd}, \var{event})} 2-tuples
+for the descriptors that have events or errors to report.
+\var{fd} is the file descriptor, and \var{event} is a bitmask 
+with bits set for the reported events for that descriptor
+--- \constant{POLLIN} for waiting input, 
+\constant{POLLOUT} to indicate that the descriptor can be written to, and
+so forth.
+An empty list indicates that the call timed out and no file
+descriptors had any events to report.
+\end{methoddesc}
+
+
