@@ -104,6 +104,8 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int nlocals;
 	int stacksize;
 	int flags;
+	PyObject *co;
+	PyObject *empty = NULL;
 	PyObject *code;
 	PyObject *consts;
 	PyObject *names;
@@ -127,31 +129,28 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 			      &PyTuple_Type, &cellvars))
 		return NULL;
 
-	if (freevars == NULL || cellvars == NULL) {
-		PyObject *empty = PyTuple_New(0);
-		if (empty == NULL)
-		    return NULL;
-		if (freevars == NULL) {
-		    freevars = empty;
-		    Py_INCREF(freevars);
-		}
-		if (cellvars == NULL) {
-		    cellvars = empty;
-		    Py_INCREF(cellvars);
-		}
-		Py_DECREF(empty);
-	}
-
 	if (!PyObject_CheckReadBuffer(code)) {
 		PyErr_SetString(PyExc_TypeError,
 		  "bytecode object must be a single-segment read-only buffer");
 		return NULL;
 	}
 
-	return (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
+	if (freevars == NULL || cellvars == NULL) {
+		empty = PyTuple_New(0);
+		if (empty == NULL)
+			return NULL;
+		if (freevars == NULL)
+			freevars = empty;
+		if (cellvars == NULL)
+			cellvars = empty;
+	}
+
+	co = (PyObject *) PyCode_New(argcount, nlocals, stacksize, flags,
 				      code, consts, names, varnames,
 				      freevars, cellvars, filename, name,
-				      firstlineno, lnotab); 
+				      firstlineno, lnotab);
+	Py_XDECREF(empty);
+	return co;
 }
 
 static void
