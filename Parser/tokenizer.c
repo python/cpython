@@ -257,7 +257,12 @@ tok_nextc(tok)
 			}
 			else {
 				cur = tok->cur - tok->buf;
-				tok->done = E_OK;
+				if (feof(tok->fp)) {
+					tok->done = E_EOF;
+					done = 1;
+				}
+				else
+					tok->done = E_OK;
 			}
 			tok->lineno++;
 			/* Read until '\n' or EOF */
