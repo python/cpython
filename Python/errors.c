@@ -369,11 +369,24 @@ PyObject *PyErr_SetFromWindowsErr(int ierr)
 #endif /* MS_WINDOWS */
 
 void
+_PyErr_BadInternalCall(char *filename, int lineno)
+{
+	PyErr_Format(PyExc_SystemError,
+		     "%s:%d: bad argument to internal function",
+		     filename, lineno);
+}
+
+/* Remove the preprocessor macro for PyErr_BadInternalCall() so that we can
+   export the entry point for existing object code: */
+#undef PyErr_BadInternalCall
+void
 PyErr_BadInternalCall(void)
 {
-	PyErr_SetString(PyExc_SystemError,
-			"bad argument to internal function");
+	PyErr_Format(PyExc_SystemError,
+		     "bad argument to internal function");
 }
+#define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
+
 
 
 PyObject *

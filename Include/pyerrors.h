@@ -82,7 +82,12 @@ extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErrWithFilename(int, const char
 extern DL_IMPORT(PyObject *) PyErr_SetFromWindowsErr(int);
 #endif
 
+/* Export the old function so that the existing API remains available: */
 extern DL_IMPORT(void) PyErr_BadInternalCall(void);
+extern DL_IMPORT(void) _PyErr_BadInternalCall(char *filename, int lineno);
+/* Mask the old API with a call to the new API for code compiled under
+   Python 2.0: */
+#define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 /* Function to create a new exception */
 DL_IMPORT(PyObject *) PyErr_NewException(char *name, PyObject *base,
