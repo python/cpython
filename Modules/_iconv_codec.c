@@ -92,7 +92,7 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     size_t               inplen, inplen_total, outlen, outlen_total, estep;
     PyObject            *outputobj = NULL, *errorcb = NULL,
                         *exceptionobj = NULL;
-    Py_UNICODE          *swappedinput;
+    Py_UNICODE          *swappedinput = NULL;
     int                  swapi;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "u#|s:encode",
