@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- XXX Karatsuba multiplication.  This is currently used if and only
+  if envar KARAT exists.  It needs more correctness and speed testing,
+  the latter especially with unbalanced bit lengths.
+
 - u'%c' will now raise a ValueError in case the argument is an
   integer outside the valid range of Unicode code point ordinals.
 
@@ -66,8 +70,8 @@ Core and builtins
   other platforms.  KeyboardInterrupt can now reliably be caught,
   and Ctrl+C at an interative prompt no longer terminates the
   process under NT/2k/XP (it never did under Win9x).  Ctrl+C will
-  interrupt time.sleep() in the main thread, and any child processes 
-  created via the popen family (on win2k; we can't make win9x work 
+  interrupt time.sleep() in the main thread, and any child processes
+  created via the popen family (on win2k; we can't make win9x work
   reliably) are also interrupted (as generally happens on for Linux/Unix.)
   [SF bugs 231273, 439992 and 581232]
 
@@ -83,7 +87,7 @@ Core and builtins
   as directory names.
 
 - The built-ins slice() and buffer() are now callable types.  The
-  types classobj (formerly class), code, function, instance, and
+0  types classobj (formerly class), code, function, instance, and
   instancemethod (formerly instance-method), which have no built-in
   names but are accessible through the types module, are now also
   callable.  The type dict-proxy is renamed to dictproxy.

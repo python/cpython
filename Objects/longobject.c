@@ -8,7 +8,18 @@
 
 #include <ctype.h>
 
+/* For long multiplication, use the O(N**2) school algorithm unless
+ * both operands contain more than KARATSUBA_CUTOFF digits (this
+ * being an internal Python long digit, in base BASE).
+ */
+#define KARATSUBA_CUTOFF 35
+
 #define ABS(x) ((x) < 0 ? -(x) : (x))
+
+#undef MIN
+#undef MAX
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
 
 /* Forward */
 static PyLongObject *long_normalize(PyLongObject *);
@@ -34,7 +45,7 @@ long_normalize(register PyLongObject *v)
 {
 	int j = ABS(v->ob_size);
 	register int i = j;
-	
+
 	while (i > 0 && v->ob_digit[i-1] == 0)
 		--i;
 	if (i != j)
@@ -226,7 +237,7 @@ PyLong_AsUnsignedLong(PyObject *vv)
 	register PyLongObject *v;
 	unsigned long x, prev;
 	int i;
-	
+
 	if (vv == NULL || !PyLong_Check(vv)) {
 		PyErr_BadInternalCall();
 		return (unsigned long) -1;
@@ -492,7 +503,7 @@ _PyLong_AsByteArray(PyLongObject* v,
 Overflow:
 	PyErr_SetString(PyExc_OverflowError, "long too big to convert");
 	return -1;
-	
+
 }
 
 double
@@ -734,7 +745,7 @@ PyLong_AsUnsignedLongLong(PyObject *vv)
 
 static int
 convert_binop(PyObject *v, PyObject *w, PyLongObject **a, PyLongObject **b) {
-	if (PyLong_Check(v)) { 
+	if (PyLong_Check(v)) {
 		*a = (PyLongObject *) v;
 		Py_INCREF(v);
 	}
@@ -744,7 +755,7 @@ convert_binop(PyObject *v, PyObject *w, PyLongObject **a, PyLongObject **b) {
 	else {
 		return 0;
 	}
-	if (PyLong_Check(w)) { 
+	if (PyLong_Check(w)) {
 		*b = (PyLongObject *) w;
 		Py_INCREF(w);
 	}
@@ -782,7 +793,7 @@ muladd1(PyLongObject *a, wdigit n, wdigit extra)
 	PyLongObject *z = _PyLong_New(size_a+1);
 	twodigits carry = extra;
 	int i;
-	
+
 	if (z == NULL)
 		return NULL;
 	for (i = 0; i < size_a; ++i) {
@@ -826,7 +837,7 @@ divrem1(PyLongObject *a, digit n, digit *prem)
 {
 	const int size = ABS(a->ob_size);
 	PyLongObject *z;
-	
+
 	assert(n > 0 && n <= MASK);
 	z = _PyLong_New(size);
 	if (z == NULL)
@@ -855,7 +866,7 @@ long_format(PyObject *aa, int base, int addL)
 		return NULL;
 	}
 	assert(base >= 2 && base <= 36);
-	
+
 	/* Compute a rough upper bound for the length of the string */
 	i = base;
 	bits = 0;
@@ -873,7 +884,7 @@ long_format(PyObject *aa, int base, int addL)
                 *--p = 'L';
 	if (a->ob_size < 0)
 		sign = '-';
-	
+
 	if (a->ob_size == 0) {
 		*--p = '0';
 	}
@@ -992,7 +1003,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	int sign = 1;
 	char *start, *orig_str = str;
 	PyLongObject *z;
-	
+
 	if ((base != 0 && base < 2) || base > 36) {
 		PyErr_SetString(PyExc_ValueError,
 				"long() arg 2 must be >= 2 and <= 36");
@@ -1023,7 +1034,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	for ( ; z != NULL; ++str) {
 		int k = -1;
 		PyLongObject *temp;
-		
+
 		if (*str <= '9')
 			k = *str - '0';
 		else if (*str >= 'a')
@@ -1053,7 +1064,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	return (PyObject *) z;
 
  onError:
-	PyErr_Format(PyExc_ValueError, 
+	PyErr_Format(PyExc_ValueError,
 		     "invalid literal for long(): %.200s", orig_str);
 	Py_XDECREF(z);
 	return NULL;
@@ -1092,7 +1103,7 @@ long_divrem(PyLongObject *a, PyLongObject *b,
 {
 	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
 	PyLongObject *z;
-	
+
 	if (size_b == 0) {
 		PyErr_SetString(PyExc_ZeroDivisionError,
 				"long division or modulo by zero");
@@ -1142,26 +1153,26 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 	PyLongObject *w = mul1(w1, d);
 	PyLongObject *a;
 	int j, k;
-	
+
 	if (v == NULL || w == NULL) {
 		Py_XDECREF(v);
 		Py_XDECREF(w);
 		return NULL;
 	}
-	
+
 	assert(size_v >= size_w && size_w > 1); /* Assert checks by div() */
 	assert(v->ob_refcnt == 1); /* Since v will be used as accumulator! */
 	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
-	
+
 	size_v = ABS(v->ob_size);
 	a = _PyLong_New(size_v - size_w + 1);
-	
+
 	for (j = size_v, k = a->ob_size-1; a != NULL && k >= 0; --j, --k) {
 		digit vj = (j >= size_v) ? 0 : v->ob_digit[j];
 		twodigits q;
 		stwodigits carry = 0;
 		int i;
-		
+
 		SIGCHECK({
 			Py_DECREF(a);
 			a = NULL;
@@ -1172,7 +1183,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 		else
 			q = (((twodigits)vj << SHIFT) + v->ob_digit[j-1]) /
 				w->ob_digit[size_w-1];
-		
+
 		while (w->ob_digit[size_w-2]*q >
 				((
 					((twodigits)vj << SHIFT)
@@ -1181,7 +1192,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 								) << SHIFT)
 				+ v->ob_digit[j-2])
 			--q;
-		
+
 		for (i = 0; i < size_w && i+k < size_v; ++i) {
 			twodigits z = w->ob_digit[i] * q;
 			digit zz = (digit) (z >> SHIFT);
@@ -1192,12 +1203,12 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 							  carry, SHIFT);
 			carry -= zz;
 		}
-		
+
 		if (i+k < size_v) {
 			carry += v->ob_digit[i+k];
 			v->ob_digit[i+k] = 0;
 		}
-		
+
 		if (carry == 0)
 			a->ob_digit[k] = (digit) q;
 		else {
@@ -1213,7 +1224,7 @@ x_divrem(PyLongObject *v1, PyLongObject *w1, PyLongObject **prem)
 			}
 		}
 	} /* for j, k */
-	
+
 	if (a == NULL)
 		*prem = NULL;
 	else {
@@ -1254,7 +1265,7 @@ static int
 long_compare(PyLongObject *a, PyLongObject *b)
 {
 	int sign;
-	
+
 	if (a->ob_size != b->ob_size) {
 		if (ABS(a->ob_size) == 0 && ABS(b->ob_size) == 0)
 			sign = 0;
@@ -1424,7 +1435,7 @@ static PyObject *
 long_sub(PyLongObject *v, PyLongObject *w)
 {
 	PyLongObject *a, *b, *z;
-	
+
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
 
 	if (a->ob_size < 0) {
@@ -1457,54 +1468,28 @@ long_repeat(PyObject *v, PyLongObject *w)
 		return (*v->ob_type->tp_as_sequence->sq_repeat)(v, n);
 }
 
-static PyObject *
-long_mul(PyLongObject *v, PyLongObject *w)
+/* Grade school multiplication, ignoring the signs.
+ * Returns the absolute value of the product, or NULL if error.
+ */
+static PyLongObject *
+x_mul(PyLongObject *a, PyLongObject *b)
 {
-	PyLongObject *a, *b, *z;
-	int size_a;
-	int size_b;
+	PyLongObject *z;
+	int size_a = ABS(a->ob_size);
+	int size_b = ABS(b->ob_size);
 	int i;
 
-	if (!convert_binop((PyObject *)v, (PyObject *)w, &a, &b)) {
-		if (!PyLong_Check(v) &&
-		    v->ob_type->tp_as_sequence &&
-		    v->ob_type->tp_as_sequence->sq_repeat)
-			return long_repeat((PyObject *)v, w);
-		if (!PyLong_Check(w) &&
-			 w->ob_type->tp_as_sequence &&
-			 w->ob_type->tp_as_sequence->sq_repeat)
-			return long_repeat((PyObject *)w, v);
-		Py_INCREF(Py_NotImplemented);
-		return Py_NotImplemented;
-	}
-
-	size_a = ABS(a->ob_size);
-	size_b = ABS(b->ob_size);
-	if (size_a > size_b) {
-		/* we are faster with the small object on the left */
-		int hold_sa = size_a;
-		PyLongObject *hold_a = a;
-		size_a = size_b;
-		size_b = hold_sa;
-		a = b;
-		b = hold_a;
-	}
-	z = _PyLong_New(size_a + size_b);
-	if (z == NULL) {
-		Py_DECREF(a);
-		Py_DECREF(b);
+     	z = _PyLong_New(size_a + size_b);
+	if (z == NULL)
 		return NULL;
-	}
-	for (i = 0; i < z->ob_size; ++i)
-		z->ob_digit[i] = 0;
+
+	memset(z->ob_digit, 0, z->ob_size * sizeof(digit));
 	for (i = 0; i < size_a; ++i) {
 		twodigits carry = 0;
 		twodigits f = a->ob_digit[i];
 		int j;
-		
+
 		SIGCHECK({
-			Py_DECREF(a);
-			Py_DECREF(b);
 			Py_DECREF(z);
 			return NULL;
 		})
@@ -1519,6 +1504,205 @@ long_mul(PyLongObject *v, PyLongObject *w)
 			z->ob_digit[i+j] = (digit) (carry & MASK);
 			carry >>= SHIFT;
 		}
+	}
+	return z;
+}
+
+/* A helper for Karatsuba multiplication (k_mul).
+   Takes a long "n" and an integer "size" representing the place to
+   split, and sets low and high such that abs(n) == (high << size) + low,
+   viewing the shift as being by digits.  The sign bit is ignored, and
+   the return values are >= 0.
+   Returns 0 on success, -1 on failure.
+*/
+static int
+kmul_split(PyLongObject *n, int size, PyLongObject **high, PyLongObject **low)
+{
+	PyLongObject *hi, *lo;
+	int size_lo, size_hi;
+	const int size_n = ABS(n->ob_size);
+
+	size_lo = MIN(size_n, size);
+	size_hi = size_n - size_lo;
+
+	if ((hi = _PyLong_New(size_hi)) == NULL)
+		return -1;
+	if ((lo = _PyLong_New(size_lo)) == NULL) {
+		Py_DECREF(hi);
+		return -1;
+	}
+
+	memcpy(lo->ob_digit, n->ob_digit, size_lo * sizeof(digit));
+	memcpy(hi->ob_digit, n->ob_digit + size_lo, size_hi * sizeof(digit));
+
+	*high = long_normalize(hi);
+	*low = long_normalize(lo);
+	return 0;
+}
+
+/* Karatsuba multiplication.  Ignores the input signs, and returns the
+ * absolute value of the product (or NULL if error).
+ * See Knuth Vol. 2 Chapter 4.3.3 (Pp. 294-295).
+ */
+static PyLongObject *
+k_mul(PyLongObject *a, PyLongObject *b)
+{
+	PyLongObject *ah = NULL;
+	PyLongObject *al = NULL;
+	PyLongObject *bh = NULL;
+	PyLongObject *bl = NULL;
+	PyLongObject *albl = NULL;
+	PyLongObject *ahbh = NULL;
+	PyLongObject *k = NULL;
+	PyLongObject *ret = NULL;
+	PyLongObject *t1, *t2;
+	int shift;	/* the number of digits we split off */
+	int i;
+
+	/* (ah*X+al)(bh*X+bl) = ah*bh*X*X + (ah*bl + al*bh)*X + al*bl
+	 * Let k = (ah+al)*(bh+bl) = ah*bl + al*bh  + ah*bh + al*bl
+	 * Then the original product is
+	 *     ah*bh*X*X + (k - ah*bh - ah*bl)*X + al*bl
+	 * By picking X to be a power of 2, "*X" is just shifting, and it's
+	 * been reduced to 3 multiplies on numbers half the size.
+	 */
+
+	/* We want to split based on the larger number; fiddle so that a
+	 * is largest.
+	 */
+	if (ABS(a->ob_size) > ABS(b->ob_size)) {
+		t1 = a;
+		a = b;
+		b = t1;
+	}
+
+	/* Use gradeschool math when either number is too small. */
+	if (ABS(a->ob_size) <= KARATSUBA_CUTOFF)
+		return x_mul(a, b);
+
+	shift = ABS(b->ob_size) >> 1;
+	if (kmul_split(a, shift, &ah, &al) < 0) goto fail;
+	if (kmul_split(b, shift, &bh, &bl) < 0) goto fail;
+
+	if ((ahbh = k_mul(ah, bh)) == NULL) goto fail;
+	assert(ahbh->ob_size >= 0);
+
+	/* Allocate result space, and copy ahbh into the high digits. */
+	ret = _PyLong_New(ahbh->ob_size + 2*shift + 1);
+	if (ret == NULL) goto fail;
+#ifdef Py_DEBUG
+	/* Fill with trash, to catch reference to uninitialized digits. */
+	memset(ret->ob_digit, 0xDF, ret->ob_size * sizeof(digit));
+#endif
+	memcpy(ret->ob_digit + 2*shift, ahbh->ob_digit,
+	       ahbh->ob_size * sizeof(digit));
+	/* That didn't copy into the most-significant (overflow) digit. */
+	ret->ob_digit[ret->ob_size - 1] = 0;
+
+	/* Compute al*bl, and copy into the low digits. */
+	if ((albl = k_mul(al, bl)) == NULL) goto fail;
+	assert(albl->ob_size >= 0);
+	assert(albl->ob_size <= 2*shift); /* no overlap with high digits */
+	memcpy(ret->ob_digit, albl->ob_digit, albl->ob_size * sizeof(digit));
+
+	/* Zero out remaining digits. */
+	i = 2*shift - albl->ob_size;	/* number of uninitialized digits */
+	if (i)
+		memset(ret->ob_digit + albl->ob_size, 0, i * sizeof(digit));
+
+	/* k = (ah+al)(bh+bl) */
+	if ((t1 = x_add(ah, al)) == NULL) goto fail;
+	Py_DECREF(ah);
+	Py_DECREF(al);
+	ah = al = NULL;
+
+	if ((t2 = x_add(bh, bl)) == NULL) {
+		Py_DECREF(t1);
+		goto fail;
+	}
+	Py_DECREF(bh);
+	Py_DECREF(bl);
+	bh = bl = NULL;
+
+	k = k_mul(t1, t2);
+	Py_DECREF(t1);
+	Py_DECREF(t2);
+	if (k == NULL) goto fail;
+
+	/* Subtract ahbh and albl from k.  Note that this can't become
+	 * negative, since k = ahbh + albl + other stuff.
+	 */
+	if ((t1 = x_sub(k, ahbh)) == NULL) goto fail;
+	Py_DECREF(k);
+	k = t1;
+	Py_DECREF(ahbh);
+	ahbh = NULL;
+
+	if ((t1 = x_sub(k, albl)) == NULL) goto fail;
+	Py_DECREF(k);
+	k = t1;
+	Py_DECREF(albl);
+	albl = NULL;
+
+	/* Add k into the result, at the shift-th least-significant digit. */
+	{
+		int j;		/* index into k */
+		digit carry = 0;
+
+		for (i = shift, j = 0; j < k->ob_size; ++i, ++j) {
+			carry += ret->ob_digit[i] + k->ob_digit[j];
+			ret->ob_digit[i] = carry & MASK;
+			carry >>= SHIFT;
+		}
+		for (; carry && i < ret->ob_size; ++i) {
+			carry += ret->ob_digit[i];
+			ret->ob_digit[i] = carry & MASK;
+			carry >>= SHIFT;
+		}
+		assert(carry == 0);
+	}
+	Py_DECREF(k);
+	return long_normalize(ret);
+
+ fail:
+ 	Py_XDECREF(ret);
+	Py_XDECREF(ah);
+	Py_XDECREF(al);
+	Py_XDECREF(bh);
+	Py_XDECREF(bl);
+	Py_XDECREF(ahbh);
+	Py_XDECREF(albl);
+	Py_XDECREF(k);
+	return NULL;
+}
+
+
+static PyObject *
+long_mul(PyLongObject *v, PyLongObject *w)
+{
+	PyLongObject *a, *b, *z;
+
+	if (!convert_binop((PyObject *)v, (PyObject *)w, &a, &b)) {
+		if (!PyLong_Check(v) &&
+		    v->ob_type->tp_as_sequence &&
+		    v->ob_type->tp_as_sequence->sq_repeat)
+			return long_repeat((PyObject *)v, w);
+		if (!PyLong_Check(w) &&
+		    w->ob_type->tp_as_sequence &&
+		    w->ob_type->tp_as_sequence->sq_repeat)
+			return long_repeat((PyObject *)w, v);
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+
+	if (Py_GETENV("KARAT") != NULL)
+		z = k_mul(a, b);
+	else
+		z = x_mul(a, b);
+	if(z == NULL) {
+		Py_DECREF(a);
+		Py_DECREF(b);
+		return NULL;
 	}
 	if (a->ob_size < 0)
 		z->ob_size = -(z->ob_size);
@@ -1545,11 +1729,11 @@ long_mul(PyLongObject *v, PyLongObject *w)
    part of the outcome to keep the invariant intact. */
 
 static int
-l_divmod(PyLongObject *v, PyLongObject *w, 
+l_divmod(PyLongObject *v, PyLongObject *w,
 	 PyLongObject **pdiv, PyLongObject **pmod)
 {
 	PyLongObject *div, *mod;
-	
+
 	if (long_divrem(v, w, &div, &mod) < 0)
 		return -1;
 	if ((mod->ob_size < 0 && w->ob_size > 0) ||
@@ -1657,7 +1841,7 @@ overflow:
 	PyErr_SetString(PyExc_OverflowError,
 		"long/long too large for a float");
 	return NULL;
-	
+
 }
 
 static PyObject *
@@ -1714,7 +1898,7 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 	int size_b, i;
 
 	CONVERT_BINOP(v, w, &a, &b);
-	if (PyLong_Check(x) || Py_None == x) { 
+	if (PyLong_Check(x) || Py_None == x) {
 		c = x;
 		Py_INCREF(x);
 	}
@@ -1754,10 +1938,10 @@ long_pow(PyObject *v, PyObject *w, PyObject *x)
 	for (i = 0; i < size_b; ++i) {
 		digit bi = b->ob_digit[i];
 		int j;
-	
+
 		for (j = 0; j < SHIFT; ++j) {
 			PyLongObject *temp;
-		
+
 			if (bi & 1) {
 				temp = (PyLongObject *)long_mul(z, a);
 				Py_DECREF(z);
@@ -1886,7 +2070,7 @@ long_rshift(PyLongObject *v, PyLongObject *w)
 	long shiftby;
 	int newsize, wordshift, loshift, hishift, i, j;
 	digit lomask, himask;
-	
+
 	CONVERT_BINOP((PyObject *)v, (PyObject *)w, &a, &b);
 
 	if (a->ob_size < 0) {
@@ -1903,7 +2087,7 @@ long_rshift(PyLongObject *v, PyLongObject *w)
 		Py_DECREF(a2);
 	}
 	else {
-		
+
 		shiftby = PyLong_AsLong((PyObject *)b);
 		if (shiftby == -1L && PyErr_Occurred())
 			goto rshift_error;
@@ -1953,7 +2137,7 @@ long_lshift(PyObject *v, PyObject *w)
 	long shiftby;
 	int oldsize, newsize, wordshift, remshift, i, j;
 	twodigits accum;
-	
+
 	CONVERT_BINOP(v, w, &a, &b);
 
 	shiftby = PyLong_AsLong((PyObject *)b);
@@ -1983,7 +2167,7 @@ long_lshift(PyObject *v, PyObject *w)
 		z->ob_size = -(z->ob_size);
 	for (i = 0; i < wordshift; i++)
 		z->ob_digit[i] = 0;
-	accum = 0;	
+	accum = 0;
 	for (i = wordshift, j = 0; j < oldsize; i++, j++) {
 		accum |= a->ob_digit[j] << remshift;
 		z->ob_digit[i] = (digit)(accum & MASK);
@@ -1991,7 +2175,7 @@ long_lshift(PyObject *v, PyObject *w)
 	}
 	if (remshift)
 		z->ob_digit[newsize-1] = (digit)accum;
-	else	
+	else
 		assert(!accum);
 	z = long_normalize(z);
 lshift_error:
@@ -2002,11 +2186,6 @@ lshift_error:
 
 
 /* Bitwise and/xor/or operations */
-
-#undef MIN
-#undef MAX
-#define MAX(x, y) ((x) < (y) ? (y) : (x))
-#define MIN(x, y) ((x) > (y) ? (y) : (x))
 
 static PyObject *
 long_bitwise(PyLongObject *a,
@@ -2020,7 +2199,7 @@ long_bitwise(PyLongObject *a,
 	int i;
 	digit diga, digb;
 	PyObject *v;
-	
+
 	if (a->ob_size < 0) {
 		a = (PyLongObject *) long_invert(a);
 		maska = MASK;
@@ -2037,7 +2216,7 @@ long_bitwise(PyLongObject *a,
 		Py_INCREF(b);
 		maskb = 0;
 	}
-	
+
 	negz = 0;
 	switch (op) {
 	case '^':
@@ -2063,7 +2242,7 @@ long_bitwise(PyLongObject *a,
 		}
 		break;
 	}
-	
+
 	/* JRH: The original logic here was to allocate the result value (z)
 	   as the longer of the two operands.  However, there are some cases
 	   where the result is guaranteed to be shorter than that: AND of two
@@ -2088,7 +2267,7 @@ long_bitwise(PyLongObject *a,
 		Py_XDECREF(z);
 		return NULL;
 	}
-	
+
 	for (i = 0; i < size_z; ++i) {
 		diga = (i < size_a ? a->ob_digit[i] : 0) ^ maska;
 		digb = (i < size_b ? b->ob_digit[i] : 0) ^ maskb;
@@ -2098,7 +2277,7 @@ long_bitwise(PyLongObject *a,
 		case '^': z->ob_digit[i] = diga ^ digb; break;
 		}
 	}
-	
+
 	Py_DECREF(a);
 	Py_DECREF(b);
 	z = long_normalize(z);
