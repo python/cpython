@@ -81,6 +81,7 @@ extern void initpcre();
 extern void initunicodedata();
 extern void init_codecs();
 extern void initNav();
+extern void inithfsplus();
 #ifdef USE_MACCTB
 extern void initctb();
 #endif
@@ -247,7 +248,10 @@ struct _inittab _PyImport_Inittab[] = {
 #if TARGET_API_MAC_CARBON
 	{"_CF", init_CF},
 #endif
+#if TARGET_API_MAC_CARBON
+	{"hfsplus", inithfsplus},
 #endif
+#endif /* USE_TOOLBOX */
 #ifdef USE_QT
 	{"_Cm", init_Cm},
 	{"_Qt", init_Qt},

@@ -157,6 +157,7 @@ def	genallprojects(force=0):
 			outputdir="::Lib:Carbon")
 	# Carbon Only?
 	genpluginproject("carbon", "_CF", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "hfsplus")
 	
 	# Other Mac modules
 	genpluginproject("all", "calldll", sources=["calldll.c"])
