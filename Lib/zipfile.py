@@ -186,9 +186,23 @@ class ZipFile:
             else:               # file is not a zip file, just append
                 fp.seek(0, 2)
         else:
+            if not self._filePassed:
+                self.fp.close()
+                self.fp = None
             raise RuntimeError, 'Mode must be "r", "w" or "a"'
 
     def _GetContents(self):
+        """Read the directory, making sure we close the file if the format
+        is bad."""
+        try:
+            self._RealGetContents()
+        except BadZipfile:
+            if not self._filePassed:
+                self.fp.close()
+                self.fp = None
+            raise
+
+    def _RealGetContents(self):
         """Read in the table of contents for the ZIP file."""
         fp = self.fp
         fp.seek(-22, 2)         # Start of end-of-archive record
