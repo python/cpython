@@ -2,34 +2,34 @@ import W
 
 # define some callbacks
 def callback():
-	window.close()
+    window.close()
 
 def checkcallback(value):
-	print "hit the checkbox", value
+    print "hit the checkbox", value
 
 def radiocallback(value):
-	print "hit radiobutton #3", value
+    print "hit radiobutton #3", value
 
 def scrollcallback(value):
-	widget = window.hbar
-	if value == "+":
-		widget.set(widget.get() - 1)
-	elif value == "-":
-		widget.set(widget.get() + 1)
-	elif value == "++":
-		widget.set(widget.get() - 10)
-	elif value == "--":
-		widget.set(widget.get() + 10)
-	else:   # in thumb
-		widget.set(value)
-	print "scroll...", widget.get()
+    widget = window.hbar
+    if value == "+":
+        widget.set(widget.get() - 1)
+    elif value == "-":
+        widget.set(widget.get() + 1)
+    elif value == "++":
+        widget.set(widget.get() - 10)
+    elif value == "--":
+        widget.set(widget.get() + 10)
+    else:   # in thumb
+        widget.set(value)
+    print "scroll...", widget.get()
 
 def textcallback():
-	window.et3.set(window.et1.get())
+    window.et3.set(window.et1.get())
 
 def cancel():
-	import EasyDialogs
-	EasyDialogs.Message("Cancel!")
+    import EasyDialogs
+    EasyDialogs.Message("Cancel!")
 
 # make a non-sizable window
 #window = W.Window((200, 300), "Fixed Size")
@@ -77,9 +77,9 @@ window.setdefaultbutton(window.button)
 window.open()
 
 if 0:
-	import time
-	for i in range(20):
-		window.et2.set(repr(i))
-		#window.et2.SetPort()
-		#window.et2.draw()
-		time.sleep(0.1)
+    import time
+    for i in range(20):
+        window.et2.set(repr(i))
+        #window.et2.SetPort()
+        #window.et2.draw()
+        time.sleep(0.1)

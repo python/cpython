@@ -78,7 +78,7 @@ class AppleSingle(object):
                 self.datafork = data
             elif restype == AS_RESOURCEFORK:
                 self.resourcefork = data
-        
+
     def tofile(self, path, resonly=False):
         outfile = open(path, 'wb')
         data = False
@@ -99,15 +99,15 @@ class AppleSingle(object):
                 fp = MacOS.openrf(path, '*wb')
                 fp.write(self.resourcefork)
                 fp.close()
-    
+
 def decode(infile, outpath, resonly=False, verbose=False):
     """decode(infile, outpath [, resonly=False, verbose=False])
 
     Creates a decoded file from an AppleSingle encoded file.
-    If resonly is True, then it will create a regular file at 
+    If resonly is True, then it will create a regular file at
     outpath containing only the resource fork from infile.
     Otherwise it will create an AppleDouble file at outpath
-    with the data and resource forks from infile.  On platforms 
+    with the data and resource forks from infile.  On platforms
     without the MacOS module, it will create inpath and inpath+'.rsrc'
     with the data and resource forks respectively.
 
@@ -121,7 +121,7 @@ def decode(infile, outpath, resonly=False, verbose=False):
 
     as = AppleSingle(infile, verbose=verbose)
     as.tofile(outpath, resonly=resonly)
-    
+
 def _test():
     if len(sys.argv) < 3 or sys.argv[1] == '-r' and len(sys.argv) != 4:
         print 'Usage: applesingle.py [-r] applesinglefile decodedfile'
@@ -132,6 +132,6 @@ def _test():
     else:
         resonly = False
     decode(sys.argv[1], sys.argv[2], resonly=resonly)
-    
+
 if __name__ == '__main__':
     _test()

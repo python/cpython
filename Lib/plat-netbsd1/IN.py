@@ -54,4 +54,3 @@ IPCTL_DIRECTEDBCAST = 6
 IPCTL_ALLOWSRCRT = 7
 IPCTL_MAXID = 8
 def in_nullhost(x): return ((x).s_addr == INADDR_ANY)
-

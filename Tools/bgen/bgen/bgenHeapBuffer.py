@@ -43,7 +43,7 @@ class HeapInputOutputBufferType(FixedInputOutputBufferType):
 class VarHeapInputOutputBufferType(HeapInputOutputBufferType):
 
     """same as base class, but passed as (inbuffer, outbuffer, &size)"""
-    
+
     def passOutput(self, name):
         return "%s__in__, %s__out__, &%s__len__" % (name, name, name)
 
@@ -51,7 +51,7 @@ class VarHeapInputOutputBufferType(HeapInputOutputBufferType):
 class HeapCombinedInputOutputBufferType(HeapInputOutputBufferType):
 
     """same as base class, but passed as (inoutbuffer, size)"""
-    
+
     def passOutput(self, name):
         return "(%s *)memcpy(%s__out__, %s__in__, %s__len__)" % \
             (self.datatype, name,   name,     name)
@@ -60,7 +60,7 @@ class HeapCombinedInputOutputBufferType(HeapInputOutputBufferType):
 class VarHeapCombinedInputOutputBufferType(HeapInputOutputBufferType):
 
     """same as base class, but passed as (inoutbuffer, &size)"""
-    
+
     def passOutput(self, name):
         return "(%s *)memcpy(%s__out__, %s__in__, &%s__len__)" % \
             (self.datatype, name,   name,      name)
@@ -73,16 +73,16 @@ class HeapOutputBufferType(OutputOnlyMixIn, HeapInputOutputBufferType):
     Instantiate without parameters.
     Call from Python with buffer size.
     """
-    
+
     def declareInputBuffer(self, name):
         pass
-    
+
     def getargsFormat(self):
         return "i"
-    
+
     def getargsArgs(self, name):
         return "&%s__in_len__" % name
-    
+
     def passOutput(self, name):
         return "%s__out__, %s__len__" % (name, name)
 

@@ -113,7 +113,7 @@ def make(filename, outfile):
     except IOError, msg:
         print >> sys.stderr, msg
         sys.exit(1)
-    
+
     section = None
     fuzzy = 0
 
@@ -169,7 +169,7 @@ def make(filename, outfile):
         open(outfile,"wb").write(output)
     except IOError,msg:
         print >> sys.stderr, msg
-                      
+
 
 
 def main():

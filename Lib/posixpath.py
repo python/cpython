@@ -420,7 +420,7 @@ symbolic links encountered in the path."""
 
 def _resolve_link(path):
     """Internal helper function.  Takes a path and follows symlinks
-    until we either arrive at something that isn't a symlink, or 
+    until we either arrive at something that isn't a symlink, or
     encounter a path we've seen before (meaning that there's a loop).
     """
     paths_seen = []

@@ -315,7 +315,7 @@ class BaseCell:
     """Abstract base class for sheet cells.
 
     Subclasses may but needn't provide the following APIs:
-    
+
     cell.reset() -- prepare for recalculation
     cell.recalc(rexec) -> value -- recalculate formula
     cell.format() -> (value, alignment) -- return formatted value

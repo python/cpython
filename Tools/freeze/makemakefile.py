@@ -23,7 +23,7 @@ def makemakefile(outfp, makevars, files, target):
             deps.append(dest)
 
     outfp.write("\n%s: %s\n" % (target, ' '.join(deps)))
-    outfp.write("\t$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) %s -o %s $(LDLAST)\n" % 
+    outfp.write("\t$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) %s -o %s $(LDLAST)\n" %
                 (' '.join(files), target))
 
     outfp.write("\nclean:\n\t-rm -f *.o %s\n" % target)

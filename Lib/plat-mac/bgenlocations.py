@@ -31,13 +31,13 @@ TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 # Creator for C files:
 CREATOR="CWIE"
 
-# The previous definitions can be overriden by creating a module 
-# bgenlocationscustomize.py and putting it in site-packages (or anywere else 
+# The previous definitions can be overriden by creating a module
+# bgenlocationscustomize.py and putting it in site-packages (or anywere else
 # on sys.path, actually)
 try:
-	from bgenlocationscustomize import *
+    from bgenlocationscustomize import *
 except ImportError:
-	pass
+    pass
 
 if not os.path.exists(BGENDIR):
     raise Error, "Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR
@@ -45,7 +45,7 @@ if not os.path.exists(INCLUDEDIR):
     raise Error, "Please fix bgenlocations.py, INCLUDEDIR does not exist: %s" % INCLUDEDIR
 if not os.path.exists(TOOLBOXDIR):
     raise Error, "Please fix bgenlocations.py, TOOLBOXDIR does not exist: %s" % TOOLBOXDIR
-    
+
 # Sigh, due to the way these are used make sure they end with : or /.
 if BGENDIR[-1] != os.sep:
     BGENDIR = BGENDIR + os.sep
@@ -53,4 +53,3 @@ if INCLUDEDIR[-1] != os.sep:
     INCLUDEDIR = INCLUDEDIR + os.sep
 if TOOLBOXDIR[-1] != os.sep:
     TOOLBOXDIR = TOOLBOXDIR + os.sep
-    

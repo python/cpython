@@ -1,5 +1,5 @@
 """PixMapWrapper - defines the PixMapWrapper class, which wraps an opaque
-QuickDraw PixMap data structure in a handy Python class.  Also provides 
+QuickDraw PixMap data structure in a handy Python class.  Also provides
 methods to convert to/from pixel data (from, e.g., the img module) or a
 Python Imaging Library Image object.
 
@@ -77,7 +77,7 @@ class PixMapWrapper:
             2, 5,                   # cmpCount, cmpSize,
             0, 0, 0)                # planeBytes, pmTable, pmReserved
         self.__dict__['_pm'] = Qd.RawBitMap(self._header)
-    
+
     def _stuff(self, element, bytes):
         offset = _pmElemOffset[element]
         fmt = _pmElemFormat[element]
@@ -85,7 +85,7 @@ class PixMapWrapper:
             + struct.pack(fmt, bytes) \
             + self._header[offset + struct.calcsize(fmt):]
         self.__dict__['_pm'] = None
-    
+
     def _unstuff(self, element):
         offset = _pmElemOffset[element]
         fmt = _pmElemFormat[element]
@@ -113,7 +113,7 @@ class PixMapWrapper:
             # any other pm attribute -- just stuff
             self._stuff(attr, val)
         else:
-            self.__dict__[attr] = val   
+            self.__dict__[attr] = val
 
     def __getattr__(self, attr):
         if attr == 'rowBytes':
@@ -133,9 +133,9 @@ class PixMapWrapper:
             # any other pm attribute -- just unstuff
             return self._unstuff(attr)
         else:
-            return self.__dict__[attr]  
+            return self.__dict__[attr]
 
-        
+
     def PixMap(self):
         "Return a QuickDraw PixMap corresponding to this data."
         if not self.__dict__['_pm']:
@@ -143,7 +143,7 @@ class PixMapWrapper:
         return self.__dict__['_pm']
 
     def blit(self, x1=0,y1=0,x2=None,y2=None, port=None):
-        """Draw this pixmap into the given (default current) grafport.""" 
+        """Draw this pixmap into the given (default current) grafport."""
         src = self.bounds
         dest = [x1,y1,x2,y2]
         if x2 == None:
@@ -153,7 +153,7 @@ class PixMapWrapper:
         if not port: port = Qd.GetPort()
         Qd.CopyBits(self.PixMap(), port.GetPortBitMapForCopyBits(), src, tuple(dest),
                 QuickDraw.srcCopy, None)
-    
+
     def fromstring(self,s,width,height,format=imgformat.macrgb):
         """Stuff this pixmap with raw pixel data from a string.
         Supply width, height, and one of the imgformat specifiers."""
@@ -188,7 +188,7 @@ class PixMapWrapper:
         """Initialize this PixMap from a PIL Image object."""
         # We need data in ARGB format; PIL can't currently do that,
         # but it can do RGBA, which we can use by inserting one null
-        # up frontpm = 
+        # up frontpm =
         if im.mode != 'RGBA': im = im.convert('RGBA')
         data = chr(0) + im.tostring()
         self.fromstring(data, im.size[0], im.size[1])
@@ -212,4 +212,3 @@ def test():
     pm.fromImage( Image.open(path) )
     pm.blit(20,20)
     return pm
-

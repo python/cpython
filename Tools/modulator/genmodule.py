@@ -65,7 +65,7 @@ class writer:
                 return open(fn, 'r')
         raise error, 'Template '+name+' not found for '+self._type+' '+ \
                      self.name
-        
+
 class module(writer):
     _type = 'module'
 
@@ -116,7 +116,7 @@ class object(writer):
         # Add getattr if we have methods
         if self.methodlist and not 'tp_getattr' in self.funclist:
             self.funclist.insert(0, 'tp_getattr')
-            
+
         for fn in FUNCLIST:
             setattr(self, fn, '0')
 

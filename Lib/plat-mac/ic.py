@@ -38,7 +38,7 @@ class ICOpaqueData:
         return "ICOpaqueData(%r)"%(self.data,)
 
 _ICOpaqueDataType=type(ICOpaqueData(''))
-        
+
 def _decode_default(data, key):
     if len(data) == 0:
         return data
@@ -46,8 +46,8 @@ def _decode_default(data, key):
         # Assume Pstring
         return data[1:]
     return ICOpaqueData(data)
-    
-    
+
+
 def _decode_multistr(data, key):
     numstr = ord(data[0]) << 8 | ord(data[1])
     rv = []
@@ -58,54 +58,54 @@ def _decode_multistr(data, key):
         rv.append(str)
         ptr = ptr + strlen + 1
     return rv
-    
+
 def _decode_fontrecord(data, key):
     size = ord(data[0]) << 8 | ord(data[1])
     face = ord(data[2])
     namelen = ord(data[4])
     return size, face, data[5:5+namelen]
-    
+
 def _decode_boolean(data, key):
     return ord(data[0])
-    
+
 def _decode_text(data, key):
     return data
-    
+
 def _decode_charset(data, key):
     return data[:256], data[256:]
-    
+
 def _decode_appspec(data, key):
     namelen = ord(data[4])
     return data[0:4], data[5:5+namelen]
 
 def _code_default(data, key):
     return chr(len(data)) + data
-        
+
 def _code_multistr(data, key):
     numstr = len(data)
     rv = chr((numstr>>8) & 0xff) + chr(numstr & 0xff)
     for i in data:
         rv = rv + _code_default(i)
     return rv
-    
+
 def _code_fontrecord(data, key):
     size, face, name = data
     return chr((size>>8) & 0xff) + chr(size & 0xff) + chr(face & 0xff) + \
         chr(0) + _code_default(name)
-    
+
 def _code_boolean(data, key):
     print 'XXXX boolean:', repr(data)
     return chr(data)
-    
+
 def _code_text(data, key):
     return data
-    
+
 def _code_charset(data, key):
     return data[0] + data[1]
-    
+
 def _code_appspec(data, key):
     return data[0] + _code_default(data[1])
-    
+
 _decoder_table = {
     "ArchieAll" : (_decode_multistr , _code_multistr),
     "UMichAll" : (_decode_multistr , _code_multistr),
@@ -118,7 +118,7 @@ _decoder_table = {
     "Plan" : (_decode_text , _code_text),
     "MailHeaders" : (_decode_text , _code_text),
     "NewsHeaders" : (_decode_text , _code_text),
-#   "Mapping" 
+#   "Mapping"
     "CharacterSet" : (_decode_charset , _code_charset),
     "Helper\245" : (_decode_appspec , _code_appspec),
 #   "Services" : (_decode_services, ????),
@@ -156,7 +156,7 @@ def _code(data, key):
     else:
         coder = _code_default
     return coder(data, key)
-    
+
 class IC:
     def __init__(self, signature='Pyth', ic=None):
         if ic:
@@ -166,7 +166,7 @@ class IC:
             if hasattr(self.ic, 'ICFindConfigFile'):
                 self.ic.ICFindConfigFile()
         self.h = Res.Resource('')
-            
+
     def keys(self):
         rv = []
         self.ic.ICBegin(icReadOnlyPerm)
@@ -175,32 +175,32 @@ class IC:
             rv.append(self.ic.ICGetIndPref(i+1))
         self.ic.ICEnd()
         return rv
-        
+
     def has_key(self, key):
         return self.__contains__(key)
-        
+
     def __contains__(self, key):
         try:
             dummy = self.ic.ICFindPrefHandle(key, self.h)
         except icglue.error:
             return 0
         return 1
-        
+
     def __getitem__(self, key):
         attr = self.ic.ICFindPrefHandle(key, self.h)
         return _decode(self.h.data, key)
-        
+
     def __setitem__(self, key, value):
         value = _code(value, key)
         self.ic.ICSetPref(key, ICattr_no_change, value)
-        
+
     def launchurl(self, url, hint=""):
         # Work around a bug in ICLaunchURL: file:/foo does
         # not work but file:///foo does.
         if url[:6] == 'file:/' and url[6] != '/':
             url = 'file:///' + url[6:]
         self.ic.ICLaunchURL(hint, url, 0, len(url))
-        
+
     def parseurl(self, data, start=None, end=None, hint=""):
         if start == None:
             selStart = 0
@@ -211,21 +211,21 @@ class IC:
             selEnd = end
         selStart, selEnd = self.ic.ICParseURL(hint, data, selStart, selEnd, self.h)
         return self.h.data, selStart, selEnd
-        
+
     def mapfile(self, file):
         if type(file) != type(''):
             file = file.as_tuple()[2]
         return self.ic.ICMapFilename(file)
-        
+
     def maptypecreator(self, type, creator, filename=""):
         return self.ic.ICMapTypeCreator(type, creator, filename)
-        
+
     def settypecreator(self, file):
         file = Carbon.File.pathname(file)
         record = self.mapfile(os.path.split(file)[1])
         MacOS.SetCreatorAndType(file, record[2], record[1])
         macostools.touched(fss)
-        
+
 # Convenience routines
 _dft_ic = None
 
@@ -233,27 +233,27 @@ def launchurl(url, hint=""):
     global _dft_ic
     if _dft_ic == None: _dft_ic = IC()
     return _dft_ic.launchurl(url, hint)
-    
+
 def parseurl(data, start=None, end=None, hint=""):
     global _dft_ic
     if _dft_ic == None: _dft_ic = IC()
     return _dft_ic.parseurl(data, start, end, hint)
-    
+
 def mapfile(filename):
     global _dft_ic
     if _dft_ic == None: _dft_ic = IC()
     return _dft_ic.mapfile(filename)
-    
+
 def maptypecreator(type, creator, filename=""):
     global _dft_ic
     if _dft_ic == None: _dft_ic = IC()
     return _dft_ic.maptypecreator(type, creator, filename)
-    
+
 def settypecreator(file):
     global _dft_ic
     if _dft_ic == None: _dft_ic = IC()
     return _dft_ic.settypecreator(file)
-        
+
 def _test():
     ic = IC()
     for k in ic.keys():
@@ -263,7 +263,6 @@ def _test():
             v = '????'
         print k, '\t', v
     sys.exit(1)
-    
+
 if __name__ == '__main__':
     _test()
-    

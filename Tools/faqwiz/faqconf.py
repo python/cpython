@@ -30,11 +30,11 @@ MAXHITS = 10                            # Max #hits to be shown directly
 COOKIE_LIFETIME = 28*24*3600            # Cookie expiration in seconds
                                         # (28*24*3600 = 28 days = 4 weeks)
 PROCESS_PREFORMAT = 1                   # toggle whether preformatted text
-                                        # will replace urls and emails with 
+                                        # will replace urls and emails with
                                         # HTML links
 
 # Markers appended to title to indicate recently change
-# (may contain HTML, e.g. <IMG>); and corresponding 
+# (may contain HTML, e.g. <IMG>); and corresponding
 
 MARK_VERY_RECENT = " **"                # Changed very recently
 MARK_RECENT = " *"                      # Changed recently

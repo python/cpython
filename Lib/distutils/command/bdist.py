@@ -78,7 +78,7 @@ class bdist (Command):
                        'wininst': ('bdist_wininst',
                                    "Windows executable installer"),
                        'zip':   ('bdist_dumb', "ZIP file"),
-                       #'pkgtool': ('bdist_pkgtool', 
+                       #'pkgtool': ('bdist_pkgtool',
                        #            "Solaris pkgtool distribution"),
                        #'sdux':  ('bdist_sdux', "HP-UX swinstall depot"),
                       }

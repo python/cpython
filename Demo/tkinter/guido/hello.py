@@ -4,14 +4,14 @@ import sys
 from Tkinter import *
 
 def main():
-	root = Tk()
-	button = Button(root)
-	button['text'] = 'Hello, world'
-	button['command'] = quit_callback	# See below
-	button.pack()
-	root.mainloop()
+    root = Tk()
+    button = Button(root)
+    button['text'] = 'Hello, world'
+    button['command'] = quit_callback       # See below
+    button.pack()
+    root.mainloop()
 
 def quit_callback():
-	sys.exit(0)
+    sys.exit(0)
 
 main()

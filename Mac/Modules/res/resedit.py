@@ -4,11 +4,11 @@
 ##Handle h;
 ##
 ##if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
-##	return NULL;
+##      return NULL;
 ##h = NewHandle(len);
 ##if ( h == NULL ) {
-##	PyErr_NoMemory();
-##	return NULL;
+##      PyErr_NoMemory();
+##      return NULL;
 ##}
 ##HLock(h);
 ##memcpy(*h, buf, len);
@@ -33,11 +33,11 @@ Handle h;
 ResourceObject *rv;
 
 if (!PyArg_ParseTuple(_args, "s#", &buf, &len))
-	return NULL;
+        return NULL;
 h = NewHandle(len);
 if ( h == NULL ) {
-	PyErr_NoMemory();
-	return NULL;
+        PyErr_NoMemory();
+        return NULL;
 }
 HLock(h);
 memcpy(*h, buf, len);
@@ -66,10 +66,10 @@ return _res;
 
 def genresconverter(longname, shortname):
 
-	f = ManualGenerator("as_%s"%longname, as_xxx_body%(shortname, longname))
-	docstring =  "Return this resource/handle as a %s"%longname
-	f.docstring = lambda docstring=docstring: docstring
-	return f
+    f = ManualGenerator("as_%s"%longname, as_xxx_body%(shortname, longname))
+    docstring =  "Return this resource/handle as a %s"%longname
+    f.docstring = lambda docstring=docstring: docstring
+    return f
 
 resmethods.append(genresconverter("Control", "Ctl"))
 resmethods.append(genresconverter("Menu", "Menu"))
@@ -87,13 +87,13 @@ resmethods.append(f)
 AutoDispose_body = """
 int onoff, old = 0;
 if (!PyArg_ParseTuple(_args, "i", &onoff))
-	return NULL;
+        return NULL;
 if ( _self->ob_freeit )
-	old = 1;
+        old = 1;
 if ( onoff )
-	_self->ob_freeit = PyMac_AutoDisposeHandle;
+        _self->ob_freeit = PyMac_AutoDisposeHandle;
 else
-	_self->ob_freeit = NULL;
+        _self->ob_freeit = NULL;
 _res = Py_BuildValue("i", old);
 return _res;
 """

@@ -685,7 +685,7 @@ class CCompiler:
 
         # A concrete compiler class can either override this method
         # entirely or implement _compile().
-        
+
         macros, objects, extra_postargs, pp_opts, build = \
                 self._setup_compile(output_dir, macros, include_dirs, sources,
                                     depends, extra_postargs)
@@ -703,7 +703,7 @@ class CCompiler:
 
     def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
         """Compile 'src' to product 'obj'."""
-        
+
         # A concrete compiler class that does not override compile()
         # should implement _compile().
         pass

@@ -204,8 +204,8 @@ class OpaqueType(Type):
             self.convert = arg + '_Convert'
         else:
             # Three arguments (name, new, convert)
-            self.new = arg 
-            self.convert = extra 
+            self.new = arg
+            self.convert = extra
 
     def getargsFormat(self):
         return "O&"
@@ -236,7 +236,7 @@ class OpaqueByValueType(OpaqueType):
 
     def mkvalueArgs(self, name):
         return "%s, %s" % (self.new, name)
-        
+
 class OpaqueByValueStructType(OpaqueByValueType):
     """Similar to OpaqueByValueType, but we also pass this to mkvalue by
     address, in stead of by value.

@@ -10,17 +10,17 @@ Checkpoints are not (yet???  ever???) supported.
 
 User interface:
 
-Enter a root to check in the text entry box.  To enter more than one root, 
+Enter a root to check in the text entry box.  To enter more than one root,
 enter them one at a time and press <Return> for each one.
 
-Command buttons Start, Stop and "Check one" govern the checking process in 
-the obvious way.  Start and "Check one" also enter the root from the text 
+Command buttons Start, Stop and "Check one" govern the checking process in
+the obvious way.  Start and "Check one" also enter the root from the text
 entry box if one is present.  There's also a check box (enabled by default)
 to decide whether actually to follow external links (since this can slow
 the checking down considerably).  Finally there's a Quit button.
 
-A series of checkbuttons determines whether the corresponding output panel 
-is shown.  List panels are also automatically shown or hidden when their 
+A series of checkbuttons determines whether the corresponding output panel
+is shown.  List panels are also automatically shown or hidden when their
 status changes between empty to non-empty.  There are six panels:
 
 Log        -- raw output from the checker (-v, -q affect this)

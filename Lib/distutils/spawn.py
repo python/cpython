@@ -97,7 +97,7 @@ def _spawn_os2 (cmd,
     #cmd = _nt_quote_args(cmd)
     if search_path:
         # either we find one or it stays the same
-        executable = find_executable(executable) or executable 
+        executable = find_executable(executable) or executable
     log.info(string.join([executable] + cmd[1:], ' '))
     if not dry_run:
         # spawnv for OS/2 EMX requires a full path to the .exe

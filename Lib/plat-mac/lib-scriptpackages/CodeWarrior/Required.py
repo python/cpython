@@ -40,8 +40,8 @@ class Required_Events(Required_Suite_Events):
             return _arguments['----']
 
 _Enum_Conv = {
-    'yes' : 'yes ',	# Convert the project if necessary on open
-    'no' : 'no  ',	# Do not convert the project if needed on open
+    'yes' : 'yes ',     # Convert the project if necessary on open
+    'no' : 'no  ',      # Do not convert the project if needed on open
 }
 
 

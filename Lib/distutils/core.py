@@ -239,4 +239,3 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     return _setup_distribution
 
 # run_setup ()
-

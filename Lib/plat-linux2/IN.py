@@ -61,11 +61,11 @@ __flexarr = []
 __flexarr = [1]
 def __ASMNAME(cname): return __ASMNAME2 (__USER_LABEL_PREFIX__, cname)
 
-def __attribute__(xyz): return  
+def __attribute__(xyz): return
 
 def __attribute_format_arg__(x): return __attribute__ ((__format_arg__ (x)))
 
-def __attribute_format_arg__(x): return  
+def __attribute_format_arg__(x): return
 
 __USE_LARGEFILE = 1
 __USE_LARGEFILE64 = 1
@@ -613,4 +613,3 @@ def IN6_IS_ADDR_MC_SITELOCAL(a): return \
 def IN6_IS_ADDR_MC_ORGLOCAL(a): return \
 
 def IN6_IS_ADDR_MC_GLOBAL(a): return \
-

@@ -39,29 +39,29 @@ AppleEvent_ptr = OpaqueType('AppleEvent', 'AEDesc')
 
 
 class EHType(Type):
-	def __init__(self, name = 'EventHandler', format = ''):
-		Type.__init__(self, name, format)
-	def declare(self, name):
-		Output("AEEventHandlerUPP %s__proc__ = upp_GenericEventHandler;", name)
-		Output("PyObject *%s;", name)
-	def getargsFormat(self):
-		return "O"
-	def getargsArgs(self, name):
-		return "&%s" % name
-	def passInput(self, name):
-		return "%s__proc__, (long)%s" % (name, name)
-	def passOutput(self, name):
-		return "&%s__proc__, (long *)&%s" % (name, name)
-	def mkvalueFormat(self):
-		return "O"
-	def mkvalueArgs(self, name):
-		return name
-	def cleanup(self, name):
-		Output("Py_INCREF(%s); /* XXX leak, but needed */", name)
+    def __init__(self, name = 'EventHandler', format = ''):
+        Type.__init__(self, name, format)
+    def declare(self, name):
+        Output("AEEventHandlerUPP %s__proc__ = upp_GenericEventHandler;", name)
+        Output("PyObject *%s;", name)
+    def getargsFormat(self):
+        return "O"
+    def getargsArgs(self, name):
+        return "&%s" % name
+    def passInput(self, name):
+        return "%s__proc__, (long)%s" % (name, name)
+    def passOutput(self, name):
+        return "&%s__proc__, (long *)&%s" % (name, name)
+    def mkvalueFormat(self):
+        return "O"
+    def mkvalueArgs(self, name):
+        return name
+    def cleanup(self, name):
+        Output("Py_INCREF(%s); /* XXX leak, but needed */", name)
 
 class EHNoRefConType(EHType):
-	def passInput(self, name):
-		return "upp_GenericEventHandler"
+    def passInput(self, name):
+        return "upp_GenericEventHandler"
 
 EventHandler = EHType()
 EventHandlerNoRefCon = EHNoRefConType()
@@ -101,9 +101,9 @@ AEEventHandlerUPP upp_GenericEventHandler;
 
 static pascal Boolean AEIdleProc(EventRecord *theEvent, long *sleepTime, RgnHandle *mouseRgn)
 {
-	if ( PyOS_InterruptOccurred() )
-		return 1;
-	return 0;
+        if ( PyOS_InterruptOccurred() )
+                return 1;
+        return 0;
 }
 
 AEIdleUPP upp_AEIdleProc;
@@ -113,99 +113,99 @@ finalstuff = finalstuff + """
 static pascal OSErr
 GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype refcon)
 {
-	PyObject *handler = (PyObject *)refcon;
-	AEDescObject *requestObject, *replyObject;
-	PyObject *args, *res;
-	if ((requestObject = (AEDescObject *)AEDesc_New((AppleEvent *)request)) == NULL) {
-		return -1;
-	}
-	if ((replyObject = (AEDescObject *)AEDesc_New(reply)) == NULL) {
-		Py_DECREF(requestObject);
-		return -1;
-	}
-	if ((args = Py_BuildValue("OO", requestObject, replyObject)) == NULL) {
-		Py_DECREF(requestObject);
-		Py_DECREF(replyObject);
-		return -1;
-	}
-	res = PyEval_CallObject(handler, args);
-	requestObject->ob_itself.descriptorType = 'null';
-	requestObject->ob_itself.dataHandle = NULL;
-	replyObject->ob_itself.descriptorType = 'null';
-	replyObject->ob_itself.dataHandle = NULL;
-	Py_DECREF(args);
-	if (res == NULL) {
-		PySys_WriteStderr("Exception in AE event handler function\\n");
-		PyErr_Print();
-		return -1;
-	}
-	Py_DECREF(res);
-	return noErr;
+        PyObject *handler = (PyObject *)refcon;
+        AEDescObject *requestObject, *replyObject;
+        PyObject *args, *res;
+        if ((requestObject = (AEDescObject *)AEDesc_New((AppleEvent *)request)) == NULL) {
+                return -1;
+        }
+        if ((replyObject = (AEDescObject *)AEDesc_New(reply)) == NULL) {
+                Py_DECREF(requestObject);
+                return -1;
+        }
+        if ((args = Py_BuildValue("OO", requestObject, replyObject)) == NULL) {
+                Py_DECREF(requestObject);
+                Py_DECREF(replyObject);
+                return -1;
+        }
+        res = PyEval_CallObject(handler, args);
+        requestObject->ob_itself.descriptorType = 'null';
+        requestObject->ob_itself.dataHandle = NULL;
+        replyObject->ob_itself.descriptorType = 'null';
+        replyObject->ob_itself.dataHandle = NULL;
+        Py_DECREF(args);
+        if (res == NULL) {
+                PySys_WriteStderr("Exception in AE event handler function\\n");
+                PyErr_Print();
+                return -1;
+        }
+        Py_DECREF(res);
+        return noErr;
 }
 
 PyObject *AEDesc_NewBorrowed(AEDesc *itself)
 {
-	PyObject *it;
-	
-	it = AEDesc_New(itself);
-	if (it)
-		((AEDescObject *)it)->ob_owned = 0;
-	return (PyObject *)it;
+        PyObject *it;
+
+        it = AEDesc_New(itself);
+        if (it)
+                ((AEDescObject *)it)->ob_owned = 0;
+        return (PyObject *)it;
 }
 
 """
 
 initstuff = initstuff + """
-	upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
-	upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
-	PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
-	PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
+        upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
+        upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
+        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+        PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
+        PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 """
 
 module = MacModule('_AE', 'AE', includestuff, finalstuff, initstuff)
 
 class AEDescDefinition(PEP253Mixin, GlobalObjectDefinition):
-	getsetlist = [(
-		'type',
-		'return PyMac_BuildOSType(self->ob_itself.descriptorType);',
-		None,
-		'Type of this AEDesc'
-		), (
-		'data',
-		"""
-		PyObject *res;
-		Size size;
-		char *ptr;
-		OSErr err;
-		
-		size = AEGetDescDataSize(&self->ob_itself);
-		if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
-			return NULL;
-		if ( (ptr = PyString_AsString(res)) == NULL )
-			return NULL;
-		if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
-			return PyMac_Error(err);	
-		return res;
-		""",
-		None,
-		'The raw data in this AEDesc'
-		)]
+    getsetlist = [(
+            'type',
+            'return PyMac_BuildOSType(self->ob_itself.descriptorType);',
+            None,
+            'Type of this AEDesc'
+            ), (
+            'data',
+            """
+            PyObject *res;
+            Size size;
+            char *ptr;
+            OSErr err;
 
-	def __init__(self, name, prefix = None, itselftype = None):
-		GlobalObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
-		self.argref = "*"
+            size = AEGetDescDataSize(&self->ob_itself);
+            if ( (res = PyString_FromStringAndSize(NULL, size)) == NULL )
+                    return NULL;
+            if ( (ptr = PyString_AsString(res)) == NULL )
+                    return NULL;
+            if ( (err=AEGetDescData(&self->ob_itself, ptr, size)) < 0 )
+                    return PyMac_Error(err);
+            return res;
+            """,
+            None,
+            'The raw data in this AEDesc'
+            )]
 
-	def outputStructMembers(self):
-		GlobalObjectDefinition.outputStructMembers(self)
-		Output("int ob_owned;")
-		
-	def outputInitStructMembers(self):
-		GlobalObjectDefinition.outputInitStructMembers(self)
-		Output("it->ob_owned = 1;")
-		
-	def outputCleanupStructMembers(self):
-		Output("if (self->ob_owned) AEDisposeDesc(&self->ob_itself);")
+    def __init__(self, name, prefix = None, itselftype = None):
+        GlobalObjectDefinition.__init__(self, name, prefix or name, itselftype or name)
+        self.argref = "*"
+
+    def outputStructMembers(self):
+        GlobalObjectDefinition.outputStructMembers(self)
+        Output("int ob_owned;")
+
+    def outputInitStructMembers(self):
+        GlobalObjectDefinition.outputInitStructMembers(self)
+        Output("it->ob_owned = 1;")
+
+    def outputCleanupStructMembers(self):
+        Output("if (self->ob_owned) AEDisposeDesc(&self->ob_itself);")
 
 aedescobject = AEDescDefinition('AEDesc')
 module.addobject(aedescobject)

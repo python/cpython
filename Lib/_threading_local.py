@@ -81,7 +81,7 @@ Now we have a default number:
   2
 
 an initial color:
-    
+
   >>> mydata.color
   'red'
   >>> del mydata.color
@@ -216,7 +216,7 @@ class local(_localbase):
                 # if enumerate fails, as it seems to do during
                 # shutdown, we'll skip cleanup under the assumption
                 # that there is nothing to clean up
-                return 
+                return
 
             for thread in threads:
                 try:
@@ -228,7 +228,7 @@ class local(_localbase):
                 if key in __dict__:
                     try:
                         del __dict__[key]
-                    except KeyError: 
+                    except KeyError:
                         pass # didn't have anything in this thread
 
         return __del__

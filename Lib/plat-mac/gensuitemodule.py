@@ -31,7 +31,7 @@ DEFAULT_USER_PACKAGEFOLDER=distutils.sysconfig.get_python_lib()
 def usage():
     sys.stderr.write("Usage: %s [opts] application-or-resource-file\n" % sys.argv[0])
     sys.stderr.write("""Options:
---output pkgdir  Pathname of the output package (short: -o)  
+--output pkgdir  Pathname of the output package (short: -o)
 --resource       Parse resource file in stead of launching application (-r)
 --base package   Use another base package in stead of default StdSuites (-b)
 --edit old=new   Edit suite names, use empty new to skip a suite (-e)
@@ -49,7 +49,7 @@ def main():
             opts, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
         except getopt.GetoptError:
             usage()
-        
+
         process_func = processfile
         basepkgname = 'StdSuites'
         output = None
@@ -57,7 +57,7 @@ def main():
         creatorsignature = None
         dump = None
         verbose = None
-        
+
         for o, a in opts:
             if o in ('-r', '--resource'):
                 process_func = processfile_fromresource
@@ -79,19 +79,19 @@ def main():
                 dump = sys.stdout
             if o in ('-v', '--verbose'):
                 verbose = sys.stderr
-                
-                    
+
+
         if output and len(args) > 1:
             sys.stderr.write("%s: cannot specify --output with multiple inputs\n" % sys.argv[0])
             sys.exit(1)
-            
+
         for filename in args:
-            process_func(filename, output=output, basepkgname=basepkgname, 
+            process_func(filename, output=output, basepkgname=basepkgname,
                 edit_modnames=edit_modnames, creatorsignature=creatorsignature,
                 dump=dump, verbose=verbose)
     else:
         main_interactive()
-        
+
 def main_interactive(interact=0, basepkgname='StdSuites'):
     if interact:
         # Ask for save-filename for each module
@@ -119,7 +119,7 @@ def main_interactive(interact=0, basepkgname='StdSuites'):
         print "Retry, manually parsing resources"
         processfile_fromresource(filename, edit_modnames=edit_modnames,
             basepkgname=basepkgname, verbose=sys.stderr)
-            
+
 def is_scriptable(application):
     """Return true if the application is scriptable"""
     if os.path.isdir(application):
@@ -141,7 +141,7 @@ def is_scriptable(application):
     UseResFile(currf)
     return n_terminology > 0
 
-def processfile_fromresource(fullname, output=None, basepkgname=None, 
+def processfile_fromresource(fullname, output=None, basepkgname=None,
         edit_modnames=None, creatorsignature=None, dump=None, verbose=None):
     """Process all resources in a single file"""
     if not is_scriptable(fullname) and verbose:
@@ -159,7 +159,7 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
         for i in range(Count1Resources('aeut')):
             res = Get1IndResource('aeut', 1+i)
             resources.append(res)
-        if verbose: 
+        if verbose:
             print >>verbose, "\nLISTING aete+aeut RESOURCES IN", repr(fullname)
         aetelist = []
         for res in resources:
@@ -176,11 +176,11 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
     UseResFile(cur)
     if dump:
         dumpaetelist(aetelist, dump)
-    compileaetelist(aetelist, fullname, output=output, 
+    compileaetelist(aetelist, fullname, output=output,
         basepkgname=basepkgname, edit_modnames=edit_modnames,
         creatorsignature=creatorsignature, verbose=verbose)
 
-def processfile(fullname, output=None, basepkgname=None, 
+def processfile(fullname, output=None, basepkgname=None,
         edit_modnames=None, creatorsignature=None, dump=None,
         verbose=None):
     """Ask an application for its terminology and process that"""
@@ -204,7 +204,7 @@ def processfile(fullname, output=None, basepkgname=None,
             if verbose:
                 print >>verbose, "Launched", fullname
         raw = aetools.unpack(aedescobj)
-        if not raw: 
+        if not raw:
             if verbose:
                 print >>verbose, 'Unpack returned empty value:', raw
             return
@@ -218,9 +218,9 @@ def processfile(fullname, output=None, basepkgname=None,
         dumpaetelist([aete], dump)
         return
     compileaete(aete, None, fullname, output=output, basepkgname=basepkgname,
-        creatorsignature=creatorsignature, edit_modnames=edit_modnames, 
+        creatorsignature=creatorsignature, edit_modnames=edit_modnames,
         verbose=verbose)
-        
+
 def getappterminology(fullname, verbose=None):
     """Get application terminology by sending an AppleEvent"""
     # First check that we actually can send AppleEvents
@@ -251,19 +251,19 @@ def getappterminology(fullname, verbose=None):
     #reply2 = talker.send("ascr", "gdut")
     # Now pick the bits out of the return that we need.
     return reply[1]['----'], cr
-    
 
-def compileaetelist(aetelist, fullname, output=None, basepkgname=None, 
+
+def compileaetelist(aetelist, fullname, output=None, basepkgname=None,
             edit_modnames=None, creatorsignature=None, verbose=None):
     for aete, resinfo in aetelist:
-        compileaete(aete, resinfo, fullname, output=output, 
+        compileaete(aete, resinfo, fullname, output=output,
             basepkgname=basepkgname, edit_modnames=edit_modnames,
             creatorsignature=creatorsignature, verbose=verbose)
 
 def dumpaetelist(aetelist, output):
     import pprint
     pprint.pprint(aetelist, output)
-    
+
 def decode(data, verbose=None):
     """Decode a resource into a python data structure"""
     f = StringIO.StringIO(data)
@@ -427,7 +427,7 @@ getaete = [
     (getlist, "suites", getsuite)
     ]
 
-def compileaete(aete, resinfo, fname, output=None, basepkgname=None, 
+def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
         edit_modnames=None, creatorsignature=None, verbose=None):
     """Generate code for a full aete resource. fname passed for doc purposes"""
     [version, language, script, suites] = aete
@@ -500,7 +500,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
     fp.write("}\n\n")
     for code, modname in suitelist:
         fp.write("from %s import *\n"%modname)
-    
+
     # Generate property dicts and element dicts for all types declared in this module
     fp.write("\ndef getbaseclasses(v):\n")
     fp.write("    if not getattr(v, '_propdict', None):\n")
@@ -534,7 +534,7 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
                     application_class = v
         fp.write("}\n")
 
-    
+
     if suitelist:
         fp.write("\n\nclass %s(%s_Events"%(packagename, suitelist[0][1]))
         for code, modname in suitelist[1:]:
@@ -554,22 +554,22 @@ class SuiteCompiler:
         self.edit_modnames = edit_modnames
         self.output = output
         self.verbose = verbose
-        
+
         # Set by precompilesuite
         self.pathname = None
         self.modname = None
-        
+
         # Set by compilesuite
         self.fp = None
         self.basemodule = None
         self.enumsneeded = {}
-            
+
     def precompilesuite(self):
         """Parse a single suite without generating the output. This step is needed
         so we can resolve recursive references by suites to enums/comps/etc declared
         in other suites"""
         [name, desc, code, level, version, events, classes, comps, enums] = self.suite
-        
+
         modname = identify(name)
         if len(modname) > 28:
             modname = modname[:27]
@@ -586,9 +586,9 @@ class SuiteCompiler:
                 self.pathname = None
         if not self.pathname:
             return None, None, None
-    
+
         self.modname = os.path.splitext(os.path.split(self.pathname)[1])[0]
-        
+
         if self.basepackage and self.basepackage._code_to_module.has_key(code):
             # We are an extension of a baseclass (usually an application extending
             # Standard_Suite or so). Import everything from our base module
@@ -596,11 +596,11 @@ class SuiteCompiler:
         else:
             # We are not an extension.
             basemodule = None
-    
+
         self.enumsneeded = {}
         for event in events:
             self.findenumsinevent(event)
-    
+
         objc = ObjectCompiler(None, self.modname, basemodule, interact=(self.edit_modnames is None),
             verbose=self.verbose)
         for cls in classes:
@@ -611,16 +611,16 @@ class SuiteCompiler:
             objc.compilecomparison(comp)
         for enum in enums:
             objc.compileenumeration(enum)
-        
+
         for enum in self.enumsneeded.keys():
             objc.checkforenum(enum)
-            
+
         objc.dumpindex()
-        
+
         precompinfo = objc.getprecompinfo(self.modname)
-        
+
         return code, self.modname, precompinfo
-    
+
     def compilesuite(self, major, minor, language, script, fname, precompinfo):
         """Generate code for a single suite"""
         [name, desc, code, level, version, events, classes, comps, enums] = self.suite
@@ -637,22 +637,22 @@ class SuiteCompiler:
                 # This is a synonym, the other one is better
                 return 1
             return 0
-            
+
         events.sort()
         classes.sort(class_sorter)
         comps.sort()
         enums.sort()
-        
+
         self.fp = fp = open(self.pathname, 'w')
         MacOS.SetCreatorAndType(self.pathname, 'Pyth', 'TEXT')
-        
+
         fp.write('"""Suite %s: %s\n' % (ascii(name), ascii(desc)))
         fp.write("Level %d, version %d\n\n" % (level, version))
         fp.write("Generated from %s\n"%ascii(fname))
         fp.write("AETE/AEUT resource version %d/%d, language %d, script %d\n" % \
             (major, minor, language, script))
         fp.write('"""\n\n')
-        
+
         fp.write('import aetools\n')
         fp.write('import MacOS\n\n')
         fp.write("_code = %r\n\n"% (code,))
@@ -670,14 +670,14 @@ class SuiteCompiler:
             basemodule = None
         self.basemodule = basemodule
         self.compileclassheader()
-    
+
         self.enumsneeded = {}
         if events:
             for event in events:
                 self.compileevent(event)
         else:
             fp.write("    pass\n\n")
-    
+
         objc = ObjectCompiler(fp, self.modname, basemodule, precompinfo, interact=(self.edit_modnames is None),
             verbose=self.verbose)
         for cls in classes:
@@ -688,12 +688,12 @@ class SuiteCompiler:
             objc.compilecomparison(comp)
         for enum in enums:
             objc.compileenumeration(enum)
-        
+
         for enum in self.enumsneeded.keys():
             objc.checkforenum(enum)
-            
+
         objc.dumpindex()
-        
+
     def compileclassheader(self):
         """Generate class boilerplate"""
         classname = '%s_Events'%self.modname
@@ -703,7 +703,7 @@ class SuiteCompiler:
             self.fp.write("class %s(%s):\n\n"%(classname, baseclassname))
         else:
             self.fp.write("class %s:\n\n"%classname)
-        
+
     def compileevent(self, event):
         """Generate code for a single event"""
         [name, desc, code, subcode, returns, accepts, arguments] = event
@@ -717,13 +717,13 @@ class SuiteCompiler:
             for a in arguments:
                 fp.write("        %r : %r,\n"%(identify(a[0]), a[1]))
             fp.write("    }\n\n")
-            
+
         #
         # Generate function header
         #
         has_arg = (not is_null(accepts))
         opt_arg = (has_arg and is_optional(accepts))
-        
+
         fp.write("    def %s(self, "%funcname)
         if has_arg:
             if not opt_arg:
@@ -803,7 +803,7 @@ class SuiteCompiler:
             fp.write("            # XXXX Should do enum remapping here...\n")
         fp.write("            return _arguments['----']\n")
         fp.write("\n")
-            
+
     def findenumsinevent(self, event):
         """Find all enums for a single event"""
         [name, desc, code, subcode, returns, accepts, arguments] = event
@@ -812,7 +812,7 @@ class SuiteCompiler:
                 ename = a[2][0]
                 if ename <> '****':
                     self.enumsneeded[ename] = 1
-    
+
 #
 # This class stores the code<->name translations for a single module. It is used
 # to keep the information while we're compiling the module, but we also keep these objects
@@ -821,7 +821,7 @@ class SuiteCompiler:
 # hand.
 #
 class CodeNameMapper:
-    
+
     def __init__(self, interact=1, verbose=None):
         self.code2name = {
             "property" : {},
@@ -839,21 +839,21 @@ class CodeNameMapper:
         self.star_imported = 0
         self.can_interact = interact
         self.verbose = verbose
-        
+
     def addnamecode(self, type, name, code):
         self.name2code[type][name] = code
         if not self.code2name[type].has_key(code):
             self.code2name[type][code] = name
-        
+
     def hasname(self, name):
         for dict in self.name2code.values():
             if dict.has_key(name):
                 return True
         return False
-        
+
     def hascode(self, type, code):
         return self.code2name[type].has_key(code)
-        
+
     def findcodename(self, type, code):
         if not self.hascode(type, code):
             return None, None, None
@@ -863,10 +863,10 @@ class CodeNameMapper:
         else:
             qualname = name
         return name, qualname, self.modulename
-        
+
     def getall(self, type):
         return self.code2name[type].items()
-            
+
     def addmodule(self, module, name, star_imported):
         self.modulename = name
         self.star_imported = star_imported
@@ -878,14 +878,14 @@ class CodeNameMapper:
             self.addnamecode('enum', '_Enum_'+identify(code), code)
         for code, name in module._compdeclarations.items():
             self.addnamecode('comparison', name, code)
-        
+
     def prepareforexport(self, name=None):
         if not self.modulename:
             self.modulename = name
         return self
-            
+
 class ObjectCompiler:
-    def __init__(self, fp, modname, basesuite, othernamemappers=None, interact=1, 
+    def __init__(self, fp, modname, basesuite, othernamemappers=None, interact=1,
             verbose=None):
         self.fp = fp
         self.verbose = verbose
@@ -901,7 +901,7 @@ class ObjectCompiler:
             basemapper = CodeNameMapper(self.can_interact, self.verbose)
             basemapper.addmodule(basesuite, '', 1)
             self.namemappers.append(basemapper)
-        
+
     def getprecompinfo(self, modname):
         list = []
         for mapper in self.namemappers:
@@ -909,7 +909,7 @@ class ObjectCompiler:
             if emapper:
                 list.append(emapper)
         return list
-        
+
     def findcodename(self, type, code):
         while 1:
             # First try: check whether we already know about this code.
@@ -935,7 +935,7 @@ class ObjectCompiler:
                 mapper = CodeNameMapper(self.can_interact, self.verbose)
                 mapper.addmodule(m, m.__name__, 0)
                 self.namemappers.append(mapper)
-                
+
     def hasname(self, name):
         for mapper in self.othernamemappers:
             if mapper.hasname(name) and mapper.modulename != self.modulename:
@@ -943,7 +943,7 @@ class ObjectCompiler:
                     print >>self.verbose, "Duplicate Python identifier:", name, self.modulename, mapper.modulename
                 return True
         return False
-    
+
     def askdefinitionmodule(self, type, code):
         if not self.can_interact:
             if self.verbose:
@@ -958,7 +958,7 @@ class ObjectCompiler:
         m = __import__(modname)
         self.fp.write("import %s\n"%modname)
         return m
-        
+
     def compileclass(self, cls):
         [name, code, desc, properties, elements] = cls
         pname = identify(name)
@@ -980,7 +980,7 @@ class ObjectCompiler:
         elements.sort()
         for elem in elements:
             self.compileelement(elem)
-    
+
     def compileproperty(self, prop, is_application_class=False):
         [name, code, what] = prop
         if code == 'c@#!':
@@ -1003,7 +1003,7 @@ class ObjectCompiler:
         self.namemappers[0].addnamecode('property', pname, code)
         if is_application_class and self.fp:
             self.fp.write("%s = _Prop_%s()\n" % (pname, pname))
-    
+
     def compileelement(self, elem):
         [code, keyform] = elem
         if self.fp:
@@ -1056,10 +1056,10 @@ class ObjectCompiler:
                     self.fp.write("# XXXX %s element %r not found!!\n"%(cname, ecode))
             else:
                 elist.append((name, ename))
-                
+
         plist.sort()
         elist.sort()
-        
+
         if self.fp:
             self.fp.write("%s._privpropdict = {\n"%cname)
             for n in plist:
@@ -1069,7 +1069,7 @@ class ObjectCompiler:
             for n, fulln in elist:
                 self.fp.write("    '%s' : %s,\n"%(n, fulln))
             self.fp.write("}\n")
-    
+
     def compilecomparison(self, comp):
         [name, code, comment] = comp
         iname = identify(name)
@@ -1077,7 +1077,7 @@ class ObjectCompiler:
         if self.fp:
             self.fp.write("class %s(aetools.NComparison):\n" % iname)
             self.fp.write('    """%s - %s """\n' % (ascii(name), ascii(comment)))
-        
+
     def compileenumeration(self, enum):
         [code, items] = enum
         name = "_Enum_%s" % identify(code)
@@ -1088,11 +1088,11 @@ class ObjectCompiler:
             self.fp.write("}\n\n")
         self.namemappers[0].addnamecode('enum', name, code)
         return code
-    
+
     def compileenumerator(self, item):
         [name, code, desc] = item
         self.fp.write("    %r : %r,\t# %s\n" % (identify(name), code, ascii(desc)))
-        
+
     def checkforenum(self, enum):
         """This enum code is used by an event. Make sure it's available"""
         name, fullname, module = self.findcodename('enum', enum)
@@ -1103,33 +1103,33 @@ class ObjectCompiler:
         if module:
             if self.fp:
                 self.fp.write("from %s import %s\n"%(module, name))
-        
+
     def dumpindex(self):
         if not self.fp:
             return
         self.fp.write("\n#\n# Indices of types declared in this module\n#\n")
-        
+
         self.fp.write("_classdeclarations = {\n")
         classlist = self.namemappers[0].getall('class')
         classlist.sort()
         for k, v in classlist:
             self.fp.write("    %r : %s,\n" % (k, v))
         self.fp.write("}\n")
-        
+
         self.fp.write("\n_propdeclarations = {\n")
         proplist = self.namemappers[0].getall('property')
         proplist.sort()
         for k, v in proplist:
             self.fp.write("    %r : _Prop_%s,\n" % (k, v))
         self.fp.write("}\n")
-        
+
         self.fp.write("\n_compdeclarations = {\n")
         complist = self.namemappers[0].getall('comparison')
         complist.sort()
         for k, v in complist:
             self.fp.write("    %r : %s,\n" % (k, v))
         self.fp.write("}\n")
-        
+
         self.fp.write("\n_enumdeclarations = {\n")
         enumlist = self.namemappers[0].getall('enum')
         enumlist.sort()
@@ -1140,16 +1140,16 @@ class ObjectCompiler:
 def compiledata(data):
     [type, description, flags] = data
     return "%r -- %r %s" % (type, description, compiledataflags(flags))
-    
+
 def is_null(data):
     return data[0] == 'null'
-    
+
 def is_optional(data):
     return (data[2] & 0x8000)
-    
+
 def is_enum(data):
     return (data[2] & 0x2000)
-    
+
 def getdatadoc(data):
     [type, descr, flags] = data
     if descr:
@@ -1170,7 +1170,7 @@ def compiledataflags(flags):
             else:
                 bits.append(repr(i))
     return '[%s]' % string.join(bits)
-    
+
 def ascii(str):
     """Return a string with all non-ascii characters hex-encoded"""
     if type(str) != type(''):
@@ -1182,7 +1182,7 @@ def ascii(str):
         else:
             rv = rv + '\\' + 'x%02.2x' % ord(c)
     return rv
-    
+
 def identify(str):
     """Turn any string into an identifier:
     - replace space by _

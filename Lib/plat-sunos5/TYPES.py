@@ -311,4 +311,3 @@ FD_SETSIZE = 1024
 _NBBY = 8
 NBBY = _NBBY
 def FD_ZERO(p): return bzero((p), sizeof (*(p)))
-

@@ -15,7 +15,7 @@ def createWidgets(top):
     # area is inaccesssible.
     f = Frame(top, width=200, height=200, background='green')
 
-    # place it so the upper left hand corner of 
+    # place it so the upper left hand corner of
     # the frame is in the upper left corner of
     # the parent
     f.place(relx=0.0, rely=0.0)
@@ -23,7 +23,7 @@ def createWidgets(top):
     # now make a button
     f.button = Button(f, foreground='red', text='amazing', command=dothis)
 
-    # and place it so that the nw corner is 
+    # and place it so that the nw corner is
     # 1/2 way along the top X edge of its' parent
     f.button.place(relx=0.5, rely=0.0, anchor=NW)
 
@@ -37,4 +37,3 @@ app = createWidgets(root)
 root.geometry("400x400")
 root.maxsize(1000, 1000)
 root.mainloop()
-

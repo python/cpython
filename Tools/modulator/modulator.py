@@ -49,7 +49,7 @@ def getlistlist(list):
     for i in range(n):
         rv.append(list.get(i))
     return rv
-    
+
 class UI:
     def __init__(self):
         self.main = Frame()
@@ -97,7 +97,7 @@ class UI:
                 o.synchronize()
         except oops:
             pass
-        
+
     def cb_save(self, *args):
         try:
             pycode = self.module.gencode('m', self.objects)
@@ -177,12 +177,12 @@ class UI_module:
                                               'command':self.cb_newobj,
                                               Pack:{'side':'left',
                                                     'padx':'0.5m'}})
-        
+
     def cb_delmethod(self, *args):
         list = self.method_list.curselection()
         for i in list:
             self.method_list.delete(i)
-        
+
     def cb_newobj(self, *arg):
         self.parent.objects.append(UI_object(self.parent))
 
@@ -208,7 +208,7 @@ class UI_module:
             if not checkid(n):
                 message('Method name not an identifier:\n'+n)
                 raise oops
-            
+
     def gencode(self, name, objects):
         rv = ''
         self.synchronize()
@@ -226,7 +226,7 @@ class UI_module:
         rv = rv + '%s.objects = [%s]\n' % (name, ','.join(onames))
         rv = rv + '\n'
         return rv
-        
+
 object_number = 0
 
 class UI_object:
@@ -250,7 +250,7 @@ class UI_object:
                                            'fill':'x'}})
         self.f4 = Frame(self.frame, {Pack:{'side':'top', 'pady':'0.5m',
                                            'fill':'x'}})
-        
+
 
         self.l1 = Label(self.f1, {'text':'Object:', Pack:{'side':'left',
                                                         'padx':'0.5m'}})
@@ -305,7 +305,7 @@ class UI_object:
                                       Pack:{'side':'top', 'pady':'0.5m',
                                             'anchor':'w'}})
             self.types[i] = b
-        
+
     def cb_method(self, *arg):
         name = self.method_entry.get()
         if not name:
@@ -317,7 +317,7 @@ class UI_object:
         list = self.method_list.curselection()
         for i in list:
             self.method_list.delete(i)
-        
+
     def synchronize(self):
         n = self.name_entry.get()
         if not n:
@@ -337,7 +337,7 @@ class UI_object:
         if m:
             self.f5.setvar(self.vpref+'tp_getattr', 1)
         pass
-        
+
     def gencode(self, name):
         rv = ''
         rv = rv + '%s = genmodule.object()\n' % (name,)
@@ -356,12 +356,12 @@ class UI_object:
             vname = self.vpref + fn
             if self.f5.getvar(vname) == '1':
                 fl.append(fn)
-                
+
         rv = rv + '%s.typelist = %r\n' % (name, fl)
 
         rv = rv + '\n'
         return rv
-        
+
 
 def main():
     if len(sys.argv) < 2:
@@ -379,5 +379,5 @@ def main():
     else:
         sys.stderr.write('Usage: modulator [file]\n')
         sys.exit(1)
-        
+
 main()

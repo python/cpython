@@ -18,10 +18,10 @@ ITEM_LOOKUP_BUTTON=3
 def main():
     macresource.need("DLOG", ID_MAIN, "dnslookup-2.rsrc")
     DNSLookup()
-    
+
 class DNSLookup(FrameWork.Application):
     "Application class for DNS Lookup"
-    
+
     def __init__(self):
         # First init menus, etc.
         FrameWork.Application.__init__(self)
@@ -31,27 +31,27 @@ class DNSLookup(FrameWork.Application):
         self.main_dialog.open(ID_MAIN)
         # Finally, go into the event loop
         self.mainloop()
-    
+
     def makeusermenus(self):
         self.filemenu = m = FrameWork.Menu(self.menubar, "File")
         self.quititem = FrameWork.MenuItem(m, "Quit", "Q", self.quit)
-    
+
     def quit(self, *args):
         self._quit()
-        
+
     def do_about(self, *args):
         f = Dlg.GetNewDialog(ID_ABOUT, -1)
         while 1:
             n = Dlg.ModalDialog(None)
             if n == 1:
                 return
-                        
+
 class MyDialog(FrameWork.DialogWindow):
     "Main dialog window for DNSLookup"
     def __init__(self, parent):
         FrameWork.DialogWindow.__init__(self, parent)
         self.parent = parent
-    
+
     def do_itemhit(self, item, event):
         if item == ITEM_LOOKUP_BUTTON:
             self.dolookup()
@@ -64,7 +64,7 @@ class MyDialog(FrameWork.DialogWindow):
 
         tp, h, rect = self.dlg.GetDialogItem(ITEM_RESULT)
         Dlg.SetDialogItemText(h, self.dnslookup(txt))
-        
+
     def dnslookup(self, str):
         """ Perform DNS lookup on str.  If first character of digit is numeric,
             assume that str contains an IP address.  Otherwise, assume that str

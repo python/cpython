@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -34,17 +34,17 @@ def RunSample(w):
 
 def adddir(tree, dir):
     if dir == '/':
-	text = '/'
+        text = '/'
     else:
-	text = os.path.basename(dir)
+        text = os.path.basename(dir)
     tree.hlist.add(dir, itemtype=Tix.IMAGETEXT, text=text,
-		   image=tree.tk.call('tix', 'getimage', 'folder'))
+                   image=tree.tk.call('tix', 'getimage', 'folder'))
     try:
-	os.listdir(dir)
-	tree.setmode(dir, 'open')
+        os.listdir(dir)
+        tree.setmode(dir, 'open')
     except os.error:
-	# No read permission ?
-	pass
+        # No read permission ?
+        pass
 
 # This function is called whenever the user presses the (+) indicator or
 # double clicks on a directory whose mode is "open". It loads the files
@@ -57,22 +57,22 @@ def adddir(tree, dir):
 def opendir(tree, dir):
     entries = tree.hlist.info_children(dir)
     if entries:
-	# We have already loaded this directory. Let's just
-	# show all the child entries
-	#
-	# Note: since we load the directory only once, it will not be
-	#       refreshed if the you add or remove files from this
-	#	directory.
-	#
-	for entry in entries:
-	    tree.hlist.show_entry(entry)
+        # We have already loaded this directory. Let's just
+        # show all the child entries
+        #
+        # Note: since we load the directory only once, it will not be
+        #       refreshed if the you add or remove files from this
+        #       directory.
+        #
+        for entry in entries:
+            tree.hlist.show_entry(entry)
     files = os.listdir(dir)
     for file in files:
-	if os.path.isdir(dir + '/' + file):
-	    adddir(tree, dir + '/' + file)
-	else:
-	    tree.hlist.add(dir + '/' + file, itemtype=Tix.IMAGETEXT, text=file,
-			   image=tree.tk.call('tix', 'getimage', 'file'))
+        if os.path.isdir(dir + '/' + file):
+            adddir(tree, dir + '/' + file)
+        else:
+            tree.hlist.add(dir + '/' + file, itemtype=Tix.IMAGETEXT, text=file,
+                           image=tree.tk.call('tix', 'getimage', 'file'))
 
 if __name__ == '__main__':
     root = Tix.Tk()

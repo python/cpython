@@ -231,7 +231,7 @@ class Distribution:
                         newreq.append((pkg, LooseVersion(ver)))
                 attrs['requires'] = newreq
 
-            # Build up the provides object. If the setup() has no 
+            # Build up the provides object. If the setup() has no
             # provides line, we use packages or modules and the version
             # to synthesise the provides. If no version is provided (no
             # pun intended) we don't have a provides entry at all.
@@ -1137,7 +1137,7 @@ class DistributionMetadata:
         return self.download_url or "UNKNOWN"
 
     def get_requires(self):
-        return [ '%s%s%s'%(x, (y and '-') or '', y or '') 
+        return [ '%s%s%s'%(x, (y and '-') or '', y or '')
                                                 for x,y in self.requires ]
 
     def get_provides(self):

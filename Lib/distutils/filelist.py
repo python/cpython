@@ -167,7 +167,7 @@ class FileList:
             for pattern in patterns:
                 if not self.include_pattern(pattern, prefix=dir):
                     log.warn(("warning: no files found matching '%s' " +
-                                "under directory '%s'"), 
+                                "under directory '%s'"),
                              pattern, dir)
 
         elif action == 'recursive-exclude':

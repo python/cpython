@@ -34,22 +34,22 @@ def _getfinder():
     global _finder_talker
     if not _finder_talker:
         _finder_talker = Finder.Finder()
-    _finder_talker.send_flags = ( _finder_talker.send_flags | 
+    _finder_talker.send_flags = ( _finder_talker.send_flags |
         AppleEvents.kAECanInteract | AppleEvents.kAECanSwitchLayer)
     return _finder_talker
-    
+
 def launch(file):
     """Open a file thru the finder. Specify file by name or fsspec"""
     finder = _getfinder()
     fss = Carbon.File.FSSpec(file)
     return finder.open(fss)
-    
+
 def Print(file):
     """Print a file thru the finder. Specify file by name or fsspec"""
     finder = _getfinder()
     fss = Carbon.File.FSSpec(file)
     return finder._print(fss)
-    
+
 def copy(src, dstdir):
     """Copy a file to a folder"""
     finder = _getfinder()
@@ -73,17 +73,17 @@ def move(src, dstdir):
         src_fss = Carbon.File.FSSpec(src)
     dst_fss = Carbon.File.FSSpec(dstdir)
     return finder.move(src_fss, to=dst_fss)
-    
+
 def sleep():
     """Put the mac to sleep"""
     finder = _getfinder()
     finder.sleep()
-    
+
 def shutdown():
     """Shut the mac down"""
     finder = _getfinder()
     finder.shut_down()
-    
+
 def restart():
     """Restart the mac"""
     finder = _getfinder()
@@ -100,16 +100,16 @@ def reveal(file):
     fsr = Carbon.File.FSRef(file)
     file_alias = fsr.FSNewAliasMinimal()
     return finder.reveal(file_alias)
-    
+
 def select(file):
     """select a file in the finder. Specify file by name, fsref or fsspec."""
     finder = _getfinder()
     fsr = Carbon.File.FSRef(file)
     file_alias = fsr.FSNewAliasMinimal()
     return finder.select(file_alias)
-    
+
 def update(file):
-    """Update the display of the specified object(s) to match 
+    """Update the display of the specified object(s) to match
     their on-disk representation. Specify file by name, fsref or fsspec."""
     finder = _getfinder()
     fsr = Carbon.File.FSRef(file)
@@ -129,7 +129,7 @@ def comment(object, comment=None):
         return _getcomment(object_alias)
     else:
         return _setcomment(object_alias, comment)
-    
+
 def _setcomment(object_alias, comment):
     finder = _getfinder()
     args = {}
@@ -219,11 +219,11 @@ def isactiveprocess(processname):
         if n == processname:
             return 1
     return 0
-    
+
 def processinfo(processname):
     """Return an object with all process properties as attributes for processname. MacOS9"""
     p = _process()
-    
+
     if processname == "Finder":
         p.partition = None
         p.used = None
@@ -238,7 +238,7 @@ def processinfo(processname):
     p.accepthighlevel = _processproperty(processname, 'revt')   #Is the process high-level event aware (accepts open application, open document, print document, and quit)?
     p.hasscripting = _processproperty(processname, 'hscr')      #Does the process have a scripting terminology, i.e., can it be scripted?
     return p
-    
+
 def _processproperty(processname, property):
     """return the partition size and memory used for processname"""
     finder = _getfinder()
@@ -256,7 +256,7 @@ def _processproperty(processname, property):
 
 #---------------------------------------------------
 #   Mess around with Finder windows.
-    
+
 def openwindow(object):
     """Open a Finder window for object, Specify object by name or fsspec."""
     finder = _getfinder()
@@ -271,7 +271,7 @@ def openwindow(object):
     _reply, args, attrs = finder.send(_code, _subcode, args, attrs)
     if args.has_key('errn'):
         raise Error, aetools.decodeerror(args)
-    
+
 def closewindow(object):
     """Close a Finder window for folder, Specify by path."""
     finder = _getfinder()
@@ -295,7 +295,7 @@ def location(object, pos=None):
     if not pos:
         return _getlocation(object_alias)
     return _setlocation(object_alias, pos)
-    
+
 def _setlocation(object_alias, (x, y)):
     """_setlocation: Set the location of the icon for the object."""
     finder = _getfinder()
@@ -309,7 +309,7 @@ def _setlocation(object_alias, (x, y)):
     if args.has_key('errn'):
         raise Error, aetools.decodeerror(args)
     return (x,y)
-    
+
 def _getlocation(object_alias):
     """_getlocation: get the location of the icon for the object."""
     finder = _getfinder()
@@ -334,7 +334,7 @@ def label(object, index=None):
     if index < 0 or index > 7:
         index = 0
     return _setlabel(object_alias, index)
-    
+
 def _getlabel(object_alias):
     """label: Get the label for the object."""
     finder = _getfinder()
@@ -378,7 +378,7 @@ def windowview(folder, view=None):
     if view == None:
         return _getwindowview(folder_alias)
     return _setwindowview(folder_alias, view)
-    
+
 def _setwindowview(folder_alias, view=0):
     """set the windowview"""
     attrs = {}
@@ -390,13 +390,13 @@ def _setwindowview(folder_alias, view=0):
     else:
         _v = aetypes.Type('iimg')
     finder = _getfinder()
-    aeobj_0 = aetypes.ObjectSpecifier(want = aetypes.Type('cfol'), 
+    aeobj_0 = aetypes.ObjectSpecifier(want = aetypes.Type('cfol'),
             form = 'alis', seld = folder_alias, fr=None)
-    aeobj_1 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'), 
+    aeobj_1 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'),
             form = 'prop', seld = aetypes.Type('cwnd'), fr=aeobj_0)
-    aeobj_2 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'), 
+    aeobj_2 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'),
             form = 'prop', seld = aetypes.Type('pvew'), fr=aeobj_1)
-    aeobj_3 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'), 
+    aeobj_3 = aetypes.ObjectSpecifier(want = aetypes.Type('prop'),
             form = 'prop', seld = _v, fr=None)
     _code = 'core'
     _subcode = 'setd'
@@ -437,7 +437,7 @@ def windowsize(folder, size=None):
     if not size:
         return _getwindowsize(folder_alias)
     return _setwindowsize(folder_alias, size)
-    
+
 def _setwindowsize(folder_alias, (w, h)):
     """Set the size of a Finder window for folder to (w, h)"""
     finder = _getfinder()
@@ -448,9 +448,9 @@ def _setwindowsize(folder_alias, (w, h)):
     aevar00 = [w, h]
     aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'),
             form="alis", seld=folder_alias, fr=None)
-    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('cwnd'), fr=aeobj_0)
-    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('ptsz'), fr=aeobj_1)
     args['----'] = aeobj_2
     args["data"] = aevar00
@@ -458,17 +458,17 @@ def _setwindowsize(folder_alias, (w, h)):
     if args.has_key('errn'):
         raise Error, aetools.decodeerror(args)
     return (w, h)
-        
+
 def _getwindowsize(folder_alias):
     """Set the size of a Finder window for folder to (w, h)"""
     finder = _getfinder()
     args = {}
     attrs = {}
-    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'), 
+    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'),
             form="alis", seld=folder_alias, fr=None)
-    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('cwnd'), fr=aeobj_0)
-    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('posn'), fr=aeobj_1)
     args['----'] = aeobj_2
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
@@ -488,17 +488,17 @@ def windowposition(folder, pos=None):
         # pos might be a QDPoint object as returned by _getwindowposition
         pos = (pos.h, pos.v)
     return _setwindowposition(folder_alias, pos)
-            
+
 def _setwindowposition(folder_alias, (x, y)):
     """Set the size of a Finder window for folder to (w, h)."""
     finder = _getfinder()
     args = {}
     attrs = {}
-    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'), 
+    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'),
             form="alis", seld=folder_alias, fr=None)
-    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('cwnd'), fr=aeobj_0)
-    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('posn'), fr=aeobj_1)
     args['----'] = aeobj_2
     args["data"] = [x, y]
@@ -513,11 +513,11 @@ def _getwindowposition(folder_alias):
     finder = _getfinder()
     args = {}
     attrs = {}
-    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'), 
+    aeobj_0 = aetypes.ObjectSpecifier(want=aetypes.Type('cfol'),
             form="alis", seld=folder_alias, fr=None)
-    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_1 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('cwnd'), fr=aeobj_0)
-    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_2 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('ptsz'), fr=aeobj_1)
     args['----'] = aeobj_2
     _reply, args, attrs = finder.send('core', 'getd', args, attrs)
@@ -536,15 +536,15 @@ def icon(object, icondata=None):
     if icondata == None:
         return _geticon(object_alias)
     return _seticon(object_alias, icondata)
-    
+
 def _geticon(object_alias):
     """get the icondata for object. Binary data of some sort."""
     finder = _getfinder()
     args = {}
     attrs = {}
-    aeobj_00 = aetypes.ObjectSpecifier(want=aetypes.Type('cobj'), 
+    aeobj_00 = aetypes.ObjectSpecifier(want=aetypes.Type('cobj'),
             form="alis", seld=object_alias, fr=None)
-    aeobj_01 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_01 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('iimg'), fr=aeobj_00)
     args['----'] = aeobj_01
     _reply, args, attrs = finder.send("core", "getd", args, attrs)
@@ -558,9 +558,9 @@ def _seticon(object_alias, icondata):
     finder = _getfinder()
     args = {}
     attrs = {}
-    aeobj_00 = aetypes.ObjectSpecifier(want=aetypes.Type('cobj'), 
+    aeobj_00 = aetypes.ObjectSpecifier(want=aetypes.Type('cobj'),
             form="alis", seld=object_alias, fr=None)
-    aeobj_01 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'), 
+    aeobj_01 = aetypes.ObjectSpecifier(want=aetypes.Type('prop'),
             form="prop", seld=aetypes.Type('iimg'), fr=aeobj_00)
     args['----'] = aeobj_01
     args["data"] = icondata
@@ -573,7 +573,7 @@ def _seticon(object_alias, icondata):
 
 #---------------------------------------------------
 #   Volumes and servers.
-    
+
 def mountvolume(volume, server=None, username=None, password=None):
     """mount a volume, local or on a server on AppleTalk.
     Note: mounting a ASIP server requires a different operation.
@@ -598,7 +598,7 @@ def mountvolume(volume, server=None, username=None, password=None):
 def unmountvolume(volume):
     """unmount a volume that's on the desktop"""
     putaway(volume)
-    
+
 def putaway(object):
     """puth the object away, whereever it came from."""
     finder = _getfinder()
@@ -675,7 +675,7 @@ def filesharing():
         if args['----'] == 1:
             status = 0
     return status
-    
+
 def movetotrash(path):
     """move the object to the trash"""
     fss = Carbon.File.FSSpec(path)
@@ -766,7 +766,7 @@ def _test2():
     # set the soundvolume in a simple way
     print '\tSystem beep volume'
     for i in range(0, 7):
-        volumelevel(i)      
+        volumelevel(i)
         MacOS.SysBeep()
 
     # Finder's windows, file location, file attributes
@@ -805,7 +805,7 @@ def _test2():
     print '\t', comment(f)      # print the Finder comment this file has
     s = 'This is a comment no one reads!'
     comment(f, s)           # set the Finder comment
-    
+
 def _test3():
     print 'MacOS9 or better specific functions'
     # processes
@@ -813,7 +813,7 @@ def _test3():
     print 'Return a list of current active processes:'
     for p in pr:
         print '\t', p
-    
+
     # get attributes of the first process in the list
     print 'Attributes of the first process in the list:'
     pinfo = processinfo(pr[0][0])
@@ -829,4 +829,3 @@ if __name__ == '__main__':
     _test()
     _test2()
     _test3()
-    

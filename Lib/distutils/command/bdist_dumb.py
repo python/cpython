@@ -53,7 +53,7 @@ class bdist_dumb (Command):
         self.dist_dir = None
         self.skip_build = 0
         self.relative = 0
-        
+
     # initialize_options()
 
 

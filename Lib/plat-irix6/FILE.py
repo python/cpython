@@ -441,7 +441,7 @@ def OFFTOBB(bytes): return (((__uint64_t)(bytes) + BBSIZE - 1) >> BBSHIFT)
 
 def OFFTOBBT(bytes): return ((off_t)(bytes) >> BBSHIFT)
 
-def BBTOOFF(bbs): return ((off_t)(bbs) << BBSHIFT)     
+def BBTOOFF(bbs): return ((off_t)(bbs) << BBSHIFT)
 
 SEEKLIMIT32 = 0x7fffffff
 MAXBSIZE = 8192
@@ -489,9 +489,9 @@ MRLOCK_BEHAVIOR = 0x2
 MRLOCK_DBLTRIPPABLE = 0x4
 MRLOCK_ALLOW_EQUAL_PRI = 0x8
 MRLOCK_DEFAULT = MRLOCK_BARRIER
-def mraccess(mrp): return mraccessf(mrp, 0)	 
+def mraccess(mrp): return mraccessf(mrp, 0)
 
-def mrupdate(mrp): return mrupdatef(mrp, 0)	 
+def mrupdate(mrp): return mrupdatef(mrp, 0)
 
 def mp_mutex_unlock(m): return mutex_unlock(m)
 

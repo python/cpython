@@ -162,28 +162,28 @@ text_style_info._privpropdict = {
 text_style_info._privelemdict = {
 }
 _Enum_just = {
-    'left' : 'left',	# Align with left margin
-    'right' : 'rght',	# Align with right margin
-    'center' : 'cent',	# Align with center
-    'full' : 'full',	# Align with both left and right margins
+    'left' : 'left',    # Align with left margin
+    'right' : 'rght',   # Align with right margin
+    'center' : 'cent',  # Align with center
+    'full' : 'full',    # Align with both left and right margins
 }
 
 _Enum_styl = {
-    'plain' : 'plan',	# Plain
-    'bold' : 'bold',	# Bold
-    'italic' : 'ital',	# Italic
-    'outline' : 'outl',	# Outline
-    'shadow' : 'shad',	# Shadow
-    'underline' : 'undl',	# Underline
-    'superscript' : 'spsc',	# Superscript
-    'subscript' : 'sbsc',	# Subscript
-    'strikethrough' : 'strk',	# Strikethrough
-    'small_caps' : 'smcp',	# Small caps
-    'all_caps' : 'alcp',	# All capital letters
-    'all_lowercase' : 'lowc',	# Lowercase
-    'condensed' : 'cond',	# Condensed
-    'expanded' : 'pexp',	# Expanded
-    'hidden' : 'hidn',	# Hidden
+    'plain' : 'plan',   # Plain
+    'bold' : 'bold',    # Bold
+    'italic' : 'ital',  # Italic
+    'outline' : 'outl', # Outline
+    'shadow' : 'shad',  # Shadow
+    'underline' : 'undl',       # Underline
+    'superscript' : 'spsc',     # Superscript
+    'subscript' : 'sbsc',       # Subscript
+    'strikethrough' : 'strk',   # Strikethrough
+    'small_caps' : 'smcp',      # Small caps
+    'all_caps' : 'alcp',        # All capital letters
+    'all_lowercase' : 'lowc',   # Lowercase
+    'condensed' : 'cond',       # Condensed
+    'expanded' : 'pexp',        # Expanded
+    'hidden' : 'hidn',  # Hidden
 }
 
 

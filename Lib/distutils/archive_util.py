@@ -68,7 +68,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
         import zipfile
     except ImportError:
         zipfile = None
-        
+
     zip_filename = base_name + ".zip"
     mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
 
@@ -79,7 +79,7 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
             zipoptions = "-r"
         else:
             zipoptions = "-rq"
-        
+
         try:
             spawn(["zip", zipoptions, zip_filename, base_dir],
                   dry_run=dry_run)

@@ -16,7 +16,7 @@ class ContentGenerator(handler.ContentHandler):
         self._out = out
 
     # ContentHandler methods
-        
+
     def startDocument(self):
         self._out.write('<?xml version="1.0" encoding="iso-8859-1"?>\n')
 
@@ -34,7 +34,7 @@ class ContentGenerator(handler.ContentHandler):
 
     def ignorableWhitespace(self, content):
         self._out.write(content)
-        
+
     def processingInstruction(self, target, data):
         self._out.write('<?%s %s?>' % (target, data))
 

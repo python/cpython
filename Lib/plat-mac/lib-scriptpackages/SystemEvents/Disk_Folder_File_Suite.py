@@ -313,21 +313,21 @@ file._privelemdict = {
     'item' : item,
 }
 _Enum_edfm = {
-    'MS_2d_DOS_format' : 'dfms',	# MS-DOS format
-    'Apple_Photo_format' : 'dfph',	# Apple Photo format
-    'ISO_9660_format' : 'df96',	# ISO 9660 format
-    'QuickTake_format' : 'dfqt',	# QuickTake format
-    'AppleShare_format' : 'dfas',	# AppleShare format
-    'High_Sierra_format' : 'dfhs',	# High Sierra format
-    'Mac_OS_Extended_format' : 'dfh+',	# Mac OS Extended format
-    'UDF_format' : 'dfud',	# UDF format
-    'unknown_format' : 'df??',	# unknown format
-    'audio_format' : 'dfau',	# audio format
-    'Mac_OS_format' : 'dfhf',	# Mac OS format
-    'UFS_format' : 'dfuf',	# UFS format
-    'NFS_format' : 'dfnf',	# NFS format
-    'ProDOS_format' : 'dfpr',	# ProDOS format
-    'WebDAV_format' : 'dfwd',	# WebDAV format
+    'MS_2d_DOS_format' : 'dfms',        # MS-DOS format
+    'Apple_Photo_format' : 'dfph',      # Apple Photo format
+    'ISO_9660_format' : 'df96', # ISO 9660 format
+    'QuickTake_format' : 'dfqt',        # QuickTake format
+    'AppleShare_format' : 'dfas',       # AppleShare format
+    'High_Sierra_format' : 'dfhs',      # High Sierra format
+    'Mac_OS_Extended_format' : 'dfh+',  # Mac OS Extended format
+    'UDF_format' : 'dfud',      # UDF format
+    'unknown_format' : 'df??',  # unknown format
+    'audio_format' : 'dfau',    # audio format
+    'Mac_OS_format' : 'dfhf',   # Mac OS format
+    'UFS_format' : 'dfuf',      # UFS format
+    'NFS_format' : 'dfnf',      # NFS format
+    'ProDOS_format' : 'dfpr',   # ProDOS format
+    'WebDAV_format' : 'dfwd',   # WebDAV format
 }
 
 

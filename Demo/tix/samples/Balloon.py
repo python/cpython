@@ -17,7 +17,7 @@
 
 import Tix
 
-TCL_ALL_EVENTS		= 0
+TCL_ALL_EVENTS          = 0
 
 def RunSample (root):
     balloon = DemoBalloon(root)

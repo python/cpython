@@ -17,7 +17,7 @@ class Standard_Suite_Events:
     }
 
     def get(self, _object, _attributes={}, **_arguments):
-        """get: 
+        """get:
         Required argument: an AE object reference
         Keyword argument as: undocumented, typecode 'type'
         Keyword argument _attributes: AppleEvent attribute dictionary

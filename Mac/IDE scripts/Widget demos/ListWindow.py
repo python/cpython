@@ -1,10 +1,10 @@
 import W
 
 def listhit(isdbl):
-	if isdbl:
-		print "double-click in list!"
-	else:
-		print "click in list."
+    if isdbl:
+        print "double-click in list!"
+    else:
+        print "click in list."
 
 window = W.Window((200, 400), "Window with List", minsize = (150, 200))
 

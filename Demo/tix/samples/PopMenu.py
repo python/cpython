@@ -1,6 +1,6 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
-#	$Id$
+#       $Id$
 #
 # Tix Demostration Program
 #
@@ -27,9 +27,9 @@ def RunSample(w):
     p.bind_widget(top)
     p.bind_widget(but)
 
-    # Set the entries inside the PopupMenu widget. 
+    # Set the entries inside the PopupMenu widget.
     # [Hint] You have to manipulate the "menu" subwidget.
-    #	     $w.top.p itself is NOT a menu widget.
+    #        $w.top.p itself is NOT a menu widget.
     # [Hint] Watch carefully how the sub-menu is created
     #
     p.menu.add_command(label='Desktop', underline=0)
@@ -45,9 +45,9 @@ def RunSample(w):
 
     box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
     box.add('ok', text='Ok', underline=0, width=6,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.add('cancel', text='Cancel', underline=0, width=6,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.pack(side=Tix.BOTTOM, fill=Tix.X)
     top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
 

@@ -81,7 +81,7 @@ class Play_Audio_mac:
         del self._gc[0]
         if self._usercallback:
             self._usercallback()
-            
+
     def setcallback(self, callback):
         self._usercallback = callback
 

@@ -57,7 +57,7 @@ class RecursiveBlowup6:
 
 def test_getitem():
     return RecursiveBlowup6()[5]
-    
+
 def test_recurse():
     return test_recurse()
 
@@ -85,4 +85,3 @@ while 1:
     check_limit(limit, "test_getitem")
     print "Limit of %d is fine" % limit
     limit = limit + 100
-    

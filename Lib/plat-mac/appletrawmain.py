@@ -23,7 +23,7 @@ else:
     _dir = os.path.split(sys.argv[0])[0]
 #
 # Add the Resources directory to the path. This is where files installed
-# by BuildApplet.py with the --extra option show up, and if those files are 
+# by BuildApplet.py with the --extra option show up, and if those files are
 # modules this sys.path modification is necessary to be able to import them.
 #
 sys.path.insert(0, _dir)

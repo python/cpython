@@ -1995,64 +1995,64 @@ zones._privpropdict = {
 zones._privelemdict = {
 }
 _Enum_boov = {
-    'true' : 'true',	# the true boolean value
-    'false' : 'fals',	# the false boolean value
+    'true' : 'true',    # the true boolean value
+    'false' : 'fals',   # the false boolean value
 }
 
 _Enum_cons = {
-    'case' : 'case',	# case
-    'diacriticals' : 'diac',	# diacriticals
-    'white_space' : 'whit',	# white space
-    'hyphens' : 'hyph',	# hyphens
-    'expansion' : 'expa',	# expansion
-    'punctuation' : 'punc',	# punctuation
-    'application_responses' : 'rmte',	# remote event replies
+    'case' : 'case',    # case
+    'diacriticals' : 'diac',    # diacriticals
+    'white_space' : 'whit',     # white space
+    'hyphens' : 'hyph', # hyphens
+    'expansion' : 'expa',       # expansion
+    'punctuation' : 'punc',     # punctuation
+    'application_responses' : 'rmte',   # remote event replies
 }
 
 _Enum_eMds = {
-    'option_down' : 'Kopt',	# 
-    'command_down' : 'Kcmd',	# 
-    'control_down' : 'Kctl',	# 
-    'shift_down' : 'Ksft',	# 
-    'caps_lock_down' : 'Kclk',	# 
+    'option_down' : 'Kopt',     #
+    'command_down' : 'Kcmd',    #
+    'control_down' : 'Kctl',    #
+    'shift_down' : 'Ksft',      #
+    'caps_lock_down' : 'Kclk',  #
 }
 
 _Enum_ekst = {
-    'escape_key' : 'ks5\x00',	# 
-    'delete_key' : 'ks3\x00',	# 
-    'tab_key' : 'ks0\x00',	# 
-    'return_key' : 'ks$\x00',	# 
-    'clear_key' : 'ksG\x00',	# 
-    'enter_key' : 'ksL\x00',	# 
-    'up_arrow_key' : 'ks~\x00',	# 
-    'down_arrow_key' : 'ks}\x00',	# 
-    'left_arrow_key' : 'ks{\x00',	# 
-    'right_arrow_key' : 'ks|\x00',	# 
-    'help_key' : 'ksr\x00',	# 
-    'home_key' : 'kss\x00',	# 
-    'page_up_key' : 'kst\x00',	# 
-    'page_down_key' : 'ksy\x00',	# 
-    'forward_del_key' : 'ksu\x00',	# 
-    'end_key' : 'ksw\x00',	# 
-    'F1_key' : 'ksz\x00',	# 
-    'F2_key' : 'ksx\x00',	# 
-    'F3_key' : 'ksc\x00',	# 
-    'F4_key' : 'ksv\x00',	# 
-    'F5_key' : 'ks`\x00',	# 
-    'F6_key' : 'ksa\x00',	# 
-    'F7_key' : 'ksb\x00',	# 
-    'F8_key' : 'ksd\x00',	# 
-    'F9_key' : 'kse\x00',	# 
-    'F10_key' : 'ksm\x00',	# 
-    'F11_key' : 'ksg\x00',	# 
-    'F12_key' : 'kso\x00',	# 
-    'F13_key' : 'ksi\x00',	# 
-    'F14_key' : 'ksk\x00',	# 
-    'F15_key' : 'ksq\x00',	# 
+    'escape_key' : 'ks5\x00',   #
+    'delete_key' : 'ks3\x00',   #
+    'tab_key' : 'ks0\x00',      #
+    'return_key' : 'ks$\x00',   #
+    'clear_key' : 'ksG\x00',    #
+    'enter_key' : 'ksL\x00',    #
+    'up_arrow_key' : 'ks~\x00', #
+    'down_arrow_key' : 'ks}\x00',       #
+    'left_arrow_key' : 'ks{\x00',       #
+    'right_arrow_key' : 'ks|\x00',      #
+    'help_key' : 'ksr\x00',     #
+    'home_key' : 'kss\x00',     #
+    'page_up_key' : 'kst\x00',  #
+    'page_down_key' : 'ksy\x00',        #
+    'forward_del_key' : 'ksu\x00',      #
+    'end_key' : 'ksw\x00',      #
+    'F1_key' : 'ksz\x00',       #
+    'F2_key' : 'ksx\x00',       #
+    'F3_key' : 'ksc\x00',       #
+    'F4_key' : 'ksv\x00',       #
+    'F5_key' : 'ks`\x00',       #
+    'F6_key' : 'ksa\x00',       #
+    'F7_key' : 'ksb\x00',       #
+    'F8_key' : 'ksd\x00',       #
+    'F9_key' : 'kse\x00',       #
+    'F10_key' : 'ksm\x00',      #
+    'F11_key' : 'ksg\x00',      #
+    'F12_key' : 'kso\x00',      #
+    'F13_key' : 'ksi\x00',      #
+    'F14_key' : 'ksk\x00',      #
+    'F15_key' : 'ksq\x00',      #
 }
 
 _Enum_misc = {
-    'current_application' : 'cura',	# the current application
+    'current_application' : 'cura',     # the current application
 }
 
 

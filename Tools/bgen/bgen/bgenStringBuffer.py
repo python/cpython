@@ -22,13 +22,13 @@ class StringBufferMixIn:
     pointer is returned.  These are actually easier (no allocation) but far
     less common.  I'll write the classes when there is demand.)
     """
-    
+
     def declareSize(self, name):
         pass
-    
+
     def getargsFormat(self):
         return "s"
-    
+
     def getargsArgs(self, name):
         return "&%s__in__" % name
 

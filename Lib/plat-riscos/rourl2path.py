@@ -25,7 +25,7 @@ def url2pathname(url):
         if '$' in components:
             del components[0]
         else:
-             components[0] = '$'
+            components[0] = '$'
     # Remove . and embedded ..
     i = 0
     while i < len(components):

@@ -18,19 +18,19 @@ error = "cfm.error"
 BUFSIZE = 0x80000
 
 def mergecfmfiles(srclist, dst, architecture = 'fat'):
-    """Merge all files in srclist into a new file dst. 
-    
+    """Merge all files in srclist into a new file dst.
+
     If architecture is given, only code fragments of that type will be used:
     "pwpc" for PPC, "m68k" for cfm68k. This does not work for "classic"
     68k code, since it does not use code fragments to begin with.
     If architecture is None, all fragments will be used, enabling FAT binaries.
     """
-    
+
     srclist = list(srclist)
     for i in range(len(srclist)):
         srclist[i] = Carbon.File.pathname(srclist[i])
     dst = Carbon.File.pathname(dst)
-    
+
     dstfile = open(dst, "wb")
     rf = Res.FSpOpenResFile(dst, 3)
     try:
@@ -43,9 +43,9 @@ def mergecfmfiles(srclist, dst, architecture = 'fat'):
                 if frag.architecture == 'm68k' and architecture == 'pwpc':
                     continue
                 dstcfrg.append(frag)
-                
+
                 frag.copydata(dstfile)
-                
+
         cfrgres = Res.Resource(dstcfrg.build())
         Res.UseResFile(rf)
         cfrgres.AddResource('cfrg', 0, "")
@@ -55,7 +55,7 @@ def mergecfmfiles(srclist, dst, architecture = 'fat'):
 
 
 class CfrgResource:
-    
+
     def __init__(self, path = None):
         self.version = 1
         self.fragments = []
@@ -74,43 +74,43 @@ class CfrgResource:
                 Res.UseResFile(currentresref)
             self.parse(data)
             if self.version <> 1:
-                raise error, "unknown 'cfrg' resource format"   
-    
+                raise error, "unknown 'cfrg' resource format"
+
     def parse(self, data):
-        (res1, res2, self.version, 
-            res3, res4, res5, res6, 
+        (res1, res2, self.version,
+            res3, res4, res5, res6,
             self.memberCount) = struct.unpack("8l", data[:32])
         data = data[32:]
         while data:
             frag = FragmentDescriptor(self.path, data)
             data = data[frag.memberSize:]
             self.fragments.append(frag)
-    
+
     def build(self):
         self.memberCount = len(self.fragments)
         data = struct.pack("8l", 0, 0, self.version, 0, 0, 0, 0, self.memberCount)
         for frag in self.fragments:
             data = data + frag.build()
         return data
-    
+
     def append(self, frag):
         self.fragments.append(frag)
 
 
 class FragmentDescriptor:
-    
+
     def __init__(self, path, data = None):
         self.path = path
         if data is not None:
             self.parse(data)
-    
+
     def parse(self, data):
         self.architecture = data[:4]
-        (   self.updatelevel, 
-            self.currentVersion, 
-            self.oldDefVersion, 
+        (   self.updatelevel,
+            self.currentVersion,
+            self.oldDefVersion,
             self.stacksize,
-            self.applibdir, 
+            self.applibdir,
             self.fragtype,
             self.where,
             self.offset,
@@ -119,15 +119,15 @@ class FragmentDescriptor:
             self.memberSize,) = struct.unpack("4lhBB4lh", data[4:42])
         pname = data[42:self.memberSize]
         self.name = pname[1:1+ord(pname[0])]
-    
+
     def build(self):
         data = self.architecture
         data = data + struct.pack("4lhBB4l",
-                self.updatelevel, 
-                self.currentVersion, 
-                self.oldDefVersion, 
+                self.updatelevel,
+                self.currentVersion,
+                self.oldDefVersion,
                 self.stacksize,
-                self.applibdir, 
+                self.applibdir,
                 self.fragtype,
                 self.where,
                 self.offset,
@@ -141,7 +141,7 @@ class FragmentDescriptor:
         data = data + self.name
         data = data + '\000' * (self.memberSize - len(data))
         return data
-    
+
     def getfragment(self):
         if self.where <> 1:
             raise error, "can't read fragment, unsupported location"
@@ -153,7 +153,7 @@ class FragmentDescriptor:
             frag = f.read()
         f.close()
         return frag
-    
+
     def copydata(self, outfile):
         if self.where <> 1:
             raise error, "can't read fragment, unsupported location"
@@ -161,17 +161,17 @@ class FragmentDescriptor:
         if self.length == 0:
             infile.seek(0, 2)
             self.length = infile.tell()
-        
+
         # Position input file and record new offset from output file
         infile.seek(self.offset)
-        
+
         # pad to 16 byte boundaries
         offset = outfile.tell()
         if offset % 16:
             offset = offset + 16 - (offset % 16)
         outfile.seek(offset)
         self.offset = offset
-        
+
         l = self.length
         while l:
             if l > BUFSIZE:
@@ -181,4 +181,3 @@ class FragmentDescriptor:
                 outfile.write(infile.read(l))
                 l = 0
         infile.close()
-

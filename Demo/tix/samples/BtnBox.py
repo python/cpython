@@ -1,5 +1,5 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
-# 
+#
 # $Id$
 #
 # Tix Demostration Program
@@ -21,7 +21,7 @@ def RunSample(w):
     # Create the label on the top of the dialog box
     #
     top = Tix.Label(w, padx=20, pady=10, bd=1, relief=Tix.RAISED,
-		    anchor=Tix.CENTER, text='This dialog box is\n a demonstration of the\n tixButtonBox widget')
+                    anchor=Tix.CENTER, text='This dialog box is\n a demonstration of the\n tixButtonBox widget')
 
     # Create the button box and add a few buttons in it. Set the
     # -width of all the buttons to the same value so that they
@@ -32,9 +32,9 @@ def RunSample(w):
     #
     box = Tix.ButtonBox(w, orientation=Tix.HORIZONTAL)
     box.add('ok', text='OK', underline=0, width=5,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.add('close', text='Cancel', underline=0, width=5,
-	    command=lambda w=w: w.destroy())
+            command=lambda w=w: w.destroy())
     box.pack(side=Tix.BOTTOM, fill=Tix.X)
     top.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
 

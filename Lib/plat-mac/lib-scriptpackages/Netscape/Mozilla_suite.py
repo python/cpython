@@ -224,29 +224,29 @@ class Mozilla_suite_Events:
             return _arguments['----']
 
 _Enum_comp = {
-    'Navigator' : 'navg',	# The Navigator component
-    'InBox' : 'inbx',	# The InBox component
-    'Newsgroups' : 'colb',	# The Newsgroups component
-    'Composer' : 'cpsr',	# The Page Composer component
-    'Conference' : 'conf',	# The Conference Component
-    'Calendar' : 'cald',	# The Calendar Component
+    'Navigator' : 'navg',       # The Navigator component
+    'InBox' : 'inbx',   # The InBox component
+    'Newsgroups' : 'colb',      # The Newsgroups component
+    'Composer' : 'cpsr',        # The Page Composer component
+    'Conference' : 'conf',      # The Conference Component
+    'Calendar' : 'cald',        # The Calendar Component
 }
 
 _Enum_dire = {
-    'again' : 'agai',	# Again (reload)
-    'home' : 'home',	# Home
-    'backward' : 'prev',	# Previous page
-    'forward' : 'next',	# Next page
+    'again' : 'agai',   # Again (reload)
+    'home' : 'home',    # Home
+    'backward' : 'prev',        # Previous page
+    'forward' : 'next', # Next page
 }
 
 _Enum_ncmd = {
-    'Get_new_mail' : '\x00\x00\x04W',	# 
-    'Send_queued_messages' : '\x00\x00\x04X',	# 
-    'Read_newsgroups' : '\x00\x00\x04\x04',	# 
-    'Show_Inbox' : '\x00\x00\x04\x05',	# 
-    'Show_Bookmarks_window' : '\x00\x00\x04\x06',	# 
-    'Show_History_window' : '\x00\x00\x04\x07',	# 
-    'Show_Address_Book_window' : '\x00\x00\x04\t',	# 
+    'Get_new_mail' : '\x00\x00\x04W',   #
+    'Send_queued_messages' : '\x00\x00\x04X',   #
+    'Read_newsgroups' : '\x00\x00\x04\x04',     #
+    'Show_Inbox' : '\x00\x00\x04\x05',  #
+    'Show_Bookmarks_window' : '\x00\x00\x04\x06',       #
+    'Show_History_window' : '\x00\x00\x04\x07', #
+    'Show_Address_Book_window' : '\x00\x00\x04\t',      #
 }
 
 

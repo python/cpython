@@ -7,16 +7,16 @@ BLANKING_BUFFER_SIZE = 2
 MAX_SOURCES = 2
 
 # mode parameter for Bind calls
-IN_OFF = 0				# No Video
-IN_OVER = 1				# Video over graphics
-IN_UNDER = 2				# Video under graphics
-IN_REPLACE = 3				# Video replaces entire win
+IN_OFF = 0                              # No Video
+IN_OVER = 1                             # Video over graphics
+IN_UNDER = 2                            # Video under graphics
+IN_REPLACE = 3                          # Video replaces entire win
 
 # mode parameters for LoadMap calls.  Specifies buffer, always 256 entries
-INPUT_COLORMAP = 0			# tuples of 8-bit RGB
-CHROMA_KEY_MAP = 1			# tuples of 8-bit RGB
-COLOR_SPACE_MAP = 2			# tuples of 8-bit RGB
-GAMMA_MAP = 3				# tuples of 24-bit red values
+INPUT_COLORMAP = 0                      # tuples of 8-bit RGB
+CHROMA_KEY_MAP = 1                      # tuples of 8-bit RGB
+COLOR_SPACE_MAP = 2                     # tuples of 8-bit RGB
+GAMMA_MAP = 3                           # tuples of 24-bit red values
 
 # mode parameters for UseExclusive calls
 INPUT = 0
@@ -24,9 +24,9 @@ OUTPUT = 1
 IN_OUT = 2
 
 # Format constants for the capture routines
-RGB8_FRAMES = 0				# noninterleaved 8 bit 3:2:3 RBG fields
-RGB32_FRAMES = 1			# 32-bit 8:8:8 RGB frames
-YUV411_FRAMES = 2			# interleaved, 8:2:2 YUV format
+RGB8_FRAMES = 0                         # noninterleaved 8 bit 3:2:3 RBG fields
+RGB32_FRAMES = 1                        # 32-bit 8:8:8 RGB frames
+YUV411_FRAMES = 2                       # interleaved, 8:2:2 YUV format
 YUV411_FRAMES_AND_BLANKING_BUFFER = 3
 
 #

@@ -94,7 +94,7 @@ class build_scripts (Command):
                 if not self.dry_run:
                     outf = open(outfile, "w")
                     if not sysconfig.python_build:
-                        outf.write("#!%s%s\n" % 
+                        outf.write("#!%s%s\n" %
                                    (os.path.normpath(sys.executable),
                                     post_interp))
                     else:

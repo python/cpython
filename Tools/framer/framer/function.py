@@ -55,7 +55,7 @@ class _ArgumentList(object):
 
     def dump_decls(self, f):
         pass
-        
+
 class NoArgs(_ArgumentList):
 
     def __init__(self, args):
@@ -67,7 +67,7 @@ class NoArgs(_ArgumentList):
         return "PyObject *self"
 
 class OneArg(_ArgumentList):
-    
+
     def __init__(self, args):
         assert len(args) == 1
         super(OneArg, self).__init__(args)
@@ -139,7 +139,7 @@ class Function:
 
         if self.__doc__:
             p(template.docstring)
-            
+
         d = {"name" : self.vars["CName"],
              "args" : self.args.c_args(),
              }
@@ -149,13 +149,13 @@ class Function:
 
         if self.args.ml_meth == METH_VARARGS:
             p(template.varargs)
-        
+
         p(template.funcdef_end)
 
     def analyze(self):
         self.__doc__ = self._func.__doc__
         self.args = ArgumentList(self._func, self.method)
-        
+
     def initvars(self):
         v = self.vars = {}
         v["PythonName"] = self._func.__name__

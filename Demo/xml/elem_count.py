@@ -30,7 +30,7 @@ class FancyCounter(handler.ContentHandler):
         for pair in  self._attr_types.items():
             print "%20s %d" % pair
 
-            
+
 parser = make_parser()
 parser.setContentHandler(FancyCounter())
 parser.parse(sys.argv[1])

@@ -28,16 +28,16 @@ class Log:
 
     def debug(self, msg, *args):
         self._log(DEBUG, msg, args)
-    
+
     def info(self, msg, *args):
         self._log(INFO, msg, args)
-    
+
     def warn(self, msg, *args):
         self._log(WARN, msg, args)
-    
+
     def error(self, msg, *args):
         self._log(ERROR, msg, args)
-    
+
     def fatal(self, msg, *args):
         self._log(FATAL, msg, args)
 

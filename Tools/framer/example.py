@@ -11,7 +11,7 @@ class cStringIO(Module):
     generality of StringIO, but it provides enough for most
     applications and is especially useful in conjunction with the
     pickle module.
-    
+
     Usage:
 
     from cStringIO import StringIO
@@ -20,7 +20,7 @@ class cStringIO(Module):
     an_output_stream.write(some_stuff)
     ...
     value = an_output_stream.getvalue()
-    
+
     an_input_stream = StringIO(a_string)
     spam = an_input_stream.readline()
     spam = an_input_stream.read(5)
@@ -36,7 +36,7 @@ class cStringIO(Module):
 
     class InputType(Type):
         "Simple type for treating strings as input file streams"
-        
+
         abbrev = "input"
 
         struct = """\
@@ -121,7 +121,6 @@ class cStringIO(Module):
 
         def writelines(self, lines):
             """Write each string in lines."""
-        
+
 
 cStringIO.gen()
-

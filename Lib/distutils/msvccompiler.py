@@ -117,7 +117,7 @@ class MacroExpander:
             if d:
                 self.macros["$(%s)" % macro] = d[key]
                 break
-              
+
     def load_macros(self, version):
         vsbase = r"Software\Microsoft\VisualStudio\%0.1f" % version
         self.set_macro("VCInstallDir", vsbase + r"\Setup\VC", "productdir")
@@ -166,7 +166,7 @@ def get_build_version():
         return majorVersion + minorVersion
     # else we don't know what version of the compiler this is
     return None
-    
+
 
 class MSVCCompiler (CCompiler) :
     """Concrete class that implements an interface to Microsoft Visual C++,
@@ -525,7 +525,7 @@ class MSVCCompiler (CCompiler) :
                 return fn
 
         return exe
-    
+
     def get_msvc_paths(self, path, platform='x86'):
         """Get a list of devstudio directories (include, lib or path).
 
@@ -576,4 +576,3 @@ class MSVCCompiler (CCompiler) :
             p = self.get_msvc_paths(name)
         if p:
             os.environ[name] = string.join(p, ';')
-

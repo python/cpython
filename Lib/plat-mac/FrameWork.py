@@ -635,7 +635,7 @@ class Menu:
             if self._parent:
                 self._parent.menu.DisableMenuItem(self._parent_item)
         if self.bar and self.bar.parent:
-                self.bar.parent.needmenubarredraw = 1
+            self.bar.parent.needmenubarredraw = 1
 
 class PopupMenu(Menu):
     def __init__(self, bar):

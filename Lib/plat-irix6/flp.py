@@ -79,18 +79,18 @@ def checkcache(filename):
         fp.close()
 
 def _unpack_cache(altforms):
-        forms = {}
-        for name in altforms.keys():
-            altobj, altlist = altforms[name]
-            obj = _newobj()
-            obj.make(altobj)
-            list = []
-            for altobj in altlist:
-                nobj = _newobj()
-                nobj.make(altobj)
-                list.append(nobj)
-            forms[name] = obj, list
-        return forms
+    forms = {}
+    for name in altforms.keys():
+        altobj, altlist = altforms[name]
+        obj = _newobj()
+        obj.make(altobj)
+        list = []
+        for altobj in altlist:
+            nobj = _newobj()
+            nobj.make(altobj)
+            list.append(nobj)
+        forms[name] = obj, list
+    return forms
 
 def rdlong(fp):
     s = fp.read(4)
@@ -276,8 +276,8 @@ def _parse_line(line):
         return line
     name, value = match.group(1, 2)
     if name[0] == 'N':
-            name = ''.join(name.split())
-            name = name.lower()
+        name = ''.join(name.split())
+        name = name.lower()
     name = name.capitalize()
     try:
         pf = _parse_func[name]
@@ -291,7 +291,7 @@ def _readline(file):
     if not line:
         raise EOFError
     return line[:-1]
-        
+
 def _parse_1_line(file):
     line = _readline(file)
     while line == '':

@@ -22,8 +22,8 @@ class Standard_URL_suite_Events:
 
     def GetURL(self, _object, _attributes={}, **_arguments):
         """GetURL: Loads the URL (optionally to disk)
-        Required argument: The url 
-        Keyword argument to: file the URL should be loaded into  
+        Required argument: The url
+        Keyword argument to: file the URL should be loaded into
         Keyword argument inside: Window the URL should be loaded to
         Keyword argument from_: Referrer, to be sent with the HTTP request
         Keyword argument _attributes: AppleEvent attribute dictionary

@@ -41,18 +41,18 @@ def mkalias(src, dst, relative=None):
         alias = File.FSNewAlias(relativefsr, srcfsr)
     else:
         alias = srcfsr.FSNewAliasMinimal()
-    
-    dstfsr, dstfss = Res.FSCreateResourceFile(dstdirfsr, unicode(dstname), 
+
+    dstfsr, dstfss = Res.FSCreateResourceFile(dstdirfsr, unicode(dstname),
         File.FSGetResourceForkName())
     h = Res.FSOpenResourceFile(dstfsr, File.FSGetResourceForkName(), 3)
     resource = Res.Resource(alias.data)
     resource.AddResource('alis', 0, '')
     Res.CloseResFile(h)
-    
+
     dstfinfo = dstfss.FSpGetFInfo()
     dstfinfo.Flags = dstfinfo.Flags|0x8000    # Alias flag
     dstfss.FSpSetFInfo(dstfinfo)
-    
+
 def mkdirs(dst):
     """Make directories leading to 'dst' if they don't exist yet"""
     if dst == '' or os.path.exists(dst):
@@ -62,7 +62,7 @@ def mkdirs(dst):
         head = head + ':'
     mkdirs(head)
     os.mkdir(dst, 0777)
-    
+
 def touched(dst):
     """Tell the finder a file has changed. No-op on MacOSX."""
     if sys.platform != 'mac': return
@@ -80,7 +80,7 @@ def touched(dst):
         dir_fss.SetDates(crdate, now, bkdate)
     except macfs.error:
         pass
-    
+
 def touched_ae(dst):
     """Tell the finder a file has changed"""
     pardir = os.path.split(dst)[0]
@@ -89,14 +89,14 @@ def touched_ae(dst):
     import Finder
     f = Finder.Finder()
     f.update(File.FSRef(pardir))
-    
+
 def copy(src, dst, createpath=0, copydates=1, forcetype=None):
     """Copy a file, including finder info, resource fork, etc"""
     src = File.pathname(src)
     dst = File.pathname(dst)
     if createpath:
         mkdirs(os.path.split(dst)[0])
-    
+
     ifp = open(src, 'rb')
     ofp = open(dst, 'wb')
     d = ifp.read(BUFSIZ)
@@ -105,7 +105,7 @@ def copy(src, dst, createpath=0, copydates=1, forcetype=None):
         d = ifp.read(BUFSIZ)
     ifp.close()
     ofp.close()
-    
+
     ifp = openrf(src, '*rb')
     ofp = openrf(dst, '*wb')
     d = ifp.read(BUFSIZ)
@@ -114,7 +114,7 @@ def copy(src, dst, createpath=0, copydates=1, forcetype=None):
         d = ifp.read(BUFSIZ)
     ifp.close()
     ofp.close()
-    
+
     srcfss = File.FSSpec(src)
     dstfss = File.FSSpec(dst)
     sf = srcfss.FSpGetFInfo()
@@ -130,7 +130,7 @@ def copy(src, dst, createpath=0, copydates=1, forcetype=None):
         catinfo, _, _, _ = srcfsr.FSGetCatalogInfo(Files.kFSCatInfoAllDates)
         dstfsr.FSSetCatalogInfo(Files.kFSCatInfoAllDates, catinfo)
     touched(dstfss)
-    
+
 def copytree(src, dst, copydates=1):
     """Copy a complete file tree to a new destination"""
     if os.path.isdir(src):

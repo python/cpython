@@ -110,12 +110,12 @@ class PthFile(object):
         """Create a .pth file with a comment, blank lines, an ``import
         <self.imported>``, a line with self.good_dirname, and a line with
         self.bad_dirname.
-        
+
         Creation of the directory for self.good_dir_path (based off of
         self.good_dirname) is also performed.
 
         Make sure to call self.cleanup() to undo anything done by this method.
-        
+
         """
         FILE = open(self.file_path, 'wU')
         try:

@@ -38,7 +38,7 @@ class Module(GeneratorGroup):
         self.declareModuleVariables()
 
         GeneratorGroup.generate(self)
-        
+
         if self.finalstuff:
             Output()
             Output("%s", self.finalstuff)

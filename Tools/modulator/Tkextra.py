@@ -105,7 +105,7 @@ def strdialog(master, title, text, bitmap, default, *args):
                   {'width': '3i',
                    'text': text,
                    'font': '-Adobe-Times-Medium-R-Normal-*-180-*',
-                   Pack: {'side': 'left', 
+                   Pack: {'side': 'left',
                           'fill': 'both',
                           'padx': '3m', 'pady': '3m'}})
 
@@ -187,7 +187,7 @@ def askstr(str):
 def askfile(str):       # XXXX For now...
     i = strdialog(mainWidget, 'Question', str, '', 0)
     return i
-    
+
 # The rest is the test program.
 
 def _go():

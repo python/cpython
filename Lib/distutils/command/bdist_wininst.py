@@ -115,7 +115,7 @@ class bdist_wininst (Command):
         # we do not want to include pyc or pyo files
         install_lib.compile = 0
         install_lib.optimize = 0
-        
+
         # If we are building an installer for a Python version other
         # than the one we are currently running, then we need to ensure
         # our build_lib reflects the other Python version rather than ours.

@@ -206,7 +206,7 @@ class UnixCCompiler(CCompiler):
         elif sys.platform[:5] == "hp-ux":
             return "+s -L" + dir
         elif compiler[:3] == "gcc" or compiler[:3] == "g++":
-          return "-Wl,-R" + dir
+            return "-Wl,-R" + dir
         else:
             return "-R" + dir
 
@@ -217,7 +217,7 @@ class UnixCCompiler(CCompiler):
         shared_f = self.library_filename(lib, lib_type='shared')
         dylib_f = self.library_filename(lib, lib_type='dylib')
         static_f = self.library_filename(lib, lib_type='static')
-        
+
         for dir in dirs:
             shared = os.path.join(dir, shared_f)
             dylib = os.path.join(dir, dylib_f)
@@ -232,6 +232,6 @@ class UnixCCompiler(CCompiler):
                 return shared
             elif os.path.exists(static):
                 return static
-            
+
         # Oops, didn't find it in *any* of 'dirs'
         return None

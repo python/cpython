@@ -74,16 +74,16 @@ def packkey(ae, key, value):
 
 def pack(x, forcetype = None):
     """Pack a python object into an AE descriptor"""
-    
+
     if forcetype:
         if type(x) is StringType:
             return AE.AECreateDesc(forcetype, x)
         else:
             return pack(x).AECoerceDesc(forcetype)
-            
+
     if x == None:
         return AE.AECreateDesc('null', '')
-        
+
     if isinstance(x, AEDescType):
         return x
     if isinstance(x, FSSType):
@@ -128,11 +128,11 @@ def pack(x, forcetype = None):
 def unpack(desc, formodulename=""):
     """Unpack an AE descriptor to a python object"""
     t = desc.type
-    
+
     if unpacker_coercions.has_key(t):
         desc = desc.AECoerceDesc(unpacker_coercions[t])
         t = desc.type # This is a guess by Jack....
-    
+
     if t == typeAEList:
         l = []
         for i in range(desc.AECountItems()):
@@ -248,7 +248,7 @@ def unpack(desc, formodulename=""):
         record = desc.AECoerceDesc('reco')
         return mklogical(unpack(record, formodulename))
     return mkunknown(desc.type, desc.data)
-    
+
 def coerce(data, egdata):
     """Coerce a python object to another type using the AE coercers"""
     pdata = pack(data)
@@ -311,10 +311,10 @@ def mklogical(dict):
 
 def mkstyledtext(dict):
     return aetypes.StyledText(dict['ksty'], dict['ktxt'])
-    
+
 def mkaetext(dict):
     return aetypes.AEText(dict[keyAEScriptTag], dict[keyAEStyles], dict[keyAEText])
-    
+
 def mkinsertionloc(dict):
     return aetypes.InsertionLoc(dict[keyAEObject], dict[keyAEPosition])
 
@@ -355,7 +355,7 @@ def mkobjectfrommodule(dict, modulename):
         assert issubclass(classtype, ObjectSpecifier)
         newobj.__class__ = classtype
     return newobj
-    
+
 def mktype(typecode, modulename=None):
     if modulename:
         module = __import__(modulename)

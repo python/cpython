@@ -7,25 +7,25 @@ f = Method(Boolean, 'IsWindowVisible',
 methods.append(f)
 
 f = Method(void, 'GetWindowStructureRgn',
-	(WindowRef, 'theWindow', InMode),
-	(RgnHandle, 'r', InMode),
+        (WindowRef, 'theWindow', InMode),
+        (RgnHandle, 'r', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowContentRgn',
-	(WindowRef, 'theWindow', InMode),
-	(RgnHandle, 'r', InMode),
+        (WindowRef, 'theWindow', InMode),
+        (RgnHandle, 'r', InMode),
 )
 methods.append(f)
 
 f = Method(void, 'GetWindowUpdateRgn',
-	(WindowRef, 'theWindow', InMode),
-	(RgnHandle, 'r', InMode),
+        (WindowRef, 'theWindow', InMode),
+        (RgnHandle, 'r', InMode),
 )
 methods.append(f)
 
 f = Method(ExistingWindowPtr, 'GetNextWindow',
-	(WindowRef, 'theWindow', InMode),
+        (WindowRef, 'theWindow', InMode),
 )
 methods.append(f)
 
@@ -54,18 +54,16 @@ methods.append(f)
 AutoDispose_body = """
 int onoff, old = 0;
 if (!PyArg_ParseTuple(_args, "i", &onoff))
-	return NULL;
+        return NULL;
 if ( _self->ob_freeit )
-	old = 1;
+        old = 1;
 if ( onoff )
-	_self->ob_freeit = PyMac_AutoDisposeWindow;
+        _self->ob_freeit = PyMac_AutoDisposeWindow;
 else
-	_self->ob_freeit = NULL;
+        _self->ob_freeit = NULL;
 _res = Py_BuildValue("i", old);
 return _res;
 """
 f = ManualGenerator("AutoDispose", AutoDispose_body)
 f.docstring = lambda: "(int)->int. Automatically DisposeHandle the object on Python object cleanup"
 methods.append(f)
-
-

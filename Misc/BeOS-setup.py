@@ -93,7 +93,7 @@ class PyBuildExt(build_ext):
                 self.extensions.remove(ext)
 
         # Parse Modules/Setup to figure out which modules are turned
-        # on in the file. 
+        # on in the file.
         input = text_file.TextFile('Modules/Setup', join_lines=1)
         remove_modules = []
         while 1:
@@ -102,11 +102,11 @@ class PyBuildExt(build_ext):
             line = line.split()
             remove_modules.append( line[0] )
         input.close()
-        
+
         for ext in self.extensions[:]:
             if ext.name in remove_modules:
                 self.extensions.remove(ext)
-        
+
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
@@ -142,18 +142,18 @@ class PyBuildExt(build_ext):
         return platform
 
     def detect_modules(self):
-	try:
-		belibs = os.environ['BELIBRARIES'].split(';')
-	except KeyError:
-		belibs = ['/boot/beos/system/lib']
-	belibs.append('/boot/home/config/lib')
-	self.compiler.library_dirs.append('/boot/home/config/lib')
-	try:
-		beincl = os.environ['BEINCLUDES'].split(';')
-	except KeyError:
-		beincl = []
-	beincl.append('/boot/home/config/include')
-	self.compiler.include_dirs.append('/boot/home/config/include')
+        try:
+            belibs = os.environ['BELIBRARIES'].split(';')
+        except KeyError:
+            belibs = ['/boot/beos/system/lib']
+        belibs.append('/boot/home/config/lib')
+        self.compiler.library_dirs.append('/boot/home/config/lib')
+        try:
+            beincl = os.environ['BEINCLUDES'].split(';')
+        except KeyError:
+            beincl = []
+        beincl.append('/boot/home/config/include')
+        self.compiler.include_dirs.append('/boot/home/config/include')
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
@@ -162,7 +162,7 @@ class PyBuildExt(build_ext):
         exts = []
 
         platform = self.get_platform()
-        
+
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
         if platform in ['Darwin1.2', 'beos']:
@@ -347,7 +347,7 @@ class PyBuildExt(build_ext):
         dblib = []
         if self.compiler.find_library_file(lib_dirs, 'db'):
             dblib = ['db']
-        
+
         db185_incs = find_file('db_185.h', inc_dirs,
                                ['/usr/include/db3', '/usr/include/db2'])
         db_inc = find_file('db.h', inc_dirs, ['/usr/include/db1'])
@@ -388,7 +388,7 @@ class PyBuildExt(build_ext):
 
             # Generic dynamic loading module
             #exts.append( Extension('dl', ['dlmodule.c']) )
-            
+
             # Sun yellow pages. Some systems have the functions in libc.
             if platform not in ['cygwin']:
                 if (self.compiler.find_library_file(lib_dirs, 'nsl')):
@@ -499,15 +499,15 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
-        
+
         # Assume we haven't found any of the libraries or include files
         tcllib = tklib = tcl_includes = tk_includes = None
         for version in ['8.4', '8.3', '8.2', '8.1', '8.0']:
-             tklib = self.compiler.find_library_file(lib_dirs,
-                                                     'tk' + version )
-             tcllib = self.compiler.find_library_file(lib_dirs,
-                                                      'tcl' + version )
-             if tklib and tcllib:
+            tklib = self.compiler.find_library_file(lib_dirs,
+                                                    'tk' + version )
+            tcllib = self.compiler.find_library_file(lib_dirs,
+                                                     'tcl' + version )
+            if tklib and tcllib:
                 # Exit the loop when we've found the Tcl/Tk libraries
                 break
 

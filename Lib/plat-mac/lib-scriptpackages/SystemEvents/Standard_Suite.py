@@ -524,9 +524,9 @@ class _b2_(aetools.NComparison):
 class _b3_(aetools.NComparison):
     """\xb3 - Greater than or equal to """
 _Enum_savo = {
-    'ask' : 'ask ',	# Ask the user whether or not to save the file.
-    'yes' : 'yes ',	# Save the file.
-    'no' : 'no  ',	# Do not save the file.
+    'ask' : 'ask ',     # Ask the user whether or not to save the file.
+    'yes' : 'yes ',     # Save the file.
+    'no' : 'no  ',      # Do not save the file.
 }
 
 

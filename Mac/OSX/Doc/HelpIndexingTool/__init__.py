@@ -76,4 +76,3 @@ class HelpIndexingTool(Standard_Suite_Events,
     _signature = 'hiti'
 
     _moduleName = 'HelpIndexingTool'
-

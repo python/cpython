@@ -25,12 +25,12 @@ initstuff = """
 module = MacModule('_IBCarbon', 'IBCarbon', includestuff, finalstuff, initstuff)
 
 class CFReleaserObject(PEP253Mixin, GlobalObjectDefinition):
-	def outputFreeIt(self, name):
-		Output("CFRelease(%s);" % name)
+    def outputFreeIt(self, name):
+        Output("CFRelease(%s);" % name)
 
 class CFNibDesc(PEP253Mixin, GlobalObjectDefinition):
-	def outputFreeIt(self, name):
-		Output("DisposeNibReference(%s);" % name)
+    def outputFreeIt(self, name):
+        Output("DisposeNibReference(%s);" % name)
 
 #cfstringobject = CFReleaserObject("CFStringRef")
 #module.addobject(cfstringobject)

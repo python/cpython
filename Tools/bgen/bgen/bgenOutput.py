@@ -30,7 +30,7 @@ def SetOutputFile(file = None, needclose = 0):
 
 def SetOutputFileName(filename = None):
     """Call this with a filename to make it the output file.
-    
+
     Call it without arguments to close the current file (if necessary)
     and reset it to sys.stdout.
     """
@@ -95,7 +95,7 @@ def DedentLevel(by = 1):
 
 def OutIndent(format = "", *args):
     """Combine Output() followed by IndentLevel().
-    
+
     If no text is given, acts like lone IndentLevel().
     """
     if format: VaOutput(format, args)
@@ -103,7 +103,7 @@ def OutIndent(format = "", *args):
 
 def OutDedent(format = "", *args):
     """Combine Output() followed by DedentLevel().
-    
+
     If no text is given, acts like loneDedentLevel().
     """
     if format: VaOutput(format, args)
@@ -111,7 +111,7 @@ def OutDedent(format = "", *args):
 
 def OutLbrace(format = "", *args):
     """Like Output, but add a '{' and increase the indentation level.
-    
+
     If no text is given a lone '{' is output.
     """
     if format:
@@ -143,13 +143,13 @@ def OutHeader2(text):
 
 def Out(text):
     """Output multiline text that's internally indented.
-    
+
     Pass this a multiline character string.  The whitespace before the
     first nonblank line of the string will be subtracted from all lines.
     The lines are then output using Output(), but without interpretation
     of formatting (if you need formatting you can do it before the call).
     Recommended use:
-    
+
         Out('''
             int main(argc, argv)
                 int argc;
@@ -159,14 +159,14 @@ def Out(text):
                 exit(0);
             }
         ''')
-    
+
     Caveat: the indentation must be consistent -- if you use three tabs
     in the first line, (up to) three tabs are removed from following lines,
     but a line beginning with 24 spaces is not trimmed at all.  Don't use
     this as a feature.
     """
     # (Don't you love using triple quotes *inside* triple quotes? :-)
-    
+
     lines = text.split('\n')
     indent = ""
     for line in lines:
@@ -193,7 +193,7 @@ def _test():
     Out("""
         #include <Python.h>
         #include <stdio.h>
-    
+
         main(argc, argv)
             int argc;
             char **argv;
