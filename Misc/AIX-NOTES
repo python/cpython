@@ -88,7 +88,7 @@ AIX shared library support was added to Python in the 1.4 release by Manus
 Hand (mhand@csn.net) and Vladimir Marangozov (Vladimir.Marangozov@imag.fr).
 
 Python modules may now be built as shared libraries on AIX using the normal
-process of uncommenting the "*shared*" line in Modules/Setup.in before the
+process of uncommenting the "*shared*" line in Modules/Setup before the
 build.
 
 AIX shared libraries require that an "export" and "import" file be provided
