@@ -182,27 +182,27 @@ sub use_icon($$$) {
 sub make_nav_panel() {
     my $s;
     # new iconic         rel         iconic     page title
-    $NEXT     = use_icon('next',     $NEXT,     unlinkify($NEXT_TITLE));
-    $UP       = use_icon('parent',   $UP,       unlinkify($UP_TITLE));
-    $PREVIOUS = use_icon('prev',     $PREVIOUS, unlinkify($PREVIOUS_TITLE));
-    $CONTENTS = use_icon('contents', $CONTENTS, 'Table of Contents');
-    $INDEX    = use_icon('index',    $INDEX,    'Index');
+    my $next     = use_icon('next',     $NEXT,     unlinkify($NEXT_TITLE));
+    my $up       = use_icon('parent',   $UP,       unlinkify($UP_TITLE));
+    my $previous = use_icon('prev',     $PREVIOUS, unlinkify($PREVIOUS_TITLE));
+    my $contents = use_icon('contents', $CONTENTS, 'Table of Contents');
+    my $index    = use_icon('index',    $INDEX,    'Index');
     if (!$CUSTOM_BUTTONS) {
         $CUSTOM_BUTTONS = get_my_icon('blank');
     }
     $s = ('<table align="center" width="100%" cellpadding="0" cellspacing="2">'
           . "\n<tr>"
           # left-hand side
-          . "\n<td class='online-navigation'>$PREVIOUS</td>"
-          . "\n<td class='online-navigation'>$UP</td>"
-          . "\n<td class='online-navigation'>$NEXT</td>"
+          . "\n<td class='online-navigation'>$previous</td>"
+          . "\n<td class='online-navigation'>$up</td>"
+          . "\n<td class='online-navigation'>$next</td>"
           # title box
           . "\n<td align=\"center\" width=\"100%\">$t_title</td>"
           # right-hand side
-          . "\n<td class='online-navigation'>$CONTENTS</td>"
+          . "\n<td class='online-navigation'>$contents</td>"
           # module index
           . "\n<td class='online-navigation'>$CUSTOM_BUTTONS</td>"
-          . "\n<td class='online-navigation'>$INDEX</td>"
+          . "\n<td class='online-navigation'>$index</td>"
           . "\n</tr></table>\n"
           # textual navigation
           . "<div class='online-navigation'>\n"
