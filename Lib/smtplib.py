@@ -237,9 +237,18 @@ class SMTP:
             if code != 220:
                 raise SMTPConnectError(code, msg)
         if local_hostname:
-                self.local_hostname = local_hostname
+            self.local_hostname = local_hostname
         else:
-                self.local_hostname = socket.getfqdn()
+            # RFC 2821 says we should use the fqdn in the EHLO/HELO verb, and
+            # if that can't be calculated, that we should use a domain literal
+            # instead (essentially an encoded IP address like [A.B.C.D]).
+            fqdn = socket.getfqdn()
+            if '.' in fqdn:
+                self.local_hostname = fqdn
+            else:
+                # We can't find an fqdn hostname, so use a domain literal
+                addr = socket.gethostbyname(socket.gethostname())
+                self.local_hostname = '[%s]' % addr
 
     def set_debuglevel(self, debuglevel):
         """Set the debug output level.
