@@ -5,7 +5,6 @@ import sys
 import struct
 import Carbon.Res
 import Carbon.File
-import Nav
 import warnings
 
 # First step: ensure we also emulate the MACFS module, which contained
