@@ -316,8 +316,9 @@ class Command:
 
     # XXX rename to 'get_reinitialized_command()'? (should do the
     # same in dist.py, if so)
-    def reinitialize_command (self, command):
-        return self.distribution.reinitialize_command(command)
+    def reinitialize_command (self, command, reinit_subcommands=0):
+        return self.distribution.reinitialize_command(
+            command, reinit_subcommands)
 
     def run_command (self, command):
         """Run some other command: uses the 'run_command()' method of
