@@ -106,13 +106,6 @@ REALLIBRARY=	../@REALLIBRARY@
 
 all:		$(OBJS)
 
-# Targets for Jim Fulton's extension Makefiles -- are these still needed?
-asharedmodule:	$(ASHAREDMODULE)$(SO)
-
-$(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
-	$(LDSHARED) $(LDFLAGS) -o $(ASHAREDMODULE)$(SO) $(ASHAREDMODULESOBS) \
-	$(ASHAREDMODULESEXTRA)
-
 # This target is used by the master Makefile to add the objects to the library.
 # To deal with the conflict between signalmodule.o and
 # sigcheck.o+intrcheck.o, we remove the latter two if we have the former.
@@ -132,7 +125,7 @@ EXE=
 # This target is used by the master Makefile to link the final binary.
 link:		$(MAINOBJ)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) $(MAINOBJ) \
-		  -L.. -lpython$(VERSION) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
+		  $(LIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
 		mv python$(EXE) ../python$(EXE)
 
 clean:
@@ -229,15 +222,6 @@ sharedinstall:	$(DESTSHARED) $(SHAREDMODS)
 			then $(INSTALL_SHARED) $$i $(DESTSHARED)/$$i; \
 			fi; \
 		done
-
-# Install a shared module from outside of setup
-asharedinstall:	$(DESTSHARED) $(ASHAREDMODULE)$(SO)
-		-for i in dummy $(ASHAREDMODULE)$(SO); do \
-		    if test -f $$i; then mv $$i $(DESTSHARED)/$$i; fi; done
-
-# This is handy when modules need to know where the destination directory is:
-echodestshared: $(DESTSHARED)
-	echo 	$(DESTSHARED)
 
 DESTDIRS=	$(exec_prefix) $(LIBDIR) $(BINLIBDEST) $(DESTSHARED)
 
