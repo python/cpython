@@ -465,7 +465,7 @@ AC_CHECK_FUNCS(alarm chown clock dlopen execv flock fork ftime ftruncate \
  kill link lstat mkfifo mktime nice pause plock putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
- tcgetpgrp tcsetpgrp times truncate uname waitpid)
+ tcgetpgrp tcsetpgrp timegm times truncate uname waitpid)
 AC_REPLACE_FUNCS(dup2 getcwd strdup strerror memmove)
 AC_CHECK_FUNC(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
 AC_CHECK_FUNC(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))

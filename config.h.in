@@ -295,6 +295,9 @@
 /* Define if you have the tcsetpgrp function.  */
 #undef HAVE_TCSETPGRP
 
+/* Define if you have the timegm function.  */
+#undef HAVE_TIMEGM
+
 /* Define if you have the times function.  */
 #undef HAVE_TIMES
 

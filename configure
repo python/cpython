@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.86 
+# From configure.in Revision: 1.87 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -2642,7 +2642,7 @@ for ac_func in alarm chown clock dlopen execv flock fork ftime ftruncate \
  kill link lstat mkfifo mktime nice pause plock putenv readlink \
  select setgid setlocale setuid setsid setpgid setpgrp setvbuf \
  sigaction siginterrupt sigrelse strftime strptime symlink \
- tcgetpgrp tcsetpgrp times truncate uname waitpid
+ tcgetpgrp tcsetpgrp timegm times truncate uname waitpid
 do
 echo $ac_n "checking for $ac_func""... $ac_c" 1>&6
 echo "configure:2649: checking for $ac_func" >&5
