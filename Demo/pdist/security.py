@@ -9,10 +9,17 @@ class Security:
 			keyfile = '.python_keyfile'
 			if env.has_key('HOME'):
 				keyfile = os.path.join(env['HOME'], keyfile)
+			if not os.path.exists(keyfile):
+				import sys
+				for dir in sys.path:
+					kf = os.path.join(dir, keyfile)
+					if os.path.exists(kf):
+						keyfile = kf
+						break
 		try:
 			self._key = eval(open(keyfile).readline())
 		except IOError:
-			raise IOError, "python keyfile %s not found" % keyfile
+			raise IOError, "python keyfile %s: cannot open" % keyfile
 
 	def _generate_challenge(self):
 		import whrandom
