@@ -120,7 +120,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             self.send_error(404, "No such CGI script (%r)" % scriptname)
             return
         if not os.path.isfile(scriptfile):
-            self.send_error(403, "CGI script is not a plain file (%r)" % 
+            self.send_error(403, "CGI script is not a plain file (%r)" %
                             scriptname)
             return
         ispy = self.is_python(scriptname)
@@ -273,6 +273,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             save_stdout = sys.stdout
             save_stderr = sys.stderr
             try:
+                save_cwd = os.getcwd()
                 try:
                     sys.argv = [scriptfile]
                     if '=' not in decoded_query:
@@ -285,6 +286,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                     sys.stdin = save_stdin
                     sys.stdout = save_stdout
                     sys.stderr = save_stderr
+                    os.chdir(save_cwd)
             except SystemExit, sts:
                 self.log_error("CGI script exit status %s", str(sts))
             else:
