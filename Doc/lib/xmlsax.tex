@@ -43,25 +43,29 @@ The convenience functions are:
 \end{funcdesc}
 
 A typical SAX application uses three kinds of objects: readers,
-handlers and input sources. ``Reader'' in this context is another term
-for parser, ie. some piece of code that reads the bytes or characters
-from the input source, and produces a sequence of events. The events
-then get distributed to the handler objects, ie. the reader invokes a
-method on the handler. A SAX application must therefore obtain a
-handler object, create or open the input sources, create the handlers,
-and connect these objects all together. As the final step, parsing is
-invoked. During parsing
+handlers and input sources.  ``Reader'' in this context is another
+term for parser, i.e.\ some piece of code that reads the bytes or
+characters from the input source, and produces a sequence of events.
+The events then get distributed to the handler objects, i.e.\ the
+reader invokes a method on the handler.  A SAX application must
+therefore obtain a reader object, create or open the input sources,
+create the handlers, and connect these objects all together.  As the
+final step of preparation, the reader is called to parse the input.
+During parsing, methods on the handler objects are called based on
+structural and syntactic events from the input data.
 
 For these objects, only the interfaces are relevant; they are normally
-not instantiated by the application itself. Since Python does not have
+not instantiated by the application itself.  Since Python does not have
 an explicit notion of interface, they are formally introduced as
-classes. The \class{InputSource}, \class{Locator},
-\class{AttributesImpl}, and \class{XMLReader} interfaces are defined
-in the module \refmodule{xml.sax.xmlreader}. The handler interfaces
-are defined in \refmodule{xml.sax.handler}. For convenience,
-\class{InputSource} (which is often instantiated directly) and the
-handler classes are also available from \module{xml.sax}.  These
-classes are described below.
+classes, but applications may use implementations which do not inherit
+from the provided classes.  The \class{InputSource}, \class{Locator},
+\class{AttributesImpl}, \class{AttributesNSImpl}, and
+\class{XMLReader} interfaces are defined in the module
+\refmodule{xml.sax.xmlreader}.  The handler interfaces are defined in
+\refmodule{xml.sax.handler}.  For convenience, \class{InputSource}
+(which is often instantiated directly) and the handler classes are
+also available from \module{xml.sax}.  These interfaces are described
+below.
 
 In addition to these classes, \module{xml.sax} provides the following
 exception classes.
