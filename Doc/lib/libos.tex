@@ -1060,8 +1060,9 @@ L = ['cp', 'index.html', '/dev/null']
 os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 \end{verbatim}
 
-Availability: \UNIX, Windows.  \function{spawnvp()} and
-\function{spawnvpe()} are not available on Windows.
+Availability: \UNIX, Windows.  \function{spawnlp()},
+\function{spawnlpe()}, \function{spawnvp()} and \function{spawnvpe()}
+are not available on Windows.
 \versionadded{1.6}
 \end{funcdesc}
 
