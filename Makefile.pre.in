@@ -743,25 +743,19 @@ TAGS::
 # files, which clobber removes those as well
 
 clean:
-	# avoid long command lines, same as LIBRARY_OBJS MAINOBJ PGOBJS
-	-rm -f $(PARSER_OBJS)
-	-rm -f $(OBJECT_OBJS)
-	-rm -f $(PYTHON_OBJS)
-	-rm -f $(MODULE_OBJS) $(SIGNAL_OBJS) Modules/getbuildinfo.o
-	-rm -f $(MODOBJS) $(MAINOBJ) $(PGOBJS)
-	if test -f build; then find build -name '*.o' -exec rm -f {} ';' ; fi
+	find . -name '*.o' -exec rm -f {} ';'
 	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
 clobber: clean
-	-rm -f tags TAGS $(PYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
-		Modules/*.so Modules/*.sl Parser/pgen
+	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
+		Modules/*.so Modules/*.sl tags TAGS \
+		config.cache config.log config.h Modules/config.c 
 	-rm -rf build
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
 distclean: clobber
 	-rm -f core Makefile Makefile.pre buildno config.status \
-		config.log config.cache config.h Modules/config.c \
 		Modules/Setup Modules/Setup.local Modules/Setup.config
 	find $(srcdir) '(' -name '*.fdc' -o -name '*~' \
 			   -o -name '[@,#]*' -o -name '*.old' \
