@@ -17,8 +17,8 @@ Core and builtins
   things_to_do is not cleared by Py_MakePendingCalls().
 
 
-What's New in Python 2.4 (release candidate 1|beta 3)
-=====================================================
+What's New in Python 2.4 (release candidate 1)
+==============================================
 
 *Release date: 18-NOV-2004*
 
