@@ -11,6 +11,13 @@ main program: nothing but a bit of glue to put it all together.
 Jack Jansen, CWI, August 1996."""
 
 import os
+import sys
+
+# Add our directory to path, if needed
+dirname = os.path.split(__file__)[0]
+if not dirname in sys.path:
+	sys.path.append(dirname)
+
 if os.name == 'mac':
 	import MacOS
 	MacOS.splash(515)	# Try to show the splash screen
