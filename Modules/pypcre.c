@@ -48,6 +48,8 @@ restrictions:
 #define FOR_PYTHON
 #include "pcre-internal.h"
 #include "Python.h"
+#include "mymalloc.h"
+#include <ctype.h>
 #include "graminit.h"
 
 /*************************************************
@@ -94,9 +96,9 @@ unsigned char pcre_lcc[] = {
   240,241,242,243,244,245,246,247,
   248,249,250,251,252,253,254,255 };
 
-/* This table is an upper casing table. */
+/* This table is a case flipping table. */
 
-unsigned char pcre_ucc[] = {
+unsigned char pcre_fcc[] = {
     0,  1,  2,  3,  4,  5,  6,  7,
     8,  9, 10, 11, 12, 13, 14, 15,
    16, 17, 18, 19, 20, 21, 22, 23,
@@ -105,10 +107,10 @@ unsigned char pcre_ucc[] = {
    40, 41, 42, 43, 44, 45, 46, 47,
    48, 49, 50, 51, 52, 53, 54, 55,
    56, 57, 58, 59, 60, 61, 62, 63,
-   64, 65, 66, 67, 68, 69, 70, 71,
-   72, 73, 74, 75, 76, 77, 78, 79,
-   80, 81, 82, 83, 84, 85, 86, 87,
-   88, 89, 90, 91, 92, 93, 94, 95,
+   64, 97, 98, 99,100,101,102,103,
+  104,105,106,107,108,109,110,111,
+  112,113,114,115,116,117,118,119,
+  120,121,122, 91, 92, 93, 94, 95,
    96, 65, 66, 67, 68, 69, 70, 71,
    72, 73, 74, 75, 76, 77, 78, 79,
    80, 81, 82, 83, 84, 85, 86, 87,
@@ -130,13 +132,38 @@ unsigned char pcre_ucc[] = {
   240,241,242,243,244,245,246,247,
   248,249,250,251,252,253,254,255 };
 
+/* This table contains bit maps for digits, letters, 'word' chars, and
+white space. Each map is 32 bytes long and the bits run from the least
+significant end of each byte. */
+
+unsigned char pcre_cbits[] = {
+  0x00,0x00,0x00,0x00,0x00,0x00,0xff,0x03,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0xfe,0xff,0xff,0x07,0xfe,0xff,0xff,0x07,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+  0x00,0x00,0x00,0x00,0x00,0x00,0xff,0x03,
+  0xfe,0xff,0xff,0x87,0xfe,0xff,0xff,0x07,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+
+  0x00,0x3e,0x00,0x00,0x01,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
+  0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
+
 /* This table identifies various classes of character by individual bits:
-    1   white space character
-    2   decimal digit
-    4   hexadecimal digit
-    8   alphanumeric or '_'
-   16   octal digit
-  128   regular expression metacharacter or binary zero
+  0x01   white space character
+  0x02   letter
+  0x04   decimal digit
+  0x08   hexadecimal digit
+  0x10   alphanumeric or '_'
+  0x80   regular expression metacharacter or binary zero
 */
 
 unsigned char pcre_ctypes[] = {
@@ -146,16 +173,16 @@ unsigned char pcre_ctypes[] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /*  24- 31 */
   0x01,0x00,0x00,0x00,0x80,0x00,0x00,0x00, /*    - '  */
   0x80,0x80,0x80,0x80,0x00,0x00,0x80,0x00, /*  ( - /  */
-  0x1e,0x1e,0x1e,0x1e,0x1e,0x1e,0x1e,0x1e, /*  0 - 7  */
-  0x0e,0x0e,0x00,0x00,0x00,0x00,0x00,0x80, /*  8 - ?  */
-  0x00,0x0c,0x0c,0x0c,0x0c,0x0c,0x0c,0x08, /*  @ - G  */
-  0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08, /*  H - O  */
-  0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08, /*  P - W  */
-  0x08,0x08,0x08,0x80,0x00,0x00,0x80,0x08, /*  X - _  */
-  0x00,0x0c,0x0c,0x0c,0x0c,0x0c,0x0c,0x08, /*  ` - g  */
-  0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08, /*  h - o  */
-  0x08,0x08,0x08,0x08,0x08,0x08,0x08,0x08, /*  p - w  */
-  0x08,0x08,0x08,0x80,0x80,0x00,0x00,0x00, /*  x -127 */
+  0x3c,0x3c,0x3c,0x3c,0x3c,0x3c,0x3c,0x3c, /*  0 - 7  */
+  0x1c,0x1c,0x00,0x00,0x00,0x00,0x00,0x80, /*  8 - ?  */
+  0x00,0x1a,0x1a,0x1a,0x1a,0x1a,0x1a,0x12, /*  @ - G  */
+  0x12,0x12,0x12,0x12,0x12,0x12,0x12,0x12, /*  H - O  */
+  0x12,0x12,0x12,0x12,0x12,0x12,0x12,0x12, /*  P - W  */
+  0x12,0x12,0x12,0x80,0x00,0x00,0x80,0x10, /*  X - _  */
+  0x00,0x1a,0x1a,0x1a,0x1a,0x1a,0x1a,0x12, /*  ` - g  */
+  0x12,0x12,0x12,0x12,0x12,0x12,0x12,0x12, /*  h - o  */
+  0x12,0x12,0x12,0x12,0x12,0x12,0x12,0x12, /*  p - w  */
+  0x12,0x12,0x12,0x80,0x80,0x00,0x00,0x00, /*  x -127 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 128-135 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 136-143 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 144-151 */
@@ -173,52 +200,7 @@ unsigned char pcre_ctypes[] = {
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, /* 240-247 */
   0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};/* 248-255 */
 
-/* End of pcre-chartables.c */
-/*************************************************
-*      Perl-Compatible Regular Expressions       *
-*************************************************/
-
-/*
-This is a library of functions to support regular expressions whose syntax
-and semantics are as close as possible to those of the Perl 5 language.
-
-Written by: Philip Hazel <ph10@cam.ac.uk>
-
-           Copyright (c) 1997 University of Cambridge
-
------------------------------------------------------------------------------
-Permission is granted to anyone to use this software for any purpose on any
-computer system, and to redistribute it freely, subject to the following
-restrictions:
-
-1. This software is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-
-2. The origin of this software must not be misrepresented, either by
-   explicit claim or by omission.
-
-3. Altered versions must be plainly marked as such, and must not be
-   misrepresented as being the original software.
------------------------------------------------------------------------------
-
-See the file Tech.Notes for some information on the internals.
-*/
-
-/* This module contains the actual definition of global variables that are
-shared between the different modules. In fact, these are limited to the
-indirections for memory management functions. */
-
-/* Include the internals header, which itself includes Standard C headers plus
-the external pcre header. */
-
-
-/* Store get and free functions. */
-
-void *(*pcre_malloc)(size_t) = malloc;
-void  (*pcre_free)(void *) = free;
-
-/* End of pcre-globals.c */
+/* End of chartables.c */
 /*************************************************
 *      Perl-Compatible Regular Expressions       *
 *************************************************/
@@ -255,66 +237,6 @@ the external pcre header. */
 
 
 
-/* Character types for class type bits */
-
-static char class_types[] = { ctype_digit, ctype_space, ctype_word };
-
-
-
-/*************************************************
-*         Set a range of bits in the map         *
-*************************************************/
-
-/* This function is called for character types.
-
-Arguments:
-  start_bits    points to the bit map
-  type          a character type bit
-  include       TRUE to include the type;
-                FALSE to include all but the type
-
-Returns:        nothing
-*/
-
-static void
-set_type_bits(uschar *start_bits, int type, BOOL include)
-{
-int i;
-for (i = 0; i < 256; i++)
-  if (((pcre_ctypes[i] & type) != 0) == include) start_bits[i/8] |= (1<<(i%8));
-}
-
-
-
-/*************************************************
-*          Set one bit in the map                *
-*************************************************/
-
-/* This function is called to set a bit in the map for a given character,
-or both cases of a letter if caseless. It could be replaced by a macro if
-better performance is wanted.
-
-Arguments:
-  start_bits   points to 32-byte table
-  c            the character
-  caseless     TRUE if caseless
-
-Returns:       nothing
-*/
-
-static void
-set_bit(uschar *start_bits, int c, BOOL caseless)
-{
-if (caseless)
-  {
-  int d = pcre_ucc[c];
-  start_bits[d/8] |= (1<<(d%8));
-  c = pcre_lcc[c];
-  }
-start_bits[c/8] |= (1<<(c%8));
-}
-
-
 
 /*************************************************
 *          Create bitmap of starting chars       *
@@ -327,14 +249,15 @@ goes by, we may be able to get more clever at doing this.
 Arguments:
   code         points to an expression
   start_bits   points to a 32-byte table, initialized to 0
-  caseless     TRUE if caseless
 
 Returns:       TRUE if table built, FALSE otherwise
 */
 
 static BOOL
-set_start_bits(uschar *code, uschar *start_bits, BOOL caseless)
+set_start_bits(uschar *code, uschar *start_bits)
 {
+register int c;
+
 do
   {
   uschar *tcode = code + 3;
@@ -346,7 +269,7 @@ do
 
     if ((int)*tcode >= OP_BRA || *tcode == OP_ASSERT)
       {
-      if (!set_start_bits(tcode, start_bits, caseless)) return FALSE;
+      if (!set_start_bits(tcode, start_bits)) return FALSE;
       }
 
     else switch(*tcode)
@@ -358,7 +281,7 @@ do
 
       case OP_BRAZERO:
       case OP_BRAMINZERO:
-      if (!set_start_bits(++tcode, start_bits, caseless)) return FALSE;
+      if (!set_start_bits(++tcode, start_bits)) return FALSE;
       do tcode += (tcode[1] << 8) + tcode[2]; while (*tcode == OP_ALT);
       tcode += 3;
       try_next = TRUE;
@@ -370,7 +293,7 @@ do
       case OP_MINSTAR:
       case OP_QUERY:
       case OP_MINQUERY:
-      set_bit(start_bits, tcode[1], caseless);
+      start_bits[tcode[1]/8] |= (1 << (tcode[1]&7));
       tcode += 2;
       try_next = TRUE;
       break;
@@ -379,7 +302,7 @@ do
 
       case OP_UPTO:
       case OP_MINUPTO:
-      set_bit(start_bits, tcode[3], caseless);
+      start_bits[tcode[3]/8] |= (1 << (tcode[3]&7));
       tcode += 4;
       try_next = TRUE;
       break;
@@ -394,33 +317,35 @@ do
 
       case OP_PLUS:
       case OP_MINPLUS:
-      set_bit(start_bits, tcode[1], caseless);
+      start_bits[tcode[1]/8] |= (1 << (tcode[1]&7));
       break;
 
       /* Single character type sets the bits and stops */
 
       case OP_NOT_DIGIT:
-      set_type_bits(start_bits, ctype_digit, FALSE);
+      for (c = 0; c < 32; c++) start_bits[c] |= ~pcre_cbits[c+cbit_digit];
       break;
 
       case OP_DIGIT:
-      set_type_bits(start_bits, ctype_digit, TRUE);
+      for (c = 0; c < 32; c++) start_bits[c] |= pcre_cbits[c+cbit_digit];
       break;
 
       case OP_NOT_WHITESPACE:
-      set_type_bits(start_bits, ctype_space, FALSE);
+      for (c = 0; c < 32; c++) start_bits[c] |= ~pcre_cbits[c+cbit_space];
       break;
 
       case OP_WHITESPACE:
-      set_type_bits(start_bits, ctype_space, TRUE);
+      for (c = 0; c < 32; c++) start_bits[c] |= pcre_cbits[c+cbit_space];
       break;
 
       case OP_NOT_WORDCHAR:
-      set_type_bits(start_bits, ctype_word, FALSE);
+      for (c = 0; c < 32; c++)
+        start_bits[c] |= ~(pcre_cbits[c] | pcre_cbits[c+cbit_word]);
       break;
 
       case OP_WORDCHAR:
-      set_type_bits(start_bits, ctype_word, TRUE);
+      for (c = 0; c < 32; c++)
+        start_bits[c] |= (pcre_cbits[c] | pcre_cbits[c+cbit_word]);
       break;
 
       /* One or more character type fudges the pointer and restarts, knowing
@@ -451,27 +376,29 @@ do
       switch(tcode[1])
         {
         case OP_NOT_DIGIT:
-        set_type_bits(start_bits, ctype_digit, FALSE);
+        for (c = 0; c < 32; c++) start_bits[c] |= ~pcre_cbits[c+cbit_digit];
         break;
 
         case OP_DIGIT:
-        set_type_bits(start_bits, ctype_digit, TRUE);
+        for (c = 0; c < 32; c++) start_bits[c] |= pcre_cbits[c+cbit_digit];
         break;
 
         case OP_NOT_WHITESPACE:
-        set_type_bits(start_bits, ctype_space, FALSE);
+        for (c = 0; c < 32; c++) start_bits[c] |= ~pcre_cbits[c+cbit_space];
         break;
 
         case OP_WHITESPACE:
-        set_type_bits(start_bits, ctype_space, TRUE);
+        for (c = 0; c < 32; c++) start_bits[c] |= pcre_cbits[c+cbit_space];
         break;
 
         case OP_NOT_WORDCHAR:
-        set_type_bits(start_bits, ctype_word, FALSE);
+        for (c = 0; c < 32; c++)
+          start_bits[c] |= ~(pcre_cbits[c] | pcre_cbits[c+cbit_word]);
         break;
 
         case OP_WORDCHAR:
-        set_type_bits(start_bits, ctype_word, TRUE);
+        for (c = 0; c < 32; c++)
+          start_bits[c] |= (pcre_cbits[c] | pcre_cbits[c+cbit_word]);
         break;
         }
 
@@ -483,16 +410,10 @@ do
       according to the repeat count. */
 
       case OP_CLASS:
-      case OP_NEGCLASS:
         {
-        uschar *base = tcode;
-        uschar *data, *end;
-        uschar *bitmap = start_bits;
-        uschar local[32];
-        int flags = base[1];
-        int i;
-
-        tcode += 4 + 2 * tcode[2] + tcode[3];      /* Advance past the item */
+        tcode++;
+        for (c = 0; c < 32; c++) start_bits[c] |= tcode[c];
+        tcode += 32;
         switch (*tcode)
           {
           case OP_CRSTAR:
@@ -512,43 +433,6 @@ do
             }
           break;
           }
-
-        /* For a negated class, we have to build a separate table of all
-        the bits in the class, and then turn all other bits on in the main
-        table. Otherwise there are problems with things like [^\da]. */
-
-        if (*base == OP_NEGCLASS)
-          {
-          memset(local, 0, 32);
-          bitmap = local;
-          }
-
-        /* Character types */
-
-        for (i = 0; flags != 0; i++)
-          {
-          if ((flags & 1) != 0)
-            set_type_bits(bitmap, class_types[i/2], (i & 1) == 0);
-          flags >>= 1;
-          }
-
-        /* Ranges and individual characters */
-
-        data = base + 4;
-        end = data + base[2] * 2;
-        while (data < end)
-          {
-          for (i = *data; i <= data[1]; i++) set_bit(bitmap, i, caseless);
-          data += 2;
-          }
-
-        end += base[3];
-        while (data < end) set_bit(bitmap, *data++, caseless);
-
-        /* If a negated class, transfer data from local map to the main one */
-
-        if (bitmap != start_bits)
-          for (i = 0; i < 32; i++) start_bits[i] |= ~local[i];
         }
       break; /* End of class handling */
 
@@ -582,7 +466,7 @@ Returns:    pointer to a pcre_extra block,
 */
 
 pcre_extra *
-pcre_study(pcre *external_re, int options, char **errorptr)
+pcre_study(const pcre *external_re, int options, char **errorptr)
 {
 BOOL caseless;
 uschar start_bits[32];
@@ -603,6 +487,10 @@ if ((options & ~PUBLIC_STUDY_OPTIONS) != 0)
   return NULL;
   }
 
+/* Caseless can either be from the compiled regex or from options. */
+
+caseless = ((re->options | options) & PCRE_CASELESS) != 0;
+
 /* For an anchored pattern, or an unchored pattern that has a first char, or a
 multiline pattern that matches only at "line starts", no further processing at
 present. */
@@ -610,15 +498,27 @@ present. */
 if ((re->options & (PCRE_ANCHORED|PCRE_FIRSTSET|PCRE_STARTLINE)) != 0)
   return NULL;
 
-/* Determine the caseless state from the compiled pattern and the current
-options. */
-
-caseless = ((re->options | options) & PCRE_CASELESS) != 0;
-
 /* See if we can find a fixed set of initial characters for the pattern. */
 
-memset(start_bits, 0, 32);
-if (!set_start_bits(re->code, start_bits, caseless)) return NULL;
+memset(start_bits, 0, 32 * sizeof(uschar));
+if (!set_start_bits(re->code, start_bits)) return NULL;
+
+/* If this studying is caseless, scan the created bit map and duplicate the
+bits for any letters. */
+
+if (caseless)
+  {
+  register int c;
+  for (c = 0; c < 256; c++)
+    {
+    if ((start_bits[c/8] & (1 << (c&7))) != 0 &&
+        (pcre_ctypes[c] & ctype_letter) != 0)
+      {
+      int d = pcre_fcc[c];
+      start_bits[d/8] |= (1 << (d&7));
+      }
+    }
+  }
 
 /* Get an "extra" block and put the information therein. */
 
@@ -629,13 +529,14 @@ if (extra == NULL)
   *errorptr = "failed to get memory";
   return NULL;
   }
+
 extra->options = PCRE_STUDY_MAPPED | (caseless? PCRE_STUDY_CASELESS : 0);
-memcpy(extra->start_bits, start_bits, 32);
+memcpy(extra->start_bits, start_bits, sizeof(start_bits));
 
 return (pcre_extra *)extra;
 }
 
-/* End of pcre-study.c */
+/* End of study.c */
 /*************************************************
 *      Perl-Compatible Regular Expressions       *
 *************************************************/
@@ -676,10 +577,12 @@ restrictions:
 the external pcre header. */
 
 
+
 #ifndef Py_eval_input
 /* For Python 1.4, graminit.h has to be explicitly included */
 #define Py_eval_input eval_input
-#endif
+
+#endif /* FOR_PYTHON */
 
 /* Min and max values for the common repeats; for the maxima, 0 => infinity */
 
@@ -690,32 +593,24 @@ static char rep_max[] = { 0, 0, 0, 0, 1, 1 };
 
 #ifdef DEBUG
 static char *OP_names[] = { "End", "\\A", "\\B", "\\b", "\\D", "\\d",
-  "\\S", "\\s", "\\W", "\\w", "\\Z", "^", "$", "Any", "chars",
+  "\\S", "\\s", "\\W", "\\w", "Cut", "\\Z", 
+  "localized \\B", "localized \\b", "localized \\W", "localized \\w",
+  "^", "$", "Any", "chars",
+  "not",
+  "*", "*?", "+", "+?", "?", "??", "{", "{", "{",
   "*", "*?", "+", "+?", "?", "??", "{", "{", "{",
   "*", "*?", "+", "+?", "?", "??", "{", "{", "{",
   "*", "*?", "+", "+?", "?", "??", "{", "{",
-  "class", "negclass", "Ref",
-  "Alt", "Ket", "KetRmax", "KetRmin", "Assert", "Assert not",
+  "class", "classL", "Ref",
+  "Alt", "Ket", "KetRmax", "KetRmin", "Assert", "Assert not", "Once",
   "Brazero", "Braminzero", "Bra"
 };
-
-static char *class_names[] = { "\\d", "\\D", "\\s", "\\S", "\\w", "\\W" };
 #endif
-
-/* Table of character type operators that correspond to the bits in the
-character class flags, starting at the least significant end. */
-
-static char class_ops[] = {
-  OP_DIGIT, OP_NOT_DIGIT,
-  OP_WHITESPACE, OP_NOT_WHITESPACE,
-  OP_WORDCHAR, OP_NOT_WORDCHAR };
 
 /* Table for handling escaped characters in the range '0'-'z'. Positive returns
 are simple data values; negative values are for special things like \d and so
 on. Zero means further processing is needed (for things like \x), or the escape
 is invalid. */
-
-/* PYTHON: Python doesn't support \e, but does support \v */
 
 static short int escapes[] = {
     0,      0,      0,      0,      0,      0,      0,      0,   /* 0 - 7 */
@@ -730,10 +625,9 @@ static short int escapes[] = {
     0,      0,      0                                            /* x - z */
 };
 
-
 /* Definition to allow mutual recursion */
 
-static BOOL compile_regexp(BOOL, int *, uschar **, uschar **, 
+static BOOL compile_regex(int, int *, uschar **, uschar **, 
 			   char **, PyObject *);
 
 /* Structure for passing "static" information around between the functions
@@ -745,19 +639,40 @@ typedef struct match_data {
   int    offset_end;            /* One past the end */
   BOOL   offset_overflow;       /* Set if too many extractions */
   BOOL   caseless;              /* Case-independent flag */
+  BOOL   runtime_caseless;      /* Caseless forced at run time */
   BOOL   multiline;             /* Multiline flag */
+  BOOL   notbol;                /* NOTBOL flag */
+  BOOL   noteol;                /* NOTEOL flag */
+  BOOL   dotall;                /* Dot matches any char */
+  BOOL   endonly;               /* Dollar not before final \n */
   uschar *start_subject;        /* Start of the subject string */
   uschar *end_subject;          /* End of the subject string */
-
+  jmp_buf fail_env;             /* Environment for longjump() break out */
   uschar *end_match_ptr;        /* Subject position at end match */
   int     end_offset_top;       /* Highwater mark at end of match */
-  BOOL   dotall;                /* Dotall flag */
+  jmp_buf error_env;          /* For longjmp() if an error occurs deep inside a 
+				   matching operation */
   int    length;                /* Length of the allocated stacks */
   int    point;                 /* Point to add next item pushed onto stacks */
   /* Pointers to the 6 stacks */
   int *off_num, *offset_top, *r1, *r2; 
   uschar **eptr, **ecode; 
 } match_data;
+
+
+
+/*************************************************
+*               Global variables                 *
+*************************************************/
+
+/* PCRE is thread-clean and doesn't use any global variables in the normal
+sense. However, it calls memory allocation and free functions via the two
+indirections below, which are can be changed by the caller, but are shared
+between all threads. */
+
+void *(*pcre_malloc)(size_t) = malloc;
+void  (*pcre_free)(void *) = free;
+
 
 
 
@@ -793,7 +708,7 @@ Returns:        number of identifying extraction brackets
 */
 
 int
-pcre_info(pcre *external_re, int *optptr, int *first_char)
+pcre_info(const pcre *external_re, int *optptr, int *first_char)
 {
 real_pcre *re = (real_pcre *)external_re;
 if (re == NULL) return PCRE_ERROR_NULL;
@@ -867,7 +782,7 @@ do {
     /* Test an embedded subpattern; if it could not be empty, break the
     loop. Otherwise carry on in the branch. */
 
-    if ((int)(*cc) >= OP_BRA)
+    if ((int)(*cc) >= OP_BRA || (int)(*cc) == OP_ONCE)
       {
       if (!could_be_empty(cc)) break;
       do cc += (cc[1] << 8) + cc[2]; while (*cc == OP_ALT);
@@ -902,6 +817,8 @@ do {
       case OP_BRAMINZERO:
       case OP_NOT_WORD_BOUNDARY:
       case OP_WORD_BOUNDARY:
+      case OP_NOT_WORD_BOUNDARY_L:
+      case OP_WORD_BOUNDARY_L:
       cc++;
       break;
 
@@ -911,6 +828,10 @@ do {
       case OP_MINSTAR:
       case OP_QUERY:
       case OP_MINQUERY:
+      case OP_NOTSTAR:
+      case OP_NOTMINSTAR:
+      case OP_NOTQUERY:
+      case OP_NOTMINQUERY:
       case OP_TYPESTAR:
       case OP_TYPEMINSTAR:
       case OP_TYPEQUERY:
@@ -930,9 +851,14 @@ do {
       /* Check a class or a back reference for a zero minimum */
 
       case OP_CLASS:
-      case OP_NEGCLASS:
       case OP_REF:
-      cc += (*cc == OP_REF)? 2 : 4 + 2 * cc[2] + cc[3];
+      case OP_CLASS_L:
+	switch(*cc)
+	  {
+	  case (OP_REF):    cc += 2; break;
+	  case (OP_CLASS):  cc += 1+32; break;
+	  case (OP_CLASS_L): cc += 1+1+32; break;
+	  }
 
       switch (*cc)
         {
@@ -970,7 +896,6 @@ while (*code == OP_ALT);
 
 return FALSE;
 }
-
 
 /* Determine the length of a group ID in an expression like
    (?P<foo_123>...) 
@@ -1025,6 +950,9 @@ sequence.
 Arguments:
   ptrptr     points to the pattern position pointer
   errorptr   points to the pointer to the error message
+  bracount   number of previous extracting brackets
+  options    the options bits
+  isclass    TRUE if inside a character class
 
 Returns:     zero or positive => a data character
              negative => a special escape sequence
@@ -1032,13 +960,14 @@ Returns:     zero or positive => a data character
 */
 
 static int
-check_escape(uschar **ptrptr, char **errorptr)
+check_escape(uschar **ptrptr, char **errorptr, int bracount, int options,
+  BOOL isclass)
 {
 uschar *ptr = *ptrptr;
 int c = *(++ptr) & 255;   /* Ensure > 0 on signed-char systems */
 int i;
 
-if (c == 0) *errorptr = "\\ at end of pattern";
+if (c == 0) *errorptr = ERR1;
 
 /* Digits or letters may have special meaning; all others are literals. */
 
@@ -1051,16 +980,26 @@ else if ((i = escapes[c - '0']) != 0) c = i;
 
 /* Escapes that need further processing, or are illegal. */
 
-else switch (c)
+else
   {
-  case '0':
-  c = 0;
-  while(i++ < 2 && (pcre_ctypes[ptr[1]] & ctype_odigit) != 0 )
-      c = c * 8 + *(++ptr) - '0';
-  break;
 
-  case '1': case '2': case '3': case '4': case '5':
-  case '6': case '7': case '8': case '9':
+  switch (c)
+    {
+    /* The handling of escape sequences consisting of a string of digits
+    starting with one that is not zero is not straightforward. By experiment,
+    the way Perl works seems to be as follows:
+
+    Outside a character class, the digits are read as a decimal number. If the
+    number is less than 10, or if there are that many previous extracting
+    left brackets, then it is a back reference. Otherwise, up to three octal
+    digits are read to form an escaped byte. Thus \123 is likely to be octal
+    123 (cf \0123, which is octal 012 followed by the literal 3). If the octal
+    value is greater than 377, the least significant 8 bits are taken. Inside a
+    character class, \ followed by a digit is always an octal number. */
+
+    case '1': case '2': case '3': case '4': case '5':
+    case '6': case '7': case '8': case '9':
+
     {
       /* PYTHON: Try to compute an octal value for a character */
       for(c=0, i=0; c!=-1 && ptr[i]!=0 && i<3; i++) 
@@ -1088,70 +1027,47 @@ else switch (c)
     }
   break;
 
-  case 'x':
+    /* \0 always starts an octal number, but we may drop through to here with a
+    larger first octal digit */
+
+    case '0':
+    c -= '0';
+    while(i++ < 2 && (pcre_ctypes[ptr[1]] & ctype_digit) != 0 &&
+      ptr[1] != '8' && ptr[1] != '9')
+        c = c * 8 + *(++ptr) - '0';
+    break;
+
+    /* Special escapes not starting with a digit are straightforward */
+
+    case 'x':
+  c = 0;
+  while ( (pcre_ctypes[ptr[1]] & ctype_xdigit) != 0)
     {
-      int length;
-      char *string;
-      PyObject *result;
-      
-      i=1;
-      while (ptr[i]!=0 && 
-	     ( pcre_ctypes[ptr[i]] & ctype_xdigit) != 0)
-	i++;
-      if (i==1)
-	{
-	  *errorptr="\\x must be followed by hex digits";
-	  break;
-	}
-      length=i-1;
-      string=malloc(length+4+1);
-      if (string==NULL)
-	{
-	  *errorptr="can't allocate memory for \\x string";
-	  break;
-	}
-      /* Create a string containing "\x<hexdigits>", which will be
-	 passed to eval() */
-      string[0]=string[length+3]='"';
-      string[1]='\\';
-      string[length+4]='\0';
-      memcpy(string+2, ptr, length+1);
-      ptr += length;
-      result=PyRun_String((char *)string, Py_eval_input, 
-			  PyEval_GetGlobals(), PyEval_GetLocals());
-      free(string);
-      /* The evaluation raised an exception */
-      if (result==NULL) 
-	{
-	  *errorptr="exception occurred during evaluation of \\x";
-	  break;
-	}
-      if (PyString_Size(result)!=1)
-	{
-	  Py_DECREF(result);
-	  *errorptr="\\x string is not one byte in length";
-	  break;
-	}
-      c=*(unsigned char *)PyString_AsString(result);
-      Py_DECREF(result);
-      break;
+    ptr++;
+    c = c * 16 + pcre_lcc[*ptr] -
+      (((pcre_ctypes[*ptr] & ctype_digit) != 0)? '0' : 'W');
+    c &= 255;
     }
   break;
 
 
-  case 'l':
-  case 'L':
-  case 'u':
-  case 'U':
-  case 'Q':
-  case 'E':
-  *errorptr = "the Perl escapes \\u, \\U, \\l, \\L, \\Q, \\E are not valid";
-  break;
+    /* PCRE_EXTRA enables extensions to Perl in the matter of escapes. Any
+    other alphameric following \ is an error if PCRE_EXTRA was set; otherwise,
+    for Perl compatibility, it is a literal. */
 
-  default:
-    /* In Python, an unrecognized escape will simply return the character 
-       after the backslash, so do nothing */
-  break;
+    default:
+    if ((options & PCRE_EXTRA) != 0) switch(c)
+      {
+      case 'X':
+      c = -ESC_X;      /* This could be a lookup if it ever got into Perl */
+      break;
+
+      default:
+      *errorptr = ERR3;
+      break;
+      }
+    break;
+    }
   }
 
 *ptrptr = ptr;
@@ -1161,10 +1077,44 @@ return c;
 
 
 /*************************************************
+*            Check for counted repeat            *
+*************************************************/
+
+/* This function is called when a '{' is encountered in a place where it might
+start a quantifier. It looks ahead to see if it really is a quantifier or not.
+It is only a quantifier if it is one of the forms {ddd} {ddd,} or {ddd,ddd}
+where the ddds are digits.
+
+Arguments:
+  p         pointer to the first char after '{'
+
+Returns:    TRUE or FALSE
+*/
+
+static BOOL
+is_counted_repeat(uschar *p)
+{
+if ((pcre_ctypes[*p++] & ctype_digit) == 0) return FALSE;
+while ((pcre_ctypes[*p] & ctype_digit) != 0) p++;
+if (*p == '}') return TRUE;
+
+if (*p++ != ',') return FALSE;
+if (*p == '}') return TRUE;
+
+if ((pcre_ctypes[*p++] & ctype_digit) == 0) return FALSE;
+while ((pcre_ctypes[*p] & ctype_digit) != 0) p++;
+return (*p == '}');
+}
+
+
+
+/*************************************************
 *         Read repeat counts                     *
 *************************************************/
 
-/* Read an item of the form {n,m} and return the values.
+/* Read an item of the form {n,m} and return the values. This is called only
+after is_counted_repeat() has confirmed that a repeat-count quantifier exists,
+so the syntax is guaranteed to be correct, but we need to check the values.
 
 Arguments:
   p          pointer to first char after '{'
@@ -1183,33 +1133,17 @@ read_repeat_counts(uschar *p, int *minp, int *maxp, char **errorptr)
 int min = 0;
 int max = -1;
 
-if ((pcre_ctypes[*p] & ctype_digit) == 0)
-  {
-  *errorptr = "number expected after {";
-  return p;
-  }
-
 while ((pcre_ctypes[*p] & ctype_digit) != 0) min = min * 10 + *p++ - '0';
 
 if (*p == '}') max = min; else
   {
-  if (*p++ != ',')
-    {
-    *errorptr = "comma expected";
-    return p-1;
-    }
-  if (*p != '}')
+  if (*(++p) != '}')
     {
     max = 0;
     while((pcre_ctypes[*p] & ctype_digit) != 0) max = max * 10 + *p++ - '0';
-    if (*p != '}')
-      {
-      *errorptr = "} expected";
-      return p;
-      }
     if (max < min)
       {
-      *errorptr = "numbers out of order";
+      *errorptr = ERR4;
       return p;
       }
     }
@@ -1218,8 +1152,8 @@ if (*p == '}') max = min; else
 /* Do paranoid checks, then fill in the required variables, and pass back the
 pointer to the terminating '}'. */
 
-if (max == 0) *errorptr = "zero maximum not allowed";
-else if (min > 65535 || max > 65535) *errorptr = "number too big";
+if (min > 65535 || max > 65535)
+  *errorptr = ERR5;
 else
   {
   *minp = min;
@@ -1237,8 +1171,8 @@ return p;
 /* Scan the pattern, compiling it into the code vector.
 
 Arguments:
-  extended   TRUE if the PCRE_EXTENDED option was set
-  brackets   points to 2-element bracket vector
+  options    the option bits
+  bracket    points to number of brackets used
   code       points to the pointer to the current code point
   ptrptr     points to the current pattern pointer
   errorptr   points to pointer to error message
@@ -1248,8 +1182,8 @@ Returns:     TRUE on success
 */
 
 static BOOL
-compile_branch(BOOL extended, int *brackets, uschar **codeptr,
-  uschar **ptrptr, char **errorptr, PyObject *dictionary)
+compile_branch(int options, int *brackets, uschar **codeptr,
+	       uschar **ptrptr, char **errorptr, PyObject *dictionary)
 {
 int repeat_type, op_type;
 int repeat_min, repeat_max;
@@ -1259,13 +1193,19 @@ register uschar *code = *codeptr;
 uschar *ptr = *ptrptr;
 uschar *previous = NULL;
 uschar *oldptr;
+uschar class[32];
+uschar *class_flag;  /* Pointer to the single-byte flag for OP_CLASS_L */
 
 /* Switch on next character until the end of the branch */
 
 for (;; ptr++)
   {
+  BOOL negate_class;
+  int  class_charcount;
+  int  class_lastchar;
+
   c = *ptr;
-  if (extended)
+  if ((options & PCRE_EXTENDED) != 0)
     {
     if ((pcre_ctypes[c] & ctype_space) != 0) continue;
     if (c == '#')
@@ -1303,162 +1243,263 @@ for (;; ptr++)
     *code++ = OP_ANY;
     break;
 
-    /* Character classes. We do quite a bit of munging around here. There are
-    always four initial bytes: the op_code, a flags byte for things like \d, a
-    count of pairs and a count of single characters. The pairs then follow, and
-    finally the single characters. */
+    /* Character classes. These always build a 32-byte bitmap of the permitted
+    characters, except in the special case where there is only one character.
+    For negated classes, we build the map as usual, then invert it at the end.
+    */
 
     case '[':
+    previous = code;
+    if (options & PCRE_LOCALE) 
       {
-      int rangecount = 0;
-      int flags = 0;
-      int singles_count = 0;
-      char singles[256];
+	*code++ = OP_CLASS_L;
+	/* Set the flag for localized classes (like \w) to 0 */
+	class_flag = code;
+	*class_flag = 0;
+      }
+    else
+      {
+	*code++ = OP_CLASS;
+	class_flag = NULL;
+      }
+    
+    /* If the first character is '^', set the negation flag */
 
-      previous = code;
+    if ((c = *(++ptr)) == '^')
+      {
+      negate_class = TRUE;
+      c = *(++ptr);
+      }
+    else negate_class = FALSE;
 
-      /* If the first character is '^', set the negation flag */
+    /* Keep a count of chars so that we can optimize the case of just a single
+    character. */
 
-      if ((c = *(++ptr)) == '^') { *code = OP_NEGCLASS; c = *(++ptr); }
-        else *code = OP_CLASS;
-      code += 4;
+    class_charcount = 0;
+    class_lastchar = -1;
 
-      /* Process characters until ] is reached. By writing this as a "do" it
-      means that an initial ] is taken as a data character. */
+    /* Initialize the 32-char bit map to all zeros. We have to build the
+    map in a temporary bit of store, in case the class contains only 1
+    character, because in that case the compiled code doesn't use the
+    bit map. */
 
-      do
+    memset(class, 0, 32 * sizeof(uschar));
+
+    /* Process characters until ] is reached. By writing this as a "do" it
+    means that an initial ] is taken as a data character. */
+
+    do
+      {
+      if (c == 0)
         {
-        if (c == 0)
-          {
-          *errorptr = "] missing";
-          goto FAILED;
-          }
-
-        /*** Perl treats '-' here as a data character, so PCRE had better
-        do the same ... cut out this diagnosis.
-
-        if (c == '-')
-          {
-          *errorptr = "unexpected '-' in character class";
-          goto FAILED;
-          }
-        ... ***/
-
-        /* Backslash may introduce a single character, or it may introduce one
-        of the specials, which just set a flag. Escaped items are checked for
-        validity in the pre-compiling pass. The sequence \b is a special case.
-        Inside a class (and only there) it is treated as backslash. Elsewhere
-        it marks a word boundary. */
-
-        if (c == '\\')
-          {
-	    uschar *save_ptr = ptr+1;
-          c = check_escape(&ptr, errorptr);
-          if (c < 0)
-            {
-            switch (-c)
-              {
-              case ESC_d: flags |= CLASS_DIGITS; continue;
-              case ESC_D: flags |= CLASS_NOT_DIGITS; continue;
-              case ESC_s: flags |= CLASS_WHITESPACE; continue;
-              case ESC_S: flags |= CLASS_NOT_WHITESPACE; continue;
-              case ESC_w: flags |= CLASS_WORD; continue;
-              case ESC_W: flags |= CLASS_NOT_WORD; continue;
-              default:
-		ptr = save_ptr;
-		c = *ptr;
-		break;
-
-              case ESC_b: c = '\b';   /* Treat as single character */
-              break;
-              }
-            }
-          /* Fall through if single character */
-          }
-
-        /* A single character may be followed by '-' to form a range. However,
-        Perl does not permit ']' to be the end of the range. A '-' character
-        here is treated as a literal. */
-
-        if (ptr[1] == '-' && ptr[2] != ']')
-          {
-          int d;
-          ptr += 2;
-          d = *ptr;
-
-          if (d == 0)
-            {
-            *errorptr = "incomplete range";
-            goto FAILED;
-            }
-
-          /* The second part of a range can be a single-character escape, but
-          not any of the other escapes. */
-
-          if (d == '\\')
-            {
-            d = check_escape(&ptr, errorptr);
-            if (d < 0)
-              {
-              if (d == -ESC_b) d = '\b'; else
-                {
-                *errorptr = "invalid range";
-                goto FAILED;
-                }
-              }
-            }
-
-          if (d < c)
-            {
-            *errorptr = "range out of order";
-            goto FAILED;
-            }
-
-          if (rangecount >= 255)
-            {
-            *errorptr = "too many ranges inside []";
-            goto FAILED;
-            }
-
-          rangecount++;
-          *code++ = c;
-          *code++ = d;
-          continue;
-          }
-
-        /* Handle a lone single character: save it up for outputting at the
-        end. Be paranoid and check that the buffer isn't going to overflow. */
-
-        if (singles_count >= 255)
-          {
-          *errorptr = "too many characters inside []";
-          goto FAILED;
-          }
-        singles[singles_count++] = c;
+        *errorptr = ERR6;
+        goto FAILED;
         }
 
-      /* Loop until ']' reached; the check for end of string happens inside the
-      loop. This "while" is the end of the "do" above. */
+      /* Backslash may introduce a single character, or it may introduce one
+      of the specials, which just set a flag. Escaped items are checked for
+      validity in the pre-compiling pass. The sequence \b is a special case.
+      Inside a class (and only there) it is treated as backslash. Elsewhere
+      it marks a word boundary. Other escapes have preset maps ready to
+      or into the one we are building. We assume they have more than one
+      character in them, so set class_count bigger than one. */
 
-      while ((c = *(++ptr)) != ']');
+      if (c == '\\')
+        {
+        c = check_escape(&ptr, errorptr, *brackets, options, TRUE);
+        if (-c == ESC_b) c = '\b';
+        else if (c < 0)
+          {
+          class_charcount = 10;
+          switch (-c)
+            {
+            case ESC_d:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 4;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++) class[c] |= pcre_cbits[c+cbit_digit];
+	      }
+            continue;
 
-      /* Copy saved single characters, which follow the ranges in the output. */
+            case ESC_D:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 8;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++) class[c] |= ~pcre_cbits[c+cbit_digit];
+	      }
+            continue;
 
-      c = 0;      
-      while (c < singles_count) *code++ = singles[c++];
+            case ESC_w:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 1;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++)
+		  class[c] |= (pcre_cbits[c] | pcre_cbits[c+cbit_word]);
+	      }
+            continue;
 
-      /* Finally fill in the flags and counts of ranges and single characters,
-      and advance the pointer past the ]. */
+            case ESC_W:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 2;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++)
+		  class[c] |= ~(pcre_cbits[c] | pcre_cbits[c+cbit_word]);
+	      }
+            continue;
 
-      previous[1] = flags;
-      previous[2] = rangecount;
-      previous[3] = singles_count;
+            case ESC_s:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 32;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++) class[c] |= pcre_cbits[c+cbit_space];
+	      }
+            continue;
+
+            case ESC_S:
+	    if (options & PCRE_LOCALE)
+	      {
+		*class_flag |= 32;
+	      }
+	    else
+	      {
+		for (c = 0; c < 32; c++) class[c] |= ~pcre_cbits[c+cbit_space];
+	      }
+            continue;
+
+            default:
+            *errorptr = ERR7;
+            goto FAILED;
+            }
+          }
+        /* Fall through if single character */
+        }
+
+      /* A single character may be followed by '-' to form a range. However,
+      Perl does not permit ']' to be the end of the range. A '-' character
+      here is treated as a literal. */
+
+      if (ptr[1] == '-' && ptr[2] != ']')
+        {
+        int d;
+        ptr += 2;
+        d = *ptr;
+
+        if (d == 0)
+          {
+          *errorptr = ERR6;
+          goto FAILED;
+          }
+
+        /* The second part of a range can be a single-character escape, but
+        not any of the other escapes. */
+
+        if (d == '\\')
+          {
+          d = check_escape(&ptr, errorptr, *brackets, options, TRUE);
+          if (d < 0)
+            {
+            if (d == -ESC_b) d = '\b'; else
+              {
+              *errorptr = ERR7;
+              goto FAILED;
+              }
+            }
+          }
+
+        if (d < c)
+          {
+          *errorptr = ERR8;
+          goto FAILED;
+          }
+
+        for (; c <= d; c++)
+          {
+          class[c/8] |= (1 << (c&7));
+          if ((options & PCRE_CASELESS) != 0)
+            {
+            int uc = pcre_fcc[c];           /* flip case */
+            class[uc/8] |= (1 << (uc&7));
+            }
+          class_charcount++;                /* in case a one-char range */
+          class_lastchar = c;
+          }
+        continue;   /* Go get the next char in the class */
+        }
+
+      /* Handle a lone single character - we can get here for a normal
+      non-escape char, or after \ that introduces a single character. */
+
+      class [c/8] |= (1 << (c&7));
+      if ((options & PCRE_CASELESS) != 0)
+        {
+        c = pcre_fcc[c];   /* flip case */
+        class[c/8] |= (1 << (c&7));
+        }
+      class_charcount++;
+      class_lastchar = c;
+      }
+
+    /* Loop until ']' reached; the check for end of string happens inside the
+    loop. This "while" is the end of the "do" above. */
+
+    while ((c = *(++ptr)) != ']');
+
+    /* If class_charcount is 1 and class_lastchar is not negative, we saw
+    precisely one character. This doesn't need the whole 32-byte bit map.
+    We turn it into a 1-character OP_CHAR if it's positive, or OP_NOT if
+    it's negative. */
+
+    if (class_charcount == 1 && class_lastchar >= 0)
+      {
+      if (negate_class)
+        {
+        code[-1] = OP_NOT;
+        }
+      else
+        {
+        code[-1] = OP_CHARS;
+        *code++ = 1;
+        }
+      *code++ = class_lastchar;
+      }
+
+    /* Otherwise, negate the 32-byte map if necessary, and copy it into
+    the code vector. */
+
+    else
+      {
+	/* If this is a localized opcode, bump the code pointer up */
+	if (class_flag) code++;
+      if (negate_class)
+	{
+	  if (class_flag) *class_flag = (*class_flag) ^ 63;
+	  for (c = 0; c < 32; c++) code[c] = ~class[c];
+	}
+      else
+        memcpy(code, class, 32);
+      code += 32;
       }
     break;
 
     /* Various kinds of repeat */
 
     case '{':
+    if (!is_counted_repeat(ptr+1)) goto NORMAL_CHAR;
     ptr = read_repeat_counts(ptr+1, &repeat_min, &repeat_max, errorptr);
     if (*errorptr != NULL) goto FAILED;
     goto REPEAT;
@@ -1480,7 +1521,7 @@ for (;; ptr++)
     REPEAT:
     if (previous == NULL)
       {
-      *errorptr = "nothing to repeat";
+      *errorptr = ERR9;
       goto FAILED;
       }
 
@@ -1489,11 +1530,16 @@ for (;; ptr++)
 
     if (ptr[1] == '?') { repeat_type = 1; ptr++; } else repeat_type = 0;
 
+    /* If the maximum is zero then the minimum must also be zero; Perl allows
+    this case, so we do too - by simply omitting the item altogether. */
+
+    if (repeat_max == 0) code = previous;
+
     /* If previous was a string of characters, chop off the last one and use it
     as the subject of the repeat. If there was only one character, we can
     abolish the previous item altogether. */
 
-    if (*previous == OP_CHARS)
+    else if (*previous == OP_CHARS)
       {
       int len = previous[1];
       if (len == 1)
@@ -1511,11 +1557,23 @@ for (;; ptr++)
       goto OUTPUT_SINGLE_REPEAT;   /* Code shared with single character types */
       }
 
+    /* If previous was a single negated character ([^a] or similar), we use
+    one of the special opcodes, replacing it. The code is shared with single-
+    character repeats by adding a suitable offset into repeat_type. */
+
+    else if ((int)*previous == OP_NOT)
+      {
+      op_type = OP_NOTSTAR - OP_STAR;  /* Use "not" opcodes */
+      c = previous[1];
+      code = previous;
+      goto OUTPUT_SINGLE_REPEAT;
+      }
+
     /* If previous was a character type match (\d or similar), abolish it and
     create a suitable repeat item. The code is shared with single-character
     repeats by adding a suitable offset into repeat_type. */
 
-    if ((int)*previous < OP_EOD || *previous == OP_ANY)
+    else if ((int)*previous < OP_CIRC || *previous == OP_ANY)
       {
       op_type = OP_TYPESTAR - OP_STAR;  /* Use type opcodes */
       c = *previous;
@@ -1587,8 +1645,7 @@ for (;; ptr++)
     /* If previous was a character class or a back reference, we put the repeat
     stuff after it. */
 
-    else if (*previous == OP_CLASS || *previous == OP_NEGCLASS ||
-             *previous == OP_REF)
+    else if (*previous == OP_CLASS || *previous==OP_CLASS_L || *previous == OP_REF)
       {
       if (repeat_min == 0 && repeat_max == -1)
         *code++ = OP_CRSTAR + repeat_type;
@@ -1618,7 +1675,7 @@ for (;; ptr++)
 
       if (repeat_max == -1 && could_be_empty(previous))
         {
-        *errorptr = "operand of unlimited repeat could match the empty string";
+        *errorptr = ERR10;
         goto FAILED;
         }
 
@@ -1672,7 +1729,7 @@ for (;; ptr++)
 
     else
       {
-      *errorptr = "internal error 1 (unexpected repeat)";
+      *errorptr = ERR11;
       goto FAILED;
       }
 
@@ -1698,6 +1755,7 @@ for (;; ptr++)
         {
         case '#':
         case 'i':
+        case 'l':
         case 'm':
         case 's':
         case 'x':
@@ -1736,7 +1794,7 @@ for (;; ptr++)
 		goto FAILED;
 	      }
 	      string = PyString_FromStringAndSize((char*)ptr, idlen);
-	      intobj = PyInt_FromLong( brackets[0] );
+	      intobj = PyInt_FromLong( brackets[0] + 1 );
 	      if (intobj == NULL || string==NULL)
 		{
 		  Py_XDECREF(string);
@@ -1760,7 +1818,7 @@ for (;; ptr++)
 	      if (*errorptr) {
 		goto FAILED;
 	      }
-	      string = PyString_FromStringAndSize((char*)ptr, idlen);
+	      string = PyString_FromStringAndSize((char *)ptr, idlen);
 	      if (string==NULL)	{
 		  Py_XDECREF(string);
 		  *errorptr = "exception raised";
@@ -1789,8 +1847,19 @@ for (;; ptr++)
 	  *errorptr="unknown after (?P";
 	  goto FAILED;
 	  break;
+
+        case '>':                         /* "Match once" brackets */
+        if ((options & PCRE_EXTRA) != 0)  /* Not yet standard */
+          {
+          bravalue = OP_ONCE;
+          ptr++;
+          previous = NULL;
+          break;
+          }
+        /* Else fall through */
+
         default:
-        *errorptr = "unknown after (?";
+        *errorptr = ERR12;
         goto FAILED;
         }
       }
@@ -1800,13 +1869,12 @@ for (;; ptr++)
     else
       {
       do_grouping_bracket:
-      if (brackets[0] > EXTRACT_MAX)
+      if (++(*brackets) > EXTRACT_MAX)
         {
-        *errorptr = "too many extraction brackets";
+        *errorptr = ERR13;
         goto FAILED;
         }
-      brackets[1] = brackets[0];
-      bravalue = OP_BRA + brackets[0]++;
+      bravalue = OP_BRA + *brackets;
       }
 
     /* Process nested bracketed re; at end pointer is on the bracket. We copy
@@ -1816,14 +1884,14 @@ for (;; ptr++)
     *code = bravalue;
       {
       uschar *mcode = code;
-      if (!compile_regexp(extended, brackets, &mcode, &ptr, errorptr, dictionary))
+      if (!compile_regex(options, brackets, &mcode, &ptr, errorptr, dictionary))
         goto FAILED;
       code = mcode;
       }
 
     if (*ptr != ')')
       {
-      *errorptr = "missing )";
+      *errorptr = ERR14;
       goto FAILED;
       }
     break;
@@ -1834,7 +1902,7 @@ for (;; ptr++)
 
     case '\\':
     oldptr = ptr;
-    c = check_escape(&ptr, errorptr);
+    c = check_escape(&ptr, errorptr, *brackets, options, FALSE);
 
     /* Handle metacharacters introduced by \. For ones like \d, the ESC_ values
     are arranged to be the negation of the corresponding OP_values. For the
@@ -1847,18 +1915,29 @@ for (;; ptr++)
       {
       if (-c >= ESC_REF)
         {
-        int refnum = -c -ESC_REF;
-	if (brackets[1] < refnum ) {
-	      *errorptr = "backreference to non-existent group";
-	      goto FAILED;
-	}
+        int refnum = -c - ESC_REF;
+        if (*brackets < refnum)
+          {
+          *errorptr = ERR15;
+          goto FAILED;
+          }
         previous = code;
         *code++ = OP_REF;
         *code++ = refnum;
         }
       else
         {
-        previous = (-c > ESC_b && -c < ESC_Z)? code : NULL;
+        previous = (-c > ESC_b && -c < ESC_X)? code : NULL;
+        if ( (options & PCRE_LOCALE) != 0)
+	  {
+	    switch (c)
+	      {
+		case (-ESC_b): c = -OP_WORD_BOUNDARY_L; break;
+		case (-ESC_B): c = -OP_NOT_WORD_BOUNDARY_L; break;
+		case (-ESC_w): c = -OP_WORDCHAR_L; break;
+		case (-ESC_W): c = -OP_NOT_WORDCHAR_L; break;
+	      }
+	  }
         *code++ = -c;
         }
       continue;
@@ -1873,6 +1952,7 @@ for (;; ptr++)
     The first character is guaranteed not to be whitespace or # when the
     extended flag is set. */
 
+    NORMAL_CHAR:
     default:
     previous = code;
     *code = OP_CHARS;
@@ -1881,7 +1961,7 @@ for (;; ptr++)
 
     do
       {
-      if (extended)
+      if ((options & PCRE_EXTENDED) != 0)
         {
         if ((pcre_ctypes[c] & ctype_space) != 0) continue;
         if (c == '#')
@@ -1899,7 +1979,7 @@ for (;; ptr++)
       if (c == '\\')
         {
         oldptr = ptr;
-        c = check_escape(&ptr, errorptr);
+        c = check_escape(&ptr, errorptr, *brackets, options, FALSE);
         if (c < 0) { ptr = oldptr; break; }
         }
 
@@ -1944,8 +2024,8 @@ The code variable is pointing at the byte into which the BRA operator has been
 stored.
 
 Argument:
-  extended  TRUE if PCRE_EXTENDED was set
-  brackets  -> 2-element vector containing next and top bracket numbers
+  options   the option bits
+  brackets  -> int containing the number of extracting brackets used
   codeptr   -> the address of the current code pointer
   ptrptr    -> the address of the current pattern pointer
   errorptr  -> pointer to error message
@@ -1954,7 +2034,7 @@ Returns:    TRUE on success
 */
 
 static BOOL
-compile_regexp(BOOL extended, int *brackets, uschar **codeptr,
+compile_regex(int options, int *brackets, uschar **codeptr,
   uschar **ptrptr, char **errorptr, PyObject *dictionary)
 {
 uschar *ptr = *ptrptr;
@@ -1967,7 +2047,7 @@ for (;;)
   uschar *last_branch = code;
 
   code += 3;
-  if (!compile_branch(extended, brackets, &code, &ptr, errorptr, dictionary))
+  if (!compile_branch(options, brackets, &code, &ptr, errorptr, dictionary))
     {
     *ptrptr = ptr;
     return FALSE;
@@ -2027,7 +2107,7 @@ is_anchored(register uschar *code, BOOL multiline)
 {
 do {
    int op = (int)code[3];
-   if (op >= OP_BRA || op == OP_ASSERT)
+   if (op >= OP_BRA || op == OP_ASSERT || op == OP_ONCE)
      { if (!is_anchored(code+3, multiline)) return FALSE; }
    else if (op == OP_TYPESTAR || op == OP_TYPEMINSTAR)
      { if (code[4] != OP_ANY) return FALSE; }
@@ -2137,36 +2217,42 @@ Returns:       pointer to compiled data block, or NULL on error,
 */
 
 pcre *
-pcre_compile(char *pattern, int options, char **errorptr, int
-	     *erroroffset, PyObject *dictionary)
+pcre_compile(const char *pattern, int options, char **errorptr, 
+	     int *erroroffset, PyObject *dictionary)
 {
 real_pcre *re;
 int spaces = 0;
 int length = 3;      /* For initial BRA plus length */
 int runlength;
 int c, size;
-int brackets[2];
+int bracount = 0;
 int brastack[200];
 int brastackptr = 0;
-BOOL extended = (options & PCRE_EXTENDED) != 0;
+int top_backref = 0;
 uschar *code, *ptr;
 
 #ifdef DEBUG
 uschar *code_base, *code_end;
 #endif
 
-/* Miscellaneous initialization; the copy the error pointers into static
-variables so all functions can access them. */
+/* We can't pass back an error message if errorptr is NULL; I guess the best we
+can do is just return NULL. */
 
-brackets[0] = 1;         /* Next bracket number */
-brackets[1] = 0;         /* Highest used bracket number */
-
+if (errorptr == NULL) return NULL;
 *errorptr = NULL;
+
+/* However, we can give a message for this error */
+
+if (erroroffset == NULL)
+  {
+  *errorptr = ERR16;
+  return NULL;
+  }
 *erroroffset = 0;
 
 if ((options & ~PUBLIC_OPTIONS) != 0)
   {
-  *errorptr = "unknown option bit(s) set";
+  *errorptr = ERR17;
   return NULL;
   }
 
@@ -2185,15 +2271,16 @@ clever for #-comments. */
 ptr = (uschar *)(pattern - 1);
 while ((c = *(++ptr)) != 0)
   {
-    int min, max;
+  int min, max;
+  int class_charcount;
 
   if ((pcre_ctypes[c] & ctype_space) != 0)
     {
-    if (extended) continue;
+    if ((options & PCRE_EXTENDED) != 0) continue;
     spaces++;
     }
 
-  if (extended && c == '#')
+  if (c == '#' && (options & PCRE_EXTENDED) != 0)
     {
     while ((c = *(++ptr)) != 0 && c != '\n');
     continue;
@@ -2209,7 +2296,7 @@ while ((c = *(++ptr)) != 0)
     case '\\':
       {
       uschar *save_ptr = ptr;
-      c = check_escape(&ptr, errorptr);
+      c = check_escape(&ptr, errorptr, bracount, options, FALSE);
       if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
       if (c >= 0)
         {
@@ -2221,12 +2308,15 @@ while ((c = *(++ptr)) != 0)
     length++;
 
     /* A back reference needs an additional char, plus either one or 5
-    bytes for a repeat. */
+    bytes for a repeat. We also need to keep the value of the highest
+    back reference. */
 
     if (c <= -ESC_REF)
       {
+      int refnum = -c - ESC_REF;
+      if (refnum > top_backref) top_backref = refnum;
       length++;   /* For single back reference */
-      if (ptr[1] == '{')
+      if (ptr[1] == '{' && is_counted_repeat(ptr+2))
         {
         ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
@@ -2252,6 +2342,7 @@ while ((c = *(++ptr)) != 0)
     or back reference. */
 
     case '{':
+    if (!is_counted_repeat(ptr+1)) goto NORMAL_CHAR;
     ptr = read_repeat_counts(ptr+1, &min, &max, errorptr);
     if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
     if ((min == 0 && (max == 1 || max == -1)) ||
@@ -2271,35 +2362,46 @@ while ((c = *(++ptr)) != 0)
     length += 3;
     continue;
 
-    /* A character class uses 4 characters plus the characters in it. Don't
-    worry about character types that aren't allowed in classes - they'll get
-    picked up during the compile. */
+    /* A character class uses 33 characters. Don't worry about character types
+    that aren't allowed in classes - they'll get picked up during the compile.
+    A character class that contains only one character uses 2 or 3 bytes,
+    depending on whether it is negated or not. Notice this where we can. */
 
     case '[':
-    length += 4;
-    if (ptr[1] == '^') ptr++;
+    class_charcount = 0;
+    if (*(++ptr) == '^') ptr++;
     do
       {
-      if (*(++ptr) == '\\')
+      if (*ptr == '\\')
         {
-        (void)check_escape(&ptr, errorptr);
+        int c = check_escape(&ptr, errorptr, bracount, options, TRUE);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
+        if (-c == ESC_b) class_charcount++; else class_charcount = 10;
         }
-      length++;
+      else class_charcount++;
+      ptr++;
       }
     while (*ptr != 0 && *ptr != ']');
 
-    /* A repeat needs either 1 or 5 bytes. */
+    /* Repeats for negated single chars are handled by the general code */
 
-    if (ptr[1] == '{')
+    if (class_charcount == 1) length += 3; else
       {
-      ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
-      if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
-      if ((min == 0 && (max == 1 || max == -1)) ||
-        (min == 1 && max == -1))
-          length++;
-      else length += 5;
-      if (ptr[1] == '?') ptr++;
+      length += 33;
+      if (options & PCRE_LOCALE) length++;  /* Add a byte for the localization flag */
+
+      /* A repeat needs either 1 or 5 bytes. */
+
+      if (ptr[1] == '{' && is_counted_repeat(ptr+2))
+        {
+        ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
+        if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
+        if ((min == 0 && (max == 1 || max == -1)) ||
+          (min == 1 && max == -1))
+            length++;
+        else length += 5;
+        if (ptr[1] == '?') ptr++;
+        }
       }
     continue;
 
@@ -2317,22 +2419,20 @@ while ((c = *(++ptr)) != 0)
       while (*ptr != 0 && *ptr != ')') ptr++;
       if (*ptr == 0)
         {
-        *errorptr = "missing ) after comment";
+        *errorptr = ERR18;
         goto PCRE_ERROR_RETURN;
         }
       continue;
 
       /* Non-referencing groups and lookaheads just move the pointer on, and
-      then behave like a non-special bracket. */
+      then behave like a non-special bracket, except that they don't increment
+      the count of extracting brackets. */
 
       case ':':
       case '=':
       case '!':
       ptr += 2;
       break;
-
-      /* Else loop setting valid options until ) is met. Anything else is an
-      error. */
 
       case ('P'):
 	{
@@ -2353,6 +2453,20 @@ while ((c = *(++ptr)) != 0)
 	}
 	break;
 
+      /* Ditto for the "once only" bracket, allowed only if the extra bit
+      is set. */
+
+      case '>':
+      if ((options & PCRE_EXTRA) != 0)
+        {
+        ptr += 2;
+        break;
+        }
+      /* Else fall thourh */
+
+      /* Else loop setting valid options until ) is met. Anything else is an
+      error. */
+
       default:
       ptr += 2;
       for (;; ptr++)
@@ -2362,12 +2476,17 @@ while ((c = *(++ptr)) != 0)
           options |= PCRE_CASELESS;
           continue;
           }
+        else if ((c = *ptr) == 'l')
+          {
+          options |= PCRE_LOCALE;
+          continue;
+          }
         else if ((c = *ptr) == 'm')
           {
           options |= PCRE_MULTILINE;
           continue;
           }
-        else if ((c = *ptr) == 's')
+        else if (c == 's')
           {
           options |= PCRE_DOTALL;
           continue;
@@ -2375,24 +2494,28 @@ while ((c = *(++ptr)) != 0)
         else if (c == 'x')
           {
           options |= PCRE_EXTENDED;
-          extended = TRUE;
           length -= spaces;          /* Already counted spaces */
           continue;
           }
         else if (c == ')') break;
 
-        *errorptr = "undefined after (?";
+        *errorptr = ERR12;
         goto PCRE_ERROR_RETURN;
         }
       continue;                      /* End of this bracket handling */
       }
+
+    /* Extracting brackets must be counted so we can process escapes in a
+    Perlish way. */
+
+    else bracount++;
 
     /* Non-special forms of bracket. Save length for computing whole length
     at end if there's a repeat that requires duplication of the group. */
 
     if (brastackptr >= sizeof(brastack)/sizeof(int))
       {
-      *errorptr = "too many brackets";
+      *errorptr = ERR19;
       goto PCRE_ERROR_RETURN;
       }
 
@@ -2413,7 +2536,7 @@ while ((c = *(++ptr)) != 0)
       /* Leave ptr at the final char; for read_repeat_counts this happens
       automatically; for the others we need an increment. */
 
-      if ((c = ptr[1]) == '{')
+      if ((c = ptr[1]) == '{' && is_counted_repeat(ptr+2))
         {
         ptr = read_repeat_counts(ptr+2, &min, &max, errorptr);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
@@ -2447,11 +2570,11 @@ while ((c = *(++ptr)) != 0)
       {
       if ((pcre_ctypes[c] & ctype_space) != 0)
         {
-        if (extended) continue;
+        if ((options & PCRE_EXTENDED) != 0) continue;
         spaces++;
         }
 
-      if (extended && c == '#')
+      if (c == '#' && (options & PCRE_EXTENDED) != 0)
         {
         while ((c = *(++ptr)) != 0 && c != '\n');
         continue;
@@ -2463,7 +2586,7 @@ while ((c = *(++ptr)) != 0)
       if (c == '\\')
         {
         uschar *saveptr = ptr;
-        c = check_escape(&ptr, errorptr);
+        c = check_escape(&ptr, errorptr, bracount, options, FALSE);
         if (*errorptr != NULL) goto PCRE_ERROR_RETURN;
         if (c < 0) { ptr = saveptr; break; }
         }
@@ -2487,19 +2610,19 @@ length += 4;    /* For final KET and END */
 
 if (length > 65539)
   {
-  *errorptr = "regular expression too large";
+  *errorptr = ERR20;
   return NULL;
   }
 
 /* Compute the size of data block needed and get it, either from malloc or
 externally provided function. Put in the magic number and the options. */
 
-size = length + sizeof(real_pcre) - sizeof(re->code);
-re = (real_pcre *)(pcre_malloc)(size);
+size = length + offsetof(real_pcre, code);
+re = (real_pcre *)(pcre_malloc)(size+50);
 
 if (re == NULL)
   {
-  *errorptr = "failed to get memory";
+  *errorptr = ERR21;
   return NULL;
   }
 
@@ -2513,19 +2636,23 @@ of the function here. */
 ptr = (uschar *)pattern;
 code = re->code;
 *code = OP_BRA;
-(void)compile_regexp(extended, brackets, &code, &ptr, errorptr, dictionary);
-re->top_bracket = brackets[1];
+bracount = 0;
+(void)compile_regex(options, &bracount, &code, &ptr, errorptr, dictionary);
+re->top_bracket = bracount;
+re->top_backref = top_backref;
 
 /* If not reached end of pattern on success, there's an excess bracket. */
 
-if (*errorptr == NULL && *ptr != 0) *errorptr = "unmatched brackets";
+if (*errorptr == NULL && *ptr != 0) *errorptr = ERR22;
+
 /* Fill in the terminating state and check for disastrous overflow, but
 if debugging, leave the test till after things are printed out. */
 
 *code++ = OP_END;
 
+
 #ifndef DEBUG
-if (code - re->code > length) *errorptr = "internal error: code overflow";
+if (code - re->code > length) *errorptr = ERR23;
 #endif
 
 /* Failed to compile */
@@ -2565,12 +2692,20 @@ if ((options & PCRE_ANCHORED) == 0)
 
 #ifdef DEBUG
 
-printf("Length = %d top_bracket = %d%s%s%s%s\n",
-  length, re->top_bracket,
-  ((re->options & PCRE_ANCHORED) != 0)? " anchored" : "",
-  ((re->options & PCRE_CASELESS) != 0)? " caseless" : "",
-  extended? " extended" : "",
-  ((re->options & PCRE_MULTILINE) != 0)? " multiline" : "");
+printf("Length = %d top_bracket = %d top_backref=%d\n",
+  length, re->top_bracket, re->top_backref);
+
+if (re->options != 0)
+  {
+  printf("%s%s%s%s%s%s%s\n",
+    ((re->options & PCRE_ANCHORED) != 0)? "anchored " : "",
+    ((re->options & PCRE_CASELESS) != 0)? "caseless " : "",
+    ((re->options & PCRE_EXTENDED) != 0)? "extended " : "",
+    ((re->options & PCRE_MULTILINE) != 0)? "multiline " : "",
+    ((re->options & PCRE_DOTALL) != 0)? "dotall " : "",
+    ((re->options & PCRE_DOLLAR_ENDONLY) != 0)? "endonly " : "",
+    ((re->options & PCRE_EXTRA) != 0)? "extra " : "");
+  }
 
 if ((re->options & PCRE_FIRSTSET) != 0)
   {
@@ -2608,6 +2743,7 @@ while (code < code_end)
     case OP_KET:
     case OP_ASSERT:
     case OP_ASSERT_NOT:
+    case OP_ONCE:
     printf("%3d %s", (code[1] << 8) + code[2], OP_names[*code]);
     code += 2;
     break;
@@ -2652,39 +2788,75 @@ while (code < code_end)
     code += 3;
     break;
 
+    case OP_NOT:
+    if (isprint(c = *(++code))) printf("    [^%c]", c);
+      else printf("    [^\\x%02x]", c);
+    break;
+
+    case OP_NOTSTAR:
+    case OP_NOTMINSTAR:
+    case OP_NOTPLUS:
+    case OP_NOTMINPLUS:
+    case OP_NOTQUERY:
+    case OP_NOTMINQUERY:
+    if (isprint(c = code[1])) printf("    [^%c]", c);
+      else printf("    [^\\x%02x]", c);
+    printf("%s", OP_names[*code++]);
+    break;
+
+    case OP_NOTEXACT:
+    case OP_NOTUPTO:
+    case OP_NOTMINUPTO:
+    if (isprint(c = code[3])) printf("    [^%c]{", c);
+      else printf("    [^\\x%02x]{", c);
+    if (*code != OP_NOTEXACT) printf(",");
+    printf("%d}", (code[1] << 8) + code[2]);
+    if (*code == OP_NOTMINUPTO) printf("?");
+    code += 3;
+    break;
+
     case OP_REF:
     printf("    \\%d", *(++code));
     break;
 
     case OP_CLASS:
-    case OP_NEGCLASS:
+    case OP_CLASS_L:
       {
       int i, min, max;
-      int flags = code[1];
-      int rangecount = code[2];
-      int charcount = code[3];
 
-      printf("    [%s", (*code == OP_CLASS)? "" : "^");
-      code += 3;
+      if (*code==OP_CLASS_L)
+	{
+	  code++;
+	  printf("Locflag = %i ", *code++);
+	}
+      else 
+        code++;
 
-      for (i = 0; i < 8; i++)
-        if ((flags & (1 << i)) != 0) printf("%s", class_names[i]);
+      printf("    [");
 
-      for (i = 0; i < rangecount; i++)
+      for (i = 0; i < 256; i++)
         {
-        if (isprint(*(++code))) printf("%c-", *code); else printf("\\x%02x-", *code);
-        if (isprint(*(++code))) printf("%c", *code); else printf("\\x%02x", *code);
-        }
-
-      for (i = 0; i < charcount; i++)
-        {
-        if (!isprint(*(++code))) printf("\\x%02x", *code);
-        else if (strchr("-\\]", *code) != NULL) printf("\\%c", *code);
-        else printf("%c", *code);
+        if ((code[i/8] & (1 << (i&7))) != 0)
+          {
+          int j;
+          for (j = i+1; j < 256; j++)
+            if ((code[j/8] & (1 << (j&7))) == 0) break;
+          if (i == '-' || i == ']') printf("\\");
+          if (isprint(i)) printf("%c", i); else printf("\\x%02x", i);
+          if (--j > i)
+            {
+            printf("-");
+            if (j == '-' || j == ']') printf("\\");
+            if (isprint(j)) printf("%c", j); else printf("\\x%02x", j);
+            }
+          i = j;
+          }
         }
       printf("]");
+      code += 32;
+      /*      code ++;*/
 
-      switch(*(++code))
+      switch(*code)
         {
         case OP_CRSTAR:
         case OP_CRMINSTAR:
@@ -2728,7 +2900,8 @@ was compiled can be seen. */
 
 if (code - re->code > length)
   {
-  *errorptr = "internal error: code overflow";
+  printf("length=%i, code length=%i\n", length, code-re->code);
+  *errorptr = ERR23;
   (pcre_free)(re);
   *erroroffset = ptr - (uschar *)pattern;
   return NULL;
@@ -2750,7 +2923,7 @@ to put the code inline.
 Arguments:
   type        the character type
   c           the character
-  multiline   the multiline flag
+  dotall      the dotall flag
 
 Returns:      TRUE if character is of the type
 */
@@ -2774,116 +2947,10 @@ switch(type)
   case OP_WHITESPACE:     return (pcre_ctypes[c] & ctype_space) != 0;
   case OP_NOT_WORDCHAR:   return (pcre_ctypes[c] & ctype_word) == 0;
   case OP_WORDCHAR:       return (pcre_ctypes[c] & ctype_word) != 0;
+  case OP_NOT_WORDCHAR_L: return (c!='_' && !isalpha(c));
+  case OP_WORDCHAR_L:     return (c=='_' || isalpha(c));
   }
 return FALSE;
-}
-
-
-/*************************************************
-*            Match a character class             *
-*************************************************/
-
-/* Return "result" if char is in the class and "!result" otherwise.
-
-Arguments:
-  data        points to the class item
-  c           the subject character
-  result      value to return if in class
-  md          matching "static" data
-
-Returns:      result or !result
-*/
-
-static BOOL
-match_class(register uschar *data, register int c, BOOL result, match_data *md)
-{
-int flags = data[1];
-int i;
-uschar *base = data;
-uschar *end;
-
-#ifdef DEBUG
-  {
-  uschar *d = base + 3;
-
-  if (isprint(c))
-    printf("match %c against [%s", c, result? "" : "^");
-  else
-    printf("match \\x%02x against [%s", c, result? "" : "^");
-
-  for (i = 0; i < 8; i++)
-    if ((flags & (1 << i)) != 0) printf("%s", class_names[i]);
-
-  for (i = 0; i < data[2]; i++)
-    {
-    if (isprint(*(++d))) printf("%c-", *d); else printf("\\x%02x-", *d);
-    if (isprint(*(++d))) printf("%c", *d); else printf("\\x%02x", *d);
-    }
-
-  for (i = 0; i < data[3]; i++)
-    {
-    if (!isprint(*(++d))) printf("\\x%02x", *d);
-    else if (strchr("-\\]", *d) != NULL) printf("\\%c", *d);
-    else printf("%c", *d);
-    }
-  printf("]\n");
-  }
-#endif
-
-/* Test for any character types */
-
-for (i = 0; flags != 0; i++)
-  {
-  if ((flags & 1) != 0 && match_type(class_ops[i], c, md->dotall))
-    return result;
-  flags >>= 1;
-  }
-
-/* Advance pointer to the specific chars and do the caseless or caseful testing
-of the ranges and individual characters as necessary. */
-
-data += 4;
-end = data + base[2] * 2;
-
-/* Caseless character ranges are slightly tricky, because of cases like [W-c].
-What we do is to uppercase the subject char if it is beyond the end of the
-range, or lowercase it if it is before the start of the range and try again if
-a caseful comparison has failed. This works because upper case letters come
-before lower case in ASCII code. It would not work in EBCDIC, for example,
-where they are the other way round, but then ranges like [W-c] would be illegal
-in EBCDIC. */
-
-if (md->caseless)
-  {
-  while (data < end)
-    {
-    register int d;
-    if (c >= (int)*data && c <= (int)data[1]) return result;
-    d = (c < (int)*data)? pcre_lcc[c] : pcre_ucc[c];
-    if (d >= (int)*data && d <= (int)data[1]) return result;
-    data += 2;
-    }
-  end += base[3];
-  c = pcre_lcc[c];
-  while (data < end) if (c == pcre_lcc[*data++]) return result;
-  }
-
-/* Caseful is easy */
-
-else
-  {
-  while (data < end)
-    {
-    if (c >= (int)*data && c <= (int)data[1]) return result;
-    data += 2;
-    }
-  end += base[3];
-  while (data < end) if (c == *data++) return result;
-  }
-
-/* Character is not in the class */
-
-return !result;
 }
 
 
@@ -2949,15 +3016,31 @@ return 0;
 
 static int grow_stack(match_data *md)
 {
-  md->length = md->length ? md->length+md->length/2 : 200; 
-  md->offset_top=realloc(md->offset_top, md->length*sizeof(int)); 
-  md->eptr=realloc(md->eptr, md->length*sizeof(void *)); 
-  md->ecode=realloc(md->ecode, md->length*sizeof(void *)); 
-  md->off_num=realloc(md->off_num, md->length*sizeof(int)); 
-  md->r1=realloc(md->r1, md->length*sizeof(int)); 
-  md->r2=realloc(md->r2, md->length*sizeof(int));
+  if (md->length != 0)
+    {
+      md->length = md->length + md->length/2;      
+    }
+  else 
+    {
+      int string_len = md->end_subject - md->start_subject + 1;
+      if (string_len < 80) {md->length = string_len; }
+      else {md->length = 80;}
+    }
+  PyMem_RESIZE(md->offset_top, int, md->length);
+  PyMem_RESIZE(md->eptr, uschar *, md->length);
+  PyMem_RESIZE(md->ecode, uschar *, md->length);
+  PyMem_RESIZE(md->off_num, int, md->length);
+  PyMem_RESIZE(md->r1, int, md->length);
+  PyMem_RESIZE(md->r2, int, md->length);
+  if (md->offset_top == NULL || md->eptr == NULL || md->ecode == NULL ||
+      md->off_num == NULL || md->r1 == NULL || md->r2 == NULL) 
+    {
+      PyErr_SetString(PyExc_MemoryError, "Can't increase failure stack for re operation");
+      longjmp(md->error_env, 1);
+    }
   return 0;
 }
+
 
 /*************************************************
 *         Match from current position            *
@@ -2989,7 +3072,7 @@ for (;;)
   int min, max, ctype;
   register int i;
   register int c;
-  BOOL minimize = 0;
+  BOOL minimize;
 
   /* Opening bracket. Check the alternative branches in turn, failing if none
   match. We have to set the start offset if required and there is space
@@ -3002,7 +3085,7 @@ for (;;)
   if ((int)*ecode >= OP_BRA)
     {
     int number = (*ecode - OP_BRA) << 1;
-    int save_offset1 = 0, save_offset2 = 0;
+    int save_offset1, save_offset2;
 
 #ifdef DEBUG
     printf("start bracket %d\n", number/2);
@@ -3050,6 +3133,13 @@ for (;;)
     md->end_offset_top = offset_top;   /* and how many extracts were taken */
     SUCCEED;
 
+    /* The equivalent of Prolog's "cut" - if the rest doesn't match, the
+    whole thing doesn't match, so we have to get out via a longjmp(). */
+
+    case OP_CUT:
+    if (match(eptr, ecode+1, offset_top, md)) SUCCEED;
+    longjmp(md->fail_env, 1);
+
     /* Assertion brackets. Check the alternative branches in turn - the
     matching won't pass the KET for an assertion. If any one branch matches,
     the assertion is true. */
@@ -3081,6 +3171,30 @@ for (;;)
       }
     while (*ecode == OP_ALT);
     ecode += 3;
+    continue;
+
+    /* "Once" brackets are like assertion brackets except that after a match,
+    the point in the subject string is not moved back. Thus there can never be
+    a move back into the brackets. Check the alternative branches in turn - the
+    matching won't pass the KET for this kind of subpattern. If any one branch
+    matches, we carry on, leaving the subject pointer. */
+
+    case OP_ONCE:
+    do
+      {
+      if (match(eptr, ecode+3, offset_top, md)) break;
+      ecode += (ecode[1] << 8) + ecode[2];
+      }
+    while (*ecode == OP_ALT);
+    if (*ecode == OP_KET) return FALSE;
+
+    /* Continue as from after the assertion, updating the offsets high water
+    mark, since extracts may have been taken. */
+
+    do ecode += (ecode[1] << 8) + ecode[2]; while (*ecode == OP_ALT);
+    ecode += 3;
+    offset_top = md->end_offset_top;
+    eptr = md->end_match_ptr;
     continue;
 
     /* An alternation is the end of a branch; scan along to find the end of the
@@ -3122,11 +3236,12 @@ for (;;)
     case OP_KETRMIN:
     case OP_KETRMAX:
       {
-      int number, start, end;
+      int number;
       uschar *prev = ecode - (ecode[1] << 8) - ecode[2];
 
-      if (*prev == OP_ASSERT || *prev == OP_ASSERT_NOT)
+      if (*prev == OP_ASSERT || *prev == OP_ASSERT_NOT || *prev == OP_ONCE)
         {
+        md->end_match_ptr = eptr;      /* For ONCE */
         md->end_offset_top = offset_top;
         SUCCEED;
         }
@@ -3145,7 +3260,6 @@ for (;;)
         {
         if (number >= md->offset_end) md->offset_overflow = TRUE; else
           {
-          start=md->offset_vector[number] ; end =md->offset_vector[number+1];
           md->offset_vector[number+1] = eptr - md->start_subject;
           if (offset_top <= number) offset_top = number + 2;
           }
@@ -3175,7 +3289,10 @@ for (;;)
 	  ptr += (ptr[1]<<8)+ ptr[2];
 	  if (*ptr==OP_ALT) 
 	    {
-	      if (md->length == md->point) grow_stack(md);
+	      if (md->length == md->point) 
+		{
+		  grow_stack(md);
+		}
 	      md->offset_top[md->point] = offset_top; 
 	      md->eptr[md->point]       = eptr; 
 	      md->ecode[md->point]      = ptr+3; 
@@ -3194,7 +3311,10 @@ for (;;)
 
 	/* Push one failure point, that will resume matching at the code after 
 	   the KETRMAX opcode. */
-	if (md->length == md->point) grow_stack(md);
+	if (md->length == md->point) 
+	  {
+	    grow_stack(md);
+	  }
 	md->offset_top[md->point] = offset_top; 
 	md->eptr[md->point]       = eptr; 
 	md->ecode[md->point]      = ecode+3; 
@@ -3212,7 +3332,11 @@ for (;;)
 	  ptr += (ptr[1]<<8)+ ptr[2];
 	  if (*ptr==OP_ALT) 
 	    {
-	      if (md->length == md->point) grow_stack(md);
+	      if (md->length == md->point) 
+		if (md->length == md->point) 
+		  {
+		    grow_stack(md);
+		  }
 	      md->offset_top[md->point] = offset_top; 
 	      md->eptr[md->point]       = eptr; 
 	      md->ecode[md->point]      = ptr+3; 
@@ -3229,9 +3353,10 @@ for (;;)
       }
     FAIL;
 
-    /* Start of subject, or after internal newline if multiline */
+    /* Start of subject unless notbol, or after internal newline if multiline */
 
     case OP_CIRC:
+    if (md->notbol && eptr == md->start_subject) FAIL;
     if (md->multiline)
       {
       if (eptr != md->start_subject && eptr[-1] != '\n') FAIL;
@@ -3247,12 +3372,22 @@ for (;;)
     ecode++;
     break;
 
-    /* End of subject, or before internal newline if multiline */
+    /* Assert before internal newline if multiline, or before
+    a terminating newline unless endonly is set, else end of subject unless
+    noteol is set. */
 
     case OP_DOLL:
+    if (md->noteol && eptr >= md->end_subject) FAIL;
     if (md->multiline)
       {
       if (eptr < md->end_subject && *eptr != '\n') FAIL;
+      ecode++;
+      break;
+      }
+    else if (!md->endonly)
+      {
+      if (eptr < md->end_subject - 1 ||
+         (eptr == md->end_subject - 1 && *eptr != '\n')) FAIL;
       ecode++;
       break;
       }
@@ -3279,6 +3414,20 @@ for (;;)
         FAIL;
       }
     break;
+
+    case OP_NOT_WORD_BOUNDARY_L:
+    case OP_WORD_BOUNDARY_L:
+      {
+	BOOL prev_is_word = (eptr != md->start_subject) &&
+	  (isalpha(eptr[-1]) || eptr[-1]=='_');
+	BOOL cur_is_word = (eptr < md->end_subject) &&
+	  (isalpha(eptr[-1]) || eptr[-1]=='_');
+	if ((*ecode++ == OP_WORD_BOUNDARY_L)?
+	    cur_is_word == prev_is_word : cur_is_word != prev_is_word)
+	  FAIL;
+      }
+      break;
+
 
     /* Match a single character type; inline for speed */
 
@@ -3324,6 +3473,20 @@ for (;;)
     ecode++;
     break;
 
+    case OP_NOT_WORDCHAR_L:
+    if (eptr >= md->end_subject || (*eptr=='_' || isalpha(*eptr) ))
+      return FALSE;
+    eptr++;
+    ecode++;
+    break;
+
+    case OP_WORDCHAR_L:
+    if (eptr >= md->end_subject || (*eptr!='_' && !isalpha(*eptr) ))
+      return FALSE;
+    eptr++;
+    ecode++;
+    break;
+    
     /* Match a back reference, possibly repeatedly. Look past the end of the
     item to see if there is repeat information following. The code is similar
     to that for character classes, but repeated for efficiency. Then obey
@@ -3432,15 +3595,14 @@ for (;;)
 
     /* Match a character class, possibly repeatedly. Look past the end of the
     item to see if there is repeat information following. Then obey similar
-    code to character type repeats - written out again for speed. */
+    code to character type repeats - written out again for speed. If caseless
+    matching was set at runtime but not at compile time, we have to check both
+    versions of a character. */
 
     case OP_CLASS:
-    case OP_NEGCLASS:
       {
-      BOOL result = *ecode == OP_CLASS;
-      uschar *data = ecode;               /* Save for matching */
-
-      ecode += 4 + 2 * ecode[2] + ecode[3];      /* Advance past the item */
+      uschar *data = ecode + 1;  /* Save for matching */
+      ecode += 33;               /* Advance past the item */
 
       switch (*ecode)
         {
@@ -3467,16 +3629,31 @@ for (;;)
         break;
 
         default:               /* No repeat follows */
-        if (eptr >= md->end_subject || !match_class(data, *eptr++, result, md))
-          FAIL;
-        continue;              /* With the main loop */
+        if (eptr >= md->end_subject) FAIL;
+        c = *eptr++;
+        if ((data[c/8] & (1 << (c&7))) != 0) continue;    /* With main loop */
+        if (md->runtime_caseless)
+          {
+          c = pcre_fcc[c];
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;  /* With main loop */
+          }
+        FAIL;
         }
 
       /* First, ensure the minimum number of matches are present. */
 
       for (i = 1; i <= min; i++)
-        if (eptr >= md->end_subject || !match_class(data, *eptr++, result, md))
-          FAIL;
+        {
+        if (eptr >= md->end_subject) FAIL;
+        c = *eptr++;
+        if ((data[c/8] & (1 << (c&7))) != 0) continue;
+        if (md->runtime_caseless)
+          {
+          c = pcre_fcc[c];
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+          }
+        FAIL;
+        }
 
       /* If max == min we can continue with the main loop without the
       need to recurse. */
@@ -3491,8 +3668,15 @@ for (;;)
         for (i = min;; i++)
           {
           if (match(eptr, ecode, offset_top, md)) SUCCEED;
-          if (i >= max || eptr >= md->end_subject ||
-            !match_class(data, *eptr++, result, md)) FAIL;
+          if (i >= max || eptr >= md->end_subject) FAIL;
+          c = *eptr++;
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+          if (md->runtime_caseless)
+            {
+            c = pcre_fcc[c];
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+            }
+          FAIL;
           }
         /* Control never gets here */
         }
@@ -3502,12 +3686,157 @@ for (;;)
       else
         {
         uschar *pp = eptr;
-        for (i = min; i < max; i++)
+        for (i = min; i < max; eptr++, i++)
           {
-          if (eptr >= md->end_subject || !match_class(data, *eptr, result, md))
-            break;
-          eptr++;
+          if (eptr >= md->end_subject) break;
+          c = *eptr;
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+          if (md->runtime_caseless)
+            {
+            c = pcre_fcc[c];
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+            }
+          break;
           }
+
+        while (eptr >= pp)
+          if (match(eptr--, ecode, offset_top, md)) SUCCEED;
+        FAIL;
+        }
+      }
+    /* Control never gets here */
+
+   /* OP_CLASS_L opcode: handles localized character classes */
+
+   case OP_CLASS_L:
+     {
+     uschar *data = ecode + 1;  /* Save for matching */
+      uschar locale_flag = *data;
+      ecode++; data++;		/* The localization support adds an extra byte */
+
+      ecode += 33;               /* Advance past the item */
+
+      switch (*ecode)
+        {
+        case OP_CRSTAR:
+        case OP_CRMINSTAR:
+        case OP_CRPLUS:
+        case OP_CRMINPLUS:
+        case OP_CRQUERY:
+        case OP_CRMINQUERY:
+        c = *ecode++ - OP_CRSTAR;
+        minimize = (c & 1) != 0;
+        min = rep_min[c];                 /* Pick up values from tables; */
+        max = rep_max[c];                 /* zero for max => infinity */
+        if (max == 0) max = INT_MAX;
+        break;
+
+        case OP_CRRANGE:
+        case OP_CRMINRANGE:
+        minimize = (*ecode == OP_CRMINRANGE);
+        min = (ecode[1] << 8) + ecode[2];
+        max = (ecode[3] << 8) + ecode[4];
+        if (max == 0) max = INT_MAX;
+        ecode += 5;
+        break;
+
+        default:               /* No repeat follows */
+        if (eptr >= md->end_subject) FAIL;
+        c = *eptr++;
+        if ((data[c/8] & (1 << (c&7))) != 0) continue;    /* With main loop */
+	if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+#if 0
+	if ( (locale_flag &  4) && isdigit(c) ) continue;    /* Locale \d */
+	if ( (locale_flag &  8) && !isdigit(c) ) continue;   /* Locale \D */
+	if ( (locale_flag & 16) && isspace(c) ) continue;    /* Locale \s */
+	if ( (locale_flag & 32) && !isspace(c) ) continue;   /* Locale \S */
+#endif
+
+        if (md->runtime_caseless)
+          {
+          c = pcre_fcc[c];
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;  /* With main loop */
+
+	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+          }
+        FAIL;
+        }
+
+      /* First, ensure the minimum number of matches are present. */
+
+      for (i = 1; i <= min; i++)
+        {
+        if (eptr >= md->end_subject) FAIL;
+        c = *eptr++;
+        if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+
+        if (md->runtime_caseless)
+          {
+          c = pcre_fcc[c];
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+          }
+        FAIL;
+        }
+
+      /* If max == min we can continue with the main loop without the
+      need to recurse. */
+
+      if (min == max) continue;
+
+      /* If minimizing, keep testing the rest of the expression and advancing
+      the pointer while it matches the class. */
+
+      if (minimize)
+        {
+        for (i = min;; i++)
+          {
+          if (match(eptr, ecode, offset_top, md)) SUCCEED;
+          if (i >= max || eptr >= md->end_subject) FAIL;
+          c = *eptr++;
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+
+          if (md->runtime_caseless)
+            {
+            c = pcre_fcc[c];
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	    if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	    if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+            }
+          FAIL;
+          }
+        /* Control never gets here */
+        }
+
+      /* If maximizing, find the longest possible run, then work backwards. */
+
+      else
+        {
+        uschar *pp = eptr;
+        for (i = min; i < max; eptr++, i++)
+          {
+          if (eptr >= md->end_subject) break;
+          c = *eptr;
+          if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	  if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	  if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+          if (md->runtime_caseless)
+            {
+            c = pcre_fcc[c];
+            if ((data[c/8] & (1 << (c&7))) != 0) continue;
+	    if ( (locale_flag &  1) && (isalpha(c) || c=='_') ) continue;   /* Locale \w */
+	    if ( (locale_flag &  2) && (!isalpha(c) && c!='_') ) continue;   /* Locale \W */
+            }
+          break;
+          }
+
         while (eptr >= pp)
           if (match(eptr--, ecode, offset_top, md)) SUCCEED;
         FAIL;
@@ -3622,6 +3951,7 @@ for (;;)
           if (match(eptr--, ecode, offset_top, md)) SUCCEED;
         FAIL;
         }
+      /* Control never gets here */
       }
 
     /* Caseful comparisons */
@@ -3645,6 +3975,133 @@ for (;;)
         for (i = min; i < max; i++)
           {
           if (eptr >= md->end_subject || c != *eptr) break;
+          eptr++;
+          }
+        while (eptr >= pp)
+         if (match(eptr--, ecode, offset_top, md)) SUCCEED;
+        FAIL;
+        }
+      }
+    /* Control never gets here */
+
+    /* Match a negated single character */
+
+    case OP_NOT:
+    if (eptr > md->end_subject) FAIL;
+    ecode++;
+    if (md->caseless)
+      {
+      if (pcre_lcc[*ecode++] == pcre_lcc[*eptr++]) FAIL;
+      }
+    else
+      {
+      if (*ecode++ == *eptr++) FAIL;
+      }
+    break;
+
+    /* Match a negated single character repeatedly. This is almost a repeat of
+    the code for a repeated single character, but I haven't found a nice way of
+    commoning these up that doesn't require a test of the positive/negative
+    option for each character match. Maybe that wouldn't add very much to the
+    time taken, but character matching *is* what this is all about... */
+
+    case OP_NOTEXACT:
+    min = max = (ecode[1] << 8) + ecode[2];
+    ecode += 3;
+    goto REPEATNOTCHAR;
+
+    case OP_NOTUPTO:
+    case OP_NOTMINUPTO:
+    min = 0;
+    max = (ecode[1] << 8) + ecode[2];
+    minimize = *ecode == OP_NOTMINUPTO;
+    ecode += 3;
+    goto REPEATNOTCHAR;
+
+    case OP_NOTSTAR:
+    case OP_NOTMINSTAR:
+    case OP_NOTPLUS:
+    case OP_NOTMINPLUS:
+    case OP_NOTQUERY:
+    case OP_NOTMINQUERY:
+    c = *ecode++ - OP_NOTSTAR;
+    minimize = (c & 1) != 0;
+    min = rep_min[c];                 /* Pick up values from tables; */
+    max = rep_max[c];                 /* zero for max => infinity */
+    if (max == 0) max = INT_MAX;
+
+    /* Common code for all repeated single-character matches. We can give
+    up quickly if there are fewer than the minimum number of characters left in
+    the subject. */
+
+    REPEATNOTCHAR:
+    if (min > md->end_subject - eptr) FAIL;
+    c = *ecode++;
+
+    /* The code is duplicated for the caseless and caseful cases, for speed,
+    since matching characters is likely to be quite common. First, ensure the
+    minimum number of matches are present. If min = max, continue at the same
+    level without recursing. Otherwise, if minimizing, keep trying the rest of
+    the expression and advancing one matching character if failing, up to the
+    maximum. Alternatively, if maximizing, find the maximum number of
+    characters and work backwards. */
+
+#ifdef DEBUG
+    printf("negative matching %c{%d,%d} against subject %.*s\n", c, min, max,
+      max, eptr);
+#endif
+
+    if (md->caseless)
+      {
+      c = pcre_lcc[c];
+      for (i = 1; i <= min; i++) if (c == pcre_lcc[*eptr++]) FAIL;
+      if (min == max) continue;
+      if (minimize)
+        {
+        for (i = min;; i++)
+          {
+          if (match(eptr, ecode, offset_top, md)) SUCCEED;
+          if (i >= max || eptr >= md->end_subject || c == pcre_lcc[*eptr++])
+            FAIL;
+          }
+        /* Control never gets here */
+        }
+      else
+        {
+        uschar *pp = eptr;
+        for (i = min; i < max; i++)
+          {
+          if (eptr >= md->end_subject || c == pcre_lcc[*eptr]) break;
+          eptr++;
+          }
+        while (eptr >= pp)
+          if (match(eptr--, ecode, offset_top, md)) SUCCEED;
+        FAIL;
+        }
+      /* Control never gets here */
+      }
+
+    /* Caseful comparisons */
+
+    else
+      {
+      for (i = 1; i <= min; i++) if (c == *eptr++) FAIL;
+      if (min == max) continue;
+      if (minimize)
+        {
+        for (i = min;; i++)
+          {
+          if (match(eptr, ecode, offset_top, md)) SUCCEED;
+          if (i >= max || eptr >= md->end_subject || c == *eptr++) FAIL;
+          }
+        /* Control never gets here */
+        }
+      else
+        {
+        uschar *pp = eptr;
+        for (i = min; i < max; i++)
+          {
+          if (eptr >= md->end_subject || c == *eptr) break;
           eptr++;
           }
         while (eptr >= pp)
@@ -3731,6 +4188,16 @@ for (;;)
       case OP_WORDCHAR:
       for (i = 1; i <= min; i++) if ((pcre_ctypes[*eptr++] & ctype_word) == 0)
         FAIL;
+      break;
+
+      case OP_NOT_WORDCHAR_L:
+      for (i = 1; i <= min; i++, eptr++) if (*eptr=='_' || isalpha(*eptr))
+        return FALSE;
+      break;
+
+      case OP_WORDCHAR_L:
+      for (i = 1; i <= min; i++, eptr++) if (*eptr!='_' && !isalpha(*eptr))
+        return FALSE;
       break;
       }
 
@@ -3826,8 +4293,25 @@ for (;;)
         case OP_WORDCHAR:
         for (i = min; i < max; i++)
           {
-          if (eptr >= md->end_subject || (pcre_ctypes[*eptr] & ctype_word) == 0)
-            break;
+	    if (eptr >= md->end_subject || (pcre_ctypes[*eptr] & ctype_word) == 0)
+	      break;
+	    eptr++;
+	  }
+	break;
+	case OP_NOT_WORDCHAR_L:
+	  for (i = min; i < max; i++)
+         {
+         if (eptr >= md->end_subject || (*eptr=='_' || isalpha(*eptr) ) )
+           break;
+         eptr++;
+         }
+       break;
+
+       case OP_WORDCHAR_L:
+       for (i = min; i < max; i++)
+         {
+         if (eptr >= md->end_subject || (*eptr!='_' && !isalpha(*eptr) ) )
+             break;
           eptr++;
           }
         break;
@@ -3887,6 +4371,7 @@ succeed:
 }
 
 
+
 /*************************************************
 *         Execute a Regular Expression           *
 *************************************************/
@@ -3896,25 +4381,26 @@ portions of the string if it matches. Two elements in the vector are set for
 each substring: the offsets to the start and end of the substring.
 
 Arguments:
-  re           points to the compiled expression
-  extra        points to "hints" from pcre_study() or is NULL
-  subject      points to the subject string
-  length       length of subject string (may contain binary zeros)
-  options      option bits
-  offsets      points to a vector of ints to be filled in with offsets
-  offsetcount  the number of elements in the vector
+  external_re     points to the compiled expression
+  external_extra  points to "hints" from pcre_study() or is NULL
+  subject         points to the subject string
+  length          length of subject string (may contain binary zeros)
+  options         option bits
+  offsets         points to a vector of ints to be filled in with offsets
+  offsetcount     the number of elements in the vector
 
-Returns:       > 0 => success; value is the number of elements filled in
-               = 0 => success, but offsets is not big enough
-                -1 => failed to match
-              < -1 => some kind of unexpected problem
+Returns:          > 0 => success; value is the number of elements filled in
+                  = 0 => success, but offsets is not big enough
+                   -1 => failed to match
+                 < -1 => some kind of unexpected problem
 */
 
 int
-pcre_exec(pcre *external_re, pcre_extra *external_extra, char *subject,
-  int length, int options, int *offsets, int offsetcount)
+pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
+  const char *subject, int length, int options, int *offsets, int offsetcount)
 {
 int resetcount;
+int ocount = offsetcount;
 int first_char = -1;
 match_data match_block;
 uschar *start_bits = NULL;
@@ -3935,13 +4421,16 @@ match_block.start_subject = (uschar *)subject;
 match_block.end_subject = match_block.start_subject + length;
 end_subject = match_block.end_subject;
 
-match_block.caseless = ((re->options | options) & PCRE_CASELESS) != 0;
-match_block.multiline = ((re->options |options) & PCRE_MULTILINE) != 0;
-match_block.dotall   = ((re->options |options) & PCRE_DOTALL) != 0;
+match_block.caseless  = ((re->options | options) & PCRE_CASELESS) != 0;
+match_block.runtime_caseless = match_block.caseless &&
+  (re->options & PCRE_CASELESS) == 0;
 
-match_block.offset_vector = offsets;            /* Where offsets go */
-match_block.offset_end = (offsetcount & (-2));  /* Past max permitted (even) */
-match_block.offset_overflow = FALSE;
+match_block.multiline = ((re->options | options) & PCRE_MULTILINE) != 0;
+match_block.dotall    = ((re->options | options) & PCRE_DOTALL) != 0;
+match_block.endonly   = ((re->options | options) & PCRE_DOLLAR_ENDONLY) != 0;
+
+match_block.notbol = (options & PCRE_NOTBOL) != 0;
+match_block.noteol = (options & PCRE_NOTEOL) != 0;
 
 match_block.errorcode = PCRE_ERROR_NOMATCH;     /* Default error */
 
@@ -3951,12 +4440,32 @@ match_block.errorcode = PCRE_ERROR_NOMATCH;     /* Default error */
   match_block.eptr = match_block.ecode = NULL;
   match_block.point = match_block.length = 0;
 
+/* If the expression has got more back references than the offsets supplied can
+hold, we get a temporary bit of working store to use during the matching.
+Otherwise, we can use the vector supplied, rounding down the size of it to a
+multiple of 2. */
+
+ocount &= (-2);
+if (re->top_backref > 0 && re->top_backref + 1 >= ocount/2)
+  {
+  ocount = re->top_backref * 2 + 2;
+  match_block.offset_vector = (pcre_malloc)(ocount * sizeof(int));
+  if (match_block.offset_vector == NULL) return PCRE_ERROR_NOMEMORY;
+#ifdef DEBUG
+  printf("Got memory to hold back references\n");
+#endif
+  }
+else match_block.offset_vector = offsets;
+
+match_block.offset_end = ocount;
+match_block.offset_overflow = FALSE;
+
 /* Compute the minimum number of offsets that we need to reset each time. Doing
 this makes a huge difference to execution time when there aren't many brackets
 in the pattern. */
 
 resetcount = 2 + re->top_bracket * 2;
-if (resetcount > offsetcount) resetcount = offsetcount;
+if (resetcount > offsetcount) resetcount = ocount;
 
 /* If MULTILINE is set at exec time but was not set at compile time, and the
 anchored flag is set, we must re-check because a setting provoked by ^ in the
@@ -3997,8 +4506,8 @@ if (!anchored)
 
 do
   {
-  register int *iptr = offsets;
-  register int *iend = offsets + resetcount;
+  register int *iptr = match_block.offset_vector;
+  register int *iend = iptr + resetcount;
 
   /* Reset the maximum number of extractions we might see. */
 
@@ -4034,7 +4543,7 @@ do
     while (start_match < end_subject)
       {
       register int c = *start_match;
-      if ((start_bits[c/8] & (1<<(c%8))) == 0) start_match++; else break;
+      if ((start_bits[c/8] & (1 << (c&7))) == 0) start_match++; else break;
       }
     }
 
@@ -4046,22 +4555,64 @@ do
 
   /* When a match occurs, substrings will be set for all internal extractions;
   we just need to set up the whole thing as substring 0 before returning. If
-  there were too many extractions, set the return code to zero. */
+  there were too many extractions, set the return code to zero. In the case
+  where we had to get some local store to hold offsets for backreferences, copy
+  those back references that we can. In this case there need not be overflow
+  if certain parts of the pattern were not used.
 
-  if (match(start_match, re->code, 2, &match_block))
+  Before starting the match, we have to set up a longjmp() target to enable
+  the "cut" operation to fail a match completely without backtracking. */
+
+  /* To handle errors such as running out of memory for the failure
+     stack, we need to save this location via setjmp(), so
+     error-handling code can call longjmp() to jump out of deeply-nested code. */
+  if (setjmp(match_block.error_env)==0)
     {
-    int rc = match_block.offset_overflow? 0 : match_block.end_offset_top/2;
+
+  if (setjmp(match_block.fail_env) == 0 &&
+      match(start_match, re->code, 2, &match_block))
+    {
+    int rc;
+
+    if (ocount != offsetcount)
+      {
+      if (offsetcount >= 4)
+        {
+        memcpy(offsets + 2, match_block.offset_vector + 2,
+          (offsetcount - 2) * sizeof(int));
+#ifdef DEBUG
+        printf("Copied offsets; freeing temporary memory\n");
+#endif
+        }
+      if (match_block.end_offset_top > offsetcount)
+        match_block.offset_overflow = TRUE;
+
+#ifdef DEBUG
+      printf("Freeing temporary memory\n");
+#endif
+
+      (pcre_free)(match_block.offset_vector);
+      }
+  
+    rc = match_block.offset_overflow? 0 : match_block.end_offset_top/2;
+
     if (match_block.offset_end < 2) rc = 0; else
       {
       offsets[0] = start_match - match_block.start_subject;
       offsets[1] = match_block.end_match_ptr - match_block.start_subject;
       }
+
 #ifdef DEBUG
     printf(">>>> returning %d\n", rc);
 #endif
     free_stack(&match_block);
     return rc;
     }
+  }  /* End of (if setjmp(match_block.error_env)...) */
+  /* Return an error code; pcremodule.c will preserve the exception */
+  if (PyErr_Occurred()) return PCRE_ERROR_NOMEMORY;
+
+  free_stack(&match_block);
   }
 while (!anchored &&
        match_block.errorcode == PCRE_ERROR_NOMATCH &&
@@ -4070,8 +4621,18 @@ while (!anchored &&
 #ifdef DEBUG
 printf(">>>> returning %d\n", match_block.errorcode);
 #endif
-free_stack(&match_block);
+
 return match_block.errorcode;
 }
 
 /* End of pcre.c */
+
+
+
+
+
+
+
+
+
+
