@@ -43,6 +43,11 @@ have any value except INVALID_SOCKET.
 #include <unistd.h>
 #endif
 
+#ifdef __sgi
+/* This is missing from unistd.h */
+extern void bzero();
+#endif
+
 #include <sys/types.h>
 
 #ifdef MS_WINDOWS
