@@ -198,7 +198,11 @@ On Mac~OS, ... \XXX{again, how do you run Python scripts on Mac~OS?}
 Running \code{setup.py install} builds and installs all modules in one
 fell swoop.  If you prefer to work incrementally---especially useful if
 you want to customize the build process, or if things are going
-wrong---you can use the setup script to do one thing at a time.
+wrong---you can use the setup script to do one thing at a time.  This is
+particularly helpful when the build and install will be done by
+different users---e.g., you might want to build a module distribution
+and hand it off to a system administrator for installation (or do it
+yourself, with super-user privileges).
 
 For example, you can build everything in one step, and then install
 everything in a second step, by invoking the setup script twice:
