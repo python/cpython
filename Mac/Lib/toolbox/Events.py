@@ -1,4 +1,4 @@
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
+# Generated from 'sap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Events.h'
 
 nullEvent = 0
 mouseDown = 1
@@ -10,6 +10,7 @@ updateEvt = 6
 diskEvt = 7
 activateEvt = 8
 osEvt = 15
+kHighLevelEvent = 23
 mDownMask = 0x0002
 mUpMask = 0x0004
 keyDownMask = 0x0008

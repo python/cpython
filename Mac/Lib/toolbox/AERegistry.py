@@ -1,4 +1,4 @@
-# Generated from 'flap:CW9 Gold:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AERegistry.h'
+# Generated from 'sap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:AERegistry.h'
 
 cAEList = 'list'
 cApplication = 'capp'
