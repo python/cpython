@@ -2,49 +2,54 @@
 
 # Phase I: list all the things that can be imported
 
-import glob, os, sys, string
-modules={}
+import glob
+import os.path
+import sys
+
+modules = {}
 
 for modname in sys.builtin_module_names:
-    modules[modname]=modname
+    modules[modname] = modname
     
 for dir in sys.path:
     # Look for *.py files
-    filelist=glob.glob(os.path.join(dir, '*.py'))
+    filelist = glob.glob(os.path.join(dir, '*.py'))
     for file in filelist: 
         path, file = os.path.split(file)
-        base, ext=os.path.splitext(file)
-        modules[string.lower(base)]=base
+        base, ext = os.path.splitext(file)
+        modules[base.lower()] = base
 
     # Look for shared library files
-    filelist=(glob.glob(os.path.join(dir, '*.so')) + 
-              glob.glob(os.path.join(dir, '*.sl')) +
-              glob.glob(os.path.join(dir, '*.o')) )
+    filelist = (glob.glob(os.path.join(dir, '*.so')) + 
+                glob.glob(os.path.join(dir, '*.sl')) +
+                glob.glob(os.path.join(dir, '*.o')) )
     for file in filelist: 
         path, file = os.path.split(file)
-        base, ext=os.path.splitext(file)
-        if base[-6:]=='module': base=base[:-6]
-        modules[string.lower(base)]=base
+        base, ext = os.path.splitext(file)
+        if base[-6:] == 'module':
+            base = base[:-6]
+        modules[base.lower()] = base
 
 # Minor oddity: the types module is documented in libtypes2.tex
 if modules.has_key('types'):
-    del modules['types'] ; modules['types2']=None
+    del modules['types']
+    modules['types2'] = None
 
 # Phase II: find all documentation files (lib*.tex)
 #           and eliminate modules that don't have one.
 
-docs={}
-filelist=glob.glob('lib*.tex')
+docs = {}
+filelist = glob.glob('lib*.tex')
 for file in filelist:
-    modname=file[3:-4]
-    docs[modname]=modname
+    modname = file[3:-4]
+    docs[modname] = modname
 
-mlist=modules.keys()
-mlist=filter(lambda x, docs=docs: docs.has_key(x), mlist)
+mlist = modules.keys()
+mlist = filter(lambda x, docs=docs: docs.has_key(x), mlist)
 mlist.sort()
-mlist=map(lambda x, docs=docs: docs[x], mlist)
+mlist = map(lambda x, docs=docs: docs[x], mlist)
 
-modules=mlist
+modules = mlist
 
 # Phase III: write custlib.tex
 
