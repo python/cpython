@@ -7,38 +7,6 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>py</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>PythonSource.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Python Module</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>TEXT</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Shell</string>
-		</dict>
-		<dict>
-			<key>CFBundleTypeExtensions</key>
-			<array>
-				<string>pyc</string>
-			</array>
-			<key>CFBundleTypeIconFile</key>
-			<string>PythonCompiled.icns</string>
-			<key>CFBundleTypeName</key>
-			<string>Python Compiled Module</string>
-			<key>CFBundleTypeOSTypes</key>
-			<array>
-				<string>PYC</string>
-			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Shell</string>
-		</dict>
-		<dict>
 			<key>CFBundleTypeOSTypes</key>
 			<array>
 				<string>****</string>
