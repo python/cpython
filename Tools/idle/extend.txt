@@ -7,7 +7,7 @@ to make other changes to IDLE, but this must be done by editing the IDLE
 source code.)
 
 The list of extensions loaded at startup time is configured by editing
-the file extend.py; see below for details.
+the file config.txt; see below for details.
 
 An IDLE extension is defined by a class.  Methods of the class define
 actions that are invoked by those bindings or menu entries. Class (or
@@ -86,11 +86,25 @@ class ZoomHeight:
     def zoom_height_event(self, event):
         "...Do what you want here..."
 
-The final piece of the puzzle is the file "extend.py", which contains a
-simple table used to configure the loading of extensions.  This file
-currently contains a single list variable named "standard", which is a
-list of extension names that are to be loaded.  (In the future, other
-configuration variables may be added to this module.)
+The final piece of the puzzle is the file "config.txt", which is used
+to to configure the loading of extensions.  For each extension,
+you must include a section in config.txt (or in any of the other
+configuration files that are consulted at startup: config-unix.txt,
+config-win.txt, or ~/.idle).  A section is headed by the module name
+in square brackets, e.g.
+
+    [ZoomHeight]
+
+The section may be empty, or it may define configuration options for
+the extension.  (See ParenMatch.py for an example.)  A special option
+is 'enable': including
+
+    enable = 0
+
+in a section disables that extension.  More than one configuration
+file may specify options for the same extension, so a user may disable
+an extension that is loaded by default, or enable an extension that is
+disabled by default.
 
 Extensions can define key bindings and menu entries that reference
 events they don't implement (including standard events); however this is
