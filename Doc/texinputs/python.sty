@@ -872,8 +872,13 @@
 %  \versionadded{1.5.2}
 %  \versionchanged[short explanation]{2.0}
 %
-\newcommand{\versionadded}[1]{%
-  {  New in version #1.  }}
+\newcommand{\versionadded}[2][\py@badkey]{%
+  \ifx#1\@undefined%
+    {  New in version #2.  }%
+  \else%
+    {  New in version #2:\ #1.  }%
+  \fi%
+}
 \newcommand{\versionchanged}[2][\py@badkey]{%
   \ifx#1\@undefined%
     {  Changed in version #2.  }%
