@@ -1,3 +1,81 @@
+
+========================================
+==> Release 1.2 BETA 4 (21 Mar 1995) <==
+========================================
+
+Tue Mar 21 13:28:32 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Python/ceval.c (call_object): removed #ifdef'ed out code
+
+Mon Mar 20 17:14:14 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/copy.py (_copy_dispatch): fix typo in hasattr() exprs
+
+Sat Mar 18 00:04:14 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Makefile.in: change -f Makefile.in to -f $(srcdir)/Makefile.in
+
+Fri Mar 17 10:52:07 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/tkinter/Tkinter.py: add TkVersion and TclVersion variables;
+	handle crash in callback different (don't drop into debugger); add
+	_getdoubles() and streamline _getints()
+
+	* Doc/lib*.tex: mass update
+
+	* Doc/partparse.py: fix several small things so it doesn't crash
+	so easily
+
+	* Modules/threadmodule.c: change exit_thread so it raises
+	SystemExit -- this allow proper cleanup in t_bootstrap
+
+	* Makefile.in (distclean): add -f Makefile.in (John Interrante)
+
+Thu Mar 16 13:35:25 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Doc/ref*.tex: made palatable to latex2html -- basically rewrote
+	all math using \code{} and \var{} (and pow() and some integer
+	literals), and added braces to some \item[]s containing \tt
+
+	* Modules/socketmodule.c: fixed up comments describing interface
+
+	* Lib/test/test_signal.py: new module to test signal module
+
+Wed Mar 15 11:07:43 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Modules/signalmodule.c (PySignal_Signal): use PyCallable_Check
+	where suitable; split some lines
+
+	* Lib/posixfile.py (open) defaults mode='r', bufsize=-1
+
+Tue Mar 14 10:42:39 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/copy.py: rename copy.Error to copy.error
+
+	* Lib/cgi.py: correct some typos that broke escape() and print_form()
+
+	* Lib/string.py: add (unsupported) optional base argument to
+	atoi() and atol(); be more careful about very negative start
+	indices in [r]find() and count()
+
+	* Modules/timemodule.c: tiny additions for Windows 3.1
+
+	* Modules/gdbmmodule.c: plugged some memory leaks (Steve Clift)
+
+	* Modules/socketmodule.c (makefile): made mode optional and added
+	optional buffer size, like built-in open()
+
+Mon Mar 13 11:26:20 1995  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* Lib/pickle.py: added ability to pickle classes (could be used
+	for exceptions in RPC); made format_version non-hidden variable,
+	added compatible_formats variable, added shorthand functions
+	dump(), load(), dumps() and loads() -- similar to marshal
+
+	* Python/pythonrun.c (fatal): In NT, write msg to debugging device
+
+	* Doc/lib*.tex: small changes by Soren Larsen
+
 Thu Mar  9 15:06:02 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Lib/pickle.py: added explicit exception for unpicklable object
