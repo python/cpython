@@ -19,10 +19,7 @@ time).\n\
 \n\
 All functions in this module take a file descriptor fd as their first\n\
 argument. This must be an integer file descriptor, such as returned by\n\
-sys.stdin.fileno().\n\
-\n\
-This module should be used in conjunction with the TERMIOS module,\n\
-which defines the relevant symbolic constants.";
+sys.stdin.fileno().";
 
 
 #ifdef __BEOS__
@@ -47,7 +44,7 @@ of the tty special characters (each a string of length 1, except the items\n\
 with indices VMIN and VTIME, which are integers when these fields are\n\
 defined).  The interpretation of the flags and the speeds as well as the\n\
 indexing in the cc array must be done using the symbolic constants defined\n\
-in the TERMIOS module.";
+in this module.";
 
 static PyObject *
 termios_tcgetattr(PyObject *self, PyObject *args)
@@ -122,9 +119,9 @@ tcsetattr(fd, when, attributes) -> None\n\
 Set the tty attributes for file descriptor fd.\n\
 The attributes to be set are taken from the attributes argument, which\n\
 is a list like the one returned by tcgetattr(). The when argument\n\
-determines when the attributes are changed: TERMIOS.TCSANOW to\n\
-change immediately, TERMIOS.TCSADRAIN to change after transmitting all\n\
-queued output, or TERMIOS.TCSAFLUSH to change after transmitting all\n\
+determines when the attributes are changed: termios.TCSANOW to\n\
+change immediately, termios.TCSADRAIN to change after transmitting all\n\
+queued output, or termios.TCSAFLUSH to change after transmitting all\n\
 queued output and discarding all queued input. ";
 
 static PyObject *
@@ -237,8 +234,8 @@ termios_tcdrain(PyObject *self, PyObject *args)
 static char termios_tcflush__doc__[] = "\
 tcflush(fd, queue) -> None\n\
 Discard queued data on file descriptor fd.\n\
-The queue selector specifies which queue: TERMIOS.TCIFLUSH for the input\n\
-queue, TERMIOS.TCOFLUSH for the output queue, or TERMIOS.TCIOFLUSH for\n\
+The queue selector specifies which queue: termios.TCIFLUSH for the input\n\
+queue, termios.TCOFLUSH for the output queue, or termios.TCIOFLUSH for\n\
 both queues. ";
 
 static PyObject *
@@ -262,9 +259,9 @@ termios_tcflush(PyObject *self, PyObject *args)
 static char termios_tcflow__doc__[] = "\
 tcflow(fd, action) -> None\n\
 Suspend or resume input or output on file descriptor fd.\n\
-The action argument can be TERMIOS.TCOOFF to suspend output,\n\
-TERMIOS.TCOON to restart output, TERMIOS.TCIOFF to suspend input,\n\
-or TERMIOS.TCION to restart input. ";
+The action argument can be termios.TCOOFF to suspend output,\n\
+termios.TCOON to restart output, termios.TCIOFF to suspend input,\n\
+or termios.TCION to restart input.";
 
 static PyObject *
 termios_tcflow(PyObject *self, PyObject *args)
