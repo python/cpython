@@ -99,6 +99,7 @@ class AllTest(unittest.TestCase):
         self.check_all("glob")
         self.check_all("gopherlib")
         self.check_all("gzip")
+        self.check_all("heapq")
         self.check_all("htmllib")
         self.check_all("httplib")
         self.check_all("ihooks")
