@@ -27,6 +27,9 @@ class TextEdit:
 	def settext(self, text):
 		self.editor.settext(text)
 	#
+	def gettext(self):
+		return self.editor.gettext(text)
+	#
 	# Downcalls from parent to child
 	#
 	def destroy(self):
