@@ -83,6 +83,8 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 # $(shell) function here to work around that restriction by
 # identifying mkhowto and the commontex/ directory using absolute paths.
 #
+# If your doc build fails immediately, you may need to switch to GNU make.
+# (e.g. OpenBSD needs package gmake installed; use gmake instead of make)
 PWD=$(shell pwd)
 
 # (The trailing colon in the value is needed; TeX places it's default
