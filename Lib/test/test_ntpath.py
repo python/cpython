@@ -1,4 +1,5 @@
 import ntpath
+from test_support import verbose
 import os
 
 errors = 0
@@ -15,16 +16,22 @@ def tester(fn, wantResult):
         global errors
         errors = errors + 1
 
-tester('ntpath.splitdrive("c:\\foo\\bar")', ('c:', '\\foo\\bar'))
-tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint', '\\foo\\bar'))
-tester('ntpath.splitdrive("c:/foo/bar")', ('c:', '/foo/bar'))
-tester('ntpath.splitunc("//conky/mountpoint/foo/bar")', ('//conky/mountpoint', '/foo/bar'))
+tester('ntpath.splitdrive("c:\\foo\\bar")',
+       ('c:', '\\foo\\bar'))
+tester('ntpath.splitunc("\\\\conky\\mountpoint\\foo\\bar")',
+       ('\\\\conky\\mountpoint', '\\foo\\bar'))
+tester('ntpath.splitdrive("c:/foo/bar")',
+       ('c:', '/foo/bar'))
+tester('ntpath.splitunc("//conky/mountpoint/foo/bar")',
+       ('//conky/mountpoint', '/foo/bar'))
 
 tester('ntpath.split("c:\\foo\\bar")', ('c:\\foo', 'bar'))
-tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")', ('\\\\conky\\mountpoint\\foo', 'bar'))
+tester('ntpath.split("\\\\conky\\mountpoint\\foo\\bar")',
+       ('\\\\conky\\mountpoint\\foo', 'bar'))
 
 tester('ntpath.split("c:\\")', ('c:\\', ''))
-tester('ntpath.split("\\\\conky\\mountpoint\\")', ('\\\\conky\\mountpoint', ''))
+tester('ntpath.split("\\\\conky\\mountpoint\\")',
+       ('\\\\conky\\mountpoint', ''))
 
 tester('ntpath.split("c:/")', ('c:/', ''))
 tester('ntpath.split("//conky/mountpoint/")', ('//conky/mountpoint', ''))
@@ -45,5 +52,5 @@ tester('ntpath.commonprefix(["/home/swen/spam", "/home/swen/spam"])',
 
 if errors:
     print str(errors) + " errors."
-else:
+elif verbose:
     print "No errors.  Thank your lucky stars."
