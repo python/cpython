@@ -3345,10 +3345,11 @@ datetime_getdate(PyDateTime_DateTime *self)
 static PyObject *
 datetime_gettime(PyDateTime_DateTime *self)
 {
-	return new_time(DATE_GET_HOUR(self),
-			DATE_GET_MINUTE(self),
-			DATE_GET_SECOND(self),
-			DATE_GET_MICROSECOND(self));
+	return new_timetz(DATE_GET_HOUR(self),
+			  DATE_GET_MINUTE(self),
+			  DATE_GET_SECOND(self),
+			  DATE_GET_MICROSECOND(self),
+			  Py_None);
 }
 
 /* Pickle support.  Quite a maze! */
@@ -3457,8 +3458,7 @@ static PyMethodDef datetime_methods[] = {
          PyDoc_STR("Return date object with same year, month and day.")},
 
 	{"time",   (PyCFunction)datetime_gettime, METH_NOARGS,
-         PyDoc_STR("Return time object with same hour, minute, second and "
-         	   "microsecond.")},
+         PyDoc_STR("Return time object with same time but with tzinfo=None.")},
 
 	{"ctime",       (PyCFunction)datetime_ctime,	METH_NOARGS,
 	 PyDoc_STR("Return ctime() style string.")},
@@ -4403,7 +4403,7 @@ static PyNumberMethods timetz_as_number = {
 statichere PyTypeObject PyDateTime_TimeTZType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
-	"datetime.timetz",			/* tp_name */
+	"datetime.time",			/* tp_name */
 	sizeof(PyDateTime_TimeTZ),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	(destructor)timetz_dealloc,		/* tp_dealloc */
@@ -5119,7 +5119,7 @@ static PyNumberMethods datetimetz_as_number = {
 statichere PyTypeObject PyDateTime_DateTimeTZType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
-	"datetime.datetimetz",			/* tp_name */
+	"datetime.datetime",			/* tp_name */
 	sizeof(PyDateTime_DateTimeTZ),		/* tp_basicsize */
 	0,					/* tp_itemsize */
 	(destructor)datetimetz_dealloc,		/* tp_dealloc */
@@ -5424,24 +5424,17 @@ initdatetime(void)
 	Py_INCREF(&PyDateTime_DateType);
 	PyModule_AddObject(m, "date", (PyObject *) &PyDateTime_DateType);
 
-	Py_INCREF(&PyDateTime_DateTimeType);
-	PyModule_AddObject(m, "datetime",
-			   (PyObject *) &PyDateTime_DateTimeType);
-
 	Py_INCREF(&PyDateTime_DeltaType);
 	PyModule_AddObject(m, "timedelta", (PyObject *) &PyDateTime_DeltaType);
-
-	Py_INCREF(&PyDateTime_TimeType);
-	PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeType);
 
 	Py_INCREF(&PyDateTime_TZInfoType);
 	PyModule_AddObject(m, "tzinfo", (PyObject *) &PyDateTime_TZInfoType);
 
 	Py_INCREF(&PyDateTime_TimeTZType);
-	PyModule_AddObject(m, "timetz", (PyObject *) &PyDateTime_TimeTZType);
+	PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeTZType);
 
 	Py_INCREF(&PyDateTime_DateTimeTZType);
-	PyModule_AddObject(m, "datetimetz",
+	PyModule_AddObject(m, "datetime",
 			   (PyObject *)&PyDateTime_DateTimeTZType);
 
 	/* A 4-year cycle has an extra leap day over what we'd get from
