@@ -16,6 +16,10 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
+.B \-m 
+.I module-name
+]
+[
 .B \-O
 ]
 .br
@@ -106,6 +110,13 @@ used, enter interactive mode after executing the script or the
 command.  It does not read the $PYTHONSTARTUP file.  This can be
 useful to inspect global variables or a stack trace when a script
 raises an exception.
+.TP
+.BI "\-m " module-name
+Searches 
+.I sys.path 
+for the named module and runs the corresponding 
+.I .py 
+file as a script.
 .TP
 .B \-O
 Turn on basic optimizations.  This changes the filename extension for
