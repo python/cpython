@@ -182,6 +182,7 @@
 %% {\command}.  This works better with the texinfo translation.
 \newcommand{\ABC}{{\sc abc}}
 \newcommand{\UNIX}{{\sc Unix}}
+\newcommand{\POSIX}{POSIX}
 \newcommand{\ASCII}{{\sc ascii}}
 \newcommand{\Cpp}{C\protect\raisebox{.18ex}{++}}
 \newcommand{\C}{C}
@@ -207,6 +208,25 @@
 
 \newif\iftexi\texifalse
 \newif\iflatex\latextrue
+
+% Proposed new macros:  These should be used for all references to identifiers
+% which are used to refer to instances of specific language constructs.  See
+% the names for specific semantic assignments.
+%
+% For now, don't do anything really fancy with them, but note that \func and
+% \method append trailing parentheses.
+%
+\let\module=\code
+\let\kw=\code
+\let\exc=\code
+\let\class=\code
+\newcommand{\func}[1]{\code{#1()}}
+\newcommand{\method}[1]{\code{#1()}}
+
+\newcommand{\manpage}[2]{{\emph{#1}(#2)}}
+\let\email=\code
+\let\url=\code
+
 
 \newenvironment{tableii}[4]{\begin{center}\def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}\begin{tabular}{#1}\hline#3&#4\\
 \hline}{\hline\end{tabular}\end{center}}
