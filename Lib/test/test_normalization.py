@@ -46,7 +46,7 @@ for line in data:
 
     if verbose:
         print line
-    
+
     # Perform tests
     verify(c2 ==  NFC(c1) ==  NFC(c2) ==  NFC(c3), line)
     verify(c4 ==  NFC(c4) ==  NFC(c5), line)
@@ -65,4 +65,3 @@ for c in range(sys.maxunicode+1):
     if X in part1_data:
         continue
     assert X == NFC(X) == NFD(X) == NFKC(X) == NFKD(X), c
-    

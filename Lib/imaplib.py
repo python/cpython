@@ -330,7 +330,7 @@ class IMAP4:
         """
         mech = mechanism.upper()
         cap = 'AUTH=%s' % mech
-        #if not cap in self.capabilities:	# Let the server decide!
+        #if not cap in self.capabilities:       # Let the server decide!
         #    raise self.error("Server doesn't allow %s authentication." % mech)
         self.literal = _Authenticator(authobject).process
         typ, dat = self._simple_command('AUTHENTICATE', mech)
@@ -1401,7 +1401,7 @@ if __name__ == '__main__':
         else:
             M = IMAP4(host)
         if M.state == 'AUTH':
-            test_seq1 = test_seq1[1:]	# Login not needed
+            test_seq1 = test_seq1[1:]   # Login not needed
         M._mesg('PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION)
         M._mesg('CAPABILITIES = %s' % `M.capabilities`)
 

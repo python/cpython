@@ -233,7 +233,7 @@ class TableDBTestCase(unittest.TestCase):
         assert len(values) == 1, values
         assert values[0]['d'] == "is for dog", values
         assert values[0]['a'] == "is for aardvark", values
-    
+
     def test_Delete(self):
         tabname = "test_Delete"
         self.tdb.CreateTable(tabname, ['x', 'y', 'z'])

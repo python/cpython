@@ -248,10 +248,10 @@ class ShelveAssociateTestCase(AssociateTestCase):
 
 
 class ShelveAssociateHashTestCase(ShelveAssociateTestCase):
-      dbtype = db.DB_HASH
+    dbtype = db.DB_HASH
 
 class ShelveAssociateBTreeTestCase(ShelveAssociateTestCase):
-      dbtype = db.DB_BTREE
+    dbtype = db.DB_BTREE
 
 class ShelveAssociateRecnoTestCase(ShelveAssociateTestCase):
     dbtype = db.DB_RECNO
@@ -287,10 +287,10 @@ class ThreadedAssociateTestCase(AssociateTestCase):
 
 
 class ThreadedAssociateHashTestCase(ShelveAssociateTestCase):
-      dbtype = db.DB_HASH
+    dbtype = db.DB_HASH
 
 class ThreadedAssociateBTreeTestCase(ShelveAssociateTestCase):
-      dbtype = db.DB_BTREE
+    dbtype = db.DB_BTREE
 
 class ThreadedAssociateRecnoTestCase(ShelveAssociateTestCase):
     dbtype = db.DB_RECNO

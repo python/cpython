@@ -221,13 +221,13 @@ if have_unicode:
 
 test_exc('%d', '1', TypeError, "int argument required")
 test_exc('%g', '1', TypeError, "float argument required")
-test_exc('no format', '1', TypeError, 
+test_exc('no format', '1', TypeError,
          "not all arguments converted during string formatting")
-test_exc('no format', u'1', TypeError, 
+test_exc('no format', u'1', TypeError,
          "not all arguments converted during string formatting")
-test_exc(u'no format', '1', TypeError, 
+test_exc(u'no format', '1', TypeError,
          "not all arguments converted during string formatting")
-test_exc(u'no format', u'1', TypeError, 
+test_exc(u'no format', u'1', TypeError,
          "not all arguments converted during string formatting")
 
 if sys.maxint == 2**32-1:
