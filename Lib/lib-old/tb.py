@@ -5,7 +5,7 @@ import sys
 try:
 	import mac
 	os = mac
-except NameError:
+except ImportError:
 	import posix
 	os = posix
 from stat import *
