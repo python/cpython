@@ -495,6 +495,37 @@ Some details you should read once, but won't need to remember:
 \item When the \constant{IGNORE_EXCEPTION_DETAIL} doctest option is
   is specified, everything following the leftmost colon is ignored.
 
+\item The interactive shell omits the traceback header line for some
+  \exception{SyntaxError}s.  But doctest uses the traceback header
+  line to distinguish exceptions from non-exceptions.  So in the rare
+  case where you need to test a \exception{SyntaxError} that omits the
+  traceback header, you will need to manually add the traceback header
+  line to your test example.
+  
+\item For some \exception{SyntaxError}s, Python displays the character
+  position of the syntax error, using a \code{\^} marker:
+
+\begin{verbatim}
+>>> 1 1
+  File "<stdin>", line 1
+    1 1
+      ^
+SyntaxError: invalid syntax
+\end{verbatim}
+
+  Since the lines showing the position of the error come before the
+  exception type and detail, they are not checked by doctest.  For
+  example, the following test would pass, even though it puts the
+  \code{\^} marker in the wrong location:
+
+\begin{verbatim}
+>>> 1 1
+  File "<stdin>", line 1
+    1 1
+    ^
+SyntaxError: invalid syntax
+\end{verbatim}
+
 \end{itemize}
 
 \versionchanged[The ability to handle a multi-line exception detail,
