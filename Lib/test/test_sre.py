@@ -114,6 +114,9 @@ test(r"""sre.sub(r'^\s*', 'X', 'test')""", 'Xtest')
 test(r"""sre.sub(r'a', 'b', 'aaaaa')""", 'bbbbb')
 test(r"""sre.sub(r'a', 'b', 'aaaaa', 1)""", 'baaaa')
 
+# bug 114660
+test(r"""sre.sub(r'(\S)\s+(\S)', r'\1 \2', 'hello  there')""", 'hello there')
+
 if verbose:
     print 'Running tests on symbolic references'
 
