@@ -1168,11 +1168,17 @@ com_call_function(c, n)
 	else {
 		PyObject *keywords = NULL;
 		int i, na, nk;
+		int lineno = n->n_lineno;
 		REQ(n, arglist);
 		na = 0;
 		nk = 0;
 		for (i = 0; i < NCH(n); i += 2) {
-			com_argument(c, CHILD(n, i), &keywords);
+			node *ch = CHILD(n, i);
+			if (ch->n_lineno != lineno) {
+				lineno = ch->n_lineno;
+				com_addoparg(c, SET_LINENO, lineno);
+			}
+			com_argument(c, ch, &keywords);
 			if (keywords == NULL)
 				na++;
 			else
