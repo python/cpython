@@ -120,6 +120,19 @@ Verify re-use of tuples (a side benefit of using genexps over listcomps)
     >>> max(tupleids) - min(tupleids)
     0
 
+Verify that syntax error's are raised for genexps used as lvalues
+
+    >>> (y for y in (1,2)) = 10
+    Traceback (most recent call last):
+       ...
+    SyntaxError: assign to generator expression not possible
+
+    >>> (y for y in (1,2)) += 10
+    Traceback (most recent call last):
+       ...
+    SyntaxError: augmented assign to tuple literal or generator expression not possible
+
+
 
 ########### Tests borrowed from or inspired by test_generators.py ############
 
