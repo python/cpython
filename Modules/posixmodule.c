@@ -3416,7 +3416,7 @@ posix_readlink(PyObject *self, PyObject *args)
 #ifdef HAVE_SYMLINK
 static char posix_symlink__doc__[] =
 "symlink(src, dst) -> None\n\
-Create a symbolic link.";
+Create a symbolic link pointing to src named dst.";
 
 static PyObject *
 posix_symlink(PyObject *self, PyObject *args)
