@@ -32,8 +32,7 @@ staticforward PyTypeObject Xxtype;
 #define is_xxobject(v)		((v)->ob_type == &Xxtype)
 
 static xxobject *
-newxxobject(arg)
-	PyObject *arg;
+newxxobject(PyObject *arg)
 {
 	xxobject *xp;
 	xp = PyObject_NEW(xxobject, &Xxtype);
@@ -46,33 +45,28 @@ newxxobject(arg)
 /* Xx methods */
 
 static void
-xx_dealloc(xp)
-	xxobject *xp;
+xx_dealloc(xxobject *xp)
 {
 	Py_XDECREF(xp->x_attr);
 	PyObject_DEL(xp);
 }
 
 static PyObject *
-xx_demo(self, args)
-	xxobject *self;
-	PyObject *args;
+xx_demo(xxobject *self, PyObject *args)
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ":demo"))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 static PyMethodDef xx_methods[] = {
-	{"demo",	(PyCFunction)xx_demo},
+	{"demo",	(PyCFunction)xx_demo,	METH_VARARGS},
 	{NULL,		NULL}		/* sentinel */
 };
 
 static PyObject *
-xx_getattr(xp, name)
-	xxobject *xp;
-	char *name;
+xx_getattr(xxobject *xp, char *name)
 {
 	if (xp->x_attr != NULL) {
 		PyObject *v = PyDict_GetItemString(xp->x_attr, name);
@@ -85,10 +79,7 @@ xx_getattr(xp, name)
 }
 
 static int
-xx_setattr(xp, name, v)
-	xxobject *xp;
-	char *name;
-	PyObject *v;
+xx_setattr(xxobject *xp, char *name, PyObject *v)
 {
 	if (xp->x_attr == NULL) {
 		xp->x_attr = PyDict_New();
@@ -99,7 +90,7 @@ xx_setattr(xp, name, v)
 		int rv = PyDict_DelItemString(xp->x_attr, name);
 		if (rv < 0)
 			PyErr_SetString(PyExc_AttributeError,
-			        "delete non-existing xx attribute");
+                                        "delete non-existing xx attribute");
 		return rv;
 	}
 	else
