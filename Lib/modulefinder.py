@@ -1,6 +1,6 @@
 """Find modules used by a script, using introspection."""
 
-# This module should be kept compatible with Python 1.5.2, see PEP 291.
+# This module should be kept compatible with Python 2.2, see PEP 291.
 
 import dis
 import imp
