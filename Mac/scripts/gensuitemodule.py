@@ -127,6 +127,7 @@ def processfile_fromresource(fullname, output=None, basepkgname=None,
 def processfile(fullname, output=None, basepkgname=None, 
 		edit_modnames=None, creatorsignature=None):
 	"""Ask an application for its terminology and process that"""
+	print "\nASKING FOR aete DICTIONARY IN", `fullname`
 	try:
 		aedescobj, launched = OSATerminology.GetAppTerminology(fullname)
 	except MacOS.Error, arg:
@@ -856,8 +857,10 @@ class ObjectCompiler:
 				self.fp.write('\t"""%s - %s """\n' % (ascii(name), ascii(desc)))
 				self.fp.write('\twant = %s\n' % `code`)
 		self.namemappers[0].addnamecode('class', pname, code)
+		properties.sort()
 		for prop in properties:
 			self.compileproperty(prop)
+		elements.sort()
 		for elem in elements:
 			self.compileelement(elem)
 	
@@ -925,6 +928,9 @@ class ObjectCompiler:
 					self.fp.write("# XXXX %s element %s not found!!\n"%(cname, `ecode`))
 			else:
 				elist.append((name, ename))
+				
+		plist.sort()
+		elist.sort()
 		
 		if self.fp:
 			self.fp.write("%s._privpropdict = {\n"%cname)
@@ -974,20 +980,32 @@ class ObjectCompiler:
 		if not self.fp:
 			return
 		self.fp.write("\n#\n# Indices of types declared in this module\n#\n")
+		
 		self.fp.write("_classdeclarations = {\n")
-		for k, v in self.namemappers[0].getall('class'):
+		classlist = self.namemappers[0].getall('class')
+		classlist.sort()
+		for k, v in classlist:
 			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
+		
 		self.fp.write("\n_propdeclarations = {\n")
-		for k, v in self.namemappers[0].getall('property'):
+		proplist = self.namemappers[0].getall('property')
+		proplist.sort()
+		for k, v in proplist:
 			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
+		
 		self.fp.write("\n_compdeclarations = {\n")
-		for k, v in self.namemappers[0].getall('comparison'):
+		complist = self.namemappers[0].getall('comparison')
+		complist.sort()
+		for k, v in complist:
 			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
+		
 		self.fp.write("\n_enumdeclarations = {\n")
-		for k, v in self.namemappers[0].getall('enum'):
+		enumlist = self.namemappers[0].getall('enum')
+		enumlist.sort()
+		for k, v in enumlist:
 			self.fp.write("\t%s : %s,\n" % (`k`, v))
 		self.fp.write("}\n")
 
