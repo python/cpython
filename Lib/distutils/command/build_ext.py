@@ -308,6 +308,16 @@ class build_ext (Command):
             rpath = build_info.get ('rpath')
             extra_args = build_info.get ('extra_link_args') or []
 
+            # XXX this is a kludge!  Knowledge of specific compilers or
+            # platforms really doesn't belong here; in an ideal world, the
+            # CCompiler interface would provide access to everything in a
+            # compiler/linker system needs to build Python extensions, and
+            # we would just do everything nicely and cleanly through that
+            # interface.  However, this is a not an ideal world and the
+            # CCompiler interface doesn't handle absolutely everything.
+            # Thus, kludges like this slip in occasionally.  (This is no
+            # excuse for committing more platform- and compiler-specific
+            # kludges; they are to be avoided if possible!)
             if self.compiler.compiler_type == 'msvc':
                 def_file = build_info.get ('def_file')
                 if def_file is None:
