@@ -55,34 +55,104 @@ chop $myrootdir;
 
 
 sub make_nav_panel{
-    ($NEXT_TITLE ? "$NEXT\n" : '')
-      . ($UP_TITLE ? "$UP\n" : '')
-      . ($PREVIOUS_TITLE ? "$PREVIOUS\n" : '')
-      . "$CONTENTS\n$INDEX"
+    ($NEXT_TITLE ? $NEXT : '')
+      . ($UP_TITLE ? $UP : '')
+      . ($PREVIOUS_TITLE ? $PREVIOUS : '')
+      . $CONTENTS
+      . $INDEX
 #      . " $CUSTOM_BUTTONS"
-      . "<br>\n"
-      . ($NEXT_TITLE ? "<b> Next:</b> $NEXT_TITLE\n" : '')
+      . "\n<br>\n"
+      . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
       . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
       . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : '');
 }
 
 sub top_navigation_panel {
     "<div class=navigation>\n"
-      . &make_nav_panel
-      . "<br><hr><p></div>"
+      . make_nav_panel()
+      . '<br><hr><p></div>';
 }
 
 sub bot_navigation_panel {
     "<p>\n<div class=navigation><hr>"
-      . &make_nav_panel
-      . "</div>"
+      . make_nav_panel()
+      . '</div>';
+}
+
+sub add_link {
+    # Returns a pair (iconic link, textual link)
+    my($icon, $current_file, @link) = @_;
+    my($dummy, $file, $title) = split($delim,
+				      $toc_section_info{join(' ',@link)});
+    if ($title && ($file ne $current_file)) {
+        $title = purify($title);
+	$title = get_first_words($title, $WORDS_IN_NAVIGATION_PANEL_TITLES);
+	return (make_href($file, $icon), make_href($file, "$title"))
+	}
+    elsif ($icon eq $up_visible_mark && $EXTERNAL_UP_LINK) {
+ 	return (make_href($EXTERNAL_UP_LINK, $icon),
+		make_href($EXTERNAL_UP_LINK, "$EXTERNAL_UP_TITLE"))
+	}
+    elsif (($icon eq $previous_visible_mark
+	    || $icon eq $previous_page_visible_mark)
+	   && $EXTERNAL_PREV_LINK && $EXTERNAL_PREV_TITLE) {
+	return (make_href($EXTERNAL_PREV_LINK, $icon),
+		make_href($EXTERNAL_PREV_LINK, "$EXTERNAL_PREV_TITLE"))
+	}
+    elsif (($icon eq $next_visible_mark
+	    ||  $icon eq $next_page_visible_mark)
+	   && $EXTERNAL_DOWN_LINK && $EXTERNAL_DOWN_TITLE) {
+	return (make_href($EXTERNAL_DOWN_LINK, $icon),
+		make_href($EXTERNAL_DOWN_LINK, "$EXTERNAL_DOWN_TITLE"))
+	}
+    (&inactive_img($icon), "");
+}
+
+sub add_special_link {
+    my($icon, $file, $current_file) = @_;
+    (($file && ($file ne $current_file)) ? make_href($file, $icon) : undef)
+}
+
+sub img_tag {
+    local($icon) = @_;
+    my $alt;
+    my $align = " align=bottom ";
+
+    $alt = join('|', 'up', 'next_group', 'previous_group'
+		, 'next', 'previous', 'change_begin_right', 'change_begin'
+		, 'change_end_right', 'change_end', 'change_delete_right'
+		, 'change_delete', 'contents', 'index');
+
+    if ($icon =~ /(gif|png)$/) {
+	$used_icons{$icon} = 1;
+	if ($icon =~ /change_(begin|end|delete)_right/) { $align = ' ' };
+	my $nav_border = "$NAV_BORDER";
+	if ($icon =~ /($alt)/) {
+	    $alt = $1;
+	}
+	else {
+	    $nav_border = '1';
+	    $alt = '[*]';
+	};
+	if ($LOCAL_ICONS) {
+	    return join('', '<img ', $iconsizes{$1}, $align
+			,'border=', $nav_border, ' alt="', $alt
+			,'" src="', $icon, '">' );
+	}
+	return join('', '<img ', $iconsizes{$1}, $align
+		    ,'border=', $nav_border, ' alt="', $alt, '"\n'
+		    ,' src="', $ICONSERVER, "/$icon", '">' );
+    }
+    else {
+	return $icon;
+    }
 }
 
 
 sub gen_index_id {
     # this is used to ensure common index key generation and a stable sort
     my($str,$extra) = @_;
-    sprintf("%s###%s%010d", $str, $extra, ++$global{'max_id'});
+    sprintf('%s###%s%010d', $str, $extra, ++$global{'max_id'});
 }
 
 sub make_index_entry {
@@ -92,16 +162,21 @@ sub make_index_entry {
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
     $str = gen_index_id($str, '');
-    $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
+    $index{$str} .= make_half_href("$CURRENT_FILE#$br_id");
     "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
 
-# use this instead with the buildindex.py tool
+
+sub insert_index{
+    my($mark,$datafile) = @_;
+    my $index = `$myrootdir/tools/buildindex.py $datafile`;
+    s/$mark/$index/;
+}
+
 sub add_idx{
     print "\nDoing the index ...";
     close(IDXFILE);
-    my $index = `$myrootdir/tools/buildindex.py index.dat`;
-    s/$idx_mark/$index/;
+    insert_index($idx_mark, 'index.dat');
 }
 
 
@@ -111,15 +186,13 @@ $idx_module_title = 'Module Index';
 sub add_module_idx{
     print "\nDoing the module index ...";
     my $key;
-    my $index = "<p>";
-    open(MODIDXFILE, ">modindex.dat") || die "\n$!\n";
+    open(MODIDXFILE, '>modindex.dat') || die "\n$!\n";
     foreach $key (keys %Modules) {
 	# dump the line in the data file; just use a dummy seqno field
 	print MODIDXFILE "$Modules{$key}" . $IDXFILE_FIELD_SEP . "$key###\n";
     }
     close(MODIDXFILE);
-    $index = `$myrootdir/tools/buildindex.py modindex.dat`;
-    s/$idx_module_mark/$index<p>/;
+    insert_index($idx_module_mark, 'modindex.dat');
 }
 
 # replace both indexes as needed:
@@ -134,10 +207,10 @@ sub do_cmd_tableofcontents {
     local($_) = @_;
     $TITLE = $toc_title;
     $tocfile = $CURRENT_FILE;
-    my($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("contents",$CURRENT_FILE,$_);		# this is added
+    my($closures,$reopens) = preserve_open_tags();
+    anchor_label('contents', $CURRENT_FILE, $_);	# this is added
     join('', "<BR>\n", $closures
-	 , &make_section_heading($toc_title, "H2"), $toc_mark
+	 , make_section_heading($toc_title, 'H2'), $toc_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
@@ -145,10 +218,10 @@ sub do_cmd_listoffigures {
     local($_) = @_;
     $TITLE = $lof_title;
     $loffile = $CURRENT_FILE;
-    my($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("lof",$CURRENT_FILE,$_);		# this is added
+    my($closures,$reopens) = preserve_open_tags();
+    anchor_label('lof', $CURRENT_FILE, $_);		# this is added
     join('', "<BR>\n", $closures
-	 , &make_section_heading($lof_title, "H2"), $lof_mark
+	 , make_section_heading($lof_title, 'H2'), $lof_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
@@ -156,17 +229,17 @@ sub do_cmd_listoftables {
     local($_) = @_;
     $TITLE = $lot_title;
     $lotfile = $CURRENT_FILE;
-    my($closures,$reopens) = &preserve_open_tags();
-    &anchor_label("lot",$CURRENT_FILE,$_);		# this is added
+    my($closures,$reopens) = preserve_open_tags();
+    anchor_label('lot', $CURRENT_FILE, $_);		# this is added
     join('', "<BR>\n", $closures
-	 , &make_section_heading($lot_title, "H2"), $lot_mark
+	 , make_section_heading($lot_title, 'H2'), $lot_mark
 	 , $reopens, $_);
 }
 # In addition to the standard stuff, add label to allow named node files.
 sub do_cmd_textohtmlinfopage {
     local($_) = @_;
     if ($INFO) {					# 
-	&anchor_label("about",$CURRENT_FILE,$_);	# this is added
+	anchor_label("about",$CURRENT_FILE,$_);		# this is added
     }							#
     ( ($INFO == 1)
      ? join('', $close_all
@@ -201,7 +274,7 @@ sub do_cmd_textohtmlindex {
 sub do_cmd_textohtmlmoduleindex {
     local($_) = @_;
     $TITLE = $idx_module_title;
-    &anchor_label("modindex",$CURRENT_FILE,$_);
+    anchor_label("modindex",$CURRENT_FILE,$_);
     '<p>' . make_section_heading($idx_module_title, "h2")
       . $idx_module_mark . $_;
 }
@@ -245,7 +318,7 @@ sub add_bbl_and_idx_dummy_commands {
 	s/[\\]printindex/\\textohtmlindex /o;
     }
     #----------------------------------------------------------------------
-    &lib_add_bbl_and_idx_dummy_commands()
+    lib_add_bbl_and_idx_dummy_commands()
         if defined(&lib_add_bbl_and_idx_dummy_commands);
 }
 
@@ -270,20 +343,16 @@ sub set_depth_levels {
 	$MAX_SPLIT_DEPTH = $level + $MAX_SPLIT_DEPTH;
     } elsif (!($MAX_SPLIT_DEPTH)) { $MAX_SPLIT_DEPTH = 1 };
 
-    %unnumbered_section_commands = (
-          'tableofcontents', $level
-	, 'listoffigures', $level
-	, 'listoftables', $level
-	, 'bibliography', $level
-	, 'textohtmlindex', $level
-	, 'textohtmlmoduleindex', $level
-        );
-    $section_headings{'textohtmlmoduleindex'} = "h1";
+    %unnumbered_section_commands = ('tableofcontents' => $level,
+				    'listoffigures' => $level,
+				    'listoftables' => $level,
+				    'bibliography' => $level,
+				    'textohtmlindex' => $level,
+				    'textohtmlmoduleindex' => $level);
+    $section_headings{'textohtmlmoduleindex'} = 'h1';
 
-    %section_commands = ( 
-	  %unnumbered_section_commands
-        , %section_commands
-        );
+    %section_commands = (%unnumbered_section_commands,
+			 %section_commands);
 
     make_sections_rx();
 }
@@ -315,7 +384,7 @@ sub protect_useritems {
 # style support file.  The %declarations must be set before initialize()
 # is called in the main script.
 #
-%declarations = ('preform', '<dl><dd><pre></pre></dl>',
+%declarations = ('preform' => '<dl><dd><pre></pre></dl>',
 		 %declarations);
 
 1;	# This must be the last line
