@@ -201,6 +201,13 @@ Connect to a remote socket at \var{address}.
 (The format of \var{address} depends on the address family --- see above.)
 \end{funcdesc}
 
+\begin{funcdesc}{connect_ex}{address}
+Likecode{connect(\var{address})}, but return an error indicator
+instead of raising an exception.  The error indicator is 0 if the
+operation succeeded, otherwise the value of the \code{errno}
+variable.  This is useful e.g. for asynchronous connects.
+\end{funcdesc}
+
 \begin{funcdesc}{fileno}{}
 Return the socket's file descriptor (a small integer).  This is useful
 with \code{select}.
