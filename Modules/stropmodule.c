@@ -79,7 +79,6 @@ strop_splitfields(self, args)
 {
 	int len, n, i, j;
 	char *s, *sub;
-	char c;
 	object *list, *item;
 
 	if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
@@ -189,6 +188,8 @@ strop_index(self, args)
 	int len, n, i;
 
 	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
+		if (i < 0)
+			i += len;
 		if (i < 0 || i+n > len) {
 			err_setstr(ValueError, "start offset out of range");
 			return NULL;
@@ -205,12 +206,46 @@ strop_index(self, args)
 		return newintobject((long)i);
 
 	len -= n;
-	for (; i <= len; i++) {
-		if (s[i] == sub[0]) {
-			if (n == 1 || strncmp(s+i, sub, n) == 0)
-				return newintobject((long)i);
+	for (; i <= len; ++i)
+		if (s[i] == sub[0] &&
+		    (n == 1 || strncmp(&s[i+1], &sub[1], n-1) == 0))
+			return newintobject((long)i);
+
+	err_setstr(ValueError, "substring not found");
+	return NULL;
+}
+
+
+static object *
+strop_rindex(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	char *s, *sub;
+	int len, n, i;
+
+	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
+		if (i < 0)
+			i += len;
+		if (i < 0 || i+n > len) {
+			err_setstr(ValueError, "start offset out of range");
+			return NULL;
 		}
 	}
+	else {
+		err_clear();
+		if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+			return NULL;
+		i = len;
+	}
+
+	if (n == 0)
+		return newintobject((long)i);
+
+	for (i -= n; i >= 0; --i)
+		if (s[i] == sub[0] &&
+		    (n == 1 || strncmp(&s[i+1], &sub[1], n-1) == 0))
+			return newintobject((long)i);
 
 	err_setstr(ValueError, "substring not found");
 	return NULL;
@@ -365,6 +400,7 @@ static struct methodlist strop_methods[] = {
 	{"index",	strop_index},
 	{"joinfields",	strop_joinfields},
 	{"lower",	strop_lower},
+	{"rindex",	strop_rindex},
 	{"split",	strop_split},
 	{"splitfields",	strop_splitfields},
 	{"strip",	strop_strip},
