@@ -192,6 +192,7 @@ class Pickler:
         self.write(self.put(memo_len))
         self.memo[d] = memo_len, obj
 
+    # Return a PUT (BINPUT, LONG_BINPUT) opcode string, with argument i.
     def put(self, i):
         if self.bin:
             s = mdumps(i)[1:]
@@ -202,6 +203,7 @@ class Pickler:
 
         return PUT + `i` + '\n'
 
+    # Return a GET (BINGET, LONG_BINGET) opcode string, with argument i.
     def get(self, i):
         if self.bin:
             s = mdumps(i)[1:]
