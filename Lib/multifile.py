@@ -18,9 +18,6 @@
 #
 # The latter sequence may be used recursively at (A).
 # It is also allowed to use multiple push()...pop() sequences.
-# Note that if a nested multipart message is terminated by a separator
-# for an outer message, this is not reported, even though it is really
-# illegal input.
 #
 # If seekable is given as 0, the class code will not do the bookeeping
 # it normally attempts in order to make seeks relative to the beginning of the
@@ -30,13 +27,12 @@
 import sys
 import string
 
-err = sys.stderr.write
-
 Error = 'multifile.Error'
 
 class MultiFile:
 	#
 	seekable = 0
+	#
 	def __init__(self, fp, seekable=1):
 		self.fp = fp
 		self.stack = [] # Grows down
@@ -70,37 +66,44 @@ class MultiFile:
 		self.last = 0
 	#
 	def readline(self):
-		if self.level > 0: return ''
+		if self.level > 0:
+			return ''
 		line = self.fp.readline()
+		# Real EOF?
 		if not line:
 			self.level = len(self.stack)
 			self.last = (self.level > 0)
 			if self.last:
-				err('*** Sudden EOF in MultiFile.readline()\n')
+				raise Error, 'sudden EOF in MultiFile.readline()'
 			return ''
-		if line[:2] <> '--': return line
-		n = len(line)
-		k = n
-		while k > 0 and line[k-1] in string.whitespace: k = k-1
-		mark = line[2:k]
-		if mark[-2:] == '--': mark1 = mark[:-2]
-		else: mark1 = None
+		assert self.level == 0
+		# Fast check to see if this is just data
+		if self.is_data(line):
+			return line
+		else:
+			# Ignore trailing whitespace on marker lines 
+			k = len(line) - 1;
+			while line[k] in string.whitespace:
+				k = k - 1
+			marker = line[:k+1]
+		# No?  OK, try to match a boundary.
+		# Return the line (unstripped) if we don't.
 		for i in range(len(self.stack)):
 			sep = self.stack[i]
-			if sep == mark:
+			if marker == self.section_divider(sep):
 				self.last = 0
 				break
-			elif mark1 <> None and sep == mark1:
+			elif marker == self.end_marker(sep):
 				self.last = 1
 				break
 		else:
 			return line
-		# Get here after break out of loop
+		# We only get here if we see a section divider or EOM line
 		if self.seekable:
 			self.lastpos = self.tell() - len(line)
 		self.level = i+1
 		if self.level > 1:
-			err('*** Missing endmarker in MultiFile.readline()\n')
+			raise Error,'Missing endmarker in MultiFile.readline()'
 		return ''
 	#
 	def readlines(self):
@@ -147,3 +150,11 @@ class MultiFile:
 			if self.level > 0:
 				self.lastpos = abslastpos - self.start
 	#
+	def is_data(self, line):
+		return line[:2] <> '--'
+	#
+	def section_divider(self, str):
+		return "--" + str
+	#
+	def end_marker(self, str):
+		return "--" + str + "--"
