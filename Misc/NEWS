@@ -1,4 +1,4 @@
-What's New in Python 2.1.2 (final) ?
+What's New in Python 2.1.2 (rc1) ?
 ==============================
 
 - The socket object gained a new method, 'sendall()'. This method 
