@@ -104,7 +104,7 @@ __all__ = [ "match", "search", "sub", "subn", "split", "findall",
     "U", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "error" ]
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 # this module works under 1.5.2 and later.  don't use string methods
 import string
@@ -197,6 +197,8 @@ def escape(pattern):
 _cache = {}
 _cache_repl = {}
 
+_pattern_type = type(sre_compile.compile("", 0))
+
 _MAXCACHE = 100
 
 def _join(seq, sep):
@@ -209,8 +211,10 @@ def _compile(*key):
     if p is not None:
         return p
     pattern, flags = key
-    if type(pattern) not in sre_compile.STRING_TYPES:
+    if type(pattern) is _pattern_type:
         return pattern
+    if type(pattern) not in sre_compile.STRING_TYPES:
+        raise TypeError, "first argument must be string or compiled pattern"
     try:
         p = sre_compile.compile(pattern, flags)
     except error, v:
@@ -312,7 +316,7 @@ import copy_reg
 def _pickle(p):
     return _compile, (p.pattern, p.flags)
 
-copy_reg.pickle(type(_compile("", 0)), _pickle, _compile)
+copy_reg.pickle(_pattern_type, _pickle, _compile)
 
 # --------------------------------------------------------------------
 # experimental stuff (see python-dev discussions for details)
