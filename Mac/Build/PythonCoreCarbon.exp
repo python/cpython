@@ -527,7 +527,6 @@ PyTuple_New
 type_getsets
 PyType_Type
 PyBaseObject_Type
-PyType_InitDict
 _PyType_Lookup
 PyType_IsSubtype
 PyType_GenericNew
