@@ -250,6 +250,13 @@ If it turns out to be impossible to make autodetection work reliably,
 it's possible that this change may become an optional build method
 instead of the default, or it may even be backed out completely.
 
+In another far-reaching change to the build mechanism, Neil
+Schemenauer restructured things so Python now uses a single makefile
+that isn't recursive, instead of makefiles in the top directory and in
+each of the Python/, Parser/, Objects/, and Modules/ subdirectories.
+This makes building Python faster, and also makes the build process
+clearer and simpler.
+
 \begin{seealso}
 \seepep{229}{Using Distutils to Build Python}{Written and implemented by A.M. Kuchling.}
 \end{seealso}
@@ -361,6 +368,12 @@ destructively iterating through the contents of a dictionary; this can be faster
 from the dictionary and returns it as a 2-tuple.  This was implemented
 mostly by Tim Peters and Guido van Rossum, after a suggestion and
 preliminary patch by Moshe Zadka.
+
+% Not checked into CVS yet -- only proposed
+%\item The \operator{in} operator now works for dictionaries
+%XXX 'if key in dict' now works.
+(Thomas Wouters)
+
  
 \item \module{curses.panel}, a wrapper for the panel library, part of
 ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
@@ -406,6 +419,9 @@ previously required.
  
 This change was proposed and implemented by Thomas Wouters.
 
+\item XXX Characters in repr() of strings now use hex escapes, and 
+use \n,\t,\r for those characters (Ka-Ping Yee)
+
 \item The \module{ftplib} module now defaults to retrieving files in passive mode,
 because passive mode is more likely to work from behind a firewall.
 This request came from the Debian bug tracking system, since other
@@ -449,7 +465,7 @@ requisite changes haven't been checked into CVS yet.
 
 \begin{seealso}
 
-\seepep{205}{Weak References}{Written and implemented by Fred L. Drake.}
+\seepep{205}{Weak References}{Written and implemented by Fred L. Drake, Jr.}
 
 \end{seealso}
 
