@@ -139,14 +139,11 @@ class NullTranslations:
 
 class GNUTranslations(NullTranslations):
     # Magic number of .mo files
-    LE_MAGIC = 0x950412de
-    BE_MAGIC = 0xde120495
+    LE_MAGIC = 0x950412deL
+    BE_MAGIC = 0xde120495L
 
     def _parse(self, fp):
         """Override this method to support alternative .mo formats."""
-        # We need to & all 32 bit unsigned integers with 0xffffffff for
-        # portability to 64 bit machines.
-        MASK = 0xffffffff
         unpack = struct.unpack
         filename = getattr(fp, 'name', '')
         # Parse the .mo file header, which consists of 5 little endian 32
@@ -155,28 +152,22 @@ class GNUTranslations(NullTranslations):
         buf = fp.read()
         buflen = len(buf)
         # Are we big endian or little endian?
-        magic = unpack('<i', buf[:4])[0] & MASK
+        magic = unpack('<I', buf[:4])[0]
         if magic == self.LE_MAGIC:
-            version, msgcount, masteridx, transidx = unpack('<4i', buf[4:20])
-            ii = '<ii'
+            version, msgcount, masteridx, transidx = unpack('<4I', buf[4:20])
+            ii = '<II'
         elif magic == self.BE_MAGIC:
-            version, msgcount, masteridx, transidx = unpack('>4i', buf[4:20])
-            ii = '>ii'
+            version, msgcount, masteridx, transidx = unpack('>4I', buf[4:20])
+            ii = '>II'
         else:
             raise IOError(0, 'Bad magic number', filename)
-        # more unsigned ints
-        msgcount &= MASK
-        masteridx &= MASK
-        transidx &= MASK
         # Now put all messages from the .mo file buffer into the catalog
         # dictionary.
         for i in xrange(0, msgcount):
             mlen, moff = unpack(ii, buf[masteridx:masteridx+8])
-            moff &= MASK
-            mend = moff + (mlen & MASK)
+            mend = moff + mlen
             tlen, toff = unpack(ii, buf[transidx:transidx+8])
-            toff &= MASK
-            tend = toff + (tlen & MASK)
+            tend = toff + tlen
             if mend < buflen and tend < buflen:
                 tmsg = buf[toff:tend]
                 catalog[buf[moff:mend]] = tmsg
