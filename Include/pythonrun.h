@@ -37,6 +37,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Interfaces to parse and execute pieces of python code */
 
+void Py_SetProgramName Py_PROTO((char *));
+char *Py_GetProgramName Py_PROTO((void));
+
+void Py_Setup Py_PROTO((void));
 void Py_Initialize Py_PROTO((void));
 
 int PyRun_AnyFile Py_PROTO((FILE *, char *));
@@ -66,6 +70,19 @@ void PyImport_Init	Py_PROTO((void));
 void PyBuiltin_Init	Py_PROTO((void));
 
 int Py_FdIsInteractive Py_PROTO((FILE *, char *));
+
+/* In getpath.c */
+char *Py_GetProgramFullPath Py_PROTO((void));
+char *Py_GetPrefix Py_PROTO((void));
+char *Py_GetExecPrefix Py_PROTO((void));
+char *Py_GetPath Py_PROTO((void));
+
+/* In their own files */
+const char *Py_GetVersion Py_PROTO((void));
+const char *Py_GetPlatform Py_PROTO((void));
+const char *Py_GetCopyright Py_PROTO((void));
+const char *Py_GetCompiler Py_PROTO((void));
+const char *Py_GetBuildInfo Py_PROTO((void));
 
 #ifdef __cplusplus
 }
