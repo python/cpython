@@ -157,10 +157,13 @@ extern void initgdbm();
 #ifdef USE_ZLIB
 extern void initzlib();
 #endif
+#ifdef WITH_THREAD
+extern void initthread();
+#endif
 
-/* Testing: */
 extern void initcPickle();
 extern void initcStringIO();
+extern void init_codecs();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -272,9 +275,12 @@ struct _inittab _PyImport_Inittab[] = {
 #ifdef USE_ZLIB
 	{"zlib",	initzlib},
 #endif
-/* Testing: */
+#ifdef WITH_THREAD
+	{"thread",	initthread},
+#endif
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
+	{"_codecs", init_codecs},
 
 /* -- ADDMODULE MARKER 2 -- */
 
