@@ -63,6 +63,12 @@ import getopt
 import traceback
 import random
 import StringIO
+import warnings
+
+# I see no other way to suppress these warnings;
+# putting them in test_grammar.py has no effect:
+warnings.filterwarnings("ignore", "hex/oct constants", DeprecationWarning,
+                        ".*test.test_grammar$")
 
 from test import test_support
 
