@@ -30,6 +30,9 @@ import EasyDialogs
 kHighLevelEvent = 23	# Don't know what header file this should come from
 SCROLLBARWIDTH = 16		# Again, not a clue...
 
+# Trick to forestall a set of SIOUX menus being added to our menubar
+SIOUX_APPLEMENU_ID=32000
+
 
 # Map event 'what' field to strings
 eventname = {}
@@ -442,8 +445,9 @@ class MenuBar:
 		self.bar = None
 		self.menus = None
 	
-	def addmenu(self, title, after = 0):
-		id = self.getnextid()
+	def addmenu(self, title, after = 0, id=None):
+		if id == None:
+			id = self.getnextid()
 		if DEBUG: print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
@@ -507,9 +511,9 @@ class MenuBar:
 class Menu:
 	"One menu."
 	
-	def __init__(self, bar, title, after=0):
+	def __init__(self, bar, title, after=0, id=None):
 		self.bar = bar
-		self.id, self.menu = self.bar.addmenu(title, after)
+		self.id, self.menu = self.bar.addmenu(title, after, id)
 		bar.menus[self.id] = self
 		self.items = []
 		self._parent = None
@@ -675,7 +679,7 @@ def SubMenu(menu, label, title=''):
 class AppleMenu(Menu):
 	
 	def __init__(self, bar, abouttext="About me...", aboutcallback=None):
-		Menu.__init__(self, bar, "\024")
+		Menu.__init__(self, bar, "\024", id=SIOUX_APPLEMENU_ID)
 		if MacOS.runtimemodel == 'ppc':
 			self.additem(abouttext, None, aboutcallback)
 			self.addseparator()
