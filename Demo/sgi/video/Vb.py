@@ -31,6 +31,11 @@ import VGrabber
 import imageop
 sys.path.append('/ufs/jack/src/av/vcr')
 import VCR
+try:
+	import cl
+	import CL
+except ImportError:
+	cl = None
 
 ARROW = 0
 WATCH = 1
@@ -46,9 +51,10 @@ def main():
 StopCapture = 'StopCapture'
 
 VideoFormatLabels = ['Video off', 'rgb8', 'grey8', 'grey4', 'grey2', \
-	  'grey2 dith', 'mono dith', 'mono thresh', 'rgb24', 'rgb24-jpeg']
+	  'grey2 dith', 'mono dith', 'mono thresh', 'rgb24', 'rgb24-jpeg', \
+	  'compress']
 VideoFormats = ['', 'rgb8', 'grey', 'grey4', 'grey2', \
-	  'grey2', 'mono', 'mono', 'rgb', 'jpeg']
+	  'grey2', 'mono', 'mono', 'rgb', 'jpeg', 'compress']
 
 VideoModeLabels = ['Continuous', 'Burst', 'Single frame', 'VCR sync']
 [VM_CONT, VM_BURST, VM_SINGLE, VM_VCR] = range(1, 5)
@@ -62,6 +68,16 @@ VcrSpeeds = [None, 5, 4, 3, 2, 1, 0]
 
 RgbSizeLabels = ['full', 'quarter', 'sixteenth']
 
+# init file stuff:
+if os.environ.has_key('HOME'):
+	HOME=os.environ['HOME']
+else:
+	HOME='.'
+VB_INIT_FILE=HOME + '/.Vb_init'
+
+VB_INIT_KEYS=['vfile', 'vmode', 'mono_thresh', 'vformat', 'comp_scheme', \
+	  'rgb24_size', 'afile', 'aformat']
+
 class VideoBagOfTricks:
 
 	# Init/close stuff
@@ -70,14 +86,23 @@ class VideoBagOfTricks:
 		self.window = None
 		formdef = flp.parse_form('VbForm', 'form')
 		flp.create_full_form(self, formdef)
-		self.g_cont.hide_object()
-		self.g_burst.hide_object()
-		self.g_single.hide_object()
-		self.g_vcr.hide_object()
 		self.setdefaults()
+		if self.vmode <> VM_CONT:
+			self.g_cont.hide_object()
+		if self.vmode <> VM_BURST:
+			self.g_burst.hide_object()
+		if self.vmode <> VM_SINGLE:
+			self.g_single.hide_object()
+		if self.vmode <> VM_VCR:
+			self.g_vcr.hide_object()
+		if self.vformat <> 'compress':
+			self.g_compress.hide_object()
+
 		self.openvideo()
 		self.makewindow()
 		self.bindvideo()
+		if self.use_24:
+			self.optfullsizewindow()
 		self.showform()
 		fl.set_event_call_back(self.do_event)
 		return self
@@ -85,6 +110,7 @@ class VideoBagOfTricks:
 	def close(self):
 		self.close_video()
 		self.close_audio()
+		self.savedefaults()
 		raise SystemExit, 0
 
 	def showform(self):
@@ -101,15 +127,56 @@ class VideoBagOfTricks:
 		gl.prefposition(x1, x2, y1, y2)
 		self.form.show_form(FL.PLACE_FREE, FL.TRUE, 'Vb Control')
 
-	def setdefaults(self):
-		self.vcr = None
-		self.vout = None
-		self.capturing = 0
+	def getdefaultdefaults(self):
 		# Video defaults
 		self.vfile = 'film.video'
 		self.vmode = VM_CONT
 		self.mono_thresh = 128
 		self.vformat = 'rgb8'
+		self.comp_scheme = 'Uncompressed'
+		self.rgb24_size = 1
+		# Missing: drop, rate, maxmem, nframes, rate, vcrspeed
+		# Audio defaults:
+		self.afile = 'film.aiff'
+		self.aformat = A_OFF
+
+	def getdefaults(self):
+		self.getdefaultdefaults()
+		# XXXX Read defaults file and override.
+		try:
+			fp = open(VB_INIT_FILE, 'r')
+		except IOError:
+			print 'Vb: no init file'
+			self.initcont = {}
+			return
+		data = fp.read(1000000)
+		try:
+			self.initcont = eval(data)
+		except:
+			print 'Vb: Ill-formatted init file'
+			self.initcont = {}
+		for k in self.initcont.keys():
+			if hasattr(self, k):
+				setattr(self, k, self.initcont[k])
+
+	def savedefaults(self):
+		newdb = {}
+		for k in VB_INIT_KEYS:
+			newdb[k] = getattr(self, k)
+		if newdb <> self.initcont:
+			try:
+				fp = open(VB_INIT_FILE, 'w')
+			except IOError:
+				print 'Vb: Cannot create', VB_INIT_FILE
+				return
+			fp.write(`newdb`)
+			fp.close()
+			
+	def setdefaults(self):
+		self.getdefaults()
+		self.vcr = None
+		self.vout = None
+		self.capturing = 0
 		self.c_vformat.clear_choice()
 		for label in VideoFormatLabels:
 			self.c_vformat.addto_choice(label)
@@ -132,13 +199,21 @@ class VideoBagOfTricks:
 		self.c_rgb24_size.clear_choice()
 		for label in RgbSizeLabels:
 			self.c_rgb24_size.addto_choice(label)
-		self.c_rgb24_size.set_choice(1)
-		self.rgb24_size = 1
+		self.c_rgb24_size.set_choice(self.rgb24_size)
+		if cl:
+			algs = cl.QueryAlgorithms(CL.VIDEO)
+			self.all_comp_schemes = []
+			for i in range(0, len(algs), 2):
+				if algs[i+1] in (CL.COMPRESSOR, CL.CODEC):
+					self.all_comp_schemes.append(algs[i])
+			self.c_cformat.clear_choice()
+			for label in self.all_comp_schemes:
+				self.c_cformat.addto_choice(label)
+			i = self.all_comp_schemes.index(self.comp_scheme)
+			self.c_cformat.set_choice(i+1)
 		# Audio defaults
 		self.aout = None
 		self.aport = None
-		self.afile = 'film.aiff'
-		self.aformat = A_OFF
 		self.c_aformat.clear_choice()
 		for label in AudioFormatLabels:
 			self.c_aformat.addto_choice(label)
@@ -276,6 +351,11 @@ class VideoBagOfTricks:
 						  `self.mono_thresh`, '')
 		self.rebindvideo()
 
+	def cb_cformat(self, *args):
+		i = self.c_cformat.get_choice()
+		self.comp_scheme = self.all_comp_schemes[i-1]
+
+		
 	def cb_vmode(self, *args):
 		if self.vcr:
 			self.vcr = None
@@ -493,21 +573,33 @@ class VideoBagOfTricks:
 			data = cd.InterleaveFields(1)
 		else:
 			x, y = self.vout.getsize()
-			if self.rgb24_size == 1:
-				data = cd.YUVtoRGB(1)
-			elif self.rgb24_size == 2:
-				data = cd.YUVtoRGB_quarter(1)
-				x = x/2
-				y = y/2
-			elif self.rgb24_size == 3:
-				data = cd.YUVtoRGB_sixteenth(1)
-				x = x/4
-				y = y/4
+			if self.use_compress:
+				if self.rgb24_size == 1:
+					data = cd.YUVtoYUV422DC(0)
+				elif self.rgb24_size == 2:
+					data = cd.YUVtoYUV422DC_quarter(1)
+					x = x/2
+					y = y/2
+				elif self.rgb24_size == 3:
+					data = cd.YUVtoYUV422DC_sixteenth(1)
+					x = x/4
+					y = y/4
 			else:
-				raise 'Kaboo! Kaboo!'
+				data = cd.YUVtoRGB(1)
+				if self.maxx*self.maxy*4 <> len(data):
+					print 'maxx,maxy,exp,got=', self.maxx,
+					print self.maxy,self.maxx*self.maxy*4,
+					print len(data)
+					fl.showmessage('Wrong sized data')
+					return 0
+				if self.rgb24_size <> 1:
+					data = imageop.scale(data, 4, \
+						  self.maxx, self.maxy, x, y)
 			if self.use_jpeg:
 				import jpeg
 				data = jpeg.compress(data, x, y, 4)
+			if self.use_compress:
+				data = self.compressor.Compress(1, data)
 		cd.UnlockCaptureData()
 		self.end_cont()
 		if timecode == None:
@@ -520,7 +612,7 @@ class VideoBagOfTricks:
 				print 'Connecting to VCR ...'
 				self.vcr = VCR.VCR().init()
 				print 'Waiting for VCR to come online ...'
-				self.vcr.wait()
+				self.vcr.initvcr()
 				print 'Preparing VCR ...'
 				if not (self.vcr.fmmode('dnr') and \
 					  self.vcr.dmcontrol('digital slow')):
@@ -622,6 +714,10 @@ class VideoBagOfTricks:
 		i = self.c_vformat.get_choice()
 		label = VideoFormatLabels[i-1]
 		format = VideoFormats[i-1]
+		if format == 'compress' and cl == None:
+			fl.show_message('Sorry, no compression library support')
+			format = ''
+			label = 'Video off'
 		self.vformat = format
 		if self.vformat == '':
 			self.form.freeze_form()
@@ -639,18 +735,23 @@ class VideoBagOfTricks:
 			elif self.vmode == VM_SINGLE:
 				self.g_single.show_object()
 		#
-		self.rgb = (format[:3] == 'rgb')
+		self.rgb = (format[:3] == 'rgb' or format == 'compress')
 		self.mono = (format == 'mono')
 		self.grey = (format[:4] == 'grey')
-		self.use_24 = (format in ('rgb', 'jpeg'))
-		if self.use_24 and 0: ### quarter/sixteenth decoding not impl.
+		self.use_24 = (format in ('rgb', 'jpeg', 'compress'))
+		if self.use_24:
 			self.g_rgb24.show_object()
 		else:
 			self.g_rgb24.hide_object()
 		self.use_jpeg = (format == 'jpeg')
 		self.mono_use_thresh = (label == 'mono thresh')
+		self.use_compress = (format == 'compress')
+		if self.use_compress:
+			self.g_compress.show_object()
+		else:
+			self.g_compress.hide_object()
 		s = format[4:]
-		if s:
+		if self.grey and s:
 			self.greybits = string.atoi(s)
 		else:
 			self.greybits = 8
@@ -676,6 +777,16 @@ class VideoBagOfTricks:
 		else:
 			self.g_audio.show_object()
 
+	def init_compressor(self, w, h):
+		self.compressor = None
+		scheme = cl.QuerySchemeFromName(CL.VIDEO, self.comp_scheme)
+		self.compressor = cl.OpenCompressor(scheme)
+		parambuf = [CL.IMAGE_WIDTH, w, \
+			  CL.IMAGE_HEIGHT, h, \
+			  CL.ORIGINAL_FORMAT, CL.YUV422DC]
+		self.compressor.SetParams(parambuf)
+		return self.compressor.Compress(0, '')
+
 	def open_if_closed(self):
 		if not self.vout:
 			self.open_video()
@@ -691,10 +802,13 @@ class VideoBagOfTricks:
 		if self.use_24:
 			if self.rgb24_size == 2:
 				x, y = x/2, y/2
-			elif self.rgb24_size == 4:
+			elif self.rgb24_size == 3:
 				x, y = x/4, y/4
 		vout = VFile.VoutFile().init(self.vfile)
 		vout.setformat(self.vformat)
+		if self.vformat == 'compress':
+			cheader = self.init_compressor(x, y)
+			vout.setcompressheader(cheader)
 		vout.setsize(x, y)
 		if self.vmode == VM_BURST:
 			vout.setpf((1, -2))
@@ -743,6 +857,7 @@ class VideoBagOfTricks:
 				msg = 'disk full??'
 			fl.show_message('IOError', str(msg), '')
 		self.vout = None
+		self.compressor = None
 
 	# Watch cursor handling
 

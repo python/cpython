@@ -304,6 +304,12 @@ class VideoParams:
 			self.c0bits, self.c1bits, self.c2bits, self.offset, \
 			self.chrompack)
 
+	def getcompressheader(self):
+		return self.compressheader
+
+	def setcompressheader(self, ch):
+		self.compressheader = ch
+
 	# Write the relevant bits to stdout
 
 	def printinfo(self):
@@ -765,6 +771,24 @@ def writefileheader(fp, values):
 	#
 	data = (width, height, packfactor)
 	fp.write(`data`+'\n')
+	
+def writecompressfileheader(fp, cheader, values):
+	(format, width, height, packfactor, \
+		c0bits, c1bits, c2bits, offset, chrompack) = values
+	#
+	# Write identifying header
+	#
+	fp.write('CMIF video 3.1\n')
+	#
+	# Write color encoding info
+	#
+	data = (format, cheader)
+	fp.write(`data`+'\n')
+	#
+	# Write frame geometry info
+	#
+	data = (width, height, packfactor)
+	fp.write(`data`+'\n')
 
 
 # Basic class for reading CMIF video files
@@ -1058,7 +1082,11 @@ class BasicVoutFile(VideoParams):
 
 	def writeheader(self):
 		if self.frozen: raise CallError
-		writefileheader(self.fp, self.getinfo())
+		if self.format == 'compress':
+			writecompressfileheader(self.fp, self.compressheader, \
+				  self.getinfo())
+		else:
+			writefileheader(self.fp, self.getinfo())
 		self.freeze()
 		self.atheader = 1
 		self.framecount = 0
