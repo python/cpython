@@ -370,6 +370,19 @@ same meaning as for \method{recv()} above.
 Send data to the socket.  The socket must be connected to a remote
 socket.  The optional \var{flags} argument has the same meaning as for
 \method{recv()} above.  Returns the number of bytes sent.
+Applications are responsible for checking that all data has been sent;
+if only some of the data was transmitted, the application needs to
+attempt delivery of the remaining data.
+\end{methoddesc}
+
+\begin{methoddesc}[socket]{sendall}{string\optional{, flags}}
+Send data to the socket.  The socket must be connected to a remote
+socket.  The optional \var{flags} argument has the same meaning as for
+\method{recv()} above.  Unlike \method{send()}, this method continues
+to send data from \var{string} until either all data has been sent or
+an error occurs.  \code{None} is returned on success.  On error, an
+exception is raised, and there is no way to determine how much data,
+if any, was successfully sent.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{sendto}{string\optional{, flags}, address}
