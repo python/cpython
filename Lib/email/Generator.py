@@ -11,10 +11,6 @@ import random
 from types import ListType, StringType
 from cStringIO import StringIO
 
-# Intrapackage imports
-import Message
-import Errors
-
 EMPTYSTRING = ''
 SEMISPACE = '; '
 BAR = '|'
