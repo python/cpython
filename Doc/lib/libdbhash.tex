@@ -4,6 +4,7 @@
 \declaremodule{standard}{dbhash}
   \platform{Unix, Windows}
 \modulesynopsis{DBM-style interface to the BSD database library.}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
 
 The \module{dbhash} module provides a function to open databases using
@@ -25,8 +26,7 @@ This module provides an exception and a function:
   \var{path} argument is the name of the database file.
 
   The \var{flag} argument can be
-  \code{'r'} (to open an existing database for reading only --- default),
-  \code{'w'} (to open an existing database for reading and writing),
+  \code{'r'} (the default), \code{'w'},
   \code{'c'} (which creates the database if it doesn't exist), or
   \code{'n'} (which always creates a new empty database).
   For platforms on which the BSD \code{db} library supports locking,
