@@ -5,7 +5,6 @@ True Py_True
 False Py_False
 None Py_None
 
-ANY PyUnivPtr
 methodlist PyMethodDef
 methodchain PyMethodChain
 
