@@ -102,7 +102,7 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
-/* Define to 1 if you have the `flock' function. */
+/* Define if you have the 'flock' function. */
 #undef HAVE_FLOCK
 
 /* Define to 1 if you have the `fork' function. */
@@ -176,6 +176,9 @@
 
 /* Define to 1 if you have the `getnameinfo' function. */
 #undef HAVE_GETNAMEINFO
+
+/* Define if you have the 'getpagesize' function. */
+#undef HAVE_GETPAGESIZE
 
 /* Define to 1 if you have the `getpeername' function. */
 #undef HAVE_GETPEERNAME
@@ -681,9 +684,6 @@
 
 /* Define if setpgrp() must be called as setpgrp(0, 0). */
 #undef SETPGRP_HAVE_ARG
-
-/* Define to 1 if the `setpgrp' function takes no argument. */
-#undef SETPGRP_VOID
 
 /* Define if i>>j for signed int i does not extend the sign bit when i < 0 */
 #undef SIGNED_RIGHT_SHIFT_ZERO_FILLS

@@ -5,6 +5,10 @@
 #include <sys/time.h>
 #include <string.h>
 #include <errno.h>
+/* for sysconf */
+#if defined(HAVE_UNISTD_H)
+#include <unistd.h>
+#endif
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.
@@ -193,7 +197,15 @@ resource_getpagesize(PyObject *self, PyObject *args)
 {
 	if (!PyArg_ParseTuple(args, ":getpagesize"))
 		return NULL;
-	return Py_BuildValue("i", getpagesize());
+
+	long pagesize = 0;
+#if defined(HAVE_GETPAGESIZE)
+	pagesize = getpagesize();
+#elif defined(HAVE_SYSCONF)
+	pagesize = sysconf(_SC_PAGE_SIZE);
+#endif
+	return Py_BuildValue("i", pagesize);
+
 }
 
 /* List of functions */

@@ -1849,7 +1849,7 @@ AC_MSG_RESULT(MACHDEP_OBJS)
 
 # checks for library functions
 AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
- fchdir flock fork fsync fdatasync fpathconf ftime ftruncate \
+ fchdir fork fsync fdatasync fpathconf ftime ftruncate \
  gai_strerror getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getpwent getwd \
  hstrerror inet_aton inet_pton kill killpg lchown lstat mkfifo mknod mktime \
@@ -1894,6 +1894,26 @@ AC_TRY_COMPILE([
 #include <stdio.h>
 ], void* p = ctermid_r,
   AC_DEFINE(HAVE_CTERMID_R, 1, Define if you have the 'ctermid_r' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for flock)
+AC_TRY_COMPILE([
+#include "confdefs.h" 
+#include <sys/file.h>
+], void* p = flock,
+  AC_DEFINE(HAVE_FLOCK, 1, Define if you have the 'flock' function.)
+  AC_MSG_RESULT(yes),
+  AC_MSG_RESULT(no)
+)
+
+AC_MSG_CHECKING(for getpagesize)
+AC_TRY_COMPILE([
+#include "confdefs.h" 
+#include <unistd.h>
+], void* p = getpagesize,
+  AC_DEFINE(HAVE_GETPAGESIZE, 1, Define if you have the 'getpagesize' function.)
   AC_MSG_RESULT(yes),
   AC_MSG_RESULT(no)
 )
