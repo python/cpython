@@ -156,7 +156,7 @@ _socket socketmodule.c	# socket(2)
 
 # Socket module compiled with SSL support; you must edit the SSL variable:
 #SSL=/usr/local/ssl
-#socket socketmodule.c \
+#_socket socketmodule.c \
 #	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
 #	-L$(SSL)/lib -lssl -lcrypto
 
