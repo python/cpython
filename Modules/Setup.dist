@@ -402,9 +402,6 @@ GLHACK=-Dclear=__GLclear
 
 
 
-# David Wayne Williams' soundex module (obsolete -- this will disappear!)
-#soundex soundex.c
-
 # Helper module for various ascii-encoders
 #binascii binascii.c
 
