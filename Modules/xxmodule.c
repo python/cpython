@@ -23,7 +23,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /* Use this file as a template to start implementing a module that
-   also declares objects types. All occurrences of 'xxo' should be changed
+   also declares objects types. All occurrences of 'Xxo' should be changed
    to something reasonable for your objects. After that, all other
    occurrences of 'xx' should be changed to something reasonable for your
    module. If your module is named foo your sourcefile should be named
@@ -37,25 +37,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Xxo objects */
 
-#include "allobjects.h"
+#include "Python.h"
 
-static object *ErrorObject;
+static PyObject *ErrorObject;
 
 typedef struct {
-	OB_HEAD
-	object	*x_attr;	/* Attributes dictionary */
-} xxoobject;
+	PyObject_HEAD
+	PyObject	*x_attr;	/* Attributes dictionary */
+} XxoObject;
 
-staticforward typeobject Xxotype;
+staticforward PyTypeObject Xxo_Type;
 
-#define is_xxoobject(v)		((v)->ob_type == &Xxotype)
+#define XxoObject_Check(v)	((v)->ob_type == &Xxo_Type)
 
-static xxoobject *
-newxxoobject(arg)
-	object *arg;
+static XxoObject *
+newXxoObject(arg)
+	PyObject *arg;
 {
-	xxoobject *self;
-	self = NEWOBJ(xxoobject, &Xxotype);
+	XxoObject *self;
+	self = PyObject_NEW(XxoObject, &Xxo_Type);
 	if (self == NULL)
 		return NULL;
 	self->x_attr = NULL;
@@ -65,77 +65,77 @@ newxxoobject(arg)
 /* Xxo methods */
 
 static void
-xxo_dealloc(self)
-	xxoobject *self;
+Xxo_dealloc(self)
+	XxoObject *self;
 {
-	XDECREF(self->x_attr);
-	DEL(self);
+	Py_XDECREF(self->x_attr);
+	PyMem_DEL(self);
 }
 
-static object *
-xxo_demo(self, args)
-	xxoobject *self;
-	object *args;
+static PyObject *
+Xxo_demo(self, args)
+	XxoObject *self;
+	PyObject *args;
 {
-	if (!getnoarg(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static struct methodlist xxo_methods[] = {
-	{"demo",	(method)xxo_demo},
+static PyMethodDef Xxo_methods[] = {
+	{"demo",	(PyCFunction)Xxo_demo,	1},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
-xxo_getattr(self, name)
-	xxoobject *self;
+static PyObject *
+Xxo_getattr(self, name)
+	XxoObject *self;
 	char *name;
 {
 	if (self->x_attr != NULL) {
-		object *v = dictlookup(self->x_attr, name);
+		PyObject *v = PyDict_GetItemString(self->x_attr, name);
 		if (v != NULL) {
-			INCREF(v);
+			Py_INCREF(v);
 			return v;
 		}
 	}
-	return findmethod(xxo_methods, (object *)self, name);
+	return Py_FindMethod(Xxo_methods, (PyObject *)self, name);
 }
 
 static int
-xxo_setattr(self, name, v)
-	xxoobject *self;
+Xxo_setattr(self, name, v)
+	XxoObject *self;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	if (self->x_attr == NULL) {
-		self->x_attr = newdictobject();
+		self->x_attr = PyDict_New();
 		if (self->x_attr == NULL)
 			return -1;
 	}
 	if (v == NULL) {
-		int rv = dictremove(self->x_attr, name);
+		int rv = PyDict_DelItemString(self->x_attr, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
-			        "delete non-existing xxo attribute");
+			PyErr_SetString(PyExc_AttributeError,
+			        "delete non-existing Xxo attribute");
 		return rv;
 	}
 	else
-		return dictinsert(self->x_attr, name, v);
+		return PyDict_SetItemString(self->x_attr, name, v);
 }
 
-staticforward typeobject Xxotype = {
-	OB_HEAD_INIT(&Typetype)
+staticforward PyTypeObject Xxo_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"xxo",			/*tp_name*/
-	sizeof(xxoobject),	/*tp_basicsize*/
+	"Xxo",			/*tp_name*/
+	sizeof(XxoObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */
-	(destructor)xxo_dealloc, /*tp_dealloc*/
+	(destructor)Xxo_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
-	(getattrfunc)xxo_getattr, /*tp_getattr*/
-	(setattrfunc)xxo_setattr, /*tp_setattr*/
+	(getattrfunc)Xxo_getattr, /*tp_getattr*/
+	(setattrfunc)Xxo_setattr, /*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 	0,			/*tp_as_number*/
@@ -147,44 +147,44 @@ staticforward typeobject Xxotype = {
 
 /* Function of two integers returning integer */
 
-static object *
+static PyObject *
 xx_foo(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	long i, j;
 	long res;
-	if (!getargs(args, "(ll)", &i, &j))
+	if (!PyArg_ParseTuple(args, "ll", &i, &j))
 		return NULL;
 	res = i+j; /* XXX Do something here */
-	return newintobject(res);
+	return PyInt_FromLong(res);
 }
 
 
-/* Function of no arguments returning new xxo object */
+/* Function of no arguments returning new Xxo object */
 
-static object *
+static PyObject *
 xx_new(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int i, j;
-	xxoobject *rv;
+	XxoObject *rv;
 	
-	if (!getnoarg(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
-	rv = newxxoobject(args);
+	rv = newXxoObject(args);
 	if ( rv == NULL )
 	    return NULL;
-	return (object *)rv;
+	return (PyObject *)rv;
 }
 
 
 /* List of functions defined in the module */
 
-static struct methodlist xx_methods[] = {
-	{"foo",		xx_foo},
-	{"new",		xx_new},
+static PyMethodDef xx_methods[] = {
+	{"foo",		xx_foo,		1},
+	{"new",		xx_new,		1},
 	{NULL,		NULL}		/* sentinel */
 };
 
@@ -194,17 +194,17 @@ static struct methodlist xx_methods[] = {
 void
 initxx()
 {
-	object *m, *d;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
-	m = initmodule("xx", xx_methods);
+	m = Py_InitModule("xx", xx_methods);
 
 	/* Add some symbolic constants to the module */
-	d = getmoduledict(m);
-	ErrorObject = newstringobject("xx.error");
-	dictinsert(d, "error", ErrorObject);
+	d = PyModule_GetDict(m);
+	ErrorObject = PyString_FromString("xx.error");
+	PyDict_SetItemString(d, "error", ErrorObject);
 
 	/* Check for errors */
-	if (err_occurred())
-		fatal("can't initialize module xx");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module xx");
 }
