@@ -22,6 +22,12 @@ set of tests.
 To achieve this, PyUnit supports three major concepts:
 
 \begin{definitions}
+\term{test fixture}
+A \dfn{test fixture} represents the preparation needed to perform one
+or more tests, and any associate cleanup actions.  This may involve,
+for example, creating temporary or proxy databases, directories, or
+starting a server process.
+
 \term{test case}
 A \dfn{test case} is the smallest unit of testing.  It checks for a
 specific response to a particular set of inputs.  PyUnit provides a
@@ -119,19 +125,32 @@ testcase = unittest.FunctionTestCase(testSomething,
   framework.
 \end{classdesc}
 
-\begin{classdesc}{TestSuite}{}
+\begin{classdesc}{TestSuite}{\optional{tests}}
   This class represents an aggregation of individual tests cases and
   test suites.  The class presents the interface needed by the test
   runner to allow it to be run as any other test case, but all the
   contained tests and test suites are executed.  Additional methods
-  are provided to add test cases and suites to the aggregation.
+  are provided to add test cases and suites to the aggregation.  If
+  \var{tests} is given, it must be a sequence of individual tests that
+  will be added to the suite.
 \end{classdesc}
 
 \begin{classdesc}{TestLoader}{}
+  This class is responsible for loading tests according to various
+  criteria and returning them wrapped in a \class{TestSuite}.
+  It can load all tests within a given module or \class{TestCase}
+  class.  When loading from a module, it considers all
+  \class{TestCase}-derived classes.  For each such class, it creates
+  an instance for each method with a name beginning with the string
+  \samp{test}.
 \end{classdesc}
 
 \begin{classdesc}{TextTestRunner}{\optional{stream\optional{,
                   descriptions\optional{, verbosity}}}}
+  A basic test runner implementation which prints results on standard
+  output.  It has a few configurable parameters, but is essentially
+  very simple.  Graphical applications which run test suites should
+  provide alternate implementations.
 \end{classdesc}
 
 \begin{funcdesc}{main}{\optional{module\optional{,
@@ -150,6 +169,127 @@ if __name__ == '__main__':
 
 \subsection{TestCase Objects
             \label{testcase-objects}}
+
+Each \class{TestCase} instance represents a single test, but each
+concrete subclass may be used to define multiple tests --- the
+concrete class represents a single test fixture.  The fixture is
+created and cleaned up for each test case.
+
+\class{TestCase} instances provide three groups of methods: one group
+used to run the test, another used by the test implementation to
+check conditions and report failures, and some inquiry methods
+allowing information about the test itself to be gathered.
+
+Methods in the first group are:
+
+\begin{methoddesc}[TestCase]{setUp}{}
+  Method called to prepare the test fixture.  This is called
+  immediately before calling the test method; any exception raised by
+  this method will be considered an error rather than a test failure.
+  The default implementation does nothing.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{run}{\optional{result}}
+  Run the test, collecting the result into the test result object
+  passed as \var{result}.  If \var{result} is omitted or \code{None},
+  a temporary result object is created and used, but is not made
+  available to the caller.  This is equivalent to simply calling the
+  \class{TestCase} instance.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{tearDown}{}
+  Method called immediately after the test method has been called and
+  the result recorded.  This is called even if the test method raised
+  an exception, so the implementation in subclasses may need to be
+  particularly careful about checking internal state.  Any exception
+  raised by this method will be considered an error rather than a test
+  failure.  The default implementation does nothing.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{debug}{}
+  Run the test without collecting the result.  This allows exceptions
+  raised by the test to be propogated to the caller, and can be used
+  to support running tests under a debugger.
+\end{methoddesc}
+
+
+The test code can either raise \exception{AssertionError} or use any
+of the following methods to check for and report failures:
+
+\begin{methoddesc}[TestCase]{failUnless}{expr\optional{, msg}}
+\methodline[TestCase]{assert_}{value\optional{, msg}}
+  This method is similar to the \keyword{assert} statement, except it
+  works even when Python is executed in ``optimizing'' mode (using the
+  \programopt{-O} command line switch).  If \var{expr} is false,
+  \exception{AssertionError} will be raised with \var{msg} as the
+  message describing the failure; \code{None} will be used for the
+  message if \var{msg} is omitted.  This method is equivalent to
+
+\begin{alltt}
+assert \var{expr}, \var{msg}
+\end{alltt}
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{assertEqual}{first, second\optional{, msg}}
+  Test that \var{first} and \var{second} are equal.  If the values do
+  not compare equal, the test will fail with the explanation given by
+  \var{msg}, or \code{None}.  Note that using \method{assertEqual()}
+  improves upon doing the comparison as the first parameter to
+  \method{failUnless()} is that the default value for \var{msg} can be
+  computed to include representations of both \var{first} and
+  \var{second}.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{assertNotEqual}{first, second\optional{, msg}}
+  Test that \var{first} and \var{second} are not equal.  If the values
+  do compare equal, the test will fail with the explanation given by
+  \var{msg}, or \code{None}.  Note that using \method{assertNotEqual()}
+  improves upon doing the comparison as the first parameter to
+  \method{failUnless()} is that the default value for \var{msg} can be
+  computed to include representations of both \var{first} and
+  \var{second}.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{failIf}{expr\optional{, msg}}
+  The inverse of the \method{assert_()} method is the
+  \method{failIf()} method.  This raises \exception{AssertionError} if
+  \var{expr} is true, with \var{msg} or \code{None} for the error
+  message.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{fail}{\optional{msg}}
+  Fail unconditionally, with \var{msg} or \code{None} for the error
+  message.
+\end{methoddesc}
+
+
+Testing frameworks can use the following methods to collect
+information on the test:
+
+\begin{methoddesc}[TestCase]{countTestCases}{}
+  Return the number of tests represented by the this test object.  For
+  \class{TestCase} instances, this will always be \code{1}, but this
+  method is also implemented by the \class{TestSuite} class, which can
+  return larger values.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{defaultTestResult}{}
+  Return the default type of test result object to be used to run this
+  test.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{id}{}
+  Return a string identifying the specific test case.  This is usually
+  the full name of the test method, including the module and class
+  names.
+\end{methoddesc}
+
+\begin{methoddesc}[TestCase]{shortDescription}{}
+  Returns a one-line description of the test, or \code{None} if no
+  description has been provided.  The default implementation of this
+  method returns the first line of the test method's docstring, if
+  available, or \code{None}.
+\end{methoddesc}
 
 
 \subsection{TestSuite Objects
