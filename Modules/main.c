@@ -12,10 +12,6 @@
 #include <fcntl.h>
 #endif
 
-#if defined(WITH_NEXT_FRAMEWORK)
-#include "pymactoolbox.h"
-#endif
-
 #if (defined(PYOS_OS2) && !defined(PYCC_GCC)) || defined(MS_WINDOWS)
 #define PYTHONHOMEHELP "<prefix>\\lib"
 #else
@@ -154,27 +150,6 @@ Py_Main(int argc, char **argv)
 
 	PySys_ResetWarnOptions();
 
-#if defined(WITH_NEXT_FRAMEWORK)
-	/* If we are running from a framework it could be that we are actually
-	** the main program for an applet. If so, the next call will return the
-	** filename that we are supposed to run.
-	*/
-	filename = PyMac_GetAppletScriptFile();
-	if (filename != NULL) {
-		if ((fp = fopen(filename, "r")) == NULL) {
-			fprintf(stderr, "%s: can't open file '%s'\n",
-				argv[0], filename);
-#if defined(__VMS)
-			/* STS$M_INHIB_MSG + SS$_ABORT */
-			exit(0x1000002c);
-#else
-			exit(2);
-#endif
-		}
-	}
-	/* Skip option-processing if we are an applet */
-	if (filename == NULL)
-#endif
 	while ((c = _PyOS_GetOpt(argc, argv, PROGRAM_OPTS)) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
@@ -301,7 +276,7 @@ Py_Main(int argc, char **argv)
 	    (p = Py_GETENV("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
-	if (command == NULL && filename == NULL && _PyOS_optind < argc &&
+	if (command == NULL && _PyOS_optind < argc &&
 	    strcmp(argv[_PyOS_optind], "-") != 0)
 	{
 #ifdef __VMS
@@ -375,6 +350,21 @@ Py_Main(int argc, char **argv)
 	}
 #endif /* __VMS */
 
+#ifdef __APPLE__
+	/* On MacOS X, when the Python interpreter is embedded in an
+	   application bundle, it gets executed by a bootstrapping script
+	   that does os.execve() with an argv[0] that's different from the
+	   actual Python executable. This is needed to keep the Finder happy,
+	   or rather, to work around Apple's overly strict requirements of
+	   the process name. However, we still need a usable sys.executable,
+	   so the actual executable path is passed in an environment variable.
+	   See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
+	   script. */
+	if ((p = Py_GETENV("PYTHONEXECUTABLE")) && *p != '\0')
+		Py_SetProgramName(p);
+	else
+		Py_SetProgramName(argv[0]);
+#else
 	Py_SetProgramName(argv[0]);
 	Py_Initialize();
 
