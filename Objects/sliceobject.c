@@ -155,6 +155,26 @@ static PyObject *slice_getattr(PySliceObject *self, char *name)
 	return ret;
 }
 
+static int
+slice_compare(PySliceObject *v, PySliceObject *w)
+{
+	int result = 0;
+
+        if (v == w)
+		return 0;
+
+	if (PyObject_Cmp(v->start, w->start, &result) < 0)
+	    return -2;
+	if (result != 0)
+		return result;
+	if (PyObject_Cmp(v->stop, w->stop, &result) < 0)
+	    return -2;
+	if (result != 0)
+		return result;
+	if (PyObject_Cmp(v->step, w->step, &result) < 0)
+	    return -2;
+	return result;
+}
 
 PyTypeObject PySlice_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
@@ -166,9 +186,9 @@ PyTypeObject PySlice_Type = {
 	0,			/*tp_print*/
 	(getattrfunc)slice_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
-	0,		    /*tp_compare*/
-	(reprfunc)slice_repr, /*tp_repr*/
+	(cmpfunc)slice_compare, /*tp_compare*/
+	(reprfunc)slice_repr,   /*tp_repr*/
 	0,			/*tp_as_number*/
-	0,	    	/*tp_as_sequence*/
+	0,	    		/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
 };
