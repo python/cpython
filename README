@@ -26,7 +26,7 @@ Misc/NEWS.  Some highlights:
   __domain__) and differs in one crucial aspect: __init__.py is
   required, and loaded in the package's namespace instead of as a
   submodule.  For more information, see
-  http://grail.cnri.reston.va.us/python/essays/packages.html.
+    http://www.python.org/doc/essays/packages.html.
 
   - The new "re" module (Perl style regular expressions) is here.  It
   is based on Philip Hazel's pcre code; the Python interfaces were put
@@ -39,7 +39,7 @@ Misc/NEWS.  Some highlights:
   - All standard exceptions and most exceptions defined in standard
   extension modules are now classes.  Use python -X to revert back to
   string exceptions.  See
-    http://grail.cnri.reston.va.us/python/essays/stdexceptions.html
+    http://www.python.org/doc/essays/stdexceptions.html
   for more info.
 
   - Comparisons can now raise exceptions (previously, exceptions
@@ -295,16 +295,15 @@ Linux:  On Linux version 1.x, once you've built Python, use it to run
 	comment out the crypt module in the same file.
 
 DEC Unix: When enabling threads, use --with-dec-threads, not
-	--with-thread.
+	--with-thread.  When using GCC, it is possible to get an
+	internal compiler error if optimization is used.  This was
+	reported for GCC 2.7.2.3 on selectmodule.c.  Manually compile
+	the affected file without optimization to solve the problem.
 
 AIX:	A complete overhaul of the shared library support is now in
 	place.  See Misc/AIX-NOTES for some notes on how it's done.
-
-	WARNING!  In some versions of AIX, you get errors about
-	Invalid Indent when running the Python test set.  This appears
-	to be a bug in the AIX compiler.  Rebuild Parser/tokenizer.c
-	using OPT="" or OPT=-g, or use gcc.  According to the latest
-	reports, it seems this compiler bug is still present in 4.2.1.
+	(The optimizer bug reported at this place in previous releases
+	has been worked around by a minimal code change.)
 
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
@@ -322,8 +321,15 @@ SCO:    1) Everything works much better if you add -U__STDC__ to the
 	3) According to at least one report, the above apply only to
 	SCO 3 -- Python builds out of the box on SCO 5.
 
-SunOS 4.x: When using the standard "cc" compiler, certain modules may
+SunOS 4.x: There seems to be a linker problem -- the linker doesn't
+	like the dot in the library name "-lpython1.5".  The simplest
+	solution is to edit the "link:" target in Modules/Makefile to
+	change
+		-L.. -lpython$(VERSION)
+	into
+		$(LIBRARY)
 
+	When using the standard "cc" compiler, certain modules may
 	not be compilable because they use non-K&R syntax.  You should
 	be able to get a basic Python interpreter by commenting out
 	such modules in the Modules/Setup file, but I really recommend
@@ -384,6 +390,11 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	smarter "smake " utility (/usr/sbin/smake), or GNU make.  If
 	you set the first line of the Makefile to #!/usr/sbin/smake
 	smake will be invoked by make (likewise for GNU make).
+
+	A bug in the MIPSpro 7.1 compiler's optimizer seems to break
+	Modules/pypcre.c.  The short term solution is to compile it
+	without optimization.  The bug appears to be fixed in version
+	7.2.1 of the compiler.
 
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
