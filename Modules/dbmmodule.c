@@ -32,8 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* DBM module using dictionary interface */
 
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -41,18 +40,18 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ndbm.h>
 
 typedef struct {
-	OB_HEAD
+	PyObject_HEAD
 	int di_size;	/* -1 means recompute */
 	DBM *di_dbm;
 } dbmobject;
 
-staticforward typeobject Dbmtype;
+staticforward PyTypeObject Dbmtype;
 
 #define is_dbmobject(v) ((v)->ob_type == &Dbmtype)
 
-static object *DbmError;
+static PyObject *DbmError;
 
-static object *
+static PyObject *
 newdbmobject(file, flags, mode)
     char *file;
     int flags;
@@ -60,16 +59,16 @@ newdbmobject(file, flags, mode)
 {
         dbmobject *dp;
 
-	dp = NEWOBJ(dbmobject, &Dbmtype);
+	dp = PyObject_NEW(dbmobject, &Dbmtype);
 	if (dp == NULL)
 		return NULL;
 	dp->di_size = -1;
 	if ( (dp->di_dbm = dbm_open(file, flags, mode)) == 0 ) {
-	    err_errno(DbmError);
-	    DECREF(dp);
+	    PyErr_SetFromErrno(DbmError);
+	    Py_DECREF(dp);
 	    return NULL;
 	}
-	return (object *)dp;
+	return (PyObject *)dp;
 }
 
 /* Methods */
@@ -80,7 +79,7 @@ dbm_dealloc(dp)
 {
         if ( dp->di_dbm )
 	  dbm_close(dp->di_dbm);
-	DEL(dp);
+	PyMem_DEL(dp);
 }
 
 static int
@@ -100,176 +99,179 @@ dbm_length(dp)
 	return dp->di_size;
 }
 
-static object *
+static PyObject *
 dbm_subscript(dp, key)
 	dbmobject *dp;
-	register object *key;
+	register PyObject *key;
 {
 	datum drec, krec;
 	
-	if (!getargs(key, "s#", &krec.dptr, &krec.dsize) )
+	if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
 		return NULL;
 	
 	drec = dbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
-	    err_setstr(KeyError, GETSTRINGVALUE((stringobject *)key));
+	    PyErr_SetString(PyExc_KeyError,
+			    PyString_AS_STRING((PyStringObject *)key));
 	    return NULL;
 	}
 	if ( dbm_error(dp->di_dbm) ) {
 	    dbm_clearerr(dp->di_dbm);
-	    err_setstr(DbmError, "");
+	    PyErr_SetString(DbmError, "");
 	    return NULL;
 	}
-	return newsizedstringobject(drec.dptr, drec.dsize);
+	return PyString_FromStringAndSize(drec.dptr, drec.dsize);
 }
 
 static int
 dbm_ass_sub(dp, v, w)
 	dbmobject *dp;
-	object *v, *w;
+	PyObject *v, *w;
 {
         datum krec, drec;
 	
-        if ( !getargs(v, "s#", &krec.dptr, &krec.dsize) ) {
-	    err_setstr(TypeError, "dbm mappings have string indices only");
+        if ( !PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
+	    PyErr_SetString(PyExc_TypeError,
+			    "dbm mappings have string indices only");
 	    return -1;
 	}
 	dp->di_size = -1;
 	if (w == NULL) {
 	    if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
 		dbm_clearerr(dp->di_dbm);
-		err_setstr(KeyError, GETSTRINGVALUE((stringobject *)v));
+		PyErr_SetString(PyExc_KeyError,
+				PyString_AS_STRING((PyStringObject *)v));
 		return -1;
 	    }
 	} else {
-	    if ( !getargs(w, "s#", &drec.dptr, &drec.dsize) ) {
-		err_setstr(TypeError,
+	    if ( !PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize) ) {
+		PyErr_SetString(PyExc_TypeError,
 			   "dbm mappings have string elements only");
 		return -1;
 	    }
 	    if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
 		dbm_clearerr(dp->di_dbm);
-		err_setstr(DbmError, "Cannot add item to database");
+		PyErr_SetString(DbmError, "Cannot add item to database");
 		return -1;
 	    }
 	}
 	if ( dbm_error(dp->di_dbm) ) {
 	    dbm_clearerr(dp->di_dbm);
-	    err_setstr(DbmError, "");
+	    PyErr_SetString(DbmError, "");
 	    return -1;
 	}
 	return 0;
 }
 
-static mapping_methods dbm_as_mapping = {
+static PyMappingMethods dbm_as_mapping = {
 	(inquiry)dbm_length,		/*mp_length*/
 	(binaryfunc)dbm_subscript,	/*mp_subscript*/
 	(objobjargproc)dbm_ass_sub,	/*mp_ass_subscript*/
 };
 
-static object *
+static PyObject *
 dbm__close(dp, args)
 	register dbmobject *dp;
-	object *args;
+	PyObject *args;
 {
-	if ( !getnoarg(args) )
+	if ( !PyArg_NoArgs(args) )
 		return NULL;
         if ( dp->di_dbm )
 	    dbm_close(dp->di_dbm);
 	dp->di_dbm = NULL;
-	INCREF(None);
-	return None;
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 dbm_keys(dp, args)
 	register dbmobject *dp;
-	object *args;
+	PyObject *args;
 {
-	register object *v, *item;
+	register PyObject *v, *item;
 	datum key;
 	int err;
 
-	if (!getnoarg(args))
+	if (!PyArg_NoArgs(args))
 		return NULL;
-	v = newlistobject(0);
+	v = PyList_New(0);
 	if (v == NULL)
 		return NULL;
 	for (key = dbm_firstkey(dp->di_dbm); key.dptr;
 	     key = dbm_nextkey(dp->di_dbm)) {
-		item = newsizedstringobject(key.dptr, key.dsize);
+		item = PyString_FromStringAndSize(key.dptr, key.dsize);
 		if (item == NULL) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
-		err = addlistitem(v, item);
-		DECREF(item);
+		err = PyList_Append(v, item);
+		Py_DECREF(item);
 		if (err != 0) {
-			DECREF(v);
+			Py_DECREF(v);
 			return NULL;
 		}
 	}
 	return v;
 }
 
-static object *
+static PyObject *
 dbm_has_key(dp, args)
 	register dbmobject *dp;
-	object *args;
+	PyObject *args;
 {
 	datum key, val;
 	
-	if (!getargs(args, "s#", &key.dptr, &key.dsize))
+	if (!PyArg_Parse(args, "s#", &key.dptr, &key.dsize))
 		return NULL;
 	val = dbm_fetch(dp->di_dbm, key);
-	return newintobject(val.dptr != NULL);
+	return PyInt_FromLong(val.dptr != NULL);
 }
 
-static struct methodlist dbm_methods[] = {
-	{"close",	(method)dbm__close},
-	{"keys",	(method)dbm_keys},
-	{"has_key",	(method)dbm_has_key},
+static PyMethodDef dbm_methods[] = {
+	{"close",	(PyCFunction)dbm__close},
+	{"keys",	(PyCFunction)dbm_keys},
+	{"has_key",	(PyCFunction)dbm_has_key},
 	{NULL,		NULL}		/* sentinel */
 };
 
-static object *
+static PyObject *
 dbm_getattr(dp, name)
 	dbmobject *dp;
 	char *name;
 {
-	return findmethod(dbm_methods, (object *)dp, name);
+	return Py_FindMethod(dbm_methods, (PyObject *)dp, name);
 }
 
-static typeobject Dbmtype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject Dbmtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"dbm",
 	sizeof(dbmobject),
 	0,
-	(destructor)dbm_dealloc, /*tp_dealloc*/
-	0,			/*tp_print*/
+	(destructor)dbm_dealloc,  /*tp_dealloc*/
+	0,			  /*tp_print*/
 	(getattrfunc)dbm_getattr, /*tp_getattr*/
-	0,			/*tp_setattr*/
-	0,			/*tp_compare*/
-	0,			/*tp_repr*/
-	0,			/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	&dbm_as_mapping,	/*tp_as_mapping*/
+	0,			  /*tp_setattr*/
+	0,			  /*tp_compare*/
+	0,			  /*tp_repr*/
+	0,			  /*tp_as_number*/
+	0,			  /*tp_as_sequence*/
+	&dbm_as_mapping,	  /*tp_as_mapping*/
 };
 
 /* ----------------------------------------------------------------- */
 
-static object *
+static PyObject *
 dbmopen(self, args)
-    object *self;
-    object *args;
+    PyObject *self;
+    PyObject *args;
 {
 	char *name;
 	char *flags = "r";
 	int iflags;
 	int mode = 0666;
 
-        if ( !newgetargs(args, "s|si", &name, &flags, &mode) )
+        if ( !PyArg_ParseTuple(args, "s|si", &name, &flags, &mode) )
 	  return NULL;
 	if ( strcmp(flags, "r") == 0 )
 	  iflags = O_RDONLY;
@@ -282,25 +284,25 @@ dbmopen(self, args)
 	else if ( strcmp(flags, "n") == 0 )
 	  iflags = O_RDWR|O_CREAT|O_TRUNC;
 	else {
-	    err_setstr(DbmError,
+	    PyErr_SetString(DbmError,
 		       "Flags should be one of 'r', 'w', 'c' or 'n'");
 	    return NULL;
 	}
         return newdbmobject(name, iflags, mode);
 }
 
-static struct methodlist dbmmodule_methods[] = {
-    { "open", (method)dbmopen, 1 },
+static PyMethodDef dbmmodule_methods[] = {
+    { "open", (PyCFunction)dbmopen, 1 },
     { 0, 0 },
 };
 
 void
 initdbm() {
-    object *m, *d;
+    PyObject *m, *d;
 
-    m = initmodule("dbm", dbmmodule_methods);
-    d = getmoduledict(m);
-    DbmError = newstringobject("dbm.error");
-    if ( DbmError == NULL || dictinsert(d, "error", DbmError) )
-      fatal("can't define dbm.error");
+    m = Py_InitModule("dbm", dbmmodule_methods);
+    d = PyModule_GetDict(m);
+    DbmError = PyString_FromString("dbm.error");
+    if ( DbmError == NULL || PyDict_SetItemString(d, "error", DbmError) )
+      Py_FatalError("can't define dbm.error");
 }
