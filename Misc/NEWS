@@ -35,6 +35,10 @@ Core and builtins
   to clear the error when attempts to get the __getstate__ attribute
   fail caused intermittent errors and odd behavior.
 
+- fixed: if a file is opened with an explicit buffer size >= 1, repeated
+  close() calls would attempt to free() the buffer already free()ed on
+  the first call.
+
 Library
 -------
 
