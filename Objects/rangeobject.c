@@ -193,9 +193,9 @@ range_contains(rangeobject *r, PyObject *obj)
 	if (num < 0 && PyErr_Occurred())
 		return -1;
 
-	if (num < r->start || (num - r->start) % r->step)
+	if ((num < r->start) || ((num - r->start) % r->step))
 		return 0;
-	if (num > (r->start + (r->len * r->step)))
+	if (num >= (r->start + (r->len * r->step)))
 		return 0;
 	return 1;
 }
