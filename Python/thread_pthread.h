@@ -200,7 +200,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	/* Restore signal mask for original thread */
 	SET_THREAD_SIGMASK(SIG_SETMASK, &oldmask, NULL);
 
-#ifdef THREAD_STACK_SIZE
+#if defined(THREAD_STACK_SIZE) || defined(PTHREAD_SYSTEM_SCHED_SUPPORTED)
 	pthread_attr_destroy(&attrs);
 #endif
 	if (success == 0) {
