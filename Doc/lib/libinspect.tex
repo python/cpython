@@ -238,7 +238,7 @@ you can expect to find the following special attributes:
 
 \begin{funcdesc}{formatargspec}{args\optional{, varargs, varkw, defaults,
       argformat, varargsformat, varkwformat, defaultformat}}
-  
+
   Format a pretty argument spec from the four values returned by
   \function{getargspec()}.  The other four arguments are the
   corresponding optional formatting functions that are called to turn
@@ -251,6 +251,14 @@ you can expect to find the following special attributes:
   \function{getargvalues()}.  The other four arguments are the
   corresponding optional formatting functions that are called to turn
   names and values into strings.
+\end{funcdesc}
+
+\begin{funcdesc}{getmro}{cls}
+  Return a tuple of class cls's base classes, including cls, in
+  method resolution order.  No class appears more than once in this tuple.
+  Note that the method resolution order depends on cls's type.  Unless a
+  very peculiar user-defined metatype is in use, cls will be the first
+  element of the tuple.
 \end{funcdesc}
 
 \subsection{The interpreter stack

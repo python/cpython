@@ -213,3 +213,23 @@ for fname in files_to_clean_up:
         os.unlink(fname)
     except:
         pass
+
+# Test classic-class method resolution order.
+class A:    pass
+class B(A): pass
+class C(A): pass
+class D(B, C): pass
+
+expected = (D, B, A, C)
+got = inspect.getmro(D)
+test(expected == got, "expected %r mro, got %r", expected, got)
+
+# The same w/ new-class MRO.
+class A(object):    pass
+class B(A): pass
+class C(A): pass
+class D(B, C): pass
+
+expected = (D, B, C, A, object)
+got = inspect.getmro(D)
+test(expected == got, "expected %r mro, got %r", expected, got)
