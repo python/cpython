@@ -142,6 +142,9 @@
 /* Define if you have the dlopen function.  */
 #undef HAVE_DLOPEN
 
+/* Define if you have the flock function.  */
+#undef HAVE_FLOCK
+
 /* Define if you have the ftime function.  */
 #undef HAVE_FTIME
 
