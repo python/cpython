@@ -256,7 +256,7 @@ class InputSource:
 
     def setCharacterStream(self, charfile):
         """Set the character stream for this input source. (The stream
-        must be a Python 1.6 Unicode-wrapped file-like that performs
+        must be a Python 2.0 Unicode-wrapped file-like that performs
         conversion to Unicode strings.)
 
         If there is a character stream specified, the SAX parser will
