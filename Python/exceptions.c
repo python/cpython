@@ -440,8 +440,10 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
 
     switch (PySequence_Length(args)) {
     case 3:
-	/* open() errors give third argument which is the filename.  But so
-	 * common in-place unpacking doesn't break, e.g.:
+	/* Where a function has a single filename, such as open() or some
+	 * of the os module functions, PyErr_SetFromErrnoWithFilename() is
+	 * called, giving a third argument which is the filename.  But, so
+	 * that old code using in-place unpacking doesn't break, e.g.:
 	 * 
 	 * except IOError, (errno, strerror):
 	 * 
@@ -465,9 +467,12 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
 	subslice = PySequence_GetSlice(args, 0, 2);
 	if (!subslice || PyObject_SetAttrString(self, "args", subslice))
 	    goto finally;
+	break;
 
     case 2:
-	/* common case: PyErr_SetFromErrno() */
+	/* Used when PyErr_SetFromErrno() is called and no filename
+	 * argument is given.
+	 */
 	item0 = PySequence_GetItem(args, 0);
 	item1 = PySequence_GetItem(args, 1);
 	if (!item0 || !item1)
@@ -478,6 +483,7 @@ EnvironmentError__init__(PyObject* self, PyObject* args)
 	{
 	    goto finally;
 	}
+	break;
     }
 
     Py_INCREF(Py_None);
