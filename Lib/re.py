@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- mode: python -*-
-
 import sys
 import string
 from pcre import *
@@ -291,4 +288,3 @@ class MatchObject:
             return result[0]
         else:
             return ()
-
