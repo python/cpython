@@ -1,4 +1,4 @@
-\chapter{Simple statements\label{simple}}
+\chapter{Simple statements \label{simple}}
 \indexii{simple}{statement}
 
 Simple statements are comprised within a single logical line.
@@ -21,7 +21,7 @@ simple_stmt:    expression_stmt
               | exec_stmt
 \end{verbatim}
 
-\section{Expression statements\label{exprstmts}}
+\section{Expression statements \label{exprstmts}}
 \indexii{expression}{statement}
 
 Expression statements are used (mostly interactively) to compute and
@@ -51,23 +51,23 @@ any output.)
 \indexii{writing}{values}
 \indexii{procedure}{call}
 
-\section{Assert statements\label{assert}}\stindex{assert}
+\section{Assert statements \label{assert}}
 
-Assert statements are a convenient way to insert debugging
-assertions\indexii{debugging}{assertions} into a program:
+Assert statements\stindex{assert} are a convenient way to insert
+debugging assertions\indexii{debugging}{assertions} into a program:
 
 \begin{verbatim}
 assert_statement: "assert" expression ["," expression]
 \end{verbatim}
 
-The simple form, ``\code{assert expression}'', is equivalent to
+The simple form, \samp{assert expression}, is equivalent to
 
 \begin{verbatim}
 if __debug__:
    if not expression: raise AssertionError
 \end{verbatim}
 
-The extended form, ``\code{assert expression1, expression2}'', is
+The extended form, \samp{assert expression1, expression2}, is
 equivalent to
 
 \begin{verbatim}
@@ -76,7 +76,7 @@ if __debug__:
 \end{verbatim}
 
 These equivalences assume that \code{__debug__}\ttindex{__debug__} and
-\code{AssertionError}\exindex{AssertionError} refer to the built-in
+\exception{AssertionError}\exindex{AssertionError} refer to the built-in
 variables with those names.  In the current implementation, the
 built-in variable \code{__debug__} is 1 under normal circumstances, 0
 when optimization is requested (command line option -O).  The current
@@ -86,11 +86,11 @@ the source code for the expression that failed in the error message;
 it will be displayed as part of the stack trace.
 
 
-\section{Assignment statements\label{assignment}}
-\indexii{assignment}{statement}
+\section{Assignment statements \label{assignment}}
 
-Assignment statements are used to (re)bind names to values and to
-modify attributes or items of mutable objects:
+Assignment statements\indexii{assignment}{statement} are used to
+(re)bind names to values and to modify attributes or items of mutable
+objects:
 \indexii{binding}{name}
 \indexii{rebinding}{name}
 \obindex{mutable}
@@ -137,7 +137,7 @@ must be a sequence with the same number of items as the there are
 targets in the target list, and the items are assigned, from left to
 right, to the corresponding targets.  (This rule is relaxed as of
 Python 1.5; in earlier versions, the object had to be a tuple.  Since
-strings are sequences, an assignment like ``\code{a, b = "xy"}'' is
+strings are sequences, an assignment like \samp{a, b = "xy"} is
 now legal as long as the string has the right length.)
 
 \end{itemize}
@@ -235,9 +235,9 @@ messages.)
 
 WARNING: Although the definition of assignment implies that overlaps
 between the left-hand side and the right-hand side are `safe' (e.g.,
-``\code{a, b = b, a}'' swaps two variables), overlaps \emph{within} the
+\samp{a, b = b, a} swaps two variables), overlaps \emph{within} the
 collection of assigned-to variables are not safe!  For instance, the
-following program prints ``\code{[0, 2]}'':
+following program prints \samp{[0, 2]}:
 
 \begin{verbatim}
 x = [0, 1]
@@ -247,7 +247,7 @@ print x
 \end{verbatim}
 
 
-\section{The \keyword{pass} statement\label{pass}}
+\section{The \keyword{pass} statement \label{pass}}
 \stindex{pass}
 
 \begin{verbatim}
@@ -265,7 +265,7 @@ def f(arg): pass    # a function that does nothing (yet)
 class C: pass       # a class with no methods (yet)
 \end{verbatim}
 
-\section{The \keyword{del} statement\label{del}}
+\section{The \keyword{del} statement \label{del}}
 \stindex{del}
 
 \begin{verbatim}
@@ -293,7 +293,7 @@ is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 \indexii{attribute}{deletion}
 
-\section{The \keyword{print} statement\label{print}}
+\section{The \keyword{print} statement \label{print}}
 \stindex{print}
 
 \begin{verbatim}
@@ -330,7 +330,7 @@ exception is raised.
 \withsubitem{(in module sys)}{\ttindex{stdout}}
 \exindex{RuntimeError}
 
-\section{The \keyword{return} statement\label{return}}
+\section{The \keyword{return} statement \label{return}}
 \stindex{return}
 
 \begin{verbatim}
@@ -353,7 +353,7 @@ with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the function.
 \kwindex{finally}
 
-\section{The \keyword{raise} statement\label{raise}}
+\section{The \keyword{raise} statement \label{raise}}
 \stindex{raise}
 
 \begin{verbatim}
@@ -363,7 +363,7 @@ raise_stmt:     "raise" [expression ["," expression ["," expression]]]
 If no expressions are present, \keyword{raise} re-raises the last
 expression that was raised in the current scope.
 
-Otherwose, \keyword{raise} evaluates its first expression, which must yield
+Otherwise, \keyword{raise} evaluates its first expression, which must yield
 a string, class, or instance object.  If there is a second expression,
 this is evaluated, else \code{None} is substituted.  If the first
 expression is a class object, then the second expression may be an
@@ -393,7 +393,7 @@ exception occurred.  This is useful to re-raise an exception
 transparently in an except clause.
 \obindex{traceback}
 
-\section{The \keyword{break} statement\label{break}}
+\section{The \keyword{break} statement \label{break}}
 \stindex{break}
 
 \begin{verbatim}
@@ -420,7 +420,7 @@ with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
-\section{The \keyword{continue} statement\label{continue}}
+\section{The \keyword{continue} statement \label{continue}}
 \stindex{continue}
 
 \begin{verbatim}
@@ -439,7 +439,7 @@ It continues with the next cycle of the nearest enclosing loop.
 \indexii{loop}{statement}
 \kwindex{finally}
 
-\section{The \keyword{import} statement\label{import}}
+\section{The \keyword{import} statement \label{import}}
 \stindex{import}
 
 \begin{verbatim}
@@ -501,8 +501,8 @@ module name: it goes through the list of identifiers, looks each one
 of them up in the module found in step (1), and binds the name in the
 local namespace to the object thus found.  If a name is not found,
 \exception{ImportError} is raised.  If the list of identifiers is replaced
-by a star (\code{*}), all names defined in the module are bound,
-except those beginning with an underscore(\code{_}).
+by a star (\samp{*}), all names defined in the module are bound,
+except those beginning with an underscore (\character{_}).
 \indexii{name}{binding}
 \exindex{ImportError}
 
@@ -510,7 +510,7 @@ Names bound by \keyword{import} statements may not occur in
 \keyword{global} statements in the same scope.
 \stindex{global}
 
-The \keyword{from} form with \code{*} may only occur in a module scope.
+The \keyword{from} form with \samp{*} may only occur in a module scope.
 \kwindex{from}
 \stindex{from}
 
@@ -534,7 +534,7 @@ about how the module search works from inside a package.]
 [XXX Also should mention __import__().]
 \bifuncindex{__import__}
 
-\section{The \keyword{global} statement\label{global}}
+\section{The \keyword{global} statement \label{global}}
 \stindex{global}
 
 \begin{verbatim}
@@ -574,7 +574,7 @@ containing the \keyword{exec} statement.  The same applies to the
 \bifuncindex{execfile}
 \bifuncindex{compile}
 
-\section{The \keyword{exec} statement\label{exec}}
+\section{The \keyword{exec} statement \label{exec}}
 \stindex{exec}
 
 \begin{verbatim}
