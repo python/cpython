@@ -26,17 +26,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
-extern char *getenv();
+extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
+extern int Py_VerboseFlag; /* For import.c, declared in pythonrun.c */
+extern int Py_SuppressPrintingFlag; /* For ceval.c, declared in pythonrun.c */
 
+/* Subroutines that live in their own file */
 extern char *getversion();
 extern char *getcopyright();
 
-extern int Py_DebugFlag;
-extern int Py_VerboseFlag;
-extern int Py_SuppressPrintingFlag;
-
+/* For getprogramname(); set by main() */
 static char *argv0;
 
+/* Main program */
+
+int
 main(argc, argv)
 	int argc;
 	char **argv;
