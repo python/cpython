@@ -32,7 +32,7 @@ class ZoomHeight:
         height = top.winfo_screenheight()
         if sys.platform == 'win32':
             y = 0
-            height = height = 72
+            height = height - 72
         else:
             y = 24
             height = height - 64
