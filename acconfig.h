@@ -18,6 +18,9 @@
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
 
+/* Used for BeOS configuration */
+#undef DL_EXPORT_HEADER
+
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -93,8 +96,17 @@
    shared libraries */ 
 #undef WITH_DL_DLD
 
+/* Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
+   dynamic linker (dyld) instead of the old-style (NextStep) dynamic
+   linker (rld). Dyld is necessary to support frameworks. */
+#undef WITH_DYLD
+
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
+
+/* Define if you want to produce an OpenStep/Rhapsody framework
+   (shared library plus accessory files). */
+#undef WITH_NEXT_FRAMEWORK
 
 /* The number of bytes in an off_t. */
 #undef SIZEOF_OFF_T

@@ -146,6 +146,7 @@ corresponding Unix manual entries for more information on calls.";
 #undef HAVE_UTIME_H
 #define HAVE_WAITPID
 /* #undef HAVE_GETCWD */
+#define UNION_WAIT /* This should really be checked for by autoconf */
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -254,6 +255,23 @@ extern int lstat Py_PROTO((const char *, struct stat *));
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
 #include <io.h>
 #endif /* OS2 */
+
+#ifdef UNION_WAIT
+/* Emulate some macros on systems that have a union instead of macros */
+
+#ifndef WIFEXITED
+#define WIFEXITED(u_wait) (!(u_wait).w_termsig && !(u_wait).w_coredump)
+#endif
+
+#ifndef WEXITSTATUS
+#define WEXITSTATUS(u_wait) (WIFEXITED(u_wait)?((u_wait).w_retcode):-1)
+#endif
+
+#ifndef WTERMSIG
+#define WTERMSIG(u_wait) ((u_wait).w_termsig)
+#endif
+
+#endif /* UNION_WAIT */
 
 /* Return a dictionary corresponding to the POSIX environment table */
 
@@ -1986,20 +2004,25 @@ posix_waitpid(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int pid, options, sts = 0;
+	int pid, options;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
+
 	if (!PyArg_Parse(args, "(ii)", &pid, &options))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#ifdef NeXT
-	pid = wait4(pid, (union wait *)&sts, options, NULL);
-#else
-	pid = waitpid(pid, &sts, options);
-#endif
+	pid = wait4(pid, &status, options, NULL);
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
 	else
-		return Py_BuildValue("ii", pid, sts);
+		return Py_BuildValue("ii", pid, status_i);
 }
 #endif /* HAVE_WAITPID */
 
@@ -2015,17 +2038,21 @@ posix_wait(self, args)
 	PyObject *args;
 {
 	int pid, sts;
-	Py_BEGIN_ALLOW_THREADS
-#ifdef NeXT
-	pid = wait((union wait *)&sts);
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
 #else
-	pid = wait(&sts);
+	int status;
+#define status_i status
 #endif
+	status_i = 0;
+	Py_BEGIN_ALLOW_THREADS
+	pid = wait(&status);
 	Py_END_ALLOW_THREADS
 	if (pid == -1)
 		return posix_error();
 	else
-		return Py_BuildValue("ii", pid, sts);
+		return Py_BuildValue("ii", pid, status_i);
 }
 #endif
 
@@ -2821,9 +2848,16 @@ posix_WIFSTOPPED(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}
@@ -2842,9 +2876,16 @@ posix_WIFSIGNALED(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}
@@ -2863,9 +2904,16 @@ posix_WIFEXITED(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}
@@ -2874,7 +2922,7 @@ posix_WIFEXITED(self, args)
 }
 #endif /* WIFEXITED */
 
-#ifdef WIFSTOPPED
+#ifdef WEXITSTATUS
 static char posix_WEXITSTATUS__doc__[] =
 "WEXITSTATUS(status) -> integer\n\
 See Unix documentation.";
@@ -2884,9 +2932,16 @@ posix_WEXITSTATUS(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}
@@ -2905,9 +2960,16 @@ posix_WTERMSIG(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}
@@ -2926,9 +2988,16 @@ posix_WSTOPSIG(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	int status = 0;
+#ifdef UNION_WAIT
+	union wait status;
+#define status_i (status.w_status)
+#else
+	int status;
+#define status_i status
+#endif
+	status_i = 0;
    
-	if (!PyArg_Parse(args, "i", &status))
+	if (!PyArg_Parse(args, "i", &status_i))
 	{
 		return NULL;
 	}

@@ -161,6 +161,7 @@ DIST=		$(DISTFILES) $(DISTDIRS)
 CFLAGS=		$(OPT) -I. $(DEFS)
 
 LIBRARY=	libpython$(VERSION).a
+LDLIBRARY=      @LDLIBRARY@
 
 # Default target
 all:		$(LIBRARY) python sharedmods
@@ -173,10 +174,10 @@ python:		$(LIBRARY) buildno Modules/python.o
 		      $(srcdir)/Modules/getbuildinfo.c
 		$(AR) cr $(LIBRARY) getbuildinfo.o
 		$(RANLIB) $(LIBRARY)
-		@DGUX_IS_BROKEN@
+		@MAKE_LDLIBRARY@
 		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
-			LIBRARY=../$(LIBRARY) link
+			LIBRARY=../$(LDLIBRARY) link
 
 Modules/python.o: $(srcdir)/Modules/python.c
 		cd Modules; $(MAKE) OPT="$(OPT)" python.o
@@ -203,6 +204,10 @@ libpython$(VERSION).so:	$(LIBRARY)
 		test -d dgux || mkdir dgux
 		(cd dgux;ar x ../$^;ld -G -o ../$@ * )
 		/bin/rm -rf ./dgux
+
+# This rule is here for OPENSTEP/Rhapsody/MacOSX
+libpython$(VERSION).dylib: $(LIBRARY)
+		libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) -framework System @LIBTOOL_CRUFT@ 
 
 $(SUBDIRS):	Makefiles
 
@@ -258,7 +263,6 @@ altbininstall:	python
 			fi; \
 		done
 		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
-		@DGUX_IS_BROKEN@
 		if test -f libpython$(VERSION).so; then \
 			$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
 		else	true; \
@@ -504,7 +508,7 @@ clean:		localclean
 		done
 
 localclobber:	localclean
-		-rm -f tags TAGS python $(LIBRARY) *.o
+		-rm -f tags TAGS python $(LIBRARY) $(LDLIBRARY) *.o
 		-rm -f config.log config.cache config.h
 
 clobber:	localclobber

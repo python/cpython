@@ -30,7 +30,7 @@
 const char *
 Py_GetBuildInfo()
 {
-	static char buildinfo[40];
-	sprintf(buildinfo, "#%d, %.12s, %.8s", BUILD, DATE, TIME);
+	static char buildinfo[50];
+	sprintf(buildinfo, "#%d, %.20s, %.9s", BUILD, DATE, TIME);
 	return buildinfo;
 }
