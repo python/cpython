@@ -21,7 +21,6 @@
 % Finally, it might be useful to include all the material from my "Care
 % and Feeding of a Python Installation" talk in here somewhere.  Yow!
 
-% Hey wow, Guido didn't write this one either!
 \author{Greg Ward}
 \authoraddress{E-mail: \email{gward@python.net}}
 
@@ -40,24 +39,172 @@
 \section{Introduction}
 \label{sec:intro}
 
-\subsection{The new way: Distutils}
-\label{sec:new-way}
+Although Python's extensive standard library covers many programming
+needs, there often comes a time when you need to add some new
+functionality to your Python installation in the form of third-party
+modules.  This might be necessary to support your own programming, or to
+support an application that you want to use and that happens to be
+written in Python.
+
+In the past, there has been little support for adding third-party
+modules to an existing Python installation.  With the introduction of
+the Python Distribution Utilities (Distutils for short) in Python 1.6,
+this is starting to change.  Not everything will change overnight,
+though, so while this document concentrates on installing module
+distributions that use the Distutils, we will also spend some time
+dealing with the old ways.
+
+This document is aimed primarily at the people who need to install
+third-party Python modules: end-users and system administrators who just
+need to get some Python application running, and existing Python
+programmers who want to add some new goodies to their toolbox.  You
+don't need to know Python to read this document; there will be some
+brief forays into using Python's interactive mode to explore your
+installation, but that's it.  If you're looking for information on how
+to distribute your own Python modules so that others may use them, see
+the ``Distributing Python Modules'' manual.
 
 
-\subsection{The old way (pure Python): whatever you feel like}
-\label{sec:old-way-pure}
+\subsection{Best case: trivial installation}
+\label{sec:trivial-inst}
+
+In the best case, someone will have prepared a special version of the
+module distribution you want to install that is targeted specifically at
+your platform and is installed just like any other software on your
+platform.  For example, the module developer might make an executable
+installer available for Windows users, an RPM package for users of
+RPM-based Linux systems (Red Hat, SuSE, Mandrake, and many others), a
+Debian package for users of Debian-based Linux systems (Debian proper,
+Caldera, Corel, etc.), and so forth.
+
+In that case, you would download the installer appropriate to your
+platform and do the usual thing with it: run it if it's an executable
+installer, \code{rpm -I} it if it's an RPM, etc.  You don't need to run
+Python or a setup script, you don't need to compile anything---you might
+not even need to read any instructions (although it's always a good idea
+to do so anyways).
+
+Of course, things will not always be that easy.  You might be interested
+in a module distribution that nobody has created an easy-to-use
+installer for use on your platform.  In that case, you'll have to start
+with the source distribution released by the module's
+author/maintainer.  Installing from a source distribution is not too
+hard, as long as the modules are packaged in the standard way.  The bulk 
+of this document is about building and installing modules that were
+packaged in the standard way.
 
 
-\subsection{The old way (extensions, \UNIX{} only): Makefile.pre.in}
-\label{sec:old-way-ext}
+\subsection{The new standard: Distutils}
+\label{sec:new-standard}
+
+If you download a module source distribution, you can tell pretty
+quickly if was packaged and distributed in the standard way, i.e. using
+the Distutils.  First, the distribution's name and version number will
+be featured prominently in the name of the downloaded archive, e.g.
+\file{foo-1.0.tar.gz} or \file{widget-0.9.7.zip}.  Next, the archive
+will unpack into a similarly-named directory: \file{foo-1.0} or
+\file{widget-0.9.7}.  Additionally, the distribution will contain a
+setup script \file{setup.py}, and a \file{README.txt} (or possibly
+\file{README}), which should explain that building and installing the
+module distribution is a simple matter of running
+\begin{verbatim}
+python setup.py install
+\end{verbatim}
+
+If all these things are true, then you already know how to build and
+install the modules you've just downloaded: run the command above.
+Unless you need to install things in a non-standard way or customize the
+build process, you don't really need this manual.  Or rather, the above
+command is everything you need to get out of this manual.
 
 
+\subsection{The old way: no standards}
+\label{sec:old-way}
 
+Before the Distutils, there was no infrastructure to support installing
+third-party modules in a consistent, standardized way.  Thus, it's not
+really possible to write a general manual for installing Python modules
+that don't use the Distutils; the only truly general statement that can
+be made is, ``Read the module's own documentation on installation.''
+
+However, such documentation is often woefully inadequate, assuming that
+you are familiar with how the Python library is laid out and will
+somehow just know where to copy various files in order for Python to
+find them.  Also, since there is only one way to lay out the Python
+library on a given platform, this manual is a good place to learn that
+layout.  That way, if you do have to manually install an old,
+pre-Distutils module distribution, you won't be completely on your own.
+
+Additionally, while there has not previously been a standard
+installation mechanism, Python has had some standard machinery for
+building extensions on Unix since Python \XXX{version?}.  This machinery
+(the \file{Makefile.pre.in} file) is superseded by the Distutils, but it
+will no doubt live on in older module distributions for a while.  This
+\file{Makefile.pre.in} mechanism is documented in the ``Extending \&
+Embedding Python'' manual, but that manual is aimed at module
+developers---hence, we include documentation for builders/installers
+here.
+
+All of the pre-Distutils material is tucked away in
+section~\ref{sec:pre-distutils}.
 
 
 \section{Standard Build and Install}
 \label{sec:normal-install}
 
+As described in section~\ref{sec:new-standard}, building and installing
+a module distribution using the Distutils is usually one simple command:
+\begin{verbatim}
+python setup.py install
+\end{verbatim}
+On Unix, you'd run this command from a shell prompt; on Windows, you
+have to open a command prompt window and do it there; on Mac OS ...
+\XXX{what the heck do you do on Mac OS?}.
+
+
+\subsection{Platform variations}
+
+You should always run the setup command from the distribution root
+directory, i.e. the top-level subdirectory that the module source
+distribution unpacks into.  For example, if you've just downloaded a
+module source distribution \file{foo-1.0.tar.gz} onto a Unix system, the 
+normal thing to do is:
+\begin{verbatim}
+gunzip -c foo-1.0.tar.gz | tar xf -    # unpacks into directory foo-1.0
+cd foo-1.0
+python setup.py install
+\end{verbatim}
+
+On Windows, you'd probably unpack the archive before opening the command 
+prompt.  If you downloaded the archive file to \file{C:\bslash{}Temp}, then
+it probably unpacked (depending on your software) into
+\file{C:\bslash{}Temp\bslash{}foo-1.0}; from the command prompt window, you would
+then run
+\begin{verbatim}
+cd c:\temp\foo-1.0
+python setup.py install
+\end{verbatim}
+
+On Mac OS, ... \XXX{again, how do you run Python scripts on Mac OS?}
+
+
+\subsection{Splitting the job up}
+
+Running \code{setup.py install} builds and installs all modules in one
+fell swoop.  If you prefer to work incrementally---especially useful if
+you want to customize the build process, or if things are going
+wrong---you can use the setup script to do one thing at a time.
+
+For example, you can build everything in one step, and then install
+everything in a second step, by invoking the setup script twice:
+\begin{verbatim}
+python setup.py build
+python setup.py install
+\end{verbatim}
+(If you do this, you will notice that running the \command{install}
+command first runs the \command{build} command, which will quickly
+notice that it has nothing to do, since everything in the \file{build}
+directory is up-to-date.
 
 % This will cover:
 %   * setup.py install        (the usual thing)
@@ -254,14 +401,14 @@ users), and a fairly simple standard Python installation.  Thus, only a
 \option{prefix} option is needed.  It defines the installation base, and 
 files are installed under it as follows:
 
-XXX how do MacPython users run the interpreter with command-line args?
+\XXX{how do MacPython users run the interpreter with command-line args?}
 
 \installscheme{prefix}{:Lib}
               {prefix}{:Mac:PlugIns}
               {prefix}{:Scripts}
               {prefix}{:Data}
 
-XXX Corran Webster says: ``Modules are found in either \file{:Lib} or
+\XXX{Corran Webster says: ``Modules are found in either \file{:Lib} or
 \file{:Mac:Lib}, while extensions usually go in
 \file{:Mac:PlugIns}''---does this mean that non-pure distributions should
 be divided between \file{:Mac:PlugIns} and \file{:Mac:Lib}?  If so, that
@@ -269,7 +416,7 @@ changes the granularity at which we care about modules: instead of
 ``modules from pure distributions'' and ``modules from non-pure
 distributions'', it becomes ``modules from pure distributions'',
 ``Python modules from non-pure distributions'', and ``extensions from
-non-pure distributions''.  Is this necessary?!?
+non-pure distributions''.  Is this necessary?!?}
 
 
 \section{Custom Installation}
@@ -326,8 +473,8 @@ python setup.py install --install-purelib=Site --install-platlib=Site
 The specified installation directories are relative to \filevar{prefix}.
 Of course, you also have to ensure that these directories are in
 Python's module search path, e.g. by putting a \file{.pth} file in
-\filevar{prefix} (XXX should have a section describing .pth files and
-cross-ref it here).
+\filevar{prefix} (\XXX{should have a section describing .pth files and
+  cross-ref it here}).
 
 If you want to define an entire installation scheme, you just have to
 supply all of the installation directory options.  The recommended way
@@ -394,14 +541,28 @@ Distutils additionally define a few extra variables that may not be in
 your environment, such as \code{\$PATH}.  See
 section~\ref{sec:config-files} for details.
 
-XXX need some Windows and Mac OS examples---when would custom
-installation schemes be needed on those platforms?
+\XXX{need some Windows and Mac OS examples---when would custom
+  installation schemes be needed on those platforms?}
 
 
-
-\section{Configuration Files}
+\section{Distutils Configuration Files}
 \label{sec:config-files}
 
 \comingsoon
+
+
+
+\section{Pre-Distutils Conventions}
+\label{sec:pre-distutils}
+
+
+\subsection{The \protect\file{Makefile.pre.in} file}
+\label{sec:makefile-pre-in}
+
+
+\subsection{Installing modules manually}
+\label{sec:manual-install}
+
+
 
 \end{document}
