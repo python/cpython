@@ -119,7 +119,7 @@ aix_bindnewmodule(void *newmoduleptr, void *modlistptr)
 }
 
 static void
-aix_loaderror(char *pathname)
+aix_loaderror(const char *pathname)
 {
 
 	char *message[1024], errbuf[1024];
