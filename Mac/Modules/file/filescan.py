@@ -10,7 +10,7 @@ LONG = "Files"
 SHORT = "file"
 
 def main():
-	input = ["Files.h", "Aliases.h"]
+	input = ["Files.h", "Aliases.h", "Finder.h"]
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
@@ -55,6 +55,7 @@ class MyScanner(Scanner_OSX):
 			"kioACAccessOwnerMask",
 			"kFSCatInfoReserved",
 			"kFSIterateReserved",
+			"kSystemFolderType",
 			
 			"FSRefMakePath", # Do this manually
 #			"ResolveAlias", # Do this manually
