@@ -380,10 +380,22 @@ class MSVCCompiler (CCompiler) :
             ld_args = (ldflags + lib_opts + export_opts + 
                        objects + ['/OUT:' + output_filename])
 
+            # The MSVC linker generates .lib and .exp files, which cannot be
+            # suppressed by any linker switches. The .lib files may even be
+            # needed! Make sure they are generated in the temporary build
+            # directory. Since they have different names for debug and release
+            # builds, they can go into the same directory.
+            (dll_name, dll_ext) = os.path.splitext(
+                os.path.basename(output_filename))
+            implib_file = os.path.join(
+                os.path.dirname(objects[0]),
+                self.library_filename(dll_name))
+            ld_args.append ('/IMPLIB:' + implib_file)
+
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
-                ld_args.extend (extra_postargs)
+                ld_args.extend(extra_postargs)
 
             print "link_shared_object():"
             print "  output_filename =", output_filename
