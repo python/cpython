@@ -259,6 +259,7 @@
 
 % Command to generate a reference to a function, statement, keyword,
 % operator.
+\newcommand{\kwindex}[1]{\indexii{keyword}{#1@{\py@idxcode{#1}}}}
 \newcommand{\stindex}[1]{\indexii{statement}{#1@{\py@idxcode{#1}}}}
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\py@idxcode{#1}}}}
 \newcommand{\exindex}[1]{\indexii{exception}{#1@{\py@idxcode{#1}}}}
@@ -619,6 +620,19 @@
 \newcommand{\itemnewline}[1]{%
   \@tempdima\linewidth%
   \advance\@tempdima \leftmargin\makebox[\@tempdima][l]{#1}%
+}
+
+% Define \itembreak: force the text after an item to start on a new line
+\newcommand{\itembreak}{%
+  \mbox{}%
+  \\*[0mm]%
+}
+
+% Define \itemjoin: some negative vspace to join two items together
+\newcommand{\itemjoin}{%
+  \mbox{}%
+  \vspace{-\itemsep}%
+  \vspace{-\parsep}%
 }
 
 % Cross-referencing (AMK, new impl. FLD)
