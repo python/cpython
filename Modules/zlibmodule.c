@@ -332,6 +332,7 @@ Comp_dealloc(self)
 {
   int err;
   err=deflateEnd(&self->zst);  /* Deallocate zstream structure */
+  PyMem_DEL(self);
 }
 
 static void
@@ -340,6 +341,7 @@ Decomp_dealloc(self)
 {
   int err;
   err=inflateEnd(&self->zst);	/* Deallocate zstream structure */
+  PyMem_DEL(self);
 }
 
 static char comp_compress__doc__[] =
