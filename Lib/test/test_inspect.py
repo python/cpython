@@ -105,8 +105,9 @@ istest(inspect.ismethod, 'mod.StupidGit.abuse')
 istest(inspect.ismethod, 'git.argue')
 istest(inspect.ismodule, 'mod')
 istest(inspect.istraceback, 'tb')
-istest(inspect.isdatadescriptor, '__builtins__.file.closed')
-istest(inspect.isdatadescriptor, '__builtins__.file.softspace')
+import __builtin__
+istest(inspect.isdatadescriptor, '__builtin__.file.closed')
+istest(inspect.isdatadescriptor, '__builtin__.file.softspace')
 test(inspect.isroutine(mod.spam), 'isroutine(mod.spam)')
 test(inspect.isroutine([].count), 'isroutine([].count)')
 
