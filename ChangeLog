@@ -1,5 +1,27 @@
 Mon Jan  3 00:02:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* Include/config.h.in: add lines for HAVE_SYS_UN_H and
+	HAVE_GETPEERNAME
+
+	* Extensions/mkext.py: copy change in library order from
+	Modules/Makefile.in.in
+
+	* Modules/Makefile.in.in: change library order subtly so -ltermcap
+	follows instead of precedes -lgl_s on SGI systems; this solves
+	(hides?) problems with clashing entry points
+
+	* configure.in: added sys/un.h to list of tested header files;
+	added getpeername to list of tested functions (both for
+	Modules/socketmodule.c)
+
+	* Modules/socketmodule.c: conditionally include sys/un.h and
+	change tests for AF_UNIX to tests for HAVE_SYS_UN_H; test for
+	HAVE_GETPEERNAME instead of NO_PEERNAME
+
+	* Modules/config.c.in: add marshal and __main__ built-in modules
+
+	* Python/sysmodule.c (list_builtin_module_names): sort the list
+
 	* Doc/Makefile: remove 'qua' from default targets
 
 	* Doc/README: add reference to ext.tex, change reference to
