@@ -1,3 +1,4 @@
+#! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
 # xxci
@@ -57,18 +58,19 @@ def badsuffix(file):
 def go(args):
 	for file in args:
 		print file + ':'
-		if run('rcsdiff -c', file):
+		if differing(file):
+			sts = posix.system('rcsdiff ' + file) # ignored
 			if askyesno('Check in ' + file + ' ? '):
-				sts = run('rcs -l', file) # ignored
-				# can't use run() here because it's interactive
+				sts = posix.system('rcs -l ' + file) # ignored
 				sts = posix.system('ci -l ' + file)
 
-def run(cmd, file):
-	sts, output = commands.getstatusoutput(cmd + commands.mkarg(file))
-	if sts:
-		print output
-		print 'Exit status', sts
-	return sts
+def differing(file):
+	try:
+		this = open(file, 'r').read()
+		that = posix.popen('co -p '+file+' 2>/dev/null', 'r').read()
+		return this <> that
+	except:
+		return 1
 
 def askyesno(prompt):
 	s = raw_input(prompt)
