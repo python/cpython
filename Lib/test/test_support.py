@@ -112,7 +112,7 @@ class BasicTestRunner:
 def run_unittest(testclass):
     """Run tests from a unittest.TestCase-derived class."""
     if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, descriptions=0)
+        runner = unittest.TextTestRunner(sys.stdout, verbosity=2)
     else:
         runner = BasicTestRunner()
 
