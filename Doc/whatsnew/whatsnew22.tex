@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.05}
+\release{0.06}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -13,7 +13,7 @@
 
 {\large This document is a draft, and is subject to change until the
 final version of Python 2.2 is released.  Currently it's up to date
-for Python 2.2 alpha 1.  Please send any comments, bug reports, or
+for Python 2.2 alpha 4.  Please send any comments, bug reports, or
 questions, no matter how minor, to \email{akuchlin@mems-exchange.org}.
 }
 
@@ -388,14 +388,13 @@ identically.  You can still distinguish them with the
 \function{int()} function will now return a long integer if the value
 is large enough.  
 
-% XXX is there a warning-enabling command-line option for this?
-
 \begin{seealso}
 
 \seepep{237}{Unifying Long Integers and Integers}{Written by
 Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van Rossum.}
 
 \end{seealso}
+
 
 %======================================================================
 \section{PEP 238: Changing the Division Operator}
@@ -667,7 +666,12 @@ items = s.meerkat.getItems( {'channel': 4} )
 #   'title': 'html2fo 0.3 (Default)'}, ... ]
 \end{verbatim}
 
-See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
+The \module{SimpleXMLRPCServer} module makes it easy to create
+straightforward XML-RPC servers.  See \url{http://www.xmlrpc.com/} for
+more information about XML-RPC.
+
+  \item The new \module{hmac} module implements implements the HMAC
+  algorithm described by \rfc{2104}.
 
   \item The \module{socket} module can be compiled to support IPv6;
   specify the \longprogramopt{enable-ipv6} option to Python's configure
@@ -707,10 +711,12 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   in \rfc{2342}, SORT, GETACL and SETACL.  (Contributed by Anthony
   Baxter and Michel Pelletier.)
 
-  \item The \module{rfc822} module's parsing of email addresses is
-  now compliant with \rfc{2822}, an update to \rfc{822}.  The module's
-  name is \emph{not} going to be changed to \samp{rfc2822}.
-  (Contributed by Barry Warsaw.)
+  \item The \module{rfc822} module's parsing of email addresses is now
+  compliant with \rfc{2822}, an update to \rfc{822}.  (The module's
+  name is \emph{not} going to be changed to \samp{rfc2822}.)  A new
+  package, \module{email}, has also been added for parsing and
+  generating e-mail messages.  (Contributed by Barry Warsaw, and
+  arising out of his work on Mailman.)
 
   \item New constants \constant{ascii_letters},
   \constant{ascii_lowercase}, and \constant{ascii_uppercase} were
