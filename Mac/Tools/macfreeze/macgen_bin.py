@@ -6,6 +6,7 @@ import string
 import types
 import macfs
 from MACFS import *
+import MacOS
 import Res
 import py_resource
 import cfmfile
@@ -96,7 +97,9 @@ def findfragments(module_dict, architecture):
 			continue
 		path = resolvealiasfile(module.__file__)
 		dir, filename = os.path.split(path)
-		ppcfile, cfm68kfile = makefilenames(filename)
+##		ppcfile, cfm68kfile = makefilenames(filename)
+		ppcfile = filename
+		cfm68kfile = "dummy.cfm68k.slb"
 		
 		# ppc stuff
 		ppcpath = os.path.join(dir, ppcfile)
@@ -158,15 +161,15 @@ def Pstring(str):
 		raise TypeError, "Str255 must be at most 255 chars long"
 	return chr(len(str)) + str
 
-def makefilenames(name):
-	lname = string.lower(name)
-	pos = string.find(lname, ".ppc.")
-	if pos > 0:
-		return name, name[:pos] + '.CFM68K.' + name[pos+5:]
-	pos = string.find(lname, ".cfm68k.")
-	if pos > 0:
-		return name[:pos] + '.ppc.' + name[pos+8:], name
-	raise ValueError, "can't make ppc/cfm68k filenames"
+##def makefilenames(name):
+##	lname = string.lower(name)
+##	pos = string.find(lname, ".ppc.")
+##	if pos > 0:
+##		return name, name[:pos] + '.CFM68K.' + name[pos+5:]
+##	pos = string.find(lname, ".cfm68k.")
+##	if pos > 0:
+##		return name[:pos] + '.ppc.' + name[pos+8:], name
+##	raise ValueError, "can't make ppc/cfm68k filenames"
 
 def copyres(input, output, *args, **kwargs):
 	openedin = openedout = 0
@@ -187,10 +190,16 @@ def copyres(input, output, *args, **kwargs):
 def findpythoncore():
 	"""find the PythonCore shared library, possibly asking the user if we can't find it"""
 	
-	vRefNum, dirID = macfs.FindFolder(kOnSystemDisk, kExtensionFolderType, 0)
+	vRefNum, dirID = macfs.FindFolder(kOnSystemDisk, kSharedLibrariesFolderType, 0)
 	extpath = macfs.FSSpec((vRefNum, dirID, "")).as_pathname()
 	version = string.split(sys.version)[0]
-	corepath = os.path.join(extpath, "PythonCore " + version)
+	if MacOS.runtimemodel == 'carbon':
+		corename = "PythonCoreCarbon " + version
+	elif MacOS.runtimemodel == 'ppc':
+		corename = "PythonCore " + version
+	else:
+		raise "Unknown MacOS.runtimemodel", MacOS.runtimemodel
+	corepath = os.path.join(extpath, corename)
 	if not os.path.exists(corepath):
 		fss, ok = macfs.PromptGetFile("Please locate PythonCore:", "shlb")
 		if not ok:
