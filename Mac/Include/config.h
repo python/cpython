@@ -36,9 +36,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define macintosh
 #endif
 
-/* Define to case-check imported modules (why is this here?) */
-#define CHECK_IMPORT_CASE
-
 #if defined(USE_GUSI1) || defined(USE_GUSI2)
 #define USE_GUSI
 #endif
@@ -73,9 +70,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you don't have tm_zone but do have the external array
    tzname.  */
 #undef HAVE_TZNAME
-
-/* Define as __inline if that's what the C compiler calls it.  */
-#undef inline
 
 /* Define if on MINIX.  */
 #undef _MINIX
@@ -118,6 +112,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
 #define WORDS_BIGENDIAN 1
 
+/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
+   and you want support for AIX C++ shared extension modules. */
+#undef AIX_GENUINE_CPLUSPLUS
+
 /* Define if your <unistd.h> contains bad prototypes for exec*()
    (as it does on SGI IRIX 4.x) */
 #undef BAD_EXEC_PROTOTYPES
@@ -125,24 +123,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if your compiler botches static forward declarations */
 #define BAD_STATIC_FORWARD
 
-/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
-   and you want support for AIX C++ shared extension modules. */
-#undef AIX_GENUINE_CPLUSPLUS
-
 /* Define this if you have BeOS threads */
 #undef BEOS_THREADS
 
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
+/* Defined when case of imported modules are checked against case of file. */
+#define CHECK_IMPORT_CASE
+
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
-
-/* Used for BeOS configuration */
-#undef DL_EXPORT_HEADER
-#ifdef DL_EXPORT_HEADER
-#include DL_EXPORT_HEADER
-#endif
 
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
@@ -154,8 +145,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
 
-/* Define this if you have gethostbyname() */
-#undef HAVE_GETHOSTBYNAME
+/* Defined when any dynamic module loading is enabled */
+/* #undef HAVE_DYNAMIC_LOADING */
+
+/* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
+#undef HAVE_GETC_UNLOCKED
 
 /* Define this if you have some version of gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
@@ -169,18 +163,38 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define this if you have the 6-arg version of gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
 
+/* Defined to enable large file support when an off_t is bigger than a long
+   and long long is available and at least as big as an off_t. You may need
+   to add some flags for configuration and compilation to enable this mode.
+   E.g, for Solaris 2.7:
+   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
+ configure
+*/
+#undef HAVE_LARGEFILE_SUPPORT
+
 /* Define this if you have the type long long */
 #undef HAVE_LONG_LONG
-
-/* Define this if you have a K&R style C preprocessor */
-#undef HAVE_OLD_CPP
 
 /* Define if your compiler supports function prototypes */
 #define HAVE_PROTOTYPES 1
 
+/* Define if you have GNU PTH threads */
+#undef HAVE_PTH
+
 /* Define if your compiler supports variable length function prototypes
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #define HAVE_STDARG_PROTOTYPES
+
+/* Define this if you have the type uintptr_t */
+#undef HAVE_UINTPTR_T
+
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be 16-bit unsigned type. (see
+   Include/unicodeobject.h). */
+#define HAVE_USABLE_WCHAR_T 1
+
+/* Define if the compiler provides a wchar.h header file. */
+#define HAVE_WCHAR_H 1
 
 /* Define if malloc(0) returns a NULL pointer */
 #ifdef USE_MSL_MALLOC
@@ -194,6 +208,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define _POSIX_THREADS
 #endif
 
+/* Define if you want to build an interpreter with many run-time checks  */
+#undef Py_DEBUG
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
@@ -202,6 +219,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define to empty if the keyword does not work.  */
 #undef signed
+
+/* Define if i>>j for signed int i does not extend the sign bit
+   when i < 0
+*/
+#define SIGNED_RIGHT_SHIFT_ZERO_FILLS
+
+/* The number of bytes in an off_t. */
+#define SIZEOF_OFF_T 4
+
+/* The number of bytes in a time_t. */
+#define SIZEOF_TIME_T 4
+
+/* The number of bytes in a pthread_t. */
+#ifdef USE_GUSI2
+#define SIZEOF_PTHREAD_T 4
+#endif
+
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef socklen_t
 
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
@@ -216,24 +252,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
-/* Define if the compiler provides a wchar.h header file. */
-#undef HAVE_WCHAR_H
-
-/* Define if you have a useable wchar_t type defined in wchar.h; useable
-   means wchar_t must be 16-bit unsigned type. (see
-   Include/unicodeobject.h). */
-#undef HAVE_USABLE_WCHAR_T
-
 /* Define if you want wctype.h functions to be used instead of the
    one supplied by Python itself. (see Include/unicodectype.h). */
 #undef WANT_WCTYPE_FUNCTIONS
 
-/* Define if you want to use SGI (IRIX 4) dynamic linking.
-   This requires the "dl" library by Jack Jansen,
-   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
-   Don't bother on IRIX 5, it already has dynamic linking using SunOS
-   style shared libraries */ 
-#undef WITH_SGI_DL
+/* Define if you want to compile in cycle garbage collection */
+#undef WITH_CYCLE_GC
 
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
@@ -251,30 +275,25 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    linker (rld). Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
 
-/* Define if you want to compile in rudimentary thread support */
-/* On the Mac this is optionally defined the the mwerks_*_config.h file */
-/* #undef WITH_THREAD */
+/* Define if you want to use BSD db. */
+#undef WITH_LIBDB
+
+/* Define if you want to use ndbm. */
+#undef WITH_LIBNDBM
 
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
 
-/* The number of bytes in an off_t. */
-#undef SIZEOF_OFF_T
+/* Define if you want to use SGI (IRIX 4) dynamic linking.
+   This requires the "dl" library by Jack Jansen,
+   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
+   Don't bother on IRIX 5, it already has dynamic linking using SunOS
+   style shared libraries */ 
+#undef WITH_SGI_DL
 
-/* Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
-   to add some flags for configuration and compilation to enable this mode.
-   E.g, for Solaris 2.7:
-   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
- configure
-*/
-#undef HAVE_LARGEFILE_SUPPORT
-
-/* Defined when any dynamic module loading is enabled */
-#ifndef HAVE_DYNAMIC_LOADING
-#undef HAVE_DYNAMIC_LOADING
-#endif
+/* Define if you want to compile in rudimentary thread support */
+/* #undef WITH_THREAD */
 
 /* The number of bytes in a char.  */
 #define SIZEOF_CHAR 1
@@ -284,6 +303,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* The number of bytes in a float.  */
 #define SIZEOF_FLOAT 4
+
+/* The number of bytes in a fpos_t.  */
+#define SIZEOF_FPOS_T 4
 
 /* The number of bytes in a int.  */
 #define SIZEOF_INT 4
@@ -297,8 +319,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* The number of bytes in a short.  */
 #define SIZEOF_SHORT 2
 
+/* The number of bytes in a uintptr_t.  */
+#define SIZEOF_UINTPTR_T 4
+
 /* The number of bytes in a void *.  */
 #define SIZEOF_VOID_P 4
+
+/* Define if you have the _getpty function.  */
+#undef HAVE__GETPTY
 
 /* Define if you have the alarm function.  */
 #undef HAVE_ALARM
@@ -336,6 +364,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the fork function.  */
 #undef HAVE_FORK
 
+/* Define if you have the forkpty function.  */
+#undef HAVE_FORKPTY
+
 /* Define if you have the fpathconf function.  */
 #undef HAVE_FPATHCONF
 
@@ -370,6 +401,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the getgroups function.  */
 #undef HAVE_GETGROUPS
+
+/* Define if you have the gethostbyname function.  */
+#ifdef USE_GUSI
+#define HAVE_GETHOSTBYNAME 1
+#endif
 
 /* Define if you have the getlogin function.  */
 #undef HAVE_GETLOGIN
@@ -422,8 +458,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the mktime function.  */
 #define HAVE_MKTIME
 
+/* Define if you have the mremap function.  */
+#undef HAVE_MREMAP
+
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
+
+/* Define if you have the openpty function.  */
+#undef HAVE_OPENPTY
 
 /* Define if you have the pathconf function.  */
 #undef HAVE_PATHCONF
@@ -432,8 +474,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HAVE_PAUSE
 
 /* Define if you have the plock function.  */
-/* XXXX GUSI threads* */
 #undef HAVE_PLOCK
+
+/* Define if you have the poll function.  */
+#undef HAVE_POLL
 
 /* Define if you have the pthread_init function.  */
 /* XXXX GUSI threads* */
@@ -450,6 +494,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_SELECT
 #endif
 
+/* Define if you have the setegid function.  */
+#undef HAVE_SETEGID
+
+/* Define if you have the seteuid function.  */
+#undef HAVE_SETEUID
+
 /* Define if you have the setgid function.  */
 #undef HAVE_SETGID
 
@@ -461,6 +511,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the setpgrp function.  */
 #undef HAVE_SETPGRP
+
+/* Define if you have the setregid function.  */
+#undef HAVE_SETREGID
+
+/* Define if you have the setreuid function.  */
+#undef HAVE_SETREUID
 
 /* Define if you have the setsid function.  */
 #undef HAVE_SETSID
@@ -534,6 +590,15 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the waitpid function.  */
 #undef HAVE_WAITPID
 
+/* Define if you have the <db.h> header file.  */
+#undef HAVE_DB_H
+
+/* Define if you have the <db1/ndbm.h> header file.  */
+#undef HAVE_DB1_NDBM_H
+
+/* Define if you have the <db_185.h> header file.  */
+#undef HAVE_DB_185_H
+
 /* Define if you have the <dirent.h> header file.  */
 #ifdef USE_GUSI
 #define HAVE_DIRENT_H
@@ -545,6 +610,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the <fcntl.h> header file.  */
 #define HAVE_FCNTL_H
 
+/* Define if you have the <gdbm/ndbm.h> header file.  */
+#undef HAVE_GDBM_NDBM_H
+
+/* Define if you have the <libutil.h> header file.  */
+#undef HAVE_LIBUTIL_H
+
 /* Define if you have the <limits.h> header file.  */
 #define HAVE_LIMITS_H
 
@@ -554,13 +625,22 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the <ncurses.h> header file.  */
 #undef HAVE_NCURSES_H
 
+/* Define if you have the <ndbm.h> header file.  */
+#undef HAVE_NDBM_H
+
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
+
+/* Define if you have the <poll.h> header file.  */
+#undef HAVE_POLL_H
 
 /* Define if you have the <pthread.h> header file.  */
 #ifdef USE_GUSI2
 #define HAVE_PTHREAD_H
 #endif
+
+/* Define if you have the <pty.h> header file.  */
+#undef HAVE_PTY_H
 
 /* Define if you have the <signal.h> header file.  */
 #define HAVE_SIGNAL_H
@@ -595,6 +675,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Define if you have the <sys/select.h> header file.  */
 #undef HAVE_SYS_SELECT_H
 
+/* Define if you have the <sys/socket.h> header file.  */
+#ifdef USE_GUSI
+#define HAVE_SYS_SOCKET_H
+#endif
+
 /* Define if you have the <sys/time.h> header file.  */
 #ifdef USE_GUSI
 #define HAVE_SYS_TIME_H
@@ -611,6 +696,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the <sys/wait.h> header file.  */
 #undef HAVE_SYS_WAIT_H
+
+/* Define if you have the <termios.h> header file.  */
+#undef HAVE_TERMIOS_H
 
 /* Define if you have the <thread.h> header file.  */
 #undef HAVE_THREAD_H
@@ -629,3 +717,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Define if you have the ieee library (-lieee).  */
 #undef HAVE_LIBIEEE
+#ifdef __CYGWIN__
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#else
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+#endif
