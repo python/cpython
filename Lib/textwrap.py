@@ -14,7 +14,7 @@ class TextWrapper:
     If you want to completely replace the main wrapping algorithm,
     you'll probably have to override _wrap_chunks().
 
-    Several instance attributes control various aspects of
+    Several boolean instance attributes control various aspects of
     wrapping:
       expand_tabs (default: true)
         Expand tabs in input text to spaces before further processing.
@@ -57,10 +57,10 @@ class TextWrapper:
 
 
     def __init__ (self):
-        self.expand_tabs = 1
-        self.replace_whitespace = 1
-        self.fix_sentence_endings = 0
-        self.break_long_words = 1
+        self.expand_tabs = True
+        self.replace_whitespace = True
+        self.fix_sentence_endings = False
+        self.break_long_words = True
         
 
     # -- Private methods -----------------------------------------------
