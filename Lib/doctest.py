@@ -450,9 +450,15 @@ class _SpoofOut:
         # that a trailing newline is missing.
         if guts and not guts.endswith("\n"):
             guts = guts + "\n"
+        # Prevent softspace from screwing up the next test case, in
+        # case they used print with a trailing comma in an example.
+        if hasattr(self, "softspace"):
+            del self.softspace
         return guts
     def clear(self):
         self.buf = []
+        if hasattr(self, "softspace"):
+            del self.softspace
     def flush(self):
         # JPython calls flush
         pass
