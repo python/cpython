@@ -609,19 +609,20 @@ insertionsort(array, size, compare)
 	object *compare;/* Comparison function object, or NULL for default */
 {
 	register object **a = array;
-	register int i;
+	register object **end = array+size;
+	register object **p;
 
-	for (i = 1; i < size; i++) {
-		register object *key = a[i];
-		register int j = i;
-		while (--j >= 0) {
-			register int k = docompare(a[j], key, compare);
+	for (p = a+1; p < end; p++) {
+		register object *key = *p;
+		register object **q = p;
+		while (--q >= a) {
+			register int k = docompare(*q, key, compare);
 			if (k == CMPERROR)
 				return -1;
 			if (k <= 0)
 				break;
-			a[j+1] = a[j];
-			a[j] = key; /* For consistency */
+			*(q+1) = *q;
+			*q = key; /* For consistency */
 		}
 	}
 
@@ -629,7 +630,9 @@ insertionsort(array, size, compare)
 }
 
 /* MINSIZE is the smallest array we care to partition; smaller arrays
-   are sorted using a straight insertion sort (above). */
+   are sorted using a straight insertion sort (above).  You may want
+   to play with this to tune it for your system.  It must be at least
+   2; more than 20 probably doesn't make sense. */
 #define MINSIZE 10
 
 /* STACKSIZE is the size of our work stack.  A rough estimate is that
@@ -649,64 +652,66 @@ quicksort(array, size, compare)
 	int size;	/* Number of elements to sort */
 	object *compare;/* Comparison function object, or NULL for default */
 {
-	register object **a, *tmp, *pivot;
-	register int n, l, r, k;
-	int top, i, j, n2;
-	object **astack[STACKSIZE];
-	int nstack[STACKSIZE];
+	register object *tmp, *pivot;
+	register object **lo, **hi, **l, **r;
+	int top, k, n, n2;
+	object **lostack[STACKSIZE];
+	object **histack[STACKSIZE];
 
 	/* Start out with the whole array on the work stack */
-	astack[0] = array;
-	nstack[0] = size;
+	lostack[0] = array;
+	histack[0] = array+size;
 	top = 1;
 
 	/* Repeat until the work stack is empty */
 	while (--top >= 0) {
-		a = astack[top];
-		n = nstack[top];
+		lo = lostack[top];
+		hi = histack[top];
 
 		/* If it's a small one, use straight insertion sort */
+		n = hi - lo;
 		if (n < MINSIZE) {
-			if (insertionsort(a, n, compare) < 0)
+			if (insertionsort(lo, n, compare) < 0)
 				return -1;
 			continue;
 		}
 
-		/* Choose median of a[0], a[n/2], a[n-1] as pivot */
-		i = n>>1;
-		j = n-1;
-		k = docompare(a[0], a[i], compare);
+		/* Choose median of first, middle and last item as pivot */
+		
+		l = lo + (n>>1); /* Middle */
+		r = hi - 1;	/* Last */
+		k = docompare(*lo, *l, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = a[0]; a[0] = a[i]; a[i] = tmp; }
-		k = docompare(a[j], a[i], compare);
+			{ tmp = *lo; *lo = *l; *l = tmp; }
+		k = docompare(*r, *l, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = a[j]; a[j] = a[i]; a[i] = tmp; }
-		k = docompare(a[j], a[0], compare);
+			{ tmp = *r; *r = *l; *l = tmp; }
+		k = docompare(*r, *lo, compare);
 		if (k == CMPERROR)
 			return -1;
 		if (k < 0)
-			{ tmp = a[j]; a[j] = a[0]; a[0] = tmp; }
-		pivot = a[0];
+			{ tmp = *r; *r = *lo; *lo = tmp; }
+		pivot = *lo;
 
 		/* Partition the array */
-		l = 0;
-		r = n;
+		l = lo;
+		r = hi;
 		for (;;) {
 			/* Move left index to element > pivot */
-			while (++l < n) {
-				k = docompare(a[l], pivot, compare);
+			while (++l < hi) {
+				k = docompare(*l, pivot, compare);
 				if (k == CMPERROR)
 					return -1;
 				if (k > 0)
 					break;
 			}
 			/* Move right index to element < pivot */
-			while (--r > 0) {
-				k = docompare(a[r], pivot, compare);
+			while (--r > lo) {
+				k = docompare(*r, pivot, compare);
 				if (k == CMPERROR)
 					return -1;
 				if (k < 0)
@@ -716,40 +721,41 @@ quicksort(array, size, compare)
 			if (r < l)
 				break;
 			/* Swap elements and continue */
-			{ tmp = a[l]; a[l] = a[r]; a[r] = tmp; }
+			{ tmp = *l; *l = *r; *r = tmp; }
 		}
 
 		/* Move the pivot into the middle */
-		{ tmp = a[0]; a[0] = a[r]; a[r] = tmp; }
+		{ tmp = *lo; *lo = *r; *r = tmp; }
 
 		/* We have now reached the following conditions:
-			0 <= r < l <= n
-			all x in a[0:r] are <= pivot
-			all x in a[r:l] are == pivot
-			all x in a[l:n] are >= pivot
-		   The partitions are a[0:r] and a[l:n]
+			lo <= r < l <= hi
+			all x in [lo,r) are <= pivot
+			all x in [r,l)  are == pivot
+			all x in [l,hi) are >= pivot
+		   The partitions are [lo,r) and [l,hi)
 		 */
 
 		/* Push biggest partition first */
-		n2 = n - l;
-		if (r > n2) {
+		n = r - lo;
+		n2 = hi - l;
+		if (n > n2) {
 			/* First one is bigger */
-			if (r > 1) {
-				astack[top] = a;
-				nstack[top++] = r;
+			if (n > 1) {
+				lostack[top] = lo;
+				histack[top++] = r;
 				if (n2 > 1) {
-					astack[top] = a+l;
-					nstack[top++] = n2;
+					lostack[top] = l;
+					histack[top++] = hi;
 				}
 			}
 		} else {
 			/* Second one is bigger */
 			if (n2 > 1) {
-				astack[top] = a+l;
-				nstack[top++] = n2;
-				if (r > 1) {
-					astack[top] = a;
-					nstack[top++] = r;
+				lostack[top] = l;
+				histack[top++] = hi;
+				if (n > 1) {
+					lostack[top] = lo;
+					histack[top++] = r;
 				}
 			}
 		}
