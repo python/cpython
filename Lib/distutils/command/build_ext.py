@@ -179,7 +179,7 @@ class BuildExt (Command):
         filenames = []
 
         # Wouldn't it be neat if we knew the names of header files too...
-        for (extension_name, build_info) in extensions:
+        for (extension_name, build_info) in self.extensions:
             sources = build_info.get ('sources')
             if type (sources) in (ListType, TupleType):
                 filenames.extend (sources)
@@ -191,10 +191,11 @@ class BuildExt (Command):
 
         for (extension_name, build_info) in extensions:
             sources = build_info.get ('sources')
-            if sources is None or type (sources) is not ListType:
+            if sources is None or type (sources) not in (ListType, TupleType):
                 raise DistutilsValueError, \
                       "in ext_modules option, 'sources' must be present " + \
                       "and must be a list of source filenames"
+            sources = list (sources)
 
             # First step: compile the source code to object files.  This
             # drops the object files in the current directory, regardless
@@ -205,7 +206,7 @@ class BuildExt (Command):
             include_dirs = build_info.get ('include_dirs')
             self.compiler.compile (sources,
                                    macros=macros,
-                                   includes=include_dirs)
+                                   include_dirs=include_dirs)
 
             # Now link the object files together into a "shared object" --
             # of course, first we have to figure out all the other things
