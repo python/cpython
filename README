@@ -1,8 +1,8 @@
-This is Python release 1.5 beta 2
-==================================
+This is Python release 1.5
+==========================
 
-The official release date for this version is Friday, December 12,
-1997.
+This version is officially released on Wednesday, December 31, 1997.
+It doesn't differ very much from 1.5b2 (released on Dec. 12).
 
 
 What's new in this release?
@@ -76,60 +76,34 @@ Misc/NEWS.  Some highlights:
   defined by Python now have a "Py" or "_Py" prefix, and the same is
   true for most macros and typedefs.
 
-If you previously downloaded 1.5b1, here are the most relevant changes
+If you previously downloaded 1.5b2, here are the most relevant changes
 since then (of course all known bugs have been fixed, leaks plugged,
-and some documentation has been added).  The full list of changes
-since 1.5b1 is presented at the end of the Misc/NEWS file.
+and quite a bit of documentation has been added -- including doc
+strings here and there).  The full list of changes since 1.5b2 is
+presented at the end of the Misc/NEWS file.
 
-  - Thanks to all who contributed doc strings for library modules!
+  - Thanks to all who contributed doc strings or other documentation!
 
-  - The portability problems caused by indented preprocessor commands
-  and C++ style comments should be gone now.
+  - Many small improvements to the quality of the documentation, both
+  PostScript, HTML and even Emacs info (library manual only).
 
-  - Lots of improvements to python-mode.el again.
+  - New module telnetlib.py.
 
-  - Changes in pickle.py and cPickle.c: when unpickling an instance of
-  a class that doesn't define the __getinitargs__() method, the
-  __init__() constructor is no longer called.  This makes a much
-  larger group of classes picklable by default, but may occasionally
-  change semantics.  To force calling __init__() on unpickling, define
-  a __getinitargs__() method.  Other changes too, in particular
-  cPickle now handles classes defined in packages correctly.  The
-  same change applies to copying instances with copy.py.
+  - New tool versioncheck.
 
-  - Locale support in the "re" (Perl regular expressions) module.  Use 
-  the flag re.L (or re.LOCALE) to enable locale-specific matching
-  rules for \w and \b.  The in-line syntax for this flag is (?L).
+  - Two bugs with ftp URLs fixed in urllib.py.
 
-  - The built-in function isinstance(x, y) now also succeeds when y is
-  a type object and type(x) is y.
+  - Fixed infinite recursion when printing __builtins__.
 
-  - repr() and str() of class and instance objects now reflect the
-  package/module in which the class is defined.
+  - A bunch of small problems fixed in Tkinter.py.
 
-  - Module "ni" has been removed.  (If you really need it, it's been
-  renamed to "ni1".  Let me know if this causes any problems for you.
-  Package authors are encouraged to write __init__.py files that
-  support both ni and 1.5 package support, so the same version can be
-  used with Python 1.4 as well as 1.5.)
+  - Ported zlibmodule.c and bsddbmodule.c to NT.
 
-  - The thread module is now automatically included when threads are
-  configured.  (You must remove it from your existing Setup file,
-  since it is now in its own Setup.thread file.)
+  - Better NT support in tempfile.py.
 
-  - New command line option "-x" to skip the first line of the script;
-  handy to make executable scripts on non-Unix platforms.
+  - Fixed 4294967296==0.
 
-  - In importdl.c, add the RTLD_GLOBAL to the dlopen() flags.  I
-  haven't checked how this affects things, but it should make symbols
-  in one shared library available to the next one.
-
-  - The Windows configuration adds a new main program, "pythonw", and
-  registers a new extension, ".pyw" that invokes this.  This is a
-  standard Python interpreter that does not pop up a console window;
-  handy for pure Tkinter applications.  All output to the original
-  stdout and stderr is lost; reading from the original stdin yields
-  EOF.
+  - Latest re and pcre modules (versions of Dec. 22).
 
 
 If you don't read instructions
