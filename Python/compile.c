@@ -686,7 +686,8 @@ static node *get_rawdocstring(node *);
 static int get_ref_type(struct compiling *, char *);
 
 /* symtable operations */
-static int symtable_build(struct compiling *, node *);
+static struct symtable *symtable_build(node *, PyFutureFeatures *,
+				       const char *filename);
 static int symtable_load_symbols(struct compiling *);
 static struct symtable *symtable_init(void);
 static void symtable_enter_scope(struct symtable *, char *, int, int);
@@ -4250,26 +4251,12 @@ PyNode_CompileSymtable(node *n, const char *filename)
 	ff = PyNode_Future(n, filename);
 	if (ff == NULL)
 		return NULL;
-
-	st = symtable_init();
+	st = symtable_build(n, ff, filename);
 	if (st == NULL) {
 		PyObject_FREE((void *)ff);
 		return NULL;
 	}
-	st->st_future = ff;
-	symtable_enter_scope(st, TOP, TYPE(n), n->n_lineno);
-	if (st->st_errors > 0)
-		goto fail;
-	symtable_node(st, n);
-	if (st->st_errors > 0)
-		goto fail;
-	
 	return st;
- fail:
-	PyObject_FREE((void *)ff);
-	st->st_future = NULL;
-	PySymtable_Free(st);
-	return NULL;
 }
 
 static PyCodeObject *
@@ -4319,10 +4306,14 @@ jcompile(node *n, const char *filename, struct compiling *base,
 			sc.c_future->ff_features = merged;
 			flags->cf_flags = merged;
 		}
-		if (symtable_build(&sc, n) < 0) {
+		sc.c_symtable = symtable_build(n, sc.c_future, sc.c_filename);
+		if (sc.c_symtable == NULL) {
 			com_free(&sc);
 			return NULL;
 		}
+		/* reset symbol table for second pass */
+		sc.c_symtable->st_nscopes = 1;
+		sc.c_symtable->st_pass = 2;
 	}
 	co = NULL;
 	if (symtable_load_symbols(&sc) < 0) {
@@ -4443,6 +4434,15 @@ get_ref_type(struct compiling *c, char *name)
 static int
 issue_warning(const char *msg, const char *filename, int lineno)
 {
+	if (PyErr_Occurred()) {
+		/* This can happen because symtable_node continues
+		   processing even after raising a SyntaxError.
+		   Calling PyErr_WarnExplicit now would clobber the
+		   pending exception; instead we fail and let that
+		   exception propagate.
+		*/
+		return -1;
+	}
 	if (PyErr_WarnExplicit(PyExc_SyntaxWarning, msg, filename,
 			       lineno, NULL, NULL) < 0)	{
 		if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
@@ -4466,23 +4466,37 @@ symtable_warn(struct symtable *st, char *msg)
 
 /* Helper function for setting lineno and filename */
 
-static int
-symtable_build(struct compiling *c, node *n)
+static struct symtable *
+symtable_build(node *n, PyFutureFeatures *ff, const char *filename)
 {
-	if ((c->c_symtable = symtable_init()) == NULL)
-		return -1;
-	c->c_symtable->st_future = c->c_future;
-	c->c_symtable->st_filename = c->c_filename;
-	symtable_enter_scope(c->c_symtable, TOP, TYPE(n), n->n_lineno);
-	if (c->c_symtable->st_errors > 0)
-		return -1;
-	symtable_node(c->c_symtable, n);
-	if (c->c_symtable->st_errors > 0)
-		return -1;
-	/* reset for second pass */
-	c->c_symtable->st_nscopes = 1;
-	c->c_symtable->st_pass = 2;
-	return 0;
+	struct symtable *st;
+
+	st = symtable_init();
+	if (st == NULL)
+		return NULL;
+	st->st_future = ff;
+	st->st_filename = filename;
+	symtable_enter_scope(st, TOP, TYPE(n), n->n_lineno);
+	if (st->st_errors > 0)
+		goto fail;
+	symtable_node(st, n);
+	if (st->st_errors > 0)
+		goto fail;
+	return st;
+ fail:
+	if (!PyErr_Occurred()) {
+		/* This could happen because after a syntax error is
+		   detected, the symbol-table-building continues for
+		   a while, and PyErr_Clear() might erroneously be
+		   called during that process.  One such case has been
+		   fixed, but there might be more (now or later).
+		*/
+		PyErr_SetString(PyExc_SystemError, "lost exception");
+	}
+	st->st_future = NULL;
+	st->st_filename = NULL;
+	PySymtable_Free(st);
+	return NULL;
 }
 
 static int
