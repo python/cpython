@@ -71,6 +71,8 @@ class TestMacostools(unittest.TestCase):
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
 
     def test_mkalias_relative(self):
+        if not os.path.exists(sys.prefix):
+            return
         try:
             os.unlink(TESTFN2)
         except:
