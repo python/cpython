@@ -20,7 +20,7 @@ def main():
 	if year in range(100):
 		print 'I\'ll assume that by', year,
 		year = year + 1900
-		print 'you mean', year, 'and not the arly Christian era'
+		print 'you mean', year, 'and not the early Christian era'
 	elif year not in range(1850, 2000):
 		print 'It\'s hard to believe you were born in', year
 		return
