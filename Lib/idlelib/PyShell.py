@@ -367,18 +367,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
             except:
                 pass
         # Kill subprocess, spawn a new one, accept connection.
-        if hasattr(os, 'kill'):
-            # We can interrupt any loop if we can use SIGINT. This doesn't
-            # work in Windows, currently we can only interrupt loops doing I/O.
-            self.__signal_interrupt()
-        # XXX KBK 13Feb03 Don't close the socket until the interrupt thread
-        # finishes.
-        self.tkconsole.executing = False
         try:
+            self.interrupt_subprocess()
+            self.shutdown_subprocess()
             self.rpcclt.close()
             os.wait()
         except:
             pass
+        self.tkconsole.executing = False
         self.spawn_subprocess()
         self.rpcclt.accept()
         self.transfer_path()
@@ -406,15 +402,31 @@ class ModifiedInterpreter(InteractiveInterpreter):
             pass
 
     def __request_interrupt(self):
-        self.rpcclt.asynccall("exec", "interrupt_the_server", (), {})
+        try:
+            self.rpcclt.asynccall("exec", "interrupt_the_server", (), {})
+        except:
+            pass
 
     def interrupt_subprocess(self):
-        if hasattr(os, "kill"):
+        # XXX KBK 22Mar03 Use interrupt message on all platforms for now.
+        # XXX if hasattr(os, "kill"):
+        if False:
             self.__signal_interrupt()
         else:
             # Windows has no os.kill(), use an RPC message.
             # This is async, must be done in a thread.
             threading.Thread(target=self.__request_interrupt).start()
+
+    def __request_shutdown(self):
+        try:
+            self.rpcclt.asynccall("exec", "shutdown_the_server", (), {})
+        except:
+            pass
+
+    def shutdown_subprocess(self):
+        t = threading.Thread(target=self.__request_shutdown)
+        t.start()
+        t.join()
 
     def transfer_path(self):
         self.runcommand("""if 1:
@@ -468,9 +480,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def kill_subprocess(self):
         clt = self.rpcclt
-        self.rpcclt = None
         if clt is not None:
+            self.shutdown_subprocess()
             clt.close()
+        self.rpcclt = None
 
     debugger = None
 
