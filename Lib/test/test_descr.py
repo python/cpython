@@ -441,6 +441,20 @@ def multi():
     verify(d.getstate() == 10)
     verify(D.__mro__ == (D, dictionary, C, object))
 
+    # SF bug #442833
+    class Node(object):
+        def __int__(self):
+            return int(self.foo())
+        def foo(self):
+            return "23"
+    class Frag(Node, list):
+        def foo(self):
+            return "42"
+    verify(Node().__int__() == 23)
+    verify(int(Node()) == 23)
+    verify(Frag().__int__() == 42)
+    verify(int(Frag()) == 42)
+
 def diamond():
     if verbose: print "Testing multiple inheritance special cases..."
     class A(object):
