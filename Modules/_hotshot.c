@@ -1180,8 +1180,11 @@ profiler_start(ProfilerObject *self, PyObject *args)
     PyObject *result = NULL;
 
     if (PyArg_ParseTuple(args, ":start")) {
-        if (is_available(self))
+        if (is_available(self)) {
             do_start(self);
+            result = Py_None;
+            Py_INCREF(result);
+        }
     }
     return result;
 }
@@ -1198,8 +1201,11 @@ profiler_stop(ProfilerObject *self, PyObject *args)
     if (PyArg_ParseTuple(args, ":stop")) {
         if (!self->active)
             PyErr_SetString(ProfilerError, "profiler not active");
-        else
+        else {
             do_stop(self);
+            result = Py_None;
+            Py_INCREF(result);
+        }
     }
     return result;
 }
