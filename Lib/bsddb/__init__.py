@@ -70,20 +70,74 @@ import UserDict
 class _iter_mixin(UserDict.DictMixin):
     def __iter__(self):
         try:
-            yield self.first()[0]
-            next = self.next
+            cur = self.db.cursor()
+            self._iter_cursors[str(cur)] = cur
+
+            # since we're only returning keys, we call the cursor
+            # methods with flags=0, dlen=0, dofs=0
+            curkey = cur.first(0,0,0)[0]
+            yield curkey
+
+            next = cur.next
             while 1:
-                yield next()[0]
+                try:
+                    curkey = next(0,0,0)[0]
+                    yield curkey
+                except _bsddb.DBCursorClosedError:
+                    # our cursor object was closed since we last yielded
+                    # create a new one and attempt to reposition to the
+                    # right place
+                    cur = self.db.cursor()
+                    self._iter_cursors[str(cur)] = cur
+                    # FIXME-20031101-greg: race condition.  cursor could
+                    # be closed by another thread before this set call.
+                    try:
+                        cur.set(curkey,0,0,0)
+                    except _bsddb.DBCursorClosedError:
+                        # halt iteration on race condition...
+                        raise _bsddb.DBNotFoundError
+                    next = cur.next
         except _bsddb.DBNotFoundError:
+            try:
+                del self._iter_cursors[str(cur)]
+            except KeyError:
+                pass
             return
 
     def iteritems(self):
         try:
-            yield self.first()
-            next = self.next
+            cur = self.db.cursor()
+            self._iter_cursors[str(cur)] = cur
+
+            kv = cur.first()
+            curkey = kv[0]
+            yield kv
+
+            next = cur.next
             while 1:
-                yield next()
+                try:
+                    kv = next()
+                    curkey = kv[0]
+                    yield kv
+                except _bsddb.DBCursorClosedError:
+                    # our cursor object was closed since we last yielded
+                    # create a new one and attempt to reposition to the
+                    # right place
+                    cur = self.db.cursor()
+                    self._iter_cursors[str(cur)] = cur
+                    # FIXME-20031101-greg: race condition.  cursor could
+                    # be closed by another thread before this set call.
+                    try:
+                        cur.set(curkey,0,0,0)
+                    except _bsddb.DBCursorClosedError:
+                        # halt iteration on race condition...
+                        raise _bsddb.DBNotFoundError
+                    next = cur.next
         except _bsddb.DBNotFoundError:
+            try:
+                del self._iter_cursors[str(cur)]
+            except KeyError:
+                pass
             return
 """
 else:
@@ -97,15 +151,53 @@ class _DBWithCursor(_iter_mixin):
     """
     def __init__(self, db):
         self.db = db
-        self.dbc = None
         self.db.set_get_returns_none(0)
+
+        # FIXME-20031101-greg: I believe there is still the potential
+        # for deadlocks in a multithreaded environment if someone
+        # attempts to use the any of the cursor interfaces in one
+        # thread while doing a put or delete in another thread.  The
+        # reason is that _checkCursor and _closeCursors are not atomic
+        # operations.  Doing our own locking around self.dbc,
+        # self.saved_dbc_key and self._iter_cursors could prevent this.
+        # TODO: A test case demonstrating the problem needs to be written.
+
+        # self.dbc is a DBCursor object used to implement the
+        # first/next/previous/last/set_location methods.
+        self.dbc = None
+        self.saved_dbc_key = None
+
+        # a collection of all DBCursor objects currently allocated
+        # by the _iter_mixin interface.
+        self._iter_cursors = {}
+
 
     def __del__(self):
         self.close()
 
+    def _get_dbc(self):
+        return self.dbc
+
     def _checkCursor(self):
         if self.dbc is None:
             self.dbc = self.db.cursor()
+            if self.saved_dbc_key is not None:
+                self.dbc.set(self.saved_dbc_key)
+                self.saved_dbc_key = None
+
+    # This method is needed for all non-cursor DB calls to avoid
+    # BerkeleyDB deadlocks (due to being opened with DB_INIT_LOCK
+    # and DB_THREAD to be thread safe) when intermixing database
+    # operations that use the cursor internally with those that don't.
+    def _closeCursors(self, save=True):
+        if self.dbc:
+            c = self.dbc
+            self.dbc = None
+            if save:
+                self.saved_dbc_key = c.current(0,0,0)[0]
+            c.close()
+            del c
+        map(lambda c: c.close(), self._iter_cursors.values())
 
     def _checkOpen(self):
         if self.db is None:
@@ -124,13 +216,16 @@ class _DBWithCursor(_iter_mixin):
 
     def __setitem__(self, key, value):
         self._checkOpen()
+        self._closeCursors()
         self.db[key] = value
 
     def __delitem__(self, key):
         self._checkOpen()
+        self._closeCursors()
         del self.db[key]
 
     def close(self):
+        self._closeCursors(save=False)
         if self.dbc is not None:
             self.dbc.close()
         v = 0
