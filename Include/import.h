@@ -42,6 +42,8 @@ PyObject *PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
 PyObject *PyImport_GetModuleDict Py_PROTO((void));
 PyObject *PyImport_AddModule Py_PROTO((char *name));
 PyObject *PyImport_ImportModule Py_PROTO((char *name));
+PyObject *PyImport_ImportModuleEx Py_PROTO((
+	char *name, PyObject *globals, PyObject *locals, PyObject *fromlist));
 PyObject *PyImport_Import Py_PROTO((PyObject *name));
 PyObject *PyImport_ReloadModule Py_PROTO((PyObject *m));
 void PyImport_Cleanup Py_PROTO((void));
