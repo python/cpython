@@ -1,0 +1,157 @@
+The Python Debugger
+===================
+
+To use the debugger in its simplest form:
+
+	>>> import pdb
+	>>> pdb.run('<a statement>')
+
+The debugger's prompt is '(Pdb) '.  This will stop in the first
+function call in <a statement>.
+
+The commands recognized by the debugger are listed in the next
+section.  Most can be abbreviated as indicated; e.g., h(elp) means
+that 'help' can be typed as 'h' or 'help' (but not as 'he' or 'hel',
+nor as 'H' or 'Help' or 'HELP').  Optional arguments are enclosed in
+square brackets.
+
+A blank line repeats the previous command literally.  (Except for
+'list', where it lists the next 11 lines.)
+
+Commands that the debugger doesn't recognize are assumed to be Python
+statements and are executed in the context of the program being
+debugged.  Python statements can also be prefixed with an exclamation
+point ('!').  This is a powerful way to inspect the program being
+debugged; it is even possible to change variables.  When an exception
+occurs in such a statement, the exception name is printed but the
+debugger's state is not changed.
+
+The debugger is not directly programmable; but it is implemented as a
+class from which you can derive your own debugger class, so you can
+make as fancy as you like.
+
+
+Debugger commands
+=================
+
+h(elp)
+	Without argument, print the list of available commands.
+	With a command name as argument, print help about that command
+	(this is currently not implemented).
+
+w(here)
+	Print a stack trace, with the most recent frame at the bottom.
+	An arrow indicates the "current frame", which determines the
+	context of most commands.
+
+d(own)
+	Move the current frame one level down in the stack trace
+	(to an older frame).
+
+u(p)
+	Move the current frame one level up in the stack trace
+	(to a newer frame).
+
+b(reak) [lineno]
+	With a line number argument, set a break there in the current file.
+	Without argument, list all breaks.
+
+cl(ear) [lineno]
+	With a line number argument, clear that break in the current file.
+	Without argument, clear all breaks (but first ask confirmation).
+
+s(tep)
+	Execute the current line, stop at the first possible occasion
+	(either in a function that is called or in the current function).
+
+n(ext)
+	Continue execution until the next line in the current function
+	is reached or it returns.
+
+r(eturn)
+	Continue execution until the current function returns.
+
+c(ont(inue))
+	Continue execution, only stop when a breakpoint is encountered.
+
+l(ist) [first [,last]]
+	List source code for the current file.
+	Without arguments, list 11 lines around the current line
+	or continue the previous listing.
+	With one argument, list 11 lines starting at that line.
+	With two arguments, list the given range;
+	if the second argument is less than the first, it is a count.
+
+a(rgs)
+	Print the argument list of the current function.
+
+p expression
+	Print the value of the expression.
+
+(!) statement
+	Execute the (one-line) statement in the context of
+	the current stack frame.
+	The exclamation point can be omitted unless the first word
+	of the statement resembles a debugger command.
+	To assign to a global variable you must always prefix the
+	command with a 'global' command, e.g.:
+	(Pdb) global list_options; list_options = ['-l']
+	(Pdb)
+
+q(uit)
+	Quit from the debugger.
+	The program being executed is aborted.
+
+
+How it works
+============
+
+Some changes were made to the interpreter:
+- if sys.trace is defined (by the user) and not None, it should be a function
+- sys.trace is called the global trace function
+- there can also a local trace function (see later)
+
+Trace functions have three arguments: (frame, event, arg)
+  - frame is the current stack frame
+  - event is a string: 'call', 'line', 'return' or 'exception'
+  - arg is dependent on the event type
+A trace function should return a new trace function or None.
+Class methods are accepted (and most useful!) as trace methods.
+
+The events have the following meaning:
+
+  'call':      A function is called (or some other code block entered).
+               The global trace function is called;
+               arg is the argument list to the function;
+               the return value specifies the local trace function.
+
+  'line':      The interpreter is about to execute a new line of code
+               (sometimes multiple line events on one line exist).
+               The local trace function is called; arg in None;
+               the return value specifies the new local trace function.
+
+  'return':    A function (or other code block) is about to return.
+               The local trace function is called;
+               arg is the value that will be returned.
+               The trace function's return value is ignored.
+
+  'exception': An exception has occurred.
+               The local trace function is called;
+               arg is a triple (exception, value, traceback);
+               the return value specifies the new local trace function
+
+Note that as an exception is propagated down the chain of callers, an
+'exception' event is generated at each level.
+
+Stack frame objects have the following read-only attributes:
+  f_code:      the code object being executed
+  f_lineno:    the current line number (-1 for 'call' events)
+  f_back:      the stack frame of the caller, or None
+  f_locals:    dictionary containing local name bindings
+  f_globals:   dictionary containing global name bindings
+
+Code objects have the following read-only attributes:
+  co_code:     the code string
+  co_names:    the list of names used by the code
+  co_consts:   the list of (literal) constants used by the code
+  co_filename: the filename from which the code was compiled
