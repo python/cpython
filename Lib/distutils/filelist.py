@@ -55,7 +55,7 @@ class FileList:
     # -- Fallback warning/debug functions ------------------------------
     
     def __warn (self, msg):
-        sys.stderr.write ("warning: %s\n" % msg)
+        sys.stderr.write("warning: %s\n" % msg)
         
     def __debug_print (self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
@@ -87,7 +87,7 @@ class FileList:
 
     def remove_duplicates (self):
         # Assumes list has been sorted!
-        for i in range (len(self.files)-1, 0, -1):
+        for i in range(len(self.files)-1, 0, -1):
             if self.files[i] == self.files[i-1]:
                 del self.files[i]
 
@@ -95,21 +95,21 @@ class FileList:
     # -- "File template" methods ---------------------------------------
     
     def _parse_template_line (self, line):
-        words = string.split (line)
+        words = string.split(line)
         action = words[0]
 
         patterns = dir = dir_pattern = None
 
         if action in ('include', 'exclude',
                       'global-include', 'global-exclude'):
-            if len (words) < 2:
+            if len(words) < 2:
                 raise DistutilsTemplateError, \
                       "'%s' expects <pattern1> <pattern2> ..." % action
 
             patterns = map(convert_path, words[1:])
 
         elif action in ('recursive-include', 'recursive-exclude'):
-            if len (words) < 3:
+            if len(words) < 3:
                 raise DistutilsTemplateError, \
                       "'%s' expects <dir> <pattern1> <pattern2> ..." % action
 
@@ -117,7 +117,7 @@ class FileList:
             patterns = map(convert_path, words[2:])
 
         elif action in ('graft', 'prune'):
-            if len (words) != 2:
+            if len(words) != 2:
                 raise DistutilsTemplateError, \
                      "'%s' expects a single <dir_pattern>" % action
 
@@ -146,13 +146,13 @@ class FileList:
         if action == 'include':
             self.debug_print("include " + string.join(patterns))
             for pattern in patterns:
-                if not self.include_pattern (pattern, anchor=1):
+                if not self.include_pattern(pattern, anchor=1):
                     self.warn("no files found matching '%s'" % pattern)
 
         elif action == 'exclude':
             self.debug_print("exclude " + string.join(patterns))
             for pattern in patterns:
-                if not self.exclude_pattern (pattern, anchor=1):
+                if not self.exclude_pattern(pattern, anchor=1):
                     self.warn(
                         "no previously-included files found matching '%s'"%
                         pattern)
@@ -160,15 +160,15 @@ class FileList:
         elif action == 'global-include':
             self.debug_print("global-include " + string.join(patterns))
             for pattern in patterns:
-                if not self.include_pattern (pattern, anchor=0):
-                    self.warn (("no files found matching '%s' " +
-                                "anywhere in distribution") %
-                               pattern)
+                if not self.include_pattern(pattern, anchor=0):
+                    self.warn(("no files found matching '%s' " +
+                               "anywhere in distribution") %
+                              pattern)
 
         elif action == 'global-exclude':
             self.debug_print("global-exclude " + string.join(patterns))
             for pattern in patterns:
-                if not self.exclude_pattern (pattern, anchor=0):
+                if not self.exclude_pattern(pattern, anchor=0):
                     self.warn(("no previously-included files matching '%s' " +
                                "found anywhere in distribution") %
                               pattern)
@@ -177,8 +177,8 @@ class FileList:
             self.debug_print("recursive-include %s %s" %
                              (dir, string.join(patterns)))
             for pattern in patterns:
-                if not self.include_pattern (pattern, prefix=dir):
-                    self.warn (("no files found matching '%s' " +
+                if not self.include_pattern(pattern, prefix=dir):
+                    self.warn(("no files found matching '%s' " +
                                 "under directory '%s'") %
                                (pattern, dir))
 
@@ -190,11 +190,11 @@ class FileList:
                     self.warn(("no previously-included files matching '%s' " +
                                "found under directory '%s'") %
                               (pattern, dir))
-
+                    
         elif action == 'graft':
             self.debug_print("graft " + dir_pattern)
             if not self.include_pattern(None, prefix=dir_pattern):
-                self.warn ("no directories found matching '%s'" % dir_pattern)
+                self.warn("no directories found matching '%s'" % dir_pattern)
 
         elif action == 'prune':
             self.debug_print("prune " + dir_pattern)
@@ -212,8 +212,7 @@ class FileList:
     # -- Filtering/selection methods -----------------------------------
 
     def include_pattern (self, pattern,
-                        anchor=1, prefix=None, is_regex=0):
-
+                         anchor=1, prefix=None, is_regex=0):
         """Select strings (presumably filenames) from 'self.files' that
         match 'pattern', a Unix-style wildcard (glob) pattern.  Patterns
         are not quite the same as implemented by the 'fnmatch' module: '*'
@@ -239,7 +238,7 @@ class FileList:
         Return 1 if files are found.
         """
         files_found = 0
-        pattern_re = translate_pattern (pattern, anchor, prefix, is_regex)
+        pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
         self.debug_print("include_pattern: applying regex r'%s'" %
                          pattern_re.pattern)
 
@@ -248,9 +247,9 @@ class FileList:
             self.findall()
 
         for name in self.allfiles:
-            if pattern_re.search (name):
+            if pattern_re.search(name):
                 self.debug_print(" adding " + name)
-                self.files.append (name)
+                self.files.append(name)
                 files_found = 1
     
         return files_found
@@ -267,11 +266,11 @@ class FileList:
         Return 1 if files are found.
         """
         files_found = 0
-        pattern_re = translate_pattern (pattern, anchor, prefix, is_regex)
+        pattern_re = translate_pattern(pattern, anchor, prefix, is_regex)
         self.debug_print("exclude_pattern: applying regex r'%s'" %
                          pattern_re.pattern)
-        for i in range (len(self.files)-1, -1, -1):
-            if pattern_re.search (self.files[i]):
+        for i in range(len(self.files)-1, -1, -1):
+            if pattern_re.search(self.files[i]):
                 self.debug_print(" removing " + self.files[i])
                 del self.files[i]
                 files_found = 1
@@ -299,11 +298,11 @@ def findall (dir = os.curdir):
 
     while stack:
         dir = pop()
-        names = os.listdir (dir)
+        names = os.listdir(dir)
 
         for name in names:
             if dir != os.curdir:        # avoid the dreaded "./" syndrome
-                fullname = os.path.join (dir, name)
+                fullname = os.path.join(dir, name)
             else:
                 fullname = name
 
@@ -311,9 +310,9 @@ def findall (dir = os.curdir):
             stat = os.stat(fullname)
             mode = stat[ST_MODE]
             if S_ISREG(mode):
-                list.append (fullname)
+                list.append(fullname)
             elif S_ISDIR(mode) and not S_ISLNK(mode):
-                push (fullname)
+                push(fullname)
 
     return list
 
@@ -324,7 +323,7 @@ def glob_to_re (pattern):
     that '*' does not match "special characters" (which are
     platform-specific).
     """
-    pattern_re = fnmatch.translate (pattern)
+    pattern_re = fnmatch.translate(pattern)
 
     # '?' and '*' in the glob pattern become '.' and '.*' in the RE, which
     # IMHO is wrong -- '?' and '*' aren't supposed to match slash in Unix,
@@ -333,7 +332,7 @@ def glob_to_re (pattern):
     # character except the special characters.
     # XXX currently the "special characters" are just slash -- i.e. this is
     # Unix-only.
-    pattern_re = re.sub (r'(^|[^\\])\.', r'\1[^/]', pattern_re)
+    pattern_re = re.sub(r'(^|[^\\])\.', r'\1[^/]', pattern_re)
     return pattern_re
 
 # glob_to_re ()
@@ -352,17 +351,17 @@ def translate_pattern (pattern, anchor=1, prefix=None, is_regex=0):
             return pattern
 
     if pattern:
-        pattern_re = glob_to_re (pattern)
+        pattern_re = glob_to_re(pattern)
     else:
         pattern_re = ''
         
     if prefix is not None:
-        prefix_re = (glob_to_re (prefix))[0:-1] # ditch trailing $
-        pattern_re = "^" + os.path.join (prefix_re, ".*" + pattern_re)
+        prefix_re = (glob_to_re(prefix))[0:-1] # ditch trailing $
+        pattern_re = "^" + os.path.join(prefix_re, ".*" + pattern_re)
     else:                               # no prefix -- respect anchor flag
         if anchor:
             pattern_re = "^" + pattern_re
         
-    return re.compile (pattern_re)
+    return re.compile(pattern_re)
 
 # translate_pattern ()
