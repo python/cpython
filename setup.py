@@ -232,21 +232,12 @@ class PyBuildExt(build_ext):
                           'failed with %s: %s' % (ext.name, exc_type, why),
                           level=3)
 
-    def get_platform (self):
+    def get_platform(self):
         # Get value of sys.platform
-        platform = sys.platform
-        if platform[:6] =='cygwin':
-            platform = 'cygwin'
-        elif platform[:4] =='beos':
-            platform = 'beos'
-        elif platform[:6] == 'darwin':
-            platform = 'darwin'
-        elif platform[:6] == 'atheos':
-            platform = 'atheos'
-        elif platform[:4] == 'osf1':
-            platform = 'osf1'
-
-        return platform
+        for platform in ['cygwin', 'beos', 'darwin', 'atheos', 'osf1']:
+            if sys.platform.startswith(platform):
+                return platform
+        return sys.platform
 
     def detect_modules(self):
         # Ensure that /usr/local is always used
