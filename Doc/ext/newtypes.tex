@@ -1039,7 +1039,7 @@ my_dealloc(PyObject *obj)
 
         cbresult = PyObject_CallObject(self->my_callback, NULL);
         if (cbresult == NULL)
-            PyErr_WriteUnraisable();
+            PyErr_WriteUnraisable(self->my_callback);
         else
             Py_DECREF(cbresult);
 
