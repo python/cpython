@@ -637,7 +637,10 @@ class Aifc_write:
 
 	def __init__(self, f):
 		if type(f) == type(''):
+			filename = f
 			f = builtin.open(f, 'w')
+		else:
+			filename = '???'
 		# else, assume it is an open file object already
 		self.initfp(f)
 		if filename[-5:] == '.aiff':
