@@ -4180,7 +4180,8 @@ turns out that's enough (on most machines) so that
 Note that this is in the very nature of binary floating-point: this is
 not a bug in Python, it is not a bug in your code either, and you'll
 see the same kind of thing in all languages that support your
-hardware's floating-point arithmetic.
+hardware's floating-point arithmetic (although some languages may
+not \emph{display} the difference by default, or in all output modes).
 
 Python's builtin \function{str()} function produces only 12
 significant digits, and you may wish to use that instead.  It's
@@ -4326,7 +4327,7 @@ precision is that over 2**56, or
 
 Note that since we rounded up, this is actually a little bit larger than
 1/10; if we had not rounded up, the quotient would have been a little
-bit smaller than 1/10.  But in no case can it be *exactly* 1/10!
+bit smaller than 1/10.  But in no case can it be \emph{exactly} 1/10!
 
 So the computer never ``sees'' 1/10:  what it sees is the exact
 fraction given above, the best 754 double approximation it can get:
