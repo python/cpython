@@ -634,6 +634,7 @@ sub make_head_and_body($$) {
             #    . "\n"
             #  : ''),
             $more_links_mark,
+            "\n",
             ($CHARSET && $HTML_VERSION ge "2.1"
              ? ('<meta http-equiv="Content-Type" content="text/html; '
                 . "charset=$CHARSET\">\n")
@@ -641,9 +642,10 @@ sub make_head_and_body($$) {
             ($AESOP_META_TYPE
              ? "<meta name='aesop' content='$AESOP_META_TYPE'>\n" : ''));
     }
-
-    if (!$charset && $CHARSET) { $charset = $CHARSET; $charset =~ s/_/\-/go; }
-
+    if (!$charset && $CHARSET) {
+        $charset = $CHARSET;
+        $charset =~ s/_/\-/go;
+    }
     join('',
          $MY_PARTIAL_HEADER,
          &meta_information($title),
