@@ -397,7 +397,7 @@ backwards compatible and debugging classes and functions?
 
 """
 
-__version__ = "2.0a3"
+__version__ = "2.0b1"
 
 
 # Imports
