@@ -1278,11 +1278,11 @@ sub make_my_titlepage() {
 	$the_title .= "\n<p><i>$t_affil</i></p>";
     }
     if ($t_date) {
-	$the_title .= "\n<p><strong>$t_date</strong>";
+	$the_title .= "\n<p>";
 	if ($PACKAGE_VERSION) {
-	    $the_title .= "<br><strong>Release $PACKAGE_VERSION</strong>";
+	    $the_title .= "<strong>Release $PACKAGE_VERSION</strong><br>\n";
         }
-	$the_title .= "</p>"
+	$the_title .= "<strong>$t_date</strong></p>"
     }
     if ($t_address) {
 	$the_title .= "\n<p>$t_address</p>";
