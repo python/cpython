@@ -197,13 +197,13 @@ CD_getstatus(self, args)
 		return NULL;
 	}
 
-	return mkvalue("(iiiiiiiiiiiiiiiiii)", status.state, status.track,
-		       status.min, status.sec, status.frame, status.abs_min,
-		       status.abs_sec, status.abs_frame, status.total_min,
-		       status.total_sec, status.total_frame, status.first,
-		       status.last, status.scsi_audio, status.cur_block,
-		       status.polyfilla[0], status.polyfilla[1],
-		       status.polyfilla[2]);
+	return mkvalue("(ii(iii)(iii)(iii)iiii(iii))", status.state,
+		       status.track, status.min, status.sec, status.frame,
+		       status.abs_min, status.abs_sec, status.abs_frame,
+		       status.total_min, status.total_sec, status.total_frame,
+		       status.first, status.last, status.scsi_audio,
+		       status.cur_block, status.polyfilla[0],
+		       status.polyfilla[1], status.polyfilla[2]);
 }
 	
 static object *
@@ -224,7 +224,7 @@ CD_gettrackinfo(self, args)
 		return NULL;
 	}
 
-	return mkvalue("(iiiiii)",
+	return mkvalue("((iii)(iii))",
 		       info.start_min, info.start_sec, info.start_frame,
 		       info.total_min, info.total_sec, info.total_frame);
 }
@@ -578,14 +578,11 @@ CD_callback(arg, type, data)
 		break;
 	case cd_ptime:
 	case cd_atime:
-		v = newsizedstringobject(NULL, 6);
-		p = getstringvalue(v);
-		*p++ = ((struct cdtimecode *) data)->mhi + '0';
-		*p++ = ((struct cdtimecode *) data)->mlo + '0';
-		*p++ = ((struct cdtimecode *) data)->shi + '0';
-		*p++ = ((struct cdtimecode *) data)->slo + '0';
-		*p++ = ((struct cdtimecode *) data)->fhi + '0';
-		*p++ = ((struct cdtimecode *) data)->flo + '0';
+#define ptr ((struct cdtimecode *) data)
+		v = mkvalue("(iii)", ptr->mhi * 10 + ptr->mlo,
+			    ptr->shi * 10 + ptr->slo,
+			    ptr->fhi * 10 + ptr->flo);
+#undef ptr
 		break;
 	case cd_catalog:
 		v = newsizedstringobject(NULL, 13);
