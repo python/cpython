@@ -232,7 +232,7 @@ class CompressObjectTestCase(unittest.TestCase):
             bufs = []
             cb = combuf
             while cb:
-                #max_length = 1 + len(cb)/10
+                #max_length = 1 + len(cb)//10
                 chunk = dco.decompress(cb, dcx)
                 self.failIf(len(chunk) > dcx,
                         'chunk too big (%d>%d)' % (len(chunk), dcx))
@@ -268,7 +268,7 @@ class CompressObjectTestCase(unittest.TestCase):
         bufs = []
         cb = combuf
         while cb:
-            max_length = 1 + len(cb)/10
+            max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, max_length)
             self.failIf(len(chunk) > max_length,
                         'chunk too big (%d>%d)' % (len(chunk),max_length))
@@ -295,7 +295,7 @@ class CompressObjectTestCase(unittest.TestCase):
         bufs = []
         cb = combuf
         while cb:
-            max_length = 1 + len(cb)/10
+            max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, max_length)
             self.failIf(len(chunk) > max_length,
                         'chunk too big (%d>%d)' % (len(chunk),max_length))
