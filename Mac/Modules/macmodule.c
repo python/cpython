@@ -361,7 +361,11 @@ mac_mkdir(self, args)
 	if (!newgetargs(args, "s|i", &path, &mode))
 		return NULL;
 	BGN_SAVE
+#ifdef USE_GUSI
+	res = mkdir(path);
+#else
 	res = mkdir(path, mode);
+#endif
 	END_SAVE
 	if (res < 0)
 		return mac_error();
