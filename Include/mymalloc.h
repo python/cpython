@@ -67,12 +67,13 @@ extern "C" {
 #pragma lib_export on
 #endif
 
-#ifndef HAVE_STDLIB_H
+/* The following should never be necessary */
+#ifdef NEED_TO_DECLARE_MALLOC_AND_FRIEND
 extern ANY *malloc Py_PROTO((size_t));
 extern ANY *calloc Py_PROTO((size_t, size_t));
 extern ANY *realloc Py_PROTO((ANY *, size_t));
 extern void free Py_PROTO((ANY *)); /* XXX sometimes int on Unix old systems */
-#endif /* !HAVE_STDLIB */
+#endif
 
 #ifndef NULL
 #define NULL ((ANY *)0)
