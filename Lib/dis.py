@@ -135,6 +135,7 @@ hasfree = []
 
 opname = [''] * 256
 for op in range(256): opname[op] = '<' + `op` + '>'
+del op
 
 def def_op(name, op):
     opname[op] = name
