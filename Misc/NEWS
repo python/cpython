@@ -39,10 +39,14 @@ Release date: XX-XXX-2003
 
 - Skip locale test on Mac OS X.
 
+- Fixed some build problems related to Redhat Linux 9.
+
 - Backported the "largefile" requirement for test_largefile on Mac OS X.
 
 - Backported email package 2.5.2, which makes address parsing slightly
   more robust.
+
+- Added new encodings for Ukrainian Cyrillic.
 
 - SF #710576: Backport of fix for #663074, to implement per-interpreter
   codecs registries. This adds new members at the end of
@@ -56,8 +60,12 @@ Release date: XX-XXX-2003
   were a factor of 2 away from the original float.  This has been
   fixed.
 
+- SF #645777: list.extend() works with any iterable and is no longer
+  experimental.
+
 - Backported SF patch #676342: after using pdb, the readline command
-  completion was botched.
+  completion was botched.  Backport fix for SF bug #741171, pdb
+  crashes when enabling a non-existent breakpoint.
 
 - Fix problem building on OSF1 because the compiler only accepted
   preprocessor directives that start in column 1.  (SF bug #691793.)
@@ -119,6 +127,10 @@ Release date: XX-XXX-2003
 - Exceptions raised by __cmp__ weren't always properly handled and
   could cause "exception set without error return" failures.
 
+- Fixed an old bug in asyncore.py which could cause bogus read calls
+  on file descriptors after a signal is handled while blocked in
+  select().
+
 - SF #643260: __rpow__ wasn't being called.
 
 - SF #534748, #645383: in setup.py, when modules fail to import, don't
@@ -170,6 +182,17 @@ Release date: XX-XXX-2003
 - Backported SF #658233, continuation lines in .mo file metadata
   crashed gettext.GNUTranslations parsing.  Also, export more symbols
   in the gettext module's __all__.
+
+- Other patch and bug fix backports: 734869, 497420, 728322, 730963,
+  723831, 708604, 723136, 549141, 557704, 724751, 716969, 711835,
+  697220, 710498, 706338, 659834, 695250, 672614, 707701, 698517,
+  709428, 708201, 700798, 703471, 676990, 521782, 635570, 633359,
+  610299, 491107, 687655, 684667, 642168, 682514, 675259, 654974,
+  655271, 641111, 642742, 669553, 634866, 664183, 664044, 665570,
+  430610, 427345, 658106, 643227, 649095, 646578, 637941, 639170,
+  635929, 637807, 637810, 424106, 635595, 613605, 635656, 633560,
+  632864, 618146, 632196, 616211, 577000, 546579, 626554, 606463,
+  217195
 
 
 What's New in Python 2.2.2 (final) ?
