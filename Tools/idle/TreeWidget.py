@@ -24,8 +24,7 @@ import ZoomHeight
 
 ICONDIR = "Icons"
 
-# If this file is <prefix>/lib/python1.5/idle/TreeWidget.py,
-# we expect to find the icons in <prefix>/lib/python1.5/Icons/
+# Look for Icons subdirectory in the same directory as this module
 try:
     _icondir = os.path.join(os.path.dirname(__file__), ICONDIR)
 except NameError:
