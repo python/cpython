@@ -4,7 +4,7 @@ convenience of application and driver writers.
 """
 
 import handler
-
+import xmlreader
 
 def escape(data, entities={}):
     """Escape &, <, and > in a string of data.
@@ -31,6 +31,7 @@ class XMLGenerator(handler.ContentHandler):
         self._out = out
         self._ns_contexts = [{}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
+        self._undeclared_ns_maps = []
         self._encoding = encoding
 
     # ContentHandler methods
@@ -42,9 +43,11 @@ class XMLGenerator(handler.ContentHandler):
     def startPrefixMapping(self, prefix, uri):
         self._ns_contexts.append(self._current_context.copy())
         self._current_context[uri] = prefix
+        self._undeclared_ns_maps.append((prefix, uri))
 
     def endPrefixMapping(self, prefix):
-        del self._current_context[-1]
+        self._current_context = self._ns_contexts[-1]
+        del self._ns_contexts[-1]
 
     def startElement(self, name, attrs):
         self._out.write('<' + name)
@@ -58,6 +61,11 @@ class XMLGenerator(handler.ContentHandler):
     def startElementNS(self, name, qname, attrs):
         name = self._current_context[name[0]] + ":" + name[1]
         self._out.write('<' + name)
+
+        for pair in self._undeclared_ns_maps:
+            self._out.write(' xmlns:%s="%s"' % pair)
+        self._undeclared_ns_maps = []
+        
         for (name, value) in attrs.items():
             name = self._current_context[name[0]] + ":" + name[1]
             self._out.write(' %s="%s"' % (name, escape(value)))
@@ -77,7 +85,7 @@ class XMLGenerator(handler.ContentHandler):
         self._out.write('<?%s %s?>' % (target, data))
 
 
-class XMLFilterBase:
+class XMLFilterBase(xmlreader.XMLReader):
     """This class is designed to sit between an XMLReader and the
     client application's event handlers.  By default, it does nothing
     but pass requests up to the reader and events on to the handlers
@@ -128,8 +136,8 @@ class XMLFilterBase:
     def characters(self, content):
         self._cont_handler.characters(content)
 
-    def ignorableWhitespace(self, chars, start, end):
-        self._cont_handler.ignorableWhitespace(chars, start, end)
+    def ignorableWhitespace(self, chars):
+        self._cont_handler.ignorableWhitespace(chars)
 
     def processingInstruction(self, target, data):
         self._cont_handler.processingInstruction(target, data)
