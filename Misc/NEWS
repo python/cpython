@@ -1,14 +1,32 @@
-XXX check that regsub.split / splitx are correctly documented.
-
-======================================
+=========================================
 ==> Release 1.4beta3 (August 26 1996) <==
-======================================
+=========================================
 
 
-XXX This needs to be reordered.
+(XXX This is less readable that it should.  I promis to restructure it
+for the final 1.4 release.)
+
 
 What's new in 1.4beta3 (since beta2)?
 -------------------------------------
+
+- In urllib.urlopen(): HTTP URLs containing user:passwd@host are now
+handled correctly when using a proxy server.
+
+- In ntpath.normpath(): don't truncate to 8+3 format.
+
+- In mimetools.choose_boundary(): don't die when getuid() or getpid()
+aren't defined.
+
+- Module urllib: some optimizations to (un)quoting.
+
+- New module MimeWriter for writing MIME documents.
+
+- More changes to formatter module.
+
+- The freeze script works once again and is much more robust (using
+sys.prefix etc.).  It also supports a -o option to specify an
+output directory.
 
 - New module whichdb recognizes dbm, gdbm and bsddb/dbhash files.
 
@@ -55,9 +73,10 @@ meaningful.
 - A generic Makefile for dynamically loaded modules is provided in the Misc 
 subdirectory (Misc/gMakefile).
 
-- A new version of python-mode.el for Emacs is provided.  Ask Barry Warsaw 
-for a list of changes.  The separate file pyimenu.el is no longer needed, 
-imenu support is folded into python-mode.el.
+- A new version of python-mode.el for Emacs is provided.  See
+http://www.python.org/ftp/emacs/pmdetails.html for details.  The
+separate file pyimenu.el is no longer needed, imenu support is folded
+into python-mode.el.
 
 - The configure script can finally correctly find the readline library in a 
 non-standard location.  The LDFLAGS variable is passed on the the Makefiles 
@@ -83,6 +102,8 @@ can use *.so and *.sl as shared libraries.
 - Some more fidgeting for AIX shared libraries.
 
 - The mpz module is now compatible with GMP 2.x.  (Not tested by me.)
+(Note -- a complete replacement by Niels Mo"ller, called gpmodule, is
+available from the contrib directory on the ftp site.)
 
 - A warning is written to sys.stderr when a __del__ method raises an 
 exception (formerly, such exceptions were completely ignored).
