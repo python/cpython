@@ -1522,8 +1522,15 @@ com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 		m = CHILD(m, 0);
 	} while (NCH(m) == 1);
 	if (TYPE(m) != NAME) {
+		/* f(lambda x: x[0] = 3) ends up getting parsed with
+		 * LHS test = lambda x: x[0], and RHS test = 3.
+		 * SF bug 132313 points out that complaining about a keyword
+		 * then is very confusing.
+		 */
 		com_error(c, PyExc_SyntaxError,
-			  "keyword can't be an expression");
+			  TYPE(m) == lambdef ?
+				  "lambda cannot contain assignment" :
+				  "keyword can't be an expression");
 	}
 	else {
 		PyObject *v = PyString_InternFromString(STR(m));
