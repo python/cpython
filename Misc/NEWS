@@ -23,6 +23,12 @@ Library
 - operator.indexOf() (PySequence_Index() in the C API) now works with any
   iterable object.
 
+- The smtplib module now supports various authentication and security
+  features of the SMTP protocol through the new login() and starttls()
+  methods.
+
+- A new hmac module implementing keyed hashing for message authentication.
+
 Tools
 
 Build
