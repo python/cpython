@@ -62,6 +62,12 @@ struct tok_state {
 	int lineno;	/* Current line number */
 	int level;	/* () [] {} Parentheses nesting level */
 			/* Used to allow free continuations inside them */
+	/* Stuff for checking on different tab sizes */
+	char *filename;	/* For error messages */
+	int altwarning;	/* Issue warning if alternate tabs don't match */
+	int alterror;	/* Issue error if alternate tabs don't match */
+	int alttabsize;	/* Alternate tab spacing */
+	int altindstack[MAXINDENT];	/* Stack of alternate indents */
 };
 
 extern struct tok_state *PyTokenizer_FromString Py_PROTO((char *));

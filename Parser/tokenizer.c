@@ -125,6 +125,11 @@ tok_new()
 	tok->prompt = tok->nextprompt = NULL;
 	tok->lineno = 0;
 	tok->level = 0;
+	tok->filename = NULL;
+	tok->altwarning = 0;
+	tok->alterror = 0;
+	tok->alttabsize = 1;
+	tok->altindstack[0] = 0;
 	return tok;
 }
 
@@ -422,6 +427,24 @@ PyToken_TwoChars(c1, c2)
 }
 
 
+static int
+indenterror(tok)
+	struct tok_state *tok;
+{
+	if (tok->alterror) {
+		tok->done = E_INDENT;
+		tok->cur = tok->inp;
+		return 1;
+	}
+	if (tok->altwarning) {
+		fprintf(stderr, "%s: inconsistent tab/space usage\n",
+			tok->filename);
+		tok->altwarning = 0;
+	}
+	return 0;
+}
+
+
 /* Get next token, after space stripping etc. */
 
 int
@@ -440,15 +463,19 @@ PyTokenizer_Get(tok, p_start, p_end)
 	/* Get indentation level */
 	if (tok->atbol) {
 		register int col = 0;
+		register int altcol = 0;
 		tok->atbol = 0;
 		for (;;) {
 			c = tok_nextc(tok);
 			if (c == ' ')
-				col++;
-			else if (c == '\t')
+				col++, altcol++;
+			else if (c == '\t') {
 				col = (col/tok->tabsize + 1) * tok->tabsize;
+				altcol = (altcol/tok->alttabsize + 1)
+					* tok->alttabsize;
+			}
 			else if (c == '\014') /* Control-L (formfeed) */
-				col = 0; /* For Emacs users */
+				col = altcol = 0; /* For Emacs users */
 			else
 				break;
 		}
@@ -469,6 +496,10 @@ PyTokenizer_Get(tok, p_start, p_end)
 		if (!blankline && tok->level == 0) {
 			if (col == tok->indstack[tok->indent]) {
 				/* No change */
+				if (altcol != tok->altindstack[tok->indent]) {
+					if (indenterror(tok))
+						return ERRORTOKEN;
+				}
 			}
 			else if (col > tok->indstack[tok->indent]) {
 				/* Indent -- always one */
@@ -478,8 +509,13 @@ PyTokenizer_Get(tok, p_start, p_end)
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
 				}
+				if (altcol <= tok->altindstack[tok->indent]) {
+					if (indenterror(tok))
+						return ERRORTOKEN;
+				}
 				tok->pendin++;
 				tok->indstack[++tok->indent] = col;
+				tok->altindstack[tok->indent] = altcol;
 			}
 			else /* col < tok->indstack[tok->indent] */ {
 				/* Dedent -- any number, must be consistent */
@@ -494,6 +530,10 @@ PyTokenizer_Get(tok, p_start, p_end)
 					tok->done = E_TOKEN;
 					tok->cur = tok->inp;
 					return ERRORTOKEN;
+				}
+				if (altcol != tok->altindstack[tok->indent]) {
+					if (indenterror(tok))
+						return ERRORTOKEN;
 				}
 			}
 		}
