@@ -104,7 +104,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 
 
 # Rules to build PostScript and PDF formats
-.SUFFIXES: .dvi .ps .pdf
+.SUFFIXES: .dvi .ps .pdf .tex
 
 .dvi.ps:
 	$(DVIPS) $< >$@
@@ -126,12 +126,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 # Dependencies
 COMMONTEX=myformat.sty copyright.tex boilerplate.tex
 
-tut.dvi lib.dvi ext.dvi api.dvi: fix_hack $(COMMONTEX)
-
-# Tutorial document
-tut.dvi: tut.tex 
-	$(LATEX) tut
-	$(LATEX) tut
+$(DVIFILES): fix_hack $(COMMONTEX)
 
 # LaTeX source files for the Python Library Reference
 LIBFILES = lib.tex \
@@ -168,31 +163,28 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
-	touch lib.ind
-	touch modules.ind
-	$(LATEX) lib
+	echo '\begin{theindex}\end{theindex}' >$*.ind
+	echo '\begin{theindex}\label{modindex}\end{theindex}' >modules.ind
+	$(LATEX) $*
 	./modindex.py modules.idx
-	./fix_hack lib.idx
-	$(MAKEINDEX) lib.idx
-	./indfix.py lib.ind
-	./modindex.py modules.idx
-	$(LATEX) lib
+	./fix_hack $*.idx
+	$(MAKEINDEX) $*.idx
+	./indfix.py $*.ind
+	$(LATEX) $*
 
-# Extensions document
-ext.dvi: ext.tex
-	touch ext.ind
-	$(LATEX) ext
-	./fix_hack ext.idx
-	$(MAKEINDEX) ext.idx
-	$(LATEX) ext
+# Tutorial document
+tut.dvi: tut.tex 
+	$(LATEX) $*
+	$(LATEX) $*
 
-# Python-C API document
-api.dvi: api.tex 
-	touch api.ind
-	$(LATEX) api
-	./fix_hack api.idx
-	$(MAKEINDEX) api.idx
-	$(LATEX) api
+# Extending & Embedding, Python/C API documents.
+# Done this way to avoid repeated command sets.
+.tex.dvi:
+	echo '\begin{theindex}\end{theindex}' >$*.ind
+	$(LATEX) $*
+	./fix_hack $*.idx
+	$(MAKEINDEX) $*.idx
+	$(LATEX) $*
 
 
 # The remaining part of the Makefile is concerned with various
@@ -206,32 +198,34 @@ api.dvi: api.tex
 .py.pyc:
 	$(PYTHON) -c "import $*"
 
-.PRECIOUS:	lib.texi
+.PRECIOUS:	python-lib.texi
 
 # The sed script in this target fixes a really nasty little condition in
 # libcgi.tex where \e has to be used in a group to get the right behavior,
-# and makeinfo can't handle a group with a leading @command.  But at least
-# the info file gets generated.
+# and makeinfo can't handle a group without a leading @command.  But at
+# least the info file gets generated.
 
-lib1.texi: lib*.tex texipre.dat texipost.dat $(PARTPARSEOBJ)
+lib1.texi: $(LIBFILES) texipre.dat texipost.dat $(PARTPARSEOBJ)
 	$(PARTPARSE) -o $@ `./whichlibs`
 	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
 	mv temp.texi $@
 
-lib.texi: lib1.texi fix.el
+python-lib.texi: lib1.texi fix.el
 	cp lib1.texi temp.texi
 	$(EMACS) -batch -l fix.el -f save-buffer -kill
 	mv temp.texi $@
 
-python-lib.info: lib.texi
+python-lib.info: python-lib.texi
 	$(MAKEINFO) --footnote-style end --fill-column 72 \
 		     --paragraph-indent 0 $<
 
 # this is needed to prevent a second set of info files from being generated,
 # at least when using GNU make
-.PHONY: lib.info
+.PHONY: lib.info lib.texi
 
 lib.info: python-lib.info
+
+lib.texi: python-lib.texi
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
@@ -330,3 +324,6 @@ l2hclean:
 # Remove temporaries as well as final products
 clobber: clean
 	 rm -f *.dvi *.pdf *.ps *.texi *.info *.info-[0-9]*
+
+realclean:  clobber
+distclean:  clobber
