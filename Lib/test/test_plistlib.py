@@ -49,6 +49,22 @@ class TestPlistlib(unittest.TestCase):
         pl2 = plistlib.Plist.fromFile(test_support.TESTFN)
         self.assertEqual(dict(pl), dict(pl2))
 
+    def test_stringio(self):
+        from StringIO import StringIO
+        f = StringIO()
+        pl = self._create()
+        pl.write(f)
+        pl2 = plistlib.Plist.fromFile(StringIO(f.getvalue()))
+        self.assertEqual(dict(pl), dict(pl2))
+
+    def test_cstringio(self):
+        from cStringIO import StringIO
+        f = StringIO()
+        pl = self._create()
+        pl.write(f)
+        pl2 = plistlib.Plist.fromFile(StringIO(f.getvalue()))
+        self.assertEqual(dict(pl), dict(pl2))
+
 
 
 def test_main():
