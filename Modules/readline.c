@@ -11,6 +11,7 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/time.h>
 
 #if defined(HAVE_SETLOCALE)
 /* GNU readline() mistakenly sets the LC_CTYPE locale.
@@ -749,15 +750,21 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 
 	rl_callback_handler_install (prompt, rlhandler);
 	FD_ZERO(&selectset);
-	FD_SET(fileno(rl_instream), &selectset);
 	
 	completed_input_string = not_done_reading;
 
-	while(completed_input_string == not_done_reading) {
-		int has_input;
+	while (completed_input_string == not_done_reading) {
+		int has_input = 0;
 
-		has_input = select(fileno(rl_instream) + 1, &selectset,
-				   NULL, NULL, NULL);
+		while (!has_input)
+		{	struct timeval timeout = {0, 100000}; /* 0.1 seconds */
+			FD_SET(fileno(rl_instream), &selectset);
+			/* select resets selectset if no input was available */
+			has_input = select(fileno(rl_instream) + 1, &selectset,
+					   NULL, NULL, &timeout);
+			if(PyOS_InputHook) PyOS_InputHook();
+		}
+
 		if(has_input > 0) {
 			rl_callback_read_char();
 		}
@@ -812,6 +819,7 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 		*signal = 1;
 		return NULL;
 	}
+	rl_event_hook = PyOS_InputHook;
 	p = readline(prompt);
 	PyOS_setsig(SIGINT, old_inthandler);
 
@@ -833,8 +841,6 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 		Py_FatalError("not enough memory to save locale");
 	setlocale(LC_CTYPE, "");
 #endif
-
-	rl_event_hook = PyOS_InputHook;
 
 	if (sys_stdin != rl_instream || sys_stdout != rl_outstream) {
 		rl_instream = sys_stdin;
