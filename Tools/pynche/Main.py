@@ -62,6 +62,34 @@ def usage(status, msg=''):
 
 
 
+def initial_color(s, colordb):
+    # function called on every color
+    def scan_color(s, colordb=colordb):
+        try:
+            r, g, b = colordb.find_byname(s)
+        except ColorDB.BadColor:
+            try:
+                r, g, b = ColorDB.rrggbb_to_triplet(s)
+            except ColorDB.BadColor:
+                return None, None, None
+        return r, g, b
+    #
+    # First try the passed in color
+    r, g, b = scan_color(s)
+    if r is None:
+        # try the same color with '#' prepended, since some shells require
+        # this to be escaped, which is a pain
+        r, g, b = scan_color('#' + s)
+    if r is None:
+        print 'Bad initial color, using gray50:', s
+        r, g, b = scan_color('gray50')
+    if r is None:
+        usage(1, 'Cannot find an initial color to use')
+        # does not return
+    return r, g, b
+
+
+
 def main():
     try:
 	opts, args = getopt.getopt(
@@ -95,19 +123,8 @@ def main():
     else:
         usage(1, 'No color database file found, see the -d option.')
 
-    # get triplet for initial color
-    try:
-	red, green, blue = colordb.find_byname(initialcolor)
-    except ColorDB.BadColor:
-	# must be a #rrggbb style color
-	try:
-	    red, green, blue = ColorDB.rrggbb_to_triplet(initialcolor)
-	except ColorDB.BadColor:
-            try:
-                red, green, blue = ColorDB.rrggbb_to_triplet('#7f7f7f')
-                print 'Bad initial color, using gray50:', initialcolor
-            except ColorDB.BadColor:
-                usage(1, 'Cannot find an initial color to use')
+    # get the initial color as components
+    red, green, blue = initial_color(initialcolor, colordb)
 
     # create all output widgets
     s = Switchboard(colordb)
