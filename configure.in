@@ -190,7 +190,7 @@ AC_TRY_RUN([int main() { return 0; }],
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_olimit_ok)
 if test $ac_cv_olimit_ok = yes; then
-  OPT="$OPT -OPT:Olimit=0"
+  OPT="$OPT -Olimit 1500"
 fi
 
 AC_MSG_CHECKING(whether $CC accepts -OPT:Olimit=0)
@@ -203,7 +203,7 @@ AC_TRY_RUN([int main() { return 0; }],
 CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_opt_olimit_ok)
 if test $ac_cv_olimit_ok = yes; then
-  OPT="$OPT -Olimit 1500"
+  OPT="$OPT -OPT:Olimit=0"
 fi
 
 # check for ANSI or K&R ("traditional") preprocessor
@@ -310,7 +310,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)	LINKFORSHARED='-Wl,-bE:$(srcdir)/python.exp -lld';;
 	hp*|HP*)
-	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/sharedmodules";;
+	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
 	Linux*) LINKFORSHARED="-rdynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
