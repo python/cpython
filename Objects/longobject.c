@@ -1268,6 +1268,47 @@ long_coerce(pv, pw)
 	return 1; /* Can't do it */
 }
 
+static object *
+long_int(v)
+	object *v;
+{
+	long x;
+	x = getlongvalue(v);
+	if (err_occurred())
+		return NULL;
+	return newintobject(x);
+}
+
+static object *
+long_long(v)
+	object *v;
+{
+	INCREF(v);
+	return v;
+}
+
+static object *
+long_float(v)
+	object *v;
+{
+	return newfloatobject(dgetlongvalue(v));
+}
+
+static object *
+long_oct(v)
+	object *v;
+{
+	return long_format(v, 8);
+}
+
+static object *
+long_hex(v)
+	object *v;
+{
+	return long_format(v, 16);
+}
+
+
 #define UF (object* (*) FPROTO((object *))) /* Unary function */
 #define BF (object* (*) FPROTO((object *, object *))) /* Binary function */
 #define IF (int (*) FPROTO((object *))) /* Int function */
@@ -1292,6 +1333,11 @@ static number_methods long_as_number = {
 	BF long_or,	/*nb_or*/
 	(int (*) FPROTO((object **, object **)))
 	long_coerce,	/*nb_coerce*/
+	UF long_int,	/*nb_int*/
+	UF long_long,	/*nb_long*/
+	UF long_float,	/*nb_float*/
+	UF long_oct,	/*nb_oct*/
+	UF long_hex,	/*nb_hex*/
 };
 
 typeobject Longtype = {

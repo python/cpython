@@ -318,6 +318,33 @@ float_coerce(pv, pw)
 	return 1; /* Can't do it */
 }
 
+static object *
+float_int(v)
+	object *v;
+{
+	double x = getfloatvalue(v);
+	/* XXX should check for overflow */
+	/* XXX should define how we round */
+	return newintobject((long)x);
+}
+
+static object *
+float_long(v)
+	object *v;
+{
+	double x = getfloatvalue(v);
+	return dnewlongobject(x);
+}
+
+static object *
+float_float(v)
+	object *v;
+{
+	INCREF(v);
+	return v;
+}
+
+
 static number_methods float_as_number = {
 	float_add,	/*nb_add*/
 	float_sub,	/*nb_subtract*/
@@ -337,6 +364,11 @@ static number_methods float_as_number = {
 	0,		/*nb_xor*/
 	0,		/*nb_or*/
 	float_coerce,	/*nb_coerce*/
+	float_int,	/*nb_int*/
+	float_long,	/*nb_long*/
+	float_float,	/*nb_float*/
+	0,		/*nb_oct*/
+	0,		/*nb_hex*/
 };
 
 typeobject Floattype = {
