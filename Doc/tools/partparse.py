@@ -29,7 +29,7 @@ import sys, string, regex, getopt, os
 
 from types import IntType, ListType, StringType, TupleType
 
-release_version = sys.version[:3]
+release_version = string.split(sys.version)[0]
 
 # Different parse modes for phase 1
 MODE_REGULAR = 0
