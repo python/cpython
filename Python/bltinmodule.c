@@ -362,7 +362,7 @@ builtin_compile(PyObject *self, PyObject *args)
 #endif
 	if (PyObject_AsReadBuffer(cmd, (const void **)&str, &length))
 		return NULL;
-	if (length != strlen(str)) {
+	if ((size_t)length != strlen(str)) {
 		PyErr_SetString(PyExc_TypeError,
 				"expected string without null bytes");
 		return NULL;
