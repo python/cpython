@@ -10,8 +10,6 @@ import sys
 
 
 class Node:
-
-    __rmtt = re.compile(r"(.*)<tt>(.*)</tt>(.*)$", re.IGNORECASE)
     __rmjunk = re.compile("<#\d+#>")
 
     def __init__(self, link, str, seqno):
@@ -20,40 +18,9 @@ class Node:
         # remove <#\d+#> left in by moving the data out of LaTeX2HTML
         str = self.__rmjunk.sub('', str)
         # now remove <tt>...</tt> markup; contents remain.
-        if '<' in str:
-            m = self.__rmtt.match(str)
-            if m:
-                kstr = string.join(m.group(1, 2, 3), '')
-            else:
-                kstr = str
-        else:
-            kstr = str
-        kstr = string.lower(kstr)
         # build up the text
-        self.text = []
-        parts = string.split(str, '!')
-        parts = map(string.split, parts, ['@'] * len(parts))
-        for entry in parts:
-            if len(entry) != 1:
-                key, text = entry
-            else:
-                text = entry[0]
-            self.text.append(text)
-        # Building the key must be separate since any <tt> has been stripped
-        # from the key, but can be avoided if both key and text sources are
-        # the same.
-        if kstr != str:
-            self.key = []
-            kparts = string.split(kstr, '!')
-            kparts = map(string.split, kparts, ['@'] * len(kparts))
-            for entry in kparts:
-                if len(entry) != 1:
-                    key, text = entry
-                else:
-                    key = entry[0]
-                self.key.append(key)
-        else:
-            self.key = self.text
+        self.text = split_entry_text(str)
+        self.key = split_entry_key(str)
 
     def __cmp__(self, other):
         """Comparison operator includes sequence number, for use with
@@ -62,12 +29,13 @@ class Node:
 
     def cmp_entry(self, other):
         """Comparison 'operator' that ignores sequence number."""
+        c = 0
         for i in range(min(len(self.key), len(other.key))):
-            c = (cmp(self.key[i], other.key[i])
-                 or cmp(self.text[i], other.text[i]))
+            c = (cmp_part(self.key[i], other.key[i])
+                 or cmp_part(self.text[i], other.text[i]))
             if c:
-                return c
-        return cmp(self.key, other.key)
+                break
+        return c or cmp(self.key, other.key) or cmp(self.text, other.text)
 
     def __repr__(self):
         return "<Node for %s (%s)>" % (string.join(self.text, '!'), self.seqno)
@@ -76,15 +44,68 @@ class Node:
         return string.join(self.key, '!')
 
     def dump(self):
-        return "%s\0%s###%s\n" \
-               % (string.join(self.links, "\0"),
+        return "%s\1%s###%s\n" \
+               % (string.join(self.links, "\1"),
                   string.join(self.text, '!'),
                   self.seqno)
 
 
+def cmp_part(s1, s2):
+    result = cmp(s1, s2)
+    if result == 0:
+        return 0
+    l1 = string.lower(s1)
+    l2 = string.lower(s2)
+    minlen = min(len(s1), len(s2))
+    if len(s1) < len(s2) and l1 == l2[:len(s1)]:
+        result = -1
+    elif len(s2) < len(s1) and l2 == l1[:len(s2)]:
+        result = 1
+    else:
+        result = cmp(l1, l2) or cmp(s1, s2)
+    return result
+
+
+def split_entry(str, which):
+    stuff = []
+    parts = string.split(str, '!')
+    parts = map(string.split, parts, ['@'] * len(parts))
+    for entry in parts:
+        if len(entry) != 1:
+            key = entry[which]
+        else:
+            key = entry[0]
+        stuff.append(key)
+    return stuff
+
+
+_rmtt = re.compile(r"(.*)<tt>(.*)</tt>(.*)$", re.IGNORECASE)
+_rmparens = re.compile(r"\(\)")
+
+def split_entry_key(str):
+    parts = split_entry(str, 1)
+    for i in range(len(parts)):
+        m = _rmtt.match(parts[i])
+        if m:
+            parts[i] = string.join(m.group(1, 2, 3), '')
+        else:
+            parts[i] = string.lower(parts[i])
+        # remove '()' from the key:
+        parts[i] = _rmparens.sub('', parts[i])
+    return map(trim_ignored_letters, parts)
+
+
+def split_entry_text(str):
+    if '<' in str:
+        m = _rmtt.match(str)
+        if m:
+            str = string.join(m.group(1, 2, 3), '')
+    return split_entry(str, 1)
+
+
 def load(fp):
     nodes = []
-    rx = re.compile(r"(.*)\0(.*)###(.*)$")
+    rx = re.compile("(.*)\1(.*)###(.*)$")
     while 1:
         line = fp.readline()
         if not line:
@@ -96,15 +117,28 @@ def load(fp):
     return nodes
 
 
+# ignore $ to keep environment variables with the leading letter from the name
+SKIP_LETTERS = "$"
+
+def trim_ignored_letters(s):
+    s = string.lower(s)
+    while s[0] in SKIP_LETTERS:
+        s = s[1:]
+    return s
+
+def get_first_letter(s):
+    return string.lower(trim_ignored_letters(s)[0])
+
+
 def split_letters(nodes):
     letter_groups = []
-    group = []
-    append = group.append
     if nodes:
-        letter = nodes[0].key[0][0]
+        group = []
+        append = group.append
+        letter = get_first_letter(nodes[0].text[0])
         letter_groups.append((letter, group))
         for node in nodes:
-            nletter = node.key[0][0]
+            nletter = get_first_letter(node.text[0])
             if letter != nletter:
                 letter = nletter
                 group = []
@@ -114,41 +148,43 @@ def split_letters(nodes):
     return letter_groups
 
 
+DL_LEVEL_INDENT = "  "
+
 def format_nodes(nodes):
-    # Does not create multiple links to multiple targets for the same entry;
-    # uses a separate entry for each target.  This is a bug.
     level = 0
     strings = ["<dl compact>"]
     append = strings.append
-    prev = None
+    previous = []
     for node in nodes:
-        nlevel = len(node.key) - 1
-        if nlevel > level:
-            if prev is None or node.key[level] != prev.key[level]:
-                append("%s\n<dl compact>" % node.text[level])
-            else:
-                append("<dl compact>")
-            level = nlevel
-        elif nlevel < level:
-            append("</dl>" * (level - len(node.key) + 1))
-            level = nlevel
-            if prev is not None and node.key[level] != prev.key[level]:
-                append("</dl>")
-            else:
-                append("<dl compact>")
-        elif level:
-            if node.key[level-1] != prev.key[level-1]:
-                append("</dl>\n%s<dl compact>"
-                       % node.text[level-1])
-        append("%s%s</a><br>" % (node.links[0], node.text[-1]))
+        current = node.text
+        count = 0
+        for i in range(min(len(current), len(previous))):
+            if previous[i] != current[i]:
+                break
+            count = i + 1
+        if count > level:
+            append("<dl compact>" * (count - level) + "\n")
+            level = count
+        elif level > count:
+            append("\n")
+            append(level * DL_LEVEL_INDENT)
+            append("</dl>" * (level - count))
+            level = count
+        # else: level == count
+        for i in range(count, len(current) - 1):
+            term = node.text[i]
+            level = level + 1
+            append("\n<dt>%s\n<dd>\n%s<dl compact>"
+                   % (term, level * DL_LEVEL_INDENT))
+        append("\n%s<dt>%s%s</a>"
+               % (level * DL_LEVEL_INDENT, node.links[0], node.text[-1]))
         for link in node.links[1:]:
-            strings[-1] = strings[-1][:-4] + ","
-            append(link + "[Link]</a><br>")
-        prev = node
-    append("</dl>" * (level + 1))
-    append("")
-    append("")
-    return string.join(strings, "\n")
+            append(",\n%s    %s[Link]</a>" % (level * DL_LEVEL_INDENT, link))
+        previous = current
+    append("\n")
+    append("</dl><p>" * (level + 1))
+    append("\n")
+    return string.join(strings, '')
 
 
 def format_letter(letter):
@@ -158,7 +194,7 @@ def format_letter(letter):
         lettername = "_ (underscore)"
     else:
         lettername = string.upper(letter)
-    return "<hr>\n<h2><a name=\"letter-%s\">%s</a></h2>\n\n" \
+    return "\n<hr>\n<h2><a name=\"letter-%s\">%s</a></h2>\n\n" \
            % (letter, lettername)
 
 
@@ -168,10 +204,11 @@ def format_html(nodes):
     for letter, nodes in letter_groups:
         s = "<b><a href=\"#letter-%s\">%s</a></b>" % (letter, letter)
         items.append(s)
-    s = "<hr><center>\n%s</center>\n" % string.join(items, " |\n")
+    s = ["<hr><center>\n%s</center>\n" % string.join(items, " |\n")]
     for letter, nodes in letter_groups:
-        s = s + format_letter(letter) + format_nodes(nodes)
-    return s
+        s.append(format_letter(letter))
+        s.append(format_nodes(nodes))
+    return string.join(s, '')
 
 
 def collapse(nodes):
@@ -186,7 +223,6 @@ def collapse(nodes):
         if not node.cmp_entry(prev):
             prev.links.append(node.links[0])
             del nodes[i]
-##             sys.stderr.write("collapsing %s\n" % `node`)
         else:
             i = i + 1
             prev = node
@@ -198,13 +234,25 @@ def dump(nodes, fp):
 
 
 def main():
-    fn = sys.argv[1]
-    nodes = load(open(fn))
+    import getopt
+    ifn = "-"
+    ofn = "-"
+    opts, args = getopt.getopt(sys.argv[1:], "o:", ["output="])
+    for opt, val in opts:
+        if opt in ("-o", "--output"):
+            ofn = val
+    if not args:
+        args = [ifn]
+    nodes = []
+    for fn in args:
+        nodes = nodes + load(open(fn))
     nodes.sort()
-    dump(nodes, open(fn + ".dump-1", "w"))
     collapse(nodes)
-    dump(nodes, open(fn + ".dump-2", "w"))
-    sys.stdout.write(format_html(nodes))
+    html = format_html(nodes)
+    if ofn == "-":
+        sys.stdout.write(html)
+    else:
+        open(ofn, "w").write(html)
 
 
 if __name__ == "__main__":
