@@ -23,7 +23,7 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
     
-    def Get(self, section, option, type=None): #,default=None)
+    def Get(self, section, option, type=None):
         """
         Get an option value for given section/option or return default.
         If type is specified, return as type.
@@ -143,9 +143,9 @@ class IdleConf:
         Get a list of sections from either the user or default config for 
         the given config type.
         configSet must be either 'user' or 'default' 
-        configType must be one of ('extensions','highlight','keys')
+        configType must be one of ('main','extensions','highlight','keys')
         """
-        if not (configType in ('extensions','highlight','keys')):
+        if not (configType in ('main','extensions','highlight','keys')):
             raise 'Invalid configType specified'
         if configSet == 'user':
             cfgParser=self.userCfg[configType]
@@ -224,7 +224,8 @@ class IdleConf:
         if activeOnly:
             activeExtns=[]
             for extn in extns:
-                if self.GetOption('extensions',extn,'enable',default=1,type='bool'):
+                if self.GetOption('extensions',extn,'enable',default=1,
+                    type='bool'):
                     #the extension is enabled
                     activeExtns.append(extn)
             return activeExtns

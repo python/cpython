@@ -36,6 +36,16 @@ class ConfigDialog(Toplevel):
             'Shell Normal Text':('console','09'),
             'Shell Stdout Text':('stdout','10'),
             'Shell Stderr Text':('stderr','11')}
+        #changedItems. When any config item is changed in this dialog, an entry
+        #should be made in the relevant section (config type) of this 
+        #dictionary. The key should be the config file section name and the 
+        #value a dictionary, whose key:value pairs are item=value pairs for
+        #that config file section.
+        self.changedItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
+        #defaultItems. This dictionary is loaded with the values from the
+        #default config files. It is used for comparison with self.changedItems
+        #to decide which changed items actually need saving.
+        self.defaultItems=self.GetDefaultItems()
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
         self.transient(parent)
@@ -44,100 +54,12 @@ class ConfigDialog(Toplevel):
         self.parent = parent
         self.tabPages.focus_set()
         #key bindings for this dialog
-        self.bind('<Escape>',self.CancelBinding) #dismiss dialog, no save
-        self.bind('<Alt-a>',self.ApplyBinding) #apply changes, save
-        self.bind('<F1>',self.HelpBinding) #context help
+        #self.bind('<Escape>',self.Cancel) #dismiss dialog, no save
+        #self.bind('<Alt-a>',self.Apply) #apply changes, save
+        #self.bind('<F1>',self.Help) #context help
         self.LoadConfigs()
         self.wait_window()
         
-    def Cancel(self):
-        self.destroy()
-
-    def Ok(self):
-        pass
-
-    def Apply(self):
-        pass
-
-    def Help(self):
-        pass
-
-    def CancelBinding(self,event):
-        self.Cancel()
-    
-    def OkBinding(self,event):
-        self.Ok()
-    
-    def ApplyBinding(self,event):
-        self.Apply()
-    
-    def HelpBinding(self,event):
-        self.Help()
-    
-    def SetThemeType(self):
-        if self.themeIsBuiltin.get():
-            self.optMenuThemeBuiltin.config(state=NORMAL)
-            self.optMenuThemeCustom.config(state=DISABLED)
-            self.buttonDeleteCustomTheme.config(state=DISABLED)
-        else:
-            self.optMenuThemeBuiltin.config(state=DISABLED)
-            self.optMenuThemeCustom.config(state=NORMAL)
-            self.buttonDeleteCustomTheme.config(state=NORMAL)
-
-    def SetKeysType(self):
-        if self.keysAreDefault.get():
-            self.optMenuKeysBuiltin.config(state=NORMAL)
-            self.optMenuKeysCustom.config(state=DISABLED)
-            self.buttonDeleteCustomKeys.config(state=DISABLED)
-        else:
-            self.optMenuKeysBuiltin.config(state=DISABLED)
-            self.optMenuKeysCustom.config(state=NORMAL)
-            self.buttonDeleteCustomKeys.config(state=NORMAL)
-    
-    def GetColour(self):
-        target=self.highlightTarget.get()
-        rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
-            title='Pick new colour for : '+target,
-            initialcolor=self.frameColourSet.cget('bg'))
-        if colourString: #user didn't cancel
-            self.frameColourSet.config(bg=colourString)#set sample
-            if self.fgHilite.get(): plane='foreground'
-            else: plane='background'
-            apply(self.textHighlightSample.tag_config,
-                (self.themeElements[target][0],),{plane:colourString})
-    
-    def SetFontSampleBinding(self,event):
-        self.SetFontSample()
-        
-    def SetFontSample(self):
-        self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
-            family=self.listFontName.get(self.listFontName.curselection()[0]))
-
-    def SetHighlightTargetBinding(self,*args):
-        self.SetHighlightTarget()
-        
-    def SetHighlightTarget(self):
-        if self.highlightTarget.get()=='Cursor': #bg not possible
-            self.radioFg.config(state=DISABLED)
-            self.radioBg.config(state=DISABLED)
-            self.fgHilite.set(1)
-        else: #both fg and bg can be set
-            self.radioFg.config(state=NORMAL)
-            self.radioBg.config(state=NORMAL)
-            self.fgHilite.set(1)
-        self.SetColourSample()
-    
-    def SetColourSampleBinding(self,*args):
-        self.SetColourSample()
-        
-    def SetColourSample(self):
-        #set the colour smaple area
-        tag=self.themeElements[self.highlightTarget.get()][0]
-        if self.fgHilite.get(): plane='foreground'
-        else: plane='background'
-        colour=self.textHighlightSample.tag_cget(tag,plane)
-        self.frameColourSet.config(bg=colour)
-    
     def CreateWidgets(self):
         self.tabPages = TabPageSet(self,
                 pageNames=['Fonts/Tabs','Highlighting','Keys','General'])
@@ -149,7 +71,7 @@ class ConfigDialog(Toplevel):
         self.buttonOk = Button(frameActionButtons,text='Ok',
                 command=self.Ok,takefocus=FALSE)
         self.buttonApply = Button(frameActionButtons,text='Apply',
-                command=self.Apply,underline=0,takefocus=FALSE)
+                command=self.Apply,takefocus=FALSE)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE)
         self.CreatePageFontTab()
@@ -162,8 +84,7 @@ class ConfigDialog(Toplevel):
         self.buttonCancel.pack(side=LEFT,padx=5,pady=5)
         frameActionButtons.pack(side=BOTTOM)
         self.tabPages.pack(side=TOP,expand=TRUE,fill=BOTH)
-
-        
+   
     def CreatePageFontTab(self):
         #tkVars
         self.fontSize=StringVar(self)
@@ -361,12 +282,13 @@ class ConfigDialog(Toplevel):
         scrollTargetY=Scrollbar(frameTarget)
         scrollTargetX=Scrollbar(frameTarget,orient=HORIZONTAL)
         self.listBindings=Listbox(frameTarget)
+        self.listBindings.bind('<ButtonRelease-1>',self.KeyBindingSelected)
         scrollTargetY.config(command=self.listBindings.yview)
         scrollTargetX.config(command=self.listBindings.xview)
         self.listBindings.config(yscrollcommand=scrollTargetY.set)
         self.listBindings.config(xscrollcommand=scrollTargetX.set)
-        buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
-            command=self.GetNewKeys)
+        self.buttonNewKeys=Button(frameCustom,text='Get New Keys for Selection',
+            command=self.GetNewKeys,state=DISABLED)
         buttonSaveCustomKeys=Button(frameCustom,text='Save as a Custom Key Set')
         #frameKeySets
         labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
@@ -387,7 +309,7 @@ class ConfigDialog(Toplevel):
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         buttonSaveCustomKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
-        buttonNewKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
+        self.buttonNewKeys.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         frameTarget.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
         #frame target
         frameTarget.columnconfigure(0,weight=1)
@@ -411,7 +333,7 @@ class ConfigDialog(Toplevel):
         self.runType=IntVar(self)       
         self.winWidth=StringVar(self)       
         self.winHeight=StringVar(self)
-        self.extState=IntVar(self)       
+        self.startupEdit=IntVar(self)       
         #widget creation
         #body
         frame=self.tabPages.pages['General']['page']
@@ -420,14 +342,15 @@ class ConfigDialog(Toplevel):
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
         frameExt=Frame(frame,borderwidth=2,relief=GROOVE)
         #frameRun
-        labelRunTitle=Label(frameRun,text='Run Preferences')
-        labelRunChoiceTitle=Label(frameRun,text='Run code : ')
-        radioRunInternal=Radiobutton(frameRun,variable=self.runType,
-            value=0,command=self.SetKeysType,text="in IDLE's Process")
-        radioRunSeparate=Radiobutton(frameRun,variable=self.runType,
-            value=1,command=self.SetKeysType,text='in a Separate Process')
+        labelRunTitle=Label(frameRun,text='Startup Preferences')
+        labelRunChoiceTitle=Label(frameRun,text='On startup : ')
+        radioStartupEdit=Radiobutton(frameRun,variable=self.startupEdit,
+            value=1,command=self.SetKeysType,text="open Edit Window")
+        radioStartupShell=Radiobutton(frameRun,variable=self.startupEdit,
+            value=0,command=self.SetKeysType,text='open Shell Window')
         #frameWinSize
-        labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size')
+        labelWinSizeTitle=Label(frameWinSize,text='Initial Window Size'+
+                '  (in characters)')
         labelWinWidthTitle=Label(frameWinSize,text='Width')
         entryWinWidth=Entry(frameWinSize,textvariable=self.winWidth,
                 width=3)
@@ -440,17 +363,16 @@ class ConfigDialog(Toplevel):
         labelExtTitle=Label(frameExt,text='Configure IDLE Extensions')
         labelExtListTitle=Label(frameExtList,text='Extension')
         scrollExtList=Scrollbar(frameExtList)
-        listExt=Listbox(frameExtList,height=5)
-        scrollExtList.config(command=listExt.yview)
-        listExt.config(yscrollcommand=scrollExtList.set)
+        self.listExt=Listbox(frameExtList,height=5)
+        scrollExtList.config(command=self.listExt.yview)
+        self.listExt.config(yscrollcommand=scrollExtList.set)
+        self.listExt.bind('<ButtonRelease-1>',self.ExtensionSelected)
         labelExtSetTitle=Label(frameExtSet,text='Settings')
-        radioEnableExt=Radiobutton(frameExtSet,variable=self.extState,
-            value=1,text="enable")
-        radioDisableExt=Radiobutton(frameExtSet,variable=self.extState,
-            value=0,text="disable")
-        self.extState.set(1)
-        buttonExtConfig=Button(frameExtSet,text='Configure')
-        
+        self.radioEnableExt=Radiobutton(frameExtSet,variable=self.startupEdit,
+            value=1,text="enabled",state=DISABLED)
+        self.radioDisableExt=Radiobutton(frameExtSet,variable=self.startupEdit,
+            value=0,text="disabled",state=DISABLED)
+        self.buttonExtConfig=Button(frameExtSet,text='Configure',state=DISABLED)
         #widget packing
         #body
         frameRun.pack(side=TOP,padx=5,pady=5,fill=X)
@@ -459,8 +381,8 @@ class ConfigDialog(Toplevel):
         #frameRun
         labelRunTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
         labelRunChoiceTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        radioRunInternal.pack(side=LEFT,anchor=W,padx=5,pady=5)
-        radioRunSeparate.pack(side=LEFT,anchor=W,padx=5,pady=5)     
+        radioStartupEdit.pack(side=LEFT,anchor=W,padx=5,pady=5)
+        radioStartupShell.pack(side=LEFT,anchor=W,padx=5,pady=5)     
         #frameWinSize
         labelWinSizeTitle.pack(side=LEFT,anchor=W,padx=5,pady=5)
         entryWinHeight.pack(side=RIGHT,anchor=E,padx=10,pady=5)
@@ -473,14 +395,89 @@ class ConfigDialog(Toplevel):
         frameExtList.pack(side=RIGHT,padx=5,pady=5,expand=TRUE,fill=BOTH)
         labelExtListTitle.pack(side=TOP,anchor=W)
         scrollExtList.pack(side=RIGHT,anchor=W,fill=Y)
-        listExt.pack(side=LEFT,anchor=E,expand=TRUE,fill=BOTH)
+        self.listExt.pack(side=LEFT,anchor=E,expand=TRUE,fill=BOTH)
         labelExtSetTitle.pack(side=TOP,anchor=W)
-        radioEnableExt.pack(side=TOP,anchor=W)
-        radioDisableExt.pack(side=TOP,anchor=W)
-        buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
-
+        self.radioEnableExt.pack(side=TOP,anchor=W)
+        self.radioDisableExt.pack(side=TOP,anchor=W)
+        self.buttonExtConfig.pack(side=TOP,anchor=W,pady=5)
         return frame
 
+    def GetDefaultItems(self):
+        dItems={'main':{},'highlight':{},'keys':{},'extensions':{}}
+        for configType in dItems.keys():
+            sections=idleConf.GetSectionList('default',configType)
+            for section in sections:
+                dItems[configType][section]={}
+                options=idleConf.defaultCfg[configType].GetOptionList(section)
+                for option in options:            
+                    dItems[configType][section][option]=(
+                            idleConf.defaultCfg[configType].Get(section,option))
+        return dItems
+            
+    def SetThemeType(self):
+        if self.themeIsBuiltin.get():
+            self.optMenuThemeBuiltin.config(state=NORMAL)
+            self.optMenuThemeCustom.config(state=DISABLED)
+            self.buttonDeleteCustomTheme.config(state=DISABLED)
+        else:
+            self.optMenuThemeBuiltin.config(state=DISABLED)
+            self.optMenuThemeCustom.config(state=NORMAL)
+            self.buttonDeleteCustomTheme.config(state=NORMAL)
+
+    def SetKeysType(self):
+        if self.keysAreDefault.get():
+            self.optMenuKeysBuiltin.config(state=NORMAL)
+            self.optMenuKeysCustom.config(state=DISABLED)
+            self.buttonDeleteCustomKeys.config(state=DISABLED)
+        else:
+            self.optMenuKeysBuiltin.config(state=DISABLED)
+            self.optMenuKeysCustom.config(state=NORMAL)
+            self.buttonDeleteCustomKeys.config(state=NORMAL)
+    
+    def GetColour(self):
+        target=self.highlightTarget.get()
+        rgbTuplet, colourString = tkColorChooser.askcolor(parent=self,
+            title='Pick new colour for : '+target,
+            initialcolor=self.frameColourSet.cget('bg'))
+        if colourString: #user didn't cancel
+            self.frameColourSet.config(bg=colourString)#set sample
+            if self.fgHilite.get(): plane='foreground'
+            else: plane='background'
+            apply(self.textHighlightSample.tag_config,
+                (self.themeElements[target][0],),{plane:colourString})
+    
+    def SetFontSampleBinding(self,event):
+        self.SetFontSample()
+        
+    def SetFontSample(self):
+        self.editFont.config(size=self.fontSize.get(),weight=NORMAL,
+            family=self.listFontName.get(self.listFontName.curselection()[0]))
+
+    def SetHighlightTargetBinding(self,*args):
+        self.SetHighlightTarget()
+        
+    def SetHighlightTarget(self):
+        if self.highlightTarget.get()=='Cursor': #bg not possible
+            self.radioFg.config(state=DISABLED)
+            self.radioBg.config(state=DISABLED)
+            self.fgHilite.set(1)
+        else: #both fg and bg can be set
+            self.radioFg.config(state=NORMAL)
+            self.radioBg.config(state=NORMAL)
+            self.fgHilite.set(1)
+        self.SetColourSample()
+    
+    def SetColourSampleBinding(self,*args):
+        self.SetColourSample()
+        
+    def SetColourSample(self):
+        #set the colour smaple area
+        tag=self.themeElements[self.highlightTarget.get()][0]
+        if self.fgHilite.get(): plane='foreground'
+        else: plane='background'
+        colour=self.textHighlightSample.tag_cget(tag,plane)
+        self.frameColourSet.config(bg=colour)
+    
     def PaintThemeSample(self):
         if self.themeIsBuiltin.get(): #a default theme
             theme=self.builtinTheme.get()
@@ -601,13 +598,29 @@ class ConfigDialog(Toplevel):
             self.listBindings.delete(listIndex)
             self.listBindings.insert(listIndex,bindName+' - '+newKeys.result)
         self.listBindings.select_set(listIndex)
-    
+
+    def KeyBindingSelected(self,event):
+        self.buttonNewKeys.config(state=NORMAL)
+
     def LoadGeneralCfg(self):
+        #startup state
+        self.startupEdit.set(idleConf.GetOption('main','General',
+                'editor-on-startup',default=1,type='bool'))
         #initial window size
         self.winWidth.set(idleConf.GetOption('main','EditorWindow','width'))       
         self.winHeight.set(idleConf.GetOption('main','EditorWindow','height'))
-        
-        
+        #extensions    
+        extns=idleConf.GetExtensions(activeOnly=0)
+        apply(self.listExt.insert,(END,)+tuple(extns))
+    
+    def ExtensionSelected(self,event):
+        self.radioEnableExt.config(state=NORMAL)
+        self.radioDisableExt.config(state=NORMAL)
+        self.buttonExtConfig.config(state=NORMAL)
+        extn=self.listExt.get(ANCHOR)
+        self.extState.set(idleConf.GetOption('extensions',extn,'enable',
+                default=1,type='bool'))
+    
     def LoadConfigs(self):
         """
         load configuration from default and user config files and populate
@@ -628,6 +641,31 @@ class ConfigDialog(Toplevel):
         """
         save configuration changes to user config files.
         """
+        #DEBUG
+        print self.defaultItems
+        print self.changedItems
+        for configType in self.changedItems.keys():
+            for section in self.changedItems[configType].keys():
+                for item in self.changedItems[configType][section].keys():
+                    #DEBUG
+                    value=self.changedItems[configType][section][item]
+                    print configType, section, item, value 
+                    print self.changedItems
+                    
+    def AddChangedItem(self,type,section,item,value):
+        self.changedItems[type][section][item]=value
+    
+    def Cancel(self):
+        self.destroy()
+
+    def Ok(self):
+        self.Apply()
+        self.destroy()
+
+    def Apply(self):
+        self.SaveConfigs()
+
+    def Help(self):
         pass
 
 if __name__ == '__main__':

@@ -27,12 +27,13 @@
 # from the default file. 
 
 [General]
-run-in-separate-process= 1
-help-browser= ""
+editor-on-startup= 1
+#run-in-separate-process= 1
+#help-browser= ""
 
 [HelpFiles]
-idle="IDLE _Help",""
-python="_Python Documentation",""
+#idle="IDLE _Help",""
+#python="_Python Documentation",""
 #additional help sources
 1=
 2=
@@ -46,7 +47,6 @@ python="_Python Documentation",""
 10=
 
 [EditorWindow]
-editor-on-startup= 0
 width= 80
 height= 30
 font= courier
