@@ -2460,7 +2460,7 @@ formatfloat(char *buf, size_t buflen, int flags,
 	   always given), therefore increase by one to 10+prec. */
 	if (buflen <= (size_t)10 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
-			"formatted float is too long (precision too long?)");
+			"formatted float is too long (precision too large?)");
 		return -1;
 	}
 	sprintf(buf, fmt, x);
@@ -2626,7 +2626,7 @@ formatint(char *buf, size_t buflen, int flags,
 	   worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
 	if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
-			"formatted integer is too long (precision too long?)");
+			"formatted integer is too long (precision too large?)");
 		return -1;
 	}
 	sprintf(buf, fmt, x);

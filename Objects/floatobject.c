@@ -466,7 +466,7 @@ float_pow(PyFloatObject *v, PyObject *w, PyFloatObject *z)
 	if (iv == 0.0) {
 		if (iw < 0.0) {
 			PyErr_SetString(PyExc_ZeroDivisionError,
-				   "0.0 to a negative power");
+					"0.0 cannot be raised to a negative power");
 			return NULL;
 		}
 		return PyFloat_FromDouble(0.0);
@@ -486,7 +486,7 @@ float_pow(PyFloatObject *v, PyObject *w, PyFloatObject *z)
 		/* Sort out special cases here instead of relying on pow() */
 		if (iv < 0.0) {
 			PyErr_SetString(PyExc_ValueError,
-				   "negative number to a float power");
+					"negative number cannot be raised to a fractional power");
 			return NULL;
 		}
 		errno = 0;

@@ -140,7 +140,7 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 		if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
 			dbm_clearerr(dp->di_dbm);
 			PyErr_SetString(DbmError,
-					"Cannot add item to database");
+					"cannot add item to database");
 			return -1;
 		}
 	}
@@ -255,7 +255,7 @@ dbm_setdefault(register dbmobject *dp, PyObject *args)
 	val.dsize = PyString_GET_SIZE(defvalue);
 	if (dbm_store(dp->di_dbm, key, val, DBM_INSERT) < 0) {
 		dbm_clearerr(dp->di_dbm);
-		PyErr_SetString(DbmError, "Cannot add item to database");
+		PyErr_SetString(DbmError, "cannot add item to database");
 		return NULL;
 	}
 	return defvalue;
@@ -325,7 +325,7 @@ dbmopen(PyObject *self, PyObject *args)
 		iflags = O_RDWR|O_CREAT|O_TRUNC;
 	else {
 		PyErr_SetString(DbmError,
-				"Flags should be one of 'r', 'w', 'c' or 'n'");
+				"arg 2 to open should be 'r', 'w', 'c', or 'n'");
 		return NULL;
 	}
         return newdbmobject(name, iflags, mode);

@@ -163,13 +163,22 @@ static PyObject *
 module_getattr(PyModuleObject *m, char *name)
 {
 	PyObject *res;
+	char* modname;
 	if (strcmp(name, "__dict__") == 0) {
 		Py_INCREF(m->md_dict);
 		return m->md_dict;
 	}
 	res = PyDict_GetItemString(m->md_dict, name);
-	if (res == NULL)
-		PyErr_SetString(PyExc_AttributeError, name);
+	if (res == NULL) {
+		modname = PyModule_GetName((PyObject *)m);
+		if (modname == NULL) {
+			PyErr_Clear();
+			modname = "?";
+		}
+		PyErr_Format(PyExc_AttributeError,
+			     "'%.50s' module has no attribute '%.400s'",
+			     modname, name);
+	}
 	else
 		Py_INCREF(res);
 	return res;
@@ -178,6 +187,7 @@ module_getattr(PyModuleObject *m, char *name)
 static int
 module_setattr(PyModuleObject *m, char *name, PyObject *v)
 {
+	char* modname;
 	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
 		PyErr_SetString(PyExc_TypeError,
 				"read-only special attribute");
@@ -185,9 +195,16 @@ module_setattr(PyModuleObject *m, char *name, PyObject *v)
 	}
 	if (v == NULL) {
 		int rv = PyDict_DelItemString(m->md_dict, name);
-		if (rv < 0)
-			PyErr_SetString(PyExc_AttributeError,
-				   "delete non-existing module attribute");
+		if (rv < 0) {
+			modname = PyModule_GetName((PyObject *)m);
+			if (modname == NULL) {
+				PyErr_Clear();
+				modname = "?";
+			}
+			PyErr_Format(PyExc_AttributeError,
+				     "'%.50s' module has no attribute '%.400s'",
+				     modname, name);
+		}
 		return rv;
 	}
 	else

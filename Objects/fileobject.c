@@ -833,7 +833,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 			buffersize *= 2;
 			if (buffersize > INT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-					"line is too long for a Python string");
+					"line is longer than a Python string can hold");
 				goto error;
 			}
 			if (big_buffer == NULL) {
@@ -938,7 +938,7 @@ file_writelines(PyFileObject *f, PyObject *args)
 		return err_closed();
 	if (args == NULL || !PySequence_Check(args)) {
 		PyErr_SetString(PyExc_TypeError,
-			   "writelines() requires sequence of strings");
+			   "writelines() argument must be a sequence of strings");
 		return NULL;
 	}
 	islist = PyList_Check(args);
@@ -1001,7 +1001,7 @@ file_writelines(PyFileObject *f, PyObject *args)
 							   &buffer,
 							   &len))) {
 					PyErr_SetString(PyExc_TypeError,
-				"writelines() requires sequences of strings");
+				"writelines() argument must be a sequence of strings");
 					goto error;
 				}
 				line = PyString_FromStringAndSize(buffer,
