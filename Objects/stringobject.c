@@ -288,13 +288,13 @@ stringcompare(a, b)
 }
 
 static sequence_methods string_as_sequence = {
-	stringlength,	/*tp_length*/
-	stringconcat,	/*tp_concat*/
-	stringrepeat,	/*tp_repeat*/
-	stringitem,	/*tp_item*/
-	stringslice,	/*tp_slice*/
-	0,	/*tp_ass_item*/
-	0,	/*tp_ass_slice*/
+	stringlength,	/*sq_length*/
+	stringconcat,	/*sq_concat*/
+	stringrepeat,	/*sq_repeat*/
+	stringitem,	/*sq_item*/
+	stringslice,	/*sq_slice*/
+	0,		/*sq_ass_item*/
+	0,		/*sq_ass_slice*/
 };
 
 typeobject Stringtype = {
