@@ -397,7 +397,7 @@ if sys.platform in ('win32', 'darwin', 'mac'):
     def getpreferredencoding(do_setlocale = True):
         """Return the charset that the user is likely using."""
         import _locale
-        return _locale.getdefaultlocale()[1]
+        return _locale._getdefaultlocale()[1]
 else:
     # On Unix, if CODESET is available, use that.
     try:
