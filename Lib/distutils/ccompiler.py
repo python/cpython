@@ -838,6 +838,7 @@ class CCompiler:
 # that platform.
 default_compiler = { 'posix': 'unix',
                      'nt': 'msvc',
+                     'mac': 'mwerks',
                    }
 
 # Map compiler types to (module_name, class_name) pairs -- ie. where to
@@ -853,6 +854,8 @@ compiler_class = { 'unix':    ('unixccompiler', 'UnixCCompiler',
                                "Mingw32 port of GNU C Compiler for Win32"),
                    'bcpp':    ('bcppcompiler', 'BCPPCompiler',
                                "Borland C++ Compiler"),
+                   'mwerks':  ('mwerkscompiler', 'MWerksCompiler',
+                               "MetroWerks CodeWarrior"),
                  }
 
 def show_compilers():
