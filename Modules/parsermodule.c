@@ -1098,12 +1098,17 @@ validate_varargslist(node *tree)
     int res = validate_ntype(tree, varargslist) && (nch != 0);
     int sym;
 
+    if (!res)
+        return 0;
     if (nch < 1) {
         err_string("varargslist missing child nodes");
         return 0;
     }
     sym = TYPE(CHILD(tree, 0));
     if (sym == STAR || sym == DOUBLESTAR)
+        /* whole thing matches:
+         *      '*' NAME [',' '**' NAME] | '**' NAME
+         */
         res = validate_varargslist_trailer(tree, 0);
     else if (sym == fpdef) {
         int i = 0;
@@ -1127,11 +1132,16 @@ validate_varargslist(node *tree)
                 }
                 if (res && i < nch) {
                     res = validate_comma(CHILD(tree, i));
-                    if (res)
-                        ++i;
+                    ++i;
+                    if (res && i < nch
+                        && (TYPE(CHILD(tree, i)) == DOUBLESTAR
+                            || TYPE(CHILD(tree, i)) == STAR))
+                        break;
                 }
             }
-            /* handle '*' NAME [',' '**' NAME] | '**' NAME */
+            /* ... '*' NAME [',' '**' NAME] | '**' NAME
+             * i --^^^
+             */
             if (res)
                 res = validate_varargslist_trailer(tree, i);
         }
@@ -1139,6 +1149,7 @@ validate_varargslist(node *tree)
             /*
              *  fpdef ['=' test] (',' fpdef ['=' test])* [',']
              */
+            /* strip trailing comma node */
             if (sym == COMMA) {
                 res = validate_comma(CHILD(tree, nch-1));
                 if (!res)
@@ -1150,9 +1161,9 @@ validate_varargslist(node *tree)
              */
             res = validate_fpdef(CHILD(tree, 0));
             ++i;
-            if (res && (i+2 < nch) && TYPE(CHILD(tree, 1)) == EQUAL) {
-                res = (validate_equal(CHILD(tree, 1))
-                       && validate_test(CHILD(tree, 2)));
+            if (res && (i+2 <= nch) && TYPE(CHILD(tree, i)) == EQUAL) {
+                res = (validate_equal(CHILD(tree, i))
+                       && validate_test(CHILD(tree, i+1)));
                 i += 2;
             }
             /*
@@ -1163,12 +1174,10 @@ validate_varargslist(node *tree)
                 res = (validate_comma(CHILD(tree, i))
                        && validate_fpdef(CHILD(tree, i+1)));
                 i += 2;
-                if (res && (nch - i) >= 2
-                    && TYPE(CHILD(tree, i)) == COMMA) {
-                    res = (validate_comma(CHILD(tree, i))
+                if (res && (nch - i) >= 2 && TYPE(CHILD(tree, i)) == EQUAL) {
+                    res = (validate_equal(CHILD(tree, i))
                            && validate_test(CHILD(tree, i+1)));
-                    if (res)
-                        i += 2;
+                    i += 2;
                 }
             }
             if (res && nch - i != 0) {
