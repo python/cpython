@@ -176,6 +176,9 @@ Mac
   automatically release the Global Interpreter Lock when an event loop
   goes to sleep, allowing other threads to run. It's currently only
   supported on OSX, in the Mach-O version.
+- The OSA modules now allow direct access to properties of the
+  toplevel application class (in AppleScript terminology).
+- The Package Manager can now update itself.
 
 What's New in Python 2.3 beta 1?
 ================================
