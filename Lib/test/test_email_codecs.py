@@ -2,7 +2,7 @@
 # email package unit tests for (optional) Asian codecs
 
 import unittest
-from test_support import TestSkipped
+import test_support
 
 from email.Charset import Charset
 from email.Header import Header, decode_header
@@ -12,7 +12,7 @@ from email.Header import Header, decode_header
 try:
     unicode('foo', 'japanese.iso-2022-jp')
 except LookupError:
-    raise TestSkipped, 'Optional Japanese codecs not installed'
+    raise test_support.TestSkipped, 'Optional Japanese codecs not installed'
 
 
 
@@ -44,6 +44,10 @@ def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestEmailAsianCodecs))
     return suite
+
+
+def test_main():
+    test_support.run_unittest(TestEmailAsianCodecs)
 
 
 

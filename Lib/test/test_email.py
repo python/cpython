@@ -29,7 +29,9 @@ from email import Iterators
 from email import base64MIME
 from email import quopriMIME
 
+import test_support
 from test_support import findfile, __file__ as test_support_file
+
 
 NL = '\n'
 EMPTYSTRING = ''
@@ -1573,28 +1575,21 @@ class TestHeader(unittest.TestCase):
 
 
 
+def _testclasses():
+    mod = sys.modules[__name__]
+    return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
+
+
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(TestMessageAPI))
-    suite.addTest(unittest.makeSuite(TestEncoders))
-    suite.addTest(unittest.makeSuite(TestLongHeaders))
-    suite.addTest(unittest.makeSuite(TestFromMangling))
-    suite.addTest(unittest.makeSuite(TestMIMEAudio))
-    suite.addTest(unittest.makeSuite(TestMIMEImage))
-    suite.addTest(unittest.makeSuite(TestMIMEText))
-    suite.addTest(unittest.makeSuite(TestMultipartMixed))
-    suite.addTest(unittest.makeSuite(TestNonConformant))
-    suite.addTest(unittest.makeSuite(TestRFC2047))
-    suite.addTest(unittest.makeSuite(TestMIMEMessage))
-    suite.addTest(unittest.makeSuite(TestIdempotent))
-    suite.addTest(unittest.makeSuite(TestMiscellaneous))
-    suite.addTest(unittest.makeSuite(TestIterators))
-    suite.addTest(unittest.makeSuite(TestParsers))
-    suite.addTest(unittest.makeSuite(TestBase64))
-    suite.addTest(unittest.makeSuite(TestQuopri))
-    suite.addTest(unittest.makeSuite(TestHeader))
-    suite.addTest(unittest.makeSuite(TestCharset))
+    for testclass in _testclasses():
+        suite.addTest(unittest.makeSuite(testclass))
     return suite
+
+
+def test_main():
+    for testclass in _testclasses():
+        test_support.run_unittest(testclass)
 
 
 
