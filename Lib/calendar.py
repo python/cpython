@@ -33,7 +33,8 @@ class _localized_name:
             if item < 0: item += self.len
             if not 0 <= item < self.len:
                 raise IndexError, "out of range"
-            return strftime(self.format, (item,)*8+(0,)).capitalize()
+            t = (2001, 1, item+1, 12, 0, 0, item, item+1, 0)
+            return strftime(self.format, t).capitalize()
         elif isinstance(item, type(slice(0))):
             return [self[e] for e in range(self.len)].__getslice__(item.start, item.stop)
     def __len__(self):
