@@ -91,12 +91,11 @@ The functions defined in this module are:
   is 0, a default base is chosen depending on the leading characters
   of the string (after stripping the sign): \samp{0x} or \samp{0X}
   means 16, \samp{0} means 8, anything else means 10.  If \var{base}
-  is 16, a leading \samp{0x} or \samp{0X} is always accepted.  Note
-  that when invoked without \var{base} or with \var{base} set to 10,
-  this behaves identical to the built-in function \function{int()}
-  when passed a string.  (Also note: for a more flexible
-  interpretation of numeric literals, use the built-in function
-  \function{eval()}\bifuncindex{eval}.)
+  is 16, a leading \samp{0x} or \samp{0X} is always accepted, though
+  not required.  This behaves identically to the built-in function
+  \function{int()} when passed a string.  (Also note: for a more
+  flexible interpretation of numeric literals, use the built-in
+  function \function{eval()}\bifuncindex{eval}.)
 \end{funcdesc}
 
 \begin{funcdesc}{atol}{s\optional{, base}}
