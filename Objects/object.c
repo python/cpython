@@ -365,6 +365,14 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 	richcmpfunc f;
 	PyObject *res;
 
+	if (v->ob_type != w->ob_type &&
+	    PyType_IsSubtype(w->ob_type, v->ob_type) &&
+	    (f = RICHCOMPARE(w->ob_type)) != NULL) {
+		res = (*f)(w, v, swapped_op[op]);
+		if (res != Py_NotImplemented)
+			return res;
+		Py_DECREF(res);
+	}
 	if ((f = RICHCOMPARE(v->ob_type)) != NULL) {
 		res = (*f)(v, w, op);
 		if (res != Py_NotImplemented)

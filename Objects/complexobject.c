@@ -560,10 +560,8 @@ complex_richcompare(PyObject *v, PyObject *w, int op)
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
 	}
-	/* May sure both arguments use complex comparison.
-	   This implies PyComplex_Check(a) && PyComplex_Check(b). */
-	if (v->ob_type->tp_richcompare != complex_richcompare ||
-	    w->ob_type->tp_richcompare != complex_richcompare) {
+	/* Make sure both arguments are complex. */
+	if (!(PyComplex_Check(v) && PyComplex_Check(w))) {
 		Py_DECREF(v);
 		Py_DECREF(w);
 		Py_INCREF(Py_NotImplemented);

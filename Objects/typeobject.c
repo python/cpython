@@ -1837,6 +1837,40 @@ BINARY(rshift, "x>>y");
 BINARY(and, "x&y");
 BINARY(xor, "x^y");
 BINARY(or, "x|y");
+
+static PyObject *
+wrap_coercefunc(PyObject *self, PyObject *args, void *wrapped)
+{
+	coercion func = (coercion)wrapped;
+	PyObject *other, *res;
+	int ok;
+
+	if (!PyArg_ParseTuple(args, "O", &other))
+		return NULL;
+	ok = func(&self, &other);
+	if (ok < 0)
+		return NULL;
+	if (ok > 0) {
+		Py_INCREF(Py_NotImplemented);
+		return Py_NotImplemented;
+	}
+	res = PyTuple_New(2);
+	if (res == NULL) {
+		Py_DECREF(self);
+		Py_DECREF(other);
+		return NULL;
+	}
+	PyTuple_SET_ITEM(res, 0, self);
+	PyTuple_SET_ITEM(res, 1, other);
+	return res;
+}
+
+static struct wrapperbase tab_coerce[] = {
+	{"__coerce__", (wrapperfunc)wrap_coercefunc,
+	 "x.__coerce__(y) <==> coerce(x, y)"},
+	{0}
+};
+
 BINARY(floordiv, "x//y");
 BINARY(truediv, "x/y # true division");
 
@@ -2573,7 +2607,7 @@ add_operators(PyTypeObject *type)
 		ADD(nb->nb_and, tab_and);
 		ADD(nb->nb_xor, tab_xor);
 		ADD(nb->nb_or, tab_or);
-		/* We don't support coerce() -- see above comment */
+		ADD(nb->nb_coerce, tab_coerce);
 		ADD(nb->nb_int, tab_int);
 		ADD(nb->nb_long, tab_long);
 		ADD(nb->nb_float, tab_float);
@@ -2840,7 +2874,64 @@ SLOT1BIN(slot_nb_rshift, nb_rshift, "__rshift__", "__rrshift__")
 SLOT1BIN(slot_nb_and, nb_and, "__and__", "__rand__")
 SLOT1BIN(slot_nb_xor, nb_xor, "__xor__", "__rxor__")
 SLOT1BIN(slot_nb_or, nb_or, "__or__", "__ror__")
-/* Not coerce() */
+
+static int
+slot_nb_coerce(PyObject **a, PyObject **b)
+{
+	static PyObject *coerce_str;
+	PyObject *self = *a, *other = *b;
+
+	if (self->ob_type->tp_as_number != NULL &&
+	    self->ob_type->tp_as_number->nb_coerce == slot_nb_coerce) {
+		PyObject *r;
+		r = call_maybe(
+			self, "__coerce__", &coerce_str, "(O)", other);
+		if (r == NULL)
+			return -1;
+		if (r == Py_NotImplemented) {
+			Py_DECREF(r);
+			return 1;
+		}
+		if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
+			PyErr_SetString(PyExc_TypeError,
+					"__coerce__ didn't return a 2-tuple");
+			Py_DECREF(r);
+			return -1;
+		}
+		*a = PyTuple_GET_ITEM(r, 0);
+		Py_INCREF(*a);
+		*b = PyTuple_GET_ITEM(r, 1);
+		Py_INCREF(*b);
+		Py_DECREF(r);
+		return 0;
+	}
+	if (other->ob_type->tp_as_number != NULL &&
+	    other->ob_type->tp_as_number->nb_coerce == slot_nb_coerce) {
+		PyObject *r;
+		r = call_maybe(
+			other, "__coerce__", &coerce_str, "(O)", self);
+		if (r == NULL)
+			return -1;
+		if (r == Py_NotImplemented) {
+			Py_DECREF(r);
+			return 1;
+		}
+		if (!PyTuple_Check(r) || PyTuple_GET_SIZE(r) != 2) {
+			PyErr_SetString(PyExc_TypeError,
+					"__coerce__ didn't return a 2-tuple");
+			Py_DECREF(r);
+			return -1;
+		}
+		*a = PyTuple_GET_ITEM(r, 1);
+		Py_INCREF(*a);
+		*b = PyTuple_GET_ITEM(r, 0);
+		Py_INCREF(*b);
+		Py_DECREF(r);
+		return 0;
+	}
+	return 1;
+}
+
 SLOT0(slot_nb_int, "__int__")
 SLOT0(slot_nb_long, "__long__")
 SLOT0(slot_nb_float, "__float__")
@@ -3336,7 +3427,7 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	NBSLOT("__and__", nb_and, slot_nb_and);
 	NBSLOT("__xor__", nb_xor, slot_nb_xor);
 	NBSLOT("__or__", nb_or, slot_nb_or);
-	/* Not coerce() */
+	NBSLOT("__coerce__", nb_coerce, slot_nb_coerce);
 	NBSLOT("__int__", nb_int, slot_nb_int);
 	NBSLOT("__long__", nb_long, slot_nb_long);
 	NBSLOT("__float__", nb_float, slot_nb_float);
