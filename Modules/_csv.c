@@ -73,7 +73,7 @@ typedef struct {
 	char escapechar;	/* escape character */
 	int skipinitialspace;	/* ignore spaces following delimiter? */
 	PyObject *lineterminator; /* string to write between records */
-	QuoteStyle quoting;	/* style of quoting to write */
+	int quoting;		/* style of quoting to write */
 
 	int strict;		/* raise exception on bad CSV */
 } DialectObj;
@@ -130,41 +130,11 @@ get_dialect_from_registry(PyObject * name_obj)
         return dialect_obj;
 }
 
-static int
-check_delattr(PyObject *v)
-{
-	if (v == NULL) {
-		PyErr_SetString(PyExc_TypeError, 
-                                "Cannot delete attribute");
-		return -1;
-        }
-        return 0;
-}
-
 static PyObject *
 get_string(PyObject *str)
 {
         Py_XINCREF(str);
         return str;
-}
-
-static int
-set_string(PyObject **str, PyObject *v)
-{
-        if (check_delattr(v) < 0)
-                return -1;
-        if (!PyString_Check(v)
-#ifdef Py_USING_UNICODE
-&& !PyUnicode_Check(v)
-#endif
-) {
-                PyErr_BadArgument();
-                return -1;
-        }
-        Py_XDECREF(*str);
-        Py_INCREF(v);
-        *str = v;
-        return 0;
 }
 
 static PyObject *
@@ -178,36 +148,10 @@ get_nullchar_as_None(char c)
                 return PyString_FromStringAndSize((char*)&c, 1);
 }
 
-static int
-set_None_as_nullchar(char * addr, PyObject *v)
-{
-        if (check_delattr(v) < 0)
-                return -1;
-        if (v == Py_None)
-                *addr = '\0';
-        else if (!PyString_Check(v) || PyString_Size(v) != 1) {
-                PyErr_BadArgument();
-                return -1;
-        }
-        else {
-		char *s = PyString_AsString(v);
-		if (s == NULL)
-			return -1;
-		*addr = s[0];
-	}
-        return 0;
-}
-
 static PyObject *
 Dialect_get_lineterminator(DialectObj *self)
 {
         return get_string(self->lineterminator);
-}
-
-static int
-Dialect_set_lineterminator(DialectObj *self, PyObject *value)
-{
-        return set_string(&self->lineterminator, value);
 }
 
 static PyObject *
@@ -216,10 +160,10 @@ Dialect_get_escapechar(DialectObj *self)
         return get_nullchar_as_None(self->escapechar);
 }
 
-static int
-Dialect_set_escapechar(DialectObj *self, PyObject *value)
+static PyObject *
+Dialect_get_quotechar(DialectObj *self)
 {
-        return set_None_as_nullchar(&self->escapechar, value);
+        return get_nullchar_as_None(self->quotechar);
 }
 
 static PyObject *
@@ -229,51 +173,109 @@ Dialect_get_quoting(DialectObj *self)
 }
 
 static int
-Dialect_set_quoting(DialectObj *self, PyObject *v)
+_set_bool(const char *name, int *target, PyObject *src, int dflt)
 {
-        int quoting;
-        StyleDesc *qs = quote_styles;
-
-        if (check_delattr(v) < 0)
-                return -1;
-        if (!PyInt_Check(v)) {
-                PyErr_BadArgument();
-                return -1;
-        }
-        quoting = PyInt_AsLong(v);
-	for (qs = quote_styles; qs->name; qs++) {
-		if (qs->style == quoting) {
-                        self->quoting = quoting;
-                        return 0;
-                }
-        }
-        PyErr_BadArgument();
-        return -1;
+	if (src == NULL)
+		*target = dflt;
+	else
+		*target = PyObject_IsTrue(src);
+	return 0;
 }
 
-static struct PyMethodDef Dialect_methods[] = {
-	{ NULL, NULL }
-};
+static int
+_set_int(const char *name, int *target, PyObject *src, int dflt)
+{
+	if (src == NULL)
+		*target = dflt;
+	else {
+		if (!PyInt_Check(src)) {
+			PyErr_Format(PyExc_TypeError, 
+				     "\"%s\" must be an integer", name);
+			return -1;
+		}
+		*target = PyInt_AsLong(src);
+	}
+	return 0;
+}
+
+static int
+_set_char(const char *name, char *target, PyObject *src, char dflt)
+{
+	if (src == NULL)
+		*target = dflt;
+	else {
+		if (src == Py_None)
+			*target = '\0';
+		else if (!PyString_Check(src) || PyString_Size(src) != 1) {
+			PyErr_Format(PyExc_TypeError, 
+				     "\"%s\" must be an 1-character string", 
+				     name);
+			return -1;
+		}
+		else {
+			char *s = PyString_AsString(src);
+			if (s == NULL)
+				return -1;
+			*target = s[0];
+		}
+	}
+        return 0;
+}
+
+static int
+_set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
+{
+	if (src == NULL)
+		*target = PyString_FromString(dflt);
+	else {
+		if (src == Py_None)
+			*target = NULL;
+		else if (!PyString_Check(src)
+#ifdef Py_USING_UNICODE
+		    && !PyUnicode_Check(src)
+#endif
+		) {
+			PyErr_Format(PyExc_TypeError, 
+				     "\"%s\" must be an string", name);
+			return -1;
+		} else {
+			Py_XDECREF(*target);
+			Py_INCREF(src);
+			*target = src;
+		}
+	}
+        return 0;
+}
+
+static int
+dialect_check_quoting(int quoting)
+{
+        StyleDesc *qs = quote_styles;
+
+	for (qs = quote_styles; qs->name; qs++) {
+		if (qs->style == quoting)
+                        return 0;
+        }
+	PyErr_Format(PyExc_TypeError, "bad \"quoting\" value");
+        return -1;
+}
 
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
-	{ "quotechar",          T_CHAR, D_OFF(quotechar) },
-	{ "delimiter",          T_CHAR, D_OFF(delimiter) },
-	{ "skipinitialspace",   T_INT, D_OFF(skipinitialspace) },
-	{ "doublequote",        T_INT, D_OFF(doublequote) },
-	{ "strict",             T_INT, D_OFF(strict) },
+	{ "delimiter",          T_CHAR, D_OFF(delimiter), READONLY },
+	{ "skipinitialspace",   T_INT, D_OFF(skipinitialspace), READONLY },
+	{ "doublequote",        T_INT, D_OFF(doublequote), READONLY },
+	{ "strict",             T_INT, D_OFF(strict), READONLY },
 	{ NULL }
 };
 
 static PyGetSetDef Dialect_getsetlist[] = {
-        { "escapechar", (getter)Dialect_get_escapechar, 
-                (setter)Dialect_set_escapechar },
-        { "lineterminator", (getter)Dialect_get_lineterminator, 
-                (setter)Dialect_set_lineterminator },
-        { "quoting", (getter)Dialect_get_quoting, 
-                (setter)Dialect_set_quoting },
-        {NULL},
+	{ "escapechar",		(getter)Dialect_get_escapechar},
+	{ "lineterminator",	(getter)Dialect_get_lineterminator},
+	{ "quotechar",		(getter)Dialect_get_quotechar},
+	{ "quoting",		(getter)Dialect_get_quoting},
+	{NULL},
 };
 
 static void
@@ -283,107 +285,155 @@ Dialect_dealloc(DialectObj *self)
         self->ob_type->tp_free((PyObject *)self);
 }
 
+/*
+ * Return a new reference to a dialect instance
+ *
+ * If given a string, looks up the name in our dialect registry
+ * If given a class, instantiate (which runs python validity checks)
+ * If given an instance, return a new reference to the instance
+ */
+static PyObject *
+dialect_instantiate(PyObject *dialect)
+{
+	Py_INCREF(dialect);
+	/* If dialect is a string, look it up in our registry */
+	if (PyString_Check(dialect)
+#ifdef Py_USING_UNICODE
+		|| PyUnicode_Check(dialect)
+#endif
+		) {
+		PyObject * new_dia;
+		new_dia = get_dialect_from_registry(dialect);
+		Py_DECREF(dialect);
+		return new_dia;
+	}
+	/* A class rather than an instance? Instantiate */
+	if (PyObject_TypeCheck(dialect, &PyClass_Type)) {
+		PyObject * new_dia;
+		new_dia = PyObject_CallFunction(dialect, "");
+		Py_DECREF(dialect);
+		return new_dia;
+	}
+	/* Make sure we finally have an instance */
+	if (!PyInstance_Check(dialect)) {
+		PyErr_SetString(PyExc_TypeError, "dialect must be an instance");
+		Py_DECREF(dialect);
+		return NULL;
+	}
+	return dialect;
+}
+
+static char *dialect_kws[] = {
+	"dialect",
+	"delimiter",
+	"doublequote",
+	"escapechar",
+	"lineterminator",
+	"quotechar",
+	"quoting",
+	"skipinitialspace",
+	"strict",
+	NULL
+};
+
 static int
 dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 {
-        PyObject *dialect = NULL, *name_obj, *value_obj;
+	int ret = -1;
+        PyObject *dialect = NULL;
+	PyObject *delimiter = NULL;
+	PyObject *doublequote = NULL;
+	PyObject *escapechar = NULL;
+	PyObject *lineterminator = NULL;
+	PyObject *quotechar = NULL;
+	PyObject *quoting = NULL;
+	PyObject *skipinitialspace = NULL;
+	PyObject *strict = NULL;
 
-	self->quotechar = '"';
-	self->delimiter = ',';
-	self->escapechar = '\0';
-	self->skipinitialspace = 0;
-        Py_XDECREF(self->lineterminator);
-	self->lineterminator = PyString_FromString("\r\n");
-        if (self->lineterminator == NULL)
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+					 "|OOOOOOOOO", dialect_kws,
+					 &dialect,
+					 &delimiter,
+					 &doublequote,
+					 &escapechar,
+					 &lineterminator,
+					 &quotechar,
+					 &quoting,
+					 &skipinitialspace,
+					 &strict))
                 return -1;
-	self->quoting = QUOTE_MINIMAL;
-	self->doublequote = 1;
-	self->strict = 0;
 
-	if (!PyArg_UnpackTuple(args, "", 0, 1, &dialect))
-                return -1;
-        Py_XINCREF(dialect);
-        if (kwargs != NULL) {
-                PyObject * key = PyString_FromString("dialect");
-                PyObject * d;
+	Py_XINCREF(delimiter);
+	Py_XINCREF(doublequote);
+	Py_XINCREF(escapechar);
+	Py_XINCREF(lineterminator);
+	Py_XINCREF(quotechar);
+	Py_XINCREF(quoting);
+	Py_XINCREF(skipinitialspace);
+	Py_XINCREF(strict);
+	if (dialect != NULL) {
+		dialect = dialect_instantiate(dialect);
+		if (dialect == NULL)
+			goto err;
+#define DIALECT_GETATTR(v, n) \
+		if (v == NULL) \
+			v = PyObject_GetAttrString(dialect, n)
 
-                d = PyDict_GetItem(kwargs, key);
-                if (d) {
-                        Py_INCREF(d);
-                        Py_XDECREF(dialect);
-                        PyDict_DelItem(kwargs, key);
-                        dialect = d;
-                }
-                Py_DECREF(key);
-        }
-        if (dialect != NULL) {
-                int i;
-                PyObject * dir_list;
+		DIALECT_GETATTR(delimiter, "delimiter");
+		DIALECT_GETATTR(doublequote, "doublequote");
+		DIALECT_GETATTR(escapechar, "escapechar");
+		DIALECT_GETATTR(lineterminator, "lineterminator");
+		DIALECT_GETATTR(quotechar, "quotechar");
+		DIALECT_GETATTR(quoting, "quoting");
+		DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
+		DIALECT_GETATTR(strict, "strict");
+		PyErr_Clear();
+		Py_DECREF(dialect);
+	}
 
-                /* If dialect is a string, look it up in our registry */
-                if (PyString_Check(dialect)
-#ifdef Py_USING_UNICODE
-		    || PyUnicode_Check(dialect)
-#endif
-			) {
-                        PyObject * new_dia;
-                        new_dia = get_dialect_from_registry(dialect);
-                        Py_DECREF(dialect);
-                        if (new_dia == NULL)
-                                return -1;
-                        dialect = new_dia;
-                }
-                /* A class rather than an instance? Instantiate */
-                if (PyObject_TypeCheck(dialect, &PyClass_Type)) {
-                        PyObject * new_dia;
-                        new_dia = PyObject_CallFunction(dialect, "");
-                        Py_DECREF(dialect);
-                        if (new_dia == NULL)
-                                return -1;
-                        dialect = new_dia;
-                }
-                /* Make sure we finally have an instance */
-                if (!PyInstance_Check(dialect) ||
-                    (dir_list = PyObject_Dir(dialect)) == NULL) {
-                        PyErr_SetString(PyExc_TypeError,
-                                        "dialect must be an instance");
-                        Py_DECREF(dialect);
-                        return -1;
-                }
-                /* And extract the attributes */
-                for (i = 0; i < PyList_GET_SIZE(dir_list); ++i) {
-			char *s;
-                        name_obj = PyList_GET_ITEM(dir_list, i);
-			s = PyString_AsString(name_obj);
-			if (s == NULL)
-				return -1;
-                        if (s[0] == '_')
-                                continue;
-                        value_obj = PyObject_GetAttr(dialect, name_obj);
-                        if (value_obj) {
-                                if (PyObject_SetAttr((PyObject *)self, 
-                                                     name_obj, value_obj)) {
-					Py_DECREF(value_obj);
-                                        Py_DECREF(dir_list);
-					Py_DECREF(dialect);
-                                        return -1;
-                                }
-                                Py_DECREF(value_obj);
-                        }
-                }
-                Py_DECREF(dir_list);
-                Py_DECREF(dialect);
-        }
-        if (kwargs != NULL) {
-                int pos = 0;
+	/* check types and convert to C values */
+#define DIASET(meth, name, target, src, dflt) \
+	if (meth(name, target, src, dflt)) \
+		goto err
+	DIASET(_set_char, "delimiter", &self->delimiter, delimiter, ',');
+	DIASET(_set_bool, "doublequote", &self->doublequote, doublequote, 1);
+	DIASET(_set_char, "escapechar", &self->escapechar, escapechar, 0);
+	DIASET(_set_str, "lineterminator", &self->lineterminator, lineterminator, "\r\n");
+	DIASET(_set_char, "quotechar", &self->quotechar, quotechar, '"');
+	DIASET(_set_int, "quoting", &self->quoting, quoting, QUOTE_MINIMAL);
+	DIASET(_set_bool, "skipinitialspace", &self->skipinitialspace, skipinitialspace, 0);
+	DIASET(_set_bool, "strict", &self->strict, strict, 0);
 
-                while (PyDict_Next(kwargs, &pos, &name_obj, &value_obj)) {
-                        if (PyObject_SetAttr((PyObject *)self, 
-                                             name_obj, value_obj))
-                                return -1;
-                }
-        }
-        return 0;
+	/* validate options */
+	if (dialect_check_quoting(self->quoting))
+		goto err;
+	if (self->delimiter == 0) {
+                PyErr_SetString(PyExc_TypeError, "delimiter must be set");
+		goto err;
+	}
+	if (quotechar == Py_None && self->quoting != QUOTE_NONE)
+		self->quoting = QUOTE_NONE;
+	if (self->quoting != QUOTE_NONE && self->quotechar == 0) {
+                PyErr_SetString(PyExc_TypeError, 
+				"quotechar must be set if quoting enabled");
+		goto err;
+	}
+	if (self->lineterminator == 0) {
+                PyErr_SetString(PyExc_TypeError, "lineterminator must be set");
+		goto err;
+	}
+
+	ret = 0;
+err:
+	Py_XDECREF(delimiter);
+	Py_XDECREF(doublequote);
+	Py_XDECREF(escapechar);
+	Py_XDECREF(lineterminator);
+	Py_XDECREF(quotechar);
+	Py_XDECREF(quoting);
+	Py_XDECREF(skipinitialspace);
+	Py_XDECREF(strict);
+        return ret;
 }
 
 static PyObject *
@@ -433,7 +483,7 @@ static PyTypeObject Dialect_Type = {
         0,                                      /* tp_weaklistoffset */
         0,                                      /* tp_iter */
         0,                                      /* tp_iternext */
-        Dialect_methods,                        /* tp_methods */
+	0,					/* tp_methods */
         Dialect_memberlist,                     /* tp_members */
         Dialect_getsetlist,                     /* tp_getset */
 	0,					/* tp_base */
@@ -509,7 +559,8 @@ parse_process_char(ReaderObj *self, char c)
 			parse_save_field(self);
 			self->state = START_RECORD;
 		}
-		else if (c == dialect->quotechar) {
+		else if (c == dialect->quotechar && 
+			 dialect->quoting != QUOTE_NONE) {
 			/* start quoted field */
 			self->state = IN_QUOTED_FIELD;
 		}
@@ -572,7 +623,8 @@ parse_process_char(ReaderObj *self, char c)
 			/* Possible escape character */
 			self->state = ESCAPE_IN_QUOTED_FIELD;
 		}
-		else if (c == dialect->quotechar) {
+		else if (c == dialect->quotechar &&
+			 dialect->quoting != QUOTE_NONE) {
 			if (dialect->doublequote) {
 				/* doublequote; " represented by "" */
 				self->state = QUOTE_IN_QUOTED_FIELD;
@@ -1332,7 +1384,7 @@ csv_register_dialect(PyObject *module, PyObject *args)
                 return NULL;
         }
         Py_INCREF(dialect_obj);
-        /* A class rather than an instance? Instanciate */
+        /* A class rather than an instance? Instantiate */
         if (PyObject_TypeCheck(dialect_obj, &PyClass_Type)) {
                 PyObject * new_dia;
                 new_dia = PyObject_CallFunction(dialect_obj, "");

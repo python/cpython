@@ -68,7 +68,7 @@ class Dialect:
         elif not isinstance(self.lineterminator, str):
             errors.append("lineterminator must be a string")
 
-        if self.doublequote not in (True, False):
+        if self.doublequote not in (True, False) and self.quoting != QUOTE_NONE:
             errors.append("doublequote parameter must be True or False")
 
         if self.skipinitialspace not in (True, False):
