@@ -574,6 +574,7 @@ block_pop(struct compiling *c, int type)
 
 /* Prototype forward declarations */
 
+static int issue_warning(char *, char *, int);
 static int com_init(struct compiling *, char *);
 static void com_free(struct compiling *);
 static void com_push(struct compiling *, int);
@@ -988,6 +989,23 @@ com_lookup_arg(PyObject *dict, PyObject *name)
 		return PyInt_AS_LONG(v);
 }
 
+static int
+none_assignment_check(struct compiling *c, char *name, int assigning)
+{
+	if (name[0] == 'N' && strcmp(name, "None") == 0) {
+		char *msg;
+		if (assigning)
+			msg = "assigment to None";
+		else
+			msg = "deleting None";
+		if (issue_warning(msg, c->c_filename, c->c_lineno) < 0) {
+			c->c_errors++;
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static void
 com_addop_varname(struct compiling *c, int kind, char *name)
 {
@@ -997,6 +1015,13 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 	int op = STOP_CODE;
 	char buffer[MANGLE_LEN];
 
+	if (kind != VAR_LOAD &&
+	    none_assignment_check(c, name, kind == VAR_STORE))
+	{
+		c->c_errors++;
+		i = 255;
+		goto done;
+	}
 	if (_Py_Mangle(c->c_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
@@ -2489,6 +2514,8 @@ com_augassign_attr(struct compiling *c, node *n, int opcode, node *augn)
 static void
 com_assign_attr(struct compiling *c, node *n, int assigning)
 {
+	if (none_assignment_check(c, STR(n), assigning))
+		return;
 	com_addopname(c, assigning ? STORE_ATTR : DELETE_ATTR, n);
 	com_pop(c, assigning ? 2 : 1);
 }
