@@ -625,8 +625,7 @@ eval_frame(PyFrameObject *f)
 
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
-#define OPARG()		(next_instr[0] + (next_instr[1]<<8))
-#define SKIPARG()	(next_instr += 2)
+#define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
 #define JUMPTO(x)	(next_instr = first_instr + (x))
 #define JUMPBY(x)	(next_instr += (x))
 
@@ -862,10 +861,8 @@ eval_frame(PyFrameObject *f)
 		/* Extract opcode and argument */
 
 		opcode = NEXTOP();
-		if (HAS_ARG(opcode)) {
-			oparg = OPARG();
-			SKIPARG();
-		}
+		if (HAS_ARG(opcode))
+			oparg = NEXTARG();
 	  dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
@@ -1901,7 +1898,7 @@ eval_frame(PyFrameObject *f)
 		case BUILD_TUPLE:
 			x = PyTuple_New(oparg);
 			if (x != NULL) {
-				while (oparg--) {
+				for (; --oparg >= 0;) {
 					w = POP();
 					PyTuple_SET_ITEM(x, oparg, w);
 				}
@@ -1913,7 +1910,7 @@ eval_frame(PyFrameObject *f)
 		case BUILD_LIST:
 			x =  PyList_New(oparg);
 			if (x != NULL) {
-				while (oparg--) {
+				for (; --oparg >= 0;) {
 					w = POP();
 					PyList_SET_ITEM(x, oparg, w);
 				}
@@ -2185,7 +2182,7 @@ eval_frame(PyFrameObject *f)
 					x = NULL;
 					break;
 				}
-				while (oparg--) {
+				while (--oparg >= 0) {
 					w = POP();
 					PyTuple_SET_ITEM(v, oparg, w);
 				}
@@ -2210,7 +2207,7 @@ eval_frame(PyFrameObject *f)
 					x = NULL;
 					break;
 				}
-				while (nfree--) {
+				while (--nfree >= 0) {
 					w = POP();
 					PyTuple_SET_ITEM(v, nfree, w);
 				}
@@ -2224,7 +2221,7 @@ eval_frame(PyFrameObject *f)
 					x = NULL;
 					break;
 				}
-				while (oparg--) {
+				while (--oparg >= 0) {
 					w = POP();
 					PyTuple_SET_ITEM(v, oparg, w);
 				}
@@ -2252,8 +2249,7 @@ eval_frame(PyFrameObject *f)
 
 		case EXTENDED_ARG:
 			opcode = NEXTOP();
-			oparg = oparg<<16 | OPARG();
-			SKIPARG();
+			oparg = oparg<<16 | NEXTARG();
 			goto dispatch_opcode;
 
 		default:
@@ -3202,7 +3198,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 		}
 
 		if (size > 0) {
-			while (size--) {
+			while (--size >= 0) {
 				addr += *p++;
 				if (*p++)
 					break;
@@ -3617,7 +3613,7 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 	}
 	if (kwdict == NULL)
 		return NULL;
-	while (nk--) {
+	while (--nk >= 0) {
 		int err;
 		PyObject *value = EXT_POP(*pp_stack);
 		PyObject *key = EXT_POP(*pp_stack);
@@ -3662,7 +3658,7 @@ update_star_args(int nstack, int nstar, PyObject *stararg,
 			PyTuple_SET_ITEM(callargs, nstack + i, a);
 		}
 	}
-	while (nstack--) {
+	while (--nstack >= 0) {
 		w = EXT_POP(*pp_stack);
 		PyTuple_SET_ITEM(callargs, nstack, w);
 	}
@@ -3677,7 +3673,7 @@ load_args(PyObject ***pp_stack, int na)
 
 	if (args == NULL)
 		return NULL;
-	while (na--) {
+	while (--na >= 0) {
 		w = EXT_POP(*pp_stack);
 		PyTuple_SET_ITEM(args, na, w);
 	}
