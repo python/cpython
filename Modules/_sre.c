@@ -1376,13 +1376,10 @@ sre_getlower(PyObject* self, PyObject* args)
 LOCAL(void)
 state_reset(SRE_STATE* state)
 {
-    int i;
-
     state->lastmark = 0;
 
     /* FIXME: dynamic! */
-    for (i = 0; i < SRE_MARK_SIZE; i++)
-        state->mark[i] = NULL;
+    memset(state->mark, 0, sizeof(*state->mark) * SRE_MARK_SIZE);
 
     state->lastindex = -1;
 

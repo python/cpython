@@ -26,7 +26,6 @@ int tuple_zero_allocs;
 PyObject *
 PyTuple_New(register int size)
 {
-	register int i;
 	register PyTupleObject *op;
 	if (size < 0) {
 		PyErr_BadInternalCall();
@@ -71,8 +70,7 @@ PyTuple_New(register int size)
 		if (op == NULL)
 			return NULL;
 	}
-	for (i = 0; i < size; i++)
-		op->ob_item[i] = NULL;
+	memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
 #if MAXSAVESIZE > 0
 	if (size == 0) {
 		free_tuples[0] = op;
@@ -697,8 +695,9 @@ _PyTuple_Resize(PyObject **pv, int newsize)
 	}
 	_Py_NewReference((PyObject *) sv);
 	/* Zero out items added by growing */
-	for (i = oldsize; i < newsize; i++)
-		sv->ob_item[i] = NULL;
+	if (newsize > oldsize)
+		memset(sv->ob_item, 0,
+			sizeof(*sv->ob_item) * (newsize - oldsize));
 	*pv = (PyObject *) sv;
 	_PyObject_GC_TRACK(sv);
 	return 0;

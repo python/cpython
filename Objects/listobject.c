@@ -56,7 +56,6 @@ do {								\
 PyObject *
 PyList_New(int size)
 {
-	int i;
 	PyListObject *op;
 	size_t nbytes;
 	if (size < 0) {
@@ -80,10 +79,9 @@ PyList_New(int size)
 		if (op->ob_item == NULL) {
 			return PyErr_NoMemory();
 		}
+		memset(op->ob_item, 0, sizeof(*op->ob_item) * size);
 	}
 	op->ob_size = size;
-	for (i = 0; i < size; i++)
-		op->ob_item[i] = NULL;
 	_PyObject_GC_TRACK(op);
 	return (PyObject *) op;
 }
@@ -1576,8 +1574,7 @@ list_fill(PyListObject *result, PyObject *v)
 		PyErr_NoMemory();
 		goto error;
 	}
-	for (i = 0; i < n; i++)
-		result->ob_item[i] = NULL;
+	memset(result->ob_item, 0, sizeof(*result->ob_item) * n);
 	result->ob_size = n;
 
 	/* Run iterator to exhaustion. */
