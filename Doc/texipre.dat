@@ -14,8 +14,8 @@ the language, see the Python Tutorial.  The Python Reference Manual
 gives a more formal definition of the language.  (These manuals are not
 yet available in INFO or Texinfo format.)
 
-Copyright (C) 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam,
-The Netherlands.
+Copyright (C) 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -43,7 +43,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 @c  The following two commands start the copyright page.
 @page
 @vskip 0pt plus 1filll
-Copyright @copyright{} 1991, 1992 by Stichting Mathematisch Centrum,
+Copyright @copyright{} 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
 
 @center All Rights Reserved
@@ -77,14 +77,8 @@ the language, see the @cite{Python Tutorial}.  The @cite{Python
 Reference Manual} gives a more formal definition of the language.
 (These manuals are not yet available in INFO or Texinfo format.)
 
-This version corresponds roughly to Python version 0.9.8 (yet to be
+This version corresponds roughly to Python version 0.9.9 (yet to be
 released).
-
-@strong{Warning:} we have just finished converting the original LaTeX
-manual into Texinfo.  This is a difficult process and it is quite
-possible that errors have been introduced in the conversion.  Please
-report any errors you find by e-mail to the author,
-@t{Guido.van.Rossum@@cwi.nl}.
 
 @end ifinfo
 

@@ -38,6 +38,10 @@ libinfo:
 	python -c 'import partparse; partparse.main()' lib[1-5].tex
 	sh fix.sh
 
+# This target is very local to CWI...  (first make libinfo)
+libwww:
+	texi2html -d @out.texi /usr/local/ftp.cwi.nl/pub/www/texinfo/python
+
 clean:
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
 	# Sources: .tex, .bib, .sty
