@@ -578,7 +578,9 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c>"     'py-shift-region-right)
   ;; subprocess commands
   (define-key py-mode-map "\C-c\C-c"  'py-execute-buffer)
+  (define-key py-mode-map "\C-c\C-m"  'py-execute-import-or-reload)
   (define-key py-mode-map "\C-c|"     'py-execute-region)
+  (define-key py-mode-map "\e\C-x"    'py-execute-def-or-class)
   (define-key py-mode-map "\C-c!"     'py-shell)
   (define-key py-mode-map "\C-c\C-t"  'py-toggle-shells)
   ;; Caution!  Enter here at your own risk.  We are trying to support
@@ -709,8 +711,10 @@ package.  Note that the latest X/Emacs releases contain this package.")
 	["Shift region left"    py-shift-region-left (mark)]
 	["Shift region right"   py-shift-region-right (mark)]
 	"-"
+	["Import/reload file"   py-execute-import-or-reload t]
 	["Execute buffer"       py-execute-buffer t]
 	["Execute region"       py-execute-region (mark)]
+	["Execute def or class" py-execute-def-or-class (mark)]
 	["Start interpreter..." py-shell t]
 	"-"
 	["Go to start of block" py-goto-block-up t]
@@ -1274,6 +1278,7 @@ filter."
     (setq py-file-queue nil)
     (message "%d pending files de-queued." n)))
 
+
 (defun py-execute-region (start end &optional async)
   "Execute the the region in a Python interpreter.
 The region is first copied into a temporary file (in the directory
@@ -1336,7 +1341,8 @@ is inserted at the end.  See also the command `py-clear-queue'."
 	))
      )))
 
-;; Code execution command
+
+;; Code execution commands
 (defun py-execute-buffer (&optional async)
   "Send the contents of the buffer to a Python interpreter.
 If the file local variable `py-master-file' is non-nil, execute the
@@ -1354,6 +1360,76 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 			 (find-file-noselect filename))))
 	(set-buffer buffer)))
   (py-execute-region (point-min) (point-max) async))
+
+(defun py-execute-import-or-reload (&optional async)
+  "Import the current buffer's file in a Python interpreter.
+
+If the file has already been imported, then do reload instead to get
+the latest version.  If the file's name does not end in \".py\", then
+do execfile instead.  If the current buffer is not visiting a file, do
+`py-execute-buffer' instead.  If the file local variable
+`py-master-file' is non-nil, import or reload the named file instead
+of the buffer's file.  The file is saved if necessary.
+
+See the `\\[py-execute-region]' docs for an account of some subtleties.
+
+This is may be preferable to `\\[py-execute-buffer]' because:
+
+ - Definitions stay in their module rather than appearing at top
+   level, where they would clutter the global namespace and not affect
+   uses of qualified names (MODULE.NAME).
+
+ - The Python debugger gets line number information about the functions."
+  (interactive "P")
+  ;; Check file local variable py-master-file
+  (if py-master-file
+      (let* ((filename (expand-file-name py-master-file))
+             (buffer (or (get-file-buffer filename)
+                         (find-file-noselect filename))))
+        (set-buffer buffer)))
+  (let ((file (buffer-file-name (current-buffer))))
+    (if file
+        (progn
+;          (if (buffer-modified-p)
+;	      ;; avoid message if unmodified
+;	      (save-buffer))
+          (py-execute-string
+           (if (string-match "\\.py$" file)
+               (let ((f (file-name-sans-extension
+			 (file-name-nondirectory file))))
+                 (format "if globals().has_key('%s'):\n    reload(%s)\nelse:\n    import %s\n"
+                         f f f))
+             (format "execfile('%s')\n" file))
+           async))
+      ;; else
+      (py-execute-buffer async))))
+
+
+(defun py-execute-def-or-class (&optional async)
+  "Send the current function or class definition to a Python interpreter.
+
+If there is a *Python* process buffer it is used.
+
+See the `\\[py-execute-region]' docs for an account of some subtleties."
+  (interactive "P")
+  (save-excursion
+    (py-mark-def-or-class)
+    ;; mark is before point
+    (py-execute-region (mark) (point) async)))
+
+
+(defun py-execute-string (string &optional async)
+  "Send the argument string to a Python interpreter.
+
+If there is a *Python* process buffer it is used.
+
+See the `\\[py-execute-region]' docs for an account of some subtleties."
+  (interactive "sExecute Python command: ")
+  (save-excursion
+    (set-buffer (get-buffer-create
+                 (generate-new-buffer-name " *Python Command*")))
+    (insert string)
+    (py-execute-region (point-min) (point-max) async)))
 
 
 
@@ -1373,7 +1449,7 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 						    file t))))))
     (pop-to-buffer buffer)
     ;; Force Python mode
-    (if (not (eq major-mode) 'python-mode)
+    (if (not (eq major-mode 'python-mode))
 	(python-mode))
     (goto-line line)
     (message "Jumping to exception in file %s on line %d" file line)))
@@ -2103,7 +2179,7 @@ If you want to mark the current `def', see `\\[py-mark-def-or-class]'."
      (t (error "internal error in py-end-of-def-or-class")))))
 
 ;; Backwards compabitility
-(defalias 'py-end-of-def-or-class 'py-end-of-def-or-class)
+(defalias 'end-of-python-def-or-class 'py-end-of-def-or-class)
 
 
 ;; Functions for marking regions
@@ -2386,12 +2462,18 @@ variable docs begin with `->'.
 
 @EXECUTING PYTHON CODE
 
+\\[py-execute-import-or-reload]\timports or reloads the file in the Python interpreter
 \\[py-execute-buffer]\tsends the entire buffer to the Python interpreter
 \\[py-execute-region]\tsends the current region
+\\[py-execute-def-or-class]\tsends the current function or class definition
+\\[py-execute-string]\tsends an arbitrary string
 \\[py-shell]\tstarts a Python interpreter window; this will be used by
-\tsubsequent \\[py-execute-buffer] or \\[py-execute-region] commands
+\tsubsequent Python execution commands
+%c:py-execute-import-or-reload
 %c:py-execute-buffer
 %c:py-execute-region
+%c:py-execute-def-or-class
+%c:py-execute-string
 %c:py-shell
 
 @VARIABLES
