@@ -12,12 +12,12 @@ Error = "bgenlocations.Error"
 # Where bgen is. For unix-Python bgen isn't installed, so you have to refer to
 # the source tree here.
 if sys.platform == 'mac':
-	# For MacPython we know where it is
-	def _pardir(p): return os.path.split(p)[0]
-	BGENDIR=os.path.join(sys.prefix, "Tools", "bgen", "bgen")
+    # For MacPython we know where it is
+    def _pardir(p): return os.path.split(p)[0]
+    BGENDIR=os.path.join(sys.prefix, "Tools", "bgen", "bgen")
 else:
-	# for unix-Python we don't know, please set it yourself.
-	BGENDIR="/Users/jack/src/python/Tools/bgen/bgen"
+    # for unix-Python we don't know, please set it yourself.
+    BGENDIR="/Users/jack/src/python/Tools/bgen/bgen"
 
 #
 # Where to find the Universal Header include files. If you have CodeWarrior
@@ -26,9 +26,9 @@ else:
 # end of lines, so don't worry about that.
 #
 if sys.platform == 'mac':
-	_MWERKSDIR="Sap:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
+    _MWERKSDIR="Sap:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior"
 else:
-	_MWERKSDIR="/Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
+    _MWERKSDIR="/Volumes/Sap/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/"
 INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", "CIncludes")
 
 #
@@ -37,25 +37,25 @@ INCLUDEDIR=os.path.join(_MWERKSDIR, "MacOS Support", "Universal", "Interfaces", 
 # your source directory, not your installed directory.
 #
 if sys.platform == 'mac':
-	TOOLBOXDIR=os.path.join(sys.prefix, "Lib", "plat-mac", "Carbon")
+    TOOLBOXDIR=os.path.join(sys.prefix, "Lib", "plat-mac", "Carbon")
 else:
-	TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
+    TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 
 # Creator for C files:
 CREATOR="CWIE"
 
 if not os.path.exists(BGENDIR):
-	raise Error, "Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR
+    raise Error, "Please fix bgenlocations.py, BGENDIR does not exist: %s" % BGENDIR
 if not os.path.exists(INCLUDEDIR):
-	raise Error, "Please fix bgenlocations.py, INCLUDEDIR does not exist: %s" % INCLUDEDIR
+    raise Error, "Please fix bgenlocations.py, INCLUDEDIR does not exist: %s" % INCLUDEDIR
 if not os.path.exists(TOOLBOXDIR):
-	raise Error, "Please fix bgenlocations.py, TOOLBOXDIR does not exist: %s" % TOOLBOXDIR
-	
+    raise Error, "Please fix bgenlocations.py, TOOLBOXDIR does not exist: %s" % TOOLBOXDIR
+    
 # Sigh, due to the way these are used make sure they end with : or /.
 if BGENDIR[-1] != os.sep:
-	BGENDIR = BGENDIR + os.sep
+    BGENDIR = BGENDIR + os.sep
 if INCLUDEDIR[-1] != os.sep:
-	INCLUDEDIR = INCLUDEDIR + os.sep
+    INCLUDEDIR = INCLUDEDIR + os.sep
 if TOOLBOXDIR[-1] != os.sep:
-	TOOLBOXDIR = TOOLBOXDIR + os.sep
-	
+    TOOLBOXDIR = TOOLBOXDIR + os.sep
+    

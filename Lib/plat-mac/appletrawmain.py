@@ -14,13 +14,13 @@ import marshal
 # directory.
 #
 if not sys.argv or sys.argv[0][:1] == '-':
-	# Insert our (guessed) name.
-	_dir = os.path.split(sys.executable)[0] # removes "python"
-	_dir = os.path.split(_dir)[0] # Removes "MacOS"
-	_dir = os.path.join(_dir, 'Resources')
-	sys.argv.insert(0, '__rawmain__')
+    # Insert our (guessed) name.
+    _dir = os.path.split(sys.executable)[0] # removes "python"
+    _dir = os.path.split(_dir)[0] # Removes "MacOS"
+    _dir = os.path.join(_dir, 'Resources')
+    sys.argv.insert(0, '__rawmain__')
 else:
-	_dir = os.path.split(sys.argv[0])[0]
+    _dir = os.path.split(sys.argv[0])[0]
 #
 # Add the Resources directory to the path. This is where files installed
 # by BuildApplet.py with the --extra option show up, and if those files are 
@@ -36,28 +36,28 @@ argvemulator.ArgvCollector().mainloop()
 #
 __file__ = os.path.join(_dir, '__main__.py')
 if os.path.exists(__file__):
-	#
-	# Setup something resembling a normal environment and go.
-	#
-	sys.argv[0] = __file__
-	del argvemulator, os, sys, _dir
-	execfile(__file__)
+    #
+    # Setup something resembling a normal environment and go.
+    #
+    sys.argv[0] = __file__
+    del argvemulator, os, sys, _dir
+    execfile(__file__)
 else:
-	__file__ = os.path.join(_dir, '__main__.pyc')
-	if os.path.exists(__file__):
-		#
-		# If we have only a .pyc file we read the code object from that
-		#
-		sys.argv[0] = __file__
-		_fp = open(__file__, 'rb')
-		_fp.read(8)
-		__code__ = marshal.load(_fp)
-		#
-		# Again, we create an almost-normal environment (only __code__ is
-		# funny) and go.
-		#
-		del argvemulator, os, sys, marshal, _dir, _fp
-		exec __code__
-	else:
-		sys.stderr.write("%s: neither __main__.py nor __main__.pyc found\n"%sys.argv[0])
-		sys.exit(1)
+    __file__ = os.path.join(_dir, '__main__.pyc')
+    if os.path.exists(__file__):
+        #
+        # If we have only a .pyc file we read the code object from that
+        #
+        sys.argv[0] = __file__
+        _fp = open(__file__, 'rb')
+        _fp.read(8)
+        __code__ = marshal.load(_fp)
+        #
+        # Again, we create an almost-normal environment (only __code__ is
+        # funny) and go.
+        #
+        del argvemulator, os, sys, marshal, _dir, _fp
+        exec __code__
+    else:
+        sys.stderr.write("%s: neither __main__.py nor __main__.pyc found\n"%sys.argv[0])
+        sys.exit(1)
