@@ -38,9 +38,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef STDC_HEADERS
 #include <stddef.h>
-#else
+#else /* !STDC_HEADERS */
+#ifndef DONT_HAVE_SYS_TYPES_H
 #include <sys/types.h>		/* For size_t */
-#endif
+#endif /* DONT_HAVE_SYS_TYPES_H */
+#endif /* !STDC_HEADERS */
 
 struct arrayobject; /* Forward */
 
