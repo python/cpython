@@ -222,8 +222,8 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             if self.is_python(scriptfile):
                 interp = sys.executable
                 if interp.lower().endswith("w.exe"):
-                    # On Windows, use python.exe, not python.exe
-                    interp = interp[:-5] = interp[-4:]
+                    # On Windows, use python.exe, not pythonw.exe
+                    interp = interp[:-5] + interp[-4:]
                 cmdline = "%s -u %s" % (interp, cmdline)
             if '=' not in query and '"' not in query:
                 cmdline = '%s "%s"' % (cmdline, query)
