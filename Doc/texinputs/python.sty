@@ -48,6 +48,14 @@
   %
   \let\py@OldContentsline=\contentsline
   %
+  % Backward compatibility hack: pdfTeX 0.13 defined \pdfannotlink,
+  % but it changed to \pdfstartlink in 0.14.  This let's us use either
+  % version and still get useful behavior.
+  %
+  \@ifundefined{pdfstartlink}{
+    \let\pdfstartlink=\pdfannotlink
+  }{}
+  %
   % Macro that takes two args: the name to link to and the content of
   % the link.  This takes care of the PDF magic, getting the colors
   % the same for each link, and avoids having lots of garbage all over 
