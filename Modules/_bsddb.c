@@ -3033,7 +3033,7 @@ DBC_join_item(DBCursorObject* self, PyObject* args)
         retval = NULL;
     }
     else {
-        retval = Py_BuildValue("s#s#", key.data, key.size);
+        retval = Py_BuildValue("s#", key.data, key.size);
         FREE_DBT(key);
     }
 
