@@ -1264,6 +1264,15 @@ PyParser_SimpleParseStringFilename(const char *str, const char *filename, int st
 						       start, 0);
 }
 
+/* May want to move a more generalized form of this to parsetok.c or
+   even parser modules. */
+
+void
+PyParser_SetError(perrdetail *err)
+{
+	err_input(err);
+}
+
 /* Set the error appropriate to the given input error code (see errcode.h) */
 
 static void
