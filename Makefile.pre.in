@@ -105,10 +105,8 @@ DIRMODE=	755
 EXEMODE=	755
 FILEMODE=	644
 
-# --with-PACKAGE options for configure script
-# e.g. --with-readline --with-svr5 --with-solaris --with-thread
-# (see README for an explanation)
-WITH=		
+# configure script arguments
+CONFIG_ARGS=	@CONFIG_ARGS@
 
 
 # Subdirectories with code
@@ -709,16 +707,9 @@ Makefile.pre: Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status
 	$(MAKE) -f Makefile.pre Makefile
 
-# Run the configure script.  If config.status already exists,
-# call it with the --recheck argument, which reruns configure with the
-# same options as it was run last time; otherwise run the configure
-# script with options taken from the $(WITH) variable
+# Run the configure script.
 config.status:	$(srcdir)/configure
-	if test -f config.status; \
-	then $(SHELL) config.status --recheck; \
-	     $(SHELL) config.status; \
-	else $(SHELL) $(srcdir)/configure $(WITH); \
-	fi
+	$(SHELL) $(srcdir)/configure $(CONFIG_ARGS)
 
 .PRECIOUS: config.status $(PYTHON) Makefile Makefile.pre
 
