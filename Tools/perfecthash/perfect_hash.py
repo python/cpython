@@ -291,7 +291,7 @@ class PerfectHash:
 
   def generate_header(self, structName):
     header = """
-#include <Python.h>
+#include "Python.h"
 #include <stdlib.h>
 
 /* --- C API ----------------------------------------------------*/
@@ -603,62 +603,3 @@ def generate_hash(keys, caseInsensitive=0,
     sys.stderr.write('initial multipler: %s\n' % c)
 
     return PerfectHash(cchMaxKey, f1, f2, G, N, len(keys), maxHashValue)
-    
-"""
-static
-PyObject *codec_tuple(PyObject *unicode,
-              int len)
-{
-    PyObject *v,*w;
-    
-    if (unicode == NULL)
-    return NULL;
-    v = PyTuple_New(2);
-    if (v == NULL) {
-    Py_DECREF(unicode);
-    return NULL;
-    }
-    PyTuple_SET_ITEM(v,0,unicode);
-    w = PyInt_FromLong(len);
-    if (w == NULL) {
-    Py_DECREF(v);
-    return NULL;
-    }
-    PyTuple_SET_ITEM(v,1,w);
-    return v;
-}
-
-static PyObject *
-ucn_decode(PyObject *self,
-           PyObject *args)
-{
-    const char *data;
-    int size;
-    const char *errors = NULL;
-    PyObject *mapping = NULL;
-    
-    if (!PyArg_ParseTuple(args, "t#|z:ucn_decode",
-              &data, &size, &errors))
-        return NULL;
-    if (mapping == Py_None)
-        mapping = NULL;
-
-    return codec_tuple(PyUnicode_DecodeNamedUnicodeEscape(data, size, errors),
-               size);
-}
-
-
-static PyMethodDef _codecs_functions[] = {
-    { "ucn_decode", ucn_decode, 1 },
-};
-
-DL_EXPORT(void)
-init_ucn()
-{
-    Py_InitModule("_ucn", _codecs_functions);
-}
-
-"""
-
-
-            
