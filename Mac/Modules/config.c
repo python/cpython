@@ -113,7 +113,9 @@ extern void initimgtiff();
 extern void initimgsgi();
 extern void initimgop();
 #endif
-
+#ifdef USE_TK
+extern void init_tkinter();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -186,6 +188,9 @@ struct {
 	{"imgtiff",	initimgtiff},
 	{"imgsgi",	initimgsgi},
 	{"imgop",	initimgop},
+#endif
+#ifdef USE_TK
+	{"_tkinter",	init_tkinter},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
