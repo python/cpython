@@ -58,7 +58,7 @@ __all__ = [
 ]
 # Note: the Plist and Dict classes have been deprecated.
 
-import base64
+import binascii
 import datetime
 from cStringIO import StringIO
 
@@ -252,9 +252,13 @@ class PlistWriter(DumbXMLWriter):
 
     def writeData(self, data):
         self.beginElement("data")
-        for line in data.asBase64().split("\n"):
+        self.indentLevel -= 1
+        maxlinelength = 76 - len(self.indent.replace("\t", " " * 8) *
+                                 self.indentLevel)
+        for line in data.asBase64(maxlinelength).split("\n"):
             if line:
                 self.writeln(line)
+        self.indentLevel += 1
         self.endElement("data")
 
     def writeDict(self, d):
@@ -317,7 +321,7 @@ class Dict(_InternalDict):
 
 class Plist(_InternalDict):
 
-    """This class has been deprecated. Use readPlist() and writePlist() 
+    """This class has been deprecated. Use readPlist() and writePlist()
     functions instead, together with regular dict objects.
     """
 
@@ -340,6 +344,15 @@ class Plist(_InternalDict):
         writePlist(self, pathOrFile)
 
 
+def _encodeBase64(s, maxlinelength=76):
+    # copied from base64.encodestring(), with added maxlinelength argument
+    maxbinsize = (maxlinelength//4)*3
+    pieces = []
+    for i in range(0, len(s), maxbinsize):
+        chunk = s[i : i + maxbinsize]
+        pieces.append(binascii.b2a_base64(chunk))
+    return "".join(pieces)
+
 class Data:
 
     """Wrapper for binary data."""
@@ -348,11 +361,13 @@ class Data:
         self.data = data
 
     def fromBase64(cls, data):
-        return cls(base64.decodestring(data))
+        # base64.decodestring just calls binascii.a2b_base64;
+        # it seems overkill to use both base64 and binascii.
+        return cls(binascii.a2b_base64(data))
     fromBase64 = classmethod(fromBase64)
 
-    def asBase64(self):
-        return base64.encodestring(self.data)
+    def asBase64(self, maxlinelength=76):
+        return _encodeBase64(self.data, maxlinelength)
 
     def __cmp__(self, other):
         if isinstance(other, self.__class__):
