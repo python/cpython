@@ -38,6 +38,26 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/types.h>
 #endif /* DONT_HAVE_SYS_TYPES_H */
 
+/* We expect that fstat exists on most systems.
+   It's confirmed on Unix, Mac and Windows.
+   If you don't have it, add #define DONT_HAVE_FSTAT to your config.h. */
+#ifndef DONT_HAVE_FSTAT
+#define HAVE_FSTAT
+
+#ifndef DONT_HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+
+#ifndef DONT_HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#else
+#ifdef HAVE_STAT_H
+#include <stat.h>
+#endif
+#endif
+
+#endif /* DONT_HAVE_FSTAT */
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -54,9 +74,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 #endif
 
-#ifdef THINK_C
-#define HAVE_FOPENRF
-#endif
 #ifdef __MWERKS__
 /* Mwerks fopen() doesn't always set errno */
 #define NO_FOPEN_ERRNO
@@ -445,21 +462,6 @@ file_isatty(f, args)
 	return PyInt_FromLong(res);
 }
 
-/* We expect that fstat exists on most systems.
-   It's confirmed on Unix, Mac and Windows.
-   If you don't have it, add #define DONT_HAVE_FSTAT to your config.h. */
-#ifndef DONT_HAVE_FSTAT
-#define HAVE_FSTAT
-
-#ifndef DONT_HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-
-#ifndef DONT_HAVE_SYS_STAT_H
-#include <sys/stat.h>
-#endif
-
-#endif /* DONT_HAVE_FSTAT */
 
 #if BUFSIZ < 8192
 #define SMALLCHUNK 8192
