@@ -116,14 +116,14 @@ def load(fp):
     return nodes
 
 
-# ignore $ to keep environment variables with the leading letter from the name
-SKIP_LETTERS = "$"
-
 def trim_ignored_letters(s):
+    # ignore $ to keep environment variables with the
+    # leading letter from the name
     s = string.lower(s)
-    while s[0] in SKIP_LETTERS:
-        s = s[1:]
-    return s
+    if s[0] == "$":
+        return s[1:]
+    else:
+        return s
 
 def get_first_letter(s):
     return string.lower(trim_ignored_letters(s)[0])
