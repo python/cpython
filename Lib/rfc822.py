@@ -858,6 +858,8 @@ def parsedate_tz(data):
 
     Accounts for military timezones.
     """
+    if not data:
+        return None
     data = data.split()
     if data[0][-1] in (',', '.') or data[0].lower() in _daynames:
         # There's a dayname here. Skip it
