@@ -14,7 +14,7 @@ What's new in this release?
 - Rewritten rexec.py (restricted execution).
 - New modules ni.py and ihooks.py (package support and more).
 - And lots more that you'll have to discover on your own (see chapter
-  12 of the Tutorial).
+  12 of the Tutorial or the Misc/NEWS file).
 
 
 What is Python anyway?
@@ -99,6 +99,10 @@ Platform specific notes
 (Some of these may no longer apply.  If you find you can build Python
 on these platforms without the special directions mentioned here, let
 me know so I can remove them!)
+
+Linux:	Once you've built Python, use it to run the regen.py script in
+	the Lib/linux1 directory.  Apparently the files as distributed
+	don't match the system headers on some Linux versions.
 
 AIX:	Read the file Misc/AIX-NOTES before trying to build.
 
