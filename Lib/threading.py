@@ -172,6 +172,7 @@ class _Condition(_Verbose):
         self.__lock.acquire()           # Ignore saved state
 
     def _is_owned(self):
+        # This method is called only if __lock doesn't have _is_owned().
         if self.__lock.acquire(0):
             self.__lock.release()
             return False
