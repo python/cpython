@@ -495,11 +495,11 @@ but they are mentioned here for completeness.
 \begin{description}
 
 \item[Code objects]
-Code objects represent executable code.  The difference between a code
+Code objects represent ``pseudo-compiled'' executable Python code.
+The difference between a code
 object and a function object is that the function object contains an
 explicit reference to the function's context (the module in which it
-was defined) while a code object contains no context.  There is no way
-to execute a bare code object.
+was defined) while a code object contains no context.
 \obindex{code}
 
 Special read-only attributes: \verb@co_code@ is a string representing
