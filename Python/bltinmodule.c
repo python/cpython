@@ -533,7 +533,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 	char *filename;
 	PyObject *globals = Py_None, *locals = Py_None;
 	PyObject *res;
-	FILE* fp;
+	FILE* fp = NULL;
 	PyCompilerFlags cf;
 	int exists;
 	struct stat s;
