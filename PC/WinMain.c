@@ -1,6 +1,7 @@
 /* Minimal main program -- everything is loaded from the library */
 
 #include <windows.h>
+#include "Python.h"
 
 extern int Py_Main();
 

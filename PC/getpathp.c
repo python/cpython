@@ -352,6 +352,7 @@ calculate_path()
 	/* We need to construct a path from the following parts:
 	   (1) the PYTHONPATH environment variable, if set;
 	   (2) for Win32, the machinepath and userpath, if set;
+	   The following only if neither machinepath nor userpath is set:
 	   (3) the PYTHONPATH config macro, with the leading "."
 	       of each component replaced with pythonhome, if set;
 	   (4) the directory containing the executable (argv0_path).
@@ -371,15 +372,17 @@ calculate_path()
 	else
 		bufsz = 0;
 	bufsz += strlen(PYTHONPATH) + 1;
-	if (envpath != NULL)
-		bufsz += strlen(envpath) + 1;
 	bufsz += strlen(argv0_path) + 1;
 #ifdef MS_WIN32
-	if (machinepath)
-		bufsz += strlen(machinepath) + 1;
+	if (userpath || machinepath)
+		bufsz = 0; /* Reset! */
 	if (userpath)
 		bufsz += strlen(userpath) + 1;
+	if (machinepath)
+		bufsz += strlen(machinepath) + 1;
 #endif
+	if (envpath != NULL)
+		bufsz += strlen(envpath) + 1;
 
 	module_search_path = buf = malloc(bufsz);
 	if (buf == NULL) {
@@ -408,17 +411,21 @@ calculate_path()
 		*buf++ = DELIM;
 	}
 #ifdef MS_WIN32
+	if (userpath) {
+		strcpy(buf, userpath);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
+		free(userpath);
+	}
 	if (machinepath) {
 		strcpy(buf, machinepath);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 		free(machinepath);
 	}
-	if (userpath) {
-		strcpy(buf, userpath);
-		buf = strchr(buf, '\0');
-		*buf++ = DELIM;
-		free(userpath);
+	if (userpath || machinepath) {
+		buf[-1] = '\0';
+		return;
 	}
 #endif
 	if (pythonhome == NULL) {
