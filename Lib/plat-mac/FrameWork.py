@@ -561,7 +561,10 @@ class Menu:
 		self.menu.AppendMenu('x')		# add a dummy string
 		self.items.append((label, shortcut, callback, kind))
 		item = len(self.items)
-		self.menu.SetMenuItemText(item, label)		# set the actual text
+		if isinstance(label, unicode):
+			self.menu.SetMenuItemTextWithCFString(item, label)
+		else:
+			self.menu.SetMenuItemText(item, label)
 		if shortcut and type(shortcut) == type(()):
 			modifiers, char = shortcut[:2]
 			self.menu.SetItemCmd(item, ord(char))
