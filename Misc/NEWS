@@ -228,9 +228,13 @@ Core and builtins
 Extension modules
 -----------------
 
-- time module code that deals with time_t timestamps will now raise a
-  ValueError if more than a second is lost in precision from time_t being less
-  precise than a double.  Closes bug #919012.
+- time module code that deals with input POSIX timestamps will now raise
+  ValueError if more than a second is lost in precision when the
+  timestamp is cast to the platform C time_t type.  There's no chance
+  that the platform will do anything sensible with the result in such
+  cases.  This includes ctime(), localtime() and gmtime().  Assorted
+  fromtimestamp() and utcfromtimestamp() methods in the datetime module
+  were also protected.  Closes bugs #919012 and 975996.
 
 - fcntl.ioctl now warns if the mutate flag is not specified.
 
@@ -554,6 +558,11 @@ Build
 
 C API
 -----
+
+- Private function _PyTime_DoubleToTimet added, to convert a Python
+  timestamp (C double) to platform time_t with some out-of-bounds
+  checking.  Declared in new header file timefuncs.h.  It would be
+  good to expose some other internal timemodule.c functions there.
 
 - New public functions PyEval_EvaluateFrame and PyGen_New to expose
   generator objects.

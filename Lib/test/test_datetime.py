@@ -730,6 +730,15 @@ class TestDate(HarmlessMixedComparison):
         self.assertEqual(d.month, month)
         self.assertEqual(d.day, day)
 
+    def test_insane_fromtimestamp(self):
+        # It's possible that some platform maps time_t to double,
+        # and that this test will fail there.  This test should
+        # exempt such platforms (provided they return reasonable
+        # results!).
+        for insane in -1e200, 1e200:
+            self.assertRaises(ValueError, self.theclass.fromtimestamp,
+                              insane)
+
     def test_today(self):
         import time
 
@@ -1379,6 +1388,24 @@ class TestDateTime(TestDate):
         expected = time.gmtime(ts)
         got = self.theclass.utcfromtimestamp(ts)
         self.verify_field_equality(expected, got)
+
+    def test_insane_fromtimestamp(self):
+        # It's possible that some platform maps time_t to double,
+        # and that this test will fail there.  This test should
+        # exempt such platforms (provided they return reasonable
+        # results!).
+        for insane in -1e200, 1e200:
+            self.assertRaises(ValueError, self.theclass.fromtimestamp,
+                              insane)
+
+    def test_insane_utcfromtimestamp(self):
+        # It's possible that some platform maps time_t to double,
+        # and that this test will fail there.  This test should
+        # exempt such platforms (provided they return reasonable
+        # results!).
+        for insane in -1e200, 1e200:
+            self.assertRaises(ValueError, self.theclass.utcfromtimestamp,
+                              insane)
 
     def test_utcnow(self):
         import time
