@@ -192,7 +192,7 @@ indentation hints, unless the comment character is in column zero."
 	  )
   :group 'python)
 
-(defcustom py-scroll-process-buffer t
+(defcustom py-scroll-process-buffer nil
   "*Scroll Python process buffer as output arrives.
 If nil, the Python process buffer acts, with respect to scrolling, like
 Shell-mode buffers normally act.  This is surprisingly complicated and
