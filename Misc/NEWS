@@ -133,6 +133,8 @@ The parser module (which provides an interface to the Python parser's
 abstract syntax trees) has been rewritten (incompatibly) by Fred
 Drake.  It now lets you change the parse tree and compile the result!
 
+The \code{syslog} module has been upgraded and documented.
+
 Other Changes
 =============
 
