@@ -1160,6 +1160,14 @@
   }
 \fi
 
+% \seelink{url}{link text}
+\newcommand{\py@seelink}[3]{%
+  \par
+  \begin{fulllineitems}
+    \item[\ulink{#2}{#1}]
+    #3
+  \end{fulllineitems}
+}
 % \seetitle[url]{title}{why it's interesting}
 \newcommand{\py@seetitle}[3][\py@modulebadkey]{%
   \par
@@ -1204,6 +1212,7 @@
   \let\seerfc=\py@seerfc
   \let\seetitle=\py@seetitle
   \let\seeurl=\py@seeurl
+  \let\seelink=\py@seelink
 }{\par}
 \newenvironment{seealso}{
   \par
@@ -1215,6 +1224,7 @@
   \let\seerfc=\py@seerfc
   \let\seetitle=\py@seetitle
   \let\seeurl=\py@seeurl
+  \let\seelink=\py@seelink
 }{\par}
 
 % Allow the Python release number to be specified independently of the
