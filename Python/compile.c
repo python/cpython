@@ -183,7 +183,7 @@ static int
 all_name_chars(unsigned char *s)
 {
        static char ok_name_char[256];
-       static unsigned char *name_chars = NAME_CHARS;
+       static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
 
        if (ok_name_char[*name_chars] == 0) {
 	       unsigned char *p;
