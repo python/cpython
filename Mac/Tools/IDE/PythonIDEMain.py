@@ -82,6 +82,8 @@ class PythonIDE(Wapplication.Application):
 		saveasitem = FrameWork.MenuItem(m, "Save as"+ELIPSES, None, 'save_as')
 		FrameWork.Separator(m)
 		saveasappletitem = FrameWork.MenuItem(m, "Save as Applet"+ELIPSES, None, 'save_as_applet')
+		FrameWork.Separator(m)
+		instmgritem = FrameWork.MenuItem(m, "Package Manager", None, 'openpackagemanager')
 		if not runningOnOSX():
 			# On OSX there's a special "magic" quit menu, so we shouldn't add
 			# it to the File menu.
@@ -307,6 +309,11 @@ class PythonIDE(Wapplication.Application):
 			# the Python 2.2 Jaguar addon.
 			sys.__stderr__.write("*** PythonIDE: Can't write preferences ***\n")
 		self.quitting = 1
+		
+	def domenu_openpackagemanager(self):
+		import PackageManager
+		PackageManager.PackageBrowser()
+		print "Done"
 		
 	def makehelpmenu(self):
 		docs = self.installdocumentation()
