@@ -1,6 +1,7 @@
 # test for xml.dom.minidom
 
 from xml.dom.minidom import parse, Node, Document, parseString
+from xml.dom import HierarchyRequestErr
 import xml.parsers.expat
 
 import os.path
