@@ -289,7 +289,7 @@ time_gmtime(PyObject *self, PyObject *args)
 }
 
 static char gmtime_doc[] =
-"gmtime([seconds]) -> tuple\n\
+"gmtime([seconds]) -> (year,month,day,hour,minute,second,weekday,dayofyear,dst)\n\
 \n\
 Convert seconds since the Epoch to a time tuple expressing UTC (a.k.a.\n\
 GMT).  When 'seconds' is not passed in, convert the current time instead.";
@@ -306,7 +306,8 @@ time_localtime(PyObject *self, PyObject *args)
 }
 
 static char localtime_doc[] =
-"localtime([seconds]) -> tuple\n\
+"localtime([seconds]) -> (year,month,day,hour,minute,second,weekday,dayofyear,dst)\n\
+\n\
 Convert seconds since the Epoch to a time tuple expressing local time.\n\
 When 'seconds' is not passed in, convert the current time instead.";
 
@@ -444,6 +445,7 @@ time_strptime(PyObject *self, PyObject *args)
 
 static char strptime_doc[] =
 "strptime(string, format) -> tuple\n\
+\n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as strftime()).";
 #endif /* HAVE_STRPTIME */
