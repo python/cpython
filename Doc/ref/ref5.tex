@@ -82,7 +82,7 @@ raises a \exception{NameError} exception.
 \indexii{private}{names}%
 when an identifier that textually occurs in a class definition begins
 with two or more underscore characters and does not end in two or more
-underscores, it is considered a ``private name'' of that class.
+underscores, it is considered a \dfn{private name} of that class.
 Private names are transformed to a longer form before code is
 generated for them.  The transformation inserts the class name in
 front of the name, with leading underscores removed, and a single
@@ -356,9 +356,14 @@ slice item is the key.  The conversion of a slice item that is an
 expression is that expression.  The conversion of an ellipsis slice
 item is the built-in \code{Ellipsis} object.  The conversion of a
 proper slice is a slice object (see section \ref{types}) whose
-\code{start}, \code{stop} and \code{step} attributes are the values of
-the expressions given as lower bound, upper bound and stride,
-respectively, substituting \code{None} for missing expressions.
+\member{start}, \member{stop} and \member{step} attributes are the
+values of the expressions given as lower bound, upper bound and
+stride, respectively, substituting \code{None} for missing
+expressions.
+\withsubitem{(slice object attribute)}{%
+  \ttindex{start}%
+  \ttindex{stop}%
+  \ttindex{step}}
 
 \subsection{Calls\label{calls}}
 \index{call}
@@ -409,23 +414,23 @@ the list of filled slots is used as the argument list for the call.
 
 If there are more positional arguments than there are formal parameter
 slots, a \exception{TypeError} exception is raised, unless a formal
-parameter using the syntax ``\code{*identifier}'' is present; in this
+parameter using the syntax \samp{*identifier} is present; in this
 case, that formal parameter receives a tuple containing the excess
 positional arguments (or an empty tuple if there were no excess
 positional arguments).
 
 If any keyword argument does not correspond to a formal parameter
 name, a \exception{TypeError} exception is raised, unless a formal
-parameter using the syntax ``\code{**identifier}'' is present; in this
+parameter using the syntax \samp{**identifier} is present; in this
 case, that formal parameter receives a dictionary containing the
 excess keyword arguments (using the keywords as keys and the argument
 values as corresponding values), or a (new) empty dictionary if there
 were no excess keyword arguments.
 
-Formal parameters using the syntax ``\code{*identifier}'' or
-``\code{**identifier}'' cannot be used as positional argument slots or
+Formal parameters using the syntax \samp{*identifier} or
+\samp{**identifier} cannot be used as positional argument slots or
 as keyword argument names.  Formal parameters using the syntax
-``\code{(sublist)}'' cannot be used as keyword argument names; the
+\samp{(sublist)} cannot be used as keyword argument names; the
 outermost sublist corresponds to a single unnamed argument slot, and
 the argument value is assigned to the sublist using the usual tuple
 assignment rules after all other parameter processing is done.
@@ -475,7 +480,7 @@ argument list of the call: the instance becomes the first argument.
 \item[a class instance:] The class must define a \method{__call__()}
 method; the effect is then the same as if that method was called.
 \indexii{instance}{call}
-\ttindex{__call__}
+\withsubitem{(object method)}{\ttindex{__call__()}}
 
 \end{description}
 
