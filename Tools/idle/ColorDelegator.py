@@ -44,6 +44,7 @@ class ColorDelegator(Delegator):
         for tag, cnf in self.tagdefs.items():
             if cnf:
                 apply(self.tag_configure, (tag,), cnf)
+        self.tag_raise('sel')
 
     tagdefs = {
         "COMMENT":    {"foreground": "#dd0000"},
@@ -53,6 +54,8 @@ class ColorDelegator(Delegator):
 
         "SYNC":       {}, #{"background": "#ffff00"},
         "TODO":       {}, #{"background": "#cccccc"},
+        
+        "BREAK":      {"background": "#FF7777"},
         }
 
     def insert(self, index, chars, tags=None):
