@@ -9,7 +9,7 @@ __rcsid__ = "$Id$"
 from distutils.core import Command
 from distutils.util import copy_tree
 
-class InstallExt (Command):
+class install_ext (Command):
 
     description = "install C/C++ extension modules"
     

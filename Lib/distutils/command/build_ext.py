@@ -20,7 +20,7 @@ extension_name_re = re.compile \
     (r'^[a-zA-Z_][a-zA-Z_0-9]*(\.[a-zA-Z_][a-zA-Z_0-9]*)*$')
 
 
-class BuildExt (Command):
+class build_ext (Command):
     
     description = "build C/C++ extensions (compile/link to build directory)"
 

@@ -12,7 +12,7 @@ from distutils.core import Command
 from distutils.util import write_file
 
 
-class Install (Command):
+class install (Command):
 
     description = "install everything from build directory"
 

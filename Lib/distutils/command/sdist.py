@@ -17,7 +17,7 @@ from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError
 
 
-class Sdist (Command):
+class sdist (Command):
 
     description = "create a source distribution (tarball, zip file, etc.)"
 
