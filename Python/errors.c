@@ -509,7 +509,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 	
 	PyErr_SetObject(exception, string);
 	Py_XDECREF(string);
-	
+	va_end(vargs);
 	return NULL;
 }
 
