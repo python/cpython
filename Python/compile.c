@@ -292,7 +292,7 @@ com_add(c, list, v)
 	int i;
 	for (i = n; --i >= 0; ) {
 		object *w = getlistitem(list, i);
-		if (cmpobject(v, w) == 0)
+		if (v->ob_type == w->ob_type && cmpobject(v, w) == 0)
 			return i;
 	}
 	if (addlistitem(list, v) != 0)
