@@ -20,8 +20,11 @@ if [ -f "$UPDATES" ] ; then
     cd devel-docs || exit $?
     (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
     rm "$UPDATES" || exit $?
-    Mail -s '[online doc updates]' fdrake@acm.org <<EOF
-Development version of documentation updated:
-http://python.sourceforge.net/devel-docs/
+    Mail -s '[development doc updates]' \
+     python-dev@python.org doc-sig@python.org \
+     <<EOF
+The development version of the documentation has been updated:
+
+	http://python.sourceforge.net/devel-docs/
 EOF
 fi
