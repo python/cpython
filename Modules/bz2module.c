@@ -1504,7 +1504,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 	int bufsize = SMALLCHUNK;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
-	int totalout;
+	LONG_LONG totalout;
 	int bzerror;
 
 	ACQUIRE_LOCK(self);
@@ -1546,7 +1546,7 @@ BZ2Comp_flush(BZ2CompObject *self)
 	}
 
 	if (bzs->avail_out != 0)
-		_PyString_Resize(&ret, BZS_TOTAL_OUT(bzs) - totalout);
+		_PyString_Resize(&ret, (int)(BZS_TOTAL_OUT(bzs) - totalout));
 
 	RELEASE_LOCK(self);
 	return ret;
