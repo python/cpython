@@ -446,7 +446,7 @@ int readinst(char *buf, int buf_size, PyObject *meth){
 	PyObject *arg=NULL;
 	PyObject *bytes=NULL;
 	PyObject *str=NULL;
-	int len = 0;
+	int len = -1;
 
 	UNLESS(bytes = PyInt_FromLong(buf_size)) {
 		if (!PyErr_Occurred())
@@ -458,20 +458,33 @@ int readinst(char *buf, int buf_size, PyObject *meth){
 		UNLESS(arg = PyTuple_New(1))
 		    goto finally;
 
-	Py_INCREF(bytes);
 	if (PyTuple_SetItem(arg, 0, bytes) < 0)
 		goto finally;
 
 	UNLESS(str = PyObject_CallObject(meth, arg))
 		goto finally;
 
-	UNLESS(PyString_Check( str ))
+	/* XXX what to do if it returns a Unicode string? */
+	UNLESS(PyString_Check( str )) {
+		PyErr_Format(PyExc_TypeError, 
+			     "read() did not return a string object (type=%.400s)",
+			     str->ob_type->tp_name);
 		goto finally;
-
+	}
+	
 	len = PyString_GET_SIZE(str);
-	strncpy(buf, PyString_AsString(str), len);
+	if (len > buf_size) {
+		PyErr_Format(PyExc_ValueError,
+			     "read() returned too much data: "
+			     "%i bytes requested, %i returned",
+			     buf_size, len);
+		Py_DECREF(str);
+		goto finally;
+	}
+	memcpy(buf, PyString_AsString(str), len);
 	Py_XDECREF(str);
 finally:
+	Py_XDECREF(arg);
 	return len;
 }
 
@@ -512,14 +525,16 @@ xmlparse_ParseFile( xmlparseobject *self, PyObject *args )
 
 		  if( fp ){
 		          bytes_read=fread( buf, sizeof( char ), BUF_SIZE, fp);
-		  }else{
+			  if (bytes_read < 0) {
+				  PyErr_SetFromErrno(PyExc_IOError);
+				  return NULL;
+			  }
+		  } else {
 			  bytes_read=readinst( buf, BUF_SIZE, readmethod );
+			  if (bytes_read < 0)
+				  return NULL;
 		  }
 
-		  if (bytes_read < 0) {
-			PyErr_SetFromErrno(PyExc_IOError);
-			return NULL;
-		  }
 		  rv=XML_ParseBuffer(self->itself, bytes_read, bytes_read == 0);
 		  if( PyErr_Occurred() ){
 			return NULL;
