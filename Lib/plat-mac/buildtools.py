@@ -303,10 +303,12 @@ def process_common_macho(template, progress, code, rsrcname, destname, is_update
 	for o in others:
 		builder.resources.append(o)
 	if plistname:
-		import Plist
-		builder.plist = Plist.fromFile(plistname)
+		import plistlib
+		builder.plist = plistlib.Plist.fromFile(plistname)
 	if icnsname:
 		builder.iconfile = icnsname
+	if not raw:
+		builder.argv_emulation = 1
 	builder.setup()
 	builder.build()
 	if progress: 
