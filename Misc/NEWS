@@ -27,9 +27,12 @@ Release date: 30-May-2003
   all that, but note that fixing these bugs may change visible behavior
   in code relying (whether intentionally or accidentally) on old behavior.
 
+- Backport SF #745478: email package 2.5.3; fixes a buglet in
+  multipart boundary calculation.
+
 - RPM spec file update from Sean Reifschneider.
 
-- Mac OS X specific backports for distutils/unixccompiler.py.
+- Mac OS X specific backports for distutils/unixccompiler.py.  SF #723495
 
 
 What's New in Python 2.2.3c1 ?
