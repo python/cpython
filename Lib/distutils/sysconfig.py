@@ -15,6 +15,7 @@ __version__ = "$Revision$"
 def _init_posix():
     import os
     import re
+    import string
     import sys
 
     g = globals()
@@ -35,10 +36,9 @@ def _init_posix():
         m = define_rx.match(line)
         if m:
             n, v = m.group(1, 2)
-            if v == "1":
-                g[n] = 1
-            else:
-                g[n] = v
+            try: v = string.atoi(v)
+            except ValueError: pass
+            g[n] = v
         else:
             m = undef_rx.match(line)
             if m:
@@ -57,9 +57,12 @@ def _init_posix():
         m = variable_rx.match(line)
         if m:
             n, v = m.group(1, 2)
+            v = string.strip(v)
             if "$" in v:
                 notdone[n] = v
             else:
+                try: v = string.atoi(v)
+                except ValueError: pass
                 done[n] = v
 
     # do variable interpolation here
@@ -79,7 +82,9 @@ def _init_posix():
                     if "$" in after:
                         notdone[name] = value
                     else:
-                        done[name] = value
+                        try: value = string.atoi(value)
+                        except ValueError: pass
+                        done[name] = string.strip(value)
                         del notdone[name]
                 elif notdone.has_key(n):
                     # get it on a subsequent round
@@ -91,9 +96,12 @@ def _init_posix():
                     if "$" in after:
                         notdone[name] = value
                     else:
-                        done[name] = value
+                        try: value = string.atoi(value)
+                        except ValueError: pass
+                        done[name] = string.strip(value)
                         del notdone[name]
             else:
+                # bogus variable reference; just drop it since we can't deal
                 del notdone[name]
 
     # save the results in the global dictionary
