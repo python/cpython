@@ -51,7 +51,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #define UsingSharedLibs
 #endif
 
@@ -61,7 +61,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "myproto.h"
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
 

@@ -5,12 +5,12 @@
    symbols doesn't quite work...
    XXX Not sure now...  Seems to be something else going on as well... */
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export off
 #endif
 
 #include <math.h>
 
-#ifdef __CFM68K__
+#ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
