@@ -1,3 +1,5 @@
+#! /usr/local/bin/python
+
 # pdb.py -- finally, a Python debugger!
 
 # (See pdb.doc for documentation.)
@@ -74,8 +76,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		locals = self.curframe.f_locals
 		globals = self.curframe.f_globals
 		globals['__privileged__'] = 1
-		code = compile(line + '\n', '<stdin>', 'single')
 		try:
+			code = compile(line + '\n', '<stdin>', 'single')
 			exec code in globals, locals
 		except:
 			if type(sys.exc_type) == type(''):
@@ -490,3 +492,17 @@ def help():
 	else:
 		print 'Sorry, can\'t find the help file "pdb.doc"',
 		print 'along the Python search path'
+
+# When invoked as main program, invoke the debugger on a script
+if __name__=='__main__':
+	import sys
+	if not sys.argv[1:]:
+		print "usage: pdb.py scriptfile [arg] ..."
+		sys.exit(2)
+
+	# Get the module name and function name, if present
+	filename = sys.argv[1]
+
+	del sys.argv[0]
+
+	run('execfile(' + `filename` + ')', {'__name__': '__main__'})
