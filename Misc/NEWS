@@ -12,6 +12,9 @@ What's New in Python 2.3.5?
 Core and builtins
 -----------------
 
+- Bug #951851: Python crashed when reading import table of certain
+  Windows DLLs
+
 - Bug #966623. classes created with type() in an exec(, {}) don't
   have a __module__, but code in typeobject assumed it would always
   be there.
