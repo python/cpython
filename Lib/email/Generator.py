@@ -8,7 +8,7 @@ import time
 import re
 import random
 
-from types import ListType
+from types import ListType, StringType
 from cStringIO import StringIO
 
 from email.Header import Header
@@ -34,6 +34,14 @@ SEMINLTAB = ';\n\t'
 SPACE8 = ' ' * 8
 
 fcre = re.compile(r'^From ', re.MULTILINE)
+
+def _is8bitstring(s):
+    if isinstance(s, StringType):
+        try:
+            unicode(s, 'us-ascii')
+        except UnicodeError:
+            return True
+    return False
 
 
 
@@ -173,6 +181,14 @@ class Generator:
         else:
             # No line was actually longer than maxheaderlen characters, so
             # just return the original unchanged.
+            return text
+        # If we have raw 8bit data in a byte string, we have no idea what the
+        # encoding is.  I think there is no safe way to split this string.  If
+        # it's ascii-subset, then we could do a normal ascii split, but if
+        # it's multibyte then we could break the string.  There's no way to
+        # know so the least harm seems to be to not split the string and risk
+        # it being too long.
+        if _is8bitstring(text):
             return text
         # The `text' argument already has the field name prepended, so don't
         # provide it here or the first line will get folded too short.
