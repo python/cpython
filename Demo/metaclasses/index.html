@@ -1,0 +1,350 @@
+<HTML>
+
+<HEAD>
+<TITLE>Metaprogramming in Python 1.5</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="FFFFFF">
+
+<H1>Metaprogramming in Python 1.5</H1>
+
+<H4>XXX Don't link to this page!  It is very much a work in progress.</H4>
+
+<P>While Python 1.5 is only out as a <A
+HREF="http://grail.cnri.reston.va.us/python/1.5a3/">restricted alpha
+release</A>, its metaprogramming feature is worth mentioning.
+
+<P>In previous Python releases (and still in 1.5), there is something
+called the ``Don Beaudry hook'', after its inventor and champion.
+This allows C extensions to provide alternate class behavior, thereby
+allowing the Python class syntax to be used to define other class-like
+entities.  Don Beaudry has used this in his infamous <A
+HREF="http://maigret.cog.brown.edu/pyutil/">MESS</A> package; Jim
+Fulton has used it in his <A
+HREF="http://www.digicool.com/papers/ExtensionClass.html">Extension
+Classes</A> package.  (It has also been referred to as the ``Don
+Beaudry <i>hack</i>, but that's a misnomer.  There's nothing hackish
+about it -- in fact, it is rather elegant and deep, even though
+there's something dark to it.)
+
+<P>Documentation of the Don Beaudry hook has purposefully been kept
+minimal, since it is a feature of incredible power, and is easily
+abused.  Basically, it checks whether the <b>type of the base
+class</b> is callable, and if so, it is called to create the new
+class.
+
+<P>Note the two indirection levels.  Take a simple example:
+
+<PRE>
+class B:
+    pass
+
+class C(B):
+    pass
+</PRE>
+
+Take a look at the second class definition, and try to fathom ``the
+type of the base class is callable.''
+
+<P>(Types are not classes, by the way.  See questions 4.2, 4.19 and in
+particular 6.22 in the <A
+HREF="http://grail.cnri.reston.va.us/cgi-bin/faqw.py" >Python FAQ</A>
+for more on this topic.)
+
+<P>
+
+<UL>
+
+<LI>The <b>base class</b> is B; this one's easy.<P>
+
+<LI>Since B is a class, its type is ``class''; so the <b>type of the
+base class</b> is the type ``class''.  This is also known as
+types.ClassType, assuming the standard module <code>types</code> has
+been imported.<P>
+
+<LI>Now is the type ``class'' <b>callable</b>?  No, because types (in
+core Python) are never callable.  Classes are callable (calling a
+class creates a new instance) but types aren't.<P>
+
+</UL>
+
+<P>So our conclusion is that in our example, the type of the base
+class (of C) is not callable.  So the Don Beaudry hook does not apply,
+and the default class creation mechanism is used (which is also used
+when there is no base class).  In fact, the Don Beaudry hook never
+applies when using only core Python, since the type of a core object
+is never callable.
+
+<P>So what do Don and Jim do in order to use Don's hook?  Write an
+extension that defines at least two new Python object types.  The
+first would be the type for ``class-like'' objects usable as a base
+class, to trigger Don's hook.  This type must be made callable.
+That's why we need a second type.  Whether an object is callable
+depends on its type.  So whether a type object is callable depends on
+<i>its</i> type, which is a <i>meta-type</i>.  (In core Python there
+is only one meta-type, the type ``type'' (types.TypeType), which is
+the type of all type objects, even itself.)  A new meta-type must
+be defined that makes the type of the class-like objects callable.
+(Normally, a third type would also be needed, the new ``instance''
+type, but this is not an absolute requirement -- the new class type
+could return an object of some existing type when invoked to create an
+instance.)
+
+<P>Still confused?  Here's a simple device due to Don himself to
+explain metaclasses.  Take a simple class definition; assume B is a
+special class that triggers Don's hook:
+
+<PRE>
+class C(B):
+    a = 1
+    b = 2
+</PRE>
+
+This can be though of as equivalent to:
+
+<PRE>
+C = type(B)('C', (B,), {'a': 1, 'b': 2})
+</PRE>
+
+If that's too dense for you, here's the same thing written out using
+temporary variables:
+
+<PRE>
+creator = type(B)               # The type of the base class
+name = 'C'                      # The name of the new class
+bases = (B,)                    # A tuple containing the base class(es)
+namespace = {'a': 1, 'b': 2}    # The namespace of the class statement
+C = creator(name, bases, namespace)
+</PRE>
+
+This is analogous to what happens without the Don Beaudry hook, except
+that in that case the creator function is set to the default class
+creator.
+
+<P>In either case, the creator is called with three arguments.  The
+first one, <i>name</i>, is the name of the new class (as given at the
+top of the class statement).  The <i>bases</i> argument is a tuple of
+base classes (a singleton tuple if there's only one base class, like
+the example).  Finally, <i>namespace</i> is a dictionary containing
+the local variables collected during execution of the class statement.
+
+<P>Note that the contents of the namespace dictionary is simply
+whatever names were defined in the class statement.  A little-known
+fact is that when Python executes a class statement, it enters a new
+local namespace, and all assignments and function definitions take
+place in this namespace.  Thus, after executing the following class
+statement:
+
+<PRE>
+class C:
+    a = 1
+    def f(s): pass
+</PRE>
+
+the class namespace's contents would be {'a': 1, 'f': &lt;function f
+...&gt;}.
+
+<P>But enough already about Python metaprogramming in C; read the
+documentation of <A
+HREF="http://maigret.cog.brown.edu/pyutil/">MESS</A> or <A
+HREF="http://www.digicool.com/papers/ExtensionClass.html" >Extension
+Classes</A> for more information.
+
+<H2>Writing Metaclasses in Python</H2>
+
+<P>In Python 1.5, the requirement to write a C extension in order to
+engage in metaprogramming has been dropped (though you can still do
+it, of course).  In addition to the check ``is the type of the base
+class callable,'' there's a check ``does the base class have a
+__class__ attribute.''  If so, it is assumed that the __class__
+attribute refers to a class.
+
+<P>Let's repeat our simple example from above:
+
+<PRE>
+class C(B):
+    a = 1
+    b = 2
+</PRE>
+
+Assuming B has a __class__ attribute, this translates into:
+
+<PRE>
+C = B.__class__('C', (B,), {'a': 1, 'b': 2})
+</PRE>
+
+This is exactly the same as before except that instead of type(B),
+B.__class__ is invoked.  If you have read <A HREF=
+"http://grail.cnri.reston.va.us/cgi-bin/faqw.py?req=show&file=faq06.022.htp"
+>FAQ question 6.22</A> you will understand that while there is a big
+technical difference between type(B) and B.__class__, they play the
+same role at different abstraction levels.  And perhaps at some point
+in the future they will really be the same thing (at which point you
+would be able to derive subclasses from built-in types).
+
+<P>Going back to the example, the class B.__class__ is instantiated,
+passing its constructor the same three arguments that are passed to
+the default class constructor or to an extension's metaprogramming
+code: <i>name</i>, <i>bases</i>, and <i>namespace</i>.
+
+<P>It is easy to be confused by what exactly happens when using a
+metaclass, because we lose the absolute distinction between classes
+and instances: a class is an instance of a metaclass (a
+``metainstance''), but technically (i.e. in the eyes of the python
+runtime system), the metaclass is just a class, and the metainstance
+is just an instance.  At the end of the class statement, the metaclass
+whose metainstance is used as a base class is instantiated, yielding a
+second metainstance (of the same metaclass).  This metainstance is
+then used as a (normal, non-meta) class; instantiation of the class
+means calling the metainstance, and this will return a real instance.
+And what class is that an instance of?  Conceptually, it is of course
+an instance of our metainstance; but in most cases the Python runtime
+system will see it as an instance of a a helper class used by the
+metaclass to implement its (non-meta) instances...
+
+<P>Hopefully an example will make things clearer.  Let's presume we
+have a metaclass MetaClass1.  It's helper class (for non-meta
+instances) is callled HelperClass1.  We now (manually) instantiate
+MetaClass1 once to get an empty special base class:
+
+<PRE>
+BaseClass1 = MetaClass1("BaseClass1", (), {})
+</PRE>
+
+We can now use BaseClass1 as a base class in a class statement:
+
+<PRE>
+class MySpecialClass(BaseClass1):
+    i = 1
+    def f(s): pass
+</PRE>
+
+At this point, MySpecialClass is defined; it is a metainstance of
+MetaClass1 just like BaseClass1, and in fact the expression
+``BaseClass1.__class__ == MySpecialClass.__class__ == MetaClass1''
+yields true.
+
+<P>We are now ready to create instances of MySpecialClass.  Let's
+assume that no constructor arguments are required:
+
+<PRE>
+x = MySpecialClass()
+y = Myspecialclass()
+print x.__class__, y.__class__
+</PRE>
+
+The print statement shows that x and y are instances of HelperClass1.
+How did this happen?  MySpecialClass is an instance of MetaClass1
+(``meta'' is irrelevant here); when an instance is called, its
+__call__ method is invoked, and presumably the __call__ method defined
+by MetaClass1 returns an instance of HelperClass1.
+
+<P>Now let's see how we could use metaprogramming -- what can we do
+with metaclasses that we can't easily do without them?  Here's one
+idea: a metaclass could automatically insert trace calls for all
+method calls.  Let's first develop a simplified example, without
+support for inheritance or other ``advanced'' Python features (we'll
+add those later).
+
+<PRE>
+import types
+
+class Tracing:
+    def __init__(self, name, bases, namespace):
+        """Create a new class."""
+        self.__name__ = name
+        self.__bases__ = bases
+        self.__namespace__ = namespace
+    def __call__(self):
+        """Create a new instance."""
+        return Instance(self)
+
+class Instance:
+    def __init__(self, klass):
+        self.__klass__ = klass
+    def __getattr__(self, name):
+        try:
+            value = self.__klass__.__namespace__[name]
+        except KeyError:
+            raise AttributeError, name
+        if type(value) is not types.FuncType:
+            return value
+        return BoundMethod(value, self)
+
+class BoundMethod:
+    def __init__(self, function, instance):
+        self.function = function
+        self.instance = instance
+    def __call__(self, *args):
+        print "calling", self.function, "for", instance, "with", args
+        return apply(self.function, (self.instance,) + args)
+<HR>
+
+Confused already?  
+
+
+<P>XXX More text is needed here.  For now, have a look at some very
+preliminary examples that I coded up to teach myself how to use this
+feature:
+
+
+
+<H2>Real-life Examples</H2>
+
+<DL>
+
+<DT><A HREF="Enum.py">Enum.py</A>
+
+<DD>This (ab)uses the class syntax as an elegant way to define
+enumerated types.  The resulting classes are never instantiated --
+rather, their class attributes are the enumerated values.  For
+example:
+
+<PRE>
+class Color(Enum):
+    red = 1
+    green = 2
+    blue = 3
+print Color.red
+</PRE>
+
+will print the string ``Color.red'', while ``Color.red==1'' is true,
+and ``Color.red + 1'' raise a TypeError exception.
+
+<P>
+
+<DT><A HREF="Trace.py">Trace.py</A>
+
+<DD>The resulting classes work much like standard classes, but by
+setting a special class or instance attribute __trace_output__ to
+point to a file, all calls to the class's methods are traced.  It was
+a bit of a struggle to get this right.  This should probably redone
+using the generic metaclass below.
+
+<P>
+
+<DT><A HREF="Meta.py">Meta.py</A>
+
+<DD>A generic metaclass.  This is an attempt at finding out how much
+standard class behavior can be mimicked by a metaclass.  The
+preliminary answer appears to be that everything's fine as long as the
+class (or its clients) don't look at the instance's __class__
+attribute, nor at the class's __dict__ attribute.  The use of
+__getattr__ internally makes the classic implementation of __getattr__
+hooks tough; we provide a similar hook _getattr_ instead.
+(__setattr__ and __delattr__ are not affected.)
+(XXX Hm.  Could detect presence of __getattr__ and rename it.)
+
+<P>
+
+<DT><A HREF="Eiffel.py">Eiffel.py</A>
+
+<DD>Uses the above generic metaclass to implement Eiffel style
+pre-conditions and post-conditions.
+
+<P>
+</DL>
+
+</BODY>
+
+</HTML>
