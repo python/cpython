@@ -270,21 +270,10 @@ search_for_prefix(char *argv0_path, char *home)
     strcpy(prefix, argv0_path);
     joinpath(prefix, "Modules/Setup");
     if (isfile(prefix)) {
-        /* Check VPATH to see if argv0_path is in the build directory.
-         * Complication: the VPATH passed in is relative to the
-         * Modules build directory and points to the Modules source
-         * directory; we need it relative to the build tree and
-         * pointing to the source tree.  Solution: chop off a leading
-         * ".." (but only if it's there -- it could be an absolute
-         * path) and chop off the final component (assuming it's
-         * "Modules").
-         */
+        /* Check VPATH to see if argv0_path is in the build directory. */
         vpath = VPATH;
-        if (vpath[0] == '.' && vpath[1] == '.' && vpath[2] == '/')
-            vpath += 3;
         strcpy(prefix, argv0_path);
         joinpath(prefix, vpath);
-        reduce(prefix);
         joinpath(prefix, "Lib");
         joinpath(prefix, LANDMARK);
         if (ismodule(prefix))
