@@ -166,8 +166,8 @@ def readmodule_ex(module, path=[], inpackage=0):
         # Dotted module name
         package = module[:i].strip()
         submodule = module[i+1:].strip()
-        parent = readmodule(package, path, inpackage)
-        child = readmodule(submodule, parent['__path__'], 1)
+        parent = readmodule_ex(package, path, inpackage)
+        child = readmodule_ex(submodule, parent['__path__'], 1)
         return child
 
     if _modules.has_key(module):
@@ -295,7 +295,7 @@ def readmodule_ex(module, path=[], inpackage=0):
                 n = n.strip()
                 try:
                     # recursively read the imported module
-                    d = readmodule(n, path, inpackage)
+                    d = readmodule_ex(n, path, inpackage)
                 except:
                     ##print 'module', n, 'not found'
                     pass
@@ -306,7 +306,7 @@ def readmodule_ex(module, path=[], inpackage=0):
             names = m.group("ImportFromList").split(',')
             try:
                 # recursively read the imported module
-                d = readmodule(mod, path, inpackage)
+                d = readmodule_ex(mod, path, inpackage)
             except:
                 ##print 'module', mod, 'not found'
                 continue
