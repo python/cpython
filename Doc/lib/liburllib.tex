@@ -2,7 +2,7 @@
 \stmodindex{urllib}
 \index{WWW}
 \indexii{World-Wide}{Web}
-\index{URLs}
+\index{URL}
 
 This module provides a high-level interface for fetching data across
 the World-Wide Web.  In particular, the \code{urlopen} function is
@@ -47,6 +47,21 @@ cached).  Exceptions are the same as for \code{urlopen()}.
 \begin{funcdesc}{urlcleanup}{}
 Clear the cache that may have been built up by previous calls to
 \code{urlretrieve()}.
+\end{funcdesc}
+
+\begin{funcdesc}{quote}{string\optional{\, addsafe}}
+Replace special characters in \var{string} using the \code{\%xx} escape.
+Letters, digits, and the characters ``\code{_,.-}'' are never quoted.
+The optional \var{addsafe} parameter specifies additional characters
+that should not be quoted --- its default value is \code{'/'}.
+
+Example: \code{quote('/~conolly/')} yields \code{'/\%7econnolly/'}.
+\end{funcdesc}
+
+\begin{funcdesc}{unquote}{string}
+Remove \code{\%xx} escapes by their single-character equivalent.
+
+Example: \code{unquote('/\%7Econnolly/')} yields \code{'/~connolly/'}.
 \end{funcdesc}
 
 Restrictions:
