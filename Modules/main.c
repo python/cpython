@@ -17,14 +17,10 @@
 #define PYTHONHOMEHELP "<prefix>/python2.0"
 #endif
 
+#include "pygetopt.h"
+
 #define COPYRIGHT \
     "Type \"copyright\", \"credits\" or \"license\" for more information."
-
-/* Interface to getopt(): */
-extern int optind;
-extern char *optarg;
-extern int getopt(); /* PROTO((int, char **, char *)); -- not standardized */
-
 
 /* For Py_GetArgcArgv(); set by main() */
 static char **orig_argv;
@@ -105,16 +101,16 @@ Py_Main(int argc, char **argv)
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
-	while ((c = getopt(argc, argv, "c:diOStuUvxXhV")) != EOF) {
+	while ((c = _PyOS_GetOpt(argc, argv, "c:diOStuUvxXhV")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
 			   the command to interpret. */
-			command = malloc(strlen(optarg) + 2);
+			command = malloc(strlen(_PyOS_optarg) + 2);
 			if (command == NULL)
 				Py_FatalError(
 				   "not enough memory to copy -c argument");
-			strcpy(command, optarg);
+			strcpy(command, _PyOS_optarg);
 			strcat(command, "\n");
 			break;
 		}
@@ -181,10 +177,10 @@ Py_Main(int argc, char **argv)
 		exit(0);
 	}
 
-	if (command == NULL && optind < argc &&
-	    strcmp(argv[optind], "-") != 0)
+	if (command == NULL && _PyOS_optind < argc &&
+	    strcmp(argv[_PyOS_optind], "-") != 0)
 	{
-		filename = argv[optind];
+		filename = argv[_PyOS_optind];
 		if (filename != NULL) {
 			if ((fp = fopen(filename, "r")) == NULL) {
 				fprintf(stderr, "%s: can't open file '%s'\n",
@@ -253,12 +249,12 @@ Py_Main(int argc, char **argv)
 	
 	
 	if (command != NULL) {
-		/* Backup optind and force sys.argv[0] = '-c' */
-		optind--;
-		argv[optind] = "-c";
+		/* Backup _PyOS_optind and force sys.argv[0] = '-c' */
+		_PyOS_optind--;
+		argv[_PyOS_optind] = "-c";
 	}
 
-	PySys_SetArgv(argc-optind, argv+optind);
+	PySys_SetArgv(argc-_PyOS_optind, argv+_PyOS_optind);
 
 	if ((inspect || (command == NULL && filename == NULL)) &&
 	    isatty(fileno(stdin))) {
