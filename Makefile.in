@@ -265,6 +265,8 @@ libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 		done
 		PYTHONPATH=$(LIBDEST) \
 			./python $(LIBDEST)/compileall.py $(LIBDEST)
+		PYTHONPATH=$(LIBDEST) \
+			./python -O $(LIBDEST)/compileall.py $(LIBDEST)
 
 # Create the MACHDEP source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(MACHDEP):
