@@ -30,8 +30,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Built-in module interface */
 
-extern PyObject *getbuiltindict Py_PROTO(());
-extern PyObject *getbuiltinmod Py_PROTO(());
+extern void PyBuiltin_Init Py_PROTO((void));
+extern PyObject *PyBuiltin_GetDict Py_PROTO(());
+extern PyObject *PyBuiltin_GetModule Py_PROTO(());
 
 #ifdef __cplusplus
 }
