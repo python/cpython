@@ -1,5 +1,6 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Windows.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Windows.h'
 
+kWindowDefProcType = 'WDEF'
 kStandardWindowDefinition = 0
 kRoundWindowDefinition = 1
 kFloatingWindowDefinition = 124
