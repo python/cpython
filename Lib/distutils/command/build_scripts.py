@@ -9,6 +9,7 @@ __revision__ = "$Id$"
 import sys, os, re
 from distutils.core import Command
 from distutils.dep_util import newer
+from distutils.util import convert_path
 
 # check if Python is called on the first line with this expression.
 # This expression will leave lines using /usr/bin/env alone; presumably
@@ -56,6 +57,7 @@ class build_scripts (Command):
         self.mkpath(self.build_dir)
         for script in self.scripts:
             adjust = 0
+            script = convert_path(script)
             outfile = os.path.join(self.build_dir, os.path.basename(script))
 
             if not self.force and not newer(script, outfile):
