@@ -2544,89 +2544,6 @@ newstdexception(dict, name)
 	return v;
 }
 
-static void
-initerrors(dict)
-	PyObject *dict;
-{
-	int i, j;
-	int exccnt = 0;
-	for (i = 0; bltin_exc[i].name; i++, exccnt++) {
-		Py_XDECREF(*bltin_exc[i].exc);
-		if (bltin_exc[i].leaf_exc)
-			*bltin_exc[i].exc =
-				newstdexception(dict, bltin_exc[i].name);
-	}
-
-	/* This is kind of bogus because we special case the some of the
-	 * new exceptions to be nearly forward compatible.  But this means
-	 * we hard code knowledge about exceptions.py into C here.  I don't
-	 * have a better solution, though.
-	 */
-	PyExc_LookupError = PyTuple_New(2);
-	Py_INCREF(PyExc_IndexError);
-	PyTuple_SET_ITEM(PyExc_LookupError, 0, PyExc_IndexError);
-	Py_INCREF(PyExc_KeyError);
-	PyTuple_SET_ITEM(PyExc_LookupError, 1, PyExc_KeyError);
-	PyDict_SetItemString(dict, "LookupError", PyExc_LookupError);
-
-	PyExc_ArithmeticError = PyTuple_New(3);
-	Py_INCREF(PyExc_OverflowError);
-	PyTuple_SET_ITEM(PyExc_ArithmeticError, 0, PyExc_OverflowError);
-	Py_INCREF(PyExc_ZeroDivisionError);
-	PyTuple_SET_ITEM(PyExc_ArithmeticError, 1, PyExc_ZeroDivisionError);
-	Py_INCREF(PyExc_FloatingPointError);
-	PyTuple_SET_ITEM(PyExc_ArithmeticError, 2, PyExc_FloatingPointError);
-	PyDict_SetItemString(dict, "ArithmeticError", PyExc_ArithmeticError);
-
-	PyExc_EnvironmentError = PyTuple_New(2);
-	Py_INCREF(PyExc_IOError);
-	PyTuple_SET_ITEM(PyExc_EnvironmentError, 0, PyExc_IOError);
-	Py_INCREF(PyExc_OSError);
-	PyTuple_SET_ITEM(PyExc_EnvironmentError, 1, PyExc_OSError);
-	PyDict_SetItemString(dict, "EnvironmentError", PyExc_EnvironmentError);
-
-	/* Make UnboundLocalError an alias for NameError */
-	Py_INCREF(PyExc_NameError);
-	Py_DECREF(PyExc_UnboundLocalError);
-	PyExc_UnboundLocalError = PyExc_NameError;
-	if (PyDict_SetItemString(dict, "UnboundLocalError",
-				 PyExc_NameError) != 0)
-		Py_FatalError("Cannot create string-based exceptions");
-
-	/* Make UnicodeError an alias for ValueError */
-	Py_INCREF(PyExc_ValueError);
-	Py_DECREF(PyExc_UnicodeError);
-	PyExc_UnicodeError = PyExc_ValueError;
-	if (PyDict_SetItemString(dict, "UnicodeError",
-				 PyExc_ValueError) != 0)
-		Py_FatalError("Cannot create string-based exceptions");
-
-	/* missing from the StandardError tuple: Exception, StandardError,
-	 * and SystemExit
-	 */
-	PyExc_StandardError = PyTuple_New(exccnt-3);
-	for (i = 2, j = 0; bltin_exc[i].name; i++) {
-		PyObject *exc = *bltin_exc[i].exc;
-		/* SystemExit is not an error, but it is an exception */
-		if (exc != PyExc_SystemExit) {
-			Py_INCREF(exc);
-			PyTuple_SET_ITEM(PyExc_StandardError, j++, exc);
-		}
-	}
-	PyDict_SetItemString(dict, "StandardError", PyExc_StandardError);
-
-	/* Exception is a 2-tuple */
-	PyExc_Exception = PyTuple_New(2);
-	Py_INCREF(PyExc_SystemExit);
-	PyTuple_SET_ITEM(PyExc_Exception, 0, PyExc_SystemExit);
-	Py_INCREF(PyExc_StandardError);
-	PyTuple_SET_ITEM(PyExc_Exception, 1, PyExc_StandardError);
-	PyDict_SetItemString(dict, "Exception", PyExc_Exception);
-	
-	if (PyErr_Occurred())
-	      Py_FatalError("Could not initialize built-in string exceptions");
-}
-
 
 static void
 finierrors()
@@ -2654,7 +2571,6 @@ _PyBuiltin_Init_1()
 	if (mod == NULL)
 		return NULL;
 	dict = PyModule_GetDict(mod);
-	initerrors(dict);
 	if (PyDict_SetItemString(dict, "None", Py_None) < 0)
 		return NULL;
 	if (PyDict_SetItemString(dict, "Ellipsis", Py_Ellipsis) < 0)
@@ -2670,18 +2586,10 @@ void
 _PyBuiltin_Init_2(dict)
 	PyObject *dict;
 {
-	/* if Python was started with -X, initialize the class exceptions */
-	if (Py_UseClassExceptionsFlag) {
-		if (!init_class_exc(dict)) {
-			/* class based exceptions could not be
-			 * initialized. Fall back to using string based
-			 * exceptions.
-			 */
-			PySys_WriteStderr(
-			"Warning!  Falling back to string-based exceptions\n");
-			initerrors(dict);
-		}
-	}
+	if (!init_class_exc(dict))
+		/* class based exceptions could not be initialized. */
+		Py_FatalError("Standard exceptions could not be initialized.");
+	/* does not return */
 }
 
 
