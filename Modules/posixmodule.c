@@ -432,7 +432,7 @@ os2_strerror(char *msgbuf, int msgbuflen, int errorcode, char *reason)
     if (rc == NO_ERROR)
         os2_formatmsg(msgbuf, msglen, reason);
     else
-        PyOS_snprintf(msgbuf, sizeof(msgbuf),
+        PyOS_snprintf(msgbuf, msgbuflen,
         	      "unknown OS error #%d", errorcode);
 
     return msgbuf;
