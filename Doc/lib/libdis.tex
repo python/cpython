@@ -23,16 +23,14 @@ the following command can be used to get the disassembly of
 
 \begin{verbatim}
 >>> dis.dis(myfunc)
-          0 SET_LINENO          1
-
-          3 SET_LINENO          2
-          6 LOAD_GLOBAL         0 (len)
-          9 LOAD_FAST           0 (alist)
-         12 CALL_FUNCTION       1
-         15 RETURN_VALUE   
-         16 LOAD_CONST          0 (None)
-         19 RETURN_VALUE   
+  2           0 LOAD_GLOBAL              0 (len)
+              3 LOAD_FAST                0 (alist)
+              6 CALL_FUNCTION            1
+              9 RETURN_VALUE        
+             10 RETURN_NONE
 \end{verbatim}
+
+(The ``2'' is a line number).
 
 The \module{dis} module defines the following functions and constants:
 
@@ -56,6 +54,7 @@ Disassembles a code object, indicating the last instruction if \var{lasti}
 was provided.  The output is divided in the following columns:
 
 \begin{enumerate}
+\item the line number, for the first instruction of each line
 \item the current instruction, indicated as \samp{-->},
 \item a labelled instruction, indicated with \samp{>\code{>}},
 \item the address of the instruction,
@@ -402,6 +401,14 @@ is evaluated, the locals are passed to the class definition.
 Returns with TOS to the caller of the function.
 \end{opcodedesc}
 
+\begin{opcodedesc}{RETURN_NONE}{}
+Returns \constant{None} to the caller of the function.  This opcode is
+generated as the last opcode of every function and only then, for
+reasons to do with tracing support.  See the comments in the function
+\cfunction{maybe_call_line_trace} in \file{Python/ceval.c} for the
+gory details.  \versionadded{2.3}.
+\end{opcodedesc}
+
 \begin{opcodedesc}{YIELD_VALUE}{}
 Pops \code{TOS} and yields it from a generator.
 \end{opcodedesc}
@@ -621,7 +628,7 @@ free variable storage.
 \end{opcodedesc}
 
 \begin{opcodedesc}{SET_LINENO}{lineno}
-Sets the current line number to \var{lineno}.
+This opcode is obsolete.
 \end{opcodedesc}
 
 \begin{opcodedesc}{RAISE_VARARGS}{argc}

@@ -407,9 +407,10 @@ PyCode_New(int argcount, int nlocals, int stacksize, int flags,
 
 /* All about c_lnotab.
 
-c_lnotab is an array of unsigned bytes disguised as a Python string.  In -O
-mode, SET_LINENO opcodes aren't generated, and bytecode offsets are mapped
-to source code line #s (when needed for tracebacks) via c_lnotab instead.
+c_lnotab is an array of unsigned bytes disguised as a Python string.  Since
+version 2.3, SET_LINENO opcodes are never generated and bytecode offsets are
+mapped to source code line #s via c_lnotab instead.
+
 The array is conceptually a list of
     (bytecode offset increment, line number increment)
 pairs.  The details are important and delicate, best illustrated by example:
@@ -830,11 +831,6 @@ static void
 com_addoparg(struct compiling *c, int op, int arg)
 {
 	int extended_arg = arg >> 16;
-	if (op == SET_LINENO) {
-		com_set_lineno(c, arg);
-		if (Py_OptimizeFlag)
-			return;
-	}
 	if (extended_arg){
 		com_addbyte(c, EXTENDED_ARG);
 		com_addint(c, extended_arg);
@@ -1738,7 +1734,7 @@ com_call_function(struct compiling *c, node *n)
 			  break;
 			if (ch->n_lineno != lineno) {
 				lineno = ch->n_lineno;
-				com_addoparg(c, SET_LINENO, lineno);
+				com_set_lineno(c, lineno);
 			}
 			com_argument(c, ch, &keywords);
 			if (keywords == NULL)
@@ -3168,7 +3164,7 @@ com_if_stmt(struct compiling *c, node *n)
 			continue;
 		}
 		if (i > 0)
-			com_addoparg(c, SET_LINENO, ch->n_lineno);
+			com_set_lineno(c, ch->n_lineno);
 		com_node(c, ch);
 		com_addfwref(c, JUMP_IF_FALSE, &a);
 		com_addbyte(c, POP_TOP);
@@ -3195,7 +3191,7 @@ com_while_stmt(struct compiling *c, node *n)
 	com_addfwref(c, SETUP_LOOP, &break_anchor);
 	block_push(c, SETUP_LOOP);
 	c->c_begin = c->c_nexti;
-	com_addoparg(c, SET_LINENO, n->n_lineno);
+	com_set_lineno(c, n->n_lineno);
 	com_node(c, CHILD(n, 1));
 	com_addfwref(c, JUMP_IF_FALSE, &anchor);
 	com_addbyte(c, POP_TOP);
@@ -3228,7 +3224,7 @@ com_for_stmt(struct compiling *c, node *n)
 	com_node(c, CHILD(n, 3));
 	com_addbyte(c, GET_ITER);
 	c->c_begin = c->c_nexti;
-	com_addoparg(c, SET_LINENO, n->n_lineno);
+	com_set_lineno(c, n->n_lineno);
 	com_addfwref(c, FOR_ITER, &anchor);
 	com_push(c, 1);
 	com_assign(c, CHILD(n, 1), OP_ASSIGN, NULL);
@@ -3339,7 +3335,7 @@ com_try_except(struct compiling *c, node *n)
 		}
 		except_anchor = 0;
 		com_push(c, 3); /* tb, val, exc pushed by exception */
-		com_addoparg(c, SET_LINENO, ch->n_lineno);
+		com_set_lineno(c, ch->n_lineno);
 		if (NCH(ch) > 1) {
 			com_addbyte(c, DUP_TOP);
 			com_push(c, 1);
@@ -3401,7 +3397,7 @@ com_try_finally(struct compiling *c, node *n)
 	com_push(c, 3);
 	com_backpatch(c, finally_anchor);
 	ch = CHILD(n, NCH(n)-1);
-	com_addoparg(c, SET_LINENO, ch->n_lineno);
+	com_set_lineno(c, ch->n_lineno);
 	com_node(c, ch);
 	com_addbyte(c, END_FINALLY);
 	block_pop(c, END_FINALLY);
@@ -3727,7 +3723,7 @@ com_node(struct compiling *c, node *n)
 
 	case simple_stmt:
 		/* small_stmt (';' small_stmt)* [';'] NEWLINE */
-		com_addoparg(c, SET_LINENO, n->n_lineno);
+		com_set_lineno(c, n->n_lineno);
 		{
 			int i;
 			for (i = 0; i < NCH(n)-1; i += 2)
@@ -3736,7 +3732,7 @@ com_node(struct compiling *c, node *n)
 		break;
 	
 	case compound_stmt:
-		com_addoparg(c, SET_LINENO, n->n_lineno);
+		com_set_lineno(c, n->n_lineno);
 		n = CHILD(n, 0);
 		goto loop;
 
@@ -3990,10 +3986,7 @@ compile_funcdef(struct compiling *c, node *n)
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
-	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-	com_push(c, 1);
-	com_addbyte(c, RETURN_VALUE);
-	com_pop(c, 1);
+	com_addbyte(c, RETURN_NONE);
 }
 
 static void
@@ -4050,7 +4043,7 @@ compile_classdef(struct compiling *c, node *n)
 static void
 compile_node(struct compiling *c, node *n)
 {
-	com_addoparg(c, SET_LINENO, n->n_lineno);
+	com_set_lineno(c, n->n_lineno);
 	
 	switch (TYPE(n)) {
 	
@@ -4060,19 +4053,13 @@ compile_node(struct compiling *c, node *n)
 		n = CHILD(n, 0);
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
-		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-		com_push(c, 1);
-		com_addbyte(c, RETURN_VALUE);
-		com_pop(c, 1);
+		com_addbyte(c, RETURN_NONE);
 		c->c_interactive--;
 		break;
 	
 	case file_input: /* A whole file, or built-in function exec() */
 		com_file_input(c, n);
-		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
-		com_push(c, 1);
-		com_addbyte(c, RETURN_VALUE);
-		com_pop(c, 1);
+		com_addbyte(c, RETURN_NONE);
 		break;
 	
 	case eval_input: /* Built-in function input() */

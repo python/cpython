@@ -57,6 +57,11 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- SET_LINENO is gone.  co_lnotab is now consulted to determine when to
+  call the trace function.  C code that accessed f_lineno should call
+  PyCode_Addr2Line instead (f_lineno is still there, but not kept up
+  to date).
+
 - There's a new warning category, FutureWarning.  This is used to warn
   about a number of situations where the value or sign of an integer
   result will change in Python 2.4 as a result of PEP 237 (integer

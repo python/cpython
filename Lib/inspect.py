@@ -711,7 +711,7 @@ def getframeinfo(frame, context=1):
         raise TypeError, 'arg is not a frame or traceback object'
 
     filename = getsourcefile(frame) or getfile(frame)
-    lineno = getlineno(frame)
+    lineno = frame.f_lineno
     if context > 0:
         start = lineno - 1 - context//2
         try:
@@ -730,18 +730,8 @@ def getframeinfo(frame, context=1):
 
 def getlineno(frame):
     """Get the line number from a frame object, allowing for optimization."""
-    # Written by Marc-André Lemburg; revised by Jim Hugunin and Fredrik Lundh.
-    lineno = frame.f_lineno
-    code = frame.f_code
-    if hasattr(code, 'co_lnotab'):
-        table = code.co_lnotab
-        lineno = code.co_firstlineno
-        addr = 0
-        for i in range(0, len(table), 2):
-            addr = addr + ord(table[i])
-            if addr > frame.f_lasti: break
-            lineno = lineno + ord(table[i+1])
-    return lineno
+    # FrameType.f_lineno is now a descriptor that grovels co_lnotab
+    return frame.f_lineno
 
 def getouterframes(frame, context=1):
     """Get a list of records for a frame and all higher (calling) frames.

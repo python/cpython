@@ -370,41 +370,29 @@ class CoverageResults:
             except IOError, err:
                 sys.stderr.write("cannot save counts files because %s" % err)
 
-# Given a code string, return the SET_LINENO information
-def _find_LINENO_from_string(co_code):
-    """return all of the SET_LINENO information from a code string"""
-    import dis
+def _find_LINENO_from_code(code):
+    """return the numbers of the lines containing the source code that
+    was compiled into code"""
     linenos = {}
 
-    # This code was filched from the `dis' module then modified
-    n = len(co_code)
-    i = 0
-    prev_op = None
-    prev_lineno = 0
-    while i < n:
-        c = co_code[i]
-        op = ord(c)
-        if op == dis.SET_LINENO:
-            if prev_op == op:
-                # two SET_LINENO in a row, so the previous didn't
-                # indicate anything.  This occurs with triple
-                # quoted strings (?).  Remove the old one.
-                del linenos[prev_lineno]
-            prev_lineno = ord(co_code[i+1]) + ord(co_code[i+2])*256
-            linenos[prev_lineno] = 1
-        if op >= dis.HAVE_ARGUMENT:
-            i = i + 3
-        else:
-            i = i + 1
-        prev_op = op
+    line_increments = [ord(c) for c in code.co_lnotab[1::2]]
+    table_length = len(line_increments)
+
+    lineno = code.co_first_lineno
+
+    for li in line_increments:
+        linenos[lineno] = 1
+        lineno += li
+    linenos[lineno] = 1
+
     return linenos
 
 def _find_LINENO(code):
-    """return all of the SET_LINENO information from a code object"""
+    """return all of the lineno information from a code object"""
     import types
 
     # get all of the lineno information from the code of this scope level
-    linenos = _find_LINENO_from_string(code.co_code)
+    linenos = _find_LINENO_from_code(code)
 
     # and check the constants for references to other code objects
     for c in code.co_consts:
@@ -416,9 +404,6 @@ def _find_LINENO(code):
 def find_executable_linenos(filename):
     """return a dict of the line numbers from executable statements in a file
 
-    Works by finding all of the code-like objects in the module then searching
-    the byte code for 'SET_LINENO' terms (so this won't work one -O files).
-
     """
     import parser
 
@@ -427,10 +412,6 @@ def find_executable_linenos(filename):
     prog = open(filename).read()
     ast = parser.suite(prog)
     code = parser.compileast(ast, filename)
-
-    # The only way I know to find line numbers is to look for the
-    # SET_LINENO instructions.  Isn't there some way to get it from
-    # the AST?
 
     return _find_LINENO(code)
 

@@ -55,6 +55,20 @@ def distb(tb=None):
 def disassemble(co, lasti=-1):
     """Disassemble a code object."""
     code = co.co_code
+
+    byte_increments = [ord(c) for c in co.co_lnotab[0::2]]
+    line_increments = [ord(c) for c in co.co_lnotab[1::2]]
+    table_length = len(byte_increments) # == len(line_increments)
+
+    lineno = co.co_firstlineno
+    table_index = 0
+    while (table_index < table_length
+           and byte_increments[table_index] == 0):
+        lineno += line_increments[table_index]
+        table_index += 1
+    addr = 0
+    line_incr = 0
+    
     labels = findlabels(code)
     n = len(code)
     i = 0
@@ -63,7 +77,23 @@ def disassemble(co, lasti=-1):
     while i < n:
         c = code[i]
         op = ord(c)
-        if op == SET_LINENO and i > 0: print # Extra blank line
+
+        if i >= addr:
+            lineno += line_incr
+            while table_index < table_length:
+                addr += byte_increments[table_index]
+                line_incr = line_increments[table_index]
+                table_index += 1
+                if line_incr:
+                    break
+            else:
+                addr = sys.maxint
+            if i > 0:
+                print
+            print "%3d"%lineno,
+        else:
+            print '   ',
+
         if i == lasti: print '-->',
         else: print '   ',
         if i in labels: print '>>',
@@ -224,6 +254,7 @@ def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 def_op('BREAK_LOOP', 80)
 
+def_op('RETURN_NONE', 81)
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
@@ -276,9 +307,6 @@ def_op('STORE_FAST', 125)       # Local variable number
 haslocal.append(125)
 def_op('DELETE_FAST', 126)      # Local variable number
 haslocal.append(126)
-
-def_op('SET_LINENO', 127)       # Current line number
-SET_LINENO = 127
 
 def_op('RAISE_VARARGS', 130)    # Number of raise arguments (1, 2, or 3)
 def_op('CALL_FUNCTION', 131)    # #args + (#kwargs << 8)

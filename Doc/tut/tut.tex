@@ -2340,12 +2340,11 @@ Some tips for experts:
 
 \item
 When the Python interpreter is invoked with the \programopt{-O} flag,
-optimized code is generated and stored in \file{.pyo} files.
-The optimizer currently doesn't help much; it only removes
-\keyword{assert} statements and \code{SET_LINENO} instructions.
-When \programopt{-O} is used, \emph{all} bytecode is optimized;
-\code{.pyc} files are ignored and \code{.py} files are compiled to
-optimized bytecode.
+optimized code is generated and stored in \file{.pyo} files.  The
+optimizer currently doesn't help much; it only removes
+\keyword{assert} statements.  When \programopt{-O} is used, \emph{all}
+bytecode is optimized; \code{.pyc} files are ignored and \code{.py}
+files are compiled to optimized bytecode.
 
 \item
 Passing two \programopt{-O} flags to the Python interpreter
