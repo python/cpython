@@ -179,11 +179,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		do
 			case $src in
 			*.c)   obj=`basename $src .c`.o; cc='$(CC)';;
-			*.cc)  obj=`basename $src .cc`.o; cc='$(CCC)';;
-			*.c++) obj=`basename $src .c++`.o; cc='$(CCC)';;
-			*.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
-			*.cxx) obj=`basename $src .cxx`.o; cc='$(CCC)';;
-			*.cpp) obj=`basename $src .cpp`.o; cc='$(CCC)';;
+			*.cc)  obj=`basename $src .cc`.o; cc='$(CXX)';;
+			*.c++) obj=`basename $src .c++`.o; cc='$(CXX)';;
+			*.C)   obj=`basename $src .C`.o; cc='$(CXX)';;
+			*.cxx) obj=`basename $src .cxx`.o; cc='$(CXX)';;
+			*.cpp) obj=`basename $src .cpp`.o; cc='$(CXX)';;
 			*)     continue;;
 			esac
 			objs="$objs $obj"
