@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- The __slots__ variable can now mention "private" names, and the
+  right thing will happen (e.g. __slots__ = ["__foo"]).
+
 - Unicode objects in sys.path are no longer ignored but treated
   as directory names.
 
