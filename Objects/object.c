@@ -1052,7 +1052,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 	if (v->ob_type->tp_getattro != NULL)
 		return (*v->ob_type->tp_getattro)(v, name);
 	else
-	return PyObject_GetAttrString(v, PyString_AS_STRING(name));
+		return PyObject_GetAttrString(v, PyString_AS_STRING(name));
 }
 
 int
