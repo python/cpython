@@ -26,9 +26,9 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
    a .pyc file in text mode the magic number will be wrong; also, the
    Apple MPW compiler swaps their values, botching string constants.
 
-   Apparently, there was a distinction made between even and odd
-   bytecodes that is related to Unicode.  The details aren't clear,
-   but the magic number has been odd for a long time.
+   The magic numbers must be spaced apart atleast 2 values, as the
+   -U interpeter flag will cause MAGIC+1 being used. They have been
+   odd numbers for some time now.
 
    There were a variety of old schemes for setting the magic number.
    The current working scheme is to increment the previous value by
@@ -47,9 +47,9 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
        Python 2.3a0: 62011
        Python 2.3a0: 62021
        Python 2.3a0: 62011 (!)
-       Python 2.4a0: 62031
+       Python 2.4a0: 62041
 */
-#define MAGIC (62031 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (62041 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
@@ -797,10 +797,10 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 				"# can't create %s\n", cpathname);
 		return;
 	}
-	PyMarshal_WriteLongToFile(pyc_magic, fp);
+	PyMarshal_WriteLongToFile(pyc_magic, fp, Py_MARSHAL_VERSION);
 	/* First write a 0 for mtime */
-	PyMarshal_WriteLongToFile(0L, fp);
-	PyMarshal_WriteObjectToFile((PyObject *)co, fp);
+	PyMarshal_WriteLongToFile(0L, fp, Py_MARSHAL_VERSION);
+	PyMarshal_WriteObjectToFile((PyObject *)co, fp, Py_MARSHAL_VERSION);
 	if (fflush(fp) != 0 || ferror(fp)) {
 		if (Py_VerboseFlag)
 			PySys_WriteStderr("# can't write %s\n", cpathname);
@@ -811,7 +811,7 @@ write_compiled_module(PyCodeObject *co, char *cpathname, long mtime)
 	}
 	/* Now write the true mtime */
 	fseek(fp, 4L, 0);
-	PyMarshal_WriteLongToFile(mtime, fp);
+	PyMarshal_WriteLongToFile(mtime, fp, Py_MARSHAL_VERSION);
 	fflush(fp);
 	fclose(fp);
 	if (Py_VerboseFlag)

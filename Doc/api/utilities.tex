@@ -283,20 +283,31 @@ data must be opened in binary mode.
 
 Numeric values are stored with the least significant byte first.
 
-\begin{cfuncdesc}{void}{PyMarshal_WriteLongToFile}{long value, FILE *file}
+The module supports two versions of the data format: version 0 is the
+historical version, version 1 (new in Python 2.4) shares interned
+strings in the file, and upon unmarshalling. \var{Py_MARSHAL_VERSION}
+indicates the current file format (currently 1).
+
+\begin{cfuncdesc}{void}{PyMarshal_WriteLongToFile}{long value, FILE *file, int version}
   Marshal a \ctype{long} integer, \var{value}, to \var{file}.  This
   will only write the least-significant 32 bits of \var{value};
   regardless of the size of the native \ctype{long} type.
+
+  \versionchanged[\var{version} indicates the file format]{2.4}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyMarshal_WriteObjectToFile}{PyObject *value,
-                                                     FILE *file}
+                                                     FILE *file, int version}
   Marshal a Python object, \var{value}, to \var{file}.
+
+  \versionchanged[\var{version} indicates the file format]{2.4}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyMarshal_WriteObjectToString}{PyObject *value}
+\begin{cfuncdesc}{PyObject*}{PyMarshal_WriteObjectToString}{PyObject *value, int version}
   Return a string object containing the marshalled representation of
   \var{value}.
+
+  \versionchanged[\var{version} indicates the file format]{2.4}
 \end{cfuncdesc}
 
 The following functions allow marshalled values to be read back in.

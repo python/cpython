@@ -73,6 +73,9 @@ The module defines these functions:
   a \exception{ValueError} exception is raised --- but garbage data
   will also be written to the file.  The object will not be properly
   read back by \function{load()}.
+
+  \versionadded[The \var{version} argument indicates the data
+  format that \code{dumps} should use.]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{load}{file}
@@ -86,11 +89,14 @@ The module defines these functions:
   \code{None} for the unmarshallable type.}
 \end{funcdesc}
 
-\begin{funcdesc}{dumps}{value}
+\begin{funcdesc}{dumps}{value\optional{, version}}
   Return the string that would be written to a file by
   \code{dump(\var{value}, \var{file})}.  The value must be a supported
   type.  Raise a \exception{ValueError} exception if value has (or
   contains an object that has) an unsupported type.
+
+  \versionadded[The \var{version} argument indicates the data
+  format that \code{dumps} should use.]{2.4}
 \end{funcdesc}
 
 \begin{funcdesc}{loads}{string}
@@ -98,3 +104,13 @@ The module defines these functions:
   \exception{EOFError}, \exception{ValueError} or
   \exception{TypeError}.  Extra characters in the string are ignored.
 \end{funcdesc}
+
+In addition, the following constants are defined:
+
+\begin{datadesc}{version}
+  Indicates the format that the module uses. Version 0 is the
+  historical format, version 1 (added in Python 2.4) shares
+  interned strings. The current version is 1.
+
+  \versionadded{2.4}
+\end{datadesc}
