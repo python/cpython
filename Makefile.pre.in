@@ -56,7 +56,10 @@ MAKESETUP=      $(srcdir)/Modules/makesetup
 OPT=		@OPT@
 BASECFLAGS=	@BASECFLAGS@
 CFLAGS=		$(BASECFLAGS) $(OPT)
-CPPFLAGS=	-I. -I$(srcdir)/Include
+# Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
+# be able to build extension modules using the directories specified in the
+# environment variables
+CPPFLAGS=	-I. -I$(srcdir)/Include @CPPFLAGS@
 LDFLAGS=	@LDFLAGS@
 LDLAST=		@LDLAST@
 SGI_ABI=	@SGI_ABI@

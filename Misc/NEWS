@@ -50,6 +50,15 @@ Library
 Build
 -----
 
+- setup.py now uses the directories specified in LDFLAGS using the -L option
+  and in CPPFLAGS using the -I option for adding library and include
+  directories, respectively, for compiling extension modules against.  This has
+  led to the core being compiled using the values in CPPFLAGS.  It also removes
+  the need for the special-casing of both DarwinPorts and Fink for darwin since
+  the proper directories can be specified in LDFLAGS (``-L/sw/lib`` for Fink,
+  ``-L/opt/local/lib`` for DarwinPorts) and CPPFLAGS (``-I/sw/include`` for
+  Fink, ``-I/opt/local/include`` for DarwinPorts).
+
 
 C API
 -----
