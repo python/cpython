@@ -13,79 +13,102 @@ distributions.  For generating distribution of angles, the circular
 uniform and von Mises distributions are available.
 
 
-The \module{random} module supports the \emph{Random Number
-Generator} interface, described in section \ref{rng-objects}.  This
-interface of the module, as well as the distribution-specific
-functions described below, all use the pseudo-random generator
-provided by the \refmodule{whrandom} module.
+\begin{funcdesc}{choice}{seq}
+  Chooses a random element from the non-empty sequence \var{seq} and
+  returns it.
+\end{funcdesc}
+
+\begin{funcdesc}{randint}{a, b}
+  \deprecated{2.0}{Use \function{randrange()} instead.}
+  Returns a random integer \var{N} such that
+  \code{\var{a} <= \var{N} <= \var{b}}.
+\end{funcdesc}
+
+\begin{funcdesc}{random}{}
+  Returns the next random floating point number in the range [0.0,
+  1.0).
+\end{funcdesc}
+
+\begin{funcdesc}{randrange}{\optional{start,} stop\optional{, step}}
+  Return a randomly selected element from \code{range(\var{start},
+  \var{stop}, \var{step})}.  This is equivalent to
+  \code{choice(range(\var{start}, \var{stop}, \var{step}))}.
+  \versionadded{1.5.2}
+\end{funcdesc}
+
+\begin{funcdesc}{uniform}{a, b}
+  Returns a random real number \var{N} such that
+  \code{\var{a} <= \var{N} < \var{b}}.
+\end{funcdesc}
 
 
 The following functions are defined to support specific distributions,
 and all return real values.  Function parameters are named after the
 corresponding variables in the distribution's equation, as used in
 common mathematical practice; most of these equations can be found in
-any statistics text.  These are expected to become part of the Random
-Number Generator interface in a future release.
+any statistics text.
+
 
 \begin{funcdesc}{betavariate}{alpha, beta}
-Beta distribution.  Conditions on the parameters are
-\code{\var{alpha} > -1} and \code{\var{beta} > -1}.
-Returned values range between 0 and 1.
+  Beta distribution.  Conditions on the parameters are
+  \code{\var{alpha} > -1} and \code{\var{beta} > -1}.
+  Returned values range between 0 and 1.
 \end{funcdesc}
 
 \begin{funcdesc}{cunifvariate}{mean, arc}
-Circular uniform distribution.  \var{mean} is the mean angle, and
-\var{arc} is the range of the distribution, centered around the mean
-angle.  Both values must be expressed in radians, and can range
-between 0 and \emph{pi}.  Returned values will range between
-\code{\var{mean} - \var{arc}/2} and \code{\var{mean} + \var{arc}/2}.
+  Circular uniform distribution.  \var{mean} is the mean angle, and
+  \var{arc} is the range of the distribution, centered around the mean
+  angle.  Both values must be expressed in radians, and can range
+  between 0 and \emph{pi}.  Returned values will range between
+  \code{\var{mean} - \var{arc}/2} and \code{\var{mean} +
+  \var{arc}/2}.
 \end{funcdesc}
 
 \begin{funcdesc}{expovariate}{lambd}
-Exponential distribution.  \var{lambd} is 1.0 divided by the desired
-mean.  (The parameter would be called ``lambda'', but that is a
-reserved word in Python.)  Returned values will range from 0 to
-positive infinity.
+  Exponential distribution.  \var{lambd} is 1.0 divided by the desired
+  mean.  (The parameter would be called ``lambda'', but that is a
+  reserved word in Python.)  Returned values will range from 0 to
+  positive infinity.
 \end{funcdesc}
 
 \begin{funcdesc}{gamma}{alpha, beta}
-Gamma distribution.  (\emph{Not} the gamma function!)  Conditions on
-the parameters are \code{\var{alpha} > -1} and \code{\var{beta} > 0}.
+  Gamma distribution.  (\emph{Not} the gamma function!)  Conditions on
+  the parameters are \code{\var{alpha} > -1} and \code{\var{beta} > 0}.
 \end{funcdesc}
 
 \begin{funcdesc}{gauss}{mu, sigma}
-Gaussian distribution.  \var{mu} is the mean, and \var{sigma} is the
-standard deviation.  This is slightly faster than the
-\function{normalvariate()} function defined below.
+  Gaussian distribution.  \var{mu} is the mean, and \var{sigma} is the
+  standard deviation.  This is slightly faster than the
+  \function{normalvariate()} function defined below.
 \end{funcdesc}
 
 \begin{funcdesc}{lognormvariate}{mu, sigma}
-Log normal distribution.  If you take the natural logarithm of this
-distribution, you'll get a normal distribution with mean \var{mu} and
-standard deviation \var{sigma}.  \var{mu} can have any value, and
-\var{sigma} must be greater than zero.  
+  Log normal distribution.  If you take the natural logarithm of this
+  distribution, you'll get a normal distribution with mean \var{mu}
+  and standard deviation \var{sigma}.  \var{mu} can have any value,
+  and \var{sigma} must be greater than zero.  
 \end{funcdesc}
 
 \begin{funcdesc}{normalvariate}{mu, sigma}
-Normal distribution.  \var{mu} is the mean, and \var{sigma} is the
-standard deviation.
+  Normal distribution.  \var{mu} is the mean, and \var{sigma} is the
+  standard deviation.
 \end{funcdesc}
 
 \begin{funcdesc}{vonmisesvariate}{mu, kappa}
-\var{mu} is the mean angle, expressed in radians between 0 and 2*\emph{pi},
-and \var{kappa} is the concentration parameter, which must be greater
-than or equal to zero.  If \var{kappa} is equal to zero, this
-distribution reduces to a uniform random angle over the range 0 to
-2*\emph{pi}.
+  \var{mu} is the mean angle, expressed in radians between 0 and
+  2*\emph{pi}, and \var{kappa} is the concentration parameter, which
+  must be greater than or equal to zero.  If \var{kappa} is equal to
+  zero, this distribution reduces to a uniform random angle over the
+  range 0 to 2*\emph{pi}.
 \end{funcdesc}
 
 \begin{funcdesc}{paretovariate}{alpha}
-Pareto distribution.  \var{alpha} is the shape parameter.
+  Pareto distribution.  \var{alpha} is the shape parameter.
 \end{funcdesc}
 
 \begin{funcdesc}{weibullvariate}{alpha, beta}
-Weibull distribution.  \var{alpha} is the scale parameter and
-\var{beta} is the shape parameter.
+  Weibull distribution.  \var{alpha} is the scale parameter and
+  \var{beta} is the shape parameter.
 \end{funcdesc}
 
 
@@ -93,61 +116,19 @@ This function does not represent a specific distribution, but
 implements a standard useful algorithm:
 
 \begin{funcdesc}{shuffle}{x\optional{, random}}
-Shuffle the sequence \var{x} in place.
-The optional argument \var{random} is a 0-argument function returning
-a random float in [0.0, 1.0); by default, this is the function
-\function{random()}.
+  Shuffle the sequence \var{x} in place.
+  The optional argument \var{random} is a 0-argument function
+  returning a random float in [0.0, 1.0); by default, this is the
+  function \function{random()}.
 
-Note that for even rather small \code{len(\var{x})}, the total number
-of permutations of \var{x} is larger than the period of most random
-number generators; this implies that most permutations of a long
-sequence can never be generated.
+  Note that for even rather small \code{len(\var{x})}, the total
+  number of permutations of \var{x} is larger than the period of most
+  random number generators; this implies that most permutations of a
+  long sequence can never be generated.
 \end{funcdesc}
 
 
 \begin{seealso}
-  \seemodule{whrandom}{The standard Python random number generator.}
+  \seemodule{whrandom}{The standard Python pseudo-random number
+                       generator.}
 \end{seealso}
-
-
-\subsection{The Random Number Generator Interface
-            \label{rng-objects}}
-
-% XXX This *must* be updated before a future release!
-
-The \dfn{Random Number Generator} interface describes the methods
-which are available for all random number generators.  This will be
-enhanced in future releases of Python.
-
-In this release of Python, the modules \refmodule{random},
-\refmodule{whrandom}, and instances of the
-\class{whrandom.whrandom} class all conform to this interface.
-
-
-\begin{funcdesc}{choice}{seq}
-Chooses a random element from the non-empty sequence \var{seq} and
-returns it.
-\end{funcdesc}
-
-\begin{funcdesc}{randint}{a, b}
-\deprecated{2.0}{Use \function{randrange()} instead.}
-Returns a random integer \var{N} such that
-\code{\var{a} <= \var{N} <= \var{b}}.
-\end{funcdesc}
-
-\begin{funcdesc}{random}{}
-Returns the next random floating point number in the range [0.0
-... 1.0).
-\end{funcdesc}
-
-\begin{funcdesc}{randrange}{\optional{start,} stop\optional{, step}}
-Return a randomly selected element from \code{range(\var{start},
-\var{stop}, \var{step})}.  This is equivalent to
-\code{choice(range(\var{start}, \var{stop}, \var{step}))}.
-\versionadded{1.5.2}
-\end{funcdesc}
-
-\begin{funcdesc}{uniform}{a, b}
-Returns a random real number \var{N} such that
-\code{\var{a} <= \var{N} < \var{b}}.
-\end{funcdesc}
