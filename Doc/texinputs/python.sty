@@ -134,6 +134,23 @@
 % Use this to set the font family for headers and other decor:
 \newcommand{\py@HeaderFamily}{\sffamily}
 
+% Set up abstract ways to get the normal and smaller font sizes that
+% work even in footnote context.
+\newif\ifpy@infootnote \py@infootnotefalse
+\let\py@oldfootnotetext\@footnotetext
+\def\@footnotetext#1{%
+  \bgroup%
+    \py@infootnotetrue
+    \py@oldfootnotetext{#1}%
+  \egroup%
+}
+\def\py@defaultsize{%
+  \ifpy@infootnote\footnotesize\else\normalsize\fi%
+}
+\def\py@smallsize{%
+  \ifpy@infootnote\scriptsize\else\small\fi%
+}
+
 % Redefine the 'normal' header/footer style when using "fancyhdr" package:
 \@ifundefined{fancyhf}{}{
   % Use \pagestyle{normal} as the primary pagestyle for text.
@@ -817,24 +834,19 @@
 \newcommand{\csimplemacro}[1]{\code{#1}}
 \newcommand{\kbd}[1]{\code{#1}}
 \newcommand{\samp}[1]{`\code{#1}'}
-% This weird definition of \var{} allows it to always appear in roman
-% italics, and won't get funky in code fragments when we play around
-% with fonts.  This also works directly in math mode.
-% XXX \normalsize is bad in footnotes, though; we need a way to
-% determine when we're in a footnote.
 \newcommand{\var}[1]{%
   \ifmmode%
-    \hbox{\normalsize\textrm{\textit{#1\/}}}%
+    \hbox{\py@defaultsize\textrm{\textit{#1\/}}}%
   \else%
-    \normalsize\textrm{\textit{#1\/}}%
+    \py@defaultsize\textrm{\textit{#1\/}}%
   \fi%
 }
 \renewcommand{\emph}[1]{{\em #1}}
 \newcommand{\dfn}[1]{\emph{#1}}
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
-\newcommand{\file}[1]{`{\small\textsf{#1}}'}
-\newcommand{\filenq}[1]{{\small\textsf{#1}}}
+\newcommand{\file}[1]{`\filenq{#1}'}
+\newcommand{\filenq}[1]{{\py@smallsize\textsf{#1}}}
 
 % Use this def/redef approach for \url{} since hyperref defined this already,
 % but only if we actually used hyperref:
@@ -843,15 +855,15 @@
     \noindent%
     \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
-    \small\sf #1%
+    \py@smallsize\sf #1%
     \py@NormalColor%                    Turn it back off; these are declarative
     \pdfendlink}%                       and don't appear bound to the current
   }%                                    formatting "box".
 \else
-  \newcommand{\url}[1]{\mbox{\small\textsf{#1}}}
+  \newcommand{\url}[1]{\mbox{\py@smallsize\textsf{#1}}}
 \fi
-\newcommand{\email}[1]{{\small\textsf{#1}}}
-\newcommand{\newsgroup}[1]{{\small\textsf{#1}}}
+\newcommand{\email}[1]{{\py@smallsize\textsf{#1}}}
+\newcommand{\newsgroup}[1]{{\py@smallsize\textsf{#1}}}
 
 \newcommand{\py@varvars}[1]{{%
   {\let\unspecified=\py@unspecified%
@@ -887,12 +899,12 @@
 \newcommand{\ctype}[1]{\texttt{#1}}     % C struct or typedef name
 \newcommand{\cdata}[1]{\texttt{#1}}     % C variable, typically global
 
-\newcommand{\mailheader}[1]{{\small\textsf{#1:}}}
-\newcommand{\mimetype}[1]{{\small\textsf{#1}}}
+\newcommand{\mailheader}[1]{{\py@smallsize\textsf{#1:}}}
+\newcommand{\mimetype}[1]{{\py@smallsize\textsf{#1}}}
 % The \! is a "negative thin space" in math mode.
 \newcommand{\regexp}[1]{%
   {\tiny$^{^\lceil}\!\!$%
-   {\normalsize\code{#1}}% XXX should use \footnotesize in footnotes
+   {\py@defaultsize\code{#1}}%
    $\!\rfloor\!$%
   }}
 \newcommand{\envvar}[1]{%
