@@ -52,6 +52,38 @@
   characters.
 \end{classdesc*}
 
+\begin{funcdesc}{context_diff}{a, b\optional{, fromfile\optional{, tofile
+	\optional{, fromfiledate\optional{, tofiledate\optional{, n
+	\optional{, lineterm}}}}}}}
+
+  Compare \var{a} and \var{b} (lists of strings); return a
+  delta (a generator generating the delta lines) in context diff
+  format.
+  
+  Context diffs are a compact way of showing just the lines that have
+  changed plus a few lines of context.  The changes are shown in a
+  before/after style.  The number of context lines is set by \var{n}
+  which defaults to three.
+
+  By default, the diff control lines (those with \code{***} or \code{---})
+  are created with a trailing newline.  This is helpful so that inputs created
+  from \function{file.readlines()} result in diffs that are suitable for use
+  with \function{file.writelines()} since both the inputs and outputs have
+  trailing newlines.
+
+  For inputs that do not have trailing newlines, set the \var{lineterm}
+  argument to \code{""} so that the output will be uniformly newline free.
+
+  The context diff format normally has a header for filenames and
+  modification times.  Any or all of these may be specified using strings for
+  \var{fromfile}, \var{tofile}, \var{fromfiledate}, and \var{tofiledate}.
+  The modification times are normally expressed in the format returned by
+  \function{time.ctime()}.  If not specified, the strings default to blanks.
+
+  \file{Tools/scripts/diff.py} is a command-line front-end for this
+  function.  
+\end{funcdesc}  
+
 \begin{funcdesc}{get_close_matches}{word, possibilities\optional{,
                  n\optional{, cutoff}}}
   Return a list of the best ``good enough'' matches.  \var{word} is a
@@ -151,6 +183,37 @@ emu
 
 \end{funcdesc}
 
+\begin{funcdesc}{unified_diff}{a, b\optional{, fromfile\optional{, tofile
+	\optional{, fromfiledate\optional{, tofiledate\optional{, n
+	\optional{, lineterm}}}}}}}
+
+  Compare \var{a} and \var{b} (lists of strings); return a
+  delta (a generator generating the delta lines) in unified diff
+  format.
+  
+  Unified diffs are a compact way of showing just the lines that have
+  changed plus a few lines of context.  The changes are shown in a
+  inline style (instead of separate before/after blocks).  The number
+  of context lines is set by \var{n} which defaults to three.
+
+  By default, the diff control lines (those with \code{---}, \code{+++},
+  or \code{@@}) are created with a trailing newline.  This is helpful so
+  that inputs created from \function{file.readlines()} result in diffs
+  that are suitable for use with \function{file.writelines()} since both
+  the inputs and outputs have trailing newlines.
+
+  For inputs that do not have trailing newlines, set the \var{lineterm}
+  argument to \code{""} so that the output will be uniformly newline free.
+
+  The context diff format normally has a header for filenames and
+  modification times.  Any or all of these may be specified using strings for
+  \var{fromfile}, \var{tofile}, \var{fromfiledate}, and \var{tofiledate}.
+  The modification times are normally expressed in the format returned by
+  \function{time.ctime()}.  If not specified, the strings default to blanks.
+
+  \file{Tools/scripts/diff.py} is a command-line front-end for this
+  function.  
+\end{funcdesc} 
 
 \begin{funcdesc}{IS_LINE_JUNK}{line}
   Return true for ignorable lines.  The line \var{line} is ignorable
