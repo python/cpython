@@ -25,6 +25,11 @@
  * 2Kb.  So the module docstring has been broken roughly in half, using
  * compile-time literal concatenation.
  */
+
+/* NOTE: If the exception class hierarchy changes, don't forget to update
+ * Doc/lib/libexcs.tex!
+ */
+
 static char
 module__doc__[] =
 "Python's standard exception class hierarchy.\n\
