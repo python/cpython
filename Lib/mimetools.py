@@ -204,11 +204,7 @@ def pipeto(input, command):
 
 def pipethrough(input, command, output):
     tempname = tempfile.mktemp()
-    try:
-        temp = open(tempname, 'w')
-    except IOError:
-        print '*** Cannot create temp file', `tempname`
-        return
+    temp = open(tempname, 'w')
     copyliteral(input, temp)
     temp.close()
     pipe = os.popen(command + ' <' + tempname, 'r')
