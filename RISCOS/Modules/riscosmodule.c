@@ -7,6 +7,7 @@
 #include "unixstuff.h"
 
 #include "Python.h"
+#include "structseq.h"
 
 #include <errno.h>
 
@@ -142,7 +143,7 @@ static PyStructSequence_Field stat_result_fields[] = {
         { "st_ctime", "time of last change" },
 	{ "st_ftype", "file type" },
 	{ "st_attrs", "attributes" },
-	{ "st_obtype", "object type" }
+	{ "st_obtype", "object type" },
 	{ 0 }
 };
 
@@ -194,7 +195,7 @@ static PyObject *riscos_stat(PyObject *self,PyObject *args)
 	PyStructSequence_SET_ITEM(v, 11, 
 				  PyInt_FromLong((long) at)); /*attributes*/
 	PyStructSequence_SET_ITEM(v, 12, 
-				  PyInt_FromLong((long) ot)); /*object type*/
+				  PyInt_FromLong((long) ob)); /*object type*/
 
         if (PyErr_Occurred()) {
                 Py_DECREF(v);
