@@ -72,13 +72,19 @@ static char copyright[] =
 /* FIXME: maybe the limit should be 40000 / sizeof(void*) ? */
 #define USE_RECURSION_LIMIT 7500
 #else
-#if defined(__GNUC__) && (__GNUC__ > 2) && \
-    (defined(__FreeBSD__) || defined(PYOS_OS2))
-/* gcc 3.x, on FreeBSD and OS/2+EMX and at optimisation levels of
- * -O3 (autoconf default) and -O2 (EMX port default), generates code
- * for _sre that fails for the default recursion limit.
+
+#if defined(__GNUC__) && defined(WITH_THREAD) && defined(__FreeBSD__)
+/* the pthreads library on FreeBSD has a fixed 1MB stack size for the
+ * initial (or "primary") thread, which is insufficient for the default
+ * recursion limit.  gcc 3.x at the default optimisation
+ * level (-O3) uses stack space more aggressively than gcc 2.95.
  */
+#if (__GNUC__ > 2)
+#define USE_RECURSION_LIMIT 6500
+#else
 #define USE_RECURSION_LIMIT 7500
+#endif
+
 #else
 #define USE_RECURSION_LIMIT 10000
 #endif
