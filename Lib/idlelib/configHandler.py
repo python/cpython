@@ -522,6 +522,7 @@ class IdleConf:
             '<<history-previous>>': ['<Alt-p>'],
             '<<interrupt-execution>>': ['<Control-c>'],
             '<<view-restart>>': ['<F6>'],
+            '<<restart-shell>>': ['<Control-F6>'],
             '<<open-class-browser>>': ['<Alt-c>'],
             '<<open-module>>': ['<Alt-m>'],
             '<<open-new-window>>': ['<Control-n>'],

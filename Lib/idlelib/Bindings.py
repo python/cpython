@@ -1,10 +1,13 @@
-# This file defines the menu contents and key bindings.  Note that
-# there is additional configuration information in the EditorWindow
-# class (and subclasses): the menus are created there based on the
-# menu_specs (class) variable, and menus not created are silently
-# skipped by the code here.  This makes it possible to define the
-# Debug menu here, which is only present in the PythonShell window.
+"""Define the menu contents, hotkeys, and event bindings.
 
+There is additional configuration information in the EditorWindow class (and
+subclasses): the menus are created there based on the menu_specs (class)
+variable, and menus not created are silently skipped in the code here.  This
+makes it possible, for example, to define a Debug menu which is only present in
+the PythonShell window, and a Format menu which is only present in the Editor
+windows.
+
+"""
 import sys
 from configHandler import idleConf
 
@@ -43,39 +46,40 @@ menudefs = [
    ('Go to _Line', '<<goto-line>>'),
   ]),
 ('format', [
-    ('_Indent Region', '<<indent-region>>'),
-    ('_Dedent Region', '<<dedent-region>>'),
-    ('Comment _Out Region', '<<comment-region>>'),
-    ('U_ncomment Region', '<<uncomment-region>>'),
-    ('Tabify Region', '<<tabify-region>>'),
-    ('Untabify Region', '<<untabify-region>>'),
-    ('Toggle Tabs', '<<toggle-tabs>>'),
-    ('New Indent Width', '<<change-indentwidth>>'),
-]),
- ('run',[
+   ('_Indent Region', '<<indent-region>>'),
+   ('_Dedent Region', '<<dedent-region>>'),
+   ('Comment _Out Region', '<<comment-region>>'),
+   ('U_ncomment Region', '<<uncomment-region>>'),
+   ('Tabify Region', '<<tabify-region>>'),
+   ('Untabify Region', '<<untabify-region>>'),
+   ('Toggle Tabs', '<<toggle-tabs>>'),
+   ('New Indent Width', '<<change-indentwidth>>'),
+   ]),
+ ('run', [
    ('Python Shell', '<<open-python-shell>>'),
- ]),
+   ]),
  ('shell', [
    ('_View Last Restart', '<<view-restart>>'),
    ('_Restart Shell', '<<restart-shell>>'),
-   None,
+   ]),
+ ('debug', [
    ('_Go to File/Line', '<<goto-file-line>>'),
    ('!_Debugger', '<<toggle-debugger>>'),
    ('_Stack Viewer', '<<open-stack-viewer>>'),
-   ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>' ),
-  ]),
+   ('!_Auto-open Stack Viewer', '<<toggle-jit-stack-viewer>>'),
+   ]),
  ('options', [
    ('_Configure IDLE...', '<<open-config-dialog>>'),
    None,
    ('Revert to _Default Settings', '<<revert-all-settings>>'),
-  ]),
+   ]),
  ('help', [
    ('_About IDLE', '<<about-idle>>'),
    ('IDLE _Readme', '<<view-readme>>'),   
    None,
    ('_IDLE Help', '<<help>>'),
    ('Python _Docs', '<<python-docs>>'),
-  ]),
+   ]),
 ]
 
 default_keydefs = idleConf.GetCurrentKeySet()
