@@ -110,6 +110,7 @@ static int countformat(format, endchar)
 			level--;
 			break;
 		case '#':
+		case '&':
 		case ',':
 		case ':':
 		case ' ':
@@ -268,7 +269,7 @@ do_mkvalue(p_format, p_va)
 
 		case 'f':
 		case 'd':
-			return newfloatobject((double)va_arg(*p_va, double));
+			return newfloatobject((double)va_arg(*p_va, va_double));
 
 		case 'c':
 		{
@@ -303,7 +304,14 @@ do_mkvalue(p_format, p_va)
 
 		case 'S':
 		case 'O':
-		{
+		if (**p_format == '&') {
+			typedef object *(*converter)(void *);
+			converter func = va_arg(*p_va, converter);
+			void *arg = va_arg(*p_va, void *);
+			++*p_format;
+			return (*func)(arg);
+		}
+		else {
 			object *v;
 			v = va_arg(*p_va, object *);
 			if (v != NULL)
