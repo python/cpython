@@ -11,6 +11,7 @@ import time
 import traceback
 import types
 import warnings
+import exceptions
 
 import linecache
 from code import InteractiveInterpreter
@@ -340,6 +341,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if clt is None:
             return
         response = clt.pollresponse(self.active_seq)
+        # Reschedule myself in 50 ms
         self.tkconsole.text.after(50, self.poll_subprocess)
         if response:
             self.tkconsole.resetoutput()
@@ -362,14 +364,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
                         line = linecache.getline(fn, ln)
                         tb[i] = fn, ln, nm, line
                 traceback.print_list(tb, file=file)
-                if mod and mod != "exceptions":
-                    name = mod + "." + name
-                print >>file, name + ":", " ".join(map(str, args))
+                # try to reinstantiate the exception, stuff in the args:
+                try:
+                    etype = eval(mod + '.' + name)
+                    val = etype()
+                    val.args = args
+                except TypeError:  # string exception!
+                    etype = name
+                    val = args
+                lines = traceback.format_exception_only(etype, val)
+                for line in lines[:-1]:
+                    traceback._print(file, line, '')
+                traceback._print(file, lines[-1], '')
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.remote_stack_viewer()
             elif how == "ERROR":
-                print >>sys.__stderr__, "Oops:", how, what
-                print >>file, "Oops:", how, what
+                errmsg = "PyShell.ModifiedInterpreter: Subprocess ERROR:\n"
+                print >>sys.__stderr__, errmsg, what
+                print >>file, errmsg, what
             self.tkconsole.endexecuting()
 
     def kill_subprocess(self):
@@ -416,6 +428,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
             code = compile(source, filename, "exec")
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
+            console = self.tkconsole.console
+            print >>console, 'Traceback (most recent call last):'
             InteractiveInterpreter.showsyntaxerror(self, filename)
             self.tkconsole.showprompt()
         else:

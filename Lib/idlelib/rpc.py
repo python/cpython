@@ -90,8 +90,6 @@ objecttable = {}
 
 class SocketIO:
 
-    debugging = False
-
     def __init__(self, sock, objtable=None, debugging=None):
         self.mainthread = threading.currentThread()
         if debugging is not None:
@@ -113,11 +111,10 @@ class SocketIO:
     def debug(self, *args):
         if not self.debugging:
             return
-        s = str(threading.currentThread().getName())
+        s = self.location + " " + str(threading.currentThread().getName())
         for a in args:
             s = s + " " + str(a)
-        s = s + "\n"
-        sys.__stderr__.write(s)
+        print>>sys.__stderr__, s
 
     def register(self, oid, object):
         self.objtable[oid] = object
@@ -159,7 +156,7 @@ class SocketIO:
             typ, val, tb = info = sys.exc_info()
             sys.last_type, sys.last_value, sys.last_traceback = info
             if isinstance(typ, type(Exception)):
-                # Class exceptions
+                # Class exception
                 mod = typ.__module__
                 name = typ.__name__
                 if issubclass(typ, Exception):
@@ -167,29 +164,29 @@ class SocketIO:
                 else:
                     args = (str(val),)
             else:
-                # String exceptions
+                # User string exception
                 mod = None
                 name = typ
-                args = (str(val),)
+                if val is None: val = ''
+                args = str(val)
             tb = traceback.extract_tb(tb)
+            self.debug("localcall:EXCEPTION: ", mod, name, args, tb)
             return ("EXCEPTION", (mod, name, args, tb))
 
     def remotecall(self, oid, methodname, args, kwargs):
-        self.debug("remotecall:", oid, methodname, args, kwargs) 
+        self.debug("remotecall:") 
         seq = self.asynccall(oid, methodname, args, kwargs)
-        ret = self.asyncreturn(seq)
-        self.debug("return:", ret)
-        return ret
+        return self.asyncreturn(seq)
 
     def asynccall(self, oid, methodname, args, kwargs):
-        self.debug("asyncall:", oid, methodname, args, kwargs)
         request = ("call", (oid, methodname, args, kwargs))
         seq = self.putrequest(request)
+        self.debug(("asyncall:%d:" % seq), oid, methodname, args, kwargs)
         return seq
 
     def asyncreturn(self, seq):
         response = self.getresponse(seq)
-        self.debug("asyncreturn:", response)
+        self.debug(("asyncreturn:%d:" % seq), response)
         return self.decoderesponse(response)
 
     def decoderesponse(self, response):
@@ -197,6 +194,7 @@ class SocketIO:
         if how == "OK":
             return what
         if how == "EXCEPTION":
+            self.debug("decoderesponse: Internal EXCEPTION:", what)
             mod, name, args, tb = what
             self.traceback = tb
             if mod: # not string exception
@@ -217,6 +215,7 @@ class SocketIO:
             # do the best we can:
             raise name, args
         if how == "ERROR":
+            self.debug("decoderesponse: Internal ERROR:", what)            
             raise RuntimeError, what
         raise SystemError, (how, what)
 
@@ -274,6 +273,7 @@ class SocketIO:
         return seq
 
     def putmessage(self, message):
+        ##self.debug("putmessage: ", message)
         try:
             s = pickle.dumps(message)
         except:
@@ -345,6 +345,7 @@ class SocketIO:
             wait = 0.0
             seq, resq = message
             if resq[0] == "call":
+                self.debug("call_localcall:%d:" % seq)
                 response = self.localcall(resq)
                 self.putmessage((seq, response))
                 continue
@@ -377,7 +378,8 @@ class RemoteProxy:
 
 class RPCHandler(SocketServer.BaseRequestHandler, SocketIO):
 
-    debugging = 0
+    debugging = False
+    location = "#S"  # Server
 
     def __init__(self, sock, addr, svr):
         svr.current_handler = self ## cgt xxx
@@ -392,6 +394,9 @@ class RPCHandler(SocketServer.BaseRequestHandler, SocketIO):
         return RPCProxy(self, oid)
 
 class RPCClient(SocketIO):
+
+    debugging = False
+    location = "#C"  # Client
 
     nextseq = 1 # Requests coming from the client are odd numbered
 
