@@ -503,6 +503,10 @@ def printlist(x, width=70, indent=4):
 #     test_pep277
 #         The _ExpectedSkips constructor adds this to the set of expected
 #         skips if not os.path.supports_unicode_filenames.
+#     test_normalization
+#         Whether a skip is expected here depends on whether a large test
+#         input file has been downloaded.  test_normalization.skip_expected
+#         controls that
 
 _expectations = {
     'win32':
@@ -528,7 +532,6 @@ _expectations = {
         test_mhlib
         test_mpz
         test_nis
-        test_normalization
         test_openpty
         test_poll
         test_pty
@@ -829,12 +832,19 @@ _expectations = {
 class _ExpectedSkips:
     def __init__(self):
         import os.path
+        from test import test_normalization
+
         self.valid = False
         if sys.platform in _expectations:
             s = _expectations[sys.platform]
             self.expected = Set(s.split())
+
             if not os.path.supports_unicode_filenames:
                 self.expected.add('test_pep277')
+
+            if test_normalization.skip_expected:
+                self.expected.add('test_normalization')
+
             self.valid = True
 
     def isvalid(self):
