@@ -29,6 +29,8 @@ Extension modules
 Library
 -------
 
+- Bug #980938: smtplib now prints debug output to sys.stderr.
+
 - Bug #930024: posixpath.realpath() now handles infinite loops in symlinks by
   returning the last point in the path that was not part of any loop.  Thanks
   AM Kuchling.

@@ -47,6 +47,7 @@ import rfc822
 import base64
 import hmac
 from email.base64MIME import encode as encode_base64
+from sys import stderr
 
 __all__ = ["SMTPException","SMTPServerDisconnected","SMTPResponseException",
            "SMTPSenderRefused","SMTPRecipientsRefused","SMTPDataError",
@@ -282,17 +283,17 @@ class SMTP:
                 except ValueError:
                     raise socket.error, "nonnumeric port"
         if not port: port = SMTP_PORT
-        if self.debuglevel > 0: print 'connect:', (host, port)
+        if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
         msg = "getaddrinfo returns an empty list"
         self.sock = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
                 self.sock = socket.socket(af, socktype, proto)
-                if self.debuglevel > 0: print 'connect:', (host, port)
+                if self.debuglevel > 0: print>>stderr, 'connect:', (host, port)
                 self.sock.connect(sa)
             except socket.error, msg:
-                if self.debuglevel > 0: print 'connect fail:', (host, port)
+                if self.debuglevel > 0: print>>stderr, 'connect fail:', (host, port)
                 if self.sock:
                     self.sock.close()
                 self.sock = None
@@ -301,12 +302,12 @@ class SMTP:
         if not self.sock:
             raise socket.error, msg
         (code, msg) = self.getreply()
-        if self.debuglevel > 0: print "connect:", msg
+        if self.debuglevel > 0: print>>stderr, "connect:", msg
         return (code, msg)
 
     def send(self, str):
         """Send `str' to the server."""
-        if self.debuglevel > 0: print 'send:', repr(str)
+        if self.debuglevel > 0: print>>stderr, 'send:', repr(str)
         if self.sock:
             try:
                 self.sock.sendall(str)
@@ -345,7 +346,7 @@ class SMTP:
             if line == '':
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
-            if self.debuglevel > 0: print 'reply:', repr(line)
+            if self.debuglevel > 0: print>>stderr, 'reply:', repr(line)
             resp.append(line[4:].strip())
             code=line[:3]
             # Check that the error code is syntactically correct.
@@ -361,7 +362,7 @@ class SMTP:
 
         errmsg = "\n".join(resp)
         if self.debuglevel > 0:
-            print 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
+            print>>stderr, 'reply: retcode (%s); Msg: %s' % (errcode,errmsg)
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
@@ -474,7 +475,7 @@ class SMTP:
         """
         self.putcmd("data")
         (code,repl)=self.getreply()
-        if self.debuglevel >0 : print "data:", (code,repl)
+        if self.debuglevel >0 : print>>stderr, "data:", (code,repl)
         if code != 354:
             raise SMTPDataError(code,repl)
         else:
@@ -484,7 +485,7 @@ class SMTP:
             q = q + "." + CRLF
             self.send(q)
             (code,msg)=self.getreply()
-            if self.debuglevel >0 : print "data:", (code,msg)
+            if self.debuglevel >0 : print>>stderr, "data:", (code,msg)
             return (code,msg)
 
     def verify(self, address):
