@@ -3881,10 +3881,21 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 void
 initcPickle() {
     PyObject *m, *d, *v;
-    char *rev="$Revision$";
+    static char revbuf[] = "$Revision$";
+    char *rev = revbuf;
     PyObject *format_version;
     PyObject *compatible_formats;
 
+    /* Fix up the revision number */
+    if (rev[0] == '$') {
+        char *p = strchr(rev, ' ');
+        if (p) {
+            rev = p+1;
+            p = strrchr(rev, ' ');
+            if (p)
+                *p = '\0';
+        }
+    }
 
     /* Create the module and add the functions */
     m = Py_InitModule4("cPickle", cPickle_methods,
@@ -3896,8 +3907,8 @@ initcPickle() {
 
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
-    PyDict_SetItemString(d,"__version__",
-		     v = PyString_FromStringAndSize(rev+11,strlen(rev+11)-2));
+    v = PyString_FromString(rev);
+    PyDict_SetItemString(d,"__version__", v);
     Py_XDECREF(v);
 
 #ifdef FORMAT_1_3
