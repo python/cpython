@@ -33,6 +33,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "eval.h"
 
+#include "mymath.h"
+
 /* Forward */
 static object *filterstring PROTO((object *, object *));
 static object *filtertuple  PROTO((object *, object *));
@@ -284,7 +286,7 @@ builtin_complex(self, args)
 	object *self;
 	object *args;
 {
-	object *r, *i;
+	object *r, *i, *tmp;
 	number_methods *nbr, *nbi;
 	Py_complex cr, ci;
 
@@ -302,7 +304,11 @@ builtin_complex(self, args)
 	if (is_complexobject(r))
 		cr = ((complexobject*)r)->cval;
 	else {
-		cr.real = getfloatvalue((*nbr->nb_float)(r));
+		tmp = (*nbr->nb_float)(r);
+		if (tmp == NULL)
+			return NULL;
+		cr.real = getfloatvalue(tmp);
+		DECREF(tmp);
 		cr.imag = 0.;
 	}
 	if (i == NULL) {
@@ -312,7 +318,11 @@ builtin_complex(self, args)
 	else if (is_complexobject(i))
 		ci = ((complexobject*)i)->cval;
 	else {
-		ci.real = getfloatvalue((*nbi->nb_float)(i));
+		tmp = (*nbr->nb_float)(r);
+		if (tmp == NULL)
+			return NULL;
+		ci.real = getfloatvalue(tmp);
+		DECREF(tmp);
 		ci.imag = 0.;
 	}
 	cr.real -= ci.imag;
@@ -1354,8 +1364,6 @@ builtin_round(self, args)
 	object *self;
 	object *args;
 {
-	extern double floor PROTO((double));
-	extern double ceil PROTO((double));
 	double x;
 	double f;
 	int ndigits = 0;
