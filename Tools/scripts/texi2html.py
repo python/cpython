@@ -25,12 +25,12 @@
 # More consistent handling of chapters/sections/etc.
 # Lots of documentation
 # Many more options:
-#	-top	designate top node
-#	-links	customize which types of links are included
-#	-split  split at chapters or sections instead of nodes
-#	-name	Allow different types of filename handling. Non unix systems
-#		will have problems with long node names
-#	...
+#       -top    designate top node
+#       -links  customize which types of links are included
+#       -split  split at chapters or sections instead of nodes
+#       -name   Allow different types of filename handling. Non unix systems
+#               will have problems with long node names
+#       ...
 # Support the most recent texinfo version and take a good look at HTML 3.0
 # More debugging output (customizable) and more fexible error handling
 # How about icons ?
@@ -67,81 +67,81 @@ class HTMLNode:
     epilogue = '</BODY></HTML>\n'
 
     def __init__(self, dir, name, topname, title, next, prev, up):
-	self.dirname = dir
-	self.name = name
-	if topname:
-	    self.topname = topname
-	else:
-	    self.topname = name
-	self.title = title
-	self.next = next
-	self.prev = prev
-	self.up = up
-	self.lines = []
+        self.dirname = dir
+        self.name = name
+        if topname:
+            self.topname = topname
+        else:
+            self.topname = name
+        self.title = title
+        self.next = next
+        self.prev = prev
+        self.up = up
+        self.lines = []
 
     def write(self, *lines):
-	map(self.lines.append, lines)
+        map(self.lines.append, lines)
 
     def flush(self):
-	fp = open(self.dirname + '/' + makefile(self.name), 'w')
-	fp.write(self.prologue)
-	fp.write(self.text)
-	fp.write(self.epilogue)
-	fp.close()
+        fp = open(self.dirname + '/' + makefile(self.name), 'w')
+        fp.write(self.prologue)
+        fp.write(self.text)
+        fp.write(self.epilogue)
+        fp.close()
 
     def link(self, label, nodename, rel=None, rev=None):
-	if nodename:
-	    if string.lower(nodename) == '(dir)':
-		addr = '../dir.html'
-		title = ''
-	    else:
-		addr = makefile(nodename)
-		title = ' TITLE="%s"' % nodename
-	    self.write(label, ': <A HREF="', addr, '"', \
-		       rel and (' REL=' + rel) or "", \
-		       rev and (' REV=' + rev) or "", \
-		       title, '>', nodename, '</A>  \n')
+        if nodename:
+            if string.lower(nodename) == '(dir)':
+                addr = '../dir.html'
+                title = ''
+            else:
+                addr = makefile(nodename)
+                title = ' TITLE="%s"' % nodename
+            self.write(label, ': <A HREF="', addr, '"', \
+                       rel and (' REL=' + rel) or "", \
+                       rev and (' REV=' + rev) or "", \
+                       title, '>', nodename, '</A>  \n')
 
     def finalize(self):
-	length = len(self.lines)
-	self.text = string.joinfields(self.lines, '')
-	self.lines = []
-	self.open_links()
-	self.output_links()
-	self.close_links()
-	links = string.joinfields(self.lines, '')
-	self.lines = []
+        length = len(self.lines)
+        self.text = string.joinfields(self.lines, '')
+        self.lines = []
+        self.open_links()
+        self.output_links()
+        self.close_links()
+        links = string.joinfields(self.lines, '')
+        self.lines = []
 
-	self.prologue = (
-	    self.DOCTYPE +
-	    '\n<HTML><HEAD>\n'
-	    '  <!-- Converted with texi2html and Python -->\n'
-	    '  <TITLE>' + self.title + '</TITLE>\n'
-	    '  <LINK REL=Next HREF="'
-		+ makefile(self.next) + '" TITLE="' + self.next + '">\n'
-	    '  <LINK REL=Previous HREF="'
-		+ makefile(self.prev) + '" TITLE="' + self.prev  + '">\n'
-	    '  <LINK REL=Up HREF="'
-		+ makefile(self.up) + '" TITLE="' + self.up  + '">\n'
-	    '</HEAD><BODY>\n' +
-	    links)
-	if length > 20:
-	    self.epilogue = '<P>\n%s</BODY></HTML>\n' % links
+        self.prologue = (
+            self.DOCTYPE +
+            '\n<HTML><HEAD>\n'
+            '  <!-- Converted with texi2html and Python -->\n'
+            '  <TITLE>' + self.title + '</TITLE>\n'
+            '  <LINK REL=Next HREF="'
+                + makefile(self.next) + '" TITLE="' + self.next + '">\n'
+            '  <LINK REL=Previous HREF="'
+                + makefile(self.prev) + '" TITLE="' + self.prev  + '">\n'
+            '  <LINK REL=Up HREF="'
+                + makefile(self.up) + '" TITLE="' + self.up  + '">\n'
+            '</HEAD><BODY>\n' +
+            links)
+        if length > 20:
+            self.epilogue = '<P>\n%s</BODY></HTML>\n' % links
 
     def open_links(self):
-	self.write('<HR>\n')
+        self.write('<HR>\n')
 
     def close_links(self):
-	self.write('<HR>\n')
+        self.write('<HR>\n')
 
     def output_links(self):
-	if self.cont != self.next:
-	    self.link('  Cont', self.cont)
-	self.link('  Next', self.next, rel='Next')
-	self.link('  Prev', self.prev, rel='Previous')
-	self.link('  Up', self.up, rel='Up')
-	if self.name <> self.topname:
-	    self.link('  Top', self.topname)
+        if self.cont != self.next:
+            self.link('  Cont', self.cont)
+        self.link('  Next', self.next, rel='Next')
+        self.link('  Prev', self.prev, rel='Previous')
+        self.link('  Up', self.up, rel='Up')
+        if self.name <> self.topname:
+            self.link('  Top', self.topname)
 
 
 class HTML3Node(HTMLNode):
@@ -149,10 +149,10 @@ class HTML3Node(HTMLNode):
     DOCTYPE = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML Level 3//EN//3.0">'
 
     def open_links(self):
-	self.write('<DIV CLASS=Navigation>\n <HR>\n')
+        self.write('<DIV CLASS=Navigation>\n <HR>\n')
 
     def close_links(self):
-	self.write(' <HR>\n</DIV>\n')
+        self.write(' <HR>\n</DIV>\n')
 
 
 class TexinfoParser:
@@ -160,329 +160,329 @@ class TexinfoParser:
     COPYRIGHT_SYMBOL = "&copy;"
     FN_ID_PATTERN = "(%(id)s)"
     FN_SOURCE_PATTERN = '<A NAME=footnoteref%(id)s' \
-			' HREF="#footnotetext%(id)s">' \
-			+ FN_ID_PATTERN + '</A>'
+                        ' HREF="#footnotetext%(id)s">' \
+                        + FN_ID_PATTERN + '</A>'
     FN_TARGET_PATTERN = '<A NAME=footnotetext%(id)s' \
-			' HREF="#footnoteref%(id)s">' \
-			+ FN_ID_PATTERN + '</A>\n%(text)s<P>\n'
+                        ' HREF="#footnoteref%(id)s">' \
+                        + FN_ID_PATTERN + '</A>\n%(text)s<P>\n'
     FN_HEADER = '\n<P>\n<HR NOSHADE SIZE=1 WIDTH=200>\n' \
-		'<STRONG><EM>Footnotes</EM></STRONG>\n<P>'
+                '<STRONG><EM>Footnotes</EM></STRONG>\n<P>'
 
 
     Node = HTMLNode
 
     # Initialize an instance
     def __init__(self):
-	self.unknown = {}	# statistics about unknown @-commands
-	self.filenames = {}	# Check for identical filenames
-	self.debugging = 0	# larger values produce more output
-	self.print_headers = 0	# always print headers?
-	self.nodefp = None	# open file we're writing to
-	self.nodelineno = 0	# Linenumber relative to node
-	self.links = None	# Links from current node
-	self.savetext = None	# If not None, save text head instead
-	self.savestack = []	# If not None, save text head instead
-	self.dirname = 'tmp'	# directory where files are created
-	self.includedir = '.'	# directory to search @include files
-	self.nodename = ''	# name of current node
-	self.topname = ''	# name of top node (first node seen)
-	self.title = ''		# title of this whole Texinfo tree
-	self.resetindex()	# Reset all indices
-	self.contents = []	# Reset table of contents
-	self.numbering = []	# Reset section numbering counters
-	self.nofill = 0		# Normal operation: fill paragraphs
-	self.values={'html': 1} # Names that should be parsed in ifset
-	self.stackinfo={}	# Keep track of state in the stack
-	# XXX The following should be reset per node?!
-	self.footnotes = []	# Reset list of footnotes
-	self.itemarg = None	# Reset command used by @item
-	self.itemnumber = None	# Reset number for @item in @enumerate
-	self.itemindex = None	# Reset item index name
-	self.node = None
-	self.nodestack = []
-	self.cont = 0
-	self.includedepth = 0
+        self.unknown = {}       # statistics about unknown @-commands
+        self.filenames = {}     # Check for identical filenames
+        self.debugging = 0      # larger values produce more output
+        self.print_headers = 0  # always print headers?
+        self.nodefp = None      # open file we're writing to
+        self.nodelineno = 0     # Linenumber relative to node
+        self.links = None       # Links from current node
+        self.savetext = None    # If not None, save text head instead
+        self.savestack = []     # If not None, save text head instead
+        self.dirname = 'tmp'    # directory where files are created
+        self.includedir = '.'   # directory to search @include files
+        self.nodename = ''      # name of current node
+        self.topname = ''       # name of top node (first node seen)
+        self.title = ''         # title of this whole Texinfo tree
+        self.resetindex()       # Reset all indices
+        self.contents = []      # Reset table of contents
+        self.numbering = []     # Reset section numbering counters
+        self.nofill = 0         # Normal operation: fill paragraphs
+        self.values={'html': 1} # Names that should be parsed in ifset
+        self.stackinfo={}       # Keep track of state in the stack
+        # XXX The following should be reset per node?!
+        self.footnotes = []     # Reset list of footnotes
+        self.itemarg = None     # Reset command used by @item
+        self.itemnumber = None  # Reset number for @item in @enumerate
+        self.itemindex = None   # Reset item index name
+        self.node = None
+        self.nodestack = []
+        self.cont = 0
+        self.includedepth = 0
     # Set (output) directory name
     def setdirname(self, dirname):
-	self.dirname = dirname
+        self.dirname = dirname
 
     # Set include directory name
     def setincludedir(self, includedir):
-	self.includedir = includedir
+        self.includedir = includedir
 
     # Parse the contents of an entire file
     def parse(self, fp):
-	line = fp.readline()
-	lineno = 1
-	while line and (line[0] == '%' or blprog.match(line)):
-	    line = fp.readline()
-	    lineno = lineno + 1
-	if line[:len(MAGIC)] <> MAGIC:
-	    raise SyntaxError, 'file does not begin with '+`MAGIC`
-	self.parserest(fp, lineno)
+        line = fp.readline()
+        lineno = 1
+        while line and (line[0] == '%' or blprog.match(line)):
+            line = fp.readline()
+            lineno = lineno + 1
+        if line[:len(MAGIC)] <> MAGIC:
+            raise SyntaxError, 'file does not begin with '+`MAGIC`
+        self.parserest(fp, lineno)
 
     # Parse the contents of a file, not expecting a MAGIC header
     def parserest(self, fp, initial_lineno):
-	lineno = initial_lineno
-	self.done = 0
-	self.skip = 0
-	self.stack = []
-	accu = []
-	while not self.done:
-	    line = fp.readline()
-	    self.nodelineno = self.nodelineno + 1
-	    if not line:
-		if accu:
-		    if not self.skip: self.process(accu)
-		    accu = []
-		if initial_lineno > 0:
-		    print '*** EOF before @bye'
-		break
-	    lineno = lineno + 1
+        lineno = initial_lineno
+        self.done = 0
+        self.skip = 0
+        self.stack = []
+        accu = []
+        while not self.done:
+            line = fp.readline()
+            self.nodelineno = self.nodelineno + 1
+            if not line:
+                if accu:
+                    if not self.skip: self.process(accu)
+                    accu = []
+                if initial_lineno > 0:
+                    print '*** EOF before @bye'
+                break
+            lineno = lineno + 1
             mo = cmprog.match(line)
             if mo:
                 a, b = mo.span(1)
-		cmd = line[a:b]
-		if cmd in ('noindent', 'refill'):
-		    accu.append(line)
-		else:
-		    if accu:
-			if not self.skip:
-			    self.process(accu)
-			accu = []
-		    self.command(line, mo)
-	    elif blprog.match(line) and \
-		 'format' not in self.stack and \
-		 'example' not in self.stack:
-		if accu:
-		    if not self.skip:
-			self.process(accu)
-			if self.nofill:
-			    self.write('\n')
-			else:
-			    self.write('<P>\n')
-			accu = []
-	    else:
-		# Append the line including trailing \n!
-		accu.append(line)
-	#
-	if self.skip:
-	    print '*** Still skipping at the end'
-	if self.stack:
-	    print '*** Stack not empty at the end'
-	    print '***', self.stack
-	if self.includedepth == 0:
-	    while self.nodestack:
-		self.nodestack[-1].finalize()
-		self.nodestack[-1].flush()
-		del self.nodestack[-1]
+                cmd = line[a:b]
+                if cmd in ('noindent', 'refill'):
+                    accu.append(line)
+                else:
+                    if accu:
+                        if not self.skip:
+                            self.process(accu)
+                        accu = []
+                    self.command(line, mo)
+            elif blprog.match(line) and \
+                 'format' not in self.stack and \
+                 'example' not in self.stack:
+                if accu:
+                    if not self.skip:
+                        self.process(accu)
+                        if self.nofill:
+                            self.write('\n')
+                        else:
+                            self.write('<P>\n')
+                        accu = []
+            else:
+                # Append the line including trailing \n!
+                accu.append(line)
+        #
+        if self.skip:
+            print '*** Still skipping at the end'
+        if self.stack:
+            print '*** Stack not empty at the end'
+            print '***', self.stack
+        if self.includedepth == 0:
+            while self.nodestack:
+                self.nodestack[-1].finalize()
+                self.nodestack[-1].flush()
+                del self.nodestack[-1]
 
     # Start saving text in a buffer instead of writing it to a file
     def startsaving(self):
-	if self.savetext <> None:
-	    self.savestack.append(self.savetext)
-	    # print '*** Recursively saving text, expect trouble'
-	self.savetext = ''
+        if self.savetext <> None:
+            self.savestack.append(self.savetext)
+            # print '*** Recursively saving text, expect trouble'
+        self.savetext = ''
 
     # Return the text saved so far and start writing to file again
     def collectsavings(self):
-	savetext = self.savetext
-	if len(self.savestack) > 0:
-	    self.savetext = self.savestack[-1]
-	    del self.savestack[-1]
-	else:
-	    self.savetext = None
-	return savetext or ''
+        savetext = self.savetext
+        if len(self.savestack) > 0:
+            self.savetext = self.savestack[-1]
+            del self.savestack[-1]
+        else:
+            self.savetext = None
+        return savetext or ''
 
     # Write text to file, or save it in a buffer, or ignore it
     def write(self, *args):
-	try:
-	    text = string.joinfields(args, '')
-	except:
-	    print args
-	    raise TypeError
-	if self.savetext <> None:
-	    self.savetext = self.savetext + text
-	elif self.nodefp:
-	    self.nodefp.write(text)
-	elif self.node:
-	    self.node.write(text)
+        try:
+            text = string.joinfields(args, '')
+        except:
+            print args
+            raise TypeError
+        if self.savetext <> None:
+            self.savetext = self.savetext + text
+        elif self.nodefp:
+            self.nodefp.write(text)
+        elif self.node:
+            self.node.write(text)
     # Complete the current node -- write footnotes and close file
     def endnode(self):
-	if self.savetext <> None:
-	    print '*** Still saving text at end of node'
-	    dummy = self.collectsavings()
-	if self.footnotes:
-	    self.writefootnotes()
-	if self.nodefp:
-	    if self.nodelineno > 20:
-		self.write('<HR>\n')
-		[name, next, prev, up] = self.nodelinks[:4]
-		self.link('Next', next)
-		self.link('Prev', prev)
-		self.link('Up', up)
-		if self.nodename <> self.topname:
-		    self.link('Top', self.topname)
-		self.write('<HR>\n')
-	    self.write('</BODY>\n')
-	    self.nodefp.close()
-	    self.nodefp = None
-	elif self.node:
-	    if not self.cont and \
-	       (not self.node.type or \
-		(self.node.next and self.node.prev and self.node.up)):
-		self.node.finalize()
-		self.node.flush()
-	    else:
-		self.nodestack.append(self.node)
-	    self.node = None
-	self.nodename = ''
+        if self.savetext <> None:
+            print '*** Still saving text at end of node'
+            dummy = self.collectsavings()
+        if self.footnotes:
+            self.writefootnotes()
+        if self.nodefp:
+            if self.nodelineno > 20:
+                self.write('<HR>\n')
+                [name, next, prev, up] = self.nodelinks[:4]
+                self.link('Next', next)
+                self.link('Prev', prev)
+                self.link('Up', up)
+                if self.nodename <> self.topname:
+                    self.link('Top', self.topname)
+                self.write('<HR>\n')
+            self.write('</BODY>\n')
+            self.nodefp.close()
+            self.nodefp = None
+        elif self.node:
+            if not self.cont and \
+               (not self.node.type or \
+                (self.node.next and self.node.prev and self.node.up)):
+                self.node.finalize()
+                self.node.flush()
+            else:
+                self.nodestack.append(self.node)
+            self.node = None
+        self.nodename = ''
 
     # Process a list of lines, expanding embedded @-commands
     # This mostly distinguishes between menus and normal text
     def process(self, accu):
-	if self.debugging > 1:
-	    print self.skip, self.stack,
-	    if accu: print accu[0][:30],
-	    if accu[0][30:] or accu[1:]: print '...',
-	    print
-	if self.stack and self.stack[-1] == 'menu':
-	    # XXX should be done differently
-	    for line in accu:
+        if self.debugging > 1:
+            print self.skip, self.stack,
+            if accu: print accu[0][:30],
+            if accu[0][30:] or accu[1:]: print '...',
+            print
+        if self.stack and self.stack[-1] == 'menu':
+            # XXX should be done differently
+            for line in accu:
                 mo = miprog.match(line)
                 if not mo:
-		    line = string.strip(line) + '\n'
-		    self.expand(line)
-		    continue
+                    line = string.strip(line) + '\n'
+                    self.expand(line)
+                    continue
                 bgn, end = mo.span(0)
                 a, b = mo.span(1)
                 c, d = mo.span(2)
                 e, f = mo.span(3)
                 g, h = mo.span(4)
-		label = line[a:b]
-		nodename = line[c:d]
-		if nodename[0] == ':': nodename = label
-		else: nodename = line[e:f]
-		punct = line[g:h]
-		self.write('  <LI><A HREF="',
-			   makefile(nodename),
-			   '">', nodename,
-			   '</A>', punct, '\n')
-		self.expand(line[end:])
-	else:
-	    text = string.joinfields(accu, '')
-	    self.expand(text)
+                label = line[a:b]
+                nodename = line[c:d]
+                if nodename[0] == ':': nodename = label
+                else: nodename = line[e:f]
+                punct = line[g:h]
+                self.write('  <LI><A HREF="',
+                           makefile(nodename),
+                           '">', nodename,
+                           '</A>', punct, '\n')
+                self.expand(line[end:])
+        else:
+            text = string.joinfields(accu, '')
+            self.expand(text)
 
     # Write a string, expanding embedded @-commands
     def expand(self, text):
-	stack = []
-	i = 0
-	n = len(text)
-	while i < n:
-	    start = i
+        stack = []
+        i = 0
+        n = len(text)
+        while i < n:
+            start = i
             mo = spprog.search(text, i)
             if mo:
                 i = mo.start()
             else:
-		self.write(text[start:])
-		break
-	    self.write(text[start:i])
-	    c = text[i]
-	    i = i+1
-	    if c == '\n':
-		self.write('\n')
-		continue
-	    if c == '<':
-		self.write('&lt;')
-		continue
-	    if c == '>':
-		self.write('&gt;')
-		continue
-	    if c == '&':
-		self.write('&amp;')
-		continue
-	    if c == '{':
-		stack.append('')
-		continue
-	    if c == '}':
-		if not stack:
-		    print '*** Unmatched }'
-		    self.write('}')
-		    continue
-		cmd = stack[-1]
-		del stack[-1]
-		try:
-		    method = getattr(self, 'close_' + cmd)
-		except AttributeError:
-		    self.unknown_close(cmd)
-		    continue
-		method()
-		continue
-	    if c <> '@':
-		# Cannot happen unless spprog is changed
-		raise RuntimeError, 'unexpected funny '+`c`
-	    start = i
-	    while i < n and text[i] in string.letters: i = i+1
-	    if i == start:
-		# @ plus non-letter: literal next character
-		i = i+1
-		c = text[start:i]
-		if c == ':':
-		    # `@:' means no extra space after
-		    # preceding `.', `?', `!' or `:'
-		    pass
-		else:
-		    # `@.' means a sentence-ending period;
-		    # `@@', `@{', `@}' quote `@', `{', `}'
-		    self.write(c)
-		continue
-	    cmd = text[start:i]
-	    if i < n and text[i] == '{':
-		i = i+1
-		stack.append(cmd)
-		try:
-		    method = getattr(self, 'open_' + cmd)
-		except AttributeError:
-		    self.unknown_open(cmd)
-		    continue
-		method()
-		continue
-	    try:
-		method = getattr(self, 'handle_' + cmd)
-	    except AttributeError:
-		self.unknown_handle(cmd)
-		continue
-	    method()
-	if stack:
-	    print '*** Stack not empty at para:', stack
+                self.write(text[start:])
+                break
+            self.write(text[start:i])
+            c = text[i]
+            i = i+1
+            if c == '\n':
+                self.write('\n')
+                continue
+            if c == '<':
+                self.write('&lt;')
+                continue
+            if c == '>':
+                self.write('&gt;')
+                continue
+            if c == '&':
+                self.write('&amp;')
+                continue
+            if c == '{':
+                stack.append('')
+                continue
+            if c == '}':
+                if not stack:
+                    print '*** Unmatched }'
+                    self.write('}')
+                    continue
+                cmd = stack[-1]
+                del stack[-1]
+                try:
+                    method = getattr(self, 'close_' + cmd)
+                except AttributeError:
+                    self.unknown_close(cmd)
+                    continue
+                method()
+                continue
+            if c <> '@':
+                # Cannot happen unless spprog is changed
+                raise RuntimeError, 'unexpected funny '+`c`
+            start = i
+            while i < n and text[i] in string.letters: i = i+1
+            if i == start:
+                # @ plus non-letter: literal next character
+                i = i+1
+                c = text[start:i]
+                if c == ':':
+                    # `@:' means no extra space after
+                    # preceding `.', `?', `!' or `:'
+                    pass
+                else:
+                    # `@.' means a sentence-ending period;
+                    # `@@', `@{', `@}' quote `@', `{', `}'
+                    self.write(c)
+                continue
+            cmd = text[start:i]
+            if i < n and text[i] == '{':
+                i = i+1
+                stack.append(cmd)
+                try:
+                    method = getattr(self, 'open_' + cmd)
+                except AttributeError:
+                    self.unknown_open(cmd)
+                    continue
+                method()
+                continue
+            try:
+                method = getattr(self, 'handle_' + cmd)
+            except AttributeError:
+                self.unknown_handle(cmd)
+                continue
+            method()
+        if stack:
+            print '*** Stack not empty at para:', stack
 
     # --- Handle unknown embedded @-commands ---
 
     def unknown_open(self, cmd):
-	print '*** No open func for @' + cmd + '{...}'
-	cmd = cmd + '{'
-	self.write('@', cmd)
-	if not self.unknown.has_key(cmd):
-	    self.unknown[cmd] = 1
-	else:
-	    self.unknown[cmd] = self.unknown[cmd] + 1
+        print '*** No open func for @' + cmd + '{...}'
+        cmd = cmd + '{'
+        self.write('@', cmd)
+        if not self.unknown.has_key(cmd):
+            self.unknown[cmd] = 1
+        else:
+            self.unknown[cmd] = self.unknown[cmd] + 1
 
     def unknown_close(self, cmd):
-	print '*** No close func for @' + cmd + '{...}'
-	cmd = '}' + cmd
-	self.write('}')
-	if not self.unknown.has_key(cmd):
-	    self.unknown[cmd] = 1
-	else:
-	    self.unknown[cmd] = self.unknown[cmd] + 1
+        print '*** No close func for @' + cmd + '{...}'
+        cmd = '}' + cmd
+        self.write('}')
+        if not self.unknown.has_key(cmd):
+            self.unknown[cmd] = 1
+        else:
+            self.unknown[cmd] = self.unknown[cmd] + 1
 
     def unknown_handle(self, cmd):
-	print '*** No handler for @' + cmd
-	self.write('@', cmd)
-	if not self.unknown.has_key(cmd):
-	    self.unknown[cmd] = 1
-	else:
-	    self.unknown[cmd] = self.unknown[cmd] + 1
+        print '*** No handler for @' + cmd
+        self.write('@', cmd)
+        if not self.unknown.has_key(cmd):
+            self.unknown[cmd] = 1
+        else:
+            self.unknown[cmd] = self.unknown[cmd] + 1
 
     # XXX The following sections should be ordered as the texinfo docs
 
@@ -495,27 +495,27 @@ class TexinfoParser:
     # --- Include file handling ---
 
     def do_include(self, args):
-	file = args
-	file = os.path.join(self.includedir, file)
-	try:
-	    fp = open(file, 'r')
-	except IOError, msg:
-	    print '*** Can\'t open include file', `file`
-	    return
-	if self.debugging:
-	    print '--> file', `file`
-	save_done = self.done
-	save_skip = self.skip
-	save_stack = self.stack
-	self.includedepth = self.includedepth + 1
-	self.parserest(fp, 0)
-	self.includedepth = self.includedepth - 1
-	fp.close()
-	self.done = save_done
-	self.skip = save_skip
-	self.stack = save_stack
-	if self.debugging:
-	    print '<-- file', `file`
+        file = args
+        file = os.path.join(self.includedir, file)
+        try:
+            fp = open(file, 'r')
+        except IOError, msg:
+            print '*** Can\'t open include file', `file`
+            return
+        if self.debugging:
+            print '--> file', `file`
+        save_done = self.done
+        save_skip = self.skip
+        save_stack = self.stack
+        self.includedepth = self.includedepth + 1
+        self.parserest(fp, 0)
+        self.includedepth = self.includedepth - 1
+        fp.close()
+        self.done = save_done
+        self.skip = save_skip
+        self.stack = save_stack
+        if self.debugging:
+            print '<-- file', `file`
 
     # --- Special Insertions ---
 
@@ -561,51 +561,51 @@ class TexinfoParser:
     # --- Cross References ---
 
     def open_pxref(self):
-	self.write('see ')
-	self.startsaving()
+        self.write('see ')
+        self.startsaving()
     def close_pxref(self):
-	self.makeref()
+        self.makeref()
 
     def open_xref(self):
-	self.write('See ')
-	self.startsaving()
+        self.write('See ')
+        self.startsaving()
     def close_xref(self):
-	self.makeref()
+        self.makeref()
 
     def open_ref(self):
-	self.startsaving()
+        self.startsaving()
     def close_ref(self):
-	self.makeref()
+        self.makeref()
 
     def open_inforef(self):
-	self.write('See info file ')
-	self.startsaving()
+        self.write('See info file ')
+        self.startsaving()
     def close_inforef(self):
-	text = self.collectsavings()
-	args = string.splitfields(text, ',')
-	n = len(args)
-	for i in range(n):
-	    args[i] = string.strip(args[i])
-	while len(args) < 3: args.append('')
-	node = args[0]
-	file = args[2]
-	self.write('`', file, '\', node `', node, '\'')
+        text = self.collectsavings()
+        args = string.splitfields(text, ',')
+        n = len(args)
+        for i in range(n):
+            args[i] = string.strip(args[i])
+        while len(args) < 3: args.append('')
+        node = args[0]
+        file = args[2]
+        self.write('`', file, '\', node `', node, '\'')
 
     def makeref(self):
-	text = self.collectsavings()
-	args = string.splitfields(text, ',')
-	n = len(args)
-	for i in range(n):
-	    args[i] = string.strip(args[i])
-	while len(args) < 5: args.append('')
-	nodename = label = args[0]
-	if args[2]: label = args[2]
-	file = args[3]
-	title = args[4]
-	href = makefile(nodename)
-	if file:
-	    href = '../' + file + '/' + href
-	self.write('<A HREF="', href, '">', label, '</A>')
+        text = self.collectsavings()
+        args = string.splitfields(text, ',')
+        n = len(args)
+        for i in range(n):
+            args[i] = string.strip(args[i])
+        while len(args) < 5: args.append('')
+        nodename = label = args[0]
+        if args[2]: label = args[2]
+        file = args[3]
+        title = args[4]
+        href = makefile(nodename)
+        if file:
+            href = '../' + file + '/' + href
+        self.write('<A HREF="', href, '">', label, '</A>')
 
     # --- Marking Words and Phrases ---
 
@@ -636,22 +636,22 @@ class TexinfoParser:
     def close_i(self): self.write('</I>')
 
     def open_footnote(self):
-	# if self.savetext <> None:
-	# 	print '*** Recursive footnote -- expect weirdness'
-	id = len(self.footnotes) + 1
-	self.write(self.FN_SOURCE_PATTERN % {'id': `id`})
-	self.startsaving()
+        # if self.savetext <> None:
+        #       print '*** Recursive footnote -- expect weirdness'
+        id = len(self.footnotes) + 1
+        self.write(self.FN_SOURCE_PATTERN % {'id': `id`})
+        self.startsaving()
 
     def close_footnote(self):
-	id = len(self.footnotes) + 1
-	self.footnotes.append(id, self.collectsavings())
+        id = len(self.footnotes) + 1
+        self.footnotes.append(id, self.collectsavings())
 
     def writefootnotes(self):
-	self.write(self.FN_HEADER)
-	for id, text in self.footnotes:
-	    self.write(self.FN_TARGET_PATTERN
-		       % {'id': `id`, 'text': text})
-	self.footnotes = []
+        self.write(self.FN_HEADER)
+        for id, text in self.footnotes:
+            self.write(self.FN_TARGET_PATTERN
+                       % {'id': `id`, 'text': text})
+        self.footnotes = []
 
     def open_file(self): self.write('<CODE>')
     def close_file(self): self.write('</CODE>')
@@ -701,57 +701,57 @@ class TexinfoParser:
 
     def command(self, line, mo):
         a, b = mo.span(1)
-	cmd = line[a:b]
-	args = string.strip(line[b:])
-	if self.debugging > 1:
-	    print self.skip, self.stack, '@' + cmd, args
-	try:
-	    func = getattr(self, 'do_' + cmd)
-	except AttributeError:
-	    try:
-		func = getattr(self, 'bgn_' + cmd)
-	    except AttributeError:
-		# don't complain if we are skipping anyway
-		if not self.skip:
-		    self.unknown_cmd(cmd, args)
-		return
-	    self.stack.append(cmd)
-	    func(args)
-	    return
-	if not self.skip or cmd == 'end':
-	    func(args)
+        cmd = line[a:b]
+        args = string.strip(line[b:])
+        if self.debugging > 1:
+            print self.skip, self.stack, '@' + cmd, args
+        try:
+            func = getattr(self, 'do_' + cmd)
+        except AttributeError:
+            try:
+                func = getattr(self, 'bgn_' + cmd)
+            except AttributeError:
+                # don't complain if we are skipping anyway
+                if not self.skip:
+                    self.unknown_cmd(cmd, args)
+                return
+            self.stack.append(cmd)
+            func(args)
+            return
+        if not self.skip or cmd == 'end':
+            func(args)
 
     def unknown_cmd(self, cmd, args):
-	print '*** unknown', '@' + cmd, args
-	if not self.unknown.has_key(cmd):
-	    self.unknown[cmd] = 1
-	else:
-	    self.unknown[cmd] = self.unknown[cmd] + 1
+        print '*** unknown', '@' + cmd, args
+        if not self.unknown.has_key(cmd):
+            self.unknown[cmd] = 1
+        else:
+            self.unknown[cmd] = self.unknown[cmd] + 1
 
     def do_end(self, args):
-	words = string.split(args)
-	if not words:
-	    print '*** @end w/o args'
-	else:
-	    cmd = words[0]
-	    if not self.stack or self.stack[-1] <> cmd:
-		print '*** @end', cmd, 'unexpected'
-	    else:
-		del self.stack[-1]
-	    try:
-		func = getattr(self, 'end_' + cmd)
-	    except AttributeError:
-		self.unknown_end(cmd)
-		return
-	    func()
+        words = string.split(args)
+        if not words:
+            print '*** @end w/o args'
+        else:
+            cmd = words[0]
+            if not self.stack or self.stack[-1] <> cmd:
+                print '*** @end', cmd, 'unexpected'
+            else:
+                del self.stack[-1]
+            try:
+                func = getattr(self, 'end_' + cmd)
+            except AttributeError:
+                self.unknown_end(cmd)
+                return
+            func()
 
     def unknown_end(self, cmd):
-	cmd = 'end ' + cmd
-	print '*** unknown', '@' + cmd
-	if not self.unknown.has_key(cmd):
-	    self.unknown[cmd] = 1
-	else:
-	    self.unknown[cmd] = self.unknown[cmd] + 1
+        cmd = 'end ' + cmd
+        print '*** unknown', '@' + cmd
+        if not self.unknown.has_key(cmd):
+            self.unknown[cmd] = 1
+        else:
+            self.unknown[cmd] = self.unknown[cmd] + 1
 
     # --- Comments ---
 
@@ -773,51 +773,51 @@ class TexinfoParser:
     def end_tex(self): self.skip = self.skip - 1
 
     def do_set(self, args):
-	fields = string.splitfields(args, ' ')
-	key = fields[0]
-	if len(fields) == 1:
-	    value = 1
-	else:
-	    value = string.joinfields(fields[1:], ' ')
-	self.values[key] = value
-	print self.values
+        fields = string.splitfields(args, ' ')
+        key = fields[0]
+        if len(fields) == 1:
+            value = 1
+        else:
+            value = string.joinfields(fields[1:], ' ')
+        self.values[key] = value
+        print self.values
 
     def do_clear(self, args):
-	self.values[args] = None
+        self.values[args] = None
 
     def bgn_ifset(self, args):
-	if args not in self.values.keys() \
-	   or self.values[args] is None:
-	    self.skip = self.skip + 1
-	    self.stackinfo[len(self.stack)] = 1
-	else:
-	    self.stackinfo[len(self.stack)] = 0
+        if args not in self.values.keys() \
+           or self.values[args] is None:
+            self.skip = self.skip + 1
+            self.stackinfo[len(self.stack)] = 1
+        else:
+            self.stackinfo[len(self.stack)] = 0
     def end_ifset(self):
-	print self.stack
-	print self.stackinfo
-	if self.stackinfo[len(self.stack) + 1]:
-	    self.skip = self.skip - 1
-	del self.stackinfo[len(self.stack) + 1]
+        print self.stack
+        print self.stackinfo
+        if self.stackinfo[len(self.stack) + 1]:
+            self.skip = self.skip - 1
+        del self.stackinfo[len(self.stack) + 1]
 
     def bgn_ifclear(self, args):
-	if args in self.values.keys() \
-	   and self.values[args] is not None:
-	    self.skip = self.skip + 1
-	    self.stackinfo[len(self.stack)] = 1
-	else:
-	    self.stackinfo[len(self.stack)] = 0
+        if args in self.values.keys() \
+           and self.values[args] is not None:
+            self.skip = self.skip + 1
+            self.stackinfo[len(self.stack)] = 1
+        else:
+            self.stackinfo[len(self.stack)] = 0
 
     end_ifclear = end_ifset
 
     def open_value(self):
-	self.startsaving()
+        self.startsaving()
 
     def close_value(self):
-	key = self.collectsavings()
-	if key in self.values.keys():
-	    self.write(self.values[key])
-	else:
-	    print '*** Undefined value: ', key
+        key = self.collectsavings()
+        if key in self.values.keys():
+            self.write(self.values[key])
+        else:
+            print '*** Undefined value: ', key
 
     # --- Beginning a file ---
 
@@ -826,18 +826,18 @@ class TexinfoParser:
     do_setfilename = do_comment
 
     def do_settitle(self, args):
-	print args
-	self.startsaving()
-	self.expand(args)
-	self.title = self.collectsavings()
-	print self.title
+        print args
+        self.startsaving()
+        self.expand(args)
+        self.title = self.collectsavings()
+        print self.title
     def do_parskip(self, args): pass
 
     # --- Ending a file ---
 
     def do_bye(self, args):
-	self.endnode()
-	self.done = 1
+        self.endnode()
+        self.done = 1
 
     # --- Title page ---
 
@@ -846,10 +846,10 @@ class TexinfoParser:
     def do_shorttitlepage(self, args): pass
 
     def do_center(self, args):
-	# Actually not used outside title page...
-	self.write('<H1>')
-	self.expand(args)
-	self.write('</H1>\n')
+        # Actually not used outside title page...
+        self.write('<H1>')
+        self.expand(args)
+        self.write('</H1>\n')
     do_title = do_center
     do_subtitle = do_center
     do_author = do_center
@@ -873,163 +873,163 @@ class TexinfoParser:
     # --- Nodes ---
 
     def do_node(self, args):
-	self.endnode()
-	self.nodelineno = 0
-	parts = string.splitfields(args, ',')
-	while len(parts) < 4: parts.append('')
-	for i in range(4): parts[i] = string.strip(parts[i])
-	self.nodelinks = parts
-	[name, next, prev, up] = parts[:4]
-	file = self.dirname + '/' + makefile(name)
-	if self.filenames.has_key(file):
-	    print '*** Filename already in use: ', file
-	else:
-	    if self.debugging: print '--- writing', file
-	self.filenames[file] = 1
-	# self.nodefp = open(file, 'w')
-	self.nodename = name
-	if self.cont and self.nodestack:
-	    self.nodestack[-1].cont = self.nodename
-	if not self.topname: self.topname = name
-	title = name
-	if self.title: title = title + ' -- ' + self.title
-	self.node = self.Node(self.dirname, self.nodename, self.topname,
-			      title, next, prev, up)
+        self.endnode()
+        self.nodelineno = 0
+        parts = string.splitfields(args, ',')
+        while len(parts) < 4: parts.append('')
+        for i in range(4): parts[i] = string.strip(parts[i])
+        self.nodelinks = parts
+        [name, next, prev, up] = parts[:4]
+        file = self.dirname + '/' + makefile(name)
+        if self.filenames.has_key(file):
+            print '*** Filename already in use: ', file
+        else:
+            if self.debugging: print '--- writing', file
+        self.filenames[file] = 1
+        # self.nodefp = open(file, 'w')
+        self.nodename = name
+        if self.cont and self.nodestack:
+            self.nodestack[-1].cont = self.nodename
+        if not self.topname: self.topname = name
+        title = name
+        if self.title: title = title + ' -- ' + self.title
+        self.node = self.Node(self.dirname, self.nodename, self.topname,
+                              title, next, prev, up)
 
     def link(self, label, nodename):
-	if nodename:
-	    if string.lower(nodename) == '(dir)':
-		addr = '../dir.html'
-	    else:
-		addr = makefile(nodename)
-	    self.write(label, ': <A HREF="', addr, '" TYPE="',
-		       label, '">', nodename, '</A>  \n')
+        if nodename:
+            if string.lower(nodename) == '(dir)':
+                addr = '../dir.html'
+            else:
+                addr = makefile(nodename)
+            self.write(label, ': <A HREF="', addr, '" TYPE="',
+                       label, '">', nodename, '</A>  \n')
 
     # --- Sectioning commands ---
 
     def popstack(self, type):
-	if (self.node):
-	    self.node.type = type
-	    while self.nodestack:
-		if self.nodestack[-1].type > type:
-		    self.nodestack[-1].finalize()
-		    self.nodestack[-1].flush()
-		    del self.nodestack[-1]
-		elif self.nodestack[-1].type == type:
-		    if not self.nodestack[-1].next:
-			self.nodestack[-1].next = self.node.name
-		    if not self.node.prev:
-			self.node.prev = self.nodestack[-1].name
-		    self.nodestack[-1].finalize()
-		    self.nodestack[-1].flush()
-		    del self.nodestack[-1]
-		else:
-		    if type > 1 and not self.node.up:
-			self.node.up = self.nodestack[-1].name
-		    break
+        if (self.node):
+            self.node.type = type
+            while self.nodestack:
+                if self.nodestack[-1].type > type:
+                    self.nodestack[-1].finalize()
+                    self.nodestack[-1].flush()
+                    del self.nodestack[-1]
+                elif self.nodestack[-1].type == type:
+                    if not self.nodestack[-1].next:
+                        self.nodestack[-1].next = self.node.name
+                    if not self.node.prev:
+                        self.node.prev = self.nodestack[-1].name
+                    self.nodestack[-1].finalize()
+                    self.nodestack[-1].flush()
+                    del self.nodestack[-1]
+                else:
+                    if type > 1 and not self.node.up:
+                        self.node.up = self.nodestack[-1].name
+                    break
 
     def do_chapter(self, args):
-	self.heading('H1', args, 0)
-	self.popstack(1)
+        self.heading('H1', args, 0)
+        self.popstack(1)
 
     def do_unnumbered(self, args):
-	self.heading('H1', args, -1)
-	self.popstack(1)
+        self.heading('H1', args, -1)
+        self.popstack(1)
     def do_appendix(self, args):
-	self.heading('H1', args, -1)
-	self.popstack(1)
+        self.heading('H1', args, -1)
+        self.popstack(1)
     def do_top(self, args):
-	self.heading('H1', args, -1)
+        self.heading('H1', args, -1)
     def do_chapheading(self, args):
-	self.heading('H1', args, -1)
+        self.heading('H1', args, -1)
     def do_majorheading(self, args):
-	self.heading('H1', args, -1)
+        self.heading('H1', args, -1)
 
     def do_section(self, args):
-	self.heading('H1', args, 1)
-	self.popstack(2)
+        self.heading('H1', args, 1)
+        self.popstack(2)
 
     def do_unnumberedsec(self, args):
-	self.heading('H1', args, -1)
-	self.popstack(2)
+        self.heading('H1', args, -1)
+        self.popstack(2)
     def do_appendixsec(self, args):
-	self.heading('H1', args, -1)
-	self.popstack(2)
+        self.heading('H1', args, -1)
+        self.popstack(2)
     do_appendixsection = do_appendixsec
     def do_heading(self, args):
-	self.heading('H1', args, -1)
+        self.heading('H1', args, -1)
 
     def do_subsection(self, args):
-	self.heading('H2', args, 2)
-	self.popstack(3)
+        self.heading('H2', args, 2)
+        self.popstack(3)
     def do_unnumberedsubsec(self, args):
-	self.heading('H2', args, -1)
-	self.popstack(3)
+        self.heading('H2', args, -1)
+        self.popstack(3)
     def do_appendixsubsec(self, args):
-	self.heading('H2', args, -1)
-	self.popstack(3)
+        self.heading('H2', args, -1)
+        self.popstack(3)
     def do_subheading(self, args):
-	self.heading('H2', args, -1)
+        self.heading('H2', args, -1)
 
     def do_subsubsection(self, args):
-	self.heading('H3', args, 3)
-	self.popstack(4)
+        self.heading('H3', args, 3)
+        self.popstack(4)
     def do_unnumberedsubsubsec(self, args):
-	self.heading('H3', args, -1)
-	self.popstack(4)
+        self.heading('H3', args, -1)
+        self.popstack(4)
     def do_appendixsubsubsec(self, args):
-	self.heading('H3', args, -1)
-	self.popstack(4)
+        self.heading('H3', args, -1)
+        self.popstack(4)
     def do_subsubheading(self, args):
-	self.heading('H3', args, -1)
+        self.heading('H3', args, -1)
 
     def heading(self, type, args, level):
-	if level >= 0:
-	    while len(self.numbering) <= level:
-		self.numbering.append(0)
-	    del self.numbering[level+1:]
-	    self.numbering[level] = self.numbering[level] + 1
-	    x = ''
-	    for i in self.numbering:
-		x = x + `i` + '.'
-	    args = x + ' ' + args
-	    self.contents.append(level, args, self.nodename)
-	self.write('<', type, '>')
-	self.expand(args)
-	self.write('</', type, '>\n')
-	if self.debugging or self.print_headers:
-	    print '---', args
+        if level >= 0:
+            while len(self.numbering) <= level:
+                self.numbering.append(0)
+            del self.numbering[level+1:]
+            self.numbering[level] = self.numbering[level] + 1
+            x = ''
+            for i in self.numbering:
+                x = x + `i` + '.'
+            args = x + ' ' + args
+            self.contents.append(level, args, self.nodename)
+        self.write('<', type, '>')
+        self.expand(args)
+        self.write('</', type, '>\n')
+        if self.debugging or self.print_headers:
+            print '---', args
 
     def do_contents(self, args):
-	# pass
-	self.listcontents('Table of Contents', 999)
+        # pass
+        self.listcontents('Table of Contents', 999)
 
     def do_shortcontents(self, args):
-	pass
-	# self.listcontents('Short Contents', 0)
+        pass
+        # self.listcontents('Short Contents', 0)
     do_summarycontents = do_shortcontents
 
     def listcontents(self, title, maxlevel):
-	self.write('<H1>', title, '</H1>\n<UL COMPACT PLAIN>\n')
-	prevlevels = [0]
-	for level, title, node in self.contents:
-	    if level > maxlevel:
-		continue
-	    if level > prevlevels[-1]:
-		# can only advance one level at a time
-		self.write('  '*prevlevels[-1], '<UL PLAIN>\n')
-		prevlevels.append(level)
-	    elif level < prevlevels[-1]:
-		# might drop back multiple levels
-		while level < prevlevels[-1]:
-		    del prevlevels[-1]
-		    self.write('  '*prevlevels[-1],
-			       '</UL>\n')
-	    self.write('  '*level, '<LI> <A HREF="',
-		       makefile(node), '">')
-	    self.expand(title)
-	    self.write('</A>\n')
-	self.write('</UL>\n' * len(prevlevels))
+        self.write('<H1>', title, '</H1>\n<UL COMPACT PLAIN>\n')
+        prevlevels = [0]
+        for level, title, node in self.contents:
+            if level > maxlevel:
+                continue
+            if level > prevlevels[-1]:
+                # can only advance one level at a time
+                self.write('  '*prevlevels[-1], '<UL PLAIN>\n')
+                prevlevels.append(level)
+            elif level < prevlevels[-1]:
+                # might drop back multiple levels
+                while level < prevlevels[-1]:
+                    del prevlevels[-1]
+                    self.write('  '*prevlevels[-1],
+                               '</UL>\n')
+            self.write('  '*level, '<LI> <A HREF="',
+                       makefile(node), '">')
+            self.expand(title)
+            self.write('</A>\n')
+        self.write('</UL>\n' * len(prevlevels))
 
     # --- Page lay-out ---
 
@@ -1045,32 +1045,32 @@ class TexinfoParser:
     # --- Line lay-out ---
 
     def do_sp(self, args):
-	if self.nofill:
-	    self.write('\n')
-	else:
-	    self.write('<P>\n')
+        if self.nofill:
+            self.write('\n')
+        else:
+            self.write('<P>\n')
 
     def do_hline(self, args):
-	self.write('<HR>')
+        self.write('<HR>')
 
     # --- Function and variable definitions ---
 
     def bgn_deffn(self, args):
-	self.write('<DL>')
-	self.do_deffnx(args)
+        self.write('<DL>')
+        self.do_deffnx(args)
 
     def end_deffn(self):
-	self.write('</DL>\n')
+        self.write('</DL>\n')
 
     def do_deffnx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 2)
-	[category, name], rest = words[:2], words[2:]
-	self.expand('@b{%s}' % name)
-	for word in rest: self.expand(' ' + makevar(word))
-	#self.expand(' -- ' + category)
-	self.write('\n<DD>')
-	self.index('fn', name)
+        self.write('<DT>')
+        words = splitwords(args, 2)
+        [category, name], rest = words[:2], words[2:]
+        self.expand('@b{%s}' % name)
+        for word in rest: self.expand(' ' + makevar(word))
+        #self.expand(' -- ' + category)
+        self.write('\n<DD>')
+        self.index('fn', name)
 
     def bgn_defun(self, args): self.bgn_deffn('Function ' + args)
     end_defun = end_deffn
@@ -1085,21 +1085,21 @@ class TexinfoParser:
     def do_defspecx(self, args): self.do_deffnx('{Special Form} ' + args)
 
     def bgn_defvr(self, args):
-	self.write('<DL>')
-	self.do_defvrx(args)
+        self.write('<DL>')
+        self.do_defvrx(args)
 
     end_defvr = end_deffn
 
     def do_defvrx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 2)
-	[category, name], rest = words[:2], words[2:]
-	self.expand('@code{%s}' % name)
-	# If there are too many arguments, show them
-	for word in rest: self.expand(' ' + word)
-	#self.expand(' -- ' + category)
-	self.write('\n<DD>')
-	self.index('vr', name)
+        self.write('<DT>')
+        words = splitwords(args, 2)
+        [category, name], rest = words[:2], words[2:]
+        self.expand('@code{%s}' % name)
+        # If there are too many arguments, show them
+        for word in rest: self.expand(' ' + word)
+        #self.expand(' -- ' + category)
+        self.write('\n<DD>')
+        self.index('vr', name)
 
     def bgn_defvar(self, args): self.bgn_defvr('Variable ' + args)
     end_defvar = end_defvr
@@ -1112,20 +1112,20 @@ class TexinfoParser:
     # --- Ditto for typed languages ---
 
     def bgn_deftypefn(self, args):
-	self.write('<DL>')
-	self.do_deftypefnx(args)
+        self.write('<DL>')
+        self.do_deftypefnx(args)
 
     end_deftypefn = end_deffn
 
     def do_deftypefnx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 3)
-	[category, datatype, name], rest = words[:3], words[3:]
-	self.expand('@code{%s} @b{%s}' % (datatype, name))
-	for word in rest: self.expand(' ' + makevar(word))
-	#self.expand(' -- ' + category)
-	self.write('\n<DD>')
-	self.index('fn', name)
+        self.write('<DT>')
+        words = splitwords(args, 3)
+        [category, datatype, name], rest = words[:3], words[3:]
+        self.expand('@code{%s} @b{%s}' % (datatype, name))
+        for word in rest: self.expand(' ' + makevar(word))
+        #self.expand(' -- ' + category)
+        self.write('\n<DD>')
+        self.index('fn', name)
 
 
     def bgn_deftypefun(self, args): self.bgn_deftypefn('Function ' + args)
@@ -1133,149 +1133,149 @@ class TexinfoParser:
     def do_deftypefunx(self, args): self.do_deftypefnx('Function ' + args)
 
     def bgn_deftypevr(self, args):
-	self.write('<DL>')
-	self.do_deftypevrx(args)
+        self.write('<DL>')
+        self.do_deftypevrx(args)
 
     end_deftypevr = end_deftypefn
 
     def do_deftypevrx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 3)
-	[category, datatype, name], rest = words[:3], words[3:]
-	self.expand('@code{%s} @b{%s}' % (datatype, name))
-	# If there are too many arguments, show them
-	for word in rest: self.expand(' ' + word)
-	#self.expand(' -- ' + category)
-	self.write('\n<DD>')
-	self.index('fn', name)
+        self.write('<DT>')
+        words = splitwords(args, 3)
+        [category, datatype, name], rest = words[:3], words[3:]
+        self.expand('@code{%s} @b{%s}' % (datatype, name))
+        # If there are too many arguments, show them
+        for word in rest: self.expand(' ' + word)
+        #self.expand(' -- ' + category)
+        self.write('\n<DD>')
+        self.index('fn', name)
 
     def bgn_deftypevar(self, args):
-	self.bgn_deftypevr('Variable ' + args)
+        self.bgn_deftypevr('Variable ' + args)
     end_deftypevar = end_deftypevr
     def do_deftypevarx(self, args):
-	self.do_deftypevrx('Variable ' + args)
+        self.do_deftypevrx('Variable ' + args)
 
     # --- Ditto for object-oriented languages ---
 
     def bgn_defcv(self, args):
-	self.write('<DL>')
-	self.do_defcvx(args)
+        self.write('<DL>')
+        self.do_defcvx(args)
 
     end_defcv = end_deftypevr
 
     def do_defcvx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 3)
-	[category, classname, name], rest = words[:3], words[3:]
-	self.expand('@b{%s}' % name)
-	# If there are too many arguments, show them
-	for word in rest: self.expand(' ' + word)
-	#self.expand(' -- %s of @code{%s}' % (category, classname))
-	self.write('\n<DD>')
-	self.index('vr', '%s @r{on %s}' % (name, classname))
+        self.write('<DT>')
+        words = splitwords(args, 3)
+        [category, classname, name], rest = words[:3], words[3:]
+        self.expand('@b{%s}' % name)
+        # If there are too many arguments, show them
+        for word in rest: self.expand(' ' + word)
+        #self.expand(' -- %s of @code{%s}' % (category, classname))
+        self.write('\n<DD>')
+        self.index('vr', '%s @r{on %s}' % (name, classname))
 
     def bgn_defivar(self, args):
-	self.bgn_defcv('{Instance Variable} ' + args)
+        self.bgn_defcv('{Instance Variable} ' + args)
     end_defivar = end_defcv
     def do_defivarx(self, args):
-	self.do_defcvx('{Instance Variable} ' + args)
+        self.do_defcvx('{Instance Variable} ' + args)
 
     def bgn_defop(self, args):
-	self.write('<DL>')
-	self.do_defopx(args)
+        self.write('<DL>')
+        self.do_defopx(args)
 
     end_defop = end_defcv
 
     def do_defopx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 3)
-	[category, classname, name], rest = words[:3], words[3:]
-	self.expand('@b{%s}' % name)
-	for word in rest: self.expand(' ' + makevar(word))
-	#self.expand(' -- %s of @code{%s}' % (category, classname))
-	self.write('\n<DD>')
-	self.index('fn', '%s @r{on %s}' % (name, classname))
+        self.write('<DT>')
+        words = splitwords(args, 3)
+        [category, classname, name], rest = words[:3], words[3:]
+        self.expand('@b{%s}' % name)
+        for word in rest: self.expand(' ' + makevar(word))
+        #self.expand(' -- %s of @code{%s}' % (category, classname))
+        self.write('\n<DD>')
+        self.index('fn', '%s @r{on %s}' % (name, classname))
 
     def bgn_defmethod(self, args):
-	self.bgn_defop('Method ' + args)
+        self.bgn_defop('Method ' + args)
     end_defmethod = end_defop
     def do_defmethodx(self, args):
-	self.do_defopx('Method ' + args)
+        self.do_defopx('Method ' + args)
 
     # --- Ditto for data types ---
 
     def bgn_deftp(self, args):
-	self.write('<DL>')
-	self.do_deftpx(args)
+        self.write('<DL>')
+        self.do_deftpx(args)
 
     end_deftp = end_defcv
 
     def do_deftpx(self, args):
-	self.write('<DT>')
-	words = splitwords(args, 2)
-	[category, name], rest = words[:2], words[2:]
-	self.expand('@b{%s}' % name)
-	for word in rest: self.expand(' ' + word)
-	#self.expand(' -- ' + category)
-	self.write('\n<DD>')
-	self.index('tp', name)
+        self.write('<DT>')
+        words = splitwords(args, 2)
+        [category, name], rest = words[:2], words[2:]
+        self.expand('@b{%s}' % name)
+        for word in rest: self.expand(' ' + word)
+        #self.expand(' -- ' + category)
+        self.write('\n<DD>')
+        self.index('tp', name)
 
     # --- Making Lists and Tables
 
     def bgn_enumerate(self, args):
-	if not args:
-	    self.write('<OL>\n')
-	    self.stackinfo[len(self.stack)] = '</OL>\n'
-	else:
-	    self.itemnumber = args
-	    self.write('<UL>\n')
-	    self.stackinfo[len(self.stack)] = '</UL>\n'
+        if not args:
+            self.write('<OL>\n')
+            self.stackinfo[len(self.stack)] = '</OL>\n'
+        else:
+            self.itemnumber = args
+            self.write('<UL>\n')
+            self.stackinfo[len(self.stack)] = '</UL>\n'
     def end_enumerate(self):
-	self.itemnumber = None
-	self.write(self.stackinfo[len(self.stack) + 1])
-	del self.stackinfo[len(self.stack) + 1]
+        self.itemnumber = None
+        self.write(self.stackinfo[len(self.stack) + 1])
+        del self.stackinfo[len(self.stack) + 1]
 
     def bgn_itemize(self, args):
-	self.itemarg = args
-	self.write('<UL>\n')
+        self.itemarg = args
+        self.write('<UL>\n')
     def end_itemize(self):
-	self.itemarg = None
-	self.write('</UL>\n')
+        self.itemarg = None
+        self.write('</UL>\n')
 
     def bgn_table(self, args):
-	self.itemarg = args
-	self.write('<DL>\n')
+        self.itemarg = args
+        self.write('<DL>\n')
     def end_table(self):
-	self.itemarg = None
-	self.write('</DL>\n')
+        self.itemarg = None
+        self.write('</DL>\n')
 
     def bgn_ftable(self, args):
-	self.itemindex = 'fn'
-	self.bgn_table(args)
+        self.itemindex = 'fn'
+        self.bgn_table(args)
     def end_ftable(self):
-	self.itemindex = None
-	self.end_table()
+        self.itemindex = None
+        self.end_table()
 
     def do_item(self, args):
-	if self.itemindex: self.index(self.itemindex, args)
-	if self.itemarg:
-	    if self.itemarg[0] == '@' and self.itemarg[1:2] and \
-			    self.itemarg[1] in string.letters:
-		args = self.itemarg + '{' + args + '}'
-	    else:
-		# some other character, e.g. '-'
-		args = self.itemarg + ' ' + args
-	if self.itemnumber <> None:
-	    args = self.itemnumber + '. ' + args
-	    self.itemnumber = increment(self.itemnumber)
-	if self.stack and self.stack[-1] == 'table':
-	    self.write('<DT>')
-	    self.expand(args)
-	    self.write('\n<DD>')
-	else:
-	    self.write('<LI>')
-	    self.expand(args)
-	    self.write('  ')
+        if self.itemindex: self.index(self.itemindex, args)
+        if self.itemarg:
+            if self.itemarg[0] == '@' and self.itemarg[1:2] and \
+                            self.itemarg[1] in string.letters:
+                args = self.itemarg + '{' + args + '}'
+            else:
+                # some other character, e.g. '-'
+                args = self.itemarg + ' ' + args
+        if self.itemnumber <> None:
+            args = self.itemnumber + '. ' + args
+            self.itemnumber = increment(self.itemnumber)
+        if self.stack and self.stack[-1] == 'table':
+            self.write('<DT>')
+            self.expand(args)
+            self.write('\n<DD>')
+        else:
+            self.write('<LI>')
+            self.expand(args)
+            self.write('  ')
     do_itemx = do_item # XXX Should suppress leading blank line
 
     # --- Enumerations, displays, quotations ---
@@ -1285,11 +1285,11 @@ class TexinfoParser:
     def end_quotation(self): self.write('</BLOCKQUOTE>\n')
 
     def bgn_example(self, args):
-	self.nofill = self.nofill + 1
-	self.write('<PRE>')
+        self.nofill = self.nofill + 1
+        self.write('<PRE>')
     def end_example(self):
-	self.write('</PRE>\n')
-	self.nofill = self.nofill - 1
+        self.write('</PRE>\n')
+        self.nofill = self.nofill - 1
 
     bgn_lisp = bgn_example # Synonym when contents are executable lisp code
     end_lisp = end_example
@@ -1310,24 +1310,24 @@ class TexinfoParser:
     # XXX Should really mess with indentation
 
     def bgn_flushleft(self, args):
-	self.nofill = self.nofill + 1
-	self.write('<PRE>\n')
+        self.nofill = self.nofill + 1
+        self.write('<PRE>\n')
     def end_flushleft(self):
-	self.write('</PRE>\n')
-	self.nofill = self.nofill - 1
+        self.write('</PRE>\n')
+        self.nofill = self.nofill - 1
 
     def bgn_flushright(self, args):
-	self.nofill = self.nofill + 1
-	self.write('<ADDRESS COMPACT>\n')
+        self.nofill = self.nofill + 1
+        self.write('<ADDRESS COMPACT>\n')
     def end_flushright(self):
-	self.write('</ADDRESS>\n')
-	self.nofill = self.nofill - 1
+        self.write('</ADDRESS>\n')
+        self.nofill = self.nofill - 1
 
     def bgn_menu(self, args):
-	self.write('<DIR>\n')
-	self.write('  <STRONG><EM>Menu</EM></STRONG><P>\n')
+        self.write('<DIR>\n')
+        self.write('  <STRONG><EM>Menu</EM></STRONG><P>\n')
     def end_menu(self):
-	self.write('</DIR>\n')
+        self.write('</DIR>\n')
 
     def bgn_cartouche(self, args): pass
     def end_cartouche(self): pass
@@ -1335,24 +1335,24 @@ class TexinfoParser:
     # --- Indices ---
 
     def resetindex(self):
-	self.noncodeindices = ['cp']
-	self.indextitle = {}
-	self.indextitle['cp'] = 'Concept'
-	self.indextitle['fn'] = 'Function'
-	self.indextitle['ky'] = 'Keyword'
-	self.indextitle['pg'] = 'Program'
-	self.indextitle['tp'] = 'Type'
-	self.indextitle['vr'] = 'Variable'
-	#
-	self.whichindex = {}
-	for name in self.indextitle.keys():
-	    self.whichindex[name] = []
+        self.noncodeindices = ['cp']
+        self.indextitle = {}
+        self.indextitle['cp'] = 'Concept'
+        self.indextitle['fn'] = 'Function'
+        self.indextitle['ky'] = 'Keyword'
+        self.indextitle['pg'] = 'Program'
+        self.indextitle['tp'] = 'Type'
+        self.indextitle['vr'] = 'Variable'
+        #
+        self.whichindex = {}
+        for name in self.indextitle.keys():
+            self.whichindex[name] = []
 
     def user_index(self, name, args):
-	if self.whichindex.has_key(name):
-	    self.index(name, args)
-	else:
-	    print '*** No index named', `name`
+        if self.whichindex.has_key(name):
+            self.index(name, args)
+        else:
+            print '*** No index named', `name`
 
     def do_cindex(self, args): self.index('cp', args)
     def do_findex(self, args): self.index('fn', args)
@@ -1362,79 +1362,79 @@ class TexinfoParser:
     def do_vindex(self, args): self.index('vr', args)
 
     def index(self, name, args):
-	self.whichindex[name].append(args, self.nodename)
+        self.whichindex[name].append(args, self.nodename)
 
     def do_synindex(self, args):
-	words = string.split(args)
-	if len(words) <> 2:
-	    print '*** bad @synindex', args
-	    return
-	[old, new] = words
-	if not self.whichindex.has_key(old) or \
-		  not self.whichindex.has_key(new):
-	    print '*** bad key(s) in @synindex', args
-	    return
-	if old <> new and \
-		  self.whichindex[old] is not self.whichindex[new]:
-	    inew = self.whichindex[new]
-	    inew[len(inew):] = self.whichindex[old]
-	    self.whichindex[old] = inew
+        words = string.split(args)
+        if len(words) <> 2:
+            print '*** bad @synindex', args
+            return
+        [old, new] = words
+        if not self.whichindex.has_key(old) or \
+                  not self.whichindex.has_key(new):
+            print '*** bad key(s) in @synindex', args
+            return
+        if old <> new and \
+                  self.whichindex[old] is not self.whichindex[new]:
+            inew = self.whichindex[new]
+            inew[len(inew):] = self.whichindex[old]
+            self.whichindex[old] = inew
     do_syncodeindex = do_synindex # XXX Should use code font
 
     def do_printindex(self, args):
-	words = string.split(args)
-	for name in words:
-	    if self.whichindex.has_key(name):
-		self.prindex(name)
-	    else:
-		print '*** No index named', `name`
+        words = string.split(args)
+        for name in words:
+            if self.whichindex.has_key(name):
+                self.prindex(name)
+            else:
+                print '*** No index named', `name`
 
     def prindex(self, name):
-	iscodeindex = (name not in self.noncodeindices)
-	index = self.whichindex[name]
-	if not index: return
-	if self.debugging:
-	    print '--- Generating', self.indextitle[name], 'index'
-	#  The node already provides a title
-	index1 = []
+        iscodeindex = (name not in self.noncodeindices)
+        index = self.whichindex[name]
+        if not index: return
+        if self.debugging:
+            print '--- Generating', self.indextitle[name], 'index'
+        #  The node already provides a title
+        index1 = []
         junkprog = re.compile('^(@[a-z]+)?{')
-	for key, node in index:
-	    sortkey = string.lower(key)
-	    # Remove leading `@cmd{' from sort key
-	    # -- don't bother about the matching `}'
-	    oldsortkey = sortkey
-	    while 1:
+        for key, node in index:
+            sortkey = string.lower(key)
+            # Remove leading `@cmd{' from sort key
+            # -- don't bother about the matching `}'
+            oldsortkey = sortkey
+            while 1:
                 mo = junkprog.match(sortkey)
                 if not mo:
                     break
                 i = mo.end()
-		sortkey = sortkey[i:]
-	    index1.append(sortkey, key, node)
-	del index[:]
-	index1.sort()
-	self.write('<DL COMPACT>\n')
-	prevkey = prevnode = None
-	for sortkey, key, node in index1:
-	    if (key, node) == (prevkey, prevnode):
-		continue
-	    if self.debugging > 1: print key, ':', node
-	    self.write('<DT>')
-	    if iscodeindex: key = '@code{' + key + '}'
-	    if key != prevkey:
-		self.expand(key)
-	    self.write('\n<DD><A HREF="%s">%s</A>\n' % (makefile(node), node))
-	    prevkey, prevnode = key, node
-	self.write('</DL>\n')
+                sortkey = sortkey[i:]
+            index1.append(sortkey, key, node)
+        del index[:]
+        index1.sort()
+        self.write('<DL COMPACT>\n')
+        prevkey = prevnode = None
+        for sortkey, key, node in index1:
+            if (key, node) == (prevkey, prevnode):
+                continue
+            if self.debugging > 1: print key, ':', node
+            self.write('<DT>')
+            if iscodeindex: key = '@code{' + key + '}'
+            if key != prevkey:
+                self.expand(key)
+            self.write('\n<DD><A HREF="%s">%s</A>\n' % (makefile(node), node))
+            prevkey, prevnode = key, node
+        self.write('</DL>\n')
 
     # --- Final error reports ---
 
     def report(self):
-	if self.unknown:
-	    print '--- Unrecognized commands ---'
-	    cmds = self.unknown.keys()
-	    cmds.sort()
-	    for cmd in cmds:
-		print string.ljust(cmd, 20), self.unknown[cmd]
+        if self.unknown:
+            print '--- Unrecognized commands ---'
+            cmds = self.unknown.keys()
+            cmds.sort()
+            for cmd in cmds:
+                print string.ljust(cmd, 20), self.unknown[cmd]
 
 
 class TexinfoParserHTML3(TexinfoParser):
@@ -1442,12 +1442,12 @@ class TexinfoParserHTML3(TexinfoParser):
     COPYRIGHT_SYMBOL = "&copy;"
     FN_ID_PATTERN = "[%(id)s]"
     FN_SOURCE_PATTERN = '<A ID=footnoteref%(id)s ' \
-			'HREF="#footnotetext%(id)s">' + FN_ID_PATTERN + '</A>'
+                        'HREF="#footnotetext%(id)s">' + FN_ID_PATTERN + '</A>'
     FN_TARGET_PATTERN = '<FN ID=footnotetext%(id)s>\n' \
-			'<P><A HREF="#footnoteref%(id)s">' + FN_ID_PATTERN \
-			+ '</A>\n%(text)s</P></FN>\n'
+                        '<P><A HREF="#footnoteref%(id)s">' + FN_ID_PATTERN \
+                        + '</A>\n%(text)s</P></FN>\n'
     FN_HEADER = '<DIV CLASS=footnotes>\n  <HR NOSHADE WIDTH=200>\n' \
-		'  <STRONG><EM>Footnotes</EM></STRONG>\n  <P>\n'
+                '  <STRONG><EM>Footnotes</EM></STRONG>\n  <P>\n'
 
     Node = HTML3Node
 
@@ -1455,30 +1455,30 @@ class TexinfoParserHTML3(TexinfoParser):
     def end_quotation(self): self.write('</BQ>\n')
 
     def bgn_example(self, args):
-	# this use of <CODE> would not be legal in HTML 2.0,
-	# but is in more recent DTDs.
-	self.nofill = self.nofill + 1
-	self.write('<PRE CLASS=example><CODE>')
+        # this use of <CODE> would not be legal in HTML 2.0,
+        # but is in more recent DTDs.
+        self.nofill = self.nofill + 1
+        self.write('<PRE CLASS=example><CODE>')
     def end_example(self):
-	self.write("</CODE></PRE>\n")
-	self.nofill = self.nofill - 1
+        self.write("</CODE></PRE>\n")
+        self.nofill = self.nofill - 1
 
     def bgn_flushleft(self, args):
-	self.nofill = self.nofill + 1
-	self.write('<PRE CLASS=flushleft>\n')
+        self.nofill = self.nofill + 1
+        self.write('<PRE CLASS=flushleft>\n')
 
     def bgn_flushright(self, args):
-	self.nofill = self.nofill + 1
-	self.write('<DIV ALIGN=right CLASS=flushright><ADDRESS COMPACT>\n')
+        self.nofill = self.nofill + 1
+        self.write('<DIV ALIGN=right CLASS=flushright><ADDRESS COMPACT>\n')
     def end_flushright(self):
-	self.write('</ADDRESS></DIV>\n')
-	self.nofill = self.nofill - 1
+        self.write('</ADDRESS></DIV>\n')
+        self.nofill = self.nofill - 1
 
     def bgn_menu(self, args):
-	self.write('<UL PLAIN CLASS=menu>\n')
-	self.write('  <LH>Menu</LH>\n')
+        self.write('<UL PLAIN CLASS=menu>\n')
+        self.write('  <LH>Menu</LH>\n')
     def end_menu(self):
-	self.write('</UL>\n')
+        self.write('</UL>\n')
 
 
 # Put @var{} around alphabetic substrings
@@ -1492,11 +1492,11 @@ def splitwords(str, minlength):
     i = 0
     n = len(str)
     while i < n:
-	while i < n and str[i] in ' \t\n': i = i+1
-	if i >= n: break
-	start = i
-	i = findwordend(str, i, n)
-	words.append(str[start:i])
+        while i < n and str[i] in ' \t\n': i = i+1
+        if i >= n: break
+        start = i
+        i = findwordend(str, i, n)
+        words.append(str[start:i])
     while len(words) < minlength: words.append('')
     return words
 
@@ -1510,11 +1510,11 @@ def findwordend(str, i, n):
         if not mo:
             break
         i = mo.start()
-	c = str[i]; i = i+1
-	if c == '@': i = i+1 # Next character is not special
-	elif c == '{': level = level+1
-	elif c == '}': level = level-1
-	elif c == ' ' and level <= 0: return i-1
+        c = str[i]; i = i+1
+        if c == '@': i = i+1 # Next character is not special
+        elif c == '{': level = level+1
+        elif c == '}': level = level-1
+        elif c == ' ' and level <= 0: return i-1
     return n
 
 
@@ -1533,32 +1533,32 @@ goodchars = string.letters + string.digits + '!@-=+.'
 def fixfunnychars(addr):
     i = 0
     while i < len(addr):
-	c = addr[i]
-	if c not in goodchars:
-	    c = '-'
-	    addr = addr[:i] + c + addr[i+1:]
-	i = i + len(c)
+        c = addr[i]
+        if c not in goodchars:
+            c = '-'
+            addr = addr[:i] + c + addr[i+1:]
+        i = i + len(c)
     return addr
 
 
 # Increment a string used as an enumeration
 def increment(s):
     if not s:
-	return '1'
+        return '1'
     for sequence in string.digits, string.lowercase, string.uppercase:
-	lastc = s[-1]
-	if lastc in sequence:
-	    i = string.index(sequence, lastc) + 1
-	    if i >= len(sequence):
-		if len(s) == 1:
-		    s = sequence[0]*2
-		    if s == '00':
-			s = '10'
-		else:
-		    s = increment(s[:-1]) + sequence[0]
-	    else:
-		s = s[:-1] + sequence[i]
-	    return s
+        lastc = s[-1]
+        if lastc in sequence:
+            i = string.index(sequence, lastc) + 1
+            if i >= len(sequence):
+                if len(s) == 1:
+                    s = sequence[0]*2
+                    if s == '00':
+                        s = '10'
+                else:
+                    s = increment(s[:-1]) + sequence[0]
+            else:
+                s = s[:-1] + sequence[i]
+            return s
     return s # Don't increment
 
 
@@ -1570,25 +1570,25 @@ def test():
     html3 = 0
    
     while sys.argv[1:2] == ['-d']:
-	debugging = debugging + 1
-	del sys.argv[1:2]
+        debugging = debugging + 1
+        del sys.argv[1:2]
     if sys.argv[1] == '-p':
-	print_headers = 1
-	del sys.argv[1]
+        print_headers = 1
+        del sys.argv[1]
     if sys.argv[1] == '-c':
-	cont = 1
-	del sys.argv[1]
+        cont = 1
+        del sys.argv[1]
     if sys.argv[1] == '-3':
-	html3 = 1
-	del sys.argv[1]
+        html3 = 1
+        del sys.argv[1]
     if len(sys.argv) <> 3:
-	print 'usage: texi2html [-d [-d]] [-p] [-c] inputfile outputdirectory'
-	sys.exit(2)
+        print 'usage: texi2html [-d [-d]] [-p] [-c] inputfile outputdirectory'
+        sys.exit(2)
 
     if html3:
-	parser = TexinfoParserHTML3()
+        parser = TexinfoParserHTML3()
     else:
-	parser = TexinfoParser()
+        parser = TexinfoParser()
     parser.cont = cont
     parser.debugging = debugging
     parser.print_headers = print_headers
@@ -1596,14 +1596,14 @@ def test():
     file = sys.argv[1]
     parser.setdirname(sys.argv[2])
     if file == '-':
-	fp = sys.stdin
+        fp = sys.stdin
     else:
-	parser.setincludedir(os.path.dirname(file))
-	try:
-	    fp = open(file, 'r')
-	except IOError, msg:
-	    print file, ':', msg
-	    sys.exit(1)
+        parser.setincludedir(os.path.dirname(file))
+        try:
+            fp = open(file, 'r')
+        except IOError, msg:
+            print file, ':', msg
+            sys.exit(1)
     parser.parse(fp)
     fp.close()
     parser.report()
