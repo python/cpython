@@ -22,6 +22,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- stat_float_times is now True.
+
 - array.array objects are now picklable.
 
 - the cPickle module no longer accepts the deprecated None option in the

@@ -1012,17 +1012,13 @@ objects.  If newval is True, future calls to stat() return floats, if
 it is False, future calls return ints.  If newval is omitted, return
 the current setting.
 
-For compatibility with older Python versions, accessing
-\class{stat_result} as a tuple always returns integers. For
-compatibility with Python 2.2, accessing the time stamps by field name
-also returns integers. Applications that want to determine the
-fractions of a second in a time stamp can use this function to have
-time stamps represented as floats. Whether they will actually observe
-non-zero fractions depends on the system.
+\versionchanged[Python now returns float values by default. Applications
+which do not work correctly with floating point time stamps can use
+this function to restore the old behaviour]{2.5}
 
-Future Python releases will change the default of this setting;
-applications that cannot deal with floating point time stamps can then
-use this function to turn the feature off.
+The resolution of the timestamps (i.e. the smallest possible fraction)
+depends on the system. Some systems only support second resolution;
+on these systems, the fraction will always be zero.
 
 It is recommended that this setting is only changed at program startup
 time in the \var{__main__} module; libraries should never change this
