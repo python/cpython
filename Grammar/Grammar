@@ -23,7 +23,7 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
-varargslist: (fpdef ['=' test] ',')* '*' NAME | fpdef ['=' test] (',' fpdef ['=' test])* [',']
+varargslist: (fpdef ['=' test] ',')* ('*' NAME [',' '*' '*' NAME] | '*' '*' NAME) | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
@@ -39,7 +39,7 @@ flow_stmt: break_stmt | continue_stmt | return_stmt | raise_stmt
 break_stmt: 'break'
 continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
-raise_stmt: 'raise' test [',' test]
+raise_stmt: 'raise' test [',' test [',' test]]
 import_stmt: 'import' dotted_name (',' dotted_name)* | 'from' dotted_name 'import' ('*' | NAME (',' NAME)*)
 dotted_name: NAME ('.' NAME)*
 global_stmt: 'global' NAME (',' NAME)*
@@ -73,10 +73,13 @@ term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-'|'~') factor | atom trailer*
 atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
 lambdef: 'lambda' [varargslist] ':' test
-trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
+trailer: '(' [arglist] ')' | '[' subscript ']' | '.' NAME
 subscript: test | [test] ':' [test]
 exprlist: expr (',' expr)* [',']
 testlist: test (',' test)* [',']
 dictmaker: test ':' test (',' test ':' test)* [',']
 
 classdef: 'class' NAME ['(' testlist ')'] ':' suite
+
+arglist:  argument (',' argument)* [',']
+argument: [test '='] test	# Really [keyword '='] test
