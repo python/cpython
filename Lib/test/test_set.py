@@ -38,15 +38,11 @@ class TestJointOps(unittest.TestCase):
         s = self.thetype([frozenset(self.letters)])
         self.assert_(self.thetype(self.letters) in s)
 
-    def test_copy(self):
-        dup = self.s.copy()
-        self.assertEqual(self.s, dup)
-        self.assertNotEqual(id(self.s), id(dup))
-
     def test_union(self):
         u = self.s.union(self.otherword)
         for c in self.letters:
             self.assertEqual(c in u, c in self.d or c in self.otherword)
+        self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(u), self.thetype)
         self.assertRaises(PassThru, self.s.union, check_pass_thru())
         self.assertRaises(TypeError, self.s.union, [[]])
@@ -66,6 +62,7 @@ class TestJointOps(unittest.TestCase):
         i = self.s.intersection(self.otherword)
         for c in self.letters:
             self.assertEqual(c in i, c in self.d and c in self.otherword)
+        self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.intersection, check_pass_thru())
 
@@ -84,6 +81,7 @@ class TestJointOps(unittest.TestCase):
         i = self.s.difference(self.otherword)
         for c in self.letters:
             self.assertEqual(c in i, c in self.d and c not in self.otherword)
+        self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.difference, [[]])
@@ -103,6 +101,7 @@ class TestJointOps(unittest.TestCase):
         i = self.s.symmetric_difference(self.otherword)
         for c in self.letters:
             self.assertEqual(c in i, (c in self.d) ^ (c in self.otherword))
+        self.assertEqual(self.s, self.thetype(self.word))
         self.assertEqual(type(i), self.thetype)
         self.assertRaises(PassThru, self.s.symmetric_difference, check_pass_thru())
         self.assertRaises(TypeError, self.s.symmetric_difference, [[]])
@@ -155,15 +154,37 @@ class TestJointOps(unittest.TestCase):
         dup = pickle.loads(p)
         self.assertEqual(self.s, dup, "%s != %s" % (self.s, dup))
 
+    def test_deepcopy(self):
+        class Tracer:
+            def __init__(self, value):
+                self.value = value
+            def __hash__(self):
+                    return self.value
+            def __deepcopy__(self, memo=None):
+                return Tracer(self.value + 1)
+        t = Tracer(10)
+        s = self.thetype([t])
+        dup = copy.deepcopy(s)
+        self.assertNotEqual(id(s), id(dup))
+        for elem in dup:
+            newt = elem
+        self.assertNotEqual(id(t), id(newt))
+        self.assertEqual(t.value + 1, newt.value)
+
 class TestSet(TestJointOps):
     thetype = set
 
     def test_init(self):
-        s = set()
+        s = self.thetype()
         s.__init__(self.word)
         self.assertEqual(s, set(self.word))
         s.__init__(self.otherword)
         self.assertEqual(s, set(self.otherword))
+
+    def test_constructor_identity(self):
+        s = self.thetype(range(3))
+        t = self.thetype(s)
+        self.assertNotEqual(id(s), id(t))
 
     def test_hash(self):
         self.assertRaises(TypeError, hash, self.s)
@@ -171,6 +192,11 @@ class TestSet(TestJointOps):
     def test_clear(self):
         self.s.clear()
         self.assertEqual(self.s, set([]))
+
+    def test_copy(self):
+        dup = self.s.copy()
+        self.assertEqual(self.s, dup)
+        self.assertNotEqual(id(self.s), id(dup))
 
     def test_add(self):
         self.s.add('Q')
@@ -285,17 +311,27 @@ class TestFrozenSet(TestJointOps):
     thetype = frozenset
 
     def test_init(self):
-        s = frozenset()
-        s.__init__(self.word)
-        self.assertEqual(s, frozenset())
+        s = self.thetype(self.word)
+        s.__init__(self.otherword)
+        self.assertEqual(s, set(self.word))
+
+    def test_constructor_identity(self):
+        s = self.thetype(range(3))
+        t = self.thetype(s)
+        self.assertEqual(id(s), id(t))
 
     def test_hash(self):
-        self.assertEqual(hash(frozenset('abcdeb')), hash(frozenset('ebecda')))
+        self.assertEqual(hash(self.thetype('abcdeb')),
+                         hash(self.thetype('ebecda')))
+
+    def test_copy(self):
+        dup = self.s.copy()
+        self.assertEqual(id(self.s), id(dup))
 
     def test_frozen_as_dictkey(self):
         seq = range(10) + list('abcdefg') + ['apple']
-        key1 = frozenset(seq)
-        key2 = frozenset(reversed(seq))
+        key1 = self.thetype(seq)
+        key2 = self.thetype(reversed(seq))
         self.assertEqual(key1, key2)
         self.assertNotEqual(id(key1), id(key2))
         d = {}
@@ -303,14 +339,37 @@ class TestFrozenSet(TestJointOps):
         self.assertEqual(d[key2], 42)
 
     def test_hash_caching(self):
-        f = frozenset('abcdcda')
+        f = self.thetype('abcdcda')
         self.assertEqual(hash(f), hash(f))
+
+    def test_hash_effectiveness(self):
+        n = 13
+        rng = range(n)
+        hashvalues = set()
+        for i in xrange(2**n):
+            combination = [j for j in rng if (1<<j)&i]
+            hashvalues.add(hash(self.thetype(combination)))
+        self.assert_(len(hashvalues) >= 2**(n-2))
 
 class FrozenSetSubclass(frozenset):
     pass
 
 class TestFrozenSetSubclass(TestFrozenSet):
     thetype = FrozenSetSubclass
+
+    def test_constructor_identity(self):
+        s = self.thetype(range(3))
+        t = self.thetype(s)
+        self.assertNotEqual(id(s), id(t))
+
+    def test_copy(self):
+        dup = self.s.copy()
+        self.assertNotEqual(id(self.s), id(dup))
+
+    def test_nested_empty_constructor(self):
+        s = self.thetype()
+        t = self.thetype(s)
+        self.assertEqual(s, t)
 
 # Tests taken from test_sets.py =============================================
 
