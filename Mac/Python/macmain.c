@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "marshal.h"
 #include "macglue.h"
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Memory.h>
 #include <Resources.h>
 #include <stdio.h>
@@ -41,21 +42,23 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Gestalt.h>
 #include <Appearance.h>
 #endif /* USE_APPEARANCE */
+#else
+#include <Carbon/Carbon.h>
+#endif /* WITHOUT_FRAMEWORKS */
+
 #ifdef __MWERKS__
 #include <SIOUX.h>
 #define USE_SIOUX
 extern int ccommand(char ***);
 #if __profile__ == 1
 #include <profiler.h>
-#endif
-#endif
+#endif /* __profile__ */
+#endif /* __MWERKS__ */
+
 #include <unistd.h>
 #ifdef USE_MAC_SHARED_LIBRARY
 extern PyMac_AddLibResources(void);
 #endif
-//#ifdef USE_GUSI
-//#include "GUSISIOUX.h"
-//#endif
 
 #define STARTUP "PythonStartup"
 
@@ -81,7 +84,7 @@ PyMac_PrefRecord PyMac_options;
 static void Py_Main(int, char **); /* Forward */
 void PyMac_Exit(int); /* Forward */
 
-static void init_appearance()
+static void init_appearance(void)
 {
 #ifdef USE_APPEARANCE
 	OSErr err;
@@ -99,7 +102,7 @@ no_appearance:
 /* Initialize the Mac toolbox world */
 
 static void
-init_mac_world()
+init_mac_world(void)
 {
 #if !TARGET_API_MAC_CARBON
 	/* These aren't needed for carbon */
@@ -127,8 +130,6 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 	ControlHandle handle;
 	DialogPtr dialog;
 	Rect rect;
-	int old_argc = *argcp;
-	int i;
 
 	/*
 	** If the preferences disallows interactive options we return,
@@ -191,7 +192,10 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			HMSetBalloons(!HMGetBalloons());
 		}
 #endif
+#if !TARGET_API_MAC_OSX
 		if ( item == OPT_CMDLINE ) {
+			int old_argc = *argcp;
+			int i;
 			int new_argc, newer_argc;
 			char **new_argv, **newer_argv;
 			
@@ -209,6 +213,7 @@ PyMac_InteractiveOptions(PyMac_PrefRecord *p, int *argcp, char ***argvp)
 			
 			/* XXXX Is it not safe to use free() here, apparently */
 		}
+#endif /* !TARGET_API_MAC_OSX */
 #define OPT_ITEM(num, var) \
 		if ( item == (num) ) { \
 			p->var = !p->var; \
@@ -283,7 +288,9 @@ init_common(int *argcp, char ***argvp, int embedded)
 
 #ifdef USE_SIOUX
 	/* Set various SIOUX flags. Some are changed later based on options */
-/*	SIOUXSettings.standalone = 0;	/* XXXX Attempting to keep sioux from eating events */
+#if 0
+	SIOUXSettings.standalone = 0;	/* XXXX Attempting to keep sioux from eating events */
+#endif
 	SIOUXSettings.asktosaveonclose = 0;
 	SIOUXSettings.showstatusline = 0;
 	SIOUXSettings.tabspaces = 4;
@@ -291,8 +298,11 @@ init_common(int *argcp, char ***argvp, int embedded)
 
 	/* Get options from preference file (or from applet resource fork) */
 	PyMac_options.keep_console = POPT_KEEPCONSOLE_OUTPUT;		/* default-default */
+	PyMac_options.unixnewlines = 1;
+#if !TARGET_API_MAC_OSX
 	PyMac_PreferenceOptions(&PyMac_options);
-	
+#endif
+
 	if ( embedded ) {
 		static char *emb_argv[] = {"embedded-python", 0};
 		
@@ -301,6 +311,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	} else {
 		/* Create argc/argv. Do it before we go into the options event loop. */
 		*argcp = PyMac_GetArgv(argvp, PyMac_options.noargs);
+#if !TARGET_API_MAC_OSX
 #ifndef NO_ARGV0_CHDIR
 		if (*argcp >= 1 && (*argvp)[0] && (*argvp)[0][0]) {
 			/* Workaround for MacOS X, which currently (DP4) doesn't set
@@ -314,6 +325,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 			chdir(app_wd);
 		}
 #endif
+#endif
 		/* Do interactive option setting, if allowed and <option> depressed */
 		PyMac_InteractiveOptions(&PyMac_options, argcp, argvp);
 	}
@@ -326,6 +338,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	Py_NoSiteFlag = PyMac_options.nosite;
 	Py_TabcheckFlag = PyMac_options.tabwarn;
 	Py_DivisionWarningFlag = PyMac_options.divisionwarn;
+#if !TARGET_API_MAC_OSX
 	if ( PyMac_options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
@@ -335,7 +348,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 		/* Should we disable command-dot as well? */
 		PyMac_SetSchedParams(&scp);
 	}
-	/* XXXX dispatch oldexc and nosite */
+#endif /* !TARGET_API_MAC_OSX */
 
 	/* Set buffering */
 	if (PyMac_options.unbuffered) {
@@ -363,7 +376,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 ** Inspection mode after script/applet termination
 */
 static int
-run_inspect()
+run_inspect(void)
 {
 	int sts = 0;
 	
@@ -378,7 +391,7 @@ run_inspect()
 ** if available on this machine.
 */
 static void
-PyMac_InstallNavServicesForSF()
+PyMac_InstallNavServicesForSF(void)
 {
 	if ( !PyMac_options.nonavservice ) {
 		PyObject *m = PyImport_ImportModule("macfsn");
@@ -401,7 +414,7 @@ PyMac_InstallNavServicesForSF()
 
 /* Run a compiled Python Python script from 'PYC ' resource __main__ */
 static int
-run_main_resource()
+run_main_resource(void)
 {
 	Handle h;
 	long size;
@@ -434,7 +447,7 @@ run_main_resource()
 
 /* Initialization sequence for applets */
 void
-PyMac_InitApplet()
+PyMac_InitApplet(void)
 {
 	int argc;
 	char **argv;
@@ -460,7 +473,7 @@ PyMac_InitApplet()
 ** Hook for embedding python.
 */
 void
-PyMac_Initialize()
+PyMac_Initialize(void)
 {
 	int argc;
 	char **argv;
@@ -473,9 +486,25 @@ PyMac_Initialize()
 
 #endif /* USE_MAC_APPLET_SUPPORT */
 
+#if TARGET_API_MAC_OSX
+int
+main(int argc, char **argv)
+{
+	int i;
+	printf("first argc=%d\n", argc);
+	for(i=0; i<argc; i++) printf("first argv[%d] = \"%s\"\n", i, argv[i]);
+	init_common(&argc, &argv, 0);
+	printf("second argc=%d\n", argc);
+	for(i=0; i<argc; i++) printf("second argv[%d] = \"%s\"\n", i, argv[i]);
+	Py_Main(argc, argv);
+	return 0;
+}
+
+#else
+
 /* For normal application */
 void
-PyMac_InitApplication()
+PyMac_InitApplication(void)
 {
 	int argc;
 	char **argv;
@@ -505,13 +534,12 @@ PyMac_InitApplication()
 	}
 	Py_Main(argc, argv);
 }
+#endif /* TARGET_API_MAC_OSX */
 
 /* Main program */
 
 static void
-Py_Main(argc, argv)
-	int argc;
-	char **argv;
+Py_Main(int argc, char **argv)
 {
 	int sts;
 	char *command = NULL;
@@ -521,7 +549,7 @@ Py_Main(argc, argv)
 	filename = argv[1];
 
 	if (Py_VerboseFlag ||
-	    command == NULL && filename == NULL && isatty((int)fileno(fp)))
+	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
 		fprintf(stderr, "Python %s on %s\n%s\n",
 			Py_GetVersion(), Py_GetPlatform(), COPYRIGHT);
 	
@@ -533,9 +561,11 @@ Py_Main(argc, argv)
 		}
 	}
 	
+#if !TARGET_API_MAC_OSX
 	/* We initialize the menubar here, hoping SIOUX is initialized by now */
 	PyMac_InitMenuBar();
-	
+#endif
+
 	Py_Initialize();
 	
 	PyUnicode_SetDefaultEncoding(PyMac_getscript());
@@ -564,11 +594,12 @@ Py_Main(argc, argv)
 	/*NOTREACHED*/
 }
 
+#if !TARGET_API_MAC_OSX
 /*
 ** Reset the "unseen output" flag
 */
 void
-PyMac_OutputSeen()
+PyMac_OutputSeen(void)
 {
 	if ( console_output_state == STATE_UNKNOWN )
 		PyMac_InitMenuBar();
@@ -579,7 +610,7 @@ PyMac_OutputSeen()
 ** Set the "unseen output" flag
 */
 void
-PyMac_OutputNotSeen()
+PyMac_OutputNotSeen(void)
 {
 	if ( console_output_state == STATE_UNKNOWN )
 		PyMac_InitMenuBar();
@@ -590,20 +621,22 @@ PyMac_OutputNotSeen()
 ** Override abort() - The default one is not what we want.
 */
 void
-abort()
+abort(void)
 {
 	console_output_state = STATE_LASTWRITE;
 	PyMac_Exit(1);
 }
+#endif /* !TARGET_API_MAC_OSX */
 
 /*
 ** Terminate application
 */
 void
-PyMac_Exit(status)
-	int status;
+PyMac_Exit(int status)
 {
+#ifdef USE_SIOUX
 	int keep = 0;
+#endif
 
 #if __profile__ == 1
 	ProfilerDump("\pPython Profiler Results");
@@ -649,14 +682,7 @@ PyMac_Exit(status)
 	exit(status);
 }
 
-/* Return the program name -- some code out there needs this. */
-char *
-Py_GetProgramFullPath()
-{
-	return orig_argv[0];
-}
-
-
+#if !TARGET_API_MAC_OSX
 /* Make the *original* argc/argv available to other modules.
    This is rare, but it is needed by the secureware extension. */
 
@@ -666,23 +692,31 @@ Py_GetArgcArgv(int *argc,char ***argv)
 	*argc = orig_argc;
 	*argv = orig_argv;
 }
+#endif
 
 /* More cruft that shouldn't really be here, used in sysmodule.c */
+#if !TARGET_API_MAC_OSX
+/* Return the program name -- some code out there needs this. */
+char *
+Py_GetProgramFullPath(void)
+{
+	return orig_argv[0];
+}
 
 char *
-Py_GetPrefix()
+Py_GetPrefix(void)
 {
 	return PyMac_GetPythonDir();
 }
 
 char *
-Py_GetExecPrefix()
+Py_GetExecPrefix(void)
 {
 	return PyMac_GetPythonDir();
 }
 
 int
-PyMac_GetDelayConsoleFlag()
+PyMac_GetDelayConsoleFlag(void)
 {
 	return (int)PyMac_options.delayconsole;
 }
@@ -705,4 +739,5 @@ __convert_to_newlines(unsigned char * buf, size_t * n_ptr)
 			*p = '\r';
 }
 #endif /* WITHOUT_UNIX_NEWLINES */
+#endif /* !TARGET_API_MAC_OSX */
 
