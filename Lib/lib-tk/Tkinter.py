@@ -223,7 +223,10 @@ class StringVar(Variable):
 
     def get(self):
         """Return value of variable as string."""
-        return self._tk.globalgetvar(self._name)
+        value = self._tk.globalgetvar(self._name)
+        if isinstance(value, basestring):
+            return value
+        return str(value)
 
 class IntVar(Variable):
     """Value holder for integer variables."""
@@ -267,7 +270,7 @@ class BooleanVar(Variable):
         Variable.__init__(self, master)
 
     def get(self):
-        """Return the value of the variable as 0 or 1."""
+        """Return the value of the variable as a bool."""
         return self._tk.getboolean(self._tk.globalgetvar(self._name))
 
 def mainloop(n=0):
@@ -369,7 +372,7 @@ class Misc:
     getint = int
     getdouble = float
     def getboolean(self, s):
-        """Return 0 or 1 for Tcl boolean values true and false given as parameter."""
+        """Return a boolean value  for Tcl boolean values true and false given as parameter."""
         return self.tk.getboolean(s)
     def focus_set(self):
         """Direct input focus to this widget.
@@ -1636,7 +1639,7 @@ class Pack:
         anchor=NSEW (or subset) - position widget according to
                                   given direction
                 before=widget - pack it before you will pack widget
-        expand=1 or 0 - expand widget if parent size grows
+        expand=bool - expand widget if parent size grows
         fill=NONE or X or Y or BOTH - fill widget if widget grows
         in=master - use master to contain this widget
         ipadx=amount - add internal padding in x direction
