@@ -311,26 +311,21 @@ class Application:
 	def do_key(self, event):
 		(what, message, when, where, modifiers) = event
 		c = chr(message & charCodeMask)
+		if self.menubar:
+			result = MenuEvent(event)
+			id = (result>>16) & 0xffff	# Hi word
+			item = result & 0xffff		# Lo word
+			if id:
+				self.do_rawmenu(id, item, None, event)
+				return
+			# Otherwise we fall-through
 		if modifiers & cmdKey:
 			if c == '.':
 				raise self
 			else:
 				if not self.menubar:
 					MacOS.HandleEvent(event)
-					return
-				result = MenuKey(ord(c))
-				id = (result>>16) & 0xffff	# Hi word
-				item = result & 0xffff		# Lo word
-				if id:
-					self.do_rawmenu(id, item, None, event)
-#				elif c == 'w':
-#					w = FrontWindow()
-#					if w:
-#						self.do_close(w)
-#					else:
-#						if DEBUG: print 'Command-W without front window'
-				else:
-					if DEBUG: print "Command-" +`c`
+				return
 		else:
 			# See whether the front window wants it
 			w = FrontWindow()
@@ -533,7 +528,7 @@ class Menu:
 			self.menu.SetItemCmd(item, ord(char))
 			self.menu.SetMenuItemModifiers(item, modifiers)
 			if len(shortcut) > 2:
-				self.menu.SetMenuItem
+				self.menu.SetMenuItemKeyGlyph(item, shortcut[2])
 		elif shortcut:	
 			self.menu.SetItemCmd(item, ord(shortcut))
 		return item
