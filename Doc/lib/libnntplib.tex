@@ -53,31 +53,57 @@ valid headers):
 The module itself defines the following items:
 
 \begin{classdesc}{NNTP}{host\optional{, port
-                        \optional{, user\optional{, password}}}}
+                        \optional{, user\optional{, password
+			\optional{, readermode}}}}}
 Return a new instance of the \class{NNTP} class, representing a
 connection to the NNTP server running on host \var{host}, listening at
 port \var{port}.  The default \var{port} is 119.  If the optional
 \var{user} and \var{password} are provided, the
 \samp{AUTHINFO USER} and \samp{AUTHINFO PASS} commands are used to
-identify and authenticate the user to the server.
+identify and authenticate the user to the server.  If the optional
+flag \var{readermode} is true, then a \samp{mode reader} command is
+sent before authentication is performed.  Reader mode is sometimes
+necessary if you are connecting to an NNTP server on the local machine
+and intend to call reader-specific commands, such as \samp{group}.  If
+you get unexpected \code{NNTPPermanentError}s, you might need to set
+\var{readermode}.  \var{readermode} defaults to \code{None}.
 \end{classdesc}
 
-\begin{excdesc}{error_reply}
-Exception raised when an unexpected reply is received from the server.
-\end{excdesc}
+\begin{classdesc}{NNTPError}{}
+Derived from the standard exception \code{Exception}, this is the base
+class for all exceptions raised by the \code{nntplib} module.
+\end{classdesc}
 
-\begin{excdesc}{error_temp}
-Exception raised when an error code in the range 400--499 is received.
-\end{excdesc}
+\begin{classdesc}{NNTPReplyError}{}
+Exception raised when an unexpected reply is received from the
+server.  For backwards compatibility, the exception \code{error_reply}
+is equivalent to this class.
+\end{classdesc}
 
-\begin{excdesc}{error_perm}
-Exception raised when an error code in the range 500--599 is received.
-\end{excdesc}
+\begin{classdesc}{NNTPTemporaryError}{}
+Exception raised when an error code in the range 400--499 is
+received.  For backwards compatibility, the exception
+\code{error_temp} is equivalent to this class.
+\end{classdesc}
 
-\begin{excdesc}{error_proto}
+\begin{classdesc}{NNTPPermanentError}{}
+Exception raised when an error code in the range 500--599 is
+received.  For backwards compatibility, the exception
+\code{error_perm} is equivalent to this class.
+\end{classdesc}
+
+\begin{classdesc}{NNTPProtocolError}{}
 Exception raised when a reply is received from the server that does
-not begin with a digit in the range 1--5.
-\end{excdesc}
+not begin with a digit in the range 1--5.  For backwards
+compatibility, the exception \code{error_proto} is equivalent to this
+class.
+\end{classdesc}
+
+\begin{classdesc}{NNTPDataError}{}
+Exception raised when there is some error in the response data.  For
+backwards compatibility, the exception \code{error_data} is
+equivalent to this class.
+\end{classdesc}
 
 
 \subsection{NNTP Objects \label{nntp-objects}}
