@@ -215,9 +215,8 @@ class MimeTypes:
             if not words:
                 continue
             type, suffixes = words[0], words[1:]
-            suffixes = [ '.' + suff for suff in suffixes ]
             for suff in suffixes:
-                self.add_type(type, suff, strict)
+                self.add_type(type, '.' + suff, strict)
 
 def guess_type(url, strict=True):
     """Guess the type of a file based on its URL.
