@@ -928,8 +928,7 @@ def pipepager(text, cmd):
         pipe.write(text)
         pipe.close()
     except IOError:
-        # Ignore broken pipes caused by quitting the pager program.
-        pass
+        pass # Ignore broken pipes caused by quitting the pager program.
 
 def tempfilepager(text, cmd):
     """Page through text by invoking a program on a temporary file."""
@@ -1126,20 +1125,285 @@ def writedocs(dir, pkgpath='', done={}):
                     writedoc(modname)
 
 class Helper:
+    keywords = {
+        'and': 'BOOLEAN',
+        'assert': 'ASSERT',
+        'break': ('ref/break', 'while for'),
+        'class': ('ref/class', 'CLASSES SPECIALMETHODS'),
+        'continue': ('ref/continue', 'while for'),
+        'def': ('ref/function', ''),
+        'del': ('ref/del', 'BASICMETHODS'),
+        'elif': 'if',
+        'else': ('ref/if', 'while for'),
+        'except': 'try',
+        'exec': ('ref/exec', ''),
+        'finally': 'try',
+        'for': ('ref/for', 'break continue while'),
+        'from': 'import',
+        'global': ('ref/global', 'NAMESPACES'),
+        'if': ('ref/if', 'TRUTHVALUE'),
+        'import': ('ref/import', 'MODULES'),
+        'in': ('ref/comparisons', 'SEQUENCEMETHODS2'),
+        'is': 'COMPARISON',
+        'lambda': ('ref/lambda', 'FUNCTIONS'),
+        'not': 'BOOLEAN',
+        'or': 'BOOLEAN',
+        'pass': 'PASS',
+        'print': ('ref/print', ''),
+        'raise': ('ref/raise', 'EXCEPTIONS'),
+        'return': ('ref/return', ''),
+        'try': ('ref/try', 'EXCEPTIONS'),
+        'while': ('ref/while', 'break continue if TRUTHVALUE'),
+    }
+
+    topics = {
+        'TYPES': ('ref/types', 'STRINGS UNICODE NUMBERS SEQUENCES MAPPINGS FUNCTIONS CLASSES MODULES FILES inspect'),
+        'STRINGS': ('ref/strings', 'UNICODE SEQUENCES STRINGMETHODS FORMATTING TYPES'),
+        'STRINGMETHODS': ('lib/string-methods', 'STRINGS FORMATTING'),
+        'FORMATTING': ('lib/typesseq-strings', 'OPERATORS'),
+        'UNICODE': ('ref/unicode', 'TYPES STRING'),
+        'NUMBERS': ('ref/numbers', 'INTEGER FLOAT COMPLEX TYPES'),
+        'INTEGER': ('ref/integers', 'int range'),
+        'FLOAT': ('ref/floating', 'float math'),
+        'COMPLEX': ('ref/imaginary', 'complex cmath'),
+        'SEQUENCES': ('lib/typesseq', 'LISTS'),
+        'MAPPINGS': 'DICTIONARIES',
+        'FUNCTIONS': ('lib/typesfunctions', 'def TYPES'),
+        'METHODS': ('lib/typesmethods', 'class def CLASSES TYPES'),
+        'CODEOBJECTS': ('lib/bltin-code-objects', 'compile FUNCTIONS TYPES'),
+        'TYPEOBJECTS': ('lib/bltin-type-objects', 'TYPES'),
+        'FRAMEOBJECTS': 'TYPES',
+        'TRACEBACKS': 'TYPES',
+        'NONE': ('lib/bltin-null-object', ''),
+        'ELLIPSIS': ('lib/bltin-ellipsis-object', 'SLICINGS'),
+        'FILES': ('lib/bltin-file-objects', ''),
+        'SPECIALATTRIBUTES': ('lib/specialattrs', ''),
+        'CLASSES': ('ref/types', 'class SPECIALMETHODS PRIVATENAMES'),
+        'MODULES': ('lib/typesmodules', 'import'),
+        'PACKAGES': 'import',
+        'EXPRESSIONS': ('ref/summary', 'lambda or and not in is BOOLEAN COMPARISON BITWISE SHIFTING BINARY FORMATTING POWER UNARY ATTRIBUTES SUBSCRIPTS SLICINGS CALLS TUPLES LISTS DICTIONARIES BACKQUOTES'),
+        'OPERATORS': 'EXPRESSIONS',
+        'PRECEDENCE': 'EXPRESSIONS',
+        'OBJECTS': ('ref/objects', 'TYPES'),
+        'SPECIALMETHODS': ('ref/specialnames', 'BASICMETHODS ATTRIBUTEMETHODS CALLABLEMETHODS SEQUENCEMETHODS1 MAPPINGMETHODS SEQUENCEMETHODS2 NUMBERMETHODS CLASSES'),
+        'BASICMETHODS': ('ref/customization', 'SPECIALMETHODS'),
+        'ATTRIBUTEMETHODS': ('ref/attribute-access', 'SPECIALMETHODS'),
+        'CALLABLEMETHODS': ('ref/callable-types', 'SPECIALMETHODS'),
+        'SEQUENCEMETHODS1': ('ref/sequence-types', 'SEQUENCEMETHODS2'),
+        'SEQUENCEMETHODS2': ('ref/sequence-methods', 'SEQUENCEMETHODS1'),
+        'MAPPINGMETHODS': ('ref/sequence-types', 'SPECIALMETHODS'),
+        'NUMBERMETHODS': ('ref/numeric-types', 'SPECIALMETHODS'),
+        'EXECUTION': ('ref/execframes', ''),
+        'NAMESPACES': ('ref/execframes', 'global ASSIGNMENT DELETION'),
+        'SCOPING': 'NAMESPACES',
+        'FRAMES': 'NAMESPACES',
+        'EXCEPTIONS': ('ref/exceptions', 'try except finally raise'),
+        'COERCIONS': 'CONVERSIONS',
+        'CONVERSIONS': ('ref/conversions', ''),
+        'IDENTIFIERS': ('ref/identifiers', 'keywords SPECIALIDENTIFIERS'),
+        'SPECIALIDENTIFIERS': ('ref/id-classes', ''),
+        'PRIVATENAMES': ('ref/identifiers', ''),
+        'LITERALS': ('ref/atom-literals', 'STRINGS BACKQUOTES NUMBERS TUPLELITERALS LISTLITERALS DICTIONARYLITERALS'),
+        'TUPLES': 'SEQUENCES',
+        'TUPLELITERALS': ('ref/exprlists', 'LITERALS'),
+        'LISTS': ('lib/typesseq-mutable', 'LISTLITERALS'),
+        'LISTLITERALS': ('ref/lists', 'LITERALS'),
+        'DICTIONARIES': ('lib/typesmapping', 'DICTIONARYLITERALS'),
+        'DICTIONARYLITERALS': ('ref/dict', 'LITERALS'),
+        'BACKQUOTES': ('ref/string-conversions', 'LITERALS'),
+        'ATTRIBUTES': ('ref/attribute-references', 'getattr hasattr setattr ATTRIBUTEMETHODS'),
+        'SUBSCRIPTS': ('ref/subscriptions', 'SEQUENCEMETHODS1'),
+        'SLICINGS': ('ref/slicings', 'SEQUENCEMETHODS2'),
+        'CALLS': ('ref/calls', 'EXPRESSIONS'),
+        'POWER': ('ref/power', 'EXPRESSIONS'),
+        'UNARY': ('ref/unary', 'EXPRESSIONS'),
+        'BINARY': ('ref/binary', 'EXPRESSIONS'),
+        'SHIFTING': ('ref/shifting', 'EXPRESSIONS'),
+        'BITWISE': ('ref/bitwise', 'EXPRESSIONS'),
+        'COMPARISON': ('ref/comparisons', 'EXPRESSIONS BASICMETHODS'),
+        'BOOLEAN': ('ref/lambda', 'EXPRESSIONS'),
+        'ASSERTION': 'assert',
+        'ASSIGNMENT': ('ref/assignment', 'AUGMENTEDASSIGNMENT'),
+        'AUGMENTEDASSIGNMENT': ('ref/augassign', ''),
+        'DELETION': 'del',
+        'PRINTING': 'print',
+        'RETURNING': 'return',
+        'IMPORTING': 'import',
+        'CONDITIONAL': 'if',
+        'LOOPING': ('ref/compound', 'for while break continue'),
+        'TRUTHVALUE': ('lib/truth', 'if while and or not BASICMETHODS'),
+    }
+
+    def __init__(self, input, output):
+        self.input = input
+        self.output = output
+        self.docdir = None
+        execdir = os.path.dirname(sys.executable)
+        homedir = os.environ.get('PYTHONHOME')
+        for dir in [os.environ.get('PYTHONDOCS'),
+                    homedir and os.path.join(homedir, 'doc'),
+                    os.path.join(execdir, 'doc'),
+                    '/usr/doc/python-docs-' + split(sys.version)[0],
+                    '/usr/doc/python-' + split(sys.version)[0],
+                    '/usr/doc/python-docs-' + sys.version[:3],
+                    '/usr/doc/python-' + sys.version[:3]]:
+            if dir and os.path.isdir(os.path.join(dir, 'lib')):
+                self.docdir = dir
+
     def __repr__(self):
-        return '''Welcome to Python %s!
+        self()
+        return ''
 
-To get help on a Python object, call help(object).
-To get help on a module or package, either import it before calling
-help(module) or call help('modulename').''' % sys.version[:3]
-
-    def __call__(self, *args):
-        if args:
-            doc(args[0])
+    def __call__(self, request=None):
+        if request is not None:
+            self.help(request)
         else:
-            print repr(self)
+            self.intro()
+            self.output.write('\n')
+            while 1:
+                self.output.write('help> ')
+                self.output.flush()
+                try:
+                    request = self.input.readline()
+                    if not request: break
+                except KeyboardInterrupt: break
+                request = strip(replace(request, '"', '', "'", ''))
+                if lower(request) in ['q', 'quit']: break
+                self.help(request)
+            self.output.write('''
+You're now leaving help and returning to the Python interpreter.
+If you want to ask for help on a particular object directly from the
+interpreter, you can type "help(object)".  Executing "help('string')"
+has the same effect as typing a particular string at the help> prompt.
+''')
 
-help = Helper()
+    def help(self, request):
+        if type(request) is type(''):
+            if request == 'help': self.intro()
+            elif request == 'keywords': self.listkeywords()
+            elif request == 'topics': self.listtopics()
+            elif request == 'modules': self.listmodules()
+            elif request[:8] == 'modules ':
+                self.listmodules(split(request)[1])
+            elif self.keywords.has_key(request): self.showtopic(request)
+            elif self.topics.has_key(request): self.showtopic(request)
+            elif request: doc(request, 'Help on %s:')
+        elif isinstance(request, Helper): self()
+        else: doc(request, 'Help on %s:')
+        self.output.write('\n')
+
+    def intro(self):
+        self.output.write('''
+Welcome to Python %s!  This is the online help utility.
+
+If this is your first time using Python, you should definitely check out
+the tutorial on the Internet at http://www.python.org/doc/tut/.
+
+Enter the name of any module, keyword, or topic to get help on writing
+Python programs and using Python modules.  To quit this help utility and
+return to the interpreter, just type "quit".
+
+To get a list of available modules, keywords, or topics, type "modules",
+"keywords", or "topics".  Each module also comes with a one-line summary
+of what it does; to list the modules whose summaries contain a given word
+such as "spam", type "modules spam".
+''' % sys.version[:3])
+
+    def list(self, items, columns=4, width=80):
+        items = items[:]
+        items.sort()
+        colw = width / columns
+        rows = (len(items) + columns - 1) / columns
+        for row in range(rows):
+            for col in range(columns):
+                i = col * rows + row
+                if i < len(items):
+                    self.output.write(items[i])
+                    if col < columns - 1:
+                        self.output.write(' ' + ' ' * (colw-1 - len(items[i])))
+            self.output.write('\n')
+
+    def listkeywords(self):
+        self.output.write('''
+Here is a list of the Python keywords.  Enter any keyword to get more help.
+
+''')
+        self.list(self.keywords.keys())
+
+    def listtopics(self):
+        self.output.write('''
+Here is a list of available topics.  Enter any topic name to get more help.
+
+''')
+        self.list(self.topics.keys())
+
+    def showtopic(self, topic):
+        if not self.docdir:
+            self.output.write('''
+Sorry, topic and keyword documentation is not available because the Python
+HTML documentation files could not be found.  If you have installed them,
+please set the environment variable PYTHONDOCS to indicate their location.
+''')
+            return
+        target = self.topics.get(topic, self.keywords.get(topic))
+        if not target:
+            self.output.write('no documentation found for %s\n' % repr(topic))
+            return
+        if type(target) is type(''):
+            return self.showtopic(target)
+
+        filename, xrefs = target
+        filename = self.docdir + '/' + filename + '.html'
+        try:
+            file = open(filename)
+        except:
+            self.output.write('could not read docs from %s\n' % filename)
+            return
+
+        divpat = re.compile('<div[^>]*navigat.*?</div[^>]*>', re.I | re.S)
+        addrpat = re.compile('<address[^>]*>.*?</address[^>]*>', re.I | re.S)
+        document = re.sub(addrpat, '', re.sub(divpat, '', file.read()))
+        file.close()
+
+        import htmllib, formatter, StringIO
+        buffer = StringIO.StringIO()
+        parser = htmllib.HTMLParser(
+            formatter.AbstractFormatter(formatter.DumbWriter(buffer)))
+        parser.start_table = parser.do_p
+        parser.end_table = lambda parser=parser: parser.do_p({})
+        parser.start_tr = parser.do_br
+        parser.start_td = parser.start_th = lambda a, b=buffer: b.write('\t')
+        parser.feed(document)
+        buffer = replace(buffer.getvalue(), '\xa0', ' ', '\n', '\n  ')
+        pager('  ' + strip(buffer) + '\n')
+        if xrefs: self.output.write('\nRelated help topics: %s\n' % xrefs)
+
+    def listmodules(self, key=''):
+        if key:
+            self.output.write('''
+Here is a list of matching modules.  Enter any module name to get more help.
+
+''')
+            apropos(key)
+        else:
+            self.output.write('''
+Please wait a moment while I gather a list of all available modules...
+
+''')
+            modules = {}
+            def callback(path, modname, desc, modules=modules):
+                if modname and modname[-9:] == '.__init__':
+                    modname = modname[:-9] + ' (package)'
+                if find(modname, '.') < 0:
+                    modules[modname] = 1
+            ModuleScanner().run(callback)
+            self.list(modules.keys())
+            self.output.write('''
+Enter any module name to get more help.  Or, type "modules spam" to search
+for modules whose descriptions contain the word "spam".
+''')
+
+help = Helper(sys.stdin, sys.stdout)
 
 class Scanner:
     """A generic tree iterator."""
