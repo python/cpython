@@ -3,8 +3,7 @@ import parser
 import pprint
 import sys
 
-from parser import expr, suite, sequence2ast
-from test_support import verbose
+from test_support import TestFailed
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -18,20 +17,18 @@ def roundtrip(f, s):
     try:
         st2 = parser.sequence2ast(t)
     except parser.ParserError:
-        print "Failing syntax tree:"
-        pprint.pprint(t)
-        raise
+        raise TestFailed, s
 
 def roundtrip_fromfile(filename):
-    roundtrip(suite, open(filename).read())
+    roundtrip(parser.suite, open(filename).read())
 
 def test_expr(s):
     print "expr:", s
-    roundtrip(expr, s)
+    roundtrip(parser.expr, s)
 
 def test_suite(s):
     print "suite:", s
-    roundtrip(suite, s)
+    roundtrip(parser.suite, s)
 
 
 print "Expressions:"
@@ -88,8 +85,37 @@ test_suite("a ^= b")
 test_suite("a <<= b")
 test_suite("a >>= b")
 test_suite("a **= b")
+
 test_suite("def f(): pass")
+test_suite("def f(*args): pass")
+test_suite("def f(*args, **kw): pass")
+test_suite("def f(**kw): pass")
 test_suite("def f(foo=bar): pass")
+test_suite("def f(foo=bar, *args): pass")
+test_suite("def f(foo=bar, *args, **kw): pass")
+test_suite("def f(foo=bar, **kw): pass")
+
+test_suite("def f(a, b): pass")
+test_suite("def f(a, b, *args): pass")
+test_suite("def f(a, b, *args, **kw): pass")
+test_suite("def f(a, b, **kw): pass")
+test_suite("def f(a, b, foo=bar): pass")
+test_suite("def f(a, b, foo=bar, *args): pass")
+test_suite("def f(a, b, foo=bar, *args, **kw): pass")
+test_suite("def f(a, b, foo=bar, **kw): pass")
+
+test_suite("from sys.path import *")
+test_suite("from sys.path import dirname")
+test_suite("from sys.path import dirname as my_dirname")
+test_suite("from sys.path import dirname, basename")
+test_suite("from sys.path import dirname as my_dirname, basename")
+test_suite("from sys.path import dirname, basename as my_basename")
+
+test_suite("import sys")
+test_suite("import sys as system")
+test_suite("import sys, math")
+test_suite("import sys as system, math")
+test_suite("import sys, math as my_math")
 
 #d = os.path.dirname(os.__file__)
 #roundtrip_fromfile(os.path.join(d, "os.py"))
@@ -107,10 +133,9 @@ def check_bad_tree(tree, label):
     print
     print label
     try:
-        sequence2ast(tree)
+        parser.sequence2ast(tree)
     except parser.ParserError:
         print "caught expected exception for invalid tree"
-        pass
     else:
         print "test failed: did not properly detect invalid tree:"
         pprint.pprint(tree)

@@ -50,7 +50,32 @@ suite: a <<= b
 suite: a >>= b
 suite: a **= b
 suite: def f(): pass
+suite: def f(*args): pass
+suite: def f(*args, **kw): pass
+suite: def f(**kw): pass
 suite: def f(foo=bar): pass
+suite: def f(foo=bar, *args): pass
+suite: def f(foo=bar, *args, **kw): pass
+suite: def f(foo=bar, **kw): pass
+suite: def f(a, b): pass
+suite: def f(a, b, *args): pass
+suite: def f(a, b, *args, **kw): pass
+suite: def f(a, b, **kw): pass
+suite: def f(a, b, foo=bar): pass
+suite: def f(a, b, foo=bar, *args): pass
+suite: def f(a, b, foo=bar, *args, **kw): pass
+suite: def f(a, b, foo=bar, **kw): pass
+suite: from sys.path import *
+suite: from sys.path import dirname
+suite: from sys.path import dirname as my_dirname
+suite: from sys.path import dirname, basename
+suite: from sys.path import dirname as my_dirname, basename
+suite: from sys.path import dirname, basename as my_basename
+suite: import sys
+suite: import sys as system
+suite: import sys, math
+suite: import sys as system, math
+suite: import sys, math as my_math
 
 Invalid parse trees:
 
