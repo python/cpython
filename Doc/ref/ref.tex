@@ -1,11 +1,7 @@
-% Format this file with latex.
-
 \documentstyle[11pt,myformat]{report}
 
-\title{\bf
-	Python Reference Manual
-}
-	
+\title{\bf Python Reference Manual}
+
 \author{
 	Guido van Rossum \\
 	Dept. CST, CWI, Kruislaan 413 \\
@@ -487,10 +483,19 @@ XXX code blocks, scopes, name spaces, name binding, exceptions
 
 \chapter{The standard type hierarchy}
 
-The following types are built into Python.  Extension modules
-written in C can define additional types.  Future versions of Python
-may also add types to the type hierarchy (e.g., rational or complex
+Below is a list of the types that are built into Python.  Extension
+modules written in C can define additional types.  Future versions of
+Python may add types to the type hierarchy (e.g., rational or complex
 numbers, lists of efficiently stored integers, etc.).
+
+Some type descriptions contain a paragraph listing `special
+attributes'.  These are attributes that provide access to the
+implementation and are not intended for general use.  Their definition
+may change in the future.  There are also some `generic' special
+attributes, not listed with the individual objects: \verb\__methods__\
+is a list of the method names of a built-in object, if it has any;
+\verb\__members__\ is a list of the data attribute names of a built-in
+object, if it has any.
 
 \begin{description}
 
@@ -648,10 +653,10 @@ These are the types to which the function call operation (written as
 \begin{description}
 
 \item[User-defined functions]
-A user-defined function is created by a function definition (starting
-with the \verb\def\ keyword).  It should be called with an argument
-list containing the same number of items as the function's
-formal parameter list.
+A user-defined function is created by a function definition (see
+section \ref{function}).  It should be called with an argument list
+containing the same number of items as the function's formal parameter
+list.
 
 Special read-only attributes: \verb\func_code\ is the code object
 representing the compiled function body, and \verb\func_globals\ is (a
@@ -692,23 +697,53 @@ call a class object with one or more arguments.
 \end{description}
 
 \item[Modules]
-A module object is a container for a module's name space, which is a
-dictionary (the same dictionary as referenced by the
+Modules are imported by the \verb\import\ statement (see section
+\ref{import}).  A module object is a container for a module's name
+space, which is a dictionary (the same dictionary as referenced by the
 \ver\func_globals\ attribute of functions defined in the module).
 Module attribute references are translated to lookups in this
 dictionary.  A module object does not contain the code object used to
 initialize the module (since it isn't needed once the initialization
 is done).
 
-There are two special read-only attributes: \verb\__dict__\ yields the
-module's name space as a dictionary object; \verb\__name__\ yields the
-module's name.
+Attribute assignment update the module's name space dictionary.
+
+Special read-only attributes: \verb\__dict__\ yields the module's name
+space as a dictionary object; \verb\__name__\ yields the module's name.
 
 \item[Classes]
-XXX
+Class objects are created by class definitions (see section
+\ref{class}).  A class is a container for a dictionary containing the
+class's name space.  Class attribute references are translated to
+lookups in this dictionary.  When an attribute name is not found
+there, the attribute search continues in the base classes.  The search
+is depth-first, left-to-right in the order of their occurrence in the
+base class list.
+
+Attribute assignments update the class's dictionary, never the
+dictionary of a base class.
+
+A class can be called as a parameterless function to yield a class
+instance (see above).
+
+Special read-only attributes: \verb\__dict__\ yields te dictionary
+containing the class's name space; \verb\__bases__\ yields a tuple
+(possibly empty or a singleton) containing the base classes, in the
+order of their occurrence in the base class list.
 
 \item[Class instances]
-XXX
+A class instance is created by calling a class object as a
+parameterless function.  A class instance has a dictionary in which
+attribute references are searched.  When an attribute is not found
+there, and the instance's class has an attribute by that name, and
+that class attribute is a user-defined function (and in no other
+cases), the instance attribute reference yields a user-defined method
+object (see above) constructed from the instance and the function.
+
+Attribute assignments update the instance's dictionary.
+
+Special read-only attributes: \verb\__dict__\ yields the attribute
+dictionary; \verb\__class__\ yields the instance's class.
 
 \item[Files]
 A file object represents an open file.  (It is a wrapper around a C
@@ -1587,7 +1622,7 @@ not nested in the \verb\try\ clause of a \verb\try\ statement with a
 
 It continues with the next cycle of the nearest enclosing loop.
 
-\section{The {\tt import} statement}
+\section{The {\tt import} statement} \label{import}
 
 \begin{verbatim}
 import_stmt:    "import" identifier ("," identifier)*
@@ -1646,7 +1681,7 @@ restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
 
-\section{The {\tt global} statement}
+\section{The {\tt global} statement} \label{global}
 
 \begin{verbatim}
 global_stmt:    "global" identifier ("," identifier)*
@@ -1842,9 +1877,9 @@ When a \verb\return\ or \verb\break\ statement is executed in the
 reason is a problem with the current implementation -- this
 restriction may be lifted in the future).
 
+\section{Function definitions} \label{function}
 
-
-\section{Function definitions}
+XXX
 
 \begin{verbatim}
 funcdef:        "def" identifier "(" [parameter_list] ")" ":" suite
@@ -1852,12 +1887,20 @@ parameter_list: parameter ("," parameter)*
 parameter:      identifier | "(" parameter_list ")"
 \end{verbatim}
 
-\section{Class definitions}
+XXX
+
+\section{Class definitions} \label{class}
+
+XXX
 
 \begin{verbatim}
 classdef:       "class" identifier [inheritance] ":" suite
 inheritance:    "(" expression ("," expression)* ")"
 \end{verbatim}
+
+XXX
+
+\section{P.M.}
 
 XXX Syntax for scripts, modules
 XXX Syntax for interactive input, eval, exec, input
