@@ -79,11 +79,11 @@ class PartialMountClient:
 
 	# This function is called to gobble up a suitable
 	# authentication object for a call to procedure 'proc'.
-	# (Experiments suggest that for Mnt/Unmnt, Unix authentication
+	# (Experiments suggest that for Mnt/Umnt, Unix authentication
 	# is necessary, while the other calls require no
 	# authentication.)
 	def mkcred(self, proc):
-		if proc not in (1, 3, 4): # not Mnt/Unmnt/Unmntall
+		if proc not in (1, 3, 4): # not Mnt/Umnt/Umntall
 			return rpc.AUTH_NULL, ''
 		if self.cred == None:
 			self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
