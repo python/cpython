@@ -136,21 +136,20 @@ but the debugger's state is not changed.
 
 \begin{description}
 
-\item[h(elp) [\var{command}]]
+\item[h(elp) \optional{\var{command}}]
 
-Without argument, print the list of available commands.
-With a \var{command} as argument, print help about that command.
-``\code{help pdb}'' displays the full documentation file; if the
-environment variable \code{PAGER} is defined, the file is piped
-through that command instead.  Since the \var{command} argument must be
-an identifier, ``\code{help exec}'' must be entered to get help on the
-``\code{!}'' command.
+Without argument, print the list of available commands.  With a
+\var{command} as argument, print help about that command.  \samp{help
+pdb} displays the full documentation file; if the environment variable
+\code{PAGER} is defined, the file is piped through that command
+instead.  Since the \var{command} argument must be an identifier,
+\samp{help exec} must be entered to get help on the \samp{!} command.
 
 \item[w(here)]
 
-Print a stack trace, with the most recent frame at the bottom.
-An arrow indicates the current frame, which determines the
-context of most commands.
+Print a stack trace, with the most recent frame at the bottom.  An
+arrow indicates the current frame, which determines the context of
+most commands.
 
 \item[d(own)]
 
@@ -162,7 +161,8 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[b(reak) [\var{lineno}\code{|}\var{function}] [, "\var{condition}"]]
+\item[b(reak) \optional{\var{lineno}{\Large\code{|}}\var{function}%
+              \optional{, \code{'}\var{condition}\code{'}}}]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the entry of
@@ -171,7 +171,7 @@ If a second argument is present, it is a string (included in string
 quotes!) specifying an expression which must evaluate to true before
 the breakpoint is honored.
 
-\item[cl(ear) [\var{lineno}]]
+\item[cl(ear) \optional{\var{lineno}}]
 
 With a \var{lineno} argument, clear that break in the current file.
 Without argument, clear all breaks (but first ask confirmation).
@@ -198,7 +198,7 @@ Continue execution until the current function returns.
 
 Continue execution, only stop when a breakpoint is encountered.
 
-\item[l(ist) [\var{first}] [, \var{last}]]
+\item[l(ist) \optional{\var{first\optional{, last}}}]
 
 List source code for the current file.  Without arguments, list 11
 lines around the current line or continue the previous listing.  With
@@ -216,7 +216,7 @@ Evaluate the \var{expression} in the current context and print its
 value.  (Note: \code{print} can also be used, but is not a debugger
 command --- this executes the Python \code{print} statement.)
 
-\item[[!] \var{statement}]
+\item[\optional{!}\var{statement}]
 
 Execute the (one-line) \var{statement} in the context of
 the current stack frame.
@@ -241,7 +241,7 @@ The program being executed is aborted.
 Some changes were made to the interpreter:
 
 \begin{itemize}
-\item sys.settrace(func) sets the global trace function
+\item \code{sys.settrace(\var{func})} sets the global trace function
 \item there can also a local trace function (see later)
 \end{itemize}
 
