@@ -32,6 +32,19 @@ def initscr():
     
     return stdscr
 
+# This is a similar wrapper for start_color(), which adds the COLORS and
+# COLOR_PAIRS variables which are only available after start_color() is
+# called.
+ 
+def start_color():
+    import _curses, curses
+    retval = _curses.start_color()
+    if hasattr(_curses, 'COLORS'):
+        curses.COLORS = _curses.COLORS
+    if hasattr(_curses, 'COLOR_PAIRS'):
+        curses.COLOR_PAIRS = _curses.COLOR_PAIRS
+    return retval 
+
 # Import Python has_key() implementation if _curses doesn't contain has_key()
 
 try:
