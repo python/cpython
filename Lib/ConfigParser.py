@@ -554,8 +554,8 @@ class ConfigParser(RawConfigParser):
             if value.find("%(") != -1:
                 try:
                     value = value % vars
-                except KeyError, key:
-                    raise InterpolationError(key, option, section, rawval)
+                except KeyError, e:
+                    raise InterpolationError(e[0], option, section, rawval)
             else:
                 break
         if value.find("%(") != -1:
@@ -599,8 +599,7 @@ class SafeConfigParser(ConfigParser):
                 try:
                     v = map[var]
                 except KeyError:
-                    raise InterpolationError(
-                        "no value found for %r" % var)
+                    raise InterpolationError(var, option, section, rest)
                 if "%" in v:
                     self._interpolate_some(option, accum, v,
                                            section, map, depth + 1)
