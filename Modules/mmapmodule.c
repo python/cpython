@@ -116,9 +116,10 @@ mmap_read_byte_method (mmap_object * self,
 			   PyObject * args)
 {
 	char value;
-	char * where = (self->data+self->pos);
+	char * where;
 	CHECK_VALID(NULL);
-	if ((where >= (char *)0) && (where < (self->data+self->size))) {
+	if (self->pos >= 0 && self->pos < self->size) {
+	        where = self->data + self->pos;
 		value = (char) *(where);
 		self->pos += 1;
 		return Py_BuildValue("c", (char) *(where));
@@ -593,7 +594,7 @@ mmap_ass_slice(self, ilow, ihigh, v)
 	int ilow, ihigh;
 	PyObject *v;
 {
-	unsigned char *buf;
+	const char *buf;
 
 	CHECK_VALID(-1);
 	if (ilow < 0)
@@ -628,7 +629,7 @@ mmap_ass_item(self, i, v)
 	int i;
 	PyObject *v;
 {
-	unsigned char *buf;
+	const char *buf;
  
 	CHECK_VALID(-1);
 	if (i < 0 || i >= self->size) {
