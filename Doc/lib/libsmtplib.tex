@@ -138,9 +138,9 @@ when necessary.
 Identify yourself to an ESMTP server using \samp{EHLO}.  The hostname
 argument defaults to the fully qualified domain name of the local
 host.  Examine the response for ESMTP option and store them for use by
-\method{has_option()}.
+\method{has_extn()}.
 
-Unless you wish to use \method{has_option()} before sending
+Unless you wish to use \method{has_extn()} before sending
 mail, it should not be necessary to call this method explicitly.  It
 will be implicitly called by \method{sendmail()} when necessary.
 \end{methoddesc}
