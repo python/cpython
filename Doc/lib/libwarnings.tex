@@ -178,8 +178,10 @@ contain embedded newlines and ends in a newline.
 
 \begin{funcdesc}{filterwarnings}{action\optional{,
                  message\optional{, category\optional{,
-                 module\optional{, lineno}}}}}
-Insert an entry into the list of warnings filters (at the front).
+                 module\optional{, lineno\optional{, append}}}}}}
+Insert an entry into the list of warnings filters.  The entry is
+inserted at the front by default; if \var{append} is true, it is
+inserted at the end.
 This checks the types of the arguments, compiles the message and
 module regular expressions, and inserts them as a tuple in front
 of the warnings filter.  Entries inserted later override entries
