@@ -19,7 +19,7 @@ syntax (e.g. between statements in compound statements).
 
 \subsection{Comments}
 
-A comment starts with a hash character (\verb\#\) that is not part of
+A comment starts with a hash character (\verb@#@) that is not part of
 a string literal, and ends at the end of the physical line.  A comment
 always signifies the end of the logical line.  Comments are ignored by
 the syntax.
@@ -28,7 +28,7 @@ the syntax.
 \index{physical line}
 \index{hash character}
 
-\subsection{Line joining}
+\subsection{Explicit line joining}
 
 Two or more physical lines may be joined into logical lines using
 backslash characters (\verb/\/), as follows: when a physical line ends
@@ -37,14 +37,36 @@ joined with the following forming a single logical line, deleting the
 backslash and the following end-of-line character.  For example:
 \index{physical line}
 \index{line joining}
+\index{line continuation}
 \index{backslash character}
 %
 \begin{verbatim}
-month_names = ['Januari', 'Februari', 'Maart',     \
-               'April',   'Mei',      'Juni',      \
-               'Juli',    'Augustus', 'September', \
-               'Oktober', 'November', 'December']
+if 1900 < year < 2100 and 1 <= month <= 12 \
+   and 1 <= day <= 31 and 0 <= hour < 24 \
+   and 0 <= minute < 60 and 0 <= second < 60:   # Looks like a valid date
+        return 1
 \end{verbatim}
+
+A line ending in a backslash cannot carry a comment; a backslash does
+not continue a comment (but it does continue a string literal, see
+below).
+
+\subsection{Implicit line joining}
+
+Expressions in parentheses, square brackets or curly braces can be
+split over more than one physical line without using backslashes.
+For example:
+
+\begin{verbatim}
+month_names = ['Januari', 'Februari', 'Maart',      # These are the
+               'April',   'Mei',      'Juni',       # Dutch names
+               'Juli',    'Augustus', 'September',  # for the months
+               'Oktober', 'November', 'December']   # of the year
+\end{verbatim}
+
+Implicitly continued lines can carry comments.  The indentation of the
+continuation lines is not important.  Blank continuation lines are
+allowed.
 
 \subsection{Blank lines}
 
@@ -123,7 +145,7 @@ The following example shows various indentation errors:
 
 (Actually, the first three errors are detected by the parser; only the
 last error is found by the lexical analyzer --- the indentation of
-\verb\return r\ does not match a level popped off the stack.)
+\verb@return r@ does not match a level popped off the stack.)
 
 \section{Other tokens}
 
@@ -159,26 +181,15 @@ identifiers.  They must be spelled exactly as written here:
 \index{reserved word}
 
 \begin{verbatim}
-and        del        for        in         print
-break      elif       from       is         raise
-class      else       global     not        return
-continue   except     if         or         try
-def        finally    import     pass       while
+access     del        from       lambda     return    
+and        elif       global     not        try       
+break      else       if         or         while     
+class      except     import     pass      
+continue   finally    in         print     
+def        for        is         raise     
 \end{verbatim}
 
-%	# This Python program sorts and formats the above table
-%	import string
-%	l = []
-%	try:
-%		while 1:
-%			l = l + string.split(raw_input())
-%	except EOFError:
-%		pass
-%	l.sort()
-%	for i in range((len(l)+4)/5):
-%		for j in range(i, len(l), 5):
-%			print string.ljust(l[j], 10),
-%		print
+% When adding keywords, pipe it through keywords.py for reformatting
 
 \section{Literals} \label{literals}
 
@@ -192,17 +203,24 @@ String literals are described by the following lexical definitions:
 \index{string literal}
 
 \begin{verbatim}
-stringliteral:  "'" stringitem* "'"
-stringitem:     stringchar | escapeseq
-stringchar:     <any ASCII character except newline or "\" or "'">
-escapeseq:      "'" <any ASCII character except newline>
+stringliteral:   shortstring | longstring
+shortstring:     "'" shortstringitem* "'" | '"' shortstringitem* '"'
+longstring:      "'''" longstringitem* "'''" | '"""' longstringitem* '"""'
+shortstringitem: shortstringchar | escapeseq
+shortstringchar: <any ASCII character except "\" or newline or the quote>
+longstringchar:  <any ASCII character except "\">
+escapeseq:       "\" <any ASCII character>
 \end{verbatim}
 \index{ASCII}
 
-String literals cannot span physical line boundaries.  Escape
-sequences in strings are actually interpreted according to rules
-similar to those used by Standard C.  The recognized escape sequences
-are:
+In ``long strings'' (strings surrounded by sets of three quotes),
+unescaped newlines and quotes are allowed (and are retained), except
+that three unescaped quotes in a row terminate the string.  (A
+``quote'' is the character used to open the string, i.e. either
+\verb/'/ or \verb/"/.)
+
+Escape sequences in strings are interpreted according to rules similar
+to those used by Standard C.  The recognized escape sequences are:
 \index{physical line}
 \index{escape sequence}
 \index{Standard C}
@@ -211,8 +229,10 @@ are:
 \begin{center}
 \begin{tabular}{|l|l|}
 \hline
+\verb/\/{\em newline}	& Ignored \\
 \verb/\\/	& Backslash (\verb/\/) \\
 \verb/\'/	& Single quote (\verb/'/) \\
+\verb/\"/	& Double quote (\verb/"/) \\
 \verb/\a/	& ASCII Bell (BEL) \\
 \verb/\b/	& ASCII Backspace (BS) \\
 %\verb/\E/	& ASCII Escape (ESC) \\
@@ -309,8 +329,8 @@ Some examples of floating point literals:
 \end{verbatim}
 
 Note that numeric literals do not include a sign; a phrase like
-\verb\-1\ is actually an expression composed of the operator
-\verb\-\ and the literal \verb\1\.
+\verb@-1@ is actually an expression composed of the operator
+\verb@-@ and the literal \verb@1@.
 
 \section{Operators}
 
@@ -323,7 +343,7 @@ The following tokens are operators:
 <       ==      >       <=      <>      !=      >=
 \end{verbatim}
 
-The comparison operators \verb\<>\ and \verb\!=\ are alternate
+The comparison operators \verb@<>@ and \verb@!=@ are alternate
 spellings of the same operator.
 
 \section{Delimiters}

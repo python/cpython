@@ -44,7 +44,7 @@ Some objects contain references to ``external'' resources such as open
 files or windows.  It is understood that these resources are freed
 when the object is garbage-collected, but since garbage collection is
 not guaranteed to happen, such objects also provide an explicit way to
-release the external resource, usually a \verb\close\ method.
+release the external resource, usually a \verb@close@ method.
 Programs are strongly recommended to always explicitly close such
 objects.
 
@@ -69,8 +69,8 @@ objects this is not allowed.  E.g. after
 a = 1; b = 1; c = []; d = []
 \end{verbatim}
 
-\verb\a\ and \verb\b\ may or may not refer to the same object with the
-value one, depending on the implementation, but \verb\c\ and \verb\d\
+\verb@a@ and \verb@b@ may or may not refer to the same object with the
+value one, depending on the implementation, but \verb@c@ and \verb@d@
 are guaranteed to refer to two different, unique, newly created empty
 lists.
 
@@ -90,9 +90,9 @@ Some of the type descriptions below contain a paragraph listing
 `special attributes'.  These are attributes that provide access to the
 implementation and are not intended for general use.  Their definition
 may change in the future.  There are also some `generic' special
-attributes, not listed with the individual objects: \verb\__methods__\
+attributes, not listed with the individual objects: \verb@__methods__@
 is a list of the method names of a built-in object, if it has any;
-\verb\__members__\ is a list of the data attribute names of a built-in
+\verb@__members__@ is a list of the data attribute names of a built-in
 object, if it has any.
 \index{attribute}
 \indexii{special}{attribute}
@@ -104,7 +104,7 @@ object, if it has any.
 
 \item[None]
 This type has a single value.  There is a single object with this value.
-This object is accessed through the built-in name \verb\None\.
+This object is accessed through the built-in name \verb@None@.
 It is returned from functions that don't explicitly return an object.
 \ttindex{None}
 \obindex{None@{\tt None}}
@@ -134,7 +134,7 @@ These represent numbers in the range $-2^{31}$ through $2^{31}-1$.
 (The range may be larger on machines with a larger natural word
 size, but not smaller.)
 When the result of an operation falls outside this range, the
-exception \verb\OverflowError\ is raised.
+exception \verb@OverflowError@ is raised.
 For the purpose of shift and mask operations, integers are assumed to
 have a binary, 2's complement notation using 32 or more bits, and
 hiding no bits from the user (i.e., all $2^{32}$ different bit
@@ -172,17 +172,17 @@ C implementation for the accepted range and handling of overflow.
 
 \item[Sequences]
 These represent finite ordered sets indexed by natural numbers.
-The built-in function \verb\len()\ returns the number of elements
+The built-in function \verb@len()@ returns the number of elements
 of a sequence.  When this number is $n$, the index set contains
-the numbers $0, 1, \ldots, n-1$.  Element \verb\i\ of sequence
-\verb\a\ is selected by \verb\a[i]\.
+the numbers $0, 1, \ldots, n-1$.  Element \verb@i@ of sequence
+\verb@a@ is selected by \verb@a[i]@.
 \obindex{seqence}
 \bifuncindex{len}
 \index{index operation}
 \index{item selection}
 \index{subscription}
 
-Sequences also support slicing: \verb\a[i:j]\ selects all elements
+Sequences also support slicing: \verb@a[i:j]@ selects all elements
 with index $k$ such that $i <= k < j$.  When used as an expression,
 a slice is a sequence of the same type --- this implies that the
 index set is renumbered so that it starts at 0 again.
@@ -209,7 +209,7 @@ The following types are immutable sequences:
 The elements of a string are characters.  There is no separate
 character type; a character is represented by a string of one element.
 Characters represent (at least) 8-bit bytes.  The built-in
-functions \verb\chr()\ and \verb\ord()\ convert between characters
+functions \verb@chr()@ and \verb@ord()@ convert between characters
 and nonnegative integers representing the byte values.
 Bytes with the values 0-127 represent the corresponding ASCII values.
 The string data type is also used to represent arrays of bytes, e.g.
@@ -223,7 +223,7 @@ to hold data read from a file.
 
 (On systems whose native character set is not ASCII, strings may use
 EBCDIC in their internal representation, provided the functions
-\verb\chr()\ and \verb\ord()\ implement a mapping between ASCII and
+\verb@chr()@ and \verb@ord()@ implement a mapping between ASCII and
 EBCDIC, and string comparison preserves the ASCII order.
 Or perhaps someone can propose a better rule?)
 \index{ASCII}
@@ -250,7 +250,7 @@ parentheses.
 \item[Mutable sequences]
 Mutable sequences can be changed after they are created.  The
 subscription and slicing notations can be used as the target of
-assignment and \verb\del\ (delete) statements.
+assignment and \verb@del@ (delete) statements.
 \obindex{mutable sequece}
 \obindex{mutable}
 \indexii{assignment}{statement}
@@ -276,10 +276,10 @@ or 1.)
 
 \item[Mapping types]
 These represent finite sets of objects indexed by arbitrary index sets.
-The subscript notation \verb\a[k]\ selects the element indexed
-by \verb\k\ from the mapping \verb\a\; this can be used in
-expressions and as the target of assignments or \verb\del\ statements.
-The built-in function \verb\len()\ returns the number of elements
+The subscript notation \verb@a[k]@ selects the element indexed
+by \verb@k@ from the mapping \verb@a@; this can be used in
+expressions and as the target of assignments or \verb@del@ statements.
+The built-in function \verb@len()@ returns the number of elements
 in a mapping.
 \bifuncindex{len}
 \index{subscription}
@@ -299,7 +299,7 @@ Numeric types used for keys obey the normal rules for numeric
 comparison: if two numbers compare equal (e.g. 1 and 1.0) then they
 can be used interchangeably to index the same dictionary entry.
 
-Dictionaries are mutable; they are created by the \verb\{...}\
+Dictionaries are mutable; they are created by the \verb@{...}@
 notation (see section \ref{dict}).
 \obindex{dictionary}
 \obindex{mutable}
@@ -308,7 +308,7 @@ notation (see section \ref{dict}).
 
 \item[Callable types]
 These are the types to which the function call (invocation) operation,
-written as \verb\function(argument, argument, ...)\, can be applied:
+written as \verb@function(argument, argument, ...)@, can be applied:
 \indexii{function}{call}
 \index{invocation}
 \indexii{function}{argument}
@@ -325,8 +325,8 @@ parameter list.
 \obindex{function}
 \obindex{user-defined function}
 
-Special read-only attributes: \verb\func_code\ is the code object
-representing the compiled function body, and \verb\func_globals\ is (a
+Special read-only attributes: \verb@func_code@ is the code object
+representing the compiled function body, and \verb@func_globals@ is (a
 reference to) the dictionary that holds the function's global
 variables --- it implements the global name space of the module in
 which the function was defined.
@@ -346,14 +346,14 @@ shifted one to the right.
 \indexii{user-defined}{method}
 \index{object closure}
 
-Special read-only attributes: \verb\im_self\ is the class instance
-object, \verb\im_func\ is the function object.
+Special read-only attributes: \verb@im_self@ is the class instance
+object, \verb@im_func@ is the function object.
 \ttindex{im_func}
 \ttindex{im_self}
 
 \item[Built-in functions]
 A built-in function object is a wrapper around a C function.  Examples
-of built-in functions are \verb\len\ and \verb\math.sin\.  There
+of built-in functions are \verb@len@ and \verb@math.sin@.  There
 are no special attributes.  The number and type of the arguments are
 determined by the C function.
 \obindex{built-in function}
@@ -363,18 +363,20 @@ determined by the C function.
 \item[Built-in methods]
 This is really a different disguise of a built-in function, this time
 containing an object passed to the C function as an implicit extra
-argument.  An example of a built-in method is \verb\list.append\ if
-\verb\list\ is a list object.
+argument.  An example of a built-in method is \verb@list.append@ if
+\verb@list@ is a list object.
 \obindex{built-in method}
 \obindex{method}
 \indexii{built-in}{method}
 
 \item[Classes]
 Class objects are described below.  When a class object is called as a
-parameterless function, a new class instance (also described below) is
-created and returned.  The class's initialization function is not
-called --- this is the responsibility of the caller.  It is illegal to
-call a class object with one or more arguments.
+function, a new class instance (also described below) is created and
+returned.  This implies a call to the class's \verb@__init__@ method
+if it has one.  Any arguments are passed on to the \verb@__init__@
+method -- if there is \verb@__init__@ method, the class must be called
+without arguments.
+\ttindex{__init__}
 \obindex{class}
 \obindex{class instance}
 \obindex{instance}
@@ -383,10 +385,10 @@ call a class object with one or more arguments.
 \end{description}
 
 \item[Modules]
-Modules are imported by the \verb\import\ statement (see section
+Modules are imported by the \verb@import@ statement (see section
 \ref{import}).  A module object is a container for a module's name
 space, which is a dictionary (the same dictionary as referenced by the
-\verb\func_globals\ attribute of functions defined in the module).
+\verb@func_globals@ attribute of functions defined in the module).
 Module attribute references are translated to lookups in this
 dictionary.  A module object does not contain the code object used to
 initialize the module (since it isn't needed once the initialization
@@ -396,8 +398,8 @@ is done).
 
 Attribute assignment update the module's name space dictionary.
 
-Special read-only attributes: \verb\__dict__\ yields the module's name
-space as a dictionary object; \verb\__name__\ yields the module's name
+Special read-only attributes: \verb@__dict__@ yields the module's name
+space as a dictionary object; \verb@__name__@ yields the module's name
 as a string object.
 \ttindex{__dict__}
 \ttindex{__name__}
@@ -423,12 +425,12 @@ Class attribute assignments update the class's dictionary, never the
 dictionary of a base class.
 \indexiii{class}{attribute}{assignment}
 
-A class can be called as a parameterless function to yield a class
-instance (see above).
+A class can be called as a function to yield a class instance (see
+above).
 \indexii{class object}{call}
 
-Special read-only attributes: \verb\__dict__\ yields the dictionary
-containing the class's name space; \verb\__bases__\ yields a tuple
+Special read-only attributes: \verb@__dict__@ yields the dictionary
+containing the class's name space; \verb@__bases__@ yields a tuple
 (possibly empty or a singleton) containing the base classes, in the
 order of their occurrence in the base class list.
 \ttindex{__dict__}
@@ -436,7 +438,7 @@ order of their occurrence in the base class list.
 
 \item[Class instances]
 A class instance is created by calling a class object as a
-parameterless function.  A class instance has a dictionary in which
+function.  A class instance has a dictionary in which
 attribute references are searched.  When an attribute is not found
 there, and the instance's class has an attribute by that name, and
 that class attribute is a user-defined function (and in no other
@@ -457,17 +459,17 @@ section \ref{specialnames}.
 \obindex{sequence}
 \obindex{mapping}
 
-Special read-only attributes: \verb\__dict__\ yields the attribute
-dictionary; \verb\__class__\ yields the instance's class.
+Special read-only attributes: \verb@__dict__@ yields the attribute
+dictionary; \verb@__class__@ yields the instance's class.
 \ttindex{__dict__}
 \ttindex{__class__}
 
 \item[Files]
 A file object represents an open file.  (It is a wrapper around a C
 {\tt stdio} file pointer.)  File objects are created by the
-\verb\open()\ built-in function, and also by \verb\posix.popen()\ and
-the \verb\makefile\ method of socket objects.  \verb\sys.stdin\,
-\verb\sys.stdout\ and \verb\sys.stderr\ are file objects corresponding
+\verb@open()@ built-in function, and also by \verb@posix.popen()@ and
+the \verb@makefile@ method of socket objects.  \verb@sys.stdin@,
+\verb@sys.stdout@ and \verb@sys.stderr@ are file objects corresponding
 the the interpreter's standard input, output and error streams.
 See the Python Library Reference for methods of file objects and other
 details.
@@ -500,12 +502,12 @@ was defined) which a code object contains no context.  There is no way
 to execute a bare code object.
 \obindex{code}
 
-Special read-only attributes: \verb\co_code\ is a string representing
-the sequence of instructions; \verb\co_consts\ is a list of literals
-used by the code; \verb\co_names\ is a list of names (strings) used by
-the code; \verb\co_filename\ is the filename from which the code was
+Special read-only attributes: \verb@co_code@ is a string representing
+the sequence of instructions; \verb@co_consts@ is a list of literals
+used by the code; \verb@co_names@ is a list of names (strings) used by
+the code; \verb@co_filename@ is the filename from which the code was
 compiled.  (To find out the line numbers, you would have to decode the
-instructions; the standard library module \verb\dis\ contains an
+instructions; the standard library module \verb@dis@ contains an
 example of how to do this.)
 \ttindex{co_code}
 \ttindex{co_consts}
@@ -517,12 +519,12 @@ Frame objects represent execution frames.  They may occur in traceback
 objects (see below).
 \obindex{frame}
 
-Special read-only attributes: \verb\f_back\ is to the previous
-stack frame (towards the caller), or \verb\None\ if this is the bottom
-stack frame; \verb\f_code\ is the code object being executed in this
-frame; \verb\f_globals\ is the dictionary used to look up global
-variables; \verb\f_locals\ is used for local variables;
-\verb\f_lineno\ gives the line number and \verb\f_lasti\ gives the
+Special read-only attributes: \verb@f_back@ is to the previous
+stack frame (towards the caller), or \verb@None@ if this is the bottom
+stack frame; \verb@f_code@ is the code object being executed in this
+frame; \verb@f_globals@ is the dictionary used to look up global
+variables; \verb@f_locals@ is used for local variables;
+\verb@f_lineno@ gives the line number and \verb@f_lasti@ gives the
 precise instruction (this is an index into the instruction string of
 the code object).
 \ttindex{f_back}
@@ -539,11 +541,11 @@ for an exception handler unwinds the execution stack, at each unwound
 level a traceback object is inserted in front of the current
 traceback.  When an exception handler is entered
 (see also section \ref{try}), the stack trace is
-made available to the program as \verb\sys.exc_traceback\.  When the
+made available to the program as \verb@sys.exc_traceback@.  When the
 program contains no suitable handler, the stack trace is written
 (nicely formatted) to the standard error stream; if the interpreter is
 interactive, it is also made available to the user as
-\verb\sys.last_traceback\.
+\verb@sys.last_traceback@.
 \obindex{traceback}
 \indexii{stack}{trace}
 \indexii{exception}{handler}
@@ -553,15 +555,15 @@ interactive, it is also made available to the user as
 \ttindex{sys.exc_traceback}
 \ttindex{sys.last_traceback}
 
-Special read-only attributes: \verb\tb_next\ is the next level in the
+Special read-only attributes: \verb@tb_next@ is the next level in the
 stack trace (towards the frame where the exception occurred), or
-\verb\None\ if there is no next level; \verb\tb_frame\ points to the
-execution frame of the current level; \verb\tb_lineno\ gives the line
-number where the exception occurred; \verb\tb_lasti\ indicates the
+\verb@None@ if there is no next level; \verb@tb_frame@ points to the
+execution frame of the current level; \verb@tb_lineno@ gives the line
+number where the exception occurred; \verb@tb_lasti@ indicates the
 precise instruction.  The line number and last instruction in the
 traceback may differ from the line number of its frame object if the
-exception occurred in a \verb\try\ statement with no matching
-\verb\except\ clause or with a \verb\finally\ clause.
+exception occurred in a \verb@try@ statement with no matching
+\verb@except@ clause or with a \verb@finally@ clause.
 \ttindex{tb_next}
 \ttindex{tb_frame}
 \ttindex{tb_lineno}
@@ -578,17 +580,19 @@ exception occurred in a \verb\try\ statement with no matching
 A class can implement certain operations that are invoked by special
 syntax (such as subscription or arithmetic operations) by defining
 methods with special names.  For instance, if a class defines a
-method named \verb\__getitem__\, and \verb\x\ is an instance of this
-class, then \verb\x[i]\ is equivalent to \verb\x.__getitem__(i)\.
-(The reverse is not true --- if \verb\x\ is a list object,
-\verb\x.__getitem__(i)\ is not equivalent to \verb\x[i]\.)
+method named \verb@__getitem__@, and \verb@x@ is an instance of this
+class, then \verb@x[i]@ is equivalent to \verb@x.__getitem__(i)@.
+(The reverse is not true --- if \verb@x@ is a list object,
+\verb@x.__getitem__(i)@ is not equivalent to \verb@x[i]@.)
 
-Except for \verb\__repr__\, \verb\__str__\ and \verb\__cmp__\,
+Except for \verb@__repr__@, \verb@__str__@ and \verb@__cmp__@,
 attempts to execute an
 operation raise an exception when no appropriate method is defined.
-For \verb\__repr__\ and \verb\__cmp__\, the traditional
-interpretations are used in this case.
-For \verb\__str__\, the \verb\__repr__\ method is used.
+For \verb@__repr__@, the default is to return a string describing the
+object's class and address.
+For \verb@__cmp__@, the default is to compare instances based on their
+address.
+For \verb@__str__@, the default is to use \verb@__repr__@.
 
 
 \subsection{Special methods for any type}
@@ -614,17 +618,17 @@ reference is deleted.  Also note that it is not guaranteed that
 the interpreter exits.
 
 \item[\tt __repr__(self)]
-Called by the \verb\repr()\ built-in function and by conversions
+Called by the \verb@repr()@ built-in function and by conversions
 (reverse quotes) to compute the string representation of an object.
 
 \item[\tt __str__(self)]
-Called by the \verb\str()\ built-in function and by the \verb\print\
+Called by the \verb@str()@ built-in function and by the \verb@print@
 statement compute the string representation of an object.
 
 \item[\tt __cmp__(self, other)]
 Called by all comparison operations.  Should return -1 if
-\verb\self < other\,  0 if \verb\self == other\, +1 if
-\verb\self > other\.  If no \code{__cmp__} operation is defined, class
+\verb@self < other@,  0 if \verb@self == other@, +1 if
+\verb@self > other@.  If no \code{__cmp__} operation is defined, class
 instances are compared by object identity (``address'').
 (Implementation note: due to limitations in the interpreter,
 exceptions raised by comparisons are ignored, and the objects will be
@@ -654,23 +658,23 @@ key's hash value is a constant.
 \begin{description}
 
 \item[\tt __len__(self)]
-Called to implement the built-in function \verb\len()\.  Should return
-the length of the object, an integer \verb\>=\ 0.  Also, an object
-whose \verb\__len__()\ method returns 0 is considered to be false in a
+Called to implement the built-in function \verb@len()@.  Should return
+the length of the object, an integer \verb@>=@ 0.  Also, an object
+whose \verb@__len__()@ method returns 0 is considered to be false in a
 Boolean context.
 
 \item[\tt __getitem__(self, key)]
-Called to implement evaluation of \verb\self[key]\.  Note that the
+Called to implement evaluation of \verb@self[key]@.  Note that the
 special interpretation of negative keys (if the class wishes to
-emulate a sequence type) is up to the \verb\__getitem__\ method.
+emulate a sequence type) is up to the \verb@__getitem__@ method.
 
 \item[\tt __setitem__(self, key, value)]
-Called to implement assignment to \verb\self[key]\.  Same note as for
-\verb\__getitem__\.
+Called to implement assignment to \verb@self[key]@.  Same note as for
+\verb@__getitem__@.
 
 \item[\tt __delitem__(self, key)]
-Called to implement deletion of \verb\self[key]\.  Same note as for
-\verb\__getitem__\.
+Called to implement deletion of \verb@self[key]@.  Same note as for
+\verb@__getitem__@.
 
 \end{description}
 
@@ -680,19 +684,19 @@ Called to implement deletion of \verb\self[key]\.  Same note as for
 \begin{description}
 
 \item[\tt __getslice__(self, i, j)]
-Called to implement evaluation of \verb\self[i:j]\.  Note that missing
-\verb\i\ or \verb\j\ are replaced by 0 or \verb\len(self)\,
-respectively, and \verb\len(self)\ has been added (once) to originally
-negative \verb\i\ or \verb\j\ by the time this function is called
-(unlike for \verb\__getitem__\).
+Called to implement evaluation of \verb@self[i:j]@.  Note that missing
+\verb@i@ or \verb@j@ are replaced by 0 or \verb@len(self)@,
+respectively, and \verb@len(self)@ has been added (once) to originally
+negative \verb@i@ or \verb@j@ by the time this function is called
+(unlike for \verb@__getitem__@).
 
 \item[\tt __setslice__(self, i, j, sequence)]
-Called to implement assignment to \verb\self[i:j]\.  Same notes as for
-\verb\__getslice__\.
+Called to implement assignment to \verb@self[i:j]@.  Same notes as for
+\verb@__getslice__@.
 
 \item[\tt __delslice__(self, i, j)]
-Called to implement deletion of \verb\self[i:j]\.  Same notes as for
-\verb\__getslice__\.
+Called to implement deletion of \verb@self[i:j]@.  Same notes as for
+\verb@__getslice__@.
 
 \end{description}
 
@@ -713,20 +717,20 @@ Called to implement deletion of \verb\self[i:j]\.  Same notes as for
 \item[\tt __and__(self, other)]\itemjoin
 \item[\tt __xor__(self, other)]\itemjoin
 \item[\tt __or__(self, other)]\itembreak
-Called to implement the binary arithmetic operations (\verb\+\,
-\verb\-\, \verb\*\, \verb\/\, \verb\%\, \verb\divmod()\, \verb\pow()\,
-\verb\<<\, \verb\>>\, \verb\&\, \verb\^\, \verb\|\).
+Called to implement the binary arithmetic operations (\verb@+@,
+\verb@-@, \verb@*@, \verb@/@, \verb@%@, \verb@divmod()@, \verb@pow()@,
+\verb@<<@, \verb@>>@, \verb@&@, \verb@^@, \verb@|@).
 
 \item[\tt __neg__(self)]\itemjoin
 \item[\tt __pos__(self)]\itemjoin
 \item[\tt __abs__(self)]\itemjoin
 \item[\tt __invert__(self)]\itembreak
-Called to implement the unary arithmetic operations (\verb\-\, \verb\+\,
-\verb\abs()\ and \verb\~\).
+Called to implement the unary arithmetic operations (\verb@-@, \verb@+@,
+\verb@abs()@ and \verb@~@).
 
 \item[\tt __nonzero__(self)]
 Called to implement boolean testing; should return 0 or 1.  An
-alternative name for this method is \verb\__len__\.
+alternative name for this method is \verb@__len__@.
 
 \item[\tt __coerce__(self, other)]
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
@@ -737,11 +741,11 @@ interpreter will also ask the other object to attempt a coercion (but
 sometimes, if the implementation of the other type cannot be changed,
 it is useful to do the conversion to the other type here).
 
-Note that this method is not called to coerce the arguments to \verb\+\
-and \verb\*\, because these are also used to implement sequence
+Note that this method is not called to coerce the arguments to \verb@+@
+and \verb@*@, because these are also used to implement sequence
 concatenation and repetition, respectively.  Also note that, for the
-same reason, in \verb\n*x\, where \verb\n\ is a built-in number and
-\verb\x\ is an instance, a call to \verb\x.__mul__(n)\ is made.%
+same reason, in \verb@n*x@, where \verb@n@ is a built-in number and
+\verb@x@ is an instance, a call to \verb@x.__mul__(n)@ is made.%
 \footnote{The interpreter should really distinguish between
 user-defined classes implementing sequences, mappings or numbers, but
 currently it doesn't --- hence this strange exception.}
@@ -749,12 +753,12 @@ currently it doesn't --- hence this strange exception.}
 \item[\tt __int__(self)]\itemjoin
 \item[\tt __long__(self)]\itemjoin
 \item[\tt __float__(self)]\itembreak
-Called to implement the built-in functions \verb\int()\, \verb\long()\
-and \verb\float()\.  Should return a value of the appropriate type.
+Called to implement the built-in functions \verb@int()@, \verb@long()@
+and \verb@float()@.  Should return a value of the appropriate type.
 
 \item[\tt __oct__(self)]\itemjoin
 \item[\tt __hex__(self)]\itembreak
-Called to implement the built-in functions \verb\oct()\ and
-\verb\hex()\.  Should return a string value.
+Called to implement the built-in functions \verb@oct()@ and
+\verb@hex()@.  Should return a string value.
 
 \end{description}

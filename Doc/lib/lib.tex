@@ -1,9 +1,6 @@
 \documentstyle[twoside,11pt,myformat]{report}
-%\includeonly{lib5}
 
-\title{\bf
-	Python Library Reference
-}
+\title{Python Library Reference}
 
 \author{
 	Guido van Rossum \\
@@ -12,14 +9,13 @@
 	E-mail: {\tt guido@cwi.nl}
 }
 
-\date{19 November 1993 \\ Release 0.9.9.++} % XXX update before release!
+\date{14 Jul 1994 \\ Release 1.0.3} % XXX update before release!
 
-% Tell \index to actually write the .idx file
-\makeindex
+\makeindex			% tell \index to actually write the .idx file
+
 
 \begin{document}
-%\showthe\fam
-%\showthe\ttfam
+
 \pagenumbering{roman}
 
 \maketitle
@@ -46,12 +42,75 @@ language.
 \pagebreak
 
 \pagenumbering{arabic}
-\include{lib1}	% intro; built-in types, functions and exceptions
-\include{lib2}	% built-in modules
-\include{lib3}	% standard modules
-\include{lib4}	% Most OS'es; UNIX only; Amoeba only
-\include{lib5}	% STDWIN only; SGI machines only; SUNs only; AUDIO TOOLS
 
-\input{lib.ind}	% The index
+				% Chapter title:
+
+\input{libintro}		% Introduction
+
+\input{libobjs}			% Built-in Types, Exceptions and Functions
+\input{libtypes}
+\input{libexcs}
+\input{libfuncs}
+
+\input{libmods}			% Built-in modules
+\input{libsys}
+\input{libbltin}		% really __builtin__
+\input{libmain}			% really __main__
+\input{libarray}
+\input{libmath}
+\input{libtime}
+\input{libregex}
+\input{libmarshal}
+\input{libstruct}
+
+\input{libstd}			% Standard Modules
+\input{libgetopt}
+\input{libos}
+\input{librand}
+\input{libregsub}
+\input{libstring}
+\input{libwhrandom}
+
+\input{libunix}			% UNIX ONLY
+\input{libdbm}
+\input{libfcntl}
+\input{libgrp}
+\input{libposix}
+\input{libposixfile} % XXX this uses lineii which partparse.py doesn't know
+\input{libppath}		% really posixpath
+\input{libpwd}
+\input{libselect}
+\input{libsocket}
+\input{libthread}
+
+\input{libmm}			% MULTIMEDIA EXTENSIONS
+\input{libaudioop}
+\input{libimageop}
+\input{libjpeg}
+\input{librgbimg}
+
+\input{libcrypto}		% CRYPTOGRAPHIC EXTENSIONS
+\input{libmd5}
+\input{libmpz}
+\input{librotor}
+
+%\input{libamoeba}		% AMOEBA ONLY
+
+%\input{libmac}			% MACINTOSH ONLY
+
+\input{libstdwin}		% STDWIN ONLY
+
+\input{libsgi}			% SGI IRIX ONLY
+\input{libal}
+%\input{libaudio}
+\input{libfl}
+\input{libfm}
+\input{libgl}
+\input{libimgfile}
+%\input{libpanel}
+
+\input{libsun}			% SUNOS ONLY
+
+\input{lib.ind}			% Index
 
 \end{document}

@@ -1,6 +1,6 @@
-\documentstyle[twoside,11pt,myformat,times]{report}
+\documentstyle[twoside,11pt,myformat]{report}
 
-\title{\bf Extending and Embedding the Python Interpreter}
+\title{Extending and Embedding the Python Interpreter}
 
 \author{
 	Guido van Rossum \\
@@ -9,7 +9,7 @@
 	E-mail: {\tt guido@cwi.nl}
 }
 
-\date{19 November 1993 \\ Release 0.9.9.++} % XXX update before release!
+\date{14 Jul 1994 \\ Release 1.0.3} % XXX update before release!
 
 % Tell \index to actually write the .idx file
 \makeindex
@@ -51,18 +51,30 @@ system supports this feature.
 It is quite easy to add non-standard built-in modules to Python, if
 you know how to program in C.  A built-in module known to the Python
 programmer as \code{foo} is generally implemented by a file called
-\file{foomodule.c}.  All but the most essential standard built-in
+\file{foomodule.c}.  All but the two most essential standard built-in
 modules also adhere to this convention, and in fact some of them form
 excellent examples of how to create an extension.
 
 Extension modules can do two things that can't be done directly in
-Python: they can implement new data types, and they can make system
-calls or call C library functions.  Since the latter is usually the
-most important reason for adding an extension, I'll concentrate on
-adding `wrappers' around C library functions; the concrete example
-uses the wrapper for
+Python: they can implement new data types (which are different from
+classes by the way), and they can make system calls or call C library
+functions.  Since the latter is usually the most important reason for
+adding an extension, I'll concentrate on adding `wrappers' around C
+library functions; the concrete example uses the wrapper for
 \code{system()} in module \code{posix}, found in (of course) the file
-\file{posixmodule.c}.
+\file{Modules/posixmodule.c}.
+
+Note: unless otherwise mentioned, all file references in this
+document are relative to the toplevel directory of the Python
+distribution --- i.e. the directory that contains the \file{configure}
+script.
+
+The compilation of an extension module depends on your system setup
+and the intended use of the module; details are given in a later
+section.
+
+
+\section{A first look at the code}
 
 It is important not to be impressed by the size and complexity of
 the average extension module; much of this is straightforward
@@ -87,8 +99,8 @@ in \file{posixmodule.c} first:
 \end{verbatim}
 
 This is the prototypical top-level function in an extension module.
-It will be called (we'll see later how this is made possible) when the
-Python program executes statements like
+It will be called (we'll see later how) when the Python program
+executes statements like
 
 \begin{verbatim}
     >>> import posix
@@ -96,71 +108,84 @@ Python program executes statements like
 \end{verbatim}
 
 There is a straightforward translation from the arguments to the call
-in Python (here the single value \code{'ls -l'}) to the arguments that
+in Python (here the single expression \code{'ls -l'}) to the arguments that
 are passed to the C function.  The C function always has two
-parameters, conventionally named \var{self} and \var{args}.  In this
-example, \var{self} will always be a \code{NULL} pointer, since this is a
-function, not a method (this is done so that the interpreter doesn't
-have to understand two different types of C functions).
+parameters, conventionally named \var{self} and \var{args}.  The
+\var{self} argument is used when the C function implements a builtin
+method --- this is advanced material and not covered in this document.
+In the example, \var{self} will always be a \code{NULL} pointer, since
+we are defining a function, not a method (this is done so that the
+interpreter doesn't have to understand two different types of C
+functions).
 
 The \var{args} parameter will be a pointer to a Python object, or
 \code{NULL} if the Python function/method was called without
 arguments.  It is necessary to do full argument type checking on each
 call, since otherwise the Python user would be able to cause the
-Python interpreter to `dump core' by passing the wrong arguments to a
-function in an extension module (or no arguments at all).  Because
-argument checking and converting arguments to C is such a common task,
-there's a general function in the Python interpreter which combines
-these tasks: \code{getargs()}.  It uses a template string to determine
-both the types of the Python argument and the types of the C variables
-into which it should store the converted values.  (More about this
-later.)\footnote{
-There are convenience macros \code{getstrarg()},
+Python interpreter to `dump core' by passing invalid arguments to a
+function in an extension module.  Because argument checking and
+converting arguments to C are such common tasks, there's a general
+function in the Python interpreter that combines them:
+\code{getargs()}.  It uses a template string to determine both the
+types of the Python argument and the types of the C variables into
+which it should store the converted values.\footnote{There are
+convenience macros \code{getnoarg()}, \code{getstrarg()},
 \code{getintarg()}, etc., for many common forms of \code{getargs()}
-templates.  These are relics from the past; it's better to call
-\code{getargs()} directly.}
+templates.  These are relics from the past; the recommended practice
+is to call \code{getargs()} directly.}  (More about this later.)
 
 If \code{getargs()} returns nonzero, the argument list has the right
 type and its components have been stored in the variables whose
 addresses are passed.  If it returns zero, an error has occurred.  In
-the latter case it has already raised an appropriate exception by
-calling \code{err_setstr()}, so the calling function can just return
-\code{NULL}.
+the latter case it has already raised an appropriate exception by so
+the calling function should return \code{NULL} immediately --- see the
+next section.
 
 
 \section{Intermezzo: errors and exceptions}
 
 An important convention throughout the Python interpreter is the
 following: when a function fails, it should set an exception condition
-and return an error value (often a NULL pointer).  Exceptions are set
-in a global variable in the file errors.c; if this variable is NULL no
-exception has occurred.  A second variable is the `associated value'
-of the exception.
+and return an error value (often a \code{NULL} pointer).  Exceptions
+are stored in a static global variable in \file{Python/errors.c}; if
+this variable is \code{NULL} no exception has occurred.  A second
+static global variable stores the `associated value' of the exception
+--- the second argument to \code{raise}.
 
-The file errors.h declares a host of err_* functions to set various
-types of exceptions.  The most common one is \code{err_setstr()} --- its
-arguments are an exception object (e.g. RuntimeError --- actually it
-can be any string object) and a C string indicating the cause of the
-error (this is converted to a string object and stored as the
-`associated value' of the exception).  Another useful function is
+The file \file{errors.h} declares a host of functions to set various
+types of exceptions.  The most common one is \code{err_setstr()} ---
+its arguments are an exception object (e.g. \code{RuntimeError} ---
+actually it can be any string object) and a C string indicating the
+cause of the error (this is converted to a string object and stored as
+the `associated value' of the exception).  Another useful function is
 \code{err_errno()}, which only takes an exception argument and
 constructs the associated value by inspection of the (UNIX) global
-variable errno.
+variable errno.  The most general function is \code{err_set()}, which
+takes two object arguments, the exception and its associated value.
+You don't need to \code{INCREF()} the objects passed to any of these
+functions.
 
 You can test non-destructively whether an exception has been set with
 \code{err_occurred()}.  However, most code never calls
 \code{err_occurred()} to see whether an error occurred or not, but
-relies on error return values from the functions it calls instead:
+relies on error return values from the functions it calls instead.
 
 When a function that calls another function detects that the called
-function fails, it should return an error value but not set an
-condition --- one is already set.  The caller is then supposed to also
-return an error indication to *its* caller, again *without* calling
-\code{err_setstr()}, and so on --- the most detailed cause of the error
-was already reported by the function that detected it in the first
-place.  Once the error has reached Python's interpreter main loop,
-this aborts the currently executing Python code and tries to find an
-exception handler specified by the Python programmer.
+function fails, it should return an error value (e.g. \code{NULL} or
+\code{-1}) but not call one of the \code{err_*} functions --- one has
+already been called.  The caller is then supposed to also return an
+error indication to {\em its} caller, again {\em without} calling
+\code{err_*()}, and so on --- the most detailed cause of the error was
+already reported by the function that first detected it.  Once the
+error has reached Python's interpreter main loop, this aborts the
+currently executing Python code and tries to find an exception handler
+specified by the Python programmer.
+
+(There are situations where a module can actually give a more detailed
+error message by calling another \code{err_*} function, and in such
+cases it is fine to do so.  As a general rule, however, this is not
+necessary, and can cause information about the cause of the error to
+be lost: most operations can fail for a variety of reasons.)
 
 To ignore an exception set by a function call that failed, the
 exception condition must be cleared explicitly by calling
@@ -170,8 +195,9 @@ interpreter but wants to handle it completely by itself (e.g. by
 trying something else or pretending nothing happened).
 
 Finally, the function \code{err_get()} gives you both error variables
-*and clears them*.  Note that even if an error occurred the second one
-may be NULL.  I doubt you will need to use this function.
+{\em and clears them}.  Note that even if an error occurred the second
+one may be \code{NULL}.  You have to \code{XDECREF()} both when you
+are finished with them.  I doubt you will need to use this function.
 
 Note that a failing \code{malloc()} call must also be turned into an
 exception --- the direct caller of \code{malloc()} (or
@@ -180,70 +206,110 @@ indicator itself.  All the object-creating functions
 (\code{newintobject()} etc.) already do this, so only if you call
 \code{malloc()} directly this note is of importance.
 
-Also note that, with the important exception of \code{getargs()}, functions
-that return an integer status usually use 0 for success and -1 for
-failure.
+Also note that, with the important exception of \code{getargs()},
+functions that return an integer status usually return \code{0} or a
+positive value for success and \code{-1} for failure.
 
-Finally, be careful about cleaning up garbage (making appropriate
-[\code{X}]\code{DECREF()} calls) when you return an error!
+Finally, be careful about cleaning up garbage (making \code{XDECREF()}
+or \code{DECREF()} calls for objects you have already created) when
+you return an error!
+
+The choice of which exception to raise is entirely yours.  There are
+predeclared C objects corresponding to all built-in Python exceptions,
+e.g. \code{ZeroDevisionError} which you can use directly.  Of course,
+you should chose exceptions wisely --- don't use \code{TypeError} to
+mean that a file couldn't be opened (that should probably be
+\code{IOError}).  If anything's wrong with the argument list the
+\code{getargs()} function raises \code{TypeError}.  If you have an
+argument whose value which must be in a particular range or must
+satisfy other conditions, \code{ValueError} is appropriate.
+
+You can also define a new exception that is unique to your module.
+For this, you usually declare a static object variable at the
+beginning of your file, e.g.
+
+\begin{verbatim}
+    static object *FooError;
+\end{verbatim}
+
+and initialize it in your module's initialization function
+(\code{initfoo()}) with a string object, e.g. (leaving out the error
+checking for simplicity):
+
+\begin{verbatim}
+    void
+    initfoo()
+    {
+        object *m, *d;
+        m = initmodule("foo", foo_methods);
+        d = getmoduledict(m);
+        FooError = newstringobject("foo.error");
+        dictinsert(d, "error", FooError);
+    }
+\end{verbatim}
 
 
 \section{Back to the example}
 
-Going back to posix_system, you should now be able to understand this
-bit:
+Going back to \code{posix_system()}, you should now be able to
+understand this bit:
 
 \begin{verbatim}
         if (!getargs(args, "s", &command))
             return NULL;
 \end{verbatim}
 
-It returns NULL (the error indicator for functions of this kind) if an
-error is detected in the argument list, relying on the exception set
-by \code{getargs()}.  The string value of the argument is now copied to the
-local variable 'command'.
+It returns \code{NULL} (the error indicator for functions of this
+kind) if an error is detected in the argument list, relying on the
+exception set by \code{getargs()}.  Otherwise the string value of the
+argument has been copied to the local variable \code{command} --- this
+is in fact just a pointer assignment and you are not supposed to
+modify the string to which it points.
 
-If a Python function is called with multiple arguments, the argument
-list is turned into a tuple.  Python programs can us this feature, for
-instance, to explicitly create the tuple containing the arguments
-first and make the call later.
+If a function is called with multiple arguments, the argument list
+(the argument \code{args}) is turned into a tuple.  If it is called
+without arguments, \code{args} is \code{NULL}. \code{getargs()} knows
+about this; see later.
 
-The next statement in posix_system is a call tothe C library function
-\code{system()}, passing it the string we just got from \code{getargs()}:
+The next statement in \code{posix_system()} is a call to the C library
+function \code{system()}, passing it the string we just got from
+\code{getargs()}:
 
 \begin{verbatim}
         sts = system(command);
 \end{verbatim}
 
-Python strings may contain internal null bytes; but if these occur in
-this example the rest of the string will be ignored by \code{system()}.
-
-Finally, posix.\code{system()} must return a value: the integer status
-returned by the C library \code{system()} function.  This is done by the
-function \code{newintobject()}, which takes a (long) integer as parameter.
+Finally, \code{posix.system()} must return a value: the integer status
+returned by the C library \code{system()} function.  This is done
+using the function \code{mkvalue()}, which is something like the
+inverse of \code{getargs()}: it takes a format string and a variable
+number of C values and returns a new Python object.
 
 \begin{verbatim}
-        return newintobject((long)sts);
+        return mkvalue("i", sts);
 \end{verbatim}
 
-(Yes, even integers are represented as objects on the heap in Python!)
-If you had a function that returned no useful argument, you would need
-this idiom:
+In this case, it returns an integer object (yes, even integers are
+objects on the heap in Python!).  More info on \code{mkvalue()} is
+given later.
+
+If you had a function that returned no useful argument (a.k.a. a
+procedure), you would need this idiom:
 
 \begin{verbatim}
         INCREF(None);
         return None;
 \end{verbatim}
 
-'None' is a unique Python object representing 'no value'.  It differs
-from NULL, which means 'error' in most contexts (except when passed as
-a function argument --- there it means 'no arguments').
+\code{None} is a unique Python object representing `no value'.  It
+differs from \code{NULL}, which means `error' in most contexts.
 
 
 \section{The module's function table}
 
 I promised to show how I made the function \code{posix_system()}
-available to Python programs.  This is shown later in posixmodule.c:
+callable from Python programs.  This is shown later in
+\file{Modules/posixmodule.c}:
 
 \begin{verbatim}
     static struct methodlist posix_methods[] = {
@@ -260,78 +326,72 @@ available to Python programs.  This is shown later in posixmodule.c:
     }
 \end{verbatim}
 
-(The actual \code{initposix()} is somewhat more complicated, but most
-extension modules are indeed as simple as that.)  When the Python
-program first imports module 'posix', \code{initposix()} is called,
-which calls \code{initmodule()} with specific parameters.  This
-creates a module object (which is inserted in the table sys.modules
-under the key 'posix'), and adds built-in-function objects to the
-newly created module based upon the table (of type struct methodlist)
-that was passed as its second parameter.  The function
-\code{initmodule()} returns a pointer to the module object that it
-creates, but this is unused here.  It aborts with a fatal error if the
-module could not be initialized satisfactorily.
+(The actual \code{initposix()} is somewhat more complicated, but many
+extension modules can be as simple as shown here.)  When the Python
+program first imports module \code{posix}, \code{initposix()} is
+called, which calls \code{initmodule()} with specific parameters.
+This creates a `module object' (which is inserted in the table
+\code{sys.modules} under the key \code{'posix'}), and adds
+built-in-function objects to the newly created module based upon the
+table (of type struct methodlist) that was passed as its second
+parameter.  The function \code{initmodule()} returns a pointer to the
+module object that it creates (which is unused here).  It aborts with
+a fatal error if the module could not be initialized satisfactorily,
+so you don't need to check for errors.
 
 
-\section{Calling the module initialization function}
+\section{Compilation and linkage}
 
-There is one more thing to do: telling the Python module to call the
-\code{initfoo()} function when it encounters an 'import foo' statement.
-This is done in the file config.c.  This file contains a table mapping
-module names to parameterless void function pointers.  You need to add
-a declaration of \code{initfoo()} somewhere early in the file, and a
-line saying
+There are two more things to do before you can use your new extension
+module: compiling and linking it with the Python system.  If you use
+dynamic loading, the details depend on the style of dynamic loading
+your system uses; see the chapter on Dynamic Loading for more info
+about this.
+
+If you can't use dynamic loading, or if you want to make your module a
+permanent part of the Python interpreter, you will have to change the
+configuration setup and rebuild the interpreter.  Luckily, in the 1.0
+release this is very simple: just place your file (named
+\file{foomodule.c} for example) in the \file{Modules} directory, add a
+line to the file \file{Modules/Setup} describing your file:
 
 \begin{verbatim}
-    {"foo",     initfoo},
+    foo foomodule.o
 \end{verbatim}
 
-to the initializer for inittab[].  It is conventional to include both
-the declaration and the initializer line in preprocessor commands
-\code{\#ifdef USE_FOO} / \code{\#endif}, to make it easy to turn the
-foo extension on or off.  Note that the Macintosh version uses a
-different configuration file, distributed as configmac.c.  This
-strategy may be extended to other operating system versions, although
-usually the standard config.c file gives a pretty useful starting
-point for a new config*.c file.
-
-And, of course, I forgot the Makefile.  This is actually not too hard,
-just follow the examples for, say, AMOEBA.  Just find all occurrences
-of the string AMOEBA in the Makefile and do the same for FOO that's
-done for AMOEBA...
-
-(Note: if you are using dynamic loading for your extension, you don't
-need to edit config.c and the Makefile.  See \file{./DYNLOAD} for more
-info about this.)
+and rebuild the interpreter by running \code{make} in the toplevel
+directory.  You can also run \code{make} in the \file{Modules}
+subdirectory, but then you must first rebuilt the \file{Makefile}
+there by running \code{make Makefile}.  (This is necessary each time
+you change the \file{Setup} file.)
 
 
 \section{Calling Python functions from C}
 
-The above concentrates on making C functions accessible to the Python
-programmer.  The reverse is also often useful: calling Python
-functions from C.  This is especially the case for libraries that
-support so-called `callback' functions.  If a C interface makes heavy
-use of callbacks, the equivalent Python often needs to provide a
-callback mechanism to the Python programmer; the implementation may
-require calling the Python callback functions from a C callback.
-Other uses are also possible.
+So far we have concentrated on making C functions callable from
+Python.  The reverse is also useful: calling Python functions from C.
+This is especially the case for libraries that support so-called
+`callback' functions.  If a C interface makes use of callbacks, the
+equivalent Python often needs to provide a callback mechanism to the
+Python programmer; the implementation will require calling the Python
+callback functions from a C callback.  Other uses are also imaginable.
 
 Fortunately, the Python interpreter is easily called recursively, and
-there is a standard interface to call a Python function.  I won't
+there is a standard interface to call a Python function.  (I won't
 dwell on how to call the Python parser with a particular string as
 input --- if you're interested, have a look at the implementation of
-the \samp{-c} command line option in pythonmain.c.
+the \samp{-c} command line option in \file{Python/pythonmain.c}.)
 
 Calling a Python function is easy.  First, the Python program must
 somehow pass you the Python function object.  You should provide a
 function (or some other interface) to do this.  When this function is
 called, save a pointer to the Python function object (be careful to
-INCREF it!) in a global variable --- or whereever you see fit.
+\code{INCREF()} it!) in a global variable --- or whereever you see fit.
 For example, the following function might be part of a module
 definition:
 
 \begin{verbatim}
-    static object *my_callback;
+    static object *my_callback = NULL;
 
     static object *
     my_set_callback(dummy, arg)
@@ -346,29 +406,49 @@ definition:
     }
 \end{verbatim}
 
+This particular function doesn't do any typechecking on its argument
+--- that will be done by \code{call_object()}, which is a bit late but
+at least protects the Python interpreter from shooting itself in its
+foot.  (The problem with typechecking functions is that there are at
+least five different Python object types that can be called, so the
+test would be somewhat cumbersome.)
+
+The macros \code{XINCREF()} and \code{XDECREF()} increment/decrement
+the reference count of an object and are safe in the presence of
+\code{NULL} pointers.  More info on them in the section on Reference
+Counts below.
+
 Later, when it is time to call the function, you call the C function
 \code{call_object()}.  This function has two arguments, both pointers
-to arbitrary Python objects: the Python function, and the argument.
-The argument can be NULL to call the function without arguments.  For
-example:
+to arbitrary Python objects: the Python function, and the argument
+list.  The argument list must always be a tuple object, whose length
+is the number of arguments.  To call the Python function with no
+arguments, you must pass an empty tuple.  For example:
 
 \begin{verbatim}
+    object *arglist;
     object *result;
     ...
     /* Time to call the callback */
-    result = call_object(my_callback, (object *)NULL);
+    arglist = mktuple(0);
+    result = call_object(my_callback, arglist);
+    DECREF(arglist);
 \end{verbatim}
 
 \code{call_object()} returns a Python object pointer: this is
 the return value of the Python function.  \code{call_object()} is
-`reference-count-neutral' with respect to its arguments, but the
-return value is `new': either it is a brand new object, or it is an
-existing object whose reference count has been incremented.  So, you
-should somehow apply DECREF to the result, even (especially!) if you
-are not interested in its value.
+`reference-count-neutral' with respect to its arguments.  In the
+example a new tuple was created to serve as the argument list, which
+is \code{DECREF()}-ed immediately after the call.
+
+The return value of \code{call_object()} is `new': either it is a
+brand new object, or it is an existing object whose reference count
+has been incremented.  So, unless you want to save it in a global
+variable, you should somehow \code{DECREF()} the result, even
+(especially!) if you are not interested in its value.
 
 Before you do this, however, it is important to check that the return
-value isn't NULL.  If it is, the Python function terminated by raising
+value isn't \code{NULL}.  If it is, the Python function terminated by raising
 an exception.  If the C code that called \code{call_object()} is
 called from Python, it should now return an error indication to its
 Python caller, so the interpreter can print a stack trace, or the
@@ -384,21 +464,21 @@ or desirable, the exception should be cleared by calling
 \end{verbatim}
 
 Depending on the desired interface to the Python callback function,
-you may also have to provide an argument to \code{call_object()}.  In
-some cases the argument is also provided by the Python program,
-through the same interface that specified the callback function.  It
-can then be saved and used in the same manner as the function object.
-In other cases, you may have to construct a new object to pass as
-argument.  In this case you must dispose of it as well.  For example,
-if you want to pass an integral event code, you might use the
-following code:
+you may also have to provide an argument list to \code{call_object()}.
+In some cases the argument list is also provided by the Python
+program, through the same interface that specified the callback
+function.  It can then be saved and used in the same manner as the
+function object.  In other cases, you may have to construct a new
+tuple to pass as the argument list.  The simplest way to do this is to
+call \code{mkvalue()}.  For example, if you want to pass an integral
+event code, you might use the following code:
 
 \begin{verbatim}
-    object *argument;
+    object *arglist;
     ...
-    argument = newintobject((long)eventcode);
-    result = call_object(my_callback, argument);
-    DECREF(argument);
+    arglist = mkvalue("(l)", eventcode);
+    result = call_object(my_callback, arglist);
+    DECREF(arglist);
     if (result == NULL)
         return NULL; /* Pass error back */
     /* Here maybe use the result */
@@ -407,19 +487,8 @@ following code:
 
 Note the placement of DECREF(argument) immediately after the call,
 before the error check!  Also note that strictly spoken this code is
-not complete: \code{newintobject()} may run out of memory, and this
-should be checked.
-
-In even more complicated cases you may want to pass the callback
-function multiple arguments.  To this end you have to construct (and
-dispose of!) a tuple object.  Details (mostly concerned with the
-errror checks and reference count manipulation) are left as an
-exercise for the reader; most of this is also needed when returning
-multiple values from a function.
-
-XXX TO DO: explain objects.
-
-XXX TO DO: defining new object types.
+not complete: \code{mkvalue()} may run out of memory, and this should
+be checked.
 
 
 \section{Format strings for {\tt getargs()}}
@@ -433,69 +502,78 @@ follows:
 
 The remaining arguments must be addresses of variables whose type is
 determined by the format string.  For the conversion to succeed, the
-`arg' object must match the format and the format must be exhausted.
+\var{arg} object must match the format and the format must be exhausted.
 Note that while \code{getargs()} checks that the Python object really
-is of the specified type, it cannot check that the addresses provided
-in the call match: if you make mistakes there, your code will probably
-dump core.
+is of the specified type, it cannot check the validity of the
+addresses of C variables provided in the call: if you make mistakes
+there, your code will probably dump core.
 
-A format string consists of a single `format unit'.  A format unit
-describes one Python object; it is usually a single character or a
-parenthesized string.  The type of a format units is determined from
-its first character, the `format letter':
+A non-empty format string consists of a single `format unit'.  A
+format unit describes one Python object; it is usually a single
+character or a parenthesized sequence of format units.  The type of a
+format units is determined from its first character, the `format
+letter':
 
 \begin{description}
 
 \item[\samp{s} (string)]
 The Python object must be a string object.  The C argument must be a
-char** (i.e. the address of a character pointer), and a pointer to
-the C string contained in the Python object is stored into it. If the
-next character in the format string is \samp{\#}, another C argument
-of type int* must be present, and the length of the Python string (not
-counting the trailing zero byte) is stored into it.
+\code{(char**)} (i.e. the address of a character pointer), and a pointer
+to the C string contained in the Python object is stored into it.  You
+must not provide storage to store the string; a pointer to an existing
+string is stored into the character pointer variable whose address you
+pass.  If the next character in the format string is \samp{\#},
+another C argument of type \code{(int*)} must be present, and the
+length of the Python string (not counting the trailing zero byte) is
+stored into it.
 
 \item[\samp{z} (string or zero, i.e. \code{NULL})]
 Like \samp{s}, but the object may also be None.  In this case the
-string pointer is set to NULL and if a \samp{\#} is present the size
-it set to 0.
+string pointer is set to \code{NULL} and if a \samp{\#} is present the
+size is set to 0.
 
 \item[\samp{b} (byte, i.e. char interpreted as tiny int)]
-The object must be a Python integer.  The C argument must be a char*.
+The object must be a Python integer.  The C argument must be a
+\code{(char*)}.
 
 \item[\samp{h} (half, i.e. short)]
-The object must be a Python integer.  The C argument must be a short*.
+The object must be a Python integer.  The C argument must be a
+\code{(short*)}.
 
 \item[\samp{i} (int)]
-The object must be a Python integer.  The C argument must be an int*.
+The object must be a Python integer.  The C argument must be an
+\code{(int*)}.
 
 \item[\samp{l} (long)]
 The object must be a (plain!) Python integer.  The C argument must be
-a long*.
+a \code{(long*)}.
 
 \item[\samp{c} (char)]
 The Python object must be a string of length 1.  The C argument must
-be a char*.  (Don't pass an int*!)
+be a \code{(char*)}.  (Don't pass an \code{(int*)}!)
 
 \item[\samp{f} (float)]
 The object must be a Python int or float.  The C argument must be a
-float*.
+\code{(float*)}.
 
 \item[\samp{d} (double)]
 The object must be a Python int or float.  The C argument must be a
-double*.
+\code{(double*)}.
 
 \item[\samp{S} (string object)]
 The object must be a Python string.  The C argument must be an
-object** (i.e. the address of an object pointer).  The C program thus
-gets back the actual string object that was passed, not just a pointer
-to its array of characters and its size as for format character
-\samp{s}.
+\code{(object**)} (i.e. the address of an object pointer).  The C
+program thus gets back the actual string object that was passed, not
+just a pointer to its array of characters and its size as for format
+character \samp{s}.  The reference count of the object has not been
+increased.
 
 \item[\samp{O} (object)]
-The object can be any Python object, including None, but not NULL.
-The C argument must be an object**.  This can be used if an argument
-list must contain objects of a type for which no format letter exist:
-the caller must then check that it has the right type.
+The object can be any Python object, including None, but not
+\code{NULL}.  The C argument must be an \code{(object**)}.  This can be
+used if an argument list must contain objects of a type for which no
+format letter exist: the caller must then check that it has the right
+type.  The reference count of the object has not been increased.
 
 \item[\samp{(} (tuple)]
 The object must be a Python tuple.  Following the \samp{(} character
@@ -504,15 +582,15 @@ elements of the tuple, followed by a \samp{)} character.  Tuple
 format units may be nested.  (There are no exceptions for empty and
 singleton tuples; \samp{()} specifies an empty tuple and \samp{(i)} a
 singleton of one integer.  Normally you don't want to use the latter,
-since it is hard for the user to specify.
+since it is hard for the Python user to specify.
 
 \end{description}
 
 More format characters will probably be added as the need arises.  It
-should be allowed to use Python long integers whereever integers are
-expected, and perform a range check.  (A range check is in fact always
-necessary for the \samp{b}, \samp{h} and \samp{i} format
-letters, but this is currently not implemented.)
+should (but currently isn't) be allowed to use Python long integers
+whereever integers are expected, and perform a range check.  (A range
+check is in fact always necessary for the \samp{b}, \samp{h} and
+\samp{i} format letters, but this is currently not implemented.)
 
 Some example calls:
 
@@ -523,14 +601,14 @@ Some example calls:
     char *s;
     int size;
 
-    ok = getargs(args, "(lls)", &k, &l, &s); /* Two longs and a string */
-        /* Possible Python call: f(1, 2, 'three') */
+    ok = getargs(args, ""); /* No arguments */
+        /* Python call: f() */
     
     ok = getargs(args, "s", &s); /* A string */
         /* Possible Python call: f('whoops!') */
 
-    ok = getargs(args, ""); /* No arguments */
-        /* Python call: f() */
+    ok = getargs(args, "(lls)", &k, &l, &s); /* Two longs and a string */
+        /* Possible Python call: f(1, 2, 'three') */
     
     ok = getargs(args, "((ii)s#)", &i, &j, &s, &size);
         /* A pair of ints and a string, whose size is also returned */
@@ -546,9 +624,13 @@ Some example calls:
     }
 \end{verbatim}
 
-Note that a format string must consist of a single unit; strings like
-\samp{is} and \samp{(ii)s\#} are not valid format strings.  (But
-\samp{s\#} is.)
+Note that the `top level' of a non-empty format string must consist of
+a single unit; strings like \samp{is} and \samp{(ii)s\#} are not valid
+format strings.  (But \samp{s\#} is.)  If you have multiple arguments,
+the format must therefore always be enclosed in parentheses, as in the
+examples \samp{((ii)s\#)} and \samp{(((ii)(ii))(ii)}.  (The current
+implementation does not complain when more than one unparenthesized
+format unit is given.  Sorry.)
 
 The \code{getargs()} function does not support variable-length
 argument lists.  In simple cases you can fake these by trying several
@@ -575,7 +657,7 @@ calls to
 \end{verbatim}
 
 (It is possible to think of an extension to the definition of format
-strings to accomodate this directly, e.g., placing a \samp{|} in a
+strings to accommodate this directly, e.g. placing a \samp{|} in a
 tuple might specify that the remaining arguments are optional.
 \code{getargs()} should then return one more than the number of
 variables stored into.)
@@ -583,13 +665,13 @@ variables stored into.)
 Advanced users note: If you set the `varargs' flag in the method list
 for a function, the argument will always be a tuple (the `raw argument
 list').  In this case you must enclose single and empty argument lists
-in parentheses, e.g., \samp{(s)} and \samp{()}.
+in parentheses, e.g. \samp{(s)} and \samp{()}.
 
 
 \section{The {\tt mkvalue()} function}
 
 This function is the counterpart to \code{getargs()}.  It is declared
-in \file{modsupport.h} as follows:
+in \file{Include/modsupport.h} as follows:
 
 \begin{verbatim}
     object *mkvalue(char *format, ...);
@@ -607,7 +689,7 @@ second argument specifies the length of the data (negative means use
 argument (so you should \code{DECREF()} it if you've just created it
 and aren't going to use it again).
 
-If the argument for \samp{O} or \samp{S} is a NULL pointer, it is
+If the argument for \samp{O} or \samp{S} is a \code{NULL} pointer, it is
 assumed that this was caused because the call producing the argument
 found an error and set an exception.  Therefore, \code{mkvalue()} will
 return \code{NULL} but won't set an exception if one is already set.
@@ -634,8 +716,10 @@ one argument is expected.)
 Here's a useful explanation of \code{INCREF()} and \code{DECREF()}
 (after an original by Sjoerd Mullender).
 
-Use \code{XINCREF()} or \code{XDECREF()} instead of \code{INCREF()} /
-\code{DECREF()} when the argument may be \code{NULL}.
+Use \code{XINCREF()} or \code{XDECREF()} instead of \code{INCREF()} or
+\code{DECREF()} when the argument may be \code{NULL} --- the versions
+without \samp{X} are faster but wull dump core when they encounter a
+\code{NULL} pointer.
 
 The basic idea is, if you create an extra reference to an object, you
 must \code{INCREF()} it, if you throw away a reference to an object,
@@ -696,7 +780,7 @@ which you keep references in your object, but you should not use
 \code{DECREF()} on your object.  You should use \code{DEL()} instead.
 
 
-\section{Using C++}
+\section{Writing extensions in C++}
 
 It is possible to write extension modules in C++.  Some restrictions
 apply: since the main program (the Python interpreter) is compiled and
@@ -733,10 +817,10 @@ lower-level operations described in the previous chapters to construct
 and use Python objects.
 
 A simple demo of embedding Python can be found in the directory
-\file{<pythonroot>/embed}.
+\file{Demo/embed}.
 
 
-\section{Using C++}
+\section{Embedding Python in C++}
 
 It is also possible to embed Python in a C++ program; how this is done
 exactly will depend on the details of the C++ system used; in general
@@ -747,13 +831,16 @@ recompile Python itself with C++.
 
 \chapter{Dynamic Loading}
 
-On some systems (e.g., SunOS, SGI Irix) it is possible to configure
-Python to support dynamic loading of modules implemented in C.  Once
-configured and installed it's trivial to use: if a Python program
+On most modern systems it is possible to configure Python to support
+dynamic loading of extension modules implemented in C.  When shared
+libraries are used dynamic loading is configured automatically;
+otherwise you have to select it as a build option (see below).  Once
+configured, dynamic loading is trivial to use: when a Python program
 executes \code{import foo}, the search for modules tries to find a
-file \file{foomodule.o} in the module search path, and if one is
-found, it is linked with the executing binary and executed.  Once
-linked, the module acts just like a built-in module.
+file \file{foomodule.o} (\file{foomodule.so} when using shared
+libraries) in the module search path, and if one is found, it is
+loaded into the executing binary and executed.  Once loaded, the
+module acts just like a built-in extension module.
 
 The advantages of dynamic loading are twofold: the `core' Python
 binary gets smaller, and users can extend Python with their own
@@ -762,150 +849,167 @@ own copy of the Python interpreter.  There are also disadvantages:
 dynamic loading isn't available on all systems (this just means that
 on some systems you have to use static loading), and dynamically
 loading a module that was compiled for a different version of Python
-(e.g., with a different representation of objects) may dump core.
-
-{\bf NEW:} Under SunOS (all versions) and IRIX 5.x, dynamic loading
-now uses shared libraries and is always configured.  See at the
-end of this chapter for how to create a dynamically loadable module.
+(e.g. with a different representation of objects) may dump core.
 
 
 \section{Configuring and building the interpreter for dynamic loading}
 
-(Ignore this section for SunOS and IRIX 5.x --- on these systems
-dynamic loading is always configured.)
+There are three styles of dynamic loading: one using shared libraries,
+one using SGI IRIX 4 dynamic loading, and one using GNU dynamic
+loading.
 
-Dynamic loading is a little complicated to configure, since its
-implementation is extremely system dependent, and there are no
-really standard libraries or interfaces for it.  I'm using an
-extremely simple interface, which basically needs only one function:
+\subsection{Shared libraries}
 
-\begin{verbatim}
-    funcptr = dl_loadmod(binary, object, function)
-\end{verbatim}
+The following systems supports dynamic loading using shared libraries:
+SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!); and probably all
+systems derived from SVR4, or at least those SVR4 derivatives that
+support shared libraries (are there any that don't?).
 
-where \code{binary} is the pathname of the currently executing program
-(not just \code{argv[0]}!), \code{object} is the name of the \samp{.o}
-file to be dynamically loaded, and \code{function} is the name of a
-function in the module.  If the dynamic loading succeeds,
-\code{dl_loadmod()} returns a pointer to the named function; if not, it
-returns \code{NULL}.
+You don't need to do anything to configure dynamic loading on these
+systems --- the \file{configure} detects the presence of the
+\file{<dlfcn.h>} header file and automatically configures dynamic
+loading.
 
-I provide two implementations of \code{dl_loadmod()}: one for SGI machines
-running Irix 4.0 (written by my colleague Jack Jansen), and one that
-is a thin interface layer for Wilson Ho's (GNU) dynamic loading
-package \dfn{dld} (version 3.2.3).  Dld implements a much more powerful
-version of dynamic loading than needed (including unlinking), but it
-does not support System V's COFF object file format.  It currently
-supports only VAX (Ultrix), Sun 3 (SunOS 3.4 and 4.0), SPARCstation
-(SunOS 4.0), Sequent Symmetry (Dynix), and Atari ST (from the dld
-3.2.3 README file).  Dld is part of the standard Python distribution;
-if you didn't get it,many ftp archive sites carry dld these days, so
-it won't be hard to get hold of it if you need it (using archie).
+\subsection{SGI dynamic loading}
 
-(If you don't know where to get dld, try anonymous ftp to
-\file{wuarchive.wustl.edu:/mirrors2/gnu/dld-3.2.3.tar.Z}.  Jack's dld
-can be found at \file{ftp.cwi.nl:/pub/python/dl.tar.Z}.)
+Only SGI IRIX 4 supports dynamic loading of modules using SGI dynamic
+loading.  (SGI IRIX 5 might also support it but it is inferior to
+using shared libraries so there is no reason to; a small test didn't
+work right away so I gave up trying to support it.)
 
-To build a Python interpreter capable of dynamic loading, you need to
-edit the Makefile.  Basically you must uncomment the lines starting
-with \samp{\#DL_}, but you must also edit some of the lines to choose
-which version of dl_loadmod to use, and fill in the pathname of the dld
-library if you use it.  And, of course, you must first build
-dl_loadmod and dld, if used.  (This is now done through the Configure
-script.  For SunOS and IRIX 5.x, everything is now automatic.)
+Before you build Python, you first need to fetch and build the \code{dl}
+package written by Jack Jansen.  This is available by anonymous ftp
+from host \file{ftp.cwi.nl}, directory \file{pub/dynload}, file
+\file{dl-1.6.tar.Z}.  (The version number may change.)  Follow the
+instructions in the package's \file{README} file to build it.
+
+Once you have built \code{dl}, you can configure Python to use it.  To
+this end, you run the \file{configure} script with the option
+\code{--with-dl=\var{directory}} where \var{directory} is the absolute
+pathname of the \code{dl} directory.
+
+Now build and install Python as you normally would (see the
+\file{README} file in the toplevel Python directory.)
+
+\subsection{GNU dynamic loading}
+
+GNU dynamic loading supports (according to its \file{README} file) the
+following hardware and software combinations: VAX (Ultrix), Sun 3
+(SunOS 3.4 and 4.0), Sparc (SunOS 4.0), Sequent Symmetry (Dynix), and
+Atari ST.  There is no reason to use it on a Sparc; I haven't seen a
+Sun 3 for years so I don't know if these have shared libraries or not.
+
+You need to fetch and build two packages.  One is GNU DLD 3.2.3,
+available by anonymous ftp from host \file{ftp.cwi.nl}, directory
+\file{pub/dynload}, file \file{dld-3.2.3.tar.Z}.  (As far as I know,
+no further development on GNU DLD is being done.)  The other is an
+emulation of Jack Jansen's \code{dl} package that I wrote on top of
+GNU DLD 3.2.3.  This is available from the same host and directory,
+file dl-dld-1.1.tar.Z.  (The version number may change --- but I doubt
+it will.)  Follow the instructions in each package's \file{README}
+file to configure build them.
+
+Now configure Python.  Run the \file{configure} script with the option
+\code{--with-dl-dld=\var{dl-directory},\var{dld-directory}} where
+\var{dl-directory} is the absolute pathname of the directory where you
+have built the \file{dl-dld} package, and \var{dld-directory} is that
+of the GNU DLD package.  The Python interpreter you build hereafter
+will support GNU dynamic loading.
 
 
 \section{Building a dynamically loadable module}
 
-Building an object file usable by dynamic loading is easy, if you
-follow these rules (substitute your module name for \code{foo}
-everywhere):
+Since there are three styles of dynamic loading, there are also three
+groups of instructions for building a dynamically loadable module.
+Instructions common for all three styles are given first.  Assuming
+your module is called \code{foo}, the source filename must be
+\file{foomodule.c}, so the object name is \file{foomodule.o}.  The
+module must be written as a normal Python extension module (as
+described earlier).
 
-\begin{itemize}
+Note that in all cases you will have to create your own Makefile that
+compiles your module file(s).  This Makefile will have to pass two
+\samp{-I} arguments to the C compiler which will make it find the
+Python header files.  If the Make variable \var{PYTHONTOP} points to
+the toplevel Python directory, your \var{CFLAGS} Make variable should
+contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
+(Most header files are in the \file{Include} subdirectory, but the
+\file{config.h} header lives in the toplevel directory.)  You must
+also add \samp{-DHAVE_CONFIG_H} to the definition of \var{CFLAGS} to
+direct the Python headers to include \file{config.h}.
 
-\item
-The source filename must be \file{foomodule.c}, so the object
-name is \file{foomodule.o}.
 
-\item
-The module must be written as a (statically linked) Python extension
-module (described in an earlier chapter) except that no line for it
-must be added to \file{config.c} and it mustn't be linked with the
-main Python interpreter.
+\subsection{Shared libraries}
 
-\item
-The module's initialization function must be called \code{initfoo}; it
-must install the module in \code{sys.modules} (generally by calling
-\code{initmodule()} as explained earlier.
+You must link the \samp{.o} file to produce a shared library.  This is
+done using a special invocation of the \UNIX{} loader/linker, {\em
+ld}(1).  Unfortunately the invocation differs slightly per system.
 
-\item
-The module must be compiled with \samp{-c}.  The resulting .o file must
-not be stripped.
-
-\item
-Since the module must include many standard Python include files, it
-must be compiled with a \samp{-I} option pointing to the Python source
-directory (unless it resides there itself).
-
-\item
-On SGI Irix, the compiler flag \samp{-G0} (or \samp{-G 0}) must be passed.
-IF THIS IS NOT DONE THE RESULTING CODE WILL NOT WORK.
-
-\item
-{\bf NEW:} On SunOS and IRIX 5.x, you must create a shared library
-from your \samp{.o} file using the following command (assuming your
-module is called \code{foo}):
-
+On SunOS 4, use
 \begin{verbatim}
-	ld -o foomodule.so foomodule.o <any other libraries needed>
+    ld foomodule.o -o foomodule.so
 \end{verbatim}
 
-and place the resulting \samp{.so} file in the Python search path (not
-the \samp{.o} file).  Note: on Solaris, you need to pass \samp{-G} to
-the loader; on IRIX 5.x, you need to pass \samp{-shared}.  Sigh...
+On Solaris 2, use
+\begin{verbatim}
+    ld -G foomodule.o -o foomodule.so
+\end{verbatim}
 
-\end{itemize}
+On SGI IRIX 5, use
+\begin{verbatim}
+    ld -shared foomodule.o -o foomodule.so
+\end{verbatim}
 
+On other systems, consult the manual page for {\em ld}(1) to find what
+flags, if any, must be used.
 
-\section{Using libraries}
+If your extension module uses system libraries that haven't already
+been linked with Python (e.g. a windowing system), these must be
+passed to the {\em ld} command as \samp{-l} options after the
+\samp{.o} file.
 
-If your dynamically loadable module needs to be linked with one or
-more libraries that aren't linked with Python (or if it needs a
-routine that isn't used by Python from one of the libraries with which
-Python is linked), you must specify a list of libraries to search
-after loading the module in a file with extension \samp{.libs} (and
-otherwise the same as your \samp{.o} file).  This file should contain
-one or more lines containing whitespace-separated absolute library
-pathnames.  When using the dl interface, \samp{-l...} flags may also
-be used (it is in fact passed as an option list to the system linker
-ld(1)), but the dl-dld interface requires absolute pathnames.  I
-believe it is possible to specify shared libraries here.
-
-(On SunOS, any extra libraries must be specified on the \code{ld}
-command that creates the \samp{.so} file.)
+The resulting file \file{foomodule.so} must be copied into a directory
+along the Python module search path.
 
 
-\section{Caveats}
+\subsection{SGI dynamic loading}
 
-Dynamic loading requires that \code{main}'s \code{argv[0]} contains
-the pathname or at least filename of the Python interpreter.
-Unfortunately, when executing a directly executable Python script (an
-executable file with \samp{\#!...} on the first line), the kernel
-overwrites \code{argv[0]} with the name of the script.  There is no
-easy way around this, so executable Python scripts cannot use
-dynamically loaded modules.  (You can always write a simple shell
-script that calls the Python interpreter with the script as its
-input.)
+{bf IMPORTANT:} You must compile your extension module with the
+additional C flag \samp{-G0} (or \samp{-G 0}).  This instruct the
+assembler to generate position-independent code.
 
-When using dl, the overlay is first converted into an `overlay' for
-the current process by the system linker (\code{ld}).  The overlay is
-saved as a file with extension \samp{.ld}, either in the directory
-where the \samp{.o} file lives or (if that can't be written) in a
-temporary directory.  An existing \samp{.ld} file resulting from a
-previous run (not from a temporary directory) is used, bypassing the
-(costly) linking phase, provided its version matches the \samp{.o}
-file and the current binary.  (See the \code{dl} man page for more
-details.)
+You don't need to link the resulting \file{foomodule.o} file; just
+copy it into a directory along the Python module search path.
+
+The first time your extension is loaded, it takes some extra time and
+a few messages may be printed.  This creates a file
+\file{foomodule.ld} which is an image that can be loaded quickly into
+the Python interpreter process.  When a new Python interpreter is
+installed, the \code{dl} package detects this and rebuilds
+\file{foomodule.ld}.  The file \file{foomodule.ld} is placed in the
+directory where \file{foomodule.o} was found, unless this directory is
+unwritable; in that case it is placed in a temporary
+directory.\footnote{Check the manual page of the \code{dl} package for
+details.}
+
+If your extension modules uses additional system libraries, you must
+create a file \file{foomodule.libs} in the same directory as the
+\file{foomodule.o}.  This file should contain one or more lines with
+whitespace-separated options that will be passed to the linker ---
+normally only \samp{-l} options or absolute pathnames of libraries
+(\samp{.a} files) should be used.
+
+
+\subsection{GNU dynamic loading}
+
+Just copy \file{foomodule.o} into a directory along the Python module
+search path.
+
+If your extension modules uses additional system libraries, you must
+create a file \file{foomodule.libs} in the same directory as the
+\file{foomodule.o}.  This file should contain one or more lines with
+whitespace-separated absolute pathnames of libraries (\samp{.a}
+files).  No \samp{-l} options can be used.
 
 
 \input{ext.ind}
