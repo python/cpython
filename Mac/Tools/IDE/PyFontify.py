@@ -25,7 +25,7 @@ sublist is not used, hence always None.
 #	Tim Peters,
 #	Just van Rossum
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 import string, regex
 
@@ -37,7 +37,7 @@ def replace(where, what, with):
 # This list of keywords is taken from ref/node13.html of the
 # Python 1.3 HTML documentation. ("access" is intentionally omitted.)
 keywordsList = [
-	"assert",
+	"assert", "exec",
 	"del", "from", "lambda", "return",
 	"and", "elif", "global", "not", "try",
 	"break", "else", "if", "or", "while",
