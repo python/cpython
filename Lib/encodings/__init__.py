@@ -48,7 +48,7 @@ def search_function(encoding):
     modname = encoding.replace('-', '_')
     modname = aliases.aliases.get(modname,modname)
     try:
-        mod = __import__(modname,globals(),locals(),'*')
+        mod = __import__('encodings.'+modname,globals(),locals(),'*')
     except ImportError,why:
         # cache misses
         _cache[encoding] = None
