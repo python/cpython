@@ -136,7 +136,6 @@ __all__ = [
 
 import threading
 import copy
-import operator
 
 #Rounding
 ROUND_DOWN = 'ROUND_DOWN'
@@ -1716,13 +1715,10 @@ class Decimal(object):
         val = Decimal(1)
         context = context._shallow_copy()
         context.prec = firstprec + elength + 1
-        rounding = context.rounding
         if n < 0:
             #n is a long now, not Decimal instance
             n = -n
             mul = Decimal(1).__div__(mul, context=context)
-
-        shouldround = context._rounding_decision == ALWAYS_ROUND
 
         spot = 1
         while spot <= n:
@@ -1742,7 +1738,7 @@ class Decimal(object):
             spot >>= 1
         context.prec = firstprec
 
-        if shouldround:
+        if context._rounding_decision == ALWAYS_ROUND:
             return val._fix(context)
         return val
 
@@ -1823,8 +1819,6 @@ class Decimal(object):
             if ans:
                 return ans
 
-        out = 0
-
         if watchexp and (context.Emax  < exp or context.Etiny() > exp):
             return context._raise_error(InvalidOperation, 'rescale(a, INF)')
 
@@ -1844,7 +1838,6 @@ class Decimal(object):
         tmp._int = (0,) + tmp._int
         digits += 1
 
-        prevexact = context.flags[Inexact]
         if digits < 0:
             tmp._exp = -digits + tmp._exp
             tmp._int = (0,1)
@@ -1940,7 +1933,6 @@ class Decimal(object):
 
         half = Decimal('0.5')
 
-        count = 1
         maxp = firstprec + 2
         rounding = context._set_rounding(ROUND_HALF_EVEN)
         while 1:
@@ -2043,8 +2035,9 @@ class Decimal(object):
 
         if context is None:
             context = getcontext()
-        context._rounding_decision == ALWAYS_ROUND
-        return ans._fix(context)
+        if context._rounding_decision == ALWAYS_ROUND:
+            return ans._fix(context)
+        return ans
 
     def min(self, other, context=None):
         """Returns the smaller value.
@@ -2089,8 +2082,9 @@ class Decimal(object):
 
         if context is None:
             context = getcontext()
-        context._rounding_decision == ALWAYS_ROUND
-        return ans._fix(context)
+        if context._rounding_decision == ALWAYS_ROUND:
+            return ans._fix(context)
+        return ans
 
     def _isinteger(self):
         """Returns whether self is an integer"""
