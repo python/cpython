@@ -183,16 +183,9 @@ int TkMacConvertEvent(EventRecord *eventPtr);
 
 staticforward int PyMacConvertEvent(EventRecord *eventPtr);
 
-#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
-	#pragma import on
-#endif
-
 #include <SIOUX.h>
 extern int SIOUXIsAppWindow(WindowPtr);
 
-#if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
-	#pragma import reset
-#endif
 #endif /* macintosh */
 
 #ifndef FREECAST
