@@ -49,6 +49,13 @@ class Parser:
         self._strict = strict
 
     def parse(self, fp, headersonly=False):
+        """Create a message structure from the data in a file.
+
+        Reads all the data from the file and returns the root of the message
+        structure.  Optional headersonly is a flag specifying whether to stop
+        parsing after reading the headers or not.  The default is False,
+        meaning it parses the entire contents of the file.
+        """
         root = self._class()
         self._parseheaders(root, fp)
         if not headersonly:
@@ -56,6 +63,13 @@ class Parser:
         return root
 
     def parsestr(self, text, headersonly=False):
+        """Create a message structure from a string.
+
+        Returns the root of the message structure.  Optional headersonly is a
+        flag specifying whether to stop parsing after reading the headers or
+        not.  The default is False, meaning it parses the entire contents of
+        the file.
+        """
         return self.parse(StringIO(text), headersonly=headersonly)
 
     def _parseheaders(self, container, fp):
