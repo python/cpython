@@ -30,13 +30,15 @@ extern typeobject Methodtype;
 
 typedef object *(*method) FPROTO((object *, object *));
 
-extern object *newmethodobject PROTO((char *, method, object *));
+extern object *newmethodobject PROTO((char *, method, object *, int));
 extern method getmethod PROTO((object *));
 extern object *getself PROTO((object *));
+extern int getvarargs PROTO((object *));
 
 struct methodlist {
-	char *ml_name;
-	method ml_meth;
+	char	*ml_name;
+	method	ml_meth;
+	int	ml_varargs;
 };
 
 extern object *findmethod PROTO((struct methodlist *, object *, char *));
