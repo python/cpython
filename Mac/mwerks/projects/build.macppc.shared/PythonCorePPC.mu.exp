@@ -1,4 +1,4 @@
-inittab
+_PyImport_Inittab
 PyExc_ZeroDivisionError
 PyExc_ValueError
 PyExc_TypeError
@@ -61,7 +61,7 @@ PyErr_SetObject
 PyErr_Restore
 PyImport_FrozenModules
 PyArg_ParseTupleAndKeywords
-PyArgs_VaParse
+PyArg_VaParse
 PyArg_ParseTuple
 PyArg_Parse
 Py_GetCopyright
@@ -72,7 +72,7 @@ optarg
 getopt
 Py_GetVersion
 _PyParser_Grammar
-import_modules
+_PyImport_Modules
 initimp
 PyImport_ReloadModule
 PyImport_ImportModule
@@ -121,12 +121,16 @@ PyRun_InteractiveOne
 PyRun_InteractiveLoop
 PyRun_AnyFile
 Py_Initialize
+Py_Setup
+PyThreadState_Swap
+PyThreadState_Get
+PyThreadState_Delete
+PyThreadState_New
+PyInterpreterState_Delete
+PyInterpreterState_New
 PyErr_CheckSignals
 PyMember_Set
 PyMember_Get
-_PySys_CheckInterval
-_PySys_ProfileFunc
-_PySys_TraceFunc
 PySys_SetArgv
 PySys_SetPath
 PySys_Init
@@ -135,8 +139,6 @@ PySys_GetFile
 PySys_GetObject
 PyTraceBack_Type
 PyTraceBack_Print
-PyTraceBack_Store
-PyTraceBack_Fetch
 PyTraceBack_Here
 PyCode_Type
 Py_OptimizeFlag
@@ -220,6 +222,22 @@ _Py_c_prod
 _Py_c_neg
 _Py_c_diff
 _Py_c_sum
+PyDict_Type
+PyDict_DelItemString
+PyDict_SetItemString
+PyDict_GetItemString
+PyObject_SetAttr
+PyObject_GetAttr
+PyDict_Items
+PyDict_Values
+PyDict_Keys
+PyDict_Size
+PyDict_Next
+PyDict_Clear
+PyDict_DelItem
+PyDict_SetItem
+PyDict_GetItem
+PyDict_New
 PyFile_Type
 PyFile_WriteString
 PyFile_WriteObject
@@ -273,22 +291,6 @@ PyLong_FromDouble
 PyLong_FromUnsignedLong
 PyLong_FromLong
 _PyLong_New
-PyDict_Type
-PyDict_DelItemString
-PyDict_SetItemString
-PyDict_GetItemString
-PyObject_SetAttr
-PyObject_GetAttr
-PyDict_Items
-PyDict_Values
-PyDict_Keys
-PyDict_Size
-PyDict_Next
-PyDict_Clear
-PyDict_DelItem
-PyDict_SetItem
-PyDict_GetItem
-PyDict_New
 PyCFunction_Type
 Py_FindMethod
 Py_FindMethodInChain
@@ -382,11 +384,9 @@ initparser
 initregex
 _Py_re_syntax
 _Py_re_search
-_Py_re_search_2
 _Py_re_match
-_Py_re_match_2
-_Py_re_compile_fastmap
 _Py_re_compile_pattern
+_Py_re_compile_fastmap
 _Py_re_set_syntax
 initrgbimg
 initrotor
@@ -446,6 +446,10 @@ PyErr_Mac
 PyMac_GetOSErrException
 PyMac_StrError
 Pstring
+PLstrrchr
+PLstrcmp
+PLstrcpy
+PyMac_StopGUSISpin
 PyMac_SetGUSISpin
 SpinCursor
 PyMac_FixGUSIcd
@@ -455,6 +459,7 @@ PyMac_AppRefNum
 Py_GetExecPrefix
 Py_GetPrefix
 Py_GetArgcArgv
+Py_GetProgramFullPath
 Py_GetProgramName
 PyMac_Exit
 PyMac_InitApplication
@@ -462,6 +467,7 @@ PyMac_Initialize
 PyMac_InitApplet
 getfiletype
 setfiletype
+main
 PyMac_AddLibResources
 __initialize_with_resources
 getbootvol
@@ -1058,6 +1064,7 @@ __dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
 __ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
 DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
 GUSISetupMSLSIOUX__Fv		# GUSISetupMSLSIOUX()
+fdopen
 fwalk
 __close_file
 __position_file
@@ -1456,7 +1463,6 @@ cuserid
 _ftype
 _fcreator
 tell
-fdopen
 fileno
 __gettype
 __getcreator
