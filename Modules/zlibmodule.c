@@ -853,7 +853,7 @@ static char zlib_module_documentation[]=
 "compressobj([level]) -- Return a compressor object.\n"
 "crc32(string) -- Compute a CRC-32 checksum.\n"
 "crc32(string, start) -- Compute a CRC-32 checksum using a given starting value.\n"
-"decompress(string,[wbites],[bufsize]) -- Decompresses a compressed string.\n"
+"decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits]) -- Return a decompressor object (wbits=window buffer size).\n\n"
 "Compressor objects support compress() and flush() methods; decompressor \n"
 "objects support decompress() and flush()."
