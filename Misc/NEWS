@@ -30,6 +30,9 @@ Library
 - SF bug 763023: fix uncaught ZeroDivisionError in difflib ratio methods
   when there are no lines.
 
+- SF bug 763637: fix exception in Tkinter with after_cancel
+  which could occur with Tk 8.4
+
 Tools/Demos
 -----------
 
