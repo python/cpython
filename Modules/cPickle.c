@@ -119,14 +119,9 @@ static PyObject *extension_cache;
 /* For looking up name pairs in copy_reg._extension_registry. */
 static PyObject *two_tuple;
 
-/* object.__reduce__, the default reduce callable. */
-static PyObject *object_reduce;
-
-/* copy_reg._better_reduce, the protocol 2 reduction function. */
-static PyObject *better_reduce;
-
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
+  *__reduce_ex___str,
   *write_str, *append_str,
   *read_str, *readline_str, *__main___str, *__basicnew___str,
   *copy_reg_str, *dispatch_table_str;
@@ -2505,48 +2500,50 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		goto finally;
 	}
 
-	/* Get a reduction callable.  This may come from
-	 * copy_reg.dispatch_table, the object's __reduce__ method,
-	 * the default object.__reduce__, or copy_reg._better_reduce.
+	/* Get a reduction callable, and call it.  This may come from
+	 * copy_reg.dispatch_table, the object's __reduce_ex__ method,
+	 * or the object's __reduce__ method.
 	 */
 	__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type);
 	if (__reduce__ != NULL) {
 		Py_INCREF(__reduce__);
+		Py_INCREF(args);
+		ARG_TUP(self, args);
+		if (self->arg) {
+			t = PyObject_Call(__reduce__, self->arg, NULL);
+			FREE_ARG_TUP(self);
+		}
 	}
 	else {
-		/* Check for a __reduce__ method.
-		 * Subtle: get the unbound method from the class, so that
-		 * protocol 2 can override the default __reduce__ that all
-		 * classes inherit from object.
-		 * XXX object.__reduce__ should really be rewritten so that
-		 * XXX we don't need to call back into Python code here
-		 * XXX (better_reduce), but no time to do that.
-		 */
-		__reduce__ = PyObject_GetAttr((PyObject *)type,
-					      __reduce___str);
-		if (__reduce__ == NULL) {
+		/* Check for a __reduce_ex__ method. */
+		__reduce__ = PyObject_GetAttr(args, __reduce_ex___str);
+		if (__reduce__ != NULL) {
+			t = PyInt_FromLong(self->proto);
+			if (t != NULL) {
+				ARG_TUP(self, t);
+				t = NULL;
+				if (self->arg) {
+					t = PyObject_Call(__reduce__,
+							  self->arg, NULL);
+					FREE_ARG_TUP(self);
+				}
+			}
+		}
+		else {
 			PyErr_Clear();
-			PyErr_SetObject(UnpickleableError, args);
-			goto finally;
-		}
-
-		if (self->proto >= 2 && __reduce__ == object_reduce) {
-			/* Proto 2 can do better than the default. */
-			Py_DECREF(__reduce__);
-			Py_INCREF(better_reduce);
-			__reduce__ = better_reduce;
+			/* Check for a __reduce__ method. */
+			__reduce__ = PyObject_GetAttr(args, __reduce___str);
+			if (__reduce__ != NULL) {
+				t = PyObject_Call(__reduce__,
+						  empty_tuple, NULL);
+			}
+			else {
+				PyErr_SetObject(UnpickleableError, args);
+				goto finally;
+			}
 		}
 	}
 
-	/* Call the reduction callable, setting t to the result. */
-	assert(__reduce__ != NULL);
-	assert(t == NULL);
-	Py_INCREF(args);
-	ARG_TUP(self, args);
-	if (self->arg) {
-		t = PyObject_Call(__reduce__, self->arg, NULL);
-		FREE_ARG_TUP(self);
-	}
 	if (t == NULL)
 		goto finally;
 
@@ -5590,6 +5587,7 @@ init_stuff(PyObject *module_dict)
 	INIT_STR(__name__);
 	INIT_STR(__main__);
 	INIT_STR(__reduce__);
+	INIT_STR(__reduce_ex__);
 	INIT_STR(write);
 	INIT_STR(append);
 	INIT_STR(read);
@@ -5618,14 +5616,7 @@ init_stuff(PyObject *module_dict)
 				"_extension_cache");
 	if (!extension_cache) return -1;
 
-	better_reduce = PyObject_GetAttrString(copy_reg, "_better_reduce");
-	if (!better_reduce) return -1;
-
 	Py_DECREF(copy_reg);
-
-	object_reduce = PyObject_GetAttrString((PyObject *)&PyBaseObject_Type,
-					       "__reduce__");
-	if (object_reduce == NULL) return -1;
 
 	if (!(empty_tuple = PyTuple_New(0)))
 		return -1;
