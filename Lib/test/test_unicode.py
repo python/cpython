@@ -411,7 +411,7 @@ try:
 except ValueError:
     pass
 else:
-    raise AssertionError, "u'Andr\202'.encode('ascii') failed to raise an exception"
+    raise TestFailed, "u'Andr\202'.encode('ascii') failed to raise an exception"
 verify(u'Andr\202 x'.encode('ascii','ignore') == "Andr x")
 verify(u'Andr\202 x'.encode('ascii','replace') == "Andr? x")
 
@@ -421,7 +421,7 @@ try:
 except ValueError:
     pass
 else:
-    raise AssertionError, "unicode('Andr\202') failed to raise an exception"
+    raise TestFailed, "unicode('Andr\202') failed to raise an exception"
 verify(unicode('Andr\202 x','ascii','ignore') == u"Andr x")
 verify(unicode('Andr\202 x','ascii','replace') == u'Andr\uFFFD x')
 
@@ -443,7 +443,7 @@ for encoding in (
     ):
     try:
         verify(unicode(u.encode(encoding),encoding) == u)
-    except AssertionError:
+    except TestFailed:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
         print '*** codec for "%s" failed: %s' % (encoding, why)
@@ -454,7 +454,7 @@ for encoding in (
     ):
     try:
         verify(unicode(u.encode(encoding),encoding) == u)
-    except AssertionError:
+    except TestFailed:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
         print '*** codec for "%s" failed: %s' % (encoding, why)
@@ -488,7 +488,7 @@ for encoding in (
     ):
     try:
         verify(unicode(s,encoding).encode(encoding) == s)
-    except AssertionError:
+    except TestFailed:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
         print '*** codec for "%s" failed: %s' % (encoding, why)
@@ -518,7 +518,7 @@ for encoding in (
     ):
     try:
         verify(unicode(s,encoding).encode(encoding) == s)
-    except AssertionError:
+    except TestFailed:
         print '*** codec "%s" failed round-trip' % encoding
     except ValueError,why:
         print '*** codec for "%s" failed: %s' % (encoding, why)
