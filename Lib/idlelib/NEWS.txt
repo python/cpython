@@ -1,7 +1,9 @@
 What's New in IDLE 1.1.1?
 =======================
 
-*Release date: XX-DEC-2004*
+*Release date: XX-JAN-2005*
+
+- Improve error handling when .idlerc can't be created (warn and exit)
 
 - The GUI was hanging if the shell window was closed while a raw_input() 
   was pending.  Restored the quit() of the readline() mainloop().
