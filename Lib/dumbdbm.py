@@ -32,7 +32,8 @@ error = IOError                         # For anydbm
 
 class _Database:
 
-    def __init__(self, file):
+    def __init__(self, file, mode):
+        self._mode = mode
         self._dirfile = file + _os.extsep + 'dir'
         self._datfile = file + _os.extsep + 'dat'
         self._bakfile = file + _os.extsep + 'bak'
@@ -40,7 +41,7 @@ class _Database:
         try:
             f = _open(self._datfile, 'r')
         except IOError:
-            f = _open(self._datfile, 'w')
+            f = _open(self._datfile, 'w', self._mode)
         f.close()
         self._update()
 
@@ -63,7 +64,7 @@ class _Database:
         except _os.error: pass
         try: _os.rename(self._dirfile, self._bakfile)
         except _os.error: pass
-        f = _open(self._dirfile, 'w')
+        f = _open(self._dirfile, 'w', self._mode)
         for key, (pos, siz) in self._index.items():
             f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
         f.close()
@@ -100,7 +101,7 @@ class _Database:
 
     def _addkey(self, key, (pos, siz)):
         self._index[key] = (pos, siz)
-        f = _open(self._dirfile, 'a')
+        f = _open(self._dirfile, 'a', self._mode)
         f.write("%s, (%s, %s)\n" % (`key`, `pos`, `siz`))
         f.close()
 
@@ -146,6 +147,6 @@ class _Database:
         self._datfile = self._dirfile = self._bakfile = None
 
 
-def open(file, flag=None, mode=None):
+def open(file, flag=None, mode=0666):
     # flag, mode arguments are currently ignored
-    return _Database(file)
+    return _Database(file, mode)
