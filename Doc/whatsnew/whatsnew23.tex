@@ -12,10 +12,6 @@
 \tableofcontents
 
 % To do:
-% PYTHONINSPECT
-% doctest extensions
-% new version of IDLE
-% XML-RPC nil extension
 % MacOS framework-related changes (section of its own, probably)
 
 %\section{Introduction \label{intro}}
@@ -1503,6 +1499,14 @@ sequence type.  Here's an example that uses a Python list:
 
 (Contributed by Kevin O'Connor.)
 
+\item The IDLE integrated development environment has been updated
+using the code from the IDLEfork project
+(\url{http://idlefork.sf.net}).  The most notable feature is that the
+code being developed is now executed in a subprocess, meaning that
+there's no longer any need for manual \code{reload()} operations.
+IDLE's core code has been incorporated into the standard library as the
+\module{idlelib} package.
+
 \item The \module{imaplib} module now supports IMAP over SSL.
 (Contributed by Piers Lauder and Tino Lange.)
 
@@ -1850,11 +1854,17 @@ For example:
 
 (Contributed by Raymond Hettinger.)
 
-
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
 particular encoding by providing an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
+
+\item The \module{xmlrpclib} module now supports an XML-RPC extension
+for handling nil data values such as Python's \code{None}.  Nil values
+are always supported on unmarshalling an XML-RPC response.  To
+generate requests containing \code{None}, you must supply a true value
+for the \var{allow_none} parameter when creating a \class{Marshaller}
+instance.
 
 \item The new \module{DocXMLRPCServer} module allows writing
 self-documenting XML-RPC servers. Run it in demo mode (as a program)
@@ -2243,6 +2253,13 @@ Python 2.2 and 2.3.  Both figures are likely to be underestimates.
 Some of the more notable changes are:
 
 \begin{itemize}
+
+\item If the \envvar{PYTHONINSPECT} environment variable is set, the
+Python interpreter will enter the interactive prompt after running a
+Python program, as if Python had been invoked with the \programopt{-i}
+option. The environment variable can be set before running the Python
+interpreter, or it can be set by the Python program as part of its
+execution.
 
 \item The \file{regrtest.py} script now provides a way to allow ``all
 resources except \var{foo}.''  A resource name passed to the
