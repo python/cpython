@@ -58,9 +58,11 @@ class LocaleTime_Tests(unittest.TestCase):
 
     def test_timezone(self):
         # Make sure timezone is correct
-        if time.strftime("%Z", self.time_tuple):
-            self.compare_against_time(self.LT_ins.timezone, '%Z', 8,
-                                      "Testing against timezone failed")
+        timezone = time.strftime("%Z", self.time_tuple)
+        if timezone:
+            self.failUnless(timezone in self.LT_ins.timezone,
+                            "timezone %s not found in %s" %
+                            (timezone, self.LT_ins.timezone))
 
     def test_date_time(self):
         # Check that LC_date_time, LC_date, and LC_time are correct
@@ -293,18 +295,25 @@ class StrptimeTests(unittest.TestCase):
         # When gmtime() is used with %Z, entire result of strftime() is empty.
         # Check for equal timezone names deals with bad locale info when this
         # occurs; first found in FreeBSD 4.4.
+        strp_output = _strptime.strptime("UTC", "%Z")
+        self.failUnlessEqual(strp_output.tm_isdst, 0)
+        strp_output = _strptime.strptime("GMT", "%Z")
+        self.failUnlessEqual(strp_output.tm_isdst, 0)
+        if time.daylight:
+            strp_output = _strptime.strptime(time.tzname[1], "%Z")
+            self.failUnlessEqual(strp_output[8], 1)
         time_tuple = time.localtime()
         strf_output = time.strftime("%Z")  #UTC does not have a timezone
         strp_output = _strptime.strptime(strf_output, "%Z")
         locale_time = _strptime.LocaleTime()
-        if locale_time.timezone[0] != locale_time.timezone[1]:
+        if time.tzname[0] != time.tzname[1]:
             self.failUnless(strp_output[8] == time_tuple[8],
                             "timezone check failed; '%s' -> %s != %s" %
                              (strf_output, strp_output[8], time_tuple[8]))
         else:
             self.failUnless(strp_output[8] == -1,
                             "LocaleTime().timezone has duplicate values but "
-                             "timzone value not set to 0")
+                             "timzone value not set to -1")
 
     def test_date_time(self):
         # Test %c directive

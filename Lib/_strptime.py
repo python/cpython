@@ -283,9 +283,13 @@ class LocaleTime(object):
     def __calc_timezone(self):
         # Set self.__timezone by using time.tzname.
         #
-        # Empty string used for matching when timezone is not used/needed such
-        # as with UTC.
-        self.__timezone = self.__pad(time.tzname, 0)
+        # Empty string used for matching when timezone is not used/needed.
+        time_zones = ["UTC", "GMT"]
+        if time.daylight:
+            time_zones.extend(time.tzname)
+        else:
+            time_zones.append(time.tzname[0])
+        self.__timezone = self.__pad(time_zones, 0)
 
     def __calc_lang(self):
         # Set self.__lang by using __getlang().
@@ -490,16 +494,20 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         elif group_key == 'j':
             julian = int(found_dict['j'])
         elif group_key == 'Z':
+            # Since -1 is default value only need to worry about setting tz if
+            # it can be something other than -1.
             found_zone = found_dict['Z'].lower()
             if locale_time.timezone[0] == locale_time.timezone[1]:
                 pass #Deals with bad locale setup where timezone info is
                      # the same; first found on FreeBSD 4.4.
-            elif locale_time.timezone[0].lower() == found_zone:
+            elif found_zone in ("utc", "gmt"):
                 tz = 0
-            elif locale_time.timezone[1].lower() == found_zone:
-                tz = 1
             elif locale_time.timezone[2].lower() == found_zone:
-                tz = -1
+                tz = 0
+            elif time.daylight:
+                if locale_time.timezone[3].lower() == found_zone:
+                    tz = 1
+
     # Cannot pre-calculate datetime_date() since can change in Julian
     #calculation and thus could have different value for the day of the week
     #calculation
