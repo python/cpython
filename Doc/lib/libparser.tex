@@ -22,6 +22,10 @@ to parse and modify an arbitrary Python code fragment as a string
 because parsing is performed in a manner identical to the code
 forming the application.  It is also faster.
 
+The \module{parser} module was written and documented by Fred
+L. Drake, Jr. (\email{fdrake@acm.org}).%
+\index{Drake, Fred L., Jr.}
+
 There are a few things to note about this module which are important
 to making use of the data structures created.  This is not a tutorial
 on editing the parse trees for Python code, but some examples of using
@@ -89,8 +93,6 @@ to convert AST objects to other representations such as parse trees
 and compiled code objects, but there are also functions which serve to
 query the type of parse tree represented by an AST object.
 
-\setindexsubitem{(in module parser)}
-
 
 \subsection{Creating AST Objects}
 \label{Creating ASTs}
@@ -153,7 +155,7 @@ converted to parse trees represented as list- or tuple- trees, or may
 be compiled into executable code objects.  Parse trees may be
 extracted with or without line numbering information.
 
-\begin{funcdesc}{ast2list}{ast\optional{, line_info\code{ = 0}}}
+\begin{funcdesc}{ast2list}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
 \code{\var{ast}} and returns a Python list representing the
 equivelent parse tree.  The resulting list representation can be used
@@ -172,7 +174,7 @@ the line on which the token \emph{ends}.  This information is
 omitted if the flag is false or omitted.
 \end{funcdesc}
 
-\begin{funcdesc}{ast2tuple}{ast\optional{, line_info\code{ = 0}}}
+\begin{funcdesc}{ast2tuple}{ast\optional{, line_info}}
 This function accepts an AST object from the caller in
 \code{\var{ast}} and returns a Python tuple representing the
 equivelent parse tree.  Other than returning a tuple instead of a
@@ -210,7 +212,7 @@ inspection of the parse tree.
 \label{Querying ASTs}
 
 Two functions are provided which allow an application to determine if
-an AST was create as an expression or a suite.  Neither of these
+an AST was created as an expression or a suite.  Neither of these
 functions can be used to determine if an AST was created from source
 code via \function{expr()} or \function{suite()} or from a parse tree
 via \function{sequence2ast()}.
@@ -304,7 +306,7 @@ intermediate data structure is equivelent to the code
 >>> eval(code)
 10
 \end{verbatim}
-%
+
 The equivelent operation using the \module{parser} module is somewhat
 longer, and allows the intermediate internal parse tree to be retained
 as an AST object:
@@ -317,7 +319,7 @@ as an AST object:
 >>> eval(code)
 10
 \end{verbatim}
-%
+
 An application which needs both AST and code objects can package this
 code into readily available functions:
 
@@ -334,7 +336,7 @@ def load_expression(source_string):
     code = parser.compileast(ast)
     return ast, code
 \end{verbatim}
-%
+
 \subsubsection{Information Discovery}
 
 Some applications benefit from direct access to the parse tree.  The
@@ -380,7 +382,7 @@ a module consisting of a docstring and nothing else.  (See file
 """Some documentation.
 """
 \end{verbatim}
-%
+
 Using the interpreter to take a look at the parse tree, we find a
 bewildering mass of numbers and parentheses, with the documentation
 buried deep in nested tuples.
@@ -414,7 +416,7 @@ buried deep in nested tuples.
  (4, ''),
  (0, ''))
 \end{verbatim}
-%
+
 The numbers at the first element of each node in the tree are the node
 types; they map directly to terminal and non-terminal symbols in the
 grammar.  Unfortunately, they are represented as integers in the
@@ -472,7 +474,7 @@ def match(pattern, data, vars=None):
             break
     return same, vars
 \end{verbatim}
-%
+
 Using this simple representation for syntactic variables and the symbolic
 node types, the pattern for the candidate docstring subtrees becomes
 fairly readable.  (See file \file{example.py}.)
@@ -505,7 +507,7 @@ DOCSTRING_STMT_PATTERN = (
      (token.NEWLINE, '')
      ))
 \end{verbatim}
-%
+
 Using the \function{match()} function with this pattern, extracting the
 module docstring from the parse tree created previously is easy:
 
@@ -516,7 +518,7 @@ module docstring from the parse tree created previously is easy:
 >>> vars
 {'docstring': '"""Some documentation.\012"""'}
 \end{verbatim}
-%
+
 Once specific data can be extracted from a location where it is
 expected, the question of where information can be expected
 needs to be answered.  When dealing with docstrings, the answer is
@@ -609,7 +611,7 @@ class SuiteInfoBase:
                     name = cstmt[2][1]
                     self._class_info[name] = ClassInfo(cstmt)
 \end{verbatim}
-%
+
 After initializing some internal state, the constructor calls the
 \method{_extract_info()} method.  This method performs the bulk of the
 information extraction which takes place in the entire example.  The
@@ -625,7 +627,7 @@ block, as in
 \begin{verbatim}
 def square(x): "Square an argument."; return x ** 2
 \end{verbatim}
-%
+
 while the long form uses an indented block and allows nested
 definitions:
 
@@ -636,7 +638,7 @@ def make_power(exp):
         return x ** y
     return raiser
 \end{verbatim}
-%
+
 When the short form is used, the code block may contain a docstring as
 the first, and possibly only, \constant{small_stmt} element.  The
 extraction of such a docstring is slightly different and requires only
@@ -681,7 +683,7 @@ def get_docs(fileName):
     tup = parser.ast2tuple(ast)
     return ModuleInfo(tup, basename)
 \end{verbatim}
-%
+
 This provides an easy-to-use interface to the documentation of a
 module.  If information is required which is not extracted by the code
 of this example, the code may be extended at clearly defined points to
@@ -689,11 +691,11 @@ provide additional capabilities.
 
 \begin{seealso}
 
-\seemodule{symbol}{
-  useful constants representing internal nodes of the parse tree}
+\seemodule{symbol}
+  {useful constants representing internal nodes of the parse tree}
 
-\seemodule{token}{
-  useful constants representing leaf nodes of the parse tree and
-  functions for testing node values}
+\seemodule{token}
+  {useful constants representing leaf nodes of the parse tree and
+   functions for testing node values}
 
 \end{seealso}
