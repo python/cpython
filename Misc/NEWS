@@ -26,6 +26,8 @@ Core and builtins
 - Added C macros Py_CLEAR and Py_VISIT to ease the implementation of
   types that support garbage collection.
 
+- Compiler now treats None as a constant.
+
 Extension modules
 -----------------
 
