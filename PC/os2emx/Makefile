@@ -45,7 +45,7 @@ GMPZ=		no
 #       - is linked statically
 #       I have had no success trying to use a DLL version, even with
 #       the multithreading switch.
-GREADLINE=	yes
+GREADLINE=	no
 # Do you have the BSD DB library (v1.85) as included in the EMXBSD package?
 # NOTE: this library needs to be recompiled with a structure member
 #       renamed to avoid problems with the multithreaded errno support
