@@ -13,6 +13,10 @@
 
 int (*PyOS_InputHook)(void) = NULL;
 
+#ifdef RISCOS
+int Py_RISCOSWimpFlag;
+#endif
+
 /* This function restarts a fgets() after an EINTR error occurred
    except if PyOS_InterruptOccurred() returns true. */
 
@@ -58,8 +62,17 @@ PyOS_StdioReadline(char *prompt)
 	if ((p = PyMem_MALLOC(n)) == NULL)
 		return NULL;
 	fflush(stdout);
+#ifndef RISCOS
 	if (prompt)
 		fprintf(stderr, "%s", prompt);
+#else
+	if (prompt) {
+		if(Py_RISCOSWimpFlag)
+			fprintf(stderr, "\x0cr%s\x0c", prompt);
+		else
+			fprintf(stderr, "%s", prompt);
+	}
+#endif
 	fflush(stderr);
 	switch (my_fgets(p, (int)n, stdin)) {
 	case 0: /* Normal case */
