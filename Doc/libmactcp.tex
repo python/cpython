@@ -1,0 +1,164 @@
+\section{Built-in module \sectcode{mactcp}}
+\bimodindex{mactcp}
+\renewcommand{\indexsubitem}{(in module mactcp)}
+
+This module provides an interface to the Macintosh TCP/IP driver
+MacTCP. There is an accompanying module \var{macdnr} which provides an
+interface to the name-server (allowing you to translate hostnames to
+ip-addresses), a module \var{MACTCP} which has symbolic names for
+constants constants used by MacTCP and a wrapper module \var{socket}
+which mimics the unix socket interface (as far as possible).
+
+A complete description of the MacTCP interface can be found in the
+Apple MacTCP API documentation.
+
+\begin{funcdesc}{MTU}{}
+Return the Maximum Transmit Unit (the packet size) of the network
+interface.
+\end{funcdesc}
+
+\begin{funcdesc}{IPAddr}{}
+Return the 32-bit integer IP address of the network interface.
+\end{funcdesc}
+
+\begin{funcdesc}{NetMask}{}
+Return the 32-bit integer network mask of the interface.
+\end{funcdesc}
+
+\begin{funcdesc}{TCPCreate}{size}
+Create a TCP Stream object. \var{Size} is the size of the receive
+buffer, \code{4096} is suggested by various sources.
+\end{funcdesc}
+
+\begin{funcdesc}{UDPCreate}{size, port}
+Create a UDP stream object. \var{Size} is the size of the receive
+buffer (and, hence, the size of the biggest datagram you can receive
+on this port). \var{Port} is the UDP port number you want to receive
+datagrams on, a value of zero will make MacTCP select a free port.
+\end{funcdesc}
+
+\subsection{TCP stream objects}
+\renewcommand{\indexsubitem}{(TCP stream method)}
+
+\begin{datadesc}{asr}
+When set to a value different than \var{None} this should point to a
+function with two integer parameters: an event code and a detail. This
+function will be called upon network-generated events such as urgent
+data arrival. In addition, it is called with eventcode
+\var{MACTCP.PassiveOpenDone} when a \var{PassiveOpen} completes. This
+is a python addition to the MacTCP semantics.
+It is safe to do further calls from the asr.
+\end{datadesc}
+
+\begin{funcdesc}{PassiveOpen}{port}
+Wait for an incoming connection on TCP port \var{port} (zero makes the
+system pick a free port). The call returns immedeately, and you should
+use \var{wait} to wait for completion. You should not issue any method
+calls other than
+\var{wait}, \var{isdone} or \var{GetSockName} before the call
+completes.
+\end{funcdesc}
+
+\begin{funcdesc}{wait}{}
+Wait for \var{PassiveOpen} to complete.
+\end{funcdesc}
+
+\begin{funcdesc}{isdone}{}
+Return 1 if a \var{PassiveOpen} is completed.
+\end{funcdesc}
+
+\begin{funcdesc}{GetSockName}{}
+Return the TCP address of this side of a connection as a 2-tuple
+\code{(host, port)}, both integers.
+\end{funcdesc}
+
+\begin{funcdesc}{ActiveOpen}{lport\, host\, rport}
+Open an outgoing connection to TCP address \code{(host, rport)}. Use
+local port \var{lport} (zero makes the system pick a free port). This
+call blocks until the connection is established.
+\end{funcdesc}
+
+\begin{funcdesc}{Send}{buf\, push\, urgent}
+Send data \var{buf} over the connection. \var{Push} and \var{urgent}
+are flags as specified by the TCP standard.
+\end{funcdesc}
+
+\begin{funcdesc}{Rcv}{timeout}
+Receive data. The call returns when \var{timeout} seconds have passed
+or when (according to the MacTCP documentation) ``a reasonable amount
+of data has been received''. The return value is a 3-tuple
+\code{(data, urgent, mark)}. If urgent data is outstanding \var{Rcv}
+will always return that before looking at any normal data. The first
+call returning urgent data will have the \var{urgent} flag set, the
+last will have the \var{mark} flag set.
+\end{funcdesc}
+
+\begin{funcdesc}{Close}{}
+Tell MacTCP that no more data will be transmitted on this
+connection. The call returnes when all data has been acknowledged by
+the receiving side.
+\end{funcdesc}
+
+\begin{funcdesc}{Abort}{}
+Forcibly close both sides of a connection, ignoring outstanding data.
+\end{funcdesc}
+
+\begin{funcdesc}{Status}{}
+Return a TCP status object for this stream.
+\end{funcdesc}
+
+\subsection{TCP status objects}
+This object has no methods, only some members holding information on
+the connection. A complete description of all fields in this objects
+can be found in the Apple documentation. The most interesting ones are:
+
+\renewcommand{\indexsubitem}{(TCP status method)}
+\begin{datadesc}{localHost}
+\dataline{localPort}
+\dataline{remoteHost}
+\dataline{remotePort}
+The integer IP-addresses and port numbers of both endpoints of the
+connection. 
+\end{datadesc}
+
+\begin{datadesc}{sendWindow}
+The current window size.
+\end{datadesc}
+
+\begin{datadesc}{amtUnackedData}
+The number of bytes sent but not yet acknowledged. \code{sendWindow -
+amtUnackedData} is what you can pass to \code{Send} without blocking.
+\end{datadesc}
+
+\begin{datadesc}{amtUnreadData}
+The number of bytes received but not yet read (what you can \var{Recv}
+without blocking).
+\end{datadesc}
+
+
+
+\subsection{UDP stream objects}
+Note that, unlike the name suggests, there is nothing stream-like
+about UDP.
+
+\renewcommand{\indexsubitem}{(UDP stream method)}
+
+\begin{datadesc}{asr}
+The asynchronous service routine to be called on events such as
+datagram arrival without outstanding \var{Read} call. The asr has a
+single argument, the event code.
+\end{datadesc}
+
+\begin{datadesc}{port}
+A read-only member giving the port number of this UDP stream.
+\end{datadesc}
+
+\begin{funcdesc}{Read}{timeout}
+Read a datagram, waiting at most \var{timeout} seconds (-1 is
+indefinite). Returns the data.
+\end{funcdesc}
+
+\begin{funcdesc}{Write}{host\, port\, buf}
+Send \var{buf} as a datagram to IP-address \var{host}, port
+\var{port}.
+\end{funcdesc}
