@@ -30,7 +30,11 @@ storage.
 #------------------------------------------------------------------------
 
 import cPickle
-from UserDict import DictMixin
+try:
+    from UserDict import DictMixin
+except ImportError:
+    # DictMixin is new in Python 2.3
+    class DictMixin: pass
 try:
     # For Python 2.3
     from bsddb import db
@@ -77,8 +81,7 @@ def open(filename, flags=db.DB_CREATE, mode=0660, filetype=db.DB_HASH,
 #---------------------------------------------------------------------------
 
 class DBShelf(DictMixin):
-    """
-    A shelf to hold pickled objects, built upon a bsddb DB object.  It
+    """A shelf to hold pickled objects, built upon a bsddb DB object.  It
     automatically pickles/unpickles data objects going to/from the DB.
     """
     def __init__(self, dbenv=None):
@@ -91,7 +94,9 @@ class DBShelf(DictMixin):
 
 
     def __getattr__(self, name):
-        """Many methods we can just pass through to the DB object.  (See below)"""
+        """Many methods we can just pass through to the DB object.
+        (See below)
+        """
         return getattr(self.db, name)
 
 

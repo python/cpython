@@ -16,7 +16,12 @@
 #
 
 import db
-from UserDict import DictMixin
+
+try:
+    from UserDict import DictMixin
+except ImportError:
+    # DictMixin is new in Python 2.3
+    class DictMixin: pass
 
 class DBEnv:
     def __init__(self, *args, **kwargs):
