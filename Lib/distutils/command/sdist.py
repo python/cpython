@@ -11,7 +11,8 @@ import fnmatch
 from types import *
 from glob import glob
 from distutils.core import Command
-from distutils.util import newer, remove_tree, make_tarball, make_zipfile
+from distutils.util import \
+     newer, remove_tree, make_tarball, make_zipfile, create_tree
 from distutils.text_file import TextFile
 from distutils.errors import DistutilsExecError
 
@@ -78,8 +79,8 @@ class sdist (Command):
                 self.formats = [self.default_format[os.name]]
             except KeyError:
                 raise DistutilsPlatformError, \
-                      "don't know how to build source distributions on " + \
-                      "%s platform" % os.name
+                      "don't know how to create source distributions " + \
+                      "on platform %s" % os.name
         elif type (self.formats) is StringType:
             self.formats = string.split (self.formats, ',')
 
@@ -219,16 +220,13 @@ class sdist (Command):
             if files:
                 self.files.extend (files)
 
-        if self.distribution.packages or self.distribution.py_modules:
+        if self.distribution.has_pure_modules():
             build_py = self.find_peer ('build_py')
-            build_py.ensure_ready ()
             self.files.extend (build_py.get_source_files ())
 
-        if self.distribution.ext_modules:
+        if self.distribution.has_ext_modules():
             build_ext = self.find_peer ('build_ext')
-            build_ext.ensure_ready ()
             self.files.extend (build_ext.get_source_files ())
-
 
 
     def search_dir (self, dir, pattern=None):
@@ -465,16 +463,10 @@ class sdist (Command):
 
     def make_release_tree (self, base_dir, files):
 
-        # First get the list of directories to create
-        need_dir = {}
-        for file in files:
-            need_dir[os.path.join (base_dir, os.path.dirname (file))] = 1
-        need_dirs = need_dir.keys()
-        need_dirs.sort()
-
-        # Now create them
-        for dir in need_dirs:
-            self.mkpath (dir)
+        # Create all the directories under 'base_dir' necessary to
+        # put 'files' there.
+        create_tree (base_dir, files,
+                     verbose=self.verbose, dry_run=self.dry_run)
 
         # And walk over the list of files, either making a hard link (if
         # os.link exists) to each one that doesn't already exist in its
@@ -483,44 +475,26 @@ class sdist (Command):
         # out-of-date, because by default we blow away 'base_dir' when
         # we're done making the distribution archives.)
     
-        try:
-            link = os.link
+        if hasattr (os, 'link'):        # can make hard links on this system
+            link = 'hard'
             msg = "making hard links in %s..." % base_dir
-        except AttributeError:
-            link = 0
+        else:                           # nope, have to copy
+            link = None
             msg = "copying files to %s..." % base_dir
 
         self.announce (msg)
         for file in files:
             dest = os.path.join (base_dir, file)
-            if link:
-                if not os.path.exists (dest):
-                    self.execute (os.link, (file, dest),
-                                  "linking %s -> %s" % (file, dest))
-            else:
-                self.copy_file (file, dest)
+            self.copy_file (file, dest, link=link)
 
     # make_release_tree ()
 
 
-    def make_tarball (self, base_dir, compress):
-        make_tarball (base_dir, compress, self.verbose, self.dry_run)
-
-    def make_zipfile (self, base_dir):
-        make_zipfile (base_dir, self.verbose, self.dry_run)
-
-
     def make_distribution (self):
 
-        # Don't warn about missing meta-data here -- should be done
-        # elsewhere.
-        name = self.distribution.name or "UNKNOWN"
-        version = self.distribution.version
-
-        if version:
-            base_dir = "%s-%s" % (name, version)
-        else:
-            base_dir = name
+        # Don't warn about missing meta-data here -- should be (and is!)
+        # done elsewhere.
+        base_dir = self.distribution.get_full_name()
 
         # Remove any files that match "base_dir" from the fileset -- we
         # don't want to go distributing the distribution inside itself!
@@ -528,14 +502,7 @@ class sdist (Command):
  
         self.make_release_tree (base_dir, self.files)
         for fmt in self.formats:
-            if fmt == 'gztar':
-                self.make_tarball (base_dir, compress='gzip')
-            elif fmt == 'ztar':
-                self.make_tarball (base_dir, compress='compress')
-            elif fmt == 'tar':
-                self.make_tarball (base_dir, compress=None)
-            elif fmt == 'zip':
-                self.make_zipfile (base_dir)
+            self.make_archive (base_dir, fmt, base_dir=base_dir)
 
         if not self.keep_tree:
             remove_tree (base_dir, self.verbose, self.dry_run)
