@@ -174,7 +174,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('operator', ['operator.c']) )
         # access to the builtin codecs and codec registry
         exts.append( Extension('_codecs', ['_codecsmodule.c']) )
-	# Python C API test module
+        # Python C API test module
         exts.append( Extension('_test', ['_testmodule.c']) )
         # static Unicode character database
         exts.append( Extension('unicodedata', ['unicodedata.c']) )
