@@ -50,8 +50,6 @@ _testcapi
     implemented by module Modules/_testcapimodule.c
 datetime
     datetimemodule.c
-_random
-    _randommodule.c
 mmap
     mmapmodule.c
 parser
