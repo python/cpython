@@ -33,6 +33,7 @@
      stdwin.getcutbuffer() and stdwin.setcutbuffer(); 'clip' is really
      a bad word for what these functions do (clipping has a different
      meaning in the drawing world), while cutbuffer is standard X jargon.
+     XXX This must change again in the light of changes to stdwin!
    - For textedit, similar rules hold, but they are less strict.
    XXX more?
 */
@@ -1472,7 +1473,7 @@ stdwin_setcutbuffer(self, args)
 	object *str;
 	if (!getstrarg(args, &str))
 		return NULL;
-	wsetclip(getstringvalue(str), getstringsize(str));
+	wsetcutbuffer(0, getstringvalue(str), getstringsize(str));
 	INCREF(None);
 	return None;
 }
@@ -1483,12 +1484,15 @@ stdwin_getcutbuffer(self, args)
 	object *args;
 {
 	char *str;
+	int len;
 	if (!getnoarg(args))
 		return NULL;
-	str = wgetclip();
-	if (str == NULL)
+	str = wgetcutbuffer(0, &len);
+	if (str == NULL) {
 		str = "";
-	return newstringobject(str);
+		len = 0;
+	}
+	return newsizedstringobject(str, len);
 }
 
 static struct methodlist stdwin_methods[] = {
