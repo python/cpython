@@ -36,13 +36,13 @@ Valid values for \var{encoding} are the same as for \code{decode()}.
 \end{funcdesc}
 
 \begin{funcdesc}{copyliteral}{input\, output}
-Read lines until EOF from open file \var{input} and write them to open
-file \var{output}.
+Read lines until \EOF{} from open file \var{input} and write them to
+open file \var{output}.
 \end{funcdesc}
 
 \begin{funcdesc}{copybinary}{input\, output}
-Read blocks until EOF from open file \var{input} and write them to open
-file \var{output}.  The block size is currently fixed at 8192.
+Read blocks until \EOF{} from open file \var{input} and write them to
+open file \var{output}.  The block size is currently fixed at 8192.
 \end{funcdesc}
 
 
@@ -68,7 +68,7 @@ a list if strings.  For parameters of the form
 Return the \var{value} of the first parameter (as returned by
 \code{getplist()} of the form \samp{\var{name}=\var{value}} for the
 given \var{name}.  If \var{value} is surrounded by quotes of the form
-\var{<...>} or \var{"..."}, these are removed.
+`\code{<}...\code{>}' or `\code{"}...\code{"}', these are removed.
 \end{funcdesc}
 
 \begin{funcdesc}{getencoding}{}
