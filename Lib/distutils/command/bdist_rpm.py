@@ -95,6 +95,31 @@ class bdist_rpm (Command):
          "RPM 3 compatibility mode (default)"),
         ('rpm2-mode', None,
          "RPM 2 compatibility mode"),
+
+        # Add the hooks necessary for specifying custom scripts
+        ('prep-script=', None, 
+         "Specify a script for the PREP phase of RPM building"),
+        ('build-script=', None, 
+         "Specify a script for the BUILD phase of RPM building"),
+
+        ('pre-install=', None, 
+         "Specify a script for the pre-INSTALL phase of RPM building"),
+        ('install-script=', None, 
+         "Specify a script for the INSTALL phase of RPM building"),
+        ('post-install=', None, 
+         "Specify a script for the post-INSTALL phase of RPM building"),
+
+        ('pre-uninstall=', None, 
+         "Specify a script for the pre-UNINSTALL phase of RPM building"),
+        ('post-uninstall=', None, 
+         "Specify a script for the post-UNINSTALL phase of RPM building"),
+
+        ('clean-script=', None, 
+         "Specify a script for the CLEAN phase of RPM building"),
+
+        ('verify-script=', None,
+         "Specify a script for the VERIFY phase of the RPM build"),
+
        ]
 
     boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode']

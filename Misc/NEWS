@@ -22,6 +22,8 @@ Extension modules
 Library
 -------
 
+- bdist_rpm now supports command line options {pre,post}-install, 
+  {pre,post}-uninstall, and {prep,build,install,clean,verify}-script.
 - SF patch #998993: The UTF-8 and the UTF-16 stateful decoders now support
   decoding incomplete input (when the input stream is temporarily exhausted).
   ``codecs.StreamReader`` now implements buffering, which enables proper
