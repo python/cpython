@@ -45,20 +45,25 @@ import os, sys
 __all__ = ["getfqdn"]
 import _socket
 __all__.extend(os._get_exports_list(_socket))
-del _socket
 
 if (sys.platform.lower().startswith("win")
     or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
     or (sys.platform=="RISCOS")):
 
-    # be sure this happens only once, even in the face of reload():
-    try:
-        _realsocketcall
-    except NameError:
-        _realsocketcall = socket
+    _realsocketcall = _socket.socket
 
     def socket(family, type, proto=0):
         return _socketobject(_realsocketcall(family, type, proto))
+
+    try:
+        _realsslcall = _socket.ssl
+    except AttributeError:
+        pass # No ssl
+    else:
+        def ssl(sock, keyfile=None, certfile=None):
+            if hasattr(sock, "_sock"):
+                sock = sock._sock
+            return _realsslcall(sock, keyfile, certfile)    
 
 
 # WSA error codes
