@@ -245,13 +245,16 @@ class FTP:
 		resp = self.sendport(host, port)
 		return sock
 
-	def transfercmd(self, cmd):
+	def ntransfercmd(self, cmd):
 		'''Initiate a transfer over the data connection.
 		If the transfer is active, send a port command and
 		the transfer command, and accept the connection.
 		If the server is passive, send a pasv command, connect
 		to it, and start the transfer command.
-		Either way, return the socket for the connection'''
+		Either way, return the socket for the connection and
+		the expected size of the transfer.  The expected size
+		may be None if it could not be determined.'''
+		size = None
 		if self.passiveserver:
 			host, port = parse227(self.sendcmd('PASV'))
 			conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -265,7 +268,15 @@ class FTP:
 			if resp[0] <> '1':
 				raise error_reply, resp
 			conn, sockaddr = sock.accept()
-		return conn
+		if resp[:3] == '150':
+			# this is conditional in case we received a 125
+			size = parse150(resp)
+		return conn, size
+
+	def transfercmd(self, cmd):
+		'''Initiate a transfer over the data connection.  Returns
+		the socket for the connection.  See also ntransfercmd().'''
+		return self.ntransfercmd(cmd)[0]
 
 	def login(self, user = '', passwd = '', acct = ''):
 		'''Login, default anonymous.'''
@@ -448,6 +459,22 @@ class FTP:
 		self.file.close()
 		self.sock.close()
 		del self.file, self.sock
+
+
+import regex
+_150_re = regex.compile("150 .* (\([0-9][0-9]*\) bytes)", regex.casefold)
+
+def parse150(resp):
+    '''Parse the '150' response for a RETR request.
+    Returns the expected transfer size or None; size is not guaranteed to
+    be present in the 150 message.
+    '''
+    if resp[:3] != '150':
+	raise error_reply, resp
+    length = _150_re.match(resp)
+    if length >= 0:
+	return string.atoi(_150_re.group(1))
+    return None
 
 
 def parse227(resp):
