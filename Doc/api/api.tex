@@ -2622,6 +2622,34 @@ Returns a new string object with the value \var{v} and length
 the contents of the string are uninitialized.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyString_FromFormat}{const char *format, ...}
+Takes a C \code{printf}-style \var{format} string and a variable
+number of arguments, calculates the size of the resulting Python
+string and returns a string with the values formatted into it.  The
+variable arguments must be C types and must correspond exactly to the
+format characters in the \var{format} string.  The following format
+characters are allowed:
+\begin{tableiii}{l|l|l}{member}{Format Characters}{Type}{Comment}
+    \lineiii{\%\%}{\emph{n/a}}{The literal \% character.}
+    \lineiii{\%c}{int}{A single character, represented as an C int.}
+    \lineiii{\%d}{int}{Exactly equivalent to \code{printf("\%d")}.}
+    \lineiii{\%ld}{long}{Exactly equivalent to \code{printf("\%ld")}.}
+    \lineiii{\%i}{int}{Exactly equivalent to \code{printf("\%i")}.}
+    \lineiii{\%x}{int}{Exactly equivalent to \code{printf("\%x")}.}
+    \lineiii{\%s}{char*}{A null-terminated C character array.}
+    \lineiii{\%p}{void*}{The hex representation of a C pointer.
+	Mostly equivalent to \code{printf("\%p")} except that it is
+	guaranteed to start with the literal \code{0x} regardless of
+	what the platform's \code{printf} yields.}
+\end{tableiii}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_FromFormatV}{const char *format,
+                                                   va_list vargs}
+Identical to \function{PyString_FromFormat()} except that it takes
+exactly two arguments.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyString_Size}{PyObject *string}
 Returns the length of the string in string object \var{string}.
 \end{cfuncdesc}
