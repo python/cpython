@@ -67,6 +67,7 @@ corresponding Unix manual entries for more information on calls.";
 #endif /* HAVE_FCNTL_H */
 
 /* Various compilers have only certain posix functions */
+/* XXX Gosh I wish these were all moved into config.h */
 #ifdef __WATCOMC__		/* Watcom compiler */
 #define HAVE_GETCWD     1
 #define HAVE_OPENDIR    1
@@ -479,6 +480,8 @@ posix_listdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	/* XXX Should redo this putting the three versions of opendir
+	   in separate files instead of having them all here... */
 #if defined(MS_WIN32) && !defined(HAVE_OPENDIR)
 
 	char *name;
@@ -832,6 +835,7 @@ posix_utime(self, args)
 	long atime, mtime;
 	int res;
 
+/* XXX should define struct utimbuf instead, above */
 #ifdef HAVE_UTIME_H
 	struct utimbuf buf;
 #define ATIME buf.actime
@@ -2222,7 +2226,8 @@ all_ins(d)
 }
 
 
-
+/* XXX The following should be more unified -- only difference left is
+   function name and module name. */
 
 #if defined(_MSC_VER) || defined(__WATCOMC__)
 void
@@ -2254,6 +2259,7 @@ initnt()
                 return;
 
   finally:
+	/* XXX Shouldn't */
         Py_FatalError("can't initialize NT posixmodule");
 }
 #else /* not a PC port */
@@ -2286,6 +2292,7 @@ initposix()
                 return;
 
   finally:
+	/* XXX Shouldn't */
         Py_FatalError("can't initialize posix module");
 }
 #endif /* !_MSC_VER */
