@@ -1073,3 +1073,21 @@ PyString_InternFromString(cp)
 }
 
 #endif
+
+void
+PyString_Fini()
+{
+	int i;
+#ifdef INTERN_STRINGS
+	Py_XDECREF(interned);
+	interned = NULL;
+#endif
+	for (i = 0; i < UCHAR_MAX + 1; i++) {
+		Py_XDECREF(characters[i]);
+		characters[i] = NULL;
+	}
+#ifndef DONT_SHARE_SHORT_STRINGS
+	Py_XDECREF(nullstring);
+	nullstring = NULL;
+#endif
+}
