@@ -148,6 +148,16 @@ sub do_cmd_samp{ return use_wrappers(@_[0], '"<tt>', '</tt>"'); }
 sub do_cmd_kbd{ return use_wrappers(@_[0], '<kbd>', '</kbd>'); }
 sub do_cmd_strong{ return use_wrappers(@_[0], '<b>', '</b>'); }
 
+sub do_cmd_refmodule{
+    # Insert the right magic to jump to the module definition.
+    local($_) = @_;
+    my $key = next_optional_argument();
+    my $module = next_argument();
+    $key = $module
+        unless $key;
+    return "<tt><a href=\"module-$key.html\">$module</a></tt>" . $_;
+}
+
 sub do_cmd_newsgroup{
     local($_) = @_;
     my $newsgroup = next_argument();
