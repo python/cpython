@@ -293,6 +293,10 @@ extern DL_IMPORT(void) Py_ReprLeave Py_PROTO((PyObject *));
 /* tstate dict key for PyObject_Compare helper */
 extern PyObject *_PyCompareState_Key;
 
+/* Helpers for hash functions */
+extern DL_IMPORT(long) _Py_HashDouble Py_PROTO((double));
+extern DL_IMPORT(long) _Py_HashPointer Py_PROTO((void*));
+
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
 

@@ -423,7 +423,7 @@ PyHKEY_hashFunc(PyObject *ob)
 	/* Just use the address.
 	   XXX - should we use the handle value?
 	*/
-	return (long)ob;
+	return _Py_HashPointer(ob);
 }
 
 

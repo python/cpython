@@ -231,10 +231,12 @@ static long
 func_hash(f)
 	PyFunctionObject *f;
 {
-	long h;
+	long h,x;
 	h = PyObject_Hash(f->func_code);
 	if (h == -1) return h;
-	h = h ^ (long)f->func_globals;
+	x = _Py_HashPointer(f->func_globals);
+	if (x == -1) return x;
+	h ^= x;
 	if (h == -1) h = -2;
 	return h;
 }

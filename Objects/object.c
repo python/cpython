@@ -33,6 +33,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#include "mymath.h"
+
 /* just for trashcan: */
 #include "compile.h"
 #include "frameobject.h"
@@ -507,6 +509,62 @@ PyObject_Compare(v, w)
 	return result;
 }
 
+
+/* Set of hash utility functions to help maintaining the invariant that
+	iff a==b then hash(a)==hash(b)
+
+   All the utility functions (_Py_Hash*()) return "-1" to signify an error.
+*/
+
+long
+_Py_HashDouble(v)
+    double v;
+{
+	/* Use frexp to get at the bits in the double.
+	 * Since the VAX D double format has 56 mantissa bits, which is the
+	 * most of any double format in use, each of these parts may have as
+	 * many as (but no more than) 56 significant bits.
+	 * So, assuming sizeof(long) >= 4, each part can be broken into two longs;
+	 * frexp and multiplication are used to do that.
+	 * Also, since the Cray double format has 15 exponent bits, which is the
+	 * most of any double format in use, shifting the exponent field left by
+	 * 15 won't overflow a long (again assuming sizeof(long) >= 4).
+	 */
+    int expo;
+    long hipart;
+
+    v = frexp(v, &expo);
+    v = v * 2147483648.0; /* 2**31 */
+    hipart = (long)v; /* Take the top 32 bits */
+	v = (v - (double)hipart) * 2147483648.0; /* Get the next 32 bits */
+
+    return hipart + (long)v + (expo << 15); /* Combine everything */
+}
+
+long
+_Py_HashPointer(p)
+	void *p;
+{
+#if SIZEOF_LONG >= SIZEOF_VOID_P
+	return (long)p;
+#else
+	/* convert to a Python long and hash that */
+	PyObject* longobj;
+	long x;
+	
+	if ((longobj = PyLong_FromVoidPtr(p)) == NULL) {
+		x = -1;
+		goto finally;
+	}
+	x = PyObject_Hash(longobj);
+	
+finally:
+	Py_XDECREF(longobj);
+	return x;
+#endif
+}
+
+
 long
 PyObject_Hash(v)
 	PyObject *v;
@@ -514,8 +572,9 @@ PyObject_Hash(v)
 	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
-	if (tp->tp_compare == NULL)
-		return (long) v; /* Use address as hash value */
+	if (tp->tp_compare == NULL) {
+		return _Py_HashPointer(v); /* Use address as hash value */
+	}
 	/* If there's a cmp but no hash defined, the object can't be hashed */
 	PyErr_SetString(PyExc_TypeError, "unhashable type");
 	return -1;
