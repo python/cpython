@@ -14,22 +14,6 @@
 
 extern const char *PyWin_DLLVersionString; // a string loaded from the DLL at startup.
 
-/* Return whether this is Win32s, i.e., Win32 API on Win 3.1(1).
-   This function is exported! */
-
-BOOL PyWin_IsWin32s()
-{
-	static BOOL bIsWin32s = -1; /* flag as "not yet looked" */
-
-	if (bIsWin32s == -1) {
-		OSVERSIONINFO ver;
-		ver.dwOSVersionInfoSize = sizeof(ver);
-		GetVersionEx(&ver);
-		bIsWin32s = ver.dwPlatformId == VER_PLATFORM_WIN32s;
-	}
-	return bIsWin32s;
-}
-
 FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppFileDesc, char *pathBuf, int pathLen)
 {
 	char *moduleKey;
@@ -43,7 +27,7 @@ FILE *PyWin_FindRegisteredModule( const char *moduleName, struct filedescr **ppF
 #endif
 	struct filedescr *fdp = NULL;
 	FILE *fp;
-	HKEY keyBase = PyWin_IsWin32s() ? HKEY_CLASSES_ROOT : HKEY_LOCAL_MACHINE;
+	HKEY keyBase = HKEY_LOCAL_MACHINE;
 	int modNameSize;
 	long regStat;
 
