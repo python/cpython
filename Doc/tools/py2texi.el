@@ -246,7 +246,7 @@ Both BEGIN and END are evaled.  Moreover, you can reference arguments through
     ("EOF" 0 "@code{EOF}")
     ("email" 1 "@email{\\1}")
     ("emph" 1 "@emph{\\1}")
-    ("envvar" 1 "@samp{\\1}")
+    ("envvar" 1 "@env{\\1}")
     ("exception" 1 "@code{\\1}")
     ("exindex" 1 (progn (setq obindex t) "@obindex{\\1}"))
     ("fi" 0 (concat "@end " last-if))
