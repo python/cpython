@@ -2096,6 +2096,22 @@ com_raise_stmt(struct compiling *c, node *n)
 }
 
 static void
+com_from_import(struct compiling *c, node *n)
+{
+	com_addopname(c, IMPORT_FROM, CHILD(n, 0));
+	com_push(c, 1);
+	if (NCH(n) > 1) {
+		if (strcmp(STR(CHILD(n, 1)), "as") != 0) {
+			com_error(c, PyExc_SyntaxError, "invalid syntax");
+			return;
+		}
+		com_addopname(c, STORE_NAME, CHILD(n, 2));
+	} else
+		com_addopname(c, STORE_NAME, CHILD(n, 0));
+	com_pop(c, 1);
+}
+
+static void
 com_import_stmt(struct compiling *c, node *n)
 {
 	int i;
@@ -2107,18 +2123,32 @@ com_import_stmt(struct compiling *c, node *n)
 		REQ(CHILD(n, 1), dotted_name);
 		com_addopname(c, IMPORT_NAME, CHILD(n, 1));
 		com_push(c, 1);
-		for (i = 3; i < NCH(n); i += 2)
-			com_addopname(c, IMPORT_FROM, CHILD(n, i));
-		com_addbyte(c, POP_TOP);
+		if (TYPE(CHILD(n, 3)) == STAR) 
+			com_addbyte(c, IMPORT_STAR);
+		else {
+			for (i = 3; i < NCH(n); i += 2) 
+				com_from_import(c, CHILD(n, i));
+			com_addbyte(c, POP_TOP);
+		}
 		com_pop(c, 1);
 	}
 	else {
 		/* 'import' ... */
 		for (i = 1; i < NCH(n); i += 2) {
-			REQ(CHILD(n, i), dotted_name);
-			com_addopname(c, IMPORT_NAME, CHILD(n, i));
+			node *subn = CHILD(n, i);
+			REQ(subn, dotted_as_name);
+			com_addopname(c, IMPORT_NAME, CHILD(subn, 0));
 			com_push(c, 1);
-			com_addopname(c, STORE_NAME, CHILD(CHILD(n, i), 0));
+			if (NCH(subn) > 1) {
+				if (strcmp(STR(CHILD(subn, 1)), "as") != 0) {
+					com_error(c, PyExc_SyntaxError,
+						  "invalid syntax");
+					return;
+				}
+				com_addopname(c, STORE_NAME, CHILD(subn, 2));
+			} else
+				com_addopname(c, STORE_NAME,
+					      CHILD(CHILD(subn, 0),0));
 			com_pop(c, 1);
 		}
 	}
@@ -3295,12 +3325,14 @@ optimize(struct compiling *c)
 		case IMPORT_FROM:
 			com_addlocal_o(c, GETNAMEOBJ(oparg));
 			break;
+		case IMPORT_STAR:
 		case EXEC_STMT:
 			c->c_flags &= ~CO_OPTIMIZED;
 			break;
 		}
 	}
 	
+	/* TBD: Is this still necessary ? */
 	if (PyDict_GetItemString(c->c_locals, "*") != NULL)
 		c->c_flags &= ~CO_OPTIMIZED;
 	

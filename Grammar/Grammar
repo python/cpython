@@ -41,7 +41,9 @@ break_stmt: 'break'
 continue_stmt: 'continue'
 return_stmt: 'return' [testlist]
 raise_stmt: 'raise' [test [',' test [',' test]]]
-import_stmt: 'import' dotted_name (',' dotted_name)* | 'from' dotted_name 'import' ('*' | NAME (',' NAME)*)
+import_stmt: 'import' dotted_as_name (',' dotted_as_name)* | 'from' dotted_name 'import' ('*' | import_as_name (',' import_as_name)*)
+import_as_name: NAME [NAME NAME]
+dotted_as_name: dotted_name [NAME NAME]
 dotted_name: NAME ('.' NAME)*
 global_stmt: 'global' NAME (',' NAME)*
 #access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype  (',' accesstype)*
