@@ -281,6 +281,10 @@ class AppBuilder(BundleBuilder):
 	# when building a Cocoa app.
 	nibname = None
 
+	# The name of the icon file to be copied to Resources and used for
+	# the Finder icon.
+	iconfile = None
+
 	# Symlink the executable instead of copying it.
 	symlink_exec = 0
 
@@ -368,6 +372,11 @@ class AppBuilder(BundleBuilder):
 			makedirs(execdir)
 			open(bootstrappath, "w").write(BOOTSTRAP_SCRIPT % locals())
 			os.chmod(bootstrappath, 0775)
+
+		if self.iconfile is not None:
+			iconbase = os.path.basename(self.iconfile)
+			self.plist.CFBundleIconFile = iconbase
+			self.files.append((self.iconfile, pathjoin(resdir, iconbase)))
 
 	def postProcess(self):
 		if self.standalone:
@@ -610,6 +619,8 @@ Options:
   -p, --plist=FILE       .plist file (default: generate one)
       --nib=NAME         main nib name
   -c, --creator=CCCC     4-char creator code (default: '????')
+      --iconfile=FILE	 filename of the icon (an .icns file) to be used
+                         as the Finder icon
   -l, --link             symlink files/folder instead of copying them
       --link-exec        symlink the executable instead of copying it
       --standalone       build a standalone application, which is fully
@@ -637,7 +648,7 @@ def main(builder=None):
 	longopts = ("builddir=", "name=", "resource=", "executable=",
 		"mainprogram=", "creator=", "nib=", "plist=", "link",
 		"link-exec", "help", "verbose", "quiet", "standalone",
-		"exclude=", "include=", "package=", "strip")
+		"exclude=", "include=", "package=", "strip", "iconfile=")
 
 	try:
 		options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -657,6 +668,8 @@ def main(builder=None):
 			builder.mainprogram = arg
 		elif opt in ('-c', '--creator'):
 			builder.creator = arg
+		elif opt == '--iconfile':
+			builder.iconfile = arg
 		elif opt == "--nib":
 			builder.nibname = arg
 		elif opt in ('-p', '--plist'):
