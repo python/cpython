@@ -1,5 +1,8 @@
 Wed Jan  5 00:18:45 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* {Parser,Objects,Python,Makefile}/Makefile*in: made depend target
+	work with VPATH
+
 	* README: describe new build procedure; added section on building
 	for multiple architectures
 
