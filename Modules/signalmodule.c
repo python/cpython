@@ -366,7 +366,7 @@ initsignal(void)
 		Py_INCREF(IntHandler);
 		Py_DECREF(Handlers[SIGINT].func);
 		Handlers[SIGINT].func = IntHandler;
-		old_siginthandler = PyOS_setsig(SIGINT, &signal_handler);
+		old_siginthandler = PyOS_setsig(SIGINT, signal_handler);
 	}
 
 #ifdef SIGHUP
