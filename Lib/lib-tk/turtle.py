@@ -24,6 +24,7 @@ class RawPen:
 
     def reset(self):
         canvas = self._canvas
+        self._canvas.update()
         width = canvas.winfo_width()
         height = canvas.winfo_height()
         if width <= 1:
@@ -198,6 +199,7 @@ class RawPen:
         self._position = x1, y1
         if self._filling:
             self._path.append(self._position)
+        self._draw_turtle()
 
     def goto(self, *args):
         if len(args) == 1:
