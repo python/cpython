@@ -1254,7 +1254,7 @@ struct_unpack(self, args)
 	const formatdef *f, *e;
 	char *str, *start, *fmt, *s;
 	char c;
-	int len, size, num, x;
+	int len, size, num;
 	PyObject *res, *v;
 
 	if (!PyArg_ParseTuple(args, "ss#", &fmt, &start, &len))
