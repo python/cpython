@@ -1,9 +1,9 @@
 """This is a sample module that doesn't really test anything all that
-   interesting
+   interesting.
 
-It simply has a few tests, some of which suceed and some of which fail.
+It simply has a few tests, some of which succeed and some of which fail.
 
-It's important that the numbers remain constance, as another test is
+It's important that the numbers remain constant as another test is
 testing the running of these tests.
 
 
@@ -60,6 +60,16 @@ def y_is_one():
     >>> y
     1
     """
+
+__test__ = {'good': """
+                    >>> 42
+                    42
+                    """,
+            'bad':  """
+                    >>> 42
+                    666
+                    """,
+           }
 
 def test_suite():
     import doctest

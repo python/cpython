@@ -986,7 +986,7 @@ Run the debugger on the docstring, and then restore sys.stdin.
 """
 
 def test_DocTestSuite():
-    """DocTestSuite creates a unittest test suite into a doctest.
+    """DocTestSuite creates a unittest test suite from a doctest.
 
        We create a Suite by providing a module.  A module can be provided
        by passing a module object:
@@ -995,19 +995,19 @@ def test_DocTestSuite():
          >>> import test.sample_doctest
          >>> suite = doctest.DocTestSuite(test.sample_doctest)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=3>
+         <unittest.TestResult run=9 errors=0 failures=4>
 
        We can also supply the module by name:
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest')
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=3>
+         <unittest.TestResult run=9 errors=0 failures=4>
 
        We can use the current module:
 
          >>> suite = test.sample_doctest.test_suite()
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=3>
+         <unittest.TestResult run=9 errors=0 failures=4>
 
        We can supply global variables.  If we pass globs, they will be
        used instead of the module globals.  Here we'll pass an empty
@@ -1015,7 +1015,7 @@ def test_DocTestSuite():
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest', globs={})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=4>
+         <unittest.TestResult run=9 errors=0 failures=5>
 
        Alternatively, we can provide extra globals.  Here we'll make an
        error go away by providing an extra global variable:
@@ -1023,17 +1023,17 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...                              extraglobs={'y': 1})
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=2>
+         <unittest.TestResult run=9 errors=0 failures=3>
 
        You can pass option flags.  Here we'll cause an extra error
        by disabling the blank-line feature:
 
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
-         ...                         optionflags=doctest.DONT_ACCEPT_BLANKLINE)
+         ...                      optionflags=doctest.DONT_ACCEPT_BLANKLINE)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=4>
+         <unittest.TestResult run=9 errors=0 failures=5>
 
-       You can supply setUp and teatDoen functions:
+       You can supply setUp and tearDown functions:
 
          >>> def setUp():
          ...     import test.test_doctest
@@ -1048,7 +1048,7 @@ def test_DocTestSuite():
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...      setUp=setUp, tearDown=tearDown)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=7 errors=0 failures=2>
+         <unittest.TestResult run=9 errors=0 failures=3>
 
        But the tearDown restores sanity:
 
@@ -1059,15 +1059,18 @@ def test_DocTestSuite():
          AttributeError: 'module' object has no attribute 'sillySetup'
 
        Finally, you can provide an alternate test finder.  Here we'll
-       use a custom test_finder to to run just the test named bar:
+       use a custom test_finder to to run just the test named bar.
+       However, the test in the module docstring, and the two tests
+       in the module __test__ dict, aren't filtered, so we actually
+       run three tests besides bar's.  The filtering mechanisms are
+       poorly conceived, and will go away someday.
 
          >>> finder = doctest.DocTestFinder(
          ...    namefilter=lambda prefix, base: base!='bar')
          >>> suite = doctest.DocTestSuite('test.sample_doctest',
          ...                              test_finder=finder)
          >>> suite.run(unittest.TestResult())
-         <unittest.TestResult run=2 errors=0 failures=0>
-
+         <unittest.TestResult run=4 errors=0 failures=1>
        """
 
 def test_DocFileSuite():
