@@ -1,12 +1,56 @@
-What's New in Python 2.2.3
+What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
-==========================
+============================
 
-- XXX There's more, but nobody has updated NEWS so far.
+- Bastion.py and rexec.py are disabled.  These modules are not safe in
+  Python 2.2. or 2.3.
 
-- Fixed broken threadstate swap in readline that could cause fatal
-  errors when a readline hook was being invoked while a background
-  thread was active.  (SF bugs #660476 and #513033.)
+- SF #660476 and #513033: broken threadstate swap in readline could
+  cause fatal errors when a readline hook was being invoked while a
+  background thread was active.
+
+- SF #623669: a class that inherits __rdiv__ (or another __r*__
+  operator) could end up with infinite recursion.
+
+- Fixed sundry memory leaks.
+
+- Correct long standing bugs in the methods for random distributions.
+  The range of u=random() is [0,1), so log(u) and 1/x can fail.  Fix
+  by setting u=1-random() or by reselecting for a usable value.
+
+- SF #659709: bogus float length computation during string formatting.
+
+- Deleted the __del__ method on socket wrappers; it's not needed and
+  prevents GC to work.
+
+- Exceptions raised by __cmp__ weren't always properly handled and
+  could cause "exception set without error return" failures.
+
+- SF #643260: __rpow__ wasn't being called.
+
+- SF #534748, #645383: in setup.py, when modules fail to import, don't
+  just delete them.
+
+- SF #529750: _Py_ResetReferences() is now a no-op.
+
+- SF #505427: build problem on HP-UX (h_errno not defined).
+
+- SF #564729: make FixTk.py search properly for Tix subdirectories.
+
+- Made string.strip() work as documented.
+
+- Implemented some additional restrictions on __class__ assignment.
+
+- SF #630824: added keyword 'yield' to pydoc.py.
+
+- SF #626172: fix crash using Unicode Latin-1 single character.
+
+- SF #570655: fix misleading option text in distutils rpm creation.
+
+- SF #624982: fix potential segfault in slot_sq_item.
+
+- New codec for Ukrainian Cyrillic.
+
 
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
