@@ -28,7 +28,7 @@ SHELL=		/bin/sh
 
 # === Fixed definitions ===
 
-OBJS=		abstract.o \
+OBJS=		abstract.o bufferobject.o \
 		classobject.o cobject.o complexobject.o \
 		fileobject.o floatobject.o \
 		frameobject.o funcobject.o intobject.o listobject.o \
@@ -37,7 +37,7 @@ OBJS=		abstract.o \
 		sliceobject.o stringobject.o \
 		tupleobject.o typeobject.o
 
-SRCS=		abstract.c \
+SRCS=		abstract.c bufferobject.c \
 		classobject.c cobject.c complexobject.c \
 		fileobject.c floatobject.c \
 		frameobject.c funcobject.c intobject.c listobject.c \
@@ -74,6 +74,7 @@ depend:
 .PRECIOUS:	Makefile
 
 abstract.o: abstract.c
+bufferobject.o: bufferobject.c
 classobject.o: classobject.c
 cobject.o: cobject.c
 complexobject.o: complexobject.c
