@@ -334,7 +334,7 @@ sub do_env_tableii{
     $h2 = $8;
   }
   $globals{"lineifont"} = $font;
-  "<table border>\n  <tr><th>$h1</th>\n      <th>$h2</th>$'\n"
+  "<table border align=center>\n  <tr><th>$h1</th>\n      <th>$h2</th>$'\n"
     . "</table>";
 }
 
@@ -365,7 +365,7 @@ sub do_env_tableiii{
     $h3 = $10;
   }
   $globals{"lineifont"} = $font;
-  "<table border>\n  <tr><th>$h1</th>\n      <th>$h2</th>"
+  "<table border align=center>\n  <tr><th>$h1</th>\n      <th>$h2</th>"
     . "\n      <th>$h3</th>$'\n"
     . "</table>";
 }
