@@ -237,10 +237,13 @@ esac
 # LDLIBRARY is the name of the library to link against (as opposed to the
 # name of the library into which to insert object files). On systems
 # without shared libraries, LDLIBRARY is the same as LIBRARY (defined in
-# the Makefiles). 
+# the Makefiles). On Cygwin LDLIBRARY is the import library, DLLLIBRARY is the
+# shared (i.e., DLL) library.
 AC_SUBST(MAKE_LDLIBRARY)
 AC_SUBST(LDLIBRARY)
+AC_SUBST(SET_DLLLIBRARY)
 LDLIBRARY=''
+SET_DLLLIBRARY=''
 
 # LINKCC is the command that links the python executable -- default is $(CC).
 # This is altered for AIX in order to build the export list before 
@@ -283,6 +286,10 @@ dguxR4)
 beos*)
       LDLIBRARY='libpython$(VERSION).so'
       ;;
+cygwin*)
+      LDLIBRARY='libpython$(VERSION).dll.a'
+      SET_DLLLIBRARY='DLLLIBRARY=	$(basename $(LDLIBRARY))'
+      ;;
 esac
 AC_MSG_RESULT($LDLIBRARY)
 
@@ -292,7 +299,10 @@ then
   LDLIBRARY='libpython$(VERSION).a'
   MAKE_LDLIBRARY="true"
 else
-  MAKE_LDLIBRARY='$(MAKE) $(LDLIBRARY)'
+  case $MACHDEP in
+    cygwin*) MAKE_LDLIBRARY='$(MAKE) -C Modules ../$(DLLLIBRARY)';;
+    *)       MAKE_LDLIBRARY='$(MAKE) $(LDLIBRARY)';;
+  esac
 fi
 
 AC_PROG_RANLIB
@@ -317,6 +327,7 @@ AC_SUBST(LN)
 if test -z "$LN" ; then
 	case $ac_sys_system in
 		BeOS*) LN="ln -s";;
+		CYGWIN*) LN="ln -s";;
 		*) LN=ln;;
 	esac
 fi
@@ -339,6 +350,11 @@ fi
 # The current (beta) Monterey compiler dies with optimizations
 case $ac_sys_system in
 Monterey*) OPT="";;
+esac
+
+# Cygwin does not need PIC compiler option so remove it to prevent warnings
+case $ac_sys_system in
+CYGWIN*) OPT="`echo $OPT | sed 's/ *-fPIC//'`";;
 esac
 
 if test "$ac_arch_flags"
@@ -559,12 +575,13 @@ AC_SUBST(LDSHARED)
 AC_SUBST(CCSHARED)
 AC_SUBST(LINKFORSHARED)
 # SO is the extension of shared libraries `(including the dot!)
-# -- usually .so, .sl on HP-UX
+# -- usually .so, .sl on HP-UX, .dll on Cygwin
 AC_MSG_CHECKING(SO)
 if test -z "$SO"
 then
 	case $ac_sys_system in
 	hp*|HP*)   SO=.sl;;
+	CYGWIN*)   SO=.dll;;
 	*)	   SO=.so;;
 	esac
 fi
@@ -622,6 +639,7 @@ then
 		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
+	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
 	*)	LDSHARED="ld";;
 	esac
 fi
@@ -646,6 +664,7 @@ then
 		   *gcc*) CCSHARED="-shared";;
 		   *) CCSHARED="";;
 		   esac;;
+	CYGWIN*) CCSHARED="-DUSE_DL_IMPORT";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)

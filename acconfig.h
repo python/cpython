@@ -185,3 +185,15 @@
 
 
 /* Leave that blank line there-- autoheader needs it! */
+
+@BOTTOM@
+
+#ifdef __CYGWIN__
+#ifdef USE_DL_IMPORT
+#define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#else
+#define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
+#endif
+#endif

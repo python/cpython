@@ -131,6 +131,7 @@ CFLAGS=		$(OPT) -I. $(DEFS)
 
 LIBRARY=	libpython$(VERSION).a
 LDLIBRARY=      @LDLIBRARY@
+@SET_DLLLIBRARY@
 
 # Default target
 all:		$(LIBRARY) python$(EXE) sharedmods
@@ -245,6 +246,10 @@ altbininstall:	python$(EXE)
 		$(INSTALL_PROGRAM) python$(EXE) $(BINDIR)/python$(VERSION)$(EXE)
 		if test -f libpython$(VERSION).so; then \
 			$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
+		else	true; \
+		fi
+		if test -f "$(DLLLIBRARY)"; then \
+			$(INSTALL_DATA) $(DLLLIBRARY) $(BINDIR); \
 		else	true; \
 		fi
 
@@ -371,9 +376,9 @@ libainstall:	all
 			else	true; \
 			fi; \
 		done
-		@if test -d $(LIBRARY); then :; else \
-			$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
-			$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
+		@if test -d $(LDLIBRARY); then :; else \
+			$(INSTALL_DATA) $(LDLIBRARY) $(LIBPL)/$(LDLIBRARY) ; \
+			$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
 		fi
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
 		$(INSTALL_DATA) Modules/python.o $(LIBPL)/python.o
