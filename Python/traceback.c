@@ -178,13 +178,18 @@ tb_displayline(f, filename, lineno, name)
 		path = sysget("path");
 		if (path != NULL && is_listobject(path)) {
 			int npath = getlistsize(path);
+			int taillen = strlen(tail);
 			char namebuf[MAXPATHLEN+1];
 			for (i = 0; i < npath; i++) {
 				object *v = getlistitem(path, i);
 				if (is_stringobject(v)) {
 					int len;
-					strcpy(namebuf, getstringvalue(v));
 					len = getstringsize(v);
+					if (len + 1 + taillen >= MAXPATHLEN)
+						continue; /* Too long */
+					strcpy(namebuf, getstringvalue(v));
+					if (strlen(namebuf) != len)
+						continue; /* v contains '\0' */
 					if (len > 0 && namebuf[len-1] != SEP)
 						namebuf[len++] = SEP;
 					strcpy(namebuf+len, tail);
