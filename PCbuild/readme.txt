@@ -1,40 +1,98 @@
-Building Python using VC++ 5.0 or 6.0
+Building Python using VC++ 6.0 or 5.0
 -------------------------------------
-
-This directory is used to build Python for Win32 platforms,
-e.g. Windows 95, 98 and NT.  It requires Microsoft Visual C++ 6.x
-or 5.x.
+This directory is used to build Python for Win32 platforms, e.g. Windows
+95, 98 and NT.  It requires Microsoft Visual C++ 6.x or 5.x.
 (For other Windows platforms and compilers, see ../PC/readme.txt.)
+XXX There are still (Python 2.0b1) a few compiler warnings under VC6.
+XXX There are likely a few more under VC5.
 
-Unlike previous versions, there's no longer a need to copy the project
-files from the PC/vc5x subdirectory to the PCbuild directory -- they
-come in PCbuild.
+Unlike older versions, there's no longer a need to copy the project files
+from a subdirectory of PC/ to the PCbuild directory -- they come in PCbuild.
 
-All you need to do is open the workspace "pcbuild.dsw" in MSVC++,
-select the Debug or Release setting (using Set Active
-Configuration... in the Build menu), and build the projects.
+All you need to do is open the workspace "pcbuild.dsw" in MSVC++, select
+the Debug or Release setting (using Build -> Set Active Configuration...),
+and build the projects.
 
-The proper order to build is
+The proper order to build subprojects is:
 
-1) python16 (this builds python16.dll and python16.lib)
-2) python   (this builds python.exe)
-3) the other subprojects
+1) python20 (this builds the main Python DLL and library files,
+             python20.{dll, lib})
 
-Some subprojects require that you have distributions of other
-software: Tcl/Tk, bsddb and zlib.  If you don't have these, you can't
-build the corresponding extensions.  If you do have them, you may have
-to change the project settings to point to the right include files,
-libraries etc.
+2) python   (this builds the main Python executable, python.exe)
+
+3) the other subprojects, as desired or needed (note:  you probably don't
+   want to build most of the other subprojects, unless you're building an
+   entire Python distribution from scratch, or specifically making changes
+   to the subsystems they implement; see SUBPROJECTS below)
 
 When using the Debug setting, the output files have a _d added to
-their name: python16_d.dll, python_d.exe, parser_d.pyd, and so on.
+their name:  python20_d.dll, python_d.exe, parser_d.pyd, and so on.
 
-If you want to create your own extension module DLL, there's an
-example with easy-to-follow instructions in ../PC/example/; read the
-file readme.txt there first.
+SUBPROJECTS
+-----------
+These subprojects should build out of the box.  Subprojects other than the 
+main ones (python20, python, pythonw) generally build a DLL (renamed to 
+.pyd) from a specific module so that users don't have to load the code 
+supporting that module unless they import the module.
 
-Pointers:
-Python	http://www.python.org
-Tcl/Tk	http://dev.scriptics.com
-zlib	http://www.winimage.com/zLibDll
-bsddb	Sam Rushing's web/ftp site
+python20
+    .dll and .lib
+python
+    .exe
+pythonw
+    pythonw.exe, a variant of python.exe that doesn't pop up a DOS box
+_socket
+    socketmodule.c
+_sre
+    Unicode-aware regular expression engine
+mmap
+    mmapmodule.c
+parser
+    the parser module
+select
+    selectmodule.c
+unicodedata
+    large tables of Unicode data
+winreg
+    Windows registry API
+winsound
+    play sounds (typically .wav files) under Windows
+
+The following subprojects will generally NOT build out of the box.  They
+wrap code Python doesn't control, and you'll need to download the base
+packages first (study the subproject structure from within MSVC to see
+where each expects to find the unpacked packages):
+
+_tkinter
+    Python wrapper for the Tk windowing system.  Requires tcl831.exe from
+        http://dev.scriptics.com/software/tcltk/downloadnow83.tml
+
+zlib
+    Python wrapper for the zlib compression library.  Requires
+        http://www.winimage.com/zLibDll/zlib133dll.zip
+    and
+        ftp://ftp.uu.net/graphics/png/src/zlib133.zip
+
+bsddb
+    Python wrapper for the BSD database 1.85.  Requires bsddbmodule.zip,
+    from the bsddb link at
+        http://www.nightmare.com/software.html
+
+pyexpat
+    Python wrapper for accelerated XML parsing.  Requires
+        ftp://ftp.jclark.com/pub/xml/expat.zip
+
+
+NOTE ON CONFIGURATIONS
+----------------------
+Under Build -> Configuration ..., you'll find several Alpha configurations,
+such as "Win32 Alpha Release".  These do not refer to alpha versions (as in
+alpha, beta, final), but to the DEC/COMPAQ Alpha processor.  Ignore them if
+you're not building on an Alpha box.
+
+
+YOUR OWN EXTENSION DDLs
+-----------------------
+If you want to create your own extension module DLL, there's an example
+with easy-to-follow instructions in ../PC/example/; read the file
+readme.txt there first.
