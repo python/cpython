@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.08a
+;;; Major mode for editing Python programs, version 1.08a+
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -203,6 +203,9 @@ Emacs bell is also rung as a warning.")
 	    ( ?\` . "$")	; backquote is open and close paren
 	    ( ?\# . "<")	; hash starts comment
 	    ( ?\n . ">"))))	; newline ends comment
+
+(defvar py-nested-indent t
+  "*If non-nil, indent nested continuation lines to inside the opening paren")
 
 (defconst py-stringlit-re "'\\([^'\n\\]\\|\\\\.\\)*'"
   "regexp matching a Python string literal")
@@ -515,12 +518,18 @@ the new line indented."
     (cond
      ;; are we on a continuation line?
      ( (py-continuation-line-p)
-       (forward-line -1)
-       (if (py-continuation-line-p) ; on at least 3rd line in block
-	   (current-indentation)    ; so just continue the pattern
+       (let ((nest (and py-nested-indent (py-nesting-level))))
+	 (if nest
+	     (save-excursion
+	       (goto-char nest)
+	       (beginning-of-line)
+	       (1+ (- nest (point))))
+	   (forward-line -1)
+	   (if (py-continuation-line-p) ; on at least 3rd line in block
+	       (current-indentation)    ; so just continue the pattern
 	 ;; else on 2nd line in block, so indent more
-	 (+ (current-indentation) py-indent-offset
-	    py-continuation-offset)))
+	     (+ (current-indentation) py-indent-offset
+		py-continuation-offset)))))
      ;; not on a continuation line
 
      ;; if at start of restriction, or on a non-indenting comment line,
