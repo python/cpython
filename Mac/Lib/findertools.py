@@ -1,6 +1,7 @@
 """Utility routines depending on the finder."""
 
 import Finder_7_0_Suite
+import AppleEvents
 import aetools
 import MacOS
 import sys
@@ -17,6 +18,8 @@ def _getfinder():
 	global _finder_talker
 	if not _finder_talker:
 		_finder_talker = Finder(SIGNATURE)
+	_finder_talker.send_flags = ( _finder_talker.send_flags | 
+		AppleEvents.kAECanInteract | AppleEvents.kAECanSwitchLayer)
 	return _finder_talker
 	
 def launch(file):
