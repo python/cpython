@@ -560,7 +560,7 @@ _ssize(oss_audio_t *self, int *nchannels, int *ssize)
     case AFMT_S16_BE:
     case AFMT_U16_LE:
     case AFMT_U16_BE:
-        *ssize = 2;                     /* 16 bit formats: 1 byte */
+        *ssize = 2;                     /* 16 bit formats: 2 byte */
         break;
     case AFMT_MPEG:
     case AFMT_IMA_ADPCM:
