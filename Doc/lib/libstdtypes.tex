@@ -539,23 +539,9 @@ Dictionaries are created by placing a comma-separated list of
 \code{\{'jack': 4098, 'sjoerd': 4127\}} or
 \code{\{4098: 'jack', 4127: 'sjoerd'\}}.
 
-The following operations are defined on mappings (where \var{a} is a
-mapping, \var{k} is a key and \var{x} is an arbitrary object):
-
-\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
-  \lineiii{len(\var{a})}{the number of items in \var{a}}{}
-  \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
-  \lineiii{\var{a}[\var{k}] = \var{x}}{set \code{\var{a}[\var{k}]} to \var{x}}{}
-  \lineiii{del \var{a}[\var{k}]}{remove \code{\var{a}[\var{k}]} from \var{a}}{(1)}
-  \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
-  \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
-  \lineiii{\var{a}.has_key(\var{k})}{\code{1} if \var{a} has a key \var{k}, else \code{0}}{}
-  \lineiii{\var{a}.items()}{a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}{(2)}
-  \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
-  \lineiii{\var{a}.update(\var{b})}{\code{for k, v in \var{b}.items(): \var{a}[k] = v}}{(3)}
-  \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
-  \lineiii{\var{a}.get(\var{k}\optional{, \var{f}})}{the value of \var{a} with key \var{k}}{(4)}
-\end{tableiii}
+The following operations are defined on mappings (where \var{a} and
+\var{b} are mappings, \var{k} is a key, and \var{v} and \var{x} are
+arbitrary objects):
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
 \stindex{del}
@@ -569,18 +555,48 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \ttindex{update()}
   \ttindex{values()}
   \ttindex{get()}}
+
+\begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
+  \lineiii{len(\var{a})}{the number of items in \var{a}}{}
+  \lineiii{\var{a}[\var{k}]}{the item of \var{a} with key \var{k}}{(1)}
+  \lineiii{\var{a}[\var{k}] = \var{x}}
+          {set \code{\var{a}[\var{k}]} to \var{x}}
+          {}
+  \lineiii{del \var{a}[\var{k}]}
+          {remove \code{\var{a}[\var{k}]} from \var{a}}
+          {(1)}
+  \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
+  \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
+  \lineiii{\var{a}.has_key(\var{k})}
+          {\code{1} if \var{a} has a key \var{k}, else \code{0}}
+          {}
+  \lineiii{\var{a}.items()}
+          {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
+          {(2)}
+  \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
+  \lineiii{\var{a}.update(\var{b})}
+          {\code{for k, v in \var{b}.items(): \var{a}[k] = v}}
+          {(3)}
+  \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
+  \lineiii{\var{a}.get(\var{k}\optional{, \var{x}})}
+          {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
+           else \var{x}}
+          {(4)}
+\end{tableiii}
+
 \noindent
 Notes:
 \begin{description}
-\item[(1)] Raises an exception if \var{k} is not in the map.
+\item[(1)] Raises a \exception{KeyError} exception if \var{k} is not
+in the map.
 
 \item[(2)] Keys and values are listed in random order.
 
 \item[(3)] \var{b} must be of the same type as \var{a}.
 
 \item[(4)] Never raises an exception if \var{k} is not in the map,
-instead it returns \var{f}.  \var{f} is optional, when not provided
-and \var{k} is not in the map, \code{None} is returned.
+instead it returns \var{f}.  \var{f} is optional; when \var{f} is not
+provided and \var{k} is not in the map, \code{None} is returned.
 \end{description}
 
 
