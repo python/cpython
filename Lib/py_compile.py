@@ -63,9 +63,9 @@ class PyCompileError(Exception):
 
 # Define an internal helper according to the platform
 if os.name == "mac":
-    import macfs
+    import MacOS
     def set_creator_type(file):
-        macfs.FSSpec(file).SetCreatorType('Pyth', 'PYC ')
+        MacOS.SetCreatorAndType(file, 'Pyth', 'PYC ')
 else:
     def set_creator_type(file):
         pass
