@@ -354,15 +354,16 @@ ELLIPSIS_MARKER = '...'
 ######################################################################
 ## Table of Contents
 ######################################################################
-# 1. Utility Functions
-# 2. Example & DocTest -- store test cases
-# 3. DocTest Finder -- extracts test cases from objects
-# 4. DocTest Runner -- runs test cases
-# 5. Test Functions -- convenient wrappers for testing
-# 6. Tester Class -- for backwards compatibility
-# 7. Unittest Support
-# 8. Debugging Support
-# 9. Example Usage
+#  1. Utility Functions
+#  2. Example & DocTest -- store test cases
+#  3. DocTest Parser -- extracts examples from strings
+#  4. DocTest Finder -- extracts test cases from objects
+#  5. DocTest Runner -- runs test cases
+#  6. Test Functions -- convenient wrappers for testing
+#  7. Tester Class -- for backwards compatibility
+#  8. Unittest Support
+#  9. Debugging Support
+# 10. Example Usage
 
 ######################################################################
 ## 1. Utility Functions
@@ -475,209 +476,6 @@ class _SpoofOut(StringIO):
         if hasattr(self, "softspace"):
             del self.softspace
 
-class Parser:
-    """
-    Extract doctests from a string.
-    """
-
-    _PS1 = ">>>"
-    _PS2 = "..."
-    _isPS1 = re.compile(r"(\s*)" + re.escape(_PS1)).match
-    _isPS2 = re.compile(r"(\s*)" + re.escape(_PS2)).match
-    _isEmpty = re.compile(r"\s*$").match
-    _isComment = re.compile(r"\s*#").match
-
-    def __init__(self, name, string):
-        """
-        Prepare to extract doctests from string `string`.
-
-        `name` is an arbitrary (string) name associated with the string,
-        and is used only in error messages.
-        """
-        self.name = name
-        self.source = string
-
-    def get_examples(self):
-        """
-        Return the doctest examples from the string.
-
-        This is a list of (source, want, lineno) triples, one per example
-        in the string.  "source" is a single Python statement; it ends
-        with a newline iff the statement contains more than one
-        physical line.  "want" is the expected output from running the
-        example (either from stdout, or a traceback in case of exception).
-        "want" always ends with a newline, unless no output is expected,
-        in which case "want" is an empty string.  "lineno" is the 0-based
-        line number of the first line of "source" within the string.  It's
-        0-based because it's most common in doctests that nothing
-        interesting appears on the same line as opening triple-quote,
-        and so the first interesting line is called "line 1" then.
-
-        >>> text = '''
-        ...        >>> x, y = 2, 3  # no output expected
-        ...        >>> if 1:
-        ...        ...     print x
-        ...        ...     print y
-        ...        2
-        ...        3
-        ...
-        ...        Some text.
-        ...        >>> x+y
-        ...        5
-        ...        '''
-        >>> for x in Parser('<string>', text).get_examples():
-        ...     print x
-        ('x, y = 2, 3  # no output expected', '', 1)
-        ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
-        ('x+y', '5\\n', 9)
-        """
-        return self._parse(kind='examples')
-
-    def get_program(self):
-        """
-        Return an executable program from the string, as a string.
-
-        The format of this isn't rigidly defined.  In general, doctest
-        examples become the executable statements in the result, and
-        their expected outputs become comments, preceded by an "#Expected:"
-        comment.  Everything else (text, comments, everything not part of
-        a doctest test) is also placed in comments.
-
-        >>> text = '''
-        ...        >>> x, y = 2, 3  # no output expected
-        ...        >>> if 1:
-        ...        ...     print x
-        ...        ...     print y
-        ...        2
-        ...        3
-        ...
-        ...        Some text.
-        ...        >>> x+y
-        ...        5
-        ...        '''
-        >>> print Parser('<string>', text).get_program()
-        x, y = 2, 3  # no output expected
-        if 1:
-            print x
-            print y
-        # Expected:
-        #     2
-        #     3
-        #
-        #         Some text.
-        x+y
-        # Expected:
-        #     5
-        """
-        return self._parse(kind='program')
-
-    def _parse(self,   kind):
-        assert kind in ('examples', 'program')
-        do_program = kind == 'program'
-        output = []
-        push = output.append
-
-        string = self.source
-        if not string.endswith('\n'):
-            string += '\n'
-
-        isPS1, isPS2 = self._isPS1, self._isPS2
-        isEmpty, isComment = self._isEmpty, self._isComment
-        lines = string.split("\n")
-        i, n = 0, len(lines)
-        while i < n:
-            # Search for an example (a PS1 line).
-            line = lines[i]
-            i += 1
-            m = isPS1(line)
-            if m is None:
-                if do_program:
-                    line = line.rstrip()
-                    if line:
-                        line = '  ' + line
-                    push('#' + line)
-                continue
-            # line is a PS1 line.
-            j = m.end(0)  # beyond the prompt
-            if isEmpty(line, j) or isComment(line, j):
-                # a bare prompt or comment -- not interesting
-                if do_program:
-                    push("#  " + line[j:])
-                continue
-            # line is a non-trivial PS1 line.
-            lineno = i - 1
-            if line[j] != " ":
-                raise ValueError('line %r of the docstring for %s lacks '
-                                 'blank after %s: %r' %
-                                 (lineno, self.name, self._PS1, line))
-
-            j += 1
-            blanks = m.group(1)
-            nblanks = len(blanks)
-            # suck up this and following PS2 lines
-            source = []
-            while 1:
-                source.append(line[j:])
-                line = lines[i]
-                m = isPS2(line)
-                if m:
-                    if m.group(1) != blanks:
-                        raise ValueError('line %r of the docstring for %s '
-                            'has inconsistent leading whitespace: %r' %
-                            (i, self.name, line))
-                    i += 1
-                else:
-                    break
-
-            if do_program:
-                output.extend(source)
-            else:
-                # get rid of useless null line from trailing empty "..."
-                if source[-1] == "":
-                    assert len(source) > 1
-                    del source[-1]
-                if len(source) == 1:
-                    source = source[0]
-                else:
-                    source = "\n".join(source) + "\n"
-
-            # suck up response
-            if isPS1(line) or isEmpty(line):
-                if not do_program:
-                    push((source, "", lineno))
-                continue
-
-            # There is a response.
-            want = []
-            if do_program:
-                push("# Expected:")
-            while 1:
-                if line[:nblanks] != blanks:
-                    raise ValueError('line %r of the docstring for %s '
-                        'has inconsistent leading whitespace: %r' %
-                        (i, self.name, line))
-                want.append(line[nblanks:])
-                i += 1
-                line = lines[i]
-                if isPS1(line) or isEmpty(line):
-                    break
-
-            if do_program:
-                output.extend(['#     ' + x for x in want])
-            else:
-                want = "\n".join(want) + "\n"
-                push((source, want, lineno))
-
-        if do_program:
-            # Trim junk on both ends.
-            while output and output[-1] == '#':
-                output.pop()
-            while output and output[0] == '#':
-                output.pop(0)
-            output = '\n'.join(output)
-
-        return output
-
 ######################################################################
 ## 2. Example & DocTest
 ######################################################################
@@ -774,7 +572,206 @@ class DocTest:
                    (other.name, other.filename, other.lineno, id(other)))
 
 ######################################################################
-## 3. DocTest Finder
+## 2. Example Parser
+######################################################################
+
+class Parser:
+    """
+    Extract doctests from a string.
+    """
+    def __init__(self, name, string):
+        """
+        Prepare to extract doctests from string `string`.
+
+        `name` is an arbitrary (string) name associated with the string,
+        and is used only in error messages.
+        """
+        self.name = name
+        self.string = string.expandtabs()
+
+    _EXAMPLE_RE = re.compile(r'''
+    # Source consists of a PS1 line followed by zero or more PS2 lines.
+    (?P<source>
+        (?:^(?P<indent> [ ]*) >>>    .*)    # PS1 line
+        (?:\n           [ ]*  \.\.\. .*)*)  # PS2 lines
+    \n?
+    # Want consists of any non-blank lines that do not start with PS1.
+    (?P<want> (?:(?![ ]*$)    # Not a blank line
+                 (?![ ]*>>>)  # Not a line starting with PS1
+                 .*$\n?       # But any other line
+              )*)
+    ''', re.MULTILINE | re.VERBOSE)
+    _IS_BLANK_OR_COMMENT = re.compile('^[ ]*(#.*)?$')
+
+    def get_examples(self):
+        """
+        Return the doctest examples from the string.
+
+        This is a list of (source, want, lineno) triples, one per example
+        in the string.  "source" is a single Python statement; it ends
+        with a newline iff the statement contains more than one
+        physical line.  "want" is the expected output from running the
+        example (either from stdout, or a traceback in case of exception).
+        "want" always ends with a newline, unless no output is expected,
+        in which case "want" is an empty string.  "lineno" is the 0-based
+        line number of the first line of "source" within the string.  It's
+        0-based because it's most common in doctests that nothing
+        interesting appears on the same line as opening triple-quote,
+        and so the first interesting line is called "line 1" then.
+
+        >>> text = '''
+        ...        >>> x, y = 2, 3  # no output expected
+        ...        >>> if 1:
+        ...        ...     print x
+        ...        ...     print y
+        ...        2
+        ...        3
+        ...
+        ...        Some text.
+        ...        >>> x+y
+        ...        5
+        ...        '''
+        >>> for x in Parser('<string>', text).get_examples():
+        ...     print x
+        ('x, y = 2, 3  # no output expected', '', 1)
+        ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
+        ('x+y', '5\\n', 9)
+        """
+        examples = []
+        charno, lineno = 0, 0
+        # Find all doctest examples in the string:
+        for m in self._EXAMPLE_RE.finditer(self.string):
+            # Update lineno (lines before this example)
+            lineno += self.string.count('\n', charno, m.start())
+
+            # Extract source/want from the regexp match.
+            (source, want) = self._parse_example(m, lineno)
+            if self._IS_BLANK_OR_COMMENT.match(source):
+                continue
+            examples.append( (source, want, lineno) )
+
+            # Update lineno (lines inside this example)
+            lineno += self.string.count('\n', m.start(), m.end())
+            # Update charno.
+            charno = m.end()
+        return examples
+
+    def get_program(self):
+        """
+        Return an executable program from the string, as a string.
+
+        The format of this isn't rigidly defined.  In general, doctest
+        examples become the executable statements in the result, and
+        their expected outputs become comments, preceded by an \"#Expected:\"
+        comment.  Everything else (text, comments, everything not part of
+        a doctest test) is also placed in comments.
+
+        >>> text = '''
+        ...        >>> x, y = 2, 3  # no output expected
+        ...        >>> if 1:
+        ...        ...     print x
+        ...        ...     print y
+        ...        2
+        ...        3
+        ...
+        ...        Some text.
+        ...        >>> x+y
+        ...        5
+        ...        '''
+        >>> print Parser('<string>', text).get_program()
+        x, y = 2, 3  # no output expected
+        if 1:
+            print x
+            print y
+        # Expected:
+        #     2
+        #     3
+        #
+        #         Some text.
+        x+y
+        # Expected:
+        #     5
+        """
+        output = []
+        charnum, lineno = 0, 0
+        # Find all doctest examples in the string:
+        for m in self._EXAMPLE_RE.finditer(self.string):
+            # Add any text before this example, as a comment.
+            if m.start() > charnum:
+                lines = self.string[charnum:m.start()-1].split('\n')
+                output.extend([self._comment_line(l) for l in lines])
+                lineno += len(lines)
+
+            # Extract source/want from the regexp match.
+            (source, want) = self._parse_example(m, lineno, False)
+            # Display the source
+            output.append(source)
+            # Display the expected output, if any
+            if want:
+                output.append('# Expected:')
+                output.extend(['#     '+l for l in want.split('\n')])
+
+            # Update the line number & char number.
+            lineno += self.string.count('\n', m.start(), m.end())
+            charnum = m.end()
+        # Add any remaining text, as comments.
+        output.extend([self._comment_line(l)
+                       for l in self.string[charnum:].split('\n')])
+        # Trim junk on both ends.
+        while output and output[-1] == '#':
+            output.pop()
+        while output and output[0] == '#':
+            output.pop(0)
+        # Combine the output, and return it.
+        return '\n'.join(output)
+
+    def _parse_example(self, m, lineno, add_newlines=True):
+        # Get the example's indentation level.
+        indent = len(m.group('indent'))
+
+        # Divide source into lines; check that they're properly
+        # indented; and then strip their indentation & prompts.
+        source_lines = m.group('source').split('\n')
+        self._check_prompt_blank(source_lines, indent, lineno)
+        self._check_prefix(source_lines[1:], ' '*indent+'.', lineno)
+        source = '\n'.join([sl[indent+4:] for sl in source_lines])
+        if len(source_lines) > 1 and add_newlines:
+            source += '\n'
+
+        # Divide want into lines; check that it's properly
+        # indented; and then strip the indentation.
+        want_lines = m.group('want').rstrip().split('\n')
+        self._check_prefix(want_lines, ' '*indent,
+                           lineno+len(source_lines))
+        want = '\n'.join([wl[indent:] for wl in want_lines])
+        if len(want) > 0 and add_newlines:
+            want += '\n'
+
+        return source, want
+
+    def _comment_line(self, line):
+        line = line.rstrip()
+        if line: return '#  '+line
+        else: return '#'
+
+    def _check_prompt_blank(self, lines, indent, lineno):
+        for i, line in enumerate(lines):
+            if len(line) >= indent+4 and line[indent+3] != ' ':
+                raise ValueError('line %r of the docstring for %s '
+                                 'lacks blank after %s: %r' %
+                                 (lineno+i+1, self.name,
+                                  line[indent:indent+3], line))
+
+    def _check_prefix(self, lines, prefix, lineno):
+        for i, line in enumerate(lines):
+            if line and not line.startswith(prefix):
+                raise ValueError('line %r of the docstring for %s has '
+                                 'inconsistent leading whitespace: %r' %
+                                 (lineno+i+1, self.name, line))
+
+
+######################################################################
+## 4. DocTest Finder
 ######################################################################
 
 class DocTestFinder:
@@ -1062,7 +1059,7 @@ class DocTestFinder:
         return None
 
 ######################################################################
-## 4. DocTest Runner
+## 5. DocTest Runner
 ######################################################################
 
 # [XX] Should overridable methods (eg DocTestRunner.check_output) be
@@ -1698,7 +1695,7 @@ class DebugRunner(DocTestRunner):
         raise DocTestFailure(test, example, got)
 
 ######################################################################
-## 5. Test Functions
+## 6. Test Functions
 ######################################################################
 # These should be backwards compatible.
 
@@ -1860,7 +1857,7 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
         runner.run(test, compileflags=compileflags)
 
 ######################################################################
-## 6. Tester
+## 7. Tester
 ######################################################################
 # This is provided only for backwards compatibility.  It's not
 # actually used in any way.
@@ -1935,7 +1932,7 @@ class Tester:
             d[name] = f, t
 
 ######################################################################
-## 7. Unittest Support
+## 8. Unittest Support
 ######################################################################
 
 class DocTestCase(unittest.TestCase):
@@ -2180,7 +2177,7 @@ def DocFileSuite(*paths, **kw):
     return suite
 
 ######################################################################
-## 8. Debugging Support
+## 9. Debugging Support
 ######################################################################
 
 def script_from_examples(s):
@@ -2315,7 +2312,7 @@ def debug(module, name, pm=False):
     debug_script(testsrc, pm, module.__dict__)
 
 ######################################################################
-## 9. Example Usage
+## 10. Example Usage
 ######################################################################
 class _TestClass:
     """

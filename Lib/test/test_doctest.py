@@ -209,7 +209,7 @@ expected output of an example, then `DocTest` will raise a ValueError:
     ...     '''
     >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
-    ValueError: line 3 of the docstring for some_test has inconsistent leading whitespace: '    indentation'
+    ValueError: line 4 of the docstring for some_test has inconsistent leading whitespace: '    indentation'
 
 If the docstring contains inconsistent leading whitespace on
 continuation lines, then `DocTest` will raise a ValueError:
@@ -229,7 +229,16 @@ will raise a ValueError:
     >>> docstring = '>>>print 1\n1'
     >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
-    ValueError: line 0 of the docstring for some_test lacks blank after >>>: '>>>print 1'
+    ValueError: line 1 of the docstring for some_test lacks blank after >>>: '>>>print 1'
+
+If there's no blank space after a PS2 prompt ('...'), then `DocTest`
+will raise a ValueError:
+
+    >>> docstring = '>>> if 1:\n...print 1\n1'
+    >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
+    Traceback (most recent call last):
+    ValueError: line 2 of the docstring for some_test lacks blank after ...: '...print 1'
+
 """
 
 # [XX] test that it's getting line numbers right.
