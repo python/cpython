@@ -117,6 +117,10 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #117745 - UserString.py - Fix two typos in __imul__.
 
+- #130306 - statcache.py - full of thread problems.
+
+- Made statcache.forget_dir more portable
+
 What's New in Python 2.0?
 =========================
 

@@ -14,22 +14,24 @@ cache = {}
 
 def stat(path):
 	"""Stat a file, possibly out of the cache."""
-	if cache.has_key(path):
-		return cache[path]
+	ret = cache.get(path, None)
+	if ret is not None:
+		return ret
 	cache[path] = ret = os.stat(path)
 	return ret
 
 
 def reset():
 	"""Reset the cache completely."""
-	global cache
-	cache = {}
+	cache.clear()
 
 
 def forget(path):
 	"""Remove a given item from the cache, if it exists."""
-	if cache.has_key(path):
+	try:
 		del cache[path]
+	except KeyError:
+		pass
 
 
 def forget_prefix(prefix):
@@ -37,25 +39,18 @@ def forget_prefix(prefix):
 	n = len(prefix)
 	for path in cache.keys():
 		if path[:n] == prefix:
-			del cache[path]
+			forget(path)
 
 
 def forget_dir(prefix):
 	"""Forget about a directory and all entries in it, but not about
 	entries in subdirectories."""
-	if prefix[-1:] == '/' and prefix <> '/':
-		prefix = prefix[:-1]
+	import os.path
+	prefix = os.path.dirname(os.path.join(prefix, "xxx"))
 	forget(prefix)
-	if prefix[-1:] <> '/':
-		prefix = prefix + '/'
-	n = len(prefix)
 	for path in cache.keys():
-		if path[:n] == prefix:
-			rest = path[n:]
-			if rest[-1:] == '/': rest = rest[:-1]
-			if '/' not in rest:
-				del cache[path]
-
+	if path.startswith(prefix) and os.path.dirname(path) == prefix:
+		forget(path)
 
 def forget_except_prefix(prefix):
 	"""Remove all pathnames except with a given prefix.
@@ -63,7 +58,7 @@ def forget_except_prefix(prefix):
 	n = len(prefix)
 	for path in cache.keys():
 		if path[:n] <> prefix:
-			del cache[path]
+			forget(path)
 
 
 def isdir(path):
