@@ -118,7 +118,8 @@ class instances are callable if they have a \method{__call__()} method.
   operations.
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{string, filename, kind}
+\begin{funcdesc}{compile}{string, filename, kind\optional{, 
+                          flags\optional{, dont_inherit}}}
   Compile the \var{string} into a code object.  Code objects can be
   executed by an \keyword{exec} statement or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
@@ -130,6 +131,24 @@ class instances are callable if they have a \method{__call__()} method.
   expression, or \code{'single'} if it consists of a single
   interactive statement (in the latter case, expression statements
   that evaluate to something else than \code{None} will printed).
+
+  The optional arguments \var{flags} and \optional{dont_inherit}
+  (which are new in Python 2.2) control which future statements (see
+  \pep{236}) affect the compilation of \var{string}.  If neither is
+  present (or both are zero) the code is compiled with those future
+  statements that are in effect in the code that is calling compile.
+  If the \var{flags} argument is given and \var{dont_inherit} is not
+  (or is zero) then the future statements specified by the \var{flags}
+  argument are used in addition to those that would be used anyway.
+  If \var{dont_inherit} is a non-zero integer then the \var{flags}
+  argument is it -- the future statements in effect around the call to
+  compile are ignored.
+
+  Future statemants are specified by bits which can be bitwise or-ed
+  together to specify multiple statements.  The bitfield required to
+  specify a given feature can be found as the \member{compiler_flag}
+  attribute on the \class{_Feature} instance in the
+  \module{__future__} module.
 \end{funcdesc}
 
 \begin{funcdesc}{complex}{real\optional{, imag}}
