@@ -93,10 +93,8 @@ static void
 PyPcre_dealloc(self)
 	PcreObject *self;
 {
-	if (self->regex) free(self->regex);
-	if (self->regex_extra) free(self->regex_extra);
-	self->regex=NULL;
-	self->regex_extra=NULL;
+	if (self->regex) (pcre_free)(self->regex);
+	if (self->regex_extra) (pcre_free)(self->regex_extra);
 	PyMem_DEL(self);
 }
 
