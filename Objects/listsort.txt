@@ -113,8 +113,8 @@ Comparison with Python's Samplesort Hybrid
                   4377402   262437   262459   416347  1457945    524286
                     1.99% 1577.82%   -0.06%  967.83%  -24.01%   774.44%
 
- 524288  9205096 9453356   9408463   524468  9441930  2218577   9692015
-                 9278734    524580   524633   837947  2916107   1048574
+ 524288  9205096  9453356  9408463   524468  9441930  2218577   9692015
+                  9278734   524580   524633   837947  2916107   1048574
                    1.88%  1693.52%   -0.03% 1026.79%  -23.92%   824.30%
 
 1048576 19458756 19950272 19838588  1048766 19912134  4430649  20434212
@@ -431,7 +431,7 @@ at-a-time mode.
 
 A refinement:  The MergeState struct contains the value of min_gallop that
 controls when we enter galloping mode, initialized to MIN_GALLOP.
-merge_lo() and merge_hi() adjust this higher when gallooping isn't paying
+merge_lo() and merge_hi() adjust this higher when galloping isn't paying
 off, and lower when it is.
 
 
@@ -549,7 +549,7 @@ that merge_lo and merge_hi adjust:  the longer we stay in galloping mode,
 the smaller min_gallop gets, making it easier to transition back to
 galloping mode (if we ever leave it in the current merge, and at the
 start of the next merge).  But whenever the gallop loop doesn't pay,
-min_gallop is increased by one, making it harder to transition to back
+min_gallop is increased by one, making it harder to transition back
 to galloping mode (and again both within a merge and across merges).  For
 random data, this all but eliminates the gallop penalty:  min_gallop grows
 large enough that we almost never get into galloping mode.  And for cases
@@ -575,6 +575,12 @@ we're merging a run of length 1 with a run of length 10000, index 5000 is
 probably a better guess at the final result than either 0 or 9999.  But
 it's unclear how to generalize that intuition usefully, and merging of
 wildly unbalanced runs already enjoys excellent performance.
+
+~sort is a good example of when balanced runs could benefit from a better
+hint value:  to the extent possible, this would like to use a starting
+offset equal to the previous value of acount/bcount.  Doing so saves about
+10% of the compares in ~sort.  However, doing so is also a mixed bag,
+hurting other cases.
 
 
 Comparing Average # of Compares on Random Arrays
