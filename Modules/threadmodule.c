@@ -278,6 +278,21 @@ PyDoc_STRVAR(exit_doc,
 This is synonymous to ``raise SystemExit''.  It will cause the current\n\
 thread to exit silently unless the exception is caught.");
 
+static PyObject *
+sys_interrupt_main(PyObject * self, PyObject * args)
+{
+	PyErr_SetInterrupt();
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(interrupt_doc,
+"interrupt_main()\n\
+\n\
+Raise a KeyboardInterrupt in the main thread.\n\
+A subthread can use this method to interrupt the main thread."
+);
+
 #ifndef NO_EXIT_PROG
 static PyObject *
 thread_PyThread_exit_prog(PyObject *self, PyObject *args)
@@ -340,6 +355,8 @@ static PyMethodDef thread_methods[] = {
 	 METH_NOARGS, exit_doc},
 	{"exit",		(PyCFunction)thread_PyThread_exit_thread, 
 	 METH_NOARGS, exit_doc},
+	{"interrupt_main",	(PyCFunction)sys_interrupt_main,
+	 METH_NOARGS, interrupt_doc},
 	{"get_ident",		(PyCFunction)thread_get_ident, 
 	 METH_NOARGS, get_ident_doc},
 #ifndef NO_EXIT_PROG
