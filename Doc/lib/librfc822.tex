@@ -8,9 +8,14 @@ collection of ``email headers'' as defined by the Internet standard
 RFC 822.  It is used in various contexts, usually to read such headers
 from a file.
 
+(Note that there's a separate, currently undocumented, module to read
+Unix style mailbox files: \code{mailbox}.)
+
 A \code{Message} instance is instantiated with an open file object as
-parameter.  Instantiation reads headers from the file up to a blank
-line and stores them in the instance; after instantiation, the file is
+parameter.  The optional \code{seekable} parameter indicates if the
+file object is seekable; the default value is 1 for true.
+Instantiation reads headers from the file up to a blank line and
+stores them in the instance; after instantiation, the file is
 positioned directly after the blank line that terminates the headers.
 
 Input lines as read from the file may either be terminated by CR-LF or
