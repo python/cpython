@@ -1,8 +1,4 @@
-#! /usr/local/python
-
-#############################################################################
-# NOTA BENE: Before installing, fix TZDIFF to reflect your local time zone! #
-#############################################################################
+#! /usr/local/bin/python
 
 # "M Clock"
 #
@@ -44,7 +40,11 @@ Gl = struct()		# Object to hold writable global variables
 SCREENBG = 127, 156, 191
 NPARTS = 9
 TITLE = 'M Clock'
-TZDIFF = -2*HOUR	# <--- change this to reflect your local time zone
+
+import tzparse
+TZDIFF = tzparse.timezone
+if tzparse.isdst(time.time()):
+	TZDIFF = tzparse.altzone
 
 # Default parameters
 
@@ -412,7 +412,7 @@ def render(list, (little_hand, big_hand, seconds_hand)):
 		resetindex()
 	#
 	if not list:
-		Gl.c3i(255, 255, 255) # White
+		Gl.c3i((255, 255, 255)) # White
 		circf(0.0, 0.0, 1.0)
 	else:
 		list.append(3600, 0, 255) # Sentinel
@@ -424,7 +424,7 @@ def render(list, (little_hand, big_hand, seconds_hand)):
 			[r, g, b] = rgb
 			if Gl.debug > 1:
 				print rgb, a_prev, a
-			Gl.c3i(r, g, b)
+			Gl.c3i((r, g, b))
 			arcf(0.0, 0.0, 1.0, a_prev, a)
 		rgb[icolor] = value
 		a_prev = a
@@ -433,7 +433,7 @@ def render(list, (little_hand, big_hand, seconds_hand)):
 		#
 		# Draw the hands -- in black
 		#
-		Gl.c3i(0, 0, 0)
+		Gl.c3i((0, 0, 0))
 		#
 		if Gl.update == 1 and not Gl.iconic:
 			# Seconds hand is only drawn if we update every second
