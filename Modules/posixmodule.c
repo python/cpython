@@ -1695,7 +1695,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 		getitem = PyTuple_GetItem;
 	}
 	else {
-		PyErr_SetString(PyExc_TypeError, "spawmv() arg 2 must be a tuple or list");
+		PyErr_SetString(PyExc_TypeError, "spawnv() arg 2 must be a tuple or list");
 		return NULL;
 	}
 
