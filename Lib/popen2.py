@@ -89,31 +89,55 @@ class Popen3:
             _active.remove(self)
         return self.sts
 
-def popen2(cmd, bufsize=-1):
-    """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
-    specified, it sets the buffer size for the I/O pipes.  The file objects
-    (child_stdout, child_stdin) are returned."""
-    _cleanup()
-    inst = Popen3(cmd, 0, bufsize)
-    return inst.fromchild, inst.tochild
+try:
+    from os import popen2
+except NameError:
+    def popen2(cmd, mode='t', bufsize=-1):
+        """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+        specified, it sets the buffer size for the I/O pipes.  The file objects
+        (child_stdout, child_stdin) are returned."""
+        if type(mode) is type(0) and bufsize == -1:
+            bufsize = mode
+            mode = 't'
+        assert mode in ('t', 'b')
+        _cleanup()
+        inst = Popen3(cmd, 0, bufsize)
+        return inst.fromchild, inst.tochild
 
-def popen3(cmd, bufsize=-1):
-    """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
-    specified, it sets the buffer size for the I/O pipes.  The file objects
-    (child_stdout, child_stdin, child_stderr) are returned."""
-    _cleanup()
-    inst = Popen3(cmd, 1, bufsize)
-    return inst.fromchild, inst.tochild, inst.childerr
+try:
+    from os import popen3
+except NameError:
+    def popen3(cmd, mode='t', bufsize=-1):
+        """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+        specified, it sets the buffer size for the I/O pipes.  The file objects
+        (child_stdout, child_stdin, child_stderr) are returned."""
+        if type(mode) is type(0) and bufsize == -1:
+            bufsize = mode
+            mode = 't'
+        assert mode in ('t', 'b')
+        _cleanup()
+        inst = Popen3(cmd, 1, bufsize)
+        return inst.fromchild, inst.tochild, inst.childerr
+
+try:
+    from os import popen4
+except NameError:
+    pass # not on unix
 
 def _test():
     teststr = "abc\n"
     print "testing popen2..."
     r, w = popen2('cat')
+    print r, w
     w.write(teststr)
     w.close()
     assert r.read() == teststr
     print "testing popen3..."
-    r, w, e = popen3(['cat'])
+    try:
+        r, w, e = popen3(['cat'])
+    except:
+        r, w, e = popen3('cat')
+    print r, w, e
     w.write(teststr)
     w.close()
     assert r.read() == teststr
