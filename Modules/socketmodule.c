@@ -3011,7 +3011,8 @@ Return the protocol number for the named protocol.  (Rarely used.)");
 
 #ifdef HAVE_SOCKETPAIR
 /* Create a pair of sockets using the socketpair() function.
-   Arguments as for socket(). */
+   Arguments as for socket() except the default family is AF_UNIX if
+   defined for the platform, otherwise the default is AF_INET. */
 
 /*ARGSUSED*/
 static PyObject *
@@ -3058,7 +3059,8 @@ PyDoc_STRVAR(socketpair_doc,
 \n\
 Create a pair of socket objects from the sockets returned by the platform\n\
 socketpair() function.\n\
-The arguments are the same as for socket().");
+The arguments are the same as for socket() except the default family is\n\
+AF_UNIX if defined for the platform, otherwise the default is AF_INET.");
 
 #endif /* HAVE_SOCKETPAIR */
 
