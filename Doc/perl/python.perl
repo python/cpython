@@ -1725,6 +1725,12 @@ sub do_env_seealso{
             . '</div>');
 }
 
+sub do_env_seealsostar{
+    return ("<div class=\"seealso-simple\">\n  "
+            . @_[0]
+            . '</div>');
+}
+
 sub do_cmd_seemodule{
     # Insert the right magic to jump to the module definition.  This should
     # work most of the time, at least for repeat builds....
