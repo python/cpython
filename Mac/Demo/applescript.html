@@ -77,7 +77,6 @@ We  next specify the folder from which <code>gensuitemodule</code>
 should import the standard suites. Here,
 we always select <code>Python:Mac:Lib:lib-scriptpackages:StdSuites</code>. (There is
 one exception to this rule: when you are generating <code>StdSuites</code> itself
-<!-- you select <code>cancel</code>.) -->
 you select <code>_builtinSuites</code>.)
 </p>
 
@@ -87,9 +86,7 @@ each AppleEvent suite it finds, <code>gensuitemodule.py</code>
 prompts us for the filename of the
 resulting python module. Remember to change folders for the first
 module&#8212;you don't want to clutter up, say, the 
-Eudora folder 
-<!--Why Eudora folder?  Was there an earlier example featuring Eudora?  
-Added "say" to make it seem less specific.-->
+Disk Copy folder
 with your python
 interfaces. If you want to skip a suite, press <code>cancel</code> and the process
 continues with the next suite. </p>
@@ -106,7 +103,6 @@ continues with the next suite. </p>
 	stored.</li>
 	
 	<li>Specify the folder <code>Python:Mac:Lib:lib-scriptpackages:StdSuites</code>
-<!-- 	to import the standard suites (or <code>cancel</code> if you are  -->
 	to import the standard suites (or <code>_builtinSuites</code> if you are 
 	generating <code>StdSuites</code> itself). </li>
 	
@@ -121,7 +117,7 @@ continues with the next suite. </p>
 
 <ul>
 	
-	<li>The interface package may need some editing by hand.  For example, 
+	<li>The interface package may occasionally need some editing by hand.  For example, 
 	<code>gensuitemodule</code> does not handle all Python reserved words, so
 	if
 	 one of the AppleScript verbs is a Python reserved word, a <code>SyntaxError</code> 
@@ -129,7 +125,9 @@ continues with the next suite. </p>
 	Simply rename the class into something acceptable, if this happens;
 	take a look at how the
 	<code>print</code> verb is handled (automatically by <code>gensuitemodule</code>) 
-	in the standard suites. </li>
+	in the standard suites. But: f you need to edit your package this should be considered a
+	bug in gensuitemodule, so please report it so it can be fixed in future releases.
+	</li>
 	
 	
 	<li>If you want to re-create the StdSuite modules,
@@ -144,11 +142,6 @@ find them in <code>System Folder:Extensions:Applescript</code>.
 per application and submodules per suite, is used. Older MacPythons had a
 single level of modules, with uncertain semantics. With the new structure,
 it is possible for programs to override standard suites, as programs often do.
-It is a good idea to convert your own old programs to the new scheme.
-<!-- , but if you -->
-<!-- really want them, the old standard suites are still available in -->
-<!-- <code>:Mac:Lib:lib-scripting</code>. -->
-<!-- Seems to be gone in MacPython 2.2 -->
 
 </li>
 
@@ -208,7 +201,6 @@ After the big class, there are a number of little class declarations. These
 declarations are for the (AppleEvent) classes and properties in the suite.
 They allow you to create object IDs, which can then be passed to the verbs.
 For instance,
-<!--Is this for Eudora again?  I'll assume so...-->
 when scripting the popular email program Eudora,
 you would use <code>mailbox("inbox").message(1).sender</code>
 to get the name of the sender of the first message in mailbox
@@ -233,11 +225,9 @@ as it is called in Script Editor, instead of the cryptic lowlevel
 <p>
 Finally, we get the &#8220;table of contents&#8221; of the module, listing all 
 classes and such
-by code, which is used by <code>gensuitemodule</code>. 
-<!--
- | Not sure I understand.  Is the code used by gensuitemodule, or is the TOC 
- | module used by gensuitemodule?
--->
+by code, which is used by <code>gensuitemodule</code> itself: if you use this
+suite as a base package in a later run this is how it knows what is defined in this
+suite, and what the Python names are.
 </p>
 
 <h3>Notes</h3>
@@ -280,7 +270,7 @@ You will usually specify the <code>start=1</code>: it will run the application i
 not already running. 
 You may want to omit it if you want to talk to the application
 only if it is already running, or if the application is something like the Finder. 
-Another way to ensure that  the application is running is to call <code>talker.start()</code>.
+Another way to ensure that  the application is running is to call <code>talker._start()</code>.
 </p>
 
 <p>
@@ -318,7 +308,8 @@ OSAX (commonly found in <code>System Folder:Scripting Additions</code>
 or something similar). There is one minor gotcha: the application
 signature to use is <code>MACS</code>. You will need to edit the main class
 in the <code>__init__.py</code> file of the created package and change the value 
-of <code>_signature</code> to <code>MACS</code>.
+of <code>_signature</code> to <code>MACS</code>, or use a subclass to the
+same effect.
 </p>
 
 <p>
@@ -347,9 +338,12 @@ is more involved) <code>fullbuild</code> from the <code>Mac:scripts</code> folde
 
 <p>
 Under Mac OS X, the above still works, but with some new difficulties.
-The application package structure can hide the &#8216;AETE&#8217; or &#8216;AEUT&#8217; resource 
-from <code>gensuitemodule</code>, so that, for example, it cannot generate an OSA interface to 
-iTunes. 
+The application package structure can hide the &#8216;AETE&#8217; or
+&#8216;AEUT&#8217; resource from <code>gensuitemodule</code>, so that,
+for example, it cannot generate an OSA interface to iTunes. Script
+Editor gets at the dictionary of such programs using a &#8216;Get
+AETE&#8217; AppleEvent, if someone wants to donate code to use the same
+method for gensuitemodule: by all means!
 </p>
 
 <p>
