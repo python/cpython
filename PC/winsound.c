@@ -49,7 +49,10 @@ static char sound_beep_doc[] =
 "\n"
 "The frequency argument specifies frequency, in hertz, of the sound.\n"
 "This parameter must be in the range 37 through 32,767 (0x25 through 0x7FFF).\n"
-"The duration argument specifies the number of milli-seconds.\n";
+"The duration argument specifies the number of milli-seconds.\n"
+"Note:  Under Windows 95 and 98, the arguments are ignored; if the system\n"
+"has a sound card, the system default sound is played; else (no sound card)\n"
+"the standard system beep.\n";
 
 static char sound_module_doc[] =
 "PlaySound(sound, flags) - play a sound\n"
