@@ -1,6 +1,6 @@
 # Test descriptor-related enhancements
 
-from test_support import verify, verbose, TestFailed
+from test_support import verify, verbose, TestFailed, TESTFN
 from copy import deepcopy
 
 def testunop(a, res, expr="len(a)", meth="__len__"):
@@ -1635,6 +1635,53 @@ def inherits():
     verify(u[:] == base)
     verify(u[0:0].__class__ is unicode)
     verify(u[0:0] == u"")
+
+    class CountedInput(file):
+        """Counts lines read by self.readline().
+
+        self.lineno is the 0-based ordinal of the last line read, up to
+        a maximum of one greater than the number of lines in the file.
+
+        self.ateof is true if and only if the final "" line has been read,
+        at which point self.lineno stops incrementing, and further calls
+        to readline() continue to return "".
+        """
+
+        lineno = 0
+        ateof = 0
+        def readline(self):
+            if self.ateof:
+                return ""
+            s = file.readline(self)
+            # Next line works too.
+            # s = super(CountedInput, self).readline()
+            self.lineno += 1
+            if s == "":
+                self.ateof = 1
+            return s
+
+    f = open(TESTFN, 'w')
+    lines = ['a\n', 'b\n', 'c\n']
+    try:
+        f.writelines(lines)
+        f.close()
+        f = CountedInput(TESTFN)
+        for (i, expected) in zip(range(1, 5) + [4], lines + 2 * [""]):
+            got = f.readline()
+            verify(expected == got)
+            verify(f.lineno == i)
+            verify(f.ateof == (i > len(lines)))
+        f.close()
+    finally:
+        try:
+            f.close()
+        except:
+            pass
+        try:
+            import os
+            os.unlink(TESTFN)
+        except:
+            pass
 
 def all():
     lists()

@@ -65,37 +65,33 @@ PyFile_Name(PyObject *f)
 		return ((PyFileObject *)f)->f_name;
 }
 
-PyObject *
-PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
+
+static PyObject *
+fill_file_fields(PyFileObject *f, FILE *fp, char *name, char *mode,
+		 int (*close)(FILE *))
 {
-	PyFileObject *f = PyObject_NEW(PyFileObject, &PyFile_Type);
-	if (f == NULL)
-		return NULL;
+	assert(f != NULL);
+	assert(PyFile_Check(f));
 	f->f_fp = NULL;
 	f->f_name = PyString_FromString(name);
 	f->f_mode = PyString_FromString(mode);
 	f->f_close = close;
 	f->f_softspace = 0;
-	if (strchr(mode,'b') != NULL)
-	    f->f_binary = 1;
-	else
-	    f->f_binary = 0;
-	if (f->f_name == NULL || f->f_mode == NULL) {
-		Py_DECREF(f);
+	f->f_binary = strchr(mode,'b') != NULL;
+	if (f->f_name == NULL || f->f_mode == NULL)
 		return NULL;
-	}
 	f->f_fp = fp;
 	return (PyObject *) f;
 }
 
-PyObject *
-PyFile_FromString(char *name, char *mode)
+static PyObject *
+open_the_file(PyFileObject *f, char *name, char *mode)
 {
-	extern int fclose(FILE *);
-	PyFileObject *f;
-	f = (PyFileObject *) PyFile_FromFile((FILE *)NULL, name, mode, fclose);
-	if (f == NULL)
-		return NULL;
+	assert(f != NULL);
+	assert(PyFile_Check(f));
+	assert(name != NULL);
+	assert(mode != NULL);
+
 #ifdef HAVE_FOPENRF
 	if (*mode == '*') {
 		FILE *fopenRF();
@@ -118,8 +114,36 @@ PyFile_FromString(char *name, char *mode)
 		}
 #endif
 		PyErr_SetFromErrnoWithFilename(PyExc_IOError, name);
-		Py_DECREF(f);
-		return NULL;
+		f = NULL;
+	}
+	return (PyObject *)f;
+}
+
+PyObject *
+PyFile_FromFile(FILE *fp, char *name, char *mode, int (*close)(FILE *))
+{
+	PyFileObject *f = PyObject_NEW(PyFileObject, &PyFile_Type);
+	if (f != NULL) {
+		if (fill_file_fields(f, fp, name, mode, close) == NULL) {
+			Py_DECREF(f);
+			f = NULL;
+		}
+	}
+	return (PyObject *) f;
+}
+
+PyObject *
+PyFile_FromString(char *name, char *mode)
+{
+	extern int fclose(FILE *);
+	PyFileObject *f;
+
+	f = (PyFileObject *)PyFile_FromFile((FILE *)NULL, name, mode, fclose);
+	if (f != NULL) {
+		if (open_the_file(f, name, mode) == NULL) {
+			Py_DECREF(f);
+			f = NULL;
+		}
 	}
 	return (PyObject *)f;
 }
@@ -1293,6 +1317,52 @@ file_getiter(PyObject *f)
 	return PyObject_CallMethod(f, "xreadlines", "");
 }
 
+static PyObject *
+file_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	/* XXX As for all XXX_new functions, file_new is called
+	   with kwds=NULL by type_call(), so the kwlist is impotent. */
+	static char *kwlist[] = {"name", "mode", "buffering", 0};
+	char *name = NULL;
+	char *mode = "r";
+	int bufsize = -1;
+	PyObject *f;
+	extern int fclose(FILE *);
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:file", kwlist,
+					 Py_FileSystemDefaultEncoding, &name,
+					 &mode, &bufsize))
+		return NULL;
+	f = PyType_GenericAlloc(type, 0);
+	if (f != NULL) {
+		PyFileObject *g = (PyFileObject *)f;
+		if (fill_file_fields(g, NULL, name, mode, fclose) == NULL) {
+			Py_DECREF(f);
+			f = NULL;
+		}
+		if (f != NULL && open_the_file(g, name, mode) == NULL) {
+			Py_DECREF(f);
+			f = NULL;
+		}
+		if (f != NULL)
+			PyFile_SetBufSize(f, bufsize);
+	}
+	PyMem_Free(name); /* free the encoded string */
+	return f;
+}
+
+/* XXX Keep this in synch with open_doc in bltinmodule.c. */
+static char file_doc[] =
+"file(name[, mode[, buffering]]) -> file object\n"
+"\n"
+"Open a file.  The mode can be 'r', 'w' or 'a' for reading (default),\n"
+"writing or appending.  The file will be created if it doesn't exist\n"
+"when opened for writing or appending; it will be truncated when\n"
+"opened for writing.  Add a 'b' to the mode for binary files.\n"
+"Add a '+' to the mode to allow simultaneous reading and writing.\n"
+"If the buffering argument is given, 0 means unbuffered, 1 means line\n"
+"buffered, and larger numbers specify the buffer size.";
+
 PyTypeObject PyFile_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -1314,8 +1384,9 @@ PyTypeObject PyFile_Type = {
 	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-	0,					/* tp_doc */
+	Py_TPFLAGS_DEFAULT |
+			Py_TPFLAGS_BASETYPE,	/* tp_flags */
+	file_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -1327,6 +1398,12 @@ PyTypeObject PyFile_Type = {
 	file_getsetlist,			/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	file_new,				/* tp_new */
 };
 
 /* Interface for the 'soft space' between print items. */
