@@ -172,6 +172,11 @@ Core and builtins
   to clear the error when attempts to get the __getstate__ attribute
   fail caused intermittent errors and odd behavior.
 
+- buffer objects based on other objects no longer cache a pointer to
+  the data and the data length.  Instead, the appropriate tp_as_buffer
+  method is called as necessary.  
+
+
 Extension modules
 -----------------
 
