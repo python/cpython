@@ -996,16 +996,12 @@ class AbstractHTTPHandler(BaseHandler):
         except socket.error, err: # XXX what error?
             raise URLError(err)
 
-        if r.status in (200, 206):
-            # Pick apart the HTTPResponse object to get the addinfourl
-            # object initialized properly
-            resp = addinfourl(r.fp, r.msg, req.get_full_url())
-            resp.code = r.status
-            resp.msg = r.reason
-            return resp
-        else:
-            return self.parent.error("http", req, r.fp, r.status, r.msg,
-                                     r.msg.dict)
+        # Pick apart the HTTPResponse object to get the addinfourl
+        # object initialized properly
+        resp = addinfourl(r.fp, r.msg, req.get_full_url())
+        resp.code = r.status
+        resp.msg = r.reason
+        return resp
 
 
 class HTTPHandler(AbstractHTTPHandler):
