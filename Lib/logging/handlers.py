@@ -349,7 +349,13 @@ class SysLogHandler(logging.Handler):
         self.facility = facility
         if type(address) == types.StringType:
             self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-            self.socket.connect(address)
+            # syslog may require either DGRAM or STREAM sockets
+            try:
+                self.socket.connect(address)
+            except socket.error:
+                self.socket.close()
+                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                self.socket.connect(address)
             self.unixsocket = 1
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
