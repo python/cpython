@@ -1,12 +1,26 @@
 #! /usr/bin/env python
 
-# Mirror a remote ftp subtree into a local directory tree.
-# Basic usage: ftpmirror [options] host remotedir localdir
-#
+"""Mirror a remote ftp subtree into a local directory tree.
+
+usage: ftpmirror [-v] [-q] [-i] [-m] [-n] [-r] [-s pat]
+                 [-l username [-p passwd [-a account]]]
+		 hostname [remotedir [localdir]]
+-v: verbose
+-q: quiet
+-i: interactive mode
+-m: macintosh server (NCSA telnet 2.4) (implies -n -s '*.o')
+-n: don't log in
+-r: remove local files/directories no longer pertinent
+-l username [-p passwd [-a account]]: login info (default anonymous ftp)
+-s pat: skip files matching pattern
+hostname: remote host
+remotedir: remote directory (default initial)
+localdir: local directory (default current)
+"""
+
 # XXX To do:
 # - handle symbolic links
 # - back up .mirrorinfo before overwriting
-# - use pickles for .mirrorinfo?
 
 import os
 import sys
@@ -16,26 +30,11 @@ import string
 import ftplib
 from fnmatch import fnmatch
 
-usage_msg = """
-usage: ftpmirror [-v] [-q] [-i] [-m] [-n] [-r] [-s pat]
-                 [-l username [-p passwd [-a account]]]
-		 hostname [remotedir [localdir]]
--v: verbose
--q: quiet
--i: interactive mode
--m: macintosh server (NCSA telnet 2.4) (implies -n -s '*.o')
--n: don't log in
--r: remove files no longer pertinent
--l username [-p passwd [-a account]]: login info (default anonymous ftp)
--s pat: skip files matching pattern
-hostname: remote host
-remotedir: remote directory (default initial)
-localdir: local directory (default current)
-"""
+# Print usage message and exit
 def usage(*args):
 	sys.stdout = sys.stderr
 	for msg in args: print msg
-	print usage_msg
+	print __doc__
 	sys.exit(2)
 
 verbose = 1 # 0 for -q, 2 for -v
@@ -45,6 +44,7 @@ rmok = 0
 nologin = 0
 skippats = ['.', '..', '.mirrorinfo']
 
+# Main program: parse command line and start processing
 def main():
 	global verbose, interactive, mac, rmok, nologin
 	try:
@@ -94,6 +94,7 @@ def main():
 	#
 	mirrorsubdir(f, localdir)
 
+# Core logic: mirror one subdirectory (recursively)
 def mirrorsubdir(f, localdir):
 	pwd = f.pwd()
 	if localdir and not os.path.isdir(localdir):
@@ -137,7 +138,7 @@ def mirrorsubdir(f, localdir):
 				continue
 			if words[-2] == '->':
 				if verbose > 1:
-					print 'Skipping symbolic link %s -> %s' % \
+				    print 'Skipping symbolic link %s -> %s' % \
 						  (words[-3], words[-1])
 				continue
 			filename = words[-1]
@@ -259,12 +260,8 @@ def mirrorsubdir(f, localdir):
 				print 'Local file', fullname,
 				print 'is no longer pertinent'
 			continue
-		if verbose: print 'Removing local file', fullname
-		try:
-			os.unlink(fullname)
-		except os.error, msg:
-			print "Can't remove local file %s: %s" % \
-				  (fullname, str(msg))
+		if verbose: print 'Removing local file/dir', fullname
+		remove(fullname)
 	#
 	# Recursively mirror subdirectories
 	for subdir in subdirs:
@@ -293,6 +290,34 @@ def mirrorsubdir(f, localdir):
 			break
 		else:
 			if verbose > 1: print 'OK.'
+
+# Helper to remove a file or directory tree
+def remove(fullname):
+	if os.path.isdir(fullname) and not os.path.islink(fullname):
+		try:
+			names = os.listdir(fullname)
+		except os.error:
+			names = []
+		ok = 1
+		for name in names:
+			if not remove(os.path.join(fullname, name)):
+				ok = 0
+		if not ok:
+			return 0
+		try:
+			os.rmdir(fullname)
+		except os.error, msg:
+			print "Can't remove local directory %s: %s" % \
+			      (fullname, str(msg))
+			return 0
+	else:
+		try:
+			os.unlink(fullname)
+		except os.error, msg:
+			print "Can't remove local file %s: %s" % \
+			      (fullname, str(msg))
+			return 0
+	return 1
 
 # Wrapper around a file for writing to write a hash sign every block.
 class LoggingFile:
