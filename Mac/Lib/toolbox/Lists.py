@@ -1,4 +1,4 @@
-# Generated from 'Sap:CodeWarrior6:Metrowerks C/C++:Headers:Universal Headers 2.0.1f:Lists.h'
+# Generated from 'Sap:CodeWarrior7:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Lists.h'
 
 lDoVAutoscroll = 2
 lDoHAutoscroll = 1
@@ -9,6 +9,15 @@ lNoExtend = 16
 lNoRect = 8
 lUseSense = 4
 lNoNilHilite = 2
+lDoVAutoscrollBit = 1
+lDoHAutoscrollBit = 0
+lOnlyOneBit = 7
+lExtendDragBit = 6
+lNoDisjointBit = 5
+lNoExtendBit = 4
+lNoRectBit = 3
+lUseSenseBit = 2
+lNoNilHiliteBit = 1
 lInitMsg = 0
 lDrawMsg = 1
 lHiliteMsg = 2
