@@ -451,25 +451,29 @@ file_read(f, args)
 	if (v == NULL)
 		return NULL;
 	bytesread = 0;
-	Py_BEGIN_ALLOW_THREADS
 	for (;;) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
 		chunksize = fread(BUF(v) + bytesread, 1,
 				  buffersize - bytesread, f->f_fp);
-		/* XXX Error check? */
-		if (chunksize == 0)
-			break;
+		Py_END_ALLOW_THREADS
+		if (chunksize == 0) {
+			if (!ferror(f->f_fp))
+				break;
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
+			Py_DECREF(v);
+			return NULL;
+		}
 		bytesread += chunksize;
 		if (bytesread < buffersize)
 			break;
 		if (bytesrequested < 0) {
 			buffersize = new_buffersize(f, buffersize);
-			Py_BLOCK_THREADS
 			if (_PyString_Resize(&v, buffersize) < 0)
 				return NULL;
-			Py_UNBLOCK_THREADS
 		}
 	}
-	Py_END_ALLOW_THREADS
 	if (bytesread != buffersize)
 		_PyString_Resize(&v, bytesread);
 	return v;
@@ -488,24 +492,21 @@ file_readinto(f, args)
 	if (!PyArg_Parse(args, "w#", &ptr, &ntodo))
 		return NULL;
 	ndone = 0;
-	/* 
-	** XXXX Is this correct? Other threads may see partially-completed
-	** reads if they look at the object we're reading into...
-	*/
-	Py_BEGIN_ALLOW_THREADS
-	while(ntodo > 0) {
+	while (ntodo > 0) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
 		nnow = fread(ptr+ndone, 1, ntodo, f->f_fp);
-		if (nnow < 0 ) {
+		Py_END_ALLOW_THREADS
+		if (nnow == 0) {
+			if (!ferror(f->f_fp))
+				break;
 			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(f->f_fp);
 			return NULL;
 		}
-		if (nnow == 0)
-			break;
 		ndone += nnow;
 		ntodo -= nnow;
 	}
-	Py_END_ALLOW_THREADS
 	return PyInt_FromLong(ndone);
 }
 
@@ -675,6 +676,14 @@ file_readlines(f, args)
 {
 	PyObject *list;
 	PyObject *line;
+	char small_buffer[SMALLCHUNK];
+	char *buffer = small_buffer;
+	size_t buffersize = SMALLCHUNK;
+	PyObject *big_buffer = NULL;
+	size_t nfilled = 0;
+	size_t nread;
+	char *p, *q, *end;
+	int err;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -683,18 +692,73 @@ file_readlines(f, args)
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
 	for (;;) {
-		line = getline(f, 0);
-		if (line != NULL && PyString_Size(line) == 0) {
-			Py_DECREF(line);
-			break;
-		}
-		if (line == NULL || PyList_Append(list, line) != 0) {
+		Py_BEGIN_ALLOW_THREADS
+		errno = 0;
+		nread = fread(buffer+nfilled, 1, buffersize-nfilled, f->f_fp);
+		Py_END_ALLOW_THREADS
+		if (nread == 0) {
+			if (nread == 0)
+				break;
+			PyErr_SetFromErrno(PyExc_IOError);
+			clearerr(f->f_fp);
+		  error:
 			Py_DECREF(list);
-			Py_XDECREF(line);
-			return NULL;
+			list = NULL;
+			goto cleanup;
 		}
-		Py_DECREF(line);
+		p = memchr(buffer+nfilled, '\n', nread);
+		if (p == NULL) {
+			/* Need a larger buffer to fit this line */
+			nfilled += nread;
+			buffersize *= 2;
+			if (big_buffer == NULL) {
+				/* Create the big buffer */
+				big_buffer = PyString_FromStringAndSize(
+					NULL, buffersize);
+				if (big_buffer == NULL)
+					goto error;
+				buffer = PyString_AS_STRING(big_buffer);
+				memcpy(buffer, small_buffer, nfilled);
+			}
+			else {
+				/* Grow the big buffer */
+				_PyString_Resize(&big_buffer, buffersize);
+				buffer = PyString_AS_STRING(big_buffer);
+			}
+			continue;
+		}
+		end = buffer+nfilled+nread;
+		q = buffer;
+		do {
+			/* Process complete lines */
+			p++;
+			line = PyString_FromStringAndSize(q, p-q);
+			if (line == NULL)
+				goto error;
+			err = PyList_Append(list, line);
+			Py_DECREF(line);
+			if (err != 0)
+				goto error;
+			q = p;
+			p = memchr(q, '\n', end-q);
+		} while (p != NULL);
+		/* Move the remaining incomplete line to the start */
+		nfilled = end-q;
+		memmove(buffer, q, nfilled);
 	}
+	if (nfilled != 0) {
+		/* Partial last line */
+		line = PyString_FromStringAndSize(buffer, nfilled);
+		if (line == NULL)
+			goto error;
+		err = PyList_Append(list, line);
+		Py_DECREF(line);
+		if (err != 0)
+			goto error;
+	}
+  cleanup:
+	if (big_buffer)
+		Py_DECREF(big_buffer);
 	return list;
 }
 
