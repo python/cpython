@@ -83,6 +83,9 @@ Extension modules
 Library
 -------
 
+- Added new codecs and aliases for ISO_8859-11, ISO_8859-16 and
+  TIS-620
+
 - Thanks to Edward Loper, doctest has been massively refactored, and
   many new features were added.  Full docs will appear later.  For now
   the doctest module comments and new test cases give good coverage.
