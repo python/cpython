@@ -33,3 +33,4 @@ python-mode.el	Emacs mode for editing Python programs
 python.man	UNIX man page for the python interpreter
 renumber.py	Script to renumber the sections in the FAQ
 setuid-prog.c	C helper program for set-uid Python scripts
+vgrindefs	Python configuration for vgrind (a generic pretty printer)
