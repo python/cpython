@@ -15,6 +15,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- itertools.islice() now accepts stop=None as documented.
+  Fixes SF bug #730685.
+
 Library
 -------
 
