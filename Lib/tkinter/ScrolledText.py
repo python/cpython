@@ -17,14 +17,16 @@ class ScrolledText(Text):
 	def __init__(self, master=None, cnf={}):
 		cnf = _cnfmerge(cnf)
 		fcnf = {}
+		vcnf = {'name': 'vbar',
+			Pack: {'side': 'right', 'fill': 'y'},}
 		for k in cnf.keys():
-			if type(k) == ClassType:
+			if type(k) == ClassType or k == 'name':
 				fcnf[k] = cnf[k]
 				del cnf[k]
 		self.frame = Frame(master, fcnf)
-		self.vbar = Scrollbar(self.frame, {
-			Pack: {'side': 'right', 'fill': 'y'}})
+		self.vbar = Scrollbar(self.frame, vcnf)
 		cnf[Pack] = {'side': 'left', 'fill': 'both', 'expand': 'yes'}
+		cnf['name'] = 'text'
 		Text.__init__(self, self.frame, cnf)
 		self['yscrollcommand'] = (self.vbar, 'set')
 		self.vbar['command'] = (self, 'yview')
