@@ -18,6 +18,9 @@ Extension modules
 
 - SSL no longer crashes the interpreter when the remote side disconnects.
 
+- time.strptime now exclusively uses the Python implementation
+  contained within the _strptime module.
+
 Library
 -------
 

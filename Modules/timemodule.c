@@ -416,44 +416,6 @@ See the library reference manual for formatting codes. When the time tuple\n\
 is not present, current time as returned by localtime() is used.");
 #endif /* HAVE_STRFTIME */
 
-#undef HAVE_STRPTIME
-#ifdef HAVE_STRPTIME
-
-#if 0
-/* Enable this if it's not declared in <time.h> */
-extern char *strptime(const char *, const char *, struct tm *);
-#endif
-
-static PyObject *
-time_strptime(PyObject *self, PyObject *args)
-{
-	struct tm tm;
-	char *fmt = "%a %b %d %H:%M:%S %Y";
-	char *buf;
-	char *s;
-
-	if (!PyArg_ParseTuple(args, "s|s:strptime", &buf, &fmt))
-	        return NULL;
-	memset((void *) &tm, '\0', sizeof(tm));
-	s = strptime(buf, fmt, &tm);
-	if (s == NULL) {
-		PyErr_SetString(PyExc_ValueError, "format mismatch");
-		return NULL;
-	}
-	while (*s && isspace(Py_CHARMASK(*s)))
-		s++;
-	if (*s) {
-		PyErr_Format(PyExc_ValueError,
-			     "unconverted data remains: '%.400s'", s);
-		return NULL;
-	}
-	return tmtotuple(&tm);
-}
-
-#endif /* HAVE_STRPTIME */
-
-#ifndef HAVE_STRPTIME
-
 static PyObject *
 time_strptime(PyObject *self, PyObject *args)
 {
@@ -467,10 +429,8 @@ time_strptime(PyObject *self, PyObject *args)
     return strptime_result;
 }
 
-#endif /* !HAVE_STRPTIME */
-
 PyDoc_STRVAR(strptime_doc,
-"strptime(string, format) -> tuple\n\
+"strptime(string, format) -> struct_time\n\
 \n\
 Parse a string to a time tuple according to a format specification.\n\
 See the library reference manual for formatting codes (same as strftime()).");
