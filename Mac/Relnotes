@@ -1,56 +1,13 @@
-Changes in 2.2 since 2.1.1
+Changes in 2.2.1 since 2.2
 ----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
 for machine-independent changes.
 
-
-- The main change is that all toolbox modules have moved to a package called Carbon.
-  So things like "import Res" should be changed to "from Carbon import Res", and
-  "from Res import *" to "from Carbon.Res import *". Please see the readme file for
-  some open questions and join the discussions on pythonmac-sig if you have anything
-  to contribute. Aside from reducing clutter this change will also benefit the
-  port to Mach-O/OSX Python later.
-- All toolbox modules have been updated to Universal Headers 3.4.
-- Toolbox modules are weaklinked against InterfaceLib (for PPC builds) and raise
-  an exception when you call an unimplemented one on an old MacOS.
-- On input MacPython now accepts either \n (unix style) or \r (mac style) newlines
-  for text files. This behaviour can be turned off with a preference.
-  This is an experimental feature; again: feedback is requested.
-- The IDE looks better on OS X, but still not as good as on OS9.
-- Command-dot handling has been improved a lot: scripts are now much easier to interrupt,
-  and they only scan for cmd-. while in the foreground.
-- "Copy" from the MacPython console window was always disabled. Fixed.
-- This release should run on MacOS 8.1 again.
-- A new, rather different GUSI I/O library is used.
-- time.time() returns positive values again.
-- There is a new module macresource which makes it easier to open a resource file
-  accompanying your script when the script is not (yet) converted to an applet.
-  This module will later also do the right thing in Mach-O/OSX Python.
-- (Carbon only) experimental modules Carbon.CG (CoreGraphics) and CarbonEvt have
-  been added.
-- A new, experimental module hfsplus is included, which gives access to some of the
-  functionality of the HFS+ API.
-- A new, experimental module gives access to Carbon Events.
-- Threads had a stack that was too small for many serious Python applications (20K).
-  They now get 64K. There is still no overflow check, though.
-- Garbage collection and the gc module have (finally) been enabled.
-- EasyDialogs.ProgressBar now has indeterminate progressbars if you specify maxval=0.
-  This is also the new default. Patch supplied by Dean Draayer.
-- There are new preferences for enabling old-style division warnings and for
-  accepting unix-style newlines in text input files. These can also be set during
-  startup, and in addition you can select very verbose import tracing.
-- The NavServices override for StandardFile has moved from early startup to the
-  time you import macfs. This speeds up MacPython startup.
-- Various outdated scripts have been moved to :Mac:Unsupported.
-- Various outdated items from :Mac:Lib:test have been removed.
-- C Developers: you know have control over the Python console if you are embedding
-  MacPython in another application, thanks to Alexandre Parenteau. :Mac:Demo:embed.html
-  has very minimal documentation.
-- BuildCGIApplet works again.
-- The CodeWarrior OSA suite missed quit(). It is back.
-- Contrib:morefindertools is gone, the functionality has been integrated into
-  the standard module findertools.py.
+- This release should work on multiprocessor OSX machines.
+- The problem with incomplete read()s on sockets has been fixed.
+- NavServices is now weaklinked, so this release should work on a virgin Mac OS 8.1.
+- Much more: to be supplied.
 
 Known problems
 --------------
@@ -58,10 +15,6 @@ Known problems
 This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
-- MacPython 2.2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
-  machine, it will quickly deadlock during I/O operations. The GUSI I/O library is suspected,
-  hints/clues/workarounds are solicited. This problem also occurs intermittently on fast
-  OS X single-processor machines.
 - Tkinter does not work under Carbon.
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - Tkinter file events do not work, unless you have opened the file through Tcl (but then

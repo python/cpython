@@ -1,4 +1,4 @@
-How to install Python 2.2 on your Macintosh
+How to install Python 2.2.1 on your Macintosh
 ---------------------------------------------
 
 This is a MacPython that can run on classic MacOS (from 8.1
@@ -34,63 +34,6 @@ configuration. By selecting custom install you can bypass these tests and
 install what you want.
 
 If you want 68k support you will have get MacPython 1.5.2.
-
-Toolbox module reorganization and more
---------------------------------------
-
-You can safely skip this section if this is your first encounter with MacPython.
-
-This release has a new organization of the mac-specific modules, and in
-general brings the MacPython folder structure more in line with
-unix-Python. This is not only a good idea, it will also immensely
-facilitate moving MacPython functionality to an OSX Python that is based
-on Mach-O and the unix-Python distribution. But don't worry: MacPython
-is definitely not dead yet, and the hope is that the transition will be
-as seamless as possible.
-
-First a change that should not cause too much concern: :Mac:Plugins has
-gone, and most of the dynamically loaded modules have moved to
-:Lib:lib-dynload.
-
-Second, and more important: the toolbox modules, such as Res and
-Resource, have moved to a Carbon package. So, in stead of "import Res"
-you should now say "from Carbon import Res" and in stead of "from Res
-import *" you should use "from Carbon.Res import *". For the lifetime of
-MacPython 2.2 there is a folder :Mac:Lib:lib-compat on sys.path that
-contains modules with the old names which imports the new names after
-issuing a warning.
-
-Note that although the package is called Carbon the modules work fine under
-classic PPC, and they are normal classic modules. Also note that some
-modules you may think of as toolbox modules (such as Waste) really are not,
-and they are not in the Carbon package.
-
-Also, all toolbox modules have been updated to Universal Headers 3.4, and
-are (for classic PPC) weak-linked against InterfaceLib so that they should
-work on all systems back to MacOS 8.1. Calling an unimplemented function will
-raise an exception, not crash your interpreter.
-  
-Another change related to the OSX growth path is that there is a new module
-macresource that you can use to easily open a resource file accompanying your
-script. Use "macresource.need("DLOG", MY_DIALOG_ID, "name.rsrc") and if the
-given resource is not available (it _is_ available if your script has been
-turned into an applet) the given resource file will be opened. This method will
-eventually also contain the magic needed to open the resource file on
-OSX MachO Python.
-
-Another feature to help with the OSX transition is that if you open a
-textfile for reading MacPython will now accept either unix linefeeds
-(LF, '\n') or Macintosh linefeeds (CR, '\r') and present both of them
-as '\n'. This is done on a low level, so it works for files opened by
-scripts as well as for your scripts and modules itself. This can be
-turned off with a preference/startup option.
-
-But:
-- this works only for input, and there's no way to find out what the original
-  linefeed convention of the file was.
-- Windows \r\n linefeeds are not supported and get turned into \n\n.
-- in 2.3 this feature will be replaced by a more general, platform independent
-  way of handling files with foreign newline conventions.
 
 What to install
 ---------------
@@ -170,7 +113,7 @@ Uninstalling
 
 Up to three items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon live in the Extensions
-folder and the "Python 2.2 Preferences" file in the Python subfolder
+folder and the "Python 2.2.1 Preferences" file in the Python subfolder
 in the Preferences folder. All the rest of Python lives in the folder
 you installed in.
 
@@ -218,9 +161,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2 works as expected you can trash
+After you are satisfied that 2.2.1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2".
+"2.2.1".
 
 The ConfigurePython... applets will try to detect incompatible
 preferences files and offer to remove them. This means that re-running
