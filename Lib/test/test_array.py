@@ -336,6 +336,9 @@ def testtype(type, example):
         a = array.array(type, range(5))
         del a[1::-2]
         vereq(a, array.array(type, [0,2,3,4]))
+        a = array.array(type, range(10))
+        del a[::1000]
+        vereq(a, array.array(type, [1,2,3,4,5,6,7,8,9]))
         #  assignment
         a = array.array(type, range(10))
         a[::2] = array.array(type, [-1]*5)

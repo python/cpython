@@ -405,6 +405,9 @@ vereq(a, [0,2,4])
 a = range(5)
 del a[1::-2]
 vereq(a, [0,2,3,4])
+a = range(10)
+del a[::1000]
+vereq(a, [1, 2, 3, 4, 5, 6, 7, 8, 9])
 #  assignment
 a = range(10)
 a[::2] = [-1]*5

@@ -1564,7 +1564,7 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 
 		if (value == NULL) {
 			/* delete slice */
-			int cur, i;
+			int cur, i, extra;
 			
 			if (slicelength <= 0)
 				return 0;
@@ -1575,16 +1575,17 @@ array_ass_subscr(arrayobject* self, PyObject* item, PyObject* value)
 				step = -step;
 			}
 
-			for (cur = start, i = 0; cur < stop; 
+			for (cur = start, i = 0; i < slicelength - 1;
 			     cur += step, i++) {
 				memmove(self->ob_item + (cur - i)*itemsize,
 					self->ob_item + (cur + 1)*itemsize,
 					(step - 1) * itemsize);
 			}
-			if (self->ob_size > (start + slicelength*step)) {
-				memmove(self->ob_item + (start + slicelength*(step - 1))*itemsize,
-					self->ob_item + (start + slicelength*step)*itemsize,
-					(self->ob_size - (start + slicelength*step))*itemsize);
+			extra = self->ob_size - (cur + 1);
+			if (extra > 0) {
+				memmove(self->ob_item + (cur - i)*itemsize,
+					self->ob_item + (cur + 1)*itemsize,
+					extra*itemsize);
 			}
 
 			self->ob_size -= slicelength;
