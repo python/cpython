@@ -38,7 +38,10 @@ PERFORMANCE OF THIS SOFTWARE.
    - provide interface to the B-tree and record libraries too
    - provide a way to access the various hash functions
    - support more open flags
- */
+
+   The windows port of the Berkeley DB code is hard to find on the web:
+   www.nightmare.com/software.html
+*/
 
 #include "Python.h"
 #ifdef WITH_THREAD
