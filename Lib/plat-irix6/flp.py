@@ -3,7 +3,6 @@
 #
 # Jack Jansen, December 1991
 #
-import string
 import os
 import sys
 import FL
@@ -248,7 +247,7 @@ def _parse_num(str):
     return eval(str)
 
 def _parse_numlist(str):
-    slist = string.split(str)
+    slist = str.split()
     nlist = []
     for i in slist:
         nlist.append(_parse_num(i))
@@ -277,9 +276,9 @@ def _parse_line(line):
         return line
     name, value = match.group(1, 2)
     if name[0] == 'N':
-            name = string.join(string.split(name),'')
-            name = string.lower(name)
-    name = string.capitalize(name)
+            name = ''.join(name.split())
+            name = name.lower()
+    name = name.capitalize()
     try:
         pf = _parse_func[name]
     except KeyError:
