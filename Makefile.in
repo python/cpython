@@ -171,8 +171,8 @@ tags::
 
 # Create a tags file for GNU Emacs
 TAGS::
-		etags -t Include/*.h
-		for i in $(SUBDIRS); do etags -t -a $$i/*.[ch]; done
+		etags Include/*.h
+		for i in $(SUBDIRS); do etags -a $$i/*.[ch]; done
 
 # Add dependencies to sub-Makefiles
 depend:
@@ -253,4 +253,4 @@ find:
 # Build a distribution tar file (run make distclean first)
 # (This leaves the RCS and CVS directories in :-( )
 tar:
-		tar cf - $(DIST) | compress >dist.tar.Z
+		tar cf - $(DIST) | gzip --best >dist.tar.gz

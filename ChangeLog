@@ -1,4 +1,29 @@
+Fri Aug  5 11:43:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* BUGS: new file (merger of unofficial BUGS1.0.x files)
+
+	* Modules/{Setup.in,Makefile.pre.in}: renamed some modules to
+	shorter names (dropped the "module" from the name): sunaudiodev,
+	imgformat, audioop, imageop, imgfile
+
+	* Python/import.c: support *.o/*.so as alternative for
+	*module.o/*module.so
+
+	* Modules/stropmodule.c (strop_rindex): make rindex('abc', '') do
+	the right thing (i.e. return 3 instead of 0)
+
+	* Python/bltinmodule.c (builtin_vars): correct typo in error msg
+
+	* Doc/libsocket.tex (subsection{Socket Object Methods}):
+	documented gethostname() and a few misc things
+
+	* Modules/socketmodule.c: disabled allowbroadcast() socket method
+
 Mon Aug  1 01:28:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Makefile.in (TAGS): Call etags w/o -t option
+
+	* Lib/rfc822.py: fix two bugs
 
 	* Lib/test/test_types.py (6.4.1): test for particular bug in
 	integer multiply

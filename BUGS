@@ -1,0 +1,163 @@
+Sorry, this list does not claim completeness.  If I fixed a bug
+immediately upon receiving the first complaint I usually did not
+nother to make an ehtry in this file, unless it was a serious bug
+(core dump or infinite loop).
+
+==> Status indicators: (-) not fixed; (?) fix proposed but not
+    confirmed; (*) fixed.
+
+======================================================================
+BUGS found in 1.0.3
+-------------------
+
+(*) vars() error message is wrong (copied from dir() obviously).
+
+(*) socket.gethostname() is undocumented.
+
+(*) rfc822.py: getfirst* dies when multiple headers occur
+
+(-) urllib caching is wrong (should use date from Expires header)
+
+(*) On a related matter: regexpr.c still has two malloc()s the results
+    of which are not tested for being NULL (lines 1253 and 1530). There
+    are also some in rgbimagemodule.c. Am I overlooking something or is
+    this a crasher?
+
+(*) strop.rindex('abc', '') returns 0 instead of 3
+
+(*) sunaudiodevmodule.o is too long!
+
+(-) need newer DOS binary (16 bit version doesn't do default args)
+
+(-) toplevel README needs new text on PC and Mac builds
+
+(*) long(0x80000000) has wrong value!
+
+======================================================================
+Bugs found in 1.0.2 and not yet fixed
+-------------------------------------
+
+(-) compiler warnings about argument type of uname() on ULTRIX
+machines
+
+(-) syntax error for interactive input prints garbage instead of last
+source line on some systems (e.g. AIX)
+
+(?) (maybe) a bad .pyc file (with old magic number) causes the .py
+file to be ignored
+
+(-) Sunos4.0.2 / 386 configure bugs:
+	- timelocal instead of mktime
+	- unistd.h doesn't declare some functions
+
+Bugs found in 1.0.2 and fixed in 1.0.3
+--------------------------------------
+
+(*) nasty bug in string formatting (see test_types.py, search for %)
+
+(*) if a triple-quoted string ends in a quote followed by a newline
+(followed immediately by the terminating 3 quotes) then a syntax error
+or system error ensues
+
+(*) bug in socket.listen: clipping backlog to >= 1 doesn't work
+
+(*) two bogus XDEL's in Modules/regexmodule.reg_dealloc()
+
+(*) Parser/myreadline.my_fgets: #endif EINTR misplaced
+
+(*) new IP address for ftp.cwi.nl !!!
+
+(*) typing vars() to interactive prompt runs into infinite loop
+because of '_'
+
+(*) tokenizer/tok_nextc() runs into infinite loop when file does not
+end in linefeed
+
+(*) Sunos4.0.2 / 386 configure bugs:
+(*)	- use size_t at some places without including sys/types.h
+(*)	- missing clock_t
+(*)	- uses SEEK_SET in some places that don't include unistd.h
+
+======================================================================
+Bugs found in 1.0.1 and not yet fixed
+-------------------------------------
+
+(-) modsupport.c(vmkvalue): on systems where va_list is an array, the
+calls to do_mkvalue and do_mktuple don't want an "&" before va.
+
+(?) threads are slow on Solaris 2
+
+(?) threads cause myreadline.c's readline() to think it sees an EOF.
+
+(-) min() on PC version generates wrong result (i.e. same as max())
+    [this happens on SoftPC -- don't know about other systems]
+
+(-) flp.py cache bug: if the cache only contains one form, asking for
+all forms returns only the cashed form
+
+Bugs found in 1.0.1 and fixed in 1.0.2
+--------------------------------------
+
+(*) core dump when parser.parsefile() called
+
+(*) man page contains a mess before -d option
+
+(*) threads don't work on IRIX 4
+
+(*) wrong cast of svideo_getattr in svmodule.c
+
+(*) bad return value in runpython.c's run_tty_1()
+
+(*) creating dict of 100,000 objects gets MemoryError or dumps core
+
+(*) freeze script doesn't work
+
+======================================================================
+BUGS found in 1.0.0 and not yet fixed
+-------------------------------------
+
+(?) On NeXT, need to define _POSIX_SOURCE.
+
+(?) there appears to be something wrong with gcc and -ldl on some
+SunOS 4.1.3 systems
+
+(-) jredfords reports core dump with float literals
+
+BUGS found in 1.0.0 and fixed in 1.0.1
+--------------------------------------
+
+(*) On SGI IRIX 4 using cc, compilation errors in md5module.c.
+
+(*) In cdmodule.c, getattr initialized with (destructor)!
+
+(*) Lib/tzparse.py runs test() on import
+
+(*) Lib/filewin.py belongs in Lib/stdwin
+
+(*) lib and man install targets don't use $(srcdir)
+
+(*) Modules/rgbimgmodule.c: exception name contains comma instead of dot
+
+(*) The FAQ still references misc/EXTENDING and misc/DYNLOAD etc
+
+(*) The FAQ still describes how to work around a problem in 0.9.9 exec()
+
+(*) Lib/aifc.py, returns float rate, should be int
+
+(*) Lib/sunau.py, incorrectly cumputes byte count from frame rate
+
+(*) README should mention possibility of passing OPT=-g to make
+
+(*) dynamic loading on sunos 4.1.3 must call dlopen(..., 1)
+
+(*) use of <varargs.h> vs. <stdarg.h> should depend on
+    HAVE_STDARG_PROTOTYPES, not on HAVE_STDARG_H
+
+(*) Doc/README refers to Misc/FTP which in fact does not exist any more
+
+(*) filter(None, 'abcdefg') dumps core
+
+(*) once you interrupt time.sleep(), there is no interrupt handler!
+
+======================================================================
+end of file

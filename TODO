@@ -1,3 +1,6 @@
+(-) write a script and add a "Make" rule (perhaps) that changes
+    #!/usr/local/bin/python to something else in all scripts around.
+
 (*) int*int overflow check shouldn't doubles on alpha (cf. John Tromp's mail)
 
 (*) add signal.alarm()
