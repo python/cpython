@@ -185,6 +185,11 @@ class PyBuildExt(build_ext):
         if '/usr/local/include' not in self.compiler.include_dirs:
             self.compiler.include_dirs.insert(0, '/usr/local/include' )
 
+        try:
+            have_unicode = unicode
+        except NameError:
+            have_unicode = 0
+
         # lib_dirs and inc_dirs are used to search for files;
         # if a file is found in one of those directories, it can
         # be assumed that no additional -I,-L directives are needed.
@@ -235,7 +240,8 @@ class PyBuildExt(build_ext):
         # Python C API test module
         exts.append( Extension('_testcapi', ['_testcapimodule.c']) )
         # static Unicode character database
-        exts.append( Extension('unicodedata', ['unicodedata.c']) )
+        if have_unicode:
+            exts.append( Extension('unicodedata', ['unicodedata.c']) )
         # access to ISO C locale support
         exts.append( Extension('_locale', ['_localemodule.c']) )
 

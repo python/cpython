@@ -520,8 +520,8 @@ static void com_assign_name(struct compiling *, node *, int);
 static PyCodeObject *icompile(node *, struct compiling *);
 static PyCodeObject *jcompile(node *, char *, struct compiling *,
 			      PyCompilerFlags *);
-static PyObject *parsestrplus(node *);
-static PyObject *parsestr(char *);
+static PyObject *parsestrplus(struct compiling*, node *);
+static PyObject *parsestr(struct compiling *, char *);
 static node *get_rawdocstring(node *);
 
 static int get_ref_type(struct compiling *, char *);
@@ -1111,7 +1111,7 @@ parsenumber(struct compiling *co, char *s)
 }
 
 static PyObject *
-parsestr(char *s)
+parsestr(struct compiling *com, char *s)
 {
 	PyObject *v;
 	size_t len;
@@ -1122,11 +1122,19 @@ parsestr(char *s)
 	int first = *s;
 	int quote = first;
 	int rawmode = 0;
+#ifdef Py_USING_UNICODE
 	int unicode = 0;
+#endif
 	if (isalpha(quote) || quote == '_') {
 		if (quote == 'u' || quote == 'U') {
+#ifdef Py_USING_UNICODE
 			quote = *++s;
 			unicode = 1;
+#else
+			com_error(com, PyExc_SyntaxError,
+				  "Unicode literals not supported in this Python");
+			return NULL;
+#endif
 		}
 		if (quote == 'r' || quote == 'R') {
 			quote = *++s;
@@ -1155,6 +1163,7 @@ parsestr(char *s)
 			return NULL;
 		}
 	}
+#ifdef Py_USING_UNICODE
 	if (unicode || Py_UnicodeFlag) {
 		if (rawmode)
 			return PyUnicode_DecodeRawUnicodeEscape(
@@ -1163,6 +1172,7 @@ parsestr(char *s)
 			return PyUnicode_DecodeUnicodeEscape(
 				s, len, NULL);
 	}
+#endif
 	if (rawmode || strchr(s, '\\') == NULL)
 		return PyString_FromStringAndSize(s, len);
 	v = PyString_FromStringAndSize((char *)NULL, len);
@@ -1238,16 +1248,16 @@ parsestr(char *s)
 }
 
 static PyObject *
-parsestrplus(node *n)
+parsestrplus(struct compiling* c, node *n)
 {
 	PyObject *v;
 	int i;
 	REQ(CHILD(n, 0), STRING);
-	if ((v = parsestr(STR(CHILD(n, 0)))) != NULL) {
+	if ((v = parsestr(c, STR(CHILD(n, 0)))) != NULL) {
 		/* String literal concatenation */
 		for (i = 1; i < NCH(n); i++) {
 		    PyObject *s;
-		    s = parsestr(STR(CHILD(n, i)));
+		    s = parsestr(c, STR(CHILD(n, i)));
 		    if (s == NULL)
 			goto onError;
 		    if (PyString_Check(v) && PyString_Check(s)) {
@@ -1255,6 +1265,7 @@ parsestrplus(node *n)
 			if (v == NULL)
 			    goto onError;
 		    }
+#ifdef Py_USING_UNICODE
 		    else {
 			PyObject *temp;
 			temp = PyUnicode_Concat(v, s);
@@ -1264,6 +1275,7 @@ parsestrplus(node *n)
 			Py_DECREF(v);
 			v = temp;
 		    }
+#endif
 		}
 	}
 	return v;
@@ -1445,7 +1457,7 @@ com_atom(struct compiling *c, node *n)
 		com_push(c, 1);
 		break;
 	case STRING:
-		v = parsestrplus(n);
+		v = parsestrplus(c, n);
 		if (v == NULL) {
 			c->c_errors++;
 			i = 255;
@@ -2936,7 +2948,7 @@ is_constant_false(struct compiling *c, node *n)
 		return i == 0;
 
 	case STRING:
-		v = parsestr(STR(n));
+		v = parsestr(c, STR(n));
 		if (v == NULL) {
 			PyErr_Clear();
 			break;
@@ -3330,7 +3342,7 @@ get_rawdocstring(node *n)
 }
 
 static PyObject *
-get_docstring(node *n)
+get_docstring(struct compiling *c, node *n)
 {
 	/* Don't generate doc-strings if run with -OO */
 	if (Py_OptimizeFlag > 1)
@@ -3338,7 +3350,7 @@ get_docstring(node *n)
 	n = get_rawdocstring(n);
 	if (n == NULL)
 		return NULL;
-	return parsestrplus(n);
+	return parsestrplus(c, n);
 }
 
 static void
@@ -3794,7 +3806,7 @@ com_file_input(struct compiling *c, node *n)
 	int i;
 	PyObject *doc;
 	REQ(n, file_input); /* (NEWLINE | stmt)* ENDMARKER */
-	doc = get_docstring(n);
+	doc = get_docstring(c, n);
 	if (doc != NULL) {
 		int i = com_addconst(c, doc);
 		Py_DECREF(doc);
@@ -3819,7 +3831,7 @@ compile_funcdef(struct compiling *c, node *n)
 	node *ch;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
 	c->c_name = STR(CHILD(n, 1));
-	doc = get_docstring(CHILD(n, 4));
+	doc = get_docstring(c, CHILD(n, 4));
 	if (doc != NULL) {
 		(void) com_addconst(c, doc);
 		Py_DECREF(doc);
@@ -3869,7 +3881,7 @@ compile_classdef(struct compiling *c, node *n)
 	c->c_name = STR(CHILD(n, 1));
 	c->c_private = c->c_name;
 	ch = CHILD(n, NCH(n)-1); /* The suite */
-	doc = get_docstring(ch);
+	doc = get_docstring(c, ch);
 	if (doc != NULL) {
 		int i = com_addconst(c, doc);
 		Py_DECREF(doc);

@@ -176,6 +176,8 @@ static char getdefaultencoding_doc[] =
 Return the current default string encoding used by the Unicode \n\
 implementation.";
 
+#ifdef Py_USING_UNICODE
+
 static PyObject *
 sys_setdefaultencoding(PyObject *self, PyObject *args)
 {
@@ -192,6 +194,8 @@ static char setdefaultencoding_doc[] =
 "setdefaultencoding(encoding)\n\
 \n\
 Set the current default string encoding used by the Unicode implementation.";
+
+#endif
 
 /*
  * Cached interned string objects used for calling the profile and
@@ -530,8 +534,10 @@ static PyMethodDef sys_methods[] = {
 	{"exc_info",	(PyCFunction)sys_exc_info, METH_NOARGS, exc_info_doc},
 	{"excepthook",	sys_excepthook, METH_VARARGS, excepthook_doc},
 	{"exit",	sys_exit, METH_OLDARGS, exit_doc},
+#ifdef Py_USING_UNICODE
 	{"getdefaultencoding", (PyCFunction)sys_getdefaultencoding, METH_NOARGS,
 	 getdefaultencoding_doc}, 
+#endif
 #ifdef HAVE_DLOPEN
 	{"getdlopenflags", (PyCFunction)sys_getdlopenflags, METH_NOARGS, 
 	 getdlopenflags_doc},
@@ -553,8 +559,10 @@ static PyMethodDef sys_methods[] = {
 #ifdef USE_MALLOPT
 	{"mdebug",	sys_mdebug, METH_VARARGS},
 #endif
+#ifdef Py_USING_UNICODE
 	{"setdefaultencoding", sys_setdefaultencoding, METH_VARARGS,
 	 setdefaultencoding_doc}, 
+#endif
 	{"setcheckinterval",	sys_setcheckinterval, METH_VARARGS,
 	 setcheckinterval_doc}, 
 #ifdef HAVE_DLOPEN
@@ -782,9 +790,11 @@ _PySys_Init(void)
 	PyDict_SetItemString(sysdict, "maxint",
 			     v = PyInt_FromLong(PyInt_GetMax()));
 	Py_XDECREF(v);
+#ifdef Py_USING_UNICODE
 	PyDict_SetItemString(sysdict, "maxunicode",
 			     v = PyInt_FromLong(PyUnicode_GetMax()));
 	Py_XDECREF(v);
+#endif
 	PyDict_SetItemString(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
 	Py_XDECREF(v);

@@ -82,7 +82,7 @@ ConfigParser -- responsible for for parsing a list of
         write the configuration state in .ini format
 """
 
-import string
+import string, types
 import re
 
 __all__ = ["NoSectionError","DuplicateSectionError","NoOptionError",
@@ -222,7 +222,7 @@ class ConfigParser:
         configuration files in the list will be read.  A single
         filename may also be given.
         """
-        if type(filenames) in [type(''), type(u'')]:
+        if type(filenames) in types.StringTypes:
             filenames = [filenames]
         for filename in filenames:
             try:

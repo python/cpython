@@ -276,6 +276,7 @@ static char chr_doc[] =
 Return a string of one character with ordinal i; 0 <= i < 256.";
 
 
+#ifdef Py_USING_UNICODE
 static PyObject *
 builtin_unichr(PyObject *self, PyObject *args)
 {
@@ -324,6 +325,7 @@ static char unichr_doc[] =
 "unichr(i) -> Unicode character\n\
 \n\
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.";
+#endif
 
 
 static PyObject *
@@ -630,11 +632,13 @@ builtin_getattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "OO|O:getattr", &v, &name, &dflt))
 		return NULL;
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
 		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
 		if (name == NULL)
 			return NULL;
 	}
+#endif
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -682,11 +686,13 @@ builtin_hasattr(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "OO:hasattr", &v, &name))
 		return NULL;
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(name)) {
 		name = _PyUnicode_AsDefaultEncodedString(name, NULL);
 		if (name == NULL)
 			return NULL;
 	}
+#endif
 
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1252,12 +1258,14 @@ builtin_ord(PyObject *self, PyObject* obj)
 			ord = (long)((unsigned char)*PyString_AS_STRING(obj));
 			return PyInt_FromLong(ord);
 		}
+#ifdef Py_USING_UNICODE
 	} else if (PyUnicode_Check(obj)) {
 		size = PyUnicode_GET_SIZE(obj);
 		if (size == 1) {
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 			return PyInt_FromLong(ord);
 		}
+#endif
 	} else {
 		PyErr_Format(PyExc_TypeError,
 			     "ord() expected string of length 1, but " \
@@ -1843,7 +1851,9 @@ static PyMethodDef builtin_methods[] = {
  	{"round",	builtin_round,      METH_VARARGS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
  	{"slice",       builtin_slice,      METH_VARARGS, slice_doc},
+#ifdef Py_USING_UNICODE
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
+#endif
  	{"vars",	builtin_vars,       METH_VARARGS, vars_doc},
  	{"xrange",	builtin_xrange,     METH_VARARGS, xrange_doc},
   	{"zip",         builtin_zip,        METH_VARARGS, zip_doc},
@@ -1905,9 +1915,11 @@ _PyBuiltin_Init(void)
 		return NULL;
 	if (PyDict_SetItemString(dict, "type", (PyObject *) &PyType_Type) < 0)
 		return NULL;
+#ifdef Py_USING_UNICODE
 	if (PyDict_SetItemString(dict, "unicode",
 				 (PyObject *) &PyUnicode_Type) < 0)
 		return NULL;
+#endif
 	debug = PyInt_FromLong(Py_OptimizeFlag == 0);
 	if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
 		Py_XDECREF(debug);

@@ -147,6 +147,7 @@ LIBOBJS=	@LIBOBJS@
 DLINCLDIR=	@DLINCLDIR@
 DYNLOADFILE=	@DYNLOADFILE@
 MACHDEP_OBJS=	@MACHDEP_OBJS@
+UNICODE_OBJS=   @UNICODE_OBJS@
 
 PYTHON=		python$(EXE)
 
@@ -263,8 +264,7 @@ OBJECT_OBJS=	\
 		Objects/stringobject.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
-		Objects/unicodeobject.o \
-		Objects/unicodectype.o
+		$(UNICODE_OBJS)
 
 
 ##########################################################################

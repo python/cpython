@@ -971,6 +971,7 @@ PyLong_FromString(char *str, char **pend, int base)
 	return NULL;
 }
 
+#ifdef Py_USING_UNICODE
 PyObject *
 PyLong_FromUnicode(Py_UNICODE *u, int length, int base)
 {
@@ -986,6 +987,7 @@ PyLong_FromUnicode(Py_UNICODE *u, int length, int base)
 
 	return PyLong_FromString(buffer, NULL, base);
 }
+#endif
 
 /* forward */
 static PyLongObject *x_divrem
@@ -2054,10 +2056,12 @@ long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return PyNumber_Long(x);
 	else if (PyString_Check(x))
 		return PyLong_FromString(PyString_AS_STRING(x), NULL, base);
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(x))
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
 					  PyUnicode_GET_SIZE(x),
 					  base);
+#endif
 	else {
 		PyErr_SetString(PyExc_TypeError,
 			"long() can't convert non-string with explicit base");

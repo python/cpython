@@ -255,6 +255,7 @@ AsString(PyObject *value, PyObject *tmp)
 {
 	if (PyString_Check(value))
 		return PyString_AsString(value);
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
 		PyObject *v = PyUnicode_AsUTF8String(value);
 		if (v == NULL)
@@ -266,6 +267,7 @@ AsString(PyObject *value, PyObject *tmp)
 		Py_DECREF(v);
 		return PyString_AsString(v);
 	}
+#endif
 	else {
 		PyObject *v = PyObject_Str(value);
 		if (v == NULL)
@@ -520,6 +522,7 @@ AsObj(PyObject *value)
 		ckfree(FREECAST argv);
 		return result;
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
 #if TKMAJORMINOR <= 8001
 		/* In Tcl 8.1 we must use UTF-8 */
@@ -542,6 +545,7 @@ AsObj(PyObject *value)
 					 PyUnicode_GET_SIZE(value));
 #endif /* TKMAJORMINOR > 8001 */
 	}
+#endif
 	else {
 		PyObject *v = PyObject_Str(value);
 		if (!v)
@@ -616,13 +620,16 @@ Tkapp_Call(PyObject *self, PyObject *args)
 		   so would confuse applications that expect a string. */
 		char *s = Tcl_GetStringResult(interp);
 		char *p = s;
+
 		/* If the result contains any bytes with the top bit set,
 		   it's UTF-8 and we should decode it to Unicode */
+#ifdef Py_USING_UNICODE
 		while (*p != '\0') {
 			if (*p & 0x80)
 				break;
 			p++;
 		}
+
 		if (*p == '\0')
 			res = PyString_FromStringAndSize(s, (int)(p-s));
 		else {
@@ -634,6 +641,10 @@ Tkapp_Call(PyObject *self, PyObject *args)
 			    res = PyString_FromStringAndSize(s, (int)(p-s));
 			}
 		}
+#else
+		p = strchr(p, '\0');
+		res = PyString_FromStringAndSize(s, (int)(p-s));
+#endif
 	}
 
 	LEAVE_OVERLAP_TCL

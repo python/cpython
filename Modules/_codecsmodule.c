@@ -71,6 +71,7 @@ PyObject *codeclookup(PyObject *self, PyObject *args)
     return NULL;
 }
 
+#ifdef Py_USING_UNICODE
 /* --- Helpers ------------------------------------------------------------ */
 
 static
@@ -621,12 +622,14 @@ mbcs_encode(PyObject *self,
 }
 
 #endif /* MS_WIN32 */
+#endif /* Py_USING_UNICODE */
 
 /* --- Module API --------------------------------------------------------- */
 
 static PyMethodDef _codecs_functions[] = {
     {"register",		codecregister,			1},
     {"lookup",			codeclookup, 			1},
+#ifdef Py_USING_UNICODE
     {"utf_8_encode",		utf_8_encode,			1},
     {"utf_8_decode",		utf_8_decode,			1},
     {"utf_16_encode",		utf_16_encode,			1},
@@ -654,6 +657,7 @@ static PyMethodDef _codecs_functions[] = {
     {"mbcs_encode", 		mbcs_encode,			1},
     {"mbcs_decode", 		mbcs_decode,			1},
 #endif
+#endif /* Py_USING_UNICODE */
     {NULL, NULL}		/* sentinel */
 };
 

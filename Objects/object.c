@@ -246,6 +246,7 @@ PyObject_Repr(PyObject *v)
 		res = (*v->ob_type->tp_repr)(v);
 		if (res == NULL)
 			return NULL;
+#ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(res)) {
 			PyObject* str;
 			str = PyUnicode_AsUnicodeEscapeString(res);
@@ -255,6 +256,7 @@ PyObject_Repr(PyObject *v)
 			else
 				return NULL;
 		}
+#endif
 		if (!PyString_Check(res)) {
 			PyErr_Format(PyExc_TypeError,
 				     "__repr__ returned non-string (type %.200s)",
@@ -283,6 +285,7 @@ PyObject_Str(PyObject *v)
 	res = (*v->ob_type->tp_str)(v);
 	if (res == NULL)
 		return NULL;
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(res)) {
 		PyObject* str;
 		str = PyUnicode_AsEncodedString(res, NULL, NULL);
@@ -292,6 +295,7 @@ PyObject_Str(PyObject *v)
 		else
 		    	return NULL;
 	}
+#endif
 	if (!PyString_Check(res)) {
 		PyErr_Format(PyExc_TypeError,
 			     "__str__ returned non-string (type %.200s)",
@@ -302,6 +306,7 @@ PyObject_Str(PyObject *v)
 	return res;
 }
 
+#ifdef Py_USING_UNICODE
 PyObject *
 PyObject_Unicode(PyObject *v)
 {
@@ -350,6 +355,7 @@ PyObject_Unicode(PyObject *v)
 	}
 	return res;
 }
+#endif
 
 
 /* Macro to get the tp_richcompare field of a type if defined */
@@ -523,6 +529,7 @@ default_3way_compare(PyObject *v, PyObject *w)
 		return (vv < ww) ? -1 : (vv > ww) ? 1 : 0;
 	}
 
+#ifdef Py_USING_UNICODE
 	/* Special case for Unicode */
 	if (PyUnicode_Check(v) || PyUnicode_Check(w)) {
 		c = PyUnicode_Compare(v, w);
@@ -537,6 +544,7 @@ default_3way_compare(PyObject *v, PyObject *w)
 			return -2;
 		PyErr_Clear();
 	}
+#endif
 
 	/* None is smaller than anything */
 	if (v == Py_None)
@@ -1032,6 +1040,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 {
 	PyTypeObject *tp = v->ob_type;
 
+#ifdef Py_USING_UNICODE
 	/* The Unicode to string conversion is done here because the
 	   existing tp_getattro slots expect a string object as name
 	   and we wouldn't want to break those. */
@@ -1040,6 +1049,8 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 		if (name == NULL)
 			return NULL;
 	}
+#endif
+
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
@@ -1073,6 +1084,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 	PyTypeObject *tp = v->ob_type;
 	int err;
 
+#ifdef Py_USING_UNICODE
 	/* The Unicode to string conversion is done here because the
 	   existing tp_setattro slots expect a string object as name
 	   and we wouldn't want to break those. */
@@ -1081,7 +1093,9 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 		if (name == NULL)
 			return -1;
 	}
-	else if (!PyString_Check(name)){
+	else 
+#endif
+	if (!PyString_Check(name)){
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
 		return -1;

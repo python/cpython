@@ -4,21 +4,24 @@
 from _winreg import *
 import os, sys
 
-from test_support import verify
+from test_support import verify, have_unicode
 
 test_key_name = "SOFTWARE\\Python Registry Test Key - Delete Me"
 
 test_data = [
     ("Int Value",     45,                                      REG_DWORD),
     ("String Val",    "A string value",                        REG_SZ,),
-    (u"Unicode Val",  u"A Unicode value",                      REG_SZ,),
     ("StringExpand",  "The path is %path%",                    REG_EXPAND_SZ),
-    ("UnicodeExpand", u"The path is %path%",                   REG_EXPAND_SZ),
     ("Multi-string",  ["Lots", "of", "string", "values"],      REG_MULTI_SZ),
-    ("Multi-unicode", [u"Lots", u"of", u"unicode", u"values"], REG_MULTI_SZ),
-    ("Multi-mixed",   [u"Unicode", u"and", "string", "values"],REG_MULTI_SZ),
     ("Raw Data",      ("binary"+chr(0)+"data"),                REG_BINARY),
 ]
+if have_unicode:
+    test_data+=[
+    (unicode("Unicode Val"),  unicode("A Unicode value"),                      REG_SZ,),
+    ("UnicodeExpand", unicode("The path is %path%"),                   REG_EXPAND_SZ),
+    ("Multi-unicode", [unicode("Lots"), unicode("of"), unicode("unicode"), unicode("values")], REG_MULTI_SZ),
+    ("Multi-mixed",   [unicode("Unicode"), unicode("and"), "string", "values"],REG_MULTI_SZ),
+    ]
 
 def WriteTestData(root_key):
     # Set the default value for this key.

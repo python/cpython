@@ -91,7 +91,10 @@ d[types.IntType] = _copy_atomic
 d[types.LongType] = _copy_atomic
 d[types.FloatType] = _copy_atomic
 d[types.StringType] = _copy_atomic
-d[types.UnicodeType] = _copy_atomic
+try:
+    d[types.UnicodeType] = _copy_atomic
+except AttributeError:
+    pass
 try:
     d[types.CodeType] = _copy_atomic
 except AttributeError:
@@ -170,7 +173,10 @@ d[types.IntType] = _deepcopy_atomic
 d[types.LongType] = _deepcopy_atomic
 d[types.FloatType] = _deepcopy_atomic
 d[types.StringType] = _deepcopy_atomic
-d[types.UnicodeType] = _deepcopy_atomic
+try:
+    d[types.UnicodeType] = _deepcopy_atomic
+except AttributeError:
+    pass
 d[types.CodeType] = _deepcopy_atomic
 d[types.TypeType] = _deepcopy_atomic
 d[types.XRangeType] = _deepcopy_atomic
