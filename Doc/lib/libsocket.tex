@@ -583,7 +583,7 @@ given, subsequent socket operations will raise an \exception{error}
 exception if the timeout period \var{value} has elapsed before the
 operation has completed.  Setting a timeout of \code{None} disables
 timeouts on socket operations.
-\code{s.settimeout(0.0)} is equivalent to \code{s.blocking(0)};
+\code{s.settimeout(0.0)} is equivalent to \code{s.setblocking(0)};
 \code{s.settimeout(None)} is equivalent to \code{s.setblocking(1)}.
 \versionadded{2.3}
 \end{methoddesc}
