@@ -4,6 +4,10 @@ while building or extending Python.
 bgen		Generate complete extension modules from a
 		description.  Still under development!
 
+compiler        A Python source to bytecode compiler written in
+                Python, including an interface for manipulating
+                abstract syntax trees.  Still under development.
+
 faqwiz		FAQ Wizard.
 		See http://grail.cnri.reston.va.us/cgi-bin/faqw.py
 		for a live example.
