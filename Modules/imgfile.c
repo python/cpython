@@ -39,7 +39,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <gl/image.h>
 #include <errno.h>
 
-#include <izoom.h>
+#include "/usr/people/4Dgifts/iristools/include/izoom.h"
 
 static object * ImgfileError; /* Exception we raise for various trouble */
 
