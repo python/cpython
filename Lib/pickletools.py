@@ -1898,15 +1898,19 @@ def dis(pickle, out=None, indentlevel=4):
                               opcode.name)
 
         maxproto = max(maxproto, opcode.proto)
-
-        # See whether a MARK should be popped.
         before = opcode.stack_before    # don't mutate
         after = opcode.stack_after      # don't mutate
+        numtopop = len(before)
+
+        # See whether a MARK should be popped.
         markmsg = None
         if markobject in before or (opcode.name == "POP" and
                                     stack and
                                     stack[-1] is markobject):
             assert markobject not in after
+            if __debug__:
+                if markobject in before:
+                    assert before[-1] is stackslice
             if markstack:
                 markpos = markstack.pop()
                 if markpos is None:
@@ -1917,19 +1921,18 @@ def dis(pickle, out=None, indentlevel=4):
                 while stack[-1] is not markobject:
                     stack.pop()
                 stack.pop()
-                # Remove markobject stuff from stack_before.
+                # Stop later code from popping too much.
                 try:
-                    i = before.index(markobject)
-                    before = before[:i]
+                    numtopop = before.index(markobject)
                 except ValueError:
                     assert opcode.name == "POP"
-                    assert len(before) == 1
-                    before = []     # stop code later from popping again
+                    numtopop = 0
             else:
                 errormsg = markmsg = "no MARK exists on stack"
 
         # Check for correct memo usage.
         if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT"):
+            assert arg is not None
             if arg in memo:
                 errormsg = "memo key %r already defined" % arg
             elif not stack:
@@ -1961,14 +1964,13 @@ def dis(pickle, out=None, indentlevel=4):
             raise ValueError(errormsg)
 
         # Emulate the stack effects.
-        n = len(before)
-        if len(stack) < n:
-            raise ValueError("tried to pop %d items from stack with "
-                             "only %d items" % (n, len(stack)))
-        if n:
-            del stack[-n:]
+        if len(stack) < numtopop:
+            raise ValueError("tries to pop %d items from stack with "
+                             "only %d items" % (numtopop, len(stack)))
+        if numtopop:
+            del stack[-numtopop:]
         if markobject in after:
-            assert markobject not in opcode.stack_before
+            assert markobject not in before
             markstack.append(pos)
 
         stack.extend(after)
