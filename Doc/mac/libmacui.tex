@@ -22,7 +22,16 @@ user clicks ``OK''.
 
 \begin{funcdesc}{AskString}{prompt\optional{, default}}
 Ask the user to input a string value, in a modal dialog. \var{prompt}
-is the promt message, the optional \var{default} arg is the initial
+is the prompt message, the optional \var{default} arg is the initial
+value for the string. All strings can be at most 255 bytes
+long. \function{AskString()} returns the string entered or \code{None}
+in case the user cancelled.
+\end{funcdesc}
+
+\begin{funcdesc}{AskPassword}{prompt\optional{, default}}
+Ask the user to input a string value, in a modal dialog. Like
+\method{AskString}, but with the text shown as bullets. \var{prompt}
+is the prompt message, the optional \var{default} arg is the initial
 value for the string. All strings can be at most 255 bytes
 long. \function{AskString()} returns the string entered or \code{None}
 in case the user cancelled.
@@ -36,22 +45,16 @@ hitting return is \code{0}. This can be changed with the optional
 \var{default} argument.
 \end{funcdesc}
 
-\begin{funcdesc}{ProgressBar}{\optional{label\optional{, maxval}}}
-Display a modeless progress dialog with a thermometer bar. \var{label}
+\begin{funcdesc}{ProgressBar}{\optional{title \optional{, maxval\optional{,label}}}}
+Display a modeless progress dialog with a thermometer bar. \var{title}
 is the text string displayed (default ``Working...''), \var{maxval} is
-the value at which progress is complete (default \code{100}). The
-returned object has one method, \code{set(\var{value})}, which sets
-the value of the progress bar. The bar remains visible until the
-object returned is discarded.
+the value at which progress is complete (default
+\code{100}). \var{label} is the text that is displayed over the progress
+bar itself.  The returned object has two methods,
+\code{set(\var{value})}, which sets the value of the progress bar, and
+\code{label(\var{text})}, which sets the text of the label. The bar
+remains visible until the object returned is discarded.
 
-The progress bar has a ``cancel'' button, but it is currently
-non-functional.
+The progress bar has a ``cancel'' button. [NOTE: how does the cancel
+button behave?]
 \end{funcdesc}
-
-Note that \module{EasyDialogs} does not currently use the notification
-manager. This means that displaying dialogs while the program is in
-the background will lead to unexpected results and possibly
-crashes. Also, all dialogs are modeless and hence expect to be at the
-top of the stacking order. This is true when the dialogs are created,
-but windows that pop-up later (like a console window) may also result
-in crashes.
