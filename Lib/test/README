@@ -1,7 +1,7 @@
-		      Writing Python Regression Tests
-		      -------------------------------
-			       Skip Montanaro
-			      (skip@mojam.com)
+              Writing Python Regression Tests
+              -------------------------------
+                   Skip Montanaro
+                  (skip@mojam.com)
 
 
 Introduction
@@ -26,6 +26,7 @@ your test cases to exercise it more completely.  In particular, you will be
 able to refer to the C and Python code in the CVS repository when writing
 your regression test cases.
 
+
 PyUnit based tests
 
 The PyUnit framework is based on the ideas of unit testing as espoused
@@ -42,21 +43,30 @@ and runs the tests defined in that class.  All test methods in the
 Python regression framework have names that start with "test_" and use
 lower-case names with words separated with underscores.
 
+
 doctest based tests
 
 Tests written to use doctest are actually part of the docstrings for
 the module being tested.  Each test is written as a display of an
 interactive session, including the Python prompts, statements that would
 be typed by the user, and the output of those statements (including
-tracebacks!).  The module in the test package is simply a wrapper that
-causes doctest to run over the tests in the module.  The test for the
-doctest module provides a convenient example:
+tracebacks, although only the exception msg needs to be retained then).
+The module in the test package is simply a wrapper that causes doctest
+to run over the tests in the module.  The test for the difflib module
+provides a convenient example:
 
-    import doctest
-    doctest.testmod(doctest, verbose=1)
+    from test_support import verbose
+    import doctest, difflib
+    doctest.testmod(difflib, verbose=verbose)
+
+If the test is successful, nothing is written to stdout (so you should not
+create a corresponding output/test_difflib file), but running regrtest
+with -v will give a detailed report, the same as if passing -v to doctest
+(that's what importing verbose from test_support accomplishes).
 
 See the documentation for the doctest module for information on
 writing tests using the doctest framework.
+
 
 "traditional" Python test modules
 
@@ -71,22 +81,25 @@ raised, the test is not run.
 Executing Test Cases
 
 If you are writing test cases for module spam, you need to create a file
-in .../Lib/test named test_spam.py and an expected output file in
-.../Lib/test/output named test_spam ("..."  represents the top-level
-directory in the Python source tree, the directory containing the configure
-script).  From the top-level directory, generate the initial version of the
-test output file by executing:
+in .../Lib/test named test_spam.py.  In addition, if the tests are expected
+to write to stdout during a successful run, you also need to create an
+expected output file in .../Lib/test/output named test_spam ("..."
+represents the top-level directory in the Python source tree, the directory
+containing the configure script).  If needed, generate the initial version
+of the test output file by executing:
 
     ./python Lib/test/regrtest.py -g test_spam.py
 
-(If your test does not generate any output when run successfully, this
-step may be skipped; no file containing expected output will be needed
-in this case.)
+from the top-level directory.
 
 Any time you modify test_spam.py you need to generate a new expected
 output file.  Don't forget to desk check the generated output to make sure
-it's really what you expected to find!  To run a single test after modifying
-a module, simply run regrtest.py without the -g flag:
+it's really what you expected to find!  All in all it's usually better
+not to have an expected-out file (note that doctest- and unittest-based
+tests do not).
+
+To run a single test after modifying a module, simply run regrtest.py
+without the -g flag:
 
     ./python Lib/test/regrtest.py test_spam.py
 
@@ -95,16 +108,26 @@ independently of the regression testing framework and see what it prints:
 
     ./python Lib/test/test_spam.py
 
-To run the entire test suite, make the "test" target at the top level:
+To run the entire test suite:
+
+[UNIX, + other platforms where "make" works] Make the "test" target at the
+top level:
 
     make test
 
-On non-Unix platforms where make may not be available, you can simply
-execute the two runs of regrtest (optimized and non-optimized) directly:
+{WINDOWS] Run rt.bat from your PCBuild directory.  Read the comments at
+the top of rt.bat for the use of special -d, -O and -q options processed
+by rt.bat.
+
+[OTHER] You can simply execute the two runs of regrtest (optimized and
+non-optimized) directly:
 
     ./python Lib/test/regrtest.py
     ./python -O Lib/test/regrtest.py
 
+But note that this way picks up whatever .pyc and .pyo files happen to be
+around.  The makefile and rt.bat ways run the tests twice, the first time
+removing all .pyc and .pyo files from the subtree rooted at Lib/.
 
 Test cases generate output based upon values computed by the test code.
 When executed, regrtest.py compares the actual output generated by executing
@@ -172,7 +195,9 @@ In designing test cases you should pay attention to the following:
 Regression Test Writing Rules
 
 Each test case is different.  There is no "standard" form for a Python
-regression test case, though there are some general rules:
+regression test case, though there are some general rules (note that
+these mostly apply only to the "classic" tests; unittest- and doctest-
+based tests should follow the conventions natural to those frameworks):
 
     * If your test case detects a failure, raise TestFailed (found in
       test_support).
@@ -212,13 +237,31 @@ provides the following useful objects:
       platform doesn't offer all the required facilities (like large
       file support), even if all the required modules are available.
 
-    * findfile(file) - you can call this function to locate a file somewhere
-      along sys.path or in the Lib/test tree - see test_linuxaudiodev.py for
-      an example of its use.
-
     * verbose - you can use this variable to control print output.  Many
       modules use it.  Search for "verbose" in the test_*.py files to see
       lots of examples.
+
+    * verify(condition, reason='test failed').  Use this instead of
+
+          assert condition[, reason]
+
+      verify() has two advantages over assert:  it works even in -O mode,
+      and it raises TestFailed on failure instead of AssertionError.
+
+    * TESTFN - a string that should always be used as the filename when you
+      need to create a temp file.  Also use try/finally to ensure that your
+      temp files are deleted before your test completes.  Note that you
+      cannot unlink an open file on all operating systems, so also be sure
+      to close temp files before trying to unlink them.
+
+    * sortdict(dict) - acts like repr(dict.items()), but sorts the items
+      first.  This is important when printing a dict value, because the
+      order of items produced by dict.items() is not defined by the
+      language.
+
+    * findfile(file) - you can call this function to locate a file somewhere
+      along sys.path or in the Lib/test tree - see test_linuxaudiodev.py for
+      an example of its use.
 
     * use_large_resources - true iff tests requiring large time or space
       should be run.
@@ -258,3 +301,30 @@ As of this writing (July, 2000) these results are being generated nightly.
 You can refer to the summaries and the test coverage output files to see
 where coverage is adequate or lacking and write test cases to beef up the
 coverage.
+
+
+Some Non-Obvious regrtest Features
+
+    * Automagic test detection:  When you create a new test file
+      test_spam.py, you do not need to modify regrtest (or anything else)
+      to advertise its existence.  regrtest searches for and runs all
+      modules in the test directory with names of the form test_xxx.py.
+
+    * Miranda output:  If, when running test_spam.py, regrtest does not
+      find an expected-output file test/output/test_spam, regrtest
+      pretends that it did find one, containing the single line
+
+      test_spam
+
+      This allows new tests that don't expect to print anything to stdout
+      to not bother creating expected-output files.
+
+    * Two-stage testing:  To run test_spam.py, regrtest imports test_spam
+      as a module.  Most tests run to completion as a side-effect of
+      getting imported.  After importing test_spam, regrtest also executes
+      test_spam.test_main(), if test_spam has a "test_main" attribute.
+      This is rarely needed, and you shouldn't create a module global
+      with name test_main unless you're specifically exploiting this
+      gimmick.  In such cases, please put a comment saying so near your
+      def test_main, because this feature is so rarely used it's not
+      obvious when reading the test code.
