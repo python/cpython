@@ -790,6 +790,10 @@ so that the following links are setup:
 	/lib/libdl.so -> /lib/libdl.so.1
 	/lib/libdl.so.1 -> /lib/libdl.so.1.7.14
 
+You may have to rerun the configure script, after rm'ing the
+config.cache file, before you attempt to rebuild python after this
+fix.
+
 3.13. Q: Trouble when making modules shared on Linux.
 
 A. This happens when you have built Python for static linking and then
@@ -929,6 +933,12 @@ wrapper around a built-in object, e.g. (for dictionaries):
                 def items(self): return self.data.items()
                 def values(self): return self.data.values()
                 def has_key(self, key): return self.data.has_key(key)
+
+A2. See Jim Fulton's ExtensionClass for an example of a mechanism
+which allows you to have superclasses which you can inherit from in
+Python -- that way you can have some methods from a C superclass (call
+it a mixin) and some methods from either a Python superclass or your
+subclass.  See <URL:http://www.digicool.com/papers/ExtensionClass.html>.
 
 4.3. Q. Is there a curses/termcap package for Python?
 
