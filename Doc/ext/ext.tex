@@ -140,7 +140,7 @@ doesn't have to understand two different types of \C{} functions.)
 The \var{args} argument will be a pointer to a Python tuple object
 containing the arguments.  Each item of the tuple corresponds to an
 argument in the call's argument list.  The arguments are Python
-objects -- in order to do anything with them in our \C{} function we have
+objects --- in order to do anything with them in our \C{} function we have
 to convert them to \C{} values.  The function \code{PyArg_ParseTuple()}
 in the Python API checks the argument types and converts them to \C{}
 values.  It uses a template string to determine the required types of
@@ -666,7 +666,7 @@ be nested.
 \end{description}
 
 It is possible to pass Python long integers where integers are
-requested; however no proper range checking is done -- the most
+requested; however no proper range checking is done --- the most
 significant bits are silently truncated when the receiving field is
 too small to receive the value (actually, the semantics are inherited
 from downcasts in \C{} --- your milage may vary).
