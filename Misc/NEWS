@@ -44,6 +44,12 @@ Library
 
 - Bug #934282: make pydoc.stripid() be case-insensitive.
 
+Build
+-----
+
+- Bug #978645: Modules/getpath.c now builds properly under --disable-framework
+  build under OS X.
+
 What's New in Python 2.3.4 (final)?
 ===================================
 
