@@ -18,8 +18,6 @@ except AttributeError:
 
 Error = 'macostools.Error'
 
-FSSpecType = type(macfs.FSSpec(':'))
-
 BUFSIZ=0x80000		# Copy in 0.5Mb chunks
 
 #
