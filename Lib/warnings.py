@@ -130,7 +130,7 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
         filters.insert(0, item)
 
 def resetwarnings():
-    """Reset the list of warnings filters to its default state."""
+    """Clear the list of warning filters, so that no filters are active."""
     filters[:] = []
 
 class _OptionError(Exception):
