@@ -1,3 +1,13 @@
+/* A multi-threaded telnet-like server that gives a Python prompt.
+
+Usage: pysvr [port]
+
+For security reasons, it only accepts requests from the current host.
+This can still be insecure, but restricts violations from people who
+can log in on your machine.  Use with caution!
+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -88,8 +98,8 @@ usage()
 static void
 main_thread(int port)
 {
-	int sock;
-	struct sockaddr_in addr;
+	int sock, conn, size;
+	struct sockaddr_in addr, clientaddr;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
 	if (sock < 0) {
@@ -117,9 +127,7 @@ main_thread(int port)
 	fprintf(stderr, "Listening on port %d...\n", port);
 
 	for (;;) {
-		struct sockaddr_in clientaddr;
-		int conn, size;
-
+		size = sizeof clientaddr;
 		conn = accept(sock, (struct sockaddr *) &clientaddr, &size);
 		if (conn < 0) {
 			oprogname();
@@ -127,6 +135,21 @@ main_thread(int port)
 			exit(1);
 		}
 
+		size = sizeof addr;
+		if (getsockname(conn, (struct sockaddr *)&addr, &size) < 0) {
+			oprogname();
+			perror("can't get socket name of connection");
+			exit(1);
+		}
+		if (clientaddr.sin_addr.s_addr != addr.sin_addr.s_addr) {
+			oprogname();
+			perror("connection from non-local host refused");
+			fprintf(stderr, "(addr=%lx, clientaddr=%lx)\n",
+				ntohl(addr.sin_addr.s_addr),
+				ntohl(clientaddr.sin_addr.s_addr));
+			close(conn);
+			continue;
+		}
 		create_thread(conn, &clientaddr);
 	}
 }
