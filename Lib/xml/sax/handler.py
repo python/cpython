@@ -20,13 +20,14 @@ version = '2.0beta'
 # ===== ERRORHANDLER =====
 
 class ErrorHandler:
-    """Basic interface for SAX error handlers. If you create an object
-    that implements this interface, then register the object with your
-    Parser, the parser will call the methods in your object to report
-    all warnings and errors. There are three levels of errors
-    available: warnings, (possibly) recoverable errors, and
-    unrecoverable errors. All methods take a SAXParseException as the
-    only parameter."""
+    """Basic interface for SAX error handlers.
+
+    If you create an object that implements this interface, then
+    register the object with your XMLReader, the parser will call the
+    methods in your object to report all warnings and errors. There
+    are three levels of errors available: warnings, (possibly)
+    recoverable errors, and unrecoverable errors. All methods take a
+    SAXParseException as the only parameter."""
 
     def error(self, exception):
         "Handle a recoverable error."
