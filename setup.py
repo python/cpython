@@ -950,6 +950,10 @@ class PyBuildExt(build_ext):
                                            'BLT8.0'):
             defs.append( ('WITH_BLT', 1) )
             libs.append('BLT8.0')
+        elif self.compiler.find_library_file(lib_dirs + added_lib_dirs,
+                                           'BLT'):
+            defs.append( ('WITH_BLT', 1) )
+            libs.append('BLT')
 
         # Add the Tcl/Tk libraries
         libs.append('tk'+version)
