@@ -111,12 +111,13 @@ $(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
 	$(ASHAREDMODULESEXTRA)
 
 # This target is used by the master Makefile to add the objects to the library.
-# To deal with the conflict between signalmodule.o and sigcheck.o,
-# we remove the latter if we have the former.
+# To deal with the conflict between signalmodule.o and
+# sigcheck.o+intrcheck.o, we remove the latter two if we have the former.
 add2lib:	$(OBJS)
 		$(AR) cr $(LIBRARY) $(OBJS)
 		-if ar x $(LIBRARY) signalmodule.o 2>/dev/null; \
-		then ar d $(LIBRARY) sigcheck.o 2>/dev/null; true; \
+		then \
+		  ar d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; true; \
 		else true; fi
 		touch add2lib
 
