@@ -309,10 +309,11 @@ source code of the innermost frame.")
   :type 'function
   :group 'python)
 
-(defface py-tab-face nil
-  "Face that tabs are displayed in.
+(defface py-mixed-indentation-face nil
+  "Face that mixed indentation is displayed in.
 To quickly see mixed tabs/spaces, use \\[customize-face] and set the
-background of `py-tab-face' to something obnoxious (like \"Yellow\")."
+background of `py-mixed-indentation-face' to something obnoxious (like
+\"Yellow\")."
   :group 'python)
 
 ;; Not customizable
@@ -377,8 +378,8 @@ support for features needed by `python-mode'.")
      ;; functions
      '("\\bdef[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-function-name-face)
-     ;; tabs
-     '("^[\t]+" 0 py-tab-face)
+     ;; mixed tabs and spaces indentation
+     '("^[ \t]*\\( \t\\|\t \\)[ \t]*" 0 py-mixed-indentation-face)
      ))
   "Additional expressions to highlight in Python mode.")
 (put 'python-mode 'font-lock-defaults '(python-font-lock-keywords))
