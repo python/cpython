@@ -26,7 +26,7 @@ static xxobject *
 newxxobject(PyObject *arg)
 {
 	xxobject *xp;
-	xp = PyObject_NEW(xxobject, &Xxtype);
+	xp = PyObject_New(xxobject, &Xxtype);
 	if (xp == NULL)
 		return NULL;
 	xp->x_attr = NULL;
@@ -39,7 +39,7 @@ static void
 xx_dealloc(xxobject *xp)
 {
 	Py_XDECREF(xp->x_attr);
-	PyObject_DEL(xp);
+	PyObject_Del(xp);
 }
 
 static PyObject *
