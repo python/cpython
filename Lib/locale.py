@@ -264,6 +264,15 @@ def _parse_localename(localename):
 
     """
     code = normalize(localename)
+    if '@' in localename:
+        # Deal with locale modifiers
+        code, modifier = code.split('@')
+        if modifier == 'euro' and '.' not in code:
+            # Assume Latin-9 for @euro locales. This is bogus,
+            # since some systems may use other encodings for these
+            # locales. Also, we ignore other modifiers.
+            return code, 'iso-8859-15'
+            
     if '.' in code:
         return code.split('.')[:2]
     elif code == 'C':
