@@ -2595,31 +2595,43 @@ _PyPopen(char *cmdstring, int mode, int n)
  */
 static int _PyPclose(FILE *file)
 {
-	int result = 0;
+	int result;
 	DWORD exit_code;
 	HANDLE hProcess;
 	PyObject *hProcessObj, *fileObj;
    
+	/* Close the file handle first, to ensure it can't block the
+	 * child from exiting when we wait for it below.
+	 */
+	result = fclose(file);
+
 	if (_PyPopenProcs) {
 		fileObj = PyLong_FromVoidPtr(file);
 		if (fileObj) {
 			hProcessObj = PyDict_GetItem(_PyPopenProcs, fileObj);
 			if (hProcessObj) {
 				hProcess = PyLong_AsVoidPtr(hProcessObj);
-				if (GetExitCodeProcess(hProcess, &exit_code)) {
+				if (result != EOF &&
+				    WaitForSingleObject(hProcess, INFINITE) != WAIT_FAILED &&
+				    GetExitCodeProcess(hProcess, &exit_code)) {
 					/* Possible truncation here in 16-bit environments, but
 					 * real exit codes are just the lower byte in any event.
 					 */
 					result = exit_code;
-					if (result == STILL_ACTIVE)
-						result = 0; /* Minimize confusion */
 				} else {
-					/* No good way to bubble up an error, so instead we just
-					 * return the Windows last error shifted above standard
-					 * exit codes.	This will truncate in 16-bits but should
-					 * be fine in 32 and at least distinguishes the problem.
+					/* Indicate failure - this will cause the file object
+					 * to raise an I/O error and translate the last Win32
+					 * error code from errno.  We do have a problem with
+					 * last errors that overlap the normal errno table,
+					 * but that's a consistent problem with the file object.
 					 */
-					result = (GetLastError() << 8);
+					if (result != EOF) {
+						/* If the error wasn't from the fclose(), then
+						 * set errno for the file object error handling.
+						 */
+						errno = GetLastError();
+					}
+					result = -1;
 				}
 
 				/* Free up the native handle at this point */
@@ -2635,7 +2647,6 @@ static int _PyPclose(FILE *file)
 		} /* if fileObj */
 	} /* if _PyPopenProcs */
 
-	fclose(file);
 	return result;
 }
 #else
