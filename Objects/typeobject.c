@@ -674,8 +674,31 @@ subtype_dict(PyObject *obj, void *context)
 	return dict;
 }
 
+static int
+subtype_setdict(PyObject *obj, PyObject *value, void *context)
+{
+	PyObject **dictptr = _PyObject_GetDictPtr(obj);
+	PyObject *dict;
+
+	if (dictptr == NULL) {
+		PyErr_SetString(PyExc_AttributeError,
+				"This object has no __dict__");
+		return -1;
+	}
+	if (value == NULL || !PyDict_Check(value)) {
+		PyErr_SetString(PyExc_TypeError,
+				"__dict__ must be set to a dictionary");
+		return -1;
+	}
+	dict = *dictptr;
+	Py_INCREF(value);
+	*dictptr = value;
+	Py_XDECREF(dict);
+	return 0;
+}
+
 static PyGetSetDef subtype_getsets[] = {
-	{"__dict__", subtype_dict, NULL, NULL},
+	{"__dict__", subtype_dict, subtype_setdict, NULL},
 	{0},
 };
 

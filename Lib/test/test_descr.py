@@ -2084,6 +2084,31 @@ def setclass():
     cant(object(), list)
     cant(list(), object)
 
+def setdict():
+    if verbose: print "Testing __dict__ assignment..."
+    class C(object): pass
+    a = C()
+    a.__dict__ = {'b': 1}
+    vereq(a.b, 1)
+    def cant(x, dict):
+        try:
+            x.__dict__ = dict
+        except TypeError:
+            pass
+        else:
+            raise TestFailed, "shouldn't allow %r.__dict__ = %r" % (x, dict)
+    cant(a, None)
+    cant(a, [])
+    cant(a, 1)
+    try:
+        del a.__dict__
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "shouldn't allow del %r.__dict__" % (a)
+    # Classes don't allow __dict__ assignment
+    cant(C, {})
+
 def pickles():
     if verbose:
         print "Testing pickling and copying new-style classes and objects..."
@@ -2391,6 +2416,7 @@ def test_main():
     coercions()
     descrdoc()
     setclass()
+    setdict()
     pickles()
     copies()
     binopoverride()
