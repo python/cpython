@@ -5,7 +5,7 @@
 % $Id$
 
 \title{What's New in Python 2.1}
-\release{0.07}
+\release{0.99}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk1@bigfoot.com}}
 \begin{document}
@@ -13,12 +13,13 @@
 
 \section{Introduction}
 
-{\large This document is a draft, and is subject to change until
-the final version of Python 2.1 is released.  Currently it is up to date
-for Python 2.1 beta 2.  Please send any comments, bug reports, or
-questions, no matter how minor, to \email{amk1@bigfoot.com}.  }
+{\large This document is a draft, and is subject to change until the
+final version of Python 2.1 is released.  Currently it is up to date
+for Python 2.1 release candidate~1.  Please send any comments, bug
+reports, or questions, no matter how minor, to
+\email{amk1@bigfoot.com}.  }
 
-It's that time again... time for a new Python release, version 2.1.
+It's that time again... time for a new Python release, Python 2.1.
 One recent goal of the Python development team has been to accelerate
 the pace of new releases, with a new release coming every 6 to 9
 months. 2.1 is the first release to come out at this faster pace, with
@@ -36,8 +37,7 @@ provides an overview of the new features for Python programmers.
 Refer to the Python 2.1 documentation, or to the specific PEP, for
 more details about any new feature that particularly interests you.
 
-Currently 2.1 is available in a beta release, and the final release is
-planned for April 2001.
+The final release of Python 2.1 is planned for April 2001.
 
 %======================================================================
 \section{PEP 227: Nested Scopes}
@@ -795,14 +795,16 @@ for line in sys.stdin.xreadlines():
 \end{verbatim}
 
 For a fuller discussion of the line I/O changes, see the python-dev
-summary for January 1-15, 2001.
+summary for January 1-15, 2001 at
+\url{http://www.amk.ca/python/dev/2001-01-1.html}.
 
 \item A new method, \method{popitem()}, was added to dictionaries to
 enable destructively iterating through the contents of a dictionary;
-this can be faster for large dictionaries because XXX.
+this can be faster for large dictionaries because there's no need to
+construct a list containing all the keys or values.
 \code{D.popitem()} removes a random \code{(\var{key}, \var{value})}
-pair from the dictionary and returns it as a 2-tuple.  This was
-implemented mostly by Tim Peters and Guido van Rossum, after a
+pair from the dictionary~\code{D} and returns it as a 2-tuple.  This
+was implemented mostly by Tim Peters and Guido van Rossum, after a
 suggestion and preliminary patch by Moshe Zadka.
  
 \item Modules can now control which names are imported when \code{from
@@ -844,7 +846,8 @@ code.
 340K thanks to Fredrik Lundh.
 
 \item Some new ports were contributed: MacOS X (by Steven Majewski),
-Cygwin (by Jason Tishler); RISCOS (by Dietmar Schwertberger).
+Cygwin (by Jason Tishler); RISCOS (by Dietmar Schwertberger); Unixware~7 
+(by Billy G. Allie).
 
 \end{itemize}
 
