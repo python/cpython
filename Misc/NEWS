@@ -23,9 +23,12 @@ Extension modules
 Library
 -------
 
-- _strptime.py now has a behind-the-scense caching mechanism for the most
+- _strptime.py now has a behind-the-scenes caching mechanism for the most
   recent TimeRE instance used along with the last five unique directive
   patterns.  The overall module was also made more thread-safe.
+
+- random.cunifvariate() and random.stdgamma() were deprecated in Py2.3
+  and removed in Py2.4.
 
 Tools/Demos
 -----------
