@@ -557,7 +557,6 @@ find_frozen(name)
 	char *name;
 {
 	struct frozen *p;
-	object *co;
 
 	for (p = frozen_modules; ; p++) {
 		if (p->name == NULL)
@@ -818,8 +817,7 @@ imp_get_frozen_object(self, args)
 	object *args;
 {
 	char *name;
-	int ret;
-	object *m;
+
 	if (!newgetargs(args, "s", &name))
 		return NULL;
 	return get_frozen_object(name);

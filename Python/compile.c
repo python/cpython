@@ -2480,7 +2480,6 @@ com_arglist(c, n)
 		for (i = 0; i < nch; i++) {
 			node *ch = CHILD(n, i);
 			node *fp;
-			char *name;
 			if (TYPE(ch) == STAR)
 				break;
 			REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
