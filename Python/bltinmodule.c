@@ -247,11 +247,11 @@ Fail_it:
 }
 
 static char filter_doc[] =
-"filter(function, sequence) -> list\n\
-\n\
-Return a list containing those items of sequence for which function(item)\n\
-is true.  If function is None, return a list of items that are true.";
-
+"filter(function or None, sequence) -> list, tuple, or string\n"
+"\n"
+"Return those items of sequence for which function(item) is true.  If\n"
+"function is None, return the items that are true.  If sequence is a tuple\n"
+"or string, return the same type, else return a list.";
 
 static PyObject *
 builtin_chr(PyObject *self, PyObject *args)
