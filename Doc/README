@@ -77,13 +77,12 @@ documentation to install Python; instructions are included in the
 README file in the Python distribution.
 
 The simplest way to get the rest of the tools in the configuration we
-used is to install the teTeX TeX distribution, version 0.4 or 0.9.  More
-information is available on teTeX at <http://www.tug.org/tetex/>.
-This is a Unix-only TeX distribution at this time.  Note that the 0.9
-release is still in testing; this documentation release was tested
-with the 9 Feb 1999 release.  We'll be upgrading to the final version 
-when it becomes available.  Except for the PDF generation, there are
-no known problems with using the ("stable") teTeX 0.4 release.
+used is to install the teTeX TeX distribution, versions 0.9 or newer.
+More information is available on teTeX at <http://www.tug.org/tetex/>.
+This is a Unix-only TeX distribution at this time.  This documentation
+release was tested with the 1.0.7 release, but there have been no
+substantial changes since late in the 0.9 series, which we used
+extensively for previous versions without any difficulty.
 
 If you don't want to get teTeX, here is what you'll need:
 
@@ -97,11 +96,11 @@ To create DVI, PDF, or PostScript files:
 
 To create PDF files:
 
-	- pdflatex.  We used the one in the teTeX 0.9 distribution
-	  (pdfTeX version 3.14159-13b (Web2C 7.3beta4) at the time of
-	  this writing).  Versions even a couple of patchlevels
-	  earlier are highly likely to fail due to syntax changes for
-	  some of the pdftex primitives.
+	- pdflatex.  We used the one in the teTeX distribution (pdfTeX
+          version 3.14159-13d (Web2C 7.3.1) at the time of this
+          writing).  Versions even a couple of patchlevels earlier are
+          highly likely to fail due to syntax changes for some of the
+          pdftex primitives.
 
 To create PostScript files:
 
