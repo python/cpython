@@ -19,7 +19,6 @@ TO DO:
 - more emacsisms:
     - parentheses matching
     - M-[, M-] to move by paragraphs
-    - smart stuff with whitespace around Return
     - filter region?
     - incremental search?
     - ^K should cut to buffer
@@ -84,9 +83,6 @@ Comparison to PTUI
 + PTUI's help is better (HTML!)
 
 + PTUI can attach a shell to any module
-
-+ PTUI's auto indent is better
-  (understands that "if a: # blah, blah" opens a block)
 
 + PTUI has more bells and whistles:
   open multiple
