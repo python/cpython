@@ -534,10 +534,6 @@ class Distribution:
         objects.
         """
 
-        if self.metadata.version is None:
-            raise DistutilsSetupError, \
-                  "No version number specified for distribution"
-
         keywords = self.metadata.keywords
         if keywords is not None:
             if type(keywords) is StringType:
