@@ -112,7 +112,7 @@ Socket methods:
    it must be compiled by the C++ compiler, as it takes the address of
    a static data item exported from the main Python DLL.
 */
-#ifdef NT
+#ifdef MS_WINDOWS
 /* seem to be a few differences in the API */
 #define close closesocket
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
@@ -169,7 +169,7 @@ static PyObject *PySocket_Error;
 static PyObject *
 PySocket_Err()
 {
-#ifdef NT
+#ifdef MS_WINDOWS
 	if (WSAGetLastError()) {
 		PyObject *v;
 		v = Py_BuildValue("(is)", WSAGetLastError(), "winsock error");
@@ -757,7 +757,7 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 
 	if (!PyArg_ParseTuple(args, "|si", &mode, &bufsize))
 		return NULL;
-#ifdef NT
+#ifdef MS_WIN32
    if ( ((fd =  _open_osfhandle( s->sock_fd, _O_BINARY )) < 0) ||
         ((fd = dup(fd)) < 0) || ((fp = fdopen(fd, mode)) == NULL)) {
 #else
@@ -817,7 +817,7 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	n = recvfrom(s->sock_fd, PyString_AsString(buf), len, flags,
-#ifndef NT
+#ifndef MS_WINDOWS
 		     (ANY *)addrbuf, &addrlen);
 #else
 		     (struct sockaddr *)addrbuf, &addrlen);
@@ -1250,7 +1250,7 @@ BUILD_FUNC_DEF_3(insint,PyObject *,d, char *,name, int,value)
 }
 
 
-#ifdef NT
+#ifdef MS_WINDOWS
 
 /* Additional initialization and cleanup for NT/Windows */
 
@@ -1258,7 +1258,6 @@ static void
 NTcleanup()
 {
 	WSACleanup();
-	fprintf(stderr, "WSACleanup called\n");
 }
 
 static int
@@ -1289,7 +1288,7 @@ NTinit()
 	return 0;
 }
 
-#endif /* NT */
+#endif /* MS_WINDOWS */
 
 
 /* Initialize this module.
@@ -1297,7 +1296,7 @@ NTinit()
    via a table in config.c, if config.c is compiled with USE_SOCKET
    defined.
 
-   For NT (which actually means any Windows variant (?)), this module
+   For MS_WINDOWS (which means any Windows variant), this module
    is actually called "_socket", and there's a wrapper "socket.py"
    which implements some missing functionality (such as makefile(),
    dup() and fromfd()).  The import of "_socket" may fail with an
@@ -1306,14 +1305,14 @@ NTinit()
    scheduled to be made at exit time.  */
 
 void
-#ifdef NT
+#ifdef MS_WINDOWS
 init_socket()
 #else
 initsocket()
 #endif
 {
 	PyObject *m, *d;
-#ifdef NT
+#ifdef MS_WINDOWS
 	if (!NTinit())
 		return;
 	m = Py_InitModule("_socket", PySocket_methods);

@@ -27,7 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* This file is also used for Windows NT and MS-Win.  In that case the module
    actually calls itself 'nt', not 'posix', and a few functions are
    either unimplemented or implemented differently.  The source
-   assumes that for Windows NT, the macro 'NT' is defined independent
+   assumes that for Windows NT, the macro 'MS_WIN32' is defined independent
    of the compiler used.  Different compilers define their own feature
    test macro, e.g. '__BORLANDC__' or '_MSC_VER'. */
 
@@ -78,13 +78,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_WAIT       1
 #else
 #ifdef _MSC_VER		/* Microsoft compiler */
-#ifdef NT
+#define HAVE_GETCWD     1
+#ifdef MS_WIN32
 #define HAVE_EXECV      1
 #define HAVE_PIPE       1
 #define HAVE_POPEN      1
 #define HAVE_SYSTEM	1
 #else /* 16-bit Windows */
-#endif /* NT */
+#endif /* !MS_WIN32 */
 #else			/* all other compilers */
 /* Unix functions that the configure script doesn't check for */
 #define HAVE_EXECV      1
@@ -125,7 +126,7 @@ extern int pclose();
 extern int lstat();
 extern int symlink();
 #else /* !HAVE_UNISTD_H */
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(_MSC_VER)
 extern int mkdir PROTO((const char *));
 #else
 extern int mkdir PROTO((const char *, mode_t));
@@ -203,13 +204,13 @@ extern int lstat PROTO((const char *, struct stat *));
 #include <io.h>
 #include <process.h>
 #include <windows.h>
-#ifdef NT
+#ifdef MS_WIN32
 #define popen	_popen
 #define pclose	_pclose
 #else /* 16-bit Windows */
 #include <dos.h>
 #include <ctype.h>
-#endif /* NT */
+#endif /* MS_WIN32 */
 #endif /* _MSC_VER */
 
 #ifdef OS2
@@ -428,7 +429,7 @@ posix_listdir(self, args)
 	object *self;
 	object *args;
 {
-#if defined(NT) && !defined(HAVE_OPENDIR)
+#if defined(MS_WIN32) && !defined(HAVE_OPENDIR)
 
 	char *name;
 	int len;
@@ -484,7 +485,7 @@ posix_listdir(self, args)
 
 	return d;
 
-#else /* !NT */
+#else /* !MS_WIN32 */
 #ifdef _MSC_VER /* 16-bit Windows */
 
 #ifndef MAX_PATH
@@ -588,7 +589,7 @@ posix_listdir(self, args)
 	return d;
 
 #endif /* !_MSC_VER */
-#endif /* !NT */
+#endif /* !MS_WIN32 */
 }
 
 static object *
@@ -602,7 +603,7 @@ posix_mkdir(self, args)
 	if (!newgetargs(args, "s|i", &path, &mode))
 		return NULL;
 	BGN_SAVE
-#if defined(__WATCOMC__)
+#if defined(__WATCOMC__) || defined(_MSC_VER)
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
@@ -1219,7 +1220,7 @@ posix_times(self, args)
 		       (double)c / HZ);
 }
 #endif /* HAVE_TIMES */
-#if defined(NT) && !defined(HAVE_TIMES)
+#if defined(MS_WIN32) && !defined(HAVE_TIMES)
 #define HAVE_TIMES	/* so the method table will pick it up */
 static object *
 posix_times(self, args)
@@ -1239,7 +1240,7 @@ posix_times(self, args)
 		       (double)0,
 		       (double)0);
 }
-#endif /* NT */
+#endif /* MS_WIN32 */
 
 #ifdef HAVE_SETSID
 static object *
@@ -1502,7 +1503,7 @@ posix_pipe(self, args)
 	object *self;
 	object *args;
 {
-#if !defined(NT)
+#if !defined(MS_WIN32)
 	int fds[2];
 	int res;
 	if (!getargs(args, ""))
@@ -1513,7 +1514,7 @@ posix_pipe(self, args)
 	if (res != 0)
 		return posix_error();
 	return mkvalue("(ii)", fds[0], fds[1]);
-#else /* NT */
+#else /* MS_WIN32 */
 	HANDLE read, write;
 	BOOL ok;
 	if (!getargs(args, ""))
@@ -1524,7 +1525,7 @@ posix_pipe(self, args)
 	if (!ok)
 		return posix_error();
 	return mkvalue("(ii)", read, write);
-#endif /* NT */
+#endif /* MS_WIN32 */
 }
 #endif  /* HAVE_PIPE */
 
@@ -1716,7 +1717,7 @@ initnt()
 	if (PosixError == NULL || dictinsert(d, "error", PosixError) != 0)
 		fatal("can't define nt.error");
 }
-#else /* !_MSC_VER */
+#else /* not a PC port */
 void
 initposix()
 {
