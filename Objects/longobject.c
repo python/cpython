@@ -1812,8 +1812,7 @@ long_invert(PyLongObject *v)
 	Py_DECREF(w);
 	if (x == NULL)
 		return NULL;
-	if (x->ob_size != 0)
-		x->ob_size = -(x->ob_size);
+	x->ob_size = -(x->ob_size);
 	return (PyObject *)x;
 }
 
