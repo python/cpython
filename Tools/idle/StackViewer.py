@@ -8,9 +8,9 @@ from repr import Repr
 from ScrolledList import ScrolledList
 
 
-class StackViewer:
+class StackBrowser:
     
-    def __init__(self, root, flist):
+    def __init__(self, root, flist, stack=None):
         self.top = top = Toplevel(root)
         top.protocol("WM_DELETE_WINDOW", self.close)
         top.wm_title("Stack viewer")
@@ -20,8 +20,10 @@ class StackViewer:
             borderwidth=2, relief="groove")
         self.helplabel.pack(fill="x")
         #
-        self.sv = StackViewer1(top, flist, self)
-        self.sv.load_stack(get_stack())
+        self.sv = StackViewer(top, flist, self)
+        if stack is None:
+            stack = get_stack()
+        self.sv.load_stack(stack)
     
     def close(self):
         self.top.destroy()
@@ -89,14 +91,14 @@ class StackViewer:
                 self.localsframe.forget()
 
 
-class StackViewer1(ScrolledList):
+class StackViewer(ScrolledList):
     
     def __init__(self, master, flist, browser):
         ScrolledList.__init__(self, master)
         self.flist = flist
         self.browser = browser
 
-    def load_stack(self, stack):
+    def load_stack(self, stack, index=None):
         self.stack = stack
         self.clear()
 ##        if len(stack) > 10:
@@ -121,6 +123,8 @@ class StackViewer1(ScrolledList):
                 item = "%s.%s(), line %d: %s" % (modname, funcname,
                                                  lineno, sourceline)
             self.append(item)
+        if index is not None:
+            self.select(index)
 
     def fill_menu(self):
         menu = self.menu
