@@ -14,13 +14,13 @@
  * and the rightmost block has rightlink==NULL).  A deque d's first
  * element is at d.leftblock[leftindex] and its last element is at
  * d.rightblock[rightindex]; note that, unlike as for Python slice
- * indices, this indices are inclusive on both ends.
+ * indices, these indices are inclusive on both ends.
  * The list of blocks is never empty.  An empty deque d has
  * d.leftblock == d.rightblock != NULL; d.len == 0; and
  * d.leftindex > d.rightindex; checking for d.len == 0 is the intended
  * way to see whether d is empty.
  * Note that since d.leftindex and d.rightindex may be indices into
- * distinct blocks (and certainly are, for and d with len(d) > BLOCKLEN),
+ * distinct blocks (and certainly are, for any d with len(d) > BLOCKLEN),
  * it's not generally true that d.leftindex <= d.rightindex.
  */
 
