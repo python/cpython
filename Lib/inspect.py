@@ -163,6 +163,91 @@ def getmembers(object, predicate=None):
     results.sort()
     return results
 
+def classify_class_attrs(cls):
+    """Return list of attribute-descriptor tuples.
+
+    For each name in dir(cls), the return list contains a 4-tuple
+    with these elements:
+
+        0. The name (a string).
+
+        1. The kind of attribute this is, one of these strings:
+               'class method'    created via classmethod()
+               'static method'   created via staticmethod()
+               'property'        created via property()
+               'method'          any other flavor of method
+               'data'            not a method
+
+        2. The class which defined this attribute (a class).
+
+        3. The object as obtained directly from the defining class's
+           __dict__, not via getattr.  This is especially important for
+           data attributes:  C.data is just a data object, but
+           C.__dict__['data'] may be a data descriptor with additional
+           info, like a __doc__ string.
+    """
+
+    mro = getmro(cls)
+    names = dir(cls)
+    result = []
+    for name in names:
+        # Get the object associated with the name.
+        # Getting an obj from the __dict__ sometimes reveals more than
+        # using getattr.  Static and class methods are dramatic examples.
+        if name in cls.__dict__:
+            obj = cls.__dict__[name]
+        else:
+            obj = getattr(cls, name)
+
+        # Figure out where it was defined.
+        # A complication:  static classes in 2.2 copy dict entries from
+        # bases into derived classes, so it's not enough just to look for
+        # "the first" class with the name in its dict.  OTOH:
+        # 1. Some-- but not all --methods in 2.2 come with an __objclass__
+        #    attr that answers the question directly.
+        # 2. Some-- but not all --classes in 2.2 have a __defined__ dict
+        #    saying which names were defined by the class.
+        homecls = getattr(obj, "__objclass__", None)
+        if homecls is None:
+            # Try __defined__.
+            for base in mro:
+                if hasattr(base, "__defined__"):
+                    if name in base.__defined__:
+                        homecls = base
+                        break
+        if homecls is None:
+            # Last chance (and first chance for classic classes):  search
+            # the dicts.
+            for base in mro:
+                if name in base.__dict__:
+                    homecls = base
+                    break
+
+        # Get the object again, in order to get it from the defining
+        # __dict__ instead of via getattr (if possible).
+        if homecls is not None and name in homecls.__dict__:
+            obj = homecls.__dict__[name]
+
+        # Also get the object via getattr.
+        obj_via_getattr = getattr(cls, name)
+
+        # Classify the object.
+        if isinstance(obj, staticmethod):
+            kind = "static method"
+        elif isinstance(obj, classmethod):
+            kind = "class method"
+        elif isinstance(obj, property):
+            kind = "property"
+        elif (ismethod(obj_via_getattr) or
+              ismethoddescriptor(obj_via_getattr)):
+            kind = "method"
+        else:
+            kind = "data"
+
+        result.append((name, kind, homecls, obj))
+
+    return result
+
 # ----------------------------------------------------------- class helpers
 def _searchbases(cls, accum):
     # Simulate the "classic class" search order.
