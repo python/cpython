@@ -11,14 +11,14 @@
 #include <pascal.h>
 #endif
 
+#include <errno.h>
+#include <string.h>
 #ifdef __MWERKS__
 #include "errno_unix.h"
 #include <Strings.h>
 #define c2pstr C2PStr
 #define p2cstr P2CStr
 #endif
-#include <errno.h>
-#include <string.h>
 
 /* We may be able to use a std routine in think, don't know */
 unsigned char *Pstring(char *);
@@ -29,8 +29,10 @@ unsigned char *Pstring(char *);
 
 /* Universal constants: */
 #define MAXPATH 256
+#ifndef __MSL__
 #define TRUE 1
 #define FALSE 0
+#endif
 #ifndef NULL
 #define NULL 0
 #endif
