@@ -2996,7 +2996,7 @@ int PyUnicode_Contains(PyObject *container,
     /* Check v in u */
     if (PyUnicode_GET_SIZE(v) != 1) {
 	PyErr_SetString(PyExc_TypeError,
-			"string member test needs char left operand");
+	    "'in <string>' requires character as left operand");
 	goto onError;
     }
     ch = *PyUnicode_AS_UNICODE(v);
