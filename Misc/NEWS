@@ -340,6 +340,9 @@ Extension modules
 Library
 -------
 
+- Bug #919012: shutil.move() will not try to move a directory into itself.
+  Thanks Johannes Gijsbers.
+
 - Bug #934282: pydoc.stripid() is now case-insensitive.  Thanks Robin Becker.
 
 - Bug #823209:  cmath.log() now takes an optional base argument so that its
