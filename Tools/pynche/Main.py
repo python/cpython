@@ -12,12 +12,25 @@ This program currently requires Python 1.5 with Tkinter.  It has only been
 tested on Solaris 2.6.  Feedback is greatly appreciated.  Send email to
 bwarsaw@python.org
 
-Usage: %(PROGRAM)s [-d file] [-h] [initialcolor]
+Usage: %(PROGRAM)s [-d file] [-i file] [-X] [-h] [initialcolor]
 
 Where:
     --database file
     -d file
         Alternate location of a color database file
+
+    --initfile file
+    -i file
+        Alternate location of the initialization file.  This file contains a
+        persistent database of the current Pynche options and color.  This
+        means that Pynche restores its option settings and current color when
+        it restarts, using this file (unless the -X option is used).  The
+        default is ~/.pynche
+
+    --ignore
+    -X
+        Ignore the initialization file when starting up.  Pynche will still
+        write the current option settings to this file when it quits.
 
     --help
     -h
@@ -49,7 +62,7 @@ RGB_TXT = [
     # Solaris OpenWindows
     '/usr/openwin/lib/rgb.txt',
     # The X11R6.4 rgb.txt file
-    os.path.join(sys.path[0], 'rgb.txt'),
+    os.path.join(sys.path[0], 'X/rgb.txt'),
     # add more here
     ]
 
@@ -95,23 +108,29 @@ def main():
     try:
 	opts, args = getopt.getopt(
             sys.argv[1:],
-            'hd:',
-            ['database=', 'help'])
+            'hd:i:X',
+            ['database=', 'initfile=', 'ignore', 'help'])
     except getopt.error, msg:
 	usage(1, msg)
 
     if len(args) == 0:
-        initialcolor = 'grey50'
+        initialcolor = None
     elif len(args) == 1:
         initialcolor = args[0]
     else:
 	usage(1)
 
+    ignore = 0
+    initfile = os.path.expanduser('~/.pynche')
     for opt, arg in opts:
 	if opt in ('-h', '--help'):
 	    usage(0)
 	elif opt in ('-d', '--database'):
 	    RGB_TXT.insert(0, arg)
+        elif opt in ('-X', '--ignore'):
+            ignore = 1
+        elif opt in ('-i', '--initfile'):
+            initfile = arg
 
     # create the windows and go
     for f in RGB_TXT:
@@ -124,11 +143,8 @@ def main():
     else:
         usage(1, 'No color database file found, see the -d option.')
 
-    # get the initial color as components
-    red, green, blue = initial_color(initialcolor, colordb)
-
     # create all output widgets
-    s = Switchboard(colordb)
+    s = Switchboard(colordb, not ignore and initfile)
 
     # create the application window decorations
     app = PyncheWidget(__version__, s)
@@ -137,12 +153,29 @@ def main():
     s.add_view(StripViewer(s, parent))
     s.add_view(ChipViewer(s, parent))
     s.add_view(TypeinViewer(s, parent))
+
+    # get the initial color as components and set the color on all views.  if
+    # there was no initial color given on the command line, use the one that's 
+    # stored in the option database
+    if initialcolor is None:
+        optiondb = s.optiondb()
+        red = optiondb.get('RED')
+        green = optiondb.get('GREEN')
+        blue = optiondb.get('BLUE')
+        # but if there wasn't any stored in the database, use grey50
+        if red is None or blue is None or green is None:
+            red, green, blue = initial_color('grey50', colordb)
+    else:
+        red, green, blue = initial_color(initialcolor, colordb)
     s.update_views(red, green, blue)
 
     try:
 	app.start()
     except KeyboardInterrupt:
 	pass
+
+    # save the option database
+    s.save_views(initfile)
 
 
 

@@ -110,3 +110,6 @@ class ChipViewer:
         colorname = self.__nearest.get_color()
         red, green, blue = self.__sb.colordb().find_byname(colorname)
         self.__sb.update_views(red, green, blue)
+
+    def save_options(self, optiondb):
+        pass

@@ -21,6 +21,7 @@ import ColorDB
 class TextViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
+        optiondb = switchboard.optiondb()
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
         root.title('Pynche Text Window')
@@ -33,11 +34,20 @@ class TextViewer:
         # create the text widget
         #
         self.__text = Text(root, relief=SUNKEN,
-                           background='black',
-                           foreground='white',
+                           background=optiondb.get('TEXTBG', 'black'),
+                           foreground=optiondb.get('TEXTFG', 'white'),
                            width=35, height=15)
+        sfg = optiondb.get('TEXT_SFG')
+        if sfg:
+            self.__text.configure(selectforeground=sfg)
+        sbg = optiondb.get('TEXT_SBG')
+        if sbg:
+            self.__text.configure(selectbackground=sbg)
+        ibg = optiondb.get('TEXT_IBG')
+        if ibg:
+            self.__text.configure(insertbackground=ibg)
         self.__text.pack()
-        self.__text.insert(0.0, '''\
+        self.__text.insert(0.0, optiondb.get('TEXT', '''\
 Insert some stuff here and play
 with the buttons below to see
 how the colors interact in
@@ -45,14 +55,23 @@ textual displays.
 
 See how the selection can also
 be affected by tickling the buttons
-and choosing a color.''')
-        self.__text.tag_add(SEL, 6.0, END)
+and choosing a color.'''))
+        insert = optiondb.get('TEXTINS')
+        if insert:
+            self.__text.mark_set(INSERT, insert)
+        try:
+            start, end = optiondb.get('TEXTSEL', (6.0, END))
+            self.__text.tag_add(SEL, start, end)
+        except ValueError:
+            # selection wasn't set
+            pass
+        self.__text.focus_set()
         #
         # variables
         self.__trackp = BooleanVar()
-        self.__trackp.set(0)
+        self.__trackp.set(optiondb.get('TRACKP', 0))
         self.__which = IntVar()
-        self.__which.set(0)
+        self.__which.set(optiondb.get('WHICH', 0))
         #
         # track toggle
         self.__t = Checkbutton(root, text='Track color changes',
@@ -130,3 +149,15 @@ and choosing a color.''')
                 self.__text.configure(selectbackground=colorname)
             elif which == 5:
                 self.__text.configure(insertbackground=colorname)
+
+    def save_options(self, optiondb):
+        optiondb['TRACKP'] = self.__trackp.get()
+        optiondb['WHICH'] = self.__which.get()
+        optiondb['TEXT'] = self.__text.get(0.0, 'end - 1c')
+        optiondb['TEXTSEL'] = self.__text.tag_ranges(SEL)[0:2]
+        optiondb['TEXTINS'] = self.__text.index(INSERT)
+        optiondb['TEXTFG'] = self.__text['foreground']
+        optiondb['TEXTBG'] = self.__text['background']
+        optiondb['TEXT_SFG'] = self.__text['selectforeground']
+        optiondb['TEXT_SBG'] = self.__text['selectbackground']
+        optiondb['TEXT_IBG'] = self.__text['insertbackground']

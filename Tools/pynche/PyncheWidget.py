@@ -60,7 +60,7 @@ class PyncheWidget:
         # Help menu
         #
         helpmenu = Menu(menubar, name='help', tearoff=0)
-	helpmenu.add_command(label='About...',
+	helpmenu.add_command(label='About Pynche...',
                              command=self.__popup_about,
                              underline=0)
         #
@@ -111,7 +111,7 @@ Color and Hue Editor
 Copyright (C) 1998 CNRI
 All rights reserved
 
-For information about Pynche contact
+For information contact
 author: Barry A. Warsaw
 email : bwarsaw@python.org''' % __version__)
 

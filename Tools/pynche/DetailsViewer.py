@@ -63,6 +63,7 @@ GRAV = 'Squash'
 class DetailsViewer:
     def __init__(self, switchboard, parent=None):
         self.__sb = switchboard
+        optiondb = switchboard.optiondb()
         self.__red, self.__green, self.__blue = switchboard.current_rgb()
         # GUI
         root = self.__root = Toplevel(parent, class_='Pynche')
@@ -87,21 +88,21 @@ class DetailsViewer:
         self.__l1 = Label(frame, text='Move Sliders:')
         self.__l1.grid(row=1, column=0, sticky=E)
         self.__rvar = IntVar()
-        self.__rvar.set(4)
+        self.__rvar.set(optiondb.get('RSLIDER', 4))
         self.__radio1 = Checkbutton(frame, text='Red',
                                     variable=self.__rvar,
                                     command=self.__effect,
                                     onvalue=4, offvalue=0)
         self.__radio1.grid(row=1, column=1, sticky=W)
         self.__gvar = IntVar()
-        self.__gvar.set(2)
+        self.__gvar.set(optiondb.get('GSLIDER', 2))
         self.__radio2 = Checkbutton(frame, text='Green',
                                     variable=self.__gvar,
                                     command=self.__effect,
                                     onvalue=2, offvalue=0)
         self.__radio2.grid(row=2, column=1, sticky=W)
         self.__bvar = IntVar()
-        self.__bvar.set(1)
+        self.__bvar.set(optiondb.get('BSLIDER', 1))
         self.__radio3 = Checkbutton(frame, text='Blue',
                                     variable=self.__bvar,
                                     command=self.__effect,
@@ -115,7 +116,7 @@ class DetailsViewer:
         self.__l3 = Label(frame, text='At boundary:')
         self.__l3.grid(row=5, column=0, sticky=E)
         self.__boundvar = StringVar()
-        self.__boundvar.set(STOP)
+        self.__boundvar.set(optiondb.get('ATBOUND', STOP))
         self.__omenu = OptionMenu(frame, self.__boundvar,
                                   STOP, WRAP, RATIO, GRAV)
         self.__omenu.grid(row=5, column=1, sticky=W)
@@ -262,3 +263,9 @@ class DetailsViewer:
         self.__red = red
         self.__green = green
         self.__blue = blue
+
+    def save_options(self, optiondb):
+        optiondb['RSLIDER'] = self.__rvar.get()
+        optiondb['GSLIDER'] = self.__gvar.get()
+        optiondb['BSLIDER'] = self.__bvar.get()
+        optiondb['ATBOUND'] = self.__boundvar.get()
