@@ -284,7 +284,7 @@ When non-nil, arguments are printed.")
 
 (make-variable-buffer-local 'py-indent-offset)
 
-;; have to bind py-file-queue before installing the kill-emacs hook
+;; have to bind py-file-queue before installing the kill-emacs-hook
 (defvar py-file-queue nil
   "Queue of Python temp files awaiting execution.
 Currently-active file is at the head of the list.")
@@ -877,6 +877,8 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
   ;; install imenu
   (setq imenu-create-index-function
 	(function imenu-example--create-python-index))
+  (setq imenu-generic-expression
+	imenu-example--generic-python-expression)
   (if (fboundp 'imenu-add-to-menubar)
       (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
 
