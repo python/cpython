@@ -439,7 +439,10 @@ class Marshaller:
         if isinstance(values, Fault):
             # fault instance
             write("<fault>\n")
-            self.__dump(vars(values))
+            self.__dump({
+                'faultCode': values.faultCode, 
+                'faultString': values.faultString,
+            })
             write("</fault>\n")
         else:
             # parameter block
