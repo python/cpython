@@ -196,7 +196,7 @@ class URLopener:
 
     # External interface
     def retrieve(self, url, filename=None, reporthook=None, data=None):
-        """retrieve(url) returns (filename, None) for a local object
+        """retrieve(url) returns (filename, headers) for a local object
         or (tempfilename, headers) for a remote object."""
         url = unwrap(toBytes(url))
         if self.tempcache and url in self.tempcache:
