@@ -52,7 +52,6 @@ class MyScanner(Scanner):
 			"WEDispose",
 			"WESetInfo", # Argument type unknown...
 			"WEGetInfo",
-			"WEGetObjectOwner", # Returns ref to existing WE
 			]
 
 	def makeblacklisttypes(self):
@@ -78,7 +77,12 @@ class MyScanner(Scanner):
 			 
 			# WEInsert
 			([('StScrpHandle', 'hStyles', 'InMode'), ('WESoupHandle', 'hSoup', 'InMode')],
-    		 [('OptStScrpHandle', 'hStyles', 'InMode'), ('OptSoupHandle', 'hSoup', 'InMode')])
+    		 [('OptStScrpHandle', 'hStyles', 'InMode'), ('OptSoupHandle', 'hSoup', 'InMode')]),
+    		 
+    		# WEGetObjectOwner
+    		("WEGetObjectOwner",
+    		 [('WEReference', '*', 'ReturnMode')],
+    		 [('ExistingWEReference', '*', 'ReturnMode')])
 
 			]
 			

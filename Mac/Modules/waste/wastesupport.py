@@ -23,6 +23,7 @@ from macsupport import *
 
 # Create the type objects
 WEReference = OpaqueByValueType("WEReference", "wasteObj")
+ExistingWEReference = OpaqueByValueType("WEReference", "ExistingwasteObj")
 WEObjectReference = OpaqueByValueType("WEObjectReference", "WEOObj")
 StScrpHandle = OpaqueByValueType("StScrpHandle", "ResObj")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
@@ -49,6 +50,7 @@ LongRect_ptr = LongRect
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+#include <WEObjectHandlers.h>
 
 /* Exported by Qdmodule.c: */
 extern PyObject *QdRGB_New(RGBColor *);
@@ -56,6 +58,7 @@ extern int QdRGB_Convert(PyObject *, RGBColor *);
 
 /* Forward declaration */
 staticforward PyObject *WEOObj_New(WEObjectReference);
+staticforward PyObject *ExistingwasteObj_New(WEReference);
 
 /*
 ** Parse/generate TextStyle records
@@ -120,6 +123,122 @@ LongPt_New(LongPt *p)
 {
 	return Py_BuildValue("(ll)", p->h, p->v);
 }
+
+/* Stuff for the callbacks: */
+static PyObject *callbackdict;
+UniversalProcPtr upp_new_handler, upp_dispose_handler, upp_draw_handler, upp_click_handler;
+
+static OSErr
+any_handler(WESelector what, WEObjectReference who, PyObject *args, PyObject **rv)
+{
+	FlavorType tp;
+	PyObject *key, *func;
+	
+	if ( args == NULL ) return errAECorruptData;
+	
+	tp = WEGetObjectType(who);
+	
+	if( (key=Py_BuildValue("O&O&", PyMac_BuildOSType, tp, PyMac_BuildOSType, what)) == NULL)
+		return errAECorruptData;
+	if( (func = PyDict_GetItem(callbackdict, key)) == NULL ) {
+		Py_DECREF(key);
+		return errAEHandlerNotFound;
+	}
+	Py_INCREF(func);
+	*rv = PyEval_CallObject(func, args);
+	Py_DECREF(func);
+	Py_DECREF(key);
+	if ( *rv == NULL ) {
+		fprintf(stderr, "--Exception in callback: ");
+		PyErr_Print();
+		return errAEReplyNotArrived;
+	}
+	return 0;
+}
+
+static pascal OSErr
+my_new_handler(Point *objectSize, WEObjectReference objref)
+{
+	PyObject *args=NULL, *rv=NULL;
+	OSErr err;
+	
+	args=Py_BuildValue("(O&)", WEOObj_New, objref);
+	err = any_handler(weNewHandler, objref, args, &rv);
+	if (!err) {
+		if (!PyMac_GetPoint(rv, objectSize) )
+			err = errAECoercionFail;
+	}
+	if ( args ) Py_DECREF(args);
+	if ( rv ) Py_DECREF(rv);
+	return err;
+}
+
+static pascal OSErr
+my_dispose_handler(WEObjectReference objref)
+{
+	PyObject *args=NULL, *rv=NULL;
+	OSErr err;
+	
+	args=Py_BuildValue("(O&)", WEOObj_New, objref);
+	err = any_handler(weDisposeHandler, objref, args, &rv);
+	if ( args ) Py_DECREF(args);
+	if ( rv ) Py_DECREF(rv);
+	return err;
+}
+
+static pascal OSErr
+my_draw_handler(Rect *destRect, WEObjectReference objref)
+{
+	PyObject *args=NULL, *rv=NULL;
+	OSErr err;
+	
+	args=Py_BuildValue("O&O&", PyMac_BuildRect, destRect, WEOObj_New, objref);
+	err = any_handler(weDrawHandler, objref, args, &rv);
+	if ( args ) Py_DECREF(args);
+	if ( rv ) Py_DECREF(rv);
+	return err;
+}
+
+static pascal Boolean
+my_click_handler(Point hitPt, EventModifiers modifiers,
+		unsigned long clickTime, WEObjectReference objref)
+{
+	PyObject *args=NULL, *rv=NULL;
+	int retvalue;
+	OSErr err;
+	
+	args=Py_BuildValue("O&llO&", PyMac_BuildPoint, hitPt,
+			(long)modifiers, (long)clickTime, WEOObj_New, objref);
+	err = any_handler(weClickHandler, objref, args, &rv);
+	if (!err)
+		retvalue = PyInt_AsLong(rv);
+	else
+		retvalue = 0;
+	if ( args ) Py_DECREF(args);
+	if ( rv ) Py_DECREF(rv);
+	return retvalue;
+}
+		
+
+"""
+finalstuff = finalstuff + """
+/* Return the object corresponding to the window, or NULL */
+
+PyObject *
+ExistingwasteObj_New(w)
+	WEReference w;
+{
+	PyObject *it = NULL;
+	
+	if (w == NULL)
+		it = NULL;
+	else
+		WEGetInfo(weRefCon, (void *)&it, w);
+	if (it == NULL || ((wasteObject *)it)->ob_itself != w)
+		it = Py_None;
+	Py_INCREF(it);
+	return it;
+}
 """
 
 class WEMethodGenerator(OSErrMethodGenerator):
@@ -142,6 +261,9 @@ class WEObjectDefinition(GlobalObjectDefinition):
 					PyErr_SetString(waste_Error,"Cannot create null WE");
 					return NULL;
 				}""")
+	def outputInitStructMembers(self):
+		GlobalObjectDefinition.outputInitStructMembers(self)
+		Output("WESetInfo(weRefCon, (void *)&it, itself);")
 	def outputFreeIt(self, itselfname):
 		Output("WEDispose(%s);", itselfname)
 		
@@ -150,7 +272,18 @@ class WEOObjectDefinition(GlobalObjectDefinition):
 		Output("""if (itself == NULL) {
 					Py_INCREF(Py_None);
 					return Py_None;
-				}""")		
+				}""")
+				
+variablestuff = """
+	callbackdict = PyDict_New();
+	if (callbackdict == NULL || PyDict_SetItemString(d, "callbacks", callbackdict) != 0)
+		Py_FatalError("can't initialize Waste.callbackdict");
+	upp_new_handler = NewWENewObjectProc(my_new_handler);
+	upp_dispose_handler = NewWENewObjectProc(my_dispose_handler);
+	upp_draw_handler = NewWENewObjectProc(my_draw_handler);
+	upp_click_handler = NewWENewObjectProc(my_click_handler);
+"""
+
 
 # From here on it's basically all boiler plate...
 
@@ -158,7 +291,7 @@ class WEOObjectDefinition(GlobalObjectDefinition):
 ## execfile(TYPETESTFILE)
 
 # Create the generator groups and link them
-module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff)
+module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff, variablestuff)
 object = WEObjectDefinition(OBJECTNAME, OBJECTPREFIX, OBJECTTYPE)
 object2 = WEOObjectDefinition("WEO", "WEOObj", "WEObjectReference")
 module.addobject(object2)
@@ -175,9 +308,88 @@ methods = []
 methods2 = []
 execfile(INPUTFILE)
 
+# A function written by hand:
+stdhandlers_body = """
+	OSErr err;
+	// install the sample object handlers for pictures and sounds
+#define	kTypePicture			'PICT'
+#define	kTypeSound				'snd '
+	
+	if ( !PyArg_ParseTuple(_args, "") ) return NULL;
+	
+	if ((err = WEInstallObjectHandler(kTypePicture, weNewHandler,
+				(UniversalProcPtr) NewWENewObjectProc(HandleNewPicture), NULL)) != noErr)
+		goto cleanup;
+	
+	if ((err = WEInstallObjectHandler(kTypePicture, weDisposeHandler,
+				(UniversalProcPtr) NewWEDisposeObjectProc(HandleDisposePicture), NULL)) != noErr)
+		goto cleanup;
+	
+	if ((err = WEInstallObjectHandler(kTypePicture, weDrawHandler,
+				(UniversalProcPtr) NewWEDrawObjectProc(HandleDrawPicture), NULL)) != noErr)
+		goto cleanup;
+	
+	if ((err = WEInstallObjectHandler(kTypeSound, weNewHandler,
+				(UniversalProcPtr) NewWENewObjectProc(HandleNewSound), NULL)) != noErr)
+		goto cleanup;
+	
+	if ((err = WEInstallObjectHandler(kTypeSound, weDrawHandler,
+				(UniversalProcPtr) NewWEDrawObjectProc(HandleDrawSound), NULL)) != noErr)
+		goto cleanup;
+	
+	if ((err = WEInstallObjectHandler(kTypeSound, weClickHandler,
+				(UniversalProcPtr) NewWEClickObjectProc(HandleClickSound), NULL)) != noErr)
+		goto cleanup;
+	Py_INCREF(Py_None);
+	return Py_None;
+	
+cleanup:
+	return PyMac_Error(err);
+"""
+
+inshandler_body = """
+	OSErr err;
+	FlavorType objectType;
+	WESelector selector;
+	PyObject *py_handler;
+	UniversalProcPtr handler;
+	WEReference we = NULL;
+	PyObject *key;
+	
+	
+	if ( !PyArg_ParseTuple(_args, "O&O&O|O&",
+			PyMac_GetOSType, &objectType,
+			PyMac_GetOSType, &selector,
+			&py_handler,
+			ExistingwasteObj_New, &we) ) return NULL;
+			
+	if ( selector == weNewHandler ) handler = upp_new_handler;
+	else if ( selector == weDisposeHandler ) handler = upp_dispose_handler;
+	else if ( selector == weDrawHandler ) handler = upp_draw_handler;
+	else if ( selector == weClickHandler ) handler = upp_click_handler;
+	else return PyMac_Error(weUndefinedSelectorErr);
+			
+	if ((key = Py_BuildValue("O&O&", 
+			PyMac_BuildOSType, objectType, 
+			PyMac_BuildOSType, selector)) == NULL )
+		return NULL;
+		
+	PyDict_SetItem(callbackdict, key, py_handler);
+	
+	err = WEInstallObjectHandler(objectType, selector, handler, we);
+	if ( err ) return PyMac_Error(err);
+	Py_INCREF(Py_None);
+	return Py_None;
+"""
+
+stdhand = ManualGenerator("STDObjectHandlers", stdhandlers_body)
+inshand = ManualGenerator("WEInstallObjectHandler", inshandler_body)
+
 # add the populated lists to the generator groups
 # (in a different wordl the scan program would generate this)
 for f in functions: module.add(f)
+module.add(stdhand)
+module.add(inshand)
 for f in methods: object.add(f)
 for f in methods2: object2.add(f)
 
