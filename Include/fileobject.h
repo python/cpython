@@ -41,7 +41,7 @@ extern DL_IMPORT(int) PyFile_WriteString(const char *, PyObject *);
 extern DL_IMPORT(int) PyObject_AsFileDescriptor(PyObject *);
 
 /* The default encoding used by the platform file system APIs
-   If non-NULL, this is different than the default encoding for strings 
+   If non-NULL, this is different than the default encoding for strings
 */
 extern DL_IMPORT(const char *) Py_FileSystemDefaultEncoding;
 
@@ -51,12 +51,12 @@ extern DL_IMPORT(const char *) Py_FileSystemDefaultEncoding;
 */
 #define PY_STDIOTEXTMODE "b"
 char *Py_UniversalNewlineFgets(char *, int, FILE*, PyObject *);
-size_t Py_UniversalNewlineFread(void *, size_t, FILE *, PyObject *);
+size_t Py_UniversalNewlineFread(char *, size_t, FILE *, PyObject *);
 #else
 #define PY_STDIOTEXTMODE ""
-#define Py_UniversalNewlineFgets(buf, len, fp, obj) (fgets((buf), (len), (fp)))
-#define Py_UniversalNewlineFread(buf, len, fp, obj) \
-		(fread((buf), 1, (len), (fp)))
+#define Py_UniversalNewlineFgets(buf, len, fp, obj) fgets((buf), (len), (fp))
+#define Py_UniversalNewlineFread(buf, len, fp, obj)
+		fread((buf), 1, (len), (fp))
 #endif /* WITH_UNIVERSAL_NEWLINES */
 #ifdef __cplusplus
 }
