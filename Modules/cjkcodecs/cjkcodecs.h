@@ -57,14 +57,8 @@ struct pair_encodemap {
 	DBCHAR code;
 };
 
-/* There are really static, and (re)declared so later by the expansions
- * of the BEGIN_MAPPINGS_LIST and BEGIN_CODECS_LIST macros, but it's
- * not legal C to declare a static array of unknown size.  It would be
- * better if the code were rearranged so as to not require declaration
- * of these names before the macros define them.
- */
-extern const MultibyteCodec codec_list[];
-extern const struct dbcs_map mapping_list[];
+static const MultibyteCodec *codec_list;
+static const struct dbcs_map *mapping_list;
 
 #define CODEC_INIT(encoding)						\
 	static int encoding##_codec_init(const void *config)
@@ -201,13 +195,16 @@ extern const struct dbcs_map mapping_list[];
 #define GET_INSIZE(c)	1
 #endif
 
-#define BEGIN_MAPPINGS_LIST static const struct dbcs_map mapping_list[] = {
+#define BEGIN_MAPPINGS_LIST static const struct dbcs_map _mapping_list[] = {
 #define MAPPING_ENCONLY(enc) {#enc, (void*)enc##_encmap, NULL},
 #define MAPPING_DECONLY(enc) {#enc, NULL, (void*)enc##_decmap},
 #define MAPPING_ENCDEC(enc) {#enc, (void*)enc##_encmap, (void*)enc##_decmap},
-#define END_MAPPINGS_LIST {"", NULL, NULL} };
+#define END_MAPPINGS_LIST				\
+	{"", NULL, NULL} };				\
+	static const struct dbcs_map *mapping_list =	\
+		(const struct dbcs_map *)_mapping_list;
 
-#define BEGIN_CODECS_LIST static const MultibyteCodec codec_list[] = {
+#define BEGIN_CODECS_LIST static const MultibyteCodec _codec_list[] = {
 #define _STATEFUL_METHODS(enc)		\
 	enc##_encode,			\
 	enc##_encode_init,		\
@@ -231,7 +228,10 @@ extern const struct dbcs_map mapping_list[];
 	enc##_codec_init,		\
 	_STATELESS_METHODS(enc)		\
 },
-#define END_CODECS_LIST {"", NULL,} };
+#define END_CODECS_LIST					\
+	{"", NULL,} };					\
+	static const MultibyteCodec *codec_list = 	\
+		(const MultibyteCodec *)_codec_list;
 
 static PyObject *
 getmultibytecodec(void)
@@ -254,12 +254,6 @@ getcodec(PyObject *self, PyObject *encoding)
 	PyObject *codecobj, *r, *cofunc;
 	const MultibyteCodec *codec;
 	const char *enc;
-#ifdef NO_METH_O
-	PyObject *args = encoding;
-
-        if (!PyArg_ParseTuple(args, "O:getcodec", &encoding))
-	        return NULL;
-#endif
 
 	if (!PyString_Check(encoding)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -286,22 +280,14 @@ getcodec(PyObject *self, PyObject *encoding)
 	if (codecobj == NULL)
 		return NULL;
 
-#if PY_VERSION_HEX >= 0x02020000
 	r = PyObject_CallFunctionObjArgs(cofunc, codecobj, NULL);
-#else
-	r = PyObject_CallFunction(cofunc, "O", codecobj);
-#endif
 	Py_DECREF(codecobj);
 
 	return r;
 }
 
 static struct PyMethodDef __methods[] = {
-#ifndef NO_METH_O
 	{"getcodec", (PyCFunction)getcodec, METH_O, ""},
-#else
-	{"getcodec", (PyCFunction)getcodec, METH_VARARGS, ""},
-#endif
 	{NULL, NULL},
 };
 
