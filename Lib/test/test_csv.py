@@ -17,44 +17,112 @@ class Test_Csv(unittest.TestCase):
     from the high level interface. Further tests of this nature are done
     in TestDialectRegistry.
     """
-    def test_reader_arg_valid(self):
-        self.assertRaises(TypeError, csv.reader)
-        self.assertRaises(TypeError, csv.reader, None)
-        self.assertRaises(AttributeError, csv.reader, [], bad_attr = 0)
-        self.assertRaises(csv.Error, csv.reader, [], 'foo')
+    def _test_arg_valid(self, ctor, arg):
+        self.assertRaises(TypeError, ctor)
+        self.assertRaises(TypeError, ctor, None)
+        self.assertRaises(TypeError, ctor, arg, bad_attr = 0)
+        self.assertRaises(TypeError, ctor, arg, delimiter = 0)
+        self.assertRaises(TypeError, ctor, arg, delimiter = 'XX')
+        self.assertRaises(csv.Error, ctor, arg, 'foo')
+        self.assertRaises(TypeError, ctor, arg, None)
+        self.assertRaises(TypeError, ctor, arg, delimiter=None)
+        self.assertRaises(TypeError, ctor, arg, delimiter=1)
+        self.assertRaises(TypeError, ctor, arg, quotechar=1)
+        self.assertRaises(TypeError, ctor, arg, lineterminator=None)
+        self.assertRaises(TypeError, ctor, arg, lineterminator=1)
+        self.assertRaises(TypeError, ctor, arg, quoting=None)
+#       We now allow this, only raising an exception if quoting is needed.
+#        self.assertRaises(TypeError, ctor, arg, quotechar=None)
+#        self.assertRaises(TypeError, ctor, arg, 
+#                          quoting=csv.QUOTE_NONE, escapechar=None)
+#       No longer complains about dialects with invalid attributes [AM]
+#        class BadDialect:
+#            bad_attr = 0
+#        self.assertRaises(AttributeError, csv.reader, [], BadDialect)
         class BadClass:
             def __init__(self):
                 raise IOError
         self.assertRaises(IOError, csv.reader, [], BadClass)
-        self.assertRaises(TypeError, csv.reader, [], None)
-        class BadDialect:
-            bad_attr = 0
-        self.assertRaises(AttributeError, csv.reader, [], BadDialect)
+
+    def test_reader_arg_valid(self):
+        self._test_arg_valid(csv.reader, [])
 
     def test_writer_arg_valid(self):
-        self.assertRaises(TypeError, csv.writer)
-        self.assertRaises(TypeError, csv.writer, None)
-        self.assertRaises(AttributeError, csv.writer, StringIO(), bad_attr = 0)
+        self._test_arg_valid(csv.writer, StringIO())
 
-    def _test_attrs(self, obj):
+    def _test_default_attrs(self, ctor, *args):
+        obj = ctor(*args)
+        # Check defaults
         self.assertEqual(obj.dialect.delimiter, ',')
-        obj.dialect.delimiter = '\t'
-        self.assertEqual(obj.dialect.delimiter, '\t')
-        self.assertRaises(TypeError, delattr, obj.dialect, 'delimiter')
-        self.assertRaises(TypeError, setattr, obj.dialect,
-                          'lineterminator', None)
-        obj.dialect.escapechar = None
+        self.assertEqual(obj.dialect.doublequote, True)
         self.assertEqual(obj.dialect.escapechar, None)
+        self.assertEqual(obj.dialect.lineterminator, "\r\n")
+        self.assertEqual(obj.dialect.quotechar, '"')
+        self.assertEqual(obj.dialect.quoting, csv.QUOTE_MINIMAL)
+        self.assertEqual(obj.dialect.skipinitialspace, False)
+        self.assertEqual(obj.dialect.strict, False)
+        # Try deleting or changing attributes (they are read-only)
+        self.assertRaises(TypeError, delattr, obj.dialect, 'delimiter')
+        self.assertRaises(TypeError, setattr, obj.dialect, 'delimiter', ':')
         self.assertRaises(TypeError, delattr, obj.dialect, 'quoting')
         self.assertRaises(TypeError, setattr, obj.dialect, 'quoting', None)
-        obj.dialect.quoting = csv.QUOTE_MINIMAL
-        self.assertEqual(obj.dialect.quoting, csv.QUOTE_MINIMAL)
 
     def test_reader_attrs(self):
-        self._test_attrs(csv.reader([]))
+        self._test_default_attrs(csv.reader, [])
 
     def test_writer_attrs(self):
-        self._test_attrs(csv.writer(StringIO()))
+        self._test_default_attrs(csv.writer, StringIO())
+
+    def _test_kw_attrs(self, ctor, *args):
+        # Now try with alternate options
+        kwargs = dict(delimiter=':', doublequote=False, escapechar='\\',
+                      lineterminator='\r', quotechar='*',
+                      quoting=csv.QUOTE_NONE, skipinitialspace=True,
+                      strict=True)
+        obj = ctor(*args, **kwargs)
+        self.assertEqual(obj.dialect.delimiter, ':')
+        self.assertEqual(obj.dialect.doublequote, False)
+        self.assertEqual(obj.dialect.escapechar, '\\')
+        self.assertEqual(obj.dialect.lineterminator, "\r")
+        self.assertEqual(obj.dialect.quotechar, '*')
+        self.assertEqual(obj.dialect.quoting, csv.QUOTE_NONE)
+        self.assertEqual(obj.dialect.skipinitialspace, True)
+        self.assertEqual(obj.dialect.strict, True)
+
+    def test_reader_kw_attrs(self):
+        self._test_kw_attrs(csv.reader, [])
+
+    def test_writer_kw_attrs(self):
+        self._test_kw_attrs(csv.writer, StringIO())
+
+    def _test_dialect_attrs(self, ctor, *args):
+        # Now try with dialect-derived options
+        class dialect:
+            delimiter='-'
+            doublequote=False
+            escapechar='^'
+            lineterminator='$'
+            quotechar='#'
+            quoting=csv.QUOTE_ALL
+            skipinitialspace=True
+            strict=False
+        args = args + (dialect,)
+        obj = ctor(*args)
+        self.assertEqual(obj.dialect.delimiter, '-')
+        self.assertEqual(obj.dialect.doublequote, False)
+        self.assertEqual(obj.dialect.escapechar, '^')
+        self.assertEqual(obj.dialect.lineterminator, "$")
+        self.assertEqual(obj.dialect.quotechar, '#')
+        self.assertEqual(obj.dialect.quoting, csv.QUOTE_ALL)
+        self.assertEqual(obj.dialect.skipinitialspace, True)
+        self.assertEqual(obj.dialect.strict, False)
+
+    def test_reader_dialect_attrs(self):
+        self._test_dialect_attrs(csv.reader, [])
+
+    def test_writer_dialect_attrs(self):
+        self._test_dialect_attrs(csv.writer, StringIO())
+
 
     def _write_test(self, fields, expect, **kwargs):
         fd, name = tempfile.mkstemp()
@@ -165,6 +233,13 @@ class Test_Csv(unittest.TestCase):
         self._read_test(['a,"b,\\c"'], [['a', 'b,\\c']], escapechar='\\')
         self._read_test(['a,"b,c\\""'], [['a', 'b,c"']], escapechar='\\')
         self._read_test(['a,"b,c"\\'], [['a', 'b,c\\']], escapechar='\\')
+
+    def test_read_quoting(self):
+        self._read_test(['1,",3,",5'], [['1', ',3,', '5']])
+        self._read_test(['1,",3,",5'], [['1', '"', '3', '"', '5']],
+                        quotechar=None, escapechar='\\')
+        self._read_test(['1,",3,",5'], [['1', '"', '3', '"', '5']],
+                        quoting=csv.QUOTE_NONE, escapechar='\\')
 
     def test_read_bigfield(self):
         # This exercises the buffer realloc functionality
@@ -297,7 +372,7 @@ class TestDialectRegistry(unittest.TestCase):
 
     def test_bad_dialect(self):
         # Unknown parameter
-        self.assertRaises(AttributeError, csv.reader, [], bad_attr = 0)
+        self.assertRaises(TypeError, csv.reader, [], bad_attr = 0)
         # Bad values
         self.assertRaises(TypeError, csv.reader, [], delimiter = None)
         self.assertRaises(TypeError, csv.reader, [], quoting = -1)
