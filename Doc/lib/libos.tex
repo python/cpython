@@ -86,12 +86,6 @@ is also a valid module: it may be imported directly as
 These functions and data items provide information and operate on the
 current process and user.
 
-\begin{funcdesc}{chdir}{path}
-\index{directory!changing}
-Change the current working directory to \var{path}.
-Availability: Macintosh, \UNIX{}, Windows.
-\end{funcdesc}
-
 \begin{datadesc}{environ}
 A mapping object representing the string environment. For example,
 \code{environ['HOME']} is the pathname of your home directory (on some
@@ -107,10 +101,11 @@ the appropriate process-creation functions to cause child processes to
 use a modified environment.
 \end{datadesc}
 
-\begin{funcdesc}{getcwd}{}
-Return a string representing the current working directory.
-Availability: Macintosh, \UNIX{}, Windows.
-\end{funcdesc}
+\begin{funcdescni}{chdir}{path}
+\funclineni{getcwd}{}
+These functions are described in ``Files and Directories'' (section
+\ref{os-file-dir}).
+\end{funcdescni}
 
 \begin{funcdesc}{getegid}{}
 Return the current process' effective group id.
@@ -408,6 +403,17 @@ Check read/write/execute permissions for this process or extance of file
 \var{path}.  Return \code{1} if access is granted, \code{0} if not.
 See the \UNIX{} manual for the semantics.
 Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{chdir}{path}
+\index{directory!changing}
+Change the current working directory to \var{path}.
+Availability: Macintosh, \UNIX{}, Windows.
+\end{funcdesc}
+
+\begin{funcdesc}{getcwd}{}
+Return a string representing the current working directory.
+Availability: Macintosh, \UNIX{}, Windows.
 \end{funcdesc}
 
 \begin{funcdesc}{chmod}{path, mode}
