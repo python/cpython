@@ -459,7 +459,6 @@ class NamedNodeMap:
         node.unlink()
         del self._attrs[node.name]
         del self._attrsNS[(node.namespaceURI, node.localName)]
-        self.length = len(self._attrs)
 
 AttributeList = NamedNodeMap
 
