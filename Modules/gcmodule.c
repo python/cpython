@@ -502,7 +502,11 @@ _PyGC_Insert(PyObject *op)
 		abort();
 	}
 #endif
-	if (allocated > threshold0 && enabled && threshold0 && !collecting) {
+	if (allocated > threshold0 &&
+	    enabled &&
+	    threshold0 &&
+	    !collecting &&
+	    !PyErr_Occurred()) {
 		collecting++;
 		collect_generations();
 		collecting--;
