@@ -70,7 +70,12 @@ Library
   a constant too small by a factor of 2 on some modern machines.
 
 - quopri's encode and decode methods take an optional header parameter,
-  which indicates whether output is intended for the header 'Q' encoding.
+  which indicates whether output is intended for the header 'Q'
+  encoding.
+
+- Decompression objects in the zlib module now accept an optional
+  second parameter to decompress() that specifies the maximum amount
+  of memory to use for the uncompressed data.
 
 Tools/Demos
 
