@@ -58,7 +58,14 @@ TRUE = 1
 FALSE = 0
 
 def main():
-	Proc0()
+	benchtime, stones = pystones()
+	print "Pystone(%s) time for %d passes = %g" % \
+	      (__version__, LOOPS, benchtime)
+	print "This machine benchmarks at %g pystones/second" % stones
+
+
+def pystones(loops=LOOPS):
+	return Proc0(loops)
 
 IntGlob = 0
 BoolGlob = FALSE
@@ -69,7 +76,7 @@ Array2Glob = map(lambda x: x[:], [Array1Glob]*51)
 PtrGlb = None
 PtrGlbNext = None
 
-def Proc0():
+def Proc0(loops=LOOPS):
 	global IntGlob
 	global BoolGlob
 	global Char1Glob
@@ -80,7 +87,7 @@ def Proc0():
 	global PtrGlbNext
 	
 	starttime = clock()
-	for i in range(LOOPS):
+	for i in range(loops):
 		pass
 	nulltime = clock() - starttime
 	
@@ -96,7 +103,7 @@ def Proc0():
 	
 	starttime = clock()
 	
-	for i in range(LOOPS):
+	for i in range(loops):
 		Proc5()
 		Proc4()
 		IntLoc1 = 2
@@ -121,10 +128,7 @@ def Proc0():
 		IntLoc1 = Proc2(IntLoc1)
 	
 	benchtime = clock() - starttime - nulltime
-	print "Pystone(%s) time for %d passes = %g" % \
-	      (__version__, LOOPS, benchtime)
-	print "This machine benchmarks at %g pystones/second" % \
-	      (LOOPS/benchtime)
+	return benchtime, (loops / benchtime)
 
 def Proc1(PtrParIn):
 	PtrParIn.PtrComp = NextRecord = PtrGlb.copy()
