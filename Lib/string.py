@@ -79,6 +79,7 @@ def maketrans(fromstr, tostr):
 
 
 
+####################################################################
 import re as _re
 
 class Template(unicode):
@@ -87,25 +88,20 @@ class Template(unicode):
 
     # Search for $$, $identifier, ${identifier}, and any bare $'s
     pattern = _re.compile(r"""
-# Match exactly two $'s -- this is the escape sequence
-(?P<escaped>\${2})|
-# Match a $ followed by a Python identifier
-\$(?P<named>[_a-z][_a-z0-9]*)|
-# Match a $ followed by a brace delimited identifier
-\${(?P<braced>[_a-z][_a-z0-9]*)}|
-# Match any other $'s
-(?P<bogus>\$)
-""", _re.IGNORECASE | _re.VERBOSE)
+      (?P<escaped>\${2})|                # Escape sequence of two $ signs
+      \$(?P<named>[_a-z][_a-z0-9]*)|     # $ and a Python identifier
+      \${(?P<braced>[_a-z][_a-z0-9]*)}|  # $ and a brace delimited identifier
+      (?P<bogus>\$)                      # Other ill-formed $ expressions
+    """, _re.IGNORECASE | _re.VERBOSE)
 
     def __mod__(self, mapping):
         def convert(mo):
-            groups = mo.groupdict()
-            if groups.get('escaped') is not None:
+            if mo.group('escaped') is not None:
                 return '$'
-            if groups.get('bogus') is not None:
+            if mo.group('bogus') is not None:
                 raise ValueError('Invalid placeholder at index %d' %
                                  mo.start('bogus'))
-            val = mapping[groups.get('named') or groups.get('braced')]
+            val = mapping[mo.group('named') or mo.group('braced')]
             return unicode(val)
         return self.pattern.sub(convert, self)
 
@@ -121,27 +117,28 @@ class SafeTemplate(Template):
 
     def __mod__(self, mapping):
         def convert(mo):
-            groups = mo.groupdict()
-            if groups.get('escaped') is not None:
+            if mo.group('escaped') is not None:
                 return '$'
-            if groups.get('bogus') is not None:
+            if mo.group('bogus') is not None:
                 raise ValueError('Invalid placeholder at index %d' %
                                  mo.start('bogus'))
-            named = groups.get('named')
+            named = mo.group('named')
             if named is not None:
                 try:
                     return unicode(mapping[named])
                 except KeyError:
                     return '$' + named
-            braced = groups.get('braced')
+            braced = mo.group('braced')
             try:
                 return unicode(mapping[braced])
             except KeyError:
                 return '${' + braced + '}'
         return self.pattern.sub(convert, self)
 
+del _re
 
 
+####################################################################
 # NOTE: Everything below here is deprecated.  Use string methods instead.
 # This stuff will go away in Python 3.0.
 
