@@ -389,12 +389,9 @@ given type object has a specified feature.
 /* PySequenceMethods contains sq_contains */
 #define Py_TPFLAGS_HAVE_SEQUENCE_IN (1L<<1)
 
-/* Objects which participate in garbage collection (see objimp.h) */
-#ifdef WITH_CYCLE_GC
-#define Py_TPFLAGS_GC (1L<<2)
-#else
-#define Py_TPFLAGS_GC 0
-#endif
+/* This is here for backwards compatibility.  Extensions that use the old GC
+ * API will still compile but the objects will not be tracked by the GC. */
+#define Py_TPFLAGS_GC 0 /* used to be (1L<<2) */
 
 /* PySequenceMethods and PyNumberMethods contain in-place operators */
 #define Py_TPFLAGS_HAVE_INPLACEOPS (1L<<3)
@@ -428,6 +425,13 @@ given type object has a specified feature.
 
 /* Set while the type is being 'readied', to prevent recursive ready calls */
 #define Py_TPFLAGS_READYING (1L<<13)
+
+/* Objects support garbage collection (see objimp.h) */
+#ifdef WITH_CYCLE_GC
+#define Py_TPFLAGS_HAVE_GC (1L<<14)
+#else
+#define Py_TPFLAGS_HAVE_GC 0
+#endif
 
 #define Py_TPFLAGS_DEFAULT  ( \
                              Py_TPFLAGS_HAVE_GETCHARBUFFER | \
