@@ -10,7 +10,8 @@ import sys
 
 
 _rx = re.compile(
-    '<dt><a href="(module-.*\.html)">([a-zA-Z_][a-zA-Z0-9_.]*)</a>')
+    '<dt><a href="(module-.*\.html)">'
+    '([a-zA-Z_][a-zA-Z0-9_.]*(\s*<em>\(.*\)</em>)?)</a>')
 
 def main():
     outputfile = "-"
@@ -32,6 +33,7 @@ def main():
     #
     nodes = []
     seqno = 0
+    has_plat_flag = 0
     for ifn in args:
         if ifn == "-":
             ifp = sys.stdin
@@ -47,14 +49,23 @@ def main():
             if m:
                 # This line specifies a module!
                 basename, modname = m.group(1, 2)
+                has_plat_flag = has_plat_flag or m.group(3)
                 linkfile = os.path.join(dirname, basename)
-                nodes.append(buildindex.Node('<a href="%s">' % linkfile,
-                                             "<tt>%s</tt>" % modname,
-                                             seqno))
+                nodes.append(buildindex.Node(
+                    '<a href="%s">' % linkfile,
+                    "<tt class=module>%s</tt>" % modname,
+                    seqno))
                 seqno = seqno + 1
         ifp.close()
+    #
+    # Generate all output:
+    #
     num_nodes = len(nodes)
-    html = HEAD + buildindex.process_nodes(nodes, columns, letters) + TAIL
+    # Here's the HTML generation:
+    parts = [HEAD, buildindex.process_nodes(nodes, columns, letters), TAIL]
+    if has_plat_flag:
+        parts.insert(1, PLAT_DISCUSS)
+    html = string.join(parts, '')
     program = os.path.basename(sys.argv[0])
     if outputfile == "-":
         sys.stdout.write(html)
@@ -97,6 +108,15 @@ HEAD = """\
 <b class=navlabel>Up:</b> <span class=sectref><A
  HREF="./">Python Documentation Index</A></span>
 <br><hr></div>
+
+<h2>Global Module Index</h2>
+
+"""
+
+PLAT_DISCUSS = """
+<p> Some module names are followed by an annotation indicating what
+platform they are available on.</p>
+
 """
 
 TAIL = """
