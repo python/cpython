@@ -1296,7 +1296,8 @@ containing the method (a so-called \emph{descriptor} class) appears in
 the class dictionary of another new-style class, known as the
 \emph{owner} class. In the examples below, ``the attribute'' refers to
 the attribute whose name is the key of the property in the owner
-class' \code{__dict__}.
+class' \code{__dict__}.  Descriptors can only be implemented as
+new-style classes themselves.
 
 \begin{methoddesc}[object]{__get__}{self, instance, owner}
 Called to get the attribute of the owner class (class attribute access)
