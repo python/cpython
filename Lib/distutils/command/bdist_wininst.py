@@ -70,7 +70,7 @@ class bdist_wininst (Command):
         if not self.target_version:
             self.target_version = ""
         if self.distribution.has_ext_modules():
-            short_version = sys.version[:3]
+            short_version = get_python_version()
             if self.target_version and self.target_version != short_version:
                 raise DistutilsOptionError, \
                       "target version can only be" + short_version
