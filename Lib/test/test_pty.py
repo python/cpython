@@ -27,8 +27,6 @@ except OSError:
     # " An optional feature could not be imported " ... ?
     raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
-if not os.isatty(master_fd):
-    raise TestFailed, "master_fd is not a tty"
 if not os.isatty(slave_fd):
     raise TestFailed, "slave_fd is not a tty"
 
