@@ -65,10 +65,11 @@ PERFORMANCE OF THIS SOFTWARE.
 :Lib:test\n\
 :Lib:mac"
 
-static void
+static int
 getpreffilefss(FSSpec *fssp)
 {
 	static int diditbefore=0;
+	static int rv = 1;
 	static FSSpec fss;
     short prefdirRefNum;
     long prefdirDirID;
@@ -88,12 +89,19 @@ getpreffilefss(FSSpec *fssp)
 	    }
 	    
 	    HLock(namehandle);
-		(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, (unsigned char *)*namehandle, &fss);
+	    if ( **namehandle == '\0' ) {
+	    	/* Empty string means don't use preferences file */
+	    	rv = 0;
+	    } else {
+	    	/* There is a filename, construct the fsspec */
+			(void)FSMakeFSSpec(prefdirRefNum, prefdirDirID, (unsigned char *)*namehandle, &fss);
+		}
 		HUnlock(namehandle);
 		ReleaseResource(namehandle);
 		diditbefore = 1;
 	}
 	*fssp = fss;
+	return rv;
 }
 
 char *
@@ -162,7 +170,8 @@ PyMac_OpenPrefFile()
     short prefrh;
     OSErr err;
 
-	getpreffilefss(&dirspec);
+	if ( !getpreffilefss(&dirspec))
+		return -1;
 	prefrh = FSpOpenResFile(&dirspec, fsRdWrShPerm);
 	if ( prefrh < 0 ) {
 #if 0
@@ -225,7 +234,7 @@ PyMac_GetPythonDir()
 	    prefrh = PyMac_OpenPrefFile();
 	    handle = (AliasHandle)Get1Resource('alis', PYTHONHOME_ID);
 	    if ( handle == NULL ) {
-	    	(void)StopAlert(BADPREFFILE_ID, NULL);
+	    	/* (void)StopAlert(BADPREFFILE_ID, NULL); */
 	    	diditbefore=1;
 	    	return ":";
 	    }
