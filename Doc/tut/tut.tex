@@ -526,18 +526,22 @@ double quotes:
 '"Isn\'t," she said.'
 \end{verbatim}
 
-String literals can span multiple lines in several ways.  Newlines can
-be escaped with backslashes:
+String literals can span multiple lines in several ways.  Continuation
+lines can be used, with a backslash as the last character on the line
+indicating that the next line is a logical continuation of the line:
 
 \begin{verbatim}
 hello = "This is a rather long string containing\n\
 several lines of text just as you would do in C.\n\
     Note that whitespace at the beginning of the line is\
- significant.\n"
+ significant."
+
 print hello
 \end{verbatim}
 
-which would print the following:
+Note that newlines would still need to be embedded in the string using
+\code{\e n}; the newline following the trailing backslash is
+discarded.  This example would print the following:
 
 \begin{verbatim}
 This is a rather long string containing
@@ -545,8 +549,27 @@ several lines of text just as you would do in C.
     Note that whitespace at the beginning of the line is significant.
 \end{verbatim}
 
+If we make the string literal a ``raw'' string, however, the
+\code{\e n} sequences are not converted to newlines, but the backslash
+at the end of the line, and the newline character in the source, are
+both included in the string as data.  Thus, the example:
+
+\begin{verbatim}
+hello = r"This is a rather long string containing\n\
+several lines of text much as you would do in C."
+
+print hello
+\end{verbatim}
+
+would print:
+
+\begin{verbatim}
+This is a rather long string containing\n\
+several lines of text much as you would do in C.
+\end{verbatim}
+
 Or, strings can be surrounded in a pair of matching triple-quotes:
-\code{"""} or \code {'''}.  End of lines do not need to be escaped
+\code{"""} or \code{'\code{'}'}.  End of lines do not need to be escaped
 when using triple-quotes, but they will be included in the string.
 
 \begin{verbatim}
