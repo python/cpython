@@ -96,9 +96,12 @@ import urlparse
 import md5
 import mimetypes
 import mimetools
+import rfc822
 import ftplib
 import sys
 import time
+import os
+import stat
 import gopherlib
 import posixpath
 
@@ -914,16 +917,22 @@ class FileHandler(BaseHandler):
 
     # not entirely sure what the rules are here
     def open_local_file(self, req):
-        mtype = mimetypes.guess_type(req.get_selector())[0]
-        headers = mimetools.Message(StringIO('Content-Type: %s\n' \
-                                             % (mtype or 'text/plain')))
         host = req.get_host()
         file = req.get_selector()
+        localfile = url2pathname(file)
+        stats = os.stat(localfile)
+        size = stats[stat.ST_SIZE]
+        modified = rfc822.formatdate(stats[stat.ST_MTIME])
+        mtype = mimetypes.guess_type(file)[0]
+        stats = os.stat(localfile)
+        headers = mimetools.Message(StringIO(
+            'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
+            (mtype or 'text/plain', size, modified)))
         if host:
             host, port = splitport(host)
         if not host or \
            (not port and socket.gethostbyname(host) in self.get_names()):
-            return addinfourl(open(url2pathname(file), 'rb'),
+            return addinfourl(open(localfile, 'rb'),
                               headers, 'file:'+file)
         raise URLError('file not on local host')
 
