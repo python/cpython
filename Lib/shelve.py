@@ -140,7 +140,7 @@ class Shelf(UserDict.DictMixin):
         self.sync()
         try:
             self.dict.close()
-        except:
+        except AttributeError:
             pass
         self.dict = 0
 
