@@ -1,22 +1,33 @@
-This is a VERY preliminary release of my Python interface to Sun RPC.
-It consists of two library modules, xdr.py and rpc.py, and two example
-clients, mountclient.py and nfsclient.py, implementing the NFS Mount
-protocol and (part of) the NFS protocol, respectively.  There is also
-a way to create servers in Python.
+This is a Python interface to Sun RPC, designed and implemented mostly
+by reading the Internet RFCs about the subject.
+
+There are two library modules, xdr.py and rpc.py, and several example
+clients: mountclient.py, nfsclient.py, and rnusersclient.py,
+implementing the NFS Mount protocol, (part of) the NFS protocol, and
+the "rnusers" protocol (used by rusers(1)), respectively.  The latter
+demonstrates the use of broadcast via the Port mapper's CALLIT
+procedure.
+
+There is also a way to create servers in Python.
 
 To test the nfs client, run it from the shell with something like this:
 
-  python -c 'import nfsclient; nfsclient.test()' hostname [filesystemname]
+  python -c 'import nfsclient; nfsclient.test()' [hostname [filesystemname]]
 
 When called without a filesystemname, it lists the filesystems at the
-host (default the local machine).
+host; default host is the local machine.
+
+Other clients are tested similarly.
 
 For hostname, use e.g. wuarchive.wustl.edu or gatekeeper.dec.com (two
 hosts that are known to export NFS filesystems with little restrictions).
 
-Note: this was developed for Python 0.9.8beta (not yet released).  I
+Note: this was developed using Python 0.9.8beta (not yet released).  I
 have tried to put in compatibility hacks for Python 0.9.7beta
 (available from ftp.cwi.nl) but I cannot guarantee that it will work
 -- if it doesn't, let me know and I'll see what I can do.  In
 particular, if you don't have the built-in module "select", UDP
 time-outs and retries won't work.
+
+--Guido van Rossum, CWI, Amsterdam <guido@cwi.nl>
+"I don't want *any* spam"
