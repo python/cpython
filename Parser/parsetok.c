@@ -53,8 +53,10 @@ parsetok(tok, g, start, n_ret)
 		str[len] = '\0';
 		ret = addtoken(ps, (int)type, str);
 		if (ret != E_OK) {
-			if (ret == E_DONE)
+			if (ret == E_DONE) {
 				*n_ret = ps->p_tree;
+				ps->p_tree = NULL;
+			}
 			else if (tok->lineno <= 1 && tok->done == E_EOF)
 				ret = E_EOF;
 			break;
@@ -112,8 +114,7 @@ parsefile(fp, g, start, ps1, ps2, n_ret)
 	ret = parsetok(tok, g, start, n_ret);
 	if (ret == E_TOKEN || ret == E_SYNTAX) {
 		char *p;
-		fprintf(stderr, "Parsing error at line %d:\n",
-			tok->lineno);
+		fprintf(stderr, "Parsing error at line %d:\n", tok->lineno);
 		*tok->inp = '\0';
 		if (tok->inp > tok->buf && tok->inp[-1] == '\n')
 			tok->inp[-1] = '\0';
