@@ -252,7 +252,7 @@ Py_Initialize(void)
 	setlocale(LC_CTYPE, saved_locale);
 
 	if (codeset) {
-		sys_stream = PySys_GetObject("stdout");
+		sys_stream = PySys_GetObject("stdin");
 		sys_isatty = PyObject_CallMethod(sys_stream, "isatty", "");
 		if (!sys_isatty)
 			PyErr_Clear();
@@ -260,7 +260,6 @@ Py_Initialize(void)
 			if (!PyFile_SetEncoding(sys_stream, codeset))
 				Py_FatalError("Cannot set codeset of stdin");
 		}
-		Py_XDECREF(sys_stream);
 		Py_XDECREF(sys_isatty);
 
 		sys_stream = PySys_GetObject("stdout");
@@ -271,7 +270,6 @@ Py_Initialize(void)
 			if (!PyFile_SetEncoding(sys_stream, codeset))
 				Py_FatalError("Cannot set codeset of stdout");
 		}
-		Py_XDECREF(sys_stream);
 		Py_XDECREF(sys_isatty);
 
 		if (!Py_FileSystemDefaultEncoding)
