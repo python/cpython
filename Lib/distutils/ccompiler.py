@@ -671,7 +671,9 @@ class CCompiler:
         for src_name in source_filenames:
             (base, ext) = os.path.splitext (src_name)
             if ext not in self.src_extensions:
-                continue
+                raise UnknownFileError, \
+                      "unknown file type '%s' (from '%s')" % \
+                      (ext, src_name)
             if strip_dir:
                 base = os.path.basename (base)
             obj_names.append (os.path.join (output_dir,
