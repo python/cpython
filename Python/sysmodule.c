@@ -634,8 +634,7 @@ _PySys_Init(void)
 		Py_INCREF(warnoptions);
 	}
 	if (warnoptions != NULL) {
-		PyDict_SetItemString(sysdict, "warnoptions", v = warnoptions);
-		Py_DECREF(v);
+		PyDict_SetItemString(sysdict, "warnoptions", warnoptions);
 	}
 	
 	if (PyErr_Occurred())
