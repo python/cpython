@@ -223,8 +223,9 @@ def samestat(s1, s2):
 # XXX This degenerates in: 'is this the root?' on DOS
 
 def ismount(path):
-    """Test whether a path is a mount point"""
-    return isabs(splitdrive(path)[1])
+    """Test whether a path is a mount point (defined as root of drive)"""
+    p = splitdrive(path)[1]
+    return len(p)==1 and p[0] in '/\\'
 
 
 # Directory tree walk.
