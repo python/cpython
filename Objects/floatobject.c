@@ -133,6 +133,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 	const char *s, *last, *end;
 	double x;
 	char buffer[256]; /* For errors */
+	char s_buffer[256];
 	int len;
 
 	if (PyString_Check(v)) {
@@ -140,8 +141,6 @@ PyFloat_FromString(PyObject *v, char **pend)
 		len = PyString_GET_SIZE(v);
 	}
 	else if (PyUnicode_Check(v)) {
-		char s_buffer[256];
-
 		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				 "float() literal too large to convert");
