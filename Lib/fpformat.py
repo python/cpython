@@ -38,7 +38,7 @@ def extract(s):
 	sign, intpart, fraction, exppart = res.group(1,2,3,4)
 	if sign == '+': sign = ''
 	if fraction: fraction = fraction[1:]
-	if exppart: expo = eval(exppart[1:])
+	if exppart: expo = int(exppart[1:])
 	else: expo = 0
 	return sign, intpart, fraction, expo
 
