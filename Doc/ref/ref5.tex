@@ -264,9 +264,9 @@ attributeref:   primary "." identifier
 \end{verbatim}
 
 The primary must evaluate to an object of a type that supports
-attribute references, e.g., a module or a list.  This object is then
-asked to produce the attribute whose name is the identifier.  If this
-attribute is not available, the exception
+attribute references, e.g., a module, list, or an instance.  This
+object is then asked to produce the attribute whose name is the
+identifier.  If this attribute is not available, the exception
 \exception{AttributeError}\exindex{AttributeError} is raised.
 Otherwise, the type and value of the object produced is determined by
 the object.  Multiple evaluations of the same attribute reference may
@@ -758,13 +758,13 @@ execution of a program.
 
 The operators \keyword{in} and \keyword{not in} test for set
 membership: every type can define membership in whatever way is
-appropriate.  Traditionally, this interface has been tightly bound
+appropriate.  Traditionally, this interface has been tightly bound to
 the sequence interface, which is related in that presence in a sequence
 can be usefully interpreted as membership in a set.
 
-For the list, tuple types, \code{\var{x} in \var{y}} is true if and only
-if there exists such an index \var{i} such that
-\code{var{x} == \var{y}[\var{i}]} is true.
+For the list and tuple types, \code{\var{x} in \var{y}} is true if and
+only if there exists such an index \var{i} such that
+\code{\var{x} == \var{y}[\var{i}]} is true.
 
 For the Unicode and string types, \code{\var{x} in \var{y}} is true if
 and only if there exists an index \var{i} such that \code{\var{x} ==
