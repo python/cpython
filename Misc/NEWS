@@ -12,6 +12,12 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- SF bug 705231:  builtin pow() no longer lets the platform C pow()
+  raise -1.0 to integer powers, because (at least) glibc gets it wrong
+  in some cases.  The result should be -1.0 if the power is odd and 1.0
+  if the power is even, and any float with a sufficiently large exponent
+  is (mathematically) an exact even integer.
+
 - The encoding attribute has been added for file objects, and set to
   the terminal encoding on Unix and Windows.
 

@@ -101,6 +101,23 @@ class PowTest(unittest.TestCase):
                 return None
         None ** TestRpow() # Won't fail when __rpow__ invoked.  SF bug #643260.
 
+    def test_bug705231(self):
+        # -1.0 raised to an integer should never blow up.  It did if the
+        # platform pow() was buggy, and Python didn't worm around it.
+        eq = self.assertEquals
+        a = -1.0
+        eq(pow(a, 1.23e167), 1.0)
+        eq(pow(a, -1.23e167), 1.0)
+        for b in range(-10, 11):
+            eq(pow(a, float(b)), b & 1 and -1.0 or 1.0)
+        for n in range(0, 100):
+            fiveto = float(5 ** n)
+            # For small n, fiveto will be odd.  Eventually we run out of
+            # mantissa bits, though, and thereafer fiveto will be even.
+            expected = fiveto % 2.0 and -1.0 or 1.0
+            eq(pow(a, fiveto), expected)
+            eq(pow(a, -fiveto), expected)
+        eq(expected, 1.0)   # else we didn't push fiveto to evenness
 
 def test_main():
     test.test_support.run_unittest(PowTest)
