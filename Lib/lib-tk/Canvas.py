@@ -170,11 +170,11 @@ class Group:
     def config(self, cnf={}, **kw):
         return self.canvas.itemconfigure(self.tag, _cnfmerge((cnf,kw)))
     def lower(self, belowThis=None):
-        self._do('tag_lower', belowThis)
+        self._do('lower', belowThis)
     def move(self, xAmount, yAmount):
         self._do('move', xAmount, yAmount)
     def tkraise(self, aboveThis=None):
-        self._do('tag_raise', aboveThis)
+        self._do('raise', aboveThis)
     lift = tkraise
     def scale(self, xOrigin, yOrigin, xScale, yScale):
         self._do('scale', xOrigin, yOrigin, xScale, yScale)
