@@ -1551,7 +1551,7 @@ posix_spawnv(PyObject *self, PyObject *args)
 	PyObject *argv;
 	char **argvlist;
 	int mode, i, argc;
-	intptr_t spawnval;
+	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, int);
 
 	/* spawnv has three arguments: (mode, path, argv), where
@@ -1620,7 +1620,7 @@ posix_spawnve(PyObject *self, PyObject *args)
 	char **envlist;
 	PyObject *key, *val, *keys=NULL, *vals=NULL, *res=NULL;
 	int mode, i, pos, argc, envc;
-	intptr_t spawnval;
+	Py_intptr_t spawnval;
 	PyObject *(*getitem)(PyObject *, int);
 
 	/* spawnve has four arguments: (mode, path, argv, env), where
@@ -3689,8 +3689,8 @@ posix_pipe(PyObject *self, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (!ok)
 		return win32_error("CreatePipe", NULL);
-	read_fd = _open_osfhandle((intptr_t)read, 0);
-	write_fd = _open_osfhandle((intptr_t)write, 1);
+	read_fd = _open_osfhandle((Py_intptr_t)read, 0);
+	write_fd = _open_osfhandle((Py_intptr_t)write, 1);
 	return Py_BuildValue("(ii)", read_fd, write_fd);
 #endif /* MS_WIN32 */
 #endif

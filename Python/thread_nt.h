@@ -152,7 +152,7 @@ static void PyThread__init_thread(void)
  */
 int PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
-	uintptr_t rv;
+	unsigned long rv;
 	int success = 0;
 
 	dprintf(("%ld: PyThread_start_new_thread called\n", PyThread_get_thread_ident()));
@@ -161,7 +161,7 @@ int PyThread_start_new_thread(void (*func)(void *), void *arg)
 
 	rv = _beginthread(func, 0, arg); /* use default stack size */
  
-	if (rv != -1) {
+	if (rv != (unsigned long)-1) {
 		success = 1;
 		dprintf(("%ld: PyThread_start_new_thread succeeded: %p\n", PyThread_get_thread_ident(), rv));
 	}

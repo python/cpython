@@ -63,16 +63,25 @@ Used in:  LONG_LONG
 
 /* uintptr_t is the C9X name for an unsigned integral type such that a
  * legitimate void* can be cast to uintptr_t and then back to void* again
- * without loss of information.
+ * without loss of information.  Similarly for intptr_t, wrt a signed
+ * integral type.
  */
 #ifdef HAVE_UINTPTR_T
-typedef uintptr_t Py_uintptr_t;
+typedef uintptr_t	Py_uintptr_t;
+typedef intptr_t	Py_intptr_t;
+
 #elif SIZEOF_VOID_P <= SIZEOF_INT
-typedef unsigned int Py_uintptr_t;
+typedef unsigned int	Py_uintptr_t;
+typedef int		Py_intptr_t;
+
 #elif SIZEOF_VOID_P <= SIZEOF_LONG
-typedef unsigned long Py_uintptr_t;
+typedef unsigned long	Py_uintptr_t;
+typedef long		Py_intptr_t;
+
 #elif defined(HAVE_LONG_LONG) && (SIZEOF_VOID_P <= SIZEOF_LONG_LONG)
-typedef unsigned LONG_LONG Py_uintptr_t;
+typedef unsigned LONG_LONG	Py_uintptr_t;
+typedef LONG_LONG		Py_intptr_t;
+
 #else
 #   error "Python needs a typedef for Py_uintptr_t in pyport.h."
 #endif /* HAVE_UINTPTR_T */

@@ -98,7 +98,7 @@ static PyObject *
 msvcrt_get_osfhandle(PyObject *self, PyObject *args)
 {
 	int fd;
-	intptr_t handle;
+	Py_intptr_t handle;
 
 	if (!PyArg_ParseTuple(args,"i:get_osfhandle", &fd))
 		return NULL;

@@ -294,10 +294,6 @@ typedef int pid_t;
 #if _MSC_VER >= 1200 /* This file only exists in VC 6.0 or higher */
 #include <basetsd.h>
 #endif
-#if defined(MS_WINDOWS) && !defined(MS_WIN64)
-typedef long intptr_t;
-typedef unsigned long uintptr_t;
-#endif
 
 #if defined(MS_WIN64)
 /* maintain "win32" sys.platform for backward compatibility of Python code,
