@@ -1687,6 +1687,7 @@ com_access_stmt(c, n)
 	struct compiling *c;
 	node *n;
 {
+#if 0
 	int i, j, k, mode, imode;
 	object *vmode;
 	REQ(n, access_stmt);
@@ -1737,6 +1738,7 @@ com_access_stmt(c, n)
 		com_addoparg(c, LOAD_CONST, imode);
 		com_addopname(c, ACCESS_MODE, CHILD(n, i));
 	}
+#endif
 }
 
 static void
