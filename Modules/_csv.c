@@ -288,40 +288,6 @@ Dialect_dealloc(DialectObj *self)
         self->ob_type->tp_free((PyObject *)self);
 }
 
-/*
- * Return a new reference to a dialect instance
- *
- * If given a string, looks up the name in our dialect registry
- * If given a class, instantiate (which runs python validity checks)
- * If given an instance, return a new reference to the instance
- */
-static PyObject *
-dialect_instantiate(PyObject *dialect)
-{
-	Py_INCREF(dialect);
-	/* If dialect is a string, look it up in our registry */
-	if (IS_BASESTRING(dialect)) {
-		PyObject * new_dia;
-		new_dia = get_dialect_from_registry(dialect);
-		Py_DECREF(dialect);
-		return new_dia;
-	}
-	/* A class rather than an instance? Instantiate */
-	if (PyObject_TypeCheck(dialect, &PyClass_Type)) {
-		PyObject * new_dia;
-		new_dia = PyObject_CallFunction(dialect, "");
-		Py_DECREF(dialect);
-		return new_dia;
-	}
-	/* Make sure we finally have an instance */
-	if (!PyInstance_Check(dialect)) {
-		PyErr_SetString(PyExc_TypeError, "dialect must be an instance");
-		Py_DECREF(dialect);
-		return NULL;
-	}
-	return dialect;
-}
-
 static char *dialect_kws[] = {
 	"dialect",
 	"delimiter",
@@ -371,9 +337,12 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
 	Py_XINCREF(skipinitialspace);
 	Py_XINCREF(strict);
 	if (dialect != NULL) {
-		dialect = dialect_instantiate(dialect);
-		if (dialect == NULL)
-			goto err;
+		if (IS_BASESTRING(dialect)) {
+			dialect = get_dialect_from_registry(dialect);
+			if (dialect == NULL)
+				goto err;
+		} else
+			Py_INCREF(dialect);
 #define DIALECT_GETATTR(v, n) \
 		if (v == NULL) \
 			v = PyObject_GetAttrString(dialect, n)
