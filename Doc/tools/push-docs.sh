@@ -11,6 +11,7 @@ PKGTYPE="bzip"  # must be one of: bzip, tar, zip  ("tar" implies gzip)
 TARGET="$TARGETHOST:$TARGETDIR"
 
 ADDRESSES='python-dev@python.org doc-sig@python.org python-list@python.org'
+ADDRESSES=fdrake01@comcast.net
 
 TOOLDIR="`dirname $0`"
 VERSION=`$TOOLDIR/getversioninfo`
@@ -32,7 +33,7 @@ ANNOUNCE=true
 getopt -T >/dev/null
 if [ $? -eq 4 ] ; then
     # We have a sufficiently useful getopt(1) implementation.
-    set -- `getopt -ssh m:p:qt:F: "$@"`
+    eval "set -- `getopt -ssh m:p:qt:F: \"$@\"`"
 else
     # This version of getopt doesn't support quoting of long options
     # with spaces, so let's not rely on it at all.
