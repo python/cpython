@@ -1149,7 +1149,7 @@ It is added to `interpreter-mode-alist' and `py-choose-shell'.
 	       ("python" . python-mode))))
   (while modes
     (when (not (assoc (car modes) interpreter-mode-alist))
-      (push modes interpreter-mode-alist))
+      (push (car modes) interpreter-mode-alist))
     (setq modes (cdr modes))))
 
 (when (not (or (rassq 'python-mode auto-mode-alist)
