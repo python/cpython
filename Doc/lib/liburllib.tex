@@ -176,8 +176,8 @@ accomplished with the following code:
 \begin{verbatim}
 class AppURLopener(urllib.FancyURLopener):
     def __init__(self, *args):
-        apply(urllib.FancyURLopener.__init__, (self,) + args)
         self.version = "App/1.7"
+        apply(urllib.FancyURLopener.__init__, (self,) + args)
 
 urllib._urlopener = AppURLopener()
 \end{verbatim}
