@@ -13,10 +13,12 @@ This module defines the class \class{ConfigParser}.
 \index{Windows ini file}
 The \class{ConfigParser} class implements a basic configuration file
 parser language which provides a structure similar to what you would
-find on Microsoft Windows INI files.  You can use this to write Python
+find on Microsoft Windows INI files.  (Beware: this library does \emph{not}
+interpret or write the value-type prefixes used in the Windows
+Registry extended version of INI syntax.)  You can use this to write Python
 programs which can be customized by end users easily.
 
-The configuration file consists of sections, lead by a
+The configuration file consists of sections, led by a
 \samp{[section]} header and followed by \samp{name: value} entries,
 with continuations in the style of \rfc{822}; \samp{name=value} is
 also accepted.  Note that leading whitespace is removed from values.
