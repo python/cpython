@@ -72,18 +72,19 @@ are stripped off.
 \end{funcdesc}
 
 \begin{funcdesc}{parseaddr}{address}
-Parse \var{address}, which should be the value of some address-containing
-field such as \code{To:} or \code{Cc:}, into its constituent
-``realname'' and ``email address'' parts.  Returns a tuple of that
-information, unless the parse fails, in which case a 2-tuple of
-\code{(None, None)} is returned.
+Parse \var{address}, which should be the value of some
+address-containing field such as \mailheader{To} or \mailheader{Cc},
+into its constituent ``realname'' and ``email address'' parts.
+Returns a tuple of that information, unless the parse fails, in which
+case a 2-tuple \code{(None, None)} is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{dump_address_pair}{pair}
 The inverse of \method{parseaddr()}, this takes a 2-tuple of the form
-\code{(realname, email_address)} and returns the string value suitable
-for a \code{To:} or \code{Cc:} header.  If the first element of
-\var{pair} is false, then the second element is returned unmodified.
+\code{(\var{realname}, \var{email_address})} and returns the string
+value suitable for a \mailheader{To} or \mailheader{Cc} header.  If
+the first element of \var{pair} is false, then the second element is
+returned unmodified.
 \end{funcdesc}
 
 \begin{funcdesc}{parsedate}{date}
@@ -142,9 +143,9 @@ object is seekable.
 \begin{methoddesc}{isheader}{line}
 Returns a line's canonicalized fieldname (the dictionary key that will
 be used to index it) if the line is a legal \rfc{2822} header; otherwise
-returns None (implying that parsing should stop here and the line be
-pushed back on the input stream).  It is sometimes useful to override
-this method in a subclass.
+returns \code{None} (implying that parsing should stop here and the
+line be pushed back on the input stream).  It is sometimes useful to
+override this method in a subclass.
 \end{methoddesc}
 
 \begin{methoddesc}{islast}{line}
@@ -200,8 +201,8 @@ header matching \var{name} exists, return \code{(None, None)};
 otherwise both the full name and the address are (possibly empty)
 strings.
 
-Example: If \var{m}'s first \code{From} header contains the string
-\code{'jack@cwi.nl (Jack Jansen)'}, then
+Example: If \var{m}'s first \mailheader{From} header contains the
+string \code{'jack@cwi.nl (Jack Jansen)'}, then
 \code{m.getaddr('From')} will yield the pair
 \code{('Jack Jansen', 'jack@cwi.nl')}.
 If the header contained
@@ -211,14 +212,14 @@ exact same result.
 
 \begin{methoddesc}{getaddrlist}{name}
 This is similar to \code{getaddr(\var{list})}, but parses a header
-containing a list of email addresses (e.g.\ a \code{To} header) and
+containing a list of email addresses (e.g.\ a \mailheader{To} header) and
 returns a list of \code{(\var{full name}, \var{email address})} pairs
 (even if there was only one address in the header).  If there is no
 header matching \var{name}, return an empty list.
 
 If multiple headers exist that match the named header (e.g. if there
-are several \code{Cc} headers), all are parsed for addresses.  Any
-continuation lines the named headers contain are also parsed.
+are several \mailheader{Cc} headers), all are parsed for addresses.
+Any continuation lines the named headers contain are also parsed.
 \end{methoddesc}
 
 \begin{methoddesc}{getdate}{name}

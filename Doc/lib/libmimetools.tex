@@ -68,8 +68,8 @@ The \class{Message} class defines the following methods in
 addition to the \class{rfc822.Message} methods:
 
 \begin{methoddesc}{getplist}{}
-Return the parameter list of the \code{content-type} header.  This is
-a list of strings.  For parameters of the form
+Return the parameter list of the \mailheader{Content-Type} header.
+This is a list of strings.  For parameters of the form
 \samp{\var{key}=\var{value}}, \var{key} is converted to lower case but
 \var{value} is not.  For example, if the message contains the header
 \samp{Content-type: text/html; spam=1; Spam=2; Spam} then
@@ -85,26 +85,27 @@ given \var{name}.  If \var{value} is surrounded by quotes of the form
 \end{methoddesc}
 
 \begin{methoddesc}{getencoding}{}
-Return the encoding specified in the \code{content-transfer-encoding}
-message header.  If no such header exists, return \code{'7bit'}.  The
-encoding is converted to lower case.
+Return the encoding specified in the
+\mailheader{Content-Transfer-Encoding} message header.  If no such
+header exists, return \code{'7bit'}.  The encoding is converted to
+lower case.
 \end{methoddesc}
 
 \begin{methoddesc}{gettype}{}
 Return the message type (of the form \samp{\var{type}/\var{subtype}})
-as specified in the \code{content-type} header.  If no such header
-exists, return \code{'text/plain'}.  The type is converted to lower
-case.
+as specified in the \mailheader{Content-Type} header.  If no such
+header exists, return \code{'text/plain'}.  The type is converted to
+lower case.
 \end{methoddesc}
 
 \begin{methoddesc}{getmaintype}{}
-Return the main type as specified in the \code{content-type} header.
-If no such header exists, return \code{'text'}.  The main type is
-converted to lower case.
+Return the main type as specified in the \mailheader{Content-Type}
+header.  If no such header exists, return \code{'text'}.  The main
+type is converted to lower case.
 \end{methoddesc}
 
 \begin{methoddesc}{getsubtype}{}
-Return the subtype as specified in the \code{content-type} header.  If
-no such header exists, return \code{'plain'}.  The subtype is
-converted to lower case.
+Return the subtype as specified in the \mailheader{Content-Type}
+header.  If no such header exists, return \code{'plain'}.  The subtype
+is converted to lower case.
 \end{methoddesc}
