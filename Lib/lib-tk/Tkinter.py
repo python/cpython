@@ -234,6 +234,12 @@ class IntVar(Variable):
         MASTER can be given as master widget."""
         Variable.__init__(self, master)
 
+    def set(self, value):
+        """Set the variable to value, converting booleans to integers."""
+        if isinstance(value, bool):
+            value = int(value)
+        return Variable.set(self, value)
+
     def get(self):
         """Return the value of the variable as an integer."""
         return getint(self._tk.globalgetvar(self._name))
