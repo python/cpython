@@ -703,3 +703,12 @@ them) except when a very large range is used on a memory-starved
 machine (e.g. MS-DOS) or when all of the range's elements are never
 used (e.g. when the loop is usually terminated with \keyword{break}).
 \end{funcdesc}
+
+\begin{funcdesc}{zip}{seq1\optional{, seq2\optional{, ...}}}
+This function returns a list of tuples, where each tuple contains the
+i-th element from each of the argument sequences.  At least one
+sequence is required, otherwise a \exception{TypeError} is raised.
+The returned list is truncated in length to the length of the shortest
+argument sequence.  When the argument sequences are all of the same
+length, \function{zip} is similar to \function{map} with an initial
+None argument.
