@@ -312,6 +312,7 @@ enum why_code {
 };
 
 static enum why_code do_raise Py_PROTO((PyObject *, PyObject *, PyObject *));
+static int unpack_sequence Py_PROTO((PyObject *, int, PyObject **));
 
 
 /* Backward compatible interface */
@@ -1182,45 +1183,47 @@ eval_code2(co, globals, locals,
 #endif
 		
 		case UNPACK_TUPLE:
-			v = POP();
-			if (!PyTuple_Check(v)) {
-				PyErr_SetString(PyExc_TypeError,
-						"unpack non-tuple");
-				why = WHY_EXCEPTION;
-			}
-			else if (PyTuple_Size(v) != oparg) {
-				PyErr_SetString(PyExc_ValueError,
-					"unpack tuple of wrong size");
-				why = WHY_EXCEPTION;
-			}
-			else {
-				for (; --oparg >= 0; ) {
-					w = PyTuple_GET_ITEM(v, oparg);
-					Py_INCREF(w);
-					PUSH(w);
-				}
-			}
-			Py_DECREF(v);
-			break;
-		
 		case UNPACK_LIST:
 			v = POP();
-			if (!PyList_Check(v)) {
-				PyErr_SetString(PyExc_TypeError,
-						"unpack non-list");
-				why = WHY_EXCEPTION;
+			if (PyTuple_Check(v)) {
+				if (PyTuple_Size(v) != oparg) {
+					PyErr_SetString(PyExc_ValueError,
+						 "unpack tuple of wrong size");
+					why = WHY_EXCEPTION;
+				}
+				else {
+					for (; --oparg >= 0; ) {
+						w = PyTuple_GET_ITEM(v, oparg);
+						Py_INCREF(w);
+						PUSH(w);
+					}
+				}
 			}
-			else if (PyList_Size(v) != oparg) {
-				PyErr_SetString(PyExc_ValueError,
-					"unpack list of wrong size");
-				why = WHY_EXCEPTION;
+			else if (PyList_Check(v)) {
+				if (PyList_Size(v) != oparg) {
+					PyErr_SetString(PyExc_ValueError,
+						  "unpack list of wrong size");
+					why = WHY_EXCEPTION;
+				}
+				else {
+					for (; --oparg >= 0; ) {
+						w = PyList_GET_ITEM(v, oparg);
+						Py_INCREF(w);
+						PUSH(w);
+					}
+				}
+			}
+			else if (PySequence_Check(v)) {
+				if (unpack_sequence(v, oparg,
+						    stack_pointer + oparg))
+					stack_pointer += oparg;
+				else
+					why = WHY_EXCEPTION;
 			}
 			else {
-				for (; --oparg >= 0; ) {
-					w = PyList_GetItem(v, oparg);
-					Py_INCREF(w);
-					PUSH(w);
-				}
+				PyErr_SetString(PyExc_TypeError,
+						"unpack non-sequence");
+				why = WHY_EXCEPTION;
 			}
 			Py_DECREF(v);
 			break;
@@ -2041,6 +2044,44 @@ do_raise(type, value, tb)
 	Py_XDECREF(tb);
 	return WHY_EXCEPTION;
 }
+
+static int
+unpack_sequence(v, argcnt, sp)
+     PyObject *v;
+     int argcnt;
+     PyObject **sp;
+{
+	int i;
+	PyObject *w;
+	
+	for (i = 0; i < argcnt; i++) {
+		if (! (w = PySequence_GetItem(v, i))) {
+			if (PyErr_ExceptionMatches(PyExc_IndexError))
+				PyErr_SetString(PyExc_ValueError,
+					      "unpack sequence of wrong size");
+			goto finally;
+		}
+		*--sp = w;
+	}
+	/* we better get an IndexError now */
+	if (PySequence_GetItem(v, i) == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+			PyErr_Clear();
+			return 1;
+		}
+		/* some other exception occurred. fall through to finally */
+	}
+	else
+		PyErr_SetString(PyExc_ValueError,
+				"unpack sequence of wrong size");
+	/* fall through */
+finally:
+	for (; i > 0; i--)
+		Py_DECREF(*sp++);
+
+	return 0;
+}
+
 
 #ifdef LLTRACE
 static int
