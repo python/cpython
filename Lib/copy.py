@@ -195,11 +195,28 @@ def _deepcopy_dict(x, memo):
 	return y
 d[types.DictionaryType] = _deepcopy_dict
 
+def _keep_alive(x, memo):
+    """Keeps a reference to the object x in the memo.
+
+    Because we remember objects by their id, we have
+    to assure that possibly temporary objects are kept
+    alive by referencing them.
+    We store a reference at the id of the memo, which should
+    normally not be used unless someone tries to deepcopy
+    the memo itself...
+    """
+    try:
+	memo[id(memo)].append(x)
+    except KeyError:
+	# aha, this is the first one :-)
+	memo[id(memo)]=[x]
+
 def _deepcopy_inst(x, memo):
 	if hasattr(x, '__deepcopy__'):
 		return x.__deepcopy__()
 	if hasattr(x, '__getinitargs__'):
 		args = x.__getinitargs__()
+		_keep_alive(args, memo)
 		args = deepcopy(args, memo)
 	else:
 		args = ()
@@ -207,6 +224,7 @@ def _deepcopy_inst(x, memo):
 	memo[id(x)] = y
 	if hasattr(x, '__getstate__'):
 			state = x.__getstate__()
+			_keep_alive(state, memo)
 	else:
 			state = x.__dict__
 	state = deepcopy(state, memo)
