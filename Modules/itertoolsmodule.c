@@ -662,6 +662,7 @@ cycle_next(cycleobject *lz)
 {
 	PyObject *item;
 	PyObject *it;
+	PyObject *tmp;
 
 	while (1) {
 		item = PyIter_Next(lz->it);
@@ -681,9 +682,10 @@ cycle_next(cycleobject *lz)
 		it = PyObject_GetIter(lz->saved);
 		if (it == NULL)
 			return NULL;
-		Py_DECREF(lz->it);
+		tmp = lz->it;
 		lz->it = it;
 		lz->firstpass = 1;
+		Py_DECREF(tmp);
 	}
 }
 
