@@ -133,31 +133,6 @@ def quotedata(data):
     return re.sub(r'(?m)^\.', '..',
         re.sub(r'(?:\r\n|\n|\r(?!\n))', CRLF, data))
 
-def make_fqdn(name = ''):
-    """Get fully qualified domain name from name.
-
-    An empty argument is interpreted as meaning the local host.
-
-    First the hostname returned by socket.gethostbyaddr()
-    is checked, then possibly existing aliases. In case
-    no FQDN is available, hostname is returned.
-    """
-    name = string.strip(name)
-    if len(name) == 0:
-        name = socket.gethostname()
-    try:
-        hostname, aliases, ipaddrs = socket.gethostbyaddr(name)
-    except socket.error:
-        pass
-    else:
-        aliases.insert(0, hostname)
-        for name in aliases:
-            if '.' in name:
-                break
-        else:
-            name = hostname
-    return name
-
 
 class SMTP:
     """This class manages a connection to an SMTP or ESMTP server.
@@ -317,7 +292,7 @@ class SMTP:
         if name:
             self.putcmd("helo", name)
         else:
-            self.putcmd("helo", make_fqdn())
+            self.putcmd("helo", socket.getfqdn())
         (code,msg)=self.getreply()
         self.helo_resp=msg
         return (code,msg)
@@ -330,7 +305,7 @@ class SMTP:
         if name:
             self.putcmd("ehlo", name)
         else:
-            self.putcmd("ehlo", make_fqdn())
+            self.putcmd("ehlo", socket.getfqdn())
         (code,msg)=self.getreply()
         # According to RFC1869 some (badly written) 
         # MTA's will disconnect on an ehlo. Toss an exception if 
