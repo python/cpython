@@ -42,10 +42,18 @@ newclassobject(bases, methods, name)
 	object *name; /* String; NULL if unknown */
 {
 	classobject *op;
+	if (bases == NULL) {
+		bases = newtupleobject(0);
+		if (bases == NULL)
+			return err_nomem();
+	}
+	else
+		INCREF(bases);
 	op = NEWOBJ(classobject, &Classtype);
-	if (op == NULL)
+	if (op == NULL) {
+		DECREF(bases);
 		return NULL;
-	XINCREF(bases);
+	}
 	op->cl_bases = bases;
 	INCREF(methods);
 	op->cl_methods = methods;
@@ -60,7 +68,8 @@ static void
 class_dealloc(op)
 	classobject *op;
 {
-	XDECREF(op->cl_bases);
+	int i;
+	DECREF(op->cl_bases);
 	DECREF(op->cl_methods);
 	XDECREF(op->cl_name);
 	free((ANY *)op);
@@ -77,8 +86,6 @@ class_getattr(op, name)
 		return op->cl_methods;
 	}
 	if (strcmp(name, "__bases__") == 0) {
-		if (op->cl_bases == NULL)
-			return newtupleobject(0);
 		INCREF(op->cl_bases);
 		return op->cl_bases;
 	}
@@ -95,7 +102,7 @@ class_getattr(op, name)
 		INCREF(v);
 		return v;
 	}
-	if (op->cl_bases != NULL) {
+	{
 		int n = gettuplesize(op->cl_bases);
 		int i;
 		for (i = 0; i < n; i++) {
@@ -105,7 +112,7 @@ class_getattr(op, name)
 			err_clear();
 		}
 	}
-	err_setstr(NameError, name);
+	err_setstr(AttributeError, name);
 	return NULL;
 }
 
@@ -209,7 +216,7 @@ instance_getattr(inst, name)
 		return w;
 	}
 	DECREF(v);
-	err_setstr(NameError, name);
+	err_setstr(AttributeError, name);
 	return NULL;
 }
 
