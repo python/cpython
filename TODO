@@ -1,12 +1,24 @@
-(-) always use my getopt.c
+(-) support lists in newgetargs()
 
-(-) get Extensions/X11/Doc checked in and out
+(-) syntax errors detected during compilation should give line number
+
+(-) dbm.open(): rwmode, filemode should be made optional; same for gdbm
+
+(-) find a bsd hash interface
+
+(-) posix.mkdir(): mode should be made optional
+
+(-) find a more useful order than alphabetical for Doc/libfuncs.tex
+
+======================================================================
+
+(*) use my getopt.c on Linux
+
+(*) get Extensions/X11/Doc checked in and out
 
 (-) investigate PPRC <URL:ftp://ftp.parc.xerox.com/pub/ppcr/>
 
 (*) add buffering parameter to fdopen() and popen()
-
-(-) "f()=0" generates syntax error msg without line number
 
 (-) interface to getdtablesize() in posix
 
@@ -14,7 +26,7 @@
 ./Modules/cdmodule.c ./Modules/flmodule.c ./Objects/accessobject.c
 ./Objects/frameobject.c ./Python/traceback.c
 
-(-) check reentrancy in list updates?
+(*) fix reentrancy in list updates?
 
 (-) speed up regsub.gsub
 

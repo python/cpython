@@ -9,6 +9,10 @@ nother to make an entry in this file, unless it was a serious bug
 
 ======================================================================
 
+(-) "f()=0" generates syntax error msg without line number
+
+======================================================================
+
 Known BUGS in 1.2 BETA 1, fixed in 1.2 BETA 2
 ---------------------------------------------
 

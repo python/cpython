@@ -237,13 +237,14 @@ clobber:	localclobber
 			(echo $$i; cd $$i; \
 			 if test -f Makefile; \
 			 then $(MAKE) clobber; \
-			 else $(MAKE) -f Makefile.in clobber; \
+			 else $(MAKE) -f $(srcdir)/Makefile.in clobber; \
 			 fi); \
 		done
 
 # Make things extra clean, before making a distribution
 distclean:	clobber
-		-$(MAKE) SUBDIRS="$(SUBDIRSTOO)" clobber
+		-$(MAKE) -f $(srcdir)/Makefile.in \
+			SUBDIRS="$(SUBDIRSTOO)" clobber
 		-rm -f config.status config.log config.cache config.h Makefile
 		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
 			 for f in $$i/*.in; do \
