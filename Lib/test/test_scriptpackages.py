@@ -26,6 +26,9 @@ class TestScriptpackages(unittest.TestCase):
     def test_StdSuites(self):
         self._test_scriptpackage('StdSuites')
         
+    def test_SystemEvents(self):
+        self._test_scriptpackage('SystemEvents')
+        
     def test_Finder(self):
         self._test_scriptpackage('Finder')
         
@@ -39,7 +42,7 @@ class TestScriptpackages(unittest.TestCase):
         self._test_scriptpackage('Explorer')
         
     def test_CodeWarrior(self):
-        self._test_scriptpackage('CodeWarrior')      
+        self._test_scriptpackage('CodeWarrior')
 
 def test_main():
     test_support.run_unittest(TestScriptpackages)
