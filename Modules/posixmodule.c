@@ -112,10 +112,10 @@ posix_1str(args, func)
 	object *args;
 	int (*func) FPROTO((const char *));
 {
-	object *path1;
+	char *path1;
 	if (!getstrarg(args, &path1))
 		return NULL;
-	if ((*func)(getstringvalue(path1)) < 0)
+	if ((*func)(path1) < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -126,10 +126,10 @@ posix_2str(args, func)
 	object *args;
 	int (*func) FPROTO((const char *, const char *));
 {
-	object *path1, *path2;
+	char *path1, *path2;
 	if (!getstrstrarg(args, &path1, &path2))
 		return NULL;
-	if ((*func)(getstringvalue(path1), getstringvalue(path2)) < 0)
+	if ((*func)(path1, path2) < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -140,11 +140,11 @@ posix_strint(args, func)
 	object *args;
 	int (*func) FPROTO((const char *, int));
 {
-	object *path1;
+	char *path;
 	int i;
-	if (!getstrintarg(args, &path1, &i))
+	if (!getstrintarg(args, &path, &i))
 		return NULL;
-	if ((*func)(getstringvalue(path1), i) < 0)
+	if ((*func)(path, i) < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -157,11 +157,11 @@ posix_do_stat(self, args, statfunc)
 	int (*statfunc) FPROTO((const char *, struct stat *));
 {
 	struct stat st;
-	object *path;
+	char *path;
 	object *v;
 	if (!getstrarg(args, &path))
 		return NULL;
-	if ((*statfunc)(getstringvalue(path), &st) != 0)
+	if ((*statfunc)(path, &st) != 0)
 		return posix_error();
 	v = newtupleobject(10);
 	if (v == NULL)
@@ -236,7 +236,8 @@ posix_listdir(self, args)
 	object *self;
 	object *args;
 {
-	object *name, *d, *v;
+	char *name;
+	object *d, *v;
 
 #ifdef MSDOS
 	struct ffblk ep;
@@ -244,7 +245,7 @@ posix_listdir(self, args)
 	if (!getstrarg(args, &name))
 		return NULL;
 
-	if (findfirst((char *) getstringvalue(name), &ep, 0) == -1)
+	if (findfirst(name, &ep, 0) == -1)
 		return posix_error();
 	if ((d = newlistobject(0)) == NULL)
 		return NULL;
@@ -268,7 +269,7 @@ posix_listdir(self, args)
 	struct direct *ep;
 	if (!getstrarg(args, &name))
 		return NULL;
-	if ((dirp = opendir(getstringvalue(name))) == NULL)
+	if ((dirp = opendir(name)) == NULL)
 		return posix_error();
 	if ((d = newlistobject(0)) == NULL) {
 		closedir(dirp);
@@ -351,11 +352,11 @@ posix_system(self, args)
 	object *self;
 	object *args;
 {
-	object *command;
+	char *command;
 	int sts;
 	if (!getstrarg(args, &command))
 		return NULL;
-	sts = system(getstringvalue(command));
+	sts = system(command);
 	return newintobject((long)sts);
 }
 
@@ -393,7 +394,7 @@ posix_utime(self, args)
 	object *self;
 	object *args;
 {
-	object *path;
+	char *path;
 
 #ifdef UTIME_STRUCT
 	struct utimbuf buf;
@@ -408,14 +409,9 @@ posix_utime(self, args)
 #define UTIME_ARG buf
 #endif
 
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
-		err_badarg();
+	if (!getargs(args, "(s(ll))", &path, &ATIME, &MTIME))
 		return NULL;
-	}
-	if (!getstrarg(gettupleitem(args, 0), &path) ||
-	    !getlonglongarg(gettupleitem(args, 1), &ATIME, &MTIME))
-		return NULL;
-	if (utime(getstringvalue(path), UTIME_ARG) < 0)
+	if (utime(path, UTIME_ARG) < 0)
 		return posix_error();
 	INCREF(None);
 	return None;
@@ -448,7 +444,8 @@ posix_exec(self, args)
 	object *self;
 	object *args;
 {
-	object *path, *argv;
+	char *path;
+	object *argv;
 	char **argvlist;
 	int i, argc;
 	object *(*getitem) PROTO((object *, int));
@@ -456,16 +453,8 @@ posix_exec(self, args)
 	/* exec has two arguments: (path, argv), where
 	   argv is a list or tuple of strings. */
 
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2) {
- badarg:
-		err_badarg();
+	if (!getargs(args, "(sO)", &path, &argv))
 		return NULL;
-	}
-	if (!getstrarg(gettupleitem(args, 0), &path))
-		return NULL;
-	argv = gettupleitem(args, 1);
-	if (argv == NULL)
-		goto badarg;
 	if (is_listobject(argv)) {
 		argc = getlistsize(argv);
 		getitem = getlistitem;
@@ -474,23 +463,24 @@ posix_exec(self, args)
 		argc = gettuplesize(argv);
 		getitem = gettupleitem;
 	}
-	else
-		goto badarg;
+	else {
+ badarg:
+		err_badarg();
+		return NULL;
+	}
 
 	argvlist = NEW(char *, argc+1);
 	if (argvlist == NULL)
 		return NULL;
 	for (i = 0; i < argc; i++) {
-		object *arg;
-		if (!getstrarg((*getitem)(argv, i), &arg)) {
+		if (!getstrarg((*getitem)(argv, i), &argvlist[i])) {
 			DEL(argvlist);
 			goto badarg;
 		}
-		argvlist[i] = getstringvalue(arg);
 	}
 	argvlist[argc] = NULL;
 
-	execv(getstringvalue(path), argvlist);
+	execv(path, argvlist);
 	
 	/* If we get here it's definitely an error */
 
@@ -560,22 +550,17 @@ posix_popen(self, args)
 	object *args;
 {
 	extern int pclose PROTO((FILE *));
-	object *name, *mode;
+	char *name, *mode;
 	FILE *fp;
-	if (args == NULL || !is_tupleobject(args) || gettuplesize(args) != 2 ||
-		!is_stringobject(name = gettupleitem(args, 0)) ||
-		!is_stringobject(mode = gettupleitem(args, 1))) {
-		err_setstr(TypeError, "popen() requires 2 string arguments");
+	if (!getargs(args, "(ss)", &name, &mode))
 		return NULL;
-	}
-	fp = popen(getstringvalue(name), getstringvalue(mode));
+	fp = popen(name, mode);
 	if (fp == NULL)
 		return posix_error();
 	/* From now on, ignore SIGPIPE and let the error checking
 	   do the work. */
 	(void) signal(SIGPIPE, SIG_IGN);
-	return newopenfileobject(fp, getstringvalue(name),
-				 getstringvalue(mode), pclose);
+	return newopenfileobject(fp, name, mode, pclose);
 }
 
 static object *
@@ -631,11 +616,11 @@ posix_readlink(self, args)
 	object *args;
 {
 	char buf[1024]; /* XXX Should use MAXPATHLEN */
-	object *path;
+	char *path;
 	int n;
 	if (!getstrarg(args, &path))
 		return NULL;
-	n = readlink(getstringvalue(path), buf, sizeof buf);
+	n = readlink(path, buf, sizeof buf);
 	if (n < 0)
 		return posix_error();
 	return newsizedstringobject(buf, n);
@@ -758,7 +743,7 @@ utime(path, times)
 	dft.ft_month = dt.da_mon;
 	dft.ft_year = (dt.da_year - 1980);	/* this is for TC library */
 
-	if ((fh = open(getstringvalue(path),O_RDWR)) < 0)
+	if ((fh = open(path,O_RDWR)) < 0)
 		return posix_error();	/* can't open file to set time */
 	if (setftime(fh,&dft) < 0)
 	{

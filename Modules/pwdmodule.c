@@ -76,11 +76,11 @@ static object *pwd_getpwuid(self, args)
 static object *pwd_getpwnam(self, args)
 	object *self, *args;
 {
-	object *name;
+	char *name;
 	struct passwd *p;
 	if (!getstrarg(args, &name))
 		return NULL;
-	if ((p = getpwnam(getstringvalue(name))) == NULL) {
+	if ((p = getpwnam(name)) == NULL) {
 		err_setstr(KeyError, "getpwnam(): name not found");
 		return NULL;
 	}
@@ -176,11 +176,11 @@ static object *grp_getgrgid(self, args)
 static object *grp_getgrnam(self, args)
 	object *self, *args;
 {
-	object *name;
+	char *name;
 	struct group *p;
 	if (!getstrarg(args, &name))
 		return NULL;
-	if ((p = getgrnam(getstringvalue(name))) == NULL) {
+	if ((p = getgrnam(name)) == NULL) {
 		err_setstr(KeyError, "getgrnam(): name not found");
 		return NULL;
 	}
