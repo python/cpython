@@ -151,6 +151,7 @@ class IncrementalParser(XMLReader):
         raise NotImplementedError("This method must be implemented!")
 
 # ===== LOCATOR =====
+
 class Locator:
     """Interface for associating a SAX event with a document
     location. A locator object will return valid results only during
@@ -173,11 +174,15 @@ class Locator:
         "Return the system identifier for the current event."
         return None
 
-# --- AttributesImpl
+# ===== ATTRIBUTESIMPL =====
+
 class AttributesImpl:
-    def __init__(self, attrs, rawnames):
+    
+    def __init__(self, attrs):
+        """Non-NS-aware implementation.
+
+        attrs should be of the form {name : value}."""
         self._attrs = attrs
-        self._rawnames = rawnames
 
     def getLength(self):
         return len(self._attrs)
@@ -189,16 +194,23 @@ class AttributesImpl:
         return self._attrs[name]
 
     def getValueByQName(self, name):
-        return self._attrs[self._rawnames[name]]
+        return self._attrs[name]
 
     def getNameByQName(self, name):
-        return self._rawnames[name]
+        if not self._attrs.has_key(name):
+            raise KeyError
+        return name
 
+    def getQNameByName(self, name):
+        if not self._attrs.has_key(name):
+            raise KeyError
+        return name        
+    
     def getNames(self):
         return self._attrs.keys()
 
     def getQNames(self):
-        return self._rawnames.keys()    
+        return self._attrs.keys()    
 
     def __len__(self):
         return len(self._attrs)
@@ -216,7 +228,7 @@ class AttributesImpl:
         return self._attrs.get(name, alternative)
 
     def copy(self):
-        return self.__class__(self._attrs, self._rawnames)
+        return self.__class__(self._attrs)
 
     def items(self):
         return self._attrs.items()
@@ -224,12 +236,46 @@ class AttributesImpl:
     def values(self):
         return self._attrs.values()
 
+# ===== ATTRIBUTESNSIMPL =====
+
+class AttributesNSImpl(AttributesImpl):
+    
+    def __init__(self, attrs, qnames):
+        """NS-aware implementation.
+
+        attrs should be of the form {(ns_uri, lname): value, ...}.
+        qnames of the form {(ns_uri, lname): qname, ...}."""
+        self._attrs = attrs
+        self._qnames = qnames
+
+    def getValueByQName(self, name):
+        for (nsname, qname) in self._qnames.items():
+            if qname == name:
+                return self._attrs[nsname]
+            
+        raise KeyError
+
+    def getNameByQName(self, name):
+        for (nsname, qname) in self._qnames.items():
+            if qname == name:
+                return nsname
+            
+        raise KeyError
+
+    def getQNameByName(self, name):
+        return self._qnames[name]
+    
+    def getQNames(self):
+        return self._qnames.values()
+
+    def copy(self):
+        return self.__class__(self._attrs, self._qnames)
+    
 
 def _test():
     XMLReader()
     IncrementalParser()
     Locator()
-    AttributesImpl()
 
 if __name__ == "__main__":
     _test()
