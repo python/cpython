@@ -1,0 +1,13 @@
+test_scope
+1. simple nesting
+2. extra nesting
+3. simple nesting + rebinding
+4. nesting with global but no free
+5. nesting through class
+6. nesting plus free ref to global
+7. nearest enclosing scope
+8. mixed freevars and cellvars
+9. free variable in method
+10. recursion
+11. unoptimized namespaces
+12. lambdas
