@@ -5,23 +5,15 @@ import stat
 import string
 
 
-# Normalize the case of a pathname.
-# On MS-DOS it maps the pathname to lowercase, turns slashes into
-# backslashes.
-# Other normalizations (such as optimizing '../' away) are not allowed
+# Normalize the case of a pathname and map slashes to backslashes.
+# Other normalizations (such as optimizing '../' away) are not done
 # (this is done by normpath).
-# Previously, this version mapped invalid consecutive characters to a 
-# single '_', but this has been removed.  This functionality should 
-# possibly be added as a new function.
+
+_normtable = string.maketrans(string.uppercase + "\\/",
+			      string.lowercase + os.sep * 2)
 
 def normcase(s):
-	res, s = splitdrive(s)
-	for c in s:
-		if c in '/\\':
-			res = res + os.sep
-		else:
-			res = res + c
-	return string.lower(res)
+    return string.translate(s, _normtable)
 
 
 # Return wheter a path is absolute.
