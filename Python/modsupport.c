@@ -39,13 +39,17 @@ typedef extended va_double;
 typedef double va_double;
 #endif
 
-/* initmodule4() parameters:
+/* Py_InitModule4() parameters:
    - name is the module name
    - methods is the list of top-level functions
    - doc is the documentation string
    - passthrough is passed as self to functions defined in the module
    - api_version is the value of PYTHON_API_VERSION at the time the
      module was compiled
+
+   Return value is a borrowed reference to the module object; or NULL
+   if an error occurred (in Python 1.4 and before, errors were fatal).
+   Errors may still leak memory.
 */
 
 static char api_version_warning[] =
@@ -65,25 +69,21 @@ Py_InitModule4(name, methods, doc, passthrough, module_api_version)
 	if (module_api_version != PYTHON_API_VERSION)
 		fprintf(stderr, api_version_warning,
 			name, PYTHON_API_VERSION, name, module_api_version);
-	if ((m = PyImport_AddModule(name)) == NULL) {
-		fprintf(stderr, "initializing module: %s\n", name);
-		Py_FatalError("can't create a module");
-	}
+	if ((m = PyImport_AddModule(name)) == NULL)
+		return NULL;
 	d = PyModule_GetDict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
 		v = PyCFunction_New(ml, passthrough);
-		if (v == NULL ||
-		    PyDict_SetItemString(d, ml->ml_name, v) != 0)
-		{
-			fprintf(stderr, "initializing module: %s\n", name);
-			Py_FatalError("can't initialize module");
-		}
+		if (v == NULL)
+			return NULL;
+		if (PyDict_SetItemString(d, ml->ml_name, v) != 0)
+			return NULL;
 		Py_DECREF(v);
 	}
 	if (doc != NULL) {
 		v = PyString_FromString(doc);
 		if (v == NULL || PyDict_SetItemString(d, "__doc__", v) != 0)
-			Py_FatalError("can't add doc string");
+			return NULL;
 		Py_DECREF(v);
 	}
 	return m;
