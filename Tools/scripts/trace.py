@@ -353,7 +353,7 @@ def create_results_log(results, dirname = ".", show_missing = 1,
             lines = open(filename, 'r').readlines()
         except IOError, err:
             print >> sys.stderr, "trace: Could not open %s for reading " \
-                  "because: %s - skipping" % (`filename`, err.strerror)
+                  "because: %s - skipping" % (`filename`, err)
             continue
 
         try:
@@ -361,7 +361,7 @@ def create_results_log(results, dirname = ".", show_missing = 1,
         except IOError, err:
             sys.stderr.write(
                 '%s: Could not open %s for writing because: %s" \
-                "- skipping\n' % ("trace", `listfilename`, err.strerror))
+                "- skipping\n' % ("trace", `listfilename`, err))
             continue
 
         # If desired, get a list of the line numbers which represent
@@ -416,7 +416,7 @@ def create_results_log(results, dirname = ".", show_missing = 1,
                              open(os.path.join(dirname, "modules"), "w"))
             except IOError, err:
                 sys.stderr.write("cannot save counts/modules " \
-                                 "files because %s" % err.strerror)
+                                 "files because %s" % err)
 
     if summary and sums:
         mods = sums.keys()
@@ -663,7 +663,7 @@ def main(argv = None):
             run(t.trace, 'execfile(' + `progname` + ')')
         except IOError, err:
             _err_exit("Cannot run file %s because: %s" % \
-                      (`sys.argv[0]`, err.strerror))
+                      (`sys.argv[0]`, err))
 
     elif count:
         t = Coverage(ignore)
@@ -671,7 +671,7 @@ def main(argv = None):
             run(t.trace, 'execfile(' + `progname` + ')')
         except IOError, err:
             _err_exit("Cannot run file %s because: %s" % \
-                      (`sys.argv[0]`, err.strerror))
+                      (`sys.argv[0]`, err))
         except SystemExit:
             pass
 
@@ -699,7 +699,7 @@ def main(argv = None):
                               open(counts_file, 'wb'))
             except IOError, err:
                 _err_exit("Cannot save counts file %s because: %s" % \
-                          (`counts_file`, err.strerror))
+                          (`counts_file`, err))
 
     elif report:
         old_counts, old_modules = marshal.load(open(counts_file, 'rb'))
