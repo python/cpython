@@ -45,12 +45,12 @@ How do I learn Python?
 ----------------------
 
 The official tutorial is still a good place to start (in the Doc
-directory as tut.tex; and http://www.python.org/doc/tut/tut.html).
+directory as tut/tut.tex; and http://www.python.org/doc/tut/tut.html).
 Aaron Watters wrote a second tutorial, that may be more accessible for
-some: http://www.wcmh.com/uworld/archives/95/tutorial/005.html.  Both
-tutorials (as well as most other sources) assume that you already know
-how to program -- if you'd like to write "Python for Dummies", I know
-a publisher who would like to talk to you...
+some: http://www.networkcomputing.com/unixworld/tutorial/005/005.html.
+Both tutorials (as well as most other sources) assume that you already
+know how to program -- if you'd like to write "Python for Dummies", I
+know a publisher who would like to talk to you...
 
 There are now also several books on Python.  While these are still
 based on Python 1.3 or 1.4, the information in them is still 99%
