@@ -22,11 +22,11 @@ def main():
 		except EOFError:
 			break
 		if v: print 'header:', `type`, size
-		if type = 'COMM':
+		if type == 'COMM':
 			nchannels, nsampframes, sampwidth, samprate = \
 				aiff.read_comm_chunk(f)
 			if v: print nchannels, nsampframes, sampwidth, samprate
-		elif type = 'SSND':
+		elif type == 'SSND':
 			offset, blocksize = aiff.read_ssnd_chunk(f)
 			if v: print offset, blocksize
 			data = f.read(size-8)
