@@ -7,9 +7,9 @@
 
 import sys
 import traceback
-from codeop import compile_command
+from codeop import CommandCompiler, compile_command
 
-__all__ = ["InteractiveInterpreter","InteractiveConsole","interact",
+__all__ = ["InteractiveInterpreter", "InteractiveConsole", "interact",
            "compile_command"]
 
 def softspace(file, newvalue):
@@ -45,6 +45,7 @@ class InteractiveInterpreter:
         if locals is None:
             locals = {"__name__": "__console__", "__doc__": None}
         self.locals = locals
+        self.compile = CommandCompiler()
 
     def runsource(self, source, filename="<input>", symbol="single"):
         """Compile and run some source in the interpreter.
@@ -71,7 +72,7 @@ class InteractiveInterpreter:
 
         """
         try:
-            code = compile_command(source, filename, symbol)
+            code = self.compile(source, filename, symbol)
         except (OverflowError, SyntaxError, ValueError):
             # Case 1
             self.showsyntaxerror(filename)

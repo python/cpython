@@ -377,10 +377,14 @@ builtin_compile(PyObject *self, PyObject *args)
 	char *filename;
 	char *startstr;
 	int start;
+	int dont_inherit = 0;
+	int supplied_flags = 0;
 	PyCompilerFlags cf;
 
-	if (!PyArg_ParseTuple(args, "sss:compile", &str, &filename, &startstr))
+	if (!PyArg_ParseTuple(args, "sss|ii:compile", &str, &filename, 
+			      &startstr, &supplied_flags, &dont_inherit))
 		return NULL;
+
 	if (strcmp(startstr, "exec") == 0)
 		start = Py_file_input;
 	else if (strcmp(startstr, "eval") == 0)
@@ -392,21 +396,35 @@ builtin_compile(PyObject *self, PyObject *args)
 		   "compile() arg 3 must be 'exec' or 'eval' or 'single'");
 		return NULL;
 	}
-	cf.cf_flags = 0;
-	if (PyEval_MergeCompilerFlags(&cf))
-		return Py_CompileStringFlags(str, filename, start, &cf);
-	else
-		return Py_CompileString(str, filename, start);
+
+	if (supplied_flags & ~(PyCF_MASK | PyCF_MASK_OBSOLETE)) {
+		PyErr_SetString(PyExc_ValueError,
+				"compile(): unrecognised flags");
+		return NULL;
+	}
+	/* XXX Warn if (supplied_flags & PyCF_MASK_OBSOLETE) != 0? */
+
+	cf.cf_flags = supplied_flags;
+	if (!dont_inherit) {
+		PyEval_MergeCompilerFlags(&cf);
+	}
+	return Py_CompileStringFlags(str, filename, start, &cf);
 }
 
 static char compile_doc[] =
-"compile(source, filename, mode) -> code object\n\
+"compile(source, filename, mode[, flags[, dont_inherit]]) -> code object\n\
 \n\
 Compile the source string (a Python module, statement or expression)\n\
 into a code object that can be executed by the exec statement or eval().\n\
 The filename will be used for run-time error messages.\n\
 The mode must be 'exec' to compile a module, 'single' to compile a\n\
-single (interactive) statement, or 'eval' to compile an expression.";
+single (interactive) statement, or 'eval' to compile an expression.\n\
+The flags argument, if present, controls which future statements influence\n\
+the compilation of the code.\n\
+The dont_inherit argument, if non-zero, stops the compilation inheriting\n\
+the effects of any future statements in effect in the code calling\n\
+compile; if absent or zero these statements do influence the compilation,\n\
+in addition to any features explicitly specified.";
 
 
 static PyObject *
