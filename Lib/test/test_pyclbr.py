@@ -23,6 +23,8 @@ class PyclbrTest(TestCase):
 
     def assertListEq(self, l1, l2, ignore):
         ''' succeed iff {l1} - {ignore} == {l2} - {ignore} '''
+        l1.sort()
+        l2.sort()
         try:
             for p1, p2 in (l1, l2), (l2, l1):
                 for item in p1:
@@ -30,7 +32,7 @@ class PyclbrTest(TestCase):
                     if not ok:
                         self.fail("%r missing" % item)
         except:
-            print >>sys.stderr, "l1=%r, l2=%r, ignore=%r" % (l1, l2, ignore)
+            print >>sys.stderr, "l1=%r\nl2=%r\nignore=%r" % (l1, l2, ignore)
             raise
 
     def assertHasattr(self, obj, attr, ignore):
@@ -67,6 +69,16 @@ class PyclbrTest(TestCase):
 
         dict = pyclbr.readmodule_ex(moduleName)
 
+        def ismethod(obj, name):
+            if not  isinstance(obj, MethodType):
+                return False
+            if obj.im_self is not None:
+                return False
+            objname = obj.__name__
+            if objname.startswith("__") and not objname.endswith("__"):
+                objname = "_%s%s" % (obj.im_class.__name__, objname)
+            return objname == name
+
         # Make sure the toplevel functions and classes are the same.
         for name, value in dict.items():
             if name in ignore:
@@ -89,7 +101,7 @@ class PyclbrTest(TestCase):
 
                 actualMethods = []
                 for m in py_item.__dict__.keys():
-                    if type(getattr(py_item, m)) == MethodType:
+                    if ismethod(getattr(py_item, m), m):
                         actualMethods.append(m)
                 foundMethods = []
                 for m in value.methods.keys():
@@ -98,11 +110,15 @@ class PyclbrTest(TestCase):
                     else:
                         foundMethods.append(m)
 
-                self.assertListEq(foundMethods, actualMethods, ignore)
-                self.assertEquals(py_item.__module__, value.module)
+                try:
+                    self.assertListEq(foundMethods, actualMethods, ignore)
+                    self.assertEquals(py_item.__module__, value.module)
 
-                self.assertEquals(py_item.__name__, value.name, ignore)
-                # can't check file or lineno
+                    self.assertEquals(py_item.__name__, value.name, ignore)
+                    # can't check file or lineno
+                except:
+                    print >>sys.stderr, "class=%s" % py_item
+                    raise
 
         # Now check for missing stuff.
         def defined_in(item, module):
@@ -119,51 +135,29 @@ class PyclbrTest(TestCase):
 
     def test_easy(self):
         self.checkModule('pyclbr')
-        self.checkModule('doctest',
-                         ignore=['_isclass',
-                                 '_isfunction',
-                                 '_ismodule',
-                                 '_classify_class_attrs'])
-        self.checkModule('rfc822', ignore=["get"])
+        self.checkModule('doctest')
+        self.checkModule('rfc822')
         self.checkModule('difflib')
 
     def test_others(self):
         cm = self.checkModule
 
-        # these are about the 20 longest modules.
-
+        # These were once about the 10 longest modules
         cm('random', ignore=('_verify',)) # deleted
-
-        cm('cgi', ignore=('f', 'g',       # nested declarations
-                          'log'))         # set with =, not def
-
-        cm('mhlib', ignore=('do',          # nested declaration
-                            'bisect'))     # imported method, set with =
-
-        cm('urllib', ignore=('getproxies_environment', # set with =
-                             'getproxies_registry',    # set with =
-                             'open_https'))            # not on all platforms
-
-        cm('pickle', ignore=('g',))       # deleted declaration
-
-        cm('aifc', ignore=('openfp',))    # set with =
-
-        cm('Cookie', ignore=('__str__', 'Cookie')) # set with =
-
-        cm('sre_parse', ignore=('literal', # nested def
-                                'makedict', 'dump' # from sre_constants
-                                ))
+        cm('cgi', ignore=('log',))      # set with = in module
+        cm('mhlib')
+        cm('urllib', ignore=('getproxies_registry',
+                             'open_https')) # not on all platforms
+        cm('pickle', ignore=('g',))     # from types import *
+        cm('aifc', ignore=('openfp',))  # set with = in module
+        cm('Cookie')
+        cm('sre_parse', ignore=('dump',)) # from sre_constants import *
+        cm('pdb')
+        cm('pydoc')
 
         # Tests for modules inside packages
         cm('email.Parser')
-
-        cm('test.test_pyclbr', ignore=('defined_in',))
-
-        # pydoc doesn't work because of string issues
-        # cm('pydoc', pydoc)
-
-        # pdb plays too many dynamic games
-        # cm('pdb', pdb)
+        cm('test.test_pyclbr')
 
 
 def test_main():
