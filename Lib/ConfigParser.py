@@ -170,11 +170,9 @@ class ConfigParser:
         if type(filenames) is type(''):
             filenames = [filenames]
         for file in filenames:
-            try:
-                fp = open(file, 'r')
-                self.__read(fp)
-            except IOError:
-                pass
+            fp = open(file)
+            self.__read(fp)
+            fp.close()
 
     def get(self, section, option, raw=0, vars=None):
         """Get an option value for a given section.
