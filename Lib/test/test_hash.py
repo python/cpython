@@ -28,4 +28,9 @@ class HashEqualityTestCase(unittest.TestCase):
         self.same_hash(float(0.5), complex(0.5, 0.0))
 
 
-test_support.run_unittest(HashEqualityTestCase)
+def test_main():
+    test_support.run_unittest(HashEqualityTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -65,4 +65,10 @@ class DircacheTests(unittest.TestCase):
         dircache.annotate(self.tempdir, lst)
         self.assertEquals(lst, ['A/', 'test2', 'test_nonexistent'])
 
-run_unittest(DircacheTests)
+
+def test_main():
+    run_unittest(DircacheTests)
+
+
+if __name__ == "__main__":
+    test_main()

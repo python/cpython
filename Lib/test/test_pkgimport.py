@@ -75,4 +75,10 @@ class TestImport(unittest.TestCase):
         reload(module)
         self.assertEqual(getattr(module, var), 1)
 
-run_unittest(TestImport)
+
+def test_main():
+    run_unittest(TestImport)
+
+
+if __name__ == "__main__":
+    test_main()

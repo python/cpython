@@ -22,4 +22,10 @@ class UTF16Test(unittest.TestCase):
         f = reader(s)
         self.assertEquals(f.read(), u"spamspam")
 
-test_support.run_unittest(UTF16Test)
+
+def test_main():
+    test_support.run_unittest(UTF16Test)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -19,4 +19,9 @@ class GroupDatabaseTestCase(unittest.TestCase):
         entry = grp.getgrnam(self.groups[0][0])
 
 
-test_support.run_unittest(GroupDatabaseTestCase)
+def test_main():
+    test_support.run_unittest(GroupDatabaseTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

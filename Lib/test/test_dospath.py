@@ -53,4 +53,9 @@ class DOSPathTestCase(unittest.TestCase):
         self.assertEquals(splitdrive("c:"), ('c:', ''))
 
 
-test_support.run_unittest(DOSPathTestCase)
+def test_main():
+    test_support.run_unittest(DOSPathTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

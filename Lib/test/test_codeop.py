@@ -87,4 +87,10 @@ class CodeopTests(unittest.TestCase):
         self.assertNotEquals(compile_command("a = 1\n", "abc").co_filename,
                              compile("a = 1\n", "def", 'single').co_filename)
 
-run_unittest(CodeopTests)
+
+def test_main():
+    run_unittest(CodeopTests)
+
+
+if __name__ == "__main__":
+    test_main()

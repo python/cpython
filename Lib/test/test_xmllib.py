@@ -27,4 +27,9 @@ class XMLParserTestCase(unittest.TestCase):
         parser.close()
 
 
-test_support.run_unittest(XMLParserTestCase)
+def test_main():
+    test_support.run_unittest(XMLParserTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

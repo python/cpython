@@ -42,4 +42,9 @@ class BinHexTestCase(unittest.TestCase):
         self.assertEqual(self.DATA, finish)
 
 
-test_support.run_unittest(BinHexTestCase)
+def test_main():
+    test_support.run_unittest(BinHexTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

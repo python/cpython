@@ -49,4 +49,10 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assertRaises(TypeError, eval, "~2j")
         self.assertRaises(TypeError, eval, "~2.0")
 
-run_unittest(UnaryOpTestCase)
+
+def test_main():
+    run_unittest(UnaryOpTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

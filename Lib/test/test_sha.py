@@ -27,4 +27,9 @@ class SHATestCase(unittest.TestCase):
                    "34aa973cd4c4daa4f61eeb2bdbad27316534016f")
 
 
-test_support.run_unittest(SHATestCase)
+def test_main():
+    test_support.run_unittest(SHATestCase)
+
+
+if __name__ == "__main__":
+    test_main()

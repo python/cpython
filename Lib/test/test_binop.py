@@ -320,4 +320,9 @@ self.assertEqual(Rat(1, 2) * 3.0, 1.5)
 self.assertEqual(eval('1/2'), 0.5)
 """
 
-test_support.run_unittest(RatTestCase)
+def test_main():
+    test_support.run_unittest(RatTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

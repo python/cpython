@@ -48,4 +48,9 @@ class TimeTestCase(unittest.TestCase):
                                         999999))
 
 
-test_support.run_unittest(TimeTestCase)
+def test_main():
+    test_support.run_unittest(TimeTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

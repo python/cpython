@@ -66,4 +66,10 @@ class FpformatTest(unittest.TestCase):
         else:
             self.fail("No exception on non-numeric sci")
 
-run_unittest(FpformatTest)
+
+def test_main():
+    run_unittest(FpformatTest)
+
+
+if __name__ == "__main__":
+    test_main()

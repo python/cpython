@@ -122,4 +122,10 @@ class CFunctionCalls(unittest.TestCase):
     def test_oldargs1_2_kw(self):
         self.assertRaises(TypeError, {}.update, x=2, y=2)
 
-run_unittest(CFunctionCalls)
+
+def test_main():
+    run_unittest(CFunctionCalls)
+
+
+if __name__ == "__main__":
+    test_main()

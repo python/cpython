@@ -22,4 +22,9 @@ class CopyRegTestCase(unittest.TestCase):
                           type(1), int, "not a callable")
 
 
-test_support.run_unittest(CopyRegTestCase)
+def test_main():
+    test_support.run_unittest(CopyRegTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

@@ -42,4 +42,10 @@ class CommandTests(unittest.TestCase):
 
         self.assert_(re.match(pat, getstatus("/bin/ls"), re.VERBOSE))
 
-run_unittest(CommandTests)
+
+def test_main():
+    run_unittest(CommandTests)
+
+
+if __name__ == "__main__":
+    test_main()

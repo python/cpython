@@ -76,4 +76,10 @@ class QueryTestCase(unittest.TestCase):
                 verify(native == got, "expected %s got %s from pprint.%s" %
                                       (native, got, function))
 
-test_support.run_unittest(QueryTestCase)
+
+def test_main():
+    test_support.run_unittest(QueryTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

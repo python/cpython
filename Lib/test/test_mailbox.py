@@ -96,4 +96,9 @@ class MaildirTestCase(unittest.TestCase):
     # XXX We still need more tests!
 
 
-test_support.run_unittest(MaildirTestCase)
+def test_main():
+    test_support.run_unittest(MaildirTestCase)
+
+
+if __name__ == "__main__":
+    test_main()

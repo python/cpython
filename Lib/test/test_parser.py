@@ -353,5 +353,13 @@ class IllegalSyntaxTestCase(unittest.TestCase):
         self.check_bad_tree(tree, "a $= b")
 
 
-test_support.run_unittest(RoundtripLegalSyntaxTestCase)
-test_support.run_unittest(IllegalSyntaxTestCase)
+def test_main():
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
+    suite.addTest(loader.loadTestsFromTestCase(RoundtripLegalSyntaxTestCase))
+    suite.addTest(loader.loadTestsFromTestCase(IllegalSyntaxTestCase))
+    test_support.run_suite(suite)
+
+
+if __name__ == "__main__":
+    test_main()

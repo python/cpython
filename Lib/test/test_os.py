@@ -62,5 +62,9 @@ class TemporaryFileTests(unittest.TestCase):
         self.check_tempfile(os.tmpnam())
 
 
+def test_main():
+    run_unittest(TemporaryFileTests)
 
-run_unittest(TemporaryFileTests)
+
+if __name__ == "__main__":
+    test_main()
