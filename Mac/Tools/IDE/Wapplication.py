@@ -190,6 +190,8 @@ class Application(FrameWork.Application):
 			self.checkmenus(None)
 		result = MenuToolbox.MenuSelect(where)
 		id = (result>>16) & 0xffff	# Hi word
+		if id >= 0x8000:
+			id = -0x10000 + id
 		item = result & 0xffff		# Lo word
 		self.do_rawmenu(id, item, window, event)
 	
