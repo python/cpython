@@ -13,12 +13,21 @@ command line switch.
 
 
 Python.dll                 - 1e100000 - 1e180000 (-1)
-Standard Extension Modules - 1e180000 - 1e200000  ""
+Standard Extension Modules 1e180000 - 1e200000  ""
  - bsddb                     1e180000 - 1e188000  ""
  - _tkinter                  1e190000 - 1e1A0000
  - parser                    1e1A0000 - 1e1B0000
  - zlib                      1e1B0000 - 1e1C0000
  - winreg                    1e1C0000 - 1e1D0000
+ - _socket                   1e1D0000 - 1e1E0000
+ - _sre                      1e1E0000 - 1e1F0000
+ - mmap                      1e1F0000 - 1e1FFFFF
+
+More standard extensions 1D100000 - 1e000000
+ - pyexpat                   1D100000 - 1D110000
+ - select                    1D110000 - 1D120000
+ - unicodedata               1D120000 - 1D130000
+ - winsound                  1D130000 - 1D140000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
