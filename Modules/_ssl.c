@@ -220,6 +220,7 @@ newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
 		ret = SSL_CTX_use_certificate_chain_file(self->ctx,
 						       cert_file);
 		Py_END_ALLOW_THREADS
+		SSL_CTX_set_options(self->ctx, SSL_OP_ALL); /* ssl compatibility */
 		if (ret < 1) {
 			errstr = "SSL_CTX_use_certificate_chain_file error";
 			goto fail;
