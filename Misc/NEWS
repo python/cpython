@@ -6,11 +6,15 @@ Build
 - configure supports a new option --enable-unicode, with the values
   ucs2 and ucs4 (new in 2.2a1). With --disable-unicode, the Unicode
   type and supporting code is completely removed from the interpreter.
-  
+
 - A new configure option --enable-framework builds a Mac OS X framework,
   which "make frameworkinstall" will install. This provides a starting
   point for more mac-like functionality, join pythonmac-sig@python.org
   if you are interested in helping.
+
+- The NeXT platform is no longer supported.
+
+- The `new' module is now statically linked.
 
 Tools
 
@@ -21,12 +25,23 @@ Tools
 Tests
 
 - regrtest.py now knows which tests are expected to be skipped on some
-  platforms, allowing to give clearer test result output.
+  platforms, allowing to give clearer test result output.  regrtest
+  also has optional --use/-u switch to run normally disabled tests
+  which require network access or consume significant disk resources.
 
 - Several new tests in the standard test suite, with special thanks to
   Nick Mathewson.
 
 Core
+
+- The floor division operator // has been added as outlined in PEP
+  238.  The / operator still provides classic division (and will until
+  Python 3.0) unless "from __future__ import division" is included, in
+  which case the / operator will provide true division.  The operator
+  module provides truediv() and floordiv() functions.  Augmented
+  assignment variants are included, as are the equivalent overloadable
+  methods and C API methods.  See the PEP for a full discussion:
+  <http://python.sf.net/peps/pep-0238.html>
 
 - Future statements are now effective in simulated interactive shells
   (like IDLE).  This should "just work" by magic, but read Michael
@@ -60,6 +75,14 @@ Library
   reliable than using xml.sax.saxutils.escape() for attribute values.
 
 - Readline completion support for cmd.Cmd was added.
+
+- Calling os.tempnam() or os.tmpnam() generate RuntimeWarnings.
+
+- Added function threading.BoundedSemaphore()
+
+- Added Ka-Ping Yee's cgitb.py module.
+
+- The `new' module now exposes the CO_xxx flags.
 
 New platforms
 
