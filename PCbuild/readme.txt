@@ -27,3 +27,12 @@ libraries etc.
 
 When using the Debug setting, the output files have a _d added to
 their name: python15_d.dll, python_d.exe, parser_d.pyd, and so on.
+
+If you want to create your own extension module DLL, there's an
+example with easy-to-follow instructions in ../PC/example/; read the
+file readme.txt there first.
+
+Pointers:
+Tcl/Tk	http://sunscript.sun.com/ or http://www.scriptics.com
+zlib	http://www.winimage.com/zLibDll
+bsddb	Sam Rushing's web/ftp site
