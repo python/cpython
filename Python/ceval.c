@@ -647,6 +647,7 @@ eval_code(co, globals, locals, arg)
 
 #define GETCONST(i)	Getconst(f, i)
 #define GETNAME(i)	Getname(f, i)
+#define GETNAMEV(i)	Getnamev(f, i)
 #define FIRST_INSTR()	(GETUSTRINGVALUE(f->f_code->co_code))
 #define INSTR_OFFSET()	(next_instr - FIRST_INSTR())
 #define NEXTOP()	(*next_instr++)
@@ -1090,9 +1091,9 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case STORE_NAME:
-			name = GETNAME(oparg);
+			w = GETNAMEV(oparg);
 			v = POP();
-			err = dictinsert(f->f_locals, name, v);
+			err = dict2insert(f->f_locals, w, v);
 			DECREF(v);
 			break;
 		
