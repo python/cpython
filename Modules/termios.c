@@ -52,7 +52,7 @@ termios_tcgetattr(self, args)
 	/* Convert the MIN and TIME slots to integer.  On some systems, the
 	   MIN and TIME slots are the same as the EOF and EOL slots.  So we
 	   only do this in noncanonical input mode.  */
-	if (mode.c_lflag & ICANON == 0) {
+	if ((mode.c_lflag & ICANON) == 0) {
 		v = PyInt_FromLong((long)mode.c_cc[VMIN]);
 		if (v == NULL)
 			return NULL;
