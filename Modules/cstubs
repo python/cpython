@@ -587,12 +587,15 @@ gl_lrectwrite(self, args)
 		return NULL;
 	if (!getiobjectarg(args, 5, 4, &s))
 		return NULL;
+#if 0
+/* Don't check this, it breaks experiments with pixmode(PM_SIZE, ...) */
 	pixcount = (long)(x2+1-x1) * (long)(y2+1-y1);
 	if (!is_stringobject(s) || getstringsize(s) != pixcount*sizeof(long)) {
-		fprintf(stderr, "string arg to lrectwrite has wrong size\n");
-		err_badarg();
+		err_setstr(RuntimeError,
+			   "string arg to lrectwrite has wrong size");
 		return NULL;
 	}
+#endif
 	lrectwrite( x1 , y1 , x2 , y2 , (unsigned long *) parray );
 	INCREF(None);
 	return None;
@@ -675,8 +678,8 @@ gl_packrect(self, args)
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
 	if (getstringsize(unpacked) != pixcount*sizeof(long)) {
-		fprintf(stderr, "string arg to packrect has wrong size\n");
-		err_badarg();
+		err_setstr(RuntimeError,
+			   "string arg to packrect has wrong size");
 		return NULL;
 	}
 	packed = newsizedstringobject((char *)NULL, packedcount);
@@ -690,7 +693,7 @@ gl_packrect(self, args)
 			r = pixel & 0xff;
 			g = (pixel >> 8) & 0xff;
 			b = (pixel >> 16) & 0xff;
-			*p++ = (r+g+b) / 3;
+			*p++ = (30*r+59*g+11*b) / 100;
 		}
 	}
 	return packed;
@@ -736,8 +739,8 @@ gl_unpackrect(self, args)
 	packedcount = ((width+packfactor-1)/packfactor) *
 		((height+packfactor-1)/packfactor);
 	if (getstringsize(packed) != packedcount) {
-		fprintf(stderr, "string arg to unpackrect has wrong size\n");
-		err_badarg();
+		err_setstr(RuntimeError,
+			   "string arg to unpackrect has wrong size");
 		return NULL;
 	}
 	unpacked = newsizedstringobject((char *)NULL, pixcount*sizeof(long));
