@@ -858,6 +858,51 @@ makeipaddr(struct sockaddr *addr, int addrlen)
 }
 
 
+#ifdef USE_BLUETOOTH
+/* Convert a string representation of a Bluetooth address into a numeric
+   address.  Returns the length (6), or raises an exception and returns -1 if
+   an error occurred. */
+
+static int
+setbdaddr(char *name, bdaddr_t *bdaddr)
+{
+	unsigned int b0, b1, b2, b3, b4, b5;
+	char ch;
+	int n;
+
+	n = sscanf(name, "%X:%X:%X:%X:%X:%X%c",
+		   &b5, &b4, &b3, &b2, &b1, &b0, &ch);
+	if (n == 6 && (b0 | b1 | b2 | b3 | b4 | b5) < 256) {
+		bdaddr->b[0] = b0;
+		bdaddr->b[1] = b1;
+		bdaddr->b[2] = b2;
+		bdaddr->b[3] = b3;
+		bdaddr->b[4] = b4;
+		bdaddr->b[5] = b5;
+		return 6;
+	} else {
+		PyErr_SetString(socket_error, "bad bluetooth address");
+		return -1;
+	}
+}
+
+/* Create a string representation of the Bluetooth address.  This is always a
+   string of the form 'XX:XX:XX:XX:XX:XX' where XX is a two digit hexadecimal
+   value (zero padded if necessary). */
+
+static PyObject *
+makebdaddr(bdaddr_t *bdaddr)
+{
+	char buf[(6 * 2) + 5 + 1];
+
+	sprintf(buf, "%02X:%02X:%02X:%02X:%02X:%02X",
+		bdaddr->b[5], bdaddr->b[4], bdaddr->b[3],
+		bdaddr->b[2], bdaddr->b[1], bdaddr->b[0]);
+	return PyString_FromString(buf);
+}
+#endif
+
+
 /* Create an object representing the given socket address,
    suitable for passing it back to bind(), connect() etc.
    The family field of the sockaddr structure is inspected
@@ -865,7 +910,7 @@ makeipaddr(struct sockaddr *addr, int addrlen)
 
 /*ARGSUSED*/
 static PyObject *
-makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
+makesockaddr(int sockfd, struct sockaddr *addr, int addrlen, int proto)
 {
 	if (addrlen == 0) {
 		/* No address -- may be recvfrom() from known socket */
@@ -918,6 +963,49 @@ makesockaddr(int sockfd, struct sockaddr *addr, int addrlen)
 		}
 		return ret;
 	}
+#endif
+
+#ifdef USE_BLUETOOTH
+	case AF_BLUETOOTH:
+		switch (proto) {
+
+		case BTPROTO_L2CAP:
+		{
+			struct sockaddr_l2 *a = (struct sockaddr_l2 *) addr;
+			PyObject *addrobj = makebdaddr(&_BT_L2_MEMB(a, bdaddr));
+			PyObject *ret = NULL;
+			if (addrobj) {
+				ret = Py_BuildValue("Oi",
+						    addrobj,
+						    _BT_L2_MEMB(a, psm));
+				Py_DECREF(addrobj);
+			}
+			return ret;
+		}
+
+		case BTPROTO_RFCOMM:
+		{
+			struct sockaddr_rc *a = (struct sockaddr_rc *) addr;
+			PyObject *addrobj = makebdaddr(&_BT_RC_MEMB(a, bdaddr));
+			PyObject *ret = NULL;
+			if (addrobj) {
+				ret = Py_BuildValue("Oi",
+						    addrobj,
+						    _BT_RC_MEMB(a, channel));
+				Py_DECREF(addrobj);
+			}
+			return ret;
+		}
+
+#if !defined(__FreeBSD__)
+		case BTPROTO_SCO:
+		{
+			struct sockaddr_sco *a = (struct sockaddr_sco *) addr;
+			return makebdaddr(&_BT_SCO_MEMB(a, bdaddr));
+		}
+#endif
+
+		}
 #endif
 
 #ifdef HAVE_NETPACKET_PACKET_H
@@ -1054,63 +1142,69 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #ifdef USE_BLUETOOTH
 	case AF_BLUETOOTH:
 	{
-		switch( s->sock_proto )
+		switch (s->sock_proto) {
+		case BTPROTO_L2CAP:
 		{
-			case BTPROTO_L2CAP:
-			{
-				struct sockaddr_l2* addr = (struct sockaddr_l2*)_BT_SOCKADDR_MEMB(s, l2);
-				bdaddr_t* bdaddr = &_BT_L2_MEMB(addr, bdaddr);
+			struct sockaddr_l2 *addr = (struct sockaddr_l2 *) _BT_SOCKADDR_MEMB(s, l2);
+			char *straddr;
 
-				_BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
-				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &_BT_L2_MEMB(addr, psm)) )
-				{
-					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
-					return 0;
-				}
-
-				*addr_ret = (struct sockaddr *) addr;
-				*len_ret = sizeof *addr;
-				return 1;
-			}
-			case BTPROTO_RFCOMM:
-			{
-				struct sockaddr_rc* addr = (struct sockaddr_rc*)_BT_SOCKADDR_MEMB(s, rc);
-				bdaddr_t* bdaddr = &_BT_RC_MEMB(addr, bdaddr);
-
-				_BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
-				if( !PyArg_ParseTuple(args, "(iiiiii)i", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5], &_BT_RC_MEMB(addr, channel)) )
-				{
-					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
-					return 0;
-				}
-
-				*addr_ret = (struct sockaddr *) addr;
-				*len_ret = sizeof *addr;
-				return 1;
-			}
-#if !defined(__FreeBSD__)
-			case BTPROTO_SCO:
-			{
-				struct sockaddr_sco* addr = (struct sockaddr_sco*)_BT_SOCKADDR_MEMB(s, sco);
-				bdaddr_t* bdaddr = &_BT_SCO_MEMB(addr, bdaddr);
-
-				_BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
-				if( !PyArg_ParseTuple(args, "iiiiii", &bdaddr->b[0], &bdaddr->b[1], &bdaddr->b[2], &bdaddr->b[3], &bdaddr->b[4], &bdaddr->b[5]) )
-				{
-					PyErr_SetString(socket_error, "getsockaddrarg: wrong format");
-					return 0;
-				}
-
-				*addr_ret = (struct sockaddr *) addr;
-				*len_ret = sizeof *addr;
-				return 1;
-			}
-#endif
-			default:
-			{
-				PyErr_SetString(socket_error, "getsockaddrarg: unknown Bluetooth protocol");
+			_BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
+			if (!PyArg_ParseTuple(args, "si", &straddr,
+					      &_BT_L2_MEMB(addr, psm))) {
+				PyErr_SetString(socket_error, "getsockaddrarg: "
+						"wrong format");
 				return 0;
 			}
+			if (setbdaddr(straddr, &_BT_L2_MEMB(addr, bdaddr)) < 0)
+				return 0;
+
+			*addr_ret = (struct sockaddr *) addr;
+			*len_ret = sizeof *addr;
+			return 1;
+		}
+		case BTPROTO_RFCOMM:
+		{
+			struct sockaddr_rc *addr = (struct sockaddr_rc *) _BT_SOCKADDR_MEMB(s, rc);
+			char *straddr;
+
+			_BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
+			if (!PyArg_ParseTuple(args, "si", &straddr,
+					      &_BT_RC_MEMB(addr, channel))) {
+				PyErr_SetString(socket_error, "getsockaddrarg: "
+						"wrong format");
+				return 0;
+			}
+			if (setbdaddr(straddr, &_BT_RC_MEMB(addr, bdaddr)) < 0)
+				return 0;
+
+			*addr_ret = (struct sockaddr *) addr;
+			*len_ret = sizeof *addr;
+			return 1;
+		}
+#if !defined(__FreeBSD__)
+		case BTPROTO_SCO:
+		{
+			struct sockaddr_sco *addr = (struct sockaddr_sco *) _BT_SOCKADDR_MEMB(s, sco);
+			char *straddr;
+
+			_BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
+			straddr = PyString_AsString(args);
+			if (straddr == NULL) {
+				PyErr_SetString(socket_error, "getsockaddrarg: "
+						"wrong format");
+				return 0;
+			}
+			if (setbdaddr(straddr, &_BT_SCO_MEMB(addr, bdaddr)) < 0)
+				return 0;
+
+			*addr_ret = (struct sockaddr *) addr;
+			*len_ret = sizeof *addr;
+			return 1;
+		}
+#endif
+		default:
+			PyErr_SetString(socket_error, "getsockaddrarg: unknown Bluetooth protocol");
+			return 0;
 		}
 	}
 #endif
@@ -1193,28 +1287,23 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
 	{
 		switch(s->sock_proto)
 		{
-			case BTPROTO_L2CAP:
-			{
-				*len_ret = sizeof (struct sockaddr_l2);
-				return 1;
-			}
-			case BTPROTO_RFCOMM:
-			{
-				*len_ret = sizeof (struct sockaddr_rc);
-				return 1;
-			}
+
+		case BTPROTO_L2CAP:
+			*len_ret = sizeof (struct sockaddr_l2);
+			return 1;
+		case BTPROTO_RFCOMM:
+			*len_ret = sizeof (struct sockaddr_rc);
+			return 1;
 #if !defined(__FreeBSD__)
-			case BTPROTO_SCO:
-			{
-				*len_ret = sizeof (struct sockaddr_sco);
-				return 1;
-			}
+		case BTPROTO_SCO:
+			*len_ret = sizeof (struct sockaddr_sco);
+			return 1;
 #endif
-			default:
-			{
-				PyErr_SetString(socket_error, "getsockaddrlen: unknown BT protocol");
-				return 0;
-			}
+		default:
+			PyErr_SetString(socket_error, "getsockaddrlen: "
+					"unknown BT protocol");
+			return 0;
+
 		}
 	}
 #endif
@@ -1291,7 +1380,7 @@ sock_accept(PySocketSockObject *s)
 		goto finally;
 	}
 	addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
-			    addrlen);
+			    addrlen, s->sock_proto);
 	if (addr == NULL)
 		goto finally;
 
@@ -1754,7 +1843,8 @@ sock_getsockname(PySocketSockObject *s)
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return s->errorhandler();
-	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
+	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen,
+			    s->sock_proto);
 }
 
 PyDoc_STRVAR(getsockname_doc,
@@ -1782,7 +1872,8 @@ sock_getpeername(PySocketSockObject *s)
 	Py_END_ALLOW_THREADS
 	if (res < 0)
 		return s->errorhandler();
-	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
+	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen,
+			    s->sock_proto);
 }
 
 PyDoc_STRVAR(getpeername_doc,
@@ -2037,7 +2128,7 @@ sock_recvfrom(PySocketSockObject *s, PyObject *args)
 		return NULL;
 
 	if (!(addr = makesockaddr(s->sock_fd, (struct sockaddr *)addrbuf,
-				  addrlen)))
+				  addrlen, s->sock_proto)))
 		goto finally;
 
 	ret = PyTuple_Pack(2, buf, addr);
@@ -3259,7 +3350,7 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
 		goto err;
 	for (res = res0; res; res = res->ai_next) {
 		PyObject *addr =
-			makesockaddr(-1, res->ai_addr, res->ai_addrlen);
+			makesockaddr(-1, res->ai_addr, res->ai_addrlen, protocol);
 		if (addr == NULL)
 			goto err;
 		single = Py_BuildValue("iiisO", res->ai_family,
@@ -3717,8 +3808,8 @@ init_socket(void)
 	PyModule_AddIntConstant(m, "BTPROTO_SCO", BTPROTO_SCO);
 #endif
 	PyModule_AddIntConstant(m, "BTPROTO_RFCOMM", BTPROTO_RFCOMM);
-	PyModule_AddObject(m, "BDADDR_ANY", Py_BuildValue( "iiiiii", 0,0,0,0,0,0 ) );
-	PyModule_AddObject(m, "BDADDR_LOCAL", Py_BuildValue( "iiiiii", 0,0,0,0xff,0xff,0xff ) );
+	PyModule_AddObject(m, "BDADDR_ANY", Py_BuildValue("s", "00:00:00:00:00:00"));
+	PyModule_AddObject(m, "BDADDR_LOCAL", Py_BuildValue("s", "00:00:00:FF:FF:FF"));
 #endif
 
 #ifdef HAVE_NETPACKET_PACKET_H
