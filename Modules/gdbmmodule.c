@@ -187,37 +187,43 @@ dbm_keys(dp, args)
 	object *args;
 {
 	register object *v, *item;
-	datum key, okey={ (char *)NULL, 0};
+	datum key, nextkey;
 	int err;
 
 	if (dp == NULL || !is_dbmobject(dp)) {
 		err_badcall();
 		return NULL;
 	}
+
 	if (!getnoarg(args))
 		return NULL;
+
 	v = newlistobject(0);
 	if (v == NULL)
 		return NULL;
-	for (key = gdbm_firstkey(dp->di_dbm); key.dptr;
-				key = gdbm_nextkey(dp->di_dbm,okey) ) {
+
+	key = gdbm_firstkey(dp->di_dbm);
+	while (key.dptr) {
 	    item = newsizedstringobject(key.dptr, key.dsize);
-	    if (item == 0) {
-		    DECREF(v);
-		    return NULL;
+	    if (item == NULL) {
+		free(key.dptr);
+		DECREF(v);
+		return NULL;
 	    }
 	    err = addlistitem(v, item);
 	    DECREF(item);
-    	    if(okey.dsize) free(okey.dptr);
 	    if (err != 0) {
-		    DECREF(v);
-		    return NULL;
+		free(key.dptr);
+		DECREF(v);
+		return NULL;
 	    }
-    	    okey=key;
+	    nextkey = gdbm_nextkey(dp->di_dbm, key);
+	    free(key.dptr);
+	    key = nextkey;
 	}
+
 	return v;
 }
-
 
 static object *
 dbm_has_key(dp, args)
