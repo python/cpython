@@ -24,225 +24,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Macintosh Python configuration file */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#ifdef macintosh
-/* The Macintosh main program is in either macapplet.c or macapplication.c */
-#define NO_MAIN
-#endif
-
-#include <stdio.h>
-#include <string.h>
-
-#include "myproto.h"
-#include "mymalloc.h"
-#include "osdefs.h"
-#include "intrcheck.h"
-
-
-#ifndef NO_MAIN
-
-/* Normally, the main program is called from here (so everything else
-   can be in libPython.a).  We save a pointer to argv[0] because it
-   may be needed for dynamic loading of modules in import.c.  If you
-   have your own main program and want to use non-SunOS dynamic
-   loading, you will have to provide your own version of
-   getprogramname(). */
-
-static char *argv0;
-
-main(argc, argv)
-	int argc;
-	char **argv;
-{
-	argv0 = argv[0];
-	realmain(argc, argv);
-}
-
-char *
-getprogramname()
-{
-	return argv0;
-}
-
-#endif
-
-
-/* Python version information */
-
-#include "patchlevel.h"
-
-/* Return the version string.  This is constructed from the official
-   version number (from patchlevel.h), and the current date (if known
-   to the compiler, else a manually inserted date). */
-
-#define VERSION "%s (%s)"
-
-#ifdef __DATE__
-#define DATE __DATE__
-#else
-#define DATE "Aug 17 1994"
-#endif
-
-char *
-getversion()
-{
-	static char version[80];
-	sprintf(version, VERSION, PATCHLEVEL, DATE);
-#ifdef __MWERKS__
-#ifdef __powerc
-	strcat(version, " [MW PPC compiler]");
-#else
-#ifdef __CFM68K__
-	strcat(version, " [MW CFM68K compiler]");
-#else
-	strcat(version, " [MW 68K compiler]");
-#endif
-#endif
-#endif
-#ifdef THINK_C
-#ifdef __SC__
-	strcat(version, " [Symantec Think C compiler]");
-#else
-	strcat(version, " [Think C compiler]");
-#endif
-#endif
-#ifdef MPW
-#ifdef __SC__
-	strcat(version, " [Symantec MPW C compiler]");
-#else
-	strcat(version, " [Apple MPW C compiler]");
-#endif
-#endif
-	return version;
-}
-
-
-/* Return the copyright string.  This is updated manually. */
-
-char *
-getcopyright()
-{
-	return "Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam";
-}
-
-char *
-getplatform()
-{
-	return "mac";
-}
-
-/* Return the initial python search path.  This is called once from
-   initsys() to initialize sys.path.
-   The environment variable PYTHONPATH is fetched and the default path
-   appended.  (The Mac has no environment variables, so there the
-   default path is always returned.)  The default path may be passed
-   to the preprocessor; if not, a system-dependent default is used. */
-
-#define PYTHONPATH "\
-:\n\
-:Lib\n\
-:Lib:stdwin\n\
-:Lib:test\n\
-:Lib:mac"
-
-#ifndef PYTHONPATH
-#ifdef macintosh
-/* Mod by Jack: \n is now separator. */
-#define PYTHONPATH ":\n:Lib\n:Lib:stdwin\n:Lib:test\n:Lib:mac\n:PackedLib\n:PlugIns"
-#endif /* macintosh */
-#endif /* !PYTHONPATH */
-
-#ifndef PYTHONPATH
-#if defined(MSDOS) || defined(NT)
-#define PYTHONPATH ".;..\\lib;\\python\\lib"
-#endif /* MSDOS || NT */
-#endif /* !PYTHONPATH */
-
-#ifndef PYTHONPATH
-#define PYTHONPATH ".:/usr/local/lib/python"
-#endif /* !PYTHONPATH */
-
-extern char *getenv();
-
-char *
-getpythonpath()
-{
-#ifdef macintosh
-	/* Modified by Jack to do something a bit more sensible:
-	** - Prepend the python home-directory (which is obtained from a Preferences
-	**   resource)
-	** - Add :
-	*/
-	static char *pythonpath;
-	char *curwd;
-	char *p, *endp;
-	int newlen;
-	extern char *PyMac_GetPythonDir();
-#ifndef USE_BUILTIN_PATH
-	extern char *PyMac_GetPythonPath();
-#endif
-	
-	if ( pythonpath ) return pythonpath;
-	curwd = PyMac_GetPythonDir();
-#ifndef USE_BUILTIN_PATH
-	if ( pythonpath = PyMac_GetPythonPath(curwd) )
-		return pythonpath;
-	printf("Warning: No pythonpath resource found, using builtin default\n");
-#endif
-	p = PYTHONPATH;
-	endp = p;
-	pythonpath = malloc(2);
-	if ( pythonpath == NULL ) return PYTHONPATH;
-	strcpy(pythonpath, ":");
-	while (*endp) {
-		endp = strchr(p, '\n');
-		if ( endp == NULL )
-			endp = p + strlen(p);
-		newlen = strlen(pythonpath) + 1 + strlen(curwd) + (endp-p);
-		pythonpath = realloc(pythonpath, newlen+1);
-		if ( pythonpath == NULL ) return PYTHONPATH;
-		strcat(pythonpath, "\n");
-		if ( *p == ':' ) {
-			p++;
-			strcat(pythonpath, curwd);
-			strncat(pythonpath, p, (endp-p));
-			newlen--;   /* Ok, ok, we've allocated one byte too much */
-		} else {
-			/* We've allocated too much in this case */
-			newlen -= strlen(curwd);
-			pythonpath = realloc(pythonpath, newlen+1);
-			if ( pythonpath == NULL ) return PYTHONPATH;
-			strncat(pythonpath, p, (endp-p));
-		}
-		pythonpath[newlen] = '\0';
-		p = endp + 1;
-	}
-	return pythonpath;
-#else /* !macintosh */
-	char *path = getenv("PYTHONPATH");
-	char *defpath = PYTHONPATH;
-	char *buf;
-	char *p;
-	int n;
-
-	if (path == 0 || *path == '\0')
-		return defpath;
-	n = strlen(path) + strlen(defpath) + 2;
-	buf = malloc(n);
-	if (buf == NULL)
-		return path; /* XXX too bad -- but not likely */
-	strcpy(buf, path);
-	p = buf + strlen(buf);
-	*p++ = DELIM;
-	strcpy(p, defpath);
-	return buf;
-#endif /* !macintosh */
-}
-
-
+#include "Python.h"
 /* Table of built-in modules.
    These are initialized when first imported.
    Note: selection of optional extensions is now generally done by the
@@ -331,7 +113,7 @@ extern void initimgop();
 
 /* -- ADDMODULE MARKER 1 -- */
 
-extern void initmarshal();
+extern void PyMarshal_Init();
 extern void initimp();
 
 struct {
@@ -403,7 +185,7 @@ struct {
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
-	{"marshal", initmarshal},
+	{"marshal", PyMarshal_Init},
 	
 	/* This module "lives in" with import.c */
 	{"imp", initimp},
@@ -416,15 +198,3 @@ struct {
 	/* Sentinel */
 	{0, 0}
 };
-
-#ifdef USE_FROZEN
-#include "frozen.c"
-#else
-struct frozen {
-	char *name;
-	char *code;
-	int size;
-} frozen_modules[] = {
-	{0, 0, 0}
-};
-#endif
