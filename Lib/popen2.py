@@ -89,9 +89,14 @@ class Popen3:
             _active.remove(self)
         return self.sts
 
-try:
-    from os import popen2
-except NameError:
+if hasattr(os, "popen2"):
+    def popen2(cmd, mode='t', bufsize=-1):
+        """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+        specified, it sets the buffer size for the I/O pipes.  The file objects
+        (child_stdout, child_stdin) are returned."""
+        w, r = os.popen2(cmd, mode, bufsize)
+        return r, w
+else:
     def popen2(cmd, mode='t', bufsize=-1):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
         specified, it sets the buffer size for the I/O pipes.  The file objects
@@ -104,9 +109,14 @@ except NameError:
         inst = Popen3(cmd, 0, bufsize)
         return inst.fromchild, inst.tochild
 
-try:
-    from os import popen3
-except NameError:
+if hasattr(os, "popen3"):
+    def popen3(cmd, mode='t', bufsize=-1):
+        """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+        specified, it sets the buffer size for the I/O pipes.  The file objects
+        (child_stdout, child_stdin, child_stderr) are returned."""
+        w, r, e = os.popen3(cmd, mode, bufsize)
+        return r, w, e
+else:
     def popen3(cmd, mode='t', bufsize=-1):
         """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
         specified, it sets the buffer size for the I/O pipes.  The file objects
@@ -119,10 +129,15 @@ except NameError:
         inst = Popen3(cmd, 1, bufsize)
         return inst.fromchild, inst.tochild, inst.childerr
 
-try:
-    from os import popen4
-except NameError:
-    pass # not on unix
+if hasattr(os, "popen4"):
+    def popen4(cmd, mode='t', bufsize=-1):
+        """Execute the shell command 'cmd' in a sub-process.  If 'bufsize' is
+        specified, it sets the buffer size for the I/O pipes.  The file objects
+        (child_stdout_stderr, child_stdin) are returned."""
+        w, r = os.popen4(cmd, mode, bufsize)
+        return r, w
+else:
+    pass # not yet on unix
 
 def _test():
     teststr = "abc\n"
