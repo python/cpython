@@ -163,7 +163,8 @@ Convert the frame rate of the input fragment.
 \var{state} is a tuple containing the state of the converter.  The
 converter returns a tuple \code{(\var{newfragment}, \var{newstate})},
 and \var{newstate} should be passed to the next call of
-\function{ratecv()}.
+\function{ratecv()}.  The initial call should pass \code{None}
+as the state.
 
 The \var{weightA} and \var{weightB} arguments are parameters for a
 simple digital filter and default to \code{1} and \code{0} respectively.
