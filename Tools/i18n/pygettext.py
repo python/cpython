@@ -2,7 +2,7 @@
 # -*- coding: iso-8859-1 -*-
 # Originally written by Barry Warsaw <barry@zope.com>
 #
-# Minimally patched to make it even more xgettext compatible 
+# Minimally patched to make it even more xgettext compatible
 # by Peter Funk <pf@artcom-gmbh.de>
 #
 # 2002-11-22 Jürgen Hermann <jh@web.de>
@@ -25,17 +25,17 @@ __doc__ = _("""pygettext -- Python equivalent of xgettext(1)
 Many systems (Solaris, Linux, Gnu) provide extensive tools that ease the
 internationalization of C programs. Most of these tools are independent of
 the programming language and can be used from within Python programs.
-Martin von Loewis' work[1] helps considerably in this regard. 
+Martin von Loewis' work[1] helps considerably in this regard.
 
 There's one problem though; xgettext is the program that scans source code
 looking for message strings, but it groks only C (or C++). Python
 introduces a few wrinkles, such as dual quoting characters, triple quoted
-strings, and raw strings. xgettext understands none of this. 
+strings, and raw strings. xgettext understands none of this.
 
 Enter pygettext, which uses Python's standard tokenize module to scan
 Python source code, generating .pot files identical to what GNU xgettext[2]
 generates for C and C++ code. From there, the standard GNU tools can be
-used. 
+used.
 
 A word about marking Python strings as candidates for translation. GNU
 xgettext recognizes the following keywords: gettext, dgettext, dcgettext,
@@ -43,7 +43,7 @@ and gettext_noop. But those can be a lot of text to include all over your
 code. C and C++ have a trick: they use the C preprocessor. Most
 internationalized C source includes a #define for gettext() to _() so that
 what has to be written in the source is much less. Thus these are both
-translatable strings: 
+translatable strings:
 
     gettext("Translatable String")
     _("Translatable String")
@@ -59,7 +59,7 @@ NOTE: pygettext attempts to be option and feature compatible with GNU
 xgettext where ever possible. However some options are still missing or are
 not fully implemented. Also, xgettext's use of command line switches with
 option arguments is broken, and in these cases, pygettext just defines
-additional switches. 
+additional switches.
 
 Usage: pygettext [options] inputfile ...
 
@@ -156,7 +156,9 @@ If `inputfile' is -, standard input is read.
 """)
 
 import os
+import imp
 import sys
+import glob
 import time
 import getopt
 import token
@@ -256,19 +258,17 @@ def normalize(s):
 
 
 def containsAny(str, set):
-    """ Check whether 'str' contains ANY of the chars in 'set'
-    """
+    """Check whether 'str' contains ANY of the chars in 'set'"""
     return 1 in [c in str for c in set]
 
 
 def _visit_pyfiles(list, dirname, names):
-    """ Helper for getFilesForName().
-    """
+    """Helper for getFilesForName()."""
     # get extension for python source files
     if not globals().has_key('_py_ext'):
-        import imp
         global _py_ext
-        _py_ext = [triple[0] for triple in imp.get_suffixes() if triple[2] == imp.PY_SOURCE][0]
+        _py_ext = [triple[0] for triple in imp.get_suffixes()
+                   if triple[2] == imp.PY_SOURCE][0]
 
     # don't recurse into CVS directories
     if 'CVS' in names:
@@ -276,20 +276,18 @@ def _visit_pyfiles(list, dirname, names):
 
     # add all *.py files to list
     list.extend(
-        [os.path.join(dirname, file)
-            for file in names
-                if os.path.splitext(file)[1] == _py_ext])
+        [os.path.join(dirname, file) for file in names
+         if os.path.splitext(file)[1] == _py_ext]
+        )
 
 
 def _get_modpkg_path(dotted_name, pathlist=None):
-    """ Get the filesystem path for a module or a package.
+    """Get the filesystem path for a module or a package.
 
-        Return the file system path to a file for a module,
-        and to a directory for a package. Return None if
-        the name is not found, or is a builtin or extension module.
+    Return the file system path to a file for a module, and to a directory for
+    a package. Return None if the name is not found, or is a builtin or
+    extension module.
     """
-    import imp
-
     # split off top-most name
     parts = dotted_name.split('.', 1)
 
@@ -310,8 +308,10 @@ def _get_modpkg_path(dotted_name, pathlist=None):
     else:
         # plain name
         try:
-            file, pathname, description = imp.find_module(dotted_name, pathlist)
-            if file: file.close()
+            file, pathname, description = imp.find_module(
+                dotted_name, pathlist)
+            if file:
+                file.close()
             if description[2] not in [imp.PY_SOURCE, imp.PKG_DIRECTORY]:
                 pathname = None
         except ImportError:
@@ -321,15 +321,12 @@ def _get_modpkg_path(dotted_name, pathlist=None):
 
 
 def getFilesForName(name):
-    """ Get a list of module files for a filename, a module or package name,
-        or a directory.
+    """Get a list of module files for a filename, a module or package name,
+    or a directory.
     """
-    import imp
-
     if not os.path.exists(name):
         # check for glob chars
         if containsAny(name, "*?[]"):
-            import glob
             files = glob.glob(name)
             list = []
             for file in files:
@@ -415,7 +412,7 @@ class TokenEater:
     def __openseen(self, ttype, tstring, lineno):
         if ttype == tokenize.OP and tstring == ')':
             # We've seen the last of the translatable strings.  Record the
-            # line number of the first line of the strings and update the list 
+            # line number of the first line of the strings and update the list
             # of messages seen.  Reset state for the next batch.  If there
             # were no strings inside _(), then just ignore this entry.
             if self.__data:
@@ -426,8 +423,13 @@ class TokenEater:
         elif ttype not in [tokenize.COMMENT, token.INDENT, token.DEDENT,
                            token.NEWLINE, tokenize.NL]:
             # warn if we see anything else than STRING or whitespace
-            print >>sys.stderr, _('*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"') % {
-                'token': tstring, 'file': self.__curfile, 'lineno': self.__lineno}
+            print >> sys.stderr, _(
+                '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
+                ) % {
+                'token': tstring,
+                'file': self.__curfile,
+                'lineno': self.__lineno
+                }
             self.__state = self.__waiting
 
     def __addentry(self, msg, lineno=None, isdocstring=0):
@@ -662,6 +664,6 @@ if __name__ == '__main__':
     main()
     # some more test strings
     _(u'a unicode string')
-    _('*** Seen unexpected token "%(token)s"' % {'token': 'test'}) # this one creates a warning
+    # this one creates a warning
+    _('*** Seen unexpected token "%(token)s"') % {'token': 'test'}
     _('more' 'than' 'one' 'string')
-
