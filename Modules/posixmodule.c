@@ -3025,8 +3025,8 @@ posix_WSTOPSIG(self, args)
 #include <sys/statvfs.h>
 
 static char posix_fstatvfs__doc__[] =
-"fstatvfs(fd) -> \
-(bsize,frsize,blocks,bfree,bavail,files,ffree,favail,fsid,flag, namemax)\n\
+"fstatvfs(fd) -> \n\
+ (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax)\n\
 Perform an fstatvfs system call on the given fd.";
 
 static PyObject *
@@ -3044,7 +3044,7 @@ posix_fstatvfs(self, args)
 	if (res != 0)
 		return posix_error();
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(lllllllllll)",
+	return Py_BuildValue("(llllllllll)",
 		    (long) st.f_bsize,
 		    (long) st.f_frsize,
 		    (long) st.f_blocks,
@@ -3053,11 +3053,10 @@ posix_fstatvfs(self, args)
 		    (long) st.f_files,
 		    (long) st.f_ffree,
 		    (long) st.f_favail,
-		    (long) st.f_fsid,
 		    (long) st.f_flag,
 		    (long) st.f_namemax);
 #else
-	return Py_BuildValue("(llLLLLLLlll)",
+	return Py_BuildValue("(llLLLLLLll)",
 		    (long) st.f_bsize,
 		    (long) st.f_frsize,
 		    (LONG_LONG) st.f_blocks,
@@ -3066,7 +3065,6 @@ posix_fstatvfs(self, args)
 		    (LONG_LONG) st.f_files,
 		    (LONG_LONG) st.f_ffree,
 		    (LONG_LONG) st.f_favail,
-		    (long) st.f_fsid,
 		    (long) st.f_flag,
 		    (long) st.f_namemax);
 #endif
@@ -3078,8 +3076,8 @@ posix_fstatvfs(self, args)
 #include <sys/statvfs.h>
 
 static char posix_statvfs__doc__[] =
-"statvfs(path) -> \
-(bsize,frsize,blocks,bfree,bavail,files,ffree,favail,fsid,flag, namemax)\n\
+"statvfs(path) -> \n\
+ (bsize, frsize, blocks, bfree, bavail, files, ffree, favail, flag, namemax)\n\
 Perform a statvfs system call on the given path.";
 
 static PyObject *
@@ -3098,7 +3096,7 @@ posix_statvfs(self, args)
 	if (res != 0)
 		return posix_error_with_filename(path);
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-	return Py_BuildValue("(lllllllllll)",
+	return Py_BuildValue("(llllllllll)",
 		    (long) st.f_bsize,
 		    (long) st.f_frsize,
 		    (long) st.f_blocks,
@@ -3107,11 +3105,10 @@ posix_statvfs(self, args)
 		    (long) st.f_files,
 		    (long) st.f_ffree,
 		    (long) st.f_favail,
-		    (long) st.f_fsid,
 		    (long) st.f_flag,
 		    (long) st.f_namemax);
 #else	/* HAVE_LARGEFILE_SUPPORT */
-	return Py_BuildValue("(llLLLLLLlll)",
+	return Py_BuildValue("(llLLLLLLll)",
 		    (long) st.f_bsize,
 		    (long) st.f_frsize,
 		    (LONG_LONG) st.f_blocks,
@@ -3120,7 +3117,6 @@ posix_statvfs(self, args)
 		    (LONG_LONG) st.f_files,
 		    (LONG_LONG) st.f_ffree,
 		    (LONG_LONG) st.f_favail,
-		    (long) st.f_fsid,
 		    (long) st.f_flag,
 		    (long) st.f_namemax);
 #endif
