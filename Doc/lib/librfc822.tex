@@ -18,11 +18,13 @@ parameter.  Message relies only on the input object having a
 Instantiation reads headers from the input object up to a delimiter
 line (normally a blank line) and stores them in the instance.
 
-If the input object has \code{seek} and \code{tell} methods, the
-last action of the class initialization is to try to seek the object
-to just before the blank line that terminates the headers.
-Otherwise, if the input object has an \code{unread} method, that
-method is used to push back the delimiter line.
+This class can work with any input object that supports a readline
+method.  If the input object has seek and tell capability, the
+\code{rewindbody} method will work; also, illegal lines will be pushed back
+onto the input stream.  If the input object lacks seek but has an
+\code{unread} method that can push back a line of input, Message will use
+that to push back illegal lines.  Thus this class can be used to parse
+messages coming from a buffered stream.
 
 The optional \code{seekable} argument is provided as a workaround for
 certain stdio libraries in which tell() discards buffered data before
@@ -83,10 +85,19 @@ Seek to the start of the message body.  This only works if the file
 object is seekable.
 \end{methoddesc}
 
+\begin{methoddesc}{isheader}{line}
+Returns a line's canonicalized fieldname (the dictionary key that will
+be used to index it) if the line is a legal RFC822 header; otherwise
+returns None (implying that parsing should stop here and the line be
+pushed back on the input stream).  It is sometimes useful to override
+this method in a subclass.
+\end{methoddesc}
+
 \begin{methoddesc}{islast}{line}
 Return true if the given line is a delimiter on which Message should
-stop.  By default this method just checks that the line is blank, but
-you can override it in a subclass.
+stop.  The delimiter line is consumed, and the file object's read
+location positioned immediately after it.  By default this method just
+checks that the line is blank, but you can override it in a subclass.
 \end{methoddesc}
 
 \begin{methoddesc}{iscomment}{line}
