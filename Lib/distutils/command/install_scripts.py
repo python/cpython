@@ -11,12 +11,12 @@ import os
 from distutils.core import Command
 from stat import ST_MODE
 
-class install_scripts(Command):
+class install_scripts (Command):
 
-    description = "install scripts"
+    description = "install scripts (Python or otherwise)"
 
     user_options = [
-        ('install-dir=', 'd', "directory to install to"),
+        ('install-dir=', 'd', "directory to install scripts to"),
         ('build-dir=','b', "build directory (where to install from)"),
         ('skip-build', None, "skip the build steps"),
     ]
