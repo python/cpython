@@ -2,12 +2,19 @@
 
 import os
 from Menu import *
-
-# Since we can't (yet) list the mounted volumes, here's a list of some:
-my_volumes = ['C:', 'D:', 'E:', 'F:']
+import macfs
+import sys
 
 def main():
 	global oldbar
+	my_volumes = []
+	while 1:
+		fss, ok = macfs.GetDirectory()
+		if not ok:
+			break
+		my_volumes.append(fss.as_pathname())
+	if not my_volumes:
+		return
 	oldbar = GetMenuBar()
 	ClearMenuBar()
 	makevolmenus(my_volumes)
@@ -40,10 +47,10 @@ def adddirectory(menu, dir, maxdepth = 1):
 	for file in files:
 		item = item+1
 		menu.AppendMenu('x')		# add a dummy string
-		menu.SetItem(item, file)	# set the actual text
+		menu.SetMenuItemText(item, file)	# set the actual text
 		fullname = os.path.join(dir, file)
 		if os.path.isdir(fullname):
-			menu.SetItem(item, ':' + file + ':')	# append colons
+			menu.SetMenuItemText(item, ':' + file + ':')	# append colons
 			if maxdepth > 0:
 				id = nextid()
 				submenu = NewMenu(id, fullname)
@@ -58,3 +65,4 @@ def adddirectory(menu, dir, maxdepth = 1):
 
 if __name__ == '__main__':
 	main()
+	sys.exit(1)   # To allow the user to interact...

@@ -5,6 +5,9 @@
 
 import string
 
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
+
 # Declarations that change for each manager
 MACHEADERFILE = 'Windows.h'		# The Apple header file
 MODNAME = 'Win'				# The name of the module
@@ -22,6 +25,7 @@ from macsupport import *
 # Create the type objects
 
 WindowPtr = OpaqueByValueType(OBJECTTYPE, OBJECTPREFIX)
+WindowRef = WindowPtr
 WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)
 WindowPeek.passInput = lambda name: "(WindowPeek)(%s)" % name
 

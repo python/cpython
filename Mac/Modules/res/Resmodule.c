@@ -240,7 +240,7 @@ static PyObject *ResObj_AddResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_SizeResource(_self, _args)
+static PyObject *ResObj_GetResourceSizeOnDisk(_self, _args)
 	ResourceObject *_self;
 	PyObject *_args;
 {
@@ -248,7 +248,7 @@ static PyObject *ResObj_SizeResource(_self, _args)
 	long _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = SizeResource(_self->ob_itself);
+	_rv = GetResourceSizeOnDisk(_self->ob_itself);
 	{
 		OSErr _err = ResError();
 		if (_err != noErr) return PyMac_Error(_err);
@@ -258,7 +258,7 @@ static PyObject *ResObj_SizeResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_MaxSizeRsrc(_self, _args)
+static PyObject *ResObj_GetMaxResourceSize(_self, _args)
 	ResourceObject *_self;
 	PyObject *_args;
 {
@@ -266,7 +266,7 @@ static PyObject *ResObj_MaxSizeRsrc(_self, _args)
 	long _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = MaxSizeRsrc(_self->ob_itself);
+	_rv = GetMaxResourceSize(_self->ob_itself);
 	{
 		OSErr _err = ResError();
 		if (_err != noErr) return PyMac_Error(_err);
@@ -331,14 +331,14 @@ static PyObject *ResObj_ChangedResource(_self, _args)
 	return _res;
 }
 
-static PyObject *ResObj_RmveResource(_self, _args)
+static PyObject *ResObj_RemoveResource(_self, _args)
 	ResourceObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	RmveResource(_self->ob_itself);
+	RemoveResource(_self->ob_itself);
 	{
 		OSErr _err = ResError();
 		if (_err != noErr) return PyMac_Error(_err);
@@ -385,6 +385,24 @@ static PyObject *ResObj_SetResourceSize(_self, _args)
 	return _res;
 }
 
+static PyObject *ResObj_GetNextFOND(_self, _args)
+	ResourceObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetNextFOND(_self->ob_itself);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+
 static PyMethodDef ResObj_methods[] = {
 	{"HomeResFile", (PyCFunction)ResObj_HomeResFile, 1,
 	 "() -> (short _rv)"},
@@ -402,9 +420,9 @@ static PyMethodDef ResObj_methods[] = {
 	 "(short theID, Str255 name) -> None"},
 	{"AddResource", (PyCFunction)ResObj_AddResource, 1,
 	 "(ResType theType, short theID, Str255 name) -> None"},
-	{"SizeResource", (PyCFunction)ResObj_SizeResource, 1,
+	{"GetResourceSizeOnDisk", (PyCFunction)ResObj_GetResourceSizeOnDisk, 1,
 	 "() -> (long _rv)"},
-	{"MaxSizeRsrc", (PyCFunction)ResObj_MaxSizeRsrc, 1,
+	{"GetMaxResourceSize", (PyCFunction)ResObj_GetMaxResourceSize, 1,
 	 "() -> (long _rv)"},
 	{"RsrcMapEntry", (PyCFunction)ResObj_RsrcMapEntry, 1,
 	 "() -> (long _rv)"},
@@ -412,12 +430,14 @@ static PyMethodDef ResObj_methods[] = {
 	 "(short attrs) -> None"},
 	{"ChangedResource", (PyCFunction)ResObj_ChangedResource, 1,
 	 "() -> None"},
-	{"RmveResource", (PyCFunction)ResObj_RmveResource, 1,
+	{"RemoveResource", (PyCFunction)ResObj_RemoveResource, 1,
 	 "() -> None"},
 	{"WriteResource", (PyCFunction)ResObj_WriteResource, 1,
 	 "() -> None"},
 	{"SetResourceSize", (PyCFunction)ResObj_SetResourceSize, 1,
 	 "(long newSize) -> None"},
+	{"GetNextFOND", (PyCFunction)ResObj_GetNextFOND, 1,
+	 "() -> (Handle _rv)"},
 	{NULL, NULL, 0}
 };
 
@@ -1017,8 +1037,8 @@ static PyObject *Res_OpenRFPerm(_self, _args)
 	short _rv;
 	Str255 fileName;
 	short vRefNum;
-	char permission;
-	if (!PyArg_ParseTuple(_args, "O&hc",
+	SignedByte permission;
+	if (!PyArg_ParseTuple(_args, "O&hb",
 	                      PyMac_GetStr255, fileName,
 	                      &vRefNum,
 	                      &permission))
@@ -1067,8 +1087,8 @@ static PyObject *Res_HOpenResFile(_self, _args)
 	short vRefNum;
 	long dirID;
 	Str255 fileName;
-	char permission;
-	if (!PyArg_ParseTuple(_args, "hlO&c",
+	SignedByte permission;
+	if (!PyArg_ParseTuple(_args, "hlO&b",
 	                      &vRefNum,
 	                      &dirID,
 	                      PyMac_GetStr255, fileName,
@@ -1163,6 +1183,25 @@ static PyObject *Res_FSpCreateResFile(_self, _args)
 	return _res;
 }
 
+static PyObject *Res_TempInsertROMMap(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean tempResLoad;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &tempResLoad))
+		return NULL;
+	TempInsertROMMap(tempResLoad);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Res_Resource(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1243,17 +1282,19 @@ static PyMethodDef Res_methods[] = {
 	{"SetResFileAttrs", (PyCFunction)Res_SetResFileAttrs, 1,
 	 "(short refNum, short attrs) -> None"},
 	{"OpenRFPerm", (PyCFunction)Res_OpenRFPerm, 1,
-	 "(Str255 fileName, short vRefNum, char permission) -> (short _rv)"},
+	 "(Str255 fileName, short vRefNum, SignedByte permission) -> (short _rv)"},
 	{"RGetResource", (PyCFunction)Res_RGetResource, 1,
 	 "(ResType theType, short theID) -> (Handle _rv)"},
 	{"HOpenResFile", (PyCFunction)Res_HOpenResFile, 1,
-	 "(short vRefNum, long dirID, Str255 fileName, char permission) -> (short _rv)"},
+	 "(short vRefNum, long dirID, Str255 fileName, SignedByte permission) -> (short _rv)"},
 	{"HCreateResFile", (PyCFunction)Res_HCreateResFile, 1,
 	 "(short vRefNum, long dirID, Str255 fileName) -> None"},
 	{"FSpOpenResFile", (PyCFunction)Res_FSpOpenResFile, 1,
 	 "(FSSpec spec, SignedByte permission) -> (short _rv)"},
 	{"FSpCreateResFile", (PyCFunction)Res_FSpCreateResFile, 1,
 	 "(FSSpec spec, OSType creator, OSType fileType, ScriptCode scriptTag) -> None"},
+	{"TempInsertROMMap", (PyCFunction)Res_TempInsertROMMap, 1,
+	 "(Boolean tempResLoad) -> None"},
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle.\nApply AddResource() to write it to a resource file.\n"},
 	{NULL, NULL, 0}

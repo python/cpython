@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Resources.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Resources.h'
 
 f = ResFunction(short, 'InitResources',
 )
@@ -158,19 +158,19 @@ f = ResMethod(void, 'SetResInfo',
 resmethods.append(f)
 
 f = ResMethod(void, 'AddResource',
-    (Handle, 'theResource', InMode),
+    (Handle, 'theData', InMode),
     (ResType, 'theType', InMode),
     (short, 'theID', InMode),
     (ConstStr255Param, 'name', InMode),
 )
 resmethods.append(f)
 
-f = ResMethod(long, 'SizeResource',
+f = ResMethod(long, 'GetResourceSizeOnDisk',
     (Handle, 'theResource', InMode),
 )
 resmethods.append(f)
 
-f = ResMethod(long, 'MaxSizeRsrc',
+f = ResMethod(long, 'GetMaxResourceSize',
     (Handle, 'theResource', InMode),
 )
 resmethods.append(f)
@@ -191,7 +191,7 @@ f = ResMethod(void, 'ChangedResource',
 )
 resmethods.append(f)
 
-f = ResMethod(void, 'RmveResource',
+f = ResMethod(void, 'RemoveResource',
     (Handle, 'theResource', InMode),
 )
 resmethods.append(f)
@@ -225,7 +225,7 @@ functions.append(f)
 f = ResFunction(short, 'OpenRFPerm',
     (ConstStr255Param, 'fileName', InMode),
     (short, 'vRefNum', InMode),
-    (char, 'permission', InMode),
+    (SignedByte, 'permission', InMode),
 )
 functions.append(f)
 
@@ -239,7 +239,7 @@ f = ResFunction(short, 'HOpenResFile',
     (short, 'vRefNum', InMode),
     (long, 'dirID', InMode),
     (ConstStr255Param, 'fileName', InMode),
-    (char, 'permission', InMode),
+    (SignedByte, 'permission', InMode),
 )
 functions.append(f)
 
@@ -269,4 +269,14 @@ f = ResMethod(void, 'SetResourceSize',
     (long, 'newSize', InMode),
 )
 resmethods.append(f)
+
+f = ResMethod(Handle, 'GetNextFOND',
+    (Handle, 'fondHandle', InMode),
+)
+resmethods.append(f)
+
+f = ResFunction(void, 'TempInsertROMMap',
+    (Boolean, 'tempResLoad', InMode),
+)
+functions.append(f)
 

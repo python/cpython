@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:QuickDraw.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDraw.h'
 
 f = Function(void, 'OpenPort',
     (GrafPtr, 'port', InMode),
@@ -128,65 +128,6 @@ functions.append(f)
 f = Function(void, 'Line',
     (short, 'dh', InMode),
     (short, 'dv', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'TextFont',
-    (short, 'font', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'TextFace',
-    (short, 'face', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'TextMode',
-    (short, 'mode', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'TextSize',
-    (short, 'size', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'SpaceExtra',
-    (Fixed, 'extra', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'DrawChar',
-    (short, 'ch', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'DrawString',
-    (ConstStr255Param, 's', InMode),
-)
-functions.append(f)
-
-f = Function(void, 'DrawText',
-    (TextThingie, 'textBuf', InMode),
-    (short, 'firstByte', InMode),
-    (short, 'byteCount', InMode),
-)
-functions.append(f)
-
-f = Function(short, 'CharWidth',
-    (short, 'ch', InMode),
-)
-functions.append(f)
-
-f = Function(short, 'StringWidth',
-    (ConstStr255Param, 's', InMode),
-)
-functions.append(f)
-
-f = Function(short, 'TextWidth',
-    (TextThingie, 'textBuf', InMode),
-    (short, 'firstByte', InMode),
-    (short, 'byteCount', InMode),
 )
 functions.append(f)
 
@@ -641,6 +582,12 @@ f = Function(void, 'PtToAngle',
 )
 functions.append(f)
 
+f = Function(void, 'SubPt',
+    (Point, 'src', InMode),
+    (Point, 'dst', InOutMode),
+)
+functions.append(f)
+
 f = Function(Boolean, 'PtInRgn',
     (Point, 'pt', InMode),
     (RgnHandle, 'rgn', InMode),
@@ -648,11 +595,6 @@ f = Function(Boolean, 'PtInRgn',
 functions.append(f)
 
 f = Function(PixMapHandle, 'NewPixMap',
-)
-functions.append(f)
-
-f = Function(void, 'DisposPixMap',
-    (PixMapHandle, 'pm', InMode),
 )
 functions.append(f)
 
@@ -668,11 +610,6 @@ f = Function(void, 'CopyPixMap',
 functions.append(f)
 
 f = Function(PixPatHandle, 'NewPixPat',
-)
-functions.append(f)
-
-f = Function(void, 'DisposPixPat',
-    (PixPatHandle, 'pp', InMode),
 )
 functions.append(f)
 
@@ -751,18 +688,7 @@ f = Function(void, 'AllocCursor',
 )
 functions.append(f)
 
-f = Function(void, 'CharExtra',
-    (Fixed, 'extra', InMode),
-)
-functions.append(f)
-
 f = Function(long, 'GetCTSeed',
-)
-functions.append(f)
-
-f = Function(void, 'SubPt',
-    (Point, 'src', InMode),
-    (Point, 'dst', InOutMode),
 )
 functions.append(f)
 
@@ -784,6 +710,72 @@ f = Function(void, 'ReserveEntry',
 functions.append(f)
 
 f = Function(short, 'QDError',
+)
+functions.append(f)
+
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDrawText.h'
+
+f = Function(void, 'TextFont',
+    (short, 'font', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'TextFace',
+    (short, 'face', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'TextMode',
+    (short, 'mode', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'TextSize',
+    (short, 'size', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'SpaceExtra',
+    (Fixed, 'extra', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'DrawChar',
+    (short, 'ch', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'DrawString',
+    (ConstStr255Param, 's', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'DrawText',
+    (TextThingie, 'textBuf', InMode),
+    (short, 'firstByte', InMode),
+    (short, 'byteCount', InMode),
+)
+functions.append(f)
+
+f = Function(short, 'CharWidth',
+    (short, 'ch', InMode),
+)
+functions.append(f)
+
+f = Function(short, 'StringWidth',
+    (ConstStr255Param, 's', InMode),
+)
+functions.append(f)
+
+f = Function(short, 'TextWidth',
+    (TextThingie, 'textBuf', InMode),
+    (short, 'firstByte', InMode),
+    (short, 'byteCount', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'CharExtra',
+    (Fixed, 'extra', InMode),
 )
 functions.append(f)
 

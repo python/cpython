@@ -1,4 +1,4 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:QuickDraw.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDraw.h'
 
 invalColReq = -1
 srcCopy = 0
@@ -47,18 +47,12 @@ magentaColor = 137
 yellowColor = 69
 picLParen = 0
 picRParen = 1
-normal = 0
-bold = 1
-italic = 2
-underline = 4
-outline = 8
-shadow = 0x10
-condense = 0x20
-extend = 0x40
 clutType = 0
 fixedType = 1
 directType = 2
 gdDevType = 0
+roundedDevice = 5
+hasAuxMenuBar = 6
 burstDevice = 7
 ext32Device = 8
 ramInit = 10
@@ -72,6 +66,28 @@ pHiliteBit = 0
 defQDColors = 127
 RGBDirect = 16
 baseAddr32 = 4
-rgnOverflowErr = -147
-insufficientStackErr = -149
+singleDevicesBit = 0
+dontMatchSeedsBit = 1
+allDevicesBit = 2
+singleDevices = 1 << singleDevicesBit
+dontMatchSeeds = 1 << dontMatchSeedsBit
 allDevices = 1 << allDevicesBit
+kNoConstraint = 0
+kVerticalConstraint = 1
+kHorizontalConstraint = 2
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:QuickDrawText.h'
+
+leftCaret = 0
+rightCaret = -1
+hilite = 1
+smLeftCaret = 0
+smRightCaret = -1
+smHilite = 1
+onlyStyleRun = 0
+leftStyleRun = 1
+rightStyleRun = 2
+middleStyleRun = 3
+smOnlyStyleRun = 0
+smLeftStyleRun = 1
+smRightStyleRun = 2
+smMiddleStyleRun = 3

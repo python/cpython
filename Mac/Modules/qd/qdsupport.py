@@ -6,7 +6,7 @@
 import string
 
 import addpack
-addpack.addpack('D:python:Tools:bgen:bgen')
+addpack.addpack(':Tools:bgen:bgen')
 
 # Declarations that change for each manager
 MACHEADERFILE = 'QuickDraw.h'		# The Apple header file

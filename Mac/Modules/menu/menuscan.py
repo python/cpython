@@ -1,4 +1,6 @@
 # Scan <Menus.h>, generating menugen.py.
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
 
 from scantools import Scanner
 
@@ -20,7 +22,7 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t == "MenuHandle" and m == "InMode":
+			if t in ("MenuHandle", "MenuRef") and m == "InMode":
 				classname = "Method"
 				listname = "methods"
 		return classname, listname

@@ -244,12 +244,12 @@ static PyObject *SndCh_SndStopFilePlay(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	Boolean async;
+	Boolean quietNow;
 	if (!PyArg_ParseTuple(_args, "b",
-	                      &async))
+	                      &quietNow))
 		return NULL;
 	_err = SndStopFilePlay(_self->ob_itself,
-	                       async);
+	                       quietNow);
 	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
@@ -289,7 +289,7 @@ static PyMethodDef SndCh_methods[] = {
 	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
 	 "() -> None"},
 	{"SndStopFilePlay", (PyCFunction)SndCh_SndStopFilePlay, 1,
-	 "(Boolean async) -> None"},
+	 "(Boolean quietNow) -> None"},
 	{"SndChannelStatus", (PyCFunction)SndCh_SndChannelStatus, 1,
 	 "(short theLength) -> (SCStatus theStatus)"},
 	{NULL, NULL, 0}
@@ -321,6 +321,35 @@ staticforward PyTypeObject SndChannel_Type = {
 
 /* ------------------- End object type SndChannel ------------------- */
 
+
+static PyObject *Snd_SetSoundVol(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short level;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &level))
+		return NULL;
+	SetSoundVol(level);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_GetSoundVol(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short level;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetSoundVol(&level);
+	_res = Py_BuildValue("h",
+	                     level);
+	return _res;
+}
 
 static PyObject *Snd_SndNewChannel(_self, _args)
 	PyObject *_self;
@@ -642,7 +671,96 @@ static PyObject *Snd_Exp1to6(_self, _args)
 	return _res;
 }
 
+static PyObject *Snd_GetSysBeepVolume(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long level;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetSysBeepVolume(&level);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     level);
+	return _res;
+}
+
+static PyObject *Snd_SetSysBeepVolume(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long level;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &level))
+		return NULL;
+	_err = SetSysBeepVolume(level);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_GetDefaultOutputVolume(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long level;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = GetDefaultOutputVolume(&level);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     level);
+	return _res;
+}
+
+static PyObject *Snd_SetDefaultOutputVolume(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	long level;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &level))
+		return NULL;
+	_err = SetDefaultOutputVolume(level);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Snd_GetSoundHeaderOffset(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SndListHandle sndHandle;
+	long offset;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &sndHandle))
+		return NULL;
+	_err = GetSoundHeaderOffset(sndHandle,
+	                            &offset);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     offset);
+	return _res;
+}
+
 static PyMethodDef Snd_methods[] = {
+	{"SetSoundVol", (PyCFunction)Snd_SetSoundVol, 1,
+	 "(short level) -> None"},
+	{"GetSoundVol", (PyCFunction)Snd_GetSoundVol, 1,
+	 "() -> (short level)"},
 	{"SndNewChannel", (PyCFunction)Snd_SndNewChannel, 1,
 	 "(short synth, long init, PyObject* userRoutine) -> (SndChannelPtr chan)"},
 	{"SndControl", (PyCFunction)Snd_SndControl, 1,
@@ -665,6 +783,16 @@ static PyMethodDef Snd_methods[] = {
 	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
 	{"Exp1to6", (PyCFunction)Snd_Exp1to6, 1,
 	 "(Buffer buffer, Buffer state, unsigned long numChannels, unsigned long whichChannel) -> (Buffer buffer, Buffer state)"},
+	{"GetSysBeepVolume", (PyCFunction)Snd_GetSysBeepVolume, 1,
+	 "() -> (long level)"},
+	{"SetSysBeepVolume", (PyCFunction)Snd_SetSysBeepVolume, 1,
+	 "(long level) -> None"},
+	{"GetDefaultOutputVolume", (PyCFunction)Snd_GetDefaultOutputVolume, 1,
+	 "() -> (long level)"},
+	{"SetDefaultOutputVolume", (PyCFunction)Snd_SetDefaultOutputVolume, 1,
+	 "(long level) -> None"},
+	{"GetSoundHeaderOffset", (PyCFunction)Snd_GetSoundHeaderOffset, 1,
+	 "(SndListHandle sndHandle) -> (long offset)"},
 	{NULL, NULL, 0}
 };
 

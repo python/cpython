@@ -2,6 +2,9 @@
 # Then import sndsupport (which execs sndgen.py) to generate Sndmodule.c.
 # (Should learn how to tell the compiler to compile it as well.)
 
+import addpack
+addpack.addpack(':Tools:bgen:bgen')
+
 from scantools import Scanner
 
 def main():
@@ -36,6 +39,10 @@ class SoundScanner(Scanner):
 			'StartSound',
 			'StopSound',
 			'SoundDone',
+			# These are soundMgr 3.0 routines that I can't seem to find...
+			'GetSoundPreference',
+			'SetSoundPreference',
+			'GetCompressionInfo',
 
 			]
 
@@ -43,6 +50,7 @@ class SoundScanner(Scanner):
 		return [
 			"GetSoundVol",
 			"SetSoundVol",
+			"UnsignedFixed",
 			]
 
 	def makerepairinstructions(self):
@@ -62,6 +70,9 @@ class SoundScanner(Scanner):
 			
 			([("SMStatusPtr", "*", "InMode")],
 			 [("SMStatus", "*", "OutMode")]),
+			 
+			([("CompressionInfoPtr", "*", "InMode")],
+			 [("CompressionInfo", "*", "OutMode")]),
 			
 			# For SndPlay's SndListHandle argument
 			([("Handle", "sndHdl", "InMode")],

@@ -1,4 +1,14 @@
-# Generated from 'D:Development:THINK C:Mac #includes:Apple #includes:Sound.h'
+# Generated from 'Moes:CW5 GOLD \304:Metrowerks C/C++ \304:Headers \304:Universal Headers 2.0a3 \304:Sound.h'
+
+f = SndFunction(void, 'SetSoundVol',
+    (short, 'level', InMode),
+)
+functions.append(f)
+
+f = SndFunction(void, 'GetSoundVol',
+    (short, 'level', OutMode),
+)
+functions.append(f)
 
 f = SndMethod(OSErr, 'SndDoCommand',
     (SndChannelPtr, 'chan', InMode),
@@ -17,7 +27,7 @@ f = SndFunction(OSErr, 'SndNewChannel',
     (SndChannelPtr, 'chan', OutMode),
     (short, 'synth', InMode),
     (long, 'init', InMode),
-    (SndCallBackProcPtr, 'userRoutine', InMode),
+    (SndCallBackUPP, 'userRoutine', InMode),
 )
 functions.append(f)
 
@@ -34,16 +44,6 @@ f = SndFunction(OSErr, 'SndControl',
 )
 functions.append(f)
 
-f = SndFunction(void, 'SetSoundVol',
-    (short, 'level', InMode),
-)
-functions.append(f)
-
-f = SndFunction(void, 'GetSoundVol',
-    (short, 'level', OutMode),
-)
-functions.append(f)
-
 f = SndFunction(NumVersion, 'SndSoundManagerVersion',
 )
 functions.append(f)
@@ -55,7 +55,7 @@ f = SndMethod(OSErr, 'SndStartFilePlay',
     (long, 'bufferSize', InMode),
     (FakeType('0'), 'theBuffer', InMode),
     (AudioSelectionPtr, 'theSelection', InMode),
-    (ProcPtr, 'theCompletion', InMode),
+    (FilePlayCompletionUPP, 'theCompletion', InMode),
     (Boolean, 'async', InMode),
 )
 sndmethods.append(f)
@@ -67,7 +67,7 @@ sndmethods.append(f)
 
 f = SndMethod(OSErr, 'SndStopFilePlay',
     (SndChannelPtr, 'chan', InMode),
-    (Boolean, 'async', InMode),
+    (Boolean, 'quietNow', InMode),
 )
 sndmethods.append(f)
 
@@ -127,6 +127,32 @@ f = SndFunction(void, 'Exp1to6',
     (InOutBuf128, 'state', InOutMode),
     (unsigned_long, 'numChannels', InMode),
     (unsigned_long, 'whichChannel', InMode),
+)
+functions.append(f)
+
+f = SndFunction(OSErr, 'GetSysBeepVolume',
+    (long, 'level', OutMode),
+)
+functions.append(f)
+
+f = SndFunction(OSErr, 'SetSysBeepVolume',
+    (long, 'level', InMode),
+)
+functions.append(f)
+
+f = SndFunction(OSErr, 'GetDefaultOutputVolume',
+    (long, 'level', OutMode),
+)
+functions.append(f)
+
+f = SndFunction(OSErr, 'SetDefaultOutputVolume',
+    (long, 'level', InMode),
+)
+functions.append(f)
+
+f = SndFunction(OSErr, 'GetSoundHeaderOffset',
+    (SndListHandle, 'sndHandle', InMode),
+    (long, 'offset', OutMode),
 )
 functions.append(f)
 
