@@ -2745,8 +2745,9 @@ build_class(methods, bases, name)
 						callable, args);
 					Py_DECREF(args);
 				}
-				if (callable != basetype)
+				if (callable != basetype) {
 					Py_DECREF(callable);
+				}
 				return newclass;
 			}
 			PyErr_SetString(PyExc_TypeError,

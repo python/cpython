@@ -143,12 +143,15 @@ w_object(v, p)
 {
 	int i, n;
 	
-	if (v == NULL)
+	if (v == NULL) {
 		w_byte(TYPE_NULL, p);
-	else if (v == Py_None)
+	}
+	else if (v == Py_None) {
 		w_byte(TYPE_NONE, p);
-	else if (v == Py_Ellipsis)
-	        w_byte(TYPE_ELLIPSIS, p);  
+	}
+	else if (v == Py_Ellipsis) {
+	        w_byte(TYPE_ELLIPSIS, p);
+	}
 	else if (PyInt_Check(v)) {
 		long x = PyInt_AS_LONG((PyIntObject *)v);
 #if SIZEOF_LONG > 4

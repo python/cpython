@@ -19,6 +19,14 @@
 /* GNU readline definitions */
 #include <readline/readline.h> /* You may need to add an -I option to Setup */
 
+extern int rl_parse_and_bind();
+extern int rl_read_init_file();
+extern int rl_insert_text();
+extern int rl_bind_key();
+extern int rl_bind_key_in_map();
+extern int rl_initialize();
+extern int add_history();
+
 /* Pointers needed from outside (but not declared in a header file). */
 extern int (*PyOS_InputHook)();
 extern char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));

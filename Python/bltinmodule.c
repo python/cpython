@@ -348,13 +348,15 @@ builtin_complex(self, args)
 	}
 	if (PyComplex_Check(r)) {
 		cr = ((PyComplexObject*)r)->cval;
-		if (own_r)
+		if (own_r) {
 			Py_DECREF(r);
+		}
 	}
 	else {
 		tmp = (*nbr->nb_float)(r);
-		if (own_r)
+		if (own_r) {
 			Py_DECREF(r);
+		}
 		if (tmp == NULL)
 			return NULL;
 		cr.real = PyFloat_AsDouble(tmp);

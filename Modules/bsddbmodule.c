@@ -433,7 +433,7 @@ bsddb_keys(dp, args)
 {
 	PyObject *list, *item;
 	DBT krec, drec;
-	char *data,buf[4096];
+	char *data=NULL,buf[4096];
 	int status;
 	int err;
 
@@ -556,8 +556,8 @@ bsddb_seq(dp, args, sequence_request)
 {
 	int status;
 	DBT krec, drec;
-	char *kdata,kbuf[4096];
-	char *ddata,dbuf[4096];
+	char *kdata=NULL,kbuf[4096];
+	char *ddata=NULL,dbuf[4096];
 	PyObject *result;
 
 	if (!PyArg_NoArgs(args))

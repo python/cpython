@@ -257,7 +257,7 @@ vgetargs1(args, format, p_va, compat)
 		}
 	}
 
-	if (*format != '\0' && !isalpha(*format) &&
+	if (*format != '\0' && !isalpha((int)(*format)) &&
 	    *format != '(' &&
 	    *format != '|' && *format != ':' && *format != ';') {
 		PyErr_Format(PyExc_SystemError,
