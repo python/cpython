@@ -2703,7 +2703,7 @@ PyObject *fixup(PyUnicodeObject *self,
 
     Py_UNICODE_COPY(u->str, self->str, self->length);
 
-    if (!fixfct(u)) {
+    if (!fixfct(u) && PyUnicode_CheckExact(self)) {
 	/* fixfct should return TRUE if it modified the buffer. If
 	   FALSE, return a reference to the original buffer instead
 	   (to save space, not time) */
@@ -2934,7 +2934,7 @@ PyUnicodeObject *pad(PyUnicodeObject *self,
     if (right < 0)
         right = 0;
 
-    if (left == 0 && right == 0) {
+    if (left == 0 && right == 0 && PyUnicode_CheckExact(self)) {
         Py_INCREF(self);
         return self;
     }
@@ -3161,7 +3161,7 @@ PyObject *strip(PyUnicodeObject *self,
         while (end > start && Py_UNICODE_ISSPACE(p[end-1]))
             end--;
 
-    if (start == 0 && end == self->length) {
+    if (start == 0 && end == self->length && PyUnicode_CheckExact(self)) {
         /* couldn't strip anything off, return original string */
         Py_INCREF(self);
         return (PyObject*) self;
@@ -3188,7 +3188,8 @@ PyObject *replace(PyUnicodeObject *self,
         int i;
 
         /* replace characters */
-        if (!findchar(self->str, self->length, str1->str[0])) {
+        if (!findchar(self->str, self->length, str1->str[0]) &&
+            PyUnicode_CheckExact(self)) {
             /* nothing to replace, return original string */
             Py_INCREF(self);
             u = self;
@@ -3220,7 +3221,7 @@ PyObject *replace(PyUnicodeObject *self,
         n = count(self, 0, self->length, str1);
         if (n > maxcount)
             n = maxcount;
-        if (n == 0) {
+        if (n == 0 && PyUnicode_CheckExact(self)) {
             /* nothing to replace, return original string */
             Py_INCREF(self);
             u = self;
@@ -3329,7 +3330,7 @@ unicode_center(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:center", &width))
         return NULL;
 
-    if (self->length >= width) {
+    if (self->length >= width && PyUnicode_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -4085,7 +4086,7 @@ unicode_ljust(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:ljust", &width))
         return NULL;
 
-    if (self->length >= width) {
+    if (self->length >= width && PyUnicode_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -4126,7 +4127,7 @@ unicode_repeat(PyUnicodeObject *str, int len)
     if (len < 0)
         len = 0;
 
-    if (len == 1) {
+    if (len == 1 && PyUnicode_CheckExact(str)) {
         /* no repeat, return original string */
         Py_INCREF(str);
         return (PyObject*) str;
@@ -4309,7 +4310,7 @@ unicode_rjust(PyUnicodeObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "i:rjust", &width))
         return NULL;
 
-    if (self->length >= width) {
+    if (self->length >= width && PyUnicode_CheckExact(self)) {
         Py_INCREF(self);
         return (PyObject*) self;
     }
@@ -4338,7 +4339,7 @@ unicode_slice(PyUnicodeObject *self, int start, int end)
         end = 0;
     if (end > self->length)
         end = self->length;
-    if (start == 0 && end == self->length) {
+    if (start == 0 && end == self->length && PyUnicode_CheckExact(self)) {
         /* full slice, return original string */
         Py_INCREF(self);
         return (PyObject*) self;
