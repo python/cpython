@@ -11,7 +11,6 @@ doit = 1
 def main():
 	if not sys.argv[1:]:
 		if os.name == 'mac':
-			import macfs
 			dir = EasyDialogs.AskFolder(message='Directory to zap pyc files in')
 			if not dir:
 				sys.exit(0)
