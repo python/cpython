@@ -403,7 +403,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 	Py_INCREF(Py_NotImplemented);
 	return Py_NotImplemented;
 }
-	    
+
 static PyObject *
 binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 {
@@ -411,7 +411,7 @@ binary_op(PyObject *v, PyObject *w, const int op_slot, const char *op_name)
 	if (result == Py_NotImplemented) {
 		Py_DECREF(Py_NotImplemented);
 		PyErr_Format(
-			PyExc_TypeError, 
+			PyExc_TypeError,
 			"unsupported operand type(s) for %s: '%s' and '%s'",
 			op_name,
 			v->ob_type->tp_name,
@@ -462,7 +462,7 @@ ternary_op(PyObject *v,
 	ternaryfunc slotv = NULL;
 	ternaryfunc slotw = NULL;
 	ternaryfunc slotz = NULL;
-	
+
 	mv = v->ob_type->tp_as_number;
 	mw = w->ob_type->tp_as_number;
 	if (mv != NULL && NEW_STYLE_NUMBER(v))
@@ -510,7 +510,7 @@ ternary_op(PyObject *v,
 		/* we have an old style operand, coerce */
 		PyObject *v1, *z1, *w2, *z2;
 		int c;
-		
+
 		c = PyNumber_Coerce(&v, &w);
 		if (c != 0)
 			goto error3;
@@ -664,13 +664,14 @@ PyNumber_Power(PyObject *v, PyObject *w, PyObject *z)
      result.  No coercion is done on the arguments; the left-hand object
      is the one the operation is performed on, and it's up to the
      function to deal with the right-hand object.
-     
+
    - Otherwise, in-place modification is not supported. Handle it exactly as
      a non in-place operation of the same kind.
 
    */
 
-#define HASINPLACE(t) PyType_HasFeature((t)->ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)
+#define HASINPLACE(t) \
+	PyType_HasFeature((t)->ob_type, Py_TPFLAGS_HAVE_INPLACEOPS)
 
 static PyObject *
 binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
@@ -733,7 +734,8 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 		if (f != NULL)
 			return (*f)(v, w);
 	}
-	return binary_iop(v, w, NB_SLOT(nb_inplace_add), NB_SLOT(nb_add), "+=");
+	return binary_iop(v, w, NB_SLOT(nb_inplace_add),
+			  NB_SLOT(nb_add), "+=");
 }
 
 PyObject *
@@ -752,15 +754,14 @@ PyNumber_InPlaceMultiply(PyObject *v, PyObject *w)
 				return NULL;
 		}
 		else {
-			return type_error("can't multiply sequence to non-int");
+			return type_error(
+				"can't multiply sequence to non-int");
 		}
 		return (*g)(v, (int)n);
 	}
 	return binary_iop(v, w, NB_SLOT(nb_inplace_multiply),
 				NB_SLOT(nb_multiply), "*=");
 }
-
-
 
 PyObject *
 PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
@@ -775,7 +776,6 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 		return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
 					NB_SLOT(nb_remainder), "%=");
 }
-
 
 PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
@@ -885,7 +885,7 @@ PyNumber_Int(PyObject *o)
 		return PyInt_FromLong(io->ob_ival);
 	}
 	if (PyString_Check(o))
-		return int_from_string(PyString_AS_STRING(o), 
+		return int_from_string(PyString_AS_STRING(o),
 				       PyString_GET_SIZE(o));
 #ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
@@ -937,7 +937,7 @@ PyNumber_Long(PyObject *o)
 	if (PyLong_Check(o))
 		return _PyLong_Copy((PyLongObject *)o);
 	if (PyString_Check(o))
-		/* need to do extra error checking that PyLong_FromString() 
+		/* need to do extra error checking that PyLong_FromString()
 		 * doesn't do.  In particular long('9.5') must raise an
 		 * exception, not truncate the float.
 		 */
@@ -1938,10 +1938,10 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	else {
 		PyObject *cls_bases = abstract_get_bases(cls);
 		if (cls_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError, 
+			PyErr_SetString(PyExc_TypeError,
 				"isinstance() arg 2 must be a class or type");
 			return -1;
-		} 
+		}
 		Py_DECREF(cls_bases);
 		if (__class__ == NULL) {
 			__class__ = PyString_FromString("__class__");
@@ -1970,10 +1970,10 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 	if (!PyClass_Check(derived) || !PyClass_Check(cls)) {
 		PyObject *derived_bases;
 		PyObject *cls_bases;
-	       
+
 		derived_bases = abstract_get_bases(derived);
 		if (derived_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError, 
+			PyErr_SetString(PyExc_TypeError,
 					"issubclass() arg 1 must be a class");
 			return -1;
 		}
@@ -1981,7 +1981,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
 		cls_bases = abstract_get_bases(cls);
 		if (cls_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError, 
+			PyErr_SetString(PyExc_TypeError,
 					"issubclass() arg 2 must be a class");
 			return -1;
 		}
@@ -2008,7 +2008,7 @@ PyObject_GetIter(PyObject *o)
 	if (f == NULL) {
 		if (PySequence_Check(o))
 			return PySeqIter_New(o);
-		PyErr_SetString(PyExc_TypeError, 
+		PyErr_SetString(PyExc_TypeError,
 				"iteration over non-sequence");
 		return NULL;
 	}
@@ -2050,4 +2050,3 @@ PyIter_Next(PyObject *iter)
 		PyErr_Clear();
 	return result;
 }
-
