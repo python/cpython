@@ -1,6 +1,6 @@
 # Module and documentation by Eric S. Raymond, 21 Dec 1998 
 
-import sys, os, string, shlex
+import os, shlex
 
 class netrc:
     def __init__(self, file=None):
