@@ -362,7 +362,6 @@ def get_config_vars(*args):
     """
     global _config_vars
     if _config_vars is None:
-        from pprint import pprint
         func = globals().get("_init_" + os.name)
         if func:
             func()
