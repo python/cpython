@@ -10,10 +10,10 @@ StringType = type('')
 
 # Test the old and obsolescent fpformat module.
 #
-# (It's obsolescent because fix(n,d) == "%.*f"%(d,n) and 
+# (It's obsolescent because fix(n,d) == "%.*f"%(d,n) and
 #                           sci(n,d) == "%.*e"%(d,n)
-#  for all reasonable numeric n and d, except that sci gives 3 exponent 
-#  digits instead of 2.  
+#  for all reasonable numeric n and d, except that sci gives 3 exponent
+#  digits instead of 2.
 #
 # Differences only occur for unreasonable n and d.    <.2 wink>)
 
@@ -64,4 +64,3 @@ class FpformatTest(unittest.TestCase):
             self.fail("No exception on non-numeric sci")
 
 run_unittest(FpformatTest)
-
