@@ -142,6 +142,9 @@ Tests
 
 Windows
 
+- The installer now installs Start menu shortcuts under (the local
+  equivalent of) "All Users" when doing an Admin install.
+
 - file.truncate([newsize]) now works on Windows for all newsize values.
   It used to fail if newsize didn't fit in 32 bits, reflecting a
   limitation of MS _chsize (which is no longer used).
@@ -151,7 +154,9 @@ Windows
   the same as, os.waitpid() on POSIX systems.  If you're waiting for
   a specific process whose pid was obtained from one of the spawn()
   functions, the same Python os.waitpid() code works across platforms.
-  See the docs for details.
+  See the docs for details.  The docs were changed to clarify that
+  spawn functions return, and waitpid requires, a process handle on
+  Windows (not the same thing as a Windows process id).
 
 - New tempfile.TemporaryFile implementation for Windows:  this doesn't
   need a TemproraryFileWrapper wrapper anymore, and should be immune
