@@ -980,7 +980,8 @@ check the modules dictionary if there's one there, and if not, create
 a new one and insert in in the modules dictionary.  Because the former
 action is most common, this does not return a new reference, and you
 do not own the returned reference.  Return \NULL{} with an
-exception set on failure.
+exception set on failure.  NOTE: this function returns
+a ``borrowed'' reference.  
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ExecCodeModule}{char *name, PyObject *co}
@@ -1697,7 +1698,8 @@ This section describes Python type objects and the singleton object
 \label{noneObject}
 
 \begin{cvardesc}{PyObject *}{Py_None}
-XXX macro
+The Python \code{None} object, denoting lack of value.  This object has
+no methods.
 \end{cvardesc}
 
 
@@ -1753,30 +1755,51 @@ of \var{newpart} appended to \var{string}.
 \begin{cfuncdesc}{void}{PyString_ConcatAndDel}{PyObject **string,
                                                PyObject *newpart}
 Creates a new string object in \var{*string} containing the contents
-of \var{newpart} appended to \var{string}.  --WHAT IS THE 
-DIFFERENCE BETWEEN THIS AND PLAIN CONCAT?--
+of \var{newpart} appended to \var{string}.  This version decrements
+the reference count of \var{newpart}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{_PyString_Resize}{PyObject **string, int newsize}
+A way to resize a string object even though it is ``immutable''.  
+Only use this to build up a brand new string object; don't use this if
+the string may already be known in other parts of the code.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_Format}{PyObject *format,
                                               PyObject *args}
+Returns a new string object from \var{format} and \var{args}.  Analogous
+to \code{\var{format} \% \var{args}}.  The \var{args} argument must be
+a tuple.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_InternInPlace}{PyObject **string}
+Intern the argument \var{*string} in place.  The argument must be the
+address of a pointer variable pointing to a Python string object.
+If there is an existing interned string that is the same as
+\var{*string}, it sets \var{*string} to it (decrementing the reference 
+count of the old string object and incrementing the reference count of
+the interned string object), otherwise it leaves \var{*string} alone
+and interns it (incrementing its reference count).  (Clarification:
+even though there is a lot of talk about reference counts, think of
+this function as reference-count-neutral; you owned the object after
+the call if and only if you own it after the call.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_InternFromString}{const char *v}
+A combination of \code{PyString_FromString()} and
+\code{PyString_InternInPlace()}, returning either a new string object
+that has been interned, or a new (``owned'') reference to an earlier
+interned string object with the same value.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AS_STRING}{PyObject *string}
-
+Macro form of \code{PyString_AsString} but without error checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_GET_SIZE}{PyObject *string}
-
+Macro form of \code{PyString_GetSize} but without error checking.
 \end{cfuncdesc}
+
 
 
 \subsection{Tuple Objects}
@@ -1806,7 +1829,8 @@ of that tuple.
 \begin{cfuncdesc}{PyObject*}{PyTuple_GetItem}{PyTupleObject *p, int pos}
 Returns the object at position \var{pos} in the tuple pointed
 to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
-raises an \exception{IndexError} exception.
+sets an \exception{IndexError} exception.  NOTE: this function returns
+a ``borrowed'' reference.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyTuple_GET_ITEM}{PyTupleObject *p, int pos}
@@ -1873,7 +1897,10 @@ Returns the length of the list object in \var{list}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, int index}
-Returns the item in \var{list} at index \var{index}.
+Returns the object at position \var{pos} in the list pointed
+to by \var{p}.  If \var{pos} is out of bounds, returns \NULL{} and
+sets an \exception{IndexError} exception.  NOTE: this function returns
+a ``borrowed'' reference.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetItem}{PyObject *list, int index,
@@ -1882,36 +1909,40 @@ Sets the item at index \var{index} in list to \var{item}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Insert}{PyObject *list, int index,
-                                      PyObject *index}
-Inserts the item \var{item} into list \var{list} in front of index \var{index}
-and returns true if successful.
-For example: 
-\begin{verbatim}
-PyList_Insert(list, 0, object);
-\end{verbatim}
+                                      PyObject *item}
+Inserts the item \var{item} into list \var{list} in front of index
+\var{index}.  Returns 0 if successful; returns -1 and sets an
+exception if unsuccessful.  Analogous to \code{list.insert(index, item)}.
 \end{cfuncdesc}
-would insert \var{object} at the front of the list.
 
 \begin{cfuncdesc}{int}{PyList_Append}{PyObject *list, PyObject *item}
-Appends the object \var{item} at the end of list \var{list}.
+Appends the object \var{item} at the end of list \var{list}.  Returns
+0 if successful; returns -1 and sets an exception if unsuccessful.
+Analogous to \code{list.append(item)}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetSlice}{PyObject *list,
                                               int low, int high}
 Returns a list of the objects in \var{list} containing the objects 
-\emph{between} \var{low} and \var{high}.  Analogous to \var{list[low:high]}.
+\emph{between} \var{low} and \var{high}.  Returns NULL and sets an
+exception if unsuccessful.
+Analogous to \code{list[low:high]}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_SetSlice}{PyObject *list,
                                         int low, int high,
                                         PyObject *itemlist}
+Sets the slice of \var{list} between \var{low} and \var{high} to the contents
+of \var{itemlist}.  Analogous to \code{list[low:high]=itemlist}.  Returns 0
+on success, -1 on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Sort}{PyObject *list}
-
+Sorts the items of \var{list} in place.  Returns 0 on success, -1 on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_Reverse}{PyObject *list}
+Reverses the items of \var{list} in place.  Returns 0 on success, -1 on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_AsTuple}{PyObject *list}
@@ -1919,9 +1950,11 @@ Returns a new tuple object containing the contents of \var{list}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GET_ITEM}{PyObject *list, int i}
+Macro form of \code{PyList_GetItem} without error checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_GET_SIZE}{PyObject *list}
+Macro form of \code{PyList_GetSize} without error checking.
 \end{cfuncdesc}
 
 
@@ -1979,29 +2012,31 @@ specified by the \code{char *}\var{key}.
 
 \begin{cfuncdesc}{PyObject*}{PyDict_GetItem}{PyDictObject *p, PyObject *key}
 Returns the object from dictionary \var{p} which has a key
-\var{key}.  Returns \NULL{} if the key \var{key} is not present.
+\var{key}.  Returns \NULL{} if the key \var{key} is not present, but
+without (!) setting an exception.  NOTE:  this function returns a
+``borrowed'' reference.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_GetItemString}{PyDictObject *p, char *key}
-Does the same, but \var{key} is specified as a
-\code{char *}, rather than a \code{PyObject *}.
+This is the same as \code{PyDict_GetItem()}, but \var{key} is
+specified as a \code{char *}, rather than a \code{PyObject *}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Items}{PyDictObject *p}
 Returns a \code{PyListObject} containing all the items 
-from the dictionary, as in the mapping method \method{items()} (see
+from the dictionary, as in the dictinoary method \method{items()} (see
 the \emph{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Keys}{PyDictObject *p}
 Returns a \code{PyListObject} containing all the keys 
-from the dictionary, as in the mapping method \method{keys()} (see the
+from the dictionary, as in the dictionary method \method{keys()} (see the
 \emph{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Values}{PyDictObject *p}
 Returns a \code{PyListObject} containing all the values 
-from the dictionary \var{p}, as in the mapping method
+from the dictionary \var{p}, as in the dictionary method
 \method{values()} (see the \emph{Python Library Reference}).
 \end{cfuncdesc}
 
@@ -2093,16 +2128,16 @@ Returns a new \code{PyLong} object from the integer part of \var{v}.
 
 \begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
 Returns a \C{} \code{long} representation of the contents of \var{pylong}.  
-WHAT HAPPENS IF \var{pylong} > MAXLONG?
+WHAT HAPPENS IF \var{pylong} is greater than \code{LONG_MAX}?
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
 Returns a \C{} \code{unsigned long} representation of the contents of 
-\var{pylong}.  WHAT HAPPENS IF \var{pylong} > MAXLONG?
+\var{pylong}.  WHAT HAPPENS IF \var{pylong} is greater than \code{ULONG_MAX}?
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
-Returns a \C{} \code{double} representation of teh contents of \var{pylong}.
+Returns a \C{} \code{double} representation of the contents of \var{pylong}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
@@ -2278,8 +2313,37 @@ Writes string \var{s} to file object \var{p}.
 \subsection{CObjects}
 \label{cObjects}
 
-XXX
+\begin{ctypedesc}{PyCObject}
+This subtype of \code{PyObject} represents an opaque value, useful for
+\C{} extension modules who need to pass an opaque value (as a
+\code{void *} pointer) through Python code to other \C{} code.  It is
+often used to make a C function pointer defined in one module
+available to other modules, so the regular import mechanism can be
+used to access C APIs defined in dynamically loaded modules.
+\end{ctypedesc}
 
+\begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtr}{void* cobj, 
+	void (*destr)(void *)}
+Creates a \code{PyCObject} from the \code{void *} \var{cobj}.  The \var{destr} 
+function will be called when the object is reclaimed.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
+	void* desc, void (*destr)(void *, void *) }
+Creates a \code{PyCObject} from the \code{void *} \var{cobj}.  The \var{destr} 
+function will be called when the object is reclaimed.  The \var{desc} argument
+can be used to pass extra callback data for the destructor function.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void *}{PyCObject_AsVoidPtr}{PyObject* self}
+Returns the object \code{void *} that the \code{PyCObject} \var{self}
+was created with.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void *}{PyCObject_GetDesc}{PyObject* self}
+Returns the description \code{void *} that the \code{PyCObject}
+\var{self} was created with.
+\end{cfuncdesc}
 
 \chapter{Initialization, Finalization, and Threads}
 \label{initialization}
