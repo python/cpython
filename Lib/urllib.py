@@ -38,16 +38,9 @@ elif os.name == 'nt':
     from nturl2path import url2pathname, pathname2url 
 else:
     def url2pathname(pathname):
-        return pathname
+        return unquote(pathname)
     def pathname2url(pathname):
-        return pathname
-
-_url2pathname = url2pathname
-def url2pathname(url):
-    return _url2pathname(unquote(url))
-_pathname2url = pathname2url
-def pathname2url(p):
-    return quote(_pathname2url(p))
+        return quote(pathname)
 
 # This really consists of two pieces:
 # (1) a class which handles opening of all sorts of URLs
