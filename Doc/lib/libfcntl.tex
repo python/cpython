@@ -47,10 +47,57 @@ The module defines the following functions:
   raised.
 \end{funcdesc}
 
-\begin{funcdesc}{ioctl}{fd, op, arg}
-  This function is identical to the \function{fcntl()} function, except
-  that the operations are typically defined in the library module
-  \refmodule{termios}.
+\begin{funcdesc}{ioctl}{fd, op\optional{, arg\optional{, mutate_flag}}}
+  This function is identical to the \function{fcntl()} function,
+  except that the operations are typically defined in the library
+  module \refmodule{termios} and the argument handling is even more
+  complicated.
+  
+  The parameter \var{arg} can be one of an integer, absent (treated
+  identically to the integer \code{0}), an object supporting the
+  read-only buffer interface (most likely a plain Python string) or an
+  object supporting the read-write buffer interface.
+  
+  In all but the last case, behaviour is as for the \function{fcntl()}
+  function.
+  
+  If a mutable buffer is passed, then the behaviour is determined by
+  the value of the \var{mutate_flag} parameter.
+  
+  If it is false, the buffer's mutability is ignored and behaviour is
+  as for a read-only buffer, except that the 1024 byte limit mentioned
+  above is avoided -- so long as the buffer you pass is longer than
+  what the operating system wants to put there, things should work.
+  
+  If \var{mutate_flag} is true, then the buffer is (in effect) passed
+  to the underlying \function{ioctl()} system call, the latter's
+  return code is passed back to the calling Python, and the buffer's
+  new contents reflect the action of the \function{ioctl}.  This is a
+  slight simplification, because if the supplied buffer is less than
+  1024 bytes long it is first copied into a static buffer 1024 bytes
+  long which is then passed to \function{ioctl} and copied back into
+  the supplied buffer.
+  
+  If \var{mutate_flag} is not supplied, then in 2.3 it defaults to
+  false.  This is planned to change over the next few Python versions:
+  in 2.4 failing to supply \var{mutate_flag} will get a warning but
+  the same behavior and in versions later than 2.5 it will default to
+  true.
+
+  An example:
+
+\begin{verbatim}
+>>> import array, fnctl, struct, termios, os
+>>> os.getpgrp()
+13341
+>>> struct.unpack('h', fcntl.ioctl(0, termios.TIOCGPGRP, "  "))[0]
+13341
+>>> buf = array.array('h', [0])
+>>> fcntl.ioctl(0, termios.TIOCGPGRP, buf, 1)
+0
+>>> buf
+array('h', [13341])
+\end{verbatim}
 \end{funcdesc}
 
 \begin{funcdesc}{flock}{fd, op}
@@ -122,7 +169,7 @@ better.
 \begin{seealso}
   \seemodule{os}{The \function{os.open} function supports locking flags
                  and is available on a wider variety of platforms than 
-		 the \function{fcntl.lockf} and \function{fcntl.flock}
-		 functions, providing a more platform-independent file
-		 locking facility.}
+                 the \function{fcntl.lockf} and \function{fcntl.flock}
+                 functions, providing a more platform-independent file
+                 locking facility.}
 \end{seealso}
