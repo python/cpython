@@ -96,7 +96,9 @@ def setup (**attrs):
                       "error: %s: %s" % (exc.filename, exc.strerror)
             else:
                 raise SystemExit, str (exc)
-        except (DistutilsExecError, DistutilsFileError), msg:
+        except (DistutilsExecError,
+                DistutilsFileError,
+                DistutilsOptionError), msg:
             raise SystemExit, "error: " + str (msg)
 
 # setup ()
