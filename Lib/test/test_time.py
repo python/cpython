@@ -13,8 +13,8 @@ if int(time.mktime(time.localtime(t))) <> int(t):
 
 time.sleep(1.2)
 tt = time.gmtime(t)
-for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'E', 'H', 'I',
-		  'j', 'm', 'M', 'n', 'N', 'o', 'p', 'S', 't',
+for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
+		  'j', 'm', 'M', 'p', 'S',
 		  'U', 'w', 'W', 'x', 'X', 'y', 'Y', 'Z', '%'):
     format = '%' + directive
     time.strftime(format, tt)
