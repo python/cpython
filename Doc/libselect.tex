@@ -12,14 +12,14 @@ corresponding string, as would be printed by the C function
 \code{perror()}.
 \end{excdesc}
 
-\begin{funcdesc}{select}{iwtd\, owtd\, ewtd\, timeout}
+\begin{funcdesc}{select}{iwtd\, owtd\, ewtd\optional{\, timeout}}
 This is a straightforward interface to the \UNIX{} \code{select()}
 system call.  The first three arguments are lists of `waitable
 objects': either integers representing \UNIX{} file descriptors or
 objects with a parameterless method named \code{fileno()} returning
 such an integer.  The three lists of waitable objects are for input,
 output and `exceptional conditions', respectively.  Empty lists are
-allowed.  The optional last argument is a time-out specified as a
+allowed.  The optional \var{timeout} argument specifies a time-out as a
 floating point number in seconds.  When the \var{timeout} argument
 is omitted the function blocks until at least one file descriptor is
 ready.  A time-out value of zero specifies a poll and never blocks.
