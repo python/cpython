@@ -60,7 +60,7 @@ def hexbincwprojects(creator):
 		dstfile = srcfile + '.hqx'
 		if os.path.exists(dstfile) and \
 				os.stat(dstfile)[8] > os.stat(srcfile)[8]:
-			print 'Skip', path,'- Up-to-date'
+			print 'Skip', dstfile,'- Up-to-date'
 			continue
 		print 'Compacting', dstfile
 		mgr.open(fss)
