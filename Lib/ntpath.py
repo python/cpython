@@ -409,7 +409,7 @@ def abspath(path):
         try:
             path = _getfullpathname(path)
         except WindowsError:
-                pass # Bad path - return unchanged.
+            pass # Bad path - return unchanged.
     else:
         path = os.getcwd()
     return normpath(path)
