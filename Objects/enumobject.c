@@ -236,22 +236,10 @@ reversed_len(reversedobject *ro)
 	return PyObject_Size(ro->seq);
 }
 
-static PyObject *
-reversed_reverse(reversedobject *ro, PyObject *unused)
-{
-	return PyObject_GetIter(ro->seq);
-}
-
 PyDoc_STRVAR(reversed_doc,
 "reverse(sequence) -> reverse iterator over values of the sequence\n"
 "\n"
 "Return a reverse iterator");
-
-static PyMethodDef reversed_methods[] = {
-	{"__reversed__",	(PyCFunction)reversed_reverse,	
-		METH_NOARGS,	 reversed_doc},
-	{NULL,		NULL}	/* sentinel */
-};
 
 static PySequenceMethods reversed_as_sequence = {
 	(inquiry)reversed_len,		/* sq_length */
@@ -289,7 +277,7 @@ PyTypeObject PyReversed_Type = {
 	0,                              /* tp_weaklistoffset */
 	PyObject_SelfIter,		/* tp_iter */
 	(iternextfunc)reversed_next,    /* tp_iternext */
-	reversed_methods,               /* tp_methods */
+	0,				/* tp_methods */
 	0,                              /* tp_members */
 	0,                              /* tp_getset */
 	0,                              /* tp_base */
