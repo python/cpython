@@ -753,12 +753,14 @@ descriptors, e.g. module \module{fcntl} or \function{os.read()} and friends.
 
 \begin{methoddesc}[file]{read}{\optional{size}}
   Read at most \var{size} bytes from the file (less if the read hits
-  \EOF{} or no more data is immediately available on a pipe, tty or
-  similar device).  If the \var{size} argument is negative or omitted,
-  read all data until \EOF{} is reached.  The bytes are returned as a string
-  object.  An empty string is returned when \EOF{} is encountered
-  immediately.  (For certain files, like ttys, it makes sense to
-  continue reading after an \EOF{} is hit.)
+  \EOF{} before obtaining \var{size} bytes).  If the \var{size}
+  argument is negative or omitted, read all data until \EOF{} is
+  reached.  The bytes are returned as a string object.  An empty
+  string is returned when \EOF{} is encountered immediately.  (For
+  certain files, like ttys, it makes sense to continue reading after
+  an \EOF{} is hit.)  Note that this method may call the underlying
+  C function \cfunction{fread()} more than once in an effort to
+  acquire as close to \var{size} bytes as possible.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{readline}{\optional{size}}
