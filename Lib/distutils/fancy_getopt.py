@@ -358,8 +358,8 @@ class FancyGetopt:
         else:
             lines = ['Option summary:']
 
-        for (long,short,help) in self.option_table:
-
+        for option in self.option_table:
+            long, short, help = option_table[:3]
             text = wrap_text(help, text_width)
             if long[-1] == '=':
                 long = long[0:-1]
