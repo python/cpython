@@ -194,12 +194,15 @@ shutdown(how) -- shut down traffic in one or both directions\n\
    but I don't know what the right thing is. */
 #define _SGIAPI 1
 
-#ifndef ENABLE_IPV6
-#define INET_ADDRSTRLEN 16
-#endif
-
 #define HAVE_INET_PTON
 #include <netdb.h>
+#endif
+
+/* Irix 6.5 fails to define this variable at all. This is needed 
+   for both GCC and SGI's compiler. I'd say that the SGI headers 
+   are just busted. */
+#if defined(__sgi) && !defined(INET_ADDRSTRLEN)
+#define INET_ADDRSTRLEN 16
 #endif
 
 /* Generic includes */
