@@ -270,3 +270,21 @@ registration}
 
 \seemodule{shelve}{indexed databases of objects; uses \module{pickle}}
 \end{seealso}
+
+
+\section{Built-in Module \module{cPickle}}
+\bimodindex{cPickle}
+\label{module-cPickle}
+
+% This section was written by Fred L. Drake, Jr. <fdrake@acm.org>
+
+The \module{cPickle} module provides a similar interface and identical
+functionality as the \module{pickle} module, but can be up to 1000
+times faster since it is implemented in \C{}.  The only other
+important difference to note is that \function{Pickler()} and
+\function{Unpickler()} are functions and not classes, and so cannot be
+subclassed.  This should not be an issue in most cases.
+
+The format of the pickle data is identical to that produced using the
+\module{pickle} module, so it is possible to use \module{pickle} and
+\module{cPickle} interchangably with existing pickles.
