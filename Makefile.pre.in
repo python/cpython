@@ -346,11 +346,30 @@ libpython$(VERSION).so: $(LIBRARY_OBJS)
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
 	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(LIBC) $(LIBM)
 
-# This rule is here for OPENSTEP/Rhapsody/MacOSX
-$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): $(LIBRARY) $(PYTHONFRAMEWORKDIR)
+# This rule is here for OPENSTEP/Rhapsody/MacOSX. It builds a temporary
+# minimal framework (not including the Lib directory and such) in the current
+# directory.
+RESSRCDIR=$(srcdir)/Mac/OSXResources/framework
+$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
+		$(LIBRARY) \
+		$(RESSRCDIR)/Info.plist \
+                $(RESSRCDIR)/version.plist \
+                $(RESSRCDIR)/English.lproj/InfoPlist.strings
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
 	libtool -o $(LDLIBRARY) -dynamic $(OTHER_LIBTOOL_OPT) $(LIBRARY) \
 		-framework System @LIBTOOL_CRUFT@
+	$(INSTALL) -d -m $(DIRMODE)  \
+		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj
+	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist \
+		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/Info.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/version.plist \
+		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/version.plist
+	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
+		$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Resources/English.lproj/InfoPlist.strings
+	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
+	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
+	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
+	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
 # This rule builds the Cygwin Python DLL
 libpython$(VERSION).dll.a: $(LIBRARY_OBJS)
@@ -742,32 +761,6 @@ sharedinstall:
 	   	--prefix=$(prefix) \
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED)
-
-# Install a MacOSX framework During build (before
-# setup.py), make a minimal Python.framework directory structure in the build
-# directory. This framework is minimal, it doesn't contain the Lib directory
-# and such, but together with some magic in Modules/getpath.c it is good enough
-# to run python from the install dir.
-
-FRAMEWORKDEST=$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
-RESSRCDIR=$(srcdir)/Mac/OSXResources/framework
-$(PYTHONFRAMEWORKDIR): $(RESSRCDIR)/Info.plist \
-                $(RESSRCDIR)/version.plist \
-                $(RESSRCDIR)/English.lproj/InfoPlist.strings
-	@if test "$(PYTHONFRAMEWORKDIR)" = no-framework; then \
-		echo Not configured with --enable-framework; \
-		exit 1; \
-	else true; \
-	fi
-	$(INSTALL) -d -m $(DIRMODE)  $(FRAMEWORKDEST)/Resources/English.lproj
-	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKDEST)/Resources/Info.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKDEST)/Resources/version.plist
-	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
-		$(FRAMEWORKDEST)/Resources/English.lproj/InfoPlist.strings
-	$(LN) -fsh $(VERSION) $(PYTHONFRAMEWORKDIR)/Versions/Current
-	$(LN) -fsh Versions/Current/Python $(PYTHONFRAMEWORKDIR)/Python
-	$(LN) -fsh Versions/Current/Headers $(PYTHONFRAMEWORKDIR)/Headers
-	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKDIR)/Resources
 
 # On install, we re-make the framework
 # structure in the install location, /Library/Frameworks/ or the argument to

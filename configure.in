@@ -820,14 +820,12 @@ AC_MSG_RESULT($enable_toolbox_glue)
 AC_SUBST(LIBTOOL_CRUFT)
 case $ac_sys_system/$ac_sys_release in
   Darwin/1.3*)
-    ns_undef_sym='_environ'
-    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc -U $ns_undef_sym"
+    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc"
    	LIBTOOL_CRUFT="$LIBTOOL_CRUFT $extra_frameworks"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Python'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
   Darwin/*)
-    ns_undef_sym='_environ'
-    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc -flat_namespace -U $ns_undef_sym"
+    LIBTOOL_CRUFT="-lcc_dynamic -arch_only ppc"
       LIBTOOL_CRUFT="$LIBTOOL_CRUFT $extra_frameworks"
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/Python'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
@@ -837,15 +835,9 @@ AC_MSG_CHECKING(for --enable-framework)
 if test "$enable_framework"
 then
 	OPT="$OPT -fno-common -dynamic"
-	# -U __environ is needed since bundles don't have access
-	# to crt0 when built but will always be linked against it
 	# -F. is needed to allow linking to the framework while 
 	# in the build location.
-	
-	case $ac_sys_system/$ac_sys_release in
-	    Darwin/1.3*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-U,$ns_undef_sym";;
-	    Darwin/*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-flat_namespace,-U,$ns_undef_sym";;
-	esac
+	LDFLAGS="$LDFLAGS -Wl,-F."
 	AC_DEFINE(WITH_NEXT_FRAMEWORK, 1, 
          [Define if you want to produce an OpenStep/Rhapsody framework
          (shared library plus accessory files).])

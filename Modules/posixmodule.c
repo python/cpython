@@ -276,8 +276,13 @@ extern int lstat(const char *, struct stat *);
 #endif
 
 /* Return a dictionary corresponding to the POSIX environment table */
-
-#if !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
+#ifdef WITH_NEXT_FRAMEWORK
+/* On Darwin/MacOSX a shared library or framework has no access to
+** environ directly, we must obtain it with _NSGetEnviron().
+*/
+#include <crt_externs.h>
+static char **environ;
+#elif !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
 extern char **environ;
 #endif /* !_MSC_VER */
 
@@ -289,6 +294,10 @@ convertenviron(void)
 	d = PyDict_New();
 	if (d == NULL)
 		return NULL;
+#ifdef WITH_NEXT_FRAMEWORK
+	if (environ == NULL)
+		environ = *_NSGetEnviron();
+#endif
 	if (environ == NULL)
 		return d;
 	/* This part ignores errors */
