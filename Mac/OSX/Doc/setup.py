@@ -24,8 +24,10 @@ from distutils.log import log
 from distutils.spawn import spawn
 from distutils import sysconfig, dep_util
 from distutils.util import change_root
+import HelpIndexingTool
+import Carbon.File
+import time
 
-		
 class DocBuild(build):
 	def initialize_options(self):
 		build.initialize_options(self)
@@ -111,6 +113,27 @@ class DocBuild(build):
 		app = '/Developer/Applications/Apple Help Indexing Tool.app'
 		self.spawn('open', '-a', app , self.build_dest)
 		print "Please wait until Apple Help Indexing Tool finishes before installing"
+		
+	def makeHelpIndex(self):
+		app = HelpIndexingTool.HelpIndexingTool(start=1)
+		app.open(Carbon.File.FSSpec(self.build_dest))
+		sys.stderr.write("Waiting for Help Indexing Tool to start...")
+		while 1:
+			# This is bad design in the suite generation code!
+			idle = app._get(HelpIndexingTool.Help_Indexing_Tool_Suite._Prop_idleStatus())
+			time.sleep(10)
+			if not idle: break
+			sys.stderr.write(".")
+		sys.stderr.write("\n")
+		sys.stderr.write("Waiting for Help Indexing Tool to finish...")
+		while 1:
+			# This is bad design in the suite generation code!
+			idle = app._get(HelpIndexingTool.Help_Indexing_Tool_Suite._Prop_idleStatus())
+			time.sleep(10)
+			if idle: break
+			sys.stderr.write(".")
+		sys.stderr.write("\n")
+			
 		
 	def run(self):
 		self.ensure_finalized()
