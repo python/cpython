@@ -37,7 +37,7 @@ def finger(host, args):
 def main():
 	options = ''
 	i = 1
-	while i < len(sys.argv) and sys.argv[i][:1] = '-':
+	while i < len(sys.argv) and sys.argv[i][:1] == '-':
 		options = options + sys.argv[i] + ' '
 		i = i+1
 	args = sys.argv[i:]
