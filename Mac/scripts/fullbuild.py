@@ -100,7 +100,7 @@ PLUGIN_INSTRUCTIONS=[
 CFM68KPLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":PlugIns:ctb.CFM68K.µ",
-		":PlugIns:imgmodules.ppc.µ",
+		":PlugIns:imgmodules.CFM68K.µ",
 		":PlugIns:toolboxmodules.CFM68K.µ",
 		":PlugIns:qtmodules.CFM68K.µ",
 		":PlugIns:waste.CFM68K.µ",
