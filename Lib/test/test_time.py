@@ -185,6 +185,23 @@ class TimeTestCase(unittest.TestCase):
             for unreasonable in -1e200, 1e200:
                 self.assertRaises(ValueError, func, unreasonable)
 
+    def test_ctime_without_arg(self):
+        # Not sure how to check the values, since the clock could tick
+        # at any time.  Make sure these are at least accepted and
+        # don't raise errors.
+        time.ctime()
+        time.ctime(None)
+
+    def test_gmtime_without_arg(self):
+        t0 = time.mktime(time.gmtime())
+        t1 = time.mktime(time.gmtime(None))
+        self.assert_(0 <= (t1-t0) < 0.2)
+
+    def test_localtime_without_arg(self):
+        t0 = time.mktime(time.localtime())
+        t1 = time.mktime(time.localtime(None))
+        self.assert_(0 <= (t1-t0) < 0.2)
+
 def test_main():
     test_support.run_unittest(TimeTestCase)
 

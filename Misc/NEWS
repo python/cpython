@@ -72,6 +72,11 @@ Extension modules
 Library
 -------
 
+- The following methods in time support passing of None: ctime(), gmtime(),
+  and localtime().  If None is provided, the current time is used (the
+  same as when the argument is omitted).
+  [SF bug 658254, patch 663482]
+
 - nntplib does now allow to ignore a .netrc file.
 
 - urllib2 now recognizes Basic authentication even if other authentication

@@ -157,11 +157,14 @@ The resolution is typically better than one microsecond.
 
 \begin{funcdesc}{ctime}{\optional{secs}}
 Convert a time expressed in seconds since the epoch to a string
-representing local time. If \var{secs} is not provided, the current time
-as returned by \function{time()} is used.  \code{ctime(\var{secs})}
-is equivalent to \code{asctime(localtime(\var{secs}))}.
+representing local time. If \var{secs} is not provided or
+\constant{None}, the current time as returned by \function{time()} is
+used.  \code{ctime(\var{secs})} is equivalent to
+\code{asctime(localtime(\var{secs}))}.
 Locale information is not used by \function{ctime()}.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
+\versionchanged[If \var{secs} is \constant{None}, the current time is
+                used]{2.3}
 \end{funcdesc}
 
 \begin{datadesc}{daylight}
@@ -171,16 +174,22 @@ Nonzero if a DST timezone is defined.
 \begin{funcdesc}{gmtime}{\optional{secs}}
 Convert a time expressed in seconds since the epoch to a \class{struct_time}
 in UTC in which the dst flag is always zero.  If \var{secs} is not
-provided, the current time as returned by \function{time()} is used.
-Fractions of a second are ignored.  See above for a description of the
-\class{struct_time} object.
+provided or \constant{None}, the current time as returned by
+\function{time()} is used.  Fractions of a second are ignored.  See
+above for a description of the \class{struct_time} object.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
+\versionchanged[If \var{secs} is \constant{None}, the current time is
+                used]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{localtime}{\optional{secs}}
-Like \function{gmtime()} but converts to local time.  The dst flag is
-set to \code{1} when DST applies to the given time.
+Like \function{gmtime()} but converts to local time.  If \var{secs} is
+not provided or \constant{None}, the current time as returned by
+\function{time()} is used.  The dst flag is set to \code{1} when DST
+applies to the given time.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
+\versionchanged[If \var{secs} is \constant{None}, the current time is
+                used]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{mktime}{t}
