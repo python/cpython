@@ -2870,7 +2870,7 @@ static PyMethodDef tzinfo_methods[] = {
 static char tzinfo_doc[] =
 PyDoc_STR("Abstract base class for time zone info objects.");
 
- statichere PyTypeObject PyDateTime_TZInfoType = {
+statichere PyTypeObject PyDateTime_TZInfoType = {
 	PyObject_HEAD_INIT(NULL)
 	0,					/* ob_size */
 	"datetime.tzinfo",			/* tp_name */
