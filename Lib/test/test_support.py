@@ -2,6 +2,8 @@
 
 import sys
 
+sys.save_stdout = sys.stdout
+
 class Error(Exception):
     """Base class for regression test exceptions."""
 
