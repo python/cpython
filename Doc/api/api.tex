@@ -5029,6 +5029,11 @@ pair of rules:
   objects.  The deallocator (\member{tp_dealloc} handler) should call
   this for the object before any of the fields used by the
   \member{tp_traverse} handler become invalid.
+
+  \strong{Note:}  Any container which may be referenced from another
+  object reachable by the collector must itself be tracked by the
+  collector, so it is generally not safe to call this function
+  anywhere but in the object's deallocator.
 \end{cfuncdesc}
 
 The \member{tp_traverse} handler accepts a function parameter of this
