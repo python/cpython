@@ -3539,13 +3539,11 @@ com_arglist(struct compiling *c, node *n)
 	for (i = 0, narg = 0; i < nch; i++) {
 		node *ch = CHILD(n, i);
 		node *fp;
-		char *name;
 		if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
 			break;
 		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
 		fp = CHILD(ch, 0);
 		if (TYPE(fp) != NAME) {
-			name = nbuf;
 			sprintf(nbuf, ".%d", i);
 			complex = 1;
 		}
