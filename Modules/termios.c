@@ -33,7 +33,7 @@ termios_tcgetattr(self, args)
 		return NULL;
 
 	if (tcgetattr(fd, &mode) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	ispeed = cfgetispeed(&mode);
 	ospeed = cfgetospeed(&mode);
@@ -133,11 +133,11 @@ termios_tcsetattr(self, args)
 	}
 
 	if (cfsetispeed(&mode, (speed_t) ispeed) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 	if (cfsetospeed(&mode, (speed_t) ospeed) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 	if (tcsetattr(fd, when, &mode) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -156,7 +156,7 @@ termios_tcsendbreak(self, args)
 	if (!PyArg_Parse(args, "(ii)", &fd, &duration))
 		return NULL;
 	if (tcsendbreak(fd, duration) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -176,7 +176,7 @@ termios_tcdrain(self, args)
 	if (!PyArg_Parse(args, "i", &fd))
 		return NULL;
 	if (tcdrain(fd) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -196,7 +196,7 @@ termios_tcflush(self, args)
 	if (!PyArg_Parse(args, "(ii)", &fd, &queue))
 		return NULL;
 	if (tcflush(fd, queue) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -216,7 +216,7 @@ termios_tcflow(self, args)
 	if (!PyArg_Parse(args, "(ii)", &fd, &action))
 		return NULL;
 	if (tcflow(fd, action) == -1)
-		PyErr_SetFromErrno(TermiosError);
+		return PyErr_SetFromErrno(TermiosError);
 
 	Py_INCREF(Py_None);
 	return Py_None;
