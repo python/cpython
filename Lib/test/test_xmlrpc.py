@@ -10,6 +10,8 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'anotherlist': ['.zyx.41'],
           'abase64': xmlrpclib.Binary("my dog has fleas"),
           'boolean': xmlrpclib.False,
+          'unicode': u'\u4000\u6000\u8000',
+          u'ukey\u4000': 'regular value',
           }]
 
 class XMLRPCTestCase(unittest.TestCase):
