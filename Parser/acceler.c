@@ -104,10 +104,27 @@ fixstate(g, d, s)
 			}
 			for (ibit = 0; ibit < g->g_ll.ll_nlabels; ibit++) {
 				if (testbit(d1->d_first, ibit)) {
+#ifdef applec
+#define MPW_881_bug			/* Undefine if bug below is fixed */
+#endif
+#ifdef MPW_881_BUG
+					/* In 881 mode MPW 3.1 has a code
+					   generation bug which seems to
+					   set the upper bits; fix this by
+					   explicitly masking them off */
+					int temp;
+#endif
 					if (accel[ibit] != -1)
 						printf("XXX ambiguity!\n");
+#ifdef MPW_881_BUG
+					temp = 0xFFFF &
+						(a->a_arrow | (1 << 7) |
+						 ((type - NT_OFFSET) << 8));
+					accel[ibit] = temp;
+#else
 					accel[ibit] = a->a_arrow | (1 << 7) |
 						((type - NT_OFFSET) << 8);
+#endif
 				}
 			}
 		}
