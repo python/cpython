@@ -279,7 +279,7 @@ then
 	DYNIX/ptx*) LDSHARED="ld -G";;
 	next/*) LDSHARED='$(CC) $(CFLAGS) -nostdlib -r';;
 	Linux*) LDSHARED="gcc -shared";;
-	FreeBSD*) LDSHARED="ld -Bshareable";;
+	FreeBSD*|NetBSD*) LDSHARED="ld -Bshareable";;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	*)	LDSHARED="ld";;
 	esac
@@ -296,7 +296,7 @@ then
 		 else CCSHARED="+z";
 		 fi;;
 	Linux*) CCSHARED="-fpic";;
-	FreeBSD*) CCSHARED="-fpic";;
+	FreeBSD*|NetBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	IRIX*/6*) CCSHARED="-all";;
 	esac
@@ -385,11 +385,15 @@ AC_CHECK_LIB(pthread, pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lpthread"
 LIBOBJS="$LIBOBJS thread.o"], [
+AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_POSIX_THREADS)
+LIBS="$LIBS -lc_r"
+LIBOBJS="$LIBOBJS thread.o"], [
 AC_CHECK_LIB(thread, __d6_pthread_create, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(_POSIX_THREADS)
 LIBS="$LIBS -lthread"
 LIBOBJS="$LIBOBJS thread.o"])
-])])])
+])])])])
 
 AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
 LIBS="$LIBS -lmpc"
