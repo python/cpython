@@ -10,6 +10,7 @@
 
 #include "compile.h"
 #include "frameobject.h"
+#include "genobject.h"
 #include "eval.h"
 #include "opcode.h"
 #include "structmember.h"
@@ -138,143 +139,6 @@ PyEval_GetCallStats(PyObject *self)
 	return Py_None;
 }
 #endif
-
-static PyTypeObject gentype;
-
-typedef struct {
-	PyObject_HEAD
-	/* The gi_ prefix is intended to remind of generator-iterator. */
-
-	PyFrameObject *gi_frame;
-
-	/* True if generator is being executed. */
-	int gi_running;
-
-	/* List of weak reference. */
-	PyObject *gi_weakreflist;
-} genobject;
-
-static PyObject *
-gen_new(PyFrameObject *f)
-{
-	genobject *gen = PyObject_GC_New(genobject, &gentype);
-	if (gen == NULL) {
-		Py_DECREF(f);
-		return NULL;
-	}
-	gen->gi_frame = f;
-	gen->gi_running = 0;
-	gen->gi_weakreflist = NULL;
-	_PyObject_GC_TRACK(gen);
-	return (PyObject *)gen;
-}
-
-static int
-gen_traverse(genobject *gen, visitproc visit, void *arg)
-{
-	return visit((PyObject *)gen->gi_frame, arg);
-}
-
-static void
-gen_dealloc(genobject *gen)
-{
-	_PyObject_GC_UNTRACK(gen);
-	if (gen->gi_weakreflist != NULL)
-		PyObject_ClearWeakRefs((PyObject *) gen);
-	Py_DECREF(gen->gi_frame);
-	PyObject_GC_Del(gen);
-}
-
-static PyObject *
-gen_iternext(genobject *gen)
-{
-	PyThreadState *tstate = PyThreadState_GET();
-	PyFrameObject *f = gen->gi_frame;
-	PyObject *result;
-
-	if (gen->gi_running) {
-		PyErr_SetString(PyExc_ValueError,
-				"generator already executing");
-		return NULL;
-	}
-	if (f->f_stacktop == NULL)
-		return NULL;
-
-	/* Generators always return to their most recent caller, not
-	 * necessarily their creator. */
-	Py_XINCREF(tstate->frame);
-	assert(f->f_back == NULL);
-	f->f_back = tstate->frame;
-
-	gen->gi_running = 1;
-	result = eval_frame(f);
-	gen->gi_running = 0;
-
-	/* Don't keep the reference to f_back any longer than necessary.  It
-	 * may keep a chain of frames alive or it could create a reference
-	 * cycle. */
-	Py_XDECREF(f->f_back);
-	f->f_back = NULL;
-
-	/* If the generator just returned (as opposed to yielding), signal
-	 * that the generator is exhausted. */
-	if (result == Py_None && f->f_stacktop == NULL) {
-		Py_DECREF(result);
-		result = NULL;
-	}
-
-	return result;
-}
-
-static PyObject *
-gen_getiter(PyObject *gen)
-{
-	Py_INCREF(gen);
-	return gen;
-}
-
-static PyMemberDef gen_memberlist[] = {
-	{"gi_frame",	T_OBJECT, offsetof(genobject, gi_frame),	RO},
-	{"gi_running",	T_INT,    offsetof(genobject, gi_running),	RO},
-	{NULL}	/* Sentinel */
-};
-
-static PyTypeObject gentype = {
-	PyObject_HEAD_INIT(&PyType_Type)
-	0,					/* ob_size */
-	"generator",				/* tp_name */
-	sizeof(genobject),			/* tp_basicsize */
-	0,					/* tp_itemsize */
-	/* methods */
-	(destructor)gen_dealloc, 		/* tp_dealloc */
-	0,					/* tp_print */
-	0, 					/* tp_getattr */
-	0,					/* tp_setattr */
-	0,					/* tp_compare */
-	0,					/* tp_repr */
-	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
-	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
-	0,					/* tp_call */
-	0,					/* tp_str */
-	PyObject_GenericGetAttr,		/* tp_getattro */
-	0,					/* tp_setattro */
-	0,					/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
- 	0,					/* tp_doc */
- 	(traverseproc)gen_traverse,		/* tp_traverse */
- 	0,					/* tp_clear */
-	0,					/* tp_richcompare */
-	offsetof(genobject, gi_weakreflist),	/* tp_weaklistoffset */
-	(getiterfunc)gen_getiter,		/* tp_iter */
-	(iternextfunc)gen_iternext,		/* tp_iternext */
-	0,					/* tp_methods */
-	gen_memberlist,				/* tp_members */
-	0,					/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-};
 
 
 #ifdef WITH_THREAD
@@ -2673,7 +2537,7 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
 		/* Create a new generator that owns the ready to run frame
 		 * and return that as the value. */
-		return gen_new(f);
+		return PyGen_New(f);
 	}
 
         retval = eval_frame(f);
@@ -3405,6 +3269,12 @@ PyEval_GetFuncDesc(PyObject *func)
 	} else {
 		return " object";
 	}
+}
+
+PyObject *
+PyEval_EvaluateFrame(PyObject *fo)
+{
+	return eval_frame((PyFrameObject *)fo);
 }
 
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))

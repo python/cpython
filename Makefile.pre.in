@@ -261,6 +261,7 @@ OBJECT_OBJS=	\
 		Objects/complexobject.o \
 		Objects/descrobject.o \
 		Objects/enumobject.o \
+		Objects/genobject.o \
 		Objects/fileobject.o \
 		Objects/floatobject.o \
 		Objects/frameobject.o \
@@ -478,6 +479,7 @@ PYTHON_HEADERS= \
 		Include/descrobject.h \
 		Include/dictobject.h \
 		Include/enumobject.h \
+		Include/genobject.h \
 		Include/fileobject.h \
 		Include/floatobject.h \
 		Include/funcobject.h \

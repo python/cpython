@@ -497,6 +497,9 @@ Build
 C API
 -----
 
+- New public functions PyEval_EvaluateFrame and PyGen_New to expose
+  generator objects.
+
 - New public functions Py_IncRef() and Py_DecRef(), exposing the
   functionality of the Py_XINCREF() and Py_XDECREF macros. Useful for
   runtime dynamic embedding of Python.  See patch #938302, by Bob
