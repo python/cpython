@@ -97,7 +97,7 @@
 #error "eek! DBVER can't handle minor versions > 9"
 #endif
 
-#define PY_BSDDB_VERSION "4.2.6"
+#define PY_BSDDB_VERSION "4.2.7"
 static char *rcs_id = "$Id$";
 
 
