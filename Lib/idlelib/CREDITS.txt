@@ -11,14 +11,15 @@ Bruce Sherwood has contributed considerable time testing and suggesting
 improvements.
 
 Besides Guido, the main developers who have been active on IDLEfork version
-0.8.1 and later are Stephen M. Gava, who implemented the configuration GUI, and
-Kurt B. Kaiser, who continued the integration of the RPC and remote debugger,
-and made a number of usability enhancements.
+0.8.1 and later are Stephen M. Gava, who implemented the Configuration GUI and
+the new About menu, and Kurt B. Kaiser, who completed the integration of the
+RPC and remote debugger, and made a number of usability enhancements.
 
-Other contributors include Tony Lownds (Mac integration), and Chui Tey (RPC,
-Debugger) 
+Other contributors include Tony Lownds (Mac integration), Neal Norwitz (code
+check and clean-up), and Chui Tey (RPC integration, debugger integration and
+persistent breakpoints).
 
-Neal Norwitz and Josh Robb have submitted useful patches. 
+Josh Robb has submitted useful patches. 
 
 There are others who should be included here, especially those who contributed
 to IDLE versions prior to 0.8, principally Mark Hammond, Tim Peters, and Moshe
@@ -28,3 +29,5 @@ Please contact the IDLEfork maintainer to have yourself included here if you
 are one of those we missed! 
 
 Contact details at http://idlefork.sourceforge.net
+
+
