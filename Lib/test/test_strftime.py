@@ -9,13 +9,15 @@ verbose = 0
 if __name__ == '__main__':
     verbose = 1
 
-now = 850499890.282			  # time.time()
-fromdate = 'Fri Dec 13 12:58:10 EST 1996' # os.popen('date')
+if verbose:
+    now = time.time()
+    fp = os.popen('date')
+    fromdate = string.strip(fp.readline())
+    fp.close()
+else:
+    now = 850499890.282			      # time.time()
+    fromdate = 'Fri Dec 13 12:58:10 EST 1996' # os.popen('date')
 
-## now = time.time()
-## fp = os.popen('date')
-## fromdate = string.strip(fp.readline())
-## fp.close()
 nowsecs = int(now)
 gmt = time.gmtime(now)
 now = time.localtime(now)
