@@ -397,7 +397,7 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_socket', ['socketmodule.c'],
                                depends = ['socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
-        ssl_incs = find_file('openssl/ssl.h', inc_dirs,
+        ssl_incs = find_file('openssl/ssl.h', self.compiler.include_dirs,
                              ['/usr/local/ssl/include',
                               '/usr/contrib/ssl/include/'
                              ]
