@@ -533,36 +533,45 @@ parameter and are called with a non-string parameter.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AsString}{PyObject *string}
-  Returns a null-terminated representation of the contents of
+  Returns a NUL-terminated representation of the contents of
   \var{string}.  The pointer refers to the internal buffer of
   \var{string}, not a copy.  The data must not be modified in any way,
   unless the string was just created using
   \code{PyString_FromStringAndSize(NULL, \var{size})}.
-  It must not be deallocated.
+  It must not be deallocated.  If \var{string} is a Unicode object,
+  this function computes the default encoding of \var{string} and
+  operates on that.  If \var{string} is not a string object at all,
+  \cfunction{PyString_AsString()} returns \NULL{} and raises
+  \exception{TypeError}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char*}{PyString_AS_STRING}{PyObject *string}
   Macro form of \cfunction{PyString_AsString()} but without error
-  checking.
+  checking.  Only string objects are supported; no Unicode objects
+  should be passed.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_AsStringAndSize}{PyObject *obj,
                                                  char **buffer,
                                                  int *length}
-  Returns a null-terminated representation of the contents of the
+  Returns a NUL-terminated representation of the contents of the
   object \var{obj} through the output variables \var{buffer} and
   \var{length}.
 
   The function accepts both string and Unicode objects as input. For
   Unicode objects it returns the default encoded version of the
-  object.  If \var{length} is set to \NULL, the resulting buffer may
-  not contain null characters; if it does, the function returns -1 and
-  a \exception{TypeError} is raised.
+  object.  If \var{length} is \NULL, the resulting buffer may not
+  contain NUL characters; if it does, the function returns \code{-1}
+  and a \exception{TypeError} is raised.
 
   The buffer refers to an internal string buffer of \var{obj}, not a
   copy. The data must not be modified in any way, unless the string
   was just created using \code{PyString_FromStringAndSize(NULL,
-  \var{size})}.  It must not be deallocated.
+  \var{size})}.  It must not be deallocated.  If \var{string} is a
+  Unicode object, this function computes the default encoding of
+  \var{string} and operates on that.  If \var{string} is not a string
+  object at all, \cfunction{PyString_AsString()} returns \NULL{} and
+  raises \exception{TypeError}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
