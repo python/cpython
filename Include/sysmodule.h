@@ -43,6 +43,15 @@ FILE *PySys_GetFile Py_PROTO((char *, FILE *));
 void PySys_SetArgv Py_PROTO((int, char **));
 void PySys_SetPath Py_PROTO((char *));
 
+#ifdef HAVE_STDARG_PROTOTYPES
+void PySys_WriteStdout(const char *format, ...);
+void PySys_WriteStderr(const char *format, ...);
+#else
+/* Better to have no prototypes at all for varargs functions in this case */
+void PySys_WriteStdout();
+void PySys_WriteStderr();
+#endif
+
 extern DL_IMPORT(PyObject *) _PySys_TraceFunc, *_PySys_ProfileFunc;
 extern DL_IMPORT(int) _PySys_CheckInterval;
 
