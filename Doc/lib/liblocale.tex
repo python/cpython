@@ -298,9 +298,10 @@ represent time in the am/pm format.
 \end{datadesc}
 
 \begin{datadesc}{DAY_1 ... DAY_7}
-Return name of the n-th day of the week. \[Warning: this follows the US
-convention DAY_1 = Sunday, not the international convention (ISO 8601)
-that Monday is the first day of the week.\]
+Return name of the n-th day of the week. \strong{Warning:} this
+follows the US convention of \constant{DAY_1} being Sunday, not the
+international convention (ISO 8601) that Monday is the first day of
+the week.
 \end{datadesc}
 
 \begin{datadesc}{ABDAY_1 ... ABDAY_7}
@@ -326,9 +327,9 @@ Return separator character for thousands (groups of three digits).
 \begin{datadesc}{YESEXPR}
 Return a regular expression that can be used with the regex
 function to recognize a positive response to a yes/no question.
-\[Warning: the expression is in the syntax suitable for the
-  regex C library function, which might differ from the syntax
-  used in \module{re}\]
+\strong{Warning:} the expression is in the syntax suitable for the
+\cfunction{regex()} function from the C library, which might differ
+from the syntax used in \refmodule{re}.
 \end{datadesc}
 
 \begin{datadesc}{NOEXPR}
