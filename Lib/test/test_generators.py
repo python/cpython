@@ -652,6 +652,17 @@ But this is fine:
 [12, 666]
 
 >>> def f():
+...    yield
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> def f():
+...    if 0:
+...        yield
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> def f():
 ...     if 0:
 ...         yield 1
 >>> type(f())
@@ -704,6 +715,28 @@ But this is fine:
 ...                 yield 2
 >>> type(f())
 <type 'None'>
+
+>>> def f():
+...     if 0:
+...         return
+...     if 0:
+...         yield 2
+>>> type(f())
+<type 'generator'>
+
+
+>>> def f():
+...     if 0:
+...         lambda x:  x        # shouldn't trigger here
+...         return              # or here
+...         def f(i):
+...             return 2*i      # or here
+...         if 0:
+...             return 3        # but *this* sucks (line 8)
+...     if 0:
+...         yield 2             # because it's a generator
+Traceback (most recent call last):
+SyntaxError: 'return' with argument inside generator (<string>, line 8)
 """
 
 __test__ = {"tut":      tutorial_tests,
