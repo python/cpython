@@ -5194,7 +5194,7 @@ posix_tmpfile(PyObject *self, PyObject *args)
     fp = tmpfile();
     if (fp == NULL)
         return posix_error();
-    return PyFile_FromFile(fp, "<tmpfile>", "w+", fclose);
+    return PyFile_FromFile(fp, "<tmpfile>", "w+b", fclose);
 }
 #endif
 
