@@ -113,11 +113,7 @@ $(ASHAREDMODULE)$(SO): $(ASHAREDMODULESOBS)
 # This target is used by the master Makefile to add the objects to the library.
 # To deal with the conflict between signalmodule.o and sigcheck.o,
 # we remove the latter if we have the former.
-add2lib:	$(OBJS) buildno
-		expr `cat buildno` + 1 >@buildno
-		mv @buildno buildno
-		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
-		      $(srcdir)/getbuildinfo.c
+add2lib:	$(OBJS)
 		$(AR) cr $(LIBRARY) $(OBJS)
 		-if ar x $(LIBRARY) signalmodule.o 2>/dev/null; \
 		then ar d $(LIBRARY) sigcheck.o 2>/dev/null; true; \
@@ -129,9 +125,6 @@ link:		$(MAINOBJ)
 		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(MAINOBJ) \
 		  $(LIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
 		mv python ../python
-
-buildno:
-		echo 0 >buildno
 
 clean:
 		-rm -f *.o python core *~ [@,#]* *.old *.orig *.rej add2lib
