@@ -46,7 +46,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef USE_DL
 #include "dl.h"
 
-static char *getbinaryname();
+extern char *argv0;
 #endif
 
 /* Magic word to reject pre-0.9.4 .pyc files */
@@ -194,7 +194,7 @@ get_module(m, name, m_ret)
 			dl_funcptr p;
 			D(fprintf(stderr, "Found %s\n", namebuf));
 			sprintf(funcname, "init%s", name);
-			p =  dl_loadmod(getbinaryname(), namebuf, funcname);
+			p =  dl_loadmod(argv0, namebuf, funcname);
 			if (p == NULL) {
 				D(fprintf(stderr, "dl_loadmod failed\n"));
 			}
@@ -404,64 +404,3 @@ init_builtin(name)
 	}
 	return 0;
 }
-
-#ifdef USE_DL
-
-/* A function to find a filename for the currently executing binary.
-   Because this is not directly available, we have to search for argv[0]
-   along $PATH.  But note that if argv[0] contains a slash anywhere,
-   sh(1) doesn't search $PATH -- so neither do we! */
-
-/* XXX This should be moved to a more system-specific file */
-
-#include <sys/types.h>
-#include <sys/stat.h> /* For stat */
-
-extern char *getenv();
-
-extern char *argv0; /* In config.c */
-
-/* Default path from sh(1) in Irix 4.0.1 */
-#define DEF_PATH ":/usr/sbin:/usr/bsd:/bin:/usr/bin:/usr/bin/X11"
-
-static char *
-getbinaryname()
-{
-	char *p, *q;
-	char *path;
-	static char buf[258];
-	int i;
-	struct stat st;
-
-	if (strchr(argv0, '/') != NULL) {
-		D(fprintf(stderr, "binary includes slash: %s\n", argv0));
-		return argv0;
-	}
-	path = getenv("PATH");
-	if (path == NULL)
-		path = DEF_PATH;
-	p = q = path;
-	for (;;) {
-		while (*q && *q != ':')
-			q++;
-		i = q-p;
-		strncpy(buf, p, i);
-		if (q > p && q[-1] != '/')
-			buf[i++] = '/';
-		strcpy(buf+i, argv0);
-		if (stat(buf, &st) >= 0) {
-			if (S_ISREG(st.st_mode) &&
-			    (st.st_mode & 0111)) {
-				D(fprintf(stderr, "found binary: %s\n", buf));
-				return buf;
-			}
-		}
-		if (!*q)
-			break;
-		p = ++q;
-	}
-	D(fprintf(stderr, "can't find binary: %s\n", argv0));
-	return argv0;
-}
-
-#endif
