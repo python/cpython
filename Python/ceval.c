@@ -2094,7 +2094,7 @@ eval_frame(PyFrameObject *f)
 			int nfree;
 			v = POP(); /* code object */
 			x = PyFunction_New(v, f->f_globals);
-			nfree = PyTuple_GET_SIZE(((PyCodeObject *)v)->co_freevars);
+			nfree = PyCode_GetNumFree((PyCodeObject *)v);
 			Py_DECREF(v);
 			/* XXX Maybe this should be a separate opcode? */
 			if (x != NULL && nfree > 0) {
@@ -3631,6 +3631,11 @@ exec_statement(PyFrameObject *f, PyObject *prog, PyObject *globals,
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL)
 		PyDict_SetItemString(globals, "__builtins__", f->f_builtins);
 	if (PyCode_Check(prog)) {
+		if (PyCode_GetNumFree((PyCodeObject *)prog) > 0) {
+			PyErr_SetString(PyExc_TypeError,
+		"code object passed to exec may not contain free variables");
+			return -1;
+		}
 		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
 	}
 	else if (PyFile_Check(prog)) {
