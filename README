@@ -304,6 +304,62 @@ OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         in the resulting binaries of PYTHON15.DLL and PYTHON.EXE.
 
 
+Configuring threads
+-------------------
+
+The main switch to configure threads is to run the configure script
+(see below) with the --with-thread switch (on DEC, use
+--with-dec-threads).  Unfortunately, on some platforms, additional
+compiler and/or linker options are required.  Below is a table of
+those options, collected by Bill Janssen.  I would love to automate
+this process more, but the information below is not enough to write a
+patch for the configure.in file, so manual intervention is required.
+If you patch the configure.in file and are confident that the patch
+works, please send me the patch.  (Don't bother patching the configure
+script itself -- it is regenerated each the configure.in file
+changes.)
+
+Compiler switches for threads
+.............................
+
+    OS/Compiler/threads                     Switches for use with threads
+    (POSIX is draft 10, DCE is draft 4)     (1) compile only (2) compile & link
+
+    SunOS 5.{1-5}/{gcc,SunPro cc}/solaris   (1) -D_REENTRANT   (2) -mt
+    SunOS 5.5/{gcc,SunPro cc}/POSIX         (1) -D_REENTRANT
+    DEC OSF/1 3.x/cc/DCE                    (1) -D_REENTRANT   (2) -threads 
+	    (butenhof@zko.dec.com)
+    Digital UNIX 4.x/cc/DCE                 (1) -D_REENTRANT   (2) -threads 
+	    (butenhof@zko.dec.com)
+    Digital UNIX 4.x/cc/POSIX               (1) -D_REENTRANT   (2) -pthread 
+	    (butenhof@zko.dec.com)
+    AIX 4.1.4/cc_r/d7                       (nothing)                       
+	    (buhrt@iquest.net)
+    AIX 4.1.4/cc_r4/DCE                     (nothing)                       
+	    (buhrt@iquest.net)
+    IRIX 6.2/cc/POSIX                       (nothing)                       
+	    (robertl@cwi.nl)
+
+
+Linker (ld) libraries and flags for threads
+...........................................
+
+    OS/threads                          Libraries/switches for use with threads
+
+    SunOS 5.{1-5}/solaris               -lthread
+    SunOS 5.5/POSIX                     -lpthread
+    DEC OSF/1 3.x/DCE                   -lpthreads -lmach -lc_r -lc     
+	    (butenhof@zko.dec.com)
+    Digital UNIX 4.x/DCE                -lpthreads -lpthread -lmach -lexc -lc
+	    (butenhof@zko.dec.com)
+    Digital UNIX 4.x/POSIX              -lpthread -lmach -lexc -lc      
+	    (butenhof@zko.dec.com)
+    AIX 4.1.4/{draft7,DCE}              (nothing)                       
+	    (buhrt@iquest.net)
+    IRIX 6.2/POSIX                      -lpthread                       
+	    (jph@emilia.engr.sgi.com)
+
+
 Configuring additional built-in modules
 ---------------------------------------
 
