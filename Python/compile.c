@@ -610,7 +610,7 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 				  Py_None, line);
 		if (t == NULL)
 			goto exit;
-		w = Py_BuildValue("(OO)", v, t);
+		w = PyTuple_Pack(2, v, t);
 		if (w == NULL)
 			goto exit;
 		PyErr_SetObject(exc, w);
@@ -969,7 +969,7 @@ com_add(struct compiling *c, PyObject *list, PyObject *dict, PyObject *v)
 	PyObject *w, *t, *np=NULL;
 	long n;
 	
-	t = Py_BuildValue("(OO)", v, v->ob_type);
+	t = PyTuple_Pack(2, v, v->ob_type);
 	if (t == NULL)
 	    goto fail;
 	w = PyDict_GetItem(dict, t);

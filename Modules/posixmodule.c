@@ -3376,10 +3376,10 @@ _PyPopen(char *cmdstring, int mode, int n, int bufsize)
 	{
 		if ((p_f[2] = PyFile_FromFile(p_s[2], cmdstring, rd_mode, _PyPclose)) != NULL)
 			PyFile_SetBufSize(p_f[0], bufsize);
-		f = Py_BuildValue("OOO", p_f[0], p_f[1], p_f[2]);
+		f = PyTuple_Pack(3, p_f[0], p_f[1], p_f[2]);
 	}
 	else
-		f = Py_BuildValue("OO", p_f[0], p_f[1]);
+		f = PyTuple_Pack(2, p_f[0], p_f[1]);
 
 	/*
 	 * Insert the files we've created into the process dictionary
@@ -4069,7 +4069,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 if (n != 4)
 			 CloseHandle(hChildStderrRdDup);
 
-		 f = Py_BuildValue("OO",p1,p2);
+		 f = PyTuple_Pack(2,p1,p2);
 		 Py_XDECREF(p1);
 		 Py_XDECREF(p2);
 		 file_count = 2;
@@ -4101,7 +4101,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 PyFile_SetBufSize(p1, 0);
 		 PyFile_SetBufSize(p2, 0);
 		 PyFile_SetBufSize(p3, 0);
-		 f = Py_BuildValue("OOO",p1,p2,p3);
+		 f = PyTuple_Pack(3,p1,p2,p3);
 		 Py_XDECREF(p1);
 		 Py_XDECREF(p2);
 		 Py_XDECREF(p3);

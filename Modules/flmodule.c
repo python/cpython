@@ -1714,7 +1714,7 @@ forms_do_or_check_forms(PyObject *dummy, FL_OBJECT *(*func)(void))
 			Py_INCREF(g);
 			return ((PyObject *) g);
 		}
-		arg = Py_BuildValue("(OO)", (PyObject *)g, g->ob_callback_arg);
+		arg = PyTuple_Pack(2, (PyObject *)g, g->ob_callback_arg);
 		if (arg == NULL)
 			return NULL;
 		res = PyEval_CallObject(g->ob_callback, arg);

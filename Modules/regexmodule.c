@@ -551,7 +551,7 @@ static PyObject *cache_prog;
 static int
 update_cache(PyObject *pat)
 {
-	PyObject *tuple = Py_BuildValue("(O)", pat);
+	PyObject *tuple = PyTuple_Pack(1, pat);
 	int status = 0;
 
 	if (!tuple)

@@ -439,7 +439,7 @@ complex_divmod(PyComplexObject *v, PyComplexObject *w)
 	mod = c_diff(v->cval, c_prod(w->cval, div));
 	d = PyComplex_FromCComplex(div);
 	m = PyComplex_FromCComplex(mod);
-	z = Py_BuildValue("(OO)", d, m);
+	z = PyTuple_Pack(2, d, m);
 	Py_XDECREF(d);
 	Py_XDECREF(m);
 	return z;
@@ -865,7 +865,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (f == NULL)
 		PyErr_Clear();
 	else {
-		PyObject *args = Py_BuildValue("()");
+		PyObject *args = PyTuple_New(0);
 		if (args == NULL)
 			return NULL;
 		r = PyEval_CallObject(f, args);

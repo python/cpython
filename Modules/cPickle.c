@@ -3627,7 +3627,7 @@ Instance_New(PyObject *cls, PyObject *args)
 		PyObject *tp, *v, *tb;
 
 		PyErr_Fetch(&tp, &v, &tb);
-		if ((r=Py_BuildValue("OOO",v,cls,args))) {
+		if ((r=PyTuple_Pack(3,v,cls,args))) {
 			Py_XDECREF(v);
 			v=r;
 		}

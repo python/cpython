@@ -336,7 +336,7 @@ trace_frame_exc(PyThreadState *tstate, PyFrameObject *f)
 	value = Py_None;
 	Py_INCREF(value);
     }
-    arg = Py_BuildValue("(OOO)", type, value, traceback);
+    arg = PyTuple_Pack(3, type, value, traceback);
     if (arg == NULL) {
 	PyErr_Restore(type, value, traceback);
 	return 0;

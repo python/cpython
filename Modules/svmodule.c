@@ -157,7 +157,7 @@ svc_GetFields(captureobject *self, PyObject *args)
 	if (!(f2 = PyString_FromStringAndSize(obcapture + fieldsize,
 					      fieldsize)))
 		goto finally;
-	ret = Py_BuildValue("(OO)", f1, f2);
+	ret = PyTuple_Pack(2, f1, f2);
 
   finally:
 	Py_XDECREF(f1);
