@@ -1932,8 +1932,11 @@ sub do_cmd_term{
 #code # {}
 process_commands_wrap_deferred(<<_RAW_ARG_DEFERRED_CMDS_);
 declaremodule # [] # {} # {}
+funcline # {} # {}
+funclineni # {} # {}
 memberline # [] # {}
 methodline # [] # {} # {}
+methodlineni # [] # {} # {}
 modulesynopsis # {}
 platform # {}
 samp # {}
