@@ -266,7 +266,8 @@ to the new definition.
 
 \begin{funcdesc}{initscr}{}
 Initialize the library. Returns a \class{WindowObject} which represents
-the whole screen.
+the whole screen.  \note{If there is an error opening the terminal,
+the underlying curses library may cause the interpreter to exit.}
 \end{funcdesc}
 
 \begin{funcdesc}{isendwin}{}
