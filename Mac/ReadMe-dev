@@ -1,0 +1,19 @@
+This is the Python 1.5b3 plugin development distribution. It should be loaded
+on top of a 1.5b3 binary distribution and enables you to create plugin modules
+without having a full source distribution available. The contents of folders
+whose names start with INTO should be merged into the corresponding folders.
+
+One example project is included, PlugIns:xx.prj
+
+More information can be found in the following files:
+
+Mac:ReadMe				ReadMe file for the normal (binary) distribution
+Relnotes				Release notes, listing changes from previous releases
+Readmefiles				Readme files as supplied by Guido (platform independent changes)
+Mac:Demo:building.html	Instructions for building Python, folder structure, etc.
+
+This distribution usually lives somewhere under http://www.cwi.nl/~jack/macpython.html
+or ftp://ftp.cwi.nl/pub/jack/python/mac.
+
+	
+	Jack Jansen, <jack@cwi.nl>, 02-Jan-98
