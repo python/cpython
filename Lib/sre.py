@@ -109,16 +109,13 @@ def _subn(pattern, template, string, count=0):
         m = c.search()
         if not m:
             break
-        j = m.start()
-        if j > i:
-            append(string[i:j])
+	b, e = m.span()
+        if i < b:
+            append(string[i:b])
         append(filter(m))
-        i = m.end()
-	if i <= j:
-	    break
+	i = e
         n = n + 1
-    if i < len(string):
-        append(string[i:])
+    append(string[i:])
     return string[:0].join(s), n
 
 def _split(pattern, string, maxsplit=0):
@@ -128,7 +125,7 @@ def _split(pattern, string, maxsplit=0):
     append = s.append
     extend = s.extend
     c = pattern.scanner(string)
-    g = c.groups
+    g = pattern.groups
     while not maxsplit or n < maxsplit:
         m = c.search()
         if not m:

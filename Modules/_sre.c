@@ -1534,6 +1534,9 @@ pattern_getattr(PatternObject* self, char* name)
     if (!strcmp(name, "flags"))
 		return Py_BuildValue("i", self->flags);
 
+    if (!strcmp(name, "groups"))
+		return Py_BuildValue("i", self->groups);
+
 	if (!strcmp(name, "groupindex") && self->groupindex) {
         Py_INCREF(self->groupindex);
 		return self->groupindex;
@@ -1938,9 +1941,6 @@ scanner_getattr(ScannerObject* self, char* name)
         Py_INCREF(self->pattern);
 		return self->pattern;
     }
-
-    if (!strcmp(name, "groups"))
-		return Py_BuildValue("i", ((PatternObject*) self->pattern)->groups);
 
 	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;

@@ -30,26 +30,27 @@ HEXDIGITS = tuple("0123456789abcdefABCDEF")
 WHITESPACE = string.whitespace
 
 ESCAPES = {
-    "\\a": (LITERAL, chr(7)),
-    "\\b": (LITERAL, chr(8)),
-    "\\f": (LITERAL, chr(12)),
-    "\\n": (LITERAL, chr(10)),
-    "\\r": (LITERAL, chr(13)),
-    "\\t": (LITERAL, chr(9)),
-    "\\v": (LITERAL, chr(11))
+    r"\a": (LITERAL, chr(7)),
+    r"\b": (LITERAL, chr(8)),
+    r"\f": (LITERAL, chr(12)),
+    r"\n": (LITERAL, chr(10)),
+    r"\r": (LITERAL, chr(13)),
+    r"\t": (LITERAL, chr(9)),
+    r"\v": (LITERAL, chr(11)),
+    r"\\": (LITERAL, "\\")
 }
 
 CATEGORIES = {
-    "\\A": (AT, AT_BEGINNING), # start of string
-    "\\b": (AT, AT_BOUNDARY),
-    "\\B": (AT, AT_NON_BOUNDARY),
-    "\\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
-    "\\D": (IN, [(CATEGORY, CATEGORY_NOT_DIGIT)]),
-    "\\s": (IN, [(CATEGORY, CATEGORY_SPACE)]),
-    "\\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
-    "\\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
-    "\\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    "\\Z": (AT, AT_END), # end of string
+    r"\A": (AT, AT_BEGINNING), # start of string
+    r"\b": (AT, AT_BOUNDARY),
+    r"\B": (AT, AT_NON_BOUNDARY),
+    r"\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
+    r"\D": (IN, [(CATEGORY, CATEGORY_NOT_DIGIT)]),
+    r"\s": (IN, [(CATEGORY, CATEGORY_SPACE)]),
+    r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
+    r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
+    r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
+    r"\Z": (AT, AT_END), # end of string
 }
 
 FLAGS = {
@@ -185,11 +186,11 @@ def isname(name):
 	    return 0
     return 1
 
-def _group(escape, state):
+def _group(escape, groups):
     # check if the escape string represents a valid group
     try:
 	group = int(escape[1:])
-	if group and group < state.groups:
+	if group and group < groups:
 	    return group
     except ValueError:
 	pass
@@ -239,10 +240,10 @@ def _escape(source, escape, state):
 	    return LITERAL, chr(int(escape[-4:], 16) & 0xff)
 	elif escape[1:2] in DIGITS:
 	    while 1:
-		group = _group(escape, state)
+		group = _group(escape, state.groups)
 		if group:
 		    if (not source.next or
-			not _group(escape + source.next, state)):
+			not _group(escape + source.next, state.groups)):
 		        return GROUP, group
 		    escape = escape + source.get()
 		elif source.next in OCTDIGITS:
@@ -534,6 +535,7 @@ def parse_template(source, pattern):
 	if this is None:
 	    break # end of replacement string
 	if this and this[0] == "\\":
+	    # group
 	    if this == "\\g":
 		name = ""
 		if s.match("<"):
@@ -557,15 +559,29 @@ def parse_template(source, pattern):
 			raise IndexError, "unknown group name"
 		a((MARK, index))
 	    elif len(this) > 1 and this[1] in DIGITS:
-		while s.next in DIGITS:
-		    this = this + s.get()
-		a((MARK, int(this[1:])))
+		code = None
+		while 1:
+		    group = _group(this, pattern.groups+1)
+		    if group:
+			if (not s.next or
+			    not _group(this + s.next, pattern.groups+1)):
+		            code = MARK, int(group)
+			    break
+		    elif s.next in OCTDIGITS:
+			this = this + s.get()
+		    else:
+			break
+		if not code:
+		    this = this[1:]
+		    # FIXME: support unicode characters!
+		    code = LITERAL, chr(int(this[-6:], 8) & 0xff)
+		a(code)
 	    else:
 		try:
 		    a(ESCAPES[this])
 		except KeyError:
-		    for char in this:
-			a((LITERAL, char))
+		    for c in this:
+			a((LITERAL, c))
 	else:
 	    a((LITERAL, this))
     return p
