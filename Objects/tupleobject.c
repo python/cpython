@@ -26,6 +26,21 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 
+#ifndef MAXSAVESIZE
+#define MAXSAVESIZE	20
+#endif
+
+#if MAXSAVESIZE > 0
+/* Entries 1 upto MAXSAVESIZE are free lists, entry 0 is the empty
+   tuple () of which at most one instance will be allocated.
+*/
+static tupleobject *free_list[MAXSAVESIZE];
+#endif
+#ifdef COUNT_ALLOCS
+int fast_tuple_allocs;
+int tuple_zero_allocs;
+#endif
+
 object *
 newtupleobject(size)
 	register int size;
@@ -36,15 +51,39 @@ newtupleobject(size)
 		err_badcall();
 		return NULL;
 	}
-	op = (tupleobject *)
-		malloc(sizeof(tupleobject) + size * sizeof(object *));
-	if (op == NULL)
-		return err_nomem();
+#if MAXSAVESIZE > 0
+	if (size == 0 && free_list[0]) {
+		op = free_list[0];
+		INCREF(op);
+#ifdef COUNT_ALLOCS
+		tuple_zero_allocs++;
+#endif
+		return (object *) op;
+	}
+	if (0 < size && size < MAXSAVESIZE && (op = free_list[size]) != NULL) {
+		free_list[size] = (tupleobject *) op->ob_item[0];
+#ifdef COUNT_ALLOCS
+		fast_tuple_allocs++;
+#endif
+	} else
+#endif
+	{
+		op = (tupleobject *)
+			malloc(sizeof(tupleobject) + size * sizeof(object *));
+		if (op == NULL)
+			return err_nomem();
+	}
 	op->ob_type = &Tupletype;
 	op->ob_size = size;
 	for (i = 0; i < size; i++)
 		op->ob_item[i] = NULL;
 	NEWREF(op);
+#if MAXSAVESIZE > 0
+	if (size == 0) {
+		free_list[0] = op;
+		INCREF(op);	/* extra INCREF so that this is never freed */
+	}
+#endif
 	return (object *) op;
 }
 
@@ -113,7 +152,13 @@ tupledealloc(op)
 		if (op->ob_item[i] != NULL)
 			DECREF(op->ob_item[i]);
 	}
-	free((ANY *)op);
+#if MAXSAVESIZE > 0
+	if (0 < op->ob_size && op->ob_size < MAXSAVESIZE) {
+		op->ob_item[0] = (object *) free_list[op->ob_size];
+		free_list[op->ob_size] = op;
+	} else
+#endif
+		free((ANY *)op);
 }
 
 static int
