@@ -76,13 +76,15 @@ class POP3:
         self.host = host
         self.port = port
         msg = "getaddrinfo returns an empty list"
+        self.sock = None
         for res in socket.getaddrinfo(self.host, self.port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.connect(sa)
             except socket.error, msg:
-                self.sock.close()
+                if self.sock:
+                    self.sock.close()
                 self.sock = None
                 continue
             break

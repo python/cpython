@@ -210,7 +210,8 @@ class Telnet:
                 self.sock = socket.socket(af, socktype, proto)
                 self.sock.connect(sa)
             except socket.error, msg:
-                self.sock.close()
+                if self.sock:
+                    self.sock.close()
                 self.sock = None
                 continue
             break

@@ -368,7 +368,8 @@ class HTTPConnection:
             except socket.error, msg:
                 if self.debuglevel > 0:
                     print 'connect fail:', (self.host, self.port)
-                self.sock.close()
+                if self.sock:
+                    self.sock.close()
                 self.sock = None
                 continue
             break
