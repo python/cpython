@@ -612,11 +612,14 @@ static HINSTANCE LoadPythonDll(char *fname)
 {
 	char fullpath[_MAX_PATH];
 	LONG size = sizeof(fullpath);
+	char subkeyname[80];
 	HINSTANCE h = LoadLibrary(fname);
 	if (h)
 		return h;
-	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER,
-					   "SOFTWARE\\Python\\PythonCore\\2.3\\InstallPath",
+	wsprintf(subkey_name,
+		 "SOFTWARE\\Python\\PythonCore\\%d.%d\\InstallPath",
+		 py_major, py_minor);
+	if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER, subkey_name,
 					   fullpath, &size))
 		return NULL;
 	strcat(fullpath, "\\");
