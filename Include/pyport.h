@@ -32,7 +32,13 @@ Used in:  LONG_LONG
 **************************************************************************/
 
 
-#define ANY void /* For API compatibility only. Obsolete, do not use. */
+/* For backward compatibility only. Obsolete, do not use. */
+#define ANY void
+#ifdef HAVE_PROTOTYPES
+#define Py_PROTO(x) x
+#else
+#define Py_PROTO(x) ()
+#endif
 
 /* typedefs for some C9X-defined synonyms for integral types.
  *
