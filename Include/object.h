@@ -149,6 +149,7 @@ typedef int(*objobjargproc) Py_PROTO((PyObject *, PyObject *, PyObject *));
 typedef int (*getreadbufferproc) Py_PROTO((PyObject *, int, void **));
 typedef int (*getwritebufferproc) Py_PROTO((PyObject *, int, void **));
 typedef int (*getsegcountproc) Py_PROTO((PyObject *, int *));
+typedef int (*getcharbufferproc) Py_PROTO((PyObject *, int, const char **));
 
 typedef struct {
 	binaryfunc nb_add;
@@ -196,6 +197,7 @@ typedef struct {
 	getreadbufferproc bf_getreadbuffer;
 	getwritebufferproc bf_getwritebuffer;
 	getsegcountproc bf_getsegcount;
+	getcharbufferproc bf_getcharbuffer;
 } PyBufferProcs;
 	
 
@@ -240,8 +242,8 @@ typedef struct _typeobject {
 	/* Functions to access object as input/output buffer */
 	PyBufferProcs *tp_as_buffer;
 	
-	/* Space for future expansion */
-	long tp_xxx4;
+	/* Flags to define presence of optional/expanded features */
+	long tp_flags;
 
 	char *tp_doc; /* Documentation string */
 
@@ -288,6 +290,37 @@ extern void Py_ReprLeave Py_PROTO((PyObject *));
 
 /* Flag bits for printing: */
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
+
+/*
+
+Type flags (tp_flags)
+
+These flags are used to extend the type structure in a backwards-compatible
+fashion. Extensions can use the flags to indicate (and test) when a given
+type structure contains a new feature. The Python core will use these when
+introducing new functionality between major revisions (to avoid mid-version
+changes in the PYTHON_API_VERSION).
+
+Arbitration of the flag bit positions will need to be coordinated among
+all extension writers who publically release their extensions (this will
+be fewer than you might expect!)..
+
+Python 1.5.2 introduced the bf_getcharbuffer slot into PyBufferProcs.
+
+Type definitions should use Py_TPFLAGS_DEFAULT for their tp_flags value.
+
+Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
+given type object has a specified feature.
+
+*/
+
+/* PyBufferProcs contains bf_getcharbuffer */
+#define Py_TPFLAGS_HAVE_GETCHARBUFFER  (1L<<0)
+
+#define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER)
+
+#define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
+
 
 /*
 123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
