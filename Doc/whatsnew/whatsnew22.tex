@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.02}
+\release{0.03}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -33,6 +33,7 @@ Reference Manual}, or to the PEP for a particular new feature.
 
 The final release of Python 2.2 is planned for October 2001.
 
+
 %======================================================================
 % It looks like this set of changes will likely get into 2.2,
 % so I need to read and digest the relevant PEPs.
@@ -40,12 +41,15 @@ The final release of Python 2.2 is planned for October 2001.
 
 %XXX
 
+% GvR's description at http://www.python.org/2.2/descrintro.html
+
 %\begin{seealso}
 
 %\seepep{252}{Making Types Look More Like Classes}{Written and implemented 
 %by GvR.}
 
 %\end{seealso}
+
 
 %======================================================================
 \section{PEP 234: Iterators}
@@ -182,6 +186,7 @@ iterator protocol only requires a \method{next()} method.
 by the Python Labs crew, mostly by GvR and Tim Peters.}
 
 \end{seealso}
+
 
 %======================================================================
 \section{PEP 255: Simple Generators}
@@ -329,6 +334,7 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 
 \end{seealso}
 
+
 %======================================================================
 \section{Unicode Changes}
 
@@ -339,9 +345,9 @@ by supplying \longprogramopt{enable-unicode=ucs4} to the configure script.
 
 XXX explain surrogates?  I have to figure out what the changes mean to users.
 
-Since their introduction, Unicode strings (XXX and regular strings in
-2.1?)  have supported an \method{encode()} method to convert the
-string to a selected encoding such as UTF-8 or Latin-1.  A symmetric
+Since their introduction, Unicode strings have supported an
+\method{encode()} method to convert the string to a selected encoding
+such as UTF-8 or Latin-1.  A symmetric
 \method{decode(\optional{\var{encoding}})} method has been added to
 both 8-bit and Unicode strings in 2.2, which assumes that the string
 is in the specified encoding and decodes it. This means that
@@ -371,6 +377,7 @@ end
 
 References: http://mail.python.org/pipermail/i18n-sig/2001-June/001107.html  
 and following thread.
+
 
 %======================================================================
 \section{PEP 227: Nested Scopes}
@@ -553,9 +560,10 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
 %======================================================================
 \section{Other Changes and Fixes}
 
+% XXX update the patch and bug figures as we go
 As usual there were a bunch of other improvements and bugfixes
 scattered throughout the source tree.  A search through the CVS change
-logs finds there were XXX patches applied, and XXX bugs fixed; both
+logs finds there were 43 patches applied, and 77 bugs fixed; both
 figures are likely to be underestimates.  Some of the more notable
 changes are:
 
@@ -585,6 +593,24 @@ changes are:
   been changed to use the new C-level interface.  (Contributed by Fred
   L. Drake, Jr.)
 
+  % XXX is this explanation correct?  
+  \item When presented with a Unicode filename on Windows, Python will
+  now correctly convert it to a string using the MBCS encoding.
+  Filenames on Windows are a case where Python's choice of ASCII as
+  the default encoding turns out to be an annoyance.  
+
+  This patch also adds \samp{et} as a format sequence to
+  \cfunction{PyArg_ParseTuple}; \samp{et} takes both a parameter and
+  an encoding name, and converts it to the given encoding if the
+  parameter turns out to be a Unicode string, or leaves it alone if
+  it's an 8-bit string, assuming it to already be in the desired
+  encoding.  (This differs from the \samp{es} format character, which
+  assumes that 8-bit strings are in Python's default ASCII encoding
+  and converts them to the specified new encoding.)
+   
+  (Contributed by Mark Hammond with assistance from Marc-Andr\'e
+  Lemburg.)
+
   \item The \file{Tools/scripts/ftpmirror.py} script
   now parses a \file{.netrc} file, if you have one.
   (Contributed by Mike Romberg.) 
@@ -601,38 +627,23 @@ changes are:
   \cfunction{PyRange_New()} function, \samp{repeat}, has also been
   deprecated.
 
+  \item There were a bunch of patches to the dictionary
+  implementation, mostly to fix potential core dumps if a dictionary
+  contains objects that sneakily changed their hash value, or mutated
+  the dictionary they were contained in. For a while python-dev fell
+  into a gentle rhythm of Michael Hudson finding a case that dump
+  core, Tim Peters fixing it, Michael finding another case, and round
+  and round it went.   
+
   \item On Windows, Python can now be compiled with Borland C thanks 
-  to a number of patches contribued by Stephen Hansen.
+  to a number of patches contributed by Stephen Hansen.
 
-  \item XXX C API: Reorganization of object calling 
-
-The \cfunction{call_object()} function, originally in \file{ceval.c},
-begins a new life as the official API \cfunction{PyObject_Call()}.  It
-is also much simplified: all it does is call the \member{tp_call}
-slot, or raise an exception if that's \NULL.
-
-%The subsidiary functions (call_eval_code2(), call_cfunction(),
-%call_instance(), and call_method()) have all been moved to the file
-%implementing their particular object type, renamed according to the
-%local convention, and added to the type's tp_call slot.  Note that
-%call_eval_code2() became function_call(); the tp_slot for class
-%objects now simply points to PyInstance_New(), which already has the
-%correct signature.
- 
-%Because of these moves, there are some more new APIs that expose
-%helpers in ceval.c that are now needed outside: PyEval_GetFuncName(),
-%PyEval_GetFuncDesc(), PyEval_EvalCodeEx() (formerly get_func_name(),
-%get_func_desc(), and eval_code2().
-
-  \item XXX Add support for Windows using "mbcs" as the default
-  Unicode encoding when dealing with the file system.  As discussed on
-  python-dev and in patch 410465.
-
-  \item XXX Lots of patches to dictionaries; measure performance
-  improvement, if any.
+  \item On platforms where Python uses the C \cfunction{dlopen()} function 
+  to load extension modules, it's now possible to set the flags used 
+  by \cfunction{dlopen()} using the \function{sys.getdlopenflags()} and
+  \function{sys.setdlopenflags()} functions.    (Contributed by Bram Stolk.)
 
 \end{itemize}
-
 
 
 %======================================================================
