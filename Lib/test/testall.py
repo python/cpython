@@ -17,3 +17,20 @@ tests = ['test_grammar',
 	 'test_dbm',
 	 'test_new',
 	 ]
+
+if __name__ == '__main__':
+    # low-overhead testing, for cases where autotest.py harness
+    # doesn't even work!
+    import sys
+    from test_support import *
+
+    for t in tests:
+        print t
+	unload(t)
+	try:
+	    __import__(t, globals(), locals())
+	except ImportError, msg:
+## 	    sys.stderr.write('%s.  Uninstalled optional module?\n' % msg)
+	    pass
+
+    print 'Passed all tests.'
