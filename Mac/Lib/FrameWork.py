@@ -1,5 +1,6 @@
 "A sort of application framework for the Mac"
 
+DEBUG=0
 
 import MacOS
 import traceback
@@ -8,27 +9,27 @@ from addpack import addpack
 addpack('Tools')
 addpack('bgen')
 addpack('ae')
-#addpack('ctl')
+addpack('ctl')
 addpack('dlg')
 addpack('evt')
 addpack('menu')
-#addpack('qd')
+addpack('qd')
 #addpack('res')
 #addpack('snd')
 addpack('win')
 
 from AE import *
 from AppleEvents import *
-#from Ctl import *
-#from Controls import *
+from Ctl import *
+from Controls import *
 from Dlg import *
 from Dialogs import *
 from Evt import *
 from Events import *
 from Menu import *
 from Menus import *
-#from Qd import *
-#from QuickDraw import *
+from Qd import *
+from QuickDraw import *
 #from Res import *
 #from Resources import *
 #from Snd import *
@@ -144,21 +145,23 @@ class Application:
 			name = "do_%d" % partcode
 		try:
 			handler = getattr(self, name)
-		except AttrinuteError:
+		except AttributeError:
 			handler = self.do_unknownpartcode
 		handler(partcode, window, event)
 	
 	def do_inDrag(self, partcode, window, event):
+		where = event[3]
 		window.DragWindow(where, self.draglimit)
 	
 	draglimit = everywhere
 	
 	def do_inGoAway(self, partcode, window, event):
+		where = event[3]
 		if window.TrackGoAway(where):
 			self.do_close(window)
 	
 	def do_close(self, window):
-		print "Should close window:", window
+		if DEBUG: print "Should close window:", window
 	
 	def do_inZoom(self, partcode, window, event):
 		(what, message, when, where, modifiers) = event
@@ -174,12 +177,14 @@ class Application:
 		self.do_inZoom(partcode, window, event)
 	
 	def do_inSysWindow(self, partcode, window, event):
-		print "SystemClick", event, window
+		MacOS.HandleEvent(event)
+		# print "SystemClick", event, window
 		# SystemClick(event, window) # XXX useless, window is None
 	
 	def do_inDesk(self, partcode, window, event):
-		print "inDesk"
+		# print "inDesk"
 		# XXX what to do with it?
+		MacOS.HandleEvent(event)
 	
 	def do_inMenuBar(self, partcode, window, event):
 		(what, message, when, where, modifiers) = event
@@ -224,16 +229,17 @@ class Application:
 			if pcode:
 				self.do_controlhit(window, control, pcode, event)
 		else:
-			print "FindControl(%s, %s) -> (%s, %s)" % \
+			if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
 				(local, window, ctltype, control)
 	
 	def do_controlhit(self, window, control, pcode, event):
-		print "control hit in", window, "on", control, "; pcode =", pcode
+		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 	
 	def do_unknownpartcode(self, partcode, window, event):
 		(what, message, when, where, modifiers) = event
-		print "Mouse down at global:", where
-		print "\tUnknown part code:", partcode
+		if DEBUG: print "Mouse down at global:", where
+		if DEBUG: print "\tUnknown part code:", partcode
+		MacOS.HandleEvent(event)
 	
 	def do_keyDown(self, event):
 		self.do_key(event)
@@ -259,26 +265,27 @@ class Application:
 					if w:
 						self.do_close(w)
 					else:
-						print 'Command-W without front window'
+						if DEBUG: print 'Command-W without front window'
 				else:
-					print "Command-" +`c`
+					if DEBUG: print "Command-" +`c`
 		else:
 			self.do_char(c, event)
 	
 	def do_char(self, c, event):
-		print "Character", `c`
+		if DEBUG: print "Character", `c`
 	
 	def do_updateEvt(self, event):
-		print "do_update",
-		self.printevent(event)
+		if DEBUG: 
+			print "do_update",
+			self.printevent(event)
 		window = FrontWindow() # XXX This is wrong!
 		if window:
 			self.do_rawupdate(window, event)
 		else:
-			print "no window for do_updateEvt"
+			MacOS.HandleEvent(event)
 	
 	def do_rawupdate(self, window, event):
-		print "raw update for", window
+		if DEBUG: print "raw update for", window
 		window.BeginUpdate()
 		self.do_update(window, event)
 		DrawControls(window)
@@ -290,8 +297,9 @@ class Application:
 	
 	def do_kHighLevelEvent(self, event):
 		(what, message, when, where, modifiers) = event
-		print "High Level Event:",
-		self.printevent(event)
+		if DEBUG: 
+			print "High Level Event:",
+			self.printevent(event)
 		try:
 			AEProcessAppleEvent(event)
 		except:
@@ -358,7 +366,7 @@ class MenuBar:
 		if self.menus.has_key(id):
 			self.menus[id].dispatch(id, item, window, event)
 		else:
-			print "MenuBar.dispatch(%d, %d, %s, %s)" % \
+			if DEBUG: print "MenuBar.dispatch(%d, %d, %s, %s)" % \
 				(id, item, window, event)
 	
 
