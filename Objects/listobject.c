@@ -326,8 +326,6 @@ list_slice(a, ilow, ihigh)
 		ilow = 0;
 	else if (ilow > a->ob_size)
 		ilow = a->ob_size;
-	if (ihigh < 0)
-		ihigh = 0;
 	if (ihigh < ilow)
 		ihigh = ilow;
 	else if (ihigh > a->ob_size)
@@ -452,8 +450,6 @@ list_ass_slice(a, ilow, ihigh, v)
 		ilow = 0;
 	else if (ilow > a->ob_size)
 		ilow = a->ob_size;
-	if (ihigh < 0)
-		ihigh = 0;
 	if (ihigh < ilow)
 		ihigh = ilow;
 	else if (ihigh > a->ob_size)
