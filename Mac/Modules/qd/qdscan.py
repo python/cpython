@@ -49,9 +49,12 @@ class MyScanner(Scanner):
 		listname = "functions"
 		if arglist:
 			t, n, m = arglist[0]
-			if t in ("WindowPtr", "WindowPeek", "WindowRef") and m == "InMode":
-				classname = "Method"
-				listname = "methods"
+##			elif t == "PolyHandle" and m == "InMode":
+##				classname = "Method"
+##				listname = "p_methods"
+##			elif t == "RgnHandle" and m == "InMode":
+##				classname = "Method"
+##				listname = "r_methods"
 		return classname, listname
 
 	def makeblacklistnames(self):
@@ -61,14 +64,18 @@ class MyScanner(Scanner):
 			'StdLine',
 			'StdComment',
 			'StdGetPic',
-			'StdLine',
+			'OpenPort',
+			'InitPort',
+			'ClosePort',
+			'OpenCPort',
+			'InitCPort',
+			'CloseCPort',
 			]
 
 	def makeblacklisttypes(self):
 		return [
 			'BitMap_ptr',
 			'CCrsrHandle',
-			'CGrafPtr',
 			'CIconHandle',
 			'CQDProcs',
 			'CSpecArray',

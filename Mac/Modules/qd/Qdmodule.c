@@ -19,6 +19,8 @@ extern int ResObj_Convert(PyObject *, Handle *);
 
 extern PyObject *WinObj_New(WindowPtr);
 extern int WinObj_Convert(PyObject *, WindowPtr *);
+extern PyTypeObject Window_Type;
+#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
 
 extern PyObject *DlgObj_New(DialogPtr);
 extern int DlgObj_Convert(PyObject *, DialogPtr *);
@@ -31,6 +33,9 @@ extern int MenuObj_Convert(PyObject *, MenuHandle *);
 extern PyObject *CtlObj_New(ControlHandle);
 extern int CtlObj_Convert(PyObject *, ControlHandle *);
 
+extern PyObject *GrafObj_New(GrafPtr);
+extern int GrafObj_Convert(PyObject *, GrafPtr *);
+
 extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 #include <QuickDraw.h>
@@ -40,59 +45,96 @@ extern PyObject *WinObj_WhichWindow(WindowPtr);
 
 static PyObject *Qd_Error;
 
-static PyObject *Qd_OpenPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+/* ---------------------- Object type GrafPort ---------------------- */
+
+PyTypeObject GrafPort_Type;
+
+#define GrafObj_Check(x) ((x)->ob_type == &GrafPort_Type)
+
+typedef struct GrafPortObject {
+	PyObject_HEAD
+	GrafPtr ob_itself;
+} GrafPortObject;
+
+PyObject *GrafObj_New(itself)
+	GrafPtr itself;
 {
-	PyObject *_res = NULL;
-	WindowPtr port;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &port))
-		return NULL;
-	OpenPort(port);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
+	GrafPortObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	it = PyObject_NEW(GrafPortObject, &GrafPort_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	return (PyObject *)it;
+}
+GrafObj_Convert(v, p_itself)
+	PyObject *v;
+	GrafPtr *p_itself;
+{
+	if (DlgObj_Check(v) || WinObj_Check(v)) {
+		*p_itself = ((GrafPortObject *)v)->ob_itself;
+		return 1;
+	}
+	if (!GrafObj_Check(v))
+	{
+		PyErr_SetString(PyExc_TypeError, "GrafPort required");
+		return 0;
+	}
+	*p_itself = ((GrafPortObject *)v)->ob_itself;
+	return 1;
 }
 
-static PyObject *Qd_InitPort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static void GrafObj_dealloc(self)
+	GrafPortObject *self;
 {
-	PyObject *_res = NULL;
-	WindowPtr port;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &port))
-		return NULL;
-	InitPort(port);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
+	/* Cleanup of self->ob_itself goes here */
+	PyMem_DEL(self);
 }
 
-static PyObject *Qd_ClosePort(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
+static PyMethodDef GrafObj_methods[] = {
+	{NULL, NULL, 0}
+};
+
+PyMethodChain GrafObj_chain = { GrafObj_methods, NULL };
+
+static PyObject *GrafObj_getattr(self, name)
+	GrafPortObject *self;
+	char *name;
 {
-	PyObject *_res = NULL;
-	WindowPtr port;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &port))
-		return NULL;
-	ClosePort(port);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
+	if ( strcmp(name, "device") == 0 )
+				return PyInt_FromLong((long)self->ob_itself->device);
+			if ( strcmp(name, "portRect") == 0 )
+				return Py_BuildValue("O&", PyMac_BuildRect, &self->ob_itself->portRect);
+			/* XXXX Add more, as needed */
+			
+	return Py_FindMethodInChain(&GrafObj_chain, (PyObject *)self, name);
 }
+
+#define GrafObj_setattr NULL
+
+PyTypeObject GrafPort_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0, /*ob_size*/
+	"GrafPort", /*tp_name*/
+	sizeof(GrafPortObject), /*tp_basicsize*/
+	0, /*tp_itemsize*/
+	/* methods */
+	(destructor) GrafObj_dealloc, /*tp_dealloc*/
+	0, /*tp_print*/
+	(getattrfunc) GrafObj_getattr, /*tp_getattr*/
+	(setattrfunc) GrafObj_setattr, /*tp_setattr*/
+};
+
+/* -------------------- End object type GrafPort -------------------- */
+
 
 static PyObject *Qd_SetPort(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	WindowPtr port;
+	GrafPtr port;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      WinObj_Convert, &port))
+	                      GrafObj_Convert, &port))
 		return NULL;
 	SetPort(port);
 	Py_INCREF(Py_None);
@@ -105,12 +147,12 @@ static PyObject *Qd_GetPort(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	WindowPtr port;
+	GrafPtr port;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetPort(&port);
 	_res = Py_BuildValue("O&",
-	                     WinObj_New, port);
+	                     GrafObj_New, port);
 	return _res;
 }
 
@@ -2378,9 +2420,9 @@ static PyObject *Qd_SpaceExtra(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long extra;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &extra))
+	Fixed extra;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &extra))
 		return NULL;
 	SpaceExtra(extra);
 	Py_INCREF(Py_None);
@@ -2504,9 +2546,9 @@ static PyObject *Qd_CharExtra(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	long extra;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &extra))
+	Fixed extra;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFixed, &extra))
 		return NULL;
 	CharExtra(extra);
 	Py_INCREF(Py_None);
@@ -2515,16 +2557,10 @@ static PyObject *Qd_CharExtra(_self, _args)
 }
 
 static PyMethodDef Qd_methods[] = {
-	{"OpenPort", (PyCFunction)Qd_OpenPort, 1,
-	 "(WindowPtr port) -> None"},
-	{"InitPort", (PyCFunction)Qd_InitPort, 1,
-	 "(WindowPtr port) -> None"},
-	{"ClosePort", (PyCFunction)Qd_ClosePort, 1,
-	 "(WindowPtr port) -> None"},
 	{"SetPort", (PyCFunction)Qd_SetPort, 1,
-	 "(WindowPtr port) -> None"},
+	 "(GrafPtr port) -> None"},
 	{"GetPort", (PyCFunction)Qd_GetPort, 1,
-	 "() -> (WindowPtr port)"},
+	 "() -> (GrafPtr port)"},
 	{"GrafDevice", (PyCFunction)Qd_GrafDevice, 1,
 	 "(short device) -> None"},
 	{"PortSize", (PyCFunction)Qd_PortSize, 1,
@@ -2788,7 +2824,7 @@ static PyMethodDef Qd_methods[] = {
 	{"TextSize", (PyCFunction)Qd_TextSize, 1,
 	 "(short size) -> None"},
 	{"SpaceExtra", (PyCFunction)Qd_SpaceExtra, 1,
-	 "(long extra) -> None"},
+	 "(Fixed extra) -> None"},
 	{"DrawChar", (PyCFunction)Qd_DrawChar, 1,
 	 "(short ch) -> None"},
 	{"DrawString", (PyCFunction)Qd_DrawString, 1,
@@ -2802,7 +2838,7 @@ static PyMethodDef Qd_methods[] = {
 	{"TextWidth", (PyCFunction)Qd_TextWidth, 1,
 	 "(Buffer textBuf, short firstByte, short byteCount) -> (short _rv)"},
 	{"CharExtra", (PyCFunction)Qd_CharExtra, 1,
-	 "(long extra) -> None"},
+	 "(Fixed extra) -> None"},
 	{NULL, NULL, 0}
 };
 
