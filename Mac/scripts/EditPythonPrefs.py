@@ -38,6 +38,7 @@ OPT_DIALOG_ID = 510
 opt_dialog_map = [
 	None,
 	None,
+	None,
 	"inspect",
 	"verbose",
 	"optimize",
