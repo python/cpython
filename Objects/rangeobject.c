@@ -113,8 +113,8 @@ PyDoc_STRVAR(range_doc,
 "xrange([start,] stop[, step]) -> xrange object\n\
 \n\
 Like range(), but instead of returning a list, returns an object that\n\
-generates the numbers in the range on demand.  This is slightly slower\n\
-than range() but more memory efficient.");
+generates the numbers in the range on demand.  For looping, this is \n\
+slightly faster than range() and more memory efficient.");
 
 static PyObject *
 range_item(rangeobject *r, int i)
