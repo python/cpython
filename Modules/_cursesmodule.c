@@ -118,7 +118,7 @@ extern int setupterm(char *,int,int *);
 #include <term.h>
 #endif
 
-#if defined(sgi) || defined(__sun__)
+#if defined(sgi) || defined(__sun)
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
