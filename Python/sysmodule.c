@@ -54,6 +54,10 @@ Data members:
 object *sys_trace, *sys_profile;
 int sys_checkinterval = 10;
 
+#if HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 static object *sysdict;
 
 #ifdef MS_COREDLL
@@ -387,35 +391,64 @@ setpythonargv(argc, argv)
 	if (sysset("argv", av) != 0)
 		fatal("can't assign sys.argv");
 	if (path != NULL) {
+		char *argv0 = argv[0];
 		char *p = NULL;
 		int n = 0;
 		object *a;
+#ifdef HAVE_READLINK
+		char link[MAXPATHLEN+1];
+		char argv0copy[2*MAXPATHLEN+1];
+		int nr = 0;
+		if (argc > 0 && argv0 != NULL)
+			nr = readlink(argv0, link, MAXPATHLEN);
+		if (nr > 0) {
+			/* It's a symlink */
+			link[nr] = '\0';
+			if (link[0] == SEP)
+				argv0 = link; /* Link to absolute path */
+			else if (strchr(link, SEP) == NULL)
+				; /* Link without path */
+			else {
+				/* Must join(dirname(argv0), link) */
+				char *q = strrchr(argv0, SEP);
+				if (q == NULL)
+					argv0 = link; /* argv0 without path */
+				else {
+					/* Must make a copy */
+					strcpy(argv0copy, argv0);
+					q = strrchr(argv0copy, SEP);
+					strcpy(q+1, link);
+					argv0 = argv0copy;
+				}
+			}
+		}
+#endif /* HAVE_READLINK */
 #if SEP == '\\' /* Special case for MS filename syntax */
-		if (argc > 0 && argv[0] != NULL) {
+		if (argc > 0 && argv0 != NULL) {
 			char *q;
-			p = strrchr(argv[0], SEP);
+			p = strrchr(argv0, SEP);
 			/* Test for alternate separator */
-			q = strrchr(p ? p : argv[0], '/');
+			q = strrchr(p ? p : argv0, '/');
 			if (q != NULL)
 				p = q;
 			if (p != NULL) {
-				n = p + 1 - argv[0];
+				n = p + 1 - argv0;
 				if (n > 1 && p[-1] != ':')
 					n--; /* Drop trailing separator */
 			}
 		}
 #else /* All other filename syntaxes */
-		if (argc > 0 && argv[0] != NULL)
-			p = strrchr(argv[0], SEP);
+		if (argc > 0 && argv0 != NULL)
+			p = strrchr(argv0, SEP);
 		if (p != NULL) {
-			n = p + 1 - argv[0];
+			n = p + 1 - argv0;
 #if SEP == '/' /* Special case for Unix filename syntax */
 			if (n > 1)
 				n--; /* Drop trailing separator */
 #endif /* Unix */
 		}
 #endif /* All others */
-		a = newsizedstringobject(argv[0], n);
+		a = newsizedstringobject(argv0, n);
 		if (a == NULL)
 			fatal("no mem for sys.path insertion");
 		if (inslistitem(path, 0, a) < 0)
