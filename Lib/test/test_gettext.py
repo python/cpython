@@ -274,7 +274,7 @@ class UnicodeTranslationsTest(GettextBaseTest):
         GettextBaseTest.setUp(self)
         fp = open(UMOFILE, 'rb')
         try:
-            self.t = gettext.GNUTranslations(fp, coerce=True)
+            self.t = gettext.GNUTranslations(fp)
         finally:
             fp.close()
         self._ = self.t.ugettext
