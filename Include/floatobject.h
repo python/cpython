@@ -50,6 +50,7 @@ extern DL_IMPORT(PyTypeObject) PyFloat_Type;
 
 #define PyFloat_Check(op) ((op)->ob_type == &PyFloat_Type)
 
+extern DL_IMPORT(PyObject *) PyFloat_FromString Py_PROTO((PyObject*, char**));
 extern DL_IMPORT(PyObject *) PyFloat_FromDouble Py_PROTO((double));
 extern DL_IMPORT(double) PyFloat_AsDouble Py_PROTO((PyObject *));
 
