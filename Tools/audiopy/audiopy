@@ -61,14 +61,14 @@ class MainWindow:
         #
         # where does input come from?
         frame = Frame(root, bd=1, relief=RAISED)
-        frame.grid(row=0, column=0)
+        frame.grid(row=0, column=0, sticky='NSEW')
         label = Label(frame, text='Input From:')
         label.grid(row=0, column=0, sticky=E)
-        self.__micvar = IntVar()
-        btn = Checkbutton(frame,
+        self.__inputvar = IntVar()
+        btn = Radiobutton(frame,
                           text='Microphone',
-                          variable=self.__micvar,
-                          onvalue=MICROPHONE,
+                          variable=self.__inputvar,
+                          value=MICROPHONE,
                           command=self.__pushtodev,
                           underline=0)
         btn.grid(row=0, column=1, sticky=W)
@@ -78,11 +78,10 @@ class MainWindow:
             btn.configure(state=DISABLED)
         buttons.append(btn)
         ##
-        self.__lineinvar = IntVar()
-        btn = Checkbutton(frame,
+        btn = Radiobutton(frame,
                           text='Line In',
-                          variable=self.__lineinvar,
-                          onvalue=LINE_IN,
+                          variable=self.__inputvar,
+                          value=LINE_IN,
                           command=self.__pushtodev,
                           underline=5)
         btn.grid(row=1, column=1, sticky=W)
@@ -92,11 +91,10 @@ class MainWindow:
             btn.configure(state=DISABLED)
         buttons.append(btn)
         ##
-        self.__cdvar = IntVar()
-        btn = Checkbutton(frame,
+        btn = Radiobutton(frame,
                           text='CD',
-                          variable=self.__cdvar,
-                          onvalue=CD,
+                          variable=self.__inputvar,
+                          value=CD,
                           command=self.__pushtodev,
                           underline=0)
         btn.grid(row=2, column=1, sticky=W)
@@ -108,7 +106,7 @@ class MainWindow:
         #
         # where does output go to?
         frame = Frame(root, bd=1, relief=RAISED)
-        frame.grid(row=1, column=0)
+        frame.grid(row=1, column=0, sticky='NSEW')
         label = Label(frame, text='Output To:')
         label.grid(row=0, column=0, sticky=E)
         self.__spkvar = IntVar()
@@ -181,10 +179,8 @@ class MainWindow:
         except AttributeError:
             pass
         else:
-            import struct
             import fcntl
             import signal
-            import FCNTL
             import STROPTS
             # set up the signal handler
             signal.signal(signal.SIGPOLL, self.__update)
@@ -207,21 +203,19 @@ class MainWindow:
         # underlying module does not support the SIGPOLL notification
         # interface.
         info = self.__devctl.getinfo()
+        # input
+        self.__inputvar.set(info.i_port)
+        # output
         self.__spkvar.set(info.o_port & SPEAKER)
         self.__headvar.set(info.o_port & HEADPHONE)
         self.__linevar.set(info.o_port & LINE_OUT)
-        self.__micvar.set(info.i_port & MICROPHONE)
-        self.__lineinvar.set(info.i_port & LINE_IN)
-        self.__cdvar.set(info.i_port & CD)
 
     def __pushtodev(self, event=None):
         info = self.__devctl.getinfo()
         info.o_port = self.__spkvar.get() + \
                       self.__headvar.get() + \
                       self.__linevar.get()
-        info.i_port = self.__micvar.get() + \
-                      self.__lineinvar.get() + \
-                      self.__cdvar.get()
+        info.i_port = self.__inputvar.get()
         self.__devctl.setinfo(info)
 
     def __getset(self, var, onvalue):
@@ -232,15 +226,13 @@ class MainWindow:
         self.__pushtodev()
 
     def __mic(self, event=None):
-        self.__getset(self.__micvar, MICROPHONE)
+        self.__getset(self.__inputvar, MICROPHONE)
 
     def __linein(self, event=None):
-        self.__getset(self.__lineinvar, LINE_IN)
+        self.__getset(self.__inputvar, LINE_IN)
 
     def __cd(self, event=None):
-        print 'pre:', self.__cdvar.get()
-        self.__getset(self.__cdvar, CD)
-        print 'post:', self.__cdvar.get()
+        self.__getset(self.__inputvar, CD)
 
     def __speaker(self, event=None):
         self.__getset(self.__spkvar, SPEAKER)
@@ -286,113 +278,47 @@ def main():
                ('--speaker',    '-s', 1, SPEAKER),
                ('--lineout',    '-o', 1, LINE_OUT),
                )
-    values = []
     info = device.getinfo()
     # first get the existing values
-    for long, short, io, mask in options:
-        if io == 0:
-            flags = info.i_port
-        else:
-            flags = info.o_port
-        values.append(flags & mask)
-
-    sval = None
-    hval = None
-    lval = None
     for arg in sys.argv[1:]:
         if arg in ('-h', '--help'):
             usage(code=0)
-        # SPEAKER
-        elif arg in ('-s', '--speaker'):
-            sval = -1
-        elif arg[:3] == '-s=':
+            # does not return
+        for long, short, io, mask in options:
+            if arg in (long, short):
+                # toggle the option
+                if io == 0: 
+                    info.i_port = info.i_port ^ mask
+                else:
+                    info.o_port = info.o_port ^ mask
+                break
+            val = None
             try:
-                sval = int(arg[3:])
+                if arg[:len(long)+1] == long+'=':
+                    val = int(arg[len(long)+1:])
+                elif arg[:len(short)+1] == short+'=':
+                    val = int(arg[len(short)+1:])
             except ValueError:
-                pass
-            if sval <> 0 and sval <> 1:
-                usage('Invalid option: ' + arg)
-        elif arg[:10] == '--speaker=':
-            try:
-                sval = int(arg[10:])
-            except ValueError:
-                pass
-            if sval <> 0 and sval <> 1:
-                usage('Invalid option: ' + arg)
-        # HEADPHONES
-        elif arg in ('-p', '--headphones'):
-            hval = -1
-        elif arg[:3] == '-p=':
-            try:
-                hval = int(arg[3:])
-            except ValueError:
-                pass
-            if hval <> 0 and hval <> 1:
-                usage('Invalid option: ' + arg)
-        elif arg[:13] == '--headphones=':
-            try:
-                hval = int(arg[130:])
-            except ValueError:
-                pass
-            if hval <> 0 and hval <> 1:
-                usage('Invalid option: ' + arg)
-        # LINEOUT
-        elif arg in ('-l', '--lineout'):
-            lval = -1
-        elif arg[:3] == '-l=':
-            try:
-                lval = int(arg[3:])
-            except ValueError:
-                pass
-            if lval <> 0 and lval <> 1:
-                usage('Invalid option: ' + arg)
-        elif arg[:10] == '--lineout=':
-            try:
-                lval = int(arg[10:])
-            except ValueError:
-                pass
-            if lval <> 0 and lval <> 1:
-                usage('Invalid option: ' + arg)
+                usage(msg='Invalid option: ' + arg)
+                # does not return
+            if val == 0:
+                if io == 0:
+                    info.i_port = info.i_port & ~mask
+                else:
+                    info.o_port = info.o_port & ~mask
+                break
+            elif val == 1:
+                if io == 0:
+                    info.i_port = info.i_port | mask
+                else:
+                    info.o_port = info.o_port | mask
+                break
+            # else keep trying next option
         else:
-            usage('Invalid option: ' + arg)
+            usage(msg='Invalid option: ' + arg)
     # now set the values
-    try:
-        devctl = sunaudiodev.open('control')
-        info = devctl.getinfo()
-        if sval is not None:
-            if sval == -1:
-                if info.o_port & SPEAKER:
-                    sval = 0
-                else:
-                    sval = SPEAKER
-            else:
-                sval = sval * SPEAKER
-        else:
-            sval = info.o_port & SPEAKER
-        if hval is not None:
-            if hval == -1:
-                if info.o_port & HEADPHONE:
-                    hval = 0
-                else:
-                    hval = HEADPHONE
-            else:
-                hval = hval * HEADPHONE
-        else:
-            hval = info.o_port & HEADPHONE
-        if lval is not None:
-            if lval == -1:
-                if info.o_port & LINE_OUT:
-                    lval = 0
-                else:
-                    lval = LINE_OUT
-            else:
-                lval = lval * LINE_OUT
-        else:
-            lval = info.o_port & LINE_OUT
-        info.o_port = sval + hval + lval
-        devctl.setinfo(info)
-    finally:
-        devctl.close()
+    device.setinfo(info)
+    device.close()
             
 
 
