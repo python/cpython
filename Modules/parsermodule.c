@@ -2816,7 +2816,7 @@ static PyMethodDef parser_functions[] =  {
         "Creates an ST object from a tree representation."},
 
     /* private stuff: support pickle module */
-    {"_pickler",        (PyCFunction)parser__pickler,   METH_VARARGS,
+    {"_pickler",        (PyCFunction)parser__pickler,  METH_VARARGS,
         "Returns the pickle magic to allow ST objects to be pickled."},
 
     {NULL, NULL, 0, NULL}
@@ -2828,44 +2828,42 @@ DL_EXPORT(void) initparser(void);  /* supply a prototype */
 DL_EXPORT(void)
 initparser(void)
 {
-    PyObject* module;
-    PyObject* dict;
+    PyObject *module, *copyreg;
 
     PyST_Type.ob_type = &PyType_Type;
     module = Py_InitModule("parser", parser_functions);
-    dict = PyModule_GetDict(module);
 
     if (parser_error == 0)
         parser_error = PyErr_NewException("parser.ParserError", NULL, NULL);
 
     if ((parser_error == 0)
-        || (PyDict_SetItemString(dict, "ParserError", parser_error) != 0)) {
+        || (PyModule_AddObject(module, "ParserError", parser_error) != 0)) {
         /* caller will check PyErr_Occurred() */
         return;
     }
     Py_INCREF(&PyST_Type);
-    PyDict_SetItemString(dict, "ASTType", (PyObject*)&PyST_Type);
+    PyModule_AddObject(module, "ASTType", (PyObject*)&PyST_Type);
     Py_INCREF(&PyST_Type);
-    PyDict_SetItemString(dict, "STType", (PyObject*)&PyST_Type);
+    PyModule_AddObject(module, "STType", (PyObject*)&PyST_Type);
 
-    PyDict_SetItemString(dict, "__copyright__",
-                         PyString_FromString(parser_copyright_string));
-    PyDict_SetItemString(dict, "__doc__",
-                         PyString_FromString(parser_doc_string));
-    PyDict_SetItemString(dict, "__version__",
-                         PyString_FromString(parser_version_string));
+    PyModule_AddStringConstant(module, "__copyright__",
+                               parser_copyright_string);
+    PyModule_AddStringConstant(module, "__doc__",
+                               parser_doc_string);
+    PyModule_AddStringConstant(module, "__version__",
+                               parser_version_string);
 
     /* Register to support pickling.
      * If this fails, the import of this module will fail because an
      * exception will be raised here; should we clear the exception?
      */
-    module = PyImport_ImportModule("copy_reg");
-    if (module != NULL) {
+    copyreg = PyImport_ImportModule("copy_reg");
+    if (copyreg != NULL) {
         PyObject *func, *pickler;
 
-        func = PyObject_GetAttrString(module, "pickle");
-        pickle_constructor = PyDict_GetItemString(dict, "sequence2st");
-        pickler = PyDict_GetItemString(dict, "_pickler");
+        func = PyObject_GetAttrString(copyreg, "pickle");
+        pickle_constructor = PyObject_GetAttrString(module, "sequence2st");
+        pickler = PyObject_GetAttrString(module, "_pickler");
         Py_XINCREF(pickle_constructor);
         if ((func != NULL) && (pickle_constructor != NULL)
             && (pickler != NULL)) {
@@ -2876,6 +2874,8 @@ initparser(void)
             Py_XDECREF(res);
         }
         Py_XDECREF(func);
-        Py_DECREF(module);
+        Py_XDECREF(pickle_constructor);
+        Py_XDECREF(pickler);
+        Py_DECREF(copyreg);
     }
 }
