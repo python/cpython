@@ -890,10 +890,11 @@ class Widget(Misc, Pack, Place, Grid):
 			_default_root = master
 		self.master = master
 		self.tk = master.tk
+		name = None
 		if cnf.has_key('name'):
 			name = cnf['name']
 			del cnf['name']
-		else:
+		if not name:
 			name = `id(self)`
 		self._name = name
 		if master._w=='.':
