@@ -1,20 +1,21 @@
 \section{\module{re} ---
-         New Perl-style regular expression search and match operations.}
+         Perl-style regular expression operations.}
 \declaremodule{standard}{re}
 \moduleauthor{Andrew M. Kuchling}{akuchling@acm.org}
 \sectionauthor{Andrew M. Kuchling}{akuchling@acm.org}
 
 
-\modulesynopsis{New Perl-style regular expression search and match
+\modulesynopsis{Perl-style regular expression search and match
 operations.}
 
 
 This module provides regular expression matching operations similar to
 those found in Perl.  It's 8-bit clean: the strings being processed
 may contain both null bytes and characters whose high bit is set.  Regular
-expression patterns may not contain null bytes, but they may contain
-characters with the high bit set.  The \module{re} module is always
-available.
+expression pattern strings may not contain null bytes, but can specify
+the null byte using the \code{\e\var{number}} notation.
+Characters with the high bit set may be included.  The \module{re}
+module is always available.
 
 Regular expressions use the backslash character (\character{\e}) to
 indicate special forms or to allow special characters to be used
