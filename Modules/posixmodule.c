@@ -692,7 +692,18 @@ posix_chmod(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	return posix_strint(args, "si:chmod", chmod);
+	char *path;
+	int i;
+	int res;
+	if (!PyArg_ParseTuple(args, format, &path, &i))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	res = chmod(path, i);
+	Py_END_ALLOW_THREADS
+	if (res < 0)
+		return posix_error_with_filename(path);
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
@@ -998,14 +1009,11 @@ posix_listdir(self, args)
 	struct dirent *ep;
 	if (!PyArg_ParseTuple(args, "s:listdir", &name))
 		return NULL;
-	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
-		Py_BLOCK_THREADS
 		return posix_error_with_filename(name);
 	}
 	if ((d = PyList_New(0)) == NULL) {
 		closedir(dirp);
-		Py_BLOCK_THREADS
 		return NULL;
 	}
 	while ((ep = readdir(dirp)) != NULL) {
@@ -1028,7 +1036,6 @@ posix_listdir(self, args)
 		Py_DECREF(v);
 	}
 	closedir(dirp);
-	Py_END_ALLOW_THREADS
 
 	return d;
 
