@@ -15,19 +15,14 @@ def is_future(stmt):
 
 class FutureParser:
 
-    features = ("nested_scopes",)
+    features = ("nested_scopes", "generators", "division")
     
     def __init__(self):
         self.found = {} # set
 
     def visitModule(self, node):
-        if node.doc is None:
-            off = 0
-        else:
-            off = 1
-
         stmt = node.node
-        for s in stmt.nodes[off:]:
+        for s in stmt.nodes:
             if not self.check_stmt(s):
                 break
 
