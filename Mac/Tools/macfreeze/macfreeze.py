@@ -38,12 +38,15 @@ def main():
 	if mustwait:
 		sys.exit(1)
 
-def process(gentype, program, output, modules=[], module_files=[], debug=0, with_ifdef=0):
-	try:
-		module_dict = macmodulefinder.process(program, modules, module_files, debug)
-	except macmodulefinder.Missing, arg:
-		arg.sort()
-		print '** Missing modules:', string.join(arg, ' ')
+def process(gentype, program, output, modules=None, module_files=None, debug=0, with_ifdef=0):
+	if modules is None:
+		modules = []
+	if module_files is None:
+		module_files = []
+	module_dict, missing = macmodulefinder.process(program, modules, module_files, debug)
+	if missing:
+		missing.sort()
+		print '** Missing modules:', string.join(missing, ' ')
 		sys.exit(1)
 	#
 	# And generate
