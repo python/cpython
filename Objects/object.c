@@ -181,11 +181,13 @@ strobject(v)
 		INCREF(v);
 		return v;
 	}
+	else if (v->ob_type->tp_str != NULL)
+		return (*v->ob_type->tp_str)(v);
 	else {
-		object *func = getattr(v, "__str__");
+		object *func;
 		object *args;
 		object *res;
-		if (func == NULL) {
+		if (!is_instanceobject(v) || (func = getattr(v, "__str__")) == NULL) {
 			err_clear();
 			return reprobject(v);
 		}
