@@ -420,15 +420,15 @@ If you can't use dynamic loading, or if you want to make your module a
 permanent part of the Python interpreter, you will have to change the
 configuration setup and rebuild the interpreter.  Luckily, this is
 very simple: just place your file (\file{spammodule.c} for example) in
-the \file{Modules} directory, add a line to the file
-\file{Modules/Setup.local} describing your file:
+the \file{Modules/} directory of an unpacked source distribution, add
+a line to the file \file{Modules/Setup.local} describing your file:
 
 \begin{verbatim}
 spam spammodule.o
 \end{verbatim}
 
 and rebuild the interpreter by running \program{make} in the toplevel
-directory.  You can also run \program{make} in the \file{Modules}
+directory.  You can also run \program{make} in the \file{Modules/}
 subdirectory, but then you must first rebuild \file{Makefile}
 there by running `\program{make} Makefile'.  (This is necessary each
 time you change the \file{Setup} file.)
