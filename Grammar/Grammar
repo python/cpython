@@ -2,6 +2,9 @@
 
 # Change log:
 
+# 27-Feb-92:
+#	Allow NEWLINE* after eval input
+
 # 16-Jan-92:
 #	Added '*' as alternative for '+' in varargs syntax
 #	(Not sure which alternative is better yet.)
@@ -62,7 +65,7 @@
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 expr_input: testlist NEWLINE
-eval_input: testlist ENDMARKER
+eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
