@@ -219,10 +219,15 @@ class BZ2FileTest(BaseTest):
         bz2f.close()
 
     def testOpenDel(self):
+        # "Test opening and deleting a file many times"
         self.createTempFile()
         for i in xrange(10000):
             o = BZ2File(self.filename)
             del o
+
+    def testOpenNonexistent(self):
+        # "Test opening a nonexistent file"
+        self.assertRaises(IOError, BZ2File, "/non/existent")
 
 class BZ2CompressorTest(BaseTest):
     def testCompress(self):
