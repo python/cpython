@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
 
 # View a single MIME multipart message.
 # Display each part as a box.

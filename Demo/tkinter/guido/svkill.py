@@ -1,4 +1,5 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
+
 # Tkinter interface to SYSV `kill' command.
 
 from Tkinter import *

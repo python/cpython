@@ -1,4 +1,4 @@
-#! /ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
 
 # A Python function that generates dialog boxes with a text message,
 # optional bitmap, and any number of buttons.

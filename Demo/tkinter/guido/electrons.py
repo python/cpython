@@ -1,4 +1,5 @@
-#!/ufs/guido/bin/sgi/tkpython
+#! /usr/local/bin/python
+
 # Simulate "electrons" migrating across the screen.  
 # An optional bitmap file in can be in the background.
 #
