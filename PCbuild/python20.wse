@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.2 pre-alpha
+  Title=Python 2.2 alpha 1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -16,6 +16,7 @@ item: Global
   Patch Flags=0000000000000001
   Patch Threshold=85
   Patch Memory=4000
+  EXE Filename=Python-2.2a1.exe
   Variable Name1=_SYS_
   Variable Description1=System directory (where to find MSVCRT.DLL)
   Variable Default1=C:\Windows\System
@@ -66,7 +67,7 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.2 pre-alpha
+  Value=Python 2.2a1
 end
 item: Set Variable
   Variable=GROUP
