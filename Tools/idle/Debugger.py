@@ -6,13 +6,26 @@ from Tkinter import *
 
 class Debugger(bdb.Bdb):
     
+    interacting = 0
+    
     def __init__(self, pyshell):
         bdb.Bdb.__init__(self)
         self.pyshell = pyshell
         self.make_gui()
     
     def close(self):
+        if self.interacting:
+            self.top.bell()
+            return
+        self.pyshell.close_debugger()
         self.top.destroy()
+        
+    def run(self, *args):
+        try:
+            self.interacting = 1
+            return apply(bdb.Bdb.run, (self,) + args)
+        finally:
+            self.interacting = 0
 
     def user_line(self, frame):
         self.interaction(frame)
@@ -29,8 +42,9 @@ class Debugger(bdb.Bdb):
         self.flist = pyshell.flist
         self.root = root = pyshell.root
         self.top = top = Toplevel(root)
+        top.wm_protocol("WM_DELETE_WINDOW", self.close)
         self.bframe = bframe = Frame(top)
-        self.bframe.pack()
+        self.bframe.pack(anchor="w")
         self.buttons = bl = []
         self.bcont = b = Button(bframe, text="Go", command=self.cont)
         bl.append(b)
@@ -43,25 +57,34 @@ class Debugger(bdb.Bdb):
         for b in bl:
             b.configure(state="disabled")
             b.pack(side="left")
-        self.status = Label(top)
-        self.status.pack()
+        self.status = Label(top, anchor="w")
+        self.status.pack(anchor="w")
+        self.error = Label(top, anchor="w")
+        self.error.pack(anchor="w")
     
     def interaction(self, frame, info=None):
+        self.top.pack_propagate(0)
         self.frame = frame
         code = frame.f_code
         file = code.co_filename
+        base = os.path.basename(file)
         lineno = frame.f_lineno
-        message = "file=%s, name=%s, line=%s" % (file, code.co_name, lineno)
+        message = "%s:%s: %s()" % (base, lineno, code.co_name)
+        self.status.configure(text=message)
         if info:
             type, value, tb = info
-            m1 = "%s" % str(type)
-##            if value is not None:
-##                try:
-##                    m1 = "%s: %s" % (m1, str(value))
-##                except:
-##                    pass
-            message = "%s\n%s" % (message, m1)
-        self.status.configure(text=message)
+            try:
+                m1 = type.__name__
+            except AttributeError:
+                m1 = "%s" % str(type)
+            if value is not None:
+                try:
+                    m1 = "%s: %s" % (m1, str(value))
+                except:
+                    pass
+        else:
+            m1 = ""
+        self.error.configure(text=m1)
         if file[:1] + file[-1:] != "<>" and os.path.exists(file):
             edit = self.flist.open(file)
             if edit:
@@ -73,6 +96,7 @@ class Debugger(bdb.Bdb):
         for b in self.buttons:
             b.configure(state="disabled")
         self.status.configure(text="")
+        self.error.configure(text="")
         self.frame = None
     
     def cont(self):

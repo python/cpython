@@ -252,19 +252,27 @@ class PyShell(PyShellEditorWindow):
             return "break"
         db = self.interp.getdebugger()
         if db:
+            self.close_debugger()
+        else:
+            self.open_debugger()
+
+    def close_debugger(self):
+        db = self.interp.getdebugger()
+        if db:
+            self.interp.setdebugger(None)
             db.close()
             self.resetoutput()
             self.console.write("[DEBUG OFF]\n")
             sys.ps1 = ">>> "
             self.showprompt()
-            self.interp.setdebugger(None)
-        else:
-            import Debugger
-            self.interp.setdebugger(Debugger.Debugger(self))
-            sys.ps1 = "[DEBUG ON]>>> "
-            self.showprompt()
-            self.top.tkraise()
-            self.text.focus_set()
+
+    def open_debugger(self):
+        import Debugger
+        self.interp.setdebugger(Debugger.Debugger(self))
+        sys.ps1 = "[DEBUG ON]>>> "
+        self.showprompt()
+        self.top.tkraise()
+        self.text.focus_set()
 
     def beginexecuting(self):
         # Helper for ModifiedInterpreter
