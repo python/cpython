@@ -4,9 +4,6 @@
 # - have a 'dispatch' function as a window member
 
 
-# XXX This is UNIX specific!  For the Mac we need to use a simpler version!
-
-
 import stdwin, stdwinq
 from stdwinevents import *
 
@@ -132,9 +129,17 @@ def mainloop():
 	recursion_level = recursion_level + 1
 	try:
 		stdwin_select_handler() # Process events already in queue
-		fd = stdwin.fileno()
 		while 1:
-			if windows:
+			if windows and not fdlist:
+				while windows and not fdlist:
+					try:
+						event = stdwinq.getevent()
+					except KeyboardInterrupt:
+						event = (WE_COMMAND, \
+							 None, WC_CANCEL)
+					dispatch(event)
+			elif windows and fdlist:
+				fd = stdwin.fileno()
 				if recursion_level == 1:
 				    registerfd(fd, 'r', stdwin_select_handler)
 				try:
