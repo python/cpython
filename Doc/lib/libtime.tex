@@ -296,7 +296,7 @@ any missing data is \code{(1900, 1, 1, 0, 0, 0, 0, 1, -1)} .
 
 Support for the \code{\%Z} directive is based on the values contained in
 \code{tzname} and whether \code{daylight} is true.  Because of this,
-it is platform-specific without recognition for UTC and GMT which are
+it is platform-specific except for recognizing UTC and GMT which are
 always known (and are considered to be non-daylight savings
 timezones).
 \end{funcdesc}
