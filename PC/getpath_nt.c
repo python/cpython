@@ -112,7 +112,7 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 	}
 
 	if (newKey)
-		CloseHandle(newKey);
+		RegCloseKey(newKey);
 	return retval;
 }
 /* Return the initial python search path.  This is called once from
@@ -129,6 +129,7 @@ Py_GetPath()
 	static char *buf = NULL;
 	char *p;
 	int n;
+	extern char *Py_GetProgramName();
 
 	if (buf != NULL) {
 		free(buf);
