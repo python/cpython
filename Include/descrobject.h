@@ -1,4 +1,9 @@
 /* Descriptors */
+#ifndef Py_DESCROBJECT_H
+#define Py_DESCROBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef PyObject *(*getter)(PyObject *, void *);
 typedef int (*setter)(PyObject *, PyObject *, void *);
@@ -78,3 +83,8 @@ extern DL_IMPORT(PyObject *) PyWrapper_New(PyObject *, PyObject *);
 
 
 extern DL_IMPORT(PyTypeObject) PyProperty_Type;
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_DESCROBJECT_H */
+
