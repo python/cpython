@@ -117,6 +117,9 @@ class build_ext (Command):
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
 
+        if type (self.libs) is StringType:
+            self.libs = [self.libs]
+
         # XXX how the heck are 'self.define' and 'self.undef' supposed to
         # be set?
 
