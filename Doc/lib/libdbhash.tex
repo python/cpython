@@ -66,23 +66,22 @@ available in addition to the standard methods.
   begin a reverse-order traversal; see \method{previous()}.
 \end{methoddesc}
 
-\begin{methoddesc}[dbhash]{next}{key}
-  Returns the key that follows \var{key} in the traversal.  The
+\begin{methoddesc}[dbhash]{next}{}
+  Returns the key next key in a database traversal.  The
   following code prints every key in the database \code{db}, without
   having to create a list in memory that contains them all:
 
 \begin{verbatim}
-k = db.first()
-while k != None:
-    print k
-    k = db.next(k)
+print db.first()
+for i in xrange(1, len(d)):
+    print db.next()
 \end{verbatim}
 \end{methoddesc}
 
-\begin{methoddesc}[dbhash]{previous}{key}
-  Return the key that comes before \var{key} in a forward-traversal of 
-  the database.  In conjunction with \method{last()}, this may be used 
-  to implement a reverse-order traversal.
+\begin{methoddesc}[dbhash]{previous}{}
+  Returns the previous key in a forward-traversal of the database.
+  In conjunction with \method{last()}, this may be used to implement
+  a reverse-order traversal.
 \end{methoddesc}
 
 \begin{methoddesc}[dbhash]{sync}{}
