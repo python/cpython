@@ -1,0 +1,45 @@
+Python has a "build number" scheme on Unix-like systems that's hard to
+explain:
+
+Python 2.0b1 (#4, Sep  7 2000, 02:40:55) [MSC 32 bit (Intel)] on win32
+              ^^
+The build number there is "#4".
+
+Each developer's unique build tree generates its own "build numbers",
+starting at 0, and increasing by 1 each time a build is done in that tree.
+These numbers are never checked in, or coordinated in any other way.  It's
+just handy for a developer to distinguish among their own personal builds.
+
+The makefile tricks used to accomplish this under Unix-like systems don't
+work under MSDev.  Here we fake it by hand, but much less frequently, and
+do check it in.  The build number only changes often enough to distinguish
+releases from each other, and from the long "in between" stretches of CVS
+development.  An account of all Windows BUILD numbers follows; when you
+check in a new one, please add an entry to the top of the list.
+
+How to change the Windows build number:
+
++ Right-click on getbuildinfo.c from within MSDev.  Select Settings ...
++ Select the General category of the C/C++ tab.
++ In "Settings For:" select "Multiple Configurations ...".
++ Check the "Win32 Release" and "Win32 Debug" boxes and click OK.
++ In the Preprocessor Definitions box, increment the number after BUILD=.
++ Click OK.
++ This is not enough to convince MSDev to recompile getbuildinfo.c,
+  so force that and relink.
++ Verify that the new build number shows up in both release and debug 
+  builds.
+
+
+Windows Python BUILD numbers
+----------------------------
+   5    CVS development
+        07-Sep-2000
+   4    2.0b1 repaired to include Lib\xml + Lib\lib-old + Lib\test\*.xml
+        07-Sep-2000
+   3    2.0b1
+        05-Sep-2000
+   2    CVS development
+   1    unused
+   0    2.0b1p1 and 2.0b1p2
+        01-Sep-2000 for both -- this scheme hadn't started yet
