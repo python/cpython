@@ -1,0 +1,189 @@
+NOTES ON OPTIMIZING DICTIONARIES
+================================
+
+
+Principal Use Cases for Dictionaries
+------------------------------------
+
+Passing keyword arguments
+    Typically, one read and one write for 1 to 3 elements.
+    Occurs frequently in normal python code.
+
+Class method lookup
+    Dictionaries vary in size with 8 to 16 elements being common.
+    Usually written once with many lookups.
+    When base classes are used, there are many failed lookups
+        followed by a lookup in a base class.
+
+Instance attribute lookup and Global variables
+    Dictionaries vary in size.  4 to 10 elements are common.
+    Both reads and writes are common.
+
+Builtins
+    Frequent reads.  Almost never written.
+    Size 126 interned strings (as of Py2.3b1).
+    A few keys are accessed much more frequently than others.
+
+Uniquification
+    Dictionaries of any size.  Bulk of work is in creation.
+    Repeated writes to a smaller set of keys.
+    Single read of each key.
+
+    * Removing duplicates from a sequence.
+        dict.fromkeys(seqn).keys()
+    * Counting elements in a sequence.
+        for e in seqn:  d[e]=d.get(e,0) + 1
+    * Accumulating items in a dictionary of lists.
+        for k, v in itemseqn:  d.setdefault(k, []).append(v)
+
+Membership Testing
+    Dictionaries of any size.  Created once and then rarely changes.
+    Single write to each key.
+    Many calls to __contains__() or has_key().
+    Similar access patterns occur with replacement dictionaries
+        such as with the % formatting operator.
+
+
+Data Layout (assuming a 32-bit box with 64 bytes per cache line)
+----------------------------------------------------------------
+
+Smalldicts (8 entries) are attached to the dictobject structure
+and the whole group nearly fills two consecutive cache lines.
+
+Larger dicts use the first half of the dictobject structure (one cache
+line) and a separate, continuous block of entries (at 12 bytes each
+for a total of 5.333 entries per cache line).
+
+
+Tunable Dictionary Parameters
+-----------------------------
+
+* PyDict_MINSIZE.  Currently set to 8.
+    Must be a power of two.  New dicts have to zero-out every cell.
+    Each additional 8 consumes 1.5 cache lines.  Increasing improves
+    the sparseness of small dictionaries but costs time to read in
+    the additional cache lines if they are not already in cache.
+    That case is common when keyword arguments are passed.
+
+* Maximum dictionary load in PyDict_SetItem.  Currently set to 2/3.
+    Increasing this ratio makes dictionaries more dense resulting
+    in more collisions.  Decreasing it improves sparseness at the
+    expense of spreading entries over more cache lines and at the
+    cost of total memory consumed.
+
+    The load test occurs in highly time sensitive code.  Efforts
+    to make the test more complex (for example, varying the load
+    for different sizes) have degraded performance.
+
+* Growth rate upon hitting maximum load.  Currently set to *2.
+    Raising this to *4 results in half the number of resizes,
+    less effort to resize, better sparseness for some (but not
+    all dict sizes), and potentially double memory consumption
+    depending on the size of the dictionary.  Setting to *4
+    eliminates every other resize step.
+
+Tune-ups should be measured across a broad range of applications and
+use cases.  A change to any parameter will help in some situations and
+hurt in others.  The key is to find settings that help the most common
+cases and do the least damage to the less common cases.  Results will
+vary dramatically depending on the exact number of keys, whether the
+keys are all strings, whether reads or writes dominate, the exact
+hash values of the keys (some sets of values have fewer collisions than
+others).  Any one test or benchmark is likely to prove misleading.
+
+
+Results of Cache Locality Experiments
+-------------------------------------
+
+When an entry is retrieved from memory, 4.333 adjacent entries are also
+retrieved into a cache line.  Since accessing items in cache is *much*
+cheaper than a cache miss, an enticing idea is to probe the adjacent
+entries as a first step in collision resolution.  Unfortunately, the
+introduction of any regularity into collision searches results in more
+collisions than the current random chaining approach.
+
+Exploiting cache locality at the expense of additional collisions fails
+to payoff when the entries are already loaded in cache (the expense
+is paid with no compensating benefit).  This occurs in small dictionaries
+where the whole dictionary fits into a pair of cache lines.  It also
+occurs frequently in large dictionaries which have a common access pattern
+where some keys are accessed much more frequently than others.  The
+more popular entries *and* their collision chains tend to remain in cache.
+
+To exploit cache locality, change the collision resolution section
+in lookdict() and lookdict_string().  Set i^=1 at the top of the
+loop and move the  i = (i << 2) + i + perturb + 1 to an unrolled
+version of the loop.
+
+This optimization strategy can be leveraged in several ways:
+
+* If the dictionary is kept sparse (through the tunable parameters),
+then the occurrence of additional collisions is lessened.
+
+* If lookdict() and lookdict_string() are specialized for small dicts
+and for largedicts, then the versions for large_dicts can be given
+an alternate search strategy without increasing collisions in small dicts
+which already have the maximum benefit of cache locality.
+
+* If the use case for a dictionary is known to have a random key
+access pattern (as opposed to a more common pattern with a Zipf's law
+distribution), then there will be more benefit for large dictionaries
+because any given key is no more likely than another to already be
+in cache.
+
+
+Optimizing the Search of Small Dictionaries
+-------------------------------------------
+
+If lookdict() and lookdict_string() are specialized for smaller dictionaries,
+then a custom search approach can be implemented that exploits the small
+search space and cache locality.
+
+* The simplest example is a linear search of contiguous entries.  This is
+  simple to implement, guaranteed to terminate rapidly, never searches
+  the same entry twice, and precludes the need to check for dummy entries.
+
+* A more advanced example is a self-organizing search so that the most
+  frequently accessed entries get probed first.  The organization
+  adapts if the access pattern changes over time.  Treaps are ideally
+  suited for self-organization with the most common entries at the
+  top of the heap and a rapid binary search pattern.  Most probes and
+  results are all located at the top of the tree allowing them all to
+  be located in one or two cache lines.
+
+* Also, small dictionaries may be made more dense, perhaps filling all
+  eight cells to take the maximum advantage of two cache lines.
+
+
+Strategy Pattern
+----------------
+
+Consider allowing the user to set the tunable parameters or to select a
+particular search method.  Since some dictionary use cases have known
+sizes and access patterns, the user may be able to provide useful hints.
+
+1) For example, if membership testing or lookups dominate runtime and memory
+   is not at a premium, the user may benefit from setting the maximum load
+   ratio at 5% or 10% instead of the usual 66.7%.  This will sharply
+   curtail the number of collisions.
+
+2) Dictionary creation time can be shortened in cases where the ultimate
+   size of the dictionary is known in advance.  The dictionary can be
+   pre-sized so that no resize operations are required during creation.
+   Not only does this save resizes, but the key insertion will go
+   more quickly because the first half of the keys will be inserted into
+   a more sparse environment than before.  The preconditions for this
+   strategy arise whenever a dictionary is created from a key or item
+   sequence of known length.
+
+3) If the key space is large and the access pattern is known to be random,
+   then search strategies exploiting cache locality can be fruitful.
+   The preconditions for this strategy arise in simulations and
+   numerical analysis.
+
+4) If the keys are fixed and the access pattern strongly favors some of
+   the keys, then the entries can be stored contiguously and accessed
+   with a linear search or treap.  This exploits knowledge of the data,
+   cache locality, and a simplified search routine.  It also eliminates
+   the need to test for dummy entries on each probe.  The preconditions
+   for this strategy arise in symbol tables and in the builtin dictionary.
