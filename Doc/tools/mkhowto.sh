@@ -13,7 +13,6 @@ DEFAULT_FORMAT=PDF
 USE_DEFAULT_FORMAT=true
 DISCARD_TEMPS=true
 
-HTML_SPLIT_LEVEL=0
 L2H_INIT_FILE=$TOPDIR/perl/l2hinit.perl
 
 # This is needed to support kpathsea based TeX installations.  Others are
@@ -39,6 +38,7 @@ Options specifying formats to build:
 
 HTML options:
     --address, -a	Specify an address for page footers.
+    --link		Specify the number of levels to include on each page.
     --split, -s		Specify a section level for page splitting.
 
 Other options:
@@ -54,29 +54,25 @@ EOF
     exit $1
 }
 
+# These are LaTeX2HTML controls; they reflect l2h variables of the same name.
+# The values here are the defaults after modification by perl/l2hinit.perl.
+#
+ADDRESS=''
+MAX_LINK_DEPTH=3
+MAX_SPLIT_DEPTH=8
+
 build_html() {
-    if [ "$HTML_SPLIT_LEVEL" -gt 0 ] ; then
-	if [ "$ADDRESS" ] ; then
-	    latex2html -init_file $L2H_INIT_FILE \
-	     -address "$ADDRESS" \
-	     -split $HTML_SPLIT_LEVEL \
-	     $1 || exit $?
-	else
-	    latex2html -init_file $L2H_INIT_FILE \
-	     -split $HTML_SPLIT_LEVEL \
-	     $1 || exit $?
-	fi
+    if [ "$ADDRESS" ] ; then
+	latex2html -init_file $L2H_INIT_FILE \
+	 -address "$ADDRESS" \
+	 -link $MAX_LINK_DEPTH -split $MAX_SPLIT_DEPTH \
+	 $1 || exit $?
     else
-	if [ "$ADDRESS" ] ; then
-	    latex2html -init_file $L2H_INIT_FILE \
-	     -address "$ADDRESS" \
-	     $1 || exit $?
-	else
-	    latex2html -init_file $L2H_INIT_FILE \
-	     $1 || exit $?
-	fi
+	latex2html -init_file $L2H_INIT_FILE \
+	 -link $MAX_LINK_DEPTH -split $MAX_SPLIT_DEPTH \
+	 $1 || exit $?
     fi
-    if [ "$HTML_SPLIT_LEVEL" -ne 1 ] ; then
+    if [ "$MAX_SPLIT_DEPTH" -ne 1 ] ; then
 	(cd $FILE; $MYDIR/node2label.pl *.html) || exit $?
     fi
 }
@@ -141,7 +137,7 @@ while [ "$1" ] ; do
 	    USE_DEFAULT_FORMAT=false
 	    shift 1
 	    ;;
-	--ps)
+	--ps|--postscript|--postscrip|--postscri|--postscr|--postsc|--posts|--post|--pos|--po)
 	    BUILD_PS=true
 	    USE_DEFAULT_FORMAT=false
 	    shift 1
@@ -163,11 +159,15 @@ while [ "$1" ] ; do
 	    ADDRESS="$2"
 	    shift 2
 	    ;;
-	-s|--split|--spli|--spl|--sp|--s)
-	    HTML_SPLIT_LEVEL="$2"
+	--link|--lin|--li)
+	    LINK="$2"
 	    shift 2
 	    ;;
-	-l|--logging|--loggin|--loggi|--logg|--log|--lo|--l)
+	-s|--split|--spli|--spl|--sp|--s)
+	    MAX_SPLIT_DEPTH="$2"
+	    shift 2
+	    ;;
+	-l|--logging|--loggin|--loggi|--logg|--log|--lo)
 	    LOGGING=true
 	    shift 1
 	    ;;
@@ -182,6 +182,9 @@ while [ "$1" ] ; do
 	-q|--quiet|--quie|--qui|--qu|--q)
 	    QUIET=true
 	    shift 1
+	    ;;
+	--)
+	    break
 	    ;;
 	-*)
 	    usage 2
