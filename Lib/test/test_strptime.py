@@ -417,6 +417,46 @@ class CalculationTests(unittest.TestCase):
         self.failUnless(result.tm_wday == self.time_tuple.tm_wday,
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
+
+class CacheTests(unittest.TestCase):
+    """Test that caching works properly."""
+
+    def test_time_re_recreation(self):
+        # Make sure cache is recreated when current locale does not match what
+        # cached object was created with.
+        _strptime.strptime("10", "%d")
+        _strptime._locale_cache.locale_time = _strptime.LocaleTime(lang="Ni")
+        original_time_re = id(_strptime._locale_cache)
+        _strptime.strptime("10", "%d")
+        self.failIfEqual(original_time_re, id(_strptime._locale_cache))
+
+    def test_regex_cleanup(self):
+        # Make sure cached regexes are discarded when cache becomes "full".
+        try:
+            del _strptime._regex_cache['%d']
+        except KeyError:
+            pass
+        bogus_key = 0
+        while len(_strptime._regex_cache) <= 5:
+            _strptime._regex_cache[bogus_key] = None
+            bogus_key += 1
+        _strptime.strptime("10", "%d")
+        self.failUnlessEqual(len(_strptime._regex_cache), 1)
+
+    def test_new_localetime(self):
+        # A new LocaleTime instance should be created when a new TimeRE object
+        # is created.
+        _strptime._locale_cache.locale_time = _strptime.LocaleTime(lang="Ni")
+        locale_time_id = id(_strptime._locale_cache.locale_time)
+        locale_time_lang = _strptime._locale_cache.locale_time.lang
+        _strptime.strptime("10", "%d")
+        self.failIfEqual(locale_time_id,
+                         id(_strptime._locale_cache.locale_time))
+        self.failIfEqual(locale_time_lang,
+                         _strptime._locale_cache.locale_time.lang)
+
+
+
 def test_main():
     test_support.run_unittest(
         getlang_Tests,
@@ -426,6 +466,7 @@ def test_main():
         Strptime12AMPMTests,
         JulianTests,
         CalculationTests,
+        CacheTests
     )
 
 

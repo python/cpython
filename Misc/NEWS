@@ -26,6 +26,10 @@ Library
 
 - Bug #782369:  fix memory leak in array module.
 
+- Caching in _strptime.py has been re-introduced.  This leads to a large
+  performance boost at the cost of being thread-safe from locale changes
+  while executing time.strptime() .
+
 IDLE
 ----
 

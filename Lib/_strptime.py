@@ -397,12 +397,28 @@ class TimeRE(dict):
         """Return a compiled re object for the format string."""
         return re_compile(self.pattern(format), IGNORECASE)
 
+# Cached TimeRE; probably only need one instance ever so cache it for performance
+_locale_cache = TimeRE()
+# Cached regex objects; same reason as for TimeRE cache
+_regex_cache = dict()
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a time struct based on the input data and the format string."""
-    time_re = TimeRE()
-    locale_time = time_re.locale_time
-    format_regex = time_re.compile(format)
+    global _locale_cache
+    global _regex_cache
+    locale_time = _locale_cache.locale_time
+    # If the language changes, caches are invalidated, so clear them
+    if locale_time.lang != _getlang():
+        _locale_cache = TimeRE()
+        _regex_cache.clear()
+    format_regex = _regex_cache.get(format)
+    if not format_regex:
+        # Limit regex cache size to prevent major bloating of the module;
+        # The value 5 is arbitrary
+        if len(_regex_cache) > 5:
+            _regex_cache.clear()
+        format_regex = _locale_cache.compile(format)
+        _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:
         raise ValueError("time data did not match format:  data=%s  fmt=%s" %
