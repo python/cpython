@@ -10,16 +10,19 @@ from Split import Split
 class HVSplit() = Split():
 	#
 	def create(self, (parent, hv)):
-		# hv is 0 or 1 for HSplit or VSplit
+		# hv is 0 for HSplit, 1 for VSplit
 		self = Split.create(self, parent)
 		self.hv = hv
 		return self
 	#
-	def minsize(self, m):
+	def getminsize(self, (m, sugg_size)):
 		hv, vh = self.hv, 1 - self.hv
 		size = [0, 0]
+		sugg_size = [sugg_size[0], sugg_size[1]]
+		sugg_size[hv] = 0
+		sugg_size = sugg_size[0], sugg_size[1] # Make a tuple
 		for c in self.children:
-			csize = c.minsize(m)
+			csize = c.getminsize(m, sugg_size)
 			if csize[vh] > size[vh]: size[vh] = csize[vh]
 			size[hv] = size[hv] + csize[hv]
 		return size[0], size[1]
@@ -31,14 +34,17 @@ class HVSplit() = Split():
 		self.bounds = bounds
 		hv, vh = self.hv, 1 - self.hv
 		mf = self.parent.beginmeasuring
-		size = self.minsize(mf())
-		# XXX not yet used!  Later for stretching
-		maxsize_hv = bounds[1][hv] - bounds[0][hv]
-		origin = [self.bounds[0][0], self.bounds[0][1]]
+		begin, end = bounds
+		sugg_size = end[0] - begin[0], end[1] - begin[1]
+		size = self.getminsize(mf(), sugg_size)
+		origin = [begin[0], begin[1]]
+		sugg_size = [sugg_size[0], sugg_size[1]] # Make a list
+		sugg_size[hv] = 0
+		sugg_size = sugg_size[0], sugg_size[1] # Make a tuple
 		for c in self.children:
-			size = c.minsize(mf())
+			size = c.getminsize(mf(), sugg_size)
 			corner = [0, 0]
-			corner[vh] = bounds[1][vh]
+			corner[vh] = end[vh]
 			corner[hv] = origin[hv] + size[hv]
 			c.setbounds((origin[0], origin[1]), \
 					(corner[0], corner[1]))

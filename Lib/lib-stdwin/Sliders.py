@@ -145,14 +145,13 @@ class ComplexSlider() = HSplit():
 	#
 	# Override HSplit methods
 	#
-	def minsize(self, m):
-		w1, h1 = self.downbutton.minsize(m)
-		w2, h2 = self.dragbutton.minsize(m)
-		w3, h3 = self.upbutton.minsize(m)
-		height = max(h1, h2, h3)
-		w1 = max(w1, height)
-		w3 = max(w3, height)
-		return w1+w2+w3, height
+	def getminsize(self, (m, (width, height))):
+		w1, h1 = self.downbutton.getminsize(m, (0, height))
+		w3, h3 = self.upbutton.getminsize(m, (0, height))
+		w1 = max(w1, h1)
+		w3 = max(w3, h3)
+		w2, h2 = self.dragbutton.getminsize(m, (width-w1-w3, height))
+		return w1+w2+w3, max(h1, h2, h3)
 	#
 	def setbounds(self, bounds):
 		(left, top), (right, bottom) = self.bounds = bounds
