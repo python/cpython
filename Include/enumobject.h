@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 PyAPI_DATA(PyTypeObject) PyEnum_Type;
+PyAPI_DATA(PyTypeObject) PyReversed_Type;
 
 #ifdef __cplusplus
 }

@@ -12,6 +12,9 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Added a reversed() builtin function that returns a reverse iterator
+  over a sequence.
+
 - CObjects are now mutable (on the C level) through PyCObject_SetVoidPtr.
 
 - list.sort() now supports three keyword arguments:  cmp, key, and reverse.

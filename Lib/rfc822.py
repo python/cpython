@@ -421,8 +421,7 @@ class Message:
                 hit = 0
             if hit:
                 list.append(i)
-        list.reverse()
-        for i in list:
+        for i in reversed(list):
             del self.headers[i]
 
     def setdefault(self, name, default=""):

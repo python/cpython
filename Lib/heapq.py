@@ -165,7 +165,7 @@ def heapify(x):
     # or i < (n-1)/2.  If n is even = 2*j, this is (2*j-1)/2 = j-1/2 so
     # j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
     # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
-    for i in xrange(n//2 - 1, -1, -1):
+    for i in reversed(xrange(n//2)):
         _siftup(x, i)
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
