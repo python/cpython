@@ -65,7 +65,7 @@ slice of a to be searched.\n");
 static PyObject *
 insort_right(PyObject *self, PyObject *args)
 {
-	PyObject *list, *item;
+	PyObject *list, *item, *result;
 	int lo = 0;
 	int hi = -1;
 	int index;
@@ -80,9 +80,11 @@ insort_right(PyObject *self, PyObject *args)
 		if (PyList_Insert(list, index, item) < 0)
 			return NULL;
 	} else {
-		if (PyObject_CallMethod(list, "insert", "iO", index, item)
-			== NULL)
+		result = PyObject_CallMethod(list, "insert", "iO",
+					     index, item);
+		if (result == NULL)
 			return NULL;
+		Py_DECREF(result);
 	}
 
 	Py_RETURN_NONE;
@@ -158,7 +160,7 @@ slice of a to be searched.\n");
 static PyObject *
 insort_left(PyObject *self, PyObject *args)
 {
-	PyObject *list, *item;
+	PyObject *list, *item, *result;
 	int lo = 0;
 	int hi = -1;
 	int index;
@@ -173,9 +175,11 @@ insort_left(PyObject *self, PyObject *args)
 		if (PyList_Insert(list, index, item) < 0)
 			return NULL;
 	} else {
-		if (PyObject_CallMethod(list, "insert", "iO", index, item)
-			== NULL)
+		result = PyObject_CallMethod(list, "insert", "iO",
+					     index, item);
+		if (result == NULL)
 			return NULL;
+		Py_DECREF(result);
 	}
 
 	Py_RETURN_NONE;
