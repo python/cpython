@@ -13,13 +13,23 @@ class Idb(bdb.Bdb):
         bdb.Bdb.__init__(self)
 
     def user_line(self, frame):
-        # get the currently executing function
-        ##print>>sys.__stderr__, "*function: ", frame.f_code.co_name
-        ##print>>sys.__stderr__, "*file: ", frame.f_code.co_filename        
-        ##print>>sys.__stderr__, "*line number: ", frame.f_code.co_firstlineno
+
         co_filename = frame.f_code.co_filename
         co_name = frame.f_code.co_name 
+
+        ## print>>sys.__stderr__, "*function: ", frame.f_code.co_name
+        ## print>>sys.__stderr__, "*file: ", frame.f_code.co_filename        
+        ## print>>sys.__stderr__, "*line number: ", frame.f_code.co_firstlineno
+        ## print>>sys.__stderr__, "*name: ", co_name
+        ## print>>sys.__stderr__, "*function: ", frame.f_locals.get(co_name,None)
+
         try:
+            # XXX 12 Dec 2002 CGT TO DO: Find way to get a reference to the
+            # XXX currently running function. If the function has an 
+            #     attribute called "DebuggerStepThrough", prevent the debugger
+            #     from stepping through Idle code. The following doesn't work
+            #     in instance methods. Hard coded some workarounds.
+
             func = frame.f_locals[co_name]
             if getattr(func, "DebuggerStepThrough", 0):
                 print "XXXX DEBUGGER STEPPING THROUGH"
@@ -27,7 +37,9 @@ class Idb(bdb.Bdb):
                 return
         except:
             pass
-        if co_filename in ('rpc.py', '<string>'):
+
+        # workaround for the problem above
+        if co_filename in (r'.\rpc.py', 'rpc.py','<string>'):
             self.set_step()
             return
         if co_filename.endswith('threading.py'):
