@@ -149,6 +149,8 @@ newframeobject(back, code, globals, locals, owner, nvalues, nblocks)
 		return NULL;
 	}
 	builtins = dictlookup(globals, "__builtins__");
+	if (builtins != NULL && is_moduleobject(builtins))
+		builtins = getmoduledict(builtins);
 	if (builtins == NULL || !is_mappingobject(builtins)) {
 		err_setstr(TypeError, "bad __builtins__ dictionary");
 		return NULL;
