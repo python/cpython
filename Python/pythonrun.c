@@ -992,13 +992,14 @@ err_input(err)
 		break;
 	case E_TOKEN:
 		msg = "invalid token";
-
 		break;
 	case E_INTR:
 		PyErr_SetNone(PyExc_KeyboardInterrupt);
+		Py_XDECREF(v);
 		return;
 	case E_NOMEM:
 		PyErr_NoMemory();
+		Py_XDECREF(v);
 		return;
 	case E_EOF:
 		msg = "unexpected EOF while parsing";
