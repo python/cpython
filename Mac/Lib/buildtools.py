@@ -78,7 +78,7 @@ def process(template, filename, destname, copy_codefragment,
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
 	
-	fp = open(filename)
+	fp = open(filename, 'rU')
 	text = fp.read()
 	fp.close()
 	try:
