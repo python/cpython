@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 """An RFC 2821 smtp proxy.
 
-Usage: %(program)s [options] localhost:port remotehost:port
+Usage: %(program)s [options] [localhost:localport [remotehost:remoteport]]
 
 Options:
 
@@ -30,8 +30,12 @@ Options:
 
 Version: %(__version__)s
 
+If localhost is not given then `localhost' is used, and if localport is not
+given then 8025 is used.  If remotehost is not given then `localhost' is used,
+and if remoteport is not given, then 25 is used.
 """
 
+
 # Overview:
 #
 # This file implements the minimal SMTP protocol as defined in RFC 821.  It
@@ -89,9 +93,10 @@ class Devnull:
 DEBUGSTREAM = Devnull()
 NEWLINE = '\n'
 EMPTYSTRING = ''
+COMMASPACE = ', '
 
 
-
+
 def usage(code, msg=''):
     print >> sys.stderr, __doc__ % globals()
     if msg:
@@ -99,7 +104,7 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-
+
 class SMTPChannel(asynchat.async_chat):
     COMMAND = 0
     DATA = 1
@@ -115,8 +120,7 @@ class SMTPChannel(asynchat.async_chat):
         self.__mailfrom = None
         self.__rcpttos = []
         self.__data = ''
-        self.__fqdn = socket.gethostbyaddr(
-            socket.gethostbyname(socket.gethostname()))[0]
+        self.__fqdn = socket.getfqdn()
         self.__peer = conn.getpeername()
         print >> DEBUGSTREAM, 'Peer:', repr(self.__peer)
         self.push('220 %s %s' % (self.__fqdn, __version__))
@@ -265,7 +269,7 @@ class SMTPChannel(asynchat.async_chat):
         self.push('354 End data with <CR><LF>.<CR><LF>')
 
 
-
+
 class SMTPServer(asyncore.dispatcher):
     def __init__(self, localaddr, remoteaddr):
         self._localaddr = localaddr
@@ -313,6 +317,7 @@ class SMTPServer(asyncore.dispatcher):
         raise NotImplementedError
 
 
+
 class DebuggingServer(SMTPServer):
     # Do something with the gathered message
     def process_message(self, peer, mailfrom, rcpttos, data):
@@ -328,7 +333,7 @@ class DebuggingServer(SMTPServer):
         print '------------ END MESSAGE ------------'
 
 
-
+
 class PureProxy(SMTPServer):
     def process_message(self, peer, mailfrom, rcpttos, data):
         lines = data.split('\n')
@@ -369,7 +374,7 @@ class PureProxy(SMTPServer):
         return refused
 
 
-
+
 class MailmanProxy(PureProxy):
     def process_message(self, peer, mailfrom, rcpttos, data):
         from cStringIO import StringIO
@@ -448,12 +453,13 @@ class MailmanProxy(PureProxy):
                 msg.Enqueue(mlist, torequest=1)
 
 
-
+
 class Options:
     setuid = 1
     classname = 'PureProxy'
 
 
+
 def parseargs():
     global DEBUGSTREAM
     try:
@@ -478,32 +484,36 @@ def parseargs():
             DEBUGSTREAM = sys.stderr
 
     # parse the rest of the arguments
-    try:
+    if len(args) < 1:
+        localspec = 'localhost:8025'
+        remotespec = 'localhost:25'
+    elif len(args) < 2:
         localspec = args[0]
-        remotespec = args[1]
-    except IndexError:
-        usage(1, 'Not enough arguments')
+        remotespec = 'localhost:25'
+    else:
+        usage(1, 'Invalid arguments: %s' % COMMASPACE.join(args))
+
     # split into host/port pairs
     i = localspec.find(':')
     if i < 0:
-        usage(1, 'Bad local spec: "%s"' % localspec)
+        usage(1, 'Bad local spec: %s' % localspec)
     options.localhost = localspec[:i]
     try:
         options.localport = int(localspec[i+1:])
     except ValueError:
-        usage(1, 'Bad local port: "%s"' % localspec)
+        usage(1, 'Bad local port: %s' % localspec)
     i = remotespec.find(':')
     if i < 0:
-        usage(1, 'Bad remote spec: "%s"' % remotespec)
+        usage(1, 'Bad remote spec: %s' % remotespec)
     options.remotehost = remotespec[:i]
     try:
         options.remoteport = int(remotespec[i+1:])
     except ValueError:
-        usage(1, 'Bad remote port: "%s"' % remotespec)
+        usage(1, 'Bad remote port: %s' % remotespec)
     return options
 
 
-
+
 if __name__ == '__main__':
     options = parseargs()
     # Become nobody
