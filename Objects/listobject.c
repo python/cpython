@@ -19,9 +19,8 @@ list_resize(PyListObject *self, int newsize)
 	   current size, then proceed with the realloc() to shrink the list.
 	*/
 
-	if (self->allocated >= newsize &&
-	    self->ob_size < newsize + 16 &&
-	    self->ob_item != NULL) {
+	if (self->allocated >= newsize && self->ob_size < newsize + 16) {
+		assert(self->ob_item != NULL || newsize == 0);
 		self->ob_size = newsize;
 		return 0;
 	}
@@ -2314,6 +2313,11 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "|O:list", kwlist, &arg))
 		return -1;
+
+	/* Verify list invariants established by PyType_GenericAlloc() */
+	assert(0 <= self->ob_size  &&  self->ob_size <= self->allocated);
+	assert(self->ob_item != NULL  ||  self->allocated == 0);
+
 	/* Empty previous contents */
 	if (self->ob_item != NULL) {
 		(void)list_clear(self);
