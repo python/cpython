@@ -12,9 +12,9 @@
 /* #define USE_GUSI2		/* Stdio implemented with GUSI 2 */
 /* # define USE_GUSI1	/* Stdio implemented with GUSI 1 */
 #define USE_MSL			/* Use Mw Standard Library (as opposed to Plaugher C libraries) */
-/* #define USE_TOOLBOX		/* Include toolbox modules in core Python */
-#define USE_CORE_TOOLBOX		/* Include minimal set of toolbox modules in core Python */
-/* #define USE_QT			/* Include quicktime modules in core Python */
+#define USE_TOOLBOX		/* Include toolbox modules in core Python */
+/* #define USE_CORE_TOOLBOX		/* Include minimal set of toolbox modules in core Python */
+#define USE_QT			/* Include quicktime modules in core Python */
 /* #define USE_WASTE		/* Include waste module in core Python */
 /* #define USE_MACSPEECH		/* Include macspeech module in core Python */
 /* #define USE_IMG	       	/* Include img modules in core Python */
@@ -29,6 +29,7 @@
 /* #define USE_MALLOC_DEBUG			/* Enable range checking and other malloc debugging */
 /* #define USE_GDBM		/* Include the gdbm module */
 /* #define USE_ZLIB		/* Include the zlib module */
+#define USE_UCNHASH		/* Include ucnhash module */
 #define USE_APPEARANCE	/* Enable Appearance support */
 #define USE_MSL_MALLOC	/* Use MSL malloc(), not our own. */
 #ifdef __powerc
