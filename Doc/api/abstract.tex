@@ -876,7 +876,7 @@ else {
   Returns a pointer to a read-only memory location useable as character-
   based input.  The \var{obj} argument must support the single-segment
   character buffer interface.  On success, returns \code{1}, sets
-  \var{buffer} to the memory location and \var{buffer} to the buffer
+  \var{buffer} to the memory location and \var{buffer_len} to the buffer
   length.  Returns \code{0} and sets a \exception{TypeError} on error.
   \versionadded{1.6}
 \end{cfuncdesc}
@@ -887,7 +887,7 @@ else {
   Returns a pointer to a read-only memory location containing
   arbitrary data.  The \var{obj} argument must support the
   single-segment readable buffer interface.  On success, returns
-  \code{1}, sets \var{buffer} to the memory location and \var{buffer}
+  \code{1}, sets \var{buffer} to the memory location and \var{buffer_len}
   to the buffer length.  Returns \code{0} and sets a
   \exception{TypeError} on error.
   \versionadded{1.6}
@@ -905,7 +905,7 @@ else {
   Returns a pointer to a writeable memory location.  The \var{obj}
   argument must support the single-segment, character buffer
   interface.  On success, returns \code{1}, sets \var{buffer} to the
-  memory location and \var{buffer} to the buffer length.  Returns
+  memory location and \var{buffer_len} to the buffer length.  Returns
   \code{0} and sets a \exception{TypeError} on error.
   \versionadded{1.6}
 \end{cfuncdesc}
