@@ -417,6 +417,10 @@ SOURCE=..\Modules\selectmodule.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Modules\shamodule.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\Modules\signalmodule.c
 # End Source File
 # Begin Source File
