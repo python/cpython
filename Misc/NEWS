@@ -126,6 +126,9 @@ Core
   faster now.  Thanks to Christian Tismer for pointing out the cause and
   the nature of an effective cure (last December! better late than never).
 
+- repr() is much faster for large containers (dict, list, tuple).
+
+
 Library
 
 - A new function fnmatch.filter to filter lists of file names was added.
