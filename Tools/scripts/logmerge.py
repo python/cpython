@@ -32,10 +32,13 @@ sep2 = '-'*28 + '\n'                    # revision separator
 def main():
     """Main program"""
     truncate_last = 0
-    opts, args = getopt.getopt(sys.argv[1:], "-t")
+    reverse = 0
+    opts, args = getopt.getopt(sys.argv[1:], "tr")
     for o, a in opts:
         if o == '-t':
             truncate_last = 1
+        elif o == '-r':
+            reverse = 1
     database = []
     while 1:
         chunk = read_chunk(sys.stdin)
@@ -46,7 +49,8 @@ def main():
             del records[-1]
         database[len(database):] = records
     database.sort()
-    database.reverse()
+    if not reverse:
+        database.reverse()
     format_output(database)
 
 def read_chunk(fp):
