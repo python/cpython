@@ -143,6 +143,79 @@
 			<Tool
 				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
 		</Configuration>
+		<Configuration
+			Name="ReleaseItanium|Win32"
+			OutputDirectory="./."
+			IntermediateDirectory=".\ia64-temp-release\pyexpat"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			ATLMinimizesCRunTimeLibraryUsage="FALSE">
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /USECL:MS_ITANIUM"
+				Optimization="2"
+				InlineFunctionExpansion="1"
+				AdditionalIncludeDirectories="{MSSDKPATH}\include\Win64\atl;{MSSDKPATH}\include\Win64\crt;{MSSDKPATH}\include\Win64\crt\sys;{MSSDKPATH}\include\Win64\mfc;..\Include,..\PC,..\Modules\expat"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE"
+				StringPooling="TRUE"
+				BasicRuntimeChecks="0"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="FALSE"
+				EnableFunctionLevelLinking="TRUE"
+				UsePrecompiledHeader="2"
+				PrecompiledHeaderFile=".\ia64-temp-release\pyexpat/pyexpat.pch"
+				AssemblerListingLocation=".\ia64-temp-release\pyexpat/"
+				ObjectFile=".\ia64-temp-release\pyexpat/"
+				ProgramDataBaseFileName=".\ia64-temp-release\pyexpat/"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"
+				CompileAs="0"/>
+			<Tool
+				Name="VCCustomBuildTool"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /MACHINE:IA64 /USELINK:MS_SDK"
+				AdditionalDependencies="odbc32.lib odbccp32.lib"
+				OutputFile="./pyexpat.pyd"
+				LinkIncremental="1"
+				SuppressStartupBanner="TRUE"
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile=".\./pyexpat.pdb"
+				SubSystem="2"
+				BaseAddress="0x1D100000"
+				ImportLibrary=".\./pyexpat.lib"
+				TargetMachine="0"/>
+			<Tool
+				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="TRUE"
+				SuppressStartupBanner="TRUE"
+				TargetEnvironment="1"
+				TypeLibraryName=".\./pyexpat.tlb"
+				HeaderFileName=""/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+			<Tool
+				Name="VCManagedWrapperGeneratorTool"/>
+			<Tool
+				Name="VCAuxiliaryManagedWrapperGeneratorTool"/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>
@@ -159,6 +232,14 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
 					Optimization="2"
@@ -184,6 +265,14 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
 			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\Modules\expat\xmlrole.c">
@@ -203,6 +292,14 @@
 					AdditionalIncludeDirectories=""
 					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
 			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\Modules\expat\xmltok.c">
@@ -216,6 +313,14 @@
 			</FileConfiguration>
 			<FileConfiguration
 				Name="Release|Win32">
+				<Tool
+					Name="VCCLCompilerTool"
+					Optimization="2"
+					AdditionalIncludeDirectories=""
+					PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;XML_NS;XML_DTD;BYTEORDER=1234;XML_CONTEXT_BYTES=1024;XML_STATIC;HAVE_MEMMOVE;$(NoInherit)"/>
+			</FileConfiguration>
+			<FileConfiguration
+				Name="ReleaseItanium|Win32">
 				<Tool
 					Name="VCCLCompilerTool"
 					Optimization="2"
