@@ -67,7 +67,7 @@ static char cStringIO_module_documentation[] =
 "  an_output_stream=StringIO()\n"
 "  an_output_stream.write(some_stuff)\n"
 "  ...\n"
-"  value=an_output_stream.getvalue() # str(an_output_stream) works too!\n"
+"  value=an_output_stream.getvalue()\n"
 "\n"
 "  an_input_stream=StringIO(a_string)\n"
 "  spam=an_input_stream.readline()\n"
