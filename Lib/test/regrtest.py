@@ -543,6 +543,9 @@ def printlist(x, width=70, indent=4):
 #     test_socket_ssl
 #         Controlled by test_socket_ssl.skip_expected.  Requires the network
 #         resource, and a socket module with ssl support.
+#     test_timeout
+#         Controlled by test_timeout.skip_expected.  Requires the network
+#         resource and a socket module.
 
 _expectations = {
     'win32':
@@ -945,6 +948,7 @@ class _ExpectedSkips:
         import os.path
         from test import test_normalization
         from test import test_socket_ssl
+        from test import test_timeout
 
         self.valid = False
         if sys.platform in _expectations:
@@ -959,6 +963,9 @@ class _ExpectedSkips:
 
             if test_socket_ssl.skip_expected:
                 self.expected.add('test_socket_ssl')
+
+            if test_timeout.skip_expected:
+                self.expected.add('test_timeout')
 
             if not sys.platform in ("mac", "darwin"):
                 self.expected.add("test_macostools")

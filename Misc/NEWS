@@ -57,7 +57,8 @@ TBD
 Tests
 -----
 
-TBD
+- test_timeout now requires -u network to be passed to regrtest to run.
+  See SF bug #692988.
 
 Windows
 -------

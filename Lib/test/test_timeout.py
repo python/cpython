@@ -3,6 +3,9 @@
 import unittest
 from test import test_support
 
+# This requires the 'network' resource as given on the regrtest command line.
+skip_expected = not test_support.is_resource_enabled('network')
+
 import time
 import socket
 
@@ -182,6 +185,8 @@ class TimeoutTestCase(unittest.TestCase):
 
 
 def test_main():
+    test_support.requires('network')
+
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(CreationTestCase))
     suite.addTest(unittest.makeSuite(TimeoutTestCase))
