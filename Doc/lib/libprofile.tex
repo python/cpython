@@ -665,6 +665,8 @@ constant :-).
 
 \subsection{OldProfile Class \label{profile-old}}
 
+\deprecated{2.1.2}{This class will be removed in Python 2.2.}
+
 The following derived profiler simulates the old style profiler,
 providing errant results on recursive functions. The reason for the
 usefulness of this profiler is that it runs faster (i.e., less
@@ -726,6 +728,8 @@ class OldProfile(Profile):
 \end{verbatim}
 
 \subsection{HotProfile Class \label{profile-HotProfile}}
+
+\deprecated{2.1.2}{This class will be removed in Python 2.2.}
 
 This profiler is the fastest derived profile example.  It does not
 calculate caller-callee relationships, and does not calculate
