@@ -40,13 +40,18 @@ Encode the contents of the \var{input} file and write the resulting
 base64 encoded data to the \var{output} file.
 \var{input} and \var{output} must either be file objects or objects that
 mimic the file object interface. \var{input} will be read until
-\code{\var{input}.read()} returns an empty string.
+\code{\var{input}.read()} returns an empty string.  If the last input
+character is not a newline (\code{'\e n'}), a newline will be added to
+the input data.
 \end{funcdesc}
 
 \begin{funcdesc}{encodestring}{s}
 Encode the string \var{s}, which can contain arbitrary binary data,
 and return a string containing one or more lines of
-base64 encoded data.
+base64-encoded data.  If the last character of \var{s} is not a
+newline (\code{'\e n'}), a newline will be added.  This causes
+\code{encodestring('hello!')} to return the same value as
+\code{encodestring('hello!\e n')}.
 \end{funcdesc}
 
 
