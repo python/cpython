@@ -743,7 +743,7 @@ marshal_loads(self, args)
 	PyObject *v;
 	char *s;
 	int n;
-	if (!PyArg_Parse(args, "r#", &s, &n))
+	if (!PyArg_Parse(args, "s#", &s, &n))
 		return NULL;
 	rf.fp = NULL;
 	rf.str = args;
