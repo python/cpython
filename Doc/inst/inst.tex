@@ -41,7 +41,14 @@
 %Abstract this!
 %\end{abstract}
 
+
+% The ugly "%begin{latexonly}" pseudo-environment supresses the table
+% of contents for HTML generation.
+%
+%begin{latexonly}
 \tableofcontents
+%end{latexonly}
+
 
 \section{Introduction}
 \label{intro}
@@ -113,6 +120,7 @@ will unpack into a similarly-named directory: \file{foo-1.0} or
 setup script \file{setup.py}, and a \file{README.txt} (or possibly
 \file{README}), which should explain that building and installing the
 module distribution is a simple matter of running
+
 \begin{verbatim}
 python setup.py install
 \end{verbatim}
@@ -162,9 +170,11 @@ section~\ref{pre-distutils}.
 
 As described in section~\ref{new-standard}, building and installing
 a module distribution using the Distutils is usually one simple command:
+
 \begin{verbatim}
 python setup.py install
 \end{verbatim}
+
 On \UNIX, you'd run this command from a shell prompt; on Windows, you
 have to open a command prompt window (``DOS box'') and do it there; on
 MacOS, things are a tad more complicated (see below).
@@ -178,6 +188,7 @@ directory, i.e. the top-level subdirectory that the module source
 distribution unpacks into.  For example, if you've just downloaded a
 module source distribution \file{foo-1.0.tar.gz} onto a
 \UNIX{} system, the normal thing to do is:
+
 \begin{verbatim}
 gunzip -c foo-1.0.tar.gz | tar xf -    # unpacks into directory foo-1.0
 cd foo-1.0
@@ -191,6 +202,7 @@ you can use either a GUI archive manipulator (such as WinZip) or a
 command-line tool (such as \program{unzip} or \program{pkunzip}) to
 unpack the archive.  Then, open a command prompt window (``DOS box''),
 and run:
+
 \begin{verbatim}
 cd c:\Temp\foo-1.0
 python setup.py install
@@ -230,10 +242,12 @@ yourself, with super-user privileges).
 
 For example, you can build everything in one step, and then install
 everything in a second step, by invoking the setup script twice:
+
 \begin{verbatim}
 python setup.py build
 python setup.py install
 \end{verbatim}
+
 (If you do this, you will notice that running the \command{install}
 command first runs the \command{build} command, which---in this
 case---quickly notices that it has nothing to do, since everything in
@@ -255,20 +269,24 @@ the files to install into a \emph{build directory}.  By default, this is
 concerned with speed, or want to keep the source tree pristine, you can
 change the build directory with the \longprogramopt{build-base} option.
 For example:
+
 \begin{verbatim}
 python setup.py build --build-base=/tmp/pybuild/foo-1.0
 \end{verbatim}
+
 (Or you could do this permanently with a directive in your system or
 personal Distutils configuration file; see
 section~\ref{config-files}.)  Normally, this isn't necessary.
 
 The default layout for the build tree is as follows:
+
 \begin{verbatim}
 --- build/ --- lib/
 or
 --- build/ --- lib.<plat>/
                temp.<plat>/
 \end{verbatim}
+
 where \code{<plat>} expands to a brief description of the current
 OS/hardware platform and Python version.  The first form, with just a
 \file{lib} directory, is used for ``pure module distributions''---that
@@ -406,8 +424,8 @@ build.  Things to talk about:
 \end{itemize}
 
 
-\subsection{Tweaking compiler/linker flags}
-\label{tweak-flags}
+%\subsection{Tweaking compiler/linker flags}
+%\label{tweak-flags}
 
 
 \subsection{Using non-Microsoft compilers on Windows}
@@ -450,12 +468,15 @@ convenient and commonly useful ``home scheme'' first.
 The idea behind the ``home scheme'' is that you build and maintain a
 personal stash of Python modules, probably under your home directory.
 Installing a new module distribution is as simple as
+
 \begin{verbatim}
 python setup.py install --home=<dir>
 \end{verbatim}
+
 where you can supply any directory you like for the \longprogramopt{home}
 option.  Lazy typists can just type a tilde (\code{\textasciitilde}); the
 \command{install} command will expand this to your home directory:
+
 \begin{verbatim}
 python setup.py install --home=~
 \end{verbatim}
@@ -486,6 +507,7 @@ rather than a local add-on.  However, if you are installing Python
 modules from source, you probably want them to go in
 \file{/usr/local/lib/python1.\filevar{X}} rather than
 \file{/usr/lib/python1.\filevar{X}}.  This can be done with
+
 \begin{verbatim}
 /usr/bin/python setup.py install --prefix=/usr/local
 \end{verbatim}
@@ -497,6 +519,7 @@ might search for modules in \file{/usr/local/lib/python1.\filevar{X}},
 but those modules would have to be installed to, say,
 \file{/mnt/\filevar{@server}/export/lib/python1.\filevar{X}}.  This
 could be done with
+
 \begin{verbatim}
 /usr/local/bin/python setup.py install --prefix=/mnt/@server/export
 \end{verbatim}
@@ -548,9 +571,11 @@ the standard Python installation under Windows is simpler than that
 under \UNIX, there's no point in having separate \longprogramopt{prefix}
 and \longprogramopt{home} options.  Just use the \longprogramopt{prefix}
 option to specify a base directory, e.g.
+
 \begin{verbatim}
 python setup.py install --prefix="\Temp\Python"
 \end{verbatim}
+
 to install modules to the \file{\textbackslash{}Temp} directory on the current
 drive.
 
@@ -606,6 +631,7 @@ As you might expect, you can override this directory with the
 \longprogramopt{install-scripts} option; in this case, it makes most
 sense to supply a relative path, which will be interpreted relative to
 the installation base directory (your home directory, in this case):
+
 \begin{verbatim}
 python setup.py install --home=~ --install-scripts=scripts
 \end{verbatim}
@@ -615,9 +641,11 @@ installed with a prefix of \file{/usr/local/python}, so under a standard
 installation scripts will wind up in \file{/usr/local/python/bin}.  If
 you want them in \file{/usr/local/bin} instead, you would supply this
 absolute directory for the \longprogramopt{install-scripts} option:
+
 \begin{verbatim}
 python setup.py install --install-scripts=/usr/local/bin
 \end{verbatim}
+
 (This performs an installation using the ``prefix scheme,'' where the
 prefix is whatever your Python interpreter was installed with---
 \file{/usr/local/python} in this case.)
@@ -628,9 +656,11 @@ live in a subdirectory of \filevar{prefix}, rather than right in
 script installation directory---you just have to remember that there are
 two types of modules to worry about, pure modules and non-pure modules
 (i.e., modules from a non-pure distribution).  For example:
+
 \begin{verbatim}
 python setup.py install --install-purelib=Site --install-platlib=Site
 \end{verbatim}
+
 The specified installation directories are relative to \filevar{prefix}.
 Of course, you also have to ensure that these directories are in
 Python's module search path, e.g. by putting a \file{.pth} file in
@@ -644,6 +674,7 @@ maintain all Python module-related files under \file{python} in your
 home directory, and you want a separate directory for each platform that
 you use your home directory from, you might define the following
 installation scheme:
+
 \begin{verbatim}
 python setup.py install --home=~ \
                         --install-purelib=python/lib \
@@ -651,7 +682,10 @@ python setup.py install --home=~ \
                         --install-scripts=python/scripts
                         --install-data=python/data
 \end{verbatim}
+% $ % -- bow to font-lock
+
 or, equivalently,
+
 \begin{verbatim}
 python setup.py install --home=~/python \
                         --install-purelib=lib \
@@ -659,6 +693,8 @@ python setup.py install --home=~/python \
                         --install-scripts=scripts
                         --install-data=data
 \end{verbatim}
+% $ % -- bow to font-lock
+
 \code{\$PLAT} is not (necessarily) an environment variable---it will be
 expanded by the Distutils as it parses your command line options (just
 as it does when parsing your configuration file(s)).
@@ -667,6 +703,7 @@ Obviously, specifying the entire installation scheme every time you
 install a new module distribution would be very tedious.  Thus, you can
 put these options into your Distutils config file (see
 section~\ref{config-files}):
+
 \begin{verbatim}
 [install]
 install-base=$HOME
@@ -675,7 +712,9 @@ install-platlib=python/lib.$PLAT
 install-scripts=python/scripts
 install-data=python/data
 \end{verbatim}
+
 or, equivalently,
+
 \begin{verbatim}
 [install]
 install-base=$HOME/python
@@ -684,11 +723,14 @@ install-platlib=lib.$PLAT
 install-scripts=scripts
 install-data=data
 \end{verbatim}
+
 Note that these two are \emph{not} equivalent if you supply a different
 installation base directory when you run the setup script.  For example,
+
 \begin{verbatim}
 python setup.py --install-base=/tmp
 \end{verbatim}
+
 would install pure modules to \filevar{/tmp/python/lib} in the first
 case, and to \filevar{/tmp/lib} in the second case.  (For the second
 case, you probably want to supply an installation base of
@@ -797,6 +839,7 @@ like \code{option=value}.
 
 For example, the following is a complete config file that just forces
 all commands to run quietly by default:
+
 \begin{verbatim}
 [global]
 verbose=0
@@ -812,15 +855,19 @@ module distribution, it affects only that distribution.
 You could override the default ``build base'' directory and make the
 \command{build*} commands always forcibly rebuild all files with the
 following:
+
 \begin{verbatim}
 [build]
 build-base=blib
 force=1
 \end{verbatim}
+
 which corresponds to the command-line arguments
+
 \begin{verbatim}
 python setup.py build --build-base=blib --force
 \end{verbatim}
+
 except that including the \command{build} command on the command-line
 means that command will be run.  Including a particular command in
 config files has no such implication; it only means that if the command
@@ -830,29 +877,32 @@ the config file.)
 
 You can find out the complete list of options for any command using the
 \longprogramopt{help} option, e.g.:
+
 \begin{verbatim}
 python setup.py build --help
 \end{verbatim}
+
 and you can find out the complete list of global options by using
 \longprogramopt{help} without a command:
+
 \begin{verbatim}
 python setup.py --help
 \end{verbatim}
+
 See also the ``Reference'' section of the ``Distributing Python
 Modules'' manual.
 
 
-\section{Pre-Distutils Conventions}
-\label{pre-distutils}
+%\section{Pre-Distutils Conventions}
+%\label{pre-distutils}
 
 
-\subsection{The Makefile.pre.in file}
-\label{makefile-pre-in}
+%\subsection{The Makefile.pre.in file}
+%\label{makefile-pre-in}
 
 
-\subsection{Installing modules manually}
-\label{manual-install}
-
+%\subsection{Installing modules manually}
+%\label{manual-install}
 
 
 \end{document}
