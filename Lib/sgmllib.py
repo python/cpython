@@ -30,12 +30,12 @@ endtagopen = re.compile('</[<>a-zA-Z]')
 endbracket = re.compile('[<>]')
 special = re.compile('<![^<>]*>')
 commentopen = re.compile('<!--')
-commentclose = re.compile('--[ \t\n]*>')
+commentclose = re.compile('--[%s]*>' % string.whitespace)
 tagfind = re.compile('[a-zA-Z][a-zA-Z0-9]*')
 attrfind = re.compile(
-    '[ \t\n]+([a-zA-Z_][-.a-zA-Z_0-9]*)'
-    '([ \t\n]*=[ \t\n]*'
-    r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:+*%?!\(\)_#=~]*))?')
+    '[ \t\n\r]+([a-zA-Z_][-.a-zA-Z_0-9]*)'
+    + ('([%s]*=[%s]*' % (string.whitespace, string.whitespace))
+    + r'(\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9./:+*%?!\(\)_#=~]*))?')
 
 
 # SGML parser base class -- find tags and call handler functions.
