@@ -111,8 +111,8 @@ Merge (args)
 
       if (PyTuple_Size (args) > ARGSZ)
 	{
-	  argv = malloc (PyTuple_Size (args) * sizeof (char *));
-	  fv = malloc (PyTuple_Size (args) * sizeof (int));
+	  argv = (char **) malloc (PyTuple_Size (args) * sizeof (char *));
+	  fv = (int *) malloc (PyTuple_Size (args) * sizeof (int));
 	  if (argv == NULL || fv == NULL)
 	    PyErr_NoMemory ();
 	}
