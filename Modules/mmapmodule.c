@@ -752,12 +752,8 @@ new_mmap_object (PyObject * self, PyObject * args)
 		    PyErr_SetFromErrno(mmap_module_error);
 		    return NULL;
 		}
-//
-//		fh = OpenFile (filename, &file_info, OF_READWRITE);
-//		if (fh == HFILE_ERROR) {
-//			PyErr_SetFromWindowsErr(GetLastError());
-//			return NULL;
-//		}
+		/* Win9x appears to need us seeked to zero */
+		fseek(&_iob[fileno], 0, SEEK_SET);
 	}
 
 	m_obj = PyObject_NEW (mmap_object, &mmap_object_type);
