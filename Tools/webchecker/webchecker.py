@@ -59,12 +59,13 @@ by the robots.txt file are reported as external URLs.
 skipped.  The size limit can be set with the -m option.
 
 - Before fetching a page, it guesses its type based on its extension.
-If it is a known extension and the type is not text/http, the page is
+If it is a known extension and the type is not text/html, the page is
 not fetched.  This is a huge optimization but occasionally it means
-links can be missed.  The mimetypes.py module (also in this directory)
-has a built-in table mapping most currently known suffixes, and in
-addition attempts to read the mime.types configuration files in the
-default locations of Netscape and the NCSA HTTP daemon.
+links can be missed, and such links aren't checked for validity
+(XXX!).  The mimetypes.py module (also in this directory) has a
+built-in table mapping most currently known suffixes, and in addition
+attempts to read the mime.types configuration files in the default
+locations of Netscape and the NCSA HTTP daemon.
 
 - It only follows links indicated by <A> tags.  It doesn't follow
 links in <FORM> or <IMG> or whatever other tags might contain
@@ -83,6 +84,7 @@ Options:
 -R        -- restart from checkpoint file
 -d file   -- checkpoint filename (default %(DUMPFILE)s)
 -m bytes  -- skip HTML pages larger than this size (default %(MAXPAGE)d)
+-n        -- reports only, no checking (use with -R)
 -q        -- quiet operation (also suppresses external links report)
 -r number -- number of links processed per round (default %(ROUNDSIZE)d)
 -v        -- verbose operation; repeating -v will increase verbosity
@@ -95,7 +97,10 @@ rooturl   -- URL to start checking
 
 """
 
-__version__ = "0.2"
+# ' Emacs bait
+
+
+__version__ = "0.3"
 
 
 import sys
@@ -108,8 +113,7 @@ import pickle
 
 import urllib
 import urlparse
-import htmllib
-import formatter
+import sgmllib
 
 import mimetypes
 import robotparser
@@ -134,9 +138,10 @@ def main():
     dumpfile = DUMPFILE
     restart = 0
     checkext = 0
+    norun = 0
 
     try:
-	opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:qr:vx')
+	opts, args = getopt.getopt(sys.argv[1:], 'Rd:m:nqr:vx')
     except getopt.error, msg:
 	sys.stdout = sys.stderr
 	print msg
@@ -148,6 +153,8 @@ def main():
 	    dumpfile = a
 	if o == '-m':
 	    maxpage = string.atoi(a)
+	if o == '-n':
+	    norun = 1
 	if o == '-q':
 	    verbose = 0
 	if o == '-r':
@@ -157,7 +164,7 @@ def main():
 	if o == '-x':
 	    checkext = 1
 
-    if verbose:
+    if verbose > 0:
 	print AGENTNAME, "version", __version__
 
     if restart:
@@ -177,32 +184,33 @@ def main():
     for arg in args:
 	c.addroot(arg)
 
-    if not c.todo:
-	needsave = 0
-    else:
-	needsave = 1
-    try:
-	c.run()
-    except KeyboardInterrupt:
-	if verbose > 0:
-	    print "[run interrupted]"
+    if not norun:
+	try:
+	    c.run()
+	except KeyboardInterrupt:
+	    if verbose > 0:
+		print "[run interrupted]"
+
     try:
 	c.report(checkext)
     except KeyboardInterrupt:
 	if verbose > 0:
 	    print "[report interrupted]"
-    if not needsave:
+
+    if not c.changed:
 	if verbose > 0:
 	    print
 	    print "No need to save checkpoint"
-    elif dumpfile:
+    elif not dumpfile:
+	if verbose > 0:
+	    print "No dumpfile, won't save checkpoint"
+    else:
 	if verbose > 0:
 	    print
 	    print "Saving checkpoint to %s ..." % dumpfile
 	newfile = dumpfile + ".new"
 	f = open(newfile, "wb")
 	pickle.dump(c, f)
-	f.flush()
 	f.close()
 	try:
 	    os.unlink(dumpfile)
@@ -226,9 +234,11 @@ class Checker:
 	self.done = {}
 	self.ext = {}
 	self.bad = {}
-	self.urlopener = MyURLopener()
 	self.round = 0
+	# The following are not pickled:
 	self.robots = {}
+	self.urlopener = MyURLopener()
+	self.changed = 0
 
     def __getstate__(self):
 	return (self.roots, self.todo, self.done,
@@ -243,15 +253,15 @@ class Checker:
     def addroot(self, root):
 	if root not in self.roots:
 	    self.roots.append(root)
-	    self.todo[root] = []
 	    self.addrobot(root)
+	    self.newintlink(root, ("<root>", root))
 
     def addrobot(self, root):
 	url = urlparse.urljoin(root, "/robots.txt")
 	self.robots[root] = rp = robotparser.RobotFileParser()
 	if verbose > 2:
 	    print "Parsing", url
-	    rp.debug = 1
+	    rp.debug = verbose > 3
 	rp.set_url(url)
 	try:
 	    rp.read()
@@ -264,24 +274,23 @@ class Checker:
 	    self.round = self.round + 1
 	    if verbose > 0:
 		print
-		print "Round", self.round,
-		print "(%d to do, %d done, %d external, %d bad)" % (
-		    len(self.todo), len(self.done),
-		    len(self.ext), len(self.bad))
-		print
+		print "Round", self.round, self.status()
+		print 
 	    urls = self.todo.keys()[:roundsize]
 	    for url in urls:
 		self.dopage(url)
-		self.done[url] = self.todo[url]
-		del self.todo[url]
+
+    def status(self):
+	return "(%d total, %d to do, %d done, %d external, %d bad)" % (
+	    len(self.todo)+len(self.done),
+	    len(self.todo), len(self.done),
+	    len(self.ext), len(self.bad))
 
     def report(self, checkext=0):
 	print
 	if not self.todo: print "Final",
 	else: print "Interim",
-	print "Report (%d to do, %d done, %d external, %d bad)" % (
-	    len(self.todo), len(self.done),
-	    len(self.ext), len(self.bad))
+	print "Report", self.status()
 	if verbose > 0 or checkext:
 	    self.report_extrefs(checkext)
 	# Report errors last because the output may get truncated
@@ -313,12 +322,14 @@ class Checker:
 	    if verbose > 2: print "Checking", url, "..."
 	    try:
 		f = self.urlopener.open(url)
-		f.close()
+		safeclose(f)
 		if verbose > 3: print "OK"
+		if self.bad.has_key(url):
+		    self.setgood(url)
 	    except IOError, msg:
 		msg = sanitize(msg)
 		if verbose > 0: print "Error", msg
-		self.bad[url] = msg
+		self.setbad(url, msg)
 
     def report_errors(self):
 	if not self.bad:
@@ -366,36 +377,51 @@ class Checker:
 	    else:
 		print "Page  ", url
 	page = self.getpage(url)
-	if not page:
-	    return
-	for info in page.getlinkinfos():
-	    link, rawlink = info
-	    origin = url, rawlink
-	    if not self.inroots(link):
-		try:
-		    self.ext[link].append(origin)
-		    if verbose > 3:
-			print "  New ext link", link,
-			if link != rawlink: print "(%s)" % rawlink,
-			print
-		except KeyError:
-		    if verbose > 3:
-			print "  Seen ext link", link,
-			if link != rawlink: print "(%s)" % rawlink,
-			print
-		    self.ext[link] = [origin]
-	    elif self.done.has_key(link):
-		if verbose > 3:
-		    print "  Done link", link
-		self.done[link].append(origin)
-	    elif self.todo.has_key(link):
-		if verbose > 3:
-		    print "  Seen todo link", link
-		self.todo[link].append(origin)
-	    else:
-		if verbose > 3:
-		    print "  New todo link", link
-		self.todo[link] = [origin]
+	if page:
+	    for info in page.getlinkinfos():
+		link, rawlink = info
+		origin = url, rawlink
+		if not self.inroots(link):
+		    self.newextlink(link, origin)
+		else:
+		    self.newintlink(link, origin)
+	self.markdone(url)
+
+    def newextlink(self, url, origin):
+	try:
+	    self.ext[url].append(origin)
+	    if verbose > 3:
+		print "  New ext link", url
+	except KeyError:
+	    self.ext[url] = [origin]
+	    if verbose > 3:
+		print "  Seen ext link", url
+
+    def newintlink(self, url, origin):
+	if self.done.has_key(url):
+	    self.newdonelink(url, origin)
+	else:
+	    self.newtodolink(url, origin)
+
+    def newdonelink(self, url, origin):
+	self.done[url].append(origin)
+	if verbose > 3:
+	    print "  Done link", url
+
+    def newtodolink(self, url, origin):
+	if self.todo.has_key(url):
+	    self.todo[url].append(origin)
+	    if verbose > 3:
+		print "  Seen todo link", url
+	else:
+	    self.todo[url] = [origin]
+	    if verbose > 3:
+		print "  New todo link", url
+
+    def markdone(self, url):
+	self.done[url] = self.todo[url]
+	del self.todo[url]
+	self.changed = 1
 
     def inroots(self, url):
 	for root in self.roots:
@@ -404,15 +430,6 @@ class Checker:
 	return 0
 
     def getpage(self, url):
-	ctype, encoding = mimetypes.guess_type(url)
-	if encoding:
-	    if verbose > 2:
-		print "  Won't bother, URL suggests encoding %s" % `encoding`
-	    return None
-	if ctype and ctype != 'text/html':
-	    if verbose > 2:
-		print "  Won't bother, URL suggests mime type %s" % `ctype`
-	    return None
 	try:
 	    f = self.urlopener.open(url)
 	except IOError, msg:
@@ -421,25 +438,42 @@ class Checker:
 		print "Error ", msg
 	    if verbose > 0:
 		show(" HREF ", url, "  from", self.todo[url])
-	    self.bad[url] = msg
+	    self.setbad(url, msg)
 	    return None
 	nurl = f.geturl()
 	info = f.info()
 	if info.has_key('content-type'):
 	    ctype = string.lower(info['content-type'])
+	else:
+	    ctype = None
 	if nurl != url:
 	    if verbose > 1:
 		print " Redirected to", nurl
-	    if not ctype:
-		ctype, encoding = mimetypes.guess_type(nurl)
+	if not ctype:
+	    ctype, encoding = mimetypes.guess_type(nurl)
 	if ctype != 'text/html':
-	    f.close()
-	    if verbose > 2:
-		print "  Not HTML, mime type", ctype
+	    safeclose(f)
+	    if verbose > 1:
+		print " Not HTML, mime type", ctype
 	    return None
 	text = f.read()
 	f.close()
 	return Page(text, nurl)
+
+    def setgood(self, url):
+	if self.bad.has_key(url):
+	    del self.bad[url]
+	    self.changed = 1
+	    if verbose > 0:
+		print "(Clear previously seen error)"
+
+    def setbad(self, url, msg):
+	if self.bad.has_key(url) and self.bad[url] == msg:
+	    if verbose > 0:
+		print "(Seen this error before)"
+	    return
+	self.bad[url] = msg
+	self.changed = 1
 
 
 class Page:
@@ -457,7 +491,7 @@ class Page:
 	    return []
 	if verbose > 2:
 	    print "  Parsing", self.url, "(%d bytes)" % size
-	parser = MyHTMLParser(formatter.NullFormatter())
+	parser = MyHTMLParser()
 	parser.feed(self.text)
 	parser.close()
 	rawlinks = parser.getlinks()
@@ -519,28 +553,32 @@ class MyURLopener(urllib.FancyURLopener):
 	return urllib.FancyURLopener.open_file(self, path)
 
 
-class MyHTMLParser(htmllib.HTMLParser):
+class MyHTMLParser(sgmllib.SGMLParser):
 
-    def __init__(*args):
-	self = args[0]
+    def __init__(self):
 	self.base = None
-	self.links = []
-	apply(htmllib.HTMLParser.__init__, args)
+	self.links = {}
+	sgmllib.SGMLParser.__init__ (self)
 
     def start_a(self, attributes):
 	for name, value in attributes:
-	    if name == 'href' and value and value not in self.links:
-		self.links.append(string.strip(value))
+	    if name == 'href':
+		if value: value = string.strip(value)
+		if value: self.links[value] = None
+		return	# match only first href
 
     def do_base(self, attributes):
 	for name, value in attributes:
-	    if name == 'href' and value:
-		if verbose > 1:
-		    print "  Base", value
-		self.base = value
+	    if name == 'href':
+		if value: value = string.strip(value)
+		if value:
+		    if verbose > 1:
+			print "  Base", value
+		    self.base = value
+		return	# match only first href
 
     def getlinks(self):
-	return self.links
+	return self.links.keys()
 
     def getbase(self):
 	return self.base
@@ -567,6 +605,15 @@ def sanitize(msg):
 	# a file object which prevents pickling.
 	msg = msg[:3] + msg[4:]
     return msg
+
+
+def safeclose(f):
+    url = f.geturl()
+    if url[:4] == 'ftp:' or url[:7] == 'file://':
+	# Apparently ftp connections don't like to be closed
+	# prematurely...
+	text = f.read()
+    f.close()
 
 
 if __name__ == '__main__':
