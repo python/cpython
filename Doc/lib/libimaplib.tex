@@ -177,11 +177,13 @@ An \class{IMAP4} instance has the following methods:
 \begin{methoddesc}{getquota}{root}
   Get the \samp{quota} \var{root}'s resource usage and limits.
   This method is part of the IMAP4 QUOTA extension defined in rfc2087.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{getquotaroot}{mailbox}
   Get the list of \samp{quota} \samp{roots} for the named \var{mailbox}.
   This method is part of the IMAP4 QUOTA extension defined in rfc2087.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{list}{\optional{directory\optional{, pattern}}}
@@ -286,6 +288,7 @@ msgnums = M.search(None, '(FROM "LDJ")')
 \begin{methoddesc}{setquota}{root, limits}
   Set the \samp{quota} \var{root}'s resource \var{limits}.
   This method is part of the IMAP4 QUOTA extension defined in rfc2087.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{shutdown}{}
