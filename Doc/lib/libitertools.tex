@@ -18,14 +18,14 @@ avoid the readability and reliability problems which arise when many
 different individuals create their own slightly varying implementations,
 each with their own quirks and naming conventions.
 
-The tools are designed to combine readily with each another.  This makes
+The tools are designed to combine readily with one another.  This makes
 it easy to construct more specialized tools succinctly and efficiently
 in pure Python.
 
-For instance, SML provides a tabulation tool: \code{tabulate(\var{f})}
+For instance, SML provides a tabulation tool: \code{tabulate(f)}
 which produces a sequence \code{f(0), f(1), ...}.  This toolbox
 provides \function{imap()} and \function{count()} which can be combined
-to form \code{imap(\var{f}, count())} and produce an equivalent result.
+to form \code{imap(f, count())} and produce an equivalent result.
 
 Whether cast in pure python form or C code, tools that use iterators
 are more memory efficient (and faster) than their list based counterparts.
@@ -75,10 +75,9 @@ by functions or loops that truncate the stream.
 
   \begin{verbatim}
      def count(n=0):
-         cnt = n
          while True:
-             yield cnt
-             cnt += 1
+             yield n
+             n += 1
   \end{verbatim}
 
   Note, \function{count()} does not check for overflow and will return
@@ -208,16 +207,16 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{repeat}{obj}
-  Make an iterator that returns \var{obj} over and over again.
+\begin{funcdesc}{repeat}{object}
+  Make an iterator that returns \var{object} over and over again.
   Used as argument to \function{imap()} for invariant parameters
-  to the called function.  Also used with function{izip()} to create
+  to the called function.  Also used with \function{izip()} to create
   an invariant part of a tuple record.  Equivalent to:
 
   \begin{verbatim}
-     def repeat(x):
+     def repeat(object):
          while True:
-             yield x
+             yield object
   \end{verbatim}
 \end{funcdesc}
 
@@ -226,7 +225,7 @@ by functions or loops that truncate the stream.
   obtained from the iterable.  Used instead of \function{imap()} when
   argument parameters are already grouped in tuples from a single iterable
   (the data has been ``pre-zipped'').  The difference between
-  \function{imap()} and \function{starmap} parallels the distinction
+  \function{imap()} and \function{starmap()} parallels the distinction
   between \code{function(a,b)} and \code{function(*c)}.
   Equivalent to:
 
