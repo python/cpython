@@ -1,9 +1,8 @@
 # Check that all ".pyc" files exist and are up-to-date
-# Uses module 'posix'
+# Uses module 'os'
 
 import sys
-import posix
-import path
+import os
 from stat import ST_MTIME
 
 def main():
@@ -24,8 +23,8 @@ def main():
 		print 'Using MAGIC word', `MAGIC`
 	for dirname in sys.path:
 		try:
-			names = posix.listdir(dirname)
-		except posix.error:
+			names = os.listdir(dirname)
+		except os.error:
 			print 'Cannot list directory', `dirname`
 			continue
 		if not silent:
@@ -33,10 +32,10 @@ def main():
 		names.sort()
 		for name in names:
 			if name[-3:] == '.py':
-				name = path.join(dirname, name)
+				name = os.path.join(dirname, name)
 				try:
-					st = posix.stat(name)
-				except posix.error:
+					st = os.stat(name)
+				except os.error:
 					print 'Cannot stat', `name`
 					continue
 				if verbose:

@@ -6,15 +6,15 @@
 #
 # Options -[amc] select atime, mtime (default) or ctime as age.
 
-import sys, posix, time
+import sys, os, time
 import string
 from stat import *
 
 # Use lstat() to stat files if it exists, else stat()
 try:
-	statfunc = posix.lstat
-except NameError:
-	statfunc = posix.stat
+	statfunc = os.lstat
+except AttributeError:
+	statfunc = os.stat
 
 # Parse options
 if sys.argv[1] == '-m':
@@ -42,7 +42,7 @@ for file in sys.argv[1:]:
 for file in sys.argv[1:]:
 	try:
 		st = statfunc(file)
-	except posix.error, msg:
+	except os.error, msg:
 		sys.stderr.write('can\'t stat ' + `file` + ': ' + `msg` + '\n')
 		status = 1
 		st = ()
