@@ -4,9 +4,14 @@
 
 \strong{Warning: This module is obsolete.}  As of Python 1.5a4,
 package support (with different semantics for \code{__init__} and no
-support for \code{__domain__} or\code{__}) is built in the
+support for \code{__domain__} or \code{__}) is built in the
 interpreter.  The ni module is retained only for backward
-compatibility.
+compatibility.  As of Python 1.5b2, it has been renamed to \code{ni1}; 
+if you really need it, you can use \code{import ni1}, but the
+recommended approach is to rely on the built-in package support,
+converting existing packages if needed.  Note that mixing \code{ni}
+and the built-in package support doesn't work once you import
+\code{ni}, all packages use it.
 
 The \code{ni} module defines a new importing scheme, which supports
 packages containing several Python modules.  To enable package
