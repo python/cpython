@@ -16,7 +16,10 @@ import sys
 import Res # For Res.Error
 import pythonprefs
 import EasyDialogs
-import Help
+try:
+	import Help
+except ImportError:
+	Help = None
 
 # resource IDs in our own resources (dialogs, etc)
 MESSAGE_ID = 256
@@ -76,6 +79,8 @@ def optinteract(options):
 	SetDialogItemText(htext, options['type'])
 	d.SetDialogDefaultItem(OD_OK_ITEM)
 	d.SetDialogCancelItem(OD_CANCEL_ITEM)
+	if not Help:
+		d.HideDialogItem(OD_HELP_ITEM)
 	while 1:
 		for name in opt_dialog_dict.keys():
 			num = opt_dialog_dict[name]
@@ -113,7 +118,7 @@ def optinteract(options):
 			options['keep_console'] = 2;
 		elif n == OD_KEEPNEVER_ITEM:
 			options['keep_console'] = 0;
-		elif n == OD_HELP_ITEM:
+		elif n == OD_HELP_ITEM and Help:
 			onoff = Help.HMGetBalloons()
 			Help.HMSetBalloons(not onoff)
 		elif 1 <= n <= len(opt_dialog_map):
@@ -138,6 +143,8 @@ def interact(options, title):
 	d.SelectDialogItemText(TEXT_ITEM, 0, 0)
 ##	d.SetDialogDefaultItem(OK_ITEM)
 	d.SetDialogCancelItem(CANCEL_ITEM)
+	if not Help:
+		d.HideDialogItem(HELP_ITEM)
 	d.GetDialogWindow().ShowWindow()
 	d.DrawDialog()
 	while 1:
@@ -152,7 +159,7 @@ def interact(options, title):
 			fss, ok = macfs.GetDirectory('Select python home folder:')
 			if ok:
 				options['dir'] = fss
-		elif n == HELP_ITEM:
+		elif n == HELP_ITEM and Help:
 			onoff = Help.HMGetBalloons()
 			Help.HMSetBalloons(not onoff)
 		if n == OPTIONS_ITEM:
