@@ -2527,7 +2527,7 @@ initsocket()
 	insint(d, "MSG_DONTROUTE", MSG_DONTROUTE);
 #endif
 #ifdef	MSG_DONTWAIT
-	insint(d, "MSG_DONWAIT", MSG_DONTWAIT);
+	insint(d, "MSG_DONTWAIT", MSG_DONTWAIT);
 #endif
 #ifdef	MSG_EOR
 	insint(d, "MSG_EOR", MSG_EOR);
