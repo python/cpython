@@ -30,10 +30,10 @@ try:
 except ImportError:
     maxint = 2147483647
 if maxint == 2147483647:
-    if -2147483647-1 != 020000000000: raise TestFailed, 'max negative int'
+    if -2147483647-1 != 020000000000L: raise TestFailed, 'max negative int'
     # XXX -2147483648
-    if 037777777777 != -1: raise TestFailed, 'oct -1'
-    if 0xffffffff != -1: raise TestFailed, 'hex -1'
+    if 037777777777L != -1: raise TestFailed, 'oct -1'
+    if 0xffffffffL != -1: raise TestFailed, 'hex -1'
     for s in '2147483648', '040000000000', '0x100000000':
         try:
             x = eval(s)
