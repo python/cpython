@@ -104,6 +104,56 @@ def initial_color(s, colordb):
 
 
 
+def build(master=None, initialcolor=None, initfile=None, ignore=None):
+    # create the windows and go
+    for f in RGB_TXT:
+	try:
+	    colordb = ColorDB.get_colordb(f)
+            if colordb:
+                break
+	except IOError:
+	    pass
+    else:
+        usage(1, 'No color database file found, see the -d option.')
+
+    # create all output widgets
+    s = Switchboard(colordb, not ignore and initfile)
+
+    # create the application window decorations
+    app = PyncheWidget(__version__, s, master=master)
+    w = app.window()
+
+    s.add_view(StripViewer(s, w))
+    s.add_view(ChipViewer(s, w))
+    s.add_view(TypeinViewer(s, w))
+
+    # get the initial color as components and set the color on all views.  if
+    # there was no initial color given on the command line, use the one that's 
+    # stored in the option database
+    if initialcolor is None:
+        optiondb = s.optiondb()
+        red = optiondb.get('RED')
+        green = optiondb.get('GREEN')
+        blue = optiondb.get('BLUE')
+        # but if there wasn't any stored in the database, use grey50
+        if red is None or blue is None or green is None:
+            red, green, blue = initial_color('grey50', colordb)
+    else:
+        red, green, blue = initial_color(initialcolor, colordb)
+    s.update_views(red, green, blue)
+    return app, s
+
+
+def run(app, s):
+    try:
+	app.start()
+    except KeyboardInterrupt:
+	pass
+    # save the option database
+    s.save_views()
+
+
+
 def main():
     try:
 	opts, args = getopt.getopt(
@@ -132,51 +182,7 @@ def main():
         elif opt in ('-i', '--initfile'):
             initfile = arg
 
-    # create the windows and go
-    for f in RGB_TXT:
-	try:
-	    colordb = ColorDB.get_colordb(f)
-            if colordb:
-                break
-	except IOError:
-	    pass
-    else:
-        usage(1, 'No color database file found, see the -d option.')
-
-    # create all output widgets
-    s = Switchboard(colordb, not ignore and initfile)
-
-    # create the application window decorations
-    app = PyncheWidget(__version__, s)
-    parent = app.parent()
-
-    s.add_view(StripViewer(s, parent))
-    s.add_view(ChipViewer(s, parent))
-    s.add_view(TypeinViewer(s, parent))
-
-    # get the initial color as components and set the color on all views.  if
-    # there was no initial color given on the command line, use the one that's 
-    # stored in the option database
-    if initialcolor is None:
-        optiondb = s.optiondb()
-        red = optiondb.get('RED')
-        green = optiondb.get('GREEN')
-        blue = optiondb.get('BLUE')
-        # but if there wasn't any stored in the database, use grey50
-        if red is None or blue is None or green is None:
-            red, green, blue = initial_color('grey50', colordb)
-    else:
-        red, green, blue = initial_color(initialcolor, colordb)
-    s.update_views(red, green, blue)
-
-    try:
-	app.start()
-    except KeyboardInterrupt:
-	pass
-
-    # save the option database
-    s.save_views(initfile)
-
+    run()
 
 
 if __name__ == '__main__':

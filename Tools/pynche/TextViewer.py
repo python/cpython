@@ -19,17 +19,17 @@ from Tkinter import *
 import ColorDB
 
 class TextViewer:
-    def __init__(self, switchboard, parent=None):
+    def __init__(self, switchboard, master=None):
         self.__sb = switchboard
         optiondb = switchboard.optiondb()
-        root = self.__root = Toplevel(parent, class_='Pynche')
-        root.protocol('WM_DELETE_WINDOW', self.__withdraw)
+        root = self.__root = Toplevel(master, class_='Pynche')
+        root.protocol('WM_DELETE_WINDOW', self.withdraw)
         root.title('Pynche Text Window')
         root.iconname('Pynche Text Window')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
-        root.bind('<Alt-w>', self.__withdraw)
-        root.bind('<Alt-W>', self.__withdraw)
+        root.bind('<Alt-w>', self.withdraw)
+        root.bind('<Alt-W>', self.withdraw)
         #
         # create the text widget
         #
@@ -114,7 +114,7 @@ and choosing a color.'''))
     def __quit(self, event=None):
         self.__root.quit()
 
-    def __withdraw(self, event=None):
+    def withdraw(self, event=None):
         self.__root.withdraw()
 
     def deiconify(self, event=None):

@@ -23,7 +23,7 @@ class ChipWidget:
     _HEIGHT = 80
 
     def __init__(self,
-                 parent = None,
+                 master = None,
                  width  = _WIDTH,
                  height = _HEIGHT,
                  text   = 'Color',
@@ -31,16 +31,16 @@ class ChipWidget:
                  presscmd   = None,
                  releasecmd = None):
         # create the text label
-        self.__label = Label(parent, text=text)
+        self.__label = Label(master, text=text)
         self.__label.grid(row=0, column=0)
         # create the color chip, implemented as a frame
-        self.__chip = Frame(parent, relief=RAISED, borderwidth=2,
+        self.__chip = Frame(master, relief=RAISED, borderwidth=2,
                             width=width,
                             height=height,
                             background=initialcolor)
         self.__chip.grid(row=1, column=0)
         # create the color name, ctor argument must be a string
-        self.__name = Label(parent, text=initialcolor)
+        self.__name = Label(master, text=initialcolor)
         self.__name.grid(row=2, column=0)
         #
         # set bindings
@@ -65,10 +65,10 @@ class ChipWidget:
 
 
 class ChipViewer:
-    def __init__(self, switchboard, parent=None):
+    def __init__(self, switchboard, master=None):
         self.__sb = switchboard
-        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
-        self.__frame.grid(row=3, column=0)
+        self.__frame = Frame(master, relief=RAISED, borderwidth=1)
+        self.__frame.grid(row=3, column=0, ipadx=5)
         # create the chip that will display the currently selected color
         # exactly
         self.__sframe = Frame(self.__frame)
@@ -81,11 +81,6 @@ class ChipViewer:
         self.__nearest = ChipWidget(self.__nframe, text='Nearest',
                                     presscmd = self.__buttonpress,
                                     releasecmd = self.__buttonrelease)
-        self.__div = Frame(self.__frame,
-                           width=2,
-                           borderwidth=2,
-                           relief=RAISED)
-        self.__div.grid(row=0, column=2, sticky='NS', padx=5)
 
     def update_yourself(self, red, green, blue):
         # TBD: should exactname default to X11 color name if their is an exact
@@ -110,6 +105,3 @@ class ChipViewer:
         colorname = self.__nearest.get_color()
         red, green, blue = self.__sb.colordb().find_byname(colorname)
         self.__sb.update_views(red, green, blue)
-
-    def save_options(self, optiondb):
-        pass

@@ -147,7 +147,7 @@ class StripWidget:
     _NUMCHIPS = 40
 
     def __init__(self, switchboard,
-                 parent     = None,
+                 master     = None,
                  chipwidth  = _CHIPWIDTH,
                  chipheight = _CHIPHEIGHT,
                  numchips   = _NUMCHIPS,
@@ -171,13 +171,12 @@ class StripWidget:
 	canvasheight = chipheight + 43		  # TBD: Kludge
 
 	# create the canvas and pack it
-	canvas = self.__canvas = Canvas(
-	    parent,
-	    width=canvaswidth,
-	    height=canvasheight,
-## 	    borderwidth=2,
-## 	    relief=GROOVE
-	    )
+	canvas = self.__canvas = Canvas(master,
+                                        width=canvaswidth,
+                                        height=canvasheight,
+##                                        borderwidth=2,
+##                                        relief=GROOVE
+                                        )
 
 	canvas.pack()
 	canvas.bind('<ButtonPress-1>', self.__select_chip)
@@ -296,11 +295,11 @@ class StripWidget:
 
 
 class StripViewer:
-    def __init__(self, switchboard, parent=None):
+    def __init__(self, switchboard, master=None):
         self.__sb = switchboard
         optiondb = switchboard.optiondb()
-        # create a frame inside the parent
-        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
+        # create a frame inside the master
+        self.__frame = Frame(master, relief=RAISED, borderwidth=1)
         self.__frame.grid(row=1, column=0, columnspan=2, sticky='EW')
         uwd = self.__uwdvar = BooleanVar()
         uwd.set(optiondb.get('UPWHILEDRAG', 0))
@@ -337,12 +336,6 @@ class StripViewer:
                                  variable=hexp,
                                  command=self.__togglehex)
         self.__hex.grid(row=1, column=0, sticky=W)
-
-        self.__div = Frame(self.__frame,
-                           height=2,
-                           borderwidth=2,
-                           relief=RAISED)
-        self.__div.pack(expand=1, fill=X)
 
     def update_yourself(self, red, green, blue):
         self.__reds.update_yourself(red, green, blue)
