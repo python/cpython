@@ -493,11 +493,12 @@ class Example:
     A single doctest example, consisting of source code and expected
     output.  Example defines the following attributes:
 
-      - source: The source code that should be run.  It ends with a
-        newline iff the source spans more than one line.
+      - source: A single python statement, ending in a newline iff the
+        statement spans more than one line.
 
-      - want: The expected output from running the source code.  If
-        not empty, then this string ends with a newline.
+      - want: The expected output from running the source code (either
+        from stdout, or a traceback in case of exception).  `want`
+        should always end with a newline, unless no output is expected,
 
       - lineno: The line number within the DocTest string containing
         this Example where the Example begins.  This line number is
@@ -550,8 +551,7 @@ class DocTest:
         self.lineno = lineno
         # Parse the docstring.
         self.docstring = docstring
-        examples = Parser(name, docstring).get_examples()
-        self.examples = [Example(*example) for example in examples]
+        self.examples = Parser(name, docstring).get_examples()
 
     def __repr__(self):
         if len(self.examples) == 0:
@@ -605,19 +605,11 @@ class Parser:
 
     def get_examples(self):
         """
-        Return the doctest examples from the string.
-
-        This is a list of (source, want, lineno) triples, one per example
-        in the string.  "source" is a single Python statement; it ends
-        with a newline iff the statement contains more than one
-        physical line.  "want" is the expected output from running the
-        example (either from stdout, or a traceback in case of exception).
-        "want" always ends with a newline, unless no output is expected,
-        in which case "want" is an empty string.  "lineno" is the 0-based
-        line number of the first line of "source" within the string.  It's
-        0-based because it's most common in doctests that nothing
-        interesting appears on the same line as opening triple-quote,
-        and so the first interesting line is called "line 1" then.
+        Extract all doctest examples, from the string, and return them
+        as a list of `Example` objects.  Line numbers are 0-based,
+        because it's most common in doctests that nothing interesting
+        appears on the same line as opening triple-quote, and so the
+        first interesting line is called \"line 1\" then.
 
         >>> text = '''
         ...        >>> x, y = 2, 3  # no output expected
@@ -632,7 +624,7 @@ class Parser:
         ...        5
         ...        '''
         >>> for x in Parser('<string>', text).get_examples():
-        ...     print x
+        ...     print (x.source, x.want, x.lineno)
         ('x, y = 2, 3  # no output expected', '', 1)
         ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
         ('x+y', '5\\n', 9)
@@ -648,7 +640,7 @@ class Parser:
             (source, want) = self._parse_example(m, lineno)
             if self._IS_BLANK_OR_COMMENT.match(source):
                 continue
-            examples.append( (source, want, lineno) )
+            examples.append( Example(source, want, lineno) )
 
             # Update lineno (lines inside this example)
             lineno += self.string.count('\n', m.start(), m.end())
