@@ -696,7 +696,7 @@ class AbstractBasicAuthHandler:
 
     def retry_http_basic_auth(self, host, req, realm):
         user,pw = self.passwd.find_user_password(realm, host)
-        if pw:
+        if pw is not None:
             raw = "%s:%s" % (user, pw)
             auth = 'Basic %s' % base64.encodestring(raw).strip()
             if req.headers.get(self.auth_header, None) == auth:
