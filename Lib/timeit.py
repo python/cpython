@@ -157,11 +157,11 @@ class Timer:
         return self.inner(it, self.timer)
 
     def repeat(self, repeat=default_repeat, number=default_number):
-        """Call timer() a few times.
+        """Call timeit() a few times.
 
-        This is a convenience function that calls the timer()
+        This is a convenience function that calls the timeit()
         repeatedly, returning a list of results.  The first argument
-        specifies how many times to call timer(), defaulting to 3;
+        specifies how many times to call timeit(), defaulting to 3;
         the second argument specifies the timer argument, defaulting
         to one million.
 
