@@ -219,26 +219,21 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
 	if (!incr)
 		incr = mask;
+	/* In the loop, me_key == dummy is by far (factor of 100s) the
+	   least likely outcome, so test for that last. */
 	for (;;) {
 		ep = &ep0[(i+incr)&mask];
 		if (ep->me_key == NULL) {
 			if (restore_error)
 				PyErr_Restore(err_type, err_value, err_tb);
-			if (freeslot != NULL)
-				return freeslot;
-			else
-				return ep;
+			return freeslot == NULL ? ep : freeslot;
 		}
-		if (ep->me_key == dummy) {
-			if (freeslot == NULL)
-				freeslot = ep;
-		}
-		else if (ep->me_key == key) {
+		if (ep->me_key == key) {
 			if (restore_error)
 				PyErr_Restore(err_type, err_value, err_tb);
 			return ep;
 		}
-		else if (ep->me_hash == hash) {
+		else if (ep->me_hash == hash && ep->me_key != dummy) {
 			if (!checked_error) {
 				checked_error = 1;
 				if (PyErr_Occurred()) {
@@ -257,11 +252,12 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 			else if (cmp < 0)
 				PyErr_Clear();
 		}
+		else if (ep->me_key == dummy && freeslot == NULL)
+			freeslot = ep;
 		/* Cycle through GF(2^n)-{0} */
-		incr = incr << 1;
+		incr <<= 1;
 		if (incr > mask)
-			incr ^= mp->ma_poly; /* This will implicitly clear
-						the highest bit */
+			incr ^= mp->ma_poly; /* clears the highest bit */
 	}
 }
 
@@ -314,28 +310,23 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
 	if (!incr)
 		incr = mask;
+	/* In the loop, me_key == dummy is by far (factor of 100s) the
+	   least likely outcome, so test for that last. */
 	for (;;) {
 		ep = &ep0[(i+incr)&mask];
-		if (ep->me_key == NULL) {
-			if (freeslot != NULL)
-				return freeslot;
-			else
-				return ep;
-		}
-		if (ep->me_key == dummy) {
-			if (freeslot == NULL)
-				freeslot = ep;
-		}
-		else if (ep->me_key == key
-			 || (ep->me_hash == hash
-			     && compare(ep->me_key, key) == 0)) {
+		if (ep->me_key == NULL)
+			return freeslot == NULL ? ep : freeslot;
+		if (ep->me_key == key
+		    || (ep->me_hash == hash
+		        && ep->me_key != dummy
+			&& compare(ep->me_key, key) == 0))
 			return ep;
-		}
+		else if (ep->me_key == dummy && freeslot == NULL)
+			freeslot = ep;
 		/* Cycle through GF(2^n)-{0} */
-		incr = incr << 1;
+		incr <<= 1;
 		if (incr > mask)
-			incr ^= mp->ma_poly; /* This will implicitly clear
-						the highest bit */
+			incr ^= mp->ma_poly; /* clears the highest bit */
 	}
 }
 
