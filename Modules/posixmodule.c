@@ -2422,9 +2422,15 @@ _PyPopenCreateProcess(char *cmdstring,
 
 			s2 = (char *)_alloca(x);
 			ZeroMemory(s2, x);
+			/* To maintain correct argument passing semantics,
+			   we pass the command-line as it stands, and allow
+			   quoting to be applied.  w9xpopen.exe will then
+			   use its argv vector, and re-quote the necessary
+			   args for the ultimate child process.
+			*/
 			sprintf(
 				s2,
-				"%s \"%s%s%s\"",
+				"\"%s\" %s%s%s",
 				modulepath,
 				s1,
 				s3,
