@@ -725,8 +725,6 @@ def setLoggerClass(klass):
     __init__() should call Logger.__init__()
     """
     if klass != Logger:
-        if type(klass) != types.ClassType:
-            raise TypeError, "setLoggerClass is expecting a class"
         if not issubclass(klass, Logger):
             raise TypeError, "logger not derived from logging.Logger: " + \
                             klass.__name__
