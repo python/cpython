@@ -1924,6 +1924,8 @@ PyImport_ImportModule(char *name)
 	PyObject *result;
 
 	pname = PyString_FromString(name);
+	if (pname == NULL)
+		return NULL;
 	result = PyImport_Import(pname);
 	Py_DECREF(pname);
 	return result;
