@@ -3468,7 +3468,7 @@ fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
 
 	PCALL(PCALL_FUNCTION);
 	PCALL(PCALL_FAST_FUNCTION);
-	if (argdefs == NULL && co->co_argcount == n && 
+	if (argdefs == NULL && co->co_argcount == n && nk==0 &&
 	    co->co_flags == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE)) {
 		PyFrameObject *f;
 		PyObject *retval = NULL;

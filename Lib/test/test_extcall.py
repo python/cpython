@@ -1,6 +1,9 @@
 from test.test_support import verify, verbose, TestFailed, sortdict
 from UserList import UserList
 
+def e(a, b):
+    print a, b
+
 def f(*a, **k):
     print a, sortdict(k)
 
@@ -21,6 +24,14 @@ f(1, 2, 3, *UserList([4, 5]))
 f(1, 2, 3, **{'a':4, 'b':5})
 f(1, 2, 3, *(4, 5), **{'a':6, 'b':7})
 f(1, 2, 3, x=4, y=5, *(6, 7), **{'a':8, 'b':9})
+
+# Verify clearing of SF bug #733667
+try:
+    e(c=3)
+except TypeError:
+    pass
+else:
+    print "should raise TypeError: e() got an unexpected keyword argument 'c'"
 
 try:
     g()
