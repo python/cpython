@@ -299,7 +299,7 @@ class URLopener:
         raise IOError, ('http error', errcode, errmsg, headers)
 
     if hasattr(socket, "ssl"):
-        def open_https(self, url):
+        def open_https(self, url, data=None):
             """Use HTTPS protocol."""
             import httplib
             if type(url) is type(""):
@@ -323,7 +323,13 @@ class URLopener:
             h = httplib.HTTPS(host, 0,
                               key_file=self.key_file,
                               cert_file=self.cert_file)
-            h.putrequest('GET', selector)
+            if data is not None:
+                h.putrequest('POST', selector)
+                h.putheader('Content-type',
+                            'application/x-www-form-urlencoded')
+                h.putheader('Content-length', '%d' % len(data))
+            else:
+                h.putrequest('GET', selector)
             if auth: h.putheader('Authorization: Basic %s' % auth)
             for args in self.addheaders: apply(h.putheader, args)
             h.endheaders()
