@@ -181,10 +181,11 @@ way to exit a program when an error occurs.
 \end{funcdesc}
 
 \begin{funcdesc}{getdlopenflags}{}
- Return the current value of the flags that are used for \code{dlopen}
- calls. The flag constants are defined in the \refmodule{dl} and
- \module{DLFCN} modules.
- \versionadded{2.2}
+  Return the current value of the flags that are used for
+  \cfunction{dlopen()} calls. The flag constants are defined in the
+  \refmodule{dl} and \module{DLFCN} modules.
+  Availability: \UNIX.
+  \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{getrefcount}{object}
@@ -341,17 +342,18 @@ maximizing responsiveness as well as overhead.
 \end{funcdesc}
 
 \begin{funcdesc}{sertdlopenflags}{n}
- Set the flags that will be used for \code{dlopen()} calls, i.e. when
- the interpreter loads extension modules. Among other things, this
- will enable a lazy resolving of symbols when imporing a module, if
- called as \code{sys.setdlopenflags(0)}. To share symols across
- extension modules, call as
- \code{sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)}.  The symbolic
- names for the flag modules can be either found in the \refmodule{dl}
- module, or in the \module{DLFCN} module. If \module{DLFCN} is not
- available, it can be generated from \code{/usr/include/dlfcn.h} using
- the \code{h2py} script.
- \versionadded{2.2}
+  Set the flags used by the interpreter for \cfunction{dlopen()}
+  calls, such as when the interpreter loads extension modules.  Among
+  other things, this will enable a lazy resolving of symbols when
+  imporing a module, if called as \code{sys.setdlopenflags(0)}.  To
+  share symols across extension modules, call as
+  \code{sys.setdlopenflags(dl.RTLD_NOW|dl.RTLD_GLOBAL)}.  Symbolic
+  names for the flag modules can be either found in the \refmodule{dl}
+  module, or in the \module{DLFCN} module. If \module{DLFCN} is not
+  available, it can be generated from \code{/usr/include/dlfcn.h}
+  using the \code{h2py} script.
+  Availability: \UNIX.
+  \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{setprofile}{profilefunc}
