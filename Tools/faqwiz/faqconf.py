@@ -21,7 +21,7 @@ OWNERNAME = "GvR"			# Name for feedback
 OWNEREMAIL = "guido@python.org"		# Email for feedback
 HOMEURL = "http://www.python.org"	# Related home page
 HOMENAME = "Python home"		# Name of related home page
-RCSBINDIR = "/depot/gnu/plat/bin/"	# Directory containing RCS commands
+RCSBINDIR = "/usr/local/bin/"		# Directory containing RCS commands
 					# (must end in a slash)
 
 # Parameters you can normally leave alone
