@@ -54,9 +54,11 @@ use shared libraries for dynamically loaded modules.
 
 Minix users: when using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
-NeXT users: try running the configure script with the "--without-gcc"
-option.  (The NeXT C compiler is based on gcc, but it is better
-matched to the set of header files provided by NeXT.)
+NeXT users: everything must be linked and compiled with "-posix".
+Until I find out how to let the configure script do that
+automatically, the best way is to run compile with "CC='cc -posix'" in
+the environment; the next best way is to edit the toplevel Makefile
+(after running configure) to add -posix to OPT.
 
 You can configure the interpreter to contain fewer or more built-in
 modules by editing the file Modules/Setup.  This file is initially
