@@ -142,6 +142,7 @@ class FileInput:
         self._filelineno = 0
         self._file = None
         self._isstdin = 0
+        self._backupfilename = None
 
     def __del__(self):
         self.close()
