@@ -26,7 +26,6 @@ from re import compile as re_compile
 from re import IGNORECASE
 from string import whitespace as whitespace_string
 
-__version__ = (2,1,6)
 __author__ = "Brett Cannon"
 __email__ = "drifty@bigfoot.com"
 
@@ -287,13 +286,19 @@ class LocaleTime(object):
         self.__timezone = self.__pad(time.tzname, 0)
 
     def __calc_lang(self):
-        # Set self.lang by using locale.getlocale() or
-        # locale.getdefaultlocale().
+        # Set self.__lang by using locale.getlocale() or
+        # locale.getdefaultlocale().  If both turn up empty, set the attribute
+        # to ''.  This is to stop calls to this method and to make sure
+        # strptime() can produce an re object correctly.
         current_lang = locale.getlocale(locale.LC_TIME)[0]
         if current_lang:
             self.__lang = current_lang
         else:
-            self.__lang = locale.getdefaultlocale()[0]
+            current_lang = locale.getdefaultlocale()[0]
+            if current_lang:
+                self.__lang = current_lang
+            else:
+                self.__lang = ''
 
 
 class TimeRE(dict):
@@ -463,7 +468,10 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 julian = int(found_dict['j'])
             elif group_key == 'Z':
                 found_zone = found_dict['Z'].lower()
-                if locale_time.timezone[0].lower() == found_zone:
+                if locale_time.timezone[0] == locale_time.timezone[1]:
+                    pass #Deals with bad locale setup where timezone info is
+                         # the same; first found on FreeBSD 4.4 -current
+                elif locale_time.timezone[0].lower() == found_zone:
                     tz = 0
                 elif locale_time.timezone[1].lower() == found_zone:
                     tz = 1
