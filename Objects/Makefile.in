@@ -17,7 +17,7 @@ DEFS=		@DEFS@
 # === Other things that are customizable but not by configure ===
 
 INCLDIR=	$(srcdir)/../Include
-OPT=		-O
+OPT=		@OPT@
 CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
 MKDEP=		mkdep
@@ -48,6 +48,7 @@ LIB=		libObjects.a
 all:		$(LIB)
 
 $(LIB):		$(OBJS)
+		-rm -f $(LIB)
 		$(AR) cr $(LIB) $(OBJS)
 		$(RANLIB) $(LIB)
 
