@@ -342,13 +342,11 @@ class build_ext (Command):
                 # which cannot be suppressed by any linker switches.  So
                 # make sure they are generated in the temporary build
                 # directory.
-                implib_dir = os.path.join(self.build_temp,\
-                                          self.get_ext_libname(extension_name))
-                extra_args.append ('/IMPLIB:' + implib_dir)
-
-                # XXX arg, which of these is correct?
-                self.mkpath(implib_dir)
-                self.mkpath(os.path.dirname(implib_dir))
+                implib_file = os.path.join (
+                    self.build_temp,
+                    self.get_ext_libname (extension_name))
+                extra_args.append ('/IMPLIB:' + implib_file)
+                self.mkpath (os.path.dirname (implib_file))
             # if MSVC
 
             fullname = self.get_ext_fullname (extension_name)
