@@ -63,7 +63,6 @@ def main():
         def delete(self, *args):
             print self.name, ": delete", args
             apply(self.delegate.delete, args)
-    from Tkinter import *
     root = Tk()
     root.wm_protocol("WM_DELETE_WINDOW", root.quit)
     text = Text()
@@ -82,4 +81,5 @@ def main():
     root.mainloop()
 
 if __name__ == "__main__":
+    from Tkinter import *
     main()
