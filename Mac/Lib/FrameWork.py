@@ -526,7 +526,7 @@ class Menu:
 		del self.items
 		del self.menu
 		del self.id
-	
+		
 	def additem(self, label, shortcut=None, callback=None, kind=None):
 		self.menu.AppendMenu('x')		# add a dummy string
 		self.items.append(label, shortcut, callback, kind)
@@ -535,6 +535,12 @@ class Menu:
 		if shortcut:
 			self.menu.SetItemCmd(item, ord(shortcut))
 		return item
+		
+	def delitem(self, item):
+		if item != len(self.items):
+			raise 'Can only delete last item of a menu'
+		self.menu.DeleteMenuItem(item)
+		del self.items[item-1]
 	
 	def addcheck(self, label, shortcut=None, callback=None):
 		return self.additem(label, shortcut, callback, 'check')
@@ -583,6 +589,8 @@ class Menu:
 			self.menu.EnableItem(0)
 		else:
 			self.menu.DisableItem(0)
+		if self.bar and self.bar.parent:
+				self.bar.parent.needmenubarredraw = 1
 			
 class PopupMenu(Menu):
 	def __init__(self, bar):
@@ -609,6 +617,11 @@ class MenuItem:
 	def __init__(self, menu, title, shortcut=None, callback=None, kind=None):
 		self.item = menu.additem(title, shortcut, callback)
 		self.menu = menu
+		
+	def delete(self):
+		self.menu.delitem(self.item)
+		del self.menu
+		del self.item
 		
 	def check(self, onoff):
 		self.menu.menu.CheckItem(self.item, onoff)
