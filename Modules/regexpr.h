@@ -101,7 +101,7 @@ int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
  * syntax is specified by a bit mask of the above defined bits. */
 
-unsigned char *re_compile_pattern(unsigned char *regex, int regex_size, regexp_t compiled);
+char *re_compile_pattern(unsigned char *regex, int regex_size, regexp_t compiled);
 /* This compiles the regexp (given in regex and length in regex_size).
  * This returns NULL if the regexp compiled successfully, and an error
  * message if an error was encountered.  The buffer field must be
@@ -138,7 +138,7 @@ extern int re_syntax;
 extern unsigned char re_syntax_table[256];
 void re_compile_initialize();
 int re_set_syntax();
-unsigned char *re_compile_pattern();
+char *re_compile_pattern();
 int re_match();
 int re_search();
 void re_compile_fastmap();
