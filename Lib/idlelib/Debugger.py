@@ -52,7 +52,6 @@ class Idb(bdb.Bdb):
 
 class Debugger:
 
-    # interacting = 0  # XXX KBK 14Jun02 move to __init__
     vstack = vsource = vlocals = vglobals = None
 
     def __init__(self, pyshell, idb=None):
@@ -157,7 +156,6 @@ class Debugger:
         if self.vglobals.get():
             self.show_globals()
 
-    # frame = None  # XXX KBK 14Jun02  Move to __init__
 
     def interaction(self, message, frame, info=None):
         self.frame = frame
@@ -321,16 +319,18 @@ class Debugger:
             return
         text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
 
-    # A literal copy of Bdb.set_break() without the print statement at the end
-    #def set_break(self, filename, lineno, temporary=0, cond = None):
-    #    import linecache # Import as late as possible
-    #    filename = self.canonic(filename)
-    #    line = linecache.getline(filename, lineno)
-    #    if not line:
-    #        return 'That line does not exist!'
-    #    if not self.breaks.has_key(filename):
-    #        self.breaks[filename] = []
-    #    list = self.breaks[filename]
-    #    if not lineno in list:
-    #        list.append(lineno)
-    #    bp = bdb.Breakpoint(filename, lineno, temporary, cond)
+    def clear_breakpoint_here(self, edit):
+         text = edit.text
+         filename = edit.io.filename
+         if not filename:
+                 text.bell()
+                 return
+         lineno = int(float(text.index("insert")))
+         msg = self.idb.clear_break(filename, lineno)
+         if msg:
+             text.bell()
+             return
+         text.tag_remove("BREAK", "insert linestart",\
+                         "insert lineend +1char")
+
+
