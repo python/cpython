@@ -41,6 +41,9 @@ aliases = {
     'base64'             : 'base64_codec',
     'base_64'            : 'base64_codec',
 
+    # bz2_codec codec
+    'bz2'                : 'bz2_codec',
+
     # cp037 codec
     'csibm037'           : 'cp037',
     'ebcdic_cp_ca'       : 'cp037',
