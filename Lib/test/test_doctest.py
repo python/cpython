@@ -1568,7 +1568,7 @@ Run the debugger on the docstring, and then restore sys.stdin.
 """
 
 def test_pdb_set_trace():
-    """Using pdb.set_trace from a doctest
+    """Using pdb.set_trace from a doctest.
 
     You can use pdb.set_trace from a doctest.  To do so, you must
     retrieve the set_trace function from the pdb module at the time
@@ -1624,8 +1624,10 @@ def test_pdb_set_trace():
       ...    'continue', # stop debugging
       ...    ''])
 
-      >>> try: runner.run(test)
-      ... finally: sys.stdin = real_stdin
+      >>> try:
+      ...     runner.run(test)
+      ... finally:
+      ...     sys.stdin = real_stdin
       --Return--
       > <doctest test.test_doctest.test_pdb_set_trace[8]>(3)calls_set_trace()->None
       -> import pdb; pdb.set_trace()
@@ -1696,6 +1698,91 @@ def test_pdb_set_trace():
           9
       (1, 3)
       """
+
+def test_pdb_set_trace_nested():
+    """This illustrates more-demanding use of set_trace with nested functions.
+
+    >>> class C(object):
+    ...     def calls_set_trace(self):
+    ...         y = 1
+    ...         import pdb; pdb.set_trace()
+    ...         self.f1()
+    ...         y = 2
+    ...     def f1(self):
+    ...         x = 1
+    ...         self.f2()
+    ...         x = 2
+    ...     def f2(self):
+    ...         z = 1
+    ...         z = 2
+
+    >>> calls_set_trace = C().calls_set_trace
+
+    >>> doc = '''
+    ... >>> a = 1
+    ... >>> calls_set_trace()
+    ... '''
+    >>> parser = doctest.DocTestParser()
+    >>> runner = doctest.DocTestRunner(verbose=False)
+    >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
+    >>> real_stdin = sys.stdin
+    >>> sys.stdin = _FakeInput([
+    ...    'print y',  # print data defined in the function
+    ...    'step', 'step', 'step', 'step', 'step', 'step', 'print z',
+    ...    'up', 'print x',
+    ...    'up', 'print y',
+    ...    'up', 'print foo',
+    ...    'continue', # stop debugging
+    ...    ''])
+
+    >>> try:
+    ...     runner.run(test)
+    ... finally:
+    ...     sys.stdin = real_stdin
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+    -> self.f1()
+    (Pdb) print y
+    1
+    (Pdb) step
+    --Call--
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(7)f1()
+    -> def f1(self):
+    (Pdb) step
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(8)f1()
+    -> x = 1
+    (Pdb) step
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+    -> self.f2()
+    (Pdb) step
+    --Call--
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(11)f2()
+    -> def f2(self):
+    (Pdb) step
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(12)f2()
+    -> z = 1
+    (Pdb) step
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(13)f2()
+    -> z = 2
+    (Pdb) print z
+    1
+    (Pdb) up
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(9)f1()
+    -> self.f2()
+    (Pdb) print x
+    1
+    (Pdb) up
+    > <doctest test.test_doctest.test_pdb_set_trace_nested[0]>(5)calls_set_trace()
+    -> self.f1()
+    (Pdb) print y
+    1
+    (Pdb) up
+    > <doctest foo[1]>(1)?()
+    -> calls_set_trace()
+    (Pdb) print foo
+    *** NameError: name 'foo' is not defined
+    (Pdb) continue
+    (0, 2)
+"""
 
 def test_DocTestSuite():
     """DocTestSuite creates a unittest test suite from a doctest.

@@ -105,8 +105,6 @@ from StringIO import StringIO
 warnings.filterwarnings("ignore", "is_private", DeprecationWarning,
                         __name__, 0)
 
-real_pdb_set_trace = pdb.set_trace
-
 # There are 4 basic classes:
 #  - Example: a <source, want> pair, plus an intra-docstring line number.
 #  - DocTest: a collection of examples, parsed from a docstring, plus
@@ -350,9 +348,10 @@ class _OutputRedirectingPdb(pdb.Pdb):
         save_stdout = sys.stdout
         sys.stdout = self.__out
         # Call Pdb's trace dispatch method.
-        pdb.Pdb.trace_dispatch(self, *args)
+        result = pdb.Pdb.trace_dispatch(self, *args)
         # Restore stdout.
         sys.stdout = save_stdout
+        return result
 
 # [XX] Normalize with respect to os.path.pardir?
 def _module_relative_path(module, path):
