@@ -31,7 +31,6 @@ are strings, not numbers, since they are rarely used for calculations.
 # Imports
 import re
 import socket
-import string
 
 __all__ = ["NNTP","NNTPReplyError","NNTPTemporaryError",
            "NNTPPermanentError","NNTPProtocolError","NNTPDataError",
@@ -267,7 +266,7 @@ class NNTP:
         resp, list = self.longcmd('LIST')
         for i in range(len(list)):
             # Parse lines into "group last first flag"
-            list[i] = tuple(string.split(list[i]))
+            list[i] = tuple(list[i].split())
         return resp, list
 
     def group(self, name):
@@ -283,7 +282,7 @@ class NNTP:
         resp = self.shortcmd('GROUP ' + name)
         if resp[:3] != '211':
             raise NNTPReplyError(resp)
-        words = string.split(resp)
+        words = resp.split()
         count = first = last = 0
         n = len(words)
         if n > 1:
@@ -293,7 +292,7 @@ class NNTP:
                 if n > 3:
                     last = words[3]
                     if n > 4:
-                        name = string.lower(words[4])
+                        name = words[4].lower()
         return resp, count, first, last, name
 
     def help(self):
@@ -307,7 +306,7 @@ class NNTP:
         """Internal: parse the response of a STAT, NEXT or LAST command."""
         if resp[:2] != '22':
             raise NNTPReplyError(resp)
-        words = string.split(resp)
+        words = resp.split()
         nr = 0
         id = ''
         n = len(words)
@@ -414,14 +413,14 @@ class NNTP:
         resp, lines = self.longcmd('XOVER ' + start + '-' + end)
         xover_lines = []
         for line in lines:
-            elem = string.splitfields(line,"\t")
+            elem = line.split("\t")
             try:
                 xover_lines.append((elem[0],
                                     elem[1],
                                     elem[2],
                                     elem[3],
                                     elem[4],
-                                    string.split(elem[5]),
+                                    elem[5].split(),
                                     elem[6],
                                     elem[7]))
             except IndexError:
@@ -439,7 +438,7 @@ class NNTP:
         resp, raw_lines = self.longcmd('XGTITLE ' + group)
         lines = []
         for raw_line in raw_lines:
-            match = line_pat.search(string.strip(raw_line))
+            match = line_pat.search(raw_line.strip())
             if match:
                 lines.append(match.group(1, 2))
         return resp, lines
@@ -455,7 +454,7 @@ class NNTP:
         if resp[:3] != '223':
             raise NNTPReplyError(resp)
         try:
-            [resp_num, path] = string.split(resp)
+            [resp_num, path] = resp.split()
         except ValueError:
             raise NNTPReplyError(resp)
         else:
@@ -472,7 +471,7 @@ class NNTP:
         resp = self.shortcmd("DATE")
         if resp[:3] != '111':
             raise NNTPReplyError(resp)
-        elem = string.split(resp)
+        elem = resp.split()
         if len(elem) != 2:
             raise NNTPDataError(resp)
         date = elem[1][2:8]
