@@ -180,10 +180,10 @@ err_input(err)
 	case E_OK:
 		break;
 	case E_SYNTAX:
-		err_setstr(ValueError, "syntax error");
+		err_setstr(SyntaxError, "invalid syntax");
 		break;
 	case E_TOKEN:
-		err_setstr(ValueError, "illegal token");
+		err_setstr(SyntaxError, "invalid token");
 		break;
 	case E_INTR:
 		err_set(KeyboardInterrupt);
@@ -192,10 +192,10 @@ err_input(err)
 		err_nomem();
 		break;
 	case E_EOF:
-		err_set(EOFError);
+		err_setstr(SyntaxError, "unexpected EOF");
 		break;
 	default:
-		err_setstr(SystemError, "unknown input error");
+		err_setstr(SystemError, "unknown parsing error");
 		break;
 	}
 }
