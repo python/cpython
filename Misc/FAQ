@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.9
-Last-modified: 8 June 1994
+Version: 1.10
+Last-modified: 14 July 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -32,7 +32,7 @@ filename python-FAQ.  It will also be posted regularly to the
 newsgroups comp.answers and comp.lang.python.
 
 Many FAQs, including this one, are available by anonymous ftp from
-rtfm.mit.edu [18.70.0.209] in the directory pub/usenet/news.answers.  
+rtfm.mit.edu [18.181.0.24] in the directory pub/usenet/news.answers.  
 The name under which a FAQ is archived appears in the Archive-name line 
 at the top of the article.  This FAQ is archived as python-faq/part1.
 
@@ -218,6 +218,7 @@ ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python
 ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (*python* only)
 ftp.sunet.se		130.238.127.3	/pub/lang/python
+unix.hensa.ac.uk	129.12.43.16	/uunet/languages/python
 
 Or try archie on e.g. python1.0 to locate the nearest copy of that
 version...
