@@ -1131,9 +1131,11 @@ release.
 
 \chapter{Utilities \label{utilities}}
 
-The functions in this chapter perform various utility tasks, such as
-parsing function arguments and constructing Python values from C
-values.
+The functions in this chapter perform various utility tasks, ranging
+from helping C code be more portable across platforms, using Python
+modules from C, and parsing function arguments and constructing Python
+values from C values.
+
 
 \section{Operating System Utilities \label{os}}
 
@@ -1394,6 +1396,58 @@ internal table.  In the event of failure, no modules are added to the
 internal table.  This should be called before
 \cfunction{Py_Initialize()}.
 \end{cfuncdesc}
+
+
+\section{Parsing arguements and building values
+         \label{arg-parsing}}
+
+These functions are useful when creating your own extensions functions
+and methods.  Additional information and examples are available in
+\citetitle[../ext/ext.html]{Extending and Embedding the Python
+Interpreter}.
+
+\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, char *format,
+                                         \moreargs}
+  Parse the parameters of a function that takes only positional
+  parameters into local variables.  Returns true on success; on
+  failure, it returns false and raises the appropriate exception.  See
+  \citetitle[../ext/parseTuple.html]{Extending and Embedding the
+  Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_ParseTupleAndKeywords}{PyObject *args,
+                       PyObject *kw, char *format, char *keywords[],
+                       \moreargs}
+  Parse the parameters of a function that takes both positional and
+  keyword parameters into local variables.  Returns true on success;
+  on failure, it returns false and raises the appropriate exception.
+  See \citetitle[../ext/parseTupleAndKeywords.html]{Extending and
+  Embedding the Python Interpreter} for more information.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, char *format,
+                                    \moreargs}
+  Function used to deconstruct the argument lists of ``old-style''
+  functions --- these are functions which use the
+  \constant{METH_OLDARGS} parameter parsing method.  This is not
+  recommended for use in parameter parsing in new code, and most code
+  in the standard interpreter has been modified to no longer use this
+  for that purpose.  It does remain a convenient way to decompose
+  other tuples, however, and may continue to be used for that
+  purpose.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_BuildValue}{char *format,
+                                            \moreargs}
+  Create a new value based on a format string similar to those
+  accepted by the \cfunction{PyArg_Parse*()} family of functions and a
+  sequence of values.  Returns the value or \NULL{} in the case of an
+  error; an exception will be raised if \NULL{} is returned.  For more
+  information on the format string and additional parameters, see
+  \citetitle[../ext/buildValue.html]{Extending and Embedding the
+  Python Interpreter}.
+\end{cfuncdesc}
+
 
 
 \chapter{Abstract Objects Layer \label{abstract}}
@@ -3353,7 +3407,7 @@ that array elements may be multi-byte values.
 An example user of the buffer interface is the file object's
 \method{write()} method. Any object that can export a series of bytes
 through the buffer interface can be written to a file. There are a
-number of format codes to \cfunction{PyArgs_ParseTuple()} that operate 
+number of format codes to \cfunction{PyArg_ParseTuple()} that operate 
 against an object's buffer interface, returning data from the target
 object.
 
@@ -4939,6 +4993,10 @@ implementing new object types in C.
 
 \chapter{Defining New Object Types \label{newTypes}}
 
+
+\section{Allocating Objects on the Heap
+         \label{allocating-objects}}
+
 \begin{cfuncdesc}{PyObject*}{_PyObject_New}{PyTypeObject *type}
 \end{cfuncdesc}
 
@@ -5041,32 +5099,6 @@ implementing new object types in C.
   the \cfunction{Py_InitModule3()} instead; only use this if you are
   sure you need it.
 \end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyArg_ParseTuple}{PyObject *args, char *format,
-                                         \moreargs}
-  Parse the parameters of a function that takes only positional
-  parameters into local variables.  See
-  \citetitle[../ext/parseTuple.html]{Extending and Embedding the
-  Python Interpreter} for more information.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyArg_ParseTupleAndKeywords}{PyObject *args,
-                    PyObject *kw, char *format, char *keywords[], \moreargs}
-  Parse the parameters of a function that takes both positional and
-  keyword parameters into local variables.  See
-  \citetitle[../ext/parseTupleAndKeywords.html]{Extending and
-  Embedding the Python Interpreter} for more information.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{int}{PyArg_Parse}{PyObject *args, char *format, \moreargs}
-  Function used to deconstruct the argument lists of ``old-style''
-  functions --- these are functions which use the
-  \constant{METH_OLDARGS} parameter parsing method.  This is not
-  recommended for new code, and most code in the standard interpreter
-  has been modified to no longer use this.
-\end{cfuncdesc}
-
-Py_BuildValue
 
 DL_IMPORT
 
