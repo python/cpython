@@ -56,6 +56,11 @@ class Error(Exception):
 	pass
 error = Error	# backward compatibility
 
+try:
+    from org.python.core import PyStringMap
+except ImportError:
+    PyStringMap = None
+
 def copy(x):
 	"""Shallow copy operation on arbitrary Python objects.
 
@@ -104,6 +109,8 @@ d[types.TupleType] = _copy_tuple
 def _copy_dict(x):
 	return x.copy()
 d[types.DictionaryType] = _copy_dict
+if PyStringMap is not None:
+    d[PyStringMap] = _copy_dict
 
 def _copy_inst(x):
 	if hasattr(x, '__copy__'):
@@ -200,6 +207,8 @@ def _deepcopy_dict(x, memo):
 		y[deepcopy(key, memo)] = deepcopy(x[key], memo)
 	return y
 d[types.DictionaryType] = _deepcopy_dict
+if PyStringMap is not None:
+    d[PyStringMap] = _deepcopy_dict
 
 def _keep_alive(x, memo):
 	"""Keeps a reference to the object x in the memo.
