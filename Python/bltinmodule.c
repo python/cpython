@@ -1098,10 +1098,14 @@ builtin_len(self, args)
 	PyObject *args;
 {
 	PyObject *v;
+	long res;
 
 	if (!PyArg_ParseTuple(args, "O:len", &v))
 		return NULL;
-	return PyInt_FromLong((long)PyObject_Length(v));
+	res = PyObject_Length(v);
+	if (res < 0 && PyErr_Occurred())
+		return NULL;
+	return PyInt_FromLong(res);
 }
 
 static char len_doc[] =
