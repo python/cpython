@@ -170,6 +170,8 @@ Extension modules
 
 Library
 
+- New encoding for the Palm OS character set: palmos.
+
 - binascii.crc32() and the zipfile module had problems on some 64-bit
   platforms.  These have been fixed.  On a platform with 8-byte C longs,
   crc32() now returns a signed-extended 4-byte result, so that its value
