@@ -228,6 +228,7 @@ PYTHON_OBJS=	\
 		Python/pystate.o \
 		Python/pythonrun.o \
 		Python/structmember.o \
+		Python/symtable.o \
 		Python/sysmodule.o \
 		Python/traceback.o \
 		Python/getopt.o \
