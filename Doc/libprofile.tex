@@ -1,7 +1,5 @@
 \chapter{The Python Profiler}
 \label{profile}
-\stmodindex{profile}
-\stmodindex{pstats}
 
 Copyright \copyright{} 1994, by InfoSeek Corporation, all rights reserved.
 
@@ -256,8 +254,9 @@ of algorithms to be directly compared to iterative implementations.
 
 
 \section{Reference Manual}
+\stmodindex{profile}
+\label{module-profile}
 
-\setindexsubitem{(in module profile)}
 
 The primary entry point for the profiler is the global function
 \function{profile.run()}.  It is typically used to create any profile
@@ -269,7 +268,7 @@ Profiler Extensions, which includes discussion of how to derive
 ``better'' profilers from the classes presented, or reading the source
 code for these modules.
 
-\begin{funcdesc}{profile.run}{string\optional{, filename\optional{, ...}}}
+\begin{funcdesc}{run}{string\optional{, filename\optional{, ...}}}
 
 This function takes a single argument that has can be passed to the
 \keyword{exec} statement, and an optional file name.  In all cases this
@@ -336,7 +335,8 @@ printed.
 Analysis of the profiler data is done using this class from the
 \module{pstats} module:
 
-\setindexsubitem{(in module pstats)}
+% now switch modules....
+\stmodindex{pstats}
 
 \begin{classdesc}{Stats}{filename\optional{, ...}}
 This class constructor creates an instance of a ``statistics object''
@@ -361,7 +361,7 @@ need to be combined with data in an existing \class{Stats} object, the
 
 \setindexsubitem{(Stats method)}
 
-\begin{funcdesc}{strip_dirs}{}
+\begin{methoddesc}{strip_dirs}{}
 This method for the \class{Stats} class removes all leading path
 information from file names.  It is very useful in reducing the size
 of the printout to fit within (close to) 80 columns.  This method
@@ -372,19 +372,19 @@ initialization and loading.  If \method{strip_dirs()} causes two
 function names to be indistinguishable (i.e., they are on the same
 line of the same filename, and have the same function name), then the
 statistics for these two entries are accumulated into a single entry.
-\end{funcdesc}
+\end{methoddesc}
 
 
-\begin{funcdesc}{add}{filename\optional{, ...}}
+\begin{methoddesc}{add}{filename\optional{, ...}}
 This method of the \class{Stats} class accumulates additional
 profiling information into the current profiling object.  Its
 arguments should refer to filenames created by the corresponding
 version of \function{profile.run()}.  Statistics for identically named
 (re: file, line, name) functions are automatically accumulated into
 single function statistics.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{sort_stats}{key\optional{, ...}}
+\begin{methoddesc}{sort_stats}{key\optional{, ...}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
 identifying the basis of a sort (example: \code{"time"} or
@@ -430,18 +430,18 @@ interpreted as \code{"stdname"}, \code{"calls"}, \code{"time"}, and
 \code{"cumulative"} respectively.  If this old style format (numeric)
 is used, only one sort key (the numeric key) will be used, and
 additional arguments will be silently ignored.
-\end{funcdesc}
+\end{methoddesc}
 
 
-\begin{funcdesc}{reverse_order}{}
+\begin{methoddesc}{reverse_order}{}
 This method for the \class{Stats} class reverses the ordering of the basic
 list within the object.  This method is provided primarily for
 compatibility with the old profiler.  Its utility is questionable
 now that ascending vs descending order is properly selected based on
 the sort key of choice.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{print_stats}{restriction\optional{, ...}}
+\begin{methoddesc}{print_stats}{restriction\optional{, ...}}
 This method for the \class{Stats} class prints out a report as described
 in the \function{profile.run()} definition.
 
@@ -473,10 +473,10 @@ print_stats("foo:", .1)
 
 would limit the list to all functions having file names \samp{.*foo:},
 and then proceed to only print the first 10\% of them.
-\end{funcdesc}
+\end{methoddesc}
 
 
-\begin{funcdesc}{print_callers}{restrictions\optional{, ...}}
+\begin{methoddesc}{print_callers}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \method{print_stats()}, and the definition
@@ -484,16 +484,16 @@ of the restricting argument is also identical.  For convenience, a
 number is shown in parentheses after each caller to show how many
 times this specific call was made.  A second non-parenthesized number
 is the cumulative time spent in the function at the right.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{print_callees}{restrictions\optional{, ...}}
+\begin{methoddesc}{print_callees}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and
 ordering are identical to the \method{print_callers()} method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{ignore}{}
+\begin{methoddesc}{ignore}{}
 This method of the \class{Stats} class is used to dispose of the value
 returned by earlier methods.  All standard methods in this class
 return the instance that is being processed, so that the commands can
@@ -503,7 +503,7 @@ be strung together.  For example:
 pstats.Stats('foofile').strip_dirs().sort_stats('cum') \
                        .print_stats().ignore()
 \end{verbatim}
-%
+
 would perform all the indicated functions, but it would not return
 the final reference to the \class{Stats} instance.%
 \footnote{
@@ -511,7 +511,7 @@ This was once necessary, when Python would print any unused expression
 result that was not \code{None}.  The method is still defined for
 backward compatibility.
 }
-\end{funcdesc}
+\end{methoddesc}
 
 
 \section{Limitations}
