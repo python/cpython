@@ -36,6 +36,10 @@
 #endif
 
 #include <stdio.h>
+#ifndef NULL
+#   error "Python.h requires that stdio.h define NULL."
+#endif
+
 #include <string.h>
 #include <errno.h>
 #ifdef HAVE_STDLIB_H

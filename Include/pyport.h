@@ -313,10 +313,6 @@ extern double hypot(double, double);
 #define DL_IMPORT(RTYPE) RTYPE
 #endif
 
-#ifndef NULL
-#define NULL ((void *)0)
-#endif
-
 #ifdef MALLOC_ZERO_RETURNS_NULL
 /* XXX Always allocate one extra byte, since some malloc's return NULL
    XXX for malloc(0) or realloc(p, 0). */

@@ -423,13 +423,6 @@ extern DL_IMPORT(long) _Py_RefTotal;
 #define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
 #define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
-/* Definition of NULL, so you don't have to include <stdio.h> */
-
-#ifndef NULL
-#define NULL 0
-#endif
-
-
 /*
 _Py_NoneStruct is an object of undefined type which can be used in contexts
 where NULL (nil) is not suitable (since NULL often means 'error').
