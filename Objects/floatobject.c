@@ -223,8 +223,20 @@ float_pow(v, w)
 	}
 	iv = v->ob_fval;
 	iw = ((floatobject *)w)->ob_fval;
+	/* Sort out special cases here instead of relying on pow() */
 	if (iw == 0.0)
 		return newfloatobject(1.0); /* x**0 is 1, even 0**0 */
+	if (iv == 0.0) {
+		if (iw < 0.0) {
+			err_setstr(RuntimeError, "0.0 to the negative power");
+			return NULL;
+		}
+		return newfloatobject(0.0);
+	}
+	if (iv < 0.0) {
+		err_setstr(RuntimeError, "negative float to float power");
+		return NULL;
+	}
 	errno = 0;
 	ix = pow(iv, iw);
 	if (errno != 0) {
