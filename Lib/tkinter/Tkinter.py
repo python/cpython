@@ -552,7 +552,16 @@ class Pack:
 	def forget(self):
 		self.tk.call('pack', 'forget', self._w)
 	def newinfo(self):
-		return self.tk.call('pack', 'newinfo', self._w)
+		words = self.tk.splitlist(
+			self.tk.call('pack', 'newinfo', self._w))
+		dict = {}
+		for i in range(0, len(words), 2):
+			key = words[i][1:]
+			value = words[i+1]
+			if value[0] == '.':
+				value = self._nametowidget(value)
+			dict[key] = value
+		return dict
 	info = newinfo
 	def propagate(self, boolean=None):
 		if boolean:
