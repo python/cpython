@@ -256,7 +256,7 @@ class TextFile:
 
             # blank line (whether we rstrip'ed or not)? skip to next line
             # if appropriate
-            if line == '' or line == '\n' and self.skip_blanks:
+            if (line == '' or line == '\n') and self.skip_blanks:
                 continue
 
             if self.join_lines:
