@@ -42,39 +42,44 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 /* Forward declarations */
-/* XXX Need prototypes */
 
-void flushline();
-static object *add();
-static object *sub();
-static object *mul();
-static object *divide();
-static object *rem();
-static object *neg();
-static object *pos();
-static object *not();
-static object *invert();
-static object *lshift();
-static object *rshift();
-static object *and();
-static object *xor();
-static object *or();
-static object *call_builtin();
-static object *call_function();
-object *call_object();
-static object *apply_subscript();
-static object *loop_subscript();
-static object *apply_slice();
-static object *cmp_outcome();
-static object *build_class();
-static int testbool();
-static int assign_subscript PROTO((object *, object *, object *));
-static int assign_slice PROTO((object *, object *, object *, object *));
-static int import_from PROTO((object *, object *, object *));
+#ifdef LLTRACE
+static int prtrace PROTO((object *, char *));
+#endif
 static void call_exc_trace PROTO((object **, object**, frameobject *));
 static int call_trace
 	PROTO((object **, object **, frameobject *, char *, object *));
+static int testbool PROTO((object *));
+static object *add PROTO((object *, object *));
+static object *sub PROTO((object *, object *));
+static object *mul PROTO((object *, object *));
+static object *divide PROTO((object *, object *));
+static object *rem PROTO((object *, object *));
+static object *neg PROTO((object *));
+static object *pos PROTO((object *));
+static object *not PROTO((object *));
+static object *invert PROTO((object *));
+static object *lshift PROTO((object *, object *));
+static object *rshift PROTO((object *, object *));
+static object *and PROTO((object *, object *));
+static object *xor PROTO((object *, object *));
+static object *or PROTO((object *, object *));
+static object *call_builtin PROTO((object *, object *));
+static object *call_function PROTO((object *, object *));
+static object *apply_subscript PROTO((object *, object *));
+static object *loop_subscript PROTO((object *, object *));
+static int slice_index PROTO((object *, int, int *));
+static object *apply_slice PROTO((object *, object *, object *));
+static int assign_subscript PROTO((object *, object *, object *));
+static int assign_slice PROTO((object *, object *, object *, object *));
+static int cmp_exception PROTO((object *, object *));
+static int cmp_member PROTO((object *, object *));
+static object *cmp_outcome PROTO((enum cmp_op, object *, object *));
+static int import_from PROTO((object *, object *, object *));
+static object *build_class PROTO((object *, object *));
 
+
+/* Pointer to current frame, used to link new frames to */
 
 static frameobject *current_frame;
 
