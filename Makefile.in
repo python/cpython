@@ -99,12 +99,14 @@ BINDIR=		$(exec_prefix)/bin
 LIBDIR=		$(exec_prefix)/lib
 MANDIR=		$(prefix)/man
 INCLUDEDIR=	$(prefix)/include
+CONFINCLUDEDIR=	$(exec_prefix)/include
 SCRIPTDIR=	$(prefix)/lib
 
 # Detailed destination directories
 BINLIBDEST=	$(LIBDIR)/python$(VERSION)
 LIBDEST=	$(SCRIPTDIR)/python$(VERSION)
 INCLUDEPY=	$(INCLUDEDIR)/python$(VERSION)
+CONFINCLUDEPY=	$(CONFINCLUDEDIR)/python$(VERSION)
 LIBP=		$(LIBDIR)/python$(VERSION)
 
 # Symbols used for using shared libraries
@@ -319,8 +321,9 @@ $(srcdir)/Lib/$(MACHDEP):
 		cd $(srcdir)/Lib/$(MACHDEP); ./regen
 
 # Install the include files
+INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
 inclinstall:
-		@for i in $(INCLUDEDIR) $(INCLUDEPY); \
+		@for i in $(INCLDIRSTOMAKE); \
 		do \
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
@@ -334,6 +337,7 @@ inclinstall:
 			echo $(INSTALL_DATA) $$i $(INCLUDEPY); \
 			$(INSTALL_DATA) $$i $(INCLUDEPY); \
 		done
+		$(INSTALL_DATA) config.h $(CONFINCLUDEPY)/config.h
 
 # Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
@@ -357,7 +361,6 @@ libainstall:	all
 		$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup
 		$(INSTALL_DATA) Modules/Setup.local $(LIBPL)/Setup.local
 		$(INSTALL_PROGRAM) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
-		$(INSTALL_DATA) config.h $(LIBPL)/config.h
 
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
