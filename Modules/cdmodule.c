@@ -27,6 +27,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <sys/types.h>
 #include <cdaudio.h>
+/* #include <sigfpe.h> */
 #include "allobjects.h"
 #include "import.h"
 #include "modsupport.h"
@@ -39,15 +40,6 @@ typedef struct {
 	CDPLAYER *ob_cdplayer;
 } cdplayerobject;
 
-#define CheckPlayer(self)	if ((self)->ob_cdplayer == NULL) { \
-					err_setstr(RuntimeError, "no player active"); \
-					return NULL; \
-				}
-#define CheckParser(self)	if ((self)->ob_cdparser == NULL) { \
-					err_setstr(RuntimeError, "no parser active"); \
-					return NULL; \
-				}
-
 static object *CdError;		/* exception cd.error */
 
 static object *
@@ -55,9 +47,7 @@ CD_allowremoval(self, args)
 	cdplayerobject *self;
 	object *args;
 {
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	CDallowremoval(self->ob_cdplayer);
@@ -71,9 +61,7 @@ CD_preventremoval(self, args)
 	cdplayerobject *self;
 	object *args;
 {
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	CDpreventremoval(self->ob_cdplayer);
@@ -87,9 +75,7 @@ CD_bestreadsize(self, args)
 	cdplayerobject *self;
 	object *args;
 {
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	return newintobject((long) CDbestreadsize(self->ob_cdplayer));
@@ -100,9 +86,7 @@ CD_close(self, args)
 	cdplayerobject *self;
 	object *args;
 {
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	if (!CDclose(self->ob_cdplayer)) {
@@ -122,9 +106,7 @@ CD_eject(self, args)
 {
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	if (!CDeject(self->ob_cdplayer)) {
@@ -147,9 +129,7 @@ CD_getstatus(self, args)
 {
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	if (!CDgetstatus(self->ob_cdplayer, &status)) {
@@ -157,13 +137,12 @@ CD_getstatus(self, args)
 		return NULL;
 	}
 
-	return mkvalue("(ii(iii)(iii)(iii)iiii(iii))", status.state,
+	return mkvalue("(ii(iii)(iii)(iii)iiii)", status.state,
 		       status.track, status.min, status.sec, status.frame,
 		       status.abs_min, status.abs_sec, status.abs_frame,
 		       status.total_min, status.total_sec, status.total_frame,
 		       status.first, status.last, status.scsi_audio,
-		       status.cur_block, status.polyfilla[0],
-		       status.polyfilla[1], status.polyfilla[2]);
+		       status.cur_block);
 }
 	
 static object *
@@ -175,9 +154,7 @@ CD_gettrackinfo(self, args)
 	CDTRACKINFO info;
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "i", &track))
+	if (!newgetargs(args, "i", &track))
 		return NULL;
 
 	if (!CDgettrackinfo(self->ob_cdplayer, track, &info)) {
@@ -200,15 +177,12 @@ CD_msftoblock(self, args)
 	object *args;
 {
 	int min, sec, frame;
-	unsigned long block;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(iii)", &min, &sec, &frame))
+	if (!newgetargs(args, "iii", &min, &sec, &frame))
 		return NULL;
 
-	block = CDmsftoblock(self->ob_cdplayer, min, sec, frame);
-	return newintobject((long) block);
+	return newintobject((long) CDmsftoblock(self->ob_cdplayer,
+						min, sec, frame));
 }
 	
 static object *
@@ -219,9 +193,7 @@ CD_play(self, args)
 	int start, play;
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(ii)", &start, &play))
+	if (!newgetargs(args, "ii", &start, &play))
 		return NULL;
 
 	if (!CDplay(self->ob_cdplayer, start, play)) {
@@ -245,9 +217,7 @@ CD_playabs(self, args)
 	int min, sec, frame, play;
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(iiii)", &min, &sec, &frame, &play))
+	if (!newgetargs(args, "iiii", &min, &sec, &frame, &play))
 		return NULL;
 
 	if (!CDplayabs(self->ob_cdplayer, min, sec, frame, play)) {
@@ -271,9 +241,7 @@ CD_playtrack(self, args)
 	int start, play;
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(ii)", &start, &play))
+	if (!newgetargs(args, "ii", &start, &play))
 		return NULL;
 
 	if (!CDplaytrack(self->ob_cdplayer, start, play)) {
@@ -297,9 +265,7 @@ CD_playtrackabs(self, args)
 	int track, min, sec, frame, play;
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(iiiii)", &track, &min, &sec, &frame, &play))
+	if (!newgetargs(args, "iiiii", &track, &min, &sec, &frame, &play))
 		return NULL;
 
 	if (!CDplaytrackabs(self->ob_cdplayer, track, min, sec, frame, play)) {
@@ -323,9 +289,7 @@ CD_readda(self, args)
 	int numframes, n;
 	object *result;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "i", &numframes))
+	if (!newgetargs(args, "i", &numframes))
 		return NULL;
 
 	result = newsizedstringobject(NULL, numframes * sizeof(CDFRAME));
@@ -353,9 +317,7 @@ CD_seek(self, args)
 	int min, sec, frame;
 	long block;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "(iii)", &min, &sec, &frame))
+	if (!newgetargs(args, "iii", &min, &sec, &frame))
 		return NULL;
 
 	block = CDseek(self->ob_cdplayer, min, sec, frame);
@@ -375,13 +337,30 @@ CD_seektrack(self, args)
 	int track;
 	long block;
 
-	CheckPlayer(self);
-
-	if (!getargs(args, "i", &track))
+	if (!newgetargs(args, "i", &track))
 		return NULL;
 
 	block = CDseektrack(self->ob_cdplayer, track);
 	if (block == -1) {
+		err_errno(CdError);
+		return NULL;
+	}
+
+	return newintobject(block);
+}
+	
+static object *
+CD_seekblock(self, args)
+	cdplayerobject *self;
+	object *args;
+{
+	unsigned long block;
+
+	if (!newgetargs(args, "l", &block))
+		return NULL;
+
+	block = CDseekblock(self->ob_cdplayer, block);
+	if (block == (unsigned long) -1) {
 		err_errno(CdError);
 		return NULL;
 	}
@@ -396,9 +375,7 @@ CD_stop(self, args)
 {
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	if (!CDstop(self->ob_cdplayer)) {
@@ -421,9 +398,7 @@ CD_togglepause(self, args)
 {
 	CDSTATUS status;
 
-	CheckPlayer(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	if (!CDtogglepause(self->ob_cdplayer)) {
@@ -440,23 +415,24 @@ CD_togglepause(self, args)
 }
 	
 static struct methodlist cdplayer_methods[] = {
-	{"allowremoval",	(method)CD_allowremoval},
-	{"bestreadsize",	(method)CD_bestreadsize},
-	{"close",		(method)CD_close},
-	{"eject",		(method)CD_eject},
-	{"getstatus",		(method)CD_getstatus},
-	{"gettrackinfo",	(method)CD_gettrackinfo},
-	{"msftoblock",		(method)CD_msftoblock},
-	{"play",		(method)CD_play},
-	{"playabs",		(method)CD_playabs},
-	{"playtrack",		(method)CD_playtrack},
-	{"playtrackabs",	(method)CD_playtrackabs},
-	{"preventremoval",	(method)CD_preventremoval},
-	{"readda",		(method)CD_readda},
-	{"seek",		(method)CD_seek},
-	{"seektrack",		(method)CD_seektrack},
-	{"stop",		(method)CD_stop},
-	{"togglepause",		(method)CD_togglepause},
+	{"allowremoval",	(method)CD_allowremoval,	1},
+	{"bestreadsize",	(method)CD_bestreadsize,	1},
+	{"close",		(method)CD_close,		1},
+	{"eject",		(method)CD_eject,		1},
+	{"getstatus",		(method)CD_getstatus,		1},
+	{"gettrackinfo",	(method)CD_gettrackinfo,	1},
+	{"msftoblock",		(method)CD_msftoblock,		1},
+	{"play",		(method)CD_play,		1},
+	{"playabs",		(method)CD_playabs,		1},
+	{"playtrack",		(method)CD_playtrack,		1},
+	{"playtrackabs",	(method)CD_playtrackabs,	1},
+	{"preventremoval",	(method)CD_preventremoval,	1},
+	{"readda",		(method)CD_readda,		1},
+	{"seek",		(method)CD_seek,		1},
+	{"seekblock",		(method)CD_seekblock,		1},
+	{"seektrack",		(method)CD_seektrack,		1},
+	{"stop",		(method)CD_stop,		1},
+	{"togglepause",		(method)CD_togglepause,		1},
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -470,11 +446,15 @@ cdplayer_dealloc(self)
 }
 
 static object *
-cdplayer_getattr(cdp, name)
-	cdplayerobject *cdp;
+cdplayer_getattr(self, name)
+	cdplayerobject *self;
 	char *name;
 {
-	return findmethod(cdplayer_methods, (object *)cdp, name);
+	if (self->ob_cdplayer == NULL) {
+		err_setstr(RuntimeError, "no player active");
+		return NULL;
+	}
+	return findmethod(cdplayer_methods, (object *)self, name);
 }
 
 typeobject CdPlayertype = {
@@ -518,14 +498,8 @@ CD_open(self, args)
 	 */
 	dev = NULL;
 	direction = "r";
-	if (!getnoarg(args)) {
-		err_clear();
-		if (!getargs(args, "z", &dev)) {
-			err_clear();
-			if (!getargs(args, "(zs)", &dev, &direction))
-				return NULL;
-		}
-	}
+	if (!newgetargs(args, "|zs", &dev, &direction))
+		return NULL;
 
 	cdp = CDopen(dev, direction);
 	if (cdp == NULL) {
@@ -574,7 +548,8 @@ CD_callback(arg, type, data)
 	case cd_ptime:
 	case cd_atime:
 #define ptr ((struct cdtimecode *) data)
-		v = mkvalue("(iii)", ptr->mhi * 10 + ptr->mlo,
+		v = mkvalue("(iii)",
+			    ptr->mhi * 10 + ptr->mlo,
 			    ptr->shi * 10 + ptr->slo,
 			    ptr->fhi * 10 + ptr->flo);
 #undef ptr
@@ -586,19 +561,21 @@ CD_callback(arg, type, data)
 			*p++ = ((char *) data)[i] + '0';
 		break;
 	case cd_ident:
+#define ptr ((struct cdident *) data)
 		v = newsizedstringobject(NULL, 12);
 		p = getstringvalue(v);
-		CDsbtoa(p, ((struct cdident *) data)->country, 2);
+		CDsbtoa(p, ptr->country, 2);
 		p += 2;
-		CDsbtoa(p, ((struct cdident *) data)->owner, 3);
+		CDsbtoa(p, ptr->owner, 3);
 		p += 3;
-		*p++ = ((struct cdident *) data)->year[0] + '0';
-		*p++ = ((struct cdident *) data)->year[1] + '0';
-		*p++ = ((struct cdident *) data)->serial[0] + '0';
-		*p++ = ((struct cdident *) data)->serial[1] + '0';
-		*p++ = ((struct cdident *) data)->serial[2] + '0';
-		*p++ = ((struct cdident *) data)->serial[3] + '0';
-		*p++ = ((struct cdident *) data)->serial[4] + '0';
+		*p++ = ptr->year[0] + '0';
+		*p++ = ptr->year[1] + '0';
+		*p++ = ptr->serial[0] + '0';
+		*p++ = ptr->serial[1] + '0';
+		*p++ = ptr->serial[2] + '0';
+		*p++ = ptr->serial[3] + '0';
+		*p++ = ptr->serial[4] + '0';
+#undef ptr
 		break;
 	case cd_control:
 		v = newintobject((long) *((unchar *) data));
@@ -622,9 +599,7 @@ CD_deleteparser(self, args)
 {
 	int i;
 
-	CheckParser(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	CDdeleteparser(self->ob_cdparser);
@@ -651,9 +626,7 @@ CD_parseframe(self, args)
 	int length;
 	CDFRAME *p;
 
-	CheckParser(self);
-
-	if (!getargs(args, "s#", &cdfp, &length))
+	if (!newgetargs(args, "s#", &cdfp, &length))
 		return NULL;
 
 	if (length % sizeof(CDFRAME) != 0) {
@@ -681,9 +654,7 @@ CD_removecallback(self, args)
 {
 	int type;
 
-	CheckParser(self);
-
-	if (!getargs(args, "i", &type))
+	if (!newgetargs(args, "i", &type))
 		return NULL;
 
 	if (type < 0 || type >= NCALLBACKS) {
@@ -708,9 +679,7 @@ CD_resetparser(self, args)
 	cdparserobject *self;
 	object *args;
 {
-	CheckParser(self);
-
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 
 	CDresetparser(self->ob_cdparser);
@@ -727,10 +696,8 @@ CD_addcallback(self, args)
 	int type;
 	object *func, *funcarg;
 
-	CheckParser(self);
-
 	/* XXX - more work here */
-	if (!getargs(args, "(iOO)", &type, &func, &funcarg))
+	if (!newgetargs(args, "iOO", &type, &func, &funcarg))
 		return NULL;
 
 	if (type < 0 || type >= NCALLBACKS) {
@@ -750,17 +717,24 @@ CD_addcallback(self, args)
 	INCREF(funcarg);
 	self->ob_cdcallbacks[type].ob_cdcallbackarg = funcarg;
 
+/*
+	if (type == cd_audio) {
+		sigfpe_[_UNDERFL].repls = _ZERO;
+		handle_sigfpes(_ON, _EN_UNDERFL, NULL, _ABORT_ON_ERROR, NULL);
+	}
+*/
+
 	INCREF(None);
 	return None;
 }
 
 static struct methodlist cdparser_methods[] = {
-	{"addcallback",		(method)CD_addcallback},
-	{"deleteparser",	(method)CD_deleteparser},
-	{"parseframe",		(method)CD_parseframe},
-	{"removecallback",	(method)CD_removecallback},
-	{"resetparser",		(method)CD_resetparser},
-	{"setcallback",		(method)CD_addcallback}, /* backward compatibility */
+	{"addcallback",		(method)CD_addcallback,		1},
+	{"deleteparser",	(method)CD_deleteparser,	1},
+	{"parseframe",		(method)CD_parseframe,		1},
+	{"removecallback",	(method)CD_removecallback,	1},
+	{"resetparser",		(method)CD_resetparser,		1},
+	{"setcallback",		(method)CD_addcallback,		1}, /* backward compatibility */
 	{NULL,			NULL} 		/* sentinel */
 };
 
@@ -781,11 +755,16 @@ cdparser_dealloc(self)
 }
 
 static object *
-cdparser_getattr(cdp, name)
-	cdparserobject *cdp;
+cdparser_getattr(self, name)
+	cdparserobject *self;
 	char *name;
 {
-	return findmethod(cdparser_methods, (object *)cdp, name);
+	if (self->ob_cdparser == NULL) {
+		err_setstr(RuntimeError, "no parser active");
+		return NULL;
+	}
+
+	return findmethod(cdparser_methods, (object *)self, name);
 }
 
 typeobject CdParsertype = {
@@ -827,7 +806,7 @@ CD_createparser(self, args)
 {
 	CDPARSER *cdp;
 
-	if (!getnoarg(args))
+	if (!newgetargs(args, ""))
 		return NULL;
 	cdp = CDcreateparser();
 	if (cdp == NULL) {
@@ -839,48 +818,21 @@ CD_createparser(self, args)
 }
 
 static object *
-CD_sbtoa(self, args)
-	object *self;
-	object *args;
+CD_msftoframe(self, args)
+	object *self, *args;
 {
-	char *sb;
-	int length;
-	object *result;
+	int min, sec, frame;
 
-	if (!getargs(args, "s#", &sb, &length))
+	if (!newgetargs(args, "iii", &min, &sec, &frame))
 		return NULL;
-	result = newsizedstringobject(NULL, length);
-	CDsbtoa(getstringvalue(result), (unchar *) sb, length);
-	return result;
+
+	return newintobject((long) CDmsftoframe(min, sec, frame));
 }
-
-static object *
-CD_timetoa(self, args)
-	object *self;
-	object *args;
-{
-	char *tc;
-	int length;
-	object *result;
-
-	if (!getargs(args, "s#", &tc, &length))
-		return NULL;
-
-	if (length != sizeof(struct cdtimecode)) {
-		err_setstr(TypeError, "bad length");
-		return NULL;
-	}
-
-	result = newsizedstringobject(NULL, 8);
-	CDtimetoa(getstringvalue(result), (struct cdtimecode *) tc);
-	return result;
-}
-
+	
 static struct methodlist CD_methods[] = {
-	{"sbtoa",	(method)CD_sbtoa},
-	{"open",	(method)CD_open},
-	{"createparser",(method)CD_createparser},
-	{"timetoa",	(method)CD_timetoa},
+	{"open",		(method)CD_open,		1},
+	{"createparser",	(method)CD_createparser,	1},
+	{"msftoframe",		(method)CD_msftoframe,		1},
 	{NULL,		NULL}	/* Sentinel */
 };
 
@@ -893,6 +845,33 @@ initcd()
 	d = getmoduledict(m);
 
 	CdError = newstringobject("cd.error");
-	if (CdError == NULL || dictinsert(d, "error", CdError) != 0)
-		fatal("can't define cd.error");
+	dictinsert(d, "error", CdError);
+
+	/* Identifiers for the different types of callbacks from the parser */
+	dictinsert(d, "audio", newintobject((long) cd_audio));
+	dictinsert(d, "pnum", newintobject((long) cd_pnum));
+	dictinsert(d, "index", newintobject((long) cd_index));
+	dictinsert(d, "ptime", newintobject((long) cd_ptime));
+	dictinsert(d, "atime", newintobject((long) cd_atime));
+	dictinsert(d, "catalog", newintobject((long) cd_catalog));
+	dictinsert(d, "ident", newintobject((long) cd_ident));
+	dictinsert(d, "control", newintobject((long) cd_control));
+
+	/* Block size information for digital audio data */
+	dictinsert(d, "DATASIZE", newintobject((long) CDDA_DATASIZE));
+	dictinsert(d, "BLOCKSIZE", newintobject((long) CDDA_BLOCKSIZE));
+
+	/* Possible states for the cd player */
+	dictinsert(d, "ERROR", newintobject((long) CD_ERROR));
+	dictinsert(d, "NODISC", newintobject((long) CD_NODISC));
+	dictinsert(d, "READY", newintobject((long) CD_READY));
+	dictinsert(d, "PLAYING", newintobject((long) CD_PLAYING));
+	dictinsert(d, "PAUSED", newintobject((long) CD_PAUSED));
+	dictinsert(d, "STILL", newintobject((long) CD_STILL));
+#ifdef CD_CDROM			/* only newer versions of the library */
+	dictinsert(d, "CDROM", newintobject((long) CD_CDROM));
+#endif
+
+	if (err_occurred())
+		fatal("can't initialize module cd");
 }
