@@ -1,0 +1,578 @@
+\chapter{Defining New Object Types \label{newTypes}}
+
+
+\section{Allocating Objects on the Heap
+         \label{allocating-objects}}
+
+\begin{cfuncdesc}{PyObject*}{_PyObject_New}{PyTypeObject *type}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyVarObject*}{_PyObject_NewVar}{PyTypeObject *type, int size}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyObject_Del}{PyObject *op}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyObject_Init}{PyObject *op,
+					    PyTypeObject *type}
+  Initialize a newly-allocated object \var{op} with its type and
+  initial reference.  Returns the initialized object.  If \var{type}
+  indicates that the object participates in the cyclic garbage
+  detector, it it added to the detector's set of observed objects.
+  Other fields of the object are not affected.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyVarObject*}{PyObject_InitVar}{PyVarObject *op,
+						  PyTypeObject *type, int size}
+  This does everything \cfunction{PyObject_Init()} does, and also
+  initializes the length information for a variable-size object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_New}{TYPE, PyTypeObject *type}
+  Allocate a new Python object using the C structure type \var{TYPE}
+  and the Python type object \var{type}.  Fields not defined by the
+  Python object header are not initialized; the object's reference
+  count will be one.  The size of the memory
+  allocation is determined from the \member{tp_basicsize} field of the
+  type object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NewVar}{TYPE, PyTypeObject *type,
+                                                int size}
+  Allocate a new Python object using the C structure type \var{TYPE}
+  and the Python type object \var{type}.  Fields not defined by the
+  Python object header are not initialized.  The allocated memory
+  allows for the \var{TYPE} structure plus \var{size} fields of the
+  size given by the \member{tp_itemsize} field of \var{type}.  This is
+  useful for implementing objects like tuples, which are able to
+  determine their size at construction time.  Embedding the array of
+  fields into the same allocation decreases the number of allocations,
+  improving the memory management efficiency.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_Del}{PyObject *op}
+  Releases memory allocated to an object using
+  \cfunction{PyObject_New()} or \cfunction{PyObject_NewVar()}.  This
+  is normally called from the \member{tp_dealloc} handler specified in
+  the object's type.  The fields of the object should not be accessed
+  after this call as the memory is no longer a valid Python object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW}{TYPE, PyTypeObject *type}
+  Macro version of \cfunction{PyObject_New()}, to gain performance at
+  the expense of safety.  This does not check \var{type} for a \NULL{}
+  value.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_NEW_VAR}{TYPE, PyTypeObject *type,
+                                                int size}
+  Macro version of \cfunction{PyObject_NewVar()}, to gain performance
+  at the expense of safety.  This does not check \var{type} for a
+  \NULL{} value.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_DEL}{PyObject *op}
+  Macro version of \cfunction{PyObject_Del()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_InitModule}{char *name,
+                                            PyMethodDef *methods}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_InitModule3}{char *name,
+                                             PyMethodDef *methods,
+                                             char *doc}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.  If \var{doc} is non-\NULL, it will
+  be used to define the docstring for the module.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_InitModule4}{char *name,
+                                             PyMethodDef *methods,
+                                             char *doc, PyObject *self,
+                                             int apiver}
+  Create a new module object based on a name and table of functions,
+  returning the new module object.  If \var{doc} is non-\NULL, it will
+  be used to define the docstring for the module.  If \var{self} is
+  non-\NULL, it will passed to the functions of the module as their
+  (otherwise \NULL) first parameter.  (This was added as an
+  experimental feature, and there are no known uses in the current
+  version of Python.)  For \var{apiver}, the only value which should
+  be passed is defined by the constant \constant{PYTHON_API_VERSION}.
+
+  \note{Most uses of this function should probably be using
+  the \cfunction{Py_InitModule3()} instead; only use this if you are
+  sure you need it.}
+\end{cfuncdesc}
+
+DL_IMPORT
+
+\begin{cvardesc}{PyObject}{_Py_NoneStruct}
+  Object which is visible in Python as \code{None}.  This should only
+  be accessed using the \code{Py_None} macro, which evaluates to a
+  pointer to this object.
+\end{cvardesc}
+
+
+\section{Common Object Structures \label{common-structs}}
+
+PyObject, PyVarObject
+
+PyObject_HEAD, PyObject_HEAD_INIT, PyObject_VAR_HEAD
+
+Typedefs:
+unaryfunc, binaryfunc, ternaryfunc, inquiry, coercion, intargfunc,
+intintargfunc, intobjargproc, intintobjargproc, objobjargproc,
+destructor, printfunc, getattrfunc, getattrofunc, setattrfunc,
+setattrofunc, cmpfunc, reprfunc, hashfunc
+
+\begin{ctypedesc}{PyCFunction}
+  Type of the functions used to implement most Python callables in C.
+\end{ctypedesc}
+
+\begin{ctypedesc}{PyMethodDef}
+  Structure used to describe a method of an extension type.  This
+  structure has four fields:
+
+  \begin{tableiii}{l|l|l}{member}{Field}{C Type}{Meaning}
+    \lineiii{ml_name}{char *}{name of the method}
+    \lineiii{ml_meth}{PyCFunction}{pointer to the C implementation}
+    \lineiii{ml_flags}{int}{flag bits indicating how the call should be
+                            constructed}
+    \lineiii{ml_doc}{char *}{points to the contents of the docstring}
+  \end{tableiii}
+\end{ctypedesc}
+
+The \member{ml_meth} is a C function pointer.  The functions may be of
+different types, but they always return \ctype{PyObject*}.  If the
+function is not of the \ctype{PyCFunction}, the compiler will require
+a cast in the method table.  Even though \ctype{PyCFunction} defines
+the first parameter as \ctype{PyObject*}, it is common that the method
+implementation uses a the specific C type of the \var{self} object.
+
+The flags can have the following values. Only \constant{METH_VARARGS}
+and \constant{METH_KEYWORDS} can be combined; the others can't.
+
+\begin{datadesc}{METH_VARARGS}
+  This is the typical calling convention, where the methods have the
+  type \ctype{PyMethodDef}. The function expects two
+  \ctype{PyObject*}.  The first one is the \var{self} object for
+  methods; for module functions, it has the value given to
+  \cfunction{Py_InitModule4()} (or \NULL{} if
+  \cfunction{Py_InitModule()} was used).  The second parameter
+  (often called \var{args}) is a tuple object representing all
+  arguments. This parameter is typically processed using
+  \cfunction{PyArg_ParseTuple()}.
+\end{datadesc}
+
+\begin{datadesc}{METH_KEYWORDS}
+  Methods with these flags must be of type
+  \ctype{PyCFunctionWithKeywords}.  The function expects three
+  parameters: \var{self}, \var{args}, and a dictionary of all the
+  keyword arguments.  The flag is typically combined with
+  \constant{METH_VARARGS}, and the parameters are typically processed
+  using \cfunction{PyArg_ParseTupleAndKeywords()}.
+\end{datadesc}
+
+\begin{datadesc}{METH_NOARGS}
+  Methods without parameters don't need to check whether arguments are
+  given if they are listed with the \constant{METH_NOARGS} flag.  They
+  need to be of type \ctype{PyNoArgsFunction}: they expect a single
+  single \ctype{PyObject*} as a parameter.  When used with object
+  methods, this parameter is typically named \code{self} and will hold
+  a reference to the object instance.
+\end{datadesc}
+
+\begin{datadesc}{METH_O}
+  Methods with a single object argument can be listed with the
+  \constant{METH_O} flag, instead of invoking
+  \cfunction{PyArg_ParseTuple()} with a \code{"O"} argument. They have
+  the type \ctype{PyCFunction}, with the \var{self} parameter, and a
+  \ctype{PyObject*} parameter representing the single argument.
+\end{datadesc}
+
+\begin{datadesc}{METH_OLDARGS}
+  This calling convention is deprecated.  The method must be of type
+  \ctype{PyCFunction}.  The second argument is \NULL{} if no arguments
+  are given, a single object if exactly one argument is given, and a
+  tuple of objects if more than one argument is given.  There is no
+  way for a function using this convention to distinguish between a
+  call with multiple arguments and a call with a tuple as the only
+  argument.
+\end{datadesc}
+
+\begin{cfuncdesc}{PyObject*}{Py_FindMethod}{PyMethodDef table[],
+                                            PyObject *ob, char *name}
+  Return a bound method object for an extension type implemented in
+  C.  This function also handles the special attribute
+  \member{__methods__},  returning a list of all the method names
+  defined in \var{table}.
+\end{cfuncdesc}
+
+
+\section{Mapping Object Structures \label{mapping-structs}}
+
+\begin{ctypedesc}{PyMappingMethods}
+  Structure used to hold pointers to the functions used to implement
+  the mapping protocol for an extension type.
+\end{ctypedesc}
+
+
+\section{Number Object Structures \label{number-structs}}
+
+\begin{ctypedesc}{PyNumberMethods}
+  Structure used to hold pointers to the functions an extension type
+  uses to implement the number protocol.
+\end{ctypedesc}
+
+
+\section{Sequence Object Structures \label{sequence-structs}}
+
+\begin{ctypedesc}{PySequenceMethods}
+  Structure used to hold pointers to the functions which an object
+  uses to implement the sequence protocol.
+\end{ctypedesc}
+
+
+\section{Buffer Object Structures \label{buffer-structs}}
+\sectionauthor{Greg J. Stein}{greg@lyra.org}
+
+The buffer interface exports a model where an object can expose its
+internal data as a set of chunks of data, where each chunk is
+specified as a pointer/length pair.  These chunks are called
+\dfn{segments} and are presumed to be non-contiguous in memory.
+
+If an object does not export the buffer interface, then its
+\member{tp_as_buffer} member in the \ctype{PyTypeObject} structure
+should be \NULL.  Otherwise, the \member{tp_as_buffer} will point to
+a \ctype{PyBufferProcs} structure.
+
+\note{It is very important that your \ctype{PyTypeObject} structure
+uses \constant{Py_TPFLAGS_DEFAULT} for the value of the
+\member{tp_flags} member rather than \code{0}.  This tells the Python
+runtime that your \ctype{PyBufferProcs} structure contains the
+\member{bf_getcharbuffer} slot. Older versions of Python did not have
+this member, so a new Python interpreter using an old extension needs
+to be able to test for its presence before using it.}
+
+\begin{ctypedesc}{PyBufferProcs}
+  Structure used to hold the function pointers which define an
+  implementation of the buffer protocol.
+
+  The first slot is \member{bf_getreadbuffer}, of type
+  \ctype{getreadbufferproc}.  If this slot is \NULL, then the object
+  does not support reading from the internal data.  This is
+  non-sensical, so implementors should fill this in, but callers
+  should test that the slot contains a non-\NULL{} value.
+
+  The next slot is \member{bf_getwritebuffer} having type
+  \ctype{getwritebufferproc}.  This slot may be \NULL{} if the object
+  does not allow writing into its returned buffers.
+
+  The third slot is \member{bf_getsegcount}, with type
+  \ctype{getsegcountproc}.  This slot must not be \NULL{} and is used
+  to inform the caller how many segments the object contains.  Simple
+  objects such as \ctype{PyString_Type} and \ctype{PyBuffer_Type}
+  objects contain a single segment.
+
+  The last slot is \member{bf_getcharbuffer}, of type
+  \ctype{getcharbufferproc}.  This slot will only be present if the
+  \constant{Py_TPFLAGS_HAVE_GETCHARBUFFER} flag is present in the
+  \member{tp_flags} field of the object's \ctype{PyTypeObject}.
+  Before using this slot, the caller should test whether it is present
+  by using the
+  \cfunction{PyType_HasFeature()}\ttindex{PyType_HasFeature()}
+  function.  If present, it may be \NULL, indicating that the object's
+  contents cannot be used as \emph{8-bit characters}.
+  The slot function may also raise an error if the object's contents
+  cannot be interpreted as 8-bit characters.  For example, if the
+  object is an array which is configured to hold floating point
+  values, an exception may be raised if a caller attempts to use
+  \member{bf_getcharbuffer} to fetch a sequence of 8-bit characters.
+  This notion of exporting the internal buffers as ``text'' is used to
+  distinguish between objects that are binary in nature, and those
+  which have character-based content.
+
+  \note{The current policy seems to state that these characters
+  may be multi-byte characters. This implies that a buffer size of
+  \var{N} does not mean there are \var{N} characters present.}
+\end{ctypedesc}
+
+\begin{datadesc}{Py_TPFLAGS_HAVE_GETCHARBUFFER}
+  Flag bit set in the type structure to indicate that the
+  \member{bf_getcharbuffer} slot is known.  This being set does not
+  indicate that the object supports the buffer interface or that the
+  \member{bf_getcharbuffer} slot is non-\NULL.
+\end{datadesc}
+
+\begin{ctypedesc}[getreadbufferproc]{int (*getreadbufferproc)
+                            (PyObject *self, int segment, void **ptrptr)}
+  Return a pointer to a readable segment of the buffer.  This function
+  is allowed to raise an exception, in which case it must return
+  \code{-1}.  The \var{segment} which is passed must be zero or
+  positive, and strictly less than the number of segments returned by
+  the \member{bf_getsegcount} slot function.  On success, it returns
+  the length of the buffer memory, and sets \code{*\var{ptrptr}} to a
+  pointer to that memory.
+\end{ctypedesc}
+
+\begin{ctypedesc}[getwritebufferproc]{int (*getwritebufferproc)
+                            (PyObject *self, int segment, void **ptrptr)}
+  Return a pointer to a writable memory buffer in
+  \code{*\var{ptrptr}}, and the length of that segment as the function
+  return value.  The memory buffer must correspond to buffer segment
+  \var{segment}.  Must return \code{-1} and set an exception on
+  error.  \exception{TypeError} should be raised if the object only
+  supports read-only buffers, and \exception{SystemError} should be
+  raised when \var{segment} specifies a segment that doesn't exist.
+% Why doesn't it raise ValueError for this one?
+% GJS: because you shouldn't be calling it with an invalid
+%      segment. That indicates a blatant programming error in the C
+%      code.
+\end{ctypedesc}
+
+\begin{ctypedesc}[getsegcountproc]{int (*getsegcountproc)
+                            (PyObject *self, int *lenp)}
+  Return the number of memory segments which comprise the buffer.  If
+  \var{lenp} is not \NULL, the implementation must report the sum of
+  the sizes (in bytes) of all segments in \code{*\var{lenp}}.
+  The function cannot fail.
+\end{ctypedesc}
+
+\begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
+                            (PyObject *self, int segment, const char **ptrptr)}
+\end{ctypedesc}
+
+
+\section{Supporting the Iterator Protocol
+         \label{supporting-iteration}}
+
+
+\section{Supporting Cyclic Garbarge Collection
+         \label{supporting-cycle-detection}}
+
+Python's support for detecting and collecting garbage which involves
+circular references requires support from object types which are
+``containers'' for other objects which may also be containers.  Types
+which do not store references to other objects, or which only store
+references to atomic types (such as numbers or strings), do not need
+to provide any explicit support for garbage collection.
+
+To create a container type, the \member{tp_flags} field of the type
+object must include the \constant{Py_TPFLAGS_HAVE_GC} and provide an
+implementation of the \member{tp_traverse} handler.  If instances of the
+type are mutable, a \member{tp_clear} implementation must also be
+provided.
+
+\begin{datadesc}{Py_TPFLAGS_HAVE_GC}
+  Objects with a type with this flag set must conform with the rules
+  documented here.  For convenience these objects will be referred to
+  as container objects.
+\end{datadesc}
+
+Constructors for container types must conform to two rules:
+
+\begin{enumerate}
+\item  The memory for the object must be allocated using
+       \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_VarNew()}.
+
+\item  Once all the fields which may contain references to other
+       containers are initialized, it must call
+       \cfunction{PyObject_GC_Track()}.
+\end{enumerate}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_GC_New}{TYPE, PyTypeObject *type}
+  Analogous to \cfunction{PyObject_New()} but for container objects with
+  the \constant{Py_TPFLAGS_HAVE_GC} flag set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{\var{TYPE}*}{PyObject_GC_NewVar}{TYPE, PyTypeObject *type,
+                                                   int size}
+  Analogous to \cfunction{PyObject_NewVar()} but for container objects
+  with the \constant{Py_TPFLAGS_HAVE_GC} flag set.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyVarObject *}{PyObject_GC_Resize}{PyVarObject *op, int}
+  Resize an object allocated by \cfunction{PyObject_NewVar()}.  Returns
+  the resized object or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_Track}{PyObject *op}
+  Adds the object \var{op} to the set of container objects tracked by
+  the collector.  The collector can run at unexpected times so objects
+  must be valid while being tracked.  This should be called once all
+  the fields followed by the \member{tp_traverse} handler become valid,
+  usually near the end of the constructor.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyObject_GC_TRACK}{PyObject *op}
+  A macro version of \cfunction{PyObject_GC_Track()}.  It should not be
+  used for extension modules.
+\end{cfuncdesc}
+
+Similarly, the deallocator for the object must conform to a similar
+pair of rules:
+
+\begin{enumerate}
+\item  Before fields which refer to other containers are invalidated,
+       \cfunction{PyObject_GC_UnTrack()} must be called.
+
+\item  The object's memory must be deallocated using
+       \cfunction{PyObject_GC_Del()}.
+\end{enumerate}
+
+\begin{cfuncdesc}{void}{PyObject_GC_Del}{PyObject *op}
+  Releases memory allocated to an object using
+  \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_NewVar()}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{PyObject_GC_UnTrack}{PyObject *op}
+  Remove the object \var{op} from the set of container objects tracked
+  by the collector.  Note that \cfunction{PyObject_GC_Track()} can be
+  called again on this object to add it back to the set of tracked
+  objects.  The deallocator (\member{tp_dealloc} handler) should call
+  this for the object before any of the fields used by the
+  \member{tp_traverse} handler become invalid.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{void}{_PyObject_GC_UNTRACK}{PyObject *op}
+  A macro version of \cfunction{PyObject_GC_UnTrack()}.  It should not be
+  used for extension modules.
+\end{cfuncdesc}
+
+The \member{tp_traverse} handler accepts a function parameter of this
+type:
+
+\begin{ctypedesc}[visitproc]{int (*visitproc)(PyObject *object, void *arg)}
+  Type of the visitor function passed to the \member{tp_traverse}
+  handler.  The function should be called with an object to traverse
+  as \var{object} and the third parameter to the \member{tp_traverse}
+  handler as \var{arg}.
+\end{ctypedesc}
+
+The \member{tp_traverse} handler must have the following type:
+
+\begin{ctypedesc}[traverseproc]{int (*traverseproc)(PyObject *self,
+                                visitproc visit, void *arg)}
+  Traversal function for a container object.  Implementations must
+  call the \var{visit} function for each object directly contained by
+  \var{self}, with the parameters to \var{visit} being the contained
+  object and the \var{arg} value passed to the handler.  If
+  \var{visit} returns a non-zero value then an error has occurred and
+  that value should be returned immediately.
+\end{ctypedesc}
+
+The \member{tp_clear} handler must be of the \ctype{inquiry} type, or
+\NULL{} if the object is immutable.
+
+\begin{ctypedesc}[inquiry]{int (*inquiry)(PyObject *self)}
+  Drop references that may have created reference cycles.  Immutable
+  objects do not have to define this method since they can never
+  directly create reference cycles.  Note that the object must still
+  be valid after calling this method (don't just call
+  \cfunction{Py_DECREF()} on a reference).  The collector will call
+  this method if it detects that this object is involved in a
+  reference cycle.
+\end{ctypedesc}
+
+
+\subsection{Example Cycle Collector Support
+            \label{example-cycle-support}}
+
+This example shows only enough of the implementation of an extension
+type to show how the garbage collector support needs to be added.  It
+shows the definition of the object structure, the
+\member{tp_traverse}, \member{tp_clear} and \member{tp_dealloc}
+implementations, the type structure, and a constructor --- the module
+initialization needed to export the constructor to Python is not shown
+as there are no special considerations there for the collector.  To
+make this interesting, assume that the module exposes ways for the
+\member{container} field of the object to be modified.  Note that
+since no checks are made on the type of the object used to initialize
+\member{container}, we have to assume that it may be a container.
+
+\begin{verbatim}
+#include "Python.h"
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *container;
+} MyObject;
+
+static int
+my_traverse(MyObject *self, visitproc visit, void *arg)
+{
+    if (self->container != NULL)
+        return visit(self->container, arg);
+    else
+        return 0;
+}
+
+static int
+my_clear(MyObject *self)
+{
+    Py_XDECREF(self->container);
+    self->container = NULL;
+
+    return 0;
+}
+
+static void
+my_dealloc(MyObject *self)
+{
+    PyObject_GC_UnTrack((PyObject *) self);
+    Py_XDECREF(self->container);
+    PyObject_GC_Del(self);
+}
+\end{verbatim}
+
+\begin{verbatim}
+statichere PyTypeObject
+MyObject_Type = {
+    PyObject_HEAD_INIT(NULL)
+    0,
+    "MyObject",
+    sizeof(MyObject),
+    0,
+    (destructor)my_dealloc,     /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_compare */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    0,                          /* tp_doc */
+    (traverseproc)my_traverse,  /* tp_traverse */
+    (inquiry)my_clear,          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+};
+
+/* This constructor should be made accessible from Python. */
+static PyObject *
+new_object(PyObject *unused, PyObject *args)
+{
+    PyObject *container = NULL;
+    MyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, "|O:new_object", &container)) {
+        result = PyObject_GC_New(MyObject, &MyObject_Type);
+        if (result != NULL) {
+            result->container = container;
+            PyObject_GC_Track(result);
+        }
+    }
+    return (PyObject *) result;
+}
+\end{verbatim}
