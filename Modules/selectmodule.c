@@ -332,7 +332,7 @@ staticforward PyTypeObject poll_Type;
 static int
 update_ufd_array(pollObject *self)
 {
-	int i, j, pos;
+	int i, pos;
 	PyObject *key, *value;
 
 	self->ufd_len = PyDict_Size(self->dict);
@@ -343,9 +343,9 @@ update_ufd_array(pollObject *self)
 	}
 
 	i = pos = 0;
-	while ((j = PyDict_Next(self->dict, &pos, &key, &value))) {
+	while (PyDict_Next(self->dict, &pos, &key, &value)) {
 		self->ufds[i].fd = PyInt_AsLong(key);
-		self->ufds[i].events = PyInt_AsLong(value);
+		self->ufds[i].events = (short)PyInt_AsLong(value);
 		i++;
 	}
 	self->ufd_uptodate = 1;
