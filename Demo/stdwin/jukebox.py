@@ -400,7 +400,7 @@ def sfplay(filename, args):
 	pid = os.fork()
 	if pid == 0:
 		# Child
-		os.exec(SFPLAY, args)
+		os.execv(SFPLAY, args)
 		# NOTREACHED
 	else:
 		# Parent
