@@ -1,3 +1,24 @@
+(-) speedup finddfa (and classify?)
+
+(-) more stuff under CVS (demo, extensions)
+
+(-) Mac port of 1.0.3++
+
+(-) Win32s for PC
+
+(-) integrate NT changes
+
+(-) print_error raises and then masks an error if softspace is not
+    defined
+
+(-) systematically create /usr/local/lib/python/<machine>-<os>/
+    subdirectories, with a lib/ subdirectory containing the lib*.a
+    files etc.
+
+(-) use const for char * parameters (and many more) where possible
+
+(-) The Great Renaming!
+
 (-) redo __xxx__ operators for class instances; add __getattr__ and
 __setattr__.
 

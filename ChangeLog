@@ -1,5 +1,7 @@
 Wed Aug 17 00:06:59 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* Lib/os.py: do fake "import posix" for freeze.py script
+
 	* Parser/parsetok.c (parsetok): don't call strncpy(str, NULL, 0)
 
 Tue Aug 16 23:58:30 1994  Guido van Rossum  (guido@voorn.cwi.nl)
