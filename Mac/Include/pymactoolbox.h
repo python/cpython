@@ -6,6 +6,7 @@
 	extern "C" {
 #endif
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Memory.h>
 #include <Dialogs.h>
 #include <Menus.h>
@@ -14,6 +15,10 @@
 #include <Lists.h>
 #include <Movies.h>
 #include <Errors.h>
+#else
+#include <Carbon/Carbon.h>
+#include <QuickTime/QuickTime.h>
+#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 /*

@@ -22,7 +22,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+#ifdef WITHOUT_FRAMEWORKS
 #include <Types.h>
 #include <Files.h>
+#else
+#include <Carbon/Carbon.h>
+#endif
 
 extern OSErr FindApplicationFromCreator(OSType, FSSpecPtr);
