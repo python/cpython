@@ -1,7 +1,7 @@
 \section{\module{socket} ---
-         Low-level networking interface.}
-\declaremodule{builtin}{socket}
+         Low-level networking interface}
 
+\declaremodule{builtin}{socket}
 \modulesynopsis{Low-level networking interface.}
 
 
@@ -20,11 +20,12 @@ socket semantics.
 The Python interface is a straightforward transliteration of the
 \UNIX{} system call and library interface for sockets to Python's
 object-oriented style: the \function{socket()} function returns a
-\dfn{socket object} whose methods implement the various socket system
-calls.  Parameter types are somewhat higher-level than in the C
-interface: as with \method{read()} and \method{write()} operations on
-Python files, buffer allocation on receive operations is automatic,
-and buffer length is implicit on send operations.
+\dfn{socket object}\obindex{socket} whose methods implement the
+various socket system calls.  Parameter types are somewhat
+higher-level than in the C interface: as with \method{read()} and
+\method{write()} operations on Python files, buffer allocation on
+receive operations is automatic, and buffer length is implicit on send
+operations.
 
 Socket addresses are represented as a single string for the
 \constant{AF_UNIX} address family and as a pair
@@ -39,14 +40,15 @@ specified when the socket object was created.
 
 For IP addresses, two special forms are accepted instead of a host
 address: the empty string represents \constant{INADDR_ANY}, and the string
-\code{"<broadcast>"} represents \constant{INADDR_BROADCAST}.
+\code{'<broadcast>'} represents \constant{INADDR_BROADCAST}.
 
 All errors raise exceptions.  The normal exceptions for invalid
 argument types and out-of-memory conditions can be raised; errors
-related to socket or address semantics raise the error \code{socket.error}.
+related to socket or address semantics raise the error
+\exception{socket.error}.
 
-Non-blocking mode is supported through the \code{setblocking()}
-method.
+Non-blocking mode is supported through the
+\method{setblocking()} method.
 
 The module \module{socket} exports the following constants and functions:
 
@@ -56,8 +58,8 @@ This exception is raised for socket- or address-related errors.
 The accompanying value is either a string telling what went wrong or a
 pair \code{(\var{errno}, \var{string})}
 representing an error returned by a system
-call, similar to the value accompanying \code{os.error}.
-See the module \module{errno}\refbimodindex{errno}, which contains
+call, similar to the value accompanying \exception{os.error}.
+See the module \refmodule{errno}\refbimodindex{errno}, which contains
 names for the error codes defined by the underlying operating system.
 \end{excdesc}
 
@@ -100,7 +102,7 @@ for a few symbols, default values are provided.
 Translate a host name to IP address format.  The IP address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
 is an IP address itself it is returned unchanged.  See
-\code{gethostbyname_ex} for a more complete interface.
+\function{gethostbyname_ex()} for a more complete interface.
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyname_ex}{hostname}
@@ -134,7 +136,7 @@ items of \var{aliaslist} for an entry containing at least one period.
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
-Translate an Internet protocol name (e.g. \code{'icmp'}) to a constant
+Translate an Internet protocol name (e.g.\ \code{'icmp'}) to a constant
 suitable for passing as the (optional) third argument to the
 \function{socket()} function.  This is usually only needed for sockets
 opened in ``raw'' mode (\constant{SOCK_RAW}); for the normal socket
@@ -159,7 +161,7 @@ The protocol number is usually zero and may be omitted in that case.
 \begin{funcdesc}{fromfd}{fd, family, type\optional{, proto}}
 Build a socket object from an existing file descriptor (an integer as
 returned by a file object's \method{fileno()} method).  Address family,
-socket type and protocol number are as for the \code{socket} function
+socket type and protocol number are as for the \function{socket()} function
 above.  The file descriptor should refer to a socket, but this is not
 checked --- subsequent operations on the object may fail if the file
 descriptor is invalid.  This function is rarely needed, but can be
@@ -264,7 +266,7 @@ is returned by the function.  If \var{buflen} is present, it specifies
 the maximum length of the buffer used to receive the option in, and
 this buffer is returned as a string.  It is up to the caller to decode
 the contents of the buffer (see the optional built-in module
-\module{struct} for a way to decode C structures encoded as strings).
+\refmodule{struct} for a way to decode C structures encoded as strings).
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{listen}{backlog}
@@ -318,9 +320,10 @@ meaning as for \method{recv()} above.  Return the number of bytes sent.
 Set blocking or non-blocking mode of the socket: if \var{flag} is 0,
 the socket is set to non-blocking, else to blocking mode.  Initially
 all sockets are in blocking mode.  In non-blocking mode, if a
-\method{recv()} call doesn't find any data, or if a \code{send} call can't
-immediately dispose of the data, a \exception{error} exception is
-raised; in blocking mode, the calls block until they can proceed.
+\method{recv()} call doesn't find any data, or if a
+\method{send()} call can't immediately dispose of the data, a
+\exception{error} exception is raised; in blocking mode, the calls
+block until they can proceed.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{setsockopt}{level, optname, value}
@@ -330,8 +333,8 @@ the \module{socket} module (\code{SO_*} etc.).  The value can be an
 integer or a string representing a buffer.  In the latter case it is
 up to the caller to ensure that the string contains the proper bits
 (see the optional built-in module
-\module{struct}\refbimodindex{struct} for a way to encode C structures
-as strings). 
+\refmodule{struct}\refbimodindex{struct} for a way to encode C
+structures as strings). 
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{shutdown}{how}
