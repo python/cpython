@@ -838,11 +838,17 @@
 %
 % Example:
 %  \versionadded{1.5.2}
+%  \versionchanged[short explanation]{1.6}
 %
 \newcommand{\versionadded}[1]{%
   {  New in version #1.  }}
-\newcommand{\versionchanged}[1]{%
-  {  Changed in version #1.  }}
+\newcommand{\versionchanged}[2][\py@badkey]{%
+  \ifx#1\@undefined%
+    {  Changed in version #2.  }%
+  \else%
+    {  Changed in version #2:\ #1.  }%
+  \fi%
+}
 
 
 % Tables.
