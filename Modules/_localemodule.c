@@ -454,5 +454,5 @@ init_locale(void)
     Py_XDECREF(x);
 
     if (PyErr_Occurred())
-        Py_FatalError("Can't initialize module locale");
+        Py_FatalError("Can't initialize module _locale");
 }
