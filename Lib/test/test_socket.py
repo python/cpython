@@ -378,13 +378,13 @@ class BasicTCPTest(SocketConnectedTest):
 
     def testSendAll(self):
         # Testing sendall() with a 2048 byte string over TCP
+        msg = ''
         while 1:
             read = self.cli_conn.recv(1024)
             if not read:
                 break
-            self.assert_(len(read) == 1024, "Error performing sendall.")
-            read = filter(lambda x: x == 'f', read)
-            self.assert_(len(read) == 1024, "Error performing sendall.")
+            msg += read
+        self.assertEqual(msg, 'f' * 2048)
 
     def _testSendAll(self):
         big_chunk = 'f' * 2048
