@@ -54,6 +54,8 @@ Module interface:
 - socket.htons(16 bit value) --> new int object
 - socket.htonl(32 bit value) --> new int object
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
+- socket.inet_aton(IP address) -> 32-bit packed IP representation
+- socket.inet_ntoa(packed IP) -> IP address string
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
@@ -151,6 +153,10 @@ int shutdown( int, int );
 #include <netdb.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+
+/* added 20 Aug 1999 to remove warnings from inet_ntoa call <che@debian.org> */
+#include <arpa/inet.h>
+
 #include <fcntl.h>
 #else
 #include <winsock.h>
@@ -1785,6 +1791,68 @@ static char htonl_doc[] =
 \n\
 Convert a 32-bit integer from host to network byte order.";
 
+/*
+ * socket.inet_aton() and socket.inet_ntoa() functions
+ *
+ * written 20 Aug 1999 by Ben Gertzfield <che@debian.org> <- blame him!
+ *
+ */
+
+static char inet_aton_doc[] = 
+"inet_aton(string) -> packed 32-bit IP representation\n\
+\n\
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed
+binary format used in low-level network functions.";
+
+static PyObject*
+BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
+{
+	char *ip_addr;
+	struct in_addr packed_addr;
+	int err;
+
+	if (!PyArg_Parse(args, "s", &ip_addr)) {
+		return NULL;
+	}
+	
+	err = inet_aton(ip_addr, &packed_addr);
+
+	if (err == 0) {		/* invalid address */
+		PyErr_SetString(PySocket_Error,
+			"illegal IP address string passed to inet_aton");
+		return NULL;
+	}
+
+	return PyString_FromStringAndSize((char *) &packed_addr,
+					  sizeof(packed_addr));
+}
+
+static char inet_ntoa_doc[] = 
+"inet_aton(packed_ip) -> ip_address_string\n\
+\n\
+Convert an IP address from 32-bit packed binary format to string format";
+
+static PyObject*
+BUILD_FUNC_DEF_2(PySocket_inet_ntoa, PyObject *, self, PyObject *, args)
+{
+	char *packed_str;
+	int err, addr_len;
+	struct in_addr packed_addr;
+
+	if (!PyArg_Parse(args, "s#", &packed_str, &addr_len)) {
+		return NULL;
+	}
+	
+	if (addr_len != sizeof(packed_addr)) {
+		PyErr_SetString(PySocket_Error,
+			"packed IP wrong length for inet_ntoa");
+		return NULL;
+	}
+
+	memcpy(&packed_addr, packed_str, addr_len);
+
+	return PyString_FromString(inet_ntoa(packed_addr));
+}
 
 /* List of functions exported by this module. */
 
@@ -1803,6 +1871,8 @@ static PyMethodDef PySocket_methods[] = {
 	{"ntohl",		PySocket_ntohl, 0, ntohl_doc},
 	{"htons",		PySocket_htons, 0, htons_doc},
 	{"htonl",		PySocket_htonl, 0, htonl_doc},
+	{"inet_aton",		PySocket_inet_aton, 0, inet_aton_doc},
+	{"inet_ntoa",		PySocket_inet_ntoa, 0, inet_ntoa_doc},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
@@ -1927,6 +1997,8 @@ getservbyname() -- map a service name and a protocol name to a port number\n\
 getprotobyname() -- mape a protocol name (e.g. 'tcp') to a number\n\
 ntohs(), ntohl() -- convert 16, 32 bit int from network to host byte order\n\
 htons(), htonl() -- convert 16, 32 bit int from host to network byte order\n\
+inet_aton() -- convert IP addr string (123.45.67.89) to 32-bit packed format\n\
+inet_ntoa() -- convert 32-bit packed format IP to string (123.45.67.89)\n\
 \n\
 (*) not available on all platforms!)\n\
 \n\
