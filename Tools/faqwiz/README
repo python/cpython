@@ -1,0 +1,25 @@
+FAQ Wizard
+----------
+
+Author: Guido van Rossum <guido@python.org>
+Version: 0.4
+Date: 26 May 1997
+
+
+This is a CGI program that maintains a user-editable FAQ.  It uses RCS
+to keep track of changes to individual FAQ entries.  It is fully
+configurable; everything you might want to change when using this
+program to maintain some other FAQ than the Python FAQ is contained in
+the configuration module, faqconf.py.
+
+Note that this is not an executable script; it's an importable module.
+The actual script in cgi-bin minimal.
+
+Files:
+
+faqw.py		executable script to be edited and installed in cgi-bin
+faqwin.py	main module, lives in same directory as FAQ entry files
+faqconf.py	main configuration module
+faqcust.py	additional local customization module (optional)
+
+--Guido van Rossum (home page: http://www.python.org/~guido/)
