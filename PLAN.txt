@@ -184,7 +184,7 @@ features.  Run the tests.  Fix bugs.  Repeat until satisfied.
 Note: this may interact with the branch integration task.
 
 
-Project: integration with main branch
+Project: integration with main branch *** This is done - tim ***
 *************************************
 
 Tasks:
@@ -217,7 +217,7 @@ Done:
 To undo or rename before final merge:  Modules/spam.c has worked its
 way into the branch Unix and Windows builds (pythoncore.dsp and
 PC/config.c); also imported by test_descr.py.  How about renaming to
-xxsubtype.c (whatever) now?
+xxsubtype.c (whatever) now? *** this is done - tim ***
 
 
 Project: performance tuning
@@ -280,17 +280,35 @@ Resolved.
 
 Rebuilt from scratch; ran all tests; checked into branch about 22:40.
 
-Merged descr-branch back into trunk:
+Merged descr-branch back into trunk (SEE BELOW -- this specific way of
+doing it was a bad idea):
+
     cvs -q -z3 up -j descr-branch python
 
 34 conflicts.  Hmm!  OK, looks like every file in the project with an
 embedded RCS Id is "a conflict".  Others make no sense, e.g., a dozen
 conflicts in dictobject.c, sometimes enclosing identical(!) blobs of
 source code.  And CVS remains utterly baffled by Python type object decls.
-Every line of ceval.c's generator code si in conflict blocks ... OK,
+Every line of ceval.c's generator code is in conflict blocks ... OK,
 there's no pattern or sense here, I'll just deal with it.
 
-Conflicts resolved; rebuilt from scratch; test_weakref fails.
+Conflicts resolved; rebuilt from scratch; test_weakref fails.  Didn't find
+an obvious reason and it was late, so committed it anyway.  Tagged the
+trunk then with tag:
+
+    after-descr-branch-merge
+
+Tracked the test_weakref failure to a botched conflict resolution in
+classobject.c; checked in a fix.
+
+LATER:  The merge should have been done via:
+
+    upd -j date2001-08-01 -j descr-branch python
+
+instead.  This would have caused only one conflict, a baffler in
+bltinmodule.c.  It would have avoided the classobject.c error I made.
+Luckily, except for that one, we got to the same place in the end anyway,
+apart from a few curious tabs-vs-spaces differences.
 ----------------------------------------------------------------------------
 2001-07-30
 
