@@ -19,8 +19,8 @@ Core and builtins
 
 - Changed the internal list over-allocation scheme.  For larger lists,
   overallocation ranged between 3% and 25%.  Now, it is a constant 12%.
-  For smaller lists (n<=5), overallocation was upto eight bytes.  Now,
-  the overallocation is no more than one byte -- this improves space
+  For smaller lists (n<8), overallocation was upto eight elements.  Now,
+  the overallocation is no more than three elements -- this improves space
   utilization for applications that have large numbers of small lists.
 
 - Support for arbitrary objects supporting the read-only buffer
