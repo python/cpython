@@ -36,6 +36,7 @@ from copy import deepcopy
 import getopt
 from plistlib import Plist
 from types import FunctionType as function
+import macresource
 
 
 class BundleBuilderError(Exception): pass
@@ -188,6 +189,8 @@ class BundleBuilder(Defaults):
 			dst = pathjoin(self.bundlepath, dst)
 			if self.symlink:
 				symlink(src, dst, mkdirs=1)
+			elif os.path.splitext(src)[1] == '.rsrc':
+				macresource.install(src, dst, mkdirs=1)
 			else:
 				copy(src, dst, mkdirs=1)
 

@@ -3,6 +3,8 @@
 from Carbon import Res
 import os
 import sys
+import MacOS
+import macostools
 
 class ArgumentError(TypeError): pass
 class ResourceFileNotFoundError(ImportError): pass
@@ -99,16 +101,51 @@ def open_error_resource():
 	mapping."""
 	need('Estr', 1, filename="errors.rsrc", modname=__name__)
 	
-def _decode(pathname, verbose=0):
+def _decode(pathname, verbose=0, newpathname=None):
 	# Decode an AppleSingle resource file, return the new pathname.
-	newpathname = pathname + '.df.rsrc'
-	if os.path.exists(newpathname) and \
+	if not newpathname:
+		newpathname = pathname + '.df.rsrc'
+		if os.path.exists(newpathname) and \
 			os.stat(newpathname).st_mtime >= os.stat(pathname).st_mtime:
-		return newpathname
+			return newpathname
 	if verbose:
 		print 'Decoding', pathname
 	import applesingle
 	applesingle.decode(pathname, newpathname, resonly=1)
 	return newpathname
 	
-	
+def install(src, dst, mkdirs=0):
+	"""Copy a resource file. The result will always be a datafork-based
+	resource file, whether the source is datafork-based, resource-fork
+	based or AppleSingle-encoded."""
+	if mkdirs:
+		macostools.mkdirs(os.path.split(dst)[0])
+	try:
+		refno = Res.FSOpenResourceFile(src, u'', 1)
+	except Res.Error, arg:
+		if arg[0] != -199:
+			# -199 is "bad resource map"
+			raise
+	else:
+		# Resource-fork based. Simply copy.
+		Res.CloseResFile(refno)
+		macostools.copy(src, dst)
+		
+	try:
+		refno = Res.FSpOpenResFile(src, 1)
+	except Res.Error, arg:
+		if not arg[0] in (-37, -39):
+			raise
+	else:
+		Res.CloseResFile(refno)
+		BUFSIZ=0x80000      # Copy in 0.5Mb chunks
+		ifp = MacOS.openrf(src, '*rb')
+		ofp = open(dst, 'wb')
+		d = ifp.read(BUFSIZ)
+		while d:
+			ofp.write(d)
+			d = ifp.read(BUFSIZ)
+		ifp.close()
+		ofp.close()
+		
+	_decode(src, newpathname=dst)
