@@ -43,6 +43,14 @@ class SearchDialog(SearchDialogBase):
             i, j = m.span()
             first = "%d.%d" % (line, i)
             last = "%d.%d" % (line, j)
+            try:
+                selfirst = text.index("sel.first")
+                sellast = text.index("sel.last")
+                if selfirst == first and sellast == last:
+                    text.bell()
+                    return 0
+            except TclError:
+                pass
             text.tag_remove("sel", "1.0", "end")
             text.tag_add("sel", first, last)
             text.mark_set("insert", self.engine.isback() and first or last)
