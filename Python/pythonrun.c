@@ -736,8 +736,8 @@ parse_syntax_error(PyObject *err, PyObject **message, char **filename,
 
 	/* old style errors */
 	if (PyTuple_Check(err))
-		return PyArg_Parse(err, "(O(ziiz))", message, filename,
-				   lineno, offset, text);
+		return PyArg_ParseTuple(err, "O(ziiz)", message, filename,
+				        lineno, offset, text);
 
 	/* new style errors.  `err' is an instance */
 
