@@ -296,9 +296,13 @@ determination.
 \begin{cfuncdesc}{PyObject*}{PyObject_Type}{PyObject *o}
   When \var{o} is non-\NULL, returns a type object corresponding to
   the object type of object \var{o}. On failure, raises
-  \exception{SystemError} and returns \NULL.  This is equivalent to
-  the Python expression \code{type(\var{o})}.
-  \bifuncindex{type}
+  \exception{SystemError} and returns \NULL.\bifuncindex{type}
+  This is equivalent to the Python expression \code{type(\var{o})}.
+  This function increments the reference count of the return value.
+  There's really no reason to use this function instead of the
+  common expression \code{\var{o}->ob_type}, which returns a pointer
+  of type \ctype{PyTypeObject*}, except when the incremented reference
+  count is needed.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_TypeCheck}{PyObject *o, PyTypeObject *type}
