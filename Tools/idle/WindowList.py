@@ -11,12 +11,12 @@ class WindowList:
         self.dict[str(window)] = window
 
     def delete(self, window):
-        window.after_idle(self.call_callbacks)
         try:
             del self.dict[str(window)]
         except KeyError:
             # Sometimes, destroy() is called twice
             pass
+        self.call_callbacks()
 
     def add_windows_to_menu(self,  menu):
         list = []
@@ -56,7 +56,6 @@ registry = WindowList()
 add_windows_to_menu = registry.add_windows_to_menu
 register_callback = registry.register_callback
 unregister_callback = registry.unregister_callback
-call_callbacks = registry.call_callbacks
 
 
 class ListedToplevel(Toplevel):
