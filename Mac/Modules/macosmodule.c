@@ -685,6 +685,46 @@ MacOS_openrf(PyObject *self, PyObject *args)
 	return (PyObject *)fp;
 }
 
+static char FreeMem_doc[] = "Return the total amount of free space in the heap";
+
+static PyObject *
+MacOS_FreeMem(PyObject *self, PyObject *args)
+{
+	long rv;
+		
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	rv = FreeMem();
+	return Py_BuildValue("l", rv);
+}
+
+static char MaxBlock_doc[] = "Return the largest contiguous block of free space in the heap";
+
+static PyObject *
+MacOS_MaxBlock(PyObject *self, PyObject *args)
+{
+	long rv;
+		
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	rv = MaxBlock();
+	return Py_BuildValue("l", rv);
+}
+
+static char CompactMem_doc[] = "(wanted size)->actual largest block after compacting";
+
+static PyObject *
+MacOS_CompactMem(PyObject *self, PyObject *args)
+{
+	long value;
+	long rv;
+		
+	if (!PyArg_ParseTuple(args, "l", &value))
+		return NULL;
+	rv = CompactMem(value);
+	return Py_BuildValue("l", rv);
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1,	accepthle_doc},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1,	getcrtp_doc},
@@ -702,6 +742,9 @@ static PyMethodDef MacOS_Methods[] = {
 	{"DebugStr",			MacOS_DebugStr,		1,	DebugStr_doc},
 	{"GetTicks",			MacOS_GetTicks,		1,	GetTicks_doc},
 	{"SysBeep",			MacOS_SysBeep,		1,	SysBeep_doc},
+	{"FreeMem",			MacOS_FreeMem,		1,	FreeMem_doc},
+	{"MaxBlock",		MacOS_MaxBlock,		1,	MaxBlock_doc},
+	{"CompactMem",		MacOS_CompactMem,	1,	CompactMem_doc},
 	{NULL,				NULL}		 /* Sentinel */
 };
 
