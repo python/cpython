@@ -256,11 +256,12 @@ tar archive several times. Each archive member is represented by a
 \begin{memberdesc}{posix}
     If true, create a \POSIX{} 1003.1-1990 compliant archive. GNU
     extensions are not used, because they are not part of the \POSIX{}
-    standard.  This limits the length of filenames to at most 256 and
-    link names to 100 characters. A \exception{ValueError} is raised
-    if a pathname exceeds this limit.  If false, create a GNU tar
-    compatible archive. It will not be \POSIX{} compliant, but can
-    store pathnames of unlimited length.
+    standard.  This limits the length of filenames to at most 256,
+    link names to 100 characters and the maximum file size to 8
+    gigabytes. A \exception{ValueError} is raised if a file exceeds
+    this limit.  If false, create a GNU tar compatible archive.  It
+    will not be \POSIX{} compliant, but can store files without any
+    of the above restrictions.
 \end{memberdesc}
 
 \begin{memberdesc}{dereference}
