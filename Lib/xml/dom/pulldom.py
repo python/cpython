@@ -21,6 +21,7 @@ class PullDOM(xml.sax.ContentHandler):
     document = None
 
     def __init__(self, documentFactory=None):
+        from xml.dom import XML_NAMESPACE
         self.documentFactory = documentFactory
         self.firstEvent = [None, None]
         self.lastEvent = self.firstEvent
@@ -31,7 +32,7 @@ class PullDOM(xml.sax.ContentHandler):
         except AttributeError:
             # use class' pop instead
             pass
-        self._ns_contexts = [{}] # contains uri -> prefix dicts
+        self._ns_contexts = [{XML_NAMESPACE:'xml'}] # contains uri -> prefix dicts
         self._current_context = self._ns_contexts[-1]
         self.pending_events = []
 
