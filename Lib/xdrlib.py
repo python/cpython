@@ -2,24 +2,9 @@
 
 See: RFC 1014
 
-This module will conditionally use the _xdrmodule.so module to get
-support for those representations we can't do much with from Python.
-
 """
 
 import struct
-from types import LongType
-
-# use C layer XDR libraries for some data types if available
-try:
-    import _xdr
-except ImportError:
-    _xdr = None
-
-# this test is done to see if machine representation is the same as
-# network representation.  if so, we can use module struct for packing
-# some data types
-_USE_MACHINE_REP = (struct.pack('l', 1) == '\0\0\0\1')
 
 # exceptions
 class Error:
@@ -60,14 +45,7 @@ class Packer:
     get_buf = get_buffer
 
     def pack_uint(self, x):
-	self.__buf = self.__buf + \
-		     (chr(int(x>>24 & 0xff)) + chr(int(x>>16 & 0xff)) + \
-		      chr(int(x>>8 & 0xff)) + chr(int(x & 0xff)))
-    if _USE_MACHINE_REP:
-	def pack_uint(self, x):
-	    if type(x) == LongType:
-		x = int((x + 0x80000000L) % 0x100000000L - 0x80000000L)
-	    self.__buf = self.__buf + struct.pack('l', x)
+	self.__buf = self.__buf + struct.pack('>L', x)
 
     pack_int = pack_uint
     pack_enum = pack_int
@@ -83,19 +61,14 @@ class Packer:
     pack_hyper = pack_uhyper
 
     def pack_float(self, x):
-	raise ConversionError('Not supported')
+	try: self.__buf = self.__buf + struct.pack('>f', x)
+	except struct.error, msg:
+	    raise ConversionError(msg)
+
     def pack_double(self, x):
-	raise ConversionError('Not supported')
-    # get these from the C layer if available
-    if _xdr:
-	def pack_float(self, x):
-	    try: self.__buf = self.__buf + _xdr.pack_float(x)
-	    except _xdr.error, msg:
-		raise ConversionError(msg)
-	def pack_double(self, x):
-	    try: self.__buf = self.__buf + _xdr.pack_double(x)
-	    except _xdr.error, msg:
-		raise ConversionError(msg)
+	try: self.__buf = self.__buf + struct.pack('>d', x)
+	except struct.error, msg:
+	    raise ConversionError(msg)
 
     def pack_fstring(self, n, s):
 	if n < 0:
@@ -163,27 +136,19 @@ class Unpacker:
 	data = self.__buf[i:j]
 	if len(data) < 4:
 	    raise EOFError
-	x = long(ord(data[0]))<<24 | ord(data[1])<<16 | \
-	    ord(data[2])<<8 | ord(data[3])
-	# Return a Python long only if the value is not representable
-	# as a nonnegative Python int
-	if x < 0x80000000L:
-	    x = int(x)
-	return x
-    if _USE_MACHINE_REP:
-	def unpack_uint(self):
-	    i = self.__pos
-	    self.__pos = j = i+4
-	    data = self.__buf[i:j]
-	    if len(data) < 4:
-		raise EOFError
-	    return struct.unpack('l', data)[0]
+	x = struct.unpack('>L', data)[0]
+	try:
+	    return int(x)
+	except OverflowError:
+	    return x
 
     def unpack_int(self):
-	x = self.unpack_uint()
-	if x >= 0x80000000L:
-	    x = x - 0x100000000L
-	return int(x)
+	i = self.__pos
+	self.__pos = j = i+4
+	data = self.__buf[i:j]
+	if len(data) < 4:
+	    raise EOFError
+	return struct.unpack('>l', data)[0]
 
     unpack_enum = unpack_int
     unpack_bool = unpack_int
@@ -200,30 +165,20 @@ class Unpacker:
 	return x
 
     def unpack_float(self):
-	raise ConversionError('Not supported')
-    def unpack_double(self):
-	raise ConversionError('Not supported')
-    # get these from the C layer if available
-    if _xdr:
-	def unpack_float(self):
-	    i = self.__pos
-	    self.__pos = j = i+4
-	    data = self.__buf[i:j]
-	    if len(data) < 4:
-		raise EOFError
-	    try: return _xdr.unpack_float(data)
-	    except _xdr.error, msg:
-		raise ConversionError(msg)
+	i = self.__pos
+	self.__pos = j = i+4
+	data = self.__buf[i:j]
+	if len(data) < 4:
+	    raise EOFError
+	return struct.unpack('>f', data)[0]
 
-	def unpack_double(self):
-	    i = self.__pos
-	    self.__pos = j = i+8
-	    data = self.__buf[i:j]
-	    if len(data) < 8:
-		raise EOFError
-	    try: return _xdr.unpack_double(data)
-	    except _xdr.error, msg:
-		raise ConversionError(msg)
+    def unpack_double(self):
+	i = self.__pos
+	self.__pos = j = i+8
+	data = self.__buf[i:j]
+	if len(data) < 8:
+	    raise EOFError
+	return struct.unpack('>d', data)[0]
 
     def unpack_fstring(self, n):
 	if n < 0:
