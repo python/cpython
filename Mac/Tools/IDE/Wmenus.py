@@ -1,6 +1,6 @@
 import FrameWork
 import Qd
-import Wbase
+import Wbase, Wcontrols, Ctl, Controls
 from types import *
 import Wapplication
 
@@ -8,21 +8,77 @@ _arrowright = Qd.GetPicture(472)
 _arrowdown = Qd.GetPicture(473)
 
 
+class PopupControl(Wcontrols.ControlWidget):
+	
+	def __init__(self, possize, items=None, callback=None):
+		if items is None:
+			items = []
+		procID = Controls.popupMenuProc|Controls.popupFixedWidth|Controls.useWFont
+		Wcontrols.ControlWidget.__init__(self, possize, "", procID, callback, 0, 0, 0)
+		self._items = items[:]
+	
+	def set(self, value):
+		self._control.SetControlValue(value+1)
+	
+	def get(self):
+		return self._control.GetControlValue() - 1
+	
+	def open(self):
+		self.menu = menu = FrameWork.Menu(self._parentwindow.parent.menubar, 'Foo', -1)
+		
+		for i in range(len(self._items)):
+			item = self._items[i]
+			if type(item) == StringType:
+				menuitemtext = object = item
+			elif type(item) == TupleType and len(item) == 2:
+				menuitemtext, object = item
+				self._items[i] = object
+			else:
+				raise Wbase.WidgetsError, "illegal itemlist for popup menu"
+			menuitem = FrameWork.MenuItem(menu, menuitemtext, None, None)
+		
+		self._calcbounds()
+		self._control = Ctl.NewControl(self._parentwindow.wid, 
+						self._bounds, 
+						self._title, 
+						1, 
+						self._value, 
+						self.menu.id, 
+						self._max, 
+						self._procID, 
+						0)
+		self.SetPort()
+		self.enable(self._enabled)
+	
+	def close(self):
+		self.menu.delete()
+		return Wcontrols.ControlWidget.close(self)
+	
+	def click(self, point, modifiers):
+		if not self._enabled:
+			return
+		part = self._control.TrackControl(point, -1)
+		if part:
+			if self._callback:
+				Wbase.CallbackCall(self._callback, 0, self._items[self.get()])
+
 
 class PopupWidget(Wbase.ClickableWidget):
 	
 	"""Simple title-less popup widget. Should be 16x16 pixels. 
 	Builds the menu items on the fly, good for dynamic popup menus."""
 	
-	def __init__(self, possize, items = [], callback = None):
-		Wbase.Widget.__init__(self, possize)
+	def __init__(self, possize, items=None, callback=None):
+		Wbase.ClickableWidget.__init__(self, possize)
+		if items is None:
+			items = []
 		self._items = items
 		self._itemsdict = {}
 		self._callback = callback
 		self._enabled = 1
 	
 	def close(self):
-		Wbase.Widget.close(self)
+		Wbase.ClickableWidget.close(self)
 		self._items = None
 		self._itemsdict = {}
 	
