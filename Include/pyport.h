@@ -235,9 +235,13 @@ extern "C" {
  * on some Cray systems HUGE_VAL is incorrectly (according to the C std)
  * defined to be the largest positive finite rather than infinity.  We need
  * the std-conforming infinity meaning (provided the platform has one!).
+ *
+ * Then, according to a bug report on SourceForge, defining Py_HUGE_VAL as
+ * INFINITY caused internal compiler errors under BeOS using some version
+ * of gcc.  Explicitly casting INFINITY to double made that problem go away.
  */
 #ifdef INFINITY
-#define Py_HUGE_VAL INFINITY
+#define Py_HUGE_VAL ((double)INFINITY)
 #else
 #define Py_HUGE_VAL HUGE_VAL
 #endif
