@@ -118,7 +118,7 @@ class TimeoutTestCase(unittest.TestCase):
 
         _delta = abs(_t1 - _t2)
         self.assert_(_delta < _timeout + self.fuzz,
-                     "timeout (%g) is %g seconds more than expected (%g)"
+                     "timeout (%g) is more than %g seconds more than expected (%g)"
                      %(_delta, self.fuzz, _timeout))
 
     def testRecvTimeout(self):
