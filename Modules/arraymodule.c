@@ -13,6 +13,8 @@
 #endif /* DONT_HAVE_SYS_TYPES_H */
 #endif /* !STDC_HEADERS */
 
+#define DELAYED(X)	0
+
 struct arrayobject; /* Forward */
 
 /* All possible arraydescr values are defined in the vector "descriptors"
@@ -1697,7 +1699,7 @@ statichere PyTypeObject Arraytype = {
 	0, 					/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	DELAYED(PyObject_GenericGetAttr),	/* tp_getattro */
 	0,					/* tp_setattro */
 	&array_as_buffer,			/* tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
@@ -1717,9 +1719,9 @@ statichere PyTypeObject Arraytype = {
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
 	0,					/* tp_init */
-	0,					/* tp_alloc */
+	DELAYED(PyType_GenericAlloc),		/* tp_alloc */
 	array_new,				/* tp_new */
-	0,					/* tp_free */
+	DELAYED(PyObject_Del),			/* tp_free */
 };
 
 /* No functions in array module. */
