@@ -221,6 +221,33 @@ def recursion():
     check('not a==b')
     if verbose: print "recursion tests ok"
 
+def dicts():
+    # Verify that __eq__ and __ne__ work for dicts even if the keys and
+    # values don't support anything other than __eq__ and __ne__.  Complex
+    # numbers are a fine example of that.
+    import random
+    imag1a = {}
+    for i in range(50):
+        imag1a[random.randrange(100)*1j] = random.randrange(100)*1j
+    items = imag1a.items()
+    random.shuffle(items)
+    imag1b = {}
+    for k, v in items:
+        imag1b[k] = v
+    imag2 = imag1b.copy()
+    imag2[k] = v + 1.0
+    verify(imag1a == imag1a, "imag1a == imag1a should have worked")
+    verify(imag1a == imag1b, "imag1a == imag1b should have worked")
+    verify(imag2 == imag2, "imag2 == imag2 should have worked")
+    verify(imag1a != imag2, "imag1a != imag2 should have worked")
+    for op in "<", "<=", ">", ">=":
+        try:
+            eval("imag1a %s imag2" % op)
+        except TypeError:
+            pass
+        else:
+            raise TestFailed("expected TypeError from imag1a %s imag2" % op)
+
 def main():
     basic()
     tabulate()
@@ -229,5 +256,6 @@ def main():
     testvector()
     misbehavin()
     recursion()
+    dicts()
 
 main()
