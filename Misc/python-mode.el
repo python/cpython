@@ -563,7 +563,8 @@ filter."
     (progn
       (require 'shell)
       (switch-to-buffer-other-window
-       (make-shell "Python" py-python-command))))
+       (apply (if (boundp 'make-shell) 'make-shell 'make-comint)
+	      "Python" py-python-command nil))))
   (make-local-variable 'shell-prompt-pattern)
   (setq shell-prompt-pattern "^>>> \\|^\\.\\.\\. ")
   (set-process-filter (get-buffer-process (current-buffer))
