@@ -542,8 +542,8 @@ eval_frame(PyFrameObject *f)
 #define BASIC_POP()	(*--stack_pointer)
 
 #ifdef LLTRACE
-#define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
-#define POP()		(lltrace && prtrace(TOP(), "pop"), BASIC_POP())
+#define PUSH(v)		(void)(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
+#define POP()		((void)(lltrace && prtrace(TOP(), "pop")), BASIC_POP())
 #else
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
