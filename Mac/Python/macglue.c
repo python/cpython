@@ -26,15 +26,42 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "macglue.h"
 
 #include <OSUtils.h> /* for Set(Current)A5 */
+#include <Files.h>
 #include <Resources.h>
 #include <Memory.h>
 #include <Events.h>
 #include <Windows.h>
 #include <Desk.h>
+#include <Traps.h>
+
+#ifdef __MWERKS__
+#include <SIOUX.h>
+#endif /* __MWERKS__ */
+
+#include <signal.h>
 
 /* XXX We should include Errors.h here, but it has a name conflict
 ** with the python errors.h. */
 #define fnfErr -43
+
+/* Declared in macfsmodule.c: */
+extern FSSpec *mfs_GetFSSpecFSSpec();
+
+/*
+** We attempt to be a good citizen by giving up the CPU periodically.
+** When in the foreground we do this less often and for shorter periods
+** than when in the background. At this time we also check for events and
+** pass them off to stdwin (or SIOUX, if compiling with mwerks).
+** The counts here are in ticks of 1/60th second.
+** XXXX The initial values here are not based on anything.
+** FG-python gives up the cpu for 1/60th 5 times per second,
+** BG-python for .2 second 10 times per second.
+*/
+static long interval_fg = 12;
+static long interval_bg = 6;
+static long yield_fg = 1;
+static long yield_bg = 12;
+static long lastyield, in_background;
 
 /* Convert C to Pascal string. Returns pointer to static buffer. */
 unsigned char *
@@ -111,28 +138,101 @@ PyMac_Error(OSErr err)
 }
 
 /*
-** Idle routine for busy-wait loops.
-** This is rather tricky: if we see an event we check whether it is
-** for somebody else (i.e. a click outside our windows) and, if so,
-** we pass the event on (so the user can switch processes). However,
-** by doing this we loose events meant for our windows. Too bad, I guess...
+** Set yield timeouts
 */
-int
-PyMac_Idle()
+void
+PyMac_SetYield(long fgi, long fgy, long bgi, long bgy)
+{
+	interval_fg = fgi;
+	yield_fg = fgy;
+	interval_bg = bgi;
+	yield_bg = bgy;
+}
+
+/*
+** Yield the CPU to other tasks.
+*/
+static
+PyMac_DoYield()
 {
 	EventRecord ev;
 	WindowPtr wp;
+	long yield;
+	extern int StdwinIsActive;
+	static int no_waitnextevent = -1;
+	int gotone;
+	
+	if ( no_waitnextevent < 0 ) {
+		no_waitnextevent = (NGetTrapAddress(_WaitNextEvent, ToolTrap) ==
+							NGetTrapAddress(_Unimplemented, ToolTrap));
+	}
 
-	SystemTask();
-	if ( intrpeek() )
-		return 0;
-	if ( GetNextEvent(0xffff, &ev) ) {
+	if ( StdwinIsActive )
+		return;
+		
+	if ( in_background )
+		yield = yield_bg;
+	else
+		yield = yield_fg;
+	while ( 1 ) {
+		if ( no_waitnextevent ) {
+			SystemTask();
+			gotone = GetNextEvent(0xffff, &ev);
+		} else {
+			gotone = WaitNextEvent(everyEvent, &ev, yield, NULL);
+		}	
+		/* Get out quickly if nothing interesting is happening */
+		if ( !gotone || ev.what == nullEvent )
+			break;
+			
+		/* Check whether we've moved to foreground or background */
+		if ( ev.what == osEvt &&
+		         (ev.message & osEvtMessageMask) == (suspendResumeMessage<<24)) {
+			if ( ev.message & resumeFlag ) {
+				in_background = 0;
+			} else {
+				in_background = 1;
+			}
+		}
+#ifdef __MWERKS__
+		/* If SIOUX wants it we're done too */
+		(void)SIOUXHandleOneEvent(&ev);
+#else
+		/* Other compilers are just unlucky: we only weed out clicks in other applications */
 		if ( ev.what == mouseDown ) {
 			if ( FindWindow(ev.where, &wp) == inSysWindow )
 				SystemClick(&ev, wp);
 		}
+#endif /* !__MWERKS__ */
 	}
-	return 1;
+	lastyield = TickCount();
+}
+
+/*
+** Yield the CPU to other tasks if opportune
+*/
+void
+PyMac_Yield() {
+	long iv;
+	
+	if ( in_background )
+		iv = interval_bg;
+	else
+		iv = interval_fg;
+	if ( TickCount() > lastyield + iv )
+		PyMac_DoYield();
+}
+
+/*
+** Idle routine for busy-wait loops.
+** Gives up CPU, handles events and returns true if an interrupt is pending
+** (but not actually handled yet).
+*/
+int
+PyMac_Idle()
+{
+	PyMac_DoYield();
+	return intrpeek();
 }
 
 
@@ -196,7 +296,14 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	short refnum;
 	long parid;
 	OSErr err;
+	FSSpec *fs2;
 
+	/* first check whether it already is an FSSpec */
+	fs2 = mfs_GetFSSpecFSSpec(v);
+	if ( fs2 ) {
+		fs = fs2;
+		return 1;
+	}
 	if ( PyString_Check(v) ) {
 		/* It's a pathname */
 		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
@@ -217,12 +324,6 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	return 1;
 }
 
-/* Convert an FSSpec to a Python object -- a triple (vrefnum, dirid, path) */
-PyObject *
-PyMac_BuildFSSpec(FSSpec *fs)
-{
-	return Py_BuildValue("(iis#)", fs->vRefNum, fs->parID, &fs->name[1], fs->name[0]);
-}
 
 
 /* Convert a Python object to a Rect.
