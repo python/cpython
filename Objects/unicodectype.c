@@ -36,9 +36,12 @@ gettyperecord(Py_UNICODE code)
 {
     int index;
 
+#ifdef Py_UNICODE_WIDE
     if (code >= 0x110000)
         index = 0;
-    else {
+    else
+#endif
+    {
         index = index1[(code>>SHIFT)];
         index = index2[(index<<SHIFT)+(code&((1<<SHIFT)-1))];
     }
