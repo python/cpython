@@ -40,7 +40,8 @@ The following values are considered false:
 \item	instances of user-defined classes, if the class defines a
 	\method{__nonzero__()} or \method{__len__()} method, when that
 	method returns zero.\footnote{Additional information on these
-special methods may be found in the \emph{Python Reference Manual}.}
+special methods may be found in the \citetitle[../ref/ref.html]{Python
+Reference Manual}.}
 
 \end{itemize}
 
@@ -142,9 +143,9 @@ consistently.
 
 Instances of a class normally compare as non-equal unless the class
 \withsubitem{(instance method)}{\ttindex{__cmp__()}}
-defines the \method{__cmp__()} method.  Refer to the \emph{Python
-Reference Manual} for information on the use of this method to effect
-object comparisons.
+defines the \method{__cmp__()} method.  Refer to the
+\citetitle[../ref/customization.html]{Python Reference Manual} for
+information on the use of this method to effect object comparisons.
 
 \strong{Implementation note:} Objects of different types except
 numbers are ordered by their type names; objects of the same types
@@ -1105,9 +1106,10 @@ Boolean that indicates whether a space character needs to be printed
 before another value when using the \keyword{print} statement.
 Classes that are trying to simulate a file object should also have a
 writable \member{softspace} attribute, which should be initialized to
-zero.  This will be automatic for classes implemented in Python; types
-implemented in C will have to provide a writable \member{softspace}
-attribute.
+zero.  This will be automatic for most classes implemented in Python
+(care may be needed for objects that override attribute access); types
+implemented in C will have to provide a writable
+\member{softspace} attribute.
 \end{memberdesc}
 
 \subsubsection{Internal Objects \label{typesinternal}}
