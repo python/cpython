@@ -79,7 +79,7 @@ XXX Possible additions:
 
 """
 
-import sys, os, stat
+import sys, os
 
 __all__ = ["input","close","nextfile","filename","lineno","filelineno",
            "isfirstline","isstdin","FileInput"]
@@ -300,7 +300,7 @@ class FileInput:
                     os.rename(self._filename, self._backupfilename)
                     self._file = open(self._backupfilename, "r")
                     try:
-                        perm = os.fstat(self._file.fileno())[stat.ST_MODE]
+                        perm = os.fstat(self._file.fileno()).st_mode
                     except:
                         self._output = open(self._filename, "w")
                     else:
