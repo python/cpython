@@ -49,14 +49,14 @@ addaccelerators(g)
 	dfa *d;
 	int i;
 #ifdef DEBUG
-	printf("Adding parser accellerators ...\n");
+	fprintf(stderr, "Adding parser accelerators ...\n");
 #endif
 	d = g->g_dfa;
 	for (i = g->g_ndfas; --i >= 0; d++)
 		fixdfa(g, d);
 	g->g_accel = 1;
 #ifdef DEBUG
-	printf("Done.\n");
+	fprintf(stderr, "Done.\n");
 #endif
 }
 
