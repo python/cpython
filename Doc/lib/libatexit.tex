@@ -42,6 +42,12 @@ later.
 \end{funcdesc}
 
 
+\begin{seealso}
+  \seemodule{readline}{Useful example of \module{atexit} to read and
+                       write \refmodule{readline} history files.}
+\end{seealso}
+
+
 \subsection{\module{atexit} Example \label{atexit-example}}
 
 The following simple example demonstrates how a module can initialize
@@ -66,9 +72,3 @@ def savecounter():
 import atexit
 atexit.register(savecounter)
 \end{verbatim}
-
-
-\begin{seealso}
-  \seemodule{readline}{Useful example of atexit to read and write
-                       \refmodule{readline} history files.}
-\end{seealso}
