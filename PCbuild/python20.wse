@@ -2241,6 +2241,14 @@ item: Install File
   Description=pynche color editor - noconsole main
   Flags=0000000100000010
 end
+item: Remark
+end
+item: Install File
+  Source=..\tools\i18n\*.py
+  Destination=%MAINDIR%\Tools\i18n
+  Description=Internationalization helpers
+  Flags=0000000000000010
+end
 item: End Block
 end
 item: Remark
