@@ -497,6 +497,7 @@ sub add_bbl_and_idx_dummy_commands {
     if (scalar(@parts) == 3) {
         # Be careful to re-write the string in place, since $_ is *not*
         # returned explicity;  *** nasty side-effect dependency! ***
+        print "\nadd_bbl_and_idx_dummy_commands ==> adding general index";
         print "\nadd_bbl_and_idx_dummy_commands ==> adding module index";
         my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex[\\s\\S]*)"
           . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
@@ -509,14 +510,21 @@ sub add_bbl_and_idx_dummy_commands {
         $HAVE_GENERAL_INDEX = 1;
     }
     elsif (scalar(@parts) == 2) {
+        print "\nadd_bbl_and_idx_dummy_commands ==> adding general index";
+        my $rx = "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
+        s/$rx/\\textohtmlindex \1/o;
         $HAVE_GENERAL_INDEX = 1;
     }
-    else {
+    elsif (scalar(@parts) == 1) {
+        print "\nadd_bbl_and_idx_dummy_commands ==> no index found";
         $CUSTOM_BUTTONS .= get_my_icon('blank');
         $global{'max_id'} = $id; # not sure why....
         s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
 	    s/[\\]printindex/\\textohtmlindex /o;
-	}
+    }
+    else {
+        die "\n\nBad number of index environments!\n\n";
+    }
     #----------------------------------------------------------------------
     lib_add_bbl_and_idx_dummy_commands()
         if defined(&lib_add_bbl_and_idx_dummy_commands);
