@@ -19,13 +19,9 @@ import errno
 import getopt
 import os
 import re
-import string
 import sys
-import UserList
 import xml.sax
 import xml.sax.saxutils
-
-from types import ListType, StringType, TupleType
 
 from esistools import encode
 
@@ -74,29 +70,30 @@ def popping(name, point, depth):
     dbgmsg("popping </%s> at %s" % (name, point))
 
 
-class _Stack(UserList.UserList):
+class _Stack(list):
     def append(self, entry):
-        if type(entry) is not StringType:
+        if not isinstance(entry, str):
             raise LaTeXFormatError("cannot push non-string on stack: "
                                    + `entry`)
         #dbgmsg("%s<%s>" % (" "*len(self.data), entry))
-        self.data.append(entry)
+        list.append(self, entry)
 
     def pop(self, index=-1):
-        entry = self.data[index]
-        del self.data[index]
-        #dbgmsg("%s</%s>" % (" "*len(self.data), entry))
+        entry = self[index]
+        del self[index]
+        #dbgmsg("%s</%s>" % (" " * len(self), entry))
 
     def __delitem__(self, index):
-        entry = self.data[index]
-        del self.data[index]
-        #dbgmsg("%s</%s>" % (" "*len(self.data), entry))
+        entry = self[index]
+        list.__delitem__(self, index)
+        #dbgmsg("%s</%s>" % (" " * len(self), entry))
 
 
 def new_stack():
     if DEBUG:
         return _Stack()
-    return []
+    else:
+        return []
 
 
 class Conversion:
@@ -106,7 +103,7 @@ class Conversion:
         self.table = table
         L = [s.rstrip() for s in ifp.readlines()]
         L.append("")
-        self.line = string.join(L, "\n")
+        self.line = "\n".join(L)
         self.preamble = 1
 
     def convert(self):
@@ -340,7 +337,7 @@ class Conversion:
                 break
         if stack:
             raise LaTeXFormatError("elements remain on stack: "
-                                   + string.join(stack, ", "))
+                                   + ", ".join(stack))
         # otherwise we just ran out of input here...
 
     # This is a really limited table of combinations, but it will have
@@ -546,7 +543,7 @@ def main():
     opts, args = getopt.getopt(sys.argv[1:], "D", ["debug"])
     for opt, arg in opts:
         if opt in ("-D", "--debug"):
-            DEBUG = DEBUG + 1
+            DEBUG += 1
     if len(args) == 0:
         ifp = sys.stdin
         ofp = sys.stdout
