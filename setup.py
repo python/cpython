@@ -418,14 +418,124 @@ class PyBuildExt(build_ext):
         # implementation independent wrapper for these; dumbdbm.py provides
         # similar functionality (but slower of course) implemented in Python.
 
+        # Berkeley DB interface.
+        #
+        # This requires the Berkeley DB code, see
+        # ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
+        #
+        # (See http://pybsddb.sourceforge.net/ for an interface to
+        # Berkeley DB 3.x.)
+
+        # when sorted in reverse order, keys for this dict must appear in the
+        # order you wish to search - e.g., search for db3 before db2, db2
+        # before db1
+        db_try_this = {
+            'db4': {'libs': ('db-4.3', 'db-4.2', 'db-4.1', 'db-4.0'),
+                    'libdirs': ('/usr/local/BerkeleyDB.4.3/lib',
+                                '/usr/local/BerkeleyDB.4.2/lib',
+                                '/usr/local/BerkeleyDB.4.1/lib',
+                                '/usr/local/BerkeleyDB.4.0/lib',
+                                '/usr/lib',
+                                '/opt/sfw',
+                                '/sw/lib',
+                                '/lib',
+                                ),
+                    'incdirs': ('/usr/local/BerkeleyDB.4.3/include',
+                                '/usr/local/BerkeleyDB.4.2/include',
+                                '/usr/local/BerkeleyDB.4.1/include',
+                                '/usr/local/BerkeleyDB.4.0/include',
+                                '/usr/include/db3',
+                                '/opt/sfw/include/db3',
+                                '/sw/include/db3',
+                                '/usr/local/include/db3',
+                                ),
+                    'incs': ('db_185.h',)},
+            'db3': {'libs': ('db-3.3', 'db-3.2', 'db-3.1', 'db-3.0'),
+                    'libdirs': ('/usr/local/BerkeleyDB.3.3/lib',
+                                '/usr/local/BerkeleyDB.3.2/lib',
+                                '/usr/local/BerkeleyDB.3.1/lib',
+                                '/usr/local/BerkeleyDB.3.0/lib',
+                                '/usr/lib',
+                                '/opt/sfw',
+                                '/sw/lib',
+                                '/lib',
+                                ),
+                    'incdirs': ('/usr/local/BerkeleyDB.3.3/include',
+                                '/usr/local/BerkeleyDB.3.2/include',
+                                '/usr/local/BerkeleyDB.3.1/include',
+                                '/usr/local/BerkeleyDB.3.0/include',
+                                '/usr/include/db3',
+                                '/opt/sfw/include/db3',
+                                '/sw/include/db3',
+                                '/usr/local/include/db3',
+                                ),
+                    'incs': ('db_185.h',)},
+            'db2': {'libs': ('db2',),
+                    'libdirs': ('/usr/lib', '/sw/lib', '/lib'),
+                    'incdirs': ('/usr/include/db2',
+                                '/usr/local/include/db2', '/sw/include/db2'),
+                    'incs': ('db_185.h',)},
+            # if you are willing to risk hash db file corruption you can
+            # uncomment the lines below for db1.  Note that this will affect
+            # not only the bsddb module, but the dbhash and anydbm modules
+            # as well.  you have been warned!!!
+            ##'db1': {'libs': ('db1', 'db'),
+            ##        'libdirs': ('/usr/lib', '/sw/lib', '/lib'),
+            ##        'incdirs': ('/usr/include/db1', '/usr/local/include/db1',
+            ##                    '/usr/include', '/usr/local/include'),
+            ##        'incs': ('db.h',)},
+            }
+
+        # override this list to affect the library version search order
+        # for example, if you want to force version 2 to be used:
+        #   db_search_order = ["db2"]
+        db_search_order = db_try_this.keys()
+        db_search_order.sort()
+        db_search_order.reverse()
+        
+        find_lib_file = self.compiler.find_library_file
+        class found(Exception): pass
+        try:
+            for dbkey in db_search_order:
+                dbd = db_try_this[dbkey]
+                for dblib in dbd['libs']:
+                    for dbinc in dbd['incs']:
+                        db_incs = find_file(dbinc, [], dbd['incdirs'])
+                        dblib_dir = find_lib_file(dbd['libdirs'], dblib)
+                        if db_incs and dblib_dir:
+                            dblib_dir = os.path.dirname(dblib_dir)
+                            dblibs = [dblib]
+                            raise found
+        except found:
+            if dbinc == 'db_185.h':
+                exts.append(Extension('bsddb', ['bsddbmodule.c'],
+                                      library_dirs=[dblib_dir],
+                                      include_dirs=db_incs,
+                                      define_macros=[('HAVE_DB_185_H',1)],
+                                      libraries=[dblib]))
+            else:
+                exts.append(Extension('bsddb', ['bsddbmodule.c'],
+                                      library_dirs=[dblib_dir],
+                                      include_dirs=db_incs,
+                                      libraries=[dblib]))
+        else:
+            db_incs = None
+            dblibs = []
+            dblib_dir = None
+
         # The standard Unix dbm module:
         if platform not in ['cygwin']:
             if (self.compiler.find_library_file(lib_dirs, 'ndbm')):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
                                        libraries = ['ndbm'] ) )
-            elif self.compiler.find_library_file(lib_dirs, 'db1'):
+            elif self.compiler.find_library_file(lib_dirs, 'gdbm'):
                 exts.append( Extension('dbm', ['dbmmodule.c'],
-                                       libraries = ['db1'] ) )
+                                       libraries = ['gdbm'] ) )
+            elif db_incs is not None:
+                exts.append( Extension('dbm', ['dbmmodule.c'],
+                                       library_dirs=dblib_dir,
+                                       include_dirs=db_incs,
+                                       libraries=dblibs))
             else:
                 exts.append( Extension('dbm', ['dbmmodule.c']) )
 
@@ -433,44 +543,6 @@ class PyBuildExt(build_ext):
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
             exts.append( Extension('gdbm', ['gdbmmodule.c'],
                                    libraries = ['gdbm'] ) )
-
-        # Berkeley DB interface.
-        #
-        # This requires the Berkeley DB code, see
-        # ftp://ftp.cs.berkeley.edu/pub/4bsd/db.1.85.tar.gz
-        #
-        # Edit the variables DB and DBPORT to point to the db top directory
-        # and the subdirectory of PORT where you built it.
-        #
-        # (See http://pybsddb.sourceforge.net/ for an interface to
-        # Berkeley DB 3.x.)
-
-        dblib = []
-        if self.compiler.find_library_file(lib_dirs, 'db-3.2'):
-            dblib = ['db-3.2']
-        elif self.compiler.find_library_file(lib_dirs, 'db-3.1'):
-            dblib = ['db-3.1']
-        elif self.compiler.find_library_file(lib_dirs, 'db3'):
-            dblib = ['db3']
-        elif self.compiler.find_library_file(lib_dirs, 'db2'):
-            dblib = ['db2']
-        elif self.compiler.find_library_file(lib_dirs, 'db1'):
-            dblib = ['db1']
-        elif self.compiler.find_library_file(lib_dirs, 'db'):
-            dblib = ['db']
-
-        db185_incs = find_file('db_185.h', inc_dirs,
-                               ['/usr/include/db3', '/usr/include/db2'])
-        db_inc = find_file('db.h', inc_dirs, ['/usr/include/db1'])
-        if db185_incs is not None:
-            exts.append( Extension('bsddb', ['bsddbmodule.c'],
-                                   include_dirs = db185_incs,
-                                   define_macros=[('HAVE_DB_185_H',1)],
-                                   libraries = dblib ) )
-        elif db_inc is not None:
-            exts.append( Extension('bsddb', ['bsddbmodule.c'],
-                                   include_dirs = db_inc,
-                                   libraries = dblib) )
 
         # The mpz module interfaces to the GNU Multiple Precision library.
         # You need to ftp the GNU MP library.

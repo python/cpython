@@ -61,15 +61,6 @@
 /* Define to 1 if you have the `ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
-/* Define to 1 if you have the <db1/ndbm.h> header file. */
-#undef HAVE_DB1_NDBM_H
-
-/* Define to 1 if you have the <db_185.h> header file. */
-#undef HAVE_DB_185_H
-
-/* Define to 1 if you have the <db.h> header file. */
-#undef HAVE_DB_H
-
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H

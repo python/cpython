@@ -503,6 +503,46 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
         News regarding these platforms with more recent Cygwin
         versions would be appreciated!
 
+Configuring the bsddb and dbm modules
+-------------------------------------
+
+Configuring the bsddb module can sometimes be a bit tricky.  This module
+provides a Python interface to the Berkeley DB library.  As of this writing
+several versions of the underlying library are in common use (versions 1.85,
+2.x, 3.x, and 4.x).  The file formats across the various versions tend to be
+incompatible.  Some Linux distributions install multiple versions by
+default.  It is important that compatible versions of header files and
+libraries are used when building bsddb.  To make matters worse, version 1.85
+of Berkeley DB has known bugs in its hash file implementation, but is still
+the most widely available version of the library.  Many people build bsddb
+with version 1.85 but aren't aware of the bugs.  This affects people using
+the anydbm and dbhash modules because they are both use Berkeley DB's hash
+file format as a side effect of calling bsddb.hashopen.
+
+To try and remedy this problem, beginning with Python version 2.3 a number
+of changes to the bsddb build process were made.  First, and most important,
+the bsddb module will not be built with version 1.85 unless the relevant
+lines in setup.py are uncommented first and no other higher-numbered
+versions are found.  Second, matching versions of the library and include
+files must be found.  Third, searching is performed in order, starting from
+version 4 and proceeding to version 2 (or version 1 if it is enabled).
+Version-independent libraries and header files (e.g. /usr/lib/libdb.a and
+/usr/include/db.h) are never considered.  They must be in version-specific
+directories or have version-specific filenames (e.g. /usr/lib/libdb-3.2.so
+and /usr/include/db3/db_185.h).
+
+Since the bsddb module is programmed using the Berkeley DB version 1 API,
+the underlying library must be configured with the --enable-compat185 flag.
+Most vendor-provided distributions are so-configured.  This is generally
+only an issue if you build Berkeley DB from source.
+
+All this affects the dbm module as well.  There are several dbm-compliant
+APIs provided by different libraries, including ndbm, gdbm and Berkeley DB.
+The build process for dbm would previously use the version 1.85 library,
+thus extending the potential hash file corruption to the dbm module as well.
+The dbm module will use the library and include files found for the bsddb
+module if neither ndbm nor gdbm libraries are found.
+
 Configuring threads
 -------------------
 
