@@ -55,6 +55,18 @@ int Py_OptimizeFlag = 0;
 #define ILLEGAL_DYNAMIC_SCOPE \
 "%.100s: exec or 'import *' makes names ambiguous in nested scope"
 
+#define UNDEFINED_FUTURE_FEATURE \
+"future feature %.100s is not defined"
+
+#define GLOBAL_AFTER_ASSIGN \
+"name '%.400s' is assigned to before global declaration"
+
+#define GLOBAL_AFTER_USE \
+"name '%.400s' is used prior to global declaration"
+
+#define LOCAL_GLOBAL \
+"name '%.400s' is a function paramter and declared global"
+
 #define MANGLE_LEN 256
 
 #define OFF(x) offsetof(PyCodeObject, x)
@@ -424,7 +436,6 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 	set_error_location(c->c_filename, c->c_lineno);
 }
 
-
 /* Interface to the block stack */
 
 static void
@@ -448,7 +459,6 @@ block_pop(struct compiling *c, int type)
 		com_error(c, PyExc_SystemError, "bad block pop");
 	}
 }
-
 
 /* Prototype forward declarations */
 
@@ -2106,6 +2116,9 @@ static int
 com_make_closure(struct compiling *c, PyCodeObject *co)
 {
 	int i, free = PyTuple_GET_SIZE(co->co_freevars);
+	/* If the code is compiled with st->st_nested_scopes == 0,
+	   then no variable will ever be added to co_freevars. 
+	*/
 	if (free == 0)
 		return 0;
 	for (i = 0; i < free; ++i) {
@@ -2295,7 +2308,7 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 			if (NCH(n) > 1) {
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
-						  "augmented assign to tuple not possible");
+				  "augmented assign to tuple not possible");
 					return;
 				}
 				com_assign_sequence(c, n, assigning);
@@ -3939,18 +3952,31 @@ static int
 get_ref_type(struct compiling *c, char *name)
 {
 	PyObject *v;
-	if (PyDict_GetItemString(c->c_cellvars, name) != NULL)
-		return CELL;
-	if (PyDict_GetItemString(c->c_locals, name) != NULL)
-		return LOCAL;
-	if (PyDict_GetItemString(c->c_freevars, name) != NULL)
-		return FREE;
-	v = PyDict_GetItemString(c->c_globals, name);
-	if (v) {
-		if (v == Py_None)
-			return GLOBAL_EXPLICIT;
-		else {
-			return GLOBAL_IMPLICIT;
+	if (c->c_symtable->st_nested_scopes) {
+		if (PyDict_GetItemString(c->c_cellvars, name) != NULL)
+			return CELL;
+		if (PyDict_GetItemString(c->c_locals, name) != NULL)
+			return LOCAL;
+		if (PyDict_GetItemString(c->c_freevars, name) != NULL)
+			return FREE;
+		v = PyDict_GetItemString(c->c_globals, name);
+		if (v) {
+			if (v == Py_None)
+				return GLOBAL_EXPLICIT;
+			else {
+				return GLOBAL_IMPLICIT;
+			}
+		}
+	} else {
+		if (PyDict_GetItemString(c->c_locals, name) != NULL)
+			return LOCAL;
+		v = PyDict_GetItemString(c->c_globals, name);
+		if (v) {
+			if (v == Py_None)
+				return GLOBAL_EXPLICIT;
+			else {
+				return GLOBAL_IMPLICIT;
+			}
 		}
 	}
 	{
@@ -3984,14 +4010,145 @@ symtable_build(struct compiling *c, node *n)
 }
 
 static int
+symtable_init_compiling_symbols(struct compiling *c)
+{
+	PyObject *varnames;
+
+	varnames = c->c_symtable->st_cur->ste_varnames;
+	if (varnames == NULL) {
+		varnames = PyList_New(0);
+		if (varnames == NULL)
+			return -1;
+		c->c_symtable->st_cur->ste_varnames = varnames;
+		Py_INCREF(varnames);
+	} else
+		Py_INCREF(varnames);
+	c->c_varnames = varnames;
+
+	c->c_globals = PyDict_New();
+	if (c->c_globals == NULL)
+		return -1;
+	c->c_freevars = PyDict_New();
+	if (c->c_freevars == NULL)
+		return -1;
+	c->c_cellvars = PyDict_New();
+	if (c->c_cellvars == NULL)
+		return -1;
+	return 0;
+}
+
+struct symbol_info {
+	int si_nlocals;
+	int si_ncells;
+	int si_nfrees;
+	int si_nimplicit;
+};
+
+static void
+symtable_init_info(struct symbol_info *si)
+{
+	si->si_nlocals = 0;
+	si->si_ncells = 0;
+	si->si_nfrees = 0;
+	si->si_nimplicit = 0;
+}
+
+static int
+symtable_resolve_free(struct compiling *c, PyObject *name, 
+		      struct symbol_info *si)
+{
+	PyObject *dict, *v;
+
+	/* Seperate logic for DEF_FREE.  If it occurs in a function,
+	   it indicates a local that we must allocate storage for (a
+	   cell var).  If it occurs in a class, then the class has a
+	   method and a free variable with the same name.
+	*/
+
+	if (c->c_symtable->st_cur->ste_type == TYPE_FUNCTION) {
+		v = PyInt_FromLong(si->si_ncells++);
+		dict = c->c_cellvars;
+	} else {
+		v = PyInt_FromLong(si->si_nfrees++);
+		dict = c->c_freevars;
+	}
+	if (v == NULL)
+		return -1;
+	if (PyDict_SetItem(dict, name, v) < 0) {
+		Py_DECREF(v);
+		return -1;
+	}
+	Py_DECREF(v);
+	return 0;
+}
+
+static int
+symtable_freevar_offsets(PyObject *freevars, int offset)
+{
+	PyObject *name, *v;
+	int pos;
+
+	/* The cell vars are the first elements of the closure,
+	   followed by the free vars.  Update the offsets in
+	   c_freevars to account for number of cellvars. */  
+	pos = 0;
+	while (PyDict_Next(freevars, &pos, &name, &v)) {
+		int i = PyInt_AS_LONG(v) + offset;
+		PyObject *o = PyInt_FromLong(i);
+		if (o == NULL)
+			return -1;
+		if (PyDict_SetItem(freevars, name, o) < 0) {
+			Py_DECREF(o);
+			return -1;
+		}
+		Py_DECREF(o);
+	}
+	return 0;
+}
+
+static int
+symtable_update_flags(struct compiling *c, PySymtableEntryObject *ste,
+		      struct symbol_info *si)
+{
+	if (ste->ste_type != TYPE_MODULE)
+		c->c_flags |= CO_NEWLOCALS;
+	if (ste->ste_type == TYPE_FUNCTION) {
+		c->c_nlocals = si->si_nlocals;
+		if (ste->ste_optimized == 0)
+			c->c_flags |= CO_OPTIMIZED;
+		else if (si->si_ncells || si->si_nfrees 
+			 || (ste->ste_nested && si->si_nimplicit)
+			 || ste->ste_child_free) {
+			if (c->c_symtable->st_nested_scopes) {
+				PyErr_Format(PyExc_SyntaxError,
+					     ILLEGAL_DYNAMIC_SCOPE, 
+				     PyString_AS_STRING(ste->ste_name));
+				set_error_location(c->c_symtable->st_filename,
+						   ste->ste_lineno);
+				return -1;
+			} else {
+				char buf[200];
+				sprintf(buf, ILLEGAL_DYNAMIC_SCOPE,
+					PyString_AS_STRING(ste->ste_name));
+				if (PyErr_Warn(PyExc_SyntaxWarning,
+					       buf) < 0) {
+					return -1;
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+static int
 symtable_load_symbols(struct compiling *c)
 {
 	static PyObject *implicit = NULL;
-	PyObject *name, *varnames, *v;
-	int i, flags, pos;
-	int nlocals, nfrees, ncells, nimplicit;
 	struct symtable *st = c->c_symtable;
 	PySymtableEntryObject *ste = st->st_cur;
+	PyObject *name, *varnames, *v;
+	int i, flags, pos;
+	struct symbol_info si;
 
 	if (implicit == NULL) {
 		implicit = PyInt_FromLong(1);
@@ -4000,33 +4157,14 @@ symtable_load_symbols(struct compiling *c)
 	}
 	v = NULL;
 
+	if (symtable_init_compiling_symbols(c) < 0)
+		goto fail;
+	symtable_init_info(&si);
 	varnames = st->st_cur->ste_varnames;
-	if (varnames == NULL) {
-		varnames = PyList_New(0);
-		if (varnames == NULL)
-			return -1;
-		ste->ste_varnames = varnames;
-		Py_INCREF(varnames);
-	} else
-		Py_INCREF(varnames);
-	c->c_varnames = varnames;
+	si.si_nlocals = PyList_GET_SIZE(varnames);
+	c->c_argcount = si.si_nlocals;
 
-	c->c_globals = PyDict_New();
-	if (c->c_globals == NULL)
-		goto fail;
-	c->c_freevars = PyDict_New();
-	if (c->c_freevars == NULL)
-		goto fail;
-	c->c_cellvars = PyDict_New();
-	if (c->c_cellvars == NULL)
-		goto fail;
-
-	nlocals = PyList_GET_SIZE(varnames);
-	c->c_argcount = nlocals;
-	nfrees = 0;
-	ncells = 0;
-	nimplicit = 0;
-	for (i = 0; i < nlocals; ++i) {
+	for (i = 0; i < si.si_nlocals; ++i) {
 		v = PyInt_FromLong(i);
 		if (PyDict_SetItem(c->c_locals, 
 				   PyList_GET_ITEM(varnames, i), v) < 0)
@@ -4041,32 +4179,12 @@ symtable_load_symbols(struct compiling *c)
 		flags = PyInt_AS_LONG(v);
 
 		if (flags & DEF_FREE_GLOBAL)
-		    /* undo the original DEF_FREE */
-		    flags &= ~(DEF_FREE | DEF_FREE_CLASS);
-
-		/* Seperate logic for DEF_FREE.  If it occurs in a
-		   function, it indicates a local that we must
-		   allocate storage for (a cell var).  If it occurs in
-		   a class, then the class has a method and a free
-		   variable with the same name.
-		*/
+			/* undo the original DEF_FREE */
+			flags &= ~(DEF_FREE | DEF_FREE_CLASS);
 
 		if ((flags & (DEF_FREE | DEF_FREE_CLASS))
-		    && (flags & (DEF_LOCAL | DEF_PARAM))) {
-			PyObject *dict;
-			if (ste->ste_type == TYPE_FUNCTION) {
-				v = PyInt_FromLong(ncells++);
-				dict = c->c_cellvars;
-			} else {
-				v = PyInt_FromLong(nfrees++);
-				dict = c->c_freevars;
-			}
-			if (v == NULL)
-				return -1;
-			if (PyDict_SetItem(dict, name, v) < 0)
-				goto fail;
-			Py_DECREF(v);
-		}
+		    && (flags & (DEF_LOCAL | DEF_PARAM)))
+			symtable_resolve_free(c, name, &si);
 
 		if (flags & DEF_STAR) {
 			c->c_argcount--;
@@ -4077,23 +4195,22 @@ symtable_load_symbols(struct compiling *c)
 		} else if (flags & DEF_INTUPLE) 
 			c->c_argcount--;
 		else if (flags & DEF_GLOBAL) {
-			if ((flags & DEF_PARAM) 
-			    && (PyString_AS_STRING(name)[0] != '.')){
-				PyErr_Format(PyExc_SyntaxError,
-				     "name '%.400s' is local and global",
+			if (flags & DEF_PARAM) {
+				PyErr_Format(PyExc_SyntaxError, LOCAL_GLOBAL,
 					     PyString_AS_STRING(name));
-				set_error_location(st->st_filename,
+				set_error_location(st->st_filename, 
 						   ste->ste_lineno);
+				st->st_errors++;
 				goto fail;
 			}
 			if (PyDict_SetItem(c->c_globals, name, Py_None) < 0)
 				goto fail;
 		} else if (flags & DEF_FREE_GLOBAL) {
-			nimplicit++;
+			si.si_nimplicit++;
 			if (PyDict_SetItem(c->c_globals, name, implicit) < 0)
 				goto fail;
 		} else if ((flags & DEF_LOCAL) && !(flags & DEF_PARAM)) {
-			v = PyInt_FromLong(nlocals++);
+			v = PyInt_FromLong(si.si_nlocals++);
 			if (v == NULL)
 				goto fail;
 			if (PyDict_SetItem(c->c_locals, name, v) < 0)
@@ -4103,15 +4220,15 @@ symtable_load_symbols(struct compiling *c)
 				if (PyList_Append(c->c_varnames, name) < 0)
 					goto fail;
 		} else if (is_free(flags)) {
-			if (ste->ste_nested) {
-				v = PyInt_FromLong(nfrees++);
+			if (ste->ste_nested && st->st_nested_scopes) {
+				v = PyInt_FromLong(si.si_nfrees++);
 				if (v == NULL)
 					goto fail;
 				if (PyDict_SetItem(c->c_freevars, name, v) < 0)
 					goto fail;
 				Py_DECREF(v);
 			} else {
-				nimplicit++;
+				si.si_nimplicit++;
 				if (PyDict_SetItem(c->c_globals, name,
 						   implicit) < 0)
 					goto fail;
@@ -4119,40 +4236,9 @@ symtable_load_symbols(struct compiling *c)
 		}
 	}
 
-	/* The cell vars are the first elements of the closure,
-	   followed by the free vars.  Update the offsets in
-	   c_freevars to account for number of cellvars. */ 
-	pos = 0;
-	while (PyDict_Next(c->c_freevars, &pos, &name, &v)) {
-		int i = PyInt_AS_LONG(v) + ncells;
-		PyObject *o = PyInt_FromLong(i);
-		if (PyDict_SetItem(c->c_freevars, name, o) < 0) {
-			Py_DECREF(o);
-			return -1;
-		}
-		Py_DECREF(o);
-	}
-
-	if (ste->ste_type == TYPE_FUNCTION)
-		c->c_nlocals = nlocals;
-
-	if (ste->ste_type != TYPE_MODULE)
-		c->c_flags |= CO_NEWLOCALS;
-	if (ste->ste_type == TYPE_FUNCTION) {
-		if (ste->ste_optimized)
-			c->c_flags |= CO_OPTIMIZED;
-		else if (ncells || nfrees 
-			 || (ste->ste_nested && nimplicit)
-			 || ste->ste_child_free) {
-			PyErr_Format(PyExc_SyntaxError, ILLEGAL_DYNAMIC_SCOPE,
-				     PyString_AS_STRING(ste->ste_name));
-			set_error_location(st->st_filename, ste->ste_lineno);
-			return -1;
-		}
-	}
-
-	return 0;
-
+	if (symtable_freevar_offsets(c->c_freevars, si.si_ncells) < 0)
+		return -1;
+	return symtable_update_flags(c, ste, &si);
  fail:
 	/* is this always the right thing to do? */
 	Py_XDECREF(v);
@@ -4168,6 +4254,7 @@ symtable_init()
 	if (st == NULL)
 		return NULL;
 	st->st_pass = 1;
+	st->st_nested_scopes = NESTED_SCOPES_DEFAULT;
 	st->st_filename = NULL;
 	if ((st->st_stack = PyList_New(0)) == NULL)
 		goto fail;
@@ -4191,6 +4278,44 @@ PySymtable_Free(struct symtable *st)
 	Py_XDECREF(st->st_stack);
 	Py_XDECREF(st->st_cur);
 	PyMem_Free((void *)st);
+}
+
+/* XXX this code is a placeholder for correct code.
+   from __future__ import name set language options */
+
+static int
+symtable_check_future(struct symtable *st, node *n)
+{
+	int i;
+	node *name = CHILD(n, 1);
+
+	if (strcmp(STR(CHILD(name, 0)), "__future__") != 0)
+		return 0;
+	/* It is only legal to define __future__ features at the top
+	   of a module.  If the current scope is not the module level
+	   or if there are any symbols defined, it is too late. */
+	if (st->st_cur->ste_symbols != st->st_global
+	    || PyDict_Size(st->st_cur->ste_symbols) != 0) {
+		PyErr_SetString(PyExc_SyntaxError, 
+	"imports from __future__ are only legal at the beginning of a module");
+		return -1;
+	}
+	for (i = 3; i < NCH(n); ++i) {
+		char *feature = STR(CHILD(CHILD(n, i), 0));
+		/* Do a linear search through the defined features,
+		   assuming there aren't very many of them. */ 
+		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
+			st->st_nested_scopes = 1;
+		} else {
+			PyErr_Format(PyExc_SyntaxError,
+				     UNDEFINED_FUTURE_FEATURE, feature);
+			set_error_location(st->st_filename,
+					   st->st_cur->ste_lineno);
+			st->st_errors++;
+			return -1;
+		}
+	}
+	return 1;
 }
 
 /* When the compiler exits a scope, it must should update the scope's
@@ -4322,12 +4447,17 @@ symtable_undo_free(struct symtable *st, PyObject *id,
 	return 0;
 }
 
+/* symtable_enter_scope() gets a reference via PySymtableEntry_New().
+   This reference is released when the scope is exited, via the DECREF
+   in symtable_exit_scope().
+*/
+
 static int
 symtable_exit_scope(struct symtable *st)
 {
 	int end;
 
-	if (st->st_pass == 1)
+	if (st->st_pass == 1 && st->st_nested_scopes)
 		symtable_update_free_vars(st);
 	Py_DECREF(st->st_cur);
 	end = PyList_GET_SIZE(st->st_stack) - 1;
@@ -4361,6 +4491,27 @@ symtable_enter_scope(struct symtable *st, char *name, int type,
 				  (PyObject *)st->st_cur) < 0)
 			st->st_errors++;
 	}
+}
+
+static int
+symtable_lookup(struct symtable *st, char *name)
+{
+	char buffer[MANGLE_LEN];
+	PyObject *v;
+	int flags;
+
+	if (mangle(st->st_private, name, buffer, sizeof(buffer)))
+		name = buffer;
+	v = PyDict_GetItemString(st->st_cur->ste_symbols, name);
+	if (v == NULL) {
+		if (PyErr_Occurred())
+			return -1;
+		else
+			return 0;
+	}
+
+	flags = PyInt_AS_LONG(v);
+	return flags;
 }
 
 static int
@@ -4485,10 +4636,12 @@ symtable_node(struct symtable *st, node *n)
 		symtable_import(st, n);
 		break;
 	case exec_stmt: {
-		st->st_cur->ste_optimized = 0;
+		st->st_cur->ste_optimized |= OPT_EXEC;
 		symtable_node(st, CHILD(n, 1));
 		if (NCH(n) > 2)
 			symtable_node(st, CHILD(n, 3));
+		else
+			st->st_cur->ste_optimized |= OPT_BARE_EXEC;
 		if (NCH(n) > 4)
 			symtable_node(st, CHILD(n, 5));
 		break;
@@ -4698,8 +4851,10 @@ symtable_global(struct symtable *st, node *n)
 {
 	int i;
 
-	for (i = 1; i < NCH(n); i += 2)
-		symtable_add_def(st, STR(CHILD(n, i)), DEF_GLOBAL);
+	for (i = 1; i < NCH(n); i += 2) {
+		char *name = STR(CHILD(n, i));
+		symtable_add_def(st, name, DEF_GLOBAL);
+	}
 }
 
 static void
@@ -4725,10 +4880,10 @@ symtable_import(struct symtable *st, node *n)
                                 ('*' | import_as_name (',' import_as_name)*)
 	   import_as_name: NAME [NAME NAME]
 	*/
-
 	if (STR(CHILD(n, 0))[0] == 'f') {  /* from */
+		symtable_check_future(st, n);
 		if (TYPE(CHILD(n, 3)) == STAR) {
-			st->st_cur->ste_optimized = 0;
+			st->st_cur->ste_optimized |= OPT_IMPORT_STAR;
 		} else {
 			for (i = 3; i < NCH(n); i += 2) {
 				node *c = CHILD(n, i);
@@ -4740,7 +4895,7 @@ symtable_import(struct symtable *st, node *n)
 							DEF_IMPORT);
 			}
 		}
-	} else {
+	} else { 
 		for (i = 1; i < NCH(n); i += 2) {
 			symtable_assign(st, CHILD(n, i), DEF_IMPORT);
 		}
