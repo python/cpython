@@ -3,6 +3,7 @@ sys.path = ['.'] + sys.path
 
 from test.test_support import verbose, run_suite
 import re
+from sre import Scanner
 import sys, os, traceback
 
 # Misc tests from Tim Peters' re.doc
@@ -168,12 +169,17 @@ class ReTests(unittest.TestCase):
                              True)
             self.assertEqual(re.match(re.escape(chr(i)), chr(i)).span(), (0,1))
 
-        pat=re.compile( re.escape(p) )
+        pat=re.compile(re.escape(p))
         self.assertEqual(pat.match(p) is not None, True)
         self.assertEqual(pat.match(p).span(), (0,256))
 
     def test_pickling(self):
         import pickle
+        self.pickle_test(pickle)
+        import cPickle
+        self.pickle_test(cPickle)
+
+    def pickle_test(self, pickle):
         oldpat = re.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
         s = pickle.dumps(oldpat)
         newpat = pickle.loads(s)
@@ -187,18 +193,8 @@ class ReTests(unittest.TestCase):
         self.assertEqual(re.X, re.VERBOSE)
 
     def test_flags(self):
-        for flags in [re.I, re.M, re.X, re.S, re.L]:
-            r = re.compile('^pattern$', flags)
-
-    def test_limitations(self):
-        # Try nasty case that overflows the straightforward recursive
-        # implementation of repeated groups.
-        try:
-            re.match('(x)*', 50000*'x')
-        except RuntimeError, v:
-            self.assertEqual(str(v), "maximum recursion limit exceeded")
-        else:
-            self.fail("re.match('(x)*', 50000*'x') should have failed")
+        for flag in [re.I, re.M, re.X, re.S, re.L]:
+            self.assertNotEqual(re.compile('^pattern$', flag), None)
 
     def test_sre_character_literals(self):
         for i in [0, 8, 16, 32, 64, 127, 128, 255]:
@@ -242,6 +238,31 @@ class ReTests(unittest.TestCase):
     def test_bug_612074(self):
         pat=u"["+re.escape(u"\u2039")+u"]"
         self.assertEqual(re.compile(pat) and 1, 1)
+
+    def test_stack_overflow(self):
+        # nasty case that overflows the straightforward recursive
+        # implementation of repeated groups.
+        self.assertRaises(RuntimeError, re.match, '(x)*', 50000*'x')
+        self.assertRaises(RuntimeError, re.match, '(x)*y', 50000*'x'+'y')
+        self.assertRaises(RuntimeError, re.match, '(x)*?y', 50000*'x'+'y')
+
+    def test_scanner(self):
+        def s_ident(scanner, token): return token
+        def s_operator(scanner, token): return "op%s" % token
+        def s_float(scanner, token): return float(token)
+        def s_int(scanner, token): return int(token)
+
+        scanner = Scanner([
+            (r"[a-zA-Z_]\w*", s_ident),
+            (r"\d+\.\d*", s_float),
+            (r"\d+", s_int),
+            (r"=|\+|-|\*|/", s_operator),
+            (r"\s+", None),
+            ])
+
+        self.assertEqual(scanner.scan("sum = 3*foo + 312.50 + bar"),
+                         (['sum', 'op=', 3, 'op*', 'foo', 'op+', 312.5,
+                           'op+', 'bar'], ''))
 
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
@@ -368,10 +389,10 @@ def run_re_tests():
                     print '=== Fails on unicode-sensitive match', t
 
 def test_main():
-    run_re_tests()
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(ReTests))
     run_suite(suite)
+    run_re_tests()
 
 if __name__ == "__main__":
     test_main()
