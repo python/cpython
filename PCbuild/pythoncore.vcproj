@@ -207,7 +207,7 @@
 			RelativePath="..\Modules\cjkcodecs\_gbk.c">
 		</File>
 		<File
-			RelativePath="..\Modules\_heapmodule.c">
+			RelativePath="..\Modules\_heapqmodule.c">
 		</File>
 		<File
 			RelativePath="..\Modules\_hotshot.c">
