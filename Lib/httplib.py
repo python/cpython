@@ -28,19 +28,12 @@
 # connection for each request.)
 
 
-import os
 import socket
 import string
-import regex
-import regsub
 import mimetools
 
 HTTP_VERSION = 'HTTP/1.0'
-HTTP_VERSIONS_ACCEPTED = 'HTTP/1\.[0-9.]+'
 HTTP_PORT = 80
-
-replypat = HTTP_VERSIONS_ACCEPTED + '[ \t]+\([0-9][0-9][0-9]\)\(.*\)'
-replyprog = regex.compile(replypat)
 
 class HTTP:
 
@@ -83,15 +76,18 @@ class HTTP:
 
 	def getreply(self):
 		self.file = self.sock.makefile('rb')
-		self.sock = None
 		line = self.file.readline()
 		if self.debuglevel > 0: print 'reply:', `line`
-		if replyprog.match(line) < 0:
-			self.headers = None
-			return -1, line, self.headers
-		errcode, errmsg = replyprog.group(1, 2)
-		errcode = string.atoi(errcode)
-		errmsg = string.strip(errmsg)
+		try:
+		    [ver, code, msg] = string.split(line, None, 2)
+		except ValueError:
+		    self.headers = None
+		    return -1, line, self.headers
+		if ver[:5] != 'HTTP/':
+		    self.headers = None
+		    return -1, line, self.headers
+		errcode = string.atoi(code)
+                errmsg = string.strip(msg)
 		self.headers = mimetools.Message(self.file, 0)
 		return errcode, errmsg, self.headers
 
@@ -102,6 +98,9 @@ class HTTP:
 		if self.file:
 			self.file.close()
 		self.file = None
+		if self.sock:
+		    self.sock.close()
+		self.sock = None
 
 
 def test():
