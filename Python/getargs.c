@@ -409,6 +409,27 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			break;
 		}
 	
+	case 'B': /* byte sized bitfield - both signed and unsigned values allowed */
+		{
+			char *p = va_arg(*p_va, char *);
+			long ival = PyInt_AsLong(arg);
+			if (ival == -1 && PyErr_Occurred())
+				return "integer<b>";
+			else if (ival < SCHAR_MIN) {
+				PyErr_SetString(PyExc_OverflowError,
+			      "byte-sized integer bitfield is less than minimum");
+				return "integer<B>";
+			}
+			else if (ival > UCHAR_MAX) {
+				PyErr_SetString(PyExc_OverflowError,
+			      "byte-sized integer bitfield is greater than maximum");
+				return "integer<B>";
+			}
+			else
+				*p = (unsigned char) ival;
+			break;
+		}
+	
 	case 'h': /* signed short int */
 		{
 			short *p = va_arg(*p_va, short *);
@@ -430,20 +451,20 @@ convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 			break;
 		}
 	
-	case 'H': /* unsigned short int */
+	case 'H': /* short int sized bitfield, both signed and unsigned allowed */
 		{
 			unsigned short *p = va_arg(*p_va, unsigned short *);
 			long ival = PyInt_AsLong(arg);
 			if (ival == -1 && PyErr_Occurred())
 				return "integer<H>";
-			else if (ival < 0) {
+			else if (ival < SHRT_MIN) {
 				PyErr_SetString(PyExc_OverflowError,
-			      "unsigned short integer is less than minimum");
+			      "short integer bitfield is less than minimum");
 				return "integer<H>";
 			}
 			else if (ival > USHRT_MAX) {
 				PyErr_SetString(PyExc_OverflowError,
-			      "unsigned short integer is greater than maximum");
+			      "short integer bitfield is greater than maximum");
 				return "integer<H>";
 			}
 			else
@@ -1133,6 +1154,7 @@ skipitem(char **p_format, va_list *p_va)
 	switch (c) {
 	
 	case 'b': /* byte -- very short int */
+	case 'B': /* byte as bitfield */
 		{
 			(void) va_arg(*p_va, char *);
 			break;
@@ -1144,7 +1166,7 @@ skipitem(char **p_format, va_list *p_va)
 			break;
 		}
 	
-	case 'H': /* unsigned short int */
+	case 'H': /* short int as bitfield */
 		{
 			(void) va_arg(*p_va, unsigned short *);
 			break;
