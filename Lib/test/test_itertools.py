@@ -471,15 +471,19 @@ Samuele
 
 >>> def all(pred, seq):
 ...     "Returns True if pred(x) is True for every element in the iterable"
-...     return not nth(ifilterfalse(pred, seq), 0)
+...     return False not in imap(pred, seq)
 
 >>> def some(pred, seq):
 ...     "Returns True if pred(x) is True for at least one element in the iterable"
-...     return bool(nth(ifilter(pred, seq), 0))
+...     return True in imap(pred, seq)
 
 >>> def no(pred, seq):
 ...     "Returns True if pred(x) is False for every element in the iterable"
-...     return not nth(ifilter(pred, seq), 0)
+...     return True not in imap(pred, seq)
+
+>>> def quantify(pred, seq):
+...     "Count how many times the predicate is True in the sequence"
+...     return sum(imap(pred, seq))
 
 >>> def padnone(seq):
 ...     "Returns the sequence elements and then returns None indefinitely"
