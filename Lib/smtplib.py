@@ -641,7 +641,7 @@ class SMTP:
          >>> import smtplib
          >>> s=smtplib.SMTP("localhost")
          >>> tolist=["one@one.org","two@two.org","three@three.org","four@four.org"]
-         >>> msg = '''
+         >>> msg = '''\\
          ... From: Me@my.org
          ... Subject: testin'...
          ...
