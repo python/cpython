@@ -30,11 +30,15 @@ PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 #define ENOTDIR		(-120)
+#ifndef __MSL__
 #define EACCES		(-54)
+#endif
 #define EEXIST		(-48)
 #define EBUSY		(-47)
 #define EROFS		(-44)
+#ifndef __MSL__
 #define ENOENT		(-43)
+#endif
 #define ENFILE		(-42)
 #define	EIO			(-36)
 #define ENOSPC		(-34)
