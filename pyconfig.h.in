@@ -65,6 +65,9 @@
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
+/* Define if we have /dev/ptmx. */
+#undef HAVE_DEV_PTMX
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
