@@ -195,7 +195,14 @@ static void fpe_reset(Sigfunc *handler)
 #else
 #include <i386/fpu_control.h>
 #endif
+#ifdef _FPU_SETCW
+    {
+        fpu_control_t cw = 0x1372;
+        _FPU_SETCW(cw);
+    }
+#else
     __setfpucw(0x1372);
+#endif
     PyOS_setsig(SIGFPE, handler);
 
 /*-- NeXT -----------------------------------------------------------------*/
