@@ -89,6 +89,7 @@ if it does, the resulting binary is not self-contained.
 
 # Import standard modules
 
+import modulefinder
 import getopt
 import os
 import sys
@@ -97,7 +98,6 @@ import sys
 # Import the freeze-private modules
 
 import checkextensions
-import modulefinder
 import makeconfig
 import makefreeze
 import makemakefile
