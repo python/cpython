@@ -1062,9 +1062,8 @@ def consistency_with_epg():
           (EditableScrollablePane, ScrollablePane, EditablePane,
            Pane, ScrollingMixin, EditingMixin, object))
 
-mro_err_msg = """Cannot create class.The superclasses have conflicting
-inheritance trees which leave the method resolution order (MRO)
-undefined for bases """
+mro_err_msg = """Cannot create a consistent method resolution
+order (MRO) for bases """
 
 def mro_disagreement():
     if verbose: print "Testing error messages for MRO disagreement..."
