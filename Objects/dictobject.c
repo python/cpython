@@ -162,7 +162,13 @@ struct dictobject {
 	PyObject_HEAD
 	int ma_fill;  /* # Active + # Dummy */
 	int ma_used;  /* # Active */
-	int ma_size;  /* total # slots in ma_table */
+
+	/* The table contains ma_mask + 1 slots, and that's a power of 2.
+	 * We store the mask instead of the size because the mask is more
+	 * frequently needed.
+	 */
+	int ma_mask;
+
 	/* ma_table points to ma_smalltable for small tables, else to
 	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
 	 * saves repeated runtime null-tests in the workhorse getitem and
@@ -194,7 +200,7 @@ show_counts(void)
 #define empty_to_minsize(mp) do { 					\
 	memset((mp)->ma_smalltable, 0, sizeof((mp)->ma_smalltable));	\
 	(mp)->ma_table = (mp)->ma_smalltable;				\
-	(mp)->ma_size = MINSIZE;					\
+	(mp)->ma_mask = MINSIZE - 1;					\
 	(mp)->ma_used = (mp)->ma_fill = 0;				\
     } while(0)
 
@@ -248,7 +254,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register int i;
 	register unsigned int perturb;
 	register dictentry *freeslot;
-	register unsigned int mask = mp->ma_size-1;
+	register unsigned int mask = mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 	register int restore_error;
@@ -359,7 +365,7 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	register int i;
 	register unsigned int perturb;
 	register dictentry *freeslot;
-	register unsigned int mask = mp->ma_size-1;
+	register unsigned int mask = mp->ma_mask;
 	dictentry *ep0 = mp->ma_table;
 	register dictentry *ep;
 
@@ -492,7 +498,7 @@ dictresize(dictobject *mp, int minused)
 	/* Make the dict empty, using the new table. */
 	assert(newtable != oldtable);
 	mp->ma_table = newtable;
-	mp->ma_size = newsize;
+	mp->ma_mask = newsize - 1;
 	memset(newtable, 0, sizeof(dictentry) * newsize);
 	mp->ma_used = 0;
 	i = mp->ma_fill;
@@ -580,7 +586,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 		if (hash == -1)
 			return -1;
 	}
-	assert(mp->ma_fill < mp->ma_size);
+	assert(mp->ma_fill <= mp->ma_mask);  /* at least one empty slot */
 	n_used = mp->ma_used;
 	Py_INCREF(value);
 	Py_INCREF(key);
@@ -591,7 +597,7 @@ PyDict_SetItem(register PyObject *op, PyObject *key, PyObject *value)
 	 * much larger than ma_used, meaning a lot of dict keys have been
 	 * deleted).
 	 */
-	if (mp->ma_used > n_used && mp->ma_fill*3 >= mp->ma_size*2) {
+	if (mp->ma_used > n_used && mp->ma_fill*3 >= (mp->ma_mask+1)*2) {
 		if (dictresize(mp, mp->ma_used*2) != 0)
 			return -1;
 	}
@@ -652,7 +658,7 @@ PyDict_Clear(PyObject *op)
 		return;
 	mp = (dictobject *)op;
 #ifdef Py_DEBUG
-	n = mp->ma_size;
+	n = mp->ma_mask + 1;
 	i = 0;
 #endif
 
@@ -721,10 +727,10 @@ PyDict_Next(PyObject *op, int *ppos, PyObject **pkey, PyObject **pvalue)
 	i = *ppos;
 	if (i < 0)
 		return 0;
-	while (i < mp->ma_size && mp->ma_table[i].me_value == NULL)
+	while (i <= mp->ma_mask && mp->ma_table[i].me_value == NULL)
 		i++;
 	*ppos = i+1;
-	if (i >= mp->ma_size)
+	if (i > mp->ma_mask)
 		return 0;
 	if (pkey)
 		*pkey = mp->ma_table[i].me_key;
@@ -772,7 +778,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 
 	fprintf(fp, "{");
 	any = 0;
-	for (i = 0; i < mp->ma_size; i++) {
+	for (i = 0; i <= mp->ma_mask; i++) {
 		dictentry *ep = mp->ma_table + i;
 		PyObject *pvalue = ep->me_value;
 		if (pvalue != NULL) {
@@ -819,7 +825,7 @@ dict_repr(dictobject *mp)
 	sepa = PyString_FromString(", ");
 	colon = PyString_FromString(": ");
 	any = 0;
-	for (i = 0; i < mp->ma_size && v; i++) {
+	for (i = 0; i <= mp->ma_mask && v; i++) {
 		dictentry *ep = mp->ma_table + i;
 		PyObject *pvalue = ep->me_value;
 		if (pvalue != NULL) {
@@ -905,7 +911,7 @@ dict_keys(register dictobject *mp, PyObject *args)
 		Py_DECREF(v);
 		goto again;
 	}
-	for (i = 0, j = 0; i < mp->ma_size; i++) {
+	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
 			PyObject *key = mp->ma_table[i].me_key;
 			Py_INCREF(key);
@@ -936,7 +942,7 @@ dict_values(register dictobject *mp, PyObject *args)
 		Py_DECREF(v);
 		goto again;
 	}
-	for (i = 0, j = 0; i < mp->ma_size; i++) {
+	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
 			PyObject *value = mp->ma_table[i].me_value;
 			Py_INCREF(value);
@@ -981,7 +987,7 @@ dict_items(register dictobject *mp, PyObject *args)
 		goto again;
 	}
 	/* Nothing we do below makes any function calls. */
-	for (i = 0, j = 0; i < mp->ma_size; i++) {
+	for (i = 0, j = 0; i <= mp->ma_mask; i++) {
 		if (mp->ma_table[i].me_value != NULL) {
 			key = mp->ma_table[i].me_key;
 			value = mp->ma_table[i].me_value;
@@ -1010,11 +1016,11 @@ dict_update(register dictobject *mp, PyObject *args)
 	/* Do one big resize at the start, rather than incrementally
 	   resizing as we insert new items.  Expect that there will be
 	   no (or few) overlapping keys. */
-	if ((mp->ma_fill + other->ma_used)*3 >= mp->ma_size*2) {
+	if ((mp->ma_fill + other->ma_used)*3 >= (mp->ma_mask+1)*2) {
 		if (dictresize(mp, (mp->ma_used + other->ma_used)*3/2) != 0)
 			return NULL;
 	}
-	for (i = 0; i < other->ma_size; i++) {
+	for (i = 0; i <= other->ma_mask; i++) {
 		entry = &other->ma_table[i];
 		if (entry->me_value != NULL) {
 			Py_INCREF(entry->me_key);
@@ -1055,7 +1061,7 @@ PyDict_Copy(PyObject *o)
 	if (mp->ma_used > 0) {
 		if (dictresize(copy, mp->ma_used*3/2) != 0)
 			return NULL;
-		for (i = 0; i < mp->ma_size; i++) {
+		for (i = 0; i <= mp->ma_mask; i++) {
 			entry = &mp->ma_table[i];
 			if (entry->me_value != NULL) {
 				Py_INCREF(entry->me_key);
@@ -1123,7 +1129,7 @@ characterize(dictobject *a, dictobject *b, PyObject **pval)
 	PyObject *aval = NULL; /* a[akey] */
 	int i, cmp;
 
-	for (i = 0; i < a->ma_size; i++) {
+	for (i = 0; i <= a->ma_mask; i++) {
 		PyObject *thiskey, *thisaval, *thisbval;
 		if (a->ma_table[i].me_value == NULL)
 			continue;
@@ -1136,7 +1142,7 @@ characterize(dictobject *a, dictobject *b, PyObject **pval)
 				goto Fail;
 			}
 			if (cmp > 0 ||
-			    i >= a->ma_size ||
+			    i > a->ma_mask ||
 			    a->ma_table[i].me_value == NULL)
 			{
 				/* Not the *smallest* a key; or maybe it is
@@ -1251,7 +1257,7 @@ dict_equal(dictobject *a, dictobject *b)
 		return 0;
 
 	/* Same # of entries -- check all of 'em.  Exit early on any diff. */
-	for (i = 0; i < a->ma_size; i++) {
+	for (i = 0; i <= a->ma_mask; i++) {
 		PyObject *aval = a->ma_table[i].me_value;
 		if (aval != NULL) {
 			int cmp;
@@ -1427,11 +1433,11 @@ dict_popitem(dictobject *mp, PyObject *args)
 		 * finger that's out of bounds now because it wrapped around
 		 * or the table shrunk -- simply make sure it's in bounds now.
 		 */
-		if (i >= mp->ma_size || i < 1)
+		if (i > mp->ma_mask || i < 1)
 			i = 1;	/* skip slot 0 */
 		while ((ep = &mp->ma_table[i])->me_value == NULL) {
 			i++;
-			if (i >= mp->ma_size)
+			if (i > mp->ma_mask)
 				i = 1;
 		}
 	}
