@@ -932,8 +932,6 @@ sub do_cmd_memberlineni{
 
 @col_aligns = ('<td>', '<td>', '<td>', '<td>');
 
-$TABLE_HEADER_BGCOLOR = $NAV_BGCOLOR;
-
 sub fix_font{
     # do a little magic on a font name to get the right behavior in the first
     # column of the output table
@@ -1010,7 +1008,7 @@ sub do_env_tableii{
     s/\\lineii</\\lineii[$a1|$a2]</g;
     return '<table border align="center" style="border-collapse: collapse">'
            . "\n  <thead>"
-           . "\n    <tr$TABLE_HEADER_BGCOLOR>"
+           . "\n    <tr class=\"tableheader\">"
 	   . "\n      $th1<b>$h1</b>\&nbsp;</th>"
 	   . "\n      $th2<b>$h2</b>\&nbsp;</th>"
 	   . "\n    </thead>"
@@ -1135,40 +1133,124 @@ sub do_cmd_lineiv{
 	   . $_;
 }
 
-sub do_cmd_maketitle {
-    local($_) = @_;
-    my $the_title = "\n<div class='titlepage'><center>";
+
+# These can be used to control the title page appearance;
+# they need a little bit of documentation.
+#
+# If $TITLE_PAGE_GRAPHIC is set, it should be the name of a file in the
+# $ICONSERVER directory, or include path information (other than "./").  The
+# default image type will be assumed if an extension is not provided.
+#
+# If specified, the "title page" will contain two colums: one containing the
+# title/author/etc., and the other containing the graphic.  Use the other
+# four variables listed here to control specific details of the layout; all
+# are optional.
+#
+# $TITLE_PAGE_GRAPHIC = "my-company-logo";
+# $TITLE_PAGE_GRAPHIC_COLWIDTH = "30%";
+# $TITLE_PAGE_GRAPHIC_WIDTH = 150;
+# $TITLE_PAGE_GRAPHIC_HEIGHT = 150;
+# $TITLE_PAGE_GRAPHIC_ON_RIGHT = 0;
+
+sub make_my_titlepage() {
+    my $the_title = "";
     if ($t_title) {
 	$the_title .= "\n<h1>$t_title</h1>";
-    } else { write_warnings("\nThis document has no title."); }
+    }
+    else {
+        write_warnings("\nThis document has no title.");
+    }
     if ($t_author) {
 	if ($t_authorURL) {
 	    my $href = translate_commands($t_authorURL);
 	    $href = make_named_href('author', $href,
 				    "<b><font size='+2'>$t_author</font></b>");
 	    $the_title .= "\n<p>$href</p>";
-	} else {
+	}
+        else {
 	    $the_title .= ("\n<p><b><font size='+2'>$t_author</font></b></p>");
 	}
-    } else { write_warnings("\nThere is no author for this document."); }
+    }
+    else {
+        write_warnings("\nThere is no author for this document.");
+    }
     if ($t_institute) {
-        $the_title .= "\n<p>$t_institute</p>";}
+        $the_title .= "\n<p>$t_institute</p>";
+    }
     if ($DEVELOPER_ADDRESS) {
-        $the_title .= "\n<p>$DEVELOPER_ADDRESS</p>";}
+        $the_title .= "\n<p>$DEVELOPER_ADDRESS</p>";
+    }
     if ($t_affil) {
-	$the_title .= "\n<p><i>$t_affil</i></p>";}
+	$the_title .= "\n<p><i>$t_affil</i></p>";
+    }
     if ($t_date) {
 	$the_title .= "\n<p><strong>$t_date</strong>";
 	if ($PYTHON_VERSION) {
-	    $the_title .= "<br><strong>Release $PYTHON_VERSION</strong>";}
+	    $the_title .= "<br><strong>Release $PYTHON_VERSION</strong>";
+        }
 	$the_title .= "</p>"
     }
     if ($t_address) {
 	$the_title .= "\n<p>$t_address</p>";
-    } else { $the_title .= "\n<p>"}
+    }
+    else {
+        $the_title .= "\n<p>";
+    }
     if ($t_email) {
 	$the_title .= "\n<p>$t_email</p>";
-    }# else { $the_title .= "</p>" }
+    }
+    return $the_title;
+}
+
+use File::Basename;
+
+sub make_my_titlegraphic() {
+    my($myname, $mydir, $myext) = fileparse($TITLE_PAGE_GRAPHIC, '\..*');
+    chop $mydir;
+    if ($mydir eq '.') {
+        $mydir = $ICONSERVER;
+    }
+    $myext = ".$IMAGE_TYPE"
+      unless $myext;
+    my $graphic = "<td class=\"titlegraphic\"";
+    $graphic .= " width=\"$TITLE_PAGE_GRAPHIC_COLWIDTH\""
+      if ($TITLE_PAGE_GRAPHIC_COLWIDTH);
+    $graphic .= "><img";
+    $graphic .= " width=\"$TITLE_PAGE_GRAPHIC_WIDTH\""
+      if ($TITLE_PAGE_GRAPHIC_WIDTH);
+    $graphic .= " height=\"$TITLE_PAGE_GRAPHIC_HEIGHT\""
+      if ($TITLE_PAGE_GRAPHIC_HEIGHT);
+    $graphic .= "\n  src=\"$mydir/$myname$myext\"></td>\n";
+    return $graphic;
+}
+
+sub do_cmd_maketitle {
+    local($_) = @_;
+    my $the_title = "\n<div class=\"titlepage\">";
+    if ($TITLE_PAGE_GRAPHIC) {
+        if ($TITLE_PAGE_GRAPHIC_ON_RIGHT) {
+            $the_title .= ("\n<table border=\"0\" width=\"100%\">"
+                           . "<tr align=\"right\">\n<td>"
+                           . make_my_titlepage()
+                           . "</td>\n"
+                           . make_my_titlegraphic()
+                           . "</tr>\n</table>");
+        }
+        else {
+            $the_title .= ("\n<table border=\"0\" width=\"100%\"><tr>\n"
+                           . make_my_titlegraphic()
+                           . "<td>"
+                           . make_my_titlepage()
+                           . "</td></tr>\n</table>");
+        }
+    }
+    else {
+        $the_title .= ("\n<center>"
+                       . make_my_titlepage()
+                       . "\n</center>");
+    }
+    $the_title .= "\n</div>";
+    return $the_title . $_;
     $the_title .= "\n</center></div>";
     return $the_title . $_ ;
 }
