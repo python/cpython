@@ -1989,7 +1989,7 @@ def supers():
 
     class F(E):
         def meth(self, a):
-            s = self.__super
+            s = self.__super # == mysuper(F, self)
             return "F(%r)[%s]" % (a, s.__class__.__name__) + s.meth(a)
     F._F__super = mysuper(F)
 
@@ -2024,6 +2024,21 @@ def supers():
         pass
     else:
         raise TestFailed, "shouldn't allow super(D).__get__(C())"
+
+    # Make sure data descriptors can be overridden and accessed via super
+    # (new feature in Python 2.3)
+
+    class DDbase(object):
+        def getx(self): return 42
+        x = property(getx)
+
+    class DDsub(DDbase):
+        def getx(self): return "hello"
+        x = property(getx)
+
+    dd = DDsub()
+    vereq(dd.x, "hello")
+    vereq(super(DDsub, dd).x, 42)
 
 def inherits():
     if verbose: print "Testing inheritance from basic types..."
