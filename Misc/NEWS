@@ -46,7 +46,7 @@ Standard library
   methods in SRE, the standard regular expression engine.
 
 - In SRE, fix error with negative lookahead and lookbehind that
-  manifested itself as a runtime error in patterns like "?<!abc)(def)".
+  manifested itself as a runtime error in patterns like "(?<!abc)(def)".
 
 - Tkinter now supports Unicode strings and will set a Python exception
   when an error occurs handling a specific Unicode string.  
