@@ -9,17 +9,13 @@ if 0:   # for throwaway debugging output
     def dump(*stuff):
         sys.__stdout__.write(string.join(map(str, stuff), " ") + "\n")
 
-# Find a def or class stmt.
+# Find what looks like the start of a popular stmt.
 
-_defclassre = re.compile(r"""
+_synchre = re.compile(r"""
     ^
     [ \t]*
-    (?:
-        def   [ \t]+ [a-zA-Z_]\w* [ \t]* \(
-    |   class [ \t]+ [a-zA-Z_]\w* [ \t]*
-        (?: \( .* \) )?
-        [ \t]* :
-    )
+    (?: if | else | elif | while | def | class )
+    \b
 """, re.VERBOSE | re.MULTILINE).search
 
 # Match blank line or non-indenting comment line.
@@ -107,10 +103,13 @@ class Parser:
         self.str = str
         self.study_level = 0
 
-    # Return index of start of last (probable!) def or class stmt, or
-    # None if none found.  It's only probable because we can't know
-    # whether we're in a string without reparsing from the start of
-    # the file -- and that's too slow in large files for routine use.
+    # Return index of a good place to begin parsing, as close to the
+    # end of the string as possible.  This will be the start of some
+    # popular stmt like "if" or "def".  Return None if none found.
+    #
+    # This will be reliable iff given a reliable is_char_in_string
+    # function, meaning that when it says "no", it's absolutely guaranteed
+    # that the char is not in a string.
     #
     # Ack, hack: in the shell window this kills us, because there's
     # no way to tell the differences between output, >>> etc and
@@ -118,7 +117,9 @@ class Parser:
     # look like it's in an unclosed paren!:
     # Python 1.5.2 (#0, Apr 13 1999, ...
 
-    def find_last_def_or_class(self, use_ps1, _defclassre=_defclassre):
+    def find_good_parse_start(self, use_ps1,
+                              is_char_in_string=None,
+                              _synchre=_synchre):
         str, pos = self.str, None
         if use_ps1:
             # hack for shell window
@@ -127,18 +128,21 @@ class Parser:
             if i >= 0:
                 pos = i + len(ps1)
                 self.str = str[:pos-1] + '\n' + str[pos:]
-        else:
+        elif is_char_in_string:
+            # otherwise we can't be sure, so leave pos at None
             i = 0
             while 1:
-                m = _defclassre(str, i)
+                m = _synchre(str, i)
                 if m:
-                    pos, i = m.span()
+                    s, i = m.span()
+                    if not is_char_in_string(s):
+                        pos = s
                 else:
                     break
         return pos
 
     # Throw away the start of the string.  Intended to be called with
-    # find_last_def_or_class's result.
+    # find_good_parse_start's result.
 
     def set_lo(self, lo):
         assert lo == 0 or self.str[lo-1] == '\n'
@@ -498,3 +502,10 @@ class Parser:
     def is_block_closer(self):
         self._study2()
         return _closere(self.str, self.stmt_start) is not None
+
+    # index of last open bracket ({[, or None if none
+    lastopenbracketpos = None
+
+    def get_last_open_bracket_pos(self):
+        self._study2()
+        return self.lastopenbracketpos

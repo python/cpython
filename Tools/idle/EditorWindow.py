@@ -579,6 +579,25 @@ class EditorWindow:
             self.vars[name] = var = vartype(self.text)
         return var
 
+    # Tk implementations of "virtual text methods" -- each platform
+    # reusing IDLE's support code needs to define these for its GUI's
+    # flavor of widget.
+
+    # Is character at text_index in a Python string?  Return 0 for
+    # "guaranteed no", true for anything else.  This info is expensive to
+    # compute ab initio, but is probably already known by the platform's
+    # colorizer.
+
+    def is_char_in_string(self, text_index):
+        if self.color:
+            # return true iff colorizer hasn't (re)gotten this far yet, or
+            # the character is tagged as being in a string
+            return self.text.tag_prevrange("TODO", text_index) or \
+                   "STRING" in self.text.tag_names(text_index)
+        else:
+            # the colorizer is missing: assume the worst
+            return 1
+
 def prepstr(s):
     # Helper to extract the underscore from a string,
     # e.g. prepstr("Co_py") returns (2, "Copy").
