@@ -151,13 +151,15 @@ PySlice_GetIndicesEx(PySliceObject *r, int length,
 		if (*stop < 0) *stop = -1;
 		if (*stop > length) *stop = length;
 	}
-
-	if (*step < 0) {
+	
+	if ((*stop - *start)*(*step) <= 0) {
+		*slicelength = 0;
+	}
+	else if (*step < 0) {
 		*slicelength = (*stop-*start+1)/(*step)+1;
 	} else {
 		*slicelength = (*stop-*start-1)/(*step)+1;
 	}
-	if (*slicelength < 0) *slicelength = 0;
 
 	return 0;
 }
