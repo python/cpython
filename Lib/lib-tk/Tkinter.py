@@ -1686,6 +1686,10 @@ class Text(Widget):
 		self.tk.call(self._w, 'mark', 'set', markName, index)
 	def mark_unset(self, *markNames):
 		self.tk.call((self._w, 'mark', 'unset') + markNames)
+	def mark_next(self, index):
+		return self.tk.call(self._w, 'mark', 'next', index) or None
+	def mark_previous(self, index):
+		return self.tk.call(self._w, 'mark', 'previous', index) or None
 	def scan_mark(self, x, y):
 		self.tk.call(self._w, 'scan', 'mark', x, y)
 	def scan_dragto(self, x, y):
