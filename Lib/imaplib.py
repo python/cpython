@@ -15,7 +15,7 @@ Public functions:	Internaldate2tuple
 			Time2Internaldate
 """
 
-__version__ = "2.30"
+__version__ = "2.32"
 
 import binascii, re, socket, string, time, random, sys
 
@@ -755,17 +755,17 @@ class IMAP4:
 				return result
 
 			# Some have reported "unexpected response" exceptions.
-			# (Isn't this non-IMAP4-compliant behaviour?
-			# Please mail me details printed below!)
-			# Anyway, ignore them here.
+			# Note that ignoring them here causes loops.
+			# Instead, send me details of the unexpected response and
+			# I'll update the code in `_get_response()'.
 
 			try:
 				self._get_response()
 			except self.abort, val:
 				if __debug__:
 					if self.debug >= 1:
-						_mesg('abort exception ignored: %s' % val)
 						print_log()
+				raise
 
 
 	def _get_line(self):
