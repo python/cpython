@@ -68,7 +68,6 @@ class Cmd:
     identchars = IDENTCHARS
     ruler = '='
     lastcmd = ''
-    cmdqueue = []
     intro = None
     doc_leader = ""
     doc_header = "Documented commands (type help <topic>):"
@@ -86,6 +85,7 @@ class Cmd:
         automatically.
 
         """
+        self.cmdqueue = []
         if completekey:
             try:
                 import readline
