@@ -198,6 +198,7 @@ class BinHex:
 		self.ofp.write(data)
 
     def _writecrc(self):
+##    	self.crc = binascii.crc_hqx('\0\0', self.crc) # XXXX Should this be here??
 		self.ofp.write(struct.pack('h', self.crc))
 		self.crc = 0
 
@@ -257,9 +258,10 @@ class _Hqxdecoderengine:
 		self.ifp = ifp
 		self.eof = 0
 
-    def read(self, wtd):
+    def read(self, totalwtd):
 		"""Read at least wtd bytes (or until EOF)"""
 		decdata = ''
+		wtd = totalwtd
 		#
 		# The loop here is convoluted, since we don't really now how much
 		# to decode: there may be newlines in the incoming data.
@@ -283,7 +285,7 @@ class _Hqxdecoderengine:
 					raise Error, 'Premature EOF on binhex file'
 				data = data + newdata
 			decdata = decdata + decdatacur
-			wtd = wtd - len(decdata)
+			wtd = totalwtd - len(decdata)
 			if not decdata and not self.eof:
 				raise Error, 'Premature EOF on binhex file'
 		return decdata
@@ -367,11 +369,12 @@ class HexBin:
 		
     def _checkcrc(self):
 		filecrc = struct.unpack('h', self.ifp.read(2))[0] & 0xffff
+##		self.crc = binascii.crc_hqx('\0\0', self.crc) # XXXX Is this needed??
 		self.crc = self.crc & 0xffff
 		if DEBUG:
 			print 'DBG CRC %x %x'%(self.crc, filecrc)
-		#if filecrc != self.crc:
-		#	raise Error, 'CRC error, computed %x, read %x'%(self.crc, filecrc)
+		if filecrc != self.crc:
+			raise Error, 'CRC error, computed %x, read %x'%(self.crc, filecrc)
 		self.crc = 0
 
     def _readheader(self):
