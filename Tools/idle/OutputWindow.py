@@ -91,3 +91,47 @@ class OutputWindow(EditorWindow):
             self.text.bell()
             return
         edit.gotoline(lineno)
+
+# These classes are currently not used but might come in handy
+
+class OnDemandOutputWindow:
+
+    tagdefs = {
+        # XXX Should use IdlePrefs.ColorPrefs
+        "stdout":  {"foreground": "blue"},
+        "stderr":  {"foreground": "#007700"},
+    }   
+    
+    def __init__(self, flist):
+        self.flist = flist
+        self.owin = None
+    
+    def write(self, s, tags, mark):
+        if not self.owin:
+            self.setup()
+        self.owin.write(s, tags, mark)
+    
+    def setup(self):
+        self.owin = owin = OutputWindow(self.flist)
+        text = owin.text
+        for tag, cnf in self.tagdefs.items():
+            if cnf:
+                apply(text.tag_configure, (tag,), cnf)
+        text.tag_raise('sel')
+        self.write = self.owin.write
+
+class PseudoFile:
+
+    def __init__(self, owin, tags, mark="end"):
+        self.owin = owin
+        self.tags = tags
+        self.mark = mark
+
+    def write(self, s):
+        self.owin.write(s, self.tags, self.mark)
+
+    def writelines(self, l):
+        map(self.write, l)
+
+    def flush(self):
+        pass
