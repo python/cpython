@@ -1,11 +1,10 @@
-
 /* strop module */
 
 static char strop_module__doc__[] =
-"Common string manipulations, optimized for speed.\n\
-\n\
-Always use \"import string\" rather than referencing\n\
-this module directly.";
+"Common string manipulations, optimized for speed.\n"
+"\n"
+"Always use \"import string\" rather than referencing\n"
+"this module directly.";
 
 #include "Python.h"
 
@@ -78,15 +77,15 @@ split_whitespace(char *s, int len, int maxsplit)
 
 
 static char splitfields__doc__[] =
-"split(s [,sep [,maxsplit]]) -> list of strings\n\
-splitfields(s [,sep [,maxsplit]]) -> list of strings\n\
-\n\
-Return a list of the words in the string s, using sep as the\n\
-delimiter string.  If maxsplit is nonzero, splits into at most\n\
-maxsplit words.  If sep is not specified, any whitespace string\n\
-is a separator.  Maxsplit defaults to 0.\n\
-\n\
-(split and splitfields are synonymous)";
+"split(s [,sep [,maxsplit]]) -> list of strings\n"
+"splitfields(s [,sep [,maxsplit]]) -> list of strings\n"
+"\n"
+"Return a list of the words in the string s, using sep as the\n"
+"delimiter string.  If maxsplit is nonzero, splits into at most\n"
+"maxsplit words.  If sep is not specified, any whitespace string\n"
+"is a separator.  Maxsplit defaults to 0.\n"
+"\n"
+"(split and splitfields are synonymous)";
 
 static PyObject *
 strop_splitfields(PyObject *self, PyObject *args)
@@ -148,14 +147,14 @@ strop_splitfields(PyObject *self, PyObject *args)
 
 
 static char joinfields__doc__[] =
-"join(list [,sep]) -> string\n\
-joinfields(list [,sep]) -> string\n\
-\n\
-Return a string composed of the words in list, with\n\
-intervening occurrences of sep.  Sep defaults to a single\n\
-space.\n\
-\n\
-(join and joinfields are synonymous)";
+"join(list [,sep]) -> string\n"
+"joinfields(list [,sep]) -> string\n"
+"\n"
+"Return a string composed of the words in list, with\n"
+"intervening occurrences of sep.  Sep defaults to a single\n"
+"space.\n"
+"\n"
+"(join and joinfields are synonymous)";
 
 static PyObject *
 strop_joinfields(PyObject *self, PyObject *args)
@@ -279,13 +278,13 @@ strop_joinfields(PyObject *self, PyObject *args)
 
 
 static char find__doc__[] =
-"find(s, sub [,start [,end]]) -> in\n\
-\n\
-Return the lowest index in s where substring sub is found,\n\
-such that sub is contained within s[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.";
+"find(s, sub [,start [,end]]) -> in\n"
+"\n"
+"Return the lowest index in s where substring sub is found,\n"
+"such that sub is contained within s[start,end].  Optional\n"
+"arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Return -1 on failure.";
 
 static PyObject *
 strop_find(PyObject *self, PyObject *args)
@@ -321,13 +320,13 @@ strop_find(PyObject *self, PyObject *args)
 
 
 static char rfind__doc__[] =
-"rfind(s, sub [,start [,end]]) -> int\n\
-\n\
-Return the highest index in s where substring sub is found,\n\
-such that sub is contained within s[start,end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.";
+"rfind(s, sub [,start [,end]]) -> int\n"
+"\n"
+"Return the highest index in s where substring sub is found,\n"
+"such that sub is contained within s[start,end].  Optional\n"
+"arguments start and end are interpreted as in slice notation.\n"
+"\n"
+"Return -1 on failure.";
 
 static PyObject *
 strop_rfind(PyObject *self, PyObject *args)
@@ -397,10 +396,10 @@ do_strip(PyObject *args, int striptype)
 
 
 static char strip__doc__[] =
-"strip(s) -> string\n\
-\n\
-Return a copy of the string s with leading and trailing\n\
-whitespace removed.";
+"strip(s) -> string\n"
+"\n"
+"Return a copy of the string s with leading and trailing\n"
+"whitespace removed.";
 
 static PyObject *
 strop_strip(PyObject *self, PyObject *args)
@@ -410,9 +409,9 @@ strop_strip(PyObject *self, PyObject *args)
 
 
 static char lstrip__doc__[] =
-"lstrip(s) -> string\n\
-\n\
-Return a copy of the string s with leading whitespace removed.";
+"lstrip(s) -> string\n"
+"\n"
+"Return a copy of the string s with leading whitespace removed.";
 
 static PyObject *
 strop_lstrip(PyObject *self, PyObject *args)
@@ -422,9 +421,9 @@ strop_lstrip(PyObject *self, PyObject *args)
 
 
 static char rstrip__doc__[] =
-"rstrip(s) -> string\n\
-\n\
-Return a copy of the string s with trailing whitespace removed.";
+"rstrip(s) -> string\n"
+"\n"
+"Return a copy of the string s with trailing whitespace removed.";
 
 static PyObject *
 strop_rstrip(PyObject *self, PyObject *args)
@@ -434,9 +433,9 @@ strop_rstrip(PyObject *self, PyObject *args)
 
 
 static char lower__doc__[] =
-"lower(s) -> string\n\
-\n\
-Return a copy of the string s converted to lowercase.";
+"lower(s) -> string\n"
+"\n"
+"Return a copy of the string s converted to lowercase.";
 
 static PyObject *
 strop_lower(PyObject *self, PyObject *args)
@@ -472,9 +471,9 @@ strop_lower(PyObject *self, PyObject *args)
 
 
 static char upper__doc__[] =
-"upper(s) -> string\n\
-\n\
-Return a copy of the string s converted to uppercase.";
+"upper(s) -> string\n"
+"\n"
+"Return a copy of the string s converted to uppercase.";
 
 static PyObject *
 strop_upper(PyObject *self, PyObject *args)
@@ -510,10 +509,10 @@ strop_upper(PyObject *self, PyObject *args)
 
 
 static char capitalize__doc__[] =
-"capitalize(s) -> string\n\
-\n\
-Return a copy of the string s with only its first character\n\
-capitalized.";
+"capitalize(s) -> string\n"
+"\n"
+"Return a copy of the string s with only its first character\n"
+"capitalized.";
 
 static PyObject *
 strop_capitalize(PyObject *self, PyObject *args)
@@ -558,12 +557,12 @@ strop_capitalize(PyObject *self, PyObject *args)
 
 
 static char expandtabs__doc__[] =
-"expandtabs(string, [tabsize]) -> string\n\
-\n\
-Expand tabs in a string, i.e. replace them by one or more spaces,\n\
-depending on the current column and the given tab size (default 8).\n\
-The column number is reset to zero after each newline occurring in the\n\
-string.  This doesn't understand other non-printing characters.";
+"expandtabs(string, [tabsize]) -> string\n"
+"\n"
+"Expand tabs in a string, i.e. replace them by one or more spaces,\n"
+"depending on the current column and the given tab size (default 8).\n"
+"The column number is reset to zero after each newline occurring in the\n"
+"string.  This doesn't understand other non-printing characters.";
 
 static PyObject *
 strop_expandtabs(PyObject *self, PyObject *args)
@@ -629,11 +628,11 @@ strop_expandtabs(PyObject *self, PyObject *args)
 
 
 static char count__doc__[] =
-"count(s, sub[, start[, end]]) -> int\n\
-\n\
-Return the number of occurrences of substring sub in string\n\
-s[start:end].  Optional arguments start and end are\n\
-interpreted as in slice notation.";
+"count(s, sub[, start[, end]]) -> int\n"
+"\n"
+"Return the number of occurrences of substring sub in string\n"
+"s[start:end].  Optional arguments start and end are\n"
+"interpreted as in slice notation.";
 
 static PyObject *
 strop_count(PyObject *self, PyObject *args)
@@ -673,10 +672,10 @@ strop_count(PyObject *self, PyObject *args)
 
 
 static char swapcase__doc__[] =
-"swapcase(s) -> string\n\
-\n\
-Return a copy of the string s with upper case characters\n\
-converted to lowercase and vice versa.";
+"swapcase(s) -> string\n"
+"\n"
+"Return a copy of the string s with upper case characters\n"
+"converted to lowercase and vice versa.";
 
 static PyObject *
 strop_swapcase(PyObject *self, PyObject *args)
@@ -717,14 +716,14 @@ strop_swapcase(PyObject *self, PyObject *args)
 
 
 static char atoi__doc__[] =
-"atoi(s [,base]) -> int\n\
-\n\
-Return the integer represented by the string s in the given\n\
-base, which defaults to 10.  The string s must consist of one\n\
-or more digits, possibly preceded by a sign.  If base is 0, it\n\
-is chosen from the leading characters of s, 0 for octal, 0x or\n\
-0X for hexadecimal.  If base is 16, a preceding 0x or 0X is\n\
-accepted.";
+"atoi(s [,base]) -> int\n"
+"\n"
+"Return the integer represented by the string s in the given\n"
+"base, which defaults to 10.  The string s must consist of one\n"
+"or more digits, possibly preceded by a sign.  If base is 0, it\n"
+"is chosen from the leading characters of s, 0 for octal, 0x or\n"
+"0X for hexadecimal.  If base is 16, a preceding 0x or 0X is\n"
+"accepted.";
 
 static PyObject *
 strop_atoi(PyObject *self, PyObject *args)
@@ -769,15 +768,15 @@ strop_atoi(PyObject *self, PyObject *args)
 
 
 static char atol__doc__[] =
-"atol(s [,base]) -> long\n\
-\n\
-Return the long integer represented by the string s in the\n\
-given base, which defaults to 10.  The string s must consist\n\
-of one or more digits, possibly preceded by a sign.  If base\n\
-is 0, it is chosen from the leading characters of s, 0 for\n\
-octal, 0x or 0X for hexadecimal.  If base is 16, a preceding\n\
-0x or 0X is accepted.  A trailing L or l is not accepted,\n\
-unless base is 0.";
+"atol(s [,base]) -> long\n"
+"\n"
+"Return the long integer represented by the string s in the\n"
+"given base, which defaults to 10.  The string s must consist\n"
+"of one or more digits, possibly preceded by a sign.  If base\n"
+"is 0, it is chosen from the leading characters of s, 0 for\n"
+"octal, 0x or 0X for hexadecimal.  If base is 16, a preceding\n"
+"0x or 0X is accepted.  A trailing L or l is not accepted,\n"
+"unless base is 0.";
 
 static PyObject *
 strop_atol(PyObject *self, PyObject *args)
@@ -819,9 +818,9 @@ strop_atol(PyObject *self, PyObject *args)
 
 
 static char atof__doc__[] =
-"atof(s) -> float\n\
-\n\
-Return the floating point number represented by the string s.";
+"atof(s) -> float\n"
+"\n"
+"Return the floating point number represented by the string s.";
 
 static PyObject *
 strop_atof(PyObject *self, PyObject *args)
@@ -860,11 +859,11 @@ strop_atof(PyObject *self, PyObject *args)
 
 
 static char maketrans__doc__[] =
-"maketrans(frm, to) -> string\n\
-\n\
-Return a translation table (a string of 256 bytes long)\n\
-suitable for use in string.translate.  The strings frm and to\n\
-must be of the same length.";
+"maketrans(frm, to) -> string\n"
+"\n"
+"Return a translation table (a string of 256 bytes long)\n"
+"suitable for use in string.translate.  The strings frm and to\n"
+"must be of the same length.";
 
 static PyObject *
 strop_maketrans(PyObject *self, PyObject *args)
@@ -896,12 +895,12 @@ strop_maketrans(PyObject *self, PyObject *args)
 
 
 static char translate__doc__[] =
-"translate(s,table [,deletechars]) -> string\n\
-\n\
-Return a copy of the string s, where all characters occurring\n\
-in the optional argument deletechars are removed, and the\n\
-remaining characters have been mapped through the given\n\
-translation table, which must be a string of length 256.";
+"translate(s,table [,deletechars]) -> string\n"
+"\n"
+"Return a copy of the string s, where all characters occurring\n"
+"in the optional argument deletechars are removed, and the\n"
+"remaining characters have been mapped through the given\n"
+"translation table, which must be a string of length 256.";
 
 static PyObject *
 strop_translate(PyObject *self, PyObject *args)
@@ -982,7 +981,8 @@ strop_translate(PyObject *self, PyObject *args)
   found, or -1 if not found.  If len of PAT is greater than length of
   MEM, the function returns -1.
 */
-static int mymemfind(char *mem, int len, char *pat, int pat_len)
+static int 
+mymemfind(char *mem, int len, char *pat, int pat_len)
 {
 	register int ii;
 
@@ -1006,7 +1006,8 @@ static int mymemfind(char *mem, int len, char *pat, int pat_len)
    meaning mem=1111 and pat==11 returns 2.
            mem=11111 and pat==11 also return 2.
  */
-static int mymemcnt(char *mem, int len, char *pat, int pat_len)
+static int 
+mymemcnt(char *mem, int len, char *pat, int pat_len)
 {
 	register int offset = 0;
 	int nfound = 0;
@@ -1041,7 +1042,11 @@ static int mymemcnt(char *mem, int len, char *pat, int pat_len)
        the new string allocated locally, or
        NULL if an error occurred.
 */
-static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub, int sub_len, int count, int *out_len)
+static char *
+mymemreplace(char *str, int len,
+             char *pat, int pat_len,
+             char *sub, int sub_len,
+             int count, int *out_len)
 {
 	char *out_s;
 	char *new_s;
@@ -1095,11 +1100,11 @@ static char *mymemreplace(char *str, int len, char *pat, int pat_len, char *sub,
 
 
 static char replace__doc__[] =
-"replace (str, old, new[, maxsplit]) -> string\n\
-\n\
-Return a copy of string str with all occurrences of substring\n\
-old replaced by new. If the optional argument maxsplit is\n\
-given, only the first maxsplit occurrences are replaced.";
+"replace (str, old, new[, maxsplit]) -> string\n"
+"\n"
+"Return a copy of string str with all occurrences of substring\n"
+"old replaced by new. If the optional argument maxsplit is\n"
+"given, only the first maxsplit occurrences are replaced.";
 
 static PyObject *
 strop_replace(PyObject *self, PyObject *args)
@@ -1139,48 +1144,27 @@ strop_replace(PyObject *self, PyObject *args)
 
 static PyMethodDef
 strop_methods[] = {
-	{"atof",	strop_atof, 
-	 METH_VARARGS, atof__doc__},
-	{"atoi",	strop_atoi, 
-	 METH_VARARGS, atoi__doc__},
-	{"atol",	strop_atol, 
-	 METH_VARARGS, atol__doc__},
-	{"capitalize",	strop_capitalize, 
-	 METH_OLDARGS, capitalize__doc__},
-	{"count",	strop_count, 
-	 METH_VARARGS, count__doc__},
-	{"expandtabs",	strop_expandtabs, 
-	 METH_VARARGS, expandtabs__doc__},
-	{"find",	strop_find, 
-	 METH_VARARGS, find__doc__},
-	{"join",	strop_joinfields, 
-	 METH_VARARGS, joinfields__doc__},
-	{"joinfields",	strop_joinfields, 
-	 METH_VARARGS, joinfields__doc__},
-	{"lstrip",	strop_lstrip, 
-	 METH_OLDARGS, lstrip__doc__},
-	{"lower",	strop_lower, 
-	 METH_OLDARGS, lower__doc__},
-	{"maketrans",	strop_maketrans, 
-	 METH_VARARGS, maketrans__doc__},
-	{"replace",	strop_replace, 
-	 METH_VARARGS, replace__doc__},
-	{"rfind",	strop_rfind, 
-	 METH_VARARGS, rfind__doc__},
-	{"rstrip",	strop_rstrip, 
-	 METH_OLDARGS, rstrip__doc__},
-	{"split",	strop_splitfields, 
-	 METH_VARARGS, splitfields__doc__},
-	{"splitfields",	strop_splitfields, 
-	 METH_VARARGS, splitfields__doc__},
-	{"strip",	strop_strip, 
-	 METH_OLDARGS, strip__doc__},
-	{"swapcase",	strop_swapcase, 
-	 METH_OLDARGS, swapcase__doc__},
-	{"translate",	strop_translate, 
-	 METH_VARARGS, translate__doc__},
-	{"upper",	strop_upper, 
-	 METH_OLDARGS, upper__doc__},
+	{"atof",	strop_atof,	   METH_VARARGS, atof__doc__},
+	{"atoi",	strop_atoi,	   METH_VARARGS, atoi__doc__},
+	{"atol",	strop_atol,	   METH_VARARGS, atol__doc__},
+	{"capitalize",	strop_capitalize,  METH_OLDARGS, capitalize__doc__},
+	{"count",	strop_count,	   METH_VARARGS, count__doc__},
+	{"expandtabs",	strop_expandtabs,  METH_VARARGS, expandtabs__doc__},
+	{"find",	strop_find,	   METH_VARARGS, find__doc__},
+	{"join",	strop_joinfields,  METH_VARARGS, joinfields__doc__},
+	{"joinfields",	strop_joinfields,  METH_VARARGS, joinfields__doc__},
+	{"lstrip",	strop_lstrip,	   METH_OLDARGS, lstrip__doc__},
+	{"lower",	strop_lower,	   METH_OLDARGS, lower__doc__},
+	{"maketrans",	strop_maketrans,   METH_VARARGS, maketrans__doc__},
+	{"replace",	strop_replace,	   METH_VARARGS, replace__doc__},
+	{"rfind",	strop_rfind,	   METH_VARARGS, rfind__doc__},
+	{"rstrip",	strop_rstrip,	   METH_OLDARGS, rstrip__doc__},
+	{"split",	strop_splitfields, METH_VARARGS, splitfields__doc__},
+	{"splitfields",	strop_splitfields, METH_VARARGS, splitfields__doc__},
+	{"strip",	strop_strip,	   METH_OLDARGS, strip__doc__},
+	{"swapcase",	strop_swapcase,    METH_OLDARGS, swapcase__doc__},
+	{"translate",	strop_translate,   METH_VARARGS, translate__doc__},
+	{"upper",	strop_upper,	   METH_OLDARGS, upper__doc__},
 	{NULL,		NULL}	/* sentinel */
 };
 
