@@ -75,7 +75,7 @@
     }}
     \begin{flushright}%
       {\rm\Huge\py@HeaderFamily \@title \par}%
-      {\em\LARGE\py@HeaderFamily \py@release \par}
+      {\em\LARGE\py@HeaderFamily \py@release\releaseinfo \par}
       \vfill
       {\LARGE\py@HeaderFamily \@author \par}
       \vfill\vfill
