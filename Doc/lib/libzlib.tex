@@ -31,12 +31,12 @@ The available exception and functions in this module are:
 \end{funcdesc}
 
 \begin{funcdesc}{compress}{string\optional{, level}}
-Compresses the data in \var{string}, returning a string contained
-compressed data.  \var{level} is an integer from \code{1} to \code{9}
-controlling the level of compression; \code{1} is fastest and produces
-the least compression, \code{9} is slowest and produces the most.  The
-default value is \code{6}.  Raises the \exception{error}
-exception if any error occurs.
+  Compresses the data in \var{string}, returning a string contained
+  compressed data.  \var{level} is an integer from \code{1} to
+  \code{9} controlling the level of compression; \code{1} is fastest
+  and produces the least compression, \code{9} is slowest and produces
+  the most.  The default value is \code{6}.  Raises the
+  \exception{error} exception if any error occurs.
 \end{funcdesc}
 
 \begin{funcdesc}{compressobj}{\optional{level}}
@@ -59,17 +59,18 @@ exception if any error occurs.
   should not be used for authentication or digital signatures.
 \end{funcdesc}
 
-\begin{funcdesc}{decompress}{string}
-Decompresses the data in \var{string}, returning a string containing
-the uncompressed data.  Raises the \exception{error} exception if any
-error occurs.
+\begin{funcdesc}{decompress}{string\optional{, wbits\optional{, buffsize}}}
+  Decompresses the data in \var{string}, returning a string containing
+  the uncompressed data.  The \var{wbits} parameter controls the size of
+  the window buffer.  If \var{buffsize} is given, it is used as the
+  initial size of the output buffer.  Raises the \exception{error}
+  exception if any error occurs.
 \end{funcdesc}
 
 \begin{funcdesc}{decompressobj}{\optional{wbits}}
-Returns a compression object, to be used for decompressing data streams
-that won't fit into memory at once.  The \var{wbits} parameter
-controls the size of the window buffer; usually this can be left
-alone.
+  Returns a compression object, to be used for decompressing data
+  streams that won't fit into memory at once.  The \var{wbits}
+  parameter controls the size of the window buffer.
 \end{funcdesc}
 
 Compression objects support the following methods:
