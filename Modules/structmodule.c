@@ -9,12 +9,12 @@ Functions to convert between Python values and C structs.\n\
 Python strings are used to hold the data representing the C struct\n\
 and also as format strings to describe the layout of data in the C struct.\n\
 \n\
-The optional first format char indicates byte ordering and alignment:\n\
- @: native w/native alignment(default)\n\
- =: native w/standard alignment\n\
- <: little-endian, std. alignment\n\
- >: big-endian, std. alignment\n\
- !: network, std (same as >)\n\
+The optional first format char indicates byte order, size and alignment:\n\
+ @: native order, size & alignment (default)\n\
+ =: native order, std. size & alignment\n\
+ <: little-endian, std. size & alignment\n\
+ >: big-endian, std. size & alignment\n\
+ !: same as >\n\
 \n\
 The remaining chars indicate types of args and must match exactly;\n\
 these can be preceded by a decimal repeat count:\n\
