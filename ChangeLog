@@ -1,3 +1,19 @@
+Wed Jan 26 14:13:39 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Misc/FAQ: updated for release 1.0.0
+
+	* Misc/NEWS: created -- all bits of news
+
+	* Misc/HISTORY: added (from old releases)
+
+	* Misc/README: documented some new files
+
+	* README: non-beta version and preface, don't ref TODO
+
+	* Makefile.in: got rid of references to TODO
+
+	* Python/version.c, Doc/???.tex: updated version and date
+
 Tue Jan 25 20:11:49 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Doc/ext.tex: revamped, finally ready for release
