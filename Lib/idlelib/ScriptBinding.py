@@ -34,13 +34,13 @@ To fix case 2, change all tabs to spaces by using Select All followed \
 by Untabify Region (both in the Edit menu)."""
 
 class ScriptBinding:
-    
+
     keydefs = {
         '<<check-module>>': ['<Alt-F5>', '<Meta-F5>'],
         '<<import-module>>': ['<F5>'],
         '<<run-script>>': ['<Control-F5>'],
     }
-    
+
     menudefs = [
         ('edit', [None,
                   ('Check module', '<<check-module>>'),
@@ -152,8 +152,12 @@ class ScriptBinding:
         # Logic to make sure we have a saved filename
         # XXX Better logic would offer to save!
         if not self.editwin.get_saved():
+            name = (self.editwin.short_title() or
+                    self.editwin.long_title() or
+                    "Untitled")
             self.errorbox("Not saved",
-                          "Please save first!")
+                          "The buffer for %s is not saved.\n" % name +
+                          "Please save it first!")
             self.editwin.text.focus_set()
             return
         filename = self.editwin.io.filename
