@@ -1580,7 +1580,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			continue;
 		}
 		PyErr_SetString(PyExc_TypeError,
-				"metatype conflict among bases");
+				"metaclass conflict: "
+				"the metaclass of a derived class "
+				"must be a (non-strict) subclass "
+				"of the metaclasses of all its bases");
 		return NULL;
 	}
 	if (winner != metatype) {
