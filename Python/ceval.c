@@ -1036,7 +1036,7 @@ eval_code(co, globals, locals, arg)
 			err = 0;
 		}
 
-#ifndef CHECKEXC
+#ifdef CHECKEXC
 		/* Double-check exception status */
 		
 		if (why == WHY_EXCEPTION || why == WHY_RERAISE) {
