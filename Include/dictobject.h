@@ -52,6 +52,8 @@ extern DL_IMPORT(PyObject *) PyDict_Keys Py_PROTO((PyObject *mp));
 extern DL_IMPORT(PyObject *) PyDict_Values Py_PROTO((PyObject *mp));
 extern DL_IMPORT(PyObject *) PyDict_Items Py_PROTO((PyObject *mp));
 extern DL_IMPORT(int) PyDict_Size Py_PROTO((PyObject *mp));
+extern DL_IMPORT(PyObject *) PyDict_Copy Py_PROTO((PyObject *mp));
+
 
 extern DL_IMPORT(PyObject *) PyDict_GetItemString Py_PROTO((PyObject *dp, char *key));
 extern DL_IMPORT(int) PyDict_SetItemString Py_PROTO((PyObject *dp, char *key, PyObject *item));

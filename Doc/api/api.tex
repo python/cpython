@@ -2081,6 +2081,10 @@ Returns true if its argument is a \ctype{PyDictObject}.
 Returns a new empty dictionary.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
+Returns a new dictionary that contains the same key/value pairs as p.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyDict_Clear}{PyDictObject *p}
 Empties an existing dictionary of all key/value pairs.
 \end{cfuncdesc}
