@@ -1054,6 +1054,10 @@ check for use of features that will be deprecated in the future,
 supply \programopt{-Walways::PendingDeprecationWarning::} on the
 command line or use \function{warnings.filterwarnings()}.
 
+\item The process of deprecating string-based exceptions, as
+in \code{raise "Error occurred"}, has begun.  Raising a string will
+now trigger \exception{PendingDeprecationWarning}.
+
 \item Using \code{None} as a variable name will now result in a
 \exception{SyntaxWarning} warning.  In a future version of Python,
 \code{None} may finally become a keyword.
@@ -1065,8 +1069,10 @@ this change.)  Python 2.2 originally used a topological sort of a
 class's ancestors, but 2.3 now uses the C3 algorithm as described in
 the paper \ulink{``A Monotonic Superclass Linearization for
 Dylan''}{http://www.webcom.com/haahr/dylan/linearization-oopsla96.html}.
-To understand the motivation for this change, read the thread on
-python-dev starting with the message at
+To understand the motivation for this change, 
+read Michele Simionato's article 
+\ulink{``Python 2.3 Method Resolution Order''}{http://www.phyast.pitt.edu/~micheles/mro.html}, or 
+read the thread on python-dev starting with the message at
 \url{http://mail.python.org/pipermail/python-dev/2002-October/029035.html}.
 Samuele Pedroni first pointed out the problem and also implemented the
 fix by coding the C3 algorithm.
