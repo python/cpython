@@ -304,6 +304,9 @@ escapeseq:       "\" <any ASCII character>
 \end{verbatim}
 \index{ASCII@\ASCII{}}
 
+\index{triple-quoted string}
+\index{Unicode Consortium}
+\index{string!Unicode}
 In plain English: String literals can be enclosed in matching single
 quotes (\code{'}) or double quotes (\code{"}).  They can also be
 enclosed in matching groups of three single or double quotes (these
@@ -311,10 +314,12 @@ are generally referred to as \emph{triple-quoted strings}).  The
 backslash (\code{\e}) character is used to escape characters that
 otherwise have a special meaning, such as newline, backslash itself,
 or the quote character.  String literals may optionally be prefixed
-with a letter `r' or `R'; such strings are called raw strings and use
-different rules for backslash escape sequences.
-\index{triple-quoted string}
-\index{raw string}
+with a letter `r' or `R'; such strings are called
+\dfn{raw strings}\index{raw string} and use different rules for
+backslash escape sequences.  A prefix of 'u' or 'U' makes the string
+a Unicode string.  Unicode strings use the Unicode character set as
+defined by the Unicode Consortium and ISO~10646.  Some additional
+escape sequences, described below, are available in Unicode strings.
 
 In triple-quoted strings,
 unescaped newlines and quotes are allowed (and are retained), except
@@ -339,25 +344,33 @@ to those used by Standard \C{}.  The recognized escape sequences are:
 \lineii{\e b}	{\ASCII{} Backspace (BS)}
 \lineii{\e f}	{\ASCII{} Formfeed (FF)}
 \lineii{\e n}	{\ASCII{} Linefeed (LF)}
+\lineii{\e N\{\var{name}\}}
+       {Character named \var{name} in the Unicode database (Unicode only)}
 \lineii{\e r}	{\ASCII{} Carriage Return (CR)}
 \lineii{\e t}	{\ASCII{} Horizontal Tab (TAB)}
+\lineii{\e u\var{xxxx}}
+       {Character with 16-bit hex value \var{xxxx} (Unicode only)}
+\lineii{\e U\var{xxxxxxxx}}
+       {Character with 32-bit hex value \var{xxxxxxxx} (Unicode only)}
 \lineii{\e v}	{\ASCII{} Vertical Tab (VT)}
-\lineii{\e\var{ooo}} {\ASCII{} character with octal value \emph{ooo}}
-\lineii{\e x\var{hh...}} {\ASCII{} character with hex value \emph{hh...}}
+\lineii{\e\var{ooo}} {\ASCII{} character with octal value \var{ooo}}
+\lineii{\e x\var{hh}} {\ASCII{} character with hex value \var{hh}}
 \end{tableii}
 \index{ASCII@\ASCII{}}
 
-In strict compatibility with Standard \C, up to three octal digits are
+In strict compatibility with Standard C, up to three octal digits are
 accepted, but an unlimited number of hex digits is taken to be part of
 the hex escape (and then the lower 8 bits of the resulting hex number
 are used in 8-bit implementations).
 
-Unlike Standard \C{},
+Unlike Standard \index{unrecognized escape sequence}C,
 all unrecognized escape sequences are left in the string unchanged,
-i.e., \emph{the backslash is left in the string.}  (This behavior is
+i.e., \emph{the backslash is left in the string}.  (This behavior is
 useful when debugging: if an escape sequence is mistyped, the
-resulting output is more easily recognized as broken.)
-\index{unrecognized escape sequence}
+resulting output is more easily recognized as broken.)  It is also
+important to note that the escape sequences marked as ``(Unicode
+only)'' in the table above fall into the category of unrecognized
+escapes for non-Unicode string literals.
 
 When an `r' or `R' prefix is present, backslashes are still used to
 quote the following character, but \emph{all backslashes are left in
