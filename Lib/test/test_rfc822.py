@@ -117,6 +117,10 @@ class MessageTestCase(unittest.TestCase):
              ('', 'goit@lip.com'),
              ])
 
+        self.check(
+            'To: person@dom.ain (User J. Person)\n\n',
+            [('User J. Person', 'person@dom.ain')])
+
     def test_twisted(self):
         # This one is just twisted.  I don't know what the proper
         # result should be, but it shouldn't be to infloop, which is
@@ -164,5 +168,13 @@ class MessageTestCase(unittest.TestCase):
             'foo',
             [('', 'guido@[132.151.1.21]')])
 
+    def test_rfc2822_phrases(self):
+        # RFC 2822 (the update to RFC 822) specifies that dots in phrases are
+        # obsolete syntax, which conforming programs MUST recognize but NEVER
+        # generate (see $4.1 Miscellaneous obsolete tokens).  This is a
+        # departure from RFC 822 which did not allow dots in non-quoted
+        # phrases.
+        self.check('To: User J. Person <person@dom.ain>\n\n',
+                   [('User J. Person', 'person@dom.ain')])
 
 test_support.run_unittest(MessageTestCase)
