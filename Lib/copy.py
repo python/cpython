@@ -128,7 +128,7 @@ def _better_reduce(obj):
         listitems = iter(obj)
     elif isinstance(obj, dict):
         dictitems = obj.iteritems()
-    return __newobj__, (cls, args), state, listitems, dictitems
+    return __newobj__, (cls,) + args, state, listitems, dictitems
     
 
 _copy_dispatch = d = {}
