@@ -544,7 +544,7 @@ then
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) 
 		if test "$GCC" = "yes"
-		then LDSHARED='$(CC) -G'
+		then LDSHARED='$(CC) -shared'
 		else LDSHARED="ld -G";
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
