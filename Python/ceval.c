@@ -2001,18 +2001,18 @@ eval_frame(PyFrameObject *f)
 
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
-			goto fast_next_opcode;
+			continue;
 
 		PREDICTED_WITH_ARG(JUMP_IF_FALSE);
 		case JUMP_IF_FALSE:
 			w = TOP();
 			if (w == Py_True) {
 				PREDICT(POP_TOP);
-				goto fast_next_opcode;
+				continue;
 			}
 			if (w == Py_False) {
 				JUMPBY(oparg);
-				goto fast_next_opcode;
+				continue;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0)
@@ -2028,11 +2028,11 @@ eval_frame(PyFrameObject *f)
 			w = TOP();
 			if (w == Py_False) {
 				PREDICT(POP_TOP);
-				goto fast_next_opcode;
+				continue;
 			}
 			if (w == Py_True) {
 				JUMPBY(oparg);
-				goto fast_next_opcode;
+				continue;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0) {
@@ -2047,7 +2047,7 @@ eval_frame(PyFrameObject *f)
 
 		case JUMP_ABSOLUTE:
 			JUMPTO(oparg);
-			goto fast_next_opcode;
+			continue;
 
 		case GET_ITER:
 			/* before: [obj]; after [getiter(obj)] */
