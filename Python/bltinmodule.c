@@ -1875,7 +1875,7 @@ builtin_raw_input(self, args)
 		else { /* strip trailing '\n' */
 			result = PyString_FromStringAndSize(s, strlen(s)-1);
 		}
-		free(s);
+		PyMem_FREE(s);
 		return result;
 	}
 	if (v != NULL) {

@@ -353,11 +353,11 @@ nis_maplist ()
 	if (list->stat != NIS_TRUE)
 		goto finally;
 
-	PyMem_DEL(server);
+	free(server);
 	return list->maps;
 
   finally:
-	PyMem_DEL(server);
+	free(server);
 	return NULL;
 }
 

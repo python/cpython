@@ -61,7 +61,7 @@ static void
 range_dealloc(r)
 	rangeobject *r;
 {
-	PyMem_DEL(r);
+	PyObject_DEL(r);
 }
 
 static PyObject *

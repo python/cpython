@@ -389,7 +389,7 @@ BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 {
 	PySocketSockObject *s;
 	PySocketSock_Type.ob_type = &PyType_Type;
-	s = PyObject_NEW(PySocketSockObject, &PySocketSock_Type);
+	s = PyObject_New(PySocketSockObject, &PySocketSock_Type);
 	if (s != NULL) {
 		s->sock_fd = fd;
 		s->sock_family = family;
@@ -1368,7 +1368,7 @@ BUILD_FUNC_DEF_1(PySocketSock_dealloc,PySocketSockObject *,s)
 {
 	if (s->sock_fd != -1)
 		(void) SOCKETCLOSE(s->sock_fd);
-	PyMem_DEL(s);
+	PyObject_Del(s);
 }
 
 
@@ -1948,7 +1948,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 	meth=SSLv2_client_method();
 #endif
 
-	self = PyObject_NEW(SSLObject, &SSL_Type); /* Create new object */
+	self = PyObject_New(SSLObject, &SSL_Type); /* Create new object */
 	if (self == NULL){
 		PyErr_SetObject(SSLErrorObject,
 				PyString_FromString("newSSLObject error"));
@@ -1962,7 +1962,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 	if (self->ctx == NULL) {
 		PyErr_SetObject(SSLErrorObject,
 				PyString_FromString("SSL_CTX_new error"));
-		PyMem_DEL(self);
+		PyObject_Del(self);
 		return NULL;
 	}
 
@@ -1971,7 +1971,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 		PyErr_SetObject(SSLErrorObject,
 		      PyString_FromString(
 			"Both the key & certificate files must be specified"));
-		PyMem_DEL(self);
+		PyObject_Del(self);
 		return NULL;
 	}
 
@@ -1983,7 +1983,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 			PyErr_SetObject(SSLErrorObject,
 				PyString_FromString(
 				  "SSL_CTX_use_PrivateKey_file error"));
-			PyMem_DEL(self);
+			PyObject_Del(self);
 			return NULL;
 		}
 
@@ -1993,7 +1993,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 			PyErr_SetObject(SSLErrorObject,
 				PyString_FromString(
 				  "SSL_CTX_use_certificate_chain_file error"));
-			PyMem_DEL(self);
+			PyObject_Del(self);
 			return NULL;
 		}
 	}
@@ -2008,7 +2008,7 @@ BUILD_FUNC_DEF_3(newSSLObject,
 		/* Actually negotiate SSL connection */
 		PyErr_SetObject(SSLErrorObject,
 				PyString_FromString("SSL_connect error"));
-		PyMem_DEL(self);
+		PyObject_Del(self);
 		return NULL;
 	}
 	self->ssl->debug = 1;
@@ -2079,7 +2079,7 @@ static void SSL_dealloc(SSLObject *self)
 	SSL_free(self->ssl);
 	Py_XDECREF(self->x_attr);
 	Py_XDECREF(self->Socket);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *SSL_getattr(SSLObject *self, char *name)

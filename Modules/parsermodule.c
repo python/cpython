@@ -295,7 +295,7 @@ parser_compare(PyAST_Object *left, PyAST_Object *right)
 static PyObject*
 parser_newastobject(node *ast, int type)
 {
-    PyAST_Object* o = PyObject_NEW(PyAST_Object, &PyAST_Type);
+    PyAST_Object* o = PyObject_New(PyAST_Object, &PyAST_Type);
 
     if (o != 0) {
         o->ast_node = ast;
@@ -317,7 +317,7 @@ static void
 parser_free(PyAST_Object *ast)
 {
     PyNode_Free(ast->ast_node);
-    PyMem_DEL(ast);
+    PyObject_Del(ast);
 }
 
 
@@ -790,10 +790,10 @@ build_node_children(PyObject *tuple, node *root, int *line_num)
                 PyObject *temp = PySequence_GetItem(elem, 1);
 
                 /* check_terminal_tuple() already verified it's a string */
-                strn = (char *)malloc(PyString_GET_SIZE(temp) + 1);
+                strn = (char *)PyMem_MALLOC(PyString_GET_SIZE(temp) + 1);
                 if (strn != NULL)
                     (void) strcpy(strn, PyString_AS_STRING(temp));
-                Py_XDECREF(temp);
+                Py_DECREF(temp);
 
                 if (PyObject_Length(elem) == 3) {
                     PyObject* temp = PySequence_GetItem(elem, 2);

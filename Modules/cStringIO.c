@@ -56,7 +56,7 @@ static char cStringIO_module_documentation[] =
 "\n"
 "This module provides a simple useful replacement for\n"
 "the StringIO module that is written in C.  It does not provide the\n"
-"full generality if StringIO, but it provides anough for most\n"
+"full generality if StringIO, but it provides enough for most\n"
 "applications and is especially useful in conjuction with the\n"
 "pickle module.\n"
 "\n"
@@ -407,7 +407,7 @@ static void
 O_dealloc(Oobject *self) {
   if (self->buf != NULL)
     free(self->buf);
-  PyMem_DEL(self);
+  PyObject_Del(self);
 }
 
 static PyObject *
@@ -465,7 +465,7 @@ static PyObject *
 newOobject(int  size) {
   Oobject *self;
 	
-  self = PyObject_NEW(Oobject, &Otype);
+  self = PyObject_New(Oobject, &Otype);
   if (self == NULL)
     return NULL;
   self->pos=0;
@@ -536,7 +536,7 @@ static struct PyMethodDef I_methods[] = {
 static void
 I_dealloc(Iobject *self) {
   Py_XDECREF(self->pbuf);
-  PyMem_DEL(self);
+  PyObject_Del(self);
 }
 
 static PyObject *
@@ -586,7 +586,7 @@ newIobject(PyObject *s) {
   }
   buf = PyString_AS_STRING(s);
   size = PyString_GET_SIZE(s);
-  UNLESS(self = PyObject_NEW(Iobject, &Itype)) return NULL;
+  UNLESS(self = PyObject_New(Iobject, &Itype)) return NULL;
   Py_INCREF(s);
   self->buf=buf;
   self->string_size=size;

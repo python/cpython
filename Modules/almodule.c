@@ -648,7 +648,7 @@ newalcobject(ALconfig config)
 {
 	alcobject *self;
 	
-	self = PyObject_NEW(alcobject, &Alctype);
+	self = PyObject_New(alcobject, &Alctype);
 	if (self == NULL)
 		return NULL;
 	/* XXXX Add your own initializers here */
@@ -667,7 +667,7 @@ alc_dealloc(self)
 #else
 	(void) ALfreeconfig(self->config);	/* ignore errors */
 #endif
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -1421,7 +1421,7 @@ newalpobject(ALport port)
 {
 	alpobject *self;
 	
-	self = PyObject_NEW(alpobject, &Alptype);
+	self = PyObject_New(alpobject, &Alptype);
 	if (self == NULL)
 		return NULL;
 	/* XXXX Add your own initializers here */
@@ -1442,7 +1442,7 @@ alp_dealloc(self)
 		ALcloseport(self->port);
 #endif
 	}
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *

@@ -62,7 +62,7 @@ int mode;
 {
         dbmobject *dp;
 
-	dp = PyObject_NEW(dbmobject, &Dbmtype);
+	dp = PyObject_New(dbmobject, &Dbmtype);
 	if (dp == NULL)
 		return NULL;
 	dp->di_size = -1;
@@ -82,7 +82,7 @@ dbm_dealloc(dp)
 {
         if ( dp->di_dbm )
 		dbm_close(dp->di_dbm);
-	PyMem_DEL(dp);
+	PyObject_Del(dp);
 }
 
 static int

@@ -56,7 +56,7 @@ newmd5object()
 {
 	md5object *md5p;
 
-	md5p = PyObject_NEW(md5object, &MD5type);
+	md5p = PyObject_New(md5object, &MD5type);
 	if (md5p == NULL)
 		return NULL;
 
@@ -71,7 +71,7 @@ static void
 md5_dealloc(md5p)
 	md5object *md5p;
 {
-	PyMem_DEL(md5p);
+	PyObject_Del(md5p);
 }
 
 

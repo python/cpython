@@ -71,7 +71,7 @@ xx_dealloc(xp)
 	xxobject *xp;
 {
 	Py_XDECREF(xp->x_attr);
-	PyMem_DEL(xp);
+	PyObject_DEL(xp);
 }
 
 static PyObject *

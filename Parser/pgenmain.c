@@ -139,7 +139,7 @@ getgrammar(filename)
 					putc(' ', stderr);
 			}
 			fprintf(stderr, "^\n");
-			free(err.text);
+			PyMem_DEL(err.text);
 		}
 		Py_Exit(1);
 	}
@@ -196,7 +196,7 @@ PyOS_Readline(prompt)
 	char *prompt;
 {
 	int n = 1000;
-	char *p = malloc(n);
+	char *p = PyMem_MALLOC(n);
 	char *q;
 	if (p == NULL)
 		return NULL;
@@ -209,7 +209,7 @@ PyOS_Readline(prompt)
 	n = strlen(p);
 	if (n > 0 && p[n-1] != '\n')
 		p[n-1] = '\n';
-	return realloc(p, n+1);
+	return PyMem_REALLOC(p, n+1);
 }
 
 #ifdef HAVE_STDARG_PROTOTYPES

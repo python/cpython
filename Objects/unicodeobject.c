@@ -200,14 +200,13 @@ PyUnicodeObject *_PyUnicode_New(int length)
         unicode = unicode_freelist;
         unicode_freelist = *(PyUnicodeObject **)unicode_freelist;
         unicode_freelist_size--;
-        unicode->ob_type = &PyUnicode_Type;
-        _Py_NewReference((PyObject *)unicode);
+	PyObject_INIT(unicode, &PyUnicode_Type);
 	if (unicode->str) {
 	    /* Keep-Alive optimization: we only upsize the buffer,
 	       never downsize it. */
 	    if ((unicode->length < length) &&
 		_PyUnicode_Resize(unicode, length)) {
-		free(unicode->str);
+		PyMem_DEL(unicode->str);
 		goto onError;
 	    }
 	}
@@ -233,7 +232,7 @@ PyUnicodeObject *_PyUnicode_New(int length)
 
  onError:
     _Py_ForgetReference((PyObject *)unicode);
-    PyMem_DEL(unicode);
+    PyObject_DEL(unicode);
     return NULL;
 }
 
@@ -243,7 +242,7 @@ void _PyUnicode_Free(register PyUnicodeObject *unicode)
     if (unicode_freelist_size < MAX_UNICODE_FREELIST_SIZE) {
         /* Keep-Alive optimization */
 	if (unicode->length >= KEEPALIVE_SIZE_LIMIT) {
-	    free(unicode->str);
+	    PyMem_DEL(unicode->str);
 	    unicode->str = NULL;
 	    unicode->length = 0;
 	}
@@ -257,9 +256,9 @@ void _PyUnicode_Free(register PyUnicodeObject *unicode)
         unicode_freelist_size++;
     }
     else {
-	free(unicode->str);
+	PyMem_DEL(unicode->str);
 	Py_XDECREF(unicode->utf8str);
-        PyMem_DEL(unicode);
+	PyObject_DEL(unicode);
     }
 }
 
@@ -4662,9 +4661,9 @@ _PyUnicode_Fini()
 	PyUnicodeObject *v = u;
 	u = *(PyUnicodeObject **)u;
 	if (v->str)
-	    free(v->str);
+	    PyMem_DEL(v->str);
 	Py_XDECREF(v->utf8str);
-	free(v);
+	PyObject_DEL(v);
     }
     Py_XDECREF(unicode_empty);
 }

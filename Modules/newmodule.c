@@ -49,7 +49,7 @@ new_instance(unused, args)
 			      &PyClass_Type, &klass,
 			      &PyDict_Type, &dict))
 		return NULL;
-	inst = PyObject_NEW(PyInstanceObject, &PyInstance_Type);
+	inst = PyObject_New(PyInstanceObject, &PyInstance_Type);
 	if (inst == NULL)
 		return NULL;
 	Py_INCREF(klass);

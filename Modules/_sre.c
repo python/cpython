@@ -848,7 +848,7 @@ _compile(PyObject* self_, PyObject* args)
                           &PyString_Type, &code, &groups, &groupindex))
 		return NULL;
 
-	self = PyObject_NEW(PatternObject, &Pattern_Type);
+	self = PyObject_New(PatternObject, &Pattern_Type);
 	if (self == NULL)
 		return NULL;
 
@@ -886,7 +886,7 @@ _pattern_new_match(PatternObject* pattern, SRE_STATE* state,
 	if (status > 0) {
 
 		/* create match object (with room for extra group marks) */
-		match = PyObject_NEW_VAR(MatchObject, &Match_Type, 2*pattern->groups);
+		match = PyObject_NewVar(MatchObject, &Match_Type, 2*pattern->groups);
 		if (match == NULL)
 			return NULL;
 
@@ -1002,7 +1002,7 @@ _pattern_dealloc(PatternObject* self)
 	Py_XDECREF(self->code);
 	Py_XDECREF(self->pattern);
 	Py_XDECREF(self->groupindex);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject*
@@ -1163,7 +1163,7 @@ _match_dealloc(MatchObject* self)
 {
 	Py_XDECREF(self->string);
 	Py_DECREF(self->pattern);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject*

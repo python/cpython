@@ -277,7 +277,7 @@ dictresize(mp, minused)
 			break;
 		}
 	}
-	newtable = (dictentry *) malloc(sizeof(dictentry) * newsize);
+	newtable = PyMem_NEW(dictentry, newsize);
 	if (newtable == NULL) {
 		PyErr_NoMemory();
 		return -1;
@@ -301,7 +301,8 @@ dictresize(mp, minused)
 		}
 	}
 
-	PyMem_XDEL(oldtable);
+	if (oldtable != NULL)
+		PyMem_DEL(oldtable);
 	return 0;
 }
 
@@ -488,8 +489,9 @@ dict_dealloc(mp)
 			Py_DECREF(ep->me_value);
 		}
 	}
-	PyMem_XDEL(mp->ma_table);
-	PyMem_DEL(mp);
+	if (mp->ma_table != NULL)
+		PyMem_DEL(mp->ma_table);
+	PyObject_DEL(mp);
 	Py_TRASHCAN_SAFE_END(mp)
 }
 

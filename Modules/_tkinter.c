@@ -469,7 +469,7 @@ Tkapp_New(screenName, baseName, className, interactive)
 	TkappObject *v;
 	char *argv0;
   
-	v = PyObject_NEW(TkappObject, &Tkapp_Type);
+	v = PyObject_New(TkappObject, &Tkapp_Type);
 	if (v == NULL)
 		return NULL;
 
@@ -1640,7 +1640,7 @@ Tktt_New(func)
 {
 	TkttObject *v;
   
-	v = PyObject_NEW(TkttObject, &Tktt_Type);
+	v = PyObject_New(TkttObject, &Tktt_Type);
 	if (v == NULL)
 		return NULL;
 
@@ -1662,7 +1662,7 @@ Tktt_Dealloc(self)
 
 	Py_XDECREF(func);
 
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -1910,7 +1910,7 @@ Tkapp_Dealloc(self)
 	ENTER_TCL
 	Tcl_DeleteInterp(Tkapp_Interp(self));
 	LEAVE_TCL
-	PyMem_DEL(self);
+	PyObject_Del(self);
 	DisableEventHook();
 }
 

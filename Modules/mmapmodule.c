@@ -69,7 +69,7 @@ mmap_object_dealloc(mmap_object * m_obj)
 	}
 #endif /* UNIX */
 
-	PyMem_DEL(m_obj);
+	PyObject_Del(m_obj);
 }
 
 static PyObject *
@@ -706,7 +706,7 @@ new_mmap_object (PyObject * self, PyObject * args, PyObject *kwdict)
 		)
 		return NULL;
   
-	m_obj = PyObject_NEW (mmap_object, &mmap_object_type);
+	m_obj = PyObject_New (mmap_object, &mmap_object_type);
 	if (m_obj == NULL) {return NULL;}
 	m_obj->size = (size_t) map_size;
 	m_obj->pos = (size_t) 0;
@@ -757,7 +757,7 @@ new_mmap_object (PyObject * self, PyObject * args)
 		fseek(&_iob[fileno], 0, SEEK_SET);
 	}
 
-	m_obj = PyObject_NEW (mmap_object, &mmap_object_type);
+	m_obj = PyObject_New (mmap_object, &mmap_object_type);
     
 	if (fh) {
 		m_obj->file_handle = fh;

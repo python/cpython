@@ -370,7 +370,7 @@ PyHKEY_deallocFunc(PyObject *ob)
 	PyHKEYObject *obkey = (PyHKEYObject *)ob;
 	if (obkey->hkey)
 		RegCloseKey((HKEY)obkey->hkey);
-	PyMem_DEL(ob);
+	PyObject_DEL(ob);
 }
 
 static int
@@ -604,12 +604,14 @@ PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
 PyObject *
 PyHKEY_FromHKEY(HKEY h)
 {
-	PyHKEYObject *op = (PyHKEYObject *) malloc(sizeof(PyHKEYObject));
+	PyHKEYObject *op;
+
+	/* PyObject_New is inlined */
+	op = (PyHKEYObject *) PyObject_MALLOC(sizeof(PyHKEYObject));
 	if (op == NULL)
 		return PyErr_NoMemory();
-	op->ob_type = &PyHKEY_Type;
+	PyObject_INIT(op, &PyHKEY_Type);
 	op->hkey = h;
-	_Py_NewReference((PyObject *)op);
 	return (PyObject *)op;
 }
 
@@ -1348,7 +1350,7 @@ PySetValueEx(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	rc = RegSetValueEx(hKey, valueName, 0, typ, data, len);
 	Py_END_ALLOW_THREADS
-	PyMem_Free(data);
+	PyMem_DEL(data);
 	if (rc != ERROR_SUCCESS)
 		return PyErr_SetFromWindowsErrWithFunction(rc,
 							   "RegSetValueEx");

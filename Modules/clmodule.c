@@ -673,7 +673,7 @@ cl_dealloc(PyObject *self)
 		else
 			clCloseDecompressor(SELF->ob_compressorHdl);
 	}
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -713,7 +713,7 @@ doOpen(PyObject *self, PyObject *args, int (*open_func)(int, CL_Handle *),
 	if (!PyArg_Parse(args, "i", &scheme))
 		return NULL;
 
-	new = PyObject_NEW(clobject, &Cltype);
+	new = PyObject_New(clobject, &Cltype);
 	if (new == NULL)
 		return NULL;
 

@@ -58,12 +58,12 @@ static lockobject *
 newlockobject()
 {
 	lockobject *self;
-	self = PyObject_NEW(lockobject, &Locktype);
+	self = PyObject_New(lockobject, &Locktype);
 	if (self == NULL)
 		return NULL;
 	self->lock_lock = PyThread_allocate_lock();
 	if (self->lock_lock == NULL) {
-		PyMem_DEL(self);
+		PyObject_Del(self);
 		self = NULL;
 		PyErr_SetString(ThreadError, "can't allocate lock");
 	}
@@ -79,7 +79,7 @@ lock_dealloc(self)
 	PyThread_release_lock(self->lock_lock);
 	
 	PyThread_free_lock(self->lock_lock);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *

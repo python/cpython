@@ -332,7 +332,7 @@ generic_dealloc(g)
 	fl_free_object(g->ob_generic);
 	Py_XDECREF(g->ob_callback);
 	Py_XDECREF(g->ob_callback_arg);
-	PyMem_DEL(g);
+	PyObject_Del(g);
 }
 
 #define OFF(x) offsetof(FL_OBJECT, x)
@@ -461,7 +461,7 @@ newgenericobject(generic, methods)
 	PyMethodDef *methods;
 {
 	genericobject *g;
-	g = PyObject_NEW(genericobject, &GenericObjecttype);
+	g = PyObject_New(genericobject, &GenericObjecttype);
 	if (g == NULL)
 		return NULL;
 	g-> ob_generic = generic;
@@ -1852,7 +1852,7 @@ form_dealloc(f)
 	if (f->ob_form->visible)
 		fl_hide_form(f->ob_form);
 	fl_free_form(f->ob_form);
-	PyMem_DEL(f);
+	PyObject_Del(f);
 }
 
 #define OFF(x) offsetof(FL_FORM, x)
@@ -1931,7 +1931,7 @@ newformobject(form)
 	FL_FORM *form;
 {
 	formobject *f;
-	f = PyObject_NEW(formobject, &Formtype);
+	f = PyObject_New(formobject, &Formtype);
 	if (f == NULL)
 		return NULL;
 	f->ob_form = form;

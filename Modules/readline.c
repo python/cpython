@@ -377,7 +377,7 @@ call_readline(prompt)
 	char *prompt;
 {
 	int n;
-	char *p;
+	char *p, *q;
 	RETSIGTYPE (*old_inthandler)();
 	old_inthandler = signal(SIGINT, onintr);
 	if (setjmp(jbuf)) {
@@ -391,8 +391,10 @@ call_readline(prompt)
 	rl_event_hook = PyOS_InputHook;
 	p = readline(prompt);
 	signal(SIGINT, old_inthandler);
+
+	/* We must return a buffer allocated with PyMem_Malloc. */
 	if (p == NULL) {
-		p = malloc(1);
+		p = PyMem_Malloc(1);
 		if (p != NULL)
 			*p = '\0';
 		return p;
@@ -400,10 +402,16 @@ call_readline(prompt)
 	n = strlen(p);
 	if (n > 0)
 		add_history(p);
-	if ((p = realloc(p, n+2)) != NULL) {
+	/* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
+	   release the original. */
+	q = p;
+	p = PyMem_Malloc(n+2);
+	if (p != NULL) {
+		strncpy(p, q, n);
 		p[n] = '\n';
 		p[n+1] = '\0';
 	}
+	free(q);
 	return p;
 }
 

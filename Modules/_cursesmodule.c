@@ -273,7 +273,7 @@ PyCursesScreen_New(arg)
 	PyFileObject *in_fo;
 	PyFileObject *out_fo;
 	PyCursesScreenObject *xp;
-	xp = PyObject_NEW(PyCursesScreenObject, &PyCursesScreen_Type);
+	xp = PyObject_New(PyCursesScreenObject, &PyCursesScreen_Type);
 	if (xp == NULL)
 		return NULL;
 	return (PyObject *)xp;
@@ -289,7 +289,7 @@ PyCursesWindow_New(win)
 {
 	PyCursesWindowObject *wo;
 
-	wo = PyObject_NEW(PyCursesWindowObject, &PyCursesWindow_Type);
+	wo = PyObject_New(PyCursesWindowObject, &PyCursesWindow_Type);
 	if (wo == NULL)
 		return NULL;
 	wo->win = win;
@@ -303,7 +303,7 @@ PyCursesWindow_Dealloc(wo)
 {
   if (wo->win != stdscr)
     delwin(wo->win);
-  PyMem_DEL(wo);
+  PyObject_Del(wo);
 }
 
 static PyObject *
@@ -1125,7 +1125,7 @@ PyCursesPad_New(pad)
 	WINDOW *pad;
 {
 	PyCursesPadObject *po;
-	po = PyObject_NEW(PyCursesPadObject, &PyCursesPad_Type);
+	po = PyObject_New(PyCursesPadObject, &PyCursesPad_Type);
 	if (po == NULL)
 		return NULL;
 	po->pad = pad;

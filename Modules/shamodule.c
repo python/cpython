@@ -380,7 +380,7 @@ staticforward PyTypeObject SHAtype;
 static SHAobject *
 newSHAobject()
 {
-	return (SHAobject *)PyObject_NEW(SHAobject, &SHAtype);
+	return (SHAobject *)PyObject_New(SHAobject, &SHAtype);
 }
 
 /* Internal methods for a hashing object */
@@ -389,7 +389,7 @@ static void
 SHA_dealloc(ptr)
 	PyObject *ptr;
 {
-	PyMem_DEL(ptr);
+	PyObject_Del(ptr);
 }
 
 

@@ -2558,7 +2558,8 @@ call_function(func, arg, kw)
 		class);
 	
 	Py_DECREF(arg);
-	PyMem_XDEL(k);
+	if (k != NULL)
+		PyMem_DEL(k);
 	
 	return result;
 }

@@ -147,7 +147,7 @@ class_dealloc(op)
 	Py_XDECREF(op->cl_getattr);
 	Py_XDECREF(op->cl_setattr);
 	Py_XDECREF(op->cl_delattr);
-	free((ANY *)op);
+	PyObject_DEL(op);
 }
 
 static PyObject *
@@ -561,7 +561,7 @@ instance_dealloc(inst)
 #endif /* Py_TRACE_REFS */
 	Py_DECREF(inst->in_class);
 	Py_XDECREF(inst->in_dict);
-	free((ANY *)inst);
+	PyObject_DEL(inst);
 }
 
 static PyObject *
@@ -1498,8 +1498,7 @@ PyMethod_New(func, self, class)
 	im = free_list;
 	if (im != NULL) {
 		free_list = (PyMethodObject *)(im->im_self);
-		im->ob_type = &PyMethod_Type;
-		_Py_NewReference((PyObject *)im);
+		PyObject_INIT(im, &PyMethod_Type);
 	}
 	else {
 		im = PyObject_NEW(PyMethodObject, &PyMethod_Type);
@@ -1691,8 +1690,8 @@ void
 PyMethod_Fini()
 {
 	while (free_list) {
-		PyMethodObject *v = free_list;
-		free_list = (PyMethodObject *)(v->im_self);
-		PyMem_DEL(v);
+		PyMethodObject *im = free_list;
+		free_list = (PyMethodObject *)(im->im_self);
+		PyObject_DEL(im);
 	}
 }

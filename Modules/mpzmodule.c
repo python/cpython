@@ -123,7 +123,7 @@ newmpzobject()
 #ifdef MPZ_DEBUG
 	fputs( "mpz_object() called...\n", stderr );
 #endif /* def MPZ_DEBUG */
-	mpzp = PyObject_NEW(mpzobject, &MPZtype);
+	mpzp = PyObject_New(mpzobject, &MPZtype);
 	if (mpzp == NULL)
 		return NULL;
 
@@ -285,7 +285,7 @@ mpz_dealloc(mpzp)
 	fputs( "mpz_dealloc() called...\n", stderr );
 #endif /* def MPZ_DEBUG */
 	mpz_clear(&mpzp->mpz);
-	PyMem_DEL(mpzp);
+	PyObject_Del(mpzp);
 } /* mpz_dealloc() */
 
 

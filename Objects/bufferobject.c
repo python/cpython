@@ -188,11 +188,11 @@ PyBuffer_New(size)
 				"size must be zero or positive");
 		return NULL;
 	}
-	b = (PyBufferObject *)malloc(sizeof(*b) + size);
+	/* PyObject_New is inlined */
+	b = (PyBufferObject *) PyObject_MALLOC(sizeof(*b) + size);
 	if ( b == NULL )
 		return PyErr_NoMemory();
-	b->ob_type = &PyBuffer_Type;
-	_Py_NewReference((PyObject *)b);
+	PyObject_INIT((PyObject *)b, &PyBuffer_Type);
 
 	b->b_base = NULL;
 	b->b_ptr = (void *)(b + 1);
@@ -212,7 +212,7 @@ buffer_dealloc(self)
 	PyBufferObject *self;
 {
 	Py_XDECREF(self->b_base);
-	free((void *)self);
+	PyObject_DEL(self);
 }
 
 static int

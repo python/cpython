@@ -447,7 +447,7 @@ cdplayer_dealloc(self)
 {
 	if (self->ob_cdplayer != NULL)
 		CDclose(self->ob_cdplayer);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -483,7 +483,7 @@ newcdplayerobject(cdp)
 {
 	cdplayerobject *p;
 
-	p = PyObject_NEW(cdplayerobject, &CdPlayertype);
+	p = PyObject_New(cdplayerobject, &CdPlayertype);
 	if (p == NULL)
 		return NULL;
 	p->ob_cdplayer = cdp;
@@ -761,7 +761,7 @@ cdparser_dealloc(self)
 		self->ob_cdcallbacks[i].ob_cdcallbackarg = NULL;
 	}
 	CDdeleteparser(self->ob_cdparser);
-	PyMem_DEL(self);
+	PyObject_Del(self);
 }
 
 static PyObject *
@@ -799,7 +799,7 @@ newcdparserobject(cdp)
 	cdparserobject *p;
 	int i;
 
-	p = PyObject_NEW(cdparserobject, &CdParsertype);
+	p = PyObject_New(cdparserobject, &CdParsertype);
 	if (p == NULL)
 		return NULL;
 	p->ob_cdparser = cdp;

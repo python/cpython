@@ -89,7 +89,7 @@ PyOS_StdioReadline(prompt)
 	int n;
 	char *p;
 	n = 100;
-	if ((p = malloc(n)) == NULL)
+	if ((p = PyMem_MALLOC(n)) == NULL)
 		return NULL;
 	fflush(stdout);
 	if (prompt)
@@ -99,7 +99,7 @@ PyOS_StdioReadline(prompt)
 	case 0: /* Normal case */
 		break;
 	case 1: /* Interrupt */
-		free(p);
+		PyMem_FREE(p);
 		return NULL;
 	case -1: /* EOF */
 	case -2: /* Error */
@@ -117,19 +117,21 @@ PyOS_StdioReadline(prompt)
 	n = strlen(p);
 	while (n > 0 && p[n-1] != '\n') {
 		int incr = n+2;
-		p = realloc(p, n + incr);
+		p = PyMem_REALLOC(p, n + incr);
 		if (p == NULL)
 			return NULL;
 		if (my_fgets(p+n, incr, stdin) != 0)
 			break;
 		n += strlen(p+n);
 	}
-	return realloc(p, n+1);
+	return PyMem_REALLOC(p, n+1);
 }
 
 
 /* By initializing this function pointer, systems embedding Python can
-   override the readline function. */
+   override the readline function.
+
+   Note: Python expects in return a buffer allocated with PyMem_Malloc. */
 
 char *(*PyOS_ReadlineFunctionPointer) Py_PROTO((char *));
 

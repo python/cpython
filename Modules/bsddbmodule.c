@@ -89,7 +89,7 @@ newdbhashobject(file, flags, mode,
 	bsddbobject *dp;
 	HASHINFO info;
 
-	if ((dp = PyObject_NEW(bsddbobject, &Bsddbtype)) == NULL)
+	if ((dp = PyObject_New(bsddbobject, &Bsddbtype)) == NULL)
 		return NULL;
 
 	info.bsize = bsize;
@@ -143,7 +143,7 @@ newdbbtobject(file, flags, mode,
 	bsddbobject *dp;
 	BTREEINFO info;
 
-	if ((dp = PyObject_NEW(bsddbobject, &Bsddbtype)) == NULL)
+	if ((dp = PyObject_New(bsddbobject, &Bsddbtype)) == NULL)
 		return NULL;
 
 	info.flags = btflags;
@@ -200,7 +200,7 @@ newdbrnobject(file, flags, mode,
 	bsddbobject *dp;
 	RECNOINFO info;
 
-	if ((dp = PyObject_NEW(bsddbobject, &Bsddbtype)) == NULL)
+	if ((dp = PyObject_New(bsddbobject, &Bsddbtype)) == NULL)
 		return NULL;
 
 	info.flags = rnflags;
@@ -261,7 +261,7 @@ bsddb_dealloc(dp)
 				"Python bsddb: close errno %d in dealloc\n",
 				errno);
 	}
-	PyMem_DEL(dp);
+	PyObject_Del(dp);
 }
 
 #ifdef WITH_THREAD

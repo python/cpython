@@ -514,17 +514,17 @@ r_object(p)
 			PyErr_SetString(PyExc_ValueError, "bad marshal data");
 			return NULL;
 		}
-		buffer = (char *)Py_Malloc(n);
+		buffer = PyMem_NEW(char, n);
 		if (buffer == NULL)
-		    return NULL;
+			return PyErr_NoMemory();
 		if (r_string(buffer, (int)n, p) != n) {
-			free(buffer);
+			PyMem_DEL(buffer);
 			PyErr_SetString(PyExc_EOFError,
 				"EOF read where object expected");
 			return NULL;
 		}
 		v = PyUnicode_DecodeUTF8(buffer, n, NULL);
-		free(buffer);
+		PyMem_DEL(buffer);
 		return v;
 	    }
 	    
