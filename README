@@ -5,28 +5,32 @@ Python release 1.1
 
 ==> Python 1.1 contains many improvements over 1.0.3, but is almost
     backward compatible (though the magic number for .pyc file has
-    changed).  It comes with build instructions for many more non-UNIX
-    platforms.
+    changed).  It is portable to many more non-UNIX platforms.
 
 ==> If you don't know yet what Python is: it's an interpreted,
     extensible, embeddable, interactive, object-oriented programming
     language.  For a quick summary of what Python can mean for a
     UNIX/C programmer, read Misc/BLURB.LUTZ.
 
-==> If you want to start compiling right away: just type "./configure"
-    in the current directory and when it finishes, type "make".  See
-    the section Build Instructions below for more details.
+==> If you want to start compiling right away (on UNIX): just type
+    "./configure" in the current directory and when it finishes, type
+    "make".  See the section Build Instructions below for more
+    details.
 
 ==> All documentation is in the subdirectory Doc in the form of LaTeX
     files.  In order of importance for new users: Tutorial (tut),
     Library Reference (lib), Language Reference (ref), Extending
     (ext).  Note that especially the Library Reference is of immense
     value since much of Python's power (including the built-in data
-    types and functions!) is described there.  [XXX The ext document
+    types and functions!) is described there.  [NB The ext document
     has not been updated to reflect this release yet.]
 
 ==> Python is COPYRIGHTED but free to use for all.  See the copyright
-    notice at the end of this file.
+    notice at the end of this file.  Moreover, the Python distribution
+    is not affected by the GNU Public Licence (GPL).  There is support
+    for interfaces to some GNU code but this is entirely optional and
+    no GNU code is distributed with Python.  For all these packages,
+    GPL-free public domain versions also exist.
 
 
 Build instructions
@@ -142,14 +146,19 @@ you change your mind about the install prefix...
 interface: this gives you line editing and command history when
 calling python interactively.  You need to configure build the GNU
 readline library before running the configure script.  Its sources are
-no longer distributed with Python; you can ftp them from any GNU
-mirror site, or from its home site:
+not distributed with Python; you can ftp them from any GNU mirror
+site, or from its home site:
 ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or a higher
-version number -- using version 1.x is not recommended).  Pass the
-Python configure script the option --with-readline=DIRECTORY where
-DIRECTORY is the absolute pathname of the directory where you've built
-the readline library.  Some hints on building and using the readline
-library:
+version number -- using version 1.x is not recommended).
+
+A GPL-free version was posted to comp.sources.misc in volume 31 and is
+widely available from FTP archive sites.  One URL for it is:
+ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume31/editline/part01.Z
+
+Pass the Python configure script the option --with-readline=DIRECTORY
+where DIRECTORY is the absolute pathname of the directory where you've
+built the readline library.  Some hints on building and using the
+readline library:
 
     - On SGI IRIX 5, you may have to add the following
     to rldefs.h:
