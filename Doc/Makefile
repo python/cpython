@@ -57,6 +57,9 @@ MAKEINFO=	makeinfo
 L2H=		/ufs/guido/l2h/latex2html
 L2HARGS=	-address $$USER@`domainname` -dont_include myformat
 
+# Destination directory for output of libwww target.
+LIBHTMLDIR=	./python-lib
+
 # Install destination -- not used now but might be useful some time...
 DESTDIR=	/usr/local
 LIBDESTDIR=	$DESTDIR/lib
@@ -66,16 +69,19 @@ DOCDESTDIR=	$LIBDEST/doc
 # Ideally, you shouldn't need to edit beyond this point
 
 # Main target
-all:	tut.dvi lib.dvi ref.dvi ext.dvi
+all:	all-ps
+
+all-dvi: tut.dvi lib.dvi ref.dvi ext.dvi
+all-ps:	tut.ps lib.ps ref.ps ext.ps
 
 # Individual document fake targets
-tut:	tut.dvi
-lib:	lib.dvi
-ref:	ref.dvi
-ext:	ext.dvi
+tut:	tut.ps
+lib:	lib.ps
+ref:	ref.ps
+ext:	ext.ps
 
 # CWI Quarterly document fake target
-qua:	qua.dvi
+qua:	qua.ps
 
 # Dependencies
 tut.dvi lib.dvi ref.dvi ext.dvi: myformat.sty fix_hack
@@ -84,6 +90,8 @@ tut.dvi lib.dvi ref.dvi ext.dvi: myformat.sty fix_hack
 tut.dvi: tut.tex 
 	$(LATEX) tut
 	$(LATEX) tut
+
+tut.ps:	tut.dvi
 	$(DVIPS) tut >tut.ps
 
 # Reference document
@@ -94,6 +102,8 @@ ref.dvi: ref.tex ref1.tex ref2.tex ref3.tex ref4.tex ref5.tex ref6.tex \
 	./fix_hack ref.idx
 	$(MAKEINDEX) ref
 	$(LATEX) ref
+
+ref.ps:	ref.dvi
 	$(DVIPS) ref >ref.ps
 
 # LaTeX source files for the Python Library Reference
@@ -137,6 +147,8 @@ lib.dvi: $(LIBFILES)
 	./fix_hack lib.idx
 	$(MAKEINDEX) lib
 	$(LATEX) lib
+
+lib.ps:	lib.dvi
 	$(DVIPS) lib >lib.ps
 
 # Extensions document
@@ -146,6 +158,8 @@ ext.dvi: ext.tex
 	./fix_hack ext.idx
 	$(MAKEINDEX) ext
 	$(LATEX) ext
+
+ext.ps:	ext.dvi
 	$(DVIPS) ext >ext.ps
 
 # Quarterly document
@@ -154,6 +168,8 @@ qua.dvi: qua.tex quabib.bib
 	$(BIBTEX) qua
 	$(LATEX) qua
 	$(BIBTEX) qua
+
+qua.ps:	qua.dvi
 	$(DVIPS) qua >qua.ps
 
 
@@ -173,9 +189,9 @@ python-lib.info: lib.texi
 
 lib.info: python-lib.info
 
-# This target is very local to CWI...
 libwww: lib.texi
-	$(PYTHON) texi2html.py -d lib.texi /ufs/guido/public_html/python-lib
+	if test ! -d $(LIBHTMLDIR); then mkdir $(LIBHTMLDIR); else true; fi
+	$(PYTHON) texi2html.py -d lib.texi $(LIBHTMLDIR)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
