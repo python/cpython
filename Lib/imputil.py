@@ -455,7 +455,6 @@ def _os_bootstrap():
         def join(a, b):
             if a == '':
                 return b
-            path = s
             if ':' not in a:
                 a = ':' + a
             if a[-1:] != ':':
