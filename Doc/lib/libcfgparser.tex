@@ -135,6 +135,24 @@ otherwise return 0.
 \begin{methoddesc}{read}{filenames}
 Read and parse a list of filenames.  If \var{filenames} is a string or
 Unicode string, it is treated as a single filename.
+If a file named in \var{filenames} cannot be opened, that file will be
+ignored.  This is designed so that you can specify a list of potential
+configuration file locations (for example, the current directory, the
+user's home directory, and some system-wide directory), and all
+existing configuration files in the list will be read.  If none of the
+named files exist, the \class{ConfigParser} instance will contain an
+empty dataset.  An application which requires initial values to be
+loaded from a file should load the required file or files using
+\method{readfp()} before calling \method{read()} for any optional
+files:
+
+\begin{verbatim}
+import ConfigParser, os
+
+config = ConfigParser.ConfigParser()
+config.readfp(open('defaults.cfg'))
+config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')])
+\end{verbatim}
 \end{methoddesc}
 
 \begin{methoddesc}{readfp}{fp\optional{, filename}}
