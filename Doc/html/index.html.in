@@ -1,10 +1,11 @@
 <html>
   <head>
     <title>Python @RELEASE@ Documentation - @DATE@</title>
-    <link rel="STYLESHEET" href="lib/lib.css" type="text/css">
+    <meta name="aesop" content="links">
     <meta name="description"
           content="Top-level index to the standard documentation for
                    Python @RELEASE@.">
+    <link rel="STYLESHEET" href="lib/lib.css" type="text/css">
     <style type="text/css">
       a.title { font-weight: bold; font-size: 110%; }
       ul { margin-left: 1em; padding: 0pt; border: 0pt; }
