@@ -710,7 +710,7 @@
 % Also for consistency: spell Python "Python", not "python"!
 
 % code is the most difficult one...
-\newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
+\newcommand{\code}[1]{\textrm{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \texttt{#1}}}
 
 \newcommand{\bfcode}[1]{\code{\bfseries#1}} % bold-faced code font
@@ -838,7 +838,7 @@
 %
 % Example:
 %  \versionadded{1.5.2}
-%  \versionchanged[short explanation]{1.6}
+%  \versionchanged[short explanation]{2.0}
 %
 \newcommand{\versionadded}[1]{%
   {  New in version #1.  }}
