@@ -61,6 +61,7 @@ __all__ = [
 import binascii
 import datetime
 from cStringIO import StringIO
+import re
 
 
 def readPlist(pathOrFile):
@@ -176,11 +177,6 @@ class DumbXMLWriter:
             self.file.write("\n")
 
 
-import re
-# Regex to strip all control chars, but for \t \n \r and \f
-_controlStripper = re.compile(r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0e\x0f"
-    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
-
 # Contents should conform to a subset of ISO 8601
 # (in particular, YYYY '-' MM '-' DD 'T' HH ':' MM ':' SS 'Z'.  Smaller units may be omitted with
 #  a loss of precision)
@@ -202,6 +198,11 @@ def _dateToString(d):
         d.year, d.month, d.day,
         d.hour, d.minute, d.second
     )
+
+
+# Regex to strip all control chars, but for \t \n \r and \f
+_controlStripper = re.compile(r"[\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0e\x0f"
+    "\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f]")
 
 def _escapeAndEncode(text):
     text = text.replace("\r\n", "\n")       # convert DOS line endings
