@@ -554,85 +554,63 @@ PyDoc_STRVAR(mktime_doc,
 Convert a time tuple in local time to seconds since the Epoch.");
 #endif /* HAVE_MKTIME */
 
-static PyMethodDef time_methods[] = {
-	{"time",	time_time, METH_VARARGS, time_doc},
-#ifdef HAVE_CLOCK
-	{"clock",	time_clock, METH_VARARGS, clock_doc},
-#endif
-	{"sleep",	time_sleep, METH_VARARGS, sleep_doc},
-	{"gmtime",	time_gmtime, METH_VARARGS, gmtime_doc},
-	{"localtime",	time_localtime, METH_VARARGS, localtime_doc},
-	{"asctime",	time_asctime, METH_VARARGS, asctime_doc},
-	{"ctime",	time_ctime, METH_VARARGS, ctime_doc},
-#ifdef HAVE_MKTIME
-	{"mktime",	time_mktime, METH_VARARGS, mktime_doc},
-#endif
-#ifdef HAVE_STRFTIME
-	{"strftime",	time_strftime, METH_VARARGS, strftime_doc},
-#endif
-	{"strptime",	time_strptime, METH_VARARGS, strptime_doc},
-	{NULL,		NULL}		/* sentinel */
-};
+#ifdef HAVE_WORKING_TZSET
+void inittimezone(PyObject *module);
 
-
-PyDoc_STRVAR(module_doc,
-"This module provides various functions to manipulate time values.\n\
-\n\
-There are two standard representations of time.  One is the number\n\
-of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
-or a floating point number (to represent fractions of seconds).\n\
-The Epoch is system-defined; on Unix, it is generally January 1st, 1970.\n\
-The actual value can be retrieved by calling gmtime(0).\n\
-\n\
-The other representation is a tuple of 9 integers giving local time.\n\
-The tuple items are:\n\
-  year (four digits, e.g. 1998)\n\
-  month (1-12)\n\
-  day (1-31)\n\
-  hours (0-23)\n\
-  minutes (0-59)\n\
-  seconds (0-59)\n\
-  weekday (0-6, Monday is 0)\n\
-  Julian day (day in the year, 1-366)\n\
-  DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
-If the DST flag is 0, the time is given in the regular time zone;\n\
-if it is 1, the time is given in the DST time zone;\n\
-if it is -1, mktime() should guess based on the date and time.\n\
-\n\
-Variables:\n\
-\n\
-timezone -- difference in seconds between UTC and local standard time\n\
-altzone -- difference in  seconds between UTC and local DST time\n\
-daylight -- whether local time should reflect DST\n\
-tzname -- tuple of (standard time zone name, DST time zone name)\n\
-\n\
-Functions:\n\
-\n\
-time() -- return current time in seconds since the Epoch as a float\n\
-clock() -- return CPU time since process start as a float\n\
-sleep() -- delay for a number of seconds given as a float\n\
-gmtime() -- convert seconds since Epoch to UTC tuple\n\
-localtime() -- convert seconds since Epoch to local time tuple\n\
-asctime() -- convert time tuple to string\n\
-ctime() -- convert time in seconds to string\n\
-mktime() -- convert local time tuple to seconds since Epoch\n\
-strftime() -- convert time tuple to string according to format specification\n\
-strptime() -- parse string to time tuple according to format specification");
-
-
-PyMODINIT_FUNC
-inittime(void)
+static PyObject *
+time_tzset(PyObject *self, PyObject *args)
 {
-	PyObject *m;
-	char *p;
-	m = Py_InitModule3("time", time_methods, module_doc);
+	PyObject* m;
 
-	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
-	p = Py_GETENV("PYTHONY2K");
-	PyModule_AddIntConstant(m, "accept2dyear", (long) (!p || !*p));
-	/* Squirrel away the module's dictionary for the y2k check */
-	moddict = PyModule_GetDict(m);
-	Py_INCREF(moddict);
+	if (!PyArg_ParseTuple(args, ":tzset"))
+		return NULL;
+
+	m = PyImport_ImportModule("time");
+	if (m == NULL) {
+	    return NULL;
+	}
+
+	tzset();
+
+	/* Reset timezone, altzone, daylight and tzname */
+	inittimezone(m);
+	Py_DECREF(m);
+	
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+PyDoc_STRVAR(tzset_doc,
+"tzset(zone)\n\
+\n\
+Initialize, or reinitialize, the local timezone to the value stored in\n\
+os.environ['TZ']. The TZ environment variable should be specified in\n\
+standard Uniz timezone format as documented in the tzset man page\n\
+(eg. 'US/Eastern', 'Europe/Amsterdam'). Unknown timezones will silently\n\
+fall back to UTC. If the TZ environment variable is not set, the local\n\
+timezone is set to the systems best guess of wallclock time.\n\
+Changing the TZ environment variable without calling tzset *may* change\n\
+the local timezone used by methods such as localtime, but this behaviour\n\
+should not be relied on.");
+#endif /* HAVE_WORKING_TZSET */
+
+void inittimezone(PyObject *m) {
+    /* This code moved from inittime wholesale to allow calling it from
+	time_tzset. In the future, some parts of it can be moved back
+	(for platforms that don't HAVE_WORKING_TZSET, when we know what they
+	are), and the extranious calls to tzset(3) should be removed.
+	I havn't done this yet, as I don't want to change this code as
+	little as possible when introducing the time.tzset and time.tzsetwall
+	methods. This should simply be a method of doing the following once,
+	at the top of this function and removing the call to tzset() from
+	time_tzset():
+
+	    #ifdef HAVE_TZSET
+	    tzset()
+	    #endif
+
+	And I'm lazy and hate C so nyer.
+     */
 #if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
 	tzset();
 #ifdef PYOS_OS2
@@ -712,6 +690,96 @@ inittime(void)
 			   Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
+}
+
+
+static PyMethodDef time_methods[] = {
+	{"time",	time_time, METH_VARARGS, time_doc},
+#ifdef HAVE_CLOCK
+	{"clock",	time_clock, METH_VARARGS, clock_doc},
+#endif
+	{"sleep",	time_sleep, METH_VARARGS, sleep_doc},
+	{"gmtime",	time_gmtime, METH_VARARGS, gmtime_doc},
+	{"localtime",	time_localtime, METH_VARARGS, localtime_doc},
+	{"asctime",	time_asctime, METH_VARARGS, asctime_doc},
+	{"ctime",	time_ctime, METH_VARARGS, ctime_doc},
+#ifdef HAVE_MKTIME
+	{"mktime",	time_mktime, METH_VARARGS, mktime_doc},
+#endif
+#ifdef HAVE_STRFTIME
+	{"strftime",	time_strftime, METH_VARARGS, strftime_doc},
+#endif
+	{"strptime",	time_strptime, METH_VARARGS, strptime_doc},
+#ifdef HAVE_WORKING_TZSET
+	{"tzset",	time_tzset, METH_VARARGS, tzset_doc},
+#endif
+	{NULL,		NULL}		/* sentinel */
+};
+
+
+PyDoc_STRVAR(module_doc,
+"This module provides various functions to manipulate time values.\n\
+\n\
+There are two standard representations of time.  One is the number\n\
+of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
+or a floating point number (to represent fractions of seconds).\n\
+The Epoch is system-defined; on Unix, it is generally January 1st, 1970.\n\
+The actual value can be retrieved by calling gmtime(0).\n\
+\n\
+The other representation is a tuple of 9 integers giving local time.\n\
+The tuple items are:\n\
+  year (four digits, e.g. 1998)\n\
+  month (1-12)\n\
+  day (1-31)\n\
+  hours (0-23)\n\
+  minutes (0-59)\n\
+  seconds (0-59)\n\
+  weekday (0-6, Monday is 0)\n\
+  Julian day (day in the year, 1-366)\n\
+  DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
+If the DST flag is 0, the time is given in the regular time zone;\n\
+if it is 1, the time is given in the DST time zone;\n\
+if it is -1, mktime() should guess based on the date and time.\n\
+\n\
+Variables:\n\
+\n\
+timezone -- difference in seconds between UTC and local standard time\n\
+altzone -- difference in  seconds between UTC and local DST time\n\
+daylight -- whether local time should reflect DST\n\
+tzname -- tuple of (standard time zone name, DST time zone name)\n\
+\n\
+Functions:\n\
+\n\
+time() -- return current time in seconds since the Epoch as a float\n\
+clock() -- return CPU time since process start as a float\n\
+sleep() -- delay for a number of seconds given as a float\n\
+gmtime() -- convert seconds since Epoch to UTC tuple\n\
+localtime() -- convert seconds since Epoch to local time tuple\n\
+asctime() -- convert time tuple to string\n\
+ctime() -- convert time in seconds to string\n\
+mktime() -- convert local time tuple to seconds since Epoch\n\
+strftime() -- convert time tuple to string according to format specification\n\
+strptime() -- parse string to time tuple according to format specification\n\
+tzset() -- change the local timezone");
+
+
+PyMODINIT_FUNC
+inittime(void)
+{
+	PyObject *m;
+	char *p;
+	m = Py_InitModule3("time", time_methods, module_doc);
+
+	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
+	p = Py_GETENV("PYTHONY2K");
+	PyModule_AddIntConstant(m, "accept2dyear", (long) (!p || !*p));
+	/* Squirrel away the module's dictionary for the y2k check */
+	moddict = PyModule_GetDict(m);
+	Py_INCREF(moddict);
+
+	/* Set, or reset, module variables like time.timezone */
+	inittimezone(m);
+
 #ifdef MS_WINDOWS
 	/* Helper to allow interrupts for Windows.
 	   If Ctrl+C event delivered while not sleeping
@@ -901,3 +969,5 @@ floatsleep(double secs)
 
 	return 0;
 }
+
+

@@ -613,6 +613,10 @@
 /* Define to 1 if you have the `wcscoll' function. */
 #undef HAVE_WCSCOLL
 
+/* Define if tzset() actually switches the local timezone in a meaningful way.
+   */
+#undef HAVE_WORKING_TZSET
+
 /* Define to 1 if you have the `_getpty' function. */
 #undef HAVE__GETPTY
 

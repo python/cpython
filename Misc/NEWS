@@ -32,6 +32,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- New function time.tzset() provides access to the C library tzet()
+  function, if supported.  (SF patch #675422.)
+
 - Using createfilehandler, deletefilehandler, createtimerhandler functions
   on Tkinter.tkinter (_tkinter module) no longer crashes the interpreter.
   See SF bug #692416.

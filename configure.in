@@ -2500,6 +2500,39 @@ then
   [Define if nice() returns success/failure instead of the new priority.])
 fi
 
+# tzset(3) exists and works like we expect it to
+AC_MSG_CHECKING(for working tzset())
+AC_CACHE_VAL(ac_cv_working_tzset, [
+AC_TRY_RUN([
+#include <stdlib.h>
+#include <time.h>
+int main()
+{
+	int gmt_hour;
+	int eastern_hour;
+	time_t now;
+	now = time((time_t*)NULL);
+	putenv("TZ=GMT");
+	tzset();
+	gmt_hour = localtime(&now)->tm_hour;
+	putenv("TZ=US/Eastern");
+	tzset();
+	eastern_hour = localtime(&now)->tm_hour;
+	if (eastern_hour == gmt_hour)
+	    exit(1);
+	exit(0);
+}
+],
+ac_cv_working_tzset=yes,
+ac_cv_working_tzset=no,
+ac_cv_working_tzset=no)])
+AC_MSG_RESULT($ac_cv_working_tzset)
+if test "$ac_cv_working_tzset" = yes
+then
+  AC_DEFINE(HAVE_WORKING_TZSET, 1,
+  [Define if tzset() actually switches the local timezone in a meaningful way.])
+fi
+
 # Look for subsecond timestamps in struct stat
 AC_MSG_CHECKING(for tv_nsec in struct stat)
 AC_CACHE_VAL(ac_cv_stat_tv_nsec,
