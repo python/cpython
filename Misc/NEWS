@@ -90,6 +90,11 @@ Core
 - Dictionary objects now support the "in" operator: "x in dict" means
   the same as dict.has_key(x).
 
+- The update() method of dictionaries now accepts generic mapping
+  objects.  Specifically the argument object must support the .keys()
+  and __getitem__() methods.  This allows you to say, for example,
+  {}.update(UserDict())
+
 - Iterators were added; this is a generalized way of providing values
   to a for loop.  See PEP 234.  There's a new built-in function iter()
   to return an iterator.  There's a new protocol to get the next value
