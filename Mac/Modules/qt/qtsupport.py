@@ -42,7 +42,34 @@ staticforward int TrackObj_Convert(PyObject *, Track *);
 staticforward PyObject *MovieObj_New(Movie);
 staticforward int MovieObj_Convert(PyObject *, Movie *);
 staticforward PyObject *MovieCtlObj_New(MovieController);
-staticforward int MovieCtlObj_Convert(PyObject *, MovieController *);
+staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
+staticforward PyObject *TimeBaseObj_New(TimeBase);
+staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
+
+/*
+** Parse/generate time records
+*/
+static PyObject *
+QtTimeRecord_New(itself)
+	TimeRecord *itself;
+{
+
+	return Py_BuildValue("O&lO&", PyMac_Buildwide, &itself->value, itself->scale, 
+			TimeBaseObj_New, itself->base);
+}
+
+static int
+QtTimeRecord_Convert(v, p_itself)
+	PyObject *v;
+	TimeRecord *p_itself;
+{
+	
+	if( !PyArg_ParseTuple(v, "O&lO&", PyMac_Getwide, &p_itself->value, &p_itself->scale,
+			TimeBaseObj_Convert, &p_itself->base) )
+		return 0;
+	return 1;
+}
+
 
 
 """
@@ -81,7 +108,9 @@ OSType_ptr = OpaqueType("OSType", "PyMac_BuildOSType", "PyMac_GetOSType")
 float_ptr = ByAddressType("float", "f")
 
 RGBColor = OpaqueType("RGBColor", "QdRGB")
-RGBColor_ptr = OpaqueType("RGBColor", "QdRGB")
+RGBColor_ptr = RGBColor
+TimeRecord = OpaqueType("TimeRecord", "QtTimeRecord")
+TimeRecord_ptr = TimeRecord
 
 # Non-opaque types, mostly integer-ish
 TimeValue = Type("TimeValue", "l")
@@ -150,8 +179,8 @@ class TimeBaseObjectDefinition(GlobalObjectDefinition):
 					PyErr_SetString(Qt_Error,"Cannot create null TimeBase");
 					return NULL;
 				}""")
-	def outputFreeIt(self, itselfname):
-		Output("DisposeTimeBase(%s);", itselfname)
+##	def outputFreeIt(self, itselfname):
+##		Output("DisposeTimeBase(%s);", itselfname)
 
 class MovieCtlObjectDefinition(GlobalObjectDefinition):
 	def outputCheckNewArg(self):

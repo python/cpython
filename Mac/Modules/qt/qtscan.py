@@ -43,7 +43,7 @@ class MyScanner(Scanner):
 			"DisposeMovieTrack",	# ditto
 			"DisposeTrackMedia",	# ditto
 			"DisposeUserData",		# ditto
-			"DisposeTimeBase",		# ditto
+#			"DisposeTimeBase",		# ditto
 			"DisposeMovieController", # ditto
 
 			# The following 4 use 'void *' in an uncontrolled way
@@ -98,8 +98,6 @@ class MyScanner(Scanner):
 			# We dont do callbacks yet, so no need for these
 			"QTCallBack",
 			# Skipped for now, due to laziness
-			"TimeRecord",
-			"TimeRecord_ptr",
 			"TrackEditState",
 			"MovieEditState",
 			"MatrixRecord",
