@@ -193,28 +193,6 @@ from StringIO import StringIO
 
 real_pdb_set_trace = pdb.set_trace
 
-# Option constants.
-DONT_ACCEPT_TRUE_FOR_1 = 1 << 0
-DONT_ACCEPT_BLANKLINE = 1 << 1
-NORMALIZE_WHITESPACE = 1 << 2
-ELLIPSIS = 1 << 3
-UNIFIED_DIFF = 1 << 4
-CONTEXT_DIFF = 1 << 5
-
-OPTIONFLAGS_BY_NAME = {
-    'DONT_ACCEPT_TRUE_FOR_1': DONT_ACCEPT_TRUE_FOR_1,
-    'DONT_ACCEPT_BLANKLINE': DONT_ACCEPT_BLANKLINE,
-    'NORMALIZE_WHITESPACE': NORMALIZE_WHITESPACE,
-    'ELLIPSIS': ELLIPSIS,
-    'UNIFIED_DIFF': UNIFIED_DIFF,
-    'CONTEXT_DIFF': CONTEXT_DIFF,
-    }
-
-# Special string markers for use in `want` strings:
-BLANKLINE_MARKER = '<BLANKLINE>'
-ELLIPSIS_MARKER = '...'
-
-
 # There are 4 basic classes:
 #  - Example: a <source, want> pair, plus an intra-docstring line number.
 #  - DocTest: a collection of examples, parsed from a docstring, plus
@@ -233,6 +211,24 @@ ELLIPSIS_MARKER = '...'
 #                            |   ...   |
 #                            | Example |
 #                            +---------+
+
+# Option constants.
+OPTIONFLAGS_BY_NAME = {}
+def register_optionflag(name):
+    flag = 1 << len(OPTIONFLAGS_BY_NAME)
+    OPTIONFLAGS_BY_NAME[name] = flag
+    return flag
+
+DONT_ACCEPT_TRUE_FOR_1 = register_optionflag('DONT_ACCEPT_TRUE_FOR_1')
+DONT_ACCEPT_BLANKLINE = register_optionflag('DONT_ACCEPT_BLANKLINE')
+NORMALIZE_WHITESPACE = register_optionflag('NORMALIZE_WHITESPACE')
+ELLIPSIS = register_optionflag('ELLIPSIS')
+UNIFIED_DIFF = register_optionflag('UNIFIED_DIFF')
+CONTEXT_DIFF = register_optionflag('CONTEXT_DIFF')
+
+# Special string markers for use in `want` strings:
+BLANKLINE_MARKER = '<BLANKLINE>'
+ELLIPSIS_MARKER = '...'
 
 ######################################################################
 ## Table of Contents
