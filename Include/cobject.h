@@ -45,6 +45,9 @@ PyAPI_FUNC(void *) PyCObject_GetDesc(PyObject *);
 /* Import a pointer to a C object from a module using a PyCObject. */
 PyAPI_FUNC(void *) PyCObject_Import(char *module_name, char *cobject_name);
 
+/* Modify a C object. Fails (==0) if object has a destructor. */
+PyAPI_FUNC(int) PyCObject_SetVoidPtr(PyObject *self, void *cobj);
+
 #ifdef __cplusplus
 }
 #endif

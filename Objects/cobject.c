@@ -99,6 +99,20 @@ PyCObject_Import(char *module_name, char *name)
     return r;
 }
 
+int
+PyCObject_SetVoidPtr(PyObject *_self, void *cobj)
+{
+    PyCObject* self = (PyCObject*)_self;
+    if (self == NULL || !PyCObject_Check(self) ||
+	self->destructor != NULL) {
+	PyErr_SetString(PyExc_TypeError, 
+			"Invalid call to PyCObject_SetVoidPtr");
+	return 0;
+    }
+    self->cobject = cobj;
+    return 1;
+}
+
 static void
 PyCObject_dealloc(PyCObject *self)
 {

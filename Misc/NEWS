@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- CObjects are now mutable (on the C level) through PyCObject_SetVoidPtr.
+
 - list.sort() now supports three keyword arguments:  cmp, key, and reverse.
   The key argument can be a function of one argument that extracts a
   comparison key from the original record:  mylist.sort(key=str.lower).
