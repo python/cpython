@@ -41,8 +41,6 @@ extern typeobject MD5type;	/* Really static, forward */
 
 #define is_md5object(v)		((v)->ob_type == &MD5type)
 
-static const char initialiser_name[] = "md5";
-
 /* #define MD5_DEBUG */
 
 static md5object *
@@ -207,7 +205,7 @@ typeobject MD5type = {
 /* List of functions exported by this module */
 
 static struct methodlist md5_functions[] = {
-	{initialiser_name,	MD5_md5},
+	{"md5",			MD5_md5},
 	{NULL,			NULL}		 /* Sentinel */
 };
 
