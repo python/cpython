@@ -61,11 +61,11 @@ src         A subdirectory used only for VC++ version 1.5 Python
             directories instead.
 
 
-Microsoft Visual C++ Version 4.0 (32-bit Windows)
+Microsoft Visual C++ Version 4.x (32-bit Windows)
 =================================================
 
-(While we have done all our testing with VC version 4.0, we are
-confident that the same procedure will work for versions 4.1 and 4.2.)
+(For historic reasons this uses the filename "vc40"; it has been tested
+most recently with VC 4.2.  VC 5.x should be able to convert it.)
 
 The distributed Makefile is vc40.mak.  This file is distributed with
 CRLF line separators, otherwise Developer Studio won't like it.  It
@@ -79,12 +79,12 @@ additional project files vc40.ncb and vc40.mdp when you use the
 project.  The project contains six targets, which should be built in
 this order:
 
-python14    The Python core as a DLL, named python14.dll.
+python15    The Python core as a DLL, named python15.dll.
 
 python      The Python main program, named python.exe.  This should
             work as a console program under Windows 95 or NT, as well
             as under Windows 3.1(1) when using win32s.  It uses
-            python14.dll.
+            python15.dll.
 
 _tkinter    The optional _tkinter extension, _tkinter.dll; see below.
 
@@ -92,7 +92,7 @@ All end products of the compilation are placed in the subdirectory
 vc40 (which Developer Studio creates); object files are placed in
 vc40/tmp.  There are no separate Release and Debug project variants.
 Note that the python and _tkinter projects require that the
-python14.lib file exists in the vc40 subdirectory before they can be
+python15.lib file exists in the vc40 subdirectory before they can be
 built.
 
 *** How to build the _tkinter extension ***
@@ -110,9 +110,9 @@ Lib\tkinter subdirectory.
 Additional files and subdirectories for 32-bit Windows
 ======================================================
 
-python_nt.def  Exports definition file for python14.dll.
+python_nt.def  Exports definition file for python15.dll.
 
-python_nt.rc   Resource compiler input for python14.dll.
+python_nt.rc   Resource compiler input for python15.dll.
 
 dl_nt.c, getpath_nt.c, import_nt.c
                Additional sources used for 32-bit Windows features.
