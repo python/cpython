@@ -23,7 +23,7 @@ HREF="http://maigret.cog.brown.edu/pyutil/">MESS</A> package; Jim
 Fulton has used it in his <A
 HREF="http://www.digicool.com/papers/ExtensionClass.html">Extension
 Classes</A> package.  (It has also been referred to as the ``Don
-Beaudry <i>hack</i>, but that's a misnomer.  There's nothing hackish
+Beaudry <i>hack</i>,'' but that's a misnomer.  There's nothing hackish
 about it -- in fact, it is rather elegant and deep, even though
 there's something dark to it.)
 
@@ -182,6 +182,11 @@ same role at different abstraction levels.  And perhaps at some point
 in the future they will really be the same thing (at which point you
 would be able to derive subclasses from built-in types).
 
+<P>At this point it may be worth mentioning that C.__class__ is the
+same object as B.__class__, i.e., C's metaclass is the same as B's
+metaclass.  In other words, subclassing an existing class creates a
+new (meta)inststance of the base class's metaclass.
+
 <P>Going back to the example, the class B.__class__ is instantiated,
 passing its constructor the same three arguments that are passed to
 the default class constructor or to an extension's metaprogramming
@@ -229,7 +234,7 @@ assume that no constructor arguments are required:
 
 <PRE>
 x = MySpecialClass()
-y = Myspecialclass()
+y = MySpecialClass()
 print x.__class__, y.__class__
 </PRE>
 
@@ -468,7 +473,7 @@ hooks tough; we provide a similar hook _getattr_ instead.
 <P>
 
 <DT><A HREF="Eiffel.py">Eiffel.py</A>
-ppp
+
 <DD>Uses the above generic metaclass to implement Eiffel style
 pre-conditions and post-conditions.
 
@@ -478,6 +483,12 @@ pre-conditions and post-conditions.
 
 <DD>Uses the above generic metaclass to implement synchronized
 methods.
+
+<P>
+
+<DT><A HREF="Simple.py">Simple.py</A>
+
+<DD>The example module used above.
 
 <P>
 
@@ -492,6 +503,82 @@ example, I wouldn't mind getting a trace from the test run of the
 Synch module, and it would be interesting to add preconditions to it
 as well.  This needs more research.  Perhaps a metaclass could be
 provided that allows stackable wrappers...
+
+<HR>
+
+<H2>Things You Could Do With Metaclasses</H2>
+
+<P>There are lots of things you could do with metaclasses.  Most of
+these can also be done with creative use of __getattr__, but
+metaclasses make it easier to modify the attribute lookup behavior of
+classes.  Here's a partial list.
+
+<P>
+
+<UL>
+
+<LI>Enforce different inheritance semantics, e.g. automatically call
+base class methods when a derived class overrides<P>
+
+<LI>Implement class methods (e.g. if the first argument is not named
+'self')<P>
+
+<LI>Implement that each instance is initialized with <b>copies</b> of
+all class variables<P>
+
+<LI>Implement a different way to store instance variables (e.g. in a
+list kept outside the the instance but indexed by the instance's id())<P>
+
+<LI>Automatically wrap or trap all or certain methods
+
+<UL>
+
+<LI>for tracing
+
+<LI>for precondition and postcondition checking
+
+<LI>for synchronized methods
+
+<LI>for automatic value caching
+
+</UL>
+<P>
+
+<LI>When an attribute is a parameterless function, call it on
+reference (to mimic it being an instance variable); same on assignment<P>
+
+<LI>Instrumentation: see how many times various attributes are used<P>
+
+<LI>Different semantics for __setattr__ and __getattr__ (e.g.  disable
+them when they are being used recursively)<P>
+
+<LI>Abuse class syntax for other things<P>
+
+<LI>Experiment with automatic type checking<P>
+
+<LI>Delegation (or acquisition)<P>
+
+<LI>Dynamic inheritance patterns<P>
+
+<LI>Automatic caching of methods<P>
+
+</UL>
+
+<P>
+
+<HR>
+
+<H4>Credits</H4>
+
+<P>Many thanks to David Ascher and Donald Beaudry for their comments
+on earlier draft of this paper.  Also thanks to Matt Conway and Tommy
+Burnette for putting a seed for the idea of metaclasses in my
+mind, nearly three years ago, even though at the time my response was
+``you can do that with __getattr__ hooks...'' :-)
+
+<P>
+
+<HR>
 
 </BODY>
 
