@@ -364,8 +364,10 @@ eval_code2(co, globals, locals,
 #define BASIC_PUSH(v)	(*stack_pointer++ = (v))
 #define BASIC_POP()	(*--stack_pointer)
 
+#if 0
 #define CHECK_STACK(n)	(STACK_LEVEL() + (n) < f->f_nvalues || \
 			  (stack_pointer = extend_stack(f, STACK_LEVEL(), n)))
+#endif
 
 #ifdef LLTRACE
 #define PUSH(v)		(BASIC_PUSH(v), lltrace && prtrace(TOP(), "push"))
@@ -403,8 +405,8 @@ eval_code2(co, globals, locals,
 			globals,		/*globals*/
 			locals,			/*locals*/
 			owner,			/*owner*/
-			50,			/*nvalues*/
-			20);			/*nblocks*/
+			co->co_stacksize,	/*nvalues*/
+			CO_MAXBLOCKS);		/*nblocks*/
 	if (f == NULL)
 		return NULL;
 
@@ -626,10 +628,12 @@ eval_code2(co, globals, locals,
 		}
 #endif
 
+#ifdef CHECK_STACK
 		if (!CHECK_STACK(3)) {
 			x = NULL;
 			break;
 		}
+#endif
 
 		/* Main switch on opcode */
 		
@@ -1097,10 +1101,12 @@ eval_code2(co, globals, locals,
 				why = WHY_EXCEPTION;
 			}
 			else {
+#ifdef CHECK_STACK
 				if (!CHECK_STACK(oparg)) {
 					x = NULL;
 					break;
 				}
+#endif
 				for (; --oparg >= 0; ) {
 					w = GETTUPLEITEM(v, oparg);
 					INCREF(w);
@@ -1122,10 +1128,12 @@ eval_code2(co, globals, locals,
 				why = WHY_EXCEPTION;
 			}
 			else {
+#ifdef CHECK_STACK
 				if (!CHECK_STACK(oparg)) {
 					x = NULL;
 					break;
 				}
+#endif
 				for (; --oparg >= 0; ) {
 					w = getlistitem(v, oparg);
 					INCREF(w);
