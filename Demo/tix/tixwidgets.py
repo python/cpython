@@ -1,128 +1,163 @@
-#! /usr/local/bin/python
+# -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
 # $Id$
 #
 # tixwidgets.py --
+#
+#	For Tix, see http://tix.sourceforge.net
+#
 # 	This is a demo program of all Tix widgets available from Python. If
 #	you have installed Python & Tix properly, you can execute this as
 #
-#		% tixwidget.py
+#		% python tixwidget.py
 #
 
 import os, sys, Tix
+from Tkconstants import *
+
+TCL_DONT_WAIT		= 1<<1
+TCL_WINDOW_EVENTS	= 1<<2
+TCL_FILE_EVENTS		= 1<<3
+TCL_TIMER_EVENTS	= 1<<4
+TCL_IDLE_EVENTS		= 1<<5
+TCL_ALL_EVENTS		= 0
 
 class Demo:
-    pass
+    def __init__(self, top):
+        self.root = top
+        self.exit = -1
 
-root = Tix.Tk()
+        self.dir = None				# script directory
+        self.balloon = None			# balloon widget
+        self.useBalloons = Tix.StringVar()
+        self.useBalloons.set('0')
+        self.statusbar = None			# status bar widget
+        self.welmsg = None			# Msg widget
+        self.welfont = ''			# font name
+        self.welsize = ''			# font size
 
-demo = Demo()
-demo.dir = None				# script directory
-demo.balloon = None			# balloon widget
-demo.useBalloons = Tix.StringVar()
-demo.useBalloons.set('0')
-demo.statusbar = None			# status bar widget
-demo.welmsg = None			# Msg widget
-demo.welfont = ''			# font name
-demo.welsize = ''			# font size
+        progname = sys.argv[0]
+        dirname = os.path.dirname(progname)
+        if dirname and dirname != os.curdir:
+            self.dir = dirname
+            index = -1
+            for i in range(len(sys.path)):
+                p = sys.path[i]
+                if p in ("", os.curdir):
+                    index = i
+            if index >= 0:
+                sys.path[index] = dirname
+            else:
+                sys.path.insert(0, dirname)
+        else:
+            self.dir = os.getcwd()
+        sys.path.insert(0, self.dir+'/samples')
 
-def main():
+    def MkMainMenu(self):
+        top = self.root
+        w = Tix.Frame(top, bd=2, relief=RAISED)
+        file = Tix.Menubutton(w, text='File', underline=0, takefocus=0)
+        help = Tix.Menubutton(w, text='Help', underline=0, takefocus=0)
+        file.pack(side=LEFT)
+        help.pack(side=RIGHT)
+        fm = Tix.Menu(file)
+        file['menu'] = fm
+        hm = Tix.Menu(help)
+        help['menu'] = hm
+
+        if w.tk.eval ('info commands console') == "console":
+            fm.add_command(label='Console', underline=1,
+                           command=lambda w=w: w.tk.eval('console show'))
+
+        fm.add_command(label='Exit', underline=1, accelerator='Ctrl+X',
+                     command = lambda self=self: self.quitcmd () )
+        hm.add_checkbutton(label='BalloonHelp', underline=0, command=ToggleHelp,
+                           variable=self.useBalloons)
+        # The trace variable option doesn't seem to work, instead I use 'command'
+        #apply(w.tk.call, ('trace', 'variable', self.useBalloons, 'w',
+        #		      ToggleHelp))
+        return w
+
+    def MkMainNotebook(self):
+        top = self.root
+        w = Tix.NoteBook(top, ipadx=5, ipady=5, options="""
+        *TixNoteBook*tagPadX 6
+        *TixNoteBook*tagPadY 4
+        *TixNoteBook*borderWidth 2
+        """)
+        # This may be required if there is no *Background option
+        top['bg'] = w['bg']
+
+        w.add('wel', label='Welcome', underline=0,
+              createcmd=lambda w=w, name='wel': MkWelcome(w, name))
+        w.add('cho', label='Choosers', underline=0,
+              createcmd=lambda w=w, name='cho': MkChoosers(w, name))
+        w.add('scr', label='Scrolled Widgets', underline=0,
+              createcmd=lambda w=w, name='scr': MkScroll(w, name))
+        w.add('mgr', label='Manager Widgets', underline=0,
+              createcmd=lambda w=w, name='mgr': MkManager(w, name))
+        w.add('dir', label='Directory List', underline=0,
+              createcmd=lambda w=w, name='dir': MkDirList(w, name))
+        w.add('exp', label='Run Sample Programs', underline=0,
+              createcmd=lambda w=w, name='exp': MkSample(w, name))
+        return w
+
+    def MkMainStatus(self):
+        global demo
+        top = self.root
+
+        w = Tix.Frame(top, relief=Tix.RAISED, bd=1)
+        demo.statusbar = Tix.Label(w, relief=Tix.SUNKEN, bd=1)
+        demo.statusbar.form(padx=3, pady=3, left=0, right='%70')
+        return w
+
+    def build(self):
+        root = self.root
+        z = root.winfo_toplevel()
+        z.wm_title('Tix Widget Demonstration')
+        z.geometry('790x590+10+10')
+
+        demo.balloon = Tix.Balloon(root)
+        frame1 = self.MkMainMenu()
+        frame2 = self.MkMainNotebook()
+        frame3 = self.MkMainStatus()
+        frame1.pack(side=TOP, fill=X)
+        frame3.pack(side=BOTTOM, fill=X)
+        frame2.pack(side=TOP, expand=1, fill=BOTH, padx=4, pady=4)
+        demo.balloon['statusbar'] = demo.statusbar
+        z.wm_protocol("WM_DELETE_WINDOW", lambda self=self: self.quitcmd())
+
+    def quitcmd (self):
+        # self.root.destroy()
+        self.exit = 0
+
+    def loop(self):
+        while self.exit < 0:
+            self.root.tk.dooneevent(TCL_ALL_EVENTS)
+        # self.root.tk.dooneevent(TCL_DONT_WAIT)
+
+    def destroy (self):
+        self.root.destroy()
+    
+def RunMain(top):
     global demo, root
 
-    progname = sys.argv[0]
-    dirname = os.path.dirname(progname)
-    if dirname and dirname != os.curdir:
-	demo.dir = dirname
-	index = -1
-	for i in range(len(sys.path)):
-	    p = sys.path[i]
-	    if p in ("", os.curdir):
-		index = i
-	if index >= 0:
-	    sys.path[index] = dirname
-	else:
-	    sys.path.insert(0, dirname)
-    else:
-	demo.dir = os.getcwd()
-    sys.path.insert(0, demo.dir+'/samples')
+    demo = Demo(top)
 
-    root.withdraw()
-    root = Tix.Toplevel()
-    root.title('Tix Widget Demonstration')
-    root.geometry('780x570+50+50')
+    # top.withdraw()
+    # root = Tix.Toplevel()
+    root = top
+    demo.build()
+    demo.loop()
+    demo.destroy()
 
-    demo.balloon = Tix.Balloon(root)
-    frame1 = MkMainMenu(root)
-    frame2 = MkMainNotebook(root)
-    frame3 = MkMainStatus(root)
-    frame1.pack(side=Tix.TOP, fill=Tix.X)
-    frame3.pack(side=Tix.BOTTOM, fill=Tix.X)
-    frame2.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=4, pady=4)
-    demo.balloon['statusbar'] = demo.statusbar
-    root.mainloop()
-
-def exit_cmd(event=None):
-    sys.exit()
-
-def MkMainMenu(top):
-    global demo
-
-    w = Tix.Frame(top, bd=2, relief=Tix.RAISED)
-    file = Tix.Menubutton(w, text='File', underline=0, takefocus=0)
-    help = Tix.Menubutton(w, text='Help', underline=0, takefocus=0)
-    file.pack(side=Tix.LEFT)
-    help.pack(side=Tix.RIGHT)
-    fm = Tix.Menu(file)
-    file['menu'] = fm
-    hm = Tix.Menu(help)
-    help['menu'] = hm
-
-    fm.add_command(label='Exit', underline=1, accelerator='Ctrl+X',
-		   command=exit_cmd)
-    hm.add_checkbutton(label='BalloonHelp', underline=0, command=ToggleHelp,
-		       variable=demo.useBalloons)
-    # The trace variable option doesn't seem to work, instead I use 'command'
-    #apply(w.tk.call, ('trace', 'variable', demo.useBalloons, 'w',
-    #		      ToggleHelp))
-    top.bind_all("<Control-x>", exit_cmd)
-    top.bind_all("<Control-X>", exit_cmd)
-    return w
-
-def MkMainNotebook(top):
-    top.option_add('*TixNoteBook*tagPadX', 6)
-    top.option_add('*TixNoteBook*tagPadY', 4)
-    top.option_add('*TixNoteBook*borderWidth', 2)
-    top.option_add('*TixNoteBook*font',
-		   '-*-helvetica-bold-o-normal-*-14-*-*-*-*-*-*-*')
-    w = Tix.NoteBook(top, ipadx=5, ipady=5)
-    w.add('wel', label='Welcome', underline=0,
-	  createcmd=lambda w=w, name='wel': MkWelcome(w, name))
-    w.add('cho', label='Choosers', underline=0,
-	  createcmd=lambda w=w, name='cho': MkChoosers(w, name))
-    w.add('scr', label='Scrolled Widgets', underline=0,
-	  createcmd=lambda w=w, name='scr': MkScroll(w, name))
-    w.add('mgr', label='Manager Widgets', underline=0,
-	  createcmd=lambda w=w, name='mgr': MkManager(w, name))
-    w.add('dir', label='Directory List', underline=0,
-	  createcmd=lambda w=w, name='dir': MkDirList(w, name))
-    w.add('exp', label='Run Sample Programs', underline=0,
-	  createcmd=lambda w=w, name='exp': MkSample(w, name))
-    return w
-
-def MkMainStatus(top):
-    global demo
-
-    w = Tix.Frame(top, relief=Tix.RAISED, bd=1)
-    demo.statusbar = Tix.Label(w, relief=Tix.SUNKEN, bd=1, font='-*-helvetica-medium-r-normal-*-14-*-*-*-*-*-*-*')
-    demo.statusbar.form(padx=3, pady=3, left=0, right='%70')
-    return w
-
+# Tabs
 def MkWelcome(nb, name):
     w = nb.page(name)
     bar = MkWelcomeBar(w)
     text = MkWelcomeText(w)
-    bar.pack(side=Tix.TOP, fill=Tix.X, padx=2, pady=2)
-    text.pack(side=Tix.TOP, fill=Tix.BOTH, expand=1)
+    bar.pack(side=TOP, fill=X, padx=2, pady=2)
+    text.pack(side=TOP, fill=BOTH, expand=1)
 
 def MkWelcomeBar(top):
     global demo
@@ -167,9 +202,9 @@ def MkWelcomeText(top):
     w = Tix.ScrolledWindow(top, scrollbar='auto')
     win = w.window
     text = 'Welcome to TIX in Python'
-    title = Tix.Label(win, font='-*-times-bold-r-normal-*-18-*-*-*-*-*-*-*',
+    title = Tix.Label(win,
 		      bd=0, width=30, anchor=Tix.N, text=text)
-    msg = Tix.Message(win, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(win,
 		      bd=0, width=400, anchor=Tix.N,
 		      text='Tix is a set of mega-widgets based on TK. This program \
 demonstrates the widgets in the Tix widget set. You can choose the pages \
@@ -190,7 +225,7 @@ def MainTextFont(w):
     point = demo.welsize['value']
     if font == 'Times Roman':
 	font = 'times'
-    fontstr = '-*-%s-bold-r-normal-*-%s-*-*-*-*-*-*-*' % (font, point)
+    fontstr = '%s %s' % (font, point)
     demo.welmsg['font'] = fontstr
 
 def ToggleHelp():
@@ -360,7 +395,7 @@ def MkOptMenu(w):
     m.pack(fill=Tix.X, padx=5, pady=3)
 
 def MkFileEnt(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='Press the "open file" icon button and a TixFileSelectDialog will popup.')
     ent = Tix.FileEntry(w, label='Select a file : ')
@@ -368,7 +403,7 @@ def MkFileEnt(w):
     ent.pack(side=Tix.TOP, fill=Tix.X, padx=3, pady=3)
 
 def MkFileBox(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The TixFileSelectBox is a Motif-style box with various enhancements. For example, you can adjust the size of the two listboxes and your past selections are recorded.')
     box = Tix.FileSelectBox(w)
@@ -381,7 +416,7 @@ def MkToolBar(w):
     prefix = Tix.OptionName(w)
     if not prefix: prefix = ''
     w.option_add('*' + prefix + '*TixSelect*frame.borderWidth', 1)
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The Select widget is also good for arranging buttons in a tool bar.')
     bar = Tix.Frame(w, bd=2, relief=Tix.RAISED)
@@ -407,7 +442,7 @@ def MkTitle(w):
     prefix = Tix.OptionName(w)
     if not prefix: prefix = ''
     w.option_add('*' + prefix + '*TixSelect*frame.borderWidth', 1)
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='There are many types of "chooser" widgets that allow the user to input different types of information')
     msg.pack(side=Tix.TOP, expand=1, fill=Tix.BOTH, padx=3, pady=3)
@@ -434,7 +469,7 @@ def MkScroll(nb, name):
 def MkSList(w):
     top = Tix.Frame(w, width=300, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(top, 
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
 		      text='This TixScrolledListBox is configured so that it uses scrollbars only when it is necessary. Use the handles to resize the listbox and watch the scrollbars automatically appear and disappear.')
 
@@ -470,7 +505,7 @@ def MkSWindow(w):
 
     top = Tix.Frame(w, width=330, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(top, 
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
 		      text='The TixScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
     win = Tix.ScrolledWindow(top, scrollbar='auto')
@@ -500,7 +535,7 @@ def SWindow_reset(rh, win):
 def MkSText(w):
     top = Tix.Frame(w, width=330, height=330)
     bot = Tix.Frame(w)
-    msg = Tix.Message(top, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(top, 
 		      relief=Tix.FLAT, width=200, anchor=Tix.N,
 		      text='The TixScrolledWindow widget allows you to scroll any kind of Tk widget. It is more versatile than a scrolled canvas widget.')
 
@@ -543,7 +578,7 @@ def MkManager(nb, name):
     note.form(top=0, right=-1, bottom=-1)
 
 def MkPanedWindow(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The PanedWindow widget allows the user to interactively manipulate the sizes of several panes. The panes can be arranged either vertically or horizontally.')
     group = Tix.Label(w, text='Newsgroup: comp.lang.python')
@@ -585,7 +620,7 @@ together with a bitmap, at the same time, inside a TK button widget.
     pane.pack(side=Tix.TOP, padx=3, pady=3, fill=Tix.BOTH, expand=1)
 
 def MkNoteBook(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The NoteBook widget allows you to layout a complex interface into individual pages.')
     prefix = Tix.OptionName(w)
@@ -654,7 +689,7 @@ def MkDirList(nb, name):
     fsbox.form(top=0, left='%40', right=-1, bottom=-1)
 
 def MkDirListWidget(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The TixDirList widget gives a graphical representation of the file system directory and makes it easy for the user to choose and access directories.')
     dirlist = Tix.DirList(w, options='hlist.padY 1 hlist.width 25 hlist.height 16')
@@ -662,7 +697,7 @@ def MkDirListWidget(w):
     dirlist.pack(side=Tix.TOP, padx=3, pady=3)
 
 def MkExFileWidget(w):
-    msg = Tix.Message(w, font='-*-helvetica-bold-r-normal-*-14-*-*-*-*-*-*-*',
+    msg = Tix.Message(w, 
 		      relief=Tix.FLAT, width=240, anchor=Tix.N,
 		      text='The TixExFileSelectBox widget is more user friendly than the Motif style FileSelectBox.')
     # There's a bug in the ComboBoxes - the scrolledlistbox is destroyed
@@ -677,6 +712,8 @@ samples = {'Balloon'		: 'Balloon',
 	   'Button Box'		: 'BtnBox',
 	   'Combo Box'		: 'ComboBox',
 	   'Compound Image'	: 'CmpImg',
+	   'Directory List'	: 'DirList',
+	   'Directory Tree'	: 'DirTree',
 	   'Control'		: 'Control',
 	   'Notebook'		: 'NoteBook',
 	   'Option Menu'	: 'OptMenu',
@@ -686,8 +723,100 @@ samples = {'Balloon'		: 'Balloon',
 	   'Tree (dynamic)'	: 'Tree'
 }
 
+# There are still a lot of demos to be translated:
+##	set root {
+##	    {d "File Selectors"		file	}
+##	    {d "Hierachical ListBox"	hlist	}
+##	    {d "Tabular ListBox"	tlist	{c tixTList}}
+##	    {d "Grid Widget"		grid	{c tixGrid}}
+##	    {d "Manager Widgets"	manager	}
+##	    {d "Scrolled Widgets"	scroll	}
+##	    {d "Miscellaneous Widgets"	misc	}
+##	    {d "Image Types"		image	}
+##	}
+##	
+##	set image {
+##	    {d "Compound Image"		cmpimg	}
+##	    {d "XPM Image"		xpm	{i pixmap}}
+##	}
+##	
+##	set cmpimg {
+##	    {f "In Buttons"		CmpImg.tcl	}
+##	    {f "In NoteBook"		CmpImg2.tcl	}
+##	    {f "Notebook Color Tabs"	CmpImg4.tcl	}
+##	    {f "Icons"			CmpImg3.tcl	}
+##	}
+##	
+##	set xpm {
+##	    {f "In Button"		Xpm.tcl		{i pixmap}}
+##	    {f "In Menu"		Xpm1.tcl	{i pixmap}}
+##	}
+##	
+##	set file {
+##added	    {f DirList				DirList.tcl	}
+##added	    {f DirTree				DirTree.tcl	}
+##	    {f DirSelectDialog			DirDlg.tcl	}
+##	    {f ExFileSelectDialog		EFileDlg.tcl	}
+##	    {f FileSelectDialog			FileDlg.tcl	}
+##	    {f FileEntry			FileEnt.tcl	}
+##	}
+##	
+##	set hlist {
+##	    {f HList			HList1.tcl	}
+##	    {f CheckList		ChkList.tcl	{c tixCheckList}}
+##done	    {f "ScrolledHList (1)"	SHList.tcl	}
+##done	    {f "ScrolledHList (2)"	SHList2.tcl	}
+##done	    {f Tree			Tree.tcl	}
+##done	    {f "Tree (Dynamic)"		DynTree.tcl	{v win}}
+##	}
+##	
+##	set tlist {
+##	    {f "ScrolledTList (1)"	STList1.tcl	{c tixTList}}
+##	    {f "ScrolledTList (2)"	STList2.tcl	{c tixTList}}
+##	}
+##	global tcl_platform
+##	#  This demo hangs windows
+##	if {$tcl_platform(platform) != "windows"} {
+##na	lappend tlist     {f "TList File Viewer"	STList3.tcl	{c tixTList}}
+##	}
+##	
+##	set grid {
+##na	    {f "Simple Grid"		SGrid0.tcl	{c tixGrid}}
+##na	    {f "ScrolledGrid"		SGrid1.tcl	{c tixGrid}}
+##na	    {f "Editable Grid"		EditGrid.tcl	{c tixGrid}}
+##	}
+##	
+##	set scroll {
+##	    {f ScrolledListBox		SListBox.tcl	}
+##	    {f ScrolledText		SText.tcl	}
+##	    {f ScrolledWindow		SWindow.tcl	}
+##na	    {f "Canvas Object View"	CObjView.tcl	{c tixCObjView}}
+##	}
+##	
+##	set manager {
+##na	    {f ListNoteBook		ListNBK.tcl	}
+##	    {f NoteBook			NoteBook.tcl	}
+##	    {f PanedWindow		PanedWin.tcl	}
+##	}
+##	
+##	set misc {
+##done	    {f Balloon			Balloon.tcl	}
+##done	    {f ButtonBox		BtnBox.tcl	}
+##done	    {f ComboBox			ComboBox.tcl	}
+##done	    {f Control			Control.tcl	}
+##	    {f LabelEntry		LabEntry.tcl	}
+##	    {f LabelFrame		LabFrame.tcl	}
+##na	    {f Meter			Meter.tcl	{c tixMeter}}
+##done	    {f OptionMenu		OptMenu.tcl	}
+##done	    {f PopupMenu		PopMenu.tcl	}
+##	    {f Select			Select.tcl	}
+##	    {f StdButtonBox		StdBBox.tcl	}
+##	}
+##
+
 stypes = {}
 stypes['widget'] = ['Balloon', 'Button Box', 'Combo Box', 'Control',
+                    'Directory List', 'Directory Tree',
 		    'Notebook', 'Option Menu', 'Popup Menu',
 		    'ScrolledHList (1)', 'ScrolledHList (2)', 'Tree (dynamic)']
 stypes['image'] = ['Compound Image']
@@ -707,7 +836,9 @@ def MkSample(nb, name):
     slb.hlist['browsecmd'] = lambda args=0, w=w,slb=slb: Sample_Action(w, slb, 'browse')
 
     stext = Tix.ScrolledText(w, name='stext')
-    stext.text.bind('<1>', stext.text.focus())
+    font = root.tk.eval('tix option get fixed_font')
+    stext.text.config(font=font)
+    # stext.text.bind('<1>', stext.text.focus())
     stext.text.bind('<Up>', lambda w=stext.text: w.yview(scroll='-1 unit'))
     stext.text.bind('<Down>', lambda w=stext.text: w.yview(scroll='1 unit'))
     stext.text.bind('<Left>', lambda w=stext.text: w.xview(scroll='-1 unit'))
@@ -726,7 +857,6 @@ def MkSample(nb, name):
     stext.text['bg'] = slb.hlist['bg']
     stext.text['state'] = 'disabled'
     stext.text['wrap'] = 'none'
-    #XXX    stext.text['font'] = fixed_font
 
     slb.hlist['separator'] = '.'
     slb.hlist['width'] = 25
@@ -785,6 +915,7 @@ def Sample_Action(w, slb, action):
 	ReadFile(stext.text, demo.dir + '/samples/' + prog + '.py')
 
 def LoadFile(w, fname):
+    global root
     b = Tix.Button(w, text='Close', command=w.destroy)
     t = Tix.ScrolledText(w)
     #    b.form(left=0, bottom=0, padx=4, pady=4)
@@ -792,9 +923,9 @@ def LoadFile(w, fname):
     t.pack()
     b.pack()
 
-    t.text['highlightcolor'] = t['bg']
+    font = root.tk.eval('tix option get fixed_font')
+    t.text.config(font=font)
     t.text['bd'] = 2
-    t.text['bg'] = t['bg']
     t.text['wrap'] = 'none'
 
     ReadFile(t.text, fname)
@@ -815,5 +946,6 @@ def ReadFile(w, fname):
 	w['state'] = old_state
 
 if __name__ == '__main__':
-    main()
+    root = Tix.Tk()
+    RunMain(root)
 

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+# -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 # 
 # $Id$
 #
@@ -57,7 +57,7 @@ def RunSample (w) :
     for boss,name in bosses :
 	if count :
 	    f=Tix.Frame(hlist, name='sep%d' % count, height=2, width=150,
-		bd=2, relief=Tix.SUNKEN, bg=hlist['bg'] )
+		bd=2, relief=Tix.SUNKEN )
 
 	    hlist.add_child( itemtype=Tix.WINDOW, 
 		window=f, state=Tix.DISABLED )
@@ -89,10 +89,10 @@ def RunSample (w) :
     #
     box= Tix.ButtonBox(top, orientation=Tix.HORIZONTAL )
     box.add( 'ok',  text='Ok', underline=0,  width=6,
-	command = lambda w=w:  w.destroy() )
+	command = lambda w=w:  w.quit() )
 
     box.add( 'cancel', text='Cancel', underline=0, width=6,
-	command = lambda w=w:  w.destroy() )
+	command = lambda w=w:  w.quit() )
 
     box.pack( side=Tix.BOTTOM, fill=Tix.X)
     top.pack( side=Tix.TOP,    fill=Tix.BOTH, expand=1 )
@@ -105,3 +105,4 @@ if __name__== '__main__' :
     root=Tix.Tk()
     RunSample(root)
     root.mainloop()
+    root.destroy()
