@@ -316,8 +316,6 @@ class Standard_Suite_Events(Standard_Suite_Events):
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
-import AppleScript_Suite
-import AppleScript_Suite
 _Enum_list = None # XXXX enum list not found!!
 _Enum_bool = None # XXXX enum bool not found!!
 
