@@ -117,7 +117,7 @@ _PyModule_Clear(m)
 			char *s = PyString_AsString(key);
 			if (s[0] == '_' && s[1] != '_') {
 				if (Py_VerboseFlag > 1)
-				    fprintf(stderr, "#   clear[1] %s\n", s);
+				    PySys_WriteStderr("#   clear[1] %s\n", s);
 				PyDict_SetItem(d, key, Py_None);
 			}
 		}
@@ -130,7 +130,7 @@ _PyModule_Clear(m)
 			char *s = PyString_AsString(key);
 			if (s[0] != '_' || strcmp(s, "__builtins__") != 0) {
 				if (Py_VerboseFlag > 1)
-				    fprintf(stderr, "#   clear[2] %s\n", s);
+				    PySys_WriteStderr("#   clear[2] %s\n", s);
 				PyDict_SetItem(d, key, Py_None);
 			}
 		}
