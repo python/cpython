@@ -933,6 +933,17 @@ instances are compared by object identity (``address'').
 \index{comparisons}
 \end{methoddesc}
 
+\begin{methoddesc}[object]{__rcmp__}{self, other}
+Called by all comparison operations.  Should return a negative integer if
+\code{self < other}, zero if \code{self == other}, a positive integer if
+\code{self > other}.  If no \method{__cmp__()} operation is defined, class
+instances are compared by object identity (``address'').
+(Note: the restriction that exceptions are not propagated by
+\method{__cmp__()} has been removed in Python 1.5.)
+\bifuncindex{cmp}
+\index{comparisons}
+\end{methoddesc}
+
 \begin{methoddesc}[object]{__hash__}{self}
 Called for the key object for dictionary\obindex{dictionary}
 operations, and by the built-in function
@@ -1201,7 +1212,7 @@ complicated).
 \methodline[numeric object]{__abs__}{self}
 \methodline[numeric object]{__invert__}{self}
 Called to implement the unary arithmetic operations (\code{-}, \code{+},
-\function{abs()}\bifuncindex{abs} and \code{~}).
+\function{abs()}\bifuncindex{abs} and \code{\~{}}).
 \end{methoddesc}
 
 \begin{methoddesc}[numeric object]{__complex__}{self}
