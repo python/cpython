@@ -144,6 +144,8 @@ Library
 - random.cunifvariate() and random.stdgamma() were deprecated in Py2.3
   and removed in Py2.4.
 
+- Bug #823328: urllib2.py's HTTP Digest Auth support works again.
+
 Tools/Demos
 -----------
 
