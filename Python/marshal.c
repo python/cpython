@@ -69,7 +69,7 @@ w_more(int c, WFILE *p)
 		p->ptr = PyString_AS_STRING((PyStringObject *)p->str) + size;
 		p->end =
 			PyString_AS_STRING((PyStringObject *)p->str) + newsize;
-		*p->ptr++ = (char) c;
+		*p->ptr++ = Py_SAFE_DOWNCAST(c, int, char);
 	}
 }
 
