@@ -91,7 +91,7 @@ typedef int pid_t;
 #define COMPILER "[MSC 16-bit]"
 #define MS_WIN16
 #define MS_WINDOWS
-#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
 #define WORD_BIT 16
@@ -138,7 +138,7 @@ int sscanf(const char *, const char *, ...);
 /* The Watcom compiler defines __WATCOMC__ */
 #ifdef __WATCOMC__
 #define COMPILER "[Watcom]"
-#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
 #define IMPORT_8x3_NAMES
 #include <ctype.h>
 #include <direct.h>
@@ -174,7 +174,7 @@ typedef int pid_t;
 /* XXX These defines are likely incomplete, but should be easy to fix. */
 #ifdef __BORLANDC__
 #define COMPILER "[Borland]"
-#define PYTHONPATH ".;.\\lib;.\\lib\\win;.\\lib\\dos_8x3"
+#define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
 #define IMPORT_8x3_NAMES
 #define HAVE_CLOCK
 #define HAVE_STRFTIME
