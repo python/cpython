@@ -5,7 +5,7 @@ import regex
 
 never = ['marshal', '__main__', '__builtin__', 'sys']
 
-def makeconfig(infp, outfp, modules):
+def makeconfig(infp, outfp, modules, with_ifdef=0):
 	m1 = regex.compile('-- ADDMODULE MARKER 1 --')
 	m2 = regex.compile('-- ADDMODULE MARKER 2 --')
 	while 1:
@@ -17,7 +17,11 @@ def makeconfig(infp, outfp, modules):
 			for mod in modules:
 				if mod in never:
 					continue
+				if with_ifdef:
+					outfp.write("#ifndef init%s\n"%mod)
 				outfp.write('extern void init%s();\n' % mod)
+				if with_ifdef:
+					outfp.write("#endif\n")
 		elif m2 and m2.search(line) >= 0:
 			m2 = None
 			for mod in modules:
