@@ -344,24 +344,25 @@ sub do_cmd_deprecated{
             . $_);
 }
 
-sub do_cmd_versionadded{
-    # one parameter:  \versionadded{version}
-    local($_) = @_;
+sub versionnote{
+    # one or two parameters:  \versionnote[explanation]{version}
+    my $type = @_[0];
+    local $_ = @_[1];
+    my $explanation = next_optional_argument();
     my $release = next_argument();
-    return ("\n<span class='versionnote'>New in version $release.</span>\n"
-            . $_);
+    my $text = "$type in version $release.";
+    if ($explanation) {
+        $text = "$type in version $release:\n$explanation.";
+    }
+    return "\n<span class='versionnote'>$text</span>\n" . $_;
+}
+
+sub do_cmd_versionadded{
+    return versionnote('New', @_);
 }
 
 sub do_cmd_versionchanged{
-    # one parameter:  \versionchanged{version}
-    local($_) = @_;
-    my $explanation = next_optional_argument();
-    my $release = next_argument();
-    my $text = "Changed in version $release.";
-    if ($explanation) {
-        $text = "Changed in version $release:\n$explanation.";
-    }
-    return "\n<span class='versionnote'>$text</span>\n" . $_;
+    return versionnote('Changed', @_);
 }
 
 #
