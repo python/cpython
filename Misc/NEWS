@@ -1,3 +1,72 @@
+What's New in Python 2.1.1c1 ?
+==============================
+
+- Python 2.1.1 comes with the new, GPL-compatible PSF licence.
+
+- Several insecurities in dict comparison as well as a scoping bug,
+  that could lead to the Python interpreter crashing were fixed.
+
+- Python should compile and run out of the box using the Borland C
+  compiler (under Windows), thanks to Stephen Hansen.
+
+- A large number of bugs was fixed, both in code and in the
+  documentation, including (but not limited to) the following
+  bugreports from SourceForge:
+
+    [ #416530 ] No notes for building on Mac OS X 10.0
+    [ #416573 ] makesockaddr() AF_UNIX ignores sun_len
+    [ #417030 ] print '%*s' fails for unicode string
+    [ #417093 ] Case sensitive import: dir and .py file w/ same name
+    [ #417418 ] Python 2.1 compile error on HPUX
+    [ #417587 ] compiler warnings compiling 2.1
+    [ #417845 ] Python 2.1: SocketServer.ThreadingMixIn
+    [ #417943 ] xreadlines documented twice for file obj
+    [ #418296 ] WinMain.c should use WIN32_LEAN_AND_MEAN.
+    [ #418615 ] regular expression bug in pipes.py.
+    [ #418977 ] Access Violation in PyCell_Set
+    [ #419434 ] Tutorial contains wrong sample code.
+    [ #419873 ] ThreadingTCPServer invalidating sockets
+    [ #420216 ] bad links in v2.1 docs
+    [ #420230 ] fileinput deletes backups without warnin
+    [ #420343 ] SystemError from tuple() builtin
+    [ #420399 ] wrong HTML ("trademark" symbols?)
+    [ #421999 ] wrong priority doc for ** vs unary -
+    [ #422108 ] Error in rich comparisons
+    [ #422121 ] Insecurities in dict comparison
+    [ #422702 ] dbhash.open default
+    [ #423087 ] A small typo in weakref documentation
+    [ #423429 ] very minor nit in library ref
+    [ #424776 ] SMTP Example does not work
+    [ #424951 ] ThreadingTCPServer file handle errors.
+    [ #425320 ] Typo in introduction.
+    [ #427698 ] objects with __eq__ are not hashable
+    [ #427783 ] Lang Ref section 4.1 s/is/in/
+    [ #427985 ] optional "listen" parameter in asyncore
+    [ #428419 ] include/rangeobject.h needs extern "C"
+    [ #429059 ] No docs for os.getenv()
+    [ #429070 ] Thread.getDaemon()should be isDaemon()
+    [ #429361 ] popen2.Popen3.wait() exit code
+    [ #429554 ] PyList_SET_ITEM documentation omission
+    [ #430627 ] Fixes for templates/module.tex file
+    [ #430991 ] wrong co_lnotab
+    [ #431772 ] traceback.print_exc() causes traceback
+    [ #432369 ] ConfigParser: problem w/ mixed-case opts
+    [ #433228 ] repr(list) woes when len(list) big
+    [ #433904 ] rexec: all s_* methods return None only
+    [ #434186 ] 0x80000000/2 != 0x80000000>>1
+    [ #434975 ] Typo on Posix Large File Support page
+    [ #435066 ] PyObject_ClearWeakRefs misdocumented
+    [ #436525 ] Wrong macro name
+    [ #437041 ] strfime %Z isn't an RFC 822 timezone
+    [ #437879 ] SocketServer.py related problems
+    [ #438032 ] Documentation errors in module "profile"
+    [ #439012 ] Need doc: initial state of allocs
+    [ #439104 ] Tuple richcompares has code-typo
+    [ #439798 ] Nested scopes core dump
+    [ #439823 ] poll docs should mention timeout unit
+    [ #440037 ] C API descriptions not complete/consistent
+
+
 What's New in Python 2.1 (final)?
 =================================
 
