@@ -16,16 +16,23 @@
 # matching performs on large strings.
 
 benchmarks = [
+
+    # test common prefix
+    ('Python|Perl', 'Perl'),    # Alternation
+    ('(Python|Perl)', 'Perl'),  # Grouped alternation
+
+    ('Python|Perl|Tcl', 'Perl'),        # Alternation
+    ('(Python|Perl|Tcl)', 'Perl'),      # Grouped alternation
+
+    ('(Python)\\1', 'PythonPython'),    # Backreference
+    ('([0a-z][a-z0-9]*,)+', 'a5,b7,c9,'), # Disable the fastmap optimization
+    ('([a-z][a-z0-9]*,)+', 'a5,b7,c9,'), # A few sets
+
     ('Python', 'Python'),               # Simple text literal
     ('.*Python', 'Python'),             # Bad text literal
     ('.*Python.*', 'Python'),           # Worse text literal
     ('.*(Python)', 'Python'),           # Bad text literal with grouping
 
-    ('(Python|Perl|Tcl', 'Perl'),       # Alternation
-    ('(Python|Perl|Tcl)', 'Perl'),      # Grouped alternation
-    ('(Python)\\1', 'PythonPython'),    # Backreference
-    ('([0a-z][a-z]*,)+', 'a5,b7,c9,'),  # Disable the fastmap optimization
-    ('([a-z][a-z0-9]*,)+', 'a5,b7,c9,') # A few sets
 ]
 
 # Test suite (for verifying correctness)
@@ -79,12 +86,17 @@ tests = [
     # Test various letter escapes
     (r'\a[\b]\f\n\r\t\v', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
     (r'[\a][\b][\f][\n][\r][\t][\v]', '\a\b\f\n\r\t\v', SUCCEED, 'found', '\a\b\f\n\r\t\v'),
-    (r'\u', '', SYNTAX_ERROR),    # A Perl escape
+    # NOTE: not an error under PCRE/PRE:
+    # (r'\u', '', SYNTAX_ERROR),    # A Perl escape
     (r'\c\e\g\h\i\j\k\m\o\p\q\y\z', 'ceghijkmopqyz', SUCCEED, 'found', 'ceghijkmopqyz'),
     (r'\xff', '\377', SUCCEED, 'found', chr(255)),
-    (r'\x00ffffffffffffff', '\377', SUCCEED, 'found', chr(255)),
-    (r'\x00f', '\017', SUCCEED, 'found', chr(15)),
-    (r'\x00fe', '\376', SUCCEED, 'found', chr(254)),
+    # new \x semantics
+    (r'\x00ffffffffffffff', '\377', FAIL, 'found', chr(255)),
+    (r'\x00f', '\017', FAIL, 'found', chr(15)),
+    (r'\x00fe', '\376', FAIL, 'found', chr(254)),
+    # (r'\x00ffffffffffffff', '\377', SUCCEED, 'found', chr(255)),
+    # (r'\x00f', '\017', SUCCEED, 'found', chr(15)),
+    # (r'\x00fe', '\376', SUCCEED, 'found', chr(254)),
 
     (r"^\w+=(\\[\000-\277]|[^\n\\])*", "SRC=eval.c g.c blah blah blah \\\\\n\tapes.c",
      SUCCEED, 'found', "SRC=eval.c g.c blah blah blah \\\\"),
@@ -138,7 +150,8 @@ tests = [
     ('a[b-d]', 'aac', SUCCEED, 'found', 'ac'),
     ('a[-b]', 'a-', SUCCEED, 'found', 'a-'),
     ('a[\\-b]', 'a-', SUCCEED, 'found', 'a-'),
-    ('a[b-]', 'a-', SYNTAX_ERROR),
+    # NOTE: not an error under PCRE/PRE:
+    # ('a[b-]', 'a-', SYNTAX_ERROR),
     ('a[]b', '-', SYNTAX_ERROR),
     ('a[', '-', SYNTAX_ERROR),
     ('a\\', '-', SYNTAX_ERROR),
@@ -543,7 +556,9 @@ tests = [
 
     # Check odd placement of embedded pattern modifiers
 
-    ('w(?i)', 'W', SYNTAX_ERROR),
+    # not an error under PCRE/PRE:
+    ('w(?i)', 'W', SUCCEED, 'found', 'W'),
+    # ('w(?i)', 'W', SYNTAX_ERROR),
 
     # Comments using the x embedded pattern modifier
 
@@ -577,20 +592,28 @@ xyzabc
     ('\\D+', '1234abc5678', SUCCEED, 'found', 'abc'),
     ('[\\D]+', '1234abc5678', SUCCEED, 'found', 'abc'),
     ('[\\da-fA-F]+', '123abc', SUCCEED, 'found', '123abc'),
-    ('[\\d-x]', '-', SYNTAX_ERROR),
+    # not an error under PCRE/PRE:
+    # ('[\\d-x]', '-', SYNTAX_ERROR),
     (r'([\s]*)([\S]*)([\s]*)', ' testing!1972', SUCCEED, 'g3+g2+g1', 'testing!1972 '),
     (r'(\s*)(\S*)(\s*)', ' testing!1972', SUCCEED, 'g3+g2+g1', 'testing!1972 '),
 
     (r'\xff', '\377', SUCCEED, 'found', chr(255)),
-    (r'\x00ff', '\377', SUCCEED, 'found', chr(255)),
+    # new \x semantics
+    (r'\x00ff', '\377', FAIL, 'found', chr(255)),
+    # (r'\x00ff', '\377', SUCCEED, 'found', chr(255)),
     (r'\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
     ('\t\n\v\r\f\a\g', '\t\n\v\r\f\ag', SUCCEED, 'found', '\t\n\v\r\f\ag'),
     (r'\t\n\v\r\f\a', '\t\n\v\r\f\a', SUCCEED, 'found', chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)),
     (r'[\t][\n][\v][\r][\f][\b]', '\t\n\v\r\f\b', SUCCEED, 'found', '\t\n\v\r\f\b'),
 
-    # additional regression tests (1.6 and later)
+    #
+    # post-1.5.2 additions
 
     # xmllib problem
     (r'(([a-z]+):)?([a-z]+)$', 'smil', SUCCEED, 'g1+"-"+g2+"-"+g3', 'None-None-smil'),
-
+    # bug 111869 (PRE/PCRE fails on this one, SRE doesn't)
+    (r'.*d', 'abc\nabd', SUCCEED, 'found', 'abd'),
+    # bug 112468
+    ('(', '', SYNTAX_ERROR),
+    ('[\\41]', '!', SUCCEED, 'found', '!'),
 ]
