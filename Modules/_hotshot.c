@@ -108,16 +108,29 @@ PyDoc_STRVAR(logreader_close__doc__,
 static PyObject *
 logreader_close(LogReaderObject *self, PyObject *args)
 {
-    PyObject *result = NULL;
-    if (PyArg_ParseTuple(args, ":close")) {
-        if (self->logfp != NULL) {
-            fclose(self->logfp);
-            self->logfp = NULL;
-        }
-        result = Py_None;
-        Py_INCREF(result);
+    if (self->logfp != NULL) {
+        fclose(self->logfp);
+        self->logfp = NULL;
     }
-    return result;
+    Py_INCREF(Py_None);
+
+    return Py_None;
+}
+
+PyDoc_STRVAR(logreader_fileno__doc__,
+"fileno() -> file descriptor\n"
+"Returns the file descriptor for the log file, if open.\n"
+"Raises ValueError if the log file is closed.");
+
+static PyObject *
+logreader_fileno(LogReaderObject *self)
+{
+    if (self->logfp == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "logreader's file object already closed");
+        return NULL;
+    }
+    return PyInt_FromLong(fileno(self->logfp));
 }
 
 static PyObject *
@@ -350,8 +363,10 @@ unpack_add_info(LogReaderObject *self)
 
 
 static void
-eof_error(void)
+eof_error(LogReaderObject *self)
 {
+    fclose(self->logfp);
+    self->logfp = NULL;
     PyErr_SetString(PyExc_EOFError,
                     "end of file with incomplete profile record");
 }
@@ -379,9 +394,11 @@ logreader_tp_iternext(LogReaderObject *self)
 
 restart:
     /* decode the record type */
-    if ((c = fgetc(self->logfp)) == EOF)
+    if ((c = fgetc(self->logfp)) == EOF) {
+        fclose(self->logfp);
+        self->logfp = NULL;
         return NULL;
-
+    }
     what = c & WHAT_OTHER;
     if (what == WHAT_OTHER)
         what = c; /* need all the bits for type */
@@ -450,7 +467,7 @@ restart:
                         "unknown record type in log file");
     }
     else if (err == ERR_EOF) {
-        eof_error();
+        eof_error(self);
     }
     else if (!err) {
         result = PyTuple_New(4);
@@ -1022,20 +1039,28 @@ PyDoc_STRVAR(close__doc__,
 "Shut down this profiler and close the log files, even if its active.");
 
 static PyObject *
-profiler_close(ProfilerObject *self, PyObject *args)
+profiler_close(ProfilerObject *self)
 {
-    PyObject *result = NULL;
-
-    if (PyArg_ParseTuple(args, ":close")) {
-        do_stop(self);
-        if (self->logfp != NULL) {
-            fclose(self->logfp);
-            self->logfp = NULL;
-        }
-        Py_INCREF(Py_None);
-        result = Py_None;
+    do_stop(self);
+    if (self->logfp != NULL) {
+        fclose(self->logfp);
+        self->logfp = NULL;
     }
-    return result;
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+#define fileno__doc__ logreader_fileno__doc__
+
+static PyObject *
+profiler_fileno(ProfilerObject *self)
+{
+    if (self->logfp == NULL) {
+        PyErr_SetString(PyExc_ValueError,
+                        "profiler's file object already closed");
+        return NULL;
+    }
+    return PyInt_FromLong(fileno(self->logfp));
 }
 
 PyDoc_STRVAR(runcall__doc__,
@@ -1109,12 +1134,10 @@ profiler_start(ProfilerObject *self, PyObject *args)
 {
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, ":start")) {
-        if (is_available(self)) {
-            do_start(self);
-            result = Py_None;
-            Py_INCREF(result);
-        }
+    if (is_available(self)) {
+        do_start(self);
+        result = Py_None;
+        Py_INCREF(result);
     }
     return result;
 }
@@ -1128,14 +1151,12 @@ profiler_stop(ProfilerObject *self, PyObject *args)
 {
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, ":stop")) {
-        if (!self->active)
-            PyErr_SetString(ProfilerError, "profiler not active");
-        else {
-            do_stop(self);
-            result = Py_None;
-            Py_INCREF(result);
-        }
+    if (!self->active)
+        PyErr_SetString(ProfilerError, "profiler not active");
+    else {
+        do_stop(self);
+        result = Py_None;
+        Py_INCREF(result);
     }
     return result;
 }
@@ -1156,11 +1177,12 @@ profiler_dealloc(ProfilerObject *self)
 
 static PyMethodDef profiler_methods[] = {
     {"addinfo", (PyCFunction)profiler_addinfo, METH_VARARGS, addinfo__doc__},
-    {"close",   (PyCFunction)profiler_close,   METH_VARARGS, close__doc__},
+    {"close",   (PyCFunction)profiler_close,   METH_NOARGS,  close__doc__},
+    {"fileno",  (PyCFunction)profiler_fileno,  METH_NOARGS,  fileno__doc__},
     {"runcall", (PyCFunction)profiler_runcall, METH_VARARGS, runcall__doc__},
     {"runcode", (PyCFunction)profiler_runcode, METH_VARARGS, runcode__doc__},
-    {"start",   (PyCFunction)profiler_start,   METH_VARARGS, start__doc__},
-    {"stop",    (PyCFunction)profiler_stop,    METH_VARARGS, stop__doc__},
+    {"start",   (PyCFunction)profiler_start,   METH_NOARGS,  start__doc__},
+    {"stop",    (PyCFunction)profiler_stop,    METH_NOARGS,  stop__doc__},
     {NULL, NULL}
 };
 
@@ -1192,6 +1214,7 @@ PyDoc_STRVAR(profiler_object__doc__,
 "Methods:\n"
 "\n"
 "close():      Stop the profiler and close the log files.\n"
+"fileno():     Returns the file descriptor of the log file.\n"
 "runcall():    Run a single function call with profiling enabled.\n"
 "runcode():    Execute a code object with profiling enabled.\n"
 "start():      Install the profiler and return.\n"
@@ -1244,8 +1267,10 @@ static PyTypeObject ProfilerType = {
 
 
 static PyMethodDef logreader_methods[] = {
-    {"close",   (PyCFunction)logreader_close,  METH_VARARGS,
+    {"close",   (PyCFunction)logreader_close,  METH_NOARGS,
      logreader_close__doc__},
+    {"fileno",  (PyCFunction)logreader_fileno, METH_NOARGS,
+     logreader_fileno__doc__},
     {NULL, NULL}
 };
 
@@ -1271,6 +1296,20 @@ static PySequenceMethods logreader_as_sequence = {
     0,					/* sq_contains */
     0,					/* sq_inplace_concat */
     0,					/* sq_inplace_repeat */
+};
+
+static PyObject *
+logreader_get_closed(LogReaderObject *self, void *closure)
+{
+    PyObject *result = (self->logfp == NULL) ? Py_True : Py_False;
+    Py_INCREF(result);
+    return result;
+}
+
+static PyGetSetDef logreader_getsets[] = {
+    {"closed", (getter)logreader_get_closed, NULL,
+     PyDoc_STR("True if the logreader's input file has already been closed.")},
+    {NULL}
 };
 
 static PyTypeObject LogReaderType = {
@@ -1304,7 +1343,7 @@ static PyTypeObject LogReaderType = {
     (iternextfunc)logreader_tp_iternext,/* tp_iternext		*/
     logreader_methods,			/* tp_methods		*/
     logreader_members,			/* tp_members		*/
-    0,					/* tp_getset		*/
+    logreader_getsets,			/* tp_getset		*/
     0,					/* tp_base		*/
     0,					/* tp_dict		*/
     0,					/* tp_descr_get		*/
@@ -1340,7 +1379,7 @@ hotshot_logreader(PyObject *unused, PyObject *args)
             /* read initial info */
             for (;;) {
                 if ((c = fgetc(self->logfp)) == EOF) {
-                    eof_error();
+                    eof_error(self);
                     break;
                 }
                 if (c != WHAT_ADD_INFO) {
@@ -1350,7 +1389,7 @@ hotshot_logreader(PyObject *unused, PyObject *args)
                 err = unpack_add_info(self);
                 if (err) {
                     if (err == ERR_EOF)
-                        eof_error();
+                        eof_error(self);
                     else
                         PyErr_SetString(PyExc_RuntimeError,
                                         "unexpected error");
