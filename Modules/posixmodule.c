@@ -1863,7 +1863,7 @@ posix_mkdir(PyObject *self, PyObject *args)
 #ifdef Py_WIN_WIDE_FILENAMES
 	if (unicode_file_names()) {
 		PyUnicodeObject *po;
-		if (PyArg_ParseTuple(args, "U|i:mkdir", &po)) {
+		if (PyArg_ParseTuple(args, "U|i:mkdir", &po, &mode)) {
 			Py_BEGIN_ALLOW_THREADS
 			/* PyUnicode_AS_UNICODE OK without thread lock as
 			   it is a simple dereference. */
