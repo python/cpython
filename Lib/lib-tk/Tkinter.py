@@ -111,14 +111,14 @@ class IntVar(Variable):
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getint(self._tk.globalgetvar(self._name))
+		return getint(self._tk.globalgetvar(self._name))
 
 class DoubleVar(Variable):
 	_default = 0.0
 	def __init__(self, master=None):
 		Variable.__init__(self, master)
 	def get(self):
-		return self._tk.getdouble(self._tk.globalgetvar(self._name))
+		return getdouble(self._tk.globalgetvar(self._name))
 
 class BooleanVar(Variable):
 	_default = "false"
@@ -130,11 +130,9 @@ class BooleanVar(Variable):
 def mainloop(n=0):
 	_default_root.tk.mainloop(n)
 
-def getint(s):
-	return _default_root.tk.getint(s)
+getint = int
 
-def getdouble(s):
-	return _default_root.tk.getdouble(s)
+getdouble = float
 
 def getboolean(s):
 	return _default_root.tk.getboolean(s)
@@ -181,10 +179,8 @@ class Misc:
 		self.tk.setvar(name, value)
 	def getvar(self, name='PY_VAR'):
 		return self.tk.getvar(name)
-	def getint(self, s):
-		return self.tk.getint(s)
-	def getdouble(self, s):
-		return self.tk.getdouble(s)
+	getint = int
+	getdouble = float
 	def getboolean(self, s):
 		return self.tk.getboolean(s)
 	def focus_set(self):
@@ -299,13 +295,13 @@ class Misc:
 		return self.tk.call('tk', 'colormodel', self._w, value)
 	def winfo_atom(self, name, displayof=0):
 		args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
-		return self.tk.getint(self.tk.call(args))
+		return getint(self.tk.call(args))
 	def winfo_atomname(self, id, displayof=0):
 		args = ('winfo', 'atomname') \
 		       + self._displayof(displayof) + (id,)
 		return self.tk.call(args)
 	def winfo_cells(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'cells', self._w))
 	def winfo_children(self):
 		return map(self._nametowidget,
@@ -323,26 +319,26 @@ class Misc:
 		if not name: return None
 		return self._nametowidget(name)
 	def winfo_depth(self):
-		return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
+		return getint(self.tk.call('winfo', 'depth', self._w))
 	def winfo_exists(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'exists', self._w))
 	def winfo_fpixels(self, number):
-		return self.tk.getdouble(self.tk.call(
+		return getdouble(self.tk.call(
 			'winfo', 'fpixels', self._w, number))
 	def winfo_geometry(self):
 		return self.tk.call('winfo', 'geometry', self._w)
 	def winfo_height(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'height', self._w))
 	def winfo_id(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'id', self._w))
 	def winfo_interps(self, displayof=0):
 		args = ('winfo', 'interps') + self._displayof(displayof)
 		return self.tk.splitlist(self.tk.call(args))
 	def winfo_ismapped(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'ismapped', self._w))
 	def winfo_manager(self):
 		return self.tk.call('winfo', 'manager', self._w)
@@ -355,53 +351,53 @@ class Misc:
 		       + self._displayof(displayof) + (id,)
 		return self.tk.call(args)
 	def winfo_pixels(self, number):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'pixels', self._w, number))
 	def winfo_pointerx(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'pointerx', self._w))
 	def winfo_pointerxy(self):
 		return self._getints(
 			self.tk.call('winfo', 'pointerxy', self._w))
 	def winfo_pointery(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'pointery', self._w))
 	def winfo_reqheight(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'reqheight', self._w))
 	def winfo_reqwidth(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'reqwidth', self._w))
 	def winfo_rgb(self, color):
 		return self._getints(
 			self.tk.call('winfo', 'rgb', self._w, color))
 	def winfo_rootx(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'rootx', self._w))
 	def winfo_rooty(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'rooty', self._w))
 	def winfo_screen(self):
 		return self.tk.call('winfo', 'screen', self._w)
 	def winfo_screencells(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screencells', self._w))
 	def winfo_screendepth(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screendepth', self._w))
 	def winfo_screenheight(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screenheight', self._w))
 	def winfo_screenmmheight(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screenmmheight', self._w))
 	def winfo_screenmmwidth(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screenmmwidth', self._w))
 	def winfo_screenvisual(self):
 		return self.tk.call('winfo', 'screenvisual', self._w)
 	def winfo_screenwidth(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'screenwidth', self._w))
 	def winfo_server(self):
 		return self.tk.call('winfo', 'server', self._w)
@@ -409,7 +405,7 @@ class Misc:
 		return self._nametowidget(self.tk.call(
 			'winfo', 'toplevel', self._w))
 	def winfo_viewable(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'viewable', self._w))
 	def winfo_visual(self):
 		return self.tk.call('winfo', 'visual', self._w)
@@ -420,28 +416,28 @@ class Misc:
 			self.tk.call('winfo', 'visualsavailable', self._w,
 				     includeids and 'includeids' or None))
 		def parseitem(x, self=self):
-			return x[:1] + tuple(map(self.tk.getint, x[1:]))
+			return x[:1] + tuple(map(getint, x[1:]))
 		return map(parseitem, data)
 	def winfo_vrootheight(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'vrootheight', self._w))
 	def winfo_vrootwidth(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'vrootwidth', self._w))
 	def winfo_vrootx(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'vrootx', self._w))
 	def winfo_vrooty(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'vrooty', self._w))
 	def winfo_width(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'width', self._w))
 	def winfo_x(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'x', self._w))
 	def winfo_y(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('winfo', 'y', self._w))
 	def update(self):
 		self.tk.call('update')
@@ -487,11 +483,11 @@ class Misc:
 	def quit(self):
 		self.tk.quit()
 	def _getints(self, string):
-		if not string: return None
-		return tuple(map(self.tk.getint, self.tk.splitlist(string)))
+		if string:
+			return tuple(map(getint, self.tk.splitlist(string)))
 	def _getdoubles(self, string):
-		if not string: return None
-		return tuple(map(self.tk.getdouble, self.tk.splitlist(string)))
+		if string:
+			return tuple(map(getdouble, self.tk.splitlist(string)))
 	def _getboolean(self, string):
 		if string:
 			return self.tk.getboolean(string)
@@ -557,39 +553,40 @@ class Misc:
 			 '%s', '%t', '%w', '%x', '%y',
 			 '%A', '%E', '%K', '%N', '%W', '%T', '%X', '%Y')
 	def _substitute(self, *args):
-		tk = self.tk
 		if len(args) != len(self._subst_format): return args
+		getboolean = self.tk.getboolean
+		getint = int
 		nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y = args
 		# Missing: (a, c, d, m, o, v, B, R)
 		e = Event()
-		e.serial = tk.getint(nsign)
-		e.num = tk.getint(b)
-		try: e.focus = tk.getboolean(f)
+		e.serial = getint(nsign)
+		e.num = getint(b)
+		try: e.focus = getboolean(f)
 		except TclError: pass
-		e.height = tk.getint(h)
-		e.keycode = tk.getint(k)
+		e.height = getint(h)
+		e.keycode = getint(k)
 		# For Visibility events, event state is a string and
 		# not an integer:
 		try:
-			e.state = tk.getint(s)
+			e.state = getint(s)
 		except TclError:
 			e.state = s
-		e.time = tk.getint(t)
-		e.width = tk.getint(w)
-		e.x = tk.getint(x)
-		e.y = tk.getint(y)
+		e.time = getint(t)
+		e.width = getint(w)
+		e.x = getint(x)
+		e.y = getint(y)
 		e.char = A
-		try: e.send_event = tk.getboolean(E)
+		try: e.send_event = getboolean(E)
 		except TclError: pass
 		e.keysym = K
-		e.keysym_num = tk.getint(N)
+		e.keysym_num = getint(N)
 		e.type = T
 		try:
 			e.widget = self._nametowidget(W)
 		except KeyError:
 			e.widget = W
-		e.x_root = tk.getint(X)
-		e.y_root = tk.getint(Y)
+		e.x_root = getint(X)
+		e.y_root = getint(Y)
 		return (e,)
 	def _report_exception(self):
 		import sys
@@ -672,9 +669,9 @@ class Misc:
 				if not value:
 					value = None
 				elif '.' in value:
-					value = self.tk.getdouble(value)
+					value = getdouble(value)
 				else:
-					value = self.tk.getint(value)
+					value = getint(value)
 				dict[key] = value
 			return dict
 		res = self.tk.call(
@@ -683,8 +680,8 @@ class Misc:
 		if len(options) == 1:
 			if not res: return None
 			# In Tk 7.5, -width can be a float
-			if '.' in res: return self.tk.getdouble(res)
-			return self.tk.getint(res)
+			if '.' in res: return getdouble(res)
+			return getint(res)
 	def grid_columnconfigure(self, index, cnf={}, **kw):
 		return self._grid_configure('columnconfigure', index, cnf, kw)
 	columnconfigure = grid_columnconfigure
@@ -1141,14 +1138,14 @@ class Canvas(Widget):
 		return self._bind((self._w, 'bind', tagOrId),
 				  sequence, func, add)
 	def canvasx(self, screenx, gridspacing=None):
-		return self.tk.getdouble(self.tk.call(
+		return getdouble(self.tk.call(
 			self._w, 'canvasx', screenx, gridspacing))
 	def canvasy(self, screeny, gridspacing=None):
-		return self.tk.getdouble(self.tk.call(
+		return getdouble(self.tk.call(
 			self._w, 'canvasy', screeny, gridspacing))
 	def coords(self, *args):
 		# XXX Should use _flatten on args
-		return map(self.tk.getdouble,
+		return map(getdouble,
                            self.tk.splitlist(self._do('coords', args)))
 	def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
 		args = _flatten(args)
@@ -1157,7 +1154,7 @@ class Canvas(Widget):
 			args = args[:-1]
 		else:
 			cnf = {}
-		return self.tk.getint(apply(
+		return getint(apply(
 			self.tk.call,
 			(self._w, 'create', itemType) 
 			+ args + self._options(cnf, kw)))
@@ -1208,7 +1205,7 @@ class Canvas(Widget):
 	def icursor(self, *args):
 		self._do('icursor', args)
 	def index(self, *args):
-		return self.tk.getint(self._do('index', args))
+		return getint(self._do('index', args))
 	def insert(self, *args):
 		self._do('insert', args)
 	def itemcget(self, tagOrId, option):
@@ -1287,7 +1284,7 @@ class Entry(Widget):
 	def icursor(self, index):
 		self.tk.call(self._w, 'icursor', index)
 	def index(self, index):
-		return self.tk.getint(self.tk.call(
+		return getint(self.tk.call(
 			self._w, 'index', index))
 	def insert(self, index, string):
 		self.tk.call(self._w, 'insert', index, string)
@@ -1359,7 +1356,7 @@ class Listbox(Widget):
 	def insert(self, index, *elements):
 		self.tk.call((self._w, 'insert', index) + elements)
 	def nearest(self, y):
-		return self.tk.getint(self.tk.call(
+		return getint(self.tk.call(
 			self._w, 'nearest', y))
 	def scan_mark(self, x, y):
 		self.tk.call(self._w, 'scan', 'mark', x, y)
@@ -1370,7 +1367,7 @@ class Listbox(Widget):
 	def index(self, index):
 		i = self.tk.call(self._w, 'index', index)
 		if i == 'none': return None
-		return self.tk.getint(i)
+		return getint(i)
 	def select_anchor(self, index):
 		self.tk.call(self._w, 'selection', 'anchor', index)
 	selection_anchor = select_anchor
@@ -1386,7 +1383,7 @@ class Listbox(Widget):
 		self.tk.call(self._w, 'selection', 'set', first, last)
 	selection_set = select_set
 	def size(self):
-		return self.tk.getint(self.tk.call(self._w, 'size'))
+		return getint(self.tk.call(self._w, 'size'))
 	def xview(self, *what):
 		if not what:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
@@ -1472,7 +1469,7 @@ class Menu(Widget):
 	def index(self, index):
 		i = self.tk.call(self._w, 'index', index)
 		if i == 'none': return None
-		return self.tk.getint(i)
+		return getint(i)
 	def invoke(self, index):
 		return self.tk.call(self._w, 'invoke', index)
 	def post(self, x, y):
@@ -1482,7 +1479,7 @@ class Menu(Widget):
 	def unpost(self):
 		self.tk.call(self._w, 'unpost')
 	def yposition(self, index):
-		return self.tk.getint(self.tk.call(
+		return getint(self.tk.call(
 			self._w, 'yposition', index))
 
 class Menubutton(Widget):
@@ -1511,9 +1508,9 @@ class Scale(Widget):
 	def get(self):
 		value = self.tk.call(self._w, 'get')
 		try:
-			return self.tk.getint(value)
+			return getint(value)
 		except TclError:
-			return self.tk.getdouble(value)
+			return getdouble(value)
 	def set(self, value):
 		self.tk.call(self._w, 'set', value)
 
@@ -1523,11 +1520,10 @@ class Scrollbar(Widget):
 	def activate(self, index):
 		self.tk.call(self._w, 'activate', index)
 	def delta(self, deltax, deltay):
-		return self.getdouble(self.tk.call(
-			self._w, 'delta', deltax, deltay))
+		return getdouble(
+			self.tk.call(self._w, 'delta', deltax, deltay))
 	def fraction(self, x, y):
-		return self.getdouble(self.tk.call(
-			self._w, 'fraction', x, y))
+		return getdouble(self.tk.call(self._w, 'fraction', x, y))
 	def identify(self, x, y):
 		return self.tk.call(self._w, 'identify', x, y)
 	def get(self):
@@ -1747,12 +1743,12 @@ class Image:
 		self.tk.call((self.name, 'config') + res)
 	config = configure
 	def height(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('image', 'height', self.name))
 	def type(self):
 		return self.tk.call('image', 'type', self.name)
 	def width(self):
-		return self.tk.getint(
+		return getint(
 			self.tk.call('image', 'width', self.name))
 
 class PhotoImage(Image):
