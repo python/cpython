@@ -1031,6 +1031,26 @@ Tkapp_MainLoop (self, args)
 }
 
 static PyObject *
+Tkapp_DoOneEvent (self, args)
+    PyObject *self;
+    PyObject *args;
+{
+    int	flags;
+    int rv;
+
+    if (PyArg_Parse (args, ""))
+	flags = TK_ALL_EVENTS;
+    else
+      {
+        PyErr_Clear();
+	if (!PyArg_Parse (args, "i", &flags))
+	  return NULL;
+      }
+    rv = Tk_DoOneEvent(flags);
+    return Py_BuildValue ("i", rv);
+}
+
+static PyObject *
 Tkapp_Quit (self, args)
      PyObject *self;
      PyObject *args;
@@ -1076,6 +1096,7 @@ static PyMethodDef Tkapp_methods[] =
   {"deletefilehandler", Tkapp_DeleteFileHandler},
   {"createtimerhandler", Tkapp_CreateTimerHandler},
   {"mainloop", Tkapp_MainLoop},
+  {"dooneevent", Tkapp_DoOneEvent},
   {"quit", Tkapp_Quit},
   {NULL, NULL}
 };
@@ -1165,6 +1186,7 @@ static PyMethodDef moduleMethods[] =
   {"deletefilehandler", Tkapp_DeleteFileHandler},
   {"createtimerhandler", Tkapp_CreateTimerHandler},
   {"mainloop", Tkapp_MainLoop},
+  {"dooneevent", Tkapp_DoOneEvent},
   {"quit", Tkapp_Quit},
   {NULL, NULL}
 };
@@ -1216,6 +1238,18 @@ PyInit_tkinter ()
   PyDict_SetItemString (d, "WRITABLE", v);
   v = Py_BuildValue ("i", TK_EXCEPTION);
   PyDict_SetItemString (d, "EXCEPTION", v);
+  v = Py_BuildValue ("i", TK_X_EVENTS);
+  PyDict_SetItemString (d, "X_EVENTS", v);
+  v = Py_BuildValue ("i", TK_FILE_EVENTS);
+  PyDict_SetItemString (d, "FILE_EVENTS", v);
+  v = Py_BuildValue ("i", TK_TIMER_EVENTS);
+  PyDict_SetItemString (d, "TIMER_EVENTS", v);
+  v = Py_BuildValue ("i", TK_IDLE_EVENTS);
+  PyDict_SetItemString (d, "IDLE_EVENTS", v);
+  v = Py_BuildValue ("i", TK_ALL_EVENTS);
+  PyDict_SetItemString (d, "ALL_EVENTS", v);
+  v = Py_BuildValue ("i", TK_DONT_WAIT);
+  PyDict_SetItemString (d, "DONT_WAIT", v);
 
 #ifdef WITH_READLINE
   rl_event_hook = EventHook;
