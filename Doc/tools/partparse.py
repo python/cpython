@@ -197,8 +197,14 @@ class Chunk:
 	self.where = where
 	self.data = data
 
+    __datatypes = [chunk_type[CSNAME], chunk_type[PLAIN], chunk_type[CSLINE]]
+
     def __repr__(self):
-	return 'chunk' + `self.chtype, self.where, self.data`
+	if self.chtype in self.__datatypes:
+	    data = s(self.buf, self.data)
+	else:
+	    data = self.data
+	return 'chunk' + `self.chtype, self.where, data`
 
 # and the wrapper
 chunk = Chunk
@@ -2142,6 +2148,26 @@ def changeit(buf, pp):
 		i = i - 1
 		length = length + len(data) - 2
 
+	    elif s_buf_data == 'deprecated':
+		length, newi = getnextarg(length, buf, pp, i)
+		version = pp[i:newi][0]
+		print "version =", version
+		length, newi2 = getnextarg(length, buf, pp, newi)
+		action = pp[newi:newi2]
+		print "action =", action
+		del pp[i-1:newi2]
+		length = length - (newi2 - i) - 1
+		stuff = [chunk(PLAIN, ch.where, 'Deprecated since release '),
+			 version,
+			 chunk(PLAIN, ch.where, '.')]
+		chunks = [chunk(CSNAME, ch.where, 'strong'),
+			  chunk(GROUP, ch.where, stuff),
+			  chunk(PLAIN, ch.where, '  ')] + action \
+			  + [chunk(DENDLINE, ch.where, '\n')]
+		i = i - 1
+		pp[i:i] = chunks
+		length = length + len(chunks)
+
 	    elif s_buf_data == "quad":
 		ch.chtype = PLAIN
 		ch.data = "    "
@@ -2341,6 +2367,7 @@ def main():
     for file in args:
 	if len(args) > 1: print '='*20, file, '='*20
 	buf = open(file, 'r').read()
+	chunk.buf = buf
 	w, pp = parseit(buf)
 	startchange()
 	changeit(buf, pp)
