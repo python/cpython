@@ -2813,7 +2813,7 @@ Convert a 32-bit integer from network to host byte order.");
 static PyObject *
 socket_htons(PyObject *self, PyObject *args)
 {
-	unsigned long x1, x2;
+	int x1, x2;
 
 	if (!PyArg_ParseTuple(args, "i:htons", &x1)) {
 		return NULL;
