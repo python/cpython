@@ -2664,27 +2664,20 @@ com_expr_stmt(struct compiling *c, node *n)
 static void
 com_assert_stmt(struct compiling *c, node *n)
 {
-	int a = 0, b = 0;
+	int a = 0;
 	int i;
 	REQ(n, assert_stmt); /* 'assert' test [',' test] */
-	/* Generate code like for
+	if (Py_OptimizeFlag)
+		return;
+	/* Generate code like
 	   
-	   if __debug__:
-	      if not <test>:
+	     if not <test>:
 	         raise AssertionError [, <message>]
 
 	   where <message> is the second test, if present.
 	*/
-
-	if (Py_OptimizeFlag)
-		return;
-	com_addop_name(c, LOAD_GLOBAL, "__debug__");
-	com_push(c, 1);
-	com_addfwref(c, JUMP_IF_FALSE, &a);
-	com_addbyte(c, POP_TOP);
-	com_pop(c, 1);
 	com_node(c, CHILD(n, 1));
-	com_addfwref(c, JUMP_IF_TRUE, &b);
+	com_addfwref(c, JUMP_IF_TRUE, &a);
 	com_addbyte(c, POP_TOP);
 	com_pop(c, 1);
 	/* Raise that exception! */
@@ -2696,9 +2689,8 @@ com_assert_stmt(struct compiling *c, node *n)
 	com_addoparg(c, RAISE_VARARGS, i);
 	com_pop(c, i);
 	/* The interpreter does not fall through */
-	/* All jumps converge here */
+	/* Jump ends up here */
 	com_backpatch(c, a);
-	com_backpatch(c, b);
 	com_addbyte(c, POP_TOP);
 }
 
