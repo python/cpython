@@ -86,7 +86,7 @@ char *
 PyOS_StdioReadline(prompt)
 	char *prompt;
 {
-	int n;
+	size_t n;
 	char *p;
 	n = 100;
 	if ((p = PyMem_MALLOC(n)) == NULL)
@@ -95,7 +95,7 @@ PyOS_StdioReadline(prompt)
 	if (prompt)
 		fprintf(stderr, "%s", prompt);
 	fflush(stderr);
-	switch (my_fgets(p, n, stdin)) {
+	switch (my_fgets(p, (int)n, stdin)) {
 	case 0: /* Normal case */
 		break;
 	case 1: /* Interrupt */
@@ -116,11 +116,14 @@ PyOS_StdioReadline(prompt)
 #endif
 	n = strlen(p);
 	while (n > 0 && p[n-1] != '\n') {
-		int incr = n+2;
+		size_t incr = n+2;
 		p = PyMem_REALLOC(p, n + incr);
 		if (p == NULL)
 			return NULL;
-		if (my_fgets(p+n, incr, stdin) != 0)
+		if (incr > INT_MAX) {
+			PyErr_SetString(PyExc_OverflowError, "input line too long");
+		}
+		if (my_fgets(p+n, (int)incr, stdin) != 0)
 			break;
 		n += strlen(p+n);
 	}

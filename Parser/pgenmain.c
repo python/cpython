@@ -127,7 +127,7 @@ getgrammar(filename)
 		fprintf(stderr, "Parsing error %d, line %d.\n",
 			err.error, err.lineno);
 		if (err.text != NULL) {
-			int i;
+			size_t i;
 			fprintf(stderr, "%s", err.text);
 			i = strlen(err.text);
 			if (i == 0 || err.text[i-1] != '\n')
@@ -195,7 +195,7 @@ char *
 PyOS_Readline(prompt)
 	char *prompt;
 {
-	int n = 1000;
+	size_t n = 1000;
 	char *p = PyMem_MALLOC(n);
 	char *q;
 	if (p == NULL)

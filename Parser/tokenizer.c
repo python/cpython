@@ -223,9 +223,9 @@ tok_nextc(tok)
 				tok->done = E_EOF;
 			}
 			else if (tok->start != NULL) {
-				int start = tok->start - tok->buf;
-				int oldlen = tok->cur - tok->buf;
-				int newlen = oldlen + strlen(new);
+				size_t start = tok->start - tok->buf;
+				size_t oldlen = tok->cur - tok->buf;
+				size_t newlen = oldlen + strlen(new);
 				char *buf = tok->buf;
 				PyMem_RESIZE(buf, char, newlen+1);
 				tok->lineno++;
