@@ -661,8 +661,9 @@ strop_maketrans(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
-	unsigned char c[256], *from=NULL, *to=NULL;
+	unsigned char *c, *from=NULL, *to=NULL;
 	int i, fromlen=0, tolen=0;
+	PyObject *result;
 
 	if (!PyArg_ParseTuple(args, "s#s#", &from, &fromlen, &to, &tolen))
 		return NULL;
@@ -672,12 +673,17 @@ strop_maketrans(self, args)
 				"maketrans arguments must have same length");
 		return NULL;
 	}
+
+	result = PyString_FromStringAndSize((char *)NULL, 256);
+	if (result == NULL)
+		return NULL;
+	c = (unsigned char *) PyString_AS_STRING((PyStringObject *)result);
 	for (i = 0; i < 256; i++)
 		c[i]=(unsigned char)i;
 	for (i = 0; i < fromlen; i++)
 		c[from[i]]=to[i];
 
-	return PyString_FromStringAndSize((char *)c, 256);
+	return result;
 }
 
 
@@ -686,48 +692,66 @@ strop_translate(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	char *input, *table, *output, *output_start, *delete=NULL;
+	register char *input, *table, *output;
+	register int i, c, changed = 0;
+	PyObject *input_obj;
+	char *table1, *output_start, *del_table=NULL;
 	int inlen, tablen, dellen = 0;
 	PyObject *result;
-	int i, trans_table[256];
+	int trans_table[256];
 
-	if (!PyArg_ParseTuple(args, "s#s#|s#", &input, &inlen,
-			      &table, &tablen, &delete, &dellen))
+	if (!PyArg_ParseTuple(args, "Ss#|s#", &input_obj,
+			      &table1, &tablen, &del_table, &dellen))
 		return NULL;
 	if (tablen != 256) {
 		PyErr_SetString(PyExc_ValueError,
 			      "translation table must be 256 characters long");
 		return NULL;
 	}
-	for (i = 0; i < 256; i++)
-		trans_table[i] = Py_CHARMASK(table[i]);
 
-	if (delete != NULL) {
-		for (i = 0; i < dellen; i++) 
-			trans_table[(int)delete[i]] = -1;
-	}
-
+	table = table1;
+	inlen = PyString_Size(input_obj);
 	result = PyString_FromStringAndSize((char *)NULL, inlen);
 	if (result == NULL)
 		return NULL;
 	output_start = output = PyString_AsString(result);
+	input = PyString_AsString(input_obj);
 
-	if (delete != NULL && dellen != 0) {
-		for (i = 0; i < inlen; i++) {
-			int c = Py_CHARMASK(*input++);
-			if (trans_table[c] != -1) 
-				*output++ = (char)trans_table[c];
+	if (dellen == 0) {
+		/* If no deletions are required, use faster code */
+		for (i = inlen; --i >= 0; ) {
+			c = Py_CHARMASK(*input++);
+			if (Py_CHARMASK((*output++ = table[c])) != c)
+				changed = 1;
 		}
-		/* Fix the size of the resulting string */
-		if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
-			return NULL; 
-	} else {
-		/* If no deletions are required, use a faster loop */
-		for (i = 0; i < inlen; i++) {
-			int c = Py_CHARMASK(*input++);
-			*output++ = (char)trans_table[c];
-		}
+		if (changed)
+			return result;
+		Py_DECREF(result);
+		Py_INCREF(input_obj);
+		return input_obj;
 	}
+
+	for (i = 0; i < 256; i++)
+		trans_table[i] = Py_CHARMASK(table[i]);
+
+	for (i = 0; i < dellen; i++) 
+		trans_table[Py_CHARMASK(del_table[i])] = -1;
+
+	for (i = inlen; --i >= 0; ) {
+		c = Py_CHARMASK(*input++);
+		if (trans_table[c] != -1)
+			if (Py_CHARMASK(*output++ = (char)trans_table[c]) == c)
+				continue;
+		changed = 1;
+	}
+	if (!changed) {
+		Py_DECREF(result);
+		Py_INCREF(input_obj);
+		return input_obj;
+	}
+	/* Fix the size of the resulting string */
+	if (inlen > 0 &&_PyString_Resize(&result, output-output_start))
+		return NULL; 
 	return result;
 }
 
