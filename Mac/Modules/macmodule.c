@@ -74,7 +74,7 @@ void closedir PROTO((DIR *));
 struct dirent * readdir PROTO((DIR *));
 int rmdir PROTO((const char *path));
 int sync PROTO((void));
-#ifdef THINK_C
+#if defined(THINK_C) || defined(__SC__)
 int unlink PROTO((char *));
 #else
 int unlink PROTO((const char *));
