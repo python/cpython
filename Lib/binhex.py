@@ -76,7 +76,6 @@ else:
 	#
 	# Glue code for non-macintosh useage
 	#
-	import regsub
 	
 	class FInfo:
 		def __init__(self):
@@ -99,7 +98,7 @@ else:
 		dsize = fp.tell()
 		fp.close()
 		dir, file = os.path.split(name)
-		file = regsub.sub(':', '-', file)
+		file = string.replace(file, ':', '-', 1)
 		return file, finfo, dsize, 0
 
 	class openrsrc:

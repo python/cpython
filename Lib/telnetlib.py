@@ -38,7 +38,6 @@ To do:
 import socket
 import select
 import string
-import regsub
 
 # Tunable parameters
 DEBUGLEVEL = 0
@@ -185,7 +184,7 @@ class Telnet:
 
 	"""
 	if IAC in buffer:
-	    buffer = regsub.gsub(IAC, IAC+IAC, buffer)
+	    buffer = string.replace(buffer, IAC, IAC+IAC)
 	self.sock.send(buffer)
 
     def read_until(self, match, timeout=None):
