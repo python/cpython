@@ -40,10 +40,8 @@ new_instancemethod(PyObject* unused, PyObject* args)
 	PyObject* self;
 	PyObject* classObj;
 
-	if (!PyArg_ParseTuple(args, "OOO!:instancemethod",
-			      &func,
-			      &self,
-			      &PyClass_Type, &classObj))
+	if (!PyArg_ParseTuple(args, "OOO:instancemethod",
+			      &func, &self, &classObj))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError,
@@ -52,11 +50,6 @@ new_instancemethod(PyObject* unused, PyObject* args)
 	}
 	if (self == Py_None)
 		self = NULL;
-	else if (!PyInstance_Check(self)) {
-		PyErr_SetString(PyExc_TypeError,
-				"second argument must be instance or None");
-		return NULL;
-	}
 	return PyMethod_New(func, self, classObj);
 }
 
