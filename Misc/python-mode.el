@@ -403,6 +403,19 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 
 
 ;; electric characters
+(defun py-outdent-p ()
+  ;; returns non-nil if the current line should outdent one level
+  (save-excursion
+    (and (progn (back-to-indentation)
+		(looking-at py-outdent-re))
+	 (progn (backward-to-indentation 1)
+		(while (or (looking-at py-blank-or-comment-re)
+			   (bobp))
+		  (backward-to-indentation 1))
+		(not (looking-at py-no-outdent-re)))
+	 )))
+      
+
 (defun py-electric-colon (arg)
   "Insert a colon.
 In certain cases the line is outdented appropriately.  If a numeric
@@ -414,13 +427,7 @@ argument is provided, that many colons are inserted non-electrically."
 	  (outdent 0)
 	  (indent (py-compute-indentation)))
       (if (and (not arg)
-	       (progn
-		 (back-to-indentation)
-		 (looking-at py-outdent-re))
-	       (prog2
-		   (backward-to-indentation 1)
-		   (not (looking-at py-no-outdent-re))
-		 (goto-char here))
+	       (py-outdent-p)
 	       (= indent (progn
 			   (forward-line -1)
 			   (py-compute-indentation)))
@@ -650,11 +657,7 @@ needed so that only a single column position is deleted."
 	 (move-to-indentation-p (<= (current-column) ci))
 	 (need (py-compute-indentation)))
     ;; see if we need to outdent
-    (if (save-excursion
-	  (and (progn (back-to-indentation)
-		      (looking-at py-outdent-re))
-	       (progn (backward-to-indentation 1)
-		      (not (looking-at py-no-outdent-re)))))
+    (if (py-outdent-p)
 	(setq need (- need py-indent-offset)))
     (if (/= ci need)
 	(save-excursion
