@@ -1952,7 +1952,7 @@ def coercions():
     coerce(0j, C(0))
 
 
-def all():
+def test_main():
     lists()
     dicts()
     dict_constructor()
@@ -1992,7 +1992,7 @@ def all():
     classic_comparisons()
     rich_comparisons()
     coercions()
+    if verbose: print "All OK"
 
-all()
-
-if verbose: print "All OK"
+if __name__ == "__main__":
+    test_main()
