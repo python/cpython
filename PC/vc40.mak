@@ -78,6 +78,7 @@ CLEAN :
 	-@erase "$(INTDIR)\frozen.obj"
 	-@erase "$(INTDIR)\funcobject.obj"
 	-@erase "$(INTDIR)\getargs.obj"
+	-@erase "$(INTDIR)\getbuildinfo.obj"
 	-@erase "$(INTDIR)\getcompiler.obj"
 	-@erase "$(INTDIR)\getcopyright.obj"
 	-@erase "$(INTDIR)\getmtime.obj"
@@ -223,6 +224,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\frozen.obj" \
 	"$(INTDIR)\funcobject.obj" \
 	"$(INTDIR)\getargs.obj" \
+	"$(INTDIR)\getbuildinfo.obj" \
 	"$(INTDIR)\getcompiler.obj" \
 	"$(INTDIR)\getcopyright.obj" \
 	"$(INTDIR)\getmtime.obj" \
@@ -4061,6 +4063,16 @@ SOURCE=.\PC\python_nt.rc
 
 
 !ENDIF 
+
+# End Source File
+################################################################################
+# Begin Source File
+
+SOURCE=.\Modules\getbuildinfo.c
+
+"$(INTDIR)\getbuildinfo.obj" : $(SOURCE) "$(INTDIR)"
+   $(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 # End Source File
 # End Target
