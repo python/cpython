@@ -680,6 +680,29 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'sunos5':
+        """
+        test_al
+        test_bsddb
+        test_cd
+        test_cl
+        test_curses
+        test_dbm
+        test_email_codecs
+        test_gdbm
+        test_gl
+        test_gzip
+        test_imgfile
+        test_linuxaudiodev
+        test_mpz
+        test_openpty
+        test_socket_ssl
+        test_socketserver
+        test_winreg
+        test_winsound
+        test_zipfile
+        test_zlib
+        """
     'hp-ux11':
         """
         test_al
