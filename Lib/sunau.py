@@ -180,10 +180,11 @@ class Au_read:
 		if self._encoding not in _simple_encodings:
 			raise Error, 'encoding not (yet) supported'
 		if self._encoding in (AUDIO_FILE_ENCODING_MULAW_8,
-			  AUDIO_FILE_ENCODING_LINEAR_8,
 			  AUDIO_FILE_ENCODING_ALAW_8):
 			self._sampwidth = 2
 			self._framesize = 1
+		elif self._encoding == AUDIO_FILE_ENCODING_LINEAR_8:
+			self._framesize = self._sampwidth = 1
 		elif self._encoding == AUDIO_FILE_ENCODING_LINEAR_16:
 			self._framesize = self._sampwidth = 2
 		elif self._encoding == AUDIO_FILE_ENCODING_LINEAR_24:
