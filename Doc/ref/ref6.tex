@@ -680,7 +680,11 @@ defined, the set of public names includes all names found in the
 module's namespace which do not begin with an underscore character
 (\character{_}).
 
-The \keyword{from} form with \samp{*} may only occur in a module scope.
+The \keyword{from} form with \samp{*} may only occur in a module
+scope.  If the wild card form of import --- \samp{import *} --- is
+used in a function and the function contains or is a nested block with
+free variables, the compiler will raise a \exception{SyntaxError}.
+
 \kwindex{from}
 \stindex{from}
 
