@@ -23,6 +23,7 @@ PyAPI_FUNC(void) Py_SetPythonHome(char *);
 PyAPI_FUNC(char *) Py_GetPythonHome(void);
 
 PyAPI_FUNC(void) Py_Initialize(void);
+PyAPI_FUNC(void) Py_InitializeEx(int);
 PyAPI_FUNC(void) Py_Finalize(void);
 PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);

@@ -131,7 +131,7 @@ add_flag(int flag, const char *envs)
 }
 
 void
-Py_Initialize(void)
+Py_InitializeEx(int install_sigs)
 {
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
@@ -208,7 +208,8 @@ Py_Initialize(void)
 
 	_PyImportHooks_Init();
 
-	initsigs(); /* Signal handling stuff, including initintr() */
+	if (install_sigs)
+		initsigs(); /* Signal handling stuff, including initintr() */
 
 	initmain(); /* Module __main__ */
 	if (!Py_NoSiteFlag)
@@ -275,6 +276,13 @@ Py_Initialize(void)
 	}
 #endif
 }
+
+void
+Py_Initialize(void)
+{
+	Py_InitializeEx(1);
+}
+
 
 #ifdef COUNT_ALLOCS
 extern void dump_counts(void);

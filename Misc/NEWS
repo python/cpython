@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- Py_InitializeEx has been added.
+
 - Fix the order of application of decorators.  The proper order is bottom-up;
   the first decorator listed is the last one called.
 
