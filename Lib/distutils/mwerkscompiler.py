@@ -16,7 +16,7 @@ import distutils.dir_util
 import mkcwproject
 
 class MWerksCompiler (CCompiler) :
-    """Concrete class that implements an interface to Microsoft Visual C++,
+    """Concrete class that implements an interface to MetroWerks CodeWarrior,
        as defined by the CCompiler abstract class."""
 
     compiler_type = 'mwerks'
@@ -150,6 +150,7 @@ class MWerksCompiler (CCompiler) :
             if not dirname in sourcefiledirs:
                 sourcefiledirs.append(dirname)
         settings['sources'] = sourcefilenames
+        settings['libraries'] = libraries
         settings['extrasearchdirs'] = sourcefiledirs + include_dirs + library_dirs
         if self.dry_run:
             print 'CALLING LINKER IN', os.getcwd()
