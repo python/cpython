@@ -591,7 +591,7 @@ PyDoc_STRVAR(tzset_doc,
 \n\
 Initialize, or reinitialize, the local timezone to the value stored in\n\
 os.environ['TZ']. The TZ environment variable should be specified in\n\
-standard Uniz timezone format as documented in the tzset man page\n\
+standard Unix timezone format as documented in the tzset man page\n\
 (eg. 'US/Eastern', 'Europe/Amsterdam'). Unknown timezones will silently\n\
 fall back to UTC. If the TZ environment variable is not set, the local\n\
 timezone is set to the systems best guess of wallclock time.\n\
