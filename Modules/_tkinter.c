@@ -2001,13 +2001,16 @@ _bump(FlattenContext* context, int size)
 }
 
 static int
-_flatten1(FlattenContext* context, PyObject* item)
+_flatten1(FlattenContext* context, PyObject* item, int depth)
 {
 	/* add tuple or list to argument tuple (recursively) */
 
 	int i, size;
 
-	if (PyList_Check(item)) {
+	if (depth > 1000) {
+		PyErr_SetString(PyExc_ValueError,"nesting too deep in _flatten");
+		return 0;
+	} else if (PyList_Check(item)) {
 		size = PyList_GET_SIZE(item);
 		/* preallocate (assume no nesting) */
 		if (context->size + size > context->maxsize && !_bump(context, size))
@@ -2016,7 +2019,7 @@ _flatten1(FlattenContext* context, PyObject* item)
 		for (i = 0; i < size; i++) {
 			PyObject *o = PyList_GET_ITEM(item, i);
 			if (PyList_Check(o) || PyTuple_Check(o)) {
-				if (!_flatten1(context, o))
+				if (!_flatten1(context, o, depth + 1))
 					return 0;
 			} else if (o != Py_None) {
 				if (context->size + 1 > context->maxsize && !_bump(context, 1))
@@ -2033,7 +2036,7 @@ _flatten1(FlattenContext* context, PyObject* item)
 		for (i = 0; i < size; i++) {
 			PyObject *o = PyTuple_GET_ITEM(item, i);
 			if (PyList_Check(o) || PyTuple_Check(o)) {
-				if (!_flatten1(context, o))
+				if (!_flatten1(context, o, depth + 1))
 					return 0;
 			} else if (o != Py_None) {
 				if (context->size + 1 > context->maxsize && !_bump(context, 1))
@@ -2068,7 +2071,7 @@ Tkinter_Flatten(PyObject* self, PyObject* args)
 	
 	context.size = 0;
 
-	if (!_flatten1(&context, item))
+	if (!_flatten1(&context, item,0))
 		return NULL;
 
 	if (_PyTuple_Resize(&context.tuple, context.size, 0))
