@@ -34,7 +34,7 @@ FILE *PyWin_FindRegisteredModule(const char *moduleName,
 #endif
 	struct filedescr *fdp = NULL;
 	FILE *fp;
-	HKEY keyBase = HKEY_LOCAL_MACHINE;
+	HKEY keyBase = HKEY_CURRENT_USER;
 	int modNameSize;
 	long regStat;
 
@@ -56,8 +56,17 @@ FILE *PyWin_FindRegisteredModule(const char *moduleName,
 
 	modNameSize = pathLen;
 	regStat = RegQueryValue(keyBase, moduleKey, pathBuf, &modNameSize);
-	if (regStat != ERROR_SUCCESS)
-		return NULL;
+	if (regStat != ERROR_SUCCESS) {
+		/* No user setting - lookup in machine settings */
+		keyBase = HKEY_LOCAL_MACHINE;
+		/* be anal - failure may have reset size param */
+		modNameSize = pathLen;
+		regStat = RegQueryValue(keyBase, moduleKey, 
+		                        pathBuf, &modNameSize);
+
+		if (regStat != ERROR_SUCCESS)
+			return NULL;
+	}
 	/* use the file extension to locate the type entry. */
 	for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 		size_t extLen = strlen(fdp->suffix);
