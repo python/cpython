@@ -100,6 +100,7 @@ MAINOBJ=	python.o
 SYSLIBS=	$(LIBM) $(LIBC)
 
 LIBRARY=	../libpython$(VERSION).a
+REALLIBRARY=	../@REALLIBRARY@
 
 # === Rules ===
 
@@ -130,8 +131,8 @@ EXE=
 
 # This target is used by the master Makefile to link the final binary.
 link:		$(MAINOBJ)
-		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(MAINOBJ) \
-		  $(LIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
+		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) $(MAINOBJ) \
+		  -L.. -lpython$(VERSION) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
 		mv python$(EXE) ../python$(EXE)
 
 clean:
