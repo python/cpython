@@ -41,7 +41,7 @@ def wrapper(func, *args, **kwds):
         except:
             pass
 
-        return func(stdscr, *rest)
+        return func(stdscr, *args, **kwds)
     finally:
         # Set everything back to normal
         stdscr.keypad(0)
