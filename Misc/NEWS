@@ -91,6 +91,9 @@ Standard library
   the new one guarantees to produce distinct internal states for all
   arguments in [0, 27814431486576L).
 
+- The socket module now supports raw packets on Linux.  The socket
+  family is AF_PACKET.
+
 Windows changes
 
 - Build procedure:  the zlib project is built in a different way that
