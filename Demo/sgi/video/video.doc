@@ -38,8 +38,6 @@ Options for Vrec:
  -q queuesize	Set size of the video board circular buffer. A little
 		experimentation with this may lead to more video being
 		captured, but not always.
- -r rate	Set video rate. A rate of 2 tries to capture every
-		second frame, etc.
  -P frames	Preallocate diskspace for 'frames' images. This may
 		enable you to capture more frames.
 
