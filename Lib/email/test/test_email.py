@@ -2105,7 +2105,7 @@ A very long line that must get split to something other than at the
 
 
 
-# Test RFC 2231 header parameters decoding
+# Test RFC 2231 header parameters (en/de)coding
 class TestRFC2231(TestEmailBase):
     def test_get_param(self):
         eq = self.assertEqual
@@ -2114,6 +2114,73 @@ class TestRFC2231(TestEmailBase):
            ('us-ascii', 'en', 'This is even more ***fun*** isn\'t it!'))
         eq(msg.get_param('title', unquote=0),
            ('us-ascii', 'en', '"This is even more ***fun*** isn\'t it!"'))
+
+    def test_set_param(self):
+        eq = self.assertEqual
+        msg = Message()
+        msg.set_param('title', 'This is even more ***fun*** isn\'t it!',
+                      charset='us-ascii')
+        eq(msg.get_param('title'),
+           ('us-ascii', '', 'This is even more ***fun*** isn\'t it!'))
+        msg.set_param('title', 'This is even more ***fun*** isn\'t it!',
+                      charset='us-ascii', language='en')
+        eq(msg.get_param('title'),
+           ('us-ascii', 'en', 'This is even more ***fun*** isn\'t it!'))
+        msg = self._msgobj('msg_01.txt')
+        msg.set_param('title', 'This is even more ***fun*** isn\'t it!',
+                      charset='us-ascii', language='en')
+        eq(msg.as_string(), """\
+Return-Path: <bbb@zzz.org>
+Delivered-To: bbb@zzz.org
+Received: by mail.zzz.org (Postfix, from userid 889)
+\tid 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Message-ID: <15090.61304.110929.45684@aaa.zzz.org>
+From: bbb@ddd.com (John X. Doe)
+To: bbb@zzz.org
+Subject: This is a test message
+Date: Fri, 4 May 2001 14:05:44 -0400
+Content-Type: text/plain; charset=us-ascii;
+\ttitle*="us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21"
+
+
+Hi,
+
+Do you like this message?
+
+-Me
+""")
+
+    def test_del_param(self):
+        eq = self.ndiffAssertEqual
+        msg = self._msgobj('msg_01.txt')
+        msg.set_param('foo', 'bar', charset='us-ascii', language='en')
+        msg.set_param('title', 'This is even more ***fun*** isn\'t it!',
+            charset='us-ascii', language='en')
+        msg.del_param('foo', header='Content-Type')
+        eq(msg.as_string(), """\
+Return-Path: <bbb@zzz.org>
+Delivered-To: bbb@zzz.org
+Received: by mail.zzz.org (Postfix, from userid 889)
+\tid 27CEAD38CC; Fri,  4 May 2001 14:05:44 -0400 (EDT)
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Message-ID: <15090.61304.110929.45684@aaa.zzz.org>
+From: bbb@ddd.com (John X. Doe)
+To: bbb@zzz.org
+Subject: This is a test message
+Date: Fri, 4 May 2001 14:05:44 -0400
+Content-Type: text/plain; charset="us-ascii";
+\ttitle*="us-ascii'en'This%20is%20even%20more%20%2A%2A%2Afun%2A%2A%2A%20isn%27t%20it%21"
+
+
+Hi,
+
+Do you like this message?
+
+-Me
+""")
 
 
 
