@@ -208,7 +208,7 @@ displayed in the echo area, and if `py-beep-if-tab-change' is non-nil
 the Emacs bell is also rung as a warning.")
 
 (defconst python-font-lock-keywords
-  (let* ((keywords '("access"     "and"        "break"      "class"
+  (let* ((keywords '("and"        "break"      "class"
 		     "continue"   "def"        "del"        "elif"
 		     "else:"      "except"     "except:"    "exec"
 		     "finally:"   "for"        "from"       "global"
