@@ -229,19 +229,14 @@ extern "C" {
  */
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 
-/* According to
- * http://www.cray.com/swpubs/manuals/SN-2194_2.0/html-SN-2194_2.0/x3138.htm
- * on some Cray systems HUGE_VAL is incorrectly (according to the C std)
- * defined to be the largest positive finite rather than infinity.  We need
- * the std-conforming infinity meaning (provided the platform has one!).
- *
- * Then, according to a bug report on SourceForge, defining Py_HUGE_VAL as
- * INFINITY caused internal compiler errors under BeOS using some version
- * of gcc.  Explicitly casting INFINITY to double made that problem go away.
+/* HUGE_VAL is supposed to expand to a positive double infinity.  Python
+ * uses Py_HUGE_VAL instead because some platforms are broken in this
+ * respect.  We used to embed code in pyport.h to try to worm around that,
+ * but different platforms are broken in conflicting ways.  If you're on
+ * a platform where HUGE_VAL is defined incorrectly, fiddle your Python
+ * config to #define Py_HUGE_VAL to something that works on your platform.
  */
-#ifdef INFINITY
-#define Py_HUGE_VAL ((double)INFINITY)
-#else
+#ifndef Py_HUGE_VAL
 #define Py_HUGE_VAL HUGE_VAL
 #endif
 
