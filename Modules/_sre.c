@@ -1140,8 +1140,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
         }
     }
 
-    /* shouldn't end up here */
-    return SRE_ERROR_ILLEGAL;
+    /* can't end up here */
 }
 
 LOCAL(int)
