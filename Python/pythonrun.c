@@ -34,6 +34,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "windows.h"
 #endif
 
+#ifdef macintosh
+#include "macglue.h"
+#endif
 extern char *Py_GetPath();
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -561,8 +564,8 @@ PyRun_SimpleFile(fp, filename)
 	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0
 #ifdef macintosh
 	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
-	    || getfiletype(filename) == 'PYC '
-	    || getfiletype(filename) == 'APPL'
+	    || PyMac_getfiletype(filename) == 'PYC '
+	    || PyMac_getfiletype(filename) == 'APPL'
 #endif /* macintosh */
 		) {
 		/* Try to run a pyc file. First, re-open in binary */
