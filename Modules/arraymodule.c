@@ -234,7 +234,7 @@ static struct arraydescr descriptors[] = {
 /* If we ever allow items larger than double, we must change reverse()! */
 	
 
-object *
+static object *
 newarrayobject(size, descr)
 	int size;
 	struct arraydescr *descr;
@@ -271,7 +271,7 @@ newarrayobject(size, descr)
 	return (object *) op;
 }
 
-int
+static int
 getarraysize(op)
 	object *op;
 {
@@ -282,7 +282,7 @@ getarraysize(op)
 	return ((arrayobject *)op) -> ob_size;
 }
 
-object *
+static object *
 getarrayitem(op, i)
 	object *op;
 	int i;
@@ -331,7 +331,7 @@ ins1(self, where, v)
 	return (*self->ob_descr->setitem)(self, where, v);
 }
 
-int
+static int
 insarrayitem(op, where, newitem)
 	object *op;
 	int where;
@@ -344,7 +344,7 @@ insarrayitem(op, where, newitem)
 	return ins1((arrayobject *)op, where, newitem);
 }
 
-int
+static int
 addarrayitem(op, newitem)
 	object *op;
 	object *newitem;
