@@ -202,11 +202,11 @@ func_repr(op)
 {
 	char buf[140];
 	if (op->func_name == Py_None)
-		sprintf(buf, "<anonymous function at %lx>", (long)op);
+		sprintf(buf, "<anonymous function at %p>", op);
 	else
-		sprintf(buf, "<function %.100s at %lx>",
+		sprintf(buf, "<function %.100s at %p>",
 			PyString_AsString(op->func_name),
-			(long)op);
+			op);
 	return PyString_FromString(buf);
 }
 

@@ -119,7 +119,7 @@ static void PyThread__init_thread _P0()
 	if (usconfig(CONF_INITSIZE, size) < 0)
 		perror("usconfig - CONF_INITSIZE (reset)");
 	addr = (long) dl_getrange(size + HDR_SIZE);
-	dprintf(("trying to use addr %lx-%lx for shared arena\n", addr, addr+size));
+	dprintf(("trying to use addr %p-%p for shared arena\n", addr, addr+size));
 	errno = 0;
 	if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 && errno != 0)
 		perror("usconfig - CONF_ATTACHADDR (set)");
@@ -157,7 +157,7 @@ static void PyThread__init_thread _P0()
 	(void) usinitlock(count_lock);
 	if ((wait_lock = usnewlock(shared_arena)) == NULL)
 		perror("usnewlock (wait_lock)");
-	dprintf(("arena start: %lx, arena size: %ld\n", (long) shared_arena, (long) usconfig(CONF_GETSIZE, shared_arena)));
+	dprintf(("arena start: %p, arena size: %ld\n",  shared_arena, (long) usconfig(CONF_GETSIZE, shared_arena)));
 }
 
 /*
@@ -224,7 +224,7 @@ int PyThread_start_new_thread _P2(func, void (*func) _P((void *)), arg, void *ar
 			if (usconfig(CONF_INITSIZE, size) < 0)
 				perror("usconfig - CONF_INITSIZE (reset)");
 			addr = (long) dl_getrange(size + HDR_SIZE);
-			dprintf(("trying to use addr %lx-%lx for sproc\n",
+			dprintf(("trying to use addr %p-%p for sproc\n",
 				 addr, addr+size));
 			errno = 0;
 			if ((addr = usconfig(CONF_ATTACHADDR, addr)) < 0 &&
@@ -375,13 +375,13 @@ PyThread_type_lock PyThread_allocate_lock _P0()
 	if ((lock = usnewlock(shared_arena)) == NULL)
 		perror("usnewlock");
 	(void) usinitlock(lock);
-	dprintf(("PyThread_allocate_lock() -> %lx\n", (long)lock));
+	dprintf(("PyThread_allocate_lock() -> %p\n", lock));
 	return (PyThread_type_lock) lock;
 }
 
 void PyThread_free_lock _P1(lock, PyThread_type_lock lock)
 {
-	dprintf(("PyThread_free_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_free_lock(%p) called\n", lock));
 	usfreelock((ulock_t) lock, shared_arena);
 }
 
@@ -389,7 +389,7 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 {
 	int success;
 
-	dprintf(("PyThread_acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 	errno = 0;		/* clear it just in case */
 	if (waitflag)
 		success = ussetlock((ulock_t) lock);
@@ -397,13 +397,13 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 		success = uscsetlock((ulock_t) lock, 1); /* Try it once */
 	if (success < 0)
 		perror(waitflag ? "ussetlock" : "uscsetlock");
-	dprintf(("PyThread_acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
+	dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
 	return success;
 }
 
 void PyThread_release_lock _P1(lock, PyThread_type_lock lock)
 {
-	dprintf(("PyThread_release_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_release_lock(%p) called\n", lock));
 	if (usunsetlock((ulock_t) lock) < 0)
 		perror("usunsetlock");
 }
@@ -420,13 +420,13 @@ PyThread_type_sema PyThread_allocate_sema _P1(value, int value)
 
 	if ((sema = usnewsema(shared_arena, value)) == NULL)
 		perror("usnewsema");
-	dprintf(("PyThread_allocate_sema() -> %lx\n", (long) sema));
+	dprintf(("PyThread_allocate_sema() -> %p\n",  sema));
 	return (PyThread_type_sema) sema;
 }
 
 void PyThread_free_sema _P1(sema, PyThread_type_sema sema)
 {
-	dprintf(("PyThread_free_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_free_sema(%p) called\n",  sema));
 	usfreesema((usema_t *) sema, shared_arena);
 }
 
@@ -434,20 +434,20 @@ int PyThread_down_sema _P2(sema, PyThread_type_sema sema, waitflag, int waitflag
 {
 	int success;
 
-	dprintf(("PyThread_down_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_down_sema(%p) called\n",  sema));
 	if (waitflag)
 		success = uspsema((usema_t *) sema);
 	else
 		success = uscpsema((usema_t *) sema);
 	if (success < 0)
 		perror(waitflag ? "uspsema" : "uscpsema");
-	dprintf(("PyThread_down_sema(%lx) return\n", (long) sema));
+	dprintf(("PyThread_down_sema(%p) return\n",  sema));
 	return success;
 }
 
 void PyThread_up_sema _P1(sema, PyThread_type_sema sema)
 {
-	dprintf(("PyThread_up_sema(%lx)\n", (long) sema));
+	dprintf(("PyThread_up_sema(%p)\n",  sema));
 	if (usvsema((usema_t *) sema) < 0)
 		perror("usvsema");
 }

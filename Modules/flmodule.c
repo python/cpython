@@ -435,8 +435,8 @@ generic_repr(g)
 	genericobject *g;
 {
 	char buf[100];
-	sprintf(buf, "<FORMS_object at %lx, objclass=%d>",
-		(long)g, g->ob_generic->objclass);
+	sprintf(buf, "<FORMS_object at %p, objclass=%d>",
+		g, g->ob_generic->objclass);
 	return PyString_FromString(buf);
 }
 
@@ -1906,8 +1906,8 @@ form_repr(f)
 	formobject *f;
 {
 	char buf[100];
-	sprintf(buf, "<FORMS_form at %lx, window=%ld>",
-		(long)f, f->ob_form->window);
+	sprintf(buf, "<FORMS_form at %p, window=%ld>",
+		f, f->ob_form->window);
 	return PyString_FromString(buf);
 }
 

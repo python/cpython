@@ -262,7 +262,7 @@ mpz_format(objp, base, withname)
 
 #ifdef MPZ_DEBUG
 	fprintf(stderr,
-		"mpz_format: cp (str end) 0x%x, begin 0x%x, diff %d, i %d\n",
+		"mpz_format: cp (str end) %p, begin %p, diff %d, i %d\n",
 		cp, PyString_AS_STRING(strobjp),
 		cp - PyString_AS_STRING(strobjp), i);
 #endif /* def MPZ_DEBUG */	
@@ -1765,7 +1765,7 @@ void *mp_allocate( alloc_size )
 		Py_FatalError("mp_allocate failure");
 
 #ifdef MPZ_DEBUG
-	fprintf(stderr, "mp_allocate  :     address 0x%08x\n", res);
+	fprintf(stderr, "mp_allocate  :     address %08p\n", res);
 #endif /* def MPZ_DEBUG */	
 
 	MP_SET_TEST(res,alloc_size);
@@ -1782,7 +1782,7 @@ void *mp_reallocate( ptr, old_size, new_size )
 	void *res;
 
 #ifdef MPZ_DEBUG
-	fprintf(stderr, "mp_reallocate: old address 0x%08x, old size %ld\n",
+	fprintf(stderr, "mp_reallocate: old address %08p, old size %ld\n",
 		ptr, old_size);
 #endif /* def MPZ_DEBUG */	
 
@@ -1792,7 +1792,7 @@ void *mp_reallocate( ptr, old_size, new_size )
 		Py_FatalError("mp_reallocate failure");
 
 #ifdef MPZ_DEBUG
-	fprintf(stderr, "mp_reallocate: new address 0x%08x, new size %ld\n",
+	fprintf(stderr, "mp_reallocate: new address %08p, new size %ld\n",
 		res, new_size);
 #endif /* def MPZ_DEBUG */	
 
@@ -1808,7 +1808,7 @@ void mp_free( ptr, size )
 {
 
 #ifdef MPZ_DEBUG
-	fprintf(stderr, "mp_free      : old address 0x%08x, old size %ld\n",
+	fprintf(stderr, "mp_free      : old address %08p, old size %ld\n",
 		ptr, size);
 #endif /* def MPZ_DEBUG */	
 

@@ -272,7 +272,7 @@ PyThread_type_lock PyThread_allocate_lock _P0()
 		}
 	}
 
-	dprintf(("PyThread_allocate_lock() -> %lx\n", (long)lock));
+	dprintf(("PyThread_allocate_lock() -> %p\n", lock));
 	return (PyThread_type_lock) lock;
 }
 
@@ -281,7 +281,7 @@ void PyThread_free_lock _P1(lock, PyThread_type_lock lock)
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("PyThread_free_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_free_lock(%p) called\n", lock));
 
 	status = pthread_mutex_destroy( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_destroy");
@@ -298,7 +298,7 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("PyThread_acquire_lock(%lx, %d) called\n", (long)lock, waitflag));
+	dprintf(("PyThread_acquire_lock(%p, %d) called\n", lock, waitflag));
 
 	status = pthread_mutex_lock( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_lock[1]");
@@ -325,7 +325,7 @@ int PyThread_acquire_lock _P2(lock, PyThread_type_lock lock, waitflag, int waitf
 		success = 1;
 	}
 	if (error) success = 0;
-	dprintf(("PyThread_acquire_lock(%lx, %d) -> %d\n", (long)lock, waitflag, success));
+	dprintf(("PyThread_acquire_lock(%p, %d) -> %d\n", lock, waitflag, success));
 	return success;
 }
 
@@ -334,7 +334,7 @@ void PyThread_release_lock _P1(lock, PyThread_type_lock lock)
 	pthread_lock *thelock = (pthread_lock *)lock;
 	int status, error = 0;
 
-	dprintf(("PyThread_release_lock(%lx) called\n", (long)lock));
+	dprintf(("PyThread_release_lock(%p) called\n", lock));
 
 	status = pthread_mutex_lock( &thelock->mut );
 	CHECK_STATUS("pthread_mutex_lock[3]");
@@ -382,7 +382,7 @@ PyThread_type_sema PyThread_allocate_sema _P1(value, int value)
 			sema = NULL;
 		}
 	}
-	dprintf(("PyThread_allocate_sema() -> %lx\n", (long) sema));
+	dprintf(("PyThread_allocate_sema() -> %p\n",  sema));
 	return (PyThread_type_sema) sema;
 }
 
@@ -391,7 +391,7 @@ void PyThread_free_sema _P1(sema, PyThread_type_sema sema)
 	int status, error = 0;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("PyThread_free_sema(%lx) called\n", (long) sema));
+	dprintf(("PyThread_free_sema(%p) called\n",  sema));
 	status = pthread_cond_destroy(&thesema->cond);
 	CHECK_STATUS("pthread_cond_destroy");
 	status = pthread_mutex_destroy(&thesema->mutex);
@@ -404,7 +404,7 @@ int PyThread_down_sema _P2(sema, PyThread_type_sema sema, waitflag, int waitflag
 	int status, error = 0, success;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("PyThread_down_sema(%lx, %d) called\n", (long) sema, waitflag));
+	dprintf(("PyThread_down_sema(%p, %d) called\n",  sema, waitflag));
 	status = pthread_mutex_lock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_lock");
 	if (waitflag) {
@@ -424,7 +424,7 @@ int PyThread_down_sema _P2(sema, PyThread_type_sema sema, waitflag, int waitflag
 		success = 0;
 	status = pthread_mutex_unlock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_unlock");
-	dprintf(("PyThread_down_sema(%lx) return\n", (long) sema));
+	dprintf(("PyThread_down_sema(%p) return\n",  sema));
 	return success;
 }
 
@@ -433,7 +433,7 @@ void PyThread_up_sema _P1(sema, PyThread_type_sema sema)
 	int status, error = 0;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
-	dprintf(("PyThread_up_sema(%lx)\n", (long) sema));
+	dprintf(("PyThread_up_sema(%p)\n",  sema));
 	status = pthread_mutex_lock(&thesema->mutex);
 	CHECK_STATUS("pthread_mutex_lock");
 	thesema->value++;

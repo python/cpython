@@ -229,12 +229,12 @@ PyObject_Print(op, fp, flags)
 	}
 	else {
 		if (op->ob_refcnt <= 0)
-			fprintf(fp, "<refcnt %u at %lx>",
-				op->ob_refcnt, (long)op);
+			fprintf(fp, "<refcnt %u at %p>",
+				op->ob_refcnt, op);
 		else if (op->ob_type->tp_print == NULL) {
 			if (op->ob_type->tp_repr == NULL) {
-				fprintf(fp, "<%s object at %lx>",
-					op->ob_type->tp_name, (long)op);
+				fprintf(fp, "<%s object at %p>",
+					op->ob_type->tp_name, op);
 			}
 			else {
 				PyObject *s;
@@ -280,8 +280,8 @@ PyObject_Repr(v)
 		return PyString_FromString("<NULL>");
 	else if (v->ob_type->tp_repr == NULL) {
 		char buf[120];
-		sprintf(buf, "<%.80s object at %lx>",
-			v->ob_type->tp_name, (long)v);
+		sprintf(buf, "<%.80s object at %p>",
+			v->ob_type->tp_name, v);
 		return PyString_FromString(buf);
 	}
 	else {

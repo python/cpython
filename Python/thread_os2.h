@@ -141,14 +141,14 @@ PyThread_type_lock PyThread_allocate_lock(void)
                     0,     /* shared ?      */
                     0);    /* initial state */  
 
-  dprintf(("%ld: PyThread_allocate_lock() -> %lx\n", PyThread_get_thread_ident(), (long)aLock));
+  dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
 
   return (PyThread_type_lock) aLock;
 }
 
 void PyThread_free_lock(PyThread_type_lock aLock)
 {
-  dprintf(("%ld: PyThread_free_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+  dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
   DosCloseMutexSem((HMTX)aLock);
 }
@@ -166,8 +166,8 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
   PID   pid = 0;
   TID   tid = 0;
 
-  dprintf(("%ld: PyThread_acquire_lock(%lx, %d) called\n", PyThread_get_thread_ident(),
-           (long)aLock, waitflag));
+  dprintf(("%ld: PyThread_acquire_lock(%p, %d) called\n", PyThread_get_thread_ident(),
+           aLock, waitflag));
 
   DosQueryMutexSem((HMTX)aLock,&pid,&tid,&count);
   if( tid == PyThread_get_thread_ident() ) { /* if we own this lock */
@@ -181,19 +181,19 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
     }
   }
 
-  dprintf(("%ld: PyThread_acquire_lock(%lx, %d) -> %d\n",
-           PyThread_get_thread_ident(),(long)aLock, waitflag, success));
+  dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n",
+           PyThread_get_thread_ident(),aLock, waitflag, success));
 
   return success;
 }
 
 void PyThread_release_lock(PyThread_type_lock aLock)
 {
-  dprintf(("%ld: PyThread_release_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+  dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
   if ( DosReleaseMutexSem( (HMTX) aLock ) != 0 ) {
-    dprintf(("%ld: Could not PyThread_release_lock(%lx) error: %l\n",
-             PyThread_get_thread_ident(), (long)aLock, GetLastError()));
+    dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n",
+             PyThread_get_thread_ident(), aLock, GetLastError()));
   }
 }
 
@@ -217,5 +217,5 @@ int PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
 
 void PyThread_up_sema(PyThread_type_sema aSemaphore)
 {
-  dprintf(("%ld: PyThread_up_sema(%lx)\n", PyThread_get_thread_ident(), (long)aSemaphore));
+  dprintf(("%ld: PyThread_up_sema(%p)\n", PyThread_get_thread_ident(), aSemaphore));
 }

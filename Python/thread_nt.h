@@ -273,14 +273,14 @@ PyThread_type_lock PyThread_allocate_lock(void)
 
 	aLock = AllocNonRecursiveMutex() ;
 
-	dprintf(("%ld: PyThread_allocate_lock() -> %lx\n", PyThread_get_thread_ident(), (long)aLock));
+	dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
 
 	return (PyThread_type_lock) aLock;
 }
 
 void PyThread_free_lock(PyThread_type_lock aLock)
 {
-	dprintf(("%ld: PyThread_free_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+	dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
 	FreeNonRecursiveMutex(aLock) ;
 }
@@ -295,21 +295,21 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 {
 	int success ;
 
-	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) called\n", PyThread_get_thread_ident(),(long)aLock, waitflag));
+	dprintf(("%ld: PyThread_acquire_lock(%p, %d) called\n", PyThread_get_thread_ident(),aLock, waitflag));
 
 	success = aLock && EnterNonRecursiveMutex((PNRMUTEX) aLock, (waitflag == 1 ? INFINITE : 0)) == WAIT_OBJECT_0 ;
 
-	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) -> %d\n", PyThread_get_thread_ident(),(long)aLock, waitflag, success));
+	dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n", PyThread_get_thread_ident(),aLock, waitflag, success));
 
 	return success;
 }
 
 void PyThread_release_lock(PyThread_type_lock aLock)
 {
-	dprintf(("%ld: PyThread_release_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+	dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
 	if (!(aLock && LeaveNonRecursiveMutex((PNRMUTEX) aLock)))
-		dprintf(("%ld: Could not PyThread_release_lock(%lx) error: %l\n", PyThread_get_thread_ident(), (long)aLock, GetLastError()));
+		dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
 
 /*
@@ -328,14 +328,14 @@ PyThread_type_sema PyThread_allocate_sema(int value)
 	                              INT_MAX,        /* Maximum value                */
 	                              NULL);          /* Name of semaphore            */
 
-	dprintf(("%ld: PyThread_allocate_sema() -> %lx\n", PyThread_get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_allocate_sema() -> %p\n", PyThread_get_thread_ident(), aSemaphore));
 
 	return (PyThread_type_sema) aSemaphore;
 }
 
 void PyThread_free_sema(PyThread_type_sema aSemaphore)
 {
-	dprintf(("%ld: PyThread_free_sema(%lx) called\n", PyThread_get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_free_sema(%p) called\n", PyThread_get_thread_ident(), aSemaphore));
 
 	CloseHandle((HANDLE) aSemaphore);
 }
@@ -347,11 +347,11 @@ int PyThread_down_sema(PyThread_type_sema aSemaphore, int waitflag)
 {
 	DWORD waitResult;
 
-	dprintf(("%ld: PyThread_down_sema(%lx) called\n", PyThread_get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_down_sema(%p) called\n", PyThread_get_thread_ident(), aSemaphore));
 
 	waitResult = WaitForSingleObject( (HANDLE) aSemaphore, INFINITE);
 
-	dprintf(("%ld: PyThread_down_sema(%lx) return: %l\n", PyThread_get_thread_ident(),(long) aSemaphore, waitResult));
+	dprintf(("%ld: PyThread_down_sema(%p) return: %l\n", PyThread_get_thread_ident(), aSemaphore, waitResult));
 	return 0;
 }
 
@@ -362,5 +362,5 @@ void PyThread_up_sema(PyThread_type_sema aSemaphore)
                 1,                              /* increment count by one                       */
                 NULL);                          /* not interested in previous count             */
                                                 
-	dprintf(("%ld: PyThread_up_sema(%lx)\n", PyThread_get_thread_ident(), (long)aSemaphore));
+	dprintf(("%ld: PyThread_up_sema(%p)\n", PyThread_get_thread_ident(), aSemaphore));
 }

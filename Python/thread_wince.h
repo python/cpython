@@ -144,14 +144,14 @@ PyThread_type_lock PyThread_allocate_lock(void)
 						1,              /* Is initially signalled  */
                         NULL);          /* Name of event            */
 
-    dprintf(("%ld: PyThread_allocate_lock() -> %lx\n", PyThread_get_thread_ident(), (long)aLock));
+    dprintf(("%ld: PyThread_allocate_lock() -> %p\n", PyThread_get_thread_ident(), aLock));
 
     return (PyThread_type_lock) aLock;
 }
 
 void PyThread_free_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%ld: PyThread_free_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+    dprintf(("%ld: PyThread_free_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
     CloseHandle(aLock);
 }
@@ -167,7 +167,7 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
     int success = 1;
     DWORD waitResult;
 
-    dprintf(("%ld: PyThread_acquire_lock(%lx, %d) called\n", PyThread_get_thread_ident(),(long)aLock, waitflag));
+    dprintf(("%ld: PyThread_acquire_lock(%p, %d) called\n", PyThread_get_thread_ident(),aLock, waitflag));
 
 #ifndef DEBUG
     waitResult = WaitForSingleObject(aLock, (waitflag == 1 ? INFINITE : 0));
@@ -185,17 +185,17 @@ int PyThread_acquire_lock(PyThread_type_lock aLock, int waitflag)
 		success = 0;    /* We failed */
     }
 
-	dprintf(("%ld: PyThread_acquire_lock(%lx, %d) -> %d\n", PyThread_get_thread_ident(),(long)aLock, waitflag, success));
+	dprintf(("%ld: PyThread_acquire_lock(%p, %d) -> %d\n", PyThread_get_thread_ident(),aLock, waitflag, success));
 
 	return success;
 }
 
 void PyThread_release_lock(PyThread_type_lock aLock)
 {
-    dprintf(("%ld: PyThread_release_lock(%lx) called\n", PyThread_get_thread_ident(),(long)aLock));
+    dprintf(("%ld: PyThread_release_lock(%p) called\n", PyThread_get_thread_ident(),aLock));
 
     if (!SetEvent(aLock))
-        dprintf(("%ld: Could not PyThread_release_lock(%lx) error: %l\n", PyThread_get_thread_ident(), (long)aLock, GetLastError()));
+        dprintf(("%ld: Could not PyThread_release_lock(%p) error: %l\n", PyThread_get_thread_ident(), aLock, GetLastError()));
 }
 
 
