@@ -59,7 +59,7 @@ new_instancemethod(PyObject* unused, PyObject* args)
 }
 
 static char new_function_doc[] =
-"Create a function object from (CODE, GLOBALS, [NAME, ARGDEFS]).";
+"Create a function object from (CODE, GLOBALS, [NAME [, ARGDEFS]]).";
 
 static PyObject *
 new_function(PyObject* unused, PyObject* args)
