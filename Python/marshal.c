@@ -55,7 +55,7 @@ typedef struct {
 			   else w_more(c, p)
 
 static void
-w_more(char c, WFILE *p)
+w_more(int c, WFILE *p)
 {
 	int size, newsize;
 	if (p->str == NULL)
@@ -69,7 +69,7 @@ w_more(char c, WFILE *p)
 		p->ptr = PyString_AS_STRING((PyStringObject *)p->str) + size;
 		p->end =
 			PyString_AS_STRING((PyStringObject *)p->str) + newsize;
-		*p->ptr++ = c;
+		*p->ptr++ = (char) c;
 	}
 }
 
