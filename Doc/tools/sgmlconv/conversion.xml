@@ -38,6 +38,9 @@
     <attribute name="href" optional="yes"/>
     <content/>
     </macro>
+  <macro name="pep">
+    <attribute name="num"/>
+    </macro>
   <macro name="rfc">
     <attribute name="num"/>
     </macro>
@@ -455,6 +458,10 @@
     <!-- not used anywhere, but it's a standard LaTeXism -->
     <attribute name="spaces">visible</attribute>
     </environment>
+  <macro name="verbatiminput" ouptutname="input">
+    <attribute name="verbatim">yes</attribute>
+    <attribute name="source"/>
+    </macro>
 
   <!-- Table markup. -->
   <macro name="hline"/>
@@ -658,7 +665,10 @@
     <attribute name="token"/>
     <content/>
     </macro>
-  <macro name="token">
+  <macro name="token" outputname="grammartoken">
+    <content/>
+    </macro>
+  <macro name="grammartoken">
     <content/>
     </macro>
   <macro name="orgroup">
@@ -766,7 +776,7 @@
     </macro>
   <macro name="ulink">
     <!-- order of the parameters makes this difficult;
-         we'll need to fix it up tp <ulink href="...">...</ulink>
+         we'll need to fix it up to <ulink href="...">...</ulink>
          in docfixer.py.
       -->
     <child name="text"/>
@@ -830,6 +840,9 @@
     </macro>
   <macro name="textasciitilde" outputname="">
     <text>~</text>
+    </macro>
+  <macro name="textbackslash" outputname="">
+    <text>\</text>
     </macro>
   <macro name="textbar" outputname="">
     <text>|</text>
