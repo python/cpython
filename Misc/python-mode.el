@@ -1579,6 +1579,11 @@ the new line indented."
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
+	(let ((skip (nth 3 (parse-partial-sexp bod (point)))))
+	  (while skip
+	    (py-safe (search-backward (make-string 1 skip)))
+	    (setq skip (nth 3 (parse-partial-sexp bod (point))))))
+	;; now skip backward over continued lines
 	(py-goto-initial-line)
 	(+ (current-indentation)
 	   (if (py-statement-opens-block-p)
@@ -2527,8 +2532,11 @@ local bindings to py-newline-and-indent."))
 ;; blocks, whether of the backslash or open-bracket varieties, or a
 ;; mix of the two.  The following manages to do that in the usual
 ;; cases.
+;;
+;; Also, if we're sitting inside a triple quoted string, this will
+;; drop us at the line that begins the string.
 (defun py-goto-initial-line ()
-  (let ( open-bracket-pos )
+  (let (open-bracket-pos state strchr bod done)
     (while (py-continuation-line-p)
       (beginning-of-line)
       (if (py-backslash-continuation-line-p)
