@@ -120,6 +120,7 @@ setlistitem(op, i, newitem)
 	register object *newitem;
 {
 	register object *olditem;
+	register object **p;
 	if (!is_listobject(op)) {
 		XDECREF(newitem);
 		err_badcall();
@@ -130,8 +131,9 @@ setlistitem(op, i, newitem)
 		err_setstr(IndexError, "list assignment index out of range");
 		return -1;
 	}
-	olditem = ((listobject *)op) -> ob_item[i];
-	((listobject *)op) -> ob_item[i] = newitem;
+	p = ((listobject *)op) -> ob_item + i;
+	olditem = *p;
+	*p = newitem;
 	XDECREF(olditem);
 	return 0;
 }

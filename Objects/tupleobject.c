@@ -119,9 +119,10 @@ int
 settupleitem(op, i, newitem)
 	register object *op;
 	register int i;
-	register object *newitem;
+	object *newitem;
 {
 	register object *olditem;
+	register object **p;
 	if (!is_tupleobject(op)) {
 		XDECREF(newitem);
 		err_badcall();
@@ -132,8 +133,9 @@ settupleitem(op, i, newitem)
 		err_setstr(IndexError, "tuple assignment index out of range");
 		return -1;
 	}
-	olditem = ((tupleobject *)op) -> ob_item[i];
-	((tupleobject *)op) -> ob_item[i] = newitem;
+	p = ((tupleobject *)op) -> ob_item + i;
+	olditem = *p;
+	*p = newitem;
 	XDECREF(olditem);
 	return 0;
 }

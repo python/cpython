@@ -133,7 +133,7 @@ lookmapping(mp, key, hash)
 	   and 0 < incr < ma_size and both are a function of hash */
 	i = sum % mp->ma_size;
 	do {
-		sum = sum + sum + sum + 1;
+		sum = 3*sum + 1;
 		incr = sum % mp->ma_size;
 	} while (incr == 0);
 	for (;;) {
