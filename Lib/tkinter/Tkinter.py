@@ -3,6 +3,7 @@
 import tkinter
 from tkinter import TclError
 from types import *
+from Tkconstants import *
 
 CallableTypes = (FunctionType, MethodType,
 		 BuiltinFunctionType, BuiltinMethodType)
@@ -12,64 +13,6 @@ TclVersion = eval(tkinter.TCL_VERSION)
 if TkVersion < 4.0:
     raise ImportError, "This version of Tkinter.py requires Tk 4.0 or higher"
 
-# Symbolic constants
-
-# Booleans
-NO=FALSE=OFF=0
-YES=TRUE=ON=1
-
-# -anchor
-N='n'
-S='s'
-W='w'
-E='e'
-NW='nw'
-SW='sw'
-NE='ne'
-SE='se'
-CENTER='center'
-
-# -fill
-NONE='none'
-X='x'
-Y='y'
-BOTH='both'
-
-# -side
-LEFT='left'
-TOP='top'
-RIGHT='right'
-BOTTOM='bottom'
-
-# -relief
-RAISED='raised'
-SUNKEN='sunken'
-FLAT='flat'
-RIDGE='ridge'
-GROOVE='groove'
-
-# -orient
-HORIZONTAL='horizontal'
-VERTICAL='vertical'
-
-# -tabs
-NUMERIC='numeric'
-
-# -wrap
-CHAR='char'
-WORD='word'
-
-# -align
-BASELINE='baseline'
-
-# Special tags, marks and insert positions
-SEL='sel'
-SEL_FIRST='sel.first'
-SEL_LAST='sel.last'
-END='end'
-INSERT='insert'
-CURRENT='current'
-ANCHOR='anchor'
 
 def _flatten(tuple):
 	res = ()
@@ -461,6 +404,7 @@ class Misc:
 			cnf = _cnfmerge(cnf)
 		res = ()
 		for k, v in cnf.items():
+			if k[-1] == '_': k = k[:-1]
 			if type(v) in CallableTypes:
 				v = self._register(v)
 			res = res + ('-'+k, v)
@@ -481,13 +425,13 @@ class Misc:
 			name = tail
 		return w
 	def _register(self, func, subst=None):
-		f = _CallSafely(func, subst).__call__
+		f = CallWrapper(func, subst, self).__call__
 		name = `id(f)`
 		if hasattr(func, 'im_func'):
 			func = func.im_func
-		if hasattr(func, 'func_name') and \
-		   type(func.func_name) == type(''):
-			name = name + func.func_name
+		if hasattr(func, '__name__') and \
+		   type(func.__name__) == type(''):
+			name = name + func.__name__
 		self.tk.createcommand(name, f)
 		return name
 	register = _register
@@ -525,25 +469,26 @@ class Misc:
 		e.x_root = tk.getint(X)
 		e.y_root = tk.getint(Y)
 		return (e,)
+	def _report_exception(self):
+		import sys
+		exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+		root = self._root()
+		root.report_callback_exception(exc, val, tb)
 
-class _CallSafely:
-	def __init__(self, func, subst=None):
+class CallWrapper:
+	def __init__(self, func, subst, widget):
 		self.func = func
 		self.subst = subst
+		self.widget = widget
 	def __call__(self, *args):
-		if self.subst:
-			args = self.apply_func(self.subst, args)
-		args = self.apply_func(self.func, args)
-	def apply_func(self, func, args):
-		import sys
 		try:
-			return apply(func, args)
+			if self.subst:
+				args = apply(self.subst, args)
+			return apply(self.func, args)
 		except SystemExit, msg:
 			raise SystemExit, msg
 		except:
-			import traceback
-			print "Exception in Tkinter callback"
-			traceback.print_exc()
+			self.widget._report_exception()
 
 class Wm:
 	def aspect(self, 
@@ -618,6 +563,7 @@ class Wm:
 class Tk(Misc, Wm):
 	_w = '.'
 	def __init__(self, screenName=None, baseName=None, className='Tk'):
+		global _default_root
 		self.master = None
 		self.children = {}
 		if baseName is None:
@@ -628,6 +574,8 @@ class Tk(Misc, Wm):
 		self.tk.createcommand('tkerror', _tkerror)
 		self.tk.createcommand('exit', _exit)
 		self.readprofile(baseName, className)
+		if not _default_root:
+			_default_root = self
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
 		self.tk.call('destroy', self._w)
@@ -657,6 +605,10 @@ class Tk(Misc, Wm):
 		if os.path.isfile(base_py):
 			print 'execfile', `base_py`
 			execfile(base_py, dir)
+	def report_callback_exception(self, exc, val, tb):
+		import traceback
+		print "Exception in Tkinter callback"
+		traceback.print_exception(exc, val, tb)
 
 class Pack:
 	def config(self, cnf={}, **kw):
@@ -682,7 +634,7 @@ class Pack:
 	info = newinfo
 	_noarg_ = ['_noarg_']
 	def propagate(self, flag=_noarg_):
-		if boolean is Pack._noarg_:
+		if flag is Pack._noarg_:
 			return self._getboolean(self.tk.call(
 				'pack', 'propagate', self._w))
 		else:
