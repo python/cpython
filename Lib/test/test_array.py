@@ -844,10 +844,6 @@ class FPTest(NumberTest):
     def assertEntryEqual(self, entry1, entry2):
         self.assertAlmostEqual(entry1, entry2)
 
-class FloatTest(FPTest):
-    typecode = 'f'
-    minitemsize = 4
-
     def test_byteswap(self):
         a = array.array(self.typecode, self.example)
         self.assertRaises(TypeError, a.byteswap, 42)
@@ -864,6 +860,9 @@ class FloatTest(FPTest):
             b.byteswap()
             self.assertEqual(a, b)
 
+class FloatTest(FPTest):
+    typecode = 'f'
+    minitemsize = 4
 tests.append(FloatTest)
 
 class DoubleTest(FPTest):
@@ -876,6 +875,3 @@ def test_main():
 
 if __name__=="__main__":
     test_main()
-
-
-#main()
