@@ -28,16 +28,17 @@ import cvsinfo
 
 
 quiet = 0
-rx = re.compile(r":ext:(?:[a-zA-Z0-9]+)@cvs\.([a-zA-Z0-9]+).sourceforge.net:"
+rx = re.compile(r":ext:(?:[a-zA-Z0-9]+@)?cvs\.([a-zA-Z0-9]+).sourceforge.net:"
                 r"/cvsroot/\1")
 
 
 def main():
      global quiet
+     anonymous = False
      try:
-          opts, args = getopt.getopt(sys.argv[1:], "abgtzq",
+          opts, args = getopt.getopt(sys.argv[1:], "Aabgtzq",
                                      ["all", "bzip2", "gzip", "tools", "zip",
-                                      "quiet"])
+                                      "quiet", "anonymous"])
      except getopt.error, e:
           usage(warning=str(e))
           sys.exit(2)
@@ -61,6 +62,8 @@ def main():
                formats["bzip2"] = 1
                formats["gzip"] = 1
                formats["zip"] = 1
+          elif opt in ("-A", "--anonymous"):
+               anonymous = True
      if formats:
           # make order human-predictable
           formats = formats.keys()
@@ -80,7 +83,7 @@ def main():
      info = cvsinfo.RepositoryInfo(mydir)
      cvsroot = info.get_cvsroot()
      m = rx.match(cvsroot)
-     if m:
+     if m and anonymous:
           # If this is an authenticated SourceForge repository, convert to
           # anonymous usage for the export/checkout, since that avoids the
           # SSH overhead.
