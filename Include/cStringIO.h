@@ -2,7 +2,7 @@
 #define CSTRINGIO_INCLUDED
 /*
 
-  cStringIO.h,v 1.3 1997/06/13 19:44:02 jim Exp
+  cStringIO.h,v 1.4 1997/12/07 14:27:00 jim Exp
 
   cStringIO C API
 
@@ -68,18 +68,6 @@
     PycStringIO_IMPORT
 
   This would typically be done in your init function.
-
-  cStringIO.h,v
-  Revision 1.3  1997/06/13 19:44:02  jim
-  - changed to avoid warning of multiple declarations in 1.5 and
-    our 1.4.
-
-  Revision 1.2  1997/01/27 14:13:05  jim
-  Changed the way the C API was exported.
-
-  Revision 1.1  1997/01/02 15:18:36  chris
-  initial version
-
 
 */
 
