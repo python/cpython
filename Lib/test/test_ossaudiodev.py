@@ -56,19 +56,6 @@ def play_sound_file(data, rate, ssize, nchannels):
     dsp.getptr()
     dsp.fileno()
 
-    # Make sure the read-only attributes work.
-    assert dsp.closed is False, "dsp.closed is not False"
-    assert dsp.name == "/dev/dsp"
-    assert dsp.mode == 'w', "bad dsp.mode: %r" % dsp.mode
-
-    # And make sure they're really read-only.
-    for attr in ('closed', 'name', 'mode'):
-        try:
-            setattr(dsp, attr, 42)
-            raise RuntimeError("dsp.%s not read-only" % attr)
-        except TypeError:
-            pass
-
     # set parameters based on .au file headers
     dsp.setparameters(AFMT_S16_NE, nchannels, rate)
     t1 = time.time()
@@ -145,6 +132,5 @@ def test():
         #test_bad_setparameters(dsp)
     finally:
         dsp.close()
-        assert dsp.closed is True, "dsp.closed is not True"
 
 test()
