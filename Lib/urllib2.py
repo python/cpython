@@ -997,8 +997,20 @@ class AbstractHTTPHandler(BaseHandler):
             raise URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
-        # object initialized properly
-        resp = addinfourl(r.fp, r.msg, req.get_full_url())
+        # object initialized properly.
+
+        # Wrap the HTTPResponse object in socket's file object adapter
+        # for Windows.  That adapter calls recv(), so delegate recv()
+        # to read().  This weird wrapping allows the returned object to
+        # have readline() and readlines() methods.
+        
+        # XXX It might be better to extract the read buffering code
+        # out of socket._fileobject() and into a base class.
+        
+        r.recv = r.read
+        fp = socket._fileobject(r)
+        
+        resp = addinfourl(fp, r.msg, req.get_full_url())
         resp.code = r.status
         resp.msg = r.reason
         return resp

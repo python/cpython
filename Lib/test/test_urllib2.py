@@ -423,6 +423,8 @@ class HandlerTests(unittest.TestCase):
                 self.msg = msg
                 self.status = status
                 self.reason = reason
+            def read(self):
+                return ''
         class MockHTTPClass:
             def __init__(self):
                 self.req_headers = []
