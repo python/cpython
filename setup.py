@@ -92,7 +92,7 @@ class PyBuildExt(build_ext):
         
         # Platform-dependent module source and include directories
         platform = self.get_platform()
-        if platform == 'darwin1':
+        if platform == 'darwin':
             # Mac OS X also includes some mac-specific modules
             macmoddir = os.path.join(os.getcwd(), srcdir, 'Mac/Modules')
             moddirlist.append(macmoddir)
@@ -177,6 +177,8 @@ class PyBuildExt(build_ext):
             platform = 'cygwin'
         elif platform[:4] =='beos':
             platform = 'beos'
+        elif platform[:6] == 'darwin':
+            platform = 'darwin'
 
         return platform
 
@@ -203,7 +205,7 @@ class PyBuildExt(build_ext):
         
         # Check for MacOS X, which doesn't need libm.a at all
         math_libs = ['m']
-        if platform in ['Darwin1.2', 'beos']:
+        if platform in ['darwin', 'beos']:
             math_libs = []
         
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
@@ -459,7 +461,7 @@ class PyBuildExt(build_ext):
             curses_libs = ['ncurses']
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
-        elif (self.compiler.find_library_file(lib_dirs, 'curses')) and platform != 'darwin1':
+        elif (self.compiler.find_library_file(lib_dirs, 'curses')) and platform != 'darwin':
         	# OSX has an old Berkeley curses, not good enough for the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
@@ -561,7 +563,7 @@ class PyBuildExt(build_ext):
             # SunOS specific modules
             exts.append( Extension('sunaudiodev', ['sunaudiodev.c']) )
         
-        if platform == 'darwin1':
+        if platform == 'darwin':
             # Mac OS X specific modules. These are ported over from MacPython
             # and still experimental. Some (such as gestalt or icglue) are
             # already generally useful, some (the GUI ones) really need to
