@@ -297,7 +297,45 @@ static void BMObj_dealloc(self)
 	PyMem_DEL(self);
 }
 
+static PyObject *BMObj_getdata(_self, _args)
+	BitMapObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	int from, length;
+	char *cp;
+
+	if ( !PyArg_ParseTuple(_args, "ii", &from, &length) )
+		return NULL;
+	cp = _self->ob_itself->baseAddr+from;
+	return PyString_FromStringAndSize(cp, length);
+
+}
+
+static PyObject *BMObj_putdata(_self, _args)
+	BitMapObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+
+	int from, length;
+	char *cp, *icp;
+
+	if ( !PyArg_ParseTuple(_args, "is#", &from, &icp, &length) )
+		return NULL;
+	cp = _self->ob_itself->baseAddr+from;
+	memcpy(cp, icp, length);
+	Py_INCREF(Py_None);
+	return Py_None;
+
+}
+
 static PyMethodDef BMObj_methods[] = {
+	{"getdata", (PyCFunction)BMObj_getdata, 1,
+	 "(int start, int size) -> string. Return bytes from the bitmap"},
+	{"putdata", (PyCFunction)BMObj_putdata, 1,
+	 "(int start, string data). Store bytes into the bitmap"},
 	{NULL, NULL, 0}
 };
 
