@@ -32,7 +32,6 @@ PERFORMANCE OF THIS SOFTWARE.
 /* fcntl module */
 
 #include "Python.h"
-/*#include "modsupport.h"*/
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
