@@ -16,6 +16,43 @@ AttributesImpl = xmlreader.AttributesImpl
 AttributesNSImpl = xmlreader.AttributesNSImpl
 
 import string
+import weakref
+
+# --- ExpatLocator
+
+class ExpatLocator(xmlreader.Locator):
+    """Locator for use with the ExpatParser class.
+
+    This uses a weak reference to the parser object to avoid creating
+    a circular reference between the parser and the content handler.
+    """
+    def __init__(self, parser):
+        self._ref = weakref.ref(parser)
+
+    def getColumnNumber(self):
+        parser = self._ref()
+        if parser is None or parser._parser is None:
+            return None
+        return parser._parser.ErrorColumnNumber
+
+    def getLineNumber(self):
+        parser = self._ref()
+        if parser is None or parser._parser is None:
+            return 1
+        return self._parser.ErrorLineNumber
+
+    def getPublicId(self):
+        parser = self._ref()
+        if parser is None:
+            return None
+        return parser._source.getPublicId()
+
+    def getSystemId(self):
+        parser = self._ref()
+        if parser is None:
+            return None
+        return parser._source.getSystemId()
+
 
 # --- ExpatParser
 
@@ -39,7 +76,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
 
         self._source = source
         self.reset()
-        self._cont_handler.setDocumentLocator(self)
+        self._cont_handler.setDocumentLocator(ExpatLocator(self))
         xmlreader.IncrementalParser.parse(self, source)
 
     def prepareParser(self, source):
