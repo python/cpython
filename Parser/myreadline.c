@@ -84,7 +84,7 @@ my_fgets(char *buf, int len, FILE *fp)
 			int s;
 			PyEval_RestoreThread(_PyOS_ReadlineTState);
 			s = PyErr_CheckSignals();
-			PyThreadState_Swap(NULL);
+			PyEval_SaveThread();
 			if (s < 0) {
 				return 1;
 			}
