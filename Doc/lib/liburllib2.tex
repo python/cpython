@@ -115,7 +115,7 @@ Cause requests to go through a proxy.
 If \var{proxies} is given, it must be a dictionary mapping
 protocol names to URLs of proxies.
 The default is to read the list of proxies from the environment
-variables \envvar{\var{protocol}_proxy}.
+variables \var{protocol}_proxy.
 \end{classdesc}
 
 \begin{classdesc}{HTTPPasswordMgr}{}
@@ -338,7 +338,7 @@ example, \exception{MemoryError} should not be mapped to
 This method will be called before any protocol-specific open method.
 \end{methoddesc}
 
-\begin{methoddesc}[BaseHandler]{\var{protocol}_open}{req}
+\begin{methoddescni}[BaseHandler]{\var{protocol}_open}{req}
 This method is \emph{not} defined in \class{BaseHandler}, but
 subclasses should define it if they want to handle URLs with the given
 protocol.
@@ -346,7 +346,7 @@ protocol.
 This method, if defined, will be called by the \member{parent} 
 \class{OpenerDirector}.  Return values should be the same as for 
 \method{default_open()}.
-\end{methoddesc}
+\end{methoddescni}
 
 \begin{methoddesc}[BaseHandler]{unknown_open}{req}
 This method is \var{not} defined in \class{BaseHandler}, but
@@ -410,14 +410,14 @@ temporary-redirect response.
 
 \subsection{ProxyHandler Objects \label{proxy-handler}}
 
-\begin{methoddesc}[ProxyHandler]{\var{protocol}_open}{request}
+\begin{methoddescni}[ProxyHandler]{\var{protocol}_open}{request}
 The \class{ProxyHandler} will have a method
 \method{\var{protocol}_open()} for every \var{protocol} which has a
 proxy in the \var{proxies} dictionary given in the constructor.  The
 method will modify requests to go through the proxy, by calling
 \code{request.set_proxy()}, and call the next handler in the chain to
 actually execute the protocol.
-\end{methoddesc}
+\end{methoddescni}
 
 
 \subsection{HTTPPasswordMgr Objects \label{http-password-mgr}}
