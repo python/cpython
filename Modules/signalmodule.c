@@ -199,8 +199,8 @@ signal_pause(self, args)
 	return Py_None;
 }
 static char pause_doc[] =
-"pause()
-
+"pause()\n\
+\n\
 Wait until a signal arrives.";
 
 #endif
