@@ -993,7 +993,9 @@ makeargvobject(int argc, char **argv)
 void
 PySys_SetArgv(int argc, char **argv)
 {
-#ifdef MS_WINDOWS
+#if defined(HAVE_REALPATH)
+	char fullpath[MAXPATHLEN];
+#elif defined(MS_WINDOWS)
 	char fullpath[MAX_PATH];
 #endif
 	PyObject *av = makeargvobject(argc, argv);
@@ -1059,8 +1061,14 @@ PySys_SetArgv(int argc, char **argv)
 			}
 		}
 #else /* All other filename syntaxes */
-		if (argc > 0 && argv0 != NULL)
+		if (argc > 0 && argv0 != NULL) {
+#if defined(HAVE_REALPATH)
+			if (realpath(argv0, fullpath)) {
+				argv0 = fullpath;
+			}
+#endif
 			p = strrchr(argv0, SEP);
+		}
 		if (p != NULL) {
 #ifndef RISCOS
 			n = p + 1 - argv0;

@@ -1843,7 +1843,7 @@ AC_CHECK_FUNCS(alarm chown clock confstr ctermid execv \
  getpriority getpwent getwd \
  hstrerror inet_aton inet_pton kill killpg lchown lstat mkfifo mknod mktime \
  mremap nice pathconf pause plock poll pthread_init \
- putenv readlink \
+ putenv readlink realpath \
  select setegid seteuid setgid \
  setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime \
