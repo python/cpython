@@ -163,6 +163,34 @@ What a mess!
                           "\nexpected %r\n"
                           "but got  %r" % (expect, result))
 
+    def test_unix_options (self):
+        # Test that Unix-style command-line options are wrapped correctly.
+        # Both Optik (OptionParser) and Docutils rely on this behaviour!
+
+        text = "You should use the -n option, or --dry-run in its long form."
+        self.check_wrap(text, 20,
+                        ["You should use the",
+                         "-n option, or --dry-",
+                         "run in its long",
+                         "form."])
+        self.check_wrap(text, 21,
+                        ["You should use the -n",
+                         "option, or --dry-run",
+                         "in its long form."])
+        expect = ["You should use the -n option, or",
+                  "--dry-run in its long form."]
+        self.check_wrap(text, 32, expect)
+        self.check_wrap(text, 34, expect)
+        self.check_wrap(text, 35, expect)
+        self.check_wrap(text, 38, expect)
+        expect = ["You should use the -n option, or --dry-",
+                  "run in its long form."]
+        self.check_wrap(text, 39, expect)
+        self.check_wrap(text, 41, expect)
+        expect = ["You should use the -n option, or --dry-run",
+                  "in its long form."]
+        self.check_wrap(text, 42, expect)
+
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
         # in the comments
