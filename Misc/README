@@ -1,39 +1,30 @@
 Python Misc subdirectory
 ========================
 
-This directory contains files that wouldn't fit in elsewhere, in
-particular the UNIX manual page, an Emacs mode for Python source code,
-and a list of Frequently Asked Questions (and their answers).  Some
+This directory contains files that wouldn't fit in elsewhere.  Some
 documents are only of historic importance.
 
 Files found here
 ----------------
 
 ACKS		Acknowledgements
-AIX-NOTES	Notes for building Python on AIX (all new!)
-BLURB		A quick description of Python for newcomers
-BLURB.LUTZ	A testimonial from a converted Tcl/Perl hacker :-)
-BLURB.WINDOWS	First announcement of Python for Windows
+AIX-NOTES	Notes for building Python on AIX
+BeOS-NOTES	Notes for building on BeOS
+BeOS-setup.py	setup.py replacement for BeOS, see BeOS-NOTES
 HISTORY		News from previous releases -- oldest last
 HPUX-NOTES	Notes about dynamic loading under HP-UX
-HYPE		More hype about Python
-Makefile	Used for administrative chores like cleaning up
-Makefile.pre.in	Generic Makefile template for building extensions
 NEWS		News for this release
 PURIFY.README	Information for Purify users
 Porting		Mini-FAQ on porting to new platforms
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
+RPM		(Old) tools to build RPMs
 cheatsheet	Quick summary of Python by Ken Manheimer
-comparisons	(Old) comparisons to some other languages
-editline-fix	A news article on how to fix R$'s editline for Python
-faq2html	FAQ to HTML converter by Ka-Ping Yee
 find_recursionlimit.py  Script to find a value for sys.maxrecursionlimit
-fixfuncptrs.sh	Shell script to fix function pointer initializers
+gdbinit		Handy stuff to put in your .gdbinit file, if you use gdb
 indent.pro	GNU indent profile approximating my C style
 python-mode.el	Emacs mode for editing Python programs
 python.man	UNIX man page for the python interpreter
-renumber.py	Script to renumber the sections in the FAQ
 setuid-prog.c	C helper program for set-uid Python scripts
 unicode.txt	Marc-Andre Lemburg's specification of the Unicode API
 vgrindefs	Python configuration for vgrind (a generic pretty printer)
