@@ -22,6 +22,8 @@ class ConversionError(Exception):
     pass
 
 
+PARA_ELEMENT = "para"
+
 DEBUG_PARA_FIXER = 0
 
 if DEBUG_PARA_FIXER:
@@ -77,7 +79,17 @@ def find_all_elements(doc, gi):
                 nodes.append(child)
             for node in child.getElementsByTagName(gi):
                 nodes.append(node)
-    return nodes        
+    return nodes
+
+def find_all_elements_from_set(doc, gi_set, nodes=None):
+    if nodes is None:
+        nodes = []
+    if doc.nodeType == ELEMENT and doc.tagName in gi_set:
+        nodes.append(doc)
+    for child in doc.childNodes:
+        if child.nodeType == ELEMENT:
+            find_all_elements_from_set(child, gi_set, nodes)
+    return nodes
 
 
 def simplify(doc, fragment):
@@ -108,7 +120,7 @@ def simplify(doc, fragment):
             docelem.insertBefore(text, docelem.firstChild)
             docelem.insertBefore(node, text)
         docelem.insertBefore(doc.createTextNode("\n"), docelem.firstChild)
-    while fragment.firstChild.nodeType == TEXT:
+    while fragment.firstChild and fragment.firstChild.nodeType == TEXT:
         fragment.removeChild(fragment.firstChild)
 
 
@@ -291,8 +303,8 @@ def handle_appendix(doc, fragment):
         docelem.appendChild(doc.createTextNode("\n"))
 
 
-def handle_labels(doc):
-    for label in find_all_elements(doc, "label"):
+def handle_labels(doc, fragment):
+    for label in find_all_elements(fragment, "label"):
         id = label.getAttribute("id")
         if not id:
             continue
@@ -303,6 +315,11 @@ def handle_labels(doc):
             parent.setAttribute("id", id)
         # now, remove <label id="..."/> from parent:
         parent.removeChild(label)
+        if parent.tagName == "title":
+            parent.normalize()
+            children = parent.childNodes
+            if children[-1].nodeType == TEXT:
+                children[-1].data = string.rstrip(children[-1].data)
 
 
 def fixup_trailing_whitespace(doc, wsmap):
@@ -587,25 +604,27 @@ def move_elements_by_name(doc, source, dest, name, sep=None):
 RECURSE_INTO_PARA_CONTAINERS = (
     "chapter", "abstract", "enumerate",
     "section", "subsection", "subsubsection",
-    "paragraph", "subparagraph",
+    "paragraph", "subparagraph", "back-matter",
     "howto", "manual",
     )
 
 PARA_LEVEL_ELEMENTS = (
     "moduleinfo", "title", "verbatim", "enumerate", "item",
-    "interpreter-session",
+    "interpreter-session", "back-matter", "interactive-session",
     "opcodedesc", "classdesc", "datadesc",
-    "funcdesc", "methoddesc", "excdesc",
+    "funcdesc", "methoddesc", "excdesc", "memberdesc", "membderdescni",
     "funcdescni", "methoddescni", "excdescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
     "sectionauthor", "seealso",
     # include <para>, so we can just do it again to get subsequent paras:
-    "para",
+    PARA_ELEMENT,
     )
 
 PARA_LEVEL_PRECEEDERS = (
     "index", "indexii", "indexiii", "indexiv", "setindexsubitem",
     "stindex", "obindex", "COMMENT", "label", "input", "title",
+    "versionadded", "versionchanged", "declaremodule", "modulesynopsis",
+    "moduleauthor",
     )
 
 
@@ -680,7 +699,7 @@ def build_para(doc, parent, start, i):
         if string.rstrip(data) != data:
             have_last = 0
             child.splitText(len(string.rstrip(data)))
-    para = doc.createElement("para")
+    para = doc.createElement(PARA_ELEMENT)
     prev = None
     indexes = range(start, after)
     indexes.reverse()
@@ -789,6 +808,98 @@ def fixup_verbatims(doc):
             verbatim._node.name = "interactive-session"
 
 
+def add_node_ids(fragment, counter=0):
+    fragment._node.node_id = counter
+    for node in fragment.childNodes:
+        counter = counter + 1
+        if node.nodeType == ELEMENT:
+            counter = add_node_ids(node, counter)
+        else:
+            node._node.node_id = counter
+    return counter + 1
+
+
+REFMODINDEX_ELEMENTS = ('refmodindex', 'refbimodindex',
+                        'refexmodindex', 'refstmodindex')
+
+def fixup_refmodindexes(fragment):
+    # Locate <ref*modindex>...</> co-located with <module>...</>, and
+    # remove the <ref*modindex>, replacing it with index=index on the
+    # <module> element.
+    nodes = find_all_elements_from_set(fragment, REFMODINDEX_ELEMENTS)
+    d = {}
+    for node in nodes:
+        parent = node.parentNode
+        d[parent._node.node_id] = parent
+    del nodes
+    map(fixup_refmodindexes_chunk, d.values())
+
+
+def fixup_refmodindexes_chunk(container):
+    # node is probably a <para>; let's see how often it isn't:
+    if container.tagName != PARA_ELEMENT:
+        sys.stderr.write("--- fixup_refmodindexes_chunk(%s)\n" % container)
+    module_entries = find_all_elements(container, "module")
+    if not module_entries:
+        return
+    index_entries = find_all_elements_from_set(container, REFMODINDEX_ELEMENTS)
+    removes = []
+    for entry in index_entries:
+        children = entry.childNodes
+        if len(children) != 0:
+            sys.stderr.write(
+                "--- unexpected number of children for %s node:\n"
+                % entry.tagName)
+            sys.stderr.write(entry.toxml() + "\n")
+            continue
+        found = 0
+        module_name = entry.getAttribute("name")
+        for node in module_entries:
+            if len(node.childNodes) != 1:
+                continue
+            this_name = node.childNodes[0].data
+            if this_name == module_name:
+                found = 1
+                node.setAttribute("index", "index")
+        if found:
+            removes.append(entry)
+    for node in removes:
+        container.removeChild(node)
+
+
+def fixup_bifuncindexes(fragment):
+    nodes = find_all_elements(fragment, 'bifuncindex')
+    d = {}
+    for node in nodes:
+        parent = node.parentNode
+        d[parent._node.node_id] = parent
+    del nodes
+    map(fixup_bifuncindexes_chunk, d.values())
+
+
+def fixup_bifuncindexes_chunk(container):
+    removes = []
+    entries = find_all_elements(container, "bifuncindex")
+    function_entries = find_all_elements(container, "function")
+    for entry in entries:
+        function_name = entry.getAttribute("name")
+        found = 0
+        for func_entry in function_entries:
+            t2 = func_entry.childNodes[0].data
+            if t2[-2:] != "()":
+                continue
+            t2 = t2[:-2]
+            if t2 == function_name:
+                
+                func_entry.setAttribute("index", "index")
+                func_entry.setAttribute("module", "__builtin__")
+                if not found:
+                    removes.append(entry)
+                    found = 1
+    for entry in removes:
+        container.removeChild(entry)
+
+
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
 
 def write_esis(doc, ofp, knownempty):
@@ -798,7 +909,8 @@ def write_esis(doc, ofp, knownempty):
             gi = node.tagName
             if knownempty(gi):
                 if node.hasChildNodes():
-                    raise ValueError, "declared-empty node has children"
+                    raise ValueError, \
+                          "declared-empty node <%s> has children" % gi
                 ofp.write("e\n")
             for k, v in node.attributes.items():
                 value = v.value
@@ -823,7 +935,7 @@ def convert(ifp, ofp):
     fragment = p.fragment
     normalize(fragment)
     simplify(doc, fragment)
-    handle_labels(fragment)
+    handle_labels(doc, fragment)
     handle_appendix(doc, fragment)
     fixup_trailing_whitespace(doc, {
         "abstract": "\n",
@@ -855,6 +967,9 @@ def convert(ifp, ofp):
     fixup_table_structures(doc, fragment)
     fixup_rfc_references(doc, fragment)
     fixup_signatures(doc, fragment)
+    add_node_ids(fragment)
+    fixup_refmodindexes(fragment)
+    fixup_bifuncindexes(fragment)
     #
     d = {}
     for gi in p.get_empties():
