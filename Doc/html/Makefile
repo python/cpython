@@ -13,15 +13,18 @@ PAPERDIR=$(TOPDIR)/paper-$(PAPER)
 TEXINPUTS=$(TOPDIR)/paper-$(PAPER):$(TOPDIR)/texinputs:
 
 # Where are the various programs?
-PYTHON=		python
-WEBCHECKER=	$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
-MKHTML=		PAPER=$(PAPER) $(TOOLSDIR)/mkhtml.sh
-KPSEWHICH=	TEXINPUTS=$(TEXINPUTS) kpsewhich tex
+PYTHON=	   python
+WEBCHECKER=$(PYTHON) $(TOPDIR)/../Tools/webchecker/webchecker.py
+MKAUX=	   PAPER=$(PAPER) TEXINPUTS=$(TEXINPUTS) $(TOOLSDIR)/mkdvi.sh --aux
+MKHTML=	   PAPER=$(PAPER) $(TOOLSDIR)/mkhtml.sh
+KPSEWHICH= TEXINPUTS=$(TEXINPUTS) kpsewhich tex
 
-BUILDINDEX=	$(TOOLSDIR)/buildindex.py
+BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
 # make it clear to l2h, since our support only generates HTML 4.0
-L2HARGS=	-html_version 4.0
+L2HARGS=   -html_version 4.0
+
+HTMLBASE=  file:`pwd`
 
 INDEXFILES=api/api.html \
 	ext/ext.html \
@@ -72,19 +75,19 @@ tut/tut.html:  $(PAPERDIR)/tut.aux
 include ../Makefile.deps
 
 $(PAPERDIR)/api.aux: $(APIFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) api.dvi)
+	(cd $(PAPERDIR); $(MKAUX) api)
 
 $(PAPERDIR)/ext.aux: $(EXTFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ext.dvi)
+	(cd $(PAPERDIR); $(MKAUX) ext)
 
 $(PAPERDIR)/lib.aux: $(LIBFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) lib.dvi)
+	(cd $(PAPERDIR); $(MKAUX) lib)
 
 $(PAPERDIR)/ref.aux: $(REFFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) ref.dvi)
+	(cd $(PAPERDIR); $(MKAUX) ref)
 
 $(PAPERDIR)/tut.aux: $(TUTFILES)
-	(cd $(PAPERDIR); $(MAKE) PAPER=$(PAPER) tut.dvi)
+	(cd $(PAPERDIR); $(MKAUX) tut)
 
 # copy the icons/ directory over...
 icons:
@@ -92,13 +95,13 @@ icons:
 	cp $(TOPDIR)/icons/*.gif icons/
 
 
-webcheck:
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/api/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ext/
-	$(WEBCHECKER) -m290000 file:`pwd`/$(HTMLDIR)/lib/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/mac/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/ref/
-	$(WEBCHECKER) file:`pwd`/$(HTMLDIR)/tut/
+webcheck: all
+	$(WEBCHECKER) $(HTMLBASE)/api/
+	$(WEBCHECKER) $(HTMLBASE)/ext/
+	$(WEBCHECKER) -m290000 $(HTMLBASE)/lib/
+	$(WEBCHECKER) $(HTMLBASE)/mac/
+	$(WEBCHECKER) $(HTMLBASE)/ref/
+	$(WEBCHECKER) $(HTMLBASE)/tut/
 
 clean:
 	rm -rf icons/ @webchecker.pickle
