@@ -91,6 +91,8 @@ Extension modules
 
 Library
 
+- New Text.dump() method in Tkinter module.
+
 - New distutils commands for building packagers were added to
   support pkgtool on Solaris and swinstall on HP-UX.
 

@@ -2627,7 +2627,6 @@ class Scrollbar(Widget):
 
 class Text(Widget):
     """Text widget which can display text in various forms."""
-    # XXX Add dump()
     def __init__(self, master=None, cnf={}, **kw):
         """Construct a text widget with the parent MASTER.
 
@@ -2671,6 +2670,44 @@ class Text(Widget):
         and baseline position of the visible part of the line containing
         the character at INDEX."""
         return self._getints(self.tk.call(self._w, 'dlineinfo', index))
+    def dump(self, index1, index2=None, command=None, **kw):
+        """Return the contents of the widget between index1 and index2.
+        
+        The type of contents returned in filtered based on the keyword
+        parameters; if 'all', 'image', 'mark', 'tag', 'text', or 'window' are
+        given and true, then the corresponding items are returned. The result
+        is a list of triples of the form (key, value, index). If none of the
+        keywords are true then 'all' is used by default.
+        
+        If the 'command' argument is given, it is called once for each element
+        of the list of triples, with the values of each triple serving as the
+        arguments to the function. In this case the list is not returned."""
+        args = []
+        func_name = None
+        result = None
+        if not command:
+            # Never call the dump command without the -command flag, since the
+            # output could involve Tcl quoting and would be a pain to parse
+            # right. Instead just set the command to build a list of triples
+            # as if we had done the parsing.
+            result = []
+            def append_triple(key, value, index, result=result):
+                result.append((key, value, index))
+            command = append_triple
+        try:
+            if not isinstance(command, str):
+                func_name = command = self._register(command)
+            args += ["-command", command]
+            for key in kw:
+                if kw[key]: args.append("-" + key)
+            args.append(index1)
+            if index2:
+                args.append(index2)
+            self.tk.call(self._w, "dump", *args)
+            return result
+        finally:
+            if func_name:
+                self.deletecommand(func_name)
     def get(self, index1, index2=None):
         """Return the text from INDEX1 to INDEX2 (not included)."""
         return self.tk.call(self._w, 'get', index1, index2)
