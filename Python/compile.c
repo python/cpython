@@ -994,7 +994,6 @@ com_sliceobj(c, n)
 {
 	int i=0;
 	int ns=2; /* number of slice arguments */
-	int first_missing=0;
 	node *ch;
 
 	/* first argument */
@@ -2871,7 +2870,7 @@ optimize(c)
 {
 	unsigned char *next_instr, *cur_instr;
 	int opcode;
-	int oparg;
+	int oparg = 0;
 	object *name;
 	object *error_type, *error_value, *error_traceback;
 	

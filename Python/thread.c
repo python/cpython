@@ -45,6 +45,10 @@ PERFORMANCE OF THIS SOFTWARE.
 extern char *getenv();
 #endif
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #include "thread.h"
 
 #ifdef __ksr__

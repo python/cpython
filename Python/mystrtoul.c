@@ -112,7 +112,7 @@ int		base;
     }
 
 /* do the conversion */
-    while (c = Py_CHARMASK(*str))
+    while ((c = Py_CHARMASK(*str)) != '\0')
     {
 	if (isdigit(c) && c - '0' < base)
 	    c -= '0';
