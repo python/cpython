@@ -219,7 +219,7 @@ Version 1.0: 94/08/30:
 
 ******************************************************************/
 
-char *PyCursesVersion = "1.2";
+static char *PyCursesVersion = "1.2";
 
 /*
  * Check the return code from a curses function and return None 
