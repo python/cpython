@@ -549,6 +549,7 @@ PyMac_InitApplication(void)
 {
 	int argc;
 	char **argv;
+	OSType filetype;
 	
 	static char scriptpath[1024];
 	char *script = NULL;
@@ -573,7 +574,8 @@ PyMac_InitApplication(void)
 			chdir(curwd);
 		}
 		/* Check that the first argument is a text file */
-		if ( PyMac_getfiletype(argv[1]) != 'TEXT' ) {
+		filetype = PyMac_getfiletype(argv[1]);
+		if ( filetype != 'TEXT' && filetype != 0 ) {
 			Alert(NOTASCRIPT_ID, NULL);
 			exit(0);
 		}
