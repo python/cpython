@@ -567,7 +567,6 @@ class PyBuildExt(build_ext):
             ],
                               define_macros = [
             ('HAVE_EXPAT_H',None),
-            ('VERSION', '"1.95.2"'),
             ('XML_NS', '1'),
             ('XML_DTD', '1'),
             ('XML_BYTE_ORDER', xmlbo),
