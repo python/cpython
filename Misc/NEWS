@@ -807,6 +807,14 @@ Yet to be written.
 Windows
 -------
 
+- The Windows distribution now ships with version 4.0.14 of the
+  Sleepycat Berkeley database library.  This should be a huge
+  improvement over the previous Berkeley DB 1.85, which had many
+  bugs.
+  XXX What are the licensing issues here?
+  XXX The debug Python still blows up (see PCbuild/readme.txt).
+  XXX The version # is likely to change before 2.3a1.
+
 - The Windows distribution now ships with Tcl/Tk version 8.4.1 (it
   previously shipped with Tcl/Tk 8.3.2).
 
