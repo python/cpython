@@ -91,6 +91,69 @@ static PyMemberDef code_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
+PyDoc_STRVAR(code_doc,
+"code(argcount, nlocals, stacksize, flags, codestring, constants, names,\n\
+      varnames, filename, name, firstlineno, lnotab[, freevars[, cellvars]])\n\
+\n\
+Create a code object.  Not for the faint of heart.");
+
+static PyObject *
+code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+	int argcount;
+	int nlocals;
+	int stacksize;
+	int flags;
+	PyObject *code;
+	PyObject *consts;
+	PyObject *names;
+	PyObject *varnames;
+	PyObject *freevars = NULL;
+	PyObject *cellvars = NULL;
+	PyObject *filename;
+	PyObject *name;
+	int firstlineno;
+	PyObject *lnotab;
+
+	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS|O!O!:code",
+			      &argcount, &nlocals, &stacksize, &flags,
+			      &code,
+			      &PyTuple_Type, &consts,
+			      &PyTuple_Type, &names,
+			      &PyTuple_Type, &varnames,
+			      &filename, &name,
+			      &firstlineno, &lnotab,
+			      &PyTuple_Type, &freevars,
+			      &PyTuple_Type, &cellvars))
+		return NULL;
+
+	if (freevars == NULL || cellvars == NULL) {
+		PyObject *empty = PyTuple_New(0);
+		if (empty == NULL)
+		    return NULL;
+		if (freevars == NULL) {
+		    freevars = empty;
+		    Py_INCREF(freevars);
+		}
+		if (cellvars == NULL) {
+		    cellvars = empty;
+		    Py_INCREF(cellvars);
+		}
+		Py_DECREF(empty);
+	}
+
+	if (!PyObject_CheckReadBuffer(code)) {
+		PyErr_SetString(PyExc_TypeError,
+		  "bytecode object must be a single-segment read-only buffer");
+		return NULL;
+	}
+
+	return (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
+				      code, consts, names, varnames,
+				      freevars, cellvars, filename, name,
+				      firstlineno, lnotab); 
+}
+
 static void
 code_dealloc(PyCodeObject *co)
 {
@@ -200,7 +263,7 @@ PyTypeObject PyCode_Type = {
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,		/* tp_flags */
-	0,				/* tp_doc */
+	code_doc,			/* tp_doc */
 	0,				/* tp_traverse */
 	0,				/* tp_clear */
 	0,				/* tp_richcompare */
@@ -217,7 +280,7 @@ PyTypeObject PyCode_Type = {
 	0,				/* tp_dictoffset */
 	0,				/* tp_init */
 	0,				/* tp_alloc */
-	0,				/* tp_new */
+	code_new,			/* tp_new */
 };
 
 #define NAME_CHARS \

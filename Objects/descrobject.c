@@ -725,7 +725,7 @@ proxy_traverse(PyObject *self, visitproc visit, void *arg)
 static PyTypeObject proxytype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"dict-proxy",				/* tp_name */
+	"dictproxy",				/* tp_name */
 	sizeof(proxyobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */

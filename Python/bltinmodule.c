@@ -107,27 +107,6 @@ Note that classes are callable, as are instances with a __call__() method.");
 
 
 static PyObject *
-builtin_buffer(PyObject *self, PyObject *args)
-{
-	PyObject *ob;
-	int offset = 0;
-	int size = Py_END_OF_BUFFER;
-
-	if ( !PyArg_ParseTuple(args, "O|ii:buffer", &ob, &offset, &size) )
-	    return NULL;
-	return PyBuffer_FromObject(ob, offset, size);
-}
-
-PyDoc_STRVAR(buffer_doc,
-"buffer(object [, offset[, size]]) -> object\n\
-\n\
-Create a new buffer object which references the given object.\n\
-The buffer will reference a slice of the target object from the\n\
-start of the object (or at the specified offset). The slice will\n\
-extend to the end of the target object (or with the specified size).");
-
-
-static PyObject *
 builtin_callable(PyObject *self, PyObject *v)
 {
 	return PyBool_FromLong((long)PyCallable_Check(v));
@@ -1079,31 +1058,6 @@ Return the number of items of a sequence or mapping.");
 
 
 static PyObject *
-builtin_slice(PyObject *self, PyObject *args)
-{
-	PyObject *start, *stop, *step;
-
-	start = stop = step = NULL;
-
-	if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
-		return NULL;
-
-	/* This swapping of stop and start is to maintain similarity with
-	   range(). */
-	if (stop == NULL) {
-		stop = start;
-		start = NULL;
-	}
-	return PySlice_New(start, stop, step);
-}
-
-PyDoc_STRVAR(slice_doc,
-"slice([start,] stop[, step]) -> slice object\n\
-\n\
-Create a slice object.  This is used for slicing by the Numeric extensions.");
-
-
-static PyObject *
 builtin_locals(PyObject *self)
 {
 	PyObject *d;
@@ -1775,7 +1729,6 @@ static PyMethodDef builtin_methods[] = {
  	{"__import__",	builtin___import__, METH_VARARGS, import_doc},
  	{"abs",		builtin_abs,        METH_O, abs_doc},
  	{"apply",	builtin_apply,      METH_VARARGS, apply_doc},
- 	{"buffer",	builtin_buffer,     METH_VARARGS, buffer_doc},
  	{"callable",	builtin_callable,   METH_O, callable_doc},
  	{"chr",		builtin_chr,        METH_VARARGS, chr_doc},
  	{"cmp",		builtin_cmp,        METH_VARARGS, cmp_doc},
@@ -1813,7 +1766,6 @@ static PyMethodDef builtin_methods[] = {
  	{"repr",	builtin_repr,       METH_O, repr_doc},
  	{"round",	builtin_round,      METH_VARARGS, round_doc},
  	{"setattr",	builtin_setattr,    METH_VARARGS, setattr_doc},
- 	{"slice",       builtin_slice,      METH_VARARGS, slice_doc},
 #ifdef Py_USING_UNICODE
  	{"unichr",	builtin_unichr,     METH_VARARGS, unichr_doc},
 #endif
@@ -1849,6 +1801,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("True",		Py_True);
 	SETBUILTIN("basestring",	&PyBaseString_Type);
 	SETBUILTIN("bool",		&PyBool_Type);
+	SETBUILTIN("buffer",		&PyBuffer_Type);
 	SETBUILTIN("classmethod",	&PyClassMethod_Type);
 #ifndef WITHOUT_COMPLEX
 	SETBUILTIN("complex",		&PyComplex_Type);
@@ -1861,6 +1814,7 @@ _PyBuiltin_Init(void)
 	SETBUILTIN("list",		&PyList_Type);
 	SETBUILTIN("long",		&PyLong_Type);
 	SETBUILTIN("object",		&PyBaseObject_Type);
+	SETBUILTIN("slice",		&PySlice_Type);
 	SETBUILTIN("staticmethod",	&PyStaticMethod_Type);
 	SETBUILTIN("str",		&PyString_Type);
 	SETBUILTIN("super",		&PySuper_Type);

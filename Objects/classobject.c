@@ -149,6 +149,27 @@ PyMethod_Class(PyObject *im)
 	return ((PyMethodObject *)im)->im_class;
 }
 
+PyDoc_STRVAR(class_doc,
+"classobj(name, bases, dict)\n\
+\n\
+Create a class object.  The name must be a string; the second argument\n\
+a tuple of classes, and the third a dictionary.");
+
+static PyObject *
+new_class(PyObject* unused, PyObject* args)
+{
+	PyObject *name;
+	PyObject *classes;
+	PyObject *dict;
+  
+	if (!PyArg_ParseTuple(args, "SO!O!:class",
+			      &name,
+			      &PyTuple_Type, &classes,
+			      &PyDict_Type, &dict))
+		return NULL;
+	return PyClass_New(classes, dict, name);
+}
+
 static PyObject *
 class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -435,7 +456,7 @@ class_traverse(PyClassObject *o, visitproc visit, void *arg)
 PyTypeObject PyClass_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"class",
+	"classobj",
 	sizeof(PyClassObject),
 	0,
 	(destructor)class_dealloc,		/* tp_dealloc */
@@ -454,7 +475,7 @@ PyTypeObject PyClass_Type = {
 	(setattrofunc)class_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-	0,					/* tp_doc */
+	class_doc,				/* tp_doc */
 	(traverseproc)class_traverse,		/* tp_traverse */
  	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -574,6 +595,34 @@ PyInstance_New(PyObject *klass, PyObject *arg, PyObject *kw)
 }
 
 /* Instance methods */
+
+PyDoc_STRVAR(instance_doc,
+"instance(class[, dict])\n\
+\n\
+Create an instance without calling its __init__() method.\n\
+The class must be a classic class.\n\
+If present, dict must be a dictionary or None.");
+
+static PyObject *
+instance_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+	PyObject *klass;
+	PyObject *dict = Py_None;
+
+	if (!PyArg_ParseTuple(args, "O!|O:instance",
+			      &PyClass_Type, &klass, &dict))
+		return NULL;
+
+	if (dict == Py_None)
+		dict = NULL;
+	else if (!PyDict_Check(dict)) {
+		PyErr_SetString(PyExc_TypeError,
+		      "instance() second arg must be dictionary or None");
+		return NULL;
+	}
+	return PyInstance_NewRaw(klass, dict);
+}
+
 
 static void
 instance_dealloc(register PyInstanceObject *inst)
@@ -2014,13 +2063,24 @@ PyTypeObject PyInstance_Type = {
 	(setattrofunc)instance_setattr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_CHECKTYPES,/*tp_flags*/
-	0,					/* tp_doc */
+	instance_doc,				/* tp_doc */
 	(traverseproc)instance_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	instance_richcompare,			/* tp_richcompare */
  	offsetof(PyInstanceObject, in_weakreflist), /* tp_weaklistoffset */
 	(getiterfunc)instance_getiter,		/* tp_iter */
 	(iternextfunc)instance_iternext,	/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	instance_new,				/* tp_new */
 };
 
 
@@ -2123,6 +2183,31 @@ instancemethod_getattro(PyObject *obj, PyObject *name)
 
 	assert(PyErr_Occurred());
 	return NULL;
+}
+
+PyDoc_STRVAR(instancemethod_doc,
+"instancemethod(function, instance, class)\n\
+\n\
+Create an instance method object.");
+
+static PyObject *
+instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
+{
+	PyObject *func;
+	PyObject *self;
+	PyObject *classObj;
+
+	if (!PyArg_ParseTuple(args, "OOO:instancemethod",
+			      &func, &self, &classObj))
+		return NULL;
+	if (!PyCallable_Check(func)) {
+		PyErr_SetString(PyExc_TypeError,
+				"first argument must be callable");
+		return NULL;
+	}
+	if (self == Py_None)
+		self = NULL;
+	return PyMethod_New(func, self, classObj);
 }
 
 static void
@@ -2362,7 +2447,7 @@ instancemethod_descr_get(PyObject *meth, PyObject *obj, PyObject *class)
 PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"instance method",
+	"instancemethod",
 	sizeof(PyMethodObject),
 	0,
 	(destructor)instancemethod_dealloc,	/* tp_dealloc */
@@ -2381,7 +2466,7 @@ PyTypeObject PyMethod_Type = {
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-	0,					/* tp_doc */
+	instancemethod_doc,			/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -2396,6 +2481,9 @@ PyTypeObject PyMethod_Type = {
 	instancemethod_descr_get,		/* tp_descr_get */
 	0,					/* tp_descr_set */
 	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	instancemethod_new,			/* tp_new */
 };
 
 /* Clear out the free list */

@@ -104,19 +104,6 @@ aix_getoldmodules(void **modlistptr)
 	return 0;
 }
 
-static int
-aix_bindnewmodule(void *newmoduleptr, void *modlistptr)
-{
-	register ModulePtr modptr;
-
-	/*
-	-- Bind the new module with the list of loaded modules.
-	*/
-	for (modptr = (ModulePtr)modlistptr; modptr; modptr = modptr->next)
-		if (loadbind(0, modptr->entry, newmoduleptr) != 0)
-			return -1;
-	return 0;
-}
 
 static void
 aix_loaderror(const char *pathname)
@@ -189,10 +176,6 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 			return NULL;
 	p = (dl_funcptr) aix_load((char *)pathname, L_NOAUTODEFER, 0);
 	if (p == NULL) {
-		aix_loaderror(pathname);
-		return NULL;
-	}
-	if (aix_bindnewmodule((void *)p, staticmodlistptr) == -1) {
 		aix_loaderror(pathname);
 		return NULL;
 	}

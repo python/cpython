@@ -266,6 +266,52 @@ static PyGetSetDef func_getsetlist[] = {
 	{NULL} /* Sentinel */
 };
 
+PyDoc_STRVAR(func_doc,
+"function(code, globals[, name[, argdefs]])\n\
+\n\
+Create a function object from a code object and a dictionary.\n\
+The optional name string overrides the name from the code object.\n\
+The optional argdefs tuple specifies the default argument values.");
+
+static PyObject *
+func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
+{
+	PyObject *code;
+	PyObject *globals;
+	PyObject *name = Py_None;
+	PyObject *defaults = Py_None;
+	PyFunctionObject *newfunc;
+
+	if (!PyArg_ParseTuple(args, "O!O!|OO!:function",
+			      &PyCode_Type, &code,
+			      &PyDict_Type, &globals,
+			      &name,
+			      &PyTuple_Type, &defaults))
+		return NULL;
+	if (name != Py_None && !PyString_Check(name)) {
+		PyErr_SetString(PyExc_TypeError,
+				"arg 3 (name) must be None or string");
+		return NULL;
+	}
+
+	newfunc = (PyFunctionObject *)PyFunction_New(code, globals);
+	if (newfunc == NULL)
+		return NULL;
+
+	if (name != Py_None) {
+		Py_XINCREF(name);
+		Py_XDECREF(newfunc->func_name);
+		newfunc->func_name = name;
+	}
+	if (defaults != Py_None) {
+		Py_XINCREF(defaults);
+		Py_XDECREF(newfunc->func_defaults);
+		newfunc->func_defaults  = defaults;
+	}
+
+	return (PyObject *)newfunc;
+}
+
 static void
 func_dealloc(PyFunctionObject *op)
 {
@@ -415,7 +461,7 @@ PyTypeObject PyFunction_Type = {
 	PyObject_GenericSetAttr,		/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
-	0,					/* tp_doc */
+	func_doc,				/* tp_doc */
 	(traverseproc)func_traverse,		/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -430,6 +476,9 @@ PyTypeObject PyFunction_Type = {
 	func_descr_get,				/* tp_descr_get */
 	0,					/* tp_descr_set */
 	offsetof(PyFunctionObject, func_dict),	/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	func_new,				/* tp_new */
 };
 
 

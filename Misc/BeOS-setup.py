@@ -232,10 +232,6 @@ class PyBuildExt(build_ext):
         # (NIST's Secure Hash Algorithm.)
         exts.append( Extension('sha', ['shamodule.c']) )
 
-        # Tommy Burnette's 'new' module (creates new empty objects of certain
-        # kinds):
-        exts.append( Extension('new', ['newmodule.c']) )
-
         # Helper module for various ascii-encoders
         exts.append( Extension('binascii', ['binascii.c']) )
 

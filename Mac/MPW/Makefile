@@ -77,7 +77,6 @@ ALL = ¶
 	"{Objs}"moduleobject.c.o ¶
 	"{Objs}"myreadline.c.o ¶
 	"{Objs}"mystrtoul.c.o ¶
-	"{Objs}"newmodule.c.o ¶
 	"{Objs}"nfullpath.c.o ¶
 	"{Objs}"node.c.o ¶
 	"{Objs}"object.c.o ¶
@@ -472,9 +471,6 @@ xxmodule.slb Ä PythonLib.slb "{Objs}"xxmodule.c.o
 
 "{Objs}"mathmodule.c.o Ä "{Top}"Modules:mathmodule.c
 	{CC} "{Top}"Modules:mathmodule.c -o "{Objs}"mathmodule.c.o -s mathmodule.c {CFlags}
-
-"{Objs}"newmodule.c.o Ä "{Top}"Modules:newmodule.c
-	{CC} "{Top}"Modules:newmodule.c -o "{Objs}"newmodule.c.o -s newmodule.c {CFlags}
 
 "{Objs}"parsermodule.c.o Ä "{Top}"Modules:parsermodule.c
 	{CC} "{Top}"Modules:parsermodule.c -o "{Objs}"parsermodule.c.o -s parsermodule.c {CFlags}

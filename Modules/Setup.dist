@@ -110,7 +110,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 posix posixmodule.c		# posix (UNIX) system calls
 _sre _sre.c			# Fredrik Lundh's new regular expressions
-new newmodule.c			# Tommy Burnette's 'new' module
 
 # The rest of the modules listed in this file are all commented out by
 # default.  Usually they can be detected and built as dynamically

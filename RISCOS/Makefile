@@ -264,9 +264,6 @@ $(LIB_PYTHON):	$(OBJECTS)
 	$(LINK) -aof -o @.^.Modules.o.md5link @.^.Modules.o.md5c @.^.Modules.o.md5module
 	$(MAKEDLK) -d @.^.Lib.md5/pyd -s s.linktab -o @.^.Modules.o.md5link -e initmd5
 
-@.^.Lib.new/pyd: @.^.Modules.o.newmodule s.linktab
-	$(MAKEDLK) -d @.^.Lib.new/pyd -s s.linktab -o @.^.Modules.o.newmodule -e initnew
-
 @.^.Lib.operator/pyd: @.^.Modules.o.operator s.linktab
 	$(MAKEDLK) -d @.^.Lib.operator/pyd -s s.linktab -o @.^.Modules.o.operator -e initoperator
 
