@@ -115,7 +115,7 @@ PyPcre_exec(self, args)
 		return NULL;
 	if (endpos == -1) {endpos = stringlen;}
 	count = pcre_exec(self->regex, self->regex_extra, 
-			  (char *)string+pos, endpos - pos, options,
+			  (char *)string, endpos, pos, options,
 			  offsets, sizeof(offsets)/sizeof(int) );
 	/* If an error occurred during the match, and an exception was raised,
 	   just return NULL and leave the exception alone.  The most likely
@@ -143,8 +143,6 @@ PyPcre_exec(self, args)
 		/* If the group wasn't affected by the match, return -1, -1 */
 		if (start<0 || count<=i) 
 		{start=end=-1;}
-		else 
-		{start += pos; end +=pos;}
 		v=Py_BuildValue("ii", start, end);
 		if (v==NULL) {Py_DECREF(list); return NULL;}
 		PyList_SetItem(list, i, v);

@@ -57,11 +57,13 @@ extern void  (*pcre_free)(void *);
 
 #ifdef FOR_PYTHON
 extern pcre *pcre_compile(const char *, int, const char **, int *, PyObject *);
+extern int pcre_exec(const pcre *, const pcre_extra *, const char *,
+  int, int, int, int *, int);
 #else
 extern pcre *pcre_compile(const char *, int, const char **, int *);
-#endif
 extern int pcre_exec(const pcre *, const pcre_extra *, const char *,
   int, int, int *, int);
+#endif
 extern int pcre_info(const pcre *, int *, int *);
 extern pcre_extra *pcre_study(const pcre *, int, const char **);
 extern const char *pcre_version(void);

@@ -4424,7 +4424,8 @@ Returns:          > 0 => success; value is the number of elements filled in
 
 int
 pcre_exec(const pcre *external_re, const pcre_extra *external_extra,
-  const char *subject, int length, int options, int *offsets, int offsetcount)
+  const char *subject, int length, int start_pos, int options, 
+  int *offsets, int offsetcount)
 {
   /* The "volatile" directives are to make gcc -Wall stop complaining
      that these variables can be clobbered by the longjmp.  Hopefully
@@ -4433,7 +4434,7 @@ int resetcount, ocount;
 int first_char = -1;
 match_data match_block;
 const uschar *start_bits = NULL;
-const uschar *start_match = (const uschar *)subject;
+const uschar *start_match = (const uschar *)subject + start_pos;
 const uschar *end_subject;
 const real_pcre *re = (const real_pcre *)external_re;
 const real_pcre_extra *extra = (const real_pcre_extra *)external_extra;
