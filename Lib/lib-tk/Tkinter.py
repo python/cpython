@@ -2830,11 +2830,27 @@ class Text(Widget):
         if not what:
             return self._getdoubles(self.tk.call(self._w, 'xview'))
         self.tk.call((self._w, 'xview') + what)
-    def yview(self, *what):
+    def xview_moveto(self, fraction):
+        """Adjusts the view in the window so that FRACTION of the
+        total width of the canvas is off-screen to the left."""
+        self.tk.call(self._w, 'xview', 'moveto', fraction)
+    def xview_scroll(self, number, what):
+        """Shift the x-view according to NUMBER which is measured
+        in "units" or "pages" (WHAT)."""
+        self.tk.call(self._w, 'xview', 'scroll', number, what)
+    def yview(self, *args):
         """Query and change vertical position of the view."""
-        if not what:
+        if not args:
             return self._getdoubles(self.tk.call(self._w, 'yview'))
-        self.tk.call((self._w, 'yview') + what)
+        self.tk.call((self._w, 'yview') + args)
+    def yview_moveto(self, fraction):
+        """Adjusts the view in the window so that FRACTION of the
+        total height of the canvas is off-screen to the top."""
+        self.tk.call(self._w, 'yview', 'moveto', fraction)
+    def yview_scroll(self, number, what):
+        """Shift the y-view according to NUMBER which is measured
+        in "units" or "pages" (WHAT)."""
+        self.tk.call(self._w, 'yview', 'scroll', number, what)
     def yview_pickplace(self, *what):
         """Obsolete function, use see."""
         self.tk.call((self._w, 'yview', '-pickplace') + what)
