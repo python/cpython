@@ -87,10 +87,10 @@ class C(object):
 
         >>> print C.clsm(22)    # 18
         22
-        >>> print C().clsm(22)  # 19
-        22
+        >>> print C().clsm(23)  # 19
+        23
         """
-        return 22
+        return val
 
     clsm = classmethod(clsm)
 
