@@ -472,13 +472,14 @@ class Input:
 		self.win.settitle(title)
 		inputwindows.insert(0, self.win)
 		try:
-			mainloop.mainloop()
-		except InputAvailable, (exc, val):		# See do_exec above.
-			if exc:
-				raise exc, val
-			if val[-1:] == '\n':
-				val = val[:-1]
-			return val
+			try:
+				mainloop.mainloop()
+			except InputAvailable, (exc, val): # See do_exec above.
+				if exc:
+					raise exc, val
+				if val[-1:] == '\n':
+					val = val[:-1]
+				return val
 		finally:
 			del inputwindows[0]
 			self.win.settitle(save_title)
