@@ -53,8 +53,8 @@ Standard library
   test for whether installed modules are on sys.path was changed to
   use both normcase() and normpath().
 
-- xml minidom, pulldom, expatreader, and saxutils had some minor bug
-  fixes.
+- Several minor bugs were fixed in the xml package (the minidom,
+  pulldom, expatreader, and saxutils modules).
 
 - The regression test driver (regrtest.py) behavior when invoked with
   -l changed: It now reports a count of objects that are recognized as
