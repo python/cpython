@@ -401,7 +401,7 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                 PyErr_SetString(PyExc_TypeError, "delimiter must be set");
 		goto err;
 	}
-	if (quotechar == Py_None && self->quoting != QUOTE_NONE)
+	if (quotechar == Py_None && quoting == NULL)
 		self->quoting = QUOTE_NONE;
 	if (self->quoting != QUOTE_NONE && self->quotechar == 0) {
                 PyErr_SetString(PyExc_TypeError, 

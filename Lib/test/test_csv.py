@@ -32,6 +32,8 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, quoting=None)
         self.assertRaises(TypeError, ctor, arg, 
                           quoting=csv.QUOTE_ALL, quotechar='')
+        self.assertRaises(TypeError, ctor, arg, 
+                          quoting=csv.QUOTE_ALL, quotechar=None)
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
