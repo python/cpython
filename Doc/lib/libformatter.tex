@@ -46,10 +46,14 @@ be called without having to track whether the property was changed.
 
 The following attributes are defined for formatter instance objects:
 
+\renewcommand{\indexsubitem}{(formatter object data)}
+
 \begin{datadesc}{writer}
 The writer instance with which the formatter interacts.
 \end{datadesc}
 
+
+\renewcommand{\indexsubitem}{(formatter object method)}
 
 \begin{funcdesc}{end_paragraph}{blanklines}
 Close any open paragraphs and insert at least \code{blanklines}
@@ -178,16 +182,25 @@ output.
 
 \subsection{Formatter Implementations}
 
+Two implementations of formatter objects are provided by this module.
+Most applications may use one of these classes without modification or
+subclassing.
+
+\renewcommand{\indexsubitem}{(in module formatter)}
+
 \begin{funcdesc}{NullFormatter}{\optional{writer\code{ = None}}}
 A formatter which does nothing.  If \code{writer} is omitted, a
 \code{NullWriter} instance is created.  No methods of the writer are
-called by \code{NullWriter} instances.
+called by \code{NullWriter} instances.  Implementations should inherit
+from this class if implementing a writer interface but don't need to
+inherit any implementation.
 \end{funcdesc}
 
 \begin{funcdesc}{AbstractFormatter}{writer}
 The standard formatter.  This implementation has demonstrated wide
 applicability to many writers, and may be used directly in most
-circumstances.
+circumstances.  It has been used to implement a full-featured
+world-wide web browser.
 \end{funcdesc}
 
 
@@ -200,6 +213,8 @@ required interfaces which all writers must support once initialized.
 Note that while most applications can use the \code{AbstractFormatter}
 class as a formatter, the writer must typically be provided by the
 application.
+
+\renewcommand{\indexsubitem}{(writer object method)}
 
 \begin{funcdesc}{new_alignment}{align}
 Set the alignment style.  The \code{align} value can be any object,
@@ -282,6 +297,12 @@ will only be called at the beginning of a line.
 
 
 \subsection{Writer Implementations}
+
+Three implementations of the writer object interface are provided as
+examples by this module.  Most applications will need to derive new
+writer classes from the \code{NullWriter} class.
+
+\renewcommand{\indexsubitem}{(in module formatter)}
 
 \begin{funcdesc}{NullWriter}{}
 A writer which only provides the interface definition; no actions are
