@@ -6,7 +6,7 @@ from bgenlocations import TOOLBOXDIR, BGENDIR
 sys.path.append(BGENDIR)
 from scantools import Scanner
 
-WASTEDIR='/Applications/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/MacOS Support/(Third Party Support)/Waste 2.0 Distribution/C_C++ Headers/'
+WASTEDIR='/Volumes/Moes/Applications (Mac OS 9)/Metrowerks CodeWarrior 7.0/Metrowerks CodeWarrior/MacOS Support/(Third Party Support)/Waste 2.0 Distribution/C_C++ Headers/'
 		
 if not os.path.exists(WASTEDIR):
 	raise 'Error: not found: %s', WASTEDIR

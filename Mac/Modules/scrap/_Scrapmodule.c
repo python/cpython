@@ -5,6 +5,9 @@
 
 
 
+#ifndef PyDoc_STR
+#define PyDoc_STR(x) (x)
+#endif
 #ifdef _WIN32
 #include "pywintoolbox.h"
 #else

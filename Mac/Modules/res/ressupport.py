@@ -25,6 +25,9 @@ FSCatalogInfo_ptr = FakeType("(FSCatalogInfo *)0")
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """
+#ifndef PyDoc_STR
+#define PyDoc_STR(x) (x)
+#endif
 #ifdef WITHOUT_FRAMEWORKS
 #include <Resources.h>
 #include <string.h>
