@@ -3884,8 +3884,6 @@ def weakref_segfault():
 
         def __del__(self):
             x = self.ref()
-            print x
-            return x
 
     class Oops(object):
         pass
