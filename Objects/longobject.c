@@ -679,7 +679,13 @@ PyLong_AsLongLong(PyObject *vv)
 	int one = 1;
 	int res;
 
-	if (vv == NULL || !PyLong_Check(vv)) {
+	if (vv == NULL) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (!PyLong_Check(vv)) {
+		if (PyInt_Check(vv))
+			return (LONG_LONG)PyInt_AsLong(vv);
 		PyErr_BadInternalCall();
 		return -1;
 	}

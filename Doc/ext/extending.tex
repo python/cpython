@@ -743,6 +743,11 @@ Convert a Python integer to a plain C \ctype{int}.
 \item[\samp{l} (integer) {[long int]}]
 Convert a Python integer to a C \ctype{long int}.
 
+\item[\samp{L} (integer) {[LONG_LONG]}]
+Convert a Python integer to a C \ctype{long long}.  This format is only
+available on platforms that support \ctype{long long} (or \ctype{_int64}
+on Windows).
+
 \item[\samp{c} (string of length 1) {[char]}]
 Convert a Python character, represented as a string of length 1, to a
 C \ctype{char}.

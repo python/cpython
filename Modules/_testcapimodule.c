@@ -255,6 +255,55 @@ test_longlong_api(PyObject* self, PyObject* args)
 #undef F_U_TO_PY
 #undef F_PY_TO_U
 
+/* Test the L code for PyArg_ParseTuple.  This should deliver a LONG_LONG
+   for both long and int arguments.  The test may leak a little memory if
+   it fails.
+*/
+static PyObject *
+test_L_code(PyObject *self, PyObject *args)
+{
+	PyObject *tuple, *num;
+	LONG_LONG value;
+
+        if (!PyArg_ParseTuple(args, ":test_L_code"))
+                return NULL;
+
+        tuple = PyTuple_New(1);
+        if (tuple == NULL)
+        	return NULL;
+
+        num = PyLong_FromLong(42);
+        if (num == NULL)
+        	return NULL;
+
+        PyTuple_SET_ITEM(tuple, 0, num);
+
+        value = -1;
+        if (PyArg_ParseTuple(tuple, "L:test_L_code", &value) < 0)
+        	return NULL;
+        if (value != 42)
+        	return raiseTestError("test_L_code",
+			"L code returned wrong value for long 42");
+
+	Py_DECREF(num);
+        num = PyInt_FromLong(42);
+        if (num == NULL)
+        	return NULL;
+
+        PyTuple_SET_ITEM(tuple, 0, num);
+
+	value = -1;
+        if (PyArg_ParseTuple(tuple, "L:test_L_code", &value) < 0)
+        	return NULL;
+        if (value != 42)
+        	return raiseTestError("test_L_code",
+			"L code returned wrong value for int 42");
+
+	Py_DECREF(tuple);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 #endif	/* ifdef HAVE_LONG_LONG */
 
 static PyObject *
@@ -291,6 +340,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_long_api",	test_long_api,		METH_VARARGS},
 #ifdef HAVE_LONG_LONG
 	{"test_longlong_api",	test_longlong_api,	METH_VARARGS},
+	{"test_L_code",		test_L_code,		METH_VARARGS},
 #endif
 	{NULL, NULL} /* sentinel */
 };
