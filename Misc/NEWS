@@ -120,6 +120,8 @@ Library
 - Bug #902501: fix unicode value of CYRILLIC CAPITAL LETTER UKRAINIAN IE
   in KOI8-U to unicode convertion table.
 
+- Bug #1048816: fix bug in Ctrl-K at start of line in curses.textpad.Textbox
+
 Tools/Demos
 -----------
 
