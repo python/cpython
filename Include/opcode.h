@@ -99,12 +99,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #define DELETE_NAME	91	/* "" */
 #define UNPACK_TUPLE	92	/* Number of tuple items */
 #define UNPACK_LIST	93	/* Number of list items */
-#define UNPACK_ARG	94	/* Number of arguments */
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */
 #define DELETE_GLOBAL	98	/* "" */
-#define UNPACK_VARARG	99	/* Minimal number of arguments */
 
 #define LOAD_CONST	100	/* Index in const list */
 #define LOAD_NAME	101	/* Index in name list */
@@ -122,10 +120,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define JUMP_ABSOLUTE	113	/* Target byte offset from beginning of code */
 #define FOR_LOOP	114	/* Number of bytes to skip */
 
-#define LOAD_LOCAL	115	/* Index in name list */
 #define LOAD_GLOBAL	116	/* Index in name list */
-
-#define SET_FUNC_ARGS	117	/* Argcount */
 
 #define SETUP_LOOP	120	/* Target address (absolute) */
 #define SETUP_EXCEPT	121	/* "" */

@@ -208,12 +208,10 @@ name_op('STORE_NAME', 90)	# Index in name list
 name_op('DELETE_NAME', 91)	# "" 
 def_op('UNPACK_TUPLE', 92)	# Number of tuple items 
 def_op('UNPACK_LIST', 93)	# Number of list items 
-def_op('UNPACK_ARG', 94)	# Number of arguments expected
 name_op('STORE_ATTR', 95)	# Index in name list 
 name_op('DELETE_ATTR', 96)	# ""
 name_op('STORE_GLOBAL', 97)	# ""
 name_op('DELETE_GLOBAL', 98)	# ""
-name_op('UNPACK_VARARG', 99)	# Minimal number of arguments
 
 def_op('LOAD_CONST', 100)	# Index in const list 
 hasconst.append(100)
@@ -233,10 +231,7 @@ jrel_op('JUMP_IF_TRUE', 112)	# ""
 jabs_op('JUMP_ABSOLUTE', 113)	# Target byte offset from beginning of code 
 jrel_op('FOR_LOOP', 114)	# Number of bytes to skip 
 
-name_op('LOAD_LOCAL', 115)	# Index in name list
 name_op('LOAD_GLOBAL', 116)	# Index in name list
-
-def_op('SET_FUNC_ARGS', 117)	# Argcount
 
 jrel_op('SETUP_LOOP', 120)	# Distance to target address
 jrel_op('SETUP_EXCEPT', 121)	# ""
