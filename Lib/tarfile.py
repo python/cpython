@@ -1851,6 +1851,7 @@ class TarIter:
         """Construct a TarIter object.
         """
         self.tarfile = tarfile
+        self.index = 0
     def __iter__(self):
         """Return iterator object.
         """
@@ -1859,10 +1860,20 @@ class TarIter:
         """Return the next item using TarFile's next() method.
            When all members have been read, set TarFile as _loaded.
         """
-        tarinfo = self.tarfile.next()
-        if not tarinfo:
-            self.tarfile._loaded = True
-            raise StopIteration
+        # Fix for SF #1100429: Under rare circumstances it can
+        # happen that getmembers() is called during iteration,
+        # which will cause TarIter to stop prematurely.
+        if not self.tarfile._loaded:
+            tarinfo = self.tarfile.next()
+            if not tarinfo:
+                self.tarfile._loaded = True
+                raise StopIteration
+        else:
+            try:
+                tarinfo = self.tarfile.members[self.index]
+            except IndexError:
+                raise StopIteration
+        self.index += 1
         return tarinfo
 
 # Helper classes for sparse file support
