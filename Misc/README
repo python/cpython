@@ -3,13 +3,14 @@ Python Misc subdirectory
 
 This directory contains files that wouldn't fit in elsewhere, in
 particular the UNIX manual page, an Emacs mode for Python source code,
-and a list of Frequently Asked Questions (and their answers).
+and a list of Frequently Asked Questions (and their answers).  Some
+documents are only of historic importance.
 
 Files found here
 ----------------
 
 ACKS		Acknowledgements
-AIX-NOTES	Notes for building Python on AIX
+AIX-NOTES	Notes for building Python on AIX (all new!)
 BLURB		A quick description of Python for newcomers
 BLURB.LUTZ	A testimonial from a converted Tcl/Perl hacker :-)
 COPYRIGHT	The Python copyright notice
@@ -23,11 +24,10 @@ NEWS		News for this release
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
 cheatsheet	Quick summary of Python by Ken Manheimer
-dlMakefile	Generic Makefile for dynamically loadable modules by Ken M.
 fixfuncptrs.sh	Shell script to fix function pointer initializers
-indent.pro	GNU indent profile approximating my C style (by Steen Lumholt)
-python-mode.el	Emacs mode for editing Python programs (thanks, Tim!)
-pyimenu.el	Support for Emacs with python-mode.el (by Perry Stoll)
+gMakefile	Generic Makefile for dynamically loadable modules
+indent.pro	GNU indent profile approximating my C style
+python-mode.el	Emacs mode for editing Python programs
 python.man	UNIX man page for the python interpreter
 renumber.py	Script to renumber the sections in the FAQ
 setuid-prog.c	C helper program for set-uid Python scripts
