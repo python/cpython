@@ -1,0 +1,6 @@
+Add spec for getsets.
+Generate a distutils setup script.
+Handle operator overloading.
+Generate traverse and clear methods for GC.
+Handle mapping, sequence, buffer protocols.
+Finish the todo list.
