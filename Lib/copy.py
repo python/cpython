@@ -50,6 +50,8 @@ __getstate__() and __setstate__().  See the __doc__ string of module
 "pickle" for information on these methods.
 """
 
+# XXX need to support copy_reg here too...
+
 import types
 
 error = 'copy.error'
