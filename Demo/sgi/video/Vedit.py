@@ -289,10 +289,10 @@ class Editor:
 		getattr(self, io + '_info2').label = `pos`
 		getattr(self, io + '_info3').label = `right`
 		sl = getattr(self, io + '_slider')
-		sl.freeze_object()
+		self.form.freeze_form()
 		sl.set_slider_bounds(left, right)
 		sl.set_slider_value(pos)
-		sl.unfreeze_object()
+		self.form.unfreeze_form()
 
 
 try:
