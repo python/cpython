@@ -272,7 +272,7 @@ def _parse_localename(localename):
             # since some systems may use other encodings for these
             # locales. Also, we ignore other modifiers.
             return code, 'iso-8859-15'
-            
+
     if '.' in code:
         return code.split('.')[:2]
     elif code == 'C':
@@ -420,7 +420,7 @@ else:
                 return result
             else:
                 return nl_langinfo(CODESET)
-                
+
 
 ### Database
 #

@@ -411,4 +411,3 @@ symbolic links encountered in the path."""
     return filename
 
 supports_unicode_filenames = False
-

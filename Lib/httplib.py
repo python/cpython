@@ -371,7 +371,7 @@ class HTTPResponse:
 
         if self.chunked:
             return self._read_chunked(amt)
-        
+
         if amt is None:
             # unbounded read
             if self.will_close:
@@ -441,7 +441,7 @@ class HTTPResponse:
         self.close()
 
         return value
-    
+
     def _safe_read(self, amt):
         """Read the number of bytes requested, compensating for partial reads.
 

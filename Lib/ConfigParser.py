@@ -525,7 +525,7 @@ class ConfigParser(RawConfigParser):
     def _interpolate(self, section, option, rawval, vars):
         # do the string interpolation
         value = rawval
-        depth = MAX_INTERPOLATION_DEPTH 
+        depth = MAX_INTERPOLATION_DEPTH
         while depth:                    # Loop through this until it's done
             depth -= 1
             if value.find("%(") != -1:
