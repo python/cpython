@@ -14,23 +14,43 @@ import gl, GL, DEVICE
 sys.path.append('/ufs/guido/src/video')
 import LiveVideoOut
 import regsub
+import getopt
 
-MYGROUP = '225.0.0.250'
-PORT = 5555
+from senddefs import *
 
-PKTMAX = 16*1024
-WIDTH = 400
-HEIGHT = 300
+
+def usage(msg):
+	print msg
+	print 'usage: Vreceive [-m mcastgrp] [-p port]'
+	print '-m mcastgrp: multicast group (default ' + `DEFMCAST` + ')'
+	print '-p port    : port (default ' + `DEFPORT` + ')'
+	sys.exit(2)
+
 
 def main():
 
-	port = PORT
-	if sys.argv[1:]:
-		port = eval(sys.argv[1])
+	sys.stdout = sys.stderr
 
-	s = opensocket(MYGROUP, port)
+	group = DEFMCAST
+	port = DEFPORT
+	width = DEFWIDTH
+	height = DEFHEIGHT
 
-	width, height = WIDTH, HEIGHT
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'm:p:')
+	except getopt.error, msg:
+		usage(msg)
+
+	try:
+		for opt, optarg in opts:
+			if opt == '-p':
+				port = string.atoi(optarg)
+			if opt == '-m':
+				group = gethostbyname(optarg)
+	except string.atoi_error, msg:
+		usage('bad integer: ' + msg)
+
+	s = opensocket(group, port)
 
 	gl.foreground()
 	gl.prefsize(width, height)
