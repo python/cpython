@@ -91,8 +91,8 @@ class UnixCCompiler (CCompiler):
                     extra_postargs=None):
 
         (_, macros, include_dirs) = \
-            self._fix_compile_args (None, macros, include_dirs)
-        pp_opts = gen_preprocess_options (macros, include_dirs)
+            self._fix_compile_args(None, macros, include_dirs)
+        pp_opts = gen_preprocess_options(macros, include_dirs)
         pp_args = self.preprocessor + pp_opts
         if output_file:
             pp_args.extend(['-o', output_file])
@@ -108,7 +108,7 @@ class UnixCCompiler (CCompiler):
             if output_file:
                 self.mkpath(os.path.dirname(output_file))
             try:
-                self.spawn (pp_args)
+                self.spawn(pp_args)
             except DistutilsExecError, msg:
                 raise CompileError, msg
 
@@ -123,11 +123,11 @@ class UnixCCompiler (CCompiler):
                  extra_postargs=None):
 
         (output_dir, macros, include_dirs) = \
-            self._fix_compile_args (output_dir, macros, include_dirs)
-        (objects, skip_sources) = self._prep_compile (sources, output_dir)
+            self._fix_compile_args(output_dir, macros, include_dirs)
+        (objects, skip_sources) = self._prep_compile(sources, output_dir)
 
         # Figure out the options for the compiler command line.
-        pp_opts = gen_preprocess_options (macros, include_dirs)
+        pp_opts = gen_preprocess_options(macros, include_dirs)
         cc_args = pp_opts + ['-c']
         if debug:
             cc_args[:0] = ['-g']
@@ -138,16 +138,16 @@ class UnixCCompiler (CCompiler):
 
         # Compile all source files that weren't eliminated by
         # '_prep_compile()'.        
-        for i in range (len (sources)):
+        for i in range(len(sources)):
             src = sources[i] ; obj = objects[i]
             if skip_sources[src]:
-                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+                self.announce("skipping %s (%s up-to-date)" % (src, obj))
             else:
-                self.mkpath (os.path.dirname (obj))
+                self.mkpath(os.path.dirname(obj))
                 try:
-                    self.spawn (self.compiler_so + cc_args +
-                                [src, '-o', obj] +
-                                extra_postargs)
+                    self.spawn(self.compiler_so + cc_args +
+                               [src, '-o', obj] +
+                               extra_postargs)
                 except DistutilsExecError, msg:
                     raise CompileError, msg
 
@@ -163,16 +163,16 @@ class UnixCCompiler (CCompiler):
                            output_dir=None,
                            debug=0):
 
-        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (objects, output_dir) = self._fix_object_args(objects, output_dir)
 
         output_filename = \
-            self.library_filename (output_libname, output_dir=output_dir)
+            self.library_filename(output_libname, output_dir=output_dir)
 
-        if self._need_link (objects, output_filename):
-            self.mkpath (os.path.dirname (output_filename))
-            self.spawn (self.archiver +
-                        [output_filename] +
-                        objects + self.objects)
+        if self._need_link(objects, output_filename):
+            self.mkpath(os.path.dirname(output_filename))
+            self.spawn(self.archiver +
+                       [output_filename] +
+                       objects + self.objects)
 
             # Not many Unices required ranlib anymore -- SunOS 4.x is, I
             # think the only major Unix that does.  Maybe we need some
@@ -181,11 +181,11 @@ class UnixCCompiler (CCompiler):
             # it for us, hence the check for leading colon.
             if self.ranlib:
                 try:
-                    self.spawn (self.ranlib + [output_filename])
+                    self.spawn(self.ranlib + [output_filename])
                 except DistutilsExecError, msg:
                     raise LibError, msg
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            self.announce("skipping %s (up-to-date)" % output_filename)
 
     # create_static_lib ()
 
@@ -203,9 +203,9 @@ class UnixCCompiler (CCompiler):
                          extra_postargs=None,
                          build_temp=None):
 
-        self.link_shared_object (
+        self.link_shared_object(
             objects,
-            self.library_filename (output_libname, lib_type='shared'),
+            self.library_filename(output_libname, lib_type='shared'),
             output_dir,
             libraries,
             library_dirs,
@@ -230,19 +230,19 @@ class UnixCCompiler (CCompiler):
                             extra_postargs=None,
                             build_temp=None):
 
-        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (objects, output_dir) = self._fix_object_args(objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
-            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
+            self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
 
-        lib_opts = gen_lib_options (self,
-                                    library_dirs, runtime_library_dirs,
-                                    libraries)
-        if type (output_dir) not in (StringType, NoneType):
+        lib_opts = gen_lib_options(self,
+                                   library_dirs, runtime_library_dirs,
+                                   libraries)
+        if type(output_dir) not in (StringType, NoneType):
             raise TypeError, "'output_dir' must be a string or None"
         if output_dir is not None:
-            output_filename = os.path.join (output_dir, output_filename)
+            output_filename = os.path.join(output_dir, output_filename)
 
-        if self._need_link (objects, output_filename):
+        if self._need_link(objects, output_filename):
             ld_args = (objects + self.objects + 
                        lib_opts + ['-o', output_filename])
             if debug:
@@ -250,14 +250,14 @@ class UnixCCompiler (CCompiler):
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
-                ld_args.extend (extra_postargs)
-            self.mkpath (os.path.dirname (output_filename))
+                ld_args.extend(extra_postargs)
+            self.mkpath(os.path.dirname(output_filename))
             try:
-                self.spawn (self.linker_so + ld_args)
+                self.spawn(self.linker_so + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            self.announce("skipping %s (up-to-date)" % output_filename)
 
     # link_shared_object ()
 
@@ -273,32 +273,32 @@ class UnixCCompiler (CCompiler):
                          extra_preargs=None,
                          extra_postargs=None):
     
-        (objects, output_dir) = self._fix_object_args (objects, output_dir)
+        (objects, output_dir) = self._fix_object_args(objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
-            self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
+            self._fix_lib_args(libraries, library_dirs, runtime_library_dirs)
 
-        lib_opts = gen_lib_options (self,
-                                    library_dirs, runtime_library_dirs,
-                                    libraries)
+        lib_opts = gen_lib_options(self,
+                                   library_dirs, runtime_library_dirs,
+                                   libraries)
         output_filename = output_progname # Unix-ism!
         if output_dir is not None:
-            output_filename = os.path.join (output_dir, output_filename)
+            output_filename = os.path.join(output_dir, output_filename)
 
-        if self._need_link (objects, output_filename):
+        if self._need_link(objects, output_filename):
             ld_args = objects + self.objects + lib_opts + ['-o', output_filename]
             if debug:
                 ld_args[:0] = ['-g']
             if extra_preargs:
                 ld_args[:0] = extra_preargs
             if extra_postargs:
-                ld_args.extend (extra_postargs)
-            self.mkpath (os.path.dirname (output_filename))
+                ld_args.extend(extra_postargs)
+            self.mkpath(os.path.dirname(output_filename))
             try:
-                self.spawn (self.linker_exe + ld_args)
+                self.spawn(self.linker_exe + ld_args)
             except DistutilsExecError, msg:
                 raise LinkError, msg
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            self.announce("skipping %s (up-to-date)" % output_filename)
 
     # link_executable ()
 
@@ -320,18 +320,18 @@ class UnixCCompiler (CCompiler):
     def find_library_file (self, dirs, lib, debug=0):
 
         for dir in dirs:
-            shared = os.path.join (
-                dir, self.library_filename (lib, lib_type='shared'))
-            static = os.path.join (
-                dir, self.library_filename (lib, lib_type='static'))
+            shared = os.path.join(
+                dir, self.library_filename(lib, lib_type='shared'))
+            static = os.path.join(
+                dir, self.library_filename(lib, lib_type='static'))
 
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
             # assuming that *all* Unix C compilers do.  And of course I'm
             # ignoring even GCC's "-static" option.  So sue me.
-            if os.path.exists (shared):
+            if os.path.exists(shared):
                 return shared
-            elif os.path.exists (static):
+            elif os.path.exists(static):
                 return static
 
         else:

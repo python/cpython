@@ -39,10 +39,10 @@ class Version:
 
     def __init__ (self, vstring=None):
         if vstring:
-            self.parse (vstring)
+            self.parse(vstring)
 
     def __repr__ (self):
-        return "%s ('%s')" % (self.__class__.__name__, str (self))
+        return "%s ('%s')" % (self.__class__.__name__, str(self))
 
 
 # Interface for version-number classes -- must be implemented
@@ -99,25 +99,25 @@ class StrictVersion (Version):
     in the distutils documentation.
     """
     
-    version_re = re.compile (r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
-                             re.VERBOSE)
+    version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
+                            re.VERBOSE)
 
 
     def parse (self, vstring):
-        match = self.version_re.match (vstring)
+        match = self.version_re.match(vstring)
         if not match:
             raise ValueError, "invalid version number '%s'" % vstring
 
         (major, minor, patch, prerelease, prerelease_num) = \
-            match.group (1, 2, 4, 5, 6)
+            match.group(1, 2, 4, 5, 6)
 
         if patch:
-            self.version = tuple (map (string.atoi, [major, minor, patch]))
+            self.version = tuple(map(string.atoi, [major, minor, patch]))
         else:
-            self.version = tuple (map (string.atoi, [major, minor]) + [0])
+            self.version = tuple(map(string.atoi, [major, minor]) + [0])
 
         if prerelease:
-            self.prerelease = (prerelease[0], string.atoi (prerelease_num))
+            self.prerelease = (prerelease[0], string.atoi(prerelease_num))
         else:
             self.prerelease = None
 
@@ -125,21 +125,21 @@ class StrictVersion (Version):
     def __str__ (self):
         
         if self.version[2] == 0:
-            vstring = string.join (map (str, self.version[0:2]), '.')
+            vstring = string.join(map(str, self.version[0:2]), '.')
         else:
-            vstring = string.join (map (str, self.version), '.')
+            vstring = string.join(map(str, self.version), '.')
 
         if self.prerelease:
-            vstring = vstring + self.prerelease[0] + str (self.prerelease[1])
+            vstring = vstring + self.prerelease[0] + str(self.prerelease[1])
 
         return vstring
     
 
     def __cmp__ (self, other):
-        if isinstance (other, StringType):
-            other = StrictVersion (other)
+        if isinstance(other, StringType):
+            other = StrictVersion(other)
 
-        compare = cmp (self.version, other.version)
+        compare = cmp(self.version, other.version)
         if (compare == 0):              # have to compare prerelease
 
             # case 1: neither has prerelease; they're equal
@@ -154,7 +154,7 @@ class StrictVersion (Version):
             elif (not self.prerelease and other.prerelease):
                 return 1
             elif (self.prerelease and other.prerelease):
-                return cmp (self.prerelease, other.prerelease)
+                return cmp(self.prerelease, other.prerelease)
 
         else:                           # numeric versions don't match --
             return compare              # prerelease stuff doesn't matter
@@ -264,7 +264,7 @@ class LooseVersion (Version):
 
     def __init__ (self, vstring=None):
         if vstring:
-            self.parse (vstring)
+            self.parse(vstring)
 
 
     def parse (self, vstring):
@@ -272,11 +272,11 @@ class LooseVersion (Version):
         # from the parsed tuple -- so I just store the string here for
         # use by __str__
         self.vstring = vstring
-        components = filter (lambda x: x and x != '.',
-                             self.component_re.split (vstring))
-        for i in range (len (components)):
+        components = filter(lambda x: x and x != '.',
+                            self.component_re.split(vstring))
+        for i in range(len(components)):
             try:
-                components[i] = int (components[i])
+                components[i] = int(components[i])
             except ValueError:
                 pass
 
@@ -288,14 +288,14 @@ class LooseVersion (Version):
 
 
     def __repr__ (self):
-        return "LooseVersion ('%s')" % str (self)
+        return "LooseVersion ('%s')" % str(self)
 
 
     def __cmp__ (self, other):
-        if isinstance (other, StringType):
-            other = LooseVersion (other)
+        if isinstance(other, StringType):
+            other = LooseVersion(other)
 
-        return cmp (self.version, other.version)
+        return cmp(self.version, other.version)
         
 
 # end class LooseVersion
