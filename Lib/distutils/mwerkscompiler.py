@@ -114,6 +114,8 @@ class MWerksCompiler (CCompiler) :
         # into the project.
         if output_filename[-8:] == '.ppc.slb':
             basename = output_filename[:-8]
+        elif output_filename[-11:] == '.carbon.slb':
+            basename = output_filename[:-11]
         else:
             basename = os.path.strip(output_filename)[0]
         projectname = basename + '.mcp'
