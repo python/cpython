@@ -1,10 +1,7 @@
-#!/ufs/guido/bin/sgi/python
+#! /usr/local/bin/python
 # Simulate the artwork in the hall.
 # Jack Jansen, Feb 91.
-#
-# Please please please don't try to read this code.
-# It is the first GL program I ever wrote, and used to do
-# very different things before it's current function:-)
+
 from gl import *
 from GL import *
 from math import *
@@ -197,6 +194,7 @@ def axis():
 	v3f(0.1,0.1,1.0)
 	endline()
 #
+green_velvet = [ DIFFUSE, 0.05, 0.4, 0.05, LMNULL]
 silver = [ DIFFUSE, 0.3, 0.3, 0.3, SPECULAR, 0.9, 0.9, 0.95, \
 	SHININESS, 40.0, LMNULL]
 floormat = [ AMBIENT, 0.5, 0.25, 0.15, DIFFUSE, 0.5, 0.25, 0.15, SPECULAR, 0.6, 0.3, 0.2, SHININESS, 20.0, LMNULL]
@@ -212,26 +210,23 @@ floor1light = [ LCOLOR, 1.0, 1.0, 1.0, POSITION, 3.9, -3.9, 0.0, 1.0, \
 lmodel = [ AMBIENT, 0.92, 0.8, 0.5, LOCALVIEWER, 1.0, LMNULL]
 #
 def lighting():
-	INDIGO=1	# XXXX Seems indigo only has one light.
+	lmdef(DEFMATERIAL, 1, green_velvet)
 	lmdef(DEFMATERIAL, 2, silver)
 	lmdef(DEFMATERIAL, 3, floormat)
 	lmdef(DEFMATERIAL, 4, wallmat)
 	lmdef(DEFMATERIAL, 5, offwhite)
 	lmdef(DEFMATERIAL, 6, doormat)
 	lmdef(DEFLIGHT, 1, toplight)
-	if not INDIGO:
-	    lmdef(DEFLIGHT, 2, floor1light)
+	lmdef(DEFLIGHT, 2, floor1light)
 	lmdef(DEFLMODEL, 1, lmodel)
+	lmbind(MATERIAL, 1)
 	lmbind(LIGHT0, 1)
-	if not INDIGO:
-	    lmbind(LIGHT1, 2)
+	lmbind(LIGHT1, 2)
 	lmbind(LMODEL, 1)
 IdMat=[1.0,0.0,0.0,0.0, 0.0,1.0,0.0,0.0, 0.0,0.0,1.0,0.0, 0.0,0.0,0.0,1.0]
 #
-wrongrange='Wrong Range'
 def defun(axis):
 	done = 0
-	res = 0.0	# Hack around exec(...)
 	while not done:
 	    print 'F'+axis+'(t) = ',
 	    s = sys.stdin.readline(100)
@@ -239,24 +234,12 @@ def defun(axis):
 	    try:
 		s = 'def f'+axis+'(t): return '+s
 		exec(s, main_dict)
-		exec('res = f'+axis+'(0.0)\n')
-		if res < -10.0 or res > 10.0:
-			raise wrongrange
-		exec('res = f'+axis+'(100.0)\n')
-		if res < -10.0 or res > 10.0:
-			raise wrongrange
 		done = 1
 	    except RuntimeError:
 		print 'Sorry, there is a syntax error in your expression'
-	    except TypeError:
-		print 'Please remember to use floating point numbers'
-	    except wrongrange:
-		print 'Sorry, function values out of range (non-periodic function?)'
 def getfunctions():
 	print 'Welcome to the CWI art simulator. You can now enter X, Y and Z'
 	print 'coordinates as a function of t.'
-	print 'Alternatively, you can specify the name of a python module'
-	print 'defining functions fx(t), fy(t) and fz(t) on the command line'
 	print 'Normal trig functions are available. Please use floating point'
 	print 'values only (so 0.0 for 0). Comments to jack@cwi.nl'
 	defun('x')
@@ -265,10 +248,7 @@ def getfunctions():
 	print 'Ok, here you go. Use mouse+right button to move up/down,'
 	print 'mouse+middle to speed up/slow down time. type ESC to quit simulation'
 def main():
-	if len(sys.argv) > 1:
-	    exec('from '+sys.argv[1]+' import *\n')
-	else:
-	    getfunctions()
+	getfunctions()
 	foreground()
 	prefposition(100,600,100,600)
 	void = winopen('cyl')
@@ -281,15 +261,15 @@ def main():
 	gconfig()
 	zbuffer(1)
 	mmode(MVIEWING)
-	perspective(600, 1.0, 0.01, 20.0)
+	perspective(400, 1.0, 1.0, 20.0)
 	loadmatrix(IdMat)
 	vx = 0.0
-	vy = -3.9
+	vy = -6.0
 	vz = 0.0
-	lookat(0.0, -3.9, 0.0, 0.0, 0.0, 0.0, 0)
+	lookat(0.0, -6.0, 0.0, 0.0, 0.0, 0.0, 0)
 	lighting()
 	t = -1.0
-	step = 0.2
+	step = 1.0
 	bol = mkcyl(12,24, 1)
 	cable = mkcyl(1, 6, 0)
 	floors = drawfloors()
@@ -313,7 +293,7 @@ def main():
 		elif (dev==MOUSE1 or dev==MOUSE2) and value == 1:
 		    if mousing > 0:
 			vx = 0.0
-			vy = -3.9
+			vy = -6.0
 			vz = 0.0
 		    mousing = dev
 		    oldx = getvaluator(MOUSEX)
@@ -325,10 +305,8 @@ def main():
 		newy = getvaluator(MOUSEY)
 		if newy <> oldy and mousing==MOUSE1:
 		    vz = vz + float(newy - oldy)/100.0
-		    if vz < -5.99:
-			vz = -5.99
 		    dist = sqrt(vx*vx + vy*vy + vz*vz)
-		    perspective(600, 1.0, 0.01, dist+16.0)
+		    perspective(400, 1.0, 1.0, dist+16.0)
 		    loadmatrix(IdMat)
 		    if vz < 0.0:
 			lookat(vx, vy, vz, 0.0, 0.0, 0.0, 1800)
@@ -346,8 +324,54 @@ def main():
 		shademodel(FLAT)
 	    #
 	    # Draw background and axis
-	    czclear(0x802020,getgdesc(GD_ZMAX))
-	    #axis()
+	    cpack(0x105090)
+	    clear()
+	    zclear()
+	    cpack(0x905010)
+	    axis()
+	    #
+	    # Draw object
+	    #
+	    bolx = fx(t)
+	    boly = fy(t)
+	    bolz = fz(t)
+	    err = ''
+	    if bolx < -4.0 or bolx > 4.0:
+		err = 'X('+`bolx`+') out of range [-4,4]'
+	    if boly < -4.0 or boly > 4.0:
+		err = 'Y('+`boly`+') out of range [-4,4]'
+	    if bolz < -4.0 or bolz > 8.0:
+		err = 'Z('+`bolz`+') out of range [-4,8]'
+	    if not err:
+		pushmatrix()
+		translate(bolx, boly, bolz)
+		scale(0.3, 0.3, 0.3)
+		lmbind(MATERIAL, 2)
+		callobj(bol)
+		popmatrix()
+		#
+		# Draw the cables
+		#
+		bolz = bolz + 0.3
+		pushmatrix()
+		linesmooth(SML_ON)
+		bgnline()
+		v3i(-4,-4,9)
+		v3f(bolx, boly, bolz)
+		endline()
+		bgnline()
+		v3i(-4,4,9)
+		v3f(bolx, boly, bolz)
+		endline()
+		bgnline()
+		v3i(4,-4,9)
+		v3f(bolx, boly, bolz)
+		endline()
+		bgnline()
+		v3i(4,4,9)
+		v3f(bolx, boly, bolz)
+		endline()
+		popmatrix()
 	    #
 	    # draw the floors
 	    #
@@ -368,51 +392,6 @@ def main():
 	    translate(0.0, -0.01, 0.0)
 	    callobj(doors)
 	    popmatrix()
-	    #
-	    # Draw object
-	    #
-	    bolx = fx(t)
-	    boly = fy(t)
-	    bolz = fz(t)
-	    err = ''
-	    if bolx < -4.0 or bolx > 4.0:
-		err = 'X('+`bolx`+') out of range [-4,4]'
-	    if boly < -4.0 or boly > 4.0:
-		err = 'Y('+`boly`+') out of range [-4,4]'
-	    if bolz < -4.0 or bolz > 8.0:
-		err = 'Z('+`bolz`+') out of range [-4,8]'
-	    if not err:
-		pushmatrix()
-		translate(bolx, boly, bolz)
-		scale(0.3, 0.3, 0.3)
-		lmbind(MATERIAL, 2)
-		blendfunction(BF_ONE, BF_ONE)
-		callobj(bol)
-		blendfunction(BF_ONE, BF_ZERO)
-		popmatrix()
-		#
-		# Draw the cables
-		#
-		bolz = bolz + 0.3
-		pushmatrix()
-		#linesmooth(SML_ON)
-		bgnline()
-		v3i(-4,-4,9)
-		v3f(bolx, boly, bolz)
-		endline()
-		bgnline()
-		v3i(-4,4,9)
-		v3f(bolx, boly, bolz)
-		endline()
-		bgnline()
-		v3i(4,-4,9)
-		v3f(bolx, boly, bolz)
-		endline()
-		bgnline()
-		v3i(4,4,9)
-		v3f(bolx, boly, bolz)
-		endline()
-		popmatrix()
 	    if mousing == MOUSE2 or err:
 		cpack(0xff0000)
 		cmov(0.0, 0.0, 0.4)
@@ -424,6 +403,7 @@ def main():
 	    if err:
 		cpack(0xff00)
 		cmov(0.0, 0.0, 0.2)
+		print err
 		charstr(err)
 		pausing = 1
 	    if pausing:
