@@ -18,7 +18,11 @@ Library
 - quopri's encode and decode methods take an optional header parameter,
   which indicates whether output is intended for the header 'Q' encoding.
 
-Tools
+Tools/Demos
+
+- Demo/dns was removed.  It no longer serves any purpose; a package
+  derived from it is now maintained by Anthony Baxter, see
+  http://PyDNS.SourceForge.net.
 
 Build
 
