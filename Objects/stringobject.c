@@ -3100,6 +3100,15 @@ formatint(char *buf, size_t buflen, int flags,
 		buf[0] = '0';
 		buf[1] = (char)type;
 	}
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+	/* unfortunately, the EMX C runtime gives us '0x' as the base
+	 * marker for %X when we expect/want '0X'
+	 */
+	else if ((flags & F_ALT) && (type == 'X')) {
+		assert(buf[1] == 'x');
+		buf[1] = (char)type;
+	}
+#endif
 	return strlen(buf);
 }
 

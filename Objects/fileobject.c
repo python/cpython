@@ -25,6 +25,10 @@
 #define NO_FOPEN_ERRNO
 #endif
 
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+#include <io.h>
+#endif
+
 #define BUF(v) PyString_AS_STRING((PyStringObject *)v)
 
 #ifndef DONT_HAVE_ERRNO_H
