@@ -770,6 +770,7 @@ _expectations = {
         test_email_codecs
         test_gdbm
         test_gl
+        test_iconv_codecs
         test_imgfile
         test_largefile
         test_linuxaudiodev
