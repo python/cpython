@@ -215,7 +215,7 @@ and a copyright notice before printing the first prompt, e.g.:
 
 \bcode\begin{verbatim}
 python
-Python 1.4b3 (Aug 25 1996)  [GCC 2.7.0]
+Python 1.4 (Oct 25 1996)  [GCC 2.7.2]
 Copyright 1991-1996 Stichting Mathematisch Centrum, Amsterdam
 >>>
 \end{verbatim}\ecode
@@ -1850,7 +1850,7 @@ exception happened, in the form of a stack backtrace.
 In general it contains a stack backtrace listing source lines; however,
 it will not display lines read from standard input.
 
-The Python library reference manual lists the built-in exceptions and
+The Python Library Reference Manual lists the built-in exceptions and
 their meanings.
 
 \section{Handling Exceptions}
@@ -3482,7 +3482,7 @@ is executed.  There's a built-in function \code{__import__} which
 provides the default implementation, but more interesting, the various
 steps it takes are available separately from the new built-in module
 \code{imp}.  (See the section on \code{imp} in the Library Reference
-Manual for more information on this module -- it also contains a
+Manual for more information on this module --- it also contains a
 complete example of how to write your own \code{__import__} function.)
 
 When you do \code{dir()} in a fresh interactive interpreter you will
@@ -3580,7 +3580,7 @@ In general, an argument list must have the form: zero or more
 positional arguments followed by zero or more keyword arguments, where
 the keywords must be chosen from the formal parameter names.  It's not
 important whether a formal parameter has a default value or not.  No
-argument must receive a value more than once -- formal parameter names
+argument must receive a value more than once --- formal parameter names
 corresponding to positional arguments cannot be used as keywords in
 the same calls.
 
@@ -3657,7 +3657,7 @@ available to the interpreter.
 
 \item
 In the effort of implementing keyword arguments, function and
-especially method calls have been sped up significantly -- for a
+especially method calls have been sped up significantly --- for a
 method with ten formal parameters, the call overhead has been cut in
 half; for a function with one formal parameters, the overhead has been
 reduced by a third.
@@ -3874,8 +3874,10 @@ notice them anyway :-)
 This chapter describes the major additions to the Python language and 
 library in version 1.4.  Many minor changes are not listed here;
 it is recommended to read the file \code{Misc/NEWS} in the Python 
-source distribution for a complete listing of all changes, however 
-small.
+source distribution for a complete listing of changes.  In particular,
+changes that only affect C programmers or the build and installation
+process are not described in this chapter (the new installation
+lay-out is explained below under \code{sys.prefix} though).
 
 \begin{itemize}
 
@@ -3887,21 +3889,22 @@ operators.  For example, \code{x**y**z} is equivalent to
 \code{x**(y**z)}, and \code{-x**y} is \code{-(x**y)}.
 
 \item
-Complex numbers.  Imaginary literals are writen with a \code{'j'} 
-suffix (\code{'J'} is allowed as well.) Complex numbers with a nonzero 
-real component are written as \code{(\var{real}+\var{imag}j)}.  You 
-can also use the new built-in function \code{complex()} which takes 
-one or two arguments: \code{complex(x)} is equivalent to \code{x + 
-0j}, and \code{complex(x, y)} is \code{x + y*0j}.
+Complex numbers.  Imaginary literals are writen with a \code{'j'}
+suffix (\code{'J'} is allowed as well.) Complex numbers with a nonzero
+real component are written as \code{(\var{real}+\var{imag}j)}.  You
+can also use the new built-in function \code{complex()} which takes
+one or two arguments: \code{complex(x)} is equivalent to \code{x +
+0j}, and \code{complex(x, y)} is \code{x + y*0j}.  For example,
+\code{1j**2} yields \code{complex(-1.0)} (which is another way of
+saying ``the real value 1.0 represented as a complex number.''
 
-The usual arithmetic operators on complex numbers are supported, so 
-that e.g.  \code{1j**2} equals \code{complex(-1.0)}.
-
-To extract the real and imaginary part from a complex number \code{z}, 
+Complex numbers are always represented as two floating point numbers,
+the real and imaginary part.
+To extract these parts from a complex number \code{z}, 
 use \code{z.real} and \code{z.imag}.  The conversion functions to 
 floating point and integer (\code{float()}, \code{int()} and 
-\code{long()}) don't work for complex numbers -- there is no one 
-obvious way to convert a complex number to a real number.  Use 
+\code{long()}) don't work for complex numbers --- there is no one 
+correct way to convert a complex number to a real number.  Use 
 \code{abs(z)} to get its magnitude (as a float) or \code{z.real} to 
 get its real part.
 
@@ -3909,12 +3912,12 @@ Module \code{cmath} provides versions of all math functions that take
 complex arguments and return complex results.  (Module \code{math} 
 only supports real numbers, so that \code{math.sqrt(-1)} still raises 
 a \code{ValueError} exception.  Numerical experts agree that this is 
-the way it shold be.)
+the way it should be.)
 
 \item
 New indexing syntax.  It is now possible to use a tuple as an indexing
 expression for a mapping object without parenthesizing it,
-e.g. \code{x[1, 2, 3]}.
+e.g. \code{x[1, 2, 3]} is equivalent to \code{x[(1, 2, 3)]}.
 
 \item
 New slicing syntax.  In support of the Numerical Python extension
@@ -3925,22 +3928,25 @@ as follows: \code{x[a, ..., z]}.  There's also a new built-in function
 \code{slice(lo, hi, stride)} and a new built-in object
 \code{Ellipses}, which yield the same effect without using special
 syntax.  None of the standard sequence types support indexing with
-slice objects or ellipses yet.  Note that when any of these extensions
-are used, the mapping interface for indexing will be used.
+slice objects or ellipses yet.
 
-When a user-defined class instance is sliced using this extended slice 
-notation, its \code{__getitem__} method is invoked -- the 
+Note that when this new slicing syntax is used, the mapping interface
+will be used, not the sequence interface.  In particular, when a
+user-defined class instance is sliced using this new slicing syntax,
+its \code{__getitem__} method is invoked --- the
 \code{__getslice__} method is only invoked when a single old-style
-slice is used, i.e. \code{x[lo:hi]}, with possible omission or 
+slice is used, i.e. \code{x[lo:hi]}, with possible omission of
 \code{lo} and/or \code{hi}.  Some examples:
 
 \begin{verbatim}
-x[1:2:-3]         --> slice(1, 2, -3)
-x[-1:2:]          --> slice(-1, 2, None)
-x[::]            --> slice(None, None, None)
-x[1, 2:3]        --> (1, slice(2, 3, None))
-x[1:2, 3:4]      --> (slice(1, 2, None), slice(3, 4, None))
-x[1:2, ..., 3:4] --> (slice(1, 2, None), Ellipses, slice(3, 4, None))
+x[0:10:2]        -> slice(0, 10, 2)
+x[:2:]           -> slice(None, 2, None)
+x[::-1]           -> slice(None, None, -1)
+x[::]            -> slice(None, None, None)
+x[1, 2:3]        -> (1, slice(2, 3, None))
+x[1:2, 3:4]      -> (slice(1, 2, None), slice(3, 4, None))
+x[1:2, ..., 3:4] -> (slice(1, 2, None), Ellipses,
+                     slice(3, 4, None))
 \end{verbatim}
 
 For more help with this you are referred to the matrix-sig.
@@ -3950,53 +3956,82 @@ The \code{access} statement is now truly gone; \code{access} is no
 longer a reserved word.  This saves a few cycles here and there.
 
 \item
-There is now limited support for class-private identifiers.  Any 
-identifier of the form \code{__spam} (two leading underscores, no two 
-trailing underscores) is now textually replaced with 
-\code{_classname__spam}, where \code{classname} is the current class 
-name with leading underscore(s) stripped.  This munging is done 
-without regard of the syntactic position of the identifier, so it can 
-be used to define class-private instance and class variables, methods, 
-as well as globals, and even class-private instance variables on 
-instances of {\em other} classes.  Truncation may occur when the 
-munged name would be longer than 255 characters.  Outside classes, no 
-munging occurs.
+Name mangling.  There is now limited support for class-private
+identifiers.  Any identifier of the form \code{__spam} (at least two
+leading underscores, at most one trailing underscore) is now textually
+replaced with \code{_classname__spam}, where \code{classname} is the
+current class name with leading underscore(s) stripped.  This mangling
+is done without regard of the syntactic position of the identifier, so
+it can be used to define class-private instance and class variables,
+methods, as well as globals, and even to store instance variables
+private to this class on instances of {\em other} classes.  Truncation
+may occur when the mangled name would be longer than 255 characters.
+Outside classes, or when the class name consists of only underscores,
+no mangling occurs.
 
-Name munging is mostly intended to give classes an easy way to define 
-``private'' instance variables and methods, without having to worry 
-about instance variables defined by derived classes, or mucking with 
-instance variables by code outside the class.  Note that the munging 
-rules are designed mostly to avoid accidents; it still is possible for 
-a ``determined soul'' to access or modify a variable that's considered 
-private.  This can even be useful, e.g. for the debugger, and that's 
-one reason why this loophole is not closed.  (Buglet: accidental 
-derivation of a class with the same name as the base class makes 
+Name mangling is intended to give classes an easy way to define
+``private'' instance variables and methods, without having to worry
+about instance variables defined by derived classes, or mucking with
+instance variables by code outside the class.  Note that the mangling
+rules are designed mostly to avoid accidents; it still is possible for
+a determined soul to access or modify a variable that is considered
+private.  This can even be useful, e.g. for the debugger, and that's
+one reason why this loophole is not closed.  (Buglet: accidental
+derivation of a class with the same name as the base class makes
 accidental use of private variables of the base class possible.)
 
 Notice that code passed to \code{exec}, \code{eval()} or
 \code{evalfile()} does not consider the classname of the invoking 
 class to be the current class; this is similar to the effect of the 
 \code{global} statement, the effect of which is likewise restricted to 
-code that is byte-compiled together.
+code that is byte-compiled together.  The same restriction applies to
+\code{getattr()}, \code{setattr()} and \code{delattr()}, as well as
+when referencing \code{__dict__} directly.
+
+Here's an example of a class that implements its own
+\code{__getattr__} and \code{__setattr__} methods and stores all
+attributes in a private variable, in a way that works in Python 1.4 as
+well as in previous versions:
+
+\begin{verbatim}
+class VirtualAttributes:
+    __vdict = None
+    __vdict_name = locals().keys()[0]
+     
+    def __init__(self):
+        self.__dict__[self.__vdict_name] = {}
+    
+    def __getattr__(self, name):
+        return self.__vdict[name]
+    
+    def __setattr__(self, name, value):
+        self.__vdict[name] = value
+\end{verbatim}
+
 
 \item
-Syntax errors detected by the code generation phase of the Python
-bytecode compiler now include a line number.  The line number is 
-appended in parentheses.  It is suppressed if the error occurs
-in line 1 (this usually happens in interactive use).
+Improved syntax error message.  Syntax errors detected by the code
+generation phase of the Python bytecode compiler now include a line
+number.  The line number is appended in parentheses.  It is suppressed
+if the error occurs in line 1 (this usually happens in interactive
+use).
 
 \item
+Different exception raised.
 Unrecognized keyword arguments now raise a \code{TypeError} exception 
 rather than \code{KeyError}.
 
 \item
-A warning is written to sys.stderr when a \code{__del__} method raises 
-an exception.  Formerly, such exceptions were completely ignored.
-The new behavior, while needed in order to debug failing 
+Exceptions in \code{__del__} methods.  When a \code{__del__} method
+raises an exception, a warning is written to \code{sys.stderr} and the
+exception is ignored.  Formerly, such exceptions were ignored without
+warning.  (Propagating the exception is not an option since it it is
+invoked from an object finalizer, which cannot 
+)  (Buglet: The new behavior, while needed in order to debug failing
 \code{__del__} methods, is occasionally annoying, because if affects
 the program's standard error stream.  It honors assignments to 
 \code{sys.stderr}, so it can be redirected from within a program if 
-desired.
+desired.)
 
 \item
 New built-in function \code{list()} converts any sequence to a new list.
@@ -4004,30 +4039,52 @@ Note that when the argument is a list, the return value is a fresh
 copy, similar to what would be returned by \code{a[:]}.
 
 \item
-New built-in module \code{operator}.  XXX
+New built-in module \code{operator}.  While undocumented, the concept
+is real simply: \code{operator.__add__(x, y)} does exactly the same
+thing as \code{x+y} (for all types --- built-in, user-defined,
+extension-defined).  As a convenience, \code{operator.add} does the
+same thing, but beware --- you can't use \code{operator.and} and a few
+others where the ``natural'' name for an operator is a reserved
+keyword.  You can add a single trailing underscore in such cases.
 
 \item
-New built-in module \code{errno}.  XXX
+New built-in module \code{errno}.  See the Library Reference Manual.
 
 \item
-Rewritten \code{cgi} module.  XXX
+Rewritten \code{cgi} module.  See the Library Reference Manual.
 
 \item
 Improved restricted execution module (\code{rexec}).  New module 
-\code{Bastion}.  XXX
+\code{Bastion}.  Both are now documented in a new chapter on
+restricted execution in the Library Reference Manual.
 
 \item
-New string operations: lstrip(), rstrip(), capitalize(), capwords(), 
-translate(), maketrans(); extended string operation: split(s, sep, 
-maxsep).  XXX
+New string operations (all described in the Library Reference Manual):
+\code{lstrip()}, \code{rstrip()} (strip only the left/right
+whitespace), \code{capitalize()} (uppercase the first character,
+lowercase the rest), \code{capwords()} (capitalize each word,
+delimited a la \code{string.split()}), \code{translate()} (string
+transliteration -- this existed before but can now also delete
+characters by specifying a third argument), \code{maketrans()} (a
+convenience function for creating translation tables for
+\code{translate()} and \code{regex.compile()}).  The string function
+\code{split()} has an optional third argument which specifies the
+maximum number of separators to split;
+e.g. \code{string.split('a=b=c', '=', 1)} yields \code{['a', 'b=c']}.
+(Note that for a long time, \code{split()} and \code{splitfields()}
+are synonyms.
 
 \item
-New regsub operations: capwords(), splitx(), and split(s, sep, maxsep).
-XXX
+New regsub operations (see the Library Reference Manual):
+\code{regsub.capwords()} (like \code{string.capwords()} but allows you to
+specify the word delimiter as a regular expression),
+\code{regsub.splitx()} (like \code{regsub.split()} but returns the
+delimiters as well as the words in the resulting list).  The optional
+\code{maxsep} argument is also supported by \code{regsub.split()}.
 
 \item
-Module files pdb.py and profile.py can now be invoked as scripts to 
-debug c.q. profile other scripts easily.
+Module files \code{pdb.py} and \code{profile.py} can now be invoked as
+scripts to debug c.q. profile other scripts easily.
 
 \item
 The \code{os} module now supports the \code{putenv()} function on 
@@ -4050,7 +4107,8 @@ New functions in the os module: mkfifo, plock, remove (== unlink),
 and ftruncate.  More functions are also available under NT.  XXX
 
 \item
-New function in the fcntl module: flock.  XXX
+New functions in the fcntl module: \code{lockf()} and \code{flock()}
+(don't ask \code{:-)}).  See the Library Reference Manual.
 
 \item
 The first item of the module search path, \code{sys.path}, is the 
@@ -4106,7 +4164,7 @@ directories to the end of \code{sys.path}:
 \code{sys.exec_prefix} mentioned above.
 
 \item
-XXX
+There's more.  As I said, see \code{Misc/NEWS}...
 
 \end{itemize}
 
