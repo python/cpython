@@ -67,7 +67,7 @@ extern long getmtime(); /* In getmtime.c */
 /* XXX Perhaps the magic number should be frozen and a version field
    added to the .pyc file header? */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
-#define MAGIC (20117 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (20121 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 object *import_modules; /* This becomes sys.modules */
 
