@@ -48,9 +48,6 @@ Data members:
 
 #include "osdefs.h"
 
-PyObject *_PySys_TraceFunc, *_PySys_ProfileFunc;
-int _PySys_CheckInterval = 10;
-
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -98,6 +95,25 @@ PySys_SetObject(name, v)
 }
 
 static PyObject *
+sys_exc_info(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	PyThreadState *tstate;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+	tstate = PyThreadState_Get();
+	if (tstate == NULL)
+		Py_FatalError("sys.exc_info(): no thread state");
+	return Py_BuildValue(
+		"(OOO)",
+		tstate->exc_type != NULL ? tstate->exc_type : Py_None,
+		tstate->exc_value != NULL ? tstate->exc_value : Py_None,
+		tstate->exc_traceback != NULL ?
+			tstate->exc_traceback : Py_None);
+}
+
+static PyObject *
 sys_exit(self, args)
 	PyObject *self;
 	PyObject *args;
@@ -112,12 +128,13 @@ sys_settrace(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyThreadState *tstate = PyThreadState_Get();
 	if (args == Py_None)
 		args = NULL;
 	else
 		Py_XINCREF(args);
-	Py_XDECREF(_PySys_TraceFunc);
-	_PySys_TraceFunc = args;
+	Py_XDECREF(tstate->sys_tracefunc);
+	tstate->sys_tracefunc = args;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -127,12 +144,13 @@ sys_setprofile(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+	PyThreadState *tstate = PyThreadState_Get();
 	if (args == Py_None)
 		args = NULL;
 	else
 		Py_XINCREF(args);
-	Py_XDECREF(_PySys_ProfileFunc);
-	_PySys_ProfileFunc = args;
+	Py_XDECREF(tstate->sys_profilefunc);
+	tstate->sys_profilefunc = args;
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -142,7 +160,8 @@ sys_setcheckinterval(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	if (!PyArg_ParseTuple(args, "i", &_PySys_CheckInterval))
+	PyThreadState *tstate = PyThreadState_Get();
+	if (!PyArg_ParseTuple(args, "i", &tstate->sys_checkinterval))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -202,6 +221,7 @@ extern PyObject *_Py_GetDXProfile Py_PROTO((PyObject *,  PyObject *));
 
 static PyMethodDef sys_methods[] = {
 	/* Might as well keep this in alphabetic order */
+	{"exc_info",	sys_exc_info, 0},
 	{"exit",	sys_exit, 0},
 #ifdef COUNT_ALLOCS
 	{"getcounts",	sys_getcounts, 0},
@@ -232,7 +252,8 @@ list_builtin_module_names()
 	if (list == NULL)
 		return NULL;
 	for (i = 0; _PyImport_Inittab[i].name != NULL; i++) {
-		PyObject *name = PyString_FromString(_PyImport_Inittab[i].name);
+		PyObject *name = PyString_FromString(
+			_PyImport_Inittab[i].name);
 		if (name == NULL)
 			break;
 		PyList_Append(list, name);

@@ -52,6 +52,8 @@ typedef struct _frame {
 	PyObject *f_locals;	/* local symbol table (PyDictObject) */
 	PyObject **f_valuestack; /* points after the last local */
 	PyObject *f_trace;	/* Trace function */
+	PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
+	PyThreadState *f_tstate;
 	int f_lasti;		/* Last instruction if called */
 	int f_lineno;		/* Current line number */
 	int f_restricted;	/* Flag set if restricted operations
@@ -71,7 +73,7 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
 PyFrameObject * PyFrame_New
-	Py_PROTO((PyFrameObject *, PyCodeObject *,
+	Py_PROTO((PyThreadState *, PyCodeObject *,
 		  PyObject *, PyObject *));
 
 

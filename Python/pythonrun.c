@@ -77,17 +77,11 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_SuppressPrintingFlag; /* Needed by ceval.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 
-/* Initialize all */
+/* Initialize the current interpreter; pass in the Python path. */
 
 void
-Py_Initialize()
+Py_Setup()
 {
-	static int inited;
-	
-	if (inited)
-		return;
-	inited = 1;
-	
 	PyImport_Init();
 	
 	/* Modules '__builtin__' and 'sys' are initialized here,
@@ -104,6 +98,46 @@ Py_Initialize()
 
 	initmain();
 }
+
+/* Create and interpreter and thread state and initialize them;
+   if we already have an interpreter and thread, do nothing.
+   Fatal error if the creation fails. */
+
+void
+Py_Initialize()
+{
+	PyThreadState *tstate;
+	PyInterpreterState *interp;
+	if (PyThreadState_Get())
+		return;
+	interp = PyInterpreterState_New();
+	if (interp == NULL)
+		Py_FatalError("PyInterpreterState_New() failed");
+	tstate = PyThreadState_New(interp);
+	if (tstate == NULL)
+		Py_FatalError("PyThreadState_New() failed");
+	(void) PyThreadState_Swap(tstate);
+
+	Py_Setup();
+
+	PySys_SetPath(Py_GetPath());
+}
+
+/*
+  Py_Initialize()
+  -- do everything, no-op on second call, call fatal on failure, set path
+
+  #2
+  -- create new interp+tstate & make it current, return NULL on failure,
+     make it current, do all setup, set path
+
+  #3
+  -- #2 without set path
+
+  #4
+  -- is there any point to #3 for caller-provided current interp+tstate?
+
+*/
 
 /* Create __main__ module */
 

@@ -35,13 +35,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 
 #ifndef WITH_THREAD
-Error!  The rest of Python is not compiled with thread support.
-Rerun configure, adding a --with-thread option.
+#error "Error!  The rest of Python is not compiled with thread support."
+#error "Rerun configure, adding a --with-thread option."
+#error "Then run `make clean' followed by `make'."
 #endif
 
 #include "thread.h"
-
-extern int _PyThread_Started;
 
 static PyObject *ThreadError;
 
@@ -192,52 +191,90 @@ static PyTypeObject Locktype = {
 
 /* Module functions */
 
+struct bootstate {
+	PyInterpreterState *interp;
+	PyObject *func;
+	PyObject *args;
+	PyObject *keyw;
+};
+
 static void
-t_bootstrap(args_raw)
-	void *args_raw;
+t_bootstrap(boot_raw)
+	void *boot_raw;
 {
-	PyObject *args = (PyObject *) args_raw;
-	PyObject *func, *arg, *res;
+	struct bootstate *boot = (struct bootstate *) boot_raw;
+	PyThreadState *alttstate, *tstate;
+	PyObject *res;
 
-	_PyThread_Started++;
-
+	tstate = PyThreadState_New(boot->interp);
 	PyEval_RestoreThread((void *)NULL);
-	func = PyTuple_GetItem(args, 0);
-	arg = PyTuple_GetItem(args, 1);
-	res = PyEval_CallObject(func, arg);
-	Py_DECREF(args); /* Matches the INCREF(args) in thread_start_new_thread */
+	alttstate = PyThreadState_Swap(tstate);
+	res = PyEval_CallObjectWithKeywords(
+		boot->func, boot->args, boot->keyw);
+	Py_DECREF(boot->func);
+	Py_DECREF(boot->args);
+	Py_XDECREF(boot->keyw);
+	PyMem_DEL(boot_raw);
 	if (res == NULL) {
 		if (PyErr_Occurred() == PyExc_SystemExit)
 			PyErr_Clear();
 		else {
 			fprintf(stderr, "Unhandled exception in thread:\n");
-			PyErr_Print(); /* From pythonmain.c */
+			PyErr_Print();
 		}
 	}
 	else
 		Py_DECREF(res);
-	(void) PyEval_SaveThread(); /* Should always be NULL */
+	(void) PyThreadState_Swap(alttstate);
+	(void) PyEval_SaveThread();
+	PyThreadState_Delete(tstate);
 	exit_thread();
 }
 
 static PyObject *
-thread_start_new_thread(self, args)
+thread_start_new_thread(self, fargs)
 	PyObject *self; /* Not used */
-	PyObject *args;
+	PyObject *fargs;
 {
-	PyObject *func, *arg;
+	PyObject *func, *args = NULL, *keyw = NULL;
+	struct bootstate *boot;
 
-	if (!PyArg_Parse(args, "(OO)", &func, &arg))
+	if (!PyArg_ParseTuple(fargs, "OO|O", &func, &args, &keyw))
 		return NULL;
-	Py_INCREF(args);
-	/* Initialize the interpreter's stack save/restore mechanism */
-	PyEval_InitThreads();
-	if (!start_new_thread(t_bootstrap, (void*) args)) {
-		Py_DECREF(args);
-		PyErr_SetString(ThreadError, "can't start new thread\n");
+	if (!PyCallable_Check(func)) {
+		PyErr_SetString(PyExc_TypeError,
+				"first arg must be callable");
 		return NULL;
 	}
-	/* Otherwise the DECREF(args) is done by t_bootstrap */
+	if (!PyTuple_Check(args)) {
+		PyErr_SetString(PyExc_TypeError,
+				"optional 2nd arg must be a tuple");
+		return NULL;
+	}
+	if (keyw != NULL && !PyDict_Check(keyw)) {
+		PyErr_SetString(PyExc_TypeError,
+				"optional 3rd arg must be a dictionary");
+		return NULL;
+	}
+	boot = PyMem_NEW(struct bootstate, 1);
+	if (boot == NULL)
+		return PyErr_NoMemory();
+	boot->interp = PyThreadState_Get()->interpreter_state;
+	boot->func = func;
+	boot->args = args;
+	boot->keyw = keyw;
+	Py_INCREF(func);
+	Py_INCREF(args);
+	Py_XINCREF(keyw);
+	PyEval_InitThreads(); /* Start the interpreter's thread-awareness */
+	if (!start_new_thread(t_bootstrap, (void*) boot)) {
+		PyErr_SetString(ThreadError, "can't start new thread\n");
+		Py_DECREF(func);
+		Py_DECREF(args);
+		Py_XDECREF(keyw);
+		PyMem_DEL(boot);
+		return NULL;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -294,8 +331,8 @@ thread_get_ident(self, args)
 }
 
 static PyMethodDef thread_methods[] = {
-	{"start_new_thread",	(PyCFunction)thread_start_new_thread},
-	{"start_new",		(PyCFunction)thread_start_new_thread},
+	{"start_new_thread",	(PyCFunction)thread_start_new_thread, 1},
+	{"start_new",		(PyCFunction)thread_start_new_thread, 1},
 	{"allocate_lock",	(PyCFunction)thread_allocate_lock},
 	{"allocate",		(PyCFunction)thread_allocate_lock},
 	{"exit_thread",		(PyCFunction)thread_exit_thread},
