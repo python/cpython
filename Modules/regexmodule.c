@@ -98,6 +98,10 @@ reg_match(re, args)
 		err_clear();
 		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
 			return NULL;
+		if (offset < 0 || offset > size) {
+			err_setstr(RegexError, "match offset out of range");
+			return NULL;
+		}
 	}
 	re->re_regs_valid = 0;
 	result = re_match(&re->re_patbuf, buffer, size, offset, &re->re_regs);
@@ -128,10 +132,10 @@ reg_search(re, args)
 		err_clear();
 		if (!getargs(args, "(s#i)", &buffer, &size, &offset))
 			return NULL;
-	}
-	if (offset < 0 || offset > size) {
-		err_setstr(RegexError, "search offset out of range");
-		return NULL;
+		if (offset < 0 || offset > size) {
+			err_setstr(RegexError, "search offset out of range");
+			return NULL;
+		}
 	}
 	/* NB: In Emacs 18.57, the documentation for re_search[_2] and
 	   the implementation don't match: the documentation states that
