@@ -163,7 +163,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*) src='$(srcdir)/'$src;;
 			esac
 			case $doconfig in
-			no)	cc="cc \$(CCSHARED)";;
+			no)	cc="$cc \$(CCSHARED)";;
 			esac
 			rule="$obj: $src; $cc \$(CFLAGS) $cpps -c $src"
 			echo "$rule" >>$rulesf
