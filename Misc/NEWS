@@ -65,6 +65,9 @@ Release date: XX-XXX-2003
 
 - SF #667147, fix crash when printing str subclass.
 
+- SF #557719, backported just the tiny fragment necessary to get BUILDEXE
+  set properly in out-of-tree builds.
+
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
 ====================================
