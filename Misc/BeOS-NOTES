@@ -1,129 +1,43 @@
 Python for BeOS R5
 
+In Python-2.1, the standard version of the new setup.py program
+will not build the full complement of modules on BeOS.  Instead,
+please replace it with the special BeOS version in Misc/BeOS-setup.py.
+
 To build,
 
-   1)  ./configure --prefix=/boot/home/config
-
-   2)  edit Modules/Setup
-          comment out grp and mmap, and pwd on 4.5 or earlier
-          uncomment any modules you want to include in python
-          (you can also add them later as shared libraries.)
+   1)  cp Misc/BeOS-setup.py setup.py
+   2)  ./configure --prefix=/boot/home/config
    3)  make
+
+The modules will all build, except termios which assumes some flags
+we don't have.  Put a libreadline.a in /boot/home/config/lib to get
+a readline.so for your interactive editing convenience;  NB, not
+libreadline.so, you want to link a static readline library into the
+dynamically loaded Python module.
 
 Test:
 
    make test
 
-   [Chris Herborth writes:]
-   test_popen2 will probably hang; it's deadlocked on a semaphore.  I should
-   probably disable popen2 support... it uses fork(), and fork() doesn't mix
-   with threads on BeOS.  In *THEORY* you could use it in a single-threaded
-   program, but I haven't tried.
+   The BeOS is Not UNIX category:
+ - test_select crashed -- select.error : (-2147459072, 'Bad file descriptor')
+ - test_socket crashed -- exceptions.AttributeError : SOCK_RAW
+ - test_fcntl crashed -- exceptions.IOError: [Errno -2147483643] Invalid argument
 
-   If test_popen2 does hang, you can find the semaphore it's hung on via the
-   "ps" command.  Look for python and you'll find something like this:
+   This one is funny!  BeOS does support large files, and that's why
+       we get this error:  the file is too big for my filesystem!
+ - test_largefile crashed -- exceptions.IOError: [Errno -2147459065]
+       No space left on device
 
-./python -tt ../src/Lib/test/regrtest.py (team 26922) (uid 0) (gid 0)
-  39472               python  sem  10    3785    1500 piperd(360526)
-./python -tt ../src/Lib/test/regrtest.py (team 26923) (uid 0) (gid 0)
-  39477               python  sem  10      25       4 python lock (1)(360022)
-                                                                      ^^^^^^
-   That last number is the semaphore the fork()'d python is stuck on
-   (see how it's helpfully called "python lock (1)"? :-).  You can unblock
-   that semaphore to let the tests continue using the "release" command
-   with that semaphore number.  Be _very_ careful with "release" though,
-   releasing the wrong semaphore can be hazardous.
-
-   Expect the following errors:
-
-   test * skipped -- an optional feature could not be imported (you'll see
-                     quite a few of these, based on what optional modules
-                     you've included)
-
-   test test_fork1 skipped -- can't mix os.fork with  threads on BeOS
-
-   test test_select crashed -- select.error : (-2147459072, 'Bad file
-                               descriptor')
-
-   test test_socket crashed -- exceptions.AttributeError : SOCK_RAW
-
-   These are all due to either partial support for certain things (like
-   sockets), or valid differences between systems.
-
-   test test_pickle crashed.  This is apparently a serious problem,
-                     "complex" number objects reconstructed from a
-                     pickle don't compare equal to their ancestors.
-                     But it happens on BeOS PPC only, not Intel.
+ - test_pickle crashed.  This is apparently a serious problem, "complex"
+       number objects reconstructed from a pickle don't compare equal to
+       their ancestors.  But it happens on BeOS PPC only, not Intel.
 
 Install:
 
    make install
 
-
-Using GNU readline:
-
-   The Python interpreter is much nicer to work with interactively if
-   you've got readline installed.  Highly recommended.
-
-   You can get the original GNU readline 2.2 source code from your
-   favourite GNU software repository, such as
-   ftp://prep.ai.mit.edu/pub/gnu/.
-
-   You can get the only-slightly-modified-for-BeOS version of GNU
-   readline 2.2 from the GeekGadgets repository;
-   ftp://ftp.ninemoons.com/pub/geekgadgets/.
- 
-
-Building libreadline for BeOS hosts:
-
-  Note that we don't build a shared library version of libreadline and
-  libhistory.  That's left as an exercise for the reader.
-
-  You won't be able to link against libreadline.a using the limited
-  linker.
-
-   1) If you're on a PowerPC system, install the POSIX ar from 
-      http://www.qnx.com/~chrish/Be/software/index.html#programming
-      (note that it's currently packaged with Python, in the BeOS/ar-1.1
-      directory).
-   
-      If you're on an x86 system, you can leave out the "AR=ar-posix"
-      part of the following instructions.  In fact, you'll have to...
-
-   2) For PowerPC, configure with:
-
-      CC=mwcc CFLAGS="-O7 -i- -I." AR=ar-posix RANLIB=: ./configure --verbose \
-      --without-gcc --prefix=/boot/home/config powerpc-*-beos
-
-      For x86, configure with:
-      
-      CC=mwcc CFLAGS="-O2 -i- -I." RANLIB=: ./configure --verbose \
-      --without-gcc --prefix=/boot/home/config x86-*-beos
-
-      Don't worry about the warnings/errors configure spews for
-      powerpc-*-beos or x86-*-beos; readline doesn't actually use this host 
-      information    for anything, although configure will die if you don't 
-      specify it.
-
-   3) Edit config.h to comment out "#define HAVE_SELECT 1"; select() on
-      BeOS doesn't work on file descriptors (such as stdin).
-
-   4) For PowerPC, make with:
-
-      make AR=ar-posix 
-
-      For x86, make with:
-      
-      make
-
-   5) Install with:
-
-      make install
-
-Enjoy!
-
-- Chris Herborth (chrish@pobox.com)
-  July 21, 2000
 
 - Donn Cave (donn@oz.net)
   October 4, 2000
