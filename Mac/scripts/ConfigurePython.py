@@ -89,9 +89,9 @@ def gotopluginfolder():
 	"""Go to the plugin folder, assuming we are somewhere in the Python tree"""
 	import os
 	
-	while not os.path.isdir(":Plugins"):
+	while not os.path.isdir(":Mac:Plugins"):
 		os.chdir("::")
-	os.chdir(":Plugins")
+	os.chdir(":Mac:Plugins")
 	if verbose: print "current directory is", os.getcwd()
 	
 def loadtoolboxmodules():
