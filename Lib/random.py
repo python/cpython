@@ -148,16 +148,7 @@ class Random(_random.Random):
         if istop != stop:
             raise ValueError, "non-integer stop for randrange()"
         if step == 1 and istart < istop:
-            try:
-                return istart + int(self.random()*(istop - istart))
-            except OverflowError:
-                # This can happen if istop-istart > sys.maxint + 1, and
-                # multiplying by random() doesn't reduce it to something
-                # <= sys.maxint.  We know that the overall result fits
-                # in an int, and can still do it correctly via math.floor().
-                # But that adds another function call, so for speed we
-                # avoided that whenever possible.
-                return int(istart + _floor(self.random()*(istop - istart)))
+            return int(istart + self.random()*(istop - istart))
         if step == 1:
             raise ValueError, "empty range for randrange()"
 
