@@ -1846,19 +1846,6 @@ com_assign_sequence(struct compiling *c, node *n, int assigning)
 }
 
 static void
-com_assign_list(struct compiling *c, node *n, int assigning)
-{
-	int i;
-	if (assigning) {
-		i = (NCH(n)+1)/2;
-		com_addoparg(c, UNPACK_SEQUENCE, i);
-		com_push(c, i-1);
-	}
-	for (i = 0; i < NCH(n); i += 2)
-		com_assign(c, CHILD(n, i), assigning);
-}
-
-static void
 com_assign_name(struct compiling *c, node *n, int assigning)
 {
 	REQ(n, NAME);
