@@ -2625,7 +2625,7 @@ to your benefit.
 \section{The Last Printed Expression}
 
 In interactive mode, the last printed expression is assigned to the
-variable \code\_.  This means that when you are using Python as a
+variable \code{_}.  This means that when you are using Python as a
 desk calculator, it is somewhat easier to continue calculations, for
 example:
 
@@ -2641,12 +2641,19 @@ example:
         >>> 
 \end{verbatim}
 
+For reasons too embarrassing to explain, this variable is implemented
+as a built-in (living in the module \code{__builtin__}), so it should
+be treated as read-only by the user.  I.e. don't explicitly assign a
+value to it --- you would create an independent local variable with
+the same name masking the built-in variable with its magic behavior.
+
 \section{String Literals}
 
 \subsection{Double Quotes}
 
 Python can now also use double quotes to surround string literals,
-e.g. \verb\"this doesn't hurt a bit"\.
+e.g. \verb\"this doesn't hurt a bit"\.  There is no semantic
+difference between strings surrounded by single or double quotes.
 
 \subsection{Continuation Of String Literals}
 
@@ -2681,7 +2688,7 @@ be used, e.g.
         hello = """
 
             This string is bounded by triple double quotes (3 times ").
-        Newlines in the string are retained, though \
+        Unescaped newlines in the string are retained, though \
         it is still possible\nto use all normal escape sequences.
 
             Whitespace at the beginning of a line is
@@ -2692,8 +2699,8 @@ be used, e.g.
         """
 \end{verbatim}
 
-Note that there is no semantic difference between strings quoted with
-single quotes (\verb/'/) or double quotes (\verb\"\).
+Triple-quoted strings can be surrounded by three single quotes as
+well, again without semantic difference.
 
 \subsection{String Literal Juxtaposition}
 
@@ -2959,11 +2966,10 @@ Reference for a full description.
 \section{Generalized Dictionaries}
 
 The keys of dictionaries are no longer restricted to strings -- they
-can be
-any immutable basic type including strings,
-numbers, tuples, or (certain) class instances.  (Lists and
-dictionaries are not acceptable as dictionary keys, in order to avoid
-problems when the object used as a key is modified.)
+can be any immutable basic type including strings, numbers, tuples, or
+(certain) class instances.  (Lists and dictionaries are not acceptable
+as dictionary keys, in order to avoid problems when the object used as
+a key is modified.)
 
 Dictionaries have two new methods: \verb\d.values()\ returns a list of
 the dictionary's values, and \verb\d.items()\ returns a list of the
@@ -3163,5 +3169,367 @@ f = PresetSomeArguments(pow, 2)    # f(i) computes powers of 2
 for i in range(10): print f(i),    # prints 1 2 4 8 16 32 64 128 256 512
 print                              # append newline
 \end{verbatim}
+
+
+\chapter{New in Release 1.2}
+
+
+This chapter describes even more recent additions to the Python
+language and library.
+
+
+\section{New Class Features}
+
+The semantics of \code{__coerce__} have been changed to be more
+reasonable.  As an example, the new standard module \code{Complex}
+implements fairly complete complex numbers using this.  Additional
+examples of classes with and without \code{__coerce__} methods can be
+found in the \code{Demo/classes} subdirectory, modules \code{Rat} and
+\code{Dates}.
+
+If a class defines no \code{__coerce__} method, this is equivalent to
+the following definition:
+
+\begin{verbatim}
+def __coerce__(self, other): return self, other
+\end{verbatim}
+
+If \code{__coerce__} coerces itself to an object of a different type,
+the operation is carried out using that type --- in release 1.1, this
+would cause an error.
+
+Comparisons involving class instances now invoke \code{__coerce__}
+exactly as if \code{cmp(x, y)} were a binary operator like \code{+}
+(except if \code{x} and \code{y} are the same object).
+
+\section{Unix Signal Handling}
+
+On Unix, Python now supports signal handling.  The module
+\code{signal} exports functions \code{signal}, \code{pause} and
+\code{alarm}, which act similar to their Unix counterparts.  The
+module also exports the conventional names for the various signal
+classes (also usable with \code{os.kill()}) and \code{SIG_IGN} and
+\code{SIG_DFL}.  See the section on \code{signal} in the Library
+Reference Manual for more information.
+
+\section{Exceptions Can Be Classes}
+
+User-defined exceptions are no longer limited to being string objects
+--- they can be identified by classes as well.  Using this mechanism it
+is possible to create extensible hierarchies of exceptions.
+
+There are two new valid (semantic) forms for the raise statement:
+
+\begin{verbatim}
+raise Class, instance
+
+raise instance
+\end{verbatim}
+
+In the first form, \code{instance} must be an instance of \code{Class}
+or of a class derived from it.  The second form is a shorthand for
+
+\begin{verbatim}
+raise instance.__class__, instance
+\end{verbatim}
+
+An except clause may list classes as well as string objects.  A class
+in an except clause is compatible with an exception if it is the same
+class or a base class thereof (but not the other way around --- an
+except clause listing a derived class is not compatible with a base
+class).  For example, the following code will print B, C, D in that
+order:
+
+\begin{verbatim}
+class B:
+    pass
+class C(B):
+    pass
+class D(C):
+    pass
+
+for c in [B, C, D]:
+    try:
+        raise c()
+    except D:
+        print "D"
+    except C:
+        print "C"
+    except B:
+        print "B"
+\end{verbatim}
+
+Note that if the except clauses were reversed (with ``\code{except B}''
+first), it would have printed B, B, B --- the first matching except
+clause is triggered.
+
+When an error message is printed for an unhandled exception which is a
+class, the class name is printed, then a colon and a space, and
+finally the instance converted to a string using the built-in function
+\code{str()}.
+
+In this release, the built-in exceptions are still strings.
+
+
+\section{Object Persistency and Object Copying}
+
+Two new modules, \code{pickle} and \code{shelve}, support storage and
+retrieval of (almost) arbitrary Python objects on disk, using the
+\code{dbm} package.  A third module, \code{copy}, provides flexible
+object copying operations.
+
+\subsection{Persistent Objects}
+
+The module \code{pickle} provides a general framework for objects to
+disassemble themselves into a stream of bytes and to reassemble such a
+stream back into an object.  It copes with reference sharing,
+recursive objects and instances of user-defined classes, but not
+(directly) with objects that have ``magical'' links into the operating
+system such as open files, sockets or windows.
+
+The \code{pickle} module defines a simple protocol whereby
+user-defined classes can control how they are disassembled and
+assembled.  The method \code{__getinitargs__()}, if defined, returns
+the argument list for the constructor to be used at assembly time (by
+default the constructor is called without arguments).  The methods
+\code{__getstate__()} and \code{__setstate__()} are used to pass
+additional state from disassembly to assembly; by default the
+instance's \code{__dict__} is passed and restored.
+
+Note that \code{pickle} does not open or close any files --- it can be
+used equally well for moving objects around on a network or store them
+in a database.  For ease of debugging, and the inevitable occasional
+manual patch-up, the constructed byte streams consist of printable
+ASCII characters only (though it's not designed to be pretty).
+
+The module \code{shelve} provides a simple model for storing objects
+on files.  The operation \code{shelve.open(filename)} returns a
+``shelf'', which is a simple persistent database with a
+dictionary-like interface.  Database keys are strings, objects stored
+in the database can be anything that \code{pickle} will handle.
+
+More information on these modules can be glanced from their
+documentation strings (see below).
+
+\subsection{Copying Objects}
+
+The module \code{copy} exports two functions: \code{copy()} and
+\code{deepcopy()}.  The \code{copy()} function returns a ``shallow''
+copy of an object; \code{deepcopy()} returns a ``deep'' copy.  The
+difference between shallow and deep copying is only relevant for
+compound objects (objects that contain other objects, like lists or
+class instances):
+
+\begin{itemize}
+
+\item
+A shallow copy constructs a new compound object and then (to the
+extent possible) inserts {\em the same objects} into in that the
+original contains.
+
+\item
+A deep copy constructs a new compound object and then, recursively,
+inserts {\em copies} into it of the objects found in the original.
+
+\end{itemize}
+
+Both functions have the same restrictions and use the same protocols
+as \code{pickle} --- user-defined classes can control how they are
+copied by providing methods named \code{__getinitargs__()},
+\code{__getstate__()} and \code{__setstate__()}.
+
+More info in the module's documentation string.
+
+
+\section{Documentation Strings}
+
+A variety of objects now have a new attribute, \code{__doc__}, which
+is supposed to contain a documentation string (if no documentation is
+present, the attribute is \code{None}).  New syntax, compatible with
+the old interpreter, allows for convenient initialization of the
+\code{__doc__} attribute of modules, classes and functions by placing
+a string literal by itself as the first statement in the suite.  It
+must be a literal --- an expression yielding a string object is not
+accepted as a documentation string, since future tools may need to
+derive documentation from source by parsing.
+
+Here is a hypothetical, amply documented module called \code{Spam}:
+
+\begin{verbatim}
+"""Spam operations.
+
+This module exports two classes, a function and an exception:
+
+class Spam: full Spam functionality --- three can sizes
+class SpamLight: limited Spam functionality --- only one can size
+
+def open(filename): open a file and return a corresponding Spam or
+SpamLight object
+
+GoneOff: exception raised for errors; should never happen
+
+Note that it is always possible to convert a SpamLight object to a
+Spam object by a simple method call, but that the reverse operation is
+generally costly and may fail for a number of reasons.
+"""
+
+class SpamLight:
+    """Limited spam functionality.
+
+    Supports a single can size, no flavor, and only hard disks.
+    """
+
+    def __init__(self, size=12):
+        """Construct a new SpamLight instance.
+
+        Argument is the can size.
+        """
+        # etc.
+
+    # etc.
+
+class Spam(SpamLight):
+    """Full spam functionality.
+
+    Supports three can sizes, two flavor varieties, and all floppy
+    disk formats still supported by current hardware.
+    """
+
+    def __init__(self, size1=8, size2=12, size3=20):
+        """Construct a new Spam instance.
+
+        Arguments are up to three can sizes.
+        """
+        # etc.
+
+    # etc.
+
+def open(filename = "/dev/null"):
+    """Open a can of Spam.
+
+    Argument must be an existing file.
+    """
+    # etc.
+
+class GoneOff:
+    """Class used for Spam exceptions.
+
+    There shouldn't be any.
+    """
+    pass
+\end{verbatim}
+
+After executing ``\code{import Spam}'', the following expressions
+return the various documentation strings from the module:
+
+\begin{verbatim}
+Spam.__doc__
+Spam.SpamLight.__doc__
+Spam.SpamLight.__init__.__doc__
+Spam.Spam.__doc__
+Spam.Spam.__init__.__doc__
+Spam.open.__doc__
+Spam.GoneOff.__doc__
+\end{verbatim}
+
+There are emerging conventions about the content and formatting of
+documentation strings.
+
+The first line should always be a short, concise summary of the
+object's purpose.  For brevity, it should not explicitly state the
+object's name or type, since these are available by other means
+(except if the name happens to be a verb describing a function's
+operation).  This line should begin with a capital letter and end with
+a period.
+
+If there are more lines in the documentation string, the second line
+should be blank, visually separating the summary from the rest of the
+description.  The following lines should be one of more of paragraphs
+describing the objects calling conventions, its side effects, etc.
+
+Some people like to copy the Emacs convention of using UPPER CASE for
+function parameters --- this often saves a few words or lines.
+
+The Python parser does not strip indentation from multi-line string
+literals in Python, so tools that process documentation have to strip
+indentation.  This is done using the following convention.  The first
+non-blank line {\em after} the first line of the string determines the
+amount of indentation for the entire documentation string.  (We can't
+use the first line since it is generally adjacent to the string's
+opening quotes so its indentation is not apparent in the string
+literal.)  Whitespace ``equivalent'' to this indentation is then
+stripped from the start of all lines of the string.  Lines that are
+indented less should not occur, but if they occur all their leading
+whitespace should be stripped.  Equivalence of whitespace should be
+tested after expansion of tabs (to 8 spaces, normally).
+
+In this release, few of the built-in or standard functions and modules
+have documentation strings.
+
+
+\section{Customizing Import and Built-Ins}
+
+In preparation for a ``restricted execution mode'' which will be
+usable to run code received from an untrusted source (such as a WWW
+server or client), the mechanism by which modules are imported has
+been redesigned.  It is now possible to provide your own function
+\code{__import__} which is called whenever an \code{import} statement
+is executed.  There's a built-in function \code{__import__} which
+provides the default implementation, but more interesting, the various
+steps it takes are available separately from the new built-in module
+\code{imp}.  (See the section on \code{imp} in the Library Reference
+Manual for more information on this module.)
+
+When you do \code{dir()} in a fresh interactive interpreter you will
+see another ``secret'' object that's present in every module:
+\code{__builtins__}.  This is either a dictionary or a module
+containing the set of built-in objects used by functions defined in
+current module.  Although normally all modules are initialized with a
+reference to the same dictionary, it is now possible to use a
+different set of built-ins on a per-module basis.  Together with the
+fact that the \code{import} statement uses the \code{__import__}
+function it finds in the importing modules' dictionary of built-ins,
+this forms the basis for a future restricted execution mode.
+
+
+\section{Python and the World-Wide Web}
+
+There is a growing number of modules available for writing WWW tools.
+The previous release already sported modules \code{gopherlib},
+\code{ftplib}, \code{httplib} and \code{urllib} (unifying the previous
+three) for accessing data through the commonest WWW protocols.  This
+release also provides \code{cgi}, to ease the writing of server-side
+scripts that use the Common Gateway Interface protocol, supported by
+most WWW servers.  The module \code{urlparse} provides precise parsing
+of a URL string into its components (address scheme, network location,
+path, parameters, query, and fragment identifier).
+
+There is no complete parser for HTML files yet, although the
+\code{Demo/www} directory in the distribution contains some old code
+that should be a start if you wanted to contribute one.
+Unfortunately Python seems to be too slow for real-time parsing and
+formatting of HTML such as required by interactive WWW browsers --- but
+it's ideal for writing a ``robot'' (an automated WWW browser that
+searches the web for information).
+
+
+\section{Miscellaneous}
+
+\begin{itemize}
+
+\item
+The \code{socket} module now exports all the needed constants used for
+socket operations, such as \code{SO_BROADCAST}.
+
+\item
+The functions \code{popen()} and \code{fdopen()} in the \code{os}
+module now follow the pattern of the built-in function \code{open()}:
+the default mode argument is \code{'r'} and the optional third
+argument specifies the buffer size, where \code{0} means unbuffered,
+\code{1} means line-buffered, and any larger number means the size of
+the buffer in bytes.
+
+\end{itemize}
+
 
 \end{document}
