@@ -322,8 +322,10 @@ long_format(aa, base)
 		})
 	} while (ABS(a->ob_size) != 0);
 	DECREF(a);
-	if (base == 8)
-		*--p = '0';
+	if (base == 8) {
+		if (size_a != 0)
+			*--p = '0';
+	}
 	else if (base == 16) {
 		*--p = 'x';
 		*--p = '0';
