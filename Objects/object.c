@@ -2047,7 +2047,8 @@ _Py_PrintReferenceAddresses(FILE *fp)
 	PyObject *op;
 	fprintf(fp, "Remaining object addresses:\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-		fprintf(fp, "%p [%d]\n", op, op->ob_refcnt);
+		fprintf(fp, "%p [%d] %s\n", op, op->ob_refcnt,
+					    op->ob_type->tp_name);
 }
 
 PyObject *
