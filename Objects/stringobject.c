@@ -765,7 +765,11 @@ string_print(PyStringObject *op, FILE *fp, int flags)
 		return ret;
 	}
 	if (flags & Py_PRINT_RAW) {
-		fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
+#ifdef __VMS
+                if (op->ob_size) fwrite(op->ob_sval, (int) op->ob_size, 1, fp);
+#else
+                fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
+#endif
 		return 0;
 	}
 

@@ -693,8 +693,11 @@ open_exclusive(char *filename)
 #ifdef O_BINARY
 				|O_BINARY   /* necessary for Windows */
 #endif
-
-			, 0666);
+#ifdef __VMS
+                        , 0666, "ctxt=bin", "shr=nil");
+#else
+                        , 0666);
+#endif
 	if (fd < 0)
 		return NULL;
 	return fdopen(fd, "wb");

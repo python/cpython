@@ -67,6 +67,7 @@ Exception\n\
  |    |    +-- OSError\n\
  |    |         |\n\
  |    |         +-- WindowsError\n\
+ |    |         +-- VMSError\n\
  |    |\n\
  |    +-- EOFError\n\
  |    +-- RuntimeError\n\
@@ -642,6 +643,11 @@ PyDoc_STRVAR(OSError__doc__, "OS system call failed.");
 #ifdef MS_WINDOWS
 PyDoc_STRVAR(WindowsError__doc__, "MS-Windows OS system call failed.");
 #endif /* MS_WINDOWS */
+
+#ifdef __VMS
+static char
+VMSError__doc__[] = "OpenVMS OS system call failed.";
+#endif
 
 PyDoc_STRVAR(EOFError__doc__, "Read beyond end of file.");
 
@@ -1599,6 +1605,9 @@ PyObject *PyExc_ZeroDivisionError;
 #ifdef MS_WINDOWS
 PyObject *PyExc_WindowsError;
 #endif
+#ifdef __VMS
+PyObject *PyExc_VMSError;
+#endif
 
 /* Pre-computed MemoryError instance.  Best to create this as early as
  * possibly and not wait until a MemoryError is actually raised!
@@ -1650,6 +1659,10 @@ static struct {
  {"WindowsError", &PyExc_WindowsError, &PyExc_OSError,
   WindowsError__doc__},
 #endif /* MS_WINDOWS */
+#ifdef __VMS
+ {"VMSError", &PyExc_VMSError, &PyExc_OSError,
+  VMSError__doc__},
+#endif
  {"EOFError",     &PyExc_EOFError,     0, EOFError__doc__},
  {"RuntimeError", &PyExc_RuntimeError, 0, RuntimeError__doc__},
  {"NotImplementedError", &PyExc_NotImplementedError,

@@ -947,7 +947,8 @@ calibrate(void)
         }
 #endif
     }
-#if defined(MS_WINDOWS) || defined(macintosh) || defined(PYOS_OS2)
+#if defined(MS_WINDOWS) || defined(macintosh) || defined(PYOS_OS2) || \
+    defined(__VMS)
     rusage_diff = -1;
 #else
     {

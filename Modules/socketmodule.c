@@ -148,6 +148,15 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # include <ctype.h>
 #endif
 
+#if defined(__VMS) && ! defined(_SOCKADDR_LEN)
+#   ifdef getaddrinfo
+#      undef getaddrinfo
+#   endif
+#  include "TCPIP_IOCTL_ROUTINE"
+#else
+#  include <ioctl.h>
+#endif
+
 #if defined(PYOS_OS2)
 # define  INCL_DOS
 # define  INCL_DOSERRORS
@@ -268,6 +277,11 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 
 #ifndef SOCKETCLOSE
 #define SOCKETCLOSE close
+#endif
+
+#ifdef __VMS
+/* TCP/IP Services for VMS uses a maximum send/revc buffer length of 65535 */
+#define SEGMENT_SIZE 65535
 #endif
 
 /* XXX There's a problem here: *static* functions are not supposed to have
@@ -485,7 +499,10 @@ internal_setblocking(PySocketSockObject *s, int block)
 #if defined(PYOS_OS2) && !defined(PYCC_GCC)
 	block = !block;
 	ioctl(s->sock_fd, FIONBIO, (caddr_t)&block, sizeof(block));
-#else /* !PYOS_OS2 */
+#elif defined(__VMS)
+	block = !block;
+	ioctl(s->sock_fd, FIONBIO, (char *)&block);
+#else  /* !PYOS_OS2 && !_VMS */
 	delay_flag = fcntl(s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NONBLOCK);
@@ -1223,7 +1240,11 @@ sock_getsockopt(PySocketSockObject *s, PyObject *args)
 			return s->errorhandler();
 		return PyInt_FromLong(flag);
 	}
+#ifdef __VMS
+	if (buflen > 1024) {
+#else
 	if (buflen <= 0 || buflen > 1024) {
+#endif
 		PyErr_SetString(socket_error,
 				"getsockopt buflen out of range");
 		return NULL;
@@ -1560,9 +1581,23 @@ sock_makefile(PySocketSockObject *s, PyObject *args)
 #endif
 	FILE *fp;
 	PyObject *f;
+#ifdef __VMS
+	char *mode_r = "r";
+	char *mode_w = "w";
+#endif
 
 	if (!PyArg_ParseTuple(args, "|si:makefile", &mode, &bufsize))
 		return NULL;
+#ifdef __VMS
+	if (strcmp(mode,"rb") == 0) {
+	    mode = mode_r;
+	}
+	else {
+		if (strcmp(mode,"wb") == 0) {
+			mode = mode_w;
+		}
+	}
+#endif
 #ifdef MS_WIN32
 	if (((fd = _open_osfhandle(s->sock_fd, _O_BINARY)) < 0) ||
 	    ((fd = dup(fd)) < 0) || ((fp = fdopen(fd, mode)) == NULL))
@@ -1601,6 +1636,10 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 {
 	int len, n, flags = 0;
 	PyObject *buf;
+#ifdef __VMS
+	int read_length;
+	char *read_buf;
+#endif
 
 	if (!PyArg_ParseTuple(args, "i|i:recv", &len, &flags))
 		return NULL;
@@ -1615,6 +1654,7 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	if (buf == NULL)
 		return NULL;
 
+#ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
 	internal_select(s, 0);
 	n = recv(s->sock_fd, PyString_AS_STRING(buf), len, flags);
@@ -1626,6 +1666,42 @@ sock_recv(PySocketSockObject *s, PyObject *args)
 	}
 	if (n != len)
 		_PyString_Resize(&buf, n);
+#else
+	read_buf = PyString_AsString(buf);
+	read_length = len;
+	while (read_length != 0) {
+		unsigned int segment;
+
+		segment = read_length /SEGMENT_SIZE;
+		if (segment != 0) {
+			segment = SEGMENT_SIZE;
+		}
+		else {
+			segment = read_length;
+		}
+
+		Py_BEGIN_ALLOW_THREADS
+ 	  	internal_select(s, 0);
+		n = recv(s->sock_fd, read_buf, segment, flags);
+		Py_END_ALLOW_THREADS
+
+		if (n < 0) {
+			Py_DECREF(buf);
+			return s->errorhandler();
+		}
+		if (n != read_length) {
+			read_buf += n;
+			break;
+		}
+
+		read_length -= segment;
+		read_buf += segment;
+	}
+	if (_PyString_Resize(&buf, (read_buf - PyString_AsString(buf))) < 0)
+	{
+	    return NULL;
+	}
+#endif /* !__VMS */
 	return buf;
 }
 
@@ -1707,10 +1783,14 @@ sock_send(PySocketSockObject *s, PyObject *args)
 {
 	char *buf;
 	int len, n, flags = 0;
+#ifdef __VMS
+	int send_length;
+#endif
 
 	if (!PyArg_ParseTuple(args, "s#|i:send", &buf, &len, &flags))
 		return NULL;
 
+#ifndef __VMS
 	Py_BEGIN_ALLOW_THREADS
 	internal_select(s, 1);
 	n = send(s->sock_fd, buf, len, flags);
@@ -1718,6 +1798,31 @@ sock_send(PySocketSockObject *s, PyObject *args)
 
 	if (n < 0)
 		return s->errorhandler();
+#else
+	/* Divide packet into smaller segments for	*/
+	/*  TCP/IP Services for OpenVMS			*/
+	send_length = len;
+	while (send_length != 0) {
+		unsigned int segment;
+
+		segment = send_length / SEGMENT_SIZE;
+		if (segment != 0) {
+			segment = SEGMENT_SIZE;
+		}
+		else {
+			segment = send_length;
+		}
+		Py_BEGIN_ALLOW_THREADS
+		internal_select(s, 1);
+		n = send(s->sock_fd, buf, segment, flags);
+		Py_END_ALLOW_THREADS
+		if (n < 0) {
+			return s->errorhandler();
+		}
+		send_length -= segment;
+		buf += segment;
+	} /* end while */
+#endif /* !__VMS */
 	return PyInt_FromLong((long)n);
 }
 
