@@ -1077,7 +1077,7 @@ dict_compare(dictobject *a, dictobject *b)
 	adiff = characterize(a, b, &aval);
 	if (adiff == NULL) {
 		assert(!aval);
-		/* Either an error, or a is a subst with the same length so
+		/* Either an error, or a is a subset with the same length so
 		 * must be equal.
 		 */
 		res = PyErr_Occurred() ? -1 : 0;
