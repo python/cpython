@@ -36,7 +36,8 @@ class Debugger(bdb.Bdb):
 
     def user_return(self, frame, rv):
         # XXX show rv?
-        self.interaction(frame)
+        ##self.interaction(frame)
+        pass
 
     def user_exception(self, frame, info):
         self.interaction(frame, info)
@@ -76,7 +77,7 @@ class Debugger(bdb.Bdb):
         self.bstack.grid(row=0, column=0)
         if not self.vsource:
             self.__class__.vsource = BooleanVar(top)
-            self.vsource.set(1)
+            ##self.vsource.set(1)
         self.bsource = Checkbutton(cframe,
             text="Source", command=self.show_source, variable=self.vsource)
         self.bsource.grid(row=0, column=1)
@@ -88,7 +89,7 @@ class Debugger(bdb.Bdb):
         self.blocals.grid(row=1, column=0)
         if not self.vglobals:
             self.__class__.vglobals = BooleanVar(top)
-            self.vglobals.set(1)
+            ##self.vglobals.set(1)
         self.bglobals = Checkbutton(cframe,
             text="Globals", command=self.show_globals, variable=self.vglobals)
         self.bglobals.grid(row=1, column=1)
@@ -96,7 +97,7 @@ class Debugger(bdb.Bdb):
         self.status = Label(top, anchor="w")
         self.status.pack(anchor="w")
         self.error = Label(top, anchor="w")
-        self.error.pack(anchor="w")
+        self.error.pack(anchor="w", fill="x")
         self.errorbg = self.error.cget("background")
         #
         self.fstack = Frame(top, height=1)
@@ -150,7 +151,7 @@ class Debugger(bdb.Bdb):
             stack, i = self.get_stack(self.frame, tb)
             sv.load_stack(stack, i)
         #
-        self.show_variables()
+        self.show_variables(1)
         #
         if self.vsource.get():
             self.sync_source_line()
@@ -248,7 +249,7 @@ class Debugger(bdb.Bdb):
                 self.fglobals['height'] = 1
         self.show_variables()
 
-    def show_variables(self):
+    def show_variables(self, force=0):
         lv = self.localsviewer
         gv = self.globalsviewer
         frame = self.frame
@@ -260,6 +261,32 @@ class Debugger(bdb.Bdb):
             if lv and gv and ldict is gdict:
                 ldict = None
         if lv:
-            lv.load_dict(ldict)
+            lv.load_dict(ldict, force)
         if gv:
-            gv.load_dict(gdict)
+            gv.load_dict(gdict, force)
+
+    def set_breakpoint_here(self, edit):
+        text = edit.text
+        filename = edit.io.filename
+        if not filename:
+            text.bell()
+            return
+        lineno = int(float(text.index("insert")))
+        msg = self.set_break(filename, lineno)
+        if msg:
+            text.bell()
+            return
+        text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
+    
+    # A literal copy of Bdb.set_break() without the print statement at the end
+    def set_break(self, filename, lineno, temporary=0, cond = None):
+	import linecache # Import as late as possible
+	line = linecache.getline(filename, lineno)
+	if not line:
+		return 'That line does not exist!'
+	if not self.breaks.has_key(filename):
+		self.breaks[filename] = []
+	list = self.breaks[filename]
+	if not lineno in list:
+		list.append(lineno)
+	bp = Breakpoint(filename, lineno, temporary, cond)
