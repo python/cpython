@@ -59,6 +59,8 @@ def setup (**attrs):
        and the command-specific options that became attributes of each
        command object."""
 
+    from pprint import pprint               # for debugging output
+
     # Determine the distribution class -- either caller-supplied or
     # our Distribution (see below).
     klass = attrs.get ('distclass')
@@ -75,6 +77,9 @@ def setup (**attrs):
     # the setup script, but be overridden by the command line.
     dist.parse_config_files()
     
+    print "options (after parsing config files):"
+    pprint (dist.command_options)
+
     # Parse the command line; any command-line errors are the end user's
     # fault, so turn them into SystemExit to suppress tracebacks.
     try:
@@ -82,6 +87,9 @@ def setup (**attrs):
     except DistutilsArgError, msg:
         sys.stderr.write (usage + "\n")
         raise SystemExit, "error: %s" % msg
+
+    print "options (after parsing command line):"
+    pprint (dist.command_options)
 
     # And finally, run all the commands found on the command line.
     if ok:
