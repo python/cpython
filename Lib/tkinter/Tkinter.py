@@ -534,12 +534,34 @@ class Tk(Misc, Wm):
 		self.tk = tkinter.create(screenName, baseName, className)
 		self.tk.createcommand('tkerror', _tkerror)
 		self.tk.createcommand('exit', _exit)
+		self.readprofile(baseName, className)
 	def destroy(self):
 		for c in self.children.values(): c.destroy()
-##		del self.master.children[self._name]
 		self.tk.call('destroy', self._w)
 	def __str__(self):
 		return self._w
+	def readprofile(self, baseName, className):
+		import os
+		if os.environ.has_key('HOME'): home = os.environ['HOME']
+		else: home = os.curdir
+		class_tcl = os.path.join(home, '.%s.tcl' % className)
+		class_py = os.path.join(home, '.%s.py' % className)
+		base_tcl = os.path.join(home, '.%s.tcl' % baseName)
+		base_py = os.path.join(home, '.%s.py' % baseName)
+		dir = {'self': self}
+		exec 'from Tkinter import *' in dir
+		if os.path.isfile(class_tcl):
+			print 'source', `class_tcl`
+			self.tk.call('source', class_tcl)
+		if os.path.isfile(class_py):
+			print 'execfile', `class_py`
+			execfile(class_py, dir)
+		if os.path.isfile(base_tcl):
+			print 'source', `base_tcl`
+			self.tk.call('source', base_tcl)
+		if os.path.isfile(base_py):
+			print 'execfile', `base_py`
+			execfile(base_py, dir)
 
 class Pack:
 	def config(self, cnf={}):
