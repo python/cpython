@@ -2,13 +2,11 @@
 # Makefile and config.c, from Makefile.pre and config.c.in,
 # respectively.  The file Setup itself is initially copied from
 # Setup.in; once it exists it will not be overwritten, so you can edit
-# Setup to your heart's content.  One possibility is to overwrite it
-# with a copy of Setup.sgi or Setup.sunos[45] before you start editing.
-# Note that Makefile.pre is created from Makefile.pre.in by the toplevel
-# configure script.
+# Setup to your heart's content.  Note that Makefile.pre is created
+# from Makefile.pre.in by the toplevel configure script.
 
 # (VPATH notes: Setup and Makefile.pre are in the build directory, as
-# are Makefile and config.c; Setup.in and config.c.in are in the source
+# are Makefile and config.c; the *.in files are in the source
 # directory.)
 
 # Each line in this file describes one or more optional modules.
@@ -37,14 +35,15 @@
 # not be included in the config.c file, nor in the list of objects to be
 # added to the library archive, and their linker options won't be added 
 # to the linker options, but rules to create their .o files and their
-# shared libraries will still be added to the Makefile
+# shared libraries will still be added to the Makefile, and their
+# names will be collected in the Make variable SHAREDMODS.  This is
+# used to build modules as shared libraries.  (They must be installed
+# using "make sharedinstall".)
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
 # enabled that are supported by most platforms and don't require you
-# to ftp sources from elsewhere.  To make this easier for SGI
-# platforms, you can copy Setup.sgi to Setup (or edit Makefile.in.in
-# to use Setup.sgi instead of Setup).
+# to ftp sources from elsewhere.
 
 
 # Some special rules to define PYTHONPATH.
@@ -68,29 +67,30 @@ PYTHONPATH=$(COREPYTHONPATH)
 # various reasons; therefore they are listed here instead of in the
 # normal order.
 
-# Some modules that are normally always on
+# Some modules that are normally always on:
 
 posix posixmodule.c		# posix (UNIX) system calls
 signal signalmodule.c		# signal(2)
 
-# The SGI specific GL module
+# The SGI specific GL module:
 
 #gl glmodule.c -lgl -lX11	# Graphics Library -- SGI only
 
 # Thread module -- works on selected systems only, e.g. SGI IRIX and
 # on SunOS 5.x (SOLARIS) only.
 # Note that you must have configured (and built!) Python with the
-# --with-thread option passed to the configure script for this to work.
+# --with-thread option passed to the configure script for this to work:
 
 #thread threadmodule.c
 
 # Uncommenting the following line tells makesetup that all following
-# modules are to be built as shared libraries (see above for more detail).
+# modules are to be built as shared libraries (see above for more
+# detail):
 
 #*noconfig*
 
 
-# Modules that should always be present (non UNIX dependent)
+# Modules that should always be present (non UNIX dependent):
 
 array arraymodule.c	# array objects
 math mathmodule.c -lm	# math library functions, e.g. sin()
@@ -101,7 +101,7 @@ struct structmodule.c	# binary structure packing/unpacking
 time timemodule.c	# time operations and variables
 
 
-# Modules with some UNIX dependencies -- on by default.
+# Modules with some UNIX dependencies -- on by default:
 # (If you have a really backward UNIX, select and socket may not be
 # supported...)
 
@@ -114,7 +114,7 @@ socket socketmodule.c	# socket(2); not on ancient System V
 
 
 # Some more UNIX dependent modules -- off by default, since these
-# are not supported by all UNIX systems.
+# are not supported by all UNIX systems:
 
 #dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 #nis nismodule.c 	# Sun yellow pages -- not everywhere
@@ -122,7 +122,7 @@ socket socketmodule.c	# socket(2); not on ancient System V
 
 
 # Multimedia modules -- on by default.
-# These represent audio samples or images as strings
+# These represent audio samples or images as strings:
 
 audioop audioop.c	# Operations on audio samples
 imageop imageop.c	# Operations on images
@@ -131,32 +131,22 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 
 # The stdwin module provides a simple, portable (between X11 and Mac)
 # windowing interface.  You need to ftp the STDWIN library, e.g. from
-# ftp://ftp.cwi.nl/pub/stdwin.  The STDWIN variable must point to the
-# STDWIN toplevel directory.  NB if you combine this with the gl
-# module on an SGI IRIX 4 machine, you should replace "-lX11" with
-# "-lX11_s".
+# ftp://ftp.cwi.nl/pub/stdwin.  (If you get it elsewhere, be sure to
+# get version 1.0 or higher!)  The STDWIN variable must point to the
+# STDWIN toplevel directory.
 
-# Add Lib/stdwin to the default module search path:
-
-#STDWINPATH=:$(DESTLIB)/stdwin
-
-# Use this for STDWIN 0.9.9 or higher:
-
+# Uncomment and edit as needed:
 #STDWIN=/ufs/guido/src/stdwin
+
+# Uncomment these lines:
+#STDWINPATH=:$(DESTLIB)/stdwin
 #LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
 #LIBX11STDWIN=$(STDWIN)/$(MACHDEP)/Ports/x11/libstdwin.a
-#LIBALFASTDWIN=$(STDWIN)/$(MACHDEP)/Ports/alfa/libstdwin.a
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBX11STDWIN) -lX11
 
-# Or use the following for the alphanumeric version:
-
+# Use this instead of the last two lines above for alphanumeric stdwin:
+#LIBALFASTDWIN=$(STDWIN)/$(MACHDEP)/Ports/alfa/libstdwin.a
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBALFASTDWIN) -ltermcap
-
-# Use this if you are still using stdwin 0.9.8 or older
-
-#STDWIN=/ufs/guido/src/stdwin
-#ARCH=???
-#stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5
@@ -185,21 +175,19 @@ md5 md5module.c md5c.c
 
 # SGI IRIX specific modules -- off by default.
 
-# These module work on any SGI machine.
+# These module work on any SGI machine:
 
 # *** gl must be enabled higher up in this file ***
 #fm fmmodule.c -lfm -lgl		# Font Manager
 #sgi sgimodule.c			# sgi.nap() and a few more
 
 # This module requires the header file
-# /usr/people/4Dgifts/iristools/include/izoom.h
+# /usr/people/4Dgifts/iristools/include/izoom.h:
 
 #imgfile imgfile.c -limage -lgutil -lm	# Image Processing Utilities
 
 
-# These modules require the Multimedia Development Option (I think).
-# Note that -lmediad and -lawareaudio are only present on IRIX 5 and
-# should be taken out for IRIX 4.
+# These modules require the Multimedia Development Option (I think):
 
 #al almodule.c -laudio			# Audio Library
 #cd cdmodule.c -lcdaudio -lds -lmediad	# CD Audio Library
@@ -212,18 +200,18 @@ md5 md5module.c md5c.c
 # libraries.  You must ftp the FORMS library separately from
 # ftp://ftp.cs.ruu.nl/pub/SGI/FORMS.  It was tested with FORMS 2.2a.
 # The FORMS variable must point to the FORMS subdirectory of the forms
-# toplevel directory.
+# toplevel directory:
 
 #FORMS=/ufs/guido/src/forms/FORMS
 #fl flmodule.c -I$(FORMS) $(FORMS)/libforms.a -lfm -lgl
 
 
-# SunOS specific modules -- off by default
+# SunOS specific modules -- off by default:
 
 #sunaudiodev sunaudiodev.c
 
 
-# GNN's timing module
+# George Neville-Neil's timing module:
 
 #timing timingmodule.c
 
@@ -251,20 +239,21 @@ md5 md5module.c md5c.c
 #TKPATH=:$(DESTLIB)/tkinter
 
 
-# Lance Ellinghouse's modules
+# Lance Ellinghaus's modules:
 
 rotor rotormodule.c		# enigma-inspired encryption
 #syslog syslogmodule.c		# syslog daemon interface
 #curses cursesmodule.c -lcurses -ltermcap	# guess what?
+				# (On Linux, try -lncurses)
 
 
 
-# Tommy Burnette's 'new' module (creates new empty objects of certain kinds)
+# Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
 
 #new newmodule.c
 
 
-# John Redford's sybase module
+# John Redford's sybase module (requires sybase):
 
 #sybase sybasemodule.c
 
@@ -272,16 +261,16 @@ rotor rotormodule.c		# enigma-inspired encryption
 # Generic (SunOS / SVR4) dynamic loading module.
 # This is not needed for dynamic loading of Python modules --
 # it is a highly experimental and dangerous device for calling
-# *arbitrary* C functions in *arbitrary* shared libraries.
+# *arbitrary* C functions in *arbitrary* shared libraries:
 
 #dl dlmodule.c
 
 
 # Anthony Baxter's gdbm module (derived from Jack's dbm module)
-# GNU dbm(3) will require -lgdbm
+# GNU dbm(3) will require -lgdbm:
 
 #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
 
 
-# Example -- included for reference only
+# Example -- included for reference only:
 # xx xxmodule.c

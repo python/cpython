@@ -6,7 +6,6 @@
 # brought up to date by running "make Makefile".  (The makesetup also
 # creates config.c from config.c.in in the source directory.)
 
-LINKCC = $(CC)
 # === Variables set by makesetup ===
 
 MODOBJS=	_MODOBJS_
@@ -22,6 +21,8 @@ VPATH=		@srcdir@
 CC=		@CC@
 RANLIB=		@RANLIB@
 AR=		@AR@
+
+OPT=		@OPT@
 
 DEFS=		@DEFS@
 LIBS=		@LIBS@
@@ -47,8 +48,8 @@ DESTSHARED=	$(exec_prefix)/lib/python/$(MACHDEP)
 
 # === Variables that are customizable by hand ===
 
+LINKCC=		$(CC)
 INCLDIR=	$(srcdir)/../Include
-OPT=		@OPT@
 CFLAGS=		$(OPT) -I$(INCLDIR) -I.. $(DEFS)
 
 MKDEP=		mkdep
