@@ -12,6 +12,17 @@
 #endif
 #endif
 
+#ifdef HAVE_NCURSES_H
+/* configure was checking <curses.h>, but we will
+   use <ncurses.h>, which has all these features. */
+#ifndef WINDOW_HAS_FLAGS
+#define WINDOW_HAS_FLAGS 1
+#endif
+#ifndef MVWDELCH_IS_EXPRESSION
+#define MVWDELCH_IS_EXPRESSION 1
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

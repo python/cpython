@@ -1963,6 +1963,38 @@ then
   AC_DEFINE(HAVE_BROKEN_NICE)
 fi
 
+# On HP/UX 11.0, mvwdelch is a block with a return statement
+AC_MSG_CHECKING(whether mvwdelch is an expression)
+AC_CACHE_VAL(ac_cv_mvwdelch_is_expression,
+AC_TRY_COMPILE([#include <curses.h>], [
+  int rtn;
+  rtn = mvwdelch(0,0,0);
+], ac_cv_mvwdelch_is_expression=yes,
+   ac_cv_mvwdelch_is_expression=no,
+   ac_cv_mvwdelch_is_expression=yes))
+AC_MSG_RESULT($ac_cv_mvwdelch_is_expression)
+
+if test "$ac_cv_mvwdelch_is_expression" = yes
+then
+  AC_DEFINE(MVWDELCH_IS_EXPRESSION)
+fi
+
+AC_MSG_CHECKING(whether WINDOW has _flags)
+AC_CACHE_VAL(ac_cv_window_has_flags,
+AC_TRY_COMPILE([#include <curses.h>], [
+  WINDOW *w;
+  w->_flags = 0;
+], ac_cv_window_has_flags=yes,
+   ac_cv_window_has_flags=no,
+   ac_cv_window_has_flags=no))
+AC_MSG_RESULT($ac_cv_window_has_flags)
+
+
+if test "$ac_cv_window_has_flags" = yes
+then
+  AC_DEFINE(WINDOW_HAS_FLAGS)
+fi
+
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
 cat >> confdefs.h <<\EOF

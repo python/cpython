@@ -232,6 +232,12 @@
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
 
+/* Define if mvwdelch in curses.h is an expression. */
+#undef MVWDELCH_IS_EXPRESSION
+
+/* Define if WINDOW in curses.h offers a field _flags. */
+#undef WINDOW_HAS_FLAGS
+
 
 /* Leave that blank line there-- autoheader needs it! */
 
