@@ -107,6 +107,11 @@ char *PyCursesVersion = "2.2";
 #define STRICT_SYSV_CURSES      /* Don't use ncurses extensions */
 #endif
 
+#ifdef __hpux
+#define _XOPEN_SOURCE_EXTENDED
+#define STRICT_SYSV_CURSES
+#endif
+
 #define CURSES_MODULE
 #include "py_curses.h"
 
@@ -119,7 +124,7 @@ extern int setupterm(char *,int,int *);
 #include <term.h>
 #endif
 
-#if defined(sgi) || defined(__sun)
+#if !defined(HAVE_NCURSES_H) && (defined(sgi) || defined(__sun))
 #define STRICT_SYSV_CURSES       /* Don't use ncurses extensions */
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
@@ -605,6 +610,19 @@ PyCursesWindow_Box(PyCursesWindowObject *self, PyObject *args)
   return Py_None;
 }
 
+#if defined(HAVE_NCURSES_H) || defined(MVWDELCH_IS_EXPRESSION)
+#define py_mvwdelch mvwdelch
+#else
+int py_mvwdelch(WINDOW *w, int y, int x)
+{
+  mvwdelch(w,y,x);
+  /* On HP/UX, mvwdelch already returns. On other systems,
+     we may well run into this return statement. */
+  return 0;
+}
+#endif
+
+
 static PyObject *
 PyCursesWindow_DelCh(PyCursesWindowObject *self, PyObject *args)
 {
@@ -618,7 +636,7 @@ PyCursesWindow_DelCh(PyCursesWindowObject *self, PyObject *args)
   case 2:
     if (!PyArg_Parse(args,"(ii);y,x", &y, &x))
       return NULL;
-    rtn = mvwdelch(self->win,y,x);
+    rtn = py_mvwdelch(self->win,y,x);
     break;
   default:
     PyErr_SetString(PyExc_TypeError, "delch requires 0 or 2 arguments");
@@ -688,7 +706,7 @@ PyCursesWindow_EchoChar(PyCursesWindowObject *self, PyObject *args)
     return NULL;
   }
   
-#if !defined(__NetBSD__)
+#ifdef WINDOW_HAS_FLAGS
   if (self->win->_flags & _ISPAD)
     return PyCursesCheckERR(pechochar(self->win, ch | attr), 
 			    "echochar");
@@ -1094,7 +1112,7 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
   int rtn;
 
-#if defined(__NetBSD__)
+#ifndef WINDOW_HAS_FLAGS
   if (0) {
 #else
   if (self->win->_flags & _ISPAD) {
@@ -1236,7 +1254,7 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
   int rtn;
   
-#if defined(__NetBSD__)
+#ifndef WINDOW_HAS_FLAGS
   if (0) {
 #else
   if (self->win->_flags & _ISPAD) {
@@ -1304,7 +1322,7 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
   }
 
   /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
-#if !defined(__NetBSD__)
+#ifdef WINDOW_HAS_FLAGS
   if (self->win->_flags & _ISPAD)
     win = subpad(self->win, nlines, ncols, begin_y, begin_x);
   else
@@ -1832,6 +1850,11 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
 	SetDictInt("ACS_HLINE",         (ACS_HLINE));
 	SetDictInt("ACS_VLINE",         (ACS_VLINE));
 	SetDictInt("ACS_PLUS",          (ACS_PLUS));
+#if !defined(__hpux) || defined(HAVE_NCURSES_H)
+        /* On HP/UX 11, these are of type cchar_t, which is not an
+           integral type. If this is a problem on more platforms, a
+           configure test should be added to determine whether ACS_S1
+           is of integral type. */
 	SetDictInt("ACS_S1",            (ACS_S1));
 	SetDictInt("ACS_S9",            (ACS_S9));
 	SetDictInt("ACS_DIAMOND",       (ACS_DIAMOND));
@@ -1846,6 +1869,7 @@ PyCurses_InitScr(PyObject *self, PyObject *args)
 	SetDictInt("ACS_BOARD",         (ACS_BOARD));
 	SetDictInt("ACS_LANTERN",       (ACS_LANTERN));
 	SetDictInt("ACS_BLOCK",         (ACS_BLOCK));
+#endif
 	SetDictInt("ACS_BSSB",          (ACS_ULCORNER));
 	SetDictInt("ACS_SSBB",          (ACS_LLCORNER));
 	SetDictInt("ACS_BBSS",          (ACS_URCORNER));
@@ -2286,6 +2310,15 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	
+#ifdef __hpux
+        /* tparm is declared with 10 arguments on HP/UX 11.
+           If this is a problem on other platforms as well,
+           an autoconf test should be added to determine
+           whether tparm can be called with a variable number
+           of arguments. Perhaps the other arguments should
+           be initialized in this case also. */
+        result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+#else
 	switch (PyTuple_GET_SIZE(args)) {
 	case 1:
 		result = tparm(fmt);
@@ -2318,7 +2351,7 @@ PyCurses_tparm(PyObject *self, PyObject *args)
 		result = tparm(fmt,i1,i2,i3,i4,i5,i6,i7,i8,i9);
 		break;
 	}
-
+#endif /* __hpux */
 	return PyString_FromString(result);
 }
 
