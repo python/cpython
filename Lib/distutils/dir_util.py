@@ -180,23 +180,38 @@ def copy_tree (src, dst,
 
 # copy_tree ()
 
+# Helper for remove_tree()
+def _build_cmdtuple(path, cmdtuples):
+    for f in os.listdir(path):
+        real_f = os.path.join(path,f)
+        if os.path.isdir(real_f) and not os.path.islink(real_f):
+            _build_cmdtuple(real_f, cmdtuples)
+        else:
+            cmdtuples.append((os.remove, real_f))
+    cmdtuples.append((os.rmdir, path))
+
 
 def remove_tree (directory, verbose=0, dry_run=0):
     """Recursively remove an entire directory tree.  Any errors are ignored
        (apart from being reported to stdout if 'verbose' is true)."""
 
-    from shutil import rmtree
-
+    global PATH_CREATED
     if verbose:
         print "removing '%s' (and everything under it)" % directory
     if dry_run:
         return
-    try:
-        rmtree(directory,1)
-    except (IOError, OSError), exc:
-        if verbose:
-            if exc.filename:
-                print "error removing %s: %s (%s)" % \
+    cmdtuples = []
+    _build_cmdtuple(directory, cmdtuples)
+    for cmd in cmdtuples:
+        try:
+            apply(cmd[0], (cmd[1],))
+            # remove dir from cache if it's already there
+            if PATH_CREATED.has_key(cmd[1]):
+                del PATH_CREATED[cmd[1]]
+        except (IOError, OSError), exc:
+            if verbose:
+                if exc.filename:
+                    print "error removing %s: %s (%s)" % \
                        (directory, exc.strerror, exc.filename)
-            else:
-                print "error removing %s: %s" % (directory, exc.strerror)
+                else:
+                    print "error removing %s: %s" % (directory, exc.strerror)
