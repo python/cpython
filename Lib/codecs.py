@@ -299,6 +299,17 @@ class StreamReader(Codec):
         """
         pass
 
+    def next(self):
+
+        """ Return the next decoded line from the input stream."""
+        line = self.readline()
+        if line:
+            return line
+        raise StopIteration
+
+    def __iter__(self):
+        return self
+
     def __getattr__(self, name,
                     getattr=getattr):
 
@@ -350,6 +361,14 @@ class StreamReaderWriter:
     def readlines(self, sizehint=None):
 
         return self.reader.readlines(sizehint)
+
+    def next(self):
+
+        """ Return the next decoded line from the input stream."""
+        return self.reader.next()
+
+    def __iter__(self):
+        return self
 
     def write(self, data):
 
@@ -450,6 +469,14 @@ class StreamRecoder:
             data = self.reader.read(sizehint)
         data, bytesencoded = self.encode(data, self.errors)
         return data.splitlines(1)
+
+    def next(self):
+
+        """ Return the next decoded line from the input stream."""
+        return self.reader.next()
+
+    def __iter__(self):
+        return self
 
     def write(self, data):
 

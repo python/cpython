@@ -362,6 +362,9 @@ Extension modules
 Library
 -------
 
+- StreamReader, StreamReaderWriter and StreamRecoder in the codecs
+  modules are iterators now.
+
 - gzip.py now handles files exceeding 2GB.  Files over 4GB also work
   now (provided the OS supports it, and Python is configured with large
   file support), but in that case the underlying gzip file format can
