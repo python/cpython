@@ -41,12 +41,20 @@ type_name(PyTypeObject *type, void *context)
 {
 	char *s;
 
-	s = strrchr(type->tp_name, '.');
-	if (s == NULL)
-		s = type->tp_name;
-	else
-		s++;
-	return PyString_FromString(s);
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		etype* et = (etype*)type;
+		
+		Py_INCREF(et->name);
+		return et->name;
+	}
+	else {
+		s = strrchr(type->tp_name, '.');
+		if (s == NULL)
+			s = type->tp_name;
+		else
+			s++;
+		return PyString_FromString(s);
+	}
 }
 
 static int
@@ -95,19 +103,18 @@ type_module(PyTypeObject *type, void *context)
 	PyObject *mod;
 	char *s;
 
-	s = strrchr(type->tp_name, '.');
-	if (s != NULL)
-		return PyString_FromStringAndSize(type->tp_name,
-						  (int)(s - type->tp_name));
-	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
-		return PyString_FromString("__builtin__");
-	mod = PyDict_GetItemString(type->tp_dict, "__module__");
-	if (mod != NULL) {
-		Py_INCREF(mod);
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		mod = PyDict_GetItemString(type->tp_dict, "__module__");
+		Py_XINCREF(mod);
 		return mod;
 	}
-	PyErr_SetString(PyExc_AttributeError, "__module__");
-	return NULL;
+	else {
+		s = strrchr(type->tp_name, '.');
+		if (s != NULL)
+			return PyString_FromStringAndSize(
+				type->tp_name, (int)(s - type->tp_name));
+		return PyString_FromString("__builtin__");
+	}
 }
 
 static int
