@@ -9,23 +9,25 @@ VPATH=		@srcdir@
 
 CC=		@CC@
 RANLIB=		@RANLIB@
+DEFS=		@DEFS@
 
 
 # === Other things that are customizable but not by configure ===
+
+TOP=		..
+INCLDIR=	$(TOP)/Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR) $(DEFS)
 
 AR=		ar
 MKDEP=		mkdep
 SHELL=		/bin/sh
 
-INCLDIR=	$(srcdir)/../Py
-OPT=		-g
-CFLAGS=		$(OPT) -I$(INCLDIR)
-
 
 # === Fixed definitions ===
 
-PARSEROBJS=	acceler.o fgetsintr.o grammar1.o \
-		intrcheck.o listnode.o node.o parser.o \
+PARSEROBJS=	acceler.o grammar1.o \
+		intrcheck.o listnode.o myreadline.o node.o parser.o \
 		parsetok.o tokenizer.o bitset.o \
 		firstsets.o grammar.o metagrammar.o pgen.o \
 		printgrammar.o
@@ -33,7 +35,7 @@ PARSEROBJS=	acceler.o fgetsintr.o grammar1.o \
 PGENOBJS=	pgenmain.o
 
 PARSERSRCS=	acceler.c fgetsintr.c grammar1.c \
-		intrcheck.c listnode.c node.c parser.c \
+		intrcheck.c listnode.c myreadline.c node.c parser.c \
 		parsetok.c tokenizer.c bitset.c \
 		firstsets.c grammar.c metagrammar.c pgen.c \
 		printgrammar.c
@@ -51,19 +53,19 @@ all:		$(LIB) $(PGEN)
 
 $(LIB):		$(PARSEROBJS)
 		$(AR) cr $(LIB) $(PARSEROBJS)
+		$(RANLIB) $(LIB)
 
 $(PGEN):	$(PGENOBJS) $(LIB)
 		$(CC) $(PGENOBJS) $(LIB) -o $(PGEN)
 
 clean:
-		-rm -f $(PARSEROBJS) $(PGENOBJS)
-		-rm -f core *~ [@,#]* *.old *.orig *.rej
+		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
 
 clobber:	clean
-		-rm -f $(PGEN) $(LIB) tags TAGS
+		-rm -f $(PGEN) *.a tags TAGS
 
-Makefile:	Makefile.in ../config.status
-		(cd ..; $(SHELL) config.status)
+Makefile:	Makefile.in $(TOP)/config.status
+		CONFIG_FILES=Makefile $(SHELL) $(TOP)/config.status
 
 depend:		$(PARSERSRCS) $(PGENSRCS)
 		$(MKDEP) $(CFLAGS) $(PARSERSRCS) $(PGENSRCS)
