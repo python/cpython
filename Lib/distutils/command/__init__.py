@@ -1,17 +1,7 @@
 """distutils.command
 
 Package containing implementation of all the standard Distutils
-commands.  Currently this means:
-
-  build
-  build_py
-  build_ext
-  install
-  install_py
-  install_ext
-  dist
-
-but this list will undoubtedly grow with time."""
+commands."""
 
 __revision__ = "$Id$"
 
@@ -21,5 +11,6 @@ __all__ = ['build',
            'install',
            'install_py',
            'install_ext',
+           'clean',
            'sdist',
           ]
