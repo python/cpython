@@ -7,6 +7,15 @@
 #    and Aahz <aahz at pobox.com>
 #    and Tim Peters
 
+# This module is currently Py2.3 compatible and should be kept that way
+# unless a major compelling advantage arises.  IOW, 2.3 compatibility is
+# strongly preferred, but not guaranteed.
+
+# Also, this module should be kept in sync with the latest updates of
+# the IBM specification as it evolves.  Those updates will be treated
+# as bug fixes (deviation from the spec is a compatibility, usability
+# bug) and will be backported.  At this point the spec is stabilizing
+# and the updates are becoming fewer, smaller, and less significant.
 
 """
 This is a Py2.3 implementation of decimal floating point arithmetic based on
