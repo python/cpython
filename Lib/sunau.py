@@ -274,7 +274,6 @@ class Au_read:
 		self._soundpos = pos
 
 	def close(self):
-		self._file.close()
 		self._file = None
 
 class Au_write:
@@ -397,7 +396,7 @@ class Au_write:
 		if self._nframeswritten != self._nframes or \
 			  self._datalength != self._datawritten:
 			self._patchheader()
-		self._file.close()
+		self._file.flush()
 		self._file = None
 
 	#
