@@ -96,9 +96,7 @@ Capitalize the first character of the argument.
 Split the argument into words using \code{split}, capitalize each word
 using \code{capitalize}, and join the capitalized words using
 \code{join}.  Note that this replaces runs of whitespace characters by
-a single space.  (See also \code{regsub.capwords()} for a version
-that doesn't change the delimiters, and lets you specify a word
-separator.)
+a single space, and removes leading and trailing whitespace.
 \end{funcdesc}
 
 \begin{funcdesc}{expandtabs}{s\, tabsize}
@@ -161,8 +159,6 @@ string.  The optional third argument \var{maxsplit} defaults to 0.  If
 it is nonzero, at most \var{maxsplit} number of splits occur, and the
 remainder of the string is returned as the final element of the list
 (thus, the list will have at most \code{\var{maxsplit}+1} elements).
-(See also \code{regsub.split()} for a version that allows specifying a
-regular expression as the separator.)
 \end{funcdesc}
 
 \begin{funcdesc}{splitfields}{s\optional{\, sep\optional{\, maxsplit}}}
