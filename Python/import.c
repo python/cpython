@@ -721,8 +721,8 @@ find_module(name, path, buf, buflen, p_fp)
 		    )
 			buf[len++] = SEP;
 #ifdef IMPORT_8x3_NAMES
-		/* see if we are searching in directory dos_8x3 */
-		if (len > 7 && !strncmp(buf + len - 8, "dos_8x3", 7)){
+		/* see if we are searching in directory dos-8x3 */
+		if (len > 7 && !strncmp(buf + len - 8, "dos-8x3", 7)){
 			int j;
 			char ch;  /* limit name to 8 lower-case characters */
 			for (j = 0; (ch = name[j]) && j < 8; j++)
@@ -731,7 +731,7 @@ find_module(name, path, buf, buflen, p_fp)
 				else
 					buf[len++] = ch;
 		}
-		else /* Not in dos_8x3, use the full name */
+		else /* Not in dos-8x3, use the full name */
 #endif
 		{
 			strcpy(buf+len, name);
