@@ -66,12 +66,11 @@ class TestImport(unittest.TestCase):
         try: __import__(self.module_name)
         except NameError: pass
         else: raise RuntimeError, 'Failed to induce NameError.'
-        module = __import__(self.module_name).foo
 
         # ...now  change  the module  so  that  the NameError  doesn't
         # happen
         self.rewrite_file('%s = 1' % var)
-        reload(module)
+        module = __import__(self.module_name).foo
         self.assertEqual(getattr(module, var), 1)
 
 
