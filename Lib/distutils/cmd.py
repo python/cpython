@@ -161,38 +161,28 @@ class Command:
 
     def get_option (self, option):
         """Return the value of a single option for this command.  Raise
-           DistutilsOptionError if 'option' is not known."""
-        try:
-            return getattr (self, option)
-        except AttributeError:
-            raise DistutilsOptionError, \
-                  "command %s: no such option %s" % \
-                  (self.get_command_name(), option)
+           AttributeError if 'option' is not known."""
+        return getattr (self, option)
 
 
     def get_options (self, *options):
         """Return (as a tuple) the values of several options for this
-           command.  Raise DistutilsOptionError if any of the options in
+           command.  Raise AttributeError if any of the options in
            'options' are not known."""
 
         values = []
-        try:
-            for opt in options:
-                values.append (getattr (self, opt))
-        except AttributeError, name:
-            raise DistutilsOptionError, \
-                  "command %s: no such option %s" % \
-                  (self.get_command_name(), name)
-            
+        for opt in options:
+            values.append (getattr (self, opt))
+
         return tuple (values)
-    
+
 
     def set_option (self, option, value):
         """Set the value of a single option for this command.  Raise
-           DistutilsOptionError if 'option' is not known."""
+           AttributeError if 'option' is not known."""
 
         if not hasattr (self, option):
-            raise DistutilsOptionError, \
+            raise AttributeError, \
                   "command '%s': no such option '%s'" % \
                   (self.get_command_name(), option)
         if value is not None:
@@ -200,7 +190,7 @@ class Command:
 
     def set_options (self, **optval):
         """Set the values of several options for this command.  Raise
-           DistutilsOptionError if any of the options specified as
+           AttributeError if any of the options specified as
            keyword arguments are not known."""
 
         for k in optval.keys():
@@ -236,14 +226,10 @@ class Command:
 
         src_cmd_obj = self.distribution.find_command_obj (src_cmd)
         src_cmd_obj.ensure_ready ()
-        try:
-            for (src_option, dst_option) in option_pairs:
-                if getattr (self, dst_option) is None:
-                    self.set_option (dst_option,
-                                     src_cmd_obj.get_option (src_option))
-        except AttributeError, name:
-            # duh, which command?
-            raise DistutilsOptionError, "unknown option %s" % name
+        for (src_option, dst_option) in option_pairs:
+            if getattr (self, dst_option) is None:
+                self.set_option (dst_option,
+                                 src_cmd_obj.get_option (src_option))
 
 
     def find_peer (self, command, create=1):

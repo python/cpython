@@ -152,7 +152,7 @@ class Distribution:
                 if hasattr (self, key):
                     setattr (self, key, val)
                 else:
-                    raise DistutilsOptionError, \
+                    raise DistutilsSetupError, \
                           "invalid distribution option '%s'" % key
 
     # __init__ ()
@@ -447,27 +447,18 @@ class Distribution:
 
     def get_option (self, option):
         """Return the value of a distribution option.  Raise
-           DistutilsOptionError if 'option' is not known."""
-
-        try:
-            return getattr (self, opt)
-        except AttributeError:
-            raise DistutilsOptionError, \
-                  "unknown distribution option %s" % option
+           AttributeError if 'option' is not known."""
+        return getattr (self, opt)
 
 
     def get_options (self, *options):
         """Return (as a tuple) the values of several distribution
-           options.  Raise DistutilsOptionError if any element of
+           options.  Raise AttributeError if any element of
            'options' is not known."""
         
         values = []
-        try:
-            for opt in options:
-                values.append (getattr (self, opt))
-        except AttributeError, name:
-            raise DistutilsOptionError, \
-                  "unknown distribution option %s" % name
+        for opt in options:
+            values.append (getattr (self, opt))
 
         return tuple (values)
 
@@ -498,17 +489,12 @@ class Distribution:
     def get_command_option (self, command, option):
         """Create a command object for 'command' if necessary, ensure that
            its option values are all set to their final values, and return
-           the value of its 'option' option.  Raise DistutilsOptionError if
+           the value of its 'option' option.  Raise AttributeError if
            'option' is not known for that 'command'."""
 
         cmd_obj = self.find_command_obj (command)
         cmd_obj.ensure_ready ()
         return cmd_obj.get_option (option)
-        try:
-            return getattr (cmd_obj, option)
-        except AttributeError:
-            raise DistutilsOptionError, \
-                  "command %s: no such option %s" % (command, option)
 
 
     def get_command_options (self, command, *options):
@@ -521,12 +507,8 @@ class Distribution:
         cmd_obj = self.find_command_obj (command)
         cmd_obj.ensure_ready ()
         values = []
-        try:
-            for opt in options:
-                values.append (getattr (cmd_obj, option))
-        except AttributeError, name:
-            raise DistutilsOptionError, \
-                  "command %s: no such option %s" % (command, name)
+        for opt in options:
+            values.append (getattr (cmd_obj, option))
 
         return tuple (values)
 

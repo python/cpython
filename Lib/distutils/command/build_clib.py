@@ -115,33 +115,33 @@ class build_clib (Command):
         """Ensure that the list of libraries (presumably provided as a
            command option 'libraries') is valid, i.e. it is a list of
            2-tuples, where the tuples are (library_name, build_info_dict).
-           Raise DistutilsValueError if the structure is invalid anywhere;
+           Raise DistutilsSetupError if the structure is invalid anywhere;
            just returns otherwise."""
 
         # Yechh, blecch, ackk: this is ripped straight out of build_ext.py,
         # with only names changed to protect the innocent!
 
         if type (libraries) is not ListType:
-            raise DistutilsValueError, \
+            raise DistutilsSetupError, \
                   "'libraries' option must be a list of tuples"
 
         for lib in libraries:
             if type (lib) is not TupleType and len (lib) != 2:
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "each element of 'libraries' must a 2-tuple"
 
             if type (lib[0]) is not StringType:
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "first element of each tuple in 'libraries' " + \
                       "must be a string (the library name)"
             if '/' in lib[0] or (os.sep != '/' and os.sep in lib[0]):
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       ("bad library name '%s': " + 
                        "may not contain directory separators") % \
                       lib[0]
 
             if type (lib[1]) is not DictionaryType:
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       "second element of each tuple in 'libraries' " + \
                       "must be a dictionary (build info)"
         # for lib
@@ -171,7 +171,7 @@ class build_clib (Command):
         for (lib_name, build_info) in libraries:
             sources = build_info.get ('sources')
             if sources is None or type (sources) not in (ListType, TupleType):
-                raise DistutilsValueError, \
+                raise DistutilsSetupError, \
                       ("in 'libraries' option (library '%s'), " +
                        "'sources' must be present and must be " +
                        "a list of source filenames") % lib_name
