@@ -5,7 +5,6 @@ http://www.w3.org/hypertext/WWW/MarkUp/html-spec/html-spec_toc.html
 """
 
 
-import string
 from sgmllib import SGMLParser
 from formatter import AS_IS
 
@@ -50,7 +49,7 @@ class HTMLParser(SGMLParser):
         data = self.savedata
         self.savedata = None
         if not self.nofill:
-            data = string.join(string.split(data))
+            data = ' '.join(data.split())
         return data
 
     # --- Hooks for anchors; should probably be overridden
@@ -321,13 +320,13 @@ class HTMLParser(SGMLParser):
         name = ''
         type = ''
         for attrname, value in attrs:
-            value = string.strip(value)
+            value = value.strip()
             if attrname == 'href':
                 href = value
             if attrname == 'name':
                 name = value
             if attrname == 'type':
-                type = string.lower(value)
+                type = value.lower()
         self.anchor_bgn(href, name, type)
 
     def end_a(self):
@@ -362,10 +361,10 @@ class HTMLParser(SGMLParser):
             if attrname == 'src':
                 src = value
             if attrname == 'width':
-                try: width = string.atoi(value)
+                try: width = int(value)
                 except: pass
             if attrname == 'height':
-                try: height = string.atoi(value)
+                try: height = int(value)
                 except: pass
         self.handle_image(src, alt, ismap, align, width, height)
 

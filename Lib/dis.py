@@ -1,7 +1,6 @@
 """Disassembler of Python byte code into mnemonics."""
 
 import sys
-import string
 import types
 
 __all__ = ["dis","disassemble","distb","disco","opname","cmp_op",
@@ -69,8 +68,8 @@ def disassemble(co, lasti=-1):
         else: print '   ',
         if i in labels: print '>>',
         else: print '  ',
-        print string.rjust(`i`, 4),
-        print string.ljust(opname[op], 20),
+        print `i`.rjust(4),
+        print opname[op].ljust(20),
         i = i+1
         if op >= HAVE_ARGUMENT:
             oparg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
@@ -78,7 +77,7 @@ def disassemble(co, lasti=-1):
             i = i+2
             if op == EXTENDED_ARG:
                 extended_arg = oparg*65536L
-            print string.rjust(`oparg`, 5),
+            print `oparg`.rjust(5),
             if op in hasconst:
                 print '(' + `co.co_consts[oparg]` + ')',
             elif op in hasname:
