@@ -2622,7 +2622,7 @@ The value of x is 31.4, and y is 40000...
 ... hello = 'hello, world\n'
 >>> hellos = `hello`
 >>> print hellos
-'hello, world\012'
+'hello, world\n'
 >>> # The argument of reverse quotes may be a tuple:
 ... `x, y, ('spam', 'eggs')`
 "(31.400000000000002, 40000, ('spam', 'eggs'))"
@@ -2783,7 +2783,7 @@ of the file has been reached, \code{f.read()} will return an empty
 string (\code {""}).
 \begin{verbatim}
 >>> f.read()
-'This is the entire file.\012'
+'This is the entire file.\n'
 >>> f.read()
 ''
 \end{verbatim}
@@ -2798,9 +2798,9 @@ string containing only a single newline.
 
 \begin{verbatim}
 >>> f.readline()
-'This is the first line of the file.\012'
+'This is the first line of the file.\n'
 >>> f.readline()
-'Second line of the file\012'
+'Second line of the file\n'
 >>> f.readline()
 ''
 \end{verbatim}
@@ -2814,7 +2814,7 @@ entire file in memory.  Only complete lines will be returned.
 
 \begin{verbatim}
 >>> f.readlines()
-['This is the first line of the file.\012', 'Second line of the file\012']
+['This is the first line of the file.\n', 'Second line of the file\n']
 \end{verbatim}
 
 \code{f.write(\var{string})} writes the contents of \var{string} to
