@@ -1319,7 +1319,7 @@ filtertuple(func, tuple)
 		}
 	}
 
-	if (resizetuple(&result, j) < 0)
+	if (resizetuple(&result, j, 0) < 0)
 		return NULL;
 
 	if (shared)
