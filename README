@@ -400,7 +400,7 @@ Mac OS X 10.0: Run configure with "./configure --with-suffix=.exe".
         work on a Unix UFS filesystem (how to check for this on Mac OS
         X?).
         On naked Darwin you may have to add the configure option
-        "--without-toolbox-glue" to disable the glue code for the Carbon
+        "--disable-toolbox-glue" to disable the glue code for the Carbon
         interface modules. (The modules themselves are currently not built
         by default as they are experimental, on real OSX you can enable them
         in setup.py).
