@@ -747,13 +747,23 @@ PyWeakref_NewRef(PyObject *ob, PyObject *callback)
            them. */
         result = new_weakref(ob, callback);
         if (result != NULL) {
+            get_basic_refs(*list, &ref, &proxy);
             if (callback == NULL) {
-                insert_head(result, list);
+                if (ref == NULL)
+                    insert_head(result, list);
+                else {
+                    /* Someone else added a ref without a callback
+                       during GC.  Return that one instead of this one
+                       to avoid violating the invariants of the list
+                       of weakrefs for ob. */
+                    Py_DECREF(result);
+                    Py_INCREF(ref);
+                    result = ref;
+                }
             }
             else {
                 PyWeakReference *prev;
 
-                get_basic_refs(*list, &ref, &proxy);
                 prev = (proxy == NULL) ? ref : proxy;
                 if (prev == NULL)
                     insert_head(result, list);
@@ -803,8 +813,18 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
             else
                 result->ob_type = &_PyWeakref_ProxyType;
             get_basic_refs(*list, &ref, &proxy);
-            if (callback == NULL)
+            if (callback == NULL) {
+                if (proxy != NULL) {
+                    /* Someone else added a proxy without a callback
+                       during GC.  Return that one instead of this one
+                       to avoid violating the invariants of the list
+                       of weakrefs for ob. */
+                    Py_DECREF(result);
+                    Py_INCREF(result = proxy);
+                    goto skip_insert;
+                }
                 prev = ref;
+            }
             else
                 prev = (proxy == NULL) ? ref : proxy;
 
@@ -812,6 +832,8 @@ PyWeakref_NewProxy(PyObject *ob, PyObject *callback)
                 insert_head(result, list);
             else
                 insert_after(result, prev);
+        skip_insert:
+            ;
         }
     }
     return (PyObject *) result;
