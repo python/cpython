@@ -261,6 +261,18 @@ def my_import(name):
   \var{b}, and \code{0 <= abs(\var{a} \%{} \var{b}) < abs(\var{b})}.
 \end{funcdesc}
 
+\begin{funcdesc}{enumerate}{iterable}
+  Return an enumerate object. \var{iterable} must be a sequence, an
+  iterator, or some other object which supports iteration.  The
+  \method{next()} method of the iterator returned by
+  \function{enumerate()} returns a tuple containing a count (from
+  zero) and the corresponding value obtained from iterating over
+  \var{iterable}.  \function{enumerate} is useful for obtaining an
+  indexed series: \code{(0, seq[0])}, \code{(1, seq[1])}, \code{(2,
+  seq[2])}, \ldots.
+  \versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{eval}{expression\optional{, globals\optional{, locals}}}
   The arguments are a string and two optional dictionaries.  The
   \var{expression} argument is parsed and evaluated as a Python
