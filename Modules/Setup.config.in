@@ -4,10 +4,6 @@
 # based on configure-time options.  Currently thread support and
 # garbage collection support are the only two modules so enabled.
 
-# *NOTE*: if the configure script decides it can't support threads,
-# the thread module will still be enabled and cause compile errors.
-# The solution is to use --without-threads on platforms that don't
-# support threads.
 @USE_THREAD_MODULE@thread threadmodule.c
 
 # Garbage collection enabled with --with-cycle-gc
