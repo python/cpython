@@ -79,7 +79,7 @@ class _Database:
 	def _addval(self, val):
 		f = _open(self._datfile, 'rb+')
 		f.seek(0, 2)
-		pos = f.tell()
+		pos = int(f.tell())
 ## Does not work under MW compiler
 ##		pos = ((pos + _BLOCKSIZE - 1) / _BLOCKSIZE) * _BLOCKSIZE
 ##		f.seek(pos)
