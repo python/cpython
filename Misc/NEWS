@@ -73,6 +73,24 @@ Extension modules
 
 - Implemented (?(id/name)yes|no) support in SRE (#572936).
 
+- random.seed() with no arguments or None uses time.time() as a default
+  seed.  Modified to match Py2.2 behavior and use fractional seconds so
+  that successive runs are more likely to produce different sequences.
+
+- random.Random has a new method, getrandbits(k), which returns an int
+  with k random bits.  This method is now an optional part of the API
+  for user defined generators.  Any generator that defines genrandbits()
+  can now use randrange() for ranges with a length >= 2**53.  Formerly,
+  randrange would return only even numbers for ranges that large (see
+  SF bug #812202).  Generators that do not define genrandbits() now
+  issue a warning when randrange() is called with a range that large.
+
+- itertools now has a new function, tee() which produces two independent
+  iterators from a single iterable.
+
+- itertools.izip() with no arguments now returns an empty iterator instead
+  of raising a TypeError exception.
+
 Library
 -------
 
@@ -107,21 +125,6 @@ Library
   for most set methods (but not the operators) have been relaxed to
   allow any iterable.  Also the Set.update() has been deprecated because
   it duplicates Set.union_update().
-
-- random.seed() with no arguments or None uses time.time() as a default
-  seed.  Modified to match Py2.2 behavior and use fractional seconds so
-  that successive runs are more likely to produce different sequences.
-
-- random.Random has a new method, getrandbits(k), which returns an int
-  with k random bits.  This method is now an optional part of the API
-  for user defined generators.  Any generator that defines genrandbits()
-  can now use randrange() for ranges with a length >= 2**53.  Formerly,
-  randrange would return only even numbers for ranges that large (see
-  SF bug #812202).  Generators that do not define genrandbits() now
-  issue a warning when randrange() is called with a range that large.
-
-- itertools.izip() with no arguments now returns an empty iterator instead
-  of raising a TypeError exception.
 
 - _strptime.py now has a behind-the-scenes caching mechanism for the most
   recent TimeRE instance used along with the last five unique directive
