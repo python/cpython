@@ -23,8 +23,9 @@ Core
     max()
     min()
     reduce()
-    XXX TODO string.join(), unicode.join()
+    string.join()
     tuple()
+    XXX TODO unicode.join()
     XXX TODO zip()
     XXX TODO 'x in y'
 
