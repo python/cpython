@@ -1,6 +1,10 @@
 #include "Python.h"
 #include "structmember.h"
 
+#ifdef __SUNPRO_C
+#pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
+#endif
+
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
    Copyright (c) 2004 Python Software Foundation.

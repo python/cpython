@@ -2,6 +2,10 @@
 
 #include "Python.h"
 
+#ifdef __SUNPRO_C
+#pragma error_messages (off,E_END_OF_LOOP_CODE_NOT_REACHED)
+#endif
+
 #ifdef STDC_HEADERS
 #include <stddef.h>
 #else
