@@ -68,19 +68,32 @@ static PyObject *
 makeresult(regs)
 	struct re_registers *regs;
 {
-	PyObject *v = PyTuple_New(RE_NREGS);
-	if (v != NULL) {
-		int i;
-		for (i = 0; i < RE_NREGS; i++) {
-			PyObject *w;
-			w = Py_BuildValue("(ii)", regs->start[i], regs->end[i]);
-			if (w == NULL) {
-				Py_XDECREF(v);
-				v = NULL;
-				break;
-			}
-			PyTuple_SetItem(v, i, w);
+	PyObject *v;
+	int i;
+	static PyObject *filler = NULL;
+	if (filler == NULL) {
+		filler = Py_BuildValue("(ii)", -1, -1);
+		if (filler == NULL)
+			return NULL;
+	}
+	v = PyTuple_New(RE_NREGS);
+	if (v == NULL)
+		return NULL;
+	for (i = 0; i < RE_NREGS; i++) {
+		int lo = regs->start[i];
+		int hi = regs->end[i];
+		PyObject *w;
+		if (lo == -1 && hi == -1) {
+			w = filler;
+			Py_INCREF(w);
 		}
+		else
+			w = Py_BuildValue("(ii)", lo, hi);
+		if (w == NULL) {
+			Py_XDECREF(v);
+			return NULL;
+		}
+		PyTuple_SetItem(v, i, w);
 	}
 	return v;
 }
