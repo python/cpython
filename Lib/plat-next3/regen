@@ -1,0 +1,11 @@
+#! /bin/sh
+set -v
+INCLUDE="/NextDeveloper/Headers;/NextDeveloper/Headers/ansi;/NextDeveloper/Headers/bsd"
+export INCLUDE
+
+python ../../Tools/scripts/h2py.py /usr/include/bsd/sys/fcntl.h
+echo "Adding O_NDELAY and O_SYNC"
+echo "O_NDELAY = FNDELAY" >> FCNTL.py
+echo "O_SYNC = FSYNC" >> FCNTL.py
+python ../../Tools/scripts/h2py.py /usr/include/bsd/sys/socket.h
+python ../../Tools/scripts/h2py.py -i '(u_long)' /usr/include/bsd/netinet/in.h
