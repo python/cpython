@@ -771,7 +771,7 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 		else	true; \
 		fi; \
 	done
-	$(LN) -sf $(FRAMEWORKFINALDEST)/Headers $(INCLUDEPY)
+	$(LN) -sf $(INCLUDEPY) $(FRAMEWORKFINALDEST)/Headers
 	$(INSTALL_DATA) $(RESSRCDIR)/Info.plist $(FRAMEWORKFINALDEST)/Resources/Info.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/version.plist $(FRAMEWORKFINALDEST)/Resources/version.plist
 	$(INSTALL_DATA) $(RESSRCDIR)/English.lproj/InfoPlist.strings \
