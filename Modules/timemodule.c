@@ -16,7 +16,9 @@
 #define GUSI_TO_MSL_EPOCH (4*365*24*60*60)
 #endif /* USE_GUSI2 */
 #else
+#ifndef RISCOS
 #include <sys/types.h>
+#endif /* RISCOS */
 #endif
 
 #ifdef QUICKWIN
@@ -38,7 +40,7 @@ extern int ftime(struct timeb *);
 #include <i86.h>
 #else
 #ifdef MS_WINDOWS
-#include <windows.h>
+include <windows.h>
 #ifdef MS_WIN16
 /* These overrides not needed for Win32 */
 #define timezone _timezone
@@ -747,7 +749,9 @@ floatsleep(double secs)
 #if defined(__WATCOMC__) && !defined(__QNX__)
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
+#ifndef RISCOS
 	delay((int)(secs * 1000 + 0.5));  /* delay() uses milliseconds */
+#endif
 	Py_END_ALLOW_THREADS
 #else /* !__WATCOMC__ || __QNX__ */
 #ifdef MSDOS

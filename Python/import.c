@@ -60,11 +60,20 @@ struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 
 /* these tables define the module suffixes that Python recognizes */
 struct filedescr * _PyImport_Filetab = NULL;
+
+#ifdef RISCOS
+static const struct filedescr _PyImport_StandardFiletab[] = {
+	{"/py", "r", PY_SOURCE},
+	{"/pyc", "rb", PY_COMPILED},
+	{0, 0}
+};
+#else
 static const struct filedescr _PyImport_StandardFiletab[] = {
 	{".py", "r", PY_SOURCE},
 	{".pyc", "rb", PY_COMPILED},
 	{0, 0}
 };
+#endif
 
 /* Initialize things */
 
@@ -95,8 +104,13 @@ _PyImport_Init(void)
 	if (Py_OptimizeFlag) {
 		/* Replace ".pyc" with ".pyo" in _PyImport_Filetab */
 		for (; filetab->suffix != NULL; filetab++) {
+#ifndef RISCOS
 			if (strcmp(filetab->suffix, ".pyc") == 0)
 				filetab->suffix = ".pyo";
+#else
+			if (strcmp(filetab->suffix, "/pyc") == 0)
+				filetab->suffix = "/pyo";
+#endif
 		}
 	}
 
@@ -842,7 +856,9 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	struct _frozen *f;
 	struct filedescr *fdp = NULL;
 	FILE *fp = NULL;
+#ifndef RISCOS
 	struct stat statbuf;
+#endif
 	static struct filedescr fd_frozen = {"", "", PY_FROZEN};
 	static struct filedescr fd_builtin = {"", "", C_BUILTIN};
 	static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
@@ -951,6 +967,15 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 		}
 #else
 		/* XXX How are you going to test for directories? */
+#ifdef RISCOS
+		{
+			static struct filedescr fd = {"", "", PKG_DIRECTORY};
+			if (isdir(buf)) {
+				if (find_init_module(buf))
+					return &fd;
+			}
+		}
+#endif
 #endif
 #ifdef macintosh
 		fdp = PyMac_FindModuleExtension(buf, &len, name);
@@ -1196,6 +1221,39 @@ find_init_module(char *buf)
 	buf[save_len] = '\0';
 	return 0;
 }
+
+#else
+
+#ifdef RISCOS
+static int
+find_init_module(buf)
+	char *buf;
+{
+	int save_len = strlen(buf);
+	int i = save_len;
+
+	if (save_len + 13 >= MAXPATHLEN)
+		return 0;
+	buf[i++] = SEP;
+	strcpy(buf+i, "__init__/py");
+	if (isfile(buf)) {
+		buf[save_len] = '\0';
+		return 1;
+	}
+
+	if (Py_OptimizeFlag)
+		strcpy(buf+i, "o");
+	else
+		strcpy(buf+i, "c");
+	if (isfile(buf)) {
+		buf[save_len] = '\0';
+		return 1;
+	}
+	buf[save_len] = '\0';
+	return 0;
+}
+#endif /*RISCOS*/
+
 #endif /* HAVE_STAT */
 
 
