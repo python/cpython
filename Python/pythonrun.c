@@ -1025,7 +1025,10 @@ Py_FatalError(msg)
 	OutputDebugString("Fatal Python error: ");
 	OutputDebugString(msg);
 	OutputDebugString("\n");
+#ifdef _DEBUG
+	DebugBreak();
 #endif
+#endif /* MS_WIN32 */
 	abort();
 }
 
