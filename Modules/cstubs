@@ -801,6 +801,18 @@ gl_unpackrect(self, args)
 	return unpacked;
 }
 
+% gversion
+static object *
+gl_gversion(self, args)
+	object *self;
+	object *args;
+{
+	char buf[20];
+	gversion(buf);
+	return newstringobject(buf);
+}
+
+
 /* End of manually written stubs */
 
 %%

@@ -384,8 +384,10 @@ sock_allowbroadcast(s, args)
 }
 
 
-/* s.setsockopt() method */
-/* XXX this works for integer flags only */
+/* s.setsockopt() method.
+   With an integer third argument, sets an integer option.
+   With a string third argument, sets an option from a buffer;
+   use optional built-in module 'struct' to encode the string. */
 
 static object *
 sock_setsockopt(s, args)
@@ -394,12 +396,21 @@ sock_setsockopt(s, args)
 {
 	int level;
 	int optname;
-	int flag;
 	int res;
+	char *buf;
+	int buflen;
+	int flag;
 
-	if (!getargs(args, "(iii)", &level, &optname, &flag))
-		return NULL;
-	res = setsockopt(s->sock_fd, level, optname, &flag, sizeof flag);
+	if (getargs(args, "(iii)", &level, &optname, &flag)) {
+		buf = (char *) &flag;
+		buflen = sizeof flag;
+	}
+	else {
+		err_clear();
+		if (!getargs(args, "(iis#)", &level, &optname, &buf, &buflen))
+			return NULL;
+	}
+	res = setsockopt(s->sock_fd, level, optname, buf, buflen);
 	if (res < 0)
 		return socket_error();
 	INCREF(None);
@@ -407,8 +418,10 @@ sock_setsockopt(s, args)
 }
 
 
-/* s.getsockopt() method */
-/* XXX this works for integer flags only */
+/* s.getsockopt() method.
+   With two arguments, retrieves an integer option.
+   With a third integer argument, retrieves a string buffer of that size;
+   use optional built-in module 'struct' to decode the string. */
 
 static object *
 sock_getsockopt(s, args)
@@ -417,18 +430,37 @@ sock_getsockopt(s, args)
 {
 	int level;
 	int optname;
-	int flag;
-	int flagsize;
 	int res;
+	object *buf;
+	int buflen;
+	int flag;
 
-	if (!getargs(args, "(ii)", &level, &optname))
+	if (getargs(args, "(ii)", &level, &optname)) {
+		int flag = 0;
+		int flagsize = sizeof flag;
+		res = getsockopt(s->sock_fd, level, optname, &flag, &flagsize);
+		if (res < 0)
+			return socket_error();
+		return newintobject(flag);
+	}
+	err_clear();
+	if (!getargs(args, "(iii)", &level, &optname, &buflen))
 		return NULL;
-	flagsize = sizeof flag;
-	flag = 0;
-	res = getsockopt(s->sock_fd, level, optname, &flag, &flagsize);
-	if (res < 0)
+	if (buflen <= 0 || buflen > 1024) {
+		err_setstr(SocketError, "getsockopt buflen out of range");
+		return NULL;
+	}
+	buf = newsizedstringobject((char *)NULL, buflen);
+	if (buf == NULL)
+		return NULL;
+	res = getsockopt(s->sock_fd, level, optname, getstringvalue(buf),
+			 &buflen);
+	if (res < 0) {
+		DECREF(buf);
 		return socket_error();
-	return newintobject(flag);
+	}
+	resizestring(&buf, buflen);
+	return buf;
 }
 
 
