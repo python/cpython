@@ -18,8 +18,7 @@ URL'' to an absolute URL given a ``base URL.''
 
 The module has been designed to match the Internet RFC on Relative
 Uniform Resource Locators (and discovered a bug in an earlier
-draft!).  Refer to \rfc{1808} for details on relative
-URLs and \rfc{1738} for information on basic URL syntax.
+draft!).
 
 It defines the following functions:
 
@@ -40,13 +39,13 @@ Example:
 \begin{verbatim}
 urlparse('http://www.cwi.nl:80/%7Eguido/Python.html')
 \end{verbatim}
-%
+
 yields the tuple
 
 \begin{verbatim}
 ('http', 'www.cwi.nl:80', '/%7Eguido/Python.html', '', '', '')
 \end{verbatim}
-%
+
 If the \var{default_scheme} argument is specified, it gives the
 default addressing scheme, to be used only if the URL string does not
 specify one.  The default value for this argument is the empty string.
@@ -75,7 +74,7 @@ Example:
 \begin{verbatim}
 urljoin('http://www.cwi.nl/%7Eguido/Python.html', 'FAQ.html')
 \end{verbatim}
-%
+
 yields the string
 
 \begin{verbatim}
@@ -85,3 +84,15 @@ yields the string
 The \var{allow_fragments} argument has the same meaning as for
 \code{urlparse()}.
 \end{funcdesc}
+
+
+\begin{seealso}
+  \seerfc{1738}{Uniform Resource Locators (URL)}{
+        This specifies the formal syntax and semantics of absolute
+        URLs.}
+  \seerfc{1808}{Relative Uniform Resource Locators}{
+        This Request For Comments includes the rules for joining an
+        absolute and a relative URL, including a fair normal of
+        ``Abnormal Examples'' which govern the treatment of border
+        cases.}
+\end{seealso}
