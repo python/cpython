@@ -777,10 +777,10 @@ try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 	PyObject *result;
 
 	c = try_3way_compare(v, w);
-	if (c <= -2)
-		return NULL;
 	if (c >= 2)
 		c = default_3way_compare(v, w);
+	if (c <= -2)
+		return NULL;
 	switch (op) {
 	case Py_LT: c = c <  0; break;
 	case Py_LE: c = c <= 0; break;
