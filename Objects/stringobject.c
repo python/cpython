@@ -743,7 +743,7 @@ string_join(PyStringObject *self, PyObject *args)
 	char *p;
 	int seqlen = 0;
 	int sz = 100;
-	int i, slen;
+	int i, slen, sz_incr;
 	PyObject *orig, *seq, *item;
 
 	if (!PyArg_ParseTuple(args, "O:join", &orig))
@@ -770,7 +770,7 @@ string_join(PyStringObject *self, PyObject *args)
 	if (!(res = PyString_FromStringAndSize((char*)NULL, sz)))
 		goto finally;
 
-	p = PyString_AsString(res);
+	p = PyString_AS_STRING(res);
 
 	for (i = 0; i < seqlen; i++) {
 		item = PySequence_Fast_GET_ITEM(seq, i);
@@ -781,17 +781,20 @@ string_join(PyStringObject *self, PyObject *args)
 				return PyUnicode_Join((PyObject *)self, seq);
 			}
 			PyErr_Format(PyExc_TypeError,
-			     "sequence item %i: expected string, %.80s found",
+				     "sequence item %i: expected string,"
+				     " %.80s found",
 				     i, item->ob_type->tp_name);
 			goto finally;
 		}
 		slen = PyString_GET_SIZE(item);
 		while (reslen + slen + seplen >= sz) {
-			if (_PyString_Resize(&res, sz*2)) {
+			/* at least double the size of the string */
+			sz_incr = slen + seplen > sz ? slen + seplen : sz;
+			if (_PyString_Resize(&res, sz + sz_incr)) {
 				goto finally;
 			}
-			sz *= 2;
-			p = PyString_AsString(res) + reslen;
+			sz += sz_incr;
+			p = PyString_AS_STRING(res) + reslen;
 		}
 		if (i > 0) {
 			memcpy(p, sep, seplen);

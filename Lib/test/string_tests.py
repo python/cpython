@@ -123,6 +123,9 @@ def run_method_tests(test):
     test('join', '.', u'a.b.c', ['a', u'b', 'c'])
     test('join', '.', u'a.b.c', ['a', 'b', u'c'])
     test('join', '.', TypeError, ['a', u'b', 3])
+    for i in [5, 25, 125]:
+        test('join', '-', ((('a' * i) + '-') * i)[:-1],
+             ['a' * i] * i)
 
     test('join', ' ', TypeError, BadSeq1())
     test('join', ' ', 'a b c', BadSeq2())
