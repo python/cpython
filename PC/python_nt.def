@@ -12,6 +12,7 @@ EXPORTS
 	_PyParser_Grammar DATA
 	_PyThread_Started DATA
 	_PyParser_TokenNames DATA
+	PyImport_Inittab DATA
 	Py_VerboseFlag DATA
 	PyExc_Exception DATA
 	PyExc_StandardError DATA
@@ -263,6 +264,7 @@ EXPORTS
 	PyErr_NewException
 	PyOS_InitInterrupts
 	PyOS_InterruptOccurred
+	PyOS_AfterFork
 	PyOS_GetLastModificationTime
 	PyOS_Readline
 	PyErr_CheckSignals
