@@ -454,6 +454,13 @@ PyMac_Exit(status)
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
 		SIOUXSetTitle("\p\307terminated\310");
+#ifdef USE_MSL
+		/*
+		** Temporary workaround: autocloseonquit clearing does not
+		** currently work for the MSL/GUSI combo.
+		*/
+		while(getchar() > 0);
+#endif
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
