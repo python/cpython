@@ -48,6 +48,27 @@ Package=<4>
 
 ###############################################################################
 
+Project: "_ssl"=".\_ssl.dsp" - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name pythoncore
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name _sre
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name python
+    End Project Dependency
+}}}
+
+###############################################################################
+
 Project: "_symtable"=".\_symtable.dsp" - Package Owner=<4>
 
 Package=<5>
