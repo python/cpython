@@ -3,7 +3,7 @@
 # keep this (__main__) as clean as possible, since we are using 
 # it like the "normal" interpreter.
 
-__version__ = '1.0b3'
+__version__ = '1.0'
 
 
 def init():
