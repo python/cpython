@@ -27,7 +27,3 @@ def makemakefile(outfp, makevars, files, target):
     outfp.write("\t$(CC) %s -o %s\n" % (string.join(files), target))
 
     outfp.write("\nclean:\n\t-rm -f *.o %s\n" % target)
-
-# Local Variables:
-# indent-tabs-mode: nil
-# End:

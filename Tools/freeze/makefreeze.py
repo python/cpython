@@ -68,7 +68,3 @@ def writecode(outfp, mod, str):
         for c in str[i:i+16]:
             outfp.write('%d,' % ord(c))
     outfp.write('\n};\n')
-
-# Local Variables:
-# indent-tabs-mode: nil
-# End:
