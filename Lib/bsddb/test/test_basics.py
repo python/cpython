@@ -398,6 +398,18 @@ class BasicTestCase(unittest.TestCase):
                 self.fail("no exception raised when using a buggy cursor's"
                           "%s method" % method)
 
+        #
+        # free cursor referencing a closed database, it should not barf:
+        #
+        oldcursor = self.d.cursor(txn=txn)
+        self.d.close()
+
+        # this would originally cause a segfault when the cursor for a
+        # closed database was cleaned up.  it should not anymore.
+        # SF pybsddb bug id 667343
+        del oldcursor
+
+
     #----------------------------------------
 
     def test04_PartialGetAndPut(self):
