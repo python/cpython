@@ -838,7 +838,7 @@ Examples (to the left the call, to the right the resulting Python value):
 \begin{verbatim}
     Py_BuildValue("")                        None
     Py_BuildValue("i", 123)                  123
-    Py_BuildValue("ii", 123, 456)            (123, 456)
+    Py_BuildValue("iii", 123, 456, 789)      (123, 456, 789)
     Py_BuildValue("s", "hello")              'hello'
     Py_BuildValue("ss", "hello", "world")    ('hello', 'world')
     Py_BuildValue("s#", "hello", 4)          'hell'
@@ -847,10 +847,10 @@ Examples (to the left the call, to the right the resulting Python value):
     Py_BuildValue("(ii)", 123, 456)          (123, 456)
     Py_BuildValue("(i,i)", 123, 456)         (123, 456)
     Py_BuildValue("[i,i]", 123, 456)         [123, 456]
-    Py_BuildValue("{s:i,s:i}", "abc", 123, "def", 456)
-                                             {'abc': 123, 'def': 456}
-    Py_BuildValue("((ii)(ii)) (ii)", 1, 2, 3, 4, 5, 6)
-                                             (((1, 2), (3, 4)), (5, 6))
+    Py_BuildValue("{s:i,s:i}",
+                  "abc", 123, "def", 456)    {'abc': 123, 'def': 456}
+    Py_BuildValue("((ii)(ii)) (ii)",
+                  1, 2, 3, 4, 5, 6)          (((1, 2), (3, 4)), (5, 6))
 \end{verbatim}
 
 
