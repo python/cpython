@@ -12,6 +12,10 @@
 #include <signal.h>
 #include <errno.h>
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* For isatty() */
+#endif
+
 /* GNU readline definitions */
 #include <readline/readline.h> /* You may need to add an -I option to Setup */
 

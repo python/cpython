@@ -33,6 +33,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* For isatty() */
+#endif
+
 /* Main program */
 
 int
