@@ -1,0 +1,136 @@
+#! /usr/bin/env python
+#  -*- Python -*-
+
+import buildindex
+import getopt
+import os
+import re
+import string
+import sys
+
+
+_rx = re.compile(
+    '<dt><a href="(module-.*\.html)">([a-zA-Z_][a-zA-Z0-9_.]*)</a>')
+
+def main():
+    outputfile = "-"
+    columns = 1
+    letters = 0
+    opts, args = getopt.getopt(sys.argv[1:], "c:lo:",
+                               ["columns=", "letters", "output="])
+    for opt, val in opts:
+        if opt in ("-o", "--output"):
+            outputfile = val
+        elif opt in ("-c", "--columns"):
+            columns = string.atoi(val)
+        elif opt in ("-l", "--letters"):
+            letters = 1
+    if not args:
+        args = ["-"]
+    #
+    # Collect the input data:
+    #
+    nodes = []
+    seqno = 0
+    for ifn in args:
+        if ifn == "-":
+            ifp = sys.stdin
+            dirname = ''
+        else:
+            ifp = open(ifn)
+            dirname = os.path.dirname(ifn)
+        while 1:
+            line = ifp.readline()
+            if not line:
+                break
+            m = _rx.match(line)
+            if m:
+                # This line specifies a module!
+                basename, modname = m.group(1, 2)
+                linkfile = os.path.join(dirname, basename)
+                nodes.append(buildindex.Node('<a href="%s">' % linkfile,
+                                             "<tt>%s</tt>" % modname,
+                                             seqno))
+                seqno = seqno + 1
+        ifp.close()
+    num_nodes = len(nodes)
+    html = HEAD + buildindex.process_nodes(nodes, columns, letters) + TAIL
+    program = os.path.basename(sys.argv[0])
+    if outputfile == "-":
+        sys.stdout.write(html)
+        sys.stderr.write("%s: %d index nodes\n" % (program, num_nodes))
+    else:
+        open(outputfile, "w").write(html)
+        print
+        print "%s: %d index nodes" % (program, num_nodes)
+
+
+HEAD = """\
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+<title>Global Module Index</title>
+<META NAME="description" CONTENT="Global Module Index">
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+<LINK REL="STYLESHEET" HREF="lib/lib.css">
+<LINK REL="up" HREF="./">
+</head>
+<body bgcolor="#ffffff">
+<div class=navigation>
+<table width="100%" cellpadding=0 cellspacing=2>
+<tr>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+<td><a href="./"><img width=32 height=32 align=bottom border=0 alt="up"
+ src="icons/up.gif"></A></td>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+<td align=center bgcolor="#99CCFF" width="100%">
+ <b class=title>Global Module Index</b></td>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+</tr></table>
+<b class=navlabel>Up:</b> <span class=sectref><A
+ HREF="./">Python Documentation Index</A></span>
+<br><hr></div>
+"""
+
+TAIL = """
+<div class=navigation>
+<hr>
+<table width="100%" cellpadding=0 cellspacing=2>
+<tr>
+<td><img width=32 height=32 align=bottom border=0 alt="blank"
+ src="icons/blank.gif"></td>
+<td><a href="./"><img width=32 height=32 align=bottom border=0 alt="up"
+ src="icons/up.gif"></A></td>
+<td><img width=32 height=32 align=bottom border=0 alt=""
+ src="icons/blank.gif"></A></td>
+<td align=center bgcolor="#99CCFF" width="100%">
+ <b class=title>Global Module Index</b></td>
+<td><img width=32 height=32 align=bottom border=0 alt=""
+ src="icons/blank.gif"></td>
+<td><img width=32 height=32 align=bottom border=0 alt=""
+ src="icons/blank.gif"></td>
+<td><img width=32 height=32 align=bottom border=0 alt=""
+ src="icons/blank.gif"></td>
+</tr></table>
+<b class=navlabel>Up:</b> <span class=sectref><A
+ HREF="./">Python Documentation Index</A></span>
+</div>
+<!--End of Navigation Panel-->
+<ADDRESS>
+<hr>Send comments to
+<a href="mailto:python-docs@python.org">python-docs@python.org</a>.
+</ADDRESS>
+</BODY>
+</HTML>
+"""
+
+
+if __name__ == "__main__":
+    main()
