@@ -3,14 +3,14 @@ Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
-Expires: Fri, 1 Sep 1995 00:00:00 GMT
+Expires: Sun, 1 Oct 1995 00:00:00 GMT
 Supersedes: <DCA29p.A9A@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.25++
-Last-modified: 25 July 1995
+Version: 1.27
+Last-modified: 28 August 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -21,13 +21,12 @@ redistribution of this FAQ is allowed.  Printed redistribution only
 with permission of the author.  No warranties.
 
 Author's address:
-        Guido van Rossum
-        CWI, dept. CST
-        Kruislaan 413
-        P.O. Box 94079
-        1090 GB  Amsterdam
-        The Netherlands
-Email:  <guido@cwi.nl>
+	Guido van Rossum
+	C.N.R.I.
+	1895 Preston White Drive
+	Reston, VA 22091
+	U.S.A.
+Email:  <guido@python.org>, <guido@cnri.reston.va.us>, <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
 <URL:ftp://ftp.python.org/pub/python/FAQ>.  It will also be posted
@@ -49,7 +48,7 @@ This FAQ is divided in the following chapters:
 
  1. General information and availability
  2. Python in the real world
- 3. Building Python
+ 3. Building Python and Other Known Bugs
  4. Programming in Python
  5. Extending Python
  6. Python's design
@@ -89,8 +88,9 @@ Here's an overview of the questions per chapter:
   2.5. Q. When will the next version be released?
   2.6. Q. What new developments are expected for Python in the future?
   2.7. Q. Is it reasonable to propose incompatible changes to Python?
+  2.8. Q. What is the future of Python?
 
- 3. Building Python
+ 3. Building Python and Other Known Bugs
   3.1. Q. Is there a test set?
   3.2. Q. When running the test set, I get complaints about floating point
        operations, but when playing with floating point operations I cannot
@@ -110,6 +110,10 @@ Here's an overview of the questions per chapter:
   3.13. Q. How to configure dynamic loading on Lixux.
   3.14. Q. Under Solaris 2.x, using GCC, how do I use shared libraries?
   3.15. Q. Errors when linking with a shared library containing C++ code.
+  3.16. Q. Tk menus don't work properly in Python 1.2
+  3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found"
+  3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version
+  3.19. Q. Tk doesn't work right on DEC Alpha
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -176,10 +180,10 @@ Here's an overview of the questions per chapter:
   5.8. Q. How do I call an object's method from C?
   5.9. Q. How do I catch the output from print_error()?
   5.10. Q. How do I access a module written in Python from C?
+  5.11. Q. How do I interface to C++ objects from Python?
 
  6. Python's design
-  6.1. Q. Why isn't there a generic copying operation for objects in
-       Python?
+  6.1. Q. Why isn't there a generic copying operation for objects in Python?
   6.2. Q. Why isn't there a generic way to implement persistent objects
        in Python?  (Persistent == automatically saved to and restored from
        disk.)
@@ -199,6 +203,7 @@ Here's an overview of the questions per chapter:
   6.11. Q. Why can't lambda forms contain statements?
   6.12. Q. Why is there no more efficient way of iterating over a dictionary
         than first constructing the list of keys()?
+  6.13. Q. Can Python be compiled to machine code, C or some other language?
 
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
@@ -225,7 +230,7 @@ question 4.2 in vi, type /^4\.2\. Q/).
 
 
 1. General information and availability
-=======================================
+ =======================================
 
 1.1. Q. What is Python?
 
@@ -294,7 +299,7 @@ site).
 A. The following anonymous ftp sites keep mirrors of the Python
 distribution:
 
-	<URL:ftp://ftp.cwi.nl/pub/python/>
+        <URL:ftp://ftp.cwi.nl/pub/python/>
         <URL:ftp://gatekeeper.dec.com/pub/plan/python/>
         <URL:ftp://ftp.uu.net/languages/python/>
         <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
@@ -302,7 +307,7 @@ distribution:
         <URL:ftp://ftp.sunet.se/pub/lang/python/>
         <URL:ftp://unix.hensa.ac.uk/mirrors/uunet/languages/python/>
         <URL:ftp://ftp.sterling.com/programming/languages/python/>
-	<URL:ftp://ftp.ibp.fr/pub/python/>
+        <URL:ftp://ftp.ibp.fr/pub/python/>
         <URL:ftp://ftp.switch.ch/software/sources/python/>
         <URL:ftp://ftp.informatik.tu-muenchen.de/pub/comp/programming/languages/python/>
 
@@ -484,6 +489,10 @@ on the net since then.
 
 	Missing-him-too-ly yours...
 
+PS: support for Python's Emacs mode (Misc/python-mode.el in the
+distribution) has been taken up by Barry Warsaw.  Questions about it
+should be mailed to <python-mode@python.org>.
+
 
 2. Python in the real world
 ===========================
@@ -498,6 +507,9 @@ list, and now that there's a newsgroup the mailing list subscription
 is even less meaningful.  I see new names on the newsgroup all the
 time and my best guess is that there are currently at least several
 thousands of users.
+
+Another statistic is the number of accesses to the Python WWW server.
+Have a look at <URL:http://www.python.org/stats/>.
 
 2.2. Q. Have any significant projects been done in Python?
 
@@ -515,6 +527,8 @@ interfaces.  See <URL:ftp://ftp.parc.xerox.com/pub/ilu/ilu.html>.
 The University of California, Irvine uses a student administration
 system called TELE-Vision written entirely in Python.  Contact: Ray
 Price <rlprice@uci.edu>.
+
+See also the next question.
 
 If you have done a significant project in Python that you'd like to be
 included in the list above, send me email!
@@ -549,6 +563,13 @@ Individuals at many other companies are using Python for internal
 development or for as yet unannounced products (witness their
 contributions to the Python mailing list or newsgroup).
 
+SGI has advertised in the Python list looking for Python programmers
+for a project involving interactive television.
+
+See also the workshop minutes at
+<URL:http://www.python.org/workshops/> -- in general the WWW server is
+more up to date than the FAQ for these issues.
+
 Python has also been elected as an extension language by MADE, a
 consortium supported by the European Committee's ESPRIT program and
 consisting of Bull, CWI and some other European companies.  Contact:
@@ -565,16 +586,17 @@ in the early stages of development, in fact new, stable releases
 
 2.5. Q. When will the next version be released?
 
-A. I am planning to release 1.3 in September or early October 1995.
-It will contain keyword parameters as the most important new language
-feature.  Beta versions may be available as early as August.
+A. I am planning to release 1.3 in early October 1995.  It will
+contain keyword parameters as the most important new language feature.
+A beta version was made available in August, more beta versions may
+appear.
 
 2.6. Q. What new developments are expected for Python in the future?
 
 A. See my Work-In-Progress web page, currently at
 <URL:http://www.python.org:~guido/WIP.html>, and the pages for the
 Second Python Workshop (best reached via the Python home page,
-<URL:http://www.python.org/>).
+<URL:http://www.python.org/>).  Also follow the newsgroup discussions!
 
 2.7. Q. Is it reasonable to propose incompatible changes to Python?
 
@@ -585,9 +607,28 @@ upon.  Even if you can provide a conversion program, there still is
 the problem of updating all documentation.  Providing a gradual
 upgrade path is the only way if a feature has to be changed.
 
+2.8. Q. What is the future of Python?
 
-3. Building Python
-==================
+A. If I knew, I'd be rich :-)
+
+Seriously, the formation of the PSA (Pyton Software Activity, see
+<URL:http://www.python.org/psa/>) ensures some kind of support even in
+the (unlikely! event that I'd be hit by a bus (actually, here in the
+US, a car accident would be more likely :-), were to join a nunnery,
+or would be head-hunted.  A large number of Python users have become
+experts at Python programming as well as maintenance of the
+implementation, and would easily fill the vacuum created by my
+disappearance.
+
+In the mean time, I have no plans to disappear -- rather, I am
+committed to improving Python, and my current benefactor, CNRI (see
+<URL:http://www.cnri.reston.va.us>) is just as committed to continue
+its support of Python and the PSA.  In fact, we have great plans for
+Python -- we just can't tell yet!
+
+
+3. Building Python and Other Known Bugs
+=======================================
 
 3.1. Q. Is there a test set?
 
@@ -796,6 +837,42 @@ cannot create shared libraries.
 A. Link the main Python binary with C++.  Change the definition of
 LINKCC in Modules/Makefile to be your C++ compiler.  You may have to
 edit config.c slightly to make it compilable with C++.
+
+3.16. Q. Tk menus don't work properly in Python 1.2.
+
+A. There's a bug in Tkinter.py; remove ClassType and InstanceType from
+the definition of CallableTypes near the top of Lib/tkinter/Tkinter.py.
+
+3.17. Q. I built with tkintermodule.c enabled but get "Tkinter not found".
+
+A. Tkinter.py (note: upper case T) lives in a subdirectory of Lib,
+Lib/tkinter.  If you are using the default module search path, you
+probably didn't enable the line in the Modules/Setup file defining
+TKPATH; if you use the environment variable PYTHONPATH, you'll have to
+add  the proper tkinter subdirectory.
+
+3.18. Q. I built with Tk 4.0 but Tkinter complains about the Tk version.
+
+A. Several things could cause this.  You most likely have a Tk 3.6
+installation that wasn't completely eradicated by the Tk 4.0
+installation (which tends to add "4.0" to its installed files).  You
+may have the Tk 3.6 support library installed in the place where the
+Tk 4.0 support files should be (default /usr/local/lib/tk/); you may
+have compiled Python with the old tk.h header file (yes, this actually
+compiles!); you may actually have linked with Tk 3.6 even though Tk
+4.0 is also around.  Similar for Tcl 7.4 vs. Tcl 7.3.
+
+3.19. Q. Tk doesn't work right on DEC Alpha.
+
+A. You probably compiled either Tcl, Tk or Python with gcc.  Don't.
+For this platform, which has 64-bit integers, gcc is known to generate
+broken code.  The standard cc (which comes bundled with the OS!)
+works.  If you still prefer gcc, at least try recompiling with cc
+before reporting problems to the newsgroup or the author; if this
+fixes the problem, report the bug to the gcc developers instead.  (As
+far as we know, there are no problem with gcc on other platforms --
+the instabilities seem to be restricted to the DEC Alpha.)  See also
+question 3.6.
 
 
 4. Programming in Python
@@ -1598,33 +1675,59 @@ the module) as follows:
 
 Calling setattr(), to assign to variables in the module, also works.
 
+5.11. Q. How do I interface to C++ objects from Python?
+
+A. Depending on your requirements, there are many approaches.  Begin
+by reading the "Extending and Embedding" document (Doc/ext.tex, see
+also <URL:http://www.python.org/doc/>).  Realize that for the Python
+run-time system, there isn't a whole lot of difference between C and
+C++ -- so the strategy to build a new Python type around a C structure
+(pointer) type will also work for C++ objects.
+
+Automatic generation of interfaces between Python and C++ is still at
+the horizon -- parsing C++ header files requires an almost complete
+C++ parser, and many features aren't easily translated from C++ to
+Python: certain forms of operator oveloading, function overloading
+(best approached by a varargs function which explicitly type-checks
+its arguments), and reference arguments are just a number of features
+that are hard to translate correctly if at all.
+
+The hardest problem is to transparently translate the C++ class
+hierarchy to Python, so that Python programs derive classes from C++
+classes.  Given suitable constraints, this may be possible, but it
+would require more space than I have in this FAQ to explain how.
+In any case, you can get quite a bit done without this, using just the
+existing classes from Python.
+
+If this all seems rather daunting, that may be because it is -- C++
+isn't exactly a baby to handle without gloves!  However, people have
+accomplished amazing feats of interfacing between Python and C++, and
+a detailed question posted to the Python list is likely to elicit some
+interesting and useful responses.
+
 
 6. Python's design
 ==================
 
-6.1. Q. Why isn't there a generic copying operation for objects in
-Python?
+6.1. Q. Why isn't there a generic copying operation for objects in Python?
 
-A. Hmm.  Maybe there should be one, but it's difficult to assign a
-useful meaning to copying of open files, sockets and windows, or
-recursive data structures.  As long as you design all your classes
-yourself you are of course free to define a standard base class that
-defines an overridable copying operation for all the objects you care
-about.  (One practical point: it would have to be a built-in function,
-not a standard method name, since not all built-in object types have
-methods; e.g. strings, integers and tuples don't.)
+A. Historically, there wasn't.  However, starting in Python 1.2,
+there's a library module "copy" which supports both shallow and deep
+copying of most common Python objects (though not things like open
+files, sockets or windows), including an extensible mechanism to copy
+class instances.
 
 6.2. Q. Why isn't there a generic way to implement persistent objects
 in Python?  (Persistent == automatically saved to and restored from
 disk.)
 
-A. Hmm, hmm.  Basically for the same reasons as why there is no
-generic copying operation.
-
-A partial solution will appear in release 1.2.  This will also provide
-a partial solution to the problem of a generic copying operation.
-(Partial because it still won't cope with open files etc.; however it
-does handle user-defined classes!)
+A. Like the previous question, historically, there wasn't.  The
+library module "pickle" now solves this in a very general way (though
+you still can't store things like open files, sockests or windows),
+and the library module "shelve" uses pickle and (g)dbm to create
+presistent mappings containing arbitrary Python objects.  There are
+some problems with shelve when using gdbm which will be solved in
+Python 1.3.
 
 6.3. Q. Why isn't there a switch or case statement in Python?
 
@@ -1810,6 +1913,52 @@ programs: it's easy never to have it happen during test runs if you
 only insert or delete a few items per iteration -- but your users will 
 surely hit upon it sooner or later.
 
+6.13. Q. Can Python be compiled to machine code, C or some other language?
+
+A. Not easily.  Python's high level data types, dynamic typing of
+objects and run-time invocation of the interpreter (using eval() or
+exec) together mean that a "compiled" Python program would probably
+consist mostly of calls into the Python run-time system, even for
+seemingly simple operations like "x+1".  Thus, the performance gain
+would probably be minimal.
+
+Internally, Python source code is always translated into a "virtual
+machine code" or "byte code" representation before it is interpreted
+(by the "Python virtual machine" or "bytecode interpreter").  In order
+to avoid the overhead of parsing and translating modules that rarely
+change over and over again, this byte code is written on a file whose
+name ends in ".pyc" whenever a module is parsed (from a file whose
+name ends in ".py").  When the corresponding .py file is changed, it
+is parsed and translated again and the .pyc file is rewritten.  There
+is no performance difference once the .pyc file has been loaded (the
+bytecode read from the .pyc file is exactly the same as the bytecode
+created by direct translation).  The only difference is that loading
+code from a .pyc file is faster than parsing and translating a .py
+file, so the presence of precompiled .pyc files will generally improve
+start-up time of Python scripts.  If desired, the Lib/compileall.py
+module/script can be used to force creation of valid .pyc files for a
+given set of modules.
+
+If you are looking for a way to translate Python programs in order to
+distribute them in binary form, without the need to distribute the
+interpreter and library as well, have a look at the freeze.py script
+in the Tools/freeze directory.  This creates a single binary file
+incorporating your program, the Python interpreter, and those parts of
+the Python library that are needed by your program.  Of course, the
+resulting binary will only run on the same type of platform as that
+used to create it.
+
+Hints for proper usage of freeze.py:
+
+- the script must be in a file whose name ends in .py
+
+- you must have installed Python fully:
+
+	make install
+	make libinstall
+	make inclinstall
+	make libainstall
+
 
 7. Using Python on non-UNIX platforms
 =====================================
@@ -1872,11 +2021,12 @@ else is working on a more complete port, for details watch the list.
 
 7.8. Q. What about IBM mainframes, or other non-UNIX platforms?
 
-A. I haven't heard about these, except I remember once hearing about
-an attempt at an OS/9 port.  If you're interested in any of this, go
-directly to the newsgroup and ask there, you may find exactly what you
-need.  For example, a port to MPE/iX 5.0 on HP3000 computers was just
-announced, see <URL:http://www.allegro.com/software/>.
+A. I haven't heard about these, except I remember hearing about an
+OS/9 port and a port to Vxworks (both operating systems for embedded
+systems).  If you're interested in any of this, go directly to the
+newsgroup and ask there, you may find exactly what you need.  For
+example, a port to MPE/iX 5.0 on HP3000 computers was just announced,
+see <URL:http://www.allegro.com/software/>.
 
 7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
 
