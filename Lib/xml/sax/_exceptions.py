@@ -2,9 +2,10 @@
 import sys
 if sys.platform[:4] == "java":
     from java.lang import Exception
+del sys
 
 # ===== SAXEXCEPTION =====
-    
+
 class SAXException(Exception):
     """Encapsulate an XML error or warning. This class can contain
     basic error or warning information from either the XML parser or
@@ -14,8 +15,8 @@ class SAXException(Exception):
     ErrorHandler interface, you are not actually required to throw
     the exception; instead, you can simply read the information in
     it."""
-    
-    def __init__(self, msg, exception = None):
+
+    def __init__(self, msg, exception=None):
         """Creates an exception. The message is required, but the exception
         is optional."""
         self._msg = msg
@@ -38,12 +39,12 @@ class SAXException(Exception):
         mistake, since Exception has __getitem__ defined."""
         raise NameError("__getitem__")
 
-    
+
 # ===== SAXPARSEEXCEPTION =====
 
 class SAXParseException(SAXException):    
     """Encapsulate an XML parse error or warning.
-    
+
     This exception will include information for locating the error in
     the original XML document. Note that although the application will
     receive a SAXParseException as the argument to the handlers in the
@@ -53,12 +54,12 @@ class SAXParseException(SAXException):
 
     Since this exception is a subclass of SAXException, it inherits
     the ability to wrap another exception."""
-    
+
     def __init__(self, msg, exception, locator):
         "Creates the exception. The exception parameter is allowed to be None."
         SAXException.__init__(self, msg, exception)
         self._locator = locator
-        
+
     def getColumnNumber(self):
         """The column number of the end of the text where the exception
 	occurred."""
@@ -83,7 +84,7 @@ class SAXParseException(SAXException):
                                    self.getLineNumber(),
                                    self.getColumnNumber())
 
-    
+
 # ===== SAXNOTRECOGNIZEDEXCEPTION =====
 
 class SAXNotRecognizedException(SAXException):
@@ -93,9 +94,9 @@ class SAXNotRecognizedException(SAXException):
     unrecognized feature or property. SAX applications and extensions may
     use this class for similar purposes."""
 
-    
+
 # ===== SAXNOTSUPPORTEDEXCEPTION =====
-    
+
 class SAXNotSupportedException(SAXException):
     """Exception class for an unsupported operation.
 
@@ -103,6 +104,3 @@ class SAXNotSupportedException(SAXException):
     perform is requested (specifically setting a state or value). SAX
     applications and extensions may use this class for similar
     purposes."""
-
-
-
