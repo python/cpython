@@ -93,6 +93,9 @@ if missing: raise "Missing Types"
 		if not self.silent:
 			print format%args
 
+	def writeinitialdefs(self):
+		pass
+		
 	def initblacklists(self):
 		self.blacklistnames = self.makeblacklistnames()
 		self.blacklisttypes = ["unknown", "-"] + self.makeblacklisttypes()
@@ -219,14 +222,21 @@ if missing: raise "Missing Types"
 		self.includepath = [':', INCLUDEDIR]
 
 	def initpatterns(self):
-		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
+#		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
+		self.head_pat = "^EXTERN_API[^_]"
 		self.tail_pat = "[;={}]"
-		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
+#		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
+		self.type_pat = "EXTERN_API" + \
+						"[ \t\n]*([ \t\n]*" + \
+						"\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)" + \
+						"[ \t\n]*)[ \t\n]*"
 		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
 		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
 		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
+#		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
+#		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
 		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
-		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
+		               "[ \t]*\(<defn>[-0-9_a-zA-Z'\"][^\t\n,;}]*\),?"
 		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
 
 	def compilepatterns(self):
@@ -356,6 +366,7 @@ if missing: raise "Missing Types"
 		else:
 			self.report("defsfile = %s", `self.defsfile.name`)
 			self.defsfile.write("# Generated from %s\n\n" % `inputname`)
+			self.writeinitialdefs()
 		self.alreadydone = []
 		try:
 			while 1:
@@ -373,7 +384,8 @@ if missing: raise "Missing Types"
 
 	def dosymdef(self):
 		name, defn = self.sym.group('name', 'defn')
-		self.defsfile.write("%s = %s\n" % (name, defn))
+		if not name in self.blacklistnames:
+			self.defsfile.write("%s = %s\n" % (name, defn))
 
 	def dofuncspec(self):
 		raw = self.line
@@ -519,6 +531,20 @@ if missing: raise "Missing Types"
 				return 1
 		return 0
 
+class Scanner_PreUH3(Scanner):
+	"""Scanner for Universal Headers before release 3"""
+	def initpatterns(self):
+		self.head_pat = "^extern pascal[ \t]+" # XXX Mac specific!
+		self.tail_pat = "[;={}]"
+		self.type_pat = "pascal[ \t\n]+\(<type>[a-zA-Z0-9_ \t]*[a-zA-Z0-9_]\)[ \t\n]+"
+		self.name_pat = "\(<name>[a-zA-Z0-9_]+\)[ \t\n]*"
+		self.args_pat = "(\(<args>\([^(;=)]+\|([^(;=)]*)\)*\))"
+		self.whole_pat = self.type_pat + self.name_pat + self.args_pat
+		self.sym_pat = "^[ \t]*\(<name>[a-zA-Z0-9_]+\)[ \t]*=" + \
+		               "[ \t]*\(<defn>[-0-9'\"][^\t\n,;}]*\),?"
+		self.asplit_pat = "^\(<type>.*[^a-zA-Z0-9_]\)\(<name>[a-zA-Z0-9_]+\)$"
+
+	
 def test():
 	input = "D:Development:THINK C:Mac #includes:Apple #includes:AppleEvents.h"
 	output = "@aespecs.py"
