@@ -311,6 +311,12 @@ PyFloat_AsString(char *buf, PyFloatObject *v)
 	PyFloat_AsStringEx(buf, v, PREC_STR);
 }
 
+void
+PyFloat_AsReprString(char *buf, PyFloatObject *v)
+{
+	PyFloat_AsStringEx(buf, v, PREC_REPR);
+}
+
 /* ARGSUSED */
 static int
 float_print(PyFloatObject *v, FILE *fp, int flags)

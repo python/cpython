@@ -13,6 +13,9 @@ except ImportError:
 else:
     raise TestFailed("import of RAnDoM should have failed (case mismatch)")
 
+# Another brief digression to test the accuracy of manifest float constants.
+import double_const  # don't blink -- that *was* the test
+
 sys.path.insert(0, os.curdir)
 
 source = TESTFN + ".py"

@@ -149,9 +149,8 @@ w_object(PyObject *v, WFILE *p)
 			w_short(ob->ob_digit[i], p);
 	}
 	else if (PyFloat_Check(v)) {
-		extern void PyFloat_AsString(char *, PyFloatObject *);
 		char buf[256]; /* Plenty to format any double */
-		PyFloat_AsString(buf, (PyFloatObject *)v);
+		PyFloat_AsReprString(buf, (PyFloatObject *)v);
 		n = strlen(buf);
 		w_byte(TYPE_FLOAT, p);
 		w_byte(n, p);
@@ -159,20 +158,19 @@ w_object(PyObject *v, WFILE *p)
 	}
 #ifndef WITHOUT_COMPLEX
 	else if (PyComplex_Check(v)) {
-		extern void PyFloat_AsString(char *, PyFloatObject *);
 		char buf[256]; /* Plenty to format any double */
 		PyFloatObject *temp;
 		w_byte(TYPE_COMPLEX, p);
 		temp = (PyFloatObject*)PyFloat_FromDouble(
 			PyComplex_RealAsDouble(v));
-		PyFloat_AsString(buf, temp);
+		PyFloat_AsReprString(buf, temp);
 		Py_DECREF(temp);
 		n = strlen(buf);
 		w_byte(n, p);
 		w_string(buf, n, p);
 		temp = (PyFloatObject*)PyFloat_FromDouble(
 			PyComplex_ImagAsDouble(v));
-		PyFloat_AsString(buf, temp);
+		PyFloat_AsReprString(buf, temp);
 		Py_DECREF(temp);
 		n = strlen(buf);
 		w_byte(n, p);
