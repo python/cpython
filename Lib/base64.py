@@ -53,10 +53,10 @@ def test():
     except getopt.error, msg:
         sys.stdout = sys.stderr
         print msg
-        print """usage: basd64 [-d] [-e] [-u] [-t] [file|-]
+        print """usage: %s [-d|-e|-u|-t] [file|-]
         -d, -u: decode
         -e: encode (default)
-        -t: decode string 'Aladdin:open sesame'"""
+        -t: encode and decode string 'Aladdin:open sesame'"""%sys.argv[0]
         sys.exit(2)
     func = encode
     for o, a in opts:
