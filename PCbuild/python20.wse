@@ -1226,22 +1226,16 @@ item: Install File
   Source=..\license
   Destination=%MAINDIR%\LICENSE.txt
   Flags=0000000000000010
-  File Size=12540
-  File Date=20010717 163642
 end
 item: Install File
   Source=..\readme
   Destination=%MAINDIR%\README.txt
   Flags=0000000000000010
-  File Size=39442
-  File Date=20010509 141347
 end
 item: Install File
   Source=..\misc\news
   Destination=%MAINDIR%\NEWS.txt
   Flags=0000000000000010
-  File Size=84910
-  File Date=20010730 113103
 end
 item: Remark
 end
@@ -1260,25 +1254,16 @@ item: Install File
   Source=.\python.exe
   Destination=%MAINDIR%\python.exe
   Flags=0000000000000010
-  File Size=20539
-  File Date=20010730 113601
-  EXE Type=32
 end
 item: Install File
   Source=.\pythonw.exe
   Destination=%MAINDIR%\pythonw.exe
   Flags=0000000000000010
-  File Size=20540
-  File Date=20010730 113602
-  EXE Type=32
 end
 item: Install File
   Source=.\w9xpopen.exe
   Destination=%MAINDIR%\w9xpopen.exe
   Flags=0000000000000010
-  File Size=16384
-  File Date=20010730 113609
-  EXE Type=32
 end
 item: Remark
 end
@@ -1290,113 +1275,71 @@ item: Install File
   Destination=%MAINDIR%\DLLs\_winreg.pyd
   Description=Extension modules
   Flags=0000000000000010
-  File Size=36864
-  File Date=20010730 113612
-  EXE Type=32
 end
 item: Install File
   Source=.\_sre.pyd
   Destination=%MAINDIR%\DLLs\_sre.pyd
   Flags=0000000000000010
-  File Size=49209
-  File Date=20010730 113546
-  EXE Type=32
 end
 item: Install File
   Source=.\_symtable.pyd
   Destination=%MAINDIR%\DLLs\_symtable.pyd
   Flags=0000000000000010
-  File Size=20480
-  File Date=20010730 113548
-  EXE Type=32
 end
 item: Install File
   Source=.\_testcapi.pyd
   Destination=%MAINDIR%\DLLs\_testcapi.pyd
   Flags=0000000000000010
-  File Size=20480
-  File Date=20010730 113549
-  EXE Type=32
 end
 item: Install File
   Source=.\_tkinter.pyd
   Destination=%MAINDIR%\DLLs\_tkinter.pyd
   Flags=0000000000000010
-  File Size=28733
-  File Date=20010730 113553
-  EXE Type=32
 end
 item: Install File
   Source=.\_socket.pyd
   Destination=%MAINDIR%\DLLs\_socket.pyd
   Flags=0000000000000010
-  File Size=41020
-  File Date=20010730 113514
-  EXE Type=32
 end
 item: Install File
   Source=.\bsddb.pyd
   Destination=%MAINDIR%\DLLs\bsddb.pyd
   Flags=0000000000000010
-  File Size=81978
-  File Date=20010730 113554
-  EXE Type=32
 end
 item: Install File
   Source=.\mmap.pyd
   Destination=%MAINDIR%\DLLs\mmap.pyd
   Flags=0000000000000010
-  File Size=24576
-  File Date=20010730 113556
-  EXE Type=32
 end
 item: Install File
   Source=.\parser.pyd
   Destination=%MAINDIR%\DLLs\parser.pyd
   Flags=0000000000000010
-  File Size=41019
-  File Date=20010730 113558
-  EXE Type=32
 end
 item: Install File
   Source=.\pyexpat.pyd
   Destination=%MAINDIR%\DLLs\pyexpat.pyd
   Flags=0000000000000010
-  File Size=36924
-  File Date=20010730 113600
-  EXE Type=32
 end
 item: Install File
   Source=.\select.pyd
   Destination=%MAINDIR%\DLLs\select.pyd
   Flags=0000000000000010
-  File Size=20539
-  File Date=20010730 113604
-  EXE Type=32
 end
 item: Install File
   Source=.\unicodedata.pyd
   Destination=%MAINDIR%\DLLs\unicodedata.pyd
   Flags=0000000000000010
-  File Size=212992
-  File Date=20010730 113607
-  EXE Type=32
 end
 item: Install File
   Source=.\winsound.pyd
   Destination=%MAINDIR%\DLLs\winsound.pyd
   Flags=0000000000000010
-  File Size=20480
-  File Date=20010730 113615
-  EXE Type=32
 end
 item: Install File
   Source=.\zlib.pyd
   Destination=%MAINDIR%\DLLs\zlib.pyd
   Flags=0000000000000010
-  File Size=61497
-  File Date=20010730 113617
-  EXE Type=32
 end
 item: Remark
 end
@@ -1408,100 +1351,72 @@ item: Install File
   Destination=%MAINDIR%\libs\_winreg.lib
   Description=Link library files
   Flags=0000000000000010
-  File Size=1942
-  File Date=20010730 113612
 end
 item: Install File
   Source=.\_sre.lib
   Destination=%MAINDIR%\libs\_sre.lib
   Flags=0000000000000010
-  File Size=1892
-  File Date=20010730 113546
 end
 item: Install File
   Source=.\_symtable.lib
   Destination=%MAINDIR%\libs\_symtable.lib
   Flags=0000000000000010
-  File Size=1976
-  File Date=20010730 113548
 end
 item: Install File
   Source=.\_testcapi.lib
   Destination=%MAINDIR%\libs\_testcapi.lib
   Flags=0000000000000010
-  File Size=1976
-  File Date=20010730 113549
 end
 item: Install File
   Source=.\_tkinter.lib
   Destination=%MAINDIR%\libs\_tkinter.lib
   Description=Extension modules
   Flags=0000000000000010
-  File Size=1960
-  File Date=20010730 113553
 end
 item: Install File
   Source=.\_socket.lib
   Destination=%MAINDIR%\libs\_socket.lib
   Flags=0000000000000010
-  File Size=1942
-  File Date=20010730 113514
 end
 item: Install File
   Source=.\bsddb.lib
   Destination=%MAINDIR%\libs\bsddb.lib
   Flags=0000000000000010
-  File Size=1908
-  File Date=20010730 113554
 end
 item: Install File
   Source=.\mmap.lib
   Destination=%MAINDIR%\libs\mmap.lib
   Flags=0000000000000010
-  File Size=1892
-  File Date=20010730 113556
 end
 item: Install File
   Source=.\parser.lib
   Destination=%MAINDIR%\libs\parser.lib
   Flags=0000000000000010
-  File Size=1926
-  File Date=20010730 113558
 end
 item: Install File
   Source=.\pyexpat.lib
   Destination=%MAINDIR%\libs\pyexpat.lib
   Flags=0000000000000010
-  File Size=1942
-  File Date=20010730 113600
 end
 item: Install File
   Source=.\select.lib
   Destination=%MAINDIR%\libs\select.lib
   Flags=0000000000000010
-  File Size=1926
-  File Date=20010730 113604
 end
 item: Install File
   Source=.\unicodedata.lib
   Destination=%MAINDIR%\libs\unicodedata.lib
   Flags=0000000000000010
-  File Size=2010
-  File Date=20010730 113607
 end
 item: Install File
   Source=.\winsound.lib
   Destination=%MAINDIR%\libs\winsound.lib
   Flags=0000000000000010
-  File Size=1960
-  File Date=20010730 113615
 end
 item: Install File
   Source=.\zlib.lib
   Destination=%MAINDIR%\libs\zlib.lib
   Flags=0000000000000010
-  File Size=1892
-  File Date=20010730 113617
 end
 item: Remark
 end
@@ -1520,9 +1435,6 @@ item: Install File
   Destination=%MAINDIR%\DLLs\expat.dll
   Description=Expat library
   Flags=0000000000000010
-  File Size=135168
-  File Date=20010727 162455
-  EXE Type=32
 end
 item: Remark
 end
@@ -1592,8 +1504,6 @@ item: Install File
   Source=..\lib\distutils\readme
   Destination=%MAINDIR%\Lib\distutils\README.txt
   Flags=0000000000000010
-  File Size=815
-  File Date=20000408 223145
 end
 item: Install File
   Source=..\lib\distutils\command\*.py
@@ -1604,8 +1514,6 @@ item: Install File
   Source=..\lib\distutils\command\command_template
   Destination=%MAINDIR%\Lib\distutils\command\command_template
   Flags=0000000000000010
-  File Size=764
-  File Date=20000529 220454
 end
 item: Remark
 end
@@ -1645,8 +1553,6 @@ item: Install File
   Destination=%MAINDIR%\Lib\site-packages\README.txt
   Description=Site packages
   Flags=0000000000000010
-  File Size=121
-  File Date=20000331 150356
 end
 item: Remark
 end
@@ -1664,8 +1570,6 @@ item: Install File
   Destination=%MAINDIR%\include\pyconfig.h
   Description=Header files (pyconfig.h)
   Flags=0000000000000010
-  File Size=18728
-  File Date=20010726 172701
 end
 item: Remark
 end
@@ -1768,8 +1672,6 @@ item: Install File
   Destination=%MAINDIR%\Tools\Scripts\README.txt
   Description=Utility Scripts
   Flags=0000000000000010
-  File Size=2530
-  File Date=20000310 173656
 end
 item: Remark
 end
@@ -1784,8 +1686,6 @@ item: Install File
   Destination=%MAINDIR%\Tools\webchecker\README.txt
   Description=Web checker tool
   Flags=0000000000000010
-  File Size=738
-  File Date=19991117 104147
 end
 item: Remark
 end
@@ -1800,8 +1700,6 @@ item: Install File
   Destination=%MAINDIR%\Tools\versioncheck\README.txt
   Description=Version checker tool
   Flags=0000000000000010
-  File Size=2184
-  File Date=19971223 134348
 end
 item: Remark
 end
@@ -1828,8 +1726,6 @@ item: Install File
   Destination=%MAINDIR%\Tools\idle\idle.pyw
   Description=IDLE bootstrap script
   Flags=0000000000000010
-  File Size=152
-  File Date=20000306 121605
 end
 item: Remark
 end
@@ -1870,24 +1766,18 @@ item: Install File
   Destination=%MAINDIR%\Tools\pynche\README.txt
   Description=pynche color editor - README
   Flags=0000000100000010
-  File Size=15799
-  File Date=20010710 174955
 end
 item: Install File
   Source=..\tools\pynche\pynche
   Destination=%MAINDIR%\Tools\pynche\pynche.py
   Description=pynche color editor - main
   Flags=0000000100000010
-  File Size=190
-  File Date=19981006 233657
 end
 item: Install File
   Source=..\tools\pynche\pynche.pyw
   Destination=%MAINDIR%\Tools\pynche\pynche.pyw
   Description=pynche color editor - noconsole main
   Flags=0000000100000010
-  File Size=188
-  File Date=19981006 233658
 end
 item: End Block
 end
@@ -1906,8 +1796,6 @@ item: Install File
   Destination=%MAINDIR%\Lib\test\audiotest.au
   Description=Python Test files
   Flags=0000000000000010
-  File Size=23493
-  File Date=19990205 155744
 end
 item: Install File
   Source=..\lib\test\*.uue
