@@ -20,14 +20,14 @@ from distutils.ccompiler import \
 
 _can_read_reg = 0
 try:
-    import winreg
+    import _winreg
     _can_read_reg = 1
-    hkey_mod = winreg
+    hkey_mod = _winreg
 
-    RegOpenKeyEx = winreg.OpenKeyEx
-    RegEnumKey = winreg.EnumKey
-    RegEnumValue = winreg.EnumValue
-    RegError = winreg.error
+    RegOpenKeyEx = _winreg.OpenKeyEx
+    RegEnumKey = _winreg.EnumKey
+    RegEnumValue = _winreg.EnumValue
+    RegError = _winreg.error
 
 except ImportError:
     try:
