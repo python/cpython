@@ -29,6 +29,8 @@ import os
 import re
 import sys
 
+from xml.sax.saxutils import quoteattr
+
 import buildindex
 import support
 
@@ -48,6 +50,21 @@ class IndexOptions(support.Options):
     def usage(self):
         program = os.path.basename(sys.argv[0])
         print __doc__ % {"program": program}
+
+    links = [
+        ('author', 'acks.html',  'Acknowledgements'),
+        ('help',   'about.html', 'About the Python Documentation'),
+        ]
+
+    def get_header(self):
+        header = support.Options.get_header(self)
+        s = ''
+        for rel, href, title in self.links:
+            s += '<link rel="%s" href="%s"' % (rel, href)
+            if title:
+                s += ' title=' + quoteattr(title)
+            s += '>\n  '
+        return header.replace("<link ", s + "<link ", 1)
 
 
 class Node(buildindex.Node):
