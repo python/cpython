@@ -440,7 +440,7 @@ utf_16_le_encode(PyObject *self,
     PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|zi:utf_16_le_encode",
+    if (!PyArg_ParseTuple(args, "O|z:utf_16_le_encode",
 			  &str, &errors))
 	return NULL;
 
@@ -463,7 +463,7 @@ utf_16_be_encode(PyObject *self,
     PyObject *str, *v;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTuple(args, "O|zi:utf_16_be_encode",
+    if (!PyArg_ParseTuple(args, "O|z:utf_16_be_encode",
 			  &str, &errors))
 	return NULL;
 
