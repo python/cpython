@@ -78,8 +78,8 @@ def factorial(n):
     return result
 
 def _test():
-    import doctest, example
-    return doctest.testmod(example)
+    import doctest
+    return doctest.testmod()
 
 if __name__ == "__main__":
     _test()
@@ -100,33 +100,25 @@ end:
 
 \begin{verbatim}
 $ python example.py -v
-Running example.__doc__
 Trying: factorial(5)
 Expecting: 120
 ok
-0 of 1 examples failed in example.__doc__
-Running example.factorial.__doc__
 Trying: [factorial(n) for n in range(6)]
 Expecting: [1, 1, 2, 6, 24, 120]
 ok
 Trying: [factorial(long(n)) for n in range(6)]
 Expecting: [1, 1, 2, 6, 24, 120]
-ok
-Trying: factorial(30)
-Expecting: 265252859812191058636308480000000L
-ok
-\end{verbatim}
+ok\end{verbatim}
 
 And so on, eventually ending with:
 
 \begin{verbatim}
 Trying: factorial(1e100)
 Expecting:
-Traceback (most recent call last):
-    ...
-OverflowError: n too large
+    Traceback (most recent call last):
+        ...
+    OverflowError: n too large
 ok
-0 of 8 examples failed in example.factorial.__doc__
 2 items passed all tests:
    1 tests in example
    8 tests in example.factorial
@@ -137,28 +129,27 @@ $
 \end{verbatim}
 
 That's all you need to know to start making productive use of
-\module{doctest}!  Jump in.  The docstrings in \file{doctest.py} contain
-detailed information about all aspects of \module{doctest}, and we'll
-just cover the more important points here.
+\module{doctest}!  Jump in.
 
-\subsection{Normal Usage}
+\subsection{Simple Usage}
 
-In normal use, end each module \module{M} with:
+The simplest (not necessarily the best) way to start using doctest is to
+end each module \module{M} with:
 
 \begin{verbatim}
 def _test():
-    import doctest, M           # replace M with your module's name
-    return doctest.testmod(M)   # ditto
+    import doctest
+    return doctest.testmod()
 
 if __name__ == "__main__":
     _test()
 \end{verbatim}
 
-If you want to test the current module as the main module, you don't need to
-pass M to \function{testmod()}; in this case, it will test the current
-module.
+\module{doctest} then examines docstrings in the module calling
+\function{testmod()}.  If you want to test a different module, you can
+pass that module object to \function{testmod()}.
 
-Then running the module as a script causes the examples in the docstrings
+Running the module as a script causes the examples in the docstrings
 to get executed and verified:
 
 \begin{verbatim}
@@ -167,7 +158,9 @@ python M.py
 
 This won't display anything unless an example fails, in which case the
 failing example(s) and the cause(s) of the failure(s) are printed to stdout,
-and the final line of output is \code{'Test failed.'}.
+and the final line of output is
+\\code{'***Test Failed*** \var{N} failures.'}, where \var{N} is the
+number of examples that failed.
 
 Run it with the \programopt{-v} switch instead:
 
@@ -178,15 +171,141 @@ python M.py -v
 and a detailed report of all examples tried is printed to standard
 output, along with assorted summaries at the end.
 
-You can force verbose mode by passing \code{verbose=1} to
+You can force verbose mode by passing \code{verbose=True} to
 \function{testmod()}, or
-prohibit it by passing \code{verbose=0}.  In either of those cases,
+prohibit it by passing \code{verbose=False}.  In either of those cases,
 \code{sys.argv} is not examined by \function{testmod()}.
 
 In any case, \function{testmod()} returns a 2-tuple of ints \code{(\var{f},
 \var{t})}, where \var{f} is the number of docstring examples that
 failed and \var{t} is the total number of docstring examples
 attempted.
+
+\begin{funcdesc}{testmod}{\optional{m}\optional{, name}\optional{,
+                          globs}\optional{, verbose}\optional{,
+                          isprivate}\optional{, report}\optional{,
+                          optionflags}\optional{, extraglobs}\optional{,
+                          raise_on_error}}
+
+  All arguments are optional, and all except for \var{m} should be
+  specified in keyword form.
+
+  Test examples in docstrings in functions and classes reachable
+  from module \var{m} (or the current module if \var{m} is not supplied
+  or is \code{None}), starting with \code{\var{m}.__doc__}.
+
+  Also test examples reachable from dict \code{\var{m}.__test__}, if it
+  exists and is not \code{None}.  \code{\var{m}.__test__} maps
+  names (strings) to functions, classes and strings; function and class
+  docstrings are searched for examples; strings are searched directly,
+  as if they were docstrings.
+
+  Only docstrings attached to objects belonging to module \var{m} are
+  searched.
+
+  Return \code{(#failures, #tests)}.
+
+  Optional argument \var{name} gives the name of the module; by default,
+  or if \code{None}, \code{\var{m}.__name__} is used.
+
+  Optional argument \var{globs} gives a dict to be used as the globals
+  when executing examples; by default, or if \code{None},
+  \code{\var{m}.__dict__} is used.  A new shallow copy of this dict is
+  created for each docstring with examples, so that each docstring's
+  examples start with a clean slate.
+
+  Optional argument \var{extraglobs} gives a dicti merged into the
+  globals used to execute examples.  This works like
+  \method{dict.update()}:  if \var{globs} and \var{extraglobs} have a
+  common key, the associated value in \var{extraglobs} appears in the
+  combined dict.  By default, or if \code{None}, no extra globals are
+  used.  This is an advanced feature that allows parameterization of
+  doctests.  For example, a doctest can be written for a base class, using
+  a generic name for the class, then reused to test any number of
+  subclasses by passing an \var{extraglobs} dict mapping the generic
+  name to the subclass to be tested.
+
+  Optional argument \var{verbose} prints lots of stuff if true, and prints
+  only failures if false; by default, or if \code{None}, it's true
+  if and only if \code{'-v'} is in \code{\module{sys}.argv}.
+
+  Optional argument \var{report} prints a summary at the end when true,
+  else prints nothing at the end.  In verbose mode, the summary is
+  detailed, else the summary is very brief (in fact, empty if all tests
+  passed).
+
+  Optional argument \var{optionflags} or's together module constants,
+  and defaults to 0.
+
+%  Possible values:
+%
+%      DONT_ACCEPT_TRUE_FOR_1
+%          By default, if an expected output block contains just "1",
+%          an actual output block containing just "True" is considered
+%          to be a match, and similarly for "0" versus "False".  When
+%          DONT_ACCEPT_TRUE_FOR_1 is specified, neither substitution
+%          is allowed.
+%
+%      DONT_ACCEPT_BLANKLINE
+%          By default, if an expected output block contains a line
+%          containing only the string "<BLANKLINE>", then that line
+%          will match a blank line in the actual output.  When
+%          DONT_ACCEPT_BLANKLINE is specified, this substitution is
+%          not allowed.
+%
+%      NORMALIZE_WHITESPACE
+%          When NORMALIZE_WHITESPACE is specified, all sequences of
+%          whitespace are treated as equal.  I.e., any sequence of
+%          whitespace within the expected output will match any
+%          sequence of whitespace within the actual output.
+%
+%      ELLIPSIS
+%          When ELLIPSIS is specified, then an ellipsis marker
+%          ("...") in the expected output can match any substring in
+%          the actual output.
+%
+%      UNIFIED_DIFF
+%          When UNIFIED_DIFF is specified, failures that involve
+%          multi-line expected and actual outputs will be displayed
+%          using a unified diff.
+%
+%      CONTEXT_DIFF
+%          When CONTEXT_DIFF is specified, failures that involve
+%          multi-line expected and actual outputs will be displayed
+%          using a context diff.
+
+  Optional argument \var{raise_on_error} defaults to false.  If true,
+  an exception is raised upon the first failure or unexpected exception
+  in an example.  This allows failures to be post-mortem debugged.
+  Default behavior is to continue running examples.
+
+  Optional argument \var{isprivate} specifies a function used to
+  determine whether a name is private.  The default function treats
+  all names as public.  \var{isprivate} can be set to
+  \code{\module{doctest}.is_private} to skip over names that are
+  private according to Python's underscore naming convention.
+  \deprecated{2.4}{\var{isprivate} was a stupid idea -- don't use it.
+  If you need to skip tests based on name, filter the list returned by
+  \code{\class{DocTestFinder.find()} instead.}
+
+%  """ [XX] This is no longer true:
+%  Advanced tomfoolery:  testmod runs methods of a local instance of
+%  class doctest.Tester, then merges the results into (or creates)
+%  global Tester instance doctest.master.  Methods of doctest.master
+%  can be called directly too, if you want to do something unusual.
+%  Passing report=0 to testmod is especially useful then, to delay
+%  displaying a summary.  Invoke doctest.master.summarize(verbose)
+%  when you're done fiddling.
+
+  \versionchanged[The parameter \var{optionflags} was added]{2.3}
+
+  \versionchanged[Many new module constants for use with \var{optionflags}
+                  were added]{2.4}
+
+  \versionchanged[The parameters \var{extraglobs} and \var{raise_on_error}
+                  were added]{2.4}
+\end{funcdesc}
+
 
 \subsection{Which Docstrings Are Examined?}
 

@@ -1610,7 +1610,7 @@ def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
     are not skipped.
 
     Also test examples reachable from dict m.__test__ if it exists and is
-    not None.  m.__dict__ maps names to functions, classes and strings;
+    not None.  m.__test__ maps names to functions, classes and strings;
     function and class docstrings are tested even if the name is private;
     strings are tested directly, as if they were docstrings.
 
