@@ -1,6 +1,7 @@
 # First attempt at automatically generating CodeWarior projects
 import os
 import MacOS
+import string
 
 Error="gencwproject.Error"
 #
@@ -55,7 +56,15 @@ class ProjectBuilder:
 					if not type(keyvalues) in (type(()), type([])):
 						raise Error, "List or tuple expected for %s"%key
 					for curkeyvalue in keyvalues:
-						if os.path.isabs(curkeyvalue):
+						if string.lower(curkeyvalue[:10]) == '{compiler}':
+							curkeyvalue = curkeyvalue[10:]
+							self.dict['pathtype'] = 'CodeWarrior'
+						elif string.lower(curkeyvalue[:9]) == '{project}':
+							curkeyvalue = curkeyvalue[9:]
+							self.dict['pathtype'] = 'Project'
+						elif curkeyvalue[0] == '{':
+							raise Error, "Unknown {} escape in %s"%curkeyvalue
+						elif os.path.isabs(curkeyvalue):
 							self.dict['pathtype'] = 'Absolute'
 						else:
 							self.dict['pathtype'] = 'Project'
