@@ -132,13 +132,13 @@ than one line:
     >>> e = doctest.Example('print 1', '1\n', 0)
     >>> e = doctest.Example('print 1\n', '1\n', 0)
     Traceback (most recent call last):
-    AssertionError
+    AssertionError: source must end with newline iff source contains more than one line
 
     >>> # Source spans multiple lines: require terminating newline.
     >>> e = doctest.Example('print 1;\nprint 2\n', '1\n2\n', 0)
     >>> e = doctest.Example('print 1;\nprint 2', '1\n2\n', 0)
     Traceback (most recent call last):
-    AssertionError
+    AssertionError: source must end with newline iff source contains more than one line
 
 The `want` string should be terminated by a newline, unless it's the
 empty string:
@@ -146,7 +146,7 @@ empty string:
     >>> e = doctest.Example('print 1', '1\n', 0)
     >>> e = doctest.Example('print 1', '1', 0)
     Traceback (most recent call last):
-    AssertionError
+    AssertionError: non-empty want must end with newline
     >>> e = doctest.Example('print', '', 0)
 """
 

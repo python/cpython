@@ -478,8 +478,11 @@ class Example:
     """
     def __init__(self, source, want, lineno):
         # Check invariants.
-        assert (source[-1:] == '\n') == ('\n' in source[:-1])
-        assert want == '' or want[-1] == '\n'
+        if (source[-1:] == '\n') != ('\n' in source[:-1]):
+            raise AssertionError("source must end with newline iff "
+                                 "source contains more than one line")
+        if  want and want[-1] != '\n':
+            raise AssertionError("non-empty want must end with newline")
         # Store properties.
         self.source = source
         self.want = want
