@@ -615,31 +615,15 @@ instance_dealloc(register PyInstanceObject *inst)
 	PyObject *error_type, *error_value, *error_traceback;
 	PyObject *del;
 	static PyObject *delstr;
-#ifdef Py_REF_DEBUG
-	extern long _Py_RefTotal;
-#endif
+
 	_PyObject_GC_UNTRACK(inst);
 	if (inst->in_weakreflist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) inst);
 
 	/* Temporarily resurrect the object. */
-#ifdef Py_TRACE_REFS
-#ifndef Py_REF_DEBUG
-#   error "Py_TRACE_REFS defined but Py_REF_DEBUG not."
-#endif
-	/* much too complicated if Py_TRACE_REFS defined */
-	inst->ob_type = &PyInstance_Type;
-	_Py_NewReference((PyObject *)inst);
-#ifdef COUNT_ALLOCS
-	/* compensate for boost in _Py_NewReference; note that
-	 * _Py_RefTotal was also boosted; we'll knock that down later.
-	 */
-	inst->ob_type->tp_allocs--;
-#endif
-#else /* !Py_TRACE_REFS */
-	/* Py_INCREF boosts _Py_RefTotal if Py_REF_DEBUG is defined */
-	Py_INCREF(inst);
-#endif /* !Py_TRACE_REFS */
+	assert(inst->ob_type == &PyInstance_Type);
+	assert(inst->ob_refcnt == 0);
+	inst->ob_refcnt = 1;
 
 	/* Save the current exception, if any. */
 	PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -656,32 +640,37 @@ instance_dealloc(register PyInstanceObject *inst)
 	}
 	/* Restore the saved exception. */
 	PyErr_Restore(error_type, error_value, error_traceback);
+
 	/* Undo the temporary resurrection; can't use DECREF here, it would
 	 * cause a recursive call.
 	 */
-#ifdef Py_REF_DEBUG
-	/* _Py_RefTotal was boosted either by _Py_NewReference or
-	 * Py_INCREF above.
-	 */
-	_Py_RefTotal--;
-#endif
-	if (--inst->ob_refcnt > 0) {
-#ifdef COUNT_ALLOCS
-		inst->ob_type->tp_frees--;
-#endif
-		_PyObject_GC_TRACK(inst);
-		return; /* __del__ added a reference; don't delete now */
+	assert(inst->ob_refcnt > 0);
+	if (--inst->ob_refcnt == 0) {
+		Py_DECREF(inst->in_class);
+		Py_XDECREF(inst->in_dict);
+		PyObject_GC_Del(inst);
 	}
-#ifdef Py_TRACE_REFS
-	_Py_ForgetReference((PyObject *)inst);
+	else {
+		int refcnt = inst->ob_refcnt;
+		/* __del__ resurrected it!  Make it look like the original
+		 * Py_DECREF never happened.
+		 */
+		_Py_NewReference((PyObject *)inst);
+		inst->ob_refcnt = refcnt;
+		_PyObject_GC_TRACK(inst);
+		/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal,
+		 * but _Py_NewReference bumped it again, so that's a wash.
+		 * If Py_TRACE_REFS, _Py_NewReference re-added self to the
+		 * object chain, so no more to do there either.
+		 * If COUNT_ALLOCS, the original decref bumped tp_frees, and
+		 * _Py_NewReference bumped tp_allocs:  both of those need to
+		 * be undone.
+		 */
 #ifdef COUNT_ALLOCS
-	/* compensate for increment in _Py_ForgetReference */
-	inst->ob_type->tp_frees--;
+		--inst->ob_type->tp_frees;
+		--inst->ob_type->tp_allocs;
 #endif
-#endif
-	Py_DECREF(inst->in_class);
-	Py_XDECREF(inst->in_dict);
-	PyObject_GC_Del(inst);
+	}
 }
 
 static PyObject *
@@ -1097,7 +1086,7 @@ sliceobj_from_intint(int i, int j)
 	start = PyInt_FromLong((long)i);
 	if (!start)
 		return NULL;
-	
+
 	end = PyInt_FromLong((long)j);
 	if (!end) {
 		Py_DECREF(start);
@@ -1131,9 +1120,9 @@ instance_slice(PyInstanceObject *inst, int i, int j)
 		if (func == NULL)
 			return NULL;
 		arg = Py_BuildValue("(N)", sliceobj_from_intint(i, j));
-	} else 
+	} else
 		arg = Py_BuildValue("(ii)", i, j);
-		
+
 	if (arg == NULL) {
 		Py_DECREF(func);
 		return NULL;
@@ -1266,7 +1255,7 @@ instance_contains(PyInstanceObject *inst, PyObject *member)
 		res = PyEval_CallObject(func, arg);
 		Py_DECREF(func);
 		Py_DECREF(arg);
-		if(res == NULL) 
+		if(res == NULL)
 			return -1;
 		ret = PyObject_IsTrue(res);
 		Py_DECREF(res);
@@ -1339,7 +1328,7 @@ static PyObject *coerce_obj;
 
 /* Try one half of a binary operator involving a class instance. */
 static PyObject *
-half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc, 
+half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 		int swapped)
 {
 	PyObject *args;
@@ -1347,7 +1336,7 @@ half_binop(PyObject *v, PyObject *w, char *opname, binaryfunc thisfunc,
 	PyObject *coerced = NULL;
 	PyObject *v1;
 	PyObject *result;
-	
+
 	if (!PyInstance_Check(v)) {
 		Py_INCREF(Py_NotImplemented);
 		return Py_NotImplemented;
@@ -1708,7 +1697,7 @@ bin_power(PyObject *v, PyObject *w)
 /* This version is for ternary calls only (z != None) */
 static PyObject *
 instance_pow(PyObject *v, PyObject *w, PyObject *z)
-{	
+{
 	if (z == Py_None) {
 		return do_binop(v, w, "__pow__", "__rpow__", bin_power);
 	}
@@ -1777,7 +1766,7 @@ instance_ipow(PyObject *v, PyObject *w, PyObject *z)
 #define NAME_OPS 6
 static PyObject **name_op = NULL;
 
-static int 
+static int
 init_name_op(void)
 {
 	int i;
@@ -1818,7 +1807,7 @@ half_richcompare(PyObject *v, PyObject *w, int op)
 	   instance_getattr2 directly because it will not set an
 	   exception on failure. */
 	if (((PyInstanceObject *)v)->in_class->cl_getattr == NULL) {
-		method = instance_getattr2((PyInstanceObject *)v, 
+		method = instance_getattr2((PyInstanceObject *)v,
 					   name_op[op]);
 		if (method == NULL) {
 			assert(!PyErr_Occurred());

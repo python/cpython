@@ -51,35 +51,10 @@ A standard interface exists for objects that contain an array of items
 whose size is determined when the object is allocated.
 */
 
-#ifdef Py_DEBUG
-/* Turn on aggregate reference counting.  This arranges that extern
- * _Py_RefTotal hold a count of all references, the sum of ob_refcnt
- * across all objects.  The value can be gotten programatically via
- * sys.gettotalrefcount() (which exists only if Py_REF_DEBUG is enabled).
- * In a debug-mode build, this is where the "8288" comes from in
- *
- *  >>> 23
- *  23
- *  [8288 refs]
- *  >>>
- *
- * Note that if this count increases when you're not storing away new objects,
- * there's probably a leak.  Remember, though, that in interactive mode the
- * special name "_" holds a reference to the last result displayed!
- * Py_REF_DEBUG also checks after every decref to verify that the refcount
- * hasn't gone negative, and causes an immediate fatal error if it has.
- */
-#define Py_REF_DEBUG
-
-/* Turn on heavy reference debugging.  This is major surgery.  Every PyObject
- * grows two more pointers, to maintain a doubly-linked list of all live
- * heap-allocated objects (note that, e.g., most builtin type objects are
- * not in this list, as they're statically allocated).  This list can be
- * materialized into a Python list via sys.getobjects() (which exists only
- * if Py_TRACE_REFS is enabled).  Py_TRACE_REFS implies Py_REF_DEBUG.
- */
+/* Py_DEBUG implies Py_TRACE_REFS. */
+#if defined(Py_DEBUG) && !defined(Py_TRACE_REFS)
 #define Py_TRACE_REFS
-#endif /* Py_DEBUG */
+#endif
 
 /* Py_TRACE_REFS implies Py_REF_DEBUG. */
 #if defined(Py_TRACE_REFS) && !defined(Py_REF_DEBUG)
@@ -536,40 +511,45 @@ variable first, both of which are slower; and in a multi-threaded
 environment the global variable trick is not safe.)
 */
 
+/* First define a pile of simple helper macros, one set per special
+ * build symbol.  These either expand to the obvious things, or to
+ * nothing at all when the special mode isn't in effect.  The main
+ * macros can later be defined just once then, yet expand to different
+ * things depending on which special build options are and aren't in effect.
+ * Trust me <wink>:  while painful, this is 20x easier to understand than,
+ * e.g, defining _Py_NewReference five different times in a maze of nested
+ * #ifdefs (we used to do that -- it was impenetrable).
+ */
 #ifdef Py_REF_DEBUG
 extern DL_IMPORT(long) _Py_RefTotal;
 extern DL_IMPORT(void) _Py_NegativeRefcount(const char *fname,
 					    int lineno, PyObject *op);
-#define _PyMAYBE_BUMP_REFTOTAL		_Py_RefTotal++
-#define _PyMAYBE_DROP_REFTOTAL		_Py_RefTotal--
-#define _PyMAYBE_BUMP_REFTOTAL_COMMA	_PyMAYBE_BUMP_REFTOTAL ,
-#define _PyMAYBE_DROP_REFTOTAL_COMMA	_PyMAYBE_DROP_REFTOTAL ,
-#define _PyMAYBE_CHECK_REFCNT(OP)				\
+#define _Py_INC_REFTOTAL	_Py_RefTotal++
+#define _Py_DEC_REFTOTAL	_Py_RefTotal--
+#define _Py_REF_DEBUG_COMMA	,
+#define _Py_CHECK_REFCNT(OP)					\
 {	if ((OP)->ob_refcnt < 0)				\
 		_Py_NegativeRefcount(__FILE__, __LINE__,	\
 				     (PyObject *)(OP));		\
 }
 #else
-#define _PyMAYBE_BUMP_REFTOTAL
-#define _PyMAYBE_DROP_REFTOTAL
-#define _PyMAYBE_BUMP_REFTOTAL_COMMA
-#define _PyMAYBE_DROP_REFTOTAL_COMMA
-#define _PyMAYBE_CHECK_REFCNT(OP)	/* a semicolon */;
+#define _Py_INC_REFTOTAL
+#define _Py_DEC_REFTOTAL
+#define _Py_REF_DEBUG_COMMA
+#define _Py_CHECK_REFCNT(OP)	/* a semicolon */;
 #endif /* Py_REF_DEBUG */
 
 #ifdef COUNT_ALLOCS
 extern DL_IMPORT(void) inc_count(PyTypeObject *);
-#define _PyMAYBE_BUMP_COUNT(OP)		inc_count((OP)->ob_type)
-#define _PyMAYBE_BUMP_FREECOUNT(OP)	(OP)->ob_type->tp_frees++
-#define _PyMAYBE_DROP_FREECOUNT(OP)	(OP)->ob_type->tp_frees--
-#define _PyMAYBE_BUMP_COUNT_COMMA(OP)	_PyMAYBE_BUMP_COUNT(OP) ,
-#define _PyMAYBE_BUMP_FREECOUNT_COMMA(OP) _PyMAYBE_BUMP_FREECOUNT(OP) ,
+#define _Py_INC_TPALLOCS(OP)	inc_count((OP)->ob_type)
+#define _Py_INC_TPFREES(OP)	(OP)->ob_type->tp_frees++
+#define _Py_DEC_TPFREES(OP)	(OP)->ob_type->tp_frees--
+#define _Py_COUNT_ALLOCS_COMMA	,
 #else
-#define _PyMAYBE_BUMP_COUNT(OP)
-#define _PyMAYBE_BUMP_FREECOUNT(OP)
-#define _PyMAYBE_DROP_FREECOUNT(OP)
-#define _PyMAYBE_BUMP_COUNT_COMMA(OP)
-#define _PyMAYBE_BUMP_FREECOUNT_COMMA(OP)
+#define _Py_INC_TPALLOCS(OP)
+#define _Py_INC_TPFREES(OP)
+#define _Py_DEC_TPFREES(OP)
+#define _Py_COUNT_ALLOCS_COMMA
 #endif /* COUNT_ALLOCS */
 
 #ifdef Py_TRACE_REFS
@@ -584,27 +564,27 @@ extern DL_IMPORT(void) _Py_ResetReferences(void);
 /* Without Py_TRACE_REFS, there's little enough to do that we expand code
  * inline.
  */
-#define _Py_NewReference(op) (		\
-	_PyMAYBE_BUMP_COUNT_COMMA(op)	\
-	_PyMAYBE_BUMP_REFTOTAL_COMMA	\
+#define _Py_NewReference(op) (				\
+	_Py_INC_TPALLOCS(op) _Py_COUNT_ALLOCS_COMMA	\
+	_Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA		\
 	(op)->ob_refcnt = 1)
 
-#define _Py_ForgetReference(op) _PyMAYBE_BUMP_FREECOUNT(op)
+#define _Py_ForgetReference(op) _Py_INC_TPFREES(op)
 
 #define _Py_Dealloc(op) (				\
-	_PyMAYBE_BUMP_FREECOUNT_COMMA(op)		\
+	_Py_INC_TPFREES(op) _Py_COUNT_ALLOCS_COMMA	\
 	(*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (			\
-	_PyMAYBE_BUMP_REFTOTAL_COMMA	\
+#define Py_INCREF(op) (				\
+	_Py_INC_REFTOTAL  _Py_REF_DEBUG_COMMA	\
 	(op)->ob_refcnt++)
 
-#define Py_DECREF(op)				\
-	if (_PyMAYBE_DROP_REFTOTAL_COMMA	\
-	    --(op)->ob_refcnt != 0)		\
-		_PyMAYBE_CHECK_REFCNT(op)	\
-	else					\
+#define Py_DECREF(op)					\
+	if (_Py_DEC_REFTOTAL  _Py_REF_DEBUG_COMMA	\
+	    --(op)->ob_refcnt != 0)			\
+		_Py_CHECK_REFCNT(op)			\
+	else						\
 		_Py_Dealloc((PyObject *)(op))
 
 /* Macros to use in case the object pointer may be NULL: */
