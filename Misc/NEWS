@@ -73,6 +73,10 @@ Extension modules
 Library
 -------
 
+- unittest.failUnlessEqual and its equivalent unittest.assertEqual now
+  return 'not a == b' rather than 'a != b'.  This gives the desired
+  result for classes that define __eq__ without defining __ne__.
+
 - sgmllib now supports SGML marked sections, in particular the 
   MS Office extensions.
 

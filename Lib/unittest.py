@@ -285,10 +285,10 @@ class TestCase:
             raise self.failureException, excName
 
     def failUnlessEqual(self, first, second, msg=None):
-        """Fail if the two objects are unequal as determined by the '!='
+        """Fail if the two objects are unequal as determined by the '=='
            operator.
         """
-        if first != second:
+        if not first == second:
             raise self.failureException, \
                   (msg or '%s != %s' % (`first`, `second`))
 
