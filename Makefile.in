@@ -150,7 +150,7 @@ test:		python
 		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
 
 # Install everything
-install:	altintall bininstall maninstall
+install:	altinstall bininstall maninstall
 
 # Install almost everything without disturbing previous versions
 altinstall:	altbininstall libinstall inclinstall libainstall sharedinstall
