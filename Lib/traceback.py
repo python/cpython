@@ -128,8 +128,11 @@ def format_exception_only(etype, value):
 def print_exc(limit=None, file=None):
 	if not file:
 		file = sys.stderr
-	print_exception(sys.exc_type, sys.exc_value, sys.exc_traceback,
-			limit, file)
+	try:
+	    etype, value, tb = sys.exc_info()
+	    print_exception(etype, value, tb, limit, file)
+	finally:
+	    etype = value = tb = None
 
 def print_last(limit=None, file=None):
 	if not file:
@@ -143,8 +146,7 @@ def print_stack(f=None, limit=None, file=None):
 		try:
 			raise ZeroDivisionError
 		except ZeroDivisionError:
-			tb = sys.exc_traceback
-			f = tb.tb_frame.f_back
+			f = sys.exc_info()[2].tb_frame.f_back
 	print_list(extract_stack(f, limit), file)
 
 def format_stack(f=None, limit=None):
@@ -152,17 +154,15 @@ def format_stack(f=None, limit=None):
 		try:
 			raise ZeroDivisionError
 		except ZeroDivisionError:
-			tb = sys.exc_traceback
-			f = tb.tb_frame.f_back
-	return format_list(extract_stack(t, limit))
+			f = sys.exc_info()[2].tb_frame.f_back
+	return format_list(extract_stack(f, limit))
 
 def extract_stack(f=None, limit = None):
 	if f is None:
 		try:
 			raise ZeroDivisionError
 		except ZeroDivisionError:
-			tb = sys.exc_traceback
-			f = tb.tb_frame.f_back
+			f = sys.exc_info()[2].tb_frame.f_back
 	if limit is None:
 		if hasattr(sys, 'tracebacklimit'):
 			limit = sys.tracebacklimit
