@@ -124,6 +124,22 @@ unicode_internal_decode(PyObject *self,
 }
 
 static PyObject *
+utf_7_decode(PyObject *self,
+	    PyObject *args)
+{
+    const char *data;
+    int size;
+    const char *errors = NULL;
+    
+    if (!PyArg_ParseTuple(args, "t#|z:utf_7_decode",
+			  &data, &size, &errors))
+	return NULL;
+
+    return codec_tuple(PyUnicode_DecodeUTF7(data, size, errors),
+		       size);
+}
+
+static PyObject *
 utf_8_decode(PyObject *self,
 	    PyObject *args)
 {
@@ -382,6 +398,30 @@ unicode_internal_encode(PyObject *self,
 }
 
 static PyObject *
+utf_7_encode(PyObject *self,
+	    PyObject *args)
+{
+    PyObject *str, *v;
+    const char *errors = NULL;
+
+    if (!PyArg_ParseTuple(args, "O|z:utf_7_encode",
+			  &str, &errors))
+	return NULL;
+
+    str = PyUnicode_FromObject(str);
+    if (str == NULL)
+	return NULL;
+    v = codec_tuple(PyUnicode_EncodeUTF7(PyUnicode_AS_UNICODE(str),
+					 PyUnicode_GET_SIZE(str),
+                     0,
+                     0,
+					 errors),
+		    PyUnicode_GET_SIZE(str));
+    Py_DECREF(str);
+    return v;
+}
+
+static PyObject *
 utf_8_encode(PyObject *self,
 	    PyObject *args)
 {
@@ -632,6 +672,8 @@ static PyMethodDef _codecs_functions[] = {
 #ifdef Py_USING_UNICODE
     {"utf_8_encode",		utf_8_encode,			1},
     {"utf_8_decode",		utf_8_decode,			1},
+    {"utf_7_encode",		utf_7_encode,			1},
+    {"utf_7_decode",		utf_7_decode,			1},
     {"utf_16_encode",		utf_16_encode,			1},
     {"utf_16_le_encode",	utf_16_le_encode,		1},
     {"utf_16_be_encode",	utf_16_be_encode,		1},

@@ -635,6 +635,306 @@ int PyUnicode_SetDefaultEncoding(const char *encoding)
     return -1;
 }
 
+/* --- UTF-7 Codec -------------------------------------------------------- */
+
+/* see RFC2152 for details */
+
+static 
+char utf7_special[128] = {
+    /* indicate whether a UTF-7 character is special i.e. cannot be directly
+       encoded:
+	   0 - not special
+	   1 - special
+	   2 - whitespace (optional)
+	   3 - RFC2152 Set O (optional) */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 2, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 3, 3, 3, 3, 3, 3, 0, 0, 0, 3, 1, 0, 0, 0, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0,
+    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 1, 3, 3, 3,
+    3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 1, 1,
+
+};
+
+#define SPECIAL(c, encodeO, encodeWS) \
+	(((c)>127 || utf7_special[(c)] == 1) || \
+	 (encodeWS && (utf7_special[(c)] == 2)) || \
+     (encodeO && (utf7_special[(c)] == 3)))
+
+#define B64(n)  ("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[(n) & 0x3f])
+#define B64CHAR(c) (isalnum(c) || (c) == '+' || (c) == '/')
+#define UB64(c)        ((c) == '+' ? 62 : (c) == '/' ? 63 : (c) >= 'a' ? \
+                        (c) - 71 : (c) >= 'A' ? (c) - 65 : (c) + 4)
+
+#define ENCODE(out, ch, bits) \
+    while (bits >= 6) { \
+        *out++ = B64(ch >> (bits-6)); \
+        bits -= 6; \
+    }
+
+#define DECODE(out, ch, bits, surrogate) \
+    while (bits >= 16) { \
+        Py_UNICODE outCh = (Py_UNICODE) ((ch >> (bits-16)) & 0xffff); \
+        bits -= 16; \
+		if (surrogate) { \
+			/* We have already generated an error for the high surrogate
+               so let's not bother seeing if the low surrogate is correct or not */\
+			surrogate = 0; \
+		} else if (0xDC00 <= outCh && outCh <= 0xDFFF) { \
+            /* This is a surrogate pair. Unfortunately we can't represent \
+               it in a 16-bit character */ \
+			surrogate = 1; \
+            errmsg = "code pairs are not supported"; \
+	        goto utf7Error; \
+		} else { \
+				*out++ = outCh; \
+		} \
+    } \
+
+static
+int utf7_decoding_error(Py_UNICODE **dest,
+                        const char *errors,
+                        const char *details) 
+{
+    if ((errors == NULL) ||
+        (strcmp(errors,"strict") == 0)) {
+        PyErr_Format(PyExc_UnicodeError,
+                     "UTF-7 decoding error: %.400s",
+                     details);
+        return -1;
+    }
+    else if (strcmp(errors,"ignore") == 0) {
+        return 0;
+    }
+    else if (strcmp(errors,"replace") == 0) {
+        if (dest != NULL) {
+            **dest = Py_UNICODE_REPLACEMENT_CHARACTER;
+            (*dest)++;
+        }
+        return 0;
+    }
+    else {
+        PyErr_Format(PyExc_ValueError,
+                     "UTF-7 decoding error; unknown error handling code: %.400s",
+                     errors);
+        return -1;
+    }
+}
+
+PyObject *PyUnicode_DecodeUTF7(const char *s,
+			       int size,
+			       const char *errors)
+{
+    const char *e;
+    PyUnicodeObject *unicode;
+    Py_UNICODE *p;
+    const char *errmsg = "";
+    int inShift = 0;
+    unsigned int bitsleft = 0;
+    unsigned long charsleft = 0;
+	int surrogate = 0;
+
+    unicode = _PyUnicode_New(size);
+    if (!unicode)
+        return NULL;
+    if (size == 0)
+        return (PyObject *)unicode;
+
+    p = unicode->str;
+    e = s + size;
+
+    while (s < e) {
+        Py_UNICODE ch = *s;
+
+        if (inShift) {
+            if ((ch == '-') || !B64CHAR(ch)) {
+                inShift = 0;
+                s++;
+                    
+                /* p, charsleft, bitsleft, surrogate = */ DECODE(p, charsleft, bitsleft, surrogate);
+                if (bitsleft >= 6) {
+                    /* The shift sequence has a partial character in it. If
+                       bitsleft < 6 then we could just classify it as padding
+                       but that is not the case here */
+
+                    errmsg = "partial character in shift sequence";
+                    goto utf7Error; 
+                }
+                /* According to RFC2152 the remaining bits should be zero. We
+                   choose to signal an error/insert a replacement character 
+                   here so indicate the potential of a misencoded character. */
+
+                /* On x86, a << b == a << (b%32) so make sure that bitsleft != 0 */
+                if (bitsleft && charsleft << (sizeof(charsleft) * 8 - bitsleft)) {
+                    errmsg = "non-zero padding bits in shift sequence";
+                    goto utf7Error; 
+                }
+
+                if (ch == '-') {
+                    if ((s < e) && (*(s) == '-')) {
+                        *p++ = '-';   
+                        inShift = 1;
+                    }
+                } else if (SPECIAL(ch,0,0)) {
+                    errmsg = "unexpected special character";
+	                goto utf7Error;  
+                } else  {
+                    *p++ = ch;
+                }
+            } else {
+                charsleft = (charsleft << 6) | UB64(ch);
+                bitsleft += 6;
+                s++;
+                /* p, charsleft, bitsleft, surrogate = */ DECODE(p, charsleft, bitsleft, surrogate);
+            }
+        }
+        else if ( ch == '+' ) {
+            s++;
+            if (s < e && *s == '-') {
+                s++;
+                *p++ = '+';
+            } else
+            {
+                inShift = 1;
+                bitsleft = 0;
+            }
+        }
+        else if (SPECIAL(ch,0,0)) {
+            errmsg = "unexpected special character";
+            s++;
+	        goto utf7Error;  
+        }
+        else {
+            *p++ = ch;
+            s++;
+        }
+        continue;
+    utf7Error:
+      if (utf7_decoding_error(&p, errors, errmsg))
+          goto onError;
+    }
+
+    if (inShift) {
+        if (utf7_decoding_error(&p, errors, "unterminated shift sequence"))
+            goto onError;
+    }
+
+    if (_PyUnicode_Resize(&unicode, p - unicode->str))
+        goto onError;
+
+    return (PyObject *)unicode;
+
+onError:
+    Py_DECREF(unicode);
+    return NULL;
+}
+
+
+PyObject *PyUnicode_EncodeUTF7(const Py_UNICODE *s,
+                   int size,
+                   int encodeSetO,
+                   int encodeWhiteSpace,
+                   const char *errors)
+{
+    PyObject *v;
+    /* It might be possible to tighten this worst case */
+    unsigned int cbAllocated = 5 * size;
+    int inShift = 0;
+    int i = 0;
+    unsigned int bitsleft = 0;
+    unsigned long charsleft = 0;
+    char * out;
+    char * start;
+
+    if (size == 0)
+		return PyString_FromStringAndSize(NULL, 0);
+
+    v = PyString_FromStringAndSize(NULL, cbAllocated);
+    if (v == NULL)
+        return NULL;
+
+    start = out = PyString_AS_STRING(v);
+    for (;i < size; ++i) {
+        Py_UNICODE ch = s[i];
+
+        if (!inShift) {
+			if (ch == '+') {
+				*out++ = '+';
+                *out++ = '-';
+            } else if (SPECIAL(ch, encodeSetO, encodeWhiteSpace)) {
+                charsleft = ch;
+                bitsleft = 16;
+                *out++ = '+';
+				/* out, charsleft, bitsleft = */ ENCODE(out, charsleft, bitsleft);
+                inShift = bitsleft > 0;
+			} else {
+				*out++ = (char) ch;
+			}
+		} else {
+            if (!SPECIAL(ch, encodeSetO, encodeWhiteSpace)) {
+                *out++ = B64(charsleft << (6-bitsleft));
+                charsleft = 0;
+                bitsleft = 0;
+                /* Characters not in the BASE64 set implicitly unshift the sequence
+                   so no '-' is required, except if the character is itself a '-' */
+                if (B64CHAR(ch) || ch == '-') {
+                    *out++ = '-';
+                }
+                inShift = 0;
+                *out++ = (char) ch;
+            } else {
+                bitsleft += 16;
+                charsleft = (charsleft << 16) | ch;
+                /* out, charsleft, bitsleft = */ ENCODE(out, charsleft, bitsleft);
+
+                /* If the next character is special then we dont' need to terminate
+                   the shift sequence. If the next character is not a BASE64 character 
+                   or '-' then the shift sequence will be terminated implicitly and we
+                   don't have to insert a '-'. */
+
+                if (bitsleft == 0) {
+                    if (i + 1 < size) {
+                        Py_UNICODE ch2 = s[i+1];
+
+                        if (SPECIAL(ch2, encodeSetO, encodeWhiteSpace)) {
+                           
+                        } else if (B64CHAR(ch2) || ch2 == '-') {
+                            *out++ = '-';
+                            inShift = 0;
+                        } else {
+                            inShift = 0;
+                        }
+
+                    }
+                    else {
+                        *out++ = '-';
+                        inShift = 0;
+                    }
+                }
+            }            
+        }
+	}
+    if (bitsleft) {
+        *out++= B64(charsleft << (6-bitsleft) );
+        *out++ = '-';
+    }
+
+    if (_PyString_Resize(&v, out - start)) {
+        Py_DECREF(v);
+        return NULL;
+    }
+    return v;
+}
+
+#undef SPECIAL
+#undef B64
+#undef B64CHAR
+#undef UB64
+#undef ENCODE
+#undef DECODE
+
 /* --- UTF-8 Codec -------------------------------------------------------- */
 
 static 
