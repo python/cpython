@@ -191,11 +191,6 @@ def executable(path):
 
 def test(HandlerClass = CGIHTTPRequestHandler,
 	 ServerClass = BaseHTTPServer.HTTPServer):
-    import sys
-    if sys.argv[1:2] == ['-r']:
-	db = MyArchive()
-	db.regenindices()
-	return
     SimpleHTTPServer.test(HandlerClass, ServerClass)
 
 
