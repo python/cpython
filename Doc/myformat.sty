@@ -26,6 +26,10 @@
 \parindent =       0mm
 \parskip =         2mm
 
+\pagestyle{empty}			% start this way; change for
+\pagenumbering{roman}			% ToC & chapters
+\setcounter{secnumdepth}{1}
+
 % old code font selections:
 \let\codefont=\tt
 \let\sectcodefont=\tt
@@ -36,25 +40,58 @@
 % Variable used by begin code command
 \newlength{\codewidth}
 
+\newcommand{\examplevspace}{2mm}
+\newcommand{\exampleindent}{1cm}
 % Command to start a code block (follow this by \begin{verbatim})
-\newcommand{\bcode}{
-	% Calculate the text width for the minipage:
-	\setlength{\codewidth}{\linewidth}
-	\addtolength{\codewidth}{-\parindent}
-	%
-	\par
-	\vspace{3mm}
-	\indent
-	\begin{minipage}[t]{\codewidth}
+\newcommand{\b@code}{%
+  \begingroup%
+  \setlength{\parindent}\exampleindent%
+  % Calculate the text width for the minipage:
+  \setlength{\codewidth}{\linewidth}%
+  \addtolength{\codewidth}{-\parindent}%
+  %
+  \par%
+  \vspace\examplevspace%
+  \indent%
+  \begin{minipage}[t]{\codewidth}%
+  \small%
 }
 
 % Command to end a code block (precede this by \end{verbatim})
-\newcommand{\ecode}{
-	\end{minipage}
-	\vspace{3mm}
-	\par
-	\noindent
+\newcommand{\e@code}{%
+  \end{minipage}%
+  \endgroup%
 }
+
+\let\OldVerbatim=\verbatim
+\let\OldEndVerbatim=\endverbatim
+\renewcommand{\verbatim}{\b@code\OldVerbatim}
+\renewcommand{\endverbatim}{\OldEndVerbatim\e@code}
+
+% Augment the sectioning commands used to get our own font family in
+% place:
+\newcommand{\HeaderFamily}{\sffamily}
+\renewcommand{\section}{\@startsection {section}{1}{\z@}%
+                                   {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                   {2.3ex \@plus.2ex}%
+                                   {\reset@font\Large\HeaderFamily}}
+\renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}%
+                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                     {1.5ex \@plus .2ex}%
+                                     {\reset@font\large\HeaderFamily}}
+\renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}%
+                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                     {1.5ex \@plus .2ex}%
+                                     {\reset@font\normalsize\HeaderFamily}}
+\renewcommand{\paragraph}{\@startsection{paragraph}{4}{\z@}%
+                                    {3.25ex \@plus1ex \@minus.2ex}%
+                                    {-1em}%
+                                    {\reset@font\normalsize\HeaderFamily}}
+\renewcommand{\subparagraph}{\@startsection{subparagraph}{5}{\parindent}%
+                                       {3.25ex \@plus1ex \@minus .2ex}%
+                                       {-1em}%
+                                      {\reset@font\normalsize\HeaderFamily}}
+
 
 % Underscore hack (only act like subscript operator if in math mode)
 %
@@ -72,20 +109,23 @@
 \expandafter\endgroup\next
 
 %
-% This is the old hack, which didn't work with 2e.  
-% If you're still using Latex 2.09, you can give it a try if the above fails.
+% This is the old hack, which didn't work with 2e.
+% You should not need this since the rest of the documentation is now
+% LaTeX2e-only.
 %
 %\def\_{\ifnum\fam=\ttfamily \char'137\else{\tt\char'137}\fi}
 %\catcode`\_=12
 %\catcode`\_=\active\def_{\ifnum\fam=\ttfamily \char'137 \else{\tt\char'137}\fi}
 
 
+
 %%  Lots of index-entry generation support.
 
-% Command to wrap around stuff that refers to function/module/attribute names
-% in the index.  Default behavior: like \code{}.  To just keep the index
-% entries in the roman font, uncomment the second definition to use instead;
-% it matches O'Reilly style more.
+% Command to wrap around stuff that refers to function / module /
+% attribute names  in the index.  Default behavior: like \code{}.  To
+% just keep the index entries in the roman font, uncomment the second
+% definition to use instead; it matches O'Reilly style more.
+%
 \newcommand{\idxcode}[1]{\codefont{#1}}
 %\renewcommand{\idxcode}[1]{#1}
 
@@ -103,7 +143,8 @@
 \index{#4!#1 #2 #3}
 }
 
-% Command to generate a reference to a function, statement, keyword, operator
+% Command to generate a reference to a function, statement, keyword,
+% operator.
 \newcommand{\stindex}[1]{\indexii{statement}{#1@{\idxcode{#1}}}}
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
 \newcommand{\exindex}[1]{\indexii{exception}{#1@{\idxcode{#1}}}}
@@ -129,9 +170,9 @@
 \newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
 
 % Additional string for an index entry
-\newcommand{\indexsubitem}{}
-\newcommand{\setindexsubitem}[1]{\renewcommand{\indexsubitem}{#1}}
-\newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \indexsubitem}}
+\newcommand{\index@subitem}{}
+\newcommand{\setindexsubitem}[1]{\renewcommand{\index@subitem}{#1}}
+\newcommand{\ttindex}[1]{\index{#1@{\idxcode{#1}} \index@subitem}}
 
 
 % from user-level, fulllineitems should be called as an environment
@@ -146,46 +187,46 @@
 % \begin{cfuncdesc}{type}{name}{arglist}
 % ... description ...
 % \end{cfuncdesc}
-\newcommand{\cfuncline}[3]{\item[\code{#1 #2(\varvars{#3})}]\ttindex{#2}}
+\newcommand{\cfuncline}[3]{\item[\code{#1 \bfcode{#2}(\varvars{#3})}]\ttindex{#2}}
 \newcommand{\cfuncdesc}[3]{\fulllineitems\cfuncline{#1}{#2}{#3}}
 \let\endcfuncdesc\endfulllineitems
 
-\newcommand{\cvarline}[2]{\item[\code{#1 #2}]\ttindex{#2}}
+\newcommand{\cvarline}[2]{\item[\code{#1 \bfcode{#2}}]\ttindex{#2}}
 \newcommand{\cvardesc}[2]{\fulllineitems\cvarline{#1}{#2}}
 \let\endcvardesc\endfulllineitems
 
-\newcommand{\ctypeline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\ctypeline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
 \newcommand{\ctypedesc}[1]{\fulllineitems\ctypeline{#1}}
 \let\endctypedesc\endfulllineitems
 
 % funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
-\newcommand{\funcline}[2]{\item[\code{#1(\varvars{#2})}]\ttindex{#1}}
+\newcommand{\funcline}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]\ttindex{#1}}
 \newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
 \let\endfuncdesc\endfulllineitems
-\newcommand{\optional}[1]{{\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}} }
+\newcommand{\optional}[1]{{\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
 
 
 % same for excdesc
-\newcommand{\excline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\excline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
 \newcommand{\excdesc}[1]{\fulllineitems\excline{#1}}
 \let\endexcdesc\endfulllineitems
 
 % same for datadesc
-\newcommand{\dataline}[1]{\item[\code{#1}]\ttindex{#1}}
+\newcommand{\dataline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
 \newcommand{\datadesc}[1]{\fulllineitems\dataline{#1}}
 \let\enddatadesc\endfulllineitems
 
 
 % opcodedesc should be called as an \begin{opcodedesc} ... \end{opcodedesc}
-\newcommand{\opcodeline}[2]{\item[\code{#1\quad\varvars{#2}}]\ttindex{#1}}
+\newcommand{\opcodeline}[2]{\item[\bfcode{#1}\quad\var{#2}]}
 \newcommand{\opcodedesc}[2]{\fulllineitems\opcodeline{#1}{#2}}
 \let\endopcodedesc\endfulllineitems
 
 
 \let\nodename=\label
 
-%% For these commands, use \command{} to get the typography right, not
-%% {\command}.  This works better with the texinfo translation.
+% For these commands, use \command{} to get the typography right, not 
+% {\command}.  This works better with the texinfo translation.
 \newcommand{\ABC}{{\sc abc}}
 \newcommand{\UNIX}{{\sc Unix}}
 \newcommand{\POSIX}{POSIX}
@@ -199,29 +240,33 @@
 \newcommand{\code}[1]{{\@vobeyspaces\@noligs\def\{{\char`\{}\def\}{\char`\}}\def\~{\char`\~}\def\^{\char`\^}\def\e{\char`\\}\def\${\char`\$}\def\#{\char`\#}\def\&{\char`\&}\def\%{\char`\%}%
 \mbox{\codefont{#1}}}}
 
+\newcommand{\bfcode}[1]{\code{\bfseries#1}} %bold-faced code font
 \newcommand{\kbd}[1]{\mbox{\tt #1}}
 \newcommand{\key}[1]{\mbox{\tt #1}}
 \newcommand{\samp}[1]{\mbox{`\code{#1}'}}
-% This weird definition of \var{} allows it to always appear in roman italics,
-% and won't get funky in code fragments when we play around with fonts.
-\newcommand{\var}[1]{\mbox{\textrm{\textit{#1\/}}}}
+% This weird definition of \var{} allows it to always appear in roman
+% italics, and won't get funky in code fragments when we play around
+% with fonts.
+\newcommand{\var}[1]{\mbox{\normalsize\textrm{\textit{#1\/}}}}
 \newcommand{\dfn}[1]{{\em #1\/}}
 \renewcommand{\emph}[1]{{\em #1\/}}
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
-\newcommand{\file}[1]{\mbox{`\textsf{#1}'}}
+\newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
+\newcommand{\url}[1]{\mbox{\small\textsf{#1}}}
+\let\email=\url
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
 
 \newif\iftexi\texifalse
 \newif\iflatex\latextrue
 
-% Proposed new macros:  These should be used for all references to identifiers
-% which are used to refer to instances of specific language constructs.  See
-% the names for specific semantic assignments.
+% These should be used for all references to identifiers which are
+% used to refer to instances of specific language constructs.  See the
+% names for specific semantic assignments.
 %
-% For now, don't do anything really fancy with them; just use them as logical
-% markup.  This might change in the future.
+% For now, don't do anything really fancy with them; just use them as
+% logical markup.  This might change in the future.
 %
 \let\module=\code
 \let\keyword=\code
@@ -236,8 +281,7 @@
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \newcommand{\rfc}[1]{RFC #1\index{RFC!RFC #1}}
-\let\email=\code
-\let\url=\code
+\newcommand{\program}[1]{\strong{#1}}
 
 
 \newenvironment{tableii}[4]{\begin{center}\def\lineii##1##2{\csname#2\endcsname{##1}&##2\\}\begin{tabular}{#1}\hline#3&#4\\
@@ -255,16 +299,16 @@
 % Sample usage:
 %  \begin{seealso}
 %    \seemodule{rand}{Uniform random number generator}; % Module xref
-%    \seetext{{\em Encyclopedia Britannica}}.                  % Ref to a book
+%    \seetext{\emph{Encyclopedia Britannica}}.          % Ref to a book
 %  \end{seealso}
 
-\newenvironment{seealso}[0]{{\bf See Also:}\par}{\par}
+\newenvironment{seealso}[0]{\strong{See Also:}\par}{\par}
 \newcommand{\seemodule}[2]{\ref{module-#1}: \module{#1}\quad(#2)}
 \newcommand{\seetext}[1]{\par{#1}}
 
-% Fix the theindex environment to add an entry to the Table of Contents;
-% this is much nicer than just having to jump to the end of the book and
-% flip around, especially with multiple indexes.
+% Fix the theindex environment to add an entry to the Table of
+% Contents; this is much nicer than just having to jump to the end of
+% the book and flip around, especially with multiple indexes.
 %
 \let\OldTheindex=\theindex
 \renewcommand{\theindex}{%
@@ -287,8 +331,8 @@
   \OldEndAbstract
 }
 
-% \mytableofcontents wraps the \tableofcontents macro with all the magic to
-% get the spacing right and have the right number of pages if the 'openright'
+% This wraps the \tableofcontents macro with all the magic to get the
+% spacing right and have the right number of pages if the 'openright'
 % option has been used.  This eliminates a fair amount of crud in the
 % individual document files.
 %
@@ -308,36 +352,40 @@
   \fi%
   }%
   \pagebreak%
+  \pagenumbering{arabic}%
 }
 
-% Allow the release number to be specified independently of the \date{}.  This
-% allows the date to reflect the document's date and release to specify the
-% Python release that is documented.
+% Allow the release number to be specified independently of the
+% \date{}.  This allows the date to reflect the document's date and
+% release to specify the Python release that is documented.
+%
 \newcommand{\@release}{}
 \newcommand{\version}{}
 \newcommand{\releasename}{Release}
 \newcommand{\release}[1]{%
   \renewcommand{\@release}{\releasename\space\version}%
-  \renewcommand{\version}{#1}%
-}
+  \renewcommand{\version}{#1}}
 
-% Allow specification of the author's address separately from the author's
-% name.  This can be used to format them differently, which is a good thing.
+% Allow specification of the author's address separately from the
+% author's name.  This can be used to format them differently, which
+% is a good thing.
+%
 \newcommand{\@authoraddress}{}
 \newcommand{\authoraddress}[1]{\renewcommand{\@authoraddress}{#1}}
 
-% Change the title page to look a bit better, and fit in with the fncychap
-% ``Bjarne'' style a bit better.
+% Change the title page to look a bit better, and fit in with the
+% fncychap ``Bjarne'' style a bit better.
+%
 \renewcommand{\maketitle}{\begin{titlepage}%
   \let\footnotesize\small
   \let\footnoterule\relax
   \@ifundefined{ChTitleVar}{}{%
     \mghrulefill{\RW}}%
   \begin{flushright}%
-    {\huge \@title \par}%
-    {\em\LARGE \@release \par}
+    {\rm\Huge\HeaderFamily \@title \par}%
+    {\em\LARGE\HeaderFamily \@release \par}
     \vfill
-    {\LARGE \@author \par}
+    {\LARGE\HeaderFamily \@author \par}
     \vfill\vfill
     {\large
      \@date \par
@@ -352,12 +400,17 @@
   \gdef\@thanks{}\gdef\@author{}\gdef\@title{}
 }
 
-% ``minitoc'' support; works fairly well but not all chapters do well with it.
-% Has some weird side effects that I haven't tracked down; don't use it for
-% real at this time.
+% ``minitoc'' support; works fairly well but not all chapters do well
+% with it.  Has some weird side effects that I haven't tracked down;
+% don't use it for real at this time.
 %
-% To enable, uncomment the following line only:
+% To enable, uncomment the following line only (don't do it!):
 %\RequirePackage{minitoc}
+%
+% Maybe this should all be removed.  But I think something like this
+% would be really nice if it can be integrated with the ``list of
+% modules'' at the top of module-documentation chapters.  But it might 
+% require a completely new environment, perhaps based on {list}.
 
 % Leave the rest as-is:
 \newif\if@minitocprinted
@@ -401,12 +454,14 @@
   \typeout{Including mini Tables of Contents in each chapter.}
 }
 
-% This sets up the fancy chapter headings that make the documents look at
-% least a little better than the usual LaTeX output.
+% This sets up the fancy chapter headings that make the documents look
+% at least a little better than the usual LaTeX output.
 %
 \RequirePackage[Bjarne]{fncychap}
 \@ifundefined{ChTitleVar}{}{
-  \ChTitleVar{\raggedleft \rm\Huge}
+  \ChNameVar{\raggedleft\normalsize\HeaderFamily}
+  \ChNumVar{\raggedleft \bfseries\Large\HeaderFamily}
+  \ChTitleVar{\raggedleft \rm\Huge\HeaderFamily}
   % This creates chapter heads without the leading \vspace*{}:
   \def\@makechapterhead#1{%
     {\parindent \z@ \raggedright \normalfont
