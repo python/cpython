@@ -45,7 +45,10 @@ def split(s):
 	colon = 0
 	for i in range(len(s)):
 		if s[i] == ':': colon = i+1
-	return s[:colon-1], s[colon:]
+	path, file = s[:colon-1], s[colon:]
+	if path and not ':' in path:
+		path = path + ':'
+	return path, file
 
 
 # Split a path in root and extension.
