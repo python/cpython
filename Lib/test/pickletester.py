@@ -344,6 +344,67 @@ class TempAbstractPickleTests(unittest.TestCase):
 ##         print
 ##         pickletools.dis(s)
 
+    def test_global_ext1(self):
+        import copy_reg
+        copy_reg.add_extension(__name__, "MyList", 0xf0)
+        try:
+            x = MyList([1, 2, 3])
+            x.foo = 42
+            x.bar = "hello"
+
+            # Dump using protocol 1 for comparison
+            s1 = self.dumps(x, 1)
+            y = self.loads(s1)
+            self.assertEqual(list(x), list(y))
+            self.assertEqual(x.__dict__, y.__dict__)
+            self.assert_(s1.find(__name__) >= 0)
+            self.assert_(s1.find("MyList") >= 0)
+##            import pickletools
+##            print
+##            pickletools.dis(s1)
+
+            # Dump using protocol 2 for test
+            s2 = self.dumps(x, 2)
+            self.assertEqual(s2.find(__name__), -1)
+            self.assertEqual(s2.find("MyList"), -1)
+            y = self.loads(s2)
+            self.assertEqual(list(x), list(y))
+            self.assertEqual(x.__dict__, y.__dict__)
+##            import pickletools
+##            print
+##            pickletools.dis(s2)
+
+        finally:
+            copy_reg.remove_extension(__name__, "MyList", 0xf0)
+
+    def test_global_ext2(self):
+        import copy_reg
+        copy_reg.add_extension(__name__, "MyList", 0xfff0)
+        try:
+            x = MyList()
+            s2 = self.dumps(x, 2)
+            self.assertEqual(s2.find(__name__), -1)
+            self.assertEqual(s2.find("MyList"), -1)
+            y = self.loads(s2)
+            self.assertEqual(list(x), list(y))
+            self.assertEqual(x.__dict__, y.__dict__)
+        finally:
+            copy_reg.remove_extension(__name__, "MyList", 0xfff0)
+
+    def test_global_ext4(self):
+        import copy_reg
+        copy_reg.add_extension(__name__, "MyList", 0xfffff0)
+        try:
+            x = MyList()
+            s2 = self.dumps(x, 2)
+            self.assertEqual(s2.find(__name__), -1)
+            self.assertEqual(s2.find("MyList"), -1)
+            y = self.loads(s2)
+            self.assertEqual(list(x), list(y))
+            self.assertEqual(x.__dict__, y.__dict__)
+        finally:
+            copy_reg.remove_extension(__name__, "MyList", 0xfffff0)
+
 class MyTuple(tuple):
     pass
 
