@@ -50,8 +50,54 @@ test_config(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+static PyObject*
+test_list_api(PyObject *self, PyObject *args)
+{
+	PyObject* list;
+	int i;
+        if (!PyArg_ParseTuple(args, ":test_list_api"))
+                return NULL;
+
+	/* SF bug 132008:  PyList_Reverse segfaults */
+#define NLIST 30
+	list = PyList_New(NLIST);
+	if (list == (PyObject*)NULL)
+		return (PyObject*)NULL;
+	/* list = range(NLIST) */
+	for (i = 0; i < NLIST; ++i) {
+		PyObject* anint = PyInt_FromLong(i);
+		if (anint == (PyObject*)NULL) {
+			Py_DECREF(list);
+			return (PyObject*)NULL;
+		}
+		PyList_SET_ITEM(list, i, anint);
+	}
+	/* list.reverse(), via PyList_Reverse() */
+	i = PyList_Reverse(list);   /* should not blow up! */
+	if (i != 0) {
+		Py_DECREF(list);
+		return (PyObject*)NULL;
+	}
+	/* Check that list == range(29, -1, -1) now */
+	for (i = 0; i < NLIST; ++i) {
+		PyObject* anint = PyList_GET_ITEM(list, i);
+		if (PyInt_AS_LONG(anint) != NLIST-1-i) {
+			PyErr_SetString(TestError,
+			                "test_list_api: reverse screwed up");
+			Py_DECREF(list);
+			return (PyObject*)NULL;
+		}
+	}
+	Py_DECREF(list);
+#undef NLIST
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef TestMethods[] = {
 	{"test_config", test_config, METH_VARARGS},
+	{"test_list_api", test_list_api, METH_VARARGS},
 	{NULL, NULL} /* sentinel */
 };
 
