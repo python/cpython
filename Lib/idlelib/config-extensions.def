@@ -1,0 +1,34 @@
+# IDLE reads several config files to determine user preferences.  This 
+# file is the default config file for idle extensions settings.  
+
+[SearchBinding]
+enable=1
+
+[AutoIndent]
+enable=1
+
+[AutoExpand]
+enable=1
+
+[FormatParagraph]
+enable=1
+
+[ZoomHeight]
+enable=1
+
+#[ScriptBinding]    # disabled in favor of ExecBinding
+#enable=0
+
+[ExecBinding]
+enable=1
+
+[CallTips]
+enable=1
+
+[ParenMatch]
+enable=0
+style= expression
+flash-delay= 500
+bell= 1
+hilite-foreground= black
+hilite-background= #43cd80
