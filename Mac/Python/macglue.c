@@ -283,6 +283,12 @@ PyOS_CheckStack()
 #endif /* USE_STACKCHECK */
 
 #if !TARGET_API_MAC_OSX
+void
+PyErr_SetInterrupt(void)
+{
+	interrupted = 1;
+}
+
 /* The catcher routine (which may not be used for all compilers) */
 static RETSIGTYPE
 intcatcher(sig)
