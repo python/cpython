@@ -48,8 +48,11 @@ static void create_thread(int, struct sockaddr_in *);
 static void *service_thread(struct workorder *);
 static void run_interpreter(FILE *, FILE *);
 static int run_command(char *, PyObject *);
+static void ps(void);
 
 static char *progname = "pysvr";
+
+static PyThreadState *gtstate;
 
 main(int argc, char **argv)
 {
@@ -98,7 +101,7 @@ usage()
 static void
 main_thread(int port)
 {
-	int sock, conn, size;
+	int sock, conn, size, i;
 	struct sockaddr_in addr, clientaddr;
 
 	sock = socket(PF_INET, SOCK_STREAM, 0);
@@ -108,7 +111,7 @@ main_thread(int port)
 		exit(1);
 	}
 
-	memset(&addr, '\0', sizeof addr);
+	memset((char *)&addr, '\0', sizeof addr);
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
 	addr.sin_addr.s_addr = 0L;
@@ -126,8 +129,9 @@ main_thread(int port)
 
 	fprintf(stderr, "Listening on port %d...\n", port);
 
-	for (;;) {
+	for (i = 0; ; i++) {
 		size = sizeof clientaddr;
+		memset((char *) &clientaddr, '\0', size);
 		conn = accept(sock, (struct sockaddr *) &clientaddr, &size);
 		if (conn < 0) {
 			oprogname();
@@ -136,6 +140,7 @@ main_thread(int port)
 		}
 
 		size = sizeof addr;
+		memset((char *) &addr, '\0', size);
 		if (getsockname(conn, (struct sockaddr *)&addr, &size) < 0) {
 			oprogname();
 			perror("can't get socket name of connection");
@@ -150,8 +155,21 @@ main_thread(int port)
 			close(conn);
 			continue;
 		}
+		if (i == 4) {
+			close(conn);
+			break;
+		}
 		create_thread(conn, &clientaddr);
 	}
+
+	close(sock);
+
+	if (gtstate) {
+		PyEval_AcquireThread(gtstate);
+		gtstate = NULL;
+		Py_Finalize();
+	}
+	exit(0);
 }
 
 static void
@@ -192,8 +210,11 @@ static PyObject *the_builtins;
 static void
 init_python()
 {
-	PyEval_InitThreads(); /* Create and acquire the interpreter lock */
-	PyEval_ReleaseLock(); /* Release the lock */
+	if (gtstate)
+		return;
+	Py_Initialize(); /* Initialize the interpreter */
+	PyEval_InitThreads(); /* Create (and acquire) the interpreter lock */
+	gtstate = PyEval_SaveThread(); /* Release the thread state */
 }
 
 static void *
@@ -202,6 +223,8 @@ service_thread(struct workorder *work)
 	FILE *input, *output;
 
 	fprintf(stderr, "Start thread for connection %d.\n", work->conn);
+
+	ps();
 
 	input = fdopen(work->conn, "r");
 	if (input == NULL) {
@@ -264,6 +287,10 @@ run_interpreter(FILE *input, FILE *output)
 	new_stdin = PyFile_FromFile(input, "<socket-in>", "r", NULL);
 	new_stdout = PyFile_FromFile(output, "<socket-out>", "w", NULL);
 
+	PySys_SetObject("stdin", new_stdin);
+	PySys_SetObject("stdout", new_stdout);
+	PySys_SetObject("stderr", new_stdout);
+
 	for (n = 1; !PyErr_Occurred(); n++) {
 		Py_BEGIN_ALLOW_THREADS
 		fprintf(output, "%d> ", n);
@@ -285,10 +312,6 @@ run_interpreter(FILE *input, FILE *output)
 			p++;
 		if (p[0] == '#' || p[0] == '\0')
 			continue;
-
-		PySys_SetObject("stdin", new_stdin);
-		PySys_SetObject("stdout", new_stdout);
-		PySys_SetObject("stderr", new_stdout);
 
 		end = run_command(buffer, globals);
 		if (end < 0)
@@ -326,4 +349,12 @@ run_command(char *buffer, PyObject *globals)
 	}
 	Py_DECREF(v);
 	return 0;
+}
+
+static void
+ps()
+{
+	char buffer[100];
+	sprintf(buffer, "ps -l -p %d </dev/null | tail +2l\n", getpid());
+	system(buffer);
 }
