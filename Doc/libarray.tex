@@ -10,7 +10,7 @@ except that the type of objects stored in them is constrained.  The
 type is specified at object creation time by using a \dfn{type code},
 which is a single character.  The following type codes are defined:
 
-\begin{tableiii}{|c|c|c|}{code}{Type code}{Type}{Minimum size in bytes}
+\begin{tableiii}{|c|c|c|}{character}{Type code}{Type}{Minimum size in bytes}
 \lineiii{'c'}{character}{1}
 \lineiii{'b'}{signed integer}{1}
 \lineiii{'B'}{unsigned integer}{1}
@@ -29,11 +29,10 @@ architecture (strictly speaking, by the \C{} implementation).  The actual
 size can be accessed through the \var{itemsize} attribute.  The values
 stored  for \code{'L'} and \code{'I'} items will be represented as
 Python long integers when retrieved, because Python's plain integer
-type can't represent the full range of \C{}'s unsigned (long) integers.
+type cannot represent the full range of \C{}'s unsigned (long) integers.
 
-See also built-in module \module{struct}\refbimodindex{struct}.
 
-The module defines the following function:
+The module defines the following function and type object:
 
 \begin{funcdesc}{array}{typecode\optional{, initializer}}
 Return a new array whose items are restricted by \var{typecode}, and
@@ -43,25 +42,28 @@ list or a string.  The list or string is passed to the new array's
 initial items to the array.
 \end{funcdesc}
 
+\begin{datadesc}{ArrayType}
+Type object corresponding to the objects returned by
+\function{array()}.
+\end{datadesc}
+
+
 Array objects support the following data items and methods:
 
-\setindexsubitem{(array attribute)}
-
-\begin{datadesc}{typecode}
+\begin{memberdesc}[array]{typecode}
 The typecode character used to create the array.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{itemsize}
+\begin{memberdesc}[array]{itemsize}
 The length in bytes of one array item in the internal representation.
-\end{datadesc}
+\end{memberdesc}
 
-\setindexsubitem{(array method)}
 
-\begin{funcdesc}{append}{x}
+\begin{methoddesc}[array]{append}{x}
 Append a new item with value \var{x} to the end of the array.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{buffer_info}{}
+\begin{methoddesc}[array]{buffer_info}{}
 Return a tuple \code{(\var{address}, \var{length})} giving the current
 memory address and the length in bytes of the buffer used to hold
 array's contents.  This is occasionally useful when working with
@@ -69,41 +71,41 @@ low-level (and inherently unsafe) I/O interfaces that require memory
 addresses, such as certain \cfunction{ioctl()} operations.  The returned
 numbers are valid as long as the array exists and no length-changing
 operations are applied to it.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{byteswap}{x}
+\begin{methoddesc}[array]{byteswap}{x}
 ``Byteswap'' all items of the array.  This is only supported for
 integer values.  It is useful when reading data from a file written
 on a machine with a different byte order.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{fromfile}{f, n}
+\begin{methoddesc}[array]{fromfile}{f, n}
 Read \var{n} items (as machine values) from the file object \var{f}
 and append them to the end of the array.  If less than \var{n} items
 are available, \exception{EOFError} is raised, but the items that were
 available are still inserted into the array.  \var{f} must be a real
-built-in file object; something else with a \code{read()} method won't
+built-in file object; something else with a \method{read()} method won't
 do.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{fromlist}{list}
+\begin{methoddesc}[array]{fromlist}{list}
 Append items from the list.  This is equivalent to
 \samp{for x in \var{list}:\ a.append(x)}
 except that if there is a type error, the array is unchanged.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{fromstring}{s}
+\begin{methoddesc}[array]{fromstring}{s}
 Appends items from the string, interpreting the string as an
 array of machine values (i.e. as if it had been read from a
 file using the \method{fromfile()} method).
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{insert}{i, x}
+\begin{methoddesc}[array]{insert}{i, x}
 Insert a new item with value \var{x} in the array before position
 \var{i}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{read}{f, n}
+\begin{methoddesc}[array]{read}{f, n}
 \deprecated {1.5.1}
   {Use the \method{fromfile()} method.}
 Read \var{n} items (as machine values) from the file object \var{f}
@@ -112,31 +114,31 @@ are available, \exception{EOFError} is raised, but the items that were
 available are still inserted into the array.  \var{f} must be a real
 built-in file object; something else with a \method{read()} method won't
 do.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{reverse}{}
+\begin{methoddesc}[array]{reverse}{}
 Reverse the order of the items in the array.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{tofile}{f}
+\begin{methoddesc}[array]{tofile}{f}
 Write all items (as machine values) to the file object \var{f}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{tolist}{}
+\begin{methoddesc}[array]{tolist}{}
 Convert the array to an ordinary list with the same items.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{tostring}{}
+\begin{methoddesc}[array]{tostring}{}
 Convert the array to an array of machine values and return the
 string representation (the same sequence of bytes that would
 be written to a file by the \method{tofile()} method.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{write}{f}
+\begin{methoddesc}[array]{write}{f}
 \deprecated {1.5.1}
   {Use the \method{tofile()} method.}
 Write all items (as machine values) to the file object \var{f}.
-\end{funcdesc}
+\end{methoddesc}
 
 When an array object is printed or converted to a string, it is
 represented as \code{array(\var{typecode}, \var{initializer})}.  The
@@ -152,3 +154,8 @@ array('c', 'hello world')
 array('l', [1, 2, 3, 4, 5])
 array('d', [1.0, 2.0, 3.14])
 \end{verbatim}
+
+
+\begin{seealso}
+\seemodule{struct}{Packing and unpacking of heterogeneous binary data.}
+\end{seealso}
