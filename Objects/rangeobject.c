@@ -8,6 +8,8 @@ typedef struct {
 	long	start;
 	long	step;
 	long	len;
+	long	index;
+	int	used;	/* Set to 1 if called by range_getiter */	
 } rangeobject;
 
 PyObject *
@@ -43,6 +45,8 @@ PyRange_New(long start, long len, long step, int reps)
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
+	obj->index = 0;
+	obj->used = 0;	
 
 	return (PyObject *) obj;
 }
@@ -86,6 +90,45 @@ range_repr(rangeobject *r)
 	return rtn;
 }
 
+static PyObject *
+range_getiter(rangeobject *r)
+{
+	rangeobject *obj;
+	if (r->used == 0 || r->index >= r->len) { 
+		Py_INCREF(r);
+		r->used = 1;
+		r->index = 0;
+		return (PyObject *)r;
+	}
+
+	obj = PyObject_NEW(rangeobject, &PyRange_Type);
+	if (obj == NULL)
+		return NULL;
+
+	obj->start = r->start;
+	obj->len   = r->len;
+	obj->step  = r->step;
+	obj->index = 0;
+	obj->used = 1;
+	return (PyObject *) obj;
+}
+
+static PyObject *
+range_next(rangeobject *r)
+{
+	if (r->index >= r->len) {
+		PyErr_SetObject(PyExc_StopIteration, Py_None);
+		return NULL;
+	}
+	return PyInt_FromLong(r->start + (r->index++) * r->step);
+}
+
+static PyMethodDef range_methods[] = {
+        {"next",        (PyCFunction)range_next, METH_NOARGS,
+         "it.next() -- get the next value, or raise StopIteration"},
+        {NULL,          NULL}           /* sentinel */
+};
+
 static PySequenceMethods range_as_sequence = {
 	(inquiry)range_length,	/* sq_length */
 	0,			/* sq_concat */
@@ -112,9 +155,16 @@ PyTypeObject PyRange_Type = {
 	0,				/* tp_hash */
 	0,				/* tp_call */
 	0,				/* tp_str */
-	0,				/* tp_getattro */
+	PyObject_GenericGetAttr,	/* tp_getattro */
 	0,				/* tp_setattro */
 	0,				/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,		/* tp_flags */
 	0,				/* tp_doc */
+	0,				/* tp_traverse */
+	0,				/* tp_clear */
+	0,				/* tp_richcompare */
+	0,				/* tp_weaklistoffset */
+	(getiterfunc)range_getiter,	/* tp_iter */
+	(iternextfunc)range_next,	/* tp_iternext */
+	range_methods,			/* tp_methods */	
 };
