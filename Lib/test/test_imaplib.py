@@ -1,5 +1,4 @@
 import imaplib
-import time
 
 # Can't use time.time() values, as they are O/S specific
 
