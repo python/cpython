@@ -34,8 +34,6 @@ if TkVersion < 3.999:
     raise ImportError, "This version of Tix.py requires Tk 4.0 or higher"
 
 import _tkinter # If this fails your Python may not be configured for Tk
-# TixVersion = float(tkinter.TIX_VERSION) # If this fails your Python may not be configured for Tix
-# WARNING - TixVersion is a limited precision floating point number
 
 # Some more constants (for consistency with Tkinter)
 WINDOW = 'window'
@@ -241,7 +239,7 @@ class Form:
             for x in y:
                 z = z + (self.tk.getint(x),)
             return z
-        self.tk.call('tixForm', 'grid', self._w, xsize, ysize)
+        return self.tk.call('tixForm', 'grid', self._w, xsize, ysize)
 
     def info(self, option=None):
         if not option:
@@ -497,6 +495,7 @@ class Balloon(TixWidget):
     label           Label
     message         Message"""
 
+    # FIXME: It should inherit -superclass tixShell
     def __init__(self, master=None, cnf={}, **kw):
         # static seem to be -installcolormap -initwait -statusbar -cursor
         static = ['options', 'installcolormap', 'initwait', 'statusbar',
@@ -549,6 +548,7 @@ class ComboBox(TixWidget):
     tick        Button
     cross       Button : present if created with the fancy option"""
 
+    # FIXME: It should inherit -superclass tixLabelWidget
     def __init__ (self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixComboBox',
                            ['editable', 'dropdown', 'fancy', 'options'],
@@ -590,6 +590,7 @@ class Control(TixWidget):
     entry       Entry
     label       Label"""
 
+    # FIXME: It should inherit -superclass tixLabelWidget
     def __init__ (self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixControl', ['options'], cnf, kw)
         self.subwidget_list['incr'] = _dummyButton(self, 'incr')
@@ -620,6 +621,7 @@ class DirList(TixWidget):
     hsb              Scrollbar
     vsb              Scrollbar"""
 
+    # FIXME: It should inherit -superclass tixScrolledHList
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirList', ['options'], cnf, kw)
         self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
@@ -641,6 +643,7 @@ class DirTree(TixWidget):
     hsb             Scrollbar
     vsb             Scrollbar"""
 
+    # FIXME: It should inherit -superclass tixScrolledHList
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirTree', ['options'], cnf, kw)
         self.subwidget_list['hlist'] = _dummyHList(self, 'hlist')
@@ -712,6 +715,7 @@ class DirSelectDialog(TixWidget):
     ----------       -----
     dirbox       DirSelectDialog"""
 
+    # FIXME: It should inherit -superclass tixDialogShell
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixDirSelectDialog',
                            ['options'], cnf, kw)
@@ -734,6 +738,7 @@ class ExFileSelectDialog(TixWidget):
     ----------       -----
     fsbox       ExFileSelectBox"""
 
+    # FIXME: It should inherit -superclass tixDialogShell
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixExFileSelectDialog',
                            ['options'], cnf, kw)
@@ -781,6 +786,7 @@ class FileSelectDialog(TixWidget):
     btns       StdButtonBox
     fsbox       FileSelectBox"""
 
+    # FIXME: It should inherit -superclass tixStdDialogShell
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixFileSelectDialog',
                            ['options'], cnf, kw)
@@ -804,6 +810,7 @@ class FileEntry(TixWidget):
     button       Button
     entry       Entry"""
 
+    # FIXME: It should inherit -superclass tixLabelWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixFileEntry',
                            ['dialogtype', 'options'], cnf, kw)
@@ -814,7 +821,7 @@ class FileEntry(TixWidget):
         self.tk.call(self._w, 'invoke')
 
     def file_dialog(self):
-        # XXX return python object
+        # FIXME: return python object
         pass
 
 class HList(TixWidget):
@@ -1003,7 +1010,7 @@ class HList(TixWidget):
         apply(self.tk.call, (self._w, 'yview') + args)
 
 class InputOnly(TixWidget):
-    """InputOnly - Invisible widget.
+    """InputOnly - Invisible widget. Unix only.
 
     Subwidgets - None"""
 
@@ -1131,7 +1138,7 @@ class NoteBook(TixWidget):
         return self.tk.call(self._w, 'raised')
 
 class NoteBookFrame(TixWidget):
-    """Will be added when Tix documentation is available !!!"""
+    # FIXME: This is dangerous to expose to be called on its own.
     pass
 
 class OptionMenu(TixWidget):
@@ -1223,6 +1230,7 @@ class PopupMenu(TixWidget):
     menubutton       Menubutton
     menu       Menu"""
 
+    # FIXME: It should inherit -superclass tixShell
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixPopupMenu', ['options'], cnf, kw)
         self.subwidget_list['menubutton'] = _dummyMenubutton(self, 'menubutton')
@@ -1239,7 +1247,8 @@ class PopupMenu(TixWidget):
 
 class ResizeHandle(TixWidget):
     """Internal widget to draw resize handles on Scrolled widgets."""
-
+    # FIXME: This is dangerous to expose to be called on its own.
+    # Perhaps rename ResizeHandle to _ResizeHandle
     def __init__(self, master, cnf={}, **kw):
         # There seems to be a Tix bug rejecting the configure method
         # Let's try making the flags -static
@@ -1265,6 +1274,7 @@ class ResizeHandle(TixWidget):
 class ScrolledHList(TixWidget):
     """ScrolledHList - HList with automatic scrollbars."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledHList', ['options'],
                            cnf, kw)
@@ -1275,6 +1285,7 @@ class ScrolledHList(TixWidget):
 class ScrolledListBox(TixWidget):
     """ScrolledListBox - Listbox with automatic scrollbars."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledListBox', ['options'], cnf, kw)
         self.subwidget_list['listbox'] = _dummyListbox(self, 'listbox')
@@ -1284,6 +1295,7 @@ class ScrolledListBox(TixWidget):
 class ScrolledText(TixWidget):
     """ScrolledText - Text with automatic scrollbars."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledText', ['options'], cnf, kw)
         self.subwidget_list['text'] = _dummyText(self, 'text')
@@ -1293,6 +1305,7 @@ class ScrolledText(TixWidget):
 class ScrolledTList(TixWidget):
     """ScrolledTList - TList with automatic scrollbars."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledTList', ['options'],
                            cnf, kw)
@@ -1303,6 +1316,7 @@ class ScrolledTList(TixWidget):
 class ScrolledWindow(TixWidget):
     """ScrolledWindow - Window with automatic scrollbars."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixScrolledWindow', ['options'], cnf, kw)
         self.subwidget_list['window'] = _dummyFrame(self, 'window')
@@ -1315,6 +1329,7 @@ class Select(TixWidget):
 
     Subwidgets are buttons added dynamically using the add method."""
 
+    # FIXME: It should inherit -superclass tixLabelWidget
     def __init__(self, master, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixSelect',
                            ['allowzero', 'radio', 'orientation', 'labelside',
@@ -1347,6 +1362,7 @@ class DialogShell(TixWidget):
 
     Subwidgets - None"""
 
+    # FIXME: It should inherit from  Shell
     def __init__ (self,master=None,cnf={}, **kw):
         TixWidget.__init__(self, master,
                            'tixDialogShell',
@@ -1474,6 +1490,7 @@ class Tree(TixWidget):
     data in a tree form. The user can adjust
     the view of the tree by opening or closing parts of the tree."""
 
+    # FIXME: It should inherit -superclass tixScrolledWidget
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixTree',
                            ['options'], cnf, kw)
@@ -1482,18 +1499,34 @@ class Tree(TixWidget):
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
 
     def autosetmode(self):
+        '''This command calls the setmode method for all the entries in this
+     Tree widget: if an entry has no child entries, its mode is set to
+     none. Otherwise, if the entry has any hidden child entries, its mode is
+     set to open; otherwise its mode is set to close.'''
         self.tk.call(self._w, 'autosetmode')
 
     def close(self, entrypath):
+        '''Close the entry given by entryPath if its mode is close.'''
         self.tk.call(self._w, 'close', entrypath)
 
     def getmode(self, entrypath):
+        '''Returns the current mode of the entry given by entryPath.'''
         return self.tk.call(self._w, 'getmode', entrypath)
 
     def open(self, entrypath):
+        '''Open the entry given by entryPath if its mode is open.'''
         self.tk.call(self._w, 'open', entrypath)
 
     def setmode(self, entrypath, mode='none'):
+        '''This command is used to indicate whether the entry given by
+     entryPath has children entries and whether the children are visible. mode
+     must be one of open, close or none. If mode is set to open, a (+)
+     indicator is drawn next the the entry. If mode is set to close, a (-)
+     indicator is drawn next the the entry. If mode is set to none, no
+     indicators will be drawn for this entry. The default mode is none. The
+     open mode indicates the entry has hidden children and this entry can be
+     opened by the user. The close mode indicates that all the children of the
+     entry are now visible and the entry can be closed by the user.'''
         self.tk.call(self._w, 'setmode', entrypath, mode)
 
 
@@ -1504,7 +1537,7 @@ class CheckList(TixWidget):
     similarly to the Tk checkbutton or radiobutton widgets, except it is
     capable of handling many more items than checkbuttons or radiobuttons.
     """
-
+    # FIXME: It should inherit -superclass tixTree
     def __init__(self, master=None, cnf={}, **kw):
         TixWidget.__init__(self, master, 'tixCheckList',
                            ['options'], cnf, kw)
@@ -1513,25 +1546,38 @@ class CheckList(TixWidget):
         self.subwidget_list['hsb'] = _dummyScrollbar(self, 'hsb')
 
     def autosetmode(self):
+        '''This command calls the setmode method for all the entries in this
+     Tree widget: if an entry has no child entries, its mode is set to
+     none. Otherwise, if the entry has any hidden child entries, its mode is
+     set to open; otherwise its mode is set to close.'''
         self.tk.call(self._w, 'autosetmode')
 
     def close(self, entrypath):
+        '''Close the entry given by entryPath if its mode is close.'''
         self.tk.call(self._w, 'close', entrypath)
 
     def getmode(self, entrypath):
+        '''Returns the current mode of the entry given by entryPath.'''
         return self.tk.call(self._w, 'getmode', entrypath)
 
     def open(self, entrypath):
+        '''Open the entry given by entryPath if its mode is open.'''
         self.tk.call(self._w, 'open', entrypath)
 
     def getselection(self, mode='on'):
-        '''Mode can be on, off, default'''
-        self.tk.call(self._w, 'getselection', mode)
+        '''Returns a list of items whose status matches status. If status is
+     not specified, the list of items in the "on" status will be returned.
+     Mode can be on, off, default'''
+        c = self.tk.split(self.tk.call(self._w, 'getselection', mode))
+        return self.tk.splitlist(c)
 
     def getstatus(self, entrypath):
-        self.tk.call(self._w, 'getstatus', entrypath)
+        '''Returns the current status of entryPath.'''
+        return self.tk.call(self._w, 'getstatus', entrypath)
 
     def setstatus(self, entrypath, mode='on'):
+        '''Sets the status of entryPath to be status. A bitmap will be
+     displayed next to the entry its status is on, off or default.'''
         self.tk.call(self._w, 'setstatus', entrypath, mode)
 
 
@@ -1690,6 +1736,7 @@ def FileTypeList(dict):
     return s
 
 # Still to be done:
+# tixIconView
 class CObjView(TixWidget):
     """This file implements the Canvas Object View widget. This is a base
     class of IconView. It implements automatic placement/adjustment of the
@@ -1697,4 +1744,11 @@ class CObjView(TixWidget):
     The scrollbars are adjusted so that the canvas is just large enough
     to see all the objects.
     """
+    # FIXME: It should inherit -superclass tixScrolledWidget
+    pass
+
+class ScrolledGrid(TixWidget):
+    '''Scrolled Grid widgets'''
+
+    # FIXME: It should inherit -superclass tixScrolledWidget
     pass

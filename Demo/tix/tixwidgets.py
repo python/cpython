@@ -1,5 +1,6 @@
 # -*-mode: python; fill-column: 75; tab-width: 8; coding: iso-latin-1-unix -*-
 #
+# Id: tixwidgets.py,v 1.7 2002/11/14 02:44:08 nnorwitz Exp
 # $Id$
 #
 # tixwidgets.py --
@@ -474,9 +475,9 @@ def MkScroll(nb, name):
     w = nb.page(name)
     options='label.padX 4'
 
-    sls = Tix.LabelFrame(w, label='tixScrolledListBox', options=options)
-    swn = Tix.LabelFrame(w, label='tixScrolledWindow', options=options)
-    stx = Tix.LabelFrame(w, label='tixScrolledText', options=options)
+    sls = Tix.LabelFrame(w, label='Tix.ScrolledListBox', options=options)
+    swn = Tix.LabelFrame(w, label='Tix.ScrolledWindow', options=options)
+    stx = Tix.LabelFrame(w, label='Tix.ScrolledText', options=options)
 
     MkSList(sls.frame)
     MkSWindow(swn.frame)
@@ -604,8 +605,8 @@ def MkManager(nb, name):
     w = nb.page(name)
     options='label.padX 4'
 
-    pane = Tix.LabelFrame(w, label='tixPanedWindow', options=options)
-    note = Tix.LabelFrame(w, label='tixNoteBook', options=options)
+    pane = Tix.LabelFrame(w, label='Tix.PanedWindow', options=options)
+    note = Tix.LabelFrame(w, label='Tix.NoteBook', options=options)
 
     MkPanedWindow(pane.frame)
     MkNoteBook(note.frame)
@@ -716,8 +717,8 @@ def MkDirList(nb, name):
     w = nb.page(name)
     options = "label.padX 4"
 
-    dir = Tix.LabelFrame(w, label='tixDirList', options=options)
-    fsbox = Tix.LabelFrame(w, label='tixExFileSelectBox', options=options)
+    dir = Tix.LabelFrame(w, label='Tix.DirList', options=options)
+    fsbox = Tix.LabelFrame(w, label='Tix.ExFileSelectBox', options=options)
     MkDirListWidget(dir.frame)
     MkExFileWidget(fsbox.frame)
     dir.form(top=0, left=0, right='%40', bottom=-1)
