@@ -1,7 +1,7 @@
 #define single_input 256
 #define file_input 257
-#define expr_input 258
-#define eval_input 259
+#define eval_input 258
+#define lambda_input 259
 #define funcdef 260
 #define parameters 261
 #define varargslist 262

@@ -1,9 +1,3 @@
-#ifndef Py_ALLOBJECTS_H
-#define Py_ALLOBJECTS_H
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /***********************************************************
 Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
 Amsterdam, The Netherlands.
@@ -28,46 +22,20 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-/* "allobjects.c" -- Source for precompiled header "allobjects.h" */
+/* Range object interface */
 
-#ifdef THINK_C
-#define macintosh
-#endif
+/*
+123456789-123456789-123456789-123456789-123456789-123456789-123456789-12
 
-#include <stdio.h>
-#include <string.h>
+rangeobject represents an integer range.  This is an immutable object;
+a range cannot change its value after creation.
 
-#include "PROTO.h"
+Range objects behave like the corresponding tuple objects except that
+they are represented by a start, stop, and step datamembers.
+*/
 
-#include "object.h"
-#include "objimpl.h"
+extern typeobject Rangetype;
 
-#include "accessobject.h"
-#include "intobject.h"
-#include "longobject.h"
-#include "floatobject.h"
-#include "rangeobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
-#include "dictobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "funcobject.h"
-#include "classobject.h"
-#include "fileobject.h"
+#define is_rangeobject(op) ((op)->ob_type == &Rangetype)
 
-#include "errors.h"
-#include "mymalloc.h"
-
-#include "modsupport.h"
-#include "ceval.h"
-
-#include "rename1.h"
-
-extern void fatal PROTO((char *));
-
-#ifdef __cplusplus
-}
-#endif
-#endif /* !Py_ALLOBJECTS_H */
+extern object *newrangeobject PROTO((long, long, long, int));

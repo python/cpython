@@ -123,21 +123,18 @@ settupleitem(op, i, newitem)
 {
 	register object *olditem;
 	if (!is_tupleobject(op)) {
-		if (newitem != NULL)
-			DECREF(newitem);
+		XDECREF(newitem);
 		err_badcall();
 		return -1;
 	}
 	if (i < 0 || i >= ((tupleobject *)op) -> ob_size) {
-		if (newitem != NULL)
-			DECREF(newitem);
+		XDECREF(newitem);
 		err_setstr(IndexError, "tuple assignment index out of range");
 		return -1;
 	}
 	olditem = ((tupleobject *)op) -> ob_item[i];
 	((tupleobject *)op) -> ob_item[i] = newitem;
-	if (olditem != NULL)
-		DECREF(olditem);
+	XDECREF(olditem);
 	return 0;
 }
 
@@ -148,10 +145,8 @@ tupledealloc(op)
 	register tupleobject *op;
 {
 	register int i;
-	for (i = 0; i < op->ob_size; i++) {
-		if (op->ob_item[i] != NULL)
-			DECREF(op->ob_item[i]);
-	}
+	for (i = 0; i < op->ob_size; i++)
+		XDECREF(op->ob_item[i]);
 #if MAXSAVESIZE > 0
 	if (0 < op->ob_size && op->ob_size < MAXSAVESIZE) {
 		op->ob_item[0] = (object *) free_list[op->ob_size];
@@ -194,8 +189,7 @@ tuplerepr(v)
 			joinstring(&s, comma);
 		t = reprobject(v->ob_item[i]);
 		joinstring(&s, t);
-		if (t != NULL)
-			DECREF(t);
+		XDECREF(t);
 	}
 	DECREF(comma);
 	if (v->ob_size == 1) {
@@ -397,3 +391,42 @@ typeobject Tupletype = {
 	0,		/*tp_as_mapping*/
 	tuplehash,	/*tp_hash*/
 };
+
+/* The following function breaks the notion that tuples are immutable:
+   it changes the size of a tuple.  We get away with this only if there
+   is only one module referencing the object.  You can also think of it
+   as creating a new tuple object and destroying the old one, only
+   more efficiently.  In any case, don't use this if the tuple may
+   already be known to some other part of the code... */
+
+int
+resizetuple(pv, newsize)
+	object **pv;
+	int newsize;
+{
+	register object *v;
+	register tupleobject *sv;
+	v = *pv;
+	if (!is_tupleobject(v) || v->ob_refcnt != 1) {
+		*pv = 0;
+		DECREF(v);
+		err_badcall();
+		return -1;
+	}
+	/* XXX UNREF/NEWREF interface should be more symmetrical */
+#ifdef REF_DEBUG
+	--ref_total;
+#endif
+	UNREF(v);
+	*pv = (object *)
+		realloc((char *)v,
+			sizeof(tupleobject) + newsize * sizeof(object *));
+	if (*pv == NULL) {
+		DEL(v);
+		err_nomem();
+		return -1;
+	}
+	NEWREF(*pv);
+	((tupleobject *) *pv)->ob_size = newsize;
+	return 0;
+}
