@@ -46,6 +46,10 @@ resources to test.  Currently only the following are defined:
 
     all -       Enable all special resources.
 
+    audio -     Tests that use the audio device.  (There are known
+                cases of broken audio drivers that can crash Python or
+                even the Linux kernel.)
+
     curses -    Tests that use curses and will modify the terminal's
                 state and output modes.
 
@@ -101,7 +105,7 @@ if sys.platform == 'darwin':
 
 from test import test_support
 
-RESOURCE_NAMES = ('curses', 'largefile', 'network', 'bsddb')
+RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network', 'bsddb')
 
 
 def usage(code, msg=''):
