@@ -311,6 +311,24 @@ mac_listdir(self, args)
 	struct dirent *ep;
 	if (!PyArg_ParseTuple(args, "s", &name))
 		return NULL;
+#ifdef USE_GUSI
+	/* Work around a bug in GUSI: if you opendir() a file it will
+	** actually opendir() the parent directory.
+	*/
+	{
+		struct stat stb;
+		int res;
+		
+		res = stat(name, &stb);
+		if ( res < 0 )
+			return mac_error();
+		if (!S_ISDIR(stb.st_mode) ) {
+			errno = ENOTDIR;
+			return mac_error();
+		}
+	}
+#endif
+		
 	Py_BEGIN_ALLOW_THREADS
 	if ((dirp = opendir(name)) == NULL) {
 		Py_BLOCK_THREADS
