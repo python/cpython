@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 # Demo program for zlib; it compresses or decompresses files, but *doesn't*
 # delete the original.  This doesn't support all of gzip's options.
 
