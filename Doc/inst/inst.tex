@@ -168,8 +168,8 @@ a module distribution using the Distutils is usually one simple command:
 python setup.py install
 \end{verbatim}
 On Unix, you'd run this command from a shell prompt; on Windows, you
-have to open a command prompt window and do it there; on Mac~OS ...
-\XXX{what the heck do you do on Mac~OS?}.
+have to open a command prompt window (``DOS box'') and do it there; on
+Mac~OS, things are a tad more complicated (see below).
 
 
 \subsection{Platform variations}
@@ -185,18 +185,35 @@ cd foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Windows, you'd probably unpack the archive before opening the command
-prompt.  If you downloaded the archive file to
-\file{C:\textbackslash{}Temp}, then it probably unpacked (depending on
-your software) into
-\file{C:\textbackslash{}Temp\textbackslash{}foo-1.0}; from the command
-prompt window, you would then run
+On Windows, you'd probably download \file{foo-1.0.zip}.  If you
+downloaded the archive file to \file{C:\textbackslash{}Temp}, then it
+would unpack into \file{C:\textbackslash{}Temp\textbackslash{}foo-1.0};
+you can use either a GUI archive manipulator (such as WinZip) or a
+command-line tool (such as \program{unzip} or \program{pkunzip}) to
+unpack the archive.  Then, open a command prompt window (``DOS box''),
+and run:
 \begin{verbatim}
-cd c:\temp\foo-1.0
+cd c:\Temp\foo-1.0
 python setup.py install
 \end{verbatim}
 
-On Mac~OS, ... \XXX{again, how do you run Python scripts on Mac~OS?}
+On Mac~OS, you have to go through a bit more effort to supply
+command-line arguments to the setup script:
+\begin{itemize}
+\item hit option-double-click on the script's icon (or option-drop it
+  onto the Python interpreter's icon)
+\item press the ``Set unix-style command line'' button
+\item set the ``Keep stdio window open on termination'' if you're
+  interested in seeing the output of the setup script (which is usually
+  voluminous and often useful)
+\item (??) when the command-line dialog pops up, enter ``install'' (you
+  can, of course, enter any Distutils command-line as described in this
+  document or in the ``Distributing Python Modules'' document: just
+  leave of the initial \code{python setup.py} and you'll be fine)
+\end{itemize}
+\XXX{this should change: every Distutils setup script will need
+  command-line arguments for every run (and should probably keep stdout
+  around), so all this should happen automatically for setup scripts}
 
 
 \subsection{Splitting the job up}
