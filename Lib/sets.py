@@ -239,6 +239,8 @@ class BaseSet(object):
     def issubset(self, other):
         """Report whether another set contains this set."""
         self._binary_sanity_check(other)
+        if len(self) > len(other):  # Fast check for obvious cases
+            return False
         for elt in self:
             if elt not in other:
                 return False
@@ -247,6 +249,8 @@ class BaseSet(object):
     def issuperset(self, other):
         """Report whether this set contains another set."""
         self._binary_sanity_check(other)
+        if len(self) < len(other):  # Fast check for obvious cases
+            return False
         for elt in other:
             if elt not in self:
                 return False
