@@ -1,5 +1,8 @@
 Wed Mar  2 10:33:39 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
+	* Python/ceval.c (eval_code): use sys.check_interval to reset the
+	ticker
+
 	* Lib/repr.py: added special case for class instances (which may
 	cause exceptions in their __repr__)
 
