@@ -42,10 +42,8 @@ catch synchronous errors like \constant{SIGFPE} or \constant{SIGSEGV}.
 \item
 Python installs a small number of signal handlers by default:
 \constant{SIGPIPE} is ignored (so write errors on pipes and sockets can be
-reported as ordinary Python exceptions), \constant{SIGINT} is translated
-into a \exception{KeyboardInterrupt} exception, and \constant{SIGTERM} is
-caught so that necessary cleanup (especially \code{sys.exitfunc}) can
-be performed before actually terminating.  All of these can be
+reported as ordinary Python exceptions) and \constant{SIGINT} is translated
+into a \exception{KeyboardInterrupt} exception.  All of these can be
 overridden.
 
 \item
