@@ -6688,12 +6688,15 @@ unicode_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 	assert(PyUnicode_Check(tmp));
 	pnew = (PyUnicodeObject *) type->tp_alloc(type, n = tmp->length);
-	if (pnew == NULL)
+	if (pnew == NULL) {
+		Py_DECREF(tmp);
 		return NULL;
+	}
 	pnew->str = PyMem_NEW(Py_UNICODE, n+1);
 	if (pnew->str == NULL) {
 		_Py_ForgetReference((PyObject *)pnew);
 		PyObject_Del(pnew);
+		Py_DECREF(tmp);
 		return PyErr_NoMemory();
 	}
 	Py_UNICODE_COPY(pnew->str, tmp->str, n+1);
