@@ -64,12 +64,12 @@ Return \code{\var{x} \%\ \var{y}}.
 \end{funcdesc}
 
 \begin{funcdesc}{frexp}{x}
-Convert a floating-point number to fractional and integral
-components.  If \var{x} is zero, returns \code{(0.0, 0)}, otherwise
-returns \code{(\var{frac}, \var{exp})} such that \code{\var{frac} *
-2**\var{exp}} will equal \var{x}.  \var{exp} will be an integer, and
-the absolute value of \var{frac} will be in the range [0.5, 1.0)
-(\var{frac} will share the sign of \var{x}).
+% Blessed by Tim.
+Return the mantissa and exponent of \var{x} as the pair
+\code{(\var{m}, \var{e})}.  \var{m} is a float and \var{e} is an
+integer such that \code{\var{x} == \var{m} * 2**\var{e}}.
+If \var{x} is zero, returns \code{(0.0, 0)}, otherwise
+\code{0.5 <= abs(\var{m}) < 1}.
 \end{funcdesc}
 
 \begin{funcdesc}{hypot}{x, y}
