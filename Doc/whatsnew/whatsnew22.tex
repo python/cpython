@@ -38,8 +38,7 @@ Reference Manual}.
 If you want to understand the complete implementation and design
 rationale for a change, refer to the PEP for a particular new feature.
 
-
-The final release of Python 2.2 is planned for October 2001.
+The final release of Python 2.2 is planned for December 2001.
 
 \begin{seealso}
 
@@ -90,17 +89,18 @@ wants to be looped over; the \var{index} parameter is essentially
 meaningless, as the class probably assumes that a series of
 \method{__getitem__()} calls will be made, with \var{index}
 incrementing by one each time.  In other words, the presence of the
-\method{__getitem__()} method doesn't mean that \code{file[5]} will
-work, though it really should.
+\method{__getitem__()} method doesn't mean that using \code{file[5]} 
+to randomly access the sixth element will work, though it really should.
 
 In Python 2.2, iteration can be implemented separately, and
 \method{__getitem__()} methods can be limited to classes that really
 do support random access.  The basic idea of iterators is quite
-simple.  A new built-in function, \function{iter(obj)}, returns an
-iterator for the object \var{obj}.  (It can also take two arguments:
-\code{iter(\var{C}, \var{sentinel})} will call the callable \var{C},
-until it returns \var{sentinel}, which will signal that the iterator
-is done.  This form probably won't be used very often.)
+simple.  A new built-in function, \function{iter(obj)} or
+\code{iter(\var{C}, \var{sentinel})}, is used to get an iterator.
+\function{iter(obj)} returns an iterator for the object \var{obj},
+while \code{iter(\var{C}, \var{sentinel})} returns an iterator that
+will invoke the callable object \var{C} until it returns
+\var{sentinel} to signal that the iterator is done.  
 
 Python classes can define an \method{__iter__()} method, which should
 create and return a new iterator for the object; if the object is its
@@ -135,7 +135,7 @@ StopIteration
 
 In 2.2, Python's \keyword{for} statement no longer expects a sequence;
 it expects something for which \function{iter()} will return something.
-For backward compatibility, and convenience, an iterator is
+For backward compatibility and convenience, an iterator is
 automatically constructed for sequences that don't implement
 \method{__iter__()} or a \code{tp_iter} slot, so \code{for i in
 [1,2,3]} will still work.  Wherever the Python interpreter loops over
@@ -182,7 +182,6 @@ the \keyword{in} operator now works on dictionaries, so
 \code{\var{key} in dict} is now equivalent to
 \code{dict.has_key(\var{key})}.
 
-
 Files also provide an iterator, which calls the \method{readline()}
 method until there are no more lines in the file.  This means you can
 now read each line of a file using code like this:
@@ -212,7 +211,7 @@ Generators are another new feature, one that interacts with the
 introduction of iterators.
 
 You're doubtless familiar with how function calls work in Python or
-C.  When you call a function, it gets a private area where its local
+C.  When you call a function, it gets a private namespace where its local
 variables are created.  When the function reaches a \keyword{return}
 statement, the local variables are destroyed and the resulting value
 is returned to the caller.  A later call to the same function will get
@@ -232,7 +231,7 @@ def generate_ints(N):
 A new keyword, \keyword{yield}, was introduced for generators.  Any
 function containing a \keyword{yield} statement is a generator
 function; this is detected by Python's bytecode compiler which
-compiles the function specially.  Because a new keyword was
+compiles the function specially as a result.  Because a new keyword was
 introduced, generators must be explicitly enabled in a module by
 including a \code{from __future__ import generators} statement near
 the top of the module's source code.  In Python 2.3 this statement
@@ -240,10 +239,10 @@ will become unnecessary.
 
 When you call a generator function, it doesn't return a single value;
 instead it returns a generator object that supports the iterator
-interface.  On executing the \keyword{yield} statement, the generator
+protocol.  On executing the \keyword{yield} statement, the generator
 outputs the value of \code{i}, similar to a \keyword{return}
 statement.  The big difference between \keyword{yield} and a
-\keyword{return} statement is that, on reaching a \keyword{yield} the
+\keyword{return} statement is that on reaching a \keyword{yield} the
 generator's state of execution is suspended and local variables are
 preserved.  On the next call to the generator's \code{.next()} method,
 the function will resume executing immediately after the
@@ -315,7 +314,7 @@ without visiting any square twice).
 
 The idea of generators comes from other programming languages,
 especially Icon (\url{http://www.cs.arizona.edu/icon/}), where the
-idea of generators is central to the language.  In Icon, every
+idea of generators is central.  In Icon, every
 expression and function call behaves like a generator.  One example
 from ``An Overview of the Icon Programming Language'' at
 \url{http://www.cs.arizona.edu/icon/docs/ipd266.htm} gives an idea of
@@ -337,8 +336,7 @@ Python doesn't go nearly as far as Icon in adopting generators as a
 central concept.  Generators are considered a new part of the core
 Python language, but learning or using them isn't compulsory; if they
 don't solve any problems that you have, feel free to ignore them.
-This is different from Icon where the idea of generators is a basic
-concept.  One novel feature of Python's interface as compared to
+One novel feature of Python's interface as compared to
 Icon's is that a generator's state is represented as a concrete object
 that can be passed around to other functions or stored in a data
 structure.
@@ -358,7 +356,7 @@ and Tim Peters, with other fixes from the Python Labs crew.}
 In recent versions, the distinction between regular integers, which
 are 32-bit values on most machines, and long integers, which can be of
 arbitrary size, was becoming an annoyance.  For example, on platforms
-that support large files (files larger than \code{2**32} bytes), the
+that support files larger than \code{2**32} bytes, the
 \method{tell()} method of file objects has to return a long integer.
 However, there were various bits of Python that expected plain
 integers and would raise an error if a long integer was provided
@@ -385,7 +383,7 @@ will now return a long integer as their result.  For example:
 In most cases, integers and long integers will now be treated
 identically.  You can still distinguish them with the
 \function{type()} built-in function, but that's rarely needed.  The
-\function{int()} function will now return a long integer if the value
+\function{int()} constructor will now return a long integer if the value
 is large enough.  
 
 \begin{seealso}
@@ -402,9 +400,9 @@ Moshe Zadka and Guido van Rossum.  Implemented mostly by Guido van Rossum.}
 The most controversial change in Python 2.2 is the start of an effort
 to fix an old design flaw that's been in Python from the beginning.
 Currently Python's division operator, \code{/}, behaves like C's
-division operator when presented with two integer arguments.  It
+division operator when presented with two integer arguments: it
 returns an integer result that's truncated down when there would be
-fractional part.  For example, \code{3/2} is 1, not 1.5, and
+a fractional part.  For example, \code{3/2} is 1, not 1.5, and
 \code{(-1)/2} is -1, not -0.5.  This means that the results of divison
 can vary unexpectedly depending on the type of the two operands and
 because Python is dynamically typed, it can be difficult to determine
@@ -414,14 +412,15 @@ the possible types of the operands.
 and whether it's worth breaking existing code to fix this.  It's
 caused endless discussions on python-dev and in July erupted into an
 storm of acidly sarcastic postings on \newsgroup{comp.lang.python}. I
-won't argue for either side here; read PEP 238 for a summary of
-arguments and counter-arguments.)
+won't argue for either side here and will stick to describing what's 
+implemented in 2.2.  Read PEP 238 for a summary of arguments and
+counter-arguments.)  
 
 Because this change might break code, it's being introduced very
 gradually.  Python 2.2 begins the transition, but the switch won't be
 complete until Python 3.0.
 
-First, some terminology from PEP 238.  ``True division'' is the
+First, I'll borrow some terminology from PEP 238.  ``True division'' is the
 division that most non-programmers are familiar with: 3/2 is 1.5, 1/4
 is 0.25, and so forth.  ``Floor division'' is what Python's \code{/}
 operator currently does when given integer operands; the result is the
@@ -481,10 +480,11 @@ accordingly.  Using an interpreter compiled to use UCS-2 (a ``narrow
 Python''), values greater than 65535 will still cause
 \function{unichr()} to raise a \exception{ValueError} exception.
 
+% XXX is this still unimplemented?
 All this is the province of the still-unimplemented PEP 261, ``Support
 for `wide' Unicode characters''; consult it for further details, and
 please offer comments on the PEP and on your experiences with the
-2.2 alpha releases.
+2.2 beta releases.
 % XXX update previous line once 2.2 reaches beta.
 
 Another change is much simpler to explain. Since their introduction,
@@ -519,6 +519,10 @@ end
 'furrfu'
 \end{verbatim}
 
+To convert a class instance to Unicode, a \method{__unicode__} method
+can be defined, analogous to \method{__str__}.
+% XXX who implemented that?
+
 \method{encode()} and \method{decode()} were implemented by
 Marc-Andr\'e Lemburg.  The changes to support using UCS-4 internally
 were implemented by Fredrik Lundh and Martin von L\"owis.
@@ -536,7 +540,7 @@ Paul Prescod.  Not yet accepted or fully implemented.}
 In Python 2.1, statically nested scopes were added as an optional
 feature, to be enabled by a \code{from __future__ import
 nested_scopes} directive.  In 2.2 nested scopes no longer need to be
-specially enabled, but are always enabled.  The rest of this section
+specially enabled, and are now always present.  The rest of this section
 is a copy of the description of nested scopes from my ``What's New in
 Python 2.1'' document; if you read it when 2.1 came out, you can skip
 the rest of this section.
@@ -641,11 +645,11 @@ Jeremy Hylton.}
 \begin{itemize}
 
   \item The \module{xmlrpclib} module was contributed to the standard
-  library by Fredrik Lundh.  It provides support for writing XML-RPC
-  clients; XML-RPC is a simple remote procedure call protocol built on
+  library by Fredrik Lundh, provding support for writing XML-RPC
+  clients.  XML-RPC is a simple remote procedure call protocol built on
   top of HTTP and XML. For example, the following snippet retrieves a
-  list of RSS channels from the O'Reilly Network, and then retrieves a
-  list of the recent headlines for one channel:
+  list of RSS channels from the O'Reilly Network, and then 
+  lists the recent headlines for one channel:
 
 \begin{verbatim}
 import xmlrpclib
@@ -673,6 +677,10 @@ more information about XML-RPC.
   \item The new \module{hmac} module implements implements the HMAC
   algorithm described by \rfc{2104}.
 
+  \item The Python profiler has been extensively reworked and various
+  errors in its output have been corrected.  (Contributed by Fred
+  Fred~L. Drake, Jr. and Tim Peters.)
+ 
   \item The \module{socket} module can be compiled to support IPv6;
   specify the \longprogramopt{enable-ipv6} option to Python's configure
   script.  (Contributed by Jun-ichiro ``itojun'' Hagino.)
@@ -684,8 +692,8 @@ more information about XML-RPC.
   Python's long integer type.  (Contributed by Tim Peters.)
 
   \item In the interpreter's interactive mode, there's a new built-in
-  function \function{help()}, that uses the \module{pydoc} module
-  introduced in Python 2.1 to provide interactive.
+  function \function{help()} that uses the \module{pydoc} module
+  introduced in Python 2.1 to provide interactive help.
   \code{help(\var{object})} displays any available help text about
   \var{object}.  \code{help()} with no argument puts you in an online
   help utility, where you can enter the names of functions, classes,
@@ -726,12 +734,12 @@ more information about XML-RPC.
   use, because \constant{string.letters} varies depending on the set
   of legal characters defined by the current locale.  The buggy
   modules have all been fixed to use \constant{ascii_letters} instead.
-  (Reported by an unknown person; fixed by Fred L. Drake, Jr.)
+  (Reported by an unknown person; fixed by Fred~L. Drake, Jr.)
 
   \item The \module{mimetypes} module now makes it easier to use
   alternative MIME-type databases by the addition of a
   \class{MimeTypes} class, which takes a list of filenames to be
-  parsed.  (Contributed by Fred L. Drake, Jr.)
+  parsed.  (Contributed by Fred~L. Drake, Jr.)
 
   \item A \class{Timer} class was added to the \module{threading}
   module that allows scheduling an activity to happen at some future
@@ -744,7 +752,7 @@ more information about XML-RPC.
 \section{Interpreter Changes and Fixes}
 
 Some of the changes only affect people who deal with the Python
-interpreter at the C level, writing Python extension modules,
+interpreter at the C level because they're writing Python extension modules,
 embedding the interpreter, or just hacking on the interpreter itself.
 If you only write Python code, none of the changes described here will
 affect you very much.
@@ -753,8 +761,8 @@ affect you very much.
 
   \item Profiling and tracing functions can now be implemented in C,
   which can operate at much higher speeds than Python-based functions
-  and should reduce the overhead of enabling profiling and tracing, so
-  it will be of interest to authors of development environments for
+  and should reduce the overhead of profiling and tracing.  This 
+  will be of interest to authors of development environments for
   Python.  Two new C functions were added to Python's API,
   \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
   The existing \function{sys.setprofile()} and
@@ -779,7 +787,8 @@ affect you very much.
   desired encoding.  This differs from the \samp{es} format character,
   which assumes that 8-bit strings are in Python's default ASCII
   encoding and converts them to the specified new encoding.
-  (Contributed by M.-A. Lemburg.)
+  (Contributed by M.-A. Lemburg, and used for the MBCS support on
+  Windows described in the following section.)
  
   \item Two new flags \constant{METH_NOARGS} and \constant{METH_O} are
    available in method definition tables to simplify implementation of
@@ -791,7 +800,7 @@ affect you very much.
 
 \item
    Two new wrapper functions, \cfunction{PyOS_snprintf()} and
-   \cfunction{PyOS_vsnprintf()} were added.  which provide a
+   \cfunction{PyOS_vsnprintf()} were added to provide 
    cross-platform implementations for the relatively new
    \cfunction{snprintf()} and \cfunction{vsnprintf()} C lib APIs. In
    contrast to the standard \cfunction{sprintf()} and
@@ -832,7 +841,7 @@ using Python as a standard OSA scripting language and much more.''
 
 Most of the MacPython toolbox modules, which interface to MacOS APIs
 such as windowing, QuickTime, scripting, etc. have been ported to OS
-X, but they've been left commented out in setup.py.  People who want
+X, but they've been left commented out in \filename{setup.py}.  People who want
 to experiment with these modules can uncomment them manually.
 
 % Jack's original comments:
@@ -853,21 +862,28 @@ to experiment with these modules can uncomment them manually.
 %they have been commented out in setup.py. People wanting to experiment
 %can uncomment them. Gestalt and Internet Config modules are enabled by
 %default.
-
   
   \item Keyword arguments passed to builtin functions that don't take them
   now cause a \exception{TypeError} exception to be raised, with the
   message "\var{function} takes no keyword arguments".
   
+  \item Weak references, added in Python 2.1 as an extension module,
+  are now part of the core because they're used in the implementation
+  of new-style classes.  The \exception{ReferenceError} exception has
+  therefore moved from the \module{weakref} module to become a
+  built-in exception.
+
   \item A new script, \file{Tools/scripts/cleanfuture.py} by Tim
   Peters, automatically removes obsolete \code{__future__} statements
   from Python source code.
 
   \item The new license introduced with Python 1.6 wasn't
   GPL-compatible.  This is fixed by some minor textual changes to the
-  2.2 license, so Python can now be embedded inside a GPLed program
-  again.  The license changes were also applied to the Python 2.0.1
-  and 2.1.1 releases.
+  2.2 license, so it's now legal to embed Python inside a GPLed
+  program again.  Note that Python itself is not GPLed, but instead is
+  under a license that's essentially equivalent to the BSD license,
+  same as it always was.  The license changes were also applied to the
+  Python 2.0.1 and 2.1.1 releases.
 
   \item When presented with a Unicode filename on Windows, Python will
   now convert it to an MBCS encoded string, as used by the Microsoft
@@ -900,8 +916,8 @@ to experiment with these modules can uncomment them manually.
   implementation, mostly to fix potential core dumps if a dictionary
   contains objects that sneakily changed their hash value, or mutated
   the dictionary they were contained in. For a while python-dev fell
-  into a gentle rhythm of Michael Hudson finding a case that dump
-  core, Tim Peters fixing it, Michael finding another case, and round
+  into a gentle rhythm of Michael Hudson finding a case that dumped
+  core, Tim Peters fixing the bug, Michael finding another case, and round
   and round it went.   
 
   \item On Windows, Python can now be compiled with Borland C thanks
@@ -941,7 +957,7 @@ to experiment with these modules can uncomment them manually.
 
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
-Bremmer, Keith Briggs, Fred L. Drake, Jr., Carel Fellinger, Mark
+Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr., Carel Fellinger, Mark
 Hammond, Stephen Hansen, Jack Jansen, Marc-Andr\'e Lemburg, Tim Peters, Neil
 Schemenauer, Guido van Rossum.
 
