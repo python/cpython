@@ -2890,7 +2890,7 @@ int PyUnicode_Find(PyObject *str,
 	return -2;
     substr = PyUnicode_FromObject(substr);
     if (substr == NULL) {
-	Py_DECREF(substr);
+	Py_DECREF(str);
 	return -2;
     }
     
