@@ -54,6 +54,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libfpectl.tex \
 	lib/libgc.tex \
 	lib/libweakref.tex \
+	lib/libinspect.tex \
 	lib/libdifflib.tex \
 	lib/libdoctest.tex \
 	lib/libtypes.tex \
