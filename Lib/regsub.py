@@ -107,6 +107,7 @@ def expand(repl, regs, str):
 		return repl
 	new = ''
 	i = 0
+	ord0 = ord('0')
 	while i < len(repl):
 		c = repl[i]; i = i+1
 		if c <> '\\' or i >= len(repl):
@@ -114,7 +115,7 @@ def expand(repl, regs, str):
 		else:
 			c = repl[i]; i = i+1
 			if '0' <= c <= '9':
-				a, b = regs[eval(c)]
+				a, b = regs[ord(c)-ord0]
 				new = new + str[a:b]
 			elif c == '\\':
 				new = new + c
