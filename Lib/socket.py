@@ -217,7 +217,7 @@ class _fileobject(object):
         self._wbuf = [] # A list of strings
 
     def _getclosed(self):
-        return self._sock is not None
+        return self._sock is None
     closed = property(_getclosed, doc="True if the file is closed")
 
     def close(self):
