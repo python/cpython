@@ -53,43 +53,67 @@ def play_sound_file(data, rate, ssize, nchannels):
 
     # set parameters based on .au file headers
     dsp.setparameters(fmt, nchannels, rate)
+    t1 = time.time()
+    print "playing test sound file..."
     dsp.write(data)
-    dsp.flush()
     dsp.close()
+    t2 = time.time()
+    print "elapsed time: %.1f sec" % (t2-t1)
 
-def test_errors():
+def test_setparameters():
     dsp = ossaudiodev.open("w")
-    fmt = ossaudiodev.AFMT_U8
-    rate = 8000
-    nchannels = 1
-    try:
-        dsp.setparameters(fmt, nchannels, -1)
-    except ossaudiodev.error, msg:
-        print msg
-    try:
-        dsp.setparameters(fmt, nchannels, rate)
-    except ossaudiodev.error, msg:
-        print msg
-    try:
-        dsp.setparameters(fmt, 3, rate)
-    except ossaudiodev.error, msg:
-        print msg
-    try:
-        dsp.setparameters(177, nchannels, rate)
-    except ossaudiodev.error, msg:
-        print msg
-    try:
-        dsp.setparameters(ossaudiodev.AFMT_U16_LE, nchannels, rate)
-    except ossaudiodev.error, msg:
-        print msg
-    try:
-        dsp.setparameters(rate, nchannels, fmt)
-    except ossaudiodev.error, msg:
-        print msg
+
+    # Two configurations for testing:
+    #   config1 (8-bit, mono, 8 kHz) should work on even the most
+    #      ancient and crufty sound card, but maybe not on special-
+    #      purpose high-end hardware
+    #   config2 (16-bit, stereo, 44.1kHz) should work on all but the
+    #      most ancient and crufty hardware
+    config1 = (ossaudiodev.AFMT_U8, 1, 8000)
+    config2 = (ossaudiodev.AFMT_S16_NE, 2, 44100)
+
+    for config in [config1, config2]:
+        (fmt, channels, rate) = config
+        if (dsp.setfmt(fmt) == fmt and
+            dsp.channels(channels) == channels and
+            dsp.speed(rate) == rate):
+            break
+    else:
+        raise RuntimeError("unable to set audio sampling parameters: "
+                           "you must have really weird audio hardware")
+
+    # setparameters() should be able to set this configuration in
+    # either strict or non-strict mode.
+    result = dsp.setparameters(fmt, channels, rate, False)
+    assert result == (fmt, channels, rate), \
+           "setparameters%r: returned %r" % (config + result)
+    result = dsp.setparameters(fmt, channels, rate, True)
+    assert result == (fmt, channels, rate), \
+           "setparameters%r: returned %r" % (config + result)
+
+    # Now try some configurations that are presumably bogus: eg. 300
+    # channels currently exceeds even Hollywood's ambitions, and
+    # negative sampling rate is utter nonsense.  setparameters() should
+    # accept these in non-strict mode, returning something other than
+    # was requested, but should barf in strict mode.
+    for config in [(fmt, 300, rate),       # ridiculous nchannels
+                   (fmt, -5, rate),        # impossible nchannels
+                   (fmt, channels, -50),   # impossible rate
+                  ]:
+        (fmt, channels, rate) = config
+        result = dsp.setparameters(fmt, channels, rate, False)
+        assert result != config, \
+               "setparameters: unexpectedly got requested configuration"
+
+        try:
+            result = dsp.setparameters(fmt, channels, rate, True)
+            raise AssertionError("setparameters: expected OSSAudioError")
+        except ossaudiodev.OSSAudioError, err:
+            print "setparameters: got OSSAudioError as expected"
 
 def test():
     (data, rate, ssize, nchannels) = read_sound_file(findfile('audiotest.au'))
     play_sound_file(data, rate, ssize, nchannels)
-    test_errors()
+    test_setparameters()
 
 test()
