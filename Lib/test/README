@@ -78,7 +78,7 @@ example:
         test_main(1)
 
 If run via regrtest, test_main() is called (by regrtest) without specifying
-verbose, and then test_supprot's idea of verbosity is used.  But when
+verbose, and then test_support's idea of verbosity is used.  But when
 run directly, test_main(1) is called, and then doctest's idea of verbosity
 is used.
 
