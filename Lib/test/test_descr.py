@@ -1951,6 +1951,13 @@ def coercions():
     coerce(0., C(0))
     coerce(0j, C(0))
 
+def descrdoc():
+    if verbose: print "Testing descriptor doc strings..."
+    def check(descr, what):
+        verify(descr.__doc__ == what, repr(descr.__doc__))
+    check(file.closed, "flag set if the file is closed") # getset descriptor
+    check(file.name, "file name") # member descriptor
+
 
 def test_main():
     lists()
@@ -1992,6 +1999,7 @@ def test_main():
     classic_comparisons()
     rich_comparisons()
     coercions()
+    descrdoc()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
