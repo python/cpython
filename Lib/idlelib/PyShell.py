@@ -119,8 +119,7 @@ class PyShellEditorWindow(EditorWindow):
                                     
 
 class PyShellFileList(FileList):
-
-    # File list when a shell is present
+    "Extend base class: file list when a shell is present"
 
     EditorWindow = PyShellEditorWindow
 
@@ -136,8 +135,7 @@ class PyShellFileList(FileList):
 
 
 class ModifiedColorDelegator(ColorDelegator):
-
-    # Colorizer for the shell window itself
+    "Extend base class: colorizer for the shell window itself"
     
     def __init__(self):
         ColorDelegator.__init__(self)
@@ -161,8 +159,7 @@ class ModifiedColorDelegator(ColorDelegator):
         })
 
 class ModifiedUndoDelegator(UndoDelegator):
-
-    # Forbid insert/delete before the I/O mark
+    "Extend base class: forbid insert/delete before the I/O mark"
 
     def insert(self, index, chars, tags=None):
         try:
@@ -283,12 +280,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
     gid = 0
 
     def execsource(self, source):
-        # Like runsource() but assumes complete exec source
+        "Like runsource() but assumes complete exec source"
         filename = self.stuffsource(source)
         self.execfile(filename, source)
 
     def execfile(self, filename, source=None):
-        # Execute an existing file
+        "Execute an existing file"
         if source is None:
             source = open(filename, "r").read()
         try:
@@ -300,7 +297,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.runcode(code)
 
     def runsource(self, source):
-        # Extend base class to stuff the source in the line cache first
+        "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
         self.more = 0
         self.save_warnings_filters = warnings.filters[:]
@@ -313,7 +310,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 self.save_warnings_filters = None
 
     def stuffsource(self, source):
-        # Stuff source in the filename cache
+        "Stuff source in the filename cache"
         filename = "<pyshell#%d>" % self.gid
         self.gid = self.gid + 1
         lines = string.split(source, "\n")
@@ -321,8 +318,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return filename
 
     def showsyntaxerror(self, filename=None):
-        # Extend base class to color the offending position
-        # (instead of printing it and pointing at it with a caret)
+        """Extend base class method: Add Colorizing
+
+        Color the offending position instead of printing it and pointing at it
+        with a caret.
+
+        """
         text = self.tkconsole.text
         stuff = self.unpackerror()
         if not stuff:
@@ -357,7 +358,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             return None
 
     def showtraceback(self):
-        # Extend base class method to reset output properly
+        "Extend base class method to reset output properly"
         self.tkconsole.resetoutput()
         self.checklinecache()
         InteractiveInterpreter.showtraceback(self)
@@ -379,7 +380,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return self.debugger
 
     def runcommand(self, code):
-        # This runs the code without invoking the debugger.
+        "Run the code without invoking the debugger"
         # The code better not raise an exception!
         if self.tkconsole.executing:
             tkMessageBox.showerror(
@@ -395,7 +396,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         return 1
 
     def runcode(self, code):
-        # Override base class method
+        "Override base class method"
         if self.tkconsole.executing:
             tkMessageBox.showerror(
                 "Already executing",
@@ -403,7 +404,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 "please wait until it is finished.",
                 master=self.tkconsole.text)
             return
-
+        #
         self.checklinecache()
         if self.save_warnings_filters is not None:
             warnings.filters[:] = self.save_warnings_filters
@@ -414,7 +415,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.active_seq = self.rpcclt.asynccall("exec", "runcode",
                                                     (code,), {})
             return
-
+        #
         try:
             self.tkconsole.beginexecuting()
             try:
@@ -433,12 +434,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     self.showtraceback()
             except:
                 self.showtraceback()
-
+        #        
         finally:
             self.tkconsole.endexecuting()
 
     def write(self, s):
-        # Override base class write
+        "Override base class method"
         self.tkconsole.console.write(s)
 
 class PyShell(OutputWindow):
@@ -565,7 +566,7 @@ class PyShell(OutputWindow):
         ##sys.settrace(self._cancel_check)
 
     def endexecuting(self):
-        # Helper for ModifiedInterpreter
+        "Helper for ModifiedInterpreter"
         ##sys.settrace(None)
         ##self._cancel_check = None
         self.executing = 0
@@ -573,7 +574,7 @@ class PyShell(OutputWindow):
         self.showprompt()
 
     def close(self):
-        # Extend base class method
+        "Extend EditorWindow.close()"
         if self.executing:
             # XXX Need to ask a question here
             if not tkMessageBox.askokcancel(
@@ -586,9 +587,10 @@ class PyShell(OutputWindow):
             if self.reading:
                 self.top.quit()
             return "cancel"
-        return OutputWindow.close(self)
+        return EditorWindow.close(self)
 
     def _close(self):
+        "Extend EditorWindow._close(), shut down debugger and execution server"
         self.close_debugger()
         self.interp.kill_subprocess()
         # Restore std streams
@@ -601,10 +603,10 @@ class PyShell(OutputWindow):
         self.auto = None
         self.flist.pyshell = None
         self.history = None
-        OutputWindow._close(self) # Really EditorWindow._close
+        EditorWindow._close(self)
 
     def ispythonsource(self, filename):
-        # Override this so EditorWindow never removes the colorizer
+        "Override EditorWindow method: never remove the colorizer"
         return 1
 
     def short_title(self):
@@ -781,9 +783,6 @@ class PyShell(OutputWindow):
             i = i-1
         line = line[:i]
         more = self.interp.runsource(line)
-        # XXX This was causing extra prompt with shell  KBK
-#       if not more:
-#           self.showprompt()
 
     def cancel_check(self, frame, what, args,
                      dooneevent=tkinter.dooneevent,

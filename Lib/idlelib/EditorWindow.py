@@ -490,15 +490,15 @@ class EditorWindow:
         self.per.insertfilter(self.undo)
         
     def ResetColorizer(self):
-        #this function is called from configDialog.py
-        #to update the colour theme if it is changed
+        "Update the colour theme if it is changed"
+        # Called from configDialog.py
         if self.color:
             self.color = self.ColorDelegator()
             self.per.insertfilter(self.color)
 
     def ResetFont(self):
-        #this function is called from configDialog.py
-        #to update the text widgets' font if it is changed
+        "Update the text widgets' font if it is changed" 
+        # Called from configDialog.py
         fontWeight='normal'
         if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
             fontWeight='bold'
@@ -507,8 +507,8 @@ class EditorWindow:
                 fontWeight))
 
     def ResetKeybindings(self):
-        #this function is called from configDialog.py
-        #to update the keybindings if they are changed
+        "Update the keybindings if they are changed"
+        # Called from configDialog.py
         self.Bindings.default_keydefs=idleConf.GetCurrentKeySet()
         keydefs = self.Bindings.default_keydefs
         for event, keylist in keydefs.items():
@@ -540,7 +540,7 @@ class EditorWindow:
                             #print 'accel now:',accel,'\n'
 
     def ResetExtraHelpMenu(self):
-        #load or update the Extra Help menu if required
+        "Load or update the Extra Help menu if required"
         menuList=idleConf.GetAllExtraHelpSourcesList()
         helpMenu=self.menudict['help']
         cascadeIndex=helpMenu.index(END)-1
@@ -564,7 +564,7 @@ class EditorWindow:
         return DisplayExtraHelp
                     
     def UpdateRecentFilesList(self,newFile=None):
-        #load or update the recent files list, and menu if required
+        "Load or update the recent files list, and menu if required"
         rfList=[]
         if os.path.exists(self.recentFilesPath):
             RFfile=open(self.recentFilesPath,'r')
@@ -578,8 +578,9 @@ class EditorWindow:
                 rfList.remove(newFile)
             rfList.insert(0,newFile)
         rfList=self.__CleanRecentFiles(rfList)
-        print self.top.instanceDict
-        print self
+        #print self.flist.inversedict
+        #print self.top.instanceDict
+        #print self
         if rfList:
             for instance in self.top.instanceDict.keys():
                 instance.menuRecentFiles.delete(1,END)
@@ -695,10 +696,12 @@ class EditorWindow:
         return reply
 
     def _close(self):
-        print self.io.filename
+        #print self.io.filename
         if self.io.filename:
             self.UpdateRecentFilesList(newFile=self.io.filename)
-            
+        shell = self.flist.pyshell
+        if shell and shell.interp.debugger:
+            shell.interp.debugger.clear_file_breaks(self)
         WindowList.unregister_callback(self.postwindowsmenu)
         if self.close_hook:
             self.close_hook()
@@ -756,7 +759,6 @@ class EditorWindow:
                 methodname = methodname + "_event"
                 if hasattr(ins, methodname):
                     self.text.bind(vevent, getattr(ins, methodname))
-       
         if hasattr(ins, "menudefs"):
             self.fill_menus(ins.menudefs, keydefs)
         return ins
@@ -771,8 +773,10 @@ class EditorWindow:
                 apply(text.event_add, (event,) + tuple(keylist))
 
     def fill_menus(self, defs=None, keydefs=None):
-        # Fill the menus. Menus that are absent or None in
-        # self.menudict are ignored.
+        """Add appropriate entries to the menus and submenus
+
+        Menus that are absent or None in self.menudict are ignored.
+        """
         if defs is None:
             defs = self.Bindings.menudefs
         if keydefs is None:

@@ -320,17 +320,27 @@ class Debugger:
         text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
 
     def clear_breakpoint_here(self, edit):
-         text = edit.text
-         filename = edit.io.filename
-         if not filename:
-                 text.bell()
-                 return
-         lineno = int(float(text.index("insert")))
-         msg = self.idb.clear_break(filename, lineno)
-         if msg:
-             text.bell()
-             return
-         text.tag_remove("BREAK", "insert linestart",\
-                         "insert lineend +1char")
+        text = edit.text
+        filename = edit.io.filename
+        if not filename:
+            text.bell()
+            return
+        lineno = int(float(text.index("insert")))
+        msg = self.idb.clear_break(filename, lineno)
+        if msg:
+            text.bell()
+            return
+        text.tag_remove("BREAK", "insert linestart",\
+                        "insert lineend +1char")
 
-
+    def clear_file_breaks(self, edit):
+        text = edit.text
+        filename = edit.io.filename
+        if not filename:
+            text.bell()
+            return
+        msg = self.idb.clear_all_file_breaks(filename)
+        if msg:
+            text.bell()
+            return
+        text.tag_delete("BREAK")

@@ -101,6 +101,9 @@ class IdbAdapter:
     def clear_break(self, filename, lineno):
         msg = self.idb.clear_break(filename, lineno)
 
+    def clear_all_file_breaks(self, filename):
+        msg = self.idb.clear_all_file_breaks(filename)
+
     #----------called by a FrameProxy----------
 
     def frame_attr(self, fid, name):
@@ -148,14 +151,6 @@ class IdbAdapter:
         dict = dicttable[did]
         value = dict[key]
         value = repr(value)
-#          try:
-#              # Test for picklability
-#              import cPickle
-#              pklstr = cPickle.dumps(value)
-#          except:
-#              print >>sys.__stderr__, "** dict_item pickle failed: ", value
-#              raise    
-#              #value = None
         return value
 
 #----------end class IdbAdapter----------
@@ -165,9 +160,9 @@ def start_debugger(conn, gui_adap_oid):
     """Start the debugger and its RPC link in the Python subprocess
 
     Start the subprocess side of the split debugger and set up that side of the
-    RPC link by instantiating the GUIProxy, Idle debugger, and IdbAdapter
+    RPC link by instantiating the GUIProxy, Idb debugger, and IdbAdapter
     objects and linking them together.  Register the IdbAdapter to handle RPC
-    requests from the split Debugger GUI via the IdbProxy.
+    requests from the split debugger GUI via the IdbProxy.
 
     """
     gui_proxy = GUIProxy(conn, gui_adap_oid)
@@ -316,12 +311,16 @@ class IdbProxy:
     def clear_break(self, filename, lineno):
         msg = self.call("clear_break", filename, lineno)
 
+    def clear_all_file_breaks(self, filename):
+        msg = self.call("clear_all_file_breaks", filename)
+        
+
 def start_remote_debugger(conn, pyshell):
     """Start the subprocess debugger, initialize the debugger GUI and RPC link
 
     Request the RPCServer start the Python subprocess debugger and link.  Set
     up the Idle side of the split debugger by instantiating the IdbProxy,
-    Debugger GUI, and Debugger GUIAdapter objects and linking them together.
+    debugger GUI, and debugger GUIAdapter objects and linking them together.
 
     Register the GUIAdapter to handle debugger GUI interaction requests coming
     from the subprocess debugger via the GUIProxy.
