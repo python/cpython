@@ -6,7 +6,6 @@ import sys, os, string
 from types import IntType
 from distutils.core import Command
 from distutils.errors import DistutilsOptionError
-from distutils.dir_util import copy_tree
 
 class install_lib (Command):
 
