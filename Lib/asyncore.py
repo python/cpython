@@ -60,56 +60,63 @@ try:
 except NameError:
     socket_map = {}
 
-class ExitNow (exceptions.Exception):
+class ExitNow(exceptions.Exception):
     pass
 
-DEBUG = 0
+def read(obj):
+    try:
+        obj.handle_read_event()
+    except ExitNow:
+        raise
+    except:
+        obj.handle_error()
+
+def write(obj):
+    try:
+        obj.handle_write_event()
+    except ExitNow:
+        raise
+    except:
+        obj.handle_error()
+
+def readwrite(obj, flags):
+    try:
+        if flags & select.POLLIN:
+            obj.handle_read_event()
+        if flags & select.POLLOUT:
+            obj.handle_write_event()
+    except ExitNow:
+        raise
+    except:
+        obj.handle_error()
 
 def poll (timeout=0.0, map=None):
     if map is None:
         map = socket_map
     if map:
         r = []; w = []; e = []
-        for fd, obj in map.items():
+        for fd, obj in map.iteritems():
             if obj.readable():
-                r.append (fd)
+                r.append(fd)
             if obj.writable():
-                w.append (fd)
+                w.append(fd)
         try:
-            r,w,e = select.select (r,w,e, timeout)
+            r, w, e = select.select(r, w, e, timeout)
         except select.error, err:
             if err[0] != EINTR:
                 raise
-            r = []; w = []; e = []
-
-        if DEBUG:
-            print r,w,e
 
         for fd in r:
-            try:
-                obj = map[fd]
-            except KeyError:
+            obj = map.get(fd)
+            if obj is None:
                 continue
-
-            try:
-                obj.handle_read_event()
-            except ExitNow:
-                raise ExitNow
-            except:
-                obj.handle_error()
+            read(obj)
 
         for fd in w:
-            try:
-                obj = map[fd]
-            except KeyError:
+            obj = map.get(fd)
+            if obj is None:
                 continue
-
-            try:
-                obj.handle_write_event()
-            except ExitNow:
-                raise ExitNow
-            except:
-                obj.handle_error()
+            write(obj)
 
 def poll2 (timeout=0.0, map=None):
     import poll
@@ -120,7 +127,7 @@ def poll2 (timeout=0.0, map=None):
         timeout = int(timeout*1000)
     if map:
         l = []
-        for fd, obj in map.items():
+        for fd, obj in map.iteritems():
             flags = 0
             if obj.readable():
                 flags = poll.POLLIN
@@ -130,20 +137,10 @@ def poll2 (timeout=0.0, map=None):
                 l.append ((fd, flags))
         r = poll.poll (l, timeout)
         for fd, flags in r:
-            try:
-                obj = map[fd]
-            except KeyError:
+            obj = map.get(fd)
+            if obj is None:
                 continue
-
-            try:
-                if (flags  & poll.POLLIN):
-                    obj.handle_read_event()
-                if (flags & poll.POLLOUT):
-                    obj.handle_write_event()
-            except ExitNow:
-                raise ExitNow
-            except:
-                obj.handle_error()
+            readwrite(obj, flags)
 
 def poll3 (timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
@@ -154,7 +151,7 @@ def poll3 (timeout=0.0, map=None):
         timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
-        for fd, obj in map.items():
+        for fd, obj in map.iteritems():
             flags = 0
             if obj.readable():
                 flags = select.POLLIN
@@ -169,25 +166,14 @@ def poll3 (timeout=0.0, map=None):
                 raise
             r = []
         for fd, flags in r:
-            try:
-                obj = map[fd]
-            except KeyError:
+            obj = map.get(fd)
+            if obj is None:
                 continue
-
-            try:
-                if (flags  & select.POLLIN):
-                    obj.handle_read_event()
-                if (flags & select.POLLOUT):
-                    obj.handle_write_event()
-            except ExitNow:
-                raise ExitNow
-            except:
-                obj.handle_error()
+            readwrite(obj, flags)
 
 def loop (timeout=30.0, use_poll=0, map=None):
-
     if map is None:
-        map=socket_map
+        map = socket_map
 
     if use_poll:
         if hasattr (select, 'poll'):
