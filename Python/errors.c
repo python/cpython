@@ -407,7 +407,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 	string = PyString_FromFormatV(format, vargs);
 	PyErr_SetObject(exception, string);
 	Py_XDECREF(string);
-	
+	va_end(vargs);
 	return NULL;
 }
 
