@@ -1,4 +1,4 @@
-.TH PYTHON "3 January 1994"
+.TH PYTHON "3 May 1994"
 .SH NAME
 python \- an interpreted, interactive, object-oriented programming language
 .SH SYNOPSIS
@@ -13,7 +13,7 @@ python \- an interpreted, interactive, object-oriented programming language
 .B \-i
 ]
 [
-.B \-k
+.B \-u
 ]
 [
 .B \-v
@@ -58,19 +58,8 @@ command.  It does not read the $PYTHONSTARTUP file.  This can be
 useful to inspect global variables or a stack trace when a script
 raises an exception.
 .TP
-.B \-k
-This hack, eh, feature is intended to help you to find expression
-statements that print a value.  Although a feature of the language, it
-can sometimes be annoying that when a function is called which returns
-a value that is not
-.IR None ,
-the value is printed to standard output, and it is not always easy to
-find which statement is the cause of an unwanted `1', for instance.
-When this option is set, if an expression statement prints its value,
-the exception
-.I RuntimeError
-is raised.  The resulting stack trace will help you to track down the
-culprit.
+.B \-u
+Force stdout and stderr to be totally unbuffered.
 .TP
 .B \-v
 Print a message each time a module is initialized, showing the place
@@ -184,9 +173,9 @@ the \fB\-d\fP option.
 .IP PYTHONINSPECT
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-i\fP option.
-.IP PYTHONKILLPRINT
+.IP PYTHONUNBUFFERED
 If this is set to a non-empty string it is equivalent to specifying
-the \fB\-k\fP option.
+the \fB\-u\fP option.
 .IP PYTHONVERBOSE
 If this is set to a non-empty string it is equivalent to specifying
 the \fB\-v\fP option.
