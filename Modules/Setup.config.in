@@ -1,8 +1,9 @@
 # This file is transmogrified into Setup.config by config.status.
 
 # The purpose of this file is to conditionally enable certain modules
-# based on configure-time options.  Currently thread support and
-# garbage collection support are the only two modules so enabled.
+# based on configure-time options.  Currently thread support, garbage
+# collection support, and the BSD DB modules are the only modules so
+# enabled.
 
 @USE_THREAD_MODULE@thread threadmodule.c
 
@@ -16,4 +17,3 @@
 
 # bsddb module enabled by --with-libdb or presence of db.h
 @USE_BSDDB_MODULE@bsddb bsddbmodule.c @HAVE_LIBDB@
-
