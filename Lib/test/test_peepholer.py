@@ -102,6 +102,34 @@ class TestTranforms(unittest.TestCase):
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
             ],)
 
+    def test_folding_of_binops_on_constants(self):
+        for line, elem in (
+            ('a = 2+3+4', '(9)'),                   # chained fold
+            ('"@"*4', "('@@@@')"),                  # check string ops
+            ('a="abc" + "def"', "('abcdef')"),      # check string ops
+            ('a = 3**4', '(81)'),                   # binary power
+            ('a = 3*4', '(12)'),                    # binary multiply
+            ('a = 13/4.0', '(3.25)'),               # binary divide
+            ('a = 13//4', '(3)'),                   # binary floor divide
+            ('a = 14%4', '(2)'),                    # binary modulo
+            ('a = 2+3', '(5)'),                     # binary add
+            ('a = 13-4', '(9)'),                    # binary subtract
+            ('a = (12,13)[1]', '(13)'),             # binary subscr
+            ('a = 13 << 2', '(52)'),                # binary lshift
+            ('a = 13 >> 2', '(3)'),                 # binary rshift
+            ('a = 13 & 7', '(5)'),                  # binary and
+            ('a = 13 ^ 7', '(10)'),                 # binary xor
+            ('a = 13 | 7', '(15)'),                 # binary or
+            ):
+            asm = dis_single(line)
+            self.assert_(elem in asm, asm)
+            self.assert_('BINARY_' not in asm)
+
+        # Verify that unfoldables are skipped
+        asm = dis_single('a=2+"b"')
+        self.assert_('(2)' in asm)
+        self.assert_("('b')" in asm)
+
     def test_elim_extra_return(self):
         # RETURN LOAD_CONST None RETURN  -->  RETURN
         def f(x):

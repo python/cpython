@@ -13,6 +13,9 @@ Core and builtins
 - min() and max() now support key= arguments with the same meaning as in
   list.sort().
 
+- The peephole optimizer now performs simple constant folding in expressions:
+      (2+3) --> (5).
+
 
 Extension Modules
 -----------------
