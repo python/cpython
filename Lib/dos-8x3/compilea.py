@@ -13,10 +13,11 @@ See module py_compile for details of the actual byte-compilation.
 """
 
 import os
+import stat
 import sys
 import py_compile
 
-def compile_dir(dir, maxlevels=10, ddir=None):
+def compile_dir(dir, maxlevels=10, ddir=None, force=0):
     """Byte-compile all modules in the given directory tree.
 
     Arguments (only dir is required):
@@ -25,6 +26,7 @@ def compile_dir(dir, maxlevels=10, ddir=None):
     maxlevels: maximum recursion level (default 10)
     ddir:      if given, purported directory name (this is the
                directory name that will show up in error messages)
+    force:     if 1, force compilation, even if timestamps are up-to-date
 
     """
     print 'Listing', dir, '...'
@@ -43,6 +45,11 @@ def compile_dir(dir, maxlevels=10, ddir=None):
         if os.path.isfile(fullname):
             head, tail = name[:-3], name[-3:]
             if tail == '.py':
+                cfile = fullname + (__debug__ and 'c' or 'o')
+                ftime = os.stat(fullname)[stat.ST_MTIME]
+                try: ctime = os.stat(cfile)[stat.ST_MTIME]
+                except os.error: ctime = 0
+                if (ctime > ftime) and not force: continue
                 print 'Compiling', fullname, '...'
                 try:
                     py_compile.compile(fullname, None, dfile)
@@ -58,40 +65,44 @@ def compile_dir(dir, maxlevels=10, ddir=None):
              name != os.curdir and name != os.pardir and \
              os.path.isdir(fullname) and \
              not os.path.islink(fullname):
-            compile_dir(fullname, maxlevels - 1, dfile)
+            compile_dir(fullname, maxlevels - 1, dfile, force)
 
-def compile_path(skip_curdir=1, maxlevels=0):
+def compile_path(skip_curdir=1, maxlevels=0, force=0):
     """Byte-compile all module on sys.path.
 
     Arguments (all optional):
 
     skip_curdir: if true, skip current directory (default true)
     maxlevels:   max recursion level (default 0)
+    force: as for compile_dir() (default 0)
 
     """
     for dir in sys.path:
         if (not dir or dir == os.curdir) and skip_curdir:
             print 'Skipping current directory'
         else:
-            compile_dir(dir, maxlevels)
+            compile_dir(dir, maxlevels, None, force)
 
 def main():
     """Script main program."""
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'ld:')
+        opts, args = getopt.getopt(sys.argv[1:], 'lfd:')
     except getopt.error, msg:
         print msg
-        print "usage: compileall [-l] [-d destdir] [directory ...]"
+        print "usage: compileall [-l] [-f] [-d destdir] [directory ...]"
         print "-l: don't recurse down"
+        print "-f: force rebuild even if timestamps are up-to-date"
         print "-d destdir: purported directory name for error messages"
-        print "if no arguments, -l sys.path is assumed"
+        print "if no directory arguments, -l sys.path is assumed"
         sys.exit(2)
     maxlevels = 10
     ddir = None
+    force = 0
     for o, a in opts:
         if o == '-l': maxlevels = 0
         if o == '-d': ddir = a
+        if o == '-f': force = 1
     if ddir:
         if len(args) != 1:
             print "-d destdir require exactly one directory argument"
@@ -99,7 +110,7 @@ def main():
     try:
         if args:
             for dir in args:
-                compile_dir(dir, maxlevels, ddir)
+                compile_dir(dir, maxlevels, ddir, force)
         else:
             compile_path()
     except KeyboardInterrupt:

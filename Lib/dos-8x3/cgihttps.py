@@ -145,7 +145,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
                 if line[:1] in string.whitespace:
                     accept.append(string.strip(line))
                 else:
-                    accept = accept + string.split(line[7:])
+                    accept = accept + string.split(line[7:], ',')
             env['HTTP_ACCEPT'] = string.joinfields(accept, ',')
             ua = self.headers.getheader('user-agent')
             if ua:
