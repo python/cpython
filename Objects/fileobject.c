@@ -32,6 +32,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
+#ifdef __MWERKS__
+/* Mwerks fopen() doesn't always set errno */
+#define NO_FOPEN_ERRNO
+#endif
 
 #define BUF(v) GETSTRINGVALUE((stringobject *)v)
 
@@ -111,6 +115,13 @@ newfileobject(name, mode)
 		END_SAVE
 	}
 	if (f->f_fp == NULL) {
+#ifdef NO_FOPEN_ERRNO
+		if ( errno == 0 ) {
+			err_setstr(IOError, "Cannot open file");
+			DECREF(f);
+			return NULL;
+		}
+#endif
 		err_errno(IOError);
 		DECREF(f);
 		return NULL;
