@@ -74,16 +74,16 @@ further information and a gentler presentation, consult the Regular
 Expression HOWTO, accessible from \url{http://www.python.org/doc/howto/}.
 
 Regular expressions can contain both special and ordinary characters.
-Most ordinary characters, like \character{A}, \character{a}, or \character{0},
-are the simplest regular expressions; they simply match themselves.  
-You can concatenate ordinary characters, so \regexp{last} matches the
-string \code{'last'}.  (In the rest of this section, we'll write RE's in
-\regexp{this special style}, usually without quotes, and strings to be
-matched \code{'in single quotes'}.)
+Most ordinary characters, like \character{A}, \character{a}, or
+\character{0}, are the simplest regular expressions; they simply match
+themselves.  You can concatenate ordinary characters, so \regexp{last}
+matches the string \code{'last'}.  (In the rest of this section, we'll
+write RE's in \regexp{this special style}, usually without quotes, and
+strings to be matched \code{'in single quotes'}.)
 
-Some characters, like \character{|} or \character{(}, are special.  Special
-characters either stand for classes of ordinary characters, or affect
-how the regular expressions around them are interpreted.
+Some characters, like \character{|} or \character{(}, are special.
+Special characters either stand for classes of ordinary characters, or
+affect how the regular expressions around them are interpreted.
 
 The special characters are:
 
@@ -114,15 +114,16 @@ will not match just 'a'.
 \item[\character{?}] Causes the resulting RE to
 match 0 or 1 repetitions of the preceding RE.  \regexp{ab?} will
 match either 'a' or 'ab'.
-\item[\code{*?}, \code{+?}, \code{??}] The \character{*}, \character{+}, and
-\character{?} qualifiers are all \dfn{greedy}; they match as much text as
-possible.  Sometimes this behaviour isn't desired; if the RE
-\regexp{<.*>} is matched against \code{'<H1>title</H1>'}, it will match the
-entire string, and not just \code{'<H1>'}.
-Adding \character{?} after the qualifier makes it perform the match in
-\dfn{non-greedy} or \dfn{minimal} fashion; as \emph{few} characters as
-possible will be matched.  Using \regexp{.*?} in the previous
-expression will match only \code{'<H1>'}.
+
+\item[\code{*?}, \code{+?}, \code{??}] The \character{*},
+\character{+}, and \character{?} qualifiers are all \dfn{greedy}; they
+match as much text as possible.  Sometimes this behaviour isn't
+desired; if the RE \regexp{<.*>} is matched against
+\code{'<H1>title</H1>'}, it will match the entire string, and not just
+\code{'<H1>'}.  Adding \character{?} after the qualifier makes it
+perform the match in \dfn{non-greedy} or \dfn{minimal} fashion; as
+\emph{few} characters as possible will be matched.  Using \regexp{.*?}
+in the previous expression will match only \code{'<H1>'}.
 
 \item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
@@ -167,10 +168,10 @@ backslash, or place it as the first character.  The
 pattern \regexp{[]]} will match \code{']'}, for example.  
 
 You can match the characters not within a range by \dfn{complementing}
-the set.  This is indicated by including a
-\character{\^} as the first character of the set; \character{\^} elsewhere will
-simply match the \character{\^} character.  For example, \regexp{[{\^}5]}
-will match any character except \character{5}.
+the set.  This is indicated by including a \character{\^} as the first
+character of the set; \character{\^} elsewhere will simply match the
+\character{\^} character.  For example, \regexp{[{\^}5]} will match
+any character except \character{5}.
 
 \item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
 creates a regular expression that will match either A or B.  An
@@ -399,8 +400,9 @@ expression will be used several times in a single program.
 
 \begin{datadesc}{I}
 \dataline{IGNORECASE}
-Perform case-insensitive matching; expressions like \regexp{[A-Z]} will match
-lowercase letters, too.  This is not affected by the current locale.
+Perform case-insensitive matching; expressions like \regexp{[A-Z]}
+will match lowercase letters, too.  This is not affected by the
+current locale.
 \end{datadesc}
 
 \begin{datadesc}{L}
@@ -414,11 +416,11 @@ Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
 When specified, the pattern character \character{\^} matches at the
 beginning of the string and at the beginning of each line
 (immediately following each newline); and the pattern character
-\character{\$} matches at the end of the string and at the end of each line
-(immediately preceding each newline).
-By default, \character{\^} matches only at the beginning of the string, and
-\character{\$} only at the end of the string and immediately before the
-newline (if any) at the end of the string. 
+\character{\$} matches at the end of the string and at the end of each
+line (immediately preceding each newline).  By default, \character{\^}
+matches only at the beginning of the string, and \character{\$} only
+at the end of the string and immediately before the newline (if any)
+at the end of the string.
 \end{datadesc}
 
 \begin{datadesc}{S}
@@ -440,9 +442,10 @@ Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b}, and
 This flag allows you to write regular expressions that look nicer.
 Whitespace within the pattern is ignored, 
 except when in a character class or preceded by an unescaped
-backslash, and, when a line contains a \character{\#} neither in a character
-class or preceded by an unescaped backslash, all characters from the
-leftmost such \character{\#} through the end of the line are ignored.
+backslash, and, when a line contains a \character{\#} neither in a
+character class or preceded by an unescaped backslash, all characters
+from the leftmost such \character{\#} through the end of the line are
+ignored.
 % XXX should add an example here
 \end{datadesc}
 
@@ -521,17 +524,18 @@ embedded modifiers in a pattern; for example,
 \samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
 
 The optional argument \var{count} is the maximum number of pattern
-occurrences to be replaced; \var{count} must be a non-negative integer, and
-the default value of 0 means to replace all occurrences.
+occurrences to be replaced; \var{count} must be a non-negative
+integer, and the default value of 0 means to replace all occurrences.
 
 Empty matches for the pattern are replaced only when not adjacent to a
-previous match, so \samp{sub('x*', '-', 'abc')} returns \code{'-a-b-c-'}.
+previous match, so \samp{sub('x*', '-', 'abc')} returns
+\code{'-a-b-c-'}.
 
 If \var{repl} is a string, any backslash escapes in it are processed.
 That is, \samp{\e n} is converted to a single newline character,
 \samp{\e r} is converted to a linefeed, and so forth.  Unknown escapes
-such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e 6}, are
-replaced with the substring matched by group 6 in the pattern. 
+such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e
+6}, are replaced with the substring matched by group 6 in the pattern. 
 
 In addition to character escapes and backreferences as described
 above, \samp{\e g<name>} will use the substring matched by the group
@@ -641,15 +645,16 @@ The pattern string from which the RE object was compiled.
 
 \subsection{Match Objects \label{match-objects}}
 
-\class{MatchObject} instances support the following methods and attributes:
+\class{MatchObject} instances support the following methods and
+attributes:
 
 \begin{methoddesc}[MatchObject]{expand}{template}
  Return the string obtained by doing backslash substitution on the
 template string \var{template}, as done by the \method{sub()} method.
 Escapes such as \samp{\e n} are converted to the appropriate
-characters, and numeric backreferences (\samp{\e 1}, \samp{\e 2}) and named
-backreferences (\samp{\e g<1>}, \samp{\e g<name>}) are replaced by the contents of the
-corresponding group.
+characters, and numeric backreferences (\samp{\e 1}, \samp{\e 2}) and
+named backreferences (\samp{\e g<1>}, \samp{\e g<name>}) are replaced
+by the contents of the corresponding group.
 \end{methoddesc}
 
 \begin{methoddesc}[MatchObject]{group}{\optional{group1, \moreargs}}
@@ -664,7 +669,7 @@ the string matching the the corresponding parenthesized group.  If a
 group number is negative or larger than the number of groups defined
 in the pattern, an \exception{IndexError} exception is raised.
 If a group is contained in a part of the pattern that did not match,
-the corresponding result is \code{-1}.  If a group is contained in a 
+the corresponding result is \code{None}.  If a group is contained in a 
 part of the pattern that matched multiple times, the last match is
 returned.
 
