@@ -38,6 +38,7 @@ CC=cc
 LD=cc
 REZ=/Developer/Tools/Rez
 DEREZ=/Developer/Tools/DeRez
+CPMAC=/Developer/Tools/CpMac
 
 PYTHON=$(builddir)/python.exe
 APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
@@ -92,11 +93,27 @@ install_Python: $(PYTHON)
 		done; \
 	done
 	$(INSTALL_PROGRAM) $(STRIPFLAG) $(PYTHON) $(APPINSTALLDIR)/Contents/MacOS/python
-	# Create a temporary version of the resources here
-	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc
-	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc
-	$(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r
-	$(DEREZ) -useDF -skip ckid errors.rsrc > errors.r
+# Create a temporary version of the resources here
+# Note that the resource files can either be real 2-fork resource files
+# or AppleSingle encoded files.
+	@if test -s $(RESOURCEDIR)/dialogs.rsrc; then \
+		echo $(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc ;\
+		$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc ; \
+		echo $(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r ; \
+		$(DEREZ) -useDF -skip ckid dialogs.rsrc > dialogs.r ; \
+	else \
+		echo $(DEREZ) -skip ckid $(RESOURCEDIR)/dialogs.rsrc > dialogs.r ; \
+		$(DEREZ) -skip ckid $(RESOURCEDIR)/dialogs.rsrc > dialogs.r ; \
+	fi
+	@if test -s $(RESOURCEDIR)/errors.rsrc; then \
+		echo $(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc ;\
+		$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc ; \
+		echo $(DEREZ) -useDF -skip ckid errors.rsrc > errors.r ; \
+		$(DEREZ) -useDF -skip ckid errors.rsrc > errors.r ; \
+	else \
+		echo $(DEREZ) -skip ckid $(RESOURCEDIR)/errors.rsrc > errors.r ; \
+		$(DEREZ) -skip ckid $(RESOURCEDIR)/errors.rsrc > errors.r ; \
+	fi
 	$(REZ) -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 	
@@ -154,7 +171,7 @@ installmacsubtree: $(INSTALLED_PYTHON)
 		else	true; \
 		fi; \
 	done
-	@for i in $(MACLIBSRC)/*.py $(MACLIBSRC)/*.rsrc; \
+	@for i in $(MACLIBSRC)/*.py; \
 	do \
 		if test -x $$i; then \
 			$(INSTALL_SCRIPT) $$i $(MACLIBDEST); \
@@ -164,6 +181,11 @@ installmacsubtree: $(INSTALLED_PYTHON)
 			echo $(INSTALL_DATA) $$i $(MACLIBDEST); \
 		fi; \
 	done
+##	@for i in $(MACLIBSRC)/*.rsrc; \
+##	do \
+##		echo $(CPMAC) $$i $$b ; \
+##		$(CPMAC) $$i $$b ; \
+##	done
 	@for d in $(MACLIBSUBDIRS); \
 	do \
 		a=$(MACLIBSRC)/$$d; \
@@ -176,6 +198,10 @@ installmacsubtree: $(INSTALLED_PYTHON)
 			*.py[co]) ;; \
 			*.orig) ;; \
 			*~) ;; \
+			*.rsrc) \
+				echo $(CPMAC) $$i $$b ; \
+				$(CPMAC) $$i $$b ; \
+				;; \
 			*) \
 				if test -d $$i; then continue; fi; \
 				if test -x $$i; then \
@@ -211,6 +237,10 @@ installmacsubtree: $(INSTALLED_PYTHON)
 			*.py[co]) ;; \
 			*.orig) ;; \
 			*~) ;; \
+			*.rsrc) \
+				echo $(CPMAC) $$i $$b ; \
+				$(CPMAC) $$i $$b ; \
+				;; \
 			*) \
 				if test -d $$i; then continue; fi; \
 				if test -x $$i; then \
