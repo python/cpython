@@ -26,6 +26,7 @@
 #
 # History (Most Recent First)
 #
+# 26-Sep-98 jrr Retested and adjusted for building w/Python 1.5.2a1
 # 20-Nov-97 jrr Cleaned Up for Applying to Distribution
 # 29-Oct-97 jrr Modified for Use with Python 1.5 Alpha 4
 # 03-Aug-96 jrr Original for Use with Python 1.4 Release
@@ -48,18 +49,24 @@ ERRS		= make.out
 # Where to Find the IBM TCP/IP Socket Includes and Libraries
 OS2TCPIP        = C:\MPTN
 
+# Where to Find the Tcl/Tk Base Directory for Libs/Includes
+TCLTK		= D:\TclTk
+TCLBASE		= D:\Tcl7.6\OS2
+TKBASE		= D:\Tk4.2\OS2
+
 # Where to Put the .OBJ Files, To Keep Them Out of the Way
 PATHOBJ		= obj
 
 # Search Path for Include Files
-PROJINCLUDE	= .;$(OS2TCPIP)\Include;$(PY_INCLUDES)
+PROJINCLUDE	= .;$(TCLBASE);$(TKBASE);$(OS2TCPIP)\Include;$(PY_INCLUDES)
 
 # Place to Search for Sources re OpusMAKE Dependency Generator (Commercial)
 MKMF_SRCS	= $(PY_MODULES)\*.c $(PY_OBJECTS)\*.c $(PY_PARSER)\*.c $(PY_PYTHON)\*.c
 
 #.HDRPATH.c	:= $(PROJINCLUDE,;= ) $(.HDRPATH.c)
 #.PATH.c         = .;$(PY_MODULES);$(PY_OBJECTS);$(PY_PARSER);$(PY_PYTHON)
-OTHERLIBS	= $(OS2TCPIP)\lib\so32dll.lib $(OS2TCPIP)\lib\tcp32dll.lib
+OTHERLIBS	= $(OS2TCPIP)\lib\so32dll.lib $(OS2TCPIP)\lib\tcp32dll.lib \
+                  $(TCLTK)\Lib\Tcl76.lib $(TCLTK)\Lib\Tk42.lib
 
 #################
 # Inference Rules
@@ -171,7 +178,6 @@ MODULES		=                              \
                   $(PATHOBJ)\PosixModule.obj   \
                   $(PATHOBJ)\RegexModule.obj   \
                   $(PATHOBJ)\RegExpr.obj       \
-                  $(PATHOBJ)\ReopModule.obj    \
                   $(PATHOBJ)\SelectModule.obj  \
                   $(PATHOBJ)\SignalModule.obj  \
                   $(PATHOBJ)\SocketModule.obj  \
@@ -204,6 +210,8 @@ _GEN		= /G4 /Gm /Gd-
 		# /G4  = Generate Code for 486 (Use 386 for Debugger)
 		# /Gm  = Use Multithread Runtime
 		# /Gd  = Dynamically Load Runtime
+		# /Ms  = Use _System Calling Convention (vs _Optlink)
+		#        (to allow non-VAC++ code to call into Python15.dll)
 
 _OPT		= /O /Gl
 		# /O   = Enable Speed-Optimizations
@@ -238,7 +246,8 @@ CFLAGS		= $(_BASE) $(_GEN) $(_OPT) $(_DBG) $(_OUT) $(_EXE) /Ss
 ###################
 # Primary Target(s)
 ###################
-All:  obj noise PyCore.lib Python15.lib Python15.dll Python.exe PGen.exe
+All:  obj noise PyCore.lib Python15.lib PGen.exe \
+      Python.exe PythonPM.exe Python15.dll _tkinter.dll
 
 Modules: $(MODULES)
 Objects: $(OBJECTS)
@@ -257,6 +266,15 @@ noise:
 #
 ##############
 
+# Python Extension DLL: Tcl/Tk Interface
+_tkinter.dll: $(PATHOBJ)\_tkinter.obj Python15.lib _tkinter.def
+	@ Echo Linking $@ As DLL
+	@ $(CC) $(CFLAGS) /B"/NOE" $(_DLL) /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
+
+$(PATHOBJ)\_tkinter.obj: $(PY_MODULES)\_tkinter.c
+	@ Echo Compiling $**
+	@ $(CC) -c $(CFLAGS) $(_DLL) -Fo$@ $** >>$(ERRS)
+
 # Object Library of All Essential Python Routines
 PyCore.lib: $(MODULES) $(OBJECTS) $(PARSER) $(PYTHON) $(PATHOBJ)\Config.obj
 	@ Echo Adding Updated Object Files to Link Library $@
@@ -265,6 +283,8 @@ PyCore.lib: $(MODULES) $(OBJECTS) $(PARSER) $(PYTHON) $(PATHOBJ)\Config.obj
 Python15.dll: $(PATHOBJ)\Compile.obj PyCore.lib Python.def
 	@ Echo Linking $@ As DLL
 	@ $(CC) $(CFLAGS) /B"/NOE" $(_DLL) /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
+	@ Echo Compressing $@ with LxLite
+	@ lxlite $@
 
 # IBM Linker Requires One Explicit .OBJ To Build a .DLL from a .LIB
 $(PATHOBJ)\Compile.obj: $(PY_PYTHON)\Compile.c
@@ -277,10 +297,15 @@ Python15.lib: Python.def
 	@ IMPLIB /NOLOGO /NOIGNORE $@ $** >>$(ERRS)
 	@ ILIB /NOLOGO /CONVFORMAT /NOEXTDICTIONARY /NOBROWSE /NOBACKUP $@; >>$(ERRS)
 
-# Small Program to Start Interpreter in Python15.dll
+# Small Command-Line Program to Start Interpreter in Python15.dll
 Python.exe: $(PATHOBJ)\Python.obj Python15.lib
 	@ Echo Linking $@ As EXE
-	@ $(CC) $(CFLAGS) $(_EXE) /B"/STACK:360000" /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
+	@ $(CC) $(CFLAGS) $(_EXE) /B"/PM:VIO /STACK:360000" /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
+
+# Small PM-GUI Program to Start Interpreter in Python15.dll
+PythonPM.exe: $(PATHOBJ)\Python.obj Python15.lib
+	@ Echo Linking $@ As EXE
+	@ $(CC) $(CFLAGS) $(_EXE) /B"/PM:PM /STACK:360000" /Fe$@ $(_MAP) $** $(OTHERLIBS) >>$(ERRS)
 
 PGen.exe: $(PGEN) PyCore.lib
 	@ Echo Linking $@ As EXE
@@ -305,6 +330,7 @@ release: Python.exe Python15.dll Python15.lib
 	-- @Echo Y | copy /U Python.exe   D:\EXEs
 	-- @Echo Y | copy /U Python15.dll D:\DLLs
 	-- @Echo Y | copy /U Python15.lib E:\Tau\Lib
+	-- @Echo Y | copy /U _tkinter.dll D:\Python
 
 test:
         python ..\..\lib\test\regrtest.py
@@ -946,19 +972,6 @@ regexpr.obj: $(PY_INCLUDE)\abstract.h $(PY_PARSER)\assert.h $(PY_INCLUDE)\ceval.
 	 $(PY_INCLUDE)\rangeobject.h $(PY_MODULES)\regexpr.h $(PY_INCLUDE)\sliceobject.h \
 	 $(PY_INCLUDE)\stringobject.h $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h \
 	 $(PY_INCLUDE)\tupleobject.h
-
-reopmodule.obj: $(PY_INCLUDE)\abstract.h $(PY_INCLUDE)\ceval.h $(PY_INCLUDE)\classobject.h \
-	 $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h config.h \
-	 $(PY_INCLUDE)\dictobject.h $(PY_INCLUDE)\fileobject.h $(PY_INCLUDE)\floatobject.h \
-	 $(PY_INCLUDE)\funcobject.h $(PY_INCLUDE)\import.h $(PY_INCLUDE)\intobject.h \
-	 $(PY_INCLUDE)\intrcheck.h $(PY_INCLUDE)\listobject.h $(PY_INCLUDE)\longobject.h \
-	 $(PY_INCLUDE)\methodobject.h $(PY_INCLUDE)\modsupport.h \
-	 $(PY_INCLUDE)\moduleobject.h $(PY_INCLUDE)\mymalloc.h $(PY_INCLUDE)\myproto.h \
-	 $(PY_INCLUDE)\object.h $(PY_INCLUDE)\objimpl.h $(PY_INCLUDE)\pydebug.h \
-	 $(PY_INCLUDE)\pyerrors.h $(PY_INCLUDE)\pyfpe.h $(PY_INCLUDE)\pystate.h \
-	 $(PY_INCLUDE)\python.h $(PY_INCLUDE)\pythonrun.h $(PY_INCLUDE)\rangeobject.h \
-	 $(PY_MODULES)\regexpr.h $(PY_INCLUDE)\sliceobject.h $(PY_INCLUDE)\stringobject.h \
-	 $(PY_INCLUDE)\sysmodule.h $(PY_INCLUDE)\traceback.h $(PY_INCLUDE)\tupleobject.h
 
 resource.obj: $(PY_INCLUDE)\abstract.h $(OS2TCPIP)\Include\sys\time.h $(PY_INCLUDE)\ceval.h \
 	 $(PY_INCLUDE)\classobject.h $(PY_INCLUDE)\cobject.h $(PY_INCLUDE)\complexobject.h \
