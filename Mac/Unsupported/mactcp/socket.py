@@ -10,7 +10,7 @@ but getpeername() and makefile() do work; everything used by ftplib works!
 
 
 import mactcp
-import MACTCP
+import MACTCPconst
 import macdnr
 
 
@@ -183,7 +183,7 @@ class _tcpsocket(_socket):
 			try:
 				self.databuf, urg, mark = self.stream.Rcv(0)
 			except mactcp.error, arg:
-				if arg[0] != MACTCP.connectionClosing:
+				if arg[0] != MACTCPconst.connectionClosing:
 					raise mactcp.error, arg
 		rv = self.databuf[:bufsize]
 		self.databuf = self.databuf[bufsize:]
