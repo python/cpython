@@ -25,7 +25,6 @@ Core
     reduce()
     .join() method of strings
     tuple()
-    unicode.join()
     XXX TODO zip()
     'x in y' and 'x not in y'
 
