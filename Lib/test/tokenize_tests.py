@@ -1,5 +1,5 @@
 # Tests for the 'tokenize' module.
-# Large bits stolen from test_grammar.py. 
+# Large bits stolen from test_grammar.py.
 
 # Comments
 "#"
@@ -129,17 +129,17 @@ bar \\ baz
 if 1:
     x = 2
 if 1:
-        x = 2
+    x = 2
 if 1:
     while 0:
-     if 0:
-           x = 2
-     x = 2
+        if 0:
+            x = 2
+        x = 2
 if 0:
-  if 2:
-   while 0:
-        if 1:
-          x = 2
+    if 2:
+        while 0:
+            if 1:
+                x = 2
 
 # Operators
 
@@ -172,4 +172,3 @@ x = -1*1/1 + 1*1 - ---1*1
 # selector
 import sys, time
 x = sys.modules['time'].time()
-

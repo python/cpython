@@ -9,7 +9,7 @@ import time
 
 
 class TestThread(_threading.Thread):
-    
+
     def run(self):
         global running
         delay = random.random() * 2
@@ -54,7 +54,7 @@ def test_main():
 
     global threads
     threads = []
-    
+
     starttasks()
 
     if verbose:

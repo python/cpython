@@ -103,7 +103,7 @@ class CompressTestCase(unittest.TestCase):
         self.failUnless(last > len(data), "compress level 0 always expands")
         for level in range(10):
             length = len(zlib.compress(data, level))
-            self.failUnless(length <= last, 
+            self.failUnless(length <= last,
                             'compress level %d more effective than %d!' % (
                                             level-1, level))
             last = length
@@ -506,4 +506,3 @@ if False:
     su = ut.TestSuite()
     su.addTest(ut.makeSuite(tz.CompressTestCase))
     ts.run_suite(su)
-

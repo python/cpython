@@ -79,9 +79,9 @@ class Cmd:
     def __init__(self, completekey='tab', stdin=None, stdout=None):
         """Instantiate a line-oriented interpreter framework.
 
-        The optional argument 'completekey' is the readline name of a 
-        completion key; it defaults to the Tab key. If completekey is 
-        not None and the readline module is available, command completion 
+        The optional argument 'completekey' is the readline name of a
+        completion key; it defaults to the Tab key. If completekey is
+        not None and the readline module is available, command completion
         is done automatically. The optional arguments stdin and stdout
         specify alternate input and output file objects; if not specified,
         sys.stdin and sys.stdout are used.

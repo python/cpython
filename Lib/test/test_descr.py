@@ -1837,7 +1837,7 @@ def specials():
         def __str__(self):
             if not self:
                 return 'EPS'
-            return self 
+            return self
 
     # sys.stdout needs to be the original to trigger the recursion bug
     import sys

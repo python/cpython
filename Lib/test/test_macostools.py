@@ -29,7 +29,7 @@ class TestMacostools(unittest.TestCase):
             os.unlink(TESTFN2)
         except:
             pass
-            
+
     def compareData(self):
         fp = open(test_support.TESTFN, 'r')
         data1 = fp.read()
@@ -48,11 +48,11 @@ class TestMacostools(unittest.TestCase):
         if data1 != data2:
             return 'Resource forks differ'
         return ''
-            
+
     def test_touched(self):
         # This really only tests that nothing unforeseen happens.
         macostools.touched(test_support.TESTFN)
-        
+
     def test_copy(self):
         try:
             os.unlink(TESTFN2)
@@ -60,7 +60,7 @@ class TestMacostools(unittest.TestCase):
             pass
         macostools.copy(test_support.TESTFN, TESTFN2)
         self.assertEqual(self.compareData(), '')
-        
+
     def test_mkalias(self):
         try:
             os.unlink(TESTFN2)
@@ -69,7 +69,7 @@ class TestMacostools(unittest.TestCase):
         macostools.mkalias(test_support.TESTFN, TESTFN2)
         fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
-        
+
     def test_mkalias_relative(self):
         try:
             os.unlink(TESTFN2)
@@ -78,8 +78,8 @@ class TestMacostools(unittest.TestCase):
         macostools.mkalias(test_support.TESTFN, TESTFN2, sys.prefix)
         fss, _, _ = macfs.ResolveAliasFile(TESTFN2)
         self.assertEqual(fss.as_pathname(), os.path.realpath(test_support.TESTFN))
-        
-    
+
+
 def test_main():
     test_support.run_unittest(TestMacostools)
 

@@ -22,11 +22,11 @@ class TestMacfs(unittest.TestCase):
     def test_fsspec(self):
         fss = macfs.FSSpec(test_support.TESTFN)
         self.assertEqual(os.path.realpath(test_support.TESTFN), fss.as_pathname())
-        
+
     def test_fsref(self):
         fsr = macfs.FSRef(test_support.TESTFN)
         self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
-        
+
     def test_coercion(self):
         fss = macfs.FSSpec(test_support.TESTFN)
         fsr = macfs.FSRef(test_support.TESTFN)
@@ -34,7 +34,7 @@ class TestMacfs(unittest.TestCase):
         fsr2 = fss.as_fsref()
         self.assertEqual(fss.as_pathname(), fss2.as_pathname())
         self.assertEqual(fsr.as_pathname(), fsr2.as_pathname())
-        
+
     def test_dates(self):
         import time
         fss = macfs.FSSpec(test_support.TESTFN)
@@ -42,24 +42,24 @@ class TestMacfs(unittest.TestCase):
         fss.SetDates(now, now-1, now-2)
         dates = fss.GetDates()
         self.assertEqual(dates, (now, now-1, now-2))
-        
+
     def test_ctor_type(self):
         fss = macfs.FSSpec(test_support.TESTFN)
         fss.SetCreatorType('Pyth', 'TEXT')
         filecr, filetp = fss.GetCreatorType()
         self.assertEqual((filecr, filetp), ('Pyth', 'TEXT'))
-        
+
     def test_alias(self):
         fss = macfs.FSSpec(test_support.TESTFN)
         alias = fss.NewAlias()
         fss2, changed = alias.Resolve()
         self.assertEqual(changed, 0)
-        self.assertEqual(fss.as_pathname(), fss2.as_pathname())     
-        
-        
+        self.assertEqual(fss.as_pathname(), fss2.as_pathname())
+
+
     def test_fss_alias(self):
         fss = macfs.FSSpec(test_support.TESTFN)
-                
+
 
 def test_main():
     test_support.run_unittest(TestMacfs)

@@ -11,7 +11,7 @@ class PosReturn:
         oldpos = self.pos
         realpos = oldpos
         if realpos<0:
-           realpos = len(exc.object) + realpos
+            realpos = len(exc.object) + realpos
         # if we don't advance this time, terminate on the next call
         # otherwise we'd get an endless loop
         if realpos <= exc.start:
@@ -532,7 +532,7 @@ class CodecCallbackTest(unittest.TestCase):
         # and inline implementations
         v = (1, 5, 10, 50, 100, 500, 1000, 5000, 10000, 50000)
         if sys.maxunicode>=100000:
-             v += (100000, 500000, 1000000)
+            v += (100000, 500000, 1000000)
         s = u"".join([unichr(x) for x in v])
         codecs.register_error("test.xmlcharrefreplace", codecs.xmlcharrefreplace_errors)
         for enc in ("ascii", "iso-8859-15"):

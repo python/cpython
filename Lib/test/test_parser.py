@@ -370,7 +370,7 @@ class IllegalSyntaxTestCase(unittest.TestCase):
                   (266,
                    (282, (1, 'foo'))), (4, ''))),
                 (4, ''),
-                (0, '')) 
+                (0, ''))
         self.check_bad_tree(tree, "malformed global ast")
 
 def test_main():

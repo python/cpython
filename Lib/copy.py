@@ -93,7 +93,7 @@ def copy(x):
                 raise Error("un(shallow)copyable object of type %s" % cls)
 
     return _reconstruct(x, rv, 0)
-    
+
 
 _copy_dispatch = d = {}
 

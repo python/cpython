@@ -352,10 +352,10 @@ class BuiltinTest(unittest.TestCase):
         filter(identity, Squares(5))
         self.assertRaises(TypeError, filter)
         class BadSeq(object):
-           def __getitem__(self, index):
-               if index<4:
-                   return 42
-               raise ValueError
+            def __getitem__(self, index):
+                if index<4:
+                    return 42
+                raise ValueError
         self.assertRaises(ValueError, filter, lambda x: x, BadSeq())
         def badfunc():
             pass
@@ -441,13 +441,13 @@ class BuiltinTest(unittest.TestCase):
 
         for (cls, inps) in inputs.iteritems():
             for (inp, exp) in inps.iteritems():
-                 # make sure the output goes through __getitem__
-                 # even if func is None
-                 self.assertEqual(
-                     filter(funcs[0], cls(inp)),
-                     filter(funcs[1], cls(inp))
-                 )
-                 for func in funcs:
+                # make sure the output goes through __getitem__
+                # even if func is None
+                self.assertEqual(
+                    filter(funcs[0], cls(inp)),
+                    filter(funcs[1], cls(inp))
+                )
+                for func in funcs:
                     outp = filter(func, cls(inp))
                     self.assertEqual(outp, exp)
                     self.assert_(not isinstance(outp, cls))
@@ -1039,10 +1039,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, round)
 
     def test_setattr(self):
-       setattr(sys, 'spam', 1)
-       self.assertEqual(sys.spam, 1)
-       self.assertRaises(TypeError, setattr, sys, 1, 'spam')
-       self.assertRaises(TypeError, setattr)
+        setattr(sys, 'spam', 1)
+        self.assertEqual(sys.spam, 1)
+        self.assertRaises(TypeError, setattr, sys, 1, 'spam')
+        self.assertRaises(TypeError, setattr)
 
     def test_str(self):
         self.assertEqual(str(''), '')

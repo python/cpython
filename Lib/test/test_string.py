@@ -82,4 +82,3 @@ for prec in range(100):
         else:
             #print result
             pass
-    
