@@ -1,5 +1,6 @@
 "Test the functionality of Python classes implementing operators."
 
+from test_support import TestFailed
 
 testmeths = [
 
@@ -216,3 +217,25 @@ testme = ExtraTests()
 testme.spam
 testme.eggs = "spam, spam, spam and ham"
 del testme.cardinal
+
+
+# Test correct errors from hash() on objects with comparisons but no __hash__
+
+class C0:
+    pass
+
+hash(C0()) # This should work; the next two should raise TypeError
+
+class C1:
+    def __cmp__(self, other): return 0
+
+try: hash(C1())
+except TypeError: pass
+else: raise TestFailed, "hash(C1()) should raise an exception"
+
+class C2:
+    def __eq__(self, other): return 1
+
+try: hash(C2())
+except TypeError: pass
+else: raise TestFailed, "hash(C2()) should raise an exception"
