@@ -619,6 +619,27 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'darwin1':
+        """
+        test_al
+        test_cd
+        test_cl
+        test_curses
+        test_dl
+        test_gdbm
+        test_gl
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_minidom
+        test_nis
+        test_ntpath
+        test_poll
+        test_socket_ssl
+        test_sunaudiodev
+        test_winreg
+        test_winsound
+        """,
 }
 
 class _ExpectedSkips:
