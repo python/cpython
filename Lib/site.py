@@ -149,7 +149,6 @@ for prefix in prefixes:
             if os.path.isdir(sitedir):
                 addsitedir(sitedir)
 
-del dirs_in_sys_path
 
 # Define new built-ins 'quit' and 'exit'.
 # These are simply strings that display a hint on how to exit.
