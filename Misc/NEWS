@@ -5,10 +5,6 @@ XXX Release date: DD-MMM-2002 XXX
 Type/class unification and new-style classes
 
 Core and builtins
-- The public Python C API will generally be declared using PyAPI_FUNC 
-   and PyAPI_DATA macros, while Python extension module init functions
-   will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
-   are deprecated.
 
 - Ctrl+C handling on Windows has been made more consistent with
   other platforms.  KeyboardInterrupt can now reliably be caught,
@@ -307,6 +303,11 @@ Tools/Demos
   the generated binary.
 
 Build
+
+- The public Python C API will generally be declared using PyAPI_FUNC 
+   and PyAPI_DATA macros, while Python extension module init functions
+   will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
+   are deprecated.
 
 - A bug was fixed that could cause COUNT_ALLOCS builds to segfault, or
   get into infinite loops, when a new-style class got garbage-collected.
