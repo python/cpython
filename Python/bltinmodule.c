@@ -436,29 +436,11 @@ builtin_raw_input(self, v)
 	object *self;
 	object *v;
 {
-	FILE *in = sysgetfile("stdin", stdin);
 	FILE *out = sysgetfile("stdout", stdout);
-	char *p;
-	int err;
-	int n = 1000;
 	flushline();
 	if (v != NULL)
 		printobject(v, out, PRINT_RAW);
-	v = newsizedstringobject((char *)NULL, n);
-	if (v != NULL) {
-		if ((err = fgets_intr(getstringvalue(v), n+1, in)) != E_OK) {
-			err_input(err);
-			DECREF(v);
-			return NULL;
-		}
-		else {
-			n = strlen(getstringvalue(v));
-			if (n > 0 && getstringvalue(v)[n-1] == '\n')
-				n--;
-			resizestring(&v, n);
-		}
-	}
-	return v;
+	return filegetline(sysget("stdin"), -1);
 }
 
 static object *
