@@ -304,7 +304,7 @@ HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
 	When using threading, you may have to add -D_REENTRANT to the
 	OPT variable in the top-level Makefile; reported by Pat Knight,
 	this seems to make a difference (at least for HP-UX 10.20)
-	even though config.h defines it.
+	even though pyconfig.h defines it.
 
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
@@ -905,7 +905,7 @@ platforms -- see http://www.python.org/.
 To port Python to a new non-UNIX system, you will have to fake the
 effect of running the configure script manually (for Mac and PC, this
 has already been done for you).  A good start is to copy the file
-config.h.in to config.h and edit the latter to reflect the actual
+pyconfig.h.in to pyconfig.h and edit the latter to reflect the actual
 configuration of your system.  Most symbols must simply be defined as
 1 only if the corresponding feature is present and can be left alone
 otherwise; however the *_t type symbols must be defined as some variant
@@ -987,7 +987,7 @@ Python/         The byte-compiler and interpreter
 README          The file you're reading now
 Tools/          Some useful programs written in Python
 acconfig.h      Additional input for the GNU autoheader program
-config.h.in     Source from which config.h is created (GNU autoheader output)
+pyconfig.h.in   Source from which pyconfig.h is created (GNU autoheader output)
 configure       Configuration shell script (GNU autoconf output)
 configure.in    Configuration specification (input for GNU autoconf)
 install-sh      Shell script used to install files
@@ -999,7 +999,7 @@ Makefile        Build rules
 Makefile.pre    Build rules before running Modules/makesetup
 buildno		Keeps track of the build number
 config.cache    Cache of configuration variables
-config.h        Configuration header
+pyconfig.h      Configuration header
 config.log      Log from last configure run
 config.status   Status from last run of the configure script
 getbuildinfo.o	Object file from Modules/getbuildinfo.c
