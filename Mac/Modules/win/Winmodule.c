@@ -9,6 +9,13 @@
 #include "pymactoolbox.h"
 
 #include <Windows.h>
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
+#define GetWindowFromPort(port) ((WindowRef)(port))
+#define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#endif
+
 /* Function to dispose a window, with a "normal" calling sequence */
 static void
 PyMac_AutoDisposeWindow(WindowPtr w)
@@ -46,12 +53,10 @@ WinObj_Convert(v, p_itself)
 	PyObject *v;
 	WindowPtr *p_itself;
 {
-#if !TARGET_API_MAC_CARBON
 	if (DlgObj_Check(v)) {
-		*p_itself = ((WindowObject *)v)->ob_itself;
+		*p_itself = DlgObj_ConvertToWindow(v);
 		return 1;
 	}
-#endif
 
 	if (v == Py_None) { *p_itself = NULL; return 1; }
 	if (PyInt_Check(v)) { *p_itself = (WindowPtr)PyInt_AsLong(v); return 1; }
@@ -109,6 +114,24 @@ static PyObject *WinObj_CloneWindow(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_ReshapeCustomWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = ReshapeCustomWindow(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *WinObj_GetWindowClass(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -143,6 +166,30 @@ static PyObject *WinObj_GetWindowAttributes(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_ChangeWindowAttributes(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowAttributes setTheseAttributes;
+	WindowAttributes clearTheseAttributes;
+	if (!PyArg_ParseTuple(_args, "ll",
+	                      &setTheseAttributes,
+	                      &clearTheseAttributes))
+		return NULL;
+	_err = ChangeWindowAttributes(_self->ob_itself,
+	                              setTheseAttributes,
+	                              clearTheseAttributes);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 #if !TARGET_API_MAC_CARBON
 
 static PyObject *WinObj_SetWinColor(_self, _args)
@@ -169,13 +216,14 @@ static PyObject *WinObj_SetWindowContentColor(_self, _args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	RGBColor color;
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      QdRGB_Convert, &color))
 		return NULL;
 	_err = SetWindowContentColor(_self->ob_itself,
 	                             &color);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     QdRGB_New, &color);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -232,6 +280,72 @@ static PyObject *WinObj_SetWindowContentPattern(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_ScrollWindowRect(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Rect inScrollRect;
+	SInt16 inHPixels;
+	SInt16 inVPixels;
+	ScrollWindowOptions inOptions;
+	RgnHandle outExposedRgn;
+	if (!PyArg_ParseTuple(_args, "O&hhlO&",
+	                      PyMac_GetRect, &inScrollRect,
+	                      &inHPixels,
+	                      &inVPixels,
+	                      &inOptions,
+	                      ResObj_Convert, &outExposedRgn))
+		return NULL;
+	_err = ScrollWindowRect(_self->ob_itself,
+	                        &inScrollRect,
+	                        inHPixels,
+	                        inVPixels,
+	                        inOptions,
+	                        outExposedRgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_ScrollWindowRegion(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	RgnHandle inScrollRgn;
+	SInt16 inHPixels;
+	SInt16 inVPixels;
+	ScrollWindowOptions inOptions;
+	RgnHandle outExposedRgn;
+	if (!PyArg_ParseTuple(_args, "O&hhlO&",
+	                      ResObj_Convert, &inScrollRgn,
+	                      &inHPixels,
+	                      &inVPixels,
+	                      &inOptions,
+	                      ResObj_Convert, &outExposedRgn))
+		return NULL;
+	_err = ScrollWindowRegion(_self->ob_itself,
+	                          inScrollRgn,
+	                          inHPixels,
+	                          inVPixels,
+	                          inOptions,
+	                          outExposedRgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *WinObj_ClipAbove(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -280,38 +394,6 @@ static PyObject *WinObj_DrawNew(_self, _args)
 }
 #endif
 
-static PyObject *WinObj_PaintOne(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle clobberedRgn;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &clobberedRgn))
-		return NULL;
-	PaintOne(_self->ob_itself,
-	         clobberedRgn);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *WinObj_PaintBehind(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle clobberedRgn;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &clobberedRgn))
-		return NULL;
-	PaintBehind(_self->ob_itself,
-	            clobberedRgn);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *WinObj_CalcVis(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -320,22 +402,6 @@ static PyObject *WinObj_CalcVis(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CalcVis(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *WinObj_CalcVisBehind(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle clobberedRgn;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &clobberedRgn))
-		return NULL;
-	CalcVisBehind(_self->ob_itself,
-	              clobberedRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -382,6 +448,46 @@ static PyObject *WinObj_SelectWindow(_self, _args)
 	_res = Py_None;
 	return _res;
 }
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_GetNextWindowOfClass(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	WindowClass inWindowClass;
+	Boolean mustBeVisible;
+	if (!PyArg_ParseTuple(_args, "lb",
+	                      &inWindowClass,
+	                      &mustBeVisible))
+		return NULL;
+	_rv = GetNextWindowOfClass(_self->ob_itself,
+	                           inWindowClass,
+	                           mustBeVisible);
+	_res = Py_BuildValue("O&",
+	                     WinObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if !TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_IsValidWindowPtr(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsValidWindowPtr(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
 
 static PyObject *WinObj_HiliteWindow(_self, _args)
 	WindowObject *_self;
@@ -797,6 +903,68 @@ static PyObject *WinObj_RemoveWindowProxy(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_BeginWindowProxyDrag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	DragReference outNewDrag;
+	RgnHandle outDragOutlineRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &outDragOutlineRgn))
+		return NULL;
+	_err = BeginWindowProxyDrag(_self->ob_itself,
+	                            &outNewDrag,
+	                            outDragOutlineRgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     DragObj_New, outNewDrag);
+	return _res;
+}
+
+static PyObject *WinObj_EndWindowProxyDrag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	DragReference theDrag;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      DragObj_Convert, &theDrag))
+		return NULL;
+	_err = EndWindowProxyDrag(_self->ob_itself,
+	                          theDrag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_TrackWindowProxyFromExistingDrag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point startPt;
+	DragReference drag;
+	RgnHandle inDragOutlineRgn;
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      PyMac_GetPoint, &startPt,
+	                      DragObj_Convert, &drag,
+	                      ResObj_Convert, &inDragOutlineRgn))
+		return NULL;
+	_err = TrackWindowProxyFromExistingDrag(_self->ob_itself,
+	                                        startPt,
+	                                        drag,
+	                                        inDragOutlineRgn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_TrackWindowProxyDrag(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -854,13 +1022,13 @@ static PyObject *WinObj_IsWindowPathSelectClick(_self, _args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	EventRecord event;
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetEventRecord, &event))
 		return NULL;
 	_rv = IsWindowPathSelectClick(_self->ob_itself,
 	                              &event);
-	_res = Py_BuildValue("bO&",
-	                     _rv,
-	                     PyMac_BuildEventRecord, &event);
+	_res = Py_BuildValue("b",
+	                     _rv);
 	return _res;
 }
 
@@ -994,7 +1162,7 @@ static PyObject *WinObj_ZoomWindow(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short partCode;
+	WindowPartCode partCode;
 	Boolean front;
 	if (!PyArg_ParseTuple(_args, "hb",
 	                      &partCode,
@@ -1054,24 +1222,23 @@ static PyObject *WinObj_CollapseWindow(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_RepositionWindow(_self, _args)
+static PyObject *WinObj_GetWindowBounds(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	WindowPtr parentWindow;
-	WindowPositionMethod method;
-	if (!PyArg_ParseTuple(_args, "O&l",
-	                      WinObj_Convert, &parentWindow,
-	                      &method))
+	WindowRegionCode regionCode;
+	Rect globalBounds;
+	if (!PyArg_ParseTuple(_args, "H",
+	                      &regionCode))
 		return NULL;
-	_err = RepositionWindow(_self->ob_itself,
-	                        parentWindow,
-	                        method);
+	_err = GetWindowBounds(_self->ob_itself,
+	                       regionCode,
+	                       &globalBounds);
 	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &globalBounds);
 	return _res;
 }
 
@@ -1096,23 +1263,24 @@ static PyObject *WinObj_SetWindowBounds(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_GetWindowBounds(_self, _args)
+static PyObject *WinObj_RepositionWindow(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	WindowRegionCode regionCode;
-	Rect globalBounds;
-	if (!PyArg_ParseTuple(_args, "H",
-	                      &regionCode))
+	WindowPtr parentWindow;
+	WindowPositionMethod method;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      WinObj_Convert, &parentWindow,
+	                      &method))
 		return NULL;
-	_err = GetWindowBounds(_self->ob_itself,
-	                       regionCode,
-	                       &globalBounds);
+	_err = RepositionWindow(_self->ob_itself,
+	                        parentWindow,
+	                        method);
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &globalBounds);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1163,7 +1331,7 @@ static PyObject *WinObj_ZoomWindowIdeal(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSStatus _err;
-	SInt16 partCode;
+	WindowPartCode partCode;
 	Point ioIdealSize;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &partCode))
@@ -1253,6 +1421,62 @@ static PyObject *WinObj_ShowHide(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_GetWindowPropertyAttributes(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType propertyCreator;
+	OSType propertyTag;
+	UInt32 attributes;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &propertyCreator,
+	                      PyMac_GetOSType, &propertyTag))
+		return NULL;
+	_err = GetWindowPropertyAttributes(_self->ob_itself,
+	                                   propertyCreator,
+	                                   propertyTag,
+	                                   &attributes);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     attributes);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_ChangeWindowPropertyAttributes(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType propertyCreator;
+	OSType propertyTag;
+	UInt32 attributesToSet;
+	UInt32 attributesToClear;
+	if (!PyArg_ParseTuple(_args, "O&O&ll",
+	                      PyMac_GetOSType, &propertyCreator,
+	                      PyMac_GetOSType, &propertyTag,
+	                      &attributesToSet,
+	                      &attributesToClear))
+		return NULL;
+	_err = ChangeWindowPropertyAttributes(_self->ob_itself,
+	                                      propertyCreator,
+	                                      propertyTag,
+	                                      attributesToSet,
+	                                      attributesToClear);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *WinObj_TrackBox(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1260,7 +1484,7 @@ static PyObject *WinObj_TrackBox(_self, _args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	Point thePt;
-	short partCode;
+	WindowPartCode partCode;
 	if (!PyArg_ParseTuple(_args, "O&h",
 	                      PyMac_GetPoint, &thePt,
 	                      &partCode))
@@ -1310,6 +1534,34 @@ static PyObject *WinObj_GetAuxWin(_self, _args)
 }
 #endif
 
+static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowGoAwayFlag(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowSpareFlag(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetWindowSpareFlag(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *WinObj_GetWindowPort(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1321,19 +1573,6 @@ static PyObject *WinObj_GetWindowPort(_self, _args)
 	_rv = GetWindowPort(_self->ob_itself);
 	_res = Py_BuildValue("O&",
 	                     GrafObj_New, _rv);
-	return _res;
-}
-
-static PyObject *WinObj_SetPortWindowPort(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	SetPortWindowPort(_self->ob_itself);
-	Py_INCREF(Py_None);
-	_res = Py_None;
 	return _res;
 }
 
@@ -1351,23 +1590,7 @@ static PyObject *WinObj_GetWindowKind(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_SetWindowKind(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short wKind;
-	if (!PyArg_ParseTuple(_args, "h",
-	                      &wKind))
-		return NULL;
-	SetWindowKind(_self->ob_itself,
-	              wKind);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *WinObj_IsWindowVisible(_self, _args)
+static PyObject *WinObj_MacIsWindowVisible(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
@@ -1375,7 +1598,7 @@ static PyObject *WinObj_IsWindowVisible(_self, _args)
 	Boolean _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = IsWindowVisible(_self->ob_itself);
+	_rv = MacIsWindowVisible(_self->ob_itself);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
@@ -1395,7 +1618,9 @@ static PyObject *WinObj_IsWindowHilited(_self, _args)
 	return _res;
 }
 
-static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
+#if TARGET_API_MAC_CARBON
+
+static PyObject *WinObj_IsWindowUpdatePending(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
@@ -1403,104 +1628,14 @@ static PyObject *WinObj_GetWindowGoAwayFlag(_self, _args)
 	Boolean _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetWindowGoAwayFlag(_self->ob_itself);
-	_res = Py_BuildValue("b",
-	                     _rv);
-	return _res;
-}
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *WinObj_GetWindowZoomFlag(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetWindowZoomFlag(_self->ob_itself);
+	_rv = IsWindowUpdatePending(_self->ob_itself);
 	_res = Py_BuildValue("b",
 	                     _rv);
 	return _res;
 }
 #endif
 
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *WinObj_GetWindowStructureRgn(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle r;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &r))
-		return NULL;
-	GetWindowStructureRgn(_self->ob_itself,
-	                      r);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *WinObj_GetWindowContentRgn(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle r;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &r))
-		return NULL;
-	GetWindowContentRgn(_self->ob_itself,
-	                    r);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *WinObj_GetWindowUpdateRgn(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	RgnHandle r;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      ResObj_Convert, &r))
-		return NULL;
-	GetWindowUpdateRgn(_self->ob_itself,
-	                   r);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *WinObj_GetWindowTitleWidth(_self, _args)
-	WindowObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	short _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = GetWindowTitleWidth(_self->ob_itself);
-	_res = Py_BuildValue("h",
-	                     _rv);
-	return _res;
-}
-#endif
-
-static PyObject *WinObj_GetNextWindow(_self, _args)
+static PyObject *WinObj_MacGetNextWindow(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
 {
@@ -1508,9 +1643,9 @@ static PyObject *WinObj_GetNextWindow(_self, _args)
 	WindowPtr _rv;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	_rv = GetNextWindow(_self->ob_itself);
+	_rv = MacGetNextWindow(_self->ob_itself);
 	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, _rv);
+	                     WinObj_New, _rv);
 	return _res;
 }
 
@@ -1519,13 +1654,13 @@ static PyObject *WinObj_GetWindowStandardState(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Rect r;
+	Rect rect;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetWindowStandardState(_self->ob_itself,
-	                       &r);
+	                       &rect);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &r);
+	                     PyMac_BuildRect, &rect);
 	return _res;
 }
 
@@ -1534,13 +1669,29 @@ static PyObject *WinObj_GetWindowUserState(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Rect r;
+	Rect rect;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	GetWindowUserState(_self->ob_itself,
-	                   &r);
+	                   &rect);
 	_res = Py_BuildValue("O&",
-	                     PyMac_BuildRect, &r);
+	                     PyMac_BuildRect, &rect);
+	return _res;
+}
+
+static PyObject *WinObj_SetWindowKind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	short kind;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &kind))
+		return NULL;
+	SetWindowKind(_self->ob_itself,
+	              kind);
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
@@ -1549,12 +1700,12 @@ static PyObject *WinObj_SetWindowStandardState(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Rect r;
+	Rect rect;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetRect, &r))
+	                      PyMac_GetRect, &rect))
 		return NULL;
 	SetWindowStandardState(_self->ob_itself,
-	                       &r);
+	                       &rect);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1565,14 +1716,42 @@ static PyObject *WinObj_SetWindowUserState(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Rect r;
+	Rect rect;
 	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetRect, &r))
+	                      PyMac_GetRect, &rect))
 		return NULL;
 	SetWindowUserState(_self->ob_itself,
-	                   &r);
+	                   &rect);
 	Py_INCREF(Py_None);
 	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_SetPortWindowPort(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	SetPortWindowPort(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_GetWindowPortBounds(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Rect bounds;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	GetWindowPortBounds(_self->ob_itself,
+	                    &bounds);
+	_res = Py_BuildValue("O&",
+	                     PyMac_BuildRect, &bounds);
 	return _res;
 }
 
@@ -1632,23 +1811,43 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> (UInt32 outCount)"},
 	{"CloneWindow", (PyCFunction)WinObj_CloneWindow, 1,
 	 "() -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"ReshapeCustomWindow", (PyCFunction)WinObj_ReshapeCustomWindow, 1,
+	 "() -> None"},
+#endif
 	{"GetWindowClass", (PyCFunction)WinObj_GetWindowClass, 1,
 	 "() -> (WindowClass outClass)"},
 	{"GetWindowAttributes", (PyCFunction)WinObj_GetWindowAttributes, 1,
 	 "() -> (WindowAttributes outAttributes)"},
+
+#if TARGET_API_MAC_CARBON
+	{"ChangeWindowAttributes", (PyCFunction)WinObj_ChangeWindowAttributes, 1,
+	 "(WindowAttributes setTheseAttributes, WindowAttributes clearTheseAttributes) -> None"},
+#endif
 
 #if !TARGET_API_MAC_CARBON
 	{"SetWinColor", (PyCFunction)WinObj_SetWinColor, 1,
 	 "(WCTabHandle newColorTable) -> None"},
 #endif
 	{"SetWindowContentColor", (PyCFunction)WinObj_SetWindowContentColor, 1,
-	 "() -> (RGBColor color)"},
+	 "(RGBColor color) -> None"},
 	{"GetWindowContentColor", (PyCFunction)WinObj_GetWindowContentColor, 1,
 	 "() -> (RGBColor color)"},
 	{"GetWindowContentPattern", (PyCFunction)WinObj_GetWindowContentPattern, 1,
 	 "(PixPatHandle outPixPat) -> None"},
 	{"SetWindowContentPattern", (PyCFunction)WinObj_SetWindowContentPattern, 1,
 	 "(PixPatHandle pixPat) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"ScrollWindowRect", (PyCFunction)WinObj_ScrollWindowRect, 1,
+	 "(Rect inScrollRect, SInt16 inHPixels, SInt16 inVPixels, ScrollWindowOptions inOptions, RgnHandle outExposedRgn) -> None"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"ScrollWindowRegion", (PyCFunction)WinObj_ScrollWindowRegion, 1,
+	 "(RgnHandle inScrollRgn, SInt16 inHPixels, SInt16 inVPixels, ScrollWindowOptions inOptions, RgnHandle outExposedRgn) -> None"},
+#endif
 	{"ClipAbove", (PyCFunction)WinObj_ClipAbove, 1,
 	 "() -> None"},
 
@@ -1661,20 +1860,24 @@ static PyMethodDef WinObj_methods[] = {
 	{"DrawNew", (PyCFunction)WinObj_DrawNew, 1,
 	 "(Boolean update) -> None"},
 #endif
-	{"PaintOne", (PyCFunction)WinObj_PaintOne, 1,
-	 "(RgnHandle clobberedRgn) -> None"},
-	{"PaintBehind", (PyCFunction)WinObj_PaintBehind, 1,
-	 "(RgnHandle clobberedRgn) -> None"},
 	{"CalcVis", (PyCFunction)WinObj_CalcVis, 1,
 	 "() -> None"},
-	{"CalcVisBehind", (PyCFunction)WinObj_CalcVisBehind, 1,
-	 "(RgnHandle clobberedRgn) -> None"},
 	{"BringToFront", (PyCFunction)WinObj_BringToFront, 1,
 	 "() -> None"},
 	{"SendBehind", (PyCFunction)WinObj_SendBehind, 1,
 	 "(WindowPtr behindWindow) -> None"},
 	{"SelectWindow", (PyCFunction)WinObj_SelectWindow, 1,
 	 "() -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetNextWindowOfClass", (PyCFunction)WinObj_GetNextWindowOfClass, 1,
+	 "(WindowClass inWindowClass, Boolean mustBeVisible) -> (WindowPtr _rv)"},
+#endif
+
+#if !TARGET_API_MAC_CARBON
+	{"IsValidWindowPtr", (PyCFunction)WinObj_IsValidWindowPtr, 1,
+	 "() -> (Boolean _rv)"},
+#endif
 	{"HiliteWindow", (PyCFunction)WinObj_HiliteWindow, 1,
 	 "(Boolean fHilite) -> None"},
 	{"SetWRefCon", (PyCFunction)WinObj_SetWRefCon, 1,
@@ -1725,6 +1928,12 @@ static PyMethodDef WinObj_methods[] = {
 	 "(IconRef icon) -> None"},
 	{"RemoveWindowProxy", (PyCFunction)WinObj_RemoveWindowProxy, 1,
 	 "() -> None"},
+	{"BeginWindowProxyDrag", (PyCFunction)WinObj_BeginWindowProxyDrag, 1,
+	 "(RgnHandle outDragOutlineRgn) -> (DragReference outNewDrag)"},
+	{"EndWindowProxyDrag", (PyCFunction)WinObj_EndWindowProxyDrag, 1,
+	 "(DragReference theDrag) -> None"},
+	{"TrackWindowProxyFromExistingDrag", (PyCFunction)WinObj_TrackWindowProxyFromExistingDrag, 1,
+	 "(Point startPt, DragReference drag, RgnHandle inDragOutlineRgn) -> None"},
 	{"TrackWindowProxyDrag", (PyCFunction)WinObj_TrackWindowProxyDrag, 1,
 	 "(Point startPt) -> None"},
 	{"IsWindowModified", (PyCFunction)WinObj_IsWindowModified, 1,
@@ -1732,7 +1941,7 @@ static PyMethodDef WinObj_methods[] = {
 	{"SetWindowModified", (PyCFunction)WinObj_SetWindowModified, 1,
 	 "(Boolean modified) -> None"},
 	{"IsWindowPathSelectClick", (PyCFunction)WinObj_IsWindowPathSelectClick, 1,
-	 "() -> (Boolean _rv, EventRecord event)"},
+	 "(EventRecord event) -> (Boolean _rv)"},
 	{"HiliteWindowFrameForDrag", (PyCFunction)WinObj_HiliteWindowFrameForDrag, 1,
 	 "(Boolean hilited) -> None"},
 	{"TransitionWindow", (PyCFunction)WinObj_TransitionWindow, 1,
@@ -1746,25 +1955,25 @@ static PyMethodDef WinObj_methods[] = {
 	{"DragWindow", (PyCFunction)WinObj_DragWindow, 1,
 	 "(Point startPt, Rect boundsRect) -> None"},
 	{"ZoomWindow", (PyCFunction)WinObj_ZoomWindow, 1,
-	 "(short partCode, Boolean front) -> None"},
+	 "(WindowPartCode partCode, Boolean front) -> None"},
 	{"IsWindowCollapsable", (PyCFunction)WinObj_IsWindowCollapsable, 1,
 	 "() -> (Boolean _rv)"},
 	{"IsWindowCollapsed", (PyCFunction)WinObj_IsWindowCollapsed, 1,
 	 "() -> (Boolean _rv)"},
 	{"CollapseWindow", (PyCFunction)WinObj_CollapseWindow, 1,
 	 "(Boolean collapse) -> None"},
-	{"RepositionWindow", (PyCFunction)WinObj_RepositionWindow, 1,
-	 "(WindowPtr parentWindow, WindowPositionMethod method) -> None"},
-	{"SetWindowBounds", (PyCFunction)WinObj_SetWindowBounds, 1,
-	 "(WindowRegionCode regionCode, Rect globalBounds) -> None"},
 	{"GetWindowBounds", (PyCFunction)WinObj_GetWindowBounds, 1,
 	 "(WindowRegionCode regionCode) -> (Rect globalBounds)"},
+	{"SetWindowBounds", (PyCFunction)WinObj_SetWindowBounds, 1,
+	 "(WindowRegionCode regionCode, Rect globalBounds) -> None"},
+	{"RepositionWindow", (PyCFunction)WinObj_RepositionWindow, 1,
+	 "(WindowPtr parentWindow, WindowPositionMethod method) -> None"},
 	{"MoveWindowStructure", (PyCFunction)WinObj_MoveWindowStructure, 1,
 	 "(short hGlobal, short vGlobal) -> None"},
 	{"IsWindowInStandardState", (PyCFunction)WinObj_IsWindowInStandardState, 1,
 	 "() -> (Boolean _rv, Point idealSize, Rect idealStandardState)"},
 	{"ZoomWindowIdeal", (PyCFunction)WinObj_ZoomWindowIdeal, 1,
-	 "(SInt16 partCode) -> (Point ioIdealSize)"},
+	 "(WindowPartCode partCode) -> (Point ioIdealSize)"},
 	{"GetWindowIdealUserState", (PyCFunction)WinObj_GetWindowIdealUserState, 1,
 	 "() -> (Rect userState)"},
 	{"SetWindowIdealUserState", (PyCFunction)WinObj_SetWindowIdealUserState, 1,
@@ -1775,8 +1984,18 @@ static PyMethodDef WinObj_methods[] = {
 	 "() -> None"},
 	{"ShowHide", (PyCFunction)WinObj_ShowHide, 1,
 	 "(Boolean showFlag) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetWindowPropertyAttributes", (PyCFunction)WinObj_GetWindowPropertyAttributes, 1,
+	 "(OSType propertyCreator, OSType propertyTag) -> (UInt32 attributes)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"ChangeWindowPropertyAttributes", (PyCFunction)WinObj_ChangeWindowPropertyAttributes, 1,
+	 "(OSType propertyCreator, OSType propertyTag, UInt32 attributesToSet, UInt32 attributesToClear) -> None"},
+#endif
 	{"TrackBox", (PyCFunction)WinObj_TrackBox, 1,
-	 "(Point thePt, short partCode) -> (Boolean _rv)"},
+	 "(Point thePt, WindowPartCode partCode) -> (Boolean _rv)"},
 	{"TrackGoAway", (PyCFunction)WinObj_TrackGoAway, 1,
 	 "(Point thePt) -> (Boolean _rv)"},
 
@@ -1784,55 +2003,39 @@ static PyMethodDef WinObj_methods[] = {
 	{"GetAuxWin", (PyCFunction)WinObj_GetAuxWin, 1,
 	 "() -> (Boolean _rv, AuxWinHandle awHndl)"},
 #endif
+	{"GetWindowGoAwayFlag", (PyCFunction)WinObj_GetWindowGoAwayFlag, 1,
+	 "() -> (Boolean _rv)"},
+	{"GetWindowSpareFlag", (PyCFunction)WinObj_GetWindowSpareFlag, 1,
+	 "() -> (Boolean _rv)"},
 	{"GetWindowPort", (PyCFunction)WinObj_GetWindowPort, 1,
 	 "() -> (CGrafPtr _rv)"},
-	{"SetPortWindowPort", (PyCFunction)WinObj_SetPortWindowPort, 1,
-	 "() -> None"},
 	{"GetWindowKind", (PyCFunction)WinObj_GetWindowKind, 1,
 	 "() -> (short _rv)"},
-	{"SetWindowKind", (PyCFunction)WinObj_SetWindowKind, 1,
-	 "(short wKind) -> None"},
-	{"IsWindowVisible", (PyCFunction)WinObj_IsWindowVisible, 1,
+	{"MacIsWindowVisible", (PyCFunction)WinObj_MacIsWindowVisible, 1,
 	 "() -> (Boolean _rv)"},
 	{"IsWindowHilited", (PyCFunction)WinObj_IsWindowHilited, 1,
 	 "() -> (Boolean _rv)"},
-	{"GetWindowGoAwayFlag", (PyCFunction)WinObj_GetWindowGoAwayFlag, 1,
-	 "() -> (Boolean _rv)"},
 
-#if !TARGET_API_MAC_CARBON
-	{"GetWindowZoomFlag", (PyCFunction)WinObj_GetWindowZoomFlag, 1,
+#if TARGET_API_MAC_CARBON
+	{"IsWindowUpdatePending", (PyCFunction)WinObj_IsWindowUpdatePending, 1,
 	 "() -> (Boolean _rv)"},
 #endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetWindowStructureRgn", (PyCFunction)WinObj_GetWindowStructureRgn, 1,
-	 "(RgnHandle r) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetWindowContentRgn", (PyCFunction)WinObj_GetWindowContentRgn, 1,
-	 "(RgnHandle r) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetWindowUpdateRgn", (PyCFunction)WinObj_GetWindowUpdateRgn, 1,
-	 "(RgnHandle r) -> None"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"GetWindowTitleWidth", (PyCFunction)WinObj_GetWindowTitleWidth, 1,
-	 "() -> (short _rv)"},
-#endif
-	{"GetNextWindow", (PyCFunction)WinObj_GetNextWindow, 1,
+	{"MacGetNextWindow", (PyCFunction)WinObj_MacGetNextWindow, 1,
 	 "() -> (WindowPtr _rv)"},
 	{"GetWindowStandardState", (PyCFunction)WinObj_GetWindowStandardState, 1,
-	 "() -> (Rect r)"},
+	 "() -> (Rect rect)"},
 	{"GetWindowUserState", (PyCFunction)WinObj_GetWindowUserState, 1,
-	 "() -> (Rect r)"},
+	 "() -> (Rect rect)"},
+	{"SetWindowKind", (PyCFunction)WinObj_SetWindowKind, 1,
+	 "(short kind) -> None"},
 	{"SetWindowStandardState", (PyCFunction)WinObj_SetWindowStandardState, 1,
-	 "(Rect r) -> None"},
+	 "(Rect rect) -> None"},
 	{"SetWindowUserState", (PyCFunction)WinObj_SetWindowUserState, 1,
-	 "(Rect r) -> None"},
+	 "(Rect rect) -> None"},
+	{"SetPortWindowPort", (PyCFunction)WinObj_SetPortWindowPort, 1,
+	 "() -> None"},
+	{"GetWindowPortBounds", (PyCFunction)WinObj_GetWindowPortBounds, 1,
+	 "() -> (Rect bounds)"},
 
 #if !TARGET_API_MAC_CARBON
 	{"CloseWindow", (PyCFunction)WinObj_CloseWindow, 1,
@@ -2002,16 +2205,16 @@ static PyObject *Win_CreateNewWindow(_self, _args)
 	OSStatus _err;
 	WindowClass windowClass;
 	WindowAttributes attributes;
-	Rect bounds;
+	Rect contentBounds;
 	WindowPtr outWindow;
 	if (!PyArg_ParseTuple(_args, "llO&",
 	                      &windowClass,
 	                      &attributes,
-	                      PyMac_GetRect, &bounds))
+	                      PyMac_GetRect, &contentBounds))
 		return NULL;
 	_err = CreateNewWindow(windowClass,
 	                       attributes,
-	                       &bounds,
+	                       &contentBounds,
 	                       &outWindow);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
@@ -2082,20 +2285,6 @@ static PyObject *Win_AreFloatingWindowsVisible(_self, _args)
 	return _res;
 }
 
-static PyObject *Win_FrontNonFloatingWindow(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	WindowPtr _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = FrontNonFloatingWindow();
-	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, _rv);
-	return _res;
-}
-
 #if !TARGET_API_MAC_CARBON
 
 static PyObject *Win_SetDeskCPat(_self, _args)
@@ -2135,7 +2324,7 @@ static PyObject *Win_MacFindWindow(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	short _rv;
+	WindowPartCode _rv;
 	Point thePoint;
 	WindowPtr window;
 	if (!PyArg_ParseTuple(_args, "O&",
@@ -2162,6 +2351,70 @@ static PyObject *Win_FrontWindow(_self, _args)
 	                     WinObj_WhichWindow, _rv);
 	return _res;
 }
+
+static PyObject *Win_FrontNonFloatingWindow(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = FrontNonFloatingWindow();
+	_res = Py_BuildValue("O&",
+	                     WinObj_WhichWindow, _rv);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Win_GetFrontWindowOfClass(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	WindowClass inWindowClass;
+	Boolean mustBeVisible;
+	if (!PyArg_ParseTuple(_args, "lb",
+	                      &inWindowClass,
+	                      &mustBeVisible))
+		return NULL;
+	_rv = GetFrontWindowOfClass(inWindowClass,
+	                            mustBeVisible);
+	_res = Py_BuildValue("O&",
+	                     WinObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Win_FindWindowOfClass(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	Point where;
+	WindowClass inWindowClass;
+	WindowPtr outWindow;
+	WindowPartCode outWindowPart;
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      PyMac_GetPoint, &where,
+	                      &inWindowClass))
+		return NULL;
+	_err = FindWindowOfClass(&where,
+	                         inWindowClass,
+	                         &outWindow,
+	                         &outWindowPart);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&h",
+	                     WinObj_WhichWindow, outWindow,
+	                     outWindowPart);
+	return _res;
+}
+#endif
 
 #if !TARGET_API_MAC_CARBON
 
@@ -2209,25 +2462,6 @@ static PyObject *Win_GetCWMgrPort(_self, _args)
 	GetCWMgrPort(&wMgrCPort);
 	_res = Py_BuildValue("O&",
 	                     GrafObj_New, wMgrCPort);
-	return _res;
-}
-#endif
-
-#if !TARGET_API_MAC_CARBON
-
-static PyObject *Win_IsValidWindowPtr(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	GrafPtr grafPort;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      GrafObj_Convert, &grafPort))
-		return NULL;
-	_rv = IsValidWindowPtr(grafPort);
-	_res = Py_BuildValue("b",
-	                     _rv);
 	return _res;
 }
 #endif
@@ -2372,6 +2606,22 @@ static PyObject *Win_GetGrayRgn(_self, _args)
 	return _res;
 }
 
+static PyObject *Win_GetWindowFromPort(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	WindowPtr _rv;
+	CGrafPtr port;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      GrafObj_Convert, &port))
+		return NULL;
+	_rv = GetWindowFromPort(port);
+	_res = Py_BuildValue("O&",
+	                     WinObj_New, _rv);
+	return _res;
+}
+
 static PyObject *Win_WhichWindow(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -2415,7 +2665,7 @@ static PyMethodDef Win_methods[] = {
 	{"NewCWindow", (PyCFunction)Win_NewCWindow, 1,
 	 "(Rect boundsRect, Str255 title, Boolean visible, short procID, WindowPtr behind, Boolean goAwayFlag, long refCon) -> (WindowPtr _rv)"},
 	{"CreateNewWindow", (PyCFunction)Win_CreateNewWindow, 1,
-	 "(WindowClass windowClass, WindowAttributes attributes, Rect bounds) -> (WindowPtr outWindow)"},
+	 "(WindowClass windowClass, WindowAttributes attributes, Rect contentBounds) -> (WindowPtr outWindow)"},
 	{"CreateWindowFromResource", (PyCFunction)Win_CreateWindowFromResource, 1,
 	 "(SInt16 resID) -> (WindowPtr outWindow)"},
 	{"ShowFloatingWindows", (PyCFunction)Win_ShowFloatingWindows, 1,
@@ -2424,8 +2674,6 @@ static PyMethodDef Win_methods[] = {
 	 "() -> None"},
 	{"AreFloatingWindowsVisible", (PyCFunction)Win_AreFloatingWindowsVisible, 1,
 	 "() -> (Boolean _rv)"},
-	{"FrontNonFloatingWindow", (PyCFunction)Win_FrontNonFloatingWindow, 1,
-	 "() -> (WindowPtr _rv)"},
 
 #if !TARGET_API_MAC_CARBON
 	{"SetDeskCPat", (PyCFunction)Win_SetDeskCPat, 1,
@@ -2434,9 +2682,21 @@ static PyMethodDef Win_methods[] = {
 	{"CheckUpdate", (PyCFunction)Win_CheckUpdate, 1,
 	 "() -> (Boolean _rv, EventRecord theEvent)"},
 	{"MacFindWindow", (PyCFunction)Win_MacFindWindow, 1,
-	 "(Point thePoint) -> (short _rv, WindowPtr window)"},
+	 "(Point thePoint) -> (WindowPartCode _rv, WindowPtr window)"},
 	{"FrontWindow", (PyCFunction)Win_FrontWindow, 1,
 	 "() -> (WindowPtr _rv)"},
+	{"FrontNonFloatingWindow", (PyCFunction)Win_FrontNonFloatingWindow, 1,
+	 "() -> (WindowPtr _rv)"},
+
+#if TARGET_API_MAC_CARBON
+	{"GetFrontWindowOfClass", (PyCFunction)Win_GetFrontWindowOfClass, 1,
+	 "(WindowClass inWindowClass, Boolean mustBeVisible) -> (WindowPtr _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"FindWindowOfClass", (PyCFunction)Win_FindWindowOfClass, 1,
+	 "(Point where, WindowClass inWindowClass) -> (WindowPtr outWindow, WindowPartCode outWindowPart)"},
+#endif
 
 #if !TARGET_API_MAC_CARBON
 	{"InitWindows", (PyCFunction)Win_InitWindows, 1,
@@ -2451,11 +2711,6 @@ static PyMethodDef Win_methods[] = {
 #if !TARGET_API_MAC_CARBON
 	{"GetCWMgrPort", (PyCFunction)Win_GetCWMgrPort, 1,
 	 "() -> (CGrafPtr wMgrCPort)"},
-#endif
-
-#if !TARGET_API_MAC_CARBON
-	{"IsValidWindowPtr", (PyCFunction)Win_IsValidWindowPtr, 1,
-	 "(GrafPtr grafPort) -> (Boolean _rv)"},
 #endif
 
 #if !TARGET_API_MAC_CARBON
@@ -2488,6 +2743,8 @@ static PyMethodDef Win_methods[] = {
 	 "(Rect theRect, Point thePt) -> (long _rv)"},
 	{"GetGrayRgn", (PyCFunction)Win_GetGrayRgn, 1,
 	 "() -> (RgnHandle _rv)"},
+	{"GetWindowFromPort", (PyCFunction)Win_GetWindowFromPort, 1,
+	 "(CGrafPtr port) -> (WindowPtr _rv)"},
 	{"WhichWindow", (PyCFunction)Win_WhichWindow, 1,
 	 "Resolve an integer WindowPtr address to a Window object"},
 	{"FindWindow", (PyCFunction)Win_FindWindow, 1,
@@ -2534,7 +2791,7 @@ void initWin()
 	Win_Error = PyMac_GetOSErrException();
 	if (Win_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Win_Error) != 0)
-		Py_FatalError("can't initialize Win.Error");
+		return;
 	Window_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Window_Type);
 	if (PyDict_SetItemString(d, "WindowType", (PyObject *)&Window_Type) != 0)

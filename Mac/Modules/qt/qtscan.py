@@ -97,6 +97,15 @@ class MyScanner(Scanner):
 			"GetMovieUPP",
 			"ModalFilterUPP",
 			"TrackTransferUPP",
+			"MoviePrePrerollCompleteUPP",
+			"MovieExecuteWiredActionsUPP",
+			"QTBandwidthNotificationUPP",
+			"DoMCActionUPP",
+			
+			"SampleReference64Ptr",	# Don't know what this does, yet
+			"QTRuntimeSpriteDescPtr",
+			"QTBandwidthReference",
+			"QTScheduledBandwidthReference",
 			"QTAtomContainer",
 			"SpriteWorld",
 			"Sprite",

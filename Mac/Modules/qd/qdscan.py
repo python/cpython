@@ -100,17 +100,24 @@ extend						= 0x40
 			'GetPortHWND',
 			'GetHWNDPort',
 			'GetPICTFromDIB',
-			
+			'GetPortBitMapForCopyBits', # Something funny in the declaration
 
 			]
 
+	def makegreylist(self):
+		return [
+			('#if !TARGET_API_MAC_CARBON', [
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+			])]
+
+
 	def makeblacklisttypes(self):
 		return [
-##			'CCrsrHandle',
 			'CIconHandle', # Obsolete
 			'CQDProcs',
+			'CQDProcsPtr',
 			'CSpecArray',
-##			'CTabHandle',
 			'ColorComplementProcPtr',
 			'ColorComplementUPP',
 			'ColorSearchProcPtr',
@@ -118,14 +125,13 @@ extend						= 0x40
 			'ConstPatternParam',
 			'DeviceLoopDrawingProcPtr',
 			'DeviceLoopFlags',
-##			'FontInfo',
-##			'GDHandle',
 			'GrafVerb',
 			'OpenCPicParams_ptr',
 			'Ptr',
 			'QDProcs',
 			'ReqListRec',
 			'void_ptr',
+			'CustomXFerProcPtr',
 			]
 
 	def makerepairinstructions(self):

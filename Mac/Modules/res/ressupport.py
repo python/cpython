@@ -18,6 +18,8 @@ class ResMixIn:
 class ResFunction(ResMixIn, FunctionGenerator): pass
 class ResMethod(ResMixIn, MethodGenerator): pass
 
+RsrcChainLocation = Type("RsrcChainLocation", "h")
+
 # includestuff etc. are imported from macsupport
 
 includestuff = includestuff + """

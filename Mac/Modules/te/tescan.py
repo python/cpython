@@ -42,11 +42,21 @@ class MyScanner(Scanner):
 ##			"TEGetHiliteRgn",
 			]
 
+	def makegreylist(self):
+		return [
+			('#if TARGET_API_MAC_CARBON', [
+				'TEGetScrapHandle',
+				'TESetScrapHandle',
+			])]
+
 	def makeblacklisttypes(self):
 		return [
 			"TEClickLoopUPP",
 			"UniversalProcPtr",
-			"WordBreakUPP"
+			"WordBreakUPP",
+			"TEDoTextUPP",
+			"TERecalcUPP",
+			"TEFindWordUPP",
 			]
 
 	def makerepairinstructions(self):

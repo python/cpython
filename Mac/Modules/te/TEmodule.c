@@ -1012,6 +1012,41 @@ static PyObject *TE_TEToScrap(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *TE_TEGetScrapHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = TEGetScrapHandle();
+	_res = Py_BuildValue("O&",
+	                     ResObj_New, _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *TE_TESetScrapHandle(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Handle value;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &value))
+		return NULL;
+	TESetScrapHandle(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *TE_as_TE(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1045,6 +1080,16 @@ static PyMethodDef TE_methods[] = {
 	 "() -> None"},
 	{"TEToScrap", (PyCFunction)TE_TEToScrap, 1,
 	 "() -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"TEGetScrapHandle", (PyCFunction)TE_TEGetScrapHandle, 1,
+	 "() -> (Handle _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"TESetScrapHandle", (PyCFunction)TE_TESetScrapHandle, 1,
+	 "(Handle value) -> None"},
+#endif
 	{"as_TE", (PyCFunction)TE_as_TE, 1,
 	 "(Handle h) -> (TEHandle _rv)"},
 	{NULL, NULL, 0}
@@ -1066,7 +1111,7 @@ void initTE()
 	TE_Error = PyMac_GetOSErrException();
 	if (TE_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", TE_Error) != 0)
-		Py_FatalError("can't initialize TE.Error");
+		return;
 	TE_Type.ob_type = &PyType_Type;
 	Py_INCREF(&TE_Type);
 	if (PyDict_SetItemString(d, "TEType", (PyObject *)&TE_Type) != 0)

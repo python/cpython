@@ -45,9 +45,12 @@ GDHandle = OpaqueByValueType("GDHandle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 BitMap_ptr = OpaqueByValueType("BitMapPtr", "BMObj")
+BitMap = BitMap_ptr
 RGBColor = OpaqueType('RGBColor', 'QdRGB')
 RGBColor_ptr = RGBColor
 FontInfo = OpaqueType('FontInfo', 'QdFI')
+Component = OpaqueByValueType('Component', 'CmpObj')
+ComponentInstance = OpaqueByValueType('ComponentInstance', 'CmpInstObj')
 
 Cursor_ptr = StructInputBufferType('Cursor')
 Pattern = StructOutputBufferType('Pattern')
@@ -57,6 +60,47 @@ PenState_ptr = StructInputBufferType('PenState')
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetPortBitMapForCopyBits(port) (((GrafPort)(port))->portBits)
+#define GetPortBounds(port, bounds) (*(bounds) = (port)->portRect, (bounds))
+#define GetPortForeColor(port, color) (*(color) = (port)->rgbFgColor, (color))
+#define GetPortBackColor(port, color) (*(color) = (port)->rgbBkColor, (color))
+#define GetPortOpColor(port, color) (*(color) = (*((port)->grafVars))->rgbOpColor, (color))
+#define GetPortHiliteColor(port, color) (*(color) = (*((port)->grafVars))->rgbHiliteColor, (color))
+#define GetPortTextFont(port) ((port)->txFont)
+#define GetPortTextFace(port) ((port)->txFace)
+#define GetPortTextMode(port) ((port)->txMode)
+#define GetPortTextSize(port) ((port)->txSize)
+#define GetPortChExtra(port) ((port)->chExtra)
+#define GetPortFracHPenLocation(port) ((port)->pnLocHFrac)
+#define GetPortSpExtra(port) ((port)->spExtra)
+#define GetPortPenVisibility(port) ((port)->pnVis)
+#define GetPortVisibleRegion(port, rgn) ((rgn) = (port)->visRgn, (rgn))
+#define GetPortClipRegion(port, rgn) ((rgn) = (port)->clipRgn, (rgn))
+#define GetPortBackPixPat(port, pat) ((pat) = (port)->bkPixPat, (pat))
+#define GetPortPenPixPat(port, pat) ((pat) = (port)->pnPixPat, (pat))
+#define GetPortFillPixPat(port, pat) ((pat) = (port)->fillPixPat, (pat))
+#define GetPortPenSize(port, pensize) (*(pensize) = (port)->pnSize, (pensize))
+#define GetPortPenMode(port) ((port)->pnMode)
+#define GetPortPenLocation(port, location) ((*location) = (port)->pnLoc, (location))
+#define IsPortRegionBeingDefined(port) ((port)->rgnSave)
+#define IsPortPictureBeingDefined(port) ((port)->picSave)
+/* #define IsPortOffscreen(port) */
+/* #define IsPortColor(port) */
+
+#define SetPortBounds(port, bounds) ((port)->portRect = *(bounds))
+#define SetPortOpColor(port, color) ((*((port)->grafVars))->rgbOpColor = *(color))
+#define SetPortVisibleRegion(port, rgn) ((port)->visRgn = (rgn))
+#define SetPortClipRegion(port, rgn) ((port)->clipRgn = (rgn))
+#define SetPortBackPixPat(port, pat) ((port)->bkPixPat = (pat))
+#define SetPortPenPixPat(port, pat) ((port)->pnPixPat = (pat))
+#define GetPortFillPixPat(port, pat) ((port)->fillPixPat = (pat))
+#define SetPortPenSize(port, pensize) ((port)->pnSize = (pensize))
+#define SetPortPenMode(port, mode) ((port)->pnMode = (mode))
+#define SetPortFracHPenLocation(port, frac) ((port)->pnLocHFrac = (frac))
+
+#endif
 
 /*
 ** Parse/generate RGB records
