@@ -42,6 +42,14 @@ class WeakValueDictionary(UserDict.UserDict):
     # objects are unwrapped on the way out, and we always wrap on the
     # way in).
 
+    def __init__(self, *args, **kw):
+        UserDict.UserDict.__init__(self, *args, **kw)
+        def remove(wr, selfref=ref(self)):
+            self = selfref()
+            if self is not None:
+                del self.data[wr.key]
+        self._remove = remove
+
     def __getitem__(self, key):
         o = self.data[key]()
         if o is None:
@@ -53,7 +61,7 @@ class WeakValueDictionary(UserDict.UserDict):
         return "<WeakValueDictionary at %s>" % id(self)
 
     def __setitem__(self, key, value):
-        self.data[key] = ref(value, self.__makeremove(key))
+        self.data[key] = KeyedRef(value, self._remove, key)
 
     def copy(self):
         new = WeakValueDictionary()
@@ -117,7 +125,7 @@ class WeakValueDictionary(UserDict.UserDict):
         try:
             wr = self.data[key]
         except KeyError:
-            self.data[key] = ref(default, self.__makeremove(key))
+            self.data[key] = KeyedRef(default, self._remove, key)
             return default
         else:
             return wr()
@@ -128,7 +136,7 @@ class WeakValueDictionary(UserDict.UserDict):
             if not hasattr(dict, "items"):
                 dict = type({})(dict)
             for key, o in dict.items():
-                d[key] = ref(o, self.__makeremove(key))
+                d[key] = KeyedRef(o, self._remove, key)
         if len(kwargs):
             self.update(kwargs)
 
@@ -140,12 +148,26 @@ class WeakValueDictionary(UserDict.UserDict):
                 L.append(o)
         return L
 
-    def __makeremove(self, key):
-        def remove(o, selfref=ref(self), key=key):
-            self = selfref()
-            if self is not None:
-                del self.data[key]
-        return remove
+
+class KeyedRef(ref):
+    """Specialized reference that includes a key corresponding to the value.
+
+    This is used in the WeakValueDictionary to avoid having to create
+    a function object for each key stored in the mapping.  A shared
+    callback object can use the 'key' attribute of a KeyedRef instead
+    of getting a reference to the key from an enclosing scope.
+
+    """
+
+    __slots__ = "key",
+
+    def __new__(type, ob, callback, key):
+        self = ref.__new__(type, ob, callback)
+        self.key = key
+        return self
+
+    def __init__(self, ob, callback, key):
+        super(KeyedRef,  self).__init__(ob, callback)
 
 
 class WeakKeyDictionary(UserDict.UserDict):
@@ -298,15 +320,11 @@ class WeakValuedValueIterator(BaseIter):
 
 class WeakValuedItemIterator(BaseIter):
     def __init__(self, weakdict):
-        self._next = weakdict.data.iteritems().next
+        self._next = weakdict.data.itervalues().next
 
     def next(self):
         while 1:
-            key, wr = self._next()
+            wr = self._next()
             value = wr()
             if value is not None:
-                return key, value
-
-
-# no longer needed
-del UserDict
+                return wr.key, value
