@@ -32,7 +32,7 @@
 Sample use, command line:
   trace.py -c -f counts --ignore-dir '$prefix' spam.py eggs
   trace.py -t --ignore-dir '$prefix' spam.py eggs
-  trace.py --track-callers spam.py eggs
+  trace.py --trackcalls spam.py eggs
 
 Sample use, programmatically
    # create a Trace object, telling it what to ignore, and whether to
@@ -40,7 +40,7 @@ Sample use, programmatically
    trace = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix,], trace=0,
                        count=1)
    # run the new command using the given trace
-   trace.run(coverage.globaltrace, 'main()')
+   trace.run('main()')
    # make a report, telling it where you want output
    r = trace.results()
    r.write_results(show_missing=True)
@@ -54,6 +54,7 @@ import threading
 import token
 import tokenize
 import types
+import gc
 
 try:
     import cPickle
@@ -242,6 +243,7 @@ class CoverageResults:
         @param coverdir
         """
         if self.calledfuncs:
+            print
             print "functions called:"
             calls = self.calledfuncs.keys()
             calls.sort()
@@ -250,12 +252,14 @@ class CoverageResults:
                        % (filename, modulename, funcname))
 
         if self.callers:
+            print
             print "calling relationships:"
             calls = self.callers.keys()
             calls.sort()
             lastfile = lastcfile = ""
             for ((pfile, pmod, pfunc), (cfile, cmod, cfunc)) in calls:
                 if pfile != lastfile:
+                    print
                     print "***", pfile, "***"
                     lastfile = pfile
                     lastcfile = ""
@@ -452,6 +456,7 @@ class Trace:
         self.trace = trace
         self._calledfuncs = {}
         self._callers = {}
+        self._caller_cache = {}
         if countcallers:
             self.globaltrace = self.globaltrace_trackcallers
         elif countfuncs:
@@ -506,6 +511,51 @@ class Trace:
                 sys.settrace(None)
         return result
 
+    def file_module_function_of(self, frame):
+        code = frame.f_code
+        filename = code.co_filename
+        if filename:
+            modulename = modname(filename)
+        else:
+            modulename = None
+
+        funcname = code.co_name
+        clsname = None
+        if code in self._caller_cache:
+            if self._caller_cache[code] is not None:
+                clsname = self._caller_cache[code]
+        else:
+            self._caller_cache[code] = None
+            ## use of gc.get_referrers() was suggested by Michael Hudson
+            # all functions which refer to this code object
+            funcs = [f for f in gc.get_referrers(code)
+                         if hasattr(f, "func_doc")]
+            # require len(func) == 1 to avoid ambiguity caused by calls to
+            # new.function(): "In the face of ambiguity, refuse the
+            # temptation to guess."
+            if len(funcs) == 1:
+                dicts = [d for d in gc.get_referrers(funcs[0])
+                             if isinstance(d, dict)]
+                if len(dicts) == 1:
+                    classes = [c for c in gc.get_referrers(dicts[0])
+                                   if hasattr(c, "__bases__")]
+                    if len(classes) == 1:
+                        # ditto for new.classobj()
+                        clsname = str(classes[0])
+                        # cache the result - assumption is that new.* is
+                        # not called later to disturb this relationship
+                        # _caller_cache could be flushed if functions in
+                        # the new module get called.
+                        self._caller_cache[code] = clsname
+        if clsname is not None:
+            # final hack - module name shows up in str(cls), but we've already
+            # computed module name, so remove it
+            clsname = clsname.split(".")[1:]
+            clsname = ".".join(clsname)
+            funcname = "%s.%s" % (clsname, funcname)
+
+        return filename, modulename, funcname
+
     def globaltrace_trackcallers(self, frame, why, arg):
         """Handler for call events.
 
@@ -513,24 +563,8 @@ class Trace:
         """
         if why == 'call':
             # XXX Should do a better job of identifying methods
-            code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
-            if filename:
-                modulename = modname(filename)
-            else:
-                modulename = None
-            this_func = (filename, modulename, funcname)
-
-            frame = frame.f_back
-            code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
-            if filename:
-                modulename = modname(filename)
-            else:
-                modulename = None
-            parent_func = (filename, modulename, funcname)
+            this_func = self.file_module_function_of(frame)
+            parent_func = self.file_module_function_of(frame.f_back)
             self._callers[(parent_func, this_func)] = 1
 
     def globaltrace_countfuncs(self, frame, why, arg):
@@ -539,14 +573,8 @@ class Trace:
         Adds (filename, modulename, funcname) to the self._calledfuncs dict.
         """
         if why == 'call':
-            code = frame.f_code
-            filename = code.co_filename
-            funcname = code.co_name
-            if filename:
-                modulename = modname(filename)
-            else:
-                modulename = None
-            self._calledfuncs[(filename, modulename, funcname)] = 1
+            this_func = self.file_module_function_of(frame)
+            self._calledfuncs[this_func] = 1
 
     def globaltrace_lt(self, frame, why, arg):
         """Handler for call events.
