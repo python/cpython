@@ -77,7 +77,6 @@ int Py_VerboseFlag; /* Needed by import.c */
 int Py_InteractiveFlag; /* Needed by Py_FdIsInteractive() below */
 int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c */
-int Py_UsingLocale = 0; /* needed by compile.c, modified by localemodule */
 
 static int initialized = 0;
 
@@ -134,8 +133,8 @@ Py_Initialize()
 	bimod = _PyBuiltin_Init_1();
 	if (bimod == NULL)
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
-	Py_INCREF(bimod);
-	interp->builtins = bimod;
+	interp->builtins = PyModule_GetDict(bimod);
+	Py_INCREF(interp->builtins);
 
 	sysmod = _PySys_Init();
 	if (sysmod == NULL)
@@ -148,7 +147,7 @@ Py_Initialize()
 			     interp->modules);
 
 	/* phase 2 of builtins */
-	_PyBuiltin_Init_2(PyModule_GetDict(bimod));
+	_PyBuiltin_Init_2(interp->builtins);
 	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
 	_PyImport_Init();
@@ -199,7 +198,7 @@ Py_Finalize()
 	/* Destroy all modules */
 	PyImport_Cleanup();
 
-	/* Delete current thread
+	/* Delete current thread */
 	PyInterpreterState_Clear(interp);
 	PyThreadState_Swap(NULL);
 	PyInterpreterState_Delete(interp);
@@ -287,8 +286,8 @@ Py_NewInterpreter()
 
 	bimod = _PyImport_FindExtension("__builtin__", "__builtin__");
 	if (bimod != NULL) {
-		Py_INCREF(bimod);
-		interp->builtins = bimod;
+		interp->builtins = PyModule_GetDict(bimod);
+		Py_INCREF(interp->builtins);
 	}
 	sysmod = _PyImport_FindExtension("sys", "sys");
 	if (bimod != NULL && sysmod != NULL) {
