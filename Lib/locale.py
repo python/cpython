@@ -337,7 +337,7 @@ def getdefaultlocale(envvars=('LANGUAGE', 'LC_ALL', 'LC_CTYPE', 'LANG')):
     lookup = os.environ.get
     for variable in envvars:
         localename = lookup(variable,None)
-        if localename is not None:
+        if localename:
             break
     else:
         localename = 'C'
