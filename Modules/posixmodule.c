@@ -703,7 +703,7 @@ posix_fsync(PyObject *self, PyObject *args)
 
 #ifdef HAVE_FDATASYNC
 
-#if defined(__hppa) || defined(hppa)
+#ifdef __hpux
 extern int fdatasync(int); /* On HP-UX, in libc but not in unistd.h */
 #endif
 
