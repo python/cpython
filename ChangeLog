@@ -1,4 +1,68 @@
-Mon Jan  3 00:02:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+Tue Jan  4 12:32:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Note that there are no functional changes below -- just changes
+	to the build process and changes to avoid compiler warnings
+
+	* Modules/Setup: disable nis as well by default, change the
+	pertaining comments, and change the comments about the multimedia
+	modules to be default on
+
+	* fixed all warnings about function pointer initializations, and
+	miscellanous other warnings (e.g. about extern forward references
+	to static variables); touched random bits of code as a consequence
+
+	* changed configuration process and Makefiles to support VPATH;
+	for this, config.h(.in) now lives to the toplevel directory, the
+	toplevel Makefile is now created by configure as well, and various
+	improvements to it have been made (e.g. working tags and TAGS
+	targets), the makesetup script follows configure instead of
+	preceding it, it understands srcdir and has an exception for
+	glmodule.c, the intermediate file is called Makefile.pre, the
+	Makefiles don't use TOP any more and are much more careful about
+	the difference between .. and the toplevel directory, and I've
+	improved my understanding of how configure handles srcdir
+
+	* Modules/threadmodule.c: refuse to compile when WITH_THREAD is not
+	defined
+
+	* configure.in, acconfig.h, config.h.in, Include/ceval.h,
+	Modules/{stdwin,thread}module.c, Python/{ceval,pythonrun}.c:
+	renamed USE_THREAD to WITH_THREAD
+
+	* configure.in: add AC_PROG_INSTALL
+
+	* README, Python/version.c: version set to 1.0.0 BETA 3
+
+	* Demo, Include, Lib: added Makefile with clean/clobber targets
+
+	* README: added remarks on --with-svr4; unnumber special cases
+
+	* configure.in: only look for -lnsl and -lsocket if --with-svr4 is
+	specified, to avoid linking with them on IRIX 5
+
+========================================================================
+Release of 1.0.0 BETA 2 (Jan 3 1994)
+========================================================================
+
+Mon Jan  3 22:21:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Include/myselect.h: fix typo in name of SYS_SELECT_WITH_SYS_TIME
+
+	* Parser/pgen.h: moved here from Include; removed extern
+	definition of 'gram'
+
+	* Parser/acceler.c: include node.h, now needed by parser.h
+
+	* README: added paragraph on testing
+
+	* Misc/python.man: changed date and add 1994 copyright
+
+	* Makefile: added test target
+
+	* Python/thread.c: include config.h if needed
+
+	* Parser/parser.h: remove references to struct _grammar and
+	similar things
 
 	* Modules/rotormodule.c (RTR_e_char, RTR_d_char): avoid warnings
 	by picky compilers about unsigned % signed
@@ -114,4 +178,3 @@ Sun Jan  2 23:10:44 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 ========================================================================
 Release of 1.0.0 BETA (Jan 1 1994)
 ========================================================================
-
