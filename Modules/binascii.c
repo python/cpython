@@ -126,7 +126,9 @@ static char table_a2b_base64[] = {
 };
 
 #define BASE64_PAD '='
-#define BASE64_MAXBIN 57	/* Max binary chunk size (76 char line) */
+
+/* Max binary chunk size; limited only by available memory */
+#define BASE64_MAXBIN (INT_MAX/2 - sizeof(PyStringObject))
 
 static unsigned char table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -335,6 +337,10 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "t#:a2b_base64", &ascii_data, &ascii_len) )
 		return NULL;
 
+	if ( ascii_len == 0) {
+		PyErr_SetString(Error, "Cannot decode empty input");
+		return NULL;
+	}
 	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
 
 	/* Allocate the buffer */
