@@ -45,7 +45,8 @@ hitting return is \code{0}. This can be changed with the optional
 \var{default} argument.
 \end{funcdesc}
 
-\begin{funcdesc}{ProgressBar}{\optional{title \optional{, maxval\optional{,label}}}}
+\begin{funcdesc}{ProgressBar}{\optional{title\optional{, maxval\optional{,
+    label}}}}
 Display a modeless progress dialog with a thermometer bar. \var{title}
 is the text string displayed (default ``Working...''), \var{maxval} is
 the value at which progress is complete (default
@@ -57,4 +58,49 @@ remains visible until the object returned is discarded.
 
 The progress bar has a ``cancel'' button. [NOTE: how does the cancel
 button behave?]
+\end{funcdesc}
+
+
+\begin{funcdesc}{GetArgv}{\optional{optionlist\optional{
+    commandlist\optional{, addoldfile\optional{, addnewfile\optional{,
+    addfolder\optional{, id}}}}}}}
+Displays a dialog which aids the user in constructing a command-line
+argument list.  Returns the list in \code{sys.argv} format, suitable for
+passing as an argument to \function{getopt.getopt()}.  \var{addoldfile},
+\var{addnewfile}, and \var{addfolder} are boolean arguments.  When
+nonzero, they enable the user to insert into the command line paths to
+an existing file, a (possibly) not-yet-existent file, and a folder,
+respectively.  (Note: Option arguments must appear in the command line
+before file and folder arguments in order to be recognized by
+\function{getopt.getopt()}.)  Arguments containing spaces can be
+specified by enclosing them within single or double quotes.  A
+\exception{SystemExit} exception is raised if the user presses the
+``Cancel'' button.
+
+\var{optionlist} is a list that determines a popup menu from which the
+allowed options are selected.  Its items can take one of two forms:
+\var{optstr} or \code{(\var{optstr}, \var{descr})}.  When present,
+\var{descr} is a short descriptive string that is displayed in the
+dialog while this option is selected in the popup menu.  The
+correspondence between \var{optstr}s and command-line arguments is:
+
+\begin{tableii}{l|l}{textrm}{\var{optstr} format}{Command-line format}
+\lineii{\code{x}}
+       {\programopt{-x} (short option)}
+\lineii{\code{x:} or \code{x=}}
+       {\programopt{-x} (short option with value)}
+\lineii{\code{xyz}}
+       {\longprogramopt{xyz} (long option)}
+\lineii{\code{xyz:} or \code{xyz=}}
+       {\longprogramopt{xyz} (long option with value)}
+\end{tableii}
+
+\var{commandlist} is a list of items of the form \var{cmdstr} or
+\code{(\var{cmdstr}, \var{descr})}, where \var{descr} is as above.  The
+\var{cmdstr}s will appear in a popup menu.  When chosen, the text of
+\var{cmdstr} will be appended to the command line as is, except that a
+trailing \character{:} or \character{=} (if present) will be trimmed
+off.
+
+\versionadded{2.0}
 \end{funcdesc}
