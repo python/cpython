@@ -485,7 +485,18 @@ posix_mkdir(self, args)
 	object *self;
 	object *args;
 {
-	return posix_strint(args, mkdir);
+	int res;
+	char *path;
+	int mode = 0777; /* Unused */
+	if (!newgetargs(args, "s|i", &path, &mode))
+		return NULL;
+	BGN_SAVE
+	res = mkdir(path, mode);
+	END_SAVE
+	if (res < 0)
+		return posix_error();
+	INCREF(None);
+	return None;
 }
 
 #ifdef HAVE_NICE
@@ -1407,7 +1418,7 @@ static struct methodlist posix_methods[] = {
 #endif /* HAVE_LINK */
 	{"listdir",	posix_listdir},
 	{"lstat",	posix_lstat},
-	{"mkdir",	posix_mkdir},
+	{"mkdir",	posix_mkdir, 1},
 #ifdef HAVE_NICE
 	{"nice",	posix_nice},
 #endif /* HAVE_NICE */
