@@ -16,13 +16,15 @@ HOWTOSTYLES= ../texinputs/howto.cls \
 	$(COMMONSTYLES)
 
 
-APIFILES= ../api/api.tex $(MANSTYLES) $(COMMONTEX)
+APIFILES= ../api/api.tex $(MANSTYLES) $(COMMONTEX) \
+	../texinputs/reportingbugs.tex
 
 DOCFILES= $(HOWTOSTYLES) $(COMMONTEX) \
 	../texinputs/ltxmarkup.sty \
 	../doc/doc.tex
 
-EXTFILES= ../ext/ext.tex $(MANSTYLES) $(COMMONTEX)
+EXTFILES= ../ext/ext.tex $(MANSTYLES) $(COMMONTEX) \
+	../texinputs/reportingbugs.tex
 
 TUTFILES= ../tut/tut.tex $(MANSTYLES) $(COMMONTEX)
 
@@ -41,6 +43,7 @@ REFFILES= $(MANSTYLES) $(COMMONTEX) \
 # LaTeX source files for the Python Library Reference
 LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/lib.tex \
+	../texinputs/reportingbugs.tex \
 	../lib/libintro.tex \
 	../lib/libobjs.tex \
 	../lib/libstdtypes.tex \
