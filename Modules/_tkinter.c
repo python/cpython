@@ -868,6 +868,8 @@ AsObj(PyObject *value)
 	if (PyString_Check(value))
 		return Tcl_NewStringObj(PyString_AS_STRING(value),
 					PyString_GET_SIZE(value));
+	else if (PyBool_Check(value))
+		return Tcl_NewBooleanObj(PyObject_IsTrue(value));
 	else if (PyInt_Check(value))
 		return Tcl_NewLongObj(PyInt_AS_LONG(value));
 	else if (PyFloat_Check(value))
@@ -1739,7 +1741,7 @@ Tkapp_GetBoolean(PyObject *self, PyObject *args)
 		return NULL;
 	if (Tcl_GetBoolean(Tkapp_Interp(self), s, &v) == TCL_ERROR)
 		return Tkinter_Error(self);
-	return Py_BuildValue("i", v);
+	return PyBool_FromLong(v);
 }
 
 static PyObject *
