@@ -679,36 +679,42 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	      int (*statfunc)(const char *, STRUCT_STAT *))
 {
 	STRUCT_STAT st;
-	char *path = NULL;
+	char *path = NULL;	/* pass this to stat; do not free() it */
+	char *pathfree = NULL;  /* this memory must be free'd */
 	int res;
 
 #ifdef MS_WIN32
-      int pathlen;
-      char pathcopy[MAX_PATH];
+	int pathlen;
+	char pathcopy[MAX_PATH];
 #endif /* MS_WIN32 */
 
 	if (!PyArg_ParseTuple(args, format, 
 	                      Py_FileSystemDefaultEncoding, &path))
 		return NULL;
+	pathfree = path;
 
 #ifdef MS_WIN32
 	pathlen = strlen(path);
 	/* the library call can blow up if the file name is too long! */
 	if (pathlen > MAX_PATH) {
-		PyMem_Free(path);
+		PyMem_Free(pathfree);
 		errno = ENAMETOOLONG;
 		return posix_error();
 	}
 
-	if ((pathlen > 0) && (path[pathlen-1] == '\\' || path[pathlen-1] == '/')) {
-		/* exception for specific or current drive root */
-		if (!((pathlen == 1) ||
-		      ((pathlen == 3) &&
-		      (path[1] == ':') &&
-		      (path[2] == '\\' || path[2] == '/'))))
-		{
+	/* Remove trailing slash or backslash, unless it's the current
+	   drive root (/ or \) or a specific drive's root (like c:\ or c:/).
+	*/
+	if (pathlen > 0 &&
+	    (path[pathlen-1]== '\\' || path[pathlen-1] == '/')) {
+	    	/* It does end with a slash -- exempt the root drive cases. */
+	    	/* XXX UNC root drives should also be exempted? */
+	    	if (pathlen == 1 || (pathlen == 3 && path[1] == ':'))
+	    		/* leave it alone */;
+	    	else {
+			/* nuke the trailing backslash */
 			strncpy(pathcopy, path, pathlen);
-			pathcopy[pathlen-1] = '\0'; /* nuke the trailing backslash */
+			pathcopy[pathlen-1] = '\0';
 			path = pathcopy;
 		}
 	}
@@ -718,9 +724,9 @@ posix_do_stat(PyObject *self, PyObject *args, char *format,
 	res = (*statfunc)(path, &st);
 	Py_END_ALLOW_THREADS
 	if (res != 0)
-		return posix_error_with_allocated_filename(path);
+		return posix_error_with_allocated_filename(pathfree);
 
-	PyMem_Free(path);
+	PyMem_Free(pathfree);
 	return _pystat_fromstructstat(st);
 }
 
