@@ -392,6 +392,17 @@ builtin_eval(self, args)
 			&Mappingtype, &globals,
 			&Mappingtype, &locals))
 		return NULL;
+	if (globals == NULL) {
+		globals = getglobals();
+		if (globals == NULL)
+			return NULL;
+	}
+	if (locals == NULL)
+		locals = globals;
+	if (dictlookup(globals, "__builtins__") == NULL) {
+		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+			return NULL;
+	}
 	if (is_codeobject(cmd))
 		return eval_code((codeobject *) cmd, globals, locals,
 				 (object *)NULL, (object *)NULL);
@@ -428,6 +439,17 @@ builtin_execfile(self, args)
 			&Mappingtype, &globals,
 			&Mappingtype, &locals))
 		return NULL;
+	if (globals == NULL) {
+		globals = getglobals();
+		if (globals == NULL)
+			return NULL;
+	}
+	if (locals == NULL)
+		locals = globals;
+	if (dictlookup(globals, "__builtins__") == NULL) {
+		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+			return NULL;
+	}
 	BGN_SAVE
 	fp = fopen(filename, "r");
 	END_SAVE
@@ -725,6 +747,7 @@ builtin_input(self, args)
 	object *line;
 	char *str;
 	object *res;
+	object *globals, *locals;
 
 	line = builtin_raw_input(self, args);
 	if (line == NULL)
@@ -733,7 +756,13 @@ builtin_input(self, args)
 		return NULL;
 	while (*str == ' ' || *str == '\t')
 			str++;
-	res = run_string(str, eval_input, (object *)NULL, (object *)NULL);
+	globals = getglobals();
+	locals = getlocals();
+	if (dictlookup(globals, "__builtins__") == NULL) {
+		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
+			return NULL;
+	}
+	res = run_string(str, eval_input, globals, locals);
 	DECREF(line);
 	return res;
 }
@@ -1363,25 +1392,9 @@ static struct methodlist builtin_methods[] = {
 static object *builtin_dict;
 
 object *
-getbuiltin(name)
-	object *name;
+getbuiltindict()
 {
-	return mappinglookup(builtin_dict, name);
-}
-
-object *
-getbuiltins(name)
-	char *name;
-{
-	return dictlookup(builtin_dict, name);
-}
-
-int
-setbuiltin(cname, value)
-	char *cname;
-	object *value;
-{
-	return dictinsert(builtin_dict, cname, value);
+	return builtin_dict;
 }
 
 /* Predefined exceptions */

@@ -269,6 +269,7 @@ typedef struct methodlist PyMethodDef;
 #define PyEval_CallObject call_object
 #define PyEval_EvalCode eval_code
 #define Py_FlushLine flushline
+#define PyEval_GetBuiltins getbuiltins
 #define PyEval_GetGlobals getglobals
 #define PyEval_GetLocals getlocals
 #define PyEval_InitThreads init_save_thread
@@ -287,7 +288,7 @@ typedef struct methodlist PyMethodDef;
 #define PyImport_Init initimport
 #define PyImport_ReloadModule reload_module
 #define PyNumber_Coerce coerce
-#define PyBuiltin_GetObject getbuiltin
+#define PyBuiltin_GetDict getbuiltindict
 #define PyBuiltin_Init initbuiltin
 #define PyMarshal_Init initmarshal
 #define PyMarshal_ReadLongFromFile rd_long
@@ -317,7 +318,7 @@ typedef struct methodlist PyMethodDef;
 #define PyRun_InteractiveLoop run_tty_loop
 #define PyMember_Get getmember
 #define PyMember_Set setmember
-#define Py_InitModule initmodule
+#define Py_InitModule(name, methods) initmodule(name, methods)
 #define Py_BuildValue mkvalue
 #define Py_VaBuildValue vmkvalue
 #define PyArg_Parse getargs

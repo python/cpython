@@ -32,6 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "graminit.h"
 #include "errcode.h"
 #include "sysmodule.h"
+#include "bltinmodule.h"
 #include "compile.h"
 #include "eval.h"
 #include "ceval.h"
@@ -48,6 +49,7 @@ extern char *getpythonpath();
 extern grammar gram; /* From graminit.c */
 
 /* Forward */
+static void initmain PROTO((void));
 static object *run_err_node PROTO((node *n, char *filename,
 				   object *globals, object *locals));
 static object *run_node PROTO((node *n, char *filename,
@@ -83,6 +85,24 @@ initall()
 	setpythonpath(getpythonpath());
 
 	initsigs(); /* Signal handling stuff, including initintr() */
+
+	initmain();
+}
+
+/* Create __main__ module */
+
+static void
+initmain()
+{
+	object *m, *d;
+	m = add_module("__main__");
+	if (m == NULL)
+		fatal("can't create __main__ module");
+	d = getmoduledict(m);
+	if (dictlookup(d, "__builtins__") == NULL) {
+		if (dictinsert(d, "__builtins__", getbuiltindict()))
+			fatal("can't add __builtins__ to __main__");
+	}
 }
 
 /* Parse input from a file and execute it */
