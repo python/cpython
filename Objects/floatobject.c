@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -212,7 +212,7 @@ float_hash(v)
 	}
 	else {
 		fractpart = frexp(fractpart, &expo);
-		fractpart = fractpart*4294967296.0; /* 2**32 */
+		fractpart = fractpart*2147483648.0; /* 2**31 */
 		x = (long) (intpart + fractpart) ^ expo; /* Rather arbitrary */
 	}
 	if (x == -1)

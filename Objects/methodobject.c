@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -33,15 +33,15 @@ typedef struct {
 	char	*m_name;
 	method	m_meth;
 	object	*m_self;
-	int	m_varargs;
+	int	m_flags;
 } methodobject;
 
 object *
-newmethodobject(name, meth, self, varargs)
-	char *name; /* static string */
+newmethodobject(name, meth, self, flags)
+	char *name;
 	method meth;
 	object *self;
-	int varargs;
+	int flags;
 {
 	methodobject *op = NEWOBJ(methodobject, &Methodtype);
 	if (op != NULL) {
@@ -50,7 +50,7 @@ newmethodobject(name, meth, self, varargs)
 		if (self != NULL)
 			INCREF(self);
 		op->m_self = self;
-		op->m_varargs = varargs;
+		op->m_flags = flags;
 	}
 	return (object *)op;
 }
@@ -85,7 +85,7 @@ getvarargs(op)
 		err_badcall();
 		return -1;
 	}
-	return ((methodobject *)op) -> m_varargs;
+	return ((methodobject *)op) -> m_flags & METH_VARARGS;
 }
 
 /* Methods (the standard built-in methods, that is) */
@@ -96,6 +96,8 @@ meth_dealloc(m)
 {
 	if (m->m_self != NULL)
 		DECREF(m->m_self);
+	if (m->m_flags & METH_FREENAME)
+		free(m->m_name);
 	free((char *)m);
 }
 
@@ -199,8 +201,9 @@ findmethod(ml, op, name)
 		return listmethods(ml);
 	for (; ml->ml_name != NULL; ml++) {
 		if (strcmp(name, ml->ml_name) == 0)
-			return newmethodobject(ml->ml_name, ml->ml_meth,
-					op, ml->ml_varargs);
+			return newmethodobject(ml->ml_name, ml->ml_meth, op,
+					       ml->ml_varargs ?
+					       METH_VARARGS : 0);
 	}
 	err_setstr(AttributeError, name);
 	return NULL;
