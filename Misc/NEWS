@@ -3,6 +3,14 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- The interpreter accepts now bytecode files on the command line even
+  if they do not have a .pyc or .pyo extension. On Linux, after executing
+
+  echo ':pyc:M::\x87\xc6\x0d\x0a::/usr/local/bin/python:' > /proc/sys/fs/binfmt_misc/register
+
+  any byte code file can be used as an executable (i.e. as an argument
+  to execve(2)).
+
 - %[xXo] formats of negative Python longs now produce a sign
   character.  In 1.6 and earlier, they never produced a sign,
   and raised an error if the value of the long was too large

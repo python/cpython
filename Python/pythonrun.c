@@ -546,6 +546,38 @@ PyRun_SimpleFile(FILE *fp, char *filename)
 	return PyRun_SimpleFileEx(fp, filename, 0);
 }
 
+/* Check whether a file maybe a pyc file: Look at the extension,
+   the file type, and, if we may close it, at the first few bytes. */
+
+static int
+maybe_pyc_file(FILE *fp, char* filename, char* ext, int closeit)
+{
+	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0)
+		return 1;
+
+#ifdef macintosh
+	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
+	if (PyMac_getfiletype(filename) == 'PYC '
+	    || PyMac_getfiletype(filename) == 'APPL')
+		return 1;
+#endif /* macintosh */
+
+	/* Only look into the file if we are allowed to close it, since
+	   it then should also be seekable. */
+	if (closeit) {
+		/* Read only two bytes of the magic. If the file was opened in
+		   text mode, the bytes 3 and 4 of the magic (\r\n) might not
+		   be read as they are on disk. */
+		unsigned int halfmagic = PyImport_GetMagicNumber() & 0xFFFF;
+		unsigned char buf[2];
+		if (fread(buf, 1, 2, fp) == 2 
+		    && (buf[1]<<8 | buf[0]) == halfmagic)
+			return 1;
+		fseek(fp, 0, SEEK_SET);
+	}
+	return 0;
+} 
+
 int
 PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
 {
@@ -557,13 +589,7 @@ PyRun_SimpleFileEx(FILE *fp, char *filename, int closeit)
 		return -1;
 	d = PyModule_GetDict(m);
 	ext = filename + strlen(filename) - 4;
-	if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0
-#ifdef macintosh
-	/* On a mac, we also assume a pyc file for types 'PYC ' and 'APPL' */
-	    || PyMac_getfiletype(filename) == 'PYC '
-	    || PyMac_getfiletype(filename) == 'APPL'
-#endif /* macintosh */
-		) {
+	if (maybe_pyc_file(fp, filename, ext, closeit)) {
 		/* Try to run a pyc file. First, re-open in binary */
 		if (closeit)
 			fclose(fp);
