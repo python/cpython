@@ -1,10 +1,8 @@
 """This script prints out a list of undocumented symbols found in
 Python include files, prefixed by their tag kind.
 
-First, a temporary file is written which contains all Python include
-files, with DL_IMPORT simply removed.  This file is passed to ctags,
-and the output is parsed into a dictionary mapping symbol names to tag
-kinds.
+Pass Python's include files to ctags, parse the output into a
+dictionary mapping symbol names to tag kinds.
 
 Then, the .tex files from Python docs are read into a giant string.
 
@@ -16,11 +14,13 @@ output, prefixed with their tag kind.
 TAG_KINDS = "dpt"
 
 # Doc sections to use
-DOCSECTIONS = ["api", "ext"]
+DOCSECTIONS = ["api"]# ["api", "ext"]
 
-# Only print symbols starting with this prefix
+# Only print symbols starting with this prefix,
 # to get all symbols, use an empty string
 PREFIX = "Py"
+
+INCLUDEPATTERN = "*.h"
 
 # end of customization section
 
@@ -58,40 +58,28 @@ def findnames(file, prefix=""):
             names[name] = tag
     return names
 
-def print_undoc_symbols(prefix):
-    incfile = tempfile.mktemp(".h")
-    
-    fp = open(incfile, "w")
-
-    for file in glob.glob(os.path.join(INCDIR, "*.h")):
-        text = open(file).read()
-        # remove all DL_IMPORT, they will confuse ctags
-        text = re.sub("DL_IMPORT", "", text)
-        fp.write(text)
-    fp.close()
-
+def print_undoc_symbols(prefix, docdir, incdir):
     docs = []
 
     for sect in DOCSECTIONS:
-        for file in glob.glob(os.path.join(DOCDIR, sect, "*.tex")):
+        for file in glob.glob(os.path.join(docdir, sect, "*.tex")):
             docs.append(open(file).read())
 
     docs = "\n".join(docs)
 
-    fp = os.popen("ctags --c-types=%s -f - %s" % (TAG_KINDS, incfile))
+    incfiles = os.path.join(incdir, INCLUDEPATTERN)
+
+    fp = os.popen("ctags -IDL_IMPORT --c-types=%s -f - %s" % (TAG_KINDS, incfiles))
     dict = findnames(fp, prefix)
     names = dict.keys()
     names.sort()
     for name in names:
         if docs.find(name) == -1:
             print dict[name], name
-    os.remove(incfile)
 
 if __name__ == '__main__':
-    global INCDIR
-    global DOCDIR
-    SRCDIR = os.path.dirname(sys.argv[0])
-    INCDIR = os.path.normpath(os.path.join(SRCDIR, "../../Include"))
-    DOCDIR = os.path.normpath(os.path.join(SRCDIR, ".."))
+    srcdir = os.path.dirname(sys.argv[0])
+    incdir = os.path.normpath(os.path.join(srcdir, "../../Include"))
+    docdir = os.path.normpath(os.path.join(srcdir, ".."))
 
-    print_undoc_symbols(PREFIX)
+    print_undoc_symbols(PREFIX, docdir, incdir)
