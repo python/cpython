@@ -109,7 +109,9 @@ class Conversion:
         self.write = ofp.write
         self.ofp = ofp
         self.table = table
-        self.line = string.join([s.rstrip() for s in ifp.readlines()], "\n")
+        L = [s.rstrip() for s in ifp.readlines()]
+        L.append("")
+        self.line = string.join(L, "\n")
         self.preamble = 1
 
     def convert(self):
