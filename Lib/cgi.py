@@ -28,7 +28,7 @@ written in Python.
 # responsible for its maintenance.
 #
 
-__version__ = "2.5"
+__version__ = "2.6"
 
 
 # Imports
@@ -243,10 +243,13 @@ def parse_multipart(fp, pdict):
     point in having two implementations of the same parsing algorithm.
 
     """
+    boundary = ""
     if pdict.has_key('boundary'):
         boundary = pdict['boundary']
-    else:
-        boundary = ""
+    if not valid_boundary(boundary):
+        raise ValueError,  ('Invalid boundary in multipart form: %s' 
+                            % `boundary`)
+    
     nextpart = "--" + boundary
     lastpart = "--" + boundary + "--"
     partdict = {}
@@ -595,14 +598,18 @@ class FieldStorage:
 
     def read_multi(self, environ, keep_blank_values, strict_parsing):
         """Internal: read a part that is itself multipart."""
+        ib = self.innerboundary
+        if not valid_boundary(ib):
+            raise ValueError, ('Invalid boundary in multipart form: %s' 
+                               % `ib`)
         self.list = []
         klass = self.FieldStorageClass or self.__class__
-        part = klass(self.fp, {}, self.innerboundary,
+        part = klass(self.fp, {}, ib,
                      environ, keep_blank_values, strict_parsing)
         # Throw first part away
         while not part.done:
             headers = rfc822.Message(self.fp)
-            part = klass(self.fp, headers, self.innerboundary,
+            part = klass(self.fp, headers, ib,
                          environ, keep_blank_values, strict_parsing)
             self.list.append(part)
         self.skip_lines()
@@ -633,11 +640,19 @@ class FieldStorage:
 
     def read_lines(self):
         """Internal: read lines until EOF or outerboundary."""
-        self.file = self.make_file('')
+        self.file = self.__file = StringIO()
         if self.outerboundary:
             self.read_lines_to_outerboundary()
         else:
             self.read_lines_to_eof()
+
+    def __write(self, line):
+        if self.__file is not None:
+            if self.__file.tell() + len(line) > 1000:
+                self.file = self.make_file('')
+                self.file.write(self.__file.getvalue())
+                self.__file = None
+        self.file.write(line)
 
     def read_lines_to_eof(self):
         """Internal: read lines until EOF."""
@@ -646,7 +661,7 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
-            self.file.write(line)
+            self.__write(line)
 
     def read_lines_to_outerboundary(self):
         """Internal: read lines until outerboundary."""
@@ -674,7 +689,7 @@ class FieldStorage:
                 line = line[:-1]
             else:
                 delim = ""
-            self.file.write(odelim + line)
+            self.__write(odelim + line)
 
     def skip_lines(self):
         """Internal: skip lines until outer boundary if defined."""
@@ -991,6 +1006,9 @@ def escape(s, quote=None):
         s = s.replace('"', "&quot;")
     return s
 
+def valid_boundary(s, _vb_pattern="^[ -~]{0,200}[!-~]$"):
+    import re
+    return re.match(_vb_pattern, s)
 
 # Invoke mainline
 # ===============
