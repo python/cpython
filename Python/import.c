@@ -1214,23 +1214,26 @@ find_module(char *fullname, char *subname, PyObject *path, char *buf,
 		** Speedup: each sys.path item is interned, and
 		** FindResourceModule remembers which items refer to
 		** folders (so we don't have to bother trying to look
-		** into them for resources).
+		** into them for resources). We only do this for string
+		** items.
 		*/
-		PyString_InternInPlace(&PyList_GET_ITEM(path, i));
-		v = PyList_GET_ITEM(path, i);
-		if (PyMac_FindResourceModule((PyStringObject *)v, name, buf)) {
-			static struct filedescr resfiledescr =
-				{"", "", PY_RESOURCE};
+		if (PyString_Check(PyList_GET_ITEM(path, i))) {
+			PyString_InternInPlace(&PyList_GET_ITEM(path, i));
+			v = PyList_GET_ITEM(path, i);
+			if (PyMac_FindResourceModule((PyStringObject *)v, name, buf)) {
+				static struct filedescr resfiledescr =
+					{"", "", PY_RESOURCE};
 
-			Py_XDECREF(copy);
-			return &resfiledescr;
-		}
-		if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
-			static struct filedescr resfiledescr =
-				{"", "", PY_CODERESOURCE};
+				Py_XDECREF(copy);
+				return &resfiledescr;
+			}
+			if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
+				static struct filedescr resfiledescr =
+					{"", "", PY_CODERESOURCE};
 
-			Py_XDECREF(copy);
-			return &resfiledescr;
+				Py_XDECREF(copy);
+				return &resfiledescr;
+			}
 		}
 #endif
 		if (len > 0 && buf[len-1] != SEP
