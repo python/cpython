@@ -137,6 +137,8 @@ class NNTP:
 			line = self.getline()
 			if line == '.':
 				break
+			if line[:2] == '..':
+				line = line[1:]
 			list.append(line)
 		return resp, list
 
@@ -407,8 +409,8 @@ class NNTP:
 				break
 			if line[-1] == '\n':
 				line = line[:-1]
-			if line == '.':
-				line = '..'
+			if line[:1] == '.':
+				line = '.' + line
 			self.putline(line)
 		self.putline('.')
 		return self.getresp()
@@ -431,8 +433,8 @@ class NNTP:
 				break
 			if line[-1] == '\n':
 				line = line[:-1]
-			if line == '.':
-				line = '..'
+			if line[:1] == '.':
+				line = '.' + line
 			self.putline(line)
 		self.putline('.')
 		return self.getresp()
@@ -446,3 +448,22 @@ class NNTP:
 		self.sock.close()
 		del self.file, self.sock
 		return resp
+
+
+# Minimal test function
+def _test():
+	s = NNTP('news')
+	resp, count, first, last, name = s.group('comp.lang.python')
+	print resp
+	print 'Group', name, 'has', count, 'articles, range', first, 'to', last
+	resp, subs = s.xhdr('subject', first + '-' + last)
+	print resp
+	for item in subs:
+		print "%7s %s" % item
+	resp = s.quit()
+	print resp
+
+
+# Run the test when run as a script
+if __name__ == '__main__':
+	_test()
