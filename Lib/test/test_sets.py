@@ -72,7 +72,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_iteration(self):
         for v in self.set:
-            assert v in self.values, "Missing item in iteration for " + self.case
+            self.assert_(v in self.values)
 
 #------------------------------------------------------------------------------
 
@@ -97,10 +97,10 @@ class TestBasicOpsSingleton(TestBasicOps):
         self.repr   = "Set([3])"
 
     def test_in(self):
-        assert 3 in self.set, "Valueship for unit set"
+        self.failUnless(3 in self.set)
 
     def test_not_in(self):
-        assert 2 not in self.set, "Non-valueship for unit set"
+        self.failUnless(2 not in self.set)
 
 #------------------------------------------------------------------------------
 
@@ -114,10 +114,10 @@ class TestBasicOpsTuple(TestBasicOps):
         self.repr   = "Set([(0, 'zero')])"
 
     def test_in(self):
-        assert (0, "zero") in self.set, "Valueship for tuple set"
+        self.failUnless((0, "zero") in self.set)
 
     def test_not_in(self):
-        assert 9 not in self.set, "Non-valueship for tuple set"
+        self.failUnless(9 not in self.set)
 
 #------------------------------------------------------------------------------
 
@@ -137,10 +137,10 @@ class TestSetOfSets(unittest.TestCase):
         inner = Set([1])
         outer = Set([inner])
         element = outer.pop()
-        assert type(element) == ImmutableSet, "Construct set of sets"
+        self.assertEqual(type(element), ImmutableSet)
         outer.add(inner)        # Rebuild set of sets with .add method
         outer.remove(inner)
-        assert outer == Set()   # Verify that remove worked
+        self.assertEqual(outer, Set())   # Verify that remove worked
         outer.discard(inner)    # Absence of KeyError indicates working fine
 
 #==============================================================================
@@ -314,7 +314,7 @@ class TestMutate(unittest.TestCase):
     def test_remove_absent(self):
         try:
             self.set.remove("d")
-            assert 0, "Removing missing element"
+            self.fail("Removing missing element should have raised LookupError")
         except LookupError:
             pass
 
@@ -323,7 +323,7 @@ class TestMutate(unittest.TestCase):
         for v in self.values:
             self.set.remove(v)
             expected_len -= 1
-            assert len(self.set) == expected_len, "Removing values one by one"
+            self.assertEqual(len(self.set), expected_len)
 
     def test_discard_present(self):
         self.set.discard("c")
@@ -343,7 +343,7 @@ class TestMutate(unittest.TestCase):
             popped[self.set.pop()] = None
         self.assertEqual(len(popped), len(self.values))
         for v in self.values:
-            assert v in popped, "Popping items"
+            self.failUnless(v in popped)
 
     def test_update_empty_tuple(self):
         self.set.update(())
@@ -364,9 +364,9 @@ class TestSubsets(unittest.TestCase):
     def test_issubset(self):
         result = self.left.issubset(self.right)
         if "<" in self.cases:
-            assert result, "subset: " + self.name
+            self.failUnless(result)
         else:
-            assert not result, "non-subset: " + self.name
+            self.failUnless(not result)
 
 #------------------------------------------------------------------------------
 
@@ -415,88 +415,88 @@ class TestOnlySetsInBinaryOps(unittest.TestCase):
     def test_cmp(self):
         try:
             self.other == self.set
-            assert 0, "Comparison with non-set on left"
+            self.fail("expected TypeError")
         except TypeError:
             pass
         try:
             self.set != self.other
-            assert 0, "Comparison with non-set on right"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_union_update(self):
         try:
             self.set |= self.other
-            assert 0, "Union update with non-set"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_union(self):
         try:
             self.other | self.set
-            assert 0, "Union with non-set on left"
+            self.fail("expected TypeError")
         except TypeError:
             pass
         try:
             self.set | self.other
-            assert 0, "Union with non-set on right"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_intersection_update(self):
         try:
             self.set &= self.other
-            assert 0, "Intersection update with non-set"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_intersection(self):
         try:
             self.other & self.set
-            assert 0, "Intersection with non-set on left"
+            self.fail("expected TypeError")
         except TypeError:
             pass
         try:
             self.set & self.other
-            assert 0, "Intersection with non-set on right"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_sym_difference_update(self):
         try:
             self.set ^= self.other
-            assert 0, "Symmetric difference update with non-set"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_sym_difference(self):
         try:
             self.other ^ self.set
-            assert 0, "Symmetric difference with non-set on left"
+            self.fail("expected TypeError")
         except TypeError:
             pass
         try:
             self.set ^ self.other
-            assert 0, "Symmetric difference with non-set on right"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_difference_update(self):
         try:
             self.set -= self.other
-            assert 0, "Symmetric difference update with non-set"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
     def test_difference(self):
         try:
             self.other - self.set
-            assert 0, "Symmetric difference with non-set on left"
+            self.fail("expected TypeError")
         except TypeError:
             pass
         try:
             self.set - self.other
-            assert 0, "Symmetric difference with non-set on right"
+            self.fail("expected TypeError")
         except TypeError:
             pass
 
@@ -529,18 +529,18 @@ class TestCopying(unittest.TestCase):
         dup = self.set.copy()
         dup_list = list(dup); dup_list.sort()
         set_list = list(self.set); set_list.sort()
-        assert len(dup_list) == len(set_list), "Unequal lengths after copy"
+        self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
-            assert dup_list[i] is set_list[i], "Non-identical items after copy"
+            self.failUnless(dup_list[i] is set_list[i])
 
     def test_deep_copy(self):
         dup = copy.deepcopy(self.set)
         ##print type(dup), `dup`
         dup_list = list(dup); dup_list.sort()
         set_list = list(self.set); set_list.sort()
-        assert len(dup_list) == len(set_list), "Unequal lengths after deep copy"
+        self.assertEqual(len(dup_list), len(set_list))
         for i in range(len(dup_list)):
-            assert dup_list[i] == set_list[i], "Unequal items after deep copy"
+            self.assertEqual(dup_list[i], set_list[i])
 
 #------------------------------------------------------------------------------
 
