@@ -29,7 +29,16 @@ fi
 EXPLANATION=''
 ANNOUNCE=true
 
-# XXX Should use getopt(1) here.
+getopt -T >/dev/null
+if [ $? -eq 4 ] ; then
+    # We have a sufficiently useful getopt(1) implementation.
+    set -- `getopt -ssh m:p:qt:F: "$@"`
+else
+    # This version of getopt doesn't support quoting of long options
+    # with spaces, so let's not rely on it at all.
+    :
+fi
+
 while [ "$#" -gt 0 ] ; do
   case "$1" in
       -m)
