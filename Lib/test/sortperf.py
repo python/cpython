@@ -1,4 +1,9 @@
-"""Sort performance test."""
+"""Sort performance test.
+
+See main() for command line syntax.
+See tabulate() for output format.
+
+"""
 
 import sys
 import time
@@ -58,6 +63,20 @@ def doit(L):
     fl()
 
 def tabulate(r):
+    """Tabulate sort speed for lists of various sizes.
+
+    The sizes are 2**i for i in r (the argument, a list).
+
+    The output displays i, 2**i, and the time to sort arrays of 2**i
+    floating point numbers with the following properties:
+
+    *sort: random data
+    \sort: descending data
+    /sort: ascending data
+    ~sort: many duplicates
+    -sort: all equal
+
+    """
     fmt = ("%2s %6s" + " %6s"*5)
     print fmt % ("i", "2**i", "*sort", "\\sort", "/sort", "~sort", "-sort")
     for i in r:
@@ -78,16 +97,22 @@ def tabulate(r):
         print
 
 def main():
+    """Main program when invoked as a script.
+
+    One argument: tabulate a single row.
+    Two arguments: tabulate a range (inclusive).
+    Extra arguments are used to seed the random generator.
+
+    """
     import string
     # default range (inclusive)
     k1 = 15
     k2 = 19
-    # one argument: single point
-    # two arguments: specify range
     if sys.argv[1:]:
-        k1 = string.atoi(sys.argv[1])
-        k2 = k1
+        # one argument: single point
+        k1 = k2 = string.atoi(sys.argv[1])
         if sys.argv[2:]:
+            # two arguments: specify range
             k2 = string.atoi(sys.argv[2])
             if sys.argv[3:]:
                 # derive random seed from remaining arguments
@@ -102,7 +127,7 @@ def main():
                     h = h>>8
                     z = (z^h^d) & 255
                 whrandom.seed(x, y, z)
-    r = range(k1, k2+1)
+    r = range(k1, k2+1)                 # include the end point
     tabulate(r)
 
 if __name__ == '__main__':
