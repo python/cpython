@@ -193,9 +193,8 @@ for i, j, k in (): pass
 else: pass
 [3]
 
-print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)* ['finally' ':' suite]
+print 'try_stmt' # 'try' ':' suite (except_clause ':' suite)+ | 'try' ':' suite 'finally' ':' suite
 ### except_clause: 'except' [expr [',' expr]]
-try: pass
 try: 1/0
 except ZeroDivisionError: pass
 try: 1/0
@@ -204,9 +203,6 @@ except TypeError, msg: pass
 except RuntimeError, msg: pass
 except: pass
 try: pass
-finally: pass
-try: 1/0
-except: pass
 finally: pass
 
 print 'suite' # simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT
