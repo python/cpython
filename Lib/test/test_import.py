@@ -88,7 +88,7 @@ def test_module_with_large_stack(module):
     f.write(']')
     f.close()
 
-    # compile & remove .py file, we only need .pyc
+    # compile & remove .py file, we only need .pyc (or .pyo)
     f = open(filename, 'r')
     py_compile.compile(filename)
     f.close()
@@ -102,6 +102,9 @@ def test_module_with_large_stack(module):
 
     # cleanup
     del sys.path[-1]
-    os.unlink(module + '.pyc')
+    for ext in '.pyc', '.pyo':
+        fname = module + ext
+        if os.path.exists(fname):
+            os.unlink(fname)
 
 test_module_with_large_stack('longlist')
