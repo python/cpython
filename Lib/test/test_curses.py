@@ -198,7 +198,10 @@ def unit_tests():
     from curses import ascii
     for ch, expected in [('a', 'a'), ('A', 'A'),
                          (';', ';'), (' ', ' '),
-                         ('\x7f', '^?'), ('\n', '^J'), ('\0', '^@')]:
+                         ('\x7f', '^?'), ('\n', '^J'), ('\0', '^@'),
+                         # Meta-bit characters
+                         ('\x8a', '!^J'), ('\xc1', '!A'),
+                         ]:
         if ascii.unctrl(ch) != expected:
             print 'curses.unctrl fails on character', repr(ch)
             
