@@ -476,7 +476,7 @@ class VideoBagOfTricks:
 		if nframes == 0:
 			maxmem = self.getint(self.in_maxmem, 1.0)
 			memsize = int(maxmem * 1024 * 1024)
-			nframes = self.calcnframes()
+			nframes = self.calcnframes(memsize)
 		info = (vformat, x, y, nframes, 1)
 		try:
 			info2, data, bitvec = self.video.CaptureBurst(info)
@@ -489,7 +489,7 @@ class VideoBagOfTricks:
 		self.save_burst(info2, data, bitvec)
 		self.setarrow()
 
-	def calcnframes(self):
+	def calcnframes(self, memsize):
 		gl.winset(self.window)
 		x, y = gl.getsize()
 		pixels = x*y
