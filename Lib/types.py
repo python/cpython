@@ -10,9 +10,9 @@ IntType = type(0)
 LongType = type(0L)
 FloatType = type(0.0)
 try:
-	ComplexType = type(complex(0,1))
+    ComplexType = type(complex(0,1))
 except NameError:
-	pass
+    pass
 
 StringType = type('')
 
@@ -23,10 +23,13 @@ DictType = DictionaryType = type({})
 def _f(): pass
 FunctionType = type(_f)
 LambdaType = type(lambda: None)		# Same as FunctionType
-CodeType = type(_f.func_code)
+try:
+    CodeType = type(_f.func_code)
+except:
+    pass
 
 class _C:
-	def _m(self): pass
+    def _m(self): pass
 ClassType = type(_C)
 UnboundMethodType = type(_C._m)		# Same as MethodType
 _x = _C()
@@ -38,14 +41,20 @@ BuiltinMethodType = type([].append)	# Same as BuiltinFunctionType
 
 ModuleType = type(sys)
 
-FileType = type(sys.stdin)		# XXX what if it was assigned to?
+try:
+    FileType = type(sys.stdin)		# XXX what if it was assigned to?
+except:
+    pass
 XRangeType = type(xrange(0))
 
 try:
-	raise TypeError
+    raise TypeError
 except TypeError:
+    try:
 	TracebackType = type(sys.exc_traceback)
 	FrameType = type(sys.exc_traceback.tb_frame)
+    except:
+	pass
 
 SliceType = type(slice(0))
 EllipsisType = type(Ellipsis)
