@@ -75,16 +75,11 @@ class bdist_wininst (Command):
         install = self.reinitialize_command('install')
         install.root = self.bdist_dir
         if os.name != 'nt':
-            # must force install to use the 'nt' scheme
-            install.select_scheme ('nt')
-            # change the backslash to the current pathname separator
-            for key in ('purelib', 'platlib', 'headers', 'scripts',
-                        'data'):
-                attrname = 'install_' + key
-                attr = getattr (install, attrname)
-                if attr:
-                    attr = string.replace (attr, '\\', os.sep)
-                    setattr (install, attrname, attr)
+            # Must force install to use the 'nt' scheme; we set the
+            # prefix too just because it looks silly to put stuff
+            # in (eg.) ".../usr/Scripts", "usr/Include", etc.
+            install.prefix = "Python"
+            install.select_scheme('nt')
 
         install_lib = self.reinitialize_command('install_lib')
         # we do not want to include pyc or pyo files
