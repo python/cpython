@@ -508,7 +508,7 @@ C API
 Tests
 -----
 
-- Several tests weren't being run rom regrtest.py (test_timeout.py,
+- Several tests weren't being run from regrtest.py (test_timeout.py,
   test_tarfile.py, test_netrc.py, test_multifile.py,
   test_importhooks.py and test_imp.py).  Now they are.  (Note to
   developers: please read Lib/test/README when creating a new test, to
