@@ -2193,11 +2193,18 @@ posix_times(self, args)
 	if (!PyArg_NoArgs(args))
 		return NULL;
 	hProc = GetCurrentProcess();
-	GetProcessTimes(hProc,&create, &exit, &kernel, &user);
+	GetProcessTimes(hProc, &create, &exit, &kernel, &user);
+	/* The fields of a FILETIME structure are the hi and lo part
+	   of a 64-bit value expressed in 100 nanosecond units.
+	   1e7 is one second in such units; 1e-7 the inverse.
+	   429.4967296 is 2**32 / 1e7 or 2**32 * 1e-7.
+	*/
 	return Py_BuildValue(
 		"ddddd",
-		(double)(kernel.dwHighDateTime*2E32+kernel.dwLowDateTime)/2E6,
-		(double)(user.dwHighDateTime*2E32+user.dwLowDateTime) / 2E6,
+		(double)(kernel.dwHighDateTime*429.4967296 +
+		         kernel.dwLowDateTime*1e-7),
+		(double)(user.dwHighDateTime*429.4967296 +
+		         user.dwLowDateTime*1e-7),
 		(double)0,
 		(double)0,
 		(double)0);
