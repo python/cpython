@@ -110,7 +110,7 @@ def capwords(str, pat='[^a-zA-Z0-9_]+'):
     words = splitx(str, pat)
     for i in range(0, len(words), 2):
         words[i] = words[i].capitalize()
-    return "".joinfields(words)
+    return "".join(words)
 
 
 # Internal subroutines:
