@@ -138,6 +138,10 @@ Core
 
 Library
 
+- The xrange() object is simplified: it no longer supports slicing,
+  repetition, comparisons, efficient 'in' checking, the tolist()
+  method, or the start, stop and step attributes.  See PEP 260.
+
 - A new function fnmatch.filter to filter lists of file names was added.
 
 - calendar.py uses month and day names based on the current locale.
