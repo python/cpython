@@ -1,0 +1,65 @@
+\documentclass{manual}
+
+\title{Big Python Manual}
+
+\input{boilerplate}
+
+\makeindex			% tell \index to actually write the .idx file
+\makemodindex			% If this contains a lot of module sections.
+
+
+\begin{document}
+
+\maketitle
+
+% This makes the contents more accessible from the front page of the HTML.
+\ifhtml
+\chapter*{Front Matter\label{front}}
+\fi
+
+%\input{copyright}
+
+\begin{abstract}
+
+\noindent
+Big Python is a special version of Python for users who require larger 
+keys on their keyboards.  It accomodates their special needs by ...
+
+\end{abstract}
+
+\tableofcontents
+
+
+\chapter{...}
+
+My chapter.
+
+
+\appendix
+\chapter{...}
+
+My appendix.
+
+The \code{\e appendix} markup need not be repeated for additional
+appendices.
+
+
+%
+%  The ugly "%begin{latexonly}" pseudo-environments are really just to
+%  keep LaTeX2HTML quiet during the \renewcommand{} macros; they're
+%  not really valuable.
+%
+%  If you don't want the Module Index, you can remove all of this up
+%  until the second \input line.
+%
+%begin{latexonly}
+\renewcommand{\indexname}{Module Index}
+%end{latexonly}
+\input{mod\jobname.ind}		% Module Index
+
+%begin{latexonly}
+\renewcommand{\indexname}{Index}
+%end{latexonly}
+\input{\jobname.ind}			% Index
+
+\end{document}
