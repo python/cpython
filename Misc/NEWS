@@ -1,3 +1,20 @@
+What's New in Python 2.2.1c2?
+Release date: ???
+=============================
+
+Core and builtins
+
+Extension modules
+
+Library
+
+- The email package bug #531966 was fixed.  This caused exceptions to
+  occur when flatting multipart/* messages with zero or one (scalar)
+  attachment.
+
+Tools
+
+
 What's New in Python 2.2.1c1?
 Release date: 18-Mar-2002
 =============================
@@ -59,7 +76,6 @@ Library
 - The copy module can be used in restricted execution mode.
 
 - A few bugs in the email package have been fixed.
-  XXX more detail!
 
 - StringIO's attitude to unicode strings has been reverted to that of
   the 2.1.x branch (note cStringIO still knows nothing about unicode).
