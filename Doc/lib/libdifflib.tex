@@ -1,0 +1,315 @@
+\section{\module{difflib} ---
+         Helpers for computing deltas}
+
+\declaremodule{standard}{difflib}
+\modulesynopsis{Helpers for computing differences between objects.}
+\moduleauthor{Tim Peters}{tim.one@home.com}
+\sectionauthor{Tim Peters}{tim.one@home.com}
+% LaTeXification by Fred L. Drake, Jr. <fdrake@acm.org>.
+
+\begin{funcdesc}{get_close_matches}{word, possibilities\optional{,
+                 n\optional{, cutoff}}}
+  Return a list of the best ``good enough'' matches.  \var{word} is a
+  sequence for which close matches are desired (typically a string),
+  and \var{possibilities} is a list of sequences against which to
+  match \var{word} (typically a list of strings).
+
+  Optional argument \var{n} (default \code{3}) is the maximum number
+  of close matches to return; \var{n} must be greater than \code{0}.
+
+  Optional argument \var{cutoff} (default \code{0.6}) is a float in
+  the range [0, 1].  Possibilities that don't score at least that
+  similar to \var{word} are ignored.
+
+  The best (no more than \var{n}) matches among the possibilities are
+  returned in a list, sorted by similarity score, most similar first.
+
+\begin{verbatim}
+>>> get_close_matches('appel', ['ape', 'apple', 'peach', 'puppy'])
+['apple', 'ape']
+>>> import keyword
+>>> get_close_matches('wheel', keyword.kwlist)
+['while']
+>>> get_close_matches('apple', keyword.kwlist)
+[]
+>>> get_close_matches('accept', keyword.kwlist)
+['except']
+\end{verbatim}
+\end{funcdesc}
+
+\begin{classdesc}{SequenceMatcher}{\unspecified}
+  This is a flexible class for comparing pairs of sequences of any
+  type, so long as the sequence elements are hashable.  The basic
+  algorithm predates, and is a little fancier than, an algorithm
+  published in the late 1980's by Ratcliff and Obershelp under the
+  hyperbolic name ``gestalt pattern matching.''  The idea is to find
+  the longest contiguous matching subsequence that contains no
+  ``junk'' elements (the Ratcliff and Obershelp algorithm doesn't
+  address junk).  The same idea is then applied recursively to the
+  pieces of the sequences to the left and to the right of the matching
+  subsequence.  This does not yield minimal edit sequences, but does
+  tend to yield matches that ``look right'' to people.
+
+  \strong{Timing:} The basic Ratcliff-Obershelp algorithm is cubic
+  time in the worst case and quadratic time in the expected case.
+  \class{SequenceMatcher} is quadratic time for the worst case and has
+  expected-case behavior dependent on how many elements the sequences
+  have in common; best case time (no elements in common) is linear.
+\end{classdesc}
+
+
+\subsection{SequenceMatcher Objects \label{sequence-matcher}}
+
+\begin{classdesc}{SequenceMatcher}{\optional{isjunk\optional{,
+                                   a\optional{, b}}}}
+  Optional argument \var{isjunk} must be \code{None} (the default) or
+  a one-argument function that takes a sequence element and returns
+  true if and only if the element is ``junk'' and should be ignored.
+  \code{None} is equivalent to passing \code{lambda x: 0}, i.e.\ no
+  elements are ignored.  For example, pass
+
+\begin{verbatim}
+lambda x: x in " \\t"
+\end{verbatim}
+
+  if you're comparing lines as sequences of characters, and don't want
+  to synch up on blanks or hard tabs.
+
+  The optional arguments \var{a} and \var{b} are sequences to be
+  compared; both default to empty strings.  The elements of both
+  sequences must be hashable.
+\end{classdesc}
+
+
+\class{SequenceMatcher} objects have the following methods:
+
+\begin{methoddesc}{set_seqs}{a, b}
+  Set the two sequences to be compared.
+\end{methoddesc}
+
+\class{SequenceMatcher} computes and caches detailed information about
+the second sequence, so if you want to compare one sequence against
+many sequences, use \method{set_seq2()} to set the commonly used
+sequence once and call \method{set_seq1()} repeatedly, once for each
+of the other sequences.
+
+\begin{methoddesc}{set_seq1}{a}
+  Set the first sequence to be compared.  The second sequence to be
+  compared is not changed.
+\end{methoddesc}
+
+\begin{methoddesc}{set_seq2}{b}
+  Set the second sequence to be compared.  The first sequence to be
+  compared is not changed.
+\end{methoddesc}
+
+\begin{methoddesc}{find_longest_match}{alo, ahi, blo, bhi}
+  Find longest matching block in \code{\var{a}[\var{alo}:\var{ahi}]}
+  and \code{\var{b}[\var{blo}:\var{bhi}]}.
+
+  If \var{isjunk} was omitted or \code{None},
+  \method{get_longest_match()} returns \code{(\var{i}, \var{j},
+  \var{k})} such that \code{\var{a}[\var{i}:\var{i}+\var{k}]} is equal
+  to \code{\var{b}[\var{j}:\var{j}+\var{k}]}, where 
+      \code{\var{alo} <= \var{i} <= \var{i}+\var{k} <= \var{ahi}} and
+      \code{\var{blo} <= \var{j} <= \var{j}+\var{k} <= \var{bhi}}.
+  For all \code{(\var{i'}, \var{j'}, \var{k'})} meeting those
+  conditions, the additional conditions
+      \code{\var{k} >= \var{k'}},
+      \code{\var{i} <= \var{i'}},
+      and if \code{\var{i} == \var{i'}}, \code{\var{j} <= \var{j'}}
+  are also met.
+  In other words, of all maximal matching blocks, return one that
+  starts earliest in \var{a}, and of all those maximal matching blocks
+  that start earliest in \var{a}, return the one that starts earliest
+  in \var{b}.
+
+\begin{verbatim}
+>>> s = SequenceMatcher(None, " abcd", "abcd abcd")
+>>> s.find_longest_match(0, 5, 0, 9)
+(0, 4, 5)
+\end{verbatim}
+
+  If \var{isjunk} was provided, first the longest matching block is
+  determined as above, but with the additional restriction that no
+  junk element appears in the block.  Then that block is extended as
+  far as possible by matching (only) junk elements on both sides.
+  So the resulting block never matches on junk except as identical
+  junk happens to be adjacent to an interesting match.
+
+  Here's the same example as before, but considering blanks to be junk.
+  That prevents \code{' abcd'} from matching the \code{ abcd} at the
+  tail end of the second sequence directly.  Instead only the
+  \code{'abcd'} can match, and matches the leftmost \code{'abcd'} in
+  the second sequence:
+
+\begin{verbatim}
+>>> s = SequenceMatcher(lambda x: x==" ", " abcd", "abcd abcd")
+>>> s.find_longest_match(0, 5, 0, 9)
+(1, 0, 4)
+\end{verbatim}
+
+  If no blocks match, this returns \code{(\var{alo}, \var{blo}, 0)}.
+\end{methoddesc}
+
+\begin{methoddesc}{get_matching_blocks}{}
+  Return list of triples describing matching subsequences.
+  Each triple is of the form \code{(\var{i}, \var{j}, \var{n})}, and
+  means that \code{\var{a}[\var{i}:\var{i}+\var{n}] ==
+  \var{b}[\var{j}:\var{j}+\var{n}]}.  The triples are monotonically
+  increasing in \var{i} and \var{j}.
+
+  The last triple is a dummy, and has the value \code{(len(\var{a}),
+  len(\var{b}), 0)}.  It is the only triple with \code{\var{n} == 0}.
+  % Explain why a dummy is used!
+
+\begin{verbatim}
+>>> s = SequenceMatcher(None, "abxcd", "abcd")
+>>> s.get_matching_blocks()
+[(0, 0, 2), (3, 2, 2), (5, 4, 0)]
+\end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}{get_opcodes}{}
+  Return list of 5-tuples describing how to turn \var{a} into \var{b}.
+  Each tuple is of the form \code{(\var{tag}, \var{i1}, \var{i2},
+  \var{j1}, \var{j2})}.  The first tuple has \code{\var{i1} ==
+  \var{j1} == 0}, and remaining tuples have \var{i1} equal to the
+  \var{i2} from the preceeding tuple, and, likewise, \var{j1} equal to
+  the previous \var{j2}.
+
+  The \var{tag} values are strings, with these meanings:
+
+\begin{tableii}{l|l}{code}{Value}{Meaning}
+  \lineii{'replace'}{\code{\var{a}[\var{i1}:\var{i2}]} should be
+                     replaced by \code{\var{b}[\var{j1}:\var{j2}]}.}
+  \lineii{'delete'}{\code{\var{a}[\var{i1}:\var{i2}]} should be
+                    deleted.  Note that \code{\var{j1} == \var{j2}} in
+                    this case.}
+  \lineii{'insert'}{\code{\var{b}[\var{j1}:\var{j2}]} should be
+                    inserted at \code{\var{a}[\var{i1}:\var{i1}]}. 
+                    Note that \code{\var{i1} == \var{i2}} in this
+                    case.}
+  \lineii{'equal'}{\code{\var{a}[\var{i1}:\var{i2}] ==
+                   \var{b}[\var{j1}:\var{j2}]} (the sub-sequences are
+                   equal).}
+\end{tableii}
+
+For example:
+
+\begin{verbatim}
+>>> a = "qabxcd"
+>>> b = "abycdf"
+>>> s = SequenceMatcher(None, a, b)
+>>> for tag, i1, i2, j1, j2 in s.get_opcodes():
+...    print ("%7s a[%d:%d] (%s) b[%d:%d] (%s)" %
+...           (tag, i1, i2, a[i1:i2], j1, j2, b[j1:j2]))
+ delete a[0:1] (q) b[0:0] ()
+  equal a[1:3] (ab) b[0:2] (ab)
+replace a[3:4] (x) b[2:3] (y)
+  equal a[4:6] (cd) b[3:5] (cd)
+ insert a[6:6] () b[5:6] (f)
+\end{verbatim}
+\end{methoddesc}
+
+\begin{methoddesc}{ratio}{}
+  Return a measure of the sequences' similarity as a float in the
+  range [0, 1].
+
+  Where T is the total number of elements in both sequences, and M is
+  the number of matches, this is 2,0*M / T. Note that this is \code{1}
+  if the sequences are identical, and \code{0} if they have nothing in
+  common.
+
+  This is expensive to compute if \method{get_matching_blocks()} or
+  \method{get_opcodes()} hasn't already been called, in which case you
+  may want to try \method{quick_ratio()} or
+  \method{real_quick_ratio()} first to get an upper bound.
+\end{methoddesc}
+
+\begin{methoddesc}{quick_ratio}{}
+  Return an upper bound on \method{ratio()} relatively quickly.
+
+  This isn't defined beyond that it is an upper bound on
+  \method{ratio()}, and is faster to compute.
+\end{methoddesc}
+
+\begin{methoddesc}{real_quick_ratio}{}
+  Return an upper bound on \method{ratio()} very quickly.
+
+  This isn't defined beyond that it is an upper bound on
+  \method{ratio()}, and is faster to compute than either
+  \method{ratio()} or \method{quick_ratio()}.
+\end{methoddesc}
+
+The three methods that return the ratio of differences to similarities
+can give different results due to differing levels of approximation:
+
+\begin{verbatim}
+>>> s = SequenceMatcher(None, "abcd", "bcde")
+>>> s.ratio()
+0.75
+>>> s.quick_ratio()
+0.75
+>>> s.real_quick_ratio()
+1.0
+\end{verbatim}
+
+
+\subsection{Examples \label{difflib-examples}}
+
+
+This example compares two strings, considering blanks to be ``junk:''
+
+\begin{verbatim}
+>>> s = SequenceMatcher(lambda x: x == " ",
+...                     "private Thread currentThread;",
+...                     "private volatile Thread currentThread;")
+\end{verbatim}
+
+\method{ratio()} returns a float in [0, 1], measuring the similarity
+of the sequences.  As a rule of thumb, a \method{ratio()} value over
+0.6 means the sequences are close matches:
+
+\begin{verbatim}
+>>> print round(s.ratio(), 3)
+0.866
+\end{verbatim}
+
+If you're only interested in where the sequences match,
+\method{get_matching_blocks()} is handy:
+
+\begin{verbatim}
+>>> for block in s.get_matching_blocks():
+...     print "a[%d] and b[%d] match for %d elements" % block
+a[0] and b[0] match for 8 elements
+a[8] and b[17] match for 6 elements
+a[14] and b[23] match for 15 elements
+a[29] and b[38] match for 0 elements
+\end{verbatim}
+
+Note that the last tuple returned by \method{get_matching_blocks()} is
+always a dummy, \code{(len(\var{a}), len(\var{b}), 0)}, and this is
+the only case in which the last tuple element (number of elements
+matched) is \code{0}.
+
+If you want to know how to change the first sequence into the second,
+use \method{get_opcodes()}:
+
+\begin{verbatim}
+>>> for opcode in s.get_opcodes():
+...     print "%6s a[%d:%d] b[%d:%d]" % opcode
+ equal a[0:8] b[0:8]
+insert a[8:8] b[8:17]
+ equal a[8:14] b[17:23]
+ equal a[14:29] b[23:38]
+\end{verbatim}
+
+See \file{Tools/scripts/ndiff.py} from the Python source distribution
+for a fancy human-friendly file differencer, which uses
+\class{SequenceMatcher} both to view files as sequences of lines, and
+lines as sequences of characters.
+
+See also the function \function{get_close_matches()} in this module,
+which shows how simple code building on \class{SequenceMatcher} can be
+used to do useful work.
