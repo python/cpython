@@ -5,46 +5,10 @@
 
 
 
-#define SystemSevenOrLater 1
-
 #include "macglue.h"
-#include <Memory.h>
-#include <Dialogs.h>
-#include <Menus.h>
-#include <Controls.h>
-
-extern PyObject *ResObj_New(Handle);
-extern int ResObj_Convert(PyObject *, Handle *);
-extern PyObject *OptResObj_New(Handle);
-extern int OptResObj_Convert(PyObject *, Handle *);
-
-extern PyObject *WinObj_New(WindowPtr);
-extern int WinObj_Convert(PyObject *, WindowPtr *);
-extern PyTypeObject Window_Type;
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
-
-extern PyObject *DlgObj_New(DialogPtr);
-extern int DlgObj_Convert(PyObject *, DialogPtr *);
-extern PyTypeObject Dialog_Type;
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
-
-extern PyObject *MenuObj_New(MenuHandle);
-extern int MenuObj_Convert(PyObject *, MenuHandle *);
-
-extern PyObject *CtlObj_New(ControlHandle);
-extern int CtlObj_Convert(PyObject *, ControlHandle *);
-
-extern PyObject *GrafObj_New(GrafPtr);
-extern int GrafObj_Convert(PyObject *, GrafPtr *);
-
-extern PyObject *BMObj_New(BitMapPtr);
-extern int BMObj_Convert(PyObject *, BitMapPtr *);
-
-extern PyObject *WinObj_WhichWindow(WindowPtr);
+#include "pymactoolbox.h"
 
 #include <Events.h>
-
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
 static PyObject *Evt_Error;
 

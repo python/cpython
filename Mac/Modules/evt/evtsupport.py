@@ -36,8 +36,6 @@ EventKind = Type("EventKind", "H")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
-
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 """
 
 class MyObjectDefinition(GlobalObjectDefinition):

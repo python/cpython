@@ -5,64 +5,11 @@
 
 
 
-#define SystemSevenOrLater 1
-
 #include "macglue.h"
-#include <Memory.h>
-#include <Dialogs.h>
-#include <Menus.h>
-#include <Controls.h>
-
-extern PyObject *ResObj_New(Handle);
-extern int ResObj_Convert(PyObject *, Handle *);
-extern PyObject *OptResObj_New(Handle);
-extern int OptResObj_Convert(PyObject *, Handle *);
-
-extern PyObject *WinObj_New(WindowPtr);
-extern int WinObj_Convert(PyObject *, WindowPtr *);
-extern PyTypeObject Window_Type;
-#define WinObj_Check(x) ((x)->ob_type == &Window_Type)
-
-extern PyObject *DlgObj_New(DialogPtr);
-extern int DlgObj_Convert(PyObject *, DialogPtr *);
-extern PyTypeObject Dialog_Type;
-#define DlgObj_Check(x) ((x)->ob_type == &Dialog_Type)
-
-extern PyObject *MenuObj_New(MenuHandle);
-extern int MenuObj_Convert(PyObject *, MenuHandle *);
-
-extern PyObject *CtlObj_New(ControlHandle);
-extern int CtlObj_Convert(PyObject *, ControlHandle *);
-
-extern PyObject *GrafObj_New(GrafPtr);
-extern int GrafObj_Convert(PyObject *, GrafPtr *);
-
-extern PyObject *BMObj_New(BitMapPtr);
-extern int BMObj_Convert(PyObject *, BitMapPtr *);
-
-extern PyObject *WinObj_WhichWindow(WindowPtr);
+#include "pymactoolbox.h"
 
 #include <Movies.h>
 
-/* Exported by Cmmodule.c: */
-extern PyObject *CmpObj_New(Component);
-extern int CmpObj_Convert(PyObject *, Component *);
-extern PyObject *CmpInstObj_New(ComponentInstance);
-extern int CmpInstObj_Convert(PyObject *, ComponentInstance *);
-
-/* Exported by Qdmodule.c: */
-extern PyObject *QdRGB_New(RGBColor *);
-extern int QdRGB_Convert(PyObject *, RGBColor *);
-
-/* Our own, used before defined: */
-staticforward PyObject *TrackObj_New(Track);
-staticforward int TrackObj_Convert(PyObject *, Track *);
-staticforward PyObject *MovieObj_New(Movie);
-staticforward int MovieObj_Convert(PyObject *, Movie *);
-staticforward PyObject *MovieCtlObj_New(MovieController);
-staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
-staticforward PyObject *TimeBaseObj_New(TimeBase);
-staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
 
 /* Macro to allow us to GetNextInterestingTime without duration */
 #define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) 			GetMediaNextInterestingTime(media, flags, time, rate, rv, NULL)

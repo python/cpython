@@ -32,8 +32,6 @@ includestuff = includestuff + """
 #include <Devices.h> /* Defines OpenDeskAcc in universal headers */
 #include <%s>""" % MACHEADERFILE + """
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
 #define as_Menu(h) ((MenuHandle)h)
 #define as_Resource(h) ((Handle)h)
 """

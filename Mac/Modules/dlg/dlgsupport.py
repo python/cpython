@@ -35,12 +35,8 @@ includestuff = includestuff + """
 #define NewModalFilterProc(x) (x)
 #endif
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
 /* XXX Shouldn't this be a stack? */
 static PyObject *Dlg_FilterProc_callback = NULL;
-
-static PyObject *DlgObj_New(DialogPtr); /* Forward */
 
 static pascal Boolean Dlg_UnivFilterProc(DialogPtr dialog,
                                          EventRecord *event,

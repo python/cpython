@@ -26,25 +26,6 @@ from macsupport import *
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
-/* Exported by Cmmodule.c: */
-extern PyObject *CmpObj_New(Component);
-extern int CmpObj_Convert(PyObject *, Component *);
-extern PyObject *CmpInstObj_New(ComponentInstance);
-extern int CmpInstObj_Convert(PyObject *, ComponentInstance *);
-
-/* Exported by Qdmodule.c: */
-extern PyObject *QdRGB_New(RGBColor *);
-extern int QdRGB_Convert(PyObject *, RGBColor *);
-
-/* Our own, used before defined: */
-staticforward PyObject *TrackObj_New(Track);
-staticforward int TrackObj_Convert(PyObject *, Track *);
-staticforward PyObject *MovieObj_New(Movie);
-staticforward int MovieObj_Convert(PyObject *, Movie *);
-staticforward PyObject *MovieCtlObj_New(MovieController);
-staticforward int MovieCtlObj_Convert(PyObject *, TimeBase *);
-staticforward PyObject *TimeBaseObj_New(TimeBase);
-staticforward int TimeBaseObj_Convert(PyObject *, TimeBase *);
 
 /* Macro to allow us to GetNextInterestingTime without duration */
 #define GetMediaNextInterestingTimeOnly(media, flags, time, rate, rv) \

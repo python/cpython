@@ -56,16 +56,6 @@ DragTrackingMessage = Type("DragTrackingMessage", "h")
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-/* Exported by Qdmodule.c: */
-extern PyObject *QdRGB_New(RGBColor *);
-extern int QdRGB_Convert(PyObject *, RGBColor *);
-
-
-/* Exported by AEModule.c: */
-extern PyObject *AEDesc_New(AppleEvent *);
-extern int AEDesc_Convert(PyObject *, AppleEvent *);
-
 /* Callback glue routines */
 DragTrackingHandlerUPP dragglue_TrackingHandlerUPP;
 DragReceiveHandlerUPP dragglue_ReceiveHandlerUPP;

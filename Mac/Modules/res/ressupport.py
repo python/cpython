@@ -24,8 +24,6 @@ includestuff = includestuff + """
 #include <Resources.h>
 #include <string.h>
 
-#define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
-
 /* Function to dispose a resource, with a "normal" calling sequence */
 static void
 PyMac_AutoDisposeHandle(Handle h)

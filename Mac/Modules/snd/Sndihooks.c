@@ -31,6 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
+#include "pymactoolbox.h"
 #include <Sound.h>
 
 #pragma options align=mac68k
@@ -45,8 +46,6 @@ struct SampleSizeAvailable_arg {
 };
 
 #pragma options align=reset
-
-extern PyObject *ResObj_New(Handle);
 
 static PyObject *ErrorObject;
 

@@ -24,11 +24,9 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ColorPicker.h>
 #include "Python.h"
 #include "macglue.h"
+#include "pymactoolbox.h"
 
 /* ----------------------------------------------------- */
-
-extern QdRGB_Convert(PyObject *v, RGBColorPtr p_itself);
-extern PyObject *QdRGB_New(RGBColorPtr itself);
 
 static char cp_GetColor__doc__[] =
 "GetColor(prompt, (r, g, b)) -> (r, g, b), ok"

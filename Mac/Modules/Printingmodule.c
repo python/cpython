@@ -23,14 +23,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
+#include "pymactoolbox.h"
 #include <Printing.h>
-
-extern int ResObj_Convert(PyObject *, Handle *);
-extern PyObject *DlgObj_New(DialogPtr);
-extern PyObject *GrafObj_New(GrafPtr);
-extern int GrafObj_Convert(PyObject *, GrafPtr *);
-extern PyObject *ResObj_New(Handle);
-
 
 static PyObject *ErrorObject;
 
