@@ -19,7 +19,6 @@ def play_sound_file(path):
     a.close()
 
 def test():
-    print os.getcwd()
     play_sound_file(findfile('audiotest.au'))
 
 test()
