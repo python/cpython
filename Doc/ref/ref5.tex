@@ -676,11 +676,10 @@ converted to a common type.
 \section{Comparisons\label{comparisons}}
 \index{comparison}
 
-Contrary to \C, all comparison operations in Python have the same
-priority, which is lower than that of any arithmetic, shifting or
-bitwise operation.  Also contrary to \C, expressions like
-\code{a < b < c} have the interpretation that is conventional in
-mathematics:
+Unlike C, all comparison operations in Python have the same priority,
+which is lower than that of any arithmetic, shifting or bitwise
+operation.  Also unlike C, expressions like \code{a < b < c} have the
+interpretation that is conventional in mathematics:
 \indexii{C}{language}
 
 \begin{verbatim}
@@ -708,11 +707,12 @@ perfectly legal (though perhaps not pretty).
 
 The forms \code{<>} and \code{!=} are equivalent; for consistency with
 C, \code{!=} is preferred; where \code{!=} is mentioned below
-\code{<>} is also acceptable.  At some point in the (far) future,
-\code{<>} may become obsolete.
+\code{<>} is also accepted.  The \code{<>} spelling is considered
+obsolescent.
 
-The operators \texttt{"<", ">", "==", ">=", "<="}, and \texttt{"!="} compare
-the values of two objects.  The objects needn't have the same type.
+The operators \code{<}, \code{>}, \code{==}, \code{>=}, \code{<=}, and
+\code{!=} compare
+the values of two objects.  The objects need not have the same type.
 If both are numbers, they are coverted to a common type.  Otherwise,
 objects of different types \emph{always} compare unequal, and are
 ordered consistently but arbitrarily.
@@ -732,7 +732,8 @@ Numbers are compared arithmetically.
 \item
 Strings are compared lexicographically using the numeric equivalents
 (the result of the built-in function \function{ord()}) of their
-characters.
+characters.  Unicode and 8-bit strings are fully interoperable in this
+behavior.
 
 \item
 Tuples and lists are compared lexicographically using comparison of
@@ -765,19 +766,19 @@ For the list, tuple types, \code{\var{x} in \var{y}} is true if and only
 if there exists such an index \var{i} such that
 \code{var{x} == \var{y}[\var{i}]} is true.
 
-For the Unicode and string types, \code{\var{x} in \var{y}} is true if and only
-if there exists such an index \var{i} such that
-\code{var{x} == \var{y}[\var{i}]} is true. If \code{\var{x}} is not
-a string of length \code{1} or a unicode object of length \code{1},
-a \exception{TypeError} exception is raised.
+For the Unicode and string types, \code{\var{x} in \var{y}} is true if
+and only if there exists an index \var{i} such that \code{\var{x} ==
+\var{y}[\var{i}]} is true. If \code{\var{x}} is not a string or
+Unicode object of length \code{1}, a \exception{TypeError} exception
+is raised.
 
 For user-defined classes which define the \method{__contains__()} method,
 \code{\var{x} in \var{y}} is true if and only if
 \code{\var{y}.__contains__(\var{x})} is true.
 
 For user-defined classes which do not define \method{__contains__()} and
-do define \var{__getitem__}, \code{\var{x} in \var{y}} is true if and only
-if there is a non-negative integer index \var{i} such that
+do define \method{__getitem__()}, \code{\var{x} in \var{y}} is true if
+and only if there is a non-negative integer index \var{i} such that
 \code{\var{x} == \var{y}[\var{i}]}, and all lower integer indices
 do not raise \exception{IndexError} exception. (If any other exception
 is raised, it is as if \keyword{in} raised that exception).
