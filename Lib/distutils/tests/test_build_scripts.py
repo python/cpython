@@ -39,11 +39,13 @@ class BuildScriptsTestCase(support.TempdirManager,
             self.assert_(name in built)
 
     def get_build_scripts_cmd(self, target, scripts):
+        import sys
         dist = Distribution()
         dist.scripts = scripts
         dist.command_obj["build"] = support.DummyCommand(
             build_scripts=target,
-            force=1
+            force=1,
+            executable=sys.executable
             )
         return build_scripts(dist)
 
