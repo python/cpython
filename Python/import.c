@@ -411,13 +411,13 @@ find_module(name, path, buf, buflen, p_fp)
 {
 	int i, npath, len, namelen;
 	struct filedescr *fdp;
-	FILE *fp;
+	FILE *fp = NULL;
 
 	if (path == NULL)
 		path = sysget("path");
 	if (path == NULL || !is_listobject(path)) {
 		err_setstr(ImportError,
-		    "module search path must be list of directory names");
+			   "sys.path must be a list of directory names");
 		return NULL;
 	}
 	npath = getlistsize(path);
@@ -528,7 +528,7 @@ init_builtin(name)
 		if (strcmp(name, inittab[i].name) == 0) {
 			if (inittab[i].initfunc == NULL) {
 				err_setstr(ImportError,
-					   "cannot re-init internal module");
+					   "Cannot re-init internal module");
 				return -1;
 			}
 			if (verbose)
@@ -544,9 +544,7 @@ init_builtin(name)
 }
 
 
-/* Initialize a frozen module.
-   Return 1 for succes, 0 if the module is not found, and -1 with
-   an exception set if the initialization failed. */
+/* Frozen modules */
 
 extern struct frozen {
 	char *name;
@@ -554,21 +552,50 @@ extern struct frozen {
 	int size;
 } frozen_modules[];
 
-/* This function is also used from frozenmain.c */
+static struct frozen *
+find_frozen(name)
+	char *name;
+{
+	struct frozen *p;
+	object *co;
+
+	for (p = frozen_modules; ; p++) {
+		if (p->name == NULL)
+			return NULL;
+		if (strcmp(p->name, name) == 0)
+			break;
+	}
+	return p;
+}
+
+static object *
+get_frozen_object(name)
+	char *name;
+{
+	struct frozen *p = find_frozen(name);
+
+	if (p == NULL) {
+		err_setstr(ImportError, "No such frozen object");
+		return NULL;
+	}
+	return rds_object(p->code, p->size);
+}
+
+/* Initialize a frozen module.
+   Return 1 for succes, 0 if the module is not found, and -1 with
+   an exception set if the initialization failed.
+   This function is also used from frozenmain.c */
 
 int
 init_frozen(name)
 	char *name;
 {
-	struct frozen *p;
+	struct frozen *p = find_frozen(name);
 	object *co;
 	object *m;
-	for (p = frozen_modules; ; p++) {
-		if (p->name == NULL)
-			return 0;
-		if (strcmp(p->name, name) == 0)
-			break;
-	}
+
+	if (p == NULL)
+		return 0;
 	if (verbose)
 		fprintf(stderr, "import %s # frozen\n", name);
 	co = rds_object(p->code, p->size);
@@ -576,7 +603,7 @@ init_frozen(name)
 		return -1;
 	if (!is_codeobject(co)) {
 		DECREF(co);
-		err_setstr(SystemError, "frozen object is not a code object");
+		err_setstr(TypeError, "frozen object is not a code object");
 		return -1;
 	}
 	m = exec_code_module(name, co);
@@ -786,6 +813,19 @@ imp_init_frozen(self, args)
 }
 
 static object *
+imp_get_frozen_object(self, args)
+	object *self;
+	object *args;
+{
+	char *name;
+	int ret;
+	object *m;
+	if (!newgetargs(args, "s", &name))
+		return NULL;
+	return get_frozen_object(name);
+}
+
+static object *
 imp_is_builtin(self, args)
 	object *self;
 	object *args;
@@ -928,6 +968,7 @@ imp_new_module(self, args)
 }
 
 static struct methodlist imp_methods[] = {
+	{"get_frozen_object",	imp_get_frozen_object,	1},
 	{"get_magic",		imp_get_magic,		1},
 	{"get_suffixes",	imp_get_suffixes,	1},
 	{"find_module",		imp_find_module,	1},
