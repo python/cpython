@@ -425,6 +425,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define getplatform Py_GetPlatform
 #define getversion Py_GetVersion
 #define getpythonpath Py_GetPath
+#define getprogramname Py_GetProgramName
+#define getargcargv Py_GetArgcArgv
 
 /* Misc. Internals */
 #define askyesno _Py_AskYesNo
