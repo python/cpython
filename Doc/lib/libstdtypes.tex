@@ -379,21 +379,27 @@ separating items with commas: \code{[a, b, c]}.  Tuples are
 constructed by the comma operator (not within square brackets), with
 or without enclosing parentheses, but an empty tuple must have the
 enclosing parentheses, e.g., \code{a, b, c} or \code{()}.  A single
-item tuple must have a trailing comma, e.g., \code{(d,)}.  Buffers are
-not directly supported by Python syntax, but can be created by calling the
-builtin function \function{buffer()}.\bifuncindex{buffer}  XRanges
-objects are similar to buffers in that there is no specific syntax to
-create them, but they are created using the \function{xrange()}
-function.\bifuncindex{xrange}
+item tuple must have a trailing comma, e.g., \code{(d,)}.
 \obindex{sequence}
 \obindex{string}
 \obindex{Unicode}
-\obindex{buffer}
 \obindex{tuple}
 \obindex{list}
+
+Buffer objects are not directly supported by Python syntax, but can be
+created by calling the builtin function
+\function{buffer()}.\bifuncindex{buffer}.  They don't support
+concatenation or repetition.
+\obindex{buffer}
+
+Xrange objects are similar to buffers in that there is no specific
+syntax to create them, but they are created using the \function{xrange()}
+function.\bifuncindex{xrange}  They don't support slicing,
+concatenation or repetition, and using \code{in}, \code{not in},
+\function{min()} or \function{max()} on them is inefficient.
 \obindex{xrange}
 
-Sequence types support the following operations.  The \samp{in} and
+Most sequence types support the following operations.  The \samp{in} and
 \samp{not in} operations have the same priorities as the comparison
 operations.  The \samp{+} and \samp{*} operations have the same
 priority as the corresponding numeric operations.\footnote{They must
