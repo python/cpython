@@ -898,6 +898,7 @@ aix_getoldmodules(modlistptr)
 	register char            *ldibuf;
 	register int             errflag, bufsize = 1024;
 	register unsigned int    offset;
+	char *progname = Py_GetProgramName();
 	
 	/*
 	-- Get the list of loaded modules into ld_info structures.
@@ -925,11 +926,13 @@ aix_getoldmodules(modlistptr)
 	ldiptr = (struct ld_info *)ldibuf;
 	prevmodptr = NULL;
 	do {
-		if (strstr(ldiptr->ldinfo_filename, "python") == NULL) {
+		if (strstr(progname, ldiptr->ldinfo_filename) == NULL &&
+		    strstr(ldiptr->ldinfo_filename, "python") == NULL) {
 			/*
-			-- Extract only the modules containing "python" as a
-			-- substring, like the "python[version]" executable or
-			-- "libpython[version].a" in case python is embedded.
+			-- Extract only the modules belonging to the main
+			-- executable + those containing "python" as a
+			-- substring (like the "python[version]" binary or
+			-- "libpython[version].a" in case it's a shared lib).
 			*/
 			offset = (unsigned int)ldiptr->ldinfo_next;
 			ldiptr = (struct ld_info *)((unsigned int)
