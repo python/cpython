@@ -5,8 +5,6 @@ warnings.filterwarnings('ignore', r".*posixfile module",
                         DeprecationWarning, 'posixfile$')
 warnings.filterwarnings('ignore', r".*statcache module",
                         DeprecationWarning, 'statcache$')
-warnings.filterwarnings('ignore', r".*'re' module",
-                        DeprecationWarning, 'pre$')
 
 from test.test_support import verbose
 
@@ -64,7 +62,6 @@ import pdb
 import pipes
 #import poplib
 import posixfile
-import pre
 import profile
 import pstats
 import py_compile
