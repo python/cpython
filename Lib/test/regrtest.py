@@ -574,14 +574,11 @@ _expectations = {
         test_ioctl
         test_largefile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_mhlib
         test_mpz
         test_nis
         test_openpty
         test_ossaudiodev
-        test_plistlib
         test_poll
         test_posix
         test_pty
@@ -604,15 +601,11 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_nis
         test_ntpath
         test_ossaudiodev
-        test_plistlib
         test_socketserver
         test_sunaudiodev
-        test_unicode_file
         """,
    'mac':
         """
@@ -658,7 +651,6 @@ _expectations = {
         test_sundry
         test_tarfile
         test_timing
-        test_unicode_file
         """,
     'unixware7':
         """
@@ -671,19 +663,15 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
-        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
         test_sunaudiodev
         test_sundry
-        test_unicode_file
         """,
     'openunix8':
         """
@@ -696,19 +684,15 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
-        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
         test_sunaudiodev
         test_sundry
-        test_unicode_file
         """,
     'sco_sv3':
         """
@@ -725,13 +709,10 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_macfs
-        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
-        test_plistlib
         test_pyexpat
         test_queue
         test_sax
@@ -742,7 +723,6 @@ _expectations = {
         test_threaded_import
         test_threadedtempfile
         test_threading
-        test_unicode_file
         """,
     'riscos':
         """
@@ -764,13 +744,10 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_macfs
-        test_macostools
         test_mmap
         test_nis
         test_ntpath
         test_openpty
-        test_plistlib
         test_poll
         test_popen2
         test_pty
@@ -784,7 +761,6 @@ _expectations = {
         test_threadedtempfile
         test_threading
         test_timing
-        test_unicode_file
         """,
     'darwin':
         """
@@ -811,7 +787,6 @@ _expectations = {
         test_poll
         test_socketserver
         test_sunaudiodev
-        test_unicode_file
         """,
     'sunos5':
         """
@@ -827,11 +802,8 @@ _expectations = {
         test_gzip
         test_imgfile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_mpz
         test_openpty
-        test_plistlib
         test_socketserver
         test_zipfile
         test_zlib
@@ -851,18 +823,14 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_macfs
-        test_macostools
         test_minidom
         test_nis
         test_ntpath
         test_openpty
-        test_plistlib
         test_pyexpat
         test_sax
         test_socketserver
         test_sunaudiodev
-        test_unicode_file
         test_zipfile
         test_zlib
         """,
@@ -880,19 +848,15 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_macfs
-        test_macostools
         test_mhlib
         test_mmap
         test_mpz
         test_nis
-        test_plistlib
         test_poll
         test_popen2
         test_resource
         test_socketserver
         test_sunaudiodev
-        test_unicode_file
         """,
     'cygwin':
         """
@@ -908,15 +872,11 @@ _expectations = {
         test_largefile
         test_linuxaudiodev
         test_locale
-        test_macfs
-        test_macostools
         test_mpz
         test_nis
         test_ossaudiodev
-        test_plistlib
         test_socketserver
         test_sunaudiodev
-        test_unicode_file
         """,
     'os2emx':
         """
@@ -934,19 +894,15 @@ _expectations = {
         test_imgfile
         test_largefile
         test_linuxaudiodev
-        test_macfs
-        test_macostools
         test_mhlib
         test_mmap
         test_nis
         test_openpty
         test_ossaudiodev
-        test_plistlib
         test_pty
         test_resource
         test_signal
         test_sunaudiodev
-        test_unicode_file
         """,
 }
 
@@ -975,13 +931,16 @@ class _ExpectedSkips:
                 self.expected.add('test_timeout')
 
             if not sys.platform in ("mac", "darwin"):
-                self.expected.add("test_macostools")
-                self.expected.add("test_macfs")
-                self.expected.add("test_aepack")
+                MAC_ONLY = ["test_macostools", "test_macfs", "test_aepack",
+                            "test_plistlib", "test_scriptpackages"]
+                for skip in MAC_ONLY:
+                    self.expected.add(skip)
 
             if sys.platform != "win32":
-                self.expected.add("test_winreg")
-                self.expected.add("test_winsound")
+                WIN_ONLY = ["test_unicode_file", "test_winreg",
+                            "test_winsound"]
+                for skip in WIN_ONLY:
+                    self.expected.add(skip)
 
             self.valid = True
 
