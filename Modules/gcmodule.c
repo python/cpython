@@ -878,7 +878,9 @@ PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
 	PyObject *op = _PyObject_GC_Malloc(_PyObject_SIZE(tp));
-	return PyObject_INIT(op, tp);
+	if (op != NULL)
+		op = PyObject_INIT(op, tp);
+	return op;
 }
 
 PyVarObject *
@@ -886,7 +888,9 @@ _PyObject_GC_NewVar(PyTypeObject *tp, int nitems)
 {
 	const size_t size = _PyObject_VAR_SIZE(tp, nitems);
 	PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(size);
-	return PyObject_INIT_VAR(op, tp, nitems);
+	if (op != NULL)
+		op = PyObject_INIT_VAR(op, tp, nitems);
+	return op;
 }
 
 PyVarObject *
