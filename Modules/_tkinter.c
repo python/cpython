@@ -157,14 +157,14 @@ PERFORMANCE OF THIS SOFTWARE.
    the thread state) but doesn't release the Tcl lock; LEAVE_OVERLAP_TCL
    releases the Tcl lock.
 
-   By contrast, ENTER_PYTHON(tstate) and LEAVE_PYTHON are used in Tcl event
+   By contrast, ENTER_PYTHON and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers are
    entered while the lock for Tcl is held; the event handler presumably needs
-   to use Python.  ENTER_PYTHON(tstate) releases the lock for Tcl and acquires
+   to use Python.  ENTER_PYTHON releases the lock for Tcl and acquires
    the Python interpreter lock, restoring the appropriate thread state, and
    LEAVE_PYTHON releases the Python interpreter lock and re-acquires the lock
    for Tcl.  It is okay for ENTER_TCL/LEAVE_TCL pairs to be contained inside
-   the code between ENTER_PYTHON(tstate) and LEAVE_PYTHON.
+   the code between ENTER_PYTHON and LEAVE_PYTHON.
 
    These locks expand to several statements and brackets; they should not be
    used in branches of if statements and the like.
@@ -172,24 +172,28 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 static type_lock tcl_lock = 0;
+static PyThreadState *tcl_tstate = NULL;
 
 #define ENTER_TCL \
-	Py_BEGIN_ALLOW_THREADS acquire_lock(tcl_lock, 1);
+	{ PyThreadState *tstate = PyThreadState_Get(); Py_BEGIN_ALLOW_THREADS \
+	    acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
 
 #define LEAVE_TCL \
-	release_lock(tcl_lock); Py_END_ALLOW_THREADS
+	tcl_tstate = NULL; release_lock(tcl_lock); Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
 	Py_END_ALLOW_THREADS
 
 #define LEAVE_OVERLAP_TCL \
-	release_lock(tcl_lock);
+	tcl_tstate = NULL; release_lock(tcl_lock); }
 
-#define ENTER_PYTHON(tstate) \
-	release_lock(tcl_lock); PyEval_RestoreThread((tstate));
+#define ENTER_PYTHON \
+	{ PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
+            release_lock(tcl_lock); PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
-	PyEval_SaveThread(); acquire_lock(tcl_lock, 1);
+	{ PyThreadState *tstate = PyEval_SaveThread(); \
+            acquire_lock(tcl_lock, 1); tcl_tstate = tstate; }
 
 #else
 
@@ -197,7 +201,7 @@ static type_lock tcl_lock = 0;
 #define LEAVE_TCL
 #define ENTER_OVERLAP
 #define LEAVE_OVERLAP_TCL
-#define ENTER_PYTHON(tstate)
+#define ENTER_PYTHON
 #define LEAVE_PYTHON
 
 #endif
@@ -1160,7 +1164,6 @@ Tkapp_Merge(self, args)
 
 /* Client data struct */
 typedef struct {
-	PyThreadState *tstate;
 	PyObject *self;
 	PyObject *func;
 } PythonCmd_ClientData;
@@ -1189,8 +1192,7 @@ PythonCmd(clientData, interp, argc, argv)
 	PyObject *self, *func, *arg, *res, *tmp;
 	int i;
 
-	/* XXX Should create fresh thread state? */
-	ENTER_PYTHON(data->tstate)
+	ENTER_PYTHON
 
 	/* TBD: no error checking here since we know, via the
 	 * Tkapp_CreateCommand() that the client data is a two-tuple
@@ -1235,7 +1237,7 @@ PythonCmdDelete(clientData)
 {
 	PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 
-	ENTER_PYTHON(data->tstate)
+	ENTER_PYTHON
 	Py_XDECREF(data->self);
 	Py_XDECREF(data->func);
 	PyMem_DEL(data);
@@ -1264,7 +1266,6 @@ Tkapp_CreateCommand(self, args)
 	data = PyMem_NEW(PythonCmd_ClientData, 1);
 	if (!data)
 		return NULL;
-	data->tstate = PyThreadState_Get();
 	Py_XINCREF(self);
 	Py_XINCREF(func);
 	data->self = self;
@@ -1313,7 +1314,6 @@ Tkapp_DeleteCommand(self, args)
 /** File Handler **/
 
 typedef struct _fhcdata {
-	PyThreadState *tstate;
 	PyObject *func;
 	PyObject *file;
 	int id;
@@ -1333,7 +1333,6 @@ NewFHCD(func, file, id)
 	if (p != NULL) {
 		Py_XINCREF(func);
 		Py_XINCREF(file);
-		p->tstate = PyThreadState_Get();
 		p->func = func;
 		p->file = file;
 		p->id = id;
@@ -1370,8 +1369,7 @@ FileHandler(clientData, mask)
 	FileHandler_ClientData *data = (FileHandler_ClientData *)clientData;
 	PyObject *func, *file, *arg, *res;
 
-	/* XXX Should create fresh thread state? */
-	ENTER_PYTHON(data->tstate)
+	ENTER_PYTHON
 	func = data->func;
 	file = data->file;
 
@@ -1500,7 +1498,6 @@ typedef struct {
 	PyObject_HEAD
 	Tcl_TimerToken token;
 	PyObject *func;
-	PyThreadState *tstate;
 } TkttObject;
 
 static PyObject *
@@ -1545,7 +1542,6 @@ Tktt_New(func)
 	Py_INCREF(func);
 	v->token = NULL;
 	v->func = func;
-	v->tstate = PyThreadState_Get();
 
 	/* Extra reference, deleted when called or when handler is deleted */
 	Py_INCREF(v);
@@ -1620,7 +1616,7 @@ TimerHandler(clientData)
 
 	v->func = NULL;
 
-	ENTER_PYTHON(v->tstate)
+	ENTER_PYTHON
 
 	res  = PyEval_CallObject(func, NULL);
 	Py_DECREF(func);
@@ -1667,6 +1663,9 @@ Tkapp_MainLoop(self, args)
 	PyObject *args;
 {
 	int threshold = 0;
+#ifdef WITH_THREAD
+	PyThreadState *tstate = PyThreadState_Get();
+#endif
 
 	if (!PyArg_ParseTuple(args, "|i", &threshold))
 		return NULL;
@@ -1681,7 +1680,9 @@ Tkapp_MainLoop(self, args)
 #ifdef WITH_THREAD
 		Py_BEGIN_ALLOW_THREADS
 		acquire_lock(tcl_lock, 1);
+		tcl_tstate = tstate;
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
+		tcl_tstate = NULL;
 		release_lock(tcl_lock);
 		if (result == 0)
 			Sleep(20);
@@ -1898,6 +1899,9 @@ static PyThreadState *event_tstate = NULL;
 static int
 EventHook()
 {
+#if defined(WITH_THREAD) || defined(MS_WINDOWS)
+	PyThreadState *tstate = PyThreadState_Get();
+#endif
 #ifndef MS_WINDOWS
 	FHANDLE tfile;
 #endif
@@ -1919,7 +1923,11 @@ EventHook()
 #if defined(WITH_THREAD) || defined(MS_WINDOWS)
 		Py_BEGIN_ALLOW_THREADS
 		acquire_lock(tcl_lock, 1);
+		tcl_tstate = tstate;
+
 		result = Tcl_DoOneEvent(TCL_DONT_WAIT);
+
+		tcl_tstate = NULL;
 		release_lock(tcl_lock);
 		if (result == 0)
 			Sleep(20);
