@@ -155,6 +155,9 @@ class bsdTableDB :
         if truncate:
             myflags |= DB_TRUNCATE
         self.db = DB(self.env)
+        # this code relies on DBCursor.set* methods to raise exceptions
+        # rather than returning None
+        self.db.set_get_returns_none(1)
         # allow duplicate entries [warning: be careful w/ metadata]
         self.db.set_flags(DB_DUP)
         self.db.open(filename, DB_BTREE, dbflags | myflags, mode)

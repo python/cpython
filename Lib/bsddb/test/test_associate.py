@@ -1,5 +1,5 @@
 """
-TestCases for multi-threaded access to a DB.
+TestCases for DB.associate.
 """
 
 import sys, os, string

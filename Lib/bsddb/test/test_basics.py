@@ -282,11 +282,11 @@ class BasicTestCase(unittest.TestCase):
 
     #----------------------------------------
 
-    def test03_SimpleCursorStuff(self):
+    def test03_SimpleCursorStuff(self, get_raises_error=0, set_raises_error=1):
         if verbose:
             print '\n', '-=' * 30
-            print "Running %s.test03_SimpleCursorStuff..." % \
-                  self.__class__.__name__
+            print "Running %s.test03_SimpleCursorStuff (get_error %s, set_error %s)..." % \
+                  (self.__class__.__name__, get_raises_error, set_raises_error)
 
         if self.env and self.dbopenflags & db.DB_AUTO_COMMIT:
             txn = self.env.txn_begin()
@@ -300,7 +300,15 @@ class BasicTestCase(unittest.TestCase):
             count = count + 1
             if verbose and count % 100 == 0:
                 print rec
-            rec = c.next()
+            try:
+                rec = c.next()
+            except db.DBNotFoundError, val:
+                if get_raises_error:
+                    assert val[0] == db.DB_NOTFOUND
+                    if verbose: print val
+                    rec = None
+                else:
+                    self.fail("unexpected DBNotFoundError")
 
         assert count == 1000
 
@@ -311,7 +319,15 @@ class BasicTestCase(unittest.TestCase):
             count = count + 1
             if verbose and count % 100 == 0:
                 print rec
-            rec = c.prev()
+            try:
+                rec = c.prev()
+            except db.DBNotFoundError, val:
+                if get_raises_error:
+                    assert val[0] == db.DB_NOTFOUND
+                    if verbose: print val
+                    rec = None
+                else:
+                    self.fail("unexpected DBNotFoundError")
 
         assert count == 1000
 
@@ -322,23 +338,29 @@ class BasicTestCase(unittest.TestCase):
         assert rec[1] == self.makeData('0505')
 
         try:
-            c.set('bad key')
+            n = c.set('bad key')
         except db.DBNotFoundError, val:
             assert val[0] == db.DB_NOTFOUND
             if verbose: print val
         else:
-            self.fail("expected exception")
+            if set_raises_error:
+                self.fail("expected exception")
+            if n != None:
+                self.fail("expected None: "+`n`)
 
         rec = c.get_both('0404', self.makeData('0404'))
         assert rec == ('0404', self.makeData('0404'))
 
         try:
-            c.get_both('0404', 'bad data')
+            n = c.get_both('0404', 'bad data')
         except db.DBNotFoundError, val:
             assert val[0] == db.DB_NOTFOUND
             if verbose: print val
         else:
-            self.fail("expected exception")
+            if get_raises_error:
+                self.fail("expected exception")
+            if n != None:
+                self.fail("expected None: "+`n`)
 
         if self.d.get_type() == db.DB_BTREE:
             rec = c.set_range('011')
@@ -414,6 +436,29 @@ class BasicTestCase(unittest.TestCase):
         # SF pybsddb bug id 667343
         del oldcursor
 
+    def test03b_SimpleCursorWithoutGetReturnsNone0(self):
+        # same test but raise exceptions instead of returning None
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test03b_SimpleCursorStuffWithoutGetReturnsNone..." % \
+                  self.__class__.__name__
+
+        old = self.d.set_get_returns_none(0)
+        assert old == 1
+        self.test03_SimpleCursorStuff(get_raises_error=1, set_raises_error=1)
+
+    def test03c_SimpleCursorGetReturnsNone2(self):
+        # same test but raise exceptions instead of returning None
+        if verbose:
+            print '\n', '-=' * 30
+            print "Running %s.test03c_SimpleCursorStuffWithoutSetReturnsNone..." % \
+                  self.__class__.__name__
+
+        old = self.d.set_get_returns_none(2)
+        assert old == 1
+        old = self.d.set_get_returns_none(2)
+        assert old == 2
+        self.test03_SimpleCursorStuff(get_raises_error=0, set_raises_error=0)
 
     #----------------------------------------
 
