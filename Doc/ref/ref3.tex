@@ -1,6 +1,6 @@
-\chapter{Data model}
+\chapter{Data model\label{datamodel}}
 
-\section{Objects, values and types}
+\section{Objects, values and types\label{objects}}
 
 \dfn{Objects} are Python's abstraction for data.  All data in a Python
 program is represented by objects or by relations between objects.
@@ -87,7 +87,7 @@ lists.
 (Note that ``\code{c = d = []}'' assigns the same object to both
 \code{c} and \code{d}.)
 
-\section{The standard type hierarchy} \label{types}
+\section{The standard type hierarchy\label{types}}
 
 Below is a list of the types that are built into Python.  Extension
 modules written in \C{} can define additional types.  Future versions of
@@ -781,7 +781,7 @@ Special read-only attributes: \code{start} is the lowerbound;
 \end{description} % Types
 
 
-\section{Special method names} \label{specialnames}
+\section{Special method names\label{specialnames}}
 
 A class can implement certain operations that are invoked by special
 syntax (such as arithmetic operations or subscripting and slicing) by defining
@@ -795,7 +795,7 @@ operation raise an exception when no appropriate method is defined.
 \ttindex{__getitem__}
 
 
-\subsection{Basic customization}
+\subsection{Basic customization\label{customization}}
 
 \begin{description}
 
@@ -917,7 +917,7 @@ this method is not defined, \code{__len__} is called, if it is defined
 \end{description}
 
 
-\subsection{Customizing attribute access}
+\subsection{Customizing attribute access\label{attribute-access}}
 
 The following methods can be defined to customize the meaning of
 attribute access (use of, assignment to, or deletion of \code{x.name})
@@ -969,7 +969,7 @@ assignment.
 \end{description}
 
 
-\subsection{Emulating callable objects}
+\subsection{Emulating callable objects\label{callable-types}}
 
 \begin{description}
 
@@ -983,7 +983,7 @@ is defined, \code{x(arg1, arg2, ...)} is a shorthand for
 \end{description}
 
 
-\subsection{Emulating sequence and mapping types}
+\subsection{Emulating sequence and mapping types\label{sequence-types}}
 
 The following methods can be defined to emulate sequence or mapping
 objects.  The first set of methods is used either to emulate a
@@ -1057,7 +1057,8 @@ Called to implement deletion of \code{self[key]}.  Same note as for
 \end{description}
 
 
-\subsection{Additional methods for emulation of sequence types}
+\subsection{Additional methods for emulation of sequence types%
+  \label{sequence-methods}}
 
 The following methods can be defined to further emulate sequence
 objects.  Immutable sequences methods should only define
@@ -1092,7 +1093,7 @@ single colon is used.  For slice operations involving extended slice
 notation, \method{__getitem__()}, \method{__setitem__()}
 or\method{__delitem__()} is called.
 
-\subsection{Emulating numeric types}
+\subsection{Emulating numeric types\label{numeric-types}}
 
 The following methods can be defined to emulate numeric objects.
 Methods corresponding to operations that are not supported by the
