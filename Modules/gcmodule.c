@@ -226,24 +226,36 @@ move_root_reachable(PyGC_Head *reachable)
 	}
 }
 
-/* Move all objects with finalizers (instances with __del__) */
-static void
-move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
+/* return true of object has a finalization method */
+static int
+has_finalizer(PyObject *op)
 {
-	PyGC_Head *next;
-	PyGC_Head *gc = unreachable->gc.gc_next;
 	static PyObject *delstr = NULL;
 	if (delstr == NULL) {
 		delstr = PyString_InternFromString("__del__");
 		if (delstr == NULL)
 			Py_FatalError("PyGC: can't initialize __del__ string");
 	}
+	if ((PyInstance_Check(op) ||
+	     PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE)) &&
+	    PyObject_HasAttr(op, delstr)) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+/* Move all objects with finalizers (instances with __del__) */
+static void
+move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
+{
+	PyGC_Head *next;
+	PyGC_Head *gc = unreachable->gc.gc_next;
 	for (; gc != unreachable; gc=next) {
 		PyObject *op = FROM_GC(gc);
 		next = gc->gc.gc_next;
-		if ((PyInstance_Check(op) ||
-		     PyType_HasFeature(op->ob_type, Py_TPFLAGS_HEAPTYPE)) &&
-		    PyObject_HasAttr(op, delstr)) {
+		if (has_finalizer(op)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
 		}
@@ -269,7 +281,7 @@ static void
 debug_instance(char *msg, PyInstanceObject *inst)
 {
 	char *cname;
-	/* be careful not to create new dictionaries */
+	/* simple version of instance_repr */
 	PyObject *classname = inst->in_class->cl_name;
 	if (classname != NULL && PyString_Check(classname))
 		cname = PyString_AsString(classname);
@@ -302,11 +314,11 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 	for (gc = finalizers->gc.gc_next; gc != finalizers;
 			gc = finalizers->gc.gc_next) {
 		PyObject *op = FROM_GC(gc);
-		if ((debug & DEBUG_SAVEALL) || PyInstance_Check(op)) {
-			/* If SAVEALL is not set then just append
-			 * instances to the list of garbage.  We assume
-			 * that all objects in the finalizers list are
-			 * reachable from instances. */
+		if ((debug & DEBUG_SAVEALL) || has_finalizer(op)) {
+			/* If SAVEALL is not set then just append objects with
+			 * finalizers to the list of garbage.  All objects in
+			 * the finalizers list are reachable from those
+			 * objects. */
 			PyList_Append(garbage, op);
 		}
 		/* object is now reachable again */ 
