@@ -181,6 +181,21 @@ static PyMethodDef dl_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+/* From socketmodule.c
+ * Convenience routine to export an integer value.
+ *
+ * Errors are silently ignored, for better or for worse...
+ */
+static void
+insint(PyObject *d, char *name, int value)
+{
+	PyObject *v = PyInt_FromLong((long) value);
+	if (!v || PyDict_SetItemString(d, name, v))
+		PyErr_Clear();
+
+	Py_XDECREF(v);
+}
+
 void
 initdl(void)
 {
@@ -202,8 +217,29 @@ initdl(void)
 	PyDict_SetItemString(d, "error", x);
 	x = PyInt_FromLong((long)RTLD_LAZY);
 	PyDict_SetItemString(d, "RTLD_LAZY", x);
+#define INSINT(X)    insint(d,#X,X)
 #ifdef RTLD_NOW
-	x = PyInt_FromLong((long)RTLD_NOW);
-	PyDict_SetItemString(d, "RTLD_NOW", x);
+        INSINT(RTLD_NOW);
+#endif
+#ifdef RTLD_NOLOAD
+        INSINT(RTLD_NOLOAD);
+#endif
+#ifdef RTLD_GLOBAL
+        INSINT(RTLD_GLOBAL);
+#endif
+#ifdef RTLD_LOCAL
+        INSINT(RTLD_LOCAL);
+#endif
+#ifdef RTLD_PARENT
+        INSINT(RTLD_PARENT);
+#endif
+#ifdef RTLD_GROUP
+        INSINT(RTLD_GROUP);
+#endif
+#ifdef RTLD_WORLD
+        INSINT(RTLD_WORLD);
+#endif
+#ifdef RTLD_NODELETE
+        INSINT(RTLD_NODELETE);
 #endif
 }
