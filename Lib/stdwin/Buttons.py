@@ -1,10 +1,8 @@
 # Module 'Buttons'
 
 
-from Resize import *
-
-
-# Import module 'rect' renamed as '_rect'
+# Import module 'rect' renamed as '_rect' to avoid exporting it on
+# 'from Buttons import *'
 #
 import rect
 _rect = rect
@@ -28,61 +26,69 @@ class LabelAppearance():
 	#
 	# Initialization
 	#
-	def init_appearance(self, (win, bounds)):
-		self.win = win
-		self.bounds = bounds
+	def init_appearance(self):
+		self.bounds = _rect.empty
 		self.enabled = 1
 		self.hilited = 0
 		self.selected = 0
 		self.text = ''
-		self.limbo = 1
-		self.recalc()
-		self.win.change(self.bounds)
-		# While the limbo flag is set, redraw calls are ignored.
-		# It is cleared by the first draw event.
-		# This is intended to avoid duplicate drawing during
-		# initialization.
+	#
+	# Size enquiry
+	#
+	def minsize(self, m):
+		try:
+			self.text = self.text
+		except NameError:
+			self.text = ''
+		return m.textwidth(self.text) + 6, m.lineheight() + 6
+	#
+	def getbounds(self):
+		return self.bounds
 	#
 	# Changing the parameters
 	#
 	def settext(self, text):
 		self.text = text
-		self.recalctextpos()
-		self.redraw()
+		if self.bounds <> _rect.empty:
+			self.recalctextpos()
+			self.redraw()
 	#
 	def setbounds(self, bounds):
-		# This delays drawing until after all buttons are moved
-		self.win.change(self.bounds)
+		if self.bounds <> _rect.empty:
+			self.parent.change(self.bounds)
 		self.bounds = bounds
-		self.recalc()
-		self.win.change(bounds)
+		if self.bounds <> _rect.empty:
+			self.recalc()
+			self.parent.change(bounds)
 	#
 	# Changing the state bits
 	#
 	def enable(self, flag):
 		if flag <> self.enabled:
 			self.enabled = flag
-			if not self.limbo:
-				self.flipenable(self.win.begindrawing())
+			if self.bounds <> _rect.empty:
+				self.flipenable(self.parent.begindrawing())
 	#
 	def hilite(self, flag):
 		if flag <> self.hilited:
 			self.hilited = flag
-			if not self.limbo:
-				self.fliphilite(self.win.begindrawing())
+			if self.bounds <> _rect.empty:
+				self.fliphilite(self.parent.begindrawing())
 	#
 	def select(self, flag):
 		if flag <> self.selected:
 			self.selected = flag
-			self.redraw()
+			if self.bounds <> _rect.empty:
+				self.redraw()
 	#
 	# Recalculate the box bounds and text position.
 	# This can be overridden by buttons that draw different boxes
 	# or want their text in a different position.
 	#
 	def recalc(self):
-		self.recalcbounds()
-		self.recalctextpos()
+		if self.bounds <> _rect.empty:
+			self.recalcbounds()
+			self.recalctextpos()
 	#
 	def recalcbounds(self):
 		self.hilitebounds = _rect.inset(self.bounds, (3, 3))
@@ -90,20 +96,19 @@ class LabelAppearance():
 	#
 	def recalctextpos(self):
 		(left, top), (right, bottom) = self.bounds
-		d = self.win.begindrawing()
-		h = (left + right - d.textwidth(self.text)) / 2
-		v = (top + bottom - d.lineheight()) / 2
+		m = self.parent.beginmeasuring()
+		h = (left + right - m.textwidth(self.text)) / 2
+		v = (top + bottom - m.lineheight()) / 2
 		self.textpos = h, v
 	#
-	# Generic drawing mechanism.
+	# Generic drawing interface.
 	# Do not override redraw() or draw() methods; override drawit() c.s.
 	#
 	def redraw(self):
-		if not self.limbo:
-			self.draw(self.win.begindrawing(), self.bounds)
+		if self.bounds <> _rect.empty:
+			self.draw(self.parent.begindrawing(), self.bounds)
 	#
 	def draw(self, (d, area)):
-		self.limbo = 0
 		area = _rect.intersect(area, self.bounds)
 		if area = _rect.empty:
 			return
@@ -161,6 +166,10 @@ class ButtonAppearance() = LabelAppearance():
 #
 class CheckAppearance() = LabelAppearance():
 	#
+	def minsize(self, m):
+		width, height = m.textwidth(self.text) + 6, m.lineheight() + 6
+		return width + height + m.textwidth(' '), height
+	#
 	def drawpict(self, d):
 		d.box(self.boxbounds)
 		if self.selected: _xorcross(d, self.boxbounds)
@@ -173,10 +182,10 @@ class CheckAppearance() = LabelAppearance():
 		self.hilitebounds = self.boxbounds
 	#
 	def recalctextpos(self):
-		d = self.win.begindrawing()
+		m = self.parent.beginmeasuring()
 		(left, top), (right, bottom) = self.boxbounds
-		h = right + d.textwidth(' ')
-		v = top + (self.size - d.lineheight()) / 2
+		h = right + m.textwidth(' ')
+		v = top + (self.size - m.lineheight()) / 2
 		self.textpos = h, v
 	#
 
@@ -199,24 +208,31 @@ class RadioAppearance() = CheckAppearance():
 	#
 
 
-# NoReactivity ignores mouse and timer events.
+# NoReactivity ignores mouse events.
+#
+class NoReactivity():
+	def init_reactivity(self): pass
+
+
+# BaseReactivity defines hooks and asks for mouse events,
+# but provides only dummy mouse event handlers.
 # The trigger methods call the corresponding hooks set by the user.
 # Hooks (and triggers) mean the following:
 # down_hook	called on some mouse-down events
 # move_hook	called on some mouse-move events
 # up_hook	called on mouse-up events
 # on_hook	called for buttons with on/off state, when it goes on
-# timer_hook	called on timer events
 # hook		called when a button 'fires' or a radiobutton goes on
 # There are usually extra conditions, e.g., hooks are only called
 # when the button is enabled, or active, or selected (on).
 #
-class NoReactivity():
+class BaseReactivity():
 	#
 	def init_reactivity(self):
 		self.down_hook = self.move_hook = self.up_hook = \
-		  self.on_hook = self.off_hook = self.timer_hook = \
-		  self.hook = self.active = 0
+			self.on_hook = self.off_hook = \
+			self.hook = self.active = 0
+		self.parent.need_mouse(self)
 	#
 	def mousetest(self, hv):
 		return _rect.pointinrect(hv, self.bounds)
@@ -228,9 +244,6 @@ class NoReactivity():
 		pass
 	#
 	def mouse_up(self, detail):
-		pass
-	#
-	def timer(self):
 		pass
 	#
 	def down_trigger(self):
@@ -248,18 +261,14 @@ class NoReactivity():
 	def off_trigger(self):
 		if self.off_hook: self.off_hook(self)
 	#
-	def timer_trigger(self):
-		if self.timer_hook: self.timer_hook(self)
-	#
 	def trigger(self):
 		if self.hook: self.hook(self)
 
 
 # ToggleReactivity acts like a simple pushbutton.
 # It toggles its hilite state on mouse down events.
-# Its timer_trigger method is called for all timer events while hilited.
 #
-class ToggleReactivity() = NoReactivity():
+class ToggleReactivity() = BaseReactivity():
 	#
 	def mouse_down(self, detail):
 		if self.enabled and self.mousetest(detail[_HV]):
@@ -276,10 +285,6 @@ class ToggleReactivity() = NoReactivity():
 			self.up_trigger()
 			self.active = 0
 	#
-	def timer(self):
-		if self.hilited:
-			self.timer_trigger()
-	#
 	def down_trigger(self):
 		if self.hilited:
 			self.on_trigger()
@@ -292,7 +297,7 @@ class ToggleReactivity() = NoReactivity():
 # TriggerReactivity acts like a fancy pushbutton.
 # It hilites itself while the mouse is down within its bounds.
 #
-class TriggerReactivity() = NoReactivity():
+class TriggerReactivity() = BaseReactivity():
 	#
 	def mouse_down(self, detail):
 		if self.enabled and self.mousetest(detail[_HV]):
@@ -314,10 +319,6 @@ class TriggerReactivity() = NoReactivity():
 				self.trigger()
 			self.active = 0
 			self.hilite(0)
-	#
-	def timer(self):
-		if self.active and self.hilited:
-			self.timer_trigger()
 	#
 
 
@@ -356,13 +357,22 @@ class RadioReactivity() = TriggerReactivity():
 
 
 # Auxiliary class for 'define' method.
+# Call the initializers in the right order.
 #
-class Define() = NoResize():
+class Define():
 	#
-	def define(self, (win, bounds, text)):
-		self.init_appearance(win, bounds)
+	def define(self, parent):
+		self.parent = parent
+		parent.addchild(self)
+		self.init_appearance()
 		self.init_reactivity()
-		self.init_resize()
+		return self
+	#
+	def destroy(self):
+		self.parent = 0
+	#
+	def definetext(self, (parent, text)):
+		self = self.define(parent)
 		self.settext(text)
 		return self
 
@@ -380,11 +390,10 @@ def _xorcross(d, bounds):
 	d.xorline((left, bottom), (right, top))
 
 
-# Ready-made button classes
+# Ready-made button classes.
 #
-class BaseButton() = NoReactivity(), LabelAppearance(), Define(): pass
 class Label() = NoReactivity(), LabelAppearance(), Define(): pass
-class ClassicButton() = TriggerReactivity(), ButtonAppearance(), Define(): pass
+class PushButton() = TriggerReactivity(), ButtonAppearance(), Define(): pass
 class CheckButton() = CheckReactivity(), CheckAppearance(), Define(): pass
 class RadioButton() = RadioReactivity(), RadioAppearance(), Define(): pass
-class Toggle() = ToggleReactivity(), ButtonAppearance(), Define(): pass
+class ToggleButton() = ToggleReactivity(), ButtonAppearance(), Define(): pass

@@ -10,8 +10,9 @@ class VUMeter() = StripChart():
 	#
 	# Override define() and timer() methods
 	#
-	def define(self, (win, bounds)):
-		self = StripChart.define(self, (win, bounds, 128))
+	def define(self, parent):
+		self = StripChart.define(self, (parent, 128))
+		self.parent.need_timer(self)
 		self.sampling = 0
 		self.rate = 3
 		self.enable(0)
@@ -31,7 +32,7 @@ class VUMeter() = StripChart():
 			audio.start_recording(size)
 			self.sampling = 1
 		if self.sampling:
-			self.win.settimer(1)
+			self.parent.settimer(1)
 	#
 	# New methods: start() and stop()
 	#
