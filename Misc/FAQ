@@ -6,7 +6,7 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.11
+Version: 1.12
 Last-modified: 25 July 1994
 
 This article contains answers to Frequently Asked Questions about
@@ -226,7 +226,7 @@ gatekeeper.dec.com	16.1.0.2	/pub/plan/python
 ftp.uu.net		192.48.96.9	/languages/python
 ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python
-ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (*python* only)
+ftp.fu-berlin.de	130.133.1.18	/unix/languages/python (*python* only)
 ftp.sunet.se		130.238.127.3	/pub/lang/python
 unix.hensa.ac.uk	129.12.43.16	/uunet/languages/python
 
@@ -334,6 +334,9 @@ Sunrise Software, who already have a product out using Python -- they
 use Python for a GUI management application and an SNMP network
 manangement application.  Contact: <info@sunrise.com>.
 
+Infoseek is using python to implement their commercial WWW information
+retrieval service.  Contact: <info@infoseek.com>.
+
 Individuals at many other companies are using Python for
 internal development (witness their contributions to the Python
 mailing list or newsgroup).
@@ -363,9 +366,10 @@ about built-in help using strings placed into function objects, and
 possibly a switch statement.
 
 There will be better ports to the Mac, DOS, Windows, Windows NT, and
-OS/2.  The Windows ports will support dynalically loaded modules using
-DLLs.  The Mac port may also support dynamic loading of modules.
-There may be a Windows version of STDWIN.
+OS/2.  The Windows ports will support dynamically loaded modules using
+DLLs.  There may be a Windows version of STDWIN (someone has actually
+written one and contributed it but it's not robust enough at the
+moment).
 
 Also planned is improved support for embedding Python in other
 applications, e.g. by renaming most global symbols to have a "Py"
@@ -415,8 +419,16 @@ change.
 script (after the script name).
 
 A. You are probably linking with GNU getopt, e.g. through -liberty.
-Don't.  (If you are using this because you link with -lreadline, use
-the readline distributed with Python instead.)
+Don't.  The reason for the complaint is that GNU getopt, unlike System
+V getopt and other getopt implementations, doesn't consider a
+non-option to be the end of the option list.  A quick (and compatible)
+fix for scripts is to add "--" to the interpreter, like this:
+
+	#! /usr/local/bin/python --
+
+You can also use this interactively:
+
+	python -- script.py [options]
 
 3.6. Q. When building on the SGI, make tries to run python to create
 glmodule.c, but python hasn't been built or installed yet.
@@ -808,7 +820,7 @@ implement any of these functions in C, so a standard library module
 "string" written in Python was created that performs string related
 operations.  Since then, the cry for performance has moved most of
 them into the built-in module strop (this is imported by module
-string, which is still the perferred interface, without loss of
+string, which is still the preferred interface, without loss of
 performance except during initialization).  Some of these functions
 (e.g. index()) could easily be implemented as string methods instead,
 but others (e.g. sort()) can't, since their interface prescribes that
