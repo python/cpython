@@ -1113,7 +1113,8 @@ posix_access(PyObject *self, PyObject *args)
 		PyErr_Clear();
 	}
 #endif
-	if (!PyArg_ParseTuple(args, "si:access", &path, &mode))
+	if (!PyArg_ParseTuple(args, "eti:access", 
+			      Py_FileSystemDefaultEncoding, &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	res = access(path, mode);

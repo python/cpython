@@ -44,8 +44,10 @@ class TestUnicodeFiles(unittest.TestCase):
     def _do_single(self, filename):
         self.failUnless(os.path.exists(filename))
         self.failUnless(os.path.isfile(filename))
+        self.failUnless(os.access(filename, os.R_OK))
         self.failUnless(os.path.exists(os.path.abspath(filename)))
         self.failUnless(os.path.isfile(os.path.abspath(filename)))
+        self.failUnless(os.access(os.path.abspath(filename), os.R_OK))
         os.chmod(filename, 0777)
         os.utime(filename, None)
         os.utime(filename, (time.time(), time.time()))
