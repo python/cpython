@@ -186,7 +186,7 @@ False
 >>> employees.union_update(engineers)         # update from another set
 >>> employees.issuperset(engineers)
 True
->>> for group in [engineers, programmers, management, employees]:
+>>> for group in [engineers, programmers, managers, employees]:
 ...     group.discard('Susan')                # unconditionally remove element
 ...     print group
 ...
