@@ -547,14 +547,15 @@ ignored.
   \var{string}.  If one or more groups are present in the pattern,
   return a list of groups; this will be a list of tuples if the
   pattern has more than one group.  Empty matches are included in the
-  result.
+  result unless they touch the beginning of another match.
   \versionadded{1.5.2}
 \end{funcdesc}
 
 \begin{funcdesc}{finditer}{pattern, string}
   Return an iterator over all non-overlapping matches for the RE
   \var{pattern} in \var{string}.  For each match, the iterator returns
-  a match object.  Empty matches are included in the result.
+  a match object.  Empty matches are included in the result unless they
+  touch the beginning of another match.
   \versionadded{2.2}
 \end{funcdesc}
 
