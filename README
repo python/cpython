@@ -1,15 +1,31 @@
-This is Python version 1.6
+This is Python version 2.0
 ==========================
 
-There are various alpha and beta versions -- these are distinguishable
-through Include/patchlevel.h or by the name of the top-level directory
-and the tar file.
+There are various beta versions -- these are distinguishable through
+Include/patchlevel.h or by the name of the top-level directory and the
+tar file.
 
 
 What's new in this release?
 ---------------------------
 
-See http://www.python.org/1.6/.
+See http://www.pythonlabs.com/.
+
+
+Why is it called version 2.0?
+-----------------------------
+
+While Pythoneers have grown fond of Python's exceedingly slow version
+incrementing, that same quality makes parts of the rest of the world
+think that Python is barely out of its first alpha test.  Especially
+enterprise customers are often fearful of anything that's version 1.x!
+The new version number also clearly marks departure of Python's core
+development teal from CNRI to join BeOpen.com.
+
+Previously, the version number 2.0 was associated with a mythical and
+elusive incompatible future release.  That release (still ways off,
+and not as incompatible as people fear!) is now referred to as Python
+3000.
 
 
 If you don't read instructions
@@ -67,6 +83,7 @@ The Python distribution is *not* affected by the GNU Public Licence
 optional and no GNU code is distributed with Python.
 
 
+
 Build instructions
 ==================
 
@@ -105,7 +122,7 @@ See also the platform specific notes in the next section.
 If recursive makes fail, try invoking make as "make MAKE=make".
 
 If you run into other trouble, see section 3 of the FAQ
-(http://grail.cnri.reston.va.us/cgi-bin/faqw.py or
+(http://www.python.org/cgi-bin/faqw.py or
 http://www.python.org/doc/FAQ.html) for hints on what can go wrong,
 and how to fix it.
 
@@ -467,18 +484,18 @@ platform-specific files in subdirectories if the directory given by
 
 All subdirectories created will have Python's version number in their
 name, e.g. the library modules are installed in
-"/usr/local/lib/python1.6/" by default.  The Python binary is
-installed as "python1.6" and a hard link named "python" is created.
+"/usr/local/lib/python2.0/" by default.  The Python binary is
+installed as "python2.0" and a hard link named "python" is created.
 The only file not installed with a version number in its name is the
 manual page, installed as "/usr/local/man/man1/python.1" by default.
 
-If you have a previous installation of a pre-1.6 Python that you don't
+If you have a previous installation of a pre-2.0 Python that you don't
 want to replace yet, use
 
 	make altinstall
 
 This installs the same set of files as "make install" except it
-doesn't create the hard link to "python1.6" named "python" and it
+doesn't create the hard link to "python2.0" named "python" and it
 doesn't install the manual page at all.
 
 The only thing you may have to install manually is the Python mode for
@@ -679,7 +696,7 @@ Emacs mode
 There's an excellent Emacs editing mode for Python code; see the file
 Misc/python-mode.el.  Originally written by the famous Tim Peters, it
 is now maintained by the equally famous Barry Warsaw
-<bwarsaw@cnri.reston.va.us>.  The latest version, along with various
+<bwarsaw@python.org>.  The latest version, along with various
 other contributed Python-related Emacs goodies, is online at
 <http://www.python.org/emacs/python-mode>.  And if you are planning to
 edit the Python C code, please pick up the latest version of CC Mode
@@ -831,21 +848,21 @@ config.cache    cache of configuration variables
 config.h        Configuration header
 config.log      Log from last configure run
 config.status   Status from last run of configure script
-libpython1.6.a	The library archive
+libpython2.0.a	The library archive
 python          The executable interpreter
 tags, TAGS      Tags files for vi and Emacs
 
 
-Author's address
-================
+
+How to reach the author
+=======================
 
 Guido van Rossum
-CNRI
-1895 Preston White Drive
-Reston, VA 20191
-USA
+BeOpen.com
+160 Saratoga Avenue, Suite 46
+Santa Clara, CA 95051
 
-E-mail: guido@cnri.reston.va.us or guido@python.org
+E-mail: guido@beopen.com or guido@python.org
 
 
 
@@ -853,37 +870,8 @@ Copyright notice
 ================
 
 The Python source is copyrighted, but you can freely use and copy it
-as long as you don't change or remove the copyright notice:
-
-----------------------------------------------------------------------
-Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
-The Netherlands.
-
-                        All Rights Reserved
-
-Permission to use, copy, modify, and distribute this software and its
-documentation for any purpose and without fee is hereby granted,
-provided that the above copyright notice appear in all copies and that
-both that copyright notice and this permission notice appear in
-supporting documentation, and that the names of Stichting Mathematisch
-Centrum or CWI or Corporation for National Research Initiatives or
-CNRI not be used in advertising or publicity pertaining to
-distribution of the software without specific, written prior
-permission.
-
-While CWI is the initial source for this software, a modified version
-is made available by the Corporation for National Research Initiatives
-(CNRI) at the Internet address ftp://ftp.python.org.
-
-STICHTING MATHEMATISCH CENTRUM AND CNRI DISCLAIM ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF
-MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH
-CENTRUM OR CNRI BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL
-DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR
-PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
-TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-----------------------------------------------------------------------
+as long as you don't change or remove the copyright notice.  The
+copyright notice is found in the Misc/COPYRIGHT file.
 
 
 --Guido van Rossum (home page: http://www.python.org/~guido/)
