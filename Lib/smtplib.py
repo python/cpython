@@ -42,6 +42,7 @@ End of HELP info
 import socket
 import string, re
 import rfc822
+import types
 
 SMTP_PORT = 25
 CRLF="\r\n"
@@ -317,11 +318,13 @@ class SMTP:
 
 
 #some useful methods
-    def sendmail(self,from_addr,to_addrs,msg,mail_options=[],rcpt_options=[]):
+    def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
+                 rcpt_options=[]): 
         """ This command performs an entire mail transaction. 
             The arguments are: 
                - from_addr : The address sending this mail.
                - to_addrs :  a list of addresses to send this mail to
+                         (a string will be treated as a list with 1 address)
                - msg : the message to send. 
                - mail_options : list of ESMTP options (such as 8bitmime)
                                 for the mail command
@@ -376,6 +379,8 @@ class SMTP:
             self.rset()
             raise SMTPSenderRefused
         senderrs={}
+        if type(to_addrs) == types.StringType:
+            to_addrs = [to_addrs]
         for each in to_addrs:
             (code,resp)=self.rcpt(each, rcpt_options)
             if (code <> 250) and (code <> 251):
