@@ -1252,7 +1252,7 @@ PySequence_SetItem(PyObject *s, int i, PyObject *o)
 		return m->sq_ass_item(s, i, o);
 	}
 
-	type_error("object doesn't support item assignment");
+	type_error("object does not support item assignment");
 	return -1;
 }
 
