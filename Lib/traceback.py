@@ -97,7 +97,7 @@ def print_exception(etype, value, tb, limit=None, file=None):
 	"""Print exception information and up to 'limit' stack trace entries
 	from the traceback 'tb' to 'file'.  This differs from print_tb() in
 	the following ways: (1) if traceback is not None, it prints a header
-	"Traceback (innermost last):"; (2) it prints the exception type and
+	"Traceback (most recent call last):"; (2) it prints the exception type and
 	value after the stack trace; (3) if type is SyntaxError and value has
 	the appropriate format, it prints the line where the syntax error
 	occurred with a caret on the next line indicating the approximate
@@ -105,7 +105,7 @@ def print_exception(etype, value, tb, limit=None, file=None):
 	if not file:
 		file = sys.stderr
 	if tb:
-		_print(file, 'Traceback (innermost last):')
+		_print(file, 'Traceback (most recent call last):')
 		print_tb(tb, limit, file)
 	lines = format_exception_only(etype, value)
 	for line in lines[:-1]:
@@ -120,7 +120,7 @@ def format_exception(etype, value, tb, limit = None):
 	these lines are contatenated and printed, exactly the same text is
 	printed as does print_exception()."""
 	if tb:
-		list = ['Traceback (innermost last):\n']
+		list = ['Traceback (most recent call last):\n']
 		list = list + format_tb(tb, limit)
 	else:
 		list = []
@@ -218,8 +218,8 @@ def extract_stack(f=None, limit = None):
 	return value has the same format as for extract_tb().  The optional
 	'f' and 'limit' arguments have the same meaning as for print_stack(). 
 	Each item in the list is a quadruple (filename, line number,
-	function name, text), and the entries are in order from outermost
-	to innermost stack frame."""
+	function name, text), and the entries are in order from oldest
+	to newest stack frame."""
 	if f is None:
 		try:
 			raise ZeroDivisionError
