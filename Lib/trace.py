@@ -198,16 +198,11 @@ class CoverageResults:
         self.infile = infile
         self.outfile = outfile
         if self.infile:
-            # Try and merge existing counts file.
-            # This code understand a couple of old trace.py formats.
+            # Try to merge existing counts file.
             try:
-                thingie = pickle.load(open(self.infile, 'r'))
-                if isinstance(thingie, dict):
-                    self.update(self.__class__(thingie))
-                elif isinstance(thingie, tuple) and len(thingie) == 2:
-                    counts, calledfuncs = thingie
-                    self.update(self.__class__(counts, calledfuncs))
-            except (IOError, EOFError), err:
+                counts, calledfuncs = pickle.load(open(self.infile, 'r'))
+                self.update(self.__class__(counts, calledfuncs))
+            except (IOError, EOFError, ValueError), err:
                 print >> sys.stderr, ("Skipping counts file %r: %s"
                                       % (self.infile, err))
             except pickle.UnpicklingError:
