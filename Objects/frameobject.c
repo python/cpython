@@ -254,7 +254,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 		}
 		else
 			extras = f->ob_size;
-		_Py_NewReference(f);
+		_Py_NewReference((PyObject *)f);
 	}
 	if (builtins == NULL) {
 		/* No builtins!  Make up a minimal one. */
