@@ -408,7 +408,7 @@ PyLocale_getdefaultlocale(PyObject* self)
 #if defined(__APPLE__)
 /*
 ** Find out what the current script is.
-** Donated by Fredrik Lund.
+** Donated by Fredrik Lundh.
 */
 static char *mac_getscript(void)
 {
