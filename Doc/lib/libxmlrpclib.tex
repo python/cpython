@@ -219,11 +219,9 @@ triggered the error.
 
 \subsection{Convenience Functions}
 
-\begin{funcdesc}{boolean}{value\optional{, truefalse}}
-Convert any Python value to one of the XML-RPC Boolean constants.
-The optional second argument supplies a conversion table to be indexed
-by the first argument's Python truth value.  If omitted, the
-\code{True} and \code{False} values defined in this module are used.
+\begin{funcdesc}{boolean}{value}
+Convert any Python value to one of the XML-RPC Boolean constants,
+\code{True} or \code{False}.
 \end{funcdesc}
 
 \begin{funcdesc}{binary}{data}
