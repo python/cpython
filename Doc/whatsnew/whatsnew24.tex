@@ -309,6 +309,20 @@ details.
    for improved performance.
    (Contributed by Dmitry Vasiliev.)
 
+\item The CJKCodecs collections of East Asian codecs, maintained
+by Hye-Shik Chang, was integrated into 2.4.  
+The new encodings are:
+
+\begin{itemize}
+ \item Chinese (PRC): gb2312, gbk, gb18030, hz
+ \item Chinese (ROC): big5, cp950
+ \item Japanese: cp932, shift-jis, shift-jisx0213, euc-jp,
+euc-jisx0213, iso-2022-jp, iso-2022-jp-1, iso-2022-jp-2,
+ iso-2022-jp-3, iso-2022-jp-ext
+ \item Korean: cp949, euc-kr, johab, iso-2022-kr
+\end{itemize} 
+
+
 \item The \module{heapq} module has been converted to C.  The resulting
    ten-fold improvement in speed makes the module suitable for handling
    high volumes of data.
