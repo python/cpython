@@ -127,17 +127,16 @@ w_long(x, p)
 	w_byte((int)((x>>24) & 0xff), p);
 }
 
+#if SIZEOF_LONG > 4
 static void
 w_long64(x, p)
 	long x;
 	WFILE *p;
 {
 	w_long(x, p);
-	w_byte((int)((x>>32) & 0xff), p);
-	w_byte((int)((x>>40) & 0xff), p);
-	w_byte((int)((x>>48) & 0xff), p);
-	w_byte((int)((x>>56) & 0xff), p);
+	w_long(x>>32, p);
 }
+#endif
 
 static void
 w_object(v, p)
@@ -154,12 +153,15 @@ w_object(v, p)
 	        w_byte(TYPE_ELLIPSIS, p);  
 	else if (is_intobject(v)) {
 		long x = GETINTVALUE((intobject *)v);
+#if SIZEOF_LONG > 4
 		long y = x>>31;
 		if (y && y != -1) {
 			w_byte(TYPE_INT64, p);
 			w_long64(x, p);
 		}
-		else {
+		else
+#endif
+			{
 			w_byte(TYPE_INT, p);
 			w_long(x, p);
 		}
@@ -328,9 +330,11 @@ r_long(p)
 		x |= (long)rs_byte(p) << 16;
 		x |= (long)rs_byte(p) << 24;
 	}
+#if SIZEOF_LONG > 4
 	/* Sign extension for 64-bit machines */
 	x <<= (8*sizeof(long) - 32);
 	x >>= (8*sizeof(long) - 32);
+#endif
 	return x;
 }
 
@@ -339,35 +343,19 @@ r_long64(p)
 	RFILE *p;
 {
 	register long x;
-	register FILE *fp = p->fp;
-	if (sizeof(long) < 8) {
+	x = r_long(p);
+#if SIZEOF_LONG > 4
+	x = (x & 0xFFFFFFFF) | (r_long(p) << 32);
+#else
+	if (r_long(p) != 0) {
 		object *f = sysget("stderr");
 		err_clear();
-		if (f != NULL) {
+		if (f != NULL)
 			writestring(
-			"Warning: un-marshal 64-bit int in 32-bit mode\n", f);
-		}
+			    "Warning: un-marshal 64-bit int in 32-bit mode\n",
+			    f);
 	}
-	if (fp) {
-		x = getc(fp);
-		x |= (long)getc(fp) << 8;
-		x |= (long)getc(fp) << 16;
-		x |= (long)getc(fp) << 24;
-		x |= (long)getc(fp) << 32;
-		x |= (long)getc(fp) << 40;
-		x |= (long)getc(fp) << 48;
-		x |= (long)getc(fp) << 56;
-	}
-	else {
-		x = rs_byte(p);
-		x |= (long)rs_byte(p) << 8;
-		x |= (long)rs_byte(p) << 16;
-		x |= (long)rs_byte(p) << 24;
-		x |= (long)rs_byte(p) << 32;
-		x |= (long)rs_byte(p) << 40;
-		x |= (long)rs_byte(p) << 48;
-		x |= (long)rs_byte(p) << 56;
-	}
+#endif
 	return x;
 }
 
