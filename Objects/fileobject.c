@@ -2052,19 +2052,20 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 
 		nread = fread(dst, 1, n, stream);
 		assert(nread <= n);
-		shortread = nread != n;	/* true iff EOF or error */
+		n -= nread; /* assuming 1 byte out for each in; will adjust */
+		shortread = n != 0;	/* true iff EOF or error */
 		while (nread--) {
 			char c = *src++;
 			if (c == '\r') {
 				/* Save as LF and set flag to skip next LF. */
 				*dst++ = '\n';
-				--n;
 				skipnextlf = 1;
 			}
 			else if (skipnextlf && c == '\n') {
 				/* Skip LF, and remember we saw CR LF. */
 				skipnextlf = 0;
 				newlinetypes |= NEWLINE_CRLF;
+				++n;
 			}
 			else {
 				/* Normal char to be stored in buffer.  Also
@@ -2076,7 +2077,6 @@ Py_UniversalNewlineFread(char *buf, size_t n,
 				else if (skipnextlf)
 					newlinetypes |= NEWLINE_CR;
 				*dst++ = c;
-				--n;
 				skipnextlf = 0;
 			}
 		}
