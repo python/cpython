@@ -66,7 +66,7 @@ builtin_chr(self, v)
 	}
 	x = getintvalue(v);
 	if (x < 0 || x >= 256) {
-		err_setstr(RuntimeError, "chr() arg not in range(256)");
+		err_setstr(ValueError, "chr() arg not in range(256)");
 		return NULL;
 	}
 	s[0] = x;
@@ -335,7 +335,7 @@ min_max(v, sign)
 	}
 	n = (*sq->sq_length)(v);
 	if (n == 0) {
-		err_setstr(RuntimeError, "min() or max() of empty sequence");
+		err_setstr(ValueError, "min() or max() of empty sequence");
 		return NULL;
 	}
 	w = (*sq->sq_item)(v, 0); /* Implies INCREF */
@@ -417,7 +417,7 @@ builtin_ord(self, v)
 		return NULL;
 	}
 	if (getstringsize(v) != 1) {
-		err_setstr(RuntimeError, "ord() arg must have length 1");
+		err_setstr(ValueError, "ord() arg must have length 1");
 		return NULL;
 	}
 	return newintobject((long)(getstringvalue(v)[0] & 0xff));
@@ -488,7 +488,7 @@ builtin_range(self, v)
 			ilow = 0;
 	}
 	if (istep == 0) {
-		err_setstr(RuntimeError, "zero step for range()");
+		err_setstr(ValueError, "zero step for range()");
 		return NULL;
 	}
 	/* XXX ought to check overflow of subtraction */
@@ -594,6 +594,15 @@ object *NameError;
 object *SystemError;
 object *KeyboardInterrupt;
 
+/* New exceptions */
+object *AttributeError;
+object *IOError;
+object *ZeroDivisionError;
+object *IndexError;
+object *ValueError;
+object *KeyError;
+object *OverflowError;
+
 static object *
 newstdexception(name, message)
 	char *name, *message;
@@ -615,6 +624,18 @@ initerrors()
 	SystemError = newstdexception("SystemError", "system error");
 	KeyboardInterrupt =
 		newstdexception("KeyboardInterrupt", "keyboard interrupt");
+	
+	/* New exceptions */
+	AttributeError =
+		newstdexception("AttributeError", "undefined attribute");
+	IOError = newstdexception("IOError", "I/O error");
+	ZeroDivisionError =
+		newstdexception("ZeroDivisionError", "division by zero");
+	IndexError = newstdexception("IndexError", "index out of range");
+	ValueError = newstdexception("ValueError", "unacceptable value");
+	KeyError = newstdexception("KeyError", "invalid key");
+	OverflowError =
+		newstdexception("OverflowError", "arithmetic overflow");
 }
 
 void
