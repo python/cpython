@@ -9,7 +9,7 @@ import warnings
 warnings.filterwarnings("ignore", "tempnam", RuntimeWarning, __name__)
 warnings.filterwarnings("ignore", "tmpnam", RuntimeWarning, __name__)
 
-from test.test_support import TESTFN, run_suite
+from test.test_support import TESTFN, run_classtests
 
 class TemporaryFileTests(unittest.TestCase):
     def setUp(self):
@@ -282,14 +282,10 @@ class WalkTests(unittest.TestCase):
         os.rmdir(TESTFN)
 
 def test_main():
-    suite = unittest.TestSuite()
-    for cls in (TemporaryFileTests,
-                StatAttributeTests,
-                EnvironTests,
-                WalkTests,
-               ):
-        suite.addTest(unittest.makeSuite(cls))
-    run_suite(suite)
+    run_classtests(TemporaryFileTests,
+                   StatAttributeTests,
+                   EnvironTests,
+                   WalkTests)
 
 if __name__ == "__main__":
     test_main()
