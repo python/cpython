@@ -27,7 +27,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #ifdef __sgi
 /* This is missing from unistd.h */
-extern void bzero();
+extern void bzero(void *, int);
 #endif
 
 #ifndef DONT_HAVE_SYS_TYPES_H

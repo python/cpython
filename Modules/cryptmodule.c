@@ -12,7 +12,7 @@
 static PyObject *crypt_crypt(PyObject *self, PyObject *args)
 {
 	char *word, *salt; 
-	extern char * crypt();
+	extern char * crypt(const char *, const char *);
 
 	if (!PyArg_Parse(args, "(ss)", &word, &salt)) {
 		return NULL;

@@ -130,11 +130,11 @@ corresponding Unix manual entries for more information on calls.";
 
 #ifdef HAVE_UNISTD_H
 /* XXX These are for SunOS4.1.3 but shouldn't hurt elsewhere */
-extern int rename();
-extern int pclose();
-extern int lstat();
-extern int symlink();
-extern int fsync();
+extern int rename(const char *, const char *);
+extern int pclose(FILE *);
+extern int lstat(const char *, struct stat *);
+extern int symlink(const char *, const char *);
+extern int fsync(int fd);
 #else /* !HAVE_UNISTD_H */
 #if defined(PYCC_VACPP)
 extern int mkdir(char *);

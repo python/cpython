@@ -963,7 +963,7 @@ validate_terminal(node *terminal, int type, char *string)
 /*  X (',' X) [',']
  */
 static int
-validate_repeating_list(node *tree, int ntype, int (*vfunc)(),
+validate_repeating_list(node *tree, int ntype, int (*vfunc)(node *),
                         const char *const name)
 {
     int nch = NCH(tree);

@@ -49,7 +49,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
 #if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
-extern int ftime();
+extern int ftime(struct timeb *);
 #endif /* MS_WINDOWS */
 #endif /* HAVE_FTIME */
 
@@ -384,7 +384,8 @@ See the library reference manual for formatting codes.";
 #ifdef HAVE_STRPTIME
 
 #if 0
-extern char *strptime(); /* Enable this if it's not declared in <time.h> */
+/* Enable this if it's not declared in <time.h> */
+extern char *strptime(const char *, const char *, struct tm *);
 #endif
 
 static PyObject *
