@@ -90,7 +90,7 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="makexp_aix python.exp \"\" \$(MYLIBS) \$(ADDOBJS); \$(CC)";;
+	   LINKCC="makexp_aix python.exp \"\" \$(LIBRARY); \$(CC)";;
 	*) LINKCC="\$(CC)";;
 	esac
 fi

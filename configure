@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.59 
+# From configure.in Revision: 1.60 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12 
@@ -818,7 +818,7 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="makexp_aix python.exp \"\" \$(MYLIBS) \$(ADDOBJS); \$(CC)";;
+	   LINKCC="makexp_aix python.exp \"\" \$(LIBRARY); \$(CC)";;
 	*) LINKCC="\$(CC)";;
 	esac
 fi
