@@ -1,5 +1,7 @@
 from test.test_support import verbose
 import random
+from UserList import UserList
+from sets import Set
 
 nerrors = 0
 
@@ -190,6 +192,7 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         random.shuffle(data)
         data.sort(reverse=True)
         self.assertEqual(data, range(99,-1,-1))
+        self.assertRaises(TypeError, data.sort, "wrong type")
 
     def test_reverse_stability(self):
         data = [(random.randrange(100), i) for i in xrange(200)]
@@ -201,11 +204,66 @@ class TestDecorateSortUndecorate(unittest.TestCase):
         copy2.sort(key=lambda x: x[0], reverse=True)
         self.assertEqual(data, copy2)
 
+class TestSorted(unittest.TestCase):
+
+    def test_basic(self):
+        data = range(100)
+        copy = data[:]
+        random.shuffle(copy)
+        self.assertEqual(data, list.sorted(copy))
+        self.assertNotEqual(data, copy)
+
+        data.reverse()
+        random.shuffle(copy)
+        self.assertEqual(data, list.sorted(copy, cmp=lambda x, y: cmp(y,x)))
+        self.assertNotEqual(data, copy)
+        random.shuffle(copy)
+        self.assertEqual(data, list.sorted(copy, key=lambda x: -x))
+        self.assertNotEqual(data, copy)
+        random.shuffle(copy)
+        self.assertEqual(data, list.sorted(copy, reverse=1))
+        self.assertNotEqual(data, copy)
+
+    def test_inputtypes(self):
+        s = 'abracadabra'
+        for T in [unicode, list, tuple]:
+            self.assertEqual(list.sorted(s), list.sorted(T(s)))
+
+        s = ''.join(dict.fromkeys(s).keys())  # unique letters only
+        for T in [unicode, Set, list, tuple, dict.fromkeys]:
+            self.assertEqual(list.sorted(s), list.sorted(T(s)))
+
+    def test_baddecorator(self):
+        data = 'The quick Brown fox Jumped over The lazy Dog'.split()
+        self.assertRaises(TypeError, list.sorted, data, None, lambda x,y: 0)
+
+    def classmethods(self):
+        s = "hello world"
+        a = list.sorted(s)
+        b = UserList.sorted(s)
+        c = [].sorted(s)
+        d = UserList().sorted(s)
+        class Mylist(list):
+            def __new__(cls):
+                return UserList()
+        e = MyList.sorted(s)
+        f = MyList().sorted(s)
+        class Myuserlist(UserList):
+            def __new__(cls):
+                return []
+        g = MyList.sorted(s)
+        h = MyList().sorted(s)
+        self.assert_(a == b == c == d == e == f == g == h)
+        self.assert_(b.__class__ == d.__class__ == UserList)
+        self.assert_(e.__class__ == f.__class__ == MyList)
+        self.assert_(g.__class__ == h.__class__ == Myuserlist)
+
 #==============================================================================
 
 def test_main(verbose=None):
     test_classes = (
         TestDecorateSortUndecorate,
+        TestSorted,
         TestBugs,
     )
 

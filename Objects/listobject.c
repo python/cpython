@@ -2001,6 +2001,38 @@ PyList_Sort(PyObject *v)
 }
 
 static PyObject *
+listsorted(PyObject *cls, PyObject *args, PyObject *kwds)
+{
+	PyObject *newlist, *v, *seq, *compare=NULL, *keyfunc=NULL, *newargs;
+	static char *kwlist[] = {"iterable", "cmp", "key", "reverse", 0};
+	long reverse;
+
+	if (args != NULL) {
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OOi:sorted",
+			kwlist, &seq, &compare, &keyfunc, &reverse))
+			return NULL;
+	}
+
+	newlist = PyObject_CallFunctionObjArgs(cls, seq, NULL);
+	if (newlist == NULL)
+		return NULL;
+	
+	newargs = PyTuple_GetSlice(args, 1, 4);
+	if (newargs == NULL) {
+		Py_DECREF(newlist);
+		return NULL;
+	}
+	v = listsort((PyListObject *)newlist, newargs, kwds);
+	Py_DECREF(newargs);
+	if (v == NULL) {
+		Py_DECREF(newlist);
+		return NULL;
+	}
+	Py_DECREF(v);
+	return newlist;
+}
+
+static PyObject *
 listreverse(PyListObject *self)
 {
 	if (self->ob_size > 1)
@@ -2335,6 +2367,9 @@ PyDoc_STRVAR(reverse_doc,
 PyDoc_STRVAR(sort_doc,
 "L.sort(cmp=None, key=None, reverse=False) -- stable sort *IN PLACE*;\n\
 cmp(x, y) -> -1, 0, 1");
+PyDoc_STRVAR(sorted_doc,
+"list.sorted(iterable, cmp=None, key=None, reverse=False) --> new sorted list;\n\
+cmp(x, y) -> -1, 0, 1");
 
 static PyMethodDef list_methods[] = {
 	{"append",	(PyCFunction)listappend,  METH_O, append_doc},
@@ -2346,6 +2381,8 @@ static PyMethodDef list_methods[] = {
 	{"count",	(PyCFunction)listcount,   METH_O, count_doc},
 	{"reverse",	(PyCFunction)listreverse, METH_NOARGS, reverse_doc},
 	{"sort",	(PyCFunction)listsort, 	  METH_VARARGS | METH_KEYWORDS, sort_doc},
+	{"sorted",	(PyCFunction)listsorted,  
+		METH_VARARGS | METH_KEYWORDS | METH_CLASS, sorted_doc},
  	{NULL,		NULL}		/* sentinel */
 };
 

@@ -23,8 +23,8 @@ Core and builtins
   starting with Py2.3 are guaranteed to be stable (the relative order of
   records with equal keys is unchanged).
 
-- Added a list.copysort() method that returns a copy of the sorted list
-  while leaving the original intact.
+- Added a list.sorted() classmethod that returns a new sorted list
+  from any iterable.
 
 - Added test whether wchar_t is signed or not. A signed wchar_t is not
   usable as internal unicode type base for Py_UNICODE since the
