@@ -294,8 +294,10 @@ nameprep_tests = [
     ('\xd8\xa71\xd8\xa8',
      '\xd8\xa71\xd8\xa8'),
     # 3.43 Unassigned code point U+E0002.
-    ('\xf3\xa0\x80\x82',
-     None),
+    # Skip this test as we allow unassigned
+    #('\xf3\xa0\x80\x82',
+    # None),
+    (None, None),
     # 3.44 Larger test (shrinking).
     # Original test case reads \xc3\xdf
     ('X\xc2\xad\xc3\x9f\xc4\xb0\xe2\x84\xa1j\xcc\x8c\xc2\xa0\xc2'
