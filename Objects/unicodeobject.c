@@ -183,10 +183,10 @@ PyUnicodeObject *_PyUnicode_New(int length)
 		goto onError;
 	    }
 	}
-      else {
+        else {
 	    unicode->str = PyMem_NEW(Py_UNICODE, length + 1);
-      }
-      PyObject_INIT(unicode, &PyUnicode_Type);
+        }
+        PyObject_INIT(unicode, &PyUnicode_Type);
     }
     else {
         unicode = PyObject_NEW(PyUnicodeObject, &PyUnicode_Type);
