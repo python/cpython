@@ -315,6 +315,12 @@ specified, it specifies the buffer size for the I/O pipes.
 objects should be opened in binary or text mode.  The default value
 for \var{mode} is \code{'t'}.
 
+These methods do not make it possible to retrieve the return code from
+the child processes.  The only way to control the input and output
+streams and also retrieve the return codes is to use the
+\class{Popen3} and \class{Popen4} classes from the \refmodule{popen2}
+module; these are only available on \UNIX.
+
 \begin{funcdesc}{popen2}{cmd\optional{, mode\optional{, bufsize}}}
 Executes \var{cmd} as a sub-process.  Returns the file objects
 \code{(\var{child_stdin}, \var{child_stdout})}.
