@@ -37,7 +37,7 @@ def copystat(src, dst):
     st = os.stat(src)
     mode = stat.S_IMODE(st[stat.ST_MODE])
     os.chmod(dst, mode)
-    os.utime(dst, (st[stat.ST_ATIME], st[stat.ST_MODE]))
+    os.utime(dst, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
 
 
 def copy(src, dst):
