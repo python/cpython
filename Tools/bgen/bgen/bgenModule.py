@@ -38,7 +38,7 @@ class Module(GeneratorGroup):
 			Output("%s", self.finalstuff)
 
 		Output()
-		Output("void init%s()", self.name)
+		Output("void init%s(void)", self.name)
 		OutLbrace()
 		Output("PyObject *m;")
 		Output("PyObject *d;")

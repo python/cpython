@@ -80,10 +80,8 @@ class ObjectDefinition(GeneratorGroup):
 
 	def outputNew(self):
 		Output()
-		Output("%sPyObject *%s_New(itself)", self.static, self.prefix)
-		IndentLevel()
-		Output("%s %sitself;", self.itselftype, self.argref)
-		DedentLevel()
+		Output("%sPyObject *%s_New(%s %sitself)", self.static, self.prefix,
+				self.itselftype, self.argref)
 		OutLbrace()
 		Output("%s *it;", self.objecttype)
 		self.outputCheckNewArg()
@@ -100,11 +98,8 @@ class ObjectDefinition(GeneratorGroup):
 			"Override this method to apply additional checks/conversions"
 	
 	def outputConvert(self):
-		Output("%s%s_Convert(v, p_itself)", self.static, self.prefix)
-		IndentLevel()
-		Output("PyObject *v;")
-		Output("%s *p_itself;", self.itselftype)
-		DedentLevel()
+		Output("%s%s_Convert(PyObject *v, %s *p_itself)", self.static, self.prefix,
+				self.itselftype)
 		OutLbrace()
 		self.outputCheckConvertArg()
 		Output("if (!%s_Check(v))", self.prefix)
@@ -121,10 +116,7 @@ class ObjectDefinition(GeneratorGroup):
 
 	def outputDealloc(self):
 		Output()
-		Output("static void %s_dealloc(self)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		DedentLevel()
+		Output("static void %s_dealloc(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		self.outputCleanupStructMembers()
 		Output("PyMem_DEL(self);")
@@ -138,11 +130,7 @@ class ObjectDefinition(GeneratorGroup):
 
 	def outputGetattr(self):
 		Output()
-		Output("static PyObject *%s_getattr(self, name)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		Output("char *name;")
-		DedentLevel()
+		Output("static PyObject *%s_getattr(%s *self, char *name)", self.prefix, self.objecttype)
 		OutLbrace()
 		self.outputGetattrBody()
 		OutRbrace()
@@ -226,10 +214,8 @@ class ObjectIdentityMixin:
 	
 	def outputCompare(self):
 		Output()
-		Output("static int %s_compare(self, other)", self.prefix)
-		IndentLevel()
-		Output("%s *self, *other;", self.objecttype)
-		DedentLevel()
+		Output("static int %s_compare(%s *self, %s *other)", self.prefix, self.objecttype,
+				self.objecttype)
 		OutLbrace()
 		Output("unsigned long v, w;")
 		Output()
@@ -250,10 +236,7 @@ class ObjectIdentityMixin:
 		
 	def outputHash(self):
 		Output()
-		Output("static long %s_hash(self)", self.prefix)
-		IndentLevel()
-		Output("%s *self;", self.objecttype)
-		DedentLevel()
+		Output("static long %s_hash(%s *self)", self.prefix, self.objecttype)
 		OutLbrace()
 		Output("return (long)self->ob_itself;")
 		OutRbrace()
