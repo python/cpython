@@ -54,11 +54,13 @@ macstat(path, buf)
 	buf->st_nlink = 1;
 	buf->st_uid = 1;
 	buf->st_gid = 1;
-	buf->st_size = pb.f.ioFlLgLen;
+	buf->st_size = (buf->st_mode & S_IFDIR) ? 0 : pb.f.ioFlLgLen;
 	buf->st_mtime = buf->st_atime = pb.f.ioFlMdDat;
 	buf->st_ctime = pb.f.ioFlCrDat;
-	buf->st_rsize = pb.f.ioFlRLgLen;
-	*(unsigned long *)buf->st_type = pb.f.ioFlFndrInfo.fdType;
-	*(unsigned long *)buf->st_creator = pb.f.ioFlFndrInfo.fdCreator;
+	buf->st_rsize = (buf->st_mode & S_IFDIR) ? 0 : pb.f.ioFlRLgLen;
+	*(unsigned long *)buf->st_type =
+		(buf->st_mode & S_IFDIR) ? 0 : pb.f.ioFlFndrInfo.fdType;
+	*(unsigned long *)buf->st_creator =
+		(buf->st_mode & S_IFDIR) ? 0 : pb.f.ioFlFndrInfo.fdCreator;
 	return 0;
 }
