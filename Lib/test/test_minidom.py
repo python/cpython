@@ -246,7 +246,12 @@ def testAttributeRepr():
 
 def testTextNodeRepr(): pass
 
-def testWriteXML(): pass
+def testWriteXML():
+    str = '<a b="c"/>'
+    dom = parseString(str)
+    domstr = dom.toxml()
+    dom.unlink()
+    confirm(str == domstr)
 
 def testProcessingInstruction(): pass
 
