@@ -114,7 +114,7 @@ libmac.tex libmacconsole.tex libmacdnr.tex \
 	libmacfs.tex libmactcp.tex libmacspeech.tex \
 	libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmimetools.tex libmisc.tex \
-	libmm.tex libmods.tex libmpz.tex \
+	libmm.tex libmpz.tex \
 libnntplib.tex \
 libobjs.tex libos.tex \
 libpanel.tex libpickle.tex libposix.tex libposixfile.tex \
@@ -122,7 +122,7 @@ libpanel.tex libpickle.tex libposix.tex libposixfile.tex \
 librand.tex libregex.tex libregsub.tex \
 	librfc822.tex librgbimg.tex librotor.tex \
 libselect.tex libsgi.tex libsgmllib.tex \
-	libshelve.tex libsocket.tex libsomeos.tex libstd.tex libstdwin.tex \
+	libshelve.tex libsocket.tex libsomeos.tex libstdwin.tex \
 	libstring.tex libstrings.tex libstruct.tex libsun.tex libsys.tex \
 libtempfile.tex libthread.tex libtime.tex \
 	libtraceback.tex libtypes.tex libtypes2.tex \
