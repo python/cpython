@@ -105,13 +105,13 @@ friendly than equivalent list comprehensions.
 is equivalent to:
 
 \begin{verbatim}
-    def _generator(exp):
+    def __gen(exp):
         for var1 in exp:
             for var2 in exp2:
                 if exp3:
                     yield tgtexp
-    g = _generator(exp1)
-    del _generator
+    g = __gen(iter(exp1))
+    del __gen
 \end{verbatim}
 
 The advantage over full generator definitions is in economy of
