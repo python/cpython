@@ -51,10 +51,10 @@ def whichdb(filename):
     # Check for dumbdbm next -- this has a .dir and and a .dat file
     try:
         # First check for presence of files
-        sizes = os.stat(filename + os.extsep + "dat").st_size, \
-                os.stat(filename + os.extsep + "dir").st_size
+        os.stat(filename + os.extsep + "dat")
+        size = os.stat(filename + os.extsep + "dir").st_size
         # dumbdbm files with no keys are empty
-        if sizes == (0, 0):
+        if size == 0:
             return "dumbdbm"
         f = open(filename + os.extsep + "dir", "rb")
         try:
