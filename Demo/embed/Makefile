@@ -32,13 +32,20 @@ all:		demo
 demo:		demo.o
 		$(CC) $(LDFLAGS) demo.o $(ALLLIBS) -o demo
 
+loop:		loop.o
+		$(CC) $(LDFLAGS) loop.o $(ALLLIBS) -o loop
+
 # Administrative targets
 
 test:		demo
 		./demo
 
+COMMAND="print 'hello world'"
+looptest:	loop
+		./loop $(COMMAND)
+
 clean:
 		-rm -f *.o core
 
 clobber:	clean
-		-rm -f *~ @* '#'* demo
+		-rm -f *~ @* '#'* demo loop
