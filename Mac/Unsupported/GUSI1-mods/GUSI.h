@@ -5,6 +5,9 @@ Author	:	Matthias Neeracher
 Language	:	MPW C/C++
 
 $Log$
+Revision 1.1  2000/09/12 20:24:50  jack
+Moved to Unsupported.
+
 Revision 1.1  1998/08/18 14:52:33  jack
 Putting Python-specific GUSI modifications under CVS.
 
