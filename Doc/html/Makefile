@@ -26,9 +26,6 @@ l2href:
 l2htut:
 	$(MAKE) srcdir=.. VPATH=.. TEXINPUTS=$(TEXINPUTS) -f ../Makefile l2htut
 
-tarhtml:
-	$(MAKE) srcdir=.. VPATH=.. -f ../Makefile tarhtml
-
 webcheck:
 	$(MAKE) srcdir=.. VPATH=.. -f ../Makefile webcheck
 
