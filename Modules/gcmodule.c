@@ -677,51 +677,48 @@ gc_get_thresh(PyObject *self, PyObject *args)
 	return Py_BuildValue("(iii)", threshold0, threshold1, threshold2);
 }
 
-struct referents{
-	PyObject *objs;
-	int seen;
-};
-
 static int
-referentsvisit(PyObject* obj, struct referents* refs)
+referentsvisit(PyObject* obj, PyObject *objs)
 {
-	if (PySequence_Contains (refs->objs, obj)) {
-		refs->seen = 1;
+	if (PySequence_Contains(objs, obj)) {
 		return 1;
 	}
 	return 0;
 }
 
-static void
+static int
 gc_referents_for(PyObject *objs, PyGC_Head *list, PyObject *resultlist)
 {
 	PyGC_Head *gc;
 	PyObject *obj;
 	traverseproc traverse;
-	struct referents refs = {objs, 0};
-	for (gc = list->gc_next; gc != list; gc = gc->gc_next){
-	  obj = PyObject_FROM_GC(gc);
+	for (gc = list->gc_next; gc != list; gc = gc->gc_next) {
+		obj = PyObject_FROM_GC(gc);
 		traverse = obj->ob_type->tp_traverse;
 		if (obj == objs || obj == resultlist)
 			continue;
-		if (traverse(obj, (visitproc)referentsvisit, &refs)) {
-			PyList_Append(resultlist, obj);
-			refs.seen = 0;
+		if (traverse(obj, (visitproc)referentsvisit, objs)) {
+			if (PyList_Append(resultlist, obj) < 0)
+				return 0; /* error */
 		}
 	}
+	return 1; /* no error */
 }
 
 static char gc_get_referents__doc__[]=
 "get_referents(*objs) -> list\n\
 Return the list of objects that directly refer to any of objs.";
 
-static PyObject*
-gc_get_referents(PyObject *self, PyObject* args)
+static PyObject *
+gc_get_referents(PyObject *self, PyObject *args)
 {
 	PyObject *result = PyList_New(0);
-	gc_referents_for(args, &generation0, result);
-	gc_referents_for(args, &generation1, result);
-	gc_referents_for(args, &generation2, result);
+	if (!(gc_referents_for(args, &generation0, result) &&
+	      gc_referents_for(args, &generation1, result) &&
+	      gc_referents_for(args, &generation2, result))) {
+		Py_DECREF(result);
+		return NULL;
+	}
 	return result;
 }
 
