@@ -306,7 +306,6 @@ class Debugger:
             gdict = frame.f_globals
             if lv and gv and ldict is gdict:
                 ldict = None
-        # Calls OldStackviewer.NamespaceViewer.load_dict():
         if lv:
             lv.load_dict(ldict, force, self.pyshell.interp.rpcclt)
         if gv:
