@@ -104,8 +104,8 @@ class UserString:
     def strip(self): return self.__class__(self.data.strip())
     def swapcase(self): return self.__class__(self.data.swapcase())
     def title(self): return self.__class__(self.data.title())
-    def translate(self, table, deletechars=""): 
-        return self.__class__(self.data.translate(table, deletechars))
+    def translate(self, *args): 
+        return self.__class__(self.data.translate(*args))
     def upper(self): return self.__class__(self.data.upper())
 
 class MutableString(UserString):
