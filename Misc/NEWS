@@ -3,6 +3,12 @@ What's New in Python 2.2a4?
 
 Core
 
+- property() now takes 4 keyword arguments:  fget, fset, fdel and doc.
+  These map to readonly attributes 'fget', 'fset', 'fdel', and '__doc__'
+  in the constructed property object.  fget, fset and fdel weren't
+  discoverable from Python in 2.2a3.  __doc__ is new, and allows to
+  associate a docstring with a property.
+
 - file.writelines() now accepts any iterable object producing strings.
 
 - PyUnicode_FromEncodedObject() now works very much like
