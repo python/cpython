@@ -59,12 +59,9 @@ if _have_ssl:
     __all__.extend(os._get_exports_list(_ssl))
 
 _realsocket = socket
-_needwrapper = False
 if (sys.platform.lower().startswith("win")
     or (hasattr(os, 'uname') and os.uname()[0] == "BeOS")
     or sys.platform=="riscos"):
-
-    _needwrapper = True
 
     if _have_ssl:
         _realssl = ssl
@@ -180,8 +177,7 @@ class _socketobject(object):
         exec _s % (_m, _m, _m, _m)
     del _m, _s
 
-if _needwrapper:
-    socket = SocketType = _socketobject
+socket = SocketType = _socketobject
 
 class _fileobject(object):
     """Faux file object attached to a socket object."""
