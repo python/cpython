@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.1}
-\release{0.04}
+\release{0.05}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk1@bigfoot.com}}
 \begin{document}
@@ -12,9 +12,9 @@
 \section{Introduction}
 
 {\large This document is a draft, and is subject to change until
-Python 2.1 is released.  Please send any comments, bug reports, or questions,
-no matter how minor, to \email{amk1@bigfoot.com}.
-}
+the final version of Python 2.1 is released.  Currently it is up to date
+for Python 2.1 alpha 2.  Please send any comments, bug reports, or
+questions, no matter how minor, to \email{amk1@bigfoot.com}.  }
 
 It's that time again... time for a new Python release, version 2.1.
 One recent goal of the Python development team has been to accelerate
@@ -38,20 +38,93 @@ Currently 2.1 is available in an alpha release, but the release
 schedule calls for a beta release by late February 2001, and a final
 release in April 2001.
 
-% ======================================================================
+%======================================================================
+\section{PEP 227: Nested Scopes}
+
+The largest change in Python 2.1 is to Python's scoping rules.  In
+Python 2.0, at any given time there are at most three namespaces used
+to look up variable names: local, module-level, and the built-in
+namespace.  This often surprised people because it didn't match their
+intuitive expectations.  For example, a nested recursive function
+definition doesn't work:
+
+\begin{verbatim}
+def f():
+    ...
+    def g(value):
+        ...
+        return g(value-1) + 1
+    ...
+\end{verbatim}
+
+The function \function{g()} will always raise a \exception{NameError}
+exception, because the binding of the name \samp{g} isn't in either
+its local namespace or in the module-level namespace.  This isn't much
+of a problem in practice (how often do you recursively define interior
+functions like this?), but this also made using the \keyword{lambda}
+statement clumsier, and this was a problem in practice.  In code which
+uses \keyword{lambda} you can often find local variables being copied
+by passing them as the default values of arguments.
+
+\begin{verbatim}
+def find(self, name):
+    "Return list of any entries equal to 'name'"
+    L = filter(lambda x, name=name: x == name,
+               self.list_attribute)
+    return L
+\end{verbatim}
+
+The readability of Python code written in a strongly functional style
+suffers greatly as a result.
+
+The most significant change to Python 2.1 is that static scoping has
+been added to the language to fix this problem.  As a first effect,
+the \code{name=name} default argument is now unnecessary in the above
+example.  Put simply, when a given variable name is not assigned a
+value within a function (by an assignment, or the \keyword{def},
+\keyword{class}, or \keyword{import} statements), references to the
+variable will be looked up in the local namespace of the enclosing
+scope.  A more detailed explanation of the rules, and a dissection of
+the implementation, can be found in the PEP.
+
+This change may cause some compatibility problems for code where the
+same variable name is used both at the module level and as a local
+variable within a function that contains further function definitions.
+This seems rather unlikely though, since such code would have been
+pretty confusing to read in the first place.
+
+One side effect of the change is that the statement from \code{from
+\var{module} import *} has been made illegal inside a function scope.
+The Python reference manual has said all along that \code{from
+\var{module} import *} is only legal at the top level of a module, but
+the CPython interpreter has never enforced this before; it will be
+enforced in 2.1, though it's not yet clear if it will be a syntax
+error or just a warning.  In the alpha 2 release, it triggers a
+\exception{SyntaxError} exception, but this check might be made more
+lenient in following releases.
+% XXX update the previous sentence for 2.1final
+
+\begin{seealso}
+
+\seepep{227}{Statically Nested Scopes}{Written and implemented by
+Jeremy Hylton.}
+
+\end{seealso}
+
+
+%======================================================================
 \section{PEP 232: Function Attributes}
 
-In Python 2.1, functions can now have arbitrary
-information attached to them.  People were often using docstrings to hold
-information about functions and methods, because the \code{__doc__}
-attribute was the only way of attaching any information to a function.
-For example, in the Zope Web application server, functions are marked
-as safe for public access by having a docstring, and in John Aycock's
-SPARK parsing framework, docstrings hold parts of the BNF grammar to
-be parsed.  This overloading is unfortunate, since docstrings are
-really intended to hold a function's documentation, and it 
-means you
-can't properly document functions intended for private use in Zope.
+In Python 2.1, functions can now have arbitrary information attached
+to them.  People were often using docstrings to hold information about
+functions and methods, because the \code{__doc__} attribute was the
+only way of attaching any information to a function.  For example, in
+the Zope Web application server, functions are marked as safe for
+public access by having a docstring, and in John Aycock's SPARK
+parsing framework, docstrings hold parts of the BNF grammar to be
+parsed.  This overloading is unfortunate, since docstrings are really
+intended to hold a function's documentation, and it means you can't
+properly document functions intended for private use in Zope.
 
 Attributes can now be set and retrieved on functions, using the
 regular Python syntax:
@@ -62,23 +135,24 @@ def f(): pass
 f.publish = 1
 f.secure = 1
 f.grammar = "A ::= B (C D)*"
-\end{verbatim}    
+\end{verbatim}
 
 The dictionary containing attributes can be accessed as
-\member{__dict__}. Unlike the \member{__dict__} attribute of
-class instances, in functions you can actually assign a new dictionary
-to \member{__dict__}, though the new value is restricted to a
-regular Python dictionary; you can't be tricky and set it to a
+\member{__dict__}. Unlike the \member{__dict__} attribute of class
+instances, in functions you can actually assign a new dictionary to
+\member{__dict__}, though the new value is restricted to a regular
+Python dictionary; you can't be tricky and set it to a
 \class{UserDict} instance, a DBM file, or any other random mapping
 object.
 
 \begin{seealso}
 
-\seepep{232}{Function Attributes}{Written and implemented by Barry Warsaw.}
+\seepep{232}{Function Attributes}{Written and implemented by Barry
+Warsaw.}
 
 \end{seealso}
 
-% ======================================================================
+%======================================================================
 \section{PEP 207: Rich Comparisons}
 
 In earlier versions, Python's support for implementing comparisons on
@@ -95,19 +169,16 @@ comparison for each element.  If the two matrices are of different
 sizes, then the compare has to be able to raise an exception to signal
 the error.
 
-In Python 2.1, rich comparisons were added in order to support this need.
-Python classes can now individually overload each of the \code{<},
-\code{<=}, \code{>}, \code{>=}, \code{==}, and \code{!=} operations.
-The new magic method names are:
+In Python 2.1, rich comparisons were added in order to support this
+need.  Python classes can now individually overload each of the
+\code{<}, \code{<=}, \code{>}, \code{>=}, \code{==}, and \code{!=}
+operations.  The new magic method names are:
 
 \begin{tableii}{c|l}{code}{Operation}{Method name}
-  \lineii{<}{\method{__lt__}}
-  \lineii{<=}{\method{__le__}}
-  \lineii{>}{\method{__gt__}}
-  \lineii{>=}{\method{__ge__}}
-  \lineii{==}{\method{__eq__}}
-  \lineii{!=}{\method{__ne__}}
-\end{tableii}
+  \lineii{<}{\method{__lt__}} \lineii{<=}{\method{__le__}}
+  \lineii{>}{\method{__gt__}} \lineii{>=}{\method{__ge__}}
+  \lineii{==}{\method{__eq__}} \lineii{!=}{\method{__ne__}}
+  \end{tableii}
 
 (The magic methods are named after the corresponding Fortran operators
 \code{.LT.}. \code{.LE.}, \&c.  Numeric programmers are almost
@@ -143,11 +214,12 @@ for the full list of related functions.
 \begin{seealso}
 
 \seepep{207}{Rich Comparisions}{Written by Guido van Rossum, heavily
-based on earlier work by David Ascher, and implemented by Guido van Rossum.}
+based on earlier work by David Ascher, and implemented by Guido van
+Rossum.}
 
 \end{seealso}
 
-% ======================================================================
+%======================================================================
 \section{PEP 230: Warning Framework}
 
 Over its 10 years of existence, Python has accumulated a certain
@@ -159,7 +231,7 @@ more structured way, a warning framework was added.  When the Python
 developers want to get rid of a feature, it will first trigger a
 warning in the next version of Python.  The following Python version
 can then drop the feature, and users will have had a full release
-cycle to remove uses of the old feature.  
+cycle to remove uses of the old feature.
 
 Python 2.1 adds the warning framework to be used in this scheme.  It
 adds a \module{warnings} module that provide functions to issue
@@ -167,19 +239,21 @@ warnings, and to filter out warnings that you don't want to be
 displayed. Third-party modules can also use this framework to
 deprecate old features that they no longer wish to support.
 
-For example, in Python 2.1 the \module{regex} module is deprecated,
-so importing it causes a warning to be printed:
+For example, in Python 2.1 the \module{regex} module is deprecated, so
+importing it causes a warning to be printed:
 
 \begin{verbatim}
 >>> import regex
-__main__:1: DeprecationWarning: the regex module is deprecated; please use the re module
->>> 
+__main__:1: DeprecationWarning: the regex module
+         is deprecated; please use the re module
+>>>
 \end{verbatim}
 
-Warnings can be issued by calling the \function{warnings.warn} function:
+Warnings can be issued by calling the \function{warnings.warn}
+function:
 
 \begin{verbatim}
-warnings.warn("feature X no longer supported")              
+warnings.warn("feature X no longer supported")
 \end{verbatim}
 
 The first parameter is the warning message; an additional optional
@@ -201,22 +275,31 @@ warnings.filterwarnings(action = 'ignore',
 \end{verbatim}
 
 This adds a filter that will apply only to warnings of the class
-\class{DeprecationWarning} triggered in the \module{__main__} module, and applies a regular expression to only match the message about the \module{regex} module being deprecated, and will cause such warnings to be ignored.  Warnings can also be printed only once, printed every time the offending code is executed, or turned into exceptions that will cause the program to stop (unless the exceptions are caught in the usual way, of course). 
+\class{DeprecationWarning} triggered in the \module{__main__} module,
+and applies a regular expression to only match the message about the
+\module{regex} module being deprecated, and will cause such warnings
+to be ignored.  Warnings can also be printed only once, printed every
+time the offending code is executed, or turned into exceptions that
+will cause the program to stop (unless the exceptions are caught in
+the usual way, of course).
 
 Functions were also added to Python's C API for issuing warnings;
 refer to PEP 230 or to Python's API documentation for the details.
 
-\begin{seealso}
-\seepep{5}{Guidelines for Language Evolution}{Written by Paul Prescod,
-to specify procedures to be followed when removing old features from
-Python.  The policy described in this PEP hasn't been officially
-adopted, but the eventual policy probably won't be too different from
-Prescod's proposal.}
+\begin{seealso} 
 
-\seepep{230}{Warning Framework}{Written and implemented by Guido van Rossum.}
+\seepep{5}{Guidelines for Language Evolution}{Written
+by Paul Prescod, to specify procedures to be followed when removing
+old features from Python.  The policy described in this PEP hasn't
+been officially adopted, but the eventual policy probably won't be too
+different from Prescod's proposal.}
+
+\seepep{230}{Warning Framework}{Written and implemented by Guido van
+Rossum.}
+
 \end{seealso}
     
-% ======================================================================
+%======================================================================
 \section{PEP 229: New Build System}
 
 When compiling Python, the user had to go in and edit the
@@ -257,11 +340,39 @@ each of the Python/, Parser/, Objects/, and Modules/ subdirectories.
 This makes building Python faster, and also makes the build process
 clearer and simpler.
 
-\begin{seealso}
-\seepep{229}{Using Distutils to Build Python}{Written and implemented by A.M. Kuchling.}
+\begin{seealso} 
+
+\seepep{229}{Using Distutils to Build Python}{Written
+and implemented by A.M. Kuchling.}
+
 \end{seealso}
 
-% ======================================================================
+%======================================================================
+\section{Weak References}
+
+Weak references are a minor but useful new data type in the Python
+programmer's toolbox.  Storing a reference to an object (say, in a
+dictionary or a list) has the side effect of keeping that object alive
+forever.  There are a few specific cases where this behaviour is
+undesirable, object caches being the most common one, and another
+being circular references in data structures such as trees.
+
+For example, a tree might be implemented as a set of \class{Node}
+instances where each instances contains a list of its children.  If
+you need to be able to determine the parent of a given \class{Node},
+an obvious solution would be to have each instance have a reference to
+its parent.  This creates lots of circular references.
+
+XXX finish the rest of this section
+
+\begin{seealso}
+
+\seepep{205}{Weak References}{Written and implemented by
+Fred~L. Drake,~Jr.}
+
+\end{seealso}
+
+%======================================================================
 \section{PEP 217: Interactive Display Hook}
 
 When using the Python interpreter interactively, the output of
@@ -274,23 +385,24 @@ For example, you can set it to a special pretty-printing function:
 >>> # Create a recursive data structure
 ... L = [1,2,3]
 >>> L.append(L)
->>> L   # Show Python's default output
+>>> L # Show Python's default output
 [1, 2, 3, [...]]
 >>> # Use pprint.pprint() as the display function
 ... import sys, pprint
 >>> sys.displayhook = pprint.pprint
 >>> L
-[1, 2, 3, <Recursion on list with id=135143996>]
->>> 
+[1, 2, 3,  <Recursion on list with id=135143996>]
+>>>
 \end{verbatim}
 
 \begin{seealso}
 
-\seepep{217}{Display Hook for Interactive Use}{Written and implemented by Moshe Zadka.}
+\seepep{217}{Display Hook for Interactive Use}{Written and implemented
+by Moshe Zadka.}
 
 \end{seealso}
 
-% ======================================================================
+%======================================================================
 \section{PEP 208: New Coercion Model}
 
 How numeric coercion is done at the C level was significantly
@@ -298,22 +410,21 @@ modified.  This will only affect the authors of C extensions to
 Python, allowing them more flexibility in writing extension types that
 support numeric operations.
 
-Extension types can now set the type flag
-\code{Py_TPFLAGS_CHECKTYPES} in their \code{PyTypeObject}
-structure to indicate that they support the new coercion model.  In
-such extension types, the numeric slot functions can no longer assume
-that they'll be passed two arguments of the same type; instead they
-may be passed two arguments of differing types, and can then perform
-their own internal coercion.  If the slot function is passed a type it
-can't handle, it can indicate the failure by returning a reference to
-the \code{Py_NotImplemented} singleton value.  The numeric functions
-of the other type will then be tried, and perhaps they can handle the
-operation; if the other type also returns \code{Py_NotImplemented},
-then a \exception{TypeError} will be raised.  Numeric methods written
-in Python can also return \code{Py_NotImplemented}, causing the
-interpreter to act as if the method did not exist (perhaps raising a
-\exception{TypeError}, perhaps trying another object's numeric
-methods).
+Extension types can now set the type flag \code{Py_TPFLAGS_CHECKTYPES}
+in their \code{PyTypeObject} structure to indicate that they support
+the new coercion model.  In such extension types, the numeric slot
+functions can no longer assume that they'll be passed two arguments of
+the same type; instead they may be passed two arguments of differing
+types, and can then perform their own internal coercion.  If the slot
+function is passed a type it can't handle, it can indicate the failure
+by returning a reference to the \code{Py_NotImplemented} singleton
+value.  The numeric functions of the other type will then be tried,
+and perhaps they can handle the operation; if the other type also
+returns \code{Py_NotImplemented}, then a \exception{TypeError} will be
+raised.  Numeric methods written in Python can also return
+\code{Py_NotImplemented}, causing the interpreter to act as if the
+method did not exist (perhaps raising a \exception{TypeError}, perhaps
+trying another object's numeric methods).
 
 \begin{seealso}
 
@@ -324,7 +435,7 @@ operations will now be processed at the C level.}
 
 \end{seealso}
 
-% ======================================================================
+%======================================================================
 \section{Minor Changes and Fixes}
 
 There were relatively few smaller changes made in Python 2.1 due to
@@ -333,7 +444,6 @@ up 57 patches applied, and 86 bugs fixed; both figures are likely to
 be underestimates.  Some of the more notable changes are:
 
 \begin{itemize}
-
 
 \item The speed of line-oriented file I/O has been improved because
 people often complain about its lack of speed, and because it's often
@@ -360,20 +470,15 @@ for line in sys.stdin.xreadlines():
 \end{verbatim}
 
 For a fuller discussion of the line I/O changes, see the python-dev
-summary for January 1-15, 2001.  
+summary for January 1-15, 2001.
 
-\item A new method, \method{popitem()}, was added to dictionaries to enable 
-destructively iterating through the contents of a dictionary; this can be faster for large dictionaries because .  
-\code{D.popitem()} removes a random \code{(\var{key}, \var{value})} pair
-from the dictionary and returns it as a 2-tuple.  This was implemented
-mostly by Tim Peters and Guido van Rossum, after a suggestion and
-preliminary patch by Moshe Zadka.
-
-% Not checked into CVS yet -- only proposed
-%\item The \operator{in} operator now works for dictionaries
-%XXX 'if key in dict' now works.
-(Thomas Wouters)
-
+\item A new method, \method{popitem()}, was added to dictionaries to
+enable destructively iterating through the contents of a dictionary;
+this can be faster for large dictionaries because .
+\code{D.popitem()} removes a random \code{(\var{key}, \var{value})}
+pair from the dictionary and returns it as a 2-tuple.  This was
+implemented mostly by Tim Peters and Guido van Rossum, after a
+suggestion and preliminary patch by Moshe Zadka.
  
 \item \module{curses.panel}, a wrapper for the panel library, part of
 ncurses and of SYSV curses, was contributed by Thomas Gellekum.  The
@@ -383,9 +488,9 @@ panel library figures out where panels overlap and which sections are
 visible.
 
 \item Modules can now control which names are imported when \code{from
-\var{module} import *} is used, by defining an \code{__all__} attribute
-containing a list of names that will be imported.  One common
-complaint is that if the module imports other modules such as
+\var{module} import *} is used, by defining an \code{__all__}
+attribute containing a list of names that will be imported.  One
+common complaint is that if the module imports other modules such as
 \module{sys} or \module{string}, \code{from \var{module} import *}
 will add them to the importing module's namespace.  To fix this,
 simply list the public names in \code{__all__}:
@@ -396,8 +501,8 @@ __all__ = ['Database', 'open']
 \end{verbatim}
 
 A stricter version of this patch was first suggested and implemented
-by Ben Wolfson, but after some python-dev discussion, a weaker
-final version was checked in.
+by Ben Wolfson, but after some python-dev discussion, a weaker final
+version was checked in.
 
 \item The PyXML package has gone through a few releases since Python
 2.0, and Python 2.1 includes an updated version of the \module{xml}
@@ -407,32 +512,45 @@ supported by Python, and various bugfixes for SAX, DOM, and the
 \module{minidom} module.
 
 \item Various functions in the \module{time} module, such as
-\function{asctime()} and \function{localtime()},
-require a floating point argument containing the time in seconds since
-the epoch.  The most common use of these functions is to work with the
-current time, so the floating point argument has been made optional;
-when a value isn't provided, the current time will be used.  For
-example, log file entries usually need a string containing the current
-time; in Python 2.1, \code{time.asctime()} can be used, instead of the
-lengthier \code{time.asctime(time.localtime(time.time()))} that was
-previously required.
+\function{asctime()} and \function{localtime()}, require a floating
+point argument containing the time in seconds since the epoch.  The
+most common use of these functions is to work with the current time,
+so the floating point argument has been made optional; when a value
+isn't provided, the current time will be used.  For example, log file
+entries usually need a string containing the current time; in Python
+2.1, \code{time.asctime()} can be used, instead of the lengthier
+\code{time.asctime(time.localtime(time.time()))} that was previously
+required.
  
 This change was proposed and implemented by Thomas Wouters.
 
-\item XXX Characters in repr() of strings now use hex escapes, and 
-use \n,\t,\r for those characters (Ka-Ping Yee)
+\item Applying \function{repr()} to strings previously used octal
+escapes for non-printable characters; for example, a newline was
+\code{'\e 012'}.  This was a vestigial trace of Python's C ancestry, but
+today octal is of very little practical use.  Ka-Ping Yee suggested
+using hex escapes instead of octal ones, and using the \code{\e n},
+\code{\e t}, \code{\e r} escapes for the appropriate characters, and
+implemented this new formatting.
 
-\item The \module{ftplib} module now defaults to retrieving files in passive mode,
-because passive mode is more likely to work from behind a firewall.
-This request came from the Debian bug tracking system, since other
-Debian packages use \module{ftplib} to retrieve files and then don't
-work from behind a firewall.  It's deemed unlikely that this will
-cause problems for anyone, because Netscape defaults to passive mode
-and few people complain, but if passive mode is unsuitable for your
-application or network setup, call
-\method{set_pasv(0)} on FTP objects to disable passive mode.  
+\item The \module{ftplib} module now defaults to retrieving files in
+passive mode, because passive mode is more likely to work from behind
+a firewall.  This request came from the Debian bug tracking system,
+since other Debian packages use \module{ftplib} to retrieve files and
+then don't work from behind a firewall.  It's deemed unlikely that
+this will cause problems for anyone, because Netscape defaults to
+passive mode and few people complain, but if passive mode is
+unsuitable for your application or network setup, call
+\method{set_pasv(0)} on FTP objects to disable passive mode.
 
-\item The size of the Unicode character database was compressed by another 340K thanks to Fredrik Lundh.
+\item Support for raw socket access has been added to the
+\module{socket} module, contributed by Grant Edwards.
+
+\item Syntax errors detected at compile-time can now raise exceptions
+containing the filename and line number of the error, a pleasant side
+effect of the compiler reorganization done by Jeremy Hylton.
+
+\item The size of the Unicode character database was shrunk by another
+340K thanks to Fredrik Lundh.
 
 \end{itemize}
 
@@ -441,41 +559,12 @@ edits, and other tweaks, too lengthy to be worth itemizing; see the
 CVS logs for the full details if you want them.
 
 
-% ======================================================================
-\section{Nested Scopes}
-
-% XXX
-The PEP for this new feature hasn't been completed yet, and the
-requisite changes haven't been checked into CVS yet.
-
-\begin{seealso}
-
-\seepep{227}{Statically Nested Scopes}{Written and implemented by Jeremy Hylton.}
-
-\end{seealso}
-
-
-% ======================================================================
-\section{Weak References}
-
-% XXX
-The PEP for this new feature hasn't been completed yet, and the
-requisite changes haven't been checked into CVS yet.
-
-
-\begin{seealso}
-
-\seepep{205}{Weak References}{Written and implemented by Fred L. Drake, Jr.}
-
-\end{seealso}
-
-
-% ======================================================================
+%======================================================================
 \section{Acknowledgements}
 
-The author would like to thank the following people for offering suggestions
-on various drafts of this article: Graeme Cross, 
-David Goodger, Jay Graves, Michael Hudson,
-Marc-Andr\'e Lemburg, Fredrik Lundh, Neil Schemenauer, Thomas Wouters.
+The author would like to thank the following people for offering
+suggestions on various drafts of this article: Graeme Cross, David
+Goodger, Jay Graves, Michael Hudson, Marc-Andr\'e Lemburg, Fredrik
+Lundh, Neil Schemenauer, Thomas Wouters.
 
 \end{document}
