@@ -85,26 +85,28 @@ def poll (timeout=0.0, map=None):
         for fd in r:
             try:
                 obj = map[fd]
-                try:
-                    obj.handle_read_event()
-                except ExitNow:
-                    raise ExitNow
-                except:
-                    obj.handle_error()
             except KeyError:
-                pass
+                continue
+
+            try:
+                obj.handle_read_event()
+            except ExitNow:
+                raise ExitNow
+            except:
+                obj.handle_error()
 
         for fd in w:
             try:
                 obj = map[fd]
-                try:
-                    obj.handle_write_event()
-                except ExitNow:
-                    raise ExitNow
-                except:
-                    obj.handle_error()
             except KeyError:
-                pass
+                continue
+
+            try:
+                obj.handle_write_event()
+            except ExitNow:
+                raise ExitNow
+            except:
+                obj.handle_error()
 
 def poll2 (timeout=0.0, map=None):
     import poll
@@ -127,17 +129,18 @@ def poll2 (timeout=0.0, map=None):
         for fd, flags in r:
             try:
                 obj = map[fd]
-                try:
-                    if (flags  & poll.POLLIN):
-                        obj.handle_read_event()
-                    if (flags & poll.POLLOUT):
-                        obj.handle_write_event()
-                except ExitNow:
-                    raise ExitNow
-                except:
-                    obj.handle_error()
             except KeyError:
-                pass
+                continue
+
+            try:
+                if (flags  & poll.POLLIN):
+                    obj.handle_read_event()
+                if (flags & poll.POLLOUT):
+                    obj.handle_write_event()
+            except ExitNow:
+                raise ExitNow
+            except:
+                obj.handle_error()
 
 def poll3 (timeout=0.0, map=None):
     # Use the poll() support added to the select module in Python 2.0
@@ -160,17 +163,18 @@ def poll3 (timeout=0.0, map=None):
         for fd, flags in r:
             try:
                 obj = map[fd]
-                try:
-                    if (flags  & select.POLLIN):
-                        obj.handle_read_event()
-                    if (flags & select.POLLOUT):
-                        obj.handle_write_event()
-                except ExitNow:
-                    raise ExitNow
-                except:
-                    obj.handle_error()
             except KeyError:
-                pass
+                continue
+
+            try:
+                if (flags  & select.POLLIN):
+                    obj.handle_read_event()
+                if (flags & select.POLLOUT):
+                    obj.handle_write_event()
+            except ExitNow:
+                raise ExitNow
+            except:
+                obj.handle_error()
 
 def loop (timeout=30.0, use_poll=0, map=None):
 
