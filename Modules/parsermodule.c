@@ -477,9 +477,7 @@ parser_methods[] = {
 
 
 static PyObject*
-parser_getattr(self, name)
-     PyObject *self;
-     char *name;
+parser_getattr(PyObject *self, char *name)
 {
     return (Py_FindMethod(parser_methods, self, name));
 }
@@ -491,8 +489,7 @@ parser_getattr(self, name)
  *
  */
 static void
-err_string(message)
-     char *message;
+err_string(char *message)
 {
     PyErr_SetString(parser_error, message);
 }
@@ -1632,8 +1629,7 @@ validate_for(node *tree)
  *
  */
 static int
-validate_try(tree)
-    node *tree;
+validate_try(node *tree)
 {
     int nch = NCH(tree);
     int pos = 3;
@@ -1882,11 +1878,7 @@ validate_and_expr(node *tree)
 
 
 static int
-validate_chain_two_ops(tree, termvalid, op1, op2)
-     node *tree;
-     int (*termvalid)();
-     int op1;
-     int op2;
+validate_chain_two_ops(node *tree, int (*termvalid)(node *), int op1, int op2)
  {
     int pos = 1;
     int nch = NCH(tree);
