@@ -91,28 +91,43 @@ new_function(unused, args)
 
 	return (object *)newfunc;
 }
+#endif
 
 static char new_code_doc[] =
-"Create a code object from (CODESTRING, CONSTANTS, NAMES, FILENAME, NAME).";
+"Create a code object from (ARGCOUNT, NLOCALS, FLAGS, CODESTRING, CONSTANTS, NAMES, VARNAMES, FILENAME, NAME).";
 
 static object *
 new_code(unused, args)
 	object* unused;
 	object* args;
 {
+	int argcount;
+	int nlocals;
+	int flags;
 	object* code;
 	object* consts;
 	object* names;
+	object* varnames;
 	object* filename;
 	object* name;
   
+#if 0
 	if (!newgetargs(args, "SO!O!SS",
 			&code, &Tupletype, &consts, &Tupletype, &names,
 			&filename, &name))
 		return NULL;
 	return (object *)newcodeobject(code, consts, names, filename, name);
-}
+#else
+	if (!newgetargs(args, "iiiSO!O!O!SS",
+			&argcount, &nlocals, &flags,	/* These are new */
+			&code, &Tupletype, &consts, &Tupletype, &names,
+			&Tupletype, &varnames,		/* These are new */
+			&filename, &name))
+		return NULL;
+	return (object *)newcodeobject(argcount, nlocals, flags,
+		code, consts, names, varnames, filename, name);
 #endif
+}
 
 static char new_module_doc[] =
 "Create a module object from (NAME).";
@@ -133,8 +148,8 @@ static struct methodlist new_methods[] = {
 	{"instancemethod",	new_instancemethod,	1, new_im_doc},
 #if 0
 	{"function",		new_function,		1, new_function_doc},
-	{"code",		new_code,		1, new_code_doc},
 #endif
+	{"code",		new_code,		1, new_code_doc},
 	{"module",		new_module,		1, new_module_doc},
 	{NULL,			NULL}		/* sentinel */
 };
