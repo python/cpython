@@ -1646,6 +1646,22 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		case LOAD_DEREF:
 			x = freevars[oparg];
 			w = PyCell_Get(x);
+			if (w == NULL) {
+				if (oparg < f->f_ncells)
+					v = PyTuple_GetItem(co->co_cellvars,
+							       oparg);
+				else
+				       v = PyTuple_GetItem(
+						      co->co_freevars,
+						      oparg - f->f_ncells);
+
+				format_exc_check_arg(
+					PyExc_UnboundLocalError,
+					UNBOUNDLOCAL_ERROR_MSG,
+					v);
+				err = -1;
+				break;
+			}
 			Py_INCREF(w);
 			PUSH(w);
 			break;
