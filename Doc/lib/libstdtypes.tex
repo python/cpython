@@ -455,7 +455,7 @@ and \var{j} are integers:
   \lineiii{\var{x} not in \var{s}}{\code{0} if an item of \var{s} is
 equal to \var{x}, else \code{1}}{(1)}
   \hline
-  \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{}
+  \lineiii{\var{s} + \var{t}}{the concatenation of \var{s} and \var{t}}{(6)}
   \lineiii{\var{s} * \var{n}\textrm{,} \var{n} * \var{s}}{\var{n} shallow copies of \var{s} concatenated}{(2)}
   \hline
   \lineiii{\var{s}[\var{i}]}{\var{i}'th item of \var{s}, origin 0}{(3)}
@@ -535,6 +535,16 @@ In Python 2.3 and beyond, \var{x} may be a string of any length.
   \var{i} or \var{j} are omitted then they become ``end'' values
   (which end depends on the sign of \var{k}).  Note, \var{k} cannot
   be zero.
+
+\item[(6)] If \var{s} and \var{t} are both strings, some Python
+implementations such as CPython can usally perform an inplace optimization
+for assignments of the form \code{\var{s}=\var{s}+\var{t}} or
+\code{\var{s}+=\var{t}}.  When applicable, this optimization makes
+quadratic run-time much less likely.  This optimization is both version
+and implementation dependent.  For performance sensitive code, it is
+preferrable to use the \method{str.join()} method which assures consistent
+linear concatenation performance across versions and implementations.
+\versionchanged[Formerly, string concatenation never occurred inplace]{2.4}
 
 \end{description}
 
