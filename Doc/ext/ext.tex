@@ -19,16 +19,6 @@
 
 \input{copyright}
 
-%begin{latexonly}
-\vspace{1in}
-%end{latexonly}
-\strong{\large Acknowledgements}
-
-% XXX This needs to be checked and updated manually before each
-% release.
-
-The following people have contributed sections to this document:  Jim
-Fulton, Konrad Hinsen, Chris Phoenix, and Neil Schemenauer.
 
 \begin{abstract}
 
@@ -1764,7 +1754,7 @@ source.
 
 The make file make file, \file{Makefile.pre.in} uses metadata
 provided in a file named \file{Setup}.  The format of the \file{Setup}
-file is the same as the \file{Setup} (or \file{Setup.in}) file
+file is the same as the \file{Setup} (or \file{Setup.dist}) file
 provided in the \file{Modules/} directory of the Python source
 distribution.  The \file{Setup} file contains variable definitions:
 
@@ -1851,17 +1841,17 @@ The make file built by \file{Makefile.pre.in} can be run with the
 make static
 \end{verbatim}
 
-Any modules defined in the Setup file before the \samp{*shared*} line
-will be statically linked into the interpreter.  Typically, a
-\samp{*shared*} line is omitted from the Setup file when a custom
-interpreter is desired.
+Any modules defined in the \file{Setup} file before the
+\samp{*shared*} line will be statically linked into the interpreter.
+Typically, a \samp{*shared*} line is omitted from the
+\file{Setup} file when a custom interpreter is desired.
 
 
 \section{Module Definition Options \label{module-defn-options}}
 
 Several compiler options are supported:
 
-\begin{tableii}{l|l}{}{Option}{Meaning}
+\begin{tableii}{l|l}{programopt}{Option}{Meaning}
   \lineii{-C}{Tell the C pre-processor not to discard comments}
   \lineii{-D\var{name}=\var{value}}{Define a macro}
   \lineii{-I\var{dir}}{Specify an include directory, \var{dir}}
@@ -1883,7 +1873,7 @@ and \file{.so} extensions.
 
 \section{Example \label{module-defn-example}}
 
-Here is a more complicated example from \file{Modules/Setup.in}:
+Here is a more complicated example from \file{Modules/Setup.dist}:
 
 \begin{verbatim}
 GMP=/ufs/guido/src/gmp
@@ -1900,10 +1890,23 @@ mpz mpzmodule.c -I$(GMP) -L$(GMP) -lgmp
 \section{Distributing your extension modules
          \label{distributing}}
 
+There are two ways to distribute extension modules for others to use.
+The way that allows the easiest cross-platform support is to use the
+\module{distutils}\refstmodindex{distutils} package.  The manual
+\citetitle[../dist/dist.html]{Distributing Python Modules} contains
+information on this approach.  It is recommended that all new
+extensions be distributed using this approach to allow easy building
+and installation across platforms.  Older extensions should migrate to
+this approach as well.
+
+What follows describes the older approach; there are still many
+extensions which use this.
+
 When distributing your extension modules in source form, make sure to
 include a \file{Setup} file.  The \file{Setup} file should be named
 \file{Setup.in} in the distribution.  The make file make file,
-\file{Makefile.pre.in}, will copy \file{Setup.in} to \file{Setup}.
+\file{Makefile.pre.in}, will copy \file{Setup.in} to \file{Setup} if
+the person installing the extension doesn't do so manually.
 Distributing a \file{Setup.in} file makes it easy for people to
 customize the \file{Setup} file while keeping the original in
 \file{Setup.in}.
@@ -1915,13 +1918,6 @@ Do not distribute a make file.  People building your modules
 should use \file{Makefile.pre.in} to build their own make file.  A
 \file{README} file included in the package should provide simple
 instructions to perform the build.
-
-Work is being done to make building and installing Python extensions
-easier for all platforms; this work in likely to supplant the current
-approach at some point in the future.  For more information or to
-participate in the effort, refer to
-\url{http://www.python.org/sigs/distutils-sig/} on the Python Web
-site.
 
 
 \chapter{Building C and \Cpp{} Extensions on Windows
