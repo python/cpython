@@ -54,7 +54,6 @@ def _cnfmerge(cnfs):
 	if type(cnfs) is DictionaryType:
 		return cnfs
 	elif type(cnfs) in (NoneType, StringType):
-		
 		return cnfs
 	else:
 		cnf = {}
@@ -1531,7 +1530,6 @@ class _setit:
 	def __init__(self, var, value):
 		self.__value = value
 		self.__var = var
-
 	def __call__(self, *args):
 		self.__var.set(self.__value)
 
@@ -1564,7 +1562,11 @@ class Image:
 		master = _default_root
 		if not master: raise RuntimeError, 'Too early to create image'
 		self.tk = master.tk
-		if not name: name = `id(self)`
+		if not name:
+			name = `id(self)`
+			# The following is needed for systems where id(x)
+			# can return a negative number, such as Linux/m68k:
+			if name[0] == '-': name = '_' + name[1:]
 		if kw and cnf: cnf = _cnfmerge((cnf, kw))
 		elif kw: cnf = kw
 		options = ()
