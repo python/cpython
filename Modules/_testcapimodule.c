@@ -334,37 +334,43 @@ test_u_code(PyObject *self)
 
 #endif
 
-/* Simple test of _PyLong_NumBits. */
+/* Simple test of _PyLong_NumBits and _PyLong_Sign. */
 static PyObject *
 test_long_numbits(PyObject *self)
 {
-	struct pair {
+	struct triple {
 		long input;
-		size_t output;
-	} testcases[] = {{0, 1},
-			 {1L, 2},
-			 {-1L, 2},
-			 {2L, 3},
-			 {-2L, 3},
-			 {3L, 3},
-			 {-3L, 3},
-			 {4L, 4},
-			 {-4L, 4},
-			 {0x7fffL, 16},		/* one Python long digit */
-			 {-0x7fffL, 16},
-			 {0xfffffffL, 29},
-			 {-0xfffffffL, 29}};
+		size_t nbits;
+		int sign;
+	} testcases[] = {{0, 0, 0},
+			 {1L, 1, 1},
+			 {-1L, 1, -1},
+			 {2L, 2, 1},
+			 {-2L, 2, -1},
+			 {3L, 2, 1},
+			 {-3L, 2, -1},
+			 {4L, 3, 1},
+			 {-4L, 3, -1},
+			 {0x7fffL, 15, 1},	/* one Python long digit */
+			 {-0x7fffL, 15, -1},
+			 {0xffffL, 16, 1},
+			 {-0xffffL, 16, -1},
+			 {0xfffffffL, 28, 1},
+			 {-0xfffffffL, 28, -1}};
 	int i;
 
-	for (i = 0; i < sizeof(testcases) / sizeof(struct pair); ++i) {
-		long input = testcases[i].input;
-		PyObject *plong = PyLong_FromLong(input);
+	for (i = 0; i < sizeof(testcases) / sizeof(struct triple); ++i) {
+		PyObject *plong = PyLong_FromLong(testcases[i].input);
 		size_t nbits = _PyLong_NumBits(plong);
+		int sign = _PyLong_Sign(plong);
 
 		Py_DECREF(plong);
-		if (nbits != testcases[i].output)
+		if (nbits != testcases[i].nbits)
 			return raiseTestError("test_long_numbits",
-					      "wrong result");
+					"wrong result for _PyLong_NumBits");
+		if (sign != testcases[i].sign)
+			return raiseTestError("test_long_numbits",
+					"wrong result for _PyLong_Sign");
 	}
 	Py_INCREF(Py_None);
 	return Py_None;

@@ -44,11 +44,17 @@ PyAPI_FUNC(PyObject *) PyLong_FromString(char *, char **, int);
 PyAPI_FUNC(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
 #endif
 
-/* _PyLong_NumBits.  Return the number of bits needed to represent a long
-   in contiguous 2's-complement form, including 1 for the sign bit.  For
-   example, this returns 1 for 0, and 2 for 1 and -1.  Note that the
-   ceiling of this divided by 8 is the number of bytes needed by
-   _PyLong_AsByteArray to store the long in 256's-complement form.
+/* _PyLong_Sign.  Return 0 if v is 0, -1 if v < 0, +1 if v > 0.
+   v must not be NULL, and must be a normalized long.
+   There are no error cases.
+*/
+PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+
+
+PyAPI_FUNC(size_t) _PyLong_NumBits(PyObject *v);
+/* _PyLong_NumBits.  Return the number of bits needed to represent the
+   absolute value of a long.  For example, this returns 1 for 1 and -1, 2
+   for 2 and -2, and 2 for 3 and -3.  It returns 0 for 0.
    v must not be NULL, and must be a normalized long.
    (size_t)-1 is returned and OverflowError set if the true result doesn't
    fit in a size_t.
