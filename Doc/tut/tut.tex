@@ -3975,27 +3975,6 @@ code that is byte-compiled together.  The same restriction applies to
 \code{getattr()}, \code{setattr()} and \code{delattr()}, as well as
 when referencing \code{__dict__} directly.
 
-Here's an example of a class that implements its own
-\method{__getattr__()} and \method{__setattr__()} methods and stores
-all attributes in a private variable, in a way that works in all
-versions of Python, including those available before this feature was
-added:
-
-\begin{verbatim}
-class VirtualAttributes:
-    __vdict = None
-    __vdict_name = locals().keys()[0]
-     
-    def __init__(self):
-        self.__dict__[self.__vdict_name] = {}
-    
-    def __getattr__(self, name):
-        return self.__vdict[name]
-    
-    def __setattr__(self, name, value):
-        self.__vdict[name] = value
-\end{verbatim}
-
 
 \section{Odds and Ends \label{odds}}
 
