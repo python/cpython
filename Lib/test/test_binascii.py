@@ -113,3 +113,11 @@ else:
 
 # Verify the treatment of Unicode strings
 verify(binascii.hexlify(u'a') == '61', "hexlify failed for Unicode")
+
+# A test for SF bug 534347 (segfaults without the proper fix)
+try:
+    binascii.a2b_qp("", **{1:1})
+except TypeError:
+    pass
+else:
+    raise TestFailed, "binascii..a2b_qp(**{1:1}) didn't raise TypeError"
