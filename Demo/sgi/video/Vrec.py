@@ -1,49 +1,50 @@
-#! /ufs/guido/bin/sgi/python-405
 #! /ufs/guido/bin/sgi/python
+#! /ufs/guido/bin/sgi/python-405
 
 # Capture a CMIF movie using the Indigo video library and board
 
-
-# Usage:
-#
-# makemovie [-a] [-q queuesize] [-r rate] [-w width] [moviefile [audiofile]]
-
-
-# Options:
-#
-# -a            : record audio as well
-# -q queuesize  : set the capture queue size (default 2)
-# -r rate       : capture 1 out of every 'rate' frames (default and min 2)
-# -w width      : initial window width (default interactive placement)
-# -n            : Don't write to file, only timing info
-# -d		: drop fields if needed
-# -g bits	: greyscale (2, 4 or 8 bits)
-# -G            : 2-bit greyscale dithered
-# -m		: monochrome dithered
-# -M value	: monochrome tresholded with value
-# -f		: Capture fields (in stead of frames)
-# -P frames	: preallocate space for 'frames' frames
-# 
-# moviefile     : here goes the movie data (default film.video);
-#                 the format is documented in cmif-film.ms
-# audiofile     : with -a, here goes the audio data (default film.aiff);
-#                 audio data is recorded in AIFF format, using the
-#                 input sampling rate, source and volume set by the
-#                 audio panel, in mono, 8 bits/sample
+# The CMIF video file format is documented in cmif-film.ms.
+# Audio data is recorded in AIFF format, using the input sampling
+# rate, source and volume set by the audio panel, in mono, 8
+# bits/sample.
 
 
-# User interface:
-#
-# Start the application.  Resize the window to the desired movie size.
-# Press the left mouse button to start recording, release it to end
-# recording.  You can record as many times as you wish, but each time
-# you overwrite the output file(s), so only the last recording is
-# kept.
-#
-# Press ESC or select the window manager Quit or Close window option
-# to quit.  If you quit before recording anything, the output file(s)
-# are not touched.
+# Usage and help functions (keep this up-to-date if you change the program!)
 
+def usage():
+	print 'Usage: Vrec [options] [moviefile [audiofile]]'
+	print
+	print 'Options:'
+	print '-a            : record audio as well'
+	print '-q queuesize  : set the capture queue size (default 2)'
+	print '-r rate       : capture 1 out of every "rate" frames', \
+	                     '(default and min 2)'
+	print '-w width      : initial window width', \
+		  	     '(default interactive placement)'
+	print '-n            : Don\'t write to file, only timing info'
+	print '-d            : drop fields if needed'
+	print '-g bits       : greyscale (2, 4 or 8 bits)'
+	print '-G            : 2-bit greyscale dithered'
+	print '-m            : monochrome dithered'
+	print '-M value      : monochrome tresholded with value'
+	print '-f            : Capture fields (in stead of frames)'
+	print '-P frames     : preallocate space for "frames" frames'
+	print 'moviefile     : here goes the movie data (default film.video)'
+	print 'audiofile     : with -a, here goes the audio data', \
+		  	     '(default film.aiff)'
+
+def help():
+	print 'Press the left mouse button to start recording, release it to'
+	print 'end recording.  You can record as many times as you wish, but'
+	print 'each recording overwrites the output file(s) -- only the last'
+	print 'recording is kept.'
+	print
+	print 'Press ESC or use the window manager Quit or Close window option'
+	print 'to quit.  If you quit before recording anything, the output'
+	print 'file(s) are not touched.'
+
+
+# Imported modules
 
 import sys
 sys.path.append('/ufs/guido/src/video')
@@ -57,6 +58,7 @@ import getopt
 import string
 import imageop
 import sgi
+
 
 # Main program
 
@@ -75,45 +77,73 @@ def main():
 	fields = 0
 	preallocspace = 0
 
-	opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:ndg:mM:GfP:')
-	for opt, arg in opts:
-		if opt == '-a':
-			audio = 1
-		elif opt == '-q':
-			qsize = string.atoi(arg)
-		elif opt == '-r':
-			rate = string.atoi(arg)
-			if rate < 2:
-				sys.stderr.write('-r rate must be >= 2\n')
-				sys.exit(2)
-		elif opt == '-w':
-			width = string.atoi(arg)
-		elif opt == '-n':
-			norecord = 1
-		elif opt == '-d':
-			drop = 1
-		elif opt == '-g':
-			grey = 1
-			greybits = string.atoi(arg)
-			if not greybits in (2,4,8):
-				print 'Only 2, 4 or 8 bit greyscale supported'
-		elif opt == '-G':
-			grey = 1
-			greybits = -2
-		elif opt == '-m':
-			mono = 1
-		elif opt == '-M':
-			mono = 1
-			monotreshold = string.atoi(arg)
-		elif opt == '-f':
-			fields = 1
-		elif opt == '-P':
-			preallocspace = string.atoi(arg)
-
-	if args[2:]:
-		sys.stderr.write('usage: Vrec [options] [file [audiofile]]\n')
+	# Parse command line
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'aq:r:w:ndg:mM:GfP:')
+	except getopt.error, msg:
+		sys.stdout = sys.stderr
+		print 'Error:', msg, '\n'
+		usage()
 		sys.exit(2)
 
+	# Interpret options
+	try:
+		for opt, arg in opts:
+			if opt == '-a':
+				audio = 1
+			elif opt == '-q':
+				qsize = string.atoi(arg)
+			elif opt == '-r':
+				rate = string.atoi(arg)
+				if rate < 2:
+					sys.stderr.write( \
+						  '-r rate must be >= 2\n')
+					sys.exit(2)
+			elif opt == '-w':
+				width = string.atoi(arg)
+			elif opt == '-n':
+				norecord = 1
+			elif opt == '-d':
+				drop = 1
+			elif opt == '-g':
+				grey = 1
+				greybits = string.atoi(arg)
+				if not greybits in (2, 4, 8):
+					sys.stderr.write( \
+				'Only 2, 4 or 8 bit greyscale supported\n')
+					sys.exit(2)
+			elif opt == '-G':
+				grey = 1
+				greybits = -2
+			elif opt == '-m':
+				mono = 1
+			elif opt == '-M':
+				mono = 1
+				monotreshold = string.atoi(arg)
+			elif opt == '-f':
+				fields = 1
+			elif opt == '-P':
+				preallocspace = string.atoi(arg)
+	except string.atoi_error:
+		sys.stdout = sys.stderr
+		print 'Option', opt, 'requires integer argument'
+		sys.exit(2)
+
+	# Check excess arguments
+	# If norecord is on, refuse filename arguments
+	if norecord:
+		if args:
+			sys.stdout = sys.stderr
+			print 'With -n, no filename arguments are used\n'
+			usage()
+			sys.exit(2)
+	elif args[2:]:
+		sys.stdout = sys.stderr
+		print 'Too many filename arguments\n'
+		usage()
+		sys.exit(2)
+
+	# Process file arguments
 	if args:
 		filename = args[0]
 	else:
@@ -133,6 +163,8 @@ def main():
 
 	if norecord:
 		filename = audiofilename = ''
+
+	# Open video
 	v = sv.OpenVideo()
 	# Determine maximum window size based on signal standard
 	param = [SV.BROADCAST, 0]
@@ -181,7 +213,7 @@ def main():
 	gl.qdevice(DEVICE.WINSHUT)
 	gl.qdevice(DEVICE.ESCKEY)
 
-	print 'Press left mouse to start recording, release it to stop'
+	help()
 
 	while 1:
 		dev, val = gl.qread()
