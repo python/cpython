@@ -65,7 +65,7 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 	len = vsnprintf(str, size, format, va);
 #else
 	/* Emulate it. */
-	buffer = PyMem_Malloc(size + 512);
+	buffer = PyMem_MALLOC(size + 512);
 	if (buffer == NULL) {
 		len = -666;
 		goto Done;
@@ -85,7 +85,7 @@ PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
 		memcpy(str, buffer, to_copy);
 		str[to_copy] = '\0';
 	}
-	PyMem_Free(buffer);
+	PyMem_FREE(buffer);
 Done:
 #endif
 	str[size-1] = '\0';

@@ -1,3 +1,0 @@
-[EditorWindow]
-font-name: courier new
-font-size: 10
