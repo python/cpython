@@ -412,7 +412,6 @@ class ModuleFinder:
         keys = self.modules.keys()
         keys.sort()
         for key in keys:
-            continue
             m = self.modules[key]
             if m.__path__:
                 print "P",
