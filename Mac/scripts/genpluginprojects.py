@@ -1,6 +1,7 @@
 import mkcwproject
 import sys
 import os
+import string
 
 PROJECTDIR = os.path.join(sys.prefix, ":Mac:Build")
 MODULEDIRS = [	# Relative to projectdirs
@@ -8,6 +9,23 @@ MODULEDIRS = [	# Relative to projectdirs
 	"::Modules",
 	":::Modules",
 ]
+
+def relpath(base, path):
+	"""Turn abs path into path relative to another. Only works for 2 abs paths
+	both pointing to folders"""
+	if not os.path.isabs(base) or not os.path.isabs(path):
+		raise 'Absolute paths only'
+	if base[-1] != ':':
+		base = base +':'
+	if path[-1] != ':':
+		path = path + ':'
+	basefields = string.split(base, os.sep)
+	pathfields = string.split(path, os.sep)
+	commonfields = len(os.path.commonprefix((basefields, pathfields)))
+	basefields = basefields[commonfields:]
+	pathfields = pathfields[commonfields:]
+	pathfields = ['']*len(basefields) + pathfields
+	return string.join(pathfields, os.sep)
 
 def genpluginproject(module,
 		project=None, projectdir=None,
@@ -38,7 +56,7 @@ def genpluginproject(module,
 		"sources" : sources,
 		"extrasearchdirs" : sourcedirs + extradirs,
 		"libraries": libraries,
-		"mac_outputdir" : os.path.join(sys.prefix, ":Mac:Plugins"),
+		"mac_outputdir" : "::Plugins",
 		"extraexportsymbols" : extraexportsymbols,
 	}
 	mkcwproject.mkproject(os.path.join(projectdir, project), module, dict)
