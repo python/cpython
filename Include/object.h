@@ -325,6 +325,13 @@ given type object has a specified feature.
 /* PySequenceMethods contains sq_contains */
 #define Py_TPFLAGS_HAVE_SEQUENCE_IN (1L<<1)
 
+/* Objects which participate in garbage collection (see objimp.h) */
+#ifdef WITH_CYCLE_GC
+#define Py_TPFLAGS_GC (1L<<2)
+#else
+#define Py_TPFLAGS_GC 0
+#endif
+
 #define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN)
 

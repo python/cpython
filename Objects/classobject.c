@@ -428,7 +428,7 @@ PyTypeObject PyClass_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"class",
-	sizeof(PyClassObject),
+	sizeof(PyClassObject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)class_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
@@ -445,7 +445,7 @@ PyTypeObject PyClass_Type = {
 	(getattrofunc)class_getattr, /*tp_getattro*/
 	(setattrofunc)class_setattr, /*tp_setattro*/
 	0,		/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,		/* tp_doc */
 	(traverseproc)class_traverse,	/* tp_traverse */
 };
@@ -1513,7 +1513,7 @@ PyTypeObject PyInstance_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance",
-	sizeof(PyInstanceObject),
+	sizeof(PyInstanceObject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)instance_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
@@ -1530,7 +1530,7 @@ PyTypeObject PyInstance_Type = {
 	(getattrofunc)instance_getattr, /*tp_getattro*/
 	(setattrofunc)instance_setattr, /*tp_setattro*/
         0, /* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,		/* tp_doc */
 	(traverseproc)instance_traverse,	/* tp_traverse */
 };
@@ -1748,7 +1748,7 @@ PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"instance method",
-	sizeof(PyMethodObject),
+	sizeof(PyMethodObject) + PyGC_INFO_SIZE,
 	0,
 	(destructor)instancemethod_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/
@@ -1765,7 +1765,7 @@ PyTypeObject PyMethod_Type = {
 	(getattrofunc)instancemethod_getattr, /*tp_getattro*/
 	0,			/*tp_setattro*/
 	0,			/* tp_as_buffer */
-	Py_TPFLAGS_DEFAULT, /*tp_flags*/
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,			/* tp_doc */
 	(traverseproc)instancemethod_traverse,	/* tp_traverse */
 };
