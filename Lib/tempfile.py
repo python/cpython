@@ -180,6 +180,17 @@ class TemporaryFileWrapper:
             setattr(self, name, a)
         return a
 
+try:
+    import fcntl as _fcntl
+    def _set_cloexec(fd, flag=_fcntl.FD_CLOEXEC):
+        flags = _fcntl.fcntl(fd, _fcntl.F_GETFD, 0)
+        if flags >= 0:
+            # flags read successfully, modify
+            flags |= flag
+            _fcntl.fcntl(fd, _fcntl.F_SETFD, flags)
+except (ImportError, AttributeError):
+    def _set_cloexec(fd):
+        pass
 
 def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
     """Create and return a temporary file (opened read-write by default)."""
@@ -187,6 +198,7 @@ def TemporaryFile(mode='w+b', bufsize=-1, suffix=""):
     if os.name == 'posix':
         # Unix -- be very careful
         fd = os.open(name, os.O_RDWR|os.O_CREAT|os.O_EXCL, 0700)
+        _set_cloexec(fd)
         try:
             os.unlink(name)
             return os.fdopen(fd, mode, bufsize)
