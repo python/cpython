@@ -751,7 +751,11 @@ int main(){
   return 0;
 }
 ],
-  ac_cv_pthread_is_default=yes,
+[
+  ac_cv_pthread_is_default=yes
+  ac_cv_kthread=no
+  ac_cv_pthread=no
+],
   ac_cv_pthread_is_default=no,
   ac_cv_pthread_is_default=no)
 ])
@@ -791,7 +795,7 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_kpthread)
 fi
 
-if test $ac_cv_kpthread = no
+if test $ac_cv_kpthread = no -a $ac_cv_pthread_is_default = no
 then
 # -Kthread, if available, provides the right #defines
 # and linker options to make pthread_create available
@@ -822,7 +826,7 @@ CC="$ac_save_cc"])
 AC_MSG_RESULT($ac_cv_kthread)
 fi
 
-if test $ac_cv_kthread = no
+if test $ac_cv_kthread = no -a $ac_cv_pthread_is_default = no
 then
 # -pthread, if available, provides the right #defines
 # and linker options to make pthread_create available
