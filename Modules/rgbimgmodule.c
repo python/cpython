@@ -249,7 +249,7 @@ sizeofimage(self, args)
 	if (!PyArg_Parse(args, "s", &name))
 		return NULL;
 
-	inf = fopen(name, "rw");
+	inf = fopen(name, "rb");
 	if (!inf) {
 		PyErr_SetString(ImgfileError, "can't open image file");
 		return NULL;
