@@ -363,12 +363,13 @@ class PyShell(OutputWindow):
         # Helper for ModifiedInterpreter
         self.resetoutput()
         self.executing = 1
-        self._cancel_check = self.cancel_check
+        ##self._cancel_check = self.cancel_check
         ##sys.settrace(self._cancel_check)
 
     def endexecuting(self):
         # Helper for ModifiedInterpreter
-        sys.settrace(None)
+        ##sys.settrace(None)
+        ##self._cancel_check = None
         self.executing = 0
         self.canceled = 0
 
@@ -386,17 +387,20 @@ class PyShell(OutputWindow):
             if self.reading:
                 self.top.quit()
             return "cancel"
-        reply = PyShellEditorWindow.close(self)
-        if reply != "cancel":
-            self.flist.pyshell = None
-            # Restore std streams
-            sys.stdout = self.save_stdout
-            sys.stderr = self.save_stderr
-            sys.stdin = self.save_stdin
-            # Break cycles
-            self.interp = None
-            self.console = None
-        return reply
+        return PyShellEditorWindow.close(self)
+
+    def _close(self):
+        # Restore std streams
+        sys.stdout = self.save_stdout
+        sys.stderr = self.save_stderr
+        sys.stdin = self.save_stdin
+        # Break cycles
+        self.interp = None
+        self.console = None
+        self.auto = None
+        self.flist.pyshell = None
+        self.history = None
+        OutputWindow._close(self) # Really EditorWindow._close
 
     def ispythonsource(self, filename):
         # Override this so EditorWindow never removes the colorizer
@@ -731,6 +735,7 @@ def main():
 
     shell.begin()
     root.mainloop()
+    root.destroy()
 
 
 if __name__ == "__main__":
