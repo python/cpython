@@ -560,17 +560,6 @@ static PyMethodDef time_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static void
-ins(PyObject *d, char *name, PyObject *v)
-{
-	/* Don't worry too much about errors, they'll be caught by the
-	 * caller of inittime().
-	 */
-	if (v)
-		PyDict_SetItemString(d, name, v);
-	Py_XDECREF(v);
-}
-
 
 static char module_doc[] =
 "This module provides various functions to manipulate time values.\n\
@@ -621,34 +610,35 @@ strptime() -- parse string to time tuple according to format specification\n\
 DL_EXPORT(void)
 inittime(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 	char *p;
 	m = Py_InitModule3("time", time_methods, module_doc);
-	d = PyModule_GetDict(m);
+
 	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
 	p = Py_GETENV("PYTHONY2K");
-	ins(d, "accept2dyear", PyInt_FromLong((long) (!p || !*p)));
+	PyModule_AddIntConstant(m, "accept2dyear", (long) (!p || !*p));
 	/* Squirrel away the module's dictionary for the y2k check */
-	Py_INCREF(d);
-	moddict = d;
+	moddict = PyModule_GetDict(m);
+	Py_INCREF(moddict);
 #if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
 	tzset();
 #ifdef PYOS_OS2
-	ins(d, "timezone", PyInt_FromLong((long)_timezone));
+	PyModule_AddIntConstant(m, "timezone", _timezone);
 #else /* !PYOS_OS2 */
-	ins(d, "timezone", PyInt_FromLong((long)timezone));
+	PyModule_AddIntConstant(m, "timezone", timezone);
 #endif /* PYOS_OS2 */
 #ifdef HAVE_ALTZONE
-	ins(d, "altzone", PyInt_FromLong((long)altzone));
+	PyModule_AddIntConstant(m, "altzone", altzone);
 #else
 #ifdef PYOS_OS2
-	ins(d, "altzone", PyInt_FromLong((long)_timezone-3600));
+	PyModule_AddIntConstant(m, "altzone", _timezone-3600);
 #else /* !PYOS_OS2 */
-	ins(d, "altzone", PyInt_FromLong((long)timezone-3600));
+	PyModule_AddIntConstant(m, "altzone", timezone-3600);
 #endif /* PYOS_OS2 */
 #endif
-	ins(d, "daylight", PyInt_FromLong((long)daylight));
-	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
+	PyModule_AddIntConstant(m, "daylight", daylight);
+	PyModule_AddObject(m, "tzname",
+			   Py_BuildValue("(zz)", tzname[0], tzname[1]));
 #else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_TM_ZONE
 	{
@@ -670,19 +660,21 @@ inittime(void)
 
 		if( janzone < julyzone ) {
 			/* DST is reversed in the southern hemisphere */
-			ins(d, "timezone", PyInt_FromLong(julyzone));
-			ins(d, "altzone", PyInt_FromLong(janzone));
-			ins(d, "daylight",
-			    PyInt_FromLong((long)(janzone != julyzone)));
-			ins(d, "tzname",
-			    Py_BuildValue("(zz)", julyname, janname));
+			PyModule_AddIntConstant(m, "timezone", julyzone);
+			PyModule_AddIntConstant(m, "altzone", janzone);
+			PyModule_AddIntConstant(m, "daylight",
+						janzone != julyzone);
+			PyModule_AddObject(m, "tzname",
+					   Py_BuildValue("(zz)",
+							 julyname, janname));
 		} else {
-			ins(d, "timezone", PyInt_FromLong(janzone));
-			ins(d, "altzone", PyInt_FromLong(julyzone));
-			ins(d, "daylight",
-			    PyInt_FromLong((long)(janzone != julyzone)));
-			ins(d, "tzname",
-			    Py_BuildValue("(zz)", janname, julyname));
+			PyModule_AddIntConstant(m, "timezone", janzone);
+			PyModule_AddIntConstant(m, "altzone", julyzone);
+			PyModule_AddIntConstant(m, "daylight",
+						janzone != julyzone);
+			PyModule_AddObject(m, "tzname",
+					   Py_BuildValue("(zz)",
+							 janname, julyname));
 		}
 	}
 #else
@@ -692,23 +684,25 @@ inittime(void)
 	** we're looking for:-( )
 	*/
 	initmactimezone();
-	ins(d, "timezone", PyInt_FromLong(timezone));
-	ins(d, "altzone", PyInt_FromLong(timezone));
-	ins(d, "daylight", PyInt_FromLong((long)0));
-	ins(d, "tzname", Py_BuildValue("(zz)", "", ""));
+	PyModule_AddIntConstant(m, "timezone", timezone);
+	PyModule_AddIntConstant(m, "altzone", timezone);
+	PyModule_AddIntConstant(m, "daylight", 0);
+	PyModule_AddObject(m, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
 #ifdef __CYGWIN__
 	tzset();
-	ins(d, "timezone", PyInt_FromLong(_timezone));
-	ins(d, "altzone", PyInt_FromLong(_timezone));
-	ins(d, "daylight", PyInt_FromLong(_daylight));
-	ins(d, "tzname", Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
+	PyModule_AddIntConstant(m, "timezone", _timezone);
+	PyModule_AddIntConstant(m, "altzone", _timezone);
+	PyModule_AddIntConstant(m, "daylight", _daylight);
+	PyModule_AddObject(m, "tzname",
+			   Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 
         PyStructSequence_InitType(&StructTimeType, &struct_time_type_desc);
-	PyDict_SetItemString(d, "struct_time", (PyObject*) &StructTimeType);
+	Py_INCREF(&StructTimeType);
+	PyModule_AddObject(m, "struct_time", (PyObject*) &StructTimeType);
 }
 
 
