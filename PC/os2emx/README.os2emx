@@ -554,10 +554,15 @@ error.
 I have not attempted to compile Python with any version of gcc prior to 
 v2.8.1.
 
-While gcc supports more aggressive optimisation than I use, a lot of 
-benchmarking indicates that Python's performance is at best only 
-marginally improved by more aggressive optimisation, at least on my 
-hardware (AMD Athlon 1.4GHz, VIA C3 800MHz).
+This release sees the default optimisation change to 
+"-O3 -fomit-frame-pointer".  This works fine too for pgcc 2.95 but not 
+for gcc 3.2.1.
+
+With gcc 3.2.1, -O3 causes 2 unexpected test failures: test_format and 
+test_unicode.  Both these tests pass if -O2 is instead of -O3 with this 
+compiler, and the performance difference is negligible (in contrast to 
+gcc 2.8.1 and pgcc 2.95, where the performance difference between the 
+2 optimisation settings approaches 10%).
 
 17.  os.spawnv() and os.spawnve() expose EMX's library routines rather 
 than use the emulation in os.py.

@@ -91,7 +91,7 @@ ifeq ($(MODE),debug)
   CFLAGS+=	-g -O
   LDFLAGS+=	-g
 else
-  CFLAGS+=	-s -O2 -fomit-frame-pointer
+  CFLAGS+=	-s -O3 -fomit-frame-pointer
   LDFLAGS+=	-s
 endif
 CFLAGS+=	$(PY_DEF)
@@ -515,28 +515,16 @@ $(PYTHON.DEF): $(PYTHON.LIB)
 	@echo DATA MULTIPLE NONSHARED >>$@
 	@echo EXPORTS >>$@
 	$(EXPLIB) -u $(PYTHON.LIB) |\
-	 sed -e "/ .init.*/s/^ /; /" \
-		-e "/ .pcre_.*/s/^ /; /" \
-		-e "/ .array_methods/s/^ /; /" \
-		-e "/ .fast_save_leave/s/^ /; /" \
-		-e "/ .dlopen/s/^ /; /" \
-		-e "/ .dlsym/s/^ /; /" \
-		-e "/ .dlclose/s/^ /; /" \
-		-e "/ .dlerror/s/^ /; /" \
-		-e "/ .cycle_type/s/^ /; /" \
-		-e "/ .dropwhile_type/s/^ /; /" \
-		-e "/ .takewhile_type/s/^ /; /" \
-		-e "/ .islice_type/s/^ /; /" \
-		-e "/ .starmap_type/s/^ /; /" \
-		-e "/ .imap_type/s/^ /; /" \
-		-e "/ .chain_type/s/^ /; /" \
-		-e "/ .ifilter_type/s/^ /; /" \
-		-e "/ .ifilterfalse_type/s/^ /; /" \
-		-e "/ .count_type/s/^ /; /" \
-		-e "/ .izip_type/s/^ /; /" \
-		-e "/ .repeat_type/s/^ /; /" \
-		-e "/ ._Py_re_.*/s/^ /; /" \
-		-e "/ ._Py_MD5.*/s/^ /; /" >>$@
+	 sed -e "/^  .init.*/s/^ /; /" \
+		-e "/^  .pcre_.*/s/^ /; /" \
+		-e "/^  .array_methods/s/^ /; /" \
+		-e "/^  .fast_save_leave/s/^ /; /" \
+		-e "/^  .dlopen/s/^ /; /" \
+		-e "/^  .dlsym/s/^ /; /" \
+		-e "/^  .dlclose/s/^ /; /" \
+		-e "/^  .dlerror/s/^ /; /" \
+		-e "/^  ._Py_re_.*/s/^ /; /" \
+		-e "/^  ._Py_MD5.*/s/^ /; /" >>$@
 
 $(PYTHON.IMPLIB): $(PYTHON.DEF)
 	$(IMPLIB) -o $@ $^
