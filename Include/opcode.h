@@ -76,8 +76,8 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #define STORE_NAME	90	/* Index in name list */
 #define DELETE_NAME	91	/* "" */
-#define UNPACK_TUPLE	92	/* Number of tuple items */
-#define UNPACK_LIST	93	/* Number of list items */
+#define UNPACK_SEQUENCE	92	/* Number of sequence items */
+
 #define STORE_ATTR	95	/* Index in name list */
 #define DELETE_ATTR	96	/* "" */
 #define STORE_GLOBAL	97	/* "" */

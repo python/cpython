@@ -206,8 +206,8 @@ HAVE_ARGUMENT = 90		# Opcodes from here have an argument:
 
 name_op('STORE_NAME', 90)	# Index in name list 
 name_op('DELETE_NAME', 91)	# "" 
-def_op('UNPACK_TUPLE', 92)	# Number of tuple items 
-def_op('UNPACK_LIST', 93)	# Number of list items 
+def_op('UNPACK_SEQUENCE', 92)	# Number of tuple items 
+
 name_op('STORE_ATTR', 95)	# Index in name list 
 name_op('DELETE_ATTR', 96)	# ""
 name_op('STORE_GLOBAL', 97)	# ""

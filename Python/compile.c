@@ -1729,27 +1729,14 @@ com_assign_trailer(struct compiling *c, node *n, int assigning)
 }
 
 static void
-com_assign_tuple(struct compiling *c, node *n, int assigning)
+com_assign_sequence(struct compiling *c, node *n, int assigning)
 {
 	int i;
 	if (TYPE(n) != testlist)
 		REQ(n, exprlist);
 	if (assigning) {
 		i = (NCH(n)+1)/2;
-		com_addoparg(c, UNPACK_TUPLE, i);
-		com_push(c, i-1);
-	}
-	for (i = 0; i < NCH(n); i += 2)
-		com_assign(c, CHILD(n, i), assigning);
-}
-
-static void
-com_assign_list(struct compiling *c, node *n, int assigning)
-{
-	int i;
-	if (assigning) {
-		i = (NCH(n)+1)/2;
-		com_addoparg(c, UNPACK_LIST, i);
+		com_addoparg(c, UNPACK_SEQUENCE, i);
 		com_push(c, i-1);
 	}
 	for (i = 0; i < NCH(n); i += 2)
@@ -1775,7 +1762,7 @@ com_assign(struct compiling *c, node *n, int assigning)
 		case exprlist:
 		case testlist:
 			if (NCH(n) > 1) {
-				com_assign_tuple(c, n, assigning);
+				com_assign_sequence(c, n, assigning);
 				return;
 			}
 			n = CHILD(n, 0);
@@ -1843,7 +1830,7 @@ com_assign(struct compiling *c, node *n, int assigning)
 						  "can't assign to []");
 					return;
 				}
-				com_assign_list(c, n, assigning);
+				com_assign_sequence(c, n, assigning);
 				return;
 			case NAME:
 				com_assign_name(c, CHILD(n, 0), assigning);
@@ -2869,7 +2856,7 @@ com_fplist(struct compiling *c, node *n)
 	}
 	else {
 		int i = (NCH(n)+1)/2;
-		com_addoparg(c, UNPACK_TUPLE, i);
+		com_addoparg(c, UNPACK_SEQUENCE, i);
 		com_push(c, i-1);
 		for (i = 0; i < NCH(n); i += 2)
 			com_fpdef(c, CHILD(n, i));

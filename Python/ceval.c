@@ -1165,8 +1165,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		default: switch (opcode) {
 #endif
 		
-		case UNPACK_TUPLE:
-		case UNPACK_LIST:
+		case UNPACK_SEQUENCE:
 			v = POP();
 			if (PyTuple_Check(v)) {
 				if (PyTuple_Size(v) != oparg) {
