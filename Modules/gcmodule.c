@@ -1,5 +1,5 @@
 /*
- 
+
   Reference Cycle Garbage Collection
   ==================================
 
@@ -63,8 +63,19 @@ static int collecting;
 				DEBUG_SAVEALL
 static int debug;
 
-/* Special gc_refs value */
+/* When a collection begins, gc_refs is set to ob_refcnt for, and only for,
+ * the objects in the generation being collected, called the "young"
+ * generation at that point.  As collection proceeds, when it's determined
+ * that one of these can't be collected (e.g., because it's reachable from
+ * outside, or has a __del__ method), the object is moved out of young, and
+ * gc_refs is set to a negative value.  The latter is so we can distinguish
+ * collection candidates from non-candidates just by looking at the object.
+ */
+/* Special gc_refs value, although any negative value means "moved". */
 #define GC_MOVED  -123
+
+/* True iff an object is still a candidate for collection. */
+#define STILL_A_CANDIDATE(o) ((AS_GC(o))->gc.gc_refs >= 0)
 
 /* list of uncollectable objects */
 static PyObject *garbage;
@@ -98,7 +109,7 @@ gc_list_remove(PyGC_Head *node)
 	node->gc.gc_next = NULL; /* object is not currently tracked */
 }
 
-static void 
+static void
 gc_list_move(PyGC_Head *from, PyGC_Head *to)
 {
 	if (from->gc.gc_next == from) {
@@ -144,7 +155,10 @@ gc_list_size(PyGC_Head *list)
 
 
 
-/* Set all gc_refs = ob_refcnt */
+/* Set all gc_refs = ob_refcnt.  After this, STILL_A_CANDIDATE(o) is true
+ * for all objects in containers, and false for all tracked gc objects not
+ * in containers (although see the comment in visit_decref).
+ */
 static void
 update_refs(PyGC_Head *containers)
 {
@@ -157,6 +171,17 @@ update_refs(PyGC_Head *containers)
 static int
 visit_decref(PyObject *op, void *data)
 {
+        /* There's no point to decrementing gc_refs unless
+         * STILL_A_CANDIDATE(op) is true.  It would take extra cycles to
+         * check that, though.  If STILL_A_CANDIDATE(op) is false,
+         * decrementing gc_refs almost always makes it "even more negative",
+         * so doesn't change that STILL_A_CANDIDATE is false, and no harm is
+         * done.  However, it's possible that, after many collections, this
+         * could underflow gc_refs in a long-lived old object.  In that case,
+         * visit_move() may move the old object back to the generation
+         * getting collected.  That would be a waste of time, but wouldn't
+         * cause an error.
+         */
 	if (op && PyObject_IS_GC(op)) {
 		PyGC_Head *gc = AS_GC(op);
 		if (gc->gc.gc_next != NULL)
@@ -179,7 +204,7 @@ subtract_refs(PyGC_Head *containers)
 	}
 }
 
-/* Append objects with gc_refs > 0 to roots list */
+/* Move objects with gc_refs > 0 to roots list.  They can't be collected. */
 static void
 move_roots(PyGC_Head *containers, PyGC_Head *roots)
 {
@@ -201,7 +226,7 @@ visit_move(PyObject *op, PyGC_Head *tolist)
 {
 	if (PyObject_IS_GC(op)) {
 		PyGC_Head *gc = AS_GC(op);
-		if (gc->gc.gc_next != NULL && gc->gc.gc_refs != GC_MOVED) {
+		if (gc->gc.gc_next != NULL && STILL_A_CANDIDATE(op)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, tolist);
 			gc->gc.gc_refs = GC_MOVED;
@@ -210,7 +235,9 @@ visit_move(PyObject *op, PyGC_Head *tolist)
 	return 0;
 }
 
-/* Move objects referenced from reachable to reachable set. */
+/* Move candidates referenced from reachable to reachable set (they're no
+ * longer candidates).
+ */
 static void
 move_root_reachable(PyGC_Head *reachable)
 {
@@ -226,7 +253,7 @@ move_root_reachable(PyGC_Head *reachable)
 	}
 }
 
-/* return true of object has a finalization method */
+/* return true if object has a finalization method */
 static int
 has_finalizer(PyObject *op)
 {
@@ -253,6 +280,7 @@ move_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 		if (has_finalizer(op)) {
 			gc_list_remove(gc);
 			gc_list_append(gc, finalizers);
+			gc->gc.gc_refs = GC_MOVED;
 		}
 	}
 }
@@ -266,7 +294,7 @@ move_finalizer_reachable(PyGC_Head *finalizers)
 	for (; gc != finalizers; gc=gc->gc.gc_next) {
 		/* careful, finalizers list is growing here */
 		traverse = FROM_GC(gc)->ob_type->tp_traverse;
-		(void) traverse(FROM_GC(gc), 
+		(void) traverse(FROM_GC(gc),
 			       (visitproc)visit_move,
 			       (void *)finalizers);
 	}
@@ -316,7 +344,8 @@ handle_finalizers(PyGC_Head *finalizers, PyGC_Head *old)
 			 * objects. */
 			PyList_Append(garbage, op);
 		}
-		/* object is now reachable again */ 
+		/* object is now reachable again */
+		assert(!STILL_A_CANDIDATE(op));
 		gc_list_remove(gc);
 		gc_list_append(gc, old);
 	}
@@ -333,6 +362,8 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 	while (unreachable->gc.gc_next != unreachable) {
 		PyGC_Head *gc = unreachable->gc.gc_next;
 		PyObject *op = FROM_GC(gc);
+
+		assert(STILL_A_CANDIDATE(op));
 		if (debug & DEBUG_SAVEALL) {
 			PyList_Append(garbage, op);
 		}
@@ -347,6 +378,7 @@ delete_garbage(PyGC_Head *unreachable, PyGC_Head *old)
 			/* object is still alive, move it, it may die later */
 			gc_list_remove(gc);
 			gc_list_append(gc, old);
+			gc->gc.gc_refs = GC_MOVED;
 		}
 	}
 }
@@ -572,7 +604,7 @@ gc_collect(PyObject *self, PyObject *args)
 	return Py_BuildValue("l", n);
 }
 
-static char gc_set_debug__doc__[] = 
+static char gc_set_debug__doc__[] =
 "set_debug(flags) -> None\n"
 "\n"
 "Set the garbage collection debugging flags. Debugging information is\n"
@@ -599,7 +631,7 @@ gc_set_debug(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
-static char gc_get_debug__doc__[] = 
+static char gc_get_debug__doc__[] =
 "get_debug() -> flags\n"
 "\n"
 "Get the garbage collection debugging flags.\n"
@@ -624,7 +656,7 @@ static char gc_set_thresh__doc__[] =
 static PyObject *
 gc_set_thresh(PyObject *self, PyObject *args)
 {
-	if (!PyArg_ParseTuple(args, "i|ii:set_threshold", &threshold0, 
+	if (!PyArg_ParseTuple(args, "i|ii:set_threshold", &threshold0,
 				&threshold1, &threshold2))
 		return NULL;
 
