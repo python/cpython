@@ -1,12 +1,7 @@
 #! /usr/bin/env python
 
-"""Promote the IDs from <label/> elements to the enclosing section / chapter /
-whatever, then remove the <label/> elements.  This allows *ML style internal
-linking rather than the bogus LaTeX model.
-
-Note that <label/>s in <title> elements are promoted two steps, since the
-<title> elements are artificially created from the section parameter, and the
-label really refers to the sectioning construct.
+"""Perform massive transformations on a document tree created from the LaTeX
+of the Python documentation, and dump the ESIS data for the transformed tree.
 """
 __version__ = '$Revision$'
 
@@ -25,6 +20,13 @@ class ConversionError(Exception):
 
 
 DEBUG_PARA_FIXER = 0
+
+if DEBUG_PARA_FIXER:
+    def para_msg(s):
+        sys.stderr.write("*** %s\n" % s)
+else:
+    def para_msg(s):
+        pass
 
 
 # Workaround to deal with invalid documents (multiple root elements).  This
@@ -60,6 +62,19 @@ def extract_first_element(doc, gi):
     if node is not None:
         doc.removeChild(node)
     return node
+
+
+def find_all_elements(doc, gi):
+    nodes = []
+    if doc.nodeType == xml.dom.core.ELEMENT and doc.tagName == gi:
+        nodes.append(doc)
+    for child in doc.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            if child.tagName == gi:
+                nodes.append(child)
+            for node in child.getElementsByTagName(gi):
+                nodes.append(node)
+    return nodes        
 
 
 def simplify(doc):
@@ -108,31 +123,50 @@ def cleanup_root_text(doc):
         doc.removeChild(node)
 
 
-def rewrite_desc_entries(doc, argname_gi):
-    argnodes = doc.getElementsByTagName(argname_gi)
-    for node in argnodes:
+def handle_args(doc):
+    for node in find_all_elements(doc, "args"):
         parent = node.parentNode
         nodes = []
         for n in parent.childNodes:
-            if n.nodeType != xml.dom.core.ELEMENT or n.tagName != argname_gi:
+            if n.nodeType != xml.dom.core.ELEMENT or n.tagName != "args":
                 nodes.append(n)
+        signature = doc.createElement("signature")
+        signature.appendChild(doc.createTextNode("\n    "))
+        name = doc.createElement("name")
+        name.appendChild(doc.createTextNode(parent.getAttribute("name")))
+        parent.removeAttribute("name")
+        signature.appendChild(name)
         desc = doc.createElement("description")
         for n in nodes:
             parent.removeChild(n)
             desc.appendChild(n)
+        desc.appendChild(doc.createTextNode("\n  "))
+        parent.replaceChild(signature, node)
+        parent.insertBefore(doc.createTextNode("\n  "), signature)
         if node.childNodes:
             # keep the <args>...</args>, newline & indent
-            parent.insertBefore(doc.createText("\n  "), node)
-        else:
-            # no arguments, remove the <args/> node
-            parent.removeChild(node)
+            signature.appendChild(doc.createTextNode("\n    "))
+            signature.appendChild(node)
         parent.appendChild(doc.createText("\n  "))
         parent.appendChild(desc)
         parent.appendChild(doc.createText("\n"))
+        signature.appendChild(doc.createTextNode("\n  "))
 
-def handle_args(doc):
-    rewrite_desc_entries(doc, "args")
-    rewrite_desc_entries(doc, "constructor-args")
+
+def methodline_to_signature(doc, methodline):
+    signature = doc.createElement("signature")
+    signature.appendChild(doc.createTextNode("\n    "))
+    name = doc.createElement("name")
+    name.appendChild(doc.createTextNode(methodline.getAttribute("name")))
+    signature.appendChild(name)
+    methodline.parentNode.removeChild(methodline)
+    if len(methodline.childNodes):
+        methodline._node.name = "args"
+        methodline.removeAttribute("name")
+        signature.appendChild(doc.createTextNode("\n    "))
+        signature.appendChild(methodline)
+    signature.appendChild(doc.createTextNode("\n  "))
+    return signature
 
 
 def handle_appendix(doc):
@@ -165,20 +199,17 @@ def handle_appendix(doc):
 
 
 def handle_labels(doc):
-    for node in doc.childNodes:
-        if node.nodeType == xml.dom.core.ELEMENT:
-            labels = node.getElementsByTagName("label")
-            for label in labels:
-                id = label.getAttribute("id")
-                if not id:
-                    continue
-                parent = label.parentNode
-                if parent.tagName == "title":
-                    parent.parentNode.setAttribute("id", id)
-                else:
-                    parent.setAttribute("id", id)
-                # now, remove <label id="..."/> from parent:
-                parent.removeChild(label)
+    for label in find_all_elements(doc, "label"):
+        id = label.getAttribute("id")
+        if not id:
+            continue
+        parent = label.parentNode
+        if parent.tagName == "title":
+            parent.parentNode.setAttribute("id", id)
+        else:
+            parent.setAttribute("id", id)
+        # now, remove <label id="..."/> from parent:
+        parent.removeChild(label)
 
 
 def fixup_trailing_whitespace(doc, wsmap):
@@ -306,7 +337,8 @@ def create_module_info(doc, section):
                 if first_data.data[:4] == " ---":
                     first_data.data = string.lstrip(first_data.data[4:])
                 title._node.name = "short-synopsis"
-                if children[-1].data[-1:] == ".":
+                if children[-1].nodeType == xml.dom.core.TEXT \
+                   and children[-1].data[-1:] == ".":
                     children[-1].data = children[-1].data[:-1]
                 section.removeChild(title)
                 section.removeChild(section.childNodes[0])
@@ -335,10 +367,8 @@ def create_module_info(doc, section):
 
 
 def cleanup_synopses(doc):
-    for node in doc.childNodes:
-        if node.nodeType == xml.dom.core.ELEMENT \
-           and node.tagName == "section":
-            create_module_info(doc, node)
+    for node in find_all_elements(doc, "section"):
+        create_module_info(doc, node)
 
 
 def remap_element_names(root, name_map):
@@ -361,11 +391,9 @@ def remap_element_names(root, name_map):
 
 def fixup_table_structures(doc):
     # must be done after remap_element_names(), or the tables won't be found
-    for child in doc.childNodes:
-        if child.nodeType == xml.dom.core.ELEMENT:
-            tables = child.getElementsByTagName("table")
-            for table in tables:
-                fixup_table(doc, table)
+    for table in find_all_elements(doc, "table"):
+        fixup_table(doc, table)
+
 
 def fixup_table(doc, table):
     # create the table head
@@ -443,66 +471,81 @@ def move_elements_by_name(doc, source, dest, name, sep=None):
 FIXUP_PARA_ELEMENTS = (
     "chapter",
     "section", "subsection", "subsubsection",
-    "paragraph", "subparagraph", "description",
-    "opcodedesc", "classdesc",
-    "funcdesc", "methoddesc", "excdesc", "datadesc",
-    "funcdescni", "methoddescni", "excdescni", "datadescni",
+    "paragraph", "subparagraph",
+    "excdesc", "datadesc",
+    "excdescni", "datadescni",
+    )
+
+RECURSE_INTO_PARA_CONTAINERS = (
+    "chapter",
+    "section", "subsection", "subsubsection",
+    "paragraph", "subparagraph",
+    "abstract",
+    "memberdesc", "memberdescni", "datadesc", "datadescni",
     )
 
 PARA_LEVEL_ELEMENTS = (
     "moduleinfo", "title", "verbatim",
     "opcodedesc", "classdesc",
-    "funcdesc", "methoddesc", "excdesc", "datadesc",
-    "funcdescni", "methoddescni", "excdescni", "datadescni",
+    "funcdesc", "methoddesc", "excdesc",
+    "funcdescni", "methoddescni", "excdescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
-    "sectionauthor",
+    "sectionauthor", "seealso",
     # include <para>, so we can just do it again to get subsequent paras:
     "para",
     )
 
 PARA_LEVEL_PRECEEDERS = (
     "index", "indexii", "indexiii", "indexiv",
-    "stindex", "obindex", "COMMENT", "label",
+    "stindex", "obindex", "COMMENT", "label", "input",
+    "memberline", "memberlineni",
+    "methodline", "methodlineni",
     )
+
 
 def fixup_paras(doc):
     for child in doc.childNodes:
         if child.nodeType == xml.dom.core.ELEMENT \
-           and child.tagName in FIXUP_PARA_ELEMENTS:
+           and child.tagName in RECURSE_INTO_PARA_CONTAINERS:
+            #
             fixup_paras_helper(doc, child)
             descriptions = child.getElementsByTagName("description")
             for description in descriptions:
-                if DEBUG_PARA_FIXER:
-                    sys.stderr.write("-- Fixing up <description> element...\n")
                 fixup_paras_helper(doc, description)
 
 
-def fixup_paras_helper(doc, container):
+def fixup_paras_helper(doc, container, depth=0):
     # document is already normalized
     children = container.childNodes
     start = 0
-    start_fixed = 0
-    i = len(children)
-    SKIP_ELEMENTS = PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS
-    if DEBUG_PARA_FIXER:
-        sys.stderr.write("fixup_paras_helper() called on <%s>; %d, %d\n"
-                         % (container.tagName, start, i))
-    if i > start:
-        # the first [start:i] children shoudl be rewritten as <para> elements
-        # start by breaking text nodes that contain \n\n+ into multiple nodes
-        nstart, i = skip_leading_nodes(container.childNodes, start, i)
-        if i > nstart:
-            build_para(doc, container, nstart, i)
-            fixup_paras_helper(doc, container)
+    while len(children) > start:
+        start = skip_leading_nodes(children, start)
+        if start >= len(children):
+            break
+        #
+        # Either paragraph material or something to recurse into:
+        #
+        if (children[start].nodeType == xml.dom.core.ELEMENT) \
+           and (children[start].tagName in RECURSE_INTO_PARA_CONTAINERS):
+            fixup_paras_helper(doc, children[start])
+            start = skip_leading_nodes(children, start + 1)
+            continue
+        #
+        # paragraph material:
+        #
+        build_para(doc, container, start, len(children))
+        if DEBUG_PARA_FIXER and depth == 10:
+            sys.exit(1)
+        start = start + 1
 
 
 def build_para(doc, parent, start, i):
     children = parent.childNodes
-    # collect all children until \n\n+ is found in a text node or a
-    # PARA_LEVEL_ELEMENT is found.
     after = start + 1
     have_last = 0
     BREAK_ELEMENTS = PARA_LEVEL_ELEMENTS + FIXUP_PARA_ELEMENTS
+    # Collect all children until \n\n+ is found in a text node or a
+    # member of BREAK_ELEMENTS is found.
     for j in range(start, i):
         after = j + 1
         child = children[j]
@@ -521,6 +564,9 @@ def build_para(doc, parent, start, i):
                 break
     else:
         have_last = 1
+    if (start + 1) > after:
+        raise ConversionError(
+            "build_para() could not identify content to turn into a paragraph")
     if children[after - 1].nodeType == xml.dom.core.TEXT:
         # we may need to split off trailing white space:
         child = children[after - 1]
@@ -528,66 +574,60 @@ def build_para(doc, parent, start, i):
         if string.rstrip(data) != data:
             have_last = 0
             child.splitText(len(string.rstrip(data)))
-    children = parent.childNodes
     para = doc.createElement("para")
     prev = None
     indexes = range(start, after)
     indexes.reverse()
     for j in indexes:
-        node = children[j]
+        node = parent.childNodes[j]
         parent.removeChild(node)
         para.insertBefore(node, prev)
         prev = node
     if have_last:
         parent.appendChild(para)
+        return len(parent.childNodes)
     else:
         parent.insertBefore(para, parent.childNodes[start])
+        return start + 1
 
 
-def skip_leading_nodes(children, start, i):
-    i = min(i, len(children))
+def skip_leading_nodes(children, start):
+    """Return index into children of a node at which paragraph building should
+    begin or a recursive call to fixup_paras_helper() should be made (for
+    subsections, etc.).
+
+    When the return value >= len(children), we've built all the paras we can
+    from this list of children.
+    """
+    i = len(children)
     while i > start:
         # skip over leading comments and whitespace:
-        try:
-            child = children[start]
-        except IndexError:
-            sys.stderr.write(
-                "skip_leading_nodes() failed at index %d\n" % start)
-            raise
+        child = children[start]
         nodeType = child.nodeType
-        if nodeType == xml.dom.core.COMMENT:
-            start = start + 1
-        elif nodeType == xml.dom.core.TEXT:
+        if nodeType == xml.dom.core.TEXT:
             data = child.data
             shortened = string.lstrip(data)
             if shortened:
                 if data != shortened:
                     # break into two nodes: whitespace and non-whitespace
                     child.splitText(len(data) - len(shortened))
-                    return start + 1, i + 1
-                break
+                    return start + 1
+                return start
             # all whitespace, just skip
-            start = start + 1
         elif nodeType == xml.dom.core.ELEMENT:
-            if child.tagName in PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS:
-                start = start + 1
-            else:
-                break
-        else:
-            break
-    return start, i
+            tagName = child.tagName
+            if tagName in RECURSE_INTO_PARA_CONTAINERS:
+                return start
+            if tagName not in PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS:
+                return start
+        start = start + 1
+    return start
 
 
 def fixup_rfc_references(doc):
-    rfc_nodes = []
-    for child in doc.childNodes:
-        if child.nodeType == xml.dom.core.ELEMENT:
-            kids = child.getElementsByTagName("rfc")
-            for k in kids:
-                rfc_nodes.append(k)
-    for rfc_node in rfc_nodes:
-        rfc_node.appendChild(doc.createTextNode(
-            "RFC " + rfc_node.getAttribute("num")))
+    for rfcnode in find_all_elements(doc, "rfc"):
+        rfcnode.appendChild(doc.createTextNode(
+            "RFC " + rfcnode.getAttribute("num")))
 
 
 def fixup_signatures(doc):
@@ -596,6 +636,7 @@ def fixup_signatures(doc):
             args = child.getElementsByTagName("args")
             for arg in args:
                 fixup_args(doc, arg)
+                arg.normalize()
             args = child.getElementsByTagName("constructor-args")
             for arg in args:
                 fixup_args(doc, arg)
@@ -616,6 +657,22 @@ def fixup_args(doc, arglist):
             arglist.insertBefore(doc.createTextNode("]"), child)
             arglist.removeChild(child)
             return fixup_args(doc, arglist)
+
+
+def fixup_sectionauthors(doc):
+    for sectauth in find_all_elements(doc, "sectionauthor"):
+        section = sectauth.parentNode
+        section.removeChild(sectauth)
+        sectauth._node.name = "author"
+        sectauth.appendChild(doc.createTextNode(
+            sectauth.getAttribute("name")))
+        sectauth.removeAttribute("name")
+        after = section.childNodes[2]
+        title = section.childNodes[1]
+        if title.nodeType == xml.dom.core.ELEMENT and title.tagName != "title":
+            after = section.childNodes[0]
+        section.insertBefore(doc.createTextNode("\n  "), after)
+        section.insertBefore(sectauth, after)
 
 
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
@@ -669,6 +726,7 @@ def convert(ifp, ofp):
     cleanup_synopses(doc)
     normalize(doc)
     fixup_paras(doc)
+    fixup_sectionauthors(doc)
     remap_element_names(doc, {
         "tableii": ("table", {"cols": "2"}),
         "tableiii": ("table", {"cols": "3"}),
