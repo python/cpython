@@ -3,7 +3,7 @@
 #
 # convert template to internal format
 #
-# Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
 #
 # See the sre.py file for information on usage and redistribution.
 #
@@ -11,6 +11,8 @@
 import _sre
 
 from sre_constants import *
+
+assert _sre.MAGIC == MAGIC, "SRE module mismatch"
 
 MAXCODE = 65535
 
@@ -21,9 +23,10 @@ def _compile(code, pattern, flags):
         if op in (LITERAL, NOT_LITERAL):
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
+                emit(_sre.getlower(av, flags))
             else:
                 emit(OPCODES[op])
-            emit(av)
+                emit(av)
         elif op is IN:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
@@ -102,9 +105,12 @@ def _compile(code, pattern, flags):
         elif op is AT:
             emit(OPCODES[op])
             if flags & SRE_FLAG_MULTILINE:
-                emit(ATCODES[AT_MULTILINE.get(av, av)])
-            else:
-                emit(ATCODES[av])
+                av = AT_MULTILINE.get(av, av)
+            if flags & SRE_FLAG_LOCALE:
+                av = AT_LOCALE.get(av, av)
+            elif flags & SRE_FLAG_UNICODE:
+                av = AT_UNICODE.get(av, av)
+            emit(ATCODES[av])
         elif op is BRANCH:
             emit(OPCODES[op])
             tail = []
@@ -121,11 +127,10 @@ def _compile(code, pattern, flags):
         elif op is CATEGORY:
             emit(OPCODES[op])
             if flags & SRE_FLAG_LOCALE:
-                emit(CHCODES[CH_LOCALE[av]])
+                av = CH_LOCALE[av]
             elif flags & SRE_FLAG_UNICODE:
-                emit(CHCODES[CH_UNICODE[av]])
-            else:
-                emit(CHCODES[av])
+                av = CH_UNICODE[av]
+            emit(CHCODES[av])
         elif op is GROUPREF:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])
@@ -176,7 +181,7 @@ def _optimize_charset(charset, fixup):
                 for i in range(fixup(av[0]), fixup(av[1])+1):
                     charmap[i] = 1
             elif op is CATEGORY:
-                # FIXME: could append to charmap tail
+                # XXX: could append to charmap tail
                 return charset # cannot compress
     except IndexError:
         # character set contains unicode characters
@@ -364,7 +369,7 @@ def compile(p, flags=0):
 
     # print code
 
-    # FIXME: <fl> get rid of this limitation!
+    # XXX: <fl> get rid of this limitation!
     assert p.pattern.groups <= 100,\
            "sorry, but this version only supports 100 named groups"
 

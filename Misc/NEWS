@@ -13,6 +13,8 @@ http://sourceforge.net/bugs/?func=detailbug&bug_id=<id>&group_id=5470
 More recent bugs are accessed as
 http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid=105470
 
+- Brought SRE up to date with Python 2.1
+
 - #117278, #117167: _tkinter
 
 - #116172, curses module fails to build on SGI, _curses

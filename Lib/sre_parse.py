@@ -3,11 +3,14 @@
 #
 # convert re-style regular expression to sre pattern
 #
-# Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
+# Copyright (c) 1998-2001 by Secret Labs AB.  All rights reserved.
 #
 # See the sre.py file for information on usage and redistribution.
 #
 
+# XXX: show string offset and offending character for all errors
+
+# this module works under 1.5.2 and later.  don't use string methods
 import string, sys
 
 from sre_constants import *
@@ -23,18 +26,18 @@ HEXDIGITS = tuple("0123456789abcdefABCDEF")
 WHITESPACE = tuple(" \t\n\r\v\f")
 
 ESCAPES = {
-    r"\a": (LITERAL, 7),
-    r"\b": (LITERAL, 8),
-    r"\f": (LITERAL, 12),
-    r"\n": (LITERAL, 10),
-    r"\r": (LITERAL, 13),
-    r"\t": (LITERAL, 9),
-    r"\v": (LITERAL, 11),
+    r"\a": (LITERAL, ord("\a")),
+    r"\b": (LITERAL, ord("\b")),
+    r"\f": (LITERAL, ord("\f")),
+    r"\n": (LITERAL, ord("\n")),
+    r"\r": (LITERAL, ord("\r")),
+    r"\t": (LITERAL, ord("\t")),
+    r"\v": (LITERAL, ord("\v")),
     r"\\": (LITERAL, ord("\\"))
 }
 
 CATEGORIES = {
-    r"\A": (AT, AT_BEGINNING), # start of string
+    r"\A": (AT, AT_BEGINNING_STRING), # start of string
     r"\b": (AT, AT_BOUNDARY),
     r"\B": (AT, AT_NON_BOUNDARY),
     r"\d": (IN, [(CATEGORY, CATEGORY_DIGIT)]),
@@ -43,7 +46,7 @@ CATEGORIES = {
     r"\S": (IN, [(CATEGORY, CATEGORY_NOT_SPACE)]),
     r"\w": (IN, [(CATEGORY, CATEGORY_WORD)]),
     r"\W": (IN, [(CATEGORY, CATEGORY_NOT_WORD)]),
-    r"\Z": (AT, AT_END), # end of string
+    r"\Z": (AT, AT_END_STRING), # end of string
 }
 
 FLAGS = {
@@ -58,18 +61,31 @@ FLAGS = {
     "u": SRE_FLAG_UNICODE,
 }
 
+# figure out best way to convert hex/octal numbers to integers
+try:
+    int("10", 8)
+    atoi = int # 2.0 and later
+except TypeError:
+    atoi = string.atoi # 1.5.2
+
 class Pattern:
     # master pattern object.  keeps track of global attributes
     def __init__(self):
         self.flags = 0
+        self.open = []
         self.groups = 1
         self.groupdict = {}
-    def getgroup(self, name=None):
+    def opengroup(self, name=None):
         gid = self.groups
         self.groups = gid + 1
         if name:
             self.groupdict[name] = gid
+        self.open.append(gid)
         return gid
+    def closegroup(self, gid):
+        self.open.remove(gid)
+    def checkgroup(self, gid):
+        return gid < self.groups and gid not in self.open
 
 class SubPattern:
     # a subpattern, in intermediate form
@@ -208,7 +224,7 @@ def isname(name):
 def _group(escape, groups):
     # check if the escape string represents a valid group
     try:
-        gid = int(escape[1:])
+        gid = atoi(escape[1:])
         if gid and gid < groups:
             return gid
     except ValueError:
@@ -231,13 +247,13 @@ def _class_escape(source, escape):
             escape = escape[2:]
             if len(escape) != 2:
                 raise error, "bogus escape: %s" % repr("\\" + escape)
-            return LITERAL, int(escape, 16) & 0xff
+            return LITERAL, atoi(escape, 16) & 0xff
         elif str(escape[1:2]) in OCTDIGITS:
             # octal escape (up to three digits)
             while source.next in OCTDIGITS and len(escape) < 5:
                 escape = escape + source.get()
             escape = escape[1:]
-            return LITERAL, int(escape, 8) & 0xff
+            return LITERAL, atoi(escape, 8) & 0xff
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -259,12 +275,12 @@ def _escape(source, escape, state):
                 escape = escape + source.get()
             if len(escape) != 4:
                 raise ValueError
-            return LITERAL, int(escape[2:], 16) & 0xff
+            return LITERAL, atoi(escape[2:], 16) & 0xff
         elif escape[1:2] == "0":
             # octal escape
             while source.next in OCTDIGITS and len(escape) < 4:
                 escape = escape + source.get()
-            return LITERAL, int(escape[1:], 8) & 0xff
+            return LITERAL, atoi(escape[1:], 8) & 0xff
         elif escape[1:2] in DIGITS:
             # octal escape *or* decimal group reference (sigh)
             here = source.tell()
@@ -274,10 +290,12 @@ def _escape(source, escape, state):
                     source.next in OCTDIGITS):
                     # got three octal digits; this is an octal escape
                     escape = escape + source.get()
-                    return LITERAL, int(escape[1:], 8) & 0xff
+                    return LITERAL, atoi(escape[1:], 8) & 0xff
             # got at least one decimal digit; this is a group reference
             group = _group(escape, state.groups)
             if group:
+                if not state.checkgroup(group):
+                    raise error, "cannot refer to open group"
                 return GROUPREF, group
             raise ValueError
         if len(escape) == 2:
@@ -402,24 +420,24 @@ def _parse(source, state):
                         else:
                             code2 = LITERAL, ord(this)
                         if code1[0] != LITERAL or code2[0] != LITERAL:
-                            raise error, "illegal range"
+                            raise error, "bad character range"
                         lo = code1[1]
                         hi = code2[1]
                         if hi < lo:
-                            raise error, "illegal range"
+                            raise error, "bad character range"
                         set.append((RANGE, (lo, hi)))
                 else:
                     if code1[0] is IN:
                         code1 = code1[1][0]
                     set.append(code1)
 
-            # FIXME: <fl> move set optimization to compiler!
+            # XXX: <fl> should move set optimization to compiler!
             if len(set)==1 and set[0][0] is LITERAL:
                 subpattern.append(set[0]) # optimization
             elif len(set)==2 and set[0][0] is NEGATE and set[1][0] is LITERAL:
                 subpattern.append((NOT_LITERAL, set[1][1])) # optimization
             else:
-                # FIXME: <fl> add charmap optimization
+                # XXX: <fl> should add charmap optimization here
                 subpattern.append((IN, set))
 
         elif this and this[0] in REPEAT_CHARS:
@@ -428,6 +446,7 @@ def _parse(source, state):
                 min, max = 0, 1
             elif this == "*":
                 min, max = 0, MAXREPEAT
+
             elif this == "+":
                 min, max = 1, MAXREPEAT
             elif this == "{":
@@ -446,17 +465,22 @@ def _parse(source, state):
                     source.seek(here)
                     continue
                 if lo:
-                    min = int(lo)
+                    min = atoi(lo)
                 if hi:
-                    max = int(hi)
-                # FIXME: <fl> check that hi >= lo!
+                    max = atoi(hi)
+                if max < min:
+                    raise error, "bad repeat interval"
             else:
                 raise error, "not supported"
             # figure out which item to repeat
             if subpattern:
                 item = subpattern[-1:]
             else:
+                item = None
+            if not item or (len(item) == 1 and item[0][0] == AT):
                 raise error, "nothing to repeat"
+            if item[0][0] in (MIN_REPEAT, MAX_REPEAT):
+                raise error, "multiple repeat"
             if source.match("?"):
                 subpattern[-1] = (MIN_REPEAT, (min, max, item))
             else:
@@ -485,7 +509,7 @@ def _parse(source, state):
                             name = name + char
                         group = 1
                         if not isname(name):
-                            raise error, "illegal character in group name"
+                            raise error, "bad character in group name"
                     elif source.match("="):
                         # named backreference
                         name = ""
@@ -497,7 +521,7 @@ def _parse(source, state):
                                 break
                             name = name + char
                         if not isname(name):
-                            raise error, "illegal character in group name"
+                            raise error, "bad character in group name"
                         gid = state.groupdict.get(name)
                         if gid is None:
                             raise error, "unknown group name"
@@ -539,6 +563,8 @@ def _parse(source, state):
                     continue
                 else:
                     # flags
+                    if not FLAGS.has_key(source.next):
+                        raise error, "unexpected end of pattern"
                     while FLAGS.has_key(source.next):
                         state.flags = state.flags | FLAGS[source.get()]
             if group:
@@ -547,15 +573,19 @@ def _parse(source, state):
                     # anonymous group
                     group = None
                 else:
-                    group = state.getgroup(name)
+                    group = state.opengroup(name)
                 p = _parse_sub(source, state)
                 if not source.match(")"):
                     raise error, "unbalanced parenthesis"
+                if group is not None:
+                    state.closegroup(group)
                 subpattern.append((SUBPATTERN, (group, p)))
             else:
                 while 1:
                     char = source.get()
-                    if char is None or char == ")":
+                    if char is None:
+                        raise error, "unexpected end of pattern"
+                    if char == ")":
                         break
                     raise error, "unknown extension"
 
@@ -582,6 +612,7 @@ def parse(str, flags=0, pattern=None):
     if pattern is None:
         pattern = Pattern()
     pattern.flags = flags
+    pattern.str = str
 
     p = _parse_sub(source, pattern, 0)
 
@@ -591,7 +622,8 @@ def parse(str, flags=0, pattern=None):
     elif tail:
         raise error, "bogus characters at end of regular expression"
 
-    # p.dump()
+    if flags & SRE_FLAG_DEBUG:
+        p.dump()
 
     if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
         # the VERBOSE flag was switched on inside the pattern.  to be
@@ -606,6 +638,16 @@ def parse_template(source, pattern):
     s = Tokenizer(source)
     p = []
     a = p.append
+    def literal(literal, p=p):
+        if p and p[-1][0] is LITERAL:
+            p[-1] = LITERAL, p[-1][1] + literal
+        else:
+            p.append((LITERAL, literal))
+    sep = source[:0]
+    if type(sep) is type(""):
+        char = chr
+    else:
+        char = unichr
     while 1:
         this = s.get()
         if this is None:
@@ -625,10 +667,10 @@ def parse_template(source, pattern):
                 if not name:
                     raise error, "bad group name"
                 try:
-                    index = int(name)
+                    index = atoi(name)
                 except ValueError:
                     if not isname(name):
-                        raise error, "illegal character in group name"
+                        raise error, "bad character in group name"
                     try:
                         index = pattern.groupindex[name]
                     except KeyError:
@@ -641,7 +683,7 @@ def parse_template(source, pattern):
                     if group:
                         if (s.next not in DIGITS or
                             not _group(this + s.next, pattern.groups+1)):
-                            code = MARK, int(group)
+                            code = MARK, group
                             break
                     elif s.next in OCTDIGITS:
                         this = this + s.get()
@@ -649,34 +691,42 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    code = LITERAL, int(this[-6:], 8) & 0xff
-                a(code)
+                    code = LITERAL, char(atoi(this[-6:], 8) & 0xff)
+                if code[0] is LITERAL:
+                    literal(code[1])
+                else:
+                    a(code)
             else:
                 try:
-                    a(ESCAPES[this])
+                    this = char(ESCAPES[this][1])
                 except KeyError:
-                    for c in this:
-                        a((LITERAL, ord(c)))
+                    pass
+                literal(this)
         else:
-            a((LITERAL, ord(this)))
-    return p
+            literal(this)
+    # convert template to groups and literals lists
+    i = 0
+    groups = []
+    literals = []
+    for c, s in p:
+        if c is MARK:
+            groups.append((i, s))
+            literals.append(None)
+        else:
+            literals.append(s)
+        i = i + 1
+    return groups, literals
 
 def expand_template(template, match):
-    # FIXME: <fl> this is sooooo slow.  drop in the slicelist
-    # code instead
-    p = []
-    a = p.append
+    g = match.group
     sep = match.string[:0]
-    if type(sep) is type(""):
-        char = chr
-    else:
-        char = unichr
-    for c, s in template:
-        if c is LITERAL:
-            a(char(s))
-        elif c is MARK:
-            s = match.group(s)
+    groups, literals = template
+    literals = literals[:]
+    try:
+        for index, group in groups:
+            literals[index] = s = g(group)
             if s is None:
-                raise error, "empty group"
-            a(s)
-    return string.join(p, sep)
+                raise IndexError
+    except IndexError:
+        raise error, "empty group"
+    return string.join(literals, sep)
