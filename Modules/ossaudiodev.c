@@ -131,7 +131,11 @@ newossobject(PyObject *arg)
           basedev = "/dev/dsp";
     }
 
-    if ((fd = open(basedev, imode)) == -1) {
+    /* Open with O_NONBLOCK to avoid hanging on devices that only allow
+       one open at a time.  This does *not* affect later I/O; OSS
+       provides a special ioctl() for non-blocking read/write, which is
+       exposed via oss_nonblock() below. */
+    if ((fd = open(basedev, imode|O_NONBLOCK)) == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
