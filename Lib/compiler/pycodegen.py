@@ -909,6 +909,11 @@ class CodeGenerator:
         self.visit(node.value)
         self.emit('RETURN_VALUE')
 
+    def visitYield(self, node):
+        self.set_lineno(node)
+        self.visit(node.value)
+        self.emit('YIELD_STMT')
+
     # slice and subscript stuff
 
     def visitSlice(self, node, aug_flag=None):
