@@ -18,10 +18,10 @@ CFG=_tkinter - Win32 Alpha Debug
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "_tkinter - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE "_tkinter - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "_tkinter - Win32 Alpha Debug" (based on "Win32 (ALPHA) Dynamic-Link Library")
 !MESSAGE "_tkinter - Win32 Alpha Release" (based on "Win32 (ALPHA) Dynamic-Link Library")
+!MESSAGE "_tkinter - Win32 x86 Debug" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "_tkinter - Win32 x86 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
