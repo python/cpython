@@ -167,25 +167,29 @@ del x
 
 class Pickler:
 
-    def __init__(self, file, proto=1):
+    def __init__(self, file, proto=0):
         """This takes a file-like object for writing a pickle data stream.
 
         The optional proto argument tells the pickler to use the given
         protocol; supported protocols are 0, 1, 2.  The default
-        protocol is 1 (in previous Python versions the default was 0).
+        protocol is 0, to be backwards compatible.  (Protocol 0 is the
+        only protocol that can be written to a file opened in text
+        mode and read back successfully.)
 
         Protocol 1 is more efficient than protocol 0; protocol 2 is
-        more efficient than protocol 1.  Protocol 2 is not the default
-        because it is not supported by older Python versions.
+        more efficient than protocol 1.
 
-        XXX Protocol 2 is not yet implemented.
+        Specifying a negative protocol version selects the highest
+        protocol version supported.
 
         The file parameter must have a write() method that accepts a single
         string argument.  It can thus be an open file object, a StringIO
         object, or any other custom object that meets this interface.
 
         """
-        if proto not in (0, 1, 2):
+        if proto < 0:
+            proto = 2
+        elif proto not in (0, 1, 2):
             raise ValueError, "pickle protocol must be 0, 1 or 2"
         self.write = file.write
         self.memo = {}
@@ -1455,10 +1459,10 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-def dump(obj, file, proto=1):
+def dump(obj, file, proto=0):
     Pickler(file, proto).dump(obj)
 
-def dumps(obj, proto=1):
+def dumps(obj, proto=0):
     file = StringIO()
     Pickler(file, proto).dump(obj)
     return file.getvalue()
