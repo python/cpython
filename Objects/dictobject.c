@@ -1310,8 +1310,6 @@ dict_contains(dictobject *mp, PyObject *key)
 		&& (mp->ma_lookup)(mp, key, hash)->me_value != NULL);
 }
 
-staticforward PyObject *dictiter_new(dictobject *);
-
 /* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
 	0,					/* sq_length */
