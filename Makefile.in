@@ -89,8 +89,8 @@ DESTSHARED=	$(BINLIBDEST)/lib-dynload
 # Shell used by make (some versions default to the login shell, which is bad)
 SHELL=		/bin/sh
 
-# Use ``EXE=.exe'' for Unix emulations on DOS/Windows (e.g. GNUWIN32)
-EXE=
+# Executable suffix (.exe on Windows and Mac OS X)
+EXE=		@EXE@
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.
