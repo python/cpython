@@ -67,7 +67,7 @@ the file object.
 \begin{funcdesc}{mkstemp}{\optional{suffix}
 			  \optional{, prefix}
 			  \optional{, dir}
-			  \optional{, binary=1}}
+			  \optional{, text=False}}
 Creates a temporary file in the most secure manner possible.  There
 are no race conditions in the file's creation, assuming that the
 platform properly implements the \constant{O_EXCL} flag for
@@ -90,7 +90,7 @@ prefix; otherwise, a default prefix is used.
 If \var{dir} is specified, the file will be created in that directory;
 otherwise, a default directory is used.
 
-If \var{binary} is specified, it indicates whether to open the file in
+If \var{text} is specified, it indicates whether to open the file in
 binary mode (the default) or text mode.  On some platforms, this makes
 no difference.
 
