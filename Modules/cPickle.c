@@ -109,6 +109,9 @@ static PyObject *inverted_registry;
 /* copy_reg._extension_cache, {code: object} */
 static PyObject *extension_cache;
 
+/* For looking up name pairs in copy_reg._extension_registry. */
+static PyObject *two_tuple;
+
 static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *write_str, *append_str,
@@ -1931,12 +1934,70 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 	if (klass != args) {
 		Py_DECREF(klass);
 		cPickle_ErrFormat(PicklingError,
-				  "Can't pickle %s: it's not the same object as %s.%s",
+				  "Can't pickle %s: it's not the same object "
+				  	"as %s.%s",
 				  "OSS", args, module, global_name);
 		goto finally;
 	}
 	Py_DECREF(klass);
 
+	if (self->proto >= 2) {
+		/* See whether this is in the extension registry, and if
+		 * so generate an EXT opcode.
+		 */
+		PyObject *py_code;	/* extension code as Python object */
+		long code;		/* extensoin code as C value */
+		char c_str[5];
+		int n;
+
+		PyTuple_SET_ITEM(two_tuple, 0, module);
+		PyTuple_SET_ITEM(two_tuple, 1, global_name);
+		py_code = PyDict_GetItem(extension_registry, two_tuple);
+		if (py_code == NULL)
+			goto gen_global;	/* not registered */
+
+		/* Verify py_code has the right type and value. */
+		if (!PyInt_Check(py_code)) {
+			cPickle_ErrFormat(PicklingError, "Can't pickle %s: "
+				"extension code %s isn't n integer",
+				"OO", args, py_code);
+			goto finally;
+		}
+		code = PyInt_AS_LONG(py_code);
+		if (code <= 0 ||  code > 0x7fffffffL) {
+			cPickle_ErrFormat(PicklingError, "Can't pickle %s: "
+				"extension code %ld is out of range",
+				"Ol", args, code);
+			goto finally;
+		}
+
+		/* Generate an EXT opcode. */
+		if (code <= 0xff) {
+			c_str[0] = EXT1;
+			c_str[1] = (char)code;
+			n = 2;
+		}
+		else if (code <= 0xffff) {
+			c_str[0] = EXT2;
+			c_str[1] = (char)(code & 0xff);
+			c_str[2] = (char)((code >> 8) & 0xff);
+			n = 3;
+		}
+		else {
+			c_str[0] = EXT4;
+			c_str[1] = (char)(code & 0xff);
+			c_str[2] = (char)((code >> 8) & 0xff);
+			c_str[3] = (char)((code >> 16) & 0xff);
+			c_str[4] = (char)((code >> 24) & 0xff);
+			n = 5;
+		}
+
+		if (self->write_func(self, c_str, n) >= 0)
+			res = 0;
+		goto finally;	/* and don't memoize */
+	}
+
+  gen_global:
 	if (self->write_func(self, &global, 1) < 0)
 		goto finally;
 
@@ -5213,7 +5274,11 @@ init_stuff(PyObject *module_dict)
 
 	Py_DECREF(copy_reg);
 
-	if (!( empty_tuple = PyTuple_New(0)))
+	if (!(empty_tuple = PyTuple_New(0)))
+		return -1;
+
+	two_tuple = PyTuple_New(2);
+	if (two_tuple == NULL)
 		return -1;
 
 	/* Ugh */
