@@ -202,9 +202,13 @@ PyFloat_AsDouble(PyObject *op)
 	if (op && PyFloat_Check(op))
 		return PyFloat_AS_DOUBLE((PyFloatObject*) op);
 
-	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
-	    nb->nb_float == NULL) {
+	if (op == NULL) {
 		PyErr_BadArgument();
+		return -1;
+	}
+
+	if ((nb = op->ob_type->tp_as_number) == NULL || nb->nb_float == NULL) {
+		PyErr_SetString(PyExc_TypeError, "a float is required");
 		return -1;
 	}
 
