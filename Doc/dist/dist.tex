@@ -69,27 +69,29 @@ without having to run a single setup script or compile a line of code.
 The setup script is usually quite simple, although since it's written in
 Python, there are no arbitrary limits to what you can do.  If all you
 want to do is distribute a module called \module{foo}, contained in a
-file \file{foo.py}, then you can get away with as little as this:
+file \file{foo.py}, then your setup script can be as little as this:
 \begin{verbatim}
 from distutils.core import setup
 setup (name = "foo",
        version = "1.0",
        py_modules = ["foo"])
 \end{verbatim}
+
 Some observations:
 \begin{itemize}
-\item all information that you supply to the Distutils is supplied as
+\item most information that you supply to the Distutils is supplied as
   keyword arguments to the \function{setup()} function
 \item those keyword arguments fall into two categories: package
   meta-data (name, version number) and information about what's in the
-  package (list of pure modules, in this case)
+  package (a list of pure Python modules, in this case)
 \item modules are specified by module name, not filename (the same will
   hold true for packages and extensions)
 \item it's recommended that you supply a little more meta-data, in
   particular your name, email address and a URL for the project
 \end{itemize}
 
-To create a source distribution for this module, you would run
+To create a source distribution for this module, you would create a
+setup script, \file{setup.py}, containing the above code, and run:
 \begin{verbatim}
 python setup.py sdist
 \end{verbatim}
@@ -136,8 +138,8 @@ industrial-strength applications that need the full capabilities of a
 ``real'' installer.  \command{bdist\_wininst} creates a self-extracting
 zip file with a minimal user interface, which is enough for small- to
 medium-sized module collections.  You'll need to have version XXX of
-Wise installed on your system for the \command{bdist\_wise} to work;
-it's available from \url{http://foo/bar/baz}.)
+Wise installed on your system for the \command{bdist\_wise} command to
+work; it's available from \url{http://foo/bar/baz}.)
 
 Other \command{bdist} commands exist for other platforms: for example,
 \command{bdist\_rpm} for RPM-based Linux systems, (\command{bdist\_deb})
