@@ -945,6 +945,40 @@ operation (e.g. a Python/C API function) was invoked with an illegal
 argument.  It is mostly for internal use.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyErr_Warn}{PyObject *category, char *message}
+Issue a warning message.  The \var{category} argument is a warning
+category (see below) or NULL; the \var{message} argument is a message
+string.
+
+This function normally prints a warning message to \var{sys.stderr};
+however, it is also possible that the user has specified that warnings
+are to be turned into errors, and in that case this will raise an
+exception.  It is also possible that the function raises an exception
+because of a problem with the warning machinery (the implementation
+imports the \module{warnings} module to do the heavy lifting).  The
+return value is \code{0} if no exception is raised, or \code{-1} if
+an exception is raised.  (It is not possible to determine whether a
+warning message is actually printed, nor what the reason is for the
+exception; this is intentional.)  If an exception is raised, the
+caller should do its normal exception handling (e.g. DECREF owned
+references and return an error value).
+
+Warning categories must be subclasses of \cdata{Warning}; the default
+warning category is \cdata{RuntimeWarning}.  The standard Python
+warning categories are available as global variables whose names are
+\samp{PyExc_} followed by the Python exception name.  These have the
+type \ctype{PyObject*}; they are all class objects.  Their names are
+\cdata{PyExc_Warning}, \cdata{PyExc_UserWarning},
+\cdata{PyExc_DeprecationWarning}, \cdata{PyExc_SyntaxWarning}, and
+\cdata{PyExc_RuntimeWarning}.  \cdata{PyExc_Warning} is a subclass of
+\cdata{PyExc_Exception}; the other warning categories are subclasses
+of \cdata{PyExc_Warning}.
+
+For information about warning control, see the documentation for the
+\module{warnings} module and the \samp{-W} option in the command line
+documentation.  There is no C API for warning control.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyErr_CheckSignals}{}
 This function interacts with Python's signal handling.  It checks
 whether a signal has been sent to the processes and if so, invokes the
