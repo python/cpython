@@ -3,120 +3,115 @@
 
 #include "Python.h"
 
-
-/*
- * MINSIZE is the minimum size of a dictionary.  This many slots are
+/* MINSIZE is the minimum size of a dictionary.  This many slots are
  * allocated directly in the dict object (in the ma_smalltable member).
- * This must be a power of 2, and the first entry in the polys[] vector must
- * match.
+ * It must be a power of 2, and at least 4.  8 allows dicts with no more than
+ * 5 active entries to live in ma_smalltable (and so avoid an additional
+ * malloc); instrumentation suggested this suffices for the majority of
+ * dicts (consisting mostly of usually-small instance dicts and usually-small
+ * dicts created to pass keyword arguments).
  */
 #define MINSIZE 8
 
-/* define this out if you don't want conversion statistics on exit */
+/* Define this out if you don't want conversion statistics on exit. */
 #undef SHOW_CONVERSION_COUNTS
 
+/* See large comment block below.  This must be >= 1. */
+#define PERTURB_SHIFT 5
+
 /*
-Table of irreducible polynomials to efficiently cycle through
-GF(2^n)-{0}, 2<=n<=30.  A table size is always a power of 2.
-For a table size of 2**i, the polys entry is 2**i + j for some j in 1 thru
-2**i-1 inclusive.  The polys[] entries here happen to add in the smallest j
-values "that work".  Work means this:  given any integer k in 1 thru 2**i-1
-inclusive, a poly works if & only if repeating this code:
-	print k
-	k <<= 1
-	if k >= 2**i:
-		k ^= poly
-prints every integer in 1 thru 2**i-1 inclusive exactly once before printing 
-k a second time.  Theory can be used to find such polys efficiently, but the 
-operational defn. of "works" is sufficient to find them in reasonable time 
-via brute force program (hint:  any poly that has an even number of 1 bits 
-cannot work; ditto any poly with low bit 0; exploit those).
+Major subtleties ahead:  Most hash schemes depend on having a "good" hash
+function, in the sense of simulating randomness.  Python doesn't:  its most
+important hash functions (for strings and ints) are very regular in common
+cases:
 
-Some major subtleties:  Most hash schemes depend on having a "good" hash
-function, in the sense of simulating randomness.  Python doesn't:  some of
-its hash functions are trivial, such as hash(i) == i for ints i (excepting
-i == -1, because -1 is the "error occurred" return value from tp_hash).
+>>> map(hash, (0, 1, 2, 3))
+[0, 1, 2, 3]
+>>> map(hash, ("namea", "nameb", "namec", "named"))
+[-1658398457, -1658398460, -1658398459, -1658398462]
+>>>
 
-This isn't necessarily bad!  To the contrary, that our hash tables are powers
-of 2 in size, and that we take the low-order bits as the initial table index,
-means that there are no collisions at all for dicts indexed by a contiguous
-range of ints.  This is "better than random" behavior, and that's very
-desirable.
+This isn't necessarily bad!  To the contrary, in a table of size 2**i, taking
+the low-order i bits as the initial table index is extremely fast, and there
+are no collisions at all for dicts indexed by a contiguous range of ints.
+The same is approximately true when keys are "consecutive" strings.  So this
+gives better-than-random behavior in common cases, and that's very desirable.
 
-On the other hand, when collisions occur, the tendency to fill contiguous
-slices of the hash table makes a good collision resolution strategy crucial;
-e.g., linear probing is right out.
+OTOH, when collisions occur, the tendency to fill contiguous slices of the
+hash table makes a good collision resolution strategy crucial.  Taking only
+the last i bits of the hash code is also vulnerable:  for example, consider
+[i << 16 for i in range(20000)] as a set of keys.  Since ints are their own
+hash codes, and this fits in a dict of size 2**15, the last 15 bits of every
+hash code are all 0:  they *all* map to the same table index.
 
-Reimer Behrends contributed the idea of using a polynomial-based approach, 
-using repeated multiplication by x in GF(2**n) where a polynomial is chosen 
-such that x is a primitive root.  This visits every table location exactly 
-once, and the sequence of locations probed is highly non-linear.
+But catering to unusual cases should not slow the usual ones, so we just take
+the last i bits anyway.  It's up to collision resolution to do the rest.  If
+we *usually* find the key we're looking for on the first try (and, it turns
+out, we usually do -- the table load factor is kept under 2/3, so the odds
+are solidly in our favor), then it makes best sense to keep the initial index
+computation dirt cheap.
 
-The same is also largely true of quadratic probing for power-of-2 tables, of
-the specific
+The first half of collision resolution is to visit table indices via this
+recurrence:
 
-    (i + comb(1, 2)) mod size
-    (i + comb(2, 2)) mod size
-    (i + comb(3, 2)) mod size
-    (i + comb(4, 2)) mod size
-    ...
-    (i + comb(j, 2)) mod size
+    j = ((5*j) + 1) mod 2**i
 
-flavor.  The polynomial approach "scrambles" the probe indices better, but
-more importantly allows to get *some* additional bits of the hash code into
-play via computing the initial increment, thus giving a weak form of double
-hashing.  Quadratic probing cannot be extended that way (the first probe
-offset must be 1, the second 3, the third 6, etc).
+For any initial j in range(2**i), repeating that 2**i times generates each
+int in range(2**i) exactly once (see any text on random-number generation for
+proof).  By itself, this doesn't help much:  like linear probing (setting
+j += 1, or j -= 1, on each loop trip), it scans the table entries in a fixed
+order.  This would be bad, except that's not the only thing we do, and it's
+actually *good* in the common cases where hash keys are consecutive.  In an
+example that's really too small to make this entirely clear, for a table of
+size 2**3 the order of indices is:
 
-Christian Tismer later contributed the idea of using polynomial division
-instead of multiplication.  The problem is that the multiplicative method
-can't get *all* the bits of the hash code into play without expensive
-computations that slow down the initial index and/or initial increment
-computation.  For a set of keys like [i << 16 for i in range(20000)], under
-the multiplicative method the initial index and increment were the same for
-all keys, so every key followed exactly the same probe sequence, and so
-this degenerated into a (very slow) linear search.  The division method uses
-all the bits of the hash code naturally in the increment, although it *may*
-visit locations more than once until such time as all the high bits of the
-increment have been shifted away.  It's also impossible to tell in advance
-whether incr is congruent to 0 modulo poly, so each iteration of the loop has
-to guard against incr becoming 0.  These are minor costs, as we usually don't
-get into the probe loop, and when we do we usually get out on its first
-iteration.
+    0 -> 1 -> 6 -> 7 -> 4 -> 5 -> 2 -> 3 -> 0 [and here it's repeating]
+
+If two things come in at index 5, the first place we look after is index 2,
+not 6, so if another comes in at index 6 the collision at 5 didn't hurt it.
+Linear probing is deadly in this case because there the fixed probe order
+is the *same* as the order consecutive keys are likely to arrive.  But it's
+extremely unlikely hash codes will follow a 5*j+1 recurrence by accident,
+and certain that consecutive hash codes do not.
+
+The other half of the strategy is to get the other bits of the hash code
+into play.  This is done by initializing a (unsigned) vrbl "perturb" to the
+full hash code, and changing the recurrence to:
+
+    j = (5*j) + 1 + perturb;
+    perturb >>= PERTURB_SHIFT;
+    use j % 2**i as the next table index;
+
+Now the probe sequence depends (eventually) on every bit in the hash code,
+and the pseudo-scrambling property of recurring on 5*j+1 is more valuable,
+because it quickly magnifies small differences in the bits that didn't affect
+the initial index.  Note that because perturb is unsigned, if the recurrence
+is executed often enough perturb eventually becomes and remains 0.  At that
+point (very rarely reached) the recurrence is on (just) 5*j+1 again, and
+that's certain to find an empty slot eventually (since it generates every int
+in range(2**i), and we make sure there's always at least one empty slot).
+
+Selecting a good value for PERTURB_SHIFT is a balancing act.  You want it
+small so that the high bits of the hash code continue to affect the probe
+sequence across iterations; but you want it large so that in really bad cases
+the high-order hash bits have an effect on early iterations.  5 was "the
+best" in minimizing total collisions across experiments Tim Peters ran (on
+both normal and pathological cases), but 4 and 6 weren't significantly worse.
+
+Historical:  Reimer Behrends contributed the idea of using a polynomial-based
+approach, using repeated multiplication by x in GF(2**n) where an irreducible
+polynomial for each table size was chosen such that x was a primitive root.
+Christian Tismer later extended that to use division by x instead, as an
+efficient way to get the high bits of the hash code into play.  This scheme
+also gave excellent collision statistics, but was more expensive:  two
+if-tests were required inside the loop; computing "the next" index took about
+the same number of operations but without as much potential parallelism
+(e.g., computing 5*j can go on at the same time as computing 1+perturb in the
+above, and then shifting perturb can be done while the table index is being
+masked); and the dictobject struct required a member to hold the table's
+polynomial.  In Tim's experiments the current scheme ran faster, produced
+equally good collision statistics, needed less code & used less memory.
 */
-
-static long polys[] = {
-/*	4 + 3, */	/* first active entry if MINSIZE == 4 */
-	8 + 3,		/* first active entry if MINSIZE == 8 */
-	16 + 3,
-	32 + 5,
-	64 + 3,
-	128 + 3,
-	256 + 29,
-	512 + 17,
-	1024 + 9,
-	2048 + 5,
-	4096 + 83,
-	8192 + 27,
-	16384 + 43,
-	32768 + 3,
-	65536 + 45,
-	131072 + 9,
-	262144 + 39,
-	524288 + 39,
-	1048576 + 9,
-	2097152 + 5,
-	4194304 + 3,
-	8388608 + 33,
-	16777216 + 27,
-	33554432 + 9,
-	67108864 + 71,
-	134217728 + 39,
-	268435456 + 9,
-	536870912 + 5,
-	1073741824 + 83
-	/* 2147483648 + 9 -- if we ever boost this to unsigned long */
-};
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject *dummy; /* Initialized by first call to newdictobject() */
@@ -168,7 +163,6 @@ struct dictobject {
 	int ma_fill;  /* # Active + # Dummy */
 	int ma_used;  /* # Active */
 	int ma_size;  /* total # slots in ma_table */
-	int ma_poly;  /* appopriate entry from polys vector */
 	/* ma_table points to ma_smalltable for small tables, else to
 	 * additional malloc'ed memory.  ma_table is never NULL!  This rule
 	 * saves repeated runtime null-tests in the workhorse getitem and
@@ -202,8 +196,6 @@ show_counts(void)
 	(mp)->ma_table = (mp)->ma_smalltable;				\
 	(mp)->ma_size = MINSIZE;					\
 	(mp)->ma_used = (mp)->ma_fill = 0;				\
-	(mp)->ma_poly = polys[0];					\
-	assert(MINSIZE < (mp)->ma_poly && (mp)->ma_poly < MINSIZE*2);	\
     } while(0)
 
 PyObject *
@@ -235,28 +227,26 @@ The basic lookup function used by all operations.
 This is based on Algorithm D from Knuth Vol. 3, Sec. 6.4.
 Open addressing is preferred over chaining since the link overhead for
 chaining would be substantial (100% with typical malloc overhead).
-However, instead of going through the table at constant steps, we cycle
-through the values of GF(2^n).  This avoids modulo computations, being
-much cheaper on RISC machines, without leading to clustering.
 
-The initial probe index is computed as hash mod the table size.
-Subsequent probe indices use the values of x^i in GF(2^n)-{0} as an offset,
-where x is a root. The initial offset is derived from hash, too.
+The initial probe index is computed as hash mod the table size. Subsequent
+probe indices are computed as explained earlier.
 
 All arithmetic on hash should ignore overflow.
 
-(This version is due to Reimer Behrends, some ideas are also due to
-Jyrki Alakuijala and Vladimir Marangozov.)
+(The details in this version are due to Tim Peters, building on many past
+contributions by Reimer Behrends, Jyrki Alakuijala, Vladimir Marangozov and
+Christian Tismer).
 
 This function must never return NULL; failures are indicated by returning
 a dictentry* for which the me_value field is NULL.  Exceptions are never
 reported by this function, and outstanding exceptions are maintained.
 */
+
 static dictentry *
 lookdict(dictobject *mp, PyObject *key, register long hash)
 {
 	register int i;
-	register unsigned int incr;
+	register unsigned int perturb;
 	register dictentry *freeslot;
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
@@ -265,9 +255,7 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	register int checked_error = 0;
 	register int cmp;
 	PyObject *err_type, *err_value, *err_tb;
-	/* We must come up with (i, incr) such that 0 <= i < ma_size
-	   and 0 < incr < ma_size and both are a function of hash.
-	   i is the initial table index and incr the initial probe offset. */
+
 	i = hash & mask;
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
@@ -294,16 +282,12 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		}
 		freeslot = NULL;
 	}
-	/* Derive incr from hash, just to make it more arbitrary. Note that
-	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = hash ^ ((unsigned long)hash >> 3);
 
 	/* In the loop, me_key == dummy is by far (factor of 100s) the
 	   least likely outcome, so test for that last. */
-	for (;;) {
-		if (!incr)
-			incr = 1; /* and incr will never be 0 again */
-		ep = &ep0[(i + incr) & mask];
+	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		ep = &ep0[i & mask];
 		if (ep->me_key == NULL) {
 			if (restore_error)
 				PyErr_Restore(err_type, err_value, err_tb);
@@ -335,10 +319,6 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		}
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
-		/* Cycle through GF(2**n). */
-		if (incr & 1)
-			incr ^= mp->ma_poly; /* clears the lowest bit */
-		incr >>= 1;
 	}
 }
 
@@ -356,7 +336,7 @@ static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, register long hash)
 {
 	register int i;
-	register unsigned int incr;
+	register unsigned int perturb;
 	register dictentry *freeslot;
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
@@ -370,8 +350,6 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		mp->ma_lookup = lookdict;
 		return lookdict(mp, key, hash);
 	}
-	/* We must come up with (i, incr) such that 0 <= i < ma_size
-	   and 0 < incr < ma_size and both are a function of hash */
 	i = hash & mask;
 	ep = &ep0[i];
 	if (ep->me_key == NULL || ep->me_key == key)
@@ -385,16 +363,12 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 		}
 		freeslot = NULL;
 	}
-	/* Derive incr from hash, just to make it more arbitrary. Note that
-	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = hash ^ ((unsigned long)hash >> 3);
 
 	/* In the loop, me_key == dummy is by far (factor of 100s) the
 	   least likely outcome, so test for that last. */
-	for (;;) {
-		if (!incr)
-			incr = 1; /* and incr will never be 0 again */
-		ep = &ep0[(i + incr) & mask];
+	for (perturb = hash; ; perturb >>= PERTURB_SHIFT) {
+		i = (i << 2) + i + perturb + 1;
+		ep = &ep0[i & mask];
 		if (ep->me_key == NULL)
 			return freeslot == NULL ? ep : freeslot;
 		if (ep->me_key == key
@@ -404,10 +378,6 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 			return ep;
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
-		/* Cycle through GF(2**n). */
-		if (incr & 1)
-			incr ^= mp->ma_poly; /* clears the lowest bit */
-		incr >>= 1;
 	}
 }
 
@@ -448,7 +418,7 @@ actually be smaller than the old one.
 static int
 dictresize(dictobject *mp, int minused)
 {
-	int newsize, newpoly;
+	int newsize;
 	dictentry *oldtable, *newtable, *ep;
 	int i;
 	int is_oldtable_malloced;
@@ -456,20 +426,12 @@ dictresize(dictobject *mp, int minused)
 
 	assert(minused >= 0);
 
-	/* Find the smallest table size > minused, and its poly[] entry. */
-	newpoly = 0;
-	newsize = MINSIZE;
-	for (i = 0; i < sizeof(polys)/sizeof(polys[0]); ++i) {
-		if (newsize > minused) {
-			newpoly = polys[i];
-			break;
-		}
-		newsize <<= 1;
-		if (newsize < 0)   /* overflow */
-			break;
-	}
-	if (newpoly == 0) {
-		/* Ran out of polynomials or newsize overflowed. */
+	/* Find the smallest table size > minused. */
+	for (newsize = MINSIZE;
+	     newsize <= minused && newsize > 0;
+	     newsize <<= 1)
+		;
+	if (newsize <= 0) {
 		PyErr_NoMemory();
 		return -1;
 	}
@@ -511,7 +473,6 @@ dictresize(dictobject *mp, int minused)
 	mp->ma_table = newtable;
 	mp->ma_size = newsize;
 	memset(newtable, 0, sizeof(dictentry) * newsize);
-	mp->ma_poly = newpoly;
 	mp->ma_used = 0;
 	i = mp->ma_fill;
 	mp->ma_fill = 0;
@@ -1255,7 +1216,7 @@ dict_equal(dictobject *a, dictobject *b)
 	if (a->ma_used != b->ma_used)
 		/* can't be equal if # of entries differ */
 		return 0;
-  
+
 	/* Same # of entries -- check all of 'em.  Exit early on any diff. */
 	for (i = 0; i < a->ma_size; i++) {
 		PyObject *aval = a->ma_table[i].me_value;

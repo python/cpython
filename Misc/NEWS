@@ -15,7 +15,7 @@ Core
   To enhance the usability of the .encode() method, the special
   casing of Unicode object return values was dropped (Unicode objects
   were auto-magically converted to string using the default encoding).
-  
+
   Both methods will now return whatever the codec in charge of the
   requested encoding returns as object, e.g. Unicode codecs will
   return Unicode objects when decoding is requested ("הצü".decode("latin-1")
@@ -116,13 +116,11 @@ Core
   to crash if the element comparison routines for the dict keys and/or
   values mutated the dicts.  Making the code bulletproof slowed it down.
 
-- Collisions in dicts now use polynomial division instead of multiplication
-  to generate the probe sequence, following an idea of Christian Tismer's.
-  This allows all bits of the hash code to come into play.  It should have
-  little or no effect on speed in ordinary cases, but can help dramatically
-  in bad cases.  For example, looking up every key in a dict d with
-  d.keys() = [i << 16 for i in range(20000)] is approximately 500x faster
-  now.
+- Collisions in dicts are resolved via a new approach, which can help
+  dramatically in bad cases.  For example, looking up every key in a dict
+  d with d.keys() = [i << 16 for i in range(20000)] is approximately 500x
+  faster now.  Thanks to Christian Tismer for pointing out the cause and
+  the nature of an effective cure (last December! better late than never).
 
 Library
 
