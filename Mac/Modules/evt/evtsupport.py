@@ -79,7 +79,7 @@ EventRecord theEvent;
 UInt32 sleep;
 Handle mouseregion = (Handle)0;
 
-if (!PyArg_ParseTuple(_args, "hl|O&",
+if (!PyArg_ParseTuple(_args, "Hl|O&",
                       &eventMask,
                       &sleep,
                       OptResObj_Convert, &mouseregion))
