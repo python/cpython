@@ -1225,11 +1225,6 @@ should instead call \code{PyCode_Addr2Line(f->f_code, f->f_lasti)}.
 This will have the added effect of making the code work as desired
 under ``python -O'' in earlier versions of Python.
 
-To make tracing work as expected, it was found necessary to add a new
-opcode, \cdata{RETURN_NONE}, to the VM.  If you want to know why, read
-the comments in the function \cfunction{maybe_call_line_trace} in
-\file{Python/ceval.c}.
-
 \end{itemize}
 
 

@@ -254,7 +254,6 @@ def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 def_op('BREAK_LOOP', 80)
 
-def_op('RETURN_NONE', 81)
 def_op('LOAD_LOCALS', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)

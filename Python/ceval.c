@@ -1515,12 +1515,6 @@ eval_frame(PyFrameObject *f)
 			why = WHY_RETURN;
 			break;
 
-		case RETURN_NONE:
-			retval = Py_None;
-			Py_INCREF(retval);
-			why = WHY_RETURN;
-			break;
-
 		case YIELD_VALUE:
 			retval = POP();
 			f->f_stacktop = stack_pointer;
@@ -2880,9 +2874,8 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 	   This is all fairly simple.  Digging the information out of
 	   co_lnotab takes some work, but is conceptually clear.
 
-	   Somewhat harder to explain is why we don't call the line
-	   trace function when executing a POP_TOP or RETURN_NONE
-	   opcodes.  An example probably serves best.
+	   Somewhat harder to explain is why we don't *always* call the
+	   line trace function when the above test fails.
 
 	   Consider this code:
 
@@ -2907,7 +2900,8 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 	   5          16 LOAD_CONST               2 (2)
 		      19 PRINT_ITEM          
 		      20 PRINT_NEWLINE       
-		 >>   21 RETURN_NONE         
+		 >>   21 LOAD_CONST               0 (None)
+		      24 RETURN_VALUE
 
 	   If a is false, execution will jump to instruction at offset
 	   15 and the co_lnotab will claim that execution has moved to
@@ -2915,42 +2909,31 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 	   associate the POP_TOP with line 4, but that doesn't make
 	   sense in all cases (I think).
 
-	   On the other hand, if a is true, execution will jump from
-	   instruction offset 12 to offset 21.  Then the co_lnotab would
-	   imply that execution has moved to line 5, which is again
-	   misleading.
+	   What we do is only call the line trace function if the co_lnotab
+	   indicates we have jumped to the *start* of a line, i.e. if the
+	   current instruction offset matches the offset given for the
+	   start of a line by the co_lnotab.
 
-	   This is why it is important that RETURN_NONE is *only* used
-	   for the "falling off the end of the function" form of
-	   returning None -- using it for code like
-
-	   1: def f():
-	   2:     return
-
-	   would, once again, lead to misleading tracing behaviour.
-
-	   It is also worth mentioning that getting tracing behaviour
-	   right is the *entire* motivation for adding the RETURN_NONE
-	   opcode.
+	   This also takes care of the situation where a is true.
+	   Execution will jump from instruction offset 12 to offset 21.
+	   Then the co_lnotab would imply that execution has moved to line
+	   5, which is again misleading.
 	*/
 
-	if (opcode != POP_TOP && opcode != RETURN_NONE &&
-	    (frame->f_lasti < *instr_lb || frame->f_lasti > *instr_ub)) {
+	if ((frame->f_lasti < *instr_lb || frame->f_lasti >= *instr_ub)) {
 		PyCodeObject* co = frame->f_code;
 		int size, addr;
 		unsigned char* p;
 
-		call_trace(func, obj, frame, PyTrace_LINE, Py_None);
+		size = PyString_GET_SIZE(co->co_lnotab) / 2;
+		p = (unsigned char*)PyString_AS_STRING(co->co_lnotab);
 
-		size = PyString_Size(co->co_lnotab) / 2;
-		p = (unsigned char*)PyString_AsString(co->co_lnotab);
+		addr = 0;
 
 		/* possible optimization: if f->f_lasti == instr_ub
 		   (likely to be a common case) then we already know
 		   instr_lb -- if we stored the matching value of p
 		   somwhere we could skip the first while loop. */
-
-		addr = 0;
 
 		/* see comments in compile.c for the description of
 		   co_lnotab.  A point to remember: increments to p
@@ -2958,13 +2941,16 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 		   the line increments here, treating them as byte
 		   increments gets confusing, to say the least. */
 
-		while (size >= 0) {
+		while (size > 0) {
 			if (addr + *p > frame->f_lasti)
 				break;
 			addr += *p++;
 			p++;
 			--size;
 		}
+		if (addr == frame->f_lasti)
+			call_trace(func, obj, frame, 
+				   PyTrace_LINE, Py_None);
 		*instr_lb = addr;
 		if (size > 0) {
 			while (--size >= 0) {

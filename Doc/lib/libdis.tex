@@ -27,7 +27,8 @@ the following command can be used to get the disassembly of
               3 LOAD_FAST                0 (alist)
               6 CALL_FUNCTION            1
               9 RETURN_VALUE        
-             10 RETURN_NONE
+             10 LOAD_CONST               0 (None)
+             13 RETURN_VALUE
 \end{verbatim}
 
 (The ``2'' is a line number).
@@ -399,14 +400,6 @@ is evaluated, the locals are passed to the class definition.
 
 \begin{opcodedesc}{RETURN_VALUE}{}
 Returns with TOS to the caller of the function.
-\end{opcodedesc}
-
-\begin{opcodedesc}{RETURN_NONE}{}
-Returns \constant{None} to the caller of the function.  This opcode is
-generated as the last opcode of every function and only then, for
-reasons to do with tracing support.  See the comments in the function
-\cfunction{maybe_call_line_trace} in \file{Python/ceval.c} for the
-gory details.  \versionadded{2.3}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{YIELD_VALUE}{}

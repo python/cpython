@@ -4014,7 +4014,10 @@ compile_funcdef(struct compiling *c, node *n)
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
-	com_addbyte(c, RETURN_NONE);
+	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+	com_push(c, 1);
+	com_addbyte(c, RETURN_VALUE);
+	com_pop(c, 1);
 }
 
 static void
@@ -4081,13 +4084,19 @@ compile_node(struct compiling *c, node *n)
 		n = CHILD(n, 0);
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
-		com_addbyte(c, RETURN_NONE);
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+		com_push(c, 1);
+		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
 		c->c_interactive--;
 		break;
 	
 	case file_input: /* A whole file, or built-in function exec() */
 		com_file_input(c, n);
-		com_addbyte(c, RETURN_NONE);
+		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
+		com_push(c, 1);
+		com_addbyte(c, RETURN_VALUE);
+		com_pop(c, 1);
 		break;
 	
 	case eval_input: /* Built-in function input() */
