@@ -2729,10 +2729,13 @@ slot_sq_length(PyObject *self)
 {
 	static PyObject *len_str;
 	PyObject *res = call_method(self, "__len__", &len_str, "()");
+	int len;
 
 	if (res == NULL)
 		return -1;
-	return (int)PyInt_AsLong(res);
+	len = (int)PyInt_AsLong(res);
+	Py_DECREF(res);
+	return len;
 }
 
 SLOT1(slot_sq_concat, "__add__", PyObject *, "O")
