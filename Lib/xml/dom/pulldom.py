@@ -1,7 +1,5 @@
 import minidom
-import xml.sax
-
-#todo: namespace handling
+import xml.sax,xml.sax.handler
 
 START_ELEMENT = "START_ELEMENT"
 END_ELEMENT = "END_ELEMENT"
@@ -12,22 +10,44 @@ PROCESSING_INSTRUCTION = "PROCESSING_INSTRUCTION"
 IGNORABLE_WHITESPACE = "IGNORABLE_WHITESPACE"
 CHARACTERS = "CHARACTERS"
 
-class PullDOM:
+class PullDOM(xml.sax.ContentHandler):
     def __init__(self):
         self.firstEvent = [None, None]
         self.lastEvent = self.firstEvent
+        self._ns_contexts = [{}] # contains uri -> prefix dicts
+        self._current_context = self._ns_contexts[-1]
 
     def setDocumentLocator(self, locator): pass
 
-    def startElement(self, name, attrs):
-        if not hasattr(self, "curNode"):
-            # FIXME: hack!
-            self.startDocument()
+    def startPrefixMapping(self, prefix, uri):
+        self._ns_contexts.append(self._current_context.copy())
+        self._current_context[uri] = prefix
 
-        node = self.document.createElement(name)
-        for (attr, value) in attrs.items():
-            node.setAttribute(attr, attrs[attr])
+    def endPrefixMapping(self, prefix):
+        del self._ns_contexts[-1]
 
+    def startElementNS(self, name, tagName , attrs):
+        if name[0]:
+            # When using namespaces, the reader may or may not
+            # provide us with the original name. If not, create
+            # *a* valid tagName from the current context.
+            if tagName is None:
+                tagName = self._current_context[name[0]] + ":" + name[1]
+            node = self.document.createElementNS(name[0], tagName)
+        else:
+            # When the tagname is not prefixed, it just appears as
+            # name[1]
+            node = self.document.createElement(name[1])
+
+        for aname,value in attrs.items():
+            if aname[0]:
+                qname = self._current_context[name[0]] + ":" + aname[1]
+                attr = self.document.createAttributeNS(name[0], qname)
+            else:
+                attr = self.document.createAttribute(name[0], name[1])
+            attr.value = value
+            node.setAttributeNode(qname, attr)
+        
         parent = self.curNode
         node.parentNode = parent
         if parent.childNodes:
@@ -39,7 +59,7 @@ class PullDOM:
         self.lastEvent = self.lastEvent[1]
         #self.events.append((START_ELEMENT, node))
 
-    def endElement(self, name):
+    def endElementNS(self, name, tagName):
         node = self.curNode
         self.lastEvent[1] = [(END_ELEMENT, node), None]
         self.lastEvent = self.lastEvent[1]
@@ -122,6 +142,8 @@ class DOMEventStream:
 
     def reset(self):
         self.pulldom = PullDOM()
+        # This content handler relies on namespace support
+        self.parser.setFeature(xml.sax.handler.feature_namespaces,1)
         self.parser.setContentHandler(self.pulldom)
 
     def __getitem__(self, pos):
@@ -154,18 +176,6 @@ class DOMEventStream:
         self.pulldom.firstEvent[1] = self.pulldom.firstEvent[1][1]
         return rc
 
-# FIXME: sax2
-#def _getParser( ):
- #   from xml.sax.saxexts import make_parser
-    # expat doesn't report errors properly! Figure it out
-  #  return make_parser()
-   # return make_parser("xml.sax.drivers.drv_xmllib")
-
-
-        
-def _getParser():
-     return xml.sax.make_parser()
-
 default_bufsize = (2 ** 14) - 20
 
 # FIXME: move into sax package for common usage
@@ -175,7 +185,7 @@ def parse(stream_or_string, parser=None, bufsize=default_bufsize):
     else:
         stream = stream_or_string
     if not parser: 
-        parser = _getParser()
+        parser = xml.sax.make_parser()
     return DOMEventStream(stream, parser, bufsize)
 
 def parseString(string, parser=None):
@@ -186,5 +196,6 @@ def parseString(string, parser=None):
         
     bufsize = len(string)
     buf = StringIO(string)
-    parser = _getParser()
+    if not parser:
+        parser = xml.sax.make_parser()
     return DOMEventStream(buf, parser, bufsize)
