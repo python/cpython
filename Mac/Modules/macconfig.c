@@ -168,10 +168,6 @@ extern void initimp();
 struct _inittab _PyImport_Inittab[] = {
 
 	{"array", initarray},
-#ifndef SYMANTEC__CFM68K__
-/* The math library seems mostly broken... */
-	{"math", initmath},
-#endif
 #ifndef WITHOUT_COMPLEX
 	{"cmath", initcmath},
 #endif
