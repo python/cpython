@@ -258,6 +258,7 @@ vgetargs1(args, format, p_va, compat)
 	}
 
 	if (*format != '\0' && !isalpha(*format) &&
+	    *format != '(' &&
 	    *format != '|' && *format != ':' && *format != ';') {
 		PyErr_Format(PyExc_SystemError,
 			     "bad format string: %s", formatsave);
