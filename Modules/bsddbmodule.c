@@ -478,7 +478,7 @@ bsddb_getattr(dp, name)
 }
 
 static PyTypeObject Bsddbtype = {
-    PyObject_HEAD_INIT(&PyType_Type)
+    PyObject_HEAD_INIT(NULL)
     0,
     "bsddb",
     sizeof(bsddbobject),
@@ -667,6 +667,7 @@ void
 initbsddb() {
     PyObject *m, *d;
 
+    Bsddbtype.ob_type = &PyType_Type;
     m = Py_InitModule("bsddb", bsddbmodule_methods);
     d = PyModule_GetDict(m);
     BsddbError = PyString_FromString("bsddb.error");
