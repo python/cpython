@@ -82,8 +82,6 @@ Test Succeeded testParseElement
 Test Succeeded testParseElementNamespaces
 Passed Test
 Test Succeeded testParseFromFile
-Garbage left over:
-258
 Test Succeeded testParseProcessingInstructions
 Test Succeeded testParseString
 Test Succeeded testProcessingInstruction

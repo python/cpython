@@ -26,6 +26,7 @@ Node._debug=1
 def testParseFromFile():
     from StringIO import StringIO
     dom=parse( StringIO( open( tstfile ).read() ) )
+    dom.unlink()
     confirm(isinstance(dom,Document))
 
 def testGetElementsByTagName( ):
