@@ -66,13 +66,15 @@ def _unquotevalue(value):
 
 
 class Message:
-    """Basic message object for use inside the object tree.
+    """Basic message object.
 
     A message object is defined as something that has a bunch of RFC 2822
-    headers and a payload.  If the body of the message is a multipart, then
-    the payload is a list of Messages, otherwise it is a string.
+    headers and a payload.  It may optionally have an envelope header
+    (a.k.a. Unix-From or From_ header).  If the message is a container (i.e. a
+    multipart or a message/rfc822), then the payload is a list of Message
+    objects, otherwise it is a string.
 
-    These objects implement part of the `mapping' interface, which assumes
+    Message objects implement part of the `mapping' interface, which assumes
     there is exactly one occurrance of the header per message.  Some headers
     do in fact appear multiple times (e.g. Received) and for those headers,
     you must use the explicit API to set or get all the headers.  Not all of
@@ -90,7 +92,7 @@ class Message:
 
     def __str__(self):
         """Return the entire formatted message as a string.
-        This includes the headers, body, and `unixfrom' line.
+        This includes the headers, body, and envelope header.
         """
         return self.as_string(unixfrom=True)
 
@@ -128,6 +130,8 @@ class Message:
 
         If the current payload is empty, then the current payload will be made
         a scalar, set to the given value.
+
+        Note: This method is deprecated.  Use .attach() instead.
         """
         warnings.warn('add_payload() is deprecated, use attach() instead.',
                       DeprecationWarning, 2)
@@ -145,8 +149,7 @@ class Message:
         """Add the given payload to the current payload.
 
         The current payload will always be a list of objects after this method
-        is called.  If you want to set the payload to a scalar object
-        (e.g. because you're attaching a message/rfc822 subpart), use
+        is called.  If you want to set the payload to a scalar object, use
         set_payload() instead.
         """
         if self._payload is None:
@@ -157,17 +160,18 @@ class Message:
     def get_payload(self, i=None, decode=False):
         """Return a reference to the payload.
 
-        The payload is typically either a list object or a string.  If you
-        mutate the list object, you modify the message's payload in place.
-        Optional i returns that index into the payload.
+        The payload will either be a list object or a string.  If you mutate
+        the list object, you modify the message's payload in place.  Optional
+        i returns that index into the payload.
 
-        Optional decode is a flag indicating whether the payload should be
-        decoded or not, according to the Content-Transfer-Encoding header.
-        When True and the message is not a multipart, the payload will be
-        decoded if this header's value is `quoted-printable' or `base64'.  If
-        some other encoding is used, or the header is missing, the payload is
-        returned as-is (undecoded).  If the message is a multipart and the
-        decode flag is True, then None is returned.
+        Optional decode is a flag (defaulting to False) indicating whether the
+        payload should be decoded or not, according to the
+        Content-Transfer-Encoding header.  When True and the message is not a
+        multipart, the payload will be decoded if this header's value is
+        `quoted-printable' or `base64'.  If some other encoding is used, or
+        the header is missing, the payload is returned as-is (undecoded).  If
+        the message is a multipart and the decode flag is True, then None is
+        returned.
         """
         if i is None:
             payload = self._payload
@@ -190,7 +194,9 @@ class Message:
     def set_payload(self, payload, charset=None):
         """Set the payload to the given value.
 
-        Optionally set the charset, which must be a Charset instance."""
+        Optional charset sets the message's default character set.  See
+        set_charset() for details.
+        """
         self._payload = payload
         if charset is not None:
             self.set_charset(charset)
@@ -198,17 +204,17 @@ class Message:
     def set_charset(self, charset):
         """Set the charset of the payload to a given character set.
 
-        charset can be a string or a Charset object.  If it is a string, it
-        will be converted to a Charset object by calling Charset's
-        constructor.  If charset is None, the charset parameter will be
-        removed from the Content-Type field.  Anything else will generate a
-        TypeError.
+        charset can be a Charset instance, a string naming a character set, or
+        None.  If it is a string it will be converted to a Charset instance.
+        If charset is None, the charset parameter will be removed from the
+        Content-Type field.  Anything else will generate a TypeError.
 
-        The message will be assumed to be a text message encoded with
+        The message will be assumed to be of type text/* encoded with
         charset.input_charset.  It will be converted to charset.output_charset
         and encoded properly, if needed, when generating the plain text
         representation of the message.  MIME headers (MIME-Version,
         Content-Type, Content-Transfer-Encoding) will be added as needed.
+
         """
         if charset is None:
             self.del_param('charset')
@@ -236,7 +242,8 @@ class Message:
                 self.add_header('Content-Transfer-Encoding', cte)
 
     def get_charset(self):
-        """Return the Charset object associated with the message's payload."""
+        """Return the Charset instance associated with the message's payload.
+        """
         return self._charset
 
     #
@@ -277,8 +284,8 @@ class Message:
                 newheaders.append((k, v))
         self._headers = newheaders
 
-    def __contains__(self, key):
-        return key.lower() in [k.lower() for k, v in self._headers]
+    def __contains__(self, name):
+        return name.lower() in [k.lower() for k, v in self._headers]
 
     def has_key(self, name):
         """Return true if the message contains the header."""
@@ -289,8 +296,9 @@ class Message:
         """Return a list of all the message's header field names.
 
         These will be sorted in the order they appeared in the original
-        message, and may contain duplicates.  Any fields deleted and
-        re-inserted are always appended to the header list.
+        message, or were added to the message, and may contain duplicates.
+        Any fields deleted and re-inserted are always appended to the header
+        list.
         """
         return [k for k, v in self._headers]
 
@@ -298,8 +306,9 @@ class Message:
         """Return a list of all the message's header values.
 
         These will be sorted in the order they appeared in the original
-        message, and may contain duplicates.  Any fields deleted and
-        re-inserted are always appended to the header list.
+        message, or were added to the message, and may contain duplicates.
+        Any fields deleted and re-inserted are always appended to the header
+        list.
         """
         return [v for k, v in self._headers]
 
@@ -307,8 +316,9 @@ class Message:
         """Get all the message's header fields and values.
 
         These will be sorted in the order they appeared in the original
-        message, and may contain duplicates.  Any fields deleted and
-        re-inserted are always appended to the header list.
+        message, or were added to the message, and may contain duplicates.
+        Any fields deleted and re-inserted are always appended to the header
+        list.
         """
         return self._headers[:]
 
@@ -426,17 +436,17 @@ class Message:
     #
 
     def get_content_type(self):
-        """Returns the message's content type.
+        """Return the message's content type.
 
-        The returned string is coerced to lowercase and returned as a ingle
-        string of the form `maintype/subtype'.  If there was no Content-Type
-        header in the message, the default type as give by get_default_type()
-        will be returned.  Since messages always have a default type this will
-        always return a value.
+        The returned string is coerced to lower case of the form
+        `maintype/subtype'.  If there was no Content-Type header in the
+        message, the default type as given by get_default_type() will be
+        returned.  Since according to RFC 2045, messages always have a default
+        type this will always return a value.
 
-        The current state of RFC standards define a message's default type to
-        be text/plain unless it appears inside a multipart/digest container,
-        in which case it would be message/rfc822.
+        RFC 2045 defines a message's default type to be text/plain unless it
+        appears inside a multipart/digest container, in which case it would be
+        message/rfc822.
         """
         missing = []
         value = self.get('content-type', missing)
@@ -450,21 +460,19 @@ class Message:
         return ctype
 
     def get_content_maintype(self):
-        """Returns the message's main content type.
+        """Return the message's main content type.
 
         This is the `maintype' part of the string returned by
-        get_content_type().  If no slash is found in the full content type, a
-        ValueError is raised.
+        get_content_type().
         """
         ctype = self.get_content_type()
         return ctype.split('/')[0]
 
     def get_content_subtype(self):
-        """Returns the message's sub content type.
+        """Returns the message's sub-content type.
 
         This is the `subtype' part of the string returned by
-        get_content_type().  If no slash is found in the full content type, a
-        ValueError is raised.
+        get_content_type().
         """
         ctype = self.get_content_type()
         return ctype.split('/')[1]
@@ -474,7 +482,7 @@ class Message:
 
         Most messages have a default content type of text/plain, except for
         messages that are subparts of multipart/digest containers.  Such
-        subparts then have a default content type of message/rfc822.
+        subparts have a default content type of message/rfc822.
         """
         return self._default_type
 
@@ -570,15 +578,16 @@ class Message:
         If the parameter already exists in the header, its value will be
         replaced with the new value.
 
-        If header is Content-Type and has not yet been defined in this
+        If header is Content-Type and has not yet been defined for this
         message, it will be set to "text/plain" and the new parameter and
-        value will be appended, as per RFC 2045.
+        value will be appended as per RFC 2045.
 
         An alternate header can specified in the header argument, and all
-        parameters will be quoted as appropriate unless requote is False.
+        parameters will be quoted as necessary unless requote is False.
 
-        If charset is specified the parameter will be encoded according to RFC
-        2231.  In this case language is optional.
+        If charset is specified, the parameter will be encoded according to RFC
+        2231.  Optional language specifies the RFC 2231 language, defaulting
+        to the empty string.  Both charset and language should be strings.
         """
         if not isinstance(value, TupleType) and charset:
             value = (charset, language, value)
@@ -613,8 +622,10 @@ class Message:
     def del_param(self, param, header='content-type', requote=True):
         """Remove the given parameter completely from the Content-Type header.
 
-        The header will be re-written in place without param or its value.
-        All values will be quoted as appropriate unless requote is False.
+        The header will be re-written in place without the parameter or its
+        value. All values will be quoted as necessary unless requote is
+        False.  Optional header specifies an alternative to the Content-Type
+        header.
         """
         if not self.has_key(header):
             return
@@ -641,8 +652,8 @@ class Message:
         header's quoting as is.  Otherwise, the parameters will be quoted (the
         default).
 
-        An alternate header can be specified in the header argument.  When the
-        Content-Type header is set, we'll always also add a MIME-Version
+        An alternative header can be specified in the header argument.  When
+        the Content-Type header is set, we'll always also add a MIME-Version
         header.
         """
         # BAW: should we be strict?
