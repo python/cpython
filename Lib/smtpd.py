@@ -211,7 +211,9 @@ class SMTPChannel(asynchat.async_chat):
         keylen = len(keyword)
         if arg[:keylen].upper() == keyword:
             address = arg[keylen:].strip()
-            if address[0] == '<' and address[-1] == '>' and address != '<>':
+            if not address:
+                pass
+            elif address[0] == '<' and address[-1] == '>' and address != '<>':
                 # Addresses can be in the form <person@dom.com> but watch out
                 # for null address, e.g. <>
                 address = address[1:-1]
@@ -489,6 +491,9 @@ def parseargs():
     elif len(args) < 2:
         localspec = args[0]
         remotespec = 'localhost:25'
+    elif len(args) < 3:
+        localspec = args[0]
+        remotespec = args[1]
     else:
         usage(1, 'Invalid arguments: %s' % COMMASPACE.join(args))
 
