@@ -4,9 +4,9 @@
 %the imaplib ``chapter''.
 
 \section{\module{poplib} ---
-         POP3 protocol client.}
-\declaremodule{standard}{poplib}
+         POP3 protocol client}
 
+\declaremodule{standard}{poplib}
 \modulesynopsis{POP3 protocol client (requires sockets).}
 
 \indexii{POP3}{protocol}
@@ -24,7 +24,7 @@ created when the instance is initialized.
 If \var{port} is omitted, the standard POP3 port (110) is used.
 \end{classdesc}
 
-One exception is defined as attributes of the \module{poplib} module:
+One exception is defined as an attribute of the \module{poplib} module:
 
 \begin{excdesc}{error_proto}
 Exception raised on any errors.  The reason for the exception is
@@ -32,13 +32,10 @@ passed to the constructor as a string.
 \end{excdesc}
 
 
-\subsection{POP3 Objects}
-\label{pop3-objects}
+\subsection{POP3 Objects \label{pop3-objects}}
 
 All POP3 commands are represented by methods of the same name,
-in lower-case.
-
-Most commands return the response text sent by the server.
+in lower-case; most return the response text sent by the server.
 
 An \class{POP3} instance has the following methods:
 
@@ -112,8 +109,7 @@ message, otherwise result is list \code{['response',
 \end{methoddesc}
 
 
-\subsection{POP3 Example}
-\label{pop3-example}
+\subsection{POP3 Example \label{pop3-example}}
 
 Here is a minimal example (without error checking) that opens a
 mailbox and retrieves and prints all messages:
