@@ -87,8 +87,9 @@ class _Feature:
         return self.mandatory
 
     def __repr__(self):
-        return "_Feature(" + `self.getOptionalRelease()` + ", " + \
-                             `self.getMandatoryRelease()` + ")"
+        return "_Feature" + repr((self.optional,
+                                  self.mandatory,
+                                  self.compiler_flag))
 
 nested_scopes = _Feature((2, 1, 0, "beta",  1),
                          (2, 2, 0, "alpha", 0),
