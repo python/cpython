@@ -397,6 +397,8 @@ backwards compatible and debugging classes and functions?
 
 """
 
+# " <== Emacs font-lock de-bogo-kludgificocity
+
 __version__ = "2.0b3"
 
 
