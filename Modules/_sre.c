@@ -1697,22 +1697,22 @@ pattern_search(PatternObject* self, PyObject* args, PyObject* kw)
 }
 
 static PyObject*
-call(char* function, PyObject* args)
+call(char* module, char* function, PyObject* args)
 {
     PyObject* name;
-    PyObject* module;
+    PyObject* mod;
     PyObject* func;
     PyObject* result;
 
-    name = PyString_FromString(SRE_MODULE);
+    name = PyString_FromString(module);
     if (!name)
         return NULL;
-    module = PyImport_Import(name);
+    mod = PyImport_Import(name);
     Py_DECREF(name);
-    if (!module)
+    if (!mod)
         return NULL;
-    func = PyObject_GetAttrString(module, function);
-    Py_DECREF(module);
+    func = PyObject_GetAttrString(mod, function);
+    Py_DECREF(mod);
     if (!func)
         return NULL;
     result = PyObject_CallObject(func, args);
@@ -1720,6 +1720,26 @@ call(char* function, PyObject* args)
     Py_DECREF(args);
     return result;
 }
+
+#ifdef USE_BUILTIN_COPY
+static int
+deepcopy(PyObject** object, PyObject* memo)
+{
+    PyObject* copy;
+
+    copy = call(
+        "copy", "deepcopy",
+        Py_BuildValue("OO", *object, memo)
+        );
+    if (!copy)
+        return 0;
+
+    Py_DECREF(*object);
+    *object = copy;
+
+    return 1; /* success */
+}
+#endif
 
 static PyObject*
 pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
@@ -1733,7 +1753,10 @@ pattern_sub(PatternObject* self, PyObject* args, PyObject* kw)
         return NULL;
 
     /* delegate to Python code */
-    return call("_sub", Py_BuildValue("OOOO", self, template, string, count));
+    return call(
+        SRE_MODULE, "_sub",
+        Py_BuildValue("OOOO", self, template, string, count)
+        );
 }
 
 static PyObject*
@@ -1748,7 +1771,10 @@ pattern_subn(PatternObject* self, PyObject* args, PyObject* kw)
         return NULL;
 
     /* delegate to Python code */
-    return call("_subn", Py_BuildValue("OOOO", self, template, string, count));
+    return call(
+        SRE_MODULE, "_subn",
+        Py_BuildValue("OOOO", self, template, string, count)
+        );
 }
 
 static PyObject*
@@ -1762,7 +1788,10 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
         return NULL;
 
     /* delegate to Python code */
-    return call("_split", Py_BuildValue("OOO", self, string, maxsplit));
+    return call(
+        SRE_MODULE, "_split",
+        Py_BuildValue("OOO", self, string, maxsplit)
+        );
 }
 
 static PyObject*
@@ -1872,11 +1901,12 @@ error:
 static PyObject*
 pattern_copy(PatternObject* self, PyObject* args)
 {
-#if USE_BUILTIN_COPY
+#ifdef USE_BUILTIN_COPY
     PatternObject* copy;
     int offset;
 
-    /* work in progress */
+    if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
+        return NULL;
     
     copy = PyObject_NEW_VAR(PatternObject, &Pattern_Type, self->codesize);
     if (!copy)
@@ -1901,8 +1931,28 @@ pattern_copy(PatternObject* self, PyObject* args)
 static PyObject*
 pattern_deepcopy(PatternObject* self, PyObject* args)
 {
+#ifdef USE_BUILTIN_COPY
+    PatternObject* copy;
+    
+    PyObject* memo;
+    if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
+        return NULL;
+
+    copy = (PatternObject*) pattern_copy(self, Py_None);
+    if (!copy)
+        return NULL;
+
+    if (!deepcopy(&copy->groupindex, memo) ||
+        !deepcopy(&copy->indexgroup, memo) ||
+        !deepcopy(&copy->pattern, memo)) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+
+#else
     PyErr_SetString(PyExc_TypeError, "cannot deepcopy this pattern object");
     return NULL;
+#endif
 }
 
 static PyMethodDef pattern_methods[] = {
@@ -2035,7 +2085,7 @@ match_expand(MatchObject* self, PyObject* args)
 
     /* delegate to Python code */
     return call(
-        "_expand",
+        SRE_MODULE, "_expand",
         Py_BuildValue("OOO", self->pattern, self, template)
         );
 }
@@ -2276,11 +2326,12 @@ match_regs(MatchObject* self)
 static PyObject*
 match_copy(MatchObject* self, PyObject* args)
 {
-#if USE_BUILTIN_COPY
+#ifdef USE_BUILTIN_COPY
     MatchObject* copy;
     int slots, offset;
     
-    /* works in progress */
+    if (args != Py_None && !PyArg_ParseTuple(args, ":__copy__"))
+        return NULL;
 
     slots = 2 * (self->pattern->groups+1);
 
@@ -2301,7 +2352,7 @@ match_copy(MatchObject* self, PyObject* args)
 
     return (PyObject*) copy;
 #else
-    PyErr_SetString(PyExc_TypeError, "cannot deepcopy this match object");
+    PyErr_SetString(PyExc_TypeError, "cannot copy this match object");
     return NULL;
 #endif
 }
@@ -2309,8 +2360,28 @@ match_copy(MatchObject* self, PyObject* args)
 static PyObject*
 match_deepcopy(MatchObject* self, PyObject* args)
 {
+#ifdef USE_BUILTIN_COPY
+    MatchObject* copy;
+    
+    PyObject* memo;
+    if (!PyArg_ParseTuple(args, "O:__deepcopy__", &memo))
+        return NULL;
+
+    copy = (MatchObject*) match_copy(self, Py_None);
+    if (!copy)
+        return NULL;
+
+    if (!deepcopy((PyObject**) &copy->pattern, memo) ||
+        !deepcopy(&copy->string, memo) ||
+        !deepcopy(&copy->regs, memo)) {
+        Py_DECREF(copy);
+        return NULL;
+    }
+
+#else
     PyErr_SetString(PyExc_TypeError, "cannot deepcopy this match object");
     return NULL;
+#endif
 }
 
 static PyMethodDef match_methods[] = {
