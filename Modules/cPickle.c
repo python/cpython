@@ -20,21 +20,10 @@ PyDoc_STRVAR(cPickle_module_documentation,
 
 #define WRITE_BUF_SIZE 256
 
-/* --------------------------------------------------------------------------
-NOTES on format codes.
-XXX much more is needed here
-
-Integer types
-BININT1         8-bit unsigned integer; followed by 1 byte.
-BININT2         16-bit unsigned integer; followed by 2 bytes, little-endian.
-BININT          32-bit signed integer; followed by 4 bytes, little-endian.
-INT             Integer; natural decimal string conversion, then newline.
-                CAUTION:  INT-reading code can't assume that what follows
-                fits in a Python int, because the size of Python ints varies
-                across platforms.
-LONG            Long (unbounded) integer; repr(i), then newline.
--------------------------------------------------------------------------- */
-
+/*
+ * Pickle opcodes.  These must be kept in synch with pickle.py.  Extensive
+ * docs are in pickletools.py.
+ */
 #define MARK        '('
 #define STOP        '.'
 #define POP         '0'
@@ -76,11 +65,30 @@ LONG            Long (unbounded) integer; repr(i), then newline.
 #define TUPLE       't'
 #define EMPTY_TUPLE ')'
 #define SETITEMS    'u'
+
+/* Protocol 2. */
+#define PROTO	 '\x80' /* identify pickle protocol */
+#define NEWOBJ   '\x81' /* build object by applying cls.__new__ to argtuple */
+#define EXT1     '\x82' /* push object from extension registry; 1-byte index */
+#define EXT2     '\x83' /* ditto, but 2-byte index */
+#define EXT4     '\x84' /* ditto, but 4-byte index */
+#define TUPLE1   '\x85' /* build 1-tuple from stack top */
+#define TUPLE2   '\x86' /* build 2-tuple from two topmost stack items */
+#define TUPLE3   '\x87' /* build 3-tuple from three topmost stack items */
+#define NEWTRUE  '\x88' /* push True */
+#define NEWFALSE '\x89' /* push False */
+#define LONG1    '\x8a' /* push long from < 256 bytes */
+#define LONG4    '\x8b' /* push really big long */
+
+/* There aren't opcodes -- they're ways to pickle bools before protocol 2,
+ * so that unpicklers written before bools were introduced unpickle them
+ * as ints, but unpicklers after can recognize that bools were intended.
+ * Note that protocol 2 added direct ways to pickle bools.
+ */
 #undef TRUE
 #define TRUE        "I01\n"
 #undef FALSE
 #define FALSE       "I00\n"
-
 
 static char MARKv = MARK;
 
@@ -269,7 +277,13 @@ typedef struct Picklerobject {
 	PyObject *arg;
 	PyObject *pers_func;
 	PyObject *inst_pers_func;
+
+	/* pickle protocol number, >= 0 */
+	int proto;
+
+	/* bool, true if proto > 0 */
 	int bin;
+
 	int fast; /* Fast mode doesn't save in memo, don't use if circ ref */
         int nesting;
 	int (*write_func)(struct Picklerobject *, char *, int);
