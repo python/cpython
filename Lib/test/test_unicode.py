@@ -8,21 +8,22 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 from test_support import verify, verbose, TestFailed
 import sys
 
-# Test basic sanity of repr()
-verify(repr(u'abc') == "u'abc'")
-verify(repr(u'ab\\c') == "u'ab\\\\c'")
-verify(repr(u'ab\\') == "u'ab\\\\'")
-verify(repr(u'\\c') == "u'\\\\c'")
-verify(repr(u'\\') == "u'\\\\'")
-verify(repr(u'\n') == "u'\\n'")
-verify(repr(u'\r') == "u'\\r'")
-verify(repr(u'\t') == "u'\\t'")
-verify(repr(u'\b') == "u'\\x08'")
-verify(repr(u"'\"") == """u'\\'"'""")
-verify(repr(u"'\"") == """u'\\'"'""")
-verify(repr(u"'") == '''u"'"''')
-verify(repr(u'"') == """u'"'""")
-verify(repr(u''.join(map(unichr, range(256)))) ==
+if not sys.platform.startswith('java'):
+    # Test basic sanity of repr()
+    verify(repr(u'abc') == "u'abc'")
+    verify(repr(u'ab\\c') == "u'ab\\\\c'")
+    verify(repr(u'ab\\') == "u'ab\\\\'")
+    verify(repr(u'\\c') == "u'\\\\c'")
+    verify(repr(u'\\') == "u'\\\\'")
+    verify(repr(u'\n') == "u'\\n'")
+    verify(repr(u'\r') == "u'\\r'")
+    verify(repr(u'\t') == "u'\\t'")
+    verify(repr(u'\b') == "u'\\x08'")
+    verify(repr(u"'\"") == """u'\\'"'""")
+    verify(repr(u"'\"") == """u'\\'"'""")
+    verify(repr(u"'") == '''u"'"''')
+    verify(repr(u'"') == """u'"'""")
+    verify(repr(u''.join(map(unichr, range(256)))) ==
        "u'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\t\\n\\x0b\\x0c\\r"
        "\\x0e\\x0f\\x10\\x11\\x12\\x13\\x14\\x15\\x16\\x17\\x18\\x19\\x1a"
        "\\x1b\\x1c\\x1d\\x1e\\x1f !\"#$%&\\'()*+,-./0123456789:;<=>?@ABCDEFGHI"
@@ -446,19 +447,21 @@ for obj in (123, 123.45, 123L):
 # unicode(obj, encoding, error) tests (this maps to
 # PyUnicode_FromEncodedObject() at C level)
 
-try:
-    unicode(u'decoding unicode is not supported', 'utf-8', 'strict')
-except TypeError:
-    pass
-else:
-    raise TestFailed, "decoding unicode should NOT be supported"
+if not sys.platform.startswith('java'):
+    try:
+        unicode(u'decoding unicode is not supported', 'utf-8', 'strict')
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "decoding unicode should NOT be supported"
 
 verify(unicode('strings are decoded to unicode', 'utf-8', 'strict')
        == u'strings are decoded to unicode')
 
-verify(unicode(buffer('character buffers are decoded to unicode'),
-               'utf-8', 'strict')
-       == u'character buffers are decoded to unicode')
+if not sys.platform.startswith('java'):
+    verify(unicode(buffer('character buffers are decoded to unicode'),
+                   'utf-8', 'strict')
+           == u'character buffers are decoded to unicode')
 
 print 'done.'
 
