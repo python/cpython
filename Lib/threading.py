@@ -320,7 +320,7 @@ class Thread(_Verbose):
 
     def __init__(self, group=None, target=None, name=None,
                  args=(), kwargs={}, verbose=None):
-	assert group is None, "group argument must be None for now"
+        assert group is None, "group argument must be None for now"
         _Verbose.__init__(self, verbose)
         self.__target = target
         self.__name = str(name or _newname())
@@ -404,14 +404,14 @@ class Thread(_Verbose):
 
     def join(self, timeout=None):
         assert self.__initialized, "Thread.__init__() not called"
-	assert self.__started, "cannot join thread before it is started"
+        assert self.__started, "cannot join thread before it is started"
         assert self is not currentThread(), "cannot join current thread"
         if __debug__:
             if not self.__stopped:
                 self._note("%s.join(): waiting until thread stops", self)
         self.__block.acquire()
         if timeout is None:
-	    while not self.__stopped:
+            while not self.__stopped:
                 self.__block.wait()
             if __debug__:
                 self._note("%s.join(): thread stopped", self)
