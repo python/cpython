@@ -467,7 +467,7 @@ then
 		fi ;;
 	Linux*) LDSHARED="gcc -shared";;
 	dgux*) LDSHARED="ld -G";;
-	FreeBSD*/3*) LDSHARED="gcc -shared";;
+	FreeBSD*/[34]*) LDSHARED="gcc -shared";;
 	FreeBSD*|OpenBSD*) LDSHARED="ld -Bshareable";;
 	NetBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
@@ -511,7 +511,7 @@ then
 	AIX*)	LINKFORSHARED='-Wl,-bE:python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	FreeBSD/3*) LINKFORSHARED="-Xlinker -export-dynamic";;
+	FreeBSD/[34]*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
 	next/2*|next/3*) LINKFORSHARED="-u libsys_s";;
