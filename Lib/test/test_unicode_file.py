@@ -39,17 +39,20 @@ class TestUnicodeFiles(unittest.TestCase):
             os.path.abspath(filename)==os.path.abspath(glob.glob(filename)[0]))
         # basename should appear in listdir.
         path, base = os.path.split(os.path.abspath(filename))
-        if (isinstance (filename, str)):
-            new_base = base.decode(TESTFN_ENCODING)
-            file_list = [f.decode(TESTFN_ENCODING) for f in os.listdir(path)]
-        else:
-            new_base = base 
-            file_list = os.listdir(path)
+        if isinstance(base, str):
+            base = base.decode(TESTFN_ENCODING)
+        file_list = os.listdir(path)
+        # listdir() with a unicode arg may or may not return Unicode
+        # objects, depending on the platform.
+        if file_list and isinstance(file_list[0], str):
+            file_list = [f.decode(TESTFN_ENCODING) for f in file_list]
 
-        new_base = unicodedata.normalize("NFD", new_base)
+        # Normalize the unicode strings, as round-tripping the name via the OS
+        # may return a different (but equivalent) value.
+        base = unicodedata.normalize("NFD", base)
         file_list = [unicodedata.normalize("NFD", f) for f in file_list]
 
-        self.failUnless(new_base in file_list)
+        self.failUnless(base in file_list)
 
     # Do as many "equivalancy' tests as we can - ie, check that although we
     # have different types for the filename, they refer to the same file.
