@@ -48,6 +48,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define USE_GUSI
 #endif
 
+#ifndef USE_GUSI
+#define DONT_HAVE_SYS_TYPES_H
+#define DONT_HAVE_SYS_STAT_H
+#define HAVE_STAT_H
+#endif
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */
@@ -182,7 +188,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_STDARG_PROTOTYPES
 
 /* Define if malloc(0) returns a NULL pointer */
+#ifdef USE_MSL_MALLOC
+#define MALLOC_ZERO_RETURNS_NULL
+#else
 #undef MALLOC_ZERO_RETURNS_NULL
+#endif
 
 /* Define if you have POSIX threads */
 #ifdef USE_GUSI2
@@ -384,7 +394,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HAVE_GETPWENT
 
 /* Define if you have the gettimeofday function.  */
+#ifdef USE_GUSI
 #define HAVE_GETTIMEOFDAY
+#endif
 
 /* Define if you have the getwd function.  */
 #undef HAVE_GETWD
