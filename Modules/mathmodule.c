@@ -1,7 +1,7 @@
 /* Math module -- standard C math library functions, pi and e */
 
 #include "Python.h"
-#include "longintrepr.h" // just for SHIFT
+#include "longintrepr.h" /* just for SHIFT */
 
 #ifndef _MSC_VER
 #ifndef __STDC__
