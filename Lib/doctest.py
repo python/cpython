@@ -179,6 +179,7 @@ __all__ = [
     'REPORT_UDIFF',
     'REPORT_CDIFF',
     'REPORT_NDIFF',
+    'REPORT_ONLY_FIRST_FAILURE',
     # 1. Utility Functions
     'is_private',
     # 2. Example & DocTest
@@ -1991,6 +1992,65 @@ class Tester:
 ## 8. Unittest Support
 ######################################################################
 
+_unittest_reportflags = 0
+valid_unittest_reportflags = (
+    REPORT_CDIFF |
+    REPORT_UDIFF |
+    REPORT_NDIFF |
+    REPORT_ONLY_FIRST_FAILURE
+    )
+def set_unittest_reportflags(flags):
+    """Sets the unit test option flags
+
+    The old flag is returned so that a runner could restore the old
+    value if it wished to:
+
+      >>> old = _unittest_reportflags
+      >>> set_unittest_reportflags(REPORT_NDIFF |
+      ...                          REPORT_ONLY_FIRST_FAILURE) == old
+      True
+
+      >>> import doctest
+      >>> doctest._unittest_reportflags == (REPORT_NDIFF |
+      ...                                   REPORT_ONLY_FIRST_FAILURE)
+      True
+      
+    Only reporting flags can be set:
+
+      >>> set_unittest_reportflags(ELLIPSIS)
+      Traceback (most recent call last):
+      ...
+      ValueError: ('Invalid flags passed', 8)
+
+      >>> set_unittest_reportflags(old) == (REPORT_NDIFF |
+      ...                                   REPORT_ONLY_FIRST_FAILURE)
+      True
+
+    """
+
+    # extract the valid reporting flags:
+    rflags = flags & valid_unittest_reportflags
+
+    # Now remove these flags from the given flags
+    nrflags = flags ^ rflags
+
+    if nrflags:
+        raise ValueError("Invalid flags passed", flags)
+    
+    global _unittest_reportflags
+    old = _unittest_reportflags
+    _unittest_reportflags = flags
+    return old
+    
+
+class FakeModule:
+    """Fake module created by tests
+    """
+    
+    def __init__(self, dict, name):
+        self.__dict__ = dict
+        self.__name__ = name
+
 class DocTestCase(unittest.TestCase):
 
     def __init__(self, test, optionflags=0, setUp=None, tearDown=None,
@@ -2004,23 +2064,37 @@ class DocTestCase(unittest.TestCase):
         self._dt_tearDown = tearDown
 
     def setUp(self):
+        test = self._dt_test
+            
         if self._dt_setUp is not None:
-            self._dt_setUp()
+            self._dt_setUp(test)
 
     def tearDown(self):
+        test = self._dt_test
+
         if self._dt_tearDown is not None:
-            self._dt_tearDown()
+            self._dt_tearDown(test)
+
+        test.globs.clear()
 
     def runTest(self):
         test = self._dt_test
         old = sys.stdout
         new = StringIO()
-        runner = DocTestRunner(optionflags=self._dt_optionflags,
+        optionflags = self._dt_optionflags
+        
+        if not (optionflags & valid_unittest_reportflags):
+            # The option flags don't include any reporting flags,
+            # so add the default reporting flags
+            optionflags |= _unittest_reportflags
+        
+        runner = DocTestRunner(optionflags=optionflags,
                                checker=self._dt_checker, verbose=False)
 
         try:
             runner.DIVIDER = "-"*70
-            failures, tries = runner.run(test, out=new.write)
+            failures, tries = runner.run(
+                test, out=new.write, clear_globs=False)
         finally:
             sys.stdout = old
 
@@ -2105,9 +2179,11 @@ class DocTestCase(unittest.TestCase):
 
            """
 
+        self.setUp()
         runner = DebugRunner(optionflags=self._dt_optionflags,
                              checker=self._dt_checker, verbose=False)
         runner.run(self._dt_test)
+        self.tearDown()
 
     def id(self):
         return self._dt_test.name
@@ -2121,10 +2197,8 @@ class DocTestCase(unittest.TestCase):
     def shortDescription(self):
         return "Doctest: " + self._dt_test.name
 
-def DocTestSuite(module=None, globs=None, extraglobs=None,
-                 optionflags=0, test_finder=None,
-                 setUp=lambda: None, tearDown=lambda: None,
-                 checker=None):
+def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
+                 **options):
     """
     Convert doctest tests for a module to a unittest test suite.
 
@@ -2138,6 +2212,32 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
     can be either a module or a module name.
 
     If no argument is given, the calling module is used.
+
+    A number of options may be provided as keyword arguments:
+
+    package
+      The name of a Python package.  Text-file paths will be
+      interpreted relative to the directory containing this package.
+      The package may be supplied as a package object or as a dotted
+      package name.
+
+    setUp
+      The name of a set-up function.  This is called before running the
+      tests in each file. The setUp function will be passed a DocTest
+      object.  The setUp function can access the test globals as the
+      globs attribute of the test passed.
+
+    tearDown
+      The name of a tear-down function.  This is called after running the
+      tests in each file.  The tearDown function will be passed a DocTest
+      object.  The tearDown function can access the test globals as the
+      globs attribute of the test passed.
+
+    globs
+      A dictionary containing initial global variables for the tests.
+
+    optionflags
+       A set of doctest option flags expressed as an integer.
     """
 
     if test_finder is None:
@@ -2147,7 +2247,9 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
     tests = test_finder.find(module, globs=globs, extraglobs=extraglobs)
     if globs is None:
         globs = module.__dict__
-    if not tests: # [XX] why do we want to do this?
+    if not tests:
+        # Why do we want to do this? Because it reveals a bug that might
+        # otherwise be hidden.
         raise ValueError(module, "has no tests")
 
     tests.sort()
@@ -2160,8 +2262,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None,
             if filename[-4:] in (".pyc", ".pyo"):
                 filename = filename[:-1]
             test.filename = filename
-        suite.addTest(DocTestCase(test, optionflags, setUp, tearDown,
-                                  checker))
+        suite.addTest(DocTestCase(test, **options))
 
     return suite
 
@@ -2179,9 +2280,7 @@ class DocFileCase(DocTestCase):
                 % (self._dt_test.name, self._dt_test.filename, err)
                 )
 
-def DocFileTest(path, package=None, globs=None,
-                setUp=None, tearDown=None,
-                optionflags=0):
+def DocFileTest(path, package=None, globs=None, **options):
     package = _normalize_module(package)
     name = path.split('/')[-1]
     dir = os.path.split(package.__file__)[0]
@@ -2193,7 +2292,7 @@ def DocFileTest(path, package=None, globs=None,
 
     test = DocTestParser().get_doctest(doc, globs, name, path, 0)
 
-    return DocFileCase(test, optionflags, setUp, tearDown)
+    return DocFileCase(test, **options)
 
 def DocFileSuite(*paths, **kw):
     """Creates a suite of doctest files.
@@ -2213,14 +2312,22 @@ def DocFileSuite(*paths, **kw):
 
     setUp
       The name of a set-up function.  This is called before running the
-      tests in each file.
+      tests in each file. The setUp function will be passed a DocTest
+      object.  The setUp function can access the test globals as the
+      globs attribute of the test passed.
 
     tearDown
       The name of a tear-down function.  This is called after running the
-      tests in each file.
+      tests in each file.  The tearDown function will be passed a DocTest
+      object.  The tearDown function can access the test globals as the
+      globs attribute of the test passed.
 
     globs
       A dictionary containing initial global variables for the tests.
+
+    optionflags
+       A set of doctest option flags expressed as an integer.
+      
     """
     suite = unittest.TestSuite()
 

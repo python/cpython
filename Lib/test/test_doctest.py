@@ -1653,11 +1653,11 @@ def test_DocTestSuite():
 
        You can supply setUp and tearDown functions:
 
-         >>> def setUp():
+         >>> def setUp(t):
          ...     import test.test_doctest
          ...     test.test_doctest.sillySetup = True
 
-         >>> def tearDown():
+         >>> def tearDown(t):
          ...     import test.test_doctest
          ...     del test.test_doctest.sillySetup
 
@@ -1675,6 +1675,21 @@ def test_DocTestSuite():
          Traceback (most recent call last):
          ...
          AttributeError: 'module' object has no attribute 'sillySetup'
+
+       The setUp and tearDown funtions are passed test objects. Here
+       we'll use the setUp function to supply the missing variable y:
+
+         >>> def setUp(test):
+         ...     test.globs['y'] = 1
+
+         >>> suite = doctest.DocTestSuite('test.sample_doctest', setUp=setUp)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=9 errors=0 failures=3>
+
+       Here, we didn't need to use a tearDown function because we
+       modified the test globals, which are a copy of the
+       sample_doctest module dictionary.  The test globals are
+       automatically cleared for us after a test.
 
        Finally, you can provide an alternate test finder.  Here we'll
        use a custom test_finder to to run just the test named bar.
@@ -1744,11 +1759,11 @@ def test_DocFileSuite():
 
        You can supply setUp and teatDoen functions:
 
-         >>> def setUp():
+         >>> def setUp(t):
          ...     import test.test_doctest
          ...     test.test_doctest.sillySetup = True
 
-         >>> def tearDown():
+         >>> def tearDown(t):
          ...     import test.test_doctest
          ...     del test.test_doctest.sillySetup
 
@@ -1768,7 +1783,22 @@ def test_DocFileSuite():
          ...
          AttributeError: 'module' object has no attribute 'sillySetup'
 
-    """
+       The setUp and tearDown funtions are passed test objects.
+       Here, we'll use a setUp function to set the favorite color in
+       test_doctest.txt:
+
+         >>> def setUp(test):
+         ...     test.globs['favorite_color'] = 'blue'
+
+         >>> suite = doctest.DocFileSuite('test_doctest.txt', setUp=setUp)
+         >>> suite.run(unittest.TestResult())
+         <unittest.TestResult run=1 errors=0 failures=0>
+
+       Here, we didn't need to use a tearDown function because we
+       modified the test globals.  The test globals are
+       automatically cleared for us after a test.
+       
+       """
 
 def test_trailing_space_in_test():
     """
@@ -1777,6 +1807,82 @@ def test_trailing_space_in_test():
       >>> x, y = 'foo', ''
       >>> print x, y
       foo \n
+    """
+
+
+def test_unittest_reportflags():
+    """Default unittest reporting flags can be set to control reporting
+
+    Here, we'll set the REPORT_ONLY_FIRST_FAILURE option so we see
+    only the first failure of each test.  First, we'll look at the
+    output without the flag.  The file test_doctest.txt file has two
+    tests. They both fail if blank lines are disabled:
+
+      >>> suite = doctest.DocFileSuite('test_doctest.txt',
+      ...                          optionflags=doctest.DONT_ACCEPT_BLANKLINE)
+      >>> import unittest
+      >>> result = suite.run(unittest.TestResult())
+      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      Traceback ...
+      Failed example:
+          favorite_color
+      ...
+      Failed example:
+          if 1:
+      ...
+
+    Note that we see both failures displayed.
+
+      >>> old = doctest.set_unittest_reportflags(
+      ...    doctest.REPORT_ONLY_FIRST_FAILURE)
+
+    Now, when we run the test:
+
+      >>> result = suite.run(unittest.TestResult())
+      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      Traceback ...
+      Failed example:
+          favorite_color
+      Exception raised:
+          ...
+          NameError: name 'favorite_color' is not defined
+      <BLANKLINE>
+      <BLANKLINE>
+      
+    We get only the first failure.
+
+    If we give any reporting options when we set up the tests,
+    however:
+
+      >>> suite = doctest.DocFileSuite('test_doctest.txt',
+      ...     optionflags=doctest.DONT_ACCEPT_BLANKLINE | doctest.REPORT_NDIFF)
+
+    Then the default eporting options are ignored:
+
+      >>> result = suite.run(unittest.TestResult())
+      >>> print result.failures[0][1] # doctest: +ELLIPSIS
+      Traceback ...
+      Failed example:
+          favorite_color
+      ...
+      Failed example:
+          if 1:
+             print 'a'
+             print
+             print 'b'
+      Differences (ndiff with -expected +actual):
+            a
+          - <BLANKLINE>
+          +
+            b
+      <BLANKLINE>
+      <BLANKLINE>
+
+
+    Test runners can restore the formatting flags after they run:
+
+      >>> ignored = doctest.set_unittest_reportflags(old)
+
     """
 
 # old_test1, ... used to live in doctest.py, but cluttered it.  Note
