@@ -69,6 +69,8 @@ if test ! -n "$*"; then
   echo $usage; exit 2
 fi
 
+makexp=`dirname $0`/makexp_aix
+
 # Check for existence of compiler.
 CC=$1; shift
 whichcc=`which $CC`
@@ -169,8 +171,8 @@ CCOPT="$CCOPT -Wl,-bM:SRE -Wl,-T512 -Wl,-H512 -lm -o $objfile"
 CCARGS="$args"
 
 # Export list generation.
-#echo makexp_aix $expfile "$objfile" $objs
-makexp_aix $expfile "$objfile" $objs
+#echo $makexp $expfile "$objfile" $objs
+$makexp $expfile "$objfile" $objs
 
 # Perform the link.
 #echo $CC $CCOPT $CCARGS
