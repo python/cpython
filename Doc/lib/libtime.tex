@@ -116,11 +116,12 @@ is defined.  This is negative if the local DST timezone is east of UTC
 \code{daylight} is nonzero.
 \end{datadesc}
 
-\begin{funcdesc}{asctime}{tuple}
+\begin{funcdesc}{asctime}{\optional{tuple}}
 Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a 24-character string of the following form:
-\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the C function of
-the same name, there is no trailing newline.
+\code{'Sun Jun 20 23:21:05 1993'}.  If \var{tuple} is not provided, the
+current time as returned by \function{localtime()} is used.  Note: unlike
+the C function of the same name, there is no trailing newline.
 \end{funcdesc}
 
 \begin{funcdesc}{clock}{}
@@ -131,23 +132,26 @@ of the same name, but in any case, this is the function to use for
 benchmarking\index{benchmarking} Python or timing algorithms.
 \end{funcdesc}
 
-\begin{funcdesc}{ctime}{secs}
+\begin{funcdesc}{ctime}{\optional{secs}}
 Convert a time expressed in seconds since the epoch to a string
-representing local time.  \code{ctime(\var{secs})} is equivalent to
-\code{asctime(localtime(\var{secs}))}.
+representing local time. If \var{secs} is not provided, the current time
+as returned by \function{time()} is used.  \code{ctime(\var{secs})}
+is equivalent to \code{asctime(localtime(\var{secs}))}.
 \end{funcdesc}
 
 \begin{datadesc}{daylight}
 Nonzero if a DST timezone is defined.
 \end{datadesc}
 
-\begin{funcdesc}{gmtime}{secs}
+\begin{funcdesc}{gmtime}{\optional{secs}}
 Convert a time expressed in seconds since the epoch to a time tuple
-in UTC in which the dst flag is always zero.  Fractions of a second are
-ignored.  See above for a description of the tuple lay-out.
+in UTC in which the dst flag is always zero.  If \var{secs} is not
+provided, the current time as returned by \function{time()} is used.
+Fractions of a second are ignored.  See above for a description of the
+tuple lay-out.
 \end{funcdesc}
 
-\begin{funcdesc}{localtime}{secs}
+\begin{funcdesc}{localtime}{\optional{secs}}
 Like \function{gmtime()} but converts to local time.  The dst flag is
 set to \code{1} when DST applies to the given time.
 \end{funcdesc}
@@ -171,10 +175,11 @@ time may be longer than requested by an arbitrary amount because of
 the scheduling of other activity in the system.
 \end{funcdesc}
 
-\begin{funcdesc}{strftime}{format, tuple}
+\begin{funcdesc}{strftime}{format\optional{, tuple}}
 Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a string as specified by the \var{format}
-argument.  \var{format} must be a string.
+argument.  If \var{tuple} is not provided, the current time as returned by
+\function{localtime()} is used.  \var{format} must be a string.
 
 The following directives can be embedded in the \var{format} string.
 They are shown without the optional field width and precision
