@@ -51,11 +51,14 @@ extern unsigned long PyLong_AsUnsignedLong Py_PROTO((PyObject *));
 extern double PyLong_AsDouble Py_PROTO((PyObject *));
 
 #ifdef HAVE_LONG_LONG
-extern PyObject *PyLong_FromLongLong Py_PROTO((long long ));
-extern PyObject *PyLong_FromUnsignedLongLong Py_PROTO((unsigned long long));
-extern long long PyLong_AsLongLong Py_PROTO((PyObject *));
-extern unsigned long long PyLong_AsUnsignedLongLong Py_PROTO((PyObject *));
+#ifndef LONG_LONG
+#define LONG_LONG long long
 #endif
+extern PyObject *PyLong_FromLongLong Py_PROTO((LONG_LONG));
+extern PyObject *PyLong_FromUnsignedLongLong Py_PROTO((unsigned LONG_LONG));
+extern LONG_LONG PyLong_AsLongLong Py_PROTO((PyObject *));
+extern unsigned LONG_LONG PyLong_AsUnsignedLongLong Py_PROTO((PyObject *));
+#endif /* HAVE_LONG_LONG */
 
 PyObject *PyLong_FromString Py_PROTO((char *, char **, int));
 
