@@ -916,6 +916,7 @@ AC_MSG_RESULT($CFLAGSFORSHARED)
 # checks for libraries
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
+AC_CHECK_LIB(rt, sem_init)	# 'Real Time' functions on Solaris
 
 # checks for system dependent C++ extensions support
 case "$ac_sys_system" in
