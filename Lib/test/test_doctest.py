@@ -267,10 +267,23 @@ For a function whose docstring contains examples, DocTestFinder.find()
 will return a single test (for that function's docstring):
 
     >>> finder = doctest.DocTestFinder()
+
+We'll simulate a __file__ attr that ends in pyc:
+
+    >>> import test.test_doctest
+    >>> old = test.test_doctest.__file__
+    >>> test.test_doctest.__file__ = 'test_doctest.pyc'
+
     >>> tests = finder.find(sample_func)
 
     >>> print tests  # doctest: +ELLIPSIS
     [<DocTest sample_func from ...:12 (1 example)>]
+
+    >>> tests[0].filename
+    'test_doctest.py'
+
+    >>> test.test_doctest.__file__ = old
+    
 
     >>> e = tests[0].examples[0]
     >>> (e.source, e.want, e.lineno)
@@ -519,10 +532,13 @@ the failure and proceeds to the next example:
     Trying: print x
     Expecting: 14
     **********************************************************************
-    Failure in example: print x
-    from line #2 of f
-    Expected: 14
-    Got: 12
+    Line 3, in f
+    Failed example:
+        print x
+    Expected:
+        14
+    Got:
+        12
     Trying: x/2
     Expecting: 6
     ok
@@ -645,8 +661,9 @@ message is raised, then it is reported as a failure:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Failure in example: raise ValueError, 'message'
-    from line #1 of f
+    Line 2, in f
+    Failed example:
+        raise ValueError, 'message'
     Expected:
         Traceback (most recent call last):
         ValueError: wrong message
@@ -668,11 +685,12 @@ unexpected exception:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Failure in example: 1/0
-    from line #1 of f
+    Line 2, in f
+    Failed example:
+        1/0
     Exception raised:
         Traceback (most recent call last):
-          ...
+        ...
         ZeroDivisionError: integer division or modulo by zero
     (1, 1)
 """
@@ -700,10 +718,13 @@ and 1/0:
     >>> flags = doctest.DONT_ACCEPT_TRUE_FOR_1
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
-    Failure in example: True
-    from line #0 of f
-    Expected: 1
-    Got: True
+    Line 1, in f
+    Failed example:
+        True
+    Expected:
+        1
+    Got:
+        True
     (1, 1)
 
 The DONT_ACCEPT_BLANKLINE flag disables the match between blank lines
@@ -722,8 +743,9 @@ and the '<BLANKLINE>' marker:
     >>> flags = doctest.DONT_ACCEPT_BLANKLINE
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
-    Failure in example: print "a\n\nb"
-    from line #0 of f
+    Line 1, in f
+    Failed example:
+        print "a\n\nb"
     Expected:
         a
         <BLANKLINE>
@@ -744,12 +766,14 @@ treated as equal:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print 1, 2, 3
-    from line #0 of f
+    Line 1, in f
+    Failed example:
+        print 1, 2, 3
     Expected:
           1   2
          3
-    Got: 1 2 3
+    Got:
+        1 2 3
     (1, 1)
 
     >>> # With the flag:
@@ -773,10 +797,13 @@ output to match any substring in the actual output:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(15)
-    from line #0 of f
-    Expected: [0, 1, 2, ..., 14]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+    Line 1, in f
+    Failed example:
+        print range(15)
+    Expected:
+        [0, 1, 2, ..., 14]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
     (1, 1)
 
     >>> # With the flag:
@@ -825,8 +852,9 @@ and actual outputs to be displayed using a unified diff:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print '\n'.join('abcdefg')
-    from line #1 of f
+    Line 2, in f
+    Failed example:
+        print '\n'.join('abcdefg')
     Expected:
         a
         B
@@ -850,8 +878,9 @@ and actual outputs to be displayed using a unified diff:
     >>> flags = doctest.UNIFIED_DIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
-    Failure in example: print '\n'.join('abcdefg')
-    from line #1 of f
+    Line 2, in f
+    Failed example:
+        print '\n'.join('abcdefg')
     Differences (unified diff):
         --- Expected
         +++ Got
@@ -876,8 +905,9 @@ and actual outputs to be displayed using a context diff:
     >>> flags = doctest.CONTEXT_DIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     **********************************************************************
-    Failure in example: print '\n'.join('abcdefg')
-    from line #1 of f
+    Line 2, in f
+    Failed example:
+        print '\n'.join('abcdefg')
     Differences (context diff):
         *** Expected
         --- Got
@@ -919,10 +949,13 @@ example with a comment of the form ``# doctest: +OPTION``:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # should fail: no ellipsis
-    from line #1 of f
-    Expected: [0, 1, ..., 9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 2, in f
+    Failed example:
+        print range(10)       # should fail: no ellipsis
+    Expected:
+        [0, 1, ..., 9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
 
 To turn an option off for an example, follow that example with a
@@ -940,10 +973,13 @@ comment of the form ``# doctest: -OPTION``:
     >>> doctest.DocTestRunner(verbose=False,
     ...                       optionflags=doctest.ELLIPSIS).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # doctest: -ELLIPSIS
-    from line #5 of f
-    Expected: [0, 1, ..., 9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 6, in f
+    Failed example:
+        print range(10)       # doctest: -ELLIPSIS
+    Expected:
+        [0, 1, ..., 9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
 
 Option directives affect only the example that they appear with; they
@@ -962,15 +998,21 @@ do not change the options for surrounding examples:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # Should fail: no ellipsis
-    from line #1 of f
-    Expected: [0, 1, ..., 9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 2, in f
+    Failed example:
+        print range(10)       # Should fail: no ellipsis
+    Expected:
+        [0, 1, ..., 9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     **********************************************************************
-    Failure in example: print range(10)       # Should fail: no ellipsis
-    from line #7 of f
-    Expected: [0, 1, ..., 9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 8, in f
+    Failed example:
+        print range(10)       # Should fail: no ellipsis
+    Expected:
+        [0, 1, ..., 9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (2, 3)
 
 Multiple options may be modified by a single option directive.  They
@@ -986,10 +1028,13 @@ may be separated by whitespace, commas, or both:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # Should fail
-    from line #1 of f
-    Expected: [0, 1,  ...,   9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 2, in f
+    Failed example:
+        print range(10)       # Should fail
+    Expected:
+        [0, 1,  ...,   9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
 
     >>> def f(x): r'''
@@ -1002,10 +1047,13 @@ may be separated by whitespace, commas, or both:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # Should fail
-    from line #1 of f
-    Expected: [0, 1,  ...,   9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 2, in f
+    Failed example:
+        print range(10)       # Should fail
+    Expected:
+        [0, 1,  ...,   9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
 
     >>> def f(x): r'''
@@ -1018,10 +1066,13 @@ may be separated by whitespace, commas, or both:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
     **********************************************************************
-    Failure in example: print range(10)       # Should fail
-    from line #1 of f
-    Expected: [0, 1,  ...,   9]
-    Got: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    Line 2, in f
+    Failed example:
+        print range(10)       # Should fail
+    Expected:
+        [0, 1,  ...,   9]
+    Got:
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     (1, 2)
 
 The option directive may be put on the line following the source, as
@@ -1414,6 +1465,14 @@ def test_DocFileSuite():
 
     """
 
+def test_trailing_space_in_test():
+    """
+    Trailing spaces in expcted output are significant:
+    
+      >>> x, y = 'foo', ''
+      >>> print x, y
+      foo \n
+    """
 
 ######################################################################
 ## Main
