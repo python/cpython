@@ -6046,7 +6046,7 @@ static PyMethodDef Ctl_methods[] = {
 
 #if TARGET_API_MAC_CARBON
 	{"CreateTabsControl", (PyCFunction)Ctl_CreateTabsControl, 1,
-	 NULL},
+	 "(WindowPtr window, Rect boundsRect, UInt16 size, UInt16 direction, ControlTabEntry tabArray) -> (ControlHandle outControl)"},
 #endif
 	{NULL, NULL, 0}
 };
