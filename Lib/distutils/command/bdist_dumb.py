@@ -25,7 +25,7 @@ class bdist_dumb (Command):
                      "(default: %s)" % get_platform()),
                     ('format=', 'f',
                      "archive format to create (tar, ztar, gztar, zip)"),
-                    ('keep-tree', 'k',
+                    ('keep-temp', 'k',
                      "keep the pseudo-installation tree around after " +
                      "creating the distribution archive"),
                     ('dist-dir=', 'd',
@@ -40,7 +40,7 @@ class bdist_dumb (Command):
         self.bdist_dir = None
         self.plat_name = None
         self.format = None
-        self.keep_tree = 0
+        self.keep_temp = 0
         self.dist_dir = None
 
     # initialize_options()
@@ -85,7 +85,7 @@ class bdist_dumb (Command):
                            self.format,
                            root_dir=self.bdist_dir)
 
-        if not self.keep_tree:
+        if not self.keep_temp:
             remove_tree (self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
