@@ -646,6 +646,8 @@ xyzabc
     (r'a[^>]*?b', 'a>b', FAIL),
     # bug 490573: minimizing repeat problem
     (r'^a*?$', 'foo', FAIL),
+    # bug 470582: nested groups problem
+    (r'^((a)c)?(ab)$', 'ab', SUCCEED, 'g1+"-"+g2+"-"+g3', 'None-None-ab'),
 ]
 
 try:

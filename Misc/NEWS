@@ -352,6 +352,13 @@ Extension modules
   to the value of the PYTHON_API_VERSION macro with which the
   interpreter was compiled.
 
+- Fixed bug #470582: sre module would return a tuple (None, 'a', 'ab')
+  when applying the regular expression '^((a)c)?(ab)$' on 'ab'. It now
+  returns (None, None, 'ab'), as expected. Also fixed handling of
+  lastindex/lastgroup match attributes in a similar cases. For example,
+  when running the expression r'(a)(b)?b' over 'ab', lastindex must be
+  1, not 2.
+
 Library
 -------
 
