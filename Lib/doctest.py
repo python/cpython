@@ -1,4 +1,4 @@
-# Module doctest version 0.9.6
+# Module doctest version 0.9.7
 # Released to the public domain 16-Jan-2001,
 # by Tim Peters (tim.one@home.com).
 
@@ -345,6 +345,8 @@ Test passed.
 #        examples no longer worked *exactly* as advertised, due to minor
 #        language changes, and running doctest on itself pointed that out.
 #        Hard to think of a better example of why this is useful <wink>.
+# 0,9,7    9-Feb-2001
+#    string method conversion
 
 __version__ = 0, 9, 6
 
@@ -354,13 +356,6 @@ _ClassType    = types.ClassType
 _ModuleType   = types.ModuleType
 _StringType   = types.StringType
 del types
-
-import string
-_string_find = string.find
-_string_join = string.join
-_string_split = string.split
-_string_rindex = string.rindex
-del string
 
 import re
 PS1 = ">>>"
@@ -384,7 +379,7 @@ def _extract_examples(s):
     isPS1, isPS2 = _isPS1, _isPS2
     isEmpty, isComment = _isEmpty, _isComment
     examples = []
-    lines = _string_split(s, "\n")
+    lines = s.split("\n")
     i, n = 0, len(lines)
     while i < n:
         line = lines[i]
@@ -422,7 +417,7 @@ def _extract_examples(s):
             # get rid of useless null line from trailing empty "..."
             if source[-1] == "":
                 del source[-1]
-            source = _string_join(source, "\n") + "\n"
+            source = "\n".join(source) + "\n"
         # suck up response
         if isPS1(line) or isEmpty(line):
             expect = ""
@@ -437,7 +432,7 @@ def _extract_examples(s):
                 line = lines[i]
                 if isPS1(line) or isEmpty(line):
                     break
-            expect = _string_join(expect, "\n") + "\n"
+            expect = "\n".join(expect) + "\n"
         examples.append( (source, expect, lineno) )
     return examples
 
@@ -449,7 +444,7 @@ class _SpoofOut:
     def write(self, s):
         self.buf.append(s)
     def get(self):
-        return _string_join(self.buf, "")
+        return "".join(self.buf)
     def clear(self):
         self.buf = []
     def flush(self):
@@ -464,7 +459,7 @@ def _tag_out(printer, *tag_msg_pairs):
         printer(tag + ":")
         msg_has_nl = msg[-1:] == "\n"
         msg_has_two_nl = msg_has_nl and \
-                        _string_find(msg, "\n") < len(msg) - 1
+                        msg.find("\n") < len(msg) - 1
         if len(tag) + len(msg) < 76 and not msg_has_two_nl:
             printer(" ")
         else:
@@ -494,10 +489,10 @@ def _run_examples_inner(out, fakeout, examples, globs, verbose, name):
             state = OK
         except:
             # See whether the exception was expected.
-            if _string_find(want, "Traceback (innermost last):\n") == 0:
+            if want.find("Traceback (innermost last):\n") == 0:
                 # Only compare exception type and value - the rest of
                 # the traceback isn't necessary.
-                want = _string_split(want, '\n')[-2] + '\n'
+                want = want.split('\n')[-2] + '\n'
                 exc_type, exc_val, exc_tb = sys.exc_info()
                 got = traceback.format_exception_only(exc_type, exc_val)[0]
                 state = OK
@@ -960,7 +955,7 @@ see its docs for details.
 
     def __runone(self, target, name):
         if "." in name:
-            i = _string_rindex(name, ".")
+            i = name.rindex(".")
             prefix, base = name[:i], name[i+1:]
         else:
             prefix, base = "", base
