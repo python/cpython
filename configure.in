@@ -421,7 +421,12 @@ then
         fi
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp \"\" \$(LIBRARY); $LINKCC";;
+	   exp_extra="\"\""
+	   if test $ac_sys_release -ge 5 -o \
+		   $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
+	       exp_extra="."
+	   fi
+	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
 	dgux*)
 	   LINKCC="LD_RUN_PATH=$libdir $LINKCC";;
 	Monterey64*)

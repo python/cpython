@@ -413,6 +413,8 @@ class PyBuildExt(build_ext):
             if self.compiler.find_library_file(lib_dirs,
                                                  'ncurses'):
                 readline_libs.append('ncurses')
+            elif self.compiler.find_library_file(lib_dirs, 'curses'):
+                readline_libs.append('curses')
             elif self.compiler.find_library_file(lib_dirs +
                                                ['/usr/lib/termcap'],
                                                'termcap'):
@@ -654,8 +656,10 @@ class PyBuildExt(build_ext):
                 # the _curses module.
             if (self.compiler.find_library_file(lib_dirs, 'terminfo')):
                 curses_libs = ['curses', 'terminfo']
-            else:
+            elif (self.compiler.find_library_file(lib_dirs, 'termcap')):
                 curses_libs = ['curses', 'termcap']
+            else:
+                curses_libs = ['curses']
 
             exts.append( Extension('_curses', ['_cursesmodule.c'],
                                    libraries = curses_libs) )
