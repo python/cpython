@@ -591,6 +591,10 @@ arbitrary objects):
           {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
            else \var{x}}
           {(4)}
+  \lineiii{\var{a}.setdefault(\var{k}\optional{, \var{x}})}
+          {\code{\var{a}[\var{k}]} if \code{\var{a}.has_key(\var{k})},
+           else \var{x} (also setting it)}
+          {(5)}
 \end{tableiii}
 
 \noindent
@@ -611,6 +615,10 @@ correspond.  This allows the creation of \code{(\var{value},
 \item[(4)] Never raises an exception if \var{k} is not in the map,
 instead it returns \var{x}.  \var{x} is optional; when \var{x} is not
 provided and \var{k} is not in the map, \code{None} is returned.
+
+\item[(5)] \function{setdefault()} is like \function{get()}, except
+that if \var{k} is missing, \var{x} is both returned and inserted into
+the dictionary as the value of \var{k}.
 \end{description}
 
 
