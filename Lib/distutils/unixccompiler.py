@@ -77,6 +77,8 @@ class UnixCCompiler(CCompiler):
     shared_lib_extension = ".so"
     dylib_lib_extension = ".dylib"
     static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
+    if sys.platform == "cygwin":
+        exe_extension = ".exe"
 
     def preprocess(self, source,
                    output_file=None, macros=None, include_dirs=None,
