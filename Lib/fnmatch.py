@@ -37,6 +37,26 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
+def filter(names, pat):
+    """Return the subset of the list NAMES that match PAT"""
+    import os,posixpath
+    result=[]
+    pat=os.path.normcase(pat)
+    if not _cache.has_key(pat):
+        res = translate(pat)
+        _cache[pat] = re.compile(res)
+    match=_cache[pat].match
+    if os.path is posixpath:
+        # normcase on posix is NOP. Optimize it away from the loop.
+        for name in names:
+            if match(name):
+                result.append(name)
+    else:
+        for name in names:
+            if match(os.path.normcase(name)):
+                result.append(name)
+    return result
+
 def fnmatchcase(name, pat):
     """Test whether FILENAME matches PATTERN, including case.
 
