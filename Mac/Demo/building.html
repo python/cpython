@@ -30,21 +30,22 @@ The following things you definitely need:
 <UL>
 
 <LI> You need a MacPython source distribution, of course. You can
-obtain one from <A
-HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">ftp://ftp.cwi.nl/pub/jack/python/mac</A>
-or from the companion webpage at <A HREF="http://www.cwi.nl/~jack/macpython.html">
-http://www.cwi.nl/~jack/macpython.html</A> (which has up-to-date links to the other
-packages needed too)
-and possibly also from the standard <A
-HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp
+obtain one from <A HREF="ftp://ftp.cwi.nl/pub/jack/python/mac">
+ftp://ftp.cwi.nl/pub/jack/python/mac</A> or from the companion webpage
+at <A HREF="http://www.cwi.nl/~jack/macpython.html">
+http://www.cwi.nl/~jack/macpython.html</A> (which has up-to-date links
+to the other packages needed too) and possibly also from the standard
+<A HREF="ftp://ftp.python.org/pub/python/mac">python.org ftp
 site</A>. Everything you need is also included in the standard Python
 source distribution, but the organization is different. Look in
 directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff. <BR>
 
-If you are a <a href="http://www.python.org/psa">PSA</a> member, an alternative
-is to check the sources straight out of the CVS repository,
-see below. Most of the packages mentioned here are also available through CVS.
+If you are a <a href="http://www.python.org/psa">PSA</a> member, an
+alternative is to check the sources straight out of the CVS
+repository, see below. Most of the packages mentioned here are also
+available through CVS. Check the section on <a href="#cvs">CVS
+repository use</a> below.
 
 <LI> You need MetroWerks CodeWarrior. The current distribution has
 been built with CodeWarrior Pro 4. Ordering information is
@@ -154,6 +155,9 @@ First build GUSI. If you didn't get the python-specific GUSI you have to
 move the files from the "CWGUSI-mods" to the right
 place in the CWGUSI distribution folder. Build the MSL version for your
 platform (ppc, 68k, cfm68k). <p>
+
+<em>Note:</em> always rebuild the CWGUSI libraries, even if you have
+checked them out from the CVS repository. <P>
 
 Next, in
 <code>MoreFiles</code>, <code>libjpeg</code>, <code>pbmplus</code>,
@@ -423,7 +427,7 @@ This rather convoluted procedure is needed to ensure that plugin modules don't
 accidentally link with those entrypoints from PythonCore, which will not work because
 those routines have to be in the same code fragment as they are used from.
 
-<H2>Using the CVS source archive</H2>
+<H2><a name="cvs">Using the CVS source archive</a></H2>
 
 It is possible to access the Python sources through remote CVS if you are
 a PSA member. The advantage of this is that you get the very latest sources,
@@ -438,18 +442,24 @@ the maccvs preferences you should also set (in the "binary files" section)
 "use mac encoding: applesingle" and (in the "text files" section) "use ISO latin 1
 conversion". <p>
 
-The machine-independent Python sources are checked out from the main Python
-CVS archive, see the <a href="http://www.python.org/psa">PSA homepage</a> for
-details. <p>
+The machine-independent Python sources are checked out from the main
+Python CVS archive, see the <a href="http://www.python.org/psa">PSA
+homepage</a> for details. When you check the sources out you will get
+something like <code>Python:dist:src</code>, and under that the
+<code>Modules</code>, <code>Lib</code>, etc hierarchy. The
+<code>src</code> folder should be renamed to <code>Python</code>, and
+is what this document refers to as the "toplevel Python folder". <P>
 
-Next, within the toplevel Python folder, you check out the mac-specific sources
-in a Mac folder. The CVS path to use can be found at the
-<a href="http://www.cwi.nl/~jack/macpython.html">MacPython homepage</a>. Finally,
-you check out the external libraries needed in the parent of the Python folder. The
-CVS path for these libraries is also mentioned at the MacPython homepage. <p>
+Next, within the toplevel Python folder, you check out the
+mac-specific sources in a Mac folder. The CVS path to use can be found
+at the <a href="http://www.cwi.nl/~jack/macpython.html">MacPython
+homepage</a>. Finally, you check out the external libraries needed in
+the parent of the Python folder. The CVS path for these libraries is
+also mentioned at the MacPython homepage. <p>
 
-Neither of the pages mentioned above contains the passwords for the CVS sites,
-for obvious reasons, but they do contain instructions on how to obtain the passwords. <p>
+Neither of the pages mentioned above contains the passwords for the
+CVS sites, for obvious reasons, but they do contain instructions on
+how to obtain the passwords. <p>
 
 <H2>Odds and ends</H2>
 
