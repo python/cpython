@@ -372,7 +372,7 @@ def main():
         except:
             sys.stderr.write('An error occurred:-)\n')
             sys.exit(1)
-        genmodule.write(sys.stdout, m)
+        ##genmodule.write(sys.stdout, m)
     else:
         sys.stderr.write('Usage: modulator [file]\n')
         sys.exit(1)
