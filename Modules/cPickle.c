@@ -4386,7 +4386,7 @@ static struct PyMethodDef cPickle_methods[] = {
 };
 
 static int
-init_stuff(PyObject *module, PyObject *module_dict) {
+init_stuff(PyObject *module_dict) {
     PyObject *string, *copy_reg, *t, *r;
 
 #define INIT_STR(S) UNLESS(S ## _str=PyString_FromString(#S)) return -1;
@@ -4516,16 +4516,22 @@ init_stuff(PyObject *module, PyObject *module_dict) {
 #endif
 DL_EXPORT(void)
 initcPickle(void) {
-    PyObject *m, *d, *v;
+    PyObject *m, *d, *di, *v, *k;
+    int i;
     char *rev="1.71";
     PyObject *format_version;
     PyObject *compatible_formats;
 
-    if (init_stuff(m, d) < 0) return;
-
     Picklertype.ob_type = &PyType_Type;
     Unpicklertype.ob_type = &PyType_Type;
     PdataType.ob_type = &PyType_Type;
+
+    /* Initialize some pieces. We need to do this before module creation, 
+       so we're forced to use a temporary dictionary. :( 
+    */
+    di=PyDict_New();
+    if (!di) return;
+    if (init_stuff(di) < 0) return;
 
     /* Create the module and add the functions */
     m = Py_InitModule4("cPickle", cPickle_methods,
@@ -4536,6 +4542,15 @@ initcPickle(void) {
     d = PyModule_GetDict(m);
     PyDict_SetItemString(d,"__version__", v = PyString_FromString(rev));
     Py_XDECREF(v);
+
+    /* Copy data from di. Waaa. */
+    for (i=0; PyDict_Next(di, &i, &k, &v); ) {
+        if (PyObject_SetItem(d, k, v) < 0) {
+            Py_DECREF(di);
+            return;
+        }
+    }
+    Py_DECREF(di);
 
     format_version = PyString_FromString("1.3");
     compatible_formats = Py_BuildValue("[sss]", "1.0", "1.1", "1.2");
