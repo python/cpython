@@ -493,6 +493,13 @@ typedef unsigned long uintptr_t;
 /* Define as the size of the unicode type. */
 #define Py_UNICODE_SIZE SIZEOF_SHORT
 
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be 16-bit unsigned type. (see
+   Include/unicodeobject.h). */
+#if Py_UNICODE_SIZE == 2
+#define HAVE_USABLE_WCHAR_T
+#endif
+
 /* Define if you want cycle garbage collection */
 #define WITH_CYCLE_GC 1
 
