@@ -1654,7 +1654,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		/* Are slots allowed? */
 		nslots = PyTuple_GET_SIZE(slots);
 		if (nslots > 0 && base->tp_itemsize != 0) {
-			/* for the special case of meta types, allow slots */
 			PyErr_Format(PyExc_TypeError,
 				     "nonempty __slots__ "
 				     "not supported for subtype of '%s'",
