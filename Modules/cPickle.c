@@ -2455,9 +2455,10 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		goto finally;
 	}
 
-	if ((__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type))) {
+	assert(t == NULL);	/* just a reminder */
+	__reduce__ = PyDict_GetItem(dispatch_table, (PyObject *)type);
+	if (__reduce__ != NULL) {
 		Py_INCREF(__reduce__);
-
 		Py_INCREF(args);
 		ARG_TUP(self, args);
 		if (self->arg) {
@@ -2467,15 +2468,13 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		if (! t) goto finally;
 	}
 	else {
-		PyErr_Clear();
-
-		if ((__reduce__ = PyObject_GetAttr(args, __reduce___str))) {
+		__reduce__ = PyObject_GetAttr(args, __reduce___str);
+		if (__reduce__ == NULL)
+			PyErr_Clear();
+		else {
 			t = PyObject_Call(__reduce__, empty_tuple, NULL);
 			if (!t)
 				goto finally;
-		}
-		else {
-			PyErr_Clear();
 		}
 	}
 
@@ -2486,21 +2485,22 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		}
 
 		if (!PyTuple_Check(t)) {
-			cPickle_ErrFormat(PicklingError, "Value returned by %s must "
-					  "be a tuple", "O", __reduce__);
+			cPickle_ErrFormat(PicklingError, "Value returned by "
+					"%s must be a tuple",
+					"O", __reduce__);
 			goto finally;
 		}
 
 		size = PyTuple_Size(t);
 
-		if ((size != 3) && (size != 2)) {
-			cPickle_ErrFormat(PicklingError, "tuple returned by %s must "
-					  "contain only two or three elements", "O", __reduce__);
+		if (size != 3 && size != 2) {
+			cPickle_ErrFormat(PicklingError, "tuple returned by "
+				"%s must contain only two or three elements",
+				"O", __reduce__);
 			goto finally;
 		}
 
 		callable = PyTuple_GET_ITEM(t, 0);
-
 		arg_tup = PyTuple_GET_ITEM(t, 1);
 
 		if (size > 2) {
@@ -2510,8 +2510,9 @@ save(Picklerobject *self, PyObject *args, int pers_save)
 		}
 
 		if (!( PyTuple_Check(arg_tup) || arg_tup==Py_None ))  {
-			cPickle_ErrFormat(PicklingError, "Second element of tuple "
-					  "returned by %s must be a tuple", "O", __reduce__);
+			cPickle_ErrFormat(PicklingError, "Second element of "
+				"tuple returned by %s must be a tuple",
+				"O", __reduce__);
 			goto finally;
 		}
 
