@@ -28,6 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "config.h"
 #endif
 
+#include "rename2.h"
+
 #ifdef THINK_C
 #define CONSOLE_IO
 #endif
