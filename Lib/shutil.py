@@ -34,16 +34,19 @@ def copyfile(src, dst):
 
 def copymode(src, dst):
     """Copy mode bits from src to dst"""
-    st = os.stat(src)
-    mode = stat.S_IMODE(st[stat.ST_MODE])
-    os.chmod(dst, mode)
+    if hasattr(os, 'chmod'):
+        st = os.stat(src)
+        mode = stat.S_IMODE(st[stat.ST_MODE])
+        os.chmod(dst, mode)
 
 def copystat(src, dst):
     """Copy all stat info (mode bits, atime and mtime) from src to dst"""
     st = os.stat(src)
     mode = stat.S_IMODE(st[stat.ST_MODE])
-    os.utime(dst, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
-    os.chmod(dst, mode)
+    if hasattr(os, 'utime'):
+        os.utime(dst, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
+    if hasattr(os, 'chmod'):
+        os.chmod(dst, mode)
 
 
 def copy(src, dst):
