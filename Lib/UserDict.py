@@ -90,13 +90,15 @@ class DictMixin:
         except KeyError:
             return False
         return True
-    __contains__ = has_key
+    def __contains__(self, key):
+        return self.has_key(key)
 
     # third level takes advantage of second level definitions
     def iteritems(self):
         for k in self:
             yield (k, self[k])
-    iterkeys = __iter__
+    def iterkeys(self):
+        return self.__iter__()
 
     # fourth level uses definitions from lower levels
     def itervalues(self):
