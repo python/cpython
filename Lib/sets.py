@@ -4,6 +4,16 @@ This module implements sets using dictionaries whose values are
 ignored.  The usual operations (union, intersection, deletion, etc.)
 are provided as both methods and operators.
 
+Important: sets are not sequences!  While they support 'x in s',
+'len(s)', and 'for x in s', none of those operations are unique for
+sequences; for example, mappings support all three as well.  The
+characteristic operation for sequences is subscripting with small
+integers: s[i], for i in range(len(s)).  Sets don't support
+subscripting at all.  Also, sequences allow multiple occurrences and
+their elements have a definite order; sets on the other hand don't
+record multiple occurrences and don't remember the order of element
+insertion (which is why they don't support s[i]).
+
 The following classes are provided:
 
 BaseSet -- All the operations common to both mutable and immutable
