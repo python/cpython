@@ -182,6 +182,24 @@ class MersenneTwister_TestBasicOps(TestBasicOps):
         seed = (1L << (10000 * 8)) - 1  # about 10K bytes
         self.gen.seed(seed)
 
+class TestDistributions(unittest.TestCase):
+    def test_zeroinputs(self):
+        # Verify that distributions can handle a series of zero inputs'
+        g = random.Random()
+        x = [g.random() for i in xrange(50)] + [0.0]*5
+        g.random = x[:].pop; g.uniform(1,10)
+        g.random = x[:].pop; g.paretovariate(1.0)
+        g.random = x[:].pop; g.expovariate(1.0)
+        g.random = x[:].pop; g.weibullvariate(1.0, 1.0)
+        g.random = x[:].pop; g.normalvariate(0.0, 1.0)
+        g.random = x[:].pop; g.gauss(0.0, 1.0)
+        g.random = x[:].pop; g.lognormvariate(0.0, 1.0)
+        g.random = x[:].pop; g.vonmisesvariate(0.0, 1.0)
+        g.random = x[:].pop; g.gammavariate(0.01, 1.0)
+        g.random = x[:].pop; g.gammavariate(1.0, 1.0)
+        g.random = x[:].pop; g.gammavariate(200.0, 1.0)
+        g.random = x[:].pop; g.betavariate(3.0, 3.0)
+
 class TestModule(unittest.TestCase):
     def testMagicConstants(self):
         self.assertAlmostEqual(random.NV_MAGICCONST, 1.71552776992141)
@@ -199,6 +217,7 @@ def test_main():
     suite = unittest.TestSuite()
     for testclass in (WichmannHill_TestBasicOps,
                       MersenneTwister_TestBasicOps,
+                      TestDistributions,
                       TestModule):
         suite.addTest(unittest.makeSuite(testclass))
     test_support.run_suite(suite)
