@@ -242,17 +242,12 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	type->tp_base = new_base;
 
 	if (mro_internal(type) < 0) {
-		type->tp_bases = old_bases;
-		type->tp_base = old_base;
-		type->tp_mro = old_mro;
-
-		Py_DECREF(value);
-		Py_DECREF(new_base);
-
-		return -1;
+		goto bail;
 	}
 
 	temp = PyList_New(0);
+	if (!temp)
+		goto bail;
 
 	r = mro_subclasses(type, temp);
 
@@ -267,7 +262,7 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 			Py_INCREF(cls->tp_mro);
 		}
 		Py_DECREF(temp);
-		return r;
+		goto bail;
 	}
 
 	Py_DECREF(temp);
@@ -303,6 +298,16 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	Py_DECREF(old_mro);
 
 	return r;
+
+  bail:
+	type->tp_bases = old_bases;
+	type->tp_base = old_base;
+	type->tp_mro = old_mro;
+	
+	Py_DECREF(value);
+	Py_DECREF(new_base);
+	
+	return -1;
 }
 
 static PyObject *
