@@ -53,7 +53,9 @@ This exception is raised for socket- or address-related errors.
 The accompanying value is either a string telling what went wrong or a
 pair \code{(\var{errno}, \var{string})}
 representing an error returned by a system
-call, similar to the value accompanying \code{posix.error}.
+call, similar to the value accompanying \code{os.error}.
+See the module \module{errno}\refbimodindex{errno}, which contains
+names for the error codes defined by the underlying operating system.
 \end{excdesc}
 
 \begin{datadesc}{AF_UNIX}
