@@ -107,12 +107,52 @@ for i in [0, 1, 2, ...] until it returns a non-string.\n\
 It should return the next possible completion starting with 'text'.\
 ";
 
+/* Exported function to read the current line buffer */
+
+static PyObject *
+get_line_buffer(self, args)
+	PyObject *self;
+        PyObject *args;
+{
+	if (PyArg_NoArgs(args))
+		return NULL;
+	return PyString_FromString(rl_line_buffer);
+}
+
+static char doc_get_line_buffer[] = "\
+get_line_buffer([function]) -> string\n\
+return the current contents of the line buffer.\
+";
+
+/* Exported function to insert text into the line buffer */
+
+static PyObject *
+insert_text(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s;
+	if (!PyArg_ParseTuple(args, "s", &s))
+		return NULL;
+	rl_insert_text(s);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+
+static char doc_insert_text[] = "\
+insert_text(string) -> None\n\
+Insert text into the command line.\
+";
+
 
 /* Table of functions exported by the module */
 
 static struct PyMethodDef readline_methods[] =
 {
 	{"parse_and_bind", parse_and_bind, 1, doc_parse_and_bind},
+	{"get_line_buffer", get_line_buffer, 1, doc_get_line_buffer},
+	{"insert_text", insert_text, 1, doc_insert_text},
 	{"read_init_file", read_init_file, 1, doc_read_init_file},
 	{"set_completer", set_completer, 1, doc_set_completer},
 	{0, 0}
