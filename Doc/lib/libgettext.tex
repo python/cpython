@@ -95,7 +95,8 @@ for returning either standard 8-bit strings or Unicode strings.
 Translations instances can also install themselves in the built-in
 namespace as the function \function{_()}.
 
-\begin{funcdesc}{find}{domain\optional{, localedir\optional{, languages}}}
+\begin{funcdesc}{find}{domain\optional{, localedir\optional{, 
+                        languages\optional{, all}}}}
 This function implements the standard \file{.mo} file search
 algorithm.  It takes a \var{domain}, identical to what
 \function{textdomain()} takes.  Optional \var{localedir} is as in
@@ -119,7 +120,9 @@ components:
 \file{\var{localedir}/\var{language}/LC_MESSAGES/\var{domain}.mo}
 
 The first such file name that exists is returned by \function{find()}.
-If no such file is found, then \code{None} is returned.
+If no such file is found, then \code{None} is returned. If \var{all}
+is given, it returns a list of all file names, in the order in which
+they appear in the languages list or the environment variables.
 \end{funcdesc}
 
 \begin{funcdesc}{translation}{domain\optional{, localedir\optional{,
@@ -127,15 +130,22 @@ If no such file is found, then \code{None} is returned.
                               class_,\optional{fallback}}}}}
 Return a \class{Translations} instance based on the \var{domain},
 \var{localedir}, and \var{languages}, which are first passed to
-\function{find()} to get the
-associated \file{.mo} file path.  Instances with
+\function{find()} to get a list of the
+associated \file{.mo} file paths.  Instances with
 identical \file{.mo} file names are cached.  The actual class instantiated
 is either \var{class_} if provided, otherwise
 \class{GNUTranslations}.  The class's constructor must take a single
-file object argument.  If no \file{.mo} file is found, this
-function raises \exception{IOError} if \var{fallback} is false
-(which is the default), and returns a \class{NullTranslations} instance
-if \var{fallback} is true.
+file object argument.  
+
+If multiple files are found, later files are used as fallbacks for
+earlier ones. To allow setting the fallback, \function{copy.copy}
+is used to clone each translation object from the cache; the actual
+instance data is still shared with the cache.
+
+If no \file{.mo} file is found, this function raises
+\exception{IOError} if \var{fallback} is false (which is the default),
+and returns a \class{NullTranslations} instance if \var{fallback} is
+true.
 \end{funcdesc}
 
 \begin{funcdesc}{install}{domain\optional{, localedir\optional{, unicode}}}
@@ -168,7 +178,8 @@ methods of \class{NullTranslations}:
 \begin{methoddesc}[NullTranslations]{__init__}{\optional{fp}}
 Takes an optional file object \var{fp}, which is ignored by the base
 class.  Initializes ``protected'' instance variables \var{_info} and
-\var{_charset} which are set by derived classes.  It then calls
+\var{_charset} which are set by derived classes, as well as \var{_fallback},
+which is set through \method{add_fallback}.  It then calls
 \code{self._parse(fp)} if \var{fp} is not \code{None}.
 \end{methoddesc}
 
@@ -179,13 +190,21 @@ you have an unsupported message catalog file format, you should
 override this method to parse your format.
 \end{methoddesc}
 
+\begin{methoddesc}{NullTranslations}{add_fallback}{fallback}
+Add \var{fallback} as the fallback object for the current translation
+object. A translation object should consult the fallback if it cannot
+provide a translation for a given message.
+\end{methoddesc}
+
 \begin{methoddesc}[NullTranslations]{gettext}{message}
-Return the translated message.  Overridden in derived classes.
+If a fallback has been set, forward \method{gettext} to the fallback.
+Otherwise, return the translated message.  Overridden in derived classes.
 \end{methoddesc}
 
 \begin{methoddesc}[NullTranslations]{ugettext}{message}
-Return the translated message as a Unicode string.  Overridden in
-derived classes.
+If a fallback has been set, forward \method{ugettext} to the fallback.
+Otherwise, return the translated message as a Unicode string.
+Overridden in derived classes.
 \end{methoddesc}
 
 \begin{methoddesc}[NullTranslations]{info}{}
