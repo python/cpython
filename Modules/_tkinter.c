@@ -46,6 +46,11 @@ Copyright (C) 1994 Steen Lumholt.
 #define PyMODINIT_FUNC void
 #endif
 
+#ifndef PyBool_Check
+#define PyBool_Check(o)       0
+#define PyBool_FromLong       PyInt_FromLong
+#endif
+
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
    making _tkinter correct for this API means to break earlier
    versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
