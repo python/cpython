@@ -248,12 +248,11 @@ class TCPServer:
 	The default is to print a traceback and continue.
 
 	"""
-	exc, value, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
 	print '-'*40
 	print 'Exception happened during processing of request from',
 	print client_address
 	import traceback
-	traceback.print_exception(exc, value, tb)
+	traceback.print_exc()
 	print '-'*40
 
 

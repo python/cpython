@@ -155,7 +155,12 @@ def get_qualified_path(name):
     """ return a more qualified path to name"""
     import sys
     import os
-    for dir in sys.path:
+    path = sys.path
+    try:
+	path = [os.path.dirname(__file__)] + path
+    except NameError:
+	pass
+    for dir in path:
 	fullname = os.path.join(dir, name)
 	if os.path.exists(fullname):
 	    return fullname
