@@ -196,7 +196,8 @@ arguments and returns complex results.
 
 cursesmodule.c -- Curses interface.
 
-dbhashmodule.c -- Obsolete.
+dbhashmodule.c -- Obsolete; this functionality is now provided by
+bsddbmodule.c.
 
 dlmodule.c --  A highly experimental and dangerous device for calling
 arbitrary C functions in arbitrary shared libraries.
@@ -210,6 +211,10 @@ timingmodule.c -- Measure time intervals to high resolution (obsolete
 -- use time.clock() instead).
 
 resource.c -- Interface to getrusage() and friends.
+
+stdwinmodule.c -- Interface to STDWIN (an old, unsupported
+platform-independent GUI package).  Obsolete; use Tkinter for a
+platform-independent GUI instead.
 
 The following are SGI specific:
 
