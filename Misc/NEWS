@@ -284,7 +284,7 @@ Mac
 ---
 
 - Bundlebuilder now inherits default values in the right way.  It was
-  previously possible for app bundles to et a type of "BNDL" instead
+  previously possible for app bundles to get a type of "BNDL" instead
   of "APPL."  Other improvements include, a --build-id option to
   specify the CFBundleIdentifier and using the --python option to set
   the executable in the bundle.
