@@ -48,6 +48,9 @@ Extension modules
 Library
 -------
 
+- Patch #841977: modulefinder didn't find extension modules
+  in packages
+
 - Bug #792101: Add missing file operations for httplib.SSLFile.
 
 - Bug #811082: test_tempfile fails if space in install directory.
