@@ -208,7 +208,7 @@ class SocketIO:
         if how == "EXCEPTION":
             mod, name, args, tb = what
             self.traceback = tb
-            if mod:
+            if mod: # not string exception
                 try:
                     __import__(mod)
                     module = sys.modules[mod]
@@ -220,7 +220,10 @@ class SocketIO:
                     except AttributeError:
                         pass
                     else:
+                        # instantiate a built-in exception object and raise it
                         raise getattr(__import__(mod), name)(*args)
+                name = mod + "." + name
+            # do the best we can:
             raise name, args
         if how == "ERROR":
             raise RuntimeError, what
