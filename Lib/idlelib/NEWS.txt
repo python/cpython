@@ -1,7 +1,7 @@
-What's New in IDLE 1.1.1?
-=======================
+What's New in IDLE 1.1.1c1?
+===========================
 
-*Release date: XX-JAN-2005*
+*Release date: 10-MAR-2005*
 
 - If an extension can't be loaded, print warning and skip it instead of
   erroring out.
