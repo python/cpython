@@ -3,7 +3,7 @@
     Unlike most of the other codecs which target Unicode, this codec
     will return Python string objects for both encode and decode.
 
-    Adapted by Raymond Hettinger from bz2_codec which was written
+    Adapted by Raymond Hettinger from zlib_codec.py which was written
     by Marc-Andre Lemburg (mal@lemburg.com).
 
 """
