@@ -609,6 +609,19 @@ so care should be taken that \ctype{FILE*} parameters are only passed
 to these functions if it is certain that they were created by the same
 library that the Python runtime is using.
 
+\begin{cfuncdesc}{int}{Py_Main}{int argc, char **argv}
+  The main program for the standard interpreter.  This is made
+  available for programs which embed Python.  The \var{argc} and
+  \var{argv} parameters should be prepared exactly as those which are
+  passed to a C program's \cfunction{main()} function.  It is
+  important to note that the argument list may be modified (but the
+  contents of the strings pointed to by the argument list are not).
+  The return value will be the integer passed to the
+  \function{sys.exit()} function, \code{1} if the interpreter exits
+  due to an exception, or \code{2} if the parameter list does not
+  represent a valid Python command line.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyRun_AnyFile}{FILE *fp, char *filename}
   If \var{fp} refers to a file associated with an interactive device
   (console or terminal input or \UNIX{} pseudo-terminal), return the
@@ -4573,6 +4586,14 @@ error (so that the caller needn't check for \NULL{}).
 Swap the current thread state with the thread state given by the
 argument \var{tstate}, which may be \NULL{}.  The interpreter lock
 must be held.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyThreadState_GetDict}{}
+Return a dictionary in which extensions can store thread-specific
+state information.  Each extension should use a unique key to use to
+store state in the dictionary.  If this function returns \NULL, an
+exception has been raised and the caller should allow it to
+propogate.
 \end{cfuncdesc}
 
 
