@@ -1,31 +1,8 @@
 \section{Built-in Module \sectcode{gdbm}}
 \bimodindex{gdbm}
 
-Gdbm provides python programs with an interface to the GNU \code{gdbm}
-database library.  Gdbm objects are of the mapping type, so they can be
-handled just like objects of the built-in \dfn{dictionary} type,
-except that keys and values are always strings, and printing a gdbm
-object doesn't print the keys and values.
+This module is nearly identical to the \code{dbm} module, but uses
+GDBM instead.  Its interface is identical, and not repeated here.
 
-The module is based on the Dbm module, modified to use GDBM instead.
-
-The module defines the following constant and functions:
-
-\renewcommand{\indexsubitem}{(in module gdbm)}
-\begin{excdesc}{error}
-Raised on gdbm-specific errors, such as I/O errors. \code{KeyError} is
-raised for general mapping errors like specifying an incorrect key.
-\end{excdesc}
-
-\begin{funcdesc}{open}{filename\, rwmode\, filemode}
-Open a gdbm database and return a mapping object.  \var{filename} is
-the name of the database file, \var{rwmode} is \code{'r'}, \code{'w'},
-\code{'c'}, or \code{'n'} for reader, writer (this also gives read
-access), create (writer, but create the database if it doesn't already
-exist) and newdb (which will always create a new database).  Only one
-writer may open a gdbm file and many readers may open the file.  Readers
-and writers cannot open the gdbm file at the same time.  Note that the
-\code{GDBM_FAST} mode of opening the database is not supported.
-\var{filemode} is the \UNIX\ mode of the file, used only when a
-database is created (but to be supplied at all times).
-\end{funcdesc}
+Warning: the file formats created by gdbm and dbm are incompatible.
+\bimodindex{dbm}

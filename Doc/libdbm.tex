@@ -1,11 +1,15 @@
 \section{Built-in Module \sectcode{dbm}}
 \bimodindex{dbm}
 
-Dbm provides python programs with an interface to the unix \code{ndbm}
-database library.  Dbm objects are of the mapping type, so they can be
-handled just like objects of the built-in \dfn{dictionary} type,
-except that keys and values are always strings, and printing a dbm
-object doesn't print the keys and values.
+The \code{dbm} module provides an interface to the {\UNIX}
+\code{(n)dbm} library.  Dbm objects behave like mappings
+(dictionaries), except that keys and values are always strings.
+Printing a dbm object doesn't print the keys and values, and the
+\code{items()} and \code{values()} methods are not supported.
+
+See also the \code{gdbm} module, which provides a similar interface
+using the GNU GDBM library.
+\bimodindex{gdbm}
 
 The module defines the following constant and functions:
 
@@ -15,11 +19,18 @@ Raised on dbm-specific errors, such as I/O errors. \code{KeyError} is
 raised for general mapping errors like specifying an incorrect key.
 \end{excdesc}
 
-\begin{funcdesc}{open}{filename\, rwmode\, filemode}
-Open a dbm database and return a mapping object.  \var{filename} is
-the name of the database file (without the \file{.dir} or \file{.pag}
-extensions), \var{rwmode} is \code{'r'}, \code{'w'} or \code{'rw'} to
-open the database fore reading, writing or both respectively,
-and \var{filemode} is the \UNIX{} mode of the file, used only
-when the database has to be created (but to be supplied at all times).
+\begin{funcdesc}{open}{filename\, \optional{flag\, \optional{mode}}}
+Open a dbm database and return a dbm object.  The \var{filename}
+argument is the name of the database file (without the \file{.dir} or
+\file{.pag} extensions).
+
+The optional \var{flag} argument can be
+\code{'r'} (to open an existing database for reading only --- default),
+\code{'w'} (to open an existing database for reading and writing),
+\code{'c'} (which creates the database if it doesn't exist), or
+\code{'n'} (which always creates a new empty database).
+
+The optional \var{mode} argument is the \UNIX{} mode of the file, used
+only when the database has to be created.  It defaults to octal
+\code{0666}.
 \end{funcdesc}
