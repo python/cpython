@@ -15,8 +15,9 @@ INCLUDE <list2.wml>
 
 PARAGRAPH "1Heading" TYPE Heading
 {
-  USES "L6H1-NodeLower"
-} 
+  USES "L2H2"
+}
+ 
 
 
 PARAGRAPH "1Heading*" TYPE Heading
@@ -57,8 +58,9 @@ PARAGRAPH "1StepLev3" TYPE List
 
 PARAGRAPH "2Heading" TYPE Heading
 {
-  USES "L7H1-NodeLower"
-} 
+  USES "L3H3"
+}
+ 
 
 
 PARAGRAPH "2Heading*" TYPE Heading
@@ -75,8 +77,9 @@ PARAGRAPH "2HeadingTOC" TYPE Normal
 
 PARAGRAPH "3Heading" TYPE Heading
 {
-  USES "L8H1-NodeLower"
-} 
+  USES "L4H4"
+}
+ 
 
 
 PARAGRAPH "3Heading*" TYPE Heading
@@ -99,8 +102,9 @@ PARAGRAPH "3Level" TYPE Normal
 
 PARAGRAPH "4Heading" TYPE Heading
 {
-  USES "L9H1-NodeLower"
-} 
+  USES "L5H5"
+}
+ 
 
 
 PARAGRAPH "4Heading*" TYPE Heading
@@ -223,10 +227,11 @@ PARAGRAPH "Center" TYPE Normal
 } 
 
 
-PARAGRAPH "Chapter" TYPE Normal
+PARAGRAPH "Chapter" TYPE Heading
 {
-  USES "L2H1-NodeLower"
-} 
+  USES "L1H1HR-NodeTop"
+}
+ 
 
 
 PARAGRAPH "Chapter*" TYPE Heading
@@ -355,9 +360,9 @@ PARAGRAPH "HangIndentLev3" TYPE Normal
 } 
 
 
-PARAGRAPH "Header" TYPE Normal
+PARAGRAPH "Header" TYPE Heading
 {
-  USES "FMDocumentTitle"
+  USES "L14H4"
 } 
 
 
@@ -475,9 +480,9 @@ PARAGRAPH "Table" TYPE Normal
 } 
 
 
-PARAGRAPH "Title" TYPE Heading
+PARAGRAPH "Title" TYPE Normal
 {
-  USES "L2H1-NodeLower"
+  USES "FMDocumentTitle"
 } 
 
 
@@ -535,6 +540,18 @@ PARAGRAPH "Type 17IX" TYPE Normal
 } 
 
 
+PARAGRAPH "WWW-IX" TYPE Heading
+{
+  USES "IndexHeadingL-IndexNodeL"
+} 
+
+
+PARAGRAPH "WWW-TOC" TYPE Heading
+{
+  USES "ExtTOCHeading-TocNode"
+} 
+
+
 CHARACTER { TAG "Code" MAP CODE } 
 
 
@@ -551,10 +568,3 @@ CHARACTER { TAG "InitialCaps" MAP UNDERLINE }
 
 
 CHARACTER { TAG "Strong" MAP BOLD } 
-
-
-PARAGRAPH "WWW-TOC" TYPE Heading
-{
-  USES "ExtTOCHeading-TocNode"
-}
- 
