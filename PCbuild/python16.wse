@@ -97,17 +97,6 @@ item: Set Variable
 end
 item: End Block
 end
-item: Remark
-  Text=Where system DLLs are installed (choose one of the following):
-end
-item: Set Variable
-  Variable=DLLDEST
-  Value=%MAINDIR%
-end
-remarked item: Set Variable
-  Variable=DLLDEST
-  Value=%SYS32%
-end
 item: Set Variable
   Variable=BACKUP
   Value=%MAINDIR%\BACKUP
@@ -650,6 +639,17 @@ item: End Block
 end
 item: Open/Close INSTALL.LOG
 end
+item: Remark
+  Text=Where system DLLs are installed (choose one of the following):
+end
+item: Set Variable
+  Variable=DLLDEST
+  Value=%MAINDIR%
+end
+remarked item: Set Variable
+  Variable=DLLDEST
+  Value=%SYS32%
+end
 item: Check Disk Space
   Component=COMPONENTS
 end
@@ -699,6 +699,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\pcbuild\_sre.pyd
+  Destination=%MAINDIR%\DLLs\_sre.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\python16.dll
   Destination=%DLLDEST%\python16.dll
   Flags=0000000000000010
@@ -744,7 +749,19 @@ end
 item: Install File
   Source=%_SRC_%\Lib\encodings\*.py
   Destination=%MAINDIR%\Lib\encodings
-  Description=Tkinter related library modules
+  Description=Unicode encoding tables
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Lib\distutils\*.py
+  Destination=%MAINDIR%\Lib\distutils
+  Description=Distribution utility modules
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_SRC_%\Lib\distutils\command\*.py
+  Destination=%MAINDIR%\Lib\distutils\command
+  Description=Distribution utility modules
   Flags=0000000000000010
 end
 item: Install File
@@ -1122,7 +1139,7 @@ item: Set Variable
   Flags=00010100
 end
 item: Include Script
-  Pathname=C:\Program Files\WISE\include\uninstal.wse
+  Pathname=%_WISE_%\include\uninstal.wse
 end
 item: If/While Statement
   Variable=COMPONENTS
@@ -1234,17 +1251,17 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=D:\src\tcl8.3\bin\tcl83.dll
+  Source=%_SRC_%\..\tcl8.3\bin\tcl83.dll
   Destination=%MAINDIR%\tcl83.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=D:\src\tcl8.3\bin\tk83.dll
+  Source=%_SRC_%\..\tcl8.3\bin\tk83.dll
   Destination=%MAINDIR%\tk83.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=D:\src\tcl8.3\lib\*.*
+  Source=%_SRC_%\..\tcl8.3\lib\*.*
   Destination=%MAINDIR%\tcl
   Flags=0000000100000010
 end
