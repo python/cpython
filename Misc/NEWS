@@ -34,6 +34,9 @@ Core and builtins
   unicode system with multiple active interpreters, or successive
   interpreter executions, would fail.
 
+- "%c" % u"a" now returns a unicode string instead of raising a
+  TypeError. See SF patch #710127.
+
 Extension modules
 -----------------
 

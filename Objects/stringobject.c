@@ -3933,6 +3933,13 @@ PyString_Format(PyObject *format, PyObject *args)
 					fill = '0';
 				break;
 			case 'c':
+#ifdef Py_USING_UNICODE
+				if (PyUnicode_Check(v)) {
+					fmt = fmt_start;
+					argidx = argidx_start;
+					goto unicode;
+				}
+#endif
 				pbuf = formatbuf;
 				len = formatchar(pbuf, sizeof(formatbuf), v);
 				if (len < 0)
