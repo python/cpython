@@ -191,7 +191,7 @@ file_seek(f, args)
 		whence = 0; /* SEEK_SET */
 	}
 	else {
-		if (!getlonglongargs(args, &offset, &whence))
+		if (!getlonglongarg(args, &offset, &whence))
 			return NULL;
 	}
 	errno = 0;
