@@ -24,6 +24,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* "allobjects.c" -- Source for precompiled header "allobjects.h" */
 
+#ifdef THINK_C
+#define macintosh
+#endif
+
 #include <stdio.h>
 #include <string.h>
 
