@@ -858,6 +858,17 @@ specify an arbitrary Python object for the ``value'' of the exception.
 You need not increment its reference count.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception, const char *format, ...}
+This function sets the error indicator using a printf-style format
+string.  The first argument specifies the exception type and the
+second argument specifies the format string for the exception.  Any
+subsequent arguments are converted to output by the C library's
+\cfunction{vsprintf()} function.  The buffer used internally by
+PyErr_Format is 500 bytes long.  The caller is responsible for
+guaranteeing that the formatted output does not overflow the buffer.
+The return value is always \NULL{}.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyErr_SetNone}{PyObject *type}
 This is a shorthand for \samp{PyErr_SetObject(\var{type}, Py_None)}.
 \end{cfuncdesc}
