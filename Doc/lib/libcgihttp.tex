@@ -18,6 +18,11 @@ run CGI scripts.
 on Mac OS it will only be able to run Python scripts within the same
 process as itself.}
 
+\note{CGI scripts run by the \class{CGIHTTPRequestHandler} class cannot execute
+redirects (HTTP code 302), because code 200 (script output follows)
+is sent prior to execution of the CGI script.  This pre-empts the status
+code.}
+
 The \module{CGIHTTPServer} module defines the following class:
 
 \begin{classdesc}{CGIHTTPRequestHandler}{request, client_address, server}
