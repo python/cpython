@@ -19,7 +19,6 @@
 *.orig
 *.prj
 *.prj.exp
-*.pyc
 *.xSYM
 *.µ
 *.µ.exp
@@ -33,3 +32,5 @@ CVS
 Makefile*
 Setup.in
 [(]*[)]
+*.pyc
+*.pyo

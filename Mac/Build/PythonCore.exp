@@ -130,6 +130,7 @@ PyMarshal_ReadObjectFromString
 PyMarshal_ReadObjectFromFile
 PyMarshal_ReadLastObjectFromFile
 PyMarshal_ReadLongFromFile
+PyMarshal_ReadShortFromFile
 PyMarshal_WriteObjectToFile
 PyMarshal_WriteLongToFile
 _Py_PackageContext
@@ -717,7 +718,7 @@ pcre_info
 pcre_version
 pcre_study
 initcPickle
-Pickler_setattr
+fast_save_leave
 cPickle_PyMapping_HasKey
 initcStringIO
 PyMac_FindModuleExtension
