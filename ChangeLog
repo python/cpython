@@ -1,4 +1,65 @@
+Fri Apr 22 17:39:20 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/{tuple,list,string,mapping}object.c,
+	Modules/arraymodule.c, Python/compile.c: use new
+	joinstring(_decref) interface for more compact code
+
+	* Objects/stringobject.c (joinstring): if error, DECREF and zero
+	result; added joinstring_decref() which XDECREFs its second
+	argument
+
+Thu Apr 21 10:59:04 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libtypes.tex (subsubsection{More String Operations}):
+	documented new '%(key)s' % {...} formatting and more liberal %s
+	interpretation (applies str() first)
+
+	* Doc/libfuncs.tex (section{Built-in Functions}): documented new
+	vars() built-in function
+
+	* Objects/stringobject.c (formatstring): add Donald Beaudry's
+	patch (slightly changed) to allow '%(<key>)<format>' % {...} to
+	format dictionary entries by key.  Also changed %s format to
+	accept any type and convert it to a string using str()
+
+	* Python/bltinmodule.c: add new built-in function vars() which
+	returns variables (of which dir() returns the sorted keys())
+
+Mon Apr 18 11:00:54 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libppath.tex (section{Standard Module
+	\sectcode{posixpath}}): describe for expandvars()
+
+	* Lib/posixpath.py (expandvars): do it using regular expressions
+	instead of forking of a shell
+
+	* Lib/urllib.py (open_http, open_gopher): diagnose missing
+	hostname
+
+Sun Apr 17 21:52:52 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/compile.c (com_atom), Grammar/Grammar (atom): string
+	literal concatenation -- "abc" 'def' is equivalent to 'abcdef'
+
+Fri Apr 15 10:10:17 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libtypes.tex (subsubsection{File Objects}): documented
+	file.setbufsize
+
+	* Objects/fileobject.c (file_setbufsize): interface to setvbuf
+
 Thu Apr 14 12:36:25 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/test/test_thread.py: new module to test threads (very basic)
+
+	* Python/thread.c: remove #define DEBUG 1
+
+	* Demo/scripts/freeze.py: changes by Jaap V and my own to make it
+	work again
+
+	* Makefile.in (libainstall): install frozenmain.c
+
+	* Python/frozenmain.c: added getprogramname()
 
 	* Doc/ref7.tex (section{Function definitions}): describe default
 	parameter values
