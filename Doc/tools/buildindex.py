@@ -7,6 +7,8 @@ import re
 import string
 import sys
 
+from xml.sax.saxutils import quoteattr
+
 
 bang_join = "!".join
 null_join = "".join
@@ -215,7 +217,7 @@ def split_columns(nodes, columns=1):
 DL_LEVEL_INDENT = "  "
 
 def format_column(nodes):
-    strings = ["<dl compact>"]
+    strings = ["<dl compact='compact'>"]
     append = strings.append
     level = 0
     previous = []
@@ -227,7 +229,7 @@ def format_column(nodes):
                 break
             count = i + 1
         if count > level:
-            append("<dl compact>" * (count - level) + "\n")
+            append("<dl compact='compact'>" * (count - level) + "\n")
             level = count
         elif level > count:
             append("\n")
@@ -242,7 +244,7 @@ def format_column(nodes):
                 extra = " (continued)"
             else:
                 extra = ""
-            append("\n<dt>%s%s\n<dd>\n%s<dl compact>"
+            append("\n<dt>%s%s\n<dd>\n%s<dl compact='compact'>"
                    % (term, extra, level * DL_LEVEL_INDENT))
         append("\n%s<dt>%s%s</a>"
                % (level * DL_LEVEL_INDENT, node.links[0], node.text[-1]))
@@ -271,7 +273,6 @@ def format_nodes(nodes, columns=1):
         append("\n</tr></table>")
     else:
         append(format_column(nodes))
-    append("\n<p>\n")
     return null_join(strings)
 
 
@@ -282,8 +283,8 @@ def format_letter(letter):
         lettername = "_ (underscore)"
     else:
         lettername = letter.capitalize()
-    return "\n<hr>\n<h2><a name=\"letter-%s\">%s</a></h2>\n\n" \
-           % (letter, lettername)
+    return "\n<hr />\n<h2 id=%s>%s</h2>\n\n" \
+           % (quoteattr("letter-" + letter), lettername)
 
 
 def format_html_letters(nodes, columns, group_symbol_nodes):
@@ -294,7 +295,7 @@ def format_html_letters(nodes, columns, group_symbol_nodes):
     for letter, nodes in letter_groups:
         s = "<b><a href=\"#letter-%s\">%s</a></b>" % (letter, letter)
         items.append(s)
-    s = ["<hr><center>\n%s</center>\n" % " |\n".join(items)]
+    s = ["<hr /><center>\n%s</center>\n" % " |\n".join(items)]
     for letter, nodes in letter_groups:
         s.append(format_letter(letter))
         s.append(format_nodes(nodes, columns))
