@@ -48,14 +48,15 @@ def main_thread(port):
     print "Listening on port", port, "..."
     while 1:
 	(conn, addr) = sock.accept()
+	if addr[0] != conn.getsockname()[0]:
+	    conn.close()
+	    print "Refusing connection from non-local host", addr[0], "."
+	    continue
 	thread.start_new_thread(service_thread, (conn, addr))
 	del conn, addr
 
 def service_thread(conn, addr):
     (caddr, cport) = addr
-    if caddr != socket.gethostbyname(socket.gethostname()):
-	print "Connection from", caddr, "not accepted."
-	return
     print "Thread %s has connection from %s.\n" % (str(thread.get_ident()),
 						   caddr),
     stdin = conn.makefile("r")
