@@ -110,6 +110,18 @@ def emphasize(line):
 	emphasize_prog = regex.compile(pat)
     return regsub.gsub(emphasize_prog, '<I>\\1</I>', line)
 
+revparse_prog = None
+
+def revparse(rev):
+    global revparse_prog
+    if not revparse_prog:
+	revparse_prog = regex.compile(
+	    '^\([1-9][0-9]?[0-9]?\)\.\([1-9][0-9]?[0-9]?[0-9]?\)$')
+    if revparse_prog.match(rev) < 0:
+	return None
+    [major, minor] = map(string.atoi, revparse_prog.group(1, 2))
+    return major, minor
+
 def load_cookies():
     if not os.environ.has_key('HTTP_COOKIE'):
 	return {}
@@ -440,12 +452,14 @@ class FaqWizard:
 	self.prologue(T_ALL)
 	files = self.dir.list()
 	self.last_changed(files)
+	self.format_index(files, localrefs=1)
 	self.format_all(files)
 
     def do_compat(self):
 	files = self.dir.list()
 	emit(COMPAT)
 	self.last_changed(files)
+	self.format_index(files, localrefs=1)
 	self.format_all(files, edit=0)
 	sys.exit(0)
 
@@ -483,7 +497,7 @@ class FaqWizard:
 	self.prologue(T_INDEX)
 	self.format_index(self.dir.list(), add=1)
 
-    def format_index(self, files, add=0):
+    def format_index(self, files, add=0, localrefs=0):
 	sec = 0
 	for file in files:
 	    try:
@@ -501,7 +515,10 @@ class FaqWizard:
 		except KeyError:
 		    title = "Untitled"
 		emit(INDEX_SECTION, sec=sec, title=title)
-	    emit(INDEX_ENTRY, entry)
+	    if localrefs:
+		emit(LOCAL_ENTRY, entry)
+	    else:
+		emit(INDEX_ENTRY, entry)
 	if sec:
 	    if add:
 		emit(INDEX_ADDSECTION, sec=sec)
@@ -587,13 +604,23 @@ class FaqWizard:
 	    if line[:1] == '=' and len(line) >= 40 and \
 	       line == line[0]*len(line):
 		del lines[-1]
+	headrev = None
 	for line in lines:
 	    if entry and athead and line[:9] == 'revision ':
 		rev = string.strip(line[9:])
-		if rev != '1.1':
-		    emit(DIFFLINK, entry, rev=rev, line=line)
-		else:
+		mami = revparse(rev)
+		if not mami:
 		    print line
+		else:
+		    emit(REVISIONLINK, entry, rev=rev, line=line)
+		    if mami[1] > 1:
+			prev = "%d.%d" % (mami[0], mami[1]-1)
+			emit(DIFFLINK, entry, prev=prev, rev=rev)
+		    if headrev:
+			emit(DIFFLINK, entry, prev=rev, rev=headrev)
+		    else:
+			headrev = rev
+		    print
 		athead = 0
 	    else:
 		athead = 0
@@ -605,18 +632,27 @@ class FaqWizard:
 		    print line
 	print '</PRE>'
 
-    def do_diff(self):
+    def do_revision(self):
 	entry = self.dir.open(self.ui.file)
 	rev = self.ui.rev
-	r = regex.compile(
-	    '^\([1-9][0-9]?[0-9]?\)\.\([1-9][0-9]?[0-9]?[0-9]?\)$')
-	if r.match(rev) < 0:
+	mami = revparse(rev)
+	if not mami:
 	    self.error("Invalid revision number: %s." % `rev`)
-	[major, minor] = map(string.atoi, r.group(1, 2))
-	if minor == 1:
-	    self.error("No previous revision.")
-	    return
-	prev = '%d.%d' % (major, minor-1)
+	self.prologue(T_REVISION, entry)
+	self.shell(interpolate(SH_REVISION, entry, rev=rev))
+
+    def do_diff(self):
+	entry = self.dir.open(self.ui.file)
+	prev = self.ui.prev
+	rev = self.ui.rev
+	mami = revparse(rev)
+	if not mami:
+	    self.error("Invalid revision number: %s." % `rev`)
+	if prev:
+	    if not revparse(prev):
+		self.error("Invalid previous revision number: %s." % `prev`)
+	else:
+	    prev = '%d.%d' % (mami[0], mami[1])
 	self.prologue(T_DIFF, entry)
 	self.shell(interpolate(SH_RDIFF, entry, rev=rev, prev=prev))
 
