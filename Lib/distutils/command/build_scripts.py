@@ -41,6 +41,8 @@ class build_scripts (Command):
                                    ('force', 'force'))
         self.scripts = self.distribution.scripts
 
+    def get_source_files(self):
+        return self.scripts
 
     def run (self):
         if not self.scripts:

@@ -304,6 +304,10 @@ class sdist (Command):
             build_clib = self.get_finalized_command('build_clib')
             self.filelist.extend(build_clib.get_source_files())
 
+        if self.distribution.has_scripts():
+            build_scripts = self.get_finalized_command('build_scripts')
+            self.filelist.extend(build_scripts.get_source_files())
+
     # add_defaults ()
 
 
