@@ -42,6 +42,8 @@ import os
 import sys
 import getopt
 import traceback
+import test_support
+test_support.verbose = 0
 from test_support import *
 
 # Exception raised when the test failed (not the same as in test_support)
