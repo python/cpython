@@ -20,6 +20,7 @@ h2py.py			Translate #define's into Python assignments
 ifdef.py		Remove #if(n)def groups from C sources
 linktree.py		Make a copy of a tree with links to original files
 lll.py			Find and list symbolic links in current directory
+logmerge.py		Consolidate CVS/RCS logs read from stdin
 methfix.py		Fix old method syntax def f(self, (a1, ..., aN)):
 mkreal.py		Turn a symbolic link into a real file or directory
 objgraph.py		Print object graph from nm output on a library
