@@ -1,5 +1,5 @@
 #! /ufs/guido/bin/sgi/python
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Watch line printer queue(s).
 # Intended for BSD 4.3 lpq.

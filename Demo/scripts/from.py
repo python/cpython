@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Print From and Subject of messages in $MAIL.
 # Extension to multiple mailboxes and other bells & whistles are left
