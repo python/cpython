@@ -555,20 +555,23 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         if type(address) == types.StringType:
-            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
-            # syslog may require either DGRAM or STREAM sockets
-            try:
-                self.socket.connect(address)
-            except socket.error:
-                self.socket.close()
-                self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            self.socket.connect(address)
+            self._connect_unixsocket(address)
             self.unixsocket = 1
         else:
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.unixsocket = 0
 
         self.formatter = None
+
+    def _connect_unixsocket(self, address):
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
+        # syslog may require either DGRAM or STREAM sockets
+        try:
+            self.socket.connect(address)
+        except socket.error:
+            self.socket.close()
+            self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.socket.connect(address)
 
     # curious: when talking to the unix-domain '/dev/log' socket, a
     #   zero-terminator seems to be required.  this string is placed
@@ -615,7 +618,11 @@ class SysLogHandler(logging.Handler):
             msg)
         try:
             if self.unixsocket:
-                self.socket.send(msg)
+                try:
+                    self.socket.send(msg)
+                except socket.error:
+                    self._connect_unixsocket(self.address)
+                    self.socket.send(msg)
             else:
                 self.socket.sendto(msg, self.address)
         except:
