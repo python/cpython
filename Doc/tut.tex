@@ -3377,7 +3377,7 @@ the Korn shell and the GNU Bash shell.  This is implemented using the
 editing.  This library has its own documentation which I won't
 duplicate here; however, the basics are easily explained.
 
-\subsection{Line Editing}
+\section{Line Editing}
 
 If supported, input line editing is active whenever the interpreter
 prints a primary or secondary prompt.  The current line can be edited
@@ -3390,7 +3390,7 @@ line to the right of the cursor, C-Y yanks back the last killed
 string.  C-underscore undoes the last change you made; it can be
 repeated for cumulative effect.
 
-\subsection{History Substitution}
+\section{History Substitution}
 
 History substitution works as follows.  All non-empty input lines
 issued are saved in a history buffer, and when a new prompt is given
@@ -3401,7 +3401,7 @@ front of the prompt to mark a line as modified.  Pressing the Return
 key passes the current line to the interpreter.  C-R starts an
 incremental reverse search; C-S starts a forward search.
 
-\subsection{Key Bindings}
+\section{Key Bindings}
 
 The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
@@ -3447,7 +3447,7 @@ TAB: complete
 in your \file{\$HOME/.inputrc}.  (Of course, this makes it hard to type
 indented continuation lines...)
 
-\subsection{Commentary}
+\section{Commentary}
 
 This facility is an enormous step forward compared to previous
 versions of the interpreter; however, some wishes are left: It would
