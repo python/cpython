@@ -89,9 +89,16 @@ Socket methods:
 
 #include "Python.h"
 
+/* Hacks for gethostbyname_r().  On some non-Linux platforms, the configure
+   script doesn't get this right, so we hardcode some platform checks below.
+   On the other hand, not all Linux versions agree, so there the settings
+   computed by the configure script are needed! */
+
+#ifndef linux
 #undef HAVE_GETHOSTBYNAME_R_3_ARG
 #undef HAVE_GETHOSTBYNAME_R_5_ARG
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
+#endif
 
 #ifndef WITH_THREAD
 #undef HAVE_GETHOSTBYNAME_R
@@ -103,7 +110,7 @@ Socket methods:
 #elif defined(__sun__) || defined(__sgi)
 #define HAVE_GETHOSTBYNAME_R_5_ARG
 #elif defined(linux)
-#define HAVE_GETHOSTBYNAME_R_6_ARG
+/* Rely on the configure script */
 #else
 #undef HAVE_GETHOSTBYNAME_R
 #endif
@@ -154,8 +161,12 @@ int shutdown( int, int );
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-/* added 20 Aug 1999 to remove warnings from inet_ntoa call <che@debian.org> */
+/* Headers needed for inet_ntoa() and inet_addr() */
+#ifdef __BEOS__
+#include <net/netdb.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 #include <fcntl.h>
 #else
