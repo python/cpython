@@ -38,10 +38,10 @@ A_PLUS_SOUND = '<'
 
 # Function mapping all file types to strings; unknown types become TYPE='x'
 _names = dir()
-_type_to_name_map = None
+_type_to_name_map = {}
 def type_to_name(gtype):
 	global _type_to_name_map
-	if not _type_to_name_map:
+	if _type_to_name_map=={}:
 		for name in _names:
 			if name[:2] == 'A_':
 				_type_to_name_map[eval(name)] = name[2:]
@@ -75,6 +75,21 @@ def send_selector(selector, host, port = 0):
 def send_query(selector, query, host, port = 0):
 	return send_selector(selector + '\t' + query, host, port)
 
+# Takes a path as returned by urlparse and returns the appropriate selector
+def path_to_selector(path):
+    if path=="/":
+	return "/"
+    else:
+	return path[2:]   # Cuts initial slash and data type identifier
+
+# Takes a path as returned by urlparse and maps it to a string
+# See section 3.4 of RFC 1738 for details
+def path_to_datatype_name(path):
+    if path=="/":
+	return "TYPE='unknown'" # No way to tell, although "INDEX" is probable
+    else:
+	return type_to_name(path[1])
+    
 # The following functions interpret the data returned by the gopher
 # server according to the expected type, e.g. textfile or directory
 
