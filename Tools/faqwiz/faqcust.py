@@ -1,4 +1,4 @@
-SHORTNAME = "Generic"
+SHORTNAME = "Python"
 PASSWORD = "Spam"
 SECTION_TITLES = {
     1: "General information and availability",
