@@ -23,6 +23,7 @@ files: the pack stuff from aepack, the objects from aetypes.
 
 from types import *
 from Carbon import AE
+from Carbon import Evt
 from Carbon import AppleEvents
 import MacOS
 import sys
@@ -144,6 +145,16 @@ class TalkTo:
 	_signature = None	# Can be overridden by subclasses
 	_moduleName = None # Can be overridden by subclasses
 	
+	__eventloop_initialized = 0
+	def __ensure_WMAvailable(klass):
+		if klass.__eventloop_initialized: return 1
+		if not MacOS.WMAvailable(): return 0
+		# Workaround for a but in MacOSX 10.2: we must have an event
+		# loop before we can call AESend.
+		Evt.WaitNextEvent(0,0)
+		return 1
+	__ensure_WMAvailable = classmethod(__ensure_WMAvailable)
+
 	def __init__(self, signature=None, start=0, timeout=0):
 		"""Create a communication channel with a particular application.
 		
@@ -201,7 +212,8 @@ class TalkTo:
 	
 	def sendevent(self, event):
 		"""Send a pre-created appleevent, await the reply and unpack it"""
-		
+		if not self.__ensure_WMAvailable():
+			raise RuntimeError, "No window manager access, cannot send AppleEvent"
 		reply = event.AESend(self.send_flags, self.send_priority,
 		                          self.send_timeout)
 		parameters, attributes = unpackevent(reply, self._moduleName)
