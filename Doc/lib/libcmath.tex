@@ -1,0 +1,59 @@
+\section{Built-in Module \sectcode{cmath}}
+\label{module-cmath}
+
+\bimodindex{cmath}
+\renewcommand{\indexsubitem}{(in module cmath)}
+This module is always available.
+It provides access to mathematical functions for complex numbers.
+The functions are:
+\iftexi
+\begin{funcdesc}{acos}{x}
+\funcline{asin}{x}
+\funcline{atan}{x}
+\funcline{cos}{x}
+\funcline{cosh}{x}
+\funcline{exp}{x}
+\funcline{log}{x}
+\funcline{log10}{x}
+\funcline{sin}{x}
+\funcline{sinh}{x}
+\funcline{sqrt}{x}
+\funcline{tan}{x}
+\funcline{tanh}{x}
+\end{funcdesc}
+\else
+\code{acos(\varvars{x})},
+\code{acosh(\varvars{x})},
+\code{asin(\varvars{x})},
+\code{asinh(\varvars{x})},
+\code{atan(\varvars{x})},
+\code{atanh(\varvars{x})},
+\code{cos(\varvars{x})},
+\code{cosh(\varvars{x})},
+\code{exp(\varvars{x})},
+\code{log(\varvars{x})},
+\code{log10(\varvars{x})},
+\code{sin(\varvars{x})},
+\code{sinh(\varvars{x})},
+\code{sqrt(\varvars{x})},
+\code{tan(\varvars{x})},
+\code{tanh(\varvars{x})}.
+\fi
+
+The module also defines two mathematical constants:
+\iftexi
+\begin{datadesc}{pi}
+\dataline{e}
+\end{datadesc}
+\else
+\code{pi} and \code{e}.
+\fi
+
+Note that the selection of functions is similar, but not identical, to
+that in module \code{math}.  The reason for having two modules is,
+that some users aren't interested in complex numbers, and perhaps
+don't even know what they are.  They would rather have \code{math(-1)}
+raise an exception than return a complex number.  Also note that the
+functions defined in \code{cmath} always return a complex number, even
+if the answer can be expressed as a real number (in which case the
+complex number has an imaginary part of zero).
