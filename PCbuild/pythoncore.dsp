@@ -315,6 +315,21 @@ SOURCE=..\Objects\bufferobject.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Objects\cellobject.c
+
+!IF  "$(CFG)" == "pythoncore - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Python\ceval.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
