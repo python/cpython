@@ -40,6 +40,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include <ctype.h>
 
+#ifdef macintosh
+#define MAC_TCL
+#endif
+
 #include <tcl.h>
 #include <tk.h>
 
