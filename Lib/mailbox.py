@@ -155,13 +155,18 @@ class MmdfMailbox(_Mailbox):
 class MHMailbox:
     def __init__(self, dirname):
         import re
-        pat = re.compile('^[0-9][0-9]*$')
+        pat = re.compile('^[1-9][0-9]*$')
         self.dirname = dirname
         files = os.listdir(self.dirname)
-        self.boxes = []
+        list = []
         for f in files:
             if pat.match(f):
-                self.boxes.append(f)
+                list.append(f)
+        list = map(long, list)
+        list.sort()
+        # This only works in Python 1.6 or later;
+        # before that str() added 'L':
+        self.boxes = map(str, list)
 
     def next(self):
         if not self.boxes:
