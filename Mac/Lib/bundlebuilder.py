@@ -491,7 +491,8 @@ class AppBuilder(BundleBuilder):
 			self.message("Warning: couldn't find the following submodules:", 1)
 			self.message("    (Note that these could be false alarms -- "
 			             "it's not always", 1)
-			self.message("    possible to distinguish between from \"package import submodule\" ", 1)
+			self.message("    possible to distinguish between \"from package "
+			             "import submodule\" ", 1)
 			self.message("    and \"from package import name\")", 1)
 			for name in maybe:
 				self.message("  ? " + name, 1)
