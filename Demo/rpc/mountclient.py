@@ -86,7 +86,11 @@ class PartialMountClient:
 	# we want to bind to a reserved port
 	def bindsocket(self):
 		import os
-		if os.getuid() == 0:
+		try:
+			uid = os.getuid()
+		except AttributeError:
+			uid = 1
+		if uid == 0:
 			port = rpc.bindresvport(self.sock, '')
 			# 'port' is not used
 		else:
@@ -100,53 +104,54 @@ class PartialMountClient:
 		return self.cred
 
 	# The methods Mnt, Dump etc. each implement one Remote
-	# Procedure Call.  Their general structure is
-	#  self.start_call(<procedure-number>)
-	#  <pack arguments using self.packer>
-	#  self.do_call()	# This does the actual message exchange
-	#  <unpack reply using self.unpacker>
-	#  self.end_call()
-	#  return <reply>
-	# If the call fails, an exception is raised by do_call().
-	# If the reply does not match what you unpack, an exception is
-	# raised either during unpacking (if you overrun the buffer)
-	# or by end_call() (if you leave values in the buffer).
-	# Calling packer methods with invalid arguments (e.g. if
-	# invalid arguments were passed from outside) will also result
-	# in exceptions during packing.
+	# Procedure Call.  This is done by calling self.make_call()
+	# with as arguments:
+	#
+	# - the procedure number
+	# - the arguments (or None)
+	# - the "packer" function for the arguments (or None)
+	# - the "unpacker" function for the return value (or None)
+	#
+	# The packer and unpacker function, if not None, *must* be
+	# methods of self.packer and self.unpacker, respectively.
+	# A value of None means that there are no arguments or is no
+	# return value, respectively.
+	#
+	# The return value from make_call() is the return value from
+	# the remote procedure call, as unpacked by the "unpacker"
+	# function, or None if the unpacker function is None.
+	#
+	# (Even if you expect a result of None, you should still
+	# return the return value from make_call(), since this may be
+	# needed by a broadcasting version of the class.)
+	#
+	# If the call fails, make_call() raises an exception
+	# (this includes time-outs and invalid results).
+	#
+	# Note that (at least with the UDP protocol) there is no
+	# guarantee that a call is executed at most once.  When you do
+	# get a reply, you know it has been executed at least once;
+	# when you don't get a reply, you know nothing.
 
 	def Mnt(self, directory):
-		self.start_call(1)
-		self.packer.pack_string(directory)
-		self.do_call()
-		stat = self.unpacker.unpack_fhstatus()
-		self.end_call()
-		return stat
+		return self.make_call(1, directory, \
+			self.packer.pack_string, \
+			self.unpacker.unpack_fhstatus)
 
 	def Dump(self):
-		self.start_call(2)
-		self.do_call()
-		list = self.unpacker.unpack_mountlist()
-		self.end_call()
-		return list
+		return self.make_call(2, None, \
+			None, self.unpacker.unpack_mountlist)
 
 	def Umnt(self, directory):
-		self.start_call(3)
-		self.packer.pack_string(directory)
-		self.do_call()
-		self.end_call()
+		return self.make_call(3, directory, \
+			self.packer.pack_string, None)
 
 	def Umntall(self):
-		self.start_call(4)
-		self.do_call()
-		self.end_call()
+		return self.make_call(4, None, None, None)
 
 	def Export(self):
-		self.start_call(5)
-		self.do_call()
-		list = self.unpacker.unpack_exportlist()
-		self.end_call()
-		return list
+		return self.make_call(5, None, \
+			None, self.unpacker.unpack_exportlist)
 
 
 # We turn the partial Mount client into a full one for either protocol
