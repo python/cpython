@@ -216,7 +216,7 @@ writetab(outf, tab, len)
 
 	while(len) {
 		r = putlong(outf, *tab++);
-		len -= 4;
+		len--;
 	}
 	return r;
 }
@@ -229,7 +229,7 @@ readtab(inf, tab, len)
 {
 	while(len) {
 		*tab++ = getlong(inf);
-		len -= 4;
+		len--;
 	}
 }
 
@@ -322,8 +322,8 @@ longimagedata(self, args)
 		}
 		
 		fseek(inf, 512, SEEK_SET);
-		readtab(inf, starttab, tablen);
-		readtab(inf, lengthtab, tablen);
+		readtab(inf, starttab, ysize*zsize);
+		readtab(inf, lengthtab, ysize*zsize);
 
 		/* check data order */
 		cur = 0;
@@ -655,8 +655,8 @@ longstoimage(self, args)
 	}
 
 	fseek(outf, 512, SEEK_SET);
-	goodwrite *= writetab(outf, starttab, tablen);
-	goodwrite *= writetab(outf, lengthtab, tablen);
+	goodwrite *= writetab(outf, starttab, ysize*zsize);
+	goodwrite *= writetab(outf, lengthtab, ysize*zsize);
 	if (goodwrite) {
 		Py_INCREF(Py_None);
 		retval = Py_None;
