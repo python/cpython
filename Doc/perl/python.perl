@@ -589,10 +589,11 @@ sub do_cmd_funcline{
     local($_) = @_;
     my $function_name = next_argument();
     my $arg_list = next_argument();
-    my $idx = make_str_index_entry("<tt class=function>$function_name()</tt>"
-				   . get_indexsubitem());
-    $idx =~ s/\(\)//;
-    return "<dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_;
+    my $prefix = "<tt class=function>$function_name()</tt>";
+    my $idx = make_str_index_entry($prefix . get_indexsubitem());
+    $prefix =~ s/\(\)//;
+
+    return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
 
 # Change this flag to index the opcode entries.  I don't think it's very
