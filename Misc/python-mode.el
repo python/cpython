@@ -1577,7 +1577,8 @@ dedenting."
     (beginning-of-line)
     (let* ((bod (py-point 'bod))
 	   (pps (parse-partial-sexp bod (point)))
-	   (boipps (parse-partial-sexp bod (py-point 'boi))))
+	   (boipps (parse-partial-sexp bod (py-point 'boi)))
+	   placeholder)
       (cond
        ;; are we inside a multi-line string or comment?
        ((or (and (nth 3 pps) (nth 3 boipps))
@@ -1620,6 +1621,11 @@ dedenting."
 		      (current-indentation)
 		    ;; else they're about to enter the first item
 		    (goto-char open-bracket-pos)
+		    (setq placeholder (point))
+		    (py-goto-initial-line)
+		    (py-goto-beginning-of-tqs
+		     (save-excursion (nth 3 (parse-partial-sexp
+					     placeholder (point)))))
 		    (+ (current-indentation) py-indent-offset))))
 
 	    ;; else on backslash continuation line
@@ -1726,18 +1732,15 @@ dedenting."
 	;; if we landed inside a string, go to the beginning of that
 	;; string. this handles triple quoted, multi-line spanning
 	;; strings.
-	(let* ((delim (nth 3 (parse-partial-sexp bod (point))))
-	       (skip (and delim (make-string 1 delim))))
-	  (when skip
-	    (save-excursion
-	      (py-safe (search-backward skip))
-	      (if (and (eq (char-before) delim)
-		       (eq (char-before (1- (point))) delim))
-		  (setq skip (make-string 3 delim))))
-	    ;; we're looking at a triple-quoted string
-	    (py-safe (search-backward skip))))
+	(py-goto-beginning-of-tqs (nth 3 (parse-partial-sexp bod (point))))
 	;; now skip backward over continued lines
+	(setq placeholder (point))
 	(py-goto-initial-line)
+	;; we may *now* have landed in a TQS, so find the beginning of
+	;; this string.
+	(py-goto-beginning-of-tqs
+	 (save-excursion (nth 3 (parse-partial-sexp
+				 placeholder (point)))))
 	(+ (current-indentation)
 	   (if (py-statement-opens-block-p)
 	       py-indent-offset
@@ -2746,6 +2749,20 @@ If nesting level is zero, return nil."
     (beginning-of-line)
     (or (py-backslash-continuation-line-p)
 	(py-nesting-level))))
+
+(defun py-goto-beginning-of-tqs (delim)
+  "Go to the beginning of the triple quoted string we find ourselves in.
+DELIM is the TQS string delimiter character we're searching backwards
+for."
+  (let ((skip (and delim (make-string 1 delim))))
+    (when skip
+      (save-excursion
+	(py-safe (search-backward skip))
+	(if (and (eq (char-before) delim)
+		 (eq (char-before (1- (point))) delim))
+	    (setq skip (make-string 3 delim))))
+      ;; we're looking at a triple-quoted string
+      (py-safe (search-backward skip)))))
 
 (defun py-goto-initial-line ()
   "Go to the initial line of the current statement.
