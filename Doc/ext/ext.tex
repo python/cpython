@@ -30,17 +30,17 @@ dynamically (at run time) into the interpreter, if the underlying
 operating system supports this feature.
 
 This document assumes basic knowledge about Python.  For an informal
-introduction to the language, see the Python Tutorial.  The Python
-Reference Manual gives a more formal definition of the language.  The
-Python Library Reference documents the existing object types,
+introduction to the language, see the Python Tutorial.  The \emph{Python
+Reference Manual} gives a more formal definition of the language.  The
+\emph{Python Library Reference} documents the existing object types,
 functions and modules (both built-in and written in Python) that give
 the language its wide application range.
 
 For a detailed description of the whole Python/\C{} API, see the separate
-Python/\C{} API Reference Manual.  \strong{Note:} While that manual is
-still in a state of flux, it is safe to say that it is much more up to
-date than the manual you're reading currently (which has been in need
-for an upgrade for some time now).
+\emph{Python/\C{} API Reference Manual}.  \strong{Note:} While that
+manual is still in a state of flux, it is safe to say that it is much
+more up to date than the manual you're reading currently (which has
+been in need for an upgrade for some time now).
 
 
 \end{abstract}
@@ -51,7 +51,8 @@ for an upgrade for some time now).
 \chapter{Extending Python with \C{} or \Cpp{} code}
 
 
-\section{Introduction}
+%\section{Introduction}
+\label{intro}
 
 It is quite easy to add new built-in modules to Python, if you know
 how to program in \C{}.  Such \dfn{extension modules} can do two things
@@ -69,6 +70,7 @@ well as on your system setup; details are given in a later section.
 
 
 \section{A Simple Example}
+\label{simpleExample}
 
 Let's create an extension module called \samp{spam} (the favorite food
 of Monty Python fans...) and let's say we want to create a Python
@@ -141,13 +143,13 @@ The \var{args} argument will be a pointer to a Python tuple object
 containing the arguments.  Each item of the tuple corresponds to an
 argument in the call's argument list.  The arguments are Python
 objects --- in order to do anything with them in our \C{} function we have
-to convert them to \C{} values.  The function \code{PyArg_ParseTuple()}
+to convert them to \C{} values.  The function \cfunction{PyArg_ParseTuple()}
 in the Python API checks the argument types and converts them to \C{}
 values.  It uses a template string to determine the required types of
 the arguments as well as the types of the \C{} variables into which to
 store the converted values.  More about this later.
 
-\code{PyArg_ParseTuple()} returns true (nonzero) if all arguments have
+\cfunction{PyArg_ParseTuple()} returns true (nonzero) if all arguments have
 the right type and its components have been stored in the variables
 whose addresses are passed.  It returns false (zero) if an invalid
 argument list was passed.  In the latter case it also raises an
@@ -156,6 +158,7 @@ appropriate exception by so the calling function can return
 
 
 \section{Intermezzo: Errors and Exceptions}
+\label{errors}
 
 An important convention throughout the Python interpreter is the
 following: when a function fails, it should set an exception condition
@@ -226,7 +229,7 @@ failure indicator itself.  All the object-creating functions
 \code{malloc()} directly this note is of importance.
 
 Also note that, with the important exception of
-\code{PyArg_ParseTuple()} and friends, functions that return an
+\cfunction{PyArg_ParseTuple()} and friends, functions that return an
 integer status usually return a positive value or zero for success and
 \code{-1} for failure, like \UNIX{} system calls.
 
@@ -240,7 +243,7 @@ e.g. \code{PyExc_ZeroDevisionError} which you can use directly.  Of
 course, you should choose exceptions wisely --- don't use
 \code{PyExc_TypeError} to mean that a file couldn't be opened (that
 should probably be \code{PyExc_IOError}).  If something's wrong with
-the argument list, the \code{PyArg_ParseTuple()} function usually
+the argument list, the \cfunction{PyArg_ParseTuple()} function usually
 raises \code{PyExc_TypeError}.  If you have an argument whose value
 which must be in a particular range or must satisfy other conditions,
 \code{PyExc_ValueError} is appropriate.
@@ -277,6 +280,7 @@ the string \code{"spam.error"}.
 
 
 \section{Back to the Example}
+\label{backToExample}
 
 Going back to our example function, you should now be able to
 understand this statement:
@@ -288,7 +292,7 @@ understand this statement:
 
 It returns \NULL{} (the error indicator for functions returning
 object pointers) if an error is detected in the argument list, relying
-on the exception set by \code{PyArg_ParseTuple()}.  Otherwise the
+on the exception set by \cfunction{PyArg_ParseTuple()}.  Otherwise the
 string value of the argument has been copied to the local variable
 \code{command}.  This is a pointer assignment and you are not supposed
 to modify the string to which it points (so in Standard \C{}, the variable
@@ -296,7 +300,7 @@ to modify the string to which it points (so in Standard \C{}, the variable
 *command}).
 
 The next statement is a call to the \UNIX{} function \code{system()},
-passing it the string we just got from \code{PyArg_ParseTuple()}:
+passing it the string we just got from \cfunction{PyArg_ParseTuple()}:
 
 \begin{verbatim}
     sts = system(command);
@@ -305,7 +309,7 @@ passing it the string we just got from \code{PyArg_ParseTuple()}:
 Our \code{spam.system()} function must return the value of \code{sts}
 as a Python object.  This is done using the function
 \code{Py_BuildValue()}, which is something like the inverse of
-\code{PyArg_ParseTuple()}: it takes a format string and an arbitrary
+\cfunction{PyArg_ParseTuple()}: it takes a format string and an arbitrary
 number of \C{} values, and returns a new Python object.  More info on
 \code{Py_BuildValue()} is given later.
 
@@ -331,6 +335,7 @@ pointer, which means ``error'' in most contexts, as we have seen).
 
 
 \section{The Module's Method Table and Initialization Function}
+\label{methodTable}
 
 I promised to show how \code{spam_system()} is called from Python
 programs.  First, we need to list its name and address in a ``method
@@ -349,7 +354,7 @@ Note the third entry (\samp{METH_VARARGS}).  This is a flag telling
 the interpreter the calling convention to be used for the \C{}
 function.  It should normally always be \samp{METH_VARARGS} or
 \samp{METH_VARARGS | METH_KEYWORDS}; a value of \samp{0} means that an
-obsolete variant of \code{PyArg_ParseTuple()} is used.
+obsolete variant of \cfunction{PyArg_ParseTuple()} is used.
 
 When using only \samp{METH_VARARGS}, the function should expect
 the Python-level parameters to be passed in as a tuple acceptable for
@@ -359,7 +364,7 @@ function is provided below.
 The \code{METH_KEYWORDS} bit may be set in the third field if keyword
 arguments should be passed to the function.  In this case, the \C{}
 function should accept a third \samp{PyObject *} parameter which will
-be a dictionary of keywords.  Use \code{PyArg_ParseTupleAndKeywords()} 
+be a dictionary of keywords.  Use \cfunction{PyArg_ParseTupleAndKeywords()}
 to parse the arguemts to such a function.
 
 The method table must be passed to the interpreter in the module's
@@ -387,6 +392,7 @@ so the caller doesn't need to check for errors.
 
 
 \section{Compilation and Linkage}
+\label{compilation}
 
 There are two more things to do before you can use your new extension:
 compiling and linking it with the Python system.  If you use dynamic
@@ -419,6 +425,7 @@ spam spammodule.o -lX11
 \end{verbatim}
 
 \section{Calling Python Functions From \C{}}
+\label{callingPython}
 
 So far we have concentrated on making \C{} functions callable from
 Python.  The reverse is also useful: calling Python functions from \C{}.
@@ -543,8 +550,9 @@ be checked.
 
 
 \section{Format Strings for \sectcode{PyArg_ParseTuple()}}
+\label{parseTuple}
 
-The \code{PyArg_ParseTuple()} function is declared as follows:
+The \cfunction{PyArg_ParseTuple()} function is declared as follows:
 
 \begin{verbatim}
 int PyArg_ParseTuple(PyObject *arg, char *format, ...);
@@ -558,7 +566,7 @@ determined by the format string.  For the conversion to succeed, the
 \var{arg} object must match the format and the format must be
 exhausted.
 
-Note that while \code{PyArg_ParseTuple()} checks that the Python
+Note that while \cfunction{PyArg_ParseTuple()} checks that the Python
 arguments have the required types, it cannot check the validity of the
 addresses of \C{} variables passed to the call: if you make mistakes
 there, your code will probably crash or at least overwrite random bits
@@ -568,7 +576,7 @@ A format string consists of zero or more ``format units''.  A format
 unit describes one Python object; it is usually a single character or
 a parenthesized sequence of format units.  With a few exceptions, a
 format unit that is not a parenthesized sequence normally corresponds
-to a single address argument to \code{PyArg_ParseTuple()}.  In the
+to a single address argument to \cfunction{PyArg_ParseTuple()}.  In the
 following description, the quoted form is the format unit; the entry
 in (round) parentheses is the Python object type that matches the
 format unit; and the entry in [square] brackets is the type of the \C{}
@@ -582,7 +590,7 @@ Convert a Python string to a \C{} pointer to a character string.  You
 must not provide storage for the string itself; a pointer to an
 existing string is stored into the character pointer variable whose
 address you pass.  The \C{} string is null-terminated.  The Python string
-must not contain embedded null bytes; if it does, a \code{TypeError}
+must not contain embedded null bytes; if it does, a \exception{TypeError}
 exception is raised.
 
 \item[\samp{s\#} (string) {[char *, int]}]
@@ -748,6 +756,7 @@ Some example calls:
 
 
 \section{Keyword Parsing with \sectcode{PyArg_ParseTupleAndKeywords()}}
+\label{parseTupleAndKeywords}
 
 The \cfunction{PyArg_ParseTupleAndKeywords()} function is declared as
 follows:
@@ -817,6 +826,7 @@ initkeywdarg()
 
 
 \section{The \sectcode{Py_BuildValue()} Function}
+\label{buildValue}
 
 This function is the counterpart to \code{PyArg_ParseTuple()}.  It is
 declared as follows:
@@ -945,8 +955,9 @@ Examples (to the left the call, to the right the resulting Python value):
 \end{verbatim}
 
 \section{Reference Counts}
+\label{refcounts}
 
-\subsection{Introduction}
+%\subsection{Introduction}
 
 In languages like \C{} or \Cpp{}, the programmer is responsible for
 dynamic allocation and deallocation of memory on the heap.  In \C{}, this
@@ -1007,6 +1018,7 @@ will be available for \C{}.  Until then, we'll have to live with
 reference counts.
 
 \subsection{Reference Counting in Python}
+\label{refcountsInPython}
 
 There are two macros, \code{Py_INCREF(x)} and \code{Py_DECREF(x)},
 which handle the incrementing and decrementing of the reference count.
@@ -1054,6 +1066,7 @@ and gives full owner responsibilities (i.e., the new owner must
 dispose of the reference properly, as well as the previous owner).
 
 \subsection{Ownership Rules}
+\label{ownershipRules}
 
 Whenever an object reference is passed into or out of a function, it
 is part of the function's interface specification whether ownership is
@@ -1102,6 +1115,7 @@ Python must be an owned reference --- ownership is tranferred from the
 function to its caller.
 
 \subsection{Thin Ice}
+\label{thinIce}
 
 There are a few situations where seemingly harmless use of a borrowed
 reference can lead to problems.  These all have to do with implicit
@@ -1181,6 +1195,7 @@ bug(PyObject *list) {
 \end{verbatim}
 
 \subsection{NULL Pointers}
+\label{nullPointers}
 
 In general, functions that take object references as arguments don't
 expect you to pass them \NULL{} pointers, and will dump core (or
@@ -1217,6 +1232,7 @@ the Python user.
 
 
 \section{Writing Extensions in \Cpp{}}
+\label{cplusplus}
 
 It is possible to write extension modules in \Cpp{}.  Some restrictions
 apply.  If the main program (the Python interpreter) is compiled and
@@ -1231,6 +1247,7 @@ It is unnecessary to enclose the Python header files in
 symbol).
 
 \chapter{Embedding Python in another application}
+\label{embedding}
 
 Embedding Python is similar to extending it, but not quite.  The
 difference is that when you extend Python, the main program of the
@@ -1258,6 +1275,7 @@ A simple demo of embedding Python can be found in the directory
 
 
 \section{Embedding Python in \Cpp{}}
+\label{embeddingInCplusplus}
 
 It is also possible to embed Python in a \Cpp{} program; precisely how this
 is done will depend on the details of the \Cpp{} system used; in general you
@@ -1267,6 +1285,7 @@ itself using \Cpp{}.
 
 
 \chapter{Dynamic Loading}
+\label{dynload}
 
 On most modern systems it is possible to configure Python to support
 dynamic loading of extension modules implemented in \C{}.  When shared
@@ -1290,12 +1309,14 @@ loading a module that was compiled for a different version of Python
 
 
 \section{Configuring and Building the Interpreter for Dynamic Loading}
+\label{dynloadConfig}
 
 There are three styles of dynamic loading: one using shared libraries,
 one using SGI IRIX 4 dynamic loading, and one using GNU dynamic
 loading.
 
 \subsection{Shared Libraries}
+\label{sharedlibs}
 
 The following systems support dynamic loading using shared libraries:
 SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!); and probably all
@@ -1308,6 +1329,7 @@ systems --- the \file{configure} detects the presence of the
 loading.
 
 \subsection{SGI IRIX 4 Dynamic Loading}
+\label{irixDynload}
 
 Only SGI IRIX 4 supports dynamic loading of modules using SGI dynamic
 loading.  (SGI IRIX 5 might also support it but it is inferior to
@@ -1329,6 +1351,7 @@ Now build and install Python as you normally would (see the
 \file{README} file in the toplevel Python directory.)
 
 \subsection{GNU Dynamic Loading}
+\label{gnuDynload}
 
 GNU dynamic loading supports (according to its \file{README} file) the
 following hardware and software combinations: VAX (Ultrix), Sun 3
@@ -1359,6 +1382,7 @@ will support GNU dynamic loading.
 
 
 \section{Building a Dynamically Loadable Module}
+\label{makedynload}
 
 Since there are three styles of dynamic loading, there are also three
 groups of instructions for building a dynamically loadable module.
@@ -1379,6 +1403,7 @@ contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
 
 
 \subsection{Shared Libraries}
+\label{linking}
 
 You must link the \file{.o} file to produce a shared library.  This is 
 done using a special invocation of the \UNIX{} loader/linker,
@@ -1413,6 +1438,7 @@ along the Python module search path.
 
 
 \subsection{SGI IRIX 4 Dynamic Loading}
+\label{irixLinking}
 
 \strong{IMPORTANT:} You must compile your extension module with the
 additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instruct the
@@ -1441,6 +1467,7 @@ normally only \samp{-l} options or absolute pathnames of libraries
 
 
 \subsection{GNU Dynamic Loading}
+\label{gnuLinking}
 
 Just copy \file{spammodule.o} into a directory along the Python module
 search path.
