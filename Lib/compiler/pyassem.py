@@ -254,7 +254,6 @@ class PyFlowGraph(FlowGraph):
 
     def setDocstring(self, doc):
         self.docstring = doc
-        self.consts.insert(0, doc)
 
     def setFlag(self, flag):
         self.flags = self.flags | flag
@@ -335,6 +334,7 @@ class PyFlowGraph(FlowGraph):
     def convertArgs(self):
         """Convert arguments from symbolic to concrete form"""
         assert self.stage == FLAT
+        self.consts.insert(0, self.docstring)
         for i in range(len(self.insts)):
             t = self.insts[i]
             if len(t) == 2:
@@ -347,21 +347,11 @@ class PyFlowGraph(FlowGraph):
 
     def _lookupName(self, name, list):
         """Return index of name in list, appending if necessary"""
-        found = None
         t = type(name)
         for i in range(len(list)):
             # must do a comparison on type first to prevent UnicodeErrors 
             if t == type(list[i]) and list[i] == name:
-                found = 1
-                break
-        if found:
-            # this is cheap, but incorrect in some cases, e.g 2 vs. 2L
-            if type(name) == type(list[i]):
                 return i
-            for i in range(len(list)):
-                elt = list[i]
-                if type(elt) == type(name) and elt == name:
-                    return i
         end = len(list)
         list.append(name)
         return end
