@@ -64,6 +64,8 @@ class sdist (Command):
         self.formats = None
         self.keep_tree = 0
 
+        self.archive_files = None
+
 
     def finalize_options (self):
         if self.manifest is None:
@@ -520,11 +522,21 @@ class sdist (Command):
         self.exclude_pattern (base_dir + "*")
  
         self.make_release_tree (base_dir, self.files)
+        archive_files = []              # remember names of files we create
         for fmt in self.formats:
-            self.make_archive (base_dir, fmt, base_dir=base_dir)
+            file = self.make_archive (base_dir, fmt, base_dir=base_dir)
+            archive_files.append(file)
+
+        self.archive_files = archive_files
 
         if not self.keep_tree:
             remove_tree (base_dir, self.verbose, self.dry_run)
+
+    def get_archive_files (self):
+        """Return the list of archive files created when the command
+        was run, or None if the command hasn't run yet.
+        """
+        return self.archive_files
 
 # class sdist
 
