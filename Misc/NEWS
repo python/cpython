@@ -58,7 +58,7 @@ Core and builtins
   leave an exception lingering behind while returning a non-error
   value.
 
-- The Unicode replace() method  would do the wrong thing for a unicode
+- The Unicode replace() method would do the wrong thing for a unicode
   subclass when there were zero string replacements.  [SF bug 599128]
 
 - Fixed some endcase bugs in Unicode rfind()/rindex() and endswith().
@@ -127,7 +127,7 @@ Extension modules
   accessible.  Added recursion limit to pickling [SF bug 576084].  Try
   the persistent id code *before* calling save_global().
 
-- In mmapmpdule.c: if the size passed to mmap() is larger than the
+- In mmapmodule.c: if the size passed to mmap() is larger than the
   length of the file on non-Windows platforms, a ValueError is
   raised. [SF bug 585792]
 
@@ -155,7 +155,7 @@ Library
   problem reported in SF patch 550290.  Change the way 'less' is
   invoked as a browser (on Unix) to make it more robust.
 
-- In pickle.py: Whichmodule() now skips dummy (None) package entries
+- In pickle.py: whichmodule() now skips dummy (None) package entries
   in sys.modules.  Try the persistent id code *before* calling
   save_global().
 
