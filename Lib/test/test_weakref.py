@@ -280,6 +280,31 @@ class MappingTestCase(TestBase):
         self.assert_(len(dict) == 0,
                      "deleting the keys did not clear the dictionary")
 
+    def check_setdefault(self, klass, key, value1, value2):
+        self.assert_(value1 is not value2,
+                     "invalid test"
+                     " -- value parameters must be distinct objects")
+        weakdict = klass()
+        o = weakdict.setdefault(key, value1)
+        self.assert_(o is value1)
+        self.assert_(weakdict.has_key(key))
+        self.assert_(weakdict.get(key) is value1)
+        self.assert_(weakdict[key] is value1)
+
+        o = weakdict.setdefault(key, value2)
+        self.assert_(o is value1)
+        self.assert_(weakdict.has_key(key))
+        self.assert_(weakdict.get(key) is value1)
+        self.assert_(weakdict[key] is value1)
+
+    def test_weak_valued_dict_setdefault(self):
+        self.check_setdefault(weakref.WeakValueDictionary,
+                              "key", C(), C())
+
+    def test_weak_keyed_dict_setdefault(self):
+        self.check_setdefault(weakref.WeakKeyDictionary,
+                              C(), "value 1", "value 2")
+
     def check_update(self, klass, dict):
         weakdict = klass()
         weakdict.update(dict)
