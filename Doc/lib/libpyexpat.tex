@@ -1,12 +1,14 @@
-\section{\module{pyexpat} ---
-         Fast XML parsing using the Expat C library}
+\section{\module{xml.parsers.expat} ---
+         Fast XML parsing using the Expat library}
 
-\declaremodule{builtin}{pyexpat}
-\modulesynopsis{An interface to the Expat XML parser.}
+\declaremodule{standard}{xml.parsers.expat}
+\modulesynopsis{An interface to the Expat non-validating XML parser.}
 \moduleauthor{Paul Prescod}{paul@prescod.net}
 \sectionauthor{A.M. Kuchling}{amk1@bigfoot.com}
 
-The \module{pyexpat} module is a Python interface to the Expat
+\versionadded{2.0}
+
+The \module{xml.parsers.expat} module is a Python interface to the Expat
 non-validating XML parser.
 The module provides a single extension type, \class{xmlparser}, that
 represents the current state of an XML parser.  After an
@@ -14,8 +16,12 @@ represents the current state of an XML parser.  After an
 can be set to handler functions.  When an XML document is then fed to
 the parser, the handler functions are called for the character data
 and markup in the XML document.
+
+This module uses the \module{pyexpat}\refbimodindex{pyexpat} module to
+provide access to the Expat parser.  Direct use of the
+\module{pyexpat} module is deprecated.
  
-The \module{pyexpat} module contains two functions:
+The \module{xml.parsers.expat} module contains two functions:
 
 \begin{funcdesc}{ErrorString}{errno}
 Returns an explanatory string for a given error number \var{errno}.
@@ -103,7 +109,7 @@ containing UTF-8 encoded data will be passed to the handlers.
 The following attributes contain values relating to the most recent
 error encountered by an \class{xmlparser} object, and will only have
 correct values once a call to \method{Parse()} or \method{ParseFile()}
-has raised a \exception{pyexpat.error} exception.
+has raised a \exception{xml.parsers.expat.error} exception.
 
 \begin{datadesc}{ErrorByteIndex} 
 Byte index at which an error occurred.
@@ -112,7 +118,7 @@ Byte index at which an error occurred.
 \begin{datadesc}{ErrorCode} 
 Numeric code specifying the problem.  This value can be passed to the
 \function{ErrorString()} function, or compared to one of the constants
-defined in the \module{pyexpat.errors} submodule.
+defined in the \module{errors} object.
 \end{datadesc}
 
 \begin{datadesc}{ErrorColumnNumber} 
@@ -199,14 +205,13 @@ Called for references to external entities.
 \end{methoddesc}
 
 
-\subsection{Example \label{pyexpat-example}}
+\subsection{Example \label{expat-example}}
 
 The following program defines three handlers that just print out their
 arguments.
 
 \begin{verbatim}
-
-import pyexpat
+import xml.parsers.expat
 
 # 3 handler functions
 def start_element(name, attrs):
@@ -216,11 +221,11 @@ def end_element(name):
 def char_data(data):
     print 'Character data:', repr(data)
 
-p=pyexpat.ParserCreate()
+p = xml.parsers.expat.ParserCreate()
 
 p.StartElementHandler = start_element
-p.EndElementHandler   = end_element
-p.CharacterDataHandler= char_data
+p.EndElementHandler = end_element
+p.CharacterDataHandler = char_data
 
 p.Parse("""<?xml version="1.0"?>
 <parent id="top"><child1 name="paul">Text goes here</child1>
@@ -244,21 +249,15 @@ End element: parent
 \end{verbatim}
 
 
-\section{\module{pyexpat.errors} --- Error constants}
-
-\declaremodule{builtin}{pyexpat.errors}
-\modulesynopsis{Error constants defined for the Expat parser}
-\moduleauthor{Paul Prescod}{paul@prescod.net}
+\subsection{Expat error constants \label{expat-errors}}
 \sectionauthor{A.M. Kuchling}{amk1@bigfoot.com}
 
 The following table lists the error constants in the
-\module{pyexpat.errors} submodule, available once the
-\refmodule{pyexpat} module has been imported.
+\code{errors} object of the \module{xml.parsers.expat} module.  These
+constants are useful in interpreting some of the attributes of the
+parser object after an error has occurred.
 
-Note that this module cannot be imported directly until
-\refmodule{pyexpat} has been imported.
-
-The following constants are defined:
+The \code{errors} object has the following attributes:
 
 \begin{datadesc}{XML_ERROR_ASYNC_ENTITY}
 \end{datadesc}
@@ -323,4 +322,3 @@ A reference was made to a entity which was not defined.
 \begin{datadesc}{XML_ERROR_UNKNOWN_ENCODING}
 The document encoding is not supported by Expat.
 \end{datadesc}
-
