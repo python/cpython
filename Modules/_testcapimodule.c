@@ -174,7 +174,7 @@ test_dict_iteration(PyObject* self, PyObject* args)
 
 
 /* Tests of PyLong_{As, From}{Unsigned,}Long(), and (#ifdef HAVE_LONG_LONG)
-   PyLong_{As, From}{Unsigned,}LongLong()/
+   PyLong_{As, From}{Unsigned,}LongLong().
 
    Note that the meat of the test is contained in testcapi_long.h.
    This is revolting, but delicate code duplication is worse:  "almost
