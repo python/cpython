@@ -62,7 +62,7 @@ BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
 
 ModuleType = type(sys)
 FileType = file
-XRangeType = type(xrange(0))
+XRangeType = xrange
 
 try:
     raise TypeError

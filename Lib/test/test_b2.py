@@ -295,6 +295,11 @@ if tuple(xrange(10)) != tuple(range(10)): raise TestFailed, 'xrange(10)'
 if tuple(xrange(5,10)) != tuple(range(5,10)): raise TestFailed, 'xrange(5,10)'
 if tuple(xrange(0,10,2)) != tuple(range(0,10,2)):
     raise TestFailed, 'xrange(0,10,2)'
+x = xrange(10); a = iter(x); b = iter(a)  # test clearing of SF bug 564601
+if id(x) == id(a): raise TestFailed, "xrange doesn't have a separate iterator"
+if id(a) != id(b): raise TestFailed, "xrange iterator not behaving like range"
+if type(x) != xrange: raise TestFailed, "xrange type not exposed"  # SF 559833
+if list(x) != list(x): raise TestFailed, "xrange should be restartable"
 
 print 'zip'
 a = (1, 2, 3)
