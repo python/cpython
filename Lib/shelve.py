@@ -74,9 +74,12 @@ class Shelf:
 		del self.dict[key]
 	
 	def close(self):
-		if hasattr(self.dict, 'close'):
-			self.dict.close()
-		self.dict = None
+		try:
+			if self.dict:
+				self.dict.close()
+		except:
+			pass
+		self.dict = 0
 
 	def __del__(self):
 		self.close()
