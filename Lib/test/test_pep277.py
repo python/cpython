@@ -6,7 +6,7 @@ from test.test_support import TESTFN, TestSkipped, TestFailed, run_suite
 try:
     from nt import _getfullpathname
 except ImportError:
-    raise TestSkipped, "test works only on NT"
+    raise TestSkipped, "test works only on NT+"
 
 filenames = [
     "abc",
@@ -20,9 +20,19 @@ filenames = [
     unicode("曨שんдΓß","utf-8"),
     ]
 
+# Destroy directory dirname and all files under it, to one level.
+def deltree(dirname):
+    # Don't hide legitimate errors:  if one of these suckers exists, it's
+    # an error if we can't remove it.
+    if os.path.exists(dirname):
+        for fname in os.listdir(dirname):
+            os.unlink(os.path.join(dirname, fname))
+        os.rmdir(dirname)
+
 class UnicodeFileTests(unittest.TestCase):
+    files = [os.path.join(TESTFN, f) for f in filenames]
+
     def setUp(self):
-        self.files = [os.path.join(TESTFN, f) for f in filenames]
         try:
             os.mkdir(TESTFN)
         except OSError:
@@ -34,9 +44,7 @@ class UnicodeFileTests(unittest.TestCase):
             os.stat(name)
 
     def tearDown(self):
-        for name in self.files:
-            os.unlink(name)
-        os.rmdir(TESTFN)
+        deltree(TESTFN)
 
     def _apply_failure(self, fn, filename, expected_exception,
                        check_fn_in_exception = True):
@@ -100,7 +108,10 @@ class UnicodeFileTests(unittest.TestCase):
 def test_main():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(UnicodeFileTests))
-    run_suite(suite)
+    try:
+        run_suite(suite)
+    finally:
+        deltree(TESTFN)
 
 if __name__ == "__main__":
     test_main()
