@@ -642,7 +642,13 @@ Building a shared libpython
 Starting with Python 2.3, the majority of the interpreter can be built
 into a shared library, which can then be used by the interpreter 
 executable, and by applications embedding Python. To enable this feature,
-configure with --enable-shared.
+configure with --enable-shared. 
+
+If you do so, a static library will be created in addition to the
+shared library, which uses the same object files as the shared library
+In particular, the library likely object files using
+position-independent code (PIC) if PIC flags are needed for the shared
+library.
 
 
 Configuring additional built-in modules
