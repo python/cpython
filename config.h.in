@@ -272,6 +272,12 @@
 /* Define if you have the getgroups function.  */
 #undef HAVE_GETGROUPS
 
+/* Define if you have the getlogin function.  */
+#undef HAVE_GETLOGIN
+
+/* Define if you have the getlogin_r function.  */
+#undef HAVE_GETLOGIN_R
+
 /* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
 
