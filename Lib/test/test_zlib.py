@@ -1,7 +1,11 @@
 import zlib
 import sys
+import imp
 
-buf = open(sys.argv[0]).read() * 8
+t = imp.find_module('test_zlib')
+file = t[0]
+buf = file.read() * 8
+file.close()
 
 x = zlib.compress(buf)
 y = zlib.decompress(x)
