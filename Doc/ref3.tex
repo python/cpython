@@ -532,12 +532,13 @@ the code object).
 \ttindex{f_lineno}
 \ttindex{f_lasti}
 
-\item[Traceback objects]
+\item[Traceback objects] \label{traceback}
 Traceback objects represent a stack trace of an exception.  A
 traceback object is created when an exception occurs.  When the search
 for an exception handler unwinds the execution stack, at each unwound
 level a traceback object is inserted in front of the current
-traceback.  When an exception handler is entered, the stack trace is
+traceback.  When an exception handler is entered
+(see also section \ref{try}), the stack trace is
 made available to the program as \verb\sys.exc_traceback\.  When the
 program contains no suitable handler, the stack trace is written
 (nicely formatted) to the standard error stream; if the interpreter is

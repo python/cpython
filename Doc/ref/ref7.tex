@@ -172,7 +172,7 @@ for x in a[:]:
     if x < 0: a.remove(x)
 \end{verbatim}
 
-\section{The {\tt try} statement}
+\section{The {\tt try} statement} \label{try}
 \stindex{try}
 
 The \verb\try\ statement specifies exception handlers and/or cleanup
@@ -221,6 +221,19 @@ is reached, execution continues normally after the entire try
 statement.  (This means that if two nested handlers exist for the same
 exception, and the exception occurs in the try clause of the inner
 handler, the outer handler will not handle the exception.)
+
+Before an except clause's suite is executed, details about the
+exception are assigned to three variables in the \verb\sys\ module:
+\verb\sys.exc_type\ receives the object identifying the exception;
+\verb\sys.exc_value\ receives the exception's parameter;
+\verb\sys.exc_traceback\ receives a traceback object (see section
+\ref{traceback}) identifying the point in the program where the
+exception occurred.
+\bimodindex{sys}
+\ttindex{exc_type}
+\ttindex{exc_value}
+\ttindex{exc_traceback}
+\obindex{traceback}
 
 The \verb\try...finally\ form specifies a `cleanup' handler.  The
 \verb\try\ clause is executed.  When no exception occurs, the
