@@ -1010,6 +1010,25 @@ This \UNIX\ is also followed by a space.
     \end{macrodesc}
 
 
+  \subsection{Miscellaneous Text Markup \label{misc-text-markup}}
+
+  In addition to the inline markup, some additional ``block'' markup
+  is defined to make it easier to bring attention to various bits of
+  text.  The markup described here serves this purpose, and is
+  intended to be used when marking one or more paragraphs or other
+  block constructs (such as \env{verbatim} environments).
+
+  \begin{envdesc}{notice}{\op{type}}
+    Label some paragraphs as being worthy of additional attention from
+    the reader.  What sort of attention is warrented can be indicated
+    by specifying the \var{type} of the notice.  The only values
+    defined for \var{type} are \code{note} and \code{warning}; these
+    are equivalent in intent to the inline markup of the same name.
+    If \var{type} is omitted, \code{note} is used.  Additional values
+    may be defined in the future.
+  \end{envdesc}
+
+
   \subsection{Module-specific Markup \label{module-markup}}
 
   The markup described in this section is used to provide information
