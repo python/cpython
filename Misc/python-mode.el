@@ -1363,13 +1363,13 @@ the new line indented."
   ;; break, continue, and pass force one level of outdenting.
   (save-excursion
     (let* ((bod (py-point 'bod))
-	   (pps (parse-partial-sexp bod (point))))
+	   (pps (parse-partial-sexp bod (point)))
+	   (boipps (parse-partial-sexp bod (py-point 'boi))))
       (beginning-of-line)
       (cond
        ;; are we inside a multi-line string or comment?
-       ((or (and (nth 3 pps)
-		 (nth 3 (parse-partial-sexp bod (py-point 'boi))))
-	    (nth 4 pps))
+       ((or (and (nth 3 pps) (nth 3 boipps))
+	    (and (nth 4 pps) (nth 4 boipps)))
 	(save-excursion
 	  (if (not py-align-multiline-strings-p) 0
 	    ;; skip back over blank & non-indenting comment lines
