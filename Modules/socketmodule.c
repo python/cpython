@@ -1462,6 +1462,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 		Py_END_ALLOW_THREADS
 	}
 
+conex_finally:
 	if (res != 0) {
 #ifdef MS_WINDOWS
 		res = WSAGetLastError();
@@ -1470,7 +1471,6 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
 #endif
 	}
 
-conex_finally:
 	return PyInt_FromLong((long) res);
 }
 
