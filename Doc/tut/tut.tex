@@ -878,13 +878,16 @@ if', and is useful to avoid excessive indentation.  An
 
 \section{\keyword{for} Statements \label{for}}
 
-The \keyword{for} statement in Python differs a bit from what you may be
-used to in \C{} or Pascal.  Rather than always iterating over an
-arithmetic progression of numbers (like in Pascal), or leaving the user
-completely free in the iteration test and step (as \C{}), Python's
-\keyword{for} statement iterates over the items of any sequence (e.g., a
-list or a string), in the order that they appear in the sequence.  For 
-example (no pun intended):
+The \keyword{for}\stindex{for} statement in Python differs a bit from
+what you may be used to in \C{} or Pascal.  Rather than always
+iterating over an arithmetic progression of numbers (like in Pascal),
+or giving the user the ability to define both the iteration step and
+halting condition (as \C{}), Python's \keyword{for}\stindex{for}
+statement iterates over the items of any sequence (e.g., a list or a
+string), in the order that they appear in the sequence.  For example
+(no pun intended):
+% One suggestion was to give a real C example here, but that may only
+% serve to confuse non-C programmers.
 
 \begin{verbatim}
 >>> # Measure some strings:
