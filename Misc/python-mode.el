@@ -403,9 +403,23 @@ Currently-active file is at the head of the list.")
 ;; Regexp matching a Python string literal
 (defconst py-stringlit-re
   (concat
-   "'\\([^'\n\\]\\|\\\\.\\)*'"		; single-quoted
+   ;; These fail if backslash-quote ends the string (not worth
+   ;; fixing?).  They precede the short versions so that the first two
+   ;; quotes don't look like an empty short string.
+   ;;
+   ;; (maybe raw), long single quoted triple quoted strings (SQTQ),
+   ;; with potential embedded single quotes
+   "[rR]?'''[^']*\\(\\('[^']\\|''[^']\\)[^']*\\)*'''"
+   "\\|"
+   ;; (maybe raw), long double quoted triple quoted strings (DQTQ),
+   ;; with potential embedded double quotes
+   "[rR]?\"\"\"[^\"]*\\(\\(\"[^\"]\\|\"\"[^\"]\\)[^\"]*\\)*\"\"\""
+   "\\|"
+   "[rR]?'\\([^'\n\\]\\|\\\\.\\)*'"	; single-quoted
    "\\|"				; or
-   "\"\\([^\"\n\\]\\|\\\\.\\)*\""))	; double-quoted
+   "[rR]?\"\\([^\"\n\\]\\|\\\\.\\)*\""	; double-quoted
+   ))
+
 
 ;; Regexp matching Python lines that are continued via backslash.
 ;; This is tricky because a trailing backslash does not mean
@@ -2801,6 +2815,10 @@ local bindings to py-newline-and-indent."))
 ;; statement we need to skip over the continuation lines.  Tricky:
 ;; Again we need to be clever to avoid quadratic time behavior.
 (defun py-goto-beyond-final-line ()
+  ;; TEST ADDED BY MDE; not quite the right solution
+  (if (looking-at (concat "[ \t]*\\(" py-stringlit-re "\\)"))
+      (goto-char (match-end 0)))
+  ;;
   (forward-line 1)
   (let (state)
     (while (and (py-continuation-line-p)
