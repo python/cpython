@@ -6,6 +6,9 @@
 # brought up to date by running "make Makefile".  (The makesetup also
 # creates config.c from config.c.in in the source directory.)
 
+# Interpreter version number, for library destination pathnames
+VERSION=	1.4
+
 # === Variables set by makesetup ===
 
 MODOBJS=	_MODOBJS_
@@ -41,7 +44,8 @@ SO=		@SO@
 LDSHARED=	@LDSHARED@
 CCSHARED=	@CCSHARED@
 LINKFORSHARED=	@LINKFORSHARED@
-DESTSHARED=	$(exec_prefix)/lib/python/$(MACHDEP)
+BINLIBDEST=	$(exec_prefix)/lib/python$(VERSION)
+DESTSHARED=	$(BINLIBDEST)/$(MACHDEP)
 
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/../install-sh -c
@@ -193,19 +197,17 @@ asharedinstall:	$(DESTSHARED) $(ASHAREDMODULE)$(SO)
 echodestshared: $(DESTSHARED)
 	echo 	$(DESTSHARED)
 
-DIRMODE=755
+DESTDIRS=	$(exec_prefix) $(exec_prefix)/lib $(BINLIBDEST) $(DESTSHARED)
 
-$(DESTSHARED): $(exec_prefix)/lib/python $(exec_prefix)/lib $(exec_prefix)
-		mkdir $(DESTSHARED); chmod $(DIRMODE) $(DESTSHARED)
-
-$(exec_prefix)/lib/python:
-		mkdir $(exec_prefix)/lib/python
-		chmod $(DIRMODE) $(exec_prefix)/lib/python
-
-$(exec_prefix)/lib:
-		mkdir $(exec_prefix)/lib; chmod $(DIRMODE) $(exec_prefix)/lib
-
-$(exec_prefix):
-		mkdir $(exec_prefix); chmod $(DIRMODE) $(exec_prefix)
+$(DESTSHARED): 
+		@for i in $(DESTDIRS); \
+		do \
+			if test ! -d $$i; then \
+				echo "Creating directory $$i"; \
+				mkdir $$i; \
+				chmod 755 $$i; \
+			else	true; \
+			fi; \
+		done
 
 # Stuff is appended here by makesetup and make depend
