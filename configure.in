@@ -176,7 +176,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*) LDSHARED="ld_so_aix \$(CC)";;
 	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX/6*) LDSHARED="ld -n32 -shared -all"; OPT="$OPT -n32";;
+	IRIX/6*) LDSHARED="ld $SGI_ABI -shared -all"; OPT="$OPT $SGI_ABI";;
 	SunOS/4*) LDSHARED="ld";;
 	SunOS/5*) LDSHARED="ld -G";;
 	hp*|HP*) LDSHARED="ld -b";;
@@ -203,7 +203,7 @@ then
 	Linux*) CCSHARED="-fpic";;
 	FreeBSD*) CCSHARED="-fpic";;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
-	IRIX/6*) CCSHARED="-n32 -all";;
+	IRIX/6*) CCSHARED="$SGI_ABI -all";;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -219,7 +219,7 @@ then
 	Linux*) LINKFORSHARED="-rdynamic";;
 	next) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
-	IRIX/6*) LINKFORSHARED="-n32 -all";;
+	IRIX/6*) LINKFORSHARED="$SGI_ABI -all";;
 	esac
 fi
 AC_MSG_RESULT($LINKFORSHARED)
