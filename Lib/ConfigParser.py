@@ -92,7 +92,7 @@ import re
 __all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
            "InterpolationError", "InterpolationDepthError",
            "InterpolationSyntaxError", "ParsingError",
-           "MissingSectionHeaderError", "ConfigParser",
+           "MissingSectionHeaderError", "ConfigParser", "SafeConfigParser",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
 DEFAULTSECT = "DEFAULT"
