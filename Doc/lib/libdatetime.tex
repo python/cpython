@@ -123,51 +123,6 @@ object
             datetimetz
 \end{verbatim}
 
-
-\subsection{\method{strftime()} Behavior}
-
-\class{date}, \class{datetime}, \class{datetimetz}, \class{time},
-and \class{timetz} objects all support a \code{strftime(\var{format})}
-method, to create a string representing the time under the control of
-an explicit format string.  Broadly speaking,
-\begin{verbatim}
-d.strftime(fmt)
-\end{verbatim}
-acts like the \refmodule{time} module's
-\begin{verbatim}
-time.strftime(fmt, d.timetuple())
-\end{verbatim}
-although not all objects support a \method{timetuple()} method.
-
-For time and \class{timetz} objects, format codes for year, month, and
-day should not be used, as time objects have no such values.  \code{0}
-is used instead.
-
-For date objects, format codes for hours, minutes, and seconds should
-not be used, as date objects have no such values.  \code{0} is used
-instead.
-
-For a \naive\ object, the \code{\%z} and \code{\%Z} format codes are
-replaced by empty strings.
-
-For an aware object:
-
-\begin{itemize}
-  \item[\code{\%z}]
-    \method{utcoffset()} is transformed into a 5-character string of
-    the form +HHMM or -HHMM, where HH is a 2-digit string giving the
-    number of UTC offset hours, and MM is a 2-digit string giving the
-    number of UTC offset minutes.  For example, if
-    \method{utcoffset()} returns -180, \code{\%z} is replaced with the
-    string \code{'-0300'}.
-
-  \item[\code{\%Z}]
-    If \method{tzname()} returns \code{None}, \code{\%Z} is replaced
-    by an empty string.  Else \code{\%Z} is replaced by the returned
-    value, which must be a string.
-\end{itemize}
-
-
 \subsection{\class{timedelta} \label{datetime-timedelta}}
 
 A \class{timedelta} object represents a duration, the difference
@@ -1154,6 +1109,62 @@ Instance methods:
 \end{verbatim}
 
 \code{str(\var{d})} is equivalent to \code{\var{d}.isoformat(' ')}.
+
+
+\subsection{\method{strftime()} Behavior}
+
+\class{date}, \class{datetime}, \class{datetimetz}, \class{time},
+and \class{timetz} objects all support a \code{strftime(\var{format})}
+method, to create a string representing the time under the control of
+an explicit format string.  Broadly speaking,
+\begin{verbatim}
+d.strftime(fmt)
+\end{verbatim}
+acts like the \refmodule{time} module's
+\begin{verbatim}
+time.strftime(fmt, d.timetuple())
+\end{verbatim}
+although not all objects support a \method{timetuple()} method.
+
+For \class{time} and \class{timetz} objects, format codes for year,
+month, and day should not be used, as time objects have no such values.
+\code{1900} is used for the year, and \code{0} for the month and day.
+
+For \class{date} objects, format codes for hours, minutes, and seconds
+should not be used, as date objects have no such values.  \code{0} is
+used instead.
+
+For a \naive\ object, the \code{\%z} and \code{\%Z} format codes are
+replaced by empty strings.
+
+For an aware object:
+
+\begin{itemize}
+  \item[\code{\%z}]
+    \method{utcoffset()} is transformed into a 5-character string of
+    the form +HHMM or -HHMM, where HH is a 2-digit string giving the
+    number of UTC offset hours, and MM is a 2-digit string giving the
+    number of UTC offset minutes.  For example, if
+    \method{utcoffset()} returns -180, \code{\%z} is replaced with the
+    string \code{'-0300'}.
+
+  \item[\code{\%Z}]
+    If \method{tzname()} returns \code{None}, \code{\%Z} is replaced
+    by an empty string.  Else \code{\%Z} is replaced by the returned
+    value, which must be a string.
+\end{itemize}
+
+The full set of format codes supported varies across platforms,
+because Python calls the platform C library's \function{strftime()}
+function, and platform variations are common.  The documentation for
+Python's \refmodule{time} module lists the format codes that the C
+standard (1989 version) requires, and those work on all platforms
+with a standard C implementation.  Note that the 1999 version of the
+C standard added additional format codes.
+
+The exact range of years for which \method{strftime()} works also
+varies across platforms.  Regardless of platform, years before 1900
+cannot be used.
 
 
 \subsection{C API}
