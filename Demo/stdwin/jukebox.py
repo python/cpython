@@ -47,7 +47,7 @@ SFPLAY = '/usr/sbin/sfplay'		# Sound playing program
 
 class struct: pass		# Class to define featureless structures
 
-G = struct()			# oHlds writable global variables
+G = struct()			# Holds writable global variables
 
 
 # Main program
@@ -82,6 +82,10 @@ def main():
 			G.synchronous = 1
 		elif optname == '-t':
 			G.mode = optarg
+	#
+	if G.debug:
+		for name in G.__dict__.keys():
+			print 'G.' + name, '=', `G.__dict__[name]`
 	#
 	if not args:
 		args = [DEF_DB]
@@ -149,7 +153,7 @@ def killchild():
 		waitchild(0)
 
 def waitchild(options):
-	pid, sts = os.wait(G.busy, options)
+	pid, sts = os.waitpid(G.busy, options)
 	if pid == G.busy:
 		G.busy = 0
 		G.stop.enable(0)
