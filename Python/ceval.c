@@ -609,7 +609,7 @@ eval_frame(PyFrameObject *f)
 	followed by a POP_TOP.
 
 	Verifying the prediction costs a single high-speed test of register
-	variable against a constant.  If the pairing was good, then the odds
+	variable against a constant.  If the pairing was good, then the
 	processor has a high likelihood of making its own successful branch
 	prediction which results in a nearly zero overhead transition to the
 	next opcode.
@@ -618,9 +618,10 @@ eval_frame(PyFrameObject *f)
 	its two unpredictable branches, the HASARG test and the switch-case.
 */
 
-#define PREDICT(op)	if (*next_instr == op) goto PRED_##op
+#define PREDICT(op)		if (*next_instr == op) goto PRED_##op
 #define PREDICTED(op)		PRED_##op: next_instr++
-#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr += 3, (next_instr[-1]<<8) + next_instr[-2])
+#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr += 3, \
+				(next_instr[-1]<<8) + next_instr[-2])
 
 /* Stack manipulation macros */
 
