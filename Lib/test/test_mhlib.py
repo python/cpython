@@ -7,10 +7,14 @@
 ###      mhlib.  It should.
 
 import unittest
-from test_support import run_unittest, TESTFN
+from test_support import run_unittest, TESTFN, TestSkipped
 import os, StringIO
-
+import sys
 import mhlib
+
+if sys.platform.startswith("win"):
+    raise TestSkipped("test_mhlib skipped on Windows -- "
+                      "too many Unix assumptions")
 
 _mhroot = TESTFN+"_MH"
 _mhpath = os.path.join(_mhroot, "MH")
