@@ -12,6 +12,10 @@ What's New in Python 2.4.1c2?
 Library
 -------
 
+- Fixed decimal operator and comparison methods to return NotImplemented
+  instead of raising a TypeError when interacting with other types. 
+  Allows other classes to successfully implement __radd__ style methods.
+
 - Bug #1163325:  Decimal infinities failed to hash.  Attempting to
   hash a NaN raised an InvalidOperation instead of a TypeError.
 
