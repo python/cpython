@@ -3,4 +3,50 @@
 
 \renewcommand{\indexsubitem}{(in module nntplib)}
 
-To be provided.
+This module defines the class \code{NNTP} which implements the client
+side of the NNTP protocol.  It can be used to implement a news reader
+or poster, or automated news processors.  For more information on NNTP
+(Network News Transfer Protocol), see Internet RFC 977.
+
+Due to time constraints, the documentation for this module could not
+be completed for this release of the Python documentation.  Here are
+two small examples of how it can be used.
+
+To list some statistics about a newsgroup and print the subjects of
+the last 10 articles:
+
+\begin{verbatim}
+>>> s = NNTP('news.cwi.nl')
+>>> resp, count, first, last, name = s.group('comp.lang.python')
+>>> print 'Group', name, 'has', count, 'articles, range', first, 'to', last
+Group comp.lang.python has 59 articles, range 3742 to 3803
+>>> resp, subs = s.xhdr('subject', first + '-' + last)
+>>> for id, sub in subs[-10:]: print id, sub
+... 
+3792 Re: Removing elements from a list while iterating...
+3793 Re: Who likes Info files?
+3794 Emacs and doc strings
+3795 a few questions about the Mac implementation
+3796 Re: executable python scripts
+3797 Re: executable python scripts
+3798 Re: a few questions about the Mac implementation 
+3799 Re: PROPOSAL: A Generic Python Object Interface for Python C Modules
+3802 Re: executable python scripts 
+3803 Re: POSIX wait and SIGCHLD
+>>> s.quit()
+'205 news.cwi.nl closing connection.  Goodbye.'
+>>> 
+\end{verbatim}
+
+To post an article from a file (this assumes that the article has
+valid headers):
+
+\begin{verbatim}
+>>> s = NNTP('news.cwi.nl')
+>>> f = open('/tmp/article')
+>>> s.post(f)
+'240 Article posted successfully.'
+>>> s.quit()
+'205 news.cwi.nl closing connection.  Goodbye.'
+>>> 
+\end{verbatim}

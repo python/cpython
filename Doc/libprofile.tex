@@ -500,7 +500,7 @@ that it relies on the Python interpreter to dispatch \dfn{call},
 \dfn{return}, and \dfn{exception} events.  Compiled C code does not
 get interpreted, and hence is ``invisible'' to the profiler.  All time
 spent in C code (including builtin functions) will be charged to the
-Python function that was invoked the C code.  If the C code calls out
+Python function that invoked the C code.  If the C code calls out
 to some native Python code, then those calls will be profiled
 properly.
 
