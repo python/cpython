@@ -53,7 +53,7 @@ char *PyMac_getscript()
         /* This leaks a an object. */
         name = CFStringConvertEncodingToIANACharSetName(enc);
     }
-    return CFStringGetCStringPtr(name, 0); 
+    return (char *)CFStringGetCStringPtr(name, 0); 
 #else
    int font, script, lang;
     font = 0;

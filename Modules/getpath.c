@@ -421,7 +421,7 @@ calculate_path(void)
 	*/
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
-    buf = NSLibraryNameForModule(pythonModule);
+    buf = (char *)NSLibraryNameForModule(pythonModule);
     if (buf != NULL) {
         /* We're in a framework. */
         /* See if we might be in the build directory. The framework in the
