@@ -2089,7 +2089,7 @@ Returns the length of the string in string object \var{string}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyString_GET_SIZE}{PyObject *string}
-Macro form of \cfunction{PyString_GetSize()} but without error
+Macro form of \cfunction{PyString_Size()} but without error
 checking.
 \end{cfuncdesc}
 
@@ -3108,7 +3108,7 @@ equivalent to \samp{len(\var{list})} on a list object.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyList_GET_SIZE}{PyObject *list}
-Macro form of \cfunction{PyList_GetSize()} without error checking.
+Macro form of \cfunction{PyList_Size()} without error checking.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyList_GetItem}{PyObject *list, int index}
