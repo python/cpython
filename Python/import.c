@@ -1664,9 +1664,16 @@ import_submodule(mod, subname, fullname)
 		struct filedescr *fdp;
 		FILE *fp = NULL;
 
-		path = PyObject_GetAttrString(mod, "__path__");
-		if (path == NULL)
-			PyErr_Clear();
+		if (mod == Py_None)
+			path = NULL;
+		else {
+			path = PyObject_GetAttrString(mod, "__path__");
+			if (path == NULL) {
+				PyErr_Clear();
+				Py_INCREF(Py_None);
+				return Py_None;
+			}
+		}
 
 		buf[0] = '\0';
 		fdp = find_module(subname, path,
