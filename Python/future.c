@@ -8,6 +8,9 @@
 #define UNDEFINED_FUTURE_FEATURE "future feature %.100s is not defined"
 #define FUTURE_IMPORT_STAR "future statement does not support import *"
 
+/* FUTURE_POSSIBLE() is provided to accomodate doc strings, which is
+   the only statement that can occur before a future statement.
+*/
 #define FUTURE_POSSIBLE(FF) ((FF)->ff_last_lineno == -1)
 
 static int
@@ -57,7 +60,6 @@ future_error(node *n, char *filename)
 			"from __future__ imports must occur at the "
 			"beginning of the file");
 	PyErr_SyntaxLocation(filename, n->n_lineno);
-	/* XXX set filename and lineno */
 }
 
 /* Relevant portions of the grammar:
@@ -75,7 +77,12 @@ dotted_as_name: dotted_name [NAME NAME]
 dotted_name: NAME ('.' NAME)*
 */
 
-/* future_parse() return values:
+/* future_parse() finds future statements at the beginnning of a
+   module.  The function calls itself recursively, rather than
+   factoring out logic for different kinds of statements into
+   different routines.
+
+   Return values:
    -1 indicates an error occurred, e.g. unknown feature name
    0 indicates no feature was found
    1 indicates a feature was found
@@ -97,11 +104,19 @@ future_parse(PyFutureFeatures *ff, node *n, char *filename)
 		return 0;
 
 	case file_input:
+		/* Check each statement in the file, starting with the
+		   first, and continuing until the first statement
+		   that isn't a future statement.
+		*/
 		for (i = 0; i < NCH(n); i++) {
 			node *ch = CHILD(n, i);
 			if (TYPE(ch) == stmt) {
 				r = future_parse(ff, ch, filename);
-				if (!FUTURE_POSSIBLE(ff))
+				/* Need to check both conditions below
+				   to accomodate doc strings, which
+				   causes r < 0.
+				*/
+				if (r < 1 && !FUTURE_POSSIBLE(ff))
 					return r;
 			}
 		}
