@@ -135,16 +135,14 @@ instance but a list of such instances.  Similarly, in this situation,
 \samp{form.getvalue(\var{key})} would return a list of strings.
 If you expect this possibility
 (when your HTML form contains multiple fields with the same name), use
-the \function{type()} built-in function to determine whether you
+the \function{isinstance()} built-in function to determine whether you
 have a single instance or a list of instances.  For example, this
 code concatenates any number of username fields, separated by
 commas:
 
 \begin{verbatim}
-from types import ListType
-
 value = form.getvalue("username", "")
-if isinstance(value, ListType):
+if isinstance(value, list):
     # Multiple username fields specified
     usernames = ",".join(value)
 else:
