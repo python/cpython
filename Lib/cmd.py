@@ -127,6 +127,13 @@ class Cmd:
 			try:
 				func = getattr(self, 'help_' + arg)
 			except:
+				try:
+					doc=getattr(self, 'do_' + arg).__doc__
+					if doc:
+						print doc
+						return
+				except:
+					pass
 				print self.nohelp % (arg,)
 				return
 			func()
@@ -159,6 +166,8 @@ class Cmd:
 					if help.has_key(cmd):
 						cmds_doc.append(cmd)
 						del help[cmd]
+					elif getattr(self, name).__doc__:
+						cmds_doc.append(cmd)
 					else:
 						cmds_undoc.append(cmd)
 			print self.doc_leader
