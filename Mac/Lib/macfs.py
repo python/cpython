@@ -9,7 +9,9 @@ import sys
 sys.modules['MACFS'] = sys.modules[__name__]
 
 # Import all those constants
-import Carbon.Files
+from Carbon.Files import *
+from Carbon.Folders import *
+# Another method:
 from Carbon.Folder import FindFolder
 
 # For some obscure historical reason these are here too:
@@ -17,24 +19,26 @@ READ = 1
 WRITE = 2
 smAllScripts = -3
 
+
 import Carbon.File
+# The old name of the error object:
+error = Carbon.File.Error
 
 class FSSpec(Carbon.File.FSSpec):
-	def as_FSRef(self):
+	def as_fsref(self):
 		return FSRef(self)
 		
 	def NewAlias(self, src=None):
-		if src is None:
-			src = FSSpec((0,0,''))
-		return self.NewAlias(src)
+		return Alias(Carbon.File.NewAlias(src, self))
 		
 	def GetCreatorType(self):
 		finfo = self.FSpGetFInfo()
-		return finfo[1], finfo[0]
+		return finfo.Creator, finfo.Type
 		
 	def SetCreatorType(self, ctor, tp):
 		finfo = self.FSpGetFInfo()
-		finfo = (tp, ctor) + finfo[2:]
+		finfo.Creator = ctor
+		finfo.Type = tp
 		self.FSpSetFInfo(finfo)
 		
 	def GetFInfo(self):
@@ -44,30 +48,29 @@ class FSSpec(Carbon.File.FSSpec):
 		return self.FSpSetFInfo(info)
 		
 	def GetDates(self):
-		raise NotImplementedError, "FSSpec.GetDates no longer implemented"
+		import os
+		statb = os.stat(self.as_pathname())
+		return statb.st_ctime, statb.st_mtime, 0
 	
 	def SetDates(self, *dates):
-		raise NotImplementedError, "FSSpec.SetDates no longer implemented"
+		print "FSSpec.SetDates no longer implemented"
 	
 class FSRef(Carbon.File.FSRef):
-	def as_FSSpec(self):
+	def as_fsspec(self):
 		return FSSpec(self)
 	
 class Alias(Carbon.File.Alias):
 
-	def Resolve(self, src=None):
-		if src is None:
-			src = FSSpec((0, 0, ''))
-		return self.ResolveAlias(src)
-		
 	def GetInfo(self, index):
 		return self.GetAliasInfo(index)
 		
 	def Update(self, *args):
-		raise NotImplementedError, "Alias.Update not yet implemented"
-	
-class FInfo:
-	pass
+		print "Alias.Update not yet implemented"
+		
+	def Resolve(self, src=None):
+		return self.ResolveAlias(src)[1:]
+		
+from Carbon.File import FInfo
 	
 FSSpecType = FSSpec
 FSRefType = FSRef
@@ -88,3 +91,6 @@ def FindApplication(*args):
 	
 def NewAliasMinimalFromFullPath(path):
 	return Carbon.Files.NewAliasMinimalFromFullPath(path, '', '')
+	
+# Finally, install nav services
+import macfsn
