@@ -8,6 +8,7 @@ from _csv import Error, __version__, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
                  QUOTE_MINIMAL, QUOTE_ALL, QUOTE_NONNUMERIC, QUOTE_NONE, \
                  __doc__
+from _csv import Dialect as _Dialect
 
 try:
     from cStringIO import StringIO
@@ -41,48 +42,14 @@ class Dialect:
     def __init__(self):
         if self.__class__ != Dialect:
             self._valid = True
-        errors = self._validate()
-        if errors != []:
-            raise Error, "Dialect did not validate: %s" % ", ".join(errors)
+        self._validate()
 
     def _validate(self):
-        errors = []
-        if not self._valid:
-            errors.append("can't directly instantiate Dialect class")
-
-        if self.delimiter is None:
-            errors.append("delimiter character not set")
-        elif (not isinstance(self.delimiter, str) or
-              len(self.delimiter) > 1):
-            errors.append("delimiter must be one-character string")
-
-        if self.quotechar is None:
-            if self.quoting != QUOTE_NONE:
-                errors.append("quotechar not set")
-        elif (not isinstance(self.quotechar, str) or
-              len(self.quotechar) > 1):
-            errors.append("quotechar must be one-character string")
-
-        if self.lineterminator is None:
-            errors.append("lineterminator not set")
-        elif not isinstance(self.lineterminator, str):
-            errors.append("lineterminator must be a string")
-
-        if self.doublequote not in (True, False) and self.quoting != QUOTE_NONE:
-            errors.append("doublequote parameter must be True or False")
-
-        if self.skipinitialspace not in (True, False):
-            errors.append("skipinitialspace parameter must be True or False")
-
-        if self.quoting is None:
-            errors.append("quoting parameter not set")
-
-        if self.quoting is QUOTE_NONE:
-            if (not isinstance(self.escapechar, (unicode, str)) or
-                len(self.escapechar) > 1):
-                errors.append("escapechar must be a one-character string or unicode object")
-
-        return errors
+        try:
+            _Dialect(self)
+        except TypeError, e:
+            # We do this for compatibility with py2.3
+            raise Error(str(e))
 
 class excel(Dialect):
     """Describe the usual properties of Excel-generated CSV files."""
