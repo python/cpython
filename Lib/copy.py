@@ -79,14 +79,20 @@ def copy(x):
         return copier(x)
 
     reductor = dispatch_table.get(cls)
-    if not reductor:
-        reductor = getattr(cls, "__reduce__", None)
-        if reductor == object.__reduce__:
-            reductor = _better_reduce
-        elif not reductor:
-            raise Error("un(shallow)copyable object of type %s" % cls)
+    if reductor:
+        rv = reductor(x)
+    else:
+        reductor = getattr(x, "__reduce_ex__", None)
+        if reductor:
+            rv = reductor(2)
+        else:
+            reductor = getattr(x, "__reduce__", None)
+            if reductor:
+                rv = reductor()
+            else:
+                raise Error("un(shallow)copyable object of type %s" % cls)
 
-    return _reconstruct(x, reductor(x), 0)
+    return _reconstruct(x, rv, 0)
     
 
 _copy_dispatch = d = {}
@@ -176,21 +182,27 @@ def deepcopy(x, memo=None, _nil=[]):
         except TypeError: # cls is not a class (old Boost; see SF #502085)
             issc = 0
         if issc:
-            copier = _deepcopy_atomic
+            y = _deepcopy_atomic(x, memo)
         else:
-            copier = getattr(cls, "__deepcopy__", None)
-
-        if copier:
-            y = copier(x, memo)
-        else:
-            reductor = dispatch_table.get(cls)
-            if not reductor:
-                reductor = getattr(cls, "__reduce__", None)
-                if reductor == object.__reduce__:
-                    reductor = _better_reduce
-                elif not reductor:
-                    raise Error("un(deep)copyable object of type %s" % cls)
-            y = _reconstruct(x, reductor(x), 1, memo)
+            copier = getattr(x, "__deepcopy__", None)
+            if copier:
+                y = copier(memo)
+            else:
+                reductor = dispatch_table.get(cls)
+                if reductor:
+                    rv = reductor(x)
+                else:
+                    reductor = getattr(x, "__reduce_ex__", None)
+                    if reductor:
+                        rv = reductor(2)
+                    else:
+                        reductor = getattr(x, "__reduce__", None)
+                        if reductor:
+                            rv = reductor()
+                        else:
+                            raise Error(
+                                "un(deep)copyable object of type %s" % cls)
+                y = _reconstruct(x, rv, 1, memo)
 
     memo[d] = y
     _keep_alive(x, memo) # Make sure x lives at least as long as d

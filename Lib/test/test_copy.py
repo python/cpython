@@ -46,6 +46,16 @@ class TestCopy(unittest.TestCase):
         copy_reg.pickle(C, pickle_C, C)
         y = copy.copy(x)
 
+    def test_copy_reduce_ex(self):
+        class C(object):
+            def __reduce_ex__(self, proto):
+                return ""
+            def __reduce__(self):
+                raise test_support.TestFailed, "shouldn't call this"
+        x = C()
+        y = copy.copy(x)
+        self.assert_(y is x)
+
     def test_copy_reduce(self):
         class C(object):
             def __reduce__(self):
@@ -55,13 +65,11 @@ class TestCopy(unittest.TestCase):
         self.assert_(y is x)
 
     def test_copy_cant(self):
-        class Meta(type):
+        class C(object):
             def __getattribute__(self, name):
-                if name == "__reduce__":
+                if name.startswith("__reduce"):
                     raise AttributeError, name
                 return object.__getattribute__(self, name)
-        class C:
-            __metaclass__ = Meta
         x = C()
         self.assertRaises(copy.Error, copy.copy, x)
 
@@ -209,6 +217,16 @@ class TestCopy(unittest.TestCase):
         copy_reg.pickle(C, pickle_C, C)
         y = copy.deepcopy(x)
 
+    def test_deepcopy_reduce_ex(self):
+        class C(object):
+            def __reduce_ex__(self, proto):
+                return ""
+            def __reduce__(self):
+                raise test_support.TestFailed, "shouldn't call this"
+        x = C()
+        y = copy.deepcopy(x)
+        self.assert_(y is x)
+
     def test_deepcopy_reduce(self):
         class C(object):
             def __reduce__(self):
@@ -218,13 +236,11 @@ class TestCopy(unittest.TestCase):
         self.assert_(y is x)
 
     def test_deepcopy_cant(self):
-        class Meta(type):
+        class C(object):
             def __getattribute__(self, name):
-                if name == "__reduce__":
+                if name.startswith("__reduce"):
                     raise AttributeError, name
                 return object.__getattribute__(self, name)
-        class C:
-            __metaclass__ = Meta
         x = C()
         self.assertRaises(copy.Error, copy.deepcopy, x)
 
