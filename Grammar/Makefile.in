@@ -2,7 +2,7 @@
 # in the parent directory.  Once configure has run, you can recreate
 # the Makefile by running just config.status.
 
-# === Variables set by config.stat ===
+# === Variables set by config.status ===
 
 VERSION=	@VERSION@
 
