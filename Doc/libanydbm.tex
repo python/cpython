@@ -1,19 +1,15 @@
-\section{Standard Modules \module{anydbm} and \module{dumbdbm}}
+\section{Standard Module \module{anydbm}}
 \label{module-anydbm}
-\label{module-dumbdbm}
 \stmodindex{anydbm}
-\stmodindex{dumbdbm}
 
 \module{anydbm} is a generic interface to variants of the DBM
-database--DBM, GDBM, or dbhash.  If none of these modules is
-installed, the slow-but-simple implementation in module \module{dumbdbm}
-will be used.   Both modules provide the same interface:
+database --- \module{dbhash}\refbimodindex{dbhash},
+\module{gdbm}\refbimodindex{gdbm}, or \module{dbm}\refbimodindex{dbm}.
+If none of these modules is installed, the slow-but-simple
+implementation in module \module{dumbdbm}\refstmodindex{dumbdbm} will
+be used.
 
-% not the best solution, but it's what you get for documenting both
-% at the same time.
-\setindexsubitem{(in modules anydbm, dumbdbm)}
-
-\begin{funcdesc}{open}{filename\optional{, flag, mode}}
+\begin{funcdesc}{open}{filename\optional{, flag\optional{, mode}}}
 Open the database file \var{filename} and return a corresponding object.
 The optional \var{flag} argument can be
 \code{'r'} to open an existing database for reading only,
@@ -27,13 +23,41 @@ only when the database has to be created.  It defaults to octal
 \code{0666} (and will be modified by the prevailing umask).
 \end{funcdesc}
 
+\begin{excdesc}{error}
+An alternate name for the \exception{error} exception defined by the
+underlying database implementation.
+\end{excdesc}
+
 The object returned by \function{open()} supports most of the same
 functionality as dictionaries; keys and their corresponding values can
 be stored, retrieved, and deleted, and the \method{has_key()} and
 \method{keys()} methods are available.  Keys and values must always be
 strings.
 
-Both modules also export the exception \exception{error}, which is
-raised for various problems.  The \exception{anydbm.error} exception
-is simply a different name for the \exception{error} exception of the
-underlying implementation module used.
+
+
+\section{Standard Module \module{dumbdbm}}
+\label{module-dumbdbm}
+\stmodindex{dumbdbm}
+
+A simple and slow database implemented entirely in Python.  This
+should only be used when no other DBM-style database is available.
+
+
+\begin{funcdesc}{open}{filename\optional{, flag\optional{, mode}}}
+Open the database file \var{filename} and return a corresponding object.
+The optional \var{flag} argument can be
+\code{'r'} to open an existing database for reading only,
+\code{'w'} to open an existing database for reading and writing,
+\code{'c'} to create the database if it doesn't exist, or
+\code{'n'}, which will always create a new empty database.  If not
+specified, the default value is \code{'r'}.
+
+The optional \var{mode} argument is the \UNIX{} mode of the file, used
+only when the database has to be created.  It defaults to octal
+\code{0666} (and will be modified by the prevailing umask).
+\end{funcdesc}
+
+\begin{excdesc}{error}
+Raised for errors not reported as \exception{KeyError} errors.
+\end{excdesc}
