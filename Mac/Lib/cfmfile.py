@@ -1,6 +1,6 @@
 """codefragments.py -- wrapper to modify code fragments."""
 
-# © 1998, Just van Rossum, Letterror
+# (c) 1998, Just van Rossum, Letterror
 
 __version__ = "0.8b3"
 __author__ = "jvr"
@@ -70,7 +70,7 @@ class CfrgResource:
 				try:
 					data = Res.Get1Resource('cfrg', 0).data
 				except Res.Error:
-					raise Res.Error, "no ïcfrg’ resource found", sys.exc_traceback
+					raise Res.Error, "no 'cfrg' resource found", sys.exc_traceback
 			finally:
 				Res.CloseResFile(resref)
 				Res.UseResFile(currentresref)
@@ -146,7 +146,7 @@ class FragmentDescriptor:
 	
 	def getfragment(self):
 		if self.where <> 1:
-			raise error, "can’t read fragment, unsupported location"
+			raise error, "can't read fragment, unsupported location"
 		f = open(self.path, "rb")
 		f.seek(self.offset)
 		if self.length:
@@ -158,7 +158,7 @@ class FragmentDescriptor:
 	
 	def copydata(self, outfile):
 		if self.where <> 1:
-			raise error, "can’t read fragment, unsupported location"
+			raise error, "can't read fragment, unsupported location"
 		infile = open(self.path, "rb")
 		if self.length == 0:
 			infile.seek(0, 2)
