@@ -59,7 +59,7 @@ extern char *getenv();
 #endif
 #endif
 
-#include "thread.h"
+#include "pythread.h"
 
 #ifdef __ksr__
 #define _POSIX_THREADS

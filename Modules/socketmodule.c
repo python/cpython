@@ -87,7 +87,7 @@ Socket methods:
 
 #include "Python.h"
 #if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
-#include "thread.h"
+#include "pythread.h"
 #endif
 
 #ifdef HAVE_UNISTD_H

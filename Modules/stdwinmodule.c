@@ -85,7 +85,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef WITH_THREAD
 
-#include "thread.h"
+#include "pythread.h"
 
 static type_lock StdwinLock; /* Lock held when interpreter not locked */
 

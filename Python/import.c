@@ -119,7 +119,7 @@ _PyImport_Fini()
 
 #ifdef WITH_THREAD
 
-#include "thread.h"
+#include "pythread.h"
 
 static type_lock import_lock = 0;
 static long import_lock_thread = -1;

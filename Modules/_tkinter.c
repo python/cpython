@@ -59,7 +59,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <ctype.h>
 
 #ifdef WITH_THREAD
-#include "thread.h"
+#include "pythread.h"
 #endif
 
 #ifdef MS_WINDOWS
@@ -68,6 +68,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef macintosh
 #define MAC_TCL
+#include "myselect.h"
+#endif
+
+#ifdef PYOS_OS2
 #include "myselect.h"
 #endif
 
