@@ -6,7 +6,6 @@ http://www.w3.org/hypertext/WWW/MarkUp/html-spec/html-spec_toc.html
 
 
 import sys
-import regsub
 import string
 from sgmllib import SGMLParser
 from formatter import AS_IS
