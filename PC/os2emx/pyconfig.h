@@ -236,6 +236,9 @@ typedef long intptr_t;
 /* Define if you have the tcsetpgrp function. */
 #define HAVE_TCSETPGRP 1
 
+/* Define if you have the tmpfile function.  */
+#define HAVE_TMPFILE 1
+
 /* Define if you have the times function. */
 #define HAVE_TIMES 1
 
