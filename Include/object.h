@@ -620,6 +620,15 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 	else						\
 		_Py_Dealloc((PyObject *)(op))
 
+#define Py_CLEAR(op)				\
+        do {                            	\
+                if (op) {			\
+                        PyObject *tmp = (op);	\
+                        (op) = NULL;		\
+                        Py_DECREF(tmp);		\
+                }				\
+        } while (0)
+
 /* Macros to use in case the object pointer may be NULL: */
 #define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
 #define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
