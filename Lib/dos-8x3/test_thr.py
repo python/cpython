@@ -2,6 +2,7 @@
 
 # Create a bunch of threads, let each do some work, wait until all are done
 
+from test_support import verbose
 import whrandom
 import thread
 import time
@@ -19,9 +20,11 @@ def task(ident):
 	whmutex.acquire()
 	delay = whrandom.random() * numtasks
 	whmutex.release()
-	print 'task', ident, 'will run for', delay, 'sec'
+	if verbose:
+	    print 'task', ident, 'will run for', delay, 'sec'
 	time.sleep(delay)
-	print 'task', ident, 'done'
+	if verbose:
+	    print 'task', ident, 'done'
 	mutex.acquire()
 	running = running - 1
 	if running == 0:
@@ -33,7 +36,8 @@ def newtask():
 	global next_ident, running
 	mutex.acquire()
 	next_ident = next_ident + 1
-	print 'creating task', next_ident
+	if verbose:
+	    print 'creating task', next_ident
 	thread.start_new_thread(task, (next_ident,))
 	running = running + 1
 	mutex.release()
@@ -84,11 +88,14 @@ def task2(ident):
 			whmutex.acquire()
 			delay = whrandom.random() * numtasks
 			whmutex.release()
-		print 'task', ident, 'will run for', delay, 'sec'
+		if verbose:
+		    print 'task', ident, 'will run for', delay, 'sec'
 		time.sleep(delay)
-		print 'task', ident, 'entering barrier', i
+		if verbose:
+		    print 'task', ident, 'entering barrier', i
 		bar.enter()
-		print 'task', ident, 'leaving barrier', i
+		if verbose:
+		    print 'task', ident, 'leaving barrier', i
 	mutex.acquire()
 	running = running - 1
 	if running == 0:

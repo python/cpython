@@ -19,7 +19,7 @@ def compile(file, cfile = None):
 	timestamp = long(os.stat(file)[8])
 	codeobject = __builtin__.compile(codestring, file, 'exec')
 	if not cfile:
-		cfile = file + 'c'
+		cfile = file + (__debug__ and 'c' or 'o')
 	fc = open(cfile, 'wb')
 	fc.write(MAGIC)
 	wr_long(fc, timestamp)
