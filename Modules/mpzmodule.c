@@ -92,7 +92,12 @@ PERFORMANCE OF THIS SOFTWARE.
 */
 
 #include "gmp.h"
+
+#if defined __GLIBC__ && __GLIBC__ >= 2 /*aid building on Linux distributions*/
+#define BITS_PER_MP_LIMB mp_bits_per_limb
+#else
 #include "gmp-mparam.h"
+#endif
 
 #if __GNU_MP__ + 0 == 2
 #define GMP2
