@@ -1,7 +1,7 @@
 # module 'macpath' -- pathname (or -related) operations for the Macintosh
 
 import string
-import mac
+import os
 from stat import *
 
 
@@ -93,8 +93,8 @@ def basename(s): return split(s)[1]
 
 def isdir(s):
 	try:
-		st = mac.stat(s)
-	except mac.error:
+		st = os.stat(s)
+	except os.error:
 		return 0
 	return S_ISDIR(st[ST_MODE])
 
@@ -110,8 +110,8 @@ def islink(s):
 
 def isfile(s):
 	try:
-		st = mac.stat(s)
-	except mac.error:
+		st = os.stat(s)
+	except os.error:
 		return 0
 	return S_ISREG(st[ST_MODE])
 
@@ -120,8 +120,8 @@ def isfile(s):
 
 def exists(s):
 	try:
-		st = mac.stat(s)
-	except mac.error:
+		st = os.stat(s)
+	except os.error:
 		return 0
 	return 1
 
@@ -186,8 +186,8 @@ def normpath(s):
 
 def walk(top, func, arg):
 	try:
-		names = mac.listdir(top)
-	except mac.error:
+		names = os.listdir(top)
+	except os.error:
 		return
 	func(arg, top, names)
 	for name in names:
