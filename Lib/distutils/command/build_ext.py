@@ -295,6 +295,14 @@ class build_ext (Command):
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
             extra_args = build_info.get ('extra_compile_args')
+            # honor CFLAGS enviroment variable
+            # XXX do we *really* need this? or is it just a hack until
+            # the user can put compiler flags in setup.cfg?
+            if os.environ.has_key('CFLAGS'):
+                if not extra_args:
+                    extra_args = []
+                extra_args = string.split(os.environ['CFLAGS']) + extra_args
+                
             objects = self.compiler.compile (sources,
                                              output_dir=self.build_temp,
                                              macros=macros,
