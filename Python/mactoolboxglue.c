@@ -90,8 +90,8 @@ char *PyMac_StrError(int err)
 		** Estr resources. We ignore all errors. We also try
 		** this only once.
 		*/
-		errors_loaded = 1;
 		PyObject *m, *rv;
+		errors_loaded = 1;
 		
 		m = PyImport_ImportModule("macresource");
 		if (!m) {
