@@ -619,12 +619,16 @@ be of interest when inspecting the results of running a set of tests:
   A list containing pairs of \class{TestCase} instances and the
   formatted tracebacks for tests which raised an exception but did not
   signal a test failure.
+  \versionchanged[Contains formatted tracebacks instead of
+                  \function{sys.exc_info()} results]{2.2}
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{failures}
   A list containing pairs of \class{TestCase} instances and the
   formatted tracebacks for tests which signalled a failure in the code
   under test.
+  \versionchanged[Contains formatted tracebacks instead of
+                  \function{sys.exc_info()} results]{2.2}
 \end{memberdesc}
 
 \begin{memberdesc}[TestResult]{testsRun}
