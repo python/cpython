@@ -718,7 +718,7 @@ class PyBuildExt(build_ext):
                                    ['macfsmodule.c',
                                     '../Python/getapplbycreator.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-            exts.append( Extension('_CF', ['cf/_CFmodule.c'],
+            exts.append( Extension('_CF', ['cf/_CFmodule.c', 'cf/pycfbridge.c'],
                         extra_link_args=['-framework', 'CoreFoundation']) )
             exts.append( Extension('_Res', ['res/_Resmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
@@ -767,21 +767,26 @@ class PyBuildExt(build_ext):
                         extra_link_args=['-framework', 'Carbon']) )
                 exts.append( Extension('_TE', ['te/_TEmodule.c'],
                         extra_link_args=['-framework', 'Carbon']) )
-                # As there is no standardized place (yet) to put user-installed
-                # Mac libraries on OSX you should put a symlink to your Waste
-                # installation in the same folder as your python source tree.
-                # Or modify the next two lines:-)
-                waste_incs = find_file("WASTE.h", [], ["../waste/C_C++ Headers"])
+                # As there is no standardized place (yet) to put
+                # user-installed Mac libraries on OSX, we search for "waste"
+                # in parent directories of the Python source tree. You
+                # should put a symlink to your Waste installation in the
+                # same folder as your python source tree.  Or modify the
+                # next few lines:-)
+                waste_incs = find_file("WASTE.h", [], 
+                        ['../'*n + 'waste/C_C++ Headers' for n in (0,1,2,3,4)])
                 waste_libs = find_library_file(self.compiler, "WASTE", [],
-                        ["../waste/Static Libraries"])
+			["../"*n + "waste/Static Libraries" for n in (0,1,2,3,4)])
                 if waste_incs != None and waste_libs != None:
+                    (srcdir,) = sysconfig.get_config_vars('srcdir')
                     exts.append( Extension('waste',
-                                   ['waste/wastemodule.c',
+                                   ['waste/wastemodule.c'] + [
+                                    os.path.join(srcdir, d) for d in 
                                     'Mac/Wastemods/WEObjectHandlers.c',
                                     'Mac/Wastemods/WETabHooks.c',
                                     'Mac/Wastemods/WETabs.c'
                                    ],
-                                   include_dirs = waste_incs + ['Mac/Wastemods'],
+                                   include_dirs = waste_incs + [os.path.join(srcdir, 'Mac/Wastemods')],
                                    library_dirs = waste_libs,
                                    libraries = ['WASTE'],
                                    extra_link_args = ['-framework', 'Carbon'],
@@ -794,9 +799,70 @@ class PyBuildExt(build_ext):
         # Call the method for detecting whether _tkinter can be compiled
         self.detect_tkinter(inc_dirs, lib_dirs)
 
+    def detect_tkinter_darwin(self, inc_dirs, lib_dirs):
+        # The _tkinter module, using frameworks. Since frameworks are quite
+        # different the UNIX search logic is not sharable.
+        from os.path import join, exists
+        framework_dirs = [
+            '/System/Library/Frameworks/', 
+            '/Library/Frameworks', 
+            join(os.getenv('HOME'), '/Library/Frameworks')
+        ]
 
+        # Find the directory that contains the Tcl.framwork and Tk.framework
+        # bundles.
+        # XXX distutils should support -F!
+        for F in framework_dirs:
+            # both Tcl.framework and Tk.framework should be present 
+            for fw in 'Tcl', 'Tk':
+            	if not exists(join(F, fw + '.framework')):
+                    break
+            else:
+                # ok, F is now directory with both frameworks. Continure
+                # building
+                break
+        else:
+            # Tk and Tcl frameworks not found. Normal "unix" tkinter search
+            # will now resume.
+            return 0
+                
+        # For 8.4a2, we must add -I options that point inside the Tcl and Tk
+        # frameworks. In later release we should hopefully be able to pass
+        # the -F option to gcc, which specifies a framework lookup path. 
+        #
+        include_dirs = [
+            join(F, fw + '.framework', H) 
+            for fw in 'Tcl', 'Tk'
+            for H in 'Headers', 'Versions/Current/PrivateHeaders'
+        ]
+
+        # For 8.4a2, the X11 headers are not included. Rather than include a 
+        # complicated search, this is a hard-coded path. It could bail out
+        # if X11 libs are not found...
+        include_dirs.append('/usr/X11R6/include')
+        frameworks = ['-framework', 'Tcl', '-framework', 'Tk']
+
+        ext = Extension('_tkinter', ['_tkinter.c', 'tkappinit.c'],
+                        define_macros=[('WITH_APPINIT', 1)],
+                        include_dirs = include_dirs,
+                        libraries = [],
+                        extra_compile_args = frameworks,
+                        extra_link_args = frameworks,
+                        )
+        self.extensions.append(ext)
+        return 1
+
+         
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
+
+        # Rather than complicate the code below, detecting and building
+        # AquaTk is a separate method. Only one Tkinter will be built on
+        # Darwin - either AquaTk, if it is found, or X11 based Tk.
+        platform = self.get_platform()
+        if platform == 'darwin' and \
+           self.detect_tkinter_darwin(inc_dirs, lib_dirs):
+          return
 
         # Assume we haven't found any of the libraries or include files
         # The versions with dots are used on Unix, and the versions without
@@ -835,7 +901,6 @@ class PyBuildExt(build_ext):
                 include_dirs.append(dir)
 
         # Check for various platform-specific directories
-        platform = self.get_platform()
         if platform == 'sunos5':
             include_dirs.append('/usr/openwin/include')
             added_lib_dirs.append('/usr/openwin/lib')

@@ -798,6 +798,12 @@ frameworkinfrastructureinstall:	$(LDLIBRARY)
 	$(LN) -fsh Versions/Current/Resources $(PYTHONFRAMEWORKINSTALLDIR)/Resources
 	$(INSTALL_DATA) $(LDLIBRARY) $(PYTHONFRAMEWORKPREFIX)/$(LDLIBRARY)
 
+# Build Python executable that can run GUI code. Another MacOSX pseudo
+# target.
+python.app:
+	$(MAKE) -f $(srcdir)/Mac/OSX/Makefile install installmacsubtree \
+		PYTHONSRCDIR=$(srcdir) PYTHONBUILDDIR=.
+
 # Build the toplevel Makefile
 Makefile.pre: Makefile.pre.in config.status
 	CONFIG_FILES=Makefile.pre CONFIG_HEADERS= $(SHELL) config.status

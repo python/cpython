@@ -1,4 +1,11 @@
-PYTHONBUILDDIR=../..
+# This file can be invoked from the "python.app" target in the 
+# main Makefile. The next two variables are overridden on the 
+# commandline in that case.
+
+# assume user was invoking from Mac/OSX directory and building in source tree
+PYTHONBUILDDIR = ../..
+PYTHONSRCDIR = ../..
+
 INSTALLDIR=/Library/Frameworks/Python.framework/Versions/Current
 APPINSTALLDIR=/Applications/Python.app
 
@@ -17,8 +24,8 @@ INSTALL_DATA=	${INSTALL} -m 644
 STRIPFLAG=-s
 OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
 	-fno-common -dynamic
-INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONBUILDDIR)/Include \
-	-I$(PYTHONBUILDDIR)/Mac/Include
+INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONSRCDIR)/Include \
+	-I$(PYTHONSRCDIR)/Mac/Include
 DEFINES=-DHAVE_CONFIG_H
 
 CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
@@ -36,11 +43,11 @@ pythonforbundle: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
 
 PYTHON=$(PYTHONBUILDDIR)/python.exe
-APPTEMPLATE=$(PYTHONBUILDDIR)/Mac/OSXResources/app
+APPTEMPLATE=$(PYTHONSRCDIR)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
-RESOURCEDIR=$(PYTHONBUILDDIR)/Mac/Resources
+RESOURCEDIR=$(PYTHONSRCDIR)/Mac/Resources
 RESOURCEFILE=python.rsrc
-RFCONVERTER=$(PYTHONBUILDDIR)/Mac/Lib/applesingle.py
+RFCONVERTER=$(PYTHONSRCDIR)/Mac/Lib/applesingle.py
 install: pythonforbundle
 	@for i in $(APPINSTALLDIR) $(APPINSTALLDIR)/Contents; do \
 		if test ! -d $$i; then \
@@ -89,7 +96,7 @@ install: pythonforbundle
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 		
 LIBDEST=$(INSTALLDIR)/Mac/Lib
-LIBSRC=$(PYTHONBUILDDIR)/Mac/Lib
+LIBSRC=$(PYTHONSRCDIR)/Mac/Lib
 LIBSUBDIRS= \
 	Carbon \
 	lib-scriptpackages \
@@ -105,7 +112,7 @@ LIBSUBDIRS= \
 	mkcwproject/template-carbon \
 	mkcwproject/template-ppc
 TOOLSDEST=$(INSTALLDIR)/Mac/Tools
-TOOLSSRC=$(PYTHONBUILDDIR)/Mac/Tools
+TOOLSSRC=$(PYTHONSRCDIR)/Mac/Tools
 TOOLSSUBDIRS=IDE
 installmacsubtree:
 	@for i in $(LIBDEST) $(TOOLSDEST); \
@@ -197,8 +204,7 @@ installmacsubtree:
 		done; \
 	done
 
-	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
-	@echo '**' $(INSTALLDIR)/lib/python2.3/sitecustomize.py
+	$(INSTALL_DATA) $(PYTHONSRCDIR)/Mac/OSX/Mac.pth $(INSTALLDIR)/lib/python2.3/site-packages/
 	
 # Put symlinks "python" and "pythonw" in the standard place
 installunixprograms: $(INSTALLED_PYTHON) pythonw.sh
@@ -213,3 +219,12 @@ symlinkmacsubtree:
 
 	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
 	@echo '**' $(INSTALLDIR)/lib/python2.3/sitecustomize.py
+
+
+# Rules to build each file in OBJECTS - is there a better way?
+$(PYTHONBUILDDIR)/Mac/Python/macmain.o: $(PYTHONSRCDIR)/Mac/Python/macmain.c
+	$(CC) $(CFLAGS) -c $(PYTHONSRCDIR)/Mac/Python/macmain.c -o $@
+
+$(PYTHONBUILDDIR)/Mac/Python/macgetargv.o: $(PYTHONSRCDIR)/Mac/Python/macgetargv.c
+	$(CC) $(CFLAGS) -c $(PYTHONSRCDIR)/Mac/Python/macgetargv.c -o $@
+
