@@ -155,7 +155,12 @@ register PyObject *key;
 	
 	if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
 		return NULL;
-	
+
+	if (dp->di_dbm == NULL) {
+		PyErr_SetString(DbmError,
+				"GDBM object has already been closed");
+		return NULL;
+	}
 	drec = gdbm_fetch(dp->di_dbm, krec);
 	if ( drec.dptr == 0 ) {
 		PyErr_SetString(PyExc_KeyError,
@@ -180,7 +185,8 @@ PyObject *v, *w;
 		return -1;
 	}
         if (dp->di_dbm == NULL) {
-                 PyErr_SetString(DbmError, "GDBM object has already been closed"); 
+                 PyErr_SetString(DbmError,
+                                 "GDBM object has already been closed"); 
                  return -1; 
         }
 	dp->di_size = -1;
