@@ -76,6 +76,9 @@
 /* Define if you have the 'ctermid_r' function. */
 #undef HAVE_CTERMID_R
 
+/* Define to 1 if you have the <curses.h> header file. */
+#undef HAVE_CURSES_H
+
 /* Define to 1 if you have the device macros. */
 #undef HAVE_DEVICE_MACROS
 
