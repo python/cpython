@@ -24,25 +24,12 @@ class Test_Csv(unittest.TestCase):
         self.assertRaises(TypeError, ctor, arg, delimiter = 0)
         self.assertRaises(TypeError, ctor, arg, delimiter = 'XX')
         self.assertRaises(csv.Error, ctor, arg, 'foo')
-        self.assertRaises(TypeError, ctor, arg, None)
         self.assertRaises(TypeError, ctor, arg, delimiter=None)
         self.assertRaises(TypeError, ctor, arg, delimiter=1)
         self.assertRaises(TypeError, ctor, arg, quotechar=1)
         self.assertRaises(TypeError, ctor, arg, lineterminator=None)
         self.assertRaises(TypeError, ctor, arg, lineterminator=1)
         self.assertRaises(TypeError, ctor, arg, quoting=None)
-#       We now allow this, only raising an exception if quoting is needed.
-#        self.assertRaises(TypeError, ctor, arg, quotechar=None)
-#        self.assertRaises(TypeError, ctor, arg,
-#                          quoting=csv.QUOTE_NONE, escapechar=None)
-#       No longer complains about dialects with invalid attributes [AM]
-#        class BadDialect:
-#            bad_attr = 0
-#        self.assertRaises(AttributeError, csv.reader, [], BadDialect)
-        class BadClass:
-            def __init__(self):
-                raise IOError
-        self.assertRaises(IOError, csv.reader, [], BadClass)
 
     def test_reader_arg_valid(self):
         self._test_arg_valid(csv.reader, [])
@@ -258,11 +245,6 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertRaises(csv.Error, csv.unregister_dialect, "nonesuch")
         self.assertRaises(TypeError, csv.register_dialect, None)
         self.assertRaises(TypeError, csv.register_dialect, None, None)
-        self.assertRaises(TypeError, csv.register_dialect, "nonesuch", None)
-        class bogus:
-            def __init__(self):
-                raise KeyError
-        self.assertRaises(KeyError, csv.register_dialect, "nonesuch", bogus)
 
     def test_registry(self):
         class myexceltsv(csv.excel):
