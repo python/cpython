@@ -236,6 +236,16 @@ sub do_cmd_textbf{
     return use_wrappers(@_[0], '<b>', '</b>'); }
 sub do_cmd_textit{
     return use_wrappers(@_[0], '<i>', '</i>'); }
+sub do_cmd_note{
+    return use_wrappers(
+        @_[0],
+        "<span class=\"note\"><b class=\"label\">Note:</b>\n",
+        '</span>'); }
+sub do_cmd_warning{
+    return use_wrappers(
+        @_[0],
+        "<span class=\"warning\"><b class=\"label\">Warning:</b>\n",
+        '</span>'); }
 
 sub do_cmd_moreargs{
     return '...' . @_[0]; }
