@@ -1513,14 +1513,17 @@ class TarFile(object):
     def chmod(self, tarinfo, targetpath):
         """Set file permissions of targetpath according to tarinfo.
         """
-        try:
-            os.chmod(targetpath, tarinfo.mode)
-        except EnvironmentError, e:
-            raise ExtractError, "could not change mode"
+        if hasattr(os, 'chmod'):
+            try:
+                os.chmod(targetpath, tarinfo.mode)
+            except EnvironmentError, e:
+                raise ExtractError, "could not change mode"
 
     def utime(self, tarinfo, targetpath):
         """Set modification time of targetpath according to tarinfo.
         """
+        if not hasattr(os, 'utime'):
+	    return
         if sys.platform == "win32" and tarinfo.isdir():
             # According to msdn.microsoft.com, it is an error (EACCES)
             # to use utime() on directories.
