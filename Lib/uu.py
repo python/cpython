@@ -135,7 +135,7 @@ def decode(in_file, out_file=None, mode=None):
             sys.stderr.write("Warning: %s\n" % str(v))
         out_file.write(data)
         s = in_file.readline()
-    if not str:
+    if not s:
         raise Error, 'Truncated input file'
 
 def test():
