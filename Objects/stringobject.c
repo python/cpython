@@ -3874,10 +3874,11 @@ PyString_Format(PyObject *format, PyObject *args)
 				if (temp == NULL)
 					goto error;
 				if (!PyString_Check(temp)) {
+					/* XXX Note: this should never happen,
+					   since PyObject_Repr() and
+					   PyObject_Str() assure this */
 					PyErr_SetString(PyExc_TypeError,
-					  c == 's' ?
-					  "%s argument has non-string str()" :
-					  "%r argument has non-string repr()");
+					  "%s argument has non-string str()");
 					Py_DECREF(temp);
 					goto error;
 				}
