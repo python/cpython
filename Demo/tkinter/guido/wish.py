@@ -15,8 +15,8 @@ while 1:
 	except EOFError:
 		break
 	cmd = cmd + (line + '\n')
-	tk.record(line)
 	if tk.getboolean(tk.call('info', 'complete', cmd)):
+		tk.record(line)
 		try:
 			result = tk.call('eval', cmd)
 		except tkinter.TclError, msg:
