@@ -11,7 +11,6 @@ EXPORTS
 	_PyThread_Started DATA
 	_PyParser_TokenNames DATA
 	Py_VerboseFlag DATA
-	Py_SuppressPrintingFlag DATA
 	PyExc_AccessError DATA
 	PyExc_AttributeError DATA
 	PyExc_EOFError DATA
@@ -193,6 +192,8 @@ EXPORTS
 	PyEval_GetFrame
 	PyEval_GetRestricted
 	PyEval_InitThreads
+	PyEval_AcquireThread
+	PyEval_ReleaseThread
 	PyEval_RestoreThread
 	PyEval_SaveThread
 	PyTraceBack_Here
@@ -318,6 +319,7 @@ EXPORTS
 	Py_GetPrefix
 	Py_GetProgramFullPath
 	Py_GetProgramName
+	Py_SetProgramName
 	PySlice_New
 	PySlice_GetIndices
 	PyMarshal_WriteLongToFile
