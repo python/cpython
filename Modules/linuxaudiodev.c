@@ -110,7 +110,9 @@ newladobject(PyObject *arg)
 static void
 lad_dealloc(lad_t *xp)
 {
-    close(xp->x_fd);
+    /* if already closed, don't reclose it */
+    if (xp->x_fd != -1)
+	close(xp->x_fd);
     PyObject_Del(xp);
 }
 
