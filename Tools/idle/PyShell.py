@@ -217,8 +217,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     raise
                 else:
                     self.showtraceback()
+                    if self.tkconsole.jit_stack_view:
+                        self.tkconsole.open_stack_viewer()
             except:
                 self.showtraceback()
+                if self.tkconsole.jit_stack_view:
+                    self.tkconsole.open_stack_viewer()
+
         finally:
             self.tkconsole.endexecuting()
 
@@ -265,6 +270,7 @@ class PyShell(OutputWindow):
         text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
+        text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
 
         sys.stdout = PseudoFile(self, "stdout")
         sys.stderr = PseudoFile(self, "stderr")
@@ -289,6 +295,11 @@ class PyShell(OutputWindow):
             self.close_debugger()
         else:
             self.open_debugger()
+
+    jit_stack_view = 0
+
+    def toggle_jit_stack_viewer( self, event=None):
+        self.jit_stack_view = not self.jit_stack_view
 
     def close_debugger(self):
         db = self.interp.getdebugger()
