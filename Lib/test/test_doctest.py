@@ -387,8 +387,8 @@ an empty test also be created when there's no docstring?)
 
     >>> def no_examples(v):
     ...     ''' no doctest examples '''
-    >>> finder.find(no_examples)
-    [<DocTest no_examples from None:1 (no examples)>]
+    >>> finder.find(no_examples) # doctest: +ELLIPSIS
+    [<DocTest no_examples from ...:1 (no examples)>]
 
 Finding Tests in Classes
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -665,6 +665,7 @@ the failure and proceeds to the next example:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=True).run(test)
+    ... # doctest: +ELLIPSIS
     Trying:
         x = 12
     Expecting nothing
@@ -674,7 +675,7 @@ the failure and proceeds to the next example:
     Expecting:
         14
     **********************************************************************
-    Line 3, in f
+    File ..., line 4, in f
     Failed example:
         print x
     Expected:
@@ -790,7 +791,7 @@ unexpected exception:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 3, in f
+    File ..., line 4, in f
     Failed example:
         print 'pre-exception output', x/0
     Exception raised:
@@ -825,7 +826,7 @@ message is raised, then it is reported as a failure:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         raise ValueError, 'message'
     Expected:
@@ -862,7 +863,7 @@ But IGNORE_EXCEPTION_DETAIL does not allow a mismatch in the exception type:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         raise ValueError, 'message' #doctest: +IGNORE_EXCEPTION_DETAIL
     Expected:
@@ -886,7 +887,7 @@ unexpected exception:
     >>> doctest.DocTestRunner(verbose=False).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         1/0
     Exception raised:
@@ -918,8 +919,9 @@ and 1/0:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.DONT_ACCEPT_TRUE_FOR_1
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 1, in f
+    File ..., line 2, in f
     Failed example:
         True
     Expected:
@@ -943,8 +945,9 @@ and the '<BLANKLINE>' marker:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.DONT_ACCEPT_BLANKLINE
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 1, in f
+    File ..., line 2, in f
     Failed example:
         print "a\n\nb"
     Expected:
@@ -966,8 +969,9 @@ treated as equal:
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 1, in f
+    File ..., line 2, in f
     Failed example:
         print 1, 2, 3
     Expected:
@@ -997,8 +1001,9 @@ output to match any substring in the actual output:
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 1, in f
+    File ..., line 2, in f
     Failed example:
         print range(15)
     Expected:
@@ -1052,8 +1057,9 @@ and actual outputs to be displayed using a unified diff:
     >>> # Without the flag:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         print '\n'.join('abcdefg')
     Expected:
@@ -1078,8 +1084,9 @@ and actual outputs to be displayed using a unified diff:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.REPORT_UDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         print '\n'.join('abcdefg')
     Differences (unified diff with -expected +actual):
@@ -1102,8 +1109,9 @@ and actual outputs to be displayed using a context diff:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.REPORT_CDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         print '\n'.join('abcdefg')
     Differences (context diff with expected followed by actual):
@@ -1139,8 +1147,9 @@ marking, as well as interline differences.
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.REPORT_NDIFF
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 3, in f
     Failed example:
         print "a b  c d e f g h i   j k l m"
     Differences (ndiff with -expected +actual):
@@ -1169,8 +1178,9 @@ failing example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> flags = doctest.REPORT_ONLY_FIRST_FAILURE
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 4, in f
+    File ..., line 5, in f
     Failed example:
         print 2 # first failure
     Expected:
@@ -1182,6 +1192,7 @@ failing example:
 However, output from `report_start` is not supressed:
 
     >>> doctest.DocTestRunner(verbose=True, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
     Trying:
         print 1 # first success
     Expecting:
@@ -1192,7 +1203,7 @@ However, output from `report_start` is not supressed:
     Expecting:
         200
     **********************************************************************
-    Line 4, in f
+    File ..., line 5, in f
     Failed example:
         print 2 # first failure
     Expected:
@@ -1222,7 +1233,7 @@ count as failures:
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 4, in f
+    File ..., line 5, in f
     Failed example:
         raise ValueError(2) # first failure
     Exception raised:
@@ -1248,8 +1259,9 @@ example with a comment of the form ``# doctest: +OPTION``:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 2, in f
     Failed example:
         print range(10)       # should fail: no ellipsis
     Expected:
@@ -1272,8 +1284,9 @@ comment of the form ``# doctest: -OPTION``:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False,
     ...                       optionflags=doctest.ELLIPSIS).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 6, in f
+    File ..., line 6, in f
     Failed example:
         print range(10)       # doctest: -ELLIPSIS
     Expected:
@@ -1297,8 +1310,9 @@ do not change the options for surrounding examples:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 2, in f
     Failed example:
         print range(10)       # Should fail: no ellipsis
     Expected:
@@ -1306,7 +1320,7 @@ do not change the options for surrounding examples:
     Got:
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     **********************************************************************
-    Line 8, in f
+    File ..., line 8, in f
     Failed example:
         print range(10)       # Should fail: no ellipsis
     Expected:
@@ -1327,8 +1341,9 @@ may be separated by whitespace, commas, or both:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 2, in f
     Failed example:
         print range(10)       # Should fail
     Expected:
@@ -1346,8 +1361,9 @@ may be separated by whitespace, commas, or both:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 2, in f
     Failed example:
         print range(10)       # Should fail
     Expected:
@@ -1365,8 +1381,9 @@ may be separated by whitespace, commas, or both:
     ...     '''
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> doctest.DocTestRunner(verbose=False).run(test)
+    ... # doctest: +ELLIPSIS
     **********************************************************************
-    Line 2, in f
+    File ..., line 2, in f
     Failed example:
         print range(10)       # Should fail
     Expected:
