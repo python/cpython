@@ -419,15 +419,16 @@ tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
 	newconst = PyTuple_New(n);
 	if (newconst == NULL)
 		return 0;
+	len_consts = PyList_GET_SIZE(consts);
 	for (i=0 ; i<n ; i++) {
 		arg = GETARG(codestr, (i*3));
+		assert(arg < len_consts);
 		constant = PyList_GET_ITEM(consts, arg);
 		Py_INCREF(constant);
 		PyTuple_SET_ITEM(newconst, i, constant);
 	}
 
 	/* Append folded constant onto consts */
-	len_consts = PyList_GET_SIZE(consts);
 	if (PyList_Append(consts, newconst)) {
 		Py_DECREF(newconst);
 		return 0;
@@ -501,6 +502,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	unsigned char *lineno;
 	int *addrmap = NULL;
 	int new_line, cum_orig_line, last_line, tabsiz;
+	int cumlc=0, lastlc=0;	/* Count runs of consecutive LOAD_CONST codes */
 	unsigned int *blocks;
 	char *name;
 
@@ -536,6 +538,10 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
 		addrmap[i] = i - nops;
 		opcode = codestr[i];
+
+		lastlc = cumlc;
+		cumlc = 0;
+
 		switch (opcode) {
 
 		/* Replace UNARY_NOT JUMP_IF_FALSE POP_TOP with 
@@ -589,6 +595,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 
 		/* Skip over LOAD_CONST trueconst  JUMP_IF_FALSE xx  POP_TOP */
 		case LOAD_CONST:
+			cumlc = lastlc + 1;
 			j = GETARG(codestr, i);
 			if (codestr[i+3] != JUMP_IF_FALSE  ||
 			    codestr[i+6] != POP_TOP  ||
@@ -607,6 +614,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			j = GETARG(codestr, i);
 			h = i - 3 * j;
 			if (h >= 0  &&
+			    j == lastlc  &&
 			    codestr[h] == LOAD_CONST  && 
 			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
 			    tuple_of_constants(&codestr[h], j, consts)) {
