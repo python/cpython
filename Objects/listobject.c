@@ -97,6 +97,8 @@ getlistsize(op)
 		return ((listobject *)op) -> ob_size;
 }
 
+static object *indexerr;
+
 object *
 getlistitem(op, i)
 	object *op;
@@ -107,7 +109,9 @@ getlistitem(op, i)
 		return NULL;
 	}
 	if (i < 0 || i >= ((listobject *)op) -> ob_size) {
-		err_setstr(IndexError, "list index out of range");
+		if (indexerr == NULL)
+			indexerr = newstringobject("list index out of range");
+		err_setval(IndexError, indexerr);
 		return NULL;
 	}
 	return ((listobject *)op) -> ob_item[i];
@@ -274,7 +278,9 @@ list_item(a, i)
 	int i;
 {
 	if (i < 0 || i >= a->ob_size) {
-		err_setstr(IndexError, "list index out of range");
+		if (indexerr == NULL)
+			indexerr = newstringobject("list index out of range");
+		err_setval(IndexError, indexerr);
 		return NULL;
 	}
 	INCREF(a->ob_item[i]);
