@@ -147,7 +147,7 @@ class config (Command):
                headers, include_dirs,
                libraries, library_dirs, lang):
         (src, obj) = self._compile(body, headers, include_dirs, lang)
-        prog = os.path.splitext(os.path.basename(src))[0] 
+        prog = os.path.splitext(os.path.basename(src))[0]
         self.compiler.link_executable([obj], prog,
                                       libraries=libraries,
                                       library_dirs=library_dirs)
@@ -263,7 +263,7 @@ class config (Command):
         self.announce(ok and "success!" or "failure.")
         self._clean()
         return ok
-            
+
     def try_run (self, body,
                  headers=None, include_dirs=None,
                  libraries=None, library_dirs=None,

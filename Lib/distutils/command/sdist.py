@@ -131,7 +131,7 @@ class sdist (Command):
         # 'filelist' contains the list of files that will make up the
         # manifest
         self.filelist = FileList()
-        
+
         # Ensure that all required meta-data is given; warn if not (but
         # don't die, it's not *that* serious!)
         self.check_metadata()
@@ -318,7 +318,7 @@ class sdist (Command):
             self.filelist.extend(build_clib.get_source_files())
 
     # add_defaults ()
-    
+
 
     def read_template (self):
 
@@ -395,7 +395,7 @@ class sdist (Command):
             self.filelist.append(line)
 
     # read_manifest ()
-            
+
 
     def make_release_tree (self, base_dir, files):
         """Create the directory tree that will become the source
@@ -419,7 +419,7 @@ class sdist (Command):
         # that's out-of-date in 'base_dir'.  (Usually, all files will be
         # out-of-date, because by default we blow away 'base_dir' when
         # we're done making the distribution archives.)
-    
+
         if hasattr(os, 'link'):        # can make hard links on this system
             link = 'hard'
             msg = "making hard links in %s..." % base_dir
@@ -439,7 +439,7 @@ class sdist (Command):
                 self.copy_file(file, dest, link=link)
 
         self.distribution.metadata.write_pkg_info(base_dir)
-        
+
     # make_release_tree ()
 
     def make_distribution (self):
