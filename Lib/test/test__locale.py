@@ -1,7 +1,6 @@
 from test.test_support import verbose, TestSkipped, run_unittest
 from _locale import (setlocale, LC_NUMERIC, RADIXCHAR, THOUSEP, nl_langinfo,
                     localeconv, Error)
-from locale import getlocale
 import unittest
 
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
@@ -33,11 +32,18 @@ class _LocaleTests(unittest.TestCase):
                             (THOUSEP, "thousands_sep")):
                 nl_radixchar = nl_langinfo(li)
                 li_radixchar = localeconv()[lc]
+                # Both with seeing what the locale is set to in order to detect
+                # when setlocale lies and says it accepted the locale setting
+                # but in actuality didn't use it (as seen in OS X 10.3)
+                try:
+                    set_locale = setlocale(LC_NUMERIC)
+                except Error:
+                    set_locale = "<not able to determine>"
                 self.assertEquals(nl_radixchar, li_radixchar,
-                                    "%r != %r (%s); "
+                                    "%s != %s (%s); "
                                     "supposed to be %s, set to %s" %
                                         (nl_radixchar, li_radixchar, lc,
-                                         loc, getlocale(LC_NUMERIC)[0]))
+                                         loc, set_locale))
 
 def test_main():
     run_unittest(_LocaleTests)
