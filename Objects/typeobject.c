@@ -742,6 +742,11 @@ mro_implementation(PyTypeObject *type)
 	int i, n, ok;
 	PyObject *bases, *result;
 
+	if(type->tp_dict == NULL) {
+		if(PyType_Ready(type) < 0)
+			return NULL;
+	}
+
 	bases = type->tp_bases;
 	n = PyTuple_GET_SIZE(bases);
 	result = Py_BuildValue("[O]", (PyObject *)type);
