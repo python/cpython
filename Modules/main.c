@@ -13,6 +13,10 @@ extern PyObject* pyvms_gr_empty_string;
 #include <fcntl.h>
 #endif
 
+#if defined(WITH_NEXT_FRAMEWORK)
+#include "pymactoolbox.h"
+#endif
+
 #if (defined(PYOS_OS2) && !defined(PYCC_GCC)) || defined(MS_WINDOWS)
 #define PYTHONHOMEHELP "<prefix>\\lib"
 #else

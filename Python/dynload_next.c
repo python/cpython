@@ -77,7 +77,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *fqname, const char *shortname,
 		newModule = NSLinkModule(image, pathname, LINKOPTIONS);
 		if (newModule == NULL) {
 			int errNo;
-			char *fileName, *moreErrorStr;
+			const char *fileName, *moreErrorStr;
 			NSLinkEditErrors c;
 			NSLinkEditError( &c, &errNo, &fileName, &moreErrorStr );
 			PyOS_snprintf(errBuf, 512, "Failure linking new module: %s: %s", 
