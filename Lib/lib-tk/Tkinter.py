@@ -585,7 +585,10 @@ class Misc:
 		e.keysym = K
 		e.keysym_num = tk.getint(N)
 		e.type = T
-		e.widget = self._nametowidget(W)
+		try:
+			e.widget = self._nametowidget(W)
+		except KeyError:
+			e.widget = W
 		e.x_root = tk.getint(X)
 		e.y_root = tk.getint(Y)
 		return (e,)
