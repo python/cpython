@@ -7,25 +7,25 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import struct,types,__builtin__
+import struct, types, __builtin__
 
 ### Registry and builtin stateless codec functions
 
 try:
     from _codecs import *
-except ImportError,why:
+except ImportError, why:
     raise SystemError,\
           'Failed to load the builtin codecs: %s' % why
 
-__all__ = ["register","lookup","open","EncodedFile","BOM","BOM_BE",
-           "BOM_LE","BOM32_BE","BOM32_LE","BOM64_BE","BOM64_LE"]
+__all__ = ["register", "lookup", "open", "EncodedFile", "BOM", "BOM_BE",
+           "BOM_LE", "BOM32_BE", "BOM32_LE", "BOM64_BE", "BOM64_LE"]
 
 ### Constants
 
 #
 # Byte Order Mark (BOM) and its possible values (BOM_BE, BOM_LE)
 #
-BOM = struct.pack('=H',0xFEFF)
+BOM = struct.pack('=H', 0xFEFF)
 #
 BOM_BE = BOM32_BE = '\376\377'
 #       corresponds to Unicode U+FEFF in UTF-16 on big endian
@@ -60,7 +60,7 @@ class Codec:
                     CHARACTER for the builtin Unicode codecs.
 
     """
-    def encode(self,input,errors='strict'):
+    def encode(self, input, errors='strict'):
 
         """ Encodes the object input and returns a tuple (output
             object, length consumed).
@@ -79,7 +79,7 @@ class Codec:
         """
         raise NotImplementedError
 
-    def decode(self,input,errors='strict'):
+    def decode(self, input, errors='strict'):
 
         """ Decodes the object input and returns a tuple (output
             object, length consumed).
@@ -111,7 +111,7 @@ class Codec:
 
 class StreamWriter(Codec):
 
-    def __init__(self,stream,errors='strict'):
+    def __init__(self, stream, errors='strict'):
 
         """ Creates a StreamWriter instance.
 
@@ -134,7 +134,7 @@ class StreamWriter(Codec):
 
         """ Writes the object's contents encoded to self.stream.
         """
-        data, consumed = self.encode(object,self.errors)
+        data, consumed = self.encode(object, self.errors)
         self.stream.write(data)
 
     def writelines(self, list):
@@ -156,19 +156,18 @@ class StreamWriter(Codec):
         """
         pass
 
-    def __getattr__(self,name,
-
+    def __getattr__(self, name,
                     getattr=getattr):
 
         """ Inherit all other methods from the underlying stream.
         """
-        return getattr(self.stream,name)
+        return getattr(self.stream, name)
 
 ###
 
 class StreamReader(Codec):
 
-    def __init__(self,stream,errors='strict'):
+    def __init__(self, stream, errors='strict'):
 
         """ Creates a StreamReader instance.
 
@@ -218,7 +217,7 @@ class StreamReader(Codec):
         while 1:
             try:
                 object, decodedbytes = decode(data, self.errors)
-            except ValueError,why:
+            except ValueError, why:
                 # This method is slow but should work under pretty much
                 # all conditions; at most 10 tries are made
                 i = i + 1
@@ -250,7 +249,7 @@ class StreamReader(Codec):
             line = self.stream.readline()
         else:
             line = self.stream.readline(size)
-        return self.decode(line,self.errors)[0]
+        return self.decode(line, self.errors)[0]
 
 
     def readlines(self, sizehint=0):
@@ -269,7 +268,7 @@ class StreamReader(Codec):
             data = self.stream.read()
         else:
             data = self.stream.read(sizehint)
-        return self.decode(data,self.errors)[0].splitlines(1)
+        return self.decode(data, self.errors)[0].splitlines(1)
 
     def reset(self):
 
@@ -282,13 +281,12 @@ class StreamReader(Codec):
         """
         pass
 
-    def __getattr__(self,name,
-
+    def __getattr__(self, name,
                     getattr=getattr):
 
         """ Inherit all other methods from the underlying stream.
         """
-        return getattr(self.stream,name)
+        return getattr(self.stream, name)
 
 ###
 
@@ -305,7 +303,7 @@ class StreamReaderWriter:
     # Optional attributes set by the file wrappers below
     encoding = 'unknown'
 
-    def __init__(self,stream,Reader,Writer,errors='strict'):
+    def __init__(self, stream, Reader, Writer, errors='strict'):
 
         """ Creates a StreamReaderWriter instance.
 
@@ -323,7 +321,7 @@ class StreamReaderWriter:
         self.writer = Writer(stream, errors)
         self.errors = errors
 
-    def read(self,size=-1):
+    def read(self, size=-1):
 
         return self.reader.read(size)
 
@@ -335,11 +333,11 @@ class StreamReaderWriter:
 
         return self.reader.readlines(sizehint)
 
-    def write(self,data):
+    def write(self, data):
 
         return self.writer.write(data)
 
-    def writelines(self,list):
+    def writelines(self, list):
 
         return self.writer.writelines(list)
 
@@ -348,13 +346,12 @@ class StreamReaderWriter:
         self.reader.reset()
         self.writer.reset()
 
-    def __getattr__(self,name,
-
+    def __getattr__(self, name,
                     getattr=getattr):
 
         """ Inherit all other methods from the underlying stream.
         """
-        return getattr(self.stream,name)
+        return getattr(self.stream, name)
 
 ###
 
@@ -379,7 +376,8 @@ class StreamRecoder:
     data_encoding = 'unknown'
     file_encoding = 'unknown'
 
-    def __init__(self,stream,encode,decode,Reader,Writer,errors='strict'):
+    def __init__(self, stream, encode, decode, Reader, Writer,
+                 errors='strict'):
 
         """ Creates a StreamRecoder instance which implements a two-way
             conversion: encode and decode work on the frontend (the
@@ -411,13 +409,13 @@ class StreamRecoder:
         self.writer = Writer(stream, errors)
         self.errors = errors
 
-    def read(self,size=-1):
+    def read(self, size=-1):
 
         data = self.reader.read(size)
         data, bytesencoded = self.encode(data, self.errors)
         return data
 
-    def readline(self,size=None):
+    def readline(self, size=None):
 
         if size is None:
             data = self.reader.readline()
@@ -426,7 +424,7 @@ class StreamRecoder:
         data, bytesencoded = self.encode(data, self.errors)
         return data
 
-    def readlines(self,sizehint=None):
+    def readlines(self, sizehint=None):
 
         if sizehint is None:
             data = self.reader.read()
@@ -435,12 +433,12 @@ class StreamRecoder:
         data, bytesencoded = self.encode(data, self.errors)
         return data.splitlines(1)
 
-    def write(self,data):
+    def write(self, data):
 
         data, bytesdecoded = self.decode(data, self.errors)
         return self.writer.write(data)
 
-    def writelines(self,list):
+    def writelines(self, list):
 
         data = ''.join(list)
         data, bytesdecoded = self.decode(data, self.errors)
@@ -451,13 +449,12 @@ class StreamRecoder:
         self.reader.reset()
         self.writer.reset()
 
-    def __getattr__(self,name,
-
+    def __getattr__(self, name,
                     getattr=getattr):
 
         """ Inherit all other methods from the underlying stream.
         """
-        return getattr(self.stream,name)
+        return getattr(self.stream, name)
 
 ### Shortcuts
 
@@ -499,7 +496,7 @@ def open(filename, mode='rb', encoding=None, errors='strict', buffering=1):
     file = __builtin__.open(filename, mode, buffering)
     if encoding is None:
         return file
-    (e,d,sr,sw) = lookup(encoding)
+    (e, d, sr, sw) = lookup(encoding)
     srw = StreamReaderWriter(file, sr, sw, errors)
     # Add attributes to simplify introspection
     srw.encoding = encoding
@@ -535,7 +532,7 @@ def EncodedFile(file, data_encoding, file_encoding=None, errors='strict'):
     encode, decode = lookup(data_encoding)[:2]
     Reader, Writer = lookup(file_encoding)[2:]
     sr = StreamRecoder(file,
-                       encode,decode,Reader,Writer,
+                       encode, decode, Reader, Writer,
                        errors)
     # Add attributes to simplify introspection
     sr.data_encoding = data_encoding
