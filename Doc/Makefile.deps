@@ -241,6 +241,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	lib/libchunk.tex \
 	lib/libcodeop.tex \
 	lib/libcurses.tex \
+	lib/libcursespanel.tex \
 	lib/libascii.tex \
 	lib/libdl.tex \
 	lib/libmutex.tex \
