@@ -11,7 +11,8 @@ WINDOWS DEFINES:
 The code specific to Windows should be wrapped around one of
 the following #defines
 
-MS_WIN32 - Code specific to the MS Win32 API
+MS_WIN64 - Code specific to the MS Win64 API
+MS_WIN32 - Code specific to the MS Win32 (and Win64) API
 MS_WIN16 - Code specific to the old 16 bit Windows API.
 MS_WINDOWS - Code specific to Windows, but all versions.
 MS_COREDLL - Code if the Python core is built as a DLL.
@@ -42,12 +43,53 @@ compiler specific".  Therefore, these should be very rare.
 #define EXEC_PREFIX ""
 
 /* Microsoft C defines _MSC_VER */
+#ifdef _MSC_VER
+
+/* MSVC defines _WINxx to differentiate the windows platform types
+
+   Note that for compatibility reasons _WIN32 is defined on Win32
+   *and* on Win64. For the same reasons, in Python, MS_WIN32 is
+   defined on Win32 *and* Win64. Win32 only code must therefore be
+   guarded as follows:
+   	#if defined(MS_WIN32) && !defined(MS_WIN64)
+*/
+#ifdef _WIN64
+#define MS_WIN64
+#endif
+#ifdef _WIN32
+#define NT	/* NT is obsolete - please use MS_WIN32 instead */
+#define MS_WIN32
+#endif
+#ifdef _WIN16
+#define MS_WIN16
+#endif
+#define MS_WINDOWS
+
+/* set the COMPILER */
+#ifdef MS_WIN64
+#ifdef _M_IX86
+#define COMPILER "[MSC 64 bit (Intel)]"
+#elif defined(_M_ALPHA)
+#define COMPILER "[MSC 64 bit (Alpha)]"
+#else
+#define COMPILER "[MSC 64 bit (Unknown)]"
+#endif
+#endif /* MS_WIN64 */
+
+#if defined(MS_WIN32) && !defined(MS_WIN64)
+#ifdef _M_IX86
+#define COMPILER "[MSC 32 bit (Intel)]"
+#elif defined(_M_ALPHA)
+#define COMPILER "[MSC 32 bit (Alpha)]"
+#else
+#define COMPILER "[MSC (Unknown)]"
+#endif
+#endif /* MS_WIN32 && !MS_WIN64 */
+
+#endif /* _MSC_VER */
 
 #if defined(_MSC_VER) && _MSC_VER > 850
 /* Start of defines for MS_WIN32 using VC++ 2.0 and up */
-#define NT	/* NT is obsolete - please use MS_WIN32 instead */
-#define MS_WIN32
-#define MS_WINDOWS
 
 /* For NT the Python core is in a DLL by default.  Test the
 standard macro MS_COREDLL to find out.  If you have an exception
@@ -59,13 +101,6 @@ you must define MS_NO_COREDLL (do not test this macro) */
 #endif /* !USE_DL_EXPORT */
 #endif /* !MS_NO_COREDLL */
 
-#ifdef _M_IX86
-#define COMPILER "[MSC 32 bit (Intel)]"
-#elif defined(_M_ALPHA)
-#define COMPILER "[MSC 32 bit (Alpha)]"
-#else
-#define COMPILER "[MSC (Unknown)]"
-#endif
 #define PYTHONPATH ".\\DLLs;.\\lib;.\\lib\\plat-win;.\\lib\\lib-tk"
 typedef int pid_t;
 #define WORD_BIT 32
@@ -92,11 +127,9 @@ typedef int pid_t;
 #define LONG_LONG __int64
 #endif /* _MSC_VER && > 850 */
 
-#if defined(_MSC_VER) && _MSC_VER <= 850
+#if defined(_MSC_VER) && _MSC_VER <= 850 /* presume this implies Win16 */
 /* Start of defines for 16-bit Windows using VC++ 1.5 */
 #define COMPILER "[MSC 16-bit]"
-#define MS_WIN16
-#define MS_WINDOWS
 #define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3"
 #define IMPORT_8x3_NAMES
 typedef int pid_t;
@@ -200,15 +233,22 @@ typedef int pid_t;
 
 /* End of compilers - finish up */
 
-#ifdef MS_WIN32
+#if defined(MS_WIN64)
+#define PLATFORM "win64"
+#define SIZEOF_VOID_P 8
+#elif defined(MS_WIN32)
 #define PLATFORM "win32"
+#ifdef _M_ALPHA
+#define SIZEOF_VOID_P 8
 #else
-#ifdef MS_WIN16
+#define SIZEOF_VOID_P 4
+#endif
+#elif defined(MS_WIN16)
 #define PLATFORM "win16"
 #else
 #define PLATFORM "dos"
-#endif /* !MS_WIN16 */
-#endif /* !MS_WIN32 */
+#endif
+
 
 #ifdef MS_WIN32
 
@@ -228,12 +268,6 @@ typedef int pid_t;
 #define SIZEOF_INT 4
 #define SIZEOF_LONG 4
 #define SIZEOF_LONG_LONG 8
-
-#ifdef _M_ALPHA
-#define SIZEOF_VOID_P 8
-#else
-#define SIZEOF_VOID_P 4
-#endif
 
 /* Smaller stack size limit.  (9500 would work too, but we're conservative.) */
 
