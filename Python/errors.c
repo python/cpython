@@ -31,9 +31,12 @@
   err_setval() has to be changed.
 */
 
-#include "errno.h"
-
 #include "allobjects.h"
+
+#include <errno.h>
+#ifndef errno
+extern int errno;
+#endif
 
 #include "errcode.h"
 
