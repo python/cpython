@@ -51,10 +51,8 @@ class PullDOM(xml.sax.ContentHandler):
             node.setAttributeNode(attr)
         
         parent = self.curNode
+        parent.appendChild(node)
         node.parentNode = parent
-        if parent.childNodes:
-            node.previousSibling = parent.childNodes[-1]
-            node.previousSibling.nextSibling = node
         self.curNode = node
 
         self.lastEvent[1] = [(START_ELEMENT, node), None]
@@ -68,26 +66,45 @@ class PullDOM(xml.sax.ContentHandler):
         #self.events.append((END_ELEMENT, node))
         self.curNode = node.parentNode
 
+    def startElement(self, name, attrs):
+        node = self.document.createElement(name)
+
+        for aname,value in attrs.items():
+            attr = self.document.createAttribute(aname)
+            attr.value = value
+            node.setAttributeNode(attr)
+        
+        parent = self.curNode
+        parent.appendChild(node)
+        node.parentNode = parent
+        self.curNode = node
+
+        self.lastEvent[1] = [(START_ELEMENT, node), None]
+        self.lastEvent = self.lastEvent[1]
+        #self.events.append((START_ELEMENT, node))
+
+    def endElement(self, name):
+        node = self.curNode
+        self.lastEvent[1] = [(END_ELEMENT, node), None]
+        self.lastEvent = self.lastEvent[1]
+        #self.events.append((END_ELEMENT, node))
+        self.curNode = node.parentNode
+        
     def comment(self, s):
         node = self.document.createComment(s)
         parent = self.curNode
+        parent.appendChild(node)
         node.parentNode = parent
-        if parent.childNodes:
-            node.previousSibling = parent.childNodes[-1]
-            node.previousSibling.nextSibling = node
         self.lastEvent[1] = [(COMMENT, node), None]
         self.lastEvent = self.lastEvent[1]
         #self.events.append((COMMENT, node))
 
     def processingInstruction(self, target, data):
         node = self.document.createProcessingInstruction(target, data)
-        #self.appendChild(node)
         
         parent = self.curNode
+        parent.appendChild(node)
         node.parentNode = parent
-        if parent.childNodes:
-            node.previousSibling = parent.childNodes[-1]
-            node.previousSibling.nextSibling = node
         self.lastEvent[1] = [(PROCESSING_INSTRUCTION, node), None]
         self.lastEvent = self.lastEvent[1]
         #self.events.append((PROCESSING_INSTRUCTION, node))
@@ -95,17 +112,17 @@ class PullDOM(xml.sax.ContentHandler):
     def ignorableWhitespace(self, chars):
         node = self.document.createTextNode(chars[start:start + length])
         parent = self.curNode
+        parent.appendChild(node)
         node.parentNode = parent
-        if parent.childNodes:
-            node.previousSibling = parent.childNodes[-1]
-            node.previousSibling.nextSibling = node
         self.lastEvent[1] = [(IGNORABLE_WHITESPACE, node), None]
         self.lastEvent = self.lastEvent[1]
         #self.events.append((IGNORABLE_WHITESPACE, node))
 
     def characters(self, chars):
         node = self.document.createTextNode(chars)
-        node.parentNode = self.curNode
+        parent = self.curNode
+        parent.appendChild(node)
+        node.parentNode = parent
         self.lastEvent[1] = [(CHARACTERS, node), None]
         self.lastEvent = self.lastEvent[1]
 
@@ -160,8 +177,6 @@ class DOMEventStream:
             token, cur_node = event
             if cur_node is node:
                 return
-            if token != END_ELEMENT:
-                cur_node.parentNode.appendChild(cur_node)
             event = self.getEvent()
 
     def getEvent(self):
