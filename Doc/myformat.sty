@@ -1,29 +1,34 @@
 % Style parameters and macros used by all documents here
 
 % Page lay-out parameters
-\textwidth =      150mm
+\textwidth =      160mm
 \textheight =     240mm
 \topmargin =      -11mm
-\oddsidemargin =    5mm
-\evensidemargin =   5mm
-
-% Macros for e.g. and E.g. if you want them italicized:
-% \newcommand{\eg}{{\it e.g.}}
-% \newcommand{\Eg}{{\it E.g.}}
-% If you don't want them italicized:
-\newcommand{\eg}{e.g.}
-\newcommand{\Eg}{E.g.}
+\oddsidemargin =    0mm
+\evensidemargin =   0mm
+%\parindent =        0mm
 
 % Frequently used system names
-\newcommand{\Python}{Python}
+\newcommand{\Python}{Python}	% Sometimes I want this italicized
 \newcommand{\UNIX}{U{\sc nix}}
 
-% Calculate the text width for the minipage in the code environment:
+% Variable used by begin code command
 \newlength{\codewidth}
-\setlength{\codewidth}{\textwidth}
-\addtolength{\codewidth}{-\parindent}
 
-% Code environment.  Use together with begin/end verbatim!
-\newenvironment{code}%
-{\vspace{10pt}\par\begin{minipage}{\codewidth}}% begin stuff
-{\end{minipage}\par\vspace{10pt}\noindent}% end stuff
+\newcommand{\bcode}{
+	% Calculate the text width for the minipage:
+	\setlength{\codewidth}{\linewidth}
+	\addtolength{\codewidth}{-\parindent}
+	%
+	\vspace{3mm}
+	\par
+	\indent
+	\begin{minipage}[t]{\codewidth}
+}
+
+\newcommand{\ecode}{
+	\end{minipage}
+	\vspace{3mm}
+	\par
+	\noindent
+}
