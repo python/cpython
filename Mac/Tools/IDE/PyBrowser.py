@@ -322,9 +322,7 @@ class BrowserWidget(W.CustomList):
 					editor.select()
 					return
 				elif os.path.exists(value) and os.path.isfile(value):
-					import macfs
-					fss = macfs.FSSpec(value)
-					if fss.GetCreatorType()[1] == 'TEXT':
+					if MacOS.GetCreatorAndType(value)[1] in ('TEXT', '\0\0\0\0'):
 						W.getapplication().openscript(value)
 	
 	def itemrepr(self, (key, value, arrow, indent), str = str, double_repr = double_repr, 

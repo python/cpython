@@ -85,7 +85,6 @@ class ConsoleTextWidget(W.EditText):
 				self._inputstart = selstart
 	
 	def domenu_save_as(self, *args):
-		import macfs
 		filename = EasyDialogs.AskFileForSave(message='Save console text as:', 
 			savedFileName='console.txt')
 		if not filename:
@@ -93,7 +92,7 @@ class ConsoleTextWidget(W.EditText):
 		f = open(filename, 'wb')
 		f.write(self.get())
 		f.close()
-		fss.SetCreatorType(W._signature, 'TEXT')
+		MacOS.SetCreatorAndType(filename, W._signature, 'TEXT')
 	
 	def write(self, text):
 		self._buf = self._buf + text
@@ -242,7 +241,6 @@ class OutputTextWidget(W.EditText):
 	
 	def domenu_save_as(self, *args):
 		title = self._parentwindow.gettitle()
-		import macfs
 		filename = EasyDialogs.AskFileForSave(message='Save %s text as:' % title, 
 			savedFileName=title + '.txt')
 		if not filename:
@@ -250,7 +248,7 @@ class OutputTextWidget(W.EditText):
 		f = open(filename, 'wb')
 		f.write(self.get())
 		f.close()
-		fss.SetCreatorType(W._signature, 'TEXT')
+		MacOS.SetCreatorAndType(filename, W._signature, 'TEXT')
 	
 	def domenu_cut(self, *args):
 		self.domenu_copy(*args)

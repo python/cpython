@@ -83,7 +83,6 @@ def main():
 		stats = pstats.Stats(i)
 		browser = ProfileBrowser(stats)
 	else:
-		import macfs
 		filename = EasyDialogs.AskFileForOpen(message='Profiler data')
 		if not filename: sys.exit(0)
 		stats = pstats.Stats(filename)

@@ -4,20 +4,21 @@ import W
 import Wtraceback
 from Wkeys import *
 
-import macfs
-import MACFS
 import MacOS
 import EasyDialogs
 from Carbon import Win
 from Carbon import Res
 from Carbon import Evt
 from Carbon import Qd
+from Carbon import File
 import os
 import imp
 import sys
 import string
 import marshal
 import re
+
+smAllScripts = -3
 
 if hasattr(Win, "FrontNonFloatingWindow"):
 	MyFrontWindow = Win.FrontNonFloatingWindow
@@ -61,8 +62,7 @@ class Editor(W.Window):
 			f = open(path, "rb")
 			text = f.read()
 			f.close()
-			fss = macfs.FSSpec(path)
-			self._creator, filetype = fss.GetCreatorType()
+			self._creator, filetype = MacOS.GetCreatorAndType(path)
 		else:
 			raise IOError, "file '%s' does not exist" % path
 		self.path = path
@@ -134,7 +134,7 @@ class Editor(W.Window):
 		try:
 			resref = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
-			Res.FSpCreateResFile(self.path, self._creator, 'TEXT', MACFS.smAllScripts)
+			Res.FSpCreateResFile(self.path, self._creator, 'TEXT', smAllScripts)
 			resref = Res.FSpOpenResFile(self.path, 3)
 		try:
 			data = Res.Resource(marshal.dumps(self.settings))
@@ -389,8 +389,7 @@ class Editor(W.Window):
 		fp = open(self.path, 'wb')  # open file in binary mode, data has '\r' line-endings
 		fp.write(data)
 		fp.close()
-		fss = macfs.FSSpec(self.path)
-		fss.SetCreatorType(self._creator, 'TEXT')
+		MacOS.SetCreatorAndType(self.path, self._creator, 'TEXT')
 		self.getsettings()
 		self.writewindowsettings()
 		self.editgroup.editor.changed = 0
@@ -419,8 +418,8 @@ class Editor(W.Window):
 		app.makeopenwindowsmenu()
 		if hasattr(app, 'makescriptsmenu'):
 			app = W.getapplication()
-			fss, fss_changed = app.scriptsfolder.Resolve()
-			path = fss.as_pathname()
+			fsr, changed = app.scriptsfolder.FSResolveAlias(None)
+			path = fsr.as_pathname()
 			if path == self.path[:len(path)]:
 				W.getapplication().makescriptsmenu()
 	
@@ -546,14 +545,8 @@ class Editor(W.Window):
 		interp_path = os.path.join(sys.exec_prefix, "bin", "python")
 		file_path = self.path
 		if not os.path.exists(interp_path):
-			# This "can happen" if we are running IDE under MacPython. Try
-			# the standard location.
-			interp_path = "/Library/Frameworks/Python.framework/Versions/2.3/bin/python"
-			try:
-				fsr = macfs.FSRef(interp_path)
-			except macfs.Error:
-				raise W.AlertError, "Can't find command-line Python"
-			file_path = macfs.FSRef(macfs.FSSpec(self.path)).as_pathname()
+			# This "can happen" if we are running IDE under MacPython-OS9.
+			raise W.AlertError, "Can't find command-line Python"
 		cmd = '"%s" "%s" ; exit' % (interp_path, file_path)
 		t = Terminal.Terminal()
 		t.do_script(with_command=cmd)
@@ -1368,8 +1361,10 @@ def EditorDefaultSettings():
 
 def resolvealiases(path):
 	try:
-		return macfs.ResolveAliasFile(path)[0].as_pathname()
-	except (macfs.error, ValueError), (error, str):
+		fsr, d1, d2 = File.FSResolveAliasFile(path, 1)
+		path = fsr.as_pathname()
+		return path
+	except (File.Error, ValueError), (error, str):
 		if error <> -120:
 			raise
 		dir, file = os.path.split(path)

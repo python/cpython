@@ -7,9 +7,10 @@ import Wapplication
 import W
 import os
 import sys
-import macfs
 import MacOS
 import EasyDialogs
+from Carbon import File
+from Carbon import Files
 
 if MacOS.runtimemodel == 'macho':
 	ELIPSES = '...'
@@ -23,6 +24,10 @@ def runningOnOSX():
 	value = gestalt("menu") & gestaltMenuMgrAquaLayoutMask
 	return not not value
 
+def getmodtime(file):
+	file = File.FSRef(file)
+	catinfo, d1, d2, d3 = file.FSGetCatalogInfo(Files.kFSCatInfoContentMod)
+	return catinfo.contentModDate
 
 class PythonIDE(Wapplication.Application):
 	
@@ -125,21 +130,21 @@ class PythonIDE(Wapplication.Application):
 		
 		prefs = self.getprefs()
 		try:
-			fss, fss_changed = macfs.RawAlias(prefs.scriptsfolder).Resolve()
-			self.scriptsfolder = fss.NewAlias()
+			fsr, d = File.Alias(rawdata=prefs.scriptsfolder).FSResolveAlias(None)
+			self.scriptsfolder = fsr.FSNewAliasMinimal()
 		except:
-			path = os.path.join(os.getcwd(), ":Mac:IDE scripts")
+			path = os.path.join(os.getcwd(), "Mac", "IDE scripts")
 			if not os.path.exists(path):
 				path = os.path.join(os.getcwd(), "Scripts")
 				if not os.path.exists(path):
 					os.mkdir(path)
 					f = open(os.path.join(path, "Place your scripts here"+ELIPSES), "w")
 					f.close()
-			fss = macfs.FSSpec(path)
-			self.scriptsfolder = fss.NewAlias()
-			self.scriptsfoldermodtime = fss.GetDates()[1]
+			fsr = File.FSRef(path)
+			self.scriptsfolder = fsr.FSNewAliasMinimal()
+			self.scriptsfoldermodtime = getmodtime(fsr)
 		else:
-			self.scriptsfoldermodtime = fss.GetDates()[1]
+			self.scriptsfoldermodtime = getmodtime(fsr)
 		prefs.scriptsfolder = self.scriptsfolder.data
 		self._scripts = {}
 		self.scriptsmenu = None
@@ -153,9 +158,9 @@ class PythonIDE(Wapplication.Application):
 	
 	def suspendresume(self, onoff):
 		if onoff:
-			fss, fss_changed = self.scriptsfolder.Resolve()
-			modtime = fss.GetDates()[1]
-			if self.scriptsfoldermodtime <> modtime or fss_changed:
+			fsr, changed = self.scriptsfolder.FSResolveAlias(None)
+			modtime = getmodtime(fsr)
+			if self.scriptsfoldermodtime <> modtime or changed:
 				self.scriptsfoldermodtime = modtime
 				W.SetCursor('watch')
 				self.makescriptsmenu()
@@ -171,12 +176,12 @@ class PythonIDE(Wapplication.Application):
 		if type(docs) <> type([]):
 			docs = [docs]
 		for doc in docs:
-			fss, a = doc.Resolve()
-			path = fss.as_pathname()
+			fsr, a = doc.FSResolveAlias(None)
+			path = fsr.as_pathname()
 			self.opendoc(path)
 	
 	def opendoc(self, path):
-		fcreator, ftype = macfs.FSSpec(path).GetCreatorType()
+		fcreator, ftype = MacOS.GetCreatorAndType(path)
 		if ftype == 'TEXT':
 			self.openscript(path)
 		elif ftype == '\0\0\0\0' and path[-3:] == '.py':
@@ -191,11 +196,11 @@ class PythonIDE(Wapplication.Application):
 		Splash.about()
 	
 	def do_setscriptsfolder(self, *args):
-		fss = EasyDialogs.AskFolder(message="Select Scripts Folder",
-			wanted=macfs.FSSpec)
-		if fss:
+		fsr = EasyDialogs.AskFolder(message="Select Scripts Folder",
+			wanted=File.FSRef)
+		if fsr:
 			prefs = self.getprefs()
-			alis = fss.NewAlias()
+			alis = fsr.FSNewAliasMinimal()
 			prefs.scriptsfolder = alis.data
 			self.scriptsfolder = alis
 			self.makescriptsmenu()
@@ -246,8 +251,8 @@ class PythonIDE(Wapplication.Application):
 		self.scriptsmenu = FrameWork.Menu(self.menubar, "Scripts")
 		#FrameWork.MenuItem(self.scriptsmenu, "New script", None, self.domenu_new)
 		#self.scriptsmenu.addseparator()
-		fss, fss_changed = self.scriptsfolder.Resolve()
-		self.scriptswalk(fss.as_pathname(), self.scriptsmenu)
+		fsr, d1 = self.scriptsfolder.FSResolveAlias(None)
+		self.scriptswalk(fsr.as_pathname(), self.scriptsmenu)
 	
 	def makeopenwindowsmenu(self):
 		for i in range(len(self.openwindowsmenu.items)):

@@ -1,6 +1,5 @@
 import re
 import W
-import macfs
 import os
 import MacPrefs
 import MacOS
