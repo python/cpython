@@ -66,6 +66,10 @@
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
 #undef WORDS_BIGENDIAN
 
+/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
+   and you want support for AIX C++ shared extension modules. */
+#undef AIX_GENUINE_CPLUSPLUS
+
 /* Define if your <unistd.h> contains bad prototypes for exec*()
    (as it does on SGI IRIX 4.x) */
 #undef BAD_EXEC_PROTOTYPES
@@ -74,15 +78,14 @@
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD
 
-/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
-   and you want support for AIX C++ shared extension modules. */
-#undef AIX_GENUINE_CPLUSPLUS
-
 /* Define this if you have BeOS threads */
 #undef BEOS_THREADS
 
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
+
+/* Defined when case of imported modules are checked against case of file. */
+#undef CHECK_IMPORT_CASE
 
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
@@ -96,6 +99,9 @@
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
+
+/* Defined when any dynamic module loading is enabled */
+#undef HAVE_DYNAMIC_LOADING
 
 /* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
 #undef HAVE_GETC_UNLOCKED
@@ -112,11 +118,17 @@
 /* Define this if you have the 6-arg version of gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R_6_ARG
 
+/* Defined to enable large file support when an off_t is bigger than a long
+   and long long is available and at least as big as an off_t. You may need
+   to add some flags for configuration and compilation to enable this mode.
+   E.g, for Solaris 2.7:
+   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
+ configure
+*/
+#undef HAVE_LARGEFILE_SUPPORT
+
 /* Define this if you have the type long long */
 #undef HAVE_LONG_LONG
-
-/* Define this if you have the type uintptr_t */
-#undef HAVE_UINTPTR_T
 
 /* Define if your compiler supports function prototypes */
 #undef HAVE_PROTOTYPES
@@ -128,11 +140,25 @@
    (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
 #undef HAVE_STDARG_PROTOTYPES
 
+/* Define this if you have the type uintptr_t */
+#undef HAVE_UINTPTR_T
+
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be 16-bit unsigned type. (see
+   Include/unicodeobject.h). */
+#undef HAVE_USABLE_WCHAR_T
+
+/* Define if the compiler provides a wchar.h header file. */
+#undef HAVE_WCHAR_H
+
 /* Define if malloc(0) returns a NULL pointer */
 #undef MALLOC_ZERO_RETURNS_NULL
 
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
+
+/* Define if you want to build an interpreter with many run-time checks  */
+#undef Py_DEBUG
 
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
@@ -142,6 +168,20 @@
 
 /* Define to empty if the keyword does not work.  */
 #undef signed
+
+/* Define if i>>j for signed int i does not extend the sign bit
+   when i < 0
+*/
+#undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
+
+/* The number of bytes in an off_t. */
+#undef SIZEOF_OFF_T
+
+/* The number of bytes in a time_t. */
+#undef SIZEOF_TIME_T
+
+/* The number of bytes in a pthread_t. */
+#undef SIZEOF_PTHREAD_T
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef socklen_t
@@ -159,24 +199,12 @@
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
-/* Define if the compiler provides a wchar.h header file. */
-#undef HAVE_WCHAR_H
-
-/* Define if you have a useable wchar_t type defined in wchar.h; useable
-   means wchar_t must be 16-bit unsigned type. (see
-   Include/unicodeobject.h). */
-#undef HAVE_USABLE_WCHAR_T
-
 /* Define if you want wctype.h functions to be used instead of the
    one supplied by Python itself. (see Include/unicodectype.h). */
 #undef WANT_WCTYPE_FUNCTIONS
 
-/* Define if you want to use SGI (IRIX 4) dynamic linking.
-   This requires the "dl" library by Jack Jansen,
-   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
-   Don't bother on IRIX 5, it already has dynamic linking using SunOS
-   style shared libraries */ 
-#undef WITH_SGI_DL
+/* Define if you want to compile in cycle garbage collection */
+#undef WITH_CYCLE_GC
 
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking.
    This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
@@ -194,47 +222,22 @@
    linker (rld). Dyld is necessary to support frameworks. */
 #undef WITH_DYLD
 
-/* Define if you want to compile in rudimentary thread support */
-#undef WITH_THREAD
-
-/* Define if you want to compile in cycle garbage collection */
-#undef WITH_CYCLE_GC
+/* Define if you want to use BSD db. */
+#undef WITH_LIBDB
 
 /* Define if you want to produce an OpenStep/Rhapsody framework
    (shared library plus accessory files). */
 #undef WITH_NEXT_FRAMEWORK
 
-/* Define if you want to use BSD db. */
-#undef WITH_LIBDB
+/* Define if you want to use SGI (IRIX 4) dynamic linking.
+   This requires the "dl" library by Jack Jansen,
+   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
+   Don't bother on IRIX 5, it already has dynamic linking using SunOS
+   style shared libraries */ 
+#undef WITH_SGI_DL
 
-/* Define if you want to build an interpreter with many run-time checks  */
-#undef Py_DEBUG
-
-/* The number of bytes in an off_t. */
-#undef SIZEOF_OFF_T
-
-/* The number of bytes in a time_t. */
-#undef SIZEOF_TIME_T
-
-/* The number of bytes in a pthread_t. */
-#undef SIZEOF_PTHREAD_T
-
-/* Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
-   to add some flags for configuration and compilation to enable this mode.
-   E.g, for Solaris 2.7:
-   CFLAGS="-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64" OPT="-O2 $CFLAGS" \
- configure
-*/
-#undef HAVE_LARGEFILE_SUPPORT
-
-/* Defined when any dynamic module loading is enabled */
-#undef HAVE_DYNAMIC_LOADING
-
-/* Define if i>>j for signed int i does not extend the sign bit
-   when i < 0
-*/
-#undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
+/* Define if you want to compile in rudimentary thread support */
+#undef WITH_THREAD
 
 /* The number of bytes in a char.  */
 #undef SIZEOF_CHAR

@@ -1010,7 +1010,7 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 
 #ifdef CHECK_IMPORT_CASE
 
-#ifdef MS_WIN32
+#if defined(MS_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
 #include <ctype.h>
 
@@ -1039,14 +1039,26 @@ allcaps8x3(char *s)
 	return 1;
 }
 
+#ifdef __CYGWIN__
+#include <sys/cygwin.h>
+#endif
+
 static int
 check_case(char *buf, int len, int namelen, char *name)
 {
 	WIN32_FIND_DATA data;
 	HANDLE h;
+#ifdef __CYGWIN__
+	char tempbuf[MAX_PATH];
+#endif
 	if (getenv("PYTHONCASEOK") != NULL)
 		return 1;
+#ifdef __CYGWIN__
+	cygwin32_conv_to_win32_path(buf, tempbuf);
+	h = FindFirstFile(tempbuf, &data);
+#else
 	h = FindFirstFile(buf, &data);
+#endif
 	if (h == INVALID_HANDLE_VALUE) {
 		PyErr_Format(PyExc_NameError,
 		  "Can't find file for module %.100s\n(filename %.300s)",
