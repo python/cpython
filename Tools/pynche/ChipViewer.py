@@ -1,79 +1,92 @@
-"""Color chip megawidget.
-This widget is used for displaying a color.  It consists of three components:
-
-    label -- a Tkinter.Label, this is the chip's label which is displayed
-             about the color chip 
-    chip  -- A Tkinter.Frame, the frame displaying the color
-    name  -- a Tkinter.Label, the name of the color
-
-In addition, the megawidget understands the following options:
-
-    color -- the color displayed in the chip and name widgets
-
-When run as a script, this program displays a sample chip.
-"""
-
-
+from types import StringType
 from Tkinter import *
-import Pmw
+import ColorDB
 
-class ChipWidget(Pmw.MegaWidget):
+
+class ChipWidget:
     _WIDTH = 150
     _HEIGHT = 80
 
-    def __init__(self, parent=None, **kw):
-	options = (('chip_borderwidth', 2,            None),
-		   ('chip_width',       self._WIDTH,  None),
-		   ('chip_height',      self._HEIGHT, None),
-		   ('label_text',       'Color',      None),
-		   ('color',            'blue',       self.__set_color),
-		   )
-	self.defineoptions(kw, options)
+    def __init__(self,
+                 parent = None,
+                 width  = _WIDTH,
+                 height = _HEIGHT,
+                 text   = 'Color',
+                 initialcolor = 'blue',
+                 presscmd   = None,
+                 releasecmd = None):
+        # create the text label
+        self.__label = Label(parent, text=text)
+        self.__label.grid(row=0, column=0)
+        # create the color chip, implemented as a frame
+        self.__chip = Frame(parent, relief=RAISED, borderwidth=2,
+                            width=width,
+                            height=height,
+                            background=initialcolor)
+        self.__chip.grid(row=1, column=0)
+        # create the color name, ctor argument must be a string
+        self.__name = Label(parent, text=initialcolor)
+        self.__name.grid(row=2, column=0)
+        #
+        # set bindings
+        if presscmd:
+            self.__chip.bind('<ButtonPress-1>', presscmd)
+        if releasecmd:
+            self.__chip.bind('<ButtonRelease-1>', releasecmd)
 
-	# initialize base class -- after defining options
-	Pmw.MegaWidget.__init__(self, parent)
-	interiorarg = (self.interior(),)
+    def set_color(self, color):
+        self.__chip.config(background=color)
+        self.__name.config(text=color)
 
-	# create the label
-	self.__label = self.createcomponent(
-	    # component name, aliases, group
-	    'label', (), None,
-	    # widget class, widget args
-	    Label, interiorarg)
-	self.__label.grid(row=0, column=0)
+    def get_color(self):
+        return self.__chip['background']
 
-	# create the color chip
-	self.__chip = self.createcomponent(
-	    'chip', (), None,
-	    Frame, interiorarg,
-	    relief=RAISED, borderwidth=2)
-	self.__chip.grid(row=1, column=0)
+    def press(self):
+        self.__chip.configure(relief=SUNKEN)
 
-	# create the color name
-	self.__name = self.createcomponent(
-	    'name', (), None,
-	    Label, interiorarg,)
-	self.__name.grid(row=2, column=0)
-
-	# Check keywords and initialize options
-	self.initialiseoptions(ChipWidget)
-
-    # called whenever `color' option is set
-    def __set_color(self):
-	color = self['color']
-	self.__chip['background'] = color
-	self.__name['text'] = color
+    def release(self):
+        self.__chip.configure(relief=RAISED)
 
 
 
-if __name__ == '__main__':
-    root = Pmw.initialise(fontScheme='pmw1')
-    root.title('ChipWidget demonstration')
+class ChipViewer:
+    def __init__(self, switchboard, parent=None):
+        self.__sb = switchboard
+        self.__frame = Frame(parent)
+        self.__frame.pack()
+        # create the chip that will display the currently selected color
+        # exactly
+        self.__sframe = Frame(self.__frame)
+        self.__sframe.grid(row=0, column=0)
+        self.__selected = ChipWidget(self.__sframe, text='Selected')
+        # create the chip that will display the nearest real X11 color
+        # database color name
+        self.__nframe = Frame(self.__frame)
+        self.__nframe.grid(row=0, column=1)
+        self.__nearest = ChipWidget(self.__nframe, text='Nearest',
+                                    presscmd = self.__buttonpress,
+                                    releasecmd = self.__buttonrelease)
 
-    exitbtn = Button(root, text='Exit', command=root.destroy)
-    exitbtn.pack(side=BOTTOM)
-    widget = ChipWidget(root, color='red',
-			chip_width=200,
-			label_text='Selected Color')
-    widget.pack()
-    root.mainloop()
+    def update_yourself(self, red, green, blue):
+        # TBD: should exactname default to X11 color name if their is an exact
+        # match for the rgb triplet?  Part of me says it's nice to see both
+        # names for the color, the other part says that it's better to
+        # feedback the exact match.
+        rgbtuple = (red, green, blue)
+        try:
+            allcolors = self.__sb.colordb().find_byrgb(rgbtuple)
+            exactname = allcolors[0]
+        except ColorDB.BadColor:
+            exactname = ColorDB.triplet_to_rrggbb(rgbtuple)
+        nearest = self.__sb.colordb().nearest(red, green, blue)
+        self.__selected.set_color(exactname)
+        self.__nearest.set_color(nearest)
+
+    def __buttonpress(self, event=None):
+        self.__nearest.press()
+
+    def __buttonrelease(self, event=None):
+        self.__nearest.release()
+        colorname = self.__nearest.get_color()
+        red, green, blue = self.__sb.colordb().find_byname(colorname)
+        self.__sb.update_views(red, green, blue)
