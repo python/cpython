@@ -105,7 +105,6 @@ signal_handler(sig_num)
 	(void *)signal(sig_num, &signal_handler);
 }
  
-
 static object *
 signal_alarm(self, args)
 	object *self; /* Not used */
@@ -115,6 +114,18 @@ signal_alarm(self, args)
 	if (!getargs(args, "i", &t))
 		return NULL;
 	alarm(t);
+	INCREF(None);
+	return None;
+}
+ 
+static object *
+signal_pause(self, args)
+	object *self; /* Not used */
+	object *args;
+{
+	if (!getnoarg(args))
+		return NULL;
+	pause();
 	INCREF(None);
 	return None;
 }
@@ -189,6 +200,7 @@ static struct methodlist signal_methods[] = {
 	{"alarm",	signal_alarm},
         {"signal",	signal_signal},
         {"getsignal",	signal_getsignal},
+	{"pause",	signal_pause},
 	{NULL,		NULL}		/* sentinel */
 };
 
