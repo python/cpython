@@ -45,7 +45,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "macstat.h"
 
-#ifndef __MWERKS__
+#ifdef __MWERKS__
+/* For CodeWarrior 4 also define CW4 */
+#include <unix.h>
+#else
 #include <fcntl.h>
 #endif
 
@@ -154,7 +157,7 @@ mac_chdir(self, args)
 	return mac_1str(args, chdir);
 }
 
-#ifndef __MWERKS__
+#ifndef CW4
 static object *
 mac_close(self, args)
 	object *self;
@@ -291,7 +294,7 @@ mac_listdir(self, args)
 	return d;
 }
 
-#ifndef __MWERKS__
+#ifndef CW4
 static object *
 mac_lseek(self, args)
 	object *self;
@@ -310,7 +313,7 @@ mac_lseek(self, args)
 		return mac_error();
 	return newintobject(res);
 }
-#endif /* !__MWERKS__ */
+#endif /* !CW4 */
 
 static object *
 mac_mkdir(self, args)
@@ -320,7 +323,7 @@ mac_mkdir(self, args)
 	return mac_strint(args, mkdir);
 }
 
-#ifndef __MWERKS__
+#ifndef CW4
 static object *
 mac_open(self, args)
 	object *self;
@@ -432,7 +435,7 @@ mac_unlink(self, args)
 	return mac_1str(args, (int (*)(const char *))unlink);
 }
 
-#ifndef __MWERKS__
+#ifndef CW4
 static object *
 mac_write(self, args)
 	object *self;
@@ -465,7 +468,7 @@ mac_mstats(self, args)
 
 static struct methodlist mac_methods[] = {
 	{"chdir",	mac_chdir},
-#ifndef __MWERKS__
+#ifndef CW4
 	{"close",	mac_close},
 #endif
 #ifdef MPW
@@ -477,11 +480,11 @@ static struct methodlist mac_methods[] = {
 	{"getbootvol",	mac_getbootvol}, /* non-standard */
 	{"getcwd",	mac_getcwd},
 	{"listdir",	mac_listdir},
-#ifndef __MWERKS__
+#ifndef CW4
 	{"lseek",	mac_lseek},
 #endif
 	{"mkdir",	mac_mkdir},
-#ifndef __MWERKS__
+#ifndef CW4
 	{"open",	mac_open},
 	{"read",	mac_read},
 #endif
@@ -490,7 +493,7 @@ static struct methodlist mac_methods[] = {
 	{"stat",	mac_stat},
 	{"sync",	mac_sync},
 	{"unlink",	mac_unlink},
-#ifndef __MWERKS__
+#ifndef CW4
 	{"write",	mac_write},
 #endif
 #ifdef MALLOC_DEBUG
