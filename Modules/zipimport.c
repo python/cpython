@@ -371,7 +371,7 @@ zipimporter_is_package(PyObject *obj, PyObject *args)
 	char *fullname;
 	enum module_info mi;
 
-	if (!PyArg_ParseTuple(args, "s:zipimporter.find_module",
+	if (!PyArg_ParseTuple(args, "s:zipimporter.is_package",
 			      &fullname))
 		return NULL;
 
@@ -947,7 +947,7 @@ normalize_line_endings(PyObject *source)
 		return NULL;
 	}
 	/* replace "\r\n?" by "\n" */
-	for (q = buf;;) {
+	for (q = buf; *p != '\0'; p++) {
 		if (*p == '\r') {
 			*q++ = '\n';
 			if (*(p + 1) == '\n')
@@ -955,9 +955,6 @@ normalize_line_endings(PyObject *source)
 		}
 		else
 			*q++ = *p;
-		if (*p == '\0')
-			break;
-		p++;
 	}
 	*q++ = '\n';  /* add trailing \n */
 	*q = '\0';

@@ -186,6 +186,9 @@ class CompressedZipImportTestCase(UncompressedZipImportTestCase):
     compression = ZIP_DEFLATED
 
 
-if __name__ == "__main__":
+def test_main():
     test_support.run_unittest(UncompressedZipImportTestCase)
     test_support.run_unittest(CompressedZipImportTestCase)
+
+if __name__ == "__main__":
+    test_main()
