@@ -67,17 +67,6 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(process)
-getbaseclasses(application_process)
-getbaseclasses(desk_accessory_process)
-getbaseclasses(application)
-getbaseclasses(package)
-getbaseclasses(file)
-getbaseclasses(application_file)
-getbaseclasses(alias_file)
-getbaseclasses(internet_location_file)
-getbaseclasses(document_file)
-getbaseclasses(clipping)
 getbaseclasses(icon_view_options)
 getbaseclasses(label)
 getbaseclasses(column)
@@ -85,18 +74,29 @@ getbaseclasses(preferences)
 getbaseclasses(alias_list)
 getbaseclasses(icon_family)
 getbaseclasses(list_view_options)
-getbaseclasses(application)
 getbaseclasses(item)
-getbaseclasses(trash_2d_object)
-getbaseclasses(desktop_2d_object)
-getbaseclasses(container)
-getbaseclasses(folder)
-getbaseclasses(disk)
+getbaseclasses(package)
+getbaseclasses(file)
+getbaseclasses(application_file)
+getbaseclasses(alias_file)
+getbaseclasses(internet_location_file)
+getbaseclasses(document_file)
+getbaseclasses(clipping)
 getbaseclasses(preferences_window)
 getbaseclasses(Finder_window)
 getbaseclasses(window)
 getbaseclasses(clipping_window)
 getbaseclasses(information_window)
+getbaseclasses(application)
+getbaseclasses(process)
+getbaseclasses(application_process)
+getbaseclasses(desk_accessory_process)
+getbaseclasses(application)
+getbaseclasses(trash_2d_object)
+getbaseclasses(desktop_2d_object)
+getbaseclasses(container)
+getbaseclasses(folder)
+getbaseclasses(disk)
 getbaseclasses(StdSuites.Type_Names_Suite.double_integer)
 getbaseclasses(StdSuites.Type_Names_Suite.version)
 getbaseclasses(StdSuites.Type_Names_Suite.RGB16_color)
@@ -142,17 +142,6 @@ getbaseclasses(StdSuites.Type_Names_Suite.bounding_rectangle)
 # Indices of types declared in this module
 #
 _classdeclarations = {
-    'prcs' : process,
-    'pcap' : application_process,
-    'pcda' : desk_accessory_process,
-    'capp' : application,
-    'pack' : package,
-    'file' : file,
-    'appf' : application_file,
-    'alia' : alias_file,
-    'inlf' : internet_location_file,
-    'docf' : document_file,
-    'clpf' : clipping,
     'icop' : icon_view_options,
     'clbl' : label,
     'lvcl' : column,
@@ -160,18 +149,29 @@ _classdeclarations = {
     'alst' : alias_list,
     'ifam' : icon_family,
     'lvop' : list_view_options,
-    'capp' : application,
     'cobj' : item,
-    'ctrs' : trash_2d_object,
-    'cdsk' : desktop_2d_object,
-    'ctnr' : container,
-    'cfol' : folder,
-    'cdis' : disk,
+    'pack' : package,
+    'file' : file,
+    'appf' : application_file,
+    'alia' : alias_file,
+    'inlf' : internet_location_file,
+    'docf' : document_file,
+    'clpf' : clipping,
     'pwnd' : preferences_window,
     'brow' : Finder_window,
     'cwin' : window,
     'lwnd' : clipping_window,
     'iwnd' : information_window,
+    'capp' : application,
+    'prcs' : process,
+    'pcap' : application_process,
+    'pcda' : desk_accessory_process,
+    'capp' : application,
+    'ctrs' : trash_2d_object,
+    'cdsk' : desktop_2d_object,
+    'ctnr' : container,
+    'cfol' : folder,
+    'cdis' : disk,
     'comp' : StdSuites.Type_Names_Suite.double_integer,
     'vers' : StdSuites.Type_Names_Suite.version,
     'tr16' : StdSuites.Type_Names_Suite.RGB16_color,

@@ -28,7 +28,8 @@ gensuitemodule.processfile_fromresource(APPLESCRIPT,
 gensuitemodule.processfile(SYSTEMEVENTS,
 	output=os.path.join(DSTDIR, 'SystemEvents'),
 	basepkgname='StdSuites',
-	edit_modnames=[], verbose=verbose)
+	edit_modnames=[('Disk_2d_Folder_2d_File_Suite', 'Disk_Folder_File_Suite')], 
+	verbose=verbose)
 gensuitemodule.processfile(CODEWARRIOR,
 	output=os.path.join(DSTDIR, 'CodeWarrior'),
 	basepkgname='StdSuites',

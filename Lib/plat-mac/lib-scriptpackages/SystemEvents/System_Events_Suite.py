@@ -50,7 +50,7 @@ class _Prop_system_wide_UI_element(aetools.NProperty):
 
 applications = application
 application._superclassnames = []
-import Disk_2d_Folder_2d_File_Suite
+import Disk_Folder_File_Suite
 import Standard_Suite
 import Folder_Actions_Suite
 import Login_Items_Suite
@@ -63,15 +63,15 @@ application._privpropdict = {
 }
 application._privelemdict = {
     'UI_element' : Processes_Suite.UI_element,
-    'alias' : Disk_2d_Folder_2d_File_Suite.alias,
+    'alias' : Disk_Folder_File_Suite.alias,
     'application_process' : Processes_Suite.application_process,
     'desk_accessory_process' : Processes_Suite.desk_accessory_process,
-    'disk' : Disk_2d_Folder_2d_File_Suite.disk,
+    'disk' : Disk_Folder_File_Suite.disk,
     'document' : Standard_Suite.document,
-    'file' : Disk_2d_Folder_2d_File_Suite.file,
-    'folder' : Disk_2d_Folder_2d_File_Suite.folder,
+    'file' : Disk_Folder_File_Suite.file,
+    'folder' : Disk_Folder_File_Suite.folder,
     'folder_action' : Folder_Actions_Suite.folder_action,
-    'item' : Disk_2d_Folder_2d_File_Suite.item,
+    'item' : Disk_Folder_File_Suite.item,
     'login_item' : Login_Items_Suite.login_item,
     'process' : Processes_Suite.process,
     'window' : Standard_Suite.window,

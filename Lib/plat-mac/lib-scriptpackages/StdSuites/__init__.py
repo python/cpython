@@ -220,13 +220,6 @@ getbaseclasses(double_integer)
 getbaseclasses(long_fixed)
 getbaseclasses(null)
 getbaseclasses(target_id)
-getbaseclasses(paragraph)
-getbaseclasses(character)
-getbaseclasses(text_flow)
-getbaseclasses(text_style_info)
-getbaseclasses(line)
-getbaseclasses(word)
-getbaseclasses(text)
 getbaseclasses(graphic_group)
 getbaseclasses(oval)
 getbaseclasses(graphic_text)
@@ -240,8 +233,19 @@ getbaseclasses(rounded_rectangle)
 getbaseclasses(arc)
 getbaseclasses(pixel_map)
 getbaseclasses(rectangle)
+getbaseclasses(paragraph)
+getbaseclasses(character)
+getbaseclasses(text_flow)
+getbaseclasses(text_style_info)
+getbaseclasses(line)
+getbaseclasses(word)
+getbaseclasses(text)
 getbaseclasses(graphic_group)
 getbaseclasses(drawing_area)
+getbaseclasses(cell)
+getbaseclasses(column)
+getbaseclasses(table)
+getbaseclasses(row)
 getbaseclasses(AppleTalk_address)
 getbaseclasses(address_specification)
 getbaseclasses(Token_Ring_address)
@@ -254,10 +258,6 @@ getbaseclasses(device_specification)
 getbaseclasses(LocalTalk_address)
 getbaseclasses(IP_address)
 getbaseclasses(Ethernet_address)
-getbaseclasses(cell)
-getbaseclasses(column)
-getbaseclasses(table)
-getbaseclasses(row)
 
 #
 # Indices of types declared in this module
@@ -415,13 +415,6 @@ _classdeclarations = {
     'lfxd' : long_fixed,
     'null' : null,
     'targ' : target_id,
-    'cpar' : paragraph,
-    'cha ' : character,
-    'cflo' : text_flow,
-    'tsty' : text_style_info,
-    'clin' : line,
-    'cwor' : word,
-    'ctxt' : text,
     'cpic' : graphic_group,
     'covl' : oval,
     'cgtx' : graphic_text,
@@ -435,8 +428,19 @@ _classdeclarations = {
     'carc' : arc,
     'cpix' : pixel_map,
     'crec' : rectangle,
+    'cpar' : paragraph,
+    'cha ' : character,
+    'cflo' : text_flow,
+    'tsty' : text_style_info,
+    'clin' : line,
+    'cwor' : word,
+    'ctxt' : text,
     'cpic' : graphic_group,
     'cdrw' : drawing_area,
+    'ccel' : cell,
+    'ccol' : column,
+    'ctbl' : table,
+    'crow' : row,
     'cat ' : AppleTalk_address,
     'cadr' : address_specification,
     'ctok' : Token_Ring_address,
@@ -449,10 +453,6 @@ _classdeclarations = {
     'clt ' : LocalTalk_address,
     'cip ' : IP_address,
     'cen ' : Ethernet_address,
-    'ccel' : cell,
-    'ccol' : column,
-    'ctbl' : table,
-    'crow' : row,
 }
 
 
