@@ -22,7 +22,6 @@ esac
 TMPDIR=/tmp/_py
 #TMPDIR=/projects/_py
 
-BUILDROOT=$TMPDIR/build
 INSTALLROOT=$TMPDIR/install
 DMGDIR=$TMPDIR/dmg
 RESOURCEDIR=$PROGDIR/resources
@@ -30,9 +29,24 @@ DESTDIR=$TMPDIR/dist
 PYTHONSRC=$PROGDIR/../../..
 WASTEDIR=$PYTHONSRC/../waste
 
+case x$1 in
+x)
+	BUILDROOT=$TMPDIR/build
+	;;
+*)
+	BUILDROOT=$1
+	;;
+esac
+
 # Setup
-mkdir -p $BUILDROOT
-mkdir -p $INSTALLROOT
+if [ -e $BUILDROOT ]; then
+	echo Using existing build directory $BUILDROOT
+	CLEANBUILD=no
+else
+	echo Creating clean build directory $BUILDROOT
+	CLEANBUILD=yes
+	mkdir -p $BUILDROOT
+fi
 rm -rf $DMGDIR
 mkdir -p $DMGDIR/root
 
@@ -68,9 +82,9 @@ if [ ! -e waste ]; then
     ln -s $WASTEDIR waste
 fi
 
-$PYTHONSRC/configure --enable-framework=$INSTALLROOT/Library/Frameworks LDFLAGS=-Wl,-x
+$PYTHONSRC/configure -C --enable-framework LDFLAGS=-Wl,-x
 make
-make DIRMODE=775 EXEMODE=775 FILEMODE=664 frameworkinstall
+make DIRMODE=775 EXEMODE=775 FILEMODE=664 DESTDIR=$INSTALLROOT frameworkinstall
 
 if [ "$builddocs" = "y" -o "$builddocs" = "Y" ]; then
     ./python.exe $PYTHONSRC/Mac/OSX/setupDocs.py build
@@ -122,12 +136,16 @@ mv $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM.dmg $DESTDIR
 # Cleanup build/install dirs
 if [ $DOCLEANUP = yes ]; then
     echo "Cleaning up..."
-    rm -rf $BUILDROOT
+    if [ $CLEANBUILD = yes ]; then
+    	rm -rf $BUILDROOT
+    fi
     rm -rf $INSTALLROOT
     rm -rf $DMGDIR
 else
     echo "Cleanup is disabled.  You should remove these dirs when done:"
-    echo "          $BUILDROOT"
+    if [ $CLEANBUILD = yes ]; then
+    	echo "          $BUILDROOT"
+    fi
     echo "          $INSTALLROOT"
     echo "          $DMGDIR"
 fi
