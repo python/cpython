@@ -902,6 +902,13 @@ ext = Extension("samp",
 Modifying \file{sample.h} would then cause the module to be recompiled.
 (Contributed by Jeremy Hylton.)
 
+\item Other minor changes to Distutils:
+it now checks for the \envvar{CC}, \envvar{CFLAGS}, \envvar{CPP},
+\envvar{LDFLAGS}, and \envvar{CPPFLAGS} environment variables, using
+them to override the settings in Python's configuration (contributed
+by Robert Weber); the \function{get_distutils_option()} method lists
+recently-added extensions to Distutils.
+
 \item The \module{getopt} module gained a new function,
 \function{gnu_getopt()}, that supports the same arguments as the existing
 \function{getopt()} function but uses GNU-style scanning mode. 
