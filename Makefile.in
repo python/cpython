@@ -122,10 +122,17 @@ SHELL=		/bin/sh
 # Use ``EXE=.exe'' for Unix emulations on DOS/Windows (e.g. GNUWIN32)
 EXE=
 
+# Modes for directories, executables and data files created by the
+# install process.  Default to group-writable directories but
+# user-only-writable for executables and data files.
+DIRMODE=	775
+EXEMODE=	755
+FILEMODE=	644
+
 # Portable install script (configure doesn't always guess right)
 INSTALL=	@srcdir@/install-sh -c
-INSTALL_PROGRAM=${INSTALL} -m 755
-INSTALL_DATA=	${INSTALL} -m 644
+INSTALL_PROGRAM=${INSTALL} -m $(EXEMODE)
+INSTALL_DATA=	${INSTALL} -m $(FILEMODE)
 
 # --with-PACKAGE options for configure script
 # e.g. --with-readline --with-svr5 --with-solaris --with-thread
@@ -233,7 +240,7 @@ altbininstall:	python
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
 				mkdir $$i; \
-				chmod 755 $$i; \
+				chmod $(DIRMODE) $$i; \
 			else	true; \
 			fi; \
 		done
@@ -246,7 +253,7 @@ maninstall:
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
 				mkdir $$i; \
-				chmod 755 $$i; \
+				chmod $(DIRMODE) $$i; \
 			else	true; \
 			fi; \
 		done
@@ -263,7 +270,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
 				mkdir $$i; \
-				chmod 755 $$i; \
+				chmod $(DIRMODE) $$i; \
 			else	true; \
 			fi; \
 		done
@@ -275,7 +282,7 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 			if test ! -d $$b; then \
 				echo "Creating directory $$b"; \
 				mkdir $$b; \
-				chmod 755 $$b; \
+				chmod $(DIRMODE) $$b; \
 			else	true; \
 			fi; \
 		done
@@ -332,7 +339,7 @@ inclinstall:
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
 				mkdir $$i; \
-				chmod 755 $$i; \
+				chmod $(DIRMODE) $$i; \
 			else	true; \
 			fi; \
 		done
@@ -352,7 +359,7 @@ libainstall:	all
 			if test ! -d $$i; then \
 				echo "Creating directory $$i"; \
 				mkdir $$i; \
-				chmod 755 $$i; \
+				chmod $(DIRMODE) $$i; \
 			else	true; \
 			fi; \
 		done
