@@ -263,6 +263,7 @@ class CCompiler:
                  output_dir=None,
                  macros=None,
                  include_dirs=None,
+                 debug=0,
                  extra_preargs=None,
                  extra_postargs=None):
         """Compile one or more C/C++ source files.  'sources' must be
@@ -277,9 +278,12 @@ class CCompiler:
            undefines a macro.  Later definitions/redefinitions/
            undefinitions take precedence.
 
-           'include_dirs', if given, must be a list of strings, the directories
-           to add to the default include file search path for this
-           compilation only.
+           'include_dirs', if given, must be a list of strings, the
+           directories to add to the default include file search path for
+           this compilation only.
+
+           'debug' is a boolean; if true, the compiler will be instructed
+           to output debug symbols in (or alongside) the object file(s).
 
            'extra_preargs' and 'extra_postargs' are optional lists of extra
            command-line arguments that will be, respectively, prepended or
@@ -295,7 +299,8 @@ class CCompiler:
     def link_static_lib (self,
                          objects,
                          output_libname,
-                         output_dir=None):
+                         output_dir=None,
+                         debug=0):
         """Link a bunch of stuff together to create a static library
            file.  The "bunch of stuff" consists of the list of object
            files supplied as 'objects', the extra object files supplied
@@ -304,8 +309,32 @@ class CCompiler:
            'set_libraries()', and the libraries supplied as 'libraries'
            (if any).
 
-           'output_libname' should be a library name, not a filename;
-           the filename will be inferred from the library name.
+           'output_libname' should be a library name, not a filename; the
+           filename will be inferred from the library name.  'output_dir'
+           is the directory where the library file will be put.
+
+           'debug' is a boolean; if true, debugging information will be
+           included in the library (note that on most platforms, it is the
+           compile step where this matters: the 'debug' flag is included
+           here just for consistency)."""
+
+        pass
+    
+
+    def link_shared_lib (self,
+                         objects,
+                         output_libname,
+                         output_dir=None,
+                         libraries=None,
+                         library_dirs=None,
+                         debug=0,
+                         extra_preargs=None,
+                         extra_postargs=None):
+        """Link a bunch of stuff together to create a shared library
+           file.  Has the same effect as 'link_static_lib()' except
+           that the filename inferred from 'output_libname' will most
+           likely be different, and the type of file generated will
+           almost certainly be different
 
            'libraries' is a list of libraries to link against.  These are
            library names, not filenames, since they're translated into
@@ -321,26 +350,15 @@ class CCompiler:
            default and those supplied to 'add_library_dir()' and/or
            'set_library_dirs()'.
 
+           'debug' is as for 'compile()' and 'link_static_lib()', with the
+           slight distinction that it actually matters on most platforms
+           (as opposed to 'link_static_lib()', which includes a 'debug'
+           flag mostly for form's sake).
+
            'extra_preargs' and 'extra_postargs' are as for 'compile()'
            (except of course that they supply command-line arguments
-           for the particular linker being used)."""
+           for the particular linker being used)."""           
 
-        pass
-    
-
-    def link_shared_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         extra_preargs=None,
-                         extra_postargs=None):
-        """Link a bunch of stuff together to create a shared library
-           file.  Has the same effect as 'link_static_lib()' except
-           that the filename inferred from 'output_libname' will most
-           likely be different, and the type of file generated will
-           almost certainly be different."""
         pass
     
 
@@ -350,6 +368,7 @@ class CCompiler:
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
+                            debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
         """Link a bunch of stuff together to create a shared object
@@ -367,6 +386,7 @@ class CCompiler:
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
         """Link a bunch of stuff together to create a binary executable
