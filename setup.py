@@ -14,6 +14,13 @@ from distutils.command.install import install
 # This global variable is used to hold the list of modules to be disabled.
 disabled_module_list = []
 
+def add_dir_to_list(dirlist, dir):
+    """Add the directory 'dir' to the list 'dirlist' (at the front) if
+    1) 'dir' is not already in 'dirlist'
+    2) 'dir' actually exists, and is a directory."""
+    if os.path.isdir(dir) and dir not in dirlist:
+        dirlist.insert(0, dir)
+
 def find_file(filename, std_dirs, paths):
     """Searches for the directory where a given file is located,
     and returns a possibly-empty list of additional directories, or None
@@ -193,10 +200,13 @@ class PyBuildExt(build_ext):
 
     def detect_modules(self):
         # Ensure that /usr/local is always used
-        if '/usr/local/lib' not in self.compiler.library_dirs:
-            self.compiler.library_dirs.insert(0, '/usr/local/lib')
-        if '/usr/local/include' not in self.compiler.include_dirs:
-            self.compiler.include_dirs.insert(0, '/usr/local/include' )
+        add_dir_to_list(self.compiler.library_dirs, '/usr/local/lib')
+        add_dir_to_list(self.compiler.include_dirs, '/usr/local/include')
+
+        add_dir_to_list(self.compiler.library_dirs,
+                        sysconfig.get_config_var("LIBDIR"))
+        add_dir_to_list(self.compiler.include_dirs,
+                        sysconfig.get_config_var("INCLUDEDIR"))
 
         try:
             have_unicode = unicode
