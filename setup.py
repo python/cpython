@@ -300,7 +300,6 @@ class PyBuildExt(build_ext):
 
         exts.append( Extension('_hotshot', ['_hotshot.c']) )
         exts.append( Extension('_weakref', ['_weakref.c']) )
-        exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
@@ -389,9 +388,7 @@ class PyBuildExt(build_ext):
         if platform not in ['atheos', 'mac']:
             exts.append( Extension('mmap', ['mmapmodule.c']) )
 
-        # Lance Ellinghaus's modules:
-        # enigma-inspired encryption
-        exts.append( Extension('rotor', ['rotormodule.c']) )
+        # Lance Ellinghaus's syslog module
         if platform not in ['mac']:
             # syslog daemon interface
             exts.append( Extension('syslog', ['syslogmodule.c']) )
@@ -628,25 +625,6 @@ class PyBuildExt(build_ext):
         if (self.compiler.find_library_file(lib_dirs, 'gdbm')):
             exts.append( Extension('gdbm', ['gdbmmodule.c'],
                                    libraries = ['gdbm'] ) )
-
-        # The mpz module interfaces to the GNU Multiple Precision library.
-        # You need to ftp the GNU MP library.
-        # This was originally written and tested against GMP 1.2 and 1.3.2.
-        # It has been modified by Rob Hooft to work with 2.0.2 as well, but I
-        # haven't tested it recently, and it definitely doesn't work with
-        # GMP 4.0.  For more complete modules, refer to
-        # http://gmpy.sourceforge.net and
-        # http://www.egenix.com/files/python/mxNumber.html
-
-        # A compatible MP library unencumbered by the GPL also exists.  It was
-        # posted to comp.sources.misc in volume 40 and is widely available from
-        # FTP archive sites. One URL for it is:
-        # ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume40/fgmp/part01.Z
-
-        if (self.compiler.find_library_file(lib_dirs, 'gmp')):
-            exts.append( Extension('mpz', ['mpzmodule.c'],
-                                   libraries = ['gmp'] ) )
-
 
         # Unix-only modules
         if platform not in ['mac', 'win32']:
