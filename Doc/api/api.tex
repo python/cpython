@@ -2326,30 +2326,44 @@ interned string object with the same value.
                                                int size,
                                                const char *encoding,
                                                const char *errors}
-Create a string object by decoding \var{size} bytes of the encoded
-buffer \var{s}. \var{encoding} and \var{errors} have the same meaning
+Creates an object by decoding \var{size} bytes of the encoded
+buffer \var{s} using the codec registered
+for \var{encoding}. \var{encoding} and \var{errors} have the same meaning
 as the parameters of the same name in the unicode() builtin
 function. The codec to be used is looked up using the Python codec
 registry. Returns \NULL{} in case an exception was raised by the
 codec.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyString_Encode}{const Py_UNICODE *s,
+\begin{cfuncdesc}{PyObject*}{PyString_AsDecodedObject}{PyObject *str,
+                                               const char *encoding,
+                                               const char *errors}
+Decodes a string object by passing it to the codec registered
+for \var{encoding} and returns the result as Python 
+object. \var{encoding} and \var{errors} have the same meaning as the
+parameters of the same name in the string .encode() method. The codec
+to be used is looked up using the Python codec registry. Returns
+\NULL{} in case an exception was raised by the codec.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_Encode}{const char *s,
                                                int size,
                                                const char *encoding,
                                                const char *errors}
-Encodes the \ctype{Py_UNICODE} buffer of the given size and returns a
-Python string object. \var{encoding} and \var{errors} have the same
+Encodes the \ctype{char} buffer of the given size by passing it to 
+the codec registered for \var{encoding} and returns a Python object. 
+\var{encoding} and \var{errors} have the same
 meaning as the parameters of the same name in the string .encode()
 method. The codec to be used is looked up using the Python codec
 registry. Returns \NULL{} in case an exception was raised by the
 codec.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyString_AsEncodedString}{PyObject *unicode,
+\begin{cfuncdesc}{PyObject*}{PyString_AsEncodedObject}{PyObject *str,
                                                const char *encoding,
                                                const char *errors}
-Encodes a string object and returns the result as Python string
+Encodes a string object using the codec registered
+for \var{encoding} and returns the result as Python 
 object. \var{encoding} and \var{errors} have the same meaning as the
 parameters of the same name in the string .encode() method. The codec
 to be used is looked up using the Python codec registry. Returns

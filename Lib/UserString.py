@@ -72,6 +72,14 @@ class UserString:
     def center(self, width): return self.__class__(self.data.center(width))
     def count(self, sub, start=0, end=sys.maxint):
         return self.data.count(sub, start, end)
+    def decode(self, encoding=None, errors=None): # XXX improve this?
+        if encoding:
+            if errors:
+                return self.__class__(self.data.decode(encoding, errors))
+            else:
+                return self.__class__(self.data.decode(encoding))
+        else:
+            return self.__class__(self.data.decode())
     def encode(self, encoding=None, errors=None): # XXX improve this?
         if encoding:
             if errors:

@@ -78,7 +78,7 @@ extern DL_IMPORT(void) _Py_ReleaseInternedStrings(void);
 
 /* --- Generic Codecs ----------------------------------------------------- */
 
-/* Create a string object by decoding the encoded string s of the
+/* Create an object by decoding the encoded string s of the
    given size. */
 
 extern DL_IMPORT(PyObject*) PyString_Decode(
@@ -89,7 +89,7 @@ extern DL_IMPORT(PyObject*) PyString_Decode(
     );
 
 /* Encodes a char buffer of the given size and returns a 
-   Python string object. */
+   Python object. */
 
 extern DL_IMPORT(PyObject*) PyString_Encode(
     const char *s,              /* string char buffer */
@@ -98,10 +98,47 @@ extern DL_IMPORT(PyObject*) PyString_Encode(
     const char *errors          /* error handling */
     );
 
-/* Encodes a string object and returns the result as Python string
+/* Encodes a string object and returns the result as Python 
    object. */
 
+extern DL_IMPORT(PyObject*) PyString_AsEncodedObject(
+    PyObject *str,	 	/* string object */
+    const char *encoding,	/* encoding */
+    const char *errors		/* error handling */
+    );
+
+/* Encodes a string object and returns the result as Python string
+   object.   
+   
+   If the codec returns an Unicode object, the object is converted
+   back to a string using the default encoding.
+
+   DEPRECATED - use PyString_AsEncodedObject() instead. */
+
 extern DL_IMPORT(PyObject*) PyString_AsEncodedString(
+    PyObject *str,	 	/* string object */
+    const char *encoding,	/* encoding */
+    const char *errors		/* error handling */
+    );
+
+/* Decodes a string object and returns the result as Python 
+   object. */
+
+extern DL_IMPORT(PyObject*) PyString_AsDecodedObject(
+    PyObject *str,	 	/* string object */
+    const char *encoding,	/* encoding */
+    const char *errors		/* error handling */
+    );
+
+/* Decodes a string object and returns the result as Python string
+   object.  
+   
+   If the codec returns an Unicode object, the object is converted
+   back to a string using the default encoding.
+
+   DEPRECATED - use PyString_AsDecodedObject() instead. */
+
+extern DL_IMPORT(PyObject*) PyString_AsDecodedString(
     PyObject *str,	 	/* string object */
     const char *encoding,	/* encoding */
     const char *errors		/* error handling */

@@ -79,4 +79,13 @@ aliases = {
     'tis260': 'tactis',
     'sjis': 'shift_jis',
 
+    # Content transfer/compression encodings
+    'rot13': 'rot_13',
+    'base64': 'base64_codec',
+    'base_64': 'base64_codec',
+    'zlib': 'zlib_codec',
+    'zip': 'zlib_codec',
+    'hex': 'hex_codec',
+    'uu': 'uu_codec',
+
 }
