@@ -1455,6 +1455,21 @@ then
 fi
 AC_MSG_RESULT($with_universal_newlines)
 
+# Check for --with-doc-strings
+AC_MSG_CHECKING(for --with-doc-strings)
+AC_ARG_WITH(doc-strings,
+[  --with(out)-doc-strings         disable/enable documentation strings])
+
+if test -z "$with_doc_strings"
+then with_doc_strings="yes"
+fi
+if test "$with_doc_strings" != "no"
+then
+    AC_DEFINE(WITH_DOC_STRINGS, 1,
+      [Define if you want documentation strings in extension modules])
+fi
+AC_MSG_RESULT($with_doc_strings)
+
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,

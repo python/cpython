@@ -146,4 +146,14 @@
 /* GNU pth user-space thread support */
 #include <pth.h>
 #endif
+
+/* Define macros for inline documentation. */
+#define PyDoc_VAR(name) static char name[]
+#define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
+#ifdef WITH_DOC_STRINGS
+#define PyDoc_STR(str) str
+#else
+#define PyDoc_STR(str) ""
+#endif
+
 #endif /* !Py_PYTHON_H */
