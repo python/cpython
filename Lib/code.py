@@ -70,7 +70,7 @@ class InteractiveInterpreter:
         """
         try:
             code = compile_command(source, filename, symbol)
-        except (OverflowError, SyntaxError):
+        except (OverflowError, SyntaxError, ValueError):
             # Case 1
             self.showsyntaxerror(filename)
             return 0
