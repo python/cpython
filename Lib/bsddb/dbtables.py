@@ -21,7 +21,7 @@ import re
 import sys
 import copy
 import xdrlib
-import whrandom
+import random
 from types import ListType, StringType
 import cPickle as pickle
 
@@ -354,8 +354,8 @@ class bsdTableDB :
             # (note: this code has <64 bits of randomness
             # but it's plenty for our database id needs!)
             p = xdrlib.Packer()
-            p.pack_int(int(whrandom.random()*2147483647))
-            p.pack_int(int(whrandom.random()*2147483647))
+            p.pack_int(int(random.random()*2147483647))
+            p.pack_int(int(random.random()*2147483647))
             newid = p.get_buffer()
 
             # Guarantee uniqueness by adding this key to the database

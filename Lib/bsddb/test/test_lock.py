@@ -6,7 +6,6 @@ import sys, os, string
 import tempfile
 import time
 from pprint import pprint
-from whrandom import random
 
 try:
     from threading import Thread, currentThread
