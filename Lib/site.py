@@ -57,8 +57,6 @@ import of sitecustomize is still attempted.
 
 """
 
-print "loading site.py"
-
 import sys, os
 
 def addsitedir(sitedir):
