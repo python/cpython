@@ -116,11 +116,10 @@ range_getiter(rangeobject *r)
 static PyObject *
 range_next(rangeobject *r)
 {
-	if (r->index >= r->len) {
-		PyErr_SetObject(PyExc_StopIteration, Py_None);
-		return NULL;
-	}
-	return PyInt_FromLong(r->start + (r->index++) * r->step);
+	if (r->index < r->len) 
+		return PyInt_FromLong(r->start + (r->index++) * r->step);
+	PyErr_SetObject(PyExc_StopIteration, Py_None);
+	return NULL;
 }
 
 static PyMethodDef range_methods[] = {
