@@ -67,8 +67,8 @@ class BCPPCompiler(CCompiler) :
         self.lib = "tlib.exe"
 
         self.preprocess_options = None
-        self.compile_options = ['/tWM', '/O2', '/q']
-        self.compile_options_debug = ['/tWM', '/Od', '/q']
+        self.compile_options = ['/tWM', '/O2', '/q', '/g0']
+        self.compile_options_debug = ['/tWM', '/Od', '/q', '/g0']
 
         self.ldflags_shared = ['/Tpd', '/Gn', '/q', '/x']
         self.ldflags_shared_debug = ['/Tpd', '/Gn', '/q', '/x']
@@ -232,7 +232,6 @@ class BCPPCompiler(CCompiler) :
             # either exchange python15.lib in the python libs directory against
             # a Borland-like one, or create one with name bcpp_python15.lib 
             # there and remove the pragmas from config.h  
-            #libraries.append ('mypylib')            
             libraries.append ('import32')
             libraries.append ('cw32mt')
 
@@ -257,7 +256,7 @@ class BCPPCompiler(CCompiler) :
             # name of dll file
             ld_args.extend([',',output_filename])
             # no map file and start libraries 
-            ld_args.extend([',', ','])
+            ld_args.append(',,')
 
             for lib in libraries:
                 # see if we find it and if there is a bcpp specific lib 
