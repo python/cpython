@@ -77,12 +77,19 @@ class Application:
 	"Application framework -- your application should be a derived class"
 	
 	def __init__(self):
+		self._windows = {}
 		self.makemenubar()
 	
 	def makemenubar(self):
 		self.menubar = MenuBar()
 		AppleMenu(self.menubar, self.getabouttext(), self.do_about)
 		self.makeusermenus()
+		
+	def appendwindow(self, wid, window):
+		self._windows[wid] = window
+		
+	def removewindow(self, wid):
+		del self._windows[wid]
 	
 	def getabouttext(self):
 		return "About %s..." % self.__class__.__name__
@@ -125,6 +132,9 @@ class Application:
 			return None
 	
 	def dispatch(self, event):
+		if IsDialogEvent(event):
+			self.do_dialogevent(event)
+			return
 		(what, message, when, where, modifiers) = event
 		if eventname.has_key(what):
 			name = "do_" + eventname[what]
@@ -135,55 +145,52 @@ class Application:
 		except AttributeError:
 			handler = self.do_unknownevent
 		handler(event)
+		
+	def do_dialogevent(self, event):
+		gotone, window, item = DialogSelect(event)
+		if gotone:
+			if self._windows.has_key(window):
+				window.do_itemhit(item, event)
+			else:
+				print 'Dialog event for unknown dialog'
 	
 	def do_mouseDown(self, event):
 		(what, message, when, where, modifiers) = event
-		partcode, window = FindWindow(where)
+		partcode, wid = FindWindow(where)
+
+		#
+		# Find the correct name.
+		#
 		if partname.has_key(partcode):
 			name = "do_" + partname[partcode]
 		else:
 			name = "do_%d" % partcode
-		try:
-			handler = getattr(self, name)
-		except AttributeError:
-			handler = self.do_unknownpartcode
-		handler(partcode, window, event)
-	
-	def do_inDrag(self, partcode, window, event):
-		where = event[3]
-		window.DragWindow(where, self.draglimit)
-	
-	draglimit = everywhere
-	
-	def do_inGoAway(self, partcode, window, event):
-		where = event[3]
-		if window.TrackGoAway(where):
-			self.do_close(window)
-	
-	def do_close(self, window):
-		if DEBUG: print "Should close window:", window
-	
-	def do_inZoom(self, partcode, window, event):
-		(what, message, when, where, modifiers) = event
-		if window.TrackBox(where, partcode):
-			window.ZoomWindow(partcode, 1)
-	
-	def do_inZoomIn(self, partcode, window, event):
-		SetPort(window) # !!!
-		self.do_inZoom(partcode, window, event)
-	
-	def do_inZoomOut(self, partcode, window, event):
-		SetPort(window) # !!!
-		self.do_inZoom(partcode, window, event)
-	
+
+		if wid == None:
+			# No window, or a non-python window	
+			try:
+				handler = getattr(self, name)
+			except AttributeError:
+				# Not menubar or something, so assume someone
+				# else's window
+				MacOS.HandleEvent(event)
+				return		
+		elif self._windows.has_key(wid):
+			# It is a window. Hand off to correct window.
+			window = self._windows[wid]
+			try:
+				handler = getattr(window, name)
+			except AttributeError:
+				handler = self.do_unknownpartcode
+		else:
+			# It is a python-toolbox window, but not ours.
+			handler = self.do_unknownwindow
+		handler(partcode, wid, event)
+
 	def do_inSysWindow(self, partcode, window, event):
 		MacOS.HandleEvent(event)
-		# print "SystemClick", event, window
-		# SystemClick(event, window) # XXX useless, window is None
 	
 	def do_inDesk(self, partcode, window, event):
-		# print "inDesk"
-		# XXX what to do with it?
 		MacOS.HandleEvent(event)
 	
 	def do_inMenuBar(self, partcode, window, event):
@@ -202,43 +209,16 @@ class Application:
 	def do_menu(self, id, item, window, event):
 		self.menubar.dispatch(id, item, window, event)
 	
-	def do_inGrow(self, partcode, window, event):
-		(what, message, when, where, modifiers) = event
-		result = window.GrowWindow(where, self.growlimit)
-		if result:
-			height = (result>>16) & 0xffff	# Hi word
-			width = result & 0xffff		# Lo word
-			self.do_resize(width, height, window)
-	
-	growlimit = everywhere
-	
-	def do_resize(self, width, height, window):
-		window.SizeWindow(width, height, 0)
-		self.do_postresize(width, height, window)
-	
-	def do_postresize(self, width, height, window):
-		SetPort(window)
-		InvalRect(everywhere)
-	
-	def do_inContent(self, partcode, window, event):
-		(what, message, when, where, modifiers) = event
-		local = GlobalToLocal(where)
-		ctltype, control = FindControl(local, window)
-		if ctltype and control:
-			pcode = control.TrackControl(local)
-			if pcode:
-				self.do_controlhit(window, control, pcode, event)
-		else:
-			if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
-				(local, window, ctltype, control)
-	
-	def do_controlhit(self, window, control, pcode, event):
-		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
 	
 	def do_unknownpartcode(self, partcode, window, event):
 		(what, message, when, where, modifiers) = event
 		if DEBUG: print "Mouse down at global:", where
 		if DEBUG: print "\tUnknown part code:", partcode
+		if DEBUG: print "\tEvent:", self.printevent(event)
+		MacOS.HandleEvent(event)
+		
+	def do_unknownwindow(self, partcode, window, event):
+		if DEBUG: print 'Unknown window:', window
 		MacOS.HandleEvent(event)
 	
 	def do_keyDown(self, event):
@@ -260,41 +240,64 @@ class Application:
 				item = result & 0xffff		# Lo word
 				if id:
 					self.do_rawmenu(id, item, None, event)
-				elif c == 'w':
-					w = FrontWindow()
-					if w:
-						self.do_close(w)
-					else:
-						if DEBUG: print 'Command-W without front window'
+#				elif c == 'w':
+#					w = FrontWindow()
+#					if w:
+#						self.do_close(w)
+#					else:
+#						if DEBUG: print 'Command-W without front window'
 				else:
 					if DEBUG: print "Command-" +`c`
 		else:
-			self.do_char(c, event)
+			# See whether the front window wants it
+			w = FrontWindow()
+			if w and self._windows.has_key(w):
+				window = self._windows[w]
+				try:
+					do_char = window.do_char
+				except AttributeError:
+					do_char = self.do_char
+			do_char(c, event)
 	
 	def do_char(self, c, event):
 		if DEBUG: print "Character", `c`
 	
 	def do_updateEvt(self, event):
-		if DEBUG: 
-			print "do_update",
-			self.printevent(event)
-		window = FrontWindow() # XXX This is wrong!
-		if window:
-			self.do_rawupdate(window, event)
+		(what, message, when, where, modifiers) = event
+		wid = WhichWindow(message)
+		if wid and self._windows.has_key(wid):
+			window = self._windows[wid]
+			window.do_rawupdate(wid, event)
 		else:
 			MacOS.HandleEvent(event)
 	
-	def do_rawupdate(self, window, event):
-		if DEBUG: print "raw update for", window
-		window.BeginUpdate()
-		self.do_update(window, event)
-		DrawControls(window)
-		window.DrawGrowIcon()
-		window.EndUpdate()
-	
-	def do_update(self, window, event):
-		EraseRect(everywhere)
-	
+	def do_activateEvt(self, event):
+		(what, message, when, where, modifiers) = event
+		wid = WhichWindow(message)
+		if wid and self._windows.has_key(wid):
+			window = self._windows[wid]
+			window.do_activate(modifiers & 1, event)
+		else:
+			MacOS.HandleEvent(event)
+			
+	def do_osEvt(self, event):
+		(what, message, when, where, modifiers) = event
+		which = (message >> 24) & 0xff
+		if which == 1:	# suspend/resume
+			self.do_suspendresume(event)
+		else:
+			if DEBUG:
+				print 'unknown osEvt:',
+				self.printevent(event)
+				
+	def do_suspendresume(self, event):
+		# Is this a good idea???
+		(what, message, when, where, modifiers) = event
+		w = FrontWindow()
+		if w:
+			nev = (activateEvt, w, when, where, message&1)
+			self.do_activateEvt(self, nev)
+
 	def do_kHighLevelEvent(self, event):
 		(what, message, when, where, modifiers) = event
 		if DEBUG: 
@@ -307,8 +310,9 @@ class Application:
 			traceback.print_exc()
 	
 	def do_unknownevent(self, event):
-		print "Unknown event:",
-		self.printevent(event)
+		if DEBUG:
+			print "Unhandled event:",
+			self.printevent(event)
 	
 	def printevent(self, event):
 		(what, message, when, where, modifiers) = event
@@ -446,6 +450,143 @@ class AppleMenu(Menu):
 			name = self.menu.GetItem(item)
 			OpenDeskAcc(name)
 
+class Window:
+	"""A single window belonging to an application"""
+	
+	def __init__(self, parent):
+		self.wid = None
+		self.parent = parent
+		
+	def open(self):
+		self.wid = NewWindow((40, 40, 400, 400), self.__class__.__name__, 1,
+				0, -1, 1, 0)
+		self.do_postopen()
+		
+	def do_postopen(self):
+		"""Tell our parent we exist"""
+		self.parent.appendwindow(self.wid, self)
+		
+	def close(self):
+		pass
+		self.do_postclose()
+			
+	def do_postclose(self):
+		self.parent.removewindow(self.wid)
+		self.parent = None
+		self.wid = None
+	
+	def do_inDrag(self, partcode, window, event):
+		where = event[3]
+		window.DragWindow(where, self.draglimit)
+	
+	draglimit = everywhere
+	
+	def do_inGoAway(self, partcode, window, event):
+		where = event[3]
+		if window.TrackGoAway(where):
+			self.close()
+	
+	def do_inZoom(self, partcode, window, event):
+		(what, message, when, where, modifiers) = event
+		if window.TrackBox(where, partcode):
+			window.ZoomWindow(partcode, 1)
+	
+	def do_inZoomIn(self, partcode, window, event):
+		SetPort(window) # !!!
+		self.do_inZoom(partcode, window, event)
+	
+	def do_inZoomOut(self, partcode, window, event):
+		SetPort(window) # !!!
+		self.do_inZoom(partcode, window, event)
+	
+	def do_inGrow(self, partcode, window, event):
+		(what, message, when, where, modifiers) = event
+		result = window.GrowWindow(where, self.growlimit)
+		if result:
+			height = (result>>16) & 0xffff	# Hi word
+			width = result & 0xffff		# Lo word
+			self.do_resize(width, height, window)
+	
+	growlimit = everywhere
+	
+	def do_resize(self, width, height, window):
+		window.SizeWindow(width, height, 0)
+		self.do_postresize(width, height, window)
+	
+	def do_postresize(self, width, height, window):
+		SetPort(window)
+		InvalRect(everywhere)
+	
+	def do_inContent(self, partcode, window, event):
+		#
+		# If we're not frontmost, select ourselves and wait for
+		# the activate event.
+		#
+		if FrontWindow() <> window:
+			window.SelectWindow()
+			return
+		# We are. Handle the event.
+		(what, message, when, where, modifiers) = event
+		SetPort(window)
+		local = GlobalToLocal(where)
+		self.do_contentclick(local, modifiers, event)
+		
+	def do_contentclick(self, local, modifiers, event):
+		print 'Click in contents at %s, modifiers %s'%(local, modifiers)
+	
+	def do_rawupdate(self, window, event):
+		if DEBUG: print "raw update for", window
+		window.BeginUpdate()
+		self.do_update(window, event)
+		window.EndUpdate()
+	
+	def do_update(self, window, event):
+		EraseRect(everywhere)
+		
+	def do_activate(self, activate, event):
+		if DEBUG: print 'Activate %d for %s'%(activate, self.wid)
+		
+class ControlsWindow(Window):
+
+	def do_rawupdate(self, window, event):
+		if DEBUG: print "raw update for", window
+		window.BeginUpdate()
+		self.do_update(window, event)
+		DrawControls(window)
+		window.DrawGrowIcon()
+		window.EndUpdate()
+	
+	def do_controlhit(self, window, control, pcode, event):
+		if DEBUG: print "control hit in", window, "on", control, "; pcode =", pcode
+
+	def do_inContent(self, partcode, window, event):
+		(what, message, when, where, modifiers) = event
+		local = GlobalToLocal(where)
+		ctltype, control = FindControl(local, window)
+		if ctltype and control:
+			pcode = control.TrackControl(local)
+			if pcode:
+				self.do_controlhit(window, control, pcode, event)
+		else:
+			if DEBUG: print "FindControl(%s, %s) -> (%s, %s)" % \
+				(local, window, ctltype, control)
+	
+class DialogWindow(Window):
+	"""A modeless dialog window"""
+	
+	def open(self, resid):
+		self.wid = GetNewDialog(resid, -1)
+		self.do_postopen()
+		
+	def close(self):
+		self.wid.DisposeDialog()
+		self.do_postclose()
+		
+	def do_itemhit(self, item, event):
+		print 'Dialog %s, item %d hit'%(self.wid, item)
+		
+	def do_rawupdate(self, window, event):
+		pass
 
 def ostypecode(x):
 	"Convert a long int to the 4-character code it really is"
