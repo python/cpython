@@ -145,8 +145,8 @@ Again, such objects are ordered arbitrarily but consistently.
 ordered by their type names; objects of the same types that don't
 support proper comparison are ordered by their address.)
 
-Two more operations with the same syntactic priority, \code{in} and
-\code{not in}, are supported only by sequence types (below).
+Two more operations with the same syntactic priority, \samp{in} and
+\samp{not in}, are supported only by sequence types (below).
 \opindex{in}
 \opindex{not in}
 
@@ -172,7 +172,7 @@ working with.
 
 Complex numbers have a real and imaginary part, which are both
 implemented using \code{double} in \C{}.  To extract these parts from
-a complex number \code{z}, use \code{z.real} and \code{z.imag}.  
+a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
 
 Numbers are created by numeric literals or as the result of built-in
 functions and operators.  Unadorned integer literals (including hex
@@ -230,7 +230,7 @@ comparison operations):
   \lineiii{complex(\var{re},\var{im})}{a complex number with real part \var{re}, imaginary part \var{im}.  \var{im} defaults to zero.}{}
   \lineiii{divmod(\var{x}, \var{y})}{the pair \code{(\var{x} / \var{y}, \var{x} \%{} \var{y})}}{(3)}
   \lineiii{pow(\var{x}, \var{y})}{\var{x} to the power \var{y}}{}
-  \lineiii{\var{x}**\var{y}}{\var{x} to the power \var{y}}{}
+  \lineiii{\var{x} ** \var{y}}{\var{x} to the power \var{y}}{}
 \end{tableiii}
 \indexiii{operations on}{numeric}{types}
 
@@ -400,10 +400,12 @@ required by the format string; if the string requires a single
 argument, the right argument may also be a single non-tuple object.%
 \footnote{A tuple object in this case should be a singleton.}
 The following format characters are understood:
-\%, c, s, i, d, u, o, x, X, e, E, f, g, G.
-Width and precision may be a * to specify that an integer argument
-specifies the actual width or precision.  The flag characters -, +,
-blank, \# and 0 are understood.  The size specifiers h, l or L may be
+\code{\%}, \code{c}, \code{s}, \code{i}, \code{d}, \code{u}, \code{o},
+\code{x}, \code{X}, \code{e}, \code{E}, \code{f}, \code{g}, \code{G}. 
+Width and precision may be a \code{*} to specify that an integer argument
+specifies the actual width or precision.  The flag characters
+\code{-}, \code{+}, blank, \code{\#} and \code{0} are understood.  The
+size specifiers \code{h}, \code{l} or \code{L} may be 
 present but are ignored.  The \code{\%s} conversion takes any Python
 object and converts it to a string using \code{str()} before
 formatting it.  The ANSI features \code{\%p} and \code{\%n}
@@ -431,10 +433,9 @@ For example:
 >>> language = 'Python'
 >>> print '%(language)s has %(count)03d quote types.' % vars()
 Python has 002 quote types.
->>> 
 \end{verbatim}
 
-In this case no * specifiers may occur in a format (since they
+In this case no \code{*} specifiers may occur in a format (since they
 require a sequential parameter list).
 
 Additional string operations are defined in standard module
@@ -553,7 +554,7 @@ mapping, \var{k} is a key and \var{x} is an arbitrary object):
   \lineiii{\var{a}.keys()}{a copy of \var{a}'s list of keys}{(2)}
   \lineiii{\var{a}.update(\var{b})}{\code{for k, v in \var{b}.items(): \var{a}[k] = v}}{(3)}
   \lineiii{\var{a}.values()}{a copy of \var{a}'s list of values}{(2)}
-  \lineiii{\var{a}.get(\var{k}, \var{f})}{the item of \var{a} with key \var{k}}{(4)}
+  \lineiii{\var{a}.get(\var{k}\optional{, \var{f}})}{the item of \var{a} with key \var{k}}{(4)}
 \end{tableiii}
 \indexiii{operations on}{mapping}{types}
 \indexiii{operations on}{dictionary}{type}
@@ -587,20 +588,21 @@ Most of these support only one or two operations.
 \subsubsection{Modules}
 
 The only special operation on a module is attribute access:
-\code{\var{m}.\var{name}}, where \var{m} is a module and \var{name} accesses
-a name defined in \var{m}'s symbol table.  Module attributes can be
-assigned to.  (Note that the \code{import} statement is not, strictly
-spoken, an operation on a module object; \code{import \var{foo}} does not
-require a module object named \var{foo} to exist, rather it requires
-an (external) \emph{definition} for a module named \var{foo}
-somewhere.)
+\code{\var{m}.\var{name}}, where \var{m} is a module and \var{name}
+accesses a name defined in \var{m}'s symbol table.  Module attributes
+can be assigned to.  (Note that the \code{import} statement is not,
+strictly spoking, an operation on a module object; \code{import
+\var{foo}} does not require a module object named \var{foo} to exist,
+rather it requires an (external) \emph{definition} for a module named
+\var{foo} somewhere.)
 
 A special member of every module is \code{__dict__}.
 This is the dictionary containing the module's symbol table.
 Modifying this dictionary will actually change the module's symbol
 table, but direct assignment to the \code{__dict__} attribute is not
 possible (i.e., you can write \code{\var{m}.__dict__['a'] = 1}, which
-defines \code{\var{m}.a} to be \code{1}, but you can't write \code{\var{m}.__dict__ = \{\}}.
+defines \code{\var{m}.a} to be \code{1}, but you can't write
+\code{\var{m}.__dict__ = \{\}}.
 
 Modules are written like this: \code{<module 'sys'>}.
 
@@ -621,10 +623,12 @@ the function), but the implementation is different, hence the
 different object types.
 
 The implementation adds two special read-only attributes:
-\code{\var{f}.func_code} is a function's \dfn{code object} (see below) and
-\code{\var{f}.func_globals} is the dictionary used as the function's
-global name space (this is the same as \code{\var{m}.__dict__} where
-\var{m} is the module in which the function \var{f} was defined).
+\code{\var{f}.func_code} is a function's \dfn{code
+object}\obindex{code} (see below) and \code{\var{f}.func_globals} is
+the dictionary used as the function's global name space (this is the
+same as \code{\var{m}.__dict__} where \var{m} is the module in which
+the function \var{f} was defined).
+
 
 \subsubsection{Methods}
 \obindex{method}
@@ -752,13 +756,13 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
   non-negative, it is a maximum byte count (including the trailing
   newline) and an incomplete line may be returned.
   An empty string is returned when \EOF{} is hit
-  immediately.  Note: unlike \code{stdio}'s \code{fgets()}, the returned
+  immediately.  Note: unlike \code{stdio}'s \cfunction{fgets()}, the returned
   string contains null characters (\code{'\e 0'}) if they occurred in the
   input.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{readlines}{\optional{sizehint}}
-  Read until \EOF{} using \code{readline()} and return a list containing
+  Read until \EOF{} using \method{readline()} and return a list containing
   the lines thus read.  If the optional \var{sizehint} argument is
   present, instead of reading up to \EOF{}, whole lines totalling
   approximately \var{sizehint} bytes (possibly after rounding up to an
@@ -766,7 +770,7 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{seek}{offset, whence}
-  Set the file's current position, like \code{stdio}'s \code{fseek()}.
+  Set the file's current position, like \code{stdio}'s \cfunction{fseek()}.
   The \var{whence} argument is optional and defaults to \code{0}
   (absolute file positioning); other values are \code{1} (seek
   relative to the current position) and \code{2} (seek relative to the
@@ -774,7 +778,8 @@ descriptors, e.g. module \code{fcntl} or \code{os.read()} and friends.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{tell}{}
-  Return the file's current position, like \code{stdio}'s \code{ftell()}.
+  Return the file's current position, like \code{stdio}'s
+  \cfunction{ftell()}.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{truncate}{\optional{size}}
@@ -788,13 +793,13 @@ operation).
 \begin{methoddesc}[file]{write}{str}
 Write a string to the file.  There is no return value.  Note: due to
 buffering, the string may not actually show up in the file until
-the \code{flush()} or \code{close()} method is called.
+the \method{flush()} or \method{close()} method is called.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{writelines}{list}
 Write a list of strings to the file.  There is no return value.
-(The name is intended to match \code{readlines}; \code{writelines}
-does not add line separators.)
+(The name is intended to match \method{readlines()};
+\method{writelines()} does not add line separators.)
 \end{methoddesc}
 
 File objects also offer the following attributes:
@@ -823,9 +828,9 @@ attribute.
 Boolean that indicates whether a space character needs to be printed
 before another value when using the \keyword{print} statement.
 Classes that are trying to simulate a file object should also have a
-writable \code{softspace} attribute, which should be initialized to
+writable \member{softspace} attribute, which should be initialized to
 zero.  This will be automatic for classes implemented in Python; types
-implemented in \C{} will have to provide a writable \code{softspace}
+implemented in \C{} will have to provide a writable \member{softspace}
 attribute.
 \end{memberdesc}
 
