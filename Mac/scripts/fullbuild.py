@@ -28,7 +28,7 @@ from Required_Suite import Required_Suite
 import Res
 import Dlg
 
-import BuildApplet
+import buildtools
 import cfmfile
 
 # Dialog resource. Note that the item numbers should correspond
@@ -87,7 +87,7 @@ def buildmwproject(top, creator, projects):
 	
 def buildapplet(top, dummy, list):
 	"""Create python applets"""
-	template = BuildApplet.findtemplate()
+	template = buildtools.findtemplate()
 	for src in list:
 		if src[-3:] != '.py':
 			raise 'Should end in .py', src
@@ -99,7 +99,7 @@ def buildapplet(top, dummy, list):
 		except os.error:
 			pass
 		print 'Building applet', dst
-		BuildApplet.process(template, src, dst)
+		buildtools.process(template, src, dst, 1)
 		
 def buildfat(top, dummy, list):
 	"""Build fat binaries"""
@@ -184,6 +184,7 @@ I_68K_EXTENSIONS : (buildmwproject, "CWIE", [
 I_APPLETS : (buildapplet, None, [
 		":Mac:scripts:EditPythonPrefs.py",
 		":Mac:scripts:BuildApplet.py",
+		":Mac:scripts:BuildApplication.py",
 		":Mac:scripts:ConfigurePython.py"
 	]),
 }
