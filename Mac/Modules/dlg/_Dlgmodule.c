@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -502,7 +502,9 @@ static PyObject *DlgObj_StdFilterProc(DialogObject *_self, PyObject *_args)
 #ifndef StdFilterProc
 	PyMac_PRECHECK(StdFilterProc);
 #endif
-	if (!PyArg_ParseTuple(_args, ""))
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      PyMac_GetEventRecord, &event,
+	                      &itemHit))
 		return NULL;
 	_rv = StdFilterProc(_self->ob_itself,
 	                    &event,
@@ -903,7 +905,7 @@ static PyMethodDef DlgObj_methods[] = {
 	{"RemoveDialogItems", (PyCFunction)DlgObj_RemoveDialogItems, 1,
 	 PyDoc_STR("(DialogItemIndex itemNo, DialogItemIndex amountToRemove, Boolean disposeItemData) -> None")},
 	{"StdFilterProc", (PyCFunction)DlgObj_StdFilterProc, 1,
-	 PyDoc_STR("() -> (Boolean _rv, EventRecord event, DialogItemIndex itemHit)")},
+	 PyDoc_STR("(EventRecord event, DialogItemIndex itemHit) -> (Boolean _rv, EventRecord event, DialogItemIndex itemHit)")},
 	{"SetDialogDefaultItem", (PyCFunction)DlgObj_SetDialogDefaultItem, 1,
 	 PyDoc_STR("(DialogItemIndex newItem) -> None")},
 	{"SetDialogCancelItem", (PyCFunction)DlgObj_SetDialogCancelItem, 1,
