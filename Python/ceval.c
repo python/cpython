@@ -1643,7 +1643,10 @@ PyEval_EvalFrame(PyFrameObject *f)
 			w = GETITEM(names, oparg);
 			v = POP();
 			if ((x = f->f_locals) != NULL) {
-				err = PyDict_SetItem(x, w, v);
+				if (PyDict_CheckExact(v))
+					err = PyDict_SetItem(x, w, v);
+				else
+					err = PyObject_SetItem(x, w, v);
 				Py_DECREF(v);
 				if (err == 0) continue;
 				break;
@@ -1656,7 +1659,7 @@ PyEval_EvalFrame(PyFrameObject *f)
 		case DELETE_NAME:
 			w = GETITEM(names, oparg);
 			if ((x = f->f_locals) != NULL) {
-				if ((err = PyDict_DelItem(x, w)) != 0)
+				if ((err = PyObject_DelItem(x, w)) != 0)
 					format_exc_check_arg(PyExc_NameError,
 								NAME_ERROR_MSG ,w);
 				break;
@@ -1733,13 +1736,22 @@ PyEval_EvalFrame(PyFrameObject *f)
 
 		case LOAD_NAME:
 			w = GETITEM(names, oparg);
-			if ((x = f->f_locals) == NULL) {
+			if ((v = f->f_locals) == NULL) {
 				PyErr_Format(PyExc_SystemError,
 					     "no locals when loading %s",
 					     PyObject_REPR(w));
 				break;
 			}
-			x = PyDict_GetItem(x, w);
+			if (PyDict_CheckExact(v))
+				x = PyDict_GetItem(v, w);
+			else {
+				x = PyObject_GetItem(v, w);
+				if (x == NULL && PyErr_Occurred()) {
+					if (!PyErr_ExceptionMatches(PyExc_KeyError))
+						break;
+					PyErr_Clear();
+				}
+			}
 			if (x == NULL) {
 				x = PyDict_GetItem(f->f_globals, w);
 				if (x == NULL) {

@@ -1621,7 +1621,7 @@ PyObject_Dir(PyObject *arg)
 		PyObject *locals = PyEval_GetLocals();
 		if (locals == NULL)
 			goto error;
-		result = PyDict_Keys(locals);
+		result = PyMapping_Keys(locals);
 		if (result == NULL)
 			goto error;
 	}
