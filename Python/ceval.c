@@ -40,6 +40,8 @@ static PyObject *eval_code2(PyCodeObject *,
 			    PyObject **, int,
 			    PyObject *);
 
+static char *get_func_name(PyObject *);
+static char *get_func_desc(PyObject *);
 static PyObject *call_object(PyObject *, PyObject *, PyObject *);
 static PyObject *call_cfunction(PyObject *, PyObject *, PyObject *);
 static PyObject *call_instance(PyObject *, PyObject *, PyObject *);
@@ -2741,6 +2743,43 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
     most common, but not by such a large margin.
 */
 
+static char *
+get_func_name(PyObject *func)
+{
+	if (PyMethod_Check(func))
+		return get_func_name(PyMethod_GET_FUNCTION(func));
+	else if (PyFunction_Check(func))
+		return PyString_AsString(((PyFunctionObject*)func)->func_name);
+	else if (PyCFunction_Check(func))
+		return ((PyCFunctionObject*)func)->m_ml->ml_name;
+	else if (PyClass_Check(func))
+		return PyString_AsString(((PyClassObject*)func)->cl_name);
+	else if (PyInstance_Check(func)) {
+		return PyString_AsString(
+			((PyInstanceObject*)func)->in_class->cl_name);
+	} else {
+		return func->ob_type->tp_name;
+	}
+}
+
+static char *
+get_func_desc(PyObject *func)
+{
+	if (PyMethod_Check(func))
+		return "()";
+	else if (PyFunction_Check(func))
+		return "()";
+	else if (PyCFunction_Check(func))
+		return "()";
+	else if (PyClass_Check(func))
+		return " constructor";
+	else if (PyInstance_Check(func)) {
+		return " instance";
+	} else {
+		return " object";
+	}
+}
+
 static PyObject *
 call_object(PyObject *func, PyObject *arg, PyObject *kw)
 {
@@ -2992,12 +3031,12 @@ update_keyword_args(PyObject *orig_kwdict, int nk, PyObject ***pp_stack,
 		PyObject *value = EXT_POP(*pp_stack);
 		PyObject *key = EXT_POP(*pp_stack);
 		if (PyDict_GetItem(kwdict, key) != NULL) {
-                        PyObject* fn = ((PyFunctionObject*) func)->func_name;
                         PyErr_Format(PyExc_TypeError,
                                      "%.200s%s got multiple values "
-                                     "for keyword argument '%.400s'",
-                                     fn ? PyString_AsString(fn) : "function",
-                                     fn ? "()" : "", PyString_AsString(key));
+                                     "for keyword argument '%.200s'",
+				     get_func_name(func),
+				     get_func_desc(func),
+				     PyString_AsString(key));
 			Py_DECREF(key);
 			Py_DECREF(value);
 			Py_DECREF(kwdict);
@@ -3088,11 +3127,11 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 	if (flags & CALL_FLAG_KW) {
 		kwdict = EXT_POP(*pp_stack);
 		if (!(kwdict && PyDict_Check(kwdict))) {
-                        PyObject* fn = ((PyFunctionObject*) func)->func_name;
 			PyErr_Format(PyExc_TypeError,
-                            "%s%s argument after ** must be a dictionary",
-                            fn ? PyString_AsString(fn) : "function",
-                            fn ? "()" : "");
+				     "%s%s argument after ** "
+				     "must be a dictionary",
+				     get_func_name(func),
+				     get_func_desc(func));
 			goto ext_call_fail;
 		}
 	}
@@ -3102,14 +3141,13 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 			PyObject *t = NULL;
 			t = PySequence_Tuple(stararg);
 			if (t == NULL) {
-			    if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                                PyObject* fn =
-                                    ((PyFunctionObject*) func)->func_name;
-				PyErr_Format(PyExc_TypeError,
-                                    "%s%s argument after * must be a sequence",
-                                    fn ? PyString_AsString(fn) : "function",
-                                    fn ? "()" : "");
-			    }
+				if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+					PyErr_Format(PyExc_TypeError,
+						     "%s%s argument after * "
+						     "must be a sequence",
+						     get_func_name(func),
+						     get_func_desc(func));
+				}
 				goto ext_call_fail;
 			}
 			Py_DECREF(stararg);
