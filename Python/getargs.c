@@ -640,22 +640,24 @@ convertsimple1(arg, p_format, p_va)
 			PyTypeObject *type;
 			PyObject **p;
 			if (*format == '!') {
-				format++;
 				type = va_arg(*p_va, PyTypeObject*);
-				if (arg->ob_type != type)
-					return type->tp_name;
-				else {
-					p = va_arg(*p_va, PyObject **);
+				p = va_arg(*p_va, PyObject **);
+				format++;
+				if (arg->ob_type == type)
 					*p = arg;
-				}
+				else
+					return type->tp_name;
+
 			}
 			else if (*format == '?') {
 				inquiry pred = va_arg(*p_va, inquiry);
+				p = va_arg(*p_va, PyObject **);
 				format++;
-				if ((*pred)(arg)) {
-					p = va_arg(*p_va, PyObject **);
+				if ((*pred)(arg)) 
 					*p = arg;
-				}
+				else
+				         return "(unspecified)";
+				
 			}
 			else if (*format == '&') {
 				typedef int (*converter)
