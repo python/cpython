@@ -8,6 +8,11 @@ from test import test_support
 
 import _strptime
 
+class getlang_Tests(unittest.TestCase):
+    """Test _getlang"""
+    def test_basic(self):
+        self.failUnlessEqual(_strptime._getlang(), locale.getlocale(locale.LC_TIME))
+
 class LocaleTime_Tests(unittest.TestCase):
     """Tests for _strptime.LocaleTime."""
 
@@ -89,11 +94,9 @@ class LocaleTime_Tests(unittest.TestCase):
                                     "empty strings")
 
     def test_lang(self):
-        # Make sure lang is set
-        self.failUnless(self.LT_ins.lang in (locale.getdefaultlocale()[0],
-                                             locale.getlocale(locale.LC_TIME)[0],
-                                             ''),
-                        "Setting of lang failed")
+        # Make sure lang is set to what _getlang() returns
+        # Assuming locale has not changed between now and when self.LT_ins was created
+        self.failUnlessEqual(self.LT_ins.lang, _strptime._getlang())
 
     def test_by_hand_input(self):
         # Test passed-in initialization value checks
@@ -410,15 +413,15 @@ class CalculationTests(unittest.TestCase):
         self.failUnless(result.tm_wday == self.time_tuple.tm_wday,
                         "Calculation of day of the week failed;"
                          "%s != %s" % (result.tm_wday, self.time_tuple.tm_wday))
-
 def test_main():
     test_support.run_unittest(
+        getlang_Tests,
         LocaleTime_Tests,
         TimeRETests,
         StrptimeTests,
         Strptime12AMPMTests,
         JulianTests,
-        CalculationTests
+        CalculationTests,
     )
 
 
