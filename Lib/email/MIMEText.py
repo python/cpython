@@ -5,12 +5,12 @@
 """
 
 import warnings
-import MIMEBase
-from Encoders import encode_7or8bit
+from email.MIMENonMultipart import MIMENonMultipart
+from email.Encoders import encode_7or8bit
 
 
 
-class MIMEText(MIMEBase.MIMEBase):
+class MIMEText(MIMENonMultipart):
     """Class for generating text/* type MIME documents."""
 
     def __init__(self, _text, _subtype='plain', _charset='us-ascii',
@@ -33,8 +33,8 @@ class MIMEText(MIMEBase.MIMEBase):
         override any header settings indicated by _charset.  This is probably
         not what you want.
         """
-        MIMEBase.MIMEBase.__init__(self, 'text', _subtype,
-                                   **{'charset': _charset})
+        MIMENonMultipart.__init__(self, 'text', _subtype,
+                                  **{'charset': _charset})
         if _text and _text[-1] <> '\n':
             _text += '\n'
         self.set_payload(_text, _charset)

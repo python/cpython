@@ -6,9 +6,9 @@
 import sndhdr
 from cStringIO import StringIO
 
-import MIMEBase
-import Errors
-import Encoders
+from email import Errors
+from email import Encoders
+from email.MIMENonMultipart import MIMENonMultipart
 
 
 
@@ -37,7 +37,7 @@ def _whatsnd(data):
 
 
 
-class MIMEAudio(MIMEBase.MIMEBase):
+class MIMEAudio(MIMENonMultipart):
     """Class for generating audio/* MIME documents."""
 
     def __init__(self, _audiodata, _subtype=None,
@@ -66,6 +66,6 @@ class MIMEAudio(MIMEBase.MIMEBase):
             _subtype = _whatsnd(_audiodata)
         if _subtype is None:
             raise TypeError, 'Could not find audio MIME subtype'
-        MIMEBase.MIMEBase.__init__(self, 'audio', _subtype, **_params)
+        MIMENonMultipart.__init__(self, 'audio', _subtype, **_params)
         self.set_payload(_audiodata)
         _encoder(self)

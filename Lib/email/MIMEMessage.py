@@ -4,12 +4,12 @@
 """Class representing message/* MIME documents.
 """
 
-import Message
-import MIMEBase
+from email import Message
+from email.MIMENonMultipart import MIMENonMultipart
 
 
 
-class MIMEMessage(MIMEBase.MIMEBase):
+class MIMEMessage(MIMENonMultipart):
     """Class representing message/* MIME documents."""
 
     def __init__(self, _msg, _subtype='rfc822'):
@@ -22,7 +22,9 @@ class MIMEMessage(MIMEBase.MIMEBase):
         default is "rfc822" (this is defined by the MIME standard, even though
         the term "rfc822" is technically outdated by RFC 2822).
         """
-        MIMEBase.MIMEBase.__init__(self, 'message', _subtype)
+        MIMENonMultipart.__init__(self, 'message', _subtype)
         if not isinstance(_msg, Message.Message):
             raise TypeError, 'Argument is not an instance of Message'
-        self.set_payload(_msg)
+        # It's convenient to use this base class method.  We need to do it
+        # this way or we'll get an exception
+        Message.Message.attach(self, _msg)
