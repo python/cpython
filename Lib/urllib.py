@@ -592,6 +592,13 @@ def basejoin(base, url):
 		else:
 			# remove last file component
 			basepath = basepath[:i+1]
+		# Interpret ../ (important because of symlinks)
+		while basepath and path[:3] == '../':
+			path = path[3:]
+			i = string.rfind(basepath, '/')
+			if i > 0:
+				basepath = basepath[:i-1]
+			
 		path = basepath + path
 	if type and host: return type + '://' + host + path
 	elif type: return type + ':' + path
