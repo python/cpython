@@ -32,6 +32,10 @@ item: Global
   Variable Description4=HTML documentation tree directory
   Variable Default4=C:\src\Python-2.0\html
   Variable Flags4=00001001
+  Variable Name5=_TCLMINOR_
+  Variable Description5=Tcl/Tk Minor Version (e.g. the "3" in "8.3.1")
+  Variable Default5=2
+  Variable Flags5=00001000
 end
 remarked item: Open/Close INSTALL.LOG
   Flags=00000001
@@ -1131,13 +1135,13 @@ item: If/While Statement
   Flags=00001010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.2\bin\tcl82.dll
-  Destination=%MAINDIR%\DLLs\tcl82.dll
+  Source=%_SRC_%\..\tcl\bin\tcl8%_TCLMINOR_%.dll
+  Destination=%MAINDIR%\DLLs\tcl8%_TCLMINOR_%.dll
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\..\tcl8.2\bin\tk82.dll
-  Destination=%MAINDIR%\DLLs\tk82.dll
+  Source=%_SRC_%\..\tcl\bin\tk8%_TCLMINOR_%.dll
+  Destination=%MAINDIR%\DLLs\tk8%_TCLMINOR_%.dll
   Flags=0000000000000010
 end
 item: Install File
