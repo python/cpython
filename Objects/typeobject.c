@@ -289,6 +289,36 @@ PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
 	}
 }
 
+/* Internal routine to do a method lookup in the type
+   without looking in the instance dictionary
+   (so we can't use PyObject_GetAttr) but still binding
+   it to the instance.  The arguments are the object,
+   the method name as a C string, and the address of a
+   static variable used to cache the interned Python string. */
+
+static PyObject *
+lookup_method(PyObject *self, char *attrstr, PyObject **attrobj)
+{
+	PyObject *res;
+
+	if (*attrobj == NULL) {
+		*attrobj = PyString_InternFromString(attrstr);
+		if (*attrobj == NULL)
+			return NULL;
+	}
+	res = _PyType_Lookup(self->ob_type, *attrobj);
+	if (res == NULL)
+		PyErr_SetObject(PyExc_AttributeError, *attrobj);
+	else {
+		descrgetfunc f;
+		if ((f = res->ob_type->tp_descr_get) == NULL)
+			Py_INCREF(res);
+		else
+			res = f(res, self, (PyObject *)(self->ob_type));
+	}
+	return res;
+}
+
 /* Method resolution order algorithm from "Putting Metaclasses to Work"
    by Forman and Danforth (Addison-Wesley 1999). */
 
@@ -399,7 +429,8 @@ mro_internal(PyTypeObject *type)
 		result = mro_implementation(type);
 	}
 	else {
-		mro = PyObject_GetAttrString((PyObject *)type, "mro");
+		static PyObject *mro_str;
+		mro = lookup_method((PyObject *)type, "mro", &mro_str);
 		if (mro == NULL)
 			return -1;
 		result = PyObject_CallObject(mro, NULL);
@@ -2405,8 +2436,9 @@ static int
 slot_sq_contains(PyObject *self, PyObject *value)
 {
 	PyObject *func, *res, *args;
+	static PyObject *contains_str;
 
-	func = PyObject_GetAttrString(self, "__contains__");
+	func = lookup_method(self, "__contains__", &contains_str);
 
 	if (func != NULL) {
 		args = Py_BuildValue("(O)", value);
@@ -2479,11 +2511,12 @@ static int
 slot_nb_nonzero(PyObject *self)
 {
 	PyObject *func, *res;
+	static PyObject *nonzero_str, *len_str;
 
-	func = PyObject_GetAttrString(self, "__nonzero__");
+	func = lookup_method(self, "__nonzero__", &nonzero_str);
 	if (func == NULL) {
 		PyErr_Clear();
-		func = PyObject_GetAttrString(self, "__len__");
+		func = lookup_method(self, "__len__", &len_str);
 	}
 
 	if (func != NULL) {
@@ -2532,9 +2565,10 @@ static int
 half_compare(PyObject *self, PyObject *other)
 {
 	PyObject *func, *args, *res;
+	static PyObject *cmp_str;
 	int c;
 
-	func = PyObject_GetAttrString(self, "__cmp__");
+	func = lookup_method(self, "__cmp__", &cmp_str);
 	if (func == NULL) {
 		PyErr_Clear();
 	}
@@ -2585,8 +2619,9 @@ static PyObject *
 slot_tp_repr(PyObject *self)
 {
 	PyObject *func, *res;
+	static PyObject *repr_str;
 
-	func = PyObject_GetAttrString(self, "__repr__");
+	func = lookup_method(self, "__repr__", &repr_str);
 	if (func != NULL) {
 		res = PyEval_CallObject(func, NULL);
 		Py_DECREF(func);
@@ -2601,8 +2636,9 @@ static PyObject *
 slot_tp_str(PyObject *self)
 {
 	PyObject *func, *res;
+	static PyObject *str_str;
 
-	func = PyObject_GetAttrString(self, "__str__");
+	func = lookup_method(self, "__str__", &str_str);
 	if (func != NULL) {
 		res = PyEval_CallObject(func, NULL);
 		Py_DECREF(func);
@@ -2618,9 +2654,11 @@ static long
 slot_tp_hash(PyObject *self)
 {
 	PyObject *func, *res;
+	static PyObject *hash_str, *eq_str, *cmp_str;
+
 	long h;
 
-	func = PyObject_GetAttrString(self, "__hash__");
+	func = lookup_method(self, "__hash__", &hash_str);
 
 	if (func != NULL) {
 		res = PyEval_CallObject(func, NULL);
@@ -2631,10 +2669,10 @@ slot_tp_hash(PyObject *self)
 	}
 	else {
 		PyErr_Clear();
-		func = PyObject_GetAttrString(self, "__eq__");
+		func = lookup_method(self, "__eq__", &eq_str);
 		if (func == NULL) {
 			PyErr_Clear();
-			func = PyObject_GetAttrString(self, "__cmp__");
+			func = lookup_method(self, "__cmp__", &cmp_str);
 		}
 		if (func != NULL) {
 			Py_DECREF(func);
@@ -2652,7 +2690,8 @@ slot_tp_hash(PyObject *self)
 static PyObject *
 slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *meth = PyObject_GetAttrString(self, "__call__");
+	static PyObject *call_str;
+	PyObject *meth = lookup_method(self, "__call__", &call_str);
 	PyObject *res;
 
 	if (meth == NULL)
@@ -2714,8 +2753,9 @@ static PyObject *
 half_richcompare(PyObject *self, PyObject *other, int op)
 {
 	PyObject *func, *args, *res;
+	static PyObject *op_str[6];
 
-	func = PyObject_GetAttrString(self, name_op[op]);
+	func = lookup_method(self, name_op[op], &op_str[op]);
 	if (func == NULL) {
 		PyErr_Clear();
 		Py_INCREF(Py_NotImplemented);
@@ -2761,15 +2801,16 @@ static PyObject *
 slot_tp_iter(PyObject *self)
 {
 	PyObject *func, *res;
+	static PyObject *iter_str, *getitem_str;
 
-	func = PyObject_GetAttrString(self, "__iter__");
+	func = lookup_method(self, "__iter__", &iter_str);
 	if (func != NULL) {
 		 res = PyObject_CallObject(func, NULL);
 		 Py_DECREF(func);
 		 return res;
 	}
 	PyErr_Clear();
-	func = PyObject_GetAttrString(self, "__getitem__");
+	func = lookup_method(self, "__getitem__", &getitem_str);
 	if (func == NULL) {
 		PyErr_SetString(PyExc_TypeError, "iter() of non-sequence");
 		return NULL;
@@ -2830,7 +2871,8 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 static int
 slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
-	PyObject *meth = PyObject_GetAttrString(self, "__init__");
+	static PyObject *init_str;
+	PyObject *meth = lookup_method(self, "__init__", &init_str);
 	PyObject *res;
 
 	if (meth == NULL)
