@@ -507,6 +507,7 @@ class IdleConf:
             '<<open-new-window>>': ['<Control-n>'],
             '<<open-window-from-file>>': ['<Control-o>'],
             '<<plain-newline-and-indent>>': ['<Control-j>'],
+            '<<print-window>>': ['<Control-p>'],
             '<<redo>>': ['<Control-y>'],
             '<<remove-selection>>': ['<Escape>'],
             '<<save-copy-of-window-as-file>>': ['<Alt-Shift-s>'],
