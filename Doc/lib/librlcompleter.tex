@@ -49,8 +49,8 @@ Return the \var{state}th completion for \var{text}.
 
 If called for \var{text} that doesn't includea period character
 (\character{.}), it will complete from names currently defined in
-\refmodule{__main__}, \refmodule{__builtin__} and keywords (as defined
-by the \refmodule{keyword} module).
+\refmodule[main]{__main__}, \refmodule[builtin]{__builtin__} and
+keywords (as defined by the \refmodule{keyword} module).
 
 If called for a dotted name, it will try to evaluate anything without
 obvious side-effects (i.e., functions will not be evaluated, but it
