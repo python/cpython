@@ -167,7 +167,7 @@ class bdist_rpm (Command):
                   ("don't know how to create RPM "
                    "distributions on platform %s" % os.name)
         if self.binary_only and self.source_only:
-            raise DistutilsOptionsError, \
+            raise DistutilsOptionError, \
                   "cannot supply both '--source-only' and '--binary-only'"
 
         # don't pass CFLAGS to pure python distributions
