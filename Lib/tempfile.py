@@ -130,7 +130,7 @@ class TemporaryFileWrapper:
     """
 
     # Cache the unlinker so we don't get spurious errors at shutdown
-    # when the module-level "os" in None'd out.  Note that this must
+    # when the module-level "os" is None'd out.  Note that this must
     # be referenced as self.unlink, because the name TemporaryFileWrapper
     # may also get None'd out before __del__ is called.
     unlink = os.unlink
