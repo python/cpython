@@ -168,8 +168,8 @@ subclass of \class{URLopener} or \class{FancyURLopener}, then assign
 that an instance of that class to the
 \code{urllib._urlopener} variable before calling the desired function.
 For example, applications may want to specify a different
-\code{user-agent} header than \class{URLopener} defines.  This can be
-accomplished with the following code:
+\mailheader{User-Agent} header than \class{URLopener} defines.  This
+can be accomplished with the following code:
 
 \begin{verbatim}
 class AppURLopener(urllib.FancyURLopener):
@@ -187,9 +187,9 @@ opening objects using schemes other than \file{http:}, \file{ftp:},
 \class{FancyURLopener}.
 
 By default, the \class{URLopener} class sends a
-\code{user-agent} header of \samp{urllib/\var{VVV}}, where
+\mailheader{User-Agent} header of \samp{urllib/\var{VVV}}, where
 \var{VVV} is the \module{urllib} version number.  Applications can
-define their own \code{user-agent} header by subclassing
+define their own \mailheader{User-Agent} header by subclassing
 \class{URLopener} or \class{FancyURLopener} and setting the instance
 attribute \member{version} to an appropriate string value before the
 \method{open()} method is called.
@@ -203,7 +203,7 @@ actually retrieve a resource at an \file{https:} URL.
 \begin{classdesc}{FancyURLopener}{...}
 \class{FancyURLopener} subclasses \class{URLopener} providing default
 handling for the following HTTP response codes: 301, 302 or 401.  For
-301 and 302 response codes, the \code{location} header is used to
+301 and 302 response codes, the \mailheader{Location} header is used to
 fetch the actual URL.  For 401 response codes (authentication
 required), basic HTTP authentication is performed.  For 301 and 302 response
 codes, recursion is bounded by the value of the \var{maxtries} attribute,
@@ -257,10 +257,11 @@ is the raw data returned by the server.  This may be binary data
 (e.g. an image), plain text or (for example) HTML\index{HTML}.  The
 HTTP\indexii{HTTP}{protocol} protocol provides type information in the
 reply header, which can be inspected by looking at the
-\code{content-type} header.  For the Gopher\indexii{Gopher}{protocol}
-protocol, type information is encoded in the URL; there is currently
-no easy way to extract it.  If the returned data is HTML, you can use
-the module \refmodule{htmllib}\refstmodindex{htmllib} to parse it.
+\mailheader{Content-Type} header.  For the
+Gopher\indexii{Gopher}{protocol} protocol, type information is encoded
+in the URL; there is currently no easy way to extract it.  If the
+returned data is HTML, you can use the module
+\refmodule{htmllib}\refstmodindex{htmllib} to parse it.
 
 \item
 This module does not support the use of proxies which require
