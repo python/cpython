@@ -85,7 +85,7 @@ def process(template, filename, destname, copy_codefragment,
 	text = fp.read()
 	fp.close()
 	try:
-		code = compile(text, filename, "exec")
+		code = compile(text + '\n', filename, "exec")
 	except SyntaxError, arg:
 		raise BuildError, "Syntax error in script %s: %s" % (filename, arg)
 	except EOFError:
