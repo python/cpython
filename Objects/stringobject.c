@@ -124,8 +124,13 @@ PyObject *
 PyString_FromString(str)
 	const char *str;
 {
-	register unsigned int size = strlen(str);
+	register size_t size = strlen(str);
 	register PyStringObject *op;
+	if (size > INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"string is too long for a Python string");
+		return NULL;
+	}
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
@@ -237,9 +242,13 @@ static PyObject *
 string_repr(op)
 	register PyStringObject *op;
 {
-	/* XXX overflow? */
-	int newsize = 2 + 4 * op->ob_size * sizeof(char);
-	PyObject *v = PyString_FromStringAndSize((char *)NULL, newsize);
+	size_t newsize = 2 + 4 * op->ob_size * sizeof(char);
+	PyObject *v;
+	if (newsize > INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+			"string is too large to make repr");
+	}
+	v = PyString_FromStringAndSize((char *)NULL, newsize);
 	if (v == NULL) {
 		return NULL;
 	}
@@ -2335,36 +2344,52 @@ getnextarg(args, arglen, p_argidx)
 #define F_ZERO	(1<<4)
 
 static int
-formatfloat(buf, flags, prec, type, v)
+formatfloat(buf, buflen, flags, prec, type, v)
 	char *buf;
+	size_t buflen;
 	int flags;
 	int prec;
 	int type;
 	PyObject *v;
 {
+	/* fmt = '%#.' + `prec` + `type`
+	   worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
 	char fmt[20];
 	double x;
 	if (!PyArg_Parse(v, "d;float argument required", &x))
 		return -1;
 	if (prec < 0)
 		prec = 6;
-	if (prec > 50)
-		prec = 50; /* Arbitrary limitation */
 	if (type == 'f' && fabs(x)/1e25 >= 1e25)
 		type = 'g';
 	sprintf(fmt, "%%%s.%d%c", (flags&F_ALT) ? "#" : "", prec, type);
+	/* worst case length calc to ensure no buffer overrun:
+	     fmt = %#.<prec>g
+	     buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
+	        for any double rep.) 
+	     len = 1 + prec + 1 + 2 + 5 = 9 + prec
+	   If prec=0 the effective precision is 1 (the leading digit is
+	   always given), therefore increase by one to 10+prec. */
+	if (buflen <= (size_t)10 + (size_t)prec) {
+		PyErr_SetString(PyExc_OverflowError,
+			"formatted float is too long (precision too long?)");
+		return -1;
+	}
 	sprintf(buf, fmt, x);
 	return strlen(buf);
 }
 
 static int
-formatint(buf, flags, prec, type, v)
+formatint(buf, buflen, flags, prec, type, v)
 	char *buf;
+	size_t buflen;
 	int flags;
 	int prec;
 	int type;
 	PyObject *v;
 {
+	/* fmt = '%#.' + `prec` + 'l' + `type`
+	   worst case length = 3 + 10 (len of INT_MAX) + 1 + 1 = 15 (use 20)*/
 	char fmt[20];
 	long x;
 	if (!PyArg_Parse(v, "l;int argument required", &x))
@@ -2372,15 +2397,24 @@ formatint(buf, flags, prec, type, v)
 	if (prec < 0)
 		prec = 1;
 	sprintf(fmt, "%%%s.%dl%c", (flags&F_ALT) ? "#" : "", prec, type);
+	/* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec,len(x in octal))
+	   worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
+	if (buflen <= 13 || buflen <= (size_t)2+(size_t)prec) {
+		PyErr_SetString(PyExc_OverflowError,
+			"formatted integer is too long (precision too long?)");
+		return -1;
+	}
 	sprintf(buf, fmt, x);
 	return strlen(buf);
 }
 
 static int
-formatchar(buf, v)
+formatchar(buf, buflen, v)
 	char *buf;
+	size_t buflen;
 	PyObject *v;
 {
+	/* presume that the buffer is at least 2 characters long */
 	if (PyString_Check(v)) {
 		if (!PyArg_Parse(v, "c;%c requires int or char", &buf[0]))
 			return -1;
@@ -2394,7 +2428,15 @@ formatchar(buf, v)
 }
 
 
-/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
+/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
+
+   FORMATBUFLEN is the length of the buffer in which the floats, ints, &
+   chars are formatted. XXX This is a magic number. Each formatting
+   routine does bounds checking to ensure no overflow, but a better
+   solution may be to malloc a buffer of appropriate size for each
+   format. For now, the current solution is sufficient.
+*/
+#define FORMATBUFLEN (size_t)120
 
 PyObject *
 PyString_Format(format, args)
@@ -2451,10 +2493,10 @@ PyString_Format(format, args)
 			int fill;
 			PyObject *v = NULL;
 			PyObject *temp = NULL;
-			char *buf;
+			char *pbuf;
 			int sign;
 			int len;
-			char tmpbuf[120]; /* For format{float,int,char}() */
+			char formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
 			char *fmt_start = fmt;
 			
 			fmt++;
@@ -2602,7 +2644,7 @@ PyString_Format(format, args)
 			fill = ' ';
 			switch (c) {
 			case '%':
-				buf = "%";
+				pbuf = "%";
 				len = 1;
 				break;
 			case 's':
@@ -2622,7 +2664,7 @@ PyString_Format(format, args)
 					  "%s argument has non-string str()");
 					goto error;
 				}
-				buf = PyString_AsString(temp);
+				pbuf = PyString_AsString(temp);
 				len = PyString_Size(temp);
 				if (prec >= 0 && len > prec)
 					len = prec;
@@ -2635,8 +2677,8 @@ PyString_Format(format, args)
 			case 'X':
 				if (c == 'i')
 					c = 'd';
-				buf = tmpbuf;
-				len = formatint(buf, flags, prec, c, v);
+				pbuf = formatbuf;
+				len = formatint(pbuf, sizeof(formatbuf), flags, prec, c, v);
 				if (len < 0)
 					goto error;
 				sign = (c == 'd');
@@ -2644,9 +2686,9 @@ PyString_Format(format, args)
 					fill = '0';
 					if ((flags&F_ALT) &&
 					    (c == 'x' || c == 'X') &&
-					    buf[0] == '0' && buf[1] == c) {
-						*res++ = *buf++;
-						*res++ = *buf++;
+					    pbuf[0] == '0' && pbuf[1] == c) {
+						*res++ = *pbuf++;
+						*res++ = *pbuf++;
 						rescnt -= 2;
 						len -= 2;
 						width -= 2;
@@ -2660,8 +2702,8 @@ PyString_Format(format, args)
 			case 'f':
 			case 'g':
 			case 'G':
-				buf = tmpbuf;
-				len = formatfloat(buf, flags, prec, c, v);
+				pbuf = formatbuf;
+				len = formatfloat(pbuf, sizeof(formatbuf), flags, prec, c, v);
 				if (len < 0)
 					goto error;
 				sign = 1;
@@ -2669,8 +2711,8 @@ PyString_Format(format, args)
 					fill = '0';
 				break;
 			case 'c':
-				buf = tmpbuf;
-				len = formatchar(buf, v);
+				pbuf = formatbuf;
+				len = formatchar(pbuf, sizeof(formatbuf), v);
 				if (len < 0)
 					goto error;
 				break;
@@ -2681,8 +2723,8 @@ PyString_Format(format, args)
 				goto error;
 			}
 			if (sign) {
-				if (*buf == '-' || *buf == '+') {
-					sign = *buf++;
+				if (*pbuf == '-' || *pbuf == '+') {
+					sign = *pbuf++;
 					len--;
 				}
 				else if (flags & F_SIGN)
@@ -2718,7 +2760,7 @@ PyString_Format(format, args)
 			}
 			if (sign && fill == ' ')
 				*res++ = sign;
-			memcpy(res, buf, len);
+			memcpy(res, pbuf, len);
 			res += len;
 			rescnt -= len;
 			while (--width >= len) {

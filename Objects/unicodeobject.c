@@ -66,7 +66,7 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 
 #include "mymath.h"
 #include "unicodeobject.h"
-#include "ucnhash.h"
+#include <ucnhash.h>
 
 #if defined(HAVE_LIMITS_H)
 #include <limits.h>
@@ -1244,14 +1244,14 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 goto onError;
 ucnFallthrough:
             /* fall through on purpose */
-        default:
+		default:
             *p++ = '\\';
             *p++ = (unsigned char)s[-1];
             break;
         }
     }
     if (_PyUnicode_Resize(v, (int)(p - buf)))
-	goto onError;
+		goto onError;
     return (PyObject *)v;
     
  onError:
@@ -4373,11 +4373,14 @@ int usprintf(va_alist) va_dcl
 
 static int
 formatfloat(Py_UNICODE *buf,
+	    size_t buflen,
 	    int flags,
 	    int prec,
 	    int type,
 	    PyObject *v)
 {
+    /* fmt = '%#.' + `prec` + `type`
+       worst case length = 3 + 10 (len of INT_MAX) + 1 = 14 (use 20)*/
     char fmt[20];
     double x;
     
@@ -4386,21 +4389,34 @@ formatfloat(Py_UNICODE *buf,
 	return -1;
     if (prec < 0)
 	prec = 6;
-    if (prec > 50)
-	prec = 50; /* Arbitrary limitation */
     if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
 	type = 'g';
     sprintf(fmt, "%%%s.%d%c", (flags & F_ALT) ? "#" : "", prec, type);
+    /* worst case length calc to ensure no buffer overrun:
+         fmt = %#.<prec>g
+         buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
+            for any double rep.)
+         len = 1 + prec + 1 + 2 + 5 = 9 + prec
+       If prec=0 the effective precision is 1 (the leading digit is
+       always given), therefore increase by one to 10+prec. */
+    if (buflen <= (size_t)10 + (size_t)prec) {
+	PyErr_SetString(PyExc_OverflowError,
+	    "formatted float is too long (precision too long?)");
+	return -1;
+    }
     return usprintf(buf, fmt, x);
 }
 
 static int
 formatint(Py_UNICODE *buf,
+	  size_t buflen,
 	  int flags,
 	  int prec,
 	  int type,
 	  PyObject *v)
 {
+    /* fmt = '%#.' + `prec` + 'l' + `type`
+       worst case length = 3 + 10 (len of INT_MAX) + 1 + 1 = 15 (use 20)*/
     char fmt[20];
     long x;
 
@@ -4409,14 +4425,23 @@ formatint(Py_UNICODE *buf,
 	return -1;
     if (prec < 0)
 	prec = 1;
+    /* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec,len(x in octal))
+       worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
+    if (buflen <= 13 || buflen <= (size_t)2+(size_t)prec) {
+        PyErr_SetString(PyExc_OverflowError,
+            "formatted integer is too long (precision too long?)");
+        return -1;
+    }
     sprintf(fmt, "%%%s.%dl%c", (flags & F_ALT) ? "#" : "", prec, type);
     return usprintf(buf, fmt, x);
 }
 
 static int
 formatchar(Py_UNICODE *buf,
-	   PyObject *v)
+           size_t buflen,
+           PyObject *v)
 {
+    /* presume that the buffer is at least 2 characters long */
     if (PyUnicode_Check(v)) {
 	if (PyUnicode_GET_SIZE(v) != 1)
 	    goto onError;
@@ -4445,6 +4470,16 @@ formatchar(Py_UNICODE *buf,
 		    "%c requires int or char");
     return -1;
 }
+
+/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
+
+   FORMATBUFLEN is the length of the buffer in which the floats, ints, &
+   chars are formatted. XXX This is a magic number. Each formatting
+   routine does bounds checking to ensure no overflow, but a better
+   solution may be to malloc a buffer of appropriate size for each
+   format. For now, the current solution is sufficient.
+*/
+#define FORMATBUFLEN (size_t)120
 
 PyObject *PyUnicode_Format(PyObject *format,
 			   PyObject *args)
@@ -4505,10 +4540,10 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    Py_UNICODE fill;
 	    PyObject *v = NULL;
 	    PyObject *temp = NULL;
-	    Py_UNICODE *buf;
+	    Py_UNICODE *pbuf;
 	    Py_UNICODE sign;
 	    int len;
-	    Py_UNICODE tmpbuf[120]; /* For format{float,int,char}() */
+	    Py_UNICODE formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
 
 	    fmt++;
 	    if (*fmt == '(') {
@@ -4658,8 +4693,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    switch (c) {
 
 	    case '%':
-		buf = tmpbuf;
-		buf[0] = '%';
+		pbuf = formatbuf;
+		/* presume that buffer length is at least 1 */
+		pbuf[0] = '%';
 		len = 1;
 		break;
 
@@ -4695,7 +4731,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    if (temp == NULL)
 			goto onError;
 		}
-		buf = PyUnicode_AS_UNICODE(temp);
+		pbuf = PyUnicode_AS_UNICODE(temp);
 		len = PyUnicode_GET_SIZE(temp);
 		if (prec >= 0 && len > prec)
 		    len = prec;
@@ -4709,8 +4745,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'X':
 		if (c == 'i')
 		    c = 'd';
-		buf = tmpbuf;
-		len = formatint(buf, flags, prec, c, v);
+		pbuf = formatbuf;
+		len = formatint(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
+			flags, prec, c, v);
 		if (len < 0)
 		    goto onError;
 		sign = (c == 'd');
@@ -4718,9 +4755,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 		    fill = '0';
 		    if ((flags&F_ALT) &&
 			(c == 'x' || c == 'X') &&
-			buf[0] == '0' && buf[1] == c) {
-			*res++ = *buf++;
-			*res++ = *buf++;
+			pbuf[0] == '0' && pbuf[1] == c) {
+			*res++ = *pbuf++;
+			*res++ = *pbuf++;
 			rescnt -= 2;
 			len -= 2;
 			width -= 2;
@@ -4735,8 +4772,9 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    case 'f':
 	    case 'g':
 	    case 'G':
-		buf = tmpbuf;
-		len = formatfloat(buf, flags, prec, c, v);
+		pbuf = formatbuf;
+		len = formatfloat(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE),
+			flags, prec, c, v);
 		if (len < 0)
 		    goto onError;
 		sign = 1;
@@ -4745,8 +4783,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 		break;
 
 	    case 'c':
-		buf = tmpbuf;
-		len = formatchar(buf, v);
+		pbuf = formatbuf;
+		len = formatchar(pbuf, sizeof(formatbuf)/sizeof(Py_UNICODE), v);
 		if (len < 0)
 		    goto onError;
 		break;
@@ -4758,8 +4796,8 @@ PyObject *PyUnicode_Format(PyObject *format,
 		goto onError;
 	    }
 	    if (sign) {
-		if (*buf == '-' || *buf == '+') {
-		    sign = *buf++;
+		if (*pbuf == '-' || *pbuf == '+') {
+		    sign = *pbuf++;
 		    len--;
 		}
 		else if (flags & F_SIGN)
@@ -4795,7 +4833,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	    }
 	    if (sign && fill == ' ')
 		*res++ = sign;
-	    memcpy(res, buf, len * sizeof(Py_UNICODE));
+	    memcpy(res, pbuf, len * sizeof(Py_UNICODE));
 	    res += len;
 	    rescnt -= len;
 	    while (--width >= len) {
