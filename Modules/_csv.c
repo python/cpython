@@ -187,8 +187,12 @@ set_None_as_nullchar(char * addr, PyObject *v)
                 PyErr_BadArgument();
                 return -1;
         }
-        else
-             *addr = PyString_AsString(v)[0];
+        else {
+		char *s = PyString_AsString(v);
+		if (s == NULL)
+			return -1;
+		*addr = s[0];
+	}
         return 0;
 }
 
@@ -347,7 +351,10 @@ dialect_init(DialectObj * self, PyObject * args, PyObject * kwargs)
                 /* And extract the attributes */
                 for (i = 0; i < PyList_GET_SIZE(dir_list); ++i) {
                         name_obj = PyList_GET_ITEM(dir_list, i);
-                        if (PyString_AsString(name_obj)[0] == '_')
+			char *s = PyString_AsString(name_obj);
+			if (s == NULL)
+				return -1;
+                        if (s[0] == '_')
                                 continue;
                         value_obj = PyObject_GetAttr(dialect, name_obj);
                         if (value_obj) {
@@ -1010,6 +1017,7 @@ join_append_lineterminator(WriterObj *self)
 		return 0;
 
 	memmove(self->rec + self->rec_len,
+		/* should not be NULL */
 		PyString_AsString(self->dialect->lineterminator), 
                 terminator_len);
 	self->rec_len += terminator_len;
@@ -1063,7 +1071,8 @@ csv_writerow(WriterObj *self, PyObject *seq)
 		}
 
 		if (PyString_Check(field)) {
-			append_ok = join_append(self, PyString_AsString(field),
+			append_ok = join_append(self,
+						PyString_AS_STRING(field),
                                                 &quoted, len == 1);
 			Py_DECREF(field);
 		}
@@ -1079,7 +1088,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
 			if (str == NULL)
 				return NULL;
 
-			append_ok = join_append(self, PyString_AsString(str), 
+			append_ok = join_append(self, PyString_AS_STRING(str), 
                                                 &quoted, len == 1);
 			Py_DECREF(str);
 		}
@@ -1291,12 +1300,8 @@ csv_register_dialect(PyObject *module, PyObject *args)
 }
 
 static PyObject *
-csv_unregister_dialect(PyObject *module, PyObject *args)
+csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
-        PyObject *name_obj;
-
-        if (!PyArg_ParseTuple(args, "O", &name_obj))
-                return NULL;
         if (PyDict_DelItem(dialects, name_obj) < 0)
                 return PyErr_Format(error_obj, "unknown dialect");
         Py_INCREF(Py_None);
@@ -1304,12 +1309,8 @@ csv_unregister_dialect(PyObject *module, PyObject *args)
 }
 
 static PyObject *
-csv_get_dialect(PyObject *module, PyObject *args)
+csv_get_dialect(PyObject *module, PyObject *name_obj)
 {
-        PyObject *name_obj;
-
-        if (!PyArg_ParseTuple(args, "O", &name_obj))
-                return NULL;
         return get_dialect_from_registry(name_obj);
 }
 
@@ -1429,9 +1430,9 @@ static struct PyMethodDef csv_methods[] = {
         { "register_dialect", (PyCFunction)csv_register_dialect, 
             METH_VARARGS, csv_register_dialect_doc},
         { "unregister_dialect", (PyCFunction)csv_unregister_dialect, 
-            METH_VARARGS, csv_unregister_dialect_doc},
+            METH_O, csv_unregister_dialect_doc},
         { "get_dialect", (PyCFunction)csv_get_dialect, 
-            METH_VARARGS, csv_get_dialect_doc},
+            METH_O, csv_get_dialect_doc},
         { NULL, NULL }
 };
 
