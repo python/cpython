@@ -14,7 +14,6 @@ markov.py		Markov chain simulation of words or characters
 mboxconvvert.py		Convert MH or MMDF mailboxes to unix mailbox format
 mkrcs.py		Fix symlinks named RCS into parallel tree
 morse.py		Produce morse code (audible or on AIFF file)
-mpzpi.py		test mpz -- print digits of pi (compare pi.py)
 pi.py			Print all digits of pi -- given enough time and memory
 pp.py			Emulate some Perl command line options
 primes.py		Print prime numbers
