@@ -66,7 +66,7 @@ def extract_tb(tb, limit = None):
 		line = linecache.getline(filename, lineno)
 		if line: line = string.strip(line)
 		else: line = None
-		list.append(filename, lineno, name, line)
+		list.append((filename, lineno, name, line))
 		tb = tb.tb_next
 		n = n+1
 	return list
@@ -176,7 +176,7 @@ def extract_stack(f=None, limit = None):
 		line = linecache.getline(filename, lineno)
 		if line: line = string.strip(line)
 		else: line = None
-		list.append(filename, lineno, name, line)
+		list.append((filename, lineno, name, line))
 		f = f.f_back
 		n = n+1
 	list.reverse()
