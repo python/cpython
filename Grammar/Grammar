@@ -2,6 +2,10 @@
 
 # Change log:
 
+# 16-Jan-92:
+#	Added '*' as alternative for '+' in varargs syntax
+#	(Not sure which alternative is better yet.)
+
 # 11-Jan-92:
 #	Variable length argument list syntax added: def f(a, b, +rest): ...
 
@@ -62,7 +66,7 @@ eval_input: testlist ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
-varargslist: (fpdef ',')* '+' NAME | fpdef (',' fpdef)* [',']
+varargslist: (fpdef ',')* ('+'|'*') NAME | fpdef (',' fpdef)* [',']
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
