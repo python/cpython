@@ -87,7 +87,7 @@ static PyObject *AE_Error;
 
 /* ----------------------- Object type AEDesc ----------------------- */
 
-staticforward PyTypeObject AEDesc_Type;
+PyTypeObject AEDesc_Type;
 
 #define AEDesc_Check(x) ((x)->ob_type == &AEDesc_Type)
 
@@ -96,7 +96,7 @@ typedef struct AEDescObject {
 	AEDesc ob_itself;
 } AEDescObject;
 
-static PyObject *AEDesc_New(itself)
+PyObject *AEDesc_New(itself)
 	AEDesc *itself;
 {
 	AEDescObject *it;
@@ -105,7 +105,7 @@ static PyObject *AEDesc_New(itself)
 	it->ob_itself = *itself;
 	return (PyObject *)it;
 }
-static AEDesc_Convert(v, p_itself)
+AEDesc_Convert(v, p_itself)
 	PyObject *v;
 	AEDesc *p_itself;
 {
@@ -784,7 +784,7 @@ static PyMethodDef AEDesc_methods[] = {
 	{NULL, NULL, 0}
 };
 
-static PyMethodChain AEDesc_chain = { AEDesc_methods, NULL };
+PyMethodChain AEDesc_chain = { AEDesc_methods, NULL };
 
 static PyObject *AEDesc_getattr(self, name)
 	AEDescObject *self;
@@ -813,7 +813,7 @@ static PyObject *AEDesc_getattr(self, name)
 
 #define AEDesc_setattr NULL
 
-staticforward PyTypeObject AEDesc_Type = {
+PyTypeObject AEDesc_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
 	"AEDesc", /*tp_name*/
