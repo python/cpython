@@ -1,4 +1,5 @@
 import types
+from consts import CO_VARARGS, CO_VARKEYWORDS
 
 nodes = {}
 
@@ -85,6 +86,12 @@ class Function(Node):
     self.code = code
     self._children = ('function',
                        name, argnames, defaults, flags, doc, code)
+    self.varargs = self.kwargs = None
+    if flags & CO_VARARGS:
+      self.varargs = 1
+    if flags & CO_VARKEYWORDS:
+      self.kwargs = 1
+    
 
   def __repr__(self):
     return "Function(%s,%s,%s,%s,%s,%s)" % self._children[1:]
