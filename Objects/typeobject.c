@@ -29,6 +29,26 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Type object implementation */
 
 static object *
+type_getattr(t, name)
+	typeobject *t;
+	char *name;
+{
+	if (strcmp(name, "__name__") == 0)
+		return newstringobject(t->tp_name);
+	if (strcmp(name, "__doc__") == 0) {
+		char *doc = t->tp_doc;
+		if (doc != NULL)
+			return newstringobject(doc);
+		INCREF(None);
+		return None;
+	}
+	if (strcmp(name, "__members__") == 0)
+		return mkvalue("[ss]", "__doc__", "__name__");
+	err_setstr(AttributeError, name);
+	return NULL;
+}
+
+static object *
 type_repr(v)
 	typeobject *v;
 {
@@ -45,8 +65,19 @@ typeobject Typetype = {
 	0,			/* Item size for varobject */
 	0,			/*tp_dealloc*/
 	0,			/*tp_print*/
-	0,			/*tp_getattr*/
+	(getattrfunc)type_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
-	(reprfunc)type_repr, /*tp_repr*/
+	(reprfunc)type_repr,	/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,			/*tp_as_sequence*/
+	0,			/*tp_as_mapping*/
+	0,			/*tp_hash*/
+	0,			/*tp_call*/
+	0,			/*tp_str*/
+	0,			/*tp_xxx1*/
+	0,			/*tp_xxx2*/
+	0,			/*tp_xxx3*/
+	0,			/*tp_xxx4*/
+	"Define the behaviour of a particular type of object.",
 };
