@@ -503,6 +503,7 @@ class BlockFinder:
     """Provide a tokeneater() method to detect the end of a code block."""
     def __init__(self):
         self.indent = 0
+        self.islambda = False
         self.started = False
         self.passline = False
         self.last = 0
@@ -510,11 +511,8 @@ class BlockFinder:
     def tokeneater(self, type, token, (srow, scol), (erow, ecol), line):
         if not self.started:
             if token in ("def", "class", "lambda"):
-                lastcolon = line.rfind(":")
-                if lastcolon:
-                    oneline = re.search(r"\w", line[lastcolon:])
-                    if oneline and line[-2:] != "\\\n":
-                        raise EndOfBlock, srow
+                if token == "lambda":
+                    self.islambda = True
                 self.started = True
             self.passline = True
         elif type == tokenize.NEWLINE:
@@ -522,6 +520,8 @@ class BlockFinder:
             self.last = srow
         elif self.passline:
             pass
+        elif self.islambda:
+            raise EndOfBlock, self.last
         elif type == tokenize.INDENT:
             self.indent = self.indent + 1
             self.passline = True
