@@ -596,7 +596,7 @@ Here's what \module{optparse}-based scripts typically look like:
 from optparse import OptionParser
 [...]
 def main():
-    usage = "usage: \%prog [-f] [-v] [-q] firstarg secondarg"
+    usage = "usage: %prog [-f] [-v] [-q] firstarg secondarg"
     parser = OptionParser(usage)
     parser.add_option("-f", "--file", type="string", dest="filename",
                       help="read data from FILENAME")
@@ -610,7 +610,7 @@ def main():
         parser.error("incorrect number of arguments")
 
     if options.verbose:
-        print "reading \%s..." \% options.filename
+        print "reading %s..." % options.filename
     [... go to work ...]
 
 if __name__ == "__main__":
