@@ -164,13 +164,12 @@ to `python-mode':
     2. `indent-tabs-mode' is set as follows: if `py-indent-offset'
        equals `tab-width' then `indent-tabs-mode' is set to t,
        otherwise it is set to nil.  This means that for newly written
-       code, tabs are only inserted in indentation if a one tab is one
+       code, tabs are only inserted in indentation if one tab is one
        indentation level, otherwise only spaces are used.
 
-Note that both these settings occur *after* `python-mode-hook' is run, 
-so if you set either of these values explicitly, and you want to
-defeat the automagic configuration, you must also set
-`py-smart-indentation' to nil in your `python-mode-hook'."
+Note that both these settings occur *after* `python-mode-hook' is run,
+so if you want to defeat the automagic configuration, you must also
+set `py-smart-indentation' to nil in your `python-mode-hook'."
   :type 'boolean
   :group 'python)
 
