@@ -1273,7 +1273,8 @@ struct_pack(PyObject *self, PyObject *args)
 		return NULL;
 	}
 	format = PyTuple_GetItem(args, 0);
-	if (!PyArg_Parse(format, "s", &fmt))
+	fmt = PyString_AsString(format);
+	if (!fmt)
 		return NULL;
 	f = whichtable(&fmt);
 	size = calcsize(fmt, f);
