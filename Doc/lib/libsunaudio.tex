@@ -1,5 +1,5 @@
 \section{\module{sunaudiodev} ---
-         Access to Sun audio hardware.}
+         Access to Sun audio hardware}
 
 \declaremodule{builtin}{sunaudiodev}
   \platform{SunOS}
@@ -125,7 +125,7 @@ this in Python:
 \begin{verbatim}
 def handle_sigpoll(signum, frame):
     print 'I got a SIGPOLL update'
-pp
+
 import fcntl, signal, STROPTS
 
 signal.signal(signal.SIGPOLL, handle_sigpoll)
