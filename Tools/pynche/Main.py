@@ -1,6 +1,6 @@
 """Pynche -- The PYthon Natural Color and Hue Editor.
 
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 Version: %(__version__)s
 
@@ -189,7 +189,7 @@ def main():
         elif opt in ('-v', '--version'):
             print '''\
 Pynche -- The PYthon Natural Color and Hue Editor.
-Author:  Barry Warsaw
+Contact: Barry Warsaw
 Email:   bwarsaw@python.org
 Version: %s''' % __version__
             sys.exit(0)

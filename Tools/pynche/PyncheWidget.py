@@ -156,9 +156,9 @@ Pynche %s
 The PYthonically Natural
 Color and Hue Editor
 
-For information contact
-author: Barry A. Warsaw
-email : bwarsaw@python.org''' % __version__)
+For information
+contact: Barry A. Warsaw
+email:   bwarsaw@python.org''' % __version__)
 
     def __popup_usage(self, event=None):
         if not self.__helpwin:
