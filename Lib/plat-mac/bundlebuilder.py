@@ -263,7 +263,7 @@ resdir=$(dirname "${execdir}")/Resources
 main="${resdir}/%(mainprogram)s"
 PYTHONPATH="$resdir"
 export PYTHONPATH
-exec "${executable}" "${main}" "${1}"
+exec "${executable}" "${main}" "$@"
 """
 
 
