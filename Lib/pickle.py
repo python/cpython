@@ -167,6 +167,22 @@ class Pickler:
         self.save(object)
         self.write(STOP)
 
+    def memoize(self, obj):
+        """Store an object in the memo."""
+
+        # The memo is a dictionary mapping object ids to 2-tuples
+        # that contains the memo value and the object being memoized.
+        # The memo value is written to the pickle and will become
+        # the key in the Unpickler's memo.  The object is stored in the
+        # memo so that transient objects are kept alive during pickling.
+
+        # The use of the memo length as the memo value is just a convention.
+        # The only requirement is that the memo values by unique.
+        d = id(obj)
+        memo_len = len(self.memo)
+        self.write(self.put(memo_len))
+        self.memo[d] = memo_len, obj
+
     def put(self, i):
         if self.bin:
             s = mdumps(i)[1:]
@@ -280,11 +296,15 @@ class Pickler:
             self.save(pid)
             self.write(BINPERSID)
 
-    def save_reduce(self, callable, arg_tup, state = None):
+    def save_reduce(self, acallable, arg_tup, state = None):
         write = self.write
         save = self.save
 
-        save(callable)
+        if not callable(acallable):
+            raise PicklingError("__reduce__() must return callable as "
+                                "first argument, not %s" % `acallable`)
+        
+        save(acallable)
         save(arg_tup)
         write(REDUCE)
 
@@ -340,9 +360,6 @@ class Pickler:
     dispatch[FloatType] = save_float
 
     def save_string(self, object):
-        d = id(object)
-        memo = self.memo
-
         if self.bin:
             l = len(object)
             s = mdumps(l)[1:]
@@ -352,16 +369,10 @@ class Pickler:
                 self.write(BINSTRING + s + object)
         else:
             self.write(STRING + `object` + '\n')
-
-        memo_len = len(memo)
-        self.write(self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.memoize(object)
     dispatch[StringType] = save_string
 
     def save_unicode(self, object):
-        d = id(object)
-        memo = self.memo
-
         if self.bin:
             encoding = object.encode('utf-8')
             l = len(encoding)
@@ -371,17 +382,12 @@ class Pickler:
             object = object.replace("\\", "\\u005c")
             object = object.replace("\n", "\\u000a")
             self.write(UNICODE + object.encode('raw-unicode-escape') + '\n')
-
-        memo_len = len(memo)
-        self.write(self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.memoize(object)
     dispatch[UnicodeType] = save_unicode
 
     if StringType == UnicodeType:
         # This is true for Jython
         def save_string(self, object):
-            d = id(object)
-            memo = self.memo
             unicode = object.isunicode()
 
             if self.bin:
@@ -404,14 +410,10 @@ class Pickler:
                     self.write(UNICODE + object + '\n')
                 else:
                     self.write(STRING + `object` + '\n')
-
-            memo_len = len(memo)
-            self.write(self.put(memo_len))
-            memo[d] = (memo_len, object)
+            self.memoize(object)
         dispatch[StringType] = save_string
 
     def save_tuple(self, object):
-
         write = self.write
         save  = self.save
         memo  = self.memo
@@ -434,6 +436,7 @@ class Pickler:
         memo_len = len(memo)
         self.write(TUPLE + self.put(memo_len))
         memo[d] = (memo_len, object)
+
     dispatch[TupleType] = save_tuple
 
     def save_empty_tuple(self, object):
@@ -451,9 +454,7 @@ class Pickler:
         else:
             write(MARK + LIST)
 
-        memo_len = len(memo)
-        write(self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.memoize(object)
 
         using_appends = (self.bin and (len(object) > 1))
 
@@ -471,20 +472,15 @@ class Pickler:
     dispatch[ListType] = save_list
 
     def save_dict(self, object):
-        d = id(object)
-
         write = self.write
         save  = self.save
-        memo  = self.memo
 
         if self.bin:
             write(EMPTY_DICT)
         else:
             write(MARK + DICT)
 
-        memo_len = len(memo)
-        self.write(self.put(memo_len))
-        memo[d] = (memo_len, object)
+        self.memoize(object)
 
         using_setitems = (self.bin and (len(object) > 1))
 
@@ -529,6 +525,8 @@ class Pickler:
         for arg in args:
             save(arg)
 
+        # This method does not use memoize() so that it can handle
+        # the special case for non-binary mode.
         memo_len = len(memo)
         if self.bin:
             write(OBJ + self.put(memo_len))
