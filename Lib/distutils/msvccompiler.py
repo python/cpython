@@ -304,6 +304,7 @@ class MSVCCompiler (CCompiler) :
                          libraries=None,
                          library_dirs=None,
                          runtime_library_dirs=None,
+                         export_symbols=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
@@ -313,6 +314,8 @@ class MSVCCompiler (CCompiler) :
                                  output_dir=output_dir,
                                  libraries=libraries,
                                  library_dirs=library_dirs,
+                                 runtime_library_dirs=runtime_library_dirs,
+                                 export_symbols=export_symbols,
                                  debug=debug,
                                  extra_preargs=extra_preargs,
                                  extra_postargs=extra_postargs)
@@ -325,6 +328,7 @@ class MSVCCompiler (CCompiler) :
                             libraries=None,
                             library_dirs=None,
                             runtime_library_dirs=None,
+                            export_symbols=None,
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
@@ -350,8 +354,12 @@ class MSVCCompiler (CCompiler) :
             else:
                 ldflags = self.ldflags_shared
 
-            ld_args = ldflags + lib_opts + \
-                      objects + ['/OUT:' + output_filename]
+            export_opts = []
+            for sym in (export_symbols or []):
+                export_opts.append("/EXPORT:" + sym)
+
+            ld_args = (ldflags + lib_opts + export_opts + 
+                       objects + ['/OUT:' + output_filename])
 
             if extra_preargs:
                 ld_args[:0] = extra_preargs

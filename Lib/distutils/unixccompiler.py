@@ -178,6 +178,7 @@ class UnixCCompiler (CCompiler):
                          libraries=None,
                          library_dirs=None,
                          runtime_library_dirs=None,
+                         export_symbols=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
@@ -188,6 +189,7 @@ class UnixCCompiler (CCompiler):
             libraries,
             library_dirs,
             runtime_library_dirs,
+            export_symbols,
             debug,
             extra_preargs,
             extra_postargs)
@@ -200,6 +202,7 @@ class UnixCCompiler (CCompiler):
                             libraries=None,
                             library_dirs=None,
                             runtime_library_dirs=None,
+                            export_symbols=None,
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
