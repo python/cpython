@@ -88,22 +88,22 @@ static PyObject *moddict;
 */
 static long timezone;
 
-static void 
+static void
 initmactimezone(void)
 {
 	MachineLocation	loc;
 	long		delta;
 
 	ReadLocation(&loc);
-	
+
 	if (loc.latitude == 0 && loc.longitude == 0 && loc.u.gmtDelta == 0)
 		return;
-	
+
 	delta = loc.u.gmtDelta & 0x00FFFFFF;
-	
+
 	if (delta & 0x00800000)
 		delta |= 0xFF000000;
-	
+
 	timezone = -delta;
 }
 #endif /* macintosh */
@@ -162,10 +162,10 @@ time_clock(PyObject *self, PyObject *args)
 
 	if (LargeIntegerEqualToZero(divisor)) {
 		QueryPerformanceCounter(&ctrStart);
-		if (!QueryPerformanceFrequency(&divisor) || 
+		if (!QueryPerformanceFrequency(&divisor) ||
 		    LargeIntegerEqualToZero(divisor)) {
-				/* Unlikely to happen - 
-				   this works on all intel machines at least! 
+				/* Unlikely to happen -
+				   this works on all intel machines at least!
 				   Revert to clock() */
 			return PyFloat_FromDouble(clock());
 		}
@@ -174,10 +174,10 @@ time_clock(PyObject *self, PyObject *args)
 	diff = LargeIntegerSubtract(now, ctrStart);
 	diff = LargeIntegerDivide(diff, divisor, &rem);
 	/* XXX - we assume both divide results fit in 32 bits.  This is
-	   true on Intels.  First person who can afford a machine that 
+	   true on Intels.  First person who can afford a machine that
 	   doesnt deserves to fix it :-)
 	*/
-	return PyFloat_FromDouble((double)diff.LowPart + 
+	return PyFloat_FromDouble((double)diff.LowPart +
 		              ((double)rem.LowPart / (double)divisor.LowPart));
 }
 
@@ -341,7 +341,7 @@ time_strftime(PyObject *self, PyObject *args)
 		buf = *localtime(&tt);
 	} else if (!gettmarg(tup, &buf))
 		return NULL;
-	
+
 	fmtlen = strlen(fmt);
 
 	/* I hate these functions that presume you know how big the output
@@ -447,7 +447,7 @@ time_ctime(PyObject *self, PyObject *args)
 	double dt;
 	time_t tt;
 	char *p;
-	
+
 	if (PyTuple_Size(args) == 0)
 		tt = time(NULL);
 	else {
@@ -491,7 +491,7 @@ time_mktime(PyObject *self, PyObject *args)
 	tt = mktime(&buf);
 	if (tt == (time_t)(-1)) {
 		PyErr_SetString(PyExc_OverflowError,
-                                "mktime argument out of range");
+				"mktime argument out of range");
 		return NULL;
 	}
 #if defined(macintosh) && defined(USE_GUSI211)
@@ -584,7 +584,7 @@ mktime() -- convert local time tuple to seconds since Epoch\n\
 strftime() -- convert time tuple to string according to format specification\n\
 strptime() -- parse string to time tuple according to format specification\n\
 ";
-  
+
 
 DL_EXPORT(void)
 inittime(void)
@@ -599,7 +599,7 @@ inittime(void)
 	/* Squirrel away the module's dictionary for the y2k check */
 	Py_INCREF(d);
 	moddict = d;
-#if defined(HAVE_TZNAME) && !defined(__GLIBC__)
+#if defined(HAVE_TZNAME) && !defined(__GLIBC__) && !defined(__CYGWIN__)
 	tzset();
 #ifdef PYOS_OS2
 	ins(d, "timezone", PyInt_FromLong((long)_timezone));
@@ -617,7 +617,7 @@ inittime(void)
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-#else /* !HAVE_TZNAME || __GLIBC__ */
+#else /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 #ifdef HAVE_TM_ZONE
 	{
 #define YEAR ((time_t)((365 * 24 + 6) * 3600))
@@ -635,7 +635,7 @@ inittime(void)
 		julyzone = -p->tm_gmtoff;
 		strncpy(julyname, p->tm_zone ? p->tm_zone : "   ", 9);
 		julyname[9] = '\0';
-		
+
 		if( janzone < julyzone ) {
 			/* DST is reversed in the southern hemisphere */
 			ins(d, "timezone", PyInt_FromLong(julyzone));
@@ -673,7 +673,7 @@ inittime(void)
 	ins(d, "daylight", PyInt_FromLong(_daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
 #endif /* __CYGWIN__ */
-#endif /* !HAVE_TZNAME || __GLIBC__ */
+#endif /* !HAVE_TZNAME || __GLIBC__ || __CYGWIN__*/
 }
 
 
@@ -820,7 +820,7 @@ floatsleep(double secs)
 		if( secs <= 0.0 ) {
 			return;
 		}
-		
+
 		Py_BEGIN_ALLOW_THREADS
 		/* BeOS snooze() is in microseconds... */
 		if( snooze( (bigtime_t)( secs * 1000.0 * 1000.0 ) ) == B_INTERRUPTED ) {
