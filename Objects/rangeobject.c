@@ -58,36 +58,30 @@ range_length(rangeobject *r)
 	return r->len * r->reps;
 }
 
-static int
-range_print(rangeobject *r, FILE *fp, int flags)
-{
-	int i, j;
-
-	fprintf(fp, "(");
-	for (i = 0; i < r->reps; ++i)
-		for (j = 0; j < r->len; ++j) {
-			if (j > 0 || i > 0)
-				fprintf(fp, ", ");
-
-			fprintf(fp, "%ld", r->start + j * r->step);
-		}
-
-	if (r->len == 1 && r->reps == 1)
-		fprintf(fp, ",");
-	fprintf(fp, ")");
-	return 0;
-}
-
 static PyObject *
 range_repr(rangeobject *r)
 {
-	char buf[80];
-	sprintf(buf, "(xrange(%ld, %ld, %ld) * %d)",
-			r->start,
-			r->start + r->len * r->step,
-			r->step,
-			r->reps);
-	return PyString_FromString(buf);
+	char buf1[80];
+	char buf2[80];
+
+	if (r->start == 0 && r->step == 1) {
+		snprintf(buf1, sizeof(buf1), "xrange(%ld)",
+			 r->start + r->len * r->step);
+	}
+	else {
+		char *fmt = "xrange(%ld, %ld, %ld)";
+		if (r->step == 1)
+			fmt = "xrange(%ld, %ld)";
+		snprintf(buf1, sizeof(buf1), fmt,
+			 r->start,
+			 r->start + r->len * r->step,
+			 r->step);
+	}
+	if (r->reps != 1) {
+		snprintf(buf2, sizeof(buf2),
+			 "(%s * %d)", buf1, r->reps);
+	}
+	return PyString_FromString(r->reps == 1 ? buf1 : buf2);
 }
 
 static PyObject *
@@ -170,7 +164,7 @@ range_tolist(rangeobject *self, PyObject *args)
 	int j;
 	int len = self->len * self->reps;
 
-	if (! PyArg_Parse(args, ""))
+	if (! PyArg_ParseTuple(args, ":tolist"))
 		return NULL;
 
 	if ((thelist = PyList_New(len)) == NULL)
@@ -188,7 +182,9 @@ static PyObject *
 range_getattr(rangeobject *r, char *name)
 {
 	static PyMethodDef range_methods[] = {
-		{"tolist",	(PyCFunction)range_tolist},
+		{"tolist",	(PyCFunction)range_tolist, METH_VARARGS,
+                 "tolist() -> list\n"
+                 "Return a list object with the same values."},
 		{NULL,		NULL}
 	};
 
@@ -228,11 +224,11 @@ PyTypeObject PyRange_Type = {
 	sizeof(rangeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
 	(destructor)range_dealloc, /*tp_dealloc*/
-	(printfunc)range_print, /*tp_print*/
+	0,			/*tp_print*/
 	(getattrfunc)range_getattr, /*tp_getattr*/
 	0,			/*tp_setattr*/
 	(cmpfunc)range_compare, /*tp_compare*/
-	(reprfunc)range_repr, /*tp_repr*/
+	(reprfunc)range_repr,	/*tp_repr*/
 	0,			/*tp_as_number*/
 	&range_as_sequence,	/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
