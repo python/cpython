@@ -453,8 +453,7 @@ typedef	struct fd_set {
  * Hide GCC attributes from compilers that don't support them.
  */
 #if (!defined(__GNUC__) || __GNUC__ < 2 || \
-     (__GNUC__ == 2 && __GNUC_MINOR__ < 7) || \
-     defined(NEXT) ) && \
+     (__GNUC__ == 2 && __GNUC_MINOR__ < 7) ) && \
     !defined(RISCOS)
 #define __attribute__(__x)
 #endif
