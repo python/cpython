@@ -72,12 +72,8 @@ PyString_FromStringAndSize(const char *str, int size)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
-#ifdef CACHE_HASH
 	op->ob_shash = -1;
-#endif
-#ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
-#endif
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
@@ -135,12 +131,8 @@ PyString_FromString(const char *str)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
-#ifdef CACHE_HASH
 	op->ob_shash = -1;
-#endif
-#ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
-#endif
 	memcpy(op->ob_sval, str, size+1);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
@@ -737,12 +729,8 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
-#ifdef CACHE_HASH
 	op->ob_shash = -1;
-#endif
-#ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
-#endif
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
 	op->ob_sval[size] = '\0';
@@ -784,12 +772,8 @@ string_repeat(register PyStringObject *a, register int n)
 	if (op == NULL)
 		return PyErr_NoMemory();
 	PyObject_INIT_VAR(op, &PyString_Type, size);
-#ifdef CACHE_HASH
 	op->ob_shash = -1;
-#endif
-#ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
-#endif
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
 	op->ob_sval[size] = '\0';
@@ -945,15 +929,11 @@ string_hash(PyStringObject *a)
 	register unsigned char *p;
 	register long x;
 
-#ifdef CACHE_HASH
 	if (a->ob_shash != -1)
 		return a->ob_shash;
-#ifdef INTERN_STRINGS
 	if (a->ob_sinterned != NULL)
 		return (a->ob_shash =
 			((PyStringObject *)(a->ob_sinterned))->ob_shash);
-#endif
-#endif
 	len = a->ob_size;
 	p = (unsigned char *) a->ob_sval;
 	x = *p << 7;
@@ -962,9 +942,7 @@ string_hash(PyStringObject *a)
 	x ^= a->ob_size;
 	if (x == -1)
 		x = -2;
-#ifdef CACHE_HASH
 	a->ob_shash = x;
-#endif
 	return x;
 }
 
@@ -2730,14 +2708,10 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	pnew = type->tp_alloc(type, n);
 	if (pnew != NULL) {
 		memcpy(PyString_AS_STRING(pnew), PyString_AS_STRING(tmp), n+1);
-#ifdef CACHE_HASH
 		((PyStringObject *)pnew)->ob_shash =
 			((PyStringObject *)tmp)->ob_shash;
-#endif
-#ifdef INTERN_STRINGS
 		((PyStringObject *)pnew)->ob_sinterned =
 			((PyStringObject *)tmp)->ob_sinterned;
-#endif
 	}
 	Py_DECREF(tmp);
 	return pnew;
@@ -3579,7 +3553,6 @@ PyString_Format(PyObject *format, PyObject *args)
 }
 
 
-#ifdef INTERN_STRINGS
 
 /* This dictionary will leak at PyString_Fini() time.  That's acceptable
  * because PyString_Fini() specifically frees interned strings that are
@@ -3656,8 +3629,6 @@ PyString_InternFromString(const char *cp)
 	return s;
 }
 
-#endif
-
 void
 PyString_Fini(void)
 {
@@ -3670,7 +3641,6 @@ PyString_Fini(void)
 	Py_XDECREF(nullstring);
 	nullstring = NULL;
 #endif
-#ifdef INTERN_STRINGS
 	if (interned) {
 		int pos, changed;
 		PyObject *key, *value;
@@ -3685,10 +3655,8 @@ PyString_Fini(void)
 			}
 		} while (changed);
 	}
-#endif
 }
 
-#ifdef INTERN_STRINGS
 void _Py_ReleaseInternedStrings(void)
 {
 	if (interned) {
@@ -3698,4 +3666,3 @@ void _Py_ReleaseInternedStrings(void)
 		interned = NULL;
 	}
 }
-#endif /* INTERN_STRINGS */
