@@ -28,6 +28,7 @@ PYTHONDOCS='<hr>Send comments to <a href="mailto:python-docs@python.org">python-
 HTMLBASE=  file:`pwd`
 
 INDEXFILES=api/api.html \
+	doc/doc.html \
 	ext/ext.html \
 	lib/lib.html \
 	mac/mac.html \
@@ -59,6 +60,10 @@ modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX)
 	$(MKHTML) api $(L2HARGS)
+
+doc/doc.html:  $(DOCFILES) $(BUILDINDEX) $(TOPDIR)/perl/ltxmarkup.perl
+	$(TOOLSDIR)/mkhowto --address $(PYTHONDOCS) --html \
+		$(TOPDIR)/doc/doc.tex
 
 ext/ext.html:  $(PAPERDIR)/ext.aux
 	$(MKHTML) ext $(L2HARGS)
@@ -99,6 +104,7 @@ $(PAPERDIR)/tut.aux: $(TUTFILES)
 
 webcheck: all
 	$(WEBCHECKER) $(HTMLBASE)/api/
+	$(WEBCHECKER) $(HTMLBASE)/doc/
 	$(WEBCHECKER) $(HTMLBASE)/ext/
 	$(WEBCHECKER) -m290000 $(HTMLBASE)/lib/
 	$(WEBCHECKER) $(HTMLBASE)/mac/
@@ -109,4 +115,4 @@ clean:
 	rm -rf @webchecker.pickle
 
 clobber: clean
-	rm -rf api/ ext/ lib/ mac/ ref/ tut/
+	rm -rf api/ doc/ ext/ lib/ mac/ ref/ tut/
