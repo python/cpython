@@ -640,6 +640,12 @@ cm_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 	if (!PyArg_UnpackTuple(args, "classmethod", 1, 1, &callable))
 		return -1;
+	if (!PyCallable_Check(callable)) {
+		PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
+		     callable->ob_type->tp_name);
+		return -1;
+	}
+	
 	Py_INCREF(callable);
 	cm->cm_callable = callable;
 	return 0;
