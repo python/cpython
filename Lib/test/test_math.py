@@ -57,6 +57,11 @@ print 'cosh'
 testit('cosh(0)', math.cosh(0), 1)
 testit('cosh(2)-2*cosh(1)**2', math.cosh(2)-2*math.cosh(1)**2, -1) # Thanks to Lambert
 
+print 'degrees'
+testit('degrees(pi)', math.degrees(math.pi), 180.0)
+testit('degrees(pi/2)', math.degrees(math.pi/2), 90.0)
+testit('degrees(-pi/4)', math.degrees(-math.pi/4), -45.0)
+
 print 'exp'
 testit('exp(-1)', math.exp(-1), 1/math.e)
 testit('exp(0)', math.exp(0), 1)
@@ -128,6 +133,11 @@ testit('pow(0,1)', math.pow(0,1), 0)
 testit('pow(1,0)', math.pow(1,0), 1)
 testit('pow(2,1)', math.pow(2,1), 2)
 testit('pow(2,-1)', math.pow(2,-1), 0.5)
+
+print 'radians'
+testit('radians(180)', math.radians(180), math.pi)
+testit('radians(90)', math.radians(90), math.pi/2)
+testit('radians(-45)', math.radians(-45), -math.pi/4)     
 
 print 'sin'
 testit('sin(0)', math.sin(0), 0)
