@@ -598,13 +598,11 @@ two types of modules to worry about, pure modules and non-pure modules
 python setup.py install --install-purelib=Site --install-platlib=Site
 \end{verbatim}
 
-The specified installation directories are relative to \filevar{prefix}.
-Of course, you also have to ensure that these directories are in
-Python's module search path, such as by putting a \file{.pth} file in
-\filevar{prefix}.
-
-% \XXX should have a section describing \file{.pth} files and
-% cross-ref it here
+The specified installation directories are relative to
+\filevar{prefix}.  Of course, you also have to ensure that these
+directories are in Python's module search path, such as by putting a
+\file{.pth} file in \filevar{prefix}.  See section~\ref{search-path}
+to find out how to modify Python's search path.
 
 If you want to define an entire installation scheme, you just have to
 supply all of the installation directory options.  The recommended way
@@ -688,6 +686,87 @@ See section~\ref{config-files} for details.
 
 % XXX need some Windows and Mac OS examples---when would custom
 % installation schemes be needed on those platforms?
+
+
+% XXX I'm not sure where this section should go.
+\subsection{Modifying Python's Search Path}
+\label{search-path}
+
+When the Python interpreter executes an \keyword{import} statement, it
+searches for both Python code and extension modules along a search
+path.  A default value for the path is configured into the Python
+binary when the interpreter is built.  You can determine the path by
+importing the \module{sys} module and printing the value of
+\code{sys.path}.  
+
+\begin{verbatim}
+$ python
+Python 2.2 (#11, Oct  3 2002, 13:31:27)
+[GCC 2.96 20000731 (Red Hat Linux 7.3 2.96-112)] on linux2
+Type ``help'', ``copyright'', ``credits'' or ``license'' for more information.
+>>> import sys
+>>> sys.path
+['', '/usr/local/lib/python2.3', '/usr/local/lib/python2.3/plat-linux2', 
+ '/usr/local/lib/python2.3/lib-tk', '/usr/local/lib/python2.3/lib-dynload', 
+ '/usr/local/lib/python2.3/site-packages']
+>>>
+\end{verbatim}
+
+The null string in \code{sys.path} represents the current working
+directory.   
+
+The expected convention for locally installed packages is to put them
+in the \file{.../site-packages/} directory, but you may want to
+install Python modules into some arbitrary directory.  For example,
+your site may have a convention of keeping all software related to the
+web server under \file{/www}.  Add-on Python modules might then belong
+in \file{/www/python}, and in order to import them, this directory
+must be added to \code{sys.path}.  There are several different ways to
+add the directory.
+
+The most convenient way is to add a path configuration file to a
+directory that's already on Python's path, usually to the
+\file{.../site-packages/} directory.  Path configuration files have an
+extension of \file{.pth}, and each line must contain a single path
+that will be added to \code{sys.path}.  Paths can be absolute or
+relative, in which case they're relative to the directory containing
+the \file{.pth} file.  Any directories added to the search path will
+be scanned in turn for \file{.pth} files.  See
+\citetitle[http://www.python.org/dev/doc/devel/lib/module-site.html]{the
+documentation for the \module{site} module} for more information.
+
+A slightly less convenient way is to edit the \file{site.py} file in
+Python's standard library, and modify \code{sys.path}.  \file{site.py}
+is automatically imported when the Python interpreter is executed,
+unless the \programopt{-S} switch is supplied to suppress this
+behaviour.  So you could simply edit \file{site.py} and add two lines to it:
+
+\begin{verbatim}
+import sys
+sys.path.append('/www/python/')
+\end{verbatim}
+
+However, if you reinstall the same major version of Python (perhaps
+when upgrading from 2.2 to 2.2.2, for example) \file{site.py} will be
+overwritten by the stock version.  You'd have to remember that it was
+modified and save a copy before doing the installation.
+
+There are two environment variables that can modify \code{sys.path}.
+\envvar{PYTHONHOME} sets an alternate value for the prefix of the
+Python installation.  For example, if \envvar{PYTHONHOME} is set to
+\samp{/www/python}, the search path will be set to \code{['',
+'/www/python/lib/python2.2/', '/www/python/lib/python2.3/plat-linux2',
+...]}.  
+
+The \envvar{PYTHONPATH} variable can be set to a list of paths that
+will be added to the beginning of \code{sys.path}.  For example, if
+\envvar{PYTHONPATH} is set to \samp{/www/python:/opt/py}, the search
+path will begin with \code{['/www/python', '/opt/py']}.  (Note that
+directories must exist in order to be added to \code{sys.path}; the
+\module{site} module removes paths that don't exist.)
+
+Finally, \code{sys.path} is just a regular Python list, so any Python
+application can modify it by adding or removing entries.
 
 
 \section{Distutils Configuration Files}
