@@ -82,6 +82,7 @@ class ReplaceDialog(SearchDialogBase):
         ok = 1
         first = last = None
         # XXX ought to replace circular instead of top-to-bottom when wrapping
+        text.undo_block_start()
         while 1:
             res = self.engine.search_forward(text, prog, line, col, 0, ok)
             if not res:
@@ -103,6 +104,7 @@ class ReplaceDialog(SearchDialogBase):
                     text.insert(first, new)
             col = i + len(new)
             ok = 0
+        text.undo_block_stop()
         if first and last:
             self.show_hit(first, last)
         self.close()
