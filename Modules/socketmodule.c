@@ -2007,10 +2007,44 @@ initsocket()
 	if (PyDict_SetItemString(d, "SocketType",
 				 (PyObject *)&PySocketSock_Type) != 0)
 		return;
+
+	/* Address families (we only support AF_INET and AF_UNIX) */
+#ifdef AF_UNSPEC
+	insint(d, "AF_UNSPEC", AF_UNSPEC);
+#endif
 	insint(d, "AF_INET", AF_INET);
 #ifdef AF_UNIX
 	insint(d, "AF_UNIX", AF_UNIX);
 #endif /* AF_UNIX */
+#ifdef AF_AX25
+	insint(d, "AF_AX25", AF_AX25); /* Amateur Radio AX.25 */
+#endif
+#ifdef AF_IPX
+	insint(d, "AF_IPX", AF_IPX); /* Novell IPX */
+#endif
+#ifdef AF_APPLETALK
+	insint(d, "AF_APPLETALK", AF_APPLETALK); /* Appletalk DDP */
+#endif
+#ifdef AF_NETROM
+	insint(d, "AF_NETROM", AF_NETROM); /* Amateur radio NetROM */
+#endif
+#ifdef AF_BRIDGE
+	insint(d, "AF_BRIDGE", AF_BRIDGE); /* Multiprotocol bridge */
+#endif
+#ifdef AF_AAL5
+	insint(d, "AF_AAL5", AF_AAL5); /* Reserved for Werner's ATM */
+#endif
+#ifdef AF_X25
+	insint(d, "AF_X25", AF_X25); /* Reserved for X.25 project */
+#endif
+#ifdef AF_INET6
+	insint(d, "AF_INET6", AF_INET6); /* IP version 6 */
+#endif
+#ifdef AF_ROSE
+	insint(d, "AF_ROSE", AF_ROSE); /* Amateur Radio X.25 PLP */
+#endif
+
+	/* Socket types */
 	insint(d, "SOCK_STREAM", SOCK_STREAM);
 	insint(d, "SOCK_DGRAM", SOCK_DGRAM);
 #ifndef __BEOS__
@@ -2050,7 +2084,6 @@ initsocket()
 #ifdef	SO_REUSEPORT
 	insint(d, "SO_REUSEPORT", SO_REUSEPORT);
 #endif
-
 #ifdef	SO_SNDBUF
 	insint(d, "SO_SNDBUF", SO_SNDBUF);
 #endif
@@ -2113,9 +2146,38 @@ initsocket()
 #endif
 
 	/* Protocol level and numbers, usable for [gs]etsockopt */
-/* Sigh -- some systems (e.g. Linux) use enums for these. */
 #ifdef	SOL_SOCKET
 	insint(d, "SOL_SOCKET", SOL_SOCKET);
+#endif
+#ifdef	SOL_IP
+	insint(d, "SOL_IP", SOL_IP);
+#else
+	insint(d, "SOL_IP", 0);
+#endif
+#ifdef	SOL_IPX
+	insint(d, "SOL_IPX", SOL_IPX);
+#endif
+#ifdef	SOL_AX25
+	insint(d, "SOL_AX25", SOL_AX25);
+#endif
+#ifdef	SOL_ATALK
+	insint(d, "SOL_ATALK", SOL_ATALK);
+#endif
+#ifdef	SOL_NETROM
+	insint(d, "SOL_NETROM", SOL_NETROM);
+#endif
+#ifdef	SOL_ROSE
+	insint(d, "SOL_ROSE", SOL_ROSE);
+#endif
+#ifdef	SOL_TCP
+	insint(d, "SOL_TCP", SOL_TCP);
+#else
+	insint(d, "SOL_TCP", 6);
+#endif
+#ifdef	SOL_UDP
+	insint(d, "SOL_UDP", SOL_UDP);
+#else
+	insint(d, "SOL_UDP", 17);
 #endif
 #ifdef	IPPROTO_IP
 	insint(d, "IPPROTO_IP", IPPROTO_IP);
@@ -2268,6 +2330,28 @@ initsocket()
 #endif
 #ifdef	IP_DROP_MEMBERSHIP
 	insint(d, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
+#endif
+#ifdef	IP_DEFAULT_MULTICAST_TTL
+	insint(d, "IP_DEFAULT_MULTICAST_TTL", IP_DEFAULT_MULTICAST_TTL);
+#endif
+#ifdef	IP_DEFAULT_MULTICAST_LOOP
+	insint(d, "IP_DEFAULT_MULTICAST_LOOP", IP_DEFAULT_MULTICAST_LOOP);
+#endif
+#ifdef	IP_MAX_MEMBERSHIPS
+	insint(d, "IP_MAX_MEMBERSHIPS", IP_MAX_MEMBERSHIPS);
+#endif
+
+	/* TCP options */
+#ifdef	TCP_NODELAY
+	insint(d, "TCP_NODELAY", TCP_NODELAY);
+#endif
+#ifdef	TCP_MAXSEG
+	insint(d, "TCP_MAXSEG", TCP_MAXSEG);
+#endif
+
+	/* IPX options */
+#ifdef	IPX_TYPE
+	insint(d, "IPX_TYPE", IPX_TYPE);
 #endif
 
 	/* Initialize gethostbyname lock */
