@@ -162,8 +162,13 @@ else:
 		def __init__(self, environ):
 			UserDict.UserDict.__init__(self)
 			self.data = environ
+		def __getinitargs__(self):
+			import copy
+			return (copy.copy(self.data),)
 		def __setitem__(self, key, item):
 			putenv(key, item)
 			self.data[key] = item
+		def __copy__(self):
+			return _Environ(self.data.copy())
 
 	environ = _Environ(environ)
