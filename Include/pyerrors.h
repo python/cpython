@@ -90,6 +90,10 @@ extern PyObject *PyErr_Format Py_PROTO((PyObject *, const char *, ...));
 
 extern void PyErr_BadInternalCall Py_PROTO((void));
 
+/* Function to create a new exception */
+PyObject *PyErr_NewException Py_PROTO((char *name, PyObject *base,
+				       PyObject *dict));
+
 /* In sigcheck.c or signalmodule.c */
 extern int PyErr_CheckSignals Py_PROTO((void));
 extern void PyErr_SetInterrupt Py_PROTO((void));
