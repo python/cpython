@@ -347,7 +347,7 @@ call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 	if (func == NULL) {
 		va_end(va);
 		PyErr_SetString(PyExc_AttributeError, name);
-		return 0;
+		return NULL;
 	}
 
 	if (format && *format)
@@ -357,21 +357,11 @@ call_method(PyObject *o, char *name, PyObject **nameobj, char *format, ...)
 
 	va_end(va);
 
-	if (!args)
+	if (args == NULL)
 		return NULL;
 
-	if (!PyTuple_Check(args)) {
-		PyObject *a;
-
-		a = PyTuple_New(1);
-		if (a == NULL)
-			return NULL;
-		if (PyTuple_SetItem(a, 0, args) < 0)
-			return NULL;
-		args = a;
-	}
-
-	retval = PyObject_CallObject(func, args);
+	assert(PyTuple_Check(args));
+	retval = PyObject_Call(func, args, NULL);
 
 	Py_DECREF(args);
 	Py_DECREF(func);
@@ -2437,7 +2427,7 @@ static PyObject * \
 FUNCNAME(PyObject *self) \
 { \
 	static PyObject *cache_str; \
-	return call_method(self, OPSTR, &cache_str, ""); \
+	return call_method(self, OPSTR, &cache_str, "()"); \
 }
 
 #define SLOT1(FUNCNAME, OPSTR, ARG1TYPE, ARGCODES) \
@@ -2445,7 +2435,7 @@ static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1) \
 { \
 	static PyObject *cache_str; \
-	return call_method(self, OPSTR, &cache_str, ARGCODES, arg1); \
+	return call_method(self, OPSTR, &cache_str, "(" ARGCODES ")", arg1); \
 }
 
 
@@ -2458,7 +2448,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 	    self->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
 		PyObject *r; \
 		r = call_method( \
-			self, OPSTR, &cache_str, "O", other); \
+			self, OPSTR, &cache_str, "(O)", other); \
 		if (r != Py_NotImplemented || \
 		    other->ob_type == self->ob_type) \
 			return r; \
@@ -2467,7 +2457,7 @@ FUNCNAME(PyObject *self, PyObject *other) \
 	if (other->ob_type->tp_as_number != NULL && \
 	    other->ob_type->tp_as_number->SLOTNAME == TESTFUNC) { \
 		return call_method( \
-			other, ROPSTR, &rcache_str, "O", self); \
+			other, ROPSTR, &rcache_str, "(O)", self); \
 	} \
 	Py_INCREF(Py_NotImplemented); \
 	return Py_NotImplemented; \
@@ -2481,14 +2471,15 @@ static PyObject * \
 FUNCNAME(PyObject *self, ARG1TYPE arg1, ARG2TYPE arg2) \
 { \
 	static PyObject *cache_str; \
-	return call_method(self, OPSTR, &cache_str, ARGCODES, arg1, arg2); \
+	return call_method(self, OPSTR, &cache_str, \
+			   "(" ARGCODES ")", arg1, arg2); \
 }
 
 static int
 slot_sq_length(PyObject *self)
 {
 	static PyObject *len_str;
-	PyObject *res = call_method(self, "__len__", &len_str, "");
+	PyObject *res = call_method(self, "__len__", &len_str, "()");
 
 	if (res == NULL)
 		return -1;
@@ -2508,10 +2499,10 @@ slot_sq_ass_item(PyObject *self, int index, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delitem__", &delitem_str,
-				  "i", index);
+				  "(i)", index);
 	else
 		res = call_method(self, "__setitem__", &setitem_str,
-				  "iO", index, value);
+				  "(iO)", index, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -2526,10 +2517,10 @@ slot_sq_ass_slice(PyObject *self, int i, int j, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delslice__", &delslice_str,
-				  "ii", i, j);
+				  "(ii)", i, j);
 	else
 		res = call_method(self, "__setslice__", &setslice_str,
-				  "iiO", i, j, value);
+				  "(iiO)", i, j, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -2549,7 +2540,7 @@ slot_sq_contains(PyObject *self, PyObject *value)
 		if (args == NULL)
 			res = NULL;
 		else {
-			res = PyEval_CallObject(func, args);
+			res = PyObject_Call(func, args, NULL);
 			Py_DECREF(args);
 		}
 		Py_DECREF(func);
@@ -2579,10 +2570,10 @@ slot_mp_ass_subscript(PyObject *self, PyObject *key, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delitem__", &delitem_str,
-				  "O", key);
+				  "(O)", key);
 	else
 		res = call_method(self, "__setitem__", &setitem_str,
-				 "OO", key, value);
+				 "(OO)", key, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -2610,7 +2601,7 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 		return slot_nb_power_binary(self, other);
 	/* Three-arg power doesn't use __rpow__ */
 	return call_method(self, "__pow__", &pow_str,
-			   "OO", other, modulus);
+			   "(OO)", other, modulus);
 }
 
 SLOT0(slot_nb_negative, "__neg__")
@@ -2630,7 +2621,7 @@ slot_nb_nonzero(PyObject *self)
 	}
 
 	if (func != NULL) {
-		res = PyEval_CallObject(func, NULL);
+		res = PyObject_CallObject(func, NULL);
 		Py_DECREF(func);
 		if (res == NULL)
 			return -1;
@@ -2687,7 +2678,7 @@ half_compare(PyObject *self, PyObject *other)
 		if (args == NULL)
 			res = NULL;
 		else {
-			res = PyObject_CallObject(func, args);
+			res = PyObject_Call(func, args, NULL);
 			Py_DECREF(args);
 		}
 		if (res != Py_NotImplemented) {
@@ -2841,10 +2832,10 @@ slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__delattr__", &delattr_str,
-				  "O", name);
+				  "(O)", name);
 	else
 		res = call_method(self, "__setattr__", &setattr_str,
-				  "OO", name, value);
+				  "(OO)", name, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
@@ -2877,7 +2868,7 @@ half_richcompare(PyObject *self, PyObject *other, int op)
 	if (args == NULL)
 		res = NULL;
 	else {
-		res = PyObject_CallObject(func, args);
+		res = PyObject_Call(func, args, NULL);
 		Py_DECREF(args);
 	}
 	Py_DECREF(func);
@@ -2935,7 +2926,7 @@ static PyObject *
 slot_tp_iternext(PyObject *self)
 {
 	static PyObject *next_str;
-	return call_method(self, "next", &next_str, "");
+	return call_method(self, "next", &next_str, "()");
 }
 
 static PyObject *
@@ -2973,10 +2964,10 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 
 	if (value == NULL)
 		res = call_method(self, "__del__", &del_str,
-				  "O", target);
+				  "(O)", target);
 	else
 		res = call_method(self, "__set__", &set_str,
-				  "OO", target, value);
+				  "(OO)", target, value);
 	if (res == NULL)
 		return -1;
 	Py_DECREF(res);
