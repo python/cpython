@@ -131,7 +131,7 @@ When reading output from a child process that writes a lot of data to
 standard error while the parent is reading from the child's standard
 out, a dead lock can occur.  A similar situation can occur with other
 combinations of reads and writes.  The essential factors are that more
-than \constant{_PC_PIPE_BUF} bites are being written by one process in
+than \constant{_PC_PIPE_BUF} bytes are being written by one process in
 a blocking fashion, while the other process is reading from the other
 process, also in a blocking fashion.
 
