@@ -3,8 +3,8 @@ import random
 
 # From SF bug #422121:  Insecurities in dict comparison.
 
-# Safety of code doing comparisons has been an historical Python waak spot.
-# The problem is that comparison of structures in written in C *naturally*
+# Safety of code doing comparisons has been an historical Python weak spot.
+# The problem is that comparison of structures written in C *naturally*
 # wants to hold on to things like the size of the container, or "the
 # biggest" containee so far, across a traversal of the container; but
 # code to do containee comparisons can call back into Python and mutate
@@ -71,9 +71,9 @@ class Horrid:
         self.i = i
 
         # An artificial hashcode is selected at random so that we don't
-        # have any systematic relationship between comparsion outcomes
+        # have any systematic relationship between comparison outcomes
         # (based on self.i and other.i) and relative position within the
-        # hawh vector (based on hashcode).
+        # hash vector (based on hashcode).
         self.hashcode = random.randrange(1000000000)
 
     def __hash__(self):
