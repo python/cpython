@@ -126,7 +126,8 @@ simplest expressions.
 be listed individually, or a range of characters can be indicated by
 giving two characters and separating them by a '-'.  Special
 characters are not active inside sets.  For example, \code{[akm\$]}
-will match any of the characters 'a', 'k', 'm', or '\$'; \code{[a-z]}
+will match any of the characters \character{a}, \character{k},
+\character{m}, or \character{\$}; \code{[a-z]}
 will match any lowercase letter and \code{[a-zA-Z0-9]} matches any
 letter or digit.  Character classes such as \code{\e w} or \code {\e
 S} (defined below) are also acceptable inside a range.  If you want to
@@ -278,6 +279,27 @@ The module defines the following functions and constants, and an exception:
   \var{flags} value.  Values can be any of the following variables,
   combined using bitwise OR (the \code{|} operator).
 
+The sequence
+
+\begin{verbatim}
+prog = re.compile(pat)
+result = prog.match(str)
+\end{verbatim}
+
+is equivalent to
+
+\begin{verbatim}
+result = re.match(pat, str)
+\end{verbatim}
+
+but the version using \function{compile()} is more efficient when the
+expression will be used several times in a single program.
+%(The compiled version of the last pattern passed to
+%\function{regex.match()} or \function{regex.search()} is cached, so
+%programs that use only a single regular expression at a time needn't
+%worry about compiling regular expressions.)
+\end{funcdesc}
+
 \begin{datadesc}{I}
 \dataline{IGNORECASE}
 Perform case-insensitive matching; expressions like \code{[A-Z]} will match
@@ -318,27 +340,6 @@ class or preceded by an unescaped backslash, all characters from the
 leftmost such \code{\#} through the end of the line are ignored.
 \end{datadesc}
 
-
-The sequence
-
-\begin{verbatim}
-prog = re.compile(pat)
-result = prog.match(str)
-\end{verbatim}
-
-is equivalent to
-
-\begin{verbatim}
-result = re.match(pat, str)
-\end{verbatim}
-
-but the version using \function{compile()} is more efficient when the
-expression will be used several times in a single program.
-%(The compiled version of the last pattern passed to
-%\function{regex.match()} or \function{regex.search()} is cached, so
-%programs that use only a single regular expression at a time needn't
-%worry about compiling regular expressions.)
-\end{funcdesc}
 
 \begin{funcdesc}{escape}{string}
   Return \var{string} with all non-alphanumerics backslashed; this is
@@ -448,8 +449,8 @@ Perform the same operation as \function{sub()}, but return a tuple
 Compiled regular expression objects support the following methods and
 attributes:
 
-\setindexsubitem{(re method)}
-\begin{funcdesc}{match}{string\optional{, pos}\optional{, endpos}}
+\begin{methoddesc}[RegexObject]{match}{string\optional{, pos}\optional{,
+                                       endpos}}
   If zero or more characters at the beginning of \var{string} match
   this regular expression, return a corresponding
   \class{MatchObject} instance.  Return \code{None} if the string does not
@@ -465,9 +466,10 @@ attributes:
   be searched; it will be as if the string is \var{endpos} characters
   long, so only the characters from \var{pos} to \var{endpos} will be
   searched for a match.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{search}{string\optional{, pos}\optional{, endpos}}
+\begin{methoddesc}[RegexObject]{search}{string\optional{, pos}\optional{,
+                                        endpos}}
   Scan through \var{string} looking for a location where this regular
   expression produces a match.  Return \code{None} if no
   position in the string matches the pattern; note that this is
@@ -475,42 +477,43 @@ attributes:
   
   The optional \var{pos} and \var{endpos} parameters have the same
   meaning as for the \method{match()} method.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{split}{string, \optional{, maxsplit\code{ = 0}}}
+\begin{methoddesc}[RegexObject]{split}{string, \optional{,
+                                       maxsplit\code{ = 0}}}
 Identical to the \function{split()} function, using the compiled pattern.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{sub}{repl, string\optional{, count\code{ = 0}}}
+\begin{methoddesc}[RegexObject]{sub}{repl, string\optional{, count\code{ = 0}}}
 Identical to the \function{sub()} function, using the compiled pattern.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{subn}{repl, string\optional{, count\code{ = 0}}}
+\begin{methoddesc}[RegexObject]{subn}{repl, string\optional{,
+                                      count\code{ = 0}}}
 Identical to the \function{subn()} function, using the compiled pattern.
-\end{funcdesc}
+\end{methoddesc}
 
-\setindexsubitem{(regex attribute)}
 
-\begin{datadesc}{flags}
+\begin{memberdesc}[RegexObject]{flags}
 The flags argument used when the regex object was compiled, or
 \code{0} if no flags were provided.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{groupindex}
+\begin{memberdesc}[RegexObject]{groupindex}
 A dictionary mapping any symbolic group names defined by 
 \code{(?P<\var{id}>)} to group numbers.  The dictionary is empty if no
 symbolic groups were used in the pattern.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{pattern}
+\begin{memberdesc}[RegexObject]{pattern}
 The pattern string from which the regex object was compiled.
-\end{datadesc}
+\end{memberdesc}
 
 \subsection{Match Objects}
 
 \class{MatchObject} instances support the following methods and attributes:
 
-\begin{funcdesc}{group}{\optional{group1, group2, ...}}
+\begin{methoddesc}[MatchObject]{group}{\optional{group1, group2, ...}}
 Returns one or more subgroups of the match.  If there is a single
 argument, the result is a single string; if there are
 multiple arguments, the result is a tuple with one item per argument.
@@ -534,18 +537,18 @@ m = re.match(r"(?P<int>\d+)\.(\d*)", '3.14')
 
 After performing this match, \code{m.group(1)} is \code{'3'}, as is
 \code{m.group('int')}, and \code{m.group(2)} is \code{'14'}.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{groups}{}
+\begin{methoddesc}[MatchObject]{groups}{}
 Return a tuple containing all the subgroups of the match, from 1 up to
 however many groups are in the pattern.  Groups that did not
 participate in the match have values of \code{None}.  (Incompatibility 
 note: in the original Python 1.5 release, if the tuple was one element
 long, a string would be returned instead.  In later versions, a
 singleton tuple is returned in such cases.)
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{funcdesc}{start}{\optional{group}}
+\begin{methoddesc}[MatchObject]{start}{\optional{group}}
 \funcline{end}{\optional{group}}
 Return the indices of the start and end of the substring
 matched by \var{group}; \var{group} defaults to zero (meaning the whole
@@ -567,36 +570,35 @@ re.search('b(c?)', 'cba')}, \code{\var{m}.start(0)} is 1,
 \code{\var{m}.end(0)} is 2, \code{\var{m}.start(1)} and
 \code{\var{m}.end(1)} are both 2, and \code{\var{m}.start(2)} raises
 an \exception{IndexError} exception.
+\end{methoddesc}
 
-\end{funcdesc}
-
-\begin{funcdesc}{span}{\optional{group}}
+\begin{methoddesc}[MatchObject]{span}{\optional{group}}
 For \class{MatchObject} \var{m}, return the 2-tuple
 \code{(\var{m}.start(\var{group}), \var{m}.end(\var{group}))}.
 Note that if \var{group} did not contribute to the match, this is
 \code{(None, None)}.  Again, \var{group} defaults to zero.
-\end{funcdesc}
+\end{methoddesc}
 
-\begin{datadesc}{pos}
+\begin{memberdesc}[MatchObject]{pos}
 The value of \var{pos} which was passed to the
 \function{search()} or \function{match()} function.  This is the index into
 the string at which the regex engine started looking for a match. 
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{endpos}
+\begin{memberdesc}[MatchObject]{endpos}
 The value of \var{endpos} which was passed to the
 \function{search()} or \function{match()} function.  This is the index into
 the string beyond which the regex engine will not go.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{re}
+\begin{memberdesc}[MatchObject]{re}
 The regular expression object whose \method{match()} or
 \method{search()} method produced this \class{MatchObject} instance.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{string}
+\begin{memberdesc}[MatchObject]{string}
 The string passed to \function{match()} or \function{search()}.
-\end{datadesc}
+\end{memberdesc}
 
 \begin{seealso}
 \seetext{Jeffrey Friedl, \emph{Mastering Regular Expressions},
