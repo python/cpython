@@ -301,6 +301,8 @@ class VinFile:
 		if self.format == 'rgb':
 			gl.RGBmode()
 			gl.gconfig()
+			gl.RGBcolor(200, 200, 200)
+			gl.clear()
 			return
 		gl.cmode()
 		gl.gconfig()
