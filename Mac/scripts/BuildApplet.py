@@ -289,6 +289,7 @@ def message(str, id = 256):
 		return
 	tp, h, rect = d.GetDialogItem(2)
 	SetDialogItemText(h, str)
+	d.SetDialogDefaultItem(1)
 	while 1:
 		n = ModalDialog(None)
 		if n == 1: break
