@@ -305,7 +305,7 @@ do_mkvalue(p_format, p_va)
 		case 'S':
 		case 'O':
 		if (**p_format == '&') {
-			typedef object *(*converter)(void *);
+			typedef object *(*converter) PROTO((void *));
 			converter func = va_arg(*p_va, converter);
 			void *arg = va_arg(*p_va, void *);
 			++*p_format;
