@@ -68,12 +68,13 @@ Return an FSSpec object and a success-indicator.
 
 \begin{funcdesc}{FindFolder}{where\, which\, create}
 Locates one of the ``special'' folders that MacOS knows about, such as
-the trash or the Preferences folder. \var{Where} is the disk to search
-(\code{0x8000} for the boot disk), \var{which} is the 4-char string
-specifying which folder to locate. Setting \var{create} causes the
-folder to be created if it does not exist. Returns a \code{(vrefnum,
-dirid)} tuple. See Inside Mac VI for a complete description, including
-4-char names.
+the trash or the Preferences folder. \var{Where} is the disk to
+search, \var{which} is the 4-char string specifying which folder to
+locate. Setting \var{create} causes the folder to be created if it
+does not exist. Returns a \code{(vrefnum, dirid)} tuple.
+
+The constants for \var{where} and \var{which} can be obtained from the
+standard module \var{MACFS}.
 \end{funcdesc}
 
 \subsection{FSSpec objects}
@@ -168,7 +169,8 @@ The 4-char type code of the file.
 \end{datadesc}
 
 \begin{datadesc}{Flags}
-The finder flags for the file as 16-bit integer.
+The finder flags for the file as 16-bit integer. The bit values in
+\var{Flags} are defined in standard module \var{MACFS}.
 \end{datadesc}
 
 \begin{datadesc}{Location}

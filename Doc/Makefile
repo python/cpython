@@ -111,7 +111,8 @@ libhtmllib.tex libhttplib.tex \
 libimageop.tex libimgfile.tex libintro.tex \
 libjpeg.tex \
 libmac.tex libmacconsole.tex libmacdnr.tex \
-	libmacfs.tex libmacos.tex libmactcp.tex libmacspeech.tex \
+	libmacfs.tex libmacos.tex libmacostools.tex libmactcp.tex \
+	libmacspeech.tex libmacui.tex \
 	libmain.tex libmarshal.tex libmath.tex \
 	libmd5.tex libmimetools.tex libmisc.tex \
 	libmm.tex libmpz.tex \
