@@ -540,6 +540,21 @@ SOURCE=..\Python\errors.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\python\exceptions.c
+
+!if  "$(cfg)" == "python16 - win32 release"
+
+!elseif  "$(cfg)" == "python16 - win32 debug"
+
+!elseif  "$(cfg)" == "python16 - win32 alpha debug"
+
+!elseif  "$(cfg)" == "python16 - win32 alpha release"
+
+!endif 
+
+# end source file
+# begin source file
+
 SOURCE=..\Objects\fileobject.c
 
 !IF  "$(CFG)" == "python16 - Win32 Release"
