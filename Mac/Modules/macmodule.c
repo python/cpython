@@ -587,7 +587,7 @@ mac_mstats(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-#endif USE_MALLOC_DEBUG
+#endif /* USE_MALLOC_DEBUG */
 
 static struct PyMethodDef mac_methods[] = {
 	{"chdir",	mac_chdir},
