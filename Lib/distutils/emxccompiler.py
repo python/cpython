@@ -76,7 +76,7 @@ class EMXCCompiler (UnixCCompiler):
         
     # __init__ ()
 
-    def _compile(self, obj, src, ext, cc_args, extra_postargs):
+    def _compile(self, obj, src, ext, cc_args, extra_postargs, pp_opts):
         if ext == '.rc':
             # gcc requires '.rc' compiled to binary ('.res') files !!!
             try:
