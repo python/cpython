@@ -16,11 +16,10 @@ import _sre
 
 from sre_constants import *
 
-# FIXME: should be 65535, but the arraymodule is still broken
-MAXREPEAT = 32767
+MAXREPEAT = 65535
 
-# FIXME: might change in 2.0 final.  but for now, this seems
-# to be the best way to be compatible with 1.5.2
+# FIXME: the following might change in 2.0 final.  but for now, this
+# seems to be the best way to be compatible with 1.5.2
 CHARMASK = 0xff
 
 SPECIAL_CHARS = ".\\[{()*+?^$|"
