@@ -214,7 +214,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
         try:
             fd = _os.open(file, flags, 0600)
             _set_cloexec(fd)
-            return (fd, file)
+            return (fd, _os.path.abspath(file))
         except OSError, e:
             if e.errno == _errno.EEXIST:
                 continue # try again
