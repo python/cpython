@@ -759,7 +759,6 @@ TT { font-family: lucidatypewriter, lucida console, courier }
             if cl:
                 if imclass is not cl:
                     note = ' from ' + self.classlink(imclass, mod)
-                    skipdocs = 1
             else:
                 if object.im_self:
                     note = ' method of %s instance' % self.classlink(
@@ -1117,7 +1116,6 @@ class TextDoc(Doc):
             if cl:
                 if imclass is not cl:
                     note = ' from ' + classname(imclass, mod)
-                    skipdocs = 1
             else:
                 if object.im_self:
                     note = ' method of %s instance' % classname(
