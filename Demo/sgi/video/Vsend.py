@@ -22,7 +22,7 @@ from senddefs import *
 
 def usage(msg):
 	print msg
-	print 'usage: Vsend [-b] [-h height] [-p port] [-s size] [-t ttl]',
+	print 'usage: Vsend [-b] [-h height] [-p port] [-s size] [-t ttl] [-c type] [-m]',
 	print '[-w width] [host] ...'
 	print '-b        : broadcast on local net'
 	print '-h height : window height (default ' + `DEFHEIGHT` + ')'
@@ -30,6 +30,7 @@ def usage(msg):
 	print '-t ttl    : time-to-live (multicast only; default 1)'
 	print '-s size   : max packet size (default ' + `DEFPKTMAX` + ')'
 	print '-w width  : window width (default ' + `DEFWIDTH` + ')'
+	print '-c type   : Type: rgb8, mono or grey (default rgb8)'
 	print '[host] ...: host(s) to send to (default multicast to ' + \
 		DEFMCAST + ')'
 	sys.exit(2)
@@ -44,9 +45,10 @@ def main():
 	pktmax = DEFPKTMAX
 	width = DEFWIDTH
 	height = DEFHEIGHT
+	vtype = 'rgb8'
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'bh:p:s:t:w:')
+		opts, args = getopt.getopt(sys.argv[1:], 'bh:p:s:t:w:c:')
 	except getopt.error, msg:
 		usage(msg)
 
@@ -64,6 +66,8 @@ def main():
 				width = string.atoi(optarg)
 			if opt == '-h':
 				height = string.atoi(optarg)
+			if opt == '-c':
+				vtype = optarg
 	except string.atoi_error, msg:
 		usage('bad integer: ' + msg)
 
@@ -92,9 +96,9 @@ def main():
 	gl.qdevice(DEVICE.WINTHAW)
 	width, height = gl.getsize()
 
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height)
+	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height, vtype)
 
-	lvi = LiveVideoIn.LiveVideoIn().init(pktmax, width, height)
+	lvi = LiveVideoIn.LiveVideoIn().init(pktmax, width, height, vtype)
 
 	s = socket(AF_INET, SOCK_DGRAM)
 	s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)

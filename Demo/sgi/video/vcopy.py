@@ -5,12 +5,18 @@ import getopt
 from gl import *
 from DEVICE import *
 import VFile
+import string
+import imageop
 
 def report(time, iframe):
 	print 'Frame', iframe, ': t =', time
 
 def usage():
-	sys.stderr.write('usage: vcopy infile outfile\n')
+	sys.stderr.write('usage: vcopy [-t type] [-m treshold] [-a] infile outfile\n')
+	sys.stderr.write('-t Convert to other type\n')
+	sys.stderr.write('-a Automatic\n')
+	sys.stderr.write('-m Convert grey to mono with treshold\n')
+	sys.stderr.write('-d Convert grey to mono with dithering\n')
 	sys.exit(2)
 
 def help():
@@ -20,7 +26,7 @@ def help():
 
 def main():
 	foreground()
-	opts, args = getopt.getopt(sys.argv[1:], 't:a')
+	opts, args = getopt.getopt(sys.argv[1:], 't:am:d')
 	if len(args) <> 2:
 		usage()
 	[ifile, ofile] = args
@@ -33,12 +39,28 @@ def main():
 
 	use_grabber = 0
 	continuous = 0
+	tomono = 0
+	tomonodither = 0
 	for o, a in opts:
 		if o == '-t':
 			ofilm.format = a
 			use_grabber = 1
 		if o == '-a':
 			continuous = 1
+		if o == '-m':
+			if ifilm.format <> 'grey':
+				print '-m only supported for greyscale'
+				sys.exit(1)
+			tomono = 1
+			treshold = string.atoi(a)
+			ofilm.format = 'mono'
+		if o == '-d':
+			if ifilm.format <> 'grey':
+				print '-m only supported for greyscale'
+				sys.exit(1)
+			tomonodither = 1
+			ofilm.format = 'mono'
+			
 	ofilm.writeheader()
 	#
 	prefsize(ifilm.width, ifilm.height)
@@ -83,6 +105,13 @@ def main():
 			if c == 'w' or continuous:
 				if use_grabber:
 					data, cdata = ofilm.grabframe()
+				if tomono:
+					data = imageop.grey2mono(data, \
+						  ifilm.width, ifilm.height, \
+						  treshold)
+				if tomonodither:
+					data = imageop.dither2mono(data, \
+						  ifilm.width, ifilm.height)
 				ofilm.writeframe(time, data, cdata)
 				print 'Frame', iframe, 'written.'
 			if c == 'n' or continuous:

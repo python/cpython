@@ -12,13 +12,15 @@ class LiveVideoOut:
 	# wid:    the window id where the video is to be displayed (centered)
 	# vw, vh: size of the video image to be displayed
 
-	def init(self, wid, vw, vh):
+	def init(self, wid, vw, vh, type):
 		##print 'Init', wid, xywh
 		##print 'video', vw, vw
 		self.vw = vw
 		self.vh = vh
 		self.disp = Displayer().init()
-		info = ('rgb8', vw, vh, 1, 8, 0, 0, 0, 0)
+		if not type in ('rgb8', 'grey', 'mono'):
+			raise 'Incorrent live video output type'
+		info = (type, vw, vh, 1, 8, 0, 0, 0, 0)
 		self.disp.setinfo(info)
 		self.wid = wid
 		oldwid = gl.winget()
@@ -56,10 +58,15 @@ class LiveVideoOut:
 	# LiveVideoIn.getnextpacket()).
 
 	def putnextpacket(self, pos, data):
-		nline = len(data)/self.vw
-		if nline*self.vw <> len(data):
-			print 'Incorrect-sized video fragment ignored'
-			return
+		if self.disp.format == 'mono':
+			# Unfortunately size-check is difficult for
+			# packed video
+			nline = (len(data)*8)/self.vw
+		else:
+			nline = len(data)/self.vw
+			if nline*self.vw <> len(data):
+				print 'Incorrect-sized video fragment ignored'
+				return
 		oldwid = gl.winget()
 		gl.winset(self.wid)
 		self.disp.showpartframe(data, None, (0, pos, self.vw, nline))

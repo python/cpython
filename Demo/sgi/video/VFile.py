@@ -73,6 +73,7 @@ def conv_jpeg(r, g, b):
 	raise Error, 'Attempt to make RGB colormap (jpeg)'
 
 conv_jpeggrey = conv_grey
+conv_mono = conv_grey
 
 
 # Choose one of the above based upon a color system name
@@ -213,7 +214,8 @@ class VideoParams:
 	def init(self):
 		# Essential parameters
 		self.format = 'grey'	# color system used
-		# Choose from: grey, rgb, rgb8, hsv, yiq, hls, jpeg, jpeggrey
+		# Choose from: grey, rgb, rgb8, hsv, yiq, hls, jpeg, jpeggrey,
+		#              mono
 		self.width = 0		# width of frame
 		self.height = 0		# height of frame
 		self.packfactor = 1	# expansion using rectzoom
@@ -315,6 +317,9 @@ class Displayer(VideoParams):
 				p = pf
 			if (width, height, bytes) <> (w/p, h/p, b):
 				raise Error, 'jpeg data has wrong size'
+		elif self.format == 'mono':
+			import imageop
+			data = imageop.mono2grey(data, w, h, 0x20, 0xdf)
 		if not self.colormapinited:
 			self.initcolormap()
 		if self.fixcolor0:
@@ -544,7 +549,7 @@ def readfileheader(fp, filename):
 			c0bits = c1bits = c2bits = 0
 			chrompack = 0
 			offset = 0
-		elif format in ('grey', 'jpeggrey'):
+		elif format in ('grey', 'jpeggrey', 'mono'):
 			c0bits = rest
 			c1bits = c2bits = 0
 			chrompack = 0
@@ -642,7 +647,7 @@ def writefileheader(fp, values):
 	#
 	if format in ('rgb', 'jpeg'):
 		data = (format, 0)
-	elif format in ('grey', 'jpeggrey'):
+	elif format in ('grey', 'jpeggrey', 'mono'):
 		data = (format, c0bits)
 	else:
 		data = (format, (c0bits, c1bits, c2bits, chrompack, offset))

@@ -23,9 +23,10 @@ from senddefs import *
 
 def usage(msg):
 	print msg
-	print 'usage: Vreceive [-m mcastgrp] [-p port]'
+	print 'usage: Vreceive [-m mcastgrp] [-p port] [-c type]'
 	print '-m mcastgrp: multicast group (default ' + `DEFMCAST` + ')'
 	print '-p port    : port (default ' + `DEFPORT` + ')'
+	print '-c type    : signal type: rgb8, grey or mono (default rgb8)'
 	sys.exit(2)
 
 
@@ -39,9 +40,10 @@ def main():
 	port = DEFPORT
 	width = DEFWIDTH
 	height = DEFHEIGHT
+	vtype = 'rgb8'
 
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'm:p:')
+		opts, args = getopt.getopt(sys.argv[1:], 'm:p:c:')
 	except getopt.error, msg:
 		usage(msg)
 
@@ -51,6 +53,8 @@ def main():
 				port = string.atoi(optarg)
 			if opt == '-m':
 				group = gethostbyname(optarg)
+			if opt == '-c':
+				vtype = optarg
 	except string.atoi_error, msg:
 		usage('bad integer: ' + msg)
 
@@ -64,7 +68,7 @@ def main():
 	gl.qdevice(DEVICE.WINSHUT)
 	gl.qdevice(DEVICE.WINQUIT)
 
-	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height)
+	lvo = LiveVideoOut.LiveVideoOut().init(wid, width, height, vtype)
 
 	ifdlist = [gl.qgetfd(), s.fileno()]
 	ofdlist = []
