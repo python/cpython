@@ -20,8 +20,6 @@ Files:
 			handle nested constructs easily using the functions
 			and classes in example.py.
 
-	pprint.py    -- function to pretty-print Python values.
-
 	test_parser.py  program to put the parser module through it's paces.
 
 	parser.tex   -- LaTex driver file for formatting the parser module
