@@ -99,6 +99,9 @@ Extension modules
 
 Library
 
+- The pickle.Pickler class grew a clear_memo() method to mimic that
+  provided by cPickle.Pickler.
+
 - difflib's SequenceMatcher class now does a dynamic analysis of
   which elements are so frequent as to constitute noise.  For
   comparing files as sequences of lines, this generally works better

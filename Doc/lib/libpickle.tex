@@ -237,15 +237,20 @@ remembers which objects the pickler has already seen, so that shared
 or recursive objects pickled by reference and not by value.  This
 method is useful when re-using picklers.
 
-\strong{Note:} \method{clear_memo()} is only available on the picklers
-created by \module{cPickle}.  In the \module{pickle} module, picklers
-have an instance variable called \member{memo} which is a Python
-dictionary.  So to clear the memo for a \module{pickle} module
+\begin{notice}
+Prior to Python 2.3, \method{clear_memo()} was only available on the
+picklers created by \refmodule{cPickle}.  In the \module{pickle} module,
+picklers have an instance variable called \member{memo} which is a
+Python dictionary.  So to clear the memo for a \module{pickle} module
 pickler, you could do the following:
 
 \begin{verbatim}
 mypickler.memo.clear()
 \end{verbatim}
+
+Code that does not need to support older versions of Python should
+simply use \method{clear_memo()}.
+\end{notice}
 \end{methoddesc}
 
 It is possible to make multiple calls to the \method{dump()} method of
