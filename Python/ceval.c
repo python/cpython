@@ -1615,7 +1615,7 @@ eval_code2(co, globals, locals,
 		    }
 		    else {
 			int nstar = 0;
-			PyObject *args;
+			PyObject *callargs;
 			PyObject *stararg = 0;
 			PyObject *kwdict = NULL;
 			if (flags & 2) {
@@ -1678,6 +1678,8 @@ eval_code2(co, globals, locals,
 				    PyErr_Format(PyExc_TypeError,
 					"keyword parameter redefined: %.400s",
 						 PyString_AsString(key));
+				    Py_DECREF(key);
+				    Py_DECREF(value);
 				    break;
 				}
 				err = PyDict_SetItem(kwdict, key, value);
@@ -1687,13 +1689,12 @@ eval_code2(co, globals, locals,
 				    break;
 			    }
 			    if (err) {
-				Py_DECREF(args);
 				Py_DECREF(kwdict);
 				break;
 			    }
 			}
-			args = PyTuple_New(na + nstar);
-			if (args == NULL) {
+			callargs = PyTuple_New(na + nstar);
+			if (callargs == NULL) {
 			    x = NULL;
 			    break;
 			}
@@ -1702,16 +1703,18 @@ eval_code2(co, globals, locals,
 			    for (i = 0; i < nstar; i++) {
 				PyObject *a = PyTuple_GET_ITEM(stararg, i);
 				Py_INCREF(a);
-				PyTuple_SET_ITEM(args, na + i, a);
+				PyTuple_SET_ITEM(callargs, na + i, a);
 			    }
 			    Py_DECREF(stararg);
 			}
 			while (--na >= 0) {
 			    w = POP();
-			    PyTuple_SET_ITEM(args, na, w);
+			    PyTuple_SET_ITEM(callargs, na, w);
 			}
-			x = PyEval_CallObjectWithKeywords(func, args, kwdict);
-			Py_DECREF(args);
+			x = PyEval_CallObjectWithKeywords(func,
+							  callargs,
+							  kwdict);  
+			Py_DECREF(callargs);
 			Py_XDECREF(kwdict);
 		    }
 		    Py_DECREF(func);
