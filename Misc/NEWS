@@ -43,6 +43,8 @@ Extension modules
 Library
 -------
 
+- Patch #808719: Ignore locale's encoding in IDLE if it is an empty string.
+
 - Patch #946153: Add wait_visibility before grab_set.
 
 - Patch #994595: urllib2 now recognizes Basic authentication even if
