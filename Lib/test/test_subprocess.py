@@ -26,7 +26,7 @@ class ProcessTestCase(unittest.TestCase):
         else:
             fname = tempfile.mktemp()
             return os.open(fname, os.O_RDWR|os.O_CREAT), fname
-    
+
     #
     # Generic tests
     #
@@ -85,7 +85,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdin_filedes(self):
         """stdin is set to open file descriptor"""
-        tf = tempfile.TemporaryFile() 
+        tf = tempfile.TemporaryFile()
         d = tf.fileno()
         os.write(d, "pear")
         os.lseek(d, 0, 0)
@@ -115,7 +115,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdout_filedes(self):
         """stdout is set to open file descriptor"""
-        tf = tempfile.TemporaryFile() 
+        tf = tempfile.TemporaryFile()
         d = tf.fileno()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
@@ -126,7 +126,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stdout_fileobj(self):
         """stdout is set to open file object"""
-        tf = tempfile.TemporaryFile() 
+        tf = tempfile.TemporaryFile()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
                          stdout=tf)
@@ -143,7 +143,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stderr_filedes(self):
         """stderr is set to open file descriptor"""
-        tf = tempfile.TemporaryFile() 
+        tf = tempfile.TemporaryFile()
         d = tf.fileno()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
@@ -154,7 +154,7 @@ class ProcessTestCase(unittest.TestCase):
 
     def test_stderr_fileobj(self):
         """stderr is set to open file object"""
-        tf = tempfile.TemporaryFile() 
+        tf = tempfile.TemporaryFile()
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=tf)
@@ -230,7 +230,7 @@ class ProcessTestCase(unittest.TestCase):
     def test_communicate_pipe_buf(self):
         """communicate() with writes larger than pipe_buf"""
         # This test will probably deadlock rather than fail, if
-        # communicate() does not work properly. 
+        # communicate() does not work properly.
         x, y = os.pipe()
         if mswindows:
             pipe_buf = 512
@@ -239,7 +239,7 @@ class ProcessTestCase(unittest.TestCase):
         os.close(x)
         os.close(y)
         p = subprocess.Popen([sys.executable, "-c",
-                          'import sys,os;' 
+                          'import sys,os;'
                           'sys.stdout.write(sys.stdin.read(47));' \
                           'sys.stderr.write("xyz"*%d);' \
                           'sys.stdout.write(sys.stdin.read())' % pipe_buf],
@@ -258,7 +258,7 @@ class ProcessTestCase(unittest.TestCase):
         (stdout, stderr) = p.communicate("split")
         self.assertEqual(stdout, "bananasplit")
         self.assertEqual(stderr, "")
-        
+
     def test_universal_newlines(self):
         """universal newlines"""
         p = subprocess.Popen([sys.executable, "-c",
@@ -354,7 +354,7 @@ class ProcessTestCase(unittest.TestCase):
         self.assertEqual(p.wait(), 0)
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.wait(), 0)
-        
+
     #
     # POSIX tests
     #
@@ -370,7 +370,7 @@ class ProcessTestCase(unittest.TestCase):
                 self.assertNotEqual(e.child_traceback.find("os.chdir"), -1)
             else:
                 self.fail("Expected OSError")
-        
+
         def test_run_abort(self):
             """returncode handles signal termination"""
             p = subprocess.Popen([sys.executable, "-c", "import os; os.abort()"])
@@ -394,7 +394,7 @@ class ProcessTestCase(unittest.TestCase):
                               'import sys,os;' \
                               'sys.stdout.write(str(os.dup(0)))'],
                              stdout=subprocess.PIPE, close_fds=1)
-            # When all fds are closed, the next free fd should be 3. 
+            # When all fds are closed, the next free fd should be 3.
             self.assertEqual(p.stdout.read(), "3")
 
         def test_args_string(self):
@@ -446,7 +446,7 @@ class ProcessTestCase(unittest.TestCase):
             rc = subprocess.call(fname)
             self.assertEqual(rc, 47)
 
-            
+
     #
     # Windows tests
     #
@@ -454,7 +454,7 @@ class ProcessTestCase(unittest.TestCase):
         def test_startupinfo(self):
             """startupinfo argument"""
             # We uses hardcoded constants, because we do not want to
-            # depend on win32all. 
+            # depend on win32all.
             STARTF_USESHOWWINDOW = 1
             SW_MAXIMIZE = 3
             startupinfo = subprocess.STARTUPINFO()
@@ -486,7 +486,7 @@ class ProcessTestCase(unittest.TestCase):
             newenv = os.environ.copy()
             newenv["FRUIT"] = "physalis"
             p = subprocess.Popen(["set"], shell=1,
-                                 stdout=subprocess.PIPE, 
+                                 stdout=subprocess.PIPE,
                                  env=newenv)
             self.assertNotEqual(p.stdout.read().find("physalis"), -1)
 
@@ -495,7 +495,7 @@ class ProcessTestCase(unittest.TestCase):
             newenv = os.environ.copy()
             newenv["FRUIT"] = "physalis"
             p = subprocess.Popen("set", shell=1,
-                                 stdout=subprocess.PIPE, 
+                                 stdout=subprocess.PIPE,
                                  env=newenv)
             self.assertNotEqual(p.stdout.read().find("physalis"), -1)
 
@@ -511,4 +511,3 @@ def test_main():
 
 if __name__ == "__main__":
     test_main()
-

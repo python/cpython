@@ -946,7 +946,7 @@ Deletes the specified alias."""
         into an absolute file name.
         """
         if os.path.isabs(filename) and  os.path.exists(filename):
-            return filename 
+            return filename
         f = os.path.join(sys.path[0], filename)
         if  os.path.exists(f) and self.canonic(f) == self.mainpyfile:
             return f
@@ -967,8 +967,8 @@ Deletes the specified alias."""
         # Start with fresh empty copy of globals and locals and tell the script
         # that it's being run as __main__ to avoid scripts being able to access
         # the pdb.py namespace.
-        globals_ = {"__name__" : "__main__"} 
-        locals_ = globals_ 
+        globals_ = {"__name__" : "__main__"}
+        locals_ = globals_
 
         # When bdb sets tracing, a number of call and line events happens
         # BEFORE debugger even reaches user's code (and the exact sequence of
@@ -1057,7 +1057,7 @@ def main():
             pdb._runscript(mainpyfile)
             if pdb._user_requested_quit:
                 break
-            print "The program finished and will be restarted"    
+            print "The program finished and will be restarted"
         except SystemExit:
             # In most cases SystemExit does not warrant a post-mortem session.
             print "The program exited via sys.exit(). Exit status: ",
@@ -1076,4 +1076,3 @@ def main():
 # When invoked as main program, invoke the debugger on a script
 if __name__=='__main__':
     main()
-        

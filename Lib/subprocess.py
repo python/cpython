@@ -1,6 +1,6 @@
 # subprocess - Subprocesses with accessible I/O streams
 #
-# For more information about this module, see PEP 324. 
+# For more information about this module, see PEP 324.
 #
 # Copyright (c) 2003-2004 by Peter Astrand <astrand@lysator.liu.se>
 #
@@ -174,7 +174,7 @@ communicate(input=None)
     terminate.  The optional stdin argument should be a string to be
     sent to the child process, or None, if no data should be sent to
     the child.
-        
+
     communicate() returns a tuple (stdout, stderr).
 
     Note: The data read is buffered in memory, so do not use this
@@ -262,7 +262,7 @@ except OSError, e:
 
 Replacing os.spawn*
 -------------------
-P_NOWAIT example: 
+P_NOWAIT example:
 
 pid = os.spawnlp(os.P_NOWAIT, "/bin/mycmd", "mycmd", "myarg")
 ==>
@@ -276,21 +276,21 @@ retcode = os.spawnlp(os.P_WAIT, "/bin/mycmd", "mycmd", "myarg")
 retcode = call(["/bin/mycmd", "myarg"])
 
 
-Vector example: 
+Vector example:
 
 os.spawnvp(os.P_NOWAIT, path, args)
 ==>
 Popen([path] + args[1:])
 
 
-Environment example: 
+Environment example:
 
 os.spawnlpe(os.P_NOWAIT, "/bin/mycmd", "mycmd", "myarg", env)
 ==>
 Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 
 
-Replacing os.popen* 
+Replacing os.popen*
 -------------------
 pipe = os.popen(cmd, mode='r', bufsize)
 ==>
@@ -352,7 +352,7 @@ except that:
 * the capturestderr argument is replaced with the stderr argument.
 * stdin=PIPE and stdout=PIPE must be specified.
 * popen2 closes all filedescriptors by default, but you have to specify
-  close_fds=True with subprocess.Popen. 
+  close_fds=True with subprocess.Popen.
 
 
 """
@@ -468,10 +468,10 @@ def list2cmdline(seq):
 
         for c in arg:
             if c == '\\':
-                # Don't know if we need to double yet. 
+                # Don't know if we need to double yet.
                 bs_buf.append(c)
             elif c == '"':
-                # Double backspaces. 
+                # Double backspaces.
                 result.append('\\' * len(bs_buf)*2)
                 bs_buf = []
                 result.append('\\"')
@@ -482,7 +482,7 @@ def list2cmdline(seq):
                     bs_buf = []
                 result.append(c)
 
-        # Add remaining backspaces, if any. 
+        # Add remaining backspaces, if any.
         if bs_buf:
             result.extend(bs_buf)
 
@@ -513,7 +513,7 @@ class Popen(object):
             if creationflags != 0:
                 raise ValueError("creationflags is only supported on Windows platforms")
 
-        self.stdin = None        
+        self.stdin = None
         self.stdout = None
         self.stderr = None
         self.pid = None
@@ -534,7 +534,7 @@ class Popen(object):
         # are file descriptors on both platforms.  The parent objects
         # are None when not using PIPEs. The child objects are None
         # when not redirecting.
-        
+
         (p2cread, p2cwrite,
          c2pread, c2pwrite,
          errread, errwrite) = self._get_handles(stdin, stdout, stderr)
@@ -558,7 +558,7 @@ class Popen(object):
                 self.stderr = os.fdopen(errread, 'rU', bufsize)
             else:
                 self.stderr = os.fdopen(errread, 'rb', bufsize)
-        
+
         _active.append(self)
 
 
@@ -578,7 +578,7 @@ class Popen(object):
             """
             if stdin == None and stdout == None and stderr == None:
                 return (None, None, None, None, None, None)
-            
+
             p2cread, p2cwrite = None, None
             c2pread, c2pwrite = None, None
             errread, errwrite = None, None
@@ -651,7 +651,7 @@ class Popen(object):
                                        "for Popen to work with your shell or platform.")
             return w9xpopen
 
-        
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            cwd, env, universal_newlines,
                            startupinfo, creationflags, shell,
@@ -685,7 +685,7 @@ class Popen(object):
             if startupinfo == None:
                 startupinfo = STARTUPINFO()
             if not None in (p2cread, c2pwrite, errwrite):
-                startupinfo.dwFlags |= STARTF_USESTDHANDLES 
+                startupinfo.dwFlags |= STARTF_USESTDHANDLES
                 startupinfo.hStdInput = p2cread
                 startupinfo.hStdOutput = c2pwrite
                 startupinfo.hStdError = errwrite
@@ -724,7 +724,7 @@ class Popen(object):
             if errwrite != None:
                 errwrite.Close()
 
-        
+
         def poll(self):
             """Check if child process has terminated.  Returns returncode
             attribute."""
@@ -830,7 +830,7 @@ class Popen(object):
                 c2pwrite = stdout
             else:
                 # Assuming file-like object
-                c2pwrite = stdout.fileno() 
+                c2pwrite = stdout.fileno()
 
             if stderr == None:
                 pass
@@ -867,8 +867,8 @@ class Popen(object):
                     os.close(i)
                 except:
                     pass
-        
-        
+
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            cwd, env, universal_newlines,
                            startupinfo, creationflags, shell,
@@ -976,7 +976,7 @@ class Popen(object):
 
             _active.remove(self)
 
-        
+
         def poll(self):
             """Check if child process has terminated.  Returns returncode
             attribute."""
@@ -1022,7 +1022,7 @@ class Popen(object):
                     self.stdin.close()
             if self.stdout:
                 read_set.append(self.stdout)
-                stdout = [] 
+                stdout = []
             if self.stderr:
                 read_set.append(self.stderr)
                 stderr = []
@@ -1137,5 +1137,3 @@ if __name__ == "__main__":
         _demo_windows()
     else:
         _demo_posix()
-
-    
