@@ -1616,6 +1616,9 @@ class Text(Widget):
 	def tag_nextrange(self, tagName, index1, index2=None):
 		return self.tk.splitlist(self.tk.call(
 			self._w, 'tag', 'nextrange', tagName, index1, index2))
+	def tag_prevrange(self, tagName, index1, index2=None):
+		return self.tk.splitlist(self.tk.call(
+			self._w, 'tag', 'prevrange', tagName, index1, index2))
 	def tag_raise(self, tagName, aboveThis=None):
 		self.tk.call(
 			self._w, 'tag', 'raise', tagName, aboveThis)
