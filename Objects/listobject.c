@@ -49,6 +49,11 @@ list_resize(PyListObject *self, int newsize)
 	return 0;
 }
 
+/* Empty list reuse scheme to save calls to malloc and free */
+#define MAXFREELISTS 80
+static PyListObject *free_lists[MAXFREELISTS];
+static int num_free_lists = 0;
+
 PyObject *
 PyList_New(int size)
 {
@@ -63,9 +68,14 @@ PyList_New(int size)
 	if (nbytes / sizeof(PyObject *) != (size_t)size) {
 		return PyErr_NoMemory();
 	}
-	op = PyObject_GC_New(PyListObject, &PyList_Type);
-	if (op == NULL) {
-		return NULL;
+	if (num_free_lists) {
+		num_free_lists--;
+		op = free_lists[num_free_lists];
+		_Py_NewReference((PyObject *)op);
+	} else {
+		op = PyObject_GC_New(PyListObject, &PyList_Type);
+		if (op == NULL)
+			return NULL;
 	}
 	if (size <= 0) {
 		op->ob_item = NULL;
@@ -233,7 +243,10 @@ list_dealloc(PyListObject *op)
 		}
 		PyMem_FREE(op->ob_item);
 	}
-	op->ob_type->tp_free((PyObject *)op);
+	if (num_free_lists < MAXFREELISTS && PyList_CheckExact(op))
+		free_lists[num_free_lists++] = op;
+	else 
+		op->ob_type->tp_free((PyObject *)op);		
 	Py_TRASHCAN_SAFE_END(op)
 }
 

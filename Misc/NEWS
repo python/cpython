@@ -54,6 +54,9 @@ Core and builtins
   the overallocation is no more than three elements -- this improves space
   utilization for applications that have large numbers of small lists.
 
+- Most list bodies now get re-used rather than freed.  Speeds up list
+  instantiation and deletion by saving calls to malloc() and free().
+
 - The dict.update() method now accepts all the same argument forms
   as the dict() constructor.  This now includes item lists and/or
   keyword arguments.
