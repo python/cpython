@@ -52,7 +52,7 @@ Copyright (c) Corporation for National Research Initiatives.
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  * -------------------------------------------------------------------- */
 
-#include "ctype.h"
+#include <ctype.h>
 
 /* === Internal API ======================================================= */
 
@@ -115,7 +115,7 @@ Copyright (c) Corporation for National Research Initiatives.
 # ifdef _HAVE_BSDI
 #  include <time.h>
 # endif
-# include "wchar.h"
+#  include <wchar.h>
 #endif
 
 /*
@@ -289,7 +289,7 @@ typedef PY_UNICODE_TYPE Py_UNICODE;
 
 #if defined(HAVE_USABLE_WCHAR_T) && defined(WANT_WCTYPE_FUNCTIONS)
 
-#include "wctype.h"
+#include <wctype.h>
 
 #define Py_UNICODE_ISSPACE(ch) iswspace(ch)
 
