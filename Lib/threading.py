@@ -193,7 +193,6 @@ class _Condition(_Verbose):
             return True
 
     def wait(self, timeout=None):
-        currentThread() # for side-effect
         assert self._is_owned(), "wait() of un-acquire()d lock"
         waiter = _allocate_lock()
         waiter.acquire()
@@ -235,7 +234,6 @@ class _Condition(_Verbose):
             self._acquire_restore(saved_state)
 
     def notify(self, n=1):
-        currentThread() # for side-effect
         assert self._is_owned(), "notify() of un-acquire()d lock"
         __waiters = self.__waiters
         waiters = __waiters[:n]
