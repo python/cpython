@@ -878,6 +878,7 @@ idleinstall:
 	--install-purelib=$(LIBDEST) \
 	--install-scripts=$(BINDIR) \
 	--install-platlib=$(DESTSHARED) \
+	--optimize=2 \
 	--root=/$(DESTDIR)
 
 # This installs a few of the useful scripts in Tools/scripts
