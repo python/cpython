@@ -1,10 +1,9 @@
 #! /ufs/guido/bin/sgi/python
 
-# Video bag-of-tricks
+# Video bag of tricks: record video(+audio) in various formats and modes
 
 # XXX To do:
 # - audio
-# - single frame recording
 # - improve user interface
 # - help button?
 # - command line options to set initial settings
@@ -12,6 +11,7 @@
 # - ...?
 
 import sys
+import time
 import getopt
 import string
 import os
@@ -29,6 +29,7 @@ import SV
 import VFile
 import VGrabber
 import imageop
+sys.path.append('/ufs/jack/src/av/vcr')
 
 ARROW = 0
 WATCH = 1
@@ -43,26 +44,41 @@ def main():
 
 StopCapture = 'StopCapture'
 
-Labels = ['rgb8', 'grey8', 'grey4', 'grey2', \
+VideoFormatLabels = ['Video off', 'rgb8', 'grey8', 'grey4', 'grey2', \
 	  'grey2 dith', 'mono dith', 'mono thresh']
-Formats = ['rgb8', 'grey', 'grey4', 'grey2', \
-	   'grey2', 'mono', 'mono']
+VideoFormats = ['', 'rgb8', 'grey', 'grey4', 'grey2', \
+	  'grey2', 'mono', 'mono']
+
+VideoModeLabels = ['Continuous', 'Burst', 'Single frame', 'VCR sync']
+[VM_CONT, VM_BURST, VM_SINGLE, VM_VCR] = range(1, 5)
+
+AudioFormatLabels = ['Audio off', \
+	  '16 bit mono', '16 bit stereo', '8 bit mono', '8 bit stereo']
+[A_OFF, A_16_MONO, A_16_STEREO, A_8_MONO, A_8_STEREO] = range(1, 6)
 
 class VideoBagOfTricks:
+
+	# Init/close stuff
 
 	def init(self):
 		formdef = flp.parse_form('VbForm', 'form')
 		flp.create_full_form(self, formdef)
-		self.g_stop.hide_object()
+		self.g_cont.hide_object()
 		self.g_burst.hide_object()
+		self.g_single.hide_object()
+		self.g_vcr.hide_object()
 		self.setdefaults()
 		self.openvideo()
 		self.makewindow()
 		self.bindvideo()
-		self.capturing = 0
 		self.showform()
 		fl.set_event_call_back(self.do_event)
 		return self
+
+	def close(self):
+		self.close_video()
+		self.close_audio()
+		raise SystemExit, 0
 
 	def showform(self):
 		# Get position of video window
@@ -80,18 +96,39 @@ class VideoBagOfTricks:
 				    'Video Bag Of Tricks')
 
 	def setdefaults(self):
+		self.vcr = None
+		self.vout = None
+		self.capturing = 0
+		# Video defaults
+		self.vfile = 'film.video'
+		self.vmode = VM_CONT
 		self.mono_thresh = 128
-		self.format = 'rgb8'
-		self.c_format.clear_choice()
-		for label in Labels:
-			self.c_format.addto_choice(label)
-		self.get_format()
+		self.vformat = 'rgb8'
+		self.c_vformat.clear_choice()
+		for label in VideoFormatLabels:
+			self.c_vformat.addto_choice(label)
+		self.c_vformat.set_choice(1 + VideoFormats.index(self.vformat))
+		self.c_vmode.clear_choice()
+		for label in VideoModeLabels:
+			self.c_vmode.addto_choice(label)
+		self.c_vmode.set_choice(self.vmode)
+		self.get_vformat()
 		self.b_drop.set_button(1)
-		self.b_burst.set_button(0)
 		self.in_rate.set_input('2')
 		self.in_maxmem.set_input('1.0')
 		self.in_nframes.set_input('0')
-		self.in_file.set_input('film.video')
+		self.in_nframes_vcr.set_input('1')
+		self.in_sleeptime.set_input('1.0')
+		# Audio defaults
+		self.aout = None
+		self.aport = None
+		self.afile = 'film.aiff'
+		self.aformat = A_OFF
+		self.c_aformat.clear_choice()
+		for label in AudioFormatLabels:
+			self.c_aformat.addto_choice(label)
+		self.c_aformat.set_choice(self.aformat)
+		self.get_aformat()
 
 	def openvideo(self):
 		try:
@@ -99,7 +136,6 @@ class VideoBagOfTricks:
 		except sv.error, msg:
 			print 'Error opening video:', msg
 			self.video = None
-			#sys.exit(1)
 		param = [SV.BROADCAST, SV.PAL]
 		if self.video: self.video.GetParam(param)
 		if param[1] == SV.PAL:
@@ -138,12 +174,6 @@ class VideoBagOfTricks:
 		gl.qdevice(DEVICE.WINQUIT)
 		gl.qdevice(DEVICE.WINSHUT)
 
-	def settitle(self):
-		gl.winset(self.window)
-		x, y = gl.getsize()
-		title = 'Vb:' + self.in_file.get_input() + ' (%dx%d)' % (x, y)
-		gl.wintitle(title)
-
 	def bindvideo(self):
 		if not self.video: return
 		x, y = gl.getsize()
@@ -167,16 +197,25 @@ class VideoBagOfTricks:
 		gl.winset(self.window)
 		self.bindvideo()
 
+	def reset(self):
+		self.close_video()
+		self.close_audio()
+
+	# Event handler (catches resize of video window)
+
 	def do_event(self, dev, val):
 		#print 'Event:', dev, val
 		if dev in (DEVICE.WINSHUT, DEVICE.WINQUIT):
-			self.cb_quit()
+			self.close()
 		if dev == DEVICE.REDRAW and val == self.window:
 			self.rebindvideo()
 			self.settitle()
 
-	def cb_format(self, *args):
-		self.get_format()
+	# Video controls: format, mode, file
+
+	def cb_vformat(self, *args):
+		self.reset()
+		self.get_vformat()
 		if self.mono_use_thresh:
 			s = `self.mono_thresh`
 			s = fl.show_input('Please enter mono threshold', s)
@@ -188,23 +227,41 @@ class VideoBagOfTricks:
 						  `self.mono_thresh`, '')
 		self.rebindvideo()
 
+	def cb_vmode(self, *args):
+		self.vmode = self.c_vmode.get_choice()
+		self.form.freeze_form()
+		self.g_cont.hide_object()
+		self.g_burst.hide_object()
+		self.g_single.hide_object()
+		self.g_vcr.hide_object()
+		if self.vmode == VM_CONT:
+			self.g_cont.show_object()
+		elif self.vmode == VM_BURST:
+			self.g_burst.show_object()
+		elif self.vmode == VM_SINGLE:
+			self.g_single.show_object()
+		elif self.vmode == VM_VCR:
+			self.g_vcr.show_object()
+		self.form.unfreeze_form()
+
+	def cb_vfile(self, *args):
+		filename = self.vfile
+		hd, tl = os.path.split(filename)
+		filename = fl.file_selector('Video save file:', hd, '', tl)
+		if filename:
+			self.reset()
+			hd, tl = os.path.split(filename)
+			if hd == os.getcwd():
+				filename = tl
+			self.vfile = filename
+
+	# Video mode specific video controls
+
 	def cb_rate(self, *args):
 		pass
 
 	def cb_drop(self, *args):
 		self.rebindvideo()
-
-	def cb_burst(self, *args):
-		if self.b_burst.get_button():
-			self.in_rate.set_input('1')
-			self.b_drop.set_button(1)
-##			self.g_stop.hide_object()
-			self.g_burst.show_object()
-		else:
-			self.in_rate.set_input('2')
-			self.b_drop.set_button(0)
-##			self.g_stop.show_object()
-			self.g_burst.hide_object()
 
 	def cb_maxmem(self, *args):
 		pass
@@ -212,102 +269,109 @@ class VideoBagOfTricks:
 	def cb_nframes(self, *args):
 		pass
 
-	def cb_file(self, *args):
-		filename = self.in_file.get_input()
-		if filename == '':
-			filename = 'film.video'
-			self.in_file.set_input(filename)
-		self.settitle()
+	def cb_fps(self, *args):
+		pass
 
-	def cb_open(self, *args):
-		filename = self.in_file.get_input()
+	def cb_nframes_vcr(self, *args):
+		pass
+
+	def cb_sleeptime(self, *args):
+		pass
+
+	# Audio controls: format, file
+
+	def cb_aformat(self, *args):
+		self.get_aformat()
+
+	def cb_afile(self, *args):
+		filename = self.afile
 		hd, tl = os.path.split(filename)
-		filename = fl.file_selector('Select file:', hd, '', tl)
+		filename = fl.file_selector('Audio save file:', hd, '', tl)
 		if filename:
+			self.reset()
 			hd, tl = os.path.split(filename)
 			if hd == os.getcwd():
 				filename = tl
-			self.in_file.set_input(filename)
-			self.cb_file()
+			self.afile = filename
+
+	# General controls: capture, reset, play, quit
 
 	def cb_capture(self, *args):
-		if not self.video:
-			gl.ringbell()
-			return
-		if self.b_burst.get_button():
-			self.burst_capture()
-		else:
-			self.cont_capture()
-
-	def cb_stop(self, *args):
 		if self.capturing:
 			raise StopCapture
-		gl.ringbell()
+		if not self.b_capture.get_button():
+			return
+		if not self.video or not self.vformat:
+			gl.ringbell()
+			return
+		if self.vmode == VM_CONT:
+			self.cont_capture()
+		elif self.vmode == VM_BURST:
+			self.burst_capture()
+		elif self.vmode == VM_SINGLE:
+			self.single_capture()
+		elif self.vmode == VM_VCR:
+			self.vcr_capture()
+
+	def cb_reset(self, *args):
+		self.reset()
 
 	def cb_play(self, *args):
-		filename = self.in_file.get_input()
-		sts = os.system('Vplay -q ' + filename + ' &')
+		sts = os.system('Vplay -q ' + self.vfile + ' &')
 
 	def cb_quit(self, *args):
-		raise SystemExit, 0
+		self.close()
+
+	# Capture routines
 
 	def burst_capture(self):
 		self.setwatch()
 		gl.winset(self.window)
 		x, y = gl.getsize()
 		vformat = SV.RGB8_FRAMES
-		try:
-			nframes = string.atoi(self.in_nframes.get_input())
-		except string.atoi_error:
-			nframes = 0
+		nframes = self.getint(self.in_nframes, 0)
 		if nframes == 0:
-			try:
-				maxmem = \
-				  float(eval(self.in_maxmem.get_input()))
-			except:
-				maxmem = 1.0
+			maxmem = self.getint(self.in_maxmem, 1.0)
 			memsize = int(maxmem * 1024 * 1024)
-			nframes = calcnframes(x, y, \
-				  self.mono or self.grey, memsize)
-			print 'nframes =', nframes
-		rate = string.atoi(self.in_rate.get_input())
-		info = (vformat, x, y, nframes, rate)
+			nframes = self.calcnframes()
+		info = (vformat, x, y, nframes, 1)
 		try:
 			info2, data, bitvec = self.video.CaptureBurst(info)
 		except sv.error, msg:
-			fl.show_message('Capture error:', str(msg), '')
+			self.b_capture.set_button(0)
 			self.setarrow()
+			fl.show_message('Capture error:', str(msg), '')
 			return
 		if info <> info2: print info, '<>', info2
 		self.save_burst(info2, data, bitvec)
 		self.setarrow()
 
+	def calcnframes(self):
+		gl.winset(self.window)
+		x, y = gl.getsize()
+		pixels = x*y
+		pixels = pixels/2	# XXX always assume fields
+		if self.mono or self.grey:
+			n = memsize/pixels
+		else:
+			n = memsize/(4*pixels)
+		return max(1, n)
+
 	def save_burst(self, info, data, bitvec):
 		(vformat, x, y, nframes, rate) = info
-		self.open_file()
+		self.open_if_closed()
 		fieldsize = x*y/2
 		nskipped = 0
 		realframeno = 0
-		tpf = 1000 / 50.0     #XXXX
-		# Trying to find the pattern in frame skipping
-		okstretch = 0
-		skipstretch = 0
+		tpf = 1000 / 50.0     # XXX
 		for frameno in range(0, nframes*2):
 			if frameno <> 0 and \
 				  bitvec[frameno] == bitvec[frameno-1]:
 				nskipped = nskipped + 1
-				if okstretch:
-					#print okstretch, 'ok',
-					okstretch = 0
-				skipstretch = skipstretch + 1
 				continue
-			if skipstretch:
-				#print skipstretch, 'skipped'
-				skipstretch = 0
-			okstretch = okstretch + 1
 			#
 			# Save field.
-			# XXXX Works only for fields and top-to-bottom
+			# XXX Works only for fields and top-to-bottom
 			#
 			start = frameno*fieldsize
 			field = data[start:start+fieldsize]
@@ -315,33 +379,17 @@ class VideoBagOfTricks:
 			fn = int(realframeno*tpf)
 			if not self.write_frame(fn, field):
 				break
-		#print okstretch, 'ok',
-		#print skipstretch, 'skipped'
-		#print 'Skipped', nskipped, 'duplicate frames'
-		self.close_file()
 
 	def cont_capture(self):
-		self.setwatch()
-		self.g_main.hide_object()
-		self.open_file()
-		vformat = SV.RGB8_FRAMES
-		qsize = 1 # XXX Should be an option?
-		try:
-			rate = string.atoi(self.in_rate.get_input())
-		except string.atoi_error:
-			rate = 2
-		x, y = self.vout.getsize()
-		info = (vformat, x, y, qsize, rate)
-		ids = []
-		fps = 59.64 # Fields per second
+		saved_label = self.b_capture.label
+		self.b_capture.label = 'Stop\n' + saved_label
+		self.open_if_closed()
+		self.init_cont()
+		fps = 59.64		# Fields per second
 		# XXX (fps of Indigo monitor, not of PAL or NTSC!)
-		tpf = 1000.0 / fps # Time per field in msec
-		info2 = self.video.InitContinuousCapture(info)
-		if info2 <> info:
-			print 'Info mismatch: requested', info, 'got', info2
+		tpf = 1000.0 / fps	# Time per field in msec
 		self.capturing = 1
-		self.g_stop.show_object()
-		self.setarrow()
+		self.start_audio()
 		while 1:
 			try:
 				void = fl.check_forms()
@@ -352,26 +400,101 @@ class VideoBagOfTricks:
 			except sv.error:
 				sgi.nap(1)
 				continue
-			ids.append(id)
-			id = id + 2*rate
+			id = id + 2*self.rate
 			data = cd.InterleaveFields(1)
 			cd.UnlockCaptureData()
 			t = id*tpf
 			if not self.write_frame(t, data):
 				break
-		self.setwatch()
-		self.g_stop.hide_object()
+		self.stop_audio()
 		self.capturing = 0
-		self.video.EndContinuousCapture()
-		self.close_file()
-		self.g_main.show_object()
-		self.setarrow()
+		self.end_cont()
+		self.reset()
+		self.b_capture.label = saved_label
 
-	def get_format(self):
-		i = self.c_format.get_choice()
-		label = Labels[i-1]
-		format = Formats[i-1]
-		self.format = format
+	def single_capture(self):
+		self.open_if_closed()
+		self.init_cont()
+		while 1:
+			try:
+				cd, id = self.video.GetCaptureData()
+				break
+			except sv.error:
+				pass
+			sgi.nap(1)
+		data = cd.InterleaveFields(1)
+		cd.UnlockCaptureData()
+		self.end_cont()
+		t = (self.nframes+1) * (1000/25)
+		return self.write_frame(t, data)
+
+	def vcr_capture(self):
+		if not self.vcr:
+			import VCR
+			try:
+				self.vcr = VCR.VCR().init()
+			except VCR.error, msg:
+				self.b_capture.set_button(0)
+				fl.show_message('VCR error', str(msg), '')
+				return
+		count = self.getint(self.in_nframes_vcr, 1)
+		if count <= 0: count = 1
+		sleeptime = self.getfloat(self.in_sleeptime, 1.0)
+		for i in range(count):
+			if i > 0:
+				time.sleep(sleeptime)
+			if not self.single_capture():
+				break
+			if not self.vcr.step():
+				break
+
+	# Init/end continuous capture mode
+
+	def init_cont(self):
+		qsize = 1
+		if self.vmode == VM_CONT:
+			self.rate = self.getint(self.in_rate, 2)
+		else:
+			self.rate = 2
+		x, y = self.vout.getsize()
+		info = (SV.RGB8_FRAMES, x, y, qsize, self.rate)
+		info2 = self.video.InitContinuousCapture(info)
+		if info2 <> info:
+			# XXX This is really only debug info
+			print 'Info mismatch: requested', info, 'got', info2
+
+	def end_cont(self):
+		self.video.EndContinuousCapture()
+
+	# Misc stuff
+
+	def settitle(self):
+		gl.winset(self.window)
+		x, y = gl.getsize()
+		title = 'Vb:' + self.vfile + ' (%dx%d)' % (x, y)
+		gl.wintitle(title)
+
+	def get_vformat(self):
+		i = self.c_vformat.get_choice()
+		label = VideoFormatLabels[i-1]
+		format = VideoFormats[i-1]
+		self.vformat = format
+		if self.vformat == '':
+			self.form.freeze_form()
+			self.g_video.hide_object()
+			self.g_cont.hide_object()
+			self.g_burst.hide_object()
+			self.g_single.hide_object()
+			self.form.unfreeze_form()
+			return
+		else:
+			self.g_video.show_object()
+			if self.vmode == VM_CONT:
+				self.g_cont.show_object()
+			elif self.vmode == VM_BURST:
+				self.g_burst.show_object()
+			elif self.vmode == VM_SINGLE:
+				self.g_single.show_object()
 		#
 		self.rgb = (format[:3] == 'rgb')
 		self.mono = (format == 'mono')
@@ -395,20 +518,40 @@ class VideoBagOfTricks:
 				convertor = imageop.dither2grey2
 		self.convertor = convertor
 
-	def open_file(self):
+	def get_aformat(self):
+		self.reset()
+		self.aformat = self.c_aformat.get_choice()
+		if self.aformat == A_OFF:
+			self.g_audio.hide_object()
+		else:
+			self.g_audio.show_object()
+
+	def open_if_closed(self):
+		if not self.vout:
+			self.open_video()
+		if not self.aout:
+			self.open_audio()
+
+	# File I/O handling
+
+	def open_video(self):
+		self.close_video()
 		gl.winset(self.window)
 		x, y = gl.getsize()
-		self.cb_file() # Make sure filename is OK
-		filename = self.in_file.get_input()
-		vout = VFile.VoutFile().init(filename)
-		vout.setformat(self.format)
+		vout = VFile.VoutFile().init(self.vfile)
+		vout.setformat(self.vformat)
 		vout.setsize(x, y)
-		if self.b_burst.get_button():
+		if self.vmode == VM_BURST:
 			vout.setpf((1, -2))
 		vout.writeheader()
 		self.vout = vout
+		self.nframes = 0
+		self.t_nframes.label = `self.nframes`
 
 	def write_frame(self, t, data):
+		if not self.vout:
+			gl.ringbell()
+			return
 		if self.convertor:
 			data = self.convertor(data, len(data), 1)
 		elif self.mono:
@@ -420,37 +563,127 @@ class VideoBagOfTricks:
 				data = imageop.dither2mono(data, \
 					  len(data), 1)
 		try:
-			self.vout.writeframe(t, data, None)
+			self.vout.writeframe(int(t), data, None)
 		except IOError, msg:
 			if msg == (0, 'Error 0'):
 				msg = 'disk full??'
 			fl.show_message('IOError', str(msg), '')
 			return 0
+		self.nframes = self.nframes + 1
+		self.t_nframes.label = `self.nframes`
 		return 1
 
-	def close_file(self):
+	def close_video(self):
+		if not self.vout:
+			return
+		self.nframes = 0
+		self.t_nframes.label = ''
 		try:
 			self.vout.close()
 		except IOError, msg:
 			if msg == (0, 'Error 0'):
 				msg = 'disk full??'
 			fl.show_message('IOError', str(msg), '')
-		del self.vout
+		self.vout = None
+
+	# Watch cursor handling
 
 	def setwatch(self):
 		gl.winset(self.form.window)
+		gl.setcursor(WATCH, 0, 0)
+		gl.winset(self.window)
 		gl.setcursor(WATCH, 0, 0)
 
 	def setarrow(self):
 		gl.winset(self.form.window)
 		gl.setcursor(ARROW, 0, 0)
+		gl.winset(self.window)
+		gl.setcursor(ARROW, 0, 0)
 
-def calcnframes(x, y, grey, memsize):
-	pixels = x*y
-	pixels = pixels/2		# XXX always assume fields
-	if grey: n = memsize/pixels
-	else: n = memsize/(4*pixels)
-	return max(1, n)
+	# Numeric field handling
+
+	def getint(self, field, default):
+		try:
+			value = string.atoi(field.get_input())
+		except string.atoi_error:
+			value = default
+		field.set_input(`value`)
+		return value
+
+	def getfloat(self, field, default):
+		try:
+			value = float(eval(field.get_input()))
+		except:
+			value = float(default)
+		field.set_input(value)
+		return value
+
+	# Audio stuff
+
+	def open_audio(self):
+		if self.aformat == A_OFF:
+			return
+		import aifc
+		import al
+		import AL
+		import thread
+		self.close_audio()
+		params = [AL.INPUT_RATE, 0]
+		al.getparams(AL.DEFAULT_DEVICE, params)
+		rate = params[1]
+		self.aout = aifc.open(self.afile, 'w')
+		if self.aformat in (A_16_STEREO, A_8_STEREO):
+			nch = AL.STEREO
+		else:
+			nch = AL.MONO
+		if self.aformat in (A_16_STEREO, A_16_MONO):
+			width = AL.SAMPLE_16
+		else:
+			width = AL.SAMPLE_8
+		self.aout.setnchannels(nch)
+		self.aout.setsampwidth(width)
+		self.aout.setframerate(rate)
+		self.aout.writeframes('')
+		c = al.newconfig()
+		c.setqueuesize(8000)
+		c.setchannels(nch)
+		c.setwidth(width)
+		self.aport = al.openport('Vb audio record', 'r', c)
+		self.audio_stop = 0
+		self.audio_ok = 0
+		self.audio_busy = 1
+		thread.start_new_thread(self.record_audio, ())
+
+	def start_audio(self):
+		if self.aformat == A_OFF:
+			return
+		self.audio_ok = 1
+
+	def record_audio(self, *args):
+		# This function runs in a separate thread
+		# Currently no semaphores are used
+		while not self.audio_stop:
+			data = self.aport.readsamps(4000)
+			if self.audio_ok:
+				self.aout.writeframesraw(data)
+			data = None
+		self.audio_busy = 0
+
+	def stop_audio(self):
+		self.audio_ok = 0
+
+	def close_audio(self):
+		if self.aout:
+			self.audio_ok = 0
+			self.audio_stop = 1
+			while self.audio_busy:
+				time.sleep(0.1)
+			self.aout.close()
+			self.aout = None
+		if self.aport:
+			self.aport.closeport()
+			self.aport = None
+
 
 try:
 	main()

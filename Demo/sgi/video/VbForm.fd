@@ -7,14 +7,14 @@ Number of forms: 1
 
 =============== FORM ===============
 Name: form
-Width: 350.000000
+Width: 450.000000
 Height: 240.000000
-Number of Objects: 23
+Number of Objects: 33
 
 --------------------
 class: 1
 type: 1
-box: 0.000000 0.000000 350.000000 240.000000
+box: 0.000000 0.000000 450.000000 240.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -25,176 +25,11 @@ label:
 name: 
 callback: 
 argument: 
-
---------------------
-class: 10000
-type: 0
-box: 0.000000 0.000000 0.000000 0.000000
-boxtype: 0
-colors: 5487 512
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: 
-name: g_burst
-callback: 
-argument: 
-
---------------------
-class: 1
-type: 1
-box: 140.000000 10.000000 120.000000 120.000000
-boxtype: 1
-colors: 47 47
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: 
-name: 
-callback: 
-argument: 
-
---------------------
-class: 31
-type: 1
-box: 150.000000 70.000000 100.000000 30.000000
-boxtype: 2
-colors: 13 5
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: Max Mbytes:
-name: in_maxmem
-callback: cb_maxmem
-argument: 0
-
---------------------
-class: 31
-type: 2
-box: 150.000000 20.000000 100.000000 30.000000
-boxtype: 2
-colors: 13 5
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: Nr. of fields:
-name: in_nframes
-callback: cb_nframes
-argument: 0
-
---------------------
-class: 20000
-type: 0
-box: 0.000000 0.000000 0.000000 0.000000
-boxtype: 0
-colors: -322390740 -895472437
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: 
-name: 
-callback: 
-argument: 
-
---------------------
-class: 10000
-type: 0
-box: 0.000000 0.000000 0.000000 0.000000
-boxtype: 0
-colors: 1147496041 1852404841
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: 
-name: g_main
-callback: 
-argument: 
-
---------------------
-class: 1
-type: 1
-box: 10.000000 10.000000 120.000000 120.000000
-boxtype: 1
-colors: 47 47
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: 
-name: 
-callback: 
-argument: 
-
---------------------
-class: 31
-type: 2
-box: 50.000000 70.000000 40.000000 30.000000
-boxtype: 2
-colors: 13 5
-alignment: 0
-style: 0
-size: 11.000000
-lcol: 0
-label: Capture rate:
-name: in_rate
-callback: cb_rate
-argument: 0
-
---------------------
-class: 12
-type: 1
-box: 140.000000 140.000000 120.000000 30.000000
-boxtype: 1
-colors: 39 3
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: Burst mode
-name: b_burst
-callback: cb_burst
-argument: 0
-
---------------------
-class: 31
-type: 0
-box: 50.000000 200.000000 209.999985 30.000000
-boxtype: 2
-colors: 13 5
-alignment: 2
-style: 0
-size: 11.000000
-lcol: 0
-label: File:
-name: in_file
-callback: cb_file
-argument: 0
 
 --------------------
 class: 11
-type: 0
-box: 270.000000 200.000000 70.000000 30.000000
-boxtype: 1
-colors: 47 47
-alignment: 4
-style: 0
-size: 11.000000
-lcol: 0
-label: Open...
-name: b_open
-callback: cb_open
-argument: 0
-
---------------------
-class: 11
-type: 0
-box: 270.000000 140.000000 70.000015 30.000002
+type: 5
+box: 330.000000 170.000000 110.000015 60.000004
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -207,39 +42,9 @@ callback: cb_capture
 argument: 0
 
 --------------------
-class: 2
-type: 0
-box: 20.000000 70.000000 30.000000 30.000000
-boxtype: 0
-colors: 47 47
-alignment: 2
-style: 0
-size: 11.000000
-lcol: 0
-label: 1/
-name: 
-callback: 
-argument: 
-
---------------------
-class: 2
-type: 0
-box: 90.000000 70.000000 30.000000 30.000000
-boxtype: 0
-colors: 47 47
-alignment: 2
-style: 0
-size: 11.000000
-lcol: 0
-label: fr
-name: 
-callback: 
-argument: 
-
---------------------
 class: 11
 type: 0
-box: 270.000000 10.000000 70.000008 30.000000
+box: 330.000000 10.000000 110.000008 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
@@ -254,14 +59,14 @@ argument: 0
 --------------------
 class: 11
 type: 0
-box: 270.000000 60.000000 70.000000 30.000000
+box: 330.000000 50.000000 110.000000 30.000000
 boxtype: 1
 colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Play
+label: Playback
 name: b_play
 callback: cb_play
 argument: 0
@@ -269,31 +74,136 @@ argument: 0
 --------------------
 class: 42
 type: 0
-box: 10.000000 140.000000 120.000000 30.000000
+box: 80.000000 200.000000 120.000000 30.000000
 boxtype: 5
 colors: 7 0
-alignment: 0
+alignment: 2
 style: 0
 size: 11.000000
 lcol: 0
-label: Video format:
-name: c_format
-callback: cb_format
+label: Format:
+name: c_vformat
+callback: cb_vformat
 argument: 0
 
 --------------------
-class: 12
-type: 1
-box: 20.000000 20.000000 100.000000 30.000000
+class: 11
+type: 0
+box: 330.000000 90.000000 110.000000 30.000000
 boxtype: 1
-colors: 39 3
+colors: 47 47
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
-label: Fielddrop
-name: b_drop
-callback: cb_drop
+label: Reset
+name: b_reset
+callback: cb_reset
+argument: 0
+
+--------------------
+class: 42
+type: 0
+box: 80.000000 50.000000 120.000000 30.000000
+boxtype: 5
+colors: 7 0
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: Format:
+name: c_aformat
+callback: cb_aformat
+argument: 0
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 1668246586 540019308
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_audio
+callback: 
+argument: 
+
+--------------------
+class: 11
+type: 0
+box: 10.000000 10.000000 190.000000 30.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Set audio file...
+name: b_afile
+callback: cb_afile
+argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 876099360 892416522
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 1147496041 1852404841
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_video
+callback: 
+argument: 
+
+--------------------
+class: 42
+type: 0
+box: 80.000000 160.000000 120.000000 30.000000
+boxtype: 5
+colors: 7 0
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: Mode:
+name: c_vmode
+callback: cb_vmode
+argument: 0
+
+--------------------
+class: 11
+type: 0
+box: 10.000000 110.000000 190.000000 30.000000
+boxtype: 1
+colors: 47 47
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Set video file...
+name: b_vfile
+callback: cb_vfile
 argument: 0
 
 --------------------
@@ -316,29 +226,29 @@ class: 10000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 1147496041 1852404841
+colors: 0 0
 alignment: 4
 style: 0
 size: 11.000000
 lcol: 0
 label: 
-name: g_stop
+name: g_single
 callback: 
 argument: 
 
 --------------------
-class: 11
-type: 0
-box: 270.000000 140.000000 70.000000 30.000000
-boxtype: 1
-colors: 47 47
-alignment: 4
+class: 31
+type: 2
+box: 220.000000 170.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
 style: 0
 size: 11.000000
 lcol: 0
-label: Stop
-name: b_stop
-callback: cb_stop
+label: Frames/sec
+name: in_fps
+callback: cb_fps
 argument: 0
 
 --------------------
@@ -346,7 +256,247 @@ class: 20000
 type: 0
 box: 0.000000 0.000000 0.000000 0.000000
 boxtype: 0
-colors: 544171552 1331849829
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_burst
+callback: 
+argument: 
+
+--------------------
+class: 31
+type: 1
+box: 220.000000 170.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Max Mbytes:
+name: in_maxmem
+callback: cb_maxmem
+argument: 0
+
+--------------------
+class: 31
+type: 2
+box: 220.000000 110.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Nr. of frames:
+name: in_nframes
+callback: cb_nframes
+argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_cont
+callback: 
+argument: 
+
+--------------------
+class: 31
+type: 2
+box: 250.000000 170.000000 40.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Capture rate:
+name: in_rate
+callback: cb_rate
+argument: 0
+
+--------------------
+class: 2
+type: 0
+box: 220.000000 170.000000 30.000000 30.000000
+boxtype: 0
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: 1/
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 2
+type: 0
+box: 290.000000 170.000000 30.000000 30.000000
+boxtype: 0
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: fr
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 13
+type: 0
+box: 220.000000 110.000000 100.000000 30.000000
+boxtype: 0
+colors: 7 3
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: Fielddrop
+name: b_drop
+callback: cb_drop
+argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 2
+type: 0
+box: 390.000000 130.000000 50.000000 30.000002
+boxtype: 2
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: t_nframes
+callback: 
+argument: 
+
+--------------------
+class: 2
+type: 0
+box: 320.000000 130.000000 60.000000 30.000000
+boxtype: 0
+colors: 47 47
+alignment: 2
+style: 0
+size: 11.000000
+lcol: 0
+label: Frames:
+name: 
+callback: 
+argument: 
+
+--------------------
+class: 10000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
+alignment: 4
+style: 0
+size: 11.000000
+lcol: 0
+label: 
+name: g_vcr
+callback: 
+argument: 
+
+--------------------
+class: 31
+type: 2
+box: 220.000000 110.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Nr. of frames:
+name: in_nframes_vcr
+callback: cb_nframes_vcr
+argument: 0
+
+--------------------
+class: 31
+type: 1
+box: 220.000000 170.000000 100.000000 30.000000
+boxtype: 2
+colors: 13 5
+alignment: 0
+style: 0
+size: 11.000000
+lcol: 0
+label: Delay:
+name: in_sleeptime
+callback: cb_sleeptime
+argument: 0
+
+--------------------
+class: 20000
+type: 0
+box: 0.000000 0.000000 0.000000 0.000000
+boxtype: 0
+colors: 0 0
 alignment: 4
 style: 0
 size: 11.000000
