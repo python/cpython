@@ -833,40 +833,6 @@ extern FILE *PyWin_FindRegisteredModule(const char *, struct filedescr **,
 static int case_ok(char *, int, int, char *);
 static int find_init_module(char *); /* Forward */
 
-#if 0 /* XXX was #ifdef HAVE_DIRENT_H; resolve whether we really need this */
-
-static int MatchFilename(char *pathname, char *filename);
-
-#include <sys/types.h>
-#include <dirent.h>
-
-static int MatchFilename(char *pathname, char *filename)
-{
-	DIR *dirp;
-	struct dirent *dp;
-	int len = strlen(filename);
-
-	if ((pathname == NULL) || (strlen(pathname) == 0))
-		pathname = ".";
-	dirp = opendir(pathname);
-	if (dirp) {
-		while ((dp = readdir(dirp)) != NULL) {
-#ifdef _DIRENT_HAVE_D_NAMELINE
-			int namelen = dp->d_namlen;
-#else  /* !_DIRENT_HAVE_D_NAMELINE */
-			int namelen = strlen(dp->d_name);
-#endif /* _DIRENT_HAVE_D_NAMELINE */
-			if (namelen == len && !strcmp(dp->d_name, filename)) {
-				(void)closedir(dirp);
-				return 1; /* Found */
-			}
-		}
-	}
-	(void)closedir(dirp);
-	return 0 ; /* Not found */
-}
-#endif /* HAVE_DIRENT_H */
-
 static struct filedescr *
 find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 	    FILE **p_fp)
@@ -1036,7 +1002,6 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
  */
 #if defined(MS_WIN32) || defined(__CYGWIN__)
 #include <windows.h>
-#include <ctype.h>
 #ifdef __CYGWIN__
 #include <sys/cygwin.h>
 #endif
@@ -1049,6 +1014,10 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 #ifdef USE_GUSI1
 #include "TFileSpec.h"		/* for Path2FSSpec() */
 #endif
+
+#elif defined(__MACH__) && defined(__APPLE__)
+#include <sys/types.h>
+#include <dirent.h>
 
 #endif
 
@@ -1137,6 +1106,42 @@ case_ok(char *buf, int len, int namelen, char *name)
 	}
 	return fss.name[0] >= namelen &&
 	       strncmp(name, (char *)fss.name+1, namelen) == 0;
+
+/* new-fangled macintosh */
+#elif defined(__MACH__) && defined(__APPLE__)
+	DIR *dirp;
+	struct dirent *dp;
+	char pathname[MAX_PATH + 1];
+	const int pathlen = len - namelen - 1; /* don't want trailing SEP */
+
+	/* Copy the path component into pathname; substitute "." if empty */
+	if (pathlen <= 0) {
+		pathname[0] = '.';
+		pathname[1] = '\0';
+	}
+	else {
+		assert(pathlen <= MAX_PATH);
+		memcpy(pathname, buf, pathlen);
+		pathname[pathlen] = '\0';
+	}
+	/* Open the directory and search the entries for an exact match. */
+	dirp = opendir(pathname);
+	if (dirp) {
+		while ((dp = readdir(dirp)) != NULL) {
+#ifdef _DIRENT_HAVE_D_NAMELEN
+			const int thislen = dp->d_namlen;
+#else
+			const int thislen = strlen(dp->d_name);
+#endif
+			if (thislen == namelen && !strcmp(dp->d_name, name)) {
+				(void)closedir(dirp);
+				return 1; /* Found */
+			}
+		}
+	}
+	(void)closedir(dirp);
+	return 0 ; /* Not found */
+}
 
 /* assuming it's a case-sensitive filesystem, so there's nothing to do! */
 #else
