@@ -227,6 +227,10 @@ class StrptimeTests(unittest.TestCase):
         self.assertRaises(ValueError, _strptime.strptime, data_string="%d",
                           format="%A")
 
+    def test_unconverteddata(self):
+        # Check ValueError is raised when there is unconverted data
+        self.assertRaises(ValueError, _strptime.strptime, "10 12", "%m")
+
     def helper(self, directive, position):
         """Helper fxn in testing."""
         strf_output = time.strftime("%" + directive, self.time_tuple)
