@@ -47,13 +47,6 @@ extern int _DlgObj_Convert(PyObject *, DialogRef *);
 #define DlgObj_Convert _DlgObj_Convert
 #endif
 
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS && UNIVERSAL_INTERFACES_VERSION < 0x340
-#define GetDialogTextEditHandle(dlg) (((DialogPeek)(dlg))->textH)
-#define SetPortDialogPort(dlg) SetPort(dlg)
-#define GetDialogPort(dlg) ((CGrafPtr)(dlg))
-#define GetDialogFromWindow(win) ((DialogRef)(win))
-#endif
-
 /* XXX Shouldn't this be a stack? */
 static PyObject *Dlg_FilterProc_callback = NULL;
 
