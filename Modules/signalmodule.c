@@ -85,6 +85,11 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
+/* On Solaris 8, gcc will produce a warning that the function
+   declaration is not a prototype. This is caused by the definition of
+   SIG_DFL as (void (*)())0; the correct declaration would have been
+   (void (*)(int))0. */
+
 static PyOS_sighandler_t old_siginthandler = SIG_DFL;
 
 
