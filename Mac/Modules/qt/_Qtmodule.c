@@ -23037,6 +23037,1763 @@ static PyObject *Qt_QTVideoOutputBaseSetEchoPort(PyObject *_self, PyObject *_arg
 	return _res;
 }
 
+static PyObject *Qt_MediaSetChunkManagementFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	UInt32 flags;
+	UInt32 flagsMask;
+#ifndef MediaSetChunkManagementFlags
+	PyMac_PRECHECK(MediaSetChunkManagementFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &flags,
+	                      &flagsMask))
+		return NULL;
+	_rv = MediaSetChunkManagementFlags(mh,
+	                                   flags,
+	                                   flagsMask);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetChunkManagementFlags(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	UInt32 flags;
+#ifndef MediaGetChunkManagementFlags
+	PyMac_PRECHECK(MediaGetChunkManagementFlags);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetChunkManagementFlags(mh,
+	                                   &flags);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     flags);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetPurgeableChunkMemoryAllowance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Size allowance;
+#ifndef MediaSetPurgeableChunkMemoryAllowance
+	PyMac_PRECHECK(MediaSetPurgeableChunkMemoryAllowance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &allowance))
+		return NULL;
+	_rv = MediaSetPurgeableChunkMemoryAllowance(mh,
+	                                            allowance);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetPurgeableChunkMemoryAllowance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Size allowance;
+#ifndef MediaGetPurgeableChunkMemoryAllowance
+	PyMac_PRECHECK(MediaGetPurgeableChunkMemoryAllowance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetPurgeableChunkMemoryAllowance(mh,
+	                                            &allowance);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     allowance);
+	return _res;
+}
+
+static PyObject *Qt_MediaEmptyAllPurgeableChunks(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaEmptyAllPurgeableChunks
+	PyMac_PRECHECK(MediaEmptyAllPurgeableChunks);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaEmptyAllPurgeableChunks(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetHandlerCapabilities(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long flags;
+	long flagsMask;
+#ifndef MediaSetHandlerCapabilities
+	PyMac_PRECHECK(MediaSetHandlerCapabilities);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &flags,
+	                      &flagsMask))
+		return NULL;
+	_rv = MediaSetHandlerCapabilities(mh,
+	                                  flags,
+	                                  flagsMask);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaIdle(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeValue atMediaTime;
+	long flagsIn;
+	long flagsOut;
+	TimeRecord movieTime;
+#ifndef MediaIdle
+	PyMac_PRECHECK(MediaIdle);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&llO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &atMediaTime,
+	                      &flagsIn,
+	                      QtTimeRecord_Convert, &movieTime))
+		return NULL;
+	_rv = MediaIdle(mh,
+	                atMediaTime,
+	                flagsIn,
+	                &flagsOut,
+	                &movieTime);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     flagsOut);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetMediaInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Handle h;
+#ifndef MediaGetMediaInfo
+	PyMac_PRECHECK(MediaGetMediaInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = MediaGetMediaInfo(mh,
+	                        h);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaPutMediaInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Handle h;
+#ifndef MediaPutMediaInfo
+	PyMac_PRECHECK(MediaPutMediaInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &h))
+		return NULL;
+	_rv = MediaPutMediaInfo(mh,
+	                        h);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetActive(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean enableMedia;
+#ifndef MediaSetActive
+	PyMac_PRECHECK(MediaSetActive);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpInstObj_Convert, &mh,
+	                      &enableMedia))
+		return NULL;
+	_rv = MediaSetActive(mh,
+	                     enableMedia);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetRate(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Fixed rate;
+#ifndef MediaSetRate
+	PyMac_PRECHECK(MediaSetRate);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetFixed, &rate))
+		return NULL;
+	_rv = MediaSetRate(mh,
+	                   rate);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGGetStatus(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	ComponentResult statusErr;
+#ifndef MediaGGetStatus
+	PyMac_PRECHECK(MediaGGetStatus);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGGetStatus(mh,
+	                      &statusErr);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     statusErr);
+	return _res;
+}
+
+static PyObject *Qt_MediaTrackEdited(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaTrackEdited
+	PyMac_PRECHECK(MediaTrackEdited);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaTrackEdited(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetMediaTimeScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeScale newTimeScale;
+#ifndef MediaSetMediaTimeScale
+	PyMac_PRECHECK(MediaSetMediaTimeScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &newTimeScale))
+		return NULL;
+	_rv = MediaSetMediaTimeScale(mh,
+	                             newTimeScale);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetMovieTimeScale(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeScale newTimeScale;
+#ifndef MediaSetMovieTimeScale
+	PyMac_PRECHECK(MediaSetMovieTimeScale);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &newTimeScale))
+		return NULL;
+	_rv = MediaSetMovieTimeScale(mh,
+	                             newTimeScale);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetGWorld(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	CGrafPtr aPort;
+	GDHandle aGD;
+#ifndef MediaSetGWorld
+	PyMac_PRECHECK(MediaSetGWorld);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      GrafObj_Convert, &aPort,
+	                      OptResObj_Convert, &aGD))
+		return NULL;
+	_rv = MediaSetGWorld(mh,
+	                     aPort,
+	                     aGD);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetDimensions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Fixed width;
+	Fixed height;
+#ifndef MediaSetDimensions
+	PyMac_PRECHECK(MediaSetDimensions);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetFixed, &width,
+	                      PyMac_GetFixed, &height))
+		return NULL;
+	_rv = MediaSetDimensions(mh,
+	                         width,
+	                         height);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetClip(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	RgnHandle theClip;
+#ifndef MediaSetClip
+	PyMac_PRECHECK(MediaSetClip);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &theClip))
+		return NULL;
+	_rv = MediaSetClip(mh,
+	                   theClip);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetTrackOpaque(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean trackIsOpaque;
+#ifndef MediaGetTrackOpaque
+	PyMac_PRECHECK(MediaGetTrackOpaque);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetTrackOpaque(mh,
+	                          &trackIsOpaque);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     trackIsOpaque);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetGraphicsMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long mode;
+	RGBColor opColor;
+#ifndef MediaSetGraphicsMode
+	PyMac_PRECHECK(MediaSetGraphicsMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &mode,
+	                      QdRGB_Convert, &opColor))
+		return NULL;
+	_rv = MediaSetGraphicsMode(mh,
+	                           mode,
+	                           &opColor);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetGraphicsMode(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long mode;
+	RGBColor opColor;
+#ifndef MediaGetGraphicsMode
+	PyMac_PRECHECK(MediaGetGraphicsMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetGraphicsMode(mh,
+	                           &mode,
+	                           &opColor);
+	_res = Py_BuildValue("llO&",
+	                     _rv,
+	                     mode,
+	                     QdRGB_New, &opColor);
+	return _res;
+}
+
+static PyObject *Qt_MediaGSetVolume(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short volume;
+#ifndef MediaGSetVolume
+	PyMac_PRECHECK(MediaGSetVolume);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      CmpInstObj_Convert, &mh,
+	                      &volume))
+		return NULL;
+	_rv = MediaGSetVolume(mh,
+	                      volume);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetSoundBalance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short balance;
+#ifndef MediaSetSoundBalance
+	PyMac_PRECHECK(MediaSetSoundBalance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      CmpInstObj_Convert, &mh,
+	                      &balance))
+		return NULL;
+	_rv = MediaSetSoundBalance(mh,
+	                           balance);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSoundBalance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short balance;
+#ifndef MediaGetSoundBalance
+	PyMac_PRECHECK(MediaGetSoundBalance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetSoundBalance(mh,
+	                           &balance);
+	_res = Py_BuildValue("lh",
+	                     _rv,
+	                     balance);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetNextBoundsChange(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeValue when;
+#ifndef MediaGetNextBoundsChange
+	PyMac_PRECHECK(MediaGetNextBoundsChange);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetNextBoundsChange(mh,
+	                               &when);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     when);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSrcRgn(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	RgnHandle rgn;
+	TimeValue atMediaTime;
+#ifndef MediaGetSrcRgn
+	PyMac_PRECHECK(MediaGetSrcRgn);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &rgn,
+	                      &atMediaTime))
+		return NULL;
+	_rv = MediaGetSrcRgn(mh,
+	                     rgn,
+	                     atMediaTime);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaPreroll(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeValue time;
+	Fixed rate;
+#ifndef MediaPreroll
+	PyMac_PRECHECK(MediaPreroll);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &time,
+	                      PyMac_GetFixed, &rate))
+		return NULL;
+	_rv = MediaPreroll(mh,
+	                   time,
+	                   rate);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSampleDescriptionChanged(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long index;
+#ifndef MediaSampleDescriptionChanged
+	PyMac_PRECHECK(MediaSampleDescriptionChanged);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &index))
+		return NULL;
+	_rv = MediaSampleDescriptionChanged(mh,
+	                                    index);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaHasCharacteristic(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	OSType characteristic;
+	Boolean hasIt;
+#ifndef MediaHasCharacteristic
+	PyMac_PRECHECK(MediaHasCharacteristic);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetOSType, &characteristic))
+		return NULL;
+	_rv = MediaHasCharacteristic(mh,
+	                             characteristic,
+	                             &hasIt);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     hasIt);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetOffscreenBufferSize(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Rect bounds;
+	short depth;
+	CTabHandle ctab;
+#ifndef MediaGetOffscreenBufferSize
+	PyMac_PRECHECK(MediaGetOffscreenBufferSize);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&hO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &depth,
+	                      ResObj_Convert, &ctab))
+		return NULL;
+	_rv = MediaGetOffscreenBufferSize(mh,
+	                                  &bounds,
+	                                  depth,
+	                                  ctab);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     PyMac_BuildRect, &bounds);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetHints(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long hints;
+#ifndef MediaSetHints
+	PyMac_PRECHECK(MediaSetHints);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &hints))
+		return NULL;
+	_rv = MediaSetHints(mh,
+	                    hints);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetName(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Str255 name;
+	long requestedLanguage;
+	long actualLanguage;
+#ifndef MediaGetName
+	PyMac_PRECHECK(MediaGetName);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetStr255, name,
+	                      &requestedLanguage))
+		return NULL;
+	_rv = MediaGetName(mh,
+	                   name,
+	                   requestedLanguage,
+	                   &actualLanguage);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     actualLanguage);
+	return _res;
+}
+
+static PyObject *Qt_MediaForceUpdate(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long forceUpdateFlags;
+#ifndef MediaForceUpdate
+	PyMac_PRECHECK(MediaForceUpdate);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &forceUpdateFlags))
+		return NULL;
+	_rv = MediaForceUpdate(mh,
+	                       forceUpdateFlags);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetDrawingRgn(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	RgnHandle partialRgn;
+#ifndef MediaGetDrawingRgn
+	PyMac_PRECHECK(MediaGetDrawingRgn);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetDrawingRgn(mh,
+	                         &partialRgn);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, partialRgn);
+	return _res;
+}
+
+static PyObject *Qt_MediaGSetActiveSegment(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	TimeValue activeStart;
+	TimeValue activeDuration;
+#ifndef MediaGSetActiveSegment
+	PyMac_PRECHECK(MediaGSetActiveSegment);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &activeStart,
+	                      &activeDuration))
+		return NULL;
+	_rv = MediaGSetActiveSegment(mh,
+	                             activeStart,
+	                             activeDuration);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaInvalidateRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	RgnHandle invalRgn;
+#ifndef MediaInvalidateRegion
+	PyMac_PRECHECK(MediaInvalidateRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &invalRgn))
+		return NULL;
+	_rv = MediaInvalidateRegion(mh,
+	                            invalRgn);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetNextStepTime(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short flags;
+	TimeValue mediaTimeIn;
+	TimeValue mediaTimeOut;
+	Fixed rate;
+#ifndef MediaGetNextStepTime
+	PyMac_PRECHECK(MediaGetNextStepTime);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&hlO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &flags,
+	                      &mediaTimeIn,
+	                      PyMac_GetFixed, &rate))
+		return NULL;
+	_rv = MediaGetNextStepTime(mh,
+	                           flags,
+	                           mediaTimeIn,
+	                           &mediaTimeOut,
+	                           rate);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     mediaTimeOut);
+	return _res;
+}
+
+static PyObject *Qt_MediaChangedNonPrimarySource(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long inputIndex;
+#ifndef MediaChangedNonPrimarySource
+	PyMac_PRECHECK(MediaChangedNonPrimarySource);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &inputIndex))
+		return NULL;
+	_rv = MediaChangedNonPrimarySource(mh,
+	                                   inputIndex);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaTrackReferencesChanged(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaTrackReferencesChanged
+	PyMac_PRECHECK(MediaTrackReferencesChanged);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaTrackReferencesChanged(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaReleaseSampleDataPointer(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long sampleNum;
+#ifndef MediaReleaseSampleDataPointer
+	PyMac_PRECHECK(MediaReleaseSampleDataPointer);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &sampleNum))
+		return NULL;
+	_rv = MediaReleaseSampleDataPointer(mh,
+	                                    sampleNum);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaTrackPropertyAtomChanged(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaTrackPropertyAtomChanged
+	PyMac_PRECHECK(MediaTrackPropertyAtomChanged);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaTrackPropertyAtomChanged(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetVideoParam(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long whichParam;
+	unsigned short value;
+#ifndef MediaSetVideoParam
+	PyMac_PRECHECK(MediaSetVideoParam);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &whichParam))
+		return NULL;
+	_rv = MediaSetVideoParam(mh,
+	                         whichParam,
+	                         &value);
+	_res = Py_BuildValue("lH",
+	                     _rv,
+	                     value);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetVideoParam(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long whichParam;
+	unsigned short value;
+#ifndef MediaGetVideoParam
+	PyMac_PRECHECK(MediaGetVideoParam);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &whichParam))
+		return NULL;
+	_rv = MediaGetVideoParam(mh,
+	                         whichParam,
+	                         &value);
+	_res = Py_BuildValue("lH",
+	                     _rv,
+	                     value);
+	return _res;
+}
+
+static PyObject *Qt_MediaCompare(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean isOK;
+	Media srcMedia;
+	ComponentInstance srcMediaComponent;
+#ifndef MediaCompare
+	PyMac_PRECHECK(MediaCompare);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      MediaObj_Convert, &srcMedia,
+	                      CmpInstObj_Convert, &srcMediaComponent))
+		return NULL;
+	_rv = MediaCompare(mh,
+	                   &isOK,
+	                   srcMedia,
+	                   srcMediaComponent);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     isOK);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetClock(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	ComponentInstance clock;
+#ifndef MediaGetClock
+	PyMac_PRECHECK(MediaGetClock);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetClock(mh,
+	                    &clock);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     CmpInstObj_New, clock);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetSoundOutputComponent(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Component outputComponent;
+#ifndef MediaSetSoundOutputComponent
+	PyMac_PRECHECK(MediaSetSoundOutputComponent);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      CmpObj_Convert, &outputComponent))
+		return NULL;
+	_rv = MediaSetSoundOutputComponent(mh,
+	                                   outputComponent);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSoundOutputComponent(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Component outputComponent;
+#ifndef MediaGetSoundOutputComponent
+	PyMac_PRECHECK(MediaGetSoundOutputComponent);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetSoundOutputComponent(mh,
+	                                   &outputComponent);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     CmpObj_New, outputComponent);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetSoundLocalizationData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Handle data;
+#ifndef MediaSetSoundLocalizationData
+	PyMac_PRECHECK(MediaSetSoundLocalizationData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &data))
+		return NULL;
+	_rv = MediaSetSoundLocalizationData(mh,
+	                                    data);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetInvalidRegion(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	RgnHandle rgn;
+#ifndef MediaGetInvalidRegion
+	PyMac_PRECHECK(MediaGetInvalidRegion);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &rgn))
+		return NULL;
+	_rv = MediaGetInvalidRegion(mh,
+	                            rgn);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSampleDescriptionB2N(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	SampleDescriptionHandle sampleDescriptionH;
+#ifndef MediaSampleDescriptionB2N
+	PyMac_PRECHECK(MediaSampleDescriptionB2N);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &sampleDescriptionH))
+		return NULL;
+	_rv = MediaSampleDescriptionB2N(mh,
+	                                sampleDescriptionH);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSampleDescriptionN2B(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	SampleDescriptionHandle sampleDescriptionH;
+#ifndef MediaSampleDescriptionN2B
+	PyMac_PRECHECK(MediaSampleDescriptionN2B);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      ResObj_Convert, &sampleDescriptionH))
+		return NULL;
+	_rv = MediaSampleDescriptionN2B(mh,
+	                                sampleDescriptionH);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaFlushNonPrimarySourceData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long inputIndex;
+#ifndef MediaFlushNonPrimarySourceData
+	PyMac_PRECHECK(MediaFlushNonPrimarySourceData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &inputIndex))
+		return NULL;
+	_rv = MediaFlushNonPrimarySourceData(mh,
+	                                     inputIndex);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetURLLink(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Point displayWhere;
+	Handle urlLink;
+#ifndef MediaGetURLLink
+	PyMac_PRECHECK(MediaGetURLLink);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetPoint, &displayWhere))
+		return NULL;
+	_rv = MediaGetURLLink(mh,
+	                      displayWhere,
+	                      &urlLink);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     ResObj_New, urlLink);
+	return _res;
+}
+
+static PyObject *Qt_MediaHitTestForTargetRefCon(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long flags;
+	Point loc;
+	long targetRefCon;
+#ifndef MediaHitTestForTargetRefCon
+	PyMac_PRECHECK(MediaHitTestForTargetRefCon);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &flags,
+	                      PyMac_GetPoint, &loc))
+		return NULL;
+	_rv = MediaHitTestForTargetRefCon(mh,
+	                                  flags,
+	                                  loc,
+	                                  &targetRefCon);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     targetRefCon);
+	return _res;
+}
+
+static PyObject *Qt_MediaHitTestTargetRefCon(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long targetRefCon;
+	long flags;
+	Point loc;
+	Boolean wasHit;
+#ifndef MediaHitTestTargetRefCon
+	PyMac_PRECHECK(MediaHitTestTargetRefCon);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&llO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &targetRefCon,
+	                      &flags,
+	                      PyMac_GetPoint, &loc))
+		return NULL;
+	_rv = MediaHitTestTargetRefCon(mh,
+	                               targetRefCon,
+	                               flags,
+	                               loc,
+	                               &wasHit);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     wasHit);
+	return _res;
+}
+
+static PyObject *Qt_MediaDisposeTargetRefCon(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long targetRefCon;
+#ifndef MediaDisposeTargetRefCon
+	PyMac_PRECHECK(MediaDisposeTargetRefCon);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &targetRefCon))
+		return NULL;
+	_rv = MediaDisposeTargetRefCon(mh,
+	                               targetRefCon);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaTargetRefConsEqual(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long firstRefCon;
+	long secondRefCon;
+	Boolean equal;
+#ifndef MediaTargetRefConsEqual
+	PyMac_PRECHECK(MediaTargetRefConsEqual);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &firstRefCon,
+	                      &secondRefCon))
+		return NULL;
+	_rv = MediaTargetRefConsEqual(mh,
+	                              firstRefCon,
+	                              secondRefCon,
+	                              &equal);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     equal);
+	return _res;
+}
+
+static PyObject *Qt_MediaPrePrerollCancel(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	void * refcon;
+#ifndef MediaPrePrerollCancel
+	PyMac_PRECHECK(MediaPrePrerollCancel);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&s",
+	                      CmpInstObj_Convert, &mh,
+	                      &refcon))
+		return NULL;
+	_rv = MediaPrePrerollCancel(mh,
+	                            refcon);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaEnterEmptyEdit(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaEnterEmptyEdit
+	PyMac_PRECHECK(MediaEnterEmptyEdit);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaEnterEmptyEdit(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaCurrentMediaQueuedData(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long milliSecs;
+#ifndef MediaCurrentMediaQueuedData
+	PyMac_PRECHECK(MediaCurrentMediaQueuedData);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaCurrentMediaQueuedData(mh,
+	                                  &milliSecs);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     milliSecs);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetEffectiveVolume(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short volume;
+#ifndef MediaGetEffectiveVolume
+	PyMac_PRECHECK(MediaGetEffectiveVolume);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetEffectiveVolume(mh,
+	                              &volume);
+	_res = Py_BuildValue("lh",
+	                     _rv,
+	                     volume);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSoundLevelMeteringEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean enabled;
+#ifndef MediaGetSoundLevelMeteringEnabled
+	PyMac_PRECHECK(MediaGetSoundLevelMeteringEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetSoundLevelMeteringEnabled(mh,
+	                                        &enabled);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     enabled);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetSoundLevelMeteringEnabled(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean enable;
+#ifndef MediaSetSoundLevelMeteringEnabled
+	PyMac_PRECHECK(MediaSetSoundLevelMeteringEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpInstObj_Convert, &mh,
+	                      &enable))
+		return NULL;
+	_rv = MediaSetSoundLevelMeteringEnabled(mh,
+	                                        enable);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetEffectiveSoundBalance(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short balance;
+#ifndef MediaGetEffectiveSoundBalance
+	PyMac_PRECHECK(MediaGetEffectiveSoundBalance);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetEffectiveSoundBalance(mh,
+	                                    &balance);
+	_res = Py_BuildValue("lh",
+	                     _rv,
+	                     balance);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetScreenLock(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	Boolean lockIt;
+#ifndef MediaSetScreenLock
+	PyMac_PRECHECK(MediaSetScreenLock);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      CmpInstObj_Convert, &mh,
+	                      &lockIt))
+		return NULL;
+	_rv = MediaSetScreenLock(mh,
+	                         lockIt);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetErrorString(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	ComponentResult theError;
+	Str255 errorString;
+#ifndef MediaGetErrorString
+	PyMac_PRECHECK(MediaGetErrorString);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lO&",
+	                      CmpInstObj_Convert, &mh,
+	                      &theError,
+	                      PyMac_GetStr255, errorString))
+		return NULL;
+	_rv = MediaGetErrorString(mh,
+	                          theError,
+	                          errorString);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSoundEqualizerBandLevels(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	UInt8 bandLevels;
+#ifndef MediaGetSoundEqualizerBandLevels
+	PyMac_PRECHECK(MediaGetSoundEqualizerBandLevels);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetSoundEqualizerBandLevels(mh,
+	                                       &bandLevels);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     bandLevels);
+	return _res;
+}
+
+static PyObject *Qt_MediaDoIdleActions(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaDoIdleActions
+	PyMac_PRECHECK(MediaDoIdleActions);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaDoIdleActions(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetSoundBassAndTreble(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short bass;
+	short treble;
+#ifndef MediaSetSoundBassAndTreble
+	PyMac_PRECHECK(MediaSetSoundBassAndTreble);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      CmpInstObj_Convert, &mh,
+	                      &bass,
+	                      &treble))
+		return NULL;
+	_rv = MediaSetSoundBassAndTreble(mh,
+	                                 bass,
+	                                 treble);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetSoundBassAndTreble(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	short bass;
+	short treble;
+#ifndef MediaGetSoundBassAndTreble
+	PyMac_PRECHECK(MediaGetSoundBassAndTreble);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetSoundBassAndTreble(mh,
+	                                 &bass,
+	                                 &treble);
+	_res = Py_BuildValue("lhh",
+	                     _rv,
+	                     bass,
+	                     treble);
+	return _res;
+}
+
+static PyObject *Qt_MediaTimeBaseChanged(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+#ifndef MediaTimeBaseChanged
+	PyMac_PRECHECK(MediaTimeBaseChanged);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaTimeBaseChanged(mh);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaMCIsPlayerEvent(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	EventRecord e;
+	Boolean handledIt;
+#ifndef MediaMCIsPlayerEvent
+	PyMac_PRECHECK(MediaMCIsPlayerEvent);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetEventRecord, &e))
+		return NULL;
+	_rv = MediaMCIsPlayerEvent(mh,
+	                           &e,
+	                           &handledIt);
+	_res = Py_BuildValue("lb",
+	                     _rv,
+	                     handledIt);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetMediaLoadState(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long mediaLoadState;
+#ifndef MediaGetMediaLoadState
+	PyMac_PRECHECK(MediaGetMediaLoadState);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGetMediaLoadState(mh,
+	                             &mediaLoadState);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     mediaLoadState);
+	return _res;
+}
+
+static PyObject *Qt_MediaVideoOutputChanged(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	ComponentInstance vout;
+#ifndef MediaVideoOutputChanged
+	PyMac_PRECHECK(MediaVideoOutputChanged);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      CmpInstObj_Convert, &vout))
+		return NULL;
+	_rv = MediaVideoOutputChanged(mh,
+	                              vout);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaEmptySampleCache(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long sampleNum;
+	long sampleCount;
+#ifndef MediaEmptySampleCache
+	PyMac_PRECHECK(MediaEmptySampleCache);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&ll",
+	                      CmpInstObj_Convert, &mh,
+	                      &sampleNum,
+	                      &sampleCount))
+		return NULL;
+	_rv = MediaEmptySampleCache(mh,
+	                            sampleNum,
+	                            sampleCount);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaGetPublicInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	OSType infoSelector;
+	void * infoDataPtr;
+	Size ioDataSize;
+#ifndef MediaGetPublicInfo
+	PyMac_PRECHECK(MediaGetPublicInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&s",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetOSType, &infoSelector,
+	                      &infoDataPtr))
+		return NULL;
+	_rv = MediaGetPublicInfo(mh,
+	                         infoSelector,
+	                         infoDataPtr,
+	                         &ioDataSize);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     ioDataSize);
+	return _res;
+}
+
+static PyObject *Qt_MediaSetPublicInfo(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	OSType infoSelector;
+	void * infoDataPtr;
+	Size dataSize;
+#ifndef MediaSetPublicInfo
+	PyMac_PRECHECK(MediaSetPublicInfo);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&sl",
+	                      CmpInstObj_Convert, &mh,
+	                      PyMac_GetOSType, &infoSelector,
+	                      &infoDataPtr,
+	                      &dataSize))
+		return NULL;
+	_rv = MediaSetPublicInfo(mh,
+	                         infoSelector,
+	                         infoDataPtr,
+	                         dataSize);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaRefConSetProperty(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long refCon;
+	long propertyType;
+	void * propertyValue;
+#ifndef MediaRefConSetProperty
+	PyMac_PRECHECK(MediaRefConSetProperty);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lls",
+	                      CmpInstObj_Convert, &mh,
+	                      &refCon,
+	                      &propertyType,
+	                      &propertyValue))
+		return NULL;
+	_rv = MediaRefConSetProperty(mh,
+	                             refCon,
+	                             propertyType,
+	                             propertyValue);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaRefConGetProperty(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long refCon;
+	long propertyType;
+	void * propertyValue;
+#ifndef MediaRefConGetProperty
+	PyMac_PRECHECK(MediaRefConGetProperty);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&lls",
+	                      CmpInstObj_Convert, &mh,
+	                      &refCon,
+	                      &propertyType,
+	                      &propertyValue))
+		return NULL;
+	_rv = MediaRefConGetProperty(mh,
+	                             refCon,
+	                             propertyType,
+	                             propertyValue);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Qt_MediaNavigateTargetRefCon(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	long navigation;
+	long refCon;
+#ifndef MediaNavigateTargetRefCon
+	PyMac_PRECHECK(MediaNavigateTargetRefCon);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      CmpInstObj_Convert, &mh,
+	                      &navigation))
+		return NULL;
+	_rv = MediaNavigateTargetRefCon(mh,
+	                                navigation,
+	                                &refCon);
+	_res = Py_BuildValue("ll",
+	                     _rv,
+	                     refCon);
+	return _res;
+}
+
+static PyObject *Qt_MediaGGetIdleManager(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	IdleManager pim;
+#ifndef MediaGGetIdleManager
+	PyMac_PRECHECK(MediaGGetIdleManager);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      CmpInstObj_Convert, &mh))
+		return NULL;
+	_rv = MediaGGetIdleManager(mh,
+	                           &pim);
+	_res = Py_BuildValue("lO&",
+	                     _rv,
+	                     IdleManagerObj_New, pim);
+	return _res;
+}
+
+static PyObject *Qt_MediaGSetIdleManager(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	ComponentResult _rv;
+	MediaHandler mh;
+	IdleManager im;
+#ifndef MediaGSetIdleManager
+	PyMac_PRECHECK(MediaGSetIdleManager);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      CmpInstObj_Convert, &mh,
+	                      IdleManagerObj_Convert, &im))
+		return NULL;
+	_rv = MediaGSetIdleManager(mh,
+	                           im);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Qt_AlignWindow(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -24494,6 +26251,170 @@ static PyMethodDef Qt_methods[] = {
 	 PyDoc_STR("(QTVideoOutputComponent vo, long index) -> (ComponentResult _rv, Component codec)")},
 	{"QTVideoOutputBaseSetEchoPort", (PyCFunction)Qt_QTVideoOutputBaseSetEchoPort, 1,
 	 PyDoc_STR("(QTVideoOutputComponent vo, CGrafPtr echoPort) -> (ComponentResult _rv)")},
+	{"MediaSetChunkManagementFlags", (PyCFunction)Qt_MediaSetChunkManagementFlags, 1,
+	 PyDoc_STR("(MediaHandler mh, UInt32 flags, UInt32 flagsMask) -> (ComponentResult _rv)")},
+	{"MediaGetChunkManagementFlags", (PyCFunction)Qt_MediaGetChunkManagementFlags, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, UInt32 flags)")},
+	{"MediaSetPurgeableChunkMemoryAllowance", (PyCFunction)Qt_MediaSetPurgeableChunkMemoryAllowance, 1,
+	 PyDoc_STR("(MediaHandler mh, Size allowance) -> (ComponentResult _rv)")},
+	{"MediaGetPurgeableChunkMemoryAllowance", (PyCFunction)Qt_MediaGetPurgeableChunkMemoryAllowance, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, Size allowance)")},
+	{"MediaEmptyAllPurgeableChunks", (PyCFunction)Qt_MediaEmptyAllPurgeableChunks, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaSetHandlerCapabilities", (PyCFunction)Qt_MediaSetHandlerCapabilities, 1,
+	 PyDoc_STR("(MediaHandler mh, long flags, long flagsMask) -> (ComponentResult _rv)")},
+	{"MediaIdle", (PyCFunction)Qt_MediaIdle, 1,
+	 PyDoc_STR("(MediaHandler mh, TimeValue atMediaTime, long flagsIn, TimeRecord movieTime) -> (ComponentResult _rv, long flagsOut)")},
+	{"MediaGetMediaInfo", (PyCFunction)Qt_MediaGetMediaInfo, 1,
+	 PyDoc_STR("(MediaHandler mh, Handle h) -> (ComponentResult _rv)")},
+	{"MediaPutMediaInfo", (PyCFunction)Qt_MediaPutMediaInfo, 1,
+	 PyDoc_STR("(MediaHandler mh, Handle h) -> (ComponentResult _rv)")},
+	{"MediaSetActive", (PyCFunction)Qt_MediaSetActive, 1,
+	 PyDoc_STR("(MediaHandler mh, Boolean enableMedia) -> (ComponentResult _rv)")},
+	{"MediaSetRate", (PyCFunction)Qt_MediaSetRate, 1,
+	 PyDoc_STR("(MediaHandler mh, Fixed rate) -> (ComponentResult _rv)")},
+	{"MediaGGetStatus", (PyCFunction)Qt_MediaGGetStatus, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, ComponentResult statusErr)")},
+	{"MediaTrackEdited", (PyCFunction)Qt_MediaTrackEdited, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaSetMediaTimeScale", (PyCFunction)Qt_MediaSetMediaTimeScale, 1,
+	 PyDoc_STR("(MediaHandler mh, TimeScale newTimeScale) -> (ComponentResult _rv)")},
+	{"MediaSetMovieTimeScale", (PyCFunction)Qt_MediaSetMovieTimeScale, 1,
+	 PyDoc_STR("(MediaHandler mh, TimeScale newTimeScale) -> (ComponentResult _rv)")},
+	{"MediaSetGWorld", (PyCFunction)Qt_MediaSetGWorld, 1,
+	 PyDoc_STR("(MediaHandler mh, CGrafPtr aPort, GDHandle aGD) -> (ComponentResult _rv)")},
+	{"MediaSetDimensions", (PyCFunction)Qt_MediaSetDimensions, 1,
+	 PyDoc_STR("(MediaHandler mh, Fixed width, Fixed height) -> (ComponentResult _rv)")},
+	{"MediaSetClip", (PyCFunction)Qt_MediaSetClip, 1,
+	 PyDoc_STR("(MediaHandler mh, RgnHandle theClip) -> (ComponentResult _rv)")},
+	{"MediaGetTrackOpaque", (PyCFunction)Qt_MediaGetTrackOpaque, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, Boolean trackIsOpaque)")},
+	{"MediaSetGraphicsMode", (PyCFunction)Qt_MediaSetGraphicsMode, 1,
+	 PyDoc_STR("(MediaHandler mh, long mode, RGBColor opColor) -> (ComponentResult _rv)")},
+	{"MediaGetGraphicsMode", (PyCFunction)Qt_MediaGetGraphicsMode, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, long mode, RGBColor opColor)")},
+	{"MediaGSetVolume", (PyCFunction)Qt_MediaGSetVolume, 1,
+	 PyDoc_STR("(MediaHandler mh, short volume) -> (ComponentResult _rv)")},
+	{"MediaSetSoundBalance", (PyCFunction)Qt_MediaSetSoundBalance, 1,
+	 PyDoc_STR("(MediaHandler mh, short balance) -> (ComponentResult _rv)")},
+	{"MediaGetSoundBalance", (PyCFunction)Qt_MediaGetSoundBalance, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, short balance)")},
+	{"MediaGetNextBoundsChange", (PyCFunction)Qt_MediaGetNextBoundsChange, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, TimeValue when)")},
+	{"MediaGetSrcRgn", (PyCFunction)Qt_MediaGetSrcRgn, 1,
+	 PyDoc_STR("(MediaHandler mh, RgnHandle rgn, TimeValue atMediaTime) -> (ComponentResult _rv)")},
+	{"MediaPreroll", (PyCFunction)Qt_MediaPreroll, 1,
+	 PyDoc_STR("(MediaHandler mh, TimeValue time, Fixed rate) -> (ComponentResult _rv)")},
+	{"MediaSampleDescriptionChanged", (PyCFunction)Qt_MediaSampleDescriptionChanged, 1,
+	 PyDoc_STR("(MediaHandler mh, long index) -> (ComponentResult _rv)")},
+	{"MediaHasCharacteristic", (PyCFunction)Qt_MediaHasCharacteristic, 1,
+	 PyDoc_STR("(MediaHandler mh, OSType characteristic) -> (ComponentResult _rv, Boolean hasIt)")},
+	{"MediaGetOffscreenBufferSize", (PyCFunction)Qt_MediaGetOffscreenBufferSize, 1,
+	 PyDoc_STR("(MediaHandler mh, short depth, CTabHandle ctab) -> (ComponentResult _rv, Rect bounds)")},
+	{"MediaSetHints", (PyCFunction)Qt_MediaSetHints, 1,
+	 PyDoc_STR("(MediaHandler mh, long hints) -> (ComponentResult _rv)")},
+	{"MediaGetName", (PyCFunction)Qt_MediaGetName, 1,
+	 PyDoc_STR("(MediaHandler mh, Str255 name, long requestedLanguage) -> (ComponentResult _rv, long actualLanguage)")},
+	{"MediaForceUpdate", (PyCFunction)Qt_MediaForceUpdate, 1,
+	 PyDoc_STR("(MediaHandler mh, long forceUpdateFlags) -> (ComponentResult _rv)")},
+	{"MediaGetDrawingRgn", (PyCFunction)Qt_MediaGetDrawingRgn, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, RgnHandle partialRgn)")},
+	{"MediaGSetActiveSegment", (PyCFunction)Qt_MediaGSetActiveSegment, 1,
+	 PyDoc_STR("(MediaHandler mh, TimeValue activeStart, TimeValue activeDuration) -> (ComponentResult _rv)")},
+	{"MediaInvalidateRegion", (PyCFunction)Qt_MediaInvalidateRegion, 1,
+	 PyDoc_STR("(MediaHandler mh, RgnHandle invalRgn) -> (ComponentResult _rv)")},
+	{"MediaGetNextStepTime", (PyCFunction)Qt_MediaGetNextStepTime, 1,
+	 PyDoc_STR("(MediaHandler mh, short flags, TimeValue mediaTimeIn, Fixed rate) -> (ComponentResult _rv, TimeValue mediaTimeOut)")},
+	{"MediaChangedNonPrimarySource", (PyCFunction)Qt_MediaChangedNonPrimarySource, 1,
+	 PyDoc_STR("(MediaHandler mh, long inputIndex) -> (ComponentResult _rv)")},
+	{"MediaTrackReferencesChanged", (PyCFunction)Qt_MediaTrackReferencesChanged, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaReleaseSampleDataPointer", (PyCFunction)Qt_MediaReleaseSampleDataPointer, 1,
+	 PyDoc_STR("(MediaHandler mh, long sampleNum) -> (ComponentResult _rv)")},
+	{"MediaTrackPropertyAtomChanged", (PyCFunction)Qt_MediaTrackPropertyAtomChanged, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaSetVideoParam", (PyCFunction)Qt_MediaSetVideoParam, 1,
+	 PyDoc_STR("(MediaHandler mh, long whichParam) -> (ComponentResult _rv, unsigned short value)")},
+	{"MediaGetVideoParam", (PyCFunction)Qt_MediaGetVideoParam, 1,
+	 PyDoc_STR("(MediaHandler mh, long whichParam) -> (ComponentResult _rv, unsigned short value)")},
+	{"MediaCompare", (PyCFunction)Qt_MediaCompare, 1,
+	 PyDoc_STR("(MediaHandler mh, Media srcMedia, ComponentInstance srcMediaComponent) -> (ComponentResult _rv, Boolean isOK)")},
+	{"MediaGetClock", (PyCFunction)Qt_MediaGetClock, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, ComponentInstance clock)")},
+	{"MediaSetSoundOutputComponent", (PyCFunction)Qt_MediaSetSoundOutputComponent, 1,
+	 PyDoc_STR("(MediaHandler mh, Component outputComponent) -> (ComponentResult _rv)")},
+	{"MediaGetSoundOutputComponent", (PyCFunction)Qt_MediaGetSoundOutputComponent, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, Component outputComponent)")},
+	{"MediaSetSoundLocalizationData", (PyCFunction)Qt_MediaSetSoundLocalizationData, 1,
+	 PyDoc_STR("(MediaHandler mh, Handle data) -> (ComponentResult _rv)")},
+	{"MediaGetInvalidRegion", (PyCFunction)Qt_MediaGetInvalidRegion, 1,
+	 PyDoc_STR("(MediaHandler mh, RgnHandle rgn) -> (ComponentResult _rv)")},
+	{"MediaSampleDescriptionB2N", (PyCFunction)Qt_MediaSampleDescriptionB2N, 1,
+	 PyDoc_STR("(MediaHandler mh, SampleDescriptionHandle sampleDescriptionH) -> (ComponentResult _rv)")},
+	{"MediaSampleDescriptionN2B", (PyCFunction)Qt_MediaSampleDescriptionN2B, 1,
+	 PyDoc_STR("(MediaHandler mh, SampleDescriptionHandle sampleDescriptionH) -> (ComponentResult _rv)")},
+	{"MediaFlushNonPrimarySourceData", (PyCFunction)Qt_MediaFlushNonPrimarySourceData, 1,
+	 PyDoc_STR("(MediaHandler mh, long inputIndex) -> (ComponentResult _rv)")},
+	{"MediaGetURLLink", (PyCFunction)Qt_MediaGetURLLink, 1,
+	 PyDoc_STR("(MediaHandler mh, Point displayWhere) -> (ComponentResult _rv, Handle urlLink)")},
+	{"MediaHitTestForTargetRefCon", (PyCFunction)Qt_MediaHitTestForTargetRefCon, 1,
+	 PyDoc_STR("(MediaHandler mh, long flags, Point loc) -> (ComponentResult _rv, long targetRefCon)")},
+	{"MediaHitTestTargetRefCon", (PyCFunction)Qt_MediaHitTestTargetRefCon, 1,
+	 PyDoc_STR("(MediaHandler mh, long targetRefCon, long flags, Point loc) -> (ComponentResult _rv, Boolean wasHit)")},
+	{"MediaDisposeTargetRefCon", (PyCFunction)Qt_MediaDisposeTargetRefCon, 1,
+	 PyDoc_STR("(MediaHandler mh, long targetRefCon) -> (ComponentResult _rv)")},
+	{"MediaTargetRefConsEqual", (PyCFunction)Qt_MediaTargetRefConsEqual, 1,
+	 PyDoc_STR("(MediaHandler mh, long firstRefCon, long secondRefCon) -> (ComponentResult _rv, Boolean equal)")},
+	{"MediaPrePrerollCancel", (PyCFunction)Qt_MediaPrePrerollCancel, 1,
+	 PyDoc_STR("(MediaHandler mh, void * refcon) -> (ComponentResult _rv)")},
+	{"MediaEnterEmptyEdit", (PyCFunction)Qt_MediaEnterEmptyEdit, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaCurrentMediaQueuedData", (PyCFunction)Qt_MediaCurrentMediaQueuedData, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, long milliSecs)")},
+	{"MediaGetEffectiveVolume", (PyCFunction)Qt_MediaGetEffectiveVolume, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, short volume)")},
+	{"MediaGetSoundLevelMeteringEnabled", (PyCFunction)Qt_MediaGetSoundLevelMeteringEnabled, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, Boolean enabled)")},
+	{"MediaSetSoundLevelMeteringEnabled", (PyCFunction)Qt_MediaSetSoundLevelMeteringEnabled, 1,
+	 PyDoc_STR("(MediaHandler mh, Boolean enable) -> (ComponentResult _rv)")},
+	{"MediaGetEffectiveSoundBalance", (PyCFunction)Qt_MediaGetEffectiveSoundBalance, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, short balance)")},
+	{"MediaSetScreenLock", (PyCFunction)Qt_MediaSetScreenLock, 1,
+	 PyDoc_STR("(MediaHandler mh, Boolean lockIt) -> (ComponentResult _rv)")},
+	{"MediaGetErrorString", (PyCFunction)Qt_MediaGetErrorString, 1,
+	 PyDoc_STR("(MediaHandler mh, ComponentResult theError, Str255 errorString) -> (ComponentResult _rv)")},
+	{"MediaGetSoundEqualizerBandLevels", (PyCFunction)Qt_MediaGetSoundEqualizerBandLevels, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, UInt8 bandLevels)")},
+	{"MediaDoIdleActions", (PyCFunction)Qt_MediaDoIdleActions, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaSetSoundBassAndTreble", (PyCFunction)Qt_MediaSetSoundBassAndTreble, 1,
+	 PyDoc_STR("(MediaHandler mh, short bass, short treble) -> (ComponentResult _rv)")},
+	{"MediaGetSoundBassAndTreble", (PyCFunction)Qt_MediaGetSoundBassAndTreble, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, short bass, short treble)")},
+	{"MediaTimeBaseChanged", (PyCFunction)Qt_MediaTimeBaseChanged, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv)")},
+	{"MediaMCIsPlayerEvent", (PyCFunction)Qt_MediaMCIsPlayerEvent, 1,
+	 PyDoc_STR("(MediaHandler mh, EventRecord e) -> (ComponentResult _rv, Boolean handledIt)")},
+	{"MediaGetMediaLoadState", (PyCFunction)Qt_MediaGetMediaLoadState, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, long mediaLoadState)")},
+	{"MediaVideoOutputChanged", (PyCFunction)Qt_MediaVideoOutputChanged, 1,
+	 PyDoc_STR("(MediaHandler mh, ComponentInstance vout) -> (ComponentResult _rv)")},
+	{"MediaEmptySampleCache", (PyCFunction)Qt_MediaEmptySampleCache, 1,
+	 PyDoc_STR("(MediaHandler mh, long sampleNum, long sampleCount) -> (ComponentResult _rv)")},
+	{"MediaGetPublicInfo", (PyCFunction)Qt_MediaGetPublicInfo, 1,
+	 PyDoc_STR("(MediaHandler mh, OSType infoSelector, void * infoDataPtr) -> (ComponentResult _rv, Size ioDataSize)")},
+	{"MediaSetPublicInfo", (PyCFunction)Qt_MediaSetPublicInfo, 1,
+	 PyDoc_STR("(MediaHandler mh, OSType infoSelector, void * infoDataPtr, Size dataSize) -> (ComponentResult _rv)")},
+	{"MediaRefConSetProperty", (PyCFunction)Qt_MediaRefConSetProperty, 1,
+	 PyDoc_STR("(MediaHandler mh, long refCon, long propertyType, void * propertyValue) -> (ComponentResult _rv)")},
+	{"MediaRefConGetProperty", (PyCFunction)Qt_MediaRefConGetProperty, 1,
+	 PyDoc_STR("(MediaHandler mh, long refCon, long propertyType, void * propertyValue) -> (ComponentResult _rv)")},
+	{"MediaNavigateTargetRefCon", (PyCFunction)Qt_MediaNavigateTargetRefCon, 1,
+	 PyDoc_STR("(MediaHandler mh, long navigation) -> (ComponentResult _rv, long refCon)")},
+	{"MediaGGetIdleManager", (PyCFunction)Qt_MediaGGetIdleManager, 1,
+	 PyDoc_STR("(MediaHandler mh) -> (ComponentResult _rv, IdleManager pim)")},
+	{"MediaGSetIdleManager", (PyCFunction)Qt_MediaGSetIdleManager, 1,
+	 PyDoc_STR("(MediaHandler mh, IdleManager im) -> (ComponentResult _rv)")},
 	{"AlignWindow", (PyCFunction)Qt_AlignWindow, 1,
 	 PyDoc_STR("(WindowPtr wp, Boolean front) -> None")},
 	{"DragAlignedWindow", (PyCFunction)Qt_DragAlignedWindow, 1,
