@@ -1,4 +1,4 @@
-/* tkintermodule.c -- Interface to libtk.a and libtcl.a.
+/* _tkinter.c -- Interface to libtk.a and libtcl.a.
    Copyright (C) 1994 Steen Lumholt */
 
 #include "Python.h"
@@ -11,7 +11,7 @@
 #define WITH_APPINIT
 #endif
 
-#define PyInit_tkinter inittkinter
+#define PyInit__tkinter init_tkinter
 
 #include <tcl.h>
 #include <tk.h>
@@ -1219,7 +1219,7 @@ Tkinter_Cleanup ()
 }
 
 void
-PyInit_tkinter ()
+PyInit__tkinter ()
 {
   static inited = 0;
 
@@ -1228,7 +1228,7 @@ PyInit_tkinter ()
 #endif /* WITH_READLINE */
   PyObject *m, *d, *v;
 
-  m = Py_InitModule ("tkinter", moduleMethods);
+  m = Py_InitModule ("_tkinter", moduleMethods);
 
   d = PyModule_GetDict (m);
   Tkinter_TclError = Py_BuildValue ("s", "TclError");
@@ -1270,7 +1270,7 @@ PyInit_tkinter ()
     }
 
   if (PyErr_Occurred ())
-    Py_FatalError ("can't initialize module tkinter");
+    Py_FatalError ("can't initialize module _tkinter");
 }
 
 #ifdef macintosh
