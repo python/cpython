@@ -34,13 +34,6 @@ class clean (Command):
         self.all = None
 
     def finalize_options(self):
-        if self.build_lib and not os.path.exists (self.build_lib):
-            self.warn ("'%s' does not exist -- can't clean it" %
-                       self.build_lib)
-        if self.build_temp and not os.path.exists (self.build_temp):
-            self.warn ("'%s' does not exist -- can't clean it" %
-                       self.build_temp)
-
         self.set_undefined_options('build',
                                    ('build_base', 'build_base'),
                                    ('build_lib', 'build_lib'),
@@ -53,11 +46,21 @@ class clean (Command):
         # gone)
         if os.path.exists (self.build_temp):
             remove_tree (self.build_temp, self.verbose, self.dry_run)
+        else:
+            self.warn ("'%s' does not exist -- can't clean it" %
+                       self.build_temp)
+
+
+            
 
         if self.all:
             # remove the module build directory (unless already gone)
             if os.path.exists (self.build_lib):
                 remove_tree (self.build_lib, self.verbose, self.dry_run)
+            else:
+                self.warn ("'%s' does not exist -- can't clean it" %
+                           self.build_lib)
+
             # remove the temporary directory used for creating built
             # distributions (default "build/bdist") -- eg. type of
             # built distribution will have its own subdirectory under
@@ -65,6 +68,9 @@ class clean (Command):
             # 'remove_tree()'.
             if os.path.exists (self.bdist_base):
                 remove_tree (self.bdist_base, self.verbose, self.dry_run)
+            else:
+                self.warn ("'%s' does not exist -- can't clean it" %
+                           self.bdist_base)
 
         # just for the heck of it, try to remove the base build directory:
         # we might have emptied it right now, but if not we don't care
