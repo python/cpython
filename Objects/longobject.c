@@ -1158,7 +1158,7 @@ long_from_binary_base(char **str, int base)
 			assert(ch >= 'A');
 			k = ch - 'A' + 10;
 		}
-		assert(k >= 0 && k <= base);
+		assert(k < base);
 		accum |= k << bits_in_accum;
 		bits_in_accum += bits_per_char;
 		if (bits_in_accum >= SHIFT) {
