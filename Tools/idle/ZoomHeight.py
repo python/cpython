@@ -1,6 +1,7 @@
 # Sample extension: zoom a window to maximum height
 
 import re
+import sys
 
 class ZoomHeight:
 
@@ -14,7 +15,7 @@ class ZoomHeight:
         '<<zoom-height>>': ['<Alt-F2>'],
     }
     unix_keydefs = {
-        '<<zoom-height>>': ['<Control-z><Control-z>'],
+        '<<zoom-height>>': ['<Control-x><Control-z>'],
     }
 
     def __init__(self, editwin):
@@ -28,8 +29,14 @@ class ZoomHeight:
             top.bell()
             return
         width, height, x, y = map(int, m.groups())
-        height = top.winfo_screenheight() - 72
-        newgeom = "%dx%d+%d+%d" % (width, height, x, 0)
+        height = top.winfo_screenheight()
+        if sys.platform == 'win32':
+            y = 0
+            height = height = 72
+        else:
+            y = 24
+            height = height - 64
+        newgeom = "%dx%d+%d+%d" % (width, height, x, y)
         if geom == newgeom:
             newgeom = ""
         top.wm_geometry(newgeom)
