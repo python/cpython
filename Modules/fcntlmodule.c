@@ -42,6 +42,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include <sys/file.h>
 #endif
 
+#include <sys/ioctl.h>
 #include <fcntl.h>
 
 
