@@ -22,8 +22,6 @@ extern DL_IMPORT(PyTypeObject) _PyWeakref_RefType;
 extern DL_IMPORT(PyTypeObject) _PyWeakref_ProxyType;
 extern DL_IMPORT(PyTypeObject) _PyWeakref_CallableProxyType;
 
-extern DL_IMPORT(PyObject *) PyErr_ReferenceError;
-
 #define PyWeakref_CheckRef(op) \
         ((op)->ob_type == &_PyWeakref_RefType)
 #define PyWeakref_CheckProxy(op) \
