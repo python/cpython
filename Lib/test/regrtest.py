@@ -988,6 +988,7 @@ class _ExpectedSkips:
         from test import test_timeout
         from test import test_codecmaps_cn, test_codecmaps_jp
         from test import test_codecmaps_kr, test_codecmaps_tw
+        from test import test_codecmaps_hk
 
         self.valid = False
         if sys.platform in _expectations:
@@ -1006,7 +1007,7 @@ class _ExpectedSkips:
             if test_timeout.skip_expected:
                 self.expected.add('test_timeout')
 
-            for cc in ('cn', 'jp', 'kr', 'tw'):
+            for cc in ('cn', 'jp', 'kr', 'tw', 'hk'):
                 if eval('test_codecmaps_' + cc).skip_expected:
                     self.expected.add('test_codecmaps_' + cc)
 
