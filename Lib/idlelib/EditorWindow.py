@@ -137,6 +137,8 @@ class EditorWindow:
             text.bind("<<open-class-browser>>", self.open_class_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
 
+        self.set_status_bar()
+        
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
 
@@ -190,10 +192,10 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
-        self.set_status_bar()
+        
 
     def set_status_bar(self):
-        self.status_bar = self.MultiStatusBar(self.text_frame)
+        self.status_bar = self.MultiStatusBar(self.top)
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
