@@ -106,7 +106,7 @@ def combine(fname):
         assert m
         addr, rc, guts = m.groups() # guts is type name here
         if addr not in addr2rc:
-            print '??? new object created while tearing down:', line
+            print '??? new object created while tearing down:', line.rstrip()
             continue
         print addr,
         if rc == addr2rc[addr]:
