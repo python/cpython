@@ -2033,6 +2033,15 @@ wrap_cmpfunc(PyObject *self, PyObject *args, void *wrapped)
 
 	if (!PyArg_ParseTuple(args, "O", &other))
 		return NULL;
+	if (!PyType_IsSubtype(other->ob_type, self->ob_type)) {
+		PyErr_Format(
+			PyExc_TypeError,
+			"%s.__cmp__(x,y) requires y to be a '%s', not a '%s'",
+			self->ob_type->tp_name,
+			self->ob_type->tp_name,
+			other->ob_type->tp_name);
+		return NULL;
+	}
 	res = (*func)(self, other);
 	if (PyErr_Occurred())
 		return NULL;
