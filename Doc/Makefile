@@ -48,7 +48,7 @@ libselect.tex libsgi.tex libsocket.tex libstd.tex libstdwin.tex \
 	libstring.tex libstruct.tex libsun.tex libsys.tex \
 libthread.tex libtime.tex libtypes.tex \
 libunix.tex \
-libwhrandom.tex
+libwhrandom.tex libaifc.tex
 
 lib.dvi: $(LIBFILES)
 	touch lib.ind
