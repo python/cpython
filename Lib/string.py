@@ -12,34 +12,32 @@ hexdigits = digits + 'abcdef' + 'ABCDEF'
 octdigits = '01234567'
 
 # Case conversion helpers
-_caseswap = {}
-for i in range(26):
-	_caseswap[lowercase[i]] = uppercase[i]
-	_caseswap[uppercase[i]] = lowercase[i]
+_idmap = ''
+for i in range(256): _idmap = _idmap + chr(i)
+_lower = _idmap[:ord('A')] + lowercase + _idmap[ord('Z')+1:]
+_upper = _idmap[:ord('a')] + uppercase + _idmap[ord('z')+1:]
+_swapcase = _upper[:ord('A')] + lowercase + _upper[ord('Z')+1:]
 del i
 
 # convert UPPER CASE letters to lower case
 def lower(s):
 	res = ''
 	for c in s:
-		if 'A' <= c <= 'Z': c = _caseswap[c]
-		res = res + c
+		res = res + _lower[ord(c)]
 	return res
 
 # Convert lower case letters to UPPER CASE
 def upper(s):
 	res = ''
 	for c in s:
-		if 'a' <= c <= 'z': c = _caseswap[c]
-		res = res + c
+		res = res + _upper[ord(c)]
 	return res
 
 # Swap lower case letters and UPPER CASE
 def swapcase(s):
 	res = ''
 	for c in s:
-		if 'a' <= c <= 'z' or 'A' <= c <= 'Z': c = _caseswap[c]
-		res = res + c
+		res = res + _swapcase[ord(c)]
 	return res
 
 # Strip leading and trailing tabs and spaces
