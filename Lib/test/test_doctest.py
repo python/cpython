@@ -758,6 +758,11 @@ treated as equal:
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     (0, 1)
 
+    An example from the docs:
+    >>> print range(20) #doctest: +NORMALIZE_WHITESPACE
+    [0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
+    10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
+
 The ELLIPSIS flag causes ellipsis marker ("...") in the expected
 output to match any substring in the actual output:
 
@@ -780,8 +785,8 @@ output to match any substring in the actual output:
     >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
     (0, 1)
 
-... should also match nothing gracefully (note that a regular-expression
-implementation of ELLIPSIS would take a loooong time to match this one!):
+    ... should also match nothing gracefully (note that a regular-expression
+    implementation of ELLIPSIS would take a loooong time to match this one!):
 
     >>> for i in range(100):
     ...     print i**2 #doctest: +ELLIPSIS
@@ -801,7 +806,7 @@ implementation of ELLIPSIS would take a loooong time to match this one!):
     9801
     ...
 
-... can be surprising; e.g., this test passes:
+    ... can be surprising; e.g., this test passes:
 
     >>> for i in range(21): #doctest: +ELLIPSIS
     ...     print i
@@ -814,6 +819,15 @@ implementation of ELLIPSIS would take a loooong time to match this one!):
     2
     ...
     0
+
+    Examples from the docs:
+
+    >>> print range(20) # doctest:+ELLIPSIS
+    [0, 1, ..., 18, 19]
+
+    >>> print range(20) # doctest: +ELLIPSIS
+    ...                 # doctest: +NORMALIZE_WHITESPACE
+    [0,    1, ...,   18,    19]
 
 The UNIFIED_DIFF flag causes failures that involve multi-line expected
 and actual outputs to be displayed using a unified diff:

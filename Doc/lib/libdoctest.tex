@@ -298,12 +298,12 @@ be left out, or could just as well be three (or three hundred) commas.
                 exception detail, were added]{2.4}
 
 
-\subsection{Option Flags and Directive Names\label{doctest-options}}
+\subsection{Option Flags and Directives\label{doctest-options}}
 
 A number of option flags control various aspects of doctest's comparison
-behavior. Symbolic names for the flags are supplied as module constants,
+behavior.  Symbolic names for the flags are supplied as module constants,
 which can be or'ed together and passed to various functions.  The names
-can also be used in doctest directives.
+can also be used in doctest directives (see below).
 
 \begin{datadesc}{DONT_ACCEPT_TRUE_FOR_1}
     By default, if an expected output block contains just \code{1},
@@ -340,9 +340,10 @@ can also be used in doctest directives.
 \begin{datadesc}{ELLIPSIS}
     When specified, an ellipsis marker (\code{...}) in the expected output
     can match any substring in the actual output.  This includes
-    substrings that span line boundaries, so it's best to keep usage of
-    this simple.  Complicated uses can lead to the same kinds of
-    surprises that \regexp{.*} is prone to in regular expressions.
+    substrings that span line boundaries, and empty substrings, so it's
+    best to keep usage of this simple.  Complicated uses can lead to the
+    same kinds of "oops, it matched too much!" surprises that \regexp{.*}
+    is prone to in regular expressions.
 \end{datadesc}
 
 \begin{datadesc}{UNIFIED_DIFF}
@@ -356,11 +357,68 @@ can also be used in doctest directives.
 \end{datadesc}
 
 
+A "doctest directive" is a trailing Python comment on a line of a doctest
+example:
+
+\begin{productionlist}[doctest]
+    \production{directive}
+               {"#" "doctest:" \token{on_or_off} \token{directive_name}}
+    \production{on_or_off}
+               {"+" | "-"}
+    \production{directive_name}
+               {"DONT_ACCEPT_BLANKLINE" | "NORMALIZE_WHITESPACE" | ...}
+\end{productionlist}
+
+Whitespace is not allowed between the \code{+} or \code{-} and the
+directive name.  The directive name can be any of the option names
+explained above.
+
+The doctest directives appearing in a single example modify doctest's
+behavior for that single example.  Use \code{+} to enable the named
+behavior, or \code{-} to disable it.
+
+For example, this test passes:
+
+\begin{verbatim}
+>>> print range(20) #doctest: +NORMALIZE_WHITESPACE
+[0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
+10,  11, 12, 13, 14, 15, 16, 17, 18, 19]
+\end{verbatim}
+
+Without the directive it would fail, both because the actual output
+doesn't have two blanks before the single-digit list elements, and
+because the actual output is on a single line.  This test also passes,
+and requires a directive to do so:
+
+\begin{verbatim}
+>>> print range(20) # doctest:+ELLIPSIS
+[0, 1, ..., 18, 19]
+\end{verbatim}
+
+Only one directive per physical line is accepted.  If you want to
+use multiple directives for a single example, you can add
+\samp{...} lines to your example containing only directives:
+
+\begin{verbatim}
+>>> print range(20) #doctest: +ELLIPSIS
+...                 #doctest: +NORMALIZE_WHITESPACE
+[0,    1, ...,   18,    19]
+\end{verbatim}
+
+Note that since all options are disabled by default, and directives apply
+only to the example they appear in, enabling options (via \code{+} in a
+directive) is usually the only meaningful choice.  However, option flags
+can also be passed to functions that run doctests, establishing different
+defaults.  In such cases, disabling an option via \code{-} in a directive
+can be useful.
+
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
     \constant{UNIFIED_DIFF}, and \constant{CONTEXT_DIFF}
-    were added, and by default \code{<BLANKLINE>} in expected output
-    matches an empty line in actual output]{2.4}
+    were added; by default \code{<BLANKLINE>} in expected output
+    matches an empty line in actual output; and doctest directives
+    were added]{2.4}
+
 
 \subsection{Advanced Usage}
 
