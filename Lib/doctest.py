@@ -642,6 +642,7 @@ Got: 84
 >>> t.runstring(">>> x = x * 2\\n>>> print x\\n84\\n", 'example2')
 (0, 2)
 >>> t.summarize()
+*****************************************************************
 1 items had failures:
    1 of   2 in XYZ
 ***Test Failed*** 1 failures.
@@ -649,6 +650,7 @@ Got: 84
 >>> t.summarize(verbose=1)
 1 items passed all tests:
    2 tests in example2
+*****************************************************************
 1 items had failures:
    1 of   2 in XYZ
 4 tests in 2 items.
