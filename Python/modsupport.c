@@ -46,17 +46,20 @@ initmodule(name, methods)
 {
 	object *m, *d, *v;
 	struct methodlist *ml;
-	char namebuf[256];
+	char *namebuf;
 	if ((m = add_module(name)) == NULL) {
 		fprintf(stderr, "initializing module: %s\n", name);
 		fatal("can't create a module");
 	}
 	d = getmoduledict(m);
 	for (ml = methods; ml->ml_name != NULL; ml++) {
+		namebuf = NEW(char, strlen(name) + strlen(ml->ml_name) + 2);
+		if (namebuf == NULL)
+			fatal("out of mem for method name");
 		sprintf(namebuf, "%s.%s", name, ml->ml_name);
-		v = newmethodobject(strdup(namebuf), ml->ml_meth,
+		v = newmethodobject(namebuf, ml->ml_meth,
 					(object *)NULL, ml->ml_varargs);
-		/* XXX The strdup'ed memory is never freed */
+		/* XXX The malloc'ed memory in namebuf is never freed */
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
 			fatal("can't initialize module");

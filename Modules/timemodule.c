@@ -33,6 +33,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <signal.h>
 #include <setjmp.h>
 
+#ifdef BSD_TIME
+#define HAVE_GETTIMEOFDAY
+#endif
+
 #ifdef macintosh
 #define NO_UNISTD
 #endif
@@ -79,6 +83,17 @@ time_time(self, args)
 	object *self;
 	object *args;
 {
+#ifdef HAVE_GETTIMEOFDAY
+	struct timeval t;
+	struct timezone tz;
+	if (!getnoarg(args))
+		return NULL;
+	if (gettimeofday(&t, &tz) != 0) {
+		err_errno(IOError);
+		return NULL;
+	}
+	return newfloatobject(t.tv_sec*1.0 + t.tv_usec*0.000001);
+#else /* !HAVE_GETTIMEOFDAY */
 	time_t secs;
 	if (!getnoarg(args))
 		return NULL;
@@ -90,7 +105,8 @@ time_time(self, args)
 	(((1970-1904)*365L + (1970-1904)/4) * 24 * 3600))
 	secs -= TIMEDIFF;
 #endif
-	return newintobject((long)secs);
+	return newfloatobject((double)secs);
+#endif /* !HAVE_GETTIMEOFDAY */
 }
 
 static jmp_buf sleep_intr;

@@ -52,5 +52,4 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "errors.h"
 #include "mymalloc.h"
 
-extern char *strdup PROTO((const char *));
 extern void fatal PROTO((char *));

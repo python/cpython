@@ -479,7 +479,11 @@ static object *cmpfunc;
 
 static int
 cmp(v, w)
+#ifdef __STDC__
+	void *v, *w;
+#else
 	char *v, *w;
+#endif
 {
 	object *t, *res;
 	long i;
