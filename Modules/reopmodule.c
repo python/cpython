@@ -119,6 +119,10 @@ reop_match(self, args)
 		PyErr_SetString(ReopError, "match failure");
 		return NULL;
 	}
+	if (result == -1) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 	return makeresult(&re_regs, num_regs);
 }
 
@@ -161,6 +165,10 @@ reop_search(self, args)
 		/* Failure like stack overflow */
 		PyErr_SetString(ReopError, "match failure");
 		return NULL;
+	}
+	if (result == -1) {
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	return makeresult(&re_regs, num_regs);
 }
