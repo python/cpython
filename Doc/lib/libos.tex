@@ -70,6 +70,13 @@ components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or
 \code{';'} for MS-DOS.
 \end{datadesc}
 
+\begin{datadesc}{linesep}
+The string used to separate (or, rather, terminate) lines on the
+current platform.  This may be a single character, e.g. \code{'\e n'}
+for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
+e.g. \code{'\e r\e n'} for MS-DOS.
+\end{datadesc}
+
 \begin{datadesc}{defpath}
 The default search path used by \code{exec*p*()} if the environment
 doesn't have a \code{'PATH'} key.
