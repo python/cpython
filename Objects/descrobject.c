@@ -21,7 +21,7 @@ typedef struct {
 
 typedef struct {
 	COMMON;
-	struct memberlist *d_member;
+	PyMemberDef *d_member;
 } PyMemberDescrObject;
 
 typedef struct {
@@ -126,8 +126,7 @@ member_get(PyMemberDescrObject *descr, PyObject *obj, PyTypeObject *type)
 
 	if (descr_check((PyDescrObject *)descr, obj, type, &res))
 		return res;
-	return PyMember_Get((char *)obj, descr->d_member,
-			    descr->d_member->name);
+	return PyMember_GetOne((char *)obj, descr->d_member);
 }
 
 static PyObject *
@@ -181,8 +180,7 @@ member_set(PyMemberDescrObject *descr, PyObject *obj, PyObject *value)
 
 	if (descr_setcheck((PyDescrObject *)descr, obj, value, &res))
 		return res;
-	return PyMember_Set((char *)obj, descr->d_member,
-			    descr->d_member->name, value);
+	return PyMember_SetOne((char *)obj, descr->d_member, value);
 }
 
 static int
@@ -289,7 +287,7 @@ wrapperdescr_call(PyWrapperDescrObject *descr, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-member_get_doc(PyMethodDescrObject *descr, void *closure)
+method_get_doc(PyMethodDescrObject *descr, void *closure)
 {
 	if (descr->d_method->ml_doc == NULL) {
 		Py_INCREF(Py_None);
@@ -298,11 +296,26 @@ member_get_doc(PyMethodDescrObject *descr, void *closure)
 	return PyString_FromString(descr->d_method->ml_doc);
 }
 
-static struct memberlist descr_members[] = {
+static PyMemberDef descr_members[] = {
 	{"__objclass__", T_OBJECT, offsetof(PyDescrObject, d_type), READONLY},
 	{"__name__", T_OBJECT, offsetof(PyDescrObject, d_name), READONLY},
 	{0}
 };
+
+static struct getsetlist method_getset[] = {
+	{"__doc__", (getter)method_get_doc},
+	{0}
+};
+
+static PyObject *
+member_get_doc(PyMemberDescrObject *descr, void *closure)
+{
+	if (descr->d_member->doc == NULL) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+	return PyString_FromString(descr->d_member->doc);
+}
 
 static struct getsetlist member_getset[] = {
 	{"__doc__", (getter)member_get_doc},
@@ -355,7 +368,7 @@ static PyTypeObject PyMethodDescr_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	descr_members,				/* tp_members */
-	member_getset,				/* tp_getset */
+	method_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	(descrgetfunc)method_get,		/* tp_descr_get */
@@ -393,7 +406,7 @@ static PyTypeObject PyMemberDescr_Type = {
 	0,					/* tp_iternext */
 	0,					/* tp_methods */
 	descr_members,				/* tp_members */
-	0,					/* tp_getset */
+	member_getset,				/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
 	(descrgetfunc)member_get,		/* tp_descr_get */
@@ -507,7 +520,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 }
 
 PyObject *
-PyDescr_NewMember(PyTypeObject *type, struct memberlist *member)
+PyDescr_NewMember(PyTypeObject *type, PyMemberDef *member)
 {
 	PyMemberDescrObject *descr;
 

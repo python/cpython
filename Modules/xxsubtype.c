@@ -148,8 +148,9 @@ spamdict_init(spamdictobject *self, PyObject *args, PyObject *kwds)
 	return 0;
 }
 
-static struct memberlist spamdict_members[] = {
-	{"state", T_INT, offsetof(spamdictobject, state), READONLY},
+static PyMemberDef spamdict_members[] = {
+	{"state", T_INT, offsetof(spamdictobject, state), READONLY,
+	 "an int variable for demonstration purposes"},
 	{0}
 };
 

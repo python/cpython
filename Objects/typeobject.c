@@ -4,7 +4,7 @@
 #include "Python.h"
 #include "structmember.h"
 
-static struct memberlist type_members[] = {
+static PyMemberDef type_members[] = {
 	{"__basicsize__", T_INT, offsetof(PyTypeObject,tp_basicsize),READONLY},
 	{"__itemsize__", T_INT, offsetof(PyTypeObject, tp_itemsize), READONLY},
 	{"__flags__", T_LONG, offsetof(PyTypeObject, tp_flags), READONLY},
@@ -263,7 +263,7 @@ typedef struct {
 	PyMappingMethods as_mapping;
 	PyBufferProcs as_buffer;
 	PyObject *name, *slots;
-	struct memberlist members[1];
+	PyMemberDef members[1];
 } etype;
 
 /* type test with subclassing support */
@@ -672,7 +672,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	PyObject *slots, *tmp;
 	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
-	struct memberlist *mp;
+	PyMemberDef *mp;
 	int i, nbases, nslots, slotoffset, dynamic, add_dict, add_weak;
 
 	/* Special case: type(x) should return x->ob_type */
@@ -1087,7 +1087,7 @@ PyTypeObject PyType_Type = {
 	0,					/* ob_size */
 	"type",					/* tp_name */
 	sizeof(etype),				/* tp_basicsize */
-	sizeof(struct memberlist),		/* tp_itemsize */
+	sizeof(PyMemberDef),			/* tp_itemsize */
 	(destructor)type_dealloc,		/* tp_dealloc */
 	0,					/* tp_print */
 	0,			 		/* tp_getattr */
@@ -1192,7 +1192,7 @@ object_free(PyObject *self)
 	PyObject_Del(self);
 }
 
-static struct memberlist object_members[] = {
+static PyMemberDef object_members[] = {
 	{"__class__", T_OBJECT, offsetof(PyObject, ob_type), READONLY},
 	{0}
 };
@@ -1263,7 +1263,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 }
 
 static int
-add_members(PyTypeObject *type, struct memberlist *memb)
+add_members(PyTypeObject *type, PyMemberDef *memb)
 {
 	PyObject *dict = type->tp_defined;
 
@@ -3221,9 +3221,11 @@ typedef struct {
 	PyObject *obj;
 } superobject;
 
-static struct memberlist super_members[] = {
-	{"__type__", T_OBJECT, offsetof(superobject, type), READONLY},
-	{"__obj__",  T_OBJECT, offsetof(superobject, obj), READONLY},
+static PyMemberDef super_members[] = {
+	{"__thisclass__", T_OBJECT, offsetof(superobject, type), READONLY,
+	 "the class invoking super()"},
+	{"__self__",  T_OBJECT, offsetof(superobject, obj), READONLY,
+	 "the instance invoking super(); may be None"},
 	{0}
 };
 

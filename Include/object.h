@@ -274,7 +274,7 @@ typedef struct _typeobject {
 
 	/* Attribute descriptor and subclassing stuff */
 	struct PyMethodDef *tp_methods;
-	struct memberlist *tp_members;
+	struct PyMemberDef *tp_members;
 	struct getsetlist *tp_getset;
 	struct _typeobject *tp_base;
 	PyObject *tp_dict;

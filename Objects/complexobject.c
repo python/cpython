@@ -625,9 +625,11 @@ static PyMethodDef complex_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static struct memberlist complex_members[] = {
-	{"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), 0},
-	{"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), 0},
+static PyMemberDef complex_members[] = {
+	{"real", T_DOUBLE, offsetof(PyComplexObject, cval.real), 0,
+	 "the real part of a complex number"},
+	{"imag", T_DOUBLE, offsetof(PyComplexObject, cval.imag), 0,
+	 "the imaginary part of a complex number"},
 	{0},
 };
 

@@ -28,11 +28,21 @@ extern "C" {
    pointer is NULL. */
 
 struct memberlist {
+	/* Obsolete version, for binary backwards compatibility */
 	char *name;
 	int type;
 	int offset;
 	int flags;
 };
+
+typedef struct PyMemberDef {
+	/* Current version, use this */
+	char *name;
+	int type;
+	int offset;
+	int flags;
+	char *doc;
+} PyMemberDef;
 
 /* Types */
 #define T_SHORT		0
@@ -66,8 +76,14 @@ struct memberlist {
 #define RESTRICTED	(READ_RESTRICTED | WRITE_RESTRICTED)
 
 
+/* Obsolete API, for binary backwards compatibility */
 DL_IMPORT(PyObject *) PyMember_Get(char *, struct memberlist *, char *);
 DL_IMPORT(int) PyMember_Set(char *, struct memberlist *, char *, PyObject *);
+
+/* Current API, use this */
+DL_IMPORT(PyObject *) PyMember_GetOne(char *, struct PyMemberDef *);
+DL_IMPORT(int) PyMember_SetOne(char *, struct PyMemberDef *, PyObject *);
+
 
 #ifdef __cplusplus
 }

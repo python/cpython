@@ -2006,10 +2006,13 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 
 #define OFF(x) offsetof(PyMethodObject, x)
 
-static struct memberlist instancemethod_memberlist[] = {
-	{"im_class",	T_OBJECT,	OFF(im_class),	READONLY|RESTRICTED},
-	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED},
-	{"im_self",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED},
+static PyMemberDef instancemethod_memberlist[] = {
+	{"im_class",	T_OBJECT,	OFF(im_class),	READONLY|RESTRICTED,
+	 "the class associated with a method"},
+	{"im_func",	T_OBJECT,	OFF(im_func),	READONLY|RESTRICTED,
+	 "the function (or other callable) implementing a method"},
+	{"im_self",	T_OBJECT,	OFF(im_self),	READONLY|RESTRICTED,
+	 "the instance to which a method is bound; None for unbound methods"},
 	{NULL}	/* Sentinel */
 };
 

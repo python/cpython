@@ -73,7 +73,7 @@ int Py_OptimizeFlag = 0;
 
 #define OFF(x) offsetof(PyCodeObject, x)
 
-static struct memberlist code_memberlist[] = {
+static PyMemberDef code_memberlist[] = {
 	{"co_argcount",	T_INT,		OFF(co_argcount),	READONLY},
 	{"co_nlocals",	T_INT,		OFF(co_nlocals),	READONLY},
 	{"co_stacksize",T_INT,		OFF(co_stacksize),	READONLY},
