@@ -1275,7 +1275,7 @@ The module \module{curses.textpad} defines the following function:
 Draw a rectangle.  The first argument must be a window object; the
 remaining arguments are coordinates relative to that window.  The
 second and third arguments are the y and x coordinates of the upper
-left hand corner of the rectangle To be drawn; the fourth and fifth
+left hand corner of the rectangle to be drawn; the fourth and fifth
 arguments are the y and x coordinates of the lower right hand corner.
 The rectangle will be drawn using VT100/IBM PC forms characters on
 terminals that make this possible (including xterm and most other
@@ -1292,7 +1292,7 @@ You can instantiate a \class{Textbox} object as follows:
 Return a textbox widget object.  The \var{win} argument should be a
 curses \class{WindowObject} in which the textbox is to be contained.
 The edit cursor of the textbox is initially located at the upper left
-hand corner of the containin window, with coordinates \code{(0, 0)}.
+hand corner of the containing window, with coordinates \code{(0, 0)}.
 The instance's \member{stripspaces} flag is initially on.
 \end{classdesc}
 
@@ -1358,7 +1358,7 @@ This data member is a flag which controls the interpretation of blanks in
 the window.  When it is on, trailing blanks on each line are ignored;
 any cursor motion that would land the cursor on a trailing blank goes
 to the end of that line instead, and trailing blanks are stripped when
-the window contents is gathered.
+the window contents are gathered.
 \end{memberdesc}
 
 
@@ -1375,7 +1375,7 @@ This module supplies one function, \function{wrapper()}, which runs
 another function which should be the rest of your curses-using
 application.  If the application raises an exception,
 \function{wrapper()} will restore the terminal to a sane state before
-passing it further up the stack and generating a traceback.
+re-raising the exception and generating a traceback.
 
 \begin{funcdesc}{wrapper}{func, \moreargs}
 Wrapper function that initializes curses and calls another function,
