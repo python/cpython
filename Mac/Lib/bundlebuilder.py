@@ -141,6 +141,7 @@ class BundleBuilder(Defaults):
 		self._copyFiles()
 		self._addMetaFiles()
 		self.postProcess()
+		self.message("Done.", 1)
 
 	def preProcess(self):
 		"""Hook for subclasses."""
@@ -200,7 +201,6 @@ class BundleBuilder(Defaults):
 		pass
 
 
-
 if __debug__:
 	PYC_EXT = ".pyc"
 else:
@@ -227,6 +227,13 @@ f.close()
 """ % FROZEN_ARCHIVE
 
 SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
+
+EXT_LOADER = """\
+import imp, sys, os
+path = os.path.join(sys.path[0], "%(filename)s")
+mod = imp.load_dynamic("%(name)s", path)
+sys.modules["%(name)s"] = mod
+"""
 
 MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
 	'win32api', 'ce', '_winreg', 'nturl2path', 'sitecustomize',
@@ -284,9 +291,6 @@ class AppBuilder(BundleBuilder):
 
 	# Strip binaries.
 	strip = 0
-
-	# Found C extension modules: [(name, path), ...]
-	extensions = []
 
 	# Found Python modules: [(name, codeobject, ispkg), ...]
 	pymodules = []
@@ -355,7 +359,7 @@ class AppBuilder(BundleBuilder):
 			mainwrapperpath = pathjoin(execdir, self.name)
 			makedirs(execdir)
 			open(mainwrapperpath, "w").write(BOOTSTRAP_SCRIPT % locals())
-			os.chmod(mainwrapperpath, 0777)
+			os.chmod(mainwrapperpath, 0775)
 
 	def postProcess(self):
 		self.addPythonModules()
@@ -374,35 +378,35 @@ class AppBuilder(BundleBuilder):
 
 	def addPythonModules(self):
 		self.message("Adding Python modules", 1)
-		pymodules = self.pymodules
 
 		if USE_FROZEN:
 			# This anticipates the acceptance of this patch:
 			#   http://www.python.org/sf/642578
 			# Create a file containing all modules, frozen.
 			frozenmodules = []
-			for name, code, ispkg in pymodules:
+			for name, code, ispkg in self.pymodules:
 				if ispkg:
 					self.message("Adding Python package %s" % name, 2)
 				else:
 					self.message("Adding Python module %s" % name, 2)
 				frozenmodules.append((name, marshal.dumps(code), ispkg))
 			frozenmodules = tuple(frozenmodules)
-			relpath = "Contents/Resources/" + FROZEN_ARCHIVE
+			relpath = pathjoin("Contents", "Resources", FROZEN_ARCHIVE)
 			abspath = pathjoin(self.bundlepath, relpath)
 			f = open(abspath, "wb")
 			marshal.dump(frozenmodules, f)
 			f.close()
 			# add site.pyc
-			sitepath = pathjoin(self.bundlepath, "Contents/Resources/site" + PYC_EXT)
+			sitepath = pathjoin(self.bundlepath, "Contents", "Resources",
+					"site" + PYC_EXT)
 			writePyc(SITE_CO, sitepath)
 		else:
 			# Create individual .pyc files.
-			for name, code, ispkg in pymodules:
+			for name, code, ispkg in self.pymodules:
 				if ispkg:
 					name += ".__init__"
 				path = name.split(".")
-				path = pathjoin("Contents/Resources/", *path) + PYC_EXT
+				path = pathjoin("Contents", "Resources", *path) + PYC_EXT
 
 				if ispkg:
 					self.message("Adding Python package %s" % path, 2)
@@ -443,7 +447,6 @@ class AppBuilder(BundleBuilder):
 			except ImportError:
 				self.missingModules.append(name)
 
-
 		mf.run_script(self.mainprogram)
 		modules = mf.modules.items()
 		modules.sort()
@@ -451,18 +454,21 @@ class AppBuilder(BundleBuilder):
 			if mod.__file__ and mod.__code__ is None:
 				# C extension
 				path = mod.__file__
-				ext = os.path.splitext(path)[1]
-				if USE_FROZEN:  # "proper" freezing
-					# rename extensions that are submodules of packages to
-					# <packagename>.<modulename>.<ext>
-					dstpath = "Contents/Resources/" + name + ext
+				filename = os.path.basename(path)
+				if USE_FROZEN:
+					# "proper" freezing, put extensions in Contents/Resources/,
+					# freeze a tiny "loader" program. Due to Thomas Heller.
+					dstpath = pathjoin("Contents", "Resources", filename)
+					source = EXT_LOADER % {"name": name, "filename": filename}
+					code = compile(source, "<dynloader for %s>" % name, "exec")
+					mod.__code__ = code
 				else:
-					dstpath = name.split(".")
-					dstpath = pathjoin("Contents/Resources/", *dstpath) + ext
+					# just copy the file
+					dstpath = name.split(".")[:-1] + [filename]
+					dstpath = pathjoin("Contents", "Resources", *dstpath)
 				self.files.append((path, dstpath))
-				self.extensions.append((name, path, dstpath))
 				self.binaries.append(dstpath)
-			elif mod.__code__ is not None:
+			if mod.__code__ is not None:
 				ispkg = mod.__path__ is not None
 				if not USE_FROZEN or name != "site":
 					# Our site.py is doing the bootstrapping, so we must
