@@ -175,13 +175,14 @@ def format_exception_only(etype, value):
                 while i < len(line) and line[i].isspace():
                     i = i+1
                 list.append('    %s\n' % line.strip())
-                s = '    '
-                for c in line[i:offset-1]:
-                    if c.isspace():
-                        s = s + c
-                    else:
-                        s = s + ' '
-                list.append('%s^\n' % s)
+                if offset is not None:
+                    s = '    '
+                    for c in line[i:offset-1]:
+                        if c.isspace():
+                            s = s + c
+                        else:
+                            s = s + ' '
+                    list.append('%s^\n' % s)
                 value = msg
         s = _some_str(value)
         if s:
