@@ -147,8 +147,8 @@ class MacModule(Module):
 
 _SetOutputFileName = SetOutputFileName # Save original
 def SetOutputFileName(file = None):
-	"Set the output file name and set its creator&type to MPCC&TEXT"
+	"Set the output file name and set its creator&type to CWIE&TEXT"
 	_SetOutputFileName(file)
 	if file:
 		import MacOS
-		MacOS.SetCreatorAndType(file, 'MPCC', 'TEXT')
+		MacOS.SetCreatorAndType(file, 'CWIE', 'TEXT')
