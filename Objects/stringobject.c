@@ -269,6 +269,14 @@ PyString_FromFormatV(const char *format, va_list vargs)
 				break;
 			case 'p':
 				sprintf(s, "%p", va_arg(vargs, void*));
+				/* %p is ill-defined:  ensure leading 0x. */
+				if (s[1] == 'X')
+					s[1] = 'x';
+				else if (s[1] != 'x') {
+					memmove(s+2, s, strlen(s)+1);
+					s[0] = '0';
+					s[1] = 'x';
+				}
 				s += strlen(s);
 				break;
 			case '%':
