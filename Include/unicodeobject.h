@@ -376,7 +376,7 @@ extern DL_IMPORT(int) PyUnicode_AsWideChar(
    
  */
 
-extern DL_IMPORT(const char*) PyUnicode_GetDefaultEncoding();
+extern DL_IMPORT(const char*) PyUnicode_GetDefaultEncoding(void);
 
 /* Sets the currently active default encoding.
 

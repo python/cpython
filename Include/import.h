@@ -35,12 +35,12 @@ extern DL_IMPORT(PyObject *)_PyImport_FixupExtension(char *, char *);
 
 struct _inittab {
     char *name;
-    void (*initfunc)();
+    void (*initfunc)(void);
 };
 
 extern DL_IMPORT(struct _inittab *) PyImport_Inittab;
 
-extern DL_IMPORT(int) PyImport_AppendInittab(char *name, void (*initfunc)());
+extern DL_IMPORT(int) PyImport_AppendInittab(char *name, void (*initfunc)(void));
 extern DL_IMPORT(int) PyImport_ExtendInittab(struct _inittab *newtab);
 
 struct _frozen {

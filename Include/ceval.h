@@ -27,15 +27,9 @@ DL_IMPORT(PyObject *) PyEval_CallObject(PyObject *, PyObject *);
 #define PyEval_CallObject(func,arg) \
         PyEval_CallObjectWithKeywords(func, arg, (PyObject *)NULL)
 
-#ifdef HAVE_STDARG_PROTOTYPES
 DL_IMPORT(PyObject *) PyEval_CallFunction(PyObject *obj, char *format, ...);
 DL_IMPORT(PyObject *) PyEval_CallMethod(PyObject *obj,
                                         char *methodname, char *format, ...);
-#else
-/* Better to have no prototypes at all for varargs functions in this case */
-DL_IMPORT(PyObject *) PyEval_CallFunction();
-DL_IMPORT(PyObject *) PyEval_CallMethod();
-#endif
 
 DL_IMPORT(PyObject *) PyEval_GetBuiltins(void);
 DL_IMPORT(PyObject *) PyEval_GetGlobals(void);
