@@ -1096,6 +1096,13 @@ considered true.
 \withsubitem{(mapping object method)}{\ttindex{__len__()}}
 \end{methoddesc}
 
+\begin{methoddesc}[object]{__unicode__}{self}
+Called to implement \function{unicode()}\bifuncindex{unicode} builtin;
+should return a Unicode object. When this method is not defined, string
+conversion is attempted, and the result of string conversion is converted
+to Unicode using the system default encoding.
+\end{methoddesc}
+
 
 \subsection{Customizing attribute access\label{attribute-access}}
 
