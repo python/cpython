@@ -716,6 +716,10 @@ sub do_cmd_token{
     return "<a href=\"$target\">$token</a>" . $_;
 }
 
+sub do_cmd_grammartoken{
+    return do_cmd_token(@_);
+}
+
 sub do_env_productionlist{
     local($_) = @_;
     my $lang = next_optional_argument();
