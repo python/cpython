@@ -311,6 +311,62 @@ static PyObject *CtlObj_SetControlVisibility(ControlObject *_self, PyObject *_ar
 	return _res;
 }
 
+#if TARGET_API_MAC_OSX
+
+static PyObject *CtlObj_IsControlEnabled(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+#ifndef IsControlEnabled
+	PyMac_PRECHECK(IsControlEnabled);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsControlEnabled(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_OSX
+
+static PyObject *CtlObj_EnableControl(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+#ifndef EnableControl
+	PyMac_PRECHECK(EnableControl);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = EnableControl(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_OSX
+
+static PyObject *CtlObj_DisableControl(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+#ifndef DisableControl
+	PyMac_PRECHECK(DisableControl);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = DisableControl(_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
 static PyObject *CtlObj_Draw1Control(ControlObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2615,6 +2671,27 @@ static PyObject *CtlObj_SetDataBrowserEditText(ControlObject *_self, PyObject *_
 }
 #endif
 
+#if TARGET_API_MAC_OSX
+
+static PyObject *CtlObj_CopyDataBrowserEditText(ControlObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	CFStringRef text;
+#ifndef CopyDataBrowserEditText
+	PyMac_PRECHECK(CopyDataBrowserEditText);
+#endif
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = CopyDataBrowserEditText(_self->ob_itself,
+	                               &text);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, text);
+	return _res;
+}
+#endif
+
 #if TARGET_API_MAC_CARBON
 
 static PyObject *CtlObj_GetDataBrowserEditText(ControlObject *_self, PyObject *_args)
@@ -3795,6 +3872,21 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> None"},
 	{"SetControlVisibility", (PyCFunction)CtlObj_SetControlVisibility, 1,
 	 "(Boolean inIsVisible, Boolean inDoDraw) -> None"},
+
+#if TARGET_API_MAC_OSX
+	{"IsControlEnabled", (PyCFunction)CtlObj_IsControlEnabled, 1,
+	 "() -> (Boolean _rv)"},
+#endif
+
+#if TARGET_API_MAC_OSX
+	{"EnableControl", (PyCFunction)CtlObj_EnableControl, 1,
+	 "() -> None"},
+#endif
+
+#if TARGET_API_MAC_OSX
+	{"DisableControl", (PyCFunction)CtlObj_DisableControl, 1,
+	 "() -> None"},
+#endif
 	{"Draw1Control", (PyCFunction)CtlObj_Draw1Control, 1,
 	 "() -> None"},
 	{"GetBestControlRect", (PyCFunction)CtlObj_GetBestControlRect, 1,
@@ -4207,6 +4299,11 @@ static PyMethodDef CtlObj_methods[] = {
 #if TARGET_API_MAC_CARBON
 	{"SetDataBrowserEditText", (PyCFunction)CtlObj_SetDataBrowserEditText, 1,
 	 "(CFStringRef text) -> None"},
+#endif
+
+#if TARGET_API_MAC_OSX
+	{"CopyDataBrowserEditText", (PyCFunction)CtlObj_CopyDataBrowserEditText, 1,
+	 "() -> (CFStringRef text)"},
 #endif
 
 #if TARGET_API_MAC_CARBON
@@ -4964,6 +5061,41 @@ static PyObject *Ctl_CreateProgressBarControl(PyObject *_self, PyObject *_args)
 	                                maximum,
 	                                indeterminate,
 	                                &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_OSX
+
+static PyObject *Ctl_CreateRelevanceBarControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	SInt32 value;
+	SInt32 minimum;
+	SInt32 maximum;
+	ControlHandle outControl;
+#ifndef CreateRelevanceBarControl
+	PyMac_PRECHECK(CreateRelevanceBarControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&lll",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      &value,
+	                      &minimum,
+	                      &maximum))
+		return NULL;
+	_err = CreateRelevanceBarControl(window,
+	                                 &boundsRect,
+	                                 value,
+	                                 minimum,
+	                                 maximum,
+	                                 &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     CtlObj_New, outControl);
@@ -5734,6 +5866,70 @@ static PyObject *Ctl_CreateScrollingTextBoxControl(PyObject *_self, PyObject *_a
 }
 #endif
 
+#if TARGET_API_MAC_OSX
+
+static PyObject *Ctl_CreateDisclosureButtonControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	Rect inBoundsRect;
+	SInt32 inValue;
+	Boolean inAutoToggles;
+	ControlHandle outControl;
+#ifndef CreateDisclosureButtonControl
+	PyMac_PRECHECK(CreateDisclosureButtonControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&lb",
+	                      WinObj_Convert, &inWindow,
+	                      PyMac_GetRect, &inBoundsRect,
+	                      &inValue,
+	                      &inAutoToggles))
+		return NULL;
+	_err = CreateDisclosureButtonControl(inWindow,
+	                                     &inBoundsRect,
+	                                     inValue,
+	                                     inAutoToggles,
+	                                     &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_OSX
+
+static PyObject *Ctl_CreateRoundButtonControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr inWindow;
+	Rect inBoundsRect;
+	SInt16 inSize;
+	ControlButtonContentInfo inContent;
+	ControlHandle outControl;
+#ifndef CreateRoundButtonControl
+	PyMac_PRECHECK(CreateRoundButtonControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&hO&",
+	                      WinObj_Convert, &inWindow,
+	                      PyMac_GetRect, &inBoundsRect,
+	                      &inSize,
+	                      ControlButtonContentInfo_Convert, &inContent))
+		return NULL;
+	_err = CreateRoundButtonControl(inWindow,
+	                                &inBoundsRect,
+	                                inSize,
+	                                &inContent,
+	                                &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
 #if TARGET_API_MAC_CARBON
 
 static PyObject *Ctl_CreateDataBrowserControl(PyObject *_self, PyObject *_args)
@@ -5756,6 +5952,41 @@ static PyObject *Ctl_CreateDataBrowserControl(PyObject *_self, PyObject *_args)
 	                                &boundsRect,
 	                                style,
 	                                &outControl);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     CtlObj_New, outControl);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_OSX
+
+static PyObject *Ctl_CreateEditUnicodeTextControl(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	WindowPtr window;
+	Rect boundsRect;
+	CFStringRef text;
+	Boolean isPassword;
+	ControlFontStyleRec style;
+	ControlHandle outControl;
+#ifndef CreateEditUnicodeTextControl
+	PyMac_PRECHECK(CreateEditUnicodeTextControl);
+#endif
+	if (!PyArg_ParseTuple(_args, "O&O&O&bO&",
+	                      WinObj_Convert, &window,
+	                      PyMac_GetRect, &boundsRect,
+	                      CFStringRefObj_Convert, &text,
+	                      &isPassword,
+	                      ControlFontStyle_Convert, &style))
+		return NULL;
+	_err = CreateEditUnicodeTextControl(window,
+	                                    &boundsRect,
+	                                    text,
+	                                    isPassword,
+	                                    &style,
+	                                    &outControl);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     CtlObj_New, outControl);
@@ -5924,6 +6155,11 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, Boolean indeterminate) -> (ControlHandle outControl)"},
 #endif
 
+#if TARGET_API_MAC_OSX
+	{"CreateRelevanceBarControl", (PyCFunction)Ctl_CreateRelevanceBarControl, 1,
+	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum) -> (ControlHandle outControl)"},
+#endif
+
 #if TARGET_API_MAC_CARBON
 	{"CreateLittleArrowsControl", (PyCFunction)Ctl_CreateLittleArrowsControl, 1,
 	 "(WindowPtr window, Rect boundsRect, SInt32 value, SInt32 minimum, SInt32 maximum, SInt32 increment) -> (ControlHandle outControl)"},
@@ -6039,9 +6275,24 @@ static PyMethodDef Ctl_methods[] = {
 	 "(WindowPtr window, Rect boundsRect, SInt16 contentResID, Boolean autoScroll, UInt32 delayBeforeAutoScroll, UInt32 delayBetweenAutoScroll, UInt16 autoScrollAmount) -> (ControlHandle outControl)"},
 #endif
 
+#if TARGET_API_MAC_OSX
+	{"CreateDisclosureButtonControl", (PyCFunction)Ctl_CreateDisclosureButtonControl, 1,
+	 "(WindowPtr inWindow, Rect inBoundsRect, SInt32 inValue, Boolean inAutoToggles) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_OSX
+	{"CreateRoundButtonControl", (PyCFunction)Ctl_CreateRoundButtonControl, 1,
+	 "(WindowPtr inWindow, Rect inBoundsRect, SInt16 inSize, ControlButtonContentInfo inContent) -> (ControlHandle outControl)"},
+#endif
+
 #if TARGET_API_MAC_CARBON
 	{"CreateDataBrowserControl", (PyCFunction)Ctl_CreateDataBrowserControl, 1,
 	 "(WindowPtr window, Rect boundsRect, OSType style) -> (ControlHandle outControl)"},
+#endif
+
+#if TARGET_API_MAC_OSX
+	{"CreateEditUnicodeTextControl", (PyCFunction)Ctl_CreateEditUnicodeTextControl, 1,
+	 "(WindowPtr window, Rect boundsRect, CFStringRef text, Boolean isPassword, ControlFontStyleRec style) -> (ControlHandle outControl)"},
 #endif
 	{"FindControlUnderMouse", (PyCFunction)Ctl_FindControlUnderMouse, 1,
 	 "(Point inWhere, WindowPtr inWindow) -> (ControlHandle _rv, SInt16 outPart)"},

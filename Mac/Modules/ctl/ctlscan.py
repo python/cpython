@@ -88,15 +88,6 @@ class MyScanner(Scanner):
 			'GetControlPropertySize',
 			'SendControlMessage', # Parameter changed from long to void* from UH3.3 to UH3.4
 			'CreateTabsControl',  # wrote manually
-			# these are part of Carbon, yet not in CarbonLib; OSX-only
-			'CreateRoundButtonControl',
-			'CreateDisclosureButtonControl',
-			'CreateRelevanceBarControl',
-			'DisableControl',
-			'EnableControl',
-			'IsControlEnabled',
-			'CreateEditUnicodeTextControl',
-			'CopyDataBrowserEditText',
 			
 			# too lazy for now
 			'GetImageWellContentInfo',
@@ -252,7 +243,18 @@ class MyScanner(Scanner):
 				'SetControlBounds',
 				'SetControlPopupMenuHandle',
 				'SetControlPopupMenuID',
-			])]
+			]),
+			('#if TARGET_API_MAC_OSX', [
+				'CreateRoundButtonControl',
+				'CreateDisclosureButtonControl',
+				'CreateRelevanceBarControl',
+				'DisableControl',
+				'EnableControl',
+				'IsControlEnabled',
+				'CreateEditUnicodeTextControl',
+				'CopyDataBrowserEditText',
+			]),
+			]
 			
 	def makeblacklisttypes(self):
 		return [
