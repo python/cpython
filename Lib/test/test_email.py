@@ -921,9 +921,19 @@ class TestMiscellaneous(unittest.TestCase):
 
     def test_formatdate(self):
         now = 1005327232.109884
+        time0 = time.ctime(0)
+        # When does the epoch start?
+        if time0 == 'Wed Dec 31 19:00:00 1969':
+            # traditional Unix epoch
+            matchdate = 'Fri, 09 Nov 2001 17:33:52 -0000'
+        elif time0 == 'Fri Jan  1 00:00:00 1904':
+            # Mac epoch
+            matchdate = 'Sat, 09 Nov 1935 16:33:52 -0000'
+        else:
+            matchdate = "I don't understand your epoch"
         gdate = Utils.formatdate(now)
         ldate = Utils.formatdate(now, localtime=1)
-        self.assertEqual(gdate, 'Fri, 09 Nov 2001 17:33:52 -0000')
+        self.assertEqual(gdate, matchdate)
         # It's a little tougher to test for localtime, but we'll try.  Skip if
         # we don't have strptime().
         if hasattr(time, 'strptime'):
