@@ -3057,12 +3057,12 @@ return TRUE;
 static int free_stack(match_data *md)
 {
 /* Free any stack space that was allocated by the call to match(). */
-if (md->off_num)    free(md->off_num); 
-if (md->offset_top) free(md->offset_top); 
-if (md->r1)         free(md->r1); 
-if (md->r2)         free(md->r2); 
-if (md->eptr)       free((char *)md->eptr); 
-if (md->ecode)      free((char *)md->ecode);
+if (md->off_num)    PyMem_DEL(md->off_num); 
+if (md->offset_top) PyMem_DEL(md->offset_top); 
+if (md->r1)         PyMem_DEL(md->r1); 
+if (md->r2)         PyMem_DEL(md->r2); 
+if (md->eptr)       PyMem_DEL((char *)md->eptr); 
+if (md->ecode)      PyMem_DEL((char *)md->ecode);
 return 0;
 }
 
