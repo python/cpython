@@ -1426,7 +1426,7 @@ Hint: the freeze program only works if your script's filename ends in
 
 A. See the chapter titled "Internet and WWW" in the Library Reference
 Manual.  There's also a web browser written in Python, called Grail --
-see <URL:http://monty.cnri.reston.va.us/grail/>.
+see <URL:http://grail.cnri.reston.va.us/grail/>.
 
 Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
 called Dancer.  An alpha version can be FTP'ed from
