@@ -421,6 +421,13 @@ Sets the virtual screen cursor to \var{y}, \var{x}.
 If \var{y} and \var{x} are both -1, then leaveok is set.  
 \end{funcdesc}
 
+\begin{funcdesc}{setupterm}{\optional{termstr, fd}}
+Initializes the terminal.  \var{termstr} is a string giving the
+terminal name; if omitted, the value of the TERM environment variable
+will be used.  \var{fd} is the file descriptor to which any initialization sequences will be sent; if not supplied, the file descriptor for 
+\code{sys.stdout} will be used.
+\end{funcdesc}
+
 \begin{funcdesc}{start_color}{}
 Must be called if the programmer wants to use colors, and before any
 other color manipulation routine is called.  It is good
