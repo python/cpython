@@ -309,7 +309,7 @@ class ConfigParser:
     def getboolean(self, section, option):
         states = {'1': 1, 'yes': 1, 'true': 1, 'on': 1,
                   '0': 0, 'no': 0, 'false': 0, 'off': 0}
-        v = self.get(section, option)       
+        v = self.get(section, option)
         if not states.has_key(v.lower()):
             raise ValueError, 'Not a boolean: %s' % v
         return states[v.lower()]

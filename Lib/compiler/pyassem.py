@@ -55,7 +55,7 @@ class FlowGraph:
         # these edges to get the blocks emitted in the right order,
         # however. :-(  If a client needs to remove these edges, call
         # pruneEdges().
-        
+
         self.current.addNext(block)
         self.startBlock(block)
 
@@ -110,13 +110,13 @@ class FlowGraph:
 
         # XXX This is a total mess.  There must be a better way to get
         # the code blocks in the right order.
-        
+
         self.fixupOrderHonorNext(blocks, default_next)
         self.fixupOrderForward(blocks, default_next)
 
     def fixupOrderHonorNext(self, blocks, default_next):
         """Fix one problem with DFS.
-        
+
         The DFS uses child block, but doesn't know about the special
         "next" block.  As a result, the DFS can order blocks so that a
         block isn't next to the right block for implicit control
@@ -200,14 +200,14 @@ class FlowGraph:
         for c in chains:
             for b in c:
                 blocks.append(b)
-            
+
     def getBlocks(self):
         return self.blocks.elements()
 
     def getRoot(self):
         """Return nodes appropriate for use with dominator"""
         return self.entry
-    
+
     def getContainedGraphs(self):
         l = []
         for b in self.getBlocks():
@@ -246,7 +246,7 @@ class Block:
     def __str__(self):
         insts = map(str, self.insts)
         return "<block %s %d:\n%s>" % (self.label, self.bid,
-                                       string.join(insts, '\n')) 
+                                       string.join(insts, '\n'))
 
     def emit(self, inst):
         op = inst[0]
@@ -331,7 +331,7 @@ class PyFlowGraph(FlowGraph):
         self.argcount = getArgCount(args)
         self.klass = klass
         if optimized:
-            self.flags = CO_OPTIMIZED | CO_NEWLOCALS 
+            self.flags = CO_OPTIMIZED | CO_NEWLOCALS
         else:
             self.flags = 0
         self.consts = []
@@ -567,7 +567,7 @@ class PyFlowGraph(FlowGraph):
     for name, obj in locals().items():
         if name[:9] == "_convert_":
             opname = name[9:]
-            _converters[opname] = obj            
+            _converters[opname] = obj
     del name, obj, opname
 
     def makeByteCode(self):
@@ -623,7 +623,7 @@ class PyFlowGraph(FlowGraph):
                 elt = elt.getCode()
             l.append(elt)
         return tuple(l)
-            
+
 def isJump(opname):
     if opname[:4] == 'JUMP':
         return 1
@@ -654,7 +654,7 @@ def twobyte(val):
 
 class LineAddrTable:
     """lnotab
-    
+
     This class builds the lnotab, which is documented in compile.c.
     Here's a brief recap:
 
@@ -717,7 +717,7 @@ class LineAddrTable:
 
     def getTable(self):
         return string.join(map(chr, self.lnotab), '')
-    
+
 class StackDepthTracker:
     # XXX 1. need to keep track of stack depth on jumps
     # XXX 2. at least partly as a result, this code is broken
@@ -792,7 +792,7 @@ class StackDepthTracker:
         ('BINARY_', -1),
         ('LOAD_', 1),
         ]
-    
+
     def UNPACK_SEQUENCE(self, count):
         return count-1
     def BUILD_TUPLE(self, count):
@@ -820,5 +820,5 @@ class StackDepthTracker:
             return -2
     def DUP_TOPX(self, argc):
         return argc
-    
+
 findDepth = StackDepthTracker().findDepth

@@ -15,7 +15,7 @@ walk(ast, visitor, verbose=None)
     See compiler.visitor for details.
 
 compile(source, filename, mode, flags=None, dont_inherit=None)
-    Returns a code object.  A replacement for the builtin compile() function. 
+    Returns a code object.  A replacement for the builtin compile() function.
 
 compileFile(filename)
     Generates a .pyc file by compiling filename.
@@ -24,4 +24,3 @@ compileFile(filename)
 from transformer import parse, parseFile
 from visitor import walk
 from pycodegen import compile, compileFile
-

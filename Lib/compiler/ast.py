@@ -438,7 +438,7 @@ class Function(Node):
             self.varargs = 1
         if flags & CO_VARKEYWORDS:
             self.kwargs = 1
-    
+
 
 
     def getChildren(self):

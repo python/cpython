@@ -68,7 +68,7 @@ class StatAttributeTests(unittest.TestCase):
         f = open(self.fname, 'wb')
         f.write("ABC")
         f.close()
-        
+
     def tearDown(self):
         os.unlink(self.fname)
         os.rmdir(TESTFN)
@@ -133,7 +133,7 @@ class StatAttributeTests(unittest.TestCase):
         except TypeError:
             pass
 
-            
+
     def test_statvfs_attributes(self):
         if not hasattr(os, "statvfs"):
             return

@@ -4,7 +4,7 @@ from pickletester import AbstractPickleTests, AbstractPickleModuleTests
 from test_support import run_unittest
 
 class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
-    
+
     def setUp(self):
         self.dumps = cPickle.dumps
         self.loads = cPickle.loads

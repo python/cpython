@@ -25,6 +25,3 @@ socket.RAND_add("this is a random string", 75.0)
 f = urllib.urlopen('https://sf.net')
 buf = f.read()
 f.close()
-
-
-

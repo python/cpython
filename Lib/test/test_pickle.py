@@ -8,7 +8,7 @@ class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
     def setUp(self):
         self.dumps = pickle.dumps
         self.loads = pickle.loads
-        
+
     module = pickle
     error = KeyError
 

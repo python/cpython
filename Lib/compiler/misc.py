@@ -72,4 +72,3 @@ def set_filename(filename, tree):
         node = worklist.pop(0)
         node.filename = filename
         worklist.extend(node.getChildNodes())
-        
