@@ -57,9 +57,24 @@ appropriate method on the \var{visitor} instance for each node
 encountered.
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{path}
-Compile the file \var{path} and generate the corresponding \file{.pyc}
-file.
+\begin{funcdesc}{compile}{source, filename, mode, flags=None, 
+			dont_inherit=None}
+Compile the string \var{source}, a Python module, statement or
+expression, into a code object that can be executed by the exec
+statement or \function{eval()}. This function is a replacement for the
+built-in \function{compile()} function.
+
+The \var{filename} will be used for run-time error messages.
+
+The \var{mode} must be 'exec' to compile a module, 'single' to compile a
+single (interactive) statement, or 'eval' to compile an expression.
+
+The \var{flags} and \var{dont_inherit} arguments affect future-related
+statements, but are not supported yet.
+\end{funcdesc}
+
+\begin{funcdesc}{compileFile}{source}
+Compiles the file \var{source} and generates a .pyc file.
 \end{funcdesc}
 
 The \module{compiler} package contains the following modules:
