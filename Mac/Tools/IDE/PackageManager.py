@@ -230,7 +230,9 @@ class PimpInterface:
 		try:
 			self.pimpdb.appendURL(url)
 		except IOError, arg:
-			return "Cannot open %s: %s" % (url, arg)
+			rv = "Cannot open %s: %s\n" % (url, arg)
+			rv += "\nSee MacPython Package Manager help page."
+			return rv
 		# Check whether we can write the installation directory.
 		# If not, set to the per-user directory, possibly
 		# creating it, if needed.
