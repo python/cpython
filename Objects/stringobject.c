@@ -19,19 +19,27 @@ static PyStringObject *nullstring;
 #endif
 
 /*
-   Newsizedstringobject() and newstringobject() try in certain cases
-   to share string objects.  When the size of the string is zero,
-   these routines always return a pointer to the same string object;
-   when the size is one, they return a pointer to an already existing
-   object if the contents of the string is known.  For
-   newstringobject() this is always the case, for
-   newsizedstringobject() this is the case when the first argument in
-   not NULL.
-   A common practice to allocate a string and then fill it in or
-   change it must be done carefully.  It is only allowed to change the
-   contents of the string if the obect was gotten from
-   newsizedstringobject() with a NULL first argument, because in the
-   future these routines may try to do even more sharing of objects.
+   PyString_FromStringAndSize() and PyString_FromString() try in certain cases
+   to share string objects.  When the size of the string is zero, these 
+   routines always return a pointer to the same string object; when the size 
+   is one, they return a pointer to an already existing object if the contents
+   of the string is known.  For PyString_FromString() this is always the case,
+   for PyString_FromStringAndSize() this is the case when the first argument 
+   in not NULL.
+
+   A common practice of allocating a string and then filling it in or changing
+   it must be done carefully.  It is only allowed to change the contents of 
+   the string if the object was gotten from PyString_FromStringAndSize() with 
+   a NULL first argument, because in the future these routines may try to do 
+   even more sharing of objects.
+
+   The parameter `size' denotes number of characters to allocate, not counting 
+   the null terminating character.  If the `str' argument is not NULL, then it 
+   must point to a null-terminated string of length `size'.
+
+   The member `op->ob_size' denotes the number of bytes of data in the string, 
+   not counting the null terminating character, and is therefore equal to the 
+   `size' parameter.
 */
 PyObject *
 PyString_FromStringAndSize(const char *str, int size)
