@@ -373,6 +373,7 @@ cat >> confdefs.h <<\EOF
 #endif
 EOF
 
+# Type availability checks
 AC_TYPE_MODE_T
 AC_TYPE_OFF_T
 AC_TYPE_PID_T
@@ -380,9 +381,14 @@ AC_TYPE_SIGNAL
 AC_TYPE_SIZE_T
 AC_TYPE_UID_T
 
+# Sizes of various common basic types
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(void *)
+AC_CHECK_SIZEOF(char)
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(float)
+AC_CHECK_SIZEOF(double)
 
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
@@ -791,8 +797,8 @@ AC_MSG_RESULT($was_it_defined)
 # checks for compiler characteristics
 
 AC_C_CHAR_UNSIGNED
-
 AC_C_CONST
+AC_C_INLINE
 
 works=no
 AC_MSG_CHECKING(for working volatile)
@@ -942,7 +948,8 @@ AC_ARG_WITH(fpectl, [--with-fpectl             enable SIGFPE catching], [
 if test "$withval" != no
 then AC_DEFINE(WANT_SIGFPE_HANDLER) AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
-fi])
+fi],
+[AC_MSG_RESULT(no)])
 
 # check for --with-libm=...
 AC_SUBST(LIBM)
@@ -1024,6 +1031,43 @@ if test "$ac_cv_malloc_zero" = null
 then
   AC_DEFINE(MALLOC_ZERO_RETURNS_NULL)
 fi
+
+# check for wchar.h
+AC_CHECK_HEADER(wchar.h,
+AC_DEFINE(HAVE_WCHAR_H) wchar_h="yes",
+wchar_h="no"
+)
+
+# check for usable wchar_t
+usable_wchar_t="unkown"
+AC_MSG_CHECKING(for usable wchar_t)
+AC_TRY_RUN([
+#include "wchar.h"
+#include "wctype.h"
+main() {
+ wchar_t s;
+ if (sizeof(s) == 2)
+  exit(0);
+ else
+  exit(1);
+}
+], 
+AC_DEFINE(HAVE_USABLE_WCHAR_T) usable_wchar_t="yes",
+usable_wchar_t="no")
+AC_MSG_RESULT($usable_wchar_t)
+
+# check for endianness
+AC_C_BIGENDIAN
+
+# Check for --with-wctype-functions
+AC_MSG_CHECKING(for --with-wctype-functions)
+AC_ARG_WITH(wctype-functions, 
+[--with-wctype-functions   use wctype.h functions], [
+if test "$withval" != no
+then AC_DEFINE(WANT_WCTYPE_FUNCTIONS) AC_MSG_RESULT(yes)
+else AC_MSG_RESULT(no)
+fi],
+[AC_MSG_RESULT(no)])
 
 # generate output files
 AC_OUTPUT(Makefile \

@@ -100,6 +100,18 @@
 /* Define if you want SIGFPE handled (see Include/pyfpe.h). */
 #undef WANT_SIGFPE_HANDLER
 
+/* Define if the compiler provides a wchar.h header file. */
+#undef HAVE_WCHAR_H
+
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+   means wchar_t must be 16-bit unsigned type. (see
+   Include/unicodeobject.h). */
+#undef HAVE_USABLE_WCHAR_T
+
+/* Define if you want wctype.h functions to be used instead of the
+   one supplied by Python itself. (see Include/unicodectype.h). */
+#undef WANT_WCTYPE_FUNCTIONS
+
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
    ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
