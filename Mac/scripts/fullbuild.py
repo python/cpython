@@ -76,9 +76,9 @@ def buildapplet(top, dummy, list):
 # XXXX We could also include the builds for stdwin and such here...
 PPC_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
-		":build.macppc.shared:PythonCore.µ",
+		":build.macppc.shared:PythonCorePPC.µ",
 		":build.macppc.shared:PythonPPC.µ",
-		":build.macppc.shared:PythonApplet.µ",
+		":build.macppc.shared:PythonAppletPPC.µ",
 	])
 ]
 CFM68K_INSTRUCTIONS=[
@@ -88,27 +88,41 @@ CFM68K_INSTRUCTIONS=[
 		":build.mac68k.shared:PythonAppletCFM68K.µ",
 	])
 ]
+FAT_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
+		":build.macppc.shared:Python.µ",
+		":build.macppc.shared:PythonApplet.µ",
+	])
+]
 PLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
-		":PlugIns:ctbmodule.ppc.µ",
+		":PlugIns:ctb.ppc.µ",
 		":PlugIns:imgmodules.ppc.µ",
-		":PlugIns:macspeechmodule.ppc.µ",
+		":PlugIns:macspeech.ppc.µ",
 		":PlugIns:toolboxmodules.ppc.µ",
-		":PlugIns:wastemodule.ppc.µ",
-		":PlugIns:_tkintermodule.ppc.µ",
+		":PlugIns:qtmodules.ppc.µ",
+		":PlugIns:waste.ppc.µ",
+		":PlugIns:_tkinter.ppc.µ",
 	])
 ]
 CFM68KPLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
-		":PlugIns:ctbmodule.CFM68K.µ",
+		":PlugIns:ctb.CFM68K.µ",
+		":PlugIns:imgmodules.ppc.µ",
 		":PlugIns:toolboxmodules.CFM68K.µ",
-		":PlugIns:wastemodule.CFM68K.µ",
-		":PlugIns:_tkintermodule.CFM68K.µ",
+		":PlugIns:qtmodules.CFM68K.µ",
+		":PlugIns:waste.CFM68K.µ",
+		":PlugIns:_tkinter.CFM68K.µ",
 	])
 ]
 M68K_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":build.mac68k.stand:Python68K.µ",
+	])
+]
+PPCSTAND_INSTRUCTIONS=[
+	(buildmwproject, "CWIE", [
+		":build.macppc.stand:PythonStandalone.µ",
 	])
 ]
 APPLET_INSTRUCTIONS=[
@@ -124,7 +138,10 @@ ALLINST=[
 	("PPC shared executable", PPC_INSTRUCTIONS),
 	("PPC plugin modules", PLUGIN_INSTRUCTIONS),
 	("CFM68K shared executable", CFM68K_INSTRUCTIONS),
+	("CFM68K plugin modules", CFM68KPLUGIN_INSTRUCTIONS),
+	("FAT shared executables", FAT_INSTRUCTIONS),
 	("68K standalone executable", M68K_INSTRUCTIONS),
+	("PPC standalone executable", PPCSTAND_INSTRUCTIONS),
 	("Applets", APPLET_INSTRUCTIONS)
 ]
 				
