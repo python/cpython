@@ -1458,13 +1458,13 @@ PyImport_ImportFrozenModule(char *name)
 PyObject *
 PyImport_ImportModule(char *name)
 {
-	static PyObject *fromlist = NULL;
-	if (fromlist == NULL && strchr(name, '.') != NULL) {
-		fromlist = Py_BuildValue("(s)", "*");
-		if (fromlist == NULL)
-			return NULL;
-	}
-	return PyImport_ImportModuleEx(name, NULL, NULL, fromlist);
+	PyObject *pname;
+	PyObject *result;
+
+	pname = PyString_FromString(name);
+	result = PyImport_Import(pname);
+	Py_DECREF(pname);
+	return result;
 }
 
 /* Forward declarations for helper routines */
@@ -1906,7 +1906,8 @@ PyImport_Import(PyObject *module_name)
 
 		if (standard_builtins == NULL) {
 			standard_builtins =
-				PyImport_ImportModule("__builtin__");
+				PyImport_ImportModuleEx("__builtin__",
+							NULL, NULL, NULL);
 			if (standard_builtins == NULL)
 				return NULL;
 		}
