@@ -28,7 +28,6 @@ Notes:
   bytes that occupy space in the buffer.
 - There's a simple test set (see end of this file).
 """
-import types
 try:
     from errno import EINVAL
 except ImportError:
@@ -50,7 +49,7 @@ class StringIO:
     """
     def __init__(self, buf = ''):
         # Force self.buf to be a string or unicode
-        if not isinstance(buf, types.StringTypes):
+        if not isinstance(buf, basestring):
             buf = str(buf)
         self.buf = buf
         self.len = len(buf)
@@ -151,7 +150,7 @@ class StringIO:
             raise ValueError, "I/O operation on closed file"
         if not s: return
         # Force s to be a string or unicode
-        if not isinstance(s, types.StringTypes):
+        if not isinstance(s, basestring):
             s = str(s)
         if self.pos > self.len:
             self.buflist.append('\0'*(self.pos - self.len))

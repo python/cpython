@@ -5,9 +5,9 @@ completes keywords, built-ins and globals in a selectable namespace (which
 defaults to __main__); when completing NAME.NAME..., it evaluates (!) the
 expression up to the last dot and completes its attributes.
 
-It's very cool to do "import string" type "string.", hit the
+It's very cool to do "import sys" type "sys.", hit the
 completion key (twice), and see the list of names defined by the
-string module!
+sys module!
 
 Tip: to use the tab key as the completion key, call
 

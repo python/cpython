@@ -3,8 +3,6 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import string
-
 def _strxor(s1, s2):
     """Utility method. XOR the two strings s1 and s2 (must have same length).
     """
@@ -82,7 +80,7 @@ class HMAC:
     def hexdigest(self):
         """Like digest(), but returns a string of hexadecimal digits instead.
         """
-        return "".join([string.zfill(hex(ord(x))[2:], 2)
+        return "".join([hex(ord(x))[2:].zfill(2)
                         for x in tuple(self.digest())])
 
 def new(key, msg = None, digestmod = None):

@@ -44,7 +44,6 @@ Example:
 import socket
 import re
 import rfc822
-import types
 import base64
 import hmac
 
@@ -651,7 +650,7 @@ class SMTP:
             self.rset()
             raise SMTPSenderRefused(code, resp, from_addr)
         senderrs={}
-        if isinstance(to_addrs, types.StringTypes):
+        if isinstance(to_addrs, basestring):
             to_addrs = [to_addrs]
         for each in to_addrs:
             (code,resp)=self.rcpt(each, rcpt_options)
