@@ -709,11 +709,6 @@ find_module(name, path, buf, buflen, p_fp)
 #endif
 		    )
 			buf[len++] = SEP;
-#ifdef macintosh
-		fdp = PyMac_FindModuleExtension(buf, &len, name);
-		if ( fdp )
-			fp = fopen(buf, fdp->mode);
-#else
 #ifdef IMPORT_8x3_NAMES
 		/* see if we are searching in directory dos_8x3 */
 		if (len > 7 && !strncmp(buf + len - 8, "dos_8x3", 7)){
@@ -740,6 +735,11 @@ find_module(name, path, buf, buflen, p_fp)
 #else
 		/* XXX How are you going to test for directories? */
 #endif
+#ifdef macintosh
+		fdp = PyMac_FindModuleExtension(buf, &len, name);
+		if (fdp)
+			fp = fopen(buf, fdp->mode);
+#else
 		for (fdp = _PyImport_Filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
 			if (Py_VerboseFlag > 1)
