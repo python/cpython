@@ -976,11 +976,14 @@ Introduction to Unicode (a little outdated by still nice to read):
         http://www.nada.kth.se/i18n/ucs/unicode-iso10646-oview.html
 
 For comparison:
-	Introducing Unicode to ECMAScript --
+	Introducing Unicode to ECMAScript (aka JavaScript) --
 	http://www-4.ibm.com/software/developer/library/internationalization-support.html
 
 IANA Character Set Names:
 	ftp://ftp.isi.edu/in-notes/iana/assignments/character-sets
+
+Discussion of UTF-8 and Unicode support for POSIX and Linux:
+	http://www.cl.cam.ac.uk/~mgk25/unicode.html
 
 Encodings:
 
