@@ -80,10 +80,10 @@ Test Succeeded testParseAttributeNamespaces
 Test Succeeded testParseAttributes
 Test Succeeded testParseElement
 Test Succeeded testParseElementNamespaces
-<xml.dom.minidom.Document instance at 0xa104c8c>
+Passed Test
 Test Succeeded testParseFromFile
 Garbage left over:
-[('168820100<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}"), ('168926628<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168722260<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168655020<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168650868<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168663308<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168846892<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('169039972<class xml.dom.minidom.Text at 0xa0ccfac>', "{'childNodes': []}"), ('168666508<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}"), ('168730780<class xml.dom.minidom.Element at 0xa0cc58c>', "{'childNodes': []}")]
+258
 Test Succeeded testParseProcessingInstructions
 Test Succeeded testParseString
 Test Succeeded testProcessingInstruction

@@ -5,6 +5,7 @@ from xml.dom.minidom import parse, Node, Document, parseString
 import os.path
 import sys
 import traceback
+from test_support import verbose
 
 if __name__ == "__main__":
     base = sys.argv[0]
@@ -25,7 +26,7 @@ Node._debug=1
 def testParseFromFile():
     from StringIO import StringIO
     dom=parse( StringIO( open( tstfile ).read() ) )
-    print dom
+    confirm(isinstance(dom,Document))
 
 def testGetElementsByTagName( ):
     dom=parse( tstfile )
@@ -335,7 +336,12 @@ for name in names:
             print "Test Succeeded", name
             if len( Node.allnodes ):
                 print "Garbage left over:"
-                print Node.allnodes.items()[0:10]
+                if verbose:
+                    print Node.allnodes.items()[0:10]
+                else:
+                    # Don't print specific nodes if repeatable results
+                    # are needed
+                    print len(Node.allnodes)
             Node.allnodes={}
         except Exception, e :
             works=0
