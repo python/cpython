@@ -60,8 +60,8 @@ class ColorDelegator(Delegator):
         "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
         "STRING": idleConf.GetHighlight(theme, "string"),
         "DEFINITION": idleConf.GetHighlight(theme, "definition"),
-        "SYNC": idleConf.GetHighlight(theme, "sync"),
-        "TODO": idleConf.GetHighlight(theme, "todo"),
+        "SYNC": {'background':None,'foreground':None},
+        "TODO": {'background':None,'foreground':None},
         "BREAK": idleConf.GetHighlight(theme, "break"),
         # The following is used by ReplaceDialog:
         "hit": idleConf.GetHighlight(theme, "hit"),

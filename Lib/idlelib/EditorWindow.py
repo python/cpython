@@ -206,7 +206,6 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
-        
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
