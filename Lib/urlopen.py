@@ -303,6 +303,28 @@ class addinfo(addbase):
 		return self.headers
 
 
+# Utility to combine a URL with a base URL to form a new URL
+
+def basejoin(base, url):
+	type, path = splittype(url)
+	if type: return url
+	host, path = splithost(path)
+	basetype, basepath = splittype(base)
+	basehost, basepath = splithost(basepath)
+	basepath, basetag = splittag(basepath)
+	basepath, basequery = splitquery(basepath)
+	type = basetype or 'file'
+	if path[:1] != '/':
+		import string
+		i = string.rfind(basepath, '/')
+		if i < 0: basepath = '/'
+		else: basepath = basepath[:i+1]
+		path = basepath + path
+	if not host: host = basehost
+	if host: return type + '://' + host + path
+	else: return type + ':' + path
+
+
 # Utilities to parse URLs:
 # unwrap('<URL:type//host/path>') --> 'type//host/path'
 # splittype('type:opaquestring') --> 'type', 'opaquestring'
