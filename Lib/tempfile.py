@@ -50,12 +50,9 @@ except (ImportError, AttributeError):
 
 try:
     import thread as _thread
-    _allocate_lock = _thread.allocate_lock
-except (ImportError, AttributeError):
-    class _allocate_lock:
-        def acquire(self):
-            pass
-        release = acquire
+except ImportError:
+    import dummy_thread as _thread
+_allocate_lock = _thread.allocate_lock
 
 _text_openflags = _os.O_RDWR | _os.O_CREAT | _os.O_EXCL
 if hasattr(_os, 'O_NOINHERIT'):

@@ -16,7 +16,10 @@ class Queue:
 
         If maxsize is <= 0, the queue size is infinite.
         """
-        import thread
+        try:
+            import thread
+        except ImportError:
+            import dummy_thread as thread
         self._init(maxsize)
         self.mutex = thread.allocate_lock()
         self.esema = thread.allocate_lock()
