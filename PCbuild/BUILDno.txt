@@ -27,12 +27,14 @@ How to change the Windows build number:
 + Click OK.
 + This is not enough to convince MSDev to recompile getbuildinfo.c,
   so force that and relink.
-+ Verify that the new build number shows up in both release and debug 
++ Verify that the new build number shows up in both release and debug
   builds.
 
 
 Windows Python BUILD numbers
 ----------------------------
+   8    2.0 (final)
+        14-Oct-2000
    7    2.0c1
         07-Oct-2000
    6    2.0b2

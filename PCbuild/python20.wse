@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 2.0 Release Candidate 1
+  Title=Python 2.0
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -64,7 +64,7 @@ item: End Block
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 2.0 Release Candidate 1
+  Value=Python 2.0
 end
 item: Set Variable
   Variable=GROUP
@@ -510,7 +510,7 @@ item: Custom Dialog Set
       Flags=0000000000000001
       Name=Times New Roman
       Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
-      Text=Select ProgMan Group
+      Text=Select Start Menu Group
       Text French=Sélectionner le groupe du Gestionnaire de programme 
       Text German=Bestimmung der Programm-Managergruppe
       Text Spanish=Seleccione grupo del Administrador de programas
@@ -519,7 +519,7 @@ item: Custom Dialog Set
     item: Static
       Rectangle=86 44 256 68
       Create Flags=01010000000000000000000000000000
-      Text=Enter the name of the Program Manager group to add %APPTITLE% icons to:
+      Text=Enter the name of the Start Menu program group to which to add the %APPTITLE% icons:
       Text French=Entrez le nom du groupe du Gestionnaire de programme dans lequel vous souhaitez ajouter les icônes de %APPTITLE% :
       Text German=Geben Sie den Namen der Programmgruppe ein, der das Symbol %APPTITLE% hinzugefügt werden soll:
       Text Spanish=Escriba el nombre del grupo del Administrador de programas en el que desea agregar los iconos de %APPTITLE%:
@@ -605,7 +605,7 @@ item: Custom Dialog Set
       Create Flags=01010000000000000000000000000000
       Text=You are now ready to install %APPTITLE%.
       Text=
-      Text=Press the Next button to begin the installation or the Back button to reenter the installation information.
+      Text=Click the Next button to begin the installation, or the Back button to change choices made previously.
       Text French=Vous êtes maintenant prêt à installer les fichiers %APPTITLE%.
       Text French=
       Text French=Cliquez sur le bouton Suite pour commencer l'installation ou sur le bouton Retour pour entrer les informations d'installation à nouveau.
@@ -1072,11 +1072,13 @@ end
 item: Install File
   Source=%_SRC_%\Lib\test\*.xml
   Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\test\*.out
   Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
   Flags=0000000000000010
 end
 item: Install File
@@ -1350,11 +1352,13 @@ end
 item: Install File
   Source=%_SRC_%\..\tcl\bin\tk8%_TCLMINOR_%.dll
   Destination=%MAINDIR%\DLLs\tk8%_TCLMINOR_%.dll
+  Description=Tcl/Tk binaries and libraries
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\..\tcl\lib\*.*
   Destination=%MAINDIR%\tcl
+  Description=Tcl/Tk binaries and libraries
   Flags=0000000100000010
 end
 item: End Block
