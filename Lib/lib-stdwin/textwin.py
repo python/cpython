@@ -3,10 +3,8 @@
 # Text windows, a subclass of gwin
 
 import stdwin
-import stdwinsupport
 import gwin
-
-S = stdwinsupport			# Shorthand
+from stdwinevents import *
 
 
 def fixsize(w):
@@ -68,7 +66,7 @@ def char(w, c):				# Char method
 	fixsize(w)
 
 def backspace(w):			# Backspace method
-	void = w.text.event(S.we_command, w, S.wc_backspace)
+	void = w.text.event(WE_COMMAND, w, WC_BACKSPACE)
 	fixsize(w)
 
 def arrow(w, detail):			# Arrow method
@@ -76,14 +74,14 @@ def arrow(w, detail):			# Arrow method
 	fixeditmenu(w)
 
 def mdown(w, detail):			# Mouse down method
-	void = w.text.event(S.we_mouse_down, w, detail)
+	void = w.text.event(WE_MOUSE_DOWN, w, detail)
 	fixeditmenu(w)
 
 def mmove(w, detail):			# Mouse move method
-	void = w.text.event(S.we_mouse_move, w, detail)
+	void = w.text.event(WE_MOUSE_MOVE, w, detail)
 
 def mup(w, detail):			# Mouse up method
-	void = w.text.event(S.we_mouse_up, w, detail)
+	void = w.text.event(WE_MOUSE_UP, w, detail)
 	fixeditmenu(w)
 
 def activate(w):			# Activate method
