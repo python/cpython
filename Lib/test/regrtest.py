@@ -338,8 +338,6 @@ STDTESTS = [
 
 NOTTESTS = [
     'test_support',
-    'test_b1',
-    'test_b2',
     'test_future1',
     'test_future2',
     'test_future3',
