@@ -48,22 +48,50 @@ All test methods in the Python regression framework have names that
 start with "test_" and use lower-case names with words separated with
 underscores.
 
+Test methods should *not* have docstrings!  The unittest module prints
+the docstring if there is one, but otherwise prints the function name
+and the full class name.  When there's a problem with a test, the
+latter information makes it easier to find the source for the test
+than the docstring.
+
 All PyUnit-based tests in the Python test suite use boilerplate that
-looks like this:
+looks like this (with minor variations):
 
     import unittest
     from test import test_support
 
     class MyTestCase1(unittest.TestCase):
-        # define test methods here...
+
+        # Define setUp and tearDown only if needed
+
+        def setUp(self):
+            unittest.TestCase.setUp(self)
+            ... additional initialization...
+
+        def tearDown(self):
+            ... additional finalization...
+            unittest.TestCase.tearDown(self)
+
+        def test_feature_one(self):
+            # Testing feature one
+            ...unit test for feature one...
+
+        def test_feature_two(self):
+            # Testing feature two
+            ...unit test for feature two...
+
+        ...etc...
 
     class MyTestCase2(unittest.TestCase):
-        # define more test methods here...
+        ...same structure as MyTestCase1...
+
+    ...etc...
 
     def test_main():
-	suite = unittest.TestSuite()
-	suite.addTest(unittest.makeSuite(MyTestCase1))
-	suite.addTest(unittest.makeSuite(MyTestCase2))
+        suite = unittest.TestSuite()
+        suite.addTest(unittest.makeSuite(MyTestCase1))
+        suite.addTest(unittest.makeSuite(MyTestCase2))
+        ...add more suites...
         test_support.run_suite(suite)
 
     if __name__ == "__main__":
