@@ -1,6 +1,6 @@
-"""distutils.command.build_lib
+"""distutils.command.build_clib
 
-Implements the Distutils 'build_lib' command, to build a C/C++ library
+Implements the Distutils 'build_clib' command, to build a C/C++ library
 that is included in the module distribution and needed by an extension
 module."""
 
@@ -26,7 +26,7 @@ from distutils.errors import *
 from distutils.ccompiler import new_compiler
 
 
-class build_lib (Command):
+class build_clib (Command):
 
     description = "build C/C++ libraries used by Python extensions"
 

@@ -87,7 +87,7 @@ class build (Command):
         # be needed by extension modules, so obviously have to be done
         # first!
         if self.distribution.libraries:
-            self.run_peer ('build_lib')
+            self.run_peer ('build_clib')
 
         # And now 'build_ext' -- compile extension modules and put them
         # into the build tree
