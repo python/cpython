@@ -76,9 +76,7 @@ class TestBasicOps(unittest.TestCase):
 
     def test_pickling(self):
         p = pickle.dumps(self.set)
-        print repr(p)
         copy = pickle.loads(p)
-        repr(copy)
         self.assertEqual(self.set, copy,
                          "%s != %s" % (self.set, copy))
 
