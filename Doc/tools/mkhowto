@@ -109,6 +109,28 @@ class Options:
     up_link = None
     up_title = None
     #
+    # 'dvips_safe' is a weird option.  It is used mostly to make
+    # LaTeX2HTML not try to be too smart about protecting the user
+    # from a bad version of dvips -- some versions would core dump if
+    # the path to the source DVI contained a dot, and it's appearantly
+    # difficult to determine if the version available has that bug.
+    # This option gets set when PostScript output is requested
+    # (because we're going to run dvips regardless, and we'll either
+    # know it succeeds before LaTeX2HTML is run, or we'll have
+    # detected the failure and bailed), or the user asserts that it's
+    # safe from the command line.
+    #
+    # So, why does LaTeX2HTML think it appropriate to protect the user
+    # from a dvips that's only potentially going to core dump?  Only
+    # because they want to avoid doing a lot of work just to have to
+    # bail later with no useful intermediates.  Unfortunately, they
+    # bail *before* they know whether dvips will be needed at all.
+    # I've gone around the bush a few times with the LaTeX2HTML
+    # developers over whether this is appropriate behavior, and they
+    # don't seem interested in changing their position.
+    #
+    dvips_safe = 0
+    #
     DEFAULT_FORMATS = ("html",)
     ALL_FORMATS = ("dvi", "html", "pdf", "ps", "text")
 
@@ -131,11 +153,12 @@ class Options:
                                     "keep", "quiet", "runs=", "image-type=",
                                     "about=", "numeric", "style=", "paper=",
                                     "up-link=", "up-title=", "dir=",
-                                    "global-module-index="]
+                                    "global-module-index=", "dvips-safe"]
                                    + list(self.ALL_FORMATS))
         for opt, arg in opts:
             if opt == "--all":
                 self.formats = list(self.ALL_FORMATS)
+                self.dvips_safe = "ps" in self.formats
             elif opt in ("-H", "--help"):
                 usage(self)
                 sys.exit()
@@ -185,6 +208,8 @@ class Options:
                 self.builddir = arg
             elif opt == "--paper":
                 self.paper = arg
+            elif opt == "--dvips-safe":
+                self.dvips_safe = 1
             #
             # Format specifiers:
             #
@@ -202,6 +227,9 @@ class Options:
     def add_format(self, format):
         """Add a format to the formats list if not present."""
         if not format in self.formats:
+            if format == "ps":
+                # assume this is safe since we're going to run it anyway
+                self.dvips_safe = 1
             self.formats.append(format)
 
     def initialize(self):
@@ -451,6 +479,7 @@ class Job:
         l2hoption(fp, "EXTERNAL_UP_LINK", options.up_link)
         l2hoption(fp, "EXTERNAL_UP_TITLE", options.up_title)
         l2hoption(fp, "GLOBAL_MODULE_INDEX", options.global_module_index)
+        l2hoption(fp, "DVIPS_SAFE", options.dvips_safe)
         fp.write("1;\n")
         fp.close()
 
