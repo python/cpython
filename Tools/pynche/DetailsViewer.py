@@ -54,7 +54,6 @@ Shift + Right == +25
 
 import sys
 from Tkinter import *
-from pynche import __version__
 
 STOP = 'Stop'
 WRAP = 'Wrap Around'
@@ -69,7 +68,7 @@ class DetailsViewer:
         # GUI
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
-        root.title('Pynche %s' % __version__)
+        root.title('Pynche Details Window')
         root.iconname('Pynche Details Window')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
@@ -89,14 +88,14 @@ class DetailsViewer:
         self.__l1 = Label(frame, text='Color Ties:')
         self.__l1.grid(row=0, column=0, columnspan=3, sticky=E)
         self.__rvar = IntVar()
-        self.__rvar.set(1)
+        self.__rvar.set(4)
         self.__radio1 = Checkbutton(frame, text='Red',
                                     variable=self.__rvar,
                                     command=self.__effect,
                                     onvalue=4, offvalue=0)
         self.__radio1.grid(row=0, column=3, columnspan=3, sticky=W)
         self.__gvar = IntVar()
-        self.__gvar.set(1)
+        self.__gvar.set(2)
         self.__radio2 = Checkbutton(frame, text='Green',
                                     variable=self.__gvar,
                                     command=self.__effect,
@@ -111,6 +110,7 @@ class DetailsViewer:
         self.__radio3.grid(row=2, column=3, columnspan=3, sticky=W)
         self.__l2 = Label(frame)
         self.__l2.grid(row=3, column=3, columnspan=3, sticky=W)
+        self.__effect()
         #
         # Boundary behavior
         self.__l3 = Label(frame, text='At boundary:')

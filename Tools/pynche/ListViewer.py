@@ -17,7 +17,6 @@ given name, without selecting the color.
 
 import sys
 from Tkinter import *
-from pynche import __version__
 import ColorDB
 
 class ListViewer:
@@ -28,7 +27,7 @@ class ListViewer:
         # GUI
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
-        root.title('Pynche %s' % __version__)
+        root.title('Pynche Color List')
         root.iconname('Pynche Color List')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)

@@ -17,7 +17,6 @@ in the text window (which only has a background).
 
 import sys
 from Tkinter import *
-from pynche import __version__
 import ColorDB
 
 class TextViewer:
@@ -25,7 +24,7 @@ class TextViewer:
         self.__sb = switchboard
         root = self.__root = Toplevel(parent, class_='Pynche')
         root.protocol('WM_DELETE_WINDOW', self.__withdraw)
-        root.title('Pynche %s' % __version__)
+        root.title('Pynche Text Window')
         root.iconname('Pynche Text Window')
         root.bind('<Alt-q>', self.__quit)
         root.bind('<Alt-Q>', self.__quit)
