@@ -230,7 +230,8 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 #define PyObject_IS_GC(o) (PyType_IS_GC((o)->ob_type) && \
 	((o)->ob_type->tp_is_gc == NULL || (o)->ob_type->tp_is_gc(o)))
 
-extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *, int);
+extern DL_IMPORT(PyObject *) _PyObject_GC_Malloc(PyTypeObject *,
+					int nitems, size_t padding);
 extern DL_IMPORT(PyVarObject *) _PyObject_GC_Resize(PyVarObject *, int);
 
 #define PyObject_GC_Resize(type, op, n) \

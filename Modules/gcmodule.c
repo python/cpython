@@ -798,13 +798,14 @@ _PyObject_GC_UnTrack(PyObject *op)
 }
 
 PyObject *
-_PyObject_GC_Malloc(PyTypeObject *tp, int size)
+_PyObject_GC_Malloc(PyTypeObject *tp, int nitems, size_t padding)
 {
 	PyObject *op;
 #ifdef WITH_CYCLE_GC
-	const size_t nbytes = sizeof(PyGC_Head) +
-			      (size_t)_PyObject_VAR_SIZE(tp, size);
-	PyGC_Head *g = PyObject_MALLOC(nbytes);						
+	const size_t basic = (size_t)_PyObject_VAR_SIZE(tp, nitems);
+	const size_t nbytes = sizeof(PyGC_Head) + basic + padding;
+
+	PyGC_Head *g = PyObject_MALLOC(nbytes);
 	if (g == NULL)
 		return (PyObject *)PyErr_NoMemory();
 	g->gc_next = NULL;
@@ -820,7 +821,7 @@ _PyObject_GC_Malloc(PyTypeObject *tp, int size)
 	}
 	op = FROM_GC(g);
 #else
-	op = PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
+	op = PyObject_MALLOC(_PyObject_VAR_SIZE(tp, nitems) + padding);
 	if (op == NULL)
 		return (PyObject *)PyErr_NoMemory();
 
@@ -831,14 +832,14 @@ _PyObject_GC_Malloc(PyTypeObject *tp, int size)
 PyObject *
 _PyObject_GC_New(PyTypeObject *tp)
 {
-	PyObject *op = _PyObject_GC_Malloc(tp, 0);
+	PyObject *op = _PyObject_GC_Malloc(tp, 0, 0);
 	return PyObject_INIT(op, tp);
 }
 
 PyVarObject *
 _PyObject_GC_NewVar(PyTypeObject *tp, int size)
 {
-	PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(tp, size);
+	PyVarObject *op = (PyVarObject *) _PyObject_GC_Malloc(tp, size, 0);
 	return PyObject_INIT_VAR(op, tp, size);
 }
 
