@@ -426,8 +426,21 @@ cPickle cPickle.c
 #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
 
 # Interface to the Expat XML parser
+#
+# Expat is written by James Clark and must be downloaded separately
+# (see below).  The pyexpat module was written by Paul Prescod after a
+# prototype by Jack Jansen.
+#
+# The Expat dist includes Windows .lib and .dll files.  Home page is at
+# http://www.jclark.com/xml/expat.html, the current production release is
+# always ftp://ftp.jclark.com/pub/xml/expat.zip.
+#
+# (Note: the expat build process doesn't yet build a libexpat.a; you can
+# do this manually while we try convince the author to add it.)
+#
 #EXPAT_DIR=/usr/local/src/expat/
 #pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
+
 
 # Example -- included for reference only:
 # xx xxmodule.c
