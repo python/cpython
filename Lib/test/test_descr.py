@@ -441,8 +441,7 @@ def pymods():
     a.foo = 12
     x = a.foo
     del a.foo
-    verify(log == [('getattr', '__init__'),
-                   ('getattr', '__setattr__'),
+    verify(log == [('getattr', '__setattr__'),
                    ("setattr", "foo", 12),
                    ("getattr", "foo"),
                    ('getattr', '__delattr__'),
