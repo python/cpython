@@ -168,14 +168,16 @@ gc_list_remove(PyGC_Head *node)
 static void
 gc_list_move(PyGC_Head *node, PyGC_Head *list)
 {
+	PyGC_Head *new_prev;
 	PyGC_Head *current_prev = node->gc.gc_prev;
 	PyGC_Head *current_next = node->gc.gc_next;
-	PyGC_Head *new_prev = list->gc.gc_prev;
+	/* Unlink from current list. */
 	current_prev->gc.gc_next = current_next;
 	current_next->gc.gc_prev = current_prev;
-	node->gc.gc_next = list;
-	node->gc.gc_prev = new_prev;
+	/* Relink at end of new list. */
+	new_prev = node->gc.gc_prev = list->gc.gc_prev;
 	new_prev->gc.gc_next = list->gc.gc_prev = node;
+	node->gc.gc_next = list;
 }
 
 /* append list `from` onto list `to`; `from` becomes an empty list */
