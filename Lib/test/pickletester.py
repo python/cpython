@@ -1,6 +1,6 @@
 # test_pickle and test_cpickle both use this.
 
-from test_support import TestFailed
+from test_support import TestFailed, have_unicode
 import sys
 
 # break into multiple strings to please font-lock-mode
@@ -191,7 +191,11 @@ def dotest(pickle):
             print "accepted insecure string: %s" % repr(buf)
 
     # Test some Unicode end cases
-    endcases = [u'', u'<\\u>', u'<\\\u1234>', u'<\n>',  u'<\\>']
+    if have_unicode:
+        endcases = [unicode(''), unicode('<\\u>'), unicode('<\\\u1234>'),
+                    unicode('<\n>'),  unicode('<\\>')]
+    else:
+        endcases = []
     for u in endcases:
         try:
             u2 = pickle.loads(pickle.dumps(u))

@@ -173,8 +173,14 @@ PyObject *PyString_AsDecodedObject(PyObject *str,
         goto onError;
     }
 
-    if (encoding == NULL)
+    if (encoding == NULL) {
+#ifdef Py_USING_UNICODE
 	encoding = PyUnicode_GetDefaultEncoding();
+#else
+	PyErr_SetString(PyExc_ValueError, "no encoding specified");
+	goto onError;
+#endif
+    }
 
     /* Decode via the codec registry */
     v = PyCodec_Decode(str, encoding, errors);
@@ -197,6 +203,7 @@ PyObject *PyString_AsDecodedString(PyObject *str,
     if (v == NULL)
         goto onError;
 
+#ifdef Py_USING_UNICODE
     /* Convert Unicode to a string using the default encoding */
     if (PyUnicode_Check(v)) {
 	PyObject *temp = v;
@@ -205,6 +212,7 @@ PyObject *PyString_AsDecodedString(PyObject *str,
 	if (v == NULL)
 	    goto onError;
     }
+#endif
     if (!PyString_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "decoder did not return a string object (type=%.400s)",
@@ -245,8 +253,14 @@ PyObject *PyString_AsEncodedObject(PyObject *str,
         goto onError;
     }
 
-    if (encoding == NULL)
+    if (encoding == NULL) {
+#ifdef Py_USING_UNICODE
 	encoding = PyUnicode_GetDefaultEncoding();
+#else
+	PyErr_SetString(PyExc_ValueError, "no encoding specified");
+	goto onError;
+#endif
+    }
 
     /* Encode via the codec registry */
     v = PyCodec_Encode(str, encoding, errors);
@@ -269,6 +283,7 @@ PyObject *PyString_AsEncodedString(PyObject *str,
     if (v == NULL)
         goto onError;
 
+#ifdef Py_USING_UNICODE
     /* Convert Unicode to a string using the default encoding */
     if (PyUnicode_Check(v)) {
 	PyObject *temp = v;
@@ -277,6 +292,7 @@ PyObject *PyString_AsEncodedString(PyObject *str,
 	if (v == NULL)
 	    goto onError;
     }
+#endif
     if (!PyString_Check(v)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder did not return a string object (type=%.400s)",
@@ -344,12 +360,15 @@ PyString_AsStringAndSize(register PyObject *obj,
 	}
 
 	if (!PyString_Check(obj)) {
+#ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(obj)) {
 			obj = _PyUnicode_AsDefaultEncodedString(obj, NULL);
 			if (obj == NULL)
 				return -1;
 		}
-		else {
+		else 
+#endif
+		{
 			PyErr_Format(PyExc_TypeError,
 				     "expected string or Unicode object, "
 				     "%.200s found", obj->ob_type->tp_name);
@@ -477,8 +496,10 @@ string_concat(register PyStringObject *a, register PyObject *bb)
 	register unsigned int size;
 	register PyStringObject *op;
 	if (!PyString_Check(bb)) {
+#ifdef Py_USING_UNICODE
 		if (PyUnicode_Check(bb))
 		    return PyUnicode_Concat((PyObject *)a, bb);
+#endif
 		PyErr_Format(PyExc_TypeError,
 			     "cannot add type \"%.200s\" to string",
 			     bb->ob_type->tp_name);
@@ -586,8 +607,10 @@ string_contains(PyObject *a, PyObject *el)
 {
 	register char *s, *end;
 	register char c;
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(el))
 		return PyUnicode_Contains(a, el);
+#endif
 	if (!PyString_Check(el) || PyString_Size(el) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 		    "'in <string>' requires character as left operand");
@@ -868,8 +891,10 @@ string_split(PyStringObject *self, PyObject *args)
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
 		return PyUnicode_Split((PyObject *)self, subobj, maxsplit);
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 	if (n == 0) {
@@ -969,6 +994,7 @@ string_join(PyStringObject *self, PyObject *orig)
 		const size_t old_sz = sz;
 		item = PySequence_Fast_GET_ITEM(seq, i);
 		if (!PyString_Check(item)){
+#ifdef Py_USING_UNICODE
 			if (PyUnicode_Check(item)) {
 				/* Defer to Unicode join.
 				 * CAUTION:  There's no gurantee that the
@@ -980,6 +1006,7 @@ string_join(PyStringObject *self, PyObject *orig)
 				Py_DECREF(seq);
 				return result;
 			}
+#endif
 			PyErr_Format(PyExc_TypeError,
 				     "sequence item %i: expected string,"
 				     " %.80s found",
@@ -1046,8 +1073,10 @@ string_find_internal(PyStringObject *self, PyObject *args, int dir)
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
 		return PyUnicode_Find((PyObject *)self, subobj, i, last, 1);
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return -2;
 
@@ -1381,6 +1410,7 @@ string_count(PyStringObject *self, PyObject *args)
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj)) {
 		int count;
 		count = PyUnicode_Count((PyObject *)self, subobj, i, last);
@@ -1389,6 +1419,7 @@ string_count(PyStringObject *self, PyObject *args)
 		else
 		    	return PyInt_FromLong((long) count);
 	}
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &n))
 		return NULL;
 
@@ -1481,6 +1512,7 @@ string_translate(PyStringObject *self, PyObject *args)
 		table1 = PyString_AS_STRING(tableobj);
 		tablen = PyString_GET_SIZE(tableobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(tableobj)) {
 		/* Unicode .translate() does not support the deletechars
 		   parameter; instead a mapping to None will cause characters
@@ -1492,6 +1524,7 @@ string_translate(PyStringObject *self, PyObject *args)
 		}
 		return PyUnicode_Translate((PyObject *)self, tableobj, NULL);
 	}
+#endif
 	else if (PyObject_AsCharBuffer(tableobj, &table1, &tablen))
 		return NULL;
 
@@ -1500,11 +1533,13 @@ string_translate(PyStringObject *self, PyObject *args)
 			del_table = PyString_AS_STRING(delobj);
 			dellen = PyString_GET_SIZE(delobj);
 		}
+#ifdef Py_USING_UNICODE
 		else if (PyUnicode_Check(delobj)) {
 			PyErr_SetString(PyExc_TypeError,
 			"deletions are implemented differently for unicode");
 			return NULL;
 		}
+#endif
 		else if (PyObject_AsCharBuffer(delobj, &del_table, &dellen))
 			return NULL;
 
@@ -1729,9 +1764,11 @@ string_replace(PyStringObject *self, PyObject *args)
 		sub = PyString_AS_STRING(subobj);
 		sub_len = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj))
 		return PyUnicode_Replace((PyObject *)self,
 					 subobj, replobj, count);
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &sub, &sub_len))
 		return NULL;
 
@@ -1739,9 +1776,11 @@ string_replace(PyStringObject *self, PyObject *args)
 		repl = PyString_AS_STRING(replobj);
 		repl_len = PyString_GET_SIZE(replobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(replobj))
 		return PyUnicode_Replace((PyObject *)self,
 					 subobj, replobj, count);
+#endif
 	else if (PyObject_AsCharBuffer(replobj, &repl, &repl_len))
 		return NULL;
 
@@ -1792,6 +1831,7 @@ string_startswith(PyStringObject *self, PyObject *args)
 		prefix = PyString_AS_STRING(subobj);
 		plen = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj)) {
 	    	int rc;
 		rc = PyUnicode_Tailmatch((PyObject *)self,
@@ -1801,6 +1841,7 @@ string_startswith(PyStringObject *self, PyObject *args)
 		else
 			return PyInt_FromLong((long) rc);
 	}
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &prefix, &plen))
 		return NULL;
 
@@ -1850,6 +1891,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 		suffix = PyString_AS_STRING(subobj);
 		slen = PyString_GET_SIZE(subobj);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(subobj)) {
 	    	int rc;
 		rc = PyUnicode_Tailmatch((PyObject *)self,
@@ -1859,6 +1901,7 @@ string_endswith(PyStringObject *self, PyObject *args)
 		else
 			return PyInt_FromLong((long) rc);
 	}
+#endif
 	else if (PyObject_AsCharBuffer(subobj, &suffix, &slen))
 		return NULL;
 
@@ -2876,7 +2919,10 @@ PyString_Format(PyObject *format, PyObject *args)
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
 	int args_owned = 0;
-	PyObject *result, *orig_args, *v, *w;
+	PyObject *result, *orig_args;
+#ifdef Py_USING_UNICODE
+	PyObject *v, *w;
+#endif
 	PyObject *dict = NULL;
 	if (format == NULL || !PyString_Check(format) || args == NULL) {
 		PyErr_BadInternalCall();
@@ -2926,8 +2972,10 @@ PyString_Format(PyObject *format, PyObject *args)
 			int sign;
 			int len;
 			char formatbuf[FORMATBUFLEN]; /* For format{float,int,char}() */
+#ifdef Py_USING_UNICODE
 			char *fmt_start = fmt;
 		        int argidx_start = argidx;
+#endif
 
 			fmt++;
 			if (*fmt == '(') {
@@ -3078,11 +3126,13 @@ PyString_Format(PyObject *format, PyObject *args)
 				break;
 			case 's':
   			case 'r':
+#ifdef Py_USING_UNICODE
 				if (PyUnicode_Check(v)) {
 					fmt = fmt_start;
 					argidx = argidx_start;
 					goto unicode;
 				}
+#endif
 				if (c == 's')
 				temp = PyObject_Str(v);
 				else
@@ -3240,6 +3290,7 @@ PyString_Format(PyObject *format, PyObject *args)
 	_PyString_Resize(&result, reslen - rescnt);
 	return result;
 
+#ifdef Py_USING_UNICODE
  unicode:
 	if (args_owned) {
 		Py_DECREF(args);
@@ -3284,6 +3335,7 @@ PyString_Format(PyObject *format, PyObject *args)
 	Py_DECREF(v);
 	Py_DECREF(args);
 	return w;
+#endif /* Py_USING_UNICODE */
 
  error:
 	Py_DECREF(result);

@@ -19,7 +19,12 @@ except NameError:
     pass
 
 StringType = str
-UnicodeType = unicode
+try:
+    UnicodeType = unicode
+    StringTypes = [StringType, UnicodeType]
+except NameError:
+    StringTypes = [StringType]
+
 BufferType = type(buffer(''))
 
 TupleType = tuple

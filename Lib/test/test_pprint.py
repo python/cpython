@@ -3,6 +3,11 @@ import unittest
 
 import test_support
 
+try:
+    uni = unicode
+except NameError:
+    def uni(x):return x
+
 
 class QueryTestCase(unittest.TestCase):
 
@@ -14,7 +19,7 @@ class QueryTestCase(unittest.TestCase):
     def test_basic(self):
         """Verify .isrecursive() and .isreadable() w/o recursion."""
         verify = self.assert_
-        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, u"yaddayadda",
+        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, uni("yaddayadda"),
                      self.a, self.b):
             verify(not pprint.isrecursive(safe),
                    "expected not isrecursive for " + `safe`)
@@ -58,8 +63,8 @@ class QueryTestCase(unittest.TestCase):
     def test_same_as_repr(self):
         "Simple objects and small containers that should be same as repr()."
         verify = self.assert_
-        for simple in (0, 0L, 0+0j, 0.0, "", u"", (), [], {}, verify, pprint,
-                       -6, -6L, -6-6j, -1.5, "x", u"x", (3,), [3], {3: 6},
+        for simple in (0, 0L, 0+0j, 0.0, "", uni(""), (), [], {}, verify, pprint,
+                       -6, -6L, -6-6j, -1.5, "x", uni("x"), (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6, 7: 8},
                        {"xy\tab\n": (3,), 5: [[]], (): {}},
                        range(10, -11, -1)

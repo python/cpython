@@ -30,7 +30,9 @@ extern DL_IMPORT(PyTypeObject) PyInt_Type;
 #define PyInt_Check(op) ((op)->ob_type == &PyInt_Type)
 
 extern DL_IMPORT(PyObject *) PyInt_FromString(char*, char**, int);
+#ifdef Py_USING_UNICODE
 extern DL_IMPORT(PyObject *) PyInt_FromUnicode(Py_UNICODE*, int, int);
+#endif
 extern DL_IMPORT(PyObject *) PyInt_FromLong(long);
 extern DL_IMPORT(long) PyInt_AsLong(PyObject *);
 extern DL_IMPORT(long) PyInt_GetMax(void);

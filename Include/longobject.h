@@ -42,7 +42,9 @@ extern DL_IMPORT(unsigned LONG_LONG) PyLong_AsUnsignedLongLong(PyObject *);
 #endif /* HAVE_LONG_LONG */
 
 DL_IMPORT(PyObject *) PyLong_FromString(char *, char **, int);
+#ifdef Py_USING_UNICODE
 DL_IMPORT(PyObject *) PyLong_FromUnicode(Py_UNICODE*, int, int);
+#endif
 
 /* _PyLong_FromByteArray:  View the n unsigned bytes as a binary integer in
    base 256, and return a Python long with the same numeric value.

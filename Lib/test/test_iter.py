@@ -1,7 +1,7 @@
 # Test iterators.
 
 import unittest
-from test_support import run_unittest, TESTFN, unlink
+from test_support import run_unittest, TESTFN, unlink, have_unicode
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -214,8 +214,11 @@ class TestCase(unittest.TestCase):
         self.check_for_loop(iter("abcde"), ["a", "b", "c", "d", "e"])
 
     # Test a Unicode string
-    def test_iter_unicode(self):
-        self.check_for_loop(iter(u"abcde"), [u"a", u"b", u"c", u"d", u"e"])
+    if have_unicode:
+        def test_iter_unicode(self):
+            self.check_for_loop(iter(unicode("abcde")),
+                                [unicode("a"), unicode("b"), unicode("c"),
+                                 unicode("d"), unicode("e")])
 
     # Test a directory
     def test_iter_dict(self):
@@ -477,6 +480,7 @@ class TestCase(unittest.TestCase):
         d = {"one": 1, "two": 2, "three": 3}
         self.assertEqual(reduce(add, d), "".join(d.keys()))
 
+    # This test case will be removed if we don't have Unicode
     def test_unicode_join_endcase(self):
 
         # This class inserts a Unicode object into its argument's natural
@@ -493,7 +497,7 @@ class TestCase(unittest.TestCase):
                 i = self.i
                 self.i = i+1
                 if i == 2:
-                    return u"fooled you!"
+                    return unicode("fooled you!")
                 return self.it.next()
 
         f = open(TESTFN, "w")
@@ -510,13 +514,15 @@ class TestCase(unittest.TestCase):
         # and pass that on to unicode.join().
         try:
             got = " - ".join(OhPhooey(f))
-            self.assertEqual(got, u"a\n - b\n - fooled you! - c\n")
+            self.assertEqual(got, unicode("a\n - b\n - fooled you! - c\n"))
         finally:
             f.close()
             try:
                 unlink(TESTFN)
             except OSError:
                 pass
+    if not have_unicode:
+        def test_unicode_join_endcase(self): pass
 
     # Test iterators with 'x in y' and 'x not in y'.
     def test_in_and_not_in(self):

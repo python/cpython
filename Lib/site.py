@@ -305,7 +305,8 @@ if 0:
     encoding = "undefined"
 
 if encoding != "ascii":
-    sys.setdefaultencoding(encoding)
+    # On Non-Unicode builds this will raise an AttributeError...
+    sys.setdefaultencoding(encoding) # Needs Python Unicode build !
 
 #
 # Run custom site specific code, if available.

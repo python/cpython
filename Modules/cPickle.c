@@ -1172,6 +1172,7 @@ err:
 }
 
 
+#ifdef Py_USING_UNICODE
 /* A copy of PyUnicode_EncodeRawUnicodeEscape() that also translates
    backslash and newline characters to \uXXXX escapes. */
 static PyObject *
@@ -1289,6 +1290,7 @@ err:
     Py_XDECREF(repr);
     return -1;
 }
+#endif
 
 
 static int
@@ -1824,11 +1826,13 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
                 goto finally;
             }
 
+#ifdef Py_USING_UNICODE
         case 'u':
             if ((type == &PyUnicode_Type) && (PyString_GET_SIZE(args) < 2)) {
                 res = save_unicode(self, args, 0);
                 goto finally;
             }
+#endif
     }
 
     if (args->ob_refcnt > 1) {
@@ -1857,12 +1861,14 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
             }
             break;
 
+#ifdef Py_USING_UNICODE
         case 'u':
             if (type == &PyUnicode_Type) {
                 res = save_unicode(self, args, 1);
                 goto finally;
             }
             break;
+#endif
 
         case 't':
             if (type == &PyTuple_Type) {
@@ -2818,6 +2824,7 @@ load_short_binstring(Unpicklerobject *self) {
 }
 
 
+#ifdef Py_USING_UNICODE
 static int
 load_unicode(Unpicklerobject *self) {
     PyObject *str = 0;
@@ -2836,8 +2843,10 @@ load_unicode(Unpicklerobject *self) {
 finally:
     return res;
 }
+#endif
 
 
+#ifdef Py_USING_UNICODE
 static int
 load_binunicode(Unpicklerobject *self) {
     PyObject *unicode;
@@ -2857,6 +2866,7 @@ load_binunicode(Unpicklerobject *self) {
     PDATA_PUSH(self->stack, unicode, -1);
     return 0;
 }
+#endif
 
 
 static int
@@ -3615,6 +3625,7 @@ load(Unpicklerobject *self) {
                     break;
                 continue;
 
+#ifdef Py_USING_UNICODE
             case UNICODE:
                 if (load_unicode(self) < 0)
                     break;
@@ -3624,6 +3635,7 @@ load(Unpicklerobject *self) {
                 if (load_binunicode(self) < 0)
                     break;
                 continue;
+#endif
 
             case EMPTY_TUPLE:
                 if (load_empty_tuple(self) < 0)
@@ -3905,6 +3917,7 @@ noload(Unpicklerobject *self) {
                     break;
                 continue;
 
+#ifdef Py_USING_UNICODE
             case UNICODE:
                 if (load_unicode(self) < 0)
                     break;
@@ -3914,6 +3927,7 @@ noload(Unpicklerobject *self) {
                 if (load_binunicode(self) < 0)
                     break;
                 continue;
+#endif
 
             case EMPTY_TUPLE:
                 if (load_empty_tuple(self) < 0)

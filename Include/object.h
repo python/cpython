@@ -320,7 +320,9 @@ extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
 extern DL_IMPORT(void) _PyObject_Dump(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
+#ifdef Py_USING_UNICODE
 extern DL_IMPORT(PyObject *) PyObject_Unicode(PyObject *);
+#endif
 extern DL_IMPORT(int) PyObject_Compare(PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
 extern DL_IMPORT(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);

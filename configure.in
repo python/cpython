@@ -1680,10 +1680,13 @@ ucs4) unicode_size="4"
       ;;
 esac
 
+AC_SUBST(UNICODE_OBJS)
 if test "$enable_unicode" = "no"
 then
+  UNICODE_OBJS=""
   AC_MSG_RESULT(not used)
 else
+  UNICODE_OBJS="Objects/unicodeobject.o Objects/unicodectype.o"
   AC_DEFINE(Py_USING_UNICODE)
   if test "$unicode_size" = "$ac_cv_sizeof_wchar_t"
   then

@@ -125,8 +125,10 @@ Py_Initialize(void)
 	/* Init codec registry */
 	_PyCodecRegistry_Init();
 
+#ifdef Py_USING_UNICODE
 	/* Init Unicode implementation; relies on the codec registry */
 	_PyUnicode_Init();
+#endif
 
 	bimod = _PyBuiltin_Init();
 	if (bimod == NULL)
@@ -206,8 +208,10 @@ Py_Finalize(void)
 	/* Disable signal handling */
 	PyOS_FiniInterrupts();
 
+#ifdef Py_USING_UNICODE
 	/* Cleanup Unicode implementation */
 	_PyUnicode_Fini();
+#endif
 
 	/* Cleanup Codec registry */
 	_PyCodecRegistry_Fini();

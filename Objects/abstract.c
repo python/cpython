@@ -583,8 +583,10 @@ PyNumber_Remainder(PyObject *v, PyObject *w)
 {
 	if (PyString_Check(v))
 		return PyString_Format(v, w);
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v))
 		return PyUnicode_Format(v, w);
+#endif
 	return binary_op(v, w, NB_SLOT(nb_remainder), "%");
 }
 
@@ -707,8 +709,10 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 {
 	if (PyString_Check(v))
 		return PyString_Format(v, w);
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v))
 		return PyUnicode_Format(v, w);
+#endif
 	else
 		return binary_iop(v, w, NB_SLOT(nb_inplace_remainder),
 					NB_SLOT(nb_remainder), "%=");
@@ -821,10 +825,12 @@ PyNumber_Int(PyObject *o)
 	if (PyString_Check(o))
 		return int_from_string(PyString_AS_STRING(o), 
 				       PyString_GET_SIZE(o));
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
 		return PyInt_FromUnicode(PyUnicode_AS_UNICODE(o),
 					 PyUnicode_GET_SIZE(o),
 					 10);
+#endif
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_int)
 		return m->nb_int(o);
@@ -873,11 +879,13 @@ PyNumber_Long(PyObject *o)
 		 */
 		return long_from_string(PyString_AS_STRING(o),
 					PyString_GET_SIZE(o));
+#ifdef Py_USING_UNICODE
 	if (PyUnicode_Check(o))
 		/* The above check is done in PyLong_FromUnicode(). */
 		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(o),
 					  PyUnicode_GET_SIZE(o),
 					  10);
+#endif
 	m = o->ob_type->tp_as_number;
 	if (m && m->nb_long)
 		return m->nb_long(o);

@@ -28,6 +28,11 @@
 #define Py_TPFLAGS_GC 0
 #endif
 
+#if (PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION > 5) || (PY_MAJOR_VERSION == 2 && PY_MINOR_VERSION < 2)
+/* In Python 1.6, 2.0 and  2.1, disabling Unicode was not possible. */
+#define Py_USING_UNICODE
+#endif
+
 enum HandlerTypes {
     StartElement,
     EndElement,
@@ -173,7 +178,7 @@ conv_atts_using_string(XML_Char **atts)
 }
 #endif
 
-#if !(PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6)
+#ifdef Py_USING_UNICODE
 #if EXPAT_VERSION == 0x010200
 static PyObject *
 conv_atts_using_unicode(XML_Char **atts)
@@ -370,7 +375,7 @@ call_with_frame(PyCodeObject *c, PyObject* func, PyObject* args)
     return res;
 }
 
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+#ifndef Py_USING_UNICODE
 #define STRING_CONV_FUNC conv_string_to_utf8
 #else
 /* Python 1.6 and later versions */
@@ -506,7 +511,7 @@ VOID_HANDLER(ProcessingInstruction,
               const XML_Char *data),
              ("(O&O&)",STRING_CONV_FUNC,target, STRING_CONV_FUNC,data))
 
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+#ifndef Py_USING_UNICODE
 VOID_HANDLER(CharacterData, 
              (void *userData, const XML_Char *data, int len), 
              ("(N)", conv_string_len_to_utf8(data,len)))
@@ -531,7 +536,7 @@ VOID_HANDLER(UnparsedEntityDecl,
               STRING_CONV_FUNC,notationName))
 
 #if EXPAT_VERSION >= 0x015f00
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+#ifndef Py_USING_UNICODE
 VOID_HANDLER(EntityDecl,
              (void *userData,
               const XML_Char *entityName,
@@ -608,7 +613,7 @@ conv_content_model_utf8(XML_Content * const model)
     return conv_content_model(model, conv_string_to_utf8);
 }
 
-#if !(PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6)
+#ifdef Py_USING_UNICODE
 static PyObject *
 conv_content_model_unicode(XML_Content * const model)
 {
@@ -678,7 +683,7 @@ VOID_HANDLER(EndCdataSection,
                (void *userData),
 		("()"))
 
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+#ifndef Py_USING_UNICODE
 VOID_HANDLER(Default,
 	      (void *userData,  const XML_Char *s, int len),
 	      ("(N)", conv_string_len_to_utf8(s,len)))
@@ -1064,7 +1069,7 @@ static struct PyMethodDef xmlparse_methods[] = {
 /* ---------- */
 
 
-#if !(PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6)
+#ifdef Py_USING_UNICODE
 
 /* 
     pyexpat international encoding support.
@@ -1158,8 +1163,7 @@ newxmlparseobject(char *encoding, char *namespace_separator)
         return NULL;
     }
     XML_SetUserData(self->itself, (void *)self);
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
-#else
+#ifdef Py_USING_UNICODE
     XML_SetUnknownEncodingHandler(self->itself, (XML_UnknownEncodingHandler) PyUnknownEncodingHandler, NULL);
 #endif
 
@@ -1292,7 +1296,7 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
     }
     if (strcmp(name, "returns_unicode") == 0) {
         if (PyObject_IsTrue(v)) {
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
+#ifndef Py_USING_UNICODE
             PyErr_SetString(PyExc_ValueError, 
                             "Cannot return Unicode strings in Python 1.5");
             return -1;
@@ -1545,8 +1549,7 @@ MODULE_INITFUNC(void)
                                          info.minor, info.micro));
     }
 #endif
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
-#else
+#ifdef Py_USING_UNICODE
     init_template_buffer();
 #endif
     /* XXX When Expat supports some way of figuring out how it was

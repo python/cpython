@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verbose, have_unicode
 import sys
 
 # test string formatting operator (I am not sure if this is being tested
@@ -34,7 +34,8 @@ def testformat(formatstr, args, output=None):
 
 def testboth(formatstr, *args):
     testformat(formatstr, *args)
-    testformat(unicode(formatstr), *args)
+    if have_unicode:
+        testformat(unicode(formatstr), *args)
 
 
 testboth("%.1d", (1,), "1")
@@ -212,5 +213,6 @@ def test_exc(formatstr, args, exception, excmsg):
 
 test_exc('abc %a', 1, ValueError,
          "unsupported format character 'a' (0x61) at index 5")
-test_exc(u'abc %\u3000', 1, ValueError,
-         "unsupported format character '?' (0x3000) at index 5")
+if have_unicode:
+    test_exc(unicode('abc %\u3000'), 1, ValueError,
+             "unsupported format character '?' (0x3000) at index 5")

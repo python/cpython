@@ -611,14 +611,15 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 	int sw_error=0;
 	int sign;
 	char buffer[256]; /* For errors */
-	char s_buffer[256];
 	int len;
 
 	if (PyString_Check(v)) {
 		s = PyString_AS_STRING(v);
 		len = PyString_GET_SIZE(v);
 	}
+#ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(v)) {
+	    	char s_buffer[256];
 		if (PyUnicode_GET_SIZE(v) >= sizeof(s_buffer)) {
 			PyErr_SetString(PyExc_ValueError,
 				 "complex() literal too large to convert");
@@ -632,6 +633,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 		s = s_buffer;
 		len = (int)strlen(s);
 	}
+#endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
 				"complex() arg is not a string");

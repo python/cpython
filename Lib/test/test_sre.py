@@ -6,7 +6,7 @@
 import sys
 sys.path=['.']+sys.path
 
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, have_unicode
 import sre
 import sys, os, string, traceback
 
@@ -378,7 +378,8 @@ for t in tests:
 
             # Try the match with UNICODE locale enabled, and check
             # that it still succeeds.
-            obj=sre.compile(pattern, sre.UNICODE)
-            result=obj.search(s)
-            if result==None:
-                print '=== Fails on unicode-sensitive match', t
+            if have_unicode:
+                obj=sre.compile(pattern, sre.UNICODE)
+                result=obj.search(s)
+                if result==None:
+                    print '=== Fails on unicode-sensitive match', t

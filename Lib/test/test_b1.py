@@ -119,7 +119,9 @@ if complex(0.0, 3.14j) != -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
 if complex(0j, 3.14) != 3.14j: raise TestFailed, 'complex(0j, 3.14)'
 if complex(0.0, 3.14) != 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
 if complex("  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
-if complex(u"  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex(u"  3.14+J  )"'
+if have_unicode:
+    if complex(unicode("  3.14+J  ")) != 3.14+1j:
+        raise TestFailed, 'complex(u"  3.14+J  )"'
 class Z:
     def __complex__(self): return 3.14j
 z = Z()
@@ -174,18 +176,20 @@ if eval('b', globals, locals) != 200:
     raise TestFailed, "eval(3)"
 if eval('c', globals, locals) != 300:
     raise TestFailed, "eval(4)"
-if eval(u'1+1') != 2: raise TestFailed, 'eval(u\'1+1\')'
-if eval(u' 1+1\n') != 2: raise TestFailed, 'eval(u\' 1+1\\n\')'
+if have_unicode:
+    if eval(unicode('1+1')) != 2: raise TestFailed, 'eval(u\'1+1\')'
+    if eval(unicode(' 1+1\n')) != 2: raise TestFailed, 'eval(u\' 1+1\\n\')'
 globals = {'a': 1, 'b': 2}
 locals = {'b': 200, 'c': 300}
-if eval(u'a', globals) != 1:
-    raise TestFailed, "eval(1) == %s" % eval(u'a', globals)
-if eval(u'a', globals, locals) != 1:
-    raise TestFailed, "eval(2)"
-if eval(u'b', globals, locals) != 200:
-    raise TestFailed, "eval(3)"
-if eval(u'c', globals, locals) != 300:
-    raise TestFailed, "eval(4)"
+if have_unicode:
+    if eval(unicode('a'), globals) != 1:
+        raise TestFailed, "eval(1) == %s" % eval(unicode('a'), globals)
+    if eval(unicode('a'), globals, locals) != 1:
+        raise TestFailed, "eval(2)"
+    if eval(unicode('b'), globals, locals) != 200:
+        raise TestFailed, "eval(3)"
+    if eval(unicode('c'), globals, locals) != 300:
+        raise TestFailed, "eval(4)"
 
 print 'execfile'
 z = 0
@@ -249,9 +253,11 @@ if float(3.14) != 3.14: raise TestFailed, 'float(3.14)'
 if float(314) != 314.0: raise TestFailed, 'float(314)'
 if float(314L) != 314.0: raise TestFailed, 'float(314L)'
 if float("  3.14  ") != 3.14:  raise TestFailed, 'float("  3.14  ")'
-if float(u"  3.14  ") != 3.14:  raise TestFailed, 'float(u"  3.14  ")'
-if float(u"  \u0663.\u0661\u0664  ") != 3.14:
-    raise TestFailed, 'float(u"  \u0663.\u0661\u0664  ")'
+if have_unicode:
+    if float(unicode("  3.14  ")) != 3.14:
+        raise TestFailed, 'float(u"  3.14  ")'
+    if float(unicode("  \u0663.\u0661\u0664  ")) != 3.14:
+        raise TestFailed, 'float(u"  \u0663.\u0661\u0664  ")'
 
 print 'getattr'
 import sys
@@ -324,7 +330,9 @@ if int(3.5) != 3: raise TestFailed, 'int(3.5)'
 if int(-3.5) != -3: raise TestFailed, 'int(-3.5)'
 # Different base:
 if int("10",16) != 16L: raise TestFailed, 'int("10",16)'
-if int(u"10",16) != 16L: raise TestFailed, 'int(u"10",16)'
+if have_unicode:
+    if int(unicode("10"),16) != 16L:
+        raise TestFailed, 'int(u"10",16)'
 # Test conversion from strings and various anomalies
 L = [
         ('0', 0),
@@ -343,23 +351,26 @@ L = [
         ('  1\02  ', ValueError),
         ('', ValueError),
         (' ', ValueError),
-        ('  \t\t  ', ValueError),
-        (u'0', 0),
-        (u'1', 1),
-        (u'9', 9),
-        (u'10', 10),
-        (u'99', 99),
-        (u'100', 100),
-        (u'314', 314),
-        (u' 314', 314),
-        (u'\u0663\u0661\u0664 ', 314),
-        (u'  \t\t  314  \t\t  ', 314),
-        (u'  1x', ValueError),
-        (u'  1  ', 1),
-        (u'  1\02  ', ValueError),
-        (u'', ValueError),
-        (u' ', ValueError),
-        (u'  \t\t  ', ValueError),
+        ('  \t\t  ', ValueError)
+]
+if have_unicode:
+    L += [
+        (unicode('0'), 0),
+        (unicode('1'), 1),
+        (unicode('9'), 9),
+        (unicode('10'), 10),
+        (unicode('99'), 99),
+        (unicode('100'), 100),
+        (unicode('314'), 314),
+        (unicode(' 314'), 314),
+        (unicode('\u0663\u0661\u0664 '), 314),
+        (unicode('  \t\t  314  \t\t  '), 314),
+        (unicode('  1x'), ValueError),
+        (unicode('  1  '), 1),
+        (unicode('  1\02  '), ValueError),
+        (unicode(''), ValueError),
+        (unicode(' '), ValueError),
+        (unicode('  \t\t  '), ValueError),
 ]
 for s, v in L:
     for sign in "", "+", "-":
@@ -460,16 +471,23 @@ if long(-3.9) != -3L: raise TestFailed, 'long(-3.9)'
 if long(3.5) != 3L: raise TestFailed, 'long(3.5)'
 if long(-3.5) != -3L: raise TestFailed, 'long(-3.5)'
 if long("-3") != -3L: raise TestFailed, 'long("-3")'
-if long(u"-3") != -3L: raise TestFailed, 'long(u"-3")'
+if have_unicode:
+    if long(unicode("-3")) != -3L:
+        raise TestFailed, 'long(u"-3")'
 # Different base:
 if long("10",16) != 16L: raise TestFailed, 'long("10",16)'
-if long(u"10",16) != 16L: raise TestFailed, 'long(u"10",16)'
+if have_unicode:
+    if long(unicode("10"),16) != 16L:
+        raise TestFailed, 'long(u"10",16)'
 # Check conversions from string (same test set as for int(), and then some)
 LL = [
         ('1' + '0'*20, 10L**20),
-        ('1' + '0'*100, 10L**100),
-        (u'1' + u'0'*20, 10L**20),
-        (u'1' + u'0'*100, 10L**100),
+        ('1' + '0'*100, 10L**100)
+]
+if have_unicode:
+    L+=[
+        (unicode('1') + unicode('0')*20, 10L**20),
+        (unicode('1') + unicode('0')*100, 10L**100),
 ]
 for s, v in L + LL:
     for sign in "", "+", "-":
