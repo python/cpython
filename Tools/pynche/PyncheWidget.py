@@ -16,7 +16,7 @@ KEEPALIVE_TIMER = 500
 
 
 class PyncheWidget:
-    def __init__(self, version, switchboard, master=None):
+    def __init__(self, version, switchboard, master=None, extrapath=[]):
         self.__sb = switchboard
         self.__version = version
         self.__textwin = None
@@ -64,16 +64,12 @@ class PyncheWidget:
         #
         # View menu
         #
+        views = make_view_popups(self.__sb, self.__tkroot, extrapath)
         viewmenu = Menu(menubar, tearoff=0)
-        viewmenu.add_command(label='Text Window...',
-                             command=self.__popup_text,
-                             underline=0)
-        viewmenu.add_command(label='Color List Window...',
-                             command=self.__popup_listwin,
-                             underline=6)
-        viewmenu.add_command(label='Details Window...',
-                             command=self.__popup_details,
-                             underline=0)
+        for v in views:
+            viewmenu.add_command(label=v.menutext(),
+                                 command=v.popup,
+                                 underline=v.underline())
         #
         # Help menu
         #
@@ -168,27 +164,6 @@ email:   bwarsaw@python.org''' % __version__)
             self.__helpwin = Helpwin(self.__root, self.__quit)
         self.__helpwin.deiconify()
 
-    def __popup_text(self, event=None):
-        if not self.__textwin:
-            from TextViewer import TextViewer
-            self.__textwin = TextViewer(self.__sb, self.__root)
-            self.__sb.add_view(self.__textwin)
-        self.__textwin.deiconify()
-
-    def __popup_listwin(self, event=None):
-        if not self.__listwin:
-            from ListViewer import ListViewer
-            self.__listwin = ListViewer(self.__sb, self.__root)
-            self.__sb.add_view(self.__listwin)
-        self.__listwin.deiconify()
-
-    def __popup_details(self, event=None):
-        if not self.__detailswin:
-            from DetailsViewer import DetailsViewer
-            self.__detailswin = DetailsViewer(self.__sb, self.__root)
-            self.__sb.add_view(self.__detailswin)
-        self.__detailswin.deiconify()
-
     def __load(self, event=None):
         import FileDialog
         import ColorDB
@@ -212,9 +187,6 @@ Unrecognized color file type in file:
                 continue
             break
         self.__sb.set_colordb(colordb)
-        if self.__listwin:
-            self.__listwin.flush()
-        self.__sb.update_views_current()
 
     def withdraw(self):
         self.__root.withdraw()
@@ -270,3 +242,58 @@ class Helpwin:
 
     def deiconify(self):
         self.__root.deiconify()
+
+
+
+class PopupViewer:
+    def __init__(self, module, name, switchboard, root):
+        self.__m = module
+        self.__name = name
+        self.__sb = switchboard
+        self.__root = root
+        self.__menutext = module.ADDTOVIEW
+        # find the underline character
+        underline = string.find(module.ADDTOVIEW, '%')
+        if underline == -1:
+            underline = 0
+        else:
+            self.__menutext = string.replace(module.ADDTOVIEW, '%', '', 1)
+        self.__underline = underline
+        self.__window = None
+
+    def menutext(self):
+        return self.__menutext
+
+    def underline(self):
+        return self.__underline
+
+    def popup(self, event=None):
+        if not self.__window:
+            # class and module must have the same name
+            class_ = getattr(self.__m, self.__name)
+            self.__window = class_(self.__sb, self.__root)
+            self.__sb.add_view(self.__window)
+        self.__window.deiconify()
+
+    def __cmp__(self, other):
+        return cmp(self.__menutext, other.__menutext)
+
+
+def make_view_popups(switchboard, root, extrapath):
+    viewers = []
+    # where we are in the file system
+    dirs = [os.path.dirname(__file__)] + extrapath
+    for dir in dirs:
+        if dir == '':
+            dir = '.'
+        for file in os.listdir(dir):
+            if file[-9:] == 'Viewer.py':
+                name = file[:-3]
+                module = __import__(name)
+                if hasattr(module, 'ADDTOVIEW') and module.ADDTOVIEW:
+                    # this is an external viewer
+                    v = PopupViewer(module, name, switchboard, root)
+                    viewers.append(v)
+    # sort alphabetically
+    viewers.sort()
+    return viewers
