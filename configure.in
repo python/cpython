@@ -646,6 +646,10 @@ AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
 
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
+ac_save_cc="$CC"
+if test "$ac_cv_kpthread" = "yes"
+then CC="$CC -Kpthread"
+fi
 AC_MSG_CHECKING(for pthread_t)
 have_pthread_t=no
 AC_TRY_COMPILE([#include <pthread.h>], [pthread_t x; x = *(pthread_t*)0;], have_pthread_t=yes)
@@ -667,7 +671,7 @@ if test "$have_pthread_t" = yes ; then
   AC_MSG_RESULT($ac_cv_sizeof_pthread_t)
   AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t)
 fi
-
+CC="$ac_save_cc"
 
 # Minor variations in building a framework between NextStep versions 4 and 5
 AC_SUBST(LIBTOOL_CRUFT)
