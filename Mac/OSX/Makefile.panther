@@ -23,9 +23,12 @@ install_IDE:
 	$(MAKE) -f Makefile install_IDE \
 		BUILDPYTHON=$(APPLE_PYTHON) INSTALLED_PYTHONW=$(APPLE_PYTHONW) \
 		DESTDIR=$(DESTDIR) PYTHONAPPSDIR=$(PYTHONAPPSDIR)
-	# Add the extra file to the resources. This is to work around a bugs in
-	# PythonIDEMain.py in the original 2.3.
+	# Add the extra files to the resources. This is to work around bugs in
+	# them in the original 2.3.
 	cp ../Tools/IDE/PythonIDEMain.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+	cp ../Tools/IDE/Wapplication.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+	cp ../Tools/IDE/Wcontrols.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
+	cp ../Tools/IDE/PyEdit.py $(DESTDIR)$(PYTHONAPPSDIR)/PythonIDE.app/Contents/Resources
 
 install_PackageManager:
 	$(MAKE) -f Makefile install_PackageManager \
