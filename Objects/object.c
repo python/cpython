@@ -1782,7 +1782,7 @@ none_dealloc(PyObject* ignore)
 	/* This should never get called, but we also don't want to SEGV if
 	 * we accidently decref None out of existance.
 	 */
-	abort();
+	Py_FatalError("deallocating None");
 }
 
 
