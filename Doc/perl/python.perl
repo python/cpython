@@ -579,9 +579,10 @@ sub process_index_macros($$){
             &$cmd($ahref);
         }
     }
-    if (/^[ \t\r\n]/) {
-        $_ = substr($_, 1);
-    }
+# XXX I don't remember why I added this to begin with.
+#     if (/^[ \t\r\n]/) {
+#         $_ = substr($_, 1);
+#     }
     return "$aname$anchor_invisible_mark</a>" . $_;
 }
 
