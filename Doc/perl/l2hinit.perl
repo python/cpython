@@ -51,6 +51,9 @@ $mydir = getcwd() . "$dd$mydir"
   unless $mydir =~ s|^/|/|;
 $LATEX2HTMLSTYLES = "$mydir$envkey$LATEX2HTMLSTYLES";
 
+($myrootname, $myrootdir, $myext) = fileparse($mydir, '\..*');
+chop $myrootdir;
+
 
 sub make_nav_panel{
     ($NEXT_TITLE ? "$NEXT\n" : '')
@@ -79,7 +82,7 @@ sub bot_navigation_panel {
 
 sub gen_index_id {
     # this is used to ensure common index key generation and a stable sort
-    local($str,$extra) = @_;
+    my($str,$extra) = @_;
     sprintf("%s###%s%010d", $str, $extra, ++$global{'max_id'});
 }
 
@@ -94,66 +97,11 @@ sub make_index_entry {
     "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
 
-sub add_idx {
-    print "\nDoing the index ...";
-    local($key, $str, @keys, $index, $level, $count, @previous, @current);
-    @keys = keys %index;
-    @keys = sort keysort  @keys;
-    $level = 0;
-    foreach $key (@keys) {
-	@current = split(/!/, $key);
-	$count = 0;
-	while ($current[$count] eq $previous[$count]) {
-	    $count++;
-	}
-	while ($count > $level) {
-	    $index .= "<dl compact>\n";
-	    $level++;
-	}
-	while ($count < $level) {
-	    $index .= "</dl>\n";
-	    $level--;
-	}
-	foreach $term (@current[$count .. $#current-1]) {
-	    # need to "step in" a little
-	    $index .= "<dt>" . $term . "\n<dl compact>\n";
-	    $level++;
-	}
-	$str = $current[$#current];
-	$str =~ s/\#\#\#\d+$//o;	# Remove the unique id's
-	$str =~ s/\#\#\#[DR]EF\d+$//o;	# Remove the unique id's
-	if (&index_key_eq(join('',@current), join('',@previous))) {
-	    $index .= ",\n$index{$key}" . $cross_ref_visible_mark . "</a>"; }
-	else {
-	    $index .= "\n<dt>$index{$key}" . $str . "</a>"; }
-	@previous = @current;
-    }
-    while ($count < $level) {
-	$index .= "</dl>\n";
-	$level--;
-    }
-    s/$idx_mark/<dl compact>$index<\/dl>/o;
-}
-
-
-sub index_key_eq{
-    local($a,$b) = @_;
-    $a = &clean_key($a);
-    $a =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
-    $a =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
-    $b = &clean_key($b);
-    $b =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
-    $b =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
-    $a eq $b;
-}
-
-# need to remove leading <...>
-sub clean_key{
-    local ($_) = @_;
-    tr/A-Z/a-z/;
-    s/\s//;
-    s/^<[a-z][-._a-z0-9]*>//;	# Remove leading <gi> (no attributes)
-    $_;
+# use this instead with the buildindex.py tool
+sub add_idx{
+    close(IDXFILE);
+    my $index = `$myrootdir/tools/buildindex.py index.dat`;
+    s/$idx_mark/$index/;
 }
 
 
@@ -162,31 +110,24 @@ $idx_module_title = 'Module Index';
 
 sub add_module_idx{
     print "\nDoing the module index ...";
-    local($key, @keys, $index);
-    $index = "<p>";
-    @keys = keys %Modules;
-    @keys = sort keysort  @keys;
-    foreach $key (@keys) {
-	$index .= "$Modules{$key}$key</a><br>\n";
+    my $key;
+    my $index = "<p>";
+    open(MODIDXFILE, ">modindex.dat") || die "\n$!\n";
+    foreach $key (keys %Modules) {
+	# dump the line in the data file; just use a dummy seqno field
+	print MODIDXFILE "$Modules{$key}\0$key###\n";
     }
-    s/$idx_module_mark/$index<p>/o;
+    close(MODIDXFILE);
+    $index = `$myrootdir/tools/buildindex.py modindex.dat`;
+    s/$idx_module_mark/$index<p>/;
 }
 
+# replace both indexes as needed:
+sub add_idx_hook{
+    &add_idx if (/$idx_mark/);
+    &add_module_idx if (/$idx_module_mark/);
+}
 
-# sub remove_general_markers {
-#     s/$lof_mark/<UL>$figure_captions<\/UL>/o;
-#     s/$lot_mark/<UL>$table_captions<\/UL>/o;
-#     &replace_citations if /$bbl_mark/;
-#     &add_toc if (/$toc_mark/);
-#     &add_idx if (/$idx_mark/);
-#     &add_module_idx if (/$idx_module_mark/);
-#     &replace_cross_references if /$cross_ref_mark/;
-#     &replace_external_references if /$external_ref_mark/;
-#     &replace_cite_references if /$cite_mark/;
-#     if (defined &replace_user_references) {
-#  	&replace_user_references if /$user_ref_mark/;
-#     }
-# }
 
 # In addition to the standard stuff, add label to allow named node files.
 sub do_cmd_tableofcontents {
@@ -247,24 +188,22 @@ sub do_cmd_textohtmlindex {
     local($_) = @_;
     $TITLE = $idx_title;
     $idxfile = $CURRENT_FILE;
-    if (%index_labels) { &make_index_labels(); }
-    if (($SHORT_INDEX) && (%index_segment)) { &make_preindex(); }
+    if (%index_labels) { make_index_labels(); }
+    if (($SHORT_INDEX) && (%index_segment)) { make_preindex(); }
     else { $preindex = ''; }
-    local($heading) = join('',&make_section_heading($idx_title, "H2"),
-			   $idx_mark);
-    local($pre,$post) = &minimize_open_tags($heading);
-    &anchor_label("genindex",$CURRENT_FILE,$_);		# this is added
-    join('',"<BR>\n" , $pre, $_);
+    my $heading = make_section_heading($idx_title, 'h2') . $idx_mark;
+    local($pre,$post) = minimize_open_tags($heading);
+    anchor_label('genindex',$CURRENT_FILE,$_);		# this is added
+    '<br>\n' . $pre . $_;
 }
 
 # $idx_module_mark will be replaced with the real index at the end
 sub do_cmd_textohtmlmoduleindex {
     local($_) = @_;
-    local($key) = q/modindex/;
     $TITLE = $idx_module_title;
     &anchor_label("modindex",$CURRENT_FILE,$_);
-    join('', '<p>' , &make_section_heading($idx_module_title, "h2"),
-	 $idx_module_mark, $_);
+    '<p>' . make_section_heading($idx_module_title, "h2")
+      . $idx_module_mark . $_;
 }
 
 # The bibliography and the index should be treated as separate sections
@@ -284,7 +223,7 @@ sub do_cmd_textohtmlmoduleindex {
 sub add_bbl_and_idx_dummy_commands {
     local($id) = $global{'max_id'};
 
-    $section_commands{'textohtmlmoduleindex'} = 2;
+#    $section_commands{'textohtmlmoduleindex'} = 2;
 
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$bbl_cnt++; $1/eg;
     s/([\\]begin\s*$O\d+$C\s*thebibliography)/$id++; "\\bibliography$O$id$C$O$id$C $1"/geo
@@ -295,7 +234,7 @@ sub add_bbl_and_idx_dummy_commands {
     # (FLD) This was added						   #
     local(@parts) = split(/\\begin\s*$O\d+$C\s*theindex/);		   #
     if (scalar(@parts) == 3) {						   #
-	print "\n&add_bbl_and_idx_dummy_commands ==> adding module index"; #
+	print "\nadd_bbl_and_idx_dummy_commands ==> adding module index"; #
 	s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlmoduleindex $1/o;    #
     }									   #
     #----------------------------------------------------------------------#
@@ -309,8 +248,6 @@ sub add_bbl_and_idx_dummy_commands {
 # etc. must appear in the contents table at the same level as the outermost
 # sectioning command. This subroutine finds what is the outermost level and
 # sets the above to the same level;
-
-#%section_commands = ('textohtmlmoduleindex', 1, %section_commands);
 
 sub set_depth_levels {
     # Sets $outermost_level
@@ -345,7 +282,8 @@ sub set_depth_levels {
 
 
 # Fix from Ross Moore for ']' in \item[...]; this can be removed once the next
-# patch to LaTeX2HTML is released and tested.
+# patch to LaTeX2HTML is released and tested ... if the patch gets included.
+# Be very careful to keep this around, just in case things break again!
 #
 sub protect_useritems {
     local(*_) = @_;
