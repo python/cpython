@@ -141,24 +141,24 @@ find_po(PANEL *pan)
    PARSESTR - format string for argument parsing */
 
 #define Panel_NoArgNoReturnFunction(X) \
-static PyObject *PyCursesPanel_ ## X (PyCursesPanelObject *self, PyObject *args) \
+static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { if (!PyArg_NoArgs(args)) return NULL; \
   return PyCursesCheckERR(X(self->pan), # X); }
 
 #define Panel_NoArgReturnStringFunction(X) \
-static PyObject *PyCursesPanel_ ## X (PyCursesPanelObject *self, PyObject *args) \
+static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { if (!PyArg_NoArgs(args)) return NULL; \
   return PyString_FromString(X(self->pan)); }
 
 #define Panel_NoArgTrueFalseFunction(X) \
-static PyObject * PyCursesPanel_ ## X (PyCursesPanelObject *self, PyObject *args) \
+static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { \
   if (!PyArg_NoArgs(args)) return NULL; \
   if (X (self->pan) == FALSE) { Py_INCREF(Py_False); return Py_False; } \
   else { Py_INCREF(Py_True); return Py_True; } }
 
 #define Panel_TwoArgNoReturnFunction(X, TYPE, PARSESTR) \
-static PyObject * PyCursesPanel_ ## X (PyCursesPanelObject *self, PyObject *args) \
+static PyObject *PyCursesPanel_##X(PyCursesPanelObject *self, PyObject *args) \
 { \
   TYPE arg1, arg2; \
   if (!PyArg_Parse(args,PARSESTR, &arg1, &arg2)) return NULL; \
@@ -309,7 +309,8 @@ PyCursesPanel_set_panel_userptr(PyCursesPanelObject *self, PyObject *args)
     }
     obj = PyTuple_GetItem(args, 0);
     Py_INCREF(obj);
-    return PyCursesCheckERR(set_panel_userptr(self->pan, obj), "set_panel_userptr");
+    return PyCursesCheckERR(set_panel_userptr(self->pan, obj),
+                            "set_panel_userptr");
 }
 
 static PyObject *PyCursesPanel_userptr
@@ -317,8 +318,9 @@ static PyObject *PyCursesPanel_userptr
 {
     PyObject *obj;
     PyCursesInitialised; 
-	if (!PyArg_NoArgs(args)) return NULL;
-    obj = panel_userptr(self->pan);
+    if (!PyArg_NoArgs(args))
+        return NULL;
+    obj = (PyObject *) panel_userptr(self->pan);
     Py_INCREF(obj);
     return obj;
 }
@@ -408,7 +410,8 @@ PyCurses_new_panel(PyObject *self, PyObject *args)
     PyCursesWindowObject *win;
     PANEL *pan;
 
-    if (!PyArg_ParseTuple(args, "O!", &PyCursesWindow_Type, &win)) return NULL;
+    if (!PyArg_ParseTuple(args, "O!", &PyCursesWindow_Type, &win))
+        return NULL;
     pan = new_panel(win->win);
     if (pan == NULL) {
 	PyErr_SetString(PyCursesError, catchall_NULL);
