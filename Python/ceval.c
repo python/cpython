@@ -61,7 +61,7 @@ static object *build_class();
 static int testbool();
 static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
-static int import_from PROTO((object *, object *, char *));
+static int import_from PROTO((object *, object *, object *));
 
 
 static frameobject *current_frame;
@@ -442,8 +442,8 @@ eval_code(co, globals, locals, arg)
 			if (is_stringobject(v)) {
 				char *s = getstringvalue(v);
 				int len = getstringsize(v);
-				err = printobject(v, fp, PRINT_RAW);
-				if (err == 0 && len > 0 && s[len-1] == '\n')
+				fwrite(s, 1, len, fp);
+				if (len > 0 && s[len-1] == '\n')
 					softspace(sysget("stdout"), 0);
 			}
 			else {
@@ -560,9 +560,9 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case DELETE_NAME:
-			name = GETNAME(oparg);
-			if ((err = dictremove(f->f_locals, name)) != 0)
-				err_setstr(NameError, name);
+			w = GETNAMEV(oparg);
+			if ((err = dict2remove(f->f_locals, w)) != 0)
+				err_setstr(NameError, getstringvalue(w));
 			break;
 		
 		case UNPACK_TUPLE:
@@ -631,14 +631,17 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case LOAD_NAME:
-			name = GETNAME(oparg);
-			x = dictlookup(f->f_locals, name);
+			w = GETNAMEV(oparg);
+			x = dict2lookup(f->f_locals, w);
 			if (x == NULL) {
-				x = dictlookup(f->f_globals, name);
+				err_clear();
+				x = dict2lookup(f->f_globals, w);
 				if (x == NULL) {
-					x = getbuiltin(name);
+					err_clear();
+					x = getbuiltin(w);
 					if (x == NULL) {
-						err_setstr(NameError, name);
+						err_setstr(NameError,
+							getstringvalue(w));
 						break;
 					}
 				}
@@ -648,12 +651,14 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case LOAD_GLOBAL:
-			name = GETNAME(oparg);
-			x = dictlookup(f->f_globals, name);
+			w = GETNAMEV(oparg);
+			x = dict2lookup(f->f_globals, w);
 			if (x == NULL) {
-				x = getbuiltin(name);
+				err_clear();
+				x = getbuiltin(w);
 				if (x == NULL) {
-					err_setstr(NameError, name);
+					err_setstr(NameError,
+						getstringvalue(w));
 					break;
 				}
 			}
@@ -662,10 +667,10 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case LOAD_LOCAL:
-			name = GETNAME(oparg);
-			x = dictlookup(f->f_locals, name);
+			w = GETNAMEV(oparg);
+			x = dict2lookup(f->f_locals, w);
 			if (x == NULL) {
-				err_setstr(NameError, name);
+				err_setstr(NameError, getstringvalue(w));
 				break;
 			}
 			INCREF(x);
@@ -728,9 +733,9 @@ eval_code(co, globals, locals, arg)
 			break;
 		
 		case IMPORT_FROM:
-			name = GETNAME(oparg);
+			w = GETNAMEV(oparg);
 			v = TOP();
-			err = import_from(f->f_locals, v, name);
+			err = import_from(f->f_locals, v, w);
 			break;
 		
 		case JUMP_FORWARD:
@@ -1131,7 +1136,6 @@ not(v)
 	INCREF(w);
 	return w;
 }
-
 /* External interface to call any callable object. The arg may be NULL. */
 
 object *
@@ -1464,36 +1468,36 @@ static int
 import_from(locals, v, name)
 	object *locals;
 	object *v;
-	char *name;
+	object *name;
 {
 	object *w, *x;
 	w = getmoduledict(v);
-	if (name[0] == '*') {
+	if (getstringvalue(name)[0] == '*') {
 		int i;
 		int n = getdictsize(w);
 		for (i = 0; i < n; i++) {
-			name = getdictkey(w, i);
-			if (name == NULL || name[0] == '_')
+			name = getdict2key(w, i);
+			if (name == NULL || getstringvalue(name)[0] == '_')
 				continue;
-			x = dictlookup(w, name);
+			x = dict2lookup(w, name);
 			if (x == NULL) {
 				/* XXX can't happen? */
-				err_setstr(NameError, name);
+				err_setstr(NameError, getstringvalue(name));
 				return -1;
 			}
-			if (dictinsert(locals, name, x) != 0)
+			if (dict2insert(locals, name, x) != 0)
 				return -1;
 		}
 		return 0;
 	}
 	else {
-		x = dictlookup(w, name);
+		x = dict2lookup(w, name);
 		if (x == NULL) {
-			err_setstr(NameError, name);
+			err_setstr(NameError, getstringvalue(name));
 			return -1;
 		}
 		else
-			return dictinsert(locals, name, x);
+			return dict2insert(locals, name, x);
 	}
 }
 
