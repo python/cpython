@@ -1365,6 +1365,11 @@ PySocketSock_makefile(PySocketSockObject *s, PyObject *args)
 			SOCKETCLOSE(fd);
 		return s->errorhandler();
 	}
+#ifdef USE_GUSI2
+	/* Workaround for bug in Metrowerks MSL vs. GUSI I/O library */
+	if (strchr(mode, 'b') != NULL )
+		bufsize = 0;
+#endif
 	f = PyFile_FromFile(fp, "<socket>", mode, fclose);
 	if (f != NULL)
 		PyFile_SetBufSize(f, bufsize);
