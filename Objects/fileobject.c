@@ -1045,6 +1045,7 @@ file_readlines(PyFileObject *f, PyObject *args)
 	size_t totalread = 0;
 	char *p, *q, *end;
 	int err;
+	int shortread = 0;
 
 	if (f->f_fp == NULL)
 		return err_closed();
@@ -1053,10 +1054,16 @@ file_readlines(PyFileObject *f, PyObject *args)
 	if ((list = PyList_New(0)) == NULL)
 		return NULL;
 	for (;;) {
-		Py_BEGIN_ALLOW_THREADS
-		errno = 0;
-		nread = fread(buffer+nfilled, 1, buffersize-nfilled, f->f_fp);
-		Py_END_ALLOW_THREADS
+		if (shortread)
+			nread = 0;
+		else {
+			Py_BEGIN_ALLOW_THREADS
+			errno = 0;
+			nread = fread(buffer+nfilled, 1,
+				      buffersize-nfilled, f->f_fp);
+			Py_END_ALLOW_THREADS
+			shortread = (nread < buffersize-nfilled);
+		}
 		if (nread == 0) {
 			sizehint = 0;
 			if (!ferror(f->f_fp))
