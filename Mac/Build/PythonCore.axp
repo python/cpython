@@ -1,0 +1,7 @@
+__terminate
+__initialize
+__start
+__ptmf_null
+__vec_longjmp
+longjmp
+exit
