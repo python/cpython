@@ -45,7 +45,7 @@ class CallTips:
         if self.calltip:
             self.calltip.hidetip()
             self.calltip = None
-        
+
     def paren_open_event(self, event):
         self._remove_calltip_window()
         arg_text = get_arg_text(self.get_object_at_cursor())
@@ -91,9 +91,9 @@ class CallTips:
             namespace = sys.modules.copy()
             namespace.update(__main__.__dict__)
             try:
-                    return eval(word, namespace)
+                return eval(word, namespace)
             except:
-                    pass
+                pass
         return None # Can't find an object.
 
 def _find_constructor(class_ob):
