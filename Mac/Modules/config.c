@@ -111,6 +111,8 @@ extern void initSndihooks();
 extern void initScrap();
 extern void initTE();
 extern void initWin();
+extern void initColorPicker();
+extern void initPrinting();
 #endif
 #ifdef USE_QT
 extern void initCm();
@@ -219,6 +221,8 @@ struct _inittab _PyImport_Inittab[] = {
 	{"TE", initTE},
 	{"Win", initWin},
 	{"Res", initRes},
+	{"ColorPicker", initColorPicker},
+	{"Printing", initPrinting},
 #endif
 #ifdef USE_QT
 	{"Cm", initCm},
