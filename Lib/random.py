@@ -75,6 +75,7 @@ used to "move backward in time":
 
 from math import log as _log, exp as _exp, pi as _pi, e as _e
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
+from math import floor as _floor
 
 __all__ = ["Random","seed","random","uniform","randint","choice",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -299,7 +300,7 @@ class Random:
         """
 
         # This code is a bit messy to make it fast for the
-        # common case while still doing adequate error checking
+        # common case while still doing adequate error checking.
         istart = int(start)
         if istart != start:
             raise ValueError, "non-integer arg 1 for randrange()"
@@ -307,14 +308,26 @@ class Random:
             if istart > 0:
                 return int(self.random() * istart)
             raise ValueError, "empty range for randrange()"
+
+        # stop argument supplied.
         istop = int(stop)
         if istop != stop:
             raise ValueError, "non-integer stop for randrange()"
+        if step == 1 and istart < istop:
+            try:
+                return istart + int(self.random()*(istop - istart))
+            except OverflowError:
+                # This can happen if istop-istart > sys.maxint + 1, and
+                # multiplying by random() doesn't reduce it to something
+                # <= sys.maxint.  We know that the overall result fits
+                # in an int, and can still do it correctly via math.floor().
+                # But that adds another function call, so for speed we
+                # avoided that whenever possible.
+                return int(istart + _floor(self.random()*(istop - istart)))
         if step == 1:
-            if istart < istop:
-                return istart + int(self.random() *
-                                   (istop - istart))
             raise ValueError, "empty range for randrange()"
+
+        # Non-unit step argument supplied.
         istep = int(step)
         if istep != step:
             raise ValueError, "non-integer step for randrange()"
