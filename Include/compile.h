@@ -62,7 +62,7 @@ DL_IMPORT(PyFutureFeatures *) PyNode_Future(struct _node *, char *);
 DL_IMPORT(PyCodeObject *) PyNode_CompileFlags(struct _node *, char *,
 					      PyCompilerFlags *);
 
-#define NESTED_SCOPES_DEFAULT 0
+#define NESTED_SCOPES_DEFAULT 1
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 
 /* for internal use only */
