@@ -34,15 +34,21 @@ class BuildPyTestCase(support.TempdirManager, unittest.TestCase):
         dist.package_dir = {"pkg": sources}
 
         cmd = build_py(dist)
+        cmd.compile = 1
         cmd.ensure_finalized()
         self.assertEqual(cmd.package_data, dist.package_data)
 
         cmd.run()
 
-        self.assertEqual(len(cmd.get_outputs()), 2)
+        # This makes sure the list of outputs includes byte-compiled
+        # files for Python modules but not for package data files
+        # (there shouldn't *be* byte-code files for those!).
+        #
+        self.assertEqual(len(cmd.get_outputs()), 3)
         pkgdest = os.path.join(destination, "pkg")
         files = os.listdir(pkgdest)
         self.assert_("__init__.py" in files)
+        self.assert_("__init__.pyc" in files)
         self.assert_("README.txt" in files)
 
 
