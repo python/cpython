@@ -71,9 +71,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define OPT_KEEPNORMAL	8
 #define OPT_KEEPERROR	9
 #define OPT_CMDLINE		10
-#define OPT_OLDEXC	13
+#define OPT_TABWARN	13
 #define OPT_NOSITE	14
-#define OPT_HELP	16
+#define OPT_HELP	15
+#define OPT_NONAVSERV 16
 
 /* Dialog for 'No preferences directory' */
 #define NOPREFDIR_ID	BASE_ID+5
@@ -143,7 +144,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define POPT_KEEPERR	6
 #endif
 
-#define POPT_VERSION_CURRENT	4	/* Current version number */
+#define POPT_VERSION_CURRENT	5	/* Current version number */
 
 #ifndef rez
 typedef struct PyMac_PrefRecord {
@@ -157,8 +158,9 @@ typedef struct PyMac_PrefRecord {
 	unsigned char	keep_error;
 	unsigned char	nointopt;
 	unsigned char	noargs;
-	unsigned char	oldexc;
+	unsigned char	tabwarn;
 	unsigned char	nosite;
+	unsigned char	nonavservice;
 } PyMac_PrefRecord;
 #endif
 
