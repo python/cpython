@@ -63,8 +63,11 @@ Extension modules
 Library
 -------
 
+- Bug #848614: distutils' msvccompiler fails to find the MSVC because
+  of incomplete registry entries.
+
 - Patch #841977: modulefinder didn't find extension modules
-  in packages
+  in packages.
 
 - Bug #792101: Add missing file operations for httplib.SSLFile.
 

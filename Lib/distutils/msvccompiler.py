@@ -547,6 +547,16 @@ class MSVCCompiler (CCompiler) :
                     return string.split(self.__macros.sub(d[path]), ";")
                 else:
                     return string.split(d[path], ";")
+        # MSVC 6 seems to create the registry entries we need only when
+        # the GUI is run.
+        if self.__version == 6:
+            for base in HKEYS:
+                if read_values(base, r"%s\6.0" % self.__root) is not None:
+                    self.warn("It seems you have Visual Studio 6 installed, "
+                        "but the expected registry settings are not present.\n"
+                        "You must at least run the Visual Studio GUI once "
+                        "so that these entries are created.")
+                break
         return []
 
     def set_path_env_var(self, name):
