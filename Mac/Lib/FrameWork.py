@@ -379,7 +379,7 @@ class Application:
 		wid = FrontWindow()
 		if wid and self._windows.has_key(wid):
 			window = self._windows[wid]
-			window.do_activate(modifiers & 1, event)
+			window.do_activate(message & 1, event)
 	
 	def do_kHighLevelEvent(self, event):
 		(what, message, when, where, modifiers) = event
