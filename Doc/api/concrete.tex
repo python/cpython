@@ -1319,10 +1319,11 @@ They all return \NULL{} or \code{-1} if an exception occurs.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Splitlines}{PyObject *s,
-                                                   int maxsplit}
+                                                   int keepend}
   Split a Unicode string at line breaks, returning a list of Unicode
-  strings.  CRLF is considered to be one line break.  The Line break
-  characters are not included in the resulting strings.
+  strings.  CRLF is considered to be one line break.  If \var{keepend}
+  is 0, the Line break characters are not included in the resulting
+  strings.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyUnicode_Translate}{PyObject *str,
