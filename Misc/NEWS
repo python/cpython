@@ -116,6 +116,14 @@ Core
   to crash if the element comparison routines for the dict keys and/or
   values mutated the dicts.  Making the code bulletproof slowed it down.
 
+- Collisions in dicts now use polynomial division instead of multiplication
+  to generate the probe sequence, following an idea of Christian Tismer's.
+  This allows all bits of the hash code to come into play.  It should have
+  little or no effect on speed in ordinary cases, but can help dramatically
+  in bad cases.  For example, looking up every key in a dict d with
+  d.keys() = [i << 16 for i in range(20000)] is approximately 500x faster
+  now.
+
 Library
 
 - calendar.py uses month and day names based on the current locale.

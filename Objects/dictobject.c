@@ -31,6 +31,58 @@ k a second time.  Theory can be used to find such polys efficiently, but the
 operational defn. of "works" is sufficient to find them in reasonable time 
 via brute force program (hint:  any poly that has an even number of 1 bits 
 cannot work; ditto any poly with low bit 0; exploit those).
+
+Some major subtleties:  Most hash schemes depend on having a "good" hash
+function, in the sense of simulating randomness.  Python doesn't:  some of
+its hash functions are trivial, such as hash(i) == i for ints i (excepting
+i == -1, because -1 is the "error occurred" return value from tp_hash).
+
+This isn't necessarily bad!  To the contrary, that our hash tables are powers
+of 2 in size, and that we take the low-order bits as the initial table index,
+means that there are no collisions at all for dicts indexed by a contiguous
+range of ints.  This is "better than random" behavior, and that's very
+desirable.
+
+On the other hand, when collisions occur, the tendency to fill contiguous
+slices of the hash table makes a good collision resolution strategy crucial;
+e.g., linear probing is right out.
+
+Reimer Behrends contributed the idea of using a polynomial-based approach, 
+using repeated multiplication by x in GF(2**n) where a polynomial is chosen 
+such that x is a primitive root.  This visits every table location exactly 
+once, and the sequence of locations probed is highly non-linear.
+
+The same is also largely true of quadratic probing for power-of-2 tables, of
+the specific
+
+    (i + comb(1, 2)) mod size
+    (i + comb(2, 2)) mod size
+    (i + comb(3, 2)) mod size
+    (i + comb(4, 2)) mod size
+    ...
+    (i + comb(j, 2)) mod size
+
+flavor.  The polynomial approach "scrambles" the probe indices better, but
+more importantly allows to get *some* additional bits of the hash code into
+play via computing the initial increment, thus giving a weak form of double
+hashing.  Quadratic probing cannot be extended that way (the first probe
+offset must be 1, the second 3, the third 6, etc).
+
+Christian Tismer later contributed the idea of using polynomial division
+instead of multiplication.  The problem is that the multiplicative method
+can't get *all* the bits of the hash code into play without expensive
+computations that slow down the initial index and/or initial increment
+computation.  For a set of keys like [i << 16 for i in range(20000)], under
+the multiplicative method the initial index and increment were the same for
+all keys, so every key followed exactly the same probe sequence, and so
+this degenerated into a (very slow) linear search.  The division method uses
+all the bits of the hash code naturally in the increment, although it *may*
+visit locations more than once until such time as all the high bits of the
+increment have been shifted away.  It's also impossible to tell in advance
+whether incr is congruent to 0 modulo poly, so each iteration of the loop has
+to guard against incr becoming 0.  These are minor costs, as we usually don't
+get into the probe loop, and when we do we usually get out on its first
+iteration.
 */
 
 static long polys[] = {
@@ -204,7 +256,7 @@ static dictentry *
 lookdict(dictobject *mp, PyObject *key, register long hash)
 {
 	register int i;
-	register unsigned incr;
+	register unsigned int incr;
 	register dictentry *freeslot;
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
@@ -244,13 +296,14 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 	}
 	/* Derive incr from hash, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
-	if (!incr)
-		incr = mask;
+	incr = hash ^ ((unsigned long)hash >> 3);
+
 	/* In the loop, me_key == dummy is by far (factor of 100s) the
 	   least likely outcome, so test for that last. */
 	for (;;) {
-		ep = &ep0[(i+incr)&mask];
+		if (!incr)
+			incr = 1; /* and incr will never be 0 again */
+		ep = &ep0[(i + incr) & mask];
 		if (ep->me_key == NULL) {
 			if (restore_error)
 				PyErr_Restore(err_type, err_value, err_tb);
@@ -282,10 +335,10 @@ lookdict(dictobject *mp, PyObject *key, register long hash)
 		}
 		else if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
-		/* Cycle through GF(2^n)-{0} */
-		incr <<= 1;
-		if (incr > mask)
-			incr ^= mp->ma_poly; /* clears the highest bit */
+		/* Cycle through GF(2**n). */
+		if (incr & 1)
+			incr ^= mp->ma_poly; /* clears the lowest bit */
+		incr >>= 1;
 	}
 }
 
@@ -303,7 +356,7 @@ static dictentry *
 lookdict_string(dictobject *mp, PyObject *key, register long hash)
 {
 	register int i;
-	register unsigned incr;
+	register unsigned int incr;
 	register dictentry *freeslot;
 	register unsigned int mask = mp->ma_size-1;
 	dictentry *ep0 = mp->ma_table;
@@ -334,13 +387,14 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 	}
 	/* Derive incr from hash, just to make it more arbitrary. Note that
 	   incr must not be 0, or we will get into an infinite loop.*/
-	incr = (hash ^ ((unsigned long)hash >> 3)) & mask;
-	if (!incr)
-		incr = mask;
+	incr = hash ^ ((unsigned long)hash >> 3);
+
 	/* In the loop, me_key == dummy is by far (factor of 100s) the
 	   least likely outcome, so test for that last. */
 	for (;;) {
-		ep = &ep0[(i+incr)&mask];
+		if (!incr)
+			incr = 1; /* and incr will never be 0 again */
+		ep = &ep0[(i + incr) & mask];
 		if (ep->me_key == NULL)
 			return freeslot == NULL ? ep : freeslot;
 		if (ep->me_key == key
@@ -350,10 +404,10 @@ lookdict_string(dictobject *mp, PyObject *key, register long hash)
 			return ep;
 		if (ep->me_key == dummy && freeslot == NULL)
 			freeslot = ep;
-		/* Cycle through GF(2^n)-{0} */
-		incr <<= 1;
-		if (incr > mask)
-			incr ^= mp->ma_poly; /* clears the highest bit */
+		/* Cycle through GF(2**n). */
+		if (incr & 1)
+			incr ^= mp->ma_poly; /* clears the lowest bit */
+		incr >>= 1;
 	}
 }
 
