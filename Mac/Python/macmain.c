@@ -522,6 +522,8 @@ Py_Main(argc, argv)
 	
 	Py_Initialize();
 	
+	PyUnicode_SetDefaultEncoding(PyMac_getscript());
+	
 	PyMac_InstallNavServicesForSF();
 
 	PySys_SetArgv(argc-1, argv+1);
