@@ -497,6 +497,7 @@ for name in names:
         except Exception, e:
             works = 0
             print "Test Failed: ", name
+            sys.stdout.flush()
             traceback.print_exception(*sys.exc_info())
             print `e`
             Node.allnodes = {}
