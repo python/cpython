@@ -2,6 +2,10 @@
 from test_support import verbose
 import signal
 import os
+import sys
+
+if sys.platform[:3] == 'win':
+    raise ImportError, "Can't test signal on Windows"
 
 
 if verbose:
