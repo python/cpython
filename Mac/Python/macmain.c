@@ -260,7 +260,6 @@ init_common(int *argcp, char ***argvp, int embedded)
 		/* Create argc/argv. Do it before we go into the options event loop. */
 		*argcp = PyMac_GetArgv(argvp, options.noargs);
 #ifdef USE_ARGV0_CHDIR
-		printf("argc=%d, argv[0]=%x=%s\n", *argcp, (*argvp)[0], (*argvp)[0]);
 		if (*argcp >= 1 && (*argvp)[0] && (*argvp)[0][0]) {
 			/* Workaround for MacOS X, which currently (DP4) doesn't set
 			** the working folder correctly
@@ -268,10 +267,8 @@ init_common(int *argcp, char ***argvp, int embedded)
 			char app_wd[256], *p;
 			
 			strncpy(app_wd, (*argvp)[0], 256);
-			printf("Modifying dir, argv[0]=%s\n", (*argvp)[0]);
 			p = strrchr(app_wd, ':');
 			if ( p ) *p = 0;
-			printf("app_wd=%s\n", app_wd);
 			chdir(app_wd);
 		}
 #endif
