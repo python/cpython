@@ -51,17 +51,31 @@ generate Python bytecode from the tree.
 
 \section{Introduction\label{Introduction}}
 
-XXX Need basic intro
+The \module{compiler} package is a Python source to bytecode
+translator written in Python.  It uses the builtin parser and standard
+\ulink{\module{parser}}
+{http://www.python.org/doc/current/lib/module-parser.html} to
+generated a concrete syntax tree.  This tree is used to generate an
+abstract syntax tree (AST) and then Python bytecode.
 
-XXX what are the major advantages...  the abstract syntax is much
-closer to the python source...
+The full functionality of the package duplicates the builtin compiler
+provided with the Python interpreter.  It is intended to match its
+behavior almost exactly.  Why implement another compiler that does the
+same thing?  The package is useful for a variety of purposes.  It can
+be modified more easily than the builtin compiler.  The AST it
+generates is useful for analyzing Python source code.
 
+This manual explains how the various components of the
+\module{compiler} package work.  It blends reference material with a
+tutorial.  (At least it will when the document is done.)
 
-\section{The basic interface}
+\subsection{The basic interface}
 
 \declaremodule{}{compiler}
 
-The top-level of the package defines four functions.
+The top-level of the package defines four functions.  If you import
+\module{compiler}, you will get these functions and a collection of
+modules contained in the package.
 
 \begin{funcdesc}{parse}{buf}
 Returns an abstract syntax tree for the Python source code in \var{buf}.
@@ -92,8 +106,7 @@ The \module{compiler} package contains the following modules:
 \module{misc}, \module{pyassem}, \module{pycodegen}, \module{symbols},
 \module{transformer}, and \refmodule[compiler.visitor]{visitor}.
 
-
-\section{Limitations}
+\subsection{Limitations}
 
 There are some problems with the error checking of the compiler
 package.  The interpreter detects syntax errors in two distinct
@@ -105,6 +118,7 @@ incomplete.  For example, the compiler package does not raise an error
 if a name appears more than once in an argument list: 
 \code{def f(x, x): ...}
 
+A future version of the compiler should fix these problems.
 
 \section{Python Abstract Syntax}
 
@@ -132,8 +146,7 @@ experimental Python-to-C compiler.  The current version contains a
 number of modifications and improvements, but the basic form of the
 abstract syntax and of the transformer are due to Stein and Tutt.
 
-
-\section{AST Nodes}
+\subsection{AST Nodes}
 
 \declaremodule{}{compiler.ast}
 
@@ -221,7 +234,7 @@ returned by \method{getChildren()} and \method{getChildNodes()}.
 \input{asttable}
 
 
-\section{Assignment nodes}
+\subsection{Assignment nodes}
 
 There is a collection of nodes used to represent assignments.  Each
 assignment statement in the source code becomes a single
@@ -232,9 +245,74 @@ Each \class{Node} in the list will be one of the following classes:
 \class{AssAttr}, \class{AssList}, \class{AssName}, or
 \class{AssTuple}. 
 
-XXX Explain what the AssXXX nodes are for.  Mention \code{a.b.c = 2}
-as an example.  Explain what the flags are for.
+Each target assignment node will describe the kind of object being
+assigned to:  \class{AssName} for a simple name, e.g. \code{a = 1}.
+\class{AssAttr} for an attribute assigned, e.g. \code{a.x = 1}.
+\class{AssList} and \class{AssTuple} for list and tuple expansion
+respectively, e.g. \code{a, b, c = a_tuple}.
 
+The target assignment nodes also have a \member{flags} attribute that
+indicates whether the node is being used for assignment or in a delete
+statement.  The \class{AssName} is also used to represent a delete
+statement, e.g. \class{del x}.
+
+When an expression contains several attribute references, an
+assignment or delete statement will contain only one \class{AssAttr}
+node -- for the final attribute reference.  The other attribute
+references will be represented as \class{Getattr} nodes in the
+\member{expr} attribute of the \class{AssAttr} instance.
+
+\subsection{Examples}
+
+This section shows several simple examples of ASTs for Python source
+code.  The examples demonstrate how to use the \function{parse()}
+function, what the repr of an AST looks like, and how to access
+attributes of an AST node.
+
+The first module defines a single function.  Assume it is stored in
+\file{/tmp/doublelib.py}. 
+
+\begin{verbatim}
+"""This is an example module.
+
+This is the docstring.
+"""
+
+def double(x):
+    "Return twice the argument"
+    return x * 2
+\end{verbatim}
+
+In the interactive interpreter session below, I have reformatted the
+long AST reprs for readability.  The AST reprs use unqualified class
+names.  If you want to create an instance from a repr, you must import
+the class names from the \module{compiler.ast} module.
+
+\begin{verbatim}
+>>> import compiler
+>>> mod = compiler.parseFile("/tmp/doublelib.py")
+>>> mod
+Module('This is an example module.\n\nThis is the docstring.\n', 
+       Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
+       Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+>>> from compiler.ast import *
+>>> Module('This is an example module.\n\nThis is the docstring.\n', 
+...    Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
+...    Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+Module('This is an example module.\n\nThis is the docstring.\n', 
+       Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
+       Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+>>> mod.doc
+'This is an example module.\n\nThis is the docstring.\n'
+>>> for node in mod.node.nodes:
+...     print node
+... 
+Function('double', ['x'], [], 0, 'Return twice the argument',
+         Stmt([Return(Mul((Name('x'), Const(2))))]))
+>>> func = mod.node.nodes[0]
+>>> func.code
+Stmt([Return(Mul((Name('x'), Const(2))))])
+\end{verbatim}
 
 \section{Using Visitors to Walk ASTs}
 
