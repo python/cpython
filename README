@@ -236,6 +236,11 @@ SunOS:	On SunOS 4.1.x, when using the SunPro C compiler, you may want
 NeXT:   To build fat binaries, use the --with-next-archs switch
 	described below.
 
+QNX:	Edit the top level Makefile to use the following compile options:
+	OPT = -Ox -Q -U_M_IX86 -U__WATCOMC__
+	Edit the Makefile in the Modules directory to read:
+	LDFLAGS = -N 48k
+
 
 Configuring additional built-in modules
 ---------------------------------------
