@@ -165,7 +165,7 @@ def	genallprojects(force=0):
 			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Fm", 
 			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Help", outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Help", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Icn", libraries=["IconServicesLib"], 
 			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_IBCarbon", sources=[":ibcarbon:_IBCarbon.c"], 
