@@ -1,4 +1,9 @@
 #! /usr/bin/env python
 
-import PyShell
-PyShell.main()
+try:
+    import idlelib.PyShell
+    idlelib.PyShell.main()
+except:
+    # IDLE is not installed, but maybe PyShell is on sys.path:
+    import PyShell
+    PyShell.main()
