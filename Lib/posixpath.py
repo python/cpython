@@ -74,6 +74,13 @@ def splitext(p):
 	return root, ext
 
 
+# Split a pathname into a drive specification and the rest of the
+# path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
+
+def splitdrive(p):
+	return '', p
+
+
 # Return the tail (basename) part of a path.
 
 def basename(p):
