@@ -296,6 +296,9 @@ extern void initHTML();
 #ifdef USE_XLIB
 extern void initXlib();
 #endif
+#ifdef USE_PARSER
+extern void initparser();
+#endif
 /* -- ADDMODULE MARKER 1 -- */
 
 struct {
@@ -473,6 +476,10 @@ struct {
 
 #ifdef USE_XLIB
        {"Xlib", initXlib},
+#endif
+
+#ifdef USE_PARSER
+       {"parser", initparser},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
