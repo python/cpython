@@ -38,6 +38,12 @@ PyMember_Get(char *addr, struct memberlist *mlist, char *name)
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
 			PyObject *v;
+			if ((l->flags & READ_RESTRICTED) &&
+			    PyEval_GetRestricted()) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"restricted attribute");
+				return NULL;
+			}
 			addr += l->offset;
 			switch (l->type) {
 			case T_BYTE:
@@ -133,15 +139,20 @@ PyMember_Set(char *addr, struct memberlist *mlist, char *name, PyObject *v)
 	
 	for (l = mlist; l->name != NULL; l++) {
 		if (strcmp(l->name, name) == 0) {
+			if ((l->flags & READONLY) || l->type == T_STRING
 #ifdef macintosh
-			if (l->readonly || l->type == T_STRING ||
-			    l->type == T_PSTRING)
+			    || l->type == T_PSTRING
+#endif
+				)
 			{
-#else
-			if (l->readonly || l->type == T_STRING ) {
-#endif /* macintosh */
 				PyErr_SetString(PyExc_TypeError,
 						"readonly attribute");
+				return -1;
+			}
+			if ((l->flags & WRITE_RESTRICTED) &&
+			    PyEval_GetRestricted()) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"restricted attribute");
 				return -1;
 			}
 			if (v == NULL && l->type != T_OBJECT) {
