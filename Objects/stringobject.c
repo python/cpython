@@ -433,6 +433,11 @@ string_hash(a)
 #ifdef CACHE_HASH
 	if (a->ob_shash != -1)
 		return a->ob_shash;
+#ifdef INTERN_STRINGS
+	if (a->ob_sinterned != NULL)
+		return (a->ob_shash =
+			((stringobject *)(a->ob_sinterned))->ob_shash);
+#endif
 #endif
 	len = a->ob_size;
 	p = (unsigned char *) a->ob_sval;
