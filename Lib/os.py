@@ -18,6 +18,7 @@
 
 try:
 	from posix import *
+	from posix import _exit
 	name = 'posix'
 	curdir = '.'
 	pardir = '..'

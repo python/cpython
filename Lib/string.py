@@ -63,13 +63,12 @@ def split(s):
 
 # Split a list into fields separated by a given string
 # NB: splitfields(s, ' ') is NOT the same as split(s)!
-# splitfields(s, '') is illegal
-splitfields_error = 'string.splitfields called with empty separator'
+# splitfields(s, '') returns [s] (in analogy with split() in nawk)
 def splitfields(s, sep):
 	res = []
 	nsep = len(sep)
 	if nsep == 0:
-		raise splitfields_error
+		return [s]
 	ns = len(s)
 	i = j = 0
 	while j+nsep <= ns:
