@@ -42,7 +42,7 @@ extern struct filedescr {
 	enum filetype type;
 } _PyImport_Filetab[];
 
-extern PyObject *import_modules;
+extern PyObject *_PyImport_Modules;
 
 extern PyObject *_PyImport_LoadDynamicModule
 	Py_PROTO((char *name, char *pathname, FILE *));

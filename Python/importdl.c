@@ -527,7 +527,7 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 	(*p)();
 	/* XXX Need check for err_occurred() here */
 
-	m = PyDict_GetItemString(import_modules, name);
+	m = PyDict_GetItemString(_PyImport_Modules, name);
 	if (m == NULL) {
 		if (PyErr_Occurred() == NULL)
 			PyErr_SetString(PyExc_SystemError,
