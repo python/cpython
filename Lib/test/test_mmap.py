@@ -40,7 +40,7 @@ def test_both():
     assert m[0] == '3'
     print '  Contents of first 3 bytes:', repr(m[0:3])
     assert m[0:3] == '3\0\0'
-    print '  Contents of second page:',  m[PAGESIZE-1 : PAGESIZE + 7]
+    print '  Contents of second page:',  repr(m[PAGESIZE-1 : PAGESIZE + 7])
     assert m[PAGESIZE-1 : PAGESIZE + 7] == '\0foobar\0'
     
     m.flush()
@@ -119,4 +119,3 @@ def test_both():
     print ' Test passed'
 
 test_both()
-
