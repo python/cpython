@@ -52,7 +52,7 @@ typedef struct {
 
 #define IOOOBJECT(O) ((IOobject*)(O))
 
-/* Declarations for objects of type StringIO */
+/* Declarations for objects of type StringO */
 
 typedef struct { /* Subtype of IOobject */
   PyObject_HEAD
@@ -540,7 +540,7 @@ newOobject(int  size) {
         return (PyObject*)self;
 }
 
-/* End of code for StringIO objects */
+/* End of code for StringO objects */
 /* -------------------------------------------------------- */
 
 static PyObject *
@@ -605,7 +605,7 @@ PyDoc_STRVAR(Itype__doc__,
 static PyTypeObject Itype = {
   PyObject_HEAD_INIT(NULL)
   0,					/*ob_size*/
-  "cStringIO.StringI",			/*tp_name*/
+  "cStringIO.StringIO",			/*tp_name*/
   sizeof(Iobject),			/*tp_basicsize*/
   0,					/*tp_itemsize*/
   /* methods */
