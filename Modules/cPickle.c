@@ -490,7 +490,7 @@ readline_other(Unpicklerobject *self, char **s) {
 
 
 static char *
-strndup(char *s, int l)
+my_strndup(char *s, int l)
 {
   char *r;
   UNLESS(r=malloc((l+1)*sizeof(char))) return (char*)PyErr_NoMemory();
@@ -1974,7 +1974,7 @@ load_int(Unpicklerobject *self) {
     long l;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=my_strndup(s,len)) return -1;
 
     errno = 0;
     l = strtol(s, &endptr, 0);
@@ -2084,7 +2084,7 @@ load_long(Unpicklerobject *self) {
     static PyObject *arg = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=my_strndup(s,len)) return -1;
 
     UNLESS(l = PyLong_FromString(s, &end, 0))
         goto finally;
@@ -2110,7 +2110,7 @@ load_float(Unpicklerobject *self) {
     double d;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=my_strndup(s,len)) return -1;
 
     errno = 0;
     d = strtod(s, &endptr);
@@ -2220,7 +2220,7 @@ load_string(Unpicklerobject *self) {
     static PyObject *eval_dict = 0;
 
     if ((len = (*self->readline_func)(self, &s)) < 0) return -1;
-    UNLESS(s=strndup(s,len)) return -1;
+    UNLESS(s=my_strndup(s,len)) return -1;
 
     UNLESS(eval_dict)
         UNLESS(eval_dict = Py_BuildValue("{s{}}", "__builtins__"))
@@ -3873,6 +3873,9 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.7  1997/05/16 16:36:52  guido
+ Renamed strndup to my_strndup to avoid conflict witth GNU libc.
+
  Revision 2.6  1997/05/13 18:00:44  guido
  Use compile-time test for 64-bit hardware instead of run-time test.
  This silences some compilers.
