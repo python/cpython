@@ -247,6 +247,9 @@
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
 
+/* Define this if you have the makedev macro. */
+#undef HAVE_MAKEDEV
+
 /* Define to 1 if you have the `memmove' function. */
 #undef HAVE_MEMMOVE
 
@@ -765,6 +768,9 @@
 
 /* Define to 1 if on MINIX. */
 #undef _MINIX
+
+/* Define _OSF_SOURCE to get the makedev macro. */
+#undef _OSF_SOURCE
 
 /* Define to 2 if the system does not provide POSIX.1 features except with
    this defined. */

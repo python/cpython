@@ -4604,7 +4604,7 @@ posix_mkfifo(PyObject *self, PyObject *args)
 #endif
 
 
-#ifdef HAVE_MKNOD
+#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 PyDoc_STRVAR(posix_mknod__doc__,
 "mknod(filename, [, mode=0600, major, minor])\n\n\
 Create a filesystem node (file, device special file or named pipe)\n\
@@ -6426,7 +6426,7 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_MKFIFO
 	{"mkfifo",	posix_mkfifo, METH_VARARGS, posix_mkfifo__doc__},
 #endif
-#ifdef HAVE_MKNOD
+#if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 	{"mknod",	posix_mknod, METH_VARARGS, posix_mknod__doc__},
 #endif
 #ifdef HAVE_FTRUNCATE
