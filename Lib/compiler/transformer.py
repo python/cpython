@@ -984,10 +984,32 @@ class Transformer:
       return Node('call_func', primaryNode, [ ])
     args = [ ]
     kw = 0
-    for i in range(1, len(nodelist), 2):
-      kw, result = self.com_argument(nodelist[i], kw)
+    len_nodelist = len(nodelist)
+    for i in range(1, len_nodelist, 2):
+      node = nodelist[i]
+      if node[0] == token.STAR or node[0] == token.DOUBLESTAR:
+          break
+      kw, result = self.com_argument(node, kw)
       args.append(result)
-    return Node('call_func', primaryNode, args)
+    else:
+        i = i + 1 # No broken by star arg, so skip the last one we processed.
+    star_node = dstar_node = None
+    while i < len_nodelist:
+        tok = nodelist[i]
+        ch = nodelist[i+1]
+        i = i + 3
+        if tok[0]==token.STAR:
+            if star_node is not None:
+                raise SyntaxError, 'already have the varargs indentifier'
+            star_node = self.com_node(ch)
+        elif tok[0]==token.DOUBLESTAR:
+            if dstar_node is not None:
+                raise SyntaxError, 'already have the kwargs indentifier'
+            dstar_node = self.com_node(ch)
+        else:
+            raise SyntaxError, 'unknown node type: %s' % tok
+
+    return Node('call_func', primaryNode, args, star_node, dstar_node)
 
   def com_argument(self, nodelist, kw):
     if len(nodelist) == 2:

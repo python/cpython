@@ -9,6 +9,14 @@ from compiler import ast, parse, walk
 from compiler import pyassem, misc
 from compiler.pyassem import CO_VARARGS, CO_VARKEYWORDS, TupleArg
 
+callfunc_opcode_info = {
+    # (Have *args, Have **args) : opcode
+    (0,0) : "CALL_FUNCTION",
+    (1,0) : "CALL_FUNCTION_VAR",
+    (0,1) : "CALL_FUNCTION_KW",
+    (1,1) : "CALL_FUNCTION_VAR_KW",
+}
+
 def compile(filename):
     f = open(filename)
     buf = f.read()
@@ -478,7 +486,14 @@ class CodeGenerator:
                 kw = kw + 1
             else:
                 pos = pos + 1
-        self.emit('CALL_FUNCTION', kw << 8 | pos)
+        if node.star_args is not None:
+            self.visit(node.star_args)
+        if node.dstar_args is not None:
+            self.visit(node.dstar_args)
+        have_star = node.star_args is not None
+        have_dstar = node.dstar_args is not None
+        opcode = callfunc_opcode_info[have_star, have_dstar]
+        self.emit(opcode, kw << 8 | pos)
 
     def visitPrint(self, node):
         self.emit('SET_LINENO', node.lineno)
