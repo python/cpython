@@ -195,6 +195,10 @@ class IC:
 		self.ic.ICSetPref(key, ICattr_no_change, value)
 		
 	def launchurl(self, url, hint=""):
+		# Work around a bug in ICLaunchURL: file:/foo does
+		# not work but file:///foo does.
+		if url[:6] == 'file:/' and url[6] != '/':
+			url = 'file:///' + url[6:]
 		self.ic.ICLaunchURL(hint, url, 0, len(url))
 		
 	def parseurl(self, data, start=None, end=None, hint=""):
