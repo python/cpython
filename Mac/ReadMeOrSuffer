@@ -1,4 +1,4 @@
-How to install Python 1.3beta3 on your Macintosh
+How to install Python 1.3 on your Macintosh
 ------------------------------------------------
 
 Even if you don't usually read readme files: please read at least the
@@ -8,11 +8,6 @@ have an non-functional python: it is best to remove all traces and start
 with a fresh distribution. Especially don't forget to remove the
 "python preferences" file from the Preferences folder, and possibly
 "PythonCore" from the Extensions folder.
-
-Next: this is a beta distribution, so (a) things may be broken and (b)
-the instructions are probably far from complete (or correct:-). I'm counting
-on you to send me feedback on any problems you encounter or suggestions
-you have!
 
 If this is your first encounter with python: you definitely need the common
 user documentation (common to all platforms). You can find this (in various
@@ -33,24 +28,17 @@ something a little less drastic.
 PowerPC Macintosh instructions
 ------------------------------
 
-1. You will have to create some aliases in the 'PlugIns' folder. There is
-   an AppleScript there that will create them for you. If you don't have
-   AppleScript you will have to create the aliases by hand, read the script
-   to see what to do. Alternatively, if you have still have an older, but
-   fairly recent version of python already on your system: try the
-   MkPluginAliases script from the Scripts folder.
+1. Remove older versions of "PythonCore" and "Python Preferences"
+   from your system folder.
    
-   [If someone nows of a way to create relative aliases or of a simple way
-   to create aliases on a target system without knowing pathnames in advance:
-   please let me know]
-   
-2. At this point you should remove older versions of "PythonCore" and
-   "Python Preferences" from your system folder.
-   
-3. Next, you should run PythonPPC. This will create an initial preferences
-   file (after asking you if that's ok with you).
-   
-4. To make sure any applets you create can find the common interpreter code
+2. Run the MkPluginAliases applet. This will first ask you whether it should
+   create an initial preferences file. Let it do so. Next, it will create a
+   number of aliases in the PlugIns folder. If this fails in mysterious ways
+   try using the applescript in the PlugIns folder to create the aliases.
+   If that also fails: examine the script and create the aliases by hand
+   (and tell me what you did to make either of these two fail:-).
+
+3. To make sure any applets you create can find the common interpreter code
    you should move PythonCore to the Extensions folder (drop it on the
    System Folder and it will find its own way). Alternatively, you can
    make an alias called "PythonCore" in the Extensions folder and
@@ -58,7 +46,7 @@ PowerPC Macintosh instructions
    again at this point to check that you actually put the extension in
    the right place.
 
-5. You're all set now. Continue with the common instructions.
+4. You're all set now. Continue with the common instructions.
 
 68K Macintosh instructions
 --------------------------
@@ -67,7 +55,7 @@ PowerPC Macintosh instructions
    have one (the file, that is, not the folder:-).
    
 2. Run Python68K. This will create an initial preferences file (after
-   asking you if that's ok with you).
+   asking you if that's ok with you). Quit python.
    
 3. Continue with the next section.
 

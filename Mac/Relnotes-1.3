@@ -1,14 +1,15 @@
 	Changes since 1.3beta3
 	----------------------
-- MkPluginAliases.py now works in a virgin distribution environment
+- MkPluginAliases.py now works in a virgin distribution environment. It is
+  also distributed as an applet.
 - hexbin from binhex.py has been fixed
 - various bits and pieces in readme files clarified
 - mkapplet bug wrt owner resource (and, hence, trouble starting applets) fixed.
+- Compiled with CodeWarrior 7.
+- AE client modules generated with gensuitemodule.py now use keyword args.
 
 	Changes since Python 1.2 for the mac
 	------------------------------------
-These relnotes are relative to the last "official" MacPython release,
-not to the intermediate releases.
 - PPC python now uses a shared library organization. This allows the
   creation of dynamically loadable extension modules (contact me) and
   creation of python applets (see mkapplet.py). A number of previously
@@ -70,4 +71,39 @@ not to the intermediate releases.
 - binhextree: Binhex all files in a tree, depending on the extension.
 - (PPC only) mkapplet: Create a python applet from a sourcefile and
   (optional) resourcefile.
+  
+	Known problems
+	--------------
+	
+- 68K python reacts rather violently to out-of-memory situations. In
+  stead of raising MemoryError it will crash, possibly bringing down the
+  whole system. This is being investigated.
+- The installation procedure is baroque. Ideas for improvement are welcome.
+- The full documentation should be ported to AppleGuide. This should be
+  a fairly simple automatic translation but I am not well-versed enough in
+  AppleGuide to do it. Any takers?
 
+
+	What will change shortly
+	------------------------
+	
+I am planning to do an intermediate release shortly (1.3.1??), mainly
+because Guido was so fast with 1.3 that I didn't have time to do some
+things I wanted. Expect the following changes shortly (note that some are
+incompatible):
+- CFM68K support,bringing applets and dynamic loading to the 68K macs.
+- Bgen-generated toolbox interfaces will go to a different place,
+  probably :Lib:mac:toolbox
+- Resource objects now often perform the role of a Handle object. This
+  will change with the introduction of a Handle object and some sort of
+  simulated inheritance.
+- AE suites generated with gensuitemodule will be restructured, whereby it
+  will be easier to override/extend standard suites. Also, server suites
+  will also be generated, and hopefully objects will be supported.
+- Event handling is currently rather messy, with python, SIOUX, stdwin and
+  the python application all fighting over the events. This will somehow
+  be changed.
+  
+  
+  		Jack Jansen, jack@cwi.nl
+  		10-Oct-95
