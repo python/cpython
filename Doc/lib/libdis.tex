@@ -38,7 +38,8 @@ The \module{dis} module defines the following functions and constants:
 
 \begin{funcdesc}{dis}{\optional{bytesource}}
 Disassemble the \var{bytesource} object. \var{bytesource} can denote
-either a class, a method, a function, or a code object.  For a class,
+either a module, a class, a method, a function, or a code object.  
+For a module, it disassembles all functions.  For a class,
 it disassembles all methods.  For a single code sequence, it prints
 one line per byte code instruction.  If no object is provided, it
 disassembles the last traceback.
