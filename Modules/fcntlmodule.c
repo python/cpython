@@ -81,13 +81,13 @@ static char fcntl_doc [] =
 "fcntl(fd, opt, [arg])\n\
 \n\
 Perform the requested operation on file descriptor fd.  The operation\n\
-is defined by op and is operating system dependent.  Typically these\n\
-codes can be retrieved from the library module FCNTL.  The argument arg\n\
-is optional, and defaults to 0; it may be an int or a string. If arg is\n\
-given as a string, the return value of fcntl is a string of that length,\n\
-containing the resulting value put in the arg buffer by the operating system.\n\
-The length of the arg string is not allowed to exceed 1024 bytes. If the arg\n\
-given is an integer or if none is specified, the result value is an integer\n\
+is defined by op and is operating system dependent.  These constants are\n\
+available from the fcntl module.  The argument arg is optional, and\n\
+defaults to 0; it may be an int or a string. If arg is given as a string,\n\
+the return value of fcntl is a string of that length, containing the\n\
+resulting value put in the arg buffer by the operating system.The length\n\
+of the arg string is not allowed to exceed 1024 bytes. If the arg given\n\
+is an integer or if none is specified, the result value is an integer\n\
 corresponding to the return value of the fcntl call in the C code.";
 
 
