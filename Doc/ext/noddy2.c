@@ -43,7 +43,7 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
-static PyObject *
+static int
 Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 {
     PyObject *first=NULL, *last=NULL;
@@ -53,7 +53,7 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
     if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
                                       &first, &last, 
                                       &self->number))
-        return NULL; 
+        return -1; 
 
     if (first) {
         Py_XDECREF(self->first);
@@ -67,8 +67,7 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
         self->last = last;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    return 0;
 }
 
 
