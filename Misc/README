@@ -12,7 +12,6 @@ ACKS		Acknowledgements
 AIX-NOTES	Notes for building Python on AIX
 BLURB		A quick description of Python for newcomers
 BLURB.LUTZ	A testimonial from a converted Tcl/Perl hacker :-)
-COPYING		The GNU GENERAL PUBLIC LICENCE (needed because of autoconf)
 COPYRIGHT	The Python copyright notice
 FAQ		Frequently Asked Questions about Python (and answers)
 Fixcprt.py	Fix the copyright message (a yearly chore :-)
@@ -23,11 +22,12 @@ Makefile	Used for administrative chores like cleaning up
 NEWS		News for this release
 README		The file you're reading now
 RFD		Request For Discussion about a Python newsgroup
-cheatsheet	Quick summary of Python by Ken Mannheimer
+cheatsheet	Quick summary of Python by Ken Manheimer
 dlMakefile	Generic Makefile for dynamically loadable modules by Ken M.
 fixfuncptrs.sh	Shell script to fix function pointer initializers
 indent.pro	GNU indent profile approximating my C style (by Steen Lumholt)
 python-mode.el	Emacs mode for editing Python programs (thanks, Tim!)
-python.gif	4-level grayscale image of a Python snake
+pyimenu.el	Support for Emacs with python-mode.el (by Perry Stoll)
 python.man	UNIX man page for the python interpreter
 renumber.py	Script to renumber the sections in the FAQ
+setuid-prog.c	C helper program for set-uid Python scripts
