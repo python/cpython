@@ -2086,6 +2086,8 @@ save(Picklerobject *self, PyObject *args, int  pers_save)
 
 		if (size > 2) {
 			state = PyTuple_GET_ITEM(t, 2);
+			if (state == Py_None)
+				state = NULL;
 		}
 
 		if (!( PyTuple_Check(arg_tup) || arg_tup==Py_None ))  {
