@@ -3,26 +3,14 @@ Things to do before releasing Pyton 1.4 the final cut:
 
 Win/NT specific things:
 
-... get bsddb.c patch
-
 ... pyc files remain open when imported???
 
-(*) no trailing separator on sys.path[0] please
-
 ... no control-c or control-break in Windows Console mode???
-    (implement Mark's hacks)
-
-... add PC template for extensions, + instructions
-
-... segv on NT after ^Z after import _tkinter
+    (implement Mark's hacks) (seems to work now?)
 
 Bugs:
 
-... apply(<class>, (), {}) fails while apply(<class>, ()) succeeds
-
 ... exception in __del__ when __builtins__ has been deleted
-
-(*) core dump on complex % or divmod
 
 Features:
 
@@ -34,19 +22,9 @@ Documentation:
 
 ... Add section on filesystem interface to tutorial
 
-... New last chapter of tutorial explaining new things (use NEWS file)
-
 ... Update tutorial for changes in the language & library
 
-... Update reference manual for complex, power, slice and ellipses
-
 ... New sections for library reference manual (use NEWS file for hints)
-
-... Update Misc/FAQ
-
-... Update README for 1.4 final cut
-
-... Update documentation for httplib
 
 ... add stuff to ext.tex about threads and embedded Python
 
@@ -55,8 +33,6 @@ Documentation:
 ... mention that 0e0 and 01.0 etc. don't work
 
 Maybe not (yet):
-
-... SyntaxErrors w/o line numbers
 
 ... get rid of 'owner' passed around for newframeobject and evalcode
 
@@ -78,8 +54,6 @@ Maybe not (yet):
 
 ... More thread testing (Solaris?), wait for David Arnold
 
-... More NeXT patches (Bill Bumgarner)
-
 ... Get rid of more modules: (stdwin, soundex, SGI specific?)
 
 ... Use autoconf features to find X11 libraries
@@ -87,6 +61,33 @@ Maybe not (yet):
 ... Use more modern autoconf features (e.g. for platform testing)
 
 Done:
+
+(*) get bsddb.c patch
+
+(*) no trailing separator on sys.path[0] please
+
+(*) add PC template for extensions, + instructions
+
+(*) segv on NT after ^Z after import _tkinter
+
+(*) apply(<class>, (), {}) fails while apply(<class>, ()) succeeds
+    if class has no __init__ method
+
+(*) core dump on complex % or divmod
+
+(*) New last chapter of tutorial explaining new things (use NEWS file)
+
+(*) Update reference manual for complex, power, slice and ellipses
+
+(*) Update Misc/FAQ
+
+(*) Update README for 1.4 final cut
+
+(*) Update documentation for httplib
+
+(*) SyntaxErrors w/o line numbers
+
+(*) More NeXT patches (Bill Bumgarner, Lele Gaifax)
 
 (*) fix file upload in cgi.py from Netscape
 
