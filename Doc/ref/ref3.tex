@@ -1130,18 +1130,18 @@ Methods corresponding to operations that are not supported by the
 particular kind of number implemented (e.g., bitwise operations for
 non-integral numbers) should be left undefined.
 
-\begin{methoddesc}[numeric interface]{__add__}{self, other}
-\methodline{__sub__}{self, other}
-\methodline{__mul__}{self, other}
-\methodline{__div__}{self, other}
-\methodline{__mod__}{self, other}
-\methodline{__divmod__}{self, other}
-\methodline{__pow__}{self, other\optional{, modulo}}
-\methodline{__lshift__}{self, other}
-\methodline{__rshift__}{self, other}
-\methodline{__and__}{self, other}
-\methodline{__xor__}{self, other}
-\methodline{__or__}{self, other}
+\begin{methoddesc}[numeric object]{__add__}{self, other}
+\methodline[numeric object]{__sub__}{self, other}
+\methodline[numeric object]{__mul__}{self, other}
+\methodline[numeric object]{__div__}{self, other}
+\methodline[numeric object]{__mod__}{self, other}
+\methodline[numeric object]{__divmod__}{self, other}
+\methodline[numeric object]{__pow__}{self, other\optional{, modulo}}
+\methodline[numeric object]{__lshift__}{self, other}
+\methodline[numeric object]{__rshift__}{self, other}
+\methodline[numeric object]{__and__}{self, other}
+\methodline[numeric object]{__xor__}{self, other}
+\methodline[numeric object]{__or__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
@@ -1156,18 +1156,18 @@ argument if the ternary version of the built-in
 \function{pow()}\bifuncindex{pow} function is to be supported.
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__radd__}{self, other}
-\methodline{__rsub__}{self, other}
-\methodline{__rmul__}{self, other}
-\methodline{__rdiv__}{self, other}
-\methodline{__rmod__}{self, other}
-\methodline{__rdivmod__}{self, other}
-\methodline{__rpow__}{self, other}
-\methodline{__rlshift__}{self, other}
-\methodline{__rrshift__}{self, other}
-\methodline{__rand__}{self, other}
-\methodline{__rxor__}{self, other}
-\methodline{__ror__}{self, other}
+\begin{methoddesc}[numeric object]{__radd__}{self, other}
+\methodline[numeric object]{__rsub__}{self, other}
+\methodline[numeric object]{__rmul__}{self, other}
+\methodline[numeric object]{__rdiv__}{self, other}
+\methodline[numeric object]{__rmod__}{self, other}
+\methodline[numeric object]{__rdivmod__}{self, other}
+\methodline[numeric object]{__rpow__}{self, other}
+\methodline[numeric object]{__rlshift__}{self, other}
+\methodline[numeric object]{__rrshift__}{self, other}
+\methodline[numeric object]{__rand__}{self, other}
+\methodline[numeric object]{__rxor__}{self, other}
+\methodline[numeric object]{__ror__}{self, other}
 These functions are
 called to implement the binary arithmetic operations (\code{+},
 \code{-}, \code{*}, \code{/}, \code{\%},
@@ -1183,18 +1183,18 @@ try calling \method{__rpow__()} (the coercion rules would become too
 complicated).
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__neg__}{self}
-\methodline{__pos__}{self}
-\methodline{__abs__}{self}
-\methodline{__invert__}{self}
+\begin{methoddesc}[numeric object]{__neg__}{self}
+\methodline[numeric object]{__pos__}{self}
+\methodline[numeric object]{__abs__}{self}
+\methodline[numeric object]{__invert__}{self}
 Called to implement the unary arithmetic operations (\code{-}, \code{+},
 \function{abs()}\bifuncindex{abs} and \code{~}).
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__complex__}{self}
-\methodline{__int__}{self}
-\methodline{__long__}{self}
-\methodline{__float__}{self}
+\begin{methoddesc}[numeric object]{__complex__}{self}
+\methodline[numeric object]{__int__}{self}
+\methodline[numeric object]{__long__}{self}
+\methodline[numeric object]{__float__}{self}
 Called to implement the built-in functions
 \function{complex()}\bifuncindex{complex},
 \function{int()}\bifuncindex{int}, \function{long()}\bifuncindex{long},
@@ -1202,17 +1202,17 @@ and \function{float()}\bifuncindex{float}.  Should return a value of
 the appropriate type.
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__oct__}{self}
-\methodline{__hex__}{self}
+\begin{methoddesc}[numeric object]{__oct__}{self}
+\methodline[numeric object]{__hex__}{self}
 Called to implement the built-in functions
 \function{oct()}\bifuncindex{oct} and
 \function{hex()}\bifuncindex{hex}.  Should return a string value.
 \end{methoddesc}
 
-\begin{methoddesc}[numeric interface]{__coerce__}{self, other}
+\begin{methoddesc}[numeric object]{__coerce__}{self, other}
 Called to implement ``mixed-mode'' numeric arithmetic.  Should either
 return a 2-tuple containing \var{self} and \var{other} converted to
-a common numeric type, or \code{None} if conversion is possible.  When
+a common numeric type, or \code{None} if conversion is impossible.  When
 the common type would be the type of \code{other}, it is sufficient to
 return \code{None}, since the interpreter will also ask the other
 object to attempt a coercion (but sometimes, if the implementation of
