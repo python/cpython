@@ -86,7 +86,7 @@ object_sitemap = '''
 # Different versions of the MS docs claim the file has a maximum size of
 # 256 or 512 bytes (including \r\n at the end of each line).
 # Note that "and", "or", "not" and "near" are operators in the search
-# language, so not point indexing them even if wanted to.
+# language, so no point indexing them even if we wanted to.
 stop_list = '''
 a  an  and
 is
