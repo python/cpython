@@ -4047,7 +4047,7 @@ PyUnicode_Join(PyObject *separator, PyObject *seq)
     sz = reslen + 100;  /* breathing room */
     if (sz < reslen || sz > INT_MAX) /* overflow -- no breathing room */
     	sz = reslen;
-    res = _PyUnicode_New(sz);
+    res = _PyUnicode_New((int)sz);
     if (res == NULL) {
         Py_DECREF(item);
         goto onError;
