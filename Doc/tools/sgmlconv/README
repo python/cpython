@@ -3,7 +3,8 @@ documentation in LaTeX format to SGML.  XML is also supported as a
 target, but is unlikely to be used.
 
 This material is preliminary and incomplete.  The XML omnibus package
-developed by the Python XML-SIG is required.  See
+developed by the Python XML-SIG is required; specifically, the version
+available in the public CVS repository.  See
 http://www.python.org/sigs/xml-sig/ for more information on the
 package.
 
