@@ -361,7 +361,7 @@ class dispatcher:
     def __getattr__(self, attr):
         return getattr(self.socket, attr)
 
-    # log and log_info maybe overriden to provide more sophisitcated
+    # log and log_info may be overridden to provide more sophisticated
     # logging and warning methods. In general, log is for 'hit' logging
     # and 'log_info' is for informational, warning and error logging.
 
