@@ -33,6 +33,8 @@ Extension Modules
 Library
 -------
 
+- The imghdr module now detects Exif files.
+
 - StringIO.truncate() now correctly adjusts the size attribute.
   (Bug #951915).
 
