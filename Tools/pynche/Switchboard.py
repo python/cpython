@@ -1,3 +1,17 @@
+"""Switchboard class.
+
+This class is used to coordinate updates among all Viewers.  Every Viewer must
+conform to the following interface:
+
+    - it must include a method called update_yourself() which takes three
+      arguments; the red, green, and blue values of the selected color.
+
+    - When a Viewer selects a color and wishes to update all other Views, it
+      should call update_views() on the Switchboard object.  Not that the
+      Viewer typically does *not* update itself before calling update_views(), 
+      since this would cause it to get updated twice.
+"""
+
 class Switchboard:
     def __init__(self, colordb):
         self.__views = []

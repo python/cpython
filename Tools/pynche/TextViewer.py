@@ -1,3 +1,20 @@
+"""TextViewer class.
+
+The TextViewer allows you to see how the selected color would affect various
+characteristics of a Tk text widget.  This is an output viewer only.
+
+In the top part of the window is a standard text widget with some sample text
+in it.  You are free to edit this text in any way you want (TBD: allow you to
+change font characteristics).  If you want changes in other viewers to update
+text characteristics, turn on Track color changes.
+
+To select which characteristic tracks the change, select one of the radio
+buttons in the window below.  Text foreground and background affect the text
+in the window above.  The Selection is what you see when you click the middle
+button and drag it through some text.  The Insertion is the insertion cursor
+in the text window (which only has a background).
+"""
+
 import sys
 from Tkinter import *
 from pynche import __version__
@@ -30,7 +47,7 @@ textual displays.''')
         self.__trackp = BooleanVar()
         self.__trackp.set(0)
         self.__which = IntVar()
-        self.__which.set(4)
+        self.__which.set(0)
         #
         # track toggle
         self.__t = Checkbutton(root, text='Track color changes',
