@@ -216,9 +216,11 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*) src='$(srcdir)/'"$srcdir/$src";;
 			esac
 			case $doconfig in
-			no)	cc="$cc \$(CCSHARED)";;
+			no)	cc="$cc \$(CCSHARED) \$(CFLAGS)";;
+			*)
+				cc="$cc \$(PY_CFLAGS)";;
 			esac
-			rule="$obj: $src; $cc $cpps \$(CFLAGS) -c $src -o $obj"
+			rule="$obj: $src; $cc $cpps -c $src -o $obj"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
@@ -230,7 +232,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*$mod.o*)	base=$mod;;
 			*)		base=${mod}module;;
 			esac
-			file="$base\$(SO)"
+			file="$srcdir/$base\$(SO)"
 			case $doconfig in
 			no)	SHAREDMODS="$SHAREDMODS $file";;
 			esac
