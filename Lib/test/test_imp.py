@@ -1,5 +1,9 @@
 import imp
-from test.test_support import TestFailed
+from test.test_support import TestFailed, TestSkipped
+try:
+    import thread
+except ImportError:
+    raise TestSkipped("test only valid when thread support is available")
 
 def verify_lock_state(expected):
     if imp.lock_held() != expected:
