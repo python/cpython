@@ -846,16 +846,18 @@ tuple, but rather yields the value of that expression (expression).
 \code{()}.)
 \indexii{trailing}{comma}
 
+
 \section{Summary\label{summary}}
 
-The following table summarizes the operator precedences in Python,
-from lowest precedence (least binding) to highest precedence (most
-binding).  Operators in the same box have the same precedence.  Unless
-the syntax is explicitly given, operators are binary.  Operators in
-the same box group left to right (except for comparisons, which
-chain from left to right --- see above).
+The following table summarizes the operator
+precedences\indexii{operator}{precedence} in Python, from lowest
+precedence (least binding) to highest precedence (most binding).
+Operators in the same box have the same precedence.  Unless the syntax
+is explicitly given, operators are binary.  Operators in the same box
+group left to right (except for comparisons, which chain from left to
+right --- see above).
 
-\begin{tableii}{c|c}{textrm}{Operator}{Description}
+\begin{tableii}{c|l}{textrm}{Operator}{Description}
     \lineii{\keyword{lambda}}			{Lambda expression}
   \hline
     \lineii{\keyword{or}}			{Boolean OR}
@@ -892,7 +894,7 @@ chain from left to right --- see above).
     \lineii{\code{\var{x}[\var{index}]}}	{Subscription}
     \lineii{\code{\var{x}[\var{index}:\var{index}]}}	{Slicing}
     \lineii{\code{\var{f}(\var{arguments}...)}}	{Function call}
-\hline
+  \hline
     \lineii{\code{(\var{expressions}\ldots)}}	{Binding or tuple display}
     \lineii{\code{[\var{expressions}\ldots]}}	{List display}
     \lineii{\code{\{\var{key}:\var{datum}\ldots\}}}{Dictionary display}
