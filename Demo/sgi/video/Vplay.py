@@ -20,6 +20,9 @@ def help():
 	print '-t         : use a 2nd thread for read-ahead'
 	print '-x left    : window offset from left of screen'
 	print '-y top     : window offset from top of screen'
+	print '-w width   : window width'
+	print '-h height  : window height'
+	print '-b color   : background color (white,black or (r,g,b))'
 	print 'file ...   : file(s) to play; default film.video'
 	print
 	print 'User interface:'
@@ -52,17 +55,20 @@ regen = None
 speed = 1.0
 threading = 0
 xoff = yoff = None
+xwsiz = ywsiz = None
+bgcolor = None
 
 
 # Main program -- mostly command line parsing
 
 def main():
 	global debug, looping, magnify, mindelta, nowait, quiet, regen, speed
-	global threading, xoff, yoff
+	global threading, xoff, yoff, xwsiz, ywsiz, bgcolor
 
 	# Parse command line
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'M:dlm:nqr:s:tx:y:')
+		opts, args = getopt.getopt(sys.argv[1:], \
+			  'M:dlm:nqr:s:tx:y:w:h:b:')
 	except getopt.error, msg:
 		sys.stdout = sys.stderr
 		print 'Error:', msg, '\n'
@@ -96,6 +102,20 @@ def main():
 					print '-t ignored'
 			if opt == '-x': xoff = string.atoi(arg)
 			if opt == '-y': yoff = string.atoi(arg)
+			if opt == '-w': xwsiz = string.atoi(arg)
+			if opt == '-h': ywsiz = string.atoi(arg)
+			if opt == '-b':
+				if arg == 'black':
+					bgcolor = (0,0,0)
+				elif arg == 'white':
+					bgcolor = (255,255,255)
+				else:
+					try:
+						bgcolor = eval(arg)
+						xxr, xxg, xxb = bgcolor
+					except:
+						print '-b needs (r,g,b) tuple'
+						sys.exit(2)
 	except string.atoi_error:
 		sys.stdout = sys.stderr
 		print 'Option', opt, 'requires integer argument'
@@ -141,6 +161,13 @@ def process(filename):
 	gl.foreground()
 
 	width, height = int(vin.width * magnify), int(vin.height * magnify)
+	xborder = yborder = 0
+	if xwsiz:
+		vin.xorigin = (xwsiz - width)/2
+		width = xwsiz
+	if ywsiz:
+		vin.yorigin = (ywsiz - height)/2
+		height = ywsiz
 	if xoff <> None and yoff <> None:
 		scrheight = gl.getgdesc(GL.GD_YPMAX)
 		gl.prefposition(xoff, xoff+width-1, \
@@ -153,6 +180,10 @@ def process(filename):
 
 	if quiet: vin.quiet = 1
 	vin.initcolormap()
+
+	if bgcolor:
+		r, g, b = bgcolor
+		vin.clearto(r,g,b)
 
 	gl.qdevice(ESCKEY)
 	gl.qdevice(WINSHUT)
@@ -169,7 +200,11 @@ def process(filename):
 			while not stop:
 				dev, val = gl.qread()
 				if dev == REDRAW:
-					vin.clear()
+					if bgcolor:
+						r,g,b = bgcolor
+						vin.clearto(r,g,b)
+					else:
+						vin.clear()
 				if dev == LEFTMOUSE and val == 1:
 					break # Continue outer loop
 				if dev == ESCKEY and val == 1 or \
