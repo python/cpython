@@ -3058,6 +3058,11 @@ posix_WSTOPSIG(self, args)
 
 
 #if defined(HAVE_FSTATVFS)
+#ifdef _SCO_DS
+/* SCO OpenServer 5.0 and later requires _SVID3 before it reveals the
+   needed definitions in sys/statvfs.h */
+#define _SVID3
+#endif
 #include <sys/statvfs.h>
 
 static char posix_fstatvfs__doc__[] =
