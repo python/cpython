@@ -31,6 +31,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define macintosh
 #endif
 
+#include "PROTO.h"
+#include "intrcheck.h"
+
 
 #ifdef MSDOS
 
@@ -69,6 +72,7 @@ intrcheck()
 
 static int interrupted;
 
+static SIGTYPE intcatcher PROTO((int));
 static SIGTYPE
 intcatcher(sig)
 	int sig;
