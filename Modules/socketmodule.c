@@ -219,10 +219,14 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #endif
 
 /* I know this is a bad practice, but it is the easiest... */
-#ifndef HAVE_GETADDRINFO
+/* XXX Temporarily work around bug #445928:
+   getaddrinfo on Darwin seems to return an empty result list, with
+   no error, even if host lookup ought to work fine. So use the
+   emulation code for now. */
+#if !defined(HAVE_GETADDRINFO) || defined(__APPLE__)
 #include "getaddrinfo.c"
 #endif
-#ifndef HAVE_GETNAMEINFO
+#if !defined(HAVE_GETNAMEINFO) || defined(__APPLE__)
 #include "getnameinfo.c"
 #endif
 
