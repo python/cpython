@@ -371,6 +371,8 @@ _isEmpty = re.compile(r"\s*$").match
 _isComment = re.compile(r"\s*#").match
 del re
 
+__all__ = []
+
 # Extract interactive examples from a string.  Return a list of triples,
 # (source, outcome, lineno).  "source" is the source code, and ends
 # with a newline iff the source spans more than one line.  "outcome" is

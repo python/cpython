@@ -13,6 +13,8 @@ import os
 import stat
 import statcache
 
+__all__ = ["cmp","dircmp","cmpfiles"]
+
 _cache = {}
 BUFSIZE=8*1024
 

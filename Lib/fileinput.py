@@ -81,6 +81,9 @@ XXX Possible additions:
 
 import sys, os, stat
 
+__all__ = ["input","close","nextfile","filename","lineno","filelineno",
+           "isfirstline","isstdin","FileInput"]
+
 _state = None
 
 DEFAULT_BUFSIZE = 8*1024

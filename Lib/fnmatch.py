@@ -12,6 +12,8 @@ corresponding to PATTERN.  (It does not compile it.)
 
 import re
 
+__all__ = ["fnmatch","fnmatchcase","translate"]
+
 _cache = {}
 
 def fnmatch(name, pat):
