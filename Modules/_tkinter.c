@@ -137,7 +137,7 @@ static PyThreadState *tcl_tstate = NULL;
 	    PyThread_acquire_lock(tcl_lock, 1); tcl_tstate = tstate;
 
 #define LEAVE_TCL \
-	tcl_tstate = NULL; PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
+    tcl_tstate = NULL; PyThread_release_lock(tcl_lock); Py_END_ALLOW_THREADS}
 
 #define ENTER_OVERLAP \
 	Py_END_ALLOW_THREADS
@@ -177,10 +177,10 @@ static PyThreadState *tcl_tstate = NULL;
 #include <Events.h> /* For EventRecord */
 
 typedef int (*TclMacConvertEventPtr) (EventRecord *eventPtr);
-void Tcl_MacSetEventProc (TclMacConvertEventPtr procPtr);
-int TkMacConvertEvent (EventRecord *eventPtr);
+void Tcl_MacSetEventProc(TclMacConvertEventPtr procPtr);
+int TkMacConvertEvent(EventRecord *eventPtr);
 
-staticforward int PyMacConvertEvent (EventRecord *eventPtr);
+staticforward int PyMacConvertEvent(EventRecord *eventPtr);
 
 #if defined(__CFM68K__) && !defined(__USING_STATIC_LIBS__)
 	#pragma import on
@@ -261,9 +261,25 @@ AsString(PyObject *value, PyObject *tmp)
 {
 	if (PyString_Check(value))
 		return PyString_AsString(value);
+	else if (PyUnicode_Check(value)) {
+		PyObject *v = PyUnicode_AsUTF8String(value);
+		if (v == NULL)
+			return NULL;
+		if (PyList_Append(tmp, v) != 0) {
+			Py_DECREF(v);
+			return NULL;
+		}
+		Py_DECREF(v);
+		return PyString_AsString(v);
+	}
 	else {
 		PyObject *v = PyObject_Str(value);
-		PyList_Append(tmp, v);
+		if (v == NULL)
+			return NULL;
+		if (PyList_Append(tmp, v) != 0) {
+			Py_DECREF(v);
+			return NULL;
+		}
 		Py_DECREF(v);
 		return PyString_AsString(v);
 	}
@@ -281,7 +297,7 @@ Merge(PyObject *args)
 	char **argv = NULL;
 	int fvStore[ARGSZ];
 	int *fv = NULL;
-	int argc = 0, i;
+	int argc = 0, fvc = 0, i;
 	char *res = NULL;
 
 	if (!(tmp = PyList_New(0)))
@@ -296,7 +312,8 @@ Merge(PyObject *args)
 	else if (!PyTuple_Check(args)) {
 		argc = 1;
 		fv[0] = 0;
-		argv[0] = AsString(args, tmp);
+		if (!(argv[0] = AsString(args, tmp)))
+			goto finally;
 	}
 	else {
 		argc = PyTuple_Size(args);
@@ -316,6 +333,7 @@ Merge(PyObject *args)
 				fv[i] = 1;
 				if (!(argv[i] = Merge(v)))
 					goto finally;
+				fvc++;
 			}
 			else if (v == Py_None) {
 				argc = i;
@@ -323,14 +341,18 @@ Merge(PyObject *args)
 			}
 			else {
 				fv[i] = 0;
-				argv[i] = AsString(v, tmp);
+				if (!(argv[i] = AsString(v, tmp)))
+					goto finally;
+				fvc++;
 			}
 		}
 	}
 	res = Tcl_Merge(argc, argv);
+	if (res == NULL)
+		PyErr_SetString(Tkinter_TclError, "merge failed");
 
   finally:
-	for (i = 0; i < argc; i++)
+	for (i = 0; i < fvc; i++)
 		if (fv[i]) {
 			ckfree(argv[i]);
 		}
@@ -507,11 +529,11 @@ AsObj(PyObject *value)
 	else if (PyUnicode_Check(value)) {
 #if TKMAJORMINOR <= 8001
 		/* In Tcl 8.1 we must use UTF-8 */
-		PyObject* utf8 = PyUnicode_AsUTF8String (value);
+		PyObject* utf8 = PyUnicode_AsUTF8String(value);
 		if (!utf8)
 			return 0;
-		result = Tcl_NewStringObj (PyString_AS_STRING (utf8),
-					 PyString_GET_SIZE (utf8));
+		result = Tcl_NewStringObj(PyString_AS_STRING(utf8),
+					  PyString_GET_SIZE(utf8));
 		Py_DECREF(utf8);
 		return result;
 #else /* TKMAJORMINOR > 8001 */
@@ -519,7 +541,7 @@ AsObj(PyObject *value)
 		if (sizeof(Py_UNICODE) != sizeof(Tcl_UniChar)) {
 			/* XXX Should really test this at compile time */
 			PyErr_SetString(PyExc_SystemError,
-					"Py_UNICODE and Tcl_UniChar differ in size");
+				"Py_UNICODE and Tcl_UniChar differ in size");
 			return 0;
 		}
 		return Tcl_NewUnicodeObj(PyUnicode_AS_UNICODE(value),
@@ -609,8 +631,8 @@ Tkapp_Call(PyObject *self, PyObject *args)
 			p = strchr(p, '\0');
 			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "strict");
 			if (res == NULL) {
-				PyErr_Clear();
-				res = PyString_FromStringAndSize(s, (int)(p-s));
+			    PyErr_Clear();
+			    res = PyString_FromStringAndSize(s, (int)(p-s));
 			}
 		}
 	}
@@ -636,7 +658,7 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	char **argv = NULL;
 	int fvStore[ARGSZ];
 	int *fv = NULL;
-	int argc = 0, i;
+	int argc = 0, fvc = 0, i;
 	PyObject *res = NULL; /* except this has a different type */
 	Tcl_CmdInfo info; /* and this is added */
 	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
@@ -653,7 +675,8 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	else if (!PyTuple_Check(args)) {
 		argc = 1;
 		fv[0] = 0;
-		argv[0] = AsString(args, tmp);
+		if (!(argv[0] = AsString(args, tmp)))
+			goto finally;
 	}
 	else {
 		argc = PyTuple_Size(args);
@@ -673,6 +696,7 @@ Tkapp_Call(PyObject *self, PyObject *args)
 				fv[i] = 1;
 				if (!(argv[i] = Merge(v)))
 					goto finally;
+				fvc++;
 			}
 			else if (v == Py_None) {
 				argc = i;
@@ -680,7 +704,9 @@ Tkapp_Call(PyObject *self, PyObject *args)
 			}
 			else {
 				fv[i] = 0;
-				argv[i] = AsString(v, tmp);
+				if (!(argv[i] = AsString(v, tmp)))
+					goto finally;
+				fvc++;
 			}
 		}
 	}
@@ -725,7 +751,7 @@ Tkapp_Call(PyObject *self, PyObject *args)
 
 	/* Copied from Merge() again */
   finally:
-	for (i = 0; i < argc; i++)
+	for (i = 0; i < fvc; i++)
 		if (fv[i]) {
 			ckfree(argv[i]);
 		}
@@ -753,10 +779,7 @@ Tkapp_GlobalCall(PyObject *self, PyObject *args)
 	PyObject *res = NULL;
 
 	cmd  = Merge(args);
-	if (!cmd)
-		PyErr_SetString(Tkinter_TclError, "merge failed");
-
-	else {
+	if (cmd) {
 		int err;
 		ENTER_TCL
 		err = Tcl_GlobalEval(Tkapp_Interp(self), cmd);
@@ -766,10 +789,8 @@ Tkapp_GlobalCall(PyObject *self, PyObject *args)
 		else
 			res = PyString_FromString(Tkapp_Result(self));
 		LEAVE_OVERLAP_TCL
-	}
-
-	if (cmd)
 		ckfree(cmd);
+	}
 
 	return res;
 }
@@ -892,14 +913,19 @@ SetVar(PyObject *self, PyObject *args, int flags)
 	if (PyArg_ParseTuple(args, "sO:setvar", &name1, &newValue)) {
 		/* XXX Merge? */
 		s = AsString(newValue, tmp);
+		if (s == NULL)
+			return NULL;
 		ENTER_TCL
 		ok = Tcl_SetVar(Tkapp_Interp(self), name1, s, flags);
 		LEAVE_TCL
 	}
 	else {
 		PyErr_Clear();
-		if (PyArg_ParseTuple(args, "ssO:setvar", &name1, &name2, &newValue)) {
-			s = AsString (newValue, tmp);
+		if (PyArg_ParseTuple(args, "ssO:setvar",
+				     &name1, &name2, &newValue)) {
+			s = AsString(newValue, tmp);
+			if (s == NULL)
+				return NULL;
 			ENTER_TCL
 			ok = Tcl_SetVar2(Tkapp_Interp(self), name1, name2, 
 					 s, flags);
@@ -1192,8 +1218,6 @@ Tkapp_Merge(PyObject *self, PyObject *args)
 		res = PyString_FromString(s);
 		ckfree(s);
 	}
-	else
-		PyErr_SetString(Tkinter_TclError, "merge failed");
 
 	return res;
 }
@@ -1225,7 +1249,8 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 {
 	PythonCmd_ClientData *data = (PythonCmd_ClientData *)clientData;
 	PyObject *self, *func, *arg, *res, *tmp;
-	int i;
+	int i, rv;
+	char *s;
 
 	ENTER_PYTHON
 
@@ -1257,13 +1282,21 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, char *argv[])
 		return PythonCmd_Error(interp);
 	}
 
-	Tcl_SetResult(Tkapp_Interp(self), AsString(res, tmp), TCL_VOLATILE);
+	s = AsString(res, tmp);
+	if (s == NULL) {
+		rv = PythonCmd_Error(interp);
+	}
+	else {
+		Tcl_SetResult(Tkapp_Interp(self), s, TCL_VOLATILE);
+		rv = TCL_OK;
+	}
+
 	Py_DECREF(res);
 	Py_DECREF(tmp);
 
 	LEAVE_PYTHON
 
-	return TCL_OK;
+	return rv;
 }
 
 static void
@@ -1417,7 +1450,8 @@ Tkapp_CreateFileHandler(PyObject *self, PyObject *args)
 	PyObject *file, *func;
 	int mask, tfile;
 
-	if (!PyArg_ParseTuple(args, "OiO:createfilehandler", &file, &mask, &func))
+	if (!PyArg_ParseTuple(args, "OiO:createfilehandler",
+			      &file, &mask, &func))
 		return NULL;
 	tfile = PyObject_AsFileDescriptor(file);
 	if (tfile < 0)
@@ -1604,7 +1638,8 @@ Tkapp_CreateTimerHandler(PyObject *self, PyObject *args)
 	PyObject *func;
 	TkttObject *v;
 
-	if (!PyArg_ParseTuple(args, "iO:createtimerhandler", &milliseconds, &func))
+	if (!PyArg_ParseTuple(args, "iO:createtimerhandler",
+			      &milliseconds, &func))
 		return NULL;
 	if (!PyCallable_Check(func)) {
 		PyErr_SetString(PyExc_TypeError, "bad argument list");
@@ -1801,8 +1836,8 @@ typedef struct {
 static int
 _bump(FlattenContext* context, int size)
 {
-	/* expand tuple to hold (at least) size new items.	return true if
-	   successful, false if an exception was raised*/
+	/* expand tuple to hold (at least) size new items.
+	   return true if successful, false if an exception was raised */
 
 	int maxsize = context->maxsize * 2;
 
@@ -1822,12 +1857,14 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
 	int i, size;
 
 	if (depth > 1000) {
-		PyErr_SetString(PyExc_ValueError,"nesting too deep in _flatten");
+		PyErr_SetString(PyExc_ValueError,
+				"nesting too deep in _flatten");
 		return 0;
 	} else if (PyList_Check(item)) {
 		size = PyList_GET_SIZE(item);
 		/* preallocate (assume no nesting) */
-		if (context->size + size > context->maxsize && !_bump(context, size))
+		if (context->size + size > context->maxsize &&
+		    !_bump(context, size))
 			return 0;
 		/* copy items to output tuple */
 		for (i = 0; i < size; i++) {
@@ -1836,16 +1873,19 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
 				if (!_flatten1(context, o, depth + 1))
 					return 0;
 			} else if (o != Py_None) {
-				if (context->size + 1 > context->maxsize && !_bump(context, 1))
+				if (context->size + 1 > context->maxsize &&
+				    !_bump(context, 1))
 					return 0;
 				Py_INCREF(o);
-				PyTuple_SET_ITEM(context->tuple, context->size++, o);
+				PyTuple_SET_ITEM(context->tuple,
+						 context->size++, o);
 			}
 		}
 	} else if (PyTuple_Check(item)) {
 		/* same, for tuples */
 		size = PyTuple_GET_SIZE(item);
-		if (context->size + size > context->maxsize && !_bump(context, size))
+		if (context->size + size > context->maxsize &&
+		    !_bump(context, size))
 			return 0;
 		for (i = 0; i < size; i++) {
 			PyObject *o = PyTuple_GET_ITEM(item, i);
@@ -1853,10 +1893,12 @@ _flatten1(FlattenContext* context, PyObject* item, int depth)
 				if (!_flatten1(context, o, depth + 1))
 					return 0;
 			} else if (o != Py_None) {
-				if (context->size + 1 > context->maxsize && !_bump(context, 1))
+				if (context->size + 1 > context->maxsize &&
+				    !_bump(context, 1))
 					return 0;
 				Py_INCREF(o);
-				PyTuple_SET_ITEM(context->tuple, context->size++, o);
+				PyTuple_SET_ITEM(context->tuple,
+						 context->size++, o);
 			}
 		}
 	} else {
