@@ -430,7 +430,10 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		selbegin, selend = self.ted.WEGetSelection()
 		if selbegin == selend:
 			return
-		Scrap.ZeroScrap()
+		if hasattr(Scrap, 'ZeroScrap'):
+			Scrap.ZeroScrap()
+		else:
+			Scrap.ClearCurrentScrap()
 		self.ted.WECopy()
 		self.updatescrollbars()
 	
@@ -438,7 +441,10 @@ class EditText(Wbase.SelectableWidget, _ScrollWidget):
 		selbegin, selend = self.ted.WEGetSelection()
 		if selbegin == selend:
 			return
-		Scrap.ZeroScrap()
+		if hasattr(Scrap, 'ZeroScrap'):
+			Scrap.ZeroScrap()
+		else:
+			Scrap.ClearCurrentScrap()
 		self.ted.WECut()
 		self.updatescrollbars()
 		self.selview()
