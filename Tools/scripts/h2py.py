@@ -1,17 +1,21 @@
 #! /usr/local/bin/python
 
 # Read #define's from stdin and translate to Python code on stdout.
-# Very primitive: non-#define's are ignored.
-# You will have to edit the output in some cases.
+# Very primitive: non-#define's are ignored, as is anything that isn't
+# valid Python as it stands.
 # If one or more filenames are given, output is written to corresponding
 # filenames in the local directory, translated to all uppercase, with
 # the extension replaced by ".py".
+# By passing one or more options of the form "-i regular_expression"
+# you can specify additional strings to be ignored.  This is useful
+# e.g. to ignore casts to u_long: simply specify "-i '(u_long)'".
 
 # XXX To do:
 # - turn trailing C comments into Python comments
 # - turn C string quotes into Python comments
 # - turn C Boolean operators "&& || !" into Python "and or not"
 # - what to do about #if(def)?
+# - what to do about #include?
 # - what to do about macros with parameters?
 # - reject definitions with semicolons in them
 
@@ -21,8 +25,13 @@ p_define = regex.compile('^#[\t ]*define[\t ]+\([a-zA-Z0-9_]+\)[\t ]+')
 
 p_comment = regex.compile('/\*\([^*]+\|\*+[^/]\)*\(\*+/\)?')
 
+ignores = [p_comment]
+
 def main():
-	opts, args = getopt.getopt(sys.argv[1:], '')
+	opts, args = getopt.getopt(sys.argv[1:], 'i:')
+	for o, a in opts:
+		if o == '-i':
+			ignores.append(regex.compile(a))
 	if not args:
 		args = ['-']
 	for filename in args:
@@ -49,22 +58,21 @@ def process(fp, outfp):
 		line = fp.readline()
 		if not line: break
 		lineno = lineno + 1
-		if p_define.match(line) >= 0:
-			# gobble up continuation lines
-			while line[-2:] == '\\\n':
-				nextline = fp.readline()
-				if not nextline: break
-				lineno = lineno + 1
-				line = line + nextline
-			regs = p_define.regs
-			a, b = regs[1] # where the macro name is
-			name = line[a:b]
-			a, b = regs[0] # the whole match
-			body = line[b:]
-			# replace comments by spaces
-			while p_comment.search(body) >= 0:
-				a, b = p_comment.regs[0]
-				body = body[:a] + ' ' + body[b:]
+		# gobble up continuation lines
+		while line[-2:] == '\\\n':
+			nextline = fp.readline()
+			if not nextline: break
+			lineno = lineno + 1
+			line = line + nextline
+		n = p_define.match(line)
+		if n >= 0:
+			name = p_define.group(1)
+			body = line[n:]
+			# replace ignored patterns by spaces
+			for p in ignores:
+				while p.search(body) >= 0:
+					a, b = p.regs[0]
+					body = body[:a] + ' ' + body[b:]
 			stmt = '%s = %s\n' % (name, string.strip(body))
 			ok = 0
 			try:
