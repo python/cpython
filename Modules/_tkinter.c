@@ -62,6 +62,14 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.2 not supported"
 #endif
 
+/* Unicode conversion assumes that Tcl_UniChar is two bytes.
+   We cannot test this directly, so we test UTF-8 size instead,
+   expecting that TCL_UTF_MAX is changed if Tcl ever supports
+   either UTF-16 or UCS-4.  */
+#if TCL_UTF_MAX != 3
+#error "unsupported Tcl configuration"
+#endif
+
 #if defined(macintosh)
 /* Sigh, we have to include this to get at the tcl qd pointer */
 #include <tkMac.h>
@@ -531,15 +539,35 @@ AsObj(PyObject *value)
 	}
 #ifdef Py_USING_UNICODE
 	else if (PyUnicode_Check(value)) {
-		/* In Tcl 8.2 and later, use Tcl_NewUnicodeObj() */
-		if (sizeof(Py_UNICODE) != sizeof(Tcl_UniChar)) {
-			/* XXX Should really test this at compile time */
-			PyErr_SetString(PyExc_SystemError,
-				"Py_UNICODE and Tcl_UniChar differ in size");
-			return 0;
+		Py_UNICODE *inbuf = PyUnicode_AS_UNICODE(value);
+		int size = PyUnicode_GET_SIZE(value);
+		/* This #ifdef assumes that Tcl uses UCS-2.
+		   See TCL_UTF_MAX test above. */
+#ifdef Py_UNICODE_WIDE
+		Tcl_UniChar *outbuf;
+		int i;
+		outbuf = (Tcl_UniChar*)ckalloc(size * sizeof(Tcl_UniChar));
+		if (!outbuf) {
+			PyErr_NoMemory();
+			return NULL;
 		}
-		return Tcl_NewUnicodeObj(PyUnicode_AS_UNICODE(value),
-					 PyUnicode_GET_SIZE(value));
+		for (i = 0; i < size; i++) {
+			if (inbuf[i] >= 0x10000) {
+				/* Tcl doesn't do UTF-16, yet. */
+				PyErr_SetString(PyExc_ValueError,
+						"unsupported character");
+				ckfree(FREECAST outbuf);
+				return NULL;
+			}
+			outbuf[i] = inbuf[i];
+		}
+		result = Tcl_NewUnicodeObj(outbuf, size);
+		ckfree(FREECAST outbuf);
+		return result;
+#else
+		return Tcl_NewUnicodeObj(inbuf, size);
+#endif
+
 	}
 #endif
 	else {
