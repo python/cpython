@@ -68,7 +68,10 @@ tb_dealloc(tb)
 	DEL(tb);
 }
 
-static typeobject Tracebacktype = {
+#define Tracebacktype PyTraceback_Type
+#define is_tracebackobject PyTraceback_Check
+
+typeobject Tracebacktype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"traceback",
@@ -84,8 +87,6 @@ static typeobject Tracebacktype = {
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
 };
-
-#define is_tracebackobject(v) ((v)->ob_type == &Tracebacktype)
 
 static tracebackobject *
 newtracebackobject(next, frame, lasti, lineno)

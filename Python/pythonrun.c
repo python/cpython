@@ -430,7 +430,7 @@ run_node(n, filename, globals, locals)
 	freetree(n);
 	if (co == NULL)
 		return NULL;
-	v = eval_code(co, globals, locals, (object *)NULL, (object *)NULL);
+	v = eval_code(co, globals, locals);
 	DECREF(co);
 	return v;
 }
@@ -462,7 +462,7 @@ run_pyc_file(fp, filename, globals, locals)
 		return NULL;
 	}
 	co = (codeobject *)v;
-	v = eval_code(co, globals, locals, (object *)NULL, (object *)NULL);
+	v = eval_code(co, globals, locals);
 	DECREF(co);
 	return v;
 }
@@ -603,16 +603,9 @@ cleanup()
 	object *exitfunc = sysget("exitfunc");
 
 	if (exitfunc) {
-		object *arg;
 		object *res;
 		sysset("exitfunc", (object *)NULL);
-		arg = newtupleobject(0);
-		if (arg == NULL)
-			res = NULL;
-		else {
-			res = call_object(exitfunc, arg);
-			DECREF(arg);
-		}
+		res = call_object(exitfunc, (object *)NULL);
 		if (res == NULL) {
 			fprintf(stderr, "Error in sys.exitfunc:\n");
 			print_error();

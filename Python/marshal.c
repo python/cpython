@@ -44,7 +44,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define TYPE_TUPLE	'('
 #define TYPE_LIST	'['
 #define TYPE_DICT	'{'
-#define TYPE_CODE	'C'
+#define TYPE_CODE	'c'
 #define TYPE_UNKNOWN	'?'
 
 typedef struct {
@@ -187,9 +187,13 @@ w_object(v, p)
 	else if (is_codeobject(v)) {
 		codeobject *co = (codeobject *)v;
 		w_byte(TYPE_CODE, p);
+		w_short(co->co_argcount, p);
+		w_short(co->co_nlocals, p);
+		w_short(co->co_flags, p);
 		w_object((object *)co->co_code, p);
 		w_object(co->co_consts, p);
 		w_object(co->co_names, p);
+		w_object(co->co_varnames, p);
 		w_object(co->co_filename, p);
 		w_object(co->co_name, p);
 	}
@@ -374,14 +378,20 @@ r_object(p)
 	
 	case TYPE_CODE:
 		{
+			int argcount = r_short(p);
+			int nlocals = r_short(p);
+			int flags = r_short(p);
 			object *code = r_object(p);
 			object *consts = r_object(p);
 			object *names = r_object(p);
+			object *varnames = r_object(p);
 			object *filename = r_object(p);
 			object *name = r_object(p);
 			if (!err_occurred()) {
-				v = (object *) newcodeobject(code,
-						consts, names, filename, name);
+				v = (object *) newcodeobject(
+					argcount, nlocals, flags, 
+					code, consts, names, varnames,
+					filename, name);
 			}
 			else
 				v = NULL;

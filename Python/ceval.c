@@ -24,6 +24,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Execute compiled code */
 
+/* XXX TO DO:
+   XXX how to pass arguments to call_trace?
+   XXX access stuff can probably dereference NULL locals?
+   XXX need to extend apply() to be able to pass keyword args
+   XXX need to be able to call built-in functions with keyword args
+   XXX speed up searching for keywords by using a dictionary
+   XXX unknown keyword shouldn't raise KeyError?
+   XXX document it!
+   */
+
 #include "allobjects.h"
 
 #include "import.h"
@@ -58,6 +68,12 @@ extern int suppress_print; /* Declared in pythonrun.c, set in pythonmain.c */
 
 /* Forward declarations */
 
+static object *eval_code2 PROTO((codeobject *,
+				 object *, object *,
+				 object **, int,
+				 object **, int,
+				 object **, int,
+				 object *));
 #ifdef LLTRACE
 static int prtrace PROTO((object *, char *));
 #endif
@@ -78,8 +94,8 @@ static object *rshift PROTO((object *, object *));
 static object *and PROTO((object *, object *));
 static object *xor PROTO((object *, object *));
 static object *or PROTO((object *, object *));
-static object *call_builtin PROTO((object *, object *));
-static object *call_function PROTO((object *, object *));
+static object *call_builtin PROTO((object *, object *, object *));
+static object *call_function PROTO((object *, object *, object *));
 static object *apply_subscript PROTO((object *, object *));
 static object *loop_subscript PROTO((object *, object *));
 static int slice_index PROTO((object *, int, int *));
@@ -259,15 +275,38 @@ enum why_code {
 };
 
 
-/* Interpreter main loop */
+/* Backward compatible interface */
 
 object *
-eval_code(co, globals, locals, owner, arg)
+eval_code(co, globals, locals)
 	codeobject *co;
 	object *globals;
 	object *locals;
+{
+	return eval_code2(co,
+			  globals, locals,
+			  (object **)NULL, 0,
+			  (object **)NULL, 0,
+			  (object **)NULL, 0,
+			  (object *)NULL);
+}
+
+
+/* Interpreter main loop */
+
+static object *
+eval_code2(co, globals, locals,
+	   args, argcount, kws, kwcount, defs, defcount, owner)
+	codeobject *co;
+	object *globals;
+	object *locals;
+	object **args;
+	int argcount;
+	object **kws; /* length: 2*kwcount */
+	int kwcount;
+	object **defs;
+	int defcount;
 	object *owner;
-	object *arg;
 {
 	register unsigned char *next_instr;
 	register int opcode;	/* Current opcode */
@@ -281,15 +320,14 @@ eval_code(co, globals, locals, owner, arg)
 	register object *u;
 	register object *t;
 	register frameobject *f; /* Current frame */
-	register listobject *fastlocals = NULL;
-	object *retval;		/* Return value iff why == WHY_RETURN */
-	int needmerge = 0;	/* Set if need to merge locals back at end */
+	register object **fastlocals;
+	object *retval;		/* Return value */
 	int defmode = 0;	/* Default access mode for new variables */
 #ifdef LLTRACE
 	int lltrace;
 #endif
-#if defined( DEBUG ) || defined( LLTRACE )
-	/* Make it easier to find out where we are with dbx */
+#if defined(DEBUG) || defined(LLTRACE)
+	/* Make it easier to find out where we are with a debugger */
 	char *filename = getstringvalue(co->co_filename);
 #endif
 
@@ -324,8 +362,14 @@ eval_code(co, globals, locals, owner, arg)
 #define POP()		BASIC_POP()
 #endif
 
-	if (globals == NULL || locals == NULL) {
-		err_setstr(SystemError, "eval_code: NULL globals or locals");
+/* Local variable macros */
+
+#define GETLOCAL(i)	(fastlocals[i])
+#define SETLOCAL(i, value)	do { XDECREF(GETLOCAL(i)); \
+				     GETLOCAL(i) = value; } while (0)
+
+	if (globals == NULL) {
+		err_setstr(SystemError, "eval_code2: NULL globals");
 		return NULL;
 	}
 
@@ -343,8 +387,112 @@ eval_code(co, globals, locals, owner, arg)
 			20);			/*nblocks*/
 	if (f == NULL)
 		return NULL;
-	
+
 	current_frame = f;
+
+	if (co->co_nlocals > 0)
+		fastlocals = ((listobject *)f->f_fastlocals)->ob_item;
+
+	if (co->co_argcount > 0 ||
+	    co->co_flags & (CO_VARARGS | CO_VARKEYWORDS)) {
+		int i;
+		int n = argcount;
+		object *kwdict = NULL;
+		if (co->co_flags & CO_VARKEYWORDS) {
+			kwdict = newmappingobject();
+			if (kwdict == NULL)
+				goto fail;
+		}
+		if (argcount > co->co_argcount) {
+			if (!(co->co_flags & CO_VARARGS)) {
+				err_setstr(TypeError, "too many arguments");
+				goto fail;
+			}
+			n = co->co_argcount;
+		}
+		for (i = 0; i < n; i++) {
+			x = args[i];
+			INCREF(x);
+			SETLOCAL(i, x);
+		}
+		if (co->co_flags & CO_VARARGS) {
+			u = newtupleobject(argcount - n);
+			for (i = n; i < argcount; i++) {
+				x = args[i];
+				INCREF(x);
+				SETTUPLEITEM(u, i-n, x);
+			}
+			SETLOCAL(co->co_argcount, u);
+		}
+		for (i = 0; i < kwcount; i++) {
+			object *keyword = kws[2*i];
+			object *value = kws[2*i + 1];
+			int j;
+			/* XXX slow -- speed up using dictionary? */
+			for (j = 0; j < co->co_argcount; j++) {
+				object *nm = GETTUPLEITEM(co->co_varnames, j);
+				if (cmpobject(keyword, nm) == 0)
+					break;
+			}
+			if (j >= co->co_argcount) {
+				if (kwdict == NULL) {
+					err_setval(KeyError/*XXX*/, keyword);
+					goto fail;
+				}
+				mappinginsert(kwdict, keyword, value);
+			}
+			else {
+				if (GETLOCAL(j) != NULL) {
+					err_setstr(TypeError,
+						"keyword parameter redefined");
+					goto fail;
+				}
+				INCREF(value);
+				SETLOCAL(j, value);
+			}
+		}
+		if (argcount < co->co_argcount) {
+			int m = co->co_argcount - defcount;
+			for (i = argcount; i < m; i++) {
+				if (GETLOCAL(i) == NULL) {
+					err_setstr(TypeError,
+						   "not enough arguments");
+					goto fail;
+				}
+			}
+			if (n > m)
+				i = n - m;
+			else
+				i = 0;
+			for (; i < defcount; i++) {
+				if (GETLOCAL(m+i) == NULL) {
+					object *def = defs[i];
+					INCREF(def);
+					SETLOCAL(m+i, def);
+				}
+			}
+		}
+		if (kwdict != NULL) {
+			i = co->co_argcount;
+			if (co->co_flags & CO_VARARGS)
+				i++;
+			SETLOCAL(i, kwdict);
+		}
+		if (0) {
+	 fail:
+			XDECREF(kwdict);
+			goto fail2;
+		}
+	}
+	else {
+		if (argcount > 0 || kwcount > 0) {
+			err_setstr(TypeError, "no arguments expected");
+ fail2:
+			current_frame = f->f_back;
+			DECREF(f);
+			return NULL;
+		}
+	}
 
 	if (sys_trace != NULL) {
 		/* sys_trace, if defined, is a function that will
@@ -359,7 +507,8 @@ eval_code(co, globals, locals, owner, arg)
 		   depends on the situation.  The global trace function
 		   (sys.trace) is also called whenever an exception
 		   is detected. */
-		if (call_trace(&sys_trace, &f->f_trace, f, "call", arg)) {
+		if (call_trace(&sys_trace, &f->f_trace, f, "call",
+			       None/*XXX how to compute arguments now?*/)) {
 			/* Trace function raised an error */
 			current_frame = f->f_back;
 			DECREF(f);
@@ -370,7 +519,8 @@ eval_code(co, globals, locals, owner, arg)
 	if (sys_profile != NULL) {
 		/* Similar for sys_profile, except it needn't return
 		   itself and isn't called for "line" events */
-		if (call_trace(&sys_profile, (object**)0, f, "call", arg)) {
+		if (call_trace(&sys_profile, (object**)0, f, "call",
+			       None/*XXX*/)) {
 			current_frame = f->f_back;
 			DECREF(f);
 			return NULL;
@@ -379,11 +529,6 @@ eval_code(co, globals, locals, owner, arg)
 
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
 	stack_pointer = f->f_valuestack;
-	
-	if (arg != NULL) {
-		INCREF(arg);
-		PUSH(arg);
-	}
 	
 	why = WHY_NOT;
 	err = 0;
@@ -522,14 +667,6 @@ eval_code(co, globals, locals, owner, arg)
 			DECREF(v);
 			PUSH(x);
 			break;
-		
-		case UNARY_CALL:
-			v = POP();
-			f->f_lasti = INSTR_OFFSET() - 1; /* For tracing */
-			x = call_object(v, (object *)NULL);
-			DECREF(v);
-			PUSH(x);
-			break;
 			
 		case UNARY_INVERT:
 			v = POP();
@@ -587,16 +724,6 @@ eval_code(co, globals, locals, owner, arg)
 			w = POP();
 			v = POP();
 			x = apply_subscript(v, w);
-			DECREF(v);
-			DECREF(w);
-			PUSH(x);
-			break;
-		
-		case BINARY_CALL:
-			w = POP();
-			v = POP();
-			f->f_lasti = INSTR_OFFSET() - 1; /* For tracing */
-			x = call_object(v, w);
 			DECREF(v);
 			DECREF(w);
 			PUSH(x);
@@ -776,9 +903,6 @@ eval_code(co, globals, locals, owner, arg)
 			why = WHY_BREAK;
 			break;
 
-		case RAISE_EXCEPTION:
-			oparg = 2;
-			/* Fallthrough */
 		case RAISE_VARARGS:
 			u = v = w = NULL;
 			switch (oparg) {
@@ -788,10 +912,7 @@ eval_code(co, globals, locals, owner, arg)
 					DECREF(u);
 					u = NULL;
 				}
-				else if (strcmp(u->ob_type->tp_name,
-						"traceback") != 0) {
-					/* XXX traceback.h needs to define
-					   is_traceback() */
+				else if (!PyTraceback_Check(u)) {
 					err_setstr(TypeError,
 				    "raise 3rd arg must be traceback or None");
 					goto raise_error;
@@ -814,8 +935,8 @@ eval_code(co, globals, locals, owner, arg)
 			}
 			/* A tuple is equivalent to its first element here */
 			while (is_tupleobject(w) && gettuplesize(w) > 0) {
-				object *t = w;
-				w = GETTUPLEITEM(t, 0);
+				t = w;
+				w = GETTUPLEITEM(w, 0);
 				INCREF(w);
 				DECREF(t);
 			}
@@ -861,20 +982,17 @@ eval_code(co, globals, locals, owner, arg)
 			break;
 		
 		case LOAD_LOCALS:
-			v = f->f_locals;
-			INCREF(v);
-			PUSH(v);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			INCREF(x);
+			PUSH(x);
 			break;
 		
 		case RETURN_VALUE:
 			retval = POP();
 			why = WHY_RETURN;
-			break;
-
-		case LOAD_GLOBALS:
-			v = f->f_locals;
-			INCREF(v);
-			PUSH(v);
 			break;
 
 		case EXEC_STMT:
@@ -884,21 +1002,6 @@ eval_code(co, globals, locals, owner, arg)
 			err = exec_statement(u, v, w);
 			DECREF(u);
 			DECREF(v);
-			DECREF(w);
-			break;
-		
-		case BUILD_FUNCTION:
-			v = POP();
-			x = newfuncobject(v, f->f_globals);
-			DECREF(v);
-			PUSH(x);
-			break;
-
-		case SET_FUNC_ARGS:
-			v = POP(); /* The function */
-			w = POP(); /* The argument list */
-			err = setfuncargstuff(v, oparg, w);
-			PUSH(v);
 			DECREF(w);
 			break;
 		
@@ -947,14 +1050,18 @@ eval_code(co, globals, locals, owner, arg)
 		case STORE_NAME:
 			w = GETNAMEV(oparg);
 			v = POP();
-			u = dict2lookup(f->f_locals, w);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			u = dict2lookup(x, w);
 			if (u == NULL) {
 				if (defmode != 0) {
 					if (v != None)
 						u = (object *)v->ob_type;
 					else
 						u = NULL;
-					x = newaccessobject(v, f->f_locals,
+					x = newaccessobject(v, x,
 							    (typeobject *)u,
 							    defmode);
 					DECREF(v);
@@ -964,23 +1071,27 @@ eval_code(co, globals, locals, owner, arg)
 				}
 			}
 			else if (is_accessobject(u)) {
-				err = setaccessvalue(u, f->f_locals, v);
+				err = setaccessvalue(u, x, v);
 				DECREF(v);
 				break;
 			}
-			err = dict2insert(f->f_locals, w, v);
+			err = dict2insert(x, w, v);
 			DECREF(v);
 			break;
 		
 		case DELETE_NAME:
 			w = GETNAMEV(oparg);
-			u = dict2lookup(f->f_locals, w);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			u = dict2lookup(x, w);
 			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, f->f_locals,
+				err = setaccessvalue(u, x,
 						     (object *)NULL);
 				break;
 			}
-			if ((err = dict2remove(f->f_locals, w)) != 0)
+			if ((err = dict2remove(x, w)) != 0)
 				err_setval(NameError, w);
 			break;
 
@@ -988,74 +1099,6 @@ eval_code(co, globals, locals, owner, arg)
 		default: switch (opcode) {
 #endif
 		
-		case UNPACK_VARARG:
-			if (EMPTY()) {
-				err_setstr(TypeError,
-					   "no argument list");
-				why = WHY_EXCEPTION;
-				break;
-			}
-			v = POP();
-			if (!is_tupleobject(v)) {
-				err_setstr(TypeError,
-					   "bad argument list");
-				why = WHY_EXCEPTION;
-			}
-			else if (gettuplesize(v) < oparg) {
-				err_setstr(TypeError,
-					"not enough arguments");
-				why = WHY_EXCEPTION;
-			}
-			else if (oparg == 0) {
-				PUSH(v);
-				break;
-			}
-			else {
-				x = gettupleslice(v, oparg, gettuplesize(v));
-				if (x != NULL) {
-					PUSH(x);
-					if (!CHECK_STACK(oparg)) {
-						x = NULL;
-						break;
-					}
-					for (; --oparg >= 0; ) {
-						w = GETTUPLEITEM(v, oparg);
-						INCREF(w);
-						PUSH(w);
-					}
-				}
-			}
-			DECREF(v);
-			break;
-		
-		case UNPACK_ARG:
-			{
-				int n;
-				if (EMPTY()) {
-					err_setstr(TypeError,
-						   "no argument list");
-					why = WHY_EXCEPTION;
-					break;
-				}
-				v = POP();
-				if (!is_tupleobject(v)) {
-					err_setstr(TypeError,
-						   "bad argument list");
-					why = WHY_EXCEPTION;
-					DECREF(v);
-					break;
-				}
-				n = gettuplesize(v);
-				if (n != oparg) {
-					err_setstr(TypeError,
-						"arg count mismatch");
-					why = WHY_EXCEPTION;
-					DECREF(v);
-					break;
-				}
-				PUSH(v);
-			}
-			/* Fall through */
 		case UNPACK_TUPLE:
 			v = POP();
 			if (!is_tupleobject(v)) {
@@ -1125,11 +1168,14 @@ eval_code(co, globals, locals, owner, arg)
 		case STORE_GLOBAL:
 			w = GETNAMEV(oparg);
 			v = POP();
-			u = dict2lookup(f->f_locals, w);
-			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, f->f_globals, v);
-				DECREF(v);
-				break;
+			if (f->f_locals != NULL) {
+				u = dict2lookup(f->f_locals, w);
+				if (u != NULL && is_accessobject(u)) {
+					err = setaccessvalue(u, f->f_globals,
+							     v);
+					DECREF(v);
+					break;
+				}
 			}
 			err = dict2insert(f->f_globals, w, v);
 			DECREF(v);
@@ -1137,11 +1183,13 @@ eval_code(co, globals, locals, owner, arg)
 		
 		case DELETE_GLOBAL:
 			w = GETNAMEV(oparg);
-			u = dict2lookup(f->f_locals, w);
-			if (u != NULL && is_accessobject(u)) {
-				err = setaccessvalue(u, f->f_globals,
-						     (object *)NULL);
-				break;
+			if (f->f_locals != NULL) {
+				u = dict2lookup(f->f_locals, w);
+				if (u != NULL && is_accessobject(u)) {
+					err = setaccessvalue(u, f->f_globals,
+							     (object *)NULL);
+					break;
+				}
 			}
 			if ((err = dict2remove(f->f_globals, w)) != 0)
 				err_setval(NameError, w);
@@ -1155,7 +1203,11 @@ eval_code(co, globals, locals, owner, arg)
 		
 		case LOAD_NAME:
 			w = GETNAMEV(oparg);
-			x = dict2lookup(f->f_locals, w);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			x = dict2lookup(x, w);
 			if (x == NULL) {
 				err_clear();
 				x = dict2lookup(f->f_globals, w);
@@ -1198,10 +1250,15 @@ eval_code(co, globals, locals, owner, arg)
 				INCREF(x);
 			PUSH(x);
 			break;
-		
+
+#if 0
 		case LOAD_LOCAL:
 			w = GETNAMEV(oparg);
-			x = dict2lookup(f->f_locals, w);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			x = dict2lookup(x, w);
 			if (x == NULL) {
 				err_setval(NameError, w);
 				break;
@@ -1215,29 +1272,14 @@ eval_code(co, globals, locals, owner, arg)
 				INCREF(x);
 			PUSH(x);
 			break;
-
-		case RESERVE_FAST:
-			x = GETCONST(oparg);
-			if (x == None)
-				break;
-			if (x == NULL || !is_tupleobject(x)) {
-				err_setstr(SystemError, "bad RESERVE_FAST");
-				x = NULL;
-				break;
-			}
-			XDECREF(f->f_fastlocals);
-			XDECREF(f->f_localmap);
-			INCREF(x);
-			f->f_localmap = x;
-			f->f_fastlocals = x = newlistobject(gettuplesize(x));
-			fastlocals = (listobject *) x;
-			break;
+#endif
 
 		case LOAD_FAST:
-			x = GETLISTITEM(fastlocals, oparg);
+			x = GETLOCAL(oparg);
 			if (x == NULL) {
 				err_setval(NameError,
-					   gettupleitem(f->f_localmap, oparg));
+					   gettupleitem(co->co_varnames,
+							oparg));
 				break;
 			}
 			if (is_accessobject(x)) {
@@ -1252,30 +1294,29 @@ eval_code(co, globals, locals, owner, arg)
 
 		case STORE_FAST:
 			v = POP();
-			w = GETLISTITEM(fastlocals, oparg);
+			w = GETLOCAL(oparg);
 			if (w != NULL && is_accessobject(w)) {
 				err = setaccessvalue(w, f->f_locals, v);
 				DECREF(v);
 				break;
 			}
-			GETLISTITEM(fastlocals, oparg) = v;
-			XDECREF(w);
+			SETLOCAL(oparg, v);
 			break;
 
 		case DELETE_FAST:
-			x = GETLISTITEM(fastlocals, oparg);
+			x = GETLOCAL(oparg);
 			if (x == NULL) {
 				err_setval(NameError,
-					   gettupleitem(f->f_localmap, oparg));
+					   gettupleitem(co->co_varnames,
+							oparg));
 				break;
 			}
-			if (x != NULL && is_accessobject(x)) {
+			if (is_accessobject(x)) {
 				err = setaccessvalue(x, f->f_locals,
 						     (object *)NULL);
 				break;
 			}
-			GETLISTITEM(fastlocals, oparg) = NULL;
-			DECREF(x);
+			SETLOCAL(oparg, NULL);
 			break;
 		
 		case BUILD_TUPLE:
@@ -1343,7 +1384,11 @@ eval_code(co, globals, locals, owner, arg)
 					break;
 				}
 			}
-			w = mkvalue("(OOOO)", w, f->f_globals, f->f_locals, u);
+			w = mkvalue("(OOOO)",
+				    w,
+				    f->f_globals,
+				    f->f_locals == NULL ? None : f->f_locals,
+				    u);
 			DECREF(u);
 			if (w == NULL) {
 				x = NULL;
@@ -1358,7 +1403,11 @@ eval_code(co, globals, locals, owner, arg)
 			w = GETNAMEV(oparg);
 			v = TOP();
 			fast_2_locals(f);
-			err = import_from(f->f_locals, v, w);
+			if ((x = f->f_locals) == NULL) {
+				err_setstr(SystemError, "no locals");
+				break;
+			}
+			err = import_from(x, v, w);
 			locals_2_fast(f, 0);
 			break;
 
@@ -1447,12 +1496,6 @@ eval_code(co, globals, locals, owner, arg)
 
 		case CALL_FUNCTION:
 		{
-			/* XXX To do:
-			   - fill in default arguments here
-			   - proper handling of keyword parameters
-			   - change eval_code interface to take an
-			     array of arguments instead of a tuple
-			   */
 			int na = oparg & 0xff;
 			int nk = (oparg>>8) & 0xff;
 			int n = na + 2*nk;
@@ -1460,75 +1503,120 @@ eval_code(co, globals, locals, owner, arg)
 			object *func = *pfunc;
 			object *self = NULL;
 			object *class = NULL;
-			object *args;
 			f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
-			INCREF(func);
 			if (is_instancemethodobject(func)) {
 				self = instancemethodgetself(func);
+				class = instancemethodgetclass(func);
+				func = instancemethodgetfunc(func);
+				INCREF(func);
 				if (self != NULL) {
-					class = instancemethodgetclass(func);
-					DECREF(func);
-					func = instancemethodgetfunc(func);
-					INCREF(func);
 					INCREF(self);
 					DECREF(*pfunc);
 					*pfunc = self;
 					na++;
 					n++;
 				}
-			}
-			args = newtupleobject(n);
-			if (args == NULL)
-				x = NULL;
-			else {
-				while (--n >= 0) {
-					w = POP();
-					SETTUPLEITEM(args, n, w);
-				}
-				if (self == NULL)
-					 POP();
-				if (is_funcobject(func)) {
-					int argcount;
-					object *argdefs =
-					    getfuncargstuff(func, &argcount);
-					if (argdefs == NULL) { /* Fast path */
-						object *co, *loc, *glob;
-						co = getfunccode(func);
-						loc = newdictobject();
-						if (loc == NULL) {
-							x = NULL;
-							DECREF(func);
-							break;
-						}
-						glob = getfuncglobals(func);
-						INCREF(glob);
-						x = eval_code(
-							(codeobject *)co,
-							glob,
-							loc,
-							class,
-							args);
-						DECREF(glob);
-						DECREF(loc);
-						DECREF(args);
-						DECREF(func);
-						PUSH(x);
-						break;
+				else {
+					/* Unbound methods must be
+					   called with an instance of
+					   the class (or a derived
+					   class) as first argument */
+					if (na > 0 &&
+					    (self = stack_pointer[-n])
+					 	!= NULL &&
+					    is_instanceobject(self) &&
+					    issubclass(
+						    (object *)
+						    (((instanceobject *)self)
+						     ->in_class),
+						    class))
+						/* Handy-dandy */ ;
+					else {
+						err_setstr(TypeError,
+	   "unbound method must be called with class instance 1st argument");
+						return NULL;
 					}
 				}
-				x = call_object(func, args);
-				DECREF(args);
-				PUSH(x);
+			}
+			else
+				INCREF(func);
+			if (is_funcobject(func)) {
+				object *co = getfunccode(func);
+				object *globals = getfuncglobals(func);
+				object *argdefs = PyFunction_GetDefaults(func);
+				object **d;
+				int nd;
+				if (argdefs != NULL) {
+					d = &GETTUPLEITEM(argdefs, 0);
+					nd = ((tupleobject *)argdefs)->ob_size;
+				}
+				else {
+					d = NULL;
+					nd = 0;
+				}
+				x = eval_code2(
+					(codeobject *)co,
+					globals, (object *)NULL,
+					stack_pointer-n, na,
+					stack_pointer-2*nk, nk,
+					d, nd,
+					class);
+			}
+			else {
+				object *args = newtupleobject(na);
+				object *kwdict = NULL;
+				if (args == NULL)
+					x = NULL;
+				else if (nk > 0) {
+					err_setstr(SystemError,
+			"calling built-in with keywords not yet implemented");
+					x = NULL;
+				}
+				else {
+					while (--na >= 0) {
+						w = POP();
+						SETTUPLEITEM(args, na, w);
+					}
+					x = call_object(func, args);
+					DECREF(args);
+				}
 			}
 			DECREF(func);
+			while (stack_pointer > pfunc) {
+				w = POP();
+				DECREF(w);
+			}
+			PUSH(x);
 			break;
 		}
+		
+		case MAKE_FUNCTION:
+			v = POP(); /* code object */
+			x = newfuncobject(v, f->f_globals);
+			DECREF(v);
+			/* XXX Maybe this should be a separate opcode? */
+			if (x != NULL && oparg > 0) {
+				v = newtupleobject(oparg);
+				if (v == NULL) {
+					DECREF(x);
+					x = NULL;
+					break;
+				}
+				while (--oparg >= 0) {
+					w = POP();
+					SETTUPLEITEM(v, oparg, w);
+				}
+				err = PyFunction_SetDefaults(x, v);
+				DECREF(v);
+			}
+			PUSH(x);
+			break;
 		
 		default:
 			fprintf(stderr,
 				"XXX lineno: %d, opcode: %d\n",
 				f->f_lineno, opcode);
-			err_setstr(SystemError, "eval_code: unknown opcode");
+			err_setstr(SystemError, "unknown opcode");
 			why = WHY_EXCEPTION;
 			break;
 
@@ -1543,8 +1631,15 @@ eval_code(co, globals, locals, owner, arg)
 		/* Quickly continue if no error occurred */
 		
 		if (why == WHY_NOT) {
-			if (err == 0 && x != NULL)
-				continue; /* Normal, fast path */
+			if (err == 0 && x != NULL) {
+#ifdef CHECKEXC
+				if (err_occurred())
+					fprintf(stderr,
+						"XXX undetected error\n");
+				else
+#endif
+					continue; /* Normal, fast path */
+			}
 			why = WHY_EXCEPTION;
 			x = None;
 			err = 0;
@@ -1561,8 +1656,12 @@ eval_code(co, globals, locals, owner, arg)
 			}
 		}
 		else {
-			if (err_occurred())
-				fatal("XXX undetected error");
+			if (err_occurred()) {
+				fprintf(stderr,
+					"XXX undetected error (why=%d)\n",
+					why);
+				why = WHY_EXCEPTION;
+			}
 		}
 #endif
 
@@ -1672,12 +1771,9 @@ eval_code(co, globals, locals, owner, arg)
 	}
 	
 	/* Restore previous frame and release the current one */
-	
+
 	current_frame = f->f_back;
 	DECREF(f);
-
-	if (needmerge)
-		locals_2_fast(current_frame, 1);
 	
 	return retval;
 }
@@ -2134,38 +2230,66 @@ not(v)
 }
 
 
-/* External interface to call any callable object. The arg may be NULL. */
+/* External interface to call any callable object.
+   The arg must be a tuple or NULL. */
 
 object *
 call_object(func, arg)
 	object *func;
 	object *arg;
 {
-        binaryfunc call;
-        object *result;
-        
-        if (call = func->ob_type->tp_call)
-                result = (*call)(func, arg);
-        else if (is_instancemethodobject(func) || is_funcobject(func))
-		result = call_function(func, arg);
-	else
-		result = call_builtin(func, arg);
+	return PyEval_CallObjectWithKeywords(func, arg, (object *)NULL);
+}
 
+object *
+PyEval_CallObjectWithKeywords(func, arg, kw)
+	object *func;
+	object *arg;
+	object *kw;
+{
+        ternaryfunc call;
+        object *result;
+
+	if (arg == NULL)
+		arg = newtupleobject(0);
+	else if (!is_tupleobject(arg)) {
+		err_setstr(TypeError, "argument list must be a tuple");
+		return NULL;
+	}
+	else
+		INCREF(arg);
+
+        if (call = func->ob_type->tp_call)
+                result = (*call)(func, arg, kw);
+        else if (is_instancemethodobject(func) || is_funcobject(func))
+		result = call_function(func, arg, kw);
+	else
+		result = call_builtin(func, arg, kw);
+
+	DECREF(arg);
+	
         if (result == NULL && !err_occurred())
-		fatal("null result without error in call_object");
+		err_setstr(SystemError,
+			   "NULL result without error in call_object");
         
         return result;
 }
 
 static object *
-call_builtin(func, arg)
+call_builtin(func, arg, kw)
 	object *func;
 	object *arg;
+	object *kw;
 {
+	if (kw != NULL) {
+		err_setstr(SystemError,
+			"calling built-in with keywords not yet implemented");
+		return NULL;
+	}
 	if (is_methodobject(func)) {
 		method meth = getmethod(func);
 		object *self = getself(func);
-		if (!getvarargs(func) && arg != NULL && is_tupleobject(arg)) {
+		if (!getvarargs(func)) {
 			int size = gettuplesize(arg);
 			if (size == 1)
 				arg = GETTUPLEITEM(arg, 0);
@@ -2181,7 +2305,8 @@ call_builtin(func, arg)
 	        object *res, *call = getattr(func,"__call__");
 		if (call == NULL) {
 			err_clear();
-			err_setstr(AttributeError, "no __call__ method defined");
+			err_setstr(AttributeError,
+				   "no __call__ method defined");
 			return NULL;
 		}
 		res = call_object(call, arg);
@@ -2193,16 +2318,21 @@ call_builtin(func, arg)
 }
 
 static object *
-call_function(func, arg)
+call_function(func, arg, kw)
 	object *func;
 	object *arg;
+	object *kw;
 {
-	object *newarg = NULL;
-	object *newlocals, *newglobals;
-	object *class = NULL;
-	object *co, *v;
+	object *class = NULL; /* == owner */
 	object *argdefs;
-	int	argcount;
+	object **d, **k;
+	int nk, nd;
+	object *result;
+	
+	if (kw != NULL && !is_dictobject(kw)) {
+		err_badcall();
+		return NULL;
+	}
 	
 	if (is_instancemethodobject(func)) {
 		object *self = instancemethodgetself(func);
@@ -2211,48 +2341,36 @@ call_function(func, arg)
 		if (self == NULL) {
 			/* Unbound methods must be called with an instance of
 			   the class (or a derived class) as first argument */
-			if (arg != NULL && is_tupleobject(arg) &&
-			    gettuplesize(arg) >= 1) {
+			if (gettuplesize(arg) >= 1) {
 				self = GETTUPLEITEM(arg, 0);
 				if (self != NULL &&
 				    is_instanceobject(self) &&
 				    issubclass((object *)
 				      (((instanceobject *)self)->in_class),
 					       class))
-					/* self = self */ ;
+					/* Handy-dandy */ ;
 				else
 					self = NULL;
 			}
 			if (self == NULL) {
 				err_setstr(TypeError,
-	   "unbound method must be called with class instance argument");
+	   "unbound method must be called with class instance 1st argument");
 				return NULL;
 			}
+			INCREF(arg);
 		}
 		else {
-			if (arg == NULL)
-				argcount = 0;
-			else if (is_tupleobject(arg))
-				argcount = gettuplesize(arg);
-			else
-				argcount = 1;
-			newarg = newtupleobject(argcount + 1);
+			int argcount = gettuplesize(arg);
+			object *newarg = newtupleobject(argcount + 1);
+			int i;
 			if (newarg == NULL)
 				return NULL;
 			INCREF(self);
 			SETTUPLEITEM(newarg, 0, self);
-			if (arg != NULL && !is_tupleobject(arg)) {
-				INCREF(arg);
-				SETTUPLEITEM(newarg, 1, arg);
-			}
-			else {
-				int i;
-				object *v;
-				for (i = 0; i < argcount; i++) {
-					v = GETTUPLEITEM(arg, i);
-					XINCREF(v);
-					SETTUPLEITEM(newarg, i+1, v);
-				}
+			for (i = 0; i < argcount; i++) {
+				object *v = GETTUPLEITEM(arg, i);
+				XINCREF(v);
+				SETTUPLEITEM(newarg, i+1, v);
 			}
 			arg = newarg;
 		}
@@ -2262,65 +2380,51 @@ call_function(func, arg)
 			err_setstr(TypeError, "call of non-function");
 			return NULL;
 		}
+		INCREF(arg);
 	}
-
-	argdefs = getfuncargstuff(func, &argcount);
-	if (argdefs != NULL && arg != NULL && is_tupleobject(arg)) {
-		int actualcount, j;
-		/* Process default arguments */
-		if (argcount & 0x4000)
-			argcount ^= 0x4000;
-		actualcount = gettuplesize(arg);
-		j = gettuplesize(argdefs) - (argcount - actualcount);
-		if (actualcount < argcount && j >= 0) {
-			int i;
-			object *v;
-			if (newarg == NULL)
-				INCREF(arg);
-			newarg = newtupleobject(argcount);
-			if (newarg == NULL) {
-				DECREF(arg);
-				return NULL;
-			}
-			for (i = 0; i < actualcount; i++) {
-				v = GETTUPLEITEM(arg, i);
-				XINCREF(v);
-				SETTUPLEITEM(newarg, i, v);
-			}
-			for (; i < argcount; i++, j++) {
-				v = GETTUPLEITEM(argdefs, j);
-				XINCREF(v);
-				SETTUPLEITEM(newarg, i, v);
-			}
+	
+	argdefs = PyFunction_GetDefaults(func);
+	if (argdefs != NULL && is_tupleobject(argdefs)) {
+		d = &GETTUPLEITEM((tupleobject *)argdefs, 0);
+		nd = gettuplesize(argdefs);
+	}
+	else {
+		d = NULL;
+		nd = 0;
+	}
+	
+	if (kw != NULL) {
+		int pos, i;
+		nk = getmappingsize(kw);
+		k = NEW(object *, 2*nk);
+		if (k == NULL) {
+			err_nomem();
 			DECREF(arg);
-			arg = newarg;
+			return NULL;
 		}
+		pos = i = 0;
+		while (mappinggetnext(kw, &pos, &k[i], &k[i+1]))
+			i += 2;
+		nk = i/2;
+		/* XXX This is broken if the caller deletes dict items! */
+	}
+	else {
+		k = NULL;
+		nk = 0;
 	}
 	
-	co = getfunccode(func);
-	if (co == NULL) {
-		XDECREF(newarg);
-		return NULL;
-	}
-	if (!is_codeobject(co))
-		fatal("XXX Bad code");
-	newlocals = newdictobject();
-	if (newlocals == NULL) {
-		XDECREF(newarg);
-		return NULL;
-	}
+	result = eval_code2(
+		(codeobject *)getfunccode(func),
+		getfuncglobals(func), (object *)NULL,
+		&GETTUPLEITEM(arg, 0), gettuplesize(arg),
+		k, nk,
+		d, nd,
+		class);
 	
-	newglobals = getfuncglobals(func);
-	INCREF(newglobals);
+	DECREF(arg);
+	XDEL(k);
 	
-	v = eval_code((codeobject *)co, newglobals, newlocals, class, arg);
-	
-	DECREF(newlocals);
-	DECREF(newglobals);
-	
-	XDECREF(newarg);
-	
-	return v;
+	return result;
 }
 
 static object *
@@ -2690,21 +2794,9 @@ access_statement(name, vmode, f)
 	int mode = getintvalue(vmode);
 	object *value, *ac;
 	typeobject *type;
-	int fastind, ret;
-	fastind = -1;
-	if (f->f_localmap == NULL)
-		value = dict2lookup(f->f_locals, name);
-	else {
-		object *map = f->f_localmap;
-		value = NULL;
-		for (fastind = gettuplesize(map); --fastind >= 0; ) {
-			object *fname = GETTUPLEITEM(map, fastind);
-			if (cmpobject(name, fname) == 0) {
-				value = getlistitem(f->f_fastlocals, fastind);
-				break;
-			}
-		}
-	}
+	int ret;
+	fast_2_locals(f);
+	value = dict2lookup(f->f_locals, name);
 	if (value && is_accessobject(value)) {
 		err_setstr(AccessError, "can't override access");
 		return -1;
@@ -2717,12 +2809,9 @@ access_statement(name, vmode, f)
 	ac = newaccessobject(value, f->f_locals, type, mode);
 	if (ac == NULL)
 		return -1;
-	if (fastind >= 0)
-		ret = setlistitem(f->f_fastlocals, fastind, ac);
-	else {
-		ret = dict2insert(f->f_locals, name, ac);
-		DECREF(ac);
-	}
+	ret = mappinginsert(f->f_locals, name, ac);
+	DECREF(ac);
+	locals_2_fast(f, 0);
 	return ret;
 }
 
@@ -2735,6 +2824,7 @@ exec_statement(prog, globals, locals)
 	char *s;
 	int n;
 	object *v;
+	int plain = 0;
 
 	if (is_tupleobject(prog) && globals == None && locals == None &&
 	    ((n = gettuplesize(prog)) == 2 || n == 3)) {
@@ -2746,8 +2836,10 @@ exec_statement(prog, globals, locals)
 	}
 	if (globals == None) {
 		globals = getglobals();
-		if (locals == None)
+		if (locals == None) {
 			locals = getlocals();
+			plain = 1;
+		}
 	}
 	else if (locals == None)
 		locals = globals;
@@ -2766,8 +2858,7 @@ exec_statement(prog, globals, locals)
 	if (dictlookup(globals, "__builtins__") == NULL)
 		dictinsert(globals, "__builtins__", current_frame->f_builtins);
 	if (is_codeobject(prog)) {
-		if (eval_code((codeobject *) prog, globals, locals,
-				 (object *)NULL, (object *)NULL) == NULL)
+		if (eval_code((codeobject *) prog, globals, locals) == NULL)
 			return -1;
 		return 0;
 	}
@@ -2783,13 +2874,16 @@ exec_statement(prog, globals, locals)
 		err_setstr(ValueError, "embedded '\\0' in exec string");
 		return -1;
 	}
-	if ((v = run_string(s, file_input, globals, locals)) == NULL)
+	v = run_string(s, file_input, globals, locals);
+	if (v == NULL)
 		return -1;
 	DECREF(v);
+	if (plain)
+		locals_2_fast(current_frame, 0);
 	return 0;
 }
 
-/* Hack for Ken Manheimer */
+/* Hack for newimp.py */
 static object *
 find_from_args(f, nexti)
 	frameobject *f;
@@ -2812,7 +2906,8 @@ find_from_args(f, nexti)
 		return NULL;
 	
 	do {
-		oparg = (next_instr += 2, (next_instr[-1]<<8) + next_instr[-2]);
+		oparg = (next_instr[1]<<8) + next_instr[0];
+		next_instr += 2;
 		name = Getnamev(f, oparg);
 		if (addlistitem(list, name) < 0) {
 			DECREF(list);
