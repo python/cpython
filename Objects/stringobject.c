@@ -835,7 +835,7 @@ string_join(PyStringObject *self, PyObject *args)
 			if (PyUnicode_Check(item)) {
 				Py_DECREF(res);
 				Py_DECREF(seq);
-				return PyUnicode_Join((PyObject *)self, seq);
+				return PyUnicode_Join((PyObject *)self, orig);
 			}
 			PyErr_Format(PyExc_TypeError,
 				     "sequence item %i: expected string,"
