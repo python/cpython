@@ -550,6 +550,8 @@ AsObj(value)
 		return result;
 	}
 	else if (PyUnicode_Check(value)) {
+#if TKMAJORMINOR <= 8001
+		/* In Tcl 8.1 we must use UTF-8 */
 		PyObject* utf8 = PyUnicode_AsUTF8String (value);
 		if (!utf8)
 			return 0;
@@ -557,6 +559,17 @@ AsObj(value)
 					 PyString_GET_SIZE (utf8));
 		Py_DECREF(utf8);
 		return result;
+#else /* TKMAJORMINOR > 8001 */
+		/* In Tcl 8.2 and later, use Tcl_NewUnicodeObj() */
+		if (sizeof(Py_UNICODE) != sizeof(Tcl_UniChar)) {
+			/* XXX Should really test this at compile time */
+			PyErr_SetString(PyExc_SystemError,
+					"Py_UNICODE and Tcl_UniChar differ in size");
+			return 0;
+		}
+		return Tcl_NewUnicodeObj(PyUnicode_AS_UNICODE(value),
+					 PyUnicode_GET_SIZE(value));
+#endif /* TKMAJORMINOR > 8001 */
 	}
 	else {
 		PyObject *v = PyObject_Str(value);
@@ -624,10 +637,26 @@ Tkapp_Call(self, args)
 	ENTER_OVERLAP
 	if (i == TCL_ERROR)
 		Tkinter_Error(self);
-	else
+	else {
 		/* We could request the object result here, but doing
 		   so would confuse applications that expect a string. */
-		res = PyString_FromString(Tcl_GetStringResult(interp));
+		char *s = Tcl_GetStringResult(interp);
+		char *p = s;
+		/* If the result contains any bytes with the top bit set,
+		   it's UTF-8 and we should decode it to Unicode */
+		while (*p != '\0') {
+			if (*p & 0x80)
+				break;
+			p++;
+		}
+		if (*p == '\0')
+			res = PyString_FromStringAndSize(s, (int)(p-s));
+		else {
+			/* Convert UTF-8 to Unicode string */
+			p = strchr(p, '\0');
+			res = PyUnicode_DecodeUTF8(s, (int)(p-s), "ignore");
+		}
+	}
 
 	LEAVE_OVERLAP_TCL
 
