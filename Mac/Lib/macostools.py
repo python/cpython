@@ -8,12 +8,18 @@ import macfs
 import Res
 import os
 from MACFS import *
+import MacOS
+try:
+	openrf = MacOS.openrf
+except AttributeError:
+	# Backward compatability
+	openrf = open
 
 Error = 'macostools.Error'
 
 FSSpecType = type(macfs.FSSpec(':'))
 
-BUFSIZ=0x100000		# Copy in 1Mb chunks
+BUFSIZ=0x80000		# Copy in 0.5Mb chunks
 
 #
 # Not guaranteed to be correct or stay correct (Apple doesn't tell you
@@ -64,8 +70,8 @@ def copy(src, dst, createpath=0):
 	ifp.close()
 	ofp.close()
 	
-	ifp = open(srcfss.as_pathname(), '*rb')
-	ofp = open(dstfss.as_pathname(), '*wb')
+	ifp = openrf(srcfss.as_pathname(), '*rb')
+	ofp = openrf(dstfss.as_pathname(), '*wb')
 	d = ifp.read(BUFSIZ)
 	while d:
 		ofp.write(d)
