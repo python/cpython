@@ -117,6 +117,12 @@ def change_root (new_root, pathname):
             path = path[1:]
         return os.path.join(new_root, path)
 
+    elif os.name == 'os2':
+        (drive, path) = os.path.splitdrive(pathname)
+        if path[0] == os.sep:
+            path = path[1:]
+        return os.path.join(new_root, path)
+
     elif os.name == 'mac':
         if not os.path.isabs(pathname):
             return os.path.join(new_root, pathname)
