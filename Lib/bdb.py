@@ -1,6 +1,7 @@
 # Debugger basics
 
 import sys
+import os
 import types
 
 BdbQuit = 'bdb.BdbQuit' # Exception to give up completely
@@ -17,12 +18,14 @@ class Bdb:
 
 	def __init__(self):
 		self.breaks = {}
-		# We want to have a method self.canonic() which
-		# canonicalizes filenames before comparing them
-		# but we want the default to be a very fast no-op.
-		# Solution: the built-in str function.
-		if not hasattr(self, "canonic"):
-			self.canonic = str
+		self.fncache = {}
+
+	def canonic(self, filename):
+		canonic = self.fncache.get(filename)
+		if not canonic:
+			canonic = os.path.abspath(filename)
+			self.fncache[filename] = canonic
+		return canonic
 	
 	def reset(self):
 		import linecache
