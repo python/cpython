@@ -1,9 +1,13 @@
 #! /usr/local/bin/python
 
+# This script is obsolete -- it is kept for historical purposes only.
+#
 # Fix Python source files to use the new class definition syntax, i.e.,
+# the syntax used in Python versions before 0.9.8:
 #	class C() = base(), base(), ...: ...
-# is changed to
+# is changed to the current syntax:
 #	class C(base, base, ...): ...
+#
 # The script uses heuristics to find class definitions that usually
 # work but occasionally can fail; carefully check the output!
 #
