@@ -12,6 +12,20 @@ def check_invariant(heap):
             parentpos = (pos-1) >> 1
             verify(heap[parentpos] <= item)
 
+# An iterator returning a heap's elements, smallest-first.
+class heapiter(object):
+    def __init__(self, heap):
+        self.heap = heap
+
+    def next(self):
+        try:
+            return heappop(self.heap)
+        except IndexError:
+            raise StopIteration
+
+    def __iter__(self):
+        return self
+
 def test_main():
     # 1) Push 100 random numbers and pop them off, verifying all's OK.
     heap = []
@@ -47,17 +61,16 @@ def test_main():
         check_invariant(heap)
     # 5) Less-naive "N-best" algorithm, much faster (if len(data) is big
     #    enough <wink>) than sorting all of data.  However, if we had a max
-    #    heap instead of a min heap, it would go much faster still via
+    #    heap instead of a min heap, it could go faster still via
     #    heapify'ing all of data (linear time), then doing 10 heappops
     #    (10 log-time steps).
     heap = data[:10]
     heapify(heap)
     for item in data[10:]:
-        if item > heap[0]:  # this gets rarer and rarer the longer we run
+        if item > heap[0]:  # this gets rarer the longer we run
+            heappop(heap)       # we know heap[0] isn't in best 10 anymore
             heappush(heap, item)
-            heappop(heap)
-    heap.sort()
-    vereq(heap, data_sorted[-10:])
+    vereq(list(heapiter(heap)), data_sorted[-10:])
     # Make user happy
     if verbose:
         print "All OK"
