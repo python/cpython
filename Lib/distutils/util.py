@@ -38,11 +38,11 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     # we're not using a recursive algorithm)
 
     name = os.path.normpath (name)
-
+    created_dirs = []
     if os.path.isdir (name) or name == '':
-        return
+        return created_dirs
     if PATH_CREATED.get (name):
-        return
+        return created_dirs
 
     (head, tail) = os.path.split (name)
     tails = [tail]                      # stack of lone dirs to create
@@ -70,11 +70,13 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
         if not dry_run:
             try:
                 os.mkdir (head)
+                created_dirs.append(head)
             except os.error, (errno, errstr):
                 raise DistutilsFileError, \
                       "could not create '%s': %s" % (head, errstr)
 
         PATH_CREATED[head] = 1
+    return created_dirs
 
 # mkpath ()
 
