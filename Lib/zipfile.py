@@ -7,7 +7,7 @@ import binascii
 
 try:
     import zlib # We may need its compression method
-except:
+except ImportError:
     zlib = None
 
 __all__ = ["BadZipfile", "error", "ZIP_STORED", "ZIP_DEFLATED", "is_zipfile",
