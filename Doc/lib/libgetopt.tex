@@ -6,7 +6,9 @@ This module helps scripts to parse the command line arguments in
 It supports the same conventions as the \UNIX{}
 \code{getopt()}
 function (including the special meanings of arguments of the form
-\samp{-} and \samp{--}).  Long options similar to those supported by
+`\code{-}' and `\code{-}\code{-}').
+% That's to fool latex2html into leaving the two hyphens alone!
+Long options similar to those supported by
 GNU software may be used as well via an optional third argument.
 It defines the function
 \code{getopt.getopt(args, options [, long_options])}
@@ -24,7 +26,7 @@ followed by a colon (i.e., the same format that \UNIX{}
 \code{getopt()}
 uses).
 The third option, if specified, is a list of strings with the names of
-the long options which should be supported.  The leading \code{'--'}
+the long options which should be supported.  The leading \code{'-}\code{-'}
 characters should not be included in the option name.  Options which
 require an argument should be followed by an equal sign (\code{'='}).
 The return value consists of two elements: the first is a list of
