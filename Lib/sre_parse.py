@@ -5,9 +5,7 @@
 #
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
-# Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 2.0 integration and
-# other compatibility work.
+# See the sre.py file for information on usage and redistribution.
 #
 
 import string, sys
@@ -536,8 +534,6 @@ def _parse(source, state):
                     group = state.getgroup(name)
                 p = _parse_sub(source, state)
                 subpattern.append((SUBPATTERN, (group, p)))
-                if group is not None:
-                    p.append((INDEX, group))
             else:
                 while 1:
                     char = source.get()

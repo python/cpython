@@ -5,8 +5,12 @@
 #
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
+# This version of the SRE library can be redistributed under CNRI's
+# Python 1.6 license.  For any other use, please contact Secret Labs
+# AB (info@pythonware.com).
+#
 # Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 2.0 integration and
+# CNRI.  Hewlett-Packard provided funding for 1.6 integration and
 # other compatibility work.
 #
 
@@ -24,7 +28,7 @@ M = MULTILINE = sre_compile.SRE_FLAG_MULTILINE
 S = DOTALL = sre_compile.SRE_FLAG_DOTALL
 X = VERBOSE = sre_compile.SRE_FLAG_VERBOSE
 
-# sre extensions (may or may not be in 2.0 final)
+# sre extensions (may or may not be in 1.6/2.0 final)
 T = TEMPLATE = sre_compile.SRE_FLAG_TEMPLATE
 U = UNICODE = sre_compile.SRE_FLAG_UNICODE
 
@@ -168,15 +172,14 @@ copy_reg.pickle(type(_compile("")), _pickle, _compile)
 
 class Scanner:
     def __init__(self, lexicon):
-        from sre_constants import BRANCH, SUBPATTERN, INDEX
+        from sre_constants import BRANCH, SUBPATTERN
         self.lexicon = lexicon
         # combine phrases into a compound pattern
         p = []
         s = sre_parse.Pattern()
         for phrase, action in lexicon:
             p.append(sre_parse.SubPattern(s, [
-                (SUBPATTERN, (None, sre_parse.parse(phrase))),
-                (INDEX, len(p))
+                (SUBPATTERN, (len(p), sre_parse.parse(phrase))),
                 ]))
         p = sre_parse.SubPattern(s, [(BRANCH, (None, p))])
         s.groups = len(p)

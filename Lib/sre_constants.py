@@ -6,9 +6,7 @@
 #
 # Copyright (c) 1998-2000 by Secret Labs AB.  All rights reserved.
 #
-# Portions of this engine have been developed in cooperation with
-# CNRI.  Hewlett-Packard provided funding for 2.0 integration and
-# other compatibility work.
+# See the sre.py file for information on usage and redistribution.
 #
 
 # should this really be here?
@@ -33,15 +31,15 @@ GROUPREF = "groupref"
 GROUPREF_IGNORE = "groupref_ignore"
 IN = "in"
 IN_IGNORE = "in_ignore"
-INDEX = "index"
 INFO = "info"
 JUMP = "jump"
 LITERAL = "literal"
 LITERAL_IGNORE = "literal_ignore"
 MARK = "mark"
 MAX_REPEAT = "max_repeat"
-MAX_REPEAT_ONE = "max_repeat_one"
+MAX_UNTIL = "max_until"
 MIN_REPEAT = "min_repeat"
+MIN_UNTIL = "min_until"
 NEGATE = "negate"
 NOT_LITERAL = "not_literal"
 NOT_LITERAL_IGNORE = "not_literal_ignore"
@@ -91,19 +89,19 @@ OPCODES = [
     CATEGORY,
     CHARSET,
     GROUPREF, GROUPREF_IGNORE,
-    INDEX,
     IN, IN_IGNORE,
     INFO,
     JUMP,
     LITERAL, LITERAL_IGNORE,
     MARK,
-    MAX_REPEAT,
-    MAX_REPEAT_ONE,
-    MIN_REPEAT,
+    MAX_UNTIL,
+    MIN_UNTIL,
     NOT_LITERAL, NOT_LITERAL_IGNORE,
     NEGATE,
     RANGE,
-    REPEAT
+    REPEAT,
+    REPEAT_ONE,
+    SUBPATTERN
 
 ]
 
