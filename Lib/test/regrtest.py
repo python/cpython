@@ -642,6 +642,36 @@ _expectations = {
         test_winreg
         test_winsound
         """,
+    'hp-ux11':
+        """
+        test_al
+        test_bsddb
+        test_cd
+        test_cl
+        test_curses
+        test_dl
+        test_gdbm
+        test_gl
+        test_gzip
+        test_imgfile
+        test_largefile
+        test_linuxaudiodev
+        test_locale
+        test_minidom
+        test_nis
+        test_ntpath
+        test_openpty
+        test_pyexpat
+        test_sax
+        test_socket_ssl
+        test_socketserver
+        test_sunaudiodev
+        test_unicode_file
+        test_winreg
+        test_winsound
+        test_zipfile
+        test_zlib
+        """,
 }
 
 class _ExpectedSkips:
