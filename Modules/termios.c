@@ -5,7 +5,11 @@
 #define PyInit_termios inittermios
 
 #include <termios.h>
+#ifdef __osf__
+/* On OSF, sys/ioctl.h requires that struct termio already be defined,
+ * so this needs to be included first on that platform. */
 #include <termio.h>
+#endif
 #include <sys/ioctl.h>
 
 #ifdef __BEOS__
