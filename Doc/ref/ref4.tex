@@ -125,13 +125,14 @@ overridden with optional extra arguments.
 
 \end{description}
 
-The built-in function \verb@vars()@ returns a dictionary representing
-the current local name space.  The effect of modifications to this
-dictionary on the name space are undefined.%
-\footnote{The current implementation returns the dictionary actually
+The built-in functions \verb@globals()@ and \verb@locals()@ returns a
+dictionary representing the current global and local name space,
+respectively.  The effect of modifications to this dictionary on the
+name space are undefined.%
+\footnote{The current implementations return the dictionary actually 
 used to implement the name space, {\em except} for functions, where
 the optimizer may cause the local name space to be implemented
-differently.}
+differently, and \verb@locals()@ returns a read-only dictionary.}
 
 \section{Exceptions}
 

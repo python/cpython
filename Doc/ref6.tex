@@ -30,24 +30,24 @@ returns no meaningful result; in Python, procedures return the value
 \verb@None@):
 
 \begin{verbatim}
-expression_stmt: expression_list
+expression_stmt: condition_list
 \end{verbatim}
 
-An expression statement evaluates the expression list (which may be a
-single expression).  If the value is not \verb@None@, it is converted
+An expression statement evaluates the condition list (which may be a
+single condition).
+\indexii{expression}{list}
+
+In interactive mode, if the value is not \verb@None@, it is converted
 to a string using the rules for string conversions (expressions in
 reverse quotes), and the resulting string is written to standard
 output (see section \ref{print}) on a line by itself.
-\indexii{expression}{list}
+(The exception for \verb@None@ is made so that procedure calls, which
+are syntactically equivalent to expressions, do not cause any output.)
 \ttindex{None}
 \indexii{string}{conversion}
 \index{output}
 \indexii{standard}{output}
 \indexii{writing}{values}
-
-(The exception for \verb@None@ is made so that procedure calls, which
-are syntactically equivalent to expressions, do not cause any output.
-A tuple with only \verb@None@ items is written normally.)
 \indexii{procedure}{call}
 
 \section{Assignment statements}
@@ -224,7 +224,7 @@ required syntactically, but no code needs to be executed, for example:
 \begin{verbatim}
 def f(arg): pass    # a function that does nothing (yet)
 
-class C: pass       # an class with no methods (yet)
+class C: pass       # a class with no methods (yet)
 \end{verbatim}
 
 \section{The {\tt del} statement}
@@ -320,7 +320,7 @@ before really leaving the function.
 \stindex{raise}
 
 \begin{verbatim}
-raise_stmt:     "raise" condition ["," condition]
+raise_stmt:     "raise" condition ["," condition ["," condition]]
 \end{verbatim}
 
 \verb@raise@ evaluates its first condition, which must yield
@@ -337,7 +337,15 @@ If the first object is a class or string, it then raises the exception
 identified by the first object, with the second one (or \verb@None@)
 as its parameter.  If the first object is an instance, it raises the
 exception identified by the class of the object, with the instance as
-its parameter.
+its parameter (and there should be no second object, or the second
+object should be \verb@None@).
+
+If a third object is present, and it it not \verb@None@, it should be
+a traceback object (see section \ref{traceback}), and it is
+substituted instead of the current location as the place where the
+exception occurred.  This is useful to re-raise an exception
+transparently in an except clause.
+\obindex{traceback}
 
 \section{The {\tt break} statement}
 \stindex{break}
@@ -525,6 +533,6 @@ must be dictionaries and they are used for the global and local
 variables, respectively.
 
 Hints: dynamic evaluation of expressions is supported by the built-in
-function \verb@eval()@.  The built-in function \verb@vars()@ returns
-the current local dictionary, which may be useful to pass around for
-use by \verb@exec@.
+function \verb@eval()@.  The built-in functions \verb@globals()@ and
+\verb@locals()@ return the current global and local dictionary,
+respectively, which may be useful to pass around for use by \verb@exec@.
