@@ -36,7 +36,7 @@
 /*
  * Handwritten code to wrap version 3.x of the Berkeley DB library,
  * written to replace a SWIG-generated file.  It has since been updated
- * to compile with BerkeleyDB versions 3.2 through 4.1.
+ * to compile with BerkeleyDB versions 3.2 through 4.2.
  *
  * This module was started by Andrew Kuchling to remove the dependency
  * on SWIG in a package by Gregory P. Smith <greg@electricrain.com> who
@@ -93,7 +93,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.1.6"
+#define PY_BSDDB_VERSION "4.2.0"
 static char *rcs_id = "$Id$";
 
 
@@ -2167,6 +2167,17 @@ DB_verify(DBObject* self, PyObject* args, PyObject* kwargs)
     MYDB_END_ALLOW_THREADS;
     if (outFileName)
         fclose(outFile);
+
+    /* DB.verify acts as a DB handle destructor (like close); this was
+     * documented in BerkeleyDB 4.2 but had the undocumented effect
+     * of not being safe in prior versions while still requiring an explicit
+     * DB.close call afterwards.  Lets call close for the user to emulate
+     * the safe 4.2 behaviour. */
+#if (DBVER <= 41)
+    self->db->close(self->db, 0);
+#endif
+    self->db = NULL;
+
     RETURN_IF_ERR();
     RETURN_NONE();
 }
@@ -4340,8 +4351,6 @@ static PyMethodDef bsddb_methods[] = {
  */
 #define ADD_INT(dict, NAME)         _addIntToDict(dict, #NAME, NAME)
 
-
-
 DL_EXPORT(void) init_bsddb(void)
 {
     PyObject* m;
@@ -4386,7 +4395,13 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_MAX_PAGES);
     ADD_INT(d, DB_MAX_RECORDS);
 
+#if (DBVER >= 42)
+    ADD_INT(d, DB_RPCCLIENT);
+#else
     ADD_INT(d, DB_CLIENT);
+    /* allow apps to be written using DB_RPCCLIENT on older BerkeleyDB */
+    _addIntToDict(d, "DB_RPCCLIENT", DB_CLIENT);
+#endif
     ADD_INT(d, DB_XA_CREATE);
 
     ADD_INT(d, DB_CREATE);
@@ -4535,7 +4550,7 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_CHECKPOINT);
     ADD_INT(d, DB_CURLSN);
 #endif
-#if (DBVER >= 33)
+#if ((DBVER >= 33) && (DBVER <= 41))
     ADD_INT(d, DB_COMMIT);
 #endif
     ADD_INT(d, DB_CONSUME);
@@ -4608,6 +4623,18 @@ DL_EXPORT(void) init_bsddb(void)
     ADD_INT(d, DB_YIELDCPU);
     ADD_INT(d, DB_PANIC_ENVIRONMENT);
     ADD_INT(d, DB_NOPANIC);
+#endif
+
+#if (DBVER >= 42)
+    ADD_INT(d, DB_TIME_NOTGRANTED);
+    ADD_INT(d, DB_TXN_NOT_DURABLE);
+    ADD_INT(d, DB_TXN_WRITE_NOSYNC);
+    ADD_INT(d, DB_LOG_AUTOREMOVE);
+    ADD_INT(d, DB_DIRECT_LOG);
+    ADD_INT(d, DB_DIRECT_DB);
+    ADD_INT(d, DB_INIT_REP);
+    ADD_INT(d, DB_ENCRYPT);
+    ADD_INT(d, DB_CHKSUM);
 #endif
 
 #if (DBVER >= 41)
