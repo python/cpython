@@ -1488,14 +1488,22 @@ builtin_round(self, args)
 	if (!PyArg_ParseTuple(args, "d|i:round", &x, &ndigits))
 			return NULL;
 	f = 1.0;
-	for (i = ndigits; --i >= 0; )
+	i = abs(ndigits);
+	while  (--i >= 0)
 		f = f*10.0;
-	for (i = ndigits; ++i <= 0; )
-		f = f*0.1;
-	if (x >= 0.0)
-		return PyFloat_FromDouble(floor(x*f + 0.5) / f);
+	if (ndigits < 0)
+		x /= f;
 	else
-		return PyFloat_FromDouble(ceil(x*f - 0.5) / f);
+		x *= f;
+	if (x >= 0.0)
+		x = floor(x + 0.5);
+	else
+		x = ceil(x - 0.5);
+	if (ndigits < 0)
+		x *= f;
+	else
+		x /= f;
+	return PyFloat_FromDouble(x);
 }
 
 static PyObject *
