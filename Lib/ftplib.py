@@ -211,6 +211,7 @@ class FTP:
 	def makeport(self):
 		global nextport
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind(('', 0))
 		sock.listen(1)
 		host, port = sock.getsockname()
 		resp = self.sendport(port)
@@ -234,7 +235,13 @@ class FTP:
 			# Make sure it is fully qualified
 			if not '.' in thishost:
 			    thisaddr = socket.gethostbyname(thishost)
-			    thishost = socket.gethostbyaddr(thisaddr)[0]
+			    firstname, names, unused = \
+				       socket.gethostbyaddr(thisaddr)
+			    names.insert(0, firstname)
+			    for name in names:
+				    if '.' in name:
+					    thishost = name
+					    break
 			try:
 				if os.environ.has_key('LOGNAME'):
 					realuser = os.environ['LOGNAME']
