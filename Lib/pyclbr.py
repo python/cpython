@@ -116,7 +116,27 @@ class Class:
 	def _addmethod(self, name, lineno):
 		self.methods[name] = lineno
 
+class Function(Class):
+	'''Class to represent a top-level Python function'''
+	def __init__(self, module, name, file, lineno):
+		Class.__init__(self, module, name, None, file, lineno)
+	def _addmethod(self, name, lineno):
+		assert 0, "Function._addmethod() shouldn't be called"
+
 def readmodule(module, path=[], inpackage=0):
+	'''Backwards compatible interface.
+
+	Like readmodule_ex() but strips Function objects from the
+	resulting dictionary.'''
+
+	dict = readmodule_ex(module, path, inpackage)
+	res = {}
+	for key, value in dict.items():
+		if not isinstance(value, Function):
+			res[key] = value
+	return res
+
+def readmodule_ex(module, path=[], inpackage=0):
 	'''Read a module file and return a dictionary of classes.
 
 	Search for MODULE in PATH and sys.path, read and parse the
@@ -189,19 +209,24 @@ def readmodule(module, path=[], inpackage=0):
 		if m.start("Method") >= 0:
 			# found a method definition or function
 			thisindent = _indent(m.group("MethodIndent"))
+			meth_name = m.group("MethodName")
+			lineno = lineno + \
+				 countnl(src, '\n',
+					 last_lineno_pos, start)
+			last_lineno_pos = start
 			# close all classes indented at least as much
 			while classstack and \
 			      classstack[-1][1] >= thisindent:
 				del classstack[-1]
 			if classstack:
-				# and we know the class it belongs to
-				meth_name = m.group("MethodName")
-				lineno = lineno + \
-					 countnl(src, '\n',
-						 last_lineno_pos, start)
-				last_lineno_pos = start
+				# it's a class method
 				cur_class = classstack[-1][0]
 				cur_class._addmethod(meth_name, lineno)
+			else:
+				# it's a function
+				f = Function(module, meth_name,
+					     file, lineno)
+				dict[meth_name] = f
 
 		elif m.start("String") >= 0:
 			pass
