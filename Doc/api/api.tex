@@ -1737,8 +1737,12 @@ Resturns a \NULL{} terminated representation of the contents of \var{string}.
 
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
                                          PyObject *newpart}
-Creates a new string object in \var{*string} containing the contents
-of \var{newpart} appended to \var{string}.
+Creates a new string object in \var{*string} containing the
+contents of \var{newpart} appended to \var{string}.  The old value of
+\var{string} have its reference count decremented.  If the new string
+cannot be created, the old reference to \var{string} will still be
+discarded and the value of \var{*string} will be set to
+\NULL{}; the appropriate exception will be set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyString_ConcatAndDel}{PyObject **string,
