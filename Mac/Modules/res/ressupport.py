@@ -35,7 +35,6 @@ finalstuff = finalstuff + """
 PyObject *OptResObj_New(itself)
 	Handle itself;
 {
-	ResourceObject *it;
 	if (itself == NULL) {
 		Py_INCREF(Py_None);
 		return Py_None;
