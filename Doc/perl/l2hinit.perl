@@ -25,7 +25,6 @@ $TOP_NAVIGATION = 1;
 $BOTTOM_NAVIGATION = 1;
 $AUTO_NAVIGATION = 0;
 
-# these exactly match the python.org colors
 $BODYTEXT = '';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
@@ -172,15 +171,36 @@ sub make_nav_panel {
     return $s;
 }
 
+sub get_version_text {
+    if ($PACKAGE_VERSION ne '' && $t_date) {
+        return ("<span class=\"release-info\">"
+                . "Release $PACKAGE_VERSION,"
+                . " documentation updated on $t_date.</span>");
+    }
+    if ($PACKAGE_VERSION ne '') {
+        return ("<span class=\"release-info\">"
+                . "Release $PACKAGE_VERSION.</span>");
+    }
+    if ($t_date) {
+        return ("<span class=\"release-info\">Documentation released on "
+                . "$t_date.</span>");
+    }
+    return '';
+}
+
 
 sub top_navigation_panel {
-    return make_nav_panel()
-           . '<br><hr>';
+    return "\n"
+           . make_nav_panel()
+           . "<br><hr>\n";
 }
 
 sub bot_navigation_panel {
-    return "<p><hr>"
-           . make_nav_panel();
+    return "\n<p><hr>\n"
+           . make_nav_panel()
+           . "<hr>\n"
+           . get_version_text()
+           . "\n";
 }
 
 sub add_link {
@@ -372,8 +392,8 @@ sub do_cmd_textohtmlinfopage {
     my $the_version = '';				# and the rest is
     if ($t_date) {					# mostly ours
 	$the_version = ",\n$t_date";
-	if ($PYTHON_VERSION) {
-	    $the_version .= ", Release $PYTHON_VERSION";
+	if ($PACKAGE_VERSION) {
+	    $the_version .= ", Release $PACKAGE_VERSION";
 	}
     }
     $_ = (($INFO == 1)
