@@ -83,6 +83,10 @@ class Generator:
     # For backwards compatibility, but this is slower
     __call__ = flatten
 
+    def clone(self, fp):
+        """Clone this generator with the exact same options."""
+        return self.__class__(fp, self._mangle_from_, self.__maxheaderlen)
+
     #
     # Protected interface - undocumented ;/
     #
@@ -121,18 +125,20 @@ class Generator:
         # missing too, then dispatch to self._writeBody().
         ctype = msg.get_type()
         if ctype is None:
-            # No Content-Type: header so try the default handler
-            self._writeBody(msg)
-        else:
-            # We do have a Content-Type: header.
-            specific = UNDERSCORE.join(ctype.split('/')).replace('-', '_')
-            meth = getattr(self, '_handle_' + specific, None)
+            # No Content-Type: header so use the default type, which must be
+            # either text/plain or message/rfc822.
+            ctype = msg.get_default_type()
+            assert ctype in ('text/plain', 'message/rfc822')
+        # We do have a Content-Type: header.
+        main, sub = ctype.split('/')
+        specific = UNDERSCORE.join((main, sub)).replace('-', '_')
+        meth = getattr(self, '_handle_' + specific, None)
+        if meth is None:
+            generic = main.replace('-', '_')
+            meth = getattr(self, '_handle_' + generic, None)
             if meth is None:
-                generic = msg.get_main_type().replace('-', '_')
-                meth = getattr(self, '_handle_' + generic, None)
-                if meth is None:
-                    meth = self._writeBody
-            meth(msg)
+                meth = self._writeBody
+        meth(msg)
 
     #
     # Default handlers
@@ -196,14 +202,14 @@ class Generator:
     # Default body handler
     _writeBody = _handle_text
 
-    def _handle_multipart(self, msg, isdigest=0):
+    def _handle_multipart(self, msg):
         # The trick here is to write out each part separately, merge them all
         # together, and then make sure that the boundary we've chosen isn't
         # present in the payload.
         msgtexts = []
         subparts = msg.get_payload()
         if subparts is None:
-            # Nothing has every been attached
+            # Nothing has ever been attached
             boundary = msg.get_boundary(failobj=_make_boundary())
             print >> self._fp, '--' + boundary
             print >> self._fp, '\n'
@@ -214,7 +220,7 @@ class Generator:
             subparts = [subparts]
         for part in subparts:
             s = StringIO()
-            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
+            g = self.clone(s)
             g.flatten(part, unixfrom=0)
             msgtexts.append(s.getvalue())
         # Now make sure the boundary we've selected doesn't appear in any of
@@ -236,14 +242,8 @@ class Generator:
         # First boundary is a bit different; it doesn't have a leading extra
         # newline.
         print >> self._fp, '--' + boundary
-        if isdigest:
-            print >> self._fp
         # Join and write the individual parts
         joiner = '\n--' + boundary + '\n'
-        if isdigest:
-            # multipart/digest types effectively add an extra newline between
-            # the boundary and the body part.
-            joiner += '\n'
         self._fp.write(joiner.join(msgtexts))
         print >> self._fp, '\n--' + boundary + '--',
         # Write out any epilogue
@@ -252,9 +252,6 @@ class Generator:
                 print >> self._fp
             self._fp.write(msg.epilogue)
 
-    def _handle_multipart_digest(self, msg):
-        self._handle_multipart(msg, isdigest=1)
-
     def _handle_message_delivery_status(self, msg):
         # We can't just write the headers directly to self's file object
         # because this will leave an extra newline between the last header
@@ -262,7 +259,7 @@ class Generator:
         blocks = []
         for part in msg.get_payload():
             s = StringIO()
-            g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
+            g = self.clone(s)
             g.flatten(part, unixfrom=0)
             text = s.getvalue()
             lines = text.split('\n')
@@ -278,11 +275,11 @@ class Generator:
 
     def _handle_message(self, msg):
         s = StringIO()
-        g = self.__class__(s, self._mangle_from_, self.__maxheaderlen)
+        g = self.clone(s)
         # The payload of a message/rfc822 part should be a multipart sequence
         # of length 1.  The zeroth element of the list should be the Message
-        # object for the subpart.Extract that object, stringify it, and write
-        # that out.
+        # object for the subpart.  Extract that object, stringify it, and
+        # write it out.
         g.flatten(msg.get_payload(0), unixfrom=0)
         self._fp.write(s.getvalue())
 
