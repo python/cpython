@@ -120,30 +120,6 @@ class FlowGraph:
             l.extend(b.getContainedGraphs())
         return l
 
-    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
-                        'JUMP_ABSOLUTE', 'JUMP_FORWARD')
-
-    def pruneNext(self):
-        """Remove bogus edge for unconditional transfers
-
-        Each block has a next edge that accounts for implicit control
-        transfers, e.g. from a JUMP_IF_FALSE to the block that will be
-        executed if the test is true.
-
-        These edges must remain for the current assembler code to
-        work. If they are removed, the dfs_postorder gets things in
-        weird orders.  However, they shouldn't be there for other
-        purposes, e.g. conversion to SSA form.  This method will
-        remove the next edge when it follows an unconditional control
-        transfer.
-        """
-        try:
-            op, arg = self.insts[-1]
-        except (IndexError, TypeError):
-            return
-        if op in self._uncond_transfer:
-            self.next = []
-
 def dfs_postorder(b, seen):
     """Depth-first search of tree rooted at b, return in postorder"""
     order = []
@@ -196,6 +172,30 @@ class Block:
     def addNext(self, block):
         self.next.append(block)
         assert len(self.next) == 1, map(str, self.next)
+
+    _uncond_transfer = ('RETURN_VALUE', 'RAISE_VARARGS',
+                        'JUMP_ABSOLUTE', 'JUMP_FORWARD')
+
+    def pruneNext(self):
+        """Remove bogus edge for unconditional transfers
+
+        Each block has a next edge that accounts for implicit control
+        transfers, e.g. from a JUMP_IF_FALSE to the block that will be
+        executed if the test is true.
+
+        These edges must remain for the current assembler code to
+        work. If they are removed, the dfs_postorder gets things in
+        weird orders.  However, they shouldn't be there for other
+        purposes, e.g. conversion to SSA form.  This method will
+        remove the next edge when it follows an unconditional control
+        transfer.
+        """
+        try:
+            op, arg = self.insts[-1]
+        except (IndexError, ValueError):
+            return
+        if op in self._uncond_transfer:
+            self.next = []
 
     def get_children(self):
         if self.next and self.next[0] in self.outEdges:
