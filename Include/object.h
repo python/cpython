@@ -295,10 +295,11 @@ environment the global variable trick is not safe.)
 #ifndef Py_TRACE_REFS
 #ifdef COUNT_ALLOCS
 #define _Py_Dealloc(op) ((op)->ob_type->tp_free++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
+#define _Py_ForgetReference(op) ((op)->ob_type->tp_free++)
 #else
 #define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
-#endif
 #define _Py_ForgetReference(op) /*empty*/
+#endif
 #endif
 
 #ifdef COUNT_ALLOCS
