@@ -31,10 +31,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Parse tree node interface */
 
 typedef struct _node {
-	int		n_type;
+	short		n_type;
 	char		*n_str;
-	int		n_lineno;
-	int		n_nchildren;
+	short		n_lineno;
+	short		n_nchildren;
 	struct _node	*n_child;
 } node;
 
