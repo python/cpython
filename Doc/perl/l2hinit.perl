@@ -107,39 +107,39 @@ sub make_nav_sectref {
     return '';
 }
 
-sub make_my_icon {
-    my($name, $text) = @_;
+@my_icon_tags = ();
+$my_icon_tags{'next'} = 'Next Page';
+$my_icon_tags{'next_page'} = 'Next Page';
+$my_icon_tags{'previous'} = 'Previous Page';
+$my_icon_tags{'previous_page'} = 'Previous Page';
+$my_icon_tags{'up'} = 'Up One Level';
+$my_icon_tags{'contents'} = 'Contents';
+$my_icon_tags{'index'} = 'Index';
+$my_icon_tags{'modules'} = 'Module Index';
+
+sub get_my_icon {
+    my $name = @_[0];
+    my $text = $my_icon_tags{$name};
+    if ($text eq '') {
+        $name = 'blank';
+    }
     my $iconserver = ($ICONSERVER eq '.') ? '' : "$ICONSERVER/";
-    return "<img src=\"$iconserver$name.$IMAGE_TYPE\" border=\"0\""
+    return "<img src=\"$iconserver$name.$IMAGE_TYPE\"\n  border=\"0\""
            . " height=\"32\"\n  alt=\"$text\" width=\"32\">";
 }
 
-$BLANK_ICON = make_my_icon('blank', '');
-
-@my_icons = ();
-$my_icons{'next_page_inactive'} = $BLANK_ICON;
-$my_icons{'previous_page_inactive'} = $BLANK_ICON;
-$my_icons{'up_page_inactive'} = $BLANK_ICON;
-$x = make_my_icon('next', 'Next Page');
-$my_icons{'next_page'} = $x;
-$my_icons{'next'} = $x;
-$x = make_my_icon('previous', 'Previous Page');
-$my_icons{'previous_page'} = $x;
-$my_icons{'previous'} = $x;
-$my_icons{'up'} = make_my_icon('up', 'Up One Level');
-$my_icons{'contents'} = make_my_icon('contents', 'Contents');
-$my_icons{'index'} = make_my_icon('index', 'Index');
-$my_icons{'modules'} = make_my_icon('modules', 'Module Index');
-
-
 sub use_my_icon {
     my $s = @_[0];
-    $s =~ s/\<tex2html_([a-z_]+)_visible_mark\>/$my_icons{$1}/;
+    if ($s =~ /\<tex2html_([a-z_]+)_visible_mark\>/) {
+        my $r = get_my_icon($1);
+        $s =~ s/\<tex2html_[a-z_]+_visible_mark\>/$r/;
+    }
     return $s;
 }
 
 sub make_nav_panel {
     my $s;
+    my $BLANK_ICON = get_my_icon('blank');
     $NEXT = $NEXT_TITLE ? use_my_icon("$NEXT") : $BLANK_ICON;
     $UP = $UP_TITLE ? use_my_icon("$UP") : $BLANK_ICON;
     $PREVIOUS = $PREVIOUS_TITLE ? use_my_icon("$PREVIOUS") : $BLANK_ICON;
@@ -208,22 +208,25 @@ sub add_link {
     my($icon, $current_file, @link) = @_;
     my($dummy, $file, $title) = split($delim,
 				      $section_info{join(' ',@link)});
-    $icon =~ s/\<tex2html_([_a-z]+)_visible_mark\>/$my_icons{$1}/;
+    if ($icon =~ /\<tex2html_([_a-z]+)_visible_mark\>/) {
+        my $r = get_my_icon($1);
+        $icon =~ s/\<tex2html_[_a-z]+_visible_mark\>/$r/;
+    }
     if ($title && ($file ne $current_file)) {
         $title = purify($title);
 	$title = get_first_words($title, $WORDS_IN_NAVIGATION_PANEL_TITLES);
 	return (make_href($file, $icon), make_href($file, "$title"))
 	}
-    elsif ($icon eq $my_icons{"up"} && $EXTERNAL_UP_LINK) {
+    elsif ($icon eq get_my_icon('up') && $EXTERNAL_UP_LINK) {
  	return (make_href($EXTERNAL_UP_LINK, $icon),
 		make_href($EXTERNAL_UP_LINK, "$EXTERNAL_UP_TITLE"))
 	}
-    elsif ($icon eq $my_icons{"previous"}
+    elsif ($icon eq get_my_icon('previous')
 	   && $EXTERNAL_PREV_LINK && $EXTERNAL_PREV_TITLE) {
 	return (make_href($EXTERNAL_PREV_LINK, $icon),
 		make_href($EXTERNAL_PREV_LINK, "$EXTERNAL_PREV_TITLE"))
 	}
-    elsif ($icon eq $my_icons{"next"}
+    elsif ($icon eq get_my_icon('next')
 	   && $EXTERNAL_DOWN_LINK && $EXTERNAL_DOWN_TITLE) {
 	return (make_href($EXTERNAL_DOWN_LINK, $icon),
 		make_href($EXTERNAL_DOWN_LINK, "$EXTERNAL_DOWN_TITLE"))
@@ -233,7 +236,10 @@ sub add_link {
 
 sub add_special_link {
     my($icon, $file, $current_file) = @_;
-    $icon =~ s/\<tex2html_([_a-z]+)_visible_mark\>/$my_icons{$1}/;
+    if ($icon =~ /\<tex2html_([_a-z]+)_visible_mark\>/) {
+        my $r = get_my_icon($1);
+        $icon =~ s/\<tex2html_[_a-z]+_visible_mark\>/$r/;
+    }
     return (($file && ($file ne $current_file))
             ? make_href($file, $icon)
             : undef)
@@ -320,8 +326,7 @@ sub add_module_idx {
     }
     close(MODIDXFILE);
     if (!$allthesame) {
-	$prefix = <<PLAT_DISCUSS;
-
+	$prefix .= <<PLAT_DISCUSS;
 
 <p> Some module names are followed by an annotation indicating what
 platform they are available on.</p>
@@ -462,11 +467,11 @@ sub add_bbl_and_idx_dummy_commands {
         s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
         # Add a button to the navigation areas:
         $CUSTOM_BUTTONS .= ('<a href="modindex.html" title="Module Index">'
-                            . $my_icons{'modules'}
+                            . get_my_icon('modules')
                             . '</a>');
     }
     else {
-        $CUSTOM_BUTTONS .= $BLANK_ICON;
+        $CUSTOM_BUTTONS .= get_my_icon('blank');
         $global{'max_id'} = $id; # not sure why....
         s/([\\]begin\s*$O\d+$C\s*theindex)/\\textohtmlindex $1/o;
 	    s/[\\]printindex/\\textohtmlindex /o;
