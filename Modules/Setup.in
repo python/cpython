@@ -390,7 +390,7 @@ cPickle cPickle.c
 #fpetest fpetestmodule.c
 
 # Andrew Kuchling's zlib module.
-# This require zlib 1.0.4 (or later).
+# This require zlib 1.0.4 (or later).  See http://quest.jpl.nasa.gov/zlib/
 # See http://www.cdrom.com/pub/infozip/zlib/
 #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
 
