@@ -779,7 +779,49 @@ static PyTypeObject Cdctype = {
 /* End of code for callable objects */
 /* ---------------------------------------------------------------- */
 
+static char cdf_keys__doc__[] =
+"Return list of symbol names in fragment";
+
+static PyObject *
+cdf_keys(self, args)
+	cdfobject *self;
+	PyObject *args;
+{
+	long symcount;
+	PyObject *rv, *obj;
+	Str255 symname;
+	Ptr dummy1;
+	CFragSymbolClass dummy2;
+	int i;
+	OSErr err;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	if ( (err=CountSymbols(self->conn_id, &symcount)) < 0 )
+		return PyMac_Error(err);
+	if ( (rv=PyList_New(symcount)) == NULL )
+		return NULL;
+	for (i=0; i<symcount; i++) {
+		if ((err=GetIndSymbol(self->conn_id, i, symname, &dummy1, &dummy2)) < 0 ) {
+			Py_XDECREF(rv);
+			return PyMac_Error(err);
+		}
+		if ((obj=PyString_FromStringAndSize((char *)symname+1, symname[0])) == NULL ) {
+			Py_XDECREF(rv);
+			return PyMac_Error(err);
+		}
+		if (PyList_SetItem(rv, i, obj) < 0 ) {
+			Py_XDECREF(rv);
+			return NULL;
+		}
+	}
+	return rv;
+}
+		
+
 static struct PyMethodDef cdf_methods[] = {
+	{"keys",		(PyCFunction)cdf_keys,		METH_VARARGS,	
+							cdf_keys__doc__},
 	
 	{NULL,		NULL}		/* sentinel */
 };
@@ -828,7 +870,7 @@ cdf_repr(self)
 }
 
 static PyObject *
-cdf_getattr(self, name)
+cdf_getattr_helper(self, name)
 	cdfobject *self;
 	char *name;
 {
@@ -853,6 +895,65 @@ cdf_getattr(self, name)
 	
 	return (PyObject *)newcdrobject(rtn_name, rtn);
 }
+
+static PyObject *
+cdf_getattr(self, name)
+	cdfobject *self;
+	char *name;
+{
+	PyObject *rv;
+	
+	if ((rv=Py_FindMethod(cdf_methods, (PyObject *)self, name)))
+		return rv;
+	PyErr_Clear();
+	return cdf_getattr_helper(self, name);
+}
+
+/* -------------------------------------------------------- */
+/* Code to access cdf objects as mappings */
+
+static int
+cdf_length(self)
+	cdfobject *self;
+{
+	long symcount;
+	OSErr err;
+	
+	err = CountSymbols(self->conn_id, &symcount);
+	if ( err ) {
+		PyMac_Error(err);
+		return -1;
+	}
+	return symcount;
+}
+
+static PyObject *
+cdf_subscript(self, key)
+	cdfobject *self;
+	PyObject *key;
+{
+	char *name;
+	
+	if ((name=PyString_AsString(key)) == 0 )
+		return 0;
+	return cdf_getattr_helper(self, name);
+}
+
+static int
+cdf_ass_sub(self, v, w)
+	cdfobject *self;
+	PyObject *v, *w;
+{
+	/* XXXX Put w in self under key v */
+	return 0;
+}
+
+static PyMappingMethods cdf_as_mapping = {
+	(inquiry)cdf_length,		/*mp_length*/
+	(binaryfunc)cdf_subscript,		/*mp_subscript*/
+	(objobjargproc)cdf_ass_sub,	/*mp_ass_subscript*/
+};
+
 /* -------------------------------------------------------- */
 
 static char Cdftype__doc__[] = 
@@ -874,7 +975,7 @@ static PyTypeObject Cdftype = {
 	(reprfunc)cdf_repr,		/*tp_repr*/
 	0,				/*tp_as_number*/
 	0,				/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
+	&cdf_as_mapping,		/*tp_as_mapping*/
 	(hashfunc)0,			/*tp_hash*/
 	(ternaryfunc)0,			/*tp_call*/
 	(reprfunc)0,			/*tp_str*/
