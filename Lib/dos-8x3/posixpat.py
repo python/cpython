@@ -5,6 +5,10 @@
 # on other systems (e.g. Mac, Windows), os.path provides the same
 # operations in a manner specific to that platform, and is an alias
 # to another module (e.g. macpath, ntpath).
+"""Common pathname manipulations, Posix version. 
+Instead of importing this module
+directly, import os and refer to this module as os.path.
+"""
 
 import os
 import stat
@@ -16,14 +20,16 @@ import stat
 # (another function should be defined to do that).
 
 def normcase(s):
-	return s
+    """Normalize case of pathname.  Has no effect under Posix"""
+    return s
 
 
 # Return wheter a path is absolute.
 # Trivial in Posix, harder on the Mac or MS-DOS.
 
 def isabs(s):
-	return s[:1] == '/'
+    """Test whether a path is absolute"""
+    return s[:1] == '/'
 
 
 # Join pathnames.
@@ -31,15 +37,16 @@ def isabs(s):
 # Insert a '/' unless the first part is empty or already ends in '/'.
 
 def join(a, *p):
-	path = a
-	for b in p:
-		if b[:1] == '/':
-			path = b
-		elif path == '' or path[-1:] == '/':
-			path = path + b
-		else:
-			path = path + '/' + b
-	return path
+    """Join two or more pathname components, inserting '/' as needed"""
+    path = a
+    for b in p:
+        if b[:1] == '/':
+            path = b
+        elif path == '' or path[-1:] == '/':
+            path = path + b
+        else:
+            path = path + '/' + b
+    return path
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -48,13 +55,15 @@ def join(a, *p):
 # Trailing '/'es are stripped from head unless it is the root.
 
 def split(p):
-	import string
-	i = string.rfind(p, '/') + 1
-	head, tail = p[:i], p[i:]
-	if head and head <> '/'*len(head):
-		while head[-1] == '/':
-			head = head[:-1]
-	return head, tail
+    """Split a pathname.  Returns tuple "(head, tail)" where "tail" is 
+everything after the final slash.  Either part may be empty"""
+    import string
+    i = string.rfind(p, '/') + 1
+    head, tail = p[:i], p[i:]
+    if head and head <> '/'*len(head):
+        while head[-1] == '/':
+            head = head[:-1]
+    return head, tail
 
 
 # Split a path in root and extension.
@@ -63,75 +72,84 @@ def split(p):
 # It is always true that root + ext == p.
 
 def splitext(p):
-	root, ext = '', ''
-	for c in p:
-		if c == '/':
-			root, ext = root + ext + c, ''
-		elif c == '.':
-			if ext:
-				root, ext = root + ext, c
-			else:
-				ext = c
-		elif ext:
-			ext = ext + c
-		else:
-			root = root + c
-	return root, ext
+    """Split the extension from a pathname.  Extension is everything from the
+last dot to the end.  Returns "(root, ext)", either part may be empty"""
+    root, ext = '', ''
+    for c in p:
+        if c == '/':
+            root, ext = root + ext + c, ''
+        elif c == '.':
+            if ext:
+                root, ext = root + ext, c
+            else:
+                ext = c
+        elif ext:
+            ext = ext + c
+        else:
+            root = root + c
+    return root, ext
 
 
 # Split a pathname into a drive specification and the rest of the
 # path.  Useful on DOS/Windows/NT; on Unix, the drive is always empty.
 
 def splitdrive(p):
-	return '', p
+    """Split a pathname into drive and path. On Posix, drive is always 
+empty"""
+    return '', p
 
 
 # Return the tail (basename) part of a path.
 
 def basename(p):
-	return split(p)[1]
+    """Returns the final component of a pathname"""
+    return split(p)[1]
 
 
 # Return the head (dirname) part of a path.
 
 def dirname(p):
-	return split(p)[0]
+    """Returns the directory component of a pathname"""
+    return split(p)[0]
 
 
 # Return the longest prefix of all list elements.
 
 def commonprefix(m):
-	if not m: return ''
-	prefix = m[0]
-	for item in m:
-		for i in range(len(prefix)):
-			if prefix[:i+1] <> item[:i+1]:
-				prefix = prefix[:i]
-				if i == 0: return ''
-				break
-	return prefix
+    "Given a list of pathnames, returns the longest common leading component"
+    if not m: return ''
+    prefix = m[0]
+    for item in m:
+        for i in range(len(prefix)):
+            if prefix[:i+1] <> item[:i+1]:
+                prefix = prefix[:i]
+                if i == 0: return ''
+                break
+    return prefix
 
 
 # Is a path a symbolic link?
 # This will always return false on systems where os.lstat doesn't exist.
 
 def islink(path):
-	try:
-		st = os.lstat(path)
-	except (os.error, AttributeError):
-		return 0
-	return stat.S_ISLNK(st[stat.ST_MODE])
+    """Test whether a path is a symbolic link"""
+    try:
+        st = os.lstat(path)
+    except (os.error, AttributeError):
+        return 0
+    return stat.S_ISLNK(st[stat.ST_MODE])
 
 
 # Does a path exist?
 # This is false for dangling symbolic links.
 
 def exists(path):
-	try:
-		st = os.stat(path)
-	except os.error:
-		return 0
-	return 1
+    """Test whether a path exists.  Returns false for broken symbolic links"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return 0
+    return 1
 
 
 # Is a path a directory?
@@ -139,11 +157,12 @@ def exists(path):
 # for the same path.
 
 def isdir(path):
-	try:
-		st = os.stat(path)
-	except os.error:
-		return 0
-	return stat.S_ISDIR(st[stat.ST_MODE])
+    """Test whether a path is a directory"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return 0
+    return stat.S_ISDIR(st[stat.ST_MODE])
 
 
 # Is a path a regular file?
@@ -151,78 +170,87 @@ def isdir(path):
 # for the same path.
 
 def isfile(path):
-	try:
-		st = os.stat(path)
-	except os.error:
-		return 0
-	return stat.S_ISREG(st[stat.ST_MODE])
+    """Test whether a path is a regular file"""
+    try:
+        st = os.stat(path)
+    except os.error:
+        return 0
+    return stat.S_ISREG(st[stat.ST_MODE])
 
 
 # Are two filenames really pointing to the same file?
 
 def samefile(f1, f2):
-	s1 = os.stat(f1)
-	s2 = os.stat(f2)
-	return samestat(s1, s2)
+    """Test whether two pathnames reference the same actual file"""
+    s1 = os.stat(f1)
+    s2 = os.stat(f2)
+    return samestat(s1, s2)
 
 
 # Are two open files really referencing the same file?
 # (Not necessarily the same file descriptor!)
 
 def sameopenfile(fp1, fp2):
-	s1 = os.fstat(fp1)
-	s2 = os.fstat(fp2)
-	return samestat(s1, s2)
+    """Test whether two open file objects reference the same file"""
+    s1 = os.fstat(fp1)
+    s2 = os.fstat(fp2)
+    return samestat(s1, s2)
 
 
 # Are two stat buffers (obtained from stat, fstat or lstat)
 # describing the same file?
 
 def samestat(s1, s2):
-	return s1[stat.ST_INO] == s2[stat.ST_INO] and \
-		s1[stat.ST_DEV] == s2[stat.ST_DEV]
+    """Test whether two stat buffers reference the same file"""
+    return s1[stat.ST_INO] == s2[stat.ST_INO] and \
+	   s1[stat.ST_DEV] == s2[stat.ST_DEV]
 
 
 # Is a path a mount point?
 # (Does this work for all UNIXes?  Is it even guaranteed to work by Posix?)
 
 def ismount(path):
-	try:
-		s1 = os.stat(path)
-		s2 = os.stat(join(path, '..'))
-	except os.error:
-		return 0 # It doesn't exist -- so not a mount point :-)
-	dev1 = s1[stat.ST_DEV]
-	dev2 = s2[stat.ST_DEV]
-	if dev1 != dev2:
-		return 1		# path/.. on a different device as path
-	ino1 = s1[stat.ST_INO]
-	ino2 = s2[stat.ST_INO]
-	if ino1 == ino2:
-		return 1		# path/.. is the same i-node as path
-	return 0
+    """Test whether a path is a mount point"""
+    try:
+        s1 = os.stat(path)
+        s2 = os.stat(join(path, '..'))
+    except os.error:
+        return 0 # It doesn't exist -- so not a mount point :-)
+    dev1 = s1[stat.ST_DEV]
+    dev2 = s2[stat.ST_DEV]
+    if dev1 != dev2:
+        return 1        # path/.. on a different device as path
+    ino1 = s1[stat.ST_INO]
+    ino2 = s2[stat.ST_INO]
+    if ino1 == ino2:
+        return 1        # path/.. is the same i-node as path
+    return 0
 
 
 # Directory tree walk.
 # For each directory under top (including top itself, but excluding
 # '.' and '..'), func(arg, dirname, filenames) is called, where
 # dirname is the name of the directory and filenames is the list
-# files files (and subdirectories etc.) in the directory.
+# of files (and subdirectories etc.) in the directory.
 # The func may modify the filenames list, to implement a filter,
 # or to impose a different order of visiting.
 
 def walk(top, func, arg):
-	try:
-		names = os.listdir(top)
-	except os.error:
-		return
-	func(arg, top, names)
-	exceptions = ('.', '..')
-	for name in names:
-		if name not in exceptions:
-			name = join(top, name)
-			if isdir(name) and not islink(name):
-				walk(name, func, arg)
+    """walk(top,func,args) calls func(arg, d, files) for each directory "d" 
+in the tree  rooted at "top" (including "top" itself).  "files" is a list
+of all the files and subdirs in directory "d".
+"""
+    try:
+        names = os.listdir(top)
+    except os.error:
+        return
+    func(arg, top, names)
+    exceptions = ('.', '..')
+    for name in names:
+        if name not in exceptions:
+            name = join(top, name)
+            if isdir(name) and not islink(name):
+                walk(name, func, arg)
 
 
 # Expand paths beginning with '~' or '~user'.
@@ -235,24 +263,26 @@ def walk(top, func, arg):
 # variable expansion.)
 
 def expanduser(path):
-	if path[:1] <> '~':
-		return path
-	i, n = 1, len(path)
-	while i < n and path[i] <> '/':
-		i = i+1
-	if i == 1:
-		if not os.environ.has_key('HOME'):
-			return path
-		userhome = os.environ['HOME']
-	else:
-		import pwd
-		try:
-			pwent = pwd.getpwnam(path[1:i])
-		except KeyError:
-			return path
-		userhome = pwent[5]
-	if userhome[-1:] == '/': i = i+1
-	return userhome + path[i:]
+    """Expand ~ and ~user constructions.  If user or $HOME is unknown, 
+do nothing"""
+    if path[:1] <> '~':
+        return path
+    i, n = 1, len(path)
+    while i < n and path[i] <> '/':
+        i = i+1
+    if i == 1:
+        if not os.environ.has_key('HOME'):
+            return path
+        userhome = os.environ['HOME']
+    else:
+        import pwd
+        try:
+            pwent = pwd.getpwnam(path[1:i])
+        except KeyError:
+            return path
+        userhome = pwent[5]
+    if userhome[-1:] == '/': i = i+1
+    return userhome + path[i:]
 
 
 # Expand paths containing shell variable substitutions.
@@ -262,29 +292,31 @@ def expanduser(path):
 _varprog = None
 
 def expandvars(path):
-	global _varprog
-	if '$' not in path:
-		return path
-	if not _varprog:
-		import re
-		_varprog = re.compile(r'\$(\w+|\{[^}]*\})')
-	i = 0
-	while 1:
-		m = _varprog.search(path, i)
-		if not m:
-			break
-		i, j = m.span(0)
-		name = m.group(1)
-		if name[:1] == '{' and name[-1:] == '}':
-			name = name[1:-1]
-		if os.environ.has_key(name):
-			tail = path[j:]
-			path = path[:i] + os.environ[name]
-			i = len(path)
-			path = path + tail
-		else:
-			i = j
-	return path
+    """Expand shell variables of form $var and ${var}.  Unknown variables
+are left unchanged"""
+    global _varprog
+    if '$' not in path:
+        return path
+    if not _varprog:
+        import re
+        _varprog = re.compile(r'\$(\w+|\{[^}]*\})')
+    i = 0
+    while 1:
+        m = _varprog.search(path, i)
+        if not m:
+            break
+        i, j = m.span(0)
+        name = m.group(1)
+        if name[:1] == '{' and name[-1:] == '}':
+            name = name[1:-1]
+        if os.environ.has_key(name):
+            tail = path[j:]
+            path = path[:i] + os.environ[name]
+            i = len(path)
+            path = path + tail
+        else:
+            i = j
+    return path
 
 
 # Normalize a path, e.g. A//B, A/./B and A/foo/../B all become A/B.
@@ -292,26 +324,26 @@ def expandvars(path):
 # if it contains symbolic links!
 
 def normpath(path):
-	import string
-	# Treat initial slashes specially
-	slashes = ''
-	while path[:1] == '/':
-		slashes = slashes + '/'
-		path = path[1:]
-	comps = string.splitfields(path, '/')
-	i = 0
-	while i < len(comps):
-		if comps[i] == '.':
-			del comps[i]
-		elif comps[i] == '..' and i > 0 and \
-					  comps[i-1] not in ('', '..'):
-			del comps[i-1:i+1]
-			i = i-1
-		elif comps[i] == '' and i > 0 and comps[i-1] <> '':
-			del comps[i]
-		else:
-			i = i+1
-	# If the path is now empty, substitute '.'
-	if not comps and not slashes:
-		comps.append('.')
-	return slashes + string.joinfields(comps, '/')
+    """Normalize path, eliminating double slashes, etc."""
+    import string
+    # Treat initial slashes specially
+    slashes = ''
+    while path[:1] == '/':
+        slashes = slashes + '/'
+        path = path[1:]
+    comps = string.splitfields(path, '/')
+    i = 0
+    while i < len(comps):
+        if comps[i] == '.':
+            del comps[i]
+        elif comps[i] == '..' and i > 0 and comps[i-1] not in ('', '..'):
+            del comps[i-1:i+1]
+            i = i-1
+        elif comps[i] == '' and i > 0 and comps[i-1] <> '':
+            del comps[i]
+        else:
+            i = i+1
+    # If the path is now empty, substitute '.'
+    if not comps and not slashes:
+        comps.append('.')
+    return slashes + string.joinfields(comps, '/')

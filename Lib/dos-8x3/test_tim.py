@@ -8,7 +8,7 @@ if time.ctime(t) <> time.asctime(time.localtime(t)):
     print 'time.ctime(t) <> time.asctime(time.localtime(t))'
 
 time.daylight
-if int(time.mktime(time.localtime(t))) <> int(t):
+if long(time.mktime(time.localtime(t))) <> long(t):
     print 'time.mktime(time.localtime(t)) <> t'
 
 time.sleep(1.2)
