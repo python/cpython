@@ -3,6 +3,31 @@ What's New in Python 2.2a0?
 
 Core
 
+- Strings now have a new method .decode() to complement the already
+  existing .encode() method. These two methods provide direct access
+  to the corresponding decoders and encoders of the registered codecs.
+
+  To enhance the usability of the .encode() method, the special
+  casing of Unicode object return values was dropped (Unicode objects
+  were auto-magically converted to string using the default encoding).
+  
+  Both methods will now return whatever the codec in charge of the
+  requested encoding returns as object, e.g. Unicode codecs will
+  return Unicode objects when decoding is requested ("הצü".decode("latin-1")
+  will return u"הצü"). This enables codec writer to create codecs
+  for various simple to use conversions.
+
+  New codecs were added to demonstrate these new features (the .encode()
+  and .decode() columns indicate the type of the returned objects):
+
+  Name     | .encode() | .decode() | Description
+  ----------------------------------------------------------------------
+  uu       | string    | string    | UU codec (e.g. for email)
+  base64   | string    | string    | base64 codec
+  zlib     | string    | string    | zlib compression
+  hex      | string    | string    | 2-byte hex codec
+  rot-13   | string    | Unicode   | ROT-13 Unicode charmap codec
+
 - Some operating systems now support the concept of a default Unicode
   encoding for file system operations.  Notably, Windows supports 'mbcs'
   as the default.  The Macintosh will also adopt this concept in the medium
