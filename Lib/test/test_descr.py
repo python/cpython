@@ -1208,6 +1208,11 @@ def classmethods():
     vereq(d.goo(1), (D, 1))
     vereq(d.foo(1), (d, 1))
     vereq(D.foo(d, 1), (d, 1))
+    # Test for a specific crash (SF bug 528132)
+    def f(cls, arg): return (cls, arg)
+    ff = classmethod(f)
+    vereq(ff.__get__(0, int)(42), (int, 42))
+    vereq(ff.__get__(0)(42), (int, 42))
 
 def staticmethods():
     if verbose: print "Testing static methods..."
