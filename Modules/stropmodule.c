@@ -37,7 +37,7 @@ strop_split(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	int len, i, j;
+	int len, i, j, err;
 	char *s;
 	char c;
 	object *list, *item;
@@ -61,7 +61,13 @@ strop_split(self, args)
 		}
 		if (j < i) {
 			item = newsizedstringobject(s+j, (int)(i-j));
-			if (item == NULL || addlistitem(list, item) < 0) {
+			if (item == NULL) {
+				DECREF(list);
+				return NULL;
+			}
+			err = addlistitem(list, item);
+			DECREF(item);
+			if (err < 0) {
 				DECREF(list);
 				return NULL;
 			}
@@ -77,7 +83,7 @@ strop_splitfields(self, args)
 	object *self; /* Not used */
 	object *args;
 {
-	int len, n, i, j;
+	int len, n, i, j, err;
 	char *s, *sub;
 	object *list, *item;
 
@@ -96,22 +102,30 @@ strop_splitfields(self, args)
 	while (i+n <= len) {
 		if (s[i] == sub[0] && (n == 1 || strncmp(s+i, sub, n) == 0)) {
 			item = newsizedstringobject(s+j, (int)(i-j));
-			if (item == NULL || addlistitem(list, item) < 0) {
-				DECREF(list);
-				return NULL;
-			}
+			if (item == NULL)
+				goto fail;
+			err = addlistitem(list, item);
+			DECREF(item);
+			if (err < 0)
+				goto fail;
 			i = j = i + n;
 		}
 		else
 			i++;
 	}
 	item = newsizedstringobject(s+j, (int)(len-j));
-	if (item == NULL || addlistitem(list, item) < 0) {
-		DECREF(list);
-		return NULL;
-	}
+	if (item == NULL)
+		goto fail;
+	err = addlistitem(list, item);
+	DECREF(item);
+	if (err < 0)
+		goto fail;
 
 	return list;
+
+ fail:
+	DECREF(list);
+	return NULL;
 }
 
 
