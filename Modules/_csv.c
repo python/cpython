@@ -12,6 +12,8 @@ module instead.
 
 */
 
+#define MODULE_VERSION "1.0"
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -1440,9 +1442,6 @@ PyMODINIT_FUNC
 init_csv(void)
 {
 	PyObject *module;
-	PyObject *rev;
-	PyObject *v;
-	int res;
 	StyleDesc *style;
 
 	if (PyType_Ready(&Dialect_Type) < 0)
@@ -1460,10 +1459,8 @@ init_csv(void)
 		return;
 
 	/* Add version to the module. */
-	rev = PyString_FromString("1.0");
-	if (rev == NULL)
-		return;
-        if (PyModule_AddObject(module, "__version__", rev) < 0)
+	if (PyModule_AddStringConstant(module, "__version__",
+				       MODULE_VERSION) == -1)
 		return;
 
         /* Add _dialects dictionary */
@@ -1475,11 +1472,8 @@ init_csv(void)
 
 	/* Add quote styles into dictionary */
 	for (style = quote_styles; style->name; style++) {
-		v = PyInt_FromLong(style->style);
-		if (v == NULL)
-			return;
-		res = PyModule_AddObject(module, style->name, v);
-		if (res < 0)
+		if (PyModule_AddIntConstant(module, style->name,
+					    style->style) == -1)
 			return;
 	}
 
