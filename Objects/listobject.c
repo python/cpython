@@ -1122,11 +1122,10 @@ fail:
  */
 #define MAX_MERGE_PENDING 85
 
-/* If a run wins MIN_GALLOP times in a row, we switch to galloping mode,
- * and stay there until both runs win less often than MIN_GALLOP
- * consecutive times.  See listsort.txt for more info.
+/* When we get into galloping mode, we stay there until both runs win less
+ * often than MIN_GALLOP consecutive times.  See listsort.txt for more info.
  */
-#define MIN_GALLOP 8
+#define MIN_GALLOP 7
 
 /* Avoid malloc for small temp arrays. */
 #define MERGESTATE_TEMP_SIZE 256
@@ -1134,9 +1133,20 @@ fail:
 /* One MergeState exists on the stack per invocation of mergesort.  It's just
  * a convenient way to pass state around among the helper functions.
  */
+struct s_slice {
+	PyObject **base;
+	int len;
+};
+
 typedef struct s_MergeState {
 	/* The user-supplied comparison function. or NULL if none given. */
 	PyObject *compare;
+
+	/* This controls when we get *into* galloping mode.  It's initialized
+	 * to MIN_GALLOP.  merge_lo and merge_hi tend to nudge it higher for
+	 * random data, and lower for highly structured data.
+	 */
+	int min_gallop;
 
 	/* 'a' is temp storage to help with merges.  It contains room for
 	 * alloced entries.
@@ -1148,14 +1158,13 @@ typedef struct s_MergeState {
 	 * address base[i] and extends for len[i] elements.  It's always
 	 * true (so long as the indices are in bounds) that
 	 *
-	 *     base[i] + len[i] == base[i+1]
+	 *     pending[i].base + pending[i].len == pending[i+1].base
 	 *
 	 * so we could cut the storage for this, but it's a minor amount,
 	 * and keeping all the info explicit simplifies the code.
 	 */
 	int n;
-	PyObject **base[MAX_MERGE_PENDING];
-	int len[MAX_MERGE_PENDING];
+	struct s_slice pending[MAX_MERGE_PENDING];
 
 	/* 'a' points to this when possible, rather than muck with malloc. */
 	PyObject *temparray[MERGESTATE_TEMP_SIZE];
@@ -1170,6 +1179,7 @@ merge_init(MergeState *ms, PyObject *compare)
 	ms->a = ms->temparray;
 	ms->alloced = MERGESTATE_TEMP_SIZE;
 	ms->n = 0;
+	ms->min_gallop = MIN_GALLOP;
 }
 
 /* Free all the temp memory owned by the MergeState.  This must be called
@@ -1224,6 +1234,7 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 	PyObject *compare;
 	PyObject **dest;
 	int result = -1;	/* guilty until proved innocent */
+	int min_gallop = ms->min_gallop;
 
 	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
 	if (MERGE_GETMEM(ms, na) < 0)
@@ -1248,6 +1259,7 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * appears to win consistently.
 		 */
  		for (;;) {
+ 			assert(na > 1 && nb > 0);
 	 		k = ISLT(*pb, *pa, compare);
 			if (k) {
 				if (k < 0)
@@ -1258,7 +1270,7 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 				--nb;
 				if (nb == 0)
 					goto Succeed;
-				if (bcount >= MIN_GALLOP)
+				if (bcount >= min_gallop)
 					break;
 			}
 			else {
@@ -1268,7 +1280,7 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 				--na;
 				if (na == 1)
 					goto CopyB;
-				if (acount >= MIN_GALLOP)
+				if (acount >= min_gallop)
 					break;
 			}
  		}
@@ -1278,7 +1290,11 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * (if ever) neither run appears to be winning consistently
 		 * anymore.
 		 */
+		++min_gallop;
 		do {
+ 			assert(na > 1 && nb > 0);
+			min_gallop -= min_gallop > 1;
+	 		ms->min_gallop = min_gallop;
 			k = gallop_right(*pb, pa, na, 0, compare);
 			acount = k;
 			if (k) {
@@ -1319,6 +1335,8 @@ merge_lo(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 			if (na == 1)
 				goto CopyB;
  		} while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
+ 		++min_gallop;	/* penalize it for leaving galloping mode */
+ 		ms->min_gallop = min_gallop;
  	}
 Succeed:
 	result = 0;
@@ -1349,6 +1367,7 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 	int result = -1;	/* guilty until proved innocent */
 	PyObject **basea;
 	PyObject **baseb;
+	int min_gallop = ms->min_gallop;
 
 	assert(ms && pa && pb && na > 0 && nb > 0 && pa + na == pb);
 	if (MERGE_GETMEM(ms, nb) < 0)
@@ -1376,6 +1395,7 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * appears to win consistently.
 		 */
  		for (;;) {
+ 			assert(na > 0 && nb > 1);
 	 		k = ISLT(*pb, *pa, compare);
 			if (k) {
 				if (k < 0)
@@ -1386,7 +1406,7 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 				--na;
 				if (na == 0)
 					goto Succeed;
-				if (acount >= MIN_GALLOP)
+				if (acount >= min_gallop)
 					break;
 			}
 			else {
@@ -1396,7 +1416,7 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 				--nb;
 				if (nb == 1)
 					goto CopyA;
-				if (bcount >= MIN_GALLOP)
+				if (bcount >= min_gallop)
 					break;
 			}
  		}
@@ -1406,7 +1426,11 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 		 * (if ever) neither run appears to be winning consistently
 		 * anymore.
 		 */
+		++min_gallop;
 		do {
+ 			assert(na > 0 && nb > 1);
+			min_gallop -= min_gallop > 1;
+	 		ms->min_gallop = min_gallop;
 			k = gallop_right(*pb, basea, na, na-1, compare);
 			if (k < 0)
 				goto Fail;
@@ -1449,6 +1473,8 @@ merge_hi(MergeState *ms, PyObject **pa, int na, PyObject **pb, int nb)
 			if (na == 0)
 				goto Succeed;
  		} while (acount >= MIN_GALLOP || bcount >= MIN_GALLOP);
+ 		++min_gallop;	/* penalize it for leaving galloping mode */
+ 		ms->min_gallop = min_gallop;
  	}
 Succeed:
 	result = 0;
@@ -1482,10 +1508,10 @@ merge_at(MergeState *ms, int i)
 	assert(i >= 0);
 	assert(i == ms->n - 2 || i == ms->n - 3);
 
-	pa = ms->base[i];
-	pb = ms->base[i+1];
-	na = ms->len[i];
-	nb = ms->len[i+1];
+	pa = ms->pending[i].base;
+	na = ms->pending[i].len;
+	pb = ms->pending[i+1].base;
+	nb = ms->pending[i+1].len;
 	assert(na > 0 && nb > 0);
 	assert(pa + na == pb);
 
@@ -1493,11 +1519,9 @@ merge_at(MergeState *ms, int i)
 	 * run now, also slide over the last run (which isn't involved
 	 * in this merge).  The current run i+1 goes away in any case.
 	 */
-	if (i == ms->n - 3) {
-		ms->len[i+1] = ms->len[i+2];
-		ms->base[i+1] = ms->base[i+2];
-	}
-	ms->len[i] = na + nb;
+	ms->pending[i].len = na + nb;
+	if (i == ms->n - 3)
+		ms->pending[i+1] = ms->pending[i+2];
 	--ms->n;
 
 	/* Where does b start in a?  Elements in a before that can be
@@ -1541,18 +1565,18 @@ merge_at(MergeState *ms, int i)
 static int
 merge_collapse(MergeState *ms)
 {
-	int *len = ms->len;
+	struct s_slice *p = ms->pending;
 
 	assert(ms);
 	while (ms->n > 1) {
 		int n = ms->n - 2;
-		if (n > 0 && len[n-1] <= len[n] + len[n+1]) {
-		    	if (len[n-1] < len[n+1])
+		if (n > 0 && p[n-1].len <= p[n].len + p[n+1].len) {
+		    	if (p[n-1].len < p[n+1].len)
 		    		--n;
 			if (merge_at(ms, n) < 0)
 				return -1;
 		}
-		else if (len[n] <= len[n+1]) {
+		else if (p[n].len <= p[n+1].len) {
 			 if (merge_at(ms, n) < 0)
 			 	return -1;
 		}
@@ -1570,12 +1594,12 @@ merge_collapse(MergeState *ms)
 static int
 merge_force_collapse(MergeState *ms)
 {
-	int *len = ms->len;
+	struct s_slice *p = ms->pending;
 
 	assert(ms);
 	while (ms->n > 1) {
 		int n = ms->n - 2;
-		if (n > 0 && len[n-1] < len[n+1])
+		if (n > 0 && p[n-1].len < p[n+1].len)
 			--n;
 		if (merge_at(ms, n) < 0)
 			return -1;
@@ -1664,8 +1688,8 @@ listsort(PyListObject *self, PyObject *args)
 		}
 		/* Push run onto pending-runs stack, and maybe merge. */
 		assert(ms.n < MAX_MERGE_PENDING);
-		ms.base[ms.n] = lo;
-		ms.len[ms.n] = n;
+		ms.pending[ms.n].base = lo;
+		ms.pending[ms.n].len = n;
 		++ms.n;
 		if (merge_collapse(&ms) < 0)
 			goto fail;
@@ -1678,8 +1702,8 @@ listsort(PyListObject *self, PyObject *args)
 	if (merge_force_collapse(&ms) < 0)
 		goto fail;
 	assert(ms.n == 1);
-	assert(ms.base[0] == self->ob_item);
-	assert(ms.len[0] == self->ob_size);
+	assert(ms.pending[0].base == self->ob_item);
+	assert(ms.pending[0].len == self->ob_size);
 
 succeed:
 	result = Py_None;
