@@ -30,6 +30,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Class object interface */
 
+#ifdef WITH_THREAD
+#include "thread.h"
+#else
+#define get_thread_ident() 1L
+#endif
+
 /* Revealing some structures (not for general use) */
 
 typedef struct {
@@ -43,6 +49,12 @@ typedef struct {
 	OB_HEAD
 	classobject	*in_class;	/* The class object */
 	object		*in_dict;	/* A dictionary */
+	object		*in_getattr;	/* A method or NULL */
+	object		*in_setattr;	/* A method or NULL */
+	long		in_ident;	/* A thread ident or 0 */
+#ifdef WITH_THREAD
+	type_lock	*in_lock;	/* A lock or NULL */
+#endif
 } instanceobject;
 
 extern typeobject Classtype, Instancetype, Instancemethodtype;

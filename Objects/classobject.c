@@ -104,21 +104,23 @@ class_getattr(op, name)
 {
 	register object *v;
 	classobject *class;
-	if (strcmp(name, "__dict__") == 0) {
-		INCREF(op->cl_dict);
-		return op->cl_dict;
-	}
-	if (strcmp(name, "__bases__") == 0) {
-		INCREF(op->cl_bases);
-		return op->cl_bases;
-	}
-	if (strcmp(name, "__name__") == 0) {
-		if (op->cl_name == NULL)
-			v = None;
-		else
-			v = op->cl_name;
-		INCREF(v);
-		return v;
+	if (name[0] == '_' && name[1] == '_') {
+		if (strcmp(name, "__dict__") == 0) {
+			INCREF(op->cl_dict);
+			return op->cl_dict;
+		}
+		if (strcmp(name, "__bases__") == 0) {
+			INCREF(op->cl_bases);
+			return op->cl_bases;
+		}
+		if (strcmp(name, "__name__") == 0) {
+			if (op->cl_name == NULL)
+				v = None;
+			else
+				v = op->cl_name;
+			INCREF(v);
+			return v;
+		}
 	}
 	v = class_lookup(op, name, &class);
 	if (v == NULL) {
@@ -280,11 +282,25 @@ newinstanceobject(class, arg)
 	INCREF(class);
 	inst->in_class = (classobject *)class;
 	inst->in_dict = newdictobject();
+	inst->in_getattr = NULL;
+	inst->in_setattr = NULL;
+#ifdef WITH_THREAD
+	inst->in_lock = NULL;
+	inst->in_ident = 0;
+#endif
 	if (inst->in_dict == NULL ||
 	    addaccess((classobject *)class, inst) != 0) {
 		DECREF(inst);
 		return NULL;
 	}
+	inst->in_setattr = instance_getattr(inst, "__setattr__");
+	err_clear();
+	inst->in_getattr = instance_getattr(inst, "__getattr__");
+	err_clear();
+#ifdef WITH_THREAD
+	if (inst->in_getattr != NULL)
+		inst->in_lock = allocate_lock();
+#endif
 	init = instance_getattr(inst, "__init__");
 	if (init == NULL) {
 		err_clear();
@@ -345,6 +361,12 @@ instance_dealloc(inst)
 		return; /* __del__ added a reference; don't delete now */
 	DECREF(inst->in_class);
 	XDECREF(inst->in_dict);
+	XDECREF(inst->in_getattr);
+	XDECREF(inst->in_setattr);
+#ifdef WITH_THREAD
+	if (inst->in_lock != NULL)
+		free_lock(inst->in_lock);
+#endif
 	free((ANY *)inst);
 }
 
@@ -370,6 +392,32 @@ instance_getattr(inst, name)
 	if (v == NULL) {
 		v = class_lookup(inst->in_class, name, &class);
 		if (v == NULL) {
+			object *func;
+			long ident;
+			if ((func = inst->in_getattr) != NULL &&
+			    inst->in_ident != (ident = get_thread_ident())) {
+				object *args;
+#ifdef WITH_THREAD
+				type_lock lock = inst->in_lock;
+				if (lock != NULL) {
+					BGN_SAVE
+					acquire_lock(lock, 0);
+					END_SAVE
+				}
+#endif
+				inst->in_ident = ident;
+				args = mkvalue("(s)", name);
+				if (args != NULL) {
+					v = call_object(func, args);
+					DECREF(args);
+				}
+				inst->in_ident = 0;
+#ifdef WITH_THREAD
+				if (lock != NULL)
+					release_lock(lock);
+#endif
+				return v;
+			}
 			err_setstr(AttributeError, name);
 			return NULL;
 		}
@@ -410,6 +458,18 @@ instance_setattr(inst, name, v)
 	object *v;
 {
 	object *ac;
+	if (inst->in_setattr != NULL) {
+		object *args = mkvalue("(sO)", name, v);
+		if (args != NULL) {
+			object *res = call_object(inst->in_setattr, args);
+			DECREF(args);
+			if (res != NULL) {
+				DECREF(res);
+				return 0;
+			}
+		}
+		return -1;
+	}
 	if (name[0] == '_' && name[1] == '_') {
 		int n = strlen(name);
 		if (name[n-1] == '_' && name[n-2] == '_') {
@@ -824,10 +884,32 @@ BINARY(instance_mul, "__mul__")
 BINARY(instance_div, "__div__")
 BINARY(instance_mod, "__mod__")
 BINARY(instance_divmod, "__divmod__")
-BINARY(instance_pow, "__pow__")
 UNARY(instance_neg, "__neg__")
 UNARY(instance_pos, "__pos__")
 UNARY(instance_abs, "__abs__")
+
+static object *
+instance_pow(self, other, modulus)
+	instanceobject *self;
+	object *other, *modulus;
+{
+	object *func, *arg, *res;
+
+	if ((func = instance_getattr(self, "__pow__")) == NULL)
+		return NULL;
+	if (modulus == None)
+		arg = mkvalue("O", other);
+	else
+		arg = mkvalue("(OO)", other, modulus);
+	if (arg == NULL) {
+		DECREF(func);
+		return NULL;
+	}
+	res = call_object(func, arg);
+	DECREF(func);
+	DECREF(arg);
+	return res;
+}
 
 static int
 instance_nonzero(self)
@@ -922,7 +1004,7 @@ static number_methods instance_as_number = {
 	(binaryfunc)instance_div, /*nb_divide*/
 	(binaryfunc)instance_mod, /*nb_remainder*/
 	(binaryfunc)instance_divmod, /*nb_divmod*/
-	(binaryfunc)instance_pow, /*nb_power*/
+	(ternaryfunc)instance_pow, /*nb_power*/
 	(unaryfunc)instance_neg, /*nb_negative*/
 	(unaryfunc)instance_pos, /*nb_positive*/
 	(unaryfunc)instance_abs, /*nb_absolute*/
