@@ -35,12 +35,7 @@ try:
 except ImportError:
     # DictMixin is new in Python 2.3
     class DictMixin: pass
-try:
-    # For Python 2.3
-    from bsddb import db
-except ImportError:
-    # For earlier Pythons w/distutils pybsddb
-    from bsddb3 import db
+import db
 
 #------------------------------------------------------------------------
 

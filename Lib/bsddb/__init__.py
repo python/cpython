@@ -33,7 +33,7 @@
 #----------------------------------------------------------------------
 
 
-"""Support for BerkeleyDB 3.1 through 4.1.
+"""Support for BerkeleyDB 3.2 through 4.2.
 """
 
 try:

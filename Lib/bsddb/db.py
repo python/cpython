@@ -40,5 +40,5 @@
 from _bsddb import *
 from _bsddb import __version__
 
-if version() < (3, 1, 0):
-    raise ImportError, "BerkeleyDB 3.x symbols not found.  Perhaps python was statically linked with an older version?"
+if version() < (3, 2, 0):
+    raise ImportError, "correct BerkeleyDB symbols not found.  Perhaps python was statically linked with an older version?"
