@@ -392,7 +392,8 @@ optimize_code(PyObject *code, PyObject* consts)
 		opcode = codestr[i];
 		switch (opcode) {
 
-		/* Replace UNARY_NOT JUMP_IF_FALSE with NOP JUMP_IF_TRUE */
+		/* Replace UNARY_NOT JUMP_IF_FALSE POP_TOP with 
+		   with    JUMP_IF_TRUE POP_TOP NOP */
 		case UNARY_NOT:
 			if (codestr[i+1] != JUMP_IF_FALSE  ||
 			    codestr[i+4] != POP_TOP  ||
@@ -401,8 +402,11 @@ optimize_code(PyObject *code, PyObject* consts)
 			tgt = GETJUMPTGT(codestr, (i+1));
 			if (codestr[tgt] != POP_TOP)
 				continue;
-			codestr[i] = NOP;
-			codestr[i+1] = JUMP_IF_TRUE;
+			j = GETARG(codestr, i+1) + 1;
+			codestr[i] = JUMP_IF_TRUE;
+			SETARG(codestr, i, j);
+			codestr[i+3] = POP_TOP;
+			codestr[i+4] = NOP;
 			break;
 
 		/* not a is b -->  a is not b
