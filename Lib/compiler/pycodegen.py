@@ -162,6 +162,7 @@ class CodeGenerator:
 	self.code = PythonVMCode(filename=filename)
         self.code.setFlags(0)
 	self.locals = misc.Stack()
+        self.loops = misc.Stack()
         self.namespace = self.MODULE_NAMESPACE
         self.curStack = 0
         self.maxStack = 0
@@ -180,8 +181,6 @@ class CodeGenerator:
             self.code.setKWArgs()
         lnf = walk(func.code, LocalNameFinder(args), 0)
         self.locals.push(lnf.getLocals())
-##        print func.name, "(", func.argnames, ")"
-##        print lnf.getLocals().items()
 	self.code.setLineNo(func.lineno)
         walk(func.code, self)
         self.code.emit('LOAD_CONST', None)
@@ -280,6 +279,8 @@ class CodeGenerator:
         return 1
 
     def visitCallFunc(self, node):
+        if hasattr(node, 'lineno'):
+            self.code.emit('SET_LINENO', node.lineno)
 	self.visit(node.node)
 	for arg in node.args:
 	    self.visit(arg)
@@ -306,29 +307,75 @@ class CodeGenerator:
 	after.bind(self.code.getCurInst())
 	return 1
 
+    def startLoop(self):
+        l = Loop()
+        self.loops.push(l)
+        self.code.emit('SETUP_LOOP', l.extentAnchor)
+        return l
+
+    def finishLoop(self):
+        l = self.loops.pop()
+        i = self.code.getCurInst()
+        l.extentAnchor.bind(self.code.getCurInst())
+
     def visitFor(self, node):
         # three refs needed
-        start = StackRef()
         anchor = StackRef()
-        breakAnchor = StackRef()
 
         self.code.emit('SET_LINENO', node.lineno)
-        self.code.emit('SETUP_LOOP', breakAnchor)
+        l = self.startLoop()
         self.visit(node.list)
         self.visit(ast.Const(0))
-        start.bind(self.code.getCurInst())
+        l.startAnchor.bind(self.code.getCurInst())
         self.code.setLineNo(node.lineno)
         self.code.emit('FOR_LOOP', anchor)
         self.push(1)
         self.visit(node.assign)
         self.visit(node.body)
-        self.code.emit('JUMP_ABSOLUTE', start)
+        self.code.emit('JUMP_ABSOLUTE', l.startAnchor)
         anchor.bind(self.code.getCurInst())
         self.code.emit('POP_BLOCK')
         if node.else_:
             self.visit(node.else_)
-        breakAnchor.bind(self.code.getCurInst())
+        self.finishLoop()
         return 1
+
+    def visitWhile(self, node):
+        self.code.emit('SET_LINENO', node.lineno)
+        l = self.startLoop()
+        if node.else_:
+            lElse = StackRef()
+        else:
+            lElse = l.breakAnchor
+        l.startAnchor.bind(self.code.getCurInst())
+        self.code.emit('SET_LINENO', node.test.lineno)
+        self.visit(node.test)
+        self.code.emit('JUMP_IF_FALSE', lElse)
+        self.code.emit('POP_TOP')
+        self.visit(node.body)
+        self.code.emit('JUMP_ABSOLUTE', l.startAnchor)
+        # note that lElse may be an alias for l.breakAnchor
+        lElse.bind(self.code.getCurInst())
+        self.code.emit('POP_TOP')
+        self.code.emit('POP_BLOCK')
+        if node.else_:
+            self.visit(node.else_)
+        self.finishLoop()
+        return 1
+
+    def visitBreak(self, node):
+        if not self.loops:
+            raise SyntaxError, "'break' outside loop"
+        self.code.emit('SET_LINENO', node.lineno)
+        self.code.emit('BREAK_LOOP')
+
+    def visitContinue(self, node):
+        if not self.loops:
+            raise SyntaxError, "'continue' outside loop"
+        l = self.loops.top()
+        self.code.emit('SET_LINENO', node.lineno)
+        self.code.emit('JUMP_ABSOLUTE', l.startAnchor)
+        
 
     def visitCompare(self, node):
 	"""Comment from compile.c follows:
@@ -617,11 +664,11 @@ class LocalNameFinder:
     def visitAssName(self, node):
 	self.names.add(node.name)
 
-class Label:
-    def __init__(self, num):
-	self.num = num
-    def __repr__(self):
-	return "Label(%d)" % self.num
+class Loop:
+    def __init__(self):
+        self.startAnchor = StackRef()
+        self.breakAnchor = StackRef()
+        self.extentAnchor = StackRef()
 
 class StackRef:
     """Manage stack locations for jumps, loops, etc."""
@@ -644,6 +691,9 @@ class StackRef:
 	self.val = inst
 
     def resolve(self):
+        if self.val is None:
+            print "UNRESOLVE REF", self
+            return 0
 	return self.val
 
 def add_hook(hooks, type, meth):
