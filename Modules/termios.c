@@ -45,7 +45,7 @@ termios_tcgetattr(self, args)
 		ch = (char)mode.c_cc[i];
 		v = PyString_FromStringAndSize(&ch, 1);
 		if (v == NULL)
-			return NULL;
+			goto err;
 		PyList_SetItem(cc, i, v);
 	}
 
@@ -55,15 +55,17 @@ termios_tcgetattr(self, args)
 	if ((mode.c_lflag & ICANON) == 0) {
 		v = PyInt_FromLong((long)mode.c_cc[VMIN]);
 		if (v == NULL)
-			return NULL;
+			goto err;
 		PyList_SetItem(cc, VMIN, v);
 		v = PyInt_FromLong((long)mode.c_cc[VTIME]);
 		if (v == NULL)
-			return NULL;
+			goto err;
 		PyList_SetItem(cc, VTIME, v);
 	}
 
-	v = PyList_New(7);
+	if (!(v = PyList_New(7)))
+		goto err;
+
 	PyList_SetItem(v, 0, PyInt_FromLong((long)mode.c_iflag));
 	PyList_SetItem(v, 1, PyInt_FromLong((long)mode.c_oflag));
 	PyList_SetItem(v, 2, PyInt_FromLong((long)mode.c_cflag));
@@ -71,8 +73,14 @@ termios_tcgetattr(self, args)
 	PyList_SetItem(v, 4, PyInt_FromLong((long)ispeed));
 	PyList_SetItem(v, 5, PyInt_FromLong((long)ospeed));
 	PyList_SetItem(v, 6, cc);
-
+	if (PyErr_Occurred()){
+		Py_DECREF(v);
+		goto err;
+	}
 	return v;
+  err:
+	Py_DECREF(cc);
+	return NULL;
 }
 
 /* tcsetattr(fd, when, termios)
@@ -95,11 +103,6 @@ termios_tcsetattr(self, args)
 		PyErr_SetString(PyExc_TypeError, BAD);
 		return NULL;
 	}
-	for (i = 0; i < 6; i++)
-		if (!PyInt_Check(PyList_GetItem(term, i))) {
-			PyErr_SetString(PyExc_TypeError, BAD);
-			return NULL;
-		}
 
 	mode.c_iflag = (tcflag_t) PyInt_AsLong(PyList_GetItem(term, 0));
 	mode.c_oflag = (tcflag_t) PyInt_AsLong(PyList_GetItem(term, 1));
@@ -108,6 +111,8 @@ termios_tcsetattr(self, args)
 	ispeed = (speed_t) PyInt_AsLong(PyList_GetItem(term, 4));
 	ospeed = (speed_t) PyInt_AsLong(PyList_GetItem(term, 5));
 	cc = PyList_GetItem(term, 6);
+	if (PyErr_Occurred())
+		return NULL;
 
 	if (!PyList_Check(cc) || PyList_Size(cc) != NCCS) {
 		PyErr_SetString(PyExc_TypeError, BAD);
@@ -116,6 +121,7 @@ termios_tcsetattr(self, args)
 
 	for (i = 0; i < NCCS; i++) {
 		v = PyList_GetItem(cc, i);
+
 		if (PyString_Check(v) && PyString_Size(v) == 1)
 			mode.c_cc[i] = (cc_t) * PyString_AsString(v);
 		else if (PyInt_Check(v))
