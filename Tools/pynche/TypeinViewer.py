@@ -9,8 +9,8 @@ class TypeinViewer:
         self.__hexp = BooleanVar()
         self.__uwtyping = BooleanVar()
         # create the gui
-        self.__frame = Frame(parent, relief=GROOVE, borderwidth=2)
-        self.__frame.pack(side=RIGHT)
+        self.__frame = Frame(parent) #, relief=GROOVE, borderwidth=2)
+        self.__frame.grid(row=3, column=1, sticky='NS')
         # Red
         self.__xl = Label(self.__frame, text='Red:')
         self.__xl.grid(row=0, column=0, sticky=E)
