@@ -53,8 +53,19 @@ DO   = chr(253)
 WONT = chr(252)
 WILL = chr(251)
 theNULL = chr(0)
-SB   = chr(250)
-SE   = chr(240)
+
+SE  = chr(240)  # Subnegotiation End
+NOP = chr(241)  # No Operation
+DM  = chr(242)  # Data Mark
+BRK = chr(243)  # Break
+IP  = chr(244)  # Interrupt process
+AO  = chr(245)  # Abort output
+AYT = chr(246)  # Are You There
+EC  = chr(247)  # Erase Character
+EL  = chr(248)  # Erase Line
+GA  = chr(249)  # Go Ahead
+SB =  chr(250)  # Subnegotiation Begin
+
 
 # Telnet protocol options code (don't change)
 # These ones all come from arpa/telnet.h
