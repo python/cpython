@@ -86,7 +86,17 @@ Socket methods:
 */
 
 #include "Python.h"
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+
+#if defined(HAVE_GETHOSTBYNAME_R) && defined(HAVE_GETHOSTBYNAME_R_3_ARG)
+/* XXX Somebody please submit code for the 3-arg version! */
+#undef HAVE_GETHOSTBYNAME_R
+#endif
+
+#if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && !defined(MS_WINDOWS)
+#define USE_GETHOSTBYNAME_LOCK
+#endif
+
+#ifdef USE_GETHOSTBYNAME_LOCK
 #include "pythread.h"
 #endif
 
@@ -312,7 +322,7 @@ BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
 
 /* Lock to allow python interpreter to continue, but only allow one 
    thread to be in gethostbyname */
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+#ifdef USE_GETHOSTBYNAME_LOCK
 PyThread_type_lock gethostbyname_lock;
 #endif
 
@@ -335,7 +345,7 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	char buf[1001];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -359,14 +369,14 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 	}
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &hp, &errnop);
 #else
 	hp = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_acquire_lock(gethostbyname_lock,1);
+#ifdef USE_GETHOSTBYNAME_LOCK
+	PyThread_acquire_lock(gethostbyname_lock, 1);
 #endif
 	hp = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -380,14 +390,14 @@ BUILD_FUNC_DEF_2(setipaddr, char*,name, struct sockaddr_in *,addr_ret)
 #else
 		PyErr_SetString(PySocket_Error, "host not found");
 #endif
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+#ifdef USE_GETHOSTBYNAME_LOCK
 		PyThread_release_lock(gethostbyname_lock);
 #endif
 		return -1;
 	}
 	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
 	h_length = hp->h_length;
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+#ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
 	return h_length;
@@ -1420,7 +1430,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -1430,20 +1440,20 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyname_ex,PyObject *,self, PyObject *,args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	result = gethostbyname_r(name, &hp_allocated, buf, buf_len, &h, &errnop);
 #else
 	h = gethostbyname_r(name, &hp_allocated, buf, buf_len, &errnop);
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_acquire_lock(gethostbyname_lock,1);
+#ifdef USE_GETHOSTBYNAME_LOCK
+	PyThread_acquire_lock(gethostbyname_lock, 1);
 #endif
 	h = gethostbyname(name);
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	ret = gethost_common(h,&addr);
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+	ret = gethost_common(h, &addr);
+#ifdef USE_GETHOSTBYNAME_LOCK
 	PyThread_release_lock(gethostbyname_lock);
 #endif
 	return ret;
@@ -1465,12 +1475,13 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
         struct sockaddr_in addr;
 	char *ip_num;
 	struct hostent *h;
+	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R
 	struct hostent hp_allocated;
 	char buf[16384];
 	int buf_len = (sizeof buf) - 1;
 	int errnop;
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	int result;
 #endif
 #endif /* HAVE_GETHOSTBYNAME_R */
@@ -1481,7 +1492,7 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(linux) && (__GLIBC__ >= 2)
+#ifdef HAVE_GETHOSTBYNAME_R_6_ARG
 	result = gethostbyaddr_r((char *)&addr.sin_addr,
 		sizeof(addr.sin_addr),
 		AF_INET, &hp_allocated, buf, buf_len,
@@ -1493,18 +1504,19 @@ BUILD_FUNC_DEF_2(PySocket_gethostbyaddr,PyObject *,self, PyObject *, args)
 			    &hp_allocated, buf, buf_len, &errnop);
 #endif
 #else /* not HAVE_GETHOSTBYNAME_R */
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_acquire_lock(gethostbyname_lock,1);
+#ifdef USE_GETHOSTBYNAME_LOCK
+	PyThread_acquire_lock(gethostbyname_lock, 1);
 #endif
 	h = gethostbyaddr((char *)&addr.sin_addr,
 			  sizeof(addr.sin_addr),
 			  AF_INET);
-#if defined(WITH_THREAD) && !defined(MS_WINDOWS)
-	PyThread_release_lock(gethostbyname_lock);
-#endif
 #endif /* HAVE_GETHOSTBYNAME_R */
 	Py_END_ALLOW_THREADS
-	return gethost_common(h,&addr);
+	ret = gethost_common(h, &addr);
+#ifdef USE_GETHOSTBYNAME_LOCK
+	PyThread_release_lock(gethostbyname_lock);
+#endif
+	return ret;
 }
 
 static char gethostbyaddr_doc[] =
@@ -2218,7 +2230,7 @@ initsocket()
 #endif
 
 	/* Initialize gethostbyname lock */
-#if defined(WITH_THREAD) && !defined(HAVE_GETHOSTBYNAME_R) && !defined(MS_WINDOWS)
+#ifdef USE_GETHOSTBYNAME_LOCK
 	gethostbyname_lock = PyThread_allocate_lock();
 #endif
 }
