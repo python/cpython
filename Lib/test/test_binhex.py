@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-"""Test script for the binascii C module
+"""Test script for the binhex C module
 
    Uses the mechanism of the python binhex module
    Roger E. Masse
@@ -15,7 +15,7 @@ def test():
         fname2 = tempfile.mktemp()
         f = open(fname1, 'w')
     except:
-        raise ImportError, "Cannot test binascii without a temp file"
+        raise ImportError, "Cannot test binhex without a temp file"
 
     start = 'Jack is my hero'
     f.write(start)
