@@ -458,7 +458,3 @@ def usage(msg):
 
 
 main()
-
-# Local Variables:
-# indent-tabs-mode: nil
-# End:
