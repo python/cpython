@@ -1,5 +1,5 @@
 # -*- Mode: Python; tab-width: 4 -*-
-# 	$Id$
+#   Id: asyncore.py,v 2.40 1999/05/27 04:08:25 rushing Exp 
 #	Author: Sam Rushing <rushing@nightmare.com>
 
 # ======================================================================
