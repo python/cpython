@@ -591,8 +591,10 @@ _expectations = {
         test_gl
         test_imgfile
         test_largefile
+        test_linuxaudiodev
         test_nis
         test_ntpath
+        test_ossaudiodev
         test_socketserver
         test_sunaudiodev
         test_unicode_file

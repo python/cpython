@@ -1,3 +1,6 @@
+from test import test_support
+test_support.requires('audio')
+
 from test.test_support import verbose, findfile, TestFailed, TestSkipped
 
 import errno

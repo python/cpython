@@ -284,6 +284,12 @@ Tools/Demos
 Build
 -----
 
+- The audio driver tests (test_ossaudiodev.py and
+  test_linuxaudiodev.py) are no longer run by default.  This is
+  because they don't always work, depending on your hardware and
+  software.  To run these tests, you must use an invocation like
+    ./python Lib/test/regrtest.py -u audio test_ossaudiodev
+
 - On systems which build using the configure script, compiler flags which
   used to be lumped together using the OPT flag have been split into two
   groups, OPT and BASECFLAGS.  OPT is meant to carry just optimization- and
