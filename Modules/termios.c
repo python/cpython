@@ -1,6 +1,6 @@
 /* termiosmodule.c -- POSIX terminal I/O module implementation.  */
 
-#include <Python.h>
+#include "Python.h"
 
 #define PyInit_termios inittermios
 
