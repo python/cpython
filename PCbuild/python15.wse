@@ -1,7 +1,7 @@
 Document Type: WSE
 item: Global
   Version=5.0
-  Title=Python 1.5.2b2
+  Title=Python 1.5.2c1
   Flags=00010100
   Languages=65 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
   Japanese Font Name=MS Gothic
@@ -53,7 +53,7 @@ item: Check Configuration
 end
 item: Set Variable
   Variable=APPTITLE
-  Value=Python 1.5.2b2
+  Value=Python 1.5.2c1
 end
 item: Set Variable
   Variable=GROUP
@@ -675,11 +675,6 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\..\zlibvc104dll\zlib.dll
-  Destination=%MAINDIR%\DLLs\zlib.dll
-  Flags=0000000000000010
-end
-item: Install File
   Source=%_SRC_%\pcbuild\bsddb.pyd
   Destination=%MAINDIR%\DLLs\bsddb.pyd
   Flags=0000000000000010
@@ -763,6 +758,9 @@ item: If/While Statement
   Variable=COMPONENTS
   Value=A
   Flags=00001010
+end
+item: Add Text to INSTALL.LOG
+  Text=File Tree: %MAINDIR%\Tools\*.*
 end
 item: Install File
   Source=%_SRC_%\Tools\scripts\*.py
@@ -900,43 +898,49 @@ end
 item: Install File
   Source=%_DOC_%\index.html
   Destination=%MAINDIR%\Doc\index.html
-  Description=Python Documentation root (HTML)
+  Description=Python Documentation Root (HTML)
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\icons\*.*
   Destination=%MAINDIR%\Doc\icons
-  Description=Python Documentation (HTML)
+  Description=Python Documentation Icons
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\tut\*.*
   Destination=%MAINDIR%\Doc\tut
-  Description=Python Documentation (HTML)
+  Description=Python Tutorial (HTML)
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\lib\*.*
   Destination=%MAINDIR%\Doc\lib
-  Description=Python Documentation (HTML)
+  Description=Python Library Reference (HTML)
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\ext\*.*
   Destination=%MAINDIR%\Doc\ext
-  Description=Python Documentation (HTML)
+  Description=Python Extending and Embedding Manual (HTML)
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\api\*.*
   Destination=%MAINDIR%\Doc\api
-  Description=Python Documentation (HTML)
+  Description=Python/C API Reference (HTML)
   Flags=0000000000000010
 end
 item: Install File
   Source=%_DOC_%\ref\*.*
   Destination=%MAINDIR%\Doc\ref
-  Description=Python Documentation (HTML)
+  Description=Python Language Reference (HTML)
+  Flags=0000000000000010
+end
+item: Install File
+  Source=%_DOC_%\doc\*.*
+  Destination=%MAINDIR%\Doc\doc
+  Description=Python Meta-Documentation (HTML)
   Flags=0000000000000010
 end
 item: End Block
@@ -1160,7 +1164,7 @@ item: Set Variable
 end
 item: Create Shortcut
   Source=%MAINDIR%\python.exe
-  Destination=%GROUP%\python.lnk
+  Destination=%GROUP%\Python (command line).lnk
   Working Directory=%MAINDIR%
   Icon Pathname=%MAINDIR%\pycon.ico
   Key Type=1536
@@ -1179,6 +1183,27 @@ item: Create Shortcut
   Flags=00000001
 end
 item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=A
+  Flags=00001010
+end
+item: Create Shortcut
+  Source=%MAINDIR%\Tools\idle\idle.pyw
+  Destination=%GROUP%\IDLE (Python GUI).lnk
+  Working Directory=%MAINDIR%
+  Key Type=1536
+  Flags=00000001
+end
+item: End Block
+end
+item: Create Shortcut
+  Source=%MAINDIR%\unwise.exe
+  Destination=%GROUP%\Uninstall Python.lnk
+  Working Directory=%MAINDIR%
+  Key Type=1536
+  Flags=00000001
 end
 item: Else Statement
 end
