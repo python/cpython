@@ -3398,8 +3398,11 @@ apply_slice(PyObject *u, PyObject *v, PyObject *w) /* return u[v:w] */
 	}
 	else {
 		PyObject *slice = PySlice_New(v, w, NULL);
-		if (slice != NULL)
-			return PyObject_GetItem(u, slice);
+		if (slice != NULL) {
+			PyObject *res = PyObject_GetItem(u, slice);
+			Py_DECREF(slice);
+			return res;
+		}
 		else
 			return NULL;
 	}
@@ -3426,10 +3429,13 @@ assign_slice(PyObject *u, PyObject *v, PyObject *w, PyObject *x)
 	else {
 		PyObject *slice = PySlice_New(v, w, NULL);
 		if (slice != NULL) {
+			int res;
 			if (x != NULL)
-				return PyObject_SetItem(u, slice, x);
+				res = PyObject_SetItem(u, slice, x);
 			else
-				return PyObject_DelItem(u, slice);
+				res = PyObject_DelItem(u, slice);
+			Py_DECREF(slice);
+			return res;
 		}
 		else
 			return -1;
