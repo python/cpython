@@ -1660,8 +1660,8 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 				"NULL result without error in PyObject_Call");
 		return result;
 	}
-	PyErr_Format(PyExc_TypeError, "object is not callable: %s",
-		     PyString_AS_STRING(PyObject_Repr(func)));
+	PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
+		     func->ob_type->tp_name);
 	return NULL;
 }
 
