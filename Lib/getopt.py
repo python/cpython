@@ -117,7 +117,7 @@ def gnu_getopt(args, shortopts, longopts = []):
     if shortopts.startswith('+'):
         shortopts = shortopts[1:]
         all_options_first = True
-    elif os.getenv("POSIXLY_CORRECT"):
+    elif os.environ.get("POSIXLY_CORRECT"):
         all_options_first = True
     else:
         all_options_first = False
