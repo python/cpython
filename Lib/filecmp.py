@@ -291,9 +291,9 @@ def cmpfiles(a, b, common, shallow=1, use_statcache=0):
 
 # Compare two files.
 # Return:
-#	0 for equal
-#	1 for different
-#	2 for funny cases (can't stat, etc.)
+#       0 for equal
+#       1 for different
+#       2 for funny cases (can't stat, etc.)
 #
 def _cmp(a, b, sh, st):
     try:

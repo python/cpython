@@ -11,13 +11,13 @@ written in Python.
 
 # History
 # -------
-# 
+#
 # Michael McLay started this module.  Steve Majewski changed the
 # interface to SvFormContentDict and FormContentDict.  The multipart
 # parsing was inspired by code submitted by Andreas Paepcke.  Guido van
 # Rossum rewrote, reformatted and documented the module and is currently
 # responsible for its maintenance.
-# 
+#
 
 __version__ = "2.5"
 
@@ -104,8 +104,8 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
         environ         : environment dictionary; default: os.environ
 
         keep_blank_values: flag indicating whether blank values in
-            URL encoded forms should be treated as blank strings.  
-            A true value indicates that blanks should be retained as 
+            URL encoded forms should be treated as blank strings.
+            A true value indicates that blanks should be retained as
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -129,10 +129,10 @@ def parse(fp=None, environ=os.environ, keep_blank_values=0, strict_parsing=0):
             qs = fp.read(clength)
         else:
             qs = ''                     # Unknown content-type
-        if environ.has_key('QUERY_STRING'): 
+        if environ.has_key('QUERY_STRING'):
             if qs: qs = qs + '&'
             qs = qs + environ['QUERY_STRING']
-        elif sys.argv[1:]: 
+        elif sys.argv[1:]:
             if qs: qs = qs + '&'
             qs = qs + sys.argv[1]
         environ['QUERY_STRING'] = qs    # XXX Shouldn't, really
@@ -155,8 +155,8 @@ def parse_qs(qs, keep_blank_values=0, strict_parsing=0):
         qs: URL-encoded query string to be parsed
 
         keep_blank_values: flag indicating whether blank values in
-            URL encoded queries should be treated as blank strings.  
-            A true value indicates that blanks should be retained as 
+            URL encoded queries should be treated as blank strings.
+            A true value indicates that blanks should be retained as
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -188,7 +188,7 @@ def parse_qsl(qs, keep_blank_values=0, strict_parsing=0):
 
     strict_parsing: flag indicating what to do with parsing errors. If
         false (the default), errors are silently ignored. If true,
-        errors raise a ValueError exception. 
+        errors raise a ValueError exception.
 
     Returns a list, as G-d intended.
     """
@@ -215,17 +215,17 @@ def parse_multipart(fp, pdict):
     fp   : input file
     pdict: dictionary containing other parameters of conten-type header
 
-    Returns a dictionary just like parse_qs(): keys are the field names, each 
-    value is a list of values for that field.  This is easy to use but not 
-    much good if you are expecting megabytes to be uploaded -- in that case, 
-    use the FieldStorage class instead which is much more flexible.  Note 
-    that content-type is the raw, unparsed contents of the content-type 
+    Returns a dictionary just like parse_qs(): keys are the field names, each
+    value is a list of values for that field.  This is easy to use but not
+    much good if you are expecting megabytes to be uploaded -- in that case,
+    use the FieldStorage class instead which is much more flexible.  Note
+    that content-type is the raw, unparsed contents of the content-type
     header.
-    
-    XXX This does not parse nested multipart parts -- use FieldStorage for 
+
+    XXX This does not parse nested multipart parts -- use FieldStorage for
     that.
-    
-    XXX This should really be subsumed by FieldStorage altogether -- no 
+
+    XXX This should really be subsumed by FieldStorage altogether -- no
     point in having two implementations of the same parsing algorithm.
 
     """
@@ -409,8 +409,8 @@ class FieldStorage:
         environ         : environment dictionary; default: os.environ
 
         keep_blank_values: flag indicating whether blank values in
-            URL encoded forms should be treated as blank strings.  
-            A true value indicates that blanks should be retained as 
+            URL encoded forms should be treated as blank strings.
+            A true value indicates that blanks should be retained as
             blank strings.  The default false value indicates that
             blank values are to be ignored and treated as if they were
             not included.
@@ -707,7 +707,7 @@ class FieldStorage:
         """
         import tempfile
         return tempfile.TemporaryFile("w+b")
-        
+
 
 
 # Backwards Compatibility Classes
@@ -744,8 +744,8 @@ class SvFormContentDict(FormContentDict):
 
     """
     def __getitem__(self, key):
-        if len(self.dict[key]) > 1: 
-            raise IndexError, 'expecting a single value' 
+        if len(self.dict[key]) > 1:
+            raise IndexError, 'expecting a single value'
         return self.dict[key][0]
     def getlist(self, key):
         return self.dict[key]
@@ -766,7 +766,7 @@ class SvFormContentDict(FormContentDict):
 
 
 class InterpFormContentDict(SvFormContentDict):
-    """This class is present for backwards compatibility only.""" 
+    """This class is present for backwards compatibility only."""
     def __getitem__(self, key):
         v = SvFormContentDict.__getitem__(self, key)
         if v[0] in string.digits + '+-.':
@@ -794,7 +794,7 @@ class InterpFormContentDict(SvFormContentDict):
 
 
 class FormContent(FormContentDict):
-    """This class is present for backwards compatibility only.""" 
+    """This class is present for backwards compatibility only."""
     def values(self, key):
         if self.dict.has_key(key) :return self.dict[key]
         else: return None
@@ -882,7 +882,7 @@ def print_environ(environ=os.environ):
     print "<DL>"
     for key in keys:
         print "<DT>", escape(key), "<DD>", escape(environ[key])
-    print "</DL>" 
+    print "</DL>"
     print
 
 def print_form(form):
@@ -982,5 +982,5 @@ def escape(s, quote=None):
 # ===============
 
 # Call test() when this file is run as a script (not imported as a module)
-if __name__ == '__main__': 
+if __name__ == '__main__':
     test()

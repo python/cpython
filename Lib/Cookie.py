@@ -3,9 +3,9 @@
 
 ####
 # Copyright 2000 by Timothy O'Malley <timo@alum.mit.edu>
-# 
+#
 #                All Rights Reserved
-# 
+#
 # Permission to use, copy, modify, and distribute this software
 # and its documentation for any purpose and without fee is hereby
 # granted, provided that the above copyright notice appear in all
@@ -13,8 +13,8 @@
 # notice appear in supporting documentation, and that the name of
 # Timothy O'Malley  not be used in advertising or publicity
 # pertaining to distribution of the software without specific, written
-# prior permission. 
-# 
+# prior permission.
+#
 # Timothy O'Malley DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS
 # SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
 # AND FITNESS, IN NO EVENT SHALL Timothy O'Malley BE LIABLE FOR
@@ -22,11 +22,11 @@
 # WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
 # WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS
 # ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-# PERFORMANCE OF THIS SOFTWARE. 
+# PERFORMANCE OF THIS SOFTWARE.
 #
 ####
-# 
-# Id: Cookie.py,v 2.29 2000/08/23 05:28:49 timo Exp 
+#
+# Id: Cookie.py,v 2.29 2000/08/23 05:28:49 timo Exp
 #   by Timothy O'Malley <timo@alum.mit.edu>
 #
 #  Cookie.py is a Python module for the handling of HTTP
@@ -116,7 +116,7 @@ attribute.
    Set-Cookie: oreo="doublestuff"; Path=/;
 
 Each dictionary element has a 'value' attribute, which gives you
-back the value associated with the key. 
+back the value associated with the key.
 
    >>> C = Cookie.SmartCookie()
    >>> C["twix"] = "none for you"
@@ -148,7 +148,7 @@ the value to a string, when the values are set dictionary-style.
    Set-Cookie: number=7;
    Set-Cookie: string=seven;
 
- 
+
 SerialCookie
 
 The SerialCookie expects that all values should be serialized using
@@ -214,7 +214,7 @@ Finis.
 
 #
 # Import our required modules
-# 
+#
 import string, sys
 from UserDict import UserDict
 
@@ -242,7 +242,7 @@ class CookieError(Exception):
 # into a 4 character sequence: a forward-slash followed by the
 # three-digit octal equivalent of the character.  Any '\' or '"' is
 # quoted with a preceeding '\' slash.
-# 
+#
 # These are taken from RFC2068 and RFC2109.
 #       _LegalChars       is the list of chars which don't require "'s
 #       _Translator       hash-table for fast quoting
@@ -319,7 +319,7 @@ def _quote(str, LegalChars=_LegalChars,
     if "" == translate(str, idmap, LegalChars):
         return str
     else:
-        return '"' + join( map(_Translator.get, str, str), "" ) + '"'    
+        return '"' + join( map(_Translator.get, str, str), "" ) + '"'
 # end _quote
 
 
@@ -370,7 +370,7 @@ def _unquote(str, join=string.join, atoi=string.atoi):
 
 # The _getdate() routine is used to set the expiration time in
 # the cookie's HTTP header.      By default, _getdate() returns the
-# current time in the appropriate "expires" format for a 
+# current time in the appropriate "expires" format for a
 # Set-Cookie header.     The one optional argument is an offset from
 # now, in seconds.      For example, an offset of -3600 means "one hour ago".
 # The offset may be a floating point number.
@@ -405,7 +405,7 @@ class Morsel(UserDict):
     # RFC 2109 lists these attributes as reserved:
     #   path       comment         domain
     #   max-age    secure      version
-    # 
+    #
     # For historical reasons, these attributes are also reserved:
     #   expires
     #

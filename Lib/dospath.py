@@ -10,8 +10,8 @@ def normcase(s):
     backslashes.
     Other normalizations (such as optimizing '../' away) are not allowed
     (this is done by normpath).
-    Previously, this version mapped invalid consecutive characters to a 
-    single '_', but this has been removed.  This functionality should 
+    Previously, this version mapped invalid consecutive characters to a
+    single '_', but this has been removed.  This functionality should
     possibly be added as a new function."""
 
     return s.replace("/", "\\").lower()

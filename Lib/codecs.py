@@ -25,19 +25,19 @@ except ImportError,why:
 BOM = struct.pack('=H',0xFEFF)
 #
 BOM_BE = BOM32_BE = '\376\377'
-#	corresponds to Unicode U+FEFF in UTF-16 on big endian
-#	platforms == ZERO WIDTH NO-BREAK SPACE
+#       corresponds to Unicode U+FEFF in UTF-16 on big endian
+#       platforms == ZERO WIDTH NO-BREAK SPACE
 BOM_LE = BOM32_LE = '\377\376'
-#	corresponds to Unicode U+FFFE in UTF-16 on little endian
-#	platforms == defined as being an illegal Unicode character
+#       corresponds to Unicode U+FFFE in UTF-16 on little endian
+#       platforms == defined as being an illegal Unicode character
 
 #
 # 64-bit Byte Order Marks
 #
 BOM64_BE = '\000\000\376\377'
-#	corresponds to Unicode U+0000FEFF in UCS-4
+#       corresponds to Unicode U+0000FEFF in UCS-4
 BOM64_LE = '\377\376\000\000'
-#	corresponds to Unicode U+0000FFFE in UCS-4
+#       corresponds to Unicode U+0000FFFE in UCS-4
 
 
 ### Codec base classes (defining the API)
@@ -547,7 +547,7 @@ def make_identity_dict(rng):
 
         Return a dictionary where elements of the rng sequence are
         mapped to themselves.
-        
+
     """
     res = {}
     for i in rng:
