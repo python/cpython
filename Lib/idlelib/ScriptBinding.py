@@ -69,7 +69,10 @@ class ScriptBinding:
         try:
             tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
         except tokenize.TokenError, msg:
-            self.errorbox("Token error", "Token error:\n%s" % msg)
+            msgtxt, (lineno, start) = msg
+            self.editwin.gotoline(lineno)
+            self.errorbox("Tabnanny Tokenizing Error",
+                          "Token Error: %s" % msgtxt)
             return False
         except tabnanny.NannyNag, nag:
             # The error messages from tabnanny are too confusing...
@@ -86,6 +89,8 @@ class ScriptBinding:
             source = re.sub(r"\r\n", "\n", source)
         if source and source[-1] != '\n':
             source = source + '\n'
+        text = self.editwin.text
+        text.tag_remove("ERROR", "1.0", "end")
         try:
             # If successful, return the compiled code
             return compile(source, filename, "exec")
