@@ -644,7 +644,7 @@ listextend_internal(PyListObject *self, PyObject *b)
 static PyObject *
 list_inplace_concat(PyListObject *self, PyObject *other)
 {
-	other = PySequence_Fast(other, "argument to += must be a sequence");
+	other = PySequence_Fast(other, "argument to += must be iterable");
 	if (!other)
 		return NULL;
 
@@ -664,7 +664,7 @@ listextend(PyListObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O:extend", &b))
 		return NULL;
 
-	b = PySequence_Fast(b, "list.extend() argument must be a sequence");
+	b = PySequence_Fast(b, "list.extend() argument must be iterable");
 	if (!b)
 		return NULL;
 
