@@ -70,8 +70,6 @@ def setup (**attrs):
     object.
     """
 
-    from pprint import pprint               # for debugging output
-
     # Determine the distribution class -- either caller-supplied or
     # our Distribution (see below).
     klass = attrs.get ('distclass')
@@ -88,8 +86,9 @@ def setup (**attrs):
     # the setup script, but be overridden by the command line.
     dist.parse_config_files()
     
-    print "options (after parsing config files):"
-    pprint (dist.command_options)
+    if DEBUG:
+        print "options (after parsing config files):"
+        dist.dump_option_dicts()
 
     # Parse the command line; any command-line errors are the end user's
     # fault, so turn them into SystemExit to suppress tracebacks.
@@ -99,8 +98,9 @@ def setup (**attrs):
         sys.stderr.write (usage + "\n")
         raise SystemExit, "error: %s" % msg
 
-    print "options (after parsing command line):"
-    pprint (dist.command_options)
+    if DEBUG:
+        print "options (after parsing command line):"
+        dist.dump_option_dicts()
 
     # And finally, run all the commands found on the command line.
     if ok:
