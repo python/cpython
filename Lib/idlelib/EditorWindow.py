@@ -510,6 +510,8 @@ class EditorWindow:
         if self.color:
             self.color = self.ColorDelegator()
             self.per.insertfilter(self.color)
+        theme = idleConf.GetOption('main','Theme','name')
+        self.text.config(idleConf.GetHighlight(theme, "normal"))
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"

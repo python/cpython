@@ -1,6 +1,7 @@
 import time
 import re
 import keyword
+import __builtin__
 from Tkinter import *
 from Delegator import Delegator
 from configHandler import idleConf
@@ -17,13 +18,16 @@ def any(name, list):
 
 def make_pat():
     kw = r"\b" + any("KEYWORD", keyword.kwlist) + r"\b"
+    builtinlist = [str(name) for name in dir(__builtin__)
+                                        if not name.startswith('_')]
+    builtin = r"([^\\.]\b|^)" + any("BUILTIN", builtinlist) + r"\b"
     comment = any("COMMENT", [r"#[^\n]*"])
     sqstring = r"(\b[rR])?'[^'\\\n]*(\\.[^'\\\n]*)*'?"
     dqstring = r'(\b[rR])?"[^"\\\n]*(\\.[^"\\\n]*)*"?'
     sq3string = r"(\b[rR])?'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"
     dq3string = r'(\b[rR])?"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'
     string = any("STRING", [sq3string, dq3string, sqstring, dqstring])
-    return kw + "|" + comment + "|" + string + "|" + any("SYNC", [r"\n"])
+    return kw + "|" + builtin + "|" + comment + "|" + string + "|" + any("SYNC", [r"\n"])
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
@@ -58,6 +62,7 @@ class ColorDelegator(Delegator):
         self.tagdefs = {
             "COMMENT": idleConf.GetHighlight(theme, "comment"),
             "KEYWORD": idleConf.GetHighlight(theme, "keyword"),
+            "BUILTIN": idleConf.GetHighlight(theme, "builtin"),
             "STRING": idleConf.GetHighlight(theme, "string"),
             "DEFINITION": idleConf.GetHighlight(theme, "definition"),
             "SYNC": {'background':None,'foreground':None},
@@ -68,7 +73,7 @@ class ColorDelegator(Delegator):
             "hit": idleConf.GetHighlight(theme, "hit"),
             }
 
-    if DEBUG: print 'tagdefs',tagdefs
+        if DEBUG: print 'tagdefs',self.tagdefs
 
     def insert(self, index, chars, tags=None):
         index = self.index(index)

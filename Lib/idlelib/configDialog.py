@@ -35,15 +35,17 @@ class ConfigDialog(Toplevel):
         self.themeElements={'Normal Text':('normal','00'),
             'Python Keywords':('keyword','01'),
             'Python Definitions':('definition','02'),
-            'Python Comments':('comment','03'),
-            'Python Strings':('string','04'),
-            'Selected Text':('hilite','05'),
-            'Found Text':('hit','06'),
-            'Cursor':('cursor','07'),
-            'Error Text':('error','08'),
-            'Shell Normal Text':('console','09'),
-            'Shell Stdout Text':('stdout','10'),
-            'Shell Stderr Text':('stderr','11')}
+            'Python Builtins':('builtin', '03'),
+            'Python Comments':('comment','04'),
+            'Python Strings':('string','05'),
+            'Selected Text':('hilite','06'),
+            'Found Text':('hit','07'),
+            'Cursor':('cursor','08'),
+            'Error Text':('error','09'),
+            'Shell Normal Text':('console','10'),
+            'Shell Stdout Text':('stdout','11'),
+            'Shell Stderr Text':('stderr','12'),
+            }
         self.ResetChangedItems() #load initial values in changed items dict
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
@@ -197,7 +199,9 @@ class ConfigDialog(Toplevel):
             (' ','normal'),('func','definition'),('(param):','normal'),
             ('\n  ','normal'),('"""string"""','string'),('\n  var0 = ','normal'),
             ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'hilite'),
-            ('\n  var2 = ','normal'),("'found'",'hit'),('\n\n','normal'),
+            ('\n  var2 = ','normal'),("'found'",'hit'),
+            ('\n  var3 = ','normal'),('list', 'builtin'), ('(','normal'),
+            ('None', 'builtin'),(')\n\n','normal'),
             (' error ','error'),(' ','normal'),('cursor |','cursor'),
             ('\n ','normal'),('shell','console'),(' ','normal'),('stdout','stdout'),
             (' ','normal'),('stderr','stderr'),('\n','normal'))

@@ -306,6 +306,8 @@ class IdleConf:
                 'normal-background':'#ffffff',
                 'keyword-foreground':'#000000',
                 'keyword-background':'#ffffff',
+                'builtin-foreground':'#000000',
+                'builtin-background':'#ffffff',
                 'comment-foreground':'#000000',
                 'comment-background':'#ffffff',
                 'string-foreground':'#000000',
