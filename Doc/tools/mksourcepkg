@@ -1,0 +1,139 @@
+#! /usr/bin/env python
+#  -*- Python -*-
+
+"""%(program)s - script to create the latex source distribution
+
+usage:
+     %(program)s [-t|--tools] release [tag]
+
+with -t|--tools:  doesn't include the documents, only the framework
+
+without [tag]:  generate from the current version that's checked in
+     	   (*NOT* what's in the current directory!)
+
+with [tag]:  generate from the named tag
+"""
+#* should be modified to get the Python version number automatically
+#  from the Makefile or someplace.
+
+__version__ = "$Revision$"
+
+import getopt
+import glob
+import os
+import shutil
+import sys
+import tempfile
+
+
+quiet = 0
+
+
+def main():
+     global quiet
+     try:
+          opts, args = getopt.getopt(sys.argv[1:], "abgtzq",
+                                     ["all", "bzip2", "gzip", "tools", "zip",
+                                      "quiet"])
+     except getopt.error, e:
+          usage(warning=str(e))
+          sys.exit(2)
+     if len(args) not in (1, 2):
+          usage(warning="wrong number of parameters")
+          sys.exit(2)
+     tools = 0
+     formats = {}
+     for opt, arg in opts:
+          if opt in ("-t", "--tools"):
+               tools = 1
+          elif opt in ("-q", "--quiet"):
+               quiet = quiet + 1
+          elif opt in ("-b", "--bzip2"):
+               formats["bzip2"] = 1
+          elif opt in ("-g", "--gzip"):
+               formats["gzip"] = 1
+          elif opt in ("-z", "--zip"):
+               formats["zip"] = 1
+          elif opt in ("-a", "--all"):
+               formats["bzip2"] = 1
+               formats["gzip"] = 1
+               formats["zip"] = 1
+     formats = formats.keys()
+     if formats:
+          # make order human-predictable
+          formats.sort()
+     else:
+          formats = ["gzip"]
+     release = args[0]
+     cvstag = None
+     if len(args) > 1:
+          cvstag = args[1]
+     tempdir = tempfile.mktemp()
+     os.mkdir(tempdir)
+     os.mkdir(os.path.join(tempdir, "Python-%s" % release))
+     docdir = os.path.join(tempdir, "Python-%s" % release, "Doc")
+     os.mkdir(docdir)
+     mydir = os.getcwd()
+     if cvstag:
+          run("cvs export -r %s -d %s/Python-%s/Doc python/dist/src/Doc"
+              % (cvstag, tempdir, release))
+     else:
+          run("cvs checkout -d %s/Python-%s/Doc python/dist/src/Doc"
+              % (tempdir, release))
+          # remove CVS directories
+          os.chdir("%s/Python-%s" % (tempdir, release))
+          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
+               map(shutil.rmtree, glob.glob(p))
+          os.chdir(mydir)
+     if tools:
+          archive = "tools-" + release
+          # we don't want the actual documents in this case:
+          for d in ("api", "doc", "ext", "lib", "mac", "ref", "tut"):
+               shutil.rmtree(os.path.join(docdir, d))
+     else:
+          archive = "latex-" + release
+
+     # XXX should also remove the .cvsignore files at this point
+
+     os.chdir(tempdir)
+     archive = os.path.join(mydir, archive)
+     for format in formats:
+          if format == "bzip2":
+               run("tar cf - Python-%s | bzip2 -9 >%s.tar.bz2"
+                   % (release, archive))
+          elif format == "gzip":
+               run("tar cf - Python-%s | gzip -9 >%s.tgz"
+                   % (release, archive))
+          elif format == "zip":
+               run("zip -r9 %s.zip Python-%s"
+                   % (archive, release))
+
+     # clean up the work area:
+     os.chdir(mydir)
+     shutil.rmtree(tempdir)
+
+
+def run(cmd):
+     if quiet < 2:
+          print "+++", cmd
+     if quiet:
+          cmd = "(%s) >/dev/null" % cmd
+     rc = os.system(cmd)
+     if rc:
+          sys.exit(rc)
+
+
+def usage(warning=None):
+     stdout = sys.stdout
+     sys.stdout = sys.stderr
+     program = os.path.basename(sys.argv[0])
+     try:
+          if warning:
+               print "%s: %s\n" % (program, warning)
+          print __doc__ % {"program": program}
+     finally:
+          sys.stdout = stdout
+
+
+if __name__ == "__main__":
+     main()
