@@ -265,9 +265,9 @@ class AbstractFormatter:
 
 
 class NullWriter:
-    """Minimal writer interface to use in testing.
-    """
+    """Minimal writer interface to use in testing & inheritance."""
     def __init__(self): pass
+    def flush(self): pass
     def new_alignment(self, align): pass
     def new_font(self, font): pass
     def new_margin(self, margin, level): pass
