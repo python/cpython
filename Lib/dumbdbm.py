@@ -24,8 +24,6 @@ is read when the database is opened, and some updates rewrite the whole index)
 _os = __import__('os')
 import __builtin__
 
-__all__ = ["open"]
-
 _open = __builtin__.open
 
 _BLOCKSIZE = 512
