@@ -89,9 +89,11 @@ goals = [
 	("imggif.slb", "imgmodules.slb"),
 	("imgjpeg.slb", "imgmodules.slb"),
 	("imgop.slb", "imgmodules.slb"),
+	("imgpbm.slb", "imgmodules.slb"),
 	("imgpgm.slb", "imgmodules.slb"),
 	("imgppm.slb", "imgmodules.slb"),
-	("imgtiff.slb", "imgmodules.slb")
+	("imgtiff.slb", "imgmodules.slb"),
+	("imgsgi.slb", "imgmodules.slb")
 ]
 
 
