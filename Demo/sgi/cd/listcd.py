@@ -11,13 +11,13 @@ def main():
 		except RuntimeError:
 			break
 	for i in range(len(info)):
-		start_min, start_sec, start_frame, \
-			total_min, total_sec, total_frame = info[i]
-		print 'Track', z(i+1),
-		print z(start_min) + ':' + z(start_sec) + ':' + z(start_frame),
-		print z(total_min) + ':' + z(total_sec) + ':' + z(total_frame)
+		start, total = info[i]
+		print 'Track', zfill(i+1), triple(start), triple(total)
 
-def z(n):
+def triple((a, b, c)):
+	return zfill(a) + ':' + zfill(b) + ':' + zfill(c)
+
+def zfill(n):
 	s = `n`
 	return '0' * (2 - len(s)) + s
 
