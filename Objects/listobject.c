@@ -342,6 +342,7 @@ static PyObject *
 list_slice(PyListObject *a, int ilow, int ihigh)
 {
 	PyListObject *np;
+	PyObject **src, **dest;
 	int i, len;
 	if (ilow < 0)
 		ilow = 0;
@@ -356,10 +357,12 @@ list_slice(PyListObject *a, int ilow, int ihigh)
 	if (np == NULL)
 		return NULL;
 
+	src = a->ob_item + ilow;
+	dest = np->ob_item;
 	for (i = 0; i < len; i++) {
-		PyObject *v = a->ob_item[i+ilow];
+		PyObject *v = src[i];
 		Py_INCREF(v);
-		np->ob_item[i] = v;
+		dest[i] = v;
 	}
 	return (PyObject *)np;
 }
@@ -646,6 +649,7 @@ listextend_internal(PyListObject *self, PyObject *b)
 	register int selflen = PyList_GET_SIZE(self);
 	int blen;
 	register int i;
+	PyObject **src, **dest;
 
 	if (PyObject_Size(b) == 0) {
 		/* short circuit when b is empty */
@@ -678,19 +682,17 @@ listextend_internal(PyListObject *self, PyObject *b)
 	}
 
 	/* populate the end of self with b's items */
-	if (PyList_Check(b)) {
-		for (i = 0; i < blen; i++) {
-			PyObject *o = PyList_GET_ITEM(b, i);
-			Py_INCREF(o);
-			PyList_SET_ITEM(self, i+selflen, o);
-		}
-	} else {
+	if (PyList_Check(b)) 
+		src = ((PyListObject *)b)->ob_item;
+	else {
 		assert (PyTuple_Check(b));
-		for (i = 0; i < blen; i++) {
-			PyObject *o = PyTuple_GET_ITEM(b, i);
-			Py_INCREF(o);
-			PyList_SET_ITEM(self, i+selflen, o);
-		}
+		src = ((PyTupleObject *)b)->ob_item;
+	}
+	dest = self->ob_item + selflen;
+	for (i = 0; i < blen; i++) {
+		PyObject *o = src[i];
+		Py_INCREF(o);
+		dest[i] = o;
 	}
 	Py_DECREF(b);
 	return 0;
