@@ -35,11 +35,17 @@ def __STRING(x): return "x"
 # Included from sys/types.h
 
 # Included from linux/types.h
-__FD_SETSIZE = 256
 
-# Included from asm/types.h
+# Included from linux/posix_types.h
+__FD_SETSIZE = 1024
+def __FDELT(d): return ((d) / __NFDBITS)
+
+
+# Included from asm/posix_types.h
 def __FD_ZERO(fdsetp): return \
 
+
+# Included from asm/types.h
 
 # Included from sys/bitypes.h
 
@@ -94,6 +100,7 @@ LOCK_NB = 4
 LOCK_UN = 8
 F_POSIX = 1
 F_FLOCK = 2
+F_BROKEN = 4
 FNDELAY = O_NDELAY
 F_ULOCK = 0
 F_LOCK = 1

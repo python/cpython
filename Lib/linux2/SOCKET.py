@@ -33,6 +33,8 @@ def __STRING(x): return "x"
 # Included from linux/socket.h
 
 # Included from asm/socket.h
+
+# Included from asm/sockios.h
 FIOSETOWN = 0x8901
 SIOCSPGRP = 0x8902
 FIOGETOWN = 0x8903
@@ -53,6 +55,7 @@ SO_OOBINLINE = 10
 SO_NO_CHECK = 11
 SO_PRIORITY = 12
 SO_LINGER = 13
+SO_BSDCOMPAT = 14
 
 # Included from linux/sockios.h
 SIOCADDRT = 0x890B
@@ -84,6 +87,8 @@ SIOCGIFSLAVE = 0x8929
 SIOCSIFSLAVE = 0x8930
 SIOCADDMULTI = 0x8931
 SIOCDELMULTI = 0x8932
+SIOCGIFBR = 0x8940
+SIOCSIFBR = 0x8941
 OLD_SIOCDARP = 0x8950
 OLD_SIOCGARP = 0x8951
 OLD_SIOCSARP = 0x8952
@@ -95,11 +100,14 @@ SIOCGRARP = 0x8961
 SIOCSRARP = 0x8962
 SIOCGIFMAP = 0x8970
 SIOCSIFMAP = 0x8971
+SIOCADDDLCI = 0x8980
+SIOCDELDLCI = 0x8981
 SIOCDEVPRIVATE = 0x89F0
 SIOCPROTOPRIVATE = 0x89E0
 
 # Included from linux/uio.h
-MAX_IOVEC = 8
+UIO_MAXIOV = 16
+SCM_RIGHTS = 1
 SOCK_STREAM = 1
 SOCK_DGRAM = 2
 SOCK_RAW = 3
@@ -134,6 +142,7 @@ SOMAXCONN = 128
 MSG_OOB = 1
 MSG_PEEK = 2
 MSG_DONTROUTE = 4
+MSG_PROXY = 16
 SOL_IP = 0
 SOL_IPX = 256
 SOL_AX25 = 257
@@ -145,6 +154,7 @@ IP_TOS = 1
 IPTOS_LOWDELAY = 0x10
 IPTOS_THROUGHPUT = 0x08
 IPTOS_RELIABILITY = 0x04
+IPTOS_MINCOST = 0x02
 IP_TTL = 2
 IP_HDRINCL = 3
 IP_OPTIONS = 4
@@ -166,11 +176,17 @@ SOPRI_BACKGROUND = 2
 # Included from sys/types.h
 
 # Included from linux/types.h
-__FD_SETSIZE = 256
 
-# Included from asm/types.h
+# Included from linux/posix_types.h
+__FD_SETSIZE = 1024
+def __FDELT(d): return ((d) / __NFDBITS)
+
+
+# Included from asm/posix_types.h
 def __FD_ZERO(fdsetp): return \
 
+
+# Included from asm/types.h
 
 # Included from sys/bitypes.h
 
