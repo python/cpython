@@ -107,7 +107,7 @@ get_long(v, p)
 {
 	long x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred()) {
-		if (PyErr_Occurred() == PyExc_TypeError)
+		if (PyErr_ExceptionMatches(PyExc_TypeError))
 			PyErr_SetString(StructError,
 					"required argument is not an integer");
 		return -1;
