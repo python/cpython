@@ -1058,6 +1058,8 @@ PyNumber_Float(PyObject *o)
 int
 PySequence_Check(PyObject *s)
 {
+	if (PyInstance_Check(s))
+		return PyObject_HasAttrString(s, "__getitem__");
 	return s != NULL && s->ob_type->tp_as_sequence &&
 		s->ob_type->tp_as_sequence->sq_item != NULL;
 }
@@ -1600,8 +1602,12 @@ PySequence_Index(PyObject *s, PyObject *o)
 int
 PyMapping_Check(PyObject *o)
 {
-	return o && o->ob_type->tp_as_mapping &&
-		o->ob_type->tp_as_mapping->mp_subscript;
+	if (PyInstance_Check(o))
+		return PyObject_HasAttrString(o, "__getitem__");
+
+	return  o && o->ob_type->tp_as_mapping &&
+		o->ob_type->tp_as_mapping->mp_subscript &&
+		!PyObject_HasAttrString(o, "__getslice__");
 }
 
 int

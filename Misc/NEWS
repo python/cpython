@@ -202,6 +202,9 @@ Core and builtins
 Extension modules
 -----------------
 
+- operator.isMappingType() and operator.isSequenceType() now give
+  fewer false positives.
+
 - socket.sslerror is now a subclass of socket.error .  Also added
   socket.error to the socket module's C API.
 
