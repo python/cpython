@@ -724,9 +724,9 @@ sub make_str_index_entry($){
 }
 
 
-%TokenToTargetMapping = ();
-%DefinedGrammars = ();
-%BackpatchGrammarFiles = ();
+%TokenToTargetMapping = ();     # language:token -> link target
+%DefinedGrammars = ();          # language -> full grammar text
+%BackpatchGrammarFiles = ();    # file -> 1 (hash of files to fixup)
 
 sub do_cmd_token{
     local($_) = @_;
@@ -1647,7 +1647,18 @@ sub make_my_titlegraphic(){
 
 sub do_cmd_maketitle{
     local($_) = @_;
-    my $the_title = "\n<div class=\"titlepage\">";
+    my $the_title = "\n";
+    if ($EXTERNAL_UP_LINK) {
+        # This generates a <LINK> element in the wrong place (the
+        # body), but I don't see any other way to get this generated
+        # at all.  Browsers like Mozilla, that support navigation
+        # links, can make use of this.
+        $the_title .= ("<link rel='up' href='$EXTERNAL_UP_LINK'"
+                       . ($EXTERNAL_UP_TITLE
+                          ? " title='$EXTERNAL_UP_TITLE'" : '')
+                       . ">\n");
+    }
+    $the_title .= '<div class="titlepage">';
     if ($TITLE_PAGE_GRAPHIC) {
         if ($TITLE_PAGE_GRAPHIC_ON_RIGHT) {
             $the_title .= ("\n<table border=\"0\" width=\"100%\">"
@@ -1854,6 +1865,7 @@ sub do_cmd_seepep{
 }
 
 sub do_cmd_seerfc{
+    # XXX Would be nice to add links to the text/plain and PDF versions.
     return handle_rfclike_reference(@_[0], "RFC", $RFC_FORMAT);
 }
 
