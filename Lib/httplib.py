@@ -711,7 +711,7 @@ if hasattr(socket, 'ssl'):
         https. 
         """
 
-    _connection_class = HTTPSConnection
+        _connection_class = HTTPSConnection
         
 
 class HTTPException(Exception):
