@@ -217,7 +217,7 @@ LIBFILES = lib/lib.tex \
     lib/libposix.tex lib/libposixpath.tex lib/libpwd.tex \
     lib/libgrp.tex lib/libcrypt.tex lib/libdbm.tex lib/libgdbm.tex \
     lib/libtermios.tex lib/libfcntl.tex lib/libposixfile.tex \
-    lib/libsyslog.tex lib/libpdb.tex lib/libprofile.tex lib/libwww.tex \
+    lib/libsyslog.tex lib/libpdb.tex lib/libprofile.tex \
     lib/libcgi.tex lib/liburllib.tex lib/libhttplib.tex \
     lib/libftplib.tex lib/libgopherlib.tex lib/libnntplib.tex \
     lib/liburlparse.tex lib/libhtmllib.tex lib/libsgmllib.tex \
@@ -245,7 +245,7 @@ LIBFILES = lib/lib.tex \
     lib/libimaplib.tex lib/libpoplib.tex lib/libcalendar.tex \
     lib/libpopen2.tex lib/libbisect.tex lib/libmimetypes.tex \
     lib/libsmtplib.tex lib/libcmd.tex lib/libmultifile.tex \
-    lib/libthreading.tex
+    lib/libthreading.tex lib/internet.tex lib/netdata.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACLIBFILES = mac/mac.tex mac/libmac.tex mac/libctb.tex \
@@ -334,13 +334,14 @@ info:
 COMMONPERL=perl/manual.perl perl/python.perl
 
 l2h html:
-	(cd $(HTMLDIR); $(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs: \
-		-f ../html/Makefile)
+	(TOPDIR=`pwd`; cd $(HTMLDIR); \
+		$(MAKE) TEXINPUTS=../paper-$(PAPER):../texinputs: \
+		-f $$TOPDIR/html/Makefile)
 
-l2hapi: $(COMMONPERL)
+l2hapi: $(COMMONPERL) api/api.tex
 	$(MKHTML) api $(L2HARGS)
 
-l2hext: $(COMMONPERL)
+l2hext: $(COMMONPERL) ext/ext.tex
 	$(MKHTML) ext $(L2HARGS)
 
 l2hlib: $(COMMONPERL) $(LIBFILES)
@@ -351,10 +352,10 @@ l2hlib: $(COMMONPERL) $(LIBFILES)
 l2hmac: $(COMMONPERL) $(MACLIBFILES)
 	$(srcdir)/tools/mkhowto.sh --html $(srcdir)/mac/mac.tex
 
-l2href: $(COMMONPERL)
+l2href: $(COMMONPERL) $(REFFILES)
 	$(MKHTML) ref $(L2HARGS)
 
-l2htut: $(COMMONPERL)
+l2htut: $(COMMONPERL) tut/tut.tex
 	$(MKHTML) tut $(L2HARGS)
 
 # webchecker needs an extra flag to process the huge index from the libref
@@ -377,6 +378,10 @@ pdf-$(PAPER)-$(RELEASE).tgz: pdf
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
+
+html-$(RELEASE).tgz: $(HTMLDIR)/api/api.html $(HTMLDIR)/ext/ext.html \
+		     $(HTMLDIR)/lib/lib.html $(HTMLDIR)/mac/mac.html \
+		     $(HTMLDIR)/ref/ref.html $(HTMLDIR)/tut/tut.html
 
 html-$(RELEASE).tgz:
 	(cd $(HTMLDIR); tar cf - index.html ???/???.css ???/*.html */*.gif) \
