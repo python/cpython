@@ -320,22 +320,19 @@ class SocketIO:
         self.debug("putmessage:%d:" % message[0])
         try:
             s = pickle.dumps(message)
-        except pickle.UnpicklingError:
+        except pickle.PicklingError:
             print >>sys.__stderr__, "Cannot pickle:", `message`
             raise
         s = struct.pack("<i", len(s)) + s
         while len(s) > 0:
             try:
-                n = self.sock.send(s)
+                r, w, x = select.select([], [self.sock], [])
+                n = self.sock.send(s[:BUFSIZE])
             except (AttributeError, socket.error):
                 # socket was closed
                 raise IOError
             else:
                 s = s[n:]
-
-    def ioready(self, wait):
-        r, w, x = select.select([self.sock.fileno()], [], [], wait)
-        return len(r)
 
     buffer = ""
     bufneed = 4
@@ -344,7 +341,8 @@ class SocketIO:
     def pollpacket(self, wait):
         self._stage0()
         if len(self.buffer) < self.bufneed:
-            if not self.ioready(wait):
+            r, w, x = select.select([self.sock.fileno()], [], [], wait)
+            if len(r) == 0:
                 return None
             try:
                 s = self.sock.recv(BUFSIZE)
@@ -377,7 +375,7 @@ class SocketIO:
             return None
         try:
             message = pickle.loads(packet)
-        except:
+        except pickle.UnpicklingError:
             print >>sys.__stderr__, "-----------------------"
             print >>sys.__stderr__, "cannot unpickle packet:", `packet`
             traceback.print_stack(file=sys.__stderr__)

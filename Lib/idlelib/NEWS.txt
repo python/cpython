@@ -3,6 +3,14 @@ What's New in IDLE 1.1a0?
 
 *Release date: XX-XXX-2004*
 
+- rpc.py:SocketIO - Large modules were generating large pickles when downloaded
+  to the execution server.  The return of the OK response from the subprocess
+  initialization was interfering and causing the sending socket to be not
+  ready.  Add an IO ready test to fix this.  Moved the polling IO ready test
+  into pollpacket().
+
+- Fix typo in rpc.py, s/b "pickle.PicklingError" not "pickle.UnpicklingError".
+
 - Added a Tk error dialog to run.py inform the user if the subprocess can't
   connect to the user GUI process.  Added a timeout to the GUI's listening
   socket.  Added Tk error dialogs to PyShell.py to announce a failure to bind
