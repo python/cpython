@@ -128,6 +128,11 @@ getcopyright()
 	return "Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam";
 }
 
+char *
+getplatform()
+{
+	return "mac";
+}
 
 /* Return the initial python search path.  This is called once from
    initsys() to initialize sys.path.
@@ -282,7 +287,9 @@ extern void initfl();
 extern void initthread();
 extern void inittiming();
 extern void initsignal();
+#if 0
 extern void initnew();
+#endif
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
@@ -353,7 +360,9 @@ struct {
 #endif
 	{"md5", initmd5},
 	{"rotor", initrotor},
+#if 0
 	{"new", initnew},
+#endif
 	{"gestalt", initgestalt},
 	{"macfs", initmacfs},
 #ifdef THINK_C
