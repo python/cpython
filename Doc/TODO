@@ -2,17 +2,14 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 ===============================
 
 
+* The "Very High Level Interface" in the API document has been
+  requested; I guess it wouldn't hurt to fill in a bit there.  Request 
+  by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.  (Partly done.)
+
 * Describe implementing types in C, including use of the 'self'
   parameter to the method implementation function.  (Missing material
   mentioned in the Extending & Embedding manual, section 1.1; problem
   reported by Clay Spence <cspence@sarnoff.com>.)
-
-* Complete the "Matching vs. Searching" subsection in the re module
-  section.
-
-* The "Very High Level Interface" in the API document has been
-  requested; I guess it wouldn't hurt to fill in a bit there.  Request 
-  by Albert Hofkamp <a.hofkamp@wtb.tue.nl>.  (Partly done.)
 
 * In the extensions manual, more information is needed about building
   dynamically linked extensions in C++.  Specifically, the extensions
@@ -22,12 +19,14 @@ PYTHON DOCUMENTATION TO-DO LIST			-*- indented-text -*-
 * Update the pickle documentation to describe all of the current
   behavior; only a subset is described.  __reduce__, etc.
 
-* Update the code module documentation.
+* Update the code/codeop module documentation.
 
 * In the indexes, some subitem entries are separated from the item
   entries by column- or page-breaks.  Reported by Lorenzo M. Catucci
   <lorenzo@argon.roma2.infn.it>.  This one will be hard; probably not
-  really worth the pain.
+  really worth the pain.  (Only an issue at all when a header-letter
+  and the first index entry get separated -- can change as soon as we
+  change the index entries in the text.)
 
 * Fix problem with howto documents getting the last module synopsis
   twice (in \localmoduletable) so we can get rid of the ugly 'uniq'
