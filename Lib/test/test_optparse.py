@@ -59,7 +59,7 @@ Args were %(args)s.""" % locals ())
                      kwargs,
                      expected_exception,
                      expected_output,
-                     get_output=None, 
+                     get_output=None,
                      exact_match=False):
         """Assert the expected exception is raised when calling a function.
 
@@ -346,7 +346,7 @@ class TestTypeAliases(BaseTest):
         self.assertEquals(self.parser.get_option("-x").type, "int")
         self.assertEquals(self.parser.get_option("-s").type, "string")
         self.assertEquals(self.parser.get_option("-t").type, "string")
-        
+
 
 # Custom type for testing processing of default values.
 _time_units = { 's' : 1, 'm' : 60, 'h' : 60*60, 'd' : 60*60*24 }
@@ -503,7 +503,7 @@ options:
                                default=None,
                                help=self.file_help)
         self.assertHelp(self.parser, self.expected_help_none)
-        
+
     def test_default_none_2(self):
         self.parser.add_option("-f", "--file",
                                help=self.file_help)
@@ -1375,7 +1375,7 @@ class TestHelp(BaseTest):
                         help="store FOO in the foo list for later fooing"),
             ]
         os.environ['COLUMNS'] = str(columns)
-        return OptionParser(option_list=options)        
+        return OptionParser(option_list=options)
 
     def assertHelpEquals(self, expected_output):
         # This trick is used to make optparse believe bar.py is being executed.
@@ -1441,7 +1441,7 @@ options:
 """)
 
 
-        
+
 
 class TestMatchAbbrev(BaseTest):
     def test_match_abbrev(self):
