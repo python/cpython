@@ -8,10 +8,17 @@ void err_get PROTO((object **, object **));
 void err_clear PROTO((void));
 
 /* Predefined exceptions (in run.c) */
-object *RuntimeError;		/* Raised by error() */
-object *EOFError;		/* Raised by eof_error() */
-object *TypeError;		/* Rased by type_error() */
-object *MemoryError;		/* Raised by mem_error() */
-object *NameError;		/* Raised by name_error() */
-object *SystemError;		/* Raised by sys_error() */
-object *KeyboardInterrupt;	/* Raised by intr_error() */
+
+extern object *RuntimeError;
+extern object *EOFError;
+extern object *TypeError;
+extern object *MemoryError;
+extern object *NameError;
+extern object *SystemError;
+extern object *KeyboardInterrupt;
+
+/* Convenience functions */
+
+extern int err_badarg PROTO((void));
+extern object *err_nomem PROTO((void));
+extern object *err_errno PROTO((object *));
