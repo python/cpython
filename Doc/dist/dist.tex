@@ -1291,20 +1291,214 @@ If you don't want this to happen for some reason, you can run
 the bdist_wininst command with the \longprogramopt{no-target-compile} and/or
 the \longprogramopt{no-target-optimize} option.
 
-%\section{Examples}
-%\label{examples}
+\section{Examples}
+\label{examples}
 
 
-%\subsection{Pure Python distribution (by module)}
-%\label{pure-mod}
+\subsection{Pure Python distribution (by module)}
+\label{pure-mod}
+
+If you're just distributing a couple of modules, especially if they
+don't live in a particular package, you can specify them individually
+using the \option{py\_modules} option in the setup script.
+
+In the simplest case, you'll have two files to worry about: a setup
+script and the single module you're distributing, \file{foo.py} in this
+example:
+\begin{verbatim}
+<root>/
+        setup.py
+        foo.py
+\end{verbatim}
+(In all diagrams in this section, \verb|<root>| will refer to the
+distribution root directory.)  A minimal setup script to describe this
+situation would be:
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foo", version = "1.0",
+      py_modules = ["foo"])
+\end{verbatim}
+Note that the name of the distribution is specified independently with
+the \option{name} option, and there's no rule that says it has to be the
+same as the name of the sole module in the distribution (although that's
+probably a good convention to follow).  However, the distribution name
+is used to generate filenames, so you should stick to letters, digits,
+underscores, and hyphens.
+
+Since \option{py\_modules} is a list, you can of course specify multiple 
+modules, eg. if you're distributing modules \module{foo} and
+\module{bar}, your setup might look like this:
+\begin{verbatim}
+<root>/
+        setup.py
+        foo.py
+        bar.py
+\end{verbatim}
+and the setup script might be
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      py_modules = ["foo", "bar"])
+\end{verbatim}
+
+You can put module source files into another directory, but if you have
+enough modules to do that, it's probably easier to specify modules by
+package rather than listing them individually.
 
 
-%\subsection{Pure Python distribution (by package)}
-%\label{pure-pkg}
+\subsection{Pure Python distribution (by package)}
+\label{pure-pkg}
+
+If you have more than a couple of modules to distribute, especially if
+they are in multiple packages, it's probably easier to specify whole
+packages rather than individual modules.  This works even if your
+modules are not in a package; you can just tell the Distutils to process
+modules from the root package, and that works the same as any other
+package (except that you don't have to have an \file{\_\_init\_\_.py}
+file).
+
+The setup script from the last example could also be written as
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      packages = [""])
+\end{verbatim}
+(The empty string stands for the root package.)
+
+If those two files are moved into a subdirectory, but remain in the root
+package, e.g.:
+\begin{verbatim}
+<root>/
+        setup.py
+        src/      foo.py
+                  bar.py
+\end{verbatim}
+then you would still specify the root package, but you have to tell the
+Distutils where source files in the root package live:
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      package_dir = {"": "src"},
+      packages = [""])
+\end{verbatim}
+
+More typically, though, you will want to distribute multiple modules in
+the same package (or in sub-packages).  For example, if the \module{foo} 
+and \module{bar} modules belong in package \module{foobar}, one way to
+layout your source tree is
+\begin{verbatim}
+<root>/
+        setup.py
+        foobar/
+                 __init__.py
+                 foo.py
+                 bar.py
+\end{verbatim}
+This is in fact the default layout expected by the Distutils, and the
+one that requires the least work to describe in your setup script:
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      packages = ["foobar"])
+\end{verbatim}
+
+If you want to put modules in directories not named for their package,
+then you need to use the \option{package\_dir} option again.  For
+example, if the \file{src} directory holds modules in the
+\module{foobar} package:
+\begin{verbatim}
+<root>/
+        setup.py
+        src/
+                 __init__.py
+                 foo.py
+                 bar.py
+\end{verbatim}
+an appropriate setup script would be
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      package_dir = {"foobar" : "src"},
+      packages = ["foobar"])
+\end{verbatim}
+
+Or, you might put modules from your main package right in the
+distribution root:
+\begin{verbatim}
+<root>/
+        setup.py
+        __init__.py
+        foo.py
+        bar.py
+\end{verbatim}
+in which case your setup script would be
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      package_dir = {"foobar" : ""},
+      packages = ["foobar"])
+\end{verbatim}
+(The empty string also stands for the current directory.)
+
+If you have sub-packages, they must be explicitly listed in
+\option{packages}, but any entries in \option{package\_dir}
+automatically extend to sub-packages.  (In other words, the Distutils
+does \emph{not} scan your source tree, trying to figure out which
+directories correspond to Python packages by looking for
+\file{\_\_init\_\_.py} files.)  Thus, if the default layout grows a
+sub-package:
+\begin{verbatim}
+<root>/
+        setup.py
+        foobar/
+                 __init__.py
+                 foo.py
+                 bar.py
+                 subfoo/
+                           __init__.py
+                           blah.py
+\end{verbatim}
+then the corresponding setup script would be
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      packages = ["foobar", "foobar.subfoo"])
+\end{verbatim}
+(Again, the empty string in \option{package\_dir} stands for the current
+directory.)
 
 
-%\subsection{Single extension module}
-%\label{single-ext}
+\subsection{Single extension module}
+\label{single-ext}
+
+Extension modules are specified using the \option{ext\_modules} option.
+\option{package\_dir} has no effect on where extension source files are
+found; it only affects the source for pure Python modules.  The simplest 
+case, a single extension module in a single C source file, is:
+\begin{verbatim}
+<root>/
+        setup.py
+        foo.c
+\end{verbatim}
+If the \module{foo} extension belongs in the root package, the setup
+script for this could be
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      ext_modules = [Extension("foo", ["foo.c"])])
+\end{verbatim}
+
+If the extension actually belongs in a package, say \module{foopkg},
+then 
+
+With exactly the same source tree layout, this extension can be put in
+the \module{foopkg} package simply by changing the name of the
+extension:
+\begin{verbatim}
+from distutils.core import setup
+setup(name = "foobar", version = "1.0",
+      ext_modules = [Extension("foopkg.foo", ["foo.c"])])
+\end{verbatim}
 
 
 %\subsection{Multiple extension modules}
@@ -1312,7 +1506,6 @@ the \longprogramopt{no-target-optimize} option.
 
 
 %\subsection{Putting it all together}
-
 
 
 %\section{Extending the Distutils}
