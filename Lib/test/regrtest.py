@@ -171,6 +171,9 @@ class Compare:
 	    raise test_support.TestFailed, \
 		    'Writing: '+`data`+', expected: '+`expected`
 
+    def flush(self):
+	pass
+
     def close(self):
 	leftover = self.fp.read()
 	if leftover:
