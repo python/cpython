@@ -72,8 +72,8 @@ The compilation of an extension module depends on its intended use as
 well as on your system setup; details are given in a later section.
 
 
-\section{A Simple Example}
-\label{simpleExample}
+\section{A Simple Example
+         \label{simpleExample}}
 
 Let's create an extension module called \samp{spam} (the favorite food
 of Monty Python fans...) and let's say we want to create a Python
@@ -161,8 +161,8 @@ appropriate exception by so the calling function can return
 \NULL{} immediately (as we saw in the example).
 
 
-\section{Intermezzo: Errors and Exceptions}
-\label{errors}
+\section{Intermezzo: Errors and Exceptions
+         \label{errors}}
 
 An important convention throughout the Python interpreter is the
 following: when a function fails, it should set an exception condition
@@ -288,8 +288,8 @@ described in the \emph{Python Library Reference} under ``Built-in
 Exceptions.''
 
 
-\section{Back to the Example}
-\label{backToExample}
+\section{Back to the Example
+         \label{backToExample}}
 
 Going back to our example function, you should now be able to
 understand this statement:
@@ -344,8 +344,8 @@ returning \ctype{void}), the corresponding Python function must return
 pointer, which means ``error'' in most contexts, as we have seen.
 
 
-\section{The Module's Method Table and Initialization Function}
-\label{methodTable}
+\section{The Module's Method Table and Initialization Function
+         \label{methodTable}}
 
 I promised to show how \cfunction{spam_system()} is called from Python
 programs.  First, we need to list its name and address in a ``method
@@ -402,8 +402,8 @@ if the module could not be initialized satisfactorily, so the caller
 doesn't need to check for errors.
 
 
-\section{Compilation and Linkage}
-\label{compilation}
+\section{Compilation and Linkage
+         \label{compilation}}
 
 There are two more things to do before you can use your new extension:
 compiling and linking it with the Python system.  If you use dynamic
@@ -435,8 +435,8 @@ be listed on the line in the configuration file as well, for instance:
 spam spammodule.o -lX11
 \end{verbatim}
 
-\section{Calling Python Functions From \C{}}
-\label{callingPython}
+\section{Calling Python Functions from \C{}
+         \label{callingPython}}
 
 So far we have concentrated on making \C{} functions callable from
 Python.  The reverse is also useful: calling Python functions from \C{}.
@@ -450,7 +450,8 @@ Fortunately, the Python interpreter is easily called recursively, and
 there is a standard interface to call a Python function.  (I won't
 dwell on how to call the Python parser with a particular string as
 input --- if you're interested, have a look at the implementation of
-the \samp{-c} command line option in \file{Python/pythonmain.c}.)
+the \samp{-c} command line option in \file{Python/pythonmain.c} from
+the Python source code.)
 
 Calling a Python function is easy.  First, the Python program must
 somehow pass you the Python function object.  You should provide a
@@ -467,19 +468,37 @@ static PyObject *
 my_set_callback(dummy, arg)
     PyObject *dummy, *arg;
 {
-    Py_XDECREF(my_callback); /* Dispose of previous callback */
-    Py_XINCREF(arg); /* Add a reference to new callback */
-    my_callback = arg; /* Remember new callback */
-    /* Boilerplate to return "None" */
-    Py_INCREF(Py_None);
-    return Py_None;
+    PyObject *result = NULL;
+    PyObject *temp;
+
+    if (PyArg_ParseTuple(args, "O:set_callback", &temp)) {
+        if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "parameter must be callable");
+            return NULL;
+        }
+        Py_XINCREF(temp);         /* Add a reference to new callback */
+        Py_XDECREF(my_callback);  /* Dispose of previous callback */
+        my_callback = temp;       /* Remember new callback */
+        /* Boilerplate to return "None" */
+        Py_INCREF(Py_None);
+        result = Py_None;
+    }
+    return result;
 }
 \end{verbatim}
 
+This function must be registered with the interpreter using the
+\constant{METH_VARARGS} flag; this is described in Section
+\ref{methodTable}, ``The Module's Method Table and Initialization
+Function.''  The \cfunction{PyArg_ParseTuple()} function and its
+arguments are documented in Section \ref{parseTuple}, ``Format Strings
+for \cfunction{PyArg_ParseTuple()}.''
+
 The macros \cfunction{Py_XINCREF()} and \cfunction{Py_XDECREF()}
 increment/decrement the reference count of an object and are safe in
-the presence of \NULL{} pointers.  More info on them in the section on
-Reference Counts below.
+the presence of \NULL{} pointers (but note that \var{temp} will not be 
+\NULL{} in this context).  More info on them in Section
+\ref{refcounts}, ``Reference Counts.''
 
 Later, when it is time to call the function, you call the \C{} function
 \cfunction{PyEval_CallObject()}.  This function has two arguments, both
@@ -561,8 +580,8 @@ code is not complete: \cfunction{Py_BuildValue()} may run out of
 memory, and this should be checked.
 
 
-\section{Format Strings for \cfunction{PyArg_ParseTuple()}}
-\label{parseTuple}
+\section{Format Strings for \cfunction{PyArg_ParseTuple()}
+         \label{parseTuple}}
 
 The \cfunction{PyArg_ParseTuple()} function is declared as follows:
 
@@ -767,8 +786,8 @@ Some example calls:
 \end{verbatim}
 
 
-\section{Keyword Parsing with \cfunction{PyArg_ParseTupleAndKeywords()}}
-\label{parseTupleAndKeywords}
+\section{Keyword Parsing with \cfunction{PyArg_ParseTupleAndKeywords()}
+         \label{parseTupleAndKeywords}}
 
 The \cfunction{PyArg_ParseTupleAndKeywords()} function is declared as
 follows:
@@ -837,8 +856,8 @@ initkeywdarg()
 \end{verbatim}
 
 
-\section{The \cfunction{Py_BuildValue()} Function}
-\label{buildValue}
+\section{The \cfunction{Py_BuildValue()} Function
+         \label{buildValue}}
 
 This function is the counterpart to \cfunction{PyArg_ParseTuple()}.  It is
 declared as follows:
@@ -967,8 +986,8 @@ Examples (to the left the call, to the right the resulting Python value):
                   1, 2, 3, 4, 5, 6)          (((1, 2), (3, 4)), (5, 6))
 \end{verbatim}
 
-\section{Reference Counts}
-\label{refcounts}
+\section{Reference Counts
+         \label{refcounts}}
 
 %\subsection{Introduction}
 
@@ -1032,8 +1051,8 @@ Maybe some day a sufficiently portable automatic garbage collector
 will be available for \C{}.  Until then, we'll have to live with
 reference counts.
 
-\subsection{Reference Counting in Python}
-\label{refcountsInPython}
+\subsection{Reference Counting in Python
+            \label{refcountsInPython}}
 
 There are two macros, \code{Py_INCREF(x)} and \code{Py_DECREF(x)},
 which handle the incrementing and decrementing of the reference count.
@@ -1080,8 +1099,8 @@ which the reference was borrowed --- it creates a new owned reference,
 and gives full owner responsibilities (i.e., the new owner must
 dispose of the reference properly, as well as the previous owner).
 
-\subsection{Ownership Rules}
-\label{ownershipRules}
+\subsection{Ownership Rules
+            \label{ownershipRules}}
 
 Whenever an object reference is passed into or out of a function, it
 is part of the function's interface specification whether ownership is
@@ -1130,8 +1149,8 @@ The object reference returned from a \C{} function that is called from
 Python must be an owned reference --- ownership is tranferred from the
 function to its caller.
 
-\subsection{Thin Ice}
-\label{thinIce}
+\subsection{Thin Ice
+            \label{thinIce}}
 
 There are a few situations where seemingly harmless use of a borrowed
 reference can lead to problems.  These all have to do with implicit
@@ -1212,8 +1231,8 @@ bug(PyObject *list) {
 }
 \end{verbatim}
 
-\subsection{NULL Pointers}
-\label{nullPointers}
+\subsection{NULL Pointers
+            \label{nullPointers}}
 
 In general, functions that take object references as arguments do not
 expect you to pass them \NULL{} pointers, and will dump core (or
@@ -1249,8 +1268,8 @@ It is a severe error to ever let a \NULL{} pointer ``escape'' to
 the Python user.  
 
 
-\section{Writing Extensions in \Cpp{}}
-\label{cplusplus}
+\section{Writing Extensions in \Cpp{}
+         \label{cplusplus}}
 
 It is possible to write extension modules in \Cpp{}.  Some restrictions
 apply.  If the main program (the Python interpreter) is compiled and
@@ -1264,8 +1283,8 @@ It is unnecessary to enclose the Python header files in
 \samp{__cplusplus} is defined (all recent \Cpp{} compilers define this
 symbol).
 
-\chapter{Embedding Python in another application}
-\label{embedding}
+\chapter{Embedding Python in Another Application
+         \label{embedding}}
 
 Embedding Python is similar to extending it, but not quite.  The
 difference is that when you extend Python, the main program of the
@@ -1293,8 +1312,8 @@ A simple demo of embedding Python can be found in the directory
 \file{Demo/embed}.
 
 
-\section{Embedding Python in \Cpp{}}
-\label{embeddingInCplusplus}
+\section{Embedding Python in \Cpp{}
+         \label{embeddingInCplusplus}}
 
 It is also possible to embed Python in a \Cpp{} program; precisely how this
 is done will depend on the details of the \Cpp{} system used; in general you
@@ -1303,8 +1322,8 @@ to compile and link your program.  There is no need to recompile Python
 itself using \Cpp{}.
 
 
-\chapter{Dynamic Loading}
-\label{dynload}
+\chapter{Dynamic Loading
+         \label{dynload}}
 
 On most modern systems it is possible to configure Python to support
 dynamic loading of extension modules implemented in \C{}.  When shared
@@ -1329,15 +1348,15 @@ loading a module that was compiled for a different version of Python
 (e.g. with a different representation of objects) may dump core.
 
 
-\section{Configuring and Building the Interpreter for Dynamic Loading}
-\label{dynloadConfig}
+\section{Configuring and Building the Interpreter for Dynamic Loading
+         \label{dynloadConfig}}
 
 There are three styles of dynamic loading: one using shared libraries,
 one using SGI IRIX 4 dynamic loading, and one using GNU dynamic
 loading.
 
-\subsection{Shared Libraries}
-\label{sharedlibs}
+\subsection{Shared Libraries
+            \label{sharedlibs}}
 
 The following systems support dynamic loading using shared libraries:
 SunOS 4; Solaris 2; SGI IRIX 5 (but not SGI IRIX 4!), Linux, FreeBSD,
@@ -1350,8 +1369,8 @@ systems --- the \file{configure} detects the presence of the
 \code{<dlfcn.h>} header file and automatically configures dynamic
 loading.
 
-\subsection{SGI IRIX 4 Dynamic Loading}
-\label{irixDynload}
+\subsection{SGI IRIX 4 Dynamic Loading
+            \label{irixDynload}}
 
 Only SGI IRIX 4 supports dynamic loading of modules using SGI dynamic
 loading.  (SGI IRIX 5 might also support it but it is inferior to
@@ -1372,8 +1391,8 @@ pathname of the \code{dl} directory.
 Now build and install Python as you normally would (see the
 \file{README} file in the toplevel Python directory.)
 
-\subsection{GNU Dynamic Loading}
-\label{gnuDynload}
+\subsection{GNU Dynamic Loading
+            \label{gnuDynload}}
 
 GNU dynamic loading supports (according to its \file{README} file) the
 following hardware and software combinations: VAX (Ultrix), Sun 3
@@ -1403,8 +1422,8 @@ of the GNU DLD package.  The Python interpreter you build hereafter
 will support GNU dynamic loading.
 
 
-\section{Building a Dynamically Loadable Module}
-\label{makedynload}
+\section{Building a Dynamically Loadable Module
+         \label{makedynload}}
 
 Since there are three styles of dynamic loading, there are also three
 groups of instructions for building a dynamically loadable module.
@@ -1424,8 +1443,8 @@ contain the options \samp{-I\$(PYTHONTOP) -I\$(PYTHONTOP)/Include}.
 \file{config.h} header lives in the toplevel directory.)
 
 
-\subsection{Shared Libraries}
-\label{linking}
+\subsection{Shared Libraries
+            \label{linking}}
 
 You must link the \file{.o} file to produce a shared library.  This is 
 done using a special invocation of the \UNIX{} loader/linker,
@@ -1459,8 +1478,8 @@ The resulting file \file{spammodule.so} must be copied into a directory
 along the Python module search path.
 
 
-\subsection{SGI IRIX 4 Dynamic Loading}
-\label{irixLinking}
+\subsection{SGI IRIX 4 Dynamic Loading
+            \label{irixLinking}}
 
 \strong{IMPORTANT:} You must compile your extension module with the
 additional \C{} flag \samp{-G0} (or \samp{-G 0}).  This instructs the
@@ -1489,8 +1508,8 @@ normally only \samp{-l} options or absolute pathnames of libraries
 (\samp{.a} files) should be used.
 
 
-\subsection{GNU Dynamic Loading}
-\label{gnuLinking}
+\subsection{GNU Dynamic Loading
+            \label{gnuLinking}}
 
 Just copy \file{spammodule.o} into a directory along the Python module
 search path.%
