@@ -16,23 +16,22 @@ An explanation of some terminology and conventions is in order.
 The \dfn{epoch}\index{epoch} is the point where the time starts.  On
 January 1st of that year, at 0 hours, the ``time since the epoch'' is
 zero.  For \UNIX{}, the epoch is 1970.  To find out what the epoch is,
-look at \code{gmtime(0)}.%
-\index{epoch}
+look at \code{gmtime(0)}.
 
 \item
 The functions in this module do not handle dates and times before the
 epoch or far in the future.  The cut-off point in the future is
-determined by the \C{} library; for \UNIX{}, it is typically in 2038.%
-\index{Year 2038}
+determined by the C library; for \UNIX{}, it is typically in
+2038\index{Year 2038}.
 
 \item
-\strong{Year 2000 (Y2K) issues}: Python depends on the platform's \C{}
-library, which generally doesn't have year 2000 issues, since all
-dates and times are represented internally as seconds since the
-epoch.  Functions accepting a time tuple (see below) generally require
-a 4-digit year.  For backward compatibility, 2-digit years are
-supported if the module variable \code{accept2dyear} is a non-zero
-integer; this variable is initialized to \code{1} unless the
+\strong{Year 2000 (Y2K) issues}:\index{Year 2000}\index{Y2K}  Python
+depends on the platform's C library, which generally doesn't have year
+2000 issues, since all dates and times are represented internally as
+seconds since the epoch.  Functions accepting a time tuple (see below)
+generally require a 4-digit year.  For backward compatibility, 2-digit
+years are supported if the module variable \code{accept2dyear} is a
+non-zero integer; this variable is initialized to \code{1} unless the
 environment variable \envvar{PYTHONY2K} is set to a non-empty string,
 in which case it is initialized to \code{0}.  Thus, you can set
 \envvar{PYTHONY2K} to a non-empty string in the environment to require 4-digit
@@ -41,26 +40,21 @@ converted according to the \POSIX{} or X/Open standard: values 69-99
 are mapped to 1969-1999, and values 0--68 are mapped to 2000--2068.
 Values 100--1899 are always illegal.  Note that this is new as of
 Python 1.5.2(a2); earlier versions, up to Python 1.5.1 and 1.5.2a1,
-would add 1900 to year values below 1900.%
-\index{Year 2000}%
-\index{Y2K}
+would add 1900 to year values below 1900.
 
 \item
-UTC is Coordinated Universal Time (formerly known as Greenwich Mean
-Time, or GMT).  The acronym UTC is not a mistake but a compromise
-between English and French.%
-\index{UTC}%
-\index{Coordinated Universal Time}%
-\index{Greenwich Mean Time}
+UTC\index{UTC} is Coordinated Universal Time\index{Coordinated
+Universal Time} (formerly known as Greenwich Mean
+Time,\index{Greenwich Mean Time} or GMT).  The acronym UTC is not a
+mistake but a compromise between English and French.
 
 \item
-DST is Daylight Saving Time, an adjustment of the timezone by
-(usually) one hour during part of the year.  DST rules are magic
-(determined by local law) and can change from year to year.  The \C{}
-library has a table containing the local rules (often it is read from
-a system file for flexibility) and is the only source of True Wisdom
-in this respect.%
-\index{Daylight Saving Time}
+DST is Daylight Saving Time,\index{Daylight Saving Time} an adjustment
+of the timezone by (usually) one hour during part of the year.  DST
+rules are magic (determined by local law) and can change from year to
+year.  The C library has a table containing the local rules (often it
+is read from a system file for flexibility) and is the only source of
+True Wisdom in this respect.
 
 \item
 The precision of the various real-time functions may be less than
@@ -84,7 +78,7 @@ The time tuple as returned by \function{gmtime()},
 is a tuple of 9 integers: year (e.g.\ 1993), month (1--12), day
 (1--31), hour (0--23), minute (0--59), second (0--59), weekday (0--6,
 monday is 0), Julian day (1--366) and daylight savings flag (-1, 0 or
-1).  Note that unlike the \C{} structure, the month value is a range
+1).  Note that unlike the C structure, the month value is a range
 of 1-12, not 0-11.  A year value will be handled as descibed under
 ``Year 2000 (Y2K) issues'' above.  A \code{-1} argument as daylight
 savings flag, passed to \function{mktime()} will usually result in the
@@ -112,14 +106,14 @@ Only use this if \code{daylight} is nonzero.
 \begin{funcdesc}{asctime}{tuple}
 Convert a tuple representing a time as returned by \function{gmtime()}
 or \function{localtime()} to a 24-character string of the following form:
-\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the \C{} function of
+\code{'Sun Jun 20 23:21:05 1993'}.  Note: unlike the C function of
 the same name, there is no trailing newline.
 \end{funcdesc}
 
 \begin{funcdesc}{clock}{}
 Return the current CPU time as a floating point number expressed in
 seconds.  The precision, and in fact the very definiton of the meaning
-of ``CPU time''\index{CPU time}, depends on that of the \C{} function
+of ``CPU time''\index{CPU time}, depends on that of the C function
 of the same name, but in any case, this is the function to use for
 benchmarking\index{benchmarking} Python or timing algorithms.
 \end{funcdesc}
@@ -199,7 +193,7 @@ specification, and are replaced by the indicated characters in the
 \end{tableii}
 
 Additional directives may be supported on certain platforms, but
-only the ones listed here have a meaning standardized by ANSI \C{}.
+only the ones listed here have a meaning standardized by ANSI C.
 
 On some platforms, an optional field width and precision
 specification can immediately follow the initial \character{\%} of a
