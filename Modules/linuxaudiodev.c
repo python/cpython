@@ -440,8 +440,8 @@ initlinuxaudiodev(void)
     x = PyInt_FromLong((long) AFMT_S16_LE);
     if (x == NULL || PyDict_SetItemString(d, "AFMT_S16_LE", x) < 0)
         goto error;
-    Py_DECREF(x);
 
   error:
+    Py_DECREF(x);
     return;
 }
