@@ -313,7 +313,7 @@ class URLopener:
             """Use HTTPS protocol."""
             import httplib
             user_passwd = None
-            if type(url) in types.StringTypes:
+            if type(url) is types.StringType:
                 host, selector = splithost(url)
                 if host:
                     user_passwd, host = splituser(host)
