@@ -36,8 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
    XXX   (it's currently the first item of the co_const tuple)
    XXX Generate simple jump for break/return outside 'try...finally'
    XXX Allow 'continue' inside try-finally
-   XXX get rid of SET_LINENO instructions, use JAR's table trick
-   XXX   (need an option to put them back in, for debugger!)
    XXX New 1-byte opcode for loading None
    XXX New opcode for loading the initial index for a for loop
    XXX other JAR tricks?
@@ -111,9 +109,10 @@ code_dealloc(co)
 	Py_XDECREF(co->co_code);
 	Py_XDECREF(co->co_consts);
 	Py_XDECREF(co->co_names);
+	Py_XDECREF(co->co_varnames);
 	Py_XDECREF(co->co_filename);
 	Py_XDECREF(co->co_name);
-	Py_XDECREF(co->co_varnames);
+	Py_XDECREF(co->co_lnotab);
 	PyMem_DEL(co);
 }
 
