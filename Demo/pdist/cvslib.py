@@ -50,6 +50,13 @@ class Entry:
 			return hexify(self.sum)
 		else:
 			return None
+	
+	def dump(self):
+		keys = self.__dict__.keys()
+		keys.sort()
+		for key in keys:
+			print "%-15s: %s" % (key, `self.__dict__[key]`)
+		print '-'*45
 
 
 class CVS:
