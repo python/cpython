@@ -704,7 +704,7 @@ Some example calls:
     
     ok = PyArg_ParseTuple(args, "(ii)s#", &i, &j, &s, &size);
         /* A pair of ints and a string, whose size is also returned */
-        /* Possible Python call: f(1, 2, 'three') */
+        /* Possible Python call: f((1, 2), 'three') */
 
     {
         char *file;
@@ -1251,10 +1251,14 @@ following hardware and software combinations: VAX (Ultrix), Sun 3
 Atari ST.  There is no reason to use it on a Sparc; I haven't seen a
 Sun 3 for years so I don't know if these have shared libraries or not.
 
-You need to fetch and build two packages.  One is GNU DLD 3.2.3,
-available by anonymous ftp from host \file{ftp.cwi.nl}, directory
-\file{pub/dynload}, file \file{dld-3.2.3.tar.Z}.  (As far as I know,
-no further development on GNU DLD is being done.)  The other is an
+You need to fetch and build two packages.
+One is GNU DLD.  All development of this code has been done with DLD
+version 3.2.3, which is available by anonymous ftp from host
+\file{ftp.cwi.nl}, directory \file{pub/dynload}, file
+\file{dld-3.2.3.tar.Z}.  (A more recent version of DLD is available
+via \file{http://www-swiss.ai.mit.edu/~jaffer/DLD.html} but this has
+not been tested.)
+The other package needed is an
 emulation of Jack Jansen's \code{dl} package that I wrote on top of
 GNU DLD 3.2.3.  This is available from the same host and directory,
 file dl-dld-1.1.tar.Z.  (The version number may change --- but I doubt
