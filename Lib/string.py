@@ -83,7 +83,7 @@ def splitfields(s, sep):
 index_error = 'substring not found in string.index'
 def index(s, sub):
 	n = len(sub)
-	for i in range(len(s) - n):
+	for i in range(len(s) + 1 - n):
 		if sub = s[i:i+n]: return i
 	raise index_error, (s, sub)
 
