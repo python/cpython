@@ -1861,6 +1861,32 @@ PyObject_CallFunctionObjArgs(PyObject *callable, ...)
 
 /* isinstance(), issubclass() */
 
+/* abstract_get_bases() has logically 4 return states, with a sort of 0th
+ * state that will almost never happen.
+ *
+ * 0. creating the __bases__ static string could get a MemoryError
+ * 1. getattr(cls, '__bases__') could raise an AttributeError
+ * 2. getattr(cls, '__bases__') could raise some other exception
+ * 3. getattr(cls, '__bases__') could return a tuple
+ * 4. getattr(cls, '__bases__') could return something other than a tuple
+ *
+ * Only state #3 is a non-error state and only it returns a non-NULL object
+ * (it returns the retrieved tuple).
+ *
+ * Any raised AttributeErrors are masked by clearing the exception and
+ * returning NULL.  If an object other than a tuple comes out of __bases__,
+ * then again, the return value is NULL.  So yes, these two situations
+ * produce exactly the same results: NULL is returned and no error is set.
+ *
+ * If some exception other than AttributeError is raised, then NULL is also
+ * returned, but the exception is not cleared.  That's because we want the
+ * exception to be propagated along.
+ *
+ * Callers are expected to test for PyErr_Occurred() when the return value
+ * is NULL to decide whether a valid exception should be propagated or not.
+ * When there's no exception to propagate, it's customary for the caller to
+ * set a TypeError.
+ */
 static PyObject *
 abstract_get_bases(PyObject *cls)
 {
@@ -1872,13 +1898,16 @@ abstract_get_bases(PyObject *cls)
 		if (__bases__ == NULL)
 			return NULL;
 	}
-
 	bases = PyObject_GetAttr(cls, __bases__);
-	if (bases == NULL || !PyTuple_Check(bases)) {
-	        Py_XDECREF(bases);
+	if (bases == NULL) {
+		if (PyErr_ExceptionMatches(PyExc_AttributeError))
+			PyErr_Clear();
 		return NULL;
 	}
-
+	if (!PyTuple_Check(bases)) {
+	        Py_DECREF(bases);
+		return NULL;
+	}
 	return bases;
 }
 
@@ -1895,9 +1924,11 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
 		return 1;
 
 	bases = abstract_get_bases(derived);
-	if (bases == NULL)
+	if (bases == NULL) {
+		if (PyErr_Occurred())
+			return -1;
 		return 0;
-
+	}
 	n = PyTuple_GET_SIZE(bases);
 	for (i = 0; i < n; i++) {
 		r = abstract_issubclass(PyTuple_GET_ITEM(bases, i), cls);
@@ -1942,7 +1973,9 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
 	else {
 		PyObject *cls_bases = abstract_get_bases(cls);
 		if (cls_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError,
+			/* Do not mask errors. */
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_TypeError,
 				"isinstance() arg 2 must be a class or type");
 			return -1;
 		}
@@ -1977,7 +2010,9 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
 		derived_bases = abstract_get_bases(derived);
 		if (derived_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError,
+			/* Do not mask errors */
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_TypeError,
 					"issubclass() arg 1 must be a class");
 			return -1;
 		}
@@ -1985,7 +2020,9 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 
 		cls_bases = abstract_get_bases(cls);
 		if (cls_bases == NULL) {
-			PyErr_SetString(PyExc_TypeError,
+			/* Do not mask errors */
+			if (!PyErr_Occurred())
+				PyErr_SetString(PyExc_TypeError,
 					"issubclass() arg 2 must be a class");
 			return -1;
 		}
