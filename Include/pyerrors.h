@@ -63,7 +63,7 @@ PyAPI_DATA(PyObject *) PyExc_ZeroDivisionError;
 PyAPI_DATA(PyObject *) PyExc_WindowsError;
 #endif
 #ifdef __VMS
-extern DL_IMPORT(PyObject *) PyExc_VMSError;
+PyAPI_DATA(PyObject *) PyExc_VMSError;
 #endif
 
 PyAPI_DATA(PyObject *) PyExc_MemoryErrorInst;
