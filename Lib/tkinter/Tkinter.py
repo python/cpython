@@ -425,7 +425,7 @@ class Misc:
 			name = tail
 		return w
 	def _register(self, func, subst=None):
-		f = CallWrapper(func, subst, self).__call__
+		f = self._wrap(func, subst)
 		name = `id(f)`
 		if hasattr(func, 'im_func'):
 			func = func.im_func
@@ -474,6 +474,8 @@ class Misc:
 		exc, val, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
 		root = self._root()
 		root.report_callback_exception(exc, val, tb)
+	def _wrap(self, func, subst=None):
+		return CallWrapper(func, subst, self).__call__
 
 class CallWrapper:
 	def __init__(self, func, subst, widget):
@@ -1269,6 +1271,10 @@ class Image:
 	def __del__(self):
 		if self.name:
 			self.tk.call('image', 'delete', self.name)
+	def __setitem__(self, key, value):
+		self.tk.call(self.name, 'configure', '-'+key, value)
+	def __getitem__(self, key):
+		return self.tk.call(self.name, 'configure', '-'+key)
 	def height(self):
 		return self.tk.getint(
 			self.tk.call('image', 'height', self.name))
