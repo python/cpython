@@ -508,23 +508,23 @@ if test $enable_shared = "yes"; then
     SunOS*)
 	  LDLIBRARY='libpython$(VERSION).so'
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(VERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
           ;;
     Linux*|GNU*|NetBSD*)
 	  LDLIBRARY='libpython$(VERSION).so'
 	  BLDLIBRARY='-L. -lpython$(VERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  ;;
     hp*|HP*)
 	  LDLIBRARY='libpython$(VERSION).sl'
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(VERSION)'
-	  RUNSHARED=SHLIB_PATH=`pwd`:$SHLIB_PATH
+	  RUNSHARED=SHLIB_PATH=`pwd`:${SHLIB_PATH}
 	  ;;
     OSF*)
 	  LDLIBRARY='libpython$(VERSION).so'
          BLDLIBRARY='-rpath $(LIBDIR) -L. -lpython$(VERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
+	  RUNSHARED=LD_LIBRARY_PATH=`pwd`:${LD_LIBRARY_PATH}
 	  ;;
     atheos*)
 	  LDLIBRARY='libpython$(VERSION).so'
