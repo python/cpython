@@ -41,6 +41,101 @@ a particular new feature.
 
 
 %======================================================================
+\section{PEP 218: A Standard Set Datatype}
+
+The new \module{sets} module contains an implementation of a set
+datatype.  The \class{Set} class is for mutable sets, sets that can
+have members added and removed.  The \class{ImmutableSet} class is for
+sets that can't be modified, and can be used as dictionary keys.  Sets
+are built on top of dictionaries, so the elements within a set must be
+hashable.
+
+As a simple example, 
+
+\begin{verbatim}
+>>> import sets
+>>> S = sets.Set([1,2,3])
+>>> S
+Set([1, 2, 3])
+>>> 1 in S
+True
+>>> 0 in S
+False
+>>> S.add(5)
+>>> S.remove(3)
+>>> S
+Set([1, 2, 5])
+>>> 
+\end{verbatim}
+
+The union and intersection of sets can be computed with the
+\method{union()} and \method{intersection()} methods, or,
+alternatively, using the bitwise operators \samp{\&} and \samp{|}.
+Mutable sets also have in-place versions of these methods,
+\method{union_update()} and \method{intersection_update()}.
+
+\begin{verbatim}
+>>> S1 = sets.Set([1,2,3])
+>>> S2 = sets.Set([4,5,6])
+>>> S1.union(S2)
+Set([1, 2, 3, 4, 5, 6])
+>>> S1 | S2                  # Alternative notation
+Set([1, 2, 3, 4, 5, 6])
+>>> S1.intersection(S2)  
+Set([])
+>>> S1 & S2                  # Alternative notation
+Set([])
+>>> S1.union_update(S2)
+Set([1, 2, 3, 4, 5, 6])
+>>> S1
+Set([1, 2, 3, 4, 5, 6])
+>>> 
+\end{verbatim}
+
+It's also possible to take the symmetric difference of two sets.  This
+is the set of all elements in the union that aren't in the
+intersection.  An alternative way of expressing the symmetric
+difference is that it contains all elements that are in exactly one
+set.  Again, there's an in-place version, with the ungainly name
+\method{symmetric_difference_update()}.
+
+\begin{verbatim}
+>>> S1 = sets.Set([1,2,3,4])
+>>> S2 = sets.Set([3,4,5,6])
+>>> S1.symmetric_difference(S2)
+Set([1, 2, 5, 6])
+>>> S1 ^ S2
+Set([1, 2, 5, 6])
+>>>
+\end{verbatim}
+
+There are also methods, \method{issubset()} and \method{issuperset()},
+for checking whether one set is a strict subset or superset of
+another:
+
+\begin{verbatim}
+>>> S1 = sets.Set([1,2,3])
+>>> S2 = sets.Set([2,3])
+>>> S2.issubset(S1)
+True
+>>> S1.issubset(S2)
+False
+>>> S1.issuperset(S2)
+True
+>>>
+\end{verbatim}
+
+
+\begin{seealso}
+
+\seepep{218}{Adding a Built-In Set Object Type}{PEP written by Greg V. Wilson.
+Implemented by Greg V. Wilson, Alex Martelli, and GvR.}
+
+\end{seealso}
+
+
+
+%======================================================================
 \section{PEP 255: Simple Generators\label{section-generators}}
 
 In Python 2.2, generators were added as an optional feature, to be
