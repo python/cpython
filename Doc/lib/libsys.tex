@@ -269,19 +269,16 @@ It is always available.
   a string while all other values are integers.
 
   \var{platform} may be one of the following values:
-  \begin{list}{}{\leftmargin 0.7in \labelwidth 0.65in}
-    \item[0 (\constant{VER_PLATFORM_WIN32s})]
-      Win32s on Windows 3.1.
-    \item[1 (\constant{VER_PLATFORM_WIN32_WINDOWS})] 
-      Windows 95/98/ME
-    \item[2 (\constant{VER_PLATFORM_WIN32_NT})] 
-      Windows NT/2000/XP
-    \item[3 (\constant{VER_PLATFORM_WIN32_CE})] 
-      Windows CE.
-  \end{list}
-  
-  This function wraps the Win32 \function{GetVersionEx()} function;
-  see the Microsoft Documentation for more information about these
+
+  \begin{tableii}{l|l}{constant}{Constant}{Platform}
+    \lineii{VER_PLATFORM_WIN32s}       {Win32s on Windows 3.1}
+    \lineii{VER_PLATFORM_WIN32_WINDOWS}{Windows 95/98/ME}
+    \lineii{VER_PLATFORM_WIN32_NT}     {Windows NT/2000/XP}
+    \lineii{VER_PLATFORM_WIN32_CE}     {Windows CE}
+  \end{tableii}
+
+  This function wraps the Win32 \cfunction{GetVersionEx()} function;
+  see the Microsoft documentation for more information about these
   fields.
 
   Availability: Windows.
@@ -319,7 +316,7 @@ else:
   interactive user to import a debugger module and engage in
   post-mortem debugging without having to re-execute the command that
   caused the error.  (Typical use is \samp{import pdb; pdb.pm()} to
-  enter the post-mortem debugger; see chapter \ref{debugger}, ``The
+  enter the post-mortem debugger; see chapter~\ref{debugger}, ``The
   Python Debugger,'' for more information.)
 
   The meaning of the variables is the same as that of the return
@@ -445,7 +442,7 @@ else:
 \begin{funcdesc}{setprofile}{profilefunc}
   Set the system's profile function,\index{profile function} which
   allows you to implement a Python source code profiler in
-  Python.\index{profiler}  See chapter \ref{profile} for more
+  Python.\index{profiler}  See chapter~\ref{profile} for more
   information on the Python profiler.  The system's profile function
   is called similarly to the system's trace function (see
   \function{settrace()}), but it isn't called for each executed line
