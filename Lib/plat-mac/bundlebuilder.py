@@ -753,8 +753,8 @@ def main(builder=None):
 		elif opt in ('-f', '--file'):
 			srcdst = arg.split(':')
 			if len(srcdst) != 2:
-				usage("-f or --file argument must be an absolute path and "
-				      "a relative path, separated by a colon")
+				usage("-f or --file argument must be two paths, "
+				      "separated by a colon")
 			builder.files.append(srcdst)
 		elif opt in ('-e', '--executable'):
 			builder.executable = arg
