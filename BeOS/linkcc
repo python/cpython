@@ -36,7 +36,7 @@
 LIBRARY="$1"; shift
 
 # What we want to end up with.
-DYNAMIC=${LIBRARY%.a}.so
+DYNAMIC=${LIBRARY/.a/.so}
 LINK_DYNAMIC="-l$(basename ${DYNAMIC%.so} | sed -e s,lib,,)"
 
 # Grab the rest of the args and build them into the command used to
@@ -61,10 +61,16 @@ done
 # a little overkill, but it'll be OK.
 LIBS="-lbe -lnet -lroot"
 
+case $BE_HOST_CPU in
+	ppc)
+		LIBS="-nodup $LIBS"
+		;;
+esac
+
 # We'll need this or the python binary won't load libpython.so... handy
 # for testing.
-( cd .. ; ln -sf `pwd` lib )
+( cd .. ; ln -sf $(pwd) lib )
 
 # Now build the python binary.
-echo "Link command: $LINK_CMD"
-$LINK_CMD
+echo "Link command: $LINK_CMD $LIBS"
+$LINK_CMD $LIBS
