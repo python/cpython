@@ -22,23 +22,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifdef sun
-#define FLORIDA_HACKS
-#endif
+/* Posix threads interface */
 
-#ifdef FLORIDA_HACKS
-/* Hacks for Florida State Posix threads implementation */
-#undef _POSIX_THREADS
-#include "/ufs/guido/src/python/Contrib/pthreads/src/pthread.h"
+#include <stdlib.h>
+#include <pthread.h>
+
 #define pthread_attr_default ((pthread_attr_t *)0)
 #define pthread_mutexattr_default ((pthread_mutexattr_t *)0)
 #define pthread_condattr_default ((pthread_condattr_t *)0)
-#define TRYLOCK_OFFSET 1
-#else /* !FLORIDA_HACKS */
-#include <pthread.h>
-#define TRYLOCK_OFFSET 0
-#endif /* FLORIDA_HACKS */
-#include <stdlib.h>
 
 /* A pthread mutex isn't sufficient to model the Python lock type
  * because, according to Draft 5 of the docs (P1003.4a/D5), both of the
@@ -78,16 +69,13 @@ static void _init_thread _P0()
 
 int start_new_thread _P2(func, void (*func) _P((void *)), arg, void *arg)
 {
-#if defined(SGI_THREADS) && defined(USE_DL)
-	long addr, size;
-	static int local_initialized = 0;
-#endif /* SGI_THREADS and USE_DL */
 	pthread_t th;
 	int success;
 	dprintf(("start_new_thread called\n"));
 	if (!initialized)
 		init_thread();
-	success = pthread_create(&th, pthread_attr_default, func, arg);
+	success = pthread_create(&th, pthread_attr_default,
+				 (void* (*) _P((void *)))func, arg);
 	return success < 0 ? 0 : 1;
 }
 
