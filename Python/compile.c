@@ -282,6 +282,7 @@ com_error(c, exc, msg)
 	object *v;
 	char buffer[30];
 	char *s;
+	c->c_errors++;
 	if (c->c_lineno <= 1) {
 		/* Unknown line number or single interactive command */
 		err_setstr(exc, msg);
@@ -296,7 +297,6 @@ com_error(c, exc, msg)
 	strcat(s, buffer);
 	err_setval(exc, v);
 	DECREF(v);
-	c->c_errors++;
 }
 
 
@@ -913,23 +913,23 @@ com_slice(c, n, op)
 	}
 }
 
-static int
-com_argument(c, n, inkeywords)
+static void
+com_argument(c, n, pkeywords)
 	struct compiling *c;
 	node *n; /* argument */
-	int inkeywords;
+	object **pkeywords;
 {
 	node *m;
 	REQ(n, argument); /* [test '='] test; really [ keyword '='] keyword */
 	if (NCH(n) == 1) {
-		if (inkeywords) {
+		if (*pkeywords != NULL) {
 			com_error(c, SyntaxError,
 				   "non-keyword arg after keyword arg");
 		}
 		else {
 			com_node(c, CHILD(n, 0));
 		}
-		return 0;
+		return;
 	}
 	m = n;
 	do {
@@ -940,15 +940,22 @@ com_argument(c, n, inkeywords)
 	}
 	else {
 		object *v = newstringobject(STR(m));
-		if (v == NULL)
+		if (v != NULL && *pkeywords == NULL)
+			*pkeywords = newdictobject();
+		if (v == NULL || *pkeywords == NULL)
 			c->c_errors++;
 		else {
+			if (dict2lookup(*pkeywords, v) != NULL)
+				com_error(c, SyntaxError,
+					  "duplicate keyword argument");
+			else
+				if (dict2insert(*pkeywords, v, v) != 0)
+					c->c_errors++;
 			com_addoparg(c, LOAD_CONST, com_addconst(c, v));
 			DECREF(v);
 		}
 	}
 	com_node(c, CHILD(n, 2));
-	return 1;
 }
 
 static void
@@ -960,18 +967,19 @@ com_call_function(c, n)
 		com_addoparg(c, CALL_FUNCTION, 0);
 	}
 	else {
-		int inkeywords, i, na, nk;
+		object *keywords = NULL;
+		int i, na, nk;
 		REQ(n, arglist);
-		inkeywords = 0;
 		na = 0;
 		nk = 0;
 		for (i = 0; i < NCH(n); i += 2) {
-			inkeywords = com_argument(c, CHILD(n, i), inkeywords);
-			if (!inkeywords)
+			com_argument(c, CHILD(n, i), &keywords);
+			if (keywords == NULL)
 				na++;
 			else
 				nk++;
 		}
+		XDECREF(keywords);
 		if (na > 255 || nk > 255) {
 			com_error(c, SyntaxError, "more than 255 arguments");
 		}
