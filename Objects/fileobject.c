@@ -1212,7 +1212,8 @@ PyFile_GetLine(PyObject *f, int n)
 		result = PyEval_CallObject(reader, args);
 		Py_DECREF(reader);
 		Py_DECREF(args);
-		if (result != NULL && !PyString_Check(result)) {
+		if (result != NULL && !PyString_Check(result) &&
+		    !PyUnicode_Check(result)) {
 			Py_DECREF(result);
 			result = NULL;
 			PyErr_SetString(PyExc_TypeError,
@@ -1240,6 +1241,28 @@ PyFile_GetLine(PyObject *f, int n)
 			}
 		}
 	}
+#ifdef Py_USING_UNICODE
+	if (n < 0 && result != NULL && PyUnicode_Check(result)) {
+		Py_UNICODE *s = PyUnicode_AS_UNICODE(result);
+		int len = PyUnicode_GET_SIZE(result);
+		if (len == 0) {
+			Py_DECREF(result);
+			result = NULL;
+			PyErr_SetString(PyExc_EOFError,
+					"EOF when reading a line");
+		}
+		else if (s[len-1] == '\n') {
+			if (result->ob_refcnt == 1)
+				PyUnicode_Resize(&result, len-1);
+			else {
+				PyObject *v;
+				v = PyUnicode_FromUnicode(s, len-1);
+				Py_DECREF(result);
+				result = v;
+			}
+		}
+	}
+#endif
 	return result;
 }
 
