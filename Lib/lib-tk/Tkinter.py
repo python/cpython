@@ -61,6 +61,8 @@ _default_root = None
 def NoDefaultRoot():
 	global _support_default_root
 	_support_default_root = 0
+	global _default_root
+	_default_root = None
 	del _default_root
 
 def _tkerror(err):
@@ -931,8 +933,8 @@ class Tk(Misc, Wm):
 			print 'execfile', `base_py`
 			execfile(base_py, dir)
 	def report_callback_exception(self, exc, val, tb):
-		import traceback
-		print "Exception in Tkinter callback"
+		import traceback, sys
+		sys.stderr.write("Exception in Tkinter callback\n")
 		traceback.print_exception(exc, val, tb)
 
 # Ideally, the classes Pack, Place and Grid disappear, the
@@ -1042,8 +1044,6 @@ class BaseWidget(Misc):
 				if not _default_root:
 					_default_root = Tk()
 				master = _default_root
-			if not _default_root:
-				_default_root = master
 		self.master = master
 		self.tk = master.tk
 		name = None
