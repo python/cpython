@@ -268,6 +268,7 @@ class Editor(W.Window):
 	def domenu_options(self, *args):
 		rv = SaveOptions(self._creator)
 		if rv:
+			self.editgroup.editor.selchanged = 1 # ouch...
 			self._creator = rv
 	
 	def clicklinefield(self):
@@ -633,8 +634,8 @@ class _saveoptions:
 		self.w = w = W.ModalDialog((240, 140), 'Save options')
 		radiobuttons = []
 		w.label = W.TextBox((8, 8, 80, 18), "File creator:")
-		w.ide_radio = W.RadioButton((8, 22, 80, 18), "IDE", radiobuttons, self.ide_hit)
-		w.interp_radio = W.RadioButton((8, 42, 80, 18), "Interpreter", radiobuttons, self.interp_hit)
+		w.ide_radio = W.RadioButton((8, 22, 160, 18), "This application", radiobuttons, self.ide_hit)
+		w.interp_radio = W.RadioButton((8, 42, 160, 18), "Python Interpreter", radiobuttons, self.interp_hit)
 		w.other_radio = W.RadioButton((8, 62, 50, 18), "Other:", radiobuttons)
 		w.other_creator = W.EditText((62, 62, 40, 20), creator, self.otherselect)
 		w.cancelbutton = W.Button((-180, -30, 80, 16), "Cancel", self.cancelbuttonhit)
@@ -642,7 +643,7 @@ class _saveoptions:
 		w.setdefaultbutton(w.okbutton)
 		if creator == 'Pyth':
 			w.interp_radio.set(1)
-		elif creator == 'Pide':
+		elif creator == W._signature:
 			w.ide_radio.set(1)
 		else:
 			w.other_radio.set(1)
@@ -650,7 +651,7 @@ class _saveoptions:
 		w.open()
 	
 	def ide_hit(self):
-		self.w.other_creator.set("Pide")
+		self.w.other_creator.set(W._signature)
 	
 	def interp_hit(self):
 		self.w.other_creator.set("Pyth")
