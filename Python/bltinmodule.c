@@ -2150,6 +2150,61 @@ static char issubclass_doc[] =
 Return whether class C is a subclass (i.e., a derived class) of class B.";
 
 
+static PyObject*
+builtin_zip(PyObject *self, PyObject *args)
+{
+	PyObject *ret;
+	int itemsize = PySequence_Length(args);
+	int i, j;
+
+	if (itemsize < 1) {
+		PyErr_SetString(PyExc_TypeError,
+				"at least one sequence is required");
+		return NULL;
+	}
+	/* args must be a tuple */
+	assert(PyTuple_Check(args));
+
+	if ((ret = PyList_New(0)) == NULL)
+		return NULL;
+
+	for (i = 0;; i++) {
+		PyObject *next = PyTuple_New(itemsize);
+		if (!next) {
+			Py_DECREF(ret);
+			return NULL;
+		}
+		for (j = 0; j < itemsize; j++) {
+			PyObject *seq = PyTuple_GET_ITEM(args, j);
+			PyObject *item = PySequence_GetItem(seq, i);
+
+			if (!item) {
+				if (PyErr_ExceptionMatches(PyExc_IndexError)) {
+					PyErr_Clear();
+					Py_DECREF(next);
+					return ret;
+				}
+				Py_DECREF(next);
+				Py_DECREF(ret);
+				return NULL;
+			}
+			PyTuple_SET_ITEM(next, j, item);
+		}
+		PyList_Append(ret, next);
+		Py_DECREF(next);
+	}
+	/* no return */
+}
+
+
+static char zip_doc[] =
+"zip(seq1 [, seq2 [...]]) -> [(seq1[0], seq2[0] ...), (...)]\n\
+\n\
+Return a list of tuples, where each tuple contains the i-th element\n\
+from each of the argument sequences.  The returned list is truncated\n\
+in length to the length of the shortest argument sequence.";
+
+
 static PyMethodDef builtin_methods[] = {
 	{"__import__",	builtin___import__, 1, import_doc},
 	{"abs",		builtin_abs, 1, abs_doc},
@@ -2207,6 +2262,7 @@ static PyMethodDef builtin_methods[] = {
 	{"unichr",	builtin_unichr, 1, unichr_doc},
 	{"vars",	builtin_vars, 1, vars_doc},
 	{"xrange",	builtin_xrange, 1, xrange_doc},
+ 	{"zip",         builtin_zip, 1, zip_doc},
 	{NULL,		NULL},
 };
 
