@@ -3455,6 +3455,11 @@ PyObject *replace(PyUnicodeObject *self,
 {
     PyUnicodeObject *u;
 
+    if (str1->length == 0) {
+	PyErr_SetString(PyExc_ValueError, "empty pattern string");
+	return NULL;
+    }
+
     if (maxcount < 0)
 	maxcount = INT_MAX;
 

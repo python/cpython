@@ -206,6 +206,12 @@ test('replace', u'one!two!three!', u'one!two!three!', u'!', u'@', 0)
 test('replace', u'one!two!three!', u'one@two@three@', u'!', u'@')
 test('replace', u'one!two!three!', u'one!two!three!', u'x', u'@')
 test('replace', u'one!two!three!', u'one!two!three!', u'x', u'@', 2)
+try:
+    u"abc".replace(u"", u"x")
+except ValueError:
+    pass
+else:
+    raise TestFailed, "u.replace('', ...) should raise ValueError"
 
 test('startswith', u'hello', True, u'he')
 test('startswith', u'hello', True, u'hello')
