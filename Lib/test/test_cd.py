@@ -1,0 +1,26 @@
+#! /usr/bin/env python
+"""Whimpy test script for the cd module
+   Roger E. Masse
+"""
+import cd
+from test_support import verbose
+
+cdattrs = ['BLOCKSIZE', 'CDROM', 'DATASIZE', 'ERROR', 'NODISC', 'PAUSED', 'PLAYING', 'READY',
+	   'STILL', '__doc__', '__name__', 'atime', 'audio', 'catalog', 'control', 'createparser', 'error',
+	   'ident', 'index', 'msftoframe', 'open', 'pnum', 'ptime']
+
+
+# This is a very inobstrusive test for the existance of the cd module and all it's
+# attributes.  More comprehensive examples can be found in Demo/cd and
+# require that you have a CD and a CD ROM drive
+
+def main():
+    # touch all the attributes of cd without doing anything
+    if verbose:
+	print 'Touching cd module attributes...'
+    for attr in cdattrs:
+	if verbose:
+	    print 'touching: ', attr
+	getattr(cd, attr)
+
+main()
