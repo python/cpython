@@ -654,7 +654,7 @@ r_object(RFILE *p)
 	}
 }
 
-PyObject *
+static PyObject *
 read_object(RFILE *p)
 {
 	PyObject *v;
