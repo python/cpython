@@ -48,13 +48,13 @@ For example, the C call
 \begin{verbatim}
 lmdef(deftype, index, np, props)
 \end{verbatim}
-%
+
 is translated to Python as
 
 \begin{verbatim}
 lmdef(deftype, index, props)
 \end{verbatim}
-%
+
 \item
 Output arguments are omitted from the argument list; they are
 transmitted as function return values instead.
@@ -67,13 +67,13 @@ Examples: the C call
 \begin{verbatim}
 getmcolor(i, &red, &green, &blue)
 \end{verbatim}
-%
+
 is translated to Python as
 
 \begin{verbatim}
 red, green, blue = getmcolor(i)
 \end{verbatim}
-%
+
 \end{itemize}
 
 The following functions are non-standard or have special argument
@@ -186,6 +186,16 @@ def main():
 
 main()
 \end{verbatim}
+
+
+\begin{seealso}
+  \seetext{An interface to OpenGL\index{OpenGL} is also available; see
+           information about David Ascher's\index{Ascher, David}
+           \strong{PyOpenGL}\index{PyOpenGL} online at
+           \url{http://starship.python.net/crew/da/PyOpenGL/}.  This may
+           be a better option if support for SGI hardware from before about
+           1996 is not required.}
+\end{seealso}
 
 
 \section{\module{DEVICE} ---
