@@ -45,7 +45,20 @@ struct _inittab {
 	void (*initfunc)();
 };
 
+/* This table is defined in config.c: */
+
 extern struct _inittab inittab[];
+
+struct _frozen {
+	char *name;
+	unsigned char *code;
+	int size;
+};
+
+/* Embedding apps may change this pointer to point to their favorite
+   collection of frozen modules: */
+
+extern DL_IMPORT(struct _frozen *) PyImport_FrozenModules;
 
 #ifdef __cplusplus
 }
