@@ -48,14 +48,30 @@ def find_file(filename, std_dirs, paths):
     return None
 
 def find_library_file(compiler, libname, std_dirs, paths):
-    filename = compiler.library_filename(libname, lib_type='shared')
-    result = find_file(filename, std_dirs, paths)
-    if result is not None: return result
+    result = compiler.find_library_file(std_dirs + paths, libname)
+    if result is None:
+        return None
 
-    filename = compiler.library_filename(libname, lib_type='static')
-    result = find_file(filename, std_dirs, paths)
-    return result
+    # Check whether the found file is in one of the standard directories
+    dirname = os.path.dirname(result)
+    for p in std_dirs:
+        # Ensure path doesn't end with path separator
+        if p.endswith(os.sep):
+            p = p.strip(os.sep)
+        if p == dirname:
+            return [ ]
 
+    # Otherwise, it must have been in one of the additional directories,
+    # so we have to figure out which one.
+    for p in paths:
+        # Ensure path doesn't end with path separator
+        if p.endswith(os.sep):
+            p = p.strip(os.sep)
+        if p == dirname:
+            return [p]
+    else:
+        assert False, "Internal error: Path not found in std_dirs or paths"
+        
 def module_enabled(extlist, modname):
     """Returns whether the module 'modname' is present in the list
     of extensions 'extlist'."""
