@@ -73,8 +73,65 @@ typedef struct { char c; double x; } s_double;
 #endif
 
 
-/* Helper routine to turn a (signed) long into an unsigned long */
+/* Global that will contain 2**<bits-per-long> */
+
+static PyObject *offset = NULL;
+
+
+/* Helper to create 2**<bits-per-long> */
 /* XXX This assumes 2's complement arithmetic */
+
+static PyObject *
+init_offset()
+{
+	PyObject *result = NULL;
+	PyObject *one = PyLong_FromLong(1L);
+	PyObject *shiftcount = PyLong_FromLong(8 * sizeof(long));
+	if (one == NULL || shiftcount == NULL)
+		goto finally;
+	result = PyNumber_Lshift(one, shiftcount);
+  finally:
+	Py_XDECREF(one);
+	Py_XDECREF(shiftcount);
+	return result;
+}
+
+
+/* Helper to add offset to a number */
+
+static PyObject *
+add_offset(v)
+	PyObject *v;
+{
+	PyObject *result = NULL;
+	if (offset == NULL) {
+		if ((offset = init_offset()) == NULL)
+			goto finally;
+	}
+	result = PyNumber_Add(v, offset);
+  finally:
+	return result;
+}
+
+
+/* Same, but subtracting */
+
+static PyObject *
+sub_offset(v)
+	PyObject *v;
+{
+	PyObject *result = NULL;
+	if (offset == NULL) {
+		if ((offset = init_offset()) == NULL)
+			goto finally;
+	}
+	result = PyNumber_Subtract(v, offset);
+  finally:
+	return result;
+}
+
+
+/* Helper routine to turn a (signed) long into an unsigned long */
 
 static PyObject *
 make_ulong(x)
@@ -82,25 +139,9 @@ make_ulong(x)
 {
 	PyObject *v = PyLong_FromLong(x);
 	if (x < 0 && v != NULL) {
-		static PyObject *offset = NULL;
-		PyObject *result = NULL;
-		if (offset == NULL) {
-			PyObject *one = PyLong_FromLong(1L);
-			PyObject *shiftcount =
-				PyLong_FromLong(8 * sizeof(long));
-			if (one == NULL || shiftcount == NULL)
-				goto bad;
-			offset = PyNumber_Lshift(one, shiftcount);
-		  bad:
-			Py_XDECREF(one);
-			Py_XDECREF(shiftcount);
-			if (offset == NULL)
-				goto finally;
-		}
-		result = PyNumber_Add(v, offset);
-	  finally:
+		PyObject *w = add_offset(v);
 		Py_DECREF(v);
-		return result;
+		return w;
 	}
 	else
 		return v;
@@ -121,6 +162,39 @@ get_long(v, p)
 					"required argument is not an integer");
 		return -1;
 	}
+	*p = x;
+	return 0;
+}
+
+
+/* Same, but handling unsigned long */
+
+static int
+get_ulong(v, p)
+	PyObject *v;
+	unsigned long *p;
+{
+	long x = PyInt_AsLong(v);
+	PyObject *exc;
+	if (x == -1 && (exc = PyErr_Occurred()) != NULL) {
+		if (exc == PyExc_OverflowError) {
+			/* Try again after subtracting offset */
+			PyObject *w;
+			PyErr_Clear();
+			if ((w = sub_offset(v)) == NULL)
+				return -1;
+			x = PyInt_AsLong(w);
+			Py_DECREF(w);
+			if (x != -1 || (exc = PyErr_Occurred()) == NULL)
+				goto okay;
+		}
+		if (exc == PyExc_TypeError)
+			PyErr_SetString(StructError,
+					"required argument is not an integer");
+		else
+			return -1;
+	}
+  okay:
 	*p = x;
 	return 0;
 }
@@ -291,6 +365,19 @@ np_int(p, v, f)
 }
 
 static int
+np_uint(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	unsigned long x;
+	if (get_ulong(v, &x) < 0)
+		return -1;
+	* (unsigned int *)p = x;
+	return 0;
+}
+
+static int
 np_long(p, v, f)
 	char *p;
 	PyObject *v;
@@ -300,6 +387,19 @@ np_long(p, v, f)
 	if (get_long(v, &x) < 0)
 		return -1;
 	* (long *)p = x;
+	return 0;
+}
+
+static int
+np_ulong(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	unsigned long x;
+	if (get_ulong(v, &x) < 0)
+		return -1;
+	* (unsigned long *)p = x;
 	return 0;
 }
 
@@ -344,9 +444,9 @@ static formatdef native_table[] = {
 	{'h',	sizeof(short),	SHORT_ALIGN,	nu_short,	np_short},
 	{'H',	sizeof(short),	SHORT_ALIGN,	nu_ushort,	np_short},
 	{'i',	sizeof(int),	INT_ALIGN,	nu_int,		np_int},
-	{'I',	sizeof(int),	INT_ALIGN,	nu_uint,	np_int},
+	{'I',	sizeof(int),	INT_ALIGN,	nu_uint,	np_uint},
 	{'l',	sizeof(long),	LONG_ALIGN,	nu_long,	np_long},
-	{'L',	sizeof(long),	LONG_ALIGN,	nu_ulong,	np_long},
+	{'L',	sizeof(long),	LONG_ALIGN,	nu_ulong,	np_ulong},
 	{'f',	sizeof(float),	FLOAT_ALIGN,	nu_float,	np_float},
 	{'d',	sizeof(double),	DOUBLE_ALIGN,	nu_double,	np_double},
 	{0}
@@ -404,6 +504,24 @@ bp_int(p, v, f)
 	return 0;
 }
 
+static int
+bp_uint(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	unsigned long x;
+	int i;
+	if (get_ulong(v, &x) < 0)
+		return -1;
+	i = f->size;
+	do {
+		p[--i] = x;
+		x >>= 8;
+	} while (i > 0);
+	return 0;
+}
+
 static formatdef bigendian_table[] = {
 	{'x',	1,		0,		NULL},
 	{'b',	1,		0,		bu_int,		bp_int},
@@ -411,11 +529,11 @@ static formatdef bigendian_table[] = {
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
 	{'h',	2,		0,		bu_int,		bp_int},
-	{'H',	2,		0,		bu_uint,	bp_int},
+	{'H',	2,		0,		bu_uint,	bp_uint},
 	{'i',	4,		0,		bu_int,		bp_int},
-	{'I',	4,		0,		bu_uint,	bp_int},
+	{'I',	4,		0,		bu_uint,	bp_uint},
 	{'l',	4,		0,		bu_int,		bp_int},
-	{'L',	4,		0,		bu_uint,	bp_int},
+	{'L',	4,		0,		bu_uint,	bp_uint},
 	/* No float and double! */
 	{0}
 };
@@ -472,6 +590,24 @@ lp_int(p, v, f)
 	return 0;
 }
 
+static int
+lp_uint(p, v, f)
+	char *p;
+	PyObject *v;
+	const formatdef *f;
+{
+	unsigned long x;
+	int i;
+	if (get_ulong(v, &x) < 0)
+		return -1;
+	i = f->size;
+	do {
+		*p++ = x;
+		x >>= 8;
+	} while (--i > 0);
+	return 0;
+}
+
 static formatdef lilendian_table[] = {
 	{'x',	1,		0,		NULL},
 	{'b',	1,		0,		lu_int,		lp_int},
@@ -479,11 +615,11 @@ static formatdef lilendian_table[] = {
 	{'c',	1,		0,		nu_char,	np_char},
 	{'s',	1,		0,		NULL},
 	{'h',	2,		0,		lu_int,		lp_int},
-	{'H',	2,		0,		lu_uint,	lp_int},
+	{'H',	2,		0,		lu_uint,	lp_uint},
 	{'i',	4,		0,		lu_int,		lp_int},
-	{'I',	4,		0,		lu_uint,	lp_int},
+	{'I',	4,		0,		lu_uint,	lp_uint},
 	{'l',	4,		0,		lu_int,		lp_int},
-	{'L',	4,		0,		lu_uint,	lp_int},
+	{'L',	4,		0,		lu_uint,	lp_uint},
 	/* No float and double! */
 	{0}
 };
