@@ -17,6 +17,8 @@ Core and builtins
 Extension Modules
 -----------------
 
+- array.array objects are now picklable.
+
 - the cPickle module no longer accepts the deprecated None option in the
   args tuple returned by __reduce__().
 
