@@ -25,7 +25,7 @@ FILE = 1
 LISTTYPE = type([])
 
 def _stat(name):
-	name = macpath.cat(cwd, name)
+	name = macpath.join(cwd, name)
 	if cache.has_key(name):
 		return cache[name]
 	if macpath.isfile(name):
