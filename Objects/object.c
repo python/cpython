@@ -74,6 +74,15 @@ inc_count(PyTypeObject *tp)
 		if (tp->tp_next != NULL) /* sanity check */
 			Py_FatalError("XXX inc_count sanity check");
 		tp->tp_next = type_list;
+		/* Note that as of Python 2.2, heap-allocated type objects
+		 * can go away, but this code requires that they stay alive
+		 * until program exit.  That's why we're careful with
+		 * refcounts here.  type_list gets a new reference to tp,
+		 * while ownership of the reference type_list used to hold
+		 * (if any) was transferred to tp->tp_next in the line above.
+		 * tp is thus effectively immortal after this.
+		 */
+		Py_INCREF(tp);
 		type_list = tp;
 	}
 	tp->tp_allocs++;
