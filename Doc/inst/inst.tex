@@ -267,12 +267,12 @@ being installed is pure Python or contains extensions (``non-pure''):
 \begin{tableiv}{l|l|l|c}{textrm}%
   {Platform}{Standard installation location}{Default value}{Notes}
   \lineiv{\UNIX{} (pure)}
-          {\filenq{\filevar{prefix}/lib/python2.4/site-packages}}
-          {\filenq{/usr/local/lib/python2.4/site-packages}}
+          {\filenq{\filevar{prefix}/lib/python\shortversion/site-packages}}
+          {\filenq{/usr/local/lib/python\shortversion/site-packages}}
           {(1)}
   \lineiv{\UNIX{} (non-pure)}
-          {\filenq{\filevar{exec-prefix}/lib/python2.4/site-packages}}
-          {\filenq{/usr/local/lib/python2.4/site-packages}}
+          {\filenq{\filevar{exec-prefix}/lib/python\shortversion/site-packages}}
+          {\filenq{/usr/local/lib/python\shortversion/site-packages}}
           {(1)}
   \lineiv{Windows}
           {\filenq{\filevar{prefix}}}
@@ -308,7 +308,7 @@ installation uses for \filevar{prefix} and \filevar{exec-prefix} by
 running Python in interactive mode and typing a few simple commands.
 Under \UNIX, just type \code{python} at the shell prompt.  Under
 Windows, choose \menuselection{Start \sub Programs \sub Python
-2.4 \sub Python (command line)}.  
+\shortversion \sub Python (command line)}.  
 Once the interpreter is started, you type Python code at the
 prompt.  For example, on my Linux system, I type the three Python
 statements shown below, and get the output as shown, to find out my
