@@ -80,7 +80,7 @@ PyFrameObject * PyFrame_New
 
 /* Tuple access macros */
 
-#ifndef DEBUG
+#ifndef Py_DEBUG
 #define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
 #define GETITEMNAME(v, i) \
 	PyString_AS_STRING((PyStringObject *)GETITEM((v), (i)))

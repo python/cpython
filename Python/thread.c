@@ -83,7 +83,7 @@ extern char *getenv();
 #define _P2(v1,t1,v2,t2)	(v1,v2) t1; t2;
 #endif /* __STDC__ */
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 static int thread_debug = 0;
 #define dprintf(args)	((thread_debug & 1) && printf args)
 #define d2printf(args)	((thread_debug & 8) && printf args)
@@ -98,7 +98,7 @@ static void _init_thread(); /* Forward */
 
 void init_thread _P0()
 {
-#ifdef DEBUG
+#ifdef Py_DEBUG
 	char *p = getenv("THREADDEBUG");
 
 	if (p) {
@@ -107,7 +107,7 @@ void init_thread _P0()
 		else
 			thread_debug = 1;
 	}
-#endif /* DEBUG */
+#endif /* Py_DEBUG */
 	if (initialized)
 		return;
 	initialized = 1;

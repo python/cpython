@@ -77,7 +77,7 @@ static void exit_sig _P0()
 	}
 	if (do_exit) {
 		d2printf(("exiting in exit_sig\n"));
-#ifdef DEBUG
+#ifdef Py_DEBUG
 		if ((thread_debug & 8) == 0)
 			thread_debug &= ~1; /* don't produce debug messages */
 #endif
@@ -140,12 +140,12 @@ static void _init_thread _P0()
 	if (usconfig(CONF_ARENATYPE, US_SHAREDONLY) < 0)
 		perror("usconfig - CONF_ARENATYPE");
 	usconfig(CONF_LOCKTYPE, US_DEBUG); /* XXX */
-#ifdef DEBUG
+#ifdef Py_DEBUG
 	if (thread_debug & 4)
 		usconfig(CONF_LOCKTYPE, US_DEBUGPLUS);
 	else if (thread_debug & 2)
 		usconfig(CONF_LOCKTYPE, US_DEBUG);
-#endif /* DEBUG */
+#endif /* Py_DEBUG */
 	if ((shared_arena = usinit(tmpnam(0))) == 0)
 		perror("usinit");
 #ifdef USE_DL

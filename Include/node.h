@@ -56,7 +56,7 @@ extern void PyNode_Free Py_PROTO((node *n));
 #define STR(n)		((n)->n_str)
 
 /* Assert that the type of a node is what we expect */
-#ifndef DEBUG
+#ifndef Py_DEBUG
 #define REQ(n, type) { /*pass*/ ; }
 #else
 #define REQ(n, type) \

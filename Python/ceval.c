@@ -51,7 +51,7 @@ PERFORMANCE OF THIS SOFTWARE.
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 
-#ifdef DEBUG
+#ifdef Py_DEBUG
 /* For debugging the interpreter: */
 #define LLTRACE  1	/* Low-level trace feature */
 #define CHECKEXC 1	/* Double-check exception checking */
@@ -339,7 +339,7 @@ eval_code2(co, globals, locals,
 #ifdef LLTRACE
 	int lltrace;
 #endif
-#if defined(DEBUG) || defined(LLTRACE)
+#if defined(Py_DEBUG) || defined(LLTRACE)
 	/* Make it easier to find out where we are with a debugger */
 	char *filename = getstringvalue(co->co_filename);
 #endif
@@ -602,7 +602,7 @@ eval_code2(co, globals, locals,
 
 		/* Extract opcode and argument */
 
-#if defined(DEBUG) || defined(LLTRACE)
+#if defined(Py_DEBUG) || defined(LLTRACE)
 		f->f_lasti = INSTR_OFFSET();
 #endif
 		
