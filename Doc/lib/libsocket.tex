@@ -413,7 +413,7 @@ from socket import *
 HOST = ''                 # Symbolic name meaning the local host
 PORT = 50007              # Arbitrary non-privileged server
 s = socket(AF_INET, SOCK_STREAM)
-s.bind(HOST, PORT)
+s.bind((HOST, PORT))
 s.listen(1)
 conn, addr = s.accept()
 print 'Connected by', addr
@@ -430,7 +430,7 @@ from socket import *
 HOST = 'daring.cwi.nl'    # The remote host
 PORT = 50007              # The same port as used by the server
 s = socket(AF_INET, SOCK_STREAM)
-s.connect(HOST, PORT)
+s.connect((HOST, PORT))
 s.send('Hello, world')
 data = s.recv(1024)
 s.close()
@@ -438,5 +438,5 @@ print 'Received', `data`
 \end{verbatim}
 
 \begin{seealso}
-\seemodule{SocketServer}{classes that simplify writing network servers}
+  \seemodule{SocketServer}{classes that simplify writing network servers}
 \end{seealso}
