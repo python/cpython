@@ -33,18 +33,11 @@ RANLIB=		@RANLIB@
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
 
-# Install prefixes are treated specially by the configure script:
-# it only changes these lines if it has received a --prefix=... or
-# --exec-prefix=... command line option.  Note that $(prefix) is
-# also used when compiling config.c in Modules to set the default
-# module search path, so if you change it later be sure to change it
-# there too and rebuild.
-
 # Install prefix for architecture-independent files
-prefix=		/usr/local
+prefix=		@prefix@
 
 # Install prefix for architecture-dependent files
-exec_prefix=	$(prefix)
+exec_prefix=	@exec_prefix@
 
 # Expanded directories
 MANDIR=$(prefix)/man
@@ -93,7 +86,7 @@ python:		Makefiles
 		done
 
 # Test the interpreter (twice, once without .pyc files, once with)
-TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/test
+TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/test:./Modules
 test:		python
 		-rm -f $(srcdir)/Lib/test/*.pyc
 		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
@@ -242,7 +235,7 @@ clobber:	localclobber
 # Make things extra clean, before making a distribution
 distclean:	clobber
 		-$(MAKE) SUBDIRS="$(SUBDIRSTOO)" clobber
-		-rm -f config.status config.h Makefile
+		-rm -f config.status config.log config.cache config.h Makefile
 		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
 			 for f in $$i/*.in; do \
 				f=`basename "$$f" .in`; \

@@ -15,8 +15,9 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
-/* Define if setpgrp() must be called as setpgrp(0, 0). */
-#undef SETPGRP_HAVE_ARG
+/* Define if gettimeofday() does not have second (timezone) argument
+   This is the case on Motorola V4 (R40V4.2) */
+#undef GETTIMEOFDAY_NO_TZ
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
@@ -31,6 +32,9 @@
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 
+/* Define if setpgrp() must be called as setpgrp(0, 0). */
+#undef SETPGRP_HAVE_ARG
+
 /* Define to empty if the keyword does not work.  */
 #undef signed
 
@@ -40,6 +44,12 @@
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
+
+/* Define if a va_list is an array of some kind */
+#undef VA_LIST_IS_ARRAY
+
+/* Define to empty if the keyword does not work.  */
+#undef volatile
 
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
@@ -64,9 +74,6 @@
 
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
-
-/* Define to empty if the keyword does not work.  */
-#undef volatile
 
 
 /* Leave that blank line there-- autoheader needs it! */

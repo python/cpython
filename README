@@ -1,13 +1,9 @@
-Python release 1.1.1
-====================
+Python release 1.2
+==================
 
-==> This is Python version 1.1.1.
-
-==> Python 1.1.1 is a pure bugfix release.  It fixes two core dumps
-    related to the changed implementation of (new)getargs, some
-    portability bugs, and some very minor things here and there.  If
-    you have 1.1, you only need to install 1.1 if bugs in it are
-    bugging you.
+==> This version provides new functionality as well as bug fixes.
+    Everyone should upgrade.  For a description of what's changed, see
+    Misc/NEWS.
 
 ==> If you don't know yet what Python is: it's an interpreted,
     extensible, embeddable, interactive, object-oriented programming
@@ -129,6 +125,20 @@ IRIX 5) you need to call the configure script with the option
 --with-svr4.  This is needed so the libraries -lnsl and -lsocket are
 found.  (On some other systems, e.g. IRIX 5, these libraries exist but
 are incompatible with other system libraries such as X11 and GL.)
+
+- On SCO, a number of notes apply:
+
+	1) Everything works much better if you add -U__STDC__ to the
+	defs.  This is because all the SCO header files are broken.
+	Anything that isn't mentioned in the C standard it's
+	conditionally excluded when __STDC__ is defined.
+
+	2) Due to the U.S. export restrictions, SCO broke the crypt
+	stuff out into a separate library, libcrypt_i.a so the LIBS
+	needed be set to:
+
+		LIBS=' -lsocket -lcrypt_i'
+
 
 - If you want to install the binaries and the Python library somewhere
 else than in /usr/local/{bin,lib}, you can pass the option

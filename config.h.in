@@ -13,13 +13,6 @@
 /* Define to empty if the keyword does not work.  */
 #undef const
 
-/* Define if you have dirent.h.  */
-#undef DIRENT
-
-/* Define to the type of elements in the array set by `getgroups'.
-   Usually this is either `int' or `gid_t'.  */
-#undef GETGROUPS_T
-
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef gid_t
 
@@ -35,9 +28,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef mode_t
-
-/* Define if you don't have dirent.h, but have ndir.h.  */
-#undef NDIR
 
 /* Define to `long' if <sys/types.h> doesn't define.  */
 #undef off_t
@@ -61,12 +51,6 @@
 /* Define if you have the ANSI C header files.  */
 #undef STDC_HEADERS
 
-/* Define if you don't have dirent.h, but have sys/dir.h.  */
-#undef SYSDIR
-
-/* Define if you don't have dirent.h, but have sys/ndir.h.  */
-#undef SYSNDIR
-
 /* Define if you can safely include both <sys/time.h> and <time.h>.  */
 #undef TIME_WITH_SYS_TIME
 
@@ -75,9 +59,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef uid_t
-
-/* Define if the closedir function returns void instead of int.  */
-#undef VOID_CLOSEDIR
 
 /* Define if your <unistd.h> contains bad prototypes for exec*()
    (as it does on SGI IRIX 4.x) */
@@ -93,8 +74,9 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
-/* Define if setpgrp() must be called as setpgrp(0, 0). */
-#undef SETPGRP_HAVE_ARG
+/* Define if gettimeofday() does not have second (timezone) argument
+   This is the case on Motorola V4 (R40V4.2) */
+#undef GETTIMEOFDAY_NO_TZ
 
 /* Define this if your time.h defines altzone */
 #undef HAVE_ALTZONE
@@ -109,12 +91,21 @@
 /* Define if you have POSIX threads */
 #undef _POSIX_THREADS
 
+/* Define if setpgrp() must be called as setpgrp(0, 0). */
+#undef SETPGRP_HAVE_ARG
+
 /* Define to empty if the keyword does not work.  */
 #undef signed
 
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 #undef SYS_SELECT_WITH_SYS_TIME
+
+/* Define if a va_list is an array of some kind */
+#undef VA_LIST_IS_ARRAY
+
+/* Define to empty if the keyword does not work.  */
+#undef volatile
 
 /* Define if you want to use SGI (IRIX 4) dynamic linking.
    This requires the "dl" library by Jack Jansen,
@@ -140,89 +131,98 @@
 /* Define if you want to use the GNU readline library */
 #undef WITH_READLINE
 
-/* Define to empty if the keyword does not work.  */
-#undef volatile
-
-/* Define if you have chown.  */
+/* Define if you have the chown function.  */
 #undef HAVE_CHOWN
 
-/* Define if you have clock.  */
+/* Define if you have the clock function.  */
 #undef HAVE_CLOCK
 
-/* Define if you have dlopen.  */
+/* Define if you have the dlopen function.  */
 #undef HAVE_DLOPEN
 
-/* Define if you have ftime.  */
+/* Define if you have the ftime function.  */
 #undef HAVE_FTIME
 
-/* Define if you have getpeername.  */
+/* Define if you have the ftruncate function.  */
+#undef HAVE_FTRUNCATE
+
+/* Define if you have the gethostname_r function.  */
+#undef HAVE_GETHOSTNAME_R
+
+/* Define if you have the getpeername function.  */
 #undef HAVE_GETPEERNAME
 
-/* Define if you have getpgrp.  */
+/* Define if you have the getpgrp function.  */
 #undef HAVE_GETPGRP
 
-/* Define if you have getpid.  */
+/* Define if you have the getpid function.  */
 #undef HAVE_GETPID
 
-/* Define if you have gettimeofday.  */
+/* Define if you have the gettimeofday function.  */
 #undef HAVE_GETTIMEOFDAY
 
-/* Define if you have getwd.  */
+/* Define if you have the getwd function.  */
 #undef HAVE_GETWD
 
-/* Define if you have link.  */
+/* Define if you have the link function.  */
 #undef HAVE_LINK
 
-/* Define if you have lstat.  */
+/* Define if you have the lstat function.  */
 #undef HAVE_LSTAT
 
-/* Define if you have nice.  */
+/* Define if you have the nice function.  */
 #undef HAVE_NICE
 
-/* Define if you have readlink.  */
+/* Define if you have the readlink function.  */
 #undef HAVE_READLINK
 
-/* Define if you have select.  */
+/* Define if you have the select function.  */
 #undef HAVE_SELECT
 
-/* Define if you have setgid.  */
+/* Define if you have the setgid function.  */
 #undef HAVE_SETGID
 
-/* Define if you have setpgid.  */
+/* Define if you have the setpgid function.  */
 #undef HAVE_SETPGID
 
-/* Define if you have setpgrp.  */
+/* Define if you have the setpgrp function.  */
 #undef HAVE_SETPGRP
 
-/* Define if you have setsid.  */
+/* Define if you have the setsid function.  */
 #undef HAVE_SETSID
 
-/* Define if you have setuid.  */
+/* Define if you have the setuid function.  */
 #undef HAVE_SETUID
 
-/* Define if you have setvbuf.  */
+/* Define if you have the setvbuf function.  */
 #undef HAVE_SETVBUF
 
-/* Define if you have siginterrupt.  */
+/* Define if you have the siginterrupt function.  */
 #undef HAVE_SIGINTERRUPT
 
-/* Define if you have symlink.  */
+/* Define if you have the symlink function.  */
 #undef HAVE_SYMLINK
 
-/* Define if you have tcgetpgrp.  */
+/* Define if you have the tcgetpgrp function.  */
 #undef HAVE_TCGETPGRP
 
-/* Define if you have tcsetpgrp.  */
+/* Define if you have the tcsetpgrp function.  */
 #undef HAVE_TCSETPGRP
 
-/* Define if you have times.  */
+/* Define if you have the times function.  */
 #undef HAVE_TIMES
 
-/* Define if you have uname.  */
+/* Define if you have the truncate function.  */
+#undef HAVE_TRUNCATE
+
+/* Define if you have the uname function.  */
 #undef HAVE_UNAME
 
-/* Define if you have waitpid.  */
+/* Define if you have the waitpid function.  */
 #undef HAVE_WAITPID
+
+/* Define if you have the <dirent.h> header file.  */
+#undef HAVE_DIRENT_H
 
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H
@@ -232,6 +232,9 @@
 
 /* Define if you have the <limits.h> header file.  */
 #undef HAVE_LIMITS_H
+
+/* Define if you have the <ndir.h> header file.  */
+#undef HAVE_NDIR_H
 
 /* Define if you have the <signal.h> header file.  */
 #undef HAVE_SIGNAL_H
@@ -247,6 +250,12 @@
 
 /* Define if you have the <sys/audioio.h> header file.  */
 #undef HAVE_SYS_AUDIOIO_H
+
+/* Define if you have the <sys/dir.h> header file.  */
+#undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/ndir.h> header file.  */
+#undef HAVE_SYS_NDIR_H
 
 /* Define if you have the <sys/param.h> header file.  */
 #undef HAVE_SYS_PARAM_H
@@ -278,32 +287,11 @@
 /* Define if you have the dl library (-ldl).  */
 #undef HAVE_LIBDL
 
-/* Define if you have the inet library (-linet).  */
-#undef HAVE_LIBINET
+/* Define if you have the dld library (-ldld).  */
+#undef HAVE_LIBDLD
 
-/* Define if you have the mpc library (-lmpc).  */
-#undef HAVE_LIBMPC
-
-/* Define if you have the nsl library (-lnsl).  */
-#undef HAVE_LIBNSL
-
-/* Define if you have the pthreads library (-lpthreads).  */
-#undef HAVE_LIBPTHREADS
-
-/* Define if you have the seq library (-lseq).  */
-#undef HAVE_LIBSEQ
-
-/* Define if you have the socket library (-lsocket).  */
-#undef HAVE_LIBSOCKET
+/* Define if you have the ieee library (-lieee).  */
+#undef HAVE_LIBIEEE
 
 /* Define if you have the sun library (-lsun).  */
 #undef HAVE_LIBSUN
-
-/* Define if you have the termcap library (-ltermcap).  */
-#undef HAVE_LIBTERMCAP
-
-/* Define if you have the termlib library (-ltermlib).  */
-#undef HAVE_LIBTERMLIB
-
-/* Define if you have the thread library (-lthread).  */
-#undef HAVE_LIBTHREAD
