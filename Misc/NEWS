@@ -667,6 +667,9 @@ Library
   unix environment even if DISPLAY was not set. Also, support for
   skipstone browser was included.
 
+- Fixed bug #636769: rexec would run unallowed code if subclasses of
+  strings were used as parameters for certain functions.
+
 Tools/Demos
 -----------
 

@@ -29,7 +29,8 @@ __all__ = ["RExec"]
 class FileBase:
 
     ok_file_methods = ('fileno', 'flush', 'isatty', 'read', 'readline',
-            'readlines', 'seek', 'tell', 'write', 'writelines')
+            'readlines', 'seek', 'tell', 'write', 'writelines', 'xreadlines',
+            '__iter__')
 
 
 class FileWrapper(FileBase):
@@ -37,7 +38,6 @@ class FileWrapper(FileBase):
     # XXX This is just like a Bastion -- should use that!
 
     def __init__(self, f):
-        self.f = f
         for m in self.ok_file_methods:
             if not hasattr(self, m) and hasattr(f, m):
                 setattr(self, m, getattr(f, m))
@@ -137,7 +137,8 @@ class RExec(ihooks._Verbose):
                           'cmath', 'errno', 'imageop',
                           'marshal', 'math', 'md5', 'operator',
                           'parser', 'regex', 'pcre', 'rotor', 'select',
-                          'sha', '_sre', 'strop', 'struct', 'time')
+                          'sha', '_sre', 'strop', 'struct', 'time',
+                          'xreadlines', '_weakref')
 
     ok_posix_names = ('error', 'fstat', 'listdir', 'lstat', 'readlink',
                       'stat', 'times', 'uname', 'getpid', 'getppid',
@@ -515,6 +516,7 @@ class RExec(ihooks._Verbose):
         used to change the policies enforced by a restricted environment.
 
         """
+        mode = str(mode)
         if mode not in ('r', 'rb'):
             raise IOError, "can't open files for writing in restricted mode"
         return open(file, mode, buf)
