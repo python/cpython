@@ -348,6 +348,9 @@ AC_ARG_WITH(readline,
 AC_ERROR(--with(out)-readline is obsolete, edit Modules/Setup instead)],
 [AC_MSG_RESULT(not specified.)])
 
+AC_SUBST(USE_THREAD_MODULE)
+USE_THREAD_MODULE="#"
+
 AC_MSG_CHECKING(for --with-dec-threads)
 AC_SUBST(LDLAST)
 AC_ARG_WITH(dec-threads,
@@ -369,6 +372,7 @@ AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for --with-thread)
 AC_ARG_WITH(thread, [--with-thread[=DIRECTORY] make interpreter thread-safe], [
+USE_THREAD_MODULE=
 AC_MSG_RESULT($withval)
 if test -d "$withval"
 then LDFLAGS="$LDFLAGS -L$withval"
@@ -642,4 +646,5 @@ AC_OUTPUT(Makefile \
  Objects/Makefile \
  Parser/Makefile \
  Python/Makefile \
- Modules/Makefile.pre)
+ Modules/Makefile.pre \
+ Modules/Setup.thread)
