@@ -52,9 +52,6 @@ extern void initrgbimg();
 extern void initrotor();
 extern void initsignal();
 extern void initsha();
-extern void initselect();
-extern void init_socket();
-extern void initsoundex();
 extern void initstrop();
 extern void initstruct();
 extern void inittime();
@@ -68,7 +65,6 @@ extern void initwinsound();
 extern void init_locale();
 #endif
 extern void init_codecs();
-extern void initunicodedata();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -95,11 +91,6 @@ struct _inittab _PyImport_Inittab[] = {
         {"rotor", initrotor},
         {"signal", initsignal},
         {"sha", initsha},
-#ifdef USE_SOCKET
-        {"_socket", init_socket},
-        {"select", initselect},
-#endif
-        {"soundex", initsoundex},
         {"strop", initstrop},
         {"struct", initstruct},
         {"time", inittime},
@@ -116,7 +107,6 @@ struct _inittab _PyImport_Inittab[] = {
 #endif
 
 	{"_codecs", init_codecs},
-	{"unicodedata", initunicodedata},
 
 /* -- ADDMODULE MARKER 2 -- */
 
