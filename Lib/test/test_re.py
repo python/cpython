@@ -497,6 +497,15 @@ class ReTests(unittest.TestCase):
         self.assert_(re.compile('bug_926075') is not
                      re.compile(eval("u'bug_926075'")))
 
+    def test_bug_931848(self):
+        try:
+            unicode
+        except NameError:
+            pass
+        pattern = eval('u"[\u002E\u3002\uFF0E\uFF61]"')
+        self.assertEqual(re.compile(pattern).split("a.b.c"),
+                         ['a','b','c'])
+
 def run_re_tests():
     from test.re_tests import benchmarks, tests, SUCCEED, FAIL, SYNTAX_ERROR
     if verbose:
