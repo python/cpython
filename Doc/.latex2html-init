@@ -1,4 +1,4 @@
-#LaTeX2HTML Version 96.1 : dot.latex2html-init
+#LaTeX2HTML Version 96.1 : dot.latex2html-init		-*- perl -*-
 #
 
 $INFO = 1;              # 0 = do not make a "About this document..." section 
@@ -193,6 +193,17 @@ sub add_idx {
 	$level--;
     } 
     s/$idx_mark/<dl compact>$index<\/dl>/o;
+}
+
+
+# need to remove leading <...>
+sub clean_key {
+    local ($_) = @_;
+    tr/A-Z/a-z/;
+    s/\s//;
+    s/\#\#\#\d+$//o;  		# Remove the unique id
+    s/^<[a-z][-._a-z0-9]*>//;	# Remove leading <gi>
+    $_
 }
 
 
