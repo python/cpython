@@ -410,7 +410,7 @@ else:
                 return dict(self)
 
     else:  # Where Env Var Names Can Be Mixed Case
-        class _Environ(UserDict.UserDict):
+        class _Environ(UserDict.IterableUserDict):
             def __init__(self, environ):
                 UserDict.UserDict.__init__(self)
                 self.data = environ
