@@ -606,9 +606,16 @@ int_neg(PyIntObject *v)
 	a = v->ob_ival;
 	x = -a;
 	if (a < 0 && x < 0) {
+		PyObject *o;
 		if (err_ovf("integer negation"))
 			return NULL;
-		return PyNumber_Negative(PyLong_FromLong(a));
+		o = PyLong_FromLong(a);
+		if (o != NULL) {
+			PyObject *result = PyNumber_Negative(o);
+			Py_DECREF(o);
+			return result;
+		}
+		return NULL;
 	}
 	return PyInt_FromLong(x);
 }
