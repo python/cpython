@@ -174,7 +174,7 @@ stripped; if no registry is passed, the warning is never suppressed.
 \begin{funcdesc}{showwarning}{message, category, filename,
 			     lineno\optional{, file}}
 Write a warning to a file.  The default implementation calls
-\code{showwarning(\var{message}, \var{category}, \var{filename},
+\code{formatwarning(\var{message}, \var{category}, \var{filename},
 \var{lineno})} and writes the resulting string to \var{file}, which
 defaults to \code{sys.stderr}.  You may replace this function with an
 alternative implementation by assigning to
