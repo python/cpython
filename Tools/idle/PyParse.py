@@ -385,13 +385,14 @@ class Parser:
             m = _chew_ordinaryre(str, p, q)
             if m:
                 # we skipped at least one boring char
-                p = m.end()
+                newp = m.end()
                 # back up over totally boring whitespace
-                i = p-1    # index of last boring char
-                while i >= 0 and str[i] in " \t\n":
+                i = newp - 1    # index of last boring char
+                while i >= p and str[i] in " \t\n":
                     i = i-1
-                if i >= 0:
+                if i >= p:
                     lastch = str[i]
+                p = newp
                 if p >= q:
                     break
 
