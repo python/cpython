@@ -13,6 +13,8 @@
  * 00-07-08 fl  added regs attribute
  * 00-07-21 fl  reset lastindex in scanner methods (0.9.6)
  * 00-08-01 fl  fixes for 1.6b1 (0.9.8)
+ * 00-08-02 fl  moved SRE_COUNT out of the match method
+ * 00-08-03 fl  added recursion limit
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *
@@ -55,6 +57,9 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 /* -------------------------------------------------------------------- */
 /* optional features */
 
+/* prevent run-away recursion (bad patterns on long strings) */
+#define USE_RECURSION_LIMIT 10000
+
 /* enables fast searching */
 #define USE_FAST_SEARCH
 
@@ -77,6 +82,7 @@ char copyright[] = " SRE 0.9.8 Copyright (c) 1997-2000 by Secret Labs AB ";
 /* error codes */
 #define SRE_ERROR_ILLEGAL -1 /* illegal opcode */
 #define SRE_ERROR_STATE -2 /* illegal state */
+#define SRE_ERROR_RECURSION_LIMIT -3 /* runaway recursion */
 #define SRE_ERROR_MEMORY -9 /* out of memory */
 
 #if defined(VERBOSE)
@@ -210,26 +216,13 @@ sre_category(SRE_CODE category, unsigned int ch)
 /* helpers */
 
 static void
-mark_init(SRE_STATE* state)
-{
-    state->mark_stack = NULL;
-    state->mark_stack_size = state->mark_stack_base = 0;
-}
-
-static void
 mark_fini(SRE_STATE* state)
 {
-#if 0
-    /* FIXME: debugging */
-    if (state->maxlevel > 0)
-        printf("max %d\n", state->maxlevel);
-    if (state->mark_stack_base > 0)
-        printf("mark stack %d\n", state->mark_stack_base);
-#endif
-
-    if (state->mark_stack)
+    if (state->mark_stack) {
         free(state->mark_stack);
-    mark_init(state);
+        state->mark_stack = NULL;
+    }
+    state->mark_stack_size = state->mark_stack_base = 0;
 }
 
 static int
@@ -304,6 +297,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 
 #define SRE_CHAR unsigned char
 #define SRE_AT sre_at
+#define SRE_COUNT sre_count
 #define SRE_MEMBER sre_member
 #define SRE_MATCH sre_match
 #define SRE_SEARCH sre_search
@@ -317,6 +311,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 #undef SRE_SEARCH
 #undef SRE_MATCH
 #undef SRE_MEMBER
+#undef SRE_COUNT
 #undef SRE_AT
 #undef SRE_CHAR
 
@@ -324,6 +319,7 @@ mark_restore(SRE_STATE* state, int lo, int hi)
 
 #define SRE_CHAR Py_UNICODE
 #define SRE_AT sre_uat
+#define SRE_COUNT sre_ucount
 #define SRE_MEMBER sre_umember
 #define SRE_MATCH sre_umatch
 #define SRE_SEARCH sre_usearch
@@ -394,13 +390,6 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
     for (;;) {
         switch (*set++) {
 
-        case SRE_OP_NEGATE:
-            ok = !ok;
-            break;
-
-        case SRE_OP_FAILURE:
-            return !ok;
-
         case SRE_OP_LITERAL:
             /* <LITERAL> <code> */
             if (ch == set[0])
@@ -429,6 +418,13 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
             set += 1;
             break;
 
+        case SRE_OP_NEGATE:
+            ok = !ok;
+            break;
+
+        case SRE_OP_FAILURE:
+            return !ok;
+
         default:
             /* internal error -- there's not much we can do about it
                here, so let's just pretend it didn't match... */
@@ -437,10 +433,87 @@ SRE_MEMBER(SRE_CODE* set, SRE_CODE ch)
     }
 }
 
+LOCAL(int) SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level);
+
+LOCAL(int)
+SRE_COUNT(SRE_STATE* state, SRE_CODE* pattern, int maxcount, int level)
+{
+    SRE_CODE chr;
+    SRE_CHAR* ptr = state->ptr;
+    SRE_CHAR* end = state->end;
+    int i;
+
+    /* adjust end */
+    if (maxcount < end - ptr && maxcount != 65535)
+        end = ptr + maxcount;
+
+    switch (pattern[0]) {
+
+    case SRE_OP_ANY:
+        /* repeated dot wildcard. */
+        while (ptr < end && !SRE_IS_LINEBREAK(*ptr))
+            ptr++;
+        break;
+
+    case SRE_OP_ANY_ALL:
+        /* repeated dot wildcare.  skip to the end of the target
+           string, and backtrack from there */
+        ptr = end;
+        break;
+
+    case SRE_OP_LITERAL:
+        /* repeated literal */
+        chr = pattern[1];
+        while (ptr < end && (SRE_CODE) *ptr == chr)
+            ptr++;
+        break;
+
+    case SRE_OP_LITERAL_IGNORE:
+        /* repeated literal */
+        chr = pattern[1];
+        while (ptr < end && (SRE_CODE) state->lower(*ptr) == chr)
+            ptr++;
+        break;
+
+    case SRE_OP_NOT_LITERAL:
+        /* repeated non-literal */
+        chr = pattern[1];
+        while (ptr < end && (SRE_CODE) *ptr != chr)
+            ptr++;
+        break;
+                
+    case SRE_OP_NOT_LITERAL_IGNORE:
+        /* repeated non-literal */
+        chr = pattern[1];
+        while (ptr < end && (SRE_CODE) state->lower(*ptr) != chr)
+            ptr++;
+        break;
+
+    case SRE_OP_IN:
+        /* repeated set */
+        while (ptr < end && SRE_MEMBER(pattern + 2, *ptr))
+            ptr++;
+        break;
+
+    default:
+        /* repeated single character pattern */
+        while ((SRE_CHAR*) state->ptr < end) {
+            i = SRE_MATCH(state, pattern, level);
+            if (i < 0)
+                return i;
+            if (!i)
+                break;
+        }
+        return (SRE_CHAR*) state->ptr - ptr;
+    }
+
+    return ptr - (SRE_CHAR*) state->ptr;
+}
+
 LOCAL(int)
 SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 {
-    /* check if string matches the given pattern.  returns -1 for
+    /* check if string matches the given pattern.  returns <0 for
        error, 0 for failure, and 1 for success */
 
     SRE_CHAR* end = state->end;
@@ -454,6 +527,11 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
     TRACE(("%8d: enter %d\n", PTR(ptr), level));
 
+#if defined(USE_RECURSION_LIMIT)
+    if (level > USE_RECURSION_LIMIT)
+        return SRE_ERROR_RECURSION_LIMIT;
+#endif
+
     if (pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
@@ -464,10 +542,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
         }
         pattern += pattern[1] + 1;
     }
-
-    /* FIXME: debugging */
-    if (level > state->maxlevel)
-        state->maxlevel = level;
 
     for (;;) {
 
@@ -611,7 +685,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
         case SRE_OP_IN_IGNORE:
             TRACE(("%8d: set lower(%c)\n", PTR(ptr), *ptr));
             if (ptr >= end
-                || !SRE_MEMBER(pattern+1, (SRE_CODE) state->lower(*ptr)))
+                || !SRE_MEMBER(pattern + 1, (SRE_CODE) state->lower(*ptr)))
                 return 0;
             pattern += pattern[0];
             ptr++;
@@ -674,21 +748,33 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             /* alternation */
             /* <BRANCH> <0=skip> code <JUMP> ... <NULL> */
             TRACE(("%8d: branch\n", PTR(ptr)));
-            {
-                lastmark = state->lastmark;
-                while (pattern[0]) {
-                    TRACE(("%8d: try branch\n", PTR(ptr)));
-                    if (pattern[1] != SRE_OP_LITERAL ||
-                        (ptr < end && (SRE_CODE) ptr[0] == pattern[2])) {
-                        state->ptr = ptr;
-                        i = SRE_MATCH(state, pattern + 1, level + 1);
-                        if (i)
-                            return i;
-                    }
+            lastmark = state->lastmark;
+            while (pattern[0]) {
+                SRE_CODE* code = pattern+1;
+                TRACE(("%8d: try branch\n", PTR(ptr)));
+                switch (code[0]) {
+                case SRE_OP_IN:
+                    if (ptr >= end || !SRE_MEMBER(code + 2, ptr[0]))
+                        break;
+                    code += code[1] + 1;
+                    state->ptr = ptr + 1;
+                    goto branch;
+                case SRE_OP_LITERAL:
+                    if (ptr >= end || (SRE_CODE) ptr[0] != code[1])
+                        break;
+                    code += 2;
+                    state->ptr = ptr + 1;
+                    goto branch;
+                default:
+                    state->ptr = ptr;
+                branch:
+                    i = SRE_MATCH(state, code, level + 1);
+                    if (i)
+                        return i;
                     while (state->lastmark > lastmark)
                         state->mark[state->lastmark--] = NULL;
-                    pattern += pattern[0];
                 }
+                pattern += pattern[0];
             }
             return 0;
 
@@ -708,100 +794,13 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             if (ptr + pattern[1] > end)
                 return 0; /* cannot match */
 
-            count = 0;
+            state->ptr = ptr;
 
-            switch (pattern[3]) {
+            count = SRE_COUNT(state, pattern + 3, pattern[2], level + 1);
+            if (count < 0)
+                return count;
 
-            case SRE_OP_ANY:
-                /* repeated wildcard. */
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || SRE_IS_LINEBREAK(ptr[0]))
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-
-            case SRE_OP_ANY_ALL:
-                /* repeated wildcard.  skip to the end of the target
-                   string, and backtrack from there */
-                if (ptr + pattern[1] > end)
-                    return 0; /* cannot match */
-                count = pattern[2];
-                if (count > end - ptr)
-                    count = end - ptr;
-                ptr += count;
-                break;
-
-            case SRE_OP_LITERAL:
-                /* repeated literal */
-                chr = pattern[4];
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || (SRE_CODE) ptr[0] != chr)
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-
-            case SRE_OP_LITERAL_IGNORE:
-                /* repeated literal */
-                chr = pattern[4];
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || (SRE_CODE) state->lower(*ptr) != chr)
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-
-            case SRE_OP_NOT_LITERAL:
-                /* repeated non-literal */
-                chr = pattern[4];
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || (SRE_CODE) ptr[0] == chr)
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-                
-            case SRE_OP_NOT_LITERAL_IGNORE:
-                /* repeated non-literal */
-                chr = pattern[4];
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || (SRE_CODE) state->lower(ptr[0]) == chr)
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-
-            case SRE_OP_IN:
-                /* repeated set */
-                while (count < (int) pattern[2]) {
-                    if (ptr >= end || !SRE_MEMBER(pattern + 5, *ptr))
-                        break;
-                    ptr++;
-                    count++;
-                }
-                break;
-
-            default:
-                /* repeated single character pattern */
-                state->ptr = ptr;
-                while (count < (int) pattern[2]) {
-                    i = SRE_MATCH(state, pattern + 3, level + 1);
-                    if (i < 0)
-                        return i;
-                    if (!i)
-                        break;
-                    count++;
-                }
-                state->ptr = ptr;
-                ptr += count;
-                break;
-            }
+            ptr += count;
 
             /* when we arrive here, count contains the number of
                matches, and ptr points to the tail of the target
@@ -904,6 +903,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* not enough matches */
                 TRACE(("%8d: match item (required)\n", PTR(ptr)));
                 rp->count = count;
+                /* RECURSIVE */
                 i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
@@ -919,6 +919,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 rp->count = count;
                 lastmark = state->lastmark;
                 mark_save(state, 0, lastmark);
+                /* RECURSIVE */
                 i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
@@ -955,6 +956,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
                 /* not enough matches */
                 TRACE(("%8d: match item (required)\n", PTR(ptr)));
                 rp->count = count;
+                /* RECURSIVE */
                 i = SRE_MATCH(state, rp->pattern + 3, level + 1);
                 if (i)
                     return i;
@@ -978,6 +980,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             TRACE(("%8d: match item (optional)\n", PTR(ptr)));
             rp->count = count;
+            /* RECURSIVE */
             i = SRE_MATCH(state, rp->pattern + 3, level + 1);
             if (i)
                 return i;
@@ -994,7 +997,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
     return SRE_ERROR_ILLEGAL;
 }
 
-static int
+LOCAL(int)
 SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 {
     SRE_CHAR* ptr = state->start;
@@ -1220,9 +1223,6 @@ state_reset(SRE_STATE* state)
 
     state->repeat = NULL;
 
-    /* FIXME: debugging */
-    state->maxlevel = 0;
-
     mark_fini(state);
 }
 
@@ -1235,6 +1235,10 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     PyBufferProcs *buffer;
     int size, bytes;
     void* ptr;
+
+    memset(state, 0, sizeof(SRE_STATE));
+
+    state->lastindex = -1;
 
     /* get pointer to string buffer */
     buffer = string->ob_type->tp_as_buffer;
@@ -1300,11 +1304,6 @@ state_init(SRE_STATE* state, PatternObject* pattern, PyObject* string,
     else
         state->lower = sre_lower;
 
-    state->mark_stack = NULL;
-    state->mark_stack_base = 0;
-
-    state_reset(state);
-
     return string;
 }
 
@@ -1332,6 +1331,28 @@ state_getslice(SRE_STATE* state, int index, PyObject* string)
         ((char*)state->mark[index+1] - (char*)state->beginning) /
         state->charsize
         );
+}
+
+static void
+pattern_error(int status)
+{
+    switch (status) {
+    case SRE_ERROR_RECURSION_LIMIT:
+        PyErr_SetString(
+            PyExc_RuntimeError,
+            "maximum recursion limit exceeded"
+            );
+        break;
+    case SRE_ERROR_MEMORY:
+        PyErr_NoMemory();
+        break;
+    default:
+        /* other error codes indicate compiler/engine bugs */
+        PyErr_SetString(
+            PyExc_RuntimeError,
+            "internal error in regular expression engine"
+            );
+    }
 }
 
 static PyObject*
@@ -1383,18 +1404,17 @@ pattern_new_match(PatternObject* pattern, SRE_STATE* state, int status)
 
         return (PyObject*) match;
 
-    } else if (status < 0) {
+    } else if (status == 0) {
 
-        /* internal error */
-        PyErr_SetString(
-            PyExc_RuntimeError, "internal error in regular expression engine"
-            );
-        return NULL;
+        /* no match */
+        Py_INCREF(Py_None);
+        return Py_None;
 
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    /* internal error */
+    pattern_error(status);
+    return NULL;
 }
 
 static PyObject*
@@ -1641,11 +1661,7 @@ pattern_findall(PatternObject* self, PyObject* args)
             if (status == 0)
                 break;
 
-            /* internal error */
-            PyErr_SetString(
-                PyExc_RuntimeError,
-                "internal error in regular expression engine"
-                );
+            pattern_error(status);
             goto error;
 
         }
