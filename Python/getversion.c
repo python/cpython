@@ -39,6 +39,7 @@ const char *
 Py_GetVersion()
 {
 	static char version[80];
-	sprintf(version, "%.10s (%.30s) %.30s", PATCHLEVEL, Py_GetBuildInfo(), Py_GetCompiler());
+	sprintf(version, "%.10s (%.30s) %.30s", PY_VERSION,
+		Py_GetBuildInfo(), Py_GetCompiler());
 	return version;
 }
