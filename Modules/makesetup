@@ -185,7 +185,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)	cc="$cc \$(CCSHARED)";;
 			esac
-			rule="$obj: $src; $cc \$(CFLAGS) $cpps -c $src"
+			rule="$obj: $src; $cc $cpps \$(CFLAGS) -c $src"
 			echo "$rule" >>$rulesf
 		done
 		case $doconfig in
