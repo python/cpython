@@ -131,6 +131,14 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #12195 - webbrowser.py - there was typo in Mac code
 
+- quopri.py - treat \r as whitespace too
+
+- xmllib.py - Moved clearing of "literal" flag.  The flag is set in setliteral 
+  which can be called from a start tag handler.  When the corresponding end
+  tag is read the flag is cleared.  However, it didn't get cleared when
+  the start tag was for an empty element of the type <tag .../>.  This
+  modification fixes the problem.
+
 What's New in Python 2.0?
 =========================
 

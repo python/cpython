@@ -683,7 +683,6 @@ class XMLParser:
                 if not self.stack or tag != self.stack[-1][0]:
                     self.handle_data(rawdata[i])
                     return i+1
-                self.literal = 0
             k = res.end(0)
         if endbracket.match(rawdata, k) is None:
             self.syntax_error('garbage in end tag')
@@ -699,6 +698,7 @@ class XMLParser:
 
     # Internal -- finish processing of end tag
     def finish_endtag(self, tag):
+        self.literal = 0
         if not tag:
             self.syntax_error('name-less end tag')
             found = len(self.stack) - 1
