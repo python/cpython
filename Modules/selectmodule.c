@@ -71,10 +71,10 @@ typedef struct {
 } pylist;
 
 static void
-reap_obj(pylist fd2obj[FD_SETSIZE + 3])
+reap_obj(pylist fd2obj[FD_SETSIZE + 1])
 {
 	int i;
-	for (i = 0; i < FD_SETSIZE + 3 && fd2obj[i].sentinel >= 0; i++) {
+	for (i = 0; i < FD_SETSIZE + 1 && fd2obj[i].sentinel >= 0; i++) {
 		Py_XDECREF(fd2obj[i].obj);
 		fd2obj[i].obj = NULL;
 	}
@@ -86,7 +86,7 @@ reap_obj(pylist fd2obj[FD_SETSIZE + 3])
    returns a number >= 0
 */
 static int
-list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
+list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 {
 	int i;
 	int max = -1;
@@ -141,7 +141,7 @@ list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
 
 /* returns NULL and sets the Python exception if an error occurred */
 static PyObject *
-set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
+set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 1])
 {
 	int i, j, count=0;
 	PyObject *list, *o;
@@ -190,21 +190,17 @@ static PyObject *
 select_select(PyObject *self, PyObject *args)
 {
 #ifdef SELECT_USES_HEAP
-	/* This would be an awful lot of stack space on Windows! */
 	pylist *rfd2obj, *wfd2obj, *efd2obj;
 #else  /* !SELECT_USES_HEAP */
-	/* XXX: Why, oh why does this add 3?!  As far as anyone can tell,
-	 * it should only add 1 for the sentinel.
-	 *
-	 * XXX: All this should probably be implemented as follows:
+	/* XXX: All this should probably be implemented as follows:
 	 * - find the highest descriptor we're interested in
 	 * - add one
 	 * - that's the size
 	 * See: Stevens, APitUE, $12.5.1
 	 */
-	pylist rfd2obj[FD_SETSIZE + 3];
-	pylist wfd2obj[FD_SETSIZE + 3];
-	pylist efd2obj[FD_SETSIZE + 3];
+	pylist rfd2obj[FD_SETSIZE + 1];
+	pylist wfd2obj[FD_SETSIZE + 1];
+	pylist efd2obj[FD_SETSIZE + 1];
 #endif /* SELECT_USES_HEAP */
 	PyObject *ifdlist, *ofdlist, *efdlist;
 	PyObject *ret = NULL;
@@ -252,9 +248,9 @@ select_select(PyObject *self, PyObject *args)
 
 #ifdef SELECT_USES_HEAP
 	/* Allocate memory for the lists */
-	rfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
-	wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
-	efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 3);
+	rfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
+	wfd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
+	efd2obj = PyMem_NEW(pylist, FD_SETSIZE + 1);
 	if (rfd2obj == NULL || wfd2obj == NULL || efd2obj == NULL) {
 		if (rfd2obj) PyMem_DEL(rfd2obj);
 		if (wfd2obj) PyMem_DEL(wfd2obj);
