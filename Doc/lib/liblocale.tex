@@ -300,16 +300,14 @@ should you document that your module is not compatible with
 non-\samp{C} locale settings.
 
 The case conversion functions in the
-\refmodule{string}\refstmodindex{string} and
-\module{strop}\refbimodindex{strop} modules are affected by the locale
-settings.  When a call to the \function{setlocale()} function changes
-the \constant{LC_CTYPE} settings, the variables
+\refmodule{string}\refstmodindex{string} module are affected by the
+locale settings.  When a call to the \function{setlocale()} function
+changes the \constant{LC_CTYPE} settings, the variables
 \code{string.lowercase}, \code{string.uppercase} and
-\code{string.letters} (and their counterparts in \module{strop}) are
-recalculated.  Note that this code that uses these variable through
-`\keyword{from} ... \keyword{import} ...', e.g. \code{from string
-import letters}, is not affected by subsequent \function{setlocale()}
-calls.
+\code{string.letters} are recalculated.  Note that this code that uses
+these variable through `\keyword{from} ... \keyword{import} ...',
+e.g.\ \code{from string import letters}, is not affected by subsequent
+\function{setlocale()} calls.
 
 The only way to perform numeric operations according to the locale
 is to use the special functions defined by this module:
