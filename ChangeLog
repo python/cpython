@@ -1,3 +1,14 @@
+Wed May  4 00:53:11 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (eval_code): removed last traces of killprint (-k
+	option)
+
+	* Doc/tut.tex: documented some more new stuff
+
+	* Added else clause to try-except.  Affected files:
+	Grammar/Grammar, Include/graminit.h, Python/graminit.c,
+	Python/compile.c, Doc/ref7.tex, Doc/tut.tex
+
 Tue May  3 15:21:47 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Misc/python.man: documented -u; undocumented -k
