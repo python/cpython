@@ -28,6 +28,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    it would have to take circular links and sharing into account. */
 
 #include "allobjects.h"
+#include "modsupport.h"
 #include "longintrepr.h"
 #include "compile.h"
 #include "marshal.h"
@@ -131,7 +132,6 @@ wr_object(v, fp)
 		n = getdictsize(v);
 		for (i = 0; i < n; i++) {
 			object *key, *val;
-			extern object *getdict2key();
 			key = getdict2key(v, (int)i);
 			if (key != NULL) {
 				val = dict2lookup(v, key); /* Can't be NULL */
@@ -221,7 +221,7 @@ rd_object(fp)
 	
 	case TYPE_FLOAT:
 		{
-			extern double strtod();
+			extern double strtod PROTO((const char *, char **));
 			char buf[256];
 			double res;
 			char *end;
