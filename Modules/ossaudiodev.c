@@ -554,13 +554,13 @@ _ssize(oss_audio_t *self, int *nchannels, int *ssize)
     case AFMT_A_LAW:
     case AFMT_U8:
     case AFMT_S8:
-        *ssize = sizeof(char);
+        *ssize = 1;                     /* 8 bit formats: 1 byte */
         break;
     case AFMT_S16_LE:
     case AFMT_S16_BE:
     case AFMT_U16_LE:
     case AFMT_U16_BE:
-        *ssize = sizeof(short);
+        *ssize = 2;                     /* 16 bit formats: 1 byte */
         break;
     case AFMT_MPEG:
     case AFMT_IMA_ADPCM:
