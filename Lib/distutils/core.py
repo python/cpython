@@ -30,8 +30,9 @@ command_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 usage = """\
 usage: %s [global_opts] cmd1 [cmd1_opts] [cmd2 [cmd2_opts] ...]
    or: %s --help
+   or: %s --help-commands
    or: %s cmd --help
-""" % (sys.argv[0], sys.argv[0], sys.argv[0])
+""" % ((sys.argv[0],) * 4)
 
 
 def setup (**attrs):
@@ -159,6 +160,7 @@ class Distribution:
         self.dry_run = 0
         self.force = 0
         self.help = 0
+        self.help_commands = 0
 
         # And the "distribution meta-data" options -- these can only
         # come from setup.py (the caller), not the command line
@@ -270,15 +272,21 @@ class Distribution:
         # happen until we know what the command is.
 
         self.commands = []
-        args = fancy_getopt (self.global_options, self.negative_opt,
+        options = self.global_options + \
+                  [('help-commands', None,
+                    "list all available commands")]
+        args = fancy_getopt (options, self.negative_opt,
                              self, sys.argv[1:])
 
-        if self.help:
-            print_help (self.global_options, header="Global options:")
+        # User just wants a list of commands -- we'll print it out and stop
+        # processing now (ie. if they ran "setup --help-commands foo bar",
+        # we ignore "foo bar").
+        if self.help_commands:
+            self.print_commands ()
             print
             print usage
             return
-
+            
         while args:
             # Pull the current command from the head of the command line
             command = args[0]
@@ -336,6 +344,25 @@ class Distribution:
 
         # while args
 
+        # If the user wants help -- ie. they gave the "--help" option --
+        # give it to 'em.  We do this *after* processing the commands in
+        # case they want help on any particular command, eg.
+        # "setup.py --help foo".  (This isn't the documented way to
+        # get help on a command, but I support it because that's how
+        # CVS does it -- might as well be consistent.)
+        if self.help:
+            print_help (self.global_options, header="Global options:")
+            print
+
+            for command in self.commands:
+                klass = self.find_command_class (command)
+                print_help (klass.options,
+                            header="Options for '%s' command:" % command)
+                print
+
+            print usage
+            return
+
         # Oops, no commands found -- an end-user error
         if not self.commands:
             raise DistutilsArgError, "no commands supplied"
@@ -344,6 +371,63 @@ class Distribution:
         return 1
 
     # parse_command_line()
+
+
+    def print_command_list (self, commands, header, max_length):
+        """Print a subset of the list of all commands -- used by
+           'print_commands()'."""
+
+        print header + ":"
+
+        for cmd in commands:
+            klass = self.cmdclass.get (cmd)
+            if not klass:
+                klass = self.find_command_class (cmd)
+            try:
+                description = klass.description
+            except AttributeError:
+                description = "(no description available)"
+
+            print "  %-*s  %s" % (max_length, cmd, description)
+
+    # print_command_list ()
+
+
+    def print_commands (self):
+        """Print out a help message listing all available commands with
+           a description of each.  The list is divided into "standard
+           commands" (listed in distutils.command.__all__) and "extra
+           commands" (mentioned in self.cmdclass, but not a standard
+           command).  The descriptions come from the command class
+           attribute 'description'."""
+
+        import distutils.command
+        std_commands = distutils.command.__all__
+        is_std = {}
+        for cmd in std_commands:
+            is_std[cmd] = 1
+
+        extra_commands = []
+        for cmd in self.cmdclass.keys():
+            if not is_std.get(cmd):
+                extra_commands.append (cmd)
+
+        max_length = 0
+        for cmd in (std_commands + extra_commands):
+            if len (cmd) > max_length:
+                max_length = len (cmd)
+
+        self.print_command_list (std_commands,
+                                 "Standard commands",
+                                 max_length)
+        if extra_commands:
+            print
+            self.print_command_list (extra_commands,
+                                     "Extra commands",
+                                     max_length)
+
+    # print_commands ()
+        
 
 
     # -- Command class/object methods ----------------------------------
