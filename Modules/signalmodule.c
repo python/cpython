@@ -45,7 +45,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #ifndef NSIG
+#ifdef _SIGMAX
 #define NSIG (_SIGMAX + 1)	/* For QNX */
+#else
+#define NSIG (SIGMAX + 1)	/* for djgpp */
+#endif
 #endif
 
 
