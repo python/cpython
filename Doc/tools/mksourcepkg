@@ -73,7 +73,7 @@ def main():
           cvstag = args[1]
      tempdir = tempfile.mktemp()
      os.mkdir(tempdir)
-     pkgdir = os.path.join(tempdir, "Python-" + release)
+     pkgdir = os.path.join(tempdir, "Python-Docs-" + release)
      os.mkdir(pkgdir)
      pwd = os.getcwd()
      mydir = os.path.abspath(os.path.dirname(sys.argv[0]))
@@ -90,14 +90,15 @@ def main():
           # For some reason, SourceForge/CVS doesn't seem to care that we
           # might not have done a "cvs login" to the anonymous server.
           # That avoids a lot of painful gunk here.
-     os.chdir(pkgdir)
+     os.chdir(tempdir)
      if not quiet:
           print "--- current directory is:", pkgdir
      if cvstag:
-          run("cvs -d%s export -r %s -d Doc python/dist/src/Doc"
-              % (cvsroot, cvstag))
+          run("cvs -d%s export -r %s -d Python-Docs-%s python/dist/src/Doc"
+              % (cvsroot, cvstag, release))
      else:
-          run("cvs -Q -d%s checkout -d Doc python/dist/src/Doc" % cvsroot)
+          run("cvs -Q -d%s checkout -d Python-Docs-%s python/dist/src/Doc"
+              % (cvsroot, release))
           # remove CVS directories
           for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
                map(shutil.rmtree, glob.glob(p))
@@ -105,13 +106,13 @@ def main():
                map(os.unlink, glob.glob(f))
      LICENSE = os.path.normpath(
           os.path.join(mydir, os.pardir, os.pardir, "LICENSE"))
-     shutil.copyfile(LICENSE, "Doc/LICENSE")
+     shutil.copyfile(LICENSE, "LICENSE")
      if tools:
           archive = "doctools-" + release
           # we don't want the actual documents in this case:
           for d in ("api", "dist", "doc", "ext", "inst",
                     "lib", "mac", "ref", "tut"):
-               shutil.rmtree(os.path.join(os.path.join(pkgdir, "Doc"), d))
+               shutil.rmtree(os.path.join(pkgdir, d))
      else:
           archive = "latex-" + release
 
@@ -121,15 +122,15 @@ def main():
      archive = os.path.join(pwd, archive)
      for format in formats:
           if format == "bzip2":
-               run("tar cf - Python-%s | bzip2 -9 >%s.tar.bz2"
+               run("tar cf - Python-Docs-%s | bzip2 -9 >%s.tar.bz2"
                    % (release, archive))
           elif format == "gzip":
-               run("tar cf - Python-%s | gzip -9 >%s.tgz"
+               run("tar cf - Python-Docs-%s | gzip -9 >%s.tgz"
                    % (release, archive))
           elif format == "zip":
                if os.path.exists(archive + ".zip"):
                     os.unlink(archive + ".zip")
-               run("zip -q -r9 %s.zip Python-%s"
+               run("zip -q -r9 %s.zip Python-Docs-%s"
                    % (archive, release))
 
      # clean up the work area:
