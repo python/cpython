@@ -1431,8 +1431,10 @@ AC_CHECK_FUNCS(gettimeofday, AC_TRY_COMPILE([#include <sys/time.h>], [gettimeofd
 # for [no]getaddrinfo in netdb.h. 
 AC_MSG_CHECKING(for getaddrinfo)
 AC_TRY_LINK([
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <stdio.h>
 ],[
 getaddrinfo(NULL, NULL, NULL, NULL);
 ], [
