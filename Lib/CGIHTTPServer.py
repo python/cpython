@@ -3,6 +3,9 @@
 This module builds on SimpleHTTPServer by implementing GET and POST
 requests to cgi-bin scripts.
 
+If the os.fork() function is not present, this module will not work;
+SystemError will be raised instead.
+
 """
 
 
@@ -14,6 +17,12 @@ import string
 import urllib
 import BaseHTTPServer
 import SimpleHTTPServer
+
+
+try:
+    os.fork
+except NameError:
+    raise SystemError, __name__ + " requires os.fork()"
 
 
 class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
@@ -147,9 +156,9 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             ua = self.headers.getheader('user-agent')
             if ua:
                 env['HTTP_USER_AGENT'] = ua
-            co = self.headers.getheader('cookie')
+            co = filter(None, self.headers.getheaders('cookie'))
             if co:
-                env['HTTP_COOKIE'] = co
+                env['HTTP_COOKIE'] = string.join(co, ', ')
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
             try:
