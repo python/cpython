@@ -25,7 +25,6 @@ try:
 except ImportError:
     if verbose:
         print "skipping curses"
-import dbhash
 import dircache
 import dis
 import distutils
