@@ -6,6 +6,21 @@
 
 #include <termios.h>
 
+static char termios__doc__[] = "\
+This module provides an interface to the Posix calls for tty I/O control.\n\
+For a complete description of these calls, see the Posix or Unix manual\n\
+pages. It is only available for those Unix versions that support Posix\n\
+termios style tty I/O control (and then only if configured at installation\n\
+time).\n\
+\n\
+All functions in this module take a file descriptor fd as their first\n\
+argument. This must be an integer file descriptor, such as returned by\n\
+sys.stdin.fileno().\n\
+\n\
+This module should be used in conjunction with the TERMIOS module,\n\
+which defines the relevant symbolic constants.";
+
+
 #define BAD "bad termios argument"
 
 static PyObject *TermiosError;
@@ -15,6 +30,16 @@ static PyObject *TermiosError;
    [iflag, oflag, cflag, lflag, ispeed, ospeed, [cc[0], ..., cc[NCCS]]] 
 
    Return the attributes of the terminal device.  */
+
+static char termios_tcgetattr__doc__[] = "\
+tcgetattr(fd) -> list_of_attrs\n\
+Get the tty attributes for file descriptor fd, as follows:\n\
+[iflag, oflag, cflag, lflag, ispeed, ospeed, cc] where cc is a list\n\
+of the tty special characters (each a string of length 1, except the items\n\
+with indices VMIN and VTIME, which are integers when these fields are\n\
+defined).  The interpretation of the flags and the speeds as well as the\n\
+indexing in the cc array must be done using the symbolic constants defined\n\
+in the TERMIOS module.";
 
 static PyObject *
 termios_tcgetattr(self, args)
@@ -86,6 +111,16 @@ termios_tcgetattr(self, args)
 /* tcsetattr(fd, when, termios)
    Set the attributes of the terminal device.  */
 
+static char termios_tcsetattr__doc__[] = "\
+tcsetattr(fd, when, attributes) -> None\n\
+Set the tty attributes for file descriptor fd.\n\
+The attributes to be set are taken from the attributes argument, which\n\
+is a list like the one returned by tcgetattr(). The when argument\n\
+determines when the attributes are changed: TERMIOS.TCSANOW to\n\
+change immediately, TERMIOS.TCSADRAIN to change after transmitting all\n\
+queued output, or TERMIOS.TCSAFLUSH to change after transmitting all\n\
+queued output and discarding all queued input. ";
+
 static PyObject *
 termios_tcsetattr(self, args)
 	PyObject *self;
@@ -146,6 +181,12 @@ termios_tcsetattr(self, args)
 /* tcsendbreak(fd, duration)
    Generate a break condition.  */
 
+static char termios_tcsendbreak__doc__[] = "\
+tcsendbreak(fd, duration) -> None\n\
+Send a break on file descriptor fd.\n\
+A zero duration sends a break for 0.25-0.5 seconds; a nonzero duration \n\
+has a system dependent meaning. ";
+
 static PyObject *
 termios_tcsendbreak(self, args)
 	PyObject *self;
@@ -165,6 +206,10 @@ termios_tcsendbreak(self, args)
 /* tcdrain(fd) 
    Wait until all queued output to the terminal has been 
    transmitted.  */
+
+static char termios_tcdrain__doc__[] = "\
+tcdrain(fd) -> None\n\
+Wait until all output written to file descriptor fd has been transmitted. ";
 
 static PyObject *
 termios_tcdrain(self, args)
@@ -186,6 +231,13 @@ termios_tcdrain(self, args)
    Clear the input and/or output queues associated with 
    the terminal.  */
 
+static char termios_tcflush__doc__[] = "\
+tcflush(fd, queue) -> None\n\
+Discard queued data on file descriptor fd.\n\
+The queue selector specifies which queue: TERMIOS.TCIFLUSH for the input\n\
+queue, TERMIOS.TCOFLUSH for the output queue, or TERMIOS.TCIOFLUSH for\n\
+both queues. ";
+
 static PyObject *
 termios_tcflush(self, args)
 	PyObject *self;
@@ -206,6 +258,13 @@ termios_tcflush(self, args)
    Perform operations relating to XON/XOFF flow control on 
    the terminal.  */
 
+static char termios_tcflow__doc__[] = "\
+tcflow(fd, action) -> None\n\
+Suspend or resume input or output on file descriptor fd.\n\
+The action argument can be TERMIOS.TCOOFF to suspend output,\n\
+TERMIOS.TCOON to restart output, TERMIOS.TCIOFF to suspend input,\n\
+or TERMIOS.TCION to restart input. ";
+
 static PyObject *
 termios_tcflow(self, args)
 	PyObject *self;
@@ -224,12 +283,12 @@ termios_tcflow(self, args)
 
 static PyMethodDef termios_methods[] =
 {
-	{"tcgetattr", termios_tcgetattr},
-	{"tcsetattr", termios_tcsetattr},
-	{"tcsendbreak", termios_tcsendbreak},
-	{"tcdrain", termios_tcdrain},
-	{"tcflush", termios_tcflush},
-	{"tcflow", termios_tcflow},
+	{"tcgetattr", termios_tcgetattr, 0, termios_tcgetattr__doc__},
+	{"tcsetattr", termios_tcsetattr, 0, termios_tcsetattr__doc__},
+	{"tcsendbreak", termios_tcsendbreak, 0, termios_tcsendbreak__doc__},
+	{"tcdrain", termios_tcdrain, 0, termios_tcdrain__doc__},
+	{"tcflush", termios_tcflush, 0, termios_tcflush__doc__},
+	{"tcflow", termios_tcflow, 0, termios_tcflow__doc__},
 	{NULL, NULL}
 };
 
@@ -238,7 +297,8 @@ PyInit_termios()
 {
 	PyObject *m, *d;
 
-	m = Py_InitModule("termios", termios_methods);
+	m = Py_InitModule4("termios", termios_methods, termios__doc__,
+                           (PyObject *)NULL, PYTHON_API_VERSION);
 
 	d = PyModule_GetDict(m);
 	TermiosError = PyErr_NewException("termios.error", NULL, NULL);
