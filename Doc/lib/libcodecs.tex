@@ -45,9 +45,13 @@ return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_rea
 
   Possible values for errors are \code{'strict'} (raise an exception
   in case of an encoding error), \code{'replace'} (replace malformed
-  data with a suitable replacement marker, such as \character{?}) and
+  data with a suitable replacement marker, such as \character{?}),
   \code{'ignore'} (ignore malformed data and continue without further
-  notice).
+  notice), \code{'xmlcharrefreplace'} (replace with the appropriate XML
+  character reference (for encoding only)) and \code{'backslashreplace'}
+  (replace with backslashed escape sequences (for encoding only)) as
+  well as any other error handling name defined via
+  \function{register_error()}.
 
 In case a search function cannot find a given encoding, it should
 return \code{None}.
