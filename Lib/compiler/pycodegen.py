@@ -204,8 +204,6 @@ class CodeGenerator:
         self.checkClass()
         self.locals = misc.Stack()
         self.setups = misc.Stack()
-        self.curStack = 0
-        self.maxStack = 0
         self.last_lineno = None
         self._setupGraphDelegation()
         self._div_op = "BINARY_DIVIDE"
