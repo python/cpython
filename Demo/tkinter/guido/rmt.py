@@ -12,37 +12,38 @@
 # XXX This should be written in a more Python-like style!!!
 
 from Tkinter import *
+import sys
 
 # 1. Create basic application structure: menu bar on top of
 # text widget, scrollbar on right.
 
 root = Tk()
 tk = root.tk
-mBar = Frame(root, {'relief': 'raised', 'bd': 2,
-		    Pack: {'side': 'top', 'fill': 'x'}})
-f = Frame(root)
-f.pack({'expand': 1, 'fill': 'both'})
-s = Scrollbar(f, {'relief': 'flat',
-		  Pack: {'side': 'right', 'fill': 'y'}})
-t = Text(f, {'relief': 'raised', 'bd': 2, 'yscrollcommand': (s, 'set'),
-	     'setgrid': 1,
-	     Pack: {'side': 'left', 'fill': 'both', 'expand': 1}})
+mBar = Frame(root, relief=RAISED, borderwidth=2)
+mBar.pack(fill=X)
 
-t.tag_config('bold', {'font': '-Adobe-Courier-Bold-R-Normal-*-120-*'}) 
-s['command'] = (t, 'yview')
+f = Frame(root)
+f.pack(expand=1, fill=BOTH)
+s = Scrollbar(f, relief=FLAT)
+s.pack(side=RIGHT, fill=Y)
+t = Text(f, relief=RAISED, borderwidth=2, yscrollcommand=s.set, setgrid=1)
+t.pack(side=LEFT, fill=BOTH, expand=1)
+t.tag_config('bold', font='-Adobe-Courier-Bold-R-Normal-*-120-*') 
+s['command'] = t.yview
+
 root.title('Tk Remote Controller')
 root.iconname('Tk Remote')
 
 # 2. Create menu button and menus.
 
-file = Menubutton(mBar, {'text': 'File', 'underline': 0,
-			 Pack: {'side': 'left'}})
+file = Menubutton(mBar, text='File', underline=0)
+file.pack(side=LEFT)
 file_m = Menu(file)
 file['menu'] = file_m
-file_m_apps = Menu(file_m)
-file_m.add('cascade', {'label': 'Select Application', 'underline': 0,
-		       'menu': file_m_apps})
-file_m.add('command', {'label': 'Quit', 'underline': 0, 'command': 'exit'})
+file_m_apps = Menu(file_m, tearoff=0)
+file_m.add_cascade(label='Select Application', underline=0,
+		   menu=file_m_apps)
+file_m.add_command(label='Quit', underline=0, command=sys.exit)
 
 # 3. Create bindings for text widget to allow commands to be
 # entered and information to be selected.  New characters
@@ -142,10 +143,9 @@ def fillAppsMenu():
 			# Inoperative window -- ignore it
 			pass
 		else:
-			file_m_apps.add('command', {'label': name,
-						    'command':
-						    lambda name=name:
-						    newApp(name)})
+			file_m_apps.add_command(
+			    label=name,
+			    command=lambda name=name: newApp(name))
 
 file_m_apps['postcommand'] = fillAppsMenu
 mBar.tk_menuBar(file)
