@@ -186,7 +186,7 @@ setmember(addr, mlist, name, v)
 					err_badarg();
 					return -1;
 				}
-				*(char*)addr = getintvalue(v);
+				*(char*)addr = (char) getintvalue(v);
 				break;
 			case T_SHORT:
 			case T_USHORT:
@@ -194,7 +194,7 @@ setmember(addr, mlist, name, v)
 					err_badarg();
 					return -1;
 				}
-				*(short*)addr = getintvalue(v);
+				*(short*)addr = (short) getintvalue(v);
 				break;
 			case T_UINT:
 			case T_INT:
@@ -202,7 +202,7 @@ setmember(addr, mlist, name, v)
 					err_badarg();
 					return -1;
 				}
-				*(int*)addr = getintvalue(v);
+				*(int*)addr = (int) getintvalue(v);
 				break;
 			case T_LONG:
 				if (!is_intobject(v)) {
@@ -223,9 +223,10 @@ setmember(addr, mlist, name, v)
 				break;
 			case T_FLOAT:
 				if (is_intobject(v))
-					*(float*)addr = getintvalue(v);
+					*(float*)addr = (float) getintvalue(v);
 				else if (is_floatobject(v))
-					*(float*)addr = getfloatvalue(v);
+					*(float*)addr =
+						(float) getfloatvalue(v);
 				else {
 					err_badarg();
 					return -1;
@@ -233,7 +234,8 @@ setmember(addr, mlist, name, v)
 				break;
 			case T_DOUBLE:
 				if (is_intobject(v))
-					*(double*)addr = getintvalue(v);
+					*(double*)addr =
+						(double) getintvalue(v);
 				else if (is_floatobject(v))
 					*(double*)addr = getfloatvalue(v);
 				else {

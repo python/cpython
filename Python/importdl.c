@@ -503,13 +503,16 @@ load_dynamic_module(name, pathname, fp)
                         perror(funcname);
 	}
 #endif /* hpux */
+#ifdef USE_SHLIB
   got_it:
+#endif
 	if (p == NULL) {
 		err_setstr(ImportError,
 		   "dynamic module does not define init function");
 		return NULL;
 	}
 	(*p)();
+	/* XXX Need check for err_occurred() here */
 
 	m = dictlookup(import_modules, name);
 	if (m == NULL) {

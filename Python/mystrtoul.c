@@ -141,7 +141,7 @@ int		base;
 	*ptr = str;
     if (ovf)
     {
-	result = ~0;
+	result = (unsigned long) ~0L;
 	errno = ERANGE;
     }
     return result;
