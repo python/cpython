@@ -2347,6 +2347,19 @@ repeat_next(repeatobject *ro)
 	return ro->element;
 }
 
+static int
+repeat_len(repeatobject *ro)
+{
+        if (ro->cnt == -1)
+                PyErr_SetString(PyExc_TypeError, "len() of unsized object");
+        return (int)(ro->cnt);
+}
+
+static PySequenceMethods repeat_as_sequence = {
+	(inquiry)repeat_len,		/* sq_length */
+	0,				/* sq_concat */
+};
+
 PyDoc_STRVAR(repeat_doc,
 "repeat(element [,times]) -> create an iterator which returns the element\n\
 for the specified number of times.  If not specified, returns the element\n\
@@ -2366,7 +2379,7 @@ static PyTypeObject repeat_type = {
 	0,				/* tp_compare */
 	0,				/* tp_repr */
 	0,				/* tp_as_number */
-	0,				/* tp_as_sequence */
+	&repeat_as_sequence,		/* tp_as_sequence */
 	0,				/* tp_as_mapping */
 	0,				/* tp_hash */
 	0,				/* tp_call */
