@@ -1,7 +1,7 @@
 """Restricted execution facilities.
 
-The class RExec exports methods rexec(), reval(), rexecfile(), and
-import_module(), which correspond roughly to the built-in operations
+The class RExec exports methods r_exec(), r_eval(), r_execfile(), and
+r_import(), which correspond roughly to the built-in operations
 exec, eval(), execfile() and import, but executing the code in an
 environment that only exposes those built-in operations that are
 deemed safe.  To this end, a modest collection of 'fake' modules is
@@ -14,7 +14,6 @@ variables like ok_builtin_modules or methods like make_sys().
 XXX To do:
 - r_open should allow writing tmp dir
 - r_exec etc. with explicit globals/locals? (Use rexec("exec ... in ...")?)
-- r_reload should reload from same location (that's one for ihooks?)
 
 """
 
@@ -61,8 +60,25 @@ class FileDelegate(FileBase):
 
 class RHooks(ihooks.Hooks):
 
-    def __init__(self, rexec, verbose=0):
+    def __init__(self, *args):
+	# Hacks to support both old and new interfaces:
+	# old interface was RHooks(rexec[, verbose])
+	# new interface is RHooks([verbose])
+	verbose = 0
+	rexec = None
+	if args and type(args[-1]) == type(0):
+	    verbose = args[-1]
+	    args = args[:-1]
+	if args and hasattr(args[0], '__class__'):
+	    rexec = args[0]
+	    args = args[1:]
+	if args:
+	    raise TypeError, "too many arguments"
 	ihooks.Hooks.__init__(self, verbose)
+	self.rexec = rexec
+
+    def set_rexec(self, rexec):
+	# Called by RExec instance to complete initialization
 	self.rexec = rexec
 
     def is_builtin(self, name):
@@ -76,8 +92,8 @@ class RHooks(ihooks.Hooks):
     def load_source(self, *args): raise SystemError, "don't use this"
     def load_compiled(self, *args): raise SystemError, "don't use this"
 
-    def load_dynamic(self, *args):
-	raise ImportError, "import of dynamically loaded modules not allowed"
+    def load_dynamic(self, name, filename, file):
+	return self.rexec.load_dynamic(name, filename, file)
 
     def add_module(self, name):
 	return self.rexec.add_module(name)
@@ -130,11 +146,16 @@ class RExec(ihooks._Verbose):
     def __init__(self, hooks = None, verbose = 0):
 	ihooks._Verbose.__init__(self, verbose)
 	# XXX There's a circular reference here:
-	self.hooks = hooks or RHooks(self, verbose)
+	self.hooks = hooks or RHooks(verbose)
+	self.hooks.set_rexec(self)
 	self.modules = {}
-	self.ok_builtin_modules = map(None, filter(
-	    lambda mname: mname in sys.builtin_module_names,
-	    self.ok_builtin_modules))
+	self.ok_dynamic_modules = self.ok_builtin_modules
+	list = []
+	for mname in self.ok_builtin_modules:
+	    if mname in sys.builtin_module_names:
+		list.append(mname)
+	self.ok_builtin_modules = list
+	self.set_trusted_path()
 	self.make_builtin()
 	self.make_initial_modules()
 	# make_sys must be last because it adds the already created
@@ -142,6 +163,22 @@ class RExec(ihooks._Verbose):
 	self.make_sys()
 	self.loader = RModuleLoader(self.hooks, verbose)
 	self.importer = RModuleImporter(self.loader, verbose)
+
+    def set_trusted_path(self):
+	# Set the path from which dynamic modules may be loaded.
+	# Those dynamic modules must also occur in ok_builtin_modules
+	self.trusted_path = filter(os.path.isabs, sys.path)
+
+    def load_dynamic(self, name, filename, file):
+	if name not in self.ok_dynamic_modules:
+	    raise ImportError, "untrusted dynamic module: %s" % name
+	if sys.modules.has_key(name):
+	    src = sys.modules[key]
+	else:
+	    import imp
+	    src = imp.load_dynamic(name, filename, file)
+	dst = self.copy_except(src, [])
+	return dst
 
     def make_initial_modules(self):
 	self.make_main()
@@ -186,8 +223,12 @@ class RExec(ihooks._Verbose):
     def copy_except(self, src, exceptions):
 	dst = self.copy_none(src)
 	for name in dir(src):
-	    if name not in exceptions:
-		setattr(dst, name, getattr(src, name))
+	    setattr(dst, name, getattr(src, name))
+	for name in exceptions:
+	    try:
+		delattr(dst, name)
+	    except KeyError:
+		pass
 	return dst
 
     def copy_only(self, src, names):
