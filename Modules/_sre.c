@@ -31,7 +31,7 @@
  * 2001-04-28 fl  added __copy__ methods (work in progress)
  * 2001-05-14 fl  fixes for 1.5.2
  * 2001-07-01 fl  added BIGCHARSET support (from Martin von Loewis)
- * 2001-09-18 fl  
+ * 2001-09-18 fl  added _getliteral helper
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -1959,25 +1959,29 @@ pattern_deepcopy(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-pattern_isliteral(PatternObject* self, PyObject* args)
+pattern_getliteral(PatternObject* self, PyObject* args)
 {
-    /* internal: return true if pattern consists of literal text only */
+    /* internal: if the pattern is a literal string, return that
+       string.  otherwise, return None */
 
     SRE_CODE* code;
-    PyObject* isliteral;
+    PyObject* literal;
 
-    if (!PyArg_ParseTuple(args, ":_isliteral"))
+    if (!PyArg_ParseTuple(args, ":_getliteral"))
         return NULL;
 
     code = PatternObject_GetCode(self);
 
-    if (code[0] == SRE_OP_INFO && code[2] & SRE_INFO_LITERAL)
-        isliteral = Py_True;
-    else
-        isliteral = Py_False;
+    if (code[0] == SRE_OP_INFO && code[2] & SRE_INFO_LITERAL) {
+        /* FIXME: extract literal string from code buffer.  we can't
+           use the pattern member, since it may contain untranslated
+           escape codes (see SF bug 449000) */
+        literal = Py_None;
+    } else
+        literal = Py_None; /* no literal */
 
-    Py_INCREF(isliteral);
-    return isliteral;
+    Py_INCREF(literal);
+    return literal;
 }
 
 static PyMethodDef pattern_methods[] = {
@@ -1990,7 +1994,7 @@ static PyMethodDef pattern_methods[] = {
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
     {"__copy__", (PyCFunction) pattern_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_VARARGS},
-    {"_isliteral", (PyCFunction) pattern_isliteral, METH_VARARGS},
+    {"_getliteral", (PyCFunction) pattern_getliteral, METH_VARARGS},
     {NULL, NULL}
 };
 

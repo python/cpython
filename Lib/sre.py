@@ -251,11 +251,13 @@ def _subn(pattern, template, text, count=0, sub=0):
     else:
         template = _compile_repl(template, pattern)
         literals = template[1]
-        sub = 0 # temporarly disabled, see bug #449000
-        if (sub and not count and pattern._isliteral() and
-            len(literals) == 1 and literals[0]):
-            # shortcut: both pattern and string are literals
-            return string.replace(text, pattern.pattern, literals[0]), 0
+        if sub and not count:
+            literal = pattern._getliteral()
+            if literal and "\\" in literal:
+                literal = None # may contain untranslated escapes
+            if literal is not None and len(literals) == 1 and literals[0]:
+                # shortcut: both pattern and string are literals
+                return string.replace(text, pattern.pattern, literals[0]), 0
         def filter(match, template=template):
             return sre_parse.expand_template(template, match)
     n = i = 0
