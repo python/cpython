@@ -326,6 +326,7 @@
 %
 \let\OldTheindex=\theindex
 \renewcommand{\theindex}{%
+  \cleardoublepage%
   \OldTheindex%
   \addcontentsline{toc}{chapter}{\indexname}%
 }
