@@ -1,58 +1,256 @@
-MAKE=		make
+########################################################################
+# Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+# Amsterdam, The Netherlands.
+# 
+#                         All Rights Reserved
+# 
+# Permission to use, copy, modify, and distribute this software and its 
+# documentation for any purpose and without fee is hereby granted, 
+# provided that the above copyright notice appear in all copies and that
+# both that copyright notice and this permission notice appear in 
+# supporting documentation, and that the names of Stichting Mathematisch
+# Centrum or CWI not be used in advertising or publicity pertaining to
+# distribution of the software without specific, written prior permission.
+# 
+# STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+# THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+# FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+# FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+# OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+########################################################################
 
-SUBDIRS=	Parser Grammar Objects Python
-SUBDIRSTOO=	Include Extensions readline
-DISTFILES=	README Makefile configure configure.in
-DIST=		$(DISTFILES) $(SUBDIRS) $(SUBDIRSTOO)
+# Toplevel Makefile for Python
+# Note -- if recursive makes fail, try adding MAKE=make
 
-all:		config.status
+# Substitutions by configure
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+INSTALL=	@INSTALL@
+
+# Install prefixes are treated specially by the configure script:
+# it only changes these lines if it has received a --prefix=... or
+# --exec-prefix-... command line option, or if it has figured out
+# a value by searching for python in $PATH.  Note that $(prefix) is
+# also used when compiling config.c in Modules to set the default
+# module search path, so if you change it later be sure to change it
+# there too and rebuild.
+
+# Install prefix for architecture-independent files
+prefix=		/usr/local
+
+# Install prefix for architecture-dependent files
+exec_prefix=	$(prefix)
+
+# Programs
+SHELL=		/bin/sh
+
+# --with-PACKAGE options for configure script
+# e.g. --with-readline --with-svr5 --with-solaris --with-thread
+# (see README for an explanation)
+WITH=		
+
+# Compiler options passed to subordinate makes
+OPT=		-O
+
+# Subdirectories where to run make recursively
+SUBDIRS=	Parser Objects Python Modules
+
+# Other subdirectories
+SUBDIRSTOO=	Include Lib Doc Misc Demo readline Grammar
+
+# Files and directories to be distributed
+CONFIGFILES=	configure configure.in acconfig.h config.h.in Makefile.in
+DISTFILES=	README ChangeLog $(CONFIGFILES)
+DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
+DIST=		$(DISTFILES) $(DISTDIRS)
+
+# Default target
+all:		python
+
+# Build the interpreter
+python:		Makefiles
 		for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) all); \
+			(echo $$i; cd $$i; $(MAKE) OPT="$(OPT)" all); \
 		done
 
-tags:		ctags -t Parser/*.[ch] Objects/*.[ch] Python/*.[ch] Include/*.h
+# Test the interpreter (twice, once without .pyc files, once with)
+TESTPATH=	$(srcdir)/Lib:$(srcdir)/Lib/test
+test:		python
+		-rm -f $(srcdir)/Lib/test/*.pyc
+		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
+		PYTHONPATH=$(TESTPATH) ./python -c 'import autotest'
 
-TAGS:		etags -t Parser/*.[ch] Objects/*.[ch] Python/*.[ch] Include/*.h
+# Install the interpreter
+install:	python
+		$(INSTALL) python $(exec_prefix)/bin/python
+		@echo If this is your first time, consider make libinstall...
 
+# Install the library.
+# If your system does not support "cp -r", try "copy -r" or perhaps
+# something like find Lib -print | cpio -pacvdmu $(DESTDIR)/lib/python
+libinstall:
+		-if test ! -d $(prefix)/lib/python; \
+		then mkdir $(prefix)/lib/python; \
+		fi
+		cp -r $(srcdir)/Lib/* $(prefix)/lib/python
+		@echo Ideally, run something to compile all modules now...
+
+# install the manual page
+maninstall:
+		$(INSTALL) $(srcdir)/Misc/python.man \
+			$(prefix)/man/man1/python.1
+
+# install the include files
+INCLUDEPY=	$(prefix)/include/Py
+inclinstall:
+		-if test ! -d $(INCLUDEPY); \
+		then mkdir $(INCLUDEPY); \
+		fi
+		cp $(srcdir)/Include/*.h $(INCLUDEPY)
+
+# install the lib*.a files and miscellaneous stuff needed by extensions
+LIBP=		$(exec_prefix)/lib/python
+LIBPL=		$(LIBP)/lib
+libainstall:	all
+		-if test ! -d $(LIBP); \
+		then mkdir $(LIBP); \
+		fi
+		-if test ! -d $(LIBPL); \
+		then mkdir $(LIBPL); \
+		fi
+		for i in $(SUBDIRS); do \
+			echo $$i; $(INSTALL) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
+		done
+		$(INSTALL) Modules/config.c $(LIBPL)/config.c
+		$(INSTALL) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
+		$(INSTALL) Modules/Makefile $(LIBPL)/Makefile
+		$(INSTALL) Modules/Setup $(LIBPL)/Setup
+		$(INSTALL) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
+		$(INSTALL) config.h $(LIBPL)/config.h
+		$(INSTALL) $(srcdir)/Python/frozenmain.c $(LIBPL)/frozenmain.c
+
+# Build the sub-Makefiles
+Makefiles:	config.status
+		(cd Modules; $(MAKE) -f Makefile.pre Makefile)
+		for i in . $(SUBDIRS); do \
+			(echo $$i; cd $$i; $(MAKE) Makefile); \
+		done
+
+# Build the toplevel Makefile
+Makefile:	Makefile.in config.status
+		CONFIG_FILES=Makefile CONFIG_HEADERS= $(SHELL) config.status
+
+# Run the configure script.  If config.status already exists,
+# call it with the --recheck argument, which reruns configure with the
+# same options as it was run last time; otherwise run the configure
+# script with options taken from the $(WITH) variable
+config.status:	$(srcdir)/configure
+		if test -f config.status; \
+		then $(SHELL) config.status --recheck; \
+		else $(SHELL) $(srcdir)/configure $(WITH); \
+		fi
+
+.PRECIOUS:	config.status python
+
+# Rerun configure with the same options as it was run last time,
+# provided the config.status script exists
+recheck:
+		$(SHELL) config.status --recheck
+
+# Rebuild the configure script from configure.in; also rebuild config.h.in
+autoconf:
+		(cd $(srcdir); autoconf; autoheader)
+
+# Create a tags file for vi
+tags::
+		ctags -w -t Include/*.h
+		for i in $(SUBDIRS); do ctags -w -t -a $$i/*.[ch]; done
+		sort tags -o tags
+
+# Create a tags file for GNU Emacs
+TAGS::
+		etags -t Include/*.h
+		for i in $(SUBDIRS); do etags -t -a $$i/*.[ch]; done
+
+# Add dependencies to sub-Makefiles
 depend:
 		for i in $(SUBDIRS); do \
 			(echo $$i; cd $$i; $(MAKE) depend); \
 		done
 
+# Sanitation targets -- clean leaves libraries, executables and tags
+# files, which clobber removes those as well
+
 localclean:
 		-rm -f core *~ [@,#]* *.old *.orig *.rej
-		-(cd Include; rm -f core *~ [@,#]* *.old *.orig *.rej)
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) clean); \
+			(echo $$i; cd $$i; \
+			 if test -f Makefile; \
+			 then $(MAKE) clean; \
+			 else $(MAKE) -f Makefile.*in clean; \
+			 fi); \
 		done
 
 localclobber:	localclean
-		-rm -f tags TAGS config.status
+		-rm -f tags TAGS python
 
 clobber:	localclobber
 		-for i in $(SUBDIRS); do \
-			(echo $$i; cd $$i; $(MAKE) clobber); \
+			(echo $$i; cd $$i; \
+			 if test -f Makefile; \
+			 then $(MAKE) clobber; \
+			 else $(MAKE) -f Makefile.in clobber; \
+			 fi); \
 		done
 
+# Make things extra clean, before making a distribution
 distclean:	clobber
-		-for i in $(SUBDIRS); do \
-			if test -f $$i/Makefile.in; then \
-				rm -f $$i/Makefile; \
-			fi; \
+		-$(MAKE) SUBDIRS="$(SUBDIRSTOO)" clobber
+		-rm -f config.status config.h Makefile
+		-for i in $(SUBDIRS) $(SUBDIRSTOO); do \
+			 for f in $$i/*.in; do \
+				f=`basename "$$f" .in`; \
+			 	if test "$$f" != "*"; then \
+					echo rm -f "$$i/$$f"; \
+				 	rm -f "$$i/$$f"; \
+				fi; \
+			 done; \
 		done
 
-Makefiles:	config.status
-		./config.status
+# Find files with funny names
+find:
+		find $(DISTDIRS) -type d \
+			-o -name '*.[chs]' \
+			-o -name '*.py' \
+			-o -name '*.doc' \
+			-o -name '*.sty' \
+			-o -name '*.bib' \
+			-o -name '*.dat' \
+			-o -name '*.el' \
+			-o -name '*.fd' \
+			-o -name '*.in' \
+			-o -name '*.tex' \
+			-o -name '*,[vpt]' \
+			-o -name 'Setup' \
+			-o -name 'Setup.*' \
+			-o -name README \
+			-o -name Makefile \
+			-o -name ChangeLog \
+			-o -name RCS \
+			-o -name Repository \
+			-o -name Entries \
+			-o -name Tag \
+			-o -name tags \
+			-o -name TAGS \
+			-o -name .cvsignore \
+			-o -name MANIFEST \
+			-o -print
 
-config.status:	configure
-		./configure
-
-configure:	configure.in
-		autoconf
- 
-tar:		dist.tar.Z
-
-dist.tar.Z:	$(DIST)
+# Build a distribution tar file (run make distclean first)
+# (This leaves the RCS and CVS directories in :-( )
+tar:
 		tar cf - $(DIST) | compress >dist.tar.Z

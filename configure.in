@@ -1,10 +1,27 @@
-dnl Process this file with autoconf to produce a configure script.
-
+dnl Process this file with autoconf 1.8 or later to produce a configure script.
+AC_REVISION($Revision$)dnl
+AC_PREREQ(1.8)dnl
 AC_INIT(Include/object.h)
+AC_PREFIX(python)
+AC_CONFIG_HEADER(config.h)dnl
+# Don't suppress compiler output when --verbose is specified
+test -n "$verbose" &&
+	ac_compile=`echo "$ac_compile" | sed "s|>/dev/null 2>&1||"`
+AC_VERBOSE(setting ac_compile to '$ac_compile')
 
 # checks for alternative programs
+AC_CHECKING(for --with(out)-gcc)
+AC_WITH(gcc, [
+	case $withval in
+	no)	withval=cc;;
+	yes)	withval=gcc;;
+	esac
+	CC=$withval])
 AC_PROG_CC
+AC_PROG_INSTALL
 AC_PROG_RANLIB
+AC_SUBST(AR)
+AC_PROGRAMS_CHECK(AR, ar aal, ar)
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
@@ -12,14 +29,21 @@ AC_ISC_POSIX
 AC_MINIX
 dnl DYNIX test runs compile so must be last
 AC_DYNIX_SEQ
+AC_CHECKING(for NeXT)
+AC_TEST_PROGRAM([
+#ifdef _NEXT_SOURCE
+main() { exit(0); }
+#endif
+], AC_DEFINE(_POSIX_SOURCE))
 
 # checks for header files
 AC_STDC_HEADERS
-AC_HAVE_HEADERS(dlfcn.h signal.h stdarg.h unistd.h utime.h sys/param.h sys/select.h sys/times.h sys/utsname.h)
+AC_HAVE_HEADERS(dlfcn.h fcntl.h limits.h signal.h stdarg.h stdlib.h thread.h unistd.h utime.h sys/audioio.h sys/param.h sys/select.h sys/time.h sys/times.h sys/un.h sys/utsname.h)
 AC_DIR_HEADER
 
 # checks for typedefs
-AC_GETGROUPS_T
+AC_CHECKING(for clock_t in time.h)
+AC_HEADER_EGREP(clock_t, time.h, , AC_DEFINE(clock_t, long))
 AC_MODE_T
 AC_OFF_T
 AC_PID_T
@@ -29,42 +53,123 @@ AC_UID_T
 
 # checks for libraries
 AC_HAVE_LIBRARY(dl)
-LIBS="${LIBS} -L${READLINESRC-${PWD-${CWD-`pwd`}}/readline}"
-AC_HAVE_LIBRARY(readline)
-if test -n "${have_lib}"; then
-AC_HAVE_LIBRARY(termcap)
-fi
 
-# Check for IRIX or SOLARIS thread interface
-AC_HAVE_LIBRARY(mpc)
-if test -n "${have_lib}"; then
-DEFS="${DEFS} -DUSE_THREAD"
-LIBOBJS="${LIBOBJS} thread.o"
-fi
+AC_CHECKING(for --with-svr4)
+AC_WITH(svr4, [
+AC_HAVE_LIBRARY(socket)
+AC_HAVE_LIBRARY(inet)
+AC_HAVE_LIBRARY(nsl)
+])
 
-AC_HAVE_LIBRARY(thread)
-if test -n "${have_lib}"; then
-DEFS="${DEFS} -DUSE_THREAD"
-LIBOBJS="${LIBOBJS} thread.o"
+AC_CHECKING(for --with-readline)
+AC_WITH(readline, [AC_DEFINE(WITH_READLINE)
+if test -d "$withval"
+then LIBS="$LIBS -L$withval"
+else AC_ERROR(proper usage is --with-readline=DIRECTORY)
 fi
+termcap=
+AC_HAVE_LIBRARY(termcap, [termcap=termcap], [AC_HAVE_LIBRARY(termlib, [termcap=termlib])])
+if test ! -z "$termcap"
+then LIBS="$LIBS -lreadline"
+     # Avoid possible conflict between shared libraries termcap and gl
+     # on IRIX 5: both contain a routine called clear.
+     if test -f /usr/lib/lib$termcap.a
+     then LIBS="$LIBS /usr/lib/lib$termcap.a"
+     else LIBS="$LIBS -l$termcap"
+     fi
+else AC_ERROR(no working termcap/termlib, do not use --with-readline)
+fi])
+
+AC_CHECKING(for --with-thread)
+AC_WITH(thread, [
+if test -d "$withval"
+then LIBS="$LIBS -L$withval"
+fi
+AC_HAVE_LIBRARY(pthreads, [AC_DEFINE(WITH_THREAD)
+AC_DEFINE(_POSIX_THREADS)
+LIBS="$LIBS -lpthreads"
+LIBOBJS="$LIBOBJS thread.o"])
+AC_HAVE_LIBRARY(mpc, [AC_DEFINE(WITH_THREAD)
+LIBS="$LIBS -lmpc"
+LIBOBJS="$LIBOBJS thread.o"])
+AC_HAVE_LIBRARY(thread, [AC_DEFINE(WITH_THREAD)
+LIBS="$LIBS -lthread"
+LIBOBJS="$LIBOBJS thread.o"])
+])
+
+# -I${DLINCLDIR} is added to the compile rule for import.o
+AC_SUBST(DLINCLDIR)
+DLINCLDIR=/
+
+AC_CHECKING(for --with-sgi-dl)
+AC_WITH(sgi-dl, [AC_DEFINE(WITH_SGI_DL)
+dldir=$withval
+if test -d "$dldir"
+then LIBS="$LIBS -L$dldir"
+else AC_ERROR(proper usage is --with-sgi-dl=DIRECTORY)
+fi
+DLINCLDIR=${dldir}
+LIBS="$LIBS -ldl -lmld"])
+
+AC_CHECKING(for --with-dl-dld)
+AC_WITH(dl-dld, [AC_DEFINE(WITH_DL_DLD)
+dldir=`echo "$withval" | sed 's/,.*//'`
+dlddir=`echo "$withval" | sed 's/.*,//'`
+if test -d "$dldir" -a -d "$dlddir"
+then LIBS="$LIBS -L$dldir -L$dlddir"
+else AC_ERROR(proper usage is --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY)
+fi
+DLINCLDIR=${dldir}
+LIBS="$LIBS -ldl -ldld"])
 
 # checks for library functions
-AC_HAVE_FUNCS(clock ftime gettimeofday getpgrp getwd lstat readlink readline select setsid setpgid setpgrp siginterrupt symlink tcgetpgrp tcsetpgrp times uname waitpid)
-AC_REPLACE_FUNCS(dup2 getcwd strerror strtoul strtod memmove)
+AC_HAVE_FUNCS(chown clock dlopen ftime gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt symlink tcgetpgrp tcsetpgrp times uname waitpid)
+AC_REPLACE_FUNCS(dup2 getcwd strerror memmove)
 AC_FUNC_CHECK(getpgrp, AC_COMPILE_CHECK([argument to getpgrp], [#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
 
 # checks for structures
 AC_TIME_WITH_SYS_TIME
 AC_STRUCT_TM
 AC_TIMEZONE
+AC_COMPILE_CHECK([whether we have altzone], [#include <time.h>], [return altzone;], AC_DEFINE(HAVE_ALTZONE))
+AC_COMPILE_CHECK([whether sys/select.h and sys/time.h may both be included], [
+#include <sys/types.h>
+#include <sys/select.h>
+#include <sys/time.h>
+], [;], [AC_DEFINE(SYS_SELECT_WITH_SYS_TIME)])
 
 # checks for compiler characteristics
+
+AC_CHAR_UNSIGNED
+
 AC_CONST
-echo checking for prototypes
-AC_TEST_PROGRAM([int foo(int x){return 0;} int main(){return foo(10);}], AC_DEFINE(HAVE_PROTOTYPES) have_prototypes=1)
+
+AC_COMPILE_CHECK([wheter we have signed char], [], [signed char c;], [], AC_DEFINE(signed, []))
+
+AC_CHECKING(for prototypes)
+AC_TEST_PROGRAM([
+int foo(int x) { return 0; }
+int main() { return foo(10); }
+], AC_DEFINE(HAVE_PROTOTYPES) have_prototypes=1)
+
+AC_CHECKING(for variable length prototypes and stdarg.h)
+AC_TEST_PROGRAM([
+#include <stdarg.h>
+int foo(int x, ...) { return 0; }
+int main() { return foo(10, 11, 12); }
+], AC_DEFINE(HAVE_STDARG_PROTOTYPES) have_prototypes=1)
 if test "$have_prototypes"; then
-AC_COMPILE_CHECK(["bad exec* prototypes"], [#include <unistd.h>], [char *const*t;execve("@",t,t);], , AC_DEFINE(BAD_EXEC_PROTOTYPES))
+AC_COMPILE_CHECK(["bad exec* prototypes"], [#include <unistd.h>], [char **t;execve("@",t,t);], , AC_DEFINE(BAD_EXEC_PROTOTYPES))
 fi
+
+AC_CHECKING(for bad static forward)
+AC_TEST_PROGRAM([
+struct s { int a; int b; };
+static struct s foo;
+int foobar() { return !foo.a; }
+static struct s foo = { 1, 2 };
+main() { exit(foobar()); }
+], , AC_DEFINE(BAD_STATIC_FORWARD))
 
 # checks for system services
 # (none yet)
@@ -73,5 +178,20 @@ fi
 AC_IRIX_SUN
 AC_XENIX_DIR
 
+# check for --with-libm=...
+AC_SUBST(LIBM)
+LIBM=-lm
+AC_WITH(libm, [if test "$withval" != yes
+then LIBM=$withval
+else AC_ERROR(proper usage is --with-libm=STRING)
+fi])
+
+# check for --with-libc=...
+AC_SUBST(LIBC)
+AC_WITH(libc, [if test "$withval" != yes
+then LIBC=$withval
+else AC_ERROR(proper usage is --with-libc=STRING)
+fi])
+
 # generate output files
-AC_OUTPUT(Objects/Makefile Parser/Makefile Python/Makefile)
+AC_OUTPUT(Makefile Objects/Makefile Parser/Makefile Python/Makefile Modules/Makefile.pre)

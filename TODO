@@ -1,17 +1,236 @@
-CVS committal...
-renaming project?  (promised but not even started yet!)
-better way to specify PYTHONPATH
-improve 'install' targets in toplevel Makefile
-Add Demo directory again
-Add NEWS and HISTORY to Misc directory
-fix compilation warnings
-non-Sun dynamic linking (SGI 4 dl, and dl-dld elsewhere)
-put some stuff into Contrib dir
-make freeze script working again (use Extensions/mkext.py as a base?)
-write porting guide
-update documentation (especially ext.tex!)
-test set?
-.
-.
-.
-release!
+(*) int*int overflow check shouldn't doubles on alpha (cf. John Tromp's mail)
+
+(*) add signal.alarm()
+
+(*) when abort()ing because of unexpected exception, print a message
+    first (Jack)
+
+----------------------------------------------------------------------
+(from BUGS1.0.1)
+----------------------------------------------------------------------
+document addpack, urllib, ...
+
+(*) import.c from JaapV
+
+document os.exec*
+
+name sunaudiodevmodule.c is too long
+
+(*) play with / include SUIT interface
+
+make regsub.[g]sub() optionally case insensitive
+
+handle printing of errors in lines containing multiline strings
+
+======================================================================
+
+(*) ought to use features from autoconf 1.8
+
+(*) errors in __repr__() are handled wrong when called from format
+
+- long(0x80000000) has wrong value!
+
+- hex(0x80000000) shouldn't have sign (?)
+
+(*) need way to set buffering at file open time
+
+(*) need way to force stdout unbuffered
+
+- document new modules (builtin as well as Lib)
+
+- restart CVS tree
+
+(?) build shared libs for SunOS 4.1.3
+
+- Mac X... code resources as shared libs?
+
+(*) X patches from Adrian Phillips
+
+(*) Jaap's freeze script
+
+Incorporate with contrib status:
+- additions to glmodule by rg3h
+(*) Jaap's posixfile module (with locking)
+(*) pthreads interface
+
+Later:
+- put the offending object in IOError and posix.error
+- make module marshal work with user-defined file-like objects
+- built-in help?
+- hierarchical module names?
+
+Big plans:
+
+- allow separate interpreters (a la Xt's Applocation Contexts, and Tcl)
+- great renaming
+- complete reflexive nature of the language, e.g. have interfaces et
+create any kind of object
+(*) GUI interface a la Tk
+
+
+======================================================================
+For FAQ:
+
+(*) why don't strings (numbers, tuples, ...) have methods / attributes
+
+(*) why are strings / numbers / tuples immutable
+
+why don't list methods return self
+
+======================================================================
+PM/TODO list after Egypt (from mailing list):
+
+make .pyc files executable (how?)
+
+thread status and improvements (lock stmt; signal/wait)
+
+optional optimizations
+
+pthread migration
+
+(*) test/incorporate new SUIT
+
+shorten excessively long filenames (sunaudiodevmodule.c)
+
+(*) default parameter values
+
+multiple interpreter objects
+
+(*) import shlib bug (irix5.2) (reload, dlclose)
+
+(*) addpack.py
+
+(*) newmodule.c (or other hacks to create new modules, classes, functions
+    etc. from their components)
+
+persistency
+
+new Dbhash.py, dbhash library
+
+reraise; or raise 3rd param for traceback?
+-or- except type, value, tbackobjec
+
+redesign exceptions from scratch?
+
+dbm objects miss items(), values() methods
+
+(*) jar's new profile
+
+answer q about coerce()
+
+(*) reconsider pass [expression] ??? -or- don't print non-interactive
+    exprs -or- option to suppress printing non-None expressions
+
+(*) should be able to hash code objs (add fns to convert between lists/tuples)
+
+describe() ?
+
+distribute demo2 with Holmes
+
+(*) re-reply on try-continue
+
+classes are too slow
+
+add += etc. ?
+
+optimize tuple = tuple
+
+allow (a, b) = [1, 2] and [1, 2] = (1, 2) ???
+
+wustl is not un the northwest of the US?
+
+(*) MPW doesn't like \000 in string literals?
+
+MPW patches, unixemu patches
+
+prepare tar files with
+	- mac think projects (*)
+	- mpw makefiles
+	- dos makefiles
+	- mac unixemu lib
+
+explain rules about == vs. 'is' for strings (* by others on the list)
+
+(*) bug in ceval.c DELETE_FAST
+
+(*) possible optimize LOAD_NAME -> LOAD_GLOBAL
+
+get dos python with suit (inesc)
+
+(*) docs for try/continue are wrong and unclear
+
+better hashing fn?
+
+(*) add improved nested indent to python-mode.el
+
+(*) add a section to tutorial on "new" features
+
+rewrite section on formatting in tutorial
+
+======================================================================
+TODO-TOO list:
+
+test for overflow when converting python long to float
+
+lift restrictions on tuple or list in many cases
+
+(*) allow long ints with sensible values for getargs "i"
+
+(*) multiline string literals
+
+what to do about 64-bit int literals (on 64-bit machines) in .pyc
+files?  (Currently truncated w/o warning!)
+
+DOCUMENTATION UPDATE!  E.g. ref.tex doesn't describe:
+(*)	- line joins w/o backslash
+(*)	- double-quoted strings; \" in strings
+	- more?
+Should double-check all changes with docs!
+
+(?) Interrupting output still sometimes doesn't call clearerr() properly
+
+sometimes ghost errors when interrupting during debugging in
+'continue' mode?
+
+typing a comment to a primary prompt shouldn't issue a secondary prompt
+
+readline: add hooks to recognize Python syntax and to expand Python
+commands and names
+
+should have absolute pathnames in function objects
+
+in general check that all the exceptions are modernized and that the
+messages aren't giving the same error twice (e.g., stdwinmodule.c!)
+
+- check read/write allowed for file objects
+
+- introduce macros to set/inspect errno for syscalls, to support things
+  like getoserr()
+
+======================================================================
+DOS/Windows Python
+
+(???) command line options?
+
+(*) os.system()
+
+(???) interrupts
+
+(???) wrap
+
+(*) pc module
+
+(*) dospath.py
+
+DOS/Windows Python -- TO DO
+
+(*) memtest from config.h
+
+(*) copy sources back
+
+(*) build DOS version
+
+(*) distribute 386 version
+
+(*) Mac 1.0.1 release?
+======================================================================

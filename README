@@ -1,63 +1,412 @@
-This is an ALPHA release of Python 1.0 for UNIX.  Currently it builds
-a rather minimal executable and requires that you already have Python
-0.9.9 (or at least its library).
+Python release 1.0.3
+====================
 
-Instructions for building:
+==> This is patch number 3 to Python 1.0, bumping its version string
+    to 1.0.3.  It consists almost entirely of essential bug fixes to
+    the C sources.  See the file Misc/NEWS for a description of what's
+    new in this patch (as well as what's new in 1.0).
 
-(1) Run the configure shell script:
+==> Python 1.0 is the first "official" Python release in more than
+    half a year.  It's significantly improved over version 0.9.9, both
+    at the functionality level and (especially) in portability of the
+    source -- you should now be able to configure build this without
+    manual intervention on almost any type of Unix system.  It is
+    known to work at least on IRIX 4 and 5, SunOS 4, Solaris 2, HP-UX,
+    Ultrix, OSF/1, AIX, SCO ODT 3.0, Minix, Linux, SEQUENT, and
+    through the use of automatic feature detection should work on most
+    other Unix flavors as well.  Binaries are available for Macintosh
+    and PC platforms (for DOS, DOS w/ 32-bit extender, Windows, and
+    Windows NT).
 
-	./configure
+==> If you don't know yet what Python is: it's an interpreted,
+    extensible, embeddable, interactive, object-oriented programming
+    language.  For a quick summary of what Python can mean for a
+    UNIX/C programmer, read Misc/BLURB.LUTZ.
 
-This may take a minute or two -- it does a rather thorough
-investigation of your system to find out many compile-time flags.  It
-prints messages but does not ask questions.  When finished, it will
-create config.status in the current directory, as well as Makefile in
-each of the subdirectories Parser, Objects and Python.  Note that
-unless you have the CC shell environment variable set to the name of
-your C compiler, it will attempt to find the GNU C compiler (gcc) and
-use it if it finds it.  On some systems a broken gcc may be installed;
-put CC=cc in the environment to override it.  On some systems it may
-be interesting to compare both compilers.  (Note: the Makefile has
-been rigged in such a way that it will run configure if you haven't
-done so.)
+==> If you want to start compiling right away: just type "./configure"
+    in the current directory and when it finishes, type "make".  See
+    the section Build Instructions below for more details.
 
-(2) Run Make:
+==> All documentation is in the subdirectory Doc in the form of LaTeX
+    files.  In order of importance for new users: Tutorial (tut),
+    Library Reference (lib), Language Reference (ref), Extending
+    (ext).  Note that especially the Library Reference is of immense
+    value since much of Python's power (including the built-in data
+    types and functions!) is described there.  [XXX The ext document
+    has not been updated to reflect this release yet.]
 
-	make
+==> Python is COPYRIGHTED but free to use for all.  See the copyright
+    notice at the end of this file.
 
-This will recursively run Make in each of the Parser, Grammar, Objects
-and Python subdirectories.  In Parser it builds an executable "pgen"
-and a library libParser.a.  In Grammar it runs Parser/pgen to generate
-graminit.[ch] which are copied to Includes and Python, respectively.
-In Objects it builds a library libObjects.a.  In Python it builds a
-library libPython.a and an executable "python".
 
-(3) Test the resulting executable:
+Build instructions
+------------------
 
-	Python/python -c 'import testall'
+Before you start building Python, you must first configure it.  This
+entails (at least) running the script "./configure", which figures out
+your system configuration and creates several Makefiles.  (This will
+take a minute or two -- please be patient!)  When it is done, you are
+ready to run make.  Typing "make" in the toplevel directory will
+recursively run make in each of the subdirectories Parser, Objects,
+Python and Modules, creating a library file in each one.  The
+executable of the interpreter is built in the Modules subdirectory but
+moved up here when it is built.  If you want or need to, you can also
+chdir into each subdirectory in turn and run make there manually
+(do the Modules subdirectory last!).  If you run into trouble, first
+see the section Troubleshooting later in this file.
 
-For now, this will assume that you have a working version of Python
-release 0.9.9 installed in /usr/local (it uses the Python library from
-/usr/local/lib/python) or that your PYTHONPATH shell environment
-variable points to the 0.9.9 Python library.
+EXCEPTIONS: on SVR4 derived systems, you need to pass the configure
+script the option --with-svr4.  See below for more options you can
+pass to the configure script.
 
-(4) Optionally: read Extensions/README and try to build a Python with
-all the  extensions that make sense on your system.  (Note: some
-extensions are not supported yet.)
+AIX users: read the file Misc/AIX-NOTES before trying to build.
 
-(5) Give feedback:
+Minix users: when using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
-	Mail guido@cwi.nl
+You can configure the interpreter to contain fewer or more built-in
+modules by editing the file Modules/Setup.  This file is initially
+copied (when the toplevel Makefile makes Modules/Makefile for the
+first time) from Setup.in; if it does not exist yet, make a copy
+yourself.  Never edit Setup.in -- always edit Setup.  Read the
+comments in the file for information on what kind of edits you can
+make.  When you have edited Setup, Makefile and config.c in Modules
+will automatically be rebuilt the next time you run make in the
+toplevel directory.  (There are some example Setup files which you may
+copy to Setup for specific systems; have a look at Setup.*.)
 
-Please tell me whether the build succeeded or not.  If you needed to
-edit *any* file, tell me which file, why and how (send me a diff or a
-copy of the modified file if you can).  If you get stuck, please send
-me the error output.  Don't forget to mention the operating system,
-compiler and hardware version that you used, e.g. "Solaris 2.2 with
-gcc version cygnus-2.0.2 on a dual processor Sparcstation 10" or "IRIX
-5.1 with standard cc on an Indigo XS-24 with R4000 CPU".  If you can
-build the core interpreter but get stuck building an extended version,
-let me know which extensions gave problems and how.
+If you want to change the optimization level of the build, assign to
+the OPT variable on the toplevel make command; e.g. "make OPT=-g" will
+build a debugging version of Python on most platforms.
+
+To test the interpreter that you have just built, type "make test".
+This runs the test set silently, twice (once with no compiled files,
+once with the compiled files left by the previous test run).  Each
+test run should print "All tests OK." and nothing more.  (The test set
+does not test the built-in modules, but will find most other problems
+with the interpreter.)
+
+To install the interpreter as /usr/local/bin/python, type "make
+install".  To install the library as /usr/local/lib/python, type "make
+libinstall".  To install the manual page as
+/usr/local/man/man1/python.1, type "make maninstall".  To install the
+Emacs editing mode for python, manually copy the file
+Misc/python-mode.el to your local Emacs lisp directory.  The directory
+/usr/local can be overridden at configuration time by passing
+--prefix=DIRECTORY to the configure script, or at make time by passing
+"prefix=DIRECTORY" to make.  See below for more information on --prefix.
+
+If you plan to do development of extension modules or to embed Python
+in another application and don't want to reference the original source
+tree, you can type "make inclinstall" and "make libainstall" to
+install the include files and lib*.a files, respectively, as
+/usr/local/include/Py/*.h and /usr/local/lib/python/lib/lib*.a.  The
+make libainstall target also installs copies of several other files
+used or produced during the build process which are needed to build
+extensions or to generate their Makefiles.
+
+To print the documentation, cd into the Doc subdirectory, type "make"
+(let's hope you have LaTeX installed!), and send the four resulting
+PostScript files (tut.ps, lib.ps, ref.ps, and ext.ps) to the printer.
+See the README file there; you can also build a texinfo version of the
+library manual and from that construct an Emacs info version (the
+hypertext format used by the Emacs "info" command) and an HTML version
+(the hypertext format used by the World Wide Web distributed
+information initiative).  You don't need to have LaTeX installed for
+this.  Note that the Python archive sites also carry the resulting
+PostScript files, in case you have a PostScript printer but not LaTeX.
+
+Some special cases are handled by passing environment variables or
+options to the configure script:
+
+- The configure script uses gcc (the GNU C compiler) if it finds it.
+If you don't want this, or if this compiler is installed but broken on
+your platform, pass "CC=cc" (or whatever the name of the proper C
+compiler is) in the environment.
+
+- On System V, Release 4 derived systems (e.g. SOLARIS 2, but not
+IRIX 5) you need to call the configure script with the option
+--with-svr4.  This is needed so the libraries -lnsl and -lsocket are
+found.  (On some other systems, e.g. IRIX 5, these libraries exist but
+are incompatible with other system libraries such as X11 and GL.)
+
+- If you want to install the binaries and the Python library somewhere
+else than in /usr/local/{bin,lib}, you can pass the option
+--prefix=DIRECTORY; the interpreter binary will be installed as
+DIRECTORY/bin/python and the library files as DIRECTORY/lib/python/*.
+If you pass --exec-prefix=DIRECTORY (as well) this overrides the
+installation prefix for architecture-dependent files (like the
+interpreter binary).  Note that --prefix=DIRECTORY also affects the
+default module search path (sys.path), when Modules/config.c is
+compiled.  Passing make the option prefix=DIRECTORY (and/or
+exec_prefix=DIRECTORY) overrides the prefix set at configuration time;
+this may be more convenient than re-running the configure script if
+you change your mind about the install prefix...
+
+- You can use the GNU readline library to improve the interactive
+user interface: this gives you line editing and command history when
+calling python interactively.  You need to build the GNU readline
+library before running the configure script.  Its sources are
+distributed with Python.  This may involve some editing of the
+Makefile there -- I'm sorry, but I don't feel responsible for making
+it more portable or adapting it to autoconf...  Pass the configure
+script the option --with-readline=DIRECTORY where DIRECTORY is the
+absolute pathname of the directory where you've built the readline
+library.  A known problem with the readline library is that it
+contains entry points which cause conflicts with the STDWIN and SGI GL
+libraries.  The stdwin conflict can be solved (and will be, in some
+future release of stdwin) by adding a line saying '#define werase
+w_erase' to the stdwin.h file (in the stdwin distribution,
+subdirectory H).  The GL conflict may be solvable by reordering the -l
+options on the final link command, but it appears unsafe...  Another
+hint: you may have to add -Dindex=strchr -Drindex=strrchr to
+readline's CFLAGS if your system doesn't have index and rindex.
+
+- On SGI IRIX, and on Sun SOLARIS 2, you can use multiple threads.  To
+enable this, pass --with-thread.  In the Modules/Setup file, enable
+the thread module.  (Threads aren't enabled automatically because
+there are run-time penalties when support for them is compiled in even
+if you don't use them.)
+
+- On SGI IRIX, there are modules that interface to many SGI specific
+system libraries, e.g. the GL library and the audio hardware.  To
+enable these modules, you must edit the Modules/Setup file (or copy the
+Setup.irix4 file to it).
+
+- On SGI IRIX 4, dynamic loading of extension modules is supported by
+the "dl" library by Jack Jansen, which is ftp'able from
+ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.  This is enabled (after
+you've ftp'ed and compiled the dl library!) by passing
+--with-sgi-dl=DIRECTORY where DIRECTORY is the absolute pathname of
+the dl library.  (Don't bother on IRIX 5, it already has dynamic
+linking using SunOS style shared libraries.)
+
+- Dynamic loading of modules is rumoured to be supported on some other
+systems: VAX (Ultrix), Sun3 (SunOS 3.4), Sequent Symmetry (Dynix), and
+Atari ST.  This is done using a combination of the GNU dynamic loading
+package (ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z) and an
+emulation of the SGI dl library mentioned above (the emulation can be
+found at ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z).  To enable
+this, ftp and compile both libraries, then call the configure passing
+it the option --with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY where
+DL_DIRECTORY is the absolute pathname of the dl emulation library and
+DLD_DIRECTORY is the absolute pathname of the GNU dld library.  (Don't
+bother on SunOS 4 or 5, they already have dynamic linking using shared
+libraries.)
+
+- It is possible to specify alternative versions for the Math library
+(default -lm) and the C library (default the empty string) using the
+options --with-libm=STRING and --with-libc=STRING, respectively.  E.g.
+if your system requires that you pass -lc_s to the C compiler to use
+the shared C library, you can pass --with-libc=-lc_s.  These libraries
+are passed after all other libraries, the C library last.
+
+You can also build an "extended" interpreter, using modules that are
+not contained in the Modules directory.  Extensions are distributed as
+a separate tar file (currently extensions.tar.Z).  See the README file
+there.
+
+
+Building for multiple architectures (using the VPATH feature)
+-------------------------------------------------------------
+
+If your file system is shared between multiple architectures, it
+usually is not necessary to make copies of the sources for each
+architecture you want to support.  If the make program supports the
+VPATH feature, you can create an empty build directory for each
+architecture, and in each directory run the configure script (on the
+appropriate machine with the appropriate options).  This creates the
+necessary subdirectories and the Makefiles therein.  The Makefiles
+contain a line VPATH=... which points to directory containing the
+actual sources.
+
+For example, the following is all you need to build a minimal Python
+in /usr/tmp/python (assuming ~guido/src/python is the toplevel
+directory and you want to build in /usr/tmp/python):
+
+	$ mkdir /usr/tmp/python
+	$ cd /usr/tmp/python
+	$ ~guido/src/python/configure
+	[...]
+	$ make
+	[...]
+	$
+
+To use the readline library in this case, you will have to create a
+subdirectory of your build directory called readline, copy
+readline/Makefile into it, edit the Makefile to contain a proper VPATH
+line (and possibly edit the compiler flags set in the Makefile), and
+pass the configure script a --with-readline=DIRECTORY option giving it
+the absolute (!) pathname of the readline build directory.
+
+Note that Modules/Makefile copies the original Setup file to the build
+directory if it finds no Setup file there.  This means that you can
+edit the Setup file for each architecture independently.  For this
+reason, subsequent changes to the original Setup file are not tracked
+automatically, as they might overwrite local changes.  To force a copy
+of a changed original Setup file, delete the target Setup file.  (The
+makesetup script supports multiple input files, so if you want to be
+fancy you can change the rules to create an empty Setup.local if it
+doesn't exist and run it with arguments $(srcdir)/Setup Setup.local;
+however this assumes that you only need to add modules.)
+
+
+Troubleshooting
+---------------
+
+Here is a selection from the FAQ on various common problems.
+
+3.6. Q. Link errors building Python with STDWIN on SGI IRIX.
+
+A. Rebuild STDWIN, specifying "CC=cc -cckr" in the Makefile.
+
+3.8. Q. Link errors after rerunning the configure script.
+
+A. It is generally necessary to run "make clean" after a configuration
+change.
+
+3.9. Q. The python interpreter complains about options passed to a
+script (after the script name).
+
+A. You are probably linking with GNU getopt, e.g. through -liberty.
+Don't.  (If you are using this because you link with -lreadline, use
+the readline distributed with Python instead.)
+
+3.10. Q. When building on the SGI, make tries to run python to create
+glmodule.c, but python hasn't been built or installed yet.
+
+A. Comment out the line mentioning glmodule.c in Setup and build a
+python without gl first; install it or make sure it is in your $PATH,
+then edit the Setup file again to turn on the gl module, and make
+again.  You don't need to do "make clean"; you do need to run "make
+Makefile" in the Modules subdirectory (or just run "make" at the
+toplevel).
+
+3.13. Q. Other trouble building Python 1.0.2 on platform X.
+
+A. Please email the details to <guido@cwi.nl> and I'll look into it.
+
+
+Building on non-UNIX systems
+----------------------------
+
+On non-UNIX systems, you will have to fake the effect of running the
+configure script manually.  A good start is to copy the file
+config.h.in to config.h and edit the latter to reflect the actual
+configuration of your system.  Most symbols must simply be defined as
+1 only if the corresponding feature is present and can be left alone
+otherwise; however RETSIGTYPE must always be defined, either as int or
+as void, and the *_t type symbols must be defined as some variant of
+int if they need to be defined at all. Then arrange that the symbol
+HAVE_CONFIG_H is defined during compilation (usually by passing an
+argument of the form `-DHAVE_CONFIG_H' to the compiler, but this is
+necessarily system-dependent).
+
+
+Distribution structure
+----------------------
+
+Most subdirectories have their own README file.  Most files have
+comments.
+
+ChangeLog	A raw list of changes since the first 1.0.0 BETA release
+Contrib/	Contributed code
+Demo/		Demonstration scripts, modules and programs
+Demo2/		Some more demonstrations (not distributed)
+Doc/		Documentation (in LaTeX)
+Ext-dummy/	Placeholder for Extensions in the distribution
+Extensions/	Extension modules (not distributed)
+Grammar/	Input for the parser generator
+Include/	Public header files
+Lib/		Python library modules
+Makefile	Rules for building the distribution
+Misc/		Miscellaneous files
+Modules/	Implementation of most built-in modules
+Objects/	Implementation of most built-in object types
+Parser/		The parser and tokenizer and their input handling
+Python/		The "compiler" and interpreter
+README		The file you're reading now
+acconfig.h	Additional input for the autoheader program
+config.h	Configuration header (generated)
+config.h.in	Source from which config.status creates config.h
+config.status	status from last run of configure script (generated)
+configure	Configuration shell script (GNU autoconf output)
+configure.in	Configuration specification (GNU autoconf input)
+tags, TAGS	Tags files for vi and Emacs (generated)
+python		The executable interpreter (generated)
+readline/	Source code for the GNU readline library
+
+
+Ftp access
+----------
+
+The latest Python source distribution can be ftp'ed from site
+ftp.cwi.nl, directory /pub/python, file python<version>.tar.Z.  You
+can also find PostScript of the main Python documentation there,
+Macintosh and PC binaries, and the latest STDWIN source distribution
+(in directory /pub/stdwin).  Mirror sites are gatekeeper.dec.com
+(/pub/plan/python/cwi), ftp.wustl.edu
+(/graphics/graphics/sgi-stuff/python) and ftp.uu.net
+(/languages/python) -- try these sites first if you are on the US
+continent, or at least closer to it than to Europe.  These mirror
+sites are at most a day behind on the European archive!
+
+If you don't have ftp access, send mail containing only the word HELP
+to ftpmail@decwrl.dec.com or bitftp@pucc.princeton.edu, and the
+server will send you instructions on how to make requests.
+
+
+Mailing list
+------------
+
+There is a mailing list devoted to Python programming, design and
+bugs.  To subscribe, send mail containing your real name and e-mail
+address in Internet form to "python-list-request@cwi.nl".  If you have
+built and installed Python, you are urgently to subscribe to this
+mailing list.
+
+
+Author
+------
+
+Guido van Rossum
+CWI, dept. CST
+P.O. Box 94079
+1090 GB  Amsterdam
+The Netherlands
+
+E-mail: Guido.van.Rossum@cwi.nl
+
+
+Copyright Notice
+----------------
+
+The Python source is copyrighted, but you can freely use and copy it
+as long as you don't change or remove the copyright:
+
+Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
+
+                        All Rights Reserved
+
+Permission to use, copy, modify, and distribute this software and its 
+documentation for any purpose and without fee is hereby granted, 
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in 
+supporting documentation, and that the names of Stichting Mathematisch
+Centrum or CWI not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior permission.
+
+STICHTING MATHEMATISCH CENTRUM DISCLAIMS ALL WARRANTIES WITH REGARD TO
+THIS SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS, IN NO EVENT SHALL STICHTING MATHEMATISCH CENTRUM BE LIABLE
+FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
+OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+
+Signature
+---------
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
 URL:  <http://www.cwi.nl/cwi/people/Guido.van.Rossum.html>
