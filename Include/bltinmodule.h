@@ -24,4 +24,4 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Built-in module interface */
 
-extern object *getbuiltin PROTO((char *));
+extern object *getbuiltin PROTO((object *));
