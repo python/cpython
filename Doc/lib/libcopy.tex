@@ -1,7 +1,7 @@
 \section{\module{copy} ---
          Shallow and deep copy operations}
-\declaremodule{standard}{copy}
 
+\declaremodule{standard}{copy}
 \modulesynopsis{Shallow and deep copy operations.}
 
 
@@ -68,16 +68,16 @@ set of components copied.
 \end{itemize}
 
 This version does not copy types like module, class, function, method,
-nor stack trace, stack frame, nor file, socket, window, nor array, nor
-any similar types.
+stack trace, stack frame, file, socket, window, array, or any similar
+types.
 
 Classes can use the same interfaces to control copying that they use
 to control pickling: they can define methods called
 \method{__getinitargs__()}, \method{__getstate__()} and
 \method{__setstate__()}.  See the description of module
 \refmodule{pickle}\refstmodindex{pickle} for information on these
-methods.  The \module{copy} module does not use the \module{copy_reg}
-registration module.
+methods.  The \module{copy} module does not use the
+\refmodule[copyreg]{copy_reg} registration module.
 \withsubitem{(copy protocol)}{\ttindex{__getinitargs__()}
   \ttindex{__getstate__()}\ttindex{__setstate__()}}
 
