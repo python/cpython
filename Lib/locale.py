@@ -268,9 +268,7 @@ def _parse_localename(localename):
         return code.split('.')[:2]
     elif code == 'C':
         return None, None
-    else:
-        raise ValueError, 'unknown locale: %s' % localename
-    return l
+    raise ValueError, 'unknown locale: %s' % localename
 
 def _build_localename(localetuple):
 
