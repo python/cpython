@@ -26,11 +26,7 @@ TextBuffer = RevVarInputBufferType()
 
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Fonts.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 
 /*

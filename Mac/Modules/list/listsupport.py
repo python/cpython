@@ -39,11 +39,7 @@ CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 EventModifiers = Type("EventModifiers", "H")
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Lists.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_ListObj_New(ListHandle);
@@ -51,31 +47,6 @@ extern int _ListObj_Convert(PyObject *, ListHandle *);
 
 #define ListObj_New _ListObj_New
 #define ListObj_Convert _ListObj_Convert
-#endif
-
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS
-#define GetListPort(list) ((CGrafPtr)(*(list))->port)
-#define GetListVerticalScrollBar(list) ((*(list))->vScroll)
-#define GetListHorizontalScrollBar(list) ((*(list))->hScroll)
-#define GetListActive(list) ((*(list))->lActive)
-#define GetListClickTime(list) ((*(list))->clikTime)
-#define GetListRefCon(list) ((*(list))->refCon)
-#define GetListDefinition(list) ((*(list))->listDefProc) /* XXX Is this indeed the same? */
-#define GetListUserHandle(list) ((*(list))->userHandle)
-#define GetListDataHandle(list) ((*(list))->cells)
-#define GetListFlags(list) ((*(list))->listFlags)
-#define GetListSelectionFlags(list) ((*(list))->selFlags)
-#define SetListViewBounds(list, bounds) (((*(list))->rView) = *(bounds))
-
-#define SetListPort(list, port) (((*(list))->port) = (GrafPtr)(port))
-#define SetListCellIndent(list, ind) (((*(list))->indent) = *(ind))
-#define SetListClickTime(list, time) (((*(list))->clikTime) = (time))
-#define SetListLastClick(list, click) (((*(list)->lastClick) = *(click))
-#define SetListRefCon(list, refcon) (((*(list))->refCon) = (refcon))
-#define SetListUserHandle(list, handle) (((*(list))->userHandle) = (handle))
-#define SetListFlags(list, flags) (((*(list))->listFlags) = (flags))
-#define SetListSelectionFlags(list, flags) (((*(list))->selFlags) = (flags))
-
 #endif
 
 #define as_List(x) ((ListHandle)x)

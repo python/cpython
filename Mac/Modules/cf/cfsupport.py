@@ -42,18 +42,7 @@ class MethodSkipArg1(MethodGenerator):
 # Create the type objects
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <CFBase.h>
-#include <CFArray.h>
-#include <CFData.h>
-#include <CFDictionary.h>
-#include <CFString.h>
-#include <CFURL.h>
-#include <CFPropertyList.h>
-#include <CFPreferences.h>
-#else
 #include <CoreServices/CoreServices.h>
-#endif
 
 #include "pycfbridge.h"
 

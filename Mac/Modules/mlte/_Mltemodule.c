@@ -14,17 +14,13 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <MacTextEditor.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
 static PyObject *TXNObj_New(TXNObject);

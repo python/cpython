@@ -20,12 +20,7 @@
     }} while(0)
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <Movies.h>
-#else
-/* #include <Carbon/Carbon.h> */
 #include <QuickTime/QuickTime.h>
-#endif
 
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE

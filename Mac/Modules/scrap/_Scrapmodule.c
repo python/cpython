@@ -23,11 +23,7 @@
     }} while(0)
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <Scrap.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 static PyObject *Scrap_Error;
 

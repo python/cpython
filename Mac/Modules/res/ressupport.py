@@ -28,12 +28,7 @@ includestuff = includestuff + """
 #ifndef PyDoc_STR
 #define PyDoc_STR(x) (x)
 #endif
-#ifdef WITHOUT_FRAMEWORKS
-#include <Resources.h>
-#include <string.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_ResObj_New(Handle);

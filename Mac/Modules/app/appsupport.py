@@ -79,12 +79,7 @@ ThemeButtonDrawUPP = FakeType("NULL")
 
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <Appearance.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
-
 
 
 int ThemeButtonDrawInfo_Convert(PyObject *v, ThemeButtonDrawInfo *p_itself)

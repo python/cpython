@@ -20,11 +20,7 @@
     }} while(0)
 
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <QuickDraw.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GrafObj_New(GrafPtr);
@@ -41,69 +37,6 @@ extern int _QdRGB_Convert(PyObject *, RGBColorPtr);
 #define QdRGB_New _QdRGB_New
 #define QdRGB_Convert _QdRGB_Convert
 #endif
-
-#if !ACCESSOR_CALLS_ARE_FUNCTIONS
-#define GetPortBitMapForCopyBits(port) ((const struct BitMap *)&((GrafPort *)(port))->portBits)
-#define GetPortPixMap(port) (((CGrafPtr)(port))->portPixMap)
-#define GetPortBounds(port, bounds) (*(bounds) = (port)->portRect, (bounds))
-#define GetPortForeColor(port, color) (*(color) = (port)->rgbFgColor, (color))
-#define GetPortBackColor(port, color) (*(color) = (port)->rgbBkColor, (color))
-#define GetPortOpColor(port, color) (*(color) = (*(GVarHandle)((port)->grafVars))->rgbOpColor, (color))
-#define GetPortHiliteColor(port, color) (*(color) = (*(GVarHandle)((port)->grafVars))->rgbHiliteColor, (color))
-#define GetPortTextFont(port) ((port)->txFont)
-#define GetPortTextFace(port) ((port)->txFace)
-#define GetPortTextMode(port) ((port)->txMode)
-#define GetPortTextSize(port) ((port)->txSize)
-#define GetPortChExtra(port) ((port)->chExtra)
-#define GetPortFracHPenLocation(port) ((port)->pnLocHFrac)
-#define GetPortSpExtra(port) ((port)->spExtra)
-#define GetPortPenVisibility(port) ((port)->pnVis)
-#define GetPortVisibleRegion(port, rgn) ((rgn) = (port)->visRgn, (rgn))
-#define GetPortClipRegion(port, rgn) ((rgn) = (port)->clipRgn, (rgn))
-#define GetPortBackPixPat(port, pat) ((pat) = (port)->bkPixPat, (pat))
-#define GetPortPenPixPat(port, pat) ((pat) = (port)->pnPixPat, (pat))
-#define GetPortFillPixPat(port, pat) ((pat) = (port)->fillPixPat, (pat))
-#define GetPortPenSize(port, pensize) (*(pensize) = (port)->pnSize, (pensize))
-#define GetPortPenMode(port) ((port)->pnMode)
-#define GetPortPenLocation(port, location) ((*location) = (port)->pnLoc, (location))
-#define IsPortRegionBeingDefined(port) (!!((port)->rgnSave))
-#define IsPortPictureBeingDefined(port) (!!((port)->picSave))
-/* #define IsPortOffscreen(port) */
-/* #define IsPortColor(port) */
-
-#define SetPortBounds(port, bounds) ((port)->portRect = *(bounds))
-#define SetPortOpColor(port, color) ((*(GVarHandle)((port)->grafVars))->rgbOpColor = *(color))
-#define SetPortVisibleRegion(port, rgn) ((port)->visRgn = (rgn))
-#define SetPortClipRegion(port, rgn) ((port)->clipRgn = (rgn))
-#define SetPortBackPixPat(port, pat) ((port)->bkPixPat = (pat))
-#define SetPortPenPixPat(port, pat) ((port)->pnPixPat = (pat))
-#define SetPortFillPixPat(port, pat) ((port)->fillPixPat = (pat))
-#define SetPortPenSize(port, pensize) ((port)->pnSize = (pensize))
-#define SetPortPenMode(port, mode) ((port)->pnMode = (mode))
-#define SetPortFracHPenLocation(port, frac) ((port)->pnLocHFrac = (frac))
-
-/* On pixmaps */
-#define GetPixBounds(pixmap, rect) (*(rect) = (*(pixmap))->bounds, (rect))
-#define GetPixDepth(pixmap) ((*(pixmap))->pixelSize)
-
-/* On regions */
-#define GetRegionBounds(rgn, rect) (*(rect) = (*(rgn))->rgnBBox, (rect))
-
-/* On QD Globals */
-#define GetQDGlobalsRandomSeed() (qd.randSeed)
-#define GetQDGlobalsScreenBits(bits) (*(bits) = qd.screenBits, (bits))
-#define GetQDGlobalsArrow(crsr) (*(crsr) = qd.arrow, (crsr))
-#define GetQDGlobalsDarkGray(pat) (*(pat) = qd.dkGray, (pat))
-#define GetQDGlobalsLightGray(pat) (*(pat) = qd.ltGray, (pat))
-#define GetQDGlobalsGray(pat) (*(pat) = qd.gray, (pat))
-#define GetQDGlobalsBlack(pat) (*(pat) = qd.black, (pat))
-#define GetQDGlobalsWhite(pat) (*(pat) = qd.white, (pat))
-#define GetQDGlobalsThePort() ((CGrafPtr)qd.thePort)
-
-#define SetQDGlobalsRandomSeed(seed) (qd.randSeed = (seed))
-#define SetQDGlobalsArrow(crsr) (qd.arrow = *(crsr))
-
-#endif /* ACCESSOR_CALLS_ARE_FUNCTIONS */
 
 static PyObject *BMObj_NewCopied(BitMapPtr);
 

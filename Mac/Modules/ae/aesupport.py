@@ -85,12 +85,7 @@ includestuff = includestuff + """
 #ifndef PyDoc_STR
 #define PyDoc_STR(x) (x)
 #endif
-#ifdef WITHOUT_FRAMEWORKS
-#include <AppleEvents.h>
-#include <AEObjects.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_AEDesc_New(AEDesc *);

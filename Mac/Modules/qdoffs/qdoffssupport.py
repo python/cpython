@@ -34,11 +34,7 @@ GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 QDErr = OSErrType("QDErr", 'h')
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <QDOffscreen.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_GWorldObj_New(GWorldPtr);

@@ -20,11 +20,7 @@ from macsupport import *
 AHTOCType = Type("AHTOCType", "h")
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <AppleHelp.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 """
 

@@ -20,11 +20,7 @@ from macsupport import *
 # Create the type objects
 
 includestuff = includestuff + """
-#ifdef WITHOUT_FRAMEWORKS
-#include <MacTextEditor.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
 static PyObject *TXNObj_New(TXNObject);
