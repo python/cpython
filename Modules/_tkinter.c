@@ -62,6 +62,10 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "thread.h"
 #endif
 
+#ifdef MS_WINDOWS
+#include <windows.h>
+#endif
+
 #ifdef macintosh
 #define MAC_TCL
 #include "myselect.h"
@@ -258,7 +262,7 @@ Tkinter_Error(v)
 /**** Utils ****/
 
 #ifdef WITH_THREAD
-#ifndef MS_WIN32
+#ifndef MS_WINDOWS
 /* Millisecond sleep() for Unix platforms. */
 
 static void
@@ -272,7 +276,7 @@ Sleep(milli)
 	t.tv_usec = (milli%1000) * 1000;
 	select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t);
 }
-#endif /* MS_WIN32 */
+#endif /* MS_WINDOWS */
 #endif /* WITH_THREAD */
 
 
