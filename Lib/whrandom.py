@@ -86,14 +86,53 @@ class whrandom:
 		return a + (b-a) * self.random()
 	#
 	# Get a random integer in the range [a, b] including both end points.
+	# (Deprecated; use randrange below.)
 	#
 	def randint(self, a, b):
-		return a + int(self.random() * (b+1-a))
+		return self.randrange(a, b+1)
 	#
 	# Choose a random element from a non-empty sequence.
 	#
 	def choice(self, seq):
 		return seq[int(self.random() * len(seq))]
+	#
+	# Choose a random item from range([start,] step[, stop]).
+	# This fixes the problem with randint() which includes the
+	# endpoint; in Python this is usually not what you want.
+	#
+	def randrange(self, start, stop=None, step=1,
+		      # Do not supply the following arguments
+		      int=int, default=None):
+		# This code is a bit messy to make it fast for the
+		# common case while still doing adequate error checking
+		istart = int(start)
+		if istart != start:
+			raise ValueError, "non-integer arg 1 for randrange()"
+		if stop is default:
+			if istart > 0:
+				return int(self.random() * istart)
+			raise ValueError, "empty range for randrange()"
+		istop = int(stop)
+		if istop != stop:
+			raise ValueError, "non-integer stop for randrange()"
+		if step == 1:
+			if istart < istop:
+				return istart + int(self.random() *
+						   (istop - istart))
+			raise ValueError, "empty range for randrange()"
+		istep = int(step)
+		if istep != step:
+			raise ValueError, "non-integer step for randrange()"
+		if istep > 0:
+			n = (istop - istart + istep - 1) / istep
+		elif istep < 0:
+			n = (istop - istart + istep + 1) / istep
+ 		else:
+ 			raise ValueError, "zero step for randrange()"
+
+ 		if n <= 0:
+ 			raise ValueError, "empty range for randrange()"
+ 		return istart + istep*int(self.random() * n)
 
 
 # Initialize from the current time
@@ -104,3 +143,4 @@ random = _inst.random
 uniform = _inst.uniform
 randint = _inst.randint
 choice = _inst.choice
+randrange = _inst.randrange
