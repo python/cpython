@@ -36,11 +36,17 @@ import string
 FTP_PORT = 21
 
 
-# Exception raiseds when an error or invalid response is received
+# Exception raised when an error or invalid response is received
 error_reply = 'ftplib.error_reply'	# unexpected [123]xx reply
 error_temp = 'ftplib.error_temp'	# 4xx errors
 error_perm = 'ftplib.error_perm'	# 5xx errors
 error_proto = 'ftplib.error_proto'	# response does not begin with [1-5]
+
+
+# All exceptions (hopefully) that may be raised here and that aren't
+# (always) programming errors on our side
+all_errors = (error_reply, error_temp, error_perm, error_proto, \
+	      socket.error, IOError)
 
 
 # Line terminators (we always output CRLF, but accept any of CRLF, CR, LF)
