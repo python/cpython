@@ -103,6 +103,11 @@ class BuildExt (Command):
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
 
+        # XXX how the heck are 'self.define' and 'self.undef' supposed to
+        # be set?
+
+    # set_final_options ()
+    
 
     def run (self):
 
@@ -152,6 +157,11 @@ class BuildExt (Command):
             
 
     def check_extensions_list (self, extensions):
+        """Ensure that the list of extensions (presumably provided as a
+           command option 'extensions') is valid, i.e. it is a list of
+           2-tuples, where the tuples are (extension_name, build_info_dict).
+           Raise DistutilsValueError if the structure is invalid anywhere;
+           just returns otherwise."""
 
         if type (extensions) is not ListType:
             raise DistutilsValueError, \
@@ -171,7 +181,7 @@ class BuildExt (Command):
             if type (ext[1]) is not DictionaryType:
                 raise DistutilsValueError, \
                       "second element of each tuple in 'ext_modules' " + \
-                      "must be a dictionary"
+                      "must be a dictionary (build info)"
 
         # end sanity-check for
 
@@ -197,7 +207,7 @@ class BuildExt (Command):
             sources = build_info.get ('sources')
             if sources is None or type (sources) not in (ListType, TupleType):
                 raise DistutilsValueError, \
-                      ("in ext_modules option (extension '%s'), " +
+                      ("in 'ext_modules' option (extension '%s'), " +
                        "'sources' must be present and must be " +
                        "a list of source filenames") % extension_name
             sources = list (sources)
