@@ -607,8 +607,7 @@ class FakeSocket:
                 buf = self.__ssl.read()
             except socket.sslerror, err:
                 if (err[0] == socket.SSL_ERROR_WANT_READ
-                    or err[0] == socket.SSL_ERROR_WANT_WRITE
-                    or 0):
+                    or err[0] == socket.SSL_ERROR_WANT_WRITE):
                     continue
                 if err[0] == socket.SSL_ERROR_ZERO_RETURN:
                     break
