@@ -14,3 +14,9 @@
 #ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
+
+#if defined(HAVE_HYPOT)
+/* Defined in <math.h> */
+#else
+extern double hypot PROTO((double, double)); /* defined in mathmodule.c */
+#endif
