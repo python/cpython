@@ -20,6 +20,7 @@ indent.pro	GNU indent profile approximating my C style
 NEWS		News for this release (for some meaning of "this")
 Porting		Mini-FAQ on porting to new platforms
 PURIFY.README	Information for Purify users
+pymemcompat.h	Memory interface compatibility file.
 python.man	UNIX man page for the python interpreter
 python-mode.el	Emacs mode for editing Python programs
 README		The file you're reading now
