@@ -100,6 +100,7 @@ PyAPI_FUNC(PyObject *) PyDict_Values(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Items(PyObject *mp);
 PyAPI_FUNC(int) PyDict_Size(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Copy(PyObject *mp);
+PyAPI_FUNC(int) PyDict_Contains(PyObject *mp, PyObject *key);
 
 /* PyDict_Update(mp, other) is equivalent to PyDict_Merge(mp, other, 1). */
 PyAPI_FUNC(int) PyDict_Update(PyObject *mp, PyObject *other);

@@ -1814,10 +1814,11 @@ static PyMethodDef mapp_methods[] = {
 	{NULL,		NULL}	/* sentinel */
 };
 
-static int
-dict_contains(dictobject *mp, PyObject *key)
+int
+PyDict_Contains(PyObject *op, PyObject *key)
 {
 	long hash;
+	dictobject *mp = (dictobject *)op;
 
 	if (!PyString_CheckExact(key) ||
 	    (hash = ((PyStringObject *) key)->ob_shash) == -1) {
@@ -1837,7 +1838,7 @@ static PySequenceMethods dict_as_sequence = {
 	0,					/* sq_slice */
 	0,					/* sq_ass_item */
 	0,					/* sq_ass_slice */
-	(objobjproc)dict_contains,		/* sq_contains */
+	(objobjproc)PyDict_Contains,		/* sq_contains */
 	0,					/* sq_inplace_concat */
 	0,					/* sq_inplace_repeat */
 };

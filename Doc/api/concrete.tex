@@ -1808,6 +1808,14 @@ format.
   Empties an existing dictionary of all key-value pairs.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyDict_Contains}{PyObject *p, PyObject *key}
+  Determine if dictionary \var{p} contains \var{key}.  If an item
+  in \var{p} is matches \var{key}, return \code{1}, otherwise return
+  \code{0}.  On error, return \code{-1}.  This is equivalent to the
+  Python expression \samp{\var{key} in \var{p}}.
+  \versionadded{2.4}			 
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyDict_Copy}{PyObject *p}
   Returns a new dictionary that contains the same key-value pairs as
   \var{p}.
