@@ -268,7 +268,7 @@ typedef void (*dl_funcptr)();
 extern char *Py_GetProgramName();
 
 #ifndef FUNCNAME_PATTERN
-#if defined(__hp9000s300) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__BORLANDC__)
+#if defined(__hp9000s300) || defined(__NetBSD__) || defined(__FreeBSD__) && !defined(__ELF__) || defined(__OpenBSD__) || defined(__BORLANDC__)
 #define FUNCNAME_PATTERN "_init%.200s"
 #else
 #define FUNCNAME_PATTERN "init%.200s"
