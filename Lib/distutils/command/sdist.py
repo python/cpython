@@ -442,8 +442,6 @@ class sdist (Command):
 
         self.make_release_tree (base_dir, self.filelist.files)
         archive_files = []              # remember names of files we create
-        if self.dist_dir:
-            self.mkpath(self.dist_dir)
         for fmt in self.formats:
             file = self.make_archive (base_name, fmt, base_dir=base_dir)
             archive_files.append(file)
