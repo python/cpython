@@ -1625,7 +1625,8 @@ Call a callable Python object \var{callable_object}, with
 arguments given by the tuple \var{args}.  If no arguments are
 needed, then \var{args} may be \NULL{}.  Returns the result of the
 call on success, or \NULL{} on failure.  This is the equivalent
-of the Python expression \samp{apply(\var{callable_object}, \var{args})}.
+of the Python expression \samp{apply(\var{callable_object},
+\var{args})} or \samp{\var{callable_object}(*\var{args})}.
 \bifuncindex{apply}
 \end{cfuncdesc}
 
@@ -1636,8 +1637,10 @@ variable number of C arguments. The C arguments are described
 using a \cfunction{Py_BuildValue()} style format string. The format may
 be \NULL{}, indicating that no arguments are provided.  Returns the
 result of the call on success, or \NULL{} on failure.  This is
-the equivalent of the Python expression \samp{apply(\var{callable_object},
-\var{args})}.\bifuncindex{apply}
+the equivalent of the Python expression
+\samp{apply(\var{callable_object}\var{args})} or
+\samp{\var{callable_object}(*\var{args})}.
+\bifuncindex{apply}
 \end{cfuncdesc}
 
 
@@ -4782,9 +4785,18 @@ previous versions.
 \end{cvardesc}
 
 \begin{cfuncdesc}{void}{PyEval_SetProfile}{Py_tracefunc func, PyObject *obj}
+  Set the profiler function to \var{func}.  The \var{obj} parameter is
+  passed to the function as its first parameter, and may be any Python
+  object, or \NULL.  If the profile function needs to maintain state,
+  using a different value for \var{obj} for each thread provides a
+  convenient and thread-safe place to store it.  The profile function
+  is called for all monitored events except the line-number events.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_SetTrace}{Py_tracefunc func, PyObject *obj}
+  Set the the tracing function to \var{func}.  This is similar to
+  \cfunction{PyEval_SetProfile()}, except the tracing function does
+  receive line-number events.
 \end{cfuncdesc}
 
 
@@ -5277,6 +5289,10 @@ The function cannot fail.
 \begin{ctypedesc}[getcharbufferproc]{int (*getcharbufferproc)
                             (PyObject *self, int segment, const char **ptrptr)}
 \end{ctypedesc}
+
+
+\section{Supporting the Iterator Protocol
+         \label{supporting-iteration}}
 
 
 \section{Supporting Cyclic Garbarge Collection
