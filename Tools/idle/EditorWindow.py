@@ -208,10 +208,9 @@ class EditorWindow:
 
     def postwindowsmenu(self):
         # Only called when Windows menu exists
-        # XXX Actually, this Just-In-Time updating interferes
-        # XXX badly with the tear-off feature.  It would be better
-        # XXX to update all Windows menus whenever the list of windows
-        # XXX changes.
+        # XXX Actually, this Just-In-Time updating interferes badly
+        # XXX with the tear-off feature.  It would be better to update
+        # XXX all Windows menus whenever the list of windows changes.
         menu = self.menudict['windows']
         end = menu.index("end")
         if end is None:
@@ -530,8 +529,8 @@ class EditorWindow:
                 apply(text.event_add, (event,) + tuple(keylist))
 
     def fill_menus(self, defs=None, keydefs=None):
-        # Fill the menus.
-        # Menus that are absent or None in self.menudict are ignored.
+        # Fill the menus. Menus that are absent or None in
+        # self.menudict are ignored.
         if defs is None:
             defs = self.Bindings.menudefs
         if keydefs is None:
@@ -584,23 +583,33 @@ class EditorWindow:
     # flavor of widget.
 
     # Is character at text_index in a Python string?  Return 0 for
-    # "guaranteed no", true for anything else.  This info is expensive to
-    # compute ab initio, but is probably already known by the platform's
-    # colorizer.
+    # "guaranteed no", true for anything else.  This info is expensive
+    # to compute ab initio, but is probably already known by the
+    # platform's colorizer.
 
     def is_char_in_string(self, text_index):
         if self.color:
-            # return true iff colorizer hasn't (re)gotten this far yet, or
-            # the character is tagged as being in a string
+            # Return true iff colorizer hasn't (re)gotten this far
+            # yet, or the character is tagged as being in a string
             return self.text.tag_prevrange("TODO", text_index) or \
                    "STRING" in self.text.tag_names(text_index)
         else:
-            # the colorizer is missing: assume the worst
+            # The colorizer is missing: assume the worst
             return 1
 
+    # If a selection is defined in the text widget, return (start,
+    # end) as Tkinter text indices, otherwise return (None, None)
+    def get_selection_index(self):
+        try:
+            first = self.text.index("sel.first")
+            last = self.text.index("sel.last")
+            return first, last
+        except TclError:
+            return None, None
+
 def prepstr(s):
-    # Helper to extract the underscore from a string,
-    # e.g. prepstr("Co_py") returns (2, "Copy").
+    # Helper to extract the underscore from a string, e.g.
+    # prepstr("Co_py") returns (2, "Copy").
     i = string.find(s, '_')
     if i >= 0:
         s = s[:i] + s[i+1:]
