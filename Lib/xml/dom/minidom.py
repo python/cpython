@@ -279,7 +279,7 @@ def _getElementsByTagNameHelper(parent, name, rc):
 def _getElementsByTagNameNSHelper(parent, nsURI, localName, rc):
     for node in parent.childNodes:
         if node.nodeType == Node.ELEMENT_NODE:
-            if ((localName == "*" or node.tagName == localName) and
+            if ((localName == "*" or node.localName == localName) and
                 (nsURI == "*" or node.namespaceURI == nsURI)):
                 rc.append(node)
             _getElementsByTagNameNSHelper(node, nsURI, localName, rc)
@@ -551,7 +551,9 @@ class Element(Node):
         return _getElementsByTagNameHelper(self, name, [])
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
-        _getElementsByTagNameNSHelper(self, namespaceURI, localName, [])
+        rc = []
+        _getElementsByTagNameNSHelper(self, namespaceURI, localName, rc)
+        return rc
 
     def __repr__(self):
         return "<DOM Element: %s at %s>" % (self.tagName, id(self))
@@ -880,7 +882,9 @@ class Document(Node):
         return a
 
     def getElementsByTagNameNS(self, namespaceURI, localName):
-        _getElementsByTagNameNSHelper(self, namespaceURI, localName)
+        rc = []
+        _getElementsByTagNameNSHelper(self, namespaceURI, localName, rc)
+        return rc
 
     def getElementsByTagName(self, name):
         rc = []
