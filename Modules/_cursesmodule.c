@@ -226,6 +226,7 @@ Window_NoArgNoReturnVoidFunction(wclear)
 
 Window_OneArgNoReturnVoidFunction(idcok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnVoidFunction(immedok, int, "i;True(1) or False(0)")
+Window_OneArgNoReturnVoidFunction(wtimeout, int, "i;delay")
 
 Window_NoArg2TupleReturnFunction(getyx, int, "(ii)")
 Window_NoArg2TupleReturnFunction(getbegyx, int, "(ii)")
@@ -1286,6 +1287,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
 	{"syncdown",        (PyCFunction)PyCursesWindow_wsyncdown},
 	{"syncok",          (PyCFunction)PyCursesWindow_syncok},
 	{"syncup",          (PyCFunction)PyCursesWindow_wsyncup},
+	{"timeout",         (PyCFunction)PyCursesWindow_wtimeout},
 	{"touchline",       (PyCFunction)PyCursesWindow_TouchLine},
 	{"touchwin",        (PyCFunction)PyCursesWindow_touchwin},
 	{"untouchwin",      (PyCFunction)PyCursesWindow_untouchwin},
@@ -2027,6 +2029,22 @@ PyCurses_Start_Color(self,arg)
 }
 
 static PyObject *
+PyCurses_TypeAhead(self,arg)
+     PyObject * self;
+     PyObject * arg;
+{
+  int fd, err;
+
+  PyCursesInitialised
+
+  if (!PyArg_Parse(arg,"i;fd",&fd)) return NULL;
+
+  PyCursesCheckERR(typeahead( fd ), "typeahead");
+  Py_INCREF(Py_None);
+  return Py_None;
+}
+
+static PyObject *
 PyCurses_UnCtrl(self,arg)
      PyObject * self;
      PyObject * arg;
@@ -2154,6 +2172,7 @@ static PyMethodDef PyCurses_methods[] = {
   {"start_color",         (PyCFunction)PyCurses_Start_Color},
   {"termattrs",           (PyCFunction)PyCurses_termattrs},
   {"termname",            (PyCFunction)PyCurses_termname},
+  {"typeahead",           (PyCFunction)PyCurses_TypeAhead},
   {"unctrl",              (PyCFunction)PyCurses_UnCtrl},
   {"ungetch",             (PyCFunction)PyCurses_UngetCh},
   {"use_env",             (PyCFunction)PyCurses_Use_Env},
