@@ -7,7 +7,8 @@ and a published article about Python.
 The Python Reference Manual is no longer maintained in LaTeX.  It is
 now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
 ref*.doc) as well as PostScript generated (ref.ps) from it are in the
-subdirectory ref/.
+subdirectory ref/.  (See ftp://ftp.adobe.com/pub/adobe/framereader for
+a free reader for FrameMaker documents, for some platforms.)
 
 If you don't have LaTeX, you can ftp a tar file containing PostScript
 of the 3 main documents.  It should be in the same place where you
