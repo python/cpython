@@ -1,11 +1,16 @@
 
-/* ====================== Module CarbonEvents ======================= */
+/* ======================= Module _CarbonEvt ======================== */
 
 #include "Python.h"
 
 
 
+#ifdef WITHOUT_FRAMEWORKS
+#include <CarbonEvents.h>
+#else
 #include <Carbon/Carbon.h>
+#endif
+
 #include "macglue.h"
 
 #define USE_MAC_MP_MULTITHREADING 1
@@ -34,7 +39,7 @@ EventTypeSpec_New(EventTypeSpec *in)
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_ParseTuple(v, "ll", &(out->eventClass), &(out->eventKind)))
+	if (PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &(out->eventClass), &(out->eventKind)))
 		return 1;
 	return NULL;
 }
@@ -43,6 +48,7 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 
 /********** HIPoint *******/
 
+#if 0  /* XXX doesn't compile */
 static PyObject*
 HIPoint_New(HIPoint *in)
 {
@@ -56,6 +62,7 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 		return 1;
 	return NULL;
 }
+#endif
 
 /********** end HIPoint *******/
 
@@ -79,7 +86,9 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 /******** handlecommand ***********/
 
-pascal OSStatus CarbonEvents_HandleCommand(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
+static EventHandlerUPP gEventHandlerUPP;
+
+pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
@@ -354,9 +363,9 @@ static PyObject *EventRef_getattr(EventRefObject *self, char *name)
 #define EventRef_hash NULL
 
 PyTypeObject EventRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventRef", /*tp_name*/
+	"_CarbonEvt.EventRef", /*tp_name*/
 	sizeof(EventRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -435,7 +444,7 @@ static PyObject *EventQueueRef_FlushEventsMatchingListFromQueue(EventQueueRefObj
 	PyObject *_res = NULL;
 	OSStatus _err;
 	UInt32 inNumTypes;
-	EventTypeSpec * inList;
+	EventTypeSpec inList;
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &inNumTypes,
 	                      EventTypeSpec_Convert, &inList))
@@ -509,7 +518,7 @@ static PyMethodDef EventQueueRef_methods[] = {
 	{"PostEventToQueue", (PyCFunction)EventQueueRef_PostEventToQueue, 1,
 	 "(EventRef inEvent, SInt16 inPriority) -> None"},
 	{"FlushEventsMatchingListFromQueue", (PyCFunction)EventQueueRef_FlushEventsMatchingListFromQueue, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec * inList) -> None"},
+	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
 	{"FlushEventQueue", (PyCFunction)EventQueueRef_FlushEventQueue, 1,
 	 "() -> None"},
 	{"GetNumEventsInQueue", (PyCFunction)EventQueueRef_GetNumEventsInQueue, 1,
@@ -537,9 +546,9 @@ static PyObject *EventQueueRef_getattr(EventQueueRefObject *self, char *name)
 #define EventQueueRef_hash NULL
 
 PyTypeObject EventQueueRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventQueueRef", /*tp_name*/
+	"_CarbonEvt.EventQueueRef", /*tp_name*/
 	sizeof(EventQueueRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -629,9 +638,9 @@ static PyObject *EventLoopRef_getattr(EventLoopRefObject *self, char *name)
 #define EventLoopRef_hash NULL
 
 PyTypeObject EventLoopRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventLoopRef", /*tp_name*/
+	"_CarbonEvt.EventLoopRef", /*tp_name*/
 	sizeof(EventLoopRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -739,9 +748,9 @@ static PyObject *EventLoopTimerRef_getattr(EventLoopTimerRefObject *self, char *
 #define EventLoopTimerRef_hash NULL
 
 PyTypeObject EventLoopTimerRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventLoopTimerRef", /*tp_name*/
+	"_CarbonEvt.EventLoopTimerRef", /*tp_name*/
 	sizeof(EventLoopTimerRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -814,7 +823,7 @@ static PyObject *EventHandlerRef_AddEventTypesToHandler(EventHandlerRefObject *_
 	PyObject *_res = NULL;
 	OSStatus _err;
 	UInt32 inNumTypes;
-	EventTypeSpec * inList;
+	EventTypeSpec inList;
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &inNumTypes,
 	                      EventTypeSpec_Convert, &inList))
@@ -833,7 +842,7 @@ static PyObject *EventHandlerRef_RemoveEventTypesFromHandler(EventHandlerRefObje
 	PyObject *_res = NULL;
 	OSStatus _err;
 	UInt32 inNumTypes;
-	EventTypeSpec * inList;
+	EventTypeSpec inList;
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &inNumTypes,
 	                      EventTypeSpec_Convert, &inList))
@@ -851,9 +860,9 @@ static PyMethodDef EventHandlerRef_methods[] = {
 	{"RemoveEventHandler", (PyCFunction)EventHandlerRef_RemoveEventHandler, 1,
 	 "() -> None"},
 	{"AddEventTypesToHandler", (PyCFunction)EventHandlerRef_AddEventTypesToHandler, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec * inList) -> None"},
+	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
 	{"RemoveEventTypesFromHandler", (PyCFunction)EventHandlerRef_RemoveEventTypesFromHandler, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec * inList) -> None"},
+	 "(UInt32 inNumTypes, EventTypeSpec inList) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -873,9 +882,9 @@ static PyObject *EventHandlerRef_getattr(EventHandlerRefObject *self, char *name
 #define EventHandlerRef_hash NULL
 
 PyTypeObject EventHandlerRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventHandlerRef", /*tp_name*/
+	"_CarbonEvt.EventHandlerRef", /*tp_name*/
 	sizeof(EventHandlerRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -968,9 +977,9 @@ static PyObject *EventHandlerCallRef_getattr(EventHandlerCallRefObject *self, ch
 #define EventHandlerCallRef_hash NULL
 
 PyTypeObject EventHandlerCallRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventHandlerCallRef", /*tp_name*/
+	"_CarbonEvt.EventHandlerCallRef", /*tp_name*/
 	sizeof(EventHandlerCallRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1046,17 +1055,14 @@ static PyObject *EventTargetRef_InstallEventHandler(EventTargetRefObject *_self,
 	PyObject *callback;
 	EventHandlerRef outRef;
 	OSStatus _err;
-	EventHandlerUPP event;
 
 	if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
 		return NULL;
 
-	event = NewEventHandlerUPP(CarbonEvents_HandleCommand);
-	_err = InstallEventHandler(_self->ob_itself, event, 1, &inSpec, (void *)callback, &outRef);
+	_err = InstallEventHandler(_self->ob_itself, gEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 	if (_err != noErr) return PyMac_Error(_err);
 
-	return Py_BuildValue("l", outRef);
-
+	return Py_BuildValue("O&", EventHandlerRef_New, outRef);
 }
 
 static PyMethodDef EventTargetRef_methods[] = {
@@ -1083,9 +1089,9 @@ static PyObject *EventTargetRef_getattr(EventTargetRefObject *self, char *name)
 #define EventTargetRef_hash NULL
 
 PyTypeObject EventTargetRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventTargetRef", /*tp_name*/
+	"_CarbonEvt.EventTargetRef", /*tp_name*/
 	sizeof(EventTargetRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1160,9 +1166,9 @@ static PyObject *EventHotKeyRef_getattr(EventHotKeyRefObject *self, char *name)
 #define EventHotKeyRef_hash NULL
 
 PyTypeObject EventHotKeyRef_Type = {
-	PyObject_HEAD_INIT(&PyType_Type)
+	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CarbonEvents.EventHotKeyRef", /*tp_name*/
+	"_CarbonEvt.EventHotKeyRef", /*tp_name*/
 	sizeof(EventHotKeyRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1225,7 +1231,7 @@ static PyObject *CarbonEvents_ReceiveNextEvent(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSStatus _err;
 	UInt32 inNumTypes;
-	EventTypeSpec * inList;
+	EventTypeSpec inList;
 	double inTimeout;
 	Boolean inPullEvent;
 	EventRef outEvent;
@@ -1474,8 +1480,7 @@ static PyObject *CarbonEvents_RunApplicationEventLoop(PyObject *_self, PyObject 
 
 #if USE_MAC_MP_MULTITHREADING
 	if (MPCreateCriticalRegion(&reentrantLock) != noErr) {
-		printf("lock failure
-	");
+		printf("lock failure\n");
 		return NULL;
 	}
 	_save = PyEval_SaveThread();
@@ -1503,7 +1508,7 @@ static PyMethodDef CarbonEvents_methods[] = {
 	{"RunCurrentEventLoop", (PyCFunction)CarbonEvents_RunCurrentEventLoop, 1,
 	 "(double inTimeout) -> None"},
 	{"ReceiveNextEvent", (PyCFunction)CarbonEvents_ReceiveNextEvent, 1,
-	 "(UInt32 inNumTypes, EventTypeSpec * inList, double inTimeout, Boolean inPullEvent) -> (EventRef outEvent)"},
+	 "(UInt32 inNumTypes, EventTypeSpec inList, double inTimeout, Boolean inPullEvent) -> (EventRef outEvent)"},
 	{"GetCurrentEventQueue", (PyCFunction)CarbonEvents_GetCurrentEventQueue, 1,
 	 "() -> (EventQueueRef _rv)"},
 	{"GetMainEventQueue", (PyCFunction)CarbonEvents_GetMainEventQueue, 1,
@@ -1544,15 +1549,17 @@ static PyMethodDef CarbonEvents_methods[] = {
 
 
 
-void initCarbonEvents(void)
+void init_CarbonEvt(void)
 {
 	PyObject *m;
 	PyObject *d;
 
 
 
+	gEventHandlerUPP = NewEventHandlerUPP(CarbonEvents_HandleEvent);
 
-	m = Py_InitModule("CarbonEvents", CarbonEvents_methods);
+
+	m = Py_InitModule("_CarbonEvt", CarbonEvents_methods);
 	d = PyModule_GetDict(m);
 	CarbonEvents_Error = PyMac_GetOSErrException();
 	if (CarbonEvents_Error == NULL ||
@@ -1592,5 +1599,5 @@ void initCarbonEvents(void)
 		Py_FatalError("can't initialize EventHotKeyRefType");
 }
 
-/* ==================== End module CarbonEvents ===================== */
+/* ===================== End module _CarbonEvt ====================== */
 

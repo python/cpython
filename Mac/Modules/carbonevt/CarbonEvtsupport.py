@@ -24,7 +24,7 @@ for typ in StructObjectTypes:
 	execstr = "%(name)s = OpaqueType('%(name)s')" % {"name": typ}
 	exec execstr
 
-EventTypeSpec_ptr = OpaqueType("EventTypeSpec *", "EventTypeSpec")
+EventTypeSpec_ptr = OpaqueType("EventTypeSpec", "EventTypeSpec")
 
 # is this the right type for the void * in GetEventParameter
 #void_ptr = FixedInputBufferType(1024)
@@ -52,7 +52,12 @@ CarbonEventsFunction = OSErrFunctionGenerator
 CarbonEventsMethod = OSErrMethodGenerator
 
 includestuff = """
+#ifdef WITHOUT_FRAMEWORKS
+#include <CarbonEvents.h>
+#else
 #include <Carbon/Carbon.h>
+#endif
+
 #include "macglue.h"
 
 #define USE_MAC_MP_MULTITHREADING 1
@@ -81,7 +86,7 @@ EventTypeSpec_New(EventTypeSpec *in)
 static int
 EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 {
-	if (PyArg_ParseTuple(v, "ll", &(out->eventClass), &(out->eventKind)))
+	if (PyArg_Parse(v, "(O&l)", PyMac_GetOSType, &(out->eventClass), &(out->eventKind)))
 		return 1;
 	return NULL;
 }
@@ -90,6 +95,7 @@ EventTypeSpec_Convert(PyObject *v, EventTypeSpec *out)
 
 /********** HIPoint *******/
 
+#if 0  /* XXX doesn't compile */
 static PyObject*
 HIPoint_New(HIPoint *in)
 {
@@ -103,6 +109,7 @@ HIPoint_Convert(PyObject *v, HIPoint *out)
 		return 1;
 	return NULL;
 }
+#endif
 
 /********** end HIPoint *******/
 
@@ -126,7 +133,9 @@ EventHotKeyID_Convert(PyObject *v, EventHotKeyID *out)
 
 /******** handlecommand ***********/
 
-pascal OSStatus CarbonEvents_HandleCommand(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
+static EventHandlerUPP gEventHandlerUPP;
+
+pascal OSStatus CarbonEvents_HandleEvent(EventHandlerCallRef handlerRef, EventRef event, void *outPyObject) {
 	PyObject *retValue;
 	int status;
 
@@ -150,7 +159,10 @@ pascal OSStatus CarbonEvents_HandleCommand(EventHandlerCallRef handlerRef, Event
 
 """
 
-module = MacModule('CarbonEvents', 'CarbonEvents', includestuff, finalstuff, initstuff)
+initstuff = initstuff + """
+gEventHandlerUPP = NewEventHandlerUPP(CarbonEvents_HandleEvent);
+"""
+module = MacModule('_CarbonEvt', 'CarbonEvents', includestuff, finalstuff, initstuff)
 
 #class CFReleaserObj(GlobalObjectDefinition):
 #	def outputFreeIt(self, name):
@@ -181,17 +193,14 @@ EventTypeSpec inSpec;
 PyObject *callback;
 EventHandlerRef outRef;
 OSStatus _err;
-EventHandlerUPP event;
 
 if (!PyArg_ParseTuple(_args, "O&O", EventTypeSpec_Convert, &inSpec, &callback))
 	return NULL;
 
-event = NewEventHandlerUPP(CarbonEvents_HandleCommand);
-_err = InstallEventHandler(_self->ob_itself, event, 1, &inSpec, (void *)callback, &outRef);
+_err = InstallEventHandler(_self->ob_itself, gEventHandlerUPP, 1, &inSpec, (void *)callback, &outRef);
 if (_err != noErr) return PyMac_Error(_err);
 
-return Py_BuildValue("l", outRef);
-"""
+return Py_BuildValue("O&", EventHandlerRef_New, outRef);"""
 
 f = ManualGenerator("InstallEventHandler", installeventhandler);
 f.docstring = lambda: "(EventTargetRef inTarget, EventTypeSpec inSpec, Method callback) -> (EventHandlerRef outRef)"
@@ -200,7 +209,7 @@ EventTargetRefobject.add(f)
 runappeventloop = """
 #if USE_MAC_MP_MULTITHREADING
 if (MPCreateCriticalRegion(&reentrantLock) != noErr) {
-	printf("lock failure\n");
+	printf("lock failure\\n");
 	return NULL;
 }
 _save = PyEval_SaveThread();
@@ -223,7 +232,7 @@ f = ManualGenerator("RunApplicationEventLoop", runappeventloop);
 f.docstring = lambda: "() -> ()"
 module.add(f)
 
-SetOutputFileName('_CarbonEvt.c')
+SetOutputFileName('_CarbonEvtmodule.c')
 module.generate()
 
 ##import os
