@@ -55,7 +55,7 @@ class UserString:
             self.data += other.data
         elif isinstance(other, StringType) or isinstance(other, UnicodeType):
             self.data += other
-        else
+        else:
             self.data += str(other)
         return self
     def __mul__(self, n):
