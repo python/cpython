@@ -2,6 +2,15 @@
 
 # Change log:
 
+# 3-May-94:
+#	Added else clause to try-except
+
+# 17-Apr-94:
+#	Added string literal concatenation
+
+# 13-Apr-94:
+#	Added default values for function/lambda argument lists
+
 # 30-Nov-93:
 #	Removed lambda_input, added lambdef
 
@@ -89,7 +98,7 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
-varargslist: (fpdef ',')* '*' NAME | fpdef (',' fpdef)* [',']
+varargslist: (fpdef ['=' test] ',')* '*' NAME | fpdef ['=' test] (',' fpdef ['=' test])* [',']
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
@@ -118,7 +127,7 @@ compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-try_stmt: 'try' ':' suite (except_clause ':' suite)+ | 'try' ':' suite 'finally' ':' suite
+try_stmt: 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite] | 'try' ':' suite 'finally' ':' suite
 # NB compile.c makes sure that the default except clause is last
 except_clause: 'except' [test [',' test]]
 suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
@@ -135,7 +144,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-'|'~') factor | atom trailer*
-atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
+atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
 lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 subscript: test | [test] ':' [test]
