@@ -26,7 +26,8 @@ INDEXFILES=api/api.html \
 	tut/tut.html
 
 COMMONPERL= $(TOPDIR)/perl/manual.perl \
-	$(TOPDIR)/perl/python.perl
+	$(TOPDIR)/perl/python.perl \
+	$(TOPDIR)/perl/l2hinit.perl
 
 
 all:	icons $(INDEXFILES)
