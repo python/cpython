@@ -9,7 +9,7 @@ Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.22
+Version: 1.23
 Last-modified: 10 April 1995
 
 This article contains answers to Frequently Asked Questions about
@@ -30,7 +30,7 @@ Author's address:
 Email:  <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
-<URL:ftp://ftp.cwi.nl/pub/python/python-FAQ>.  It will also be posted
+<URL:ftp://ftp.cwi.nl/pub/python/FAQ>.  It will also be posted
 regularly to the newsgroups comp.answers <URL:news:comp.answers> and
 comp.lang.python <URL:news:comp.lang.python>.
 
@@ -199,18 +199,19 @@ Here's an overview of the questions per chapter:
  7. Using Python on non-UNIX platforms
   7.1. Q. Is there a Mac version of Python?
   7.2. Q. Is there a DOS version of Python?
-  7.3. Q. Is there a Windows version of Python?
+  7.3. Q. Is there a Windows 3.1(1) version of Python?
   7.4. Q. Is there a Windows NT version of Python?
-  7.5. Q. Is there an OS/2 version of Python?
-  7.6. Q. Is there a VMS version of Python?
-  7.7. Q. What about IBM mainframes, or other esoteric non-UNIX
+  7.5. Q. Is there a Windows 95 version of Python?
+  7.6. Q. Is there an OS/2 version of Python?
+  7.7. Q. Is there a VMS version of Python?
+  7.8. Q. What about IBM mainframes, or other esoteric non-UNIX
        platforms?
-  7.8. Q. Where are the source or Makefiles for the non-UNIX versions?
-  7.9. Q. What is the status and support for the non-UNIX versions?
-  7.10. Q. I have the PC version but it appears to be only a binary.
+  7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
+  7.10. Q. What is the status and support for the non-UNIX versions?
+  7.11. Q. I have a PC version but it appears to be only a binary.
         Where's the library?
-  7.11. Q. Where's the documentation for the Mac or PC version?
-  7.12. Q. The Mac (PC) version doesn't seem to have any facilities for
+  7.12. Q. Where's the documentation for the Mac or PC version?
+  7.13. Q. The Mac (PC) version doesn't seem to have any facilities for
         creating or editing programs apart from entering it interactively, and
         there seems to be no way to save code that was entered interactively.
         How do I create a Python program on the Mac (PC)?
@@ -255,15 +256,17 @@ the TV series or of a can of SPAM :-)
 
 A. The latest complete Python source distribution is always available
 by anonymous ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/python1.1.tar.gz>.  It is a gzipped
-tar file containing the complete C source, LaTeX documentation, Python
-library modules, example programs, and several useful pieces of freely
-distributable software.  This will compile and run out of the box on
-most UNIX platforms.  (See section 7 for non-UNIX information.)
+<URL:ftp://ftp.cwi.nl/pub/python/src/python1.2.tar.gz>.  It is a
+gzipped tar file containing the complete C source, LaTeX
+documentation, Python library modules, example programs, and several
+useful pieces of freely distributable software.  This will compile and
+run out of the box on most UNIX platforms.  (See section 7 for
+non-UNIX information.)
 
 Occasionally a set of patches is issued which has to be applied using
 the patch program.  These patches are placed in the same directory,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/patch1.1.1>.
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/src/patch1.1.1>.  (At the time
+of writing, no patches exist for 1.2.)
 
 An index of said ftp directory can be found in the file INDEX.  An
 HTML version of the index can be found in the file index.html,
@@ -274,7 +277,7 @@ HTML version of the index can be found in the file index.html,
 A. The LaTeX source for the documentation is part of the source
 distribution.  If you don't have LaTeX, the latest Python
 documentation set is always available by anonymous ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/pythondoc-ps1.1.tar.gz>.  It is a
+<URL:ftp://ftp.cwi.nl/pub/python/doc/postscript.tar.gz>.  It is a
 gzipped tar file containing PostScript files of the reference manual,
 the library manual, and the tutorial.  Note that the library manual is
 the most important one of the set, as much of Python's power stems
@@ -305,15 +308,15 @@ A. There is a newsgroup, comp.lang.python <URL:news:comp.lang.python>,
 and a mailing list.  The newsgroup and mailing list are gatewayed into
 each other -- if you can read news it's unnecessary to subscribe to
 the mailing list.  Send e-mail to <python-list-request@cwi.nl> to
-(un)subscribe to the mailing list.  Hypermail archives of
-(nearly) everything posted to the mailing list (and thus the
-newsgroup) are available on our WWW server,
+(un)subscribe to the mailing list.  Hypermail archives of (nearly)
+everything posted to the mailing list (and thus the newsgroup) are
+available on our WWW server,
 <URL:http://www.cwi.nl/~guido/hypermail/index.html>.  The raw archives
 are also available by ftp, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/mailinglist.gz>.  The uncompressed
-versions of these files can be read with the standard UNIX Mail
-program ("Mail -f file") or with nn ("nn file").  To read them using
-MH, you could use "inc -file file".
+<URL:ftp://ftp.cwi.nl/pub/python/mail/mailinglist.gz>.  The
+uncompressed versions of these files can be read with the standard
+UNIX Mail program ("Mail -f file") or with nn ("nn file").  To read
+them using MH, you could use "inc -file file".
 
 1.7. Q. Is there a WWW page devoted to Python?
 
@@ -332,12 +335,12 @@ documentation set (as hypertext, not just PostScript).
 
 If you wish to browse this collection of HTML files on your own
 machine, it is available bundled up by anonymous ftp,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/python-html.tar.gz>.  (This
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/html.tar.gz>.  (This
 requires some manual patch-up for the references to images,
 unfortunately.)
 
 An Emacs-INFO set containing the library manual is also available by
-ftp, e.g. <URL:ftp://ftp.cwi.nl/pub/python/python-lin-info.tar.gz>.
+ftp, e.g. <URL:ftp://ftp.cwi.nl/pub/python/doc/lib-info.tar.gz>.
 
 1.9. Q. Is there a book on Python, or will there be one out soon?
 
@@ -367,12 +370,12 @@ A. A recent high-level description of Python is:
 
 PostScript for this paper and for the slides used for the accompanying
 presentation is available by ftp as
-<URL:ftp://ftp.cwi.nl/pub/python/nluug-paper.ps> and
-<URL:ftp://ftp.cwi.nl/pub/python/nluug-slides.ps>, respectively.
+<URL:ftp://ftp.cwi.nl/pub/python/doc/nluug-paper.ps> and
+<URL:ftp://ftp.cwi.nl/pub/python/doc/nluug-slides.ps>, respectively.
 
 Slides for a talk on Python that I gave at the Usenix Symposium on
 Very High Level Languages in Santa Fe, NM, USA in October 1995 are
-available as <URL:ftp://ftp.cwi.nl/pub/python/vhll-slides.ps>.
+available as <URL:ftp://ftp.cwi.nl/pub/python/doc/vhll-slides.ps>.
 
 1.12. Q. How does the Python version numbering scheme work?
 
@@ -630,10 +633,8 @@ toplevel).
 
 People have reported problems with gcc 2.5.8 up to 2.6.3.  The DEC
 OSF/1 cc compiler does not have these problems so it's likely a gcc
-bug.  The latest news is that (at least in the 1.2 beta release) the
-problem still exists but only when you use -O, and only affects the
-code generated from Python/marshal.c.  A fix is to change "long i, n;"
-into "int i, n;" in w_object().
+bug.  The latest news is that this has been fixed in Python 1.2 by a
+source change (I gave up waiting for a fixed gcc).
 
 3.9. Q. I use VPATH but some targets are built in the source directory.
 
@@ -972,10 +973,8 @@ sys.path.
 For X-related modules (Xt and Xm) you will have to do more work: they
 are currently not part of the standard Python distribution.  You will
 have to ftp the Extensions tar file, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz> and follow the
-instructions there.  Note: the X related modules are still somewhat
-flakey, so don't try this unless you alread know a bit or two about
-building X applications on your platform.
+<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz> and follow the
+instructions there.
 
 See also the next question.
 
@@ -1024,7 +1023,7 @@ Overmars -- ftp'able from <URL:ftp://ftp.cs.ruu.nl/pub/SGI/FORMS/>).
 - There's an interface to X11, including the Athena and Motif widget
 sets (and a few individual widgets, like Mosaic's HTML widget and
 SGI's GL widget) in the Extensions set, which is separately ftp'able
-<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz>.
+<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz>.
 
 - There's an interface to SUIT, the U of Virginia's Simple User
 Interface Toolkit; it can be ftp'ed from
@@ -1062,10 +1061,11 @@ A. There's an interface to SYBASE by John Redford
 
 There's an interface to metalbase by Lance Ellinghaus
 <lance@markv.com>; it is part of the separate Extensions distribution
-<URL:ftp://ftp.cwi.nl/pub/python/extensions.tar.gz>.
+<URL:ftp://ftp.cwi.nl/pub/python/src/extensions.tar.gz>.
 
 Anthony Baxter <anthony.baxter@aaii.oz.au> has written an interface to
-mSQL (mini-SQL).  <URL:ftp://ftp.cwi.nl/pub/python/PymSQL.tar.gz>.
+mSQL (mini-SQL).
+<URL:ftp://ftp.cwi.nl/pub/python/contrib/PymSQL.tar.gz>.
 
 Tom Culliton <culliton@clark.net> has written an Oracle module.  Write
 him to get a copy of the latest version.
@@ -1302,7 +1302,7 @@ A. The standard library has a module urllib, which can retrieve most
 commonly used URL types (file, ftp, http, gopher).
 
 The Demo2/www directory (Demo2 has to be retrieved separately from the
-Python ftp sites <URL:ftp://ftp.cwi.nl/pub/python/demo2.tar.gz>)
+Python ftp sites <URL:ftp://ftp.cwi.nl/pub/python/src/demo2.tar.gz>)
 contains some (really old) code to parse HTML and to display it.
 
 Steve Miale <smiale@cs.indiana.edu> has written a modular WWW browser
@@ -1754,39 +1754,18 @@ surely hit upon it sooner or later.
 
 7.1. Q. Is there a Mac version of Python?
 
-A. Yes.  It is on most ftp sites carrying Python as python.sea.hqx,
-e.g. <URL:ftp://ftp.cwi.nl/pub/python/python_1.1.sea.hqx> -- this is a
-self-extracting archive containing the application binary as well as
-the Lib modules.
+A. Yes, see the "mac" subdirectory of the distribution sites,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/mac/>.
 
 7.2. Q. Is there a DOS version of Python?
 
-A. Yes.  More than one, actually: 16python.exe runs in standard DOS
-mode on 186 CPUs or higher; 32python.exe uses a DOS extender and only
-runs on a 386 or higher CPUs.  Although 16python.exe does not pass the
-test set because test_grammar is too big for the parser, it actually
-has about 270 kbyte of allocatable heap space, which is sufficient for
-fairly large programs.  32python.exe is distributed as a tar file
-containing the required DOS extended and 387 emulator.  Both are on
-most ftp sites carrying Python.
+A. Yes, see the "pc" subdirectory of the distribution sites,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
 
-The file dosbuild.tar.gz on the standard ftp sites contains
-rudimentary Makefiles and instructions
-<URL:ftp://ftp.cwi.nl/pub/python/dosbuild.tar.gz>.
+7.3. Q. Is there a Windows 3.1(1) version of Python?
 
-7.3. Q. Is there a Windows version of Python?
-
-A. Yes.  Use qwpython.exe.  The only problem with it: ^C
-unconditionally kills the entire program -- it does not raise
-KeyboardInterrupt.  You can also run 16python.exe or 32python.exe in a
-"DOS box", but qwpython.exe appears to be slightly faster.
-
-There aren't any Makefiles at this moment.  Sorry.
-
-Using Win32s (a free NT compatibility package by Microsoft) you can
-also use the NT version by Mark Hammond -- the Win32s package is also
-in that directory (you'll need several MB of disk space to install
-it).  See the next question.
+A. Yes, also see the "pc" subdirectory of the distribution sites,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
 
 7.4. Q. Is there a Windows NT version of Python?
 
@@ -1804,45 +1783,33 @@ Note that currently there is no unified compilation environment for
 all NT platforms -- hopefully Microsoft will fix this with the release
 of Visual C++ 2.0.
 
-7.5. Q. Is there an OS/2 version of Python?
+7.5. Q. Is there a Windows 95 version of Python?
 
-A. Yes.  You can ftp an old version from the usual places as
-pyth_os2.zip, e.g.  <URL:ftp://ftp.cwi.nl/pub/python/pyth_os2.zip>.
-This contains both an executable and Makefiles for those fortunate
-enough to have a C compiler.  A newer port is in progress -- Chris
-Vale <cvale@netcom.com> is doing the work, using Borland C, based on
-Mark Hammond's NT port.
+A. The Windows NT version might work, otherwise the Windows 3.1(1)
+version should work (isn't Windows 95 supposed to be backwards
+compatible?).
 
-7.6. Q. Is there a VMS version of Python?
+7.6. Q. Is there an OS/2 version of Python?
 
-A. I think not (yet).  This question has been asked on the list
-several times and I've never seen an answer.  Maybe someone with a VMS
-C compiler could attempt a port?  Probably coming up with proper
-Makefiles, config.h and config.c should be sufficient.  If you succeed
-(or even if you get stuck halfway), please let me know!  (Info as of
-23 September 1994.)
+A. Yes, also see the "pc" subdirectory of the distribution sites,
+e.g. <URL:ftp://ftp.cwi.nl/pub/python/pc/>.
 
-7.7. Q. What about IBM mainframes, or other esoteric non-UNIX
+7.7. Q. Is there a VMS version of Python?
+
+A. I think not.  This question has been asked on the list several
+times and I've never seen an affirmative answer.
+
+7.8. Q. What about IBM mainframes, or other esoteric non-UNIX
 platforms?
 
-A. Basically, the same story as for VMS...  (Info as of 23 September
-1994.)
+A. Basically, the same story as for VMS...
 
-7.8. Q. Where are the source or Makefiles for the non-UNIX versions?
+7.9. Q. Where are the source or Makefiles for the non-UNIX versions?
 
-A. The standard sources can (almost) be used. See the previous
-questions for availability of Makefiles/projects or patches.  If you
-find things in the standard sources that don't work on your particular
-platform, please let me know and I'll integrate a solution into the
-next release of the standard sources.  If you submit a fix, please use
-some kind of #ifdef so as to keep the source working for other
-platforms.  In particular, if the patch works around the availability
-of a particular function of header file, you should mimic the
-HAVE_... style used by the configure script -- you can then submit a
-config.h file for a particular platform so there are no absolutely
-platform-specific #ifdefs in the rest of the sources.
+A. The standard sources can (almost) be used.  Additional sources can
+be found in the platform-specific subdirectories of the distribution.
 
-7.9. Q. What is the status and support for the non-UNIX versions?
+7.10. Q. What is the status and support for the non-UNIX versions?
 
 A. I don't have access to most of these platforms, so in general I am
 dependent on material submitted by volunteers(*).  However I strive to
@@ -1853,15 +1820,14 @@ version to the various non-UNIX platforms should be easy.
 (*) For the Macintosh, that volunteer is me, with help from Jack
 Jansen <jack@cwi.nl>.
 
-7.10. Q. I have the PC version but it appears to be only a binary.
+7.11. Q. I have a PC version but it appears to be only a binary.
 Where's the library?
 
 A. You still need to copy the files from the distribution directory
 "python/Lib" to your system.  If you don't have the full distribution,
-you can get the file pythonlib<version>.tar.gz from most ftp sites
-carrying Python; this is a subset of the distribution containing just
-those files, e.g.
-<URL:ftp://ftp.cwi.nl/pub/python/pythonlib1.1.tar.gz>.
+you can get the file lib<version>.tar.gz from most ftp sites carrying
+Python; this is a subset of the distribution containing just those
+files, e.g.  <URL:ftp://ftp.cwi.nl/pub/python/src/lib1.1.tar.gz>.
 
 Once you have installed the library, you need to point sys.path to it.
 Assuming the library is in C:\misc\python\lib, the following commands
@@ -1877,13 +1843,12 @@ as follows (talking to a DOS prompt):
 
         C> SET PYTHONPATH=C:\misc\python\lib
 
-7.11. Q. Where's the documentation for the Mac or PC version?
+7.12. Q. Where's the documentation for the Mac or PC version?
 
-A. There isn't any.  The documentation for the Unix version also
-applies to the Mac and PC versions.  Where applicable, differences
-are indicated in the text.
+A.  The documentation for the Unix version also applies to the Mac and
+PC versions.  Where applicable, differences are indicated in the text.
 
-7.12. Q. The Mac (PC) version doesn't seem to have any facilities for
+7.13. Q. The Mac (PC) version doesn't seem to have any facilities for
 creating or editing programs apart from entering it interactively, and
 there seems to be no way to save code that was entered interactively.
 How do I create a Python program on the Mac (PC)?
