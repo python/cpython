@@ -1406,6 +1406,7 @@ sub do_cmd_lineii{
     my $c2 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
+    $c1 = '&nbsp;' if ($c1 eq '');
     $c2 = '&nbsp;' if ($c2 eq '');
     my($c1align, $c2align) = split('\|', $aligns);
     my $padding = '';
@@ -1457,6 +1458,8 @@ sub do_cmd_lineiii{
     my $c3 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
+    $c1 = '&nbsp;' if ($c1 eq '');
+    $c2 = '&nbsp;' if ($c2 eq '');
     $c3 = '&nbsp;' if ($c3 eq '');
     my($c1align, $c2align, $c3align) = split('\|', $aligns);
     my $padding = '';
@@ -1513,6 +1516,9 @@ sub do_cmd_lineiv{
     my $c4 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
+    $c1 = '&nbsp;' if ($c1 eq '');
+    $c2 = '&nbsp;' if ($c2 eq '');
+    $c3 = '&nbsp;' if ($c3 eq '');
     $c4 = '&nbsp;' if ($c4 eq '');
     my($c1align, $c2align, $c3align, $c4align) = split('\|', $aligns);
     my $padding = '';
@@ -1574,6 +1580,10 @@ sub do_cmd_linev{
     my $c5 = next_argument();
     s/[\s\n]+//;
     my($sfont, $efont) = get_table_col1_fonts();
+    $c1 = '&nbsp;' if ($c1 eq '');
+    $c2 = '&nbsp;' if ($c2 eq '');
+    $c3 = '&nbsp;' if ($c3 eq '');
+    $c4 = '&nbsp;' if ($c4 eq '');
     $c5 = '&nbsp;' if ($c5 eq '');
     my($c1align, $c2align, $c3align, $c4align, $c5align) = split('\|',$aligns);
     my $padding = '';
