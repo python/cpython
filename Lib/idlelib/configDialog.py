@@ -942,28 +942,22 @@ class ConfigDialog(Toplevel):
         print 'current option',currentOption
         ##load available theme option menus
         if self.themeIsBuiltin.get(): #default theme selected
-            print 'builtin theme'
             itemList=idleConf.GetSectionList('default','highlight')
             itemList.sort()
-            print 'builtin items:',itemList
             self.optMenuThemeBuiltin.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('user','highlight')
             itemList.sort()
-            print 'user items:',itemList
             if not itemList:
                 self.radioThemeCustom.config(state=DISABLED)
                 self.customTheme.set('- no custom themes -')    
             else:
                 self.optMenuThemeCustom.SetMenu(itemList,itemList[0])
         else: #user theme selected
-            print 'user theme'
             itemList=idleConf.GetSectionList('user','highlight')
             itemList.sort()
-            print 'user items:',itemList
             self.optMenuThemeCustom.SetMenu(itemList,currentOption)
             itemList=idleConf.GetSectionList('default','highlight')
             itemList.sort()
-            print 'builtin items:',itemList
             self.optMenuThemeBuiltin.SetMenu(itemList,itemList[0])
         self.SetThemeType()
         ##load theme element option menu
