@@ -108,7 +108,7 @@ def process(slave, master):
 
 def compare(slave, master):
     try:
-	sf = open(slave, 'rb')
+	sf = open(slave, 'r')
     except IOError:
 	sf = None
     try:
@@ -117,10 +117,13 @@ def compare(slave, master):
 	mf = None
     if not sf:
 	if not mf:
-	    print "Not updating missing master", master
+	    print "Neither master nor slave exists", master
 	    return
 	print "Creating missing slave", slave
 	copy(master, slave, answer=create_files)
+	return
+    if not mf:
+	print "Not updating missing master", master
 	return
     if sf and mf:
 	if identical(sf, mf):
@@ -136,6 +139,7 @@ def compare(slave, master):
 	copy(master, slave, answer=write_slave)
 	return
     # Slave is newer -- copy slave to master
+    print "Slave is", sft-mft, "seconds newer than master"
     # But first check what to do about CRLF
     mf.seek(0)
     fun = funnychars(mf)
