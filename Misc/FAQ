@@ -6,8 +6,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.4
-Last-modified: 2 Feb 1994
+Version: 1.5
+Last-modified: 15 Feb 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -75,26 +75,17 @@ Here's an overview of the questions per chapter:
   2.5. Q. What new developments are expected for Python in the future?
 
  3. Building Python
-  3.1. Q. I have trouble building the md5 module and/or finding the file
-       md5.c.
-  3.2. Q. Is there a test set?
-  3.3. Q. When running the test set, I get complaints about floating point
+  3.1. Q. Is there a test set?
+  3.2. Q. When running the test set, I get complaints about floating point
        operations, but when playing with floating point operations I cannot
        find anything wrong with them.
-  3.4. Q. I get an OverflowError on evaluating 2*2.  What is going on?
-  3.5. Q. Trouble building Python 0.9.9 or earlier on platform X.
-  3.6. Q. Link errors building Python with STDWIN on SGI Irix.
-  3.7. Q. Link errors for dlopen, dlsym, dlerror from import.o.
-  3.8. Q. Link errors after rerunning the configure script.
-  3.9. Q. The python interpreter complains about options passed to a
+  3.3. Q. Link errors building Python with STDWIN on SGI IRIX.
+  3.4. Q. Link errors after rerunning the configure script.
+  3.5. Q. The python interpreter complains about options passed to a
        script (after the script name).
-  3.10. Q. When building on the SGI, make tries to run python to create
+  3.6. Q. When building on the SGI, make tries to run python to create
         glmodule.c, but python hasn't been built or installed yet.
-  3.11. Q. Intermittent core dumps and complaints about perfectly valid
-        argument lists to built-in functions (e.g. posix.stat(filename) says
-        "no arguments needed").
-  3.12. Q. Trouble building Python 1.0.0 on NeXT.
-  3.13. Q. Other trouble building Python 1.0.0 on platform X.
+  3.7. Q. Other trouble building Python 1.0.1 on platform X.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -130,15 +121,17 @@ Here's an overview of the questions per chapter:
   6.3. Q. Why isn't there a switch or case statement in Python?
 
  7. Using Python on non-UNIX platforms
-  7.1. Q. Where's the DOS version of 1.0.0?
-  7.2. Q. Is there a Windows version of Python?
-  7.3. Q. I have the Mac or DOS version but it appears to be only a binary.
-       Where's the library?
-  7.4. Q. Where's the documentation for the Mac or DOS version?
-  7.5. Q. The Mac version doesn't seem to have any facilities for creating or
-       editing programs apart from entering it interactively, and there seems
-       to be no way to save code that was entered interactively.  How do I
-       create a Python program on the Mac?
+  7.1. Q. Is there a Mac version of Python?
+  7.2. Q. Is there a DOS version of Python?
+  7.3. Q. Is there a Windows version of Python?
+  7.4. Q. Is there a Windows NT version of Python?
+  7.5. Q. I have the DOS or Windows version but it appears to be only a
+       binary.  Where's the library?
+  7.6. Q. Where's the documentation for the Mac or PC version?
+  7.7. Q. The Mac (PC) version doesn't seem to have any facilities for
+       creating or editing programs apart from entering it interactively, and
+       there seems to be no way to save code that was entered interactively.
+       How do I create a Python program on the Mac (PC)?
 
 To find a particular question, search for the question number followed
 by a dot, a space, and a Q at the beginning of a line (e.g. to find
@@ -182,7 +175,7 @@ anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
 tar file containing the complete C source, LaTeX documentation, Python
 library modules, example programs, and several useful pieces of freely
 distributable software.  This will compile and run out of the box on
-most UNIX platforms.  Currently <version> is 1.0.0.  (See section 7
+most UNIX platforms.  Currently <version> is 1.0.1.  (See section 7
 for non-UNIX information.)
 
 1.4. Q. How do I get documentation on Python?
@@ -192,7 +185,7 @@ anonymous ftp from ftp.cwi.nl [192.16.184.180] in the directory
 /pub/python, with filename pythondoc-ps<version>.tar.Z.  It is a
 compressed tar file containing PostScript files of the reference
 manual, the library manual, and the tutorial.  Currently <version> is
-1.0.0.  (Note that the library manual is the most important one of the
+1.0.1.  (Note that the library manual is the most important one of the
 set, as much of Python's power stems from the standard or built-in
 types, functions and modules, all of which are described here.)
 PostScript for a high-level description of Python is in the file
@@ -208,16 +201,16 @@ ftp.wustl.edu		128.252.135.4	/graphics/graphics/sgi-stuff/python
 ftp.funet.fi		128.214.6.100	/pub/languages/python (old?)
 ftp.fu-berlin.de	130.133.4.50	/pub/unix/languages/python (python* only)
 
-Or try archie on e.g. python1.0.0.tar.Z to locate the nearest copy of
+Or try archie on e.g. python1.0.1.tar.Z to locate the nearest copy of
 that version...
 
 1.5. Q. Is there a newsgroup or mailing list devoted to Python?
 
 A. There is no Python newsgroup yet; if you want to post to the net
 about Python, use comp.lang.misc.  There is a mailing list devoted to
-Python; send e-mail to python-list-request@cwi.nl to (un)subscribe.
-There are plans to start the discussion about creation of
-comp.lang.python as soon as version 1.0.0 has been released.
+Python; send e-mail to python-list-request@cwi.nl to (un)subscribe.  A
+Request For Discussion about create comp.lang.python has been posted
+to news.groups.  So far it has not elicited any negative responses.
 
 1.6. Q. Is there a book on Python, or will there be one out soon?
 
@@ -302,7 +295,7 @@ Ivan Herman <ivan@cwi.nl>.
 
 2.4. Q. How stable is Python?
 
-A. Very stable.  While the current version number (1.0.0) would
+A. Very stable.  While the current version number (1.0.1) would
 suggest it is in the early stages of development, in fact new, stable
 releases (numbered 0.9.x) have been coming out roughly every 3 to 6
 months for the past four years.
@@ -329,16 +322,7 @@ documentation and threading support.
 3. Building Python
 ==================
 
-3.1. Q. I have trouble building the md5 module and/or finding the file
-md5.c.
-
-A. Apparently the md5 module was based on an older version of RSA's
-md5 implementation.  The ftp site rsa.com mentioned in the Makefile
-where this version was found is no longer accessible, and the version
-from RFC 1321 (md5c.c) is slightly different.  This will be fixed in
-the 1.0 release; write me if you need the fixes now.
-
-3.2. Q. Is there a test set?
+3.1. Q. Is there a test set?
 
 A. Yes, simply do "import testall" (or "import autotest" if you aren't
 interested in the output).  The standard modules whose name begins
@@ -347,7 +331,7 @@ with "test" together comprise the test.  The test set doesn't test
 port is actually working.  The Makefile contains an entry "make test"
 which runs the autotest module.
 
-3.3. Q. When running the test set, I get complaints about floating point
+3.2. Q. When running the test set, I get complaints about floating point
 operations, but when playing with floating point operations I cannot
 find anything wrong with them.
 
@@ -356,49 +340,23 @@ semantics of C floating point operations.  Until someone donates a
 better floating point test set, you will have to comment out the
 offending floating point tests and execute similar tests manually.
 
-3.4. Q. I get an OverflowError on evaluating 2*2.  What is going on?
-
-A. Your machine probably has 64 bit long integers (e.g. DEC alpha or
-HP snake architectures).  There are some dependencies on word length
-in file intobject.c.  This will be corrected in the 1.0 release; until
-then, on a 64 bit machine, just comment out the check for overflow
-from int_mul:
-
-	#if 0
-		if (x > 0x7fffffff || x < (double) (long) 0x80000000)
-			return err_ovf("integer multiplication");
-	#endif
-
-You should also include <limits.h> and replace the constant 32 by
-LONG_BIT in int_[lr]shift.
-
-3.5. Q. Trouble building Python 0.9.9 or earlier on platform X.
-
-Please convert to Python 1.0.0 -- it is much more portable.
-
-3.6. Q. Link errors building Python with STDWIN on SGI IRIX.
+3.3. Q. Link errors building Python with STDWIN on SGI IRIX.
 
 A. Rebuild STDWIN, specifying "CC=cc -cckr" in the Makefile.
 
-3.7. Q. Link errors for dlopen, dlsym, dlerror from import.o.
-
-A. You are probably using the GNU loader which doesn't understand
-dynamic linking.  Manually comment out #define HAVE_DLFCN_H from
-config.h.  (Should be fixed in 1.0.1.)
-
-3.8. Q. Link errors after rerunning the configure script.
+3.4. Q. Link errors after rerunning the configure script.
 
 A. It is generally necessary to run "make clean" after a configuration
 change.
 
-3.9. Q. The python interpreter complains about options passed to a
+3.5. Q. The python interpreter complains about options passed to a
 script (after the script name).
 
 A. You are probably linking with GNU getopt, e.g. through -liberty.
 Don't.  (If you are using this because you link with -lreadline, use
 the readline distributed with Python instead.)
 
-3.10. Q. When building on the SGI, make tries to run python to create
+3.6. Q. When building on the SGI, make tries to run python to create
 glmodule.c, but python hasn't been built or installed yet.
 
 A. Comment out the line mentioning glmodule.c in Setup and build a
@@ -408,22 +366,7 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.11. Q. Intermittent core dumps and complaints about perfectly valid
-argument lists to built-in functions (e.g. posix.stat(filename) says
-"no arguments needed").
-
-A. You are probably using <stdarg.h> instead of <varargs.h>, or the
-other way around.  It may also be that your <stdarg.h> or <varargs.h>
-does not match the code generated by your compiler.  In simple cases,
-it may help to turn comment out the #define HAVE_STDARG_H from the
-generated config.h.
-
-3.12. Q. Trouble building Python 1.0.0 on NeXT.
-
-A. Manually add #define _POSIX_SOURCE to config.h.  (Should be fixed
-in 1.0.1.)
-
-3.13. Q. Other trouble building Python 1.0.0 on platform X.
+3.7. Q. Other trouble building Python 1.0.1 on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
@@ -469,7 +412,7 @@ wrapper around a built-in object, e.g. (for dictionaries):
 
 A. No, but you can use the "alfa" (== character cell) version of
 STDWIN.  (STDWIN == Standard Windows, a portable windowing system
-interface by the same author, URL ftp://ftp.cwi.nl/pub/stdwin.)
+interface by the same author, URL: ftp://ftp.cwi.nl/pub/stdwin.)
 This will also prepare your program for porting to windowing
 environments such as X11 or the Macintosh.
 
@@ -651,41 +594,58 @@ to do range tests.
 7. Using Python on non-UNIX platforms
 =====================================
 
-7.1. Q. Where's the DOS version of 1.0.0?
+7.1. Q. Is there a Mac version of Python?
 
-A. I hope it will be coming soon.  Our institute has finally acquired
-a 486 PC with a decent C compiler, now all I have to do is to learn
-how to use it :-)  Until then, you will have to make do with the 0.9.8
-version (which isn't so bad, actually).
+A. Yes.  It is on most ftp sites carrying Python as python.sea.hqx --
+this is a self-extracting archive containing the application binary as
+well as the Lib modules.
 
-7.2. Q. Is there a Windows version of Python?
+7.2. Q. Is there a DOS version of Python?
 
-A. Not yet.  Several Windows hackers with C compilers are working on a
-port though, so maybe we'll have one soon.
+A. Yes.  More than one, actually: 16python.exe runs in standard DOS
+mode on 186 CPUs or higher; 32python.exe uses a DOS extender and only
+runs on a 386 or higher CPUs.  Although 16python.exe does not pass the
+test set because test_grammar is too big for the parser, it actually
+has about 270 kbyte of allocatable heap space, which is sufficient for
+fairly large programs.  32python.exe is distributed as a tar file
+containing the required DOS extended and 387 emulator.  Both are on
+most ftp sites carrying Python.
 
-7.3. Q. I have the Mac or DOS version but it appears to be only a binary.
-Where's the library?
+7.3. Q. Is there a Windows version of Python?
+
+A. Yes.  Use qwpython.exe.  The only problem with it: ^C
+unconditionally kills the entire program -- it does not raise
+KeyboardInterrupt.  You can also run 16python.exe or 32python.exe in a
+"DOS box", but qwpython.exe appears to be slightly faster.
+
+7.4. Q. Is there a Windows NT version of Python?
+
+A. Yes.  Use ntpython.exe.  This is for Intel CPUs.  If you want a
+Windows user interface, use qwpython.exe.
+
+7.5. Q. I have the DOS or Windows version but it appears to be only a
+binary.  Where's the library?
 
 A. You still need to copy the files from the distribution directory
-"python/lib" to your system.  If you don't have the full distribution,
-you can ftp the file pythonlib1.0.0.tar.Z from site ftp.cwi.nl,
-directory /pub/python; this is a subset of the distribution containing
-just those file.
+"python/Lib" to your system.  If you don't have the full distribution,
+you can get the file pythonlib1.0.1.tar.Z from most ftp sites carrying
+Python; this is a subset of the distribution containing just those
+file.
 
-7.4. Q. Where's the documentation for the Mac or DOS version?
+7.6. Q. Where's the documentation for the Mac or PC version?
 
 A. There isn't any.  The documentation for the Unix version also
-applies to the Mac and DOS versions.  Where applicable, differences
+applies to the Mac and PC versions.  Where applicable, differences
 are indicated in the text.
 
-7.5. Q. The Mac version doesn't seem to have any facilities for creating or
-editing programs apart from entering it interactively, and there seems
-to be no way to save code that was entered interactively.  How do I
-create a Python program on the Mac?
+7.7. Q. The Mac (PC) version doesn't seem to have any facilities for
+creating or editing programs apart from entering it interactively, and
+there seems to be no way to save code that was entered interactively.
+How do I create a Python program on the Mac (PC)?
 
-A. Use an external editor.  I am quite happy with the Desk Accessory
-called Sigma Edit; this doesn't require Multifinder or System 7.  I
-work like this: start the interpreter; edit a module file using Sigma
-Edit; import and test it in the interpreter; edit again in Sigma Edit;
-then use the built-in function reload() to re-read the imported
-module; etc.
+A. Use an external editor.  On the Mac, I am quite happy with the Desk
+Accessory called Sigma Edit; this doesn't require Multifinder or
+System 7.  I work like this: start the interpreter; edit a module file
+using Sigma Edit; import and test it in the interpreter; edit again in
+Sigma Edit; then use the built-in function reload() to re-read the
+imported module; etc.
