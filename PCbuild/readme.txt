@@ -30,9 +30,9 @@ their name:  python20_d.dll, python_d.exe, parser_d.pyd, and so on.
 
 SUBPROJECTS
 -----------
-These subprojects should build out of the box.  Subprojects other than the 
-main ones (python20, python, pythonw) generally build a DLL (renamed to 
-.pyd) from a specific module so that users don't have to load the code 
+These subprojects should build out of the box.  Subprojects other than the
+main ones (python20, python, pythonw) generally build a DLL (renamed to
+.pyd) from a specific module so that users don't have to load the code
 supporting that module unless they import the module.
 
 python20
@@ -65,7 +65,7 @@ where each expects to find the unpacked packages):
 
 _tkinter
     Python wrapper for the Tk windowing system.  Requires tcl831.exe from
-        http://dev.scriptics.com/software/tcltk/downloadnow83.tml
+        http://dev.scriptics.com/software/tcltk/downloadnow83.html
 
 zlib
     Python wrapper for the zlib compression library.  Requires
@@ -74,8 +74,8 @@ zlib
         ftp://ftp.uu.net/graphics/png/src/zlib133.zip
 
 bsddb
-    Python wrapper for the BSD database 1.85.  Requires bsddbmodule.zip,
-    from the bsddb link at
+    Python wrapper for the BSD database 1.85.  Requires db.1.85.win32.zip,
+    from the "bsd db" link at
         http://www.nightmare.com/software.html
 
 pyexpat
