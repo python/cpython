@@ -4,6 +4,12 @@ Python main documentation -- in LaTeX
 This directory contains the LaTeX sources to the Python documentation
 and a published article about Python.
 
+If you don't have LaTeX, you can ftp a tar file containing PostScript
+of the 4 main documents.  It should be in the same place where you
+fetched the main Python distribution, in a file named
+"pythondoc-ps<version>.tar.gz".  (See "../Misc/FAQ" for more
+information about ftp-ing Python files.)
+
 The following are the LaTeX source files:
 
 	tut.tex				The tutorial
@@ -25,38 +31,50 @@ may want to fiddle with lay-out parameters like \textwidth and
 You need the makeindex utility to produce the index for ref.tex
 lib.tex; you need bibtex to produce the references list for qua.tex.
 
-There's a Makefile to call latex and the other utilities in the right
-order and the right number of times.  This will produce dvi files for
-each document made; to preview them, use xdvi.  Printing depends on
-local conventions; at my site, I use dvips and lpr.  For example:
+There's a Makefile to call LaTeX and the other utilities in the right
+order and the right number of times.  This will produce DVI files for
+each document made; to preview them, use xdvi.  PostScript is produced
+by the same Makefile target that produces the DVI files.  This uses
+the dvips tool.  Printing depends on local conventions; at my site, I
+use lpr.  For example:
 
-	make ref			# creates ref.dvi
-	xdvi ref			# preview it
-	dvips -Ppsc ref | lpr -Ppsc	# print it on printer "psc".
+	make ref			# creates ref.dvi and ref.ps
+	xdvi ref			# preview it ref.dvi
+	lpr -Ppsc ref.ps		# print it on printer "psc".
 
-If you don't have latex, you can ftp the pre-formatted PosytScript
-versions of the documents.  It should be in the same place where you
-fetched the main Python distribution, if you got it by ftp.  (See
-"../Misc/FAQ" for information about ftp-ing Python files.)
+
+Making HTML files
+-----------------
+
+The Reference, Tutorial and Extensions manual can all be converted to
+HTML using Nikos Drakos' LaTeX2HTML converter.  See the Makefile;
+after some twiddling, "make l2h" should do the trick.
+
+The Library manual doesn't work well with LaTeX2HTML; instead, there's
+a Python script texi2html.py in this directory that can be run on the
+texinfo generated as an intermediate step for generating the INFO
+files as described in the next section.  The command "make libwww"
+should do this.
 
 
 Making the INFO version of the Library Reference
 ------------------------------------------------
 
-The Library Reference can now also be read in hypertext form using the
+The Library Reference can also be read in hypertext form using the
 Emacs INFO system.  This uses Texinfo format as an intermediate step.
 It requires texinfo version 2 (we have used 2.14).
 
 To build the info files (python-lib.info*), say "make lib.info".  This
-takes a while, even on machines with 33 MIPS and 16 Mbytes :-) You can
-ignore the output.
+takes a while, even on a machine with a 100 MHz clock and 64 Mbytes of
+RAM :-).  Please ignore the output, which appears like error messages
+but really is debugging output only.
 
-But first you'll have to change a site dependency in fix.el: if
-texinfo 2.xx isn't installed by default at your site, you'll have to
-install it (use archie to locate a version and ftp to fetch it).  If
-you can't install it in the standard Emacs load path, uncomment the
-line containing a "(setq load-path ...)" statement, and fill in the
-path where you put it.
+You may have to change a site dependency in fix.el: if texinfo 2.xx
+isn't installed by default at your site, you'll have to install it
+(use archie to locate a version and ftp to fetch it).  If you can't
+install it in the standard Emacs load path, uncomment the line
+containing a "(setq load-path ...)" statement, and fill in the path
+where you put it.
 
 The files used by the conversion process are:
 
