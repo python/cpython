@@ -332,6 +332,15 @@ PyImport_ImportModuleEx:PyObject*:fromlist:0:???
 PyImport_ReloadModule:PyObject*::+1:
 PyImport_ReloadModule:PyObject*:m:0:
 
+PyInstance_New:PyObject*::+1:
+PyInstance_New:PyObject*:klass:+1:
+PyInstance_New:PyObject*:arg:0:
+PyInstance_New:PyObject*:kw:0:
+
+PyInstance_NewRaw:PyObject*::+1:
+PyInstance_NewRaw:PyObject*:klass:+1:
+PyInstance_NewRaw:PyObject*:dict:+1:
+
 PyInt_AS_LONG:long:::
 PyInt_AS_LONG:PyIntObject*:io:0:
 
