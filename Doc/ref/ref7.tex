@@ -83,7 +83,7 @@ The \keyword{if} statement is used for conditional execution:
 \end{productionlist}
 
 It selects exactly one of the suites by evaluating the expressions one
-by one until one is found to be true (see section \ref{Booleans} for
+by one until one is found to be true (see section~\ref{Booleans} for
 the definition of true and false); then that suite is executed (and no
 other part of the \keyword{if} statement is executed or evaluated).  If
 all expressions are false, the suite of the \keyword{else} clause, if
@@ -251,7 +251,7 @@ exception are assigned to three variables in the
 \module{sys}\refbimodindex{sys} module: \code{sys.exc_type} receives
 the object identifying the exception; \code{sys.exc_value} receives
 the exception's parameter; \code{sys.exc_traceback} receives a
-traceback object\obindex{traceback} (see section \ref{traceback})
+traceback object\obindex{traceback} (see section~\ref{traceback})
 identifying the point in the program where the exception occurred.
 These details are also available through the \function{sys.exc_info()}
 function, which returns a tuple \code{(\var{exc_type}, \var{exc_value},
@@ -299,13 +299,17 @@ restriction may be lifted in the future).
 \stindex{break}
 \stindex{continue}
 
+Additional information on exceptions can be found in
+section~\ref{exceptions}, and information on using the \keyword{raise}
+statement to generate exceptions may be found in section~\ref{raise}.
+
 
 \section{Function definitions\label{function}}
 \indexii{function}{definition}
 \stindex{def}
 
 A function definition defines a user-defined function object (see
-section \ref{types}):
+section~\ref{types}):
 \obindex{user-defined function}
 \obindex{function}
 
@@ -368,8 +372,8 @@ def whats_on_the_telly(penguin=None):
     return penguin
 \end{verbatim}
 
-Function call semantics are described in more detail in section
-\ref{calls}. 
+Function call semantics are described in more detail in
+section~\ref{calls}.
 A function call always assigns values to all parameters mentioned in
 the parameter list, either from position arguments, from keyword
 arguments, or from default values.  If the form ``\code{*identifier}''
@@ -381,7 +385,7 @@ new empty dictionary.
 
 It is also possible to create anonymous functions (functions not bound
 to a name), for immediate use in expressions.  This uses lambda forms,
-described in section \ref{lambda}.  Note that the lambda form is
+described in section~\ref{lambda}.  Note that the lambda form is
 merely a shorthand for a simplified function definition; a function
 defined in a ``\keyword{def}'' statement can be passed around or
 assigned to another name just like a function defined by a lambda
@@ -393,14 +397,14 @@ allows the execution of multiple statements.
 ``\code{def}'' form executed inside a function definition defines a
 local function that can be returned or passed around.  Free variables
 used in the nested function can access the local variables of the
-function containing the def.  See section \ref{naming} for details.
+function containing the def.  See section~\ref{naming} for details.
 
 
 \section{Class definitions\label{class}}
 \indexii{class}{definition}
 \stindex{class}
 
-A class definition defines a class object (see section \ref{types}):
+A class definition defines a class object (see section~\ref{types}):
 \obindex{class}
 
 \begin{productionlist}
@@ -416,7 +420,7 @@ A class definition defines a class object (see section \ref{types}):
 A class definition is an executable statement.  It first evaluates the
 inheritance list, if present.  Each item in the inheritance list
 should evaluate to a class object.  The class's suite is then executed
-in a new execution frame (see section \ref{naming}), using a newly
+in a new execution frame (see section~\ref{naming}), using a newly
 created local namespace and the original global namespace.
 (Usually, the suite contains only function definitions.)  When the
 class's suite finishes execution, its execution frame is discarded but
