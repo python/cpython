@@ -157,8 +157,6 @@ class Dialog(Toplevel):
 # --------------------------------------------------------------------
 # convenience dialogues
 
-import string
-
 class _QueryDialog(Dialog):
 
     def __init__(self, title, prompt,
@@ -236,7 +234,7 @@ class _QueryDialog(Dialog):
 class _QueryInteger(_QueryDialog):
     errormessage = "Not an integer."
     def getresult(self):
-        return string.atoi(self.entry.get())
+        return int(self.entry.get())
 
 def askinteger(title, prompt, **kw):
     '''get an integer from the user
@@ -255,7 +253,7 @@ def askinteger(title, prompt, **kw):
 class _QueryFloat(_QueryDialog):
     errormessage = "Not a floating point value."
     def getresult(self):
-        return string.atof(self.entry.get())
+        return float(self.entry.get())
 
 def askfloat(title, prompt, **kw):
     '''get a float from the user

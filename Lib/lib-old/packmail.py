@@ -5,7 +5,6 @@
 
 import os
 from stat import ST_MTIME
-import string
 
 # Print help
 def help():
@@ -103,7 +102,7 @@ def packtree(outfp, dirname):
 		packtree(outfp, subdirname)
 
 def unixfix(name):
-	comps = string.splitfields(name, os.sep)
+	comps = name.splitfields(os.sep)
 	res = ''
 	for comp in comps:
 		if comp:

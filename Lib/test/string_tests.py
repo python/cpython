@@ -44,8 +44,8 @@ def run_module_tests(test):
     test('join', BadSeq2(), 'a b c')
 
     # try a few long ones
-    print string.join(['x' * 100] * 100, ':')
-    print string.join(('x' * 100,) * 100, ':')
+    print ":".join(['x' * 100] * 100)
+    print ":".join(('x' * 100,) * 100)
 
 
 def run_method_tests(test):

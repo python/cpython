@@ -1,11 +1,10 @@
 import ntpath
-import string
 import os
 
 errors = 0
 
 def tester(fn, wantResult):
-    fn = string.replace(fn, "\\", "\\\\")
+    fn = fn.replace("\\", "\\\\")
     gotResult = eval(fn)
     if wantResult != gotResult:
         print "error!"

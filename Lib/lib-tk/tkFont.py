@@ -18,7 +18,6 @@
 __version__ = "0.9"
 
 import Tkinter
-import string
 
 # weight/slant
 NORMAL = "normal"
@@ -120,7 +119,7 @@ class Font:
 
     def measure(self, text):
         "Return text width"
-        return string.atoi(self._call("font", "measure", self.name, text))
+        return int(self._call("font", "measure", self.name, text))
 
     def metrics(self, *options):
         """Return font metrics.
@@ -129,14 +128,14 @@ class Font:
         using this font before calling this method."""
 
         if options:
-            return string.atoi(
+            return int(
                 self._call("font", "metrics", self.name, self._get(options))
                 )
         else:
             res = self._split(self._call("font", "metrics", self.name))
             options = {}
             for i in range(0, len(res), 2):
-                options[res[i][1:]] = string.atoi(res[i+1])
+                options[res[i][1:]] = int(res[i+1])
             return options
 
 def families(root=None):

@@ -10,7 +10,7 @@
 
 # XXX: show string offset and offending character for all errors
 
-import string, sys
+import sys
 
 from sre_constants import *
 
@@ -59,12 +59,6 @@ FLAGS = {
     "t": SRE_FLAG_TEMPLATE,
     "u": SRE_FLAG_UNICODE,
 }
-
-try:
-    int("10", 8)
-    atoi = int
-except TypeError:
-    atoi = string.atoi
 
 class Pattern:
     # master pattern object.  keeps track of global attributes
@@ -222,7 +216,7 @@ def isname(name):
 def _group(escape, groups):
     # check if the escape string represents a valid group
     try:
-        gid = atoi(escape[1:])
+        gid = int(escape[1:])
         if gid and gid < groups:
             return gid
     except ValueError:
@@ -245,13 +239,13 @@ def _class_escape(source, escape):
             escape = escape[2:]
             if len(escape) != 2:
                 raise error, "bogus escape: %s" % repr("\\" + escape)
-            return LITERAL, atoi(escape, 16) & 0xff
+            return LITERAL, int(escape, 16) & 0xff
         elif str(escape[1:2]) in OCTDIGITS:
             # octal escape (up to three digits)
             while source.next in OCTDIGITS and len(escape) < 5:
                 escape = escape + source.get()
             escape = escape[1:]
-            return LITERAL, atoi(escape, 8) & 0xff
+            return LITERAL, int(escape, 8) & 0xff
         if len(escape) == 2:
             return LITERAL, ord(escape[1])
     except ValueError:
@@ -273,12 +267,12 @@ def _escape(source, escape, state):
                 escape = escape + source.get()
             if len(escape) != 4:
                 raise ValueError
-            return LITERAL, atoi(escape[2:], 16) & 0xff
+            return LITERAL, int(escape[2:], 16) & 0xff
         elif escape[1:2] == "0":
             # octal escape
             while source.next in OCTDIGITS and len(escape) < 4:
                 escape = escape + source.get()
-            return LITERAL, atoi(escape[1:], 8) & 0xff
+            return LITERAL, int(escape[1:], 8) & 0xff
         elif escape[1:2] in DIGITS:
             # octal escape *or* decimal group reference (sigh)
             here = source.tell()
@@ -288,7 +282,7 @@ def _escape(source, escape, state):
                     source.next in OCTDIGITS):
                     # got three octal digits; this is an octal escape
                     escape = escape + source.get()
-                    return LITERAL, atoi(escape[1:], 8) & 0xff
+                    return LITERAL, int(escape[1:], 8) & 0xff
             # got at least one decimal digit; this is a group reference
             group = _group(escape, state.groups)
             if group:
@@ -462,9 +456,9 @@ def _parse(source, state):
                     source.seek(here)
                     continue
                 if lo:
-                    min = atoi(lo)
+                    min = int(lo)
                 if hi:
-                    max = atoi(hi)
+                    max = int(hi)
                 if max < min:
                     raise error, "bad repeat interval"
             else:
@@ -652,7 +646,7 @@ def parse_template(source, pattern):
                 if not name:
                     raise error, "bad group name"
                 try:
-                    index = atoi(name)
+                    index = int(name)
                 except ValueError:
                     if not isname(name):
                         raise error, "bad character in group name"
@@ -676,7 +670,7 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    code = LITERAL, atoi(this[-6:], 8) & 0xff
+                    code = LITERAL, int(this[-6:], 8) & 0xff
                 a(code)
             else:
                 try:
@@ -705,4 +699,4 @@ def expand_template(template, match):
             if s is None:
                 raise error, "empty group"
             a(s)
-    return string.join(p, sep)
+    return sep.join(p)
