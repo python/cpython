@@ -1,3 +1,7 @@
+#! /usr/bin/env python
+"""Simple test script for imgfile.c
+   Roger E. Masse
+"""
 from test_support import verbose
 
 import imgfile
@@ -5,13 +9,16 @@ import imgfile
      
 def main():       
 
+    # Test a 3 byte color image
     testimage('test.rgb')
+    
+    # Test a 1 byte greyscale image
     testimage('greytest.rgb')
 
 
 def testimage(name):
-    """return a tuple consisting of
-       image (in 'imgfile' format) width, height, size
+    """Run through the imgfile's battery of possible methods
+       on the image passed in name.
     """
 
     import sys
@@ -22,8 +29,8 @@ def testimage(name):
 
     # try opening the name directly
     try:
-	# This function returns a tuple (x, y, z) where x and y are the size of
-	# the image in pixels and z is the number of bytes per pixel. Only
+	# This function returns a tuple (x, y, z) where x and y are the size
+	# of the image in pixels and z is the number of bytes per pixel. Only
 	# 3 byte RGB pixels and 1 byte greyscale pixels are supported.
 	sizes = imgfile.getsizes(name)
     except imgfile.error:
