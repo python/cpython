@@ -10,6 +10,7 @@ import sys, os, string, re
 import fnmatch
 from types import *
 from glob import glob
+from shutil import rmtree
 from distutils.core import Command
 from distutils.text_file import TextFile
 
@@ -135,6 +136,9 @@ class Dist (Command):
                 "name of manifest file"),
                ('list-only', 'l',
                 "just list files that would be distributed"),
+               ('keep-tree', 'k',
+                "keep the distribution tree around after creating " +
+                "archive file(s)"),
               ]
 
     default_format = { 'posix': 'gztar',
@@ -147,6 +151,7 @@ class Dist (Command):
         self.formats = None
         self.manifest = None
         self.list_only = 0
+        self.keep_tree = 0
 
 
     def set_final_options (self):
@@ -202,8 +207,8 @@ class Dist (Command):
                 self.warn ("missing meta-data: if 'maintainer' supplied, " +
                            "'maintainer_email' must be supplied too")
         else:
-            self.warn ("missing meta-data: either author (and author_email) " +
-                       "or maintainer (and maintainer_email) " +
+            self.warn ("missing meta-data: either (author and author_email) " +
+                       "or (maintainer and maintainer_email) " +
                        "must be supplied")
 
     # check_metadata ()
@@ -296,7 +301,18 @@ class Dist (Command):
         # README, setup script, ...)
         assert self.files is not None
 
-        manifest = self.open_manifest (self.manifest)
+        try:
+            manifest = self.open_manifest (self.manifest)
+        except IOError, exc:
+            if type (exc) is InstanceType and hasattr (exc, 'strerror'):
+                msg = "could not open MANIFEST (%s)" % \
+                      string.lower (exc.strerror)
+            else:
+                msg = "could not open MANIFST"
+    
+            self.warn (msg + ": using default file list")
+            return
+        
         while 1:
 
             pattern = manifest.readline()
@@ -385,6 +401,11 @@ class Dist (Command):
     # make_release_tree ()
 
 
+    def nuke_release_tree (self, base_dir):
+        self.execute (rmtree, (base_dir,),
+                      "removing %s" % base_dir)
+
+
     def make_tarball (self, base_dir, compress="gzip"):
 
         # XXX GNU tar 1.13 has a nifty option to add a prefix directory.
@@ -440,6 +461,9 @@ class Dist (Command):
                 self.make_tarball (base_dir, compress=None)
             elif fmt == 'zip':
                 self.make_zipfile (base_dir)
+
+        if not self.keep_tree:
+            self.nuke_release_tree (base_dir)
 
 # class Dist
 
