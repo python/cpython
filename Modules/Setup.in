@@ -58,7 +58,7 @@ MACHDESTLIB=$(exec_prefix)/lib/python$(VERSION)
 SITEPATH=
 
 # Standard path -- don't edit
-DESTPATH=:$(DESTLIB)
+DESTPATH=$(DESTLIB)
 
 # Standard enabled (tests are always available)
 TESTPATH=:$(DESTLIB)/test
@@ -66,7 +66,7 @@ TESTPATH=:$(DESTLIB)/test
 # Path components for machine- or system-dependent modules and shared libraries
 MACHDEPPATH=:$(DESTLIB)/$(MACHDEP):$(MACHDESTLIB)/sharedmodules
 
-COREPYTHONPATH=.$(SITEPATH)$(DESTPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
+COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
