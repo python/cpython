@@ -11,6 +11,7 @@ HTMLDIR="${HTMLDIR:-html}"
 
 cd "../$HTMLDIR"
 make --no-print-directory || exit $?
+cd ..
 RELEASE=`grep '^RELEASE=' Makefile | sed 's|RELEASE=||'`
 make --no-print-directory HTMLDIR="$HTMLDIR" bziphtml
 scp "html-$RELEASE.tar.bz2" python.sourceforge.net:/home/users/fdrake/python-docs-update.tar.bz2
