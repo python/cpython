@@ -15,6 +15,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -31,6 +34,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -47,6 +53,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -63,6 +72,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -79,6 +91,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -95,6 +110,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -111,6 +129,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -127,6 +148,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -159,6 +183,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -175,6 +202,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -191,6 +221,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -207,6 +240,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
@@ -223,6 +259,9 @@ Package=<5>
 
 Package=<4>
 {{{
+    Begin Project Dependency
+    Project_Dep_Name python16
+    End Project Dependency
 }}}
 
 ###############################################################################
