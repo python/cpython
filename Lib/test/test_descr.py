@@ -1069,6 +1069,29 @@ def weakrefs():
     verify(r() is None)
     del r
 
+def getsets():
+    if verbose: print "Testing getset..."
+    class C(object):
+        def getx(self):
+            return self.__x
+        def setx(self, value):
+            self.__x = value
+        def delx(self):
+            del self.__x
+        x = getset(getx, setx, delx)
+    a = C()
+    verify(not hasattr(a, "x"))
+    a.x = 42
+    verify(a._C__x == 42)
+    verify(a.x == 42)
+    del a.x
+    verify(not hasattr(a, "x"))
+    verify(not hasattr(a, "_C__x"))
+    C.x.__set__(a, 100)
+    verify(C.x.__get__(a) == 100)
+##    C.x.__set__(a)
+##    verify(not hasattr(a, "x"))
+
 def all():
     lists()
     dicts()
@@ -1098,6 +1121,7 @@ def all():
     methods()
     specials()
     weakrefs()
+    getsets()
 
 all()
 
