@@ -31,12 +31,6 @@ neg_alias_re = re.compile("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
 # (for use as attributes of some object).
 longopt_xlate = string.maketrans('-', '_')
 
-# This records (option, value) pairs in the order seen on the command line;
-# it's close to what getopt.getopt() returns, but with short options
-# expanded.  (Ugh, this module should be OO-ified.)
-_option_order = None
-
-
 class FancyGetopt:
     """Wrapper around the standard 'getopt()' module that provides some
     handy extra functionality:
