@@ -3,8 +3,11 @@ import sys
 import imp
 import string
 
-t = imp.find_module('test_zlib')
-file = t[0]
+try:
+    t = imp.find_module('test_zlib')
+    file = t[0]
+except ImportError:
+    file = open(__file__)
 buf = file.read() * 8
 file.close()
 
