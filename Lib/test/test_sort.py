@@ -145,6 +145,26 @@ def bug453523():
 
 bug453523()
 
+def cmpNone():
+    global nerrors
+
+    if verbose:
+        print "Testing None as a comparison function."
+
+    L = range(50)
+    random.shuffle(L)
+    try:
+        L.sort(None)
+    except TypeError:
+        print "    Passing None as cmpfunc failed."
+        nerrors += 1
+    else:
+        if L != range(50):
+            print "    Passing None as cmpfunc failed."
+            nerrors += 1
+
+cmpNone()
+
 if nerrors:
     print "Test failed", nerrors
 elif verbose:

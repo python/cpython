@@ -925,7 +925,7 @@ The following operations are defined on mutable sequence types (where
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(3)}
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(6)}
-  \lineiii{\var{s}.sort(\optional{\var{cmpfunc}})}
+  \lineiii{\var{s}.sort(\optional{\var{cmpfunc=None}})}
 	{sort the items of \var{s} in place}{(6), (7), (8), (9)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
@@ -970,10 +970,11 @@ Notes:
   the first argument is considered smaller than, equal to, or larger
   than the second argument.  Note that this slows the sorting process
   down considerably; e.g. to sort a list in reverse order it is much
-  faster to call method \method{sort()} followed by
-  \method{reverse()} than to use method
-  \method{sort()} with a comparison function that reverses the
-  ordering of the elements.
+  faster to call method \method{sort()} followed by \method{reverse()}
+  than to use method \method{sort()} with a comparison function that
+  reverses the ordering of the elements.  Passing \constant{None} as the
+  comparison function is semantically equivalent to calling
+  \method{sort()} with no comparison function.
 
 \item[(8)] Whether the \method{sort()} method is stable is not defined by
   the language (a sort is stable if it guarantees not to change the
