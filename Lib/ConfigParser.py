@@ -89,9 +89,10 @@ ConfigParser -- responsible for for parsing a list of
 
 import re
 
-__all__ = ["NoSectionError","DuplicateSectionError","NoOptionError",
-           "InterpolationError","InterpolationDepthError","ParsingError",
-           "MissingSectionHeaderError","ConfigParser",
+__all__ = ["NoSectionError", "DuplicateSectionError", "NoOptionError",
+           "InterpolationError", "InterpolationDepthError",
+           "InterpolationSyntaxError", "ParsingError",
+           "MissingSectionHeaderError", "ConfigParser",
            "DEFAULTSECT", "MAX_INTERPOLATION_DEPTH"]
 
 DEFAULTSECT = "DEFAULT"
@@ -102,24 +103,34 @@ MAX_INTERPOLATION_DEPTH = 10
 
 # exception classes
 class Error(Exception):
+    """Base class for ConfigParser exceptions."""
+
     def __init__(self, msg=''):
         self._msg = msg
         Exception.__init__(self, msg)
+
     def __repr__(self):
         return self._msg
+
     __str__ = __repr__
 
 class NoSectionError(Error):
+    """Raised when no section matches a requested option."""
+
     def __init__(self, section):
         Error.__init__(self, 'No section: %s' % section)
         self.section = section
 
 class DuplicateSectionError(Error):
+    """Raised when a section is multiply-created."""
+
     def __init__(self, section):
         Error.__init__(self, "Section %s already exists" % section)
         self.section = section
 
 class NoOptionError(Error):
+    """A requested option was not found."""
+
     def __init__(self, option, section):
         Error.__init__(self, "No option `%s' in section: %s" %
                        (option, section))
@@ -127,6 +138,8 @@ class NoOptionError(Error):
         self.section = section
 
 class InterpolationError(Error):
+    """A string substitution required a setting which was not available."""
+
     def __init__(self, reference, option, section, rawval):
         Error.__init__(self,
                        "Bad value substitution:\n"
@@ -139,9 +152,13 @@ class InterpolationError(Error):
         self.option = option
         self.section = section
 
-class InterpolationSyntaxError(Error): pass
+class InterpolationSyntaxError(Error):
+    """Raised when the source text into which substitutions are made
+    does not conform to the required syntax."""
 
 class InterpolationDepthError(Error):
+    """Raised when substitutions are nested too deeply."""
+
     def __init__(self, option, section, rawval):
         Error.__init__(self,
                        "Value interpolation too deeply recursive:\n"
@@ -153,6 +170,8 @@ class InterpolationDepthError(Error):
         self.section = section
 
 class ParsingError(Error):
+    """Raised when a configuration file does not follow legal syntax."""
+
     def __init__(self, filename):
         Error.__init__(self, 'File contains parsing errors: %s' % filename)
         self.filename = filename
@@ -163,6 +182,8 @@ class ParsingError(Error):
         self._msg = self._msg + '\n\t[line %2d]: %s' % (lineno, line)
 
 class MissingSectionHeaderError(ParsingError):
+    """Raised when a key-value pair is found before any section header."""
+
     def __init__(self, filename, lineno, line):
         Error.__init__(
             self,
