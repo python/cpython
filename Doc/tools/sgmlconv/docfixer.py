@@ -74,7 +74,7 @@ xml.dom.core.Document.get_childNodes = get_childNodes
 
 def get_first_element(doc, gi):
     for n in doc.childNodes:
-        if n.nodeType == ELEMENT and n.tagName == gi:
+        if n.nodeName == gi:
             return n
 
 def extract_first_element(doc, gi):
@@ -86,7 +86,7 @@ def extract_first_element(doc, gi):
 
 def find_all_elements(doc, gi):
     nodes = []
-    if doc.nodeType == ELEMENT and doc.tagName == gi:
+    if doc.nodeName == gi:
         nodes.append(doc)
     for child in doc.childNodes:
         if child.nodeType == ELEMENT:
@@ -99,16 +99,15 @@ def find_all_elements(doc, gi):
 def find_all_child_elements(doc, gi):
     nodes = []
     for child in doc.childNodes:
-        if child.nodeType == ELEMENT:
-            if child.tagName == gi:
-                nodes.append(child)
+        if child.nodeName == gi:
+            nodes.append(child)
     return nodes
 
 def find_all_elements_from_set(doc, gi_set):
     return __find_all_elements_from_set(doc, gi_set, [])
 
 def __find_all_elements_from_set(doc, gi_set, nodes):
-    if doc.nodeType == ELEMENT and doc.tagName in gi_set:
+    if doc.nodeName in gi_set:
         nodes.append(doc)
     for child in doc.childNodes:
         if child.nodeType == ELEMENT:
@@ -156,7 +155,7 @@ def cleanup_root_text(doc):
         skip = 0
         if n.nodeType == TEXT and not prevskip:
             discards.append(n)
-        elif n.nodeType == ELEMENT and n.tagName == "COMMENT":
+        elif n.nodeName == "COMMENT":
             skip = 1
     for node in discards:
         doc.removeChild(node)
@@ -191,7 +190,8 @@ def rewrite_descriptor(doc, descriptor):
     # Do these things:
     #   1. Add an "index='no'" attribute to the element if the tagName
     #      ends in 'ni', removing the 'ni' from the name.
-    #   2. Create a <signature> from the name attribute and <args>.
+    #   2. Create a <signature> from the name attribute
+    #   2a.Create an <args> if it appears to be available.
     #   3. Create additional <signature>s from <*line{,ni}> elements,
     #      if found.
     #   4. If a <versionadded> is found, move it to an attribute on the
@@ -199,6 +199,7 @@ def rewrite_descriptor(doc, descriptor):
     #   5. Move remaining child nodes to a <description> element.
     #   6. Put it back together.
     #
+    # 1.
     descname = descriptor.tagName
     index = 1
     if descname[-2:] == "ni":
@@ -217,7 +218,11 @@ def rewrite_descriptor(doc, descriptor):
     signature.appendChild(name)
     name.appendChild(doc.createTextNode(descriptor.getAttribute("name")))
     descriptor.removeAttribute("name")
+    # 2a.
     if descriptor.attributes.has_key("var"):
+        if descname != "opcodedesc":
+            raise RuntimeError, \
+                  "got 'var' attribute on descriptor other than opcodedesc"
         variable = descriptor.getAttribute("var")
         if variable:
             args = doc.createElement("args")
@@ -227,10 +232,12 @@ def rewrite_descriptor(doc, descriptor):
         descriptor.removeAttribute("var")
     newchildren = [signature]
     children = descriptor.childNodes
-    pos = skip_leading_nodes(children, 0)
+    pos = skip_leading_nodes(children)
     if pos < len(children):
         child = children[pos]
-        if child.nodeType == ELEMENT and child.tagName == "args":
+        if child.nodeName == "args":
+##             bwrite("found <args> in descriptor, moving to <signature>\n")
+##             ewrite(descriptor.toxml() + "\n---\n")
             # create an <args> in <signature>:
             args = doc.createElement("args")
             argchildren = []
@@ -242,10 +249,9 @@ def rewrite_descriptor(doc, descriptor):
             signature.appendChild(args)
     signature.appendChild(doc.createTextNode("\n  "))
     # 3, 4.
-    pos = skip_leading_nodes(children, pos + 1)
+    pos = skip_leading_nodes(children, pos)
     while pos < len(children) \
-          and children[pos].nodeType == ELEMENT \
-          and children[pos].tagName in (linename, "versionadded"):
+          and children[pos].nodeName in (linename, "versionadded"):
         if children[pos].tagName == linename:
             # this is really a supplemental signature, create <signature>
             sig = methodline_to_signature(doc, children[pos])
@@ -351,8 +357,7 @@ def fixup_trailing_whitespace(doc, wsmap):
     while queue:
         node = queue[0]
         del queue[0]
-        if node.nodeType == ELEMENT \
-           and wsmap.has_key(node.tagName):
+        if wsmap.has_key(node.nodeName):
             ws = wsmap[node.tagName]
             children = node.childNodes
             children.reverse()
@@ -467,8 +472,7 @@ def create_module_info(doc, section):
         if title:
             children = title.childNodes
             if len(children) >= 2 \
-               and children[0].nodeType == ELEMENT \
-               and children[0].tagName == "module" \
+               and children[0].nodeName == "module" \
                and children[0].childNodes[0].data == name:
                 # this is it; morph the <title> into <short-synopsis>
                 first_data = children[1]
@@ -512,8 +516,7 @@ def create_module_info(doc, section):
         children = section.childNodes
         for i in range(len(children)):
             node = children[i]
-            if node.nodeType == ELEMENT \
-               and node.tagName == "moduleinfo":
+            if node.nodeName == "moduleinfo":
                 nextnode = children[i+1]
                 if nextnode.nodeType == TEXT:
                     data = nextnode.data
@@ -595,7 +598,7 @@ def fixup_row(doc, row):
 def move_elements_by_name(doc, source, dest, name, sep=None):
     nodes = []
     for child in source.childNodes:
-        if child.nodeType == ELEMENT and child.tagName == name:
+        if child.nodeName == name:
             nodes.append(child)
     for node in nodes:
         source.removeChild(node)
@@ -635,9 +638,7 @@ PARA_LEVEL_PRECEEDERS = (
 
 def fixup_paras(doc, fragment):
     for child in fragment.childNodes:
-        if child.nodeType == ELEMENT \
-           and child.tagName in RECURSE_INTO_PARA_CONTAINERS:
-            #
+        if child.nodeName in RECURSE_INTO_PARA_CONTAINERS:
             fixup_paras_helper(doc, child)
     descriptions = find_all_elements(fragment, "description")
     for description in descriptions:
@@ -647,26 +648,17 @@ def fixup_paras(doc, fragment):
 def fixup_paras_helper(doc, container, depth=0):
     # document is already normalized
     children = container.childNodes
-    start = 0
+    start = skip_leading_nodes(children)
     while len(children) > start:
-        start = skip_leading_nodes(children, start)
-        if start >= len(children):
-            break
-        #
-        # Either paragraph material or something to recurse into:
-        #
-        if (children[start].nodeType == ELEMENT) \
-           and (children[start].tagName in RECURSE_INTO_PARA_CONTAINERS):
+        if children[start].nodeName in RECURSE_INTO_PARA_CONTAINERS:
+            # Something to recurse into:
             fixup_paras_helper(doc, children[start])
-            start = skip_leading_nodes(children, start + 1)
-            continue
-        #
-        # paragraph material:
-        #
-        build_para(doc, container, start, len(children))
-        if DEBUG_PARA_FIXER and depth == 10:
-            sys.exit(1)
-        start = start + 1
+        else:
+            # Paragraph material:
+            build_para(doc, container, start, len(children))
+            if DEBUG_PARA_FIXER and depth == 10:
+                sys.exit(1)
+        start = skip_leading_nodes(children, start + 1)
 
 
 def build_para(doc, parent, start, i):
@@ -731,7 +723,7 @@ def build_para(doc, parent, start, i):
         return start + 1
 
 
-def skip_leading_nodes(children, start):
+def skip_leading_nodes(children, start=0):
     """Return index into children of a node at which paragraph building should
     begin or a recursive call to fixup_paras_helper() should be made (for
     subsections, etc.).
@@ -785,8 +777,7 @@ def fixup_signatures(doc, fragment):
 
 def fixup_args(doc, arglist):
     for child in arglist.childNodes:
-        if child.nodeType == ELEMENT \
-           and child.tagName == "optional":
+        if child.nodeName == "optional":
             # found it; fix and return
             arglist.insertBefore(doc.createTextNode("["), child)
             optkids = child.childNodes
@@ -809,7 +800,7 @@ def fixup_sectionauthors(doc, fragment):
         sectauth.removeAttribute("name")
         after = section.childNodes[2]
         title = section.childNodes[1]
-        if title.nodeType == ELEMENT and title.tagName != "title":
+        if title.nodeName != "title":
             after = section.childNodes[0]
         section.insertBefore(doc.createTextNode("\n  "), after)
         section.insertBefore(sectauth, after)
