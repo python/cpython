@@ -139,6 +139,7 @@ class MyScanner(Scanner):
 			
 			# ConvertTime and ConvertTimeScale
 			([('TimeRecord', 'inout', 'OutMode')], [('TimeRecord', 'inout', 'InOutMode')]),
+			([('TimeRecord', 'theTime', 'OutMode')], [('TimeRecord', 'theTime', 'InOutMode')]),
 			
 			# AddTime and SubtractTime
 			([('TimeRecord', 'dst', 'OutMode')], [('TimeRecord', 'dst', 'InOutMode')]),

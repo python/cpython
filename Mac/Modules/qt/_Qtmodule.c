@@ -14,9 +14,9 @@
 
 /* Macro to test whether a weak-loaded CFM function exists */
 #define PyMac_PRECHECK(rtn) do { if ( &rtn == NULL )  {\
-    	PyErr_SetString(PyExc_NotImplementedError, \
-    	"Not available in this shared library/OS version"); \
-    	return NULL; \
+        PyErr_SetString(PyExc_NotImplementedError, \
+        "Not available in this shared library/OS version"); \
+        return NULL; \
     }} while(0)
 
 
@@ -9340,7 +9340,8 @@ static PyObject *Qt_ConvertTime(PyObject *_self, PyObject *_args)
 #ifndef ConvertTime
 	PyMac_PRECHECK(ConvertTime);
 #endif
-	if (!PyArg_ParseTuple(_args, "O&",
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      QtTimeRecord_Convert, &theTime,
 	                      TimeBaseObj_Convert, &newBase))
 		return NULL;
 	ConvertTime(&theTime,
@@ -9358,7 +9359,8 @@ static PyObject *Qt_ConvertTimeScale(PyObject *_self, PyObject *_args)
 #ifndef ConvertTimeScale
 	PyMac_PRECHECK(ConvertTimeScale);
 #endif
-	if (!PyArg_ParseTuple(_args, "l",
+	if (!PyArg_ParseTuple(_args, "O&l",
+	                      QtTimeRecord_Convert, &theTime,
 	                      &newScale))
 		return NULL;
 	ConvertTimeScale(&theTime,
@@ -9691,9 +9693,9 @@ static PyMethodDef Qt_methods[] = {
 	{"NewTimeBase", (PyCFunction)Qt_NewTimeBase, 1,
 	 PyDoc_STR("() -> (TimeBase _rv)")},
 	{"ConvertTime", (PyCFunction)Qt_ConvertTime, 1,
-	 PyDoc_STR("(TimeBase newBase) -> (TimeRecord theTime)")},
+	 PyDoc_STR("(TimeRecord theTime, TimeBase newBase) -> (TimeRecord theTime)")},
 	{"ConvertTimeScale", (PyCFunction)Qt_ConvertTimeScale, 1,
-	 PyDoc_STR("(TimeScale newScale) -> (TimeRecord theTime)")},
+	 PyDoc_STR("(TimeRecord theTime, TimeScale newScale) -> (TimeRecord theTime)")},
 	{"AddTime", (PyCFunction)Qt_AddTime, 1,
 	 PyDoc_STR("(TimeRecord dst, TimeRecord src) -> (TimeRecord dst)")},
 	{"SubtractTime", (PyCFunction)Qt_SubtractTime, 1,
