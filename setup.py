@@ -447,10 +447,11 @@ class PyBuildExt(build_ext):
                               '/usr/contrib/ssl/include/'
                              ]
                              )
-        krb5_h = find_file('krb5.h', inc_dirs,
-                           ['/usr/kerberos/include'])
-        if krb5_h:
-            ssl_incs += krb5_h
+        if ssl_incs is not None:
+            krb5_h = find_file('krb5.h', inc_dirs,
+                               ['/usr/kerberos/include'])
+            if krb5_h:
+                ssl_incs += krb5_h
         ssl_libs = find_library_file(self.compiler, 'ssl',lib_dirs,
                                      ['/usr/local/ssl/lib',
                                       '/usr/contrib/ssl/lib/'
