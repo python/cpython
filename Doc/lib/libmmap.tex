@@ -42,10 +42,12 @@ the underlying file.
 \begin{funcdesc}{mmap}{fileno, length\optional{, tagname\optional{, access}}}
   \strong{(Windows version)} Maps \var{length} bytes from the file
   specified by the file handle \var{fileno}, and returns a mmap
-  object.  If \var{length} is \code{0}, the maximum length of the map
-  will be the current size of the file when \function{mmap()} is
-  called.
-  
+  object.  If \var{length} is larger than the current size of the file,
+  the file is extended to contain \var{length} bytes.  If \var{length}
+  is \code{0}, the maximum length of the map is the current size
+  of the file, except that if the file is empty Windows raises an
+  exception (you cannot create an empty mapping on Windows).
+
   \var{tagname}, if specified and not \code{None}, is a string giving
   a tag name for the mapping.  Windows allows you to have many
   different mappings against the same file.  If you specify the name
@@ -61,19 +63,19 @@ the underlying file.
   \strong{(\UNIX{} version)} Maps \var{length} bytes from the file
   specified by the file descriptor \var{fileno}, and returns a mmap
   object.
-  
+
   \var{flags} specifies the nature of the mapping.
   \constant{MAP_PRIVATE} creates a private copy-on-write mapping, so
   changes to the contents of the mmap object will be private to this
   process, and \constant{MAP_SHARED} creates a mapping that's shared
   with all other processes mapping the same areas of the file.  The
   default value is \constant{MAP_SHARED}.
-  
+
   \var{prot}, if specified, gives the desired memory protection; the
   two most useful values are \constant{PROT_READ} and
   \constant{PROT_WRITE}, to specify that the pages may be read or
   written.  \var{prot} defaults to \constant{PROT_READ | PROT_WRITE}.
-  
+
   \var{access} may be specified in lieu of \var{flags} and \var{prot}
   as an optional keyword parameter.  It is an error to specify both
   \var{flags}, \var{prot} and \var{access}.  See the description of
@@ -123,7 +125,7 @@ Memory-mapped file objects support the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}{readline}{}
-  Returns a single line, starting at the current file position and up to 
+  Returns a single line, starting at the current file position and up to
   the next newline.
 \end{methoddesc}
 
