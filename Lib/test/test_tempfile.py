@@ -25,7 +25,10 @@ has_spawnl = hasattr(os, 'spawnl')
 
 # TEST_FILES may need to be tweaked for systems depending on the maximum
 # number of files that can be opened at one time (see ulimit -n)
-TEST_FILES = 100
+if sys.platform == 'mac':
+    TEST_FILES = 32
+else:
+    TEST_FILES = 100
 
 # This is organized as one test for each chunk of code in tempfile.py,
 # in order of their appearance in the file.  Testing which requires
@@ -258,7 +261,7 @@ class test__mkstemp_inner(TC):
         file = self.do_create()
         mode = stat.S_IMODE(os.stat(file.name).st_mode)
         expected = 0600
-        if sys.platform in ('win32', 'os2emx'):
+        if sys.platform in ('win32', 'os2emx', 'mac'):
             # There's no distinction among 'user', 'group' and 'world';
             # replicate the 'user' bits.
             user = expected >> 6
@@ -463,7 +466,7 @@ class test_mkdtemp(TC):
         try:
             mode = stat.S_IMODE(os.stat(dir).st_mode)
             expected = 0700
-            if sys.platform in ('win32', 'os2emx'):
+            if sys.platform in ('win32', 'os2emx', 'mac'):
                 # There's no distinction among 'user', 'group' and 'world';
                 # replicate the 'user' bits.
                 user = expected >> 6
