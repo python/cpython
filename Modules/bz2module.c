@@ -1047,7 +1047,7 @@ BZ2File_seek(BZ2FileObject *self, PyObject *args)
 	/* Before getting here, offset must be set to the number of bytes
 	 * to walk forward. */
 	for (;;) {
-		if (offset-bytesread > buffersize)
+		if ((size_t)offset-bytesread > buffersize)
 			readsize = buffersize;
 		else
 			readsize = offset-bytesread;
