@@ -1,8 +1,7 @@
 /*
  * Secret Labs' Regular Expression Engine
- * $Id$
  *
- * simple regular expression matching engine
+ * regular expression matching engine
  *
  * Copyright (c) 1997-2000 by Secret Labs AB.  All rights reserved.
  *

@@ -1,6 +1,5 @@
 #
 # Secret Labs' Regular Expression Engine
-# $Id$
 #
 # convert re-style regular expression to sre pattern
 #
