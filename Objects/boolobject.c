@@ -51,10 +51,10 @@ static PyObject *
 bool_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	static char *kwlist[] = {"x", 0};
-	PyObject *x;
+	PyObject *x = Py_False;
 	long ok;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:bool", kwlist, &x))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:bool", kwlist, &x))
 		return NULL;
 	ok = PyObject_IsTrue(x);
 	if (ok < 0)

@@ -12,6 +12,11 @@ What's New in Python 2.3 beta 1?
 Core and builtins
 -----------------
 
+- bool() called without arguments now returns False rather than
+  raising an exception.  This is consistent with calling the
+  constructors for the other builtin types -- called without argument
+  they all return the false value of that type.  (SF patch #724135)
+
 - In support of PEP 269 (making the pgen parser generator accessible
   from Python), some changes to the pgen code structure were made; a
   few files that used to be linked only with pgen are now linked with
