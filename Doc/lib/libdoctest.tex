@@ -443,7 +443,7 @@ last line of a traceback, but can extend across multiple lines if the
 exception has a multi-line detail:
 
 \begin{verbatim}
->>> raise ValueError('multi\n   line\ndetail')
+>>> raise ValueError('multi\n    line\ndetail')
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 ValueError: multi
@@ -460,7 +460,7 @@ significant documentation value to the example.  So the last example
 is probably better as:
 
 \begin{verbatim}
->>> raise ValueError('multi\n   line\ndetail')
+>>> raise ValueError('multi\n    line\ndetail')
 Traceback (most recent call last):
     ...
 ValueError: multi
@@ -1699,10 +1699,10 @@ the synthesized code under the debugger:
    \function{script_from_examples()} above.  For example, if module
    \file{a.py} contains a top-level function \function{f()}, then
 
-    \begin{verbatim}
-    import a, doctest
-    print doctest.testsource(a, "a.f")
-    \end{verbatim}
+\begin{verbatim}
+import a, doctest
+print doctest.testsource(a, "a.f")
+\end{verbatim}
 
   prints a script version of function \function{f()}'s docstring,
   with doctests converted to code, and the rest placed in comments.
