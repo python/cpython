@@ -15,6 +15,7 @@ extern DL_IMPORT(int) Py_FrozenFlag;
 extern DL_IMPORT(int) Py_TabcheckFlag;
 extern DL_IMPORT(int) Py_UnicodeFlag;
 extern DL_IMPORT(int) Py_IgnoreEnvironmentFlag;
+extern DL_IMPORT(int) Py_DivisionWarningFlag;
 
 /* this is a wrapper around getenv() that pays attention to
    Py_IgnoreEnvironmentFlag.  It should be used for getting variables like

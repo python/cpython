@@ -33,6 +33,7 @@ DL_IMPORT(int) PyRun_AnyFileFlags(FILE *, char *, PyCompilerFlags *);
 DL_IMPORT(int) PyRun_AnyFileExFlags(FILE *, char *, int, PyCompilerFlags *);
 
 DL_IMPORT(int) PyRun_SimpleString(char *);
+DL_IMPORT(int) PyRun_SimpleStringFlags(char *, PyCompilerFlags *);
 DL_IMPORT(int) PyRun_SimpleFile(FILE *, char *);
 DL_IMPORT(int) PyRun_SimpleFileEx(FILE *, char *, int);
 DL_IMPORT(int) PyRun_SimpleFileExFlags(FILE *, char *, int, PyCompilerFlags *);

@@ -373,6 +373,27 @@ complex_div(PyComplexObject *v, PyComplexObject *w)
 }
 
 static PyObject *
+complex_classic_div(PyComplexObject *v, PyComplexObject *w)
+{
+	Py_complex quot;
+
+	if (Py_DivisionWarningFlag &&
+	    PyErr_Warn(PyExc_DeprecationWarning,
+		       "classic complex division") < 0)
+		return NULL;
+
+	PyFPE_START_PROTECT("complex_classic_div", return 0)
+	errno = 0;
+	quot = c_quot(v->cval,w->cval);
+	PyFPE_END_PROTECT(quot)
+	if (errno == EDOM) {
+		PyErr_SetString(PyExc_ZeroDivisionError, "complex division");
+		return NULL;
+	}
+	return PyComplex_FromCComplex(quot);
+}
+
+static PyObject *
 complex_remainder(PyComplexObject *v, PyComplexObject *w)
 {
         Py_complex div, mod;
@@ -854,7 +875,7 @@ static PyNumberMethods complex_as_number = {
 	(binaryfunc)complex_add, 		/* nb_add */
 	(binaryfunc)complex_sub, 		/* nb_subtract */
 	(binaryfunc)complex_mul, 		/* nb_multiply */
-	(binaryfunc)complex_div, 		/* nb_divide */
+	(binaryfunc)complex_classic_div,	/* nb_divide */
 	(binaryfunc)complex_remainder,		/* nb_remainder */
 	(binaryfunc)complex_divmod,		/* nb_divmod */
 	(ternaryfunc)complex_pow,		/* nb_power */
