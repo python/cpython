@@ -5,8 +5,10 @@
 # The mainloop() function here is an event dispatcher for all window types.
 
 import stdwin
-import stdwinsupport
+from stdwinevents import *
 
+# XXX Old version of stdwinevents, should go
+import stdwinsupport
 S = stdwinsupport			# Shorthand
 
 windows = []				# List of open windows
@@ -75,6 +77,8 @@ def treatevent(e):			# Handle a stdwin event
 		w.move(w)
 	elif type = S.we_timer:
 		w.timer(w)
+	elif type = WE_CLOSE:
+		w.close(w)
 
 def treatcommand(w, type):		# Handle a we_command event
 	if type = S.wc_close:
