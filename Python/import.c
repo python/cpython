@@ -1087,7 +1087,7 @@ check_case(char *buf, int len, int namelen, char *name)
 
 #ifdef macintosh
 #include <TextUtils.h>
-#ifdef USE_GUSI
+#ifdef USE_GUSI1
 #include "TFileSpec.h"		/* for Path2FSSpec() */
 #endif
 static int
@@ -1095,7 +1095,7 @@ check_case(char *buf, int len, int namelen, char *name)
 {
 	FSSpec fss;
 	OSErr err;
-#ifndef USE_GUSI
+#ifndef USE_GUSI1
 	err = FSMakeFSSpec(0, 0, Pstring(buf), &fss);
 #else
 	/* GUSI's Path2FSSpec() resolves all possible aliases nicely on
