@@ -219,14 +219,14 @@ sub do_cmd_versionadded{
     # one parameter:  \versionadded{version}
     local($_) = @_;
     my $release = next_argument();
-    return "<b>New in version $release.</b><p>" . $_;
+    return "\nNew in version $release.\n" . $_;
 }
 
 sub do_cmd_versionchanged{
     # one parameter:  \versionchanged{version}
     local($_) = @_;
     my $release = next_argument();
-    return "<b>Changed in version $release.</b><p>" . $_;
+    return "\nChanged in version $release.\n" . $_;
 }
 
 # file and samp are at the end of this file since they screw up fontlock.
