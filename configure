@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.232 
+# From configure.in Revision: 1.233 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -4519,7 +4519,7 @@ for ac_func in alarm chown clock confstr ctermid ctermid_r execv \
  nice pathconf pause plock poll pthread_init \
  putenv readlink \
  select setegid seteuid setgid \
- setlocale setregid setreuid setsid setpgid setuid setvbuf \
+ setlocale setregid setreuid setsid setpgid setuid setvbuf snprintf \
  sigaction siginterrupt sigrelse strftime strptime symlink sysconf \
  tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
  truncate uname waitpid _getpty getpriority

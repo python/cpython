@@ -544,10 +544,6 @@ get_addr(hostname, af, res, pai, port0)
 	struct gai_afd *gai_afd;
 	int i, error = 0, h_error;
 	char *ap;
-#if !defined(INET6) && !defined(h_errno)
-	/* In winsock.h, h_errno is #defined as a function call. */
-	extern int h_errno;
-#endif
 
 	top = NULL;
 	sentinel.ai_next = NULL;
