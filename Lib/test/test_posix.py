@@ -37,22 +37,17 @@ class PosixTester(unittest.TestCase):
             posix_func = getattr(posix, name, None)
             if posix_func is not None:
                 posix_func()
-                try:
-                    posix_func(1)
-                except TypeError:
-                    pass
-                else:
-                    raise TestFailed, '%s should take no arguments' % name
+                self.assertRaises(TypeError, posix_func, 1)
 
     def test_statvfs(self):
         if hasattr(posix, 'statvfs'):
-            posix.statvfs(os.curdir)
+            self.assert_(posix.statvfs(os.curdir))
 
     def test_fstatvfs(self):
         if hasattr(posix, 'fstatvfs'):
             fp = open(TESTFN)
             try:
-                posix.fstatvfs(fp.fileno())
+                self.assert_(posix.fstatvfs(fp.fileno()))
             finally:
                 fp.close()
 
@@ -72,6 +67,7 @@ class PosixTester(unittest.TestCase):
             fp = open(TESTFN)
             try:
                 fd = posix.dup(fp.fileno())
+                self.assert_(isinstance(fd, int))
                 os.close(fd)
             finally:
                 fp.close()
@@ -101,44 +97,36 @@ class PosixTester(unittest.TestCase):
         if hasattr(posix, 'fstat'):
             fp = open(TESTFN)
             try:
-                posix.fstat(fp.fileno())
+                self.assert_(posix.fstat(fp.fileno()))
             finally:
                 fp.close()
 
     def test_stat(self):
         if hasattr(posix, 'stat'):
-            posix.stat(TESTFN)
+            self.assert_(posix.stat(TESTFN))
 
     def test_chdir(self):
         if hasattr(posix, 'chdir'):
             posix.chdir(os.curdir)
-            try:
-                posix.chdir(TESTFN)
-            except OSError:
-                pass
-            else:
-                raise TestFailed, \
-                      'should not be able to change directory to a file'
+            self.assertRaises(OSError, posix.chdir, TESTFN)
 
     def test_lsdir(self):
         if hasattr(posix, 'lsdir'):
-            if TESTFN not in posix.lsdir(os.curdir):
-                raise TestFailed, \
-                      '%s should exist in current directory' % TESTFN
+            self.assert_(TESTFN in posix.lsdir(os.curdir))
 
     def test_access(self):
         if hasattr(posix, 'access'):
-            if not posix.access(TESTFN, os.R_OK):
-                raise TestFailed, 'should have read access to: %s' % TESTFN
+            self.assert_(posix.access(TESTFN, os.R_OK))
 
     def test_umask(self):
         if hasattr(posix, 'umask'):
             old_mask = posix.umask(0)
+            self.assert_(isinstance(old_mask, int))
             posix.umask(old_mask)
 
     def test_strerror(self):
         if hasattr(posix, 'strerror'):
-            posix.strerror(0)
+            self.assert_(posix.strerror(0))
 
     def test_pipe(self):
         if hasattr(posix, 'pipe'):
@@ -148,9 +136,9 @@ class PosixTester(unittest.TestCase):
 
     def test_tempnam(self):
         if hasattr(posix, 'tempnam'):
-            posix.tempnam()
-            posix.tempnam(os.curdir)
-            posix.tempnam(os.curdir, 'blah')
+            self.assert_(posix.tempnam())
+            self.assert_(posix.tempnam(os.curdir))
+            self.assert_(posix.tempnam(os.curdir, 'blah'))
 
     def test_tmpfile(self):
         if hasattr(posix, 'tmpfile'):
