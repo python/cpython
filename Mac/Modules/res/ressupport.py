@@ -56,6 +56,34 @@ if (strcmp(name, "__members__") == 0)
 	return Py_BuildValue("[ss]", "data", "size");
 """
 
+setattrCode = """
+static int
+ResObj_setattr(self, name, value)
+	ResourceObject *self;
+	char *name;
+	PyObject *value;
+{
+	char *data;
+	long size;
+	
+	if (strcmp(name, "data") != 0 || value == NULL )
+		return -1;
+	if ( !PyString_Check(value) )
+		return -1;
+	size = PyString_Size(value);
+	data = PyString_AsString(value);
+	/* XXXX Do I need the GetState/SetState calls? */
+	SetHandleSize(self->ob_itself, size);
+	if ( MemError())
+		return -1;
+	HLock(self->ob_itself);
+	memcpy((char *)*self->ob_itself, data, size);
+	HUnlock(self->ob_itself);
+	/* XXXX Should I do the Changed call immedeately? */
+	return 0;
+}
+"""
+
 class ResDefiniton(GlobalObjectDefinition):
 
 	def outputCheckNewArg(self):
@@ -63,6 +91,9 @@ class ResDefiniton(GlobalObjectDefinition):
 
 	def outputGetattrHook(self):
 		Output(getattrHookCode)
+		
+	def outputSetattr(self):
+		Output(setattrCode)
 
 
 resobject = ResDefiniton('Resource', 'ResObj', 'Handle')
