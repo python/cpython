@@ -184,15 +184,9 @@ op_delslice(PyObject *s, PyObject *a)
 
 #undef spam1
 #undef spam2
-#ifdef HAVE_OLD_CPP
-#define spam1(OP,DOC) {"OP", OP, METH_VARARGS, DOC},
-#define spam2(OP,ALTOP,DOC) {"OP", op_/**/OP, METH_VARARGS, DOC}, \
-			   {"ALTOP", op_/**/OP, METH_VARARGS, DOC}, 
-#else
 #define spam1(OP,DOC) {#OP, OP, METH_VARARGS, DOC},
 #define spam2(OP,ALTOP,DOC) {#OP, op_##OP, METH_VARARGS, DOC}, \
 			   {#ALTOP, op_##OP, METH_VARARGS, DOC}, 
-#endif
 
 static struct PyMethodDef operator_methods[] = {
 
