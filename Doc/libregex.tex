@@ -137,14 +137,14 @@ be used inside groups (see below) as well.
 contents of a group can be matched later in the string with the
 \code{\e [1-9]} special sequence, described next.
 %
-{\fulllineitems\item[\code{\e \e 1, ... \e \e 7, \e 8, \e 9}]
+\fulllineitems\item[\code{\e \e 1, ... \e \e 7, \e 8, \e 9}]
 Matches the contents of the group of the same
 number.  For example, \code{\e (.+\e ) \e \e 1} matches 'the the' or
 '55 55', but not 'the end' (note the space after the group).  This
 special sequence can only be used to match one of the first 9 groups;
 groups with higher numbers can be matched using the \code{\e v}
 sequence.  (\code{\e 8} and \code{\e 9} don't need a double backslash
-because they are not octal digits.)}
+because they are not octal digits.)
 %
 \item[\code{\e \e b}] Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
@@ -182,6 +182,7 @@ the string.
 \end{itemize}
 
 \subsection{Module Contents}
+\nodename{Contents of Module regex}
 
 The module defines these functions, and an exception:
 
