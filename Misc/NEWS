@@ -46,6 +46,9 @@ Extension modules
 Library
 -------
 
+- The urllib module now offers support for the iterator protocol.
+  SF patch 698520 contributed by Brett Cannon.
+
 - New module timeit provides a simple framework for timing the
   execution speed of expressions and statements.
 
