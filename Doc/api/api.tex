@@ -980,6 +980,15 @@ For information about warning control, see the documentation for the
 line documentation.  There is no C API for warning control.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyErr_WarnExplicit}{PyObject *category, char *message,
+char *filename, int lineno, char *module, PyObject *registry}
+Issue a warning message with explicit control over all warning
+attributes.  This is a straightforward wrapper around the Python
+function \function{warnings.warn_explicit()}, see there for more
+information.  The \var{module} and \var{registry} arguments may be
+set to \code{NULL} to get the default effect described there.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyErr_CheckSignals}{}
 This function interacts with Python's signal handling.  It checks
 whether a signal has been sent to the processes and if so, invokes the
