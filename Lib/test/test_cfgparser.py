@@ -1,44 +1,39 @@
 import ConfigParser
 import StringIO
 
-from test_support import TestFailed
+from test_support import TestFailed, verify
 
 
 def basic(src):
-    print
     print "Testing basic accessors..."
     cf = ConfigParser.ConfigParser()
     sio = StringIO.StringIO(src)
     cf.readfp(sio)
     L = cf.sections()
     L.sort()
-    print L
-    for s in L:
-        print "%s: %s" % (s, cf.options(s))
+    verify(L == ['Commented Bar', 'Foo Bar',
+                 'Internationalized Stuff', 'Spacey Bar'],
+           "unexpected list of section names")
 
     # The use of spaces in the section names serves as a regression test for
     # SourceForge bug #115357.
     # http://sourceforge.net/bugs/?func=detailbug&group_id=5470&bug_id=115357
-    print `cf.get('Foo Bar', 'foo', raw=1)`
-    print `cf.get('Spacey Bar', 'foo', raw=1)`
-    print `cf.get('Commented Bar', 'foo', raw=1)`
+    verify(cf.get('Foo Bar', 'foo', raw=1) == 'bar')
+    verify(cf.get('Spacey Bar', 'foo', raw=1) == 'bar')
+    verify(cf.get('Commented Bar', 'foo', raw=1) == 'bar')
 
-    if '__name__' in cf.options("Foo Bar"):
-        print '__name__ "option" should not be exposed by the API!'
-    else:
-        print '__name__ "option" properly hidden by the API.'
+    verify('__name__' not in cf.options("Foo Bar"),
+           '__name__ "option" should not be exposed by the API!')
 
     # Make sure the right things happen for remove_option();
     # added to include check for SourceForge bug #123324:
-    if not cf.remove_option('Foo Bar', 'foo'):
-        raise TestFailed(
-            "remove_option() failed to report existance of option")
-    if cf.has_option('Foo Bar', 'foo'):
-        raise TestFailed("remove_option() failed to remove option")
-    if cf.remove_option('Foo Bar', 'foo'):
-        raise TestFailed(
-            "remove_option() failed to report non-existance of option"
-            " that was removed")
+    verify(cf.remove_option('Foo Bar', 'foo'),
+           "remove_option() failed to report existance of option")
+    verify(not cf.has_option('Foo Bar', 'foo'),
+           "remove_option() failed to remove option")
+    verify(not cf.remove_option('Foo Bar', 'foo'),
+           "remove_option() failed to report non-existance of option"
+           " that was removed")
     try:
         cf.remove_option('No Such Section', 'foo')
     except ConfigParser.NoSectionError:
@@ -50,20 +45,21 @@ def basic(src):
 
 
 def interpolation(src):
-    print
     print "Testing value interpolation..."
     cf = ConfigParser.ConfigParser({"getname": "%(__name__)s"})
     sio = StringIO.StringIO(src)
     cf.readfp(sio)
-    print `cf.get("Foo", "getname")`
-    print `cf.get("Foo", "bar")`
-    print `cf.get("Foo", "bar9")`
-    print `cf.get("Foo", "bar10")`
+    verify(cf.get("Foo", "getname") == "Foo")
+    verify(cf.get("Foo", "bar") == "something with interpolation (1 step)")
+    verify(cf.get("Foo", "bar9")
+           == "something with lots of interpolation (9 steps)")
+    verify(cf.get("Foo", "bar10")
+           == "something with lots of interpolation (10 steps)")
     expect_get_error(cf, ConfigParser.InterpolationDepthError, "Foo", "bar11")
 
+
 def parse_errors():
-    print
-    print "Testing for parsing errors..."
+    print "Testing parse errors..."
     expect_parse_error(ConfigParser.ParsingError,
                        """[Foo]\n  extra-spaces: splat\n""")
     expect_parse_error(ConfigParser.ParsingError,
@@ -77,48 +73,52 @@ def parse_errors():
     expect_parse_error(ConfigParser.MissingSectionHeaderError,
                        """No Section!\n""")
 
+
 def query_errors():
-    print
     print "Testing query interface..."
     cf = ConfigParser.ConfigParser()
-    print cf.sections()
-    print "Has section 'Foo'?", cf.has_section("Foo")
+    verify(cf.sections() == [],
+           "new ConfigParser should have no defined sections")
+    verify(not cf.has_section("Foo"),
+           "new ConfigParser should have no acknowledged sections")
     try:
         cf.options("Foo")
     except ConfigParser.NoSectionError, e:
-        print "Caught expected NoSectionError:", e
+        pass
     else:
-        print "Failed to catch expected NoSectionError from options()"
+        raise TestFailed(
+            "Failed to catch expected NoSectionError from options()")
     try:
         cf.set("foo", "bar", "value")
     except ConfigParser.NoSectionError, e:
-        print "Caught expected NoSectionError:", e
+        pass
     else:
-        print "Failed to catch expected NoSectionError from set()"
+        raise TestFailed("Failed to catch expected NoSectionError from set()")
     expect_get_error(cf, ConfigParser.NoSectionError, "foo", "bar")
     cf.add_section("foo")
     expect_get_error(cf, ConfigParser.NoOptionError, "foo", "bar")
 
+
 def weird_errors():
-    print
     print "Testing miscellaneous error conditions..."
     cf = ConfigParser.ConfigParser()
     cf.add_section("Foo")
     try:
         cf.add_section("Foo")
     except ConfigParser.DuplicateSectionError, e:
-        print "Caught expected DuplicateSectionError:", e
+        pass
     else:
-        print "Failed to catch expected DuplicateSectionError"
+        raise TestFailed("Failed to catch expected DuplicateSectionError")
+
 
 def expect_get_error(cf, exctype, section, option, raw=0):
     try:
         cf.get(section, option, raw=raw)
     except exctype, e:
-        print "Caught expected", exctype.__name__, ":"
-        print e
+        pass
     else:
-        print "Failed to catch expected", exctype.__name__
+        raise TestFailed("Failed to catch expected " + exctype.__name__)
+
 
 def expect_parse_error(exctype, src):
     cf = ConfigParser.ConfigParser()
@@ -126,9 +126,10 @@ def expect_parse_error(exctype, src):
     try:
         cf.readfp(sio)
     except exctype, e:
-        print "Caught expected exception:", e
+        pass
     else:
-        print "Failed to catch expected", exctype.__name__
+        raise TestFailed("Failed to catch expected " + exctype.__name__)
+
 
 basic(r"""
 [Foo Bar]
@@ -137,6 +138,11 @@ foo=bar
 foo = bar
 [Commented Bar]
 foo: bar ; comment
+[Internationalized Stuff]
+foo[bg]: Bulgarian
+foo=Default
+foo[en]=English
+foo[de]=Deutsch
 """)
 interpolation(r"""
 [Foo]
