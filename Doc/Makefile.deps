@@ -187,8 +187,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/liblinecache.tex \
 	../lib/libnew.tex \
 	../lib/libdircache.tex \
-	../lib/libcmp.tex \
-	../lib/libcmpcache.tex \
+	../lib/libfilecmp.tex \
 	../lib/libstatcache.tex \
 	../lib/libsunau.tex \
 	../lib/libwave.tex \
