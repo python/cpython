@@ -1055,8 +1055,8 @@ implement all of them.
 
 \begin{methoddesc}{dst}{self, dt}
   Return the daylight saving time (DST) adjustment, in minutes east of
-  UTC, or \code{None} if DST information isn't known.  Return \code{0} if
-  DST is not in effect.
+  UTC, or \code{None} if DST information isn't known.  Return
+  \code{timedelta(0)} if DST is not in effect.
   If DST is in effect, return the offset as a
   \class{timedelta} object (see \method{utcoffset()} for details).
   Note that DST offset, if applicable, has
