@@ -2966,15 +2966,17 @@ maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj,
 			if (addr + *p > frame->f_lasti)
 				break;
 			addr += *p++;
+			if (*p) *instr_lb = addr;
 			line += *p++;
 			--size;
 		}
+
 		if (addr == frame->f_lasti) {
 			frame->f_lineno = line;
 			call_trace(func, obj, frame, 
 				   PyTrace_LINE, Py_None);
 		}
-		*instr_lb = addr;
+
 		if (size > 0) {
 			while (--size >= 0) {
 				addr += *p++;
