@@ -292,7 +292,7 @@ class build_ext (Command):
                 ext.undef_macros = []
                 for macro in macros:
                     if not (type(macro) is TupleType and
-                            1 <= len(macros) <= 2):
+                            1 <= len(macro) <= 2):
                         raise DistutilsSetupError, \
                               ("'macros' element of build info dict "
                                "must be 1- or 2-tuple")
