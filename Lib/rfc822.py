@@ -160,7 +160,7 @@ class Message:
                 else:
                     self.status = 'Non-header line where header expected'
                 # Try to undo the read.
-                if getattr(self.fp, 'unread'):
+                if hasattr(self.fp, 'unread'):
                     self.fp.unread(line)
                 elif self.seekable:
                     self.fp.seek(-len(line), 1)
