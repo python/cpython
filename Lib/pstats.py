@@ -35,7 +35,7 @@ import os
 import time
 import string
 import marshal
-import regex
+import re
 
 #**************************************************************************
 # Class Stats documentation
@@ -300,7 +300,7 @@ class Stats:
 		if type(sel) == type(""):
 			new_list = []
 			for func in list:
-				if 0<=regex.search(sel, func_std_string(func)):
+				if re.search(sel, func_std_string(func)):
 					new_list.append(func)
 		else:
 			count = len(list)

@@ -2,23 +2,22 @@
 # XXX Unfinished.
 # XXX Only the typical form "XXXhhYYY;ddd/hh,ddd/hh" is currently supported.
 
-tzpat = '^\([A-Z][A-Z][A-Z]\)\([-+]?[0-9]+\)\([A-Z][A-Z][A-Z]\);' + \
-	  '\([0-9]+\)/\([0-9]+\),\([0-9]+\)/\([0-9]+\)$'
+tzpat = ('^([A-Z][A-Z][A-Z])([-+]?[0-9]+)([A-Z][A-Z][A-Z]);'
+	  '([0-9]+)/([0-9]+),([0-9]+)/([0-9]+)$')
 
 tzprog = None
 
 def tzparse(tzstr):
 	global tzprog
 	if tzprog == None:
-		import regex
-		tzprog = regex.compile(tzpat)
-	if tzprog.match(tzstr) < 0:
+		import re
+		tzprog = re.compile(tzpat)
+	match = tzprog.match(tzstr)
+	if not match:
 		raise ValueError, 'not the TZ syntax I understand'
-	regs = tzprog.regs
 	subs = []
 	for i in range(1, 8):
-		a, b = regs[i]
-		subs.append(tzstr[a:b])
+		subs.append(match.group(i))
 	for i in (1, 3, 4, 5, 6):
 		subs[i] = eval(subs[i])
 	[tzname, delta, dstname, daystart, hourstart, dayend, hourend] = subs

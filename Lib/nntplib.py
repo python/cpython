@@ -29,7 +29,7 @@
 
 
 # Imports
-import regex
+import re
 import socket
 import string
 
@@ -313,13 +313,13 @@ class NNTP:
 	# - list: list of (nr, value) strings
 
 	def xhdr(self, hdr, str):
+		pat = re.compile('^([0-9]+) ?(.*)\n?')
 		resp, lines = self.longcmd('XHDR ' + hdr + ' ' + str)
 		for i in range(len(lines)):
 			line = lines[i]
-			n = regex.match('^[0-9]+', line)
-			nr = line[:n]
-			if n < len(line) and line[n] == ' ': n = n+1
-			lines[i] = (nr, line[n:])
+			m = pat.match(line)
+			if m:
+				lines[i] = m.group(1, 2)
 		return resp, lines
 
 	# Process an XOVER command (optional server extension) Arguments:
@@ -354,14 +354,13 @@ class NNTP:
 	# - list: list of (name,title) strings
 
 	def xgtitle(self, group):
-		line_pat = regex.compile("^\([^ \t]+\)[ \t]+\(.*\)$")
+		line_pat = re.compile("^([^ \t]+)[ \t]+(.*)$")
 		resp, raw_lines = self.longcmd('XGTITLE ' + group)
 		lines = []
 		for raw_line in raw_lines:
-			if line_pat.search(string.strip(raw_line)) == 0:
-				lines.append(line_pat.group(1),
-					     line_pat.group(2))
-
+			match = line_pat.search(string.strip(raw_line))
+			if match:
+				lines.append(match.group(1, 2))
 		return resp, lines
 
 	# Process an XPATH command (optional server extension) Arguments:

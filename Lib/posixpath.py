@@ -266,15 +266,15 @@ def expandvars(path):
 	if '$' not in path:
 		return path
 	if not _varprog:
-		import regex
-		_varprog = regex.compile('$\([a-zA-Z0-9_]+\|{[^}]*}\)')
+		import re
+		_varprog = re.compile(r'\$(\w+|\{[^}]*\})')
 	i = 0
 	while 1:
-		i = _varprog.search(path, i)
-		if i < 0:
+		m = _varprog.search(path, i)
+		if not m:
 			break
-		name = _varprog.group(1)
-		j = i + len(_varprog.group(0))
+		i, j = m.span(0)
+		name = m.group(1)
 		if name[:1] == '{' and name[-1:] == '}':
 			name = name[1:-1]
 		if os.environ.has_key(name):

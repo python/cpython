@@ -267,19 +267,18 @@ _parse_func = { \
 # This function parses a line, and returns either
 # a string or a tuple (name,value)
 
-import regex
-prog = regex.compile('^\([^:]*\): *\(.*\)')
+import re
+prog = re.compile('^([^:]*): *(.*)')
 
 def _parse_line(line):
-    if prog.match(line) < 0:
+    match = prog.match(line)
+    if not match:
 	return line
-    a = prog.regs
-    name = line[:a[1][1]]
+    name, value = match.group(1, 2)
     if name[0] == 'N':
-	    name = string.joinfields(string.split(name),'')
+	    name = string.join(string.split(name),'')
 	    name = string.lower(name)
-    name = string.upper(name[0]) + name[1:]
-    value = line[a[2][0]:]
+    name = string.capitalize(name)
     try:
 	pf = _parse_func[name]
     except KeyError:

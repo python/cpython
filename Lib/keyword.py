@@ -7,10 +7,7 @@
 #  To update the symbols in this file, 'cd' to the top directory of
 #  the python source tree after building the interpreter and run:
 #
-#    PYTHONPATH=./Lib ./python Lib/keyword.py
-#
-#  (this path allows the import of string.py and regexmodule.so
-#  for a site with no installation in place)
+#    python Lib/keyword.py
 
 kwlist = [
 #--start keywords--
@@ -52,7 +49,7 @@ for keyword in kwlist:
 iskeyword = kwdict.has_key
 
 def main():
-    import sys, regex, string
+    import sys, re, string
 
     args = sys.argv[1:]
     iptfile = args and args[0] or "Python/graminit.c"
@@ -61,13 +58,15 @@ def main():
 
     # scan the source file for keywords
     fp = open(iptfile)
-    strprog = regex.compile('"\([^"]+\)"')
+    strprog = re.compile('"([^"]+)"')
     lines = []
     while 1:
         line = fp.readline()
         if not line: break
-        if string.find(line, '{1, "') > -1 and strprog.search(line) > -1:
-            lines.append("        '" + strprog.group(1) + "',\n")
+	if string.find(line, '{1, "') > -1:
+	    match = strprog.search(line)
+	    if match:
+		lines.append("        '" + match.group(1) + "',\n")
     fp.close()
     lines.sort()
 
@@ -90,4 +89,5 @@ def main():
     fp.write(string.join(format, ''))
     fp.close()
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()

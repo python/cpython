@@ -461,9 +461,9 @@ class StdwinBackEnd(SavingBackEnd):
 		self.paralist[para2].invert(d, pos1, pos2)
 	#
 	def search(self, prog):
-		import regex, string
+		import re, string
 		if type(prog) == type(''):
-			prog = regex.compile(string.lower(prog))
+			prog = re.compile(string.lower(prog))
 		if self.selection:
 			iold = self.selection[0][0]
 		else:
@@ -474,8 +474,9 @@ class StdwinBackEnd(SavingBackEnd):
 				continue
 			p = self.paralist[i]
 			text = string.lower(p.extract())
-			if prog.search(text) >= 0:
-				a, b = prog.regs[0]
+			match = prog.search(text)
+			if match:
+				a, b = match.group(0)
 				long1 = i, a
 				long2 = i, b
 				hit = long1, long2

@@ -73,7 +73,7 @@ FOLDER_PROTECT = 0700
 import os
 import sys
 from stat import ST_NLINK
-import regex
+import re
 import string
 import mimetools
 import multifile
@@ -236,9 +236,9 @@ class MH:
 
 # Class representing a particular folder
 
-numericprog = regex.compile('^[1-9][0-9]*$')
+numericprog = re.compile('^[1-9][0-9]*$')
 def isnumeric(str):
-    return numericprog.match(str) >= 0
+    return numericprog.match(str) is not None
 
 class Folder:
 
@@ -906,15 +906,12 @@ def pickline(file, key, casefold = 1):
 	f = open(file, 'r')
     except IOError:
 	return None
-    pat = key + ':'
-    if casefold:
-	prog = regex.compile(pat, regex.casefold)
-    else:
-	prog = regex.compile(pat)
+    pat = re.escape(key) + ':'
+    prog = re.compile(pat, casefold and re.IGNORECASE)
     while 1:
 	line = f.readline()
 	if not line: break
-	if prog.match(line) >= 0:
+	if prog.match(line):
 	    text = line[len(key)+1:]
 	    while 1:
 		line = f.readline()
@@ -931,18 +928,15 @@ def updateline(file, key, value, casefold = 1):
 	f.close()
     except IOError:
 	lines = []
-    pat = key + ':\(.*\)\n'
-    if casefold:
-	prog = regex.compile(pat, regex.casefold)
-    else:
-	prog = regex.compile(pat)
+    pat = re.escape(key) + ':(.*)\n'
+    prog = re.compile(pat, casefold and re.IGNORECASE)
     if value is None:
 	newline = None
     else:
 	newline = '%s: %s\n' % (key, value)
     for i in range(len(lines)):
 	line = lines[i]
-	if prog.match(line) == len(line):
+	if prog.match(line):
 	    if newline is None:
 		del lines[i]
 	    else:

@@ -81,18 +81,17 @@ class Cddb:
 		self.notes = []
 		if not hasattr(self, 'file'):
 			return
-		import regex
-		reg = regex.compile('^\\([^.]*\\)\\.\\([^:]*\\):[\t ]+\\(.*\\)')
+		import re
+		reg = re.compile(r'^([^.]*)\.([^:]*):[\t ]+(.*)')
 		while 1:
 			line = f.readline()
 			if not line:
 				break
-			if reg.match(line) == -1:
+			match = reg.match(line)
+			if not match:
 				print 'syntax error in ' + file
 				continue
-			name1 = line[reg.regs[1][0]:reg.regs[1][1]]
-			name2 = line[reg.regs[2][0]:reg.regs[2][1]]
-			value = line[reg.regs[3][0]:reg.regs[3][1]]
+			name1, name2, value = match.group(1, 2, 3)
 			if name1 == 'album':
 				if name2 == 'artist':
 					self.artist = value
