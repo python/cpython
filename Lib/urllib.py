@@ -1187,8 +1187,8 @@ def getproxies_environment():
             proxies[name[:-6]] = value
     return proxies
 
-if os.name == 'mac':
-    def getproxies():
+if sys.platform == 'darwin':
+    def getproxies_internetconfig():
         """Return a dictionary of scheme -> proxy server URL mappings.
 
         By convention the mac uses Internet Config to store
@@ -1221,6 +1221,9 @@ if os.name == 'mac':
     def proxy_bypass(x):
         return 0
 
+    def getproxies():
+        return getproxies_environment() or getproxies_internetconfig()
+        
 elif os.name == 'nt':
     def getproxies_registry():
         """Return a dictionary of scheme -> proxy server URL mappings.
