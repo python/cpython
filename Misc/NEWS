@@ -120,6 +120,8 @@ Standard library
   internal symbol table used by the Python compiler.  A higher-level
   interface will be added on top of _symtable in a future release.
 
+- Removed the obsolete soundex module.
+
 Windows changes
 
 - Build procedure:  the zlib project is built in a different way that
