@@ -238,7 +238,7 @@ static PyMethodDef xxsubtype_functions[] = {
 DL_EXPORT(void)
 initxxsubtype(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 
 	/* Fill in deferred data addresses.  This must be done before
 	   PyType_Ready() is called.  Note that PyType_Ready() automatically
@@ -263,17 +263,13 @@ initxxsubtype(void)
 	if (PyType_Ready(&spamdict_type) < 0)
 		return;
 
-	d = PyModule_GetDict(m);
-	if (d == NULL)
-		return;
-
 	Py_INCREF(&spamlist_type);
-	if (PyDict_SetItemString(d, "spamlist",
-				 (PyObject *) &spamlist_type) < 0)
+	if (PyModule_AddObject(m, "spamlist",
+			       (PyObject *) &spamlist_type) < 0)
 		return;
 
 	Py_INCREF(&spamdict_type);
-	if (PyDict_SetItemString(d, "spamdict",
-				 (PyObject *) &spamdict_type) < 0)
+	if (PyModule_AddObject(m, "spamdict",
+			       (PyObject *) &spamdict_type) < 0)
 		return;
 }
