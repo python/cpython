@@ -192,11 +192,10 @@ the \keyword{except} clause must reference the same class or a base
 class of it.
 
 When an exception is raised, an object (maybe \code{None}) is passed
-as the exception's ``parameter'' or ``value''; this object does not
-affect the selection of an exception handler, but is passed to the
-selected exception handler as additional information.  For class
-exceptions, this object must be an instance of the exception class
-being raised.
+as the exception's \emph{value}; this object does not affect the
+selection of an exception handler, but is passed to the selected
+exception handler as additional information.  For class exceptions,
+this object must be an instance of the exception class being raised.
 
 See also the description of the \keyword{try} statement in section
 \ref{try} and \keyword{raise} statement in section \ref{raise}.
