@@ -11,9 +11,11 @@ This base address is passed to the linker using the /BASE
 command line switch.
 
 
+Python.exe/Pythonw.exe     - 1d000000 - 1e000000 (-1)
+Python.dll                 - 1e000000 - 1e100000 (-1)
 
-Python.dll                 - 1e100000 - 1e180000 (-1)
-Standard Extension Modules 1e180000 - 1e200000  ""
+Standard Extension Modules 1e100000 - 1e200000  ""
+ - _symtable                 1e100000 - 1e110000
  - bsddb                     1e180000 - 1e188000  ""
  - _tkinter                  1e190000 - 1e1A0000
  - parser                    1e1A0000 - 1e1B0000
@@ -26,8 +28,8 @@ Standard Extension Modules 1e180000 - 1e200000  ""
 More standard extensions 1D100000 - 1e000000
  - pyexpat                   1D100000 - 1D110000
  - select                    1D110000 - 1D120000
- - unicodedata               1D120000 - 1D130000
- - winsound                  1D130000 - 1D140000
+ - unicodedata               1D120000 - 1D160000
+ - winsound                  1D160000 - 1D170000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
@@ -41,13 +43,31 @@ Other extension modules
  - win32net                  1e290000 - 1e2A0000
  - win32security             1e2A0000 - 1e2B0000
  - win32print                1e2B0000 - 1e2c0000
- - <nspi is dead too??>      1e2d0000 - 1e2e0000
+ - <unused>                  1e2d0000 - 1e2e0000
  - win32gui                  1e2e0000 - 1e2f0000
  - _imaging                  1e2f0000 - 1e300000
  - multiarray                1e300000 - 1e310000
  - win32help                 1e310000 - 1e320000
  - win32clipboard            1e320000 - 1e330000
+ - win2kras                  1e330000 - 1e340000
+ - pythoncom                 1e340000 - 1e400000
+ - win32ui                   1e400000 - 1e500000
+ - win32uiole                1e500000 - 1e600000
+ - pywintypes                1e600000 - 1e700000
+ - win32process              1e700000 - 1e800000
+ - odbc                      1e710000 - 1e720000
+ - dbi                       1e720000 - 1e730000
+ - win32file                 1e730000 - 1e740000
+ - win32wnet                 1e740000 - 1e750000
+ - win32com.shell            1e750000 - 1e760000
+ - win32com.internet         1e760000 - 1e770000
+ - win32com.exchange         1e770000 - 1e780000
+ - win32com.exchdapi         1e780000 - 1e790000
+ - win32com.axscript         1e790000 - 1e7a0000
+ - win32com.axdebug          1e7b0000 - 1e7c0000
+ - win32com.adsi             1e7f0000 - 1e800000
+ - win32event                1e810000 - 1e820000
+ - win32evtlog               1e820000 - 1e830000
+ - win32com.axcontrol        1e830000 - 1e840000
 
-PythonWin
- win32ui                     1e400000 - 1e500000
 
