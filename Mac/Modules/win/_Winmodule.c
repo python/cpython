@@ -2469,7 +2469,7 @@ static int WinObj_hash(WindowObject *self)
 PyTypeObject Window_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Window", /*tp_name*/
+	"_Win.Window", /*tp_name*/
 	sizeof(WindowObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

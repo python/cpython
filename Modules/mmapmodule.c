@@ -772,7 +772,7 @@ static PyBufferProcs mmap_as_buffer = {
 static PyTypeObject mmap_object_type = {
 	PyObject_HEAD_INIT(0) /* patched in module init */
 	0,					/* ob_size */
-	"mmap",					/* tp_name */
+	"mmap.mmap",				/* tp_name */
 	sizeof(mmap_object),			/* tp_size */
 	0,					/* tp_itemsize */
 	/* methods */

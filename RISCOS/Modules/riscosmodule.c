@@ -148,7 +148,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 };
 
 static PyStructSequence_Desc stat_result_desc = {
-	"stat_result",
+	"riscos.stat_result",
 	stat_result__doc__,
 	stat_result_fields,
 	13

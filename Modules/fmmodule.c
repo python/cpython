@@ -154,7 +154,7 @@ fh_dealloc(fhobject *fhp)
 static PyTypeObject Fhtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"font handle",			/*tp_name*/
+	"fm.font handle",		/*tp_name*/
 	sizeof(fhobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */

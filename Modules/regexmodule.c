@@ -340,7 +340,7 @@ regobj_getattr(regexobject *re, char *name)
 static PyTypeObject Regextype = {
 	PyObject_HEAD_INIT(NULL)
 	0,				     /*ob_size*/
-	"regex",			     /*tp_name*/
+	"regex.regex",			     /*tp_name*/
 	sizeof(regexobject),		     /*tp_size*/
 	0,				     /*tp_itemsize*/
 	/* methods */

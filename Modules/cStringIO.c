@@ -543,7 +543,7 @@ static char Otype__doc__[] =
 static PyTypeObject Otype = {
   PyObject_HEAD_INIT(NULL)
   0,	       		/*ob_size*/
-  "StringO",     		/*tp_name*/
+  "cStringIO.StringO",   		/*tp_name*/
   sizeof(Oobject),       	/*tp_basicsize*/
   0,	       		/*tp_itemsize*/
   /* methods */
@@ -677,7 +677,7 @@ static char Itype__doc__[] =
 static PyTypeObject Itype = {
   PyObject_HEAD_INIT(NULL)
   0,					/*ob_size*/
-  "StringI",				/*tp_name*/
+  "cStringIO.StringI",			/*tp_name*/
   sizeof(Iobject),			/*tp_basicsize*/
   0,					/*tp_itemsize*/
   /* methods */

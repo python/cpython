@@ -2403,7 +2403,7 @@ pattern_getattr(PatternObject* self, char* name)
 
 statichere PyTypeObject Pattern_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "SRE_Pattern",
+    0, "_sre.SRE_Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -2866,7 +2866,7 @@ match_getattr(MatchObject* self, char* name)
 
 statichere PyTypeObject Match_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "SRE_Match",
+    0, "_sre.SRE_Match",
     sizeof(MatchObject), sizeof(int),
     (destructor)match_dealloc, /*tp_dealloc*/
     0, /*tp_print*/
@@ -2974,7 +2974,7 @@ scanner_getattr(ScannerObject* self, char* name)
 
 statichere PyTypeObject Scanner_Type = {
     PyObject_HEAD_INIT(NULL)
-    0, "SRE_Scanner",
+    0, "_sre.SRE_Scanner",
     sizeof(ScannerObject), 0,
     (destructor)scanner_dealloc, /*tp_dealloc*/
     0, /*tp_print*/

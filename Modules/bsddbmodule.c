@@ -677,7 +677,7 @@ bsddb_getattr(PyObject *dp, char *name)
 static PyTypeObject Bsddbtype = {
 	PyObject_HEAD_INIT(NULL)
 	0,
-	"bsddb",
+	"bsddb.bsddb",
 	sizeof(bsddbobject),
 	0,
 	(destructor)bsddb_dealloc, /*tp_dealloc*/

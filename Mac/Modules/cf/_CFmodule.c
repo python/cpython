@@ -336,7 +336,7 @@ static int CFTypeRefObj_hash(CFTypeRefObject *self)
 PyTypeObject CFTypeRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFTypeRef", /*tp_name*/
+	"_CF.CFTypeRef", /*tp_name*/
 	sizeof(CFTypeRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -488,7 +488,7 @@ static int CFArrayRefObj_hash(CFArrayRefObject *self)
 PyTypeObject CFArrayRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFArrayRef", /*tp_name*/
+	"_CF.CFArrayRef", /*tp_name*/
 	sizeof(CFArrayRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -647,7 +647,7 @@ static int CFMutableArrayRefObj_hash(CFMutableArrayRefObject *self)
 PyTypeObject CFMutableArrayRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFMutableArrayRef", /*tp_name*/
+	"_CF.CFMutableArrayRef", /*tp_name*/
 	sizeof(CFMutableArrayRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -781,7 +781,7 @@ static int CFDictionaryRefObj_hash(CFDictionaryRefObject *self)
 PyTypeObject CFDictionaryRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFDictionaryRef", /*tp_name*/
+	"_CF.CFDictionaryRef", /*tp_name*/
 	sizeof(CFDictionaryRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -899,7 +899,7 @@ static int CFMutableDictionaryRefObj_hash(CFMutableDictionaryRefObject *self)
 PyTypeObject CFMutableDictionaryRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFMutableDictionaryRef", /*tp_name*/
+	"_CF.CFMutableDictionaryRef", /*tp_name*/
 	sizeof(CFMutableDictionaryRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1051,7 +1051,7 @@ static int CFDataRefObj_hash(CFDataRefObject *self)
 PyTypeObject CFDataRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFDataRef", /*tp_name*/
+	"_CF.CFDataRef", /*tp_name*/
 	sizeof(CFDataRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1257,7 +1257,7 @@ static int CFMutableDataRefObj_hash(CFMutableDataRefObject *self)
 PyTypeObject CFMutableDataRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFMutableDataRef", /*tp_name*/
+	"_CF.CFMutableDataRef", /*tp_name*/
 	sizeof(CFMutableDataRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1890,7 +1890,7 @@ static int CFStringRefObj_hash(CFStringRefObject *self)
 PyTypeObject CFStringRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFStringRef", /*tp_name*/
+	"_CF.CFStringRef", /*tp_name*/
 	sizeof(CFStringRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -2197,7 +2197,7 @@ static int CFMutableStringRefObj_hash(CFMutableStringRefObject *self)
 PyTypeObject CFMutableStringRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFMutableStringRef", /*tp_name*/
+	"_CF.CFMutableStringRef", /*tp_name*/
 	sizeof(CFMutableStringRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -2601,7 +2601,7 @@ static int CFURLRefObj_hash(CFURLRefObject *self)
 PyTypeObject CFURLRef_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"CFURLRef", /*tp_name*/
+	"_CF.CFURLRef", /*tp_name*/
 	sizeof(CFURLRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

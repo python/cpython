@@ -174,7 +174,7 @@ static
 PyTypeObject PyST_Type = {
     PyObject_HEAD_INIT(NULL)
     0,
-    "st",                               /* tp_name              */
+    "parser.st",                        /* tp_name              */
     (int) sizeof(PyST_Object),          /* tp_basicsize         */
     0,                                  /* tp_itemsize          */
     (destructor)parser_free,            /* tp_dealloc           */

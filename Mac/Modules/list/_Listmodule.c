@@ -649,7 +649,7 @@ ListObj_setattr(ListObject *self, char *name, PyObject *value)
 PyTypeObject List_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"List", /*tp_name*/
+	"_List.List", /*tp_name*/
 	sizeof(ListObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

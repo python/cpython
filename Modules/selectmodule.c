@@ -567,7 +567,7 @@ statichere PyTypeObject poll_Type = {
 	 * to be portable to Windows without using C++. */
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"poll",			/*tp_name*/
+	"select.poll",		/*tp_name*/
 	sizeof(pollObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

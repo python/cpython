@@ -798,7 +798,7 @@ static PyMethodDef zlib_methods[] =
 statichere PyTypeObject Comptype = {
     PyObject_HEAD_INIT(0)
     0,
-    "Compress",
+    "zlib.Compress",
     sizeof(compobject),
     0,
     (destructor)Comp_dealloc,       /*tp_dealloc*/
@@ -815,7 +815,7 @@ statichere PyTypeObject Comptype = {
 statichere PyTypeObject Decomptype = {
     PyObject_HEAD_INIT(0)
     0,
-    "Decompress",
+    "zlib.Decompress",
     sizeof(compobject),
     0,
     (destructor)Decomp_dealloc,     /*tp_dealloc*/

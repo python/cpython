@@ -597,7 +597,7 @@ static char Alctype__doc__[] =
 static PyTypeObject Alctype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"config",			/*tp_name*/
+	"al.config",			/*tp_name*/
 	sizeof(alcobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -1321,7 +1321,7 @@ static char Alptype__doc__[] =
 static PyTypeObject Alptype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"port",			/*tp_name*/
+	"al.port",			/*tp_name*/
 	sizeof(alpobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

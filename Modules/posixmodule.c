@@ -6002,9 +6002,11 @@ INITFUNC(void)
 		posix_putenv_garbage = PyDict_New();
 #endif
 
+	stat_result_desc.name = MODNAME ".stat_result";
 	PyStructSequence_InitType(&StatResultType, &stat_result_desc);
 	PyDict_SetItemString(d, "stat_result", (PyObject*) &StatResultType);
 
+	statvfs_result_desc.name = MODNAME ".statvfs_result";
 	PyStructSequence_InitType(&StatVFSResultType, &statvfs_result_desc);
 	PyDict_SetItemString(d, "statvfs_result", (PyObject*) &StatResultType);
 }

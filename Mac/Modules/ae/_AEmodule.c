@@ -782,7 +782,7 @@ static PyObject *AEDesc_getattr(AEDescObject *self, char *name)
 PyTypeObject AEDesc_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"AEDesc", /*tp_name*/
+	"_AE.AEDesc", /*tp_name*/
 	sizeof(AEDescObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

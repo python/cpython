@@ -371,7 +371,7 @@ static PyObject *GrafObj_getattr(GrafPortObject *self, char *name)
 PyTypeObject GrafPort_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"GrafPort", /*tp_name*/
+	"_Qd.GrafPort", /*tp_name*/
 	sizeof(GrafPortObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -502,7 +502,7 @@ static PyObject *BMObj_getattr(BitMapObject *self, char *name)
 PyTypeObject BitMap_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"BitMap", /*tp_name*/
+	"_Qd.BitMap", /*tp_name*/
 	sizeof(BitMapObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -630,7 +630,7 @@ static PyObject *QDGA_getattr(QDGlobalsAccessObject *self, char *name)
 staticforward PyTypeObject QDGlobalsAccess_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"QDGlobalsAccess", /*tp_name*/
+	"_Qd.QDGlobalsAccess", /*tp_name*/
 	sizeof(QDGlobalsAccessObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

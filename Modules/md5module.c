@@ -202,7 +202,7 @@ copy() -- return a copy of the current md5 object\n\
 statichere PyTypeObject MD5type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			  /*ob_size*/
-	"md5",			  /*tp_name*/
+	"md5.md5",		  /*tp_name*/
 	sizeof(md5object),	  /*tp_size*/
 	0,			  /*tp_itemsize*/
 	/* methods */

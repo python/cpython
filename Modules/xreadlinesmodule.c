@@ -135,7 +135,7 @@ static PySequenceMethods xreadlines_as_sequence = {
 static PyTypeObject XReadlinesObject_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,
-	"xreadlines",
+	"xreadlines.xreadlines",
 	sizeof(PyXReadlinesObject),
 	0,
 	(destructor)xreadlines_dealloc,		/* tp_dealloc */

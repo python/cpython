@@ -275,7 +275,7 @@ static char Rftype__doc__[] =
 static PyTypeObject Rftype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"ResourceFork",			/*tp_name*/
+	"MacOS.ResourceFork",		/*tp_name*/
 	sizeof(rfobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

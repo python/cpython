@@ -294,7 +294,7 @@ capture_getattr(svobject *self, char *name)
 PyTypeObject Capturetype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"capture",			/*tp_name*/
+	"sv.capture",			/*tp_name*/
 	sizeof(captureobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -898,7 +898,7 @@ svideo_getattr(svobject *self, char *name)
 PyTypeObject Svtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"sv",			/*tp_name*/
+	"sv.sv",		/*tp_name*/
 	sizeof(svobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -356,7 +356,7 @@ static PyObject *EventRef_getattr(EventRefObject *self, char *name)
 PyTypeObject EventRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventRef", /*tp_name*/
+	"CarbonEvents.EventRef", /*tp_name*/
 	sizeof(EventRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -539,7 +539,7 @@ static PyObject *EventQueueRef_getattr(EventQueueRefObject *self, char *name)
 PyTypeObject EventQueueRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventQueueRef", /*tp_name*/
+	"CarbonEvents.EventQueueRef", /*tp_name*/
 	sizeof(EventQueueRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -631,7 +631,7 @@ static PyObject *EventLoopRef_getattr(EventLoopRefObject *self, char *name)
 PyTypeObject EventLoopRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventLoopRef", /*tp_name*/
+	"CarbonEvents.EventLoopRef", /*tp_name*/
 	sizeof(EventLoopRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -741,7 +741,7 @@ static PyObject *EventLoopTimerRef_getattr(EventLoopTimerRefObject *self, char *
 PyTypeObject EventLoopTimerRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventLoopTimerRef", /*tp_name*/
+	"CarbonEvents.EventLoopTimerRef", /*tp_name*/
 	sizeof(EventLoopTimerRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -875,7 +875,7 @@ static PyObject *EventHandlerRef_getattr(EventHandlerRefObject *self, char *name
 PyTypeObject EventHandlerRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventHandlerRef", /*tp_name*/
+	"CarbonEvents.EventHandlerRef", /*tp_name*/
 	sizeof(EventHandlerRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -970,7 +970,7 @@ static PyObject *EventHandlerCallRef_getattr(EventHandlerCallRefObject *self, ch
 PyTypeObject EventHandlerCallRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventHandlerCallRef", /*tp_name*/
+	"CarbonEvents.EventHandlerCallRef", /*tp_name*/
 	sizeof(EventHandlerCallRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1085,7 +1085,7 @@ static PyObject *EventTargetRef_getattr(EventTargetRefObject *self, char *name)
 PyTypeObject EventTargetRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventTargetRef", /*tp_name*/
+	"CarbonEvents.EventTargetRef", /*tp_name*/
 	sizeof(EventTargetRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
@@ -1162,7 +1162,7 @@ static PyObject *EventHotKeyRef_getattr(EventHotKeyRefObject *self, char *name)
 PyTypeObject EventHotKeyRef_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
-	"EventHotKeyRef", /*tp_name*/
+	"CarbonEvents.EventHotKeyRef", /*tp_name*/
 	sizeof(EventHotKeyRefObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

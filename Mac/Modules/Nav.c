@@ -387,7 +387,7 @@ static char Navrrtype__doc__[] =
 static PyTypeObject Navrrtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"NavReplyRecord",			/*tp_name*/
+	"Nav.NavReplyRecord",			/*tp_name*/
 	sizeof(navrrobject),		/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

@@ -1511,7 +1511,7 @@ PyCursesWindow_GetAttr(PyCursesWindowObject *self, char *name)
 PyTypeObject PyCursesWindow_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0,			/*ob_size*/
-	"curses window",	/*tp_name*/
+	"_curses.curses window",	/*tp_name*/
 	sizeof(PyCursesWindowObject),	/*tp_basicsize*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -1380,7 +1380,7 @@ static char Xmlparsetype__doc__[] =
 static PyTypeObject Xmlparsetype = {
 	PyObject_HEAD_INIT(NULL)
 	0,				/*ob_size*/
-	"xmlparser",			/*tp_name*/
+	"pyexpat.xmlparser",		/*tp_name*/
 	sizeof(xmlparseobject) + PyGC_HEAD_SIZE,/*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */

@@ -486,7 +486,7 @@ static PyStructSequence_Field stat_result_fields[] = {
 };
 
 static PyStructSequence_Desc stat_result_desc = {
-	"stat_result",
+	"mac.stat_result",
 	stat_result__doc__,
 	stat_result_fields,
 	10
@@ -504,7 +504,7 @@ static PyStructSequence_Field xstat_result_fields[] = {
 };
 
 static PyStructSequence_Desc xstat_result_desc = {
-	"xstat_result",
+	"mac.xstat_result",
 	stat_result__doc__,
 	xstat_result_fields,
 	13

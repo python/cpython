@@ -136,7 +136,7 @@ static PyObject *GWorldObj_getattr(GWorldObject *self, char *name)
 PyTypeObject GWorld_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"GWorld", /*tp_name*/
+	"_Qdoffs.GWorld", /*tp_name*/
 	sizeof(GWorldObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

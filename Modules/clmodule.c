@@ -658,7 +658,7 @@ cl_getattr(PyObject *self, char *name)
 static PyTypeObject Cltype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"cl",			/*tp_name*/
+	"cl.cl",		/*tp_name*/
 	sizeof(clobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */

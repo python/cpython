@@ -395,7 +395,7 @@ cdplayer_getattr(cdplayerobject *self, char *name)
 PyTypeObject CdPlayertype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"cdplayer",		/*tp_name*/
+	"cd.cdplayer",	/*tp_name*/
 	sizeof(cdplayerobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */
@@ -692,7 +692,7 @@ cdparser_getattr(cdparserobject *self, char *name)
 PyTypeObject CdParsertype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
-	"cdparser",		/*tp_name*/
+	"cd.cdparser",		/*tp_name*/
 	sizeof(cdparserobject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	/* methods */

@@ -167,7 +167,7 @@ Pdata_dealloc(Pdata *self) {
 }
 
 static PyTypeObject PdataType = {
-    PyObject_HEAD_INIT(NULL) 0, "Pdata", sizeof(Pdata), 0,
+    PyObject_HEAD_INIT(NULL) 0, "cPickle.Pdata", sizeof(Pdata), 0,
     (destructor)Pdata_dealloc,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0L,0L,0L,0L, ""
 };
@@ -2479,7 +2479,7 @@ static char Picklertype__doc__[] =
 static PyTypeObject Picklertype = {
     PyObject_HEAD_INIT(NULL)
     0,                            /*ob_size*/
-    "Pickler",                    /*tp_name*/
+    "cPickle.Pickler",            /*tp_name*/
     sizeof(Picklerobject),              /*tp_basicsize*/
     0,
     (destructor)Pickler_dealloc,	/* tp_dealloc */
@@ -4478,7 +4478,7 @@ static char Unpicklertype__doc__[] =
 static PyTypeObject Unpicklertype = {
     PyObject_HEAD_INIT(NULL)
     0,                            /*ob_size*/
-    "Unpickler",                  /*tp_name*/
+    "cPickle.Unpickler",                  /*tp_name*/
     sizeof(Unpicklerobject),              /*tp_basicsize*/
     0,                            /*tp_itemsize*/
     /* methods */

@@ -1008,7 +1008,7 @@ static int DlgObj_hash(DialogObject *self)
 PyTypeObject Dialog_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Dialog", /*tp_name*/
+	"_Dlg.Dialog", /*tp_name*/
 	sizeof(DialogObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */

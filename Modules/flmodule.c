@@ -378,7 +378,7 @@ generic_repr(genericobject *g)
 static PyTypeObject GenericObjecttype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FORMS_object",			/*tp_name*/
+	"fl.FORMS_object",		/*tp_name*/
 	sizeof(genericobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */
@@ -1588,7 +1588,7 @@ form_repr(formobject *f)
 static PyTypeObject Formtype = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,				/*ob_size*/
-	"FORMS_form",			/*tp_name*/
+	"fl.FORMS_form",		/*tp_name*/
 	sizeof(formobject),		/*tp_size*/
 	0,				/*tp_itemsize*/
 	/* methods */

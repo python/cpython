@@ -548,7 +548,7 @@ ResObj_setattr(ResourceObject *self, char *name, PyObject *value)
 PyTypeObject Resource_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, /*ob_size*/
-	"Resource", /*tp_name*/
+	"_Res.Resource", /*tp_name*/
 	sizeof(ResourceObject), /*tp_basicsize*/
 	0, /*tp_itemsize*/
 	/* methods */
