@@ -20,6 +20,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "compile.h"
 #include "eval.h"
 #include "marshal.h"
+#include "osdefs.h"			/* SEP */
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -1003,9 +1004,26 @@ err_input(perrdetail *err)
 		break;
 	}
 	w = Py_BuildValue("(sO)", msg, v);
-	Py_XDECREF(v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);
+
+	if (v != NULL) {
+		PyObject *exc, *tb;
+
+		PyErr_Fetch(&errtype, &exc, &tb);
+		PyErr_NormalizeException(&errtype, &exc, &tb);
+		if (PyObject_SetAttrString(exc, "filename",
+					   PyTuple_GET_ITEM(v, 0)))
+			PyErr_Clear();
+		if (PyObject_SetAttrString(exc, "lineno",
+					   PyTuple_GET_ITEM(v, 1)))
+			PyErr_Clear();
+		if (PyObject_SetAttrString(exc, "offset",
+					   PyTuple_GET_ITEM(v, 2)))
+			PyErr_Clear();
+		Py_DECREF(v);
+		PyErr_Restore(errtype, exc, tb);
+	}
 }
 
 /* Print fatal error message and abort */
