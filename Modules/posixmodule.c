@@ -4354,21 +4354,10 @@ _PyPopen(char *cmdstring, int mode, int n)
  * exit code as the result of the close() operation.  This permits the
  * files to be closed in any order - it is always the close() of the
  * final handle that will return the exit code.
+ *
+ * NOTE: This function is currently called with the GIL released.
+ * hence we use the GILState API to manage our state.
  */
-
- /* RED_FLAG 31-Aug-2000 Tim
-  * This is always called (today!) between a pair of
-  * Py_BEGIN_ALLOW_THREADS/ Py_END_ALLOW_THREADS
-  * macros.  So the thread running this has no valid thread state, as
-  * far as Python is concerned.  However, this calls some Python API
-  * functions that cannot be called safely without a valid thread
-  * state, in particular PyDict_GetItem.
-  * As a temporary hack (although it may last for years ...), we
-  * *rely* on not having a valid thread state in this function, in
-  * order to create our own "from scratch".
-  * This will deadlock if _PyPclose is ever called by a thread
-  * holding the global lock.
-  */
 
 static int _PyPclose(FILE *file)
 {
@@ -4378,40 +4367,16 @@ static int _PyPclose(FILE *file)
 	PyObject *procObj, *hProcessObj, *intObj, *fileObj;
 	long file_count;
 #ifdef WITH_THREAD
-	PyInterpreterState* pInterpreterState;
-	PyThreadState* pThreadState;
+	PyGILState_STATE state;
 #endif
 
 	/* Close the file handle first, to ensure it can't block the
 	 * child from exiting if it's the last handle.
 	 */
 	result = fclose(file);
-
 #ifdef WITH_THREAD
-	/* Bootstrap a valid thread state into existence. */
-	pInterpreterState = PyInterpreterState_New();
-	if (!pInterpreterState) {
-		/* Well, we're hosed now!  We don't have a thread
-		 * state, so can't call a nice error routine, or raise
-		 * an exception.  Just die.
-		 */
-		 Py_FatalError("unable to allocate interpreter state "
-		 	       "when closing popen object");
-		 return -1;  /* unreachable */
-	}
-	pThreadState = PyThreadState_New(pInterpreterState);
-	if (!pThreadState) {
-		 Py_FatalError("unable to allocate thread state "
-		 	       "when closing popen object");
-		 return -1;  /* unreachable */
-	}
-	/* Grab the global lock.  Note that this will deadlock if the
-	 * current thread already has the lock! (see RED_FLAG comments
-	 * before this function)
-	 */
-	PyEval_RestoreThread(pThreadState);
+	state = PyGILState_Ensure();
 #endif
-
 	if (_PyPopenProcs) {
 		if ((fileObj = PyLong_FromVoidPtr(file)) != NULL &&
 		    (procObj = PyDict_GetItem(_PyPopenProcs,
@@ -4470,17 +4435,8 @@ static int _PyPclose(FILE *file)
 	} /* if _PyPopenProcs */
 
 #ifdef WITH_THREAD
-	/* Tear down the thread & interpreter states.
-	 * Note that interpreter state clear & delete functions automatically
-	 * call the thread clear & delete functions, and indeed insist on
-	 * doing that themselves.  The lock must be held during the clear, but
-	 * need not be held during the delete.
-	 */
-	PyInterpreterState_Clear(pInterpreterState);
-	PyEval_ReleaseThread(pThreadState);
-	PyInterpreterState_Delete(pInterpreterState);
+	PyGILState_Release(state);
 #endif
-
 	return result;
 }
 

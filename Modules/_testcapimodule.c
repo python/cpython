@@ -7,6 +7,10 @@
 
 #include "Python.h"
 
+#ifdef WITH_THREAD
+#include "pythread.h"
+#endif /* WITH_THREAD */
+
 static PyObject *TestError;	/* set to exception object in init */
 
 /* Raise TestError with test_name + ": " + msg, and return NULL. */
@@ -535,6 +539,46 @@ raise_exception(PyObject *self, PyObject *args)
 	return NULL;
 }
 
+#ifdef WITH_THREAD
+
+void _make_call(void *callable)
+{
+	PyObject *rc;
+	PyGILState_STATE s = PyGILState_Ensure();
+	rc = PyObject_CallFunction(callable, "");
+	Py_XDECREF(rc);
+	PyGILState_Release(s);
+}
+
+static PyObject *
+test_thread_state(PyObject *self, PyObject *args)
+{
+	PyObject *fn;
+	if (!PyArg_ParseTuple(args, "O:test_thread_state", &fn))
+		return NULL;
+	/* Ensure Python is setup for threading */
+	PyEval_InitThreads();
+	/* Start a new thread for our callback. */
+	PyThread_start_new_thread( _make_call, fn);
+	/* Make the callback with the thread lock held by this thread */
+	_make_call(fn);
+	/* Do it all again, but this time with the thread-lock released */
+	Py_BEGIN_ALLOW_THREADS
+	_make_call(fn);
+	Py_END_ALLOW_THREADS
+	/* And once more with and without a thread
+	   XXX - should use a lock and work out exactly what we are trying 
+	   to test <wink> 
+	*/
+	Py_BEGIN_ALLOW_THREADS
+	PyThread_start_new_thread( _make_call, fn);
+	_make_call(fn);
+	Py_END_ALLOW_THREADS
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+#endif
+
 static PyMethodDef TestMethods[] = {
 	{"raise_exception",	raise_exception,		 METH_VARARGS},
 	{"test_config",		(PyCFunction)test_config,	 METH_NOARGS},
@@ -553,6 +597,9 @@ static PyMethodDef TestMethods[] = {
 #endif
 #ifdef Py_USING_UNICODE
 	{"test_u_code",		(PyCFunction)test_u_code,	 METH_NOARGS},
+#endif
+#ifdef WITH_THREAD
+	{"_test_thread_state", (PyCFunction)test_thread_state, METH_VARARGS},
 #endif
 	{NULL, NULL} /* sentinel */
 };

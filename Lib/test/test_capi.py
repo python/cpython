@@ -14,3 +14,32 @@ for name in dir(_testcapi):
             test()
         except _testcapi.error:
             raise test_support.TestFailed, sys.exc_info()[1]
+
+# some extra thread-state tests driven via _testcapi
+def TestThreadState():
+    import thread
+    import time
+
+    if test_support.verbose:
+        print "auto-thread-state"
+
+    idents = []
+
+    def callback():
+        idents.append(thread.get_ident())
+    
+    _testcapi._test_thread_state(callback)
+    time.sleep(1)
+    # Check our main thread is in the list exactly 3 times.
+    if idents.count(thread.get_ident()) != 3:
+        raise test_support.TestFailed, \
+              "Couldn't find main thread correctly in the list"
+
+try:
+    _testcapi._test_thread_state
+    have_thread_state = True
+except AttributeError:
+    have_thread_state = False
+    
+if have_thread_state:
+    TestThreadState()
