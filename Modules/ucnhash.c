@@ -11,18 +11,19 @@
 /* database code (cut and pasted from the unidb package) */
 
 static unsigned long
-gethash(const char *s)
+gethash(const char *s, int len)
 {
+    int i;
     unsigned long h = 0;
-    unsigned long i;
-    while (*s) {
+    unsigned long ix;
+    for (i = 0; i < len; i++) {
         /* magic value 47 was chosen to minimize the number
            of collisions for the uninames dataset.  see the
            makeunicodedata script for more background */
-        h = (h * 47) + (unsigned char) toupper(*s++);
-        i = h & 0xff000000;
-        if (i)
-            h = (h ^ ((i>>24) & 0xff)) & 0x00ffffff;
+        h = (h * 47) + (unsigned char) toupper(s[i]);
+        ix = h & 0xff000000;
+        if (ix)
+            h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
     }
     return h;
 }
@@ -80,21 +81,18 @@ getname(Py_UCS4 code, char* buffer, int buflen)
 }
 
 static int
-cmpname(int code, const char* name)
+cmpname(int code, const char* name, int namelen)
 {
     /* check if code corresponds to the given name */
     int i;
     char buffer[NAME_MAXLEN];
     if (!getname(code, buffer, sizeof(buffer)))
         return 0;
-    i = 0;
-    for (;;) {
+    for (i = 0; i < namelen; i++) {
         if (toupper(name[i]) != buffer[i])
             return 0;
-        if (!name[i] || !buffer[i])
-            return 1;
-        i++;
     }
+    return buffer[namelen] == '\0';
 }
 
 static int
@@ -108,12 +106,12 @@ getcode(const char* name, int namelen, Py_UCS4* code)
        only minor changes.  see the makeunicodedata script for more
        details */
 
-    h = (unsigned int) gethash(name);
+    h = (unsigned int) gethash(name, namelen);
     i = (~h) & mask;
     v = code_hash[i];
     if (!v)
         return 0;
-    if (cmpname(v, name)) {
+    if (cmpname(v, name, namelen)) {
         *code = v;
         return 1;
     }
@@ -125,7 +123,7 @@ getcode(const char* name, int namelen, Py_UCS4* code)
         v = code_hash[i];
         if (!v)
             return -1;
-        if (cmpname(v, name)) {
+        if (cmpname(v, name, namelen)) {
             *code = v;
             return 1;
         }
