@@ -661,14 +661,12 @@ below.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_ExceptionMatches}{PyObject *exc}
-\strong{(NEW in 1.5a4!)}
 Equivalent to
 \samp{PyErr_GivenExceptionMatches(PyErr_Occurred(), \var{exc})}.
 This should only be called when an exception is actually set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyErr_GivenExceptionMatches}{PyObject *given, PyObject *exc}
-\strong{(NEW in 1.5a4!)}
 Return true if the \var{given} exception matches the exception in
 \var{exc}.  If \var{exc} is a class object, this also returns true
 when \var{given} is a subclass.  If \var{exc} is a tuple, all
@@ -678,7 +676,6 @@ set.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_NormalizeException}{PyObject**exc, PyObject**val, PyObject**tb}
-\strong{(NEW in 1.5a4!)}
 Under certain circumstances, the values returned by
 \cfunction{PyErr_Fetch()} below can be ``unnormalized'', meaning that
 \code{*\var{exc}} is a class object but \code{*\var{val}} is not an
@@ -792,7 +789,6 @@ the effect of a \constant{SIGINT} signal arriving --- the next time
 
 \begin{cfuncdesc}{PyObject *}{PyErr_NewException}{char *name,
 PyObject *base, PyObject *dict}
-\strong{(NEW in 1.5a4!)}
 This utility function creates and returns a new exception object.  The
 \var{name} argument must be the name of the new exception, a \C{} string
 of the form \code{module.class}.  The \var{base} and \var{dict}
@@ -819,7 +815,7 @@ names are \samp{PyExc_} followed by the Python exception name.
 These have the type \code{PyObject *}; they are all either class
 objects or string objects, depending on the use of the \code{-X}
 option to the interpreter.  For completeness, here are all the
-variables (the first four are new in Python 1.5a4):
+variables:
 \code{PyExc_Exception},
 \code{PyExc_StandardError},
 \code{PyExc_ArithmeticError},
@@ -918,7 +914,6 @@ be created in this case).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
-\strong{(NEW in 1.5a4!)}
 Import a module.  This is best described by referring to the built-in
 Python function \function{__import__()}\bifuncindex{__import__}, as
 the standard \function{__import__()} function calls this function
@@ -2241,7 +2236,6 @@ fatal error if the initialization fails.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{Py_IsInitialized}{}
-\strong{(NEW in 1.5a4!)}
 Return true (nonzero) when the Python interpreter has been
 initialized, false (zero) if not.  After \cfunction{Py_Finalize()} is
 called, this returns false until \cfunction{Py_Initialize()} is called
@@ -2249,7 +2243,6 @@ again.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_Finalize}{}
-\strong{(NEW in 1.5a3!)}
 Undo all initializations made by \cfunction{Py_Initialize()} and
 subsequent use of Python/C API functions, and destroy all
 sub-interpreters (see \cfunction{Py_NewInterpreter()} below) that were
@@ -2282,7 +2275,6 @@ than once.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{Py_NewInterpreter}{}
-\strong{(NEW in 1.5a3!)}
 Create a new sub-interpreter.  This is an (almost) totally separate
 environment for the execution of Python code.  In particular, the new
 interpreter has separate, independent versions of all imported
@@ -2337,7 +2329,6 @@ a hard-to-fix bug that will be addressed in a future release.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_EndInterpreter}{PyThreadState *tstate}
-\strong{(NEW in 1.5a3!)}
 Destroy the (sub-)interpreter represented by the given thread state.  
 The given thread state must be the current thread state.  See the 
 discussion of thread states below.  When the call returns, the current 
@@ -2349,7 +2340,6 @@ been explicitly destroyed at that point.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{Py_SetProgramName}{char *name}
-\strong{(NEW in 1.5a3!)}
 This function should be called before \cfunction{Py_Initialize()} is called 
 for the first time, if it is called at all.  It tells the interpreter 
 the value of the \code{argv[0]} argument to the \cfunction{main()} function 
@@ -2421,7 +2411,6 @@ platform.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{char *}{Py_GetProgramFullPath}{}
-\strong{(NEW in 1.5a3!)}
 Return the full program name of the Python executable; this is 
 computed as a side-effect of deriving the default module search path 
 from the program name (set by \cfunction{Py_SetProgramName()} above).  The 
@@ -2545,7 +2534,7 @@ exception last raised in the current thread.
 
 There's one global variable left, however: the pointer to the current
 \code{PyThreadState} structure.  While most thread packages have a way
-to store ``per-thread global data'', Python's internal platform
+to store ``per-thread global data,'' Python's internal platform
 independent thread abstraction doesn't support this yet.  Therefore,
 the current thread state must be manipulated explicitly.
 
@@ -2644,7 +2633,6 @@ thread after Python is initialized).
 XXX More?
 
 \begin{ctypedesc}{PyInterpreterState}
-\strong{(NEW in 1.5a3!)}
 This data structure represents the state shared by a number of
 cooperating threads.  Threads belonging to the same interpreter
 share their module administration and a few other internal items.
@@ -2657,7 +2645,6 @@ regardless of to which interpreter they belong.
 \end{ctypedesc}
 
 \begin{ctypedesc}{PyThreadState}
-\strong{(NEW in 1.5a3!)}
 This data structure represents the state of a single thread.  The only
 public data member is \code{PyInterpreterState *interp}, which points
 to this thread's interpreter state.
@@ -2696,7 +2683,6 @@ compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireLock}{}
-\strong{(NEW in 1.5a3!)}
 Acquire the global interpreter lock.  The lock must have been created
 earlier.  If this thread already has the lock, a deadlock ensues.
 This function is not available when thread support is disabled at
@@ -2704,14 +2690,12 @@ compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseLock}{}
-\strong{(NEW in 1.5a3!)}
 Release the global interpreter lock.  The lock must have been created
 earlier.  This function is not available when thread support is
 disabled at compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_AcquireThread}{PyThreadState *tstate}
-\strong{(NEW in 1.5a3!)}
 Acquire the global interpreter lock and then set the current thread
 state to \var{tstate}, which should not be \NULL{}.  The lock must
 have been created earlier.  If this thread already has the lock,
@@ -2720,7 +2704,6 @@ is disabled at compile time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_ReleaseThread}{PyThreadState *tstate}
-\strong{(NEW in 1.5a3!)}
 Reset the current thread state to \NULL{} and release the global
 interpreter lock.  The lock must have been created earlier and must be
 held by the current thread.  The \var{tstate} argument, which must not
@@ -2731,7 +2714,6 @@ time.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyThreadState *}{PyEval_SaveThread}{}
-\strong{(Different return type in 1.5a3!)}
 Release the interpreter lock (if it has been created and thread
 support is enabled) and reset the thread state to \NULL{},
 returning the previous thread state (which is not \NULL{}).  If
@@ -2741,7 +2723,6 @@ compile time.)
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyEval_RestoreThread}{PyThreadState *tstate}
-\strong{(Different argument type in 1.5a3!)}
 Acquire the interpreter lock (if it has been created and thread
 support is enabled) and set the thread state to \var{tstate}, which
 must not be \NULL{}.  If the lock has been created, the current
@@ -2785,7 +2766,7 @@ disabled at compile time.
 
 All of the following functions are only available when thread support
 is enabled at compile time, and must be called only when the
-interpreter lock has been created.  They are all new in 1.5a3.
+interpreter lock has been created.
 
 \begin{cfuncdesc}{PyInterpreterState *}{PyInterpreterState_New}{}
 Create a new interpreter state object.  The interpreter lock must be
