@@ -550,11 +550,34 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			}
 			break;
 
+		/* Simplify conditional jump to conditional jump where the
+		   result of the first test implies the success of a similar
+		   test or the failure of the opposite test.
+		   Arises in code like:
+		        "a and b or c"
+			"a and b and c"
+		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE z
+		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE y+3 
+		*/
+		case JUMP_IF_FALSE:
+		case JUMP_IF_TRUE:
+			tgt = GETJUMPTGT(codestr, i);
+			j = codestr[tgt];
+			if (j == JUMP_IF_FALSE  ||  j == JUMP_IF_TRUE) {
+				if (j == opcode) {
+					tgttgt = GETJUMPTGT(codestr, tgt) - i - 3;
+					SETARG(codestr, i, tgttgt);
+				} else {
+					tgt -= i;
+					SETARG(codestr, i, tgt);
+				}
+				break;
+			}
+			/* Intentional fallthrough */  
+
 		/* Replace jumps to unconditional jumps */
 		case FOR_ITER:
 		case JUMP_FORWARD:
-		case JUMP_IF_FALSE:
-		case JUMP_IF_TRUE:
 		case JUMP_ABSOLUTE:
 		case CONTINUE_LOOP:
 		case SETUP_LOOP:
