@@ -92,7 +92,8 @@ del dir, L
 
 # Append ./build/lib.<platform> in case we're running in the build dir
 # (especially for Guido :-)
-if os.name == "posix" and os.path.basename(sys.path[-1]) == "Modules":
+if (os.name == "posix" and sys.path and
+    os.path.basename(sys.path[-1]) == "Modules"):
     from distutils.util import get_platform
     s = "build/lib.%s-%.3s" % (get_platform(), sys.version)
     s = os.path.join(os.path.dirname(sys.path[-1]), s)
