@@ -453,6 +453,21 @@ listsort(self, args)
 	return None;
 }
 
+int
+sortlist(v)
+	object *v;
+{
+	if (v == NULL || !is_listobject(v)) {
+		err_badcall();
+		return -1;
+	}
+	v = listsort((listobject *)v, (object *)NULL);
+	if (v == NULL)
+		return -1;
+	DECREF(v);
+	return 0;
+}
+
 static struct methodlist list_methods[] = {
 	{"append",	listappend},
 	{"insert",	listinsert},
