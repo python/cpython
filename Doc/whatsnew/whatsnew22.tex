@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.2}
-\release{0.06}
+\release{0.07}
 \author{A.M. Kuchling}
 \authoraddress{\email{akuchlin@mems-exchange.org}}
 \begin{document}
@@ -212,7 +212,7 @@ have a few attributes of their own:
 
 \item \method{__get__(\var{object})} is a method that retrieves the attribute value from \var{object}.
 
-\item \method{__get__(\var{object}, \var{value})} sets the attribute
+\item \method{__set__(\var{object}, \var{value})} sets the attribute
 on \var{object} to \var{value}.
 
 \end{itemize}
@@ -832,7 +832,7 @@ its operands are, so \code{1 // 2} is 0 and \code{1.0 // 2.0} is also
 \code{//} is always available in Python 2.2; you don't need to enable
 it using a \code{__future__} statement.  
 
-\item By including a \code{from __future__ import true_division} in a
+\item By including a \code{from __future__ import division} in a
 module, the \code{/} operator will be changed to return the result of
 true division, so \code{1/2} is 0.5.  Without the \code{__future__}
 statement, \code{/} still means classic division.  The default meaning
@@ -1280,6 +1280,13 @@ to experiment with these modules can uncomment them manually.
   Peters, automatically removes obsolete \code{__future__} statements
   from Python source code.
 
+  \item An additional \var{flags} argument has been added to the
+  built-in function \function{compile()}, so the behaviour of
+  \code{__future__} statements can now be correctly observed in
+  simulated shells, such as those presented by IDLE and other
+  development environments.  This is described in \pep{264}.
+  (Contributed by Michael Hudson.)
+
   \item The new license introduced with Python 1.6 wasn't
   GPL-compatible.  This is fixed by some minor textual changes to the
   2.2 license, so it's now legal to embed Python inside a GPLed
@@ -1362,7 +1369,7 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
 Carel Fellinger, Mark Hammond, Stephen Hansen, Michael Hudson, Jack Jansen,
-Marc-Andr\'e Lemburg, Fredrik Lundh, Tim Peters, Tom Reinhardt, Neil
-Schemenauer, Guido van Rossum.
+Marc-Andr\'e Lemburg, Fredrik Lundh, Tim Peters, Jens Quade, Tom Reinhardt, 
+Neil Schemenauer, Guido van Rossum.
 
 \end{document}
