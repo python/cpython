@@ -193,6 +193,15 @@ then
 fi
 
 AC_PROG_CC
+AC_SUBST(EXE)
+AC_MSG_CHECKING(for --with-suffix)
+AC_ARG_WITH(suffix, [  --with-suffix=.exe              set executable suffix],[
+	case $withval in
+	no)	EXE=;;
+	yes)	EXE=.exe;;
+	*)	EXE=$withval;;
+	esac])
+AC_MSG_RESULT($EXE)
 
 case $MACHDEP in
 bsdos*)

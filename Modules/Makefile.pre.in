@@ -41,6 +41,9 @@ prefix=		@prefix@
 # Install prefix for architecture-dependent files
 exec_prefix=	@exec_prefix@
 
+# Executable suffix (.exe on Windows and Mac OS X)
+EXE=		@EXE@
+
 # Expanded directories
 BINDIR=		$(exec_prefix)/bin
 LIBDIR=		$(exec_prefix)/lib
@@ -118,13 +121,10 @@ add2lib:	$(OBJS)
 		$(AR) cr $(LIBRARY) $(OBJS)
 		touch add2lib
 
-# Use ``EXE=.exe'' for Unix emulations on DOS/Windows
-EXE=
-
 # This target is used by the master Makefile to link the final binary.
 link:		$(MAINOBJ)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) $(MAINOBJ) \
-		  $(LDLIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
+		  $(LDLIBRARY) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python$(EXE) $(LDLAST)
 		mv python$(EXE) ../python$(EXE)
 
 clean:
