@@ -250,7 +250,7 @@ OptionalCFURLRef  = OpaqueByValueType("CFURLRef", "OptionalCFURLRefObj")
 
 # Our (opaque) objects
 
-class MyGlobalObjectDefinition(GlobalObjectDefinition):
+class MyGlobalObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 	def outputCheckNewArg(self):
 		Output('if (itself == NULL)')
 		OutLbrace()
@@ -302,11 +302,39 @@ class MyGlobalObjectDefinition(GlobalObjectDefinition):
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 
+	def output_tp_newBody(self):
+		Output("PyObject *self;")
+		Output
+		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+		Output("((%s *)self)->ob_itself = NULL;", self.objecttype)
+		Output("((%s *)self)->ob_freeit = CFRelease;", self.objecttype)
+		Output("return self;")
+		
+	def output_tp_initBody(self):
+		Output("%s itself;", self.itselftype)
+		Output("char *kw[] = {\"itself\", 0};")
+		Output()
+		Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
+			self.prefix)
+		OutLbrace()
+		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+		Output("return 0;")
+		OutRbrace()
+		if self.prefix != 'CFTypeRefObj':
+			Output()
+			Output("/* Any CFTypeRef descendent is allowed as initializer too */")
+			Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, CFTypeRefObj_Convert, &itself))")
+			OutLbrace()
+			Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+			Output("return 0;")
+			OutRbrace()
+		Output("return -1;")
+
 class CFTypeRefObjectDefinition(MyGlobalObjectDefinition):
 	pass
 	
 class CFArrayRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFTypeRefObj_chain"
+	basetype = "CFTypeRef_Type"
 	
 	def outputRepr(self):
 		Output()
@@ -318,7 +346,7 @@ class CFArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 	
 class CFMutableArrayRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFArrayRefObj_chain"
+	basetype = "CFArrayRef_Type"
 	
 	def outputRepr(self):
 		Output()
@@ -330,7 +358,7 @@ class CFMutableArrayRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 	
 class CFDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFTypeRefObj_chain"
+	basetype = "CFTypeRef_Type"
 	
 	def outputRepr(self):
 		Output()
@@ -342,7 +370,7 @@ class CFDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 	
 class CFMutableDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFDictionaryRefObj_chain"
+	basetype = "CFDictionaryRef_Type"
 	
 	def outputRepr(self):
 		Output()
@@ -354,7 +382,7 @@ class CFMutableDictionaryRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 	
 class CFDataRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFTypeRefObj_chain"
+	basetype = "CFTypeRef_Type"
 	
 	def outputCheckConvertArg(self):
 		Out("""
@@ -378,7 +406,7 @@ class CFDataRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 	
 class CFMutableDataRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFDataRefObj_chain"
+	basetype = "CFDataRef_Type"
 	
 	def outputRepr(self):
 		Output()
@@ -390,7 +418,7 @@ class CFMutableDataRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 
 class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFTypeRefObj_chain"
+	basetype = "CFTypeRef_Type"
 	
 	def outputCheckConvertArg(self):
 		Out("""
@@ -423,7 +451,7 @@ class CFStringRefObjectDefinition(MyGlobalObjectDefinition):
 		OutRbrace()
 
 class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
-	basechain = "&CFStringRefObj_chain"
+	basetype = "CFStringRef_Type"
 	
 	def outputCheckConvertArg(self):
 		# Mutable, don't allow Python strings
@@ -439,7 +467,7 @@ class CFMutableStringRefObjectDefinition(CFStringRefObjectDefinition):
 		OutRbrace()
 
 class CFURLRefObjectDefinition(MyGlobalObjectDefinition):
-	basechain = "&CFTypeRefObj_chain"
+	basetype = "CFTypeRef_Type"
 	
 	def outputRepr(self):
 		Output()
