@@ -1093,13 +1093,43 @@ def quote_plus(s, safe = ''):
     else:
         return quote(s, safe)
 
-def urlencode(dict):
-    """Encode a dictionary of form entries into a URL query string."""
+def urlencode(dict,doseq=0):
+    """Encode a dictionary of form entries into a URL query string.
+
+    If any values in the dict are sequences and doseq is true, each
+    sequence element is converted to a separate parameter.
+    """
     l = []
-    for k, v in dict.items():
-        k = quote_plus(str(k))
-        v = quote_plus(str(v))
-        l.append(k + '=' + v)
+    if not doseq:
+        # preserve old behavior
+        for k, v in dict.items():
+            k = quote_plus(str(k))
+            v = quote_plus(str(v))
+            l.append(k + '=' + v)
+    else:
+        for k, v in dict.items():
+            k = quote_plus(str(k))
+            if type(v) == types.StringType:
+                v = quote_plus(v)
+                l.append(k + '=' + v)
+            elif type(v) == types.UnicodeType:
+                # is there a reasonable way to convert to ASCII?
+                # encode generates a string, but "replace" or "ignore"
+                # lose information and "strict" can raise UnicodeError
+                v = quote_plus(v.encode("ASCII","replace"))
+                l.append(k + '=' + v)
+            else:
+                try:
+                    # is this a sufficient test for sequence-ness?
+                    x = len(v)
+                except TypeError:
+                    # not a sequence
+                    v = quote_plus(str(v))
+                    l.append(k + '=' + v)
+                else:
+                    # loop over the sequence
+                    for elt in v:
+                        l.append(k + '=' + quote_plus(str(elt)))
     return '&'.join(l)
 
 # Proxy handling
