@@ -346,10 +346,6 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	if ( !PyArg_ParseTuple(args, "t#:a2b_base64", &ascii_data, &ascii_len) )
 		return NULL;
 
-	if ( ascii_len == 0) {
-		PyErr_SetString(Error, "Cannot decode empty input");
-		return NULL;
-	}
 	bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
 
 	/* Allocate the buffer */
@@ -413,7 +409,8 @@ binascii_a2b_base64(PyObject *self, PyObject *args)
 	}
 
 	/* and set string size correctly */
-	_PyString_Resize(&rv, bin_len);
+	if (bin_len > 0)
+		_PyString_Resize(&rv, bin_len);
 	return rv;
 }
 

@@ -44,12 +44,7 @@ class Base64TestCase(unittest.TestCase):
             "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXpBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWjAxMjM0\nNTY3ODkhQCMwXiYqKCk7Ojw+LC4gW117fQ==\n") ==
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#0^&*();:<>,. []{}",
             reason = "long decodestring failed")
-        try:
-            base64.decodestring("")
-        except binascii_error:
-            pass
-        else:
-            self.fail("expected a binascii.Error on null decode request")
+        test_support.verify(base64.decodestring('') == '')
 
 def test_main():
     test_support.run_unittest(Base64TestCase)
