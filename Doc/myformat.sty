@@ -98,6 +98,9 @@
 \index{#4!#1 #2 #3}
 }
 
+% Index an Internet RFC
+\newcommand{\rfcindex}[1]{\index{RFC!#1}}
+
 % Command to generate a reference to a function, statement, keyword, operator
 \newcommand{\stindex}[1]{\indexii{statement}{#1@{\idxcode{#1}}}}
 \newcommand{\opindex}[1]{\indexii{operator}{#1@{\idxcode{#1}}}}
@@ -228,6 +231,7 @@
 \let\constant=\code
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
+\newcommand{\rfc}[1]{RFC #1\rfcindex{#1}}
 \let\email=\code
 \let\url=\code
 
@@ -302,4 +306,4 @@
 }
 
 % Uncomment the following line to use a PostScript font instead of bitmaps:
-%\RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
+\RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
