@@ -735,7 +735,7 @@ def add_ui(db):
     # Also set list of reinstalled features to "ALL"
     c.event("[REINSTALL]", "ALL", 'MaintenanceForm_Action="Repair"', 5)
     c.event("[Progress1]", "Repairing", 'MaintenanceForm_Action="Repair"', 6)
-    c.event("[Progress2]", "repaires", 'MaintenanceForm_Action="Repair"', 7)
+    c.event("[Progress2]", "repairs", 'MaintenanceForm_Action="Repair"', 7)
     c.event("Reinstall", "ALL", 'MaintenanceForm_Action="Repair"', 8)
 
     # Uninstall: Change progress to "Remove", then invoke uninstall
