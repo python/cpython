@@ -19,7 +19,7 @@
 #ifdef WITHOUT_FRAMEWORKS
 #include <MacTextEditor.h>
 #else
-#include <xxxx.h>
+#include <Carbon/Carbon.h>
 #endif
 
 /* For now we declare them forward here. They'll go to mactoolbox later */
@@ -229,6 +229,7 @@ static PyObject *TXNObj_TXNClick(TXNObjectObject *_self, PyObject *_args)
 	return _res;
 }
 
+#if !TARGET_API_MAC_OSX
 static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -244,6 +245,7 @@ static PyObject *TXNObj_TXNTSMCheck(TXNObjectObject *_self, PyObject *_args)
 	                     _rv);
 	return _res;
 }
+#endif
 
 static PyObject *TXNObj_TXNSelectAll(TXNObjectObject *_self, PyObject *_args)
 {
@@ -946,8 +948,10 @@ static PyMethodDef TXNObj_methods[] = {
 	 "(RgnHandle ioCursorRgn) -> None"},
 	{"TXNClick", (PyCFunction)TXNObj_TXNClick, 1,
 	 "(EventRecord iEvent) -> None"},
+#if !TARGET_API_MAC_OSX
 	{"TXNTSMCheck", (PyCFunction)TXNObj_TXNTSMCheck, 1,
 	 "(EventRecord iEvent) -> (Boolean _rv)"},
+#endif
 	{"TXNSelectAll", (PyCFunction)TXNObj_TXNSelectAll, 1,
 	 "() -> None"},
 	{"TXNFocus", (PyCFunction)TXNObj_TXNFocus, 1,

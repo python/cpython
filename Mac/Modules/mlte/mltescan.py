@@ -76,7 +76,11 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 			]
 
 	def makegreylist(self):
-		return []
+		return [
+			('#if !TARGET_API_MAC_OSX', [
+				'TXNTSMCheck',
+			])]
+
 
 	def makeblacklisttypes(self):
 		return [
