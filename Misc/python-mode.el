@@ -332,6 +332,8 @@ support for features needed by `python-mode'.")
      ;; block introducing keywords with immediately following colons.
      ;; Yes "except" is in both lists.
      (cons (concat "\\b\\(" kw2 "\\)[ \n\t(]") 1)
+     ;; `as' but only in "import foo as bar"
+     '("[ \t]*\\(\\bfrom\\b.*\\)?\\bimport\\b.*\\b\\(as\\)\\b" . 2)
      ;; classes
      '("\\bclass[ \t]+\\([a-zA-Z_]+[a-zA-Z0-9_]*\\)"
        1 font-lock-type-face)
