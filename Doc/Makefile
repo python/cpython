@@ -71,19 +71,21 @@ RELEASE=2.4a0
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
-MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+MKHOWTO=   $(PYTHON) ../tools/mkhowto
+
+MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
+MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
 		--iconserver ../icons --favicon ../icons/pyfav.gif \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html" --dvips-safe
-MKISILOHTML=$(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+MKISILOHTML=$(MKHOWTO) --html --about html/stdabout.dat \
 		--iconserver ../icons \
 		--l2h-init perl/isilo.perl --numeric --split 1 \
 		--dvips-safe
 MKISILO=   iSilo386 -U -y -rCR -d0
-MKPDF=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --pdf
-MKPS=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --ps
+MKPDF=	   $(MKHOWTO) --paper=$(PAPER) --pdf
+MKPS=	   $(MKHOWTO) --paper=$(PAPER) --ps
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
