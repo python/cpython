@@ -83,6 +83,7 @@ typedef int pid_t;
 #endif
 #ifdef USE_DL_EXPORT
 #define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
+#define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
 #endif
 
 #define HAVE_LONG_LONG 1
