@@ -114,7 +114,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 		}
 		if (PyUnicode_EncodeDecimal(PyUnicode_AS_UNICODE(v),
 					    PyUnicode_GET_SIZE(v),
-					    s_buffer, 
+					    s_buffer,
 					    NULL))
 			return NULL;
 		s = s_buffer;
@@ -196,16 +196,16 @@ PyFloat_AsDouble(PyObject *op)
 	PyNumberMethods *nb;
 	PyFloatObject *fo;
 	double val;
-	
+
 	if (op && PyFloat_Check(op))
 		return PyFloat_AS_DOUBLE((PyFloatObject*) op);
-	
+
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_float == NULL) {
 		PyErr_BadArgument();
 		return -1;
 	}
-	
+
 	fo = (PyFloatObject*) (*nb->nb_float) (op);
 	if (fo == NULL)
 		return -1;
@@ -214,10 +214,10 @@ PyFloat_AsDouble(PyObject *op)
 				"nb_float should return float object");
 		return -1;
 	}
-	
+
 	val = PyFloat_AS_DOUBLE(fo);
 	Py_DECREF(fo);
-	
+
 	return val;
 }
 
@@ -505,7 +505,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 		else
 			ix = 1.0;
 		PyFPE_END_PROTECT(ix)
-		return PyFloat_FromDouble(ix); 
+		return PyFloat_FromDouble(ix);
 	}
 	if (iv == 0.0) {  /* 0**w is error if w<0, else 1 */
 		if (iw < 0.0) {
@@ -537,7 +537,7 @@ static PyObject *
 float_int_div(PyObject *v, PyObject *w)
 {
 	PyObject *t, *r;
-	
+
 	t = float_divmod(v, w);
 	if (t != NULL) {
 		r = PyTuple_GET_ITEM(t, 0);
@@ -570,8 +570,10 @@ float_abs(PyFloatObject *v)
 {
 	if (v->ob_fval < 0)
 		return float_neg(v);
-	else
+	else if (v->ob_fval > 0)
 		return float_pos(v);
+	else /* ensure abs(-0) is +0 */
+		return PyFloat_FromDouble(+0.0);
 }
 
 static int
