@@ -148,7 +148,19 @@ class Random(_random.Random):
         if istop != stop:
             raise ValueError, "non-integer stop for randrange()"
         if step == 1 and istart < istop:
-            return int(istart + self.random()*(istop - istart))
+            # Note that
+            #     int(istart + self.random()*(istop - istart))
+            # instead would be incorrect.  For example, consider istart
+            # = -2 and istop = 0.  Then the guts would be in
+            # -2.0 to 0.0 exclusive on both ends (ignoring that random()
+            # might return 0.0), and because int() truncates toward 0, the
+            # final result would be -1 or 0 (instead of -2 or -1).
+            #     istart + int(self.random()*(istop - istart))
+            # would also be incorrect, for a subtler reason:  the RHS
+            # can return a long, and then randrange() would also return
+            # a long, but we're supposed to return an int (for backward
+            # compatibility).
+            return int(istart + int(self.random()*(istop - istart)))
         if step == 1:
             raise ValueError, "empty range for randrange()"
 
