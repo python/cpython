@@ -124,7 +124,10 @@ Top-level-folder:
 First build GUSI. Move the files from the "CWGUSI-mods" to the right
 place in the CWGUSI distribution folder, and build the
 projects <code>GUSI.68K.µ</code>, <code>GUSI.CFM68K.µ</code>
-and <code>GUSI.PPC.µ</code>. If you have a CWGUSI version more recent than
+(note that the Gusi CFM68K project is
+distributed without "far data": you should set this option before building)
+and <code>GUSI.PPC.µ</code>. 
+If you have a CWGUSI version more recent than
 1.7.2 it could be that the fixes are already included, check it. Alternatively,
 you can forget about the fixes and remove the one reference to GUSILoadPreferences
 in the Python sources. This will disable the "default file creator/type" and
