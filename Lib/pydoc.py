@@ -1069,7 +1069,7 @@ def locate(path):
                 continue
             else:
                 # Some other error occurred before executing the module.
-                raise ErrorDuringImport(filename, sys.exc_info())
+                raise ErrorDuringImport(path, sys.exc_info())
         try:
             x = module
             for p in parts[n:]:
