@@ -770,8 +770,33 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
 	PyObject *result = NULL;
 	TkappObject *app = (TkappObject*)tkapp;
 
-	if (value->typePtr == NULL)
-		return PyString_FromStringAndSize(value->bytes, value->length);
+	if (value->typePtr == NULL) {
+		/* If the result contains any bytes with the top bit set,
+		   it's UTF-8 and we should decode it to Unicode */
+#ifdef Py_USING_UNICODE
+		int i;
+		char *s = value->bytes;
+		int len = value->length;
+		for (i = 0; i < len; i++) {
+			if (value->bytes[i] & 0x80)
+				break;
+		}
+
+		if (i == value->length)
+			result = PyString_FromStringAndSize(s, len);
+		else {
+			/* Convert UTF-8 to Unicode string */
+			result = PyUnicode_DecodeUTF8(s, len, "strict");
+			if (result == NULL) {
+				PyErr_Clear();
+				result = PyString_FromStringAndSize(s, len);
+			}
+		}
+#else
+		res = PyString_FromStringAndSize(value->bytes, value->length);
+#endif
+		return result;
+	}
 
 	if (value->typePtr == app->BooleanType) {
 		result = value->internalRep.longValue ? Py_True : Py_False;
