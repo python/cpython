@@ -219,6 +219,21 @@ is a negative lookahead assertion.  For example,
 \regexp{Isaac (?!Asimov)} will match \code{'Isaac~'} only if it's \emph{not}
 followed by \code{'Asimov'}.
 
+\item[\code{(?<=...)}] Matches if the current position in the string
+is preceded by a match for \regexp{...} that ends at the current
+position.  This is called a positive lookbehind assertion.
+\regexp{(?<=abc)def} will match \samp{abcdef}, since the lookbehind
+will back up 3 characters and check if the contained pattern matches.
+The contained pattern must only match strings of some fixed length,
+meaning that \regexp{abc} or \regexp{a|b} are allowed, but \regexp{a*}
+isn't.
+
+\item[\code{(?<!...)}] Matches if the current position in the string
+is not preceded by a match for \regexp{...}.  This
+is called a negative lookbehind assertion.  Similar to positive lookbehind
+assertions, the contained pattern must only match strings of some
+fixed length.
+
 \end{list}
 
 The special sequences consist of \character{\e} and a character from the
