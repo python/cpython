@@ -202,8 +202,8 @@ If \var{name} is omitted or empty, it is interpreted as the local
 host.  To find the fully qualified name, the hostname returned by
 \function{gethostbyaddr()} is checked, then aliases for the host, if
 available.  The first name which includes a period is selected.  In
-case no fully qualified domain name is available, the hostname is
-returned.
+case no fully qualified domain name is available, the hostname as
+returned by \function{gethostname()} is returned.
 \versionadded{2.0}
 \end{funcdesc}
 

@@ -102,7 +102,7 @@ def getfqdn(name=''):
 
     First the hostname returned by gethostbyaddr() is checked, then
     possibly existing aliases. In case no FQDN is available, hostname
-    is returned.
+    from gethostname() is returned.
     """
     name = name.strip()
     if not name or name == '0.0.0.0':
