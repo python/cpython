@@ -3,20 +3,20 @@
 # commandline in that case.
 
 # assume user was invoking from Mac/OSX directory and building in source tree
-PYTHONBUILDDIR = ../..
-PYTHONSRCDIR = ../..
+builddir = ../..
+srcdir = ../..
+VERSION=2.3
 
-INSTALLDIR=/Library/Frameworks/Python.framework/Versions/Current
+prefix=/Library/Frameworks/Python.framework/Versions/$(VERSION)
 PYTHONAPPSDIR=/Applications/Python
-APPINSTALLDIR=$(PYTHONAPPSDIR)/Python.app
+APPINSTALLDIR=$(prefix)/Resources/Python.app
 
 # Variables for installing the "normal" unix binaries
 UNIXBINDIR=/usr/local/bin
-INSTALLED_PYTHON=$(INSTALLDIR)/bin/python
+INSTALLED_PYTHON=$(prefix)/bin/python
 INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
 
 # Items more-or-less copied from the main Makefile
-VERSION=2.3
 DIRMODE=755
 INSTALL=/usr/bin/install -c
 INSTALL_SYMLINK=/usr/bin/install -l as
@@ -26,32 +26,31 @@ INSTALL_DATA=	${INSTALL} -m 644
 STRIPFLAG=-s
 OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
 	-fno-common -dynamic
-INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONSRCDIR)/Include \
-	-I$(PYTHONSRCDIR)/Mac/Include
+INCLUDES=-I$(builddir) -I$(srcdir)/Include -I$(srcdir)/Mac/Include
 DEFINES=-DHAVE_CONFIG_H
 
 CFLAGS=$(OPT) $(DEFINES) $(INCLUDES)
-LDFLAGS=-F$(PYTHONBUILDDIR) -framework System -framework Python -framework Carbon \
+LDFLAGS=-F$(builddir) -framework System -framework Python -framework Carbon \
 	-framework Foundation
 CC=cc
 LD=cc
 REZ=/Developer/Tools/Rez
 DEREZ=/Developer/Tools/DeRez
 
-OBJECTS=$(PYTHONBUILDDIR)/Mac/Python/macmain.o \
-	$(PYTHONBUILDDIR)/Mac/Python/macgetargv.o
+OBJECTS=$(builddir)/Mac/Python/macmain.o \
+	$(builddir)/Mac/Python/macgetargv.o
 
-PYTHON=$(PYTHONBUILDDIR)/python.exe
-APPTEMPLATE=$(PYTHONSRCDIR)/Mac/OSXResources/app
+PYTHON=$(builddir)/python.exe
+APPTEMPLATE=$(srcdir)/Mac/OSXResources/app
 APPSUBDIRS=MacOS Resources Resources/English.lproj
-RESOURCEDIR=$(PYTHONSRCDIR)/Mac/Resources
+RESOURCEDIR=$(srcdir)/Mac/Resources
 RESOURCEFILE=python.rsrc
-RFCONVERTER=$(PYTHONSRCDIR)/Mac/Lib/applesingle.py
+RFCONVERTER=$(srcdir)/Mac/Lib/applesingle.py
 
 install_all: install_PythonLauncher install_Python install_IDE
 
 install_PythonLauncher:
-	cd $(PYTHONSRCDIR)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
+	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
 	pbxbuild -target PythonLauncher -buildstyle Deployment DSTROOT=/ install
 	
 install_Python: pythonforbundle
@@ -102,12 +101,12 @@ install_Python: pythonforbundle
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
 	
 install_IDE: $(INSTALLED_PYTHONW)
-	$(INSTALLED_PYTHONW) $(PYTHONSRCDIR)/Mac/scripts/BuildApplet.py \
+	$(INSTALLED_PYTHONW) $(srcdir)/Mac/scripts/BuildApplet.py \
 		--output $(PYTHONAPPSDIR)/PythonIDE.app --noargv \
-		$(PYTHONSRCDIR)/Mac/Tools/IDE/PythonIDE.py
+		$(srcdir)/Mac/Tools/IDE/PythonIDE.py
 		
-LIBDEST=$(INSTALLDIR)/Mac/Lib
-LIBSRC=$(PYTHONSRCDIR)/Mac/Lib
+LIBDEST=$(prefix)/Mac/Lib
+LIBSRC=$(srcdir)/Mac/Lib
 LIBSUBDIRS= \
 	Carbon \
 	lib-scriptpackages \
@@ -122,8 +121,8 @@ LIBSUBDIRS= \
 	mkcwproject/template \
 	mkcwproject/template-carbon \
 	mkcwproject/template-ppc
-TOOLSDEST=$(INSTALLDIR)/Mac/Tools
-TOOLSSRC=$(PYTHONSRCDIR)/Mac/Tools
+TOOLSDEST=$(prefix)/Mac/Tools
+TOOLSSRC=$(srcdir)/Mac/Tools
 TOOLSSUBDIRS=IDE
 installmacsubtree:
 	@for i in $(LIBDEST) $(TOOLSDEST); \
@@ -215,7 +214,7 @@ installmacsubtree:
 		done; \
 	done
 
-	$(INSTALL_DATA) $(PYTHONSRCDIR)/Mac/OSX/Mac.pth $(INSTALLDIR)/lib/python$(VERSION)/site-packages/
+	$(INSTALL_DATA) $(srcdir)/Mac/OSX/Mac.pth $(prefix)/lib/python$(VERSION)/site-packages/
 	
 # Put symlinks "python" and "pythonw" in the standard place
 $(INSTALLED_PYTHONW): install_Python
@@ -229,17 +228,17 @@ installunixprograms: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW) pythonw.sh
 # This is for development purposes: create a Mac.pth that refers to the source
 # directories
 dontinstallmacsubtree:
-	l=`cd $(PYTHONSRCDIR)/Mac/Lib; pwd`; \
-	echo $$l > $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth ; \
-	echo $$l/lib-scriptpackages >> $(INSTALLDIR)/lib/python$(VERSION)/site-packages/Mac.pth
+	l=`cd $(srcdir)/Mac/Lib; pwd`; \
+	echo $$l > $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth ; \
+	echo $$l/lib-scriptpackages >> $(prefix)/lib/python$(VERSION)/site-packages/Mac.pth
 
 pythonforbundle: $(OBJECTS)
 	$(LD) $(LDFLAGS) $(OBJECTS) -o pythonforbundle
 
 # Rules to build each file in OBJECTS - is there a better way?
-$(PYTHONBUILDDIR)/Mac/Python/macmain.o: $(PYTHONSRCDIR)/Mac/Python/macmain.c
-	$(CC) $(CFLAGS) -c $(PYTHONSRCDIR)/Mac/Python/macmain.c -o $@
+$(builddir)/Mac/Python/macmain.o: $(srcdir)/Mac/Python/macmain.c
+	$(CC) $(CFLAGS) -c $(srcdir)/Mac/Python/macmain.c -o $@
 
-$(PYTHONBUILDDIR)/Mac/Python/macgetargv.o: $(PYTHONSRCDIR)/Mac/Python/macgetargv.c
-	$(CC) $(CFLAGS) -c $(PYTHONSRCDIR)/Mac/Python/macgetargv.c -o $@
+$(builddir)/Mac/Python/macgetargv.o: $(srcdir)/Mac/Python/macgetargv.c
+	$(CC) $(CFLAGS) -c $(srcdir)/Mac/Python/macgetargv.c -o $@
 
