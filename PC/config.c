@@ -47,7 +47,7 @@ extern void initzipimport(void);
 extern void init_random(void);
 extern void inititertools(void);
 
-/* XXX tim: what's the purpose of ADDMODULE MARKER? */
+/* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init(void);
@@ -103,7 +103,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"xxsubtype", initxxsubtype},
 	{"zipimport", initzipimport},
 
-/* XXX tim: what's the purpose of ADDMODULE MARKER? */
+/* tools/freeze/makeconfig.py marker for additional "_inittab" entries */
 /* -- ADDMODULE MARKER 2 -- */
 
         /* This module "lives in" with marshal.c */
