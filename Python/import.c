@@ -1020,8 +1020,8 @@ find_module(char *realname, PyObject *path, char *buf, size_t buflen,
 
 /* case_ok(buf, len, namelen, name)
  * We've already done a successful stat() or fopen() on buf (a path of length
- * len; can not assume there's a trailing null).  name is the last component
- * of then path (a string of length namelen, exclusive of trailing null).
+ * len, exclusive of trailing null).  name is the last component of that path
+ & a string of length namelen, exclusive of trailing null).
  * case_ok() is to return 1 if there's a case-sensitive match for
  * name, else 0.  case_ok() is also to return 1 if envar PYTHONCASEOK
  * exists.
