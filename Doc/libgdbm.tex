@@ -2,6 +2,20 @@
 \label{module-gdbm}
 \bimodindex{gdbm}
 
+% Note that if this section appears on the same page as the first
+% paragraph of the dbm module section, makeindex will produce the
+% warning:
+%
+% ## Warning (input = lib.idx, line = 1184; output = lib.ind, line = 852):
+%    -- Conflicting entries: multiple encaps for the same page under same key.
+%
+% This is because the \bimodindex{gdbm} and \refbimodindex{gdbm}
+% entries in the .idx file are slightly different (the \bimodindex{}
+% version includes "|textbf" at the end to make the defining occurance 
+% bold).  There doesn't appear to be anything that can be done about
+% this; it's just a little annoying.  The warning can be ignored, but
+% the index produced uses the non-bold version.
+
 This module is quite similar to the \code{dbm} module, but uses \code{gdbm}
 instead to provide some additional functionality.  Please note that
 the file formats created by \code{gdbm} and \code{dbm} are incompatible.
