@@ -224,7 +224,7 @@ class dispatcher:
                                       ' '.join (status), id (self))
         except:
             pass
-        
+
         try:
             ar = repr (self.addr)
         except AttributeError:
