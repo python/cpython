@@ -574,7 +574,70 @@ See \url{http://www.xmlrpc.com/} for more information about XML-RPC.
   now compliant with \rfc{2822}, an update to \rfc{822}.  The module's
   name is \emph{not} going to be changed to \samp{rfc2822}.
   (Contributed by Barry Warsaw.)
-  
+
+  \item New constants \constant{ascii_letters},
+  \constant{ascii_lowercase}, and \constant{ascii_uppercase} were
+  added to the \module{string} module.  There were several modules in
+  the standard library that used \constant{string.letters} to mean the
+  ranges A-Za-z, but that assumption is incorrect when locales are in
+  use, because \constant{string.letters} varies depending on the set
+  of legal characters defined by the current locale.  The buggy
+  modules have all been fixed to use \constant{ascii_letters} instead.
+  (Reported by an unknown person; fixed by Fred L. Drake, Jr.)
+
+\end{itemize}
+
+
+%======================================================================
+\section{Interpreter Changes and Fixes}
+
+Some of the changes only affect people who deal with the Python
+interpreter at the C level, writing Python extension modules,
+embedding the interpreter, or just hacking on the interpreter itself.
+If you only write Python code, none of the changes described here will
+affect you very much.
+
+\begin{itemize}
+
+  \item Profiling and tracing functions can now be implemented in C,
+  which can operate at much higher speeds than Python-based functions
+  and should reduce the overhead of enabling profiling and tracing, so
+  it will be of interest to authors of development environments for
+  Python.  Two new C functions were added to Python's API,
+  \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
+  The existing \function{sys.setprofile()} and
+  \function{sys.settrace()} functions still exist, and have simply
+  been changed to use the new C-level interface.  (Contributed by Fred
+  L. Drake, Jr.)
+
+  \item Another low-level API, primarily of interest to implementors
+  of Python debuggers and development tools, was added.
+  \cfunction{PyInterpreterState_Head()} and
+  \cfunction{PyInterpreterState_Next()} let a caller walk through all
+  the existing interpreter objects;
+  \cfunction{PyInterpreterState_ThreadHead()} and
+  \cfunction{PyThreadState_Next()} allow looping over all the thread
+  states for a given interpreter.  (Contributed by David Beazley.)
+
+  \item A new \samp{et} format sequence was added to
+  \cfunction{PyArg_ParseTuple}; \samp{et} takes both a parameter and
+  an encoding name, and converts the parameter to the given encoding
+  if the parameter turns out to be a Unicode string, or leaves it
+  alone if it's an 8-bit string, assuming it to already be in the
+  desired encoding.  This differs from the \samp{es} format character,
+  which assumes that 8-bit strings are in Python's default ASCII
+  encoding and converts them to the specified new encoding.
+  (Contributed by M.-A. Lemburg, and used for the MBCS support on
+  Windows described in the previous section.)
+   
+  \item Two new wrapper functions, \cfunction{PyOS_snprintf()} and
+  \cfunction{PyOS_vsnprintf()} were added.   which provide a cross-platform
+  implementations for the relatively new snprintf()/vsnprintf() C lib
+  APIs. In contrast to the standard sprintf() and vsprintf() C lib
+  APIs, these versions apply bounds checking on the used buffer which
+  enhances protection against buffer overruns.
+  (Contributed by M.-A. Lemburg.)
+
 \end{itemize}
 
 
@@ -603,47 +666,12 @@ changes are:
   again.  The license changes were also applied to the Python 2.0.1
   and 2.1.1 releases.
 
-  \item Profiling and tracing functions can now be implemented in C,
-  which can operate at much higher speeds than Python-based functions
-  and should reduce the overhead of enabling profiling and tracing, so
-  it will be of interest to authors of development environments for
-  Python.  Two new C functions were added to Python's API,
-  \cfunction{PyEval_SetProfile()} and \cfunction{PyEval_SetTrace()}.
-  The existing \function{sys.setprofile()} and
-  \function{sys.settrace()} functions still exist, and have simply
-  been changed to use the new C-level interface.  (Contributed by Fred
-  L. Drake, Jr.)
-
-  \item Another low-level API, primarily of interest to implementors
-  of Python debuggers and development tools, was added.
-  \cfunction{PyInterpreterState_Head()} and
-  \cfunction{PyInterpreterState_Next()} let a caller walk through all
-  the existing interpreter objects;
-  \cfunction{PyInterpreterState_ThreadHead()} and
-  \cfunction{PyThreadState_Next()} allow looping over all the thread
-  states for a given interpreter.  (Contributed by David Beazley.)
-
-  % XXX is this explanation correct?  
-  \item When presented with a Unicode filename on Windows, Python will
-  now correctly convert it to a string using the MBCS encoding.
-  Filenames on Windows are a case where Python's choice of ASCII as
-  the default encoding turns out to be an annoyance.  
-
   \item When presented with a Unicode filename on Windows, Python will
   now convert it to an MBCS encoded string, as used by the Microsoft
   file APIs.  As MBCS is explicitly used by the file APIs, Python's
   choice of ASCII as the default encoding turns out to be an
   annoyance.
 
-  This patch also adds \samp{et} as a format sequence to
-  \cfunction{PyArg_ParseTuple}; \samp{et} takes both a parameter and
-  an encoding name, and converts it to the given encoding if the
-  parameter turns out to be a Unicode string, or leaves it alone if
-  it's an 8-bit string, assuming it to already be in the desired
-  encoding.  (This differs from the \samp{es} format character, which
-  assumes that 8-bit strings are in Python's default ASCII encoding
-  and converts them to the specified new encoding.)
-   
   (Contributed by Mark Hammond with assistance from Marc-Andr\'e
   Lemburg.)
 
@@ -683,7 +711,7 @@ changes are:
   to load extension modules, it's now possible to set the flags used 
   by \cfunction{dlopen()} using the \function{sys.getdlopenflags()} and
   \function{sys.setdlopenflags()} functions.    (Contributed by Bram Stolk.)
-
+  
 \end{itemize}
 
 
