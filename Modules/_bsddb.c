@@ -201,6 +201,12 @@ static PyObject* DBPermissionsError;    /* EPERM  */
 #undef HAVE_WARNINGS
 #endif
 
+#if PYTHON_API_VERSION <= 1007
+    /* 1.5 compatibility */
+#define PyObject_New PyObject_NEW
+#define PyObject_Del PyMem_DEL
+#endif
+
 struct behaviourFlags {
     /* What is the default behaviour when DB->get or DBCursor->get returns a
        DB_NOTFOUND error?  Return None or raise an exception? */
@@ -697,13 +703,7 @@ newDBObject(DBEnvObject* arg, int flags)
     DB_ENV* db_env = NULL;
     int err;
 
-#if PYTHON_API_VERSION <= 1007
-    /* 1.5 compatibility */
-    self = PyObject_NEW(DBObject, &DB_Type);
-#else
     self = PyObject_New(DBObject, &DB_Type);
-#endif
-
     if (self == NULL)
         return NULL;
 
@@ -788,23 +788,14 @@ DB_dealloc(DBObject* self)
         self->associateCallback = NULL;
     }
 #endif
-#if PYTHON_API_VERSION <= 1007
-    PyMem_DEL(self);
-#else
     PyObject_Del(self);
-#endif
 }
 
 
 static DBCursorObject*
 newDBCursorObject(DBC* dbc, DBObject* db)
 {
-    DBCursorObject* self;
-#if PYTHON_API_VERSION <= 1007
-    self = PyObject_NEW(DBCursorObject, &DBCursor_Type);
-#else
-    self = PyObject_New(DBCursorObject, &DBCursor_Type);
-#endif
+    DBCursorObject* self = PyObject_New(DBCursorObject, &DBCursor_Type);
     if (self == NULL)
         return NULL;
 
@@ -844,11 +835,7 @@ DBCursor_dealloc(DBCursorObject* self)
         MYDB_END_ALLOW_THREADS;
     }
     Py_XDECREF( self->mydb );
-#if PYTHON_API_VERSION <= 1007
-    PyMem_DEL(self);
-#else
     PyObject_Del(self);
-#endif
 }
 
 
@@ -856,13 +843,7 @@ static DBEnvObject*
 newDBEnvObject(int flags)
 {
     int err;
-    DBEnvObject* self;
-#if PYTHON_API_VERSION <= 1007
-    self = PyObject_NEW(DBEnvObject, &DBEnv_Type);
-#else
-    self = PyObject_New(DBEnvObject, &DBEnv_Type);
-#endif
-
+    DBEnvObject* self = PyObject_New(DBEnvObject, &DBEnv_Type);
     if (self == NULL)
         return NULL;
 
@@ -901,11 +882,7 @@ DBEnv_dealloc(DBEnvObject* self)
         self->db_env->close(self->db_env, 0);
         MYDB_END_ALLOW_THREADS;
     }
-#if PYTHON_API_VERSION <= 1007
-    PyMem_DEL(self);
-#else
     PyObject_Del(self);
-#endif
 }
 
 
@@ -913,13 +890,7 @@ static DBTxnObject*
 newDBTxnObject(DBEnvObject* myenv, DB_TXN *parent, int flags)
 {
     int err;
-    DBTxnObject* self;
-
-#if PYTHON_API_VERSION <= 1007
-    self = PyObject_NEW(DBTxnObject, &DBTxn_Type);
-#else
-    self = PyObject_New(DBTxnObject, &DBTxn_Type);
-#endif
+    DBTxnObject* self = PyObject_New(DBTxnObject, &DBTxn_Type);
     if (self == NULL)
         return NULL;
 #ifdef HAVE_WEAKREF
@@ -967,11 +938,7 @@ DBTxn_dealloc(DBTxnObject* self)
     }
 #endif
 
-#if PYTHON_API_VERSION <= 1007
-    PyMem_DEL(self);
-#else
     PyObject_Del(self);
-#endif
 }
 
 
@@ -980,13 +947,7 @@ newDBLockObject(DBEnvObject* myenv, u_int32_t locker, DBT* obj,
                 db_lockmode_t lock_mode, int flags)
 {
     int err;
-    DBLockObject* self;
-
-#if PYTHON_API_VERSION <= 1007
-    self = PyObject_NEW(DBLockObject, &DBLock_Type);
-#else
-    self = PyObject_New(DBLockObject, &DBLock_Type);
-#endif
+    DBLockObject* self = PyObject_New(DBLockObject, &DBLock_Type);
     if (self == NULL)
         return NULL;
 #ifdef HAVE_WEAKREF
@@ -1019,11 +980,7 @@ DBLock_dealloc(DBLockObject* self)
 #endif
     /* TODO: is this lock held? should we release it? */
 
-#if PYTHON_API_VERSION <= 1007
-    PyMem_DEL(self);
-#else
     PyObject_Del(self);
-#endif
 }
 
 
