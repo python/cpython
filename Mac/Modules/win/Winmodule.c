@@ -45,8 +45,12 @@ PyObject *WinObj_New(itself)
 	it = PyObject_NEW(WindowObject, &Window_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = itself;
-	SetWRefCon(itself, (long)it);
-	it->ob_freeit = PyMac_AutoDisposeWindow;
+	it->ob_freeit = NULL;
+	if (GetWRefCon(itself) == 0)
+	{
+		SetWRefCon(itself, (long)it);
+		it->ob_freeit = PyMac_AutoDisposeWindow;
+	}
 	return (PyObject *)it;
 }
 WinObj_Convert(v, p_itself)
@@ -73,12 +77,13 @@ WinObj_Convert(v, p_itself)
 static void WinObj_dealloc(self)
 	WindowObject *self;
 {
-	if (self->ob_itself) SetWRefCon(self->ob_itself, 0);
 	if (self->ob_freeit && self->ob_itself)
 	{
+		SetWRefCon(self->ob_itself, 0);
 		self->ob_freeit(self->ob_itself);
 	}
 	self->ob_itself = NULL;
+	self->ob_freeit = NULL;
 	PyMem_DEL(self);
 }
 
@@ -394,6 +399,38 @@ static PyObject *WinObj_DrawNew(_self, _args)
 }
 #endif
 
+static PyObject *WinObj_PaintOne(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	PaintOne(_self->ob_itself,
+	         clobberedRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_PaintBehind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	PaintBehind(_self->ob_itself,
+	            clobberedRgn);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *WinObj_CalcVis(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -402,6 +439,22 @@ static PyObject *WinObj_CalcVis(_self, _args)
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	CalcVis(_self->ob_itself);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *WinObj_CalcVisBehind(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	RgnHandle clobberedRgn;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &clobberedRgn))
+		return NULL;
+	CalcVisBehind(_self->ob_itself,
+	              clobberedRgn);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1032,6 +1085,26 @@ static PyObject *WinObj_IsWindowPathSelectClick(_self, _args)
 	return _res;
 }
 
+static PyObject *WinObj_WindowPathSelect(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	MenuHandle menu;
+	SInt32 outMenuResult;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      MenuObj_Convert, &menu))
+		return NULL;
+	_err = WindowPathSelect(_self->ob_itself,
+	                        menu,
+	                        &outMenuResult);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("l",
+	                     outMenuResult);
+	return _res;
+}
+
 static PyObject *WinObj_HiliteWindowFrameForDrag(_self, _args)
 	WindowObject *_self;
 	PyObject *_args;
@@ -1239,6 +1312,29 @@ static PyObject *WinObj_GetWindowBounds(_self, _args)
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
 	                     PyMac_BuildRect, &globalBounds);
+	return _res;
+}
+
+static PyObject *WinObj_ResizeWindow(_self, _args)
+	WindowObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	Point startPoint;
+	Rect sizeConstraints;
+	Rect newContentRect;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetPoint, &startPoint,
+	                      PyMac_GetRect, &sizeConstraints))
+		return NULL;
+	_rv = ResizeWindow(_self->ob_itself,
+	                   startPoint,
+	                   &sizeConstraints,
+	                   &newContentRect);
+	_res = Py_BuildValue("bO&",
+	                     _rv,
+	                     PyMac_BuildRect, &newContentRect);
 	return _res;
 }
 
@@ -1860,8 +1956,14 @@ static PyMethodDef WinObj_methods[] = {
 	{"DrawNew", (PyCFunction)WinObj_DrawNew, 1,
 	 "(Boolean update) -> None"},
 #endif
+	{"PaintOne", (PyCFunction)WinObj_PaintOne, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
+	{"PaintBehind", (PyCFunction)WinObj_PaintBehind, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
 	{"CalcVis", (PyCFunction)WinObj_CalcVis, 1,
 	 "() -> None"},
+	{"CalcVisBehind", (PyCFunction)WinObj_CalcVisBehind, 1,
+	 "(RgnHandle clobberedRgn) -> None"},
 	{"BringToFront", (PyCFunction)WinObj_BringToFront, 1,
 	 "() -> None"},
 	{"SendBehind", (PyCFunction)WinObj_SendBehind, 1,
@@ -1942,6 +2044,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Boolean modified) -> None"},
 	{"IsWindowPathSelectClick", (PyCFunction)WinObj_IsWindowPathSelectClick, 1,
 	 "(EventRecord event) -> (Boolean _rv)"},
+	{"WindowPathSelect", (PyCFunction)WinObj_WindowPathSelect, 1,
+	 "(MenuHandle menu) -> (SInt32 outMenuResult)"},
 	{"HiliteWindowFrameForDrag", (PyCFunction)WinObj_HiliteWindowFrameForDrag, 1,
 	 "(Boolean hilited) -> None"},
 	{"TransitionWindow", (PyCFunction)WinObj_TransitionWindow, 1,
@@ -1964,6 +2068,8 @@ static PyMethodDef WinObj_methods[] = {
 	 "(Boolean collapse) -> None"},
 	{"GetWindowBounds", (PyCFunction)WinObj_GetWindowBounds, 1,
 	 "(WindowRegionCode regionCode) -> (Rect globalBounds)"},
+	{"ResizeWindow", (PyCFunction)WinObj_ResizeWindow, 1,
+	 "(Point startPoint, Rect sizeConstraints) -> (Boolean _rv, Rect newContentRect)"},
 	{"SetWindowBounds", (PyCFunction)WinObj_SetWindowBounds, 1,
 	 "(WindowRegionCode regionCode, Rect globalBounds) -> None"},
 	{"RepositionWindow", (PyCFunction)WinObj_RepositionWindow, 1,
@@ -2767,7 +2873,7 @@ WinObj_WhichWindow(w)
 		Py_INCREF(it);
 	} else {
 		it = (PyObject *) GetWRefCon(w);
-		if (it == NULL || ((WindowObject *)it)->ob_itself != w) {
+		if (it == NULL || ((WindowObject *)it)->ob_itself != w || !WinObj_Check(it)) {
 			it = WinObj_New(w);
 			((WindowObject *)it)->ob_freeit = NULL;
 		} else {
