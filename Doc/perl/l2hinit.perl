@@ -27,6 +27,7 @@ $SHOW_SECTION_NUMBERS = 1;
 
 $ICONSERVER = '../icons';
 
+$BODYTEXT = 'bgcolor="#ffffff"';
 $CHILDLINE = "\n<p><hr>\n";
 $VERBOSITY = 0;
 
