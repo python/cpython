@@ -219,14 +219,23 @@ tb_displayline(f, filename, lineno)
 }
 
 static void
-tb_printinternal(tb, f)
+tb_printinternal(tb, f, limit)
 	tracebackobject *tb;
 	object *f;
+	int limit;
 {
+	int depth = 0;
+	tracebackobject *tb1 = tb;
+	while (tb1 != NULL) {
+		depth++;
+		tb1 = tb1->tb_next;
+	}
 	while (tb != NULL && !intrcheck()) {
-		tb_displayline(f,
-		     getstringvalue(tb->tb_frame->f_code->co_filename),
-							tb->tb_lineno);
+		if (depth <= limit)
+			tb_displayline(f,
+			    getstringvalue(tb->tb_frame->f_code->co_filename),
+			    tb->tb_lineno);
+		depth--;
 		tb = tb->tb_next;
 	}
 }
@@ -236,6 +245,8 @@ tb_print(v, f)
 	object *v;
 	object *f;
 {
+	object *limitv;
+	int limit = 1000;
 	if (v == NULL)
 		return 0;
 	if (!is_tracebackobject(v)) {
@@ -243,6 +254,13 @@ tb_print(v, f)
 		return -1;
 	}
 	sysset("last_traceback", v);
-	tb_printinternal((tracebackobject *)v, f);
+	limitv = sysget("tracebacklimit");
+	if (limitv && is_intobject(limitv)) {
+		limit = getintvalue(limitv);
+		if (limit <= 0)
+			return 0;
+	}
+	writestring("Traceback (innermost last):\n", f);
+	tb_printinternal((tracebackobject *)v, f, limit);
 	return 0;
 }

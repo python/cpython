@@ -1710,7 +1710,6 @@ printtraceback(f)
 {
 	object *v = tb_fetch();
 	if (v != NULL) {
-		writestring("Stack backtrace (innermost last):\n", f);
 		tb_print(v, f);
 		DECREF(v);
 	}
