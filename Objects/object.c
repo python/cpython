@@ -7,11 +7,6 @@
 #include "macglue.h"
 #endif
 
-/* just for trashcan: */
-#include "compile.h"
-#include "frameobject.h"
-#include "traceback.h"
-
 #if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
 DL_IMPORT(long) _Py_RefTotal;
 #endif
