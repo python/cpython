@@ -18,6 +18,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- cStringIO now supports the f.closed attribute.
+
 - The signal module now exposes SIGRTMIN and SIGRTMAX (if available).
 
 Library
