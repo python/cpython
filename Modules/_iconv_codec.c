@@ -40,8 +40,6 @@ typedef struct {
 } iconvcodecObject;
 PyDoc_STRVAR(iconvcodec_doc, "iconvcodec object");
 
-staticforward PyTypeObject iconvcodec_Type;
-
 /* does the chosen internal encoding require
  * byteswapping to get native endianness?
  * 0=no, 1=yes, -1=unknown */
@@ -608,7 +606,7 @@ iconvcodec_repr(PyObject *self)
                     ((iconvcodecObject *)self)->encoding);
 }
 
-statichere PyTypeObject iconvcodec_Type = {
+static PyTypeObject iconvcodec_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,                              /* Number of items for varobject */
     "iconvcodec",                   /* Name of this type */
