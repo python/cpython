@@ -295,6 +295,9 @@ Core and builtins
   supply a __doc__ descriptor that returns something different for a
   class than for instances of that class.
 
+- Fixed bug #521782: when a file was in non-blocking mode, file.read()
+  could silently lose data or wrongly throw an unknown error.
+
 Extension modules
 
 - In readline.c: change completion to avoid appending a space
