@@ -15,14 +15,20 @@ To create a fullblown Python.app proceed as follows.
 5. It is probably a good idea to add the Mac-specific modules to the framework,
    with "make installmacsubtree". This puts a MacPython lib directory into
    sys.prefix/Mac/Lib. Again, this is a temporary measure.
-   
+6. To actually find the Lib directory installed in step 5 you add a line
+   to your site.py file (the one in /Library/Frameworks/....):
+   sys.path.append(os.path.join(sys.prefix, 'Mac/Lib'))
+
 You are now done. In your Applications you should have a "Python", with the icon
 being a falling 16 Ton weight with a shadow under it. You can drop Python scripts
 on this and the will be run, in a full-windowing environment. Note that you
 do not get sys.stdin, and that sys.stdout goes to the console (Use
 Applications/Utilities/Console to see it).
 
+For some reason the application only accepts files with TEXT type, not straight unix
+typeless files.
+
 Something to take note of is that the ".rsrc" files in the distribution are not
 actually resource files, they're AppleSingle encoded resource files.
 
-	Jack Jansen, jack@oratrix.com, 6-Sep-01.
+	Jack Jansen, jack@oratrix.com, 11-Sep-01.
