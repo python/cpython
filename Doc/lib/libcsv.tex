@@ -424,3 +424,38 @@ import csv
 print csv.reader(['one,two,three'])[0]
 \end{verbatim}
 
+The \module{csv} module doesn't directly support reading and writing
+Unicode, but it is 8-bit clean save for some problems with \ASCII{} NUL
+characters, so you can write classes that handle the encoding and decoding
+for you as long as you avoid encodings like utf-16 that use NULs.
+
+\begin{verbatim}
+import csv
+
+class UnicodeReader:
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        self.reader = csv.reader(f, dialect=dialect, **kwds)
+        self.encoding = encoding
+
+    def next(self):
+        row = self.reader.next()
+        return [unicode(s, self.encoding) for s in row]
+
+    def __iter__(self):
+        return self
+
+class UnicodeWriter:
+    def __init__(self, f, dialect=csv.excel, encoding="utf-8", **kwds):
+        self.writer = csv.writer(f, dialect=dialect, **kwds)
+        self.encoding = encoding
+
+    def writerow(self, row):
+        self.writer.writerow([s.encode("utf-8") for s in row])
+
+    def writerows(self, rows):
+        for row in rows:
+            self.writerow(row)
+\end{verbatim}
+
+They should work just like the \class{csv.reader} and \class{csv.writer}
+classes but add an \var{encoding} parameter.
