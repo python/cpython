@@ -397,7 +397,7 @@ backwards compatible and debugging classes and functions?
 
 """
 
-__version__ = "2.0b2"
+__version__ = "2.0b3"
 
 
 # Imports
@@ -1089,9 +1089,27 @@ def test(environ=os.environ):
 	print_directory()
 	print_arguments()
 	print_environ_usage()
+	def f():
+	    exec "testing print_exception() -- <I>italics?</I>"
+	def g(f=f):
+	    f()
+	print "<H3>What follows is a test, not an actual exception:</H3>"
+	g()
     except:
-	print "\n\n<PRE>"	# Turn off HTML word wrap
-	traceback.print_exc()
+	print_exception()
+
+def print_exception(type=None, value=None, tb=None, limit=None):
+    if type is None:
+	type, value, tb = sys.exc_type, sys.exc_value, sys.exc_traceback
+    import traceback
+    print
+    print "<H3>Traceback (innermost last):</H3>"
+    list = traceback.format_tb(tb, limit) + \
+	   traceback.format_exception_only(type, value)
+    print "<PRE>%s<B>%s</B></PRE>" % (
+	escape(string.join(list[:-1], "")),
+	escape(list[-1]),
+	)
 
 def print_environ(environ=os.environ):
     """Dump the shell environment as HTML."""
