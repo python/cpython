@@ -188,7 +188,8 @@ def move_file (src, dst,
     other systems???
     """
     from os.path import exists, isfile, isdir, basename, dirname
-
+    import errno
+    
     if verbose:
         print "moving %s -> %s" % (src, dst)
 
