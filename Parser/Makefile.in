@@ -1,0 +1,73 @@
+# NOTE: Makefile.in is converted into Makefile by the configure script
+# in the parent directory.  Once configure has run, you can recreate
+# the Makefile by running just config.status.
+
+# === Variables set by config.stat ===
+
+srcdir=		@srcdir@
+VPATH=		@srcdir@
+
+CC=		@CC@
+RANLIB=		@RANLIB@
+
+
+# === Other things that are customizable but not by configure ===
+
+AR=		ar
+MKDEP=		mkdep
+SHELL=		/bin/sh
+
+INCLDIR=	$(srcdir)/../Py
+OPT=		-g
+CFLAGS=		$(OPT) -I$(INCLDIR)
+
+
+# === Fixed definitions ===
+
+PARSEROBJS=	acceler.o fgetsintr.o grammar1.o \
+		intrcheck.o listnode.o node.o parser.o \
+		parsetok.o tokenizer.o bitset.o \
+		firstsets.o grammar.o metagrammar.o pgen.o \
+		printgrammar.o
+
+PGENOBJS=	pgenmain.o
+
+PARSERSRCS=	acceler.c fgetsintr.c grammar1.c \
+		intrcheck.c listnode.c node.c parser.c \
+		parsetok.c tokenizer.c bitset.c \
+		firstsets.c grammar.c metagrammar.c pgen.c \
+		printgrammar.c
+
+PGENSRCS=	pgenmain.c
+
+PGEN=		pgen
+
+LIB=		libParser.a
+
+
+# === Rules ===
+
+all:		$(LIB) $(PGEN)
+
+$(LIB):		$(PARSEROBJS)
+		$(AR) cr $(LIB) $(PARSEROBJS)
+
+$(PGEN):	$(PGENOBJS) $(LIB)
+		$(CC) $(PGENOBJS) $(LIB) -o $(PGEN)
+
+clean:
+		-rm -f $(PARSEROBJS) $(PGENOBJS)
+		-rm -f core *~ [@,#]* *.old *.orig *.rej
+
+clobber:	clean
+		-rm -f $(PGEN) $(LIB) tags TAGS
+
+Makefile:	Makefile.in ../config.status
+		(cd ..; $(SHELL) config.status)
+
+depend:		$(PARSERSRCS) $(PGENSRCS)
+		$(MKDEP) $(CFLAGS) $(PARSERSRCS) $(PGENSRCS)
+
+# DO NOT DELETE THIS LINE -- mkdep uses it.
+# DO NOT PUT ANYTHING AFTER THIS LINE, IT WILL GO AWAY.
+# IF YOU PUT ANYTHING HERE IT WILL GO AWAY
