@@ -24,21 +24,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Functions used by cgen output */
 
-#include <stdio.h>
-
-#include "PROTO.h"
-#include "object.h"
-#include "intobject.h"
-#include "floatobject.h"
-#include "stringobject.h"
-#include "tupleobject.h"
-#include "listobject.h"
-#include "methodobject.h"
-#include "moduleobject.h"
-#include "modsupport.h"
-#include "import.h"
+#include "allobjects.h"
 #include "cgensupport.h"
-#include "errors.h"
 
 
 /* Functions to construct return values */
@@ -130,6 +117,10 @@ extractdouble(v, p_arg)
 		*p_arg = GETINTVALUE((intobject *)v);
 		return 1;
 	}
+	else if (is_longobject(v)) {
+		*p_arg = dgetlongvalue(v);
+		return 1;
+	}
 	return err_badarg();
 }
 
@@ -147,6 +138,10 @@ extractfloat(v, p_arg)
 	}
 	else if (is_intobject(v)) {
 		*p_arg = GETINTVALUE((intobject *)v);
+		return 1;
+	}
+	else if (is_longobject(v)) {
+		*p_arg = dgetlongvalue(v);
 		return 1;
 	}
 	return err_badarg();
