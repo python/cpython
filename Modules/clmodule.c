@@ -25,6 +25,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Cl objects */
 
+#include <stdarg.h>
 #include <cl.h>
 #include "allobjects.h"
 #include "modsupport.h"		/* For getargs() etc. */
@@ -44,13 +45,30 @@ extern typeobject Cltype;	/* Really static, forward */
 
 #define is_clobject(v)		((v)->ob_type == &Cltype)
 
+static object *ClError;		/* exception cl.error */
+
+static int error_handler_called = 0;
+
+static void
+cl_ErrorHandler(long errnum, const char *fmt, ...)
+{
+	va_list ap;
+	char errbuf[BUFSIZ];	/* hopefully big enough */
+
+	error_handler_called = 1;
+	va_start(ap, fmt);
+	vsprintf(errbuf, fmt, ap);
+	va_end(ap);
+	err_setstr(ClError, errbuf);
+}
+
 static object *
 cl_Compress(self, args)
 	clobject *self;
 	object *args;
 {
-	object *data, *res;
-	long frameIndex, numberOfFrames, dataSize, result;
+	object *data;
+	long frameIndex, numberOfFrames, dataSize;
 
 	if (!getargs(args, "(ii)", &frameIndex, &numberOfFrames))
 		return NULL;
@@ -62,16 +80,20 @@ cl_Compress(self, args)
 
 	dataSize = numberOfFrames * self->ob_dataMaxSize;
 
-	result = clCompress(self->ob_compressorHdl, frameIndex, numberOfFrames,
-		   &dataSize, (void *) getstringvalue(data));
+	error_handler_called = 0;
+	if (clCompress(self->ob_compressorHdl, frameIndex, numberOfFrames,
+		       &dataSize, (void *) getstringvalue(data)) == FAILURE) {
+		DECREF(data);
+		if (!error_handler_called)
+			err_setstr(ClError, "compress failed");
+		return NULL;
+	}
 
 	if (dataSize < numberOfFrames * self->ob_dataMaxSize)
 		if (resizestring(&data, dataSize))
 			return NULL;
 
-	res = mkvalue("(iO)", result, data);
-	DECREF(data);
-	return res;
+	return data;
 }	
 
 static object *
@@ -79,8 +101,8 @@ cl_Decompress(self, args)
 	clobject *self;
 	object *args;
 {
-	object *data, *res;
-	long frameIndex, numberOfFrames, result;
+	object *data;
+	long frameIndex, numberOfFrames;
 
 	if (!getargs(args, "(ii)", &frameIndex, &numberOfFrames))
 		return NULL;
@@ -90,12 +112,16 @@ cl_Decompress(self, args)
 	if (data == NULL)
 		return NULL;
 
-	result = clDecompress(self->ob_compressorHdl, frameIndex,
-			      numberOfFrames, (void *) getstringvalue(data));
+	error_handler_called = 0;
+	if (clDecompress(self->ob_compressorHdl, frameIndex, numberOfFrames,
+			 (void *) getstringvalue(data)) == FAILURE) {
+		DECREF(data);
+		if (!error_handler_called)
+			err_setstr(ClError, "decompress failed");
+		return NULL;
+	}
 
-	res = mkvalue("(iO)", result, data);
-	DECREF(data);
-	return res;
+	return data;
 }	
 
 static object *
@@ -110,13 +136,14 @@ cl_GetCompressorInfo(self, args)
 	if (!getnoarg(args))
 		return NULL;
 
-	result = clGetCompressorInfo(self->ob_compressorHdl, &infoSize, &info);
+	error_handler_called = 0;
+	if (clGetCompressorInfo(self->ob_compressorHdl, &infoSize, &info) == FAILURE) {
+		if (!error_handler_called)
+			err_setstr(ClError, "getcompressorinfo failed");
+		return NULL;
+	}
 
-	infoObject = newsizedstringobject((char *) info, infoSize);
-
-	res = mkvalue("(iO)", result, infoObject);
-	DECREF(infoObject);
-	return res;
+	return newsizedstringobject((char *) info, infoSize);
 }
 
 static object *
@@ -129,7 +156,10 @@ cl_GetDefault(self, args)
 	if (!getargs(args, "i", &initial))
 		return NULL;
 
+	error_handler_called = 0;
 	result = clGetDefault(self->ob_compressorHdl, initial);
+	if (error_handler_called)
+		return NULL;
 
 	return newintobject(result);
 }
@@ -144,7 +174,10 @@ cl_GetMinMax(self, args)
 	if (!getargs(args, "i", &param))
 		return NULL;
 
+	error_handler_called = 0;
 	clGetMinMax(self->ob_compressorHdl, param, &min, &max);
+	if (error_handler_called)
+		return NULL;
 
 	return mkvalue("(ii)", min, max);
 }
@@ -160,7 +193,14 @@ cl_GetName(self, args)
 	if (!getargs(args, "i", &descriptor))
 		return NULL;
 
+	error_handler_called = 0;
 	name = clGetName(self->ob_compressorHdl, descriptor);
+	if (error_handler_called)
+		return NULL;
+	if (name == NULL) {
+		err_setstr(ClError, "getname failed");
+		return NULL;
+	}
 
 	return newstringobject(name);
 }
@@ -197,7 +237,10 @@ doParams(self, args, func, modified)
 		PVbuffer[i] = getintvalue(v);
 	}
 
+	error_handler_called = 0;
 	(*func)(self->ob_compressorHdl, PVbuffer, length);
+	if (error_handler_called)
+		return NULL;
 
 	if (modified) {
 		for (i = 0; i < length; i++)
@@ -237,7 +280,10 @@ cl_QueryParams(self, args)
 	if (!getnoarg(args))
 		return NULL;
 
+	error_handler_called = 0;
 	bufferlength = clQueryParams(self->ob_compressorHdl, 0, 0);
+	if (error_handler_called)
+		return NULL;
 
 	PVbuffer = NEW(long, bufferlength);
 	if (PVbuffer == NULL)
@@ -245,6 +291,10 @@ cl_QueryParams(self, args)
 
 	bufferlength = clQueryParams(self->ob_compressorHdl, PVbuffer,
 				     bufferlength);
+	if (error_handler_called) {
+		DEL(PVbuffer);
+		return NULL;
+	}
 
 	list = newlistobject(bufferlength);
 	if (list == NULL) {
@@ -252,8 +302,12 @@ cl_QueryParams(self, args)
 		return NULL;
 	}
 
-	for (i = 0; i < bufferlength; i++)
-		setlistitem(list, i, newintobject(PVbuffer[i]));
+	for (i = 0; i < bufferlength; i++) {
+		if (i & 1)
+			setlistitem(list, i, newintobject(PVbuffer[i]));
+		else
+			setlistitem(list, i, newstringobject((char *) PVbuffer[i]));
+	}
 
 	DEL(PVbuffer);
 
@@ -424,8 +478,6 @@ cl_OpenCompressor(self, args)
 	object *GetFrameCBPtr;
 	object *callbackID;
 	clobject *new;
-	long result;
-	object *res;
 
 	if (!getargs(args, "((iiiiiiiiii)iOO)",
 		     &compressionFormat.width,
@@ -445,8 +497,19 @@ cl_OpenCompressor(self, args)
 	if (new == 0)
 		return NULL;
 
-	result = clOpenCompressor(&compressionFormat, qualityFactor, GetFrame,
-				  (void *) new, &new->ob_compressorHdl);
+	new->ob_compressorHdl = NULL;
+	new->ob_callbackFunc = NULL;
+	new->ob_callbackID = NULL;
+	new->ob_data = NULL;
+
+	error_handler_called = 0;
+	if (clOpenCompressor(&compressionFormat, qualityFactor, GetFrame,
+			     (void *) new, &new->ob_compressorHdl) == FAILURE) {
+		DECREF(new);
+		if (!error_handler_called)
+			err_setstr(ClError, "opencompressor failed");
+		return NULL;
+	}
 
 	new->ob_isCompressor = 1;
 	new->ob_callbackFunc = GetFrameCBPtr;
@@ -458,9 +521,7 @@ cl_OpenCompressor(self, args)
 	new->ob_data = NULL;
 	new->ob_dataMaxSize = compressionFormat.dataMaxSize;
 
-	res = mkvalue("(iO)", result, new);
-	DECREF(new);
-	return res;
+	return new;
 }
 
 static object *
@@ -473,7 +534,6 @@ cl_OpenDecompressor(self, args)
 	object *GetDataCBPtr;
 	object *callbackID;
 	clobject *new;
-	long result;
 	object *res;
 
 	if (!getargs(args, "(s#OO)", &info, &infoSize, &GetDataCBPtr,
@@ -484,9 +544,19 @@ cl_OpenDecompressor(self, args)
 	if (new == 0)
 		return NULL;
 
-	result = clOpenDecompressor(&compressionFormat, infoSize, info,
-				    GetData, (void *) new,
-				    &new->ob_compressorHdl);
+	new->ob_compressorHdl = NULL;
+	new->ob_callbackFunc = NULL;
+	new->ob_callbackID = NULL;
+	new->ob_data = NULL;
+
+	error_handler_called = 0;
+	if (clOpenDecompressor(&compressionFormat, infoSize, info, GetData,
+			       (void *) new, &new->ob_compressorHdl) == FAILURE) {
+		DECREF(new);
+		if (!error_handler_called)
+			err_setstr(ClError, "opendecompressor failed");
+		return NULL;
+	}
 
 	new->ob_isCompressor = 0;
 	new->ob_callbackFunc = GetDataCBPtr;
@@ -497,7 +567,7 @@ cl_OpenDecompressor(self, args)
 	XINCREF(new->ob_callbackID);
 	new->ob_data = NULL;
 
-	res = mkvalue("(iO(iiiiiiiiii))", result, new, 
+	res = mkvalue("(O(iiiiiiiiii))", new, 
 		     compressionFormat.width,
 		     compressionFormat.height,
 		     compressionFormat.frameSize,
@@ -508,10 +578,6 @@ cl_OpenDecompressor(self, args)
 		     compressionFormat.frameRate,
 		     compressionFormat.numberOfFrames,
 		     compressionFormat.compressionScheme);
-	if (res == NULL) {
-		XDECREF(new->ob_callbackFunc);
-		XDECREF(new->ob_callbackID);
-	}
 
 	DECREF(new);
 	return res;
@@ -522,14 +588,19 @@ cl_AddParam(self, args)
 	object *self, *args;
 {
 	char *name;
-	long type, min, max, initial, paramID, result;
+	long type, min, max, initial, paramID;
 
 	if (!getargs(args, "(siiii)", &name, &type, &min, &max, &initial))
 		return NULL;
 
-	result = clAddParam(name, type, min, max, initial, &paramID);
+	error_handler_called = 0;
+	if (clAddParam(name, type, min, max, initial, &paramID) == FAILURE) {
+		if (!error_handler_called)
+			err_setstr(ClError, "addparam failed");
+		return NULL;
+	}
 
-	return mkvalue("(ii)", result, paramID);
+	return newintobject(paramID);
 }
 
 static struct methodlist cl_methods[] = {
@@ -542,5 +613,14 @@ static struct methodlist cl_methods[] = {
 void
 initcl()
 {
-	(void) initmodule("cl", cl_methods);
+	object *m, *d;
+
+	m = initmodule("cl", cl_methods);
+	d = getmoduledict(m);
+
+	ClError = newstringobject("cl.error");
+	if (ClError == NULL || dictinsert(d, "error", ClError) != 0)
+		fatal("can't define cl.error");
+
+	(void) clSetErrorHandler(cl_ErrorHandler);
 }
