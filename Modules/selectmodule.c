@@ -657,6 +657,8 @@ initselect(void)
 	insint(d, "POLLRDBAND", POLLRDBAND);
 	insint(d, "POLLWRNORM", POLLWRNORM);
 	insint(d, "POLLWRBAND", POLLWRBAND);
+#ifdef POLLMSG
 	insint(d, "POLLMSG", POLLMSG);
+#endif
 #endif /* HAVE_POLL */
 }
