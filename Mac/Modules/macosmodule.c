@@ -202,6 +202,19 @@ MacOS_EnableAppswitch(PyObject *self, PyObject *args)
 	return Py_None;
 }
 
+
+static PyObject *
+MacOS_HandleEvent(PyObject *self, PyObject *args)
+{
+	EventRecord ev;
+	
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetEventRecord, &ev))
+		return NULL;
+	PyMac_HandleEvent(&ev);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyMethodDef MacOS_Methods[] = {
 	{"AcceptHighLevelEvent",	MacOS_AcceptHighLevelEvent, 1},
 	{"GetCreatorAndType",		MacOS_GetCreatorAndType, 1},
@@ -211,6 +224,7 @@ static PyMethodDef MacOS_Methods[] = {
 #endif
 	{"SetScheduleTimes",	MacOS_SetScheduleTimes, 1},
 	{"EnableAppswitch",		MacOS_EnableAppswitch, 1},
+	{"HandleEvent",			MacOS_HandleEvent, 1},
 	{NULL,				NULL}		 /* Sentinel */
 };
 

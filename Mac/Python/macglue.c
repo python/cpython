@@ -267,13 +267,34 @@ PyMac_SetYield(long fgi, long fgy, long bgi, long bgy)
 }
 
 /*
+** Handle an event, either one found in the mainloop eventhandler or
+** one passed back from the python program.
+*/
+void
+PyMac_HandleEvent(evp)
+	EventRecord *evp;
+{
+	WindowPtr wp;
+			
+#ifdef __MWERKS__
+	/* If SIOUX wants it we're done */
+	(void)SIOUXHandleOneEvent(evp);
+#else
+	/* Other compilers are just unlucky: we only weed out clicks in other applications */
+	if ( evp->what == mouseDown ) {
+		if ( FindWindow(evp->where, &wp) == inSysWindow )
+			SystemClick(evp, wp);
+	}
+#endif /* !__MWERKS__ */
+}
+
+/*
 ** Yield the CPU to other tasks.
 */
 static
 PyMac_DoYield()
 {
 	EventRecord ev;
-	WindowPtr wp;
 	long yield;
 	static int no_waitnextevent = -1;
 	int gotone;
@@ -306,17 +327,7 @@ PyMac_DoYield()
 		/* Get out quickly if nothing interesting is happening */
 		if ( !gotone || ev.what == nullEvent )
 			break;
-			
-#ifdef __MWERKS__
-		/* If SIOUX wants it we're done too */
-		(void)SIOUXHandleOneEvent(&ev);
-#else
-		/* Other compilers are just unlucky: we only weed out clicks in other applications */
-		if ( ev.what == mouseDown ) {
-			if ( FindWindow(ev.where, &wp) == inSysWindow )
-				SystemClick(&ev, wp);
-		}
-#endif /* !__MWERKS__ */
+		PyMac_HandleEvent(&ev);
 	}
 	lastyield = TickCount();
 }
