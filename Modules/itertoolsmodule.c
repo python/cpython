@@ -637,7 +637,6 @@ PyTypeObject starmap_type = {
 typedef struct {
 	PyObject_HEAD
 	PyObject *iters;
-	PyObject *argtuple;
 	PyObject *func;
 } imapobject;
 
@@ -646,7 +645,7 @@ PyTypeObject imap_type;
 static PyObject *
 imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *it, *iters, *argtuple, *func;
+	PyObject *it, *iters, *func;
 	imapobject *lz;
 	int numargs, i;
 
@@ -661,34 +660,23 @@ imap_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	if (iters == NULL)
 		return NULL;
 
-	argtuple = PyTuple_New(numargs-1);
-	if (argtuple == NULL) {
-		Py_DECREF(iters);
-		return NULL;
-	}
-
 	for (i=1 ; i<numargs ; i++) {
 		/* Get iterator. */
 		it = PyObject_GetIter(PyTuple_GET_ITEM(args, i));
 		if (it == NULL) {
-			Py_DECREF(argtuple);
 			Py_DECREF(iters);
 			return NULL;
 		}
 		PyTuple_SET_ITEM(iters, i-1, it);
-		Py_INCREF(Py_None);
-		PyTuple_SET_ITEM(argtuple, i-1, Py_None);
 	}
 
 	/* create imapobject structure */
 	lz = (imapobject *)type->tp_alloc(type, 0);
 	if (lz == NULL) {
-		Py_DECREF(argtuple);
 		Py_DECREF(iters);
 		return NULL;
 	}
 	lz->iters = iters;
-	lz->argtuple = argtuple;
 	func = PyTuple_GET_ITEM(args, 0);
 	Py_INCREF(func);
 	lz->func = func;
@@ -700,7 +688,6 @@ static void
 imap_dealloc(imapobject *lz)
 {
 	PyObject_GC_UnTrack(lz);
-	Py_XDECREF(lz->argtuple);
 	Py_XDECREF(lz->iters);
 	Py_XDECREF(lz->func);
 	lz->ob_type->tp_free(lz);
@@ -713,11 +700,6 @@ imap_traverse(imapobject *lz, visitproc visit, void *arg)
 
 	if (lz->iters) {
 		err = visit(lz->iters, arg);
-		if (err)
-			return err;
-	}
-	if (lz->argtuple) {
-		err = visit(lz->argtuple, arg);
 		if (err)
 			return err;
 	}
@@ -758,39 +740,28 @@ static PyObject *
 imap_next(imapobject *lz)
 {
 	PyObject *val;
-	PyObject *argtuple=lz->argtuple;
+	PyObject *argtuple;
+	PyObject *result;
 	int numargs, i;
 
 	numargs = PyTuple_Size(lz->iters);
-	if (lz->func == Py_None) {
-		argtuple = PyTuple_New(numargs);
-		if (argtuple == NULL)
-			return NULL;
+	argtuple = PyTuple_New(numargs);
+	if (argtuple == NULL)
+		return NULL;
 
-		for (i=0 ; i<numargs ; i++) {
-			val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
-			if (val == NULL) {
-				Py_DECREF(argtuple);
-				return NULL;
-			}
-			PyTuple_SET_ITEM(argtuple, i, val);
+	for (i=0 ; i<numargs ; i++) {
+		val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
+		if (val == NULL) {
+			Py_DECREF(argtuple);
+			return NULL;
 		}
-		return argtuple;
-	} else {
-		if (argtuple->ob_refcnt > 1) {
-			argtuple = PyTuple_New(numargs);
-			if (argtuple == NULL)
-				return NULL;
-		}
-		for (i=0 ; i<numargs ; i++) {
-			val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
-			if (val == NULL)
-				return NULL;
-			Py_DECREF(PyTuple_GET_ITEM(argtuple, i));
-			PyTuple_SET_ITEM(argtuple, i, val);
-		}
-		return PyObject_Call(lz->func, argtuple, NULL);
+		PyTuple_SET_ITEM(argtuple, i, val);
 	}
+	if (lz->func == Py_None) 
+		return argtuple;
+	result = PyObject_Call(lz->func, argtuple, NULL);
+	Py_DECREF(argtuple);
+	return result;
 }
 
 static PyObject *
@@ -1331,32 +1302,29 @@ izip_next(izipobject *lz)
 	PyObject *it;
 	PyObject *item;
 
-	assert(result->ob_refcnt >= 1);
 	if (result->ob_refcnt == 1) {
 		for (i=0 ; i < tuplesize ; i++) {
+			it = PyTuple_GET_ITEM(lz->ittuple, i);
+			item = PyIter_Next(it);
+			if (item == NULL)
+				return NULL;
 			Py_DECREF(PyTuple_GET_ITEM(result, i));
-			PyTuple_SET_ITEM(result, i, NULL);
+			PyTuple_SET_ITEM(result, i, item);
 		}
 		Py_INCREF(result);
 	} else {
-		Py_DECREF(result);
 		result = PyTuple_New(tuplesize);
 		if (result == NULL)
 			return NULL;
-		Py_INCREF(result);
-		lz->result = result;
-	}
-	assert(lz->result == result);
-	assert(result->ob_refcnt == 2);
-
-	for (i=0 ; i < tuplesize ; i++) {
-		it = PyTuple_GET_ITEM(lz->ittuple, i);
-		item = PyIter_Next(it);
-		if (item == NULL) {
-			Py_DECREF(result);
-			return NULL;
+		for (i=0 ; i < tuplesize ; i++) {
+			it = PyTuple_GET_ITEM(lz->ittuple, i);
+			item = PyIter_Next(it);
+			if (item == NULL) {
+				Py_DECREF(result);
+				return NULL;
+			}
+			PyTuple_SET_ITEM(result, i, item);
 		}
-		PyTuple_SET_ITEM(result, i, item);
 	}
 	return result;
 }
