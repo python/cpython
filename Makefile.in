@@ -250,7 +250,7 @@ maninstall:
 
 # Install the library
 MACHDEPS=	$(MACHDEP)
-LIBSUBDIRS=	stdwin tkinter test $(MACHDEPS)
+LIBSUBDIRS=	lib-stdwin lib-tk test test/output $(MACHDEPS)
 libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
