@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 #  -*- Python -*-
 
+import string
 import support
 import sys
 
@@ -11,7 +12,7 @@ def collect(fp):
         line = fp.readline()
         if not line:
             break
-        line = line.strip()
+        line = string.strip(line)
         if line:
             names.append(line)
         else:
@@ -26,22 +27,24 @@ def main():
     options.parse(sys.argv[1:])
     names = collect(sys.stdin)
     percol = (len(names) + options.columns - 1) / options.columns
-    colnums = [percol*i for i in range(options.columns)]
+    colnums = []
+    for i in range(options.columns):
+        colnums.append(percol*i)
     fp = options.get_output_file()
-    print >>fp, options.get_header().rstrip()
-    print >>fp, THANKS
-    print >>fp, '<table width="100%" align="center">'
+    fp.write(string.rstrip(options.get_header()) + "\n")
+    fp.write(THANKS + "\n")
+    fp.write('<table width="100%" align="center">\n')
     for i in range(percol):
-        print >>fp, "  <tr>"
+        fp.write("  <tr>\n")
         for j in colnums:
             try:
-                print >>fp, "    <td>%s</td>" % names[i + j]
+                fp.write("    <td>%s</td>\n" % names[i + j])
             except IndexError:
-                print >>fp, "    <td>&nbsp;</td>"
-        print >>fp, "  </tr>"
-    print >>fp, "</table>"
-    print >>fp, options.get_footer().rstrip()
-
+                pass
+        fp.write("  </tr>\n")
+    fp.write("</table>\n")
+    fp.write(string.rstrip(options.get_footer()) + "\n")
+    fp.close()
 
 THANKS = '''\
 

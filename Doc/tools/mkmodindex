@@ -52,8 +52,8 @@ class Node(buildindex.Node):
     annotation = ""
 
     def __init__(self, link, str, seqno):
-        parts = str.split(None, 1)
-        if parts[0].endswith("</tt>"):
+        parts = string.split(str, None, 1)
+        if parts[0][-5:] == "</tt>":
             self.modname = parts[0][:-5]
         else:
             self.modname = parts[0]
