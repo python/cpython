@@ -15,22 +15,6 @@ from distutils.spawn import spawn
 from distutils.util import move_file, mkpath, newer_pairwise, newer_group
 
 
-# Exception classes used by the CCompiler implementation classes
-class CCompilerError (Exception):
-    """Failure doing some compile/link operation."""
-
-class CompileError (CCompilerError):
-    """Failure to compile one or more C/C++ source files."""
-
-class LibError (CCompilerError):
-    """Failure to create a static library from one or more C/C++ object
-    files."""
-
-class LinkError (CCompilerError):
-    """Failure to link one or more C/C++ object files into an executable
-    or shared library file."""
-
-
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
        by real compiler abstraction classes.  Might have some use as a
