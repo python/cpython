@@ -561,7 +561,8 @@ class Pickler:
                     save(value)
                 write(SETITEMS)
                 return
-
+            # else (dict is empty or a singleton), fall through to the
+            # SETITEM code at the end
         else:   # proto 0 -- can't use EMPTY_DICT or SETITEMS
             write(MARK + DICT)
             self.memoize(obj)
