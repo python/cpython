@@ -246,9 +246,10 @@ class Bdb: # Basic Debugger
 		self.reset()
 		sys.settrace(self.trace_dispatch)
 		try:
-			exec(cmd + '\n', globals, locals)
-		except BdbQuit:
-			pass
+			try:
+				exec(cmd + '\n', globals, locals)
+			except BdbQuit:
+				pass
 		finally:
 			self.quitting = 1
 			sys.settrace(None)
