@@ -71,42 +71,42 @@ used for special class methods; variants without leading and trailing\n\
 
 #define spam1(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; \
-  if(! PyArg_ParseTuple(a,"O",&a1)) return NULL; \
+  if(! PyArg_ParseTuple(a,"O:" #OP,&a1)) return NULL; \
   return AOP(a1); }
 
 #define spam2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
-  if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
+  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
   return AOP(a1,a2); }
 
 #define spamoi(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; int a2; \
-  if(! PyArg_ParseTuple(a,"Oi",&a1,&a2)) return NULL; \
+  if(! PyArg_ParseTuple(a,"Oi:" #OP,&a1,&a2)) return NULL; \
   return AOP(a1,a2); }
 
 #define spam2n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; \
-  if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
+  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
   if(-1 == AOP(a1,a2)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
 #define spam3n(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2, *a3; \
-  if(! PyArg_ParseTuple(a,"OOO",&a1,&a2,&a3)) return NULL; \
+  if(! PyArg_ParseTuple(a,"OOO:" #OP,&a1,&a2,&a3)) return NULL; \
   if(-1 == AOP(a1,a2,a3)) return NULL; \
   Py_INCREF(Py_None); \
   return Py_None; }
 
 #define spami(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1; long r; \
-  if(! PyArg_ParseTuple(a,"O",&a1)) return NULL; \
+  if(! PyArg_ParseTuple(a,"O:" #OP,&a1)) return NULL; \
   if(-1 == (r=AOP(a1))) return NULL; \
   return PyInt_FromLong(r); }
 
 #define spami2(OP,AOP) static PyObject *OP(PyObject *s, PyObject *a) { \
   PyObject *a1, *a2; long r; \
-  if(! PyArg_ParseTuple(a,"OO",&a1,&a2)) return NULL; \
+  if(! PyArg_ParseTuple(a,"OO:" #OP,&a1,&a2)) return NULL; \
   if(-1 == (r=AOP(a1,a2))) return NULL; \
   return PyInt_FromLong(r); }
 
@@ -122,6 +122,7 @@ spam1(op_neg           , PyNumber_Negative)
 spam1(op_pos           , PyNumber_Positive)
 spam1(op_abs           , PyNumber_Absolute)
 spam1(op_inv           , PyNumber_Invert)
+spam1(op_invert        , PyNumber_Invert)
 spam2(op_lshift        , PyNumber_Lshift)
 spam2(op_rshift        , PyNumber_Rshift)
 spami(op_not_          , PyObject_Not)
@@ -132,6 +133,7 @@ spami(isSequenceType   , PySequence_Check)
 spam2(op_concat        , PySequence_Concat)
 spamoi(op_repeat       , PySequence_Repeat)
 spami2(op_contains     , PySequence_Contains)
+spami2(sequenceIncludes, PySequence_Contains)
 spami2(indexOf         , PySequence_Index)
 spami2(countOf         , PySequence_Count)
 spami(isMappingType    , PyMapping_Check)
@@ -145,7 +147,7 @@ op_getslice(PyObject *s, PyObject *a)
         PyObject *a1;
         int a2,a3;
 
-        if (!PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
+        if (!PyArg_ParseTuple(a,"Oii:getslice",&a1,&a2,&a3))
                 return NULL;
         return PySequence_GetSlice(a1,a2,a3);
 }
@@ -156,7 +158,7 @@ op_setslice(PyObject *s, PyObject *a)
         PyObject *a1, *a4;
         int a2,a3;
 
-        if (!PyArg_ParseTuple(a,"OiiO",&a1,&a2,&a3,&a4))
+        if (!PyArg_ParseTuple(a,"OiiO:setslice",&a1,&a2,&a3,&a4))
                 return NULL;
 
         if (-1 == PySequence_SetSlice(a1,a2,a3,a4))
@@ -172,7 +174,7 @@ op_delslice(PyObject *s, PyObject *a)
         PyObject *a1;
         int a2,a3;
 
-        if(! PyArg_ParseTuple(a,"Oii",&a1,&a2,&a3))
+        if(! PyArg_ParseTuple(a,"Oii:delslice",&a1,&a2,&a3))
                 return NULL;
 
         if (-1 == PySequence_DelSlice(a1,a2,a3))
@@ -198,8 +200,10 @@ spam1(isSequenceType,
  "isSequenceType(a) -- Return 1 if a has a sequence type, and zero otherwise.")
 spam1(truth,
  "truth(a) -- Return 1 if a is true, and 0 otherwise.")
-spam2(contains,sequenceIncludes,
+spam2(contains,__contains__,
  "contains(a, b) -- Same as b in a (note reversed operands).")
+spam1(sequenceIncludes,
+ "sequenceIncludes(a, b) -- Same as b in a (note reversed operands; deprecated).")
 spam1(indexOf,
  "indexOf(a, b) -- Return the first index of b in a.")
 spam1(countOf,
@@ -216,6 +220,7 @@ spam2(neg,__neg__, "neg(a) -- Same as -a.")
 spam2(pos,__pos__, "pos(a) -- Same as +a.")
 spam2(abs,__abs__, "abs(a) -- Same as abs(a).")
 spam2(inv,__inv__, "inv(a) -- Same as ~a.")
+spam2(invert,__invert__, "invert(a) -- Same as ~a.")
 spam2(lshift,__lshift__, "lshift(a, b) -- Same as a << b.")
 spam2(rshift,__rshift__, "rshift(a, b) -- Same as a >> b.")
 spam2(not_,__not__, "not_(a) -- Same as not a.")
