@@ -14,7 +14,12 @@ AC_ARG_WITH(gcc, [--without-gcc             never use gcc], [
 		without_gcc=no;;
 	*)	CC=$withval
 		without_gcc=$withval;;
-	esac], [without_gcc=no])
+	esac], [
+	case `uname -s` in
+	OSF1)	CC=cc
+		without_gcc=;;
+	*)	without_gcc=no;;
+	esac])
 AC_MSG_RESULT($without_gcc)
 
 # If the user switches compilers, we can't believe the cache
@@ -234,7 +239,7 @@ DLINCLDIR=${dldir}
 LIBS="$LIBS -ldl -ldld"], AC_MSG_RESULT(no))
 
 # checks for library functions
-AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate gethostname_r gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt symlink tcgetpgrp tcsetpgrp times truncate uname waitpid)
+AC_CHECK_FUNCS(chown clock dlopen ftime ftruncate gethostname_r gettimeofday getpeername getpgrp getpid getwd link lstat nice readlink select setgid setuid setsid setpgid setpgrp setvbuf siginterrupt strftime symlink tcgetpgrp tcsetpgrp times truncate uname waitpid)
 AC_REPLACE_FUNCS(dup2 getcwd strerror memmove)
 AC_CHECK_FUNC(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
 AC_CHECK_FUNC(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
