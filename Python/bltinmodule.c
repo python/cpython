@@ -6,7 +6,7 @@
 #include "graminit.h"
 #include "errcode.h"
 #include "sysmodule.h"
-#include "builtinmodule.h"
+#include "bltinmodule.h"
 #include "import.h"
 #include "pythonrun.h"
 #include "compile.h" /* For ceval.h */
