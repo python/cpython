@@ -9,18 +9,18 @@ lines, and joining lines with backslashes."""
 __revision__ = "$Id$"
 
 from types import *
-import sys, os, string, re
+import sys, os, string
 
 
 class TextFile:
 
     """Provides a file-like object that takes care of all the things you
        commonly want to do when processing a text file that has some
-       line-by-line syntax: strip comments (as long as "#" is your comment
-       character), skip blank lines, join adjacent lines by escaping the
-       newline (ie. backslash at end of line), strip leading and/or
-       trailing whitespace, and collapse internal whitespace.  All of these
-       are optional and independently controllable.
+       line-by-line syntax: strip comments (as long as "#" is your
+       comment character), skip blank lines, join adjacent lines by
+       escaping the newline (ie. backslash at end of line), strip
+       leading and/or trailing whitespace.  All of these are optional
+       and independently controllable.
 
        Provides a 'warn()' method so you can generate warning messages that
        report physical line number, even if the logical line in question
@@ -50,7 +50,7 @@ class TextFile:
            each line before returning it
          skip_blanks [default: true}
            skip lines that are empty *after* stripping comments and
-           whitespace.  (If both lstrip_ws and rstrip_ws are true,
+           whitespace.  (If both lstrip_ws and rstrip_ws are false,
            then some lines may consist of solely whitespace: these will
            *not* be skipped, even if 'skip_blanks' is true.)
          join_lines [default: false]
@@ -59,12 +59,9 @@ class TextFile:
            to it to form one "logical line"; if N consecutive lines end
            with a backslash, then N+1 physical lines will be joined to
            form one logical line.
-         collapse_ws [default: false]  
-           after stripping comments and whitespace and joining physical
-           lines into logical lines, all internal whitespace (strings of
-           whitespace surrounded by non-whitespace characters, and not at
-           the beginning or end of the logical line) will be collapsed
-           to a single space.
+         collapse_join [default: false]
+           strip leading whitespace from lines that are joined to their
+           predecessor; only matters if (join_lines and not lstrip_ws)
 
        Note that since 'rstrip_ws' can strip the trailing newline, the
        semantics of 'readline()' must differ from those of the builtin file
@@ -75,10 +72,10 @@ class TextFile:
 
     default_options = { 'strip_comments': 1,
                         'skip_blanks':    1,
-                        'join_lines':     0,
                         'lstrip_ws':      0,
                         'rstrip_ws':      1,
-                        'collapse_ws':    0,
+                        'join_lines':     0,
+                        'collapse_join':  0,
                       }
 
     def __init__ (self, filename=None, file=None, **options):
@@ -219,6 +216,8 @@ class TextFile:
                                "end-of-file")
                     return buildup_line
 
+                if self.collapse_join:
+                    line = string.lstrip (line)
                 line = buildup_line + line
 
                 # careful: pay attention to line number when incrementing it
@@ -261,10 +260,6 @@ class TextFile:
                     buildup_line = line[0:-2] + '\n'
                     continue
 
-            # collapse internal whitespace (*after* joining lines!)
-            if self.collapse_ws:
-                line = re.sub (r'(\S)\s+(\S)', r'\1 \2', line)            
-
             # well, I guess there's some actual content there: return it
             return line
 
@@ -295,7 +290,7 @@ if __name__ == "__main__":
     test_data = """# test file
 
 line 3 \\
-continues on next line
+  continues on next line
 """
 
 
@@ -303,16 +298,21 @@ continues on next line
     result1 = map (lambda x: x + "\n", string.split (test_data, "\n")[0:-1])
 
     # result 2: just strip comments
-    result2 = ["\n", "\n", "line 3 \\\n", "continues on next line\n"]
+    result2 = ["\n", "\n", "line 3 \\\n", "  continues on next line\n"]
 
     # result 3: just strip blank lines
-    result3 = ["# test file\n", "line 3 \\\n", "continues on next line\n"]
+    result3 = ["# test file\n", "line 3 \\\n", "  continues on next line\n"]
 
     # result 4: default, strip comments, blank lines, and trailing whitespace
-    result4 = ["line 3 \\", "continues on next line"]
+    result4 = ["line 3 \\", "  continues on next line"]
 
-    # result 5: full processing, strip comments and blanks, plus join lines
-    result5 = ["line 3 continues on next line"]
+    # result 5: strip comments and blanks, plus join lines (but don't
+    # "collapse" joined lines
+    result5 = ["line 3   continues on next line"]
+
+    # result 6: strip comments and blanks, plus join lines (and
+    # "collapse" joined lines
+    result6 = ["line 3 continues on next line"]
 
     def test_input (count, description, file, expected_result):
         result = file.readlines ()
@@ -349,7 +349,11 @@ continues on next line
 
     in_file = TextFile (filename, strip_comments=1, skip_blanks=1,
                         join_lines=1, rstrip_ws=1)
-    test_input (5, "full processing", in_file, result5)
+    test_input (5, "join lines without collapsing", in_file, result5)
+
+    in_file = TextFile (filename, strip_comments=1, skip_blanks=1,
+                        join_lines=1, rstrip_ws=1, collapse_join=1)
+    test_input (6, "join lines with collapsing", in_file, result6)
 
     os.remove (filename)
     
