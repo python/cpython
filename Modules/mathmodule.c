@@ -254,6 +254,7 @@ initmath()
 	if (PyDict_SetItemString(d, "e", v) < 0)
                 goto finally;
 	Py_DECREF(v);
+	return;
 
   finally:
         Py_FatalError("can't initialize math module");
