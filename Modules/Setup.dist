@@ -474,6 +474,9 @@ GLHACK=-Dclear=__GLclear
 #EXPAT_DIR=/usr/local/src/expat-1.95.2
 #pyexpat pyexpat.c -DHAVE_EXPAT_H -I$(EXPAT_DIR)/lib -L$(EXPAT_DIR) -lexpat
 
+# Wrapper for iconv(3). This requires either GNU iconv, or a native
+# iconv implementation (only Linux, Solaris, and BSD are known to work)
+#_iconv_codec _iconv_codec -I$(prefix)/include -L$(exec_prefix)/lib -liconv
 
 # Example -- included for reference only:
 # xx xxmodule.c

@@ -603,17 +603,12 @@ static struct PyMethodDef _iconv_codec_methods[] = {
 void
 init_iconv_codec(void)
 {
-    PyObject        *m, *d, *t;
+    PyObject *m;
 
     m = Py_InitModule("_iconv_codec", _iconv_codec_methods);
 
-    d = PyModule_GetDict(m);
-
-    t = PyString_FromString(__version__);
-    PyDict_SetItemString(d, "__version__", t);
-    Py_DECREF(t);
-
-    PyDict_SetItemString(d, "iconvcodec", (PyObject *)(&iconvcodec_Type));
+    PyModule_AddStringConstant(m, "__version__", (char*)__version__);
+    PyModule_AddObject(m, "iconvcodec", (PyObject *)(&iconvcodec_Type));
     PyModule_AddStringConstant(m, "internal_encoding", UNICODE_ENCODING);
 
     if (PyErr_Occurred())
