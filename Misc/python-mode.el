@@ -436,10 +436,12 @@ argument is provided, that many colons are inserted non-electrically."
 			   (py-compute-indentation)))
 	       )
 	  (setq outdent py-indent-offset))
-      ;; electric colon won't re-indent lines that start in column
-      ;; zero.  you'd have to use TAB for that.  TBD: Is there a
-      ;; better way to determine this???
-      (if (zerop (current-indentation)) nil
+      ;; electric colon won't re-indent lines that start to the left
+      ;; of the current computed indentation, under the assumption
+      ;; that these are already outdented properly.  Use TAB, C-c C-l
+      ;; or C-c C-r to adjust.  TBD: Is there a better way to
+      ;; determine this???
+      (if (< (current-indentation) indent) nil
 	(goto-char here)
 	(beginning-of-line)
 	(delete-horizontal-space)
