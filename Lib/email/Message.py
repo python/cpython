@@ -747,7 +747,8 @@ class Message:
             # RFC 2231 encoded, so decode.  It better end up as ascii
             charset = boundary[0] or 'us-ascii'
             return unicode(boundary[2], charset).encode('us-ascii')
-        return _unquotevalue(boundary.strip())
+        # RFC 2046 says that boundaries may begin but not end in w/s
+        return _unquotevalue(boundary.rstrip())
 
     def set_boundary(self, boundary):
         """Set the boundary parameter in Content-Type to 'boundary'.
