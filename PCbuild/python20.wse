@@ -1740,6 +1740,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=.\datetime.pyd
+  Destination=%MAINDIR%\DLLs\datetime.pyd
+  Flags=0000000000000010
+end
+item: Install File
   Source=.\mmap.pyd
   Destination=%MAINDIR%\DLLs\mmap.pyd
   Flags=0000000000000010
@@ -1824,6 +1829,11 @@ end
 item: Install File
   Source=.\bz2.lib
   Destination=%MAINDIR%\libs\bz2.lib
+  Flags=0000000000000010
+end
+item: Install File
+  Source=.\datetime.lib
+  Destination=%MAINDIR%\libs\datetime.lib
   Flags=0000000000000010
 end
 item: Install File
