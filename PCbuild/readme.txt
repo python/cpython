@@ -48,6 +48,8 @@ _symtable
 _testcapi
     tests of the Python C API, run via Lib/test/test_capi.py, and
     implemented by module Modules/_testcapimodule.c
+datetime
+    datetimemodule.c
 mmap
     mmapmodule.c
 parser

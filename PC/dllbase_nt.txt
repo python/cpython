@@ -5,7 +5,7 @@ is selected, and the DLL subject to fixups.  Apparently, these
 fixups are very slow, and significant performance gains can be
 made by selecting a good base address.
 
-This document is to allocate base addresses to core Python 
+This document is to allocate base addresses to core Python
 and Python .PYD files, to give a better change of optimal performance.
 This base address is passed to the linker using the /BASE
 command line switch.
@@ -31,6 +31,7 @@ More standard extensions 1D100000 - 1e000000
  - unicodedata               1D120000 - 1D160000
  - winsound                  1D160000 - 1D170000
  - bZ2                       1D170000 - 1D180000
+ - datetime                  1D180000 - 1D190000
 
 Other extension modules
  - win32api                  1e200000 - 1e220000
