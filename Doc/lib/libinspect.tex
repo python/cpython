@@ -264,6 +264,16 @@ line within that list.
 The optional \var{context} argument specifies the number of lines of
 context to return, which are centered around the current line.
 
+\strong{Warning:}  Keeping references to frame objects, as found in
+the first element of the frame records these functions return, can
+cause your program to create reference cycles.  Once a reference cycle
+has been created, the lifespan of all objects which can be accessed
+from the objects which form the cycle can become much longer even if
+Python's optional cycle detector is enabled.  If such cycles must be
+created, it is important to ensure they are explicitly broken to avoid
+the delayed destruction of objects and increased memory consumption
+which occurs.
+
 \begin{funcdesc}{getouterframes}{frame\optional{, context}}
   Get a list of frame records for a frame and all higher (calling)
   frames.
