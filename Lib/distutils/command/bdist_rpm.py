@@ -81,6 +81,8 @@ class bdist_rpm (Command):
          "capabilities required to build this package"),
         ('obsoletes=', None,
          "capabilities made obsolete by this package"),
+        ('no-autoreq', None,
+         "do not automatically calculate dependencies"),
 
         # Actions to take when building RPM
         ('keep-temp', 'k',
@@ -125,7 +127,8 @@ class bdist_rpm (Command):
          "Force an architecture onto the RPM build process"),
        ]
 
-    boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode']
+    boolean_options = ['keep-temp', 'use-rpm-opt-flags', 'rpm3-mode',
+                       'no-autoreq']
 
     negative_opt = {'no-keep-temp': 'keep-temp',
                     'no-rpm-opt-flags': 'use-rpm-opt-flags',
@@ -172,6 +175,7 @@ class bdist_rpm (Command):
         self.keep_temp = 0
         self.use_rpm_opt_flags = 1
         self.rpm3_mode = 1
+        self.no_autoreq = 0
 
         self.force_arch = None
 
@@ -428,6 +432,9 @@ class bdist_rpm (Command):
 
         if self.icon:
             spec_file.append('Icon: ' + os.path.basename(self.icon))
+
+        if self.no_autoreq:
+            spec_file.append('AutoReq: 0')
 
         spec_file.extend([
             '',
