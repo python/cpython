@@ -1675,9 +1675,9 @@ static PySequenceMethods list_as_sequence = {
 	(intargfunc)list_inplace_repeat,	/* sq_inplace_repeat */
 };
 
-static char list_doc[] =
+PyDoc_STRVAR(list_doc,
 "list() -> new list\n"
-"list(sequence) -> new list initialized from sequence's items";
+"list(sequence) -> new list initialized from sequence's items");
 
 staticforward PyObject * list_iter(PyObject *seq);
 
