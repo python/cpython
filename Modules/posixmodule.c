@@ -756,7 +756,7 @@ posix_access(PyObject *self, PyObject *args)
 	Py_BEGIN_ALLOW_THREADS
 	res = access(path, mode);
 	Py_END_ALLOW_THREADS
-	return(PyInt_FromLong(res == 0 ? 1L : 0L));
+	return(PyBool_FromLong(res == 0));
 }
 
 #ifndef F_OK
