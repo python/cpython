@@ -134,7 +134,12 @@ consult the module code.
 
 \subsection{SMTP Example \label{SMTP-example}}
 
-% really need a little description here...
+This example prompts the user for addresses needed in the message
+envelop (`To' and `From' addresses), and the message to be
+delivered.  Note that the headers to be included with the message must 
+be included in the message as entered; this example doesn't do any
+processing of the \rfc{822} headers.  In particular, the `To' and
+`From' addresses must be included in the message headers explicitly.
 
 \begin{verbatim}
 import rfc822, string, sys
@@ -147,7 +152,7 @@ def prompt(prompt):
 fromaddr = prompt("From")
 toaddrs  = string.splitfields(prompt("To"), ',')
 print "Enter message, end with ^D:"
-msg = ''
+msg = ""
 while 1:
     line = sys.stdin.readline()
     if not line:
