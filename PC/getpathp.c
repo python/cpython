@@ -44,7 +44,7 @@
 
   * When Python is hosted in another exe (different directory, embedded via 
     COM, etc), the Python Home will not be deduced, so the core path from
-    the registry is used.  Other "application paths "in the registry are 
+    the registry is used.  Other "application paths" in the registry are 
     always read.
 
   * If Python can't find its home and there is no registry (eg, frozen
@@ -576,6 +576,40 @@ calculate_path(void)
 		buf = strchr(buf, '\0');
 	}
 	*buf = '\0';
+	/* Now to pull one last hack/trick.  If sys.prefix is
+	   empty, then try and find it somewhere on the paths
+	   we calculated.  We scan backwards, as our general policy
+	   is that Python core directories are at the *end* of
+	   sys.path.  We assume that our "lib" directory is
+	   on the path, and that our 'prefix' directory is
+	   the parent of that.
+	*/
+	if (*prefix=='\0') {
+		char lookBuf[MAXPATHLEN+1];
+		char *look = buf - 1; /* 'buf' is at the end of the buffer */
+		while (1) {
+			int nchars;
+			char *lookEnd = look;
+			/* 'look' will end up one character before the
+			   start of the path in question - even if this
+			   is one character before the start of the buffer
+			*/
+			while (*look != DELIM && look >= module_search_path)
+				look--;
+			nchars = lookEnd-look;
+			strncpy(lookBuf, look+1, nchars);
+			lookBuf[nchars] = '\0';
+			/* Up one level to the parent */
+			reduce(lookBuf);
+			if (search_for_prefix(lookBuf, LANDMARK)) {
+				break;
+			}
+			/* If we are out of paths to search - give up */
+			if (look < module_search_path)
+				break;
+			look--;
+		}
+	}
 }
 
 
