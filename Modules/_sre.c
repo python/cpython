@@ -199,7 +199,7 @@ sre_category(SRE_CODE category, unsigned int ch)
 /* helpers */
 
 LOCAL(int)
-_stack_free(SRE_STATE* state)
+stack_free(SRE_STATE* state)
 {
 	if (state->stack) {
 		TRACE(("release stack\n"));
@@ -211,7 +211,7 @@ _stack_free(SRE_STATE* state)
 }
 
 static int /* shouldn't be LOCAL */
-_stack_extend(SRE_STATE* state, int lo, int hi)
+stack_extend(SRE_STATE* state, int lo, int hi)
 {
 	SRE_STACK* stack;
 	int stacksize;
@@ -242,7 +242,7 @@ _stack_extend(SRE_STATE* state, int lo, int hi)
 	}
 
 	if (!stack) {
-		_stack_free(state);
+		stack_free(state);
 		return SRE_ERROR_MEMORY;
 	}
 
@@ -775,7 +775,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 				/* this position was valid; add it to the retry
                    stack */
 				if (stack >= state->stacksize) {
-					i = _stack_extend(state, stack + 1,
+					i = stack_extend(state, stack + 1,
                                       stackbase + pattern[2]);
 					if (i < 0)
 						return i; /* out of memory */
@@ -1016,7 +1016,7 @@ sre_lower(PyObject* self, PyObject* args)
 }
 
 LOCAL(PyObject*)
-_setup(SRE_STATE* state, PatternObject* pattern, PyObject* args)
+state_init(SRE_STATE* state, PatternObject* pattern, PyObject* args)
 {
 	/* prepare state object */
 
@@ -1093,8 +1093,33 @@ _setup(SRE_STATE* state, PatternObject* pattern, PyObject* args)
 	return string;
 }
 
+LOCAL(void)
+state_fini(SRE_STATE* state)
+{
+	stack_free(state);
+}
+
+LOCAL(PyObject*)
+state_getslice(SRE_STATE* state, int index, PyObject* string)
+{
+    index = (index - 1) * 2;
+
+	if (string == Py_None || !state->mark[index] || !state->mark[index+1]) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
+
+	return PySequence_GetSlice(
+		string,
+        ((char*)state->mark[index] - (char*)state->beginning) /
+        state->charsize,
+        ((char*)state->mark[index+1] - (char*)state->beginning) /
+        state->charsize
+		);
+}
+
 static PyObject*
-_pattern_new_match(PatternObject* pattern, SRE_STATE* state,
+pattern_new_match(PatternObject* pattern, SRE_STATE* state,
                    PyObject* string, int status)
 {
 	/* create match object (from state object) */
@@ -1151,7 +1176,7 @@ _pattern_new_match(PatternObject* pattern, SRE_STATE* state,
 }
 
 static PyObject*
-_pattern_cursor(PatternObject* pattern, PyObject* args)
+pattern_cursor(PatternObject* pattern, PyObject* args)
 {
 	/* create search state object */
 
@@ -1163,7 +1188,7 @@ _pattern_cursor(PatternObject* pattern, PyObject* args)
     if (self == NULL)
         return NULL;
 
-    string = _setup(&self->state, pattern, args);
+    string = state_init(&self->state, pattern, args);
     if (!string) {
         PyObject_DEL(self);
         return NULL;
@@ -1179,7 +1204,7 @@ _pattern_cursor(PatternObject* pattern, PyObject* args)
 }
 
 static void
-_pattern_dealloc(PatternObject* self)
+pattern_dealloc(PatternObject* self)
 {
 	Py_XDECREF(self->code);
 	Py_XDECREF(self->pattern);
@@ -1188,13 +1213,13 @@ _pattern_dealloc(PatternObject* self)
 }
 
 static PyObject*
-_pattern_match(PatternObject* self, PyObject* args)
+pattern_match(PatternObject* self, PyObject* args)
 {
 	SRE_STATE state;
 	PyObject* string;
 	int status;
 
-	string = _setup(&state, self, args);
+	string = state_init(&state, self, args);
 	if (!string)
 		return NULL;
 
@@ -1208,19 +1233,19 @@ _pattern_match(PatternObject* self, PyObject* args)
 #endif
 	}
 
-	_stack_free(&state);
+	state_fini(&state);
 
-	return _pattern_new_match(self, &state, string, status);
+	return pattern_new_match(self, &state, string, status);
 }
 
 static PyObject*
-_pattern_search(PatternObject* self, PyObject* args)
+pattern_search(PatternObject* self, PyObject* args)
 {
 	SRE_STATE state;
 	PyObject* string;
 	int status;
 
-	string = _setup(&state, self, args);
+	string = state_init(&state, self, args);
 	if (!string)
 		return NULL;
 
@@ -1232,9 +1257,9 @@ _pattern_search(PatternObject* self, PyObject* args)
 #endif
 	}
 
-	_stack_free(&state);
+	state_fini(&state);
 
-	return _pattern_new_match(self, &state, string, status);
+	return pattern_new_match(self, &state, string, status);
 }
 
 static PyObject*
@@ -1263,7 +1288,7 @@ call(char* function, PyObject* args)
 }
 
 static PyObject*
-_pattern_sub(PatternObject* self, PyObject* args)
+pattern_sub(PatternObject* self, PyObject* args)
 {
 	PyObject* template;
 	PyObject* string;
@@ -1276,7 +1301,7 @@ _pattern_sub(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-_pattern_subn(PatternObject* self, PyObject* args)
+pattern_subn(PatternObject* self, PyObject* args)
 {
 	PyObject* template;
 	PyObject* string;
@@ -1289,7 +1314,7 @@ _pattern_subn(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-_pattern_split(PatternObject* self, PyObject* args)
+pattern_split(PatternObject* self, PyObject* args)
 {
 	PyObject* string;
     PyObject* maxsplit;
@@ -1301,14 +1326,15 @@ _pattern_split(PatternObject* self, PyObject* args)
 }
 
 static PyObject*
-_pattern_findall(PatternObject* self, PyObject* args)
+pattern_findall(PatternObject* self, PyObject* args)
 {
 	SRE_STATE state;
 	PyObject* string;
 	PyObject* list;
 	int status;
+    int i;
 
-	string = _setup(&state, self, args);
+	string = state_init(&state, self, args);
 	if (!string)
 		return NULL;
 
@@ -1330,14 +1356,42 @@ _pattern_findall(PatternObject* self, PyObject* args)
 
         if (status > 0) {
 
-            item = PySequence_GetSlice(
-                string,
-                ((char*) state.start - (char*) state.beginning) / state.charsize,
-                ((char*) state.ptr - (char*) state.beginning) / state.charsize);
-            if (!item)
+            /* don't bother to build a match object */
+            switch (self->groups) {
+            case 0:
+                item = PySequence_GetSlice(
+                    string,
+                    ((char*) state.start - (char*) state.beginning) /
+                    state.charsize,
+                    ((char*) state.ptr - (char*) state.beginning) /
+                    state.charsize);
+                if (!item)
+                    goto error;
+                break;
+            case 1:
+                item = state_getslice(&state, 1, string);
+                if (!item)
+                    goto error;
+                break;
+            default:
+                item = PyTuple_New(self->groups);
+                if (!item)
+                    goto error;
+                for (i = 0; i < self->groups; i++) {
+                    PyObject* o = state_getslice(&state, i+1, string);
+                    if (!o) {
+                        Py_DECREF(item);
+                        goto error;
+                    }
+                    PyTuple_SET_ITEM(item, i, o);
+                }
+                break;
+            }
+
+            if (PyList_Append(list, item) < 0) {
+                Py_DECREF(item);
                 goto error;
-            if (PyList_Append(list, item) < 0)
-                goto error;
+            }
 
 			if (state.ptr == state.start)
 				state.start = (void*) ((char*) state.ptr + state.charsize);
@@ -1359,34 +1413,34 @@ _pattern_findall(PatternObject* self, PyObject* args)
 		}
 	}
 
-	_stack_free(&state);
-
+	state_fini(&state);
 	return list;
 
 error:
-	_stack_free(&state);
+    Py_DECREF(list);
+	state_fini(&state);
 	return NULL;
 	
 }
 
-static PyMethodDef _pattern_methods[] = {
-	{"match", (PyCFunction) _pattern_match, 1},
-	{"search", (PyCFunction) _pattern_search, 1},
-	{"sub", (PyCFunction) _pattern_sub, 1},
-	{"subn", (PyCFunction) _pattern_subn, 1},
-	{"split", (PyCFunction) _pattern_split, 1},
-	{"findall", (PyCFunction) _pattern_findall, 1},
+static PyMethodDef pattern_methods[] = {
+	{"match", (PyCFunction) pattern_match, 1},
+	{"search", (PyCFunction) pattern_search, 1},
+	{"sub", (PyCFunction) pattern_sub, 1},
+	{"subn", (PyCFunction) pattern_subn, 1},
+	{"split", (PyCFunction) pattern_split, 1},
+	{"findall", (PyCFunction) pattern_findall, 1},
     /* experimental */
-	{"cursor", (PyCFunction) _pattern_cursor, 1},
+	{"cursor", (PyCFunction) pattern_cursor, 1},
 	{NULL, NULL}
 };
 
 static PyObject*  
-_pattern_getattr(PatternObject* self, char* name)
+pattern_getattr(PatternObject* self, char* name)
 {
     PyObject* res;
 
-	res = Py_FindMethod(_pattern_methods, (PyObject*) self, name);
+	res = Py_FindMethod(pattern_methods, (PyObject*) self, name);
 
 	if (res)
 		return res;
@@ -1414,16 +1468,16 @@ _pattern_getattr(PatternObject* self, char* name)
 statichere PyTypeObject Pattern_Type = {
 	PyObject_HEAD_INIT(NULL)
 	0, "Pattern", sizeof(PatternObject), 0,
-	(destructor)_pattern_dealloc, /*tp_dealloc*/
+	(destructor)pattern_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc)_pattern_getattr, /*tp_getattr*/
+	(getattrfunc)pattern_getattr, /*tp_getattr*/
 };
 
 /* -------------------------------------------------------------------- */
 /* match methods */
 
 static void
-_match_dealloc(MatchObject* self)
+match_dealloc(MatchObject* self)
 {
 	Py_XDECREF(self->string);
 	Py_DECREF(self->pattern);
@@ -1431,7 +1485,7 @@ _match_dealloc(MatchObject* self)
 }
 
 static PyObject*
-getslice_by_index(MatchObject* self, int index)
+match_getslice_by_index(MatchObject* self, int index)
 {
 	if (index < 0 || index >= self->groups) {
 		/* raise IndexError if we were given a bad group number */
@@ -1454,7 +1508,7 @@ getslice_by_index(MatchObject* self, int index)
 }
 
 static int
-getindex(MatchObject* self, PyObject* index)
+match_getindex(MatchObject* self, PyObject* index)
 {
 	if (!PyInt_Check(index) && self->pattern->groupindex != NULL) {
 		/* FIXME: resource leak? */
@@ -1470,13 +1524,13 @@ getindex(MatchObject* self, PyObject* index)
 }
 
 static PyObject*
-getslice(MatchObject* self, PyObject* index)
+match_getslice(MatchObject* self, PyObject* index)
 {
-	return getslice_by_index(self, getindex(self, index));
+	return match_getslice_by_index(self, match_getindex(self, index));
 }
 
 static PyObject*
-_match_group(MatchObject* self, PyObject* args)
+match_group(MatchObject* self, PyObject* args)
 {
 	PyObject* result;
 	int i, size;
@@ -1485,10 +1539,10 @@ _match_group(MatchObject* self, PyObject* args)
 
 	switch (size) {
 	case 0:
-		result = getslice(self, Py_False); /* force error */
+		result = match_getslice(self, Py_False);
 		break;
 	case 1:
-		result = getslice(self, PyTuple_GET_ITEM(args, 0));
+		result = match_getslice(self, PyTuple_GET_ITEM(args, 0));
 		break;
 	default:
 		/* fetch multiple items */
@@ -1496,7 +1550,7 @@ _match_group(MatchObject* self, PyObject* args)
 		if (!result)
 			return NULL;
 		for (i = 0; i < size; i++) {
-			PyObject* item = getslice(self, PyTuple_GET_ITEM(args, i));
+			PyObject* item = match_getslice(self, PyTuple_GET_ITEM(args, i));
 			if (!item) {
 				Py_DECREF(result);
 				return NULL;
@@ -1509,7 +1563,7 @@ _match_group(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-_match_groups(MatchObject* self, PyObject* args)
+match_groups(MatchObject* self, PyObject* args)
 {
 	PyObject* result;
 	int index;
@@ -1523,7 +1577,7 @@ _match_groups(MatchObject* self, PyObject* args)
 	for (index = 1; index < self->groups; index++) {
 		PyObject* item;
 		/* FIXME: <fl> handle default! */
-		item = getslice_by_index(self, index);
+		item = match_getslice_by_index(self, index);
 		if (!item) {
 			Py_DECREF(result);
 			return NULL;
@@ -1535,7 +1589,7 @@ _match_groups(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-_match_groupdict(MatchObject* self, PyObject* args)
+match_groupdict(MatchObject* self, PyObject* args)
 {
 	PyObject* result;
 	PyObject* keys;
@@ -1562,7 +1616,7 @@ _match_groupdict(MatchObject* self, PyObject* args)
 			Py_DECREF(result);
 			return NULL;
 		}
-		item = getslice(self, key);
+		item = match_getslice(self, key);
 		if (!item) {
 			Py_DECREF(key);
 			Py_DECREF(keys);
@@ -1579,7 +1633,7 @@ _match_groupdict(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-_match_start(MatchObject* self, PyObject* args)
+match_start(MatchObject* self, PyObject* args)
 {
     int index;
 
@@ -1587,7 +1641,7 @@ _match_start(MatchObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
-    index = getindex(self, index_);
+    index = match_getindex(self, index_);
 
 	if (index < 0 || index >= self->groups) {
 		PyErr_SetString(
@@ -1606,7 +1660,7 @@ _match_start(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-_match_end(MatchObject* self, PyObject* args)
+match_end(MatchObject* self, PyObject* args)
 {
     int index;
 
@@ -1614,7 +1668,7 @@ _match_end(MatchObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
-    index = getindex(self, index_);
+    index = match_getindex(self, index_);
 
 	if (index < 0 || index >= self->groups) {
 		PyErr_SetString(
@@ -1633,7 +1687,7 @@ _match_end(MatchObject* self, PyObject* args)
 }
 
 static PyObject*
-_match_span(MatchObject* self, PyObject* args)
+match_span(MatchObject* self, PyObject* args)
 {
     int index;
 
@@ -1641,7 +1695,7 @@ _match_span(MatchObject* self, PyObject* args)
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
-    index = getindex(self, index_);
+    index = match_getindex(self, index_);
 
 	if (index < 0 || index >= self->groups) {
 		PyErr_SetString(
@@ -1660,22 +1714,22 @@ _match_span(MatchObject* self, PyObject* args)
 	return Py_BuildValue("ii", self->mark[index*2], self->mark[index*2+1]);
 }
 
-static PyMethodDef _match_methods[] = {
-	{"group", (PyCFunction) _match_group, 1},
-	{"start", (PyCFunction) _match_start, 1},
-	{"end", (PyCFunction) _match_end, 1},
-	{"span", (PyCFunction) _match_span, 1},
-	{"groups", (PyCFunction) _match_groups, 1},
-	{"groupdict", (PyCFunction) _match_groupdict, 1},
+static PyMethodDef match_methods[] = {
+	{"group", (PyCFunction) match_group, 1},
+	{"start", (PyCFunction) match_start, 1},
+	{"end", (PyCFunction) match_end, 1},
+	{"span", (PyCFunction) match_span, 1},
+	{"groups", (PyCFunction) match_groups, 1},
+	{"groupdict", (PyCFunction) match_groupdict, 1},
 	{NULL, NULL}
 };
 
 static PyObject*  
-_match_getattr(MatchObject* self, char* name)
+match_getattr(MatchObject* self, char* name)
 {
 	PyObject* res;
 
-	res = Py_FindMethod(_match_methods, (PyObject*) self, name);
+	res = Py_FindMethod(match_methods, (PyObject*) self, name);
 	if (res)
 		return res;
 
@@ -1710,25 +1764,25 @@ statichere PyTypeObject Match_Type = {
 	0, "Match",
 	sizeof(MatchObject), /* size of basic object */
 	sizeof(int), /* space for group item */
-	(destructor)_match_dealloc, /*tp_dealloc*/
+	(destructor)match_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc)_match_getattr, /*tp_getattr*/
+	(getattrfunc)match_getattr, /*tp_getattr*/
 };
 
 /* -------------------------------------------------------------------- */
 /* cursor methods (experimental) */
 
 static void
-_cursor_dealloc(CursorObject* self)
+cursor_dealloc(CursorObject* self)
 {
-	_stack_free(&self->state);
+	state_fini(&self->state);
     Py_DECREF(self->string);
     Py_DECREF(self->pattern);
 	PyMem_DEL(self);
 }
 
 static PyObject*
-_cursor_match(CursorObject* self, PyObject* args)
+cursor_match(CursorObject* self, PyObject* args)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -1744,7 +1798,7 @@ _cursor_match(CursorObject* self, PyObject* args)
 #endif
     }
 
-    match = _pattern_new_match((PatternObject*) self->pattern,
+    match = pattern_new_match((PatternObject*) self->pattern,
                                state, self->string, status);
 
     if (status == 0 || state->ptr == state->start)
@@ -1757,7 +1811,7 @@ _cursor_match(CursorObject* self, PyObject* args)
 
 
 static PyObject*
-_cursor_search(CursorObject* self, PyObject* args)
+cursor_search(CursorObject* self, PyObject* args)
 {
     SRE_STATE* state = &self->state;
     PyObject* match;
@@ -1773,7 +1827,7 @@ _cursor_search(CursorObject* self, PyObject* args)
 #endif
     }
 
-    match = _pattern_new_match((PatternObject*) self->pattern,
+    match = pattern_new_match((PatternObject*) self->pattern,
                                state, self->string, status);
 
     if (status >= 0)
@@ -1782,18 +1836,18 @@ _cursor_search(CursorObject* self, PyObject* args)
     return match;
 }
 
-static PyMethodDef _cursor_methods[] = {
-	{"match", (PyCFunction) _cursor_match, 0},
-	{"search", (PyCFunction) _cursor_search, 0},
+static PyMethodDef cursor_methods[] = {
+	{"match", (PyCFunction) cursor_match, 0},
+	{"search", (PyCFunction) cursor_search, 0},
 	{NULL, NULL}
 };
 
 static PyObject*  
-_cursor_getattr(CursorObject* self, char* name)
+cursor_getattr(CursorObject* self, char* name)
 {
 	PyObject* res;
 
-	res = Py_FindMethod(_cursor_methods, (PyObject*) self, name);
+	res = Py_FindMethod(cursor_methods, (PyObject*) self, name);
 	if (res)
 		return res;
 
@@ -1814,9 +1868,9 @@ statichere PyTypeObject Cursor_Type = {
 	0, "Cursor",
 	sizeof(CursorObject), /* size of basic object */
 	0,
-	(destructor)_cursor_dealloc, /*tp_dealloc*/
+	(destructor)cursor_dealloc, /*tp_dealloc*/
 	0, /*tp_print*/
-	(getattrfunc)_cursor_getattr, /*tp_getattr*/
+	(getattrfunc)cursor_getattr, /*tp_getattr*/
 };
 
 static PyMethodDef _functions[] = {
