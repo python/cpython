@@ -12,6 +12,18 @@ What's New in Python 2.3 alpha 2?
 Core and builtins
 -----------------
 
+- Through a bytecode optimizer bug (and I bet you didn't even know
+  Python *had* a bytecode optimizer :-), "unsigned" hex/oct constants
+  with a leading minus sign would come out with the wrong sign.
+  ("Unsigned" hex/oct constants are those with a face value in the
+  range sys.maxint+1 through sys.maxint*2+1, inclusive; these have
+  always been interpreted as negative numbers through sign folding.)
+  E.g. 0xffffffff is -1, and -(0xffffffff) is 1, but -0xffffffff would
+  come out as -4294967295.  This was the case in Python 2.2 through
+  2.2.2 and 2.3a1, and in Python 2.4 it will once again have that
+  value, but according to PEP 237 it really needs to be 1 now.  This
+  will be backported to Python 2.2.3 a well.  (SF #660455)
+
 - super(X, x): x may now be a proxy for an X instance, i.e.
   issubclass(x.__class__, X) but not issubclass(type(x), X).
 
