@@ -1012,6 +1012,9 @@ objects.  If newval is True, future calls to stat() return floats, if
 it is False, future calls return ints.  If newval is omitted, return
 the current setting.
 
+For compatibility with older Python versions, accessing
+\class{stat_result} as a tuple always returns integers.
+
 \versionchanged[Python now returns float values by default. Applications
 which do not work correctly with floating point time stamps can use
 this function to restore the old behaviour]{2.5}
