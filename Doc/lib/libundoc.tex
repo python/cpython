@@ -8,20 +8,14 @@ posting by Fredrik Lundh; I have revised some modules' status.)
 
 \section{Fundamental, and pretty straightforward to document}
 
-UserDict.py -- user-defined wrapper around dictionary objects
-
-UserList.py -- user-defined wrapper around list objects
-
 ni.py -- New import scheme with package support
-
-site.py -- easy access to site-specific modules
 
 
 \section{Frameworks; somewhat harder to document, but
 well worth the effort}
 
 Tkinter.py -- Interface to Tcl/Tk for graphical user interfaces;
-Fredrik is working on this one!
+Fredrik Lundh is working on this one!
 
 BaseHTTPServer.py -- HTTP server base class
 
@@ -30,8 +24,6 @@ CGIHTTPServer.py -- CGI-savvy HTTP Server
 SimpleHTTPServer.py -- Simple HTTP Server
 
 SocketServer.py -- Generic socket server classes
-
-anydbm.py -- Generic interface to all dbm clones
 
 
 \section{Stuff useful to a lot of people, including the CGI crowd}
@@ -71,14 +63,14 @@ pipes.py -- Conversion pipeline templates (hmm)
 
 popen2.py -- improved popen? (read AND write simultaneously) (hmm)
 
-random.py -- random numbers, layered on top of whrandom.py
-
 statcache.py -- Maintain a cache of file stats
 
 colorsys.py -- Conversion between RGB and other color systems
 
 commands.py -- executing commands and looking at their output and
 status
+
+dbhash.py -- (g)dbm-like wrapper for bsdhash.hashopen
 
 dumbdbm.py -- A dumb and slow but simple dbm clone (anydbm's last
 resort)
@@ -90,8 +82,6 @@ pty.py -- Pseudo terminal utilities
 tty.py -- Terminal utilities
 
 cmd.py -- build line-oriented command interpreters (used by pdb)
-
-whichdb.py -- Guess which db package to use to open a db file
 
 bdb.py -- A generic Python debugger base class (used by pdb)
 
@@ -109,8 +99,6 @@ token.py -- Tokens (from ``token.h'')
 symbol.py -- Symbols (from ``graminit.h'')
 
 tokenize.py -- regular expression that recognizes Python tokens
-
-AST.py -- see parser module documentation
 
 pyclbr.py -- Parse a Python file and retrieve classes and methods
 
@@ -171,13 +159,13 @@ emacs.py -- Execute Emacs code from a Python interpreter
 
 find.py -- find files matching pattern in directory tree
 
-fpformat.py -- General floating point formatting functions
+fpformat.py -- General floating point formatting functions -- obsolete
 
 grep.py -- grep
 
 mutex.py -- Mutual exclusion -- for use with module sched
 
-packmail.py -- create a self-unpacking shell archive
+packmail.py -- create a self-unpacking \Unix{} shell archive
 
 poly.py -- Polynomials
 
@@ -196,10 +184,7 @@ tzparse.py -- Parse a timezone specification (unfinished)
 
 addpack.py -- standard support for "packages" (use ni instead)
 
-dbhash.py -- (g)dbm-compatible interface to bsdhash.hashopen (use
-bsddb instead)
-
-fmt.py -- obsolete text formatting abstractions
+fmt.py -- text formatting abstractions (too slow)
 
 Para.py -- helper for fmt.py
 
