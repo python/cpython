@@ -166,7 +166,7 @@ class async_chat (asyncore.dispatcher):
 		# return len(self.ac_out_buffer) or len(self.producer_fifo) or (not self.connected)
 		# this is about twice as fast, though not as clear.
 		return not (
-			(self.ac_out_buffer is '') and
+			(self.ac_out_buffer == '') and
 			self.producer_fifo.is_empty() and
 			self.connected
 			)
