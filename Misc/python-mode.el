@@ -1053,7 +1053,10 @@ comint believe the user typed this string so that
 (defun py-comint-output-filter-function (string)
   "Watch output for Python prompt and exec next file waiting in queue.
 This function is appropriate for `comint-output-filter-functions'."
-  (when (and (string-equal ">>> " string)
+  (when (and (or (string-equal string ">>> ")
+		 ;; NT XEmacs 21.0 kludge
+		 (and (>= (length string) 5)
+		      (string-equal (substring string -5) "\n>>> ")))
 	     py-file-queue)
     (py-safe (delete-file (car py-file-queue)))
     (setq py-file-queue (cdr py-file-queue))
