@@ -45,6 +45,7 @@ SndCommand = OpaqueType('SndCommand', 'SndCmd')
 SndCommand_ptr = OpaqueType('SndCommand', 'SndCmd')
 SndListHandle = OpaqueByValueType("SndListHandle", "ResObj")
 SPBPtr = OpaqueByValueType("SPBPtr", "SPBObj")
+ModalFilterUPP = FakeType("(ModalFilterUPP)0")
 
 #
 # NOTE: the following is pretty dangerous. For void pointers we pass buffer addresses

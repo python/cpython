@@ -64,6 +64,7 @@ class SoundScanner(Scanner):
 				'SndStopFilePlay',
 				'SndStartFilePlay',
 				'SndPauseFilePlay',
+				'SndRecordToFile',
 			])]
 
 	def makeblacklisttypes(self):
@@ -78,7 +79,6 @@ class SoundScanner(Scanner):
 			"SoundComponentData",
 			"SoundComponentData_ptr",
 			"SoundConverter",
-			"ModalFilterUPP",
 			]
 
 	def makerepairinstructions(self):
