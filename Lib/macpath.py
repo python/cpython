@@ -89,6 +89,29 @@ def dirname(s): return split(s)[0]
 def basename(s): return split(s)[1]
 
 
+# Return the longest prefix of all list elements.
+# XXX completely untested on Mac!!!
+
+def commonprefix(m):
+    "Given a list of pathnames, returns the longest common leading component"
+    if not m: return ''
+    n = m[:]
+    for i in range(len(n)):
+        n[i] = n[i].split(os.sep)
+        # if os.sep didn't have any effect, try os.altsep
+        if os.altsep and len(n[i]) == 1:
+            n[i] = n[i].split(os.altsep)
+            
+    prefix = n[0]
+    for item in n:
+        for i in range(len(prefix)):
+            if prefix[:i+1] <> item[:i+1]:
+                prefix = prefix[:i]
+                if i == 0: return ''
+                break
+    return os.sep.join(prefix)
+
+
 def isdir(s):
     """Return true if the pathname refers to an existing directory."""
 

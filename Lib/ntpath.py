@@ -8,7 +8,7 @@ module as os.path.
 import os
 import stat
 import string
-
+import copy
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
@@ -158,14 +158,17 @@ def dirname(p):
 def commonprefix(m):
     "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
-    prefix = m[0]
-    for item in m:
+    n = copy.copy(m)
+    for i in range(len(n)):
+        n[i] = n[i].split(os.sep)
+    prefix = n[0]
+    for item in n:
         for i in range(len(prefix)):
             if prefix[:i+1] <> item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
-    return prefix
+    return os.sep.join(prefix)
 
 
 # Get size, mtime, atime of files.
