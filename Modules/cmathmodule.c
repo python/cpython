@@ -4,8 +4,6 @@
 
 #include "Python.h"
 
-#include <errno.h>
-
 #include "mymath.h"
 
 #ifdef i860
