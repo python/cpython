@@ -24,7 +24,7 @@ class CompilerTest(unittest.TestCase):
                 path = os.path.join(dir, basename)
                 if test.test_support.verbose:
                     print "compiling", path
-                f = open(path)
+                f = open(path, "U")
                 buf = f.read()
                 f.close()
                 if "badsyntax" in basename:
