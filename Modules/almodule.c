@@ -516,7 +516,7 @@ doParams(args, func, modified)
 		PVbuffer[i] = getintvalue(v);
 	}
 
-	ALgetparams(device, PVbuffer, length);
+	(*func)(device, PVbuffer, length);
 
 	if (modified) {
 		for (i = 0; i < length; i++)
