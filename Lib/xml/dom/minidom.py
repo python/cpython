@@ -16,7 +16,7 @@ Todo:
 
 import xml.dom
 
-from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX
+from xml.dom import EMPTY_NAMESPACE, EMPTY_PREFIX, XMLNS_NAMESPACE, domreg
 from xml.dom.minicompat import *
 from xml.dom.xmlbuilder import DOMImplementationLS, DocumentLS
 
@@ -384,10 +384,10 @@ class Attr(Node):
         else:
             d[name] = value
 
-    def _set_prefix(self, value):
+    def _set_prefix(self, prefix):
         nsuri = self.namespaceURI
-        if value == "xmlns":
-            if self.namespaceURI and self.namespaceURI != XMLNS_NAMESPACE:
+        if prefix == "xmlns":
+            if nsuri and nsuri != XMLNS_NAMESPACE:
                 raise xml.dom.NamespaceErr(
                     "illegal use of 'xmlns' prefix for the wrong namespace")
         d = self.__dict__
@@ -395,7 +395,7 @@ class Attr(Node):
         if prefix is None:
             newName = self.localName
         else:
-            newName = "%s:%s" % (value, self.localName)
+            newName = "%s:%s" % (prefix, self.localName)
         if self.ownerElement:
             _clear_id_cache(self.ownerElement)
         d['nodeName'] = d['name'] = newName
@@ -536,6 +536,7 @@ class NamedNodeMap(NewStyle, GetattrMagic):
             except KeyError:
                 node = Attr(attname)
                 node.ownerDocument = self._ownerElement.ownerDocument
+                self.setNamedItem(node)
             node.value = value
         else:
             if not isinstance(value, Attr):
@@ -1008,7 +1009,8 @@ defproperty(CharacterData, "length", doc="Length of the string data.")
 class Text(CharacterData):
     # Make sure we don't add an instance __dict__ if we don't already
     # have one, at least when that's possible:
-    __slots__ = ()
+    # XXX this does not work, CharacterData is an old-style class
+    # __slots__ = ()
 
     nodeType = Node.TEXT_NODE
     nodeName = "#text"
@@ -1132,7 +1134,8 @@ class Comment(Childless, CharacterData):
 class CDATASection(Text):
     # Make sure we don't add an instance __dict__ if we don't already
     # have one, at least when that's possible:
-    __slots__ = ()
+    # XXX this does not work, Text is an old-style class
+    # __slots__ = ()
 
     nodeType = Node.CDATA_SECTION_NODE
     nodeName = "#cdata-section"
@@ -1212,7 +1215,8 @@ defproperty(ReadOnlySequentialNamedNodeMap, "length",
 class Identified:
     """Mix-in class that supports the publicId and systemId attributes."""
 
-    __slots__ = 'publicId', 'systemId'
+    # XXX this does not work, this is an old-style class
+    # __slots__ = 'publicId', 'systemId'
 
     def _identified_mixin_init(self, publicId, systemId):
         self.publicId = publicId
