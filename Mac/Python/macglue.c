@@ -130,10 +130,6 @@ extern pascal unsigned char *PLstrrchr(unsigned char *, unsigned char);
 ** with the python errors.h. */
 #define fnfErr -43
 
-/* Declared in macfsmodule.c: */
-extern FSSpec *mfs_GetFSSpecFSSpec(PyObject *);
-extern PyObject *newmfssobject(FSSpec *);
-
 /* Interrupt code variables: */
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher(int);
@@ -1044,63 +1040,6 @@ PyMac_BuildOptStr255(Str255 s)
 }
 
 
-/*
-** Convert a Python object to an FSSpec.
-** The object may either be a full pathname or a triple
-** (vrefnum, dirid, path).
-** NOTE: This routine will fail on pre-sys7 machines. 
-** The caller is responsible for not calling this routine
-** in those cases (which is fine, since everyone calling
-** this is probably sys7 dependent anyway).
-*/
-int
-PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
-{
-	Str255 path;
-	short refnum;
-	long parid;
-	OSErr err;
-	FSSpec *fs2;
-
-#if !TARGET_API_MAC_OSX
-	/* XXX This #if is temporary */
-	/* first check whether it already is an FSSpec */
-	fs2 = mfs_GetFSSpecFSSpec(v);
-	if ( fs2 ) {
-		(void)FSMakeFSSpec(fs2->vRefNum, fs2->parID, fs2->name, fs);
-		return 1;
-	}
-#endif
-	if ( PyString_Check(v) ) {
-		/* It's a pathname */
-		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
-			return 0;
-		refnum = 0; /* XXXX Should get CurWD here?? */
-		parid = 0;
-	} else {
-		if( !PyArg_Parse(v, "(hlO&); FSSpec should be fullpath or (vrefnum,dirid,path)",
-							&refnum, &parid, PyMac_GetStr255, &path)) {
-			return 0;
-		}
-	}
-	err = FSMakeFSSpec(refnum, parid, path, fs);
-	if ( err && err != fnfErr ) {
-		PyMac_Error(err);
-		return 0;
-	}
-	return 1;
-}
-
-/* Convert FSSpec to PyObject */
-PyObject *PyMac_BuildFSSpec(FSSpec *v)
-{
-#if TARGET_API_MAC_OSX
-	PyErr_SetString(PyExc_NotImplementedError, "FSSpec not yet done for OSX");
-	return NULL;
-#else
-	return newmfssobject(v);
-#endif
-}
 
 /* Convert a Python object to a Rect.
    The object must be a (left, top, right, bottom) tuple.

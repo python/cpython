@@ -106,9 +106,6 @@ int PyMac_GetStr255(PyObject *, Str255);	/* argument parser for Str255 */
 PyObject *PyMac_BuildStr255(Str255);		/* Convert Str255 to PyObject */
 PyObject *PyMac_BuildOptStr255(Str255);		/* Convert Str255 to PyObject, NULL to None */
 
-int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
-PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
-
 int PyMac_GetRect(PyObject *, Rect *);		/* argument parser for Rect */
 PyObject *PyMac_BuildRect(Rect *);		/* Convert Rect to PyObject */
 
@@ -128,6 +125,14 @@ void PyMac_Initialize(void);			/* Initialize function for embedding Python */
 #ifdef USE_GUSI2
 short PyMac_OpenPrefFile(void);			/* From macgetpath.c, open and return preference file */
 #endif
+
+/* from macfsmodule.c: */
+int PyMac_GetFSSpec(PyObject *, FSSpec *);	/* argument parser for FSSpec */
+PyObject *PyMac_BuildFSSpec(FSSpec *);		/* Convert FSSpec to PyObject */
+
+int PyMac_GetFSRef(PyObject *, FSRef *);	/* argument parser for FSRef */
+PyObject *PyMac_BuildFSRef(FSRef *);		/* Convert FSRef to PyObject */
+
 
 /* From macfiletype.c: */
 

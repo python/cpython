@@ -38,8 +38,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "getapplbycreator.h"
 
-/* Should this be in macglue.h? */
-extern FSSpec *mfs_GetFSSpecFSSpec(PyObject *);
 
 static PyObject *ErrorObject;
 
@@ -67,6 +65,18 @@ staticforward PyTypeObject Mfsstype;
 
 #define is_mfssobject(v)		((v)->ob_type == &Mfsstype)
 
+/* ---------------------------------------------------------------- */
+/* Declarations for objects of type FSRef */
+
+typedef struct {
+	PyObject_HEAD
+	FSRef fsref;
+} mfsrobject;
+
+staticforward PyTypeObject Mfsrtype;
+
+#define is_mfsrobject(v)		((v)->ob_type == &Mfsrtype)
+
 
 /* ---------------------------------------------------------------- */
 /* Declarations for objects of type FInfo */
@@ -81,7 +91,8 @@ staticforward PyTypeObject Mfsitype;
 #define is_mfsiobject(v)		((v)->ob_type == &Mfsitype)
 
 
-mfssobject *newmfssobject(FSSpec *fss); /* Forward */
+staticforward mfssobject *newmfssobject(FSSpec *fss); /* Forward */
+staticforward mfsrobject *newmfsrobject(FSRef *fsr); /* Forward */
 
 /* ---------------------------------------------------------------- */
 
@@ -336,15 +347,56 @@ static PyTypeObject Mfsitype = {
 
 
 /*
-** Helper routine for other modules: return an FSSpec * if the
-** object is a python fsspec object, else NULL
+** Helper routines for the FSRef and FSSpec creators in macglue.c
+** They return an FSSpec/FSRef if the Python object encapsulating
+** either is passed. They return a boolean success indicator.
+** Note that they do not set an exception on failure, they're only
+** helper routines.
 */
-FSSpec *
-mfs_GetFSSpecFSSpec(PyObject *self)
+static int
+_mfs_GetFSSpecFromFSSpec(PyObject *self, FSSpec *fssp)
 {
-	if ( is_mfssobject(self) )
-		return &((mfssobject *)self)->fsspec;
-	return NULL;
+	if ( is_mfssobject(self) ) {
+		*fssp = ((mfssobject *)self)->fsspec;
+		return 1;
+	}
+	return 0;
+}
+
+/* Return an FSSpec if this is an FSref */
+static int
+_mfs_GetFSSpecFromFSRef(PyObject *self, FSSpec *fssp)
+{
+	static FSRef *fsrp;
+	
+	if ( is_mfsrobject(self) ) {
+		fsrp = &((mfsrobject *)self)->fsref;
+		if ( FSGetCatalogInfo(&((mfsrobject *)self)->fsref, kFSCatInfoNone, NULL, NULL, fssp, NULL) == noErr )
+			return 1;
+	}
+	return 0;
+}
+
+/* Return an FSRef if this is an FSRef */
+static int
+_mfs_GetFSRefFromFSRef(PyObject *self, FSRef *fsrp)
+{
+	if ( is_mfsrobject(self) ) {
+		*fsrp = ((mfsrobject *)self)->fsref;
+		return 1;
+	}
+	return 0;
+}
+
+/* Return an FSRef if this is an FSSpec */
+static int
+_mfs_GetFSRefFromFSSpec(PyObject *self, FSRef *fsrp)
+{
+	if ( is_mfssobject(self) ) {
+		if ( FSpMakeFSRef(&((mfssobject *)self)->fsspec, fsrp) == noErr )
+			return 1;
+	}
+	return 0;
 }
 
 /*
@@ -465,6 +517,24 @@ mfss_NewAliasMinimal(self, args)
 		return NULL;
 	}
 	return (PyObject *)newmfsaobject(alias);
+}
+
+static PyObject *
+mfss_FSpMakeFSRef(self, args)
+	mfssobject *self;
+	PyObject *args;
+{
+	OSErr err;
+	FSRef fsref;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	err = FSpMakeFSRef(&self->fsspec, &fsref);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return (PyObject *)newmfsrobject(&fsref);
 }
 
 /* XXXX These routines should be replaced by a wrapper to the *FInfo routines */
@@ -596,6 +666,8 @@ mfss_SetDates(self, args)
 static struct PyMethodDef mfss_methods[] = {
 	{"as_pathname",		(PyCFunction)mfss_as_pathname,			1},
 	{"as_tuple",		(PyCFunction)mfss_as_tuple,				1},
+	{"as_fsref",	(PyCFunction)mfss_FSpMakeFSRef,			1},
+	{"FSpMakeFSRef",	(PyCFunction)mfss_FSpMakeFSRef,			1},
 	{"NewAlias",		(PyCFunction)mfss_NewAlias,				1},
 	{"NewAliasMinimal",	(PyCFunction)mfss_NewAliasMinimal,		1},
 	{"GetCreatorType",	(PyCFunction)mfss_GetCreatorType,		1},
@@ -693,6 +765,112 @@ statichere PyTypeObject Mfsstype = {
 };
 
 /* End of code for FSSpec objects */
+/* -------------------------------------------------------- */
+
+static PyObject *
+mfsr_as_fsspec(self, args)
+	mfsrobject *self;
+	PyObject *args;
+{
+	OSErr err;
+	FSSpec fss;
+	
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	err = FSGetCatalogInfo(&self->fsref, kFSCatInfoNone, NULL, NULL, &fss, NULL);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	Py_INCREF(Py_None);
+	return (PyObject *)newmfssobject(&fss);
+}
+
+static struct PyMethodDef mfsr_methods[] = {
+	{"as_fsspec",		(PyCFunction)mfsr_as_fsspec,	1},
+#if 0
+	{"as_pathname",		(PyCFunction)mfss_as_pathname,			1},
+	{"as_tuple",		(PyCFunction)mfss_as_tuple,				1},
+	{"NewAlias",		(PyCFunction)mfss_NewAlias,				1},
+	{"NewAliasMinimal",	(PyCFunction)mfss_NewAliasMinimal,		1},
+	{"GetCreatorType",	(PyCFunction)mfss_GetCreatorType,		1},
+	{"SetCreatorType",	(PyCFunction)mfss_SetCreatorType,		1},
+	{"GetFInfo",		(PyCFunction)mfss_GetFInfo,				1},
+	{"SetFInfo",		(PyCFunction)mfss_SetFInfo,				1},
+	{"GetDates",		(PyCFunction)mfss_GetDates,				1},
+	{"SetDates",		(PyCFunction)mfss_SetDates,				1},
+#endif
+ 
+	{NULL,			NULL}		/* sentinel */
+};
+
+/* ---------- */
+
+static PyObject *
+mfsr_getattr(self, name)
+	mfsrobject *self;
+	char *name;
+{
+	if ( strcmp(name, "data") == 0)
+		return PyString_FromStringAndSize((char *)&self->fsref, sizeof(FSRef));	
+	return Py_FindMethod(mfsr_methods, (PyObject *)self, name);
+}
+
+mfsrobject *
+newmfsrobject(fsr)
+	FSRef *fsr;
+{
+	mfsrobject *self;
+	
+	self = PyObject_NEW(mfsrobject, &Mfsrtype);
+	if (self == NULL)
+		return NULL;
+	self->fsref = *fsr;
+	return self;
+}
+
+static int
+mfsr_compare(v, w)
+	mfsrobject *v, *w;
+{
+	OSErr err;
+	
+	if ( v == w ) return 0;
+	err = FSCompareFSRefs(&v->fsref, &w->fsref);
+	if ( err == 0 )
+		return 0;
+	if (v < w )
+		return -1;
+	return 1;
+}
+
+static void
+mfsr_dealloc(self)
+	mfsrobject *self;
+{
+	PyMem_DEL(self);
+}
+
+statichere PyTypeObject Mfsrtype = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,				/*ob_size*/
+	"FSRef",			/*tp_name*/
+	sizeof(mfsrobject),		/*tp_basicsize*/
+	0,				/*tp_itemsize*/
+	/* methods */
+	(destructor)mfsr_dealloc,	/*tp_dealloc*/
+	(printfunc)0,		/*tp_print*/
+	(getattrfunc)mfsr_getattr,	/*tp_getattr*/
+	(setattrfunc)0,	/*tp_setattr*/
+	(cmpfunc)mfsr_compare,		/*tp_compare*/
+	(reprfunc)0,		/*tp_repr*/
+	0,			/*tp_as_number*/
+	0,		/*tp_as_sequence*/
+	0,		/*tp_as_mapping*/
+	(hashfunc)0,		/*tp_hash*/
+};
+
+/* End of code for FSRef objects */
 /* -------------------------------------------------------- */
 
 static PyObject *
@@ -817,6 +995,18 @@ mfs_FSSpec(self, args)
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSSpec, &fss))
 		return NULL;
 	return (PyObject *)newmfssobject(&fss);
+}
+
+static PyObject *
+mfs_FSRef(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+	FSRef fsr;
+
+	if (!PyArg_ParseTuple(args, "O&", PyMac_GetFSRef, &fsr))
+		return NULL;
+	return (PyObject *)newmfsrobject(&fsr);
 }
 
 static PyObject *
@@ -963,6 +1153,7 @@ static struct PyMethodDef mfs_methods[] = {
 	{"SetFolder",			mfs_SetFolder,			1},
 #endif
 	{"FSSpec",				mfs_FSSpec,				1},
+	{"FSRef",				mfs_FSRef,				1},
 	{"RawFSSpec",			mfs_RawFSSpec,			1},
 	{"RawAlias",			mfs_RawAlias,			1},
 	{"FindFolder",			mfs_FindFolder,			1},
@@ -973,6 +1164,79 @@ static struct PyMethodDef mfs_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+/*
+** Convert a Python object to an FSSpec.
+** The object may either be a full pathname, an FSSpec, an FSRef or a triple
+** (vrefnum, dirid, path).
+*/
+int
+PyMac_GetFSRef(PyObject *v, FSRef *fsr)
+{
+	OSErr err;
+
+	/* If it's an FSRef we're also okay. */
+	if (_mfs_GetFSRefFromFSRef(v, fsr))
+		return 1;
+	/* first check whether it already is an FSSpec */
+	if ( _mfs_GetFSRefFromFSSpec(v, fsr) )
+		return 1;
+	if ( PyString_Check(v) ) {
+		PyErr_SetString(PyExc_NotImplementedError, "Cannot create an FSRef from a pathname on this platform");
+		return 0;
+	}
+	PyErr_SetString(PyExc_TypeError, "FSRef argument should be existing FSRef, FSSpec or (OSX only) pathname");
+	return 0;
+}
+
+/* Convert FSSpec to PyObject */
+PyObject *PyMac_BuildFSRef(FSRef *v)
+{
+	return (PyObject *)newmfsrobject(v);
+}
+
+/*
+** Convert a Python object to an FSRef.
+** The object may either be a full pathname (OSX only), an FSSpec or an FSRef.
+*/
+int
+PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
+{
+	Str255 path;
+	short refnum;
+	long parid;
+	OSErr err;
+
+	/* first check whether it already is an FSSpec */
+	if ( _mfs_GetFSSpecFromFSSpec(v, fs) )
+		return 1;
+	/* If it's an FSRef we're also okay. */
+	if (_mfs_GetFSSpecFromFSRef(v, fs))
+		return 1;
+	if ( PyString_Check(v) ) {
+		/* It's a pathname */
+		if( !PyArg_Parse(v, "O&", PyMac_GetStr255, &path) )
+			return 0;
+		refnum = 0; /* XXXX Should get CurWD here?? */
+		parid = 0;
+	} else {
+		if( !PyArg_Parse(v, "(hlO&); FSSpec should be FSSpec, FSRef, fullpath or (vrefnum,dirid,path)",
+							&refnum, &parid, PyMac_GetStr255, &path)) {
+			return 0;
+		}
+	}
+	err = FSMakeFSSpec(refnum, parid, path, fs);
+	if ( err && err != fnfErr ) {
+		PyMac_Error(err);
+		return 0;
+	}
+	return 1;
+}
+
+/* Convert FSSpec to PyObject */
+PyObject *PyMac_BuildFSSpec(FSSpec *v)
+{
+	return (PyObject *)newmfssobject(v);
+}
 
 /* Initialization function for the module (*must* be called initmacfs) */
 
