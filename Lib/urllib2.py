@@ -247,7 +247,7 @@ class Request:
 class OpenerDirector:
     def __init__(self):
         server_version = "Python-urllib/%s" % __version__
-        self.addheaders = [('User-agent', server_version)]
+        self.addheaders = [('User-Agent', server_version)]
         # manage the individual handlers
         self.handlers = []
         self.handle_open = {}
@@ -771,7 +771,8 @@ class AbstractHTTPHandler(BaseHandler):
         sel_host, sel_path = splithost(sel)
         h.putheader('Host', sel_host or host)
         for args in self.parent.addheaders:
-            h.putheader(*args)
+            if name not in req.headers:
+                h.putheader(*args)
         for k, v in req.headers.items():
             h.putheader(k, v)
         h.endheaders()
