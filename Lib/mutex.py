@@ -40,7 +40,7 @@ class mutex:
 	# If the mutex is already locked, place function and argument
 	# in the queue.
 	#
-	def lock(self, (function, argument)):
+	def lock(self, function, argument):
 		if self.testandset():
 			function(argument)
 		else:

@@ -217,8 +217,9 @@ class Bdb: # Basic Debugger
 	
 	# 
 	
-	def format_stack_entry(self, (frame, lineno)):
+	def format_stack_entry(self, frame_lineno):
 		import codehack, linecache, repr, string
+		frame, lineno = frame_lineno
 		filename = frame.f_code.co_filename
 		s = filename + '(' + `lineno` + ')'
 		s = s + codehack.getcodename(frame.f_code)

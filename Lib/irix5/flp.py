@@ -208,7 +208,7 @@ def _parse_fd_form(file, name):
 class _newobj:
     def init(self):
 	return self
-    def add(self, (name, value)):
+    def add(self, name, value):
 	self.__dict__[name] = value
     def make(self, dict):
 	for name in dict.keys():
@@ -299,9 +299,9 @@ def _parse_object(file):
 	    if datum == FORMLINE:
 		file.seek(pos)
 	    return obj
-	if type(datum) <> type(()):
+	if type(datum) <> type(()) or len(datum) <> 2:
 	    raise error, 'Parse error, illegal line in object: '+datum
-	obj.add(datum)
+	obj.add(datum[0], datum[1])
 
 #################################################################
 #   Part 2 - High-level object/form creation routines            #

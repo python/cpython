@@ -20,7 +20,7 @@ class FormSplit(Split):
 		self.last_child = None
 		return Split.create(self, parent)
 	#
-	def getminsize(self, (m, sugg_size)):
+	def getminsize(self, m, sugg_size):
 		max_width, max_height = 0, 0
 		for c in self.children:
 			c.form_width, c.form_height = c.getminsize(m, (0, 0))
@@ -38,9 +38,9 @@ class FormSplit(Split):
 		for c in self.children:
 			left, top = c.form_left + fleft, c.form_top + ftop
 			right, bottom = left + c.form_width, top + c.form_height
-			c.setbounds((left, top), (right, bottom))
+			c.setbounds(((left, top), (right, bottom)))
 	#
-	def placenext(self, (left, top)):
+	def placenext(self, left, top):
 		self.next_left = left
 		self.next_top = top
 		self.last_child = None

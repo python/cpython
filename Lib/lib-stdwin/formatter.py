@@ -13,7 +13,7 @@ class formatter:
 	# Pass the window's drawing object, and left, top, right
 	# coordinates of the drawing space as arguments.
 	#
-	def init(self, (d, left, top, right)):
+	def init(self, d, left, top, right):
 		self.d = d		# Drawing object
 		self.left = left	# Left margin
 		self.right = right	# Right margin
@@ -50,10 +50,10 @@ class formatter:
 	# of the current font's space width.
 	# (Two variations: one without, one with explicit stretch factor.)
 	#
-	def addword(self, (word, spacefactor)):
+	def addword(self, word, spacefactor):
 		self.addwordstretch(word, spacefactor, spacefactor)
 	#
-	def addwordstretch(self, (word, spacefactor, stretchfactor)):
+	def addwordstretch(self, word, spacefactor, stretchfactor):
 		width = self.d.textwidth(word)
 		if width > self.avail_width:
 			self._flush(1)

@@ -9,7 +9,7 @@ from Split import Split
 
 class CSplit(Split):
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		# Since things look best if the children are spaced evenly
 		# along the circle (and often all children have the same
 		# size anyway) we compute the max child size and assume
@@ -65,5 +65,5 @@ class CSplit(Split):
 			right, bottom = \
 				left + child_width, \
 				top + child_height
-			child.setbounds((left, top), (right, bottom))
+			child.setbounds(((left, top), (right, bottom)))
 	#

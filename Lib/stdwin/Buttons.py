@@ -35,7 +35,7 @@ class LabelAppearance:
 	#
 	# Size enquiry
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		width = max(width, m.textwidth(self.text) + 6)
 		height = max(height, m.lineheight() + 6)
 		return width, height
@@ -108,8 +108,8 @@ class LabelAppearance:
 			d.erase(self.bounds)
 			self.draw(d, self.bounds)
 	#
-	def draw(self, (d, area)):
-		area = _rect.intersect(area, self.bounds)
+	def draw(self, d, area):
+		area = _rect.intersect([area, self.bounds])
 		if area == _rect.empty:
 			return
 		d.cliprect(area)
@@ -145,7 +145,7 @@ class LabelAppearance:
 
 class StrutAppearance(LabelAppearance):
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		height = max(height, m.lineheight() + 6)
 		return width, height
 	#
@@ -175,7 +175,7 @@ class ButtonAppearance(LabelAppearance):
 #
 class CheckAppearance(LabelAppearance):
 	#
-	def getminsize(self, (m, (width, height))):
+	def getminsize(self, m, (width, height)):
 		minwidth = m.textwidth(self.text) + 6
 		minheight = m.lineheight() + 6
 		width = max(width, minwidth + minheight + m.textwidth(' '))
@@ -382,7 +382,7 @@ class Define:
 	def destroy(self):
 		self.parent = 0
 	#
-	def definetext(self, (parent, text)):
+	def definetext(self, parent, text):
 		self = self.define(parent)
 		self.settext(text)
 		return self

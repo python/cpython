@@ -34,7 +34,7 @@ class scheduler:
 	#
 	# Initialize a new instance, passing the time and delay functions
 	#
-	def init(self, (timefunc, delayfunc)):
+	def init(self, timefunc, delayfunc):
 		self.queue = []
 		self.timefunc = timefunc
 		self.delayfunc = delayfunc
@@ -44,14 +44,15 @@ class scheduler:
 	# Returns an ID for the event which can be used
 	# to remove it, if necessary.
 	#
-	def enterabs(self, event):
+	def enterabs(self, time, priority, action, argument):
+		event = time, priority, action, argument
 		bisect.insort(self.queue, event)
 		return event # The ID
 	#
 	# A variant that specifies the time as a relative time.
 	# This is actually the more commonly used interface.
 	#
-	def enter(self, (delay, priority, action, argument)):
+	def enter(self, delay, priority, action, argument):
 		time = self.timefunc() + delay
 		return self.enterabs(time, priority, action, argument)
 	#
@@ -95,6 +96,6 @@ class scheduler:
 				self.delayfunc(time - now)
 			else:
 				del q[0]
-				void = action(argument)
+				void = apply(action, argument)
 				self.delayfunc(0) # Let other threads run
 	#

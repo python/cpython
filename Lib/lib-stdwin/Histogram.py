@@ -12,7 +12,7 @@ class HistogramAppearance(LabelAppearance, Define):
 		self.scale = (0, 100)
 		return self
 	#
-	def setdata(self, (ydata, scale)):
+	def setdata(self, ydata, scale):
 		self.ydata = ydata
 		self.scale = scale # (min, max)
 		self.parent.change(self.bounds)

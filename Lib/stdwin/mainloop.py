@@ -23,7 +23,7 @@ last_window = None
 def register(win):
 	# First test the dispatch function by passing it a null event --
 	# this catches registration of unconforming windows.
-	win.dispatch(WE_NULL, win, None)
+	win.dispatch((WE_NULL, win, None))
 	if win not in windows:
 		windows.append(win)
 
