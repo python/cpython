@@ -5,6 +5,12 @@
 \sectionauthor{Moshe Zadka}{moshez@zadka.site.co.il}
 \modulesynopsis{Stat files, and remember results.}
 
+
+\deprecated{2.2}{Use \function{\refmodule{os}.stat()} directly instead
+of using the cache; the cache introduces a very high level of
+fragility in applications using it and complicates application code
+with the addition of cache management support.}
+
 The \module{statcache} module provides a simple optimization to
 \function{os.stat()}: remembering the values of previous invocations.
 
