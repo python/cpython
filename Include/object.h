@@ -5,8 +5,8 @@ extern "C" {
 #endif
 
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -99,14 +99,14 @@ whose size is determined when the object is allocated.
 #define OB_HEAD_INIT(type) 0, 0, 1, type,
 #else
 #define OB_HEAD \
-	unsigned int ob_refcnt; \
+	int ob_refcnt; \
 	struct _typeobject *ob_type;
 #define OB_HEAD_INIT(type) 1, type,
 #endif
 
 #define OB_VARHEAD \
 	OB_HEAD \
-	unsigned int ob_size; /* Number of items in variable part */
+	int ob_size; /* Number of items in variable part */
  
 typedef struct _object {
 	OB_HEAD
@@ -197,7 +197,7 @@ typedef long (*hashfunc) PROTO((object *));
 typedef struct _typeobject {
 	OB_VARHEAD
 	char *tp_name; /* For printing */
-	unsigned int tp_basicsize, tp_itemsize; /* For allocation */
+	int tp_basicsize, tp_itemsize; /* For allocation */
 	
 	/* Methods to implement standard operations */
 	
@@ -304,7 +304,7 @@ extern long ref_total;
 #endif
 #define INCREF(op) (ref_total++, (op)->ob_refcnt++)
 #define DECREF(op) \
-	if (--ref_total, --(op)->ob_refcnt > 0) \
+	if (--ref_total, --(op)->ob_refcnt != 0) \
 		; \
 	else \
 		DELREF(op)
@@ -316,7 +316,7 @@ extern long ref_total;
 #endif
 #define INCREF(op) ((op)->ob_refcnt++)
 #define DECREF(op) \
-	if (--(op)->ob_refcnt > 0) \
+	if (--(op)->ob_refcnt != 0) \
 		; \
 	else \
 		DELREF(op)
