@@ -2774,7 +2774,7 @@ build_class(methods, bases, name)
 	}
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_SystemError,
-				"build_class witn non-string name");
+				"build_class with non-string name");
 		return NULL;
 	}
 	n = PyTuple_Size(bases);
