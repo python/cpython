@@ -67,6 +67,10 @@ PyCObject_FromVoidPtrAndDesc:void(*)(void*,void*):destr::
 PyCObject_GetDesc:void*:::
 PyCObject_GetDesc:PyObject*:self:0:
 
+PyCallIter_New:PyObject*::+1:
+PyCallIter_New:PyObject*:callable::
+PyCallIter_New:PyObject*:sentinel::
+
 PyCallable_Check:int:::
 PyCallable_Check:PyObject*:o:0:
 
@@ -844,6 +848,9 @@ PyRun_String:char*:str::
 PyRun_String:int:start::
 PyRun_String:PyObject*:globals:0:
 PyRun_String:PyObject*:locals:0:
+
+PySeqIter_New:PyObject*::+1:
+PySeqIter_New:PyObject*:seq::
 
 PySequence_Check:int:::
 PySequence_Check:PyObject*:o:0:

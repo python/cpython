@@ -2337,6 +2337,18 @@ Returns true if the type object \var{o} sets the feature
 \var{feature}.  Type features are denoted by single bit flags.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyType_IsSubtype}{PyTypeObject *a, PyTypeObject *b}
+Returns true if \var{a} is a subtype of \var{b}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyType_GenericAlloc}{PyTypeObject *type,
+                                                  int nitems}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyType_GenericNew}{PyTypeObject *type,
+                                            PyObject *args, PyObject *kwds}
+\end{cfuncdesc}
+
 
 \subsection{The None Object \label{noneObject}}
 
@@ -4356,11 +4368,57 @@ error, \code{0} on success.
 \end{cfuncdesc}
 
 
+\subsection{Iterator Objects \label{iterator-objects}}
+
+Python provides two general-purpose iterator objects.  The first, a
+sequence iterator, works with an arbitrary sequence supporting the
+\method{__getitem__()} method.  The second works with a callable
+object and a sentinel value, calling the callable for each item in the
+sequence, and ending the iteration when the sentinel value is
+returned.
+
+\begin{cvardesc}{PyTypeObject}{PySeqIter_Type}
+  Type object for iterator objects returned by
+  \cfunction{PySeqIter_New()} and the one-argument form of the
+  \function{iter()} built-in function for built-in sequence types.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PySeqIter_Check}{op}
+  Return true if the type of \var{op} is \cdata{PySeqIter_Type}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PySeqIter_New}{PyObject *seq}
+  Return an iterator that works with a general sequence object,
+  \var{seq}.  The iteration ends when the sequence raises
+  \exception{IndexError} for the subscripting operation.
+\end{cfuncdesc}
+
+
+\begin{cvardesc}{PyTypeObject}{PyCallIter_Type}
+  Type object for iterator objects returned by
+  \cfunction{PyCallIter_New()} and the two-argument form of the
+  \function{iter()} built-in function.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyCallIter_Check}{op}
+  Return true if the type of \var{op} is \cdata{PyCallIter_Type}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyCallIter_New}{PyObject *callable,
+                                             PyObject *sentinel}
+  Return a new iterator.  The first parameter, \var{callable}, can be
+  any Python callable object that can be called with no parameters;
+  each call to it should return the next item in the iteration.  When
+  \var{callable} returns a value equal to \var{sentinel}, the
+  iteration will be terminated.
+\end{cfuncdesc}
+
+
 \subsection{CObjects \label{cObjects}}
 
 \obindex{CObject}
 Refer to \emph{Extending and Embedding the Python Interpreter},
-section 1.12 (``Providing a C API for an Extension Module''), for more 
+section 1.12 (``Providing a C API for an Extension Module), for more 
 information on using these objects.
 
 
