@@ -2328,7 +2328,7 @@ getinstclassname(PyObject *inst, char *buf, int bufsize)
 	PyObject *class;
 
 	if (inst == NULL) {
-		assert(bufsize > strlen("nothing"));
+		assert(bufsize > 0 && (size_t)bufsize > strlen("nothing"));
 		strcpy(buf, "nothing");
 		return;
 	}
