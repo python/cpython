@@ -71,6 +71,18 @@ char *macstrerror(int err)
 	return buf;
 }
 
+/* Exception object shared by all Mac specific modules for Mac OS errors */
+PyObject *PyMac_OSErrException;
+
+/* Initialize and return PyMac_OSErrException */
+PyObject *
+PyMac_GetOSErrException()
+{
+	if (PyMac_OSErrException == NULL)
+		PyMac_OSErrException = PyString_FromString("Mac OS Error");
+	return PyMac_OSErrException;
+}
+
 /* Set a MAC-specific error from errno, and return NULL; return None if no error */
 PyObject * 
 PyErr_Mac(PyObject *eobj, int err)
@@ -89,6 +101,13 @@ PyErr_Mac(PyObject *eobj, int err)
 	PyErr_SetObject(eobj, v);
 	Py_DECREF(v);
 	return NULL;
+}
+
+/* Call PyErr_Mac with PyMac_OSErrException */
+PyObject *
+PyMac_Error(OSErr err)
+{
+	return PyErr_Mac(PyMac_GetOSErrException(), err);
 }
 
 /*
@@ -117,9 +136,9 @@ PyMac_Idle()
 }
 
 
-/* Convert a ResType argument */
+/* Convert a 4-char string object argument to an OSType value */
 int
-PyMac_GetOSType(PyObject *v, ResType *pr)
+PyMac_GetOSType(PyObject *v, OSType *pr)
 {
 	if (!PyString_Check(v) || PyString_Size(v) != 4) {
 		PyErr_SetString(PyExc_TypeError,
@@ -130,7 +149,15 @@ PyMac_GetOSType(PyObject *v, ResType *pr)
 	return 1;
 }
 
-/* Convert a Python string to a Str255 */
+/* Convert an OSType value to a 4-char string object */
+PyObject *
+PyMac_BuildOSType(OSType t)
+{
+	return PyString_FromStringAndSize((char *)&t, 4);
+}
+
+
+/* Convert a Python string object to a Str255 */
 int
 PyMac_GetStr255(PyObject *v, Str255 pbuf)
 {
@@ -145,8 +172,18 @@ PyMac_GetStr255(PyObject *v, Str255 pbuf)
 	return 1;
 }
 
+/* Convert a Str255 to a Python string object */
+PyObject *
+PyMac_BuildStr255(Str255 s)
+{
+	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
+}
+
+
 /*
-** Convert anything resembling an FSSpec argument
+** Convert a Python object to an FSSpec.
+** The object may either be a full pathname or a triple
+** (vrefnum, dirid, path).
 ** NOTE: This routine will fail on pre-sys7 machines. 
 ** The caller is responsible for not calling this routine
 ** in those cases (which is fine, since everyone calling
@@ -180,23 +217,71 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *fs)
 	return 1;
 }
 
-/* Return a Python object that describes an FSSpec */
+/* Convert an FSSpec to a Python object -- a triple (vrefnum, dirid, path) */
 PyObject *
 PyMac_BuildFSSpec(FSSpec *fs)
 {
 	return Py_BuildValue("(iis#)", fs->vRefNum, fs->parID, &fs->name[1], fs->name[0]);
 }
 
-/* Convert an OSType value to a 4-char string object */
-PyObject *
-PyMac_BuildOSType(OSType t)
+
+/* Convert a Python object to a Rect.
+   The object must be a (top, left, bottom, right) tuple.
+   (Unfortunately this is different from STDWIN's convention). */
+int
+PyMac_GetRect(PyObject *v, Rect *r)
 {
-	return PyString_FromStringAndSize((char *)&t, 4);
+	return PyArg_Parse(v, "(hhhh)", &r->top, &r->left, &r->bottom, &r->right);
 }
 
-/* Convert a Str255 to a Python string */
+/* Convert a Rect to a Python object */
 PyObject *
-PyMac_BuildStr255(Str255 s)
+PyMac_BuildRect(Rect *r)
 {
-	return PyString_FromStringAndSize((char *)&s[1], (int)s[0]);
+	return Py_BuildValue("(hhhh)", r->top, r->left, r->bottom, r->right);
+}
+
+
+/* Convert a Python object to a Point.
+   The object must be a (v, h) tuple.
+   (Unfortunately this is different from STDWIN's convention). */
+int
+PyMac_GetPoint(PyObject *v, Point *p)
+{
+	return PyArg_Parse(v, "(hh)", &p->v, &p->h);
+}
+
+/* Convert a Point to a Python object */
+PyObject *
+PyMac_BuildPoint(Point p)
+{
+	return Py_BuildValue("(hh)", p.v, p.h);
+}
+
+
+/* Convert a Python object to an EventRecord.
+   The object must be a (what, message, when, (v, h), modifiers) tuple. */
+int
+PyMac_GetEventRecord(PyObject *v, EventRecord *e)
+{
+	return PyArg_Parse(v, "(hll(hh)h)",
+	                   &e->what,
+	                   &e->message,
+	                   &e->when,
+	                   &e->where.v,                   
+	                   &e->where.h,
+	                   &e->modifiers);
+}
+
+/* Convert a Rect to an EventRecord object */
+PyObject *
+PyMac_BuildEventRecord(EventRecord *e)
+{
+	return Py_BuildValue("(hll(hh)h)",
+	                     e->what,
+	                     e->message,
+	                     e->when,
+	                     e->where.v,
+	                     e->where.h,
+	                     e->modifiers);
 }
