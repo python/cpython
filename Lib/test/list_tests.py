@@ -3,11 +3,39 @@ Tests common to list and UserList.UserList
 """
 
 import sys
+import os
 
 import unittest
 from test import test_support, seq_tests
 
 class CommonTest(seq_tests.CommonTest):
+
+    def test_init(self):
+        # Iterable arg is optional
+        self.assertEqual(self.type2test([]), self.type2test())
+
+        # Init clears previous values
+        a = self.type2test([1, 2, 3])
+        a.__init__()
+        self.assertEqual(a, self.type2test([]))
+
+        # Init overwrites previous values
+        a = self.type2test([1, 2, 3])
+        a.__init__([4, 5, 6])
+        self.assertEqual(a, self.type2test([4, 5, 6]))
+
+        # Mutables always return a new object
+        b = self.type2test(a)
+        self.assertNotEqual(id(a), id(b))
+        self.assertEqual(a, b)
+
+    def test_mul(self):
+        for m in xrange(4):
+            s = tuple(range(m))
+            for n in xrange(-3, 5):
+                self.assertEqual(self.type2test(s*n), self.type2test(s)*n)
+            self.assertEqual(self.type2test(s)*(-4), self.type2test([]))
+            self.assertEqual(id(s), id(s*1))
 
     def test_repr(self):
         l0 = []
@@ -20,6 +48,71 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(`a2`, `l2`)
         self.assertEqual(str(a2), "[0, 1, 2]")
         self.assertEqual(repr(a2), "[0, 1, 2]")
+
+        a2.append(a2)
+        a2.append(3)
+        self.assertEqual(str(a2), "[0, 1, 2, [...], 3]")
+        self.assertEqual(repr(a2), "[0, 1, 2, [...], 3]")
+
+    def test_print(self):
+        d = self.type2test(xrange(200))
+        d.append(d)
+        d.extend(xrange(200,400))
+        d.append(d)
+        d.append(400)
+        try:
+            fo = open(test_support.TESTFN, "wb")
+            print >> fo, d,
+            fo.close()
+            fo = open(test_support.TESTFN, "rb")
+            self.assertEqual(fo.read(), repr(d))
+        finally:
+            fo.close()
+            os.remove(test_support.TESTFN)
+
+    def test_getitem(self):
+        a = self.type2test([10, 11])
+        self.assertEqual(a[0], 10)
+        self.assertEqual(a[1], 11)
+        self.assertEqual(a[-2], 10)
+        self.assertEqual(a[-1], 11)
+        self.assertRaises(IndexError, a.__getitem__, -3)
+        self.assertRaises(IndexError, a.__getitem__, 3)
+
+    def test_subscript(self):
+        a = self.type2test([10, 11])
+        self.assertEqual(a.__getitem__(0L), 10)
+        self.assertEqual(a.__getitem__(1L), 11)
+        self.assertEqual(a.__getitem__(-2L), 10)
+        self.assertEqual(a.__getitem__(-1L), 11)
+        self.assertRaises(IndexError, a.__getitem__, -3)
+        self.assertRaises(IndexError, a.__getitem__, 3)
+        self.assertEqual(a.__getitem__(slice(0,1)), self.type2test([10]))
+        self.assertEqual(a.__getitem__(slice(1,2)), self.type2test([11]))
+        self.assertEqual(a.__getitem__(slice(0,2)), self.type2test([10, 11]))
+        self.assertEqual(a.__getitem__(slice(0,3)), self.type2test([10, 11]))
+        self.assertEqual(a.__getitem__(slice(3,5)), self.type2test([]))
+        self.assertRaises(ValueError, a.__getitem__, slice(0, 10, 0))
+        self.assertRaises(TypeError, a.__getitem__, 'x')
+
+    def test_set_subscript(self):
+        a = self.type2test(range(20))
+        self.assertRaises(ValueError, a.__setitem__, slice(0, 10, 0), [1,2,3])
+        self.assertRaises(TypeError, a.__setitem__, slice(0, 10), 1)
+        self.assertRaises(ValueError, a.__setitem__, slice(0, 10, 2), [1,2])
+        self.assertRaises(TypeError, a.__getitem__, 'x', 1)
+        a[slice(2,10,3)] = [1,2,3]
+        self.assertEqual(a, self.type2test([0, 1, 1, 3, 4, 2, 6, 7, 3,
+                                            9, 10, 11, 12, 13, 14, 15,
+                                            16, 17, 18, 19]))
+
+    def test_reversed(self):
+        a = self.type2test(range(20))
+        r = reversed(a)
+        self.assertEqual(list(r), self.type2test(range(19, -1, -1)))
+        self.assertRaises(StopIteration, r.next)
+        self.assertEqual(list(reversed(self.type2test())),
+                         self.type2test())
 
     def test_setitem(self):
         a = self.type2test([0, 1])
@@ -36,7 +129,6 @@ class CommonTest(seq_tests.CommonTest):
         a = self.type2test([])
         self.assertRaises(IndexError, a.__setitem__, 0, 200)
         self.assertRaises(IndexError, a.__setitem__, -1, 200)
-
         self.assertRaises(TypeError, a.__setitem__)
 
         a = self.type2test([0,1,2,3,4])
@@ -210,6 +302,7 @@ class CommonTest(seq_tests.CommonTest):
         self.assertRaises(TypeError, a.insert)
 
     def test_pop(self):
+        from decimal import Decimal
         a = self.type2test([-1, 0, 1])
         a.pop()
         self.assertEqual(a, [-1, 0])
@@ -219,8 +312,10 @@ class CommonTest(seq_tests.CommonTest):
         a.pop(0)
         self.assertEqual(a, [])
         self.assertRaises(IndexError, a.pop)
-
         self.assertRaises(TypeError, a.pop, 42, 42)
+        a = self.type2test([0, 10, 20, 30, 40])
+        self.assertEqual(a.pop(Decimal(2)), 20)
+        self.assertRaises(IndexError, a.pop, Decimal(25))
 
     def test_remove(self):
         a = self.type2test([0, 0, 1])
@@ -390,6 +485,10 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(u, self.type2test([0, 1, 0, 1, 0, 1]))
         u *= 0
         self.assertEqual(u, self.type2test([]))
+        s = self.type2test([])
+        oldid = id(s)
+        s *= 10
+        self.assertEqual(id(s), oldid)
 
     def test_extendedslicing(self):
         #  subscript
