@@ -197,6 +197,9 @@
 */
 #undef HAVE_LARGEFILE_SUPPORT
 
+/* Defined when any dynamic module loading is enabled */
+#undef HAVE_DYNAMIC_LOADING
+
 /* The number of bytes in a int.  */
 #undef SIZEOF_INT
 
