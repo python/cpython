@@ -128,8 +128,8 @@ class _Database(UserDict.DictMixin):
         return (pos, len(val))
 
     # key is a new key whose associated value starts in the data file
-    # at offset pos and with length size.  Add an index record to
-    # the in-memory index dict, and append one to the index file.
+    # at offset pos and with length siz.  Add an index record to
+    # the in-memory index dict, and append one to the directory file.
     def _addkey(self, key, pos_and_siz_pair):
         self._index[key] = pos_and_siz_pair
         f = _open(self._dirfile, 'a', self._mode)
@@ -157,7 +157,11 @@ class _Database(UserDict.DictMixin):
 
             # Note that _index may be out of synch with the directory
             # file now:  _setval() and _addval() don't update the directory
-            # file.
+            # file.  This also means that the on-disk directory and data
+            # files are in a mutually inconsistent state, and they'll
+            # remain that way until _commit() is called.  Note that this
+            # is a disaster (for the database) if the program crashes
+            # (so that _commit() never gets called).
 
     def __delitem__(self, key):
         # The blocks used by the associated value are lost.
