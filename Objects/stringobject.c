@@ -900,6 +900,11 @@ PyString_Format(format, args)
 				temp = PyObject_Str(v);
 				if (temp == NULL)
 					goto error;
+				if (!PyString_Check(temp)) {
+					PyErr_SetString(PyExc_TypeError,
+					  "%s argument has non-string str()");
+					goto error;
+				}
 				buf = PyString_AsString(temp);
 				len = PyString_Size(temp);
 				if (prec >= 0 && len > prec)
