@@ -514,6 +514,53 @@ it carefully, it may save lots of calls to Py_INCREF() and Py_DECREF() at
 times.
 */
 
+/*
+  trashcan
+  CT 2k0130
+  non-recursively destroy nested objects
+
+  CT 2k0223
+  redefinition for better locality and less overhead.
+
+  Objects that want to be recursion safe need to use
+  the macroes 
+		Py_TRASHCAN_SAFE_BEGIN(name)
+  and
+		Py_TRASHCAN_SAFE_END(name)
+  surrounding their actual deallocation code.
+
+  It would be nice to do this using the thread state.
+  Also, we could do an exact stack measure then.
+  Unfortunately, deallocations also take place when
+  the thread state is undefined.
+*/
+
+#define PyTrash_UNWIND_LEVEL 50
+
+#define Py_TRASHCAN_SAFE_BEGIN(op) \
+	{ \
+		++_PyTrash_delete_nesting; \
+		if (_PyTrash_delete_nesting < PyTrash_UNWIND_LEVEL) { \
+
+#define Py_TRASHCAN_SAFE_END(op) \
+		;} \
+		else \
+			_PyTrash_deposit_object((PyObject*)op);\
+		--_PyTrash_delete_nesting; \
+		if (_PyTrash_delete_later && _PyTrash_delete_nesting <= 0) \
+			_PyTrash_destroy_list(); \
+	} \
+
+extern DL_IMPORT(void) _PyTrash_deposit_object Py_PROTO((PyObject*));
+extern DL_IMPORT(void) _PyTrash_destroy_list Py_PROTO(());
+
+extern DL_IMPORT(int) _PyTrash_delete_nesting;
+extern DL_IMPORT(PyObject *) _PyTrash_delete_later;
+
+/* swap the "xx" to check the speed loss */
+
+#define xxPy_TRASHCAN_SAFE_BEGIN(op) 
+#define xxPy_TRASHCAN_SAFE_END(op) ;
 #ifdef __cplusplus
 }
 #endif

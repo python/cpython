@@ -68,9 +68,11 @@ static void
 tb_dealloc(tb)
 	tracebackobject *tb;
 {
+	Py_TRASHCAN_SAFE_BEGIN(tb)
 	Py_XDECREF(tb->tb_next);
 	Py_XDECREF(tb->tb_frame);
 	PyMem_DEL(tb);
+	Py_TRASHCAN_SAFE_END(tb)
 }
 
 #define Tracebacktype PyTraceBack_Type

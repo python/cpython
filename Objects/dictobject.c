@@ -479,6 +479,7 @@ dict_dealloc(mp)
 {
 	register int i;
 	register dictentry *ep;
+	Py_TRASHCAN_SAFE_BEGIN(mp)
 	for (i = 0, ep = mp->ma_table; i < mp->ma_size; i++, ep++) {
 		if (ep->me_key != NULL) {
 			Py_DECREF(ep->me_key);
@@ -489,6 +490,7 @@ dict_dealloc(mp)
 	}
 	PyMem_XDEL(mp->ma_table);
 	PyMem_DEL(mp);
+	Py_TRASHCAN_SAFE_END(mp)
 }
 
 static int

@@ -906,3 +906,48 @@ Py_ReprLeave(obj)
 		}
 	}
 }
+
+/*
+  trashcan
+  CT 2k0130
+  non-recursively destroy nested objects
+
+  CT 2k0223
+  everything is now done in a macro.
+
+  CT 2k0305
+  modified to use functions, after Tim Peter's suggestion.
+
+  CT 2k0309
+  modified to restore a possible error.
+*/
+
+int _PyTrash_delete_nesting = 0;
+PyObject * _PyTrash_delete_later = NULL;
+
+void
+_PyTrash_deposit_object(op)
+	PyObject *op;
+{
+	PyObject *error_type, *error_value, *error_traceback;
+	PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+	if (!_PyTrash_delete_later)
+		_PyTrash_delete_later = PyList_New(0);
+	if (_PyTrash_delete_later)
+		PyList_Append(_PyTrash_delete_later, (PyObject *)op);
+
+	PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+void
+_PyTrash_destroy_list()
+{
+	while (_PyTrash_delete_later) {
+		PyObject *shredder = _PyTrash_delete_later;
+		_PyTrash_delete_later = NULL;
+		++_PyTrash_delete_nesting;
+		Py_DECREF(shredder);
+		--_PyTrash_delete_nesting;
+	}
+}
