@@ -555,9 +555,9 @@ class Transformer:
         type = n[1]
         if len(nl) == 3:
           if type == 'not':
-            type = 'notin'
+            type = 'not in'
           else:
-            type = 'isnot'
+            type = 'is not'
       else:
         type = _cmp_types[n[0]]
 
