@@ -1959,7 +1959,7 @@ save_global(Picklerobject *self, PyObject *args, PyObject *name)
 		/* Verify py_code has the right type and value. */
 		if (!PyInt_Check(py_code)) {
 			cPickle_ErrFormat(PicklingError, "Can't pickle %s: "
-				"extension code %s isn't n integer",
+				"extension code %s isn't an integer",
 				"OO", args, py_code);
 			goto finally;
 		}
