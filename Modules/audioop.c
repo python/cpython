@@ -541,7 +541,7 @@ audioop_ulaw2lin(self, args)
 	
 	if ( size == 1 )      *CHARP(ncp, i) = (signed char)(val >> 8);
 	else if ( size == 2 ) *SHORTP(ncp, i) = (short)(val);
-	else if ( size == 4 ) *LONGP(ncp, i) = (long)(val>>16);
+	else if ( size == 4 ) *LONGP(ncp, i) = (long)(val<<16);
     }
     return rv;
 }
