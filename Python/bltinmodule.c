@@ -67,7 +67,7 @@ builtin_apply(self, args)
 }
 
 static object *
-builtin_bagof(self, args)
+builtin_filter(self, args)
 	object *self;
 	object *args;
 {
@@ -101,7 +101,7 @@ builtin_bagof(self, args)
 
 	if ((sqf = seq->ob_type->tp_as_sequence) == NULL) {
 		err_setstr(TypeError,
-			   "argument 2 to bagof() must be a sequence type");
+			   "argument 2 to filter() must be a sequence type");
 		goto Fail_2;
 	}
 
@@ -1121,7 +1121,6 @@ builtin_type(self, v)
 static struct methodlist builtin_methods[] = {
 	{"abs",		builtin_abs},
 	{"apply",	builtin_apply},
-	{"bagof",	builtin_bagof},
 	{"chr",		builtin_chr},
 	{"cmp",		builtin_cmp},
 	{"coerce",	builtin_coerce},
@@ -1130,6 +1129,7 @@ static struct methodlist builtin_methods[] = {
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
 	{"execfile",	builtin_execfile},
+	{"filter",	builtin_filter},
 	{"float",	builtin_float},
 	{"getattr",	builtin_getattr},
 	{"hasattr",	builtin_hasattr},
@@ -1271,7 +1271,7 @@ coerce(pv, pw)
 }
 
 
-/* Helper for bagof(): filter a tuple through a function */
+/* Helper for filter(): filter a tuple through a function */
 
 static object *
 filtertuple(func, tuple)
@@ -1324,7 +1324,7 @@ Fail_1:
 }
 
 
-/* Helper for bagof(): filter a string through a function */
+/* Helper for filter(): filter a string through a function */
 
 static object *
 filterstring(func, strobj)

@@ -154,7 +154,12 @@ static void set_key(r, key)
 rotorobject *r;
 char *key;
 {
+#ifdef BUGGY_CODE_BW_COMPAT
+	/* See comments below */
 	int k1=995, k2=576, k3=767, k4=671, k5=463;
+#else
+	unsigned long k1=995, k2=576, k3=767, k4=671, k5=463;
+#endif
 	int i;
 	int len=strlen(key);
 	for (i=0;i<len;i++) {
