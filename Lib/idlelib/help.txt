@@ -191,3 +191,16 @@ Other preferences:
 Command line usage:
 	
 	Enter idle -h at the command prompt to get a usage message.
+
+Running without a subprocess:
+
+	If IDLE is started with the -n command line switch it will run in a
+	single process and will not create the subprocess which runs the RPC
+	Python execution server.  This can be useful if Python cannot create
+	the subprocess or the RPC socket interface on your platform.  However,
+	in this mode user code is not isolated from IDLE itself.  Also, the
+	environment is not restarted when Run/Run Module (F5) is selected.  If
+	your code has been modified, you must reload() the affected modules and
+	re-import any specific items (e.g. from foo import baz) if the changes
+	are to take effect.  For these reasons, it is preferable to run IDLE
+	with the default subprocess if at all possible.
