@@ -523,6 +523,8 @@ int_pow(v, w, z)
 		 	XDECREF(t2);
 			return(NULL);
 		}
+		DECREF(t1);
+		DECREF(t2);
 	 	ix=mod;
 	}
 	return newintobject(ix);
