@@ -22,6 +22,7 @@ def _debug(msg):
 class RobotFileParser:
     def __init__(self, url=''):
         self.entries = []
+        self.default_entry = None
         self.disallow_all = 0
         self.allow_all = 0
         self.set_url(url)
@@ -72,7 +73,11 @@ class RobotFileParser:
                     entry = Entry()
                     state = 0
                 elif state==2:
-                    self.entries.append(entry)
+                    if "*" in entry.useragents:
+                        # the default entry is considered last
+                        self.default_entry = entry
+                    else:
+                        self.entries.append(entry)
                     entry = Entry()
                     state = 0
             # remove optional comment and strip line
@@ -85,7 +90,7 @@ class RobotFileParser:
             line = line.split(':', 1)
             if len(line) == 2:
                 line[0] = line[0].strip().lower()
-                line[1] = line[1].strip()
+                line[1] = urllib.unquote(line[1].strip())
                 if line[0] == "user-agent":
                     if state==2:
                         _debug("line %d: warning: you should insert a blank"
@@ -128,10 +133,13 @@ class RobotFileParser:
             return 1
         # search for given user agent matches
         # the first match counts
-        url = urllib.quote(urlparse.urlparse(url)[2]) or "/"
+        url = urllib.quote(urlparse.urlparse(urllib.unquote(url))[2]) or "/"
         for entry in self.entries:
             if entry.applies_to(useragent):
                 return entry.allowance(url)
+        # try the default entry last
+        if self.default_entry:
+            return self.default_entry.allowance(url)
         # agent not found ==> access granted
         return 1
 
@@ -147,11 +155,14 @@ class RuleLine:
     """A rule line is a single "Allow:" (allowance==1) or "Disallow:"
        (allowance==0) followed by a path."""
     def __init__(self, path, allowance):
+        if path == '' and not allowance:
+            # an empty value means allow all
+            allowance = 1
         self.path = urllib.quote(path)
         self.allowance = allowance
 
     def applies_to(self, filename):
-        return self.path=="*" or re.match(self.path, filename)
+        return self.path=="*" or filename.startswith(self.path)
 
     def __str__(self):
         return (self.allowance and "Allow" or "Disallow")+": "+self.path
@@ -180,8 +191,7 @@ class Entry:
                 # we have the catch-all agent
                 return 1
             agent = agent.lower()
-            # don't forget to re.escape
-            if re.search(re.escape(useragent), agent):
+            if useragent.find(agent) != -1:
                 return 1
         return 0
 
