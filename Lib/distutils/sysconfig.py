@@ -129,6 +129,16 @@ def _init_posix():
     parse_makefile(open(get_makefile_filename()), g)
 
 
+def _init_nt():
+    """Initialize the module as appropriate for NT"""
+    g=globals()
+    # load config.h, though I don't know how useful this is
+    parse_config_h(open(
+            os.path.join(sys.exec_prefix, "include", "config.h")), g)
+    # set basic install directories
+    g['LIBDEST']=os.path.join(sys.exec_prefix, "Lib")
+    g['BINLIBDEST']=os.path.join(sys.exec_prefix, "Lib")
+
 
 try:
     exec "_init_" + os.name
@@ -139,3 +149,4 @@ else:
     exec "_init_%s()" % os.name
 
 del _init_posix
+del _init_nt
