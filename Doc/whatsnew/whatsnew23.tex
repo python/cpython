@@ -343,15 +343,28 @@ strings \samp{True} and \samp{False} instead of \samp{1} and \samp{0}.
 \section{Extended Slices\label{extended-slices}}
 
 Ever since Python 1.4 the slice syntax has supported a third
-``stride'' argument, but the builtin sequence types have not supported
-this feature (it was initially included at the behest of the
-developers of the Numerical Python package).  This changes with Python
-2.3.
+``stride'' argument, but the built-in sequence types have not
+supported this feature (it was initially included at the behest of the
+developers of the Numerical Python package).  Starting with Python
+2.3, the built-in sequence types do support the stride.
 
-% XXX examples, etc.
+For example, to extract the elements of a list with even indexes:
+
+\begin{verbatim}
+>>> L = range(10)
+>>> L[::2]
+[0, 2, 4, 6, 8]
+\end{verbatim}
+
+To make a copy of the same list in reverse order:
+
+\begin{verbatim}
+>>> L[::-1]
+[9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+\end{verbatim}
 
 %======================================================================
-%\section{Other Language Changes}
+\section{Other Language Changes}
 
 %Here are the changes that Python 2.3 makes to the core language.
 
@@ -368,11 +381,12 @@ developers of the Numerical Python package).  This changes with Python
 
 
 %\begin{PendingDeprecationWarning}
-A new warning PendingDeprecationWarning was added to provide
-direction on features which are in the process of being deprecated.
-The warning will not be printed by default.  To see the pending
-deprecations, use -Walways::PendingDeprecationWarning:: on the command line
-or warnings.filterwarnings().
+A new warning, \exception{PendingDeprecationWarning} was added to
+provide direction on features which are in the process of being
+deprecated.  The warning will not be printed by default.  To see the
+pending deprecations, use
+\programopt{-Walways::PendingDeprecationWarning::} on the command line
+or use \function{warnings.filterwarnings()}.
 %\end{PendingDeprecationWarning}
 
 
