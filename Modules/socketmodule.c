@@ -1,7 +1,5 @@
 /* Socket module */
 
-/* SSL support based on patches by Brian E Gallew and Laszlo Kovacs */
-
 /*
 This module provides an interface to Berkeley socket IPC.
 
@@ -35,7 +33,6 @@ Module interface:
 - socket.AF_INET, socket.SOCK_STREAM, etc.: constants from <socket.h>
 - socket.inet_aton(IP address) -> 32-bit packed IP representation
 - socket.inet_ntoa(packed IP) -> IP address string
-- socket.ssl(socket, keyfile, certfile) -> new ssl object
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
   (including the dd.dd.dd.dd notation) and port is in host byte order
@@ -86,127 +83,110 @@ Socket methods:
    computed by the configure script are needed! */
 
 #ifndef linux
-#undef HAVE_GETHOSTBYNAME_R_3_ARG
-#undef HAVE_GETHOSTBYNAME_R_5_ARG
-#undef HAVE_GETHOSTBYNAME_R_6_ARG
+# undef HAVE_GETHOSTBYNAME_R_3_ARG
+# undef HAVE_GETHOSTBYNAME_R_5_ARG
+# undef HAVE_GETHOSTBYNAME_R_6_ARG
 #endif
 
 #ifndef WITH_THREAD
-#undef HAVE_GETHOSTBYNAME_R
+# undef HAVE_GETHOSTBYNAME_R
 #endif
 
 #ifdef HAVE_GETHOSTBYNAME_R
-#if defined(_AIX) || defined(__osf__)
-#define HAVE_GETHOSTBYNAME_R_3_ARG
-#elif defined(__sun) || defined(__sgi)
-#define HAVE_GETHOSTBYNAME_R_5_ARG
-#elif defined(linux)
+# if defined(_AIX) || defined(__osf__)
+#  define HAVE_GETHOSTBYNAME_R_3_ARG
+# elif defined(__sun) || defined(__sgi)
+#  define HAVE_GETHOSTBYNAME_R_5_ARG
+# elif defined(linux)
 /* Rely on the configure script */
-#else
-#undef HAVE_GETHOSTBYNAME_R
-#endif
+# else
+#  undef HAVE_GETHOSTBYNAME_R
+# endif
 #endif
 
 #if !defined(HAVE_GETHOSTBYNAME_R) && defined(WITH_THREAD) && !defined(MS_WINDOWS)
-#define USE_GETHOSTBYNAME_LOCK
+# define USE_GETHOSTBYNAME_LOCK
 #endif
 
 #ifdef USE_GETHOSTBYNAME_LOCK
-#include "pythread.h"
+# include "pythread.h"
 #endif
 
 #if defined(PYCC_VACPP)
-#include <types.h>
-#include <io.h>
-#include <sys/ioctl.h>
-#include <utils.h>
-#include <ctype.h>
+# include <types.h>
+# include <io.h>
+# include <sys/ioctl.h>
+# include <utils.h>
+# include <ctype.h>
 #endif
 
 #if defined(PYOS_OS2)
-#define  INCL_DOS
-#define  INCL_DOSERRORS
-#define  INCL_NOPMAPI
-#include <os2.h>
+# define  INCL_DOS
+# define  INCL_DOSERRORS
+# define  INCL_NOPMAPI
+# include <os2.h>
 #endif
 
-
+/* Generic includes */
 #include <sys/types.h>
-
 #include <signal.h>
+
+/* Generic _socket.h definitions and includes */
+#define PySocket_BUILDING_SOCKET
+#include "_socket.h"
+
+/* Addressing includes */
+
 #ifndef MS_WINDOWS
-#include <netdb.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#if !(defined(__BEOS__) || defined(__CYGWIN__) || (defined(PYOS_OS2) && defined(PYCC_VACPP)))
-#include <netinet/tcp.h>
-#endif
+
+/* Non-MS WINDOWS includes */
+# include <netdb.h>
 
 /* Headers needed for inet_ntoa() and inet_addr() */
-#ifdef __BEOS__
-#include <net/netdb.h>
-#elif defined(PYOS_OS2) && defined(PYCC_VACPP)
-#include <netdb.h>
+# ifdef __BEOS__
+#  include <net/netdb.h>
+# elif defined(PYOS_OS2) && defined(PYCC_VACPP)
+#  include <netdb.h>
 typedef size_t socklen_t;
-#else
-#ifndef USE_GUSI1
-#include <arpa/inet.h>
-#endif
-#endif
+# else
+#  ifndef USE_GUSI1
+#   include <arpa/inet.h>
+#  endif
+# endif
 
-#ifndef RISCOS
-#include <fcntl.h>
-#else
-#include <sys/fcntl.h>
-#define NO_DUP
+# ifndef RISCOS
+#  include <fcntl.h>
+# else
+#  include <sys/fcntl.h>
+#  define NO_DUP
 int h_errno; /* not used */
-#endif
+# endif
+
 #else
-#include <winsock.h>
-#include <fcntl.h>
-#endif
 
+/* MS_WINDOWS includes */
+# include <fcntl.h>
 
-#ifdef HAVE_SYS_UN_H
-#include <sys/un.h>
-#else
-#undef AF_UNIX
-#endif
-
-#ifdef HAVE_NETPACKET_PACKET_H
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <netpacket/packet.h>
 #endif
 
 #ifdef HAVE_STDDEF_H
-#include <stddef.h>
+# include <stddef.h>
 #endif
 
 #ifndef offsetof
-#define offsetof(type, member)	((size_t)(&((type *)0)->member))
+# define offsetof(type, member)	((size_t)(&((type *)0)->member))
 #endif
 
 #ifndef O_NDELAY
-#define O_NDELAY O_NONBLOCK	/* For QNX only? */
+# define O_NDELAY O_NONBLOCK	/* For QNX only? */
 #endif
 
 #ifdef USE_GUSI1
 /* fdopen() isn't declared in stdio.h (sigh) */
-#include <GUSI.h>
+# include <GUSI.h>
 #endif
 
 #include "addrinfo.h"
-
-#ifdef USE_SSL
-#include "openssl/rsa.h"
-#include "openssl/crypto.h"
-#include "openssl/x509.h"
-#include "openssl/pem.h"
-#include "openssl/ssl.h"
-#include "openssl/err.h"
-#include "openssl/rand.h"
-#endif /* USE_SSL */
 
 #ifndef HAVE_INET_PTON
 int inet_pton (int af, const char *src, void *dst);
@@ -242,19 +222,6 @@ const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
 #endif
 
-/* abstract the socket file descriptor type */
-#ifdef MS_WINDOWS
-typedef SOCKET SOCKET_T;
-#	ifdef MS_WIN64
-#		define SIZEOF_SOCKET_T 8
-#	else
-#		define SIZEOF_SOCKET_T 4
-#	endif
-#else
-typedef int SOCKET_T;
-#	define SIZEOF_SOCKET_T SIZEOF_INT
-#endif
-
 #ifdef MS_WIN32
 #	define EAFNOSUPPORT            WSAEAFNOSUPPORT
 #	define snprintf _snprintf
@@ -269,7 +236,6 @@ typedef int SOCKET_T;
 #define SOCKETCLOSE close
 #endif
 
-
 /* XXX There's a problem here: *static* functions are not supposed to have
    a Py prefix (or use CapitalizedWords).  Later... */
 
@@ -279,11 +245,6 @@ typedef int SOCKET_T;
 static PyObject *PySocket_Error;
 static PyObject *PyH_Error;
 static PyObject *PyGAI_Error;
-
-#ifdef USE_SSL
-static PyObject *PySSLErrorObject;
-#endif /* USE_SSL */
-
 
 #ifdef RISCOS
 /* Global variable which is !=0 if Python is running in a RISC OS taskwindow */
@@ -459,64 +420,6 @@ PyGAI_Err(int error)
 	return NULL;
 }
 
-
-/* The object holding a socket.  It holds some extra information,
-   like the address family, which is used to decode socket address
-   arguments properly. */
-
-typedef struct {
-	PyObject_HEAD
-	SOCKET_T sock_fd;	/* Socket file descriptor */
-	int sock_family;	/* Address family, e.g., AF_INET */
-	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
-	int sock_proto;		/* Protocol type, usually 0 */
-	union sock_addr {
-		struct sockaddr_in in;
-#ifdef AF_UNIX
-		struct sockaddr_un un;
-#endif
-#ifdef ENABLE_IPV6
-		struct sockaddr_in6 in6;
-		struct sockaddr_storage storage;
-#endif
-#ifdef HAVE_NETPACKET_PACKET_H
-		struct sockaddr_ll ll;
-#endif
-	} sock_addr;
-} PySocketSockObject;
-
-#ifdef USE_SSL
-
-#define X509_NAME_MAXLEN 256
-
-typedef struct {
-	PyObject_HEAD
-	PySocketSockObject *Socket;	/* Socket on which we're layered */
-	SSL_CTX* 	ctx;
-	SSL*     	ssl;
-	X509*    	server_cert;
-	BIO*		sbio;
-	char    	server[X509_NAME_MAXLEN];
-	char		issuer[X509_NAME_MAXLEN];
-
-} PySSLObject;
-
-staticforward PyTypeObject PySSL_Type;
-staticforward PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args);
-staticforward PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args);
-
-#define PySSLObject_Check(v)	((v)->ob_type == &PySSL_Type)
-
-#endif /* USE_SSL */
-
-/* A forward reference to the Socktype type object.
-   The Socktype variable contains pointers to various functions,
-   some of which call newsockobject(), which uses Socktype, so
-   there has to be a circular reference. */
-
-staticforward PyTypeObject PySocketSock_Type;
-
-
 /* Initialize a new socket object. */
 
 static void
@@ -530,6 +433,7 @@ init_sockobject(PySocketSockObject *s,
 	s->sock_family = family;
 	s->sock_type = type;
 	s->sock_proto = proto;
+	s->errorhandler = &PySocket_Err;
 #ifdef RISCOS
 	if(taskwindow) {
 		socketioctl(s->sock_fd, 0x80046679, (u_long*)&block);
@@ -867,7 +771,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 		strncpy(ifr.ifr_name, interfaceName, sizeof(ifr.ifr_name));
 		ifr.ifr_name[(sizeof(ifr.ifr_name))-1] = '\0';
 		if (ioctl(s->sock_fd, SIOCGIFINDEX, &ifr) < 0) {
-			PySocket_Err();
+		        s->errorhandler();
 			return 0;
 		}
 		addr = &(s->sock_addr.ll);
@@ -964,7 +868,7 @@ PySocketSock_accept(PySocketSockObject *s)
 #else
 	if (newfd < 0)
 #endif
-		return PySocket_Err();
+		return s->errorhandler();
 
 	/* Create the new object with unspecified family,
 	   to avoid calls to bind() etc. on it. */
@@ -1101,7 +1005,7 @@ PySocketSock_setsockopt(PySocketSockObject *s, PyObject *args)
 	}
 	res = setsockopt(s->sock_fd, level, optname, (void *)buf, buflen);
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1143,7 +1047,7 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 		res = getsockopt(s->sock_fd, level, optname,
 				 (void *)&flag, &flagsize);
 		if (res < 0)
-			return PySocket_Err();
+			return s->errorhandler();
 		return PyInt_FromLong(flag);
 	}
 	if (buflen <= 0 || buflen > 1024) {
@@ -1158,7 +1062,7 @@ PySocketSock_getsockopt(PySocketSockObject *s, PyObject *args)
 			 (void *)PyString_AS_STRING(buf), &buflen);
 	if (res < 0) {
 		Py_DECREF(buf);
-		return PySocket_Err();
+		return s->errorhandler();
 	}
 	_PyString_Resize(&buf, buflen);
 	return buf;
@@ -1188,7 +1092,7 @@ PySocketSock_bind(PySocketSockObject *s, PyObject *addro)
 	res = bind(s->sock_fd, addr, addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1241,7 +1145,7 @@ PySocketSock_connect(PySocketSockObject *s, PyObject *addro)
 	res = connect(s->sock_fd, addr, addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1313,7 +1217,7 @@ PySocketSock_dup(PySocketSockObject *s)
 
 	newfd = dup(s->sock_fd);
 	if (newfd < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	sock = (PyObject *) PySocketSock_New(newfd,
 					     s->sock_family,
 					     s->sock_type,
@@ -1347,7 +1251,7 @@ PySocketSock_getsockname(PySocketSockObject *s)
 	res = getsockname(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
 }
 
@@ -1375,7 +1279,7 @@ PySocketSock_getpeername(PySocketSockObject *s)
 	res = getpeername(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	return makesockaddr(s->sock_fd, (struct sockaddr *) addrbuf, addrlen);
 }
 
@@ -1405,7 +1309,7 @@ PySocketSock_listen(PySocketSockObject *s, PyObject *arg)
 	res = listen(s->sock_fd, backlog);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1451,7 +1355,7 @@ PySocketSock_makefile(PySocketSockObject *s, PyObject *args)
 	{
 		if (fd >= 0)
 			SOCKETCLOSE(fd);
-		return PySocket_Err();
+		return s->errorhandler();
 	}
 	f = PyFile_FromFile(fp, "<socket>", mode, fclose);
 	if (f != NULL)
@@ -1490,7 +1394,7 @@ PySocketSock_recv(PySocketSockObject *s, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buf);
-		return PySocket_Err();
+		return s->errorhandler();
 	}
 	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
@@ -1541,7 +1445,7 @@ PySocketSock_recvfrom(PySocketSockObject *s, PyObject *args)
 	Py_END_ALLOW_THREADS
 	if (n < 0) {
 		Py_DECREF(buf);
-		return PySocket_Err();
+		return s->errorhandler();
 	}
 	if (n != len && _PyString_Resize(&buf, n) < 0)
 		return NULL;
@@ -1575,7 +1479,7 @@ PySocketSock_send(PySocketSockObject *s, PyObject *args)
 	n = send(s->sock_fd, buf, len, flags);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	return PyInt_FromLong((long)n);
 }
 
@@ -1607,7 +1511,7 @@ PySocketSock_sendall(PySocketSockObject *s, PyObject *args)
 	} while (len > 0);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1643,7 +1547,7 @@ PySocketSock_sendto(PySocketSockObject *s, PyObject *args)
 	n = sendto(s->sock_fd, buf, len, flags, addr, addrlen);
 	Py_END_ALLOW_THREADS
 	if (n < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	return PyInt_FromLong((long)n);
 }
 
@@ -1669,7 +1573,7 @@ PySocketSock_shutdown(PySocketSockObject *s, PyObject *arg)
 	res = shutdown(s->sock_fd, how);
 	Py_END_ALLOW_THREADS
 	if (res < 0)
-		return PySocket_Err();
+		return s->errorhandler();
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -2614,351 +2518,6 @@ static char getnameinfo_doc[] =
 \n\
 Get host and port for a sockaddr.";
 
-/* XXX It might be helpful to augment the error message generated
-   below with the name of the SSL function that generated the error.
-   I expect it's obvious most of the time.
-*/
-
-#ifdef USE_SSL
-static PyObject *
-PySSL_SetError(SSL *ssl, int ret)
-{
-	PyObject *v, *n, *s;
-	char *errstr;
-	int err;
-
-	assert(ret <= 0);
-    
-	err = SSL_get_error(ssl, ret);
-	n = PyInt_FromLong(err);
-	if (n == NULL)
-		return NULL;
-	v = PyTuple_New(2);
-	if (v == NULL) {
-		Py_DECREF(n);
-		return NULL;
-	}
-
-	switch (SSL_get_error(ssl, ret)) {
-	case SSL_ERROR_ZERO_RETURN:
-		errstr = "TLS/SSL connection has been closed";
-		break;
-	case SSL_ERROR_WANT_READ:
-		errstr = "The operation did not complete (read)";
-		break;
-	case SSL_ERROR_WANT_WRITE:
-		errstr = "The operation did not complete (write)";
-		break;
-	case SSL_ERROR_WANT_X509_LOOKUP:
-		errstr = "The operation did not complete (X509 lookup)";
-		break;
-	case SSL_ERROR_SYSCALL:
-	case SSL_ERROR_SSL:
-	{
-		unsigned long e = ERR_get_error();
-		if (e == 0) {
-			/* an EOF was observed that violates the protocol */
-			errstr = "EOF occurred in violation of protocol";
-		} else if (e == -1) {
-			/* the underlying BIO reported an I/O error */
-			Py_DECREF(v);
-			Py_DECREF(n);
-			return PySocket_Err();
-		} else {
-			/* XXX Protected by global interpreter lock */
-			errstr = ERR_error_string(e, NULL);
-		}
-		break;
-	}
-	default:
-		errstr = "Invalid error code";
-	}
-	s = PyString_FromString(errstr);
-	if (s == NULL) {
-		Py_DECREF(v);
-		Py_DECREF(n);
-	}
-	PyTuple_SET_ITEM(v, 0, n);
-	PyTuple_SET_ITEM(v, 1, s);
-	PyErr_SetObject(PySSLErrorObject, v);
-	return NULL;
-}
-
-/* This is a C function to be called for new object initialization */
-static PySSLObject *
-newPySSLObject(PySocketSockObject *Sock, char *key_file, char *cert_file)
-{
-	PySSLObject *self;
-	char *errstr = NULL;
-	int ret;
-
-	self = PyObject_New(PySSLObject, &PySSL_Type); /* Create new object */
-	if (self == NULL){
-		errstr = "newPySSLObject error";
-		goto fail;
-	}
-	memset(self->server, '\0', sizeof(char) * X509_NAME_MAXLEN);
-	memset(self->issuer, '\0', sizeof(char) * X509_NAME_MAXLEN);
-	self->server_cert = NULL;
-	self->ssl = NULL;
-	self->ctx = NULL;
-	self->Socket = NULL;
-
-	if ((key_file && !cert_file) || (!key_file && cert_file)) {
-		errstr = "Both the key & certificate files must be specified";
-		goto fail;
-	}
-
-	self->ctx = SSL_CTX_new(SSLv23_method()); /* Set up context */
-	if (self->ctx == NULL) {
-		errstr = "SSL_CTX_new error";
-		goto fail;
-	}
-
-	if (key_file) {
-		if (SSL_CTX_use_PrivateKey_file(self->ctx, key_file,
-						SSL_FILETYPE_PEM) < 1) {
-			errstr = "SSL_CTX_use_PrivateKey_file error";
-			goto fail;
-		}
-
-		if (SSL_CTX_use_certificate_chain_file(self->ctx,
-						       cert_file) < 1) {
-			errstr = "SSL_CTX_use_certificate_chain_file error";
-			goto fail;
-		}
-	}
-
-	SSL_CTX_set_verify(self->ctx,
-			   SSL_VERIFY_NONE, NULL); /* set verify lvl */
-	self->ssl = SSL_new(self->ctx); /* New ssl struct */
-	SSL_set_fd(self->ssl, Sock->sock_fd);	/* Set the socket for SSL */
-	SSL_set_connect_state(self->ssl);
-
-	/* Actually negotiate SSL connection */
-	/* XXX If SSL_connect() returns 0, it's also a failure. */
-	ret = SSL_connect(self->ssl);
-	if (ret <= 0) {
-		PySSL_SetError(self->ssl, ret);
-		goto fail;
-	}
-	self->ssl->debug = 1;
-
-	if ((self->server_cert = SSL_get_peer_certificate(self->ssl))) {
-		X509_NAME_oneline(X509_get_subject_name(self->server_cert),
-				  self->server, X509_NAME_MAXLEN);
-		X509_NAME_oneline(X509_get_issuer_name(self->server_cert),
-				  self->issuer, X509_NAME_MAXLEN);
-	}
-	self->Socket = Sock;
-	Py_INCREF(self->Socket);
-	return self;
- fail:
-	if (errstr)
-		PyErr_SetString(PySSLErrorObject, errstr);
-	Py_DECREF(self);
-	return NULL;
-}
-
-/* This is the Python function called for new object initialization */
-static PyObject *
-PySocket_ssl(PyObject *self, PyObject *args)
-{
-	PySSLObject *rv;
-	PySocketSockObject *Sock;
-	char *key_file = NULL;
-	char *cert_file = NULL;
-
-	if (!PyArg_ParseTuple(args, "O!|zz:ssl",
-			      &PySocketSock_Type, (PyObject*)&Sock,
-			      &key_file, &cert_file))
-		return NULL;
-
-	rv = newPySSLObject(Sock, key_file, cert_file);
-	if (rv == NULL)
-		return NULL;
-	return (PyObject *)rv;
-}
-
-static char ssl_doc[] =
-"ssl(socket, [keyfile, certfile]) -> sslobject";
-
-/* SSL object methods */
-
-static PyObject *
-PySSL_server(PySSLObject *self)
-{
-	return PyString_FromString(self->server);
-}
-
-static PyObject *
-PySSL_issuer(PySSLObject *self)
-{
-	return PyString_FromString(self->issuer);
-}
-
-
-static void PySSL_dealloc(PySSLObject *self)
-{
-	if (self->server_cert)	/* Possible not to have one? */
-		X509_free (self->server_cert);
-	if (self->ssl)
-	    SSL_free(self->ssl);
-	if (self->ctx)
-	    SSL_CTX_free(self->ctx);
-	Py_XDECREF(self->Socket);
-	PyObject_Del(self);
-}
-
-static PyObject *PySSL_SSLwrite(PySSLObject *self, PyObject *args)
-{
-	char *data;
-	int len;
-
-	if (!PyArg_ParseTuple(args, "s#:write", &data, &len))
-		return NULL;
-
-	Py_BEGIN_ALLOW_THREADS
-	len = SSL_write(self->ssl, data, len);
-	Py_END_ALLOW_THREADS
-	if (len > 0)
-		return PyInt_FromLong(len);
-	else
-		return PySSL_SetError(self->ssl, len);
-}
-
-static char PySSL_SSLwrite_doc[] =
-"write(s) -> len\n\
-\n\
-Writes the string s into the SSL object.  Returns the number\n\
-of bytes written.";
-
-static PyObject *PySSL_SSLread(PySSLObject *self, PyObject *args)
-{
-	PyObject *buf;
-	int count = 0;
-	int len = 1024;
-
-	if (!PyArg_ParseTuple(args, "|i:read", &len))
-		return NULL;
-
-	if (!(buf = PyString_FromStringAndSize((char *) 0, len)))
-		return NULL;
-
-	Py_BEGIN_ALLOW_THREADS
-	count = SSL_read(self->ssl, PyString_AsString(buf), len);
-	Py_END_ALLOW_THREADS
- 	if (count <= 0) {
-		Py_DECREF(buf);
-		return PySSL_SetError(self->ssl, count);
-	}
-	if (count != len && _PyString_Resize(&buf, count) < 0)
-		return NULL;
-	return buf;
-}
-
-static char PySSL_SSLread_doc[] =
-"read([len]) -> string\n\
-\n\
-Read up to len bytes from the SSL socket.";
-
-static PyMethodDef PySSLMethods[] = {
-	{"write", (PyCFunction)PySSL_SSLwrite, METH_VARARGS,
-	          PySSL_SSLwrite_doc},
-	{"read", (PyCFunction)PySSL_SSLread, METH_VARARGS,
-	          PySSL_SSLread_doc},
-	{"server", (PyCFunction)PySSL_server, METH_NOARGS},
-	{"issuer", (PyCFunction)PySSL_issuer, METH_NOARGS},
-	{NULL, NULL}
-};
-
-static PyObject *PySSL_getattr(PySSLObject *self, char *name)
-{
-	return Py_FindMethod(PySSLMethods, (PyObject *)self, name);
-}
-
-staticforward PyTypeObject PySSL_Type = {
-	PyObject_HEAD_INIT(NULL)
-	0,				/*ob_size*/
-	"_socket.SSL",			/*tp_name*/
-	sizeof(PySSLObject),		/*tp_basicsize*/
-	0,				/*tp_itemsize*/
-	/* methods */
-	(destructor)PySSL_dealloc,	/*tp_dealloc*/
-	0,				/*tp_print*/
-	(getattrfunc)PySSL_getattr,	/*tp_getattr*/
-	0,				/*tp_setattr*/
-	0,				/*tp_compare*/
-	0,				/*tp_repr*/
-	0,				/*tp_as_number*/
-	0,				/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
-	0,				/*tp_hash*/
-};
-
-/* helper routines for seeding the SSL PRNG */
-static PyObject *
-PySSL_RAND_add(PyObject *self, PyObject *args)
-{
-    char *buf;
-    int len;
-    double entropy;
-
-    if (!PyArg_ParseTuple(args, "s#d:RAND_add", &buf, &len, &entropy))
-	return NULL;
-    RAND_add(buf, len, entropy);
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-static char PySSL_RAND_add_doc[] =
-"RAND_add(string, entropy)\n\
-\n\
-Mix string into the OpenSSL PRNG state.  entropy (a float) is a lower\n\
-bound on the entropy contained in string.";
-
-static PyObject *
-PySSL_RAND_status(PyObject *self)
-{
-    return PyInt_FromLong(RAND_status());
-}
-
-static char PySSL_RAND_status_doc[] = 
-"RAND_status() -> 0 or 1\n\
-\n\
-Returns 1 if the OpenSSL PRNG has been seeded with enough data and 0 if not.\n\
-It is necessary to seed the PRNG with RAND_add() on some platforms before\n\
-using the ssl() function.";
-
-static PyObject *
-PySSL_RAND_egd(PyObject *self, PyObject *arg)
-{
-    int bytes;
-
-    if (!PyString_Check(arg))
-	return PyErr_Format(PyExc_TypeError,
-			    "RAND_egd() expected string, found %s",
-			    arg->ob_type->tp_name);
-    bytes = RAND_egd(PyString_AS_STRING(arg));
-    if (bytes == -1) {
-	PyErr_SetString(PySSLErrorObject,
-			"EGD connection failed or EGD did not return "
-			"enough data to seed the PRNG");
-	return NULL;
-    }
-    return PyInt_FromLong(bytes);
-}
-
-static char PySSL_RAND_egd_doc[] = 
-"RAND_egd(path) -> bytes\n\
-\n\
-Queries the entropy gather daemon (EGD) on socket path.  Returns number\n\
-of bytes read.  Raises socket.sslerror if connection to EGD fails or\n\
-if it does provide enough data to seed PRNG.";
-
-#endif /* USE_SSL */
-
-
 /* List of functions exported by this module. */
 
 static PyMethodDef PySocket_methods[] = {
@@ -2994,16 +2553,6 @@ static PyMethodDef PySocket_methods[] = {
 	 METH_VARARGS, getaddrinfo_doc},
 	{"getnameinfo",		PySocket_getnameinfo,
 	 METH_VARARGS, getnameinfo_doc},
-#ifdef USE_SSL
-	{"ssl",			PySocket_ssl,
-	 METH_VARARGS, ssl_doc},
-	{"RAND_add",            PySSL_RAND_add, METH_VARARGS, 
-	 PySSL_RAND_add_doc},
-	{"RAND_egd",            PySSL_RAND_egd, METH_O,
-	 PySSL_RAND_egd_doc},
-	{"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
-	 PySSL_RAND_status_doc},
-#endif /* USE_SSL */
 	{NULL,			NULL}		 /* Sentinel */
 };
 
@@ -3094,6 +2643,14 @@ OS2init(void)
 
 #endif /* PYOS_OS2 */
 
+/* C API table - always add new things to the end for binary
+   compatibility. */
+static
+PySocketModule_APIObject PySocketModuleAPI =
+{
+    &PySocketSock_Type,
+};
+
 /* Initialize this module.
  *   This is called when the first 'import socket' is done,
  *   via a table in config.c, if config.c is compiled with USE_SOCKET
@@ -3141,10 +2698,9 @@ init_socket(void)
 	PySocketSock_Type.tp_getattro = PyObject_GenericGetAttr;
 	PySocketSock_Type.tp_alloc = PyType_GenericAlloc;
 	PySocketSock_Type.tp_free = _PyObject_Del;
-#ifdef USE_SSL
-	PySSL_Type.ob_type = &PyType_Type;
-#endif
-	m = Py_InitModule3("_socket", PySocket_methods, module_doc);
+	m = Py_InitModule3(PySocket_MODULE_NAME, 
+			   PySocket_methods, 
+			   module_doc);
 	d = PyModule_GetDict(m);
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);
 	if (PySocket_Error == NULL)
@@ -3159,34 +2715,17 @@ init_socket(void)
 	if (PyGAI_Error == NULL)
 		return;
 	PyDict_SetItemString(d, "gaierror", PyGAI_Error);
-#ifdef USE_SSL
-	SSL_load_error_strings();
-	SSLeay_add_ssl_algorithms();
-	PySSLErrorObject = PyErr_NewException("socket.sslerror", NULL, NULL);
-	if (PySSLErrorObject == NULL)
-		return;
-	PyDict_SetItemString(d, "sslerror", PySSLErrorObject);
-	if (PyDict_SetItemString(d, "SSLType",
-				 (PyObject *)&PySSL_Type) != 0)
-		return;
-	PyModule_AddIntConstant(m, "SSL_ERROR_ZERO_RETURN",
-				SSL_ERROR_ZERO_RETURN);
-	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_READ",
-				SSL_ERROR_WANT_READ);
-	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_WRITE",
-				SSL_ERROR_WANT_WRITE);
-	PyModule_AddIntConstant(m, "SSL_ERROR_WANT_X509_LOOKUP",
-				SSL_ERROR_WANT_X509_LOOKUP);
-	PyModule_AddIntConstant(m, "SSL_ERROR_SYSCALL",
-				SSL_ERROR_SYSCALL);
-	PyModule_AddIntConstant(m, "SSL_ERROR_SSL",
-				SSL_ERROR_SSL);
-#endif /* USE_SSL */
 	if (PyDict_SetItemString(d, "SocketType",
 				 (PyObject *)&PySocketSock_Type) != 0)
 		return;
 	if (PyDict_SetItemString(d, "socket",
 				 (PyObject *)&PySocketSock_Type) != 0)
+		return;
+
+	/* Export C API */
+	if (PyDict_SetItemString(d, PySocket_CAPI_NAME,
+	       PyCObject_FromVoidPtr((void *)&PySocketModuleAPI, NULL)
+				 ) != 0)
 		return;
 
 	/* Address families (we only support AF_INET and AF_UNIX) */

@@ -173,21 +173,26 @@ class PyBuildExt(build_ext):
             self.get_ext_filename(self.get_ext_fullname(ext.name)))
         try:
             imp.load_dynamic(ext.name, ext_filename)
-        except ImportError:
-            self.announce('WARNING: removing "%s" since importing it failed' %
-                          ext.name)
-            assert not self.inplace
-            fullname = self.get_ext_fullname(ext.name)
-            ext_filename = os.path.join(self.build_lib,
-                                        self.get_ext_filename(fullname))
-            os.remove(ext_filename)
+        except ImportError, why:
 
-            # XXX -- This relies on a Vile HACK in
-            # distutils.command.build_ext.build_extension().  The
-            # _built_objects attribute is stored there strictly for
-            # use here.
-            for filename in self._built_objects:
-                os.remove(filename)
+            if 1:
+                self.announce('*** WARNING: removing "%s" since importing it'
+                              ' failed: %s' % (ext.name, why))
+                assert not self.inplace
+                fullname = self.get_ext_fullname(ext.name)
+                ext_filename = os.path.join(self.build_lib,
+                                            self.get_ext_filename(fullname))
+                os.remove(ext_filename)
+
+                # XXX -- This relies on a Vile HACK in
+                # distutils.command.build_ext.build_extension().  The
+                # _built_objects attribute is stored there strictly for
+                # use here.
+                for filename in self._built_objects:
+                    os.remove(filename)
+            else:
+                self.announce('*** WARNING: importing extension "%s" '
+                              'failed: %s' % (ext.name, why))
 
     def get_platform (self):
         # Get value of sys.platform
@@ -359,7 +364,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
         # socket(2)
-        # Detect SSL support for the socket module
+        exts.append( Extension('_socket', ['socketmodule.c']) )
+        # Detect SSL support for the socket module (via _ssl)
         ssl_incs = find_file('openssl/ssl.h', inc_dirs,
                              ['/usr/local/ssl/include',
                               '/usr/contrib/ssl/include/'
@@ -372,13 +378,10 @@ class PyBuildExt(build_ext):
 
         if (ssl_incs is not None and
             ssl_libs is not None):
-            exts.append( Extension('_socket', ['socketmodule.c'],
+            exts.append( Extension('_ssl', ['_ssl.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto'],
-                                   define_macros = [('USE_SSL',1)] ) )
-        else:
-            exts.append( Extension('_socket', ['socketmodule.c']) )
+                                   libraries = ['ssl', 'crypto']) )
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on

@@ -175,13 +175,13 @@ GLHACK=-Dclear=__GLclear
 # Dynamic readlines
 #xreadlines xreadlinesmodule.c
 
-# for socket(2), without SSL support.
+# Socket module helper for socket(2)
 #_socket socketmodule.c
 
-# Socket module compiled with SSL support; you must comment out the other
+# Socket module helper for SSL support; you must comment out the other
 # socket line above, and possibly edit the SSL variable:
 #SSL=/usr/local/ssl
-#_socket socketmodule.c \
+#_ssl _ssl.c \
 #	-DUSE_SSL -I$(SSL)/include -I$(SSL)/include/openssl \
 #	-L$(SSL)/lib -lssl -lcrypto
 
