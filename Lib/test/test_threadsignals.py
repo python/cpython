@@ -5,7 +5,7 @@ import thread
 import signal
 import os
 import sys
-from test import test_support
+from test import test_support, TestSkipped
 
 if sys.platform[:3] in ('win', 'os2') or sys.platform=='riscos':
     raise TestSkipped, "Can't test signal on %s" % sys.platform
