@@ -1442,6 +1442,7 @@ PySequence_List(PyObject *v)
 		Py_DECREF(result);
 		return NULL;
 	}
+	Py_DECREF(rv);
 	return result;
 }
 
