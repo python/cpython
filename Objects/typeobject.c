@@ -192,32 +192,42 @@ PyType_GenericAlloc(PyTypeObject *type, int nitems)
 {
 #define PTRSIZE (sizeof(PyObject *))
 
-	int size;
+	size_t size = (size_t)_PyObject_VAR_SIZE(type, nitems);
+	size_t padding = 0;
 	PyObject *obj;
 
-	/* Inline PyObject_New() so we can zero the memory */
-	size = _PyObject_VAR_SIZE(type, nitems);
-	/* Round up size, if necessary, so we fully zero out __dict__ */
-	if (type->tp_itemsize % PTRSIZE != 0) {
-		size += PTRSIZE - 1;
-		size /= PTRSIZE;
-		size *= PTRSIZE;
+	/* Round up size, if necessary, so that the __dict__ pointer
+	   following the variable part is properly aligned for the platform.
+	   This is needed only for types with a vrbl number of items
+	   before the __dict__ pointer == types that record the dict offset
+	   as a negative offset from the end of the object.  If tp_dictoffset
+	   is 0, there is no __dict__; if positive, tp_dict was declared in a C
+	   struct so the compiler already took care of aligning it. */
+        if (type->tp_dictoffset < 0) {
+		padding = PTRSIZE - size % PTRSIZE;
+		if (padding == PTRSIZE)
+			padding = 0;
+		size += padding;
 	}
-	if (PyType_IS_GC(type)) {
-		obj = _PyObject_GC_Malloc(type, nitems);
-	}
-	else {
+
+	if (PyType_IS_GC(type))
+		obj = _PyObject_GC_Malloc(type, nitems, padding);
+	else
 		obj = PyObject_MALLOC(size);
-	}
+
 	if (obj == NULL)
 		return PyErr_NoMemory();
+
 	memset(obj, '\0', size);
+
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE)
 		Py_INCREF(type);
+
 	if (type->tp_itemsize == 0)
 		PyObject_INIT(obj, type);
 	else
 		(void) PyObject_INIT_VAR((PyVarObject *)obj, type, nitems);
+
 	if (PyType_IS_GC(type))
 		_PyObject_GC_TRACK(obj);
 	return obj;
