@@ -619,7 +619,7 @@ _expectations = {
         test_winreg
         test_winsound
         """,
-    'darwin1':
+    'darwin':
         """
         test_al
         test_cd
