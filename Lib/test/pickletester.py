@@ -1,4 +1,6 @@
 import unittest
+import pickle
+
 from test.test_support import TestFailed, have_unicode, TESTFN
 
 # Tests that try a number of pickle protocols should have a
@@ -296,6 +298,25 @@ class AbstractPickleTests(unittest.TestCase):
 
     # Tests for protocol 2
 
+    def test_proto(self):
+        build_none = pickle.NONE + pickle.STOP
+        for proto in protocols:
+            expected = build_none
+            if proto >= 2:
+                expected = pickle.PROTO + chr(proto) + expected
+            p = self.dumps(None, proto)
+            self.assertEqual(p, expected)
+
+        oob = protocols[-1] + 1     # a future protocol
+        badpickle = pickle.PROTO + chr(oob) + build_none
+        try:
+            self.loads(badpickle)
+        except ValueError, detail:
+            self.failUnless(str(detail).startswith(
+                                            "unsupported pickle protocol"))
+        else:
+            self.fail("expected bad protocol number to raise ValueError")
+
     def test_long1(self):
         x = 12345678910111213141516178920L
         s = self.dumps(x, 2)
@@ -314,14 +335,14 @@ class AbstractPickleTests(unittest.TestCase):
         c = (1, 2)
         d = (1, 2, 3)
         e = (1, 2, 3, 4)
-        for proto in 0, 1, 2:
+        for proto in protocols:
             for x in a, b, c, d, e:
                 s = self.dumps(x, proto)
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
 
     def test_singletons(self):
-        for proto in 0, 1, 2:
+        for proto in protocols:
             for x in None, False, True:
                 s = self.dumps(x, proto)
                 y = self.loads(s)
