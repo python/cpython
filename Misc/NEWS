@@ -41,6 +41,9 @@ Extension modules
 - Various bugfixes to the curses module.  There is now a test suite
   for the curses module (you have to run it manually).
 
+- binascii.b2a_base64 no longer places an arbitrary restriction of 57
+  bytes on its input.
+
 Library
 
 - Traceback objects are now scanned by cyclic garbage collection, so
