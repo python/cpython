@@ -59,6 +59,11 @@ class Shelf:
 	
 	def has_key(self, key):
 		return self.dict.has_key(key)
+
+	def get(self, key, default=None):
+	        if self.dict.has_key(key):
+			return self[key]
+		return default
 	
 	def __getitem__(self, key):
 		f = StringIO(self.dict[key])
