@@ -13,10 +13,11 @@ Public functions:       Internaldate2tuple
 # Author: Piers Lauder <piers@cs.su.oz.au> December 1997.
 #
 # Authentication code contributed by Donn Cave <donn@u.washington.edu> June 1998.
+# String method conversion by ESR, February 2001.
 
-__version__ = "2.39"
+__version__ = "2.40"
 
-import binascii, re, socket, string, time, random, sys
+import binascii, re, socket, time, random, sys
 
 __all__ = ["IMAP4", "Internaldate2tuple",
            "Int2AP", "ParseFlags", "Time2Internaldate"]
@@ -167,7 +168,7 @@ class IMAP4:
         self._simple_command(cap)
         if not self.untagged_responses.has_key(cap):
             raise self.error('no CAPABILITY response from server')
-        self.capabilities = tuple(string.split(string.upper(self.untagged_responses[cap][-1])))
+        self.capabilities = tuple(self.untagged_responses[cap][-1].upper().split())
 
         if __debug__:
             if self.debug >= 3:
@@ -185,7 +186,7 @@ class IMAP4:
     def __getattr__(self, attr):
         #       Allow UPPERCASE variants of IMAP4 command methods.
         if Commands.has_key(attr):
-            return eval("self.%s" % string.lower(attr))
+            return eval("self.%s" % attr.lower())
         raise AttributeError("Unknown IMAP4 command: '%s'" % attr)
 
 
@@ -224,7 +225,7 @@ class IMAP4:
 
         (code, [data]) = <instance>.response(code)
         """
-        return self._untagged_response(code, [None], string.upper(code))
+        return self._untagged_response(code, [None], code.upper())
 
 
     def socket(self):
@@ -278,7 +279,7 @@ class IMAP4:
         It should return None if the client abort response '*' should
         be sent instead.
         """
-        mech = string.upper(mechanism)
+        mech = mechanism.upper()
         cap = 'AUTH=%s' % mech
         if not cap in self.capabilities:
             raise self.error("Server doesn't allow %s authentication." % mech)
@@ -537,7 +538,7 @@ class IMAP4:
 
         Returns response appropriate to 'command'.
         """
-        command = string.upper(command)
+        command = command.upper()
         if not Commands.has_key(command):
             raise self.error("Unknown IMAP4 UID command: %s" % command)
         if self.state not in Commands[command]:
@@ -729,7 +730,7 @@ class IMAP4:
 
                 # Read literal direct from connection.
 
-                size = string.atoi(self.mo.group('size'))
+                size = int(self.mo.group('size'))
                 if __debug__:
                     if self.debug >= 4:
                         _mesg('read literal size %s' % size)
@@ -832,8 +833,8 @@ class IMAP4:
 
     def _quote(self, arg):
 
-        arg = string.replace(arg, '\\', '\\\\')
-        arg = string.replace(arg, '"', '\\"')
+        arg = arg.replace('\\', '\\\\')
+        arg = arg.replace('"', '\\"')
 
         return '"%s"' % arg
 
@@ -920,7 +921,7 @@ def Internaldate2tuple(resp):
     zonen = mo.group('zonen')
 
     for name in ('day', 'year', 'hour', 'min', 'sec', 'zoneh', 'zonem'):
-        exec "%s = string.atoi(mo.group('%s'))" % (name, name)
+        exec "%s = int(mo.group('%s'))" % (name, name)
 
     # INTERNALDATE timezone must be subtracted to get UT
 
@@ -966,7 +967,7 @@ def ParseFlags(resp):
     if not mo:
         return ()
 
-    return tuple(string.split(mo.group('flags')))
+    return tuple(mo.group('flags').split())
 
 
 def Time2Internaldate(date_time):
@@ -1010,8 +1011,7 @@ if __debug__:
         l = dict.items()
         if not l: return
         t = '\n\t\t'
-        j = string.join
-        l = map(lambda x,j=j:'%s: "%s"' % (x[0], x[1][0] and j(x[1], '" "') or ''), l)
+        l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
         _mesg('untagged responses dump:%s%s' % (t, j(l, t)))
 
     _cmd_log = []           # Last `_cmd_log_len' interactions
@@ -1048,7 +1048,7 @@ if __name__ == '__main__':
     host = args[0]
 
     USER = getpass.getuser()
-    PASSWD = getpass.getpass("IMAP password for %s on %s" % (USER, host or "localhost"))
+    PASSWD = getpass.getpass("IMAP password for %s on %s:" % (USER, host or "localhost"))
 
     test_mesg = 'From: %s@localhost\nSubject: IMAP4 test\n\ndata...\n' % USER
     test_seq1 = (
@@ -1093,7 +1093,7 @@ if __name__ == '__main__':
         for ml in run('list', ('/tmp/', 'yy%')):
             mo = re.match(r'.*"([^"]+)"$', ml)
             if mo: path = mo.group(1)
-            else: path = string.split(ml)[-1]
+            else: path = ml.split()[-1]
             run('delete', (path,))
 
         for cmd,args in test_seq2:
@@ -1102,7 +1102,7 @@ if __name__ == '__main__':
             if (cmd,args) != ('uid', ('SEARCH', 'ALL')):
                 continue
 
-            uid = string.split(dat[-1])
+            uid = dat[-1].split()
             if not uid: continue
             run('uid', ('FETCH', '%s' % uid[-1],
                     '(FLAGS INTERNALDATE RFC822.SIZE RFC822.HEADER RFC822.TEXT)'))
