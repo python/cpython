@@ -544,6 +544,11 @@ initsignal(void)
 	PyDict_SetItemString(d, "SIGXFSZ", x);
         Py_XDECREF(x);
 #endif
+#ifdef SIGINFO
+	x = PyInt_FromLong(SIGINFO);
+	PyDict_SetItemString(d, "SIGINFO", x);
+        Py_XDECREF(x);
+#endif
         if (!PyErr_Occurred())
                 return;
 
