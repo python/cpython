@@ -5117,7 +5117,7 @@ newUnpicklerobject(PyObject *f)
 {
 	Unpicklerobject *self;
 
-	if (!( self = PyObject_New(Unpicklerobject, &Unpicklertype)))
+	if (!( self = PyObject_GC_New(Unpicklerobject, &Unpicklertype)))
 		return NULL;
 
 	self->file = NULL;
@@ -5170,6 +5170,7 @@ newUnpicklerobject(PyObject *f)
 			goto err;
 		}
 	}
+	PyObject_GC_Track(self);
 
 	return self;
 
@@ -5193,6 +5194,7 @@ get_Unpickler(PyObject *self, PyObject *args)
 static void
 Unpickler_dealloc(Unpicklerobject *self)
 {
+	PyObject_GC_UnTrack((PyObject *)self);
 	Py_XDECREF(self->readline);
 	Py_XDECREF(self->read);
 	Py_XDECREF(self->file);
@@ -5210,9 +5212,47 @@ Unpickler_dealloc(Unpicklerobject *self)
 		free(self->buf);
 	}
 
-	PyObject_Del(self);
+	PyObject_GC_Del(self);
 }
 
+static int
+Unpickler_traverse(Unpicklerobject *self, visitproc visit, void *arg)
+{
+	int err;
+
+#define VISIT(SLOT) \
+	if (SLOT) { \
+		err = visit((PyObject *)(SLOT), arg); \
+		if (err) \
+			return err; \
+	}
+	VISIT(self->readline);
+	VISIT(self->read);
+	VISIT(self->file);
+	VISIT(self->memo);
+	VISIT(self->stack);
+	VISIT(self->pers_func);
+	VISIT(self->arg);
+	VISIT(self->last_string);
+#undef VISIT
+	return 0;
+}
+
+static int
+Unpickler_clear(Unpicklerobject *self)
+{
+#define CLEAR(SLOT) Py_XDECREF(SLOT); SLOT = NULL
+	CLEAR(self->readline);
+	CLEAR(self->read);
+	CLEAR(self->file);
+	CLEAR(self->memo);
+	CLEAR(self->stack);
+	CLEAR(self->pers_func);
+	CLEAR(self->arg);
+	CLEAR(self->last_string);
+#undef CLEAR
+	return 0;
+}
 
 static PyObject *
 Unpickler_getattr(Unpicklerobject *self, char *name)
@@ -5410,27 +5450,29 @@ PyDoc_STRVAR(Unpicklertype__doc__,
 
 static PyTypeObject Unpicklertype = {
     PyObject_HEAD_INIT(NULL)
-    0,                            /*ob_size*/
-    "cPickle.Unpickler",                  /*tp_name*/
-    sizeof(Unpicklerobject),              /*tp_basicsize*/
-    0,                            /*tp_itemsize*/
-    /* methods */
-    (destructor)Unpickler_dealloc,        /*tp_dealloc*/
-    (printfunc)0,         /*tp_print*/
-    (getattrfunc)Unpickler_getattr,       /*tp_getattr*/
-    (setattrfunc)Unpickler_setattr,       /*tp_setattr*/
-    (cmpfunc)0,           /*tp_compare*/
-    (reprfunc)0,          /*tp_repr*/
-    0,                    /*tp_as_number*/
-    0,            /*tp_as_sequence*/
-    0,            /*tp_as_mapping*/
-    (hashfunc)0,          /*tp_hash*/
-    (ternaryfunc)0,               /*tp_call*/
-    (reprfunc)0,          /*tp_str*/
-
-    /* Space for future expansion */
-    0L,0L,0L,0L,
-    Unpicklertype__doc__ /* Documentation string */
+    0,                          	 /*ob_size*/
+    "cPickle.Unpickler", 	         /*tp_name*/
+    sizeof(Unpicklerobject),             /*tp_basicsize*/
+    0,
+    (destructor)Unpickler_dealloc,	/* tp_dealloc */
+    0,					/* tp_print */
+    (getattrfunc)Unpickler_getattr,	/* tp_getattr */
+    (setattrfunc)Unpickler_setattr,	/* tp_setattr */
+    0,					/* tp_compare */
+    0,		 			/* tp_repr */
+    0,					/* tp_as_number */
+    0,					/* tp_as_sequence */
+    0,					/* tp_as_mapping */
+    0,					/* tp_hash */
+    0,					/* tp_call */
+    0,					/* tp_str */
+    0,					/* tp_getattro */
+    0,					/* tp_setattro */
+    0,					/* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
+    Unpicklertype__doc__,		/* tp_doc */
+    (traverseproc)Unpickler_traverse,	/* tp_traverse */
+    (inquiry)Unpickler_clear,		/* tp_clear */
 };
 
 static struct PyMethodDef cPickle_methods[] = {
