@@ -406,7 +406,7 @@ class HTTPDefaultErrorHandler(BaseHandler):
         raise HTTPError(req.get_full_url(), code, msg, hdrs, fp)
 
 class HTTPRedirectHandler(BaseHandler):
-    def redirect_request(self, req, fp, code, msg, headers):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
         """Return a Request or None in response to a redirect.
 
         This is called by the http_error_30x methods when a redirection
@@ -442,7 +442,7 @@ class HTTPRedirectHandler(BaseHandler):
         # XXX Probably want to forget about the state of the current
         # request, although that might interact poorly with other
         # handlers that also use handler-specific request attributes
-        new = self.redirect_request(req, fp, code, msg, headers)
+        new = self.redirect_request(req, fp, code, msg, headers, newurl)
         if new is None:
             return
 
