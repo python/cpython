@@ -696,7 +696,7 @@ PyLong_AsLongLong(PyObject *vv)
 
 	/* Plan 9 can't handle LONG_LONG in ? : expressions */
 	if (res < 0)
-		return (LONG_LONG)res;
+		return (LONG_LONG)-1;
 	else
 		return bytes;
 }
