@@ -308,7 +308,6 @@ void
 PyMac_HandleEvent(evp)
 	EventRecord *evp;
 {
-	WindowPtr wp;
 			
 #ifdef __MWERKS__
 	/* If SIOUX wants it we're done */
@@ -316,6 +315,8 @@ PyMac_HandleEvent(evp)
 #else
 	/* Other compilers are just unlucky: we only weed out clicks in other applications */
 	if ( evp->what == mouseDown ) {
+		WindowPtr wp;
+		
 		if ( FindWindow(evp->where, &wp) == inSysWindow )
 			SystemClick(evp, wp);
 	}
@@ -436,7 +437,6 @@ char *filename;
 	FSSpec fss;
 	FInfo finfo;
 	short oldrh, filerh;
-	int ok;
 	Handle h;
 	OSErr err;
 	PyObject *m, *co;
