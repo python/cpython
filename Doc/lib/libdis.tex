@@ -7,7 +7,7 @@ The \code{dis} module supports the analysis of Python byte code by
 disassembling it.  Since there is no Python assembler, this module
 defines the Python assembly language.  The Python byte code which
 this module takes as an input is defined in the file 
-\code{Include/opcode.h} and used by the compiler and the interpreter.
+\file{Include/opcode.h} and used by the compiler and the interpreter.
 
 Example: Given the function myfunc
 
@@ -16,7 +16,7 @@ def myfunc(alist):
   return len(alist)
 \end{verbatim}\ecode
 
-the following command can be used to get the disassembly of myfunc:
+the following command can be used to get the disassembly of \code{myfunc()}:
 
 \begin{verbatim}
 >>> dis.dis(myfunc)
@@ -123,384 +123,385 @@ instructions.
 
 \renewcommand{\indexsubitem}{(byte code insns)}
 
-\begin{funcdesc}{STOP_CODE}{}
+\begin{opcodedesc}{STOP_CODE}{}
 Indicates end-of-code to the compiler, not used by the interpreter.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{POP_TOP}{}
+\begin{opcodedesc}{POP_TOP}{}
 Removes the top-of-stack (TOS) item.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{ROT_TWO}{}
+\begin{opcodedesc}{ROT_TWO}{}
 Swaps the two top-most stack items.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{ROT_THREE}{}
-Lifts second and third stack item on position up, moves top down
+\begin{opcodedesc}{ROT_THREE}{}
+Lifts second and third stack item one position up, moves top down
 to position three.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DUP_TOP}{}
+\begin{opcodedesc}{DUP_TOP}{}
 Duplicates the reference on top of the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
 Unary Operations take the top of the stack, apply the operation, and
 push the result back on the stack.
 
-\begin{funcdesc}{UNARY_POSITIVE}{}
+\begin{opcodedesc}{UNARY_POSITIVE}{}
 Implements \code{TOS = +TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNARY_NEG}{}
+\begin{opcodedesc}{UNARY_NEG}{}
 Implements \code{TOS = -TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNARY_NOT}{}
+\begin{opcodedesc}{UNARY_NOT}{}
 Implements \code{TOS = not TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNARY_CONVERT}{}
+\begin{opcodedesc}{UNARY_CONVERT}{}
 Implements \code{TOS = `TOS`}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNARY_INVERT}{}
+\begin{opcodedesc}{UNARY_INVERT}{}
 Implements \code{TOS = ~TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
 Binary operations remove the top of the stack (TOS) and the second top-most
 stack item (TOS1) from the stack.  They perform the operation, and put the
 result back on the stack.
 
-\begin{funcdesc}{BINARY_POWER}{}
+\begin{opcodedesc}{BINARY_POWER}{}
 Implements \code{TOS = TOS1 ** TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_MULTIPLY}{}
+\begin{opcodedesc}{BINARY_MULTIPLY}{}
 Implements \code{TOS = TOS1 * TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_DIVIDE}{}
+\begin{opcodedesc}{BINARY_DIVIDE}{}
 Implements \code{TOS = TOS1 / TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_MODULO}{}
+\begin{opcodedesc}{BINARY_MODULO}{}
 Implements \code{TOS = TOS1 \% TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_ADD}{}
+\begin{opcodedesc}{BINARY_ADD}{}
 Implements \code{TOS = TOS1 + TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_SUBTRACT}{}
+\begin{opcodedesc}{BINARY_SUBTRACT}{}
 Implements \code{TOS = TOS1 - TOS}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_SUBSCR}{}
+\begin{opcodedesc}{BINARY_SUBSCR}{}
 Implements \code{TOS = TOS1[TOS] }.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_LSHIFT}{}
+\begin{opcodedesc}{BINARY_LSHIFT}{}
 Implements \code{TOS = TOS1 << TOS }.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_RSHIFT}{}
+\begin{opcodedesc}{BINARY_RSHIFT}{}
 Implements \code{TOS = TOS1 << TOS }.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_AND}{}
+\begin{opcodedesc}{BINARY_AND}{}
 Implements \code{TOS = TOS1 and TOS }.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_XOR}{}
+\begin{opcodedesc}{BINARY_XOR}{}
 Implements \code{TOS = TOS1 \^{ }TOS }.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BINARY_OR}{}
+\begin{opcodedesc}{BINARY_OR}{}
 Implements \code{TOS = TOS1 or TOS }.
-\end{funcdesc}
+\end{opcodedesc}
 
 The slice opcodes take up to three parameters.
 
-\begin{funcdesc}{SLICE+0}{}
+\begin{opcodedesc}{SLICE+0}{}
 Implements \code{TOS = TOS[:]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SLICE+1}{}
+\begin{opcodedesc}{SLICE+1}{}
 Implements \code{TOS = TOS1[TOS:]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SLICE+2}{}
+\begin{opcodedesc}{SLICE+2}{}
 Implements \code{TOS = TOS1[:TOS1]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SLICE+3}{}
+\begin{opcodedesc}{SLICE+3}{}
 Implements \code{TOS = TOS2[TOS1:TOS]}.
-\end{funcdesc}
+\end{opcodedesc}
 
 Slice assignment needs even an additional parameter.  As any statement,
 they put nothing on the stack.
 
-\begin{funcdesc}{STORE_SLICE+0}{}
+\begin{opcodedesc}{STORE_SLICE+0}{}
 Implements \code{TOS[:]=TOS1}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_SLICE+1}{}
+\begin{opcodedesc}{STORE_SLICE+1}{}
 Implements \code{TOS1[TOS:]=TOS2}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_SLICE+2}{}
+\begin{opcodedesc}{STORE_SLICE+2}{}
 Implements \code{TOS1[:TOS]=TOS2}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_SLICE+3}{}
+\begin{opcodedesc}{STORE_SLICE+3}{}
 Implements \code{TOS2[TOS1:TOS]=TOS3}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_SLICE+0}{}
+\begin{opcodedesc}{DELETE_SLICE+0}{}
 Implements \code{del TOS[:]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_SLICE+1}{}
+\begin{opcodedesc}{DELETE_SLICE+1}{}
 Implements \code{del TOS1[TOS:]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_SLICE+2}{}
+\begin{opcodedesc}{DELETE_SLICE+2}{}
 Implements \code{del TOS1[:TOS]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_SLICE+3}{}
+\begin{opcodedesc}{DELETE_SLICE+3}{}
 Implements \code{del TOS2[TOS1:TOS]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_SUBSCR}{}
+\begin{opcodedesc}{STORE_SUBSCR}{}
 Implements \code{TOS1[TOS]=TOS2}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_SUBSCR}{}
+\begin{opcodedesc}{DELETE_SUBSCR}{}
 Implements \code{del TOS1[TOS]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{PRINT_EXPR}{}
+\begin{opcodedesc}{PRINT_EXPR}{}
 Implements the expression statement for the interactive mode.  TOS is
 removed from the stack and printed.  In non-interactive mode, an
-expression statement is terminated with POP_STACK.
-\end{funcdesc}
+expression statement is terminated with \code{POP_STACK}.
+\end{opcodedesc}
 
-\begin{funcdesc}{PRINT_ITEM}{}
+\begin{opcodedesc}{PRINT_ITEM}{}
 Prints TOS.  There is one such instruction for
 each item in the print statement.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{PRINT_NEWLINE}{}
+\begin{opcodedesc}{PRINT_NEWLINE}{}
 Prints a new line on \code{sys.stdout}.  This is generated as the
 last operation of a print statement, unless the statement ends
 with a comma.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BREAK_LOOP}{}
+\begin{opcodedesc}{BREAK_LOOP}{}
 Terminates a loop due to a break statement.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_LOCALS}{}
+\begin{opcodedesc}{LOAD_LOCALS}{}
 Pushes a reference to the locals of the current scope on the stack.
 This is used in the code for a class definition: After the class body
 is evaluated, the locals are passed to the class definition.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{RETURN_VALUE}{}
+\begin{opcodedesc}{RETURN_VALUE}{}
 Returns with TOS to the caller of the function.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{EXEC_STMT}{}
+\begin{opcodedesc}{EXEC_STMT}{}
 Implements \code{exec TOS2,TOS1,TOS}.  The compiler fills
 missing optional parameters with None.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{POP_BLOCK}{}
+\begin{opcodedesc}{POP_BLOCK}{}
 Removes one block from the block stack.  Per frame, there is a 
 stack of blocks, denoting nested loops, try statements, and such.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{END_FINALLY}{}
+\begin{opcodedesc}{END_FINALLY}{}
 Terminates a finally-block.  The interpreter recalls whether the
 exception has to be re-raised, or whether the function returns,
 and continues with the outer-next block.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BUILD_CLASS}{}
+\begin{opcodedesc}{BUILD_CLASS}{}
 Creates a new class object.  TOS is the methods dictionary, TOS1
 the tuple of the names of the base classes, and TOS2 the class name.
-\end{funcdesc}
+\end{opcodedesc}
 
 All of the following opcodes expect arguments.  An argument is two
 bytes, with the more significant byte last.
 
-\begin{funcdesc}{STORE_NAME}{namei}
+\begin{opcodedesc}{STORE_NAME}{namei}
 Implements \code{name = TOS}. \var{namei} is the index of \var{name}
 in the attribute \code{co_names} of the code object.
-The compiler tries to use STORE_LOCAL or STORE_GLOBAL if possible.
-\end{funcdesc}
+The compiler tries to use \code{STORE_LOCAL} or \code{STORE_GLOBAL}
+if possible.
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_NAME}{namei}
+\begin{opcodedesc}{DELETE_NAME}{namei}
 Implements \code{del name}, where \var{namei} is the index into
 \code{co_names} attribute of the code object.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNPACK_TUPLE}{count}
+\begin{opcodedesc}{UNPACK_TUPLE}{count}
 Unpacks TOS into \var{count} individual values, which are put onto
 the stack right-to-left.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{UNPACK_LIST}{count}
+\begin{opcodedesc}{UNPACK_LIST}{count}
 Unpacks TOS into \var{count} individual values.
-\end{funcdesc}
+\end{opcodedesc}
 
-%\begin{funcdesc}{UNPACK_ARG}{count}
+%\begin{opcodedesc}{UNPACK_ARG}{count}
 %This opcode is obsolete.
-%\end{funcdesc}
+%\end{opcodedesc}
 
-\begin{funcdesc}{STORE_ATTR}{namei}
+\begin{opcodedesc}{STORE_ATTR}{namei}
 Implements \code{TOS.name = TOS1}, where \var{namei} is the index
 of name in \code{co_names}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_ATTR}{namei}
+\begin{opcodedesc}{DELETE_ATTR}{namei}
 Implements \code{del TOS.name}, using \var{namei} as index into
 \code{co_names}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_GLOBAL}{namei}
-Works as STORE_NAME, but stores the name as a global.
-\end{funcdesc}
+\begin{opcodedesc}{STORE_GLOBAL}{namei}
+Works as \code{STORE_NAME}, but stores the name as a global.
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_GLOBAL}{namei}
-Works as DELETE_NAME, but deletes a global name.
-\end{funcdesc}
+\begin{opcodedesc}{DELETE_GLOBAL}{namei}
+Works as \code{DELETE_NAME}, but deletes a global name.
+\end{opcodedesc}
 
-%\begin{funcdesc}{UNPACK_VARARG}{argc}
+%\begin{opcodedesc}{UNPACK_VARARG}{argc}
 %This opcode is obsolete.
-%\end{funcdesc}
+%\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_CONST}{consti}
+\begin{opcodedesc}{LOAD_CONST}{consti}
 Pushes \code{co_consts[consti]} onto the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_NAME}{namei}
+\begin{opcodedesc}{LOAD_NAME}{namei}
 Pushes the value associated with \code{co_names[namei]} onto the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BUILD_TUPLE}{count}
+\begin{opcodedesc}{BUILD_TUPLE}{count}
 Creates a tuple consuming \var{count} items from the stack, and pushes
 the resulting tuple onto the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BUILD_LIST}{count}
+\begin{opcodedesc}{BUILD_LIST}{count}
 Works as \code{BUILD_TUPLE}, but creates a list.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BUILD_MAP}{zero}
+\begin{opcodedesc}{BUILD_MAP}{zero}
 Pushes an empty dictionary object onto the stack.  The argument is ignored
 and set to zero by the compiler.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_ATTR}{namei}
+\begin{opcodedesc}{LOAD_ATTR}{namei}
 Replaces TOS with \code{getattr(TOS,co_names[namei]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{COMPARE_OP}{opname}
+\begin{opcodedesc}{COMPARE_OP}{opname}
 Performs a boolean operation.  The operation name can be found
 in \code{cmp_op[opname]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{IMPORT_NAME}{namei}
+\begin{opcodedesc}{IMPORT_NAME}{namei}
 Imports the module \code{co_names[namei]}.  The module object is
 pushed onto the stack.  The current name space is not affect: for a
 proper import statement, a subsequent \code{STORE_FAST} instruction
 modifies the name space.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{IMPORT_FROM}{namei}
+\begin{opcodedesc}{IMPORT_FROM}{namei}
 Imports the attribute \code{co_names[namei]}.  The module to import
 from is found in TOS and left there.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{JUMP_FORWARD}{delta}
+\begin{opcodedesc}{JUMP_FORWARD}{delta}
 Increments byte code counter by \var{delta}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{JUMP_IF_TRUE}{delta}
+\begin{opcodedesc}{JUMP_IF_TRUE}{delta}
 If TOS is true, increment the byte code counter by \var{delta}.  TOS is
 left on the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{JUMP_IF_FALSE}{delta}
+\begin{opcodedesc}{JUMP_IF_FALSE}{delta}
 If TOS is false, increment the byte code counter by \var{delta}.  TOS
 is not changed. 
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{JUMP_ABSOLUTE}{target}
+\begin{opcodedesc}{JUMP_ABSOLUTE}{target}
 Set byte code counter to \var{target}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{FOR_LOOP}{delta}
+\begin{opcodedesc}{FOR_LOOP}{delta}
 Iterate over a sequence.  TOS is the current index, TOS1 the sequence.
 First, the next element is computed.  If the sequence is exhausted,
 increment byte code counter by \var{delta}.  Otherwise, push the
 sequence, the incremented counter, and the current item onto the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-%\begin{funcdesc}{LOAD_LOCAL}{namei}
+%\begin{opcodedesc}{LOAD_LOCAL}{namei}
 %This opcode is obsolete.
-%\end{funcdesc}
+%\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_GLOBAL}{namei}
+\begin{opcodedesc}{LOAD_GLOBAL}{namei}
 Loads the global named \code{co_names[namei]} onto the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-%\begin{funcdesc}{SET_FUNC_ARGS}{argc}
+%\begin{opcodedesc}{SET_FUNC_ARGS}{argc}
 %This opcode is obsolete.
-%\end{funcdesc}
+%\end{opcodedesc}
 
-\begin{funcdesc}{SETUP_LOOP}{delta}
+\begin{opcodedesc}{SETUP_LOOP}{delta}
 Pushes a block for a loop onto the block stack.  The block spans
 from the current instruction with a size of \var{delta} bytes.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SETUP_EXCEPT}{delta}
+\begin{opcodedesc}{SETUP_EXCEPT}{delta}
 Pushes a try block from a try-except clause onto the block stack.
 \var{delta} points to the first except block.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SETUP_FINALLY}{delta}
+\begin{opcodedesc}{SETUP_FINALLY}{delta}
 Pushes a try block from a try-except clause onto the block stack.
 \var{delta} points to the finally block.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{LOAD_FAST}{var_num}
+\begin{opcodedesc}{LOAD_FAST}{var_num}
 Pushes a reference to the local \code{co_varnames[var_num]} onto
 the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{STORE_FAST}{var_num}
+\begin{opcodedesc}{STORE_FAST}{var_num}
 Stores TOS into the local \code{co_varnames[var_num]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{DELETE_FAST}{var_num}
+\begin{opcodedesc}{DELETE_FAST}{var_num}
 Deletes local \code{co_varnames[var_num]}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{SET_LINE_NO}{lineno}
+\begin{opcodedesc}{SET_LINE_NO}{lineno}
 Sets the current line number to \var{lineno}.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{RAISE_VARARGS}{argc}
+\begin{opcodedesc}{RAISE_VARARGS}{argc}
 Raises an exception. \var{argc} indicates the number of parameters
 to the raise statement, ranging from 1 to 3.  The handler will find
 the traceback as TOS2, the parameter as TOS1, and the exception
 as TOS.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{CALL_FUNCTION}{argc}
+\begin{opcodedesc}{CALL_FUNCTION}{argc}
 Calls a function.  The low byte of \var{argc} indicates the number of
 positional parameters, the high byte the number of keyword parameters.
 On the stack, the opcode finds the keyword parameters first.  For each
@@ -508,17 +509,17 @@ keyword argument, the value is on top of the key.  Below the keyword
 parameters, the positional parameters are on the stack, with the
 right-most parameter on top.  Below the parameters, the function object
 to call is on the stack.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{MAKE_FUNCTION}{argc}
+\begin{opcodedesc}{MAKE_FUNCTION}{argc}
 Pushes a new function object on the stack.  TOS is the code associated
 with the function.  The function object is defined to have \var{argc}
 default parameters, which are found below TOS.
-\end{funcdesc}
+\end{opcodedesc}
 
-\begin{funcdesc}{BUILD_SLICE}{argc}
+\begin{opcodedesc}{BUILD_SLICE}{argc}
 Pushes a slice object on the stack.  If \var{argc} is three, creates
 \code{TOS3[TOS2:TOS1:TOS]}.  Otherwise, expects three arguments.
-\end{funcdesc}
+\end{opcodedesc}
 
 
