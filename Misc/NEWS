@@ -12,6 +12,12 @@ What's New in Python 2.3.3c1?
 Core and builtins
 -----------------
 
+- Critical bugfix, for SF bug 840829:  if cyclic garbage collection
+  happened to occur during a weakref callback for a new-style class
+  instance, subtle memory corruption could result (in a release build;
+  in a debug build, a segfault occurred reliably very soon after).
+  This has been repaired.
+
 - Patch #820195: object.__contains__() now returns True or False instead
   of 1 or 0.
 
@@ -36,7 +42,7 @@ Extension modules
 - Bug #814613: INET_ADDRSTRLEN fix needed for all compilers on SGI
 
 - The sre module (which underlies the re module) now uses a non-recursive
-  algorithm for matching. A bunch of ugly REs that used to fail with a 
+  algorithm for matching. A bunch of ugly REs that used to fail with a
   RuntimeError will now work. See Bug #757624
 
 Library
@@ -155,7 +161,7 @@ Library
 - Bug #709491: Reset __starttext_tag in sgmllib.
 
 - The bsddb module and dbhash module now support the iterator and
-  mapping protocols. 
+  mapping protocols.
 
 - Bug #711632: Reset all state members in HTMLParser.reset.
 

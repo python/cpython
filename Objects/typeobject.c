@@ -639,7 +639,11 @@ subtype_dealloc(PyObject *self)
 	++_PyTrash_delete_nesting;
 	Py_TRASHCAN_SAFE_BEGIN(self);
 	--_PyTrash_delete_nesting;
-	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
+	/* DO NOT restore GC tracking at this point.  The weakref callback
+	 * (if any) may trigger GC, and if self is tracked at that point,
+	 * it will look like trash to GC and GC will try to delete it
+	 * again.  Double-deallocation is a subtle disaster.
+	 */
 
 	/* Find the nearest base with a different tp_dealloc */
 	base = type;
@@ -654,6 +658,7 @@ subtype_dealloc(PyObject *self)
 
 	if (type->tp_weaklistoffset && !base->tp_weaklistoffset)
 		PyObject_ClearWeakRefs(self);
+	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
 
 	/* Maybe call finalizer; exit early if resurrected */
 	if (type->tp_del) {

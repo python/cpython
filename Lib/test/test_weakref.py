@@ -298,6 +298,26 @@ class ReferencesTestCase(TestBase):
         else:
             self.fail("exception not properly restored")
 
+    def test_sf_bug_840829(self):
+        # "weakref callbacks and gc corrupt memory"
+        # subtype_dealloc erroneously exposed a new-style instance
+        # already in the process of getting deallocated to gc,
+        # causing double-deallocation if the instance had a weakref
+        # callback that triggered gc.
+        # If the bug exists, there probably won't be an obvious symptom
+        # in a release build.  In a debug build, a segfault will occur
+        # when the second attempt to remove the instance from the "list
+        # of all objects" occurs.
+
+        import gc
+
+        class C(object):
+            pass
+
+        c = C()
+        wr = weakref.ref(c, lambda ignore: gc.collect())
+        del c
+
 
 class Object:
     def __init__(self, arg):
