@@ -1,23 +1,26 @@
-# Zap .pyc files
+#!/usr/local/bin/python
+"""Recursively zap all .pyc files"""
 import os
 import sys
 
+# set doit true to actually delete files
+# set doit false to just print what would be deleted
 doit = 1
 
 def main():
-	if os.name == 'mac':
-		import macfs
-		fss, ok = macfs.GetDirectory('Directory to zap pyc files in')
-		if not ok:
-			sys.exit(0)
-		dir = fss.as_pathname()
-		zappyc(dir)
-	else:
-		if not sys.argv[1:]:
+	if not sys.argv[1:]:
+		if os.name == 'mac':
+			import macfs
+			fss, ok = macfs.GetDirectory('Directory to zap pyc files in')
+			if not ok:
+				sys.exit(0)
+			dir = fss.as_pathname()
+			zappyc(dir)
+		else:
 			print 'Usage: zappyc dir ...'
 			sys.exit(1)
-		for dir in sys.argv[1:]:
-			zappyc(dir)
+	for dir in sys.argv[1:]:
+		zappyc(dir)
 
 def zappyc(dir):
 	os.path.walk(dir, walker, None)
