@@ -1,0 +1,2 @@
+import hmac
+hmac.test()
