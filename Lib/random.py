@@ -124,7 +124,7 @@ class Random:
 
         None or no argument seeds from current time.
 
-        If a is not None or an int or long, hash(a) is instead.
+        If a is not None or an int or long, hash(a) is used instead.
 
         If a is an int or long, a is used directly.  Distinct values between
         0 and 27814431486575L inclusive are guaranteed to yield distinct
