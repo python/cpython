@@ -51,7 +51,7 @@ SHELL=		/bin/sh
 WITH=		
 
 # Compiler options passed to subordinate makes
-OPT=		-O
+OPT=		@OPT@
 
 # Subdirectories where to run make recursively
 SUBDIRS=	Parser Objects Python Modules

@@ -225,6 +225,9 @@
 /* Define if you have the <fcntl.h> header file.  */
 #undef HAVE_FCNTL_H
 
+/* Define if you have the <limits.h> header file.  */
+#undef HAVE_LIMITS_H
+
 /* Define if you have the <signal.h> header file.  */
 #undef HAVE_SIGNAL_H
 

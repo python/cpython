@@ -17,10 +17,19 @@ AC_WITH(gcc, [
 	esac
 	CC=$withval])
 AC_PROG_CC
-AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_PROGRAMS_CHECK(AR, ar aal, ar)
+AC_SUBST(INSTALL)
+# Install just never works :-(
+if test -z "$INSTALL"
+then INSTALL=cp
+fi
+AC_SUBST(OPT)
+# Optimizer/debugger flags passed between Makefiles
+if test -z "$OPT"
+then OPT=-O
+fi
 
 # checks for UNIX variants that set C preprocessor variables
 AC_AIX
@@ -62,14 +71,13 @@ AC_HAVE_LIBRARY(nsl)
 
 AC_CHECKING(for --with-readline)
 AC_WITH(readline, [AC_DEFINE(WITH_READLINE)
-if test -d "$withval"
-then LIBS="$LIBS -L$withval"
-else AC_ERROR(proper usage is --with-readline=DIRECTORY)
+if test ! -d "$withval"
+then AC_ERROR(proper usage is --with-readline=DIRECTORY)
 fi
 termcap=
 AC_HAVE_LIBRARY(termcap, [termcap=termcap], [AC_HAVE_LIBRARY(termlib, [termcap=termlib])])
 if test ! -z "$termcap"
-then LIBS="$LIBS -lreadline"
+then LIBS="$LIBS $withval/libreadline.a"
      # Avoid possible conflict between shared libraries termcap and gl
      # on IRIX 5: both contain a routine called clear.
      if test -f /usr/lib/lib$termcap.a
