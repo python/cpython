@@ -358,10 +358,7 @@ class Pickler:
     dispatch[NoneType] = save_none
 
     def save_bool(self, object):
-        if object:
-            self.write(TRUE)
-        else:
-            self.write(FALSE)
+        self.write(object and TRUE or FALSE)
     dispatch[bool] = save_bool
 
     def save_int(self, object):
