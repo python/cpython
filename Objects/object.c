@@ -77,7 +77,7 @@ printobject(op, fp, flags)
 	}
 	else {
 		if (op->ob_refcnt <= 0)
-			fprintf(fp, "(refcnt %d):", op->ob_refcnt);
+			fprintf(fp, "(refcnt %u):", op->ob_refcnt);
 		if (op->ob_type->tp_print == NULL)
 			fprintf(fp, "<%s object at %lx>",
 				op->ob_type->tp_name, (long)op);
@@ -188,6 +188,7 @@ There is (and should be!) no way to create other objects of this type,
 so there is exactly one (which is indestructible, by the way).
 */
 
+/* ARGSUSED */
 static int
 none_print(op, fp, flags)
 	object *op;
@@ -198,6 +199,7 @@ none_print(op, fp, flags)
 	return 0;
 }
 
+/* ARGSUSED */
 static object *
 none_repr(op)
 	object *op;
