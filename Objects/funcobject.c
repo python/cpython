@@ -20,6 +20,7 @@ PyFunction_New(PyObject *code, PyObject *globals)
 		op->func_name = ((PyCodeObject *)code)->co_name;
 		Py_INCREF(op->func_name);
 		op->func_defaults = NULL; /* No default arguments */
+		op->func_closure = NULL;
 		consts = ((PyCodeObject *)code)->co_consts;
 		if (PyTuple_Size(consts) >= 1) {
 			doc = PyTuple_GetItem(consts, 0);
@@ -89,6 +90,37 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
 	return 0;
 }
 
+PyObject *
+PyFunction_GetClosure(PyObject *op)
+{
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
+		return NULL;
+	}
+	return ((PyFunctionObject *) op) -> func_closure;
+}
+
+int
+PyFunction_SetClosure(PyObject *op, PyObject *closure)
+{
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
+		return -1;
+	}
+	if (closure == Py_None)
+		closure = NULL;
+	else if (PyTuple_Check(closure)) {
+		Py_XINCREF(closure);
+	}
+	else {
+		PyErr_SetString(PyExc_SystemError, "non-tuple closure");
+		return -1;
+	}
+	Py_XDECREF(((PyFunctionObject *) op) -> func_closure);
+	((PyFunctionObject *) op) -> func_closure = closure;
+	return 0;
+}
+
 /* Methods */
 
 #define OFF(x) offsetof(PyFunctionObject, x)
@@ -98,6 +130,7 @@ static struct memberlist func_memberlist[] = {
         {"func_globals",  T_OBJECT,     OFF(func_globals),      READONLY},
         {"func_name",     T_OBJECT,     OFF(func_name),         READONLY},
         {"__name__",      T_OBJECT,     OFF(func_name),         READONLY},
+        {"func_closure",  T_OBJECT,     OFF(func_closure)},
         {"func_defaults", T_OBJECT,     OFF(func_defaults)},
         {"func_doc",      T_OBJECT,     OFF(func_doc)},
         {"__doc__",       T_OBJECT,     OFF(func_doc)},

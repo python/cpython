@@ -20,6 +20,7 @@ typedef struct _frame {
     PyObject *f_builtins;	/* builtin symbol table (PyDictObject) */
     PyObject *f_globals;	/* global symbol table (PyDictObject) */
     PyObject *f_locals;		/* local symbol table (PyDictObject) */
+    PyObject *f_closure;        /* environment for free variables */
     PyObject **f_valuestack;	/* points after the last local */
     PyObject *f_trace;		/* Trace function */
     PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
@@ -43,7 +44,8 @@ extern DL_IMPORT(PyTypeObject) PyFrame_Type;
 #define PyFrame_Check(op) ((op)->ob_type == &PyFrame_Type)
 
 DL_IMPORT(PyFrameObject *) PyFrame_New(PyThreadState *, PyCodeObject *,
-                                       PyObject *, PyObject *);
+                                       PyObject *, PyObject *,
+				       PyObject *);
 
 
 /* The rest of the interface is specific for frame objects */

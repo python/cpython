@@ -238,6 +238,8 @@ w_object(PyObject *v, WFILE *p)
 		w_object(co->co_consts, p);
 		w_object(co->co_names, p);
 		w_object(co->co_varnames, p);
+		w_object(co->co_freevars, p);
+		w_object(co->co_cellvars, p);
 		w_object(co->co_filename, p);
 		w_object(co->co_name, p);
 		w_short(co->co_firstlineno, p);
@@ -554,6 +556,8 @@ r_object(RFILE *p)
 			PyObject *consts = NULL;
 			PyObject *names = NULL;
 			PyObject *varnames = NULL;
+			PyObject *freevars = NULL;
+			PyObject *cellvars = NULL;
 			PyObject *filename = NULL;
 			PyObject *name = NULL;
 			int firstlineno = 0;
@@ -563,7 +567,9 @@ r_object(RFILE *p)
 			if (code) consts = r_object(p);
 			if (consts) names = r_object(p);
 			if (names) varnames = r_object(p);
-			if (varnames) filename = r_object(p);
+			if (varnames) freevars = r_object(p);
+			if (freevars) cellvars = r_object(p);
+			if (cellvars) filename = r_object(p);
 			if (filename) name = r_object(p);
 			if (name) {
 				firstlineno = r_short(p);
@@ -572,9 +578,10 @@ r_object(RFILE *p)
 			
 			if (!PyErr_Occurred()) {
 				v = (PyObject *) PyCode_New(
-					argcount, nlocals, stacksize, flags, 
+					argcount, nlocals, stacksize, flags,  
 					code, consts, names, varnames,
-					filename, name, firstlineno, lnotab);
+					freevars, cellvars, filename, name, 
+					firstlineno, lnotab);  
 			}
 			else
 				v = NULL;
@@ -582,6 +589,8 @@ r_object(RFILE *p)
 			Py_XDECREF(consts);
 			Py_XDECREF(names);
 			Py_XDECREF(varnames);
+			Py_XDECREF(freevars);
+			Py_XDECREF(cellvars);
 			Py_XDECREF(filename);
 			Py_XDECREF(name);
 			Py_XDECREF(lnotab);

@@ -12,6 +12,7 @@ typedef struct {
     PyObject *func_code;
     PyObject *func_globals;
     PyObject *func_defaults;
+    PyObject *func_closure;
     PyObject *func_doc;
     PyObject *func_name;
     PyObject *func_dict;
@@ -26,6 +27,8 @@ extern DL_IMPORT(PyObject *) PyFunction_GetCode(PyObject *);
 extern DL_IMPORT(PyObject *) PyFunction_GetGlobals(PyObject *);
 extern DL_IMPORT(PyObject *) PyFunction_GetDefaults(PyObject *);
 extern DL_IMPORT(int) PyFunction_SetDefaults(PyObject *, PyObject *);
+extern DL_IMPORT(PyObject *) PyFunction_GetClosure(PyObject *);
+extern DL_IMPORT(int) PyFunction_SetClosure(PyObject *, PyObject *);
 
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
@@ -35,6 +38,8 @@ extern DL_IMPORT(int) PyFunction_SetDefaults(PyObject *, PyObject *);
 	(((PyFunctionObject *)func) -> func_globals)
 #define PyFunction_GET_DEFAULTS(func) \
 	(((PyFunctionObject *)func) -> func_defaults)
+#define PyFunction_GET_CLOSURE(func) \
+	(((PyFunctionObject *)func) -> func_closure)
 
 #ifdef __cplusplus
 }

@@ -18,6 +18,8 @@ typedef struct {
     PyObject *co_consts;	/* list (constants used) */
     PyObject *co_names;		/* list of strings (names used) */
     PyObject *co_varnames;	/* tuple of strings (local variable names) */
+    PyObject *co_freevars;	/* tuple of strings (free variable names) */
+    PyObject *co_cellvars;      /* tuple of strings (cell variable names) */
     /* The rest doesn't count for hash/cmp */
     PyObject *co_filename;	/* string (where it was loaded from) */
     PyObject *co_name;		/* string (name, for reference) */
@@ -42,7 +44,8 @@ struct _node; /* Declare the existence of this type */
 DL_IMPORT(PyCodeObject *) PyNode_Compile(struct _node *, char *);
 DL_IMPORT(PyCodeObject *) PyCode_New(
 	int, int, int, int, PyObject *, PyObject *, PyObject *, PyObject *,
-	PyObject *, PyObject *, int, PyObject *); /* same as struct above */
+	PyObject *, PyObject *, PyObject *, PyObject *, int, PyObject *); 
+        /* same as struct above */
 DL_IMPORT(int) PyCode_Addr2Line(PyCodeObject *, int);
 
 /* for internal use only */
