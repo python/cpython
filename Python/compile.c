@@ -3092,6 +3092,7 @@ com_arglist(c, n)
 		node *ch = CHILD(n, i);
 		node *fp;
 		char *name;
+		PyObject *nameval;
 		if (TYPE(ch) == STAR || TYPE(ch) == DOUBLESTAR)
 			break;
 		REQ(ch, fpdef); /* fpdef: NAME | '(' fplist ')' */
@@ -3103,7 +3104,15 @@ com_arglist(c, n)
 			sprintf(nbuf, ".%d", i);
 			complex = 1;
 		}
-		com_newlocal(c, name);
+		nameval = PyString_InternFromString(name);
+		if (nameval == NULL) {
+			c->c_errors++;
+		}
+                if (PyDict_GetItem(c->c_locals, nameval)) {
+			com_error(c, PyExc_SyntaxError,"duplicate argument in function definition");
+		}
+		com_newlocal_o(c, nameval);
+		Py_DECREF(nameval);
 		c->c_argcount++;
 		if (++i >= nch)
 			break;
