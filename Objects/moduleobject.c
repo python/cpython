@@ -62,6 +62,17 @@ setmoduledict(m, v)
 	return 0;
 }
 
+char *
+getmodulename(m)
+	object *m;
+{
+	if (!is_moduleobject(m)) {
+		err_badarg();
+		return NULL;
+	}
+	return getstringvalue(((moduleobject *)m) -> md_name);
+}
+
 /* Methods */
 
 static void
