@@ -1502,16 +1502,18 @@ static PyMethodDef struct_methods[] = {
 DL_EXPORT(void)
 initstruct(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule4("struct", struct_methods, struct__doc__,
 			   (PyObject*)NULL, PYTHON_API_VERSION);
 
 	/* Add some symbolic constants to the module */
-	d = PyModule_GetDict(m);
-	StructError = PyErr_NewException("struct.error", NULL, NULL);
-	if (StructError == NULL)
-		return;
-	PyDict_SetItemString(d, "error", StructError);
+	if (StructError == NULL) {
+		StructError = PyErr_NewException("struct.error", NULL, NULL);
+		if (StructError == NULL)
+			return;
+	}
+	Py_INCREF(StructError);
+	PyModule_AddObject(d, "error", StructError);
 }

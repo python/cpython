@@ -891,15 +891,17 @@ static struct constant {
 DL_EXPORT(void)
 PyInit_termios(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 	struct constant *constant = termios_constants;
 
 	m = Py_InitModule4("termios", termios_methods, termios__doc__,
                            (PyObject *)NULL, PYTHON_API_VERSION);
 
-	d = PyModule_GetDict(m);
-	TermiosError = PyErr_NewException("termios.error", NULL, NULL);
-	PyDict_SetItemString(d, "error", TermiosError);
+	if (TermiosError == NULL) {
+		TermiosError = PyErr_NewException("termios.error", NULL, NULL);
+	}
+	Py_INCREF(TermiosError);
+	PyModule_AddObject(m, "error", TermiosError);
 
 	while (constant->name != NULL) {
 		PyModule_AddIntConstant(m, constant->name, constant->value);
