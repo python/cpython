@@ -121,11 +121,11 @@ for each thread.
 
 \begin{cfuncdesc}{PyObject*}{PyErr_Format}{PyObject *exception,
                                            const char *format, \moreargs}
-  This function sets the error indicator.  \var{exception} should be a
-  Python exception (string or class, not an instance).  \var{format}
-  should be a string, containing format codes, similar to
-  \cfunction{printf()}. The \code{width.precision} before a format
-  code is parsed, but the width part is ignored.
+  This function sets the error indicator and returns \NULL..
+  \var{exception} should be a Python exception (string or class, not
+  an instance).  \var{format} should be a string, containing format
+  codes, similar to \cfunction{printf()}. The \code{width.precision}
+  before a format code is parsed, but the width part is ignored.
 
   \begin{tableii}{c|l}{character}{Character}{Meaning}
     \lineii{c}{Character, as an \ctype{int} parameter}
@@ -137,8 +137,6 @@ for each thread.
   An unrecognized format character causes all the rest of the format
   string to be copied as-is to the result string, and any extra
   arguments discarded.
-
-  A new reference is returned, which is owned by the caller.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyErr_SetNone}{PyObject *type}
