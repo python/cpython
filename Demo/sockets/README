@@ -1,0 +1,7 @@
+Contents of this directory:
+
+echosvr.py		About the simplest TCP server possible.
+finger.py		Client for the 'finger' protocol.
+telnet.py		Client for the 'telnet' protocol.
+throughput.py		Client and server to measure TCP throughput.
+udpecho.py		Client and server for the UDP echo protocol.
