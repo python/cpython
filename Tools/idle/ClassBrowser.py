@@ -8,16 +8,20 @@ XXX TO DO:
 - show function argument list? (have to do pattern matching on source)
 - should the classes and methods lists also be in the module's menu bar?
 - add base classes to class browser tree
-- make methodless classes inexpandable
-- make classless modules inexpandable
-
-
 """
 
 import os
 import sys
 import string
 import pyclbr
+
+# XXX Patch pyclbr with dummies if it's vintage Python 1.5.2:
+if not hasattr(pyclbr, "readmodule_ex"):
+    pyclbr.readmodule_ex = pyclbr.readmodule
+if not hasattr(pyclbr, "Function"):
+    class Function(pyclbr.Class):
+        pass
+    pyclbr.Function = Function
 
 import PyShell
 from WindowList import ListedToplevel
@@ -92,7 +96,7 @@ class ModuleBrowserTreeItem(TreeItem):
         if os.path.normcase(ext) != ".py":
             return []
         try:
-            dict = pyclbr.readmodule(name, [dir] + sys.path)
+            dict = pyclbr.readmodule_ex(name, [dir] + sys.path)
         except ImportError, msg:
             return []
         items = []
@@ -125,23 +129,34 @@ class ClassBrowserTreeItem(TreeItem):
         self.name = name
         self.classes = classes
         self.file = file
+        try:
+            self.cl = self.classes[self.name]
+        except (IndexError, KeyError):
+            self.cl = None
+        self.isfunction = isinstance(self.cl, pyclbr.Function)
 
     def GetText(self):
-        return "class " + self.name
+        if self.isfunction:
+            return "def " + self.name + "(...)"
+        else:
+            return "class " + self.name
+
+    def GetIconName(self):
+        if self.isfunction:
+            return "python"
+        else:
+            return "folder"
 
     def IsExpandable(self):
-        try:
-            cl = self.classes[self.name]
-        except (IndexError, KeyError):
-            return 0
-        else:
-            return not not cl.methods
+        if self.cl:
+            return not not self.cl.methods
 
     def GetSubList(self):
+        if not self.cl:
+            return []
         sublist = []
         for name in self.listmethods():
-            item = MethodBrowserTreeItem(
-                name, self.classes[self.name], self.file)
+            item = MethodBrowserTreeItem(name, self.cl, self.file)
             sublist.append(item)
         return sublist
 
@@ -149,29 +164,15 @@ class ClassBrowserTreeItem(TreeItem):
         if not os.path.exists(self.file):
             return
         edit = PyShell.flist.open(self.file)
-        if self.classes.has_key(self.name):
-            cl = self.classes[self.name]
-        else:
-            name = self.name
-            i = string.find(name, '(')
-            if i < 0:
-                return
-            name = name[:i]
-            if not self.classes.has_key(name):
-                return
-            cl = self.classes[name]
-        if not hasattr(cl, 'lineno'):
-            return
-        lineno = cl.lineno
-        edit.gotoline(lineno)
+        if hasattr(self.cl, 'lineno'):
+            lineno = self.cl.lineno
+            edit.gotoline(lineno)
 
     def listmethods(self):
-        try:
-            cl = self.classes[self.name]
-        except (IndexError, KeyError):
+        if not self.cl:
             return []
         items = []
-        for name, lineno in cl.methods.items():
+        for name, lineno in self.cl.methods.items():
             items.append((lineno, name))
         items.sort()
         list = []
