@@ -18,9 +18,10 @@ try:
 except ImportError, x:
     raise TestFailed, "import __phello__.spam failed:" + str(x)
 
-try:
-    import __phello__.foo
-except ImportError:
-    pass
-else:
-    raise TestFailed, "import __phello__.foo should have failed"
+if sys.platform != "mac":  # On the Mac this import does succeed.
+    try:
+        import __phello__.foo
+    except ImportError:
+        pass
+    else:
+        raise TestFailed, "import __phello__.foo should have failed"
