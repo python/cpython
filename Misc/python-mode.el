@@ -222,7 +222,8 @@ Currently-active file is at the head of the list.")
   (mapcar (function
 	   (lambda (x)
 	     (define-key py-mode-map (car x) (cdr x))))
-	  '(("\C-c\C-c"  . py-execute-buffer)
+	  '((":"         . py-electric-colon)
+	    ("\C-c\C-c"  . py-execute-buffer)
 	    ("\C-c|"	 . py-execute-region)
 	    ("\C-c!"	 . py-shell)
 	    ("\177"	 . py-delete-char)
@@ -361,6 +362,30 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
   (if python-mode-hook
       (run-hooks 'python-mode-hook)
     (run-hooks 'py-mode-hook)))
+
+
+;; electric characters
+(defun py-electric-colon (arg)
+  "Insert a colon.
+In certain cases the line is outdented appropriately.  If a numeric
+argument is provided, that many colons are inserted non-electrically."
+  (interactive "P")
+  (self-insert-command (prefix-numeric-value arg))
+  (let (this-indent)
+    (if (and (not arg)
+	     (save-excursion
+	       (forward-word -1)
+	       (looking-at "\\(else\\|except\\|finally\\elif\\):"))
+	     (= (setq this-indent (py-compute-indentation))
+		(save-excursion
+		  (forward-line -1)
+		  (py-compute-indentation)))
+	     )
+	(save-excursion
+	  (beginning-of-line)
+	  (delete-horizontal-space)
+	  (indent-to (- this-indent py-indent-offset)))
+      )))
 
 
 ;;; Functions that execute Python commands in a subprocess
