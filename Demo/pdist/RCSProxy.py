@@ -12,7 +12,8 @@ The module defines two classes:
 RCSProxyLocal  -- used for local access
 RCSProxyServer -- used on the server side of remote access
 
-An additional class, RCSProxyClient, is defined in module rcsclient.
+The corresponding client class, RCSProxyClient, is defined in module
+rcsclient.
 
 The remote classes are instantiated with an IP address and an optional
 verbosity flag.
@@ -109,6 +110,7 @@ class RCSProxyLocal(rcslib.RCS, DirSupport):
 	f.write(data)
 	f.close()
 	self.checkin(name_rev, message)
+	self._remove(name)
 
     def _list(self, function, list = None):
 	"""INTERNAL: apply FUNCTION to all files in LIST.
