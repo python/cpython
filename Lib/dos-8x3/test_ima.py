@@ -1,13 +1,18 @@
 #! /usr/bin/env python
+
 """Test script for the imageop module.  This has the side
    effect of partially testing the imgfile module as well.
    Roger E. Masse
 """
-from test_support import verbose
 
-import imageop
+from test_support import verbose, unlink
+
+import imageop, uu
 
 def main(use_rgbimg=1):
+
+    # Create binary test files
+    uu.decode(get_qualified_path('testrgb.uue'), 'test.rgb')
 
     if use_rgbimg:
 	image, width, height = getrgbimage('test.rgb')
@@ -106,7 +111,10 @@ def main(use_rgbimg=1):
     # Convert a 2-bit greyscale image to an 8-bit greyscale image. 
     if verbose:
 	print 'grey22grey'
-    image = imageop.grey22grey (grey2image, width, height) 
+    image = imageop.grey22grey (grey2image, width, height)
+
+    # Cleanup
+    unlink('test.rgb')
 
 def getrgbimage(name):
     """return a tuple consisting of image (in 'imgfile' format but
@@ -160,6 +168,6 @@ def get_qualified_path(name):
     name = string.joinfields(parts, os.sep)
     return name
 
-# rgbimg (unlike imgfile) is portable to platforms other than SGI.  So we prefer to use it.
+# rgbimg (unlike imgfile) is portable to platforms other than SGI.
+# So we prefer to use it.
 main(use_rgbimg=1)
-
