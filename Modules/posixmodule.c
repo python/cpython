@@ -2098,7 +2098,7 @@ posix_popen(PyObject *self, PyObject *args)
  *
  * Written by Bill Tutt <billtut@microsoft.com>.  Minor tweaks
  * and 2.0 integration by Fredrik Lundh <fredrik@pythonware.com>
- * Return code handling by David Bolen.
+ * Return code handling by David Bolen <db3l@fitlinxx.com>.
  */
 
 #include <malloc.h>
@@ -2116,8 +2116,8 @@ static int _PyPclose(FILE *file);
 
 /*
  * Internal dictionary mapping popen* file pointers to process handles,
- * in order to maintain a link to the process handle until the file is
- * closed, at which point the process exit code is returned to the caller.
+ * for use when retrieving the process exit code.  See _PyPclose() below
+ * for more information on this dictionary's use.
  */
 static PyObject *_PyPopenProcs = NULL;
 
@@ -2276,10 +2276,11 @@ win32_popen4(PyObject *self, PyObject  *args)
 }
 
 static int
-_PyPopenCreateProcess(char *cmdstring, FILE *file,
+_PyPopenCreateProcess(char *cmdstring,
 		      HANDLE hStdin,
 		      HANDLE hStdout,
-		      HANDLE hStderr)
+		      HANDLE hStderr,
+		      HANDLE *hProcess)
 {
 	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
@@ -2354,26 +2355,8 @@ _PyPopenCreateProcess(char *cmdstring, FILE *file,
 		/* Close the handles now so anyone waiting is woken. */
 		CloseHandle(piProcInfo.hThread);
 
-		/*
-		 * Try to insert our process handle into the internal
-		 * dictionary so we can find it later when trying 
-		 * to close this file.
-		 */
-		if (!_PyPopenProcs)
-			_PyPopenProcs = PyDict_New();
-		if (_PyPopenProcs) {
-			PyObject *hProcessObj, *fileObj;
-
-			hProcessObj = PyLong_FromVoidPtr(piProcInfo.hProcess);
-			fileObj = PyLong_FromVoidPtr(file);
-
-			if (!hProcessObj || !fileObj ||
-				PyDict_SetItem(_PyPopenProcs,
-							   fileObj, hProcessObj) < 0) {
-				/* Insert failure - close handle to prevent leak */
-				CloseHandle(piProcInfo.hProcess);
-			}
-		}
+		/* Return process handle */
+		*hProcess = piProcInfo.hProcess;
 		return TRUE;
 	}
 	return FALSE;
@@ -2386,12 +2369,13 @@ _PyPopen(char *cmdstring, int mode, int n)
 {
 	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr,
 		hChildStderrRd, hChildStderrWr, hChildStdinWrDup, hChildStdoutRdDup,
-		hChildStderrRdDup; /* hChildStdoutWrDup; */
+		hChildStderrRdDup, hProcess; /* hChildStdoutWrDup; */
 	  
 	SECURITY_ATTRIBUTES saAttr;
 	BOOL fSuccess;
 	int fd1, fd2, fd3;
 	FILE *f1, *f2, *f3;
+	long file_count;
 	PyObject *f;
 
 	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -2490,6 +2474,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 CloseHandle(hChildStderrRdDup);
 			 break;
 		 }
+		 file_count = 1;
 		 break;
 	
 	 case POPEN_2:
@@ -2512,13 +2497,14 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 f2 = _fdopen(fd2, m1);
 		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
 		 PyFile_SetBufSize(p1, 0);
-		 p2 = PyFile_FromFile(f2, cmdstring, m1, fclose);
+		 p2 = PyFile_FromFile(f2, cmdstring, m1, _PyPclose);
 		 PyFile_SetBufSize(p2, 0);
 
 		 if (n != 4)
 			 CloseHandle(hChildStderrRdDup);
 
 		 f = Py_BuildValue("OO",p1,p2);
+		 file_count = 2;
 		 break;
 	 }
 	
@@ -2542,31 +2528,117 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 fd3 = _open_osfhandle((long)hChildStderrRdDup, mode);
 		 f3 = _fdopen(fd3, m1);
 		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
-		 p2 = PyFile_FromFile(f2, cmdstring, m1, fclose);
-		 p3 = PyFile_FromFile(f3, cmdstring, m1, fclose);
+		 p2 = PyFile_FromFile(f2, cmdstring, m1, _PyPclose);
+		 p3 = PyFile_FromFile(f3, cmdstring, m1, _PyPclose);
 		 PyFile_SetBufSize(p1, 0);
 		 PyFile_SetBufSize(p2, 0);
 		 PyFile_SetBufSize(p3, 0);
 		 f = Py_BuildValue("OOO",p1,p2,p3);
+		 file_count = 3;
 		 break;
 	 }
 	 }
 
 	 if (n == POPEN_4) {
 		 if (!_PyPopenCreateProcess(cmdstring,
-					    f1,
 					    hChildStdinRd,
 					    hChildStdoutWr,
-					    hChildStdoutWr))
+					    hChildStdoutWr,
+					    &hProcess))
 			 return win32_error("CreateProcess", NULL);
 	 }
 	 else {
 		 if (!_PyPopenCreateProcess(cmdstring,
-					    f1,
 					    hChildStdinRd,
 					    hChildStdoutWr,
-					    hChildStderrWr))
+					    hChildStderrWr,
+					    &hProcess))
 			 return win32_error("CreateProcess", NULL);
+	 }
+
+	 /*
+	  * Insert the files we've created into the process dictionary
+	  * all referencing the list with the process handle and the
+	  * initial number of files (see description below in _PyPclose).
+	  * Since if _PyPclose later tried to wait on a process when all
+	  * handles weren't closed, it could create a deadlock with the
+	  * child, we spend some energy here to try to ensure that we
+	  * either insert all file handles into the dictionary or none
+	  * at all.  It's a little clumsy with the various popen modes
+	  * and variable number of files involved.
+	  */
+	 if (!_PyPopenProcs) {
+		 _PyPopenProcs = PyDict_New();
+	 }
+
+	 if (_PyPopenProcs) {
+		 PyObject *procObj, *hProcessObj, *intObj, *fileObj[3];
+		 int ins_rc[3];
+
+		 fileObj[0] = fileObj[1] = fileObj[2] = NULL;
+		 ins_rc[0]  = ins_rc[1]  = ins_rc[2]  = 0;
+
+		 procObj = PyList_New(2);
+		 hProcessObj = PyLong_FromVoidPtr(hProcess);
+		 intObj = PyInt_FromLong(file_count);
+
+		 if (procObj && hProcessObj && intObj) {
+			 PyList_SetItem(procObj,0,hProcessObj);
+			 PyList_SetItem(procObj,1,intObj);
+
+			 fileObj[0] = PyLong_FromVoidPtr(f1);
+			 if (fileObj[0]) {
+			    ins_rc[0] = PyDict_SetItem(_PyPopenProcs,
+						       fileObj[0],
+						       procObj);
+			 }
+			 if (file_count >= 2) {
+				 fileObj[1] = PyLong_FromVoidPtr(f2);
+				 if (fileObj[1]) {
+				    ins_rc[1] = PyDict_SetItem(_PyPopenProcs,
+							       fileObj[1],
+							       procObj);
+				 }
+			 }
+			 if (file_count >= 3) {
+				 fileObj[2] = PyLong_FromVoidPtr(f3);
+				 if (fileObj[2]) {
+				    ins_rc[2] = PyDict_SetItem(_PyPopenProcs,
+							       fileObj[2],
+							       procObj);
+				 }
+			 }
+
+			 if (ins_rc[0] < 0 || !fileObj[0] ||
+			     ins_rc[1] < 0 || (file_count > 1 && !fileObj[1]) ||
+			     ins_rc[2] < 0 || (file_count > 2 && !fileObj[2])) {
+				 /* Something failed - remove any dictionary
+				  * entries that did make it.
+				  */
+				 if (!ins_rc[0] && fileObj[0]) {
+					 PyDict_DelItem(_PyPopenProcs,
+							fileObj[0]);
+				 }
+				 if (!ins_rc[1] && fileObj[1]) {
+					 PyDict_DelItem(_PyPopenProcs,
+							fileObj[1]);
+				 }
+				 if (!ins_rc[2] && fileObj[2]) {
+					 PyDict_DelItem(_PyPopenProcs,
+							fileObj[2]);
+				 }
+			 }
+		 }
+		     
+		 /*
+		  * Clean up our localized references for the dictionary keys
+		  * and value since PyDict_SetItem will Py_INCREF any copies
+		  * that got placed in the dictionary.
+		  */
+		 Py_XDECREF(procObj);
+		 Py_XDECREF(fileObj[0]);
+		 Py_XDECREF(fileObj[1]);
+		 Py_XDECREF(fileObj[2]);
 	 }
 
 	 /* Child is launched. Close the parents copy of those pipe
@@ -2590,25 +2662,55 @@ _PyPopen(char *cmdstring, int mode, int n)
 /*
  * Wrapper for fclose() to use for popen* files, so we can retrieve the
  * exit code for the child process and return as a result of the close.
+ *
+ * This function uses the _PyPopenProcs dictionary in order to map the
+ * input file pointer to information about the process that was
+ * originally created by the popen* call that created the file pointer.
+ * The dictionary uses the file pointer as a key (with one entry
+ * inserted for each file returned by the original popen* call) and a
+ * single list object as the value for all files from a single call.
+ * The list object contains the Win32 process handle at [0], and a file
+ * count at [1], which is initialized to the total number of file
+ * handles using that list.
+ *
+ * This function closes whichever handle it is passed, and decrements
+ * the file count in the dictionary for the process handle pointed to
+ * by this file.  On the last close (when the file count reaches zero),
+ * this function will wait for the child process and then return its
+ * exit code as the result of the close() operation.  This permits the
+ * files to be closed in any order - it is always the close() of the
+ * final handle that will return the exit code.
  */
 static int _PyPclose(FILE *file)
 {
 	int result;
 	DWORD exit_code;
 	HANDLE hProcess;
-	PyObject *hProcessObj, *fileObj;
+	PyObject *procObj, *hProcessObj, *intObj, *fileObj;
+	long file_count;
    
 	/* Close the file handle first, to ensure it can't block the
-	 * child from exiting when we wait for it below.
+	 * child from exiting if it's the last handle.
 	 */
 	result = fclose(file);
 
 	if (_PyPopenProcs) {
-		fileObj = PyLong_FromVoidPtr(file);
-		if (fileObj) {
-			hProcessObj = PyDict_GetItem(_PyPopenProcs, fileObj);
-			if (hProcessObj) {
-				hProcess = PyLong_AsVoidPtr(hProcessObj);
+		if ((fileObj = PyLong_FromVoidPtr(file)) != NULL &&
+		    (procObj = PyDict_GetItem(_PyPopenProcs,
+					      fileObj)) != NULL &&
+		    (hProcessObj = PyList_GetItem(procObj,0)) != NULL &&
+		    (intObj = PyList_GetItem(procObj,1)) != NULL) {
+
+			hProcess = PyLong_AsVoidPtr(hProcessObj);
+			file_count = PyInt_AsLong(intObj);
+
+			if (file_count > 1) {
+				/* Still other files referencing process */
+				file_count--;
+				PyList_SetItem(procObj,1,
+					       PyInt_FromLong(file_count));
+			} else {
+				/* Last file for this process */
 				if (result != EOF &&
 				    WaitForSingleObject(hProcess, INFINITE) != WAIT_FAILED &&
 				    GetExitCodeProcess(hProcess, &exit_code)) {
@@ -2634,15 +2736,19 @@ static int _PyPclose(FILE *file)
 
 				/* Free up the native handle at this point */
 				CloseHandle(hProcess);
+			}
 
-				/* Remove from dictionary and flush dictionary if empty */
-				PyDict_DelItem(_PyPopenProcs, fileObj);
-				if (PyDict_Size(_PyPopenProcs) == 0) {
-					Py_DECREF(_PyPopenProcs);
-					_PyPopenProcs = NULL;
-				}
-			} /* if hProcessObj */
-		} /* if fileObj */
+			/* Remove this file pointer from dictionary */
+			PyDict_DelItem(_PyPopenProcs, fileObj);
+
+			if (PyDict_Size(_PyPopenProcs) == 0) {
+				Py_DECREF(_PyPopenProcs);
+				_PyPopenProcs = NULL;
+			}
+
+		} /* if object retrieval ok */
+
+		Py_XDECREF(fileObj);
 	} /* if _PyPopenProcs */
 
 	return result;
