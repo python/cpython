@@ -36,6 +36,7 @@ the various releases.
     2.0.1           2.0+1.6.1   2001        PSF         yes
     2.1.1           2.1+2.0.1   2001        PSF         yes
     2.2             2.1.1       2001        PSF         yes
+    2.2.1           2.2         2002        PSF         yes
 
 Footnotes:
 
@@ -66,8 +67,9 @@ license to reproduce, analyze, test, perform and/or display publicly,
 prepare derivative works, distribute, and otherwise use Python 2.2
 alone or in any derivative version, provided, however, that PSF's
 License Agreement and PSF's notice of copyright, i.e., "Copyright (c)
-2001 Python Software Foundation; All Rights Reserved" are retained in
-Python 2.2 alone or in any derivative version prepared by Licensee.
+2001, 2002 Python Software Foundation; All Rights Reserved" are
+retained in Python 2.2 alone or in any derivative version prepared by
+Licensee.
 
 3. In the event Licensee prepares a derivative work that is based on
 or incorporates Python 2.2 or any part thereof, and wants to make
