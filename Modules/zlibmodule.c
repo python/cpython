@@ -81,6 +81,7 @@ PyZlib_compress(self, args)
       return NULL;
     }
 
+  zst.zalloc=(alloc_func)NULL;
   zst.zfree=(free_func)Z_NULL;
   zst.next_out=(Byte *)output;
   zst.next_in =(Byte *)input;
