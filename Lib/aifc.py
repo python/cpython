@@ -379,7 +379,16 @@ class Aifc_read():
 		self._comm_chunk_read = 0
 		while formlength > 0:
 			self._ssnd_seek_needed = 1
-			chunk = Chunk().init(self._file)
+			#DEBUG: SGI's soundfiler has a bug.  There should
+			# be no need to check for EOF here.
+			try:
+				chunk = Chunk().init(self._file)
+			except EOFError:
+				if formlength == 8:
+					print 'Warning: FORM chunk size too large'
+					formlength = 0
+					break
+				raise EOFError # different error, raise exception
 			formlength = formlength - 8 - chunk.chunksize
 			if chunk.chunksize & 1:
 				formlength = formlength - 1
@@ -495,6 +504,8 @@ class Aifc_read():
 			if pos:
 				self._ssnd_chunk.setpos(pos + 8)
 			self._ssnd_seek_needed = 0
+		if nframes == 0:
+			return ''
 		size = nframes * self._nchannels * self._sampwidth
 		if self._decomp:
 			if self._comptype in ('ULAW', 'ALAW'):
