@@ -82,7 +82,7 @@ class HTTP:
 		self.send('\r\n')
 
 	def getreply(self):
-		self.file = self.sock.makefile('r')
+		self.file = self.sock.makefile('rb')
 		self.sock = None
 		line = self.file.readline()
 		if self.debuglevel > 0: print 'reply:', `line`

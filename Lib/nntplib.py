@@ -68,7 +68,7 @@ class NNTP:
 		self.port = port
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.sock.connect(self.host, self.port)
-		self.file = self.sock.makefile('r')
+		self.file = self.sock.makefile('rb')
 		self.debugging = 0
 		self.welcome = self.getresp()
 

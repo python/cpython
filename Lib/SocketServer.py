@@ -392,8 +392,8 @@ class StreamRequestHandler(BaseRequestHandler):
 
     def setup(self):
 	self.connection = self.request
-	self.rfile = self.connection.makefile('r')
-	self.wfile = self.connection.makefile('w', 0)
+	self.rfile = self.connection.makefile('rb')
+	self.wfile = self.connection.makefile('wb', 0)
 
     def finish(self):
 	self.wfile.flush()

@@ -69,7 +69,7 @@ def send_selector(selector, host, port = 0):
 	s.connect(host, port)
 	s.send(selector + CRLF)
 	s.shutdown(1)
-	return s.makefile('r')
+	return s.makefile('rb')
 
 # Send a selector and a query string
 def send_query(selector, query, host, port = 0):
