@@ -73,7 +73,7 @@ AsString (value, tmp)
     {
       PyObject *v;
 
-      v = strobject (value);
+      v = PyObject_Str (value);
       PyList_Append (tmp, v);
       Py_DECREF (v);
       return PyString_AsString (v);

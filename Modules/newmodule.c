@@ -26,7 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "allobjects.h"
 #include "compile.h"
-#include "modsupport.h"
 
 static char new_im_doc[] =
 "Create a instance method object from (FUNCTION, INSTANCE, CLASS).";
