@@ -819,8 +819,8 @@ static int check_case(char *, int, int, char *);
 static int find_init_module Py_PROTO((char *)); /* Forward */
 
 static struct filedescr *
-find_module(name, path, buf, buflen, p_fp)
-	char *name;
+find_module(realname, path, buf, buflen, p_fp)
+	char *realname;
 	PyObject *path;
 	/* Output parameters: */
 	char *buf;
@@ -835,7 +835,25 @@ find_module(name, path, buf, buflen, p_fp)
 	static struct filedescr fd_frozen = {"", "", PY_FROZEN};
 	static struct filedescr fd_builtin = {"", "", C_BUILTIN};
 	static struct filedescr fd_package = {"", "", PKG_DIRECTORY};
+	char name[MAXPATHLEN+1];
 
+	strcpy(name, realname);
+
+	if (path != NULL && PyString_Check(path)) {
+		/* Submodule of "frozen" package:
+		   Set name to the fullname, path to NULL
+		   and continue as "usual" */
+		if (PyString_Size(path) + 1 + strlen(name) >= (size_t)buflen) {
+			PyErr_SetString(PyExc_ImportError,
+					"full frozen module name too long");
+			return NULL;
+		}
+		strcpy(buf, PyString_AsString(path));
+		strcat(buf, ".");
+		strcat(buf, name);
+		strcpy(name, buf);
+		path = NULL;
+	}
 	if (path == NULL) {
 		if (is_builtin(name)) {
 			strcpy(buf, name);
@@ -855,23 +873,6 @@ find_module(name, path, buf, buflen, p_fp)
 #endif
 		path = PySys_GetObject("path");
 	}
-	else if (PyString_Check(path)) {
-		/* Submodule of frozen package */
-		if (PyString_Size(path) + 1 + strlen(name) >= (unsigned int)buflen) {
-			PyErr_SetString(PyExc_ImportError,
-					"full frozen module name too long");
-			return NULL;
-		}
-		strcpy(buf, PyString_AsString(path));
-		strcat(buf, ".");
-		strcat(buf, name);
-		if (find_frozen(buf) != NULL)
-			return &fd_frozen;
-		PyErr_Format(PyExc_ImportError,
-			     "frozen module %.200s not found", buf);
-		return NULL;
-	}
-
 	if (path == NULL || !PyList_Check(path)) {
 		PyErr_SetString(PyExc_ImportError,
 				"sys.path must be a list of directory names");
