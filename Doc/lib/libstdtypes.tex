@@ -1319,6 +1319,11 @@ Files have the following methods:
 \end{methoddesc}
 
 
+Files support the iterator protocol.  Each iteration returns the same
+result as \code{\var{file}.readline()}, and iteration ends when the
+\method{readline()} method returns an empty string.
+
+
 File objects also offer a number of other interesting attributes.
 These are not required for file-like objects, but should be
 implemented if they make sense for the particular object.
