@@ -28,19 +28,32 @@ OPTIONS_ITEM = 7
 # The options dialog. There is a correspondence between
 # the dialog item numbers and the option.
 OPT_DIALOG_ID = 513
-# 1 thru 7 are the options
-OD_OK_ITEM = 8
-OD_CANCEL_ITEM = 9
+# 1 thru 9 are the options
+# The GUSI creator/type and delay-console
+OD_CREATOR_ITEM = 10
+OD_TYPE_ITEM = 11
+OD_DELAYCONSOLE_ITEM = 12
+OD_OK_ITEM = 13
+OD_CANCEL_ITEM = 14
 
 # Resource IDs in the preferences file
 PATH_STRINGS_ID = 128
 DIRECTORY_ID = 128
 OPTIONS_ID = 128
+GUSI_ID = 10240
 
 # Override IDs (in the applet)
 OVERRIDE_PATH_STRINGS_ID = 129
 OVERRIDE_DIRECTORY_ID = 129
 OVERRIDE_OPTIONS_ID = 129
+OVERRIDE_GUSI_ID = 10240
+
+# Things we know about the GUSI resource. Note the code knows these too.
+GUSIPOS_TYPE=0
+GUSIPOS_CREATOR=4
+GUSIPOS_SKIP=8
+GUSIPOS_FLAGS=9
+GUSIFLAGS_DELAY=0x04 # Mask
 
 READ = 1
 WRITE = 2
@@ -80,21 +93,38 @@ def message(str = "Hello, world!", id = MESSAGE_ID):
 		n = ModalDialog(None)
 		if n == 1: break
 		
-def optinteract(options):
+def optinteract((options, creator, type, delaycons)):
 	"""Let the user interact with the options dialog"""
-	old_options = options[:]
+	old_options = (options[:], creator, type, delaycons)
 	d = GetNewDialog(OPT_DIALOG_ID, -1)
+	tp, h, rect = d.GetDialogItem(OD_CREATOR_ITEM)
+	SetDialogItemText(h, creator)
+	tp, h, rect = d.GetDialogItem(OD_TYPE_ITEM)
+	SetDialogItemText(h, type)
 	d.SetDialogDefaultItem(OD_OK_ITEM)
 	d.SetDialogCancelItem(OD_CANCEL_ITEM)
 	while 1:
 		for i in range(len(options)):
 			tp, h, rect = d.GetDialogItem(i+1)
 			h.as_Control().SetControlValue(options[i])
+		tp, h, rect = d.GetDialogItem(OD_DELAYCONSOLE_ITEM)
+		h.as_Control().SetControlValue(delaycons)
 		n = ModalDialog(None)
 		if n == OD_OK_ITEM:
-			return options
+			tp, h, rect = d.GetDialogItem(OD_CREATOR_ITEM)
+			ncreator = GetDialogItemText(h)
+			tp, h, rect = d.GetDialogItem(OD_TYPE_ITEM)
+			ntype = GetDialogItemText(h)
+			if len(ncreator) == 4 and len(ntype) == 4:
+				return options, ncreator, ntype, delaycons
+			else:
+				sys.stderr.write('\007')
 		elif n == OD_CANCEL_ITEM:
 			return old_options
+		elif n in (OD_CREATOR_ITEM, OD_TYPE_ITEM):
+			pass
+		elif n == OD_DELAYCONSOLE_ITEM:
+			delaycons = (not delaycons)
 		elif 1 <= n <= len(options):
 			options[n-1] = (not options[n-1])
 
@@ -160,6 +190,28 @@ def getoptions(id):
 		return [0]*7, None
 	return map(lambda x: ord(x), opr.data), opr
 	
+def getgusioptions(id):
+	try:
+		opr = GetResource('GU\267I', id)
+	except (MacOS.Error, Res.Error):
+		return '????', '????', 0, None
+	data = opr.data
+	type = data[GUSIPOS_TYPE:GUSIPOS_TYPE+4]
+	creator = data[GUSIPOS_CREATOR:GUSIPOS_CREATOR+4]
+	flags = ord(data[GUSIPOS_FLAGS])
+	delay = (not not (flags & GUSIFLAGS_DELAY))
+	return creator, type, delay, opr
+	
+def setgusioptions(opr, creator, type, delay):
+	data = opr.data
+	flags = ord(data[GUSIPOS_FLAGS])
+	if delay:
+		flags = flags | GUSIFLAGS_DELAY
+	else:
+		flags = flags & ~GUSIFLAGS_DELAY
+	data = type + creator + data[GUSIPOS_SKIP] + chr(flags) + data[GUSIPOS_FLAGS+1:]
+	return data
+	
 def openpreffile(rw):
 	# Find the preferences folder and our prefs file, create if needed.	
 	vrefnum, dirid = macfs.FindFolder(kOnSystemDisk, 'pref', 0)
@@ -199,14 +251,18 @@ def edit_preferences():
 	options, opr = getoptions(OPTIONS_ID)
 	saved_options = options[:]
 	
+	creator, type, delaycons, gusi_opr = getgusioptions(GUSI_ID)
+	saved_gusi_options = creator, type, delaycons
+	
 	# Let the user play away
-	result = interact(l, fss, options, 'System-wide preferences')
+	result = interact(l, fss, (options, creator, type, delaycons),
+			 'System-wide preferences')
 	
 	# See what we have to update, and how
 	if result == None:
 		sys.exit(0)
 		
-	pathlist, nfss, options = result
+	pathlist, nfss, (options, creator, type, delaycons) = result
 	if nfss != fss:
 		fss_changed = 1
 		
@@ -238,6 +294,16 @@ def edit_preferences():
 		else:
 			opr = Resource(newdata)
 			opr.AddResource('Popt', OPTIONS_ID, '')
+			
+	if (creator, type, delaycons) != saved_gusi_options:
+		newdata = setgusioptions(gusi_opr, creator, type, delaycons)
+		if gusi_opr.HomeResFile() == preff_handle:
+			gusi_opr.data = newdata
+			gusi_opr.ChangedResource()
+		else:
+			print 'Created new GUSI option'
+			ngusi_opr = Resource(gusi_opr.data)
+			ngusi_opr.AddResource('GU\267I', GUSI_ID, '')
 				
 	CloseResFile(preff_handle)
 	
@@ -275,12 +341,21 @@ def edit_applet(name):
 		options, dummy = getoptions(OPTIONS_ID)
 	saved_options = options[:]
 	
+	creator, type, delaycons, gusi_opr = getgusioptions(OVERRIDE_GUSI_ID)
+	if not opr:
+		if notfound:
+			notfound = notfound + ', GUSI options'
+		else:
+			notfound = 'GUSI options'
+			creator, type, delaycons, dummy = getgusioptions(GUSI_ID)
+	saved_gusi_options = creator, type, delaycons
+	
 	dummy = dummy2 = None # Discard them.
 	
 	if notfound:
 		message('Warning: initial %s taken from system-wide defaults'%notfound)
 	# Let the user play away
-	result = interact(l, fss, options, name)
+	result = interact(l, fss, (options, creator, type, delaycons), name)
 	
 	# See what we have to update, and how
 	if result == None:
@@ -318,7 +393,16 @@ def edit_applet(name):
 		else:
 			opr = Resource(newdata)
 			opr.AddResource('Popt', OVERRIDE_OPTIONS_ID, '')
-				
+			
+	if (creator, type, delaycons) != saved_gusi_options:
+		newdata = setgusioptions(gusi_opr, creator, type, delaycons)
+		if gusi_opr.HomeResFile == app_handle:
+			gusi_opr.data = newdata
+			gusi_opr.ChangedResource()
+		else:
+			gusi_opr = Resource(gusi_opr.data)
+			gusi_opr.AddResource('GU\267I', OVERRIDE_GUSI_ID, '')
+			
 	CloseResFile(app_handle)
 
 def main():
@@ -335,5 +419,4 @@ def main():
 		
 
 if __name__ == '__main__':
-	print # Stupid, to init toolboxes...
 	main()
