@@ -528,6 +528,7 @@ _expectations = {
         test_mhlib
         test_mpz
         test_nis
+        test_normalization
         test_openpty
         test_poll
         test_pty
