@@ -421,19 +421,21 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
 	The line number may be prefixed with a filename and a colon,
 	to specify a breakpoint in another file (probably one that
-	hasn't been loaded yet).  The file is searched on sys.path."""
+	hasn't been loaded yet).  The file is searched on sys.path;
+	the .py suffix may be omitted."""
 
 	def help_clear(self):
 		self.help_cl()
 
 	def help_cl(self):
-		print """cl(ear) [lineno]
+		print """cl(ear) [file:][lineno]
 	With a line number argument, clear that break in the current file.
 	Without argument, clear all breaks (but first ask confirmation).
 
 	The line number may be prefixed with a filename and a colon,
 	to specify a breakpoint in another file (probably one that
-	hasn't been loaded yet).  The file is searched on sys.path."""
+	hasn't been loaded yet).  The file is searched on sys.path;
+	the .py suffix may be omitted."""
 
 	def help_step(self):
 		self.help_s()
@@ -517,6 +519,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	def lookupmodule(self, filename):
 		if filename == mainmodule:
 			return mainpyfile
+		root, ext = os.path.splitext(filename)
+		if ext == '':
+			filename = filename + '.py'
+		if os.path.isabs(filename):
+			return filename
 		for dirname in sys.path:
 			fullname = os.path.join(dirname, filename)
 			if os.path.exists(fullname):
