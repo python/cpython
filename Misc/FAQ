@@ -4,13 +4,13 @@ Followup-to: comp.lang.python
 From: guido@cwi.nl (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
 Expires: Wed, 1 Nov 1995 00:00:00 GMT
-Supersedes: <DE1DI9.8MF@cwi.nl>
+Supersedes: <DFMAv8.3Hp@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
 Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.28
-Last-modified: 28 September 1995
+Version: 1.29
+Last-modified: 11 October 1995
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -21,15 +21,15 @@ redistribution of this FAQ is allowed.  Printed redistribution only
 with permission of the author.  No warranties.
 
 Author's address:
-	Guido van Rossum
-	C.N.R.I.
-	1895 Preston White Drive
-	Reston, VA 22091
-	U.S.A.
+        Guido van Rossum
+        C.N.R.I.
+        1895 Preston White Drive
+        Reston, VA 22091
+        U.S.A.
 Email:  <guido@python.org>, <guido@cnri.reston.va.us>, <guido@cwi.nl>
 
 The latest version of this FAQ is available by anonymous ftp from
-<URL:ftp://ftp.python.org/pub/python/FAQ>.  It will also be posted
+<URL:ftp://ftp.python.org/pub/doc/FAQ>.  It will also be posted
 regularly to the newsgroups comp.answers <URL:news:comp.answers> and
 comp.lang.python <URL:news:comp.lang.python>.
 
@@ -302,18 +302,29 @@ site).
 A. The following anonymous ftp sites keep mirrors of the Python
 distribution:
 
-        <URL:ftp://ftp.cwi.nl/pub/python/>
+USA:
+
+        <URL:ftp://ftp.python.org/pub/python/>
         <URL:ftp://gatekeeper.dec.com/pub/plan/python/>
+        <URL:ftp://ftp.uu.net/languages/python/>
         <URL:ftp://ftp.wustl.edu/graphics/graphics/sgi-stuff/python/>
-	<URL:ftp://ftp.uu.net/languages/python/>
+        <URL:ftp://ftp.sterling.com/programming/languages/python/>
+        <URL:ftp://uiarchive.cso.uiuc.edu/pub/lang/python/>
+        <URL:ftp://ftp.pht.com/mirrors/python/python/>
+
+Europe:
+
+        <URL:ftp://ftp.cwi.nl/pub/python/>
         <URL:ftp://ftp.funet.fi/pub/languages/python/>
         <URL:ftp://ftp.sunet.se/pub/lang/python/>
         <URL:ftp://unix.hensa.ac.uk/mirrors/uunet/languages/python/>
-        <URL:ftp://ftp.sterling.com/programming/languages/python/>
-	<URL:ftp://uiarchive.cso.uiuc.edu/pub/lang/python/>
         <URL:ftp://ftp.ibp.fr/pub/python/>
         <URL:ftp://ftp.switch.ch/software/sources/python/>
         <URL:ftp://ftp.informatik.tu-muenchen.de/pub/comp/programming/languages/python/>
+
+Australia:
+
+        <URL:ftp://ftp.dstc.edu.au/pub/python/>
 
 Or try archie on the string "python".
 
@@ -488,7 +499,7 @@ new kind of massively parallel processor).  When KSR folded down a
 couple of years ago, Tim lost his email access.  He hasn't surfaced
 on the net since then.
 
-	Missing-him-too-ly yours...
+        Missing-him-too-ly yours...
 
 PS: support for Python's Emacs mode (Misc/python-mode.el in the
 distribution) has been taken up by Barry Warsaw.  Questions about it
@@ -547,9 +558,6 @@ Infoseek uses Python to implement their commercial WWW information
 retrieval service <URL:http://www.infoseek.com/>.  Contact:
 <info@infoseek.com>.
 
-Michael Powers of daVinci Time & Space is "writing tons-o-python for
-interactive television entertainment."  Contact: <powers@dvts.com>.
-
 Paul Everitt of Connecting Minds is planning a Lotus Notes gateway.
 Contact: <Paul.Everitt@cminds.com>.  Or see their WWW server
 <URL:http://www.cminds.com/>.
@@ -582,15 +590,14 @@ If you'd like to be included in the list above, send me email!
 
 A. Very stable.  While the current version number would suggest it is
 in the early stages of development, in fact new, stable releases
-(numbered 0.9.x through 1.2) have been coming out roughly every 3 to
+(numbered 0.9.x through 1.3) have been coming out roughly every 3 to
 6 months for the past four years.
 
 2.5. Q. When will the next version be released?
 
-A. I am planning to release 1.3 in early October 1995.  It will
-contain keyword parameters as the most important new language feature.
-A beta version was made available in August, more beta versions may
-appear.
+A. Version 1.3 is being released on 13 October 1995.  It is too early
+to predict when the next release will be necessary, but you can expect
+something awesome within half a year!
 
 2.6. Q. What new developments are expected for Python in the future?
 
@@ -1476,39 +1483,39 @@ If after reading all of the above you still want to connect two pipes
 to a subprocess's standard input and output, here's a simple solution,
 due to Jack Jansen:
 
-	import os
-	import sys
-	import string
+        import os
+        import sys
+        import string
 
-	MAXFD = 100	# Max number of file descriptors in this system
+        MAXFD = 100     # Max number of file descriptors in this system
 
-	def popen2(cmd):
-		cmd = string.split(cmd)
-		p2cread, p2cwrite = os.pipe()
-		c2pread, c2pwrite = os.pipe()
-		pid = os.fork()
-		if pid == 0:
-			# Child
-			os.close(0)
-			os.close(1)
-			if os.dup(p2cread) <> 0:
-				sys.stderr.write('popen2: bad read dup\n')
-			if os.dup(c2pwrite) <> 1:
-				sys.stderr.write('popen2: bad write dup\n')
-			for i in range(3, MAXFD):
-				try:
-					os.close(i)
-				except:
-					pass
-			try:
-				os.execv(cmd[0], cmd)
-			finally:
-				os._exit(1)
-		os.close(p2cread)
-		tochild = os.fdopen(p2cwrite, 'w')
-		os.close(c2pwrite)
-		fromchild = os.fdopen(c2pread, 'r')
-		return fromchild, tochild
+        def popen2(cmd):
+                cmd = string.split(cmd)
+                p2cread, p2cwrite = os.pipe()
+                c2pread, c2pwrite = os.pipe()
+                pid = os.fork()
+                if pid == 0:
+                        # Child
+                        os.close(0)
+                        os.close(1)
+                        if os.dup(p2cread) <> 0:
+                                sys.stderr.write('popen2: bad read dup\n')
+                        if os.dup(c2pwrite) <> 1:
+                                sys.stderr.write('popen2: bad write dup\n')
+                        for i in range(3, MAXFD):
+                                try:
+                                        os.close(i)
+                                except:
+                                        pass
+                        try:
+                                os.execv(cmd[0], cmd)
+                        finally:
+                                os._exit(1)
+                os.close(p2cread)
+                tochild = os.fdopen(p2cwrite, 'w')
+                os.close(c2pwrite)
+                fromchild = os.fdopen(c2pread, 'r')
+                return fromchild, tochild
 
 Note that many interactive programs (e.g. vi) don't work well with
 pipes substituted for standard input and output.  You will have to use
@@ -1541,10 +1548,10 @@ one argument, the tuple args, instead of three arguments, the integers
 A. Assuming you're already using python-mode and font-lock-mode
 separately, all you need to do is put this in your .emacs file:
 
-	(defun my-python-mode-hook ()
-	  (setq font-lock-keywords python-font-lock-keywords)
-	  (font-lock-mode 1))
-	(add-hook 'python-mode-hook 'my-python-mode-hook)
+        (defun my-python-mode-hook ()
+          (setq font-lock-keywords python-font-lock-keywords)
+          (font-lock-mode 1))
+        (add-hook 'python-mode-hook 'my-python-mode-hook)
 
 4.33. Q. Is there an inverse to the format operator (a la C's scanf())?
 
@@ -1980,10 +1987,10 @@ Hints for proper usage of freeze.py:
 
 - you must have installed Python fully:
 
-	make install
-	make libinstall
-	make inclinstall
-	make libainstall
+        make install
+        make libinstall
+        make inclinstall
+        make libainstall
 
 6.14. Q. Why doesn't Python use proper garbage collection?
 
@@ -2008,9 +2015,9 @@ attractive.  With GC, the following code (which is fine in current
 Python) will run out of file descriptors long before it runs out of
 memory:
 
-	for file in <very long list of files>:
-		f = open(file)
-		c = file.read(1)
+        for file in <very long list of files>:
+                f = open(file)
+                c = file.read(1)
 
 Using the current reference counting and destructor scheme, each new
 assignment to f closes the previous file.  Using GC, this is not
