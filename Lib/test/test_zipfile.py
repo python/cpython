@@ -1,24 +1,41 @@
-import zipfile, os
+import zipfile, os, StringIO, tempfile
 from test_support import TestFailed
 
 srcname = "junk9630.tmp"
 zipname = "junk9708.tmp"
 
+
+def zipTest(f, compression, srccontents):
+    zip = zipfile.ZipFile(f, "w", compression)   # Create the ZIP archive
+    zip.write(srcname, "another.name")
+    zip.write(srcname, srcname)
+    zip.close()
+            
+    zip = zipfile.ZipFile(f, "r", compression)   # Read the ZIP archive
+    readData2 = zip.read(srcname)
+    readData1 = zip.read("another.name")
+    zip.close()
+    
+    if readData1 != srccontents or readData2 != srccontents:
+        raise TestFailed, "Written data doesn't equal read data."
+
+
 try:
-    fp = open(srcname, "w")               # Make a source file with some lines
+    fp = open(srcname, "wb")               # Make a source file with some lines
     for i in range(0, 1000):
         fp.write("Test of zipfile line %d.\n" % i)
     fp.close()
+    
+    fp = open(srcname, "rb")
+    writtenData = fp.read()
+    fp.close()
+    
+    for file in (zipname, tempfile.TemporaryFile(), StringIO.StringIO()):
+        zipTest(file, zipfile.ZIP_STORED, writtenData)
 
-    zip = zipfile.ZipFile(zipname, "w")   # Create the ZIP archive
-    zip.write(srcname, srcname)
-    zip.write(srcname, "another.name")
-    zip.close()
+    for file in (zipname, tempfile.TemporaryFile(), StringIO.StringIO()):
+        zipTest(file, zipfile.ZIP_DEFLATED, writtenData)
 
-    zip = zipfile.ZipFile(zipname, "r")   # Read the ZIP archive
-    zip.read("another.name")
-    zip.read(srcname)
-    zip.close()
 finally:
     if os.path.isfile(srcname):           # Remove temporary files
         os.unlink(srcname)
