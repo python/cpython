@@ -39,6 +39,10 @@ Extension modules
 Library
 -------
 
+- Bug #993394.  Fix a possible red herring of KeyError in 'threading' being
+  raised during interpreter shutdown from a registered function with atexit
+  when dummy_threading is being used.
+
 - Bug #857297/Patch #916874.  Fix an error when extracting a hard link
   from a tarfile.
 
