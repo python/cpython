@@ -39,11 +39,15 @@ static PyObject *msvcrt_locking(PyObject *self, PyObject *args)
 	int fd;
 	int mode;
 	long nbytes;
+	int err;
 
 	if (!PyArg_ParseTuple(args, "iil:locking", &fd, &mode, &nbytes))
 		return NULL;
 
-	if (_locking(fd, mode, nbytes) != 0)
+	Py_BEGIN_ALLOW_THREADS
+	err = _locking(fd, mode, nbytes);
+	Py_END_ALLOW_THREADS
+	if (err != 0)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
 	Py_INCREF(Py_None);
@@ -73,7 +77,7 @@ static PyObject *msvcrt_open_osfhandle(PyObject *self, PyObject *args)
 	int fd;
 
 	if (!PyArg_ParseTuple(args, "li:open_osfhandle", &handle, &flags))
-		return PyErr_SetFromErrno(PyExc_IOError);
+		return NULL;
 
 	fd = _open_osfhandle(handle, flags);
 	if (fd == -1)
@@ -120,7 +124,9 @@ static PyObject *msvcrt_getch(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":getch"))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	ch = _getch();
+	Py_END_ALLOW_THREADS
 	s[0] = ch;
 	return PyString_FromStringAndSize(s, 1);
 }
@@ -133,7 +139,9 @@ static PyObject *msvcrt_getche(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, ":getche"))
 		return NULL;
 
+	Py_BEGIN_ALLOW_THREADS
 	ch = _getche();
+	Py_END_ALLOW_THREADS
 	s[0] = ch;
 	return PyString_FromStringAndSize(s, 1);
 }
