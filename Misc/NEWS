@@ -18,17 +18,16 @@ Type/class unification and new-style classes
 - The new builtin dictionary() constructor, and dictionary type, have
   been renamed to dict.  This reflects a decade of common usage.
 
+- dict() now accepts an iterable object producing 2-sequences.  For
+  example, dict(d.items()) == d for any dictionary d.  The argument,
+  and the elements of the argument, can be any iterable objects.
+
 - New-style classes can now have a __del__ method, which is called
   when the instance is deleted (just like for classic classes).
 
 - Assignment to object.__dict__ is now possible, for objects that are
   instances of new-style classes that have a __dict__ (unless the base
   class forbids it).
-
-- dictionary() now accepts an iterable object producing 2-sequences.
-  For example, dictionary(d.items()) == d for any dictionary d.  The
-  argument, and the elements of the argument, can be any iterable
-  objects.
 
 - Methods of built-in types now properly check for keyword arguments
   (formerly these were silently ignored).  The only built-in methods
