@@ -1728,10 +1728,12 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
   (interactive "p")
   (let ((case-fold-search nil))
     (if (> arg 0)
-	(re-search-forward "\\W*\\([A-Z_]*[a-z0-9]*\\)" (point-max) t arg)
+	(re-search-forward
+	 "\\(\\W\\|[_]\\)*\\([A-Z]*[a-z0-9]*\\)"
+	 (point-max) t arg)
       (while (and (< arg 0)
 		  (re-search-backward
-		   "\\(\\(\\W\\|[a-z0-9]\\)[A-Z]+\\|\\W\\w+\\)"
+		   "\\(\\W\\|[a-z0-9]\\)[A-Z]+\\|\\(\\W\\|[_]\\)\\w+"
 		   (point-min) 0))
 	(forward-char 1)
 	(setq arg (1+ arg)))))
