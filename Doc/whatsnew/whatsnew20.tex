@@ -111,7 +111,8 @@ new encoding, you'll most often use the
 \item \var{encode_func} is a function that takes a Unicode string, and
 returns a 2-tuple \code{(\var{string}, \var{length})}.  \var{string}
 is an 8-bit string containing a portion (perhaps all) of the Unicode
-string converted into the given encoding, and \var{length} tells you how much of the Unicode string was converted.
+string converted into the given encoding, and \var{length} tells you
+how much of the Unicode string was converted.
 
 \item \var{decode_func} is the mirror of \var{encode_func}, 
 taking a Unicode string and
@@ -164,6 +165,121 @@ compiler to interpret all string literals as Unicode string literals.
 This is intended to be used in testing and future-proofing your Python
 code, since some future version of Python may drop support for 8-bit
 strings and provide only Unicode strings.
+
+% ======================================================================
+\section{List Comprehensions}
+
+Lists are a workhorse data type in Python, and many programs
+manipulate a list at some point.  Two common operations on lists are
+to loop over them, and either pick out the elements that meet a
+certain criterion, or apply some function to each element.  For
+example, given a list of strings, you might want to pull out all the
+strings containing a given substring, or strip off trailing whitespace
+from each line.  
+
+The existing \function{map()} and \function{filter()} functions can be
+used for this purpose, but they require a function as one of their
+arguments.  This is fine if there's an existing built-in function that
+can be passed directly, but if there isn't, you have to create a
+little function to do the required work, and Python's scoping rules
+make the result ugly if the little function needs additional
+information.  Take the first example in the previous paragraph,
+finding all the strings in the list containing a given substring.  You
+could write the following to do it:
+
+\begin{verbatim}
+# Given the list L, make a list of all strings 
+# containing the substring S.
+sublist = filter( lambda s, substring=S: 
+                     string.find(s, substring) != -1,
+	          L)
+\end{verbatim}
+
+Because of Python's scoping rules, a default argument is used so that
+the anonymous function created by the \keyword{lambda} statement knows
+what substring is being searched for.  List comprehensions make this
+cleaner:
+
+\begin{verbatim}
+sublist = [ s for s in L if string.find(s, S) != -1 ]
+\end{verbatim}
+
+List comprehensions have the form:
+
+\begin{verbatim}
+[ expression for expr in sequence1 
+             for expr2 in sequence2 ...
+	     for exprN in sequenceN
+             if condition
+\end{verbatim}
+
+The \keyword{for}...\keyword{in} clauses contain the sequences to be
+iterated over.  The sequences do not have to be the same length,
+because they are \emph{not} iterated over in parallel, but
+from left to right; this is explained more clearly in the following
+paragraphs.  The elements of the generated list will be the successive
+values of \var{expression}.  The final \keyword{if} clause is
+optional; if present, \var{expression} is only evaluated and added to
+the result if \var{condition} is true.
+
+To make the semantics very clear, a list comprehension is equivalent
+to the following Python code:
+
+\begin{verbatim}
+for expr1 in sequence1:
+    for expr2 in sequence2:
+    ...
+        for exprN in sequenceN:
+             if (condition):
+                  # Append the value of 
+                  # the expression to the 
+                  # resulting list.
+\end{verbatim}
+
+This means that when there are \keyword{for}...\keyword{in} clauses,
+the resulting list will be equal to the product of the lengths of all
+the sequences.  If you have two lists of length 3, the output list is
+9 elements long:
+
+\begin{verbatim}
+seq1 = 'abc'
+seq2 = (1,2,3)
+>>> [ (x,y) for x in seq1 for y in seq2]
+[('a', 1), ('a', 2), ('a', 3), ('b', 1), ('b', 2), ('b', 3), ('c', 1),
+('c', 2), ('c', 3)]
+\end{verbatim}
+
+To avoid introducing an ambiguity into Python's grammar, if
+\var{expression} is creating a tuple, it must be surrounded with
+parentheses.  The first list comprehension below is a syntax error,
+while the second one is correct:
+
+\begin{verbatim}
+# Syntax error
+[ x,y for x in seq1 for y in seq2]
+# Correct
+[ (x,y) for x in seq1 for y in seq2]
+\end{verbatim}
+
+
+The idea of list comprehensions originally comes from the functional
+programming language Haskell (\url{http://www.haskell.org}).  Greg
+Ewing argued most effectively for adding them to Python and wrote the
+initial list comprehension patch, which was then discussed for a
+seemingly endless time on the python-dev mailing list and kept
+up-to-date by Skip Montanaro.
+
+
+
+
+   A list comprehension has the form [ e | q[1], ..., q[n] ], n>=1, where
+   the q[i] qualifiers are either
+     * generators of the form p <- e, where p is a pattern (see Section
+       3.17) of type t and e is an expression of type [t]
+     * guards, which are arbitrary expressions of type Bool
+     * local bindings that provide new definitions for use in the
+       generated expression e or subsequent guards and generators.
+
 
 % ======================================================================
 \section{Distutils: Making Modules Easy to Install}
@@ -353,9 +469,9 @@ cycle collection for Python'' and ``Finalization again''.
 
 
 % ======================================================================
-\section{New XML Code}
+%\section{New XML Code}
 
-XXX write this section...
+%XXX write this section...
 
 % ======================================================================
 \section{Porting to 2.0}
@@ -612,7 +728,7 @@ various portability hacks; they've been merged into a single file,
 Vladimir Marangozov's long-awaited malloc restructuring was completed,
 to make it easy to have the Python interpreter use a custom allocator
 instead of C's standard \function{malloc()}.  For documentation, read
-the comments in \file{Include/mymalloc.h} and
+the comments in \file{Include/pymem.h} and
 \file{Include/objimpl.h}.  For the lengthy discussions during which
 the interface was hammered out, see the Web archives of the 'patches'
 and 'python-dev' lists at python.org.
