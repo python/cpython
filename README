@@ -253,15 +253,6 @@ AIX:	A complete overhaul of the shared library support is now in
 	using OPT="" or OPT=-g, or use gcc.  According to the latest
 	reports, it seems this compiler bug is still present in 4.2.1.
 
-HP-UX:	Shared library support now works by default (at least on HP-UX
-	9.x).  One other problem remains: the HP ANSI C compiler (cc
-	-Aa) is too pedantic to use, but in K&R mode, it barfs on a
-	few files (complexobject.c, getargs.c and operator.c).  Until
-	this is fixed, the following seems to work:
-
-		make -k		# this compiles all but a few files
-		make OPT=-Aa	# compile the remaining files
-
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 SCO:    1) Everything works much better if you add -U__STDC__ to the
@@ -289,6 +280,14 @@ QNX:	Edit the top level Makefile to use the following compile options:
 	OPT = -Ox -Q -U_M_IX86 -U__WATCOMC__
 	Edit the Makefile in the Modules directory to read:
 	LDFLAGS = -N 48k
+
+Cray T3E: Konrad Hinsen writes:
+	1) Don't use gcc. It compiles Python/graminit.c into something that
+	   the Cray assembler doesn't like. Cray's cc seems to work fine.
+	2) Uncomment modules md5 (won't compile) and audioop (will crash
+	   the interpreter during the test suite).
+	If you run the test suite, two tests will fail (rotate and binascii),
+	but these are not the modules you'd expect to need on a Cray.
 
 
 Configuring additional built-in modules
