@@ -650,14 +650,12 @@ class Transformer:
     def factor(self, nodelist):
         elt = nodelist[0]
         t = elt[0]
-        print "source", nodelist[-1]
         node = self.com_node(nodelist[-1])
         # need to handle (unary op)constant here...
         if t == token.PLUS:
             node = UnaryAdd(node)
             node.lineno = elt[2]
         elif t == token.MINUS:
-            print node
             node = UnarySub(node)
             node.lineno = elt[2]
         elif t == token.TILDE:
