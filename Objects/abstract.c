@@ -812,10 +812,12 @@ PyNumber_InPlaceAdd(PyObject *v, PyObject *w)
 		if (PyInstance_HalfBinOp(v, w, "__iadd__", &x,
 					PyNumber_Add, 0) <= 0)
 			return x;
-	} else if (HASINPLACE(v) && (v->ob_type->tp_as_sequence != NULL &&
-		  (f = v->ob_type->tp_as_sequence->sq_inplace_concat) != NULL) ||
-		  (v->ob_type->tp_as_number != NULL &&
-		  (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL))
+	}
+	else if ((HASINPLACE(v)
+		  && (v->ob_type->tp_as_sequence != NULL &&
+		      (f = v->ob_type->tp_as_sequence->sq_inplace_concat) != NULL))
+		 || (v->ob_type->tp_as_number != NULL &&
+		     (f = v->ob_type->tp_as_number->nb_inplace_add) != NULL))
 		return (*f)(v, w);
 
 	BINOP(v, w, "__add__", "__radd__", PyNumber_Add);
