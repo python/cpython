@@ -229,7 +229,7 @@ millitimer()
 
 #ifdef BSD_TIME
 
-#ifdef _IBMR2
+#ifdef _AIX /* I *think* this works */
 /* AIX defines fd_set in a separate file.  Sigh... */
 #include <sys/select.h>
 #endif
