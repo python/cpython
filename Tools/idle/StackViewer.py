@@ -220,8 +220,8 @@ class NamespaceViewer:
     
     dict = -1
     
-    def load_dict(self, dict):
-        if dict is self.dict:
+    def load_dict(self, dict, force=0):
+        if dict is self.dict and not force:
             return
         subframe = self.subframe
         frame = self.frame
