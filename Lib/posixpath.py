@@ -32,21 +32,15 @@ def join(a, b):
 
 
 # Split a path in head (everything up to the last '/') and tail (the
-# rest).  If the original path ends in '/' but is not the root, this
-# '/' is stripped.  After the trailing '/' is stripped, the invariant
-# join(head, tail) == p holds.
-# The resulting head won't end in '/' unless it is the root.
+# rest).  If the path ends in '/', tail will be empty.  If there is no
+# '/' in the path, head  will be empty.
+# Trailing '/'es are stripped from head unless it is the root.
 
 def split(p):
-	if p[-1:] == '/' and p <> '/'*len(p):
-		while p[-1] == '/':
-			p = p[:-1]
-	head, tail = '', ''
-	for c in p:
-		tail = tail + c
-		if c == '/':
-			head, tail = head + tail, ''
-	if head[-1:] == '/' and head <> '/'*len(head):
+	import string
+	i = string.rfind(p, '/') + 1
+	head, tail = p[:i], p[i:]
+	if head and head <> '/'*len(head):
 		while head[-1] == '/':
 			head = head[:-1]
 	return head, tail
