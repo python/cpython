@@ -816,11 +816,11 @@ posix_setpgrp(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
-#ifdef GETPGRP_HAVE_ARG
+#ifdef SETPGRP_HAVE_ARG
 	if (setpgrp(0, 0) < 0)
-#else /* GETPGRP_HAVE_ARG */
+#else /* SETPGRP_HAVE_ARG */
 	if (setpgrp() < 0)
-#endif /* GETPGRP_HAVE_ARG */
+#endif /* SETPGRP_HAVE_ARG */
 		return posix_error();
 	INCREF(None);
 	return None;
