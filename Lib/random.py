@@ -207,7 +207,7 @@ class Random(CoreGenerator):
             j = int(random() * (i+1))
             x[i], x[j] = x[j], x[i]
 
-    def sample(self, population, k, random=None, int=int):
+    def sample(self, population, k, int=int):
         """Chooses k unique random elements from a population sequence.
 
         Returns a new list containing elements from the population while
@@ -223,37 +223,30 @@ class Random(CoreGenerator):
         To choose a sample in a range of integers, use xrange as an argument.
         This is especially fast and space efficient for sampling from a
         large population:   sample(xrange(10000000), 60)
-
-        Optional arg random is a 0-argument function returning a random
-        float in [0.0, 1.0); by default, the standard random.random.
         """
 
         # Sampling without replacement entails tracking either potential
-        # selections (the pool) or previous selections.
+        # selections (the pool) in a list or previous selections in a
+        # dictionary.
 
-        # Pools are stored in lists which provide __getitem__ for selection
-        # and provide a way to remove selections.  But each list.remove()
-        # rebuilds the entire list, so it is better to rearrange the list,
-        # placing non-selected elements at the head of the list.  Tracking
-        # the selection pool is only space efficient with small populations.
-
-        # Previous selections are stored in dictionaries which provide
-        # __contains__ for detecting repeat selections.  Discarding repeats
-        # is efficient unless most of the population has already been chosen.
-        # So, tracking selections is fast only with small sample sizes.
+        # When the number of selections is small compared to the population,
+        # then tracking selections is efficient, requiring only a small
+        # dictionary and an occasional reselection.  For a larger number of
+        # selections, the pool tracking method is preferred since the list takes
+        # less space than the dictionary and it doesn't suffer from frequent
+        # reselections.
 
         n = len(population)
         if not 0 <= k <= n:
             raise ValueError, "sample larger than population"
-        if random is None:
-            random = self.random
+        random = self.random
         result = [None] * k
         if n < 6 * k:     # if n len list takes less space than a k len dict
             pool = list(population)
             for i in xrange(k):         # invariant:  non-selected at [0,n-i)
                 j = int(random() * (n-i))
                 result[i] = pool[j]
-                pool[j] = pool[n-i-1]
+                pool[j] = pool[n-i-1]   # move non-selected item into vacancy
         else:
             selected = {}
             for i in xrange(k):
