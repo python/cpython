@@ -408,7 +408,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #define getistringarg PyArg_GetString
 #define err_badarg PyErr_BadArgument
 #define err_badcall PyErr_BadInternalCall
-#define err_input PyErr_Input
 #define err_nomem PyErr_NoMemory
 #define err_errno PyErr_SetFromErrno
 #define err_set PyErr_SetNone
