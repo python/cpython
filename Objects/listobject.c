@@ -67,7 +67,7 @@ newlistobject(size)
 	}
 	nbytes = size * sizeof(object *);
 	/* Check for overflow */
-	if (nbytes / sizeof(object *) != size) {
+	if (nbytes / sizeof(object *) != (size_t)size) {
 		return err_nomem();
 	}
 	op = (listobject *) malloc(sizeof(listobject));

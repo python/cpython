@@ -327,7 +327,7 @@ string_repeat(a, n)
 	register int n;
 {
 	register int i;
-	register unsigned int size;
+	register int size;
 	register stringobject *op;
 	if (n < 0)
 		n = 0;

@@ -101,7 +101,7 @@ newlongobject(ival)
 			v->ob_size = -(v->ob_size);
   		}
 		for (i = 0; i < 5; i++) {
-			v->ob_digit[i] = t & MASK; 
+			v->ob_digit[i] = (digit) (t & MASK);
 			t >>= SHIFT;
 		}
 		v = long_normalize(v);
@@ -122,7 +122,7 @@ PyLong_FromUnsignedLong(ival)
 		unsigned long t = ival;
 		int i;
 		for (i = 0; i < 5; i++) {
-			v->ob_digit[i] = t & MASK; 
+			v->ob_digit[i] = (digit) (t & MASK);
 			t >>= SHIFT;
 		}
 		v = long_normalize(v);
@@ -158,7 +158,7 @@ dnewlongobject(dval)
 	frac = ldexp(frac, (expo-1) % SHIFT + 1);
 	for (i = ndig; --i >= 0; ) {
 		long bits = (long)frac;
-		v->ob_digit[i] = bits;
+		v->ob_digit[i] = (digit) bits;
 		frac = frac - (double)bits;
 		frac = ldexp(frac, SHIFT);
 	}
@@ -293,10 +293,10 @@ muladd1(a, n, extra)
 		return NULL;
 	for (i = 0; i < size_a; ++i) {
 		carry += (twodigits)a->ob_digit[i] * n;
-		z->ob_digit[i] = carry & MASK;
+		z->ob_digit[i] = (digit) (carry & MASK);
 		carry >>= SHIFT;
 	}
-	z->ob_digit[i] = carry;
+	z->ob_digit[i] = (digit) carry;
 	return long_normalize(z);
 }
 
@@ -321,10 +321,10 @@ divrem1(a, n, prem)
 		return NULL;
 	for (i = size; --i >= 0; ) {
 		rem = (rem << SHIFT) + a->ob_digit[i];
-		z->ob_digit[i] = rem/n;
+		z->ob_digit[i] = (digit) (rem/n);
 		rem %= n;
 	}
-	*prem = rem;
+	*prem = (digit) rem;
 	return long_normalize(z);
 }
 
@@ -383,7 +383,7 @@ long_format(aa, base)
 		else
 			rem += 'A'-10;
 		assert(p > GETSTRINGVALUE(str));
-		*--p = rem;
+		*--p = (char) rem;
 		DECREF(a);
 		a = temp;
 		SIGCHECK({
@@ -552,7 +552,7 @@ x_divrem(v1, w1, prem)
 	longobject **prem;
 {
 	int size_v = ABS(v1->ob_size), size_w = ABS(w1->ob_size);
-	digit d = (twodigits)BASE / (w1->ob_digit[size_w-1] + 1);
+	digit d = (digit) ((twodigits)BASE / (w1->ob_digit[size_w-1] + 1));
 	longobject *v = mul1(v1, d);
 	longobject *w = mul1(w1, d);
 	longobject *a;
@@ -599,7 +599,7 @@ x_divrem(v1, w1, prem)
 		
 		for (i = 0; i < size_w && i+k < size_v; ++i) {
 			twodigits z = w->ob_digit[i] * q;
-			digit zz = z >> SHIFT;
+			digit zz = (digit) (z >> SHIFT);
 			carry += v->ob_digit[i+k] - z + ((twodigits)zz << SHIFT);
 			v->ob_digit[i+k] = carry & MASK;
 			carry = (carry >> SHIFT) - zz;
@@ -611,10 +611,10 @@ x_divrem(v1, w1, prem)
 		}
 		
 		if (carry == 0)
-			a->ob_digit[k] = q;
+			a->ob_digit[k] = (digit) q;
 		else {
 			assert(carry == -1);
-			a->ob_digit[k] = q-1;
+			a->ob_digit[k] = (digit) q-1;
 			carry = 0;
 			for (i = 0; i < size_w && i+k < size_v; ++i) {
 				carry += v->ob_digit[i+k] + w->ob_digit[i];
@@ -903,13 +903,13 @@ long_mul(a, b)
 		})
 		for (j = 0; j < size_b; ++j) {
 			carry += z->ob_digit[i+j] + b->ob_digit[j] * f;
-			z->ob_digit[i+j] = carry & MASK;
+			z->ob_digit[i+j] = (digit) (carry & MASK);
 			carry >>= SHIFT;
 		}
 		for (; carry != 0; ++j) {
 			assert(i+j < z->ob_size);
 			carry += z->ob_digit[i+j];
-			z->ob_digit[i+j] = carry & MASK;
+			z->ob_digit[i+j] = (digit) (carry & MASK);
 			carry >>= SHIFT;
 		}
 	}
