@@ -70,89 +70,6 @@ static void AEDesc_dealloc(self)
 	PyMem_DEL(self);
 }
 
-static PyObject *AEDesc_AEResetTimer(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AEResetTimer(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AESuspendTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AESuspendTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AppleEvent reply;
-	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
-	PyObject *dispatcher;
-	if (!PyArg_ParseTuple(_args, "O&O",
-	                      AEDesc_Convert, &reply,
-	                      &dispatcher))
-		return NULL;
-	_err = AEResumeTheCurrentEvent(&_self->ob_itself,
-	                               &reply,
-	                               dispatcher__proc__, (long)dispatcher);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	Py_INCREF(dispatcher); /* XXX leak, but needed */
-	return _res;
-}
-
-static PyObject *AEDesc_AEGetTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AEGetTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AESetTheCurrentEvent(_self, _args)
-	AEDescObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AESetTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *AEDesc_AECoerceDesc(_self, _args)
 	AEDescObject *_self;
 	PyObject *_args;
@@ -662,17 +579,138 @@ static PyObject *AEDesc_AEGetDescDataSize(_self, _args)
 }
 #endif
 
+static PyObject *AEDesc_AESend(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	AppleEvent reply;
+	AESendMode sendMode;
+	AESendPriority sendPriority;
+	long timeOutInTicks;
+	if (!PyArg_ParseTuple(_args, "lhl",
+	                      &sendMode,
+	                      &sendPriority,
+	                      &timeOutInTicks))
+		return NULL;
+	_err = AESend(&_self->ob_itself,
+	              &reply,
+	              sendMode,
+	              sendPriority,
+	              timeOutInTicks,
+	              upp_AEIdleProc,
+	              (AEFilterUPP)0);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &reply);
+	return _res;
+}
+
+static PyObject *AEDesc_AEResetTimer(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = AEResetTimer(&_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *AEDesc_AESuspendTheCurrentEvent(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = AESuspendTheCurrentEvent(&_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *AEDesc_AEResumeTheCurrentEvent(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	AppleEvent reply;
+	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
+	PyObject *dispatcher;
+	if (!PyArg_ParseTuple(_args, "O&O",
+	                      AEDesc_Convert, &reply,
+	                      &dispatcher))
+		return NULL;
+	_err = AEResumeTheCurrentEvent(&_self->ob_itself,
+	                               &reply,
+	                               dispatcher__proc__, (long)dispatcher);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	Py_INCREF(dispatcher); /* XXX leak, but needed */
+	return _res;
+}
+
+static PyObject *AEDesc_AEGetTheCurrentEvent(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = AEGetTheCurrentEvent(&_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *AEDesc_AESetTheCurrentEvent(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_err = AESetTheCurrentEvent(&_self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *AEDesc_AEResolve(_self, _args)
+	AEDescObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	short callbackFlags;
+	AEDesc theToken;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &callbackFlags))
+		return NULL;
+	_err = AEResolve(&_self->ob_itself,
+	                 callbackFlags,
+	                 &theToken);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &theToken);
+	return _res;
+}
+
 static PyMethodDef AEDesc_methods[] = {
-	{"AEResetTimer", (PyCFunction)AEDesc_AEResetTimer, 1,
-	 "() -> None"},
-	{"AESuspendTheCurrentEvent", (PyCFunction)AEDesc_AESuspendTheCurrentEvent, 1,
-	 "() -> None"},
-	{"AEResumeTheCurrentEvent", (PyCFunction)AEDesc_AEResumeTheCurrentEvent, 1,
-	 "(AppleEvent reply, EventHandler dispatcher) -> None"},
-	{"AEGetTheCurrentEvent", (PyCFunction)AEDesc_AEGetTheCurrentEvent, 1,
-	 "() -> None"},
-	{"AESetTheCurrentEvent", (PyCFunction)AEDesc_AESetTheCurrentEvent, 1,
-	 "() -> None"},
 	{"AECoerceDesc", (PyCFunction)AEDesc_AECoerceDesc, 1,
 	 "(DescType toType) -> (AEDesc result)"},
 	{"AEDuplicateDesc", (PyCFunction)AEDesc_AEDuplicateDesc, 1,
@@ -718,6 +756,20 @@ static PyMethodDef AEDesc_methods[] = {
 	{"AEGetDescDataSize", (PyCFunction)AEDesc_AEGetDescDataSize, 1,
 	 "() -> (Size _rv)"},
 #endif
+	{"AESend", (PyCFunction)AEDesc_AESend, 1,
+	 "(AESendMode sendMode, AESendPriority sendPriority, long timeOutInTicks) -> (AppleEvent reply)"},
+	{"AEResetTimer", (PyCFunction)AEDesc_AEResetTimer, 1,
+	 "() -> None"},
+	{"AESuspendTheCurrentEvent", (PyCFunction)AEDesc_AESuspendTheCurrentEvent, 1,
+	 "() -> None"},
+	{"AEResumeTheCurrentEvent", (PyCFunction)AEDesc_AEResumeTheCurrentEvent, 1,
+	 "(AppleEvent reply, EventHandler dispatcher) -> None"},
+	{"AEGetTheCurrentEvent", (PyCFunction)AEDesc_AEGetTheCurrentEvent, 1,
+	 "() -> None"},
+	{"AESetTheCurrentEvent", (PyCFunction)AEDesc_AESetTheCurrentEvent, 1,
+	 "() -> None"},
+	{"AEResolve", (PyCFunction)AEDesc_AEResolve, 1,
+	 "(short callbackFlags) -> (AEDesc theToken)"},
 	{NULL, NULL, 0}
 };
 
@@ -791,6 +843,147 @@ PyTypeObject AEDesc_Type = {
 
 /* --------------------- End object type AEDesc --------------------- */
 
+
+static PyObject *AE_AECoercePtr(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	DescType typeCode;
+	char *dataPtr__in__;
+	long dataPtr__len__;
+	int dataPtr__in_len__;
+	DescType toType;
+	AEDesc result;
+	if (!PyArg_ParseTuple(_args, "O&s#O&",
+	                      PyMac_GetOSType, &typeCode,
+	                      &dataPtr__in__, &dataPtr__in_len__,
+	                      PyMac_GetOSType, &toType))
+		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
+	_err = AECoercePtr(typeCode,
+	                   dataPtr__in__, dataPtr__len__,
+	                   toType,
+	                   &result);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &result);
+ dataPtr__error__: ;
+	return _res;
+}
+
+static PyObject *AE_AECreateDesc(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	DescType typeCode;
+	char *dataPtr__in__;
+	long dataPtr__len__;
+	int dataPtr__in_len__;
+	AEDesc result;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      PyMac_GetOSType, &typeCode,
+	                      &dataPtr__in__, &dataPtr__in_len__))
+		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
+	_err = AECreateDesc(typeCode,
+	                    dataPtr__in__, dataPtr__len__,
+	                    &result);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &result);
+ dataPtr__error__: ;
+	return _res;
+}
+
+static PyObject *AE_AECreateList(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	char *factoringPtr__in__;
+	long factoringPtr__len__;
+	int factoringPtr__in_len__;
+	Boolean isRecord;
+	AEDescList resultList;
+	if (!PyArg_ParseTuple(_args, "s#b",
+	                      &factoringPtr__in__, &factoringPtr__in_len__,
+	                      &isRecord))
+		return NULL;
+	factoringPtr__len__ = factoringPtr__in_len__;
+	_err = AECreateList(factoringPtr__in__, factoringPtr__len__,
+	                    isRecord,
+	                    &resultList);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &resultList);
+ factoringPtr__error__: ;
+	return _res;
+}
+
+static PyObject *AE_AECreateAppleEvent(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	AEEventClass theAEEventClass;
+	AEEventID theAEEventID;
+	AEAddressDesc target;
+	AEReturnID returnID;
+	AETransactionID transactionID;
+	AppleEvent result;
+	if (!PyArg_ParseTuple(_args, "O&O&O&hl",
+	                      PyMac_GetOSType, &theAEEventClass,
+	                      PyMac_GetOSType, &theAEEventID,
+	                      AEDesc_Convert, &target,
+	                      &returnID,
+	                      &transactionID))
+		return NULL;
+	_err = AECreateAppleEvent(theAEEventClass,
+	                          theAEEventID,
+	                          &target,
+	                          returnID,
+	                          transactionID,
+	                          &result);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &result);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *AE_AEReplaceDescData(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	DescType typeCode;
+	char *dataPtr__in__;
+	long dataPtr__len__;
+	int dataPtr__in_len__;
+	AEDesc theAEDesc;
+	if (!PyArg_ParseTuple(_args, "O&s#",
+	                      PyMac_GetOSType, &typeCode,
+	                      &dataPtr__in__, &dataPtr__in_len__))
+		return NULL;
+	dataPtr__len__ = dataPtr__in_len__;
+	_err = AEReplaceDescData(typeCode,
+	                         dataPtr__in__, dataPtr__len__,
+	                         &theAEDesc);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("O&",
+	                     AEDesc_New, &theAEDesc);
+ dataPtr__error__: ;
+	return _res;
+}
+#endif
 
 static PyObject *AE_AEProcessAppleEvent(_self, _args)
 	PyObject *_self;
@@ -991,148 +1184,82 @@ static PyObject *AE_AEManagerInfo(_self, _args)
 	return _res;
 }
 
-static PyObject *AE_AECoercePtr(_self, _args)
+static PyObject *AE_AEObjectInit(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	DescType typeCode;
-	char *dataPtr__in__;
-	long dataPtr__len__;
-	int dataPtr__in_len__;
-	DescType toType;
-	AEDesc result;
-	if (!PyArg_ParseTuple(_args, "O&s#O&",
-	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__in_len__,
-	                      PyMac_GetOSType, &toType))
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	dataPtr__len__ = dataPtr__in_len__;
-	_err = AECoercePtr(typeCode,
-	                   dataPtr__in__, dataPtr__len__,
-	                   toType,
-	                   &result);
+	_err = AEObjectInit();
 	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &result);
- dataPtr__error__: ;
+	Py_INCREF(Py_None);
+	_res = Py_None;
 	return _res;
 }
 
-static PyObject *AE_AECreateDesc(_self, _args)
+static PyObject *AE_AEDisposeToken(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	DescType typeCode;
-	char *dataPtr__in__;
-	long dataPtr__len__;
-	int dataPtr__in_len__;
-	AEDesc result;
-	if (!PyArg_ParseTuple(_args, "O&s#",
-	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__in_len__))
+	AEDesc theToken;
+	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
-	dataPtr__len__ = dataPtr__in_len__;
-	_err = AECreateDesc(typeCode,
-	                    dataPtr__in__, dataPtr__len__,
-	                    &result);
+	_err = AEDisposeToken(&theToken);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &result);
- dataPtr__error__: ;
+	                     AEDesc_New, &theToken);
 	return _res;
 }
 
-static PyObject *AE_AECreateList(_self, _args)
+static PyObject *AE_AECallObjectAccessor(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	char *factoringPtr__in__;
-	long factoringPtr__len__;
-	int factoringPtr__in_len__;
-	Boolean isRecord;
-	AEDescList resultList;
-	if (!PyArg_ParseTuple(_args, "s#b",
-	                      &factoringPtr__in__, &factoringPtr__in_len__,
-	                      &isRecord))
+	DescType desiredClass;
+	AEDesc containerToken;
+	DescType containerClass;
+	DescType keyForm;
+	AEDesc keyData;
+	AEDesc token;
+	if (!PyArg_ParseTuple(_args, "O&O&O&O&O&",
+	                      PyMac_GetOSType, &desiredClass,
+	                      AEDesc_Convert, &containerToken,
+	                      PyMac_GetOSType, &containerClass,
+	                      PyMac_GetOSType, &keyForm,
+	                      AEDesc_Convert, &keyData))
 		return NULL;
-	factoringPtr__len__ = factoringPtr__in_len__;
-	_err = AECreateList(factoringPtr__in__, factoringPtr__len__,
-	                    isRecord,
-	                    &resultList);
+	_err = AECallObjectAccessor(desiredClass,
+	                            &containerToken,
+	                            containerClass,
+	                            keyForm,
+	                            &keyData,
+	                            &token);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &resultList);
- factoringPtr__error__: ;
+	                     AEDesc_New, &token);
 	return _res;
 }
-
-static PyObject *AE_AECreateAppleEvent(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEEventClass theAEEventClass;
-	AEEventID theAEEventID;
-	AEAddressDesc target;
-	AEReturnID returnID;
-	AETransactionID transactionID;
-	AppleEvent result;
-	if (!PyArg_ParseTuple(_args, "O&O&O&hl",
-	                      PyMac_GetOSType, &theAEEventClass,
-	                      PyMac_GetOSType, &theAEEventID,
-	                      AEDesc_Convert, &target,
-	                      &returnID,
-	                      &transactionID))
-		return NULL;
-	_err = AECreateAppleEvent(theAEEventClass,
-	                          theAEEventID,
-	                          &target,
-	                          returnID,
-	                          transactionID,
-	                          &result);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &result);
-	return _res;
-}
-
-#if TARGET_API_MAC_CARBON
-
-static PyObject *AE_AEReplaceDescData(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	DescType typeCode;
-	char *dataPtr__in__;
-	long dataPtr__len__;
-	int dataPtr__in_len__;
-	AEDesc theAEDesc;
-	if (!PyArg_ParseTuple(_args, "O&s#",
-	                      PyMac_GetOSType, &typeCode,
-	                      &dataPtr__in__, &dataPtr__in_len__))
-		return NULL;
-	dataPtr__len__ = dataPtr__in_len__;
-	_err = AEReplaceDescData(typeCode,
-	                         dataPtr__in__, dataPtr__len__,
-	                         &theAEDesc);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &theAEDesc);
- dataPtr__error__: ;
-	return _res;
-}
-#endif
 
 static PyMethodDef AE_methods[] = {
+	{"AECoercePtr", (PyCFunction)AE_AECoercePtr, 1,
+	 "(DescType typeCode, Buffer dataPtr, DescType toType) -> (AEDesc result)"},
+	{"AECreateDesc", (PyCFunction)AE_AECreateDesc, 1,
+	 "(DescType typeCode, Buffer dataPtr) -> (AEDesc result)"},
+	{"AECreateList", (PyCFunction)AE_AECreateList, 1,
+	 "(Buffer factoringPtr, Boolean isRecord) -> (AEDescList resultList)"},
+	{"AECreateAppleEvent", (PyCFunction)AE_AECreateAppleEvent, 1,
+	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, AEAddressDesc target, AEReturnID returnID, AETransactionID transactionID) -> (AppleEvent result)"},
+
+#if TARGET_API_MAC_CARBON
+	{"AEReplaceDescData", (PyCFunction)AE_AEReplaceDescData, 1,
+	 "(DescType typeCode, Buffer dataPtr) -> (AEDesc theAEDesc)"},
+#endif
 	{"AEProcessAppleEvent", (PyCFunction)AE_AEProcessAppleEvent, 1,
 	 "(EventRecord theEventRecord) -> None"},
 	{"AEGetInteractionAllowed", (PyCFunction)AE_AEGetInteractionAllowed, 1,
@@ -1153,19 +1280,12 @@ static PyMethodDef AE_methods[] = {
 	 "(AEKeyword functionClass) -> None"},
 	{"AEManagerInfo", (PyCFunction)AE_AEManagerInfo, 1,
 	 "(AEKeyword keyWord) -> (long result)"},
-	{"AECoercePtr", (PyCFunction)AE_AECoercePtr, 1,
-	 "(DescType typeCode, Buffer dataPtr, DescType toType) -> (AEDesc result)"},
-	{"AECreateDesc", (PyCFunction)AE_AECreateDesc, 1,
-	 "(DescType typeCode, Buffer dataPtr) -> (AEDesc result)"},
-	{"AECreateList", (PyCFunction)AE_AECreateList, 1,
-	 "(Buffer factoringPtr, Boolean isRecord) -> (AEDescList resultList)"},
-	{"AECreateAppleEvent", (PyCFunction)AE_AECreateAppleEvent, 1,
-	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, AEAddressDesc target, AEReturnID returnID, AETransactionID transactionID) -> (AppleEvent result)"},
-
-#if TARGET_API_MAC_CARBON
-	{"AEReplaceDescData", (PyCFunction)AE_AEReplaceDescData, 1,
-	 "(DescType typeCode, Buffer dataPtr) -> (AEDesc theAEDesc)"},
-#endif
+	{"AEObjectInit", (PyCFunction)AE_AEObjectInit, 1,
+	 "() -> None"},
+	{"AEDisposeToken", (PyCFunction)AE_AEDisposeToken, 1,
+	 "() -> (AEDesc theToken)"},
+	{"AECallObjectAccessor", (PyCFunction)AE_AECallObjectAccessor, 1,
+	 "(DescType desiredClass, AEDesc containerToken, DescType containerClass, DescType keyForm, AEDesc keyData) -> (AEDesc token)"},
 	{NULL, NULL, 0}
 };
 

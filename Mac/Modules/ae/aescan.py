@@ -16,36 +16,11 @@ from bgenlocations import TOOLBOXDIR
 from scantools import Scanner
 
 def main():
-	print "=== Scanning AERegistry.h for defines ==="
-	input = "AERegistry.h"
-	output = "@dummy-registry.py"
-	defsoutput = TOOLBOXDIR + "AERegistry.py"
-	scanner = AppleEventsRegScanner(input, output, defsoutput)
-	scanner.scan()
-	scanner.close()
-	print "=== Scanning AEObjects.h for defines ==="
-	# XXXX This isn't correct. We only scan AEObjects.h for defines, but there
-	# are some functions in there that are probably useful (the accessor stuff)
-	# once we start writing servers in python.
-	input = "AEObjects.h"
-	output = "@dummy-objects.py"
-	defsoutput = TOOLBOXDIR + "AEObjects.py"
-	scanner = AppleEventsScanner(input, output, defsoutput)
-	scanner.scan()
-	scanner.close()
-	print "=== Scanning AEDataModel.h ==="
-	input = "AEDataModel.h"
-	output = "aedatamodelgen.py"
-	defsoutput = TOOLBOXDIR + "AEDataModel.py"
-	scanner = AppleEventsScanner(input, output, defsoutput)
-	
-	scanner.scan()
-	scanner.close()
-	print "=== Scanning AppleEvents.h ==="
-	input = "AppleEvents.h"
+	print "=== Scanning AEDataModel.h, AppleEvents.h, AERegistry.h, AEObjects.h ==="
+	input = ["AEDataModel.h", "AppleEvents.h", "AERegistry.h", "AEObjects.h"]
 	output = "aegen.py"
 	defsoutput = TOOLBOXDIR + "AppleEvents.py"
-	scanner = AppleEventsRegScanner(input, output, defsoutput)
+	scanner = AppleEventsScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
 	print "=== Done Scanning and Generating, now doing 'import aesupport' ==="
@@ -89,6 +64,8 @@ class AppleEventsScanner(Scanner):
 			"AEArrayType",
 			"AECoercionHandlerUPP",
 			"UniversalProcPtr",
+			"OSLCompareUPP",
+			"OSLAccessorUPP",
 			]
 
 	def makerepairinstructions(self):
@@ -124,11 +101,6 @@ class AppleEventsScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
-
-class AppleEventsRegScanner(AppleEventsScanner):
-	def writeinitialdefs(self):
-		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
-		self.defsfile.write("from AEDataModel import *\n")
 
 if __name__ == "__main__":
 	main()

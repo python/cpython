@@ -193,7 +193,7 @@ functions = []
 aedescmethods = []
 
 execfile('aegen.py')
-execfile('aedatamodelgen.py')
+##execfile('aedatamodelgen.py')
 
 for f in functions: module.add(f)
 for f in aedescmethods: aedescobject.add(f)
