@@ -230,6 +230,26 @@ extern "C" {
  */
 #define Py_IS_INFINITY(X) ((X) && (X)*0.5 == (X))
 
+/* Py_OVERFLOWED(X)
+ * Return 1 iff a libm function overflowed.  Set errno to 0 before calling
+ * a libm function, and invoke this macro after, passing the function
+ * result.
+ * Caution:
+ *    This isn't reliable.  C99 no longer requires libm to set errno under
+ *        any exceptional condition, but does require +- HUGE_VAL return
+ *        values on overflow.  A 754 box *probably* maps HUGE_VAL to a
+ *        double infinity, and we're cool if that's so, unless the input
+ *        was an infinity and an infinity is the expected result.  A C89
+ *        system sets errno to ERANGE, so we check for that too.  We're
+ *	  out of luck if a C99 754 box doesn't map HUGE_VAL to +Inf, or
+ *	  if the returned result is a NaN, or if a C89 box returns HUGE_VAL
+ *	  in non-overflow cases.
+ *    X is evaluated more than once.
+ */
+#define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE || \
+					 (X) == HUGE_VAL || \
+					 (X) == -HUGE_VAL))
+
 /**************************************************************************
 Prototypes that are missing from the standard include files on some systems
 (and possibly only some versions of such systems.)
