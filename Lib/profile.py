@@ -581,14 +581,14 @@ def main():
         help="Save stats to <outfile>", default=None)
     parser.add_option('-s', '--sort', dest="sort",
         help="Sort order when printing to stdout, based on pstats.Stats class", default=-1)
-    
+
     if not sys.argv[1:]:
         parser.print_usage()
         sys.exit(2)
-    
+
     (options, args) = parser.parse_args()
     sys.argv[:] = args
-    
+
     if (len(sys.argv) > 0):
         sys.path.insert(0, os.path.dirname(sys.argv[0]))
         run('execfile(%r)' % (sys.argv[0],), options.outfile, options.sort)
