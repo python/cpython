@@ -33,6 +33,14 @@ class UnaryOpTestCase(unittest.TestCase):
         self.assert_(eval("-" + nines) == eval("-" + nines + "L"))
         self.assert_(eval("~" + nines) == eval("~" + nines + "L"))
 
+    def test_negation_of_exponentiation(self):
+        # Make sure '**' does the right thing; these form a
+        # regression test for SourceForge bug #456756.
+        self.assertEqual(-2 ** 3, -8)
+        self.assertEqual((-2) ** 3, -8)
+        self.assertEqual(-2 ** 4, -16)
+        self.assertEqual((-2) ** 4, 16)
+
     def test_bad_types(self):
         for op in '+', '-', '~':
             self.assertRaises(TypeError, eval, op + "'a'")
