@@ -2573,7 +2573,8 @@ posix_fork(PyObject *self, PyObject *noargs)
 #endif
 
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
-#ifdef HAVE_DEV_PTC
+/* IRIX has both /dev/ptc and /dev/ptmx, use ptmx */
+#if defined(HAVE_DEV_PTC) && !defined(HAVE_DEV_PTMX)
 #define DEV_PTY_FILE "/dev/ptc"
 #define HAVE_DEV_PTMX
 #else
