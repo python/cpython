@@ -26,6 +26,10 @@ PyObject *
 PyCF_CF2Python(CFTypeRef src) {
 	CFTypeID typeid;
 	
+	if( src == NULL ) {
+		Py_INCREF(Py_None);
+		return Py_None;
+	}
 	typeid = CFGetTypeID(src);
 	if (typeid == CFArrayGetTypeID())
 		return PyCF_CF2Python_sequence((CFArrayRef)src);
@@ -36,13 +40,63 @@ PyCF_CF2Python(CFTypeRef src) {
 
 PyObject *
 PyCF_CF2Python_sequence(CFArrayRef src) {
-	PyErr_SetString(PyExc_SystemError, "Not yet implemented");
+	int size = CFArrayGetCount(src);
+	PyObject *rv;
+	CFTypeRef item_cf;
+	PyObject *item_py = NULL;
+	int i;
+	
+	if ( (rv=PyList_New(size)) == NULL )
+		return NULL;
+	for(i=0; i<size; i++) {
+		item_cf = CFArrayGetValueAtIndex(src, i);
+		if (item_cf == NULL ) goto err;
+		item_py = PyCF_CF2Python(item_cf);
+		if (item_py == NULL ) goto err;
+		if (!PyList_SetItem(rv, i, item_py)) goto err;
+		item_py = NULL;
+	}
+	return rv;
+err:
+	Py_XDECREF(item_py);
+	Py_DECREF(rv);
 	return NULL;
 }
 
 PyObject *
 PyCF_CF2Python_mapping(CFTypeRef src) {
-	PyErr_SetString(PyExc_SystemError, "Not yet implemented");
+	int size = CFDictionaryGetCount(src);
+	PyObject *rv;
+	CFTypeRef *allkeys, *allvalues;
+	CFTypeRef key_cf, value_cf;
+	PyObject *key_py = NULL, *value_py = NULL;
+	int i;
+	
+	allkeys = malloc(size*sizeof(CFTypeRef *));
+	if (allkeys == NULL) return PyErr_NoMemory();
+	allvalues = malloc(size*sizeof(CFTypeRef *));
+	if (allvalues == NULL) return PyErr_NoMemory();
+	if ( (rv=PyDict_New()) == NULL )
+		return NULL;
+	CFDictionaryGetKeysAndValues(src, allkeys, allvalues);
+	for(i=0; i<size; i++) {
+		key_cf = allkeys[i];
+		value_cf = allvalues[i];
+		key_py = PyCF_CF2Python(key_cf);
+		if (key_py == NULL ) goto err;
+		value_py = PyCF_CF2Python(value_py);
+		if (value_py == NULL ) goto err;
+		if (!PyDict_SetItem(rv, key_py, value_py)) goto err;
+		key_py = NULL;
+		value_py = NULL;
+	}
+	return rv;
+err:
+	Py_XDECREF(key_py);
+	Py_XDECREF(value_py);
+	Py_DECREF(rv);
+	free(allkeys);
+	free(allvalues);
 	return NULL;
 }
 
@@ -90,7 +144,7 @@ PyCF_Python2CF(PyObject *src, CFTypeRef *dst) {
 
 int
 PyCF_Python2CF_sequence(PyObject *src, CFArrayRef *dst) {
-	CFArrayRef rv = NULL;
+	CFMutableArrayRef rv = NULL;
 	CFTypeRef item_cf = NULL;
 	PyObject *item_py = NULL;
 	int size, i;
@@ -122,7 +176,7 @@ err:
 
 int
 PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
-	CFDictionaryRef rv = NULL;
+	CFMutableDictionaryRef rv = NULL;
 	PyObject *aslist = NULL;
 	CFTypeRef key_cf = NULL, value_cf = NULL;
 	PyObject *item_py = NULL, *key_py = NULL, *value_py = NULL;
@@ -130,7 +184,7 @@ PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
 	
 	size = PyMapping_Size(src);
 	rv = CFDictionaryCreateMutable((CFAllocatorRef)NULL, size,
-									&kCFTypeDictionaryKeyCallBacks,
+					&kCFTypeDictionaryKeyCallBacks,
 	                                &kCFTypeDictionaryValueCallBacks);
 	if (rv == NULL) {
 		PyMac_Error(resNotFound); 
@@ -144,7 +198,7 @@ PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
 		if (!PyArg_ParseTuple(item_py, "OO", key_py, value_py)) goto err;
 		if ( !PyCF_Python2CF(key_py, &key_cf) ) goto err;
 		Py_DECREF(key_py);
-		if ( !PyCF_Python2CF(value_cf, &key_cf) ) goto err;
+		if ( !PyCF_Python2CF(value_py, &value_cf) ) goto err;
 		Py_DECREF(value_py);
 		CFDictionaryAddValue(rv, key_cf, value_cf);
 		CFRelease(key_cf);

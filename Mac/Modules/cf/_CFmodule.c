@@ -31,6 +31,8 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
+#include "pycfbridge.h"
+
 #ifdef USE_TOOLBOX_OBJECT_GLUE
 extern PyObject *_CFTypeRefObj_New(CFTypeRef);
 extern int _CFTypeRefObj_Convert(PyObject *, CFTypeRef *);
@@ -287,6 +289,14 @@ static PyObject *CFTypeRefObj_CFShow(CFTypeRefObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *CFTypeRefObj_toPython(CFTypeRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	return PyCF_CF2Python(_self->ob_itself);
+
+}
+
 static PyMethodDef CFTypeRefObj_methods[] = {
 	{"CFGetTypeID", (PyCFunction)CFTypeRefObj_CFGetTypeID, 1,
 	 "() -> (CFTypeID _rv)"},
@@ -304,6 +314,8 @@ static PyMethodDef CFTypeRefObj_methods[] = {
 	 "() -> (CFStringRef _rv)"},
 	{"CFShow", (PyCFunction)CFTypeRefObj_CFShow, 1,
 	 "() -> None"},
+	{"toPython", (PyCFunction)CFTypeRefObj_toPython, 1,
+	 "() -> (python_object)"},
 	{NULL, NULL, 0}
 };
 
@@ -3695,6 +3707,30 @@ static PyObject *CF_CFURLCreateFromFSRef(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *CF_toCF(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	CFTypeRef rv;
+	CFTypeID typeid;
+
+	if (!PyArg_ParseTuple(_args, "O&", PyCF_Python2CF, &rv))
+		return NULL;
+	typeid = CFGetTypeID(rv);
+
+	if (typeid == CFStringGetTypeID())
+		return Py_BuildValue("O&", CFStringRefObj_New, rv);
+	if (typeid == CFArrayGetTypeID())
+		return Py_BuildValue("O&", CFArrayRefObj_New, rv);
+	if (typeid == CFDictionaryGetTypeID())
+		return Py_BuildValue("O&", CFDictionaryRefObj_New, rv);
+	if (typeid == CFURLGetTypeID())
+		return Py_BuildValue("O&", CFURLRefObj_New, rv);
+
+	return Py_BuildValue("O&", CFTypeRefObj_New, rv);
+
+}
+
 static PyMethodDef CF_methods[] = {
 	{"__CFRangeMake", (PyCFunction)CF___CFRangeMake, 1,
 	 "(CFIndex loc, CFIndex len) -> (CFRange _rv)"},
@@ -3778,6 +3814,8 @@ static PyMethodDef CF_methods[] = {
 	 "(Buffer buffer, Boolean isDirectory, CFURLRef baseURL) -> (CFURLRef _rv)"},
 	{"CFURLCreateFromFSRef", (PyCFunction)CF_CFURLCreateFromFSRef, 1,
 	 "(FSRef fsRef) -> (CFURLRef _rv)"},
+	{"toCF", (PyCFunction)CF_toCF, 1,
+	 "(python_object) -> (CF_object)"},
 	{NULL, NULL, 0}
 };
 
