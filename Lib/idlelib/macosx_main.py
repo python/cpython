@@ -35,7 +35,7 @@ if '-p' in sys.argv:
 
     # this module will become the namespace used by the interactive
     # interpreter; remove all variables we have defined.
-    del sys, __file__, split, join, isdir
+    del sys, __file__, split, join, isdir, idlelib
     __import__('run').main()
 else:
     # Load idlelib/idle.py which starts the application.
