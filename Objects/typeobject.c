@@ -5355,23 +5355,6 @@ super_getattro(PyObject *self, PyObject *name)
 			if ((PyObject *)(su->type) == PyTuple_GET_ITEM(mro, i))
 				break;
 		}
-#if 0
-		if (i >= n && PyType_Check(su->obj)) {
-			starttype = (PyTypeObject *)(su->obj);
-			mro = starttype->tp_mro;
-			if (mro == NULL)
-				n = 0;
-			else {
-				assert(PyTuple_Check(mro));
-				n = PyTuple_GET_SIZE(mro);
-			}
-			for (i = 0; i < n; i++) {
-				if ((PyObject *)(su->type) ==
-				    PyTuple_GET_ITEM(mro, i))
-					break;
-			}
-		}
-#endif
 		i++;
 		res = NULL;
 		for (; i < n; i++) {
@@ -5383,7 +5366,10 @@ super_getattro(PyObject *self, PyObject *name)
 			else
 				continue;
 			res = PyDict_GetItem(dict, name);
-			if (res != NULL  && !PyDescr_IsData(res)) {
+			/* Skip data descriptors because when obj_type is a
+			   metaclass, we don't want to return its __class__
+			   descriptor.  See supers() in test_descr.py. */
+			if (res != NULL && !PyDescr_IsData(res)) {
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
 				if (f != NULL) {
