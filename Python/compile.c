@@ -36,7 +36,6 @@ PERFORMANCE OF THIS SOFTWARE.
    XXX   (it's currently the first item of the co_const tuple)
    XXX Generate simple jump for break/return outside 'try...finally'
    XXX Allow 'continue' inside try-finally
-   XXX New 1-byte opcode for loading None
    XXX New opcode for loading the initial index for a for loop
    XXX other JAR tricks?
 */
@@ -922,11 +921,19 @@ parsestr(s)
 			break;
 		case 'x':
 			if (isxdigit(Py_CHARMASK(*s))) {
-				sscanf(s, "%x", &c);
-				*p++ = c;
+				unsigned int x = 0;
 				do {
+					c = Py_CHARMASK(*s);
 					s++;
+					x = (x<<4) & ~0xF;
+					if (isdigit(c))
+						x += c - '0';
+					else if (islower(c))
+						x += 10 + c - 'a';
+					else
+						x += 10 + c - 'A';
 				} while (isxdigit(Py_CHARMASK(*s)));
+				*p++ = x;
 				break;
 			}
 		/* FALLTHROUGH */
