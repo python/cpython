@@ -383,11 +383,8 @@ binascii_rlecode_hqx(self, args)
 			    inend<len && in_data[inend] == ch &&
 			        inend < in+255;
 			    inend++) ;
-			if ( inend - in > 3 && inend-in != RUNCHAR ) {
-				/* More than 3 in a row. Output RLE.
-				** The special case of exactly 0x90 repeats will result in a single
-				** byte now and a 0x8f repeat next time around
-				*/
+			if ( inend - in > 3 ) {
+				/* More than 3 in a row. Output RLE. */
 				*out_data++ = ch;
 				*out_data++ = RUNCHAR;
 				*out_data++ = inend-in;
