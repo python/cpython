@@ -288,6 +288,7 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/libheapq.tex \
 	lib/libmimetypes.tex \
 	lib/libsmtplib.tex \
+	lib/libsmtpd.tex \
 	lib/libcmd.tex \
 	lib/libmultifile.tex \
 	lib/libthreading.tex \
