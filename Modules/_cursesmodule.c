@@ -123,6 +123,10 @@ extern char *tparm(char *instring, ...);
 typedef chtype attr_t;           /* No attr_t type is available */
 #endif
 
+#if defined(_AIX)
+#define STRICT_SYSV_CURSES
+#endif
+
 /* Definition of exception curses.error */
 
 static PyObject *PyCursesError;
@@ -310,9 +314,17 @@ Window_OneArgNoReturnFunction(wattroff, attr_t, "l;attr")
 Window_OneArgNoReturnFunction(wattrset, attr_t, "l;attr")
 Window_OneArgNoReturnFunction(clearok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(idlok, int, "i;True(1) or False(0)")
+#if defined(__NetBSD__)
+Window_OneArgNoReturnVoidFunction(keypad, int, "i;True(1) or False(0)")
+#else
 Window_OneArgNoReturnFunction(keypad, int, "i;True(1) or False(0)")
+#endif
 Window_OneArgNoReturnFunction(leaveok, int, "i;True(1) or False(0)")
+#if defined(__NetBSD__)
+Window_OneArgNoReturnVoidFunction(nodelay, int, "i;True(1) or False(0)")
+#else
 Window_OneArgNoReturnFunction(nodelay, int, "i;True(1) or False(0)")
+#endif
 Window_OneArgNoReturnFunction(notimeout, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(scrollok, int, "i;True(1) or False(0)")
 Window_OneArgNoReturnFunction(winsdelln, int, "i;nlines")
@@ -655,10 +667,12 @@ PyCursesWindow_EchoChar(PyCursesWindowObject *self, PyObject *args)
     return NULL;
   }
   
+#if !defined(__NetBSD__)
   if (self->win->_flags & _ISPAD)
     return PyCursesCheckERR(pechochar(self->win, ch | attr), 
 			    "echochar");
   else
+#endif
     return PyCursesCheckERR(wechochar(self->win, ch | attr), 
 			    "echochar");
 }
@@ -735,7 +749,11 @@ PyCursesWindow_GetKey(PyCursesWindowObject *self, PyObject *args)
   if (rtn<=255)
     return Py_BuildValue("c", rtn);
   else
+#if defined(__NetBSD__)
+    return PyString_FromString(unctrl(rtn));
+#else
     return PyString_FromString((char *)keyname(rtn));
+#endif
 }
 
 static PyObject *
@@ -1054,7 +1072,11 @@ PyCursesWindow_NoOutRefresh(PyCursesWindowObject *self, PyObject *args)
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
   int rtn;
 
+#if defined(__NetBSD__)
+  if (0) {
+#else
   if (self->win->_flags & _ISPAD) {
+#endif
     switch(ARG_COUNT(args)) {
     case 6:
       if (!PyArg_Parse(args, 
@@ -1192,7 +1214,11 @@ PyCursesWindow_Refresh(PyCursesWindowObject *self, PyObject *args)
   int pminrow,pmincol,sminrow,smincol,smaxrow,smaxcol;
   int rtn;
   
+#if defined(__NetBSD__)
+  if (0) {
+#else
   if (self->win->_flags & _ISPAD) {
+#endif
     switch(ARG_COUNT(args)) {
     case 6:
       if (!PyArg_Parse(args, 
@@ -1256,9 +1282,11 @@ PyCursesWindow_SubWin(PyCursesWindowObject *self, PyObject *args)
   }
 
   /* printf("Subwin: %i %i %i %i   \n", nlines, ncols, begin_y, begin_x); */
+#if !defined(__NetBSD__)
   if (self->win->_flags & _ISPAD)
     win = subpad(self->win, nlines, ncols, begin_y, begin_x);
   else
+#endif
     win = subwin(self->win, nlines, ncols, begin_y, begin_x);
 
   if (win == NULL) {
@@ -1912,6 +1940,7 @@ PyCurses_IntrFlush(PyObject *self, PyObject *args)
   return PyCursesCheckERR(intrflush(NULL,ch), "intrflush");
 }
 
+#if !defined(__NetBSD__)
 static PyObject *
 PyCurses_KeyName(PyObject *self, PyObject *args)
 {
@@ -1926,6 +1955,7 @@ PyCurses_KeyName(PyObject *self, PyObject *args)
 
   return PyString_FromString((knp == NULL) ? "" : (char *)knp);
 }
+#endif
 
 static PyObject *  
 PyCurses_KillChar(PyObject *self, PyObject *args)  
@@ -2388,7 +2418,9 @@ static PyMethodDef PyCurses_methods[] = {
   {"initscr",             (PyCFunction)PyCurses_InitScr},
   {"intrflush",           (PyCFunction)PyCurses_IntrFlush},
   {"isendwin",            (PyCFunction)PyCurses_isendwin},
+#if !defined(__NetBSD__)
   {"keyname",             (PyCFunction)PyCurses_KeyName},
+#endif
   {"killchar",            (PyCFunction)PyCurses_KillChar}, 
   {"longname",            (PyCFunction)PyCurses_longname}, 
   {"meta",                (PyCFunction)PyCurses_Meta},
@@ -2482,7 +2514,9 @@ init_curses(void)
 	SetDictInt("A_DIM",		A_DIM);
 	SetDictInt("A_BOLD",		A_BOLD);
 	SetDictInt("A_ALTCHARSET",	A_ALTCHARSET);
+#if !defined(__NetBSD__)
 	SetDictInt("A_INVIS",           A_INVIS);
+#endif
 	SetDictInt("A_PROTECT",         A_PROTECT);
 	SetDictInt("A_CHARTEXT",        A_CHARTEXT);
 	SetDictInt("A_COLOR",           A_COLOR);
@@ -2554,6 +2588,7 @@ init_curses(void)
 	  int key;
 	  char *key_n;
 	  char *key_n2;
+#if !defined(__NetBSD__)
 	  for (key=KEY_MIN;key < KEY_MAX; key++) {
 	    key_n = (char *)keyname(key);
 	    if (key_n == NULL || strcmp(key_n,"UNKNOWN KEY")==0)
@@ -2577,6 +2612,7 @@ init_curses(void)
 	    if (key_n2 != key_n)
 	      free(key_n2);
 	  }
+#endif
 	  SetDictInt("KEY_MIN", KEY_MIN);
 	  SetDictInt("KEY_MAX", KEY_MAX);
 	}
