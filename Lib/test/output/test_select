@@ -1,0 +1,25 @@
+test_select
+timeout = 0
+timeout = 1
+'testing...\012'
+timeout = 2
+'testing...\012'
+timeout = 4
+'testing...\012'
+timeout = 8
+'testing...\012'
+timeout = 16
+'testing...\012'
+timeout = None
+'testing...\012'
+timeout = None
+'testing...\012'
+timeout = None
+'testing...\012'
+timeout = None
+'testing...\012'
+timeout = None
+'testing...\012'
+timeout = None
+''
+EOF
