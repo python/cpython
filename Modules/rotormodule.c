@@ -597,10 +597,9 @@ rotor_rotor(PyObject *self, PyObject *args)
 {
 	Rotorobj *r;
 	char *string;
-	int len;
 	int num_rotors = 6;
 
-	if (!PyArg_ParseTuple(args, "s#|i:newrotor", &string, &len, &num_rotors))
+	if (!PyArg_ParseTuple(args, "s|i:newrotor", &string, &num_rotors))
 		return NULL;
 
 	r = rotorobj_new(num_rotors, string);
