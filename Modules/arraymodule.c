@@ -1962,13 +1962,6 @@ array_iter(arrayobject *ao)
 }
 
 static PyObject *
-arrayiter_getiter(PyObject *it)
-{
-	Py_INCREF(it);
-	return it;
-}
-
-static PyObject *
 arrayiter_next(arrayiterobject *it)
 {
 	assert(PyArrayIter_Check(it));
@@ -2021,7 +2014,7 @@ static PyTypeObject PyArrayIter_Type = {
 	0,					/* tp_clear */
 	0,                                      /* tp_richcompare */
 	0,                                      /* tp_weaklistoffset */
-	(getiterfunc)arrayiter_getiter,		/* tp_iter */
+	PyObject_GenericGetIter,		/* tp_iter */
 	(iternextfunc)arrayiter_next,		/* tp_iternext */
 	0,					/* tp_methods */
 };
