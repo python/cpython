@@ -419,8 +419,8 @@ class dispatcher:
 
 class dispatcher_with_send(dispatcher):
 
-    def __init__(self, sock=None):
-        dispatcher.__init__(self, sock)
+    def __init__(self, sock=None, map=None):
+        dispatcher.__init__(self, sock, map)
         self.out_buffer = ''
 
     def initiate_send(self):
@@ -510,8 +510,8 @@ if os.name == 'posix':
 
     class file_dispatcher(dispatcher):
 
-        def __init__(self, fd):
-            dispatcher.__init__(self)
+        def __init__(self, fd, map=None):
+            dispatcher.__init__(self, None, map)
             self.connected = True
             # set it to non-blocking mode
             flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
