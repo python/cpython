@@ -242,7 +242,7 @@ class ModuleFinder:
             return None
         try:
             fp, pathname, stuff = self.find_module(partname,
-                                                   parent and parent.__path__)
+                                                   parent and parent.__path__, parent)
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
@@ -385,9 +385,9 @@ class ModuleFinder:
         self.modules[fqname] = m = Module(fqname)
         return m
 
-    def find_module(self, name, path):
-        if path:
-            fullname = '.'.join(path)+'.'+name
+    def find_module(self, name, path, parent=None):
+        if parent is not None:
+            fullname = parent.__name__+'.'+name
         else:
             fullname = name
         if fullname in self.excludes:
