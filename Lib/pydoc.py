@@ -21,7 +21,7 @@ help.  Calling help(thing) on a Python object documents the object."""
 
 __author__ = "Ka-Ping Yee <ping@lfw.org>"
 __date__ = "26 February 2001"
-__version__ = "$Revision $"
+__version__ = "$Revision$"
 __credits__ = """Tommy Burnette, the original creator of manpy.
 Paul Prescod, for all his work on onlinehelp.
 Richard Chamberlain, for the first implementation of textdoc.
