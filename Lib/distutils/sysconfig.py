@@ -19,9 +19,12 @@ exec_prefix = os.path.normpath (sys.exec_prefix)
 
 def get_config_h_filename():
     """Return full pathname of installed config.h file."""
-    return os.path.join(exec_prefix,
-                        "include", "python" + sys.version[:3],
-                        "config.h")
+    if os.name == "nt":
+        return os.path.join(exec_prefix, "include", "config.h")
+    else:
+        return os.path.join(exec_prefix,
+                            "include", "python" + sys.version[:3],
+                            "config.h")
 
 def get_makefile_filename():
     """Return full pathname of installed Makefile from the Python build."""
@@ -136,19 +139,19 @@ def _init_posix():
 
 def _init_nt():
     """Initialize the module as appropriate for NT"""
-    g=globals()
+    g = globals()
     # load config.h, though I don't know how useful this is
-    parse_config_h(open(
-            os.path.join(exec_prefix, "include", "config.h")), g)
+    parse_config_h(open(get_config_h_filename()), g)
     # set basic install directories
-    g['LIBDEST']=os.path.join(exec_prefix, "Lib")
-    g['BINLIBDEST']= os.path.join(exec_prefix, "Lib")
+    g['LIBDEST'] = os.path.join(exec_prefix, "Lib")
+    g['BINLIBDEST'] = os.path.join(exec_prefix, "Lib")
 
     # XXX hmmm.. a normal install puts include files here
-    g['INCLUDEPY'] = os.path.join (prefix, 'include' )
+    g['INCLUDEPY'] = os.path.join(prefix, 'include')
 
-    g['SO'] = '.dll'
+    g['SO'] = '.pyd'
     g['exec_prefix'] = exec_prefix
+
 
 try:
     exec "_init_" + os.name
@@ -157,6 +160,7 @@ except NameError:
     pass
 else:
     exec "_init_%s()" % os.name
+
 
 del _init_posix
 del _init_nt
