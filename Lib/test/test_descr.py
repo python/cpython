@@ -1529,6 +1529,20 @@ def inherits():
     verify(s.lower().__class__ is str)
     verify(s.lower() == base)
 
+    s = madstring("x y")
+    verify(intern(s).__class__ is str)
+    verify(intern(s) is intern("x y"))
+    verify(intern(s) == "x y")
+
+    i = intern("y x")
+    s = madstring("y x")
+    verify(intern(s).__class__ is str)
+    verify(intern(s) is i)
+
+    s = madstring(i)
+    verify(intern(s).__class__ is str)
+    verify(intern(s) is i)
+
     class madunicode(unicode):
         _rev = None
         def rev(self):
