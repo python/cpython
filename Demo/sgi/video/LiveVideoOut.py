@@ -18,9 +18,13 @@ class LiveVideoOut:
 		self.vw = vw
 		self.vh = vh
 		self.disp = Displayer().init()
-		if not type in ('rgb8', 'grey', 'mono', 'grey2', 'grey4'):
+		if not type in ('rgb', 'rgb8', 'grey', 'mono', 'grey2', \
+			  'grey4'):
 			raise 'Incorrent live video output type', type
-		info = (type, vw, vh, 1, 8, 0, 0, 0, 0)
+		if type == 'rgb':
+			info = (type, vw, vh, 0, 32, 0, 0, 0, 0)
+		else:
+			info = (type, vw, vh, 1, 8, 0, 0, 0, 0)
 		self.disp.setinfo(info)
 		self.wid = wid
 		oldwid = gl.winget()
@@ -53,6 +57,8 @@ class LiveVideoOut:
 
 	# Return the number of bytes in one video line
 	def linewidth(self):
+		if self.disp.format == 'rgb':
+			return self.vw*4
 		if self.disp.format == 'mono':
 			return (self.vw+7)/8
 		elif self.disp.format == 'grey2':
