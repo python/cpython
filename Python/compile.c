@@ -61,7 +61,7 @@ int Py_OptimizeFlag = 0;
 "name '%.400s' is used prior to global declaration"
 
 #define LOCAL_GLOBAL \
-"name '%.400s' is a function paramter and declared global"
+"name '%.400s' is a function parameter and declared global"
 
 #define LATE_FUTURE \
 "from __future__ imports must occur at the beginning of the file"
