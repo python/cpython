@@ -1123,7 +1123,7 @@ class Entry(Widget):
 		self.tk.call(self._w, 'selection', 'clear')
 	select_clear = selection_clear
 	def selection_from(self, index):
-		self.tk.call(self._w, 'selection', 'set', index)
+		self.tk.call(self._w, 'selection', 'from', index)
 	select_from = selection_from
 	def selection_present(self):
 		return self.tk.getboolean(
