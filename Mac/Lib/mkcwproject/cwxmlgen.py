@@ -53,6 +53,8 @@ class ProjectBuilder:
 			dict['stdlibraryflags'] = 'Debug'
 		if not dict.has_key('libraryflags'):
 			dict['libraryflags'] = 'Debug'
+		if not dict.has_key('initialize'):
+			dict['initialize'] = '__initialize'
 		if not dict.has_key('mac_sysprefixtype'):
 			if os.path.isabs(dict['sysprefix']):
 				dict['mac_sysprefixtype'] = 'Absolute'
