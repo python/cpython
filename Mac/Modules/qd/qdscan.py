@@ -70,11 +70,11 @@ class MyScanner(Scanner):
 			'OpenCPort',
 			'InitCPort',
 			'CloseCPort',
+			'BitMapToRegionGlue',
 			]
 
 	def makeblacklisttypes(self):
 		return [
-			'BitMap_ptr',
 			'CCrsrHandle',
 			'CIconHandle',
 			'CQDProcs',

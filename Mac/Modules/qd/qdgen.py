@@ -15,6 +15,11 @@ f = Function(void, 'GrafDevice',
 )
 functions.append(f)
 
+f = Function(void, 'SetPortBits',
+    (BitMap_ptr, 'bm', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'PortSize',
     (short, 'width', InMode),
     (short, 'height', InMode),
@@ -288,6 +293,12 @@ f = Function(void, 'CloseRgn',
 )
 functions.append(f)
 
+f = Function(OSErr, 'BitMapToRegion',
+    (RgnHandle, 'region', InMode),
+    (BitMap_ptr, 'bMap', InMode),
+)
+functions.append(f)
+
 f = Function(void, 'DisposeRgn',
     (RgnHandle, 'rgn', InMode),
 )
@@ -403,6 +414,26 @@ f = Function(void, 'ScrollRect',
     (short, 'dh', InMode),
     (short, 'dv', InMode),
     (RgnHandle, 'updateRgn', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'CopyBits',
+    (BitMap_ptr, 'srcBits', InMode),
+    (BitMap_ptr, 'dstBits', InMode),
+    (Rect_ptr, 'srcRect', InMode),
+    (Rect_ptr, 'dstRect', InMode),
+    (short, 'mode', InMode),
+    (RgnHandle, 'maskRgn', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'CopyMask',
+    (BitMap_ptr, 'srcBits', InMode),
+    (BitMap_ptr, 'maskBits', InMode),
+    (BitMap_ptr, 'dstBits', InMode),
+    (Rect_ptr, 'srcRect', InMode),
+    (Rect_ptr, 'maskRect', InMode),
+    (Rect_ptr, 'dstRect', InMode),
 )
 functions.append(f)
 
@@ -532,6 +563,15 @@ f = Function(void, 'MapPoly',
     (PolyHandle, 'poly', InMode),
     (Rect_ptr, 'srcRect', InMode),
     (Rect_ptr, 'dstRect', InMode),
+)
+functions.append(f)
+
+f = Function(void, 'StdBits',
+    (BitMap_ptr, 'srcBits', InMode),
+    (Rect_ptr, 'srcRect', InMode),
+    (Rect_ptr, 'dstRect', InMode),
+    (short, 'mode', InMode),
+    (RgnHandle, 'maskRgn', InMode),
 )
 functions.append(f)
 
@@ -695,6 +735,18 @@ f = Function(void, 'ReserveEntry',
 functions.append(f)
 
 f = Function(short, 'QDError',
+)
+functions.append(f)
+
+f = Function(void, 'CopyDeepMask',
+    (BitMap_ptr, 'srcBits', InMode),
+    (BitMap_ptr, 'maskBits', InMode),
+    (BitMap_ptr, 'dstBits', InMode),
+    (Rect_ptr, 'srcRect', InMode),
+    (Rect_ptr, 'maskRect', InMode),
+    (Rect_ptr, 'dstRect', InMode),
+    (short, 'mode', InMode),
+    (RgnHandle, 'maskRgn', InMode),
 )
 functions.append(f)
 
