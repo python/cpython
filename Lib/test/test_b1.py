@@ -122,6 +122,14 @@ if complex(0j, 3.14j) != -3.14+0j: raise TestFailed, 'complex(0j, 3.14j)'
 if complex(0.0, 3.14j) != -3.14+0j: raise TestFailed, 'complex(0.0, 3.14j)'
 if complex(0j, 3.14) != 3.14j: raise TestFailed, 'complex(0j, 3.14)'
 if complex(0.0, 3.14) != 3.14j: raise TestFailed, 'complex(0.0, 3.14)'
+if complex("1") != 1+0j: raise TestFailed, 'complex("1")'
+if complex("1j") != 1j: raise TestFailed, 'complex("1j")'
+try: complex("1", "1")
+except TypeError: pass
+else: raise TestFailed, 'complex("1", "1")'
+try: complex(1, "1")
+except TypeError: pass
+else: raise TestFailed, 'complex(1, "1")'
 if complex("  3.14+J  ") != 3.14+1j:  raise TestFailed, 'complex("  3.14+J  )"'
 if have_unicode:
     if complex(unicode("  3.14+J  ")) != 3.14+1j:
