@@ -980,8 +980,26 @@ initgc(void)
 #undef ADD_INT
 }
 
+/* API to invoke gc.collect() from C */
+long
+PyGC_Collect(void)
+{
+	long n;
+
+	if (collecting)
+		n = 0; /* already collecting, don't do anything */
+	else {
+		collecting = 1;
+		n = collect(NUM_GENERATIONS - 1);
+		collecting = 0;
+	}
+
+	return n;
+}
+
 /* for debugging */
-void _PyGC_Dump(PyGC_Head *g)
+void
+_PyGC_Dump(PyGC_Head *g)
 {
 	_PyObject_Dump(FROM_GC(g));
 }

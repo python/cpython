@@ -255,8 +255,16 @@ Py_Finalize(void)
 	Py_XDECREF(PyModule_WarningsModule);
 	PyModule_WarningsModule = NULL;
 
+	/* Collect garbage.  This may call finalizers; it's nice to call these
+	   before all modules are destroyed. */
+	PyGC_Collect();
+
 	/* Destroy all modules */
 	PyImport_Cleanup();
+
+	/* Collect final garbage.  This disposes of cycles created by
+	   new-style class definitions, for example. */
+	PyGC_Collect();
 
 	/* Destroy the database used by _PyImport_{Fixup,Find}Extension */
 	_PyImport_Fini();
