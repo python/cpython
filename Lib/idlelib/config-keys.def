@@ -55,6 +55,8 @@ tabify-region=<Alt-Key-5> <Meta-Key-5>
 untabify-region=<Alt-Key-6> <Meta-Key-6>
 toggle-tabs=<Alt-Key-t> <Meta-Key-t> <Alt-Key-T>
 change-indentwidth=<Alt-Key-u> <Meta-Key-u> <Alt-Key-U>
+del-word-left=<Control-Key-BackSpace>
+del-word-right=<Control-Key-Delete>
 
 [IDLE Classic Unix]
 copy=<Alt-Key-w> <Meta-Key-w>
@@ -104,6 +106,8 @@ tabify-region=<Alt-Key-5>
 untabify-region=<Alt-Key-6>
 toggle-tabs=<Alt-Key-t>
 change-indentwidth=<Alt-Key-u>
+del-word-left=<Alt-Key-BackSpace>
+del-word-right=<Alt-Key-d>
 
 [IDLE Classic Mac]
 copy=<Command-Key-c>
@@ -153,3 +157,5 @@ tabify-region=<Control-Key-5>
 untabify-region=<Control-Key-6>
 toggle-tabs=<Control-Key-t>
 change-indentwidth=<Control-Key-u>
+del-word-left=<Control-Key-BackSpace>
+del-word-right=<Control-Key-Delete>

@@ -3,16 +3,23 @@ What's New in IDLE 1.2a0?
 
 *Release date: XX-XXX-2005*
 
+- Add keybindings for del-word-left and del-word-right.
+
 - Discourage using an indent width other than 8 when using tabs to indent
   Python code.
 
 - Restore use of EditorWindow.set_indentation_params(), was dead code since
-  Autoindent was merged into EditorWindow.
+  Autoindent was merged into EditorWindow.  This allows IDLE to conform to the
+  indentation width of a loaded file.  (But it still will not switch to tabs
+  even if the file uses tabs.)  Any change in indent width is local to that
+  window.
 
 - Add Tabnanny check before Run/F5, not just when Checking module.
 
 - If an extension can't be loaded, print warning and skip it instead of
   erroring out.
+
+- Improve error handling when .idlerc can't be created (warn and exit).
 
 - The GUI was hanging if the shell window was closed while a raw_input() 
   was pending.  Restored the quit() of the readline() mainloop().

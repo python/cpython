@@ -141,6 +141,8 @@ class EditorWindow(object):
         text.bind("<<change-indentwidth>>",self.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
+        text.bind("<<del-word-left>>", self.del_word_left)
+        text.bind("<<del-word-right>>", self.del_word_right)
 
         if flist:
             flist.inversedict[self] = key
@@ -385,6 +387,14 @@ class EditorWindow(object):
                 except TclError:
                     pass
         return move_at_edge
+
+    def del_word_left(self, event):
+        self.text.event_generate('<Meta-Delete>')
+        return "break"
+
+    def del_word_right(self, event):
+        self.text.event_generate('<Meta-d>')
+        return "break"
 
     def find_event(self, event):
         SearchDialog.find(self.text)
