@@ -1,4 +1,3 @@
-
 \documentclass{howto}
 
 % $Id$
@@ -14,7 +13,7 @@
 
 {\large This document is a draft, and is subject to change until the
 final version of Python 2.2 is released.  Currently it's up to date
-for Python 2.2 alpha 4.  Please send any comments, bug reports, or
+for Python 2.2 beta 1.  Please send any comments, bug reports, or
 questions, no matter how minor, to \email{akuchlin@mems-exchange.org}.
 }
 
@@ -147,7 +146,8 @@ class C(object):
 This means that \keyword{class} statements that don't have any base
 classes are always classic classes in Python 2.2.  There's actually a
 way to make new-style classes without any base classes, by setting the
-\member{__metaclass__} variable to XXX.  (What do you set it to?)
+\member{__metaclass__} variable to XXX (What do you set it to?), but
+it's easier to just subclass \keyword{object}.
 
 The type objects for the built-in types are available as built-ins,
 named using a clever trick.  Python has always had built-in functions
@@ -163,62 +163,23 @@ factories when called.
 \end{verbatim}
 
 To make the set of types complete, new type objects such as
-\function{dictionary} and \function{file} have been added.
-
-Here's a more interesting example.  The following class subclasses
-Python's dictionary implementation in order to automatically fold all
-dictionary keys to lowercase.
+\function{dictionary} and \function{file} have been added.  Here's a
+more interesting example, adding a \method{lock()} method to file
+objects:
 
 \begin{verbatim}
-class LowerCaseDict(dictionary):
-    def _fold_key (self, key):
-        if not isinstance(key, str):
-            raise TypeError, "All keys must be strings"
-        return key.lower()
-    
-    def __getitem__ (self, key):
-        key = self._fold_key(key)
-        return dictionary.__getitem__(self, key)
-
-    def __setitem__ (self, key, value):
-        key = self._fold_key(key)
-        dictionary.__setitem__(self, key, value)
-
-    def __delitem__ (self, key):
-        key = self._fold_key(key)
-        dictionary.__delitem__(self, key, value)
+class LockableFile(file):
+    def lock (self, operation, length=0, start=0, whence=0):
+        import fcntl
+        return fcntl.lockf(self.fileno(), operation,
+                           length, start, whence)
 \end{verbatim}
 
-Trying out this class, it works as you'd expect:
-
-\begin{verbatim}
->>> d = LowerCaseDict()
->>> d['ABC'] = 1
->>> d['abc']
-1
-\end{verbatim}
-
-However, because it's a subclass of Python's dictionary type,
-instances of \class{LowerCaseDict} can be used in most places where a
-regular dictionary is required.
-
-\begin{verbatim}
->>> d = LowerCaseDict()
->>> exec 'Name = 1' in d
->>> print d.items()
-XXX
->>> exec 'nAmE = name + 1' in d
->>> print d.items()
-XXX
-\end{verbatim}
-
-And now you can have Python with case-insensitive variable names!  One
-of the nice things about Python 2.2 is that it makes Python flexible
-enough to solve many other past problems without hacking Python's C
-code.  If you want a case-insensitive Python environment, using a
-case-folding dictionary and writing a case-insensitive tokenizer using
-the compiler package (now automatically installed in 2.2) will make it
-a straightforward.
+The now-obsolete \module{posixfile} module contained a class that
+emulated all of a file object's methods and also added a
+\method{lock()} method, but this class couldn't be passed to internal
+functions that expected a built-in file, something which is possible
+with our new \class{LockableFile}.
 
 
 \subsection{Descriptors}
@@ -371,14 +332,100 @@ class{A}] after dropping duplicates.
 
 Following this rule, referring to \method{D.save()} will return
 \method{C.save()}, which is the behaviour we're after.  This lookup
-rule is the same as the one followed by XXX Common Lisp?.
+rule is the same as the one followed by Common Lisp.  
 
 
 \subsection{Attribute Access}
 
-XXX __getattribute__, __getattr__
+A fair number of sophisticated Python classes define hooks for
+attribute access using \method{__getattr__}; most commonly this is
+done for convenience, to make code more readable by automatically
+mapping an attribute access such as \code{obj.parent} into a method
+call such as \code{obj.get_parent()}.  Python 2.2 adds some new ways
+of controlling attribute access.
 
-XXX properties, slots
+First, \method{__getattr__(\var{attr_name})} is still supported by
+new-style classes, and nothing about it has changed.  As before, it
+will be called when an attempt is made to access \code{obj.foo} and no
+attribute named \samp{foo} is found in the instance's dictionary.
+
+New-style classes also support a new method,
+\method{__getattribute__(\var{attr_name})}.  The difference between
+the two methods is that \method{__getattribute__} is \emph{always}
+called whenever any attribute is accessed, while the old
+\method{__getattr__} is only called if \samp{foo} isn't found in the
+instance's dictionary.
+
+However, Python 2.2's support for \dfn{properties} will often be a
+simpler way to trap attribute references.  Writing a
+\method{__getattr__} method is complicated because to avoid recursion
+you can't use regular attribute accesses inside them, and instead have
+to mess around with the contents of \member{__dict__}.
+\method{__getattr__} methods also end up being called by Python when
+it checks for other methods such as \method{__repr__} or
+\method{__coerce__}, and so have to be written with this in mind.
+Finally, calling a function on every attribute access results in a
+sizable performance loss.
+
+\class{property} is a new built-in type that packages up three
+functions that get, set, or delete an attribute, and a docstring.  For
+example, if you want to define a \member{size} attribute that's
+computed, but also settable, you could write:
+
+\begin{verbatim}
+class C:
+    def get_size (self):
+        result = ... computation ...
+        return result
+    def set_size (self, size):
+        ... compute something based on the size
+        and set internal state appropriately ...
+
+    # Define a property.  The 'delete this attribute'
+    # method is defined as None, so the attribute
+    # can't be deleted.
+    size = property(get_size, set_size,
+                    None,
+                    "Storage size of this instance")
+\end{verbatim}
+
+That is certainly clearer and easier to write than a pair of
+\method{__getattr__}/\method{__setattr__} methods that check for the
+\member{size} attribute and handle it specially, while retrieving all
+other attributes from the instance's \member{__dict__}.  Accesses to
+\member{size} are also the only ones which have to perform the work of
+calling a function, letting references to other attributes run at
+their usual speed.
+
+Finally, it's possible to constrain the list of attributes that can be
+referenced on an object using the new \member{__slots__} attribute.
+Python objects are usually very dynamic; at any time it's possible to
+define a new attribute on an instance by just doing
+\code{obj.new_attr=1}.  This is flexible and convenient, but this
+flexibility can also lead to bugs, as when you meant to write
+\code{obj.template = 'a'} but make a typo and wrote
+\code{obj.templtae} by accident.  
+
+A new-style class can define a class variable named \member{__slots__}
+to constrain the list of legal attribute names.  An example will make
+this clear:
+
+\begin{verbatim}
+>>> class C(object):
+...     __slots__ = ['template', 'name']
+...
+>>> obj = C()
+>>> print obj.template
+None
+>>> obj.template = 'Test' ; obj.name = 'abc'
+>>> print obj.template
+Test
+>>> obj.templtae
+Traceback (most recent call last):
+  File "<stdin>", line 1, in ?
+AttributeError: 'C' object has no attribute 'templtae'
+\end{verbatim}
+
 
 
 \subsection{Related Links}
@@ -389,23 +436,26 @@ giving enough of an explanation to start you programming, but many
 details have been simplified or ignored.  Where should you go to get a
 more complete picture?
 
-\url{http://www.python.org/2.2/descrintro.html} is a tutorial
+\url{http://www.python.org/2.2/descrintro.html} is a lengthy tutorial
 introduction to the descriptor features, written by Guido van Rossum.
-% XXX read it and comment on it
+If my description has whetted your appetite, go read this tutorial
+next, because it goes into much more detail about the new features
+while still remaining quite easy to read.
 
 Next, there are two relevant PEPs, \pep{252} and \pep{253}.  \pep{252}
 is titled "Making Types Look More Like Classes", and covers the
 descriptor API.  \pep{253} is titled "Subtyping Built-in Types", and
 describes the changes to type objects that make it possible to subtype
-built-in objects.  This is the more complicated PEP of the two, and at
-a few points the necessary explanations of types and meta-types may
-cause your head to explode.  Both PEPs were written and implemented by
-Guido van Rossum, with substantial assistance from the rest of the
-Zope Corp. team.
+built-in objects.  \pep{253} is the more complicated PEP of the two,
+and at a few points the necessary explanations of types and meta-types
+may cause your head to explode.  Both PEPs were written and
+implemented by Guido van Rossum, with substantial assistance from the
+rest of the Zope Corp. team.
 
-Finally, there's the ultimate authority: the source code.
-typeobject.c, others?
-% XXX point people at the right files
+Finally, there's the ultimate authority: the source code.  Most of the
+machinery for the type handling is in \file{Objects/typeobject.c}, but
+you should only resort to it after all other avenues have been
+exhausted (including posting a question to python-list or python-dev.)
 
 
 %======================================================================
@@ -1096,6 +1146,8 @@ embedding the interpreter, or just hacking on the interpreter itself.
 If you only write Python code, none of the changes described here will
 affect you very much.
 
+% XXX PyArg_UnpackTuple()
+
 \begin{itemize}
 
   \item Profiling and tracing functions can now be implemented in C,
@@ -1295,10 +1347,10 @@ to experiment with these modules can uncomment them manually.
 \section{Acknowledgements}
 
 The author would like to thank the following people for offering
-suggestions and corrections to various drafts of this article: Fred
-Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr., Carel
-Fellinger, Mark Hammond, Stephen Hansen, Jack Jansen, Marc-Andr\'e
-Lemburg, Fredrik Lundh, Tim Peters, Neil Schemenauer, Guido van
-Rossum.
+suggestions, corrections and assistance with various drafts of this
+article: Fred Bremmer, Keith Briggs, Andrew Dalke, Fred~L. Drake, Jr.,
+Carel Fellinger, Mark Hammond, Stephen Hansen, Jack Jansen,
+Marc-Andr\'e Lemburg, Fredrik Lundh, Tim Peters, Tom Reinhardt, Neil
+Schemenauer, Guido van Rossum.
 
 \end{document}
