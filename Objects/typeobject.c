@@ -1152,7 +1152,8 @@ inherit_slots(PyTypeObject *type, PyTypeObject *base)
 		COPYSLOT(tp_dictoffset);
 		COPYSLOT(tp_init);
 		COPYSLOT(tp_alloc);
-		if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		if (base != &PyBaseObject_Type ||
+		    (type->tp_flags & Py_TPFLAGS_HEAPTYPE)) {
 			COPYSLOT(tp_new);
 		}
 		COPYSLOT(tp_free);
