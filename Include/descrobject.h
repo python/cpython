@@ -30,3 +30,6 @@ extern DL_IMPORT(int) PyDescr_IsData(PyObject *);
 
 extern DL_IMPORT(PyObject *) PyDictProxy_New(PyObject *);
 extern DL_IMPORT(PyObject *) PyWrapper_New(PyObject *, PyObject *);
+
+
+extern DL_IMPORT(PyTypeObject) PyGetSet_Type;

@@ -840,3 +840,138 @@ PyWrapper_New(PyObject *d, PyObject *self)
 	}
 	return (PyObject *)wp;
 }
+
+
+/* A built-in 'getset' type */
+
+/*
+    class getset(object):
+
+	def __init__(self, get=None, set=None):
+	    self.__get = get
+	    self.__set = set
+
+	def __get__(self, inst, type=None):
+	    if self.__get is None:
+		raise AttributeError, "unreadable attribute"
+	    if inst is None:
+	        return self
+	    return self.__get(inst)
+
+	def __set__(self, inst, value):
+	    if self.__set is None:
+		raise AttributeError, "unsettable attribute"
+	    return self.__set(inst, value)
+*/
+
+typedef struct {
+	PyObject_HEAD
+	PyObject *get;
+	PyObject *set;
+} getsetobject;
+
+static void
+getset_dealloc(PyObject *self)
+{
+	getsetobject *gs = (getsetobject *)self;
+
+	Py_XDECREF(gs->get);
+	Py_XDECREF(gs->set);
+	self->ob_type->tp_free(self);
+}
+
+static PyObject *
+getset_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+	getsetobject *gs = (getsetobject *)self;
+
+	if (gs->get == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
+		return NULL;
+	}
+	if (obj == NULL || obj == Py_None) {
+		Py_INCREF(self);
+		return self;
+	}
+	return PyObject_CallFunction(gs->get, "(O)", obj);
+}
+
+static int
+getset_descr_set(PyObject *self, PyObject *obj, PyObject *value)
+{
+	getsetobject *gs = (getsetobject *)self;
+	PyObject *res;
+
+	if (gs->set == NULL) {
+		PyErr_SetString(PyExc_AttributeError, "unsettable attribute");
+		return -1;
+	}
+	res = PyObject_CallFunction(gs->set, "(OO)", obj, value);
+	if (res == NULL)
+		return -1;
+	Py_DECREF(res);
+	return 0;
+}
+
+static int
+getset_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+	PyObject *get, *set;
+	getsetobject *gs = (getsetobject *)self;
+
+	if (!PyArg_ParseTuple(args, "OO:getset.__init__", &get, &set))
+		return -1;
+	if (get == Py_None)
+		get = NULL;
+	if (set == Py_None)
+		set = NULL;
+	Py_XINCREF(get);
+	Py_XINCREF(set);
+	gs->get = get;
+	gs->set = set;
+	return 0;
+}
+
+PyTypeObject PyGetSet_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"getset",				/* tp_name */
+	sizeof(getsetobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	getset_dealloc,		 		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,		       			/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	getset_descr_get,			/* tp_descr_get */
+	getset_descr_set,			/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	getset_init,				/* tp_init */
+	PyType_GenericAlloc,			/* tp_alloc */
+	PyType_GenericNew,			/* tp_new */
+	_PyObject_Del,				/* tp_free */
+};
