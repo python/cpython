@@ -17,9 +17,14 @@ class UrlParseTestCase(unittest.TestCase):
                                ('http', 'www.python.org', '/', '', '', 'abc')),
                               (RFC1808_BASE,
                                ('http', 'a', '/b/c/d', 'p', 'q', 'f')),
+                              ('file:///tmp/junk.txt',
+                               ('file', '', '/tmp/junk.txt', '', '', '')),
                               ]:
             result = urlparse.urlparse(url)
             self.assertEqual(result, expected)
+            # put it back together and it should be the same
+            result2 = urlparse.urlunparse(result)
+            self.assertEqual(result2, url)
 
     def checkJoin(self, base, relurl, expected):
         self.assertEqual(urlparse.urljoin(base, relurl), expected)
