@@ -16,7 +16,7 @@ except (AttributeError, KeyError):
 
 try:
 	mail = open(mailbox, 'r')
-except RuntimeError:
+except IOError:
 	sys.stderr.write('Cannot open mailbox file: ' + mailbox + '\n')
 	sys.exit(2)
 
