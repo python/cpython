@@ -69,26 +69,26 @@ modindex.html: lib/lib.html mac/mac.html $(TOOLSDIR)/mkmodindex
 		lib/modindex.html mac/modindex.html
 
 api/api.html:  $(PAPERDIR)/api.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
-	$(MKHTML) api $(L2HARGS)
+	$(MKHTML) api $(L2HARGS) -split 5
 
 doc/doc.html:  $(DOCFILES) $(BUILDINDEX) $(TOPDIR)/perl/ltxmarkup.perl
 	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
 		--html $(TOPDIR)/doc/doc.tex
 
 ext/ext.html:  $(PAPERDIR)/ext.aux $(TOOLSDIR)/mkhtml.sh
-	$(MKHTML) ext $(L2HARGS)
+	$(MKHTML) ext $(L2HARGS) -split 5
 
 lib/lib.html:  $(PAPERDIR)/lib.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
 	$(TOOLSDIR)/fix_libaux.sed <`$(KPSEWHICH) lib.aux` >lib1.aux
 	mv lib1.aux `$(KPSEWHICH) lib.aux`
-	$(MKHTML) lib $(L2HARGS)
+	$(MKHTML) lib $(L2HARGS) -split 5
 
 mac/mac.html:  $(MACFILES) $(BUILDINDEX)
 	$(TOOLSDIR)/mkhowto --about stdabout.dat --address $(PYTHONDOCS) \
 		--html $(TOPDIR)/mac/mac.tex
 
 ref/ref.html:  $(PAPERDIR)/ref.aux $(BUILDINDEX) $(TOOLSDIR)/mkhtml.sh
-	$(MKHTML) ref $(L2HARGS)
+	$(MKHTML) ref $(L2HARGS) -split 5
 
 tut/tut.html:  $(PAPERDIR)/tut.aux $(TOOLSDIR)/mkhtml.sh
 	$(MKHTML) --numeric tut $(L2HARGS) -split 3
