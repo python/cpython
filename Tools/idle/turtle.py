@@ -55,7 +55,7 @@ class RawPen:
         x0, y0 = start = self._position
         x1 = x0 + distance * cos(self._angle*self._invradian)
         y1 = y0 - distance * sin(self._angle*self._invradian)
-        self.goto(x1, y1)
+        self._goto(x1, y1)
 
     def backward(self, distance):
         self.forward(-distance)
@@ -106,14 +106,14 @@ class RawPen:
 
     def write(self, arg, move=0):
         x, y = start = self._position
+        x = x-1 # correction -- calibrated for Windows
         item = self._canvas.create_text(x, y, 
                                         text=str(arg), anchor="sw",
                                         fill=self._color)
         self._items.append(item)
         if move:
             x0, y0, x1, y1 = self._canvas.bbox(item)
-            x1 = x1-1 # correction -- calibrated for Windows
-            self.goto(x1, y1)
+            self._goto(x1, y1)
 
     def fill(self, flag):
         if self._filling:
@@ -187,14 +187,18 @@ class RawPen:
     def goto(self, *args):
         if len(args) == 1:
             try:
-                x1, y1 = args[0]
+                x, y = args[0]
             except:
                 raise Error, "bad point argument: %s" % `args[0]`
         else:
             try:
-                x1, y1 = args
+                x, y = args
             except:
                 raise Error, "bad coordinates: %s" % `args[0]`
+        x0, y0 = self._origin
+        self._goto(x0+x, y0-y)
+
+    def _goto(self, x1, y1):
         x0, y0 = start = self._position
         self._position = map(float, (x1, y1))
         if self._filling:
