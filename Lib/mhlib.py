@@ -314,9 +314,9 @@ class Folder:
         """Write the set of sequences back to the folder."""
         fullname = self.getsequencesfilename()
         f = None
-        for key in sequences.keys():
+        for key, seq in sequences.iteritems():
             s = IntSet('', ' ')
-            s.fromlist(sequences[key])
+            s.fromlist(seq)
             if not f: f = open(fullname, 'w')
             f.write('%s: %s\n' % (key, s.tostring()))
         if not f:
