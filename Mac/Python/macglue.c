@@ -557,7 +557,7 @@ SIOUXDoAboutBox(void)
 	swidth = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
 	sheight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - LMGetMBarHeight();
 	xpos = (swidth-width)/2;
-	ypos = (sheight-height)/2 + LMGetMBarHeight();
+	ypos = (sheight-height)/5 + LMGetMBarHeight();
 	MoveWindow(theWindow, xpos, ypos, 0);
 	ShowWindow(theWindow);
 	ModalDialog(NULL, &item);
