@@ -567,6 +567,11 @@ class PyBuildExt(build_ext):
                                    define_macros = expat_defs,
                                    libraries = ['expat']) )
 
+	# Dynamic loading module
+        dl_inc = find_file('dlfcn.h', [], inc_dirs)
+        if dl_inc is not None:
+		exts.append( Extension('dl', ['dlmodule.c']) )
+		
         # Platform-specific libraries
         if platform == 'linux2':
             # Linux-specific modules
