@@ -45,6 +45,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #define CHECKEXC 1	/* Double-check exception checking */
 #endif
 
+#define DEBUG
+
+
 /* Forward declarations */
 
 #ifdef LLTRACE
@@ -82,6 +85,7 @@ static object *cmp_outcome PROTO((int, object *, object *));
 static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *));
 static void locals_2_fast PROTO((frameobject *, int));
+static void fast_2_locals PROTO((frameobject *));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -178,6 +182,7 @@ eval_code(co, globals, locals, arg)
 	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
+	int needmerge = 0;
 #ifdef LLTRACE
 	int lltrace = dictlookup(globals, "__lltrace__") != NULL;
 #endif
@@ -216,6 +221,18 @@ eval_code(co, globals, locals, arg)
 #define PUSH(v)		BASIC_PUSH(v)
 #define POP()		BASIC_POP()
 #endif
+
+	if (globals == NULL) {
+		globals = getglobals();
+		if (locals == NULL) {
+			locals = getlocals();
+			needmerge = 1;
+		}
+	}
+	else {
+		if (locals == NULL)
+			locals = globals;
+	}
 
 	f = newframeobject(
 			current_frame,		/*back*/
@@ -1328,11 +1345,17 @@ eval_code(co, globals, locals, arg)
 			why = WHY_EXCEPTION;
 		}
 	}
+
+	if (fastlocals && (f->ob_refcnt > 1 || f->f_locals->ob_refcnt > 2))
+		fast_2_locals(f);
 	
 	/* Restore previous frame and release the current one */
 	
 	current_frame = f->f_back;
 	DECREF(f);
+
+	if (needmerge)
+		locals_2_fast(current_frame, 1);
 	
 	return retval;
 }
@@ -1417,7 +1440,9 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	INCREF(arg);
 	settupleitem(arglist, 2, arg);
 	tracing++;
+	fast_2_locals(f);
 	res = call_object(*p_trace, arglist);
+	locals_2_fast(f, 1);
 	tracing--;
  cleanup:
 	XDECREF(arglist);
@@ -1447,24 +1472,25 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	}
 }
 
-object *
-getlocals()
-{
-	/* Merge f->f_fastlocals into f->f_locals, then return the latter */
+static void
+fast_2_locals(f)
 	frameobject *f;
+{
+	/* Merge f->f_fastlocals into f->f_locals */
 	object *locals, *fast, *map;
+	object *error_type, *error_value;
 	int i;
-	f = current_frame;
 	if (f == NULL)
-		return NULL;
+		return;
 	locals = f->f_locals;
 	fast = f->f_fastlocals;
 	map = f->f_localmap;
 	if (locals == NULL || fast == NULL || map == NULL)
-		return locals;
+		return;
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_dictobject(map))
-		return locals;
+		return;
+	err_get(&error_type, &error_value);
 	i = getdictsize(map);
 	while (--i >= 0) {
 		object *key;
@@ -1488,7 +1514,7 @@ getlocals()
 				err_clear();
 		}
 	}
-	return locals;
+	err_setval(error_type, error_value);
 }
 
 static void
@@ -1536,6 +1562,15 @@ void
 mergelocals()
 {
 	locals_2_fast(current_frame, 1);
+}
+
+object *
+getlocals()
+{
+	if (current_frame == NULL)
+		return NULL;
+	fast_2_locals(current_frame);
+	return current_frame->f_locals;
 }
 
 object *

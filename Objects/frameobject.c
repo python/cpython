@@ -38,7 +38,7 @@ static struct memberlist frame_memberlist[] = {
 	{"f_code",	T_OBJECT,	OFF(f_code)},
 	{"f_globals",	T_OBJECT,	OFF(f_globals)},
 	{"f_locals",	T_OBJECT,	OFF(f_locals)},
-	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals)},
+/*	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals)}, /* XXX Unsafe */
 	{"f_localmap",	T_OBJECT,	OFF(f_localmap)},
 	{"f_lasti",	T_INT,		OFF(f_lasti)},
 	{"f_lineno",	T_INT,		OFF(f_lineno)},

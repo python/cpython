@@ -35,6 +35,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pythonrun.h"
 #include "ceval.h"
 #include "modsupport.h"
+#include "compile.h"
+#include "eval.h"
 
 static object *
 builtin_abs(self, v)
@@ -107,6 +109,29 @@ builtin_coerce(self, args)
 }
 
 static object *
+builtin_compile(self, args)
+	object *self;
+	object *args;
+{
+	char *str;
+	char *filename;
+	char *startstr;
+	int start;
+	if (!getargs(args, "(sss)", &str, &filename, &startstr))
+		return NULL;
+	if (strcmp(startstr, "exec") == 0)
+		start = file_input;
+	else if (strcmp(startstr, "eval") == 0)
+		start = eval_input;
+	else {
+		err_setstr(ValueError,
+			   "compile() mode must be 'exec' or 'eval'");
+		return NULL;
+	}
+	return compile_string(str, filename, start);
+}
+
+static object *
 builtin_dir(self, v)
 	object *self;
 	object *v;
@@ -168,23 +193,26 @@ exec_eval(v, start)
 	char *s;
 	int n;
 	if (v != NULL) {
-		if (is_stringobject(v))
-			str = v;
-		else if (is_tupleobject(v) &&
+		if (is_tupleobject(v) &&
 				((n = gettuplesize(v)) == 2 || n == 3)) {
 			str = gettupleitem(v, 0);
 			globals = gettupleitem(v, 1);
 			if (n == 3)
 				locals = gettupleitem(v, 2);
 		}
+		else
+			str = v;
 	}
-	if (str == NULL || !is_stringobject(str) ||
+	if (str == NULL || (!is_stringobject(str) && !is_codeobject(str)) ||
 			globals != NULL && !is_dictobject(globals) ||
 			locals != NULL && !is_dictobject(locals)) {
 		err_setstr(TypeError,
-		    "exec/eval arguments must be string[,dict[,dict]]");
+		    "exec/eval arguments must be (string|code)[,dict[,dict]]");
 		return NULL;
 	}
+	if (is_codeobject(str))
+		return eval_code((codeobject *) str, globals, locals,
+				 (object *)NULL);
 	s = getstringvalue(str);
 	if (strlen(s) != getstringsize(str)) {
 		err_setstr(ValueError, "embedded '\\0' in string arg");
@@ -303,6 +331,17 @@ builtin_hasattr(self, args)
 	}
 	DECREF(v);
 	return newintobject(1L);
+}
+
+static object *
+builtin_id(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	if (!getargs(args, "O", &v))
+		return NULL;
+	return newintobject((long)v);
 }
 
 static object *
@@ -713,6 +752,7 @@ static struct methodlist builtin_methods[] = {
 	{"chr",		builtin_chr},
 	{"cmp",		builtin_cmp},
 	{"coerce",	builtin_coerce},
+	{"compile",	builtin_compile},
 	{"dir",		builtin_dir},
 	{"divmod",	builtin_divmod},
 	{"eval",	builtin_eval},
@@ -723,6 +763,7 @@ static struct methodlist builtin_methods[] = {
 	{"hasattr",	builtin_hasattr},
 	{"hash",	builtin_hash},
 	{"hex",		builtin_hex},
+	{"id",		builtin_id},
 	{"input",	builtin_input},
 	{"int",		builtin_int},
 	{"len",		builtin_len},

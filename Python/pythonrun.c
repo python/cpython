@@ -263,7 +263,7 @@ object *
 run_string(str, start, globals, locals)
 	char *str;
 	int start;
-	/*dict*/object *globals, *locals;
+	object *globals, *locals;
 {
 	node *n;
 	int err;
@@ -276,7 +276,7 @@ run_file(fp, filename, start, globals, locals)
 	FILE *fp;
 	char *filename;
 	int start;
-	/*dict*/object *globals, *locals;
+	object *globals, *locals;
 {
 	node *n;
 	int err;
@@ -289,7 +289,7 @@ run_err_node(err, n, filename, globals, locals)
 	int err;
 	node *n;
 	char *filename;
-	/*dict*/object *globals, *locals;
+	object *globals, *locals;
 {
 	if (err != E_DONE) {
 		err_input(err);
@@ -302,25 +302,9 @@ object *
 run_node(n, filename, globals, locals)
 	node *n;
 	char *filename;
-	/*dict*/object *globals, *locals;
+	object *globals, *locals;
 {
-	object *res;
-	int needmerge = 0;
-	if (globals == NULL) {
-		globals = getglobals();
-		if (locals == NULL) {
-			locals = getlocals();
-			needmerge = 1;
-		}
-	}
-	else {
-		if (locals == NULL)
-			locals = globals;
-	}
-	res = eval_node(n, filename, globals, locals);
-	if (needmerge)
-		mergelocals();
-	return res;
+	return eval_node(n, filename, globals, locals);
 }
 
 object *
@@ -339,6 +323,25 @@ eval_node(n, filename, globals, locals)
 	v = eval_code(co, globals, locals, (object *)NULL);
 	DECREF(co);
 	return v;
+}
+
+object *
+compile_string(str, filename, start)
+	char *str;
+	char *filename;
+	int start;
+{
+	node *n;
+	int err;
+	codeobject *co;
+	err = parse_string(str, start, &n);
+	if (err != E_DONE) {
+		err_input(err);
+		return NULL;
+	}
+	co = compile(n, filename);
+	freetree(n);
+	return (object *)co;
 }
 
 /* Simplified interface to parsefile */

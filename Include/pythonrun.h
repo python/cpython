@@ -42,6 +42,8 @@ object *run_file PROTO((FILE *, char *, int, object *, object *));
 object *run_err_node PROTO((int, struct _node *, char *, object *, object *));
 object *run_node PROTO((struct _node *, char *, object *, object *));
 
+object *compile_string PROTO((char *, char *, int));
+
 void print_error PROTO((void));
 
 void goaway PROTO((int));
