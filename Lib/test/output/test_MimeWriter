@@ -41,7 +41,7 @@ INTERFACE Seller-1;
 TYPE Seller = OBJECT
     DOCUMENTATION "A simple Seller interface to test ILU"
     METHODS
-	    price():INTEGER,
+            price():INTEGER,
     END;
 
 --802spam999
@@ -71,22 +71,22 @@ KP-Module-Name: BuyerKP
 
 class Buyer:
     def __setup__(self, maxprice):
-	self._maxprice = maxprice
+        self._maxprice = maxprice
 
     def __main__(self, kos):
-	"""Entry point upon arrival at a new KOS."""
-	broker = kos.broker()
-	# B4 == Barry's Big Bass Business :-)
-	seller = broker.lookup('Seller_1.Seller', 'B4')
-	if seller:
-	    price = seller.price()
-	    print 'Seller wants $', price, '... '
-	    if price > self._maxprice:
-		print 'too much!'
-	    else:
-		print "I'll take it!"
-	else:
-	    print 'no seller found here'
+        """Entry point upon arrival at a new KOS."""
+        broker = kos.broker()
+        # B4 == Barry's Big Bass Business :-)
+        seller = broker.lookup('Seller_1.Seller', 'B4')
+        if seller:
+            price = seller.price()
+            print 'Seller wants $', price, '... '
+            if price > self._maxprice:
+                print 'too much!'
+            else:
+                print "I'll take it!"
+        else:
+            print 'no seller found here'
 
 --803spam999--
 
