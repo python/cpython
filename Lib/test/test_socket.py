@@ -214,10 +214,10 @@ class GeneralModuleTests(unittest.TestCase):
         if not fqhn in all_host_names:
             self.fail("Error testing host resolution mechanisms.")
 
-    def testJavaRef(self):
+    def testRefCountGetNameInfo(self):
         """Testing reference count for getnameinfo."""
         import sys
-        if not sys.platform.startswith('java'):
+        if hasattr(sys, "getrefcount"):
             try:
                 # On some versions, this loses a reference
                 orig = sys.getrefcount(__name__)
