@@ -57,9 +57,9 @@ getwd(cwd)
 	/* First, get the default volume name and working directory ID. */
 	
 	pb.w.ioNamePtr= (unsigned char *)cwd;
-	err= PBHGetVol(&pb.w, FALSE);
+	err= PBHGetVolSync(&pb.w);
 	if (err != noErr) {
-		sprintf(cwd, "I/O error %d in PBHGetVol", err);
+		sprintf(cwd, "I/O error %d in PBHGetVolSync", err);
 		return NULL;
 	}
 	ecwd= strchr((const char *)p2cstr((unsigned char*)cwd), EOS);
@@ -75,9 +75,9 @@ getwd(cwd)
 			pb.d.ioNamePtr= (unsigned char *) ++ebuf;
 			pb.d.ioFDirIndex= -1;
 			pb.d.ioDrDirID= dirid;
-			err= PBGetCatInfo((CInfoPBPtr)&pb.d, FALSE);
+			err= PBGetCatInfoSync((CInfoPBPtr)&pb.d);
 			if (err != noErr) {
-				sprintf(cwd, "I/O error %d in PBGetCatInfo", err);
+				sprintf(cwd, "I/O error %d in PBGetCatInfoSync", err);
 				return NULL;
 			}
 			dirid= pb.d.ioDrParID;
