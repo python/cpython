@@ -96,7 +96,7 @@ and methods which format specific object types.
   Formatting methods for specific types are implemented as methods
   with a name based on the type name.  In the method name, \var{type}
   is replaced by
-  \code{string.join(string.split(type(\var{obj}).__name__, '_')}.
+  \code{string.join(string.split(type(\var{obj}).__name__, '_'))}.
   Dispatch to these methods is handled by \method{repr1()}.
   Type-specific methods which need to recursively format a value
   should call \samp{self.repr1(\var{subobj}, \var{level} - 1)}.
