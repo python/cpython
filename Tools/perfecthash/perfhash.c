@@ -5,11 +5,13 @@ static PyObject * hashFunction(PyObject *self, PyObject *args, PyObject *kw)
 	PyStringObject *a;
 	register int len;
 	register unsigned char *p;
-	register long x;
-	long lSeed;
+	register unsigned long x;
+	unsigned long ulSeed;
 	unsigned long cchSeed;
+	unsigned long cHashElements;
 
-	if (!PyArg_ParseTuple(args, "iiO:hash", &lSeed, &cchSeed, &a))
+	if (!PyArg_ParseTuple(args, "llOl:hash", 
+			      &ulSeed, &cchSeed, &a, &cHashElements))
 	  return NULL;
 	if (!PyString_Check(a))
 	{
@@ -19,13 +21,35 @@ static PyObject * hashFunction(PyObject *self, PyObject *args, PyObject *kw)
 	
 	len = a->ob_size;
 	p = (unsigned char *) a->ob_sval;
-	x = lSeed;
+	x = ulSeed;
 	while (--len >= 0)
-		x = (1000003*x) ^ *p++;
+	{
+	    /* (1000003 * x) ^ *p++ 
+  	     * translated to handle > 32 bit longs 
+	     */
+	    x = (0xf4243 * x);
+	    x = x & 0xFFFFFFFF;
+	    x = x ^ *p++;
+	}
 	x ^= a->ob_size + cchSeed;
-	if (x == -1)
-		x = -2;
-	return PyInt_FromLong(x);
+	if (x == 0xFFFFFFFF)
+	  x = 0xfffffffe;
+	if (x & 0x80000000) 
+	{
+	      /* Emulate Python 32-bit signed (2's complement) 
+	       * modulo operation 
+	       */
+	      x = (~x & 0xFFFFFFFF) + 1;
+	      x %= cHashElements;
+	      if (x != 0)
+	      {
+	          x = x + (~cHashElements & 0xFFFFFFFF) + 1;
+	          x = (~x & 0xFFFFFFFF) + 1;
+              }
+	}
+	else
+	  x %= cHashElements;
+	return PyInt_FromLong((long)x);
 }
 
 static PyObject * calcSeed(PyObject *self, PyObject *args, PyObject *kw)
@@ -33,7 +57,7 @@ static PyObject * calcSeed(PyObject *self, PyObject *args, PyObject *kw)
 	PyStringObject *a;
 	register int len;
 	register unsigned char *p;
-	register long x;
+	register unsigned long x;
 
 	if (!PyString_Check(args))
 	{
@@ -45,10 +69,17 @@ static PyObject * calcSeed(PyObject *self, PyObject *args, PyObject *kw)
 	
 	len = a->ob_size;
 	p = (unsigned char *) a->ob_sval;
-	x = *p << 7;
+	x = (*p << 7) & 0xFFFFFFFF;
 	while (--len >= 0)
-		x = (1000003*x) ^ *p++;
-	return PyInt_FromLong(x);
+	{
+	    /* (1000003 * x) ^ *p++ 
+  	     * translated to handle > 32 bit longs 
+	     */
+	    x = (0xf4243 * x);
+	    x = x & 0xFFFFFFFF;
+	    x = x ^ *p++;
+	}
+	return PyInt_FromLong((long)x);
 }
 
 
@@ -68,5 +99,16 @@ void initperfhash(void)
         m = Py_InitModule4("perfhash", hashMethods,
                                            NULL, NULL, PYTHON_API_VERSION);
         if ( m == NULL )
-            Py_FatalError("can't initialize module hashModule");
+            Py_FatalError("can't initialize module perfhash");
 }
+
+
+
+
+
+
+
+
+
+
+

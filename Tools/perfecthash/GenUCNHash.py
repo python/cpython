@@ -12,8 +12,8 @@ import perfect_hash
 
 # These variables determine which hash function is tried first.
 # Yields a multiple of 1.7875 for UnicodeData.txt on 2000/06/24/
-f1Seed = 1694245428
-f2Seed = -1917331657
+f1Seed = 0x64fc2234 
+f2Seed = 0x8db7d737 
 
 # Maximum allowed multipler, if this isn't None then instead of continually
 # increasing C, it resets it back to initC to keep searching for

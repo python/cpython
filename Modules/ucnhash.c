@@ -11,7 +11,7 @@
  * perfect_hash.py: 
  * http://starship.python.net/crew/amk/python/code/perfect-hash.html
  *
- * Generated on: Wed Jun 28 03:34:07 2000
+ * Generated on: Fri Jul 14 08:00:58 2000
  */
 
 #define k_cHashElements 18836
@@ -26,20 +26,36 @@ static long f1(const char *key, unsigned int cch)
 {
     register int len;
     register unsigned char *p;
-    register long x;
+    register unsigned long x;
 
     len = cch;
     p = (unsigned char *) key;
-    x = 1694245428;
+    x = 0x64fc2234;
     while (--len >= 0)
-        x = (1000003*x) ^ toupper(*(p++));
+    {   
+        /* (1000003 * x) ^ toupper(*(p++)) 
+         * translated to handle > 32 bit longs 
+         */
+        x = (0xf4243 * x);
+        x = x & 0xFFFFFFFF;
+        x = x ^ toupper(*(p++));
+    }
     x ^= cch + 10;
-    if (x == -1)
-        x = -2;
-    x %= k_cHashElements;
-    /* ensure the returned value is positive so we mimic Python's % operator */
-    if (x < 0)
-      x += k_cHashElements;
+    if (x == 0xFFFFFFFF)
+        x = 0xfffffffe;
+    if (x & 0x80000000) 
+    {
+        /* Emulate 32-bit signed (2's complement) modulo operation */
+        x = (~x & 0xFFFFFFFF) + 1;
+        x %= k_cHashElements;
+        if (x != 0)
+        {
+            x = x + (~k_cHashElements & 0xFFFFFFFF) + 1;
+            x = (~x & 0xFFFFFFFF) + 1;
+        }
+    }
+    else
+        x %= k_cHashElements;
     return x;
 }
 
@@ -48,20 +64,36 @@ static long f2(const char *key, unsigned int cch)
 {
     register int len;
     register unsigned char *p;
-    register long x;
+    register unsigned long x;
 
     len = cch;
     p = (unsigned char *) key;
-    x = -1917331657;
+    x = 0x8db7d737;
     while (--len >= 0)
-        x = (1000003*x) ^ toupper(*(p++));
+    {   
+        /* (1000003 * x) ^ toupper(*(p++)) 
+         * translated to handle > 32 bit longs 
+         */
+        x = (0xf4243 * x);
+        x = x & 0xFFFFFFFF;
+        x = x ^ toupper(*(p++));
+    }
     x ^= cch + 10;
-    if (x == -1)
-        x = -2;
-    x %= k_cHashElements;
-    /* ensure the returned value is positive so we mimic Python's % operator */
-    if (x < 0)
-      x += k_cHashElements;
+    if (x == 0xFFFFFFFF)
+        x = 0xfffffffe;
+    if (x & 0x80000000) 
+    {
+        /* Emulate 32-bit signed (2's complement) modulo operation */
+        x = (~x & 0xFFFFFFFF) + 1;
+        x %= k_cHashElements;
+        if (x != 0)
+        {
+            x = x + (~k_cHashElements & 0xFFFFFFFF) + 1;
+            x = (~x & 0xFFFFFFFF) + 1;
+        }
+    }
+    else
+        x %= k_cHashElements;
     return x;
 }
 
