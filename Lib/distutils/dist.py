@@ -177,9 +177,15 @@ Common commands: (see '--help-commands' for more)
         #   command_options = { command_name : { option : (source, value) } }
         self.command_options = {}
 
-        # 'dist_files' is the list of (command, file) that have been created
-        # by any dist commands run so far. This is filled regardless
-        # of whether the run is dry or not.
+        # 'dist_files' is the list of (command, pyversion, file) that
+        # have been created by any dist commands run so far. This is
+        # filled regardless of whether the run is dry or not. pyversion
+        # gives sysconfig.get_python_version() if the dist file is
+        # specific to a Python version, 'any' if it is good for all
+        # Python versions on the target platform, and '' for a source
+        # file. pyversion should not be used to specify minimum or
+        # maximum required Python versions; use the metainfo for that
+        # instead.
         self.dist_files = []
 
         # These options are really the business of various commands, rather

@@ -15,6 +15,7 @@ from distutils.debug import DEBUG
 from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
+from distutils.sysconfig import get_python_version
 from distutils import log
 
 class bdist_rpm (Command):
@@ -346,6 +347,10 @@ class bdist_rpm (Command):
                 srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
                 assert len(srpms) == 1, \
                        "unexpected number of SRPM files found: %s" % srpms
+                dist_file = ('bdist_rpm', '',
+                             os.path.join(self.dist_dir,
+                                          os.path.basename(srpms[0])))
+                self.distribution.dist_files.append(dist_file)
                 self.move_file(srpms[0], self.dist_dir)
 
             if not self.source_only:
@@ -356,9 +361,15 @@ class bdist_rpm (Command):
                     rpms.remove(debuginfo[0])
                 assert len(rpms) == 1, \
                        "unexpected number of RPM files found: %s" % rpms
+                dist_file = ('bdist_rpm', get_python_version(),
+                             os.path.join(self.dist_dir,
+                                          os.path.basename(rpms[0])))
+                self.distribution.dist_files.append(dist_file)
                 self.move_file(rpms[0], self.dist_dir)
-                self.distribution.dist_files.append(('bdist_rpm', rpms[0]))
                 if debuginfo:
+                    dist_file = ('bdist_rpm', get_python_version(),
+                                 os.path.join(self.dist_dir,
+                                              os.path.basename(debuginfo[0])))
                     self.move_file(debuginfo[0], self.dist_dir)
     # run()
 
