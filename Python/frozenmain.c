@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern char *Py_GetVersion();
 extern char *Py_GetCopyright();
 
-/* For getprogramname(); set by main() */
+/* For Py_GetProgramName(); set by main() */
 static char *argv0;
 
 /* Main program */
@@ -87,7 +87,7 @@ main(argc, argv)
 }
 
 char *
-getprogramname()
+Py_GetProgramName()
 {
 	return argv0;
 }
