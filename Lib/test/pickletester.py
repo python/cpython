@@ -286,3 +286,38 @@ class AbstractPickleModuleTests(unittest.TestCase):
             self.assertRaises(ValueError, self.module.dump, 123, f)
         finally:
             os.remove(TESTFN)
+
+class AbstractPersistentPicklerTests(unittest.TestCase):
+
+    # This class defines persistent_id() and persistent_load()
+    # functions that should be used by the pickler.  All even integers
+    # are pickled using persistent ids.
+
+    def persistent_id(self, object):
+        if isinstance(object, int) and object % 2 == 0:
+            self.id_count += 1
+            return str(object)
+        else:
+            return None
+
+    def persistent_load(self, oid):
+        self.load_count += 1
+        object = int(oid)
+        assert object % 2 == 0
+        return object
+
+    def test_persistence(self):
+        self.id_count = 0
+        self.load_count = 0
+        L = range(10)
+        self.assertEqual(self.loads(self.dumps(L)), L)
+        self.assertEqual(self.id_count, 5)
+        self.assertEqual(self.load_count, 5)
+
+    def test_bin_persistence(self):
+        self.id_count = 0
+        self.load_count = 0
+        L = range(10)
+        self.assertEqual(self.loads(self.dumps(L, 1)), L)
+        self.assertEqual(self.id_count, 5)
+        self.assertEqual(self.load_count, 5)
