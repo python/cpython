@@ -676,7 +676,7 @@
   <macro name="function">
     <content/>
     </macro>
-  <macro name="kbd">
+  <macro name="kbd" outputname="keysym">
     <content/>
     </macro>
   <macro name="makevar">
