@@ -19,11 +19,13 @@ Example subdirectories:
 
 ae	AppleEvents
 ctl	Controls
+cm	Component manager
 dlg	Dialogs
 evt	Events
 menu	Menus
 list	Lists
 qd	QuickDraw
+qt	QuickTime
 res	Resources
 snd	Sound
 win	Windows
@@ -70,7 +72,13 @@ gensuitemodule.py
 		modules. The *_Suite.py modules have been generated
 		with this.
 AEservertest.py	A simple AE server, similar to echo but different.
-		
+
+In cm:
+cmtest.py	List all components in the system plus some info on them
+
+In qt:
+MovieInWindow.py	Play a movie in a fixed-sized window, stop on mouse-press
+VerySimplePlayer.py	Play a movie with the standard quicktime controller.
 
 In res:
 
