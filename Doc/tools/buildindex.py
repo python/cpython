@@ -182,8 +182,8 @@ def format_nodes(nodes):
             append(",\n%s    %s[Link]</a>" % (level * DL_LEVEL_INDENT, link))
         previous = current
     append("\n")
-    append("</dl><p>" * (level + 1))
-    append("\n")
+    append("</dl>" * (level + 1))
+    append("\n<p>\n")
     return string.join(strings, '')
 
 
