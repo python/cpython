@@ -200,24 +200,9 @@ def classify_class_attrs(cls):
             obj = getattr(cls, name)
 
         # Figure out where it was defined.
-        # A complication:  static classes in 2.2 copy dict entries from
-        # bases into derived classes, so it's not enough just to look for
-        # "the first" class with the name in its dict.  OTOH:
-        # 1. Some-- but not all --methods in 2.2 come with an __objclass__
-        #    attr that answers the question directly.
-        # 2. Some-- but not all --classes in 2.2 have a __defined__ dict
-        #    saying which names were defined by the class.
         homecls = getattr(obj, "__objclass__", None)
         if homecls is None:
-            # Try __defined__.
-            for base in mro:
-                if hasattr(base, "__defined__"):
-                    if name in base.__defined__:
-                        homecls = base
-                        break
-        if homecls is None:
-            # Last chance (and first chance for classic classes):  search
-            # the dicts.
+            # search the dicts.
             for base in mro:
                 if name in base.__dict__:
                     homecls = base

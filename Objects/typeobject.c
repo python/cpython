@@ -44,7 +44,7 @@ type_module(PyTypeObject *type, void *context)
 						  (int)(s - type->tp_name));
 	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
 		return PyString_FromString("__builtin__");
-	mod = PyDict_GetItemString(type->tp_defined, "__module__");
+	mod = PyDict_GetItemString(type->tp_dict, "__module__");
 	if (mod != NULL && PyString_Check(mod)) {
 		Py_INCREF(mod);
 		return mod;
@@ -80,21 +80,10 @@ type_dict(PyTypeObject *type, void *context)
 	return PyDictProxy_New(type->tp_dict);
 }
 
-static PyObject *
-type_defined(PyTypeObject *type, void *context)
-{
-	if (type->tp_defined == NULL) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	return PyDictProxy_New(type->tp_defined);
-}
-
 PyGetSetDef type_getsets[] = {
 	{"__name__", (getter)type_name, NULL, NULL},
 	{"__module__", (getter)type_module, (setter)type_set_module, NULL},
 	{"__dict__",  (getter)type_dict,  NULL, NULL},
-	{"__defined__",  (getter)type_defined,  NULL, NULL},
 	{0}
 };
 
@@ -838,8 +827,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	Py_INCREF(base);
 	type->tp_base = base;
 
-	/* Initialize tp_defined from passed-in dict */
-	type->tp_defined = dict = PyDict_Copy(dict);
+	/* Initialize tp_dict from passed-in dict */
+	type->tp_dict = dict = PyDict_Copy(dict);
 	if (dict == NULL) {
 		Py_DECREF(type);
 		return NULL;
@@ -973,14 +962,14 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
 	int i, n;
 	PyObject *mro, *res, *dict;
 
-	/* Look in tp_defined of types in MRO */
+	/* Look in tp_dict of types in MRO */
 	mro = type->tp_mro;
 	assert(PyTuple_Check(mro));
 	n = PyTuple_GET_SIZE(mro);
 	for (i = 0; i < n; i++) {
 		type = (PyTypeObject *) PyTuple_GET_ITEM(mro, i);
 		assert(PyType_Check(type));
-		dict = type->tp_defined;
+		dict = type->tp_dict;
 		assert(dict && PyDict_Check(dict));
 		res = PyDict_GetItem(dict, name);
 		if (res != NULL)
@@ -1014,7 +1003,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 				 (PyObject *)type, (PyObject *)metatype);
 	}
 
-	/* Look in tp_defined of this type and its bases */
+	/* Look in tp_dict of this type and its bases */
 	res = _PyType_Lookup(type, name);
 	if (res != NULL) {
 		f = res->ob_type->tp_descr_get;
@@ -1070,7 +1059,7 @@ type_dealloc(PyTypeObject *type)
 	Py_XDECREF(type->tp_dict);
 	Py_XDECREF(type->tp_bases);
 	Py_XDECREF(type->tp_mro);
-	Py_XDECREF(type->tp_defined);
+	Py_XDECREF(type->tp_cache);
 	Py_XDECREF(type->tp_subclasses);
 	Py_XDECREF(et->name);
 	Py_XDECREF(et->slots);
@@ -1136,7 +1125,7 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 	}
 
 	VISIT(type->tp_dict);
-	VISIT(type->tp_defined);
+	VISIT(type->tp_cache);
 	VISIT(type->tp_mro);
 	VISIT(type->tp_bases);
 	VISIT(type->tp_base);
@@ -1167,7 +1156,7 @@ type_clear(PyTypeObject *type)
 	}
 
 	CLEAR(type->tp_dict);
-	CLEAR(type->tp_defined);
+	CLEAR(type->tp_cache);
 	CLEAR(type->tp_mro);
 	CLEAR(type->tp_bases);
 	CLEAR(type->tp_base);
@@ -1455,7 +1444,7 @@ PyTypeObject PyBaseObject_Type = {
 static int
 add_methods(PyTypeObject *type, PyMethodDef *meth)
 {
-	PyObject *dict = type->tp_defined;
+	PyObject *dict = type->tp_dict;
 
 	for (; meth->ml_name != NULL; meth++) {
 		PyObject *descr;
@@ -1474,7 +1463,7 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
 static int
 add_members(PyTypeObject *type, PyMemberDef *memb)
 {
-	PyObject *dict = type->tp_defined;
+	PyObject *dict = type->tp_dict;
 
 	for (; memb->name != NULL; memb++) {
 		PyObject *descr;
@@ -1493,7 +1482,7 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
 static int
 add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 {
-	PyObject *dict = type->tp_defined;
+	PyObject *dict = type->tp_dict;
 
 	for (; gsp->name != NULL; gsp++) {
 		PyObject *descr;
@@ -1746,7 +1735,6 @@ PyType_Ready(PyTypeObject *type)
 		return 0;
 	}
 	assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
-	assert(type->tp_dict == NULL);
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
 
@@ -1773,16 +1761,16 @@ PyType_Ready(PyTypeObject *type)
 			goto error;
 	}
 
-	/* Initialize tp_defined */
-	dict = type->tp_defined;
+	/* Initialize tp_dict */
+	dict = type->tp_dict;
 	if (dict == NULL) {
 		dict = PyDict_New();
 		if (dict == NULL)
 			goto error;
-		type->tp_defined = dict;
+		type->tp_dict = dict;
 	}
 
-	/* Add type-specific descriptors to tp_defined */
+	/* Add type-specific descriptors to tp_dict */
 	if (add_operators(type) < 0)
 		goto error;
 	if (type->tp_methods != NULL) {
@@ -1797,12 +1785,6 @@ PyType_Ready(PyTypeObject *type)
 		if (add_getset(type, type->tp_getset) < 0)
 			goto error;
 	}
-
-	/* Temporarily make tp_dict the same object as tp_defined.
-	   (This is needed to call mro(), and can stay this way for
-	   dynamic types). */
-	Py_INCREF(type->tp_defined);
-	type->tp_dict = type->tp_defined;
 
 	/* Calculate method resolution order */
 	if (mro_internal(type) < 0) {
@@ -2676,18 +2658,18 @@ add_tp_new_wrapper(PyTypeObject *type)
 {
 	PyObject *func;
 
-	if (PyDict_GetItemString(type->tp_defined, "__new__") != NULL)
+	if (PyDict_GetItemString(type->tp_dict, "__new__") != NULL)
 		return 0;
 	func = PyCFunction_New(tp_new_methoddef, (PyObject *)type);
 	if (func == NULL)
 		return -1;
-	return PyDict_SetItemString(type->tp_defined, "__new__", func);
+	return PyDict_SetItemString(type->tp_dict, "__new__", func);
 }
 
 static int
 add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
 {
-	PyObject *dict = type->tp_defined;
+	PyObject *dict = type->tp_dict;
 
 	for (; wraps->name != NULL; wraps++) {
 		PyObject *descr;
@@ -2706,14 +2688,14 @@ add_wrappers(PyTypeObject *type, struct wrapperbase *wraps, void *wrapped)
 /* This function is called by PyType_Ready() to populate the type's
    dictionary with method descriptors for function slots.  For each
    function slot (like tp_repr) that's defined in the type, one or
-   more corresponding descriptors are added in the type's tp_defined
+   more corresponding descriptors are added in the type's tp_dict
    dictionary under the appropriate name (like __repr__).  Some
    function slots cause more than one descriptor to be added (for
    example, the nb_add slot adds both __add__ and __radd__
    descriptors) and some function slots compete for the same
    descriptor (for example both sq_item and mp_subscript generate a
    __getitem__ descriptor).  This only adds new descriptors and
-   doesn't overwrite entries in tp_defined that were previously
+   doesn't overwrite entries in tp_dict that were previously
    defined.  The descriptors contain a reference to the C function
    they must call, so that it's safe if they are copied into a
    subtype's __dict__ and the subtype has a different C function in
@@ -3942,7 +3924,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
 				base = (PyTypeObject *)PyTuple_GET_ITEM(mro, i);
 				assert(PyType_Check(base));
 				descr = PyDict_GetItem(
-					base->tp_defined, p->name_strobj);
+					base->tp_dict, p->name_strobj);
 				if (descr != NULL)
 					break;
 			}
@@ -4055,7 +4037,7 @@ super_getattro(PyObject *self, PyObject *name)
 			tmp = PyTuple_GET_ITEM(mro, i);
 			assert(PyType_Check(tmp));
 			res = PyDict_GetItem(
-				((PyTypeObject *)tmp)->tp_defined, name);
+				((PyTypeObject *)tmp)->tp_dict, name);
 			if (res != NULL) {
 				Py_INCREF(res);
 				f = res->ob_type->tp_descr_get;
