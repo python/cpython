@@ -108,14 +108,19 @@ Unicode Integration Proposal (see file Misc/unicode.txt).
 # define BYTEORDER_IS_LITTLE_ENDIAN
 #endif
 
-/* --- Globals ------------------------------------------------------------ */
+/* --- Globals ------------------------------------------------------------
+
+   The globals are initialized by the _PyUnicode_Init() API and should
+   not be used before calling that API.
+
+*/
 
 /* The empty Unicode object */
-static PyUnicodeObject *unicode_empty = NULL;
+static PyUnicodeObject *unicode_empty;
 
 /* Free list for Unicode objects */
-static PyUnicodeObject *unicode_freelist = NULL;
-static int unicode_freelist_size = 0;
+static PyUnicodeObject *unicode_freelist;
+static int unicode_freelist_size;
 
 /* Default encoding to use and assume when NULL is passed as encoding
    parameter; it is initialized by _PyUnicode_Init().
@@ -4262,22 +4267,33 @@ static int
 formatchar(Py_UNICODE *buf,
 	   PyObject *v)
 {
-    if (PyUnicode_Check(v))
+    if (PyUnicode_Check(v)) {
+	if (PyUnicode_GET_SIZE(v) != 1)
+	    goto onError;
 	buf[0] = PyUnicode_AS_UNICODE(v)[0];
+    }
 
-    else if (PyString_Check(v))
-	buf[0] = (Py_UNICODE) PyString_AS_STRING(v)[0];
+    else if (PyString_Check(v)) {
+	if (PyString_GET_SIZE(v) != 1) 
+	    goto onError;
+	buf[0] = (Py_UNICODE)PyString_AS_STRING(v)[0];
+    }
 
     else {
 	/* Integer input truncated to a character */
         long x;
 	x = PyInt_AsLong(v);
 	if (x == -1 && PyErr_Occurred())
-	    return -1;
+	    goto onError;
 	buf[0] = (char) x;
     }
     buf[1] = '\0';
     return 1;
+
+ onError:
+    PyErr_SetString(PyExc_TypeError,
+		    "%c requires int or char");
+    return -1;
 }
 
 PyObject *PyUnicode_Format(PyObject *format,
@@ -4709,6 +4725,8 @@ void _PyUnicode_Init()
 		      "sizeof(Py_UNICODE) != 2 bytes");
 
     /* Init the implementation */
+    unicode_freelist = NULL;
+    unicode_freelist_size = 0;
     unicode_empty = _PyUnicode_New(0);
     strcpy(unicode_default_encoding, "ascii");
 }
@@ -4728,5 +4746,8 @@ _PyUnicode_Fini()
 	Py_XDECREF(v->utf8str);
 	PyObject_DEL(v);
     }
+    unicode_freelist = NULL;
+    unicode_freelist_size = 0;
     Py_XDECREF(unicode_empty);
+    unicode_empty = NULL;
 }
