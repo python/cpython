@@ -585,9 +585,8 @@ def unpack_other(object, indent = 0):
 	return pack_items(items, indent)
 
 def pack_items(items, indent = 0):
-	items = map(lambda (k, v), type = type, simp = SIMPLE_TYPES, indent = indent: 
-				(k, v, not type(v) in simp, indent), 
-			items)
+	items = [(k, v, not isinstance(v, SIMPLE_TYPES), indent)
+	         for k, v in items]
 	return tuple_caselesssort(items)
 
 def caselesssort(alist):
