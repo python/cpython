@@ -261,7 +261,7 @@ static PyObject *Help_HMGetBalloonWindow(_self, _args)
 	_err = HMGetBalloonWindow(&window);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     WinObj_New, window);
+	                     WinObj_WhichWindow, window);
 	return _res;
 }
 
