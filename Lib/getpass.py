@@ -13,6 +13,8 @@ On the Mac EasyDialogs.AskPassword is used, if available.
 
 import sys
 
+__all__ = ["getpass","getuser"]
+
 def unix_getpass(prompt='Password: '):
     """Prompt for a password, with echo turned off.
 

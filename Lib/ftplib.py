@@ -45,6 +45,7 @@ try:
 except ImportError:
     import socket
 
+__all__ = ["FTP","Netrc"]
 
 # Magic number from <socket.h>
 MSG_OOB = 0x1                           # Process data out of band

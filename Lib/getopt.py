@@ -17,6 +17,8 @@ option involved with the exception.
 # Gerrit Holl <gerrit@nl.linux.org> moved the string-based exceptions
 # to class-based exceptions.
 
+__all__ = ["GetoptError","error","getopt"]
+
 class GetoptError(Exception):
     opt = ''
     msg = ''
