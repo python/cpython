@@ -193,7 +193,7 @@ typedef int pid_t;
 
 /* egcs/gnu-win32 defines __GNUC__ and _WIN32 */
 #if defined(__GNUC__) && defined(_WIN32)
-/* XXX These defines are likely incomplete, but should be easy to fix. 
+/* XXX These defines are likely incomplete, but should be easy to fix.
    They should be complete enough to build extension modules. */
 /* Suggested by Rene Liebscher <R.Liebscher@gmx.de> to avoid a GCC 2.91.*
    bug that requires structure imports.  More recent versions of the
@@ -239,13 +239,13 @@ you must define MS_NO_COREDLL (do not test this macro) */
 #endif
 
 #define HAVE_LONG_LONG 1
-#define LONG_LONG long long 
+#define LONG_LONG long long
 #endif /* GNUC */
 
 /* lcc-win32 defines __LCC__ */
 
 #if defined(__LCC__)
-/* XXX These defines are likely incomplete, but should be easy to fix. 
+/* XXX These defines are likely incomplete, but should be easy to fix.
    They should be complete enough to build extension modules. */
 
 #define NT	/* NT is obsolete - please use MS_WIN32 instead */
@@ -505,6 +505,9 @@ typedef int pid_t;
 
 /* Define if you want cycle garbage collection */
 #define WITH_CYCLE_GC 1
+
+/* Use Python's own small-block memory-allocator. */
+#define WITH_PYMALLOC 1
 
 /* Define if you have clock.  */
 /* #define HAVE_CLOCK */
