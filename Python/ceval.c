@@ -883,7 +883,7 @@ eval_frame(PyFrameObject *f)
 			w = SECOND();
 			SET_TOP(w);
 			SET_SECOND(v);
-			continue;
+			goto fast_next_opcode;
 
 		case ROT_THREE:
 			v = TOP();
@@ -892,7 +892,7 @@ eval_frame(PyFrameObject *f)
 			SET_TOP(w);
 			SET_SECOND(x);
 			SET_THIRD(v);
-			continue;
+			goto fast_next_opcode;
 
 		case ROT_FOUR:
 			u = TOP();
@@ -903,13 +903,13 @@ eval_frame(PyFrameObject *f)
 			SET_SECOND(w);
 			SET_THIRD(x);
 			SET_FOURTH(u);
-			continue;
+			goto fast_next_opcode;
 
 		case DUP_TOP:
 			v = TOP();
 			Py_INCREF(v);
 			PUSH(v);
-			continue;
+			goto fast_next_opcode;
 
 		case DUP_TOPX:
 			if (oparg == 2) {
@@ -1594,7 +1594,7 @@ eval_frame(PyFrameObject *f)
 		case END_FINALLY:
 			v = POP();
 			if (PyInt_Check(v)) {
-				why = (enum why_code) PyInt_AsLong(v);
+				why = (enum why_code) PyInt_AS_LONG(v);
 				if (why == WHY_RETURN ||
 				    why == WHY_YIELD ||
 				    why == WHY_CONTINUE)
@@ -1972,15 +1972,15 @@ eval_frame(PyFrameObject *f)
 
 		case JUMP_FORWARD:
 			JUMPBY(oparg);
-			continue;
+			goto fast_next_opcode;
 
 		case JUMP_IF_FALSE:
 			w = TOP();
 			if (w == Py_True)
-				continue;
+				goto fast_next_opcode;
 			if (w == Py_False) {
 				JUMPBY(oparg);
-				continue;
+				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0)
@@ -1994,10 +1994,10 @@ eval_frame(PyFrameObject *f)
 		case JUMP_IF_TRUE:
 			w = TOP();
 			if (w == Py_False)
-				continue;
+				goto fast_next_opcode;
 			if (w == Py_True) {
 				JUMPBY(oparg);
-				continue;
+				goto fast_next_opcode;
 			}
 			err = PyObject_IsTrue(w);
 			if (err > 0) {
@@ -2012,7 +2012,7 @@ eval_frame(PyFrameObject *f)
 
 		case JUMP_ABSOLUTE:
 			JUMPTO(oparg);
-			continue;
+			goto fast_next_opcode;
 
 		case GET_ITER:
 			/* before: [obj]; after [getiter(obj)] */
