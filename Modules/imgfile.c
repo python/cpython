@@ -58,7 +58,7 @@ static imgfile_error(str)
 {
     err_setstr(ImgfileError, str);
     error_called = 1;
-    return;	/* To imglib, which will return a failure indictaor */
+    return;	/* To imglib, which will return a failure indicator */
 }
 
 

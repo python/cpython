@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -165,6 +165,20 @@ cmpobject(v, w)
 	return (*tp->tp_compare)(v, w);
 }
 
+long
+hashobject(v)
+	object *v;
+{
+	typeobject *tp = v->ob_type;
+	if (tp->tp_hash != NULL)
+		return (*tp->tp_hash)(v);
+	if (tp->tp_compare == NULL)
+		return (long) v; /* Use address as hash value */
+	/* If there's a cmp but no hash defined, the object can't be hashed */
+	err_setstr(TypeError, "unhashable type");
+	return -1;
+}
+
 object *
 getattr(v, name)
 	object *v;
@@ -229,6 +243,7 @@ static typeobject Notype = {
 	0,		/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	0,		/*tp_hash */
 };
 
 object NoObject = {

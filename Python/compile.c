@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -50,6 +50,7 @@ static struct memberlist code_memberlist[] = {
 	{"co_consts",	T_OBJECT,	OFF(co_consts),		READONLY},
 	{"co_names",	T_OBJECT,	OFF(co_names),		READONLY},
 	{"co_filename",	T_OBJECT,	OFF(co_filename),	READONLY},
+	{"co_name",	T_OBJECT,	OFF(co_name),		READONLY},
 	{NULL}	/* Sentinel */
 };
 
@@ -69,6 +70,7 @@ code_dealloc(co)
 	XDECREF(co->co_consts);
 	XDECREF(co->co_names);
 	XDECREF(co->co_filename);
+	XDECREF(co->co_name);
 	DEL(co);
 }
 
@@ -80,12 +82,15 @@ code_repr(co)
 	int lineno = -1;
 	char *p = GETSTRINGVALUE(co->co_code);
 	char *filename = "???";
+	char *name = "???";
 	if (*p == SET_LINENO)
 		lineno = (p[1] & 0xff) | ((p[2] & 0xff) << 8);
 	if (co->co_filename && is_stringobject(co->co_filename))
 		filename = getstringvalue(co->co_filename);
-	sprintf(buf, "<code object at %lx, file \"%.400s\", line %d>",
-		(long)co, filename, lineno);
+	if (co->co_name && is_stringobject(co->co_name))
+		name = getstringvalue(co->co_name);
+	sprintf(buf, "<code object %.100s at %lx, file \"%.300s\", line %d>",
+		name, (long)co, filename, lineno);
 	return newstringobject(buf);
 }
 
@@ -107,18 +112,20 @@ typeobject Codetype = {
 };
 
 codeobject *
-newcodeobject(code, consts, names, filename)
+newcodeobject(code, consts, names, filename, name)
 	object *code;
 	object *consts;
 	object *names;
 	object *filename;
+	object *name;
 {
 	codeobject *co;
 	int i;
 	/* Check argument types */
 	if (code == NULL || !is_stringobject(code) ||
 		consts == NULL || !is_listobject(consts) ||
-		names == NULL || !is_listobject(names)) {
+		names == NULL || !is_listobject(names) ||
+		name == NULL || !is_stringobject(name)) {
 		err_badcall();
 		return NULL;
 	}
@@ -140,6 +147,8 @@ newcodeobject(code, consts, names, filename)
 		co->co_names = names;
 		INCREF(filename);
 		co->co_filename = filename;
+		INCREF(name);
+		co->co_name = name;
 	}
 	return co;
 }
@@ -162,6 +171,7 @@ struct compiling {
 	int c_block[MAXBLOCKS];	/* stack of block types */
 	int c_nblocks;		/* current block stack level */
 	char *c_filename;	/* filename of current node */
+	char *c_name;		/* name of object (e.g. function) */
 };
 
 
@@ -232,6 +242,7 @@ com_init(c, filename)
 	c->c_begin = 0;
 	c->c_nblocks = 0;
 	c->c_filename = filename;
+	c->c_name = "?";
 	return 1;
 	
   fail_0:
@@ -2020,6 +2031,8 @@ compile_funcdef(c, n)
 {
 	node *ch;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
+	c->c_name = STR(CHILD(n, 1));
+	com_addoparg(c, RESERVE_FAST, 0); /* Patched up later */
 	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
 	ch = CHILD(ch, 1); /* ')' | varargslist */
 	if (TYPE(ch) == RPAR)
@@ -2088,6 +2101,8 @@ compile_node(c, n)
 }
 
 /* Optimization for local and global variables.
+
+   XXX Need to update this text for LOAD_FAST stuff...
 
    Attempt to replace all LOAD_NAME instructions that refer to a local
    variable with LOAD_LOCAL instructions, and all that refer to a global
@@ -2187,17 +2202,21 @@ compile(n, filename)
 {
 	struct compiling sc;
 	codeobject *co;
-	object *v;
 	if (!com_init(&sc, filename))
 		return NULL;
 	compile_node(&sc, n);
 	com_done(&sc);
-	if (sc.c_errors == 0 && (v = newstringobject(filename)) != NULL) {
-		co = newcodeobject(sc.c_code, sc.c_consts, sc.c_names, v);
-		DECREF(v);
+	co = NULL;
+	if (sc.c_errors == 0) {
+		object *v, *w;
+		v = newstringobject(sc.c_filename);
+		w = newstringobject(sc.c_name);
+		if (v != NULL && w != NULL)
+			co = newcodeobject(sc.c_code, sc.c_consts,
+					   sc.c_names, v, w);
+		XDECREF(v);
+		XDECREF(w);
 	}
-	else
-		co = NULL;
 	com_free(&sc);
 	if (co != NULL && filename[0] != '<')
 		optimizer(co);

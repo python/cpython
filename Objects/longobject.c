@@ -555,6 +555,7 @@ static void long_dealloc PROTO((object *));
 static int long_print PROTO((object *, FILE *, int));
 static object *long_repr PROTO((object *));
 static int long_compare PROTO((longobject *, longobject *));
+static long long_hash PROTO((longobject *));
 
 static object *long_add PROTO((longobject *, longobject *));
 static object *long_sub PROTO((longobject *, longobject *));
@@ -614,6 +615,35 @@ long_compare(a, b)
 	}
 	return sign < 0 ? -1 : sign > 0 ? 1 : 0;
 }
+
+static long
+long_hash(v)
+	longobject *v;
+{
+	long x;
+	int i, sign;
+
+	/* This is designed so that Python ints and longs with the
+	   same value hash to the same value, otherwise comparisons
+	   of mapping keys will turn out weird */
+	i = v->ob_size;
+	sign = 1;
+	x = 0;
+	if (i < 0) {
+		sign = -1;
+		i = -(i);
+	}
+	while (--i >= 0) {
+		/* Force a 32-bit circular shift */
+		x = ((x << SHIFT) & ~MASK) | ((x >> (32-SHIFT)) & MASK);
+		x += v->ob_digit[i];
+	}
+	x = x * sign;
+	if (x == -1)
+		x = -2;
+	return x;
+}
+
 
 /* Add the absolute values of two long integers. */
 
@@ -1346,4 +1376,6 @@ typeobject Longtype = {
 	&long_as_number,/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
+	(long (*) FPROTO((object *)))
+	long_hash,	/*tp_hash*/
 };

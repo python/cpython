@@ -145,6 +145,38 @@ float_compare(v, w)
 	return (i < j) ? -1 : (i > j) ? 1 : 0;
 }
 
+static long
+float_hash(v)
+	floatobject *v;
+{
+	double intpart, fractpart;
+	int expo;
+	long x;
+	/* This is designed so that Python numbers with the same
+	   value hash to the same value, otherwise comparisons
+	   of mapping keys will turn out weird */
+	fractpart = modf(v->ob_fval, &intpart);
+	if (fractpart == 0.0) {
+		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
+			/* Convert to long int and use its hash... */
+			object *w = dnewlongobject(v->ob_fval);
+			if (w == NULL)
+				return -1;
+			x = hashobject(w);
+			DECREF(w);
+			return x;
+		}
+		x = (long)intpart;
+	}
+	else {
+		fractpart = frexp(fractpart, &expo);
+		x = (long) (intpart + fractpart) ^ expo; /* Rather arbitrary */
+	}
+	if (x == -1)
+		x = -2;
+	return x;
+}
+
 static object *
 float_add(v, w)
 	floatobject *v;
@@ -378,4 +410,5 @@ typeobject Floattype = {
 	&float_as_number,	/*tp_as_number*/
 	0,			/*tp_as_sequence*/
 	0,			/*tp_as_mapping*/
+	float_hash,		/*tp_hash */
 };

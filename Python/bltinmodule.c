@@ -281,10 +281,28 @@ builtin_getattr(self, args)
 	object *args;
 {
 	object *v;
-	char *name;
-	if (!getargs(args, "(Os)", &v, &name))
+	object *name;
+	if (!getargs(args, "(OS)", &v, &name))
 		return NULL;
-	return getattr(v, name);
+	return getattro(v, name);
+}
+
+static object *
+builtin_hasattr(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	object *name;
+	if (!getargs(args, "(OS)", &v, &name))
+		return NULL;
+	v = getattro(v, name);
+	if (v == NULL) {
+		err_clear();
+		return newintobject(0L);
+	}
+	DECREF(v);
+	return newintobject(1L);
 }
 
 static object *
@@ -293,14 +311,29 @@ builtin_setattr(self, args)
 	object *args;
 {
 	object *v;
-	char *name;
+	object *name;
 	object *value;
-	if (!getargs(args, "(OsO)", &v, &name, &value))
+	if (!getargs(args, "(OSO)", &v, &name, &value))
 		return NULL;
-	if (setattr(v, name, value) != 0)
+	if (setattro(v, name, value) != 0)
 		return NULL;
 	INCREF(None);
 	return None;
+}
+
+static object *
+builtin_hash(self, args)
+	object *self;
+	object *args;
+{
+	object *v;
+	long x;
+	if (!getargs(args, "O", &v))
+		return NULL;
+	x = hashobject(v);
+	if (x == -1)
+		return NULL;
+	return newintobject(x);
 }
 
 static object *
@@ -687,6 +720,8 @@ static struct methodlist builtin_methods[] = {
 	{"execfile",	builtin_execfile},
 	{"float",	builtin_float},
 	{"getattr",	builtin_getattr},
+	{"hasattr",	builtin_hasattr},
+	{"hash",	builtin_hash},
 	{"hex",		builtin_hex},
 	{"input",	builtin_input},
 	{"int",		builtin_int},

@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -28,7 +28,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* An intermediate code fragment contains:
    - a string that encodes the instructions,
    - a list of the constants,
-   - and a list of the names used. */
+   - a list of the names used,
+   - the filename from which it was compiled,
+   - the name of the object for which it was compiled. */
 
 typedef struct {
 	OB_HEAD
@@ -36,6 +38,7 @@ typedef struct {
 	object *co_consts;	/* list of immutable constant objects */
 	object *co_names;	/* list of stringobjects */
 	object *co_filename;	/* string */
+	object *co_name;	/* string */
 } codeobject;
 
 extern typeobject Codetype;
@@ -46,4 +49,5 @@ extern typeobject Codetype;
 /* Public interface */
 struct _node; /* Declare the existence of this type */
 codeobject *compile PROTO((struct _node *, char *));
-codeobject *newcodeobject PROTO((object *, object *, object *, object *));
+codeobject *newcodeobject
+	PROTO((object *, object *, object *, object *, object *));
