@@ -761,7 +761,7 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 \end{verbatim}
 
 With these changes, we can assure that the \member{first} and
-\member{last} members are never NULL so we can remove checks for \NULL
+\member{last} members are never \NULL{} so we can remove checks for \NULL{}
 values in almost all cases. This means that most of the
 \cfunction{Py_XDECREF()} calls can be converted to \cfunction{Py_DECREF()}
 calls. The only place we can't change these calls is in the
@@ -891,15 +891,15 @@ Noddy_dealloc(Noddy* self)
 \end{verbatim}
 
 Notice the use of a temporary variable in \cfunction{Noddy_clear()}.
-We use the temporary variable so that we can set each member to \NULL
-before decrementing it's reference count.  We do this because, as was
+We use the temporary variable so that we can set each member to \NULL{}
+before decrementing its reference count.  We do this because, as was
 discussed earlier, if the reference count drops to zero, we might
 cause code to run that calls back into the object.  In addition,
 because we now support garbage collection, we also have to worry about
 code being run that triggers garbage collection.  If garbage
 collection is run, our \member{tp_traverse} handler could get called.
 We can't take a chance of having \cfunction{Noddy_traverse()} called
-when a member's reference count has dropped to zero and it's value
+when a member's reference count has dropped to zero and its value
 hasn't been set to \NULL.
 
 Python 2.4 and higher provide a \cfunction{Py_CLEAR()} that automates
