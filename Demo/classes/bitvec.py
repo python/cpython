@@ -84,7 +84,7 @@ class BitVec:
 					raise error, 'bitvec()\'s 2nd parameter must be int'
 				computed_length = _compute_len(param)
 				if computed_length > length:
-					print 'warning: bitvec() value is longer than the lenght indicates, truncating value'
+					print 'warning: bitvec() value is longer than the length indicates, truncating value'
 					self._data = self._data & \
 						  ((1L << length) - 1)
 				self._len = length
@@ -178,7 +178,7 @@ class BitVec:
 		if length == 0 or other._len == 0:
 			return cmp(length, other._len)
 		if length != other._len:
-			min_lenght = min(length, other._len)
+			min_length = min(length, other._len)
 			return cmp(self[:min_length], other[:min_length]) or \
 				  cmp(self[min_length:], other[min_length:])
 		#the lengths are the same now...
