@@ -2014,6 +2014,49 @@ Here is a small example using a dictionary:
 1
 \end{verbatim}
 
+
+\section{Looping Techniques \label{loopidioms}}
+
+When looping through dictionaries, the key and corresponding value can
+be retrieved at the same time using the \method{items()} method.
+
+\begin{verbatim}
+>>> knights = {'gallahad': 'the pure', 'robin': 'the brave'}
+>>> for k, v in knights.items():
+...     print k, v
+...
+gallahad the pure
+robin the brave
+\end{verbatim}
+ 
+When looping through a sequence, the position index and corresponding
+value can be retrieved at the same time using the
+\function{enumerate()} function.
+
+\begin{verbatim} 
+>>> for i, v in enumerate(['tic', 'tac', 'toe']):
+...     print i, v
+...
+0 tic
+1 tac
+2 toe
+\end{verbatim}
+
+To loop over two or more sequences at the same time, the entries
+can be paired with the \function{zip()} function.
+
+\begin{verbatim}
+>>> questions = ['name', 'quest', 'favorite color']
+>>> answers = ['lancelot', 'the holy grail', 'blue']
+>>> for q, a in zip(questions, answers):
+...     print 'What is your %s?  It is %s.' % (q, a)
+...	
+What is your name ?  It is lancelot .
+What is your quest ?  It is the holy grail .
+What is your favorite color ?  It is blue .
+\end{verbatim}
+
+
 \section{More on Conditions \label{conditions}}
 
 The conditions used in \code{while} and \code{if} statements above can
