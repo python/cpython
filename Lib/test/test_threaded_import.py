@@ -17,9 +17,13 @@ def task():
     x = random.randrange(1, 3)
     critical_section.acquire()
     N -= 1
-    if N == 0:
-        done.release()
+    # Must release critical_section before releasing done, else the main
+    # thread can exit and set critical_section to None as part of global
+    # teardown; then critical_section.release() raises AttributeError.
+    finished = N == 0
     critical_section.release()
+    if finished:
+        done.release()
 
 # Tricky:  When regrtest imports this module, the thread running regrtest
 # grabs the import lock and won't let go of it until this module returns.
