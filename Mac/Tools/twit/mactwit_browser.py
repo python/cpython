@@ -27,7 +27,7 @@ import Res
 import Qd
 import List
 import sys
-from types import *
+from Types import *
 from QuickDraw import *
 import string
 import time
@@ -37,7 +37,7 @@ import os
 start_object = sys
 
 # Resource definitions
-ID_MAIN = 516
+ID_MAIN = 503
 NUM_LISTS = 4	# the number of lists used. could be changed, but the dlg item numbers should be consistent
 MAIN_TITLE = 3	# this is only the first text item, the other three ID's should be 5, 7 and 9
 MAIN_LIST = 4	# this is only the first list, the other three ID's should be 6, 8 and 10
