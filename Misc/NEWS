@@ -226,11 +226,18 @@ Standard library
 
 Build issues
 
-- On Linux (and possibly other Unix platforms), the readline and
-  _curses modules are automatically configured through
-  Modules/Setup.config.  These, and the bsddb module (which was
-  already dynamically configured) are now built as shared libraries by
-  default.
+- For Unix (and Unix-compatible) builds, configuration and building of
+  extension modules is now greatly automated.  Rather than having to
+  edit the Modules/Setup file to indicate which modules should be
+  built and where their include files and libraries are, a
+  distutils-based setup.py script now takes care of building most
+  extension modules.  All extension modules built this way are built
+  as shared libraries.  Only a few modules that must be linked
+  statically are still listed in the Setup file; you won't need to
+  edit their configuration.
+
+- Python should now build out of the box on Cygwin.  If it doesn't,
+  mail to Jason Tishler (jlt63 at users.sourceforge.net).
 
 - Python now always uses its own (renamed) implementation of getopt()
   -- there's too much variation among C library getopt()
