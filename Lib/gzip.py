@@ -35,6 +35,10 @@ class GzipFile:
 
     def __init__(self, filename=None, mode=None,
                  compresslevel=9, fileobj=None):
+        # guarantee the file is opened in binary mode on platforms
+        # that care about that sort of thing
+        if mode and 'b' not in mode:
+            mode += 'b'
         if fileobj is None:
             fileobj = self.myfileobj = __builtin__.open(filename, mode or 'rb')
         if filename is None:
