@@ -963,6 +963,9 @@ _PyObject_GC_Track(PyObject *op)
 void
 PyObject_GC_UnTrack(void *op)
 {
+	/* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
+	 * call PyObject_GC_UnTrack twice on an object.
+	 */
 	if (IS_TRACKED(op))
 		_PyObject_GC_UNTRACK(op);
 }
