@@ -1726,8 +1726,6 @@ sub do_cmd_maketitle{
     }
     $the_title .= "\n</div>";
     return $the_title . $_;
-    $the_title .= "\n</center></div>";
-    return $the_title . $_ ;
 }
 
 
