@@ -1,7 +1,8 @@
 """distutils.cmd
 
 Provides the Command class, the base class for the command classes
-in the distutils.command package."""
+in the distutils.command package.
+"""
 
 # created 2000/04/03, Greg Ward
 # (extricated from core.py; actually dates back to the beginning)
@@ -16,28 +17,28 @@ from distutils import util
 
 class Command:
     """Abstract base class for defining command classes, the "worker bees"
-       of the Distutils.  A useful analogy for command classes is to
-       think of them as subroutines with local variables called
-       "options".  The options are "declared" in 'initialize_options()'
-       and "defined" (given their final values, aka "finalized") in
-       'finalize_options()', both of which must be defined by every
-       command class.  The distinction between the two is necessary
-       because option values might come from the outside world (command
-       line, option file, ...), and any options dependent on other
-       options must be computed *after* these outside influences have
-       been processed -- hence 'finalize_options()'.  The "body" of the
-       subroutine, where it does all its work based on the values of its
-       options, is the 'run()' method, which must also be implemented by
-       every command class."""
+    of the Distutils.  A useful analogy for command classes is to think of
+    them as subroutines with local variables called "options".  The options
+    are "declared" in 'initialize_options()' and "defined" (given their
+    final values, aka "finalized") in 'finalize_options()', both of which
+    must be defined by every command class.  The distinction between the
+    two is necessary because option values might come from the outside
+    world (command line, config file, ...), and any options dependent on
+    other options must be computed *after* these outside influences have
+    been processed -- hence 'finalize_options()'.  The "body" of the
+    subroutine, where it does all its work based on the values of its
+    options, is the 'run()' method, which must also be implemented by every
+    command class.
+    """
 
     # -- Creation/initialization methods -------------------------------
 
     def __init__ (self, dist):
         """Create and initialize a new Command object.  Most importantly,
-           invokes the 'initialize_options()' method, which is the
-           real initializer and depends on the actual command being
-           instantiated."""
-
+        invokes the 'initialize_options()' method, which is the real
+        initializer and depends on the actual command being
+        instantiated.
+        """
         # late import because of mutual dependence between these classes
         from distutils.dist import Distribution
 
@@ -97,9 +98,9 @@ class Command:
 
     # Subclasses must define:
     #   initialize_options()
-    #     provide default values for all options; may be overridden
-    #     by Distutils client, by command-line options, or by options
-    #     from option file
+    #     provide default values for all options; may be customized by
+    #     setup script, by options from config file(s), or by command-line
+    #     options
     #   finalize_options()
     #     decide on the final values for all options; this is called
     #     after all possible intervention from the outside world
@@ -110,28 +111,28 @@ class Command:
 
     def initialize_options (self):
         """Set default values for all the options that this command
-           supports.  Note that these defaults may be overridden
-           by the command-line supplied by the user; thus, this is
-           not the place to code dependencies between options; generally,
-           'initialize_options()' implementations are just a bunch
-           of "self.foo = None" assignments.
+        supports.  Note that these defaults may be overridden by other
+        commands, by the setup script, by config files, or by the
+        command-line.  Thus, this is not the place to code dependencies
+        between options; generally, 'initialize_options()' implementations
+        are just a bunch of "self.foo = None" assignments.
            
-           This method must be implemented by all command classes."""
-           
+        This method must be implemented by all command classes.
+        """
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
         
     def finalize_options (self):
-        """Set final values for all the options that this command
-           supports.  This is always called as late as possible, ie.
-           after any option assignments from the command-line or from
-           other commands have been done.  Thus, this is the place to to
-           code option dependencies: if 'foo' depends on 'bar', then it
-           is safe to set 'foo' from 'bar' as long as 'foo' still has
-           the same value it was assigned in 'initialize_options()'.
+        """Set final values for all the options that this command supports.
+        This is always called as late as possible, ie.  after any option
+        assignments from the command-line or from other commands have been
+        done.  Thus, this is the place to to code option dependencies: if
+        'foo' depends on 'bar', then it is safe to set 'foo' from 'bar' as
+        long as 'foo' still has the same value it was assigned in
+        'initialize_options()'.
 
-           This method must be implemented by all command classes."""
-           
+        This method must be implemented by all command classes.
+        """
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
 
@@ -151,23 +152,23 @@ class Command:
 
 
     def run (self):
-        """A command's raison d'etre: carry out the action it exists
-           to perform, controlled by the options initialized in
-           'initialize_options()', customized by the user and other
-           commands, and finalized in 'finalize_options()'.  All
-           terminal output and filesystem interaction should be done by
-           'run()'.
+        """A command's raison d'etre: carry out the action it exists to
+        perform, controlled by the options initialized in
+        'initialize_options()', customized by other commands, the setup
+        script, the command-line, and config files, and finalized in
+        'finalize_options()'.  All terminal output and filesystem
+        interaction should be done by 'run()'.
 
-           This method must be implemented by all command classes."""
+        This method must be implemented by all command classes.
+        """
 
         raise RuntimeError, \
               "abstract method -- subclass %s must override" % self.__class__
 
     def announce (self, msg, level=1):
-        """If the Distribution instance to which this command belongs
-           has a verbosity level of greater than or equal to 'level'
-           print 'msg' to stdout."""
-    
+        """If the current verbosity level is of greater than or equal to
+        'level' print 'msg' to stdout.
+        """
         if self.verbose >= level:
             print msg
 
@@ -183,18 +184,18 @@ class Command:
 
     def set_undefined_options (self, src_cmd, *option_pairs):
         """Set the values of any "undefined" options from corresponding
-           option values in some other command object.  "Undefined" here
-           means "is None", which is the convention used to indicate
-           that an option has not been changed between
-           'set_initial_values()' and 'set_final_values()'.  Usually
-           called from 'set_final_values()' for options that depend on
-           some other command rather than another option of the same
-           command.  'src_cmd' is the other command from which option
-           values will be taken (a command object will be created for it
-           if necessary); the remaining arguments are
-           '(src_option,dst_option)' tuples which mean "take the value
-           of 'src_option' in the 'src_cmd' command object, and copy it
-           to 'dst_option' in the current command object"."""
+        option values in some other command object.  "Undefined" here means
+        "is None", which is the convention used to indicate that an option
+        has not been changed between 'initialize_options()' and
+        'finalize_options()'.  Usually called from 'finalize_options()' for
+        options that depend on some other command rather than another
+        option of the same command.  'src_cmd' is the other command from
+        which option values will be taken (a command object will be created
+        for it if necessary); the remaining arguments are
+        '(src_option,dst_option)' tuples which mean "take the value of
+        'src_option' in the 'src_cmd' command object, and copy it to
+        'dst_option' in the current command object".
+        """
 
         # Option_pairs: list of (src_option, dst_option) tuples
 
@@ -207,10 +208,11 @@ class Command:
 
 
     def get_finalized_command (self, command, create=1):
-        """Wrapper around Distribution's 'get_command_obj()' method:
-           find (create if necessary and 'create' is true) the command
-           object for 'command'.."""
-
+        """Wrapper around Distribution's 'get_command_obj()' method: find
+        (create if necessary and 'create' is true) the command object for
+        'command', call its 'ensure_finalized()' method, and return the
+        finalized command object.
+        """
         cmd_obj = self.distribution.get_command_obj (command, create)
         cmd_obj.ensure_finalized ()
         return cmd_obj
@@ -222,9 +224,9 @@ class Command:
 
     def run_command (self, command):
         """Run some other command: uses the 'run_command()' method of
-           Distribution, which creates the command object if necessary
-           and then invokes its 'run()' method."""
-
+        Distribution, which creates and finalizes the command object if
+        necessary and then invokes its 'run()' method.
+        """
         self.distribution.run_command (command)
 
 
@@ -236,15 +238,16 @@ class Command:
 
 
     def execute (self, func, args, msg=None, level=1):
-        """Perform some action that affects the outside world (eg.
-           by writing to the filesystem).  Such actions are special because
-           they should be disabled by the "dry run" flag, and should
-           announce themselves if the current verbosity level is high
-           enough.  This method takes care of all that bureaucracy for you;
-           all you have to do is supply the funtion to call and an argument
-           tuple for it (to embody the "external action" being performed),
-           a message to print if the verbosity level is high enough, and an
-           optional verbosity threshold."""
+        """Perform some action that affects the outside world (eg.  by
+        writing to the filesystem).  Such actions are special because they
+        should be disabled by the "dry run" flag, and should announce
+        themselves if the current verbosity level is high enough.  This
+        method takes care of all that bureaucracy for you; all you have to
+        do is supply the funtion to call and an argument tuple for it (to
+        embody the "external action" being performed), a message to print
+        if the verbosity level is high enough, and an optional verbosity
+        threshold.
+        """
 
         # Generate a message if we weren't passed one
         if msg is None:
@@ -285,8 +288,8 @@ class Command:
                    preserve_mode=1, preserve_times=1, preserve_symlinks=0,
                    level=1):
         """Copy an entire directory tree respecting verbose, dry-run,
-           and force flags."""
-
+        and force flags.
+        """
         return util.copy_tree (infile, outfile, 
                                preserve_mode,preserve_times,preserve_symlinks,
                                not self.force,
@@ -302,6 +305,7 @@ class Command:
 
 
     def spawn (self, cmd, search_path=1, level=1):
+        """Spawn an external command respecting verbose and dry-run flags."""
         from distutils.spawn import spawn
         spawn (cmd, search_path,
                self.verbose >= level,
@@ -316,16 +320,14 @@ class Command:
 
     def make_file (self, infiles, outfile, func, args,
                    exec_msg=None, skip_msg=None, level=1):
-
         """Special case of 'execute()' for operations that process one or
         more input files and generate one output file.  Works just like
         'execute()', except the operation is skipped and a different
         message printed if 'outfile' already exists and is newer than all
         files listed in 'infiles'.  If the command defined 'self.force',
         and it is true, then the command is unconditionally run -- does no
-        timestamp checks."""
-
-
+        timestamp checks.
+        """
         if exec_msg is None:
             exec_msg = "generating %s from %s" % \
                        (outfile, string.join (infiles, ', '))

@@ -1,7 +1,8 @@
 """distutils.dist
 
 Provides the Distribution class, which represents the module distribution
-being built/installed/distributed."""
+being built/installed/distributed.
+"""
 
 # created 2000/04/03, Greg Ward
 # (extricated from core.py; actually dates back to the beginning)
@@ -25,20 +26,18 @@ command_re = re.compile (r'^[a-zA-Z]([a-zA-Z0-9_]*)$')
 
 
 class Distribution:
-    """The core of the Distutils.  Most of the work hiding behind
-       'setup' is really done within a Distribution instance, which
-       farms the work out to the Distutils commands specified on the
-       command line.
+    """The core of the Distutils.  Most of the work hiding behind 'setup'
+    is really done within a Distribution instance, which farms the work out
+    to the Distutils commands specified on the command line.
 
-       Clients will almost never instantiate Distribution directly,
-       unless the 'setup' function is totally inadequate to their needs.
-       However, it is conceivable that a client might wish to subclass
-       Distribution for some specialized purpose, and then pass the
-       subclass to 'setup' as the 'distclass' keyword argument.  If so,
-       it is necessary to respect the expectations that 'setup' has of
-       Distribution: it must have a constructor and methods
-       'parse_command_line()' and 'run_commands()' with signatures like
-       those described below."""
+    Setup scripts will almost never instantiate Distribution directly,
+    unless the 'setup()' function is totally inadequate to their needs.
+    However, it is conceivable that a setup script might wish to subclass
+    Distribution for some specialized purpose, and then pass the subclass
+    to 'setup()' as the 'distclass' keyword argument.  If so, it is
+    necessary to respect the expectations that 'setup' has of Distribution.
+    See the code for 'setup()', in core.py, for details.
+    """
 
 
     # 'global_options' describes the command-line options that may be
@@ -98,14 +97,14 @@ class Distribution:
     
     def __init__ (self, attrs=None):
         """Construct a new Distribution instance: initialize all the
-           attributes of a Distribution, and then uses 'attrs' (a
-           dictionary mapping attribute names to values) to assign
-           some of those attributes their "real" values.  (Any attributes
-           not mentioned in 'attrs' will be assigned to some null
-           value: 0, None, an empty list or dictionary, etc.)  Most
-           importantly, initialize the 'command_obj' attribute
-           to the empty dictionary; this will be filled in with real
-           command objects by 'parse_command_line()'."""
+        attributes of a Distribution, and then use 'attrs' (a dictionary
+        mapping attribute names to values) to assign some of those
+        attributes their "real" values.  (Any attributes not mentioned in
+        'attrs' will be assigned to some null value: 0, None, an empty list
+        or dictionary, etc.)  Most importantly, initialize the
+        'command_obj' attribute to the empty dictionary; this will be
+        filled in with real command objects by 'parse_command_line()'.
+        """
 
         # Default values for our command-line options
         self.verbose = 1
@@ -387,7 +386,6 @@ class Distribution:
     # parse_command_line()
 
     def _parse_command_opts (self, parser, args):
-
         """Parse the command-line options for a single command.
         'parser' must be a FancyGetopt instance; 'args' must be the list
         of arguments, starting with the current command (whose options
@@ -666,7 +664,6 @@ class Distribution:
         return cmd_obj
 
     def _set_command_options (self, command_obj, option_dict=None):
-
         """Set the options for 'command_obj' from 'option_dict'.  Basically
         this means copying elements of a dictionary ('option_dict') to
         attributes of an instance ('command').
