@@ -1120,6 +1120,14 @@ specific signals available on the host platform are defined in the
 Availability: \UNIX.
 \end{funcdesc}
 
+\begin{funcdesc}{killpg}{pgid, sig}
+\index{process!killing}
+\index{process!signalling}
+Kill the process group \var{pgid} with the signal \var{sig}.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{nice}{increment}
 Add \var{increment} to the process's ``niceness''.  Return the new
 niceness.
