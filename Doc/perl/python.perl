@@ -760,13 +760,13 @@ sub do_cmd_lineii{
     s/$next_pair_pr_rx//o;
     my $c1 = $2;
     s/$next_pair_pr_rx//o;
-    my($c2,$font,$efont) = ($2, $globals{"lineifont"}, '');
+    my($c2,$font,$sfont,$efont) = ($2, $globals{"lineifont"}, '', '');
     if ($font) {
-	$font = "<$font>";
+	$sfont = "<$font>";
 	$efont = "</$font>";
     }
     my($c1align,$c2align) = @col_aligns[0,1];
-    "<tr>$c1align$font$c1$efont</td>\n"
+    "<tr>$c1align$sfont$c1$efont</td>\n"
       . "      $c2align$c2</td>$'";
 }
 
@@ -801,13 +801,13 @@ sub do_cmd_lineiii{
     s/$next_pair_pr_rx//o;
     my $c2 = $2;
     s/$next_pair_pr_rx//o;
-    my($c3,$font,$efont) = ($2, $globals{"lineifont"}, '');
+    my($c3,$font,$sfont,$efont) = ($2, $globals{"lineifont"}, '', '');
     if ($font) {
-	$font = "<$font>";
+	$sfont = "<$font>";
 	$efont = "</$font>";
     }
     my($c1align, $c2align, $c3align) = @col_aligns;
-    "<tr>$c1align$font$c1$efont</td>\n"
+    "<tr>$c1align$sfont$c1$efont</td>\n"
       . "      $c2align$c2</td>\n"
       . "      $c3align$c3</td>$'";
 }
