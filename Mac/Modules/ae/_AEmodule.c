@@ -35,6 +35,7 @@ extern PyObject *_AEDesc_New(AEDesc *);
 extern int _AEDesc_Convert(PyObject *, AEDesc *);
 
 #define AEDesc_New _AEDesc_New
+#define AEDesc_NewBorrowed _AEDesc_NewBorrowed
 #define AEDesc_Convert _AEDesc_Convert
 #endif
 
@@ -70,6 +71,7 @@ PyTypeObject AEDesc_Type;
 typedef struct AEDescObject {
 	PyObject_HEAD
 	AEDesc ob_itself;
+	int ob_owned;
 } AEDescObject;
 
 PyObject *AEDesc_New(AEDesc *itself)
@@ -78,6 +80,7 @@ PyObject *AEDesc_New(AEDesc *itself)
 	it = PyObject_NEW(AEDescObject, &AEDesc_Type);
 	if (it == NULL) return NULL;
 	it->ob_itself = *itself;
+	it->ob_owned = 1;
 	return (PyObject *)it;
 }
 int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
@@ -93,7 +96,7 @@ int AEDesc_Convert(PyObject *v, AEDesc *p_itself)
 
 static void AEDesc_dealloc(AEDescObject *self)
 {
-	AEDisposeDesc(&self->ob_itself);
+	if (self->ob_owned) AEDisposeDesc(&self->ob_itself);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
@@ -759,6 +762,20 @@ static PyObject *AEDesc_AEResolve(AEDescObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *AEDesc_AutoDispose(AEDescObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+
+	int onoff, old;
+	if (!PyArg_ParseTuple(_args, "i", &onoff))
+	        return NULL;
+	old = _self->ob_owned;
+	_self->ob_owned = onoff;
+	_res = Py_BuildValue("i", old);
+	return _res;
+
+}
+
 static PyMethodDef AEDesc_methods[] = {
 	{"AECoerceDesc", (PyCFunction)AEDesc_AECoerceDesc, 1,
 	 PyDoc_STR("(DescType toType) -> (AEDesc result)")},
@@ -816,6 +833,8 @@ static PyMethodDef AEDesc_methods[] = {
 	 PyDoc_STR("() -> None")},
 	{"AEResolve", (PyCFunction)AEDesc_AEResolve, 1,
 	 PyDoc_STR("(short callbackFlags) -> (AEDesc theToken)")},
+	{"AutoDispose", (PyCFunction)AEDesc_AutoDispose, 1,
+	 PyDoc_STR("(int)->int. Automatically AEDisposeDesc the object on Python object cleanup")},
 	{NULL, NULL, 0}
 };
 
@@ -1413,6 +1432,17 @@ GenericEventHandler(const AppleEvent *request, AppleEvent *reply, refcontype ref
 	return noErr;
 }
 
+PyObject *AEDesc_NewBorrowed(AEDesc *itself)
+{
+	PyObject *it;
+	
+	it = AEDesc_New(itself);
+	if (it)
+		((AEDescObject *)it)->ob_owned = 0;
+	return (PyObject *)it;
+}
+
+
 
 void init_AE(void)
 {
@@ -1424,6 +1454,7 @@ void init_AE(void)
 		upp_AEIdleProc = NewAEIdleUPP(AEIdleProc);
 		upp_GenericEventHandler = NewAEEventHandlerUPP(GenericEventHandler);
 		PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_New);
+		PyMac_INIT_TOOLBOX_OBJECT_NEW(AEDesc *, AEDesc_NewBorrowed);
 		PyMac_INIT_TOOLBOX_OBJECT_CONVERT(AEDesc, AEDesc_Convert);
 
 

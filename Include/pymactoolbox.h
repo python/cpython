@@ -106,6 +106,7 @@ PyObject *PyMac_BuildFSRef(FSRef *);		/* Convert FSRef to PyObject */
 
 /* AE exports */
 extern PyObject *AEDesc_New(AppleEvent *); /* XXXX Why passed by address?? */
+extern PyObject *AEDesc_NewBorrowed(AppleEvent *);
 extern int AEDesc_Convert(PyObject *, AppleEvent *);
 
 /* Cm exports */
