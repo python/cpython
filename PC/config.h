@@ -330,13 +330,13 @@ typedef int pid_t;
 #define HAVE_FTIME
 
 /* Define if you have getpeername.  */
-/* #undef HAVE_GETPEERNAME */
+#define HAVE_GETPEERNAME
 
 /* Define if you have getpgrp.  */
 /* #undef HAVE_GETPGRP */
 
 /* Define if you have getpid.  */
-/* #undef HAVE_GETPID */
+#define HAVE_GETPID
 
 /* Define if you have gettimeofday.  */
 /* #undef HAVE_GETTIMEOFDAY */
@@ -364,6 +364,9 @@ typedef int pid_t;
 
 /* Define if you have setsid.  */
 /* #undef HAVE_SETSID */
+
+/* Define if you have setvbuf.  */
+#define HAVE_SETVBUF
 
 /* Define if you have siginterrupt.  */
 /* #undef HAVE_SIGINTERRUPT */
