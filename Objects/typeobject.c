@@ -912,9 +912,30 @@ object_dealloc(PyObject *self)
 static PyObject *
 object_repr(PyObject *self)
 {
-	char buf[120];
+	PyTypeObject *type;
+	PyObject *mod, *name;
+	char buf[200];
 
-	sprintf(buf, "<%.80s object at %p>", self->ob_type->tp_name, self);
+	type = self->ob_type;
+	mod = type_module(type, NULL);
+	if (mod == NULL)
+		PyErr_Clear();
+	else if (!PyString_Check(mod)) {
+		Py_DECREF(mod);
+		mod = NULL;
+	}
+	name = type_name(type, NULL);
+	if (name == NULL)
+		return NULL;
+	if (mod != NULL && strcmp(PyString_AS_STRING(mod), "__builtin__"))
+		sprintf(buf, "<%.80s.%.80s instance at %p>",
+			PyString_AS_STRING(mod),
+			PyString_AS_STRING(name),
+			self);
+	else
+		sprintf(buf, "<%.80s instance at %p>", type->tp_name, self);
+	Py_XDECREF(mod);
+	Py_DECREF(name);
 	return PyString_FromString(buf);
 }
 
