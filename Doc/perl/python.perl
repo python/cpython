@@ -55,6 +55,24 @@ sub ArabictoRoman {
     $D2[$c[2]] . $D1[$c[1]] . $D0[$c[0]];
 }
 
+
+# This is a fairly simple hack; it supports \let when it is used to create
+# (or redefine) a macro to exactly be some other macro: \let\newname=\oldname.
+# Many uses of \let aren't supported.
+#
+sub do_cmd_let{
+    local($_) = @_;
+    my $matched = 0;
+    s/\s*[\\]([a-zA-Z]+)\s*(=\s*)?[\\]([a-zA-Z]*)/$matched=1; ''/e;
+    if ($matched) {
+	my($new, $old) = ($1, $3);
+	eval "sub do_cmd_$new { do_cmd_$old" . '(@_); }';
+	print "\ndefining handler for \\$new using \\$old\n";
+    }
+    $_;
+}
+
+
 # words typeset in a special way (not in HTML though)
 
 sub do_cmd_ABC{ 'ABC' . @_[0]; }
@@ -84,9 +102,9 @@ sub do_cmd_authoraddress{
     $_;
 }
 
-sub do_cmd_developer{ do_cmd_author(@_[0]); }
-sub do_cmd_developers{ do_cmd_author(@_[0]); }
-sub do_cmd_developersaddress{ do_cmd_authoraddress(@_[0]); }
+#sub do_cmd_developer{ do_cmd_author(@_[0]); }
+#sub do_cmd_developers{ do_cmd_author(@_[0]); }
+#sub do_cmd_developersaddress{ do_cmd_authoraddress(@_[0]); }
 
 sub do_cmd_hackscore{
     local($_) = @_;
