@@ -6,7 +6,7 @@ Implements the Distutils 'build_py' command."""
 
 __rcsid__ = "$Id$"
 
-import string, os
+import sys, string, os
 from types import *
 from glob import glob
 
@@ -40,11 +40,21 @@ class BuildPy (Command):
 
     def run (self):
 
-        # XXX copy_file by default preserves all stat info -- mode, atime,
-        # and mtime.  IMHO this is the right thing to do, but perhaps it
-        # should be an option -- in particular, a site administrator might
-        # want installed files to reflect the time of installation rather
-        # than the last modification time before the installed release.
+        # XXX copy_file by default preserves atime and mtime.  IMHO this is
+        # the right thing to do, but perhaps it should be an option -- in
+        # particular, a site administrator might want installed files to
+        # reflect the time of installation rather than the last
+        # modification time before the installed release.
+
+        # XXX copy_file by default preserves mode, which appears to be the
+        # wrong thing to do: if a file is read-only in the working
+        # directory, we want it to be installed read/write so that the next
+        # installation of the same module distribution can overwrite it
+        # without problems.  (This might be a Unix-specific issue.)  Thus
+        # we turn off 'preserve_mode' when copying to the build directory,
+        # since the build directory is supposed to be exactly what the
+        # installation will look like (ie. we preserve mode when
+        # installing).
 
         # XXX copy_file does *not* preserve MacOS-specific file metadata.
         # If this is a problem for building/installing Python modules, then
@@ -73,14 +83,13 @@ class BuildPy (Command):
         if self.modules and self.packages:
             raise DistutilsOptionError, \
                   "build_py: supplying both 'packages' and 'modules' " + \
-                  "options not allowed"
+                  "options is not allowed"
 
         # Now we're down to two cases: 'modules' only and 'packages' only.
         if self.modules:
             self.build_modules ()
         else:
             self.build_packages ()
-
 
     # run ()
         
@@ -162,9 +171,13 @@ class BuildPy (Command):
     def find_package_modules (self, package, package_dir):
         module_files = glob (os.path.join (package_dir, "*.py"))
         module_pairs = []
+        setup_script = os.path.abspath (sys.argv[0])
+
         for f in module_files:
-            module = os.path.splitext (os.path.basename (f))[0]
-            module_pairs.append (module, f)
+            abs_f = os.path.abspath (f)
+            if abs_f != setup_script:
+                module = os.path.splitext (os.path.basename (f))[0]
+                module_pairs.append ((module, f))
         return module_pairs
 
 
@@ -253,7 +266,7 @@ class BuildPy (Command):
 
         dir = os.path.dirname (outfile)
         self.mkpath (dir)
-        self.copy_file (module_file, outfile)
+        self.copy_file (module_file, outfile, preserve_mode=0)
 
 
     def build_modules (self):
