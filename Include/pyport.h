@@ -429,7 +429,11 @@ and both these use __declspec()
 #		else /* Py_BUILD_CORE */
 			/* Building an extension module, or an embedded situation */
 			/* public Python functions and data are imported */
-#			define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
+			/* Under Cygwin, auto-import functions to prevent compilation */
+			/* failures similar to http://python.org/doc/FAQ.html#3.24 */
+#			if !defined(__CYGWIN__)
+#				define PyAPI_FUNC(RTYPE) __declspec(dllimport) RTYPE
+#			endif /* !__CYGWIN__ */
 #			define PyAPI_DATA(RTYPE) extern __declspec(dllimport) RTYPE
 			/* module init functions outside the core must be exported */
 #			if defined(__cplusplus)

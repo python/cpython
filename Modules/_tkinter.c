@@ -834,7 +834,7 @@ statichere PyTypeObject PyTclObject_Type = {
 	0,			/*tp_hash*/
         0,                      /*tp_call*/
         (reprfunc)PyTclObject_str,        /*tp_str*/
-        0,                      /*tp_getattro*/
+        PyObject_GenericGetAttr,/*tp_getattro*/
         0,                      /*tp_setattro*/
         0,                      /*tp_as_buffer*/
         Py_TPFLAGS_DEFAULT,     /*tp_flags*/
@@ -2931,7 +2931,6 @@ init_tkinter(void)
 	PyDict_SetItemString(d, "TkttType", (PyObject *)&Tktt_Type);
 
 	PyTclObject_Type.ob_type = &PyType_Type;
-	PyTclObject_Type.tp_getattro = &PyObject_GenericGetAttr;
 	PyDict_SetItemString(d, "Tcl_Obj", (PyObject *)&PyTclObject_Type);
 
 #ifdef TK_AQUA
