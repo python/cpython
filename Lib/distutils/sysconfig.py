@@ -6,7 +6,7 @@ Email:        <fdrake@acm.org>
 Initial date: 17-Dec-1998
 """
 
-__version__ = "$Revision$"
+__revision__ = "$Id$"
 
 import os
 import re
@@ -254,6 +254,20 @@ def _init_nt():
 
     g['SO'] = '.pyd'
     g['exec_prefix'] = EXEC_PREFIX
+
+    # These are needed for the CygwinCCompiler and Mingw32CCompiler
+    # classes, which are just UnixCCompiler classes that happen to work on
+    # Windows.  UnixCCompiler expects to find these values in sysconfig, so
+    # here they are.  The fact that other Windows compilers don't need
+    # these values is pure luck (hmmm).
+    g['CC'] = "cc"                      # not gcc?
+    g['RANLIB'] = "ranlib"
+    g['AR'] = "ar"
+    g['OPT'] = "-O2"
+    g['SO'] = ".pyd"
+    g['LDSHARED'] = "ld"
+    g['CCSHARED'] = ""
+    g['EXE'] = ".exe"
 
 
 def _init_mac():
