@@ -8,7 +8,6 @@ of the Python documentation, and dump the ESIS data for the transformed tree.
 import errno
 import esistools
 import re
-import string
 import sys
 import xml.dom
 import xml.dom.minidom
@@ -119,6 +118,12 @@ def simplify(doc, fragment):
     node = get_first_element(fragment, "document")
     if node is not None:
         set_tagName(node, documentclass)
+        # Move everything that comes before this node into this node;
+        # this will be the document element.
+        nodelist = fragment.childNodes
+        point = node.firstChild
+        while not nodelist[0].isSameNode(node):
+            node.insertBefore(nodelist[0], point)
     while 1:
         node = extract_first_element(fragment, "input")
         if node is None:
@@ -251,7 +256,7 @@ def rewrite_descriptor(doc, descriptor):
     move_children(descriptor, description, pos)
     last = description.childNodes[-1]
     if last.nodeType == TEXT:
-        last.data = string.rstrip(last.data) + "\n  "
+        last.data = last.data.rstrip() + "\n  "
     # 6.
     # should have nothing but whitespace and signature lines in <descriptor>;
     # discard them
@@ -310,7 +315,7 @@ def handle_appendix(doc, fragment):
         docelem.appendChild(back)
         back.appendChild(doc.createTextNode("\n"))
         while nodes and nodes[0].nodeType == TEXT \
-              and not string.strip(nodes[0].data):
+              and not nodes[0].data.strip():
             del nodes[0]
         map(back.appendChild, nodes)
         docelem.appendChild(doc.createTextNode("\n"))
@@ -333,30 +338,44 @@ def handle_labels(doc, fragment):
             parent.normalize()
             children = parent.childNodes
             if children[-1].nodeType == TEXT:
-                children[-1].data = string.rstrip(children[-1].data)
+                children[-1].data = children[-1].data.rstrip()
 
 
-def fixup_trailing_whitespace(doc, wsmap):
-    queue = [doc]
+def fixup_trailing_whitespace(doc, fragment, wsmap):
+    queue = [fragment]
+    fixups = []
     while queue:
         node = queue[0]
         del queue[0]
         if wsmap.has_key(node.nodeName):
-            ws = wsmap[node.tagName]
-            children = node.childNodes
-            children.reverse()
-            if children[0].nodeType == TEXT:
-                data = string.rstrip(children[0].data) + ws
-                children[0].data = data
-            children.reverse()
-            # hack to get the title in place:
-            if node.tagName == "title" \
-               and node.parentNode.firstChild.nodeType == ELEMENT:
-                node.parentNode.insertBefore(doc.createText("\n  "),
-                                             node.parentNode.firstChild)
+            fixups.append(node)
         for child in node.childNodes:
             if child.nodeType == ELEMENT:
                 queue.append(child)
+
+    # reverse the list to process from the inside out
+    fixups.reverse()
+    for node in fixups:
+        node.parentNode.normalize()
+        lastchild = node.lastChild
+        before, after = wsmap[node.tagName]
+        if lastchild.nodeType == TEXT:
+            data = lastchild.data.rstrip() + before
+            lastchild.data = data
+        norm = 0
+        if wsmap[node.tagName]:
+            nextnode = node.nextSibling
+            if nextnode and nextnode.nodeType == TEXT:
+                nextnode.data = after + nextnode.data.lstrip()
+            else:
+                wsnode = doc.createTextNode(after)
+                node.parentNode.insertBefore(wsnode, nextnode)
+        # hack to get the title in place:
+        if node.tagName == "title" \
+           and node.parentNode.firstChild.nodeType == ELEMENT:
+            node.parentNode.insertBefore(doc.createTextNode("\n  "),
+                                         node.parentNode.firstChild)
+            node.parentNode.normalize()
 
 
 def normalize(doc):
@@ -461,7 +480,7 @@ def create_module_info(doc, section):
                 # this is it; morph the <title> into <short-synopsis>
                 first_data = children[1]
                 if first_data.data[:4] == " ---":
-                    first_data.data = string.lstrip(first_data.data[4:])
+                    first_data.data = first_data.data[4:].lstrip()
                 set_tagName(title, "short-synopsis")
                 if children[-1].nodeType == TEXT \
                    and children[-1].data[-1:] == ".":
@@ -504,8 +523,9 @@ def create_module_info(doc, section):
                 nextnode = children[i+1]
                 if nextnode.nodeType == TEXT:
                     data = nextnode.data
-                    if len(string.lstrip(data)) < (len(data) - 4):
-                        nextnode.data = "\n\n\n" + string.lstrip(data)
+                    s = data.lstrip()
+                    if len(s) < (len(data) - 4):
+                        nextnode.data = "\n\n\n" + s
 
 
 def cleanup_synopses(doc, fragment):
@@ -546,7 +566,7 @@ def fixup_table(doc, table):
         child = children[0]
         nodeType = child.nodeType
         if nodeType == TEXT:
-            if string.strip(child.data):
+            if child.data.strip():
                 raise ConversionError("unexpected free data in <%s>: %r"
                                       % (table.tagName, child.data))
             table.removeChild(child)
@@ -605,6 +625,7 @@ PARA_LEVEL_ELEMENTS = (
     "moduleinfo", "title", "verbatim", "enumerate", "item",
     "interpreter-session", "back-matter", "interactive-session",
     "opcodedesc", "classdesc", "datadesc",
+    "cfuncdesc", "ctypedesc", "cvardesc",
     "funcdesc", "methoddesc", "excdesc", "memberdesc", "membderdescni",
     "funcdescni", "methoddescni", "excdescni",
     "tableii", "tableiii", "tableiv", "localmoduletable",
@@ -662,7 +683,7 @@ def build_para(doc, parent, start, i):
                 after = j
                 break
         elif nodeType == TEXT:
-            pos = string.find(child.data, "\n\n")
+            pos = child.data.find("\n\n")
             if pos == 0:
                 after = j
                 break
@@ -678,9 +699,9 @@ def build_para(doc, parent, start, i):
         # we may need to split off trailing white space:
         child = children[after - 1]
         data = child.data
-        if string.rstrip(data) != data:
+        if data.rstrip() != data:
             have_last = 0
-            child.splitText(len(string.rstrip(data)))
+            child.splitText(len(data.rstrip()))
     para = doc.createElement(PARA_ELEMENT)
     prev = None
     indexes = range(start, after)
@@ -723,7 +744,7 @@ def skip_leading_nodes(children, start=0):
         nodeType = child.nodeType
         if nodeType == TEXT:
             data = child.data
-            shortened = string.lstrip(data)
+            shortened = data.lstrip()
             if shortened:
                 if data != shortened:
                     # break into two nodes: whitespace and non-whitespace
@@ -795,7 +816,7 @@ def fixup_verbatims(doc):
     for verbatim in find_all_elements(doc, "verbatim"):
         child = verbatim.childNodes[0]
         if child.nodeType == TEXT \
-           and string.lstrip(child.data)[:3] == ">>>":
+           and child.data.lstrip().startswith(">>>"):
             set_tagName(verbatim, "interactive-session")
 
 
@@ -973,15 +994,17 @@ def convert(ifp, ofp):
     simplify(doc, fragment)
     handle_labels(doc, fragment)
     handle_appendix(doc, fragment)
-    fixup_trailing_whitespace(doc, {
-        "abstract": "\n",
-        "title": "",
-        "chapter": "\n\n",
-        "section": "\n\n",
-        "subsection": "\n\n",
-        "subsubsection": "\n\n",
-        "paragraph": "\n\n",
-        "subparagraph": "\n\n",
+    fixup_trailing_whitespace(doc, fragment, {
+        # element -> (before-end-tag, after-end-tag)
+        "abstract": ("\n", "\n"),
+        "title": ("", "\n"),
+        "chapter": ("\n", "\n\n\n"),
+        "section": ("\n", "\n\n\n"),
+        "subsection": ("\n", "\n\n"),
+        "subsubsection": ("\n", "\n\n"),
+        "paragraph": ("\n", "\n\n"),
+        "subparagraph": ("\n", "\n\n"),
+        "enumeration": ("\n", "\n\n"),
         })
     cleanup_root_text(doc)
     cleanup_trailing_parens(fragment, ["function", "method", "cfunction"])
