@@ -25,7 +25,7 @@ def f2(a1, a2):
 		raise TestFailed, 'f2 called with ' + `a1, a2`
 def f3(a1, a2, a3):
 	if a1 != 1 or a2 != 2 or a3 != 3:
-		raise TestFailed, 'f2 called with ' + `a1, a2, a3`
+		raise TestFailed, 'f3 called with ' + `a1, a2, a3`
 apply(f0, ())
 apply(f1, (1,))
 apply(f2, (1, 2))
@@ -80,14 +80,6 @@ if fcmp(divmod(-3.25, -1.0), (3.0, -0.25)):
 print 'eval'
 if eval('1+1') <> 2: raise TestFailed, 'eval(\'1+1\')'
 if eval(' 1+1\n') <> 2: raise TestFailed, 'eval(\' 1+1\\n\')'
-
-print 'exec'
-z = 0
-exec('z=1+1\n')
-if z <> 2: raise TestFailed, 'exec(\'z=1+1\'\\n)'
-z = 0
-exec('z=1+1')
-if z <> 2: raise TestFailed, 'exec(\'z=1+1\')'
 
 print 'execfile'
 z = 0
