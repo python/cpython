@@ -237,6 +237,17 @@ Raised when an \keyword{assert} statement fails.
   typical applications prefer to drop bits than raise an exception.
 \end{excdesc}
 
+\begin{excdesc}{ReferenceError}
+  This exception is raised when a weak reference proxy, created by the
+  \function{\refmodule{weakref}.proxy()} function, is used to access
+  an attribute of the referent after it has been garbage collected.
+  For more information on weak references, see the \refmodule{weakref}
+  module.
+  \versionadded[Previously known as the
+                \exception{\refmodule{weakref}.ReferenceError}
+                exception]{2.2}
+\end{excdesc}
+
 \begin{excdesc}{RuntimeError}
   Raised when an error is detected that doesn't fall in any of the
   other categories.  The associated value is a string indicating what
