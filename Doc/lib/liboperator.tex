@@ -77,6 +77,20 @@ Return the bitwise and of \var{a} and \var{b}.
 Return the bitwise or of \var{a} and \var{b}.
 \end{funcdesc}
 
+\begin{funcdesc}{xor}{a, b}
+\funcline{__xor__}{a, b}
+Return the bitwise exclusive or of \var{a} and \var{b}.
+\end{funcdesc}
+
+\begin{funcdesc}{not_}{o}
+\funcline{__not__}{o}
+Return the outcome of \keyword{not} \var{o}.
+\end{funcdesc}
+
+\begin{funcdesc}{truth}{o}
+Return 1 if \var{o} is true, and 0 otherwise.
+\end{funcdesc}
+
 \begin{funcdesc}{concat}{a, b}
 \funcline{__concat__}{a, b}
 Return \var{a} \code{+} \var{b} for \var{a} and \var{b} sequences.
@@ -86,6 +100,20 @@ Return \var{a} \code{+} \var{b} for \var{a} and \var{b} sequences.
 \funcline{__repeat__}{a, b}
 Return \var{a} \code{*} \var{b} where \var{a} is a sequence and
 \var{b} is an integer.
+\end{funcdesc}
+
+\begin{funcdesc}{contains}{a, b}
+\funcline{sequenceIncludes}{a, b}
+Return the outcome of the test \var{b} \code{in} \var{a}.
+Note the reversed operands.
+\end{funcdesc}
+
+\begin{funcdesc}{countOf}{a, b}
+Return the number of occurrences of \var{b} in \var{a}.
+\end{funcdesc}
+
+\begin{funcdesc}{indexOf}{a, b}
+Return the index of the first of occurrence of \var{b} in \var{a}.
 \end{funcdesc}
 
 \begin{funcdesc}{getitem}{a, b}
