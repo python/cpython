@@ -158,6 +158,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         if not bad and not skipped and len(good) > 1:
             print "All",
         print count(len(good), "test"), "OK."
+        if verbose:
+            print "CAUTION:  stdout isn't compared in verbose mode:  a test"
+            print "that passes in verbose mode may fail without it."
     if bad:
         print count(len(bad), "test"), "failed:",
         print string.join(bad)
@@ -280,12 +283,34 @@ class Compare:
 
     def __init__(self, filename):
         self.fp = open(filename, 'r')
+        self.stuffthatmatched = []
 
     def write(self, data):
         expected = self.fp.read(len(data))
-        if data != expected:
-            raise test_support.TestFailed, \
-                    'Writing: '+`data`+', expected: '+`expected`
+        if data == expected:
+            self.stuffthatmatched.append(expected)
+        else:
+            # This Compare instance is spoofing stdout, so we need to write
+            # to stderr instead.
+            from sys import stderr as e
+            print >> e, "The actual stdout doesn't match the expected stdout."
+            if self.stuffthatmatched:
+                print >> e, "This much did match (between asterisk lines):"
+                print >> e, "*" * 70
+                good = "".join(self.stuffthatmatched)
+                e.write(good)
+                if not good.endswith("\n"):
+                    e.write("\n")
+                print >> e, "*" * 70
+                print >> e, "Then ..."
+            else:
+                print >> e, "The first write to stdout clashed:"
+            # Note that the prompts are the same length in next two lines.
+            # This is so what we expected and what we got line up.
+            print >> e, "We expected (repr):", `expected`
+            print >> e, "But instead we got:", `data`
+            raise test_support.TestFailed('Writing: ' + `data`+
+                                          ', expected: ' + `expected`)
 
     def writelines(self, listoflines):
         map(self.write, listoflines)
@@ -296,7 +321,8 @@ class Compare:
     def close(self):
         leftover = self.fp.read()
         if leftover:
-            raise test_support.TestFailed, 'Unread: '+`leftover`
+            raise test_support.TestFailed('Tail of expected stdout unseen: ' +
+                                          `leftover`)
         self.fp.close()
 
     def isatty(self):
