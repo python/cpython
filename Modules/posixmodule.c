@@ -1419,7 +1419,7 @@ posix_utime(PyObject *self, PyObject *args)
 		res = utime(path, NULL);
 		Py_END_ALLOW_THREADS
 	}
-	else if (!PyArg_ParseTuple(arg, "ll", &atime, &mtime)) {
+	else if (!PyArg_Parse(arg, "(ll)", &atime, &mtime)) {
 		PyErr_SetString(PyExc_TypeError,
 				"utime() arg 2 must be a tuple (atime, mtime)");
 		return NULL;
