@@ -10,7 +10,7 @@
 # No warnings about duplicate tags.
 
 import sys
-import regexp
+import regex
 
 def main():
 	outfp = open('TAGS', 'w')
@@ -18,8 +18,8 @@ def main():
 	for file in args:
 		treat_file(file, outfp)
 
-expr = '^[ \t]*(def|class)[ \t]+([a-zA-Z0-9_]+)[ \t]*[:(]'
-matcher = regexp.compile(expr).match
+expr = '^[ \t]*\(def\|class\)[ \t]+\([a-zA-Z0-9_]+\)[ \t]*[:(]'
+matcher = regex.compile(expr)
 
 def treat_file(file, outfp):
 	try:
@@ -35,9 +35,8 @@ def treat_file(file, outfp):
 		line = fp.readline()
 		if not line: break
 		lineno = lineno + 1
-		res = matcher(line)
-		if res:
-			(a, b), (a1, b1), (a2, b2) = res
+		if matcher.search(line) >= 0:
+			(a, b), (a1, b1), (a2, b2) = matcher.regs[:3]
 			name = line[a2:b2]
 			pat = line[a:b]
 			tag = pat + '\177' + `lineno` + ',' + `charno` + '\n'
