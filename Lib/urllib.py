@@ -204,13 +204,14 @@ class URLopener:
 		else:
 			host, selector = url
 			urltype, rest = splittype(selector)
+			user_passwd = None
 			if string.lower(urltype) == 'http':
 			    realhost, rest = splithost(rest)
 			    user_passwd, realhost = splituser(realhost)
 			    if user_passwd:
 				selector = "%s://%s%s" % (urltype,
 							  realhost, rest)
-			print "proxy via http:", host, selector
+			#print "proxy via http:", host, selector
 		if not host: raise IOError, ('http error', 'no host given')
 		if user_passwd:
 			import base64
