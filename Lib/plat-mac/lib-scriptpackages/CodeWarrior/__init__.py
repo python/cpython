@@ -47,6 +47,15 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
+getbaseclasses(character)
+getbaseclasses(text)
+getbaseclasses(window)
+getbaseclasses(file)
+getbaseclasses(line)
+getbaseclasses(selection_2d_object)
+getbaseclasses(application)
+getbaseclasses(insertion_point)
+getbaseclasses(document)
 getbaseclasses(single_class_browser)
 getbaseclasses(project_document)
 getbaseclasses(symbol_browser)
@@ -100,20 +109,20 @@ getbaseclasses(Font)
 getbaseclasses(Target_Source_Trees)
 getbaseclasses(Debugger_Display)
 getbaseclasses(class_)
-getbaseclasses(character)
-getbaseclasses(text)
-getbaseclasses(window)
-getbaseclasses(file)
-getbaseclasses(line)
-getbaseclasses(selection_2d_object)
-getbaseclasses(application)
-getbaseclasses(insertion_point)
-getbaseclasses(document)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
+    'cha ' : character,
+    'ctxt' : text,
+    'cwin' : window,
+    'file' : file,
+    'clin' : line,
+    'csel' : selection_2d_object,
+    'capp' : application,
+    'cins' : insertion_point,
+    'docu' : document,
     '1BRW' : single_class_browser,
     'PRJD' : project_document,
     'SYMB' : symbol_browser,
@@ -167,15 +176,6 @@ _classdeclarations = {
     'TSTs' : Target_Source_Trees,
     'DbDS' : Debugger_Display,
     'Clas' : class_,
-    'cha ' : character,
-    'ctxt' : text,
-    'cwin' : window,
-    'file' : file,
-    'clin' : line,
-    'csel' : selection_2d_object,
-    'capp' : application,
-    'cins' : insertion_point,
-    'docu' : document,
 }
 
 

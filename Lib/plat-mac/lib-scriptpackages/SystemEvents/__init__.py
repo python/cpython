@@ -5,7 +5,7 @@ import aetools
 Error = aetools.Error
 import Standard_Suite
 import Text_Suite
-import Disk_2d_Folder_2d_File_Suite
+import Disk_Folder_File_Suite
 import Folder_Actions_Suite
 import Login_Items_Suite
 import Power_Suite
@@ -17,7 +17,7 @@ import Hidden_Suite
 _code_to_module = {
     '????' : Standard_Suite,
     '????' : Text_Suite,
-    'cdis' : Disk_2d_Folder_2d_File_Suite,
+    'cdis' : Disk_Folder_File_Suite,
     'faco' : Folder_Actions_Suite,
     'logi' : Login_Items_Suite,
     'powr' : Power_Suite,
@@ -31,7 +31,7 @@ _code_to_module = {
 _code_to_fullname = {
     '????' : ('SystemEvents.Standard_Suite', 'Standard_Suite'),
     '????' : ('SystemEvents.Text_Suite', 'Text_Suite'),
-    'cdis' : ('SystemEvents.Disk_2d_Folder_2d_File_Suite', 'Disk_2d_Folder_2d_File_Suite'),
+    'cdis' : ('SystemEvents.Disk_Folder_File_Suite', 'Disk_Folder_File_Suite'),
     'faco' : ('SystemEvents.Folder_Actions_Suite', 'Folder_Actions_Suite'),
     'logi' : ('SystemEvents.Login_Items_Suite', 'Login_Items_Suite'),
     'powr' : ('SystemEvents.Power_Suite', 'Power_Suite'),
@@ -42,7 +42,7 @@ _code_to_fullname = {
 
 from Standard_Suite import *
 from Text_Suite import *
-from Disk_2d_Folder_2d_File_Suite import *
+from Disk_Folder_File_Suite import *
 from Folder_Actions_Suite import *
 from Login_Items_Suite import *
 from Power_Suite import *
@@ -67,17 +67,18 @@ import StdSuites
 #
 # Set property and element dictionaries now that all classes have been defined
 #
-getbaseclasses(color)
-getbaseclasses(window)
-getbaseclasses(application)
-getbaseclasses(item)
-getbaseclasses(document)
 getbaseclasses(character)
 getbaseclasses(attachment)
 getbaseclasses(paragraph)
 getbaseclasses(word)
 getbaseclasses(attribute_run)
 getbaseclasses(text)
+getbaseclasses(color)
+getbaseclasses(window)
+getbaseclasses(application)
+getbaseclasses(item)
+getbaseclasses(document)
+getbaseclasses(application)
 getbaseclasses(login_item)
 getbaseclasses(file)
 getbaseclasses(alias)
@@ -170,23 +171,23 @@ getbaseclasses(color_well)
 getbaseclasses(scroll_bar)
 getbaseclasses(combo_box)
 getbaseclasses(browser)
-getbaseclasses(application)
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-    'colr' : color,
-    'cwin' : window,
-    'capp' : application,
-    'cobj' : item,
-    'docu' : document,
     'cha ' : character,
     'atts' : attachment,
     'cpar' : paragraph,
     'cwor' : word,
     'catr' : attribute_run,
     'ctxt' : text,
+    'colr' : color,
+    'cwin' : window,
+    'capp' : application,
+    'cobj' : item,
+    'docu' : document,
+    'capp' : application,
     'logi' : login_item,
     'file' : file,
     'alis' : alias,
@@ -279,13 +280,12 @@ _classdeclarations = {
     'scrb' : scroll_bar,
     'comB' : combo_box,
     'broW' : browser,
-    'capp' : application,
 }
 
 
 class SystemEvents(Standard_Suite_Events,
         Text_Suite_Events,
-        Disk_2d_Folder_2d_File_Suite_Events,
+        Disk_Folder_File_Suite_Events,
         Folder_Actions_Suite_Events,
         Login_Items_Suite_Events,
         Power_Suite_Events,

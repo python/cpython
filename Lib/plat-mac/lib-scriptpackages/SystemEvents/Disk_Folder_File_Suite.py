@@ -10,7 +10,7 @@ import MacOS
 
 _code = 'cdis'
 
-class Disk_2d_Folder_2d_File_Suite_Events:
+class Disk_Folder_File_Suite_Events:
 
     _argmap_move = {
         'to' : 'insh',
