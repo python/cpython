@@ -57,6 +57,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "windows.h"
 #endif
 
+#ifdef HAVE_GETPID
+#ifndef MS_WINDOWS
+#define HAVE_KILL
+#endif
+#endif
+
 extern char *Py_GetPath();
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
@@ -370,7 +376,7 @@ PyErr_Print()
 				if (text != NULL) {
 					char *nl;
 					if (offset > 0 &&
-					    offset == strlen(text))
+					    offset == (int)strlen(text))
 						offset--;
 					for (;;) {
 						nl = strchr(text, '\n');
@@ -728,7 +734,7 @@ sighandler(sig)
 {
 	signal(sig, SIG_DFL); /* Don't catch recursive signals */
 	Py_Cleanup(); /* Do essential clean-up */
-#ifdef HAVE_GETPID
+#ifdef HAVE_KILL
 	kill(getpid(), sig); /* Pretend the signal killed us */
 #else
 	exit(1);
