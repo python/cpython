@@ -1,3 +1,5 @@
+"""Classes for manipulating audio devices (currently only for Sun and SGI)"""
+
 error = 'audiodev.error'
 
 class Play_Audio_sgi:

@@ -1,4 +1,4 @@
-# Helper to provide extensibility for pickle/cPickle.
+"""Helper to provide extensibility for pickle/cPickle."""
 
 dispatch_table = {}
 safe_constructors = {}

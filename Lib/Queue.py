@@ -1,4 +1,4 @@
-# A multi-producer, multi-consumer queue.
+"""A multi-producer, multi-consumer queue."""
 
 # define this exception to be compatible with Python 1.5's class
 # exceptions, but also when -X option is used.
