@@ -318,3 +318,68 @@ def makeAddPair((a, b)):
     return addPair
 
 verify(makeAddPair((1, 2))((100, 200)) == (101,202))
+
+print "15. scope of global statements"
+# Examples posted by Samuele Pedroni to python-dev on 3/1/2001
+
+# I
+x = 7
+def f():
+    x = 1
+    def g():
+        global x
+        def i():
+            def h():
+                return x
+            return h()
+        return i()
+    return g()
+verify(f() == 7)
+verify(x == 7)
+
+# II
+x = 7
+def f():
+    x = 1
+    def g():
+        x = 2
+        def i():
+            def h():
+                return x
+            return h()
+        return i()
+    return g()
+verify(f() == 2)
+verify(x == 7)
+
+# III
+x = 7
+def f():
+    x = 1
+    def g():
+        global x
+        x = 2
+        def i():
+            def h():
+                return x
+            return h()
+        return i()
+    return g()
+verify(f() == 2)
+verify(x == 2)
+
+# IV
+x = 7
+def f():
+    x = 3
+    def g():
+        global x
+        x = 2
+        def i():
+            def h():
+                return x
+            return h()
+        return i()
+    return g()
+verify(f() == 2)
+verify(x == 2)
