@@ -54,6 +54,11 @@ except ImportError:
 
 import os, sys
 
+try:
+    from errno import EBADF
+except ImportError:
+    EBADF = 9
+
 __all__ = ["getfqdn"]
 __all__.extend(os._get_exports_list(_socket))
 if _have_ssl:
@@ -137,7 +142,7 @@ _socketmethods = (
 class _closedsocket(object):
     __slots__ = []
     def _dummy(*args):
-        raise error(9, 'Bad file descriptor')
+        raise error(EBADF, 'Bad file descriptor')
     send = recv = sendto = recvfrom = __getattr__ = _dummy
 
 class _socketobject(object):
