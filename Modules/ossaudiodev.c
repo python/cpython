@@ -52,7 +52,7 @@ typedef struct {
     int      icount;                  /* Input count */
     int      ocount;                  /* Output count */
     uint32_t afmts;                   /* Audio formats supported by hardware */
-} oss_t;
+} oss_audio_t;
 
 typedef struct {
     PyObject_HEAD;
@@ -81,7 +81,7 @@ static struct {
 
 static int n_audio_types = sizeof(audio_types) / sizeof(audio_types[0]);
 
-static PyTypeObject OSSType;
+static PyTypeObject OSSAudioType;
 static PyTypeObject OSSMixerType;
 
 static PyObject *OSSAudioError;
@@ -91,10 +91,10 @@ static PyObject *OSSAudioError;
  * DSP object initialization/deallocation
  */
 
-static oss_t *
+static oss_audio_t *
 newossobject(PyObject *arg)
 {
-    oss_t *xp;
+    oss_audio_t *xp;
     int fd, afmts, imode;
     char *basedev = NULL;
     char *mode = NULL;
@@ -139,7 +139,7 @@ newossobject(PyObject *arg)
         return NULL;
     }
     /* Create and initialize the object */
-    if ((xp = PyObject_New(oss_t, &OSSType)) == NULL) {
+    if ((xp = PyObject_New(oss_audio_t, &OSSAudioType)) == NULL) {
         close(fd);
         return NULL;
     }
@@ -151,7 +151,7 @@ newossobject(PyObject *arg)
 }
 
 static void
-oss_dealloc(oss_t *xp)
+oss_dealloc(oss_audio_t *xp)
 {
     /* if already closed, don't reclose it */
     if (xp->fd != -1)
@@ -302,11 +302,11 @@ _do_ioctl_0(int fd, PyObject *args, char *fname, int cmd)
 
 
 /* ----------------------------------------------------------------------
- * Methods of DSP objects (OSSType)
+ * Methods of DSP objects (OSSAudioType)
  */
 
 static PyObject *
-oss_nonblock(oss_t *self, PyObject *args)
+oss_nonblock(oss_audio_t *self, PyObject *args)
 {
     /* Hmmm: it doesn't appear to be possible to return to blocking
        mode once we're in non-blocking mode! */
@@ -319,13 +319,13 @@ oss_nonblock(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_setfmt(oss_t *self, PyObject *args)
+oss_setfmt(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_1(self->fd, args, "setfmt", SNDCTL_DSP_SETFMT);
 }
 
 static PyObject *
-oss_getfmts(oss_t *self, PyObject *args)
+oss_getfmts(oss_audio_t *self, PyObject *args)
 {
     int mask;
     if (!PyArg_ParseTuple(args, ":getfmts"))
@@ -336,31 +336,31 @@ oss_getfmts(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_channels(oss_t *self, PyObject *args)
+oss_channels(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_1(self->fd, args, "channels", SNDCTL_DSP_CHANNELS);
 }
 
 static PyObject *
-oss_speed(oss_t *self, PyObject *args)
+oss_speed(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_1(self->fd, args, "speed", SNDCTL_DSP_SPEED);
 }
 
 static PyObject *
-oss_sync(oss_t *self, PyObject *args)
+oss_sync(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_0(self->fd, args, "sync", SNDCTL_DSP_SYNC);
 }
     
 static PyObject *
-oss_reset(oss_t *self, PyObject *args)
+oss_reset(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_0(self->fd, args, "reset", SNDCTL_DSP_RESET);
 }
     
 static PyObject *
-oss_post(oss_t *self, PyObject *args)
+oss_post(oss_audio_t *self, PyObject *args)
 {
     return _do_ioctl_0(self->fd, args, "post", SNDCTL_DSP_POST);
 }
@@ -370,7 +370,7 @@ oss_post(oss_t *self, PyObject *args)
    as one convenience method, writeall(). */
 
 static PyObject *
-oss_read(oss_t *self, PyObject *args)
+oss_read(oss_audio_t *self, PyObject *args)
 {
     int size, count;
     char *cp;
@@ -393,7 +393,7 @@ oss_read(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_write(oss_t *self, PyObject *args)
+oss_write(oss_audio_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
@@ -410,7 +410,7 @@ oss_write(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_writeall(oss_t *self, PyObject *args)
+oss_writeall(oss_audio_t *self, PyObject *args)
 {
     char *cp;
     int rv, size;
@@ -455,7 +455,7 @@ oss_writeall(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_close(oss_t *self, PyObject *args)
+oss_close(oss_audio_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":close"))
         return NULL;
@@ -469,7 +469,7 @@ oss_close(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_fileno(oss_t *self, PyObject *args)
+oss_fileno(oss_audio_t *self, PyObject *args)
 {
     if (!PyArg_ParseTuple(args, ":fileno")) 
         return NULL;
@@ -481,7 +481,7 @@ oss_fileno(oss_t *self, PyObject *args)
    common task. */
 
 static PyObject *
-oss_setparameters(oss_t *self, PyObject *args)
+oss_setparameters(oss_audio_t *self, PyObject *args)
 {
     int rate, ssize, nchannels, n, fmt, emulate=0;
 
@@ -546,7 +546,7 @@ oss_setparameters(oss_t *self, PyObject *args)
 }
 
 static int
-_ssize(oss_t *self, int *nchannels, int *ssize)
+_ssize(oss_audio_t *self, int *nchannels, int *ssize)
 {
     int fmt;
 
@@ -582,7 +582,7 @@ _ssize(oss_t *self, int *nchannels, int *ssize)
 /* bufsize returns the size of the hardware audio buffer in number 
    of samples */
 static PyObject *
-oss_bufsize(oss_t *self, PyObject *args)
+oss_bufsize(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -603,7 +603,7 @@ oss_bufsize(oss_t *self, PyObject *args)
 /* obufcount returns the number of samples that are available in the 
    hardware for playing */
 static PyObject *
-oss_obufcount(oss_t *self, PyObject *args)
+oss_obufcount(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -626,7 +626,7 @@ oss_obufcount(oss_t *self, PyObject *args)
 /* obufcount returns the number of samples that can be played without
    blocking */
 static PyObject *
-oss_obuffree(oss_t *self, PyObject *args)
+oss_obuffree(oss_audio_t *self, PyObject *args)
 {
     audio_buf_info ai;
     int nchannels, ssize;
@@ -646,7 +646,7 @@ oss_obuffree(oss_t *self, PyObject *args)
 }
 
 static PyObject *
-oss_getptr(oss_t *self, PyObject *args)
+oss_getptr(oss_audio_t *self, PyObject *args)
 {
     count_info info;
     int req;
@@ -830,7 +830,7 @@ static PyMethodDef oss_mixer_methods[] = {
 };
 
 static PyObject *
-oss_getattr(oss_t *xp, char *name)
+oss_getattr(oss_audio_t *xp, char *name)
 {
     return Py_FindMethod(oss_methods, (PyObject *)xp, name);
 }
@@ -841,11 +841,11 @@ oss_mixer_getattr(oss_mixer_t *xp, char *name)
     return Py_FindMethod(oss_mixer_methods, (PyObject *)xp, name);
 }
 
-static PyTypeObject OSSType = {
+static PyTypeObject OSSAudioType = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,                          /*ob_size*/
     "ossaudiodev.oss_audio_device", /*tp_name*/
-    sizeof(oss_t),              /*tp_size*/
+    sizeof(oss_audio_t),        /*tp_size*/
     0,                          /*tp_itemsize*/
     /* methods */
     (destructor)oss_dealloc,    /*tp_dealloc*/
