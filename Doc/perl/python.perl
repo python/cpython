@@ -1943,11 +1943,10 @@ sub do_cmd_term{
 }
 
 
-# I don't recall exactly why this was needed, but it was very much needed.
-# We'll see if anything breaks when I move the "code" line out -- some
-# things broke with it in.
-
-#code # {}
+# Commands listed here have process-order dependencies; these often
+# are related to indexing operations.
+# XXX Not sure why funclineni, methodlineni, and samp are here.
+#
 process_commands_wrap_deferred(<<_RAW_ARG_DEFERRED_CMDS_);
 declaremodule # [] # {} # {}
 funcline # {} # {}
@@ -1956,6 +1955,15 @@ memberline # [] # {}
 methodline # [] # {} # {}
 methodlineni # [] # {} # {}
 modulesynopsis # {}
+bifuncindex # {}
+exindex # {}
+indexii # {} # {}
+indexiii # {} # {} # {}
+indexiv # {} # {} # {} # {}
+kwindex # {}
+obindex # {}
+opindex # {}
+stindex # {}
 platform # {}
 samp # {}
 setindexsubitem # {}
