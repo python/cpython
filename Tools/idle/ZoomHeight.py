@@ -35,7 +35,7 @@ class ZoomHeight:
             height = height - 72
         else:
             y = 24
-            height = height - 64
+            height = height - 96
         newgeom = "%dx%d+%d+%d" % (width, height, x, y)
         if geom == newgeom:
             newgeom = ""
