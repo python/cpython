@@ -2,29 +2,73 @@
 \label{module-site}
 \stmodindex{site}
 
-Scripts or modules that need to use site-specific modules should
-execute \code{import site} somewhere near the top of their code.  This
-will append up to two site-specific paths (\code{sys.prefix +
-'/lib/site-python'} and
-\code{sys.exec_prefix + '/lib/site-python'}) to the module search path. 
-\code{sys.prefix} and \code{sys.exec_prefix} are configured when Python is installed; the default value is \file{/usr/local}.   
+\strong{This module is automatically imported during initialization.}
 
-Because of Python's import semantics, it is okay for more than one
-module to import \code{site} -- only the first one will execute the
-site customizations.  The directories are only appended to the path if
-they exist and are not already on it.
+In earlier versions of Python (up to and including 1.5a3), scripts or
+modules that needed to use site-specific modules would place
+\code{import site} somewhere near the top of their code.  This is no
+longer necessary.
 
-Sites that wish to provide site-specific modules should place them in
-one of the site specific directories; \code{sys.prefix +
-'/lib/site-python'} is for Python source code and
-\code{sys.exec_prefix + '/lib/site-python'} is for dynamically
-loadable extension modules (shared libraries).
+This will append up site-specific paths to to the module search path.
+It starts with \code{sys.prefix} and \code{sys.exec_prefix} (if
+different) and appends \file{lib/python\var{version}/packages}.  The
+resulting directory, if it exists, is added to \code{sys.path}, and
+also inspected for path configuration files.  A path configuration
+file is a file whose name has the form \file{\var{package}.pth}; its
+contents are additional directories (one per line) to be added to
+\code{sys.path}.  Non-existing directories (or non-directories) are
+never added to \code{sys.path}; no directory is added to
+\code{sys.path} more than once.  Blank lines and lines beginning with
+\code{\#} are skipped.
+\index{package}
+\kwindex{sys.prefix}
+\kwindex{sys.exec_prefix}
+\kwindex{prefix}
+\kwindex{exec_prefix}
+
+For example, suppose \code{sys.prefix} and \code{sys.exec_prefix} are
+set to \file{/usr/local}.  The Python 1.5 library is then installed in
+\file{/usr/local/lib/python1.5}.  Suppose this has a subdirectory
+\file{/usr/local/python1.5/packages} with three subsubdirectories,
+\file{foo}, \file{bar} and \file{spam}, and two path configuration
+files, \file{foo.pth} and \file{bar.pth}.  Assume \file{foo.pth}
+contains the following:
+
+\bcode\begin{verbatim}
+# foo package configuration
+
+foo
+bar
+bletch
+\end{verbatim}\ecode
+
+and \file{bar.pth} contains:
+
+\bcode\begin{verbatim}
+# bar package configuration
+
+bar
+\end{verbatim}\ecode
+
+Then the following directories are added to sys.path, in this order:
+
+\bcode\begin{verbatim}
+/usr/local/python1.5/packages/bar
+/usr/local/python1.5/packages/foo
+\end{verbatim}\ecode
+
+Note that \file{bletch} is omitted because it doesn't exist; the
+\file{bar} directory precedes the \file{foo} directory because
+\file{bar.pth} comes alphabetically before \file{foo.pth}; and
+\file{spam} is omitted because it is not mentioned in either path
+configuration file.
 
 After these path manipulations, an attempt is made to import a module
 named \code{sitecustomize}, which can perform arbitrary site-specific
 customizations.  If this import fails with an \code{ImportError}
-exception, it is ignored.
+exception, it is silently ignored.
+\stmodindex{sitecustomize}
 
-Note that for non-Unix systems, \code{sys.prefix} and
+Note that for some non-Unix systems, \code{sys.prefix} and
 \code{sys.exec_prefix} are empty, and the path manipulations are
 skipped; however the import of \code{sitecustomize} is still attempted.
