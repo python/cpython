@@ -50,7 +50,11 @@ extern BOOL PyWin_IsWin32s();
 
 /* Search in some common locations for the associated Python libraries.
  *
- * This version always returns "" for both prefix and exec_prefix.
+ * Two directories must be found, the platform independent directory
+ * (prefix), containing the common .py and .pyc files, and the platform
+ * dependent directory (exec_prefix), containing the shared library
+ * modules.  Note that prefix and exec_prefix can be the same directory,
+ * but for some installations, they are different.
  *
  * Py_GetPath() tries to return a sensible Python module search path.
  *
@@ -75,6 +79,7 @@ extern BOOL PyWin_IsWin32s();
 #endif
 
 static char prefix[MAXPATHLEN+1];
+static char exec_prefix[MAXPATHLEN+1];
 static char progpath[MAXPATHLEN+1];
 static char *module_search_path = NULL;
 
@@ -345,8 +350,20 @@ calculate_path()
 		else
 			pythonhome = NULL;
 	}
-	else
+	else {
+        char *delim;
+
 		strcpy(prefix, pythonhome);
+
+        /* Extract Any Optional Trailing EXEC_PREFIX */
+        /* e.g. PYTHONHOME=<prefix>:<exec_prefix>   */
+        delim = strchr(prefix, DELIM);
+        if (delim) {
+            *delim = '\0';
+            strcpy(exec_prefix, delim+1);
+        } else
+            strcpy(exec_prefix, EXEC_PREFIX);
+    }
 
 	if (envpath && *envpath == '\0')
 		envpath = NULL;
@@ -475,7 +492,10 @@ Py_GetPrefix()
 char *
 Py_GetExecPrefix()
 {
-	return Py_GetPrefix();
+	if (!module_search_path)
+		calculate_path();
+
+	return exec_prefix;
 }
 
 char *

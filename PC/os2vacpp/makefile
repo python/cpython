@@ -165,6 +165,9 @@ MODULES		=                              \
                   $(PATHOBJ)\MD5Module.obj     \
                   $(PATHOBJ)\NewModule.obj     \
                   $(PATHOBJ)\Operator.obj      \
+                  $(PATHOBJ)\PCREModule.obj    \
+                  $(PATHOBJ)\PyPCRE.obj        \
+                  $(PATHOBJ)\RotorModule.obj   \
                   $(PATHOBJ)\PosixModule.obj   \
                   $(PATHOBJ)\RegexModule.obj   \
                   $(PATHOBJ)\RegExpr.obj       \
@@ -197,7 +200,7 @@ _BASE		= /Q /W2 /I$(PROJINCLUDE)
 		# /Q   = Omit IBM Copyright
 		# /W2  = Show Warnings/Errors Only
 
-_GEN		= /G4 /Gm /Gd
+_GEN		= /G4 /Gm /Gd-
 		# /G4  = Generate Code for 486 (Use 386 for Debugger)
 		# /Gm  = Use Multithread Runtime
 		# /Gd  = Dynamically Load Runtime
@@ -208,7 +211,8 @@ _OPT		= /O /Gl
 		# /Gu  = Advise Linker All Ext Data is ID'd
 		# /Gl  = Have Linker Remove Unused Fns
 
-_DBG		= /DHAVE_CONFIG_H /DUSE_SOCKET
+_DBG		= /Wpro- /Ti- /DHAVE_CONFIG_H /DUSE_SOCKET
+                # /Wpro= Generate Compiler Warnings re Missing Prototypes
 		# /Ti  = Embed Debugger/Analyzer Recs
 		# /Tm  = Enable Debug Memory Fns
 		# /Tx  = Request Full Dump Upon Exception

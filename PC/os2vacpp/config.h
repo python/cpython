@@ -74,11 +74,6 @@
 /* Configuration Options for Finding Modules */
 #define PREFIX                 ""
 #define EXEC_PREFIX            ""
-//#define VPATH "."
-
-//#define PYTHONPATH PREFIX "/lib/python" VERSION DELIM \
-//	           PREFIX "/lib/python" VERSION "/test" DELIM \
-//	      EXEC_PREFIX "/lib/python" VERSION "/sharedmodules"
 
 /***************************************************/
 /*    32-Bit IBM VisualAge C/C++ v3.0 for OS/2     */
@@ -91,7 +86,7 @@
   #define PYCC_VACPP /* Define Indicator of C Compiler */
 
   /* Platform Filesystem */
-  #define PYTHONPATH ".;.\\lib;.\\lib\\plat-os2;.\\lib\\dos_8x3;.\\lib\\lib-tk"
+  #define PYTHONPATH ".;.\\lib;.\\lib\\plat-win;.\\lib\\dos-8x3;.\\lib\\lib-tk"
   #define DOSFILESYS /* OS/2 Uses the DOS File Naming Conventions */
   /* #define IMPORT_8x3_NAMES */
 
@@ -483,7 +478,7 @@
 /* #define WITH_READLINE 1 */
 
 /* Define if you have clock.  */
-/* #define HAVE_CLOCK */
+#define HAVE_CLOCK
 
 /* Define if you have ftime.  */
 #define HAVE_FTIME
@@ -540,7 +535,7 @@
 /* #undef HAVE_TCSETPGRP */
 
 /* Define if you have times.  */
-/* #undef HAVE_TIMES */
+#define HAVE_TIMES
 
 /* Define if you have uname.  */
 /* #undef HAVE_UNAME */
