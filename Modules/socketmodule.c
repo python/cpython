@@ -1207,6 +1207,208 @@ initsocket()
 	insint(d, "SOCK_RAW", SOCK_RAW);
 	insint(d, "SOCK_SEQPACKET", SOCK_SEQPACKET);
 	insint(d, "SOCK_RDM", SOCK_RDM);
+
+#ifdef	SO_DEBUG
+	insint(d, "SO_DEBUG", SO_DEBUG);
+#endif
+#ifdef	SO_ACCEPTCONN
+	insint(d, "SO_ACCEPTCONN", SO_ACCEPTCONN);
+#endif
+#ifdef	SO_REUSEADDR
+	insint(d, "SO_REUSEADDR", SO_REUSEADDR);
+#endif
+#ifdef	SO_KEEPALIVE
+	insint(d, "SO_KEEPALIVE", SO_KEEPALIVE);
+#endif
+#ifdef	SO_DONTROUTE
+	insint(d, "SO_DONTROUTE", SO_DONTROUTE);
+#endif
+#ifdef	SO_BROADCAST
+	insint(d, "SO_BROADCAST", SO_BROADCAST);
+#endif
+#ifdef	SO_USELOOPBACK
+	insint(d, "SO_USELOOPBACK", SO_USELOOPBACK);
+#endif
+#ifdef	SO_LINGER
+	insint(d, "SO_LINGER", SO_LINGER);
+#endif
+#ifdef	SO_OOBINLINE
+	insint(d, "SO_OOBINLINE", SO_OOBINLINE);
+#endif
+#ifdef	SO_REUSEPORT
+	insint(d, "SO_REUSEPORT", SO_REUSEPORT);
+#endif
+
+#ifdef	SO_SNDBUF
+	insint(d, "SO_SNDBUF", SO_SNDBUF);
+#endif
+#ifdef	SO_RCVBUF
+	insint(d, "SO_RCVBUF", SO_RCVBUF);
+#endif
+#ifdef	SO_SNDLOWAT
+	insint(d, "SO_SNDLOWAT", SO_SNDLOWAT);
+#endif
+#ifdef	SO_RCVLOWAT
+	insint(d, "SO_RCVLOWAT", SO_RCVLOWAT);
+#endif
+#ifdef	SO_SNDTIMEO
+	insint(d, "SO_SNDTIMEO", SO_SNDTIMEO);
+#endif
+#ifdef	SO_RCVTIMEO
+	insint(d, "SO_RCVTIMEO", SO_RCVTIMEO);
+#endif
+#ifdef	SO_ERROR
+	insint(d, "SO_ERROR", SO_ERROR);
+#endif
+#ifdef	SO_TYPE
+	insint(d, "SO_TYPE", SO_TYPE);
+#endif
+
+	/* Maximum number of connections for "listen" */
+#ifdef	SOMAXCONN
+	insint(d, "SOMAXCONN", SOMAXCONN);
+#else
+	insint(d, "SOMAXCONN", 5);	/* Common value */
+#endif
+
+	/* Flags for send, recv */
+#ifdef	MSG_OOB
+	insint(d, "MSG_OOB", MSG_OOB);
+#endif
+#ifdef	MSG_PEEK
+	insint(d, "MSG_PEEK", MSG_PEEK);
+#endif
+#ifdef	MSG_DONTROUTE
+	insint(d, "MSG_DONTROUTE", MSG_DONTROUTE);
+#endif
+#ifdef	MSG_EOR
+	insint(d, "MSG_EOR", MSG_EOR);
+#endif
+#ifdef	MSG_TRUNC
+	insint(d, "MSG_TRUNC", MSG_TRUNC);
+#endif
+#ifdef	MSG_CTRUNC
+	insint(d, "MSG_CTRUNC", MSG_CTRUNC);
+#endif
+#ifdef	MSG_WAITALL
+	insint(d, "MSG_WAITALL", MSG_WAITALL);
+#endif
+#ifdef	MSG_BTAG
+	insint(d, "MSG_BTAG", MSG_BTAG);
+#endif
+#ifdef	MSG_ETAG
+	insint(d, "MSG_ETAG", MSG_ETAG);
+#endif
+
+	/* Protocol level and numbers, usable for [gs]etsockopt */
+#ifdef	SOL_SOCKET
+	insint(d, "SOL_SOCKET", SOL_SOCKET);
+#endif
+#ifdef	IPPROTO_IP
+	insint(d, "IPPROTO_IP", IPPROTO_IP);
+#endif
+#ifdef	IPPROTO_ICMP
+	insint(d, "IPPROTO_ICMP", IPPROTO_ICMP);
+#endif
+#ifdef	IPPROTO_IGMP
+	insint(d, "IPPROTO_IGMP", IPPROTO_IGMP);
+#endif
+#ifdef	IPPROTO_GGP
+	insint(d, "IPPROTO_GGP", IPPROTO_GGP);
+#endif
+#ifdef	IPPROTO_TCP
+	insint(d, "IPPROTO_TCP", IPPROTO_TCP);
+#endif
+#ifdef	IPPROTO_EGP
+	insint(d, "IPPROTO_EGP", IPPROTO_EGP);
+#endif
+#ifdef	IPPROTO_PUP
+	insint(d, "IPPROTO_PUP", IPPROTO_PUP);
+#endif
+#ifdef	IPPROTO_UDP
+	insint(d, "IPPROTO_UDP", IPPROTO_UDP);
+#endif
+#ifdef	IPPROTO_IDP
+	insint(d, "IPPROTO_IDP", IPPROTO_IDP);
+#endif
+#ifdef	IPPROTO_HELLO
+	insint(d, "IPPROTO_HELLO", IPPROTO_HELLO);
+#endif
+#ifdef	IPPROTO_ND
+	insint(d, "IPPROTO_ND", IPPROTO_ND);
+#endif
+#ifdef	IPPROTO_TP
+	insint(d, "IPPROTO_TP", IPPROTO_TP);
+#endif
+#ifdef	IPPROTO_XTP
+	insint(d, "IPPROTO_XTP", IPPROTO_XTP);
+#endif
+#ifdef	IPPROTO_EON
+	insint(d, "IPPROTO_EON", IPPROTO_EON);
+#endif
+#ifdef	IPPROTO_BIP
+	insint(d, "IPPROTO_BIP", IPPROTO_BIP);
+#endif
+/**/
+#ifdef	IPPROTO_RAW
+	insint(d, "IPPROTO_RAW", IPPROTO_RAW);
+#endif
+#ifdef	IPPROTO_MAX
+	insint(d, "IPPROTO_MAX", IPPROTO_MAX);
+#endif
+
+	/* Some port configuration */
+#ifdef	IPPORT_RESERVED
+	insint(d, "IPPORT_RESERVED", IPPORT_RESERVED);
+#else
+	insint(d, "IPPORT_RESERVED", 1024);
+#endif
+#ifdef	IPPORT_USERRESERVED
+	insint(d, "IPPORT_USERRESERVED", IPPORT_USERRESERVED);
+#else
+	insint(d, "IPPORT_USERRESERVED", 5000);
+#endif
+
+	/* IP [gs]etsockopt options */
+#ifdef	IP_OPTIONS
+	insint(d, "IP_OPTIONS", IP_OPTIONS);
+#endif
+#ifdef	IP_HDRINCL
+	insint(d, "IP_HDRINCL", IP_HDRINCL);
+#endif
+#ifdef	IP_TOS
+	insint(d, "IP_TOS", IP_TOS);
+#endif
+#ifdef	IP_TTL
+	insint(d, "IP_TTL", IP_TTL);
+#endif
+#ifdef	IP_RECVOPTS
+	insint(d, "IP_RECVOPTS", IP_RECVOPTS);
+#endif
+#ifdef	IP_RECVRETOPTS
+	insint(d, "IP_RECVRETOPTS", IP_RECVRETOPTS);
+#endif
+#ifdef	IP_RECVDSTADDR
+	insint(d, "IP_RECVDSTADDR", IP_RECVDSTADDR);
+#endif
+#ifdef	IP_RETOPTS
+	insint(d, "IP_RETOPTS", IP_RETOPTS);
+#endif
+#ifdef	IP_MULTICAST_IF
+	insint(d, "IP_MULTICAST_IF", IP_MULTICAST_IF);
+#endif
+#ifdef	IP_MULTICAST_TTL
+	insint(d, "IP_MULTICAST_TTL", IP_MULTICAST_TTL);
+#endif
+#ifdef	IP_MULTICAST_LOOP
+	insint(d, "IP_MULTICAST_LOOP", IP_MULTICAST_LOOP);
+#endif
+#ifdef	IP_ADD_MEMBERSHIP
+	insint(d, "IP_ADD_MEMBERSHIP", IP_ADD_MEMBERSHIP);
+#endif
+#ifdef	IP_DROP_MEMBERSHIP
+	insint(d, "IP_DROP_MEMBERSHIP", IP_DROP_MEMBERSHIP);
+#endif
 }
 
 #ifdef NT
