@@ -39,6 +39,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <console.h>
 #endif
 
+char *fileargument;
+
 main(argc, argv)
 	int argc;
 	char **argv;
@@ -51,7 +53,7 @@ main(argc, argv)
 		extern char *about_message;
 		extern char *about_item;
 		extern char *getversion(), *getcopyright();
-		static char buf[256];
+		static char buf[1024];
 		sprintf(buf, "Python %s\r\
 \r\
 %s\r\
@@ -76,5 +78,7 @@ Motto: \"Nobody expects the Spanish Inquisition!\"",
 	else
 		console_options.title = "\pPython";
 #endif /* CONSOLE_IO */
+	if ( argc > 1 )
+		fileargument = argv[1];  /* Mod by Jack to do chdir */
 	realmain(argc, argv);
 }
