@@ -3069,46 +3069,52 @@ formatint(char *buf, size_t buflen, int flags,
 	   + 1 + 1 = 24 */
 	char fmt[64];	/* plenty big enough! */
 	long x;
+
 	if (!PyArg_Parse(v, "l;int argument required", &x))
 		return -1;
 	if (prec < 0)
 		prec = 1;
-	PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
-		      (flags&F_ALT) ? "#" : "", 
-		      prec, type);
+
+	if ((flags & F_ALT) &&
+	    (type == 'x' || type == 'X')) {
+		/* When converting under %#x or %#X, there are a number 
+		 * of issues that cause pain:
+		 * - when 0 is being converted, the C standard leaves off
+		 *   the '0x' or '0X', which is inconsistent with other
+		 *   %#x/%#X conversions and inconsistent with Python's
+		 *   hex() function
+		 * - there are platforms that violate the standard and
+		 *   convert 0 with the '0x' or '0X'
+		 *   (Metrowerks, Compaq Tru64)
+		 * - there are platforms that give '0x' when converting
+		 *   under %#X, but convert 0 in accordance with the 
+		 *   standard (OS/2 EMX)
+		 * 
+		 * We can achieve the desired consistency by inserting our
+		 * own '0x' or '0X' prefix, and substituting %x/%X in place
+		 * of %#x/%#X.
+		 *
+		 * Note that this is the same approach as used in
+		 * formatint() in unicodeobject.c
+		 */
+		PyOS_snprintf(fmt, sizeof(fmt), "0%c%%.%dl%c", 
+			      type, prec, type);
+	}
+	else {
+		PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%dl%c",
+			      (flags&F_ALT) ? "#" : "", 
+			      prec, type);
+	}
+
 	/* buf = '+'/'-'/'0'/'0x' + '[0-9]'*max(prec, len(x in octal))
-	   worst case buf = '0x' + [0-9]*prec, where prec >= 11 */
+	 * worst case buf = '0x' + [0-9]*prec, where prec >= 11
+	 */
 	if (buflen <= 13 || buflen <= (size_t)2 + (size_t)prec) {
 		PyErr_SetString(PyExc_OverflowError,
 			"formatted integer is too long (precision too large?)");
 		return -1;
 	}
 	PyOS_snprintf(buf, buflen, fmt, x);
-	/* When converting 0 under %#x or %#X, C leaves off the base marker,
-	 * but we want it (for consistency with other %#x conversions, and
-	 * for consistency with Python's hex() function).
-	 * BUG 28-Apr-2001 tim:  At least two platform Cs (Metrowerks &
-	 * Compaq Tru64) violate the std by converting 0 w/ leading 0x anyway.
-	 * So add it only if the platform didn't already.
-	 */
-	if (x == 0 &&
-	   (flags & F_ALT) &&
-	   (type == 'x' || type == 'X') &&
-	    buf[1] != (char)type)  /* this last always true under std C */
-		{
-		memmove(buf+2, buf, strlen(buf) + 1);
-		buf[0] = '0';
-		buf[1] = (char)type;
-	}
-#if defined(PYOS_OS2) && defined(PYCC_GCC)
-	/* unfortunately, the EMX C runtime gives us '0x' as the base
-	 * marker for %X when we expect/want '0X'
-	 */
-	else if ((flags & F_ALT) && (type == 'X')) {
-		assert(buf[1] == 'x');
-		buf[1] = (char)type;
-	}
-#endif
 	return strlen(buf);
 }
 
