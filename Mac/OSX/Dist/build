@@ -11,6 +11,14 @@ BUILDNUM=3
 DOCLEANUP=no
 
 PROGDIR="`dirname \"$0\"`"
+case x$PROGDIR in
+x|x.) PROGDIR=`pwd` ;;
+x/*) ;;
+*) echo "Please run with a full pathname"
+   exit 1
+   ;;
+esac
+
 TMPDIR=/tmp/_py
 #TMPDIR=/projects/_py
 
@@ -18,9 +26,9 @@ BUILDROOT=$TMPDIR/build
 INSTALLROOT=$TMPDIR/install
 DMGDIR=$TMPDIR/dmg
 RESOURCEDIR=$PROGDIR/resources
-DESTDIR=/projects/wx/wxPython/dist
-PYTHONSRC=/projects/Python-$PYVERSION
-WASTEDIR=/projects/waste
+DESTDIR=$TMPDIR/dist
+PYTHONSRC=$PROGDIR/../../..
+WASTEDIR=$PYTHONSRC/../waste
 
 # Setup
 mkdir -p $BUILDROOT
@@ -71,10 +79,11 @@ popd
 # Make the Installer package:
 # First, remove the unix tools as their paths will be wrong.  We'll recreate
 # them in the postinstall.
-rm -r $INSTALLROOT/usr
+rm -rf $INSTALLROOT/usr
 
 # Next, remove the .pyc/.pyo files
-python $PROGDIR/../zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
+python $PYTHONSRC/Mac/scripts/zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
+python $PYTHONSRC/Mac/scripts/zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/Mac/Tools
 
 # Make the welcome message
 cat > $RESOURCEDIR/Welcome.txt <<EOF
@@ -86,15 +95,9 @@ Build number: $BUILDNUM
 Build date:   `date`
 EOF
 
-
-# fix a bug in the IDLE install
-IDLERES=$INSTALLROOT/Applications/MacPython-2.3/IDLE.app/Contents/Resources
-mv $IDLERES/idlelib/idle $IDLERES
-
-
 # Finally, build the package...
 rm -rf MacPython-OSX.pkg
-python $PROGDIR/../buildpkg.py \
+python $PYTHONSRC/Mac/scripts/buildpkg.py \
     --Title=MacPython-OSX \
     --Version=$PYVERSION-$BUILDNUM \
     --Description="Python $PYVERSION for Mac OS X, framework based" \
@@ -108,7 +111,7 @@ python $PROGDIR/../buildpkg.py \
 
 # ...and then make a disk image containing the package.
 mv MacPython-OSX.pkg $DMGDIR/root
-$PROGDIR/../makedmg $DMGDIR/root $DMGDIR MacPython-OSX-$PYVERSION-$BUILDNUM
+$PROGDIR/makedmg $DMGDIR/root $DMGDIR MacPython-OSX-$PYVERSION-$BUILDNUM
 
 echo Moving $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM to $DESTDIR
 mv $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM.dmg $DESTDIR
@@ -126,4 +129,5 @@ else
     echo "          $INSTALLROOT"
     echo "          $DMGDIR"
 fi
+echo "Your installer can be found in $DESTDIR"
 
