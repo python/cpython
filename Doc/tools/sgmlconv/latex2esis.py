@@ -53,8 +53,6 @@ def subconvert(line, ofp, table, discards, autoclosing, endchar=None):
                 ofp.write("- %s \n" % encode(text))
                 ofp.write(")COMMENT\n")
                 ofp.write("-\\n\n")
-##             else:
-##                 ofp.write("-\\n\n")
             line = line[m.end():]
             continue
         m = _begin_env_rx.match(line)
@@ -250,8 +248,12 @@ def subconvert(line, ofp, table, discards, autoclosing, endchar=None):
 
 
 def convert(ifp, ofp, table={}, discards=(), autoclosing=()):
+    lines = string.split(ifp.read(), "\n")
+    for i in range(len(lines)):
+        lines[i] = string.rstrip(lines[i])
+    data = string.join(lines, "\n")
     try:
-        subconvert(ifp.read(), ofp, table, discards, autoclosing)
+        subconvert(data, ofp, table, discards, autoclosing)
     except IOError, (err, msg):
         if err != errno.EPIPE:
             raise
