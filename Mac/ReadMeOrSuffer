@@ -6,8 +6,8 @@ first sections of this file, failure to do so will probably result in
 an unuseable python system. If this warning is too late and you already
 have an non-functional python: it is best to remove all traces and start
 with a fresh distribution. Especially don't forget to remove the
-"python preferences" file from the Preferences folder, and possibly
-"PythonCore", "PythonCorePPC" and/or "PythonCoreCFM68K"
+"python 1.4 preferences" file from the Preferences folder, and possibly
+"PythonCorePPC 1.4" and/or "PythonCoreCFM68K 1.4"
 from the Extensions folder. Before you mail me for help *please*
 try the steps above (cleaning up and re-installing): it should fix most
 common mistakes. If you are installing a CFM68K python also check that
@@ -41,49 +41,28 @@ when it really means that there is not enough room in the system heap. Decreasin
 (yes, *de*creasing) the size of the interpreter and/or enabling virtual memory
 may solve these problems.
 
-PowerPC Macintosh instructions
-------------------------------
+PowerPC and CFM68K Macintosh instructions
+-----------------------------------------
 
-1. Remove older versions of "PythonCorePPC", "PythonCore" and "Python Preferences"
-   from your system folder.
+For CFM68K you need a Mac with a 68020, 68030 or 68040, and at least System 7.1.1.
+CFM68K Python will not run on PowerPC Macs. Before installing Python you
+should install CFM68K. Put everything from the "CFM68K for System Folder" into the
+Extensions folder and restart.
+
+Run the MkPluginAliases applet. This will create an initial preferences file. 
+Next, it will create a number of aliases in the PlugIns folder. Finally
+it will put an alias to your PythonCore in the Extensions folder. The whole
+process should be independent of any previous releases of Python on your disk
+(and these releases should still continue working).
    
-2. Run the MkPluginAliases applet. This will first ask you whether it should
-   create an initial preferences file. Let it do so. Next, it will create a
-   number of aliases in the PlugIns folder. If this fails in mysterious ways
-   examine the script (in Mac:scripts:MkPluginAliases.py) and create the aliases
-   by hand (and tell me what you did to make the script fail:-).
-
-3. To make sure any applets you create can find the common interpreter code
-   you should move PythonCorePPC to the Extensions folder (drop it on the
-   System Folder and it will find its own way). Alternatively, you can
-   make an alias called "PythonCorePPC" in the Extensions folder and
-   point it to the real PythonCorePPC. You may want to start PythonPPC
-   again at this point to check that you actually put the extension in
-   the right place.
-
-4. You're all set now. Continue with the common instructions.
-
-CFM68K Macintosh instructions
------------------------------
-
-For this you need a Mac with a 68020, 68030 or 68040, and at least System 7.1.1.
-CFM68K Python will not run on PowerPC Macs.
-
-1. Install the stuff from the "CFM68K for System Folder" into the Extensions
-   folder and restart.
-   
-2. Continue with the PowerPC instructions, but read "CFM68K" every time you see
-   "PPC".
+For all these things to work correctly it is vital that you don't move anything
+around before running MkPluginAliases. After you have set things up you may
+move things around to your hearts' desire.
 
 Classic 68K Macintosh instructions
 ----------------------------------
 
-1. Remove the old "Python Preferences" file from the Preferences folder, if there is one.
-   
-2. Run Python68K. This will create an initial preferences file (after
-   asking you if that's ok with you). Quit python.
-   
-3. Continue with the next section.
+Run Python68K. This will create an initial preferences file. Quit python.
 
 Common instructions
 -------------------
@@ -128,6 +107,17 @@ how to use AppleEvents and various other toolboxes from python.
 The 'img' group of modules, which handles I/O of many different image formats
 (not pict yet, sigh:-) is included, but without documentation. You can find
 docs at ftp://ftp.cwi.nl/pub/jack/python/img (or somewhere around there).
+
+Upgrading from older Python releases
+------------------------------------
+
+Since release 1.4 Python releases are independent of each other, with separate
+Preferences files, shared library names, etc. The good news is that this means you
+can keep your older version around if you are unsure whether to upgrade. The bad
+news is that your old preference settings are lost and you have to set them again.
+
+After you are satisfied that 1.4 works as expected you can trash anything in the
+system folder that has "python" in the name and not "1.4".
 
 Feedback
 --------
