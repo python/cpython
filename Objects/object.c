@@ -1858,9 +1858,7 @@ _Py_NewReference(PyObject *op)
 	op->_ob_prev = &refchain;
 	refchain._ob_next->_ob_prev = op;
 	refchain._ob_next = op;
-#ifdef COUNT_ALLOCS
-	inc_count(op->ob_type);
-#endif
+	_PyMAYBE_BUMP_COUNT(op);
 }
 
 void
@@ -1885,9 +1883,7 @@ _Py_ForgetReference(register PyObject *op)
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
 	op->_ob_next = op->_ob_prev = NULL;
-#ifdef COUNT_ALLOCS
-	op->ob_type->tp_frees++;
-#endif
+	_PyMAYBE_BUMP_FREECOUNT(op);
 }
 
 void

@@ -13,7 +13,8 @@ the use of objects to ensure they are properly garbage-collected.
 Objects are never allocated statically or on the stack; they must be
 accessed through special macros and functions only.  (Type objects are
 exceptions to the first rule; the standard types are represented by
-statically initialized type objects.)
+statically initialized type objects, although work on type/class unification
+for Python 2.2 made it possible to have heap-allocated type objects too).
 
 An object has a 'reference count' that is increased or decreased when a
 pointer to the object is copied or deleted; when the reference count
@@ -51,32 +52,76 @@ whose size is determined when the object is allocated.
 */
 
 #ifdef Py_DEBUG
-
-/* Turn on heavy reference debugging */
-#define Py_TRACE_REFS
-
-/* Turn on reference counting */
+/* Turn on aggregate reference counting.  This arranges that extern
+ * _Py_RefTotal hold a count of all references, the sum of ob_refcnt
+ * across all objects.  The value can be gotten programatically via
+ * sys.gettotalrefcount() (which exists only if Py_REF_DEBUG is enabled).
+ * In a debug-mode build, this is where the "8288" comes from in
+ *
+ *  >>> 23
+ *  23
+ *  [8288 refs]
+ *  >>>
+ *
+ * Note that if this count increases when you're not storing away new objects,
+ * there's probably a leak.  Remember, though, that in interactive mode the
+ * special name "_" holds a reference to the last result displayed!
+ */
 #define Py_REF_DEBUG
 
+/* Turn on heavy reference debugging.  This is major surgery.  Every PyObject
+ * grows two more pointers, to maintain a doubly-linked list of all live
+ * heap-allocated objects (note that, e.g., most builtin type objects are
+ * not in this list, as they're statically allocated).  This list can be
+ * materialized into a Python list via sys.getobjects() (which exists only
+ * if Py_TRACE_REFS is enabled).  Py_TRACE_REFS implies Py_REF_DEBUG.
+ */
+#define Py_TRACE_REFS
 #endif /* Py_DEBUG */
 
-#ifdef Py_TRACE_REFS
-#define PyObject_HEAD \
-	struct _object *_ob_next, *_ob_prev; \
-	int ob_refcnt; \
-	struct _typeobject *ob_type;
-#define PyObject_HEAD_INIT(type) 0, 0, 1, type,
-#else /* !Py_TRACE_REFS */
-#define PyObject_HEAD \
-	int ob_refcnt; \
-	struct _typeobject *ob_type;
-#define PyObject_HEAD_INIT(type) 1, type,
-#endif /* !Py_TRACE_REFS */
+/* Py_TRACE_REFS implies Py_REF_DEBUG. */
+#if defined(Py_TRACE_REFS) && !defined(Py_REF_DEBUG)
+#define Py_REF_DEBUG
+#endif
 
-#define PyObject_VAR_HEAD \
-	PyObject_HEAD \
+#ifdef Py_TRACE_REFS
+/* Define pointers to support a doubly-linked list of all live heap objects. */
+#define _PyObject_HEAD_EXTRA		\
+	struct _object *_ob_next;	\
+	struct _object *_ob_prev;
+
+#define _PyObject_EXTRA_INIT 0, 0,
+
+#else
+#define _PyObject_HEAD_EXTRA
+#define _PyObject_EXTRA_INIT
+#endif
+
+/* PyObject_HEAD defines the initial segment of every PyObject. */
+#define PyObject_HEAD			\
+	_PyObject_HEAD_EXTRA		\
+	int ob_refcnt;			\
+	struct _typeobject *ob_type;
+
+#define PyObject_HEAD_INIT(type)	\
+	_PyObject_EXTRA_INIT		\
+	1, type,
+
+/* PyObject_VAR_HEAD defines the initial segment of all variable-size
+ * container objects.  These end with a declaration of an array with 1
+ * element, but enough space is malloc'ed so that the array actually
+ * has room for ob_size elements.  Note that ob_size is an element count,
+ * not necessarily a byte count.
+ */
+#define PyObject_VAR_HEAD		\
+	PyObject_HEAD			\
 	int ob_size; /* Number of items in variable part */
 
+/* Nothing is actually declared to be a PyObject, but every pointer to
+ * a Python object can be cast to a PyObject*.  This is inheritance built
+ * by hand.  Similarly every pointer to a variable-size Python object can,
+ * in addition, be cast to PyVarObject*.
+ */
 typedef struct _object {
 	PyObject_HEAD
 } PyObject;
@@ -88,13 +133,14 @@ typedef struct {
 
 /*
 Type objects contain a string containing the type name (to help somewhat
-in debugging), the allocation parameters (see newobj() and newvarobj()),
-and methods for accessing objects of the type.  Methods are optional,a
+in debugging), the allocation parameters (see PyObject_New() and
+PyObject_NewVar()),
+and methods for accessing objects of the type.  Methods are optional, a
 nil pointer meaning that particular kind of access is not available for
 this type.  The Py_DECREF() macro uses the tp_dealloc method without
 checking for a nil pointer; it should always be implemented except if
 the implementation can guarantee that the reference count will never
-reach zero (e.g., for type objects).
+reach zero (e.g., for statically allocated type objects).
 
 NB: the methods for certain type groups are now contained in separate
 method blocks.
@@ -121,7 +167,7 @@ typedef int (*traverseproc)(PyObject *, visitproc, void *);
 typedef struct {
 	/* For numbers without flag bit Py_TPFLAGS_CHECKTYPES set, all
 	   arguments are guaranteed to be of the object's type (modulo
-	   coercion hacks that is -- i.e. if the type's coercion function
+	   coercion hacks -- i.e. if the type's coercion function
 	   returns other types, then these are allowed as well).  Numbers that
 	   have the Py_TPFLAGS_CHECKTYPES flag bit set should check *both*
 	   arguments for proper type and implement the necessary conversions
@@ -378,8 +424,7 @@ extern DL_IMPORT(long) _Py_HashPointer(void*);
 #define Py_PRINT_RAW	1	/* No string quotes etc. */
 
 /*
-
-Type flags (tp_flags)
+`Type flags (tp_flags)
 
 These flags are used to extend the type structure in a backwards-compatible
 fashion. Extensions can use the flags to indicate (and test) when a given
@@ -397,7 +442,6 @@ Type definitions should use Py_TPFLAGS_DEFAULT for their tp_flags value.
 
 Code can use PyType_HasFeature(type_ob, flag_value) to test whether the
 given type object has a specified feature.
-
 */
 
 /* PyBufferProcs contains bf_getcharbuffer */
@@ -458,18 +502,25 @@ given type object has a specified feature.
 
 /*
 The macros Py_INCREF(op) and Py_DECREF(op) are used to increment or decrement
-reference counts.  Py_DECREF calls the object's deallocator function; for
+reference counts.  Py_DECREF calls the object's deallocator function when
+the refcount falls to 0; for
 objects that don't contain references to other objects or heap memory
 this can be the standard function free().  Both macros can be used
-wherever a void expression is allowed.  The argument shouldn't be a
-NIL pointer.  The macro _Py_NewReference(op) is used only to initialize
-reference counts to 1; it is defined here for convenience.
+wherever a void expression is allowed.  The argument must not be a
+NIL pointer.  If it may be NIL, use Py_XINCREF/Py_XDECREF instead.
+The macro _Py_NewReference(op) initialize reference counts to 1, and
+in special builds (Py_REF_DEBUG, Py_TRACE_REFS) performs additional
+bookkeeping appropriate to the special build.
 
 We assume that the reference count field can never overflow; this can
-be proven when the size of the field is the same as the pointer size
-but even with a 16-bit reference count field it is pretty unlikely so
-we ignore the possibility.  (If you are paranoid, make it a long.)
+be proven when the size of the field is the same as the pointer size, so
+we ignore the possibility.  Provided a C int is at least 32 bits (which
+is implicitly assumed in many parts of this code), that's enough for
+about 2**31 references to an object.
 
+XXX The following became out of date in Python 2.2, but I'm not sure
+XXX what the full truth is now.  Certainly, heap-allocated type objects
+XXX can and should be deallocated.
 Type objects should never be deallocated; the type pointer in an object
 is not considered to be a reference to the type object, to save
 complications in the deallocation function.  (This is actually a
@@ -483,62 +534,60 @@ variable first, both of which are slower; and in a multi-threaded
 environment the global variable trick is not safe.)
 */
 
-#ifdef Py_TRACE_REFS
-#ifndef Py_REF_DEBUG
-#define Py_REF_DEBUG
+#ifdef Py_REF_DEBUG
+extern DL_IMPORT(long) _Py_RefTotal;
+#define _PyMAYBE_BUMP_REFTOTAL	_Py_RefTotal++
+#else
+#define _PyMAYBE_BUMP_REFTOTAL	(void)0
 #endif
-#endif
-
-#ifdef Py_TRACE_REFS
-extern DL_IMPORT(void) _Py_Dealloc(PyObject *);
-extern DL_IMPORT(void) _Py_NewReference(PyObject *);
-extern DL_IMPORT(void) _Py_ForgetReference(PyObject *);
-extern DL_IMPORT(void) _Py_PrintReferences(FILE *);
-extern DL_IMPORT(void) _Py_ResetReferences(void);
-#endif
-
-#ifndef Py_TRACE_REFS
-#ifdef COUNT_ALLOCS
-#define _Py_Dealloc(op) ((op)->ob_type->tp_frees++, (*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
-#define _Py_ForgetReference(op) ((op)->ob_type->tp_frees++)
-#else /* !COUNT_ALLOCS */
-#define _Py_Dealloc(op) (*(op)->ob_type->tp_dealloc)((PyObject *)(op))
-#define _Py_ForgetReference(op) /*empty*/
-#endif /* !COUNT_ALLOCS */
-#endif /* !Py_TRACE_REFS */
 
 #ifdef COUNT_ALLOCS
 extern DL_IMPORT(void) inc_count(PyTypeObject *);
-#endif
-
-#ifdef Py_REF_DEBUG
-
-extern DL_IMPORT(long) _Py_RefTotal;
-
-#ifndef Py_TRACE_REFS
-#ifdef COUNT_ALLOCS
-#define _Py_NewReference(op) (inc_count((op)->ob_type), _Py_RefTotal++, (op)->ob_refcnt = 1)
+#define _PyMAYBE_BUMP_COUNT(OP)		inc_count((OP)->ob_type)
+#define _PyMAYBE_BUMP_FREECOUNT(OP)	(OP)->ob_type->tp_frees++
 #else
-#define _Py_NewReference(op) (_Py_RefTotal++, (op)->ob_refcnt = 1)
+#define _PyMAYBE_BUMP_COUNT(OP)		(void)0
+#define _PyMAYBE_BUMP_FREECOUNT(OP)	(void)0
 #endif
+
+#ifdef Py_TRACE_REFS
+/* Py_TRACE_REFS is such major surgery that we call external routines. */
+extern DL_IMPORT(void) _Py_NewReference(PyObject *);
+extern DL_IMPORT(void) _Py_ForgetReference(PyObject *);
+extern DL_IMPORT(void) _Py_Dealloc(PyObject *);
+extern DL_IMPORT(void) _Py_PrintReferences(FILE *);
+extern DL_IMPORT(void) _Py_ResetReferences(void);
+
+#else
+/* Without Py_TRACE_REFS, there's little enough to do that we expand code
+ * inline.
+ */
+#define _Py_NewReference(op) (		\
+	_PyMAYBE_BUMP_COUNT(op),	\
+	_PyMAYBE_BUMP_REFTOTAL, 	\
+	(op)->ob_refcnt = 1)
+
+#define _Py_ForgetReference(op) (_PyMAYBE_BUMP_FREECOUNT(op))
+
+#define _Py_Dealloc(op) (		\
+	_Py_ForgetReference(op),	\
+	(*(op)->ob_type->tp_dealloc)((PyObject *)(op)))
+
 #endif /* !Py_TRACE_REFS */
 
-#define Py_INCREF(op) (_Py_RefTotal++, (op)->ob_refcnt++)
-  /* under Py_REF_DEBUG: also log negative ref counts after Py_DECREF() !! */
+#define Py_INCREF(op) (			\
+	_PyMAYBE_BUMP_REFTOTAL,		\
+	(op)->ob_refcnt++)
+
+#ifdef Py_REF_DEBUG
+/* under Py_REF_DEBUG: also log negative ref counts after Py_DECREF() !! */
 #define Py_DECREF(op)							\
        if (--_Py_RefTotal, 0 < (--((op)->ob_refcnt))) ;			\
        else if (0 == (op)->ob_refcnt) _Py_Dealloc( (PyObject*)(op));	\
-       else ((void)fprintf( stderr, "%s:%i negative ref count %i\n",	\
+       else ((void)fprintf(stderr, "%s:%i negative ref count %i\n",	\
 		           __FILE__, __LINE__, (op)->ob_refcnt), abort())
-#else /* !Py_REF_DEBUG */
 
-#ifdef COUNT_ALLOCS
-#define _Py_NewReference(op) (inc_count((op)->ob_type), (op)->ob_refcnt = 1)
 #else
-#define _Py_NewReference(op) ((op)->ob_refcnt = 1)
-#endif
-
-#define Py_INCREF(op) ((op)->ob_refcnt++)
 #define Py_DECREF(op) \
 	if (--(op)->ob_refcnt != 0) \
 		; \
@@ -547,7 +596,6 @@ extern DL_IMPORT(long) _Py_RefTotal;
 #endif /* !Py_REF_DEBUG */
 
 /* Macros to use in case the object pointer may be NULL: */
-
 #define Py_XINCREF(op) if ((op) == NULL) ; else Py_INCREF(op)
 #define Py_XDECREF(op) if ((op) == NULL) ; else Py_DECREF(op)
 
@@ -557,18 +605,14 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 
 Don't forget to apply Py_INCREF() when returning this value!!!
 */
-
 extern DL_IMPORT(PyObject) _Py_NoneStruct; /* Don't use this directly */
-
 #define Py_None (&_Py_NoneStruct)
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is
 not implemented for a given type combination.
 */
-
 extern DL_IMPORT(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
-
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
 
 /* Rich comparison opcodes */
@@ -624,7 +668,9 @@ is set (see errors.h), and the function result differs: functions that
 normally return a pointer return NULL for failure, functions returning
 an integer return -1 (which could be a legal return value too!), and
 other functions return 0 for success and -1 for failure.
-Callers should always check for errors before using the result.
+Callers should always check for errors before using the result.  If
+an error was set, the caller must either explicitly clear it, or pass
+the error on to its caller.
 
 Reference Counts
 ----------------

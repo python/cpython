@@ -469,11 +469,10 @@ sys_getrefcount(PyObject *self, PyObject *arg)
 	return PyInt_FromLong(arg->ob_refcnt);
 }
 
-#ifdef Py_TRACE_REFS
+#ifdef Py_REF_DEBUG
 static PyObject *
 sys_gettotalrefcount(PyObject *self)
 {
-	extern long _Py_RefTotal;
 	return PyInt_FromLong(_Py_RefTotal);
 }
 
@@ -564,6 +563,8 @@ static PyMethodDef sys_methods[] = {
 #endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, METH_VARARGS},
+#endif
+#ifdef Py_REF_DEBUG
 	{"gettotalrefcount", (PyCFunction)sys_gettotalrefcount, METH_NOARGS},
 #endif
 	{"getrefcount",	(PyCFunction)sys_getrefcount, METH_O, getrefcount_doc},
