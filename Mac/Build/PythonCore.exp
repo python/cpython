@@ -91,6 +91,7 @@ PyErr_SetNone
 PyErr_SetObject
 PyErr_Restore
 PyImport_FrozenModules
+PyArg_UnpackTuple
 PyArg_ParseTupleAndKeywords
 PyArg_VaParse
 PyArg_ParseTuple
@@ -450,7 +451,6 @@ PyCFunction_GetFlags
 PyCFunction_GetSelf
 PyCFunction_GetFunction
 PyCFunction_New
-module_members
 PyModule_Type
 _PyModule_Clear
 PyModule_GetFilename
@@ -545,16 +545,12 @@ PyTuple_SetItem
 PyTuple_GetItem
 PyTuple_Size
 PyTuple_New
-type_getsets
-subtype_getsets
 PyType_Type
 PyBaseObject_Type
 PySuper_Type
 _PyObject_SlotCompare
 PyType_Ready
 _PyType_Lookup
-call_maybe
-call_method
 PyType_IsSubtype
 PyType_GenericNew
 PyType_GenericAlloc
@@ -599,7 +595,6 @@ _Py_MD5Final
 _Py_MD5Update
 _Py_MD5Init
 initmd5
-new_doc
 initnew
 initoperator
 initparser
@@ -895,12 +890,9 @@ PySeqIter_New
 PyOS_vsnprintf
 PyOS_snprintf
 PyWrapperDescr_Type
-proxytype
-wrappertype
 PyProperty_Type
 PyWrapper_New
 PyDictProxy_New
-proxy_str
 PyDescr_IsData
 PyDescr_NewWrapper
 PyDescr_NewGetSet
@@ -1046,6 +1038,8 @@ PyWeakref_GetObject
 PyWeakref_NewProxy
 PyWeakref_NewRef
 _PyWeakref_GetWeakrefCount
+PyStructSequence_InitType
+PyStructSequence_New
 GUSISetupConsoleStdio
 GUSIStdioFlush
 GUSIStdioClose
