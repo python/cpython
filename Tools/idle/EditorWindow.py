@@ -462,21 +462,37 @@ class EditorWindow:
         self.top.tkraise()
         reply = self.maybesave()
         if reply != "cancel":
-            WindowList.unregister_callback(self.postwindowsmenu)
-            if self.close_hook:
-                self.close_hook()
-            colorizing = 0
-            if self.color:
-                colorizing = self.color.colorizing
-                doh = colorizing and self.top
-                self.color.close(doh) # Cancel colorization
-            if not colorizing:
-                self.top.destroy()
+            self._close()
         return reply
+
+    def _close(self):
+        WindowList.unregister_callback(self.postwindowsmenu)
+        if self.close_hook:
+            self.close_hook()
+        self.flist = None
+        colorizing = 0
+        self.unload_extensions()
+        self.io.close(); self.io = None
+        self.undo = None # XXX
+        if self.color:
+            colorizing = self.color.colorizing
+            doh = colorizing and self.top
+            self.color.close(doh) # Cancel colorization
+        self.text = None
+        self.vars = None
+        self.per.close(); self.per = None
+        if not colorizing:
+            self.top.destroy()
 
     def load_extensions(self):
         self.extensions = {}
         self.load_standard_extensions()
+
+    def unload_extensions(self):
+        for ins in self.extensions.values():
+            if hasattr(ins, "close"):
+                ins.close()
+        self.extensions = {}
 
     def load_standard_extensions(self):
         for name in self.get_standard_extension_names():
