@@ -17,7 +17,7 @@ import webbrowser
 import idlever
 import WindowList
 from IdleConf import idleconf
-import aboutDialog, textView
+import aboutDialog, textView, configDialog
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -123,6 +123,7 @@ class EditorWindow:
         text.bind("<<view-readme>>", self.view_readme)
         text.bind("<<python-docs>>", self.python_docs)
         text.bind("<<about-idle>>", self.about_dialog)
+        text.bind("<<open-config-dialog>>", self.config_dialog)
         text.bind("<<open-module>>", self.open_module)
         text.bind("<<do-nothing>>", lambda event: "break")
         text.bind("<<select-all>>", self.select_all)
@@ -220,6 +221,7 @@ class EditorWindow:
         ("edit", "_Edit"),
         ("format", "F_ormat"),
         ("run", "_Run"),
+        #("settings", "_Settings"),
         ("windows", "_Windows"),
         ("help", "_Help"),
     ]
@@ -277,6 +279,9 @@ class EditorWindow:
 
     def about_dialog(self, event=None):
         aboutDialog.AboutDialog(self.top,'About IDLEfork')
+        
+    def config_dialog(self, event=None):
+        configDialog.ConfigDialog(self.top,'Settings')
         
     def good_advice(self, event=None):
         tkMessageBox.showinfo('Advice', "Don't Panic!", master=self.text)

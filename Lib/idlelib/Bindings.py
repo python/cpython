@@ -50,6 +50,11 @@ menudefs = [
    ('!_Debugger', '<<toggle-debugger>>'),
    ('!_Auto-open stack viewer', '<<toggle-jit-stack-viewer>>' ),
   ]),
+# ('settings', [
+#   ('_Configure Idle...', '<<open-config-dialog>>'),
+#   None,
+#   ('Revert to _Default Settings', '<<revert-all-settings>>'),
+#  ]),
  ('help', [
    ('_IDLE Help...', '<<help>>'),
    ('Python _Documentation...', '<<python-docs>>'),

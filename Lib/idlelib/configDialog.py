@@ -17,10 +17,7 @@ class ConfigDialog(Toplevel):
     """
     configuration dialog for idle
     """ 
-    def __init__(self,parent,title,configDict):
-        """
-        configDict - dictionary of configuration items
-        """
+    def __init__(self,parent,title):
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
         self.geometry("+%d+%d" % (parent.winfo_rootx()+20,
@@ -160,6 +157,18 @@ class ConfigDialog(Toplevel):
             self.radioFg.config(state=NORMAL)
             self.radioBg.config(state=NORMAL)
             self.fgHilite.set(1) #default to setting foreground attribute
+        self.SetColourSample()
+    
+    def SetColourSampleBinding(self,*args):
+        self.SetColourSample()
+        
+    def SetColourSample(self):
+        #set the colour smaple area
+        tag=self.themeElements[self.highlightTarget.get()][0]
+        if self.fgHilite.get(): plane='foreground'
+        else: plane='background'
+        colour=self.textHighlightSample.tag_cget(tag,plane)
+        self.frameColourSet.config(bg=colour)
     
     def CreateWidgets(self):
         self.framePages = Frame(self)
@@ -175,7 +184,7 @@ class ConfigDialog(Toplevel):
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE)
         #page buttons
-        self.pageNum=IntVar()
+        self.pageNum=IntVar(self)
         self.pageNum.set(0)
         pageButtonNames=('Fonts/Tabs','Highlighting','Keys','General')
         self.pageButtons=[]
@@ -211,11 +220,11 @@ class ConfigDialog(Toplevel):
         
     def CreatePageFontTab(self):
         #tkVars
-        self.fontSize=StringVar()
-        self.fontBold=StringVar()
-        self.spaceNum=IntVar()
-        self.tabCols=IntVar()
-        self.indentType=IntVar() 
+        self.fontSize=StringVar(self)
+        self.fontBold=StringVar(self)
+        self.spaceNum=IntVar(self)
+        self.tabCols=IntVar(self)
+        self.indentType=IntVar(self) 
         self.editFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
@@ -295,13 +304,13 @@ class ConfigDialog(Toplevel):
         return frame
 
     def CreatePageHighlight(self):
-        self.builtinTheme=StringVar()
-        self.customTheme=StringVar()
-        self.fgHilite=IntVar()
-        self.colour=StringVar()
-        self.fontName=StringVar()
-        self.themeIsBuiltin=IntVar() 
-        self.highlightTarget=StringVar()
+        self.builtinTheme=StringVar(self)
+        self.customTheme=StringVar(self)
+        self.fgHilite=IntVar(self)
+        self.colour=StringVar(self)
+        self.fontName=StringVar(self)
+        self.themeIsBuiltin=IntVar(self) 
+        self.highlightTarget=StringVar(self)
         self.highlightTarget.trace_variable('w',self.SetHighlightTargetBinding)
         ##widget creation
         #body frame
@@ -340,9 +349,9 @@ class ConfigDialog(Toplevel):
         self.optMenuHighlightTarget=DynOptionMenu(self.frameColourSet,
             self.highlightTarget,None,highlightthickness=0)#,command=self.SetHighlightTargetBinding
         self.radioFg=Radiobutton(frameFgBg,variable=self.fgHilite,
-            value=1,text='Foreground')#,command=self.SetFgBg
+            value=1,text='Foreground',command=self.SetColourSampleBinding)
         self.radioBg=Radiobutton(frameFgBg,variable=self.fgHilite,
-            value=0,text='Background')#,command=self.SetFgBg
+            value=0,text='Background',command=self.SetColourSampleBinding)
         self.fgHilite.set(1)
         buttonSaveCustomTheme=Button(frameCustom, 
             text='Save as a Custom Theme')
@@ -385,14 +394,14 @@ class ConfigDialog(Toplevel):
 
     def CreatePageKeys(self):
         #tkVars
-        self.bindingTarget=StringVar()
-        self.builtinKeys=StringVar()
-        self.customKeys=StringVar()
-        self.keyChars=StringVar()
-        self.keyCtrl=StringVar()
-        self.keyAlt=StringVar()
-        self.keyShift=StringVar()
-        self.keysAreDefault=IntVar() 
+        self.bindingTarget=StringVar(self)
+        self.builtinKeys=StringVar(self)
+        self.customKeys=StringVar(self)
+        self.keyChars=StringVar(self)
+        self.keyCtrl=StringVar(self)
+        self.keyAlt=StringVar(self)
+        self.keyShift=StringVar(self)
+        self.keysAreDefault=IntVar(self) 
         ##widget creation
         #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
@@ -460,10 +469,10 @@ class ConfigDialog(Toplevel):
 
     def CreatePageGeneral(self):
         #tkVars        
-        self.runType=IntVar()       
-        self.winWidth=StringVar()       
-        self.winHeight=StringVar()
-        self.extState=IntVar()       
+        self.runType=IntVar(self)       
+        self.winWidth=StringVar(self)       
+        self.winHeight=StringVar(self)
+        self.extState=IntVar(self)       
         #widget creation
         #body
         frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
@@ -663,5 +672,5 @@ if __name__ == '__main__':
     #test the dialog
     root=Tk()
     Button(root,text='Dialog',
-            command=lambda:ConfigDialog(root,'Settings',None)).pack()
+            command=lambda:ConfigDialog(root,'Settings')).pack()
     root.mainloop()

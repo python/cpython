@@ -328,7 +328,7 @@ class PyShell(OutputWindow):
 
     # Override menu bar specs
     menu_specs = PyShellEditorWindow.menu_specs[:]
-    menu_specs.insert(len(menu_specs)-2, ("debug", "_Debug"))
+    menu_specs.insert(len(menu_specs)-3, ("debug", "_Debug"))
 
     # New classes
     from IdleHistory import History
