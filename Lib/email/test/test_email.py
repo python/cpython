@@ -1973,7 +1973,7 @@ class TestIdempotent(TestEmailBase):
 
 
 # Test various other bits of the package's functionality
-class TestMiscellaneous(unittest.TestCase):
+class TestMiscellaneous(TestEmailBase):
     def test_message_from_string(self):
         fp = openfile('msg_01.txt')
         try:
@@ -2221,6 +2221,48 @@ class TestMiscellaneous(unittest.TestCase):
         lc = Charset('us-ascii')
         uc = Charset('US-ASCII')
         self.assertEqual(lc.get_body_encoding(), uc.get_body_encoding())
+
+    def test_partial_falls_inside_message_delivery_status(self):
+        eq = self.ndiffAssertEqual
+        # The Parser interface provides chunks of data to FeedParser in 8192
+        # byte gulps.  SF bug #1076485 found one of those chunks inside
+        # message/delivery-status header block, which triggered an
+        # unreadline() of NeedMoreData.
+        msg = self._msgobj('msg_43.txt')
+        sfp = StringIO()
+        Iterators._structure(msg, sfp)
+        eq(sfp.getvalue(), """\
+multipart/report
+    text/plain
+    message/delivery-status
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+        text/plain
+    text/rfc822-headers
+""")
 
 
 
