@@ -1388,7 +1388,7 @@ BZ2File_dealloc(BZ2FileObject *self)
 			break;
 	}
 	Util_DropReadAhead(self);
-	Py_DECREF(self->file);
+	Py_XDECREF(self->file);
 	self->ob_type->tp_free((PyObject *)self);
 }
 
