@@ -82,7 +82,7 @@ class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
     def __init__(self, *args, **kw):
         self._db = []
         mapping_tests.BasicTestMappingProtocol.__init__(self, *args, **kw)
-    _tested_class = shelve.Shelf
+    type2test = shelve.Shelf
     def _reference(self):
         return {"key1":"value1", "key2":2, "key3":(1,2,3)}
     def _empty_mapping(self):

@@ -12,7 +12,7 @@ d4 = {"one": None, "two": None}
 d5 = {"one": 1, "two": 1}
 
 class UserDictTest(mapping_tests.TestHashMappingProtocol):
-    _tested_class = UserDict.IterableUserDict
+    type2test = UserDict.IterableUserDict
 
     def test_all(self):
         # Test constructors
@@ -199,7 +199,7 @@ class SeqDict(UserDict.DictMixin):
     fromkeys = classmethod(fromkeys)
 
 class UserDictMixinTest(mapping_tests.TestMappingProtocol):
-    _tested_class = SeqDict
+    type2test = SeqDict
 
     def test_all(self):
         ## Setup test and verify working of the test class
