@@ -1323,9 +1323,6 @@ void
 Py_FatalError(const char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
-#ifdef macintosh
-	for (;;);
-#endif
 #ifdef MS_WINDOWS
 	OutputDebugString("Fatal Python error: ");
 	OutputDebugString(msg);
