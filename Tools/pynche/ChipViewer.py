@@ -68,7 +68,7 @@ class ChipViewer:
     def __init__(self, switchboard, master=None):
         self.__sb = switchboard
         self.__frame = Frame(master, relief=RAISED, borderwidth=1)
-        self.__frame.grid(row=3, column=0, ipadx=5)
+        self.__frame.grid(row=3, column=0, ipadx=5, sticky='NSEW')
         # create the chip that will display the currently selected color
         # exactly
         self.__sframe = Frame(self.__frame)
