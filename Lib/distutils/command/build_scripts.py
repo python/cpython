@@ -24,6 +24,7 @@ class build_scripts (Command):
     user_options = [
         ('build-dir=', 'd', "directory to \"build\" (copy) to"),
         ('force', 'f', "forcibly build everything (ignore file timestamps"),
+        ('executable=', 'e', "specify final destination interpreter path"),
         ]
 
     boolean_options = ['force']
@@ -33,12 +34,14 @@ class build_scripts (Command):
         self.build_dir = None
         self.scripts = None
         self.force = None
+        self.executable = None
         self.outfiles = None
 
     def finalize_options (self):
         self.set_undefined_options('build',
                                    ('build_scripts', 'build_dir'),
-                                   ('force', 'force'))
+                                   ('force', 'force'),
+                                   ('executable', 'executable'))
         self.scripts = self.distribution.scripts
 
     def get_source_files(self):
@@ -95,7 +98,7 @@ class build_scripts (Command):
                     outf = open(outfile, "w")
                     if not sysconfig.python_build:
                         outf.write("#!%s%s\n" %
-                                   (os.path.normpath(sys.executable),
+                                   (self.executable,
                                     post_interp))
                     else:
                         outf.write("#!%s%s\n" %
