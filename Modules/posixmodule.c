@@ -2237,15 +2237,18 @@ posix_pipe(self, args)
 	return Py_BuildValue("(ii)", fds[0], fds[1]);
 #else /* MS_WIN32 */
 	HANDLE read, write;
+	int read_fd, write_fd;
 	BOOL ok;
 	if (!PyArg_Parse(args, ""))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-	ok = CreatePipe( &read, &write, NULL, 0);
+	ok = CreatePipe(&read, &write, NULL, 0);
 	Py_END_ALLOW_THREADS
 	if (!ok)
 		return posix_error();
-	return Py_BuildValue("(ii)", read, write);
+	read_fd = _open_osfhandle((long)read, 0);
+	write_fd = _open_osfhandle((long)write, 1);
+	return Py_BuildValue("(ii)", read_fd, write_fd);
 #endif /* MS_WIN32 */
 #endif
 }
