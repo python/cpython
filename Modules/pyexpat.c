@@ -883,7 +883,7 @@ initpyexpat(void)
         PyObject *errmod_name = PyString_FromString("pyexpat.errors");
 
         if (errmod_name != NULL) {
-            errors_module = PyDict_GetItem(errmod_name);
+            errors_module = PyDict_GetItem(d, errmod_name);
             if (errors_module == NULL) {
                 errors_module = PyModule_New("pyexpat.errors");
                 if (errors_module != NULL) {
@@ -891,7 +891,7 @@ initpyexpat(void)
                     PyDict_SetItem(sys_modules, errmod_name, errors_module);
                 }
             }
-            PyDECREF(errmod_name);
+            Py_DECREF(errmod_name);
             if (errors_module == NULL)
                 /* Don't code dump later! */
                 return;
