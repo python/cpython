@@ -166,12 +166,11 @@ bits of precision.  Long integers have unlimited precision.  Floating
 point numbers are implemented using \ctype{double} in C.  All bets on
 their precision are off unless you happen to know the machine you are
 working with.
-\indexii{numeric}{types}
-\indexii{integer}{types}
-\indexii{integer}{type}
-\indexiii{long}{integer}{type}
-\indexii{floating point}{type}
-\indexii{complex number}{type}
+\obindex{numeric}
+\obindex{integer}
+\obindex{long integer}
+\obindex{floating point}
+\obindex{complex number}
 \indexii{C}{language}
 
 Complex numbers have a real and imaginary part, which are both
@@ -332,13 +331,13 @@ builtin function \function{buffer()}.\bifuncindex{buffer}  XRanges
 objects are similar to buffers in that there is no specific syntax to
 create them, but they are created using the \function{xrange()}
 function.\bifuncindex{xrange}
-\indexii{sequence}{types}
-\indexii{string}{type}
-\indexii{Unicode}{type}
-\indexii{buffer}{type}
-\indexii{tuple}{type}
-\indexii{list}{type}
-\indexii{xrange}{type}
+\obindex{sequence}
+\obindex{string}
+\obindex{Unicode}
+\obindex{buffer}
+\obindex{tuple}
+\obindex{list}
+\obindex{xrange}
 
 Sequence types support the following operations.  The \samp{in} and
 \samp{not in} operations have the same priorities as the comparison
@@ -647,7 +646,7 @@ Additional string operations are defined in standard module
 
 \subsubsection{XRange Type \label{typesseq-xrange}}
 
-The xrange\indexii{xrange}{type} type is an immutable sequence which is
+The xrange\obindex{xrange} type is an immutable sequence which is
 commonly used for looping.  The advantage of the xrange type is that an
 xrange object will always take the same amount of memory, no matter the
 size of the range it represents.  There are no consistent performance
@@ -672,7 +671,7 @@ be modified once created.
 The following operations are defined on mutable sequence types (where
 \var{x} is an arbitrary object):
 \indexiii{mutable}{sequence}{types}
-\indexii{list}{type}
+\obindex{list}
 
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{s}[\var{i}] = \var{x}}
@@ -749,8 +748,8 @@ Notes:
 
 
 \subsection{Mapping Types \label{typesmapping}}
-\indexii{mapping}{types}
-\indexii{dictionary}{type}
+\obindex{mapping}
+\obindex{dictionary}
 
 A \dfn{mapping} object maps values of one type (the key type) to
 arbitrary objects.  Mappings are mutable objects.  There is currently
