@@ -1367,8 +1367,10 @@ in the map.
 
 \item[(2)] \versionadded{2.2}
 
-\item[(3)] Keys and values are listed in random order.  If
-\method{items()}, \method{keys()}, \method{values()},
+\item[(3)] Keys and values are listed in an arbitrary order which is
+non-random, varies across Python implementations, and depends on the
+dictionary's history of insertions and deletions.
+If \method{items()}, \method{keys()}, \method{values()},
 \method{iteritems()}, \method{iterkeys()}, and \method{itervalues()}
 are called with no intervening modifications to the dictionary, the
 lists will directly correspond.  This allows the creation of
