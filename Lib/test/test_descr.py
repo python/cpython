@@ -1060,6 +1060,45 @@ def slots():
     vereq(x.b, 2)
     vereq(x.c, 3)
 
+    # Make sure slot names are proper identifiers
+    try:
+        class C(object):
+            __slots__ = [None]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "[None] slots not caught"
+    try:
+        class C(object):
+            __slots__ = ["foo bar"]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "['foo bar'] slots not caught"
+    try:
+        class C(object):
+            __slots__ = ["foo\0bar"]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "['foo\\0bar'] slots not caught"
+    try:
+        class C(object):
+            __slots__ = ["1"]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "['1'] slots not caught"
+    try:
+        class C(object):
+            __slots__ = [""]
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "[''] slots not caught"
+    class C(object):
+        __slots__ = ["a", "a_b", "_a", "A0123456789Z"]
+
     # Test leaks
     class Counted(object):
         counter = 0    # counts the number of instances alive
@@ -1092,6 +1131,18 @@ def slots():
     x.e = Counted()
     vereq(Counted.counter, 3)
     del x
+    vereq(Counted.counter, 0)
+
+    # Test cyclical leaks [SF bug 519621]
+    class F(object):
+        __slots__ = ['a', 'b']
+    log = []
+    s = F()
+    s.a = [Counted(), s]
+    vereq(Counted.counter, 1)
+    s = None
+    import gc
+    gc.collect()
     vereq(Counted.counter, 0)
 
 def dynamics():
