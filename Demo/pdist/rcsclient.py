@@ -2,9 +2,11 @@
 
 import string
 
+# These defaults don't belong here -- they should be taken from the
+# environment or from a hidden file in the current directory
+
 HOST = 'voorn.cwi.nl'
 PORT = 4127
-DIRECTORY = '/ufs/guido/voorn/python-RCS/Demo/pdist'
 VERBOSE = 1
 
 def openrcsclient(opts = []):
@@ -12,8 +14,8 @@ def openrcsclient(opts = []):
 	import RCSProxy
 	host = HOST
 	port = PORT
-	directory = DIRECTORY
 	verbose = VERBOSE
+	directory = None
 	for o, a in opts:
 		if o == '-h':
 			host = a
@@ -32,6 +34,14 @@ def openrcsclient(opts = []):
 			verbose = 0
 	address = (host, port)
 	x = RCSProxy.RCSProxyClient(address, verbose)
+	if not directory:
+		try:
+			directory = open("CVS/Repository").readline()
+		except IOError:
+			pass
+		else:
+			if directory[-1] == '\n':
+				directory = directory[:-1]
 	if directory:
 		x.cd(directory)
 	return x
