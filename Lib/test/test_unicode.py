@@ -415,6 +415,12 @@ verify(('a' in (1,None,'a')) == 1)
 verify(('a' in (1,None,u'a')) == 1)
 verify(('a' in ('x',1,u'y')) == 0)
 verify(('a' in ('x',1,None)) == 0)
+try:
+    u'\xe2' in 'g\xe2teau'
+except UnicodeError:
+    pass
+else:
+    print '*** contains operator does not propagate UnicodeErrors'
 print 'done.'
 
 # Formatting:
