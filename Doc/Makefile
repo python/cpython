@@ -73,6 +73,7 @@ PARTPARSE=	$(PYTHON) $(PARTPARSEOBJ)
 VERSION=1.5
 
 DVIFILES=	api.dvi ext.dvi lib.dvi tut.dvi
+INFOFILES=	python-lib.info
 PDFFILES=	api.pdf ext.pdf lib.pdf tut.pdf
 PSFILES=	api.ps ext.ps lib.ps tut.ps
 
@@ -213,17 +214,18 @@ api.dvi: api.tex
 # the info file gets generated.
 
 lib1.texi: lib*.tex texipre.dat texipost.dat $(PARTPARSEOBJ)
-	$(PARTPARSE) -o lib1.texi `./whichlibs`
-	sed 's/"{\\}n{\\}n/"\\n\\n/' lib1.texi >lib2.texi
-	mv lib2.texi lib1.texi
+	$(PARTPARSE) -o $@ `./whichlibs`
+	sed 's/"{\\}n{\\}n/"\\n\\n/' $@ >temp.texi
+	mv temp.texi $@
 
 lib.texi: lib1.texi fix.el
+	cp lib1.texi temp.texi
 	$(EMACS) -batch -l fix.el -f save-buffer -kill
-	cp lib1.texi lib.texi
+	mv temp.texi $@
 
 python-lib.info: lib.texi
 	-$(MAKEINFO) --footnote-style end --fill-column 72 \
-		     --paragraph-indent 0 lib.texi
+		     --paragraph-indent 0 $<
 
 # this is needed to prevent a second set of info files from being generated,
 # at least when using GNU make
@@ -280,18 +282,25 @@ l2hapi: api.dvi myformat.perl
 	mv api/xxx api/api.html
 	ln -s api.html api/index.html || true
 
+info-$(VERSION).tar.gz: $(INFOFILES)
+	tar cf - python-???.info* | gzip -9 >$@
+
 pdf-$(VERSION).tar.gz: $(PDFFILES)
-	tar cf - ???.pdf | gzip -9 >pdf-$(VERSION).tar.gz
+	tar cf - ???.pdf | gzip -9 >$@
 
 postscript-$(VERSION).tar.gz: $(PSFILES) ref/ref.ps
 	cp ref/ref.ps .
-	tar cf - ???.ps | gzip -9 >postscript-$(VERSION).tar.gz
+	tar cf - ???.ps | gzip -9 >$@
 	rm ref.ps
 
 tarhtml:
 	@echo "Did you remember to run makeMIFs.py in the ref subdirectory...?"
 	tar cf - index.html ???/???.css ???/*.html lib/*.gif icons/*.* \
 		| gzip -9 >html-$(VERSION).tar.gz
+
+# convenience targets:
+
+tarinfo:  info-$(VERSION).tar.gz
 
 tarps:	postscript-$(VERSION).tar.gz
 
