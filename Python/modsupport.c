@@ -56,22 +56,24 @@ Py_InitModule4(char *name, PyMethodDef *methods, char *doc,
 	if ((m = PyImport_AddModule(name)) == NULL)
 		return NULL;
 	d = PyModule_GetDict(m);
-	for (ml = methods; ml->ml_name != NULL; ml++) {
-		if ((ml->ml_flags & METH_CLASS) ||
-		    (ml->ml_flags & METH_STATIC)) {
-			PyErr_SetString(PyExc_ValueError,
-					"module functions cannot set"
-					" METH_CLASS or METH_STATIC");
-			return NULL;
-		}
-		v = PyCFunction_New(ml, passthrough);
-		if (v == NULL)
-			return NULL;
-		if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {
+	if (methods != NULL) {
+		for (ml = methods; ml->ml_name != NULL; ml++) {
+			if ((ml->ml_flags & METH_CLASS) ||
+			    (ml->ml_flags & METH_STATIC)) {
+				PyErr_SetString(PyExc_ValueError,
+						"module functions cannot set"
+						" METH_CLASS or METH_STATIC");
+				return NULL;
+			}
+			v = PyCFunction_New(ml, passthrough);
+			if (v == NULL)
+				return NULL;
+			if (PyDict_SetItemString(d, ml->ml_name, v) != 0) {
+				Py_DECREF(v);
+				return NULL;
+			}
 			Py_DECREF(v);
-			return NULL;
 		}
-		Py_DECREF(v);
 	}
 	if (doc != NULL) {
 		v = PyString_FromString(doc);
