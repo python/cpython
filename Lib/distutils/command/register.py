@@ -17,8 +17,7 @@ class register(Command):
 
     description = "register the distribution with the repository"
 
-    # XXX must update this to python.org before 2.3final!
-    DEFAULT_REPOSITORY = 'http://www.amk.ca/cgi-bin/pypi.cgi'
+    DEFAULT_REPOSITORY = 'http://www.python.org/pypi'
 
     user_options = [
         ('repository=', 'r',
