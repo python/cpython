@@ -3,7 +3,7 @@
 
 __version__ = "$Revision$"
 
-import sys, os, imp, re, getopt
+import sys, os, imp, re, optparse
 
 from distutils import log
 from distutils import sysconfig
@@ -253,11 +253,10 @@ class PyBuildExt(build_ext):
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = os.getenv(env_var)
             if env_val:
-                # getopt is used instead of optparse because the latter imports
-                # gettext which imports struct which has not been built yet
-                # when this method is needed
-                options = getopt.getopt(env_val.split(), arg_name[1] + ':')[0]
-                for arg_option, directory in options:
+                parser = optparse.OptionParser()
+                parser.add_option(arg_name, dest="dirs", action="append")
+                options = parser.parse_args(env_val.split())[0]
+                for directory in options.dirs:
                     add_dir_to_list(dir_list, directory)
 
         if os.path.normpath(sys.prefix) != '/usr':

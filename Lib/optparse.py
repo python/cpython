@@ -69,7 +69,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import sys, os
 import types
 import textwrap
-from gettext import gettext as _
+try:
+    from gettext import gettext as _
+except ImportError:
+    _ = lambda arg: arg
 
 def _repr(self):
     return "<%s at 0x%x: %s>" % (self.__class__.__name__, id(self), self)
