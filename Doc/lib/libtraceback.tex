@@ -33,7 +33,7 @@ Print exception information and up to \var{limit} stack trace entries
 from \var{traceback} to \var{file}.
 This differs from \function{print_tb()} in the
 following ways: (1) if \var{traceback} is not \code{None}, it prints a
-header \samp{Traceback (innermost last):}; (2) it prints the
+header \samp{Traceback (most recent call last):}; (2) it prints the
 exception \var{type} and \var{value} after the stack trace; (3) if
 \var{type} is \exception{SyntaxError} and \var{value} has the appropriate
 format, it prints the line where the syntax error occurred with a
