@@ -456,7 +456,7 @@ symcomp(pattern, gdict)
 				*g++ = *o++;
 			}
 		}
-		if (*o == '[' && !escaped) {
+		else if (*o == '[' && !escaped) {
 			*n++ = *o;
 			++o;	/* eat the char following '[' */
 			*n++ = *o;
