@@ -39,6 +39,7 @@ class RawPen:
         self._path = []
         self._tofill = []
         self.clear()
+        canvas._root().tkraise()
 
     def clear(self):
         self.fill(0)
@@ -242,25 +243,22 @@ class Pen(RawPen):
         global _root, _canvas
         if _root is None:
             _root = Tk.Tk()
-            _root.wm_protocol("WM_DELETE_WINDOW", self.destroy)
+            _root.wm_protocol("WM_DELETE_WINDOW", self._destroy)
         if _canvas is None:
             # XXX Should have scroll bars
             _canvas = Tk.Canvas(_root, background="white")
             _canvas.pack(expand=1, fill="both")
         RawPen.__init__(self, _canvas)
 
-    def destroy(self):
+    def _destroy(self):
         global _root, _canvas, _pen
-        self.clear()
-        if self is _pen:
+        root = self._canvas._root()
+        if root is _root:
             _pen = None
-            root = _root; _root = None
-            canvas = _canvas; _canvas = None
-            if root:
-                try:
-                    root.destroy()
-                except Tk.TclError:
-                    pass
+            _root = None
+            _canvas = None
+        root.destroy()
+        
 
 def _getpen():
     global _pen
