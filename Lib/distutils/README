@@ -1,0 +1,18 @@
+This directory contains only a subset of the Distutils, specifically the
+Python modules in the 'distutils' and 'distutils.command' packages.
+Technically, this is all you need to distribute and install Python modules
+using the Distutils.  Most people will want some documentation and other
+help, though.  Currently, everything can be found at the Distutils web page:
+
+    http://www.python.org/sigs/distutils-sig/
+
+From there you can access the latest documentation, or download a standalone
+Distutils release that includes all the code in this directory, plus
+documentation, test scripts, examples, etc.
+
+The Distutils documentation isn't yet part of the standard Python
+documentation set, but will be soon.
+
+        Greg Ward (gward@python.net)
+
+$Id$
