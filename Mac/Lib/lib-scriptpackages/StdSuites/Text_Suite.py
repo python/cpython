@@ -1,7 +1,7 @@
 """Suite Text Suite: A set of basic classes for text processing
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -26,7 +26,6 @@ class _3c_inheritance_3e_(aetools.NProperty):
 class line(aetools.ComponentItem):
 	"""line - A line of text """
 	want = 'clin'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class justification(aetools.NProperty):
 	"""justification - the justification of the text """
 	which = 'pjst'
@@ -37,7 +36,6 @@ lines = line
 class paragraph(aetools.ComponentItem):
 	"""paragraph - A paragraph """
 	want = 'cpar'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 
 paragraphs = paragraph
 
@@ -77,7 +75,6 @@ class uniform_styles(aetools.NProperty):
 class text_flow(aetools.ComponentItem):
 	"""text flow - A contiguous block of text.  Page layout applications call this a •story.Õ """
 	want = 'cflo'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class name(aetools.NProperty):
 	"""name - the name """
 	which = 'pnam'
@@ -102,7 +99,6 @@ text_style_infos = text_style_info
 class word(aetools.ComponentItem):
 	"""word - A word """
 	want = 'cwor'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 
 words = word
 character._propdict = {
@@ -183,27 +179,27 @@ _Enum_styl = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'clin' : line,
-	'ctxt' : text,
-	'cwor' : word,
-	'cflo' : text_flow,
 	'cpar' : paragraph,
-	'tsty' : text_style_info,
 	'cha ' : character,
+	'cflo' : text_flow,
+	'tsty' : text_style_info,
+	'clin' : line,
+	'cwor' : word,
+	'ctxt' : text,
 }
 
 _propdeclarations = {
-	'psct' : writing_code,
-	'txst' : style,
-	'colr' : color,
-	'font' : font,
-	'pnam' : name,
-	'ustl' : uniform_styles,
-	'pjst' : justification,
-	'ofst' : off_styles,
-	'onst' : on_styles,
 	'ptsz' : size,
+	'ofst' : off_styles,
+	'pjst' : justification,
+	'colr' : color,
+	'txst' : style,
+	'psct' : writing_code,
+	'ustl' : uniform_styles,
 	'c@#^' : _3c_inheritance_3e_,
+	'pnam' : name,
+	'font' : font,
+	'onst' : on_styles,
 }
 
 _compdeclarations = {

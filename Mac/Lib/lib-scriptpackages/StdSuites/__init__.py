@@ -1,8 +1,9 @@
 """
-Package generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Package generated from Moes:Systeemmap:Extensies:AppleScript
 Resource aeut resid 0 Standard Event Suites for English
 """
 import aetools
+Error = aetools.Error
 import AppleScript_Suite
 import Required_Suite
 import Standard_Suite

@@ -1,7 +1,7 @@
 """Suite CodeWarrior suite: Terms for scripting the CodeWarrior IDE
 Level 0, version 0
 
-Generated from Macintosh HD:SWdev:CodeWarrior 6 MPTP:Metrowerks CodeWarrior:CodeWarrior IDE 4.1B9
+Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -257,49 +257,42 @@ build_progress_documents = build_progress_document
 class catalog_document(aetools.ComponentItem):
 	"""catalog document - a browser catalog document """
 	want = 'CTLG'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 catalog_documents = catalog_document
 
 class class_browser(aetools.ComponentItem):
 	"""class browser - a class browser """
 	want = 'BROW'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 class_browsers = class_browser
 
 class class_hierarchy(aetools.ComponentItem):
 	"""class hierarchy - a class hierarchy document """
 	want = 'HIER'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 class_hierarchies = class_hierarchy
 
 class editor_document(aetools.ComponentItem):
 	"""editor document - an editor document """
 	want = 'EDIT'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 editor_documents = editor_document
 
 class file_compare_document(aetools.ComponentItem):
 	"""file compare document - a file compare document """
 	want = 'COMP'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 file_compare_documents = file_compare_document
 
 class message_document(aetools.ComponentItem):
 	"""message document - a message document """
 	want = 'MSSG'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 message_documents = message_document
 
 class project_document(aetools.ComponentItem):
 	"""project document - a project document """
 	want = 'PRJD'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 class current_target(aetools.NProperty):
 	"""current target - the current target """
 	which = 'CURT'
@@ -311,28 +304,24 @@ project_documents = project_document
 class project_inspector(aetools.ComponentItem):
 	"""project inspector - the project inspector """
 	want = 'INSP'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 project_inspectors = project_inspector
 
 class single_class_browser(aetools.ComponentItem):
 	"""single class browser - a single class browser """
 	want = '1BRW'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 single_class_browsers = single_class_browser
 
 class single_class_hierarchy(aetools.ComponentItem):
 	"""single class hierarchy - a single class hierarchy document """
 	want = '1HIR'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 single_class_hierarchies = single_class_hierarchy
 
 class subtarget(aetools.ComponentItem):
 	"""subtarget - a target that is prerequisite for another target """
 	want = 'SBTG'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 class target(aetools.NProperty):
 	"""target - the target that is dependent on this subtarget """
 	which = 'TrgT'
@@ -347,7 +336,6 @@ subtargets = subtarget
 class symbol_browser(aetools.ComponentItem):
 	"""symbol browser - a symbol browser """
 	want = 'SYMB'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 symbol_browsers = symbol_browser
 
@@ -358,10 +346,6 @@ class name(aetools.NProperty):
 	"""name -  """
 	which = 'pnam'
 	want = 'itxt'
-class index(aetools.NProperty):
-	"""index - the number of the target """
-	which = 'pidx'
-	want = 'long'
 class project_document(aetools.NProperty):
 	"""project document - the project document that contains this target """
 	which = 'PrjD'
@@ -382,7 +366,6 @@ class type(aetools.NProperty):
 	"""type - the type of source file """
 	which = 'FTYP'
 	want = 'FTYP'
-# repeated property index the number of the target file
 class location(aetools.NProperty):
 	"""location - the location of the target file on disk """
 	which = 'FILE'
@@ -445,7 +428,6 @@ target_files = target_file
 class text_document(aetools.ComponentItem):
 	"""text document - a document that contains text """
 	want = 'TXTD'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 class modified(aetools.NProperty):
 	"""modified - Has the document been modified since the last save? """
 	which = 'imod'
@@ -464,7 +446,6 @@ text_documents = text_document
 class ToolServer_worksheet(aetools.ComponentItem):
 	"""ToolServer worksheet - a ToolServer worksheet """
 	want = 'TOOL'
-# repeated property inherits all properties and elements of the given class are inherited by this class.
 
 ToolServer_worksheets = ToolServer_worksheet
 build_progress_document._propdict = {
@@ -538,7 +519,6 @@ symbol_browser._elemdict = {
 }
 target._propdict = {
 	'name' : name,
-	'index' : index,
 	'project_document' : project_document,
 }
 target._elemdict = {
@@ -548,7 +528,6 @@ target._elemdict = {
 target_file._propdict = {
 	'id' : id,
 	'type' : type,
-	'index' : index,
 	'location' : location,
 	'path' : path,
 	'linked' : linked,
@@ -629,59 +608,58 @@ _Enum_PERM = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'TOOL' : ToolServer_worksheet,
-	'1HIR' : single_class_hierarchy,
-	'SRCF' : target_file,
-	'TXTD' : text_document,
-	'TRGT' : target,
-	'HIER' : class_hierarchy,
-	'CTLG' : catalog_document,
 	'1BRW' : single_class_browser,
+	'PRJD' : project_document,
+	'SYMB' : symbol_browser,
+	'EDIT' : editor_document,
+	'COMP' : file_compare_document,
+	'BROW' : class_browser,
+	'SBTG' : subtarget,
 	'MSSG' : message_document,
 	'INSP' : project_inspector,
-	'BROW' : class_browser,
-	'COMP' : file_compare_document,
-	'EDIT' : editor_document,
-	'PRJD' : project_document,
-	'SBTG' : subtarget,
-	'SYMB' : symbol_browser,
+	'TXTD' : text_document,
+	'CTLG' : catalog_document,
+	'HIER' : class_hierarchy,
+	'TRGT' : target,
 	'PRGS' : build_progress_document,
+	'SRCF' : target_file,
+	'TOOL' : ToolServer_worksheet,
+	'1HIR' : single_class_hierarchy,
 }
 
 _propdeclarations = {
-	'PRER' : prerequisites,
-	'DBUG' : debug,
-	'CSZE' : code_size,
-	'Path' : path,
-	'pnam' : name,
-	'TrgT' : target,
-	'DSZE' : data_size,
-	'FTYP' : type,
-	'MODD' : modified_date,
-	'INIT' : init_before,
-	'sele' : selection,
-	'imod' : modified,
-	'DPND' : dependents,
-	'FILE' : location,
-	'LIDX' : link_index,
-	'LINK' : linked,
-	'ID  ' : id,
-	'c@#^' : inherits,
-	'pidx' : index,
-	'LNKO' : link_against_output,
-	'WEAK' : weak_link,
-	'MRGE' : merge_output,
-	'CMPD' : compiled_date,
-	'PrjD' : project_document,
 	'CURT' : current_target,
+	'PrjD' : project_document,
+	'MRGE' : merge_output,
+	'WEAK' : weak_link,
+	'DPND' : dependents,
+	'c@#^' : inherits,
+	'ID  ' : id,
+	'CMPD' : compiled_date,
+	'LIDX' : link_index,
+	'FILE' : location,
+	'Path' : path,
+	'LNKO' : link_against_output,
+	'imod' : modified,
+	'sele' : selection,
+	'DSZE' : data_size,
+	'INIT' : init_before,
+	'MODD' : modified_date,
+	'FTYP' : type,
+	'TrgT' : target,
+	'pnam' : name,
+	'LINK' : linked,
+	'CSZE' : code_size,
+	'DBUG' : debug,
+	'PRER' : prerequisites,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'PERM' : _Enum_PERM,
-	'FTYP' : _Enum_FTYP,
-	'DKND' : _Enum_DKND,
 	'Inte' : _Enum_Inte,
+	'DKND' : _Enum_DKND,
+	'FTYP' : _Enum_FTYP,
+	'PERM' : _Enum_PERM,
 }

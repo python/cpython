@@ -1,7 +1,7 @@
 """Suite Macintosh Connectivity Classes: Classes relating to Apple Macintosh personal computer connectivity
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -36,7 +36,6 @@ device_specifications = device_specification
 class address_specification(aetools.ComponentItem):
 	"""address specification - Unique designation of a device or service connected to this computer """
 	want = 'cadr'
-# repeated property properties property that allows getting and setting of multiple properties
 class conduit(aetools.NProperty):
 	"""conduit - How the addressee is physically connected """
 	which = 'pcon'
@@ -65,7 +64,6 @@ ADB_addresses = ADB_address
 class AppleTalk_address(aetools.ComponentItem):
 	"""AppleTalk address - Addresses a device or service connected via the AppleTalk protocol """
 	want = 'cat '
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class AppleTalk_machine(aetools.NProperty):
 	"""AppleTalk machine - the machine name part of the address """
 	which = 'patm'
@@ -84,32 +82,24 @@ AppleTalk_addresses = AppleTalk_address
 class bus_slot(aetools.ComponentItem):
 	"""bus slot - Addresses a PC, PCI, or NuBus card """
 	want = 'cbus'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
-# repeated property ID the slot number
 
 bus_slots = bus_slot
 
 class Ethernet_address(aetools.ComponentItem):
 	"""Ethernet address - Addresses a device by its Ethernet address """
 	want = 'cen '
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
-# repeated property ID the Ethernet address
 
 Ethernet_addresses = Ethernet_address
 
 class FireWire_address(aetools.ComponentItem):
 	"""FireWire address - Addresses a device on the FireWire bus """
 	want = 'cfw '
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
-# repeated property ID the FireWire device ID
 
 FireWire_addresses = FireWire_address
 
 class IP_address(aetools.ComponentItem):
 	"""IP address - Addresses a device or service via the Internet Protocol (IP) """
 	want = 'cip '
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
-# repeated property ID the address in the form "127.201.0.1"
 class DNS_form(aetools.NProperty):
 	"""DNS form - the address in the form "apple.com" """
 	which = 'pdns'
@@ -124,7 +114,6 @@ IP_addresses = IP_address
 class LocalTalk_address(aetools.ComponentItem):
 	"""LocalTalk address - Addresses a device by its LocalTalk address """
 	want = 'clt '
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class network(aetools.NProperty):
 	"""network - the LocalTalk network number """
 	which = 'pnet'
@@ -143,12 +132,10 @@ LocalTalk_addresses = LocalTalk_address
 class SCSI_address(aetools.ComponentItem):
 	"""SCSI address - Addresses a SCSI device """
 	want = 'cscs'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class SCSI_bus(aetools.NProperty):
 	"""SCSI bus - the SCSI bus number """
 	which = 'pscb'
 	want = 'shor'
-# repeated property ID the SCSI ID
 class LUN(aetools.NProperty):
 	"""LUN - the SCSI logical unit number """
 	which = 'pslu'
@@ -159,15 +146,12 @@ SCSI_addresses = SCSI_address
 class Token_Ring_address(aetools.ComponentItem):
 	"""Token Ring address - Addresses a device or service via the Token Ring protocol """
 	want = 'ctok'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
-# repeated property ID the Token Ring ID
 
 Token_Ring_addresses = Token_Ring_address
 
 class USB_address(aetools.ComponentItem):
 	"""USB address - Addresses a device on the Universal Serial Bus """
 	want = 'cusb'
-# repeated property _3c_inheritance_3e_ inherits some of its properties from this class
 class name(aetools.NProperty):
 	"""name - the USB device name """
 	which = 'pnam'
@@ -332,39 +316,39 @@ _Enum_epro = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'cen ' : Ethernet_address,
-	'clt ' : LocalTalk_address,
-	'cip ' : IP_address,
-	'cusb' : USB_address,
-	'cadb' : ADB_address,
-	'cscs' : SCSI_address,
-	'cbus' : bus_slot,
-	'cdev' : device_specification,
+	'cat ' : AppleTalk_address,
+	'cadr' : address_specification,
 	'ctok' : Token_Ring_address,
 	'cfw ' : FireWire_address,
-	'cadr' : address_specification,
-	'cat ' : AppleTalk_address,
+	'cbus' : bus_slot,
+	'cscs' : SCSI_address,
+	'cadb' : ADB_address,
+	'cusb' : USB_address,
+	'cdev' : device_specification,
+	'clt ' : LocalTalk_address,
+	'cip ' : IP_address,
+	'cen ' : Ethernet_address,
 }
 
 _propdeclarations = {
-	'pnod' : node,
-	'pslu' : LUN,
-	'patm' : AppleTalk_machine,
-	'pdva' : device_address,
-	'pscb' : SCSI_bus,
-	'ppor' : port,
-	'pALL' : properties,
-	'ID  ' : ID,
-	'c@#^' : _3c_inheritance_3e_,
-	'pdvt' : device_type,
-	'pnet' : network,
-	'patz' : AppleTalk_zone,
-	'pnam' : name,
-	'pcon' : conduit,
-	'pprt' : protocol,
-	'patt' : AppleTalk_type,
-	'psoc' : socket,
 	'pdns' : DNS_form,
+	'ppor' : port,
+	'patt' : AppleTalk_type,
+	'pprt' : protocol,
+	'pcon' : conduit,
+	'patz' : AppleTalk_zone,
+	'pnet' : network,
+	'pdvt' : device_type,
+	'pnam' : name,
+	'c@#^' : _3c_inheritance_3e_,
+	'ID  ' : ID,
+	'pALL' : properties,
+	'pscb' : SCSI_bus,
+	'pdva' : device_address,
+	'patm' : AppleTalk_machine,
+	'psoc' : socket,
+	'pslu' : LUN,
+	'pnod' : node,
 }
 
 _compdeclarations = {
@@ -372,6 +356,6 @@ _compdeclarations = {
 
 _enumdeclarations = {
 	'econ' : _Enum_econ,
-	'epro' : _Enum_epro,
 	'edvt' : _Enum_edvt,
+	'epro' : _Enum_epro,
 }
