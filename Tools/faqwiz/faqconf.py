@@ -46,7 +46,7 @@ entries marked with * were changed within the last 7 days.)
 
 # Version -- don't change unless you edit faqwiz.py
 
-WIZVERSION = "0.8.1"			# FAQ Wizard version
+WIZVERSION = "0.8.2"			# FAQ Wizard version
 
 # This parameter is normally overwritten with a dynamic value
 
@@ -311,6 +311,8 @@ LAST_CHANGED = "Last changed on %c %Z"
 # "Compat" command prologue (this has no <BODY> tag)
 COMPAT = """
 <H1>The whole %(FAQNAME)s</H1>
+See also the <A HREF="%(FAQCGI)s?req=home">%(FAQNAME)s Wizard</A>.
+<P>
 """
 
 # Editing
