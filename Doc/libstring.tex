@@ -3,8 +3,11 @@
 \stmodindex{string}
 
 This module defines some constants useful for checking character
-classes, some exceptions, and some useful string functions.
-The constants are:
+classes and some useful string functions.  See the modules
+\code{regex} and \code{regsub} for string functions based on regular
+expressions.
+
+The constants defined in this module are are:
 
 \renewcommand{\indexsubitem}{(data in module string)}
 \begin{datadesc}{digits}
@@ -48,11 +51,7 @@ The constants are:
   undefined.
 \end{datadesc}
 
-The exceptions are:
-
-\renewcommand{\indexsubitem}{(exception in module string)}
-
-The functions are:
+The functions defined in this module are:
 
 \renewcommand{\indexsubitem}{(in module string)}
 
@@ -169,3 +168,12 @@ The string is never truncated.
 Pad a numeric string on the left with zero digits until the given
 width is reached.  Strings starting with a sign are handled correctly.
 \end{funcdesc}
+
+This module is implemented in Python.  Much of its functionality has
+been reimplemented in the built-in module \code{strop}.  However, you
+should \emph{never} import the latter module directly.  When
+\code{string} discovers that \code{strop} exists, it transparently
+replaces parts of itself with the implementation from \code{strop}.
+After initialization, there is \emph{no} overhead in using
+\code{string} instead of \code{strop}.
+\bimodindex{strop}
