@@ -1636,6 +1636,8 @@ form_getattr(f, name)
 	formobject *f;
 	char *name;
 {
+	if (strcmp(name, "window") == 0)
+		return newintobject(f->ob_form->window);
 	/* XXX check for data attr's: x, y etc. */
 	return findmethod(form_methods, (object *)f, name);
 }
