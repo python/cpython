@@ -155,14 +155,9 @@ PyMac_FixGUSIcd()
 }
 
 #ifdef __CFM68K__
-/*
-** There is no SpinCursor for cfm68k.
-*/
-SpinCursor(dummy)
-int dummy;
-{
-}
-#endif
+void SpinCursor(short x) { /* Dummy */ }
+#endif /* __CFM68K */
+
 #endif
 
 
@@ -282,12 +277,9 @@ static void
 scan_event_queue(flush)
 	int flush;
 {
-#if defined(__MWERKS__) && defined(__CFM68K__)
-	return; /* No GetEvQHdr yet */
-#else
 	register EvQElPtr q;
 	
-	q = (EvQElPtr) GetEvQHdr()->qHead;
+	q = (EvQElPtr) GetEventQueue()->qHead;
 	
 	for (; q; q = (EvQElPtr)q->qLink) {
 		if (q->evtQWhat == keyDown &&
@@ -299,7 +291,6 @@ scan_event_queue(flush)
 			break;
 		}
 	}
-#endif
 }
 
 int
@@ -398,7 +389,7 @@ PyMac_HandleEvent(evp)
 /*
 ** Yield the CPU to other tasks.
 */
-static
+static void
 PyMac_DoYield()
 {
 	EventRecord ev;
