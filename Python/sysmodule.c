@@ -1,5 +1,5 @@
 /***********************************************************
-Copyright 1991 by Stichting Mathematisch Centrum, Amsterdam, The
+Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
 Netherlands.
 
                         All Rights Reserved
@@ -101,7 +101,9 @@ sys_settrace(self, args)
 {
 	if (args == None)
 		args = NULL;
-	XINCREF(args);
+	else
+		INCREF(args);
+	XDECREF(sys_trace);
 	sys_trace = args;
 	INCREF(None);
 	return None;
@@ -114,7 +116,9 @@ sys_setprofile(self, args)
 {
 	if (args == None)
 		args = NULL;
-	XINCREF(args);
+	else
+		INCREF(args);
+	XDECREF(sys_profile);
 	sys_profile = args;
 	INCREF(None);
 	return None;
