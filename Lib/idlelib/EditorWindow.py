@@ -50,6 +50,7 @@ class EditorWindow:
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         if EditorWindow.help_url is None:
+            dochome =  os.path.join(sys.prefix, 'Doc', 'index.html')
             if sys.platform.count('linux'):
                 # look for html docs in a couple of standard places
                 pyver = 'python-docs-' + '%s.%s.%s' % sys.version_info[:3]
@@ -59,8 +60,11 @@ class EditorWindow:
                     basepath = '/usr/share/doc/'  # standard location
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
-            else:
-                dochome =  os.path.join(sys.prefix, 'Doc', 'index.html')
+            elif sys.platform.count('win') or sys.platform.count('nt'):
+                chmfile = os.path.join(sys.prefix, "Python%d%d.chm" % sys.version_info[:2])
+                if os.path.isfile(chmfile):
+                    dochome = chmfile
+                    print "dochome =", dochome
             dochome = os.path.normpath(dochome)
             if os.path.isfile(dochome):
                 EditorWindow.help_url = dochome
