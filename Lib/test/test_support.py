@@ -288,5 +288,5 @@ def run_doctest(module, verbosity=None):
     finally:
         sys.stdout = save_stdout
     if verbose:
-        print 'Ran %d doctests with zero failures' % (t,)
+        print 'doctest (%s) ... %d tests with zero failures' % (module.__name__, t)
     return f, t
