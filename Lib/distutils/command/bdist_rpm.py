@@ -295,14 +295,17 @@ class bdist_rpm (Command):
         # find out the names of the RPM files created; also, this assumes
         # that RPM creates exactly one source and one binary RPM.
         if not self.dry_run:
-            srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
-            rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
-            assert len(srpms) == 1, \
-                   "unexpected number of SRPM files found: %s" % srpms
-            assert len(rpms) == 1, \
-                   "unexpected number of RPM files found: %s" % rpms
-            self.move_file(srpms[0], self.dist_dir)
-            self.move_file(rpms[0], self.dist_dir)
+            if not self.binary_only:
+                srpms = glob.glob(os.path.join(rpm_dir['SRPMS'], "*.rpm"))
+                assert len(srpms) == 1, \
+                       "unexpected number of SRPM files found: %s" % srpms
+                self.move_file(srpms[0], self.dist_dir)
+
+            if not self.source_only:
+                rpms = glob.glob(os.path.join(rpm_dir['RPMS'], "*/*.rpm"))
+                assert len(rpms) == 1, \
+                       "unexpected number of RPM files found: %s" % rpms
+                self.move_file(rpms[0], self.dist_dir)
 
     # run()
 
