@@ -31,7 +31,7 @@ import regex, regsub, string
 
 qp = regex.compile('^content-transfer-encoding:[ \t]*quoted-printable',
 		   regex.casefold)
-base64 = regex.compile('^content-transfer-encoding:[ \t]*base64',
+base64_re = regex.compile('^content-transfer-encoding:[ \t]*base64',
 		       regex.casefold)
 mp = regex.compile('^content-type:[\000-\377]*multipart/[\000-\377]*boundary="?\\([^;"\n]*\\)',
 		   regex.casefold)
@@ -115,10 +115,11 @@ def mime_decode_header(line):
 		line = line[i + len(match[0]):]
 	return newline + line
 
-def unmimify_part(ifile, ofile):
+def unmimify_part(ifile, ofile, decode_base64 = 0):
 	'''Convert a quoted-printable part of a MIME mail message to 8bit.'''
 	multipart = None
 	quoted_printable = 0
+	is_base64 = 0
 	is_repl = 0
 	if ifile.boundary and ifile.boundary[:2] == QUOTE:
 		prefix = QUOTE
@@ -140,6 +141,9 @@ def unmimify_part(ifile, ofile):
 		if qp.match(line) >= 0:
 			quoted_printable = 1
 			continue	# skip this header
+		if decode_base64 and base64_re.match(line) >= 0:
+			is_base64 = 1
+			continue
 		ofile.write(pref + line)
 		if not prefix and repl.match(line) >= 0:
 			# we're dealing with a reply message
@@ -173,7 +177,7 @@ def unmimify_part(ifile, ofile):
 			if line == multipart + '\n':
 				ofile.write(pref + line)
 				nifile = File(ifile, multipart)
-				unmimify_part(nifile, ofile)
+				unmimify_part(nifile, ofile, decode_base64)
 				line = nifile.peek
 				continue
 			# not a boundary between parts
@@ -186,10 +190,13 @@ def unmimify_part(ifile, ofile):
 					newline = newline[len(QUOTE):]
 				line = line + newline
 			line = mime_decode(line)
+		if line and is_base64 and not pref:
+			import base64
+			line = base64.decodestring(line)
 		if line:
 			ofile.write(pref + line)
 
-def unmimify(infile, outfile):
+def unmimify(infile, outfile, decode_base64 = 0):
 	'''Convert quoted-printable parts of a MIME mail message to 8bit.'''
 	if type(infile) == type(''):
 		ifile = open(infile)
@@ -204,7 +211,7 @@ def unmimify(infile, outfile):
 	else:
 		ofile = outfile
 	nifile = File(ifile, None)
-	unmimify_part(nifile, ofile)
+	unmimify_part(nifile, ofile, decode_base64)
 	ofile.flush()
 
 mime_char = regex.compile('[=\240-\377]') # quote these chars in body
@@ -285,7 +292,7 @@ def mimify_part(ifile, ofile, is_mime):
 			has_cte = 1
 			if qp.match(line) >= 0:
 				is_qp = 1
-			elif base64.match(line) >= 0:
+			elif base64_re.match(line) >= 0:
 				is_base64 = 1
 		if mp.match(line) >= 0:
 			multipart = '--' + mp.group(1)
@@ -405,11 +412,13 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
 	import getopt
 	usage = 'Usage: mimify [-l len] -[ed] [infile [outfile]]'
 
-	opts, args = getopt.getopt(sys.argv[1:], 'l:ed')
+	decode_base64 = 0
+	opts, args = getopt.getopt(sys.argv[1:], 'l:edb')
 	if len(args) not in (0, 1, 2):
 		print usage
 		sys.exit(1)
-	if (('-e', '') in opts) == (('-d', '') in opts):
+	if (('-e', '') in opts) == (('-d', '') in opts) or \
+	   ((('-b', '') in opts) and (('-d', '') not in opts)):
 		print usage
 		sys.exit(1)
 	for o, a in opts:
@@ -423,9 +432,14 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
 			except:
 				print usage
 				sys.exit(1)
+		elif o == '-b':
+			decode_base64 = 1
 	if len(args) == 0:
-		encode(sys.stdin, sys.stdout)
+		encode_args = (sys.stdin, sys.stdout)
 	elif len(args) == 1:
-		encode(args[0], sys.stdout)
+		encode_args = (args[0], sys.stdout)
 	else:
-		encode(args[0], args[1])
+		encode_args = (args[0], args[1])
+	if decode_base64:
+		encode_args = encode_args + (decode_base64,)
+	apply(encode, encode_args)
