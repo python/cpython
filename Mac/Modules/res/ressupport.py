@@ -25,6 +25,13 @@ includestuff = includestuff + """
 #include <string.h>
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
+
+/* Function to dispose a resource, with a "normal" calling sequence */
+static void
+PyMac_AutoDisposeHandle(Handle h)
+{
+	DisposeHandle(h);
+}
 """
 
 finalstuff = finalstuff + """
@@ -65,7 +72,6 @@ OptResObj_Convert(v, p_itself)
 	PyErr_SetString(PyExc_TypeError, "Resource required");
 	return 0;
 }
-
 """
 
 initstuff = initstuff + """
@@ -120,7 +126,7 @@ ResObj_setattr(self, name, value)
 }
 """
 
-class ResDefiniton(GlobalObjectDefinition):
+class ResDefinition(GlobalObjectDefinition):
 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
@@ -145,8 +151,23 @@ class ResDefiniton(GlobalObjectDefinition):
 	def outputSetattr(self):
 		Output(setattrCode)
 
+	def outputStructMembers(self):
+		GlobalObjectDefinition.outputStructMembers(self)
+		Output("void (*ob_freeit)(%s ptr);", self.itselftype)
+		
+	def outputInitStructMembers(self):
+		GlobalObjectDefinition.outputInitStructMembers(self)
+		Output("it->ob_freeit = NULL;")
+		
+	def outputCleanupStructMembers(self):
+		Output("if (self->ob_freeit && self->ob_itself)")
+		OutLbrace()
+		Output("self->ob_freeit(self->ob_itself);")
+		OutRbrace()
+		Output("self->ob_itself = NULL;")
 
-resobject = ResDefiniton('Resource', 'ResObj', 'Handle')
+
+resobject = ResDefinition('Resource', 'ResObj', 'Handle')
 module.addobject(resobject)
 
 functions = []
