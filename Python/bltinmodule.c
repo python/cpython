@@ -399,7 +399,7 @@ complex_from_string(v)
 	PyObject *v;
 {
 	extern double strtod Py_PROTO((const char *, char **));
-	char a, *s, *start, *end;
+	char *s, *start, *end;
 	double x=0.0, y=0.0, z;
 	int got_re=0, got_im=0, done=0;
 	int digit_or_dot;
