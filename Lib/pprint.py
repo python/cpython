@@ -34,7 +34,8 @@ saferepr()
 
 """
 
-from types import DictType, ListType, TupleType
+from types import DictType, ListType, TupleType, StringType
+import sys
 
 try:
     from cStringIO import StringIO
@@ -95,7 +96,6 @@ class PrettyPrinter:
         if stream:
             self.__stream = stream
         else:
-            import sys
             self.__stream = sys.stdout
 
     def pprint(self, object):
@@ -187,12 +187,30 @@ class PrettyPrinter:
 
 # Return triple (repr_string, isreadable, isrecursive).
 
+_have_module = sys.modules.has_key
+
 def _safe_repr(object, context, maxlevels=None, level=0):
     level += 1
     typ = type(object)
-    if not (typ in (DictType, ListType, TupleType) and object):
+    if not (typ in (DictType, ListType, TupleType, StringType) and object):
         rep = `object`
         return rep, (rep and (rep[0] != '<')), 0
+    elif typ is StringType:
+        if not _have_module('locale'):
+            return `object`, 1, 0
+        if "'" in object and '"' not in object:
+            closure = '"'
+            quotes = {'"': '\\"'}
+        else:
+            closure = "'"
+            quotes = {"'": "\\'"}
+        sio = StringIO()
+        for char in object:
+            if char.isalpha():
+                sio.write(char)
+            else:
+                sio.write(quotes.get(char, `char`[1:-1]))
+        return closure + sio.getvalue() + closure, 1, 0
 
     if context.has_key(id(object)):
         return `_Recursion(object)`, 0, 1
