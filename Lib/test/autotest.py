@@ -46,6 +46,7 @@ from test_support import *
 
 # Exception raised when the test failed (not the same as in test_support)
 TestFailed = 'autotest.TestFailed'
+TestMissing = 'autotest.TestMissing'
 
 # defaults
 generate = 0
@@ -96,8 +97,7 @@ def do_one_test(t, outdir):
 		try:
 			fake_stdout = Compare(filename)
 		except IOError:
-			print 'Could not find output file for test:', t
-			return
+			raise TestMissing
 	try:
 		sys.stdout = fake_stdout
 		print t
@@ -139,12 +139,26 @@ def main():
 	else:
 	    import testall
 	    tests = testall.tests
+	failed = []
+	missing = []
 	for test in tests:
 		try:
 			do_one_test(test, outdir)
 		except TestFailed, msg:
-			print 'Failure of test:', test
 			traceback.print_exc()
-	print 'All tests OK.'
-
+			failed.append(test)
+		except TestMissing:
+			missing.append(test)
+	print '**********\n* Report *\n**********'
+	if not failed and not missing:
+		print 'All tests OK.'
+	if failed:
+		print 'Failed tests:'
+		for t in failed:
+			print '    ', t
+	if missing:
+		print 'Missing tests:'
+		for t in missing:
+			print '    ', t
+			
 main()
