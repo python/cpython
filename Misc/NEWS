@@ -12,6 +12,10 @@ What's New in Python 2.4 alpha 3?
 Core and builtins
 -----------------
 
+- SF patch #1005778.  Fix a seg fault if the list size changed while
+  calling list.index().  This could happen if a rich comparison function
+  modified the list.
+
 - The ``func_name`` (a.k.a. ``__name__``) attribute of user-defined
   functions is now writable.
 

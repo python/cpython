@@ -2186,9 +2186,7 @@ listindex(PyListObject *self, PyObject *args)
 		if (stop < 0)
 			stop = 0;
 	}
-	else if (stop > self->ob_size)
-		stop = self->ob_size;
-	for (i = start; i < stop; i++) {
+	for (i = start; i < stop && i < self->ob_size; i++) {
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0)
 			return PyInt_FromLong((long)i);
