@@ -33,39 +33,41 @@ class MyFile(File):
 		'r' -- get rid of entry
 		'c' -- create entry
 		'u' -- update entry
+
+		(and probably others :-)
 		"""
 		if not self.lseen:
 			self.getlocal()
 		if not self.rseen:
 			self.getremote()
 		if not self.eseen:
-			if not self.lseen:
-				if not self.rseen: return '0' # Never heard of
+			if not self.lsum:
+				if not self.rsum: return '0' # Never heard of
 				else:
 					return 'N' # New remotely
-			else: # self.lseen
-				if not self.rseen: return '?' # Local only
+			else: # self.lsum
+				if not self.rsum: return '?' # Local only
 				# Local and remote, but no entry
 				if self.lsum == self.rsum:
 					return 'c' # Restore entry only
 				else: return 'C' # Real conflict
 		else: # self.eseen
-			if not self.lseen:
-				if self.eremoved:
-					if self.rseen: return 'R' # Removed
+			if not self.lsum:
+				if self.edeleted:
+					if self.rsum: return 'R' # Removed
 					else: return 'r' # Get rid of entry
-				else: # not self.eremoved
-					if self.rseen:
+				else: # not self.edeleted
+					if self.rsum:
 						print "warning:",
 						print self.file,
 						print "was lost"
 						return 'U'
 					else: return 'r' # Get rid of entry
-			else: # self.lseen
-				if not self.rseen:
+			else: # self.lsum
+				if not self.rsum:
 					if self.enew: return 'A' # New locally
 					else: return 'D' # Deleted remotely
-				else: # self.rseen
+				else: # self.rsum
 					if self.enew:
 						if self.lsum == self.rsum:
 							return 'u'
