@@ -216,7 +216,12 @@ list_dealloc(op)
 {
 	int i;
 	if (op->ob_item != NULL) {
-		for (i = 0; i < op->ob_size; i++) {
+		/* Do it backwards, for Christian Tismer.
+		   There's a simple test case where somehow this reduces
+		   thrashing when a *very* large list is created and
+		   immediately deleted. */
+		i = op->ob_size;
+		while (--i >= 0) {
 			Py_XDECREF(op->ob_item[i]);
 		}
 		free((ANY *)op->ob_item);
