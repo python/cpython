@@ -389,7 +389,9 @@ PyObject *a, *el;
 {
 	register char *s, *end;
 	register char c;
-	if (!PyString_Check(el) || PyString_Size(el) != 1) {
+	if (!PyString_Check(el))
+		return PyUnicode_Contains(a, el);
+	if (PyString_Size(el) != 1) {
 		PyErr_SetString(PyExc_TypeError,
 				"string member test needs char left operand");
 		return -1;
@@ -1575,7 +1577,7 @@ string_replace(self, args)
 	else if (PyObject_AsCharBuffer(replobj, &repl, &repl_len))
 		return NULL;
 
-	if (repl_len <= 0) {
+	if (sub_len <= 0) {
 		PyErr_SetString(PyExc_ValueError, "empty replacement string");
 		return NULL;
 	}
