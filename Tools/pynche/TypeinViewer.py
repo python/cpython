@@ -127,3 +127,6 @@ class TypeinViewer:
         self.__x.insert(0, redstr)
         self.__y.insert(0, greenstr)
         self.__z.insert(0, bluestr)
+
+    def hexp(self):
+        return self.__hexp.get()
