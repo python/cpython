@@ -70,8 +70,6 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	PyObject *iterable = NULL;
-
 	return make_new_set(type, NULL);
 }
 
@@ -781,11 +779,12 @@ If the element is not a member, raise a KeyError.");
 static PyObject *
 set_discard(PySetObject *so, PyObject *item)
 {
-	if (PyDict_DelItem(so->data, item) == -1)
+	if (PyDict_DelItem(so->data, item) == -1) {
 		if  (PyErr_ExceptionMatches(PyExc_KeyError))
 			PyErr_Clear();
 		else
 			return NULL;
+	}
 	Py_INCREF(Py_None);
 	return Py_None;
 }
