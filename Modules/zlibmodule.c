@@ -870,7 +870,8 @@ PyInit_zlib()
 			   (PyObject*)NULL,PYTHON_API_VERSION);
         d = PyModule_GetDict(m);
         ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
-        PyDict_SetItemString(d, "error", ZlibError);
+        if (ZlibError != NULL)
+                PyDict_SetItemString(d, "error", ZlibError);
 
 	insint(d, "MAX_WBITS", MAX_WBITS);
 	insint(d, "DEFLATED", DEFLATED);
@@ -888,6 +889,8 @@ PyInit_zlib()
 	insint(d, "Z_FULL_FLUSH", Z_FULL_FLUSH);
 
 	ver = PyString_FromString(ZLIB_VERSION);
-	PyDict_SetItemString(d, "ZLIB_VERSION", ver);
-	Py_DECREF(ver);
+        if (ver != NULL) {
+                PyDict_SetItemString(d, "ZLIB_VERSION", ver);
+                Py_DECREF(ver);
+        }
 }
