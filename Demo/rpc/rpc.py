@@ -6,6 +6,8 @@
 # XXX The UDP version of the protocol resends requests when it does
 # XXX not receive a timely reply -- use only for idempotent calls!
 
+# XXX There is no provision for call timeout on TCP connections
+
 import xdr
 import socket
 import os
@@ -160,20 +162,21 @@ def make_auth_unix_default():
 		gid = getgid()
 	except ImportError:
 		uid = gid = 0
-	return make_auth_unix(0, socket.gethostname(), uid, gid, [])
+	import time
+	return make_auth_unix(time.time(), socket.gethostname(), uid, gid, [])
 
 
 # Common base class for clients
 
 class Client:
 
-	def init(self, host, prog, vers, port, type):
+	def init(self, host, prog, vers, port):
 		self.host = host
 		self.prog = prog
 		self.vers = vers
 		self.port = port
-		self.type = type
-		self.sock = socket.socket(socket.AF_INET, type)
+		self.makesocket() # Assigns to self.sock
+		self.bindsocket()
 		self.sock.connect((host, port))
 		self.lastxid = 0
 		self.addpackers()
@@ -181,29 +184,55 @@ class Client:
 		self.verf = None
 		return self
 
-	def Null(self):			# Procedure 0 is always like this
-		self.start_call(0)
-		self.do_call(0)
-		self.end_call()
-
 	def close(self):
 		self.sock.close()
 
-	# Functions that may be overridden by specific derived classes
+	def makesocket(self):
+		# This MUST be overridden
+		raise RuntimeError, 'makesocket not defined'
+
+	def bindsocket(self):
+		# Override this to bind to a different port (e.g. reserved)
+		self.sock.bind(('', 0))
 
 	def addpackers(self):
+		# Override this to use derived classes from Packer/Unpacker
 		self.packer = Packer().init()
 		self.unpacker = Unpacker().init('')
 
-	def mkcred(self, proc):
+	def start_call(self, proc):
+		# Don't override this
+		self.lastxid = xid = self.lastxid + 1
+		cred = self.mkcred()
+		verf = self.mkverf()
+		p = self.packer
+		p.reset()
+		p.pack_callheader(xid, self.prog, self.vers, proc, cred, verf)
+
+	def do_call(self, *rest):
+		# This MUST be overridden
+		raise RuntimeError, 'do_call not defined'
+
+	def end_call(self):
+		# Don't override this
+		self.unpacker.done()
+
+	def mkcred(self):
+		# Override this to use more powerful credentials
 		if self.cred == None:
 			self.cred = (AUTH_NULL, make_auth_null())
 		return self.cred
 
-	def mkverf(self, proc):
+	def mkverf(self):
+		# Override this to use a more powerful verifier
 		if self.verf == None:
 			self.verf = (AUTH_NULL, make_auth_null())
 		return self.verf
+
+	def Null(self):			# Procedure 0 is always like this
+		self.start_call(0)
+		self.do_call(0)
+		self.end_call()
 
 
 # Record-Marking standard support
@@ -243,18 +272,38 @@ def recvrecord(sock):
 	return record
 
 
+# Try to bind to a reserved port (must be root)
+
+last_resv_port_tried = None
+def bindresvport(sock, host):
+	global last_resv_port_tried
+	FIRST, LAST = 600, 1024 # Range of ports to try
+	if last_resv_port_tried == None:
+		import os
+		last_resv_port_tried = FIRST + os.getpid() % (LAST-FIRST)
+	for i in range(last_resv_port_tried, LAST) + \
+		  range(FIRST, last_resv_port_tried):
+		last_resv_port_tried = i
+		try:
+			sock.bind((host, i))
+			return last_resv_port_tried
+		except socket.error, (errno, msg):
+			if errno <> 114:
+				raise socket.error, (errno, msg)
+	raise RuntimeError, 'can\'t assign reserved port'
+
+
 # Raw TCP-based client
 
 class RawTCPClient(Client):
 
-	def init(self, host, prog, vers, port):
-		return Client.init(self, host, prog, vers, port, \
-			socket.SOCK_STREAM)
+	def makesocket(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 	def start_call(self, proc):
 		self.lastxid = xid = self.lastxid + 1
-		cred = self.mkcred(proc)
-		verf = self.mkverf(proc)
+		cred = self.mkcred()
+		verf = self.mkverf()
 		p = self.packer
 		p.reset()
 		p.pack_callheader(xid, self.prog, self.vers, proc, cred, verf)
@@ -280,14 +329,13 @@ class RawTCPClient(Client):
 
 class RawUDPClient(Client):
 
-	def init(self, host, prog, vers, port):
-		return Client.init(self, host, prog, vers, port, \
-			socket.SOCK_DGRAM)
+	def makesocket(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 	def start_call(self, proc):
 		self.lastxid = xid = self.lastxid + 1
-		cred = self.mkcred(proc)
-		verf = self.mkverf(proc)
+		cred = self.mkcred()
+		verf = self.mkverf()
 		p = self.packer
 		p.reset()
 		p.pack_callheader(xid, self.prog, self.vers, proc, cred, verf)
@@ -316,7 +364,7 @@ class RawUDPClient(Client):
 				count = count - 1
 				if count < 0: raise RuntimeError, 'timeout'
 				if timeout < 25: timeout = timeout *2
-				print 'RESEND', timeout, count
+##				print 'RESEND', timeout, count
 				self.sock.send(call)
 				continue
 			reply = self.sock.recv(bufsize)
@@ -324,7 +372,7 @@ class RawUDPClient(Client):
 			u.reset(reply)
 			xid, verf = u.unpack_replyheader()
 			if xid <> self.lastxid:
-				print 'BAD xid'
+##				print 'BAD xid'
 				continue
 			break
 
@@ -334,9 +382,14 @@ class RawUDPClient(Client):
 
 # Port mapper interface
 
-PMAP_PORT = 111
+# XXX CALLIT is not implemented
+
+# Program number, version and (fixed!) port number
 PMAP_PROG = 100000
 PMAP_VERS = 2
+PMAP_PORT = 111
+
+# Procedure numbers
 PMAPPROC_NULL = 0			# (void) -> void
 PMAPPROC_SET = 1			# (mapping) -> bool
 PMAPPROC_UNSET = 2			# (mapping) -> bool
@@ -439,9 +492,9 @@ class TCPClient(RawTCPClient):
 	def init(self, host, prog, vers):
 		pmap = TCPPortMapperClient().init(host)
 		port = pmap.Getport((prog, vers, IPPROTO_TCP, 0))
+		pmap.close()
 		if port == 0:
 			raise RuntimeError, 'program not registered'
-		pmap.close()
 		return RawTCPClient.init(self, host, prog, vers, port)
 
 
@@ -451,45 +504,37 @@ class UDPClient(RawUDPClient):
 		pmap = UDPPortMapperClient().init(host)
 		port = pmap.Getport((prog, vers, IPPROTO_UDP, 0))
 		pmap.close()
+		if port == 0:
+			raise RuntimeError, 'program not registered'
 		return RawUDPClient.init(self, host, prog, vers, port)
 
 
 # Server classes
 
+# These are not symmetric to the Client classes
+# XXX No attempt is made to provide authorization hooks yet
+
 class Server:
 
-	def init(self, host, prog, vers, port, type):
+	def init(self, host, prog, vers, port):
 		self.host = host # Should normally be '' for default interface
 		self.prog = prog
 		self.vers = vers
 		self.port = port # Should normally be 0 for random port
-		self.type = type # SOCK_STREAM or SOCK_DGRAM
-		self.sock = socket.socket(socket.AF_INET, type)
-		self.sock.bind((host, port))
+		self.makesocket() # Assigns to self.sock and self.prot
+		self.bindsocket()
 		self.host, self.port = self.sock.getsockname()
 		self.addpackers()
 		return self
 
 	def register(self):
-		if self.type == socket.SOCK_STREAM:
-			type = IPPROTO_TCP
-		elif self.type == socket.SOCK_DGRAM:
-			type = IPPROTO_UDP
-		else:
-			raise ValueError, 'unknown protocol type'
-		mapping = self.prog, self.vers, type, self.port
+		mapping = self.prog, self.vers, self.prot, self.port
 		p = TCPPortMapperClient().init(self.host)
 		if not p.Set(mapping):
 			raise RuntimeError, 'register failed'
 
 	def unregister(self):
-		if self.type == socket.SOCK_STREAM:
-			type = IPPROTO_TCP
-		elif self.type == socket.SOCK_DGRAM:
-			type = IPPROTO_UDP
-		else:
-			raise ValueError, 'unknown protocol type'
-		mapping = self.prog, self.vers, type, self.port
+		mapping = self.prog, self.vers, self.prot, self.port
 		p = TCPPortMapperClient().init(self.host)
 		if not p.Unset(mapping):
 			raise RuntimeError, 'unregister failed'
@@ -555,18 +600,25 @@ class Server:
 	def handle_0(self): # Handle NULL message
 		self.turn_around()
 
-	# Functions that may be overridden by specific derived classes
+	def makesocket(self):
+		# This MUST be overridden
+		raise RuntimeError, 'makesocket not defined'
+
+	def bindsocket(self):
+		# Override this to bind to a different port (e.g. reserved)
+		self.sock.bind((self.host, self.port))
 
 	def addpackers(self):
+		# Override this to use derived classes from Packer/Unpacker
 		self.packer = Packer().init()
 		self.unpacker = Unpacker().init('')
 
 
 class TCPServer(Server):
 
-	def init(self, host, prog, vers, port):
-		return Server.init(self, host, prog, vers, port, \
-			socket.SOCK_STREAM)
+	def makesocket(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.prot = IPPROTO_TCP
 
 	def loop(self):
 		self.sock.listen(0)
@@ -587,13 +639,13 @@ class TCPServer(Server):
 
 class UDPServer(Server):
 
-	def init(self, host, prog, vers, port):
-		return Server.init(self, host, prog, vers, port, \
-			socket.SOCK_DGRAM)
+	def makesocket(self):
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		self.prot = IPPROTO_UDP
 
 	def loop(self):
 		while 1:
-			session()
+			self.session()
 
 	def session(self):
 		call, host_port = self.sock.recvfrom(8192)
@@ -629,7 +681,7 @@ def test():
 
 def testsvr():
 	# Simple test class -- proc 1 doubles its string argument as reply
-	class S(TCPServer):
+	class S(UDPServer):
 		def handle_1(self):
 			arg = self.unpacker.unpack_string()
 			self.turn_around()
@@ -655,7 +707,7 @@ def testclt():
 	if sys.argv[1:]: host = sys.argv[1]
 	else: host = ''
 	# Client for above server
-	class C(TCPClient):
+	class C(UDPClient):
 		def call_1(self, arg):
 			self.start_call(1)
 			self.packer.pack_string(arg)
