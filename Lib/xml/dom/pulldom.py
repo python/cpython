@@ -184,8 +184,7 @@ class DOMEventStream:
         while not self.pulldom.firstEvent[1]:
             buf = self.stream.read(self.bufsize)
             if not buf:
-                #FIXME: why doesn't Expat close work?
-                #self.parser.close()
+                self.parser.close()
                 return None
             self.parser.feed(buf)
         rc = self.pulldom.firstEvent[1][0]
