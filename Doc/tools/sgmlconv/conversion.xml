@@ -560,6 +560,55 @@
     <child name="entry"/>
     </macro>
 
+  <environment name="tablev" outputname="table">
+    <attribute name="cols">4</attribute>
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <environment name="longtablev" outputname="table">
+    <attribute name="cols">4</attribute>
+    <attribute name="colspec"/>
+    <attribute name="style"/>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </environment>
+  <macro name="linev" outputname="row">
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    <text>
+         </text>
+    <child name="entry"/>
+    </macro>
+
   <!-- These are handled at a later translation stage, at least for now. -->
   <macro name="Cpp" outputname="">
     <text>C++</text>
@@ -677,6 +726,9 @@
     <content/>
     </macro>
   <macro name="kbd" outputname="keysym">
+    <content/>
+    </macro>
+  <macro name="mailheader">
     <content/>
     </macro>
   <macro name="makevar">
