@@ -502,6 +502,8 @@ class AppBuilder(BundleBuilder):
         for item in PYTHONFRAMEWORKGOODIES:
             src = pathjoin(frameworkpath, item)
             dst = pathjoin(destbase, item)
+            if item == "Python":
+                self.binaries.append(dst)
             self.files.append((src, dst))
 
     def addPythonModules(self):
@@ -548,8 +550,8 @@ class AppBuilder(BundleBuilder):
             for relpath in self.binaries:
                 self.message("Stripping %s" % relpath, 2)
                 abspath = pathjoin(self.bundlepath, relpath)
-                assert not os.path.islink(abspath)
-                rv = os.system("%s -S \"%s\"" % (STRIP_EXEC, abspath))
+                if not os.path.islink(abspath):
+                    rv = os.system("%s -S \"%s\"" % (STRIP_EXEC, abspath))
 
     def findDependencies(self):
         self.message("Finding module dependencies", 1)
