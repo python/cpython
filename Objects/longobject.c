@@ -1663,7 +1663,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	 */
 
 	/* 1. Allocate result space. */
-	ret = _PyLong_New(asize + bsize);
+	ret = _PyLong_New(asize + bsize + 1);
 	if (ret == NULL) goto fail;
 #ifdef Py_DEBUG
 	/* Fill with trash, to catch reference to uninitialized digits. */
@@ -1727,7 +1727,15 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	Py_DECREF(t2);
 	if (t3 == NULL) goto fail;
 
-	/* Add t3. */
+	/* Add t3.  Caution:  t3 can spill one bit beyond the allocated
+	 * result space; it's t3-al*bl-ah*bh that always fits.  We have
+	 * to arrange to ignore the hight bit.
+	 */
+	if (t3->ob_size > i) {
+		assert(t3->ob_size == i+1);	/* just one digit over */
+		assert(t3->ob_digit[t3->ob_size - 1] == 1); /* & just one bit */
+		--t3->ob_size;	/* ignore the overflow bit */
+	}
 	(void)v_iadd(ret->ob_digit + shift, i, t3->ob_digit, t3->ob_size);
 	Py_DECREF(t3);
 
@@ -1761,7 +1769,7 @@ long_mul(PyLongObject *v, PyLongObject *w)
 		return Py_NotImplemented;
 	}
 
-#if 0
+#if 1
 	if (Py_GETENV("KARAT") != NULL)
 		z = k_mul(a, b);
 	else
