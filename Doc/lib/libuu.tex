@@ -7,7 +7,7 @@
 
 
 This module encodes and decodes files in uuencode format, allowing
-arbitrary binary data to be transferred over ascii-only connections.
+arbitrary binary data to be transferred over ASCII-only connections.
 Wherever a file argument is expected, the methods accept a file-like
 object.  For backwards compatibility, a string containing a pathname
 is also accepted, and the corresponding file will be opened for
@@ -24,19 +24,28 @@ Jansen.
 The \module{uu} module defines the following functions:
 
 \begin{funcdesc}{encode}{in_file, out_file\optional{, name\optional{, mode}}}
-Uuencode file \var{in_file} into file \var{out_file}.  The uuencoded
-file will have the header specifying \var{name} and \var{mode} as the
-defaults for the results of decoding the file. The default defaults
-are taken from \var{in_file}, or \code{'-'} and \code{0666} respectively. 
+  Uuencode file \var{in_file} into file \var{out_file}.  The uuencoded
+  file will have the header specifying \var{name} and \var{mode} as
+  the defaults for the results of decoding the file. The default
+  defaults are taken from \var{in_file}, or \code{'-'} and \code{0666}
+  respectively.
 \end{funcdesc}
 
 \begin{funcdesc}{decode}{in_file\optional{, out_file\optional{, mode}}}
-This call decodes uuencoded file \var{in_file} placing the result on
-file \var{out_file}. If \var{out_file} is a pathname, \var{mode} is
-used to set the permission bits if the file must be created. Defaults
-for \var{out_file} and \var{mode} are taken from the uuencode header.
+  This call decodes uuencoded file \var{in_file} placing the result on
+  file \var{out_file}. If \var{out_file} is a pathname, \var{mode} is
+  used to set the permission bits if the file must be
+  created. Defaults for \var{out_file} and \var{mode} are taken from
+  the uuencode header.  However, if the file specified in the header
+  already exists, a \exception{uu.Error} is raised.
 \end{funcdesc}
 
+\begin{excclassdesc}{Error}{}
+  Subclass of \exception{Exception}, this can be raised by
+  \function{uu.decode()} under various situations, such as described
+  above, but also including a badly formated header, or truncated
+  input file.
+\end{excclassdesc}
 
 \begin{seealso}
   \seemodule{binascii}{Support module containing \ASCII-to-binary
