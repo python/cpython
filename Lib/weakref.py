@@ -20,11 +20,14 @@ from _weakref import \
 ProxyTypes = (ProxyType, CallableProxyType)
 
 
-def mapping(dict=None):
-    return WeakDictionary(dict)
+def mapping(dict=None,weakkeys=0):
+    if weakkeys:
+        return WeakKeyDictionary(dict)
+    else:
+        return WeakValueDictionary(dict)
 
 
-class WeakDictionary(UserDict.UserDict):
+class WeakValueDictionary(UserDict.UserDict):
 
     # We inherit the constructor without worrying about the input
     # dictionary; since it uses our .update() method, we get the right
@@ -111,6 +114,60 @@ class WeakDictionary(UserDict.UserDict):
                 L.append(o)
         return L
 
+
+class WeakKeyDictionary(UserDict.UserDict):
+
+    def __init__(self, dict=None):
+        self.data = {}
+        if dict is not None: self.update(dict)
+        def remove(k, data=self.data):
+            del data[k]
+        self._remove = remove
+
+    def __getitem__(self, key):
+        return self.data[ref(key)]
+
+    def __repr__(self):
+        return "<WeakKeyDictionary at %s>" % id(self)
+
+    def __setitem__(self, key, value):
+        self.data[ref(key, self._remove)] = value
+
+    def copy(self):
+        new = WeakKeyDictionary()
+        for key, value in self.data.items():
+            o = key()
+            if o is not None:
+                new[o] = value
+
+    def get(self, key, default):
+        return self.data.get(ref(key),default)
+
+    def items(self):
+        L = []
+        for key, value in self.data.items():
+            o = key()
+            if o is not None:
+                L.append((o, value))
+        return L
+
+    def popitem(self):
+        while 1:
+            key, value = self.data.popitem()
+            o = key()
+            if o is not None:
+                return o, value
+
+    def setdefault(self, key, default):
+        return self.data.setdefault(ref(key, self._remove),default)
+
+    def update(self, dict):
+        d = self.data
+        L = []
+        for key, value in dict.items():
+            L.append(ref(key, self._remove), value)
+        for key, r in L:
+            d[key] = r
 
 # no longer needed
 del UserDict

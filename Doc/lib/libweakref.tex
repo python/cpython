@@ -3,6 +3,8 @@
 
 \declaremodule{extension}{weakref}
 \moduleauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+\moduleauthor{Neil Schemenauer}{nas@arctrix.com}
+\moduleauthor{Martin von L\o"wis}{martin@loewis.home.cs.tu-berlin.de}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
 \versionadded{2.1}
@@ -18,22 +20,12 @@ include class instances and dictionaries.  Extension types can easily
 be made to support weak references; see section \ref{weakref-extension},
 ``Weak References in Extension Types,'' for more information.
 
-
-\strong{Warning:}
-The weak dictionaries provided in the current implementation and
-described below are subject to change.  They are included to solicit
-feedback and usage experience, and may be changed or removed in the
-final version.
-
 \strong{Warning:}
 The desired semantics of weak-reference proxy objects are not
 completely clear; it is very difficult to create proxies which behave
 exactly like the type of the referent.  The details of these objects
 are likely to change to some degree before the final release as
 experience reports become available.
-
-Please send specific feedback on this module to Fred Drake at
-\email{fdrake@acm.org}.
 
 
 \begin{funcdesc}{ref}{object\optional{, callback}}
@@ -53,15 +45,36 @@ Please send specific feedback on this module to Fred Drake at
   error output, but cannot be propagated; they are handled in exactly
   the same way as exceptions raised from an object's
   \method{__del__()} method.
+  
+  Weak references are hashable if the \var{object} is hashable.  They
+  will maintain their hash value even after the \var{object} was
+  deleted.  If \function{hash()} is called the first time only after
+  the \var{object} was deleted, the call will raise
+  \exception{TypeError}.
+  
+  Weak references support test for equality, but not ordering.  If the
+  \var{object} is still alive, to references are equal if the objects
+  are equal (regardless of the \var{callback}).  If the \var{object}
+  has been deleted, they are equal iff they are identical.
+
 \end{funcdesc}
 
-\begin{funcdesc}{mapping}{\optional{dict}}
+\begin{funcdesc}{mapping}{\optional{dict\optional{, weakkeys=0}}}
   Return a weak dictionary.  If \var{dict} is given and not
   \code{None}, the new dictionary will contain the items contained in
   \var{dict}.  The values from \var{dict} must be weakly referencable;
   if any values which would be inserted into the new mapping are not
   weakly referencable, \exception{TypeError} will be raised and the
   new mapping will be empty.
+
+  If the \var{weakkeys} argument is not given or zero, the values in
+  the dictionary are weak. That means the entries in the dictionary
+  will be discarded when no strong reference to the value exists
+  anymore.
+
+  If the \var{weakkeys} argument is nonzero, the keys in the
+  dictionary are weak, i.e. the entry in the dictionary is discarded
+  when the last strong reference to the key is discarded.
 \end{funcdesc}
 
 \begin{funcdesc}{proxy}{object\optional{, callback}}
@@ -87,9 +100,16 @@ Please send specific feedback on this module to Fred Drake at
   \var{object}.
 \end{funcdesc}
 
-\begin{classdesc}{WeakDictionary}{\optional{dict}}
-  The class of the mapping objects returned by \function{mapping()}.
-  This can be used for subclassing the implementation if needed.
+\begin{classdesc}{WeakKeyDictionary}{\optional{dict}}
+  The class of the mapping objects returned by \function{mapping()}
+  when \var{weakkeys} is true.  This can be used for subclassing the
+  implementation if needed.
+\end{classdesc}
+
+\begin{classdesc}{WeakValueDictionary}{\optional{dict}}
+  The class of the mapping objects returned by \function{mapping()}
+  when \var{weakkeys} if false.  This can be used for subclassing the
+  implementation if needed.
 \end{classdesc}
 
 \begin{datadesc}{ReferenceType}
@@ -187,8 +207,8 @@ For example, the instance type is defined with the following structure:
 typedef struct {
     PyObject_HEAD
     PyClassObject *in_class;       /* The class object */
-    PyObject	  *in_dict;        /* A dictionary */
-    PyObject	  *in_weakreflist; /* List of weak references */
+    PyObject      *in_dict;        /* A dictionary */
+    PyObject      *in_weakreflist; /* List of weak references */
 } PyInstanceObject;
 \end{verbatim}
 

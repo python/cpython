@@ -153,6 +153,24 @@ dict.clear()
 print "weak dict test complete"
 
 print
+print "Weak Keyed Dictionaries"
+
+dict = weakref.mapping(weakkeys=1)
+objects = map(Object, range(10))
+for o in objects:
+    dict[o] = o.arg
+print "objects are stored in weak dict"
+for o in objects:
+    verify(weakref.getweakrefcount(o) == 1,
+           "wrong number of weak references to %r!" % o)
+    verify(o.arg is dict[o],
+           "wrong object returned by weak dict!")
+del objects,o
+verify(len(dict)==0, "deleting the keys did not clear the dictionary")
+print "weak key dict test complete"
+
+
+print
 print "Non-callable Proxy References"
 print "XXX -- tests not written!"
 
