@@ -327,8 +327,8 @@ AC_SUBST(AR)
 AC_CHECK_PROGS(AR, ar aal, ar)
 
 case $MACHDEP in
-bsdos*)
-	# install -d does not work on BSDI
+bsdos*|hp*|HP*)
+	# install -d does not work on BSDI or HP-UX
 	if test -z "$INSTALL"
 	then
 		INSTALL="${srcdir}/install-sh -c"
