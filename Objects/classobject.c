@@ -111,59 +111,59 @@ typeobject Classtype = {
 
 typedef struct {
 	OB_HEAD
-	classobject	*cm_class;	/* The class object */
-	object		*cm_attr;	/* A dictionary */
+	classobject	*in_class;	/* The class object */
+	object		*in_attr;	/* A dictionary */
 } instanceobject;
 
 object *
 newinstanceobject(class)
 	register object *class;
 {
-	register instanceobject *cm;
+	register instanceobject *inst;
 	if (!is_classobject(class)) {
 		err_badcall();
 		return NULL;
 	}
-	cm = NEWOBJ(instanceobject, &Instancetype);
-	if (cm == NULL)
+	inst = NEWOBJ(instanceobject, &Instancetype);
+	if (inst == NULL)
 		return NULL;
 	INCREF(class);
-	cm->cm_class = (classobject *)class;
-	cm->cm_attr = newdictobject();
-	if (cm->cm_attr == NULL) {
-		DECREF(cm);
+	inst->in_class = (classobject *)class;
+	inst->in_attr = newdictobject();
+	if (inst->in_attr == NULL) {
+		DECREF(inst);
 		return NULL;
 	}
-	return (object *)cm;
+	return (object *)inst;
 }
 
 /* Instance methods */
 
 static void
-instance_dealloc(cm)
-	register instanceobject *cm;
+instance_dealloc(inst)
+	register instanceobject *inst;
 {
-	DECREF(cm->cm_class);
-	if (cm->cm_attr != NULL)
-		DECREF(cm->cm_attr);
-	free((ANY *)cm);
+	DECREF(inst->in_class);
+	if (inst->in_attr != NULL)
+		DECREF(inst->in_attr);
+	free((ANY *)inst);
 }
 
 static object *
-instance_getattr(cm, name)
-	register instanceobject *cm;
+instance_getattr(inst, name)
+	register instanceobject *inst;
 	register char *name;
 {
-	register object *v = dictlookup(cm->cm_attr, name);
+	register object *v = dictlookup(inst->in_attr, name);
 	if (v != NULL) {
 		INCREF(v);
 		return v;
 	}
-	v = class_getattr(cm->cm_class, name);
+	v = class_getattr(inst->in_class, name);
 	if (v == NULL)
 		return v; /* class_getattr() has set the error */
 	if (is_funcobject(v)) {
-		object *w = newclassmethodobject(v, (object *)cm);
+		object *w = newinstancemethodobject(v, (object *)inst);
 		DECREF(v);
 		return w;
 	}
@@ -173,15 +173,15 @@ instance_getattr(cm, name)
 }
 
 static int
-instance_setattr(cm, name, v)
-	instanceobject *cm;
+instance_setattr(inst, name, v)
+	instanceobject *inst;
 	char *name;
 	object *v;
 {
 	if (v == NULL)
-		return dictremove(cm->cm_attr, name);
+		return dictremove(inst->in_attr, name);
 	else
-		return dictinsert(cm->cm_attr, name, v);
+		return dictinsert(inst->in_attr, name, v);
 }
 
 typeobject Instancetype = {
@@ -207,88 +207,88 @@ typeobject Instancetype = {
 
 typedef struct {
 	OB_HEAD
-	object	*cm_func;	/* The method function */
-	object	*cm_self;	/* The object to which this applies */
-} classmethodobject;
+	object	*im_func;	/* The method function */
+	object	*im_self;	/* The object to which this applies */
+} instancemethodobject;
 
 object *
-newclassmethodobject(func, self)
+newinstancemethodobject(func, self)
 	object *func;
 	object *self;
 {
-	register classmethodobject *cm;
+	register instancemethodobject *im;
 	if (!is_funcobject(func)) {
 		err_badcall();
 		return NULL;
 	}
-	cm = NEWOBJ(classmethodobject, &Classmethodtype);
-	if (cm == NULL)
+	im = NEWOBJ(instancemethodobject, &Instancemethodtype);
+	if (im == NULL)
 		return NULL;
 	INCREF(func);
-	cm->cm_func = func;
+	im->im_func = func;
 	INCREF(self);
-	cm->cm_self = self;
-	return (object *)cm;
+	im->im_self = self;
+	return (object *)im;
 }
 
 object *
-classmethodgetfunc(cm)
-	register object *cm;
+instancemethodgetfunc(im)
+	register object *im;
 {
-	if (!is_classmethodobject(cm)) {
+	if (!is_instancemethodobject(im)) {
 		err_badcall();
 		return NULL;
 	}
-	return ((classmethodobject *)cm)->cm_func;
+	return ((instancemethodobject *)im)->im_func;
 }
 
 object *
-classmethodgetself(cm)
-	register object *cm;
+instancemethodgetself(im)
+	register object *im;
 {
-	if (!is_classmethodobject(cm)) {
+	if (!is_instancemethodobject(im)) {
 		err_badcall();
 		return NULL;
 	}
-	return ((classmethodobject *)cm)->cm_self;
+	return ((instancemethodobject *)im)->im_self;
 }
 
 /* Class method methods */
 
-#define OFF(x) offsetof(classmethodobject, x)
+#define OFF(x) offsetof(instancemethodobject, x)
 
-static struct memberlist classmethod_memberlist[] = {
-	{"cm_func",	T_OBJECT,	OFF(cm_func)},
-	{"cm_self",	T_OBJECT,	OFF(cm_self)},
+static struct memberlist instancemethod_memberlist[] = {
+	{"im_func",	T_OBJECT,	OFF(im_func)},
+	{"im_self",	T_OBJECT,	OFF(im_self)},
 	{NULL}	/* Sentinel */
 };
 
 static object *
-classmethod_getattr(cm, name)
-	register classmethodobject *cm;
+instancemethod_getattr(im, name)
+	register instancemethodobject *im;
 	char *name;
 {
-	return getmember((char *)cm, classmethod_memberlist, name);
+	return getmember((char *)im, instancemethod_memberlist, name);
 }
 
 static void
-classmethod_dealloc(cm)
-	register classmethodobject *cm;
+instancemethod_dealloc(im)
+	register instancemethodobject *im;
 {
-	DECREF(cm->cm_func);
-	DECREF(cm->cm_self);
-	free((ANY *)cm);
+	DECREF(im->im_func);
+	DECREF(im->im_self);
+	free((ANY *)im);
 }
 
-typeobject Classmethodtype = {
+typeobject Instancemethodtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
 	"instance method",
-	sizeof(classmethodobject),
+	sizeof(instancemethodobject),
 	0,
-	classmethod_dealloc,	/*tp_dealloc*/
+	instancemethod_dealloc,	/*tp_dealloc*/
 	0,			/*tp_print*/
-	classmethod_getattr,	/*tp_getattr*/
+	instancemethod_getattr,	/*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/

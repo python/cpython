@@ -266,7 +266,7 @@ eval_code(co, globals, locals, arg)
 		
 		case UNARY_CALL:
 			v = POP();
-			if (is_classmethodobject(v) || is_funcobject(v))
+			if (is_instancemethodobject(v) || is_funcobject(v))
 				x = call_function(v, (object *)NULL);
 			else
 				x = call_builtin(v, (object *)NULL);
@@ -331,7 +331,7 @@ eval_code(co, globals, locals, arg)
 		case BINARY_CALL:
 			w = POP();
 			v = POP();
-			if (is_classmethodobject(v) || is_funcobject(v))
+			if (is_instancemethodobject(v) || is_funcobject(v))
 				x = call_function(v, w);
 			else
 				x = call_builtin(v, w);
@@ -1134,9 +1134,9 @@ call_function(func, arg)
 	object *newlocals, *newglobals;
 	object *co, *v;
 	
-	if (is_classmethodobject(func)) {
-		object *self = classmethodgetself(func);
-		func = classmethodgetfunc(func);
+	if (is_instancemethodobject(func)) {
+		object *self = instancemethodgetself(func);
+		func = instancemethodgetfunc(func);
 		if (arg == NULL) {
 			arg = self;
 		}
