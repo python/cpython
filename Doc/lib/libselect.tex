@@ -23,10 +23,10 @@ corresponding string, as would be printed by the \C{} function
 \end{excdesc}
 
 \begin{funcdesc}{poll}{}
-(Not supported by all operating systems.)  Returns a polling object, 
+(Not supported by all operating systems.)  Returns a polling object,
 which supports registering and unregistering file descriptors, and
-then polling them for I/O events; 
-see section~\ref{poll-objects} below for the methods supported by 
+then polling them for I/O events;
+see section~\ref{poll-objects} below for the methods supported by
 polling objects.
 \end{funcdesc}
 
@@ -49,12 +49,12 @@ subsets of the first three arguments.  When the time-out is reached
 without a file descriptor becoming ready, three empty lists are
 returned.
 
-Amongst the acceptable object types in the lists are Python file
+Among the acceptable object types in the lists are Python file
 objects (e.g. \code{sys.stdin}, or objects returned by
 \function{open()} or \function{os.popen()}), socket objects
-returned by \function{socket.socket()},%
+returned by \function{socket.socket()}.%
 \withsubitem{(in module socket)}{\ttindex{socket()}}
-\withsubitem{(in module os)}{\ttindex{popen()}}.
+\withsubitem{(in module os)}{\ttindex{popen()}}
 You may also define a \dfn{wrapper} class yourself, as long as it has
 an appropriate \method{fileno()} method (that really returns a file
 descriptor, not just a random integer).
@@ -102,8 +102,7 @@ used will check for all 3 types of events.
 
 Registering a file descriptor that's already registered is not an
 error, and has the same effect as registering the descriptor exactly
-once. 
- 
+once.
 \end{methoddesc}
 
 \begin{methoddesc}{unregister}{fd}
@@ -119,17 +118,15 @@ causes a \exception{KeyError} exception to be raised.
 Polls the set of registered file descriptors, and returns a
 possibly-empty list containing \code{(\var{fd}, \var{event})} 2-tuples
 for the descriptors that have events or errors to report.
-\var{fd} is the file descriptor, and \var{event} is a bitmask 
+\var{fd} is the file descriptor, and \var{event} is a bitmask
 with bits set for the reported events for that descriptor
---- \constant{POLLIN} for waiting input, 
+--- \constant{POLLIN} for waiting input,
 \constant{POLLOUT} to indicate that the descriptor can be written to, and
 so forth.
 An empty list indicates that the call timed out and no file
 descriptors had any events to report.
 If \var{timeout} is given, it specifies the length of time in
 milliseconds which the system will wait for events before returning.
-If \var{timeout} is omitted, negative, or \code{None}, the call will
+If \var{timeout} is omitted, negative, or \constant{None}, the call will
 block until there is an event for this poll object.
 \end{methoddesc}
-
-
