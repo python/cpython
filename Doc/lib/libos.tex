@@ -1,7 +1,7 @@
 \section{\module{os} ---
          Miscellaneous OS interfaces}
-\declaremodule{standard}{os}
 
+\declaremodule{standard}{os}
 \modulesynopsis{Miscellaneous OS interfaces.}
 
 
@@ -14,9 +14,9 @@ This module searches for an OS dependent built-in module like
 as found there.  The design of all Python's built-in OS dependent
 modules is such that as long as the same functionality is available,
 it uses the same interface; e.g., the function
-\code{os.stat(\var{path})} returns stat information about \var{path}
-in the same format (which happens to have originated with the \POSIX{}
-interface).
+\code{os.stat(\var{path})} returns stat information about \var{path} in
+the same format (which happens to have originated with the
+\POSIX{} interface).
 
 Extensions peculiar to a particular OS are also available through the
 \module{os} module, but using them is of course a threat to
@@ -688,7 +688,7 @@ Availability: Windows.
 \begin{funcdesc}{system}{command}
 Execute the command (a string) in a subshell.  This is implemented by
 calling the Standard C function \cfunction{system()}, and has the
-same limitations.  Changes to \code{posix.environ}, \code{sys.stdin}
+same limitations.  Changes to \code{posix.environ}, \code{sys.stdin},
 etc.\ are not reflected in the environment of the executed command.
 The return value is the exit status of the process encoded in the
 format specified for \function{wait()}.
@@ -700,9 +700,9 @@ Return a 5-tuple of floating point numbers indicating accumulated (CPU
 or other)
 times, in seconds.  The items are: user time, system time, children's
 user time, children's system time, and elapsed real time since a fixed
-point in the past, in that order.  See the \UNIX{}
-manual page \manpage{times}{2} or the corresponding Windows Platform
-API documentation.
+point in the past, in that order.  See the \UNIX{} manual page
+\manpage{times}{2} or the corresponding Windows Platform API
+documentation.
 Availability: \UNIX{}, Windows.
 \end{funcdesc}
 
@@ -814,7 +814,7 @@ doesn't have a \code{'PATH'} key.
 
 \begin{datadesc}{linesep}
 The string used to separate (or, rather, terminate) lines on the
-current platform.  This may be a single character, e.g. \code{'\e n'}
-for \POSIX{} or \code{'\e r'} for MacOS, or multiple characters,
-e.g. \code{'\e r\e n'} for MS-DOS and MS Windows.
+current platform.  This may be a single character,
+e.g.\ \code{'\e n'} for \POSIX{} or \code{'\e r'} for MacOS, or multiple
+characters, e.g.\ \code{'\e r\e n'} for MS-DOS and MS Windows.
 \end{datadesc}
