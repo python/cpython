@@ -1,7 +1,7 @@
 What's New in IDLE 1.0.1?
 ===================================
 
-*Release date: XX-XXX-2003*
+*Release date: 23-Sep-2003*
 
 - IDLE didn't start correctly when Python was installed in "Program Files" on
   W2K and XP.  Python Bugs 780451, 784183
