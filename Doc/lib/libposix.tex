@@ -225,10 +225,12 @@ Add \var{incr} to the process' ``niceness''.  Return the new niceness.
 (Not on MS-DOS.)
 \end{funcdesc}
 
-\begin{funcdesc}{open}{file\, flags\, mode}
+\begin{funcdesc}{open}{file\, flags\optional{\, mode}}
 Open the file \var{file} and set various flags according to
 \var{flags} and possibly its mode according to \var{mode}.
-Return the file descriptor for the newly opened file.
+The default \var{mode} is 0777 (octal), and the current umask value is
+first masked out.  Return the file descriptor for the newly opened
+file.
 
 Note: this function is intended for low-level I/O.  For normal usage,
 use the built-in function \code{open}, which returns a ``file object''
