@@ -674,14 +674,14 @@ init_iconv_codec(void)
     iconv_t hdl = iconv_open(UNICODE_ENCODING, "ISO-8859-1");
 
     if (hdl == (iconv_t)-1) {
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
 	  "can't initialize the _iconv_codec module: iconv_open() failed");
 	return;
     }
 
     res = iconv(hdl, &inptr, &insize, &outptr, &outsize);
     if (res == (size_t)-1) {
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
 	  "can't initialize the _iconv_codec module: iconv() failed");
 	return;
     }
@@ -698,7 +698,7 @@ init_iconv_codec(void)
        byteswap = 1;
     else {
 	iconv_close(hdl);
-        PyErr_SetString(PyExc_ImportError,
+        PyErr_SetString(PyExc_RuntimeError,
 	  "can't initialize the _iconv_codec module: mixed endianess");
 	return;
     }
