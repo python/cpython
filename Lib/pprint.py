@@ -26,7 +26,7 @@ pformat()
     Format a Python object into a pretty-printed representation.
 
 pprint()
-    Pretty-print a Python object to a stream [default is sys.sydout].
+    Pretty-print a Python object to a stream [default is sys.stdout].
 
 saferepr()
     Generate a 'standard' repr()-like value, but protect against recursive
@@ -49,7 +49,7 @@ _type = type
 
 
 def pprint(object, stream=None, indent=1, width=80, depth=None):
-    """Pretty-print a Python object to a stream [default is sys.sydout]."""
+    """Pretty-print a Python object to a stream [default is sys.stdout]."""
     printer = PrettyPrinter(
         stream=stream, indent=indent, width=width, depth=depth)
     printer.pprint(object)
