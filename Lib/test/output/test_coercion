@@ -1,0 +1,1054 @@
+test_coercion
+2 + 2 = 4
+2 += 2 => 4
+2 - 2 = 0
+2 -= 2 => 0
+2 * 2 = 4
+2 *= 2 => 4
+2 / 2 = 1
+2 /= 2 => 1
+2 ** 2 = 4
+2 **= 2 => 4
+2 % 2 = 0
+2 %= 2 => 0
+2 + 2.2 = 4.2
+2 += 2.2 => 4.2
+2 - 2.2 = -0.2
+2 -= 2.2 => -0.2
+2 * 2.2 = 4.4
+2 *= 2.2 => 4.4
+2 / 2.2 = 0.909090909091
+2 /= 2.2 => 0.909090909091
+2 ** 2.2 = 4.59479341999
+2 **= 2.2 => 4.59479341999
+2 % 2.2 = 2.0
+2 %= 2.2 => 2.0
+2 + 2 = 4
+2 += 2 => 4
+2 - 2 = 0
+2 -= 2 => 0
+2 * 2 = 4
+2 *= 2 => 4
+2 / 2 = 1
+2 /= 2 => 1
+2 ** 2 = 4
+2 **= 2 => 4
+2 % 2 = 0
+2 %= 2 => 0
+2 + (2+4j) = (4+4j)
+2 += (2+4j) => (4+4j)
+2 - (2+4j) = -4j
+2 -= (2+4j) => -4j
+2 * (2+4j) = (4+8j)
+2 *= (2+4j) => (4+8j)
+2 / (2+4j) = (0.2-0.4j)
+2 /= (2+4j) => (0.2-0.4j)
+2 ** (2+4j) = (-3.73074830734+1.44274636276j)
+2 **= (2+4j) => (-3.73074830734+1.44274636276j)
+2 % (2+4j) = (2+0j)
+2 %= (2+4j) => (2+0j)
+2 + [1] ... exceptions.TypeError
+2 += [1] ... exceptions.TypeError
+2 - [1] ... exceptions.TypeError
+2 -= [1] ... exceptions.TypeError
+2 * [1] = [1, 1]
+2 *= [1] ... exceptions.TypeError
+2 / [1] ... exceptions.TypeError
+2 /= [1] ... exceptions.TypeError
+2 ** [1] ... exceptions.TypeError
+2 **= [1] ... exceptions.TypeError
+2 % [1] ... exceptions.TypeError
+2 %= [1] ... exceptions.TypeError
+2 + (2,) ... exceptions.TypeError
+2 += (2,) ... exceptions.TypeError
+2 - (2,) ... exceptions.TypeError
+2 -= (2,) ... exceptions.TypeError
+2 * (2,) = (2, 2)
+2 *= (2,) ... exceptions.TypeError
+2 / (2,) ... exceptions.TypeError
+2 /= (2,) ... exceptions.TypeError
+2 ** (2,) ... exceptions.TypeError
+2 **= (2,) ... exceptions.TypeError
+2 % (2,) ... exceptions.TypeError
+2 %= (2,) ... exceptions.TypeError
+2 + None ... exceptions.TypeError
+2 += None ... exceptions.TypeError
+2 - None ... exceptions.TypeError
+2 -= None ... exceptions.TypeError
+2 * None ... exceptions.TypeError
+2 *= None ... exceptions.TypeError
+2 / None ... exceptions.TypeError
+2 /= None ... exceptions.TypeError
+2 ** None ... exceptions.TypeError
+2 **= None ... exceptions.TypeError
+2 % None ... exceptions.TypeError
+2 %= None ... exceptions.TypeError
+2 + <MethodNumber 1> = 3
+2 += <MethodNumber 1> => 3
+2 - <MethodNumber 1> = 1
+2 -= <MethodNumber 1> => 1
+2 * <MethodNumber 1> = 2
+2 *= <MethodNumber 1> => 2
+2 / <MethodNumber 1> = 2
+2 /= <MethodNumber 1> => 2
+2 ** <MethodNumber 1> = 2
+2 **= <MethodNumber 1> => 2
+2 % <MethodNumber 1> = 0
+2 %= <MethodNumber 1> => 0
+2 + <CoerceNumber 8> = 10
+2 += <CoerceNumber 8> => 10
+2 - <CoerceNumber 8> = -6
+2 -= <CoerceNumber 8> => -6
+2 * <CoerceNumber 8> = 16
+2 *= <CoerceNumber 8> => 16
+2 / <CoerceNumber 8> = 0
+2 /= <CoerceNumber 8> => 0
+2 ** <CoerceNumber 8> = 256
+2 **= <CoerceNumber 8> => 256
+2 % <CoerceNumber 8> = 2
+2 %= <CoerceNumber 8> => 2
+2.2 + 2 = 4.2
+2.2 += 2 => 4.2
+2.2 - 2 = 0.2
+2.2 -= 2 => 0.2
+2.2 * 2 = 4.4
+2.2 *= 2 => 4.4
+2.2 / 2 = 1.1
+2.2 /= 2 => 1.1
+2.2 ** 2 = 4.84
+2.2 **= 2 => 4.84
+2.2 % 2 = 0.2
+2.2 %= 2 => 0.2
+2.2 + 2.2 = 4.4
+2.2 += 2.2 => 4.4
+2.2 - 2.2 = 0.0
+2.2 -= 2.2 => 0.0
+2.2 * 2.2 = 4.84
+2.2 *= 2.2 => 4.84
+2.2 / 2.2 = 1.0
+2.2 /= 2.2 => 1.0
+2.2 ** 2.2 = 5.66669577875
+2.2 **= 2.2 => 5.66669577875
+2.2 % 2.2 = 0.0
+2.2 %= 2.2 => 0.0
+2.2 + 2 = 4.2
+2.2 += 2 => 4.2
+2.2 - 2 = 0.2
+2.2 -= 2 => 0.2
+2.2 * 2 = 4.4
+2.2 *= 2 => 4.4
+2.2 / 2 = 1.1
+2.2 /= 2 => 1.1
+2.2 ** 2 = 4.84
+2.2 **= 2 => 4.84
+2.2 % 2 = 0.2
+2.2 %= 2 => 0.2
+2.2 + (2+4j) = (4.2+4j)
+2.2 += (2+4j) => (4.2+4j)
+2.2 - (2+4j) = (0.2-4j)
+2.2 -= (2+4j) => (0.2-4j)
+2.2 * (2+4j) = (4.4+8.8j)
+2.2 *= (2+4j) => (4.4+8.8j)
+2.2 / (2+4j) = (0.22-0.44j)
+2.2 /= (2+4j) => (0.22-0.44j)
+2.2 ** (2+4j) = (-4.8396376362-0.059224575214j)
+2.2 **= (2+4j) => (-4.8396376362-0.059224575214j)
+2.2 % (2+4j) = (2.2+0j)
+2.2 %= (2+4j) => (2.2+0j)
+2.2 + [1] ... exceptions.TypeError
+2.2 += [1] ... exceptions.TypeError
+2.2 - [1] ... exceptions.TypeError
+2.2 -= [1] ... exceptions.TypeError
+2.2 * [1] ... exceptions.TypeError
+2.2 *= [1] ... exceptions.TypeError
+2.2 / [1] ... exceptions.TypeError
+2.2 /= [1] ... exceptions.TypeError
+2.2 ** [1] ... exceptions.TypeError
+2.2 **= [1] ... exceptions.TypeError
+2.2 % [1] ... exceptions.TypeError
+2.2 %= [1] ... exceptions.TypeError
+2.2 + (2,) ... exceptions.TypeError
+2.2 += (2,) ... exceptions.TypeError
+2.2 - (2,) ... exceptions.TypeError
+2.2 -= (2,) ... exceptions.TypeError
+2.2 * (2,) ... exceptions.TypeError
+2.2 *= (2,) ... exceptions.TypeError
+2.2 / (2,) ... exceptions.TypeError
+2.2 /= (2,) ... exceptions.TypeError
+2.2 ** (2,) ... exceptions.TypeError
+2.2 **= (2,) ... exceptions.TypeError
+2.2 % (2,) ... exceptions.TypeError
+2.2 %= (2,) ... exceptions.TypeError
+2.2 + None ... exceptions.TypeError
+2.2 += None ... exceptions.TypeError
+2.2 - None ... exceptions.TypeError
+2.2 -= None ... exceptions.TypeError
+2.2 * None ... exceptions.TypeError
+2.2 *= None ... exceptions.TypeError
+2.2 / None ... exceptions.TypeError
+2.2 /= None ... exceptions.TypeError
+2.2 ** None ... exceptions.TypeError
+2.2 **= None ... exceptions.TypeError
+2.2 % None ... exceptions.TypeError
+2.2 %= None ... exceptions.TypeError
+2.2 + <MethodNumber 1> = 3.2
+2.2 += <MethodNumber 1> => 3.2
+2.2 - <MethodNumber 1> = 1.2
+2.2 -= <MethodNumber 1> => 1.2
+2.2 * <MethodNumber 1> = 2.2
+2.2 *= <MethodNumber 1> => 2.2
+2.2 / <MethodNumber 1> = 2.2
+2.2 /= <MethodNumber 1> => 2.2
+2.2 ** <MethodNumber 1> = 2.2
+2.2 **= <MethodNumber 1> => 2.2
+2.2 % <MethodNumber 1> = 0.2
+2.2 %= <MethodNumber 1> => 0.2
+2.2 + <CoerceNumber 8> = 10.2
+2.2 += <CoerceNumber 8> => 10.2
+2.2 - <CoerceNumber 8> = -5.8
+2.2 -= <CoerceNumber 8> => -5.8
+2.2 * <CoerceNumber 8> = 17.6
+2.2 *= <CoerceNumber 8> => 17.6
+2.2 / <CoerceNumber 8> = 0.275
+2.2 /= <CoerceNumber 8> => 0.275
+2.2 ** <CoerceNumber 8> = 548.75873536
+2.2 **= <CoerceNumber 8> => 548.75873536
+2.2 % <CoerceNumber 8> = 2.2
+2.2 %= <CoerceNumber 8> => 2.2
+2 + 2 = 4
+2 += 2 => 4
+2 - 2 = 0
+2 -= 2 => 0
+2 * 2 = 4
+2 *= 2 => 4
+2 / 2 = 1
+2 /= 2 => 1
+2 ** 2 = 4
+2 **= 2 => 4
+2 % 2 = 0
+2 %= 2 => 0
+2 + 2.2 = 4.2
+2 += 2.2 => 4.2
+2 - 2.2 = -0.2
+2 -= 2.2 => -0.2
+2 * 2.2 = 4.4
+2 *= 2.2 => 4.4
+2 / 2.2 = 0.909090909091
+2 /= 2.2 => 0.909090909091
+2 ** 2.2 = 4.59479341999
+2 **= 2.2 => 4.59479341999
+2 % 2.2 = 2.0
+2 %= 2.2 => 2.0
+2 + 2 = 4
+2 += 2 => 4
+2 - 2 = 0
+2 -= 2 => 0
+2 * 2 = 4
+2 *= 2 => 4
+2 / 2 = 1
+2 /= 2 => 1
+2 ** 2 = 4
+2 **= 2 => 4
+2 % 2 = 0
+2 %= 2 => 0
+2 + (2+4j) = (4+4j)
+2 += (2+4j) => (4+4j)
+2 - (2+4j) = -4j
+2 -= (2+4j) => -4j
+2 * (2+4j) = (4+8j)
+2 *= (2+4j) => (4+8j)
+2 / (2+4j) = (0.2-0.4j)
+2 /= (2+4j) => (0.2-0.4j)
+2 ** (2+4j) = (-3.73074830734+1.44274636276j)
+2 **= (2+4j) => (-3.73074830734+1.44274636276j)
+2 % (2+4j) = (2+0j)
+2 %= (2+4j) => (2+0j)
+2 + [1] ... exceptions.TypeError
+2 += [1] ... exceptions.TypeError
+2 - [1] ... exceptions.TypeError
+2 -= [1] ... exceptions.TypeError
+2 * [1] = [1, 1]
+2 *= [1] ... exceptions.TypeError
+2 / [1] ... exceptions.TypeError
+2 /= [1] ... exceptions.TypeError
+2 ** [1] ... exceptions.TypeError
+2 **= [1] ... exceptions.TypeError
+2 % [1] ... exceptions.TypeError
+2 %= [1] ... exceptions.TypeError
+2 + (2,) ... exceptions.TypeError
+2 += (2,) ... exceptions.TypeError
+2 - (2,) ... exceptions.TypeError
+2 -= (2,) ... exceptions.TypeError
+2 * (2,) = (2, 2)
+2 *= (2,) ... exceptions.TypeError
+2 / (2,) ... exceptions.TypeError
+2 /= (2,) ... exceptions.TypeError
+2 ** (2,) ... exceptions.TypeError
+2 **= (2,) ... exceptions.TypeError
+2 % (2,) ... exceptions.TypeError
+2 %= (2,) ... exceptions.TypeError
+2 + None ... exceptions.TypeError
+2 += None ... exceptions.TypeError
+2 - None ... exceptions.TypeError
+2 -= None ... exceptions.TypeError
+2 * None ... exceptions.TypeError
+2 *= None ... exceptions.TypeError
+2 / None ... exceptions.TypeError
+2 /= None ... exceptions.TypeError
+2 ** None ... exceptions.TypeError
+2 **= None ... exceptions.TypeError
+2 % None ... exceptions.TypeError
+2 %= None ... exceptions.TypeError
+2 + <MethodNumber 1> = 3
+2 += <MethodNumber 1> => 3
+2 - <MethodNumber 1> = 1
+2 -= <MethodNumber 1> => 1
+2 * <MethodNumber 1> = 2
+2 *= <MethodNumber 1> => 2
+2 / <MethodNumber 1> = 2
+2 /= <MethodNumber 1> => 2
+2 ** <MethodNumber 1> = 2
+2 **= <MethodNumber 1> => 2
+2 % <MethodNumber 1> = 0
+2 %= <MethodNumber 1> => 0
+2 + <CoerceNumber 8> = 10
+2 += <CoerceNumber 8> => 10
+2 - <CoerceNumber 8> = -6
+2 -= <CoerceNumber 8> => -6
+2 * <CoerceNumber 8> = 16
+2 *= <CoerceNumber 8> => 16
+2 / <CoerceNumber 8> = 0
+2 /= <CoerceNumber 8> => 0
+2 ** <CoerceNumber 8> = 256
+2 **= <CoerceNumber 8> => 256
+2 % <CoerceNumber 8> = 2
+2 %= <CoerceNumber 8> => 2
+(2+4j) + 2 = (4+4j)
+(2+4j) += 2 => (4+4j)
+(2+4j) - 2 = 4j
+(2+4j) -= 2 => 4j
+(2+4j) * 2 = (4+8j)
+(2+4j) *= 2 => (4+8j)
+(2+4j) / 2 = (1+2j)
+(2+4j) /= 2 => (1+2j)
+(2+4j) ** 2 = (-12+16j)
+(2+4j) **= 2 => (-12+16j)
+(2+4j) % 2 = 4j
+(2+4j) %= 2 => 4j
+(2+4j) + 2.2 = (4.2+4j)
+(2+4j) += 2.2 => (4.2+4j)
+(2+4j) - 2.2 = (-0.2+4j)
+(2+4j) -= 2.2 => (-0.2+4j)
+(2+4j) * 2.2 = (4.4+8.8j)
+(2+4j) *= 2.2 => (4.4+8.8j)
+(2+4j) / 2.2 = (0.909090909091+1.81818181818j)
+(2+4j) /= 2.2 => (0.909090909091+1.81818181818j)
+(2+4j) ** 2.2 = (-20.5374452851+17.5053998061j)
+(2+4j) **= 2.2 => (-20.5374452851+17.5053998061j)
+(2+4j) % 2.2 = (2+4j)
+(2+4j) %= 2.2 => (2+4j)
+(2+4j) + 2 = (4+4j)
+(2+4j) += 2 => (4+4j)
+(2+4j) - 2 = 4j
+(2+4j) -= 2 => 4j
+(2+4j) * 2 = (4+8j)
+(2+4j) *= 2 => (4+8j)
+(2+4j) / 2 = (1+2j)
+(2+4j) /= 2 => (1+2j)
+(2+4j) ** 2 = (-12+16j)
+(2+4j) **= 2 => (-12+16j)
+(2+4j) % 2 = 4j
+(2+4j) %= 2 => 4j
+(2+4j) + (2+4j) = (4+8j)
+(2+4j) += (2+4j) => (4+8j)
+(2+4j) - (2+4j) = 0j
+(2+4j) -= (2+4j) => 0j
+(2+4j) * (2+4j) = (-12+16j)
+(2+4j) *= (2+4j) => (-12+16j)
+(2+4j) / (2+4j) = (1+0j)
+(2+4j) /= (2+4j) => (1+0j)
+(2+4j) ** (2+4j) = (-0.0822228891036+0.224011648635j)
+(2+4j) **= (2+4j) => (-0.0822228891036+0.224011648635j)
+(2+4j) % (2+4j) = 0j
+(2+4j) %= (2+4j) => 0j
+(2+4j) + [1] ... exceptions.TypeError
+(2+4j) += [1] ... exceptions.TypeError
+(2+4j) - [1] ... exceptions.TypeError
+(2+4j) -= [1] ... exceptions.TypeError
+(2+4j) * [1] ... exceptions.TypeError
+(2+4j) *= [1] ... exceptions.TypeError
+(2+4j) / [1] ... exceptions.TypeError
+(2+4j) /= [1] ... exceptions.TypeError
+(2+4j) ** [1] ... exceptions.TypeError
+(2+4j) **= [1] ... exceptions.TypeError
+(2+4j) % [1] ... exceptions.TypeError
+(2+4j) %= [1] ... exceptions.TypeError
+(2+4j) + (2,) ... exceptions.TypeError
+(2+4j) += (2,) ... exceptions.TypeError
+(2+4j) - (2,) ... exceptions.TypeError
+(2+4j) -= (2,) ... exceptions.TypeError
+(2+4j) * (2,) ... exceptions.TypeError
+(2+4j) *= (2,) ... exceptions.TypeError
+(2+4j) / (2,) ... exceptions.TypeError
+(2+4j) /= (2,) ... exceptions.TypeError
+(2+4j) ** (2,) ... exceptions.TypeError
+(2+4j) **= (2,) ... exceptions.TypeError
+(2+4j) % (2,) ... exceptions.TypeError
+(2+4j) %= (2,) ... exceptions.TypeError
+(2+4j) + None ... exceptions.TypeError
+(2+4j) += None ... exceptions.TypeError
+(2+4j) - None ... exceptions.TypeError
+(2+4j) -= None ... exceptions.TypeError
+(2+4j) * None ... exceptions.TypeError
+(2+4j) *= None ... exceptions.TypeError
+(2+4j) / None ... exceptions.TypeError
+(2+4j) /= None ... exceptions.TypeError
+(2+4j) ** None ... exceptions.TypeError
+(2+4j) **= None ... exceptions.TypeError
+(2+4j) % None ... exceptions.TypeError
+(2+4j) %= None ... exceptions.TypeError
+(2+4j) + <MethodNumber 1> = (3+4j)
+(2+4j) += <MethodNumber 1> => (3+4j)
+(2+4j) - <MethodNumber 1> = (1+4j)
+(2+4j) -= <MethodNumber 1> => (1+4j)
+(2+4j) * <MethodNumber 1> = (2+4j)
+(2+4j) *= <MethodNumber 1> => (2+4j)
+(2+4j) / <MethodNumber 1> = (2+4j)
+(2+4j) /= <MethodNumber 1> => (2+4j)
+(2+4j) ** <MethodNumber 1> = (2+4j)
+(2+4j) **= <MethodNumber 1> => (2+4j)
+(2+4j) % <MethodNumber 1> = 4j
+(2+4j) %= <MethodNumber 1> => 4j
+(2+4j) + <CoerceNumber 8> = (10+4j)
+(2+4j) += <CoerceNumber 8> => (10+4j)
+(2+4j) - <CoerceNumber 8> = (-6+4j)
+(2+4j) -= <CoerceNumber 8> => (-6+4j)
+(2+4j) * <CoerceNumber 8> = (16+32j)
+(2+4j) *= <CoerceNumber 8> => (16+32j)
+(2+4j) / <CoerceNumber 8> = (0.25+0.5j)
+(2+4j) /= <CoerceNumber 8> => (0.25+0.5j)
+(2+4j) ** <CoerceNumber 8> = (-134912+86016j)
+(2+4j) **= <CoerceNumber 8> => (-134912+86016j)
+(2+4j) % <CoerceNumber 8> = (2+4j)
+(2+4j) %= <CoerceNumber 8> => (2+4j)
+[1] + 2 ... exceptions.TypeError
+[1] += 2 ... exceptions.TypeError
+[1] - 2 ... exceptions.TypeError
+[1] -= 2 ... exceptions.TypeError
+[1] * 2 = [1, 1]
+[1] *= 2 => [1, 1]
+[1] / 2 ... exceptions.TypeError
+[1] /= 2 ... exceptions.TypeError
+[1] ** 2 ... exceptions.TypeError
+[1] **= 2 ... exceptions.TypeError
+[1] % 2 ... exceptions.TypeError
+[1] %= 2 ... exceptions.TypeError
+[1] + 2.2 ... exceptions.TypeError
+[1] += 2.2 ... exceptions.TypeError
+[1] - 2.2 ... exceptions.TypeError
+[1] -= 2.2 ... exceptions.TypeError
+[1] * 2.2 ... exceptions.TypeError
+[1] *= 2.2 ... exceptions.TypeError
+[1] / 2.2 ... exceptions.TypeError
+[1] /= 2.2 ... exceptions.TypeError
+[1] ** 2.2 ... exceptions.TypeError
+[1] **= 2.2 ... exceptions.TypeError
+[1] % 2.2 ... exceptions.TypeError
+[1] %= 2.2 ... exceptions.TypeError
+[1] + 2 ... exceptions.TypeError
+[1] += 2 ... exceptions.TypeError
+[1] - 2 ... exceptions.TypeError
+[1] -= 2 ... exceptions.TypeError
+[1] * 2 = [1, 1]
+[1] *= 2 => [1, 1]
+[1] / 2 ... exceptions.TypeError
+[1] /= 2 ... exceptions.TypeError
+[1] ** 2 ... exceptions.TypeError
+[1] **= 2 ... exceptions.TypeError
+[1] % 2 ... exceptions.TypeError
+[1] %= 2 ... exceptions.TypeError
+[1] + (2+4j) ... exceptions.TypeError
+[1] += (2+4j) ... exceptions.TypeError
+[1] - (2+4j) ... exceptions.TypeError
+[1] -= (2+4j) ... exceptions.TypeError
+[1] * (2+4j) ... exceptions.TypeError
+[1] *= (2+4j) ... exceptions.TypeError
+[1] / (2+4j) ... exceptions.TypeError
+[1] /= (2+4j) ... exceptions.TypeError
+[1] ** (2+4j) ... exceptions.TypeError
+[1] **= (2+4j) ... exceptions.TypeError
+[1] % (2+4j) ... exceptions.TypeError
+[1] %= (2+4j) ... exceptions.TypeError
+[1] + [1] = [1, 1]
+[1] += [1] => [1, 1]
+[1] - [1] ... exceptions.TypeError
+[1] -= [1] ... exceptions.TypeError
+[1] * [1] ... exceptions.TypeError
+[1] *= [1] ... exceptions.TypeError
+[1] / [1] ... exceptions.TypeError
+[1] /= [1] ... exceptions.TypeError
+[1] ** [1] ... exceptions.TypeError
+[1] **= [1] ... exceptions.TypeError
+[1] % [1] ... exceptions.TypeError
+[1] %= [1] ... exceptions.TypeError
+[1] + (2,) ... exceptions.TypeError
+[1] += (2,) => [1, 2]
+[1] - (2,) ... exceptions.TypeError
+[1] -= (2,) ... exceptions.TypeError
+[1] * (2,) ... exceptions.TypeError
+[1] *= (2,) ... exceptions.TypeError
+[1] / (2,) ... exceptions.TypeError
+[1] /= (2,) ... exceptions.TypeError
+[1] ** (2,) ... exceptions.TypeError
+[1] **= (2,) ... exceptions.TypeError
+[1] % (2,) ... exceptions.TypeError
+[1] %= (2,) ... exceptions.TypeError
+[1] + None ... exceptions.TypeError
+[1] += None ... exceptions.TypeError
+[1] - None ... exceptions.TypeError
+[1] -= None ... exceptions.TypeError
+[1] * None ... exceptions.TypeError
+[1] *= None ... exceptions.TypeError
+[1] / None ... exceptions.TypeError
+[1] /= None ... exceptions.TypeError
+[1] ** None ... exceptions.TypeError
+[1] **= None ... exceptions.TypeError
+[1] % None ... exceptions.TypeError
+[1] %= None ... exceptions.TypeError
+[1] + <MethodNumber 1> ... exceptions.TypeError
+[1] += <MethodNumber 1> ... exceptions.AttributeError
+[1] - <MethodNumber 1> ... exceptions.TypeError
+[1] -= <MethodNumber 1> ... exceptions.TypeError
+[1] * <MethodNumber 1> = [1]
+[1] *= <MethodNumber 1> ... exceptions.TypeError
+[1] / <MethodNumber 1> ... exceptions.TypeError
+[1] /= <MethodNumber 1> ... exceptions.TypeError
+[1] ** <MethodNumber 1> ... exceptions.TypeError
+[1] **= <MethodNumber 1> ... exceptions.TypeError
+[1] % <MethodNumber 1> ... exceptions.TypeError
+[1] %= <MethodNumber 1> ... exceptions.TypeError
+[1] + <CoerceNumber 8> ... exceptions.TypeError
+[1] += <CoerceNumber 8> ... exceptions.AttributeError
+[1] - <CoerceNumber 8> ... exceptions.TypeError
+[1] -= <CoerceNumber 8> ... exceptions.TypeError
+[1] * <CoerceNumber 8> = [1, 1, 1, 1, 1, 1, 1, 1]
+[1] *= <CoerceNumber 8> ... exceptions.TypeError
+[1] / <CoerceNumber 8> ... exceptions.TypeError
+[1] /= <CoerceNumber 8> ... exceptions.TypeError
+[1] ** <CoerceNumber 8> ... exceptions.TypeError
+[1] **= <CoerceNumber 8> ... exceptions.TypeError
+[1] % <CoerceNumber 8> ... exceptions.TypeError
+[1] %= <CoerceNumber 8> ... exceptions.TypeError
+(2,) + 2 ... exceptions.TypeError
+(2,) += 2 ... exceptions.TypeError
+(2,) - 2 ... exceptions.TypeError
+(2,) -= 2 ... exceptions.TypeError
+(2,) * 2 = (2, 2)
+(2,) *= 2 => (2, 2)
+(2,) / 2 ... exceptions.TypeError
+(2,) /= 2 ... exceptions.TypeError
+(2,) ** 2 ... exceptions.TypeError
+(2,) **= 2 ... exceptions.TypeError
+(2,) % 2 ... exceptions.TypeError
+(2,) %= 2 ... exceptions.TypeError
+(2,) + 2.2 ... exceptions.TypeError
+(2,) += 2.2 ... exceptions.TypeError
+(2,) - 2.2 ... exceptions.TypeError
+(2,) -= 2.2 ... exceptions.TypeError
+(2,) * 2.2 ... exceptions.TypeError
+(2,) *= 2.2 ... exceptions.TypeError
+(2,) / 2.2 ... exceptions.TypeError
+(2,) /= 2.2 ... exceptions.TypeError
+(2,) ** 2.2 ... exceptions.TypeError
+(2,) **= 2.2 ... exceptions.TypeError
+(2,) % 2.2 ... exceptions.TypeError
+(2,) %= 2.2 ... exceptions.TypeError
+(2,) + 2 ... exceptions.TypeError
+(2,) += 2 ... exceptions.TypeError
+(2,) - 2 ... exceptions.TypeError
+(2,) -= 2 ... exceptions.TypeError
+(2,) * 2 = (2, 2)
+(2,) *= 2 => (2, 2)
+(2,) / 2 ... exceptions.TypeError
+(2,) /= 2 ... exceptions.TypeError
+(2,) ** 2 ... exceptions.TypeError
+(2,) **= 2 ... exceptions.TypeError
+(2,) % 2 ... exceptions.TypeError
+(2,) %= 2 ... exceptions.TypeError
+(2,) + (2+4j) ... exceptions.TypeError
+(2,) += (2+4j) ... exceptions.TypeError
+(2,) - (2+4j) ... exceptions.TypeError
+(2,) -= (2+4j) ... exceptions.TypeError
+(2,) * (2+4j) ... exceptions.TypeError
+(2,) *= (2+4j) ... exceptions.TypeError
+(2,) / (2+4j) ... exceptions.TypeError
+(2,) /= (2+4j) ... exceptions.TypeError
+(2,) ** (2+4j) ... exceptions.TypeError
+(2,) **= (2+4j) ... exceptions.TypeError
+(2,) % (2+4j) ... exceptions.TypeError
+(2,) %= (2+4j) ... exceptions.TypeError
+(2,) + [1] ... exceptions.TypeError
+(2,) += [1] ... exceptions.TypeError
+(2,) - [1] ... exceptions.TypeError
+(2,) -= [1] ... exceptions.TypeError
+(2,) * [1] ... exceptions.TypeError
+(2,) *= [1] ... exceptions.TypeError
+(2,) / [1] ... exceptions.TypeError
+(2,) /= [1] ... exceptions.TypeError
+(2,) ** [1] ... exceptions.TypeError
+(2,) **= [1] ... exceptions.TypeError
+(2,) % [1] ... exceptions.TypeError
+(2,) %= [1] ... exceptions.TypeError
+(2,) + (2,) = (2, 2)
+(2,) += (2,) => (2, 2)
+(2,) - (2,) ... exceptions.TypeError
+(2,) -= (2,) ... exceptions.TypeError
+(2,) * (2,) ... exceptions.TypeError
+(2,) *= (2,) ... exceptions.TypeError
+(2,) / (2,) ... exceptions.TypeError
+(2,) /= (2,) ... exceptions.TypeError
+(2,) ** (2,) ... exceptions.TypeError
+(2,) **= (2,) ... exceptions.TypeError
+(2,) % (2,) ... exceptions.TypeError
+(2,) %= (2,) ... exceptions.TypeError
+(2,) + None ... exceptions.TypeError
+(2,) += None ... exceptions.TypeError
+(2,) - None ... exceptions.TypeError
+(2,) -= None ... exceptions.TypeError
+(2,) * None ... exceptions.TypeError
+(2,) *= None ... exceptions.TypeError
+(2,) / None ... exceptions.TypeError
+(2,) /= None ... exceptions.TypeError
+(2,) ** None ... exceptions.TypeError
+(2,) **= None ... exceptions.TypeError
+(2,) % None ... exceptions.TypeError
+(2,) %= None ... exceptions.TypeError
+(2,) + <MethodNumber 1> ... exceptions.TypeError
+(2,) += <MethodNumber 1> ... exceptions.TypeError
+(2,) - <MethodNumber 1> ... exceptions.TypeError
+(2,) -= <MethodNumber 1> ... exceptions.TypeError
+(2,) * <MethodNumber 1> = (2,)
+(2,) *= <MethodNumber 1> => (2,)
+(2,) / <MethodNumber 1> ... exceptions.TypeError
+(2,) /= <MethodNumber 1> ... exceptions.TypeError
+(2,) ** <MethodNumber 1> ... exceptions.TypeError
+(2,) **= <MethodNumber 1> ... exceptions.TypeError
+(2,) % <MethodNumber 1> ... exceptions.TypeError
+(2,) %= <MethodNumber 1> ... exceptions.TypeError
+(2,) + <CoerceNumber 8> ... exceptions.TypeError
+(2,) += <CoerceNumber 8> ... exceptions.TypeError
+(2,) - <CoerceNumber 8> ... exceptions.TypeError
+(2,) -= <CoerceNumber 8> ... exceptions.TypeError
+(2,) * <CoerceNumber 8> = (2, 2, 2, 2, 2, 2, 2, 2)
+(2,) *= <CoerceNumber 8> => (2, 2, 2, 2, 2, 2, 2, 2)
+(2,) / <CoerceNumber 8> ... exceptions.TypeError
+(2,) /= <CoerceNumber 8> ... exceptions.TypeError
+(2,) ** <CoerceNumber 8> ... exceptions.TypeError
+(2,) **= <CoerceNumber 8> ... exceptions.TypeError
+(2,) % <CoerceNumber 8> ... exceptions.TypeError
+(2,) %= <CoerceNumber 8> ... exceptions.TypeError
+None + 2 ... exceptions.TypeError
+None += 2 ... exceptions.TypeError
+None - 2 ... exceptions.TypeError
+None -= 2 ... exceptions.TypeError
+None * 2 ... exceptions.TypeError
+None *= 2 ... exceptions.TypeError
+None / 2 ... exceptions.TypeError
+None /= 2 ... exceptions.TypeError
+None ** 2 ... exceptions.TypeError
+None **= 2 ... exceptions.TypeError
+None % 2 ... exceptions.TypeError
+None %= 2 ... exceptions.TypeError
+None + 2.2 ... exceptions.TypeError
+None += 2.2 ... exceptions.TypeError
+None - 2.2 ... exceptions.TypeError
+None -= 2.2 ... exceptions.TypeError
+None * 2.2 ... exceptions.TypeError
+None *= 2.2 ... exceptions.TypeError
+None / 2.2 ... exceptions.TypeError
+None /= 2.2 ... exceptions.TypeError
+None ** 2.2 ... exceptions.TypeError
+None **= 2.2 ... exceptions.TypeError
+None % 2.2 ... exceptions.TypeError
+None %= 2.2 ... exceptions.TypeError
+None + 2 ... exceptions.TypeError
+None += 2 ... exceptions.TypeError
+None - 2 ... exceptions.TypeError
+None -= 2 ... exceptions.TypeError
+None * 2 ... exceptions.TypeError
+None *= 2 ... exceptions.TypeError
+None / 2 ... exceptions.TypeError
+None /= 2 ... exceptions.TypeError
+None ** 2 ... exceptions.TypeError
+None **= 2 ... exceptions.TypeError
+None % 2 ... exceptions.TypeError
+None %= 2 ... exceptions.TypeError
+None + (2+4j) ... exceptions.TypeError
+None += (2+4j) ... exceptions.TypeError
+None - (2+4j) ... exceptions.TypeError
+None -= (2+4j) ... exceptions.TypeError
+None * (2+4j) ... exceptions.TypeError
+None *= (2+4j) ... exceptions.TypeError
+None / (2+4j) ... exceptions.TypeError
+None /= (2+4j) ... exceptions.TypeError
+None ** (2+4j) ... exceptions.TypeError
+None **= (2+4j) ... exceptions.TypeError
+None % (2+4j) ... exceptions.TypeError
+None %= (2+4j) ... exceptions.TypeError
+None + [1] ... exceptions.TypeError
+None += [1] ... exceptions.TypeError
+None - [1] ... exceptions.TypeError
+None -= [1] ... exceptions.TypeError
+None * [1] ... exceptions.TypeError
+None *= [1] ... exceptions.TypeError
+None / [1] ... exceptions.TypeError
+None /= [1] ... exceptions.TypeError
+None ** [1] ... exceptions.TypeError
+None **= [1] ... exceptions.TypeError
+None % [1] ... exceptions.TypeError
+None %= [1] ... exceptions.TypeError
+None + (2,) ... exceptions.TypeError
+None += (2,) ... exceptions.TypeError
+None - (2,) ... exceptions.TypeError
+None -= (2,) ... exceptions.TypeError
+None * (2,) ... exceptions.TypeError
+None *= (2,) ... exceptions.TypeError
+None / (2,) ... exceptions.TypeError
+None /= (2,) ... exceptions.TypeError
+None ** (2,) ... exceptions.TypeError
+None **= (2,) ... exceptions.TypeError
+None % (2,) ... exceptions.TypeError
+None %= (2,) ... exceptions.TypeError
+None + None ... exceptions.TypeError
+None += None ... exceptions.TypeError
+None - None ... exceptions.TypeError
+None -= None ... exceptions.TypeError
+None * None ... exceptions.TypeError
+None *= None ... exceptions.TypeError
+None / None ... exceptions.TypeError
+None /= None ... exceptions.TypeError
+None ** None ... exceptions.TypeError
+None **= None ... exceptions.TypeError
+None % None ... exceptions.TypeError
+None %= None ... exceptions.TypeError
+None + <MethodNumber 1> ... exceptions.TypeError
+None += <MethodNumber 1> ... exceptions.TypeError
+None - <MethodNumber 1> ... exceptions.TypeError
+None -= <MethodNumber 1> ... exceptions.TypeError
+None * <MethodNumber 1> ... exceptions.TypeError
+None *= <MethodNumber 1> ... exceptions.TypeError
+None / <MethodNumber 1> ... exceptions.TypeError
+None /= <MethodNumber 1> ... exceptions.TypeError
+None ** <MethodNumber 1> ... exceptions.TypeError
+None **= <MethodNumber 1> ... exceptions.TypeError
+None % <MethodNumber 1> ... exceptions.TypeError
+None %= <MethodNumber 1> ... exceptions.TypeError
+None + <CoerceNumber 8> ... exceptions.TypeError
+None += <CoerceNumber 8> ... exceptions.TypeError
+None - <CoerceNumber 8> ... exceptions.TypeError
+None -= <CoerceNumber 8> ... exceptions.TypeError
+None * <CoerceNumber 8> ... exceptions.TypeError
+None *= <CoerceNumber 8> ... exceptions.TypeError
+None / <CoerceNumber 8> ... exceptions.TypeError
+None /= <CoerceNumber 8> ... exceptions.TypeError
+None ** <CoerceNumber 8> ... exceptions.TypeError
+None **= <CoerceNumber 8> ... exceptions.TypeError
+None % <CoerceNumber 8> ... exceptions.TypeError
+None %= <CoerceNumber 8> ... exceptions.TypeError
+<MethodNumber 1> + 2 = 3
+<MethodNumber 1> += 2 => 3
+<MethodNumber 1> - 2 = -1
+<MethodNumber 1> -= 2 => -1
+<MethodNumber 1> * 2 = 2
+<MethodNumber 1> *= 2 => 2
+<MethodNumber 1> / 2 = 0
+<MethodNumber 1> /= 2 => 0
+<MethodNumber 1> ** 2 = 1
+<MethodNumber 1> **= 2 => 1
+<MethodNumber 1> % 2 = 1
+<MethodNumber 1> %= 2 => 1
+<MethodNumber 1> + 2.2 = 3.2
+<MethodNumber 1> += 2.2 => 3.2
+<MethodNumber 1> - 2.2 = -1.2
+<MethodNumber 1> -= 2.2 => -1.2
+<MethodNumber 1> * 2.2 = 2.2
+<MethodNumber 1> *= 2.2 => 2.2
+<MethodNumber 1> / 2.2 = 0.454545454545
+<MethodNumber 1> /= 2.2 => 0.454545454545
+<MethodNumber 1> ** 2.2 = 1.0
+<MethodNumber 1> **= 2.2 => 1.0
+<MethodNumber 1> % 2.2 = 1.0
+<MethodNumber 1> %= 2.2 => 1.0
+<MethodNumber 1> + 2 = 3
+<MethodNumber 1> += 2 => 3
+<MethodNumber 1> - 2 = -1
+<MethodNumber 1> -= 2 => -1
+<MethodNumber 1> * 2 = 2
+<MethodNumber 1> *= 2 => 2
+<MethodNumber 1> / 2 = 0
+<MethodNumber 1> /= 2 => 0
+<MethodNumber 1> ** 2 = 1
+<MethodNumber 1> **= 2 => 1
+<MethodNumber 1> % 2 = 1
+<MethodNumber 1> %= 2 => 1
+<MethodNumber 1> + (2+4j) = (3+4j)
+<MethodNumber 1> += (2+4j) => (3+4j)
+<MethodNumber 1> - (2+4j) = (-1-4j)
+<MethodNumber 1> -= (2+4j) => (-1-4j)
+<MethodNumber 1> * (2+4j) = (2+4j)
+<MethodNumber 1> *= (2+4j) => (2+4j)
+<MethodNumber 1> / (2+4j) = (0.1-0.2j)
+<MethodNumber 1> /= (2+4j) => (0.1-0.2j)
+<MethodNumber 1> ** (2+4j) = (1+0j)
+<MethodNumber 1> **= (2+4j) => (1+0j)
+<MethodNumber 1> % (2+4j) = (1+0j)
+<MethodNumber 1> %= (2+4j) => (1+0j)
+<MethodNumber 1> + [1] ... exceptions.TypeError
+<MethodNumber 1> += [1] ... exceptions.TypeError
+<MethodNumber 1> - [1] ... exceptions.TypeError
+<MethodNumber 1> -= [1] ... exceptions.TypeError
+<MethodNumber 1> * [1] = [1]
+<MethodNumber 1> *= [1] => [1]
+<MethodNumber 1> / [1] ... exceptions.TypeError
+<MethodNumber 1> /= [1] ... exceptions.TypeError
+<MethodNumber 1> ** [1] ... exceptions.TypeError
+<MethodNumber 1> **= [1] ... exceptions.TypeError
+<MethodNumber 1> % [1] ... exceptions.TypeError
+<MethodNumber 1> %= [1] ... exceptions.TypeError
+<MethodNumber 1> + (2,) ... exceptions.TypeError
+<MethodNumber 1> += (2,) ... exceptions.TypeError
+<MethodNumber 1> - (2,) ... exceptions.TypeError
+<MethodNumber 1> -= (2,) ... exceptions.TypeError
+<MethodNumber 1> * (2,) = (2,)
+<MethodNumber 1> *= (2,) => (2,)
+<MethodNumber 1> / (2,) ... exceptions.TypeError
+<MethodNumber 1> /= (2,) ... exceptions.TypeError
+<MethodNumber 1> ** (2,) ... exceptions.TypeError
+<MethodNumber 1> **= (2,) ... exceptions.TypeError
+<MethodNumber 1> % (2,) ... exceptions.TypeError
+<MethodNumber 1> %= (2,) ... exceptions.TypeError
+<MethodNumber 1> + None ... exceptions.TypeError
+<MethodNumber 1> += None ... exceptions.TypeError
+<MethodNumber 1> - None ... exceptions.TypeError
+<MethodNumber 1> -= None ... exceptions.TypeError
+<MethodNumber 1> * None ... exceptions.TypeError
+<MethodNumber 1> *= None ... exceptions.TypeError
+<MethodNumber 1> / None ... exceptions.TypeError
+<MethodNumber 1> /= None ... exceptions.TypeError
+<MethodNumber 1> ** None ... exceptions.TypeError
+<MethodNumber 1> **= None ... exceptions.TypeError
+<MethodNumber 1> % None ... exceptions.TypeError
+<MethodNumber 1> %= None ... exceptions.TypeError
+<MethodNumber 1> + <MethodNumber 1> = 2
+<MethodNumber 1> += <MethodNumber 1> => 2
+<MethodNumber 1> - <MethodNumber 1> = 0
+<MethodNumber 1> -= <MethodNumber 1> => 0
+<MethodNumber 1> * <MethodNumber 1> = 1
+<MethodNumber 1> *= <MethodNumber 1> => 1
+<MethodNumber 1> / <MethodNumber 1> = 1
+<MethodNumber 1> /= <MethodNumber 1> => 1
+<MethodNumber 1> ** <MethodNumber 1> = 1
+<MethodNumber 1> **= <MethodNumber 1> => 1
+<MethodNumber 1> % <MethodNumber 1> = 0
+<MethodNumber 1> %= <MethodNumber 1> => 0
+<MethodNumber 1> + <CoerceNumber 8> = 9
+<MethodNumber 1> += <CoerceNumber 8> => 9
+<MethodNumber 1> - <CoerceNumber 8> = -7
+<MethodNumber 1> -= <CoerceNumber 8> => -7
+<MethodNumber 1> * <CoerceNumber 8> = 8
+<MethodNumber 1> *= <CoerceNumber 8> => 8
+<MethodNumber 1> / <CoerceNumber 8> = 0
+<MethodNumber 1> /= <CoerceNumber 8> => 0
+<MethodNumber 1> ** <CoerceNumber 8> = 1
+<MethodNumber 1> **= <CoerceNumber 8> => 1
+<MethodNumber 1> % <CoerceNumber 8> = 1
+<MethodNumber 1> %= <CoerceNumber 8> => 1
+<CoerceNumber 8> + 2 = 10
+<CoerceNumber 8> += 2 => 10
+<CoerceNumber 8> - 2 = 6
+<CoerceNumber 8> -= 2 => 6
+<CoerceNumber 8> * 2 = 16
+<CoerceNumber 8> *= 2 => 16
+<CoerceNumber 8> / 2 = 4
+<CoerceNumber 8> /= 2 => 4
+<CoerceNumber 8> ** 2 = 64
+<CoerceNumber 8> **= 2 => 64
+<CoerceNumber 8> % 2 = 0
+<CoerceNumber 8> %= 2 => 0
+<CoerceNumber 8> + 2.2 = 10.2
+<CoerceNumber 8> += 2.2 => 10.2
+<CoerceNumber 8> - 2.2 = 5.8
+<CoerceNumber 8> -= 2.2 => 5.8
+<CoerceNumber 8> * 2.2 = 17.6
+<CoerceNumber 8> *= 2.2 => 17.6
+<CoerceNumber 8> / 2.2 = 3.63636363636
+<CoerceNumber 8> /= 2.2 => 3.63636363636
+<CoerceNumber 8> ** 2.2 = 97.0058602567
+<CoerceNumber 8> **= 2.2 => 97.0058602567
+<CoerceNumber 8> % 2.2 = 1.4
+<CoerceNumber 8> %= 2.2 => 1.4
+<CoerceNumber 8> + 2 = 10
+<CoerceNumber 8> += 2 => 10
+<CoerceNumber 8> - 2 = 6
+<CoerceNumber 8> -= 2 => 6
+<CoerceNumber 8> * 2 = 16
+<CoerceNumber 8> *= 2 => 16
+<CoerceNumber 8> / 2 = 4
+<CoerceNumber 8> /= 2 => 4
+<CoerceNumber 8> ** 2 = 64
+<CoerceNumber 8> **= 2 => 64
+<CoerceNumber 8> % 2 = 0
+<CoerceNumber 8> %= 2 => 0
+<CoerceNumber 8> + (2+4j) = (10+4j)
+<CoerceNumber 8> += (2+4j) => (10+4j)
+<CoerceNumber 8> - (2+4j) = (6-4j)
+<CoerceNumber 8> -= (2+4j) => (6-4j)
+<CoerceNumber 8> * (2+4j) = (16+32j)
+<CoerceNumber 8> *= (2+4j) => (16+32j)
+<CoerceNumber 8> / (2+4j) = (0.8-1.6j)
+<CoerceNumber 8> /= (2+4j) => (0.8-1.6j)
+<CoerceNumber 8> ** (2+4j) = (-28.6295078161+57.2394207012j)
+<CoerceNumber 8> **= (2+4j) => (-28.6295078161+57.2394207012j)
+<CoerceNumber 8> % (2+4j) = (8+0j)
+<CoerceNumber 8> %= (2+4j) => (8+0j)
+<CoerceNumber 8> + [1] ... exceptions.TypeError
+<CoerceNumber 8> += [1] ... exceptions.TypeError
+<CoerceNumber 8> - [1] ... exceptions.TypeError
+<CoerceNumber 8> -= [1] ... exceptions.TypeError
+<CoerceNumber 8> * [1] = [1, 1, 1, 1, 1, 1, 1, 1]
+<CoerceNumber 8> *= [1] => [1, 1, 1, 1, 1, 1, 1, 1]
+<CoerceNumber 8> / [1] ... exceptions.TypeError
+<CoerceNumber 8> /= [1] ... exceptions.TypeError
+<CoerceNumber 8> ** [1] ... exceptions.TypeError
+<CoerceNumber 8> **= [1] ... exceptions.TypeError
+<CoerceNumber 8> % [1] ... exceptions.TypeError
+<CoerceNumber 8> %= [1] ... exceptions.TypeError
+<CoerceNumber 8> + (2,) ... exceptions.TypeError
+<CoerceNumber 8> += (2,) ... exceptions.TypeError
+<CoerceNumber 8> - (2,) ... exceptions.TypeError
+<CoerceNumber 8> -= (2,) ... exceptions.TypeError
+<CoerceNumber 8> * (2,) = (2, 2, 2, 2, 2, 2, 2, 2)
+<CoerceNumber 8> *= (2,) => (2, 2, 2, 2, 2, 2, 2, 2)
+<CoerceNumber 8> / (2,) ... exceptions.TypeError
+<CoerceNumber 8> /= (2,) ... exceptions.TypeError
+<CoerceNumber 8> ** (2,) ... exceptions.TypeError
+<CoerceNumber 8> **= (2,) ... exceptions.TypeError
+<CoerceNumber 8> % (2,) ... exceptions.TypeError
+<CoerceNumber 8> %= (2,) ... exceptions.TypeError
+<CoerceNumber 8> + None ... exceptions.TypeError
+<CoerceNumber 8> += None ... exceptions.TypeError
+<CoerceNumber 8> - None ... exceptions.TypeError
+<CoerceNumber 8> -= None ... exceptions.TypeError
+<CoerceNumber 8> * None ... exceptions.TypeError
+<CoerceNumber 8> *= None ... exceptions.TypeError
+<CoerceNumber 8> / None ... exceptions.TypeError
+<CoerceNumber 8> /= None ... exceptions.TypeError
+<CoerceNumber 8> ** None ... exceptions.TypeError
+<CoerceNumber 8> **= None ... exceptions.TypeError
+<CoerceNumber 8> % None ... exceptions.TypeError
+<CoerceNumber 8> %= None ... exceptions.TypeError
+<CoerceNumber 8> + <MethodNumber 1> = 9
+<CoerceNumber 8> += <MethodNumber 1> => 9
+<CoerceNumber 8> - <MethodNumber 1> = 7
+<CoerceNumber 8> -= <MethodNumber 1> => 7
+<CoerceNumber 8> * <MethodNumber 1> = 8
+<CoerceNumber 8> *= <MethodNumber 1> => 8
+<CoerceNumber 8> / <MethodNumber 1> = 8
+<CoerceNumber 8> /= <MethodNumber 1> => 8
+<CoerceNumber 8> ** <MethodNumber 1> = 8
+<CoerceNumber 8> **= <MethodNumber 1> => 8
+<CoerceNumber 8> % <MethodNumber 1> = 0
+<CoerceNumber 8> %= <MethodNumber 1> => 0
+<CoerceNumber 8> + <CoerceNumber 8> = 16
+<CoerceNumber 8> += <CoerceNumber 8> => 16
+<CoerceNumber 8> - <CoerceNumber 8> = 0
+<CoerceNumber 8> -= <CoerceNumber 8> => 0
+<CoerceNumber 8> * <CoerceNumber 8> = 64
+<CoerceNumber 8> *= <CoerceNumber 8> => 64
+<CoerceNumber 8> / <CoerceNumber 8> = 1
+<CoerceNumber 8> /= <CoerceNumber 8> => 1
+<CoerceNumber 8> ** <CoerceNumber 8> = 16777216
+<CoerceNumber 8> **= <CoerceNumber 8> => 16777216
+<CoerceNumber 8> % <CoerceNumber 8> = 0
+<CoerceNumber 8> %= <CoerceNumber 8> => 0
+divmod(2, 2) = (1, 0)
+divmod(2, 2.2) = (0.0, 2.0)
+divmod(2, 2) = (1L, 0L)
+divmod(2, (2+4j)) = (0j, (2+0j))
+divmod(2, [1]) ... exceptions.TypeError
+divmod(2, (2,)) ... exceptions.TypeError
+divmod(2, None) ... exceptions.TypeError
+divmod(2, <MethodNumber 1>) ... exceptions.TypeError
+divmod(2, <CoerceNumber 8>) = (0, 2)
+divmod(2.2, 2) = (1.0, 0.20000000000000018)
+divmod(2.2, 2.2) = (1.0, 0.0)
+divmod(2.2, 2) = (1.0, 0.20000000000000018)
+divmod(2.2, (2+4j)) = (0j, (2.2+0j))
+divmod(2.2, [1]) ... exceptions.TypeError
+divmod(2.2, (2,)) ... exceptions.TypeError
+divmod(2.2, None) ... exceptions.TypeError
+divmod(2.2, <MethodNumber 1>) ... exceptions.TypeError
+divmod(2.2, <CoerceNumber 8>) = (0.0, 2.2000000000000002)
+divmod(2, 2) = (1L, 0L)
+divmod(2, 2.2) = (0.0, 2.0)
+divmod(2, 2) = (1L, 0L)
+divmod(2, (2+4j)) = (0j, (2+0j))
+divmod(2, [1]) ... exceptions.TypeError
+divmod(2, (2,)) ... exceptions.TypeError
+divmod(2, None) ... exceptions.TypeError
+divmod(2, <MethodNumber 1>) ... exceptions.TypeError
+divmod(2, <CoerceNumber 8>) = (0L, 2L)
+divmod((2+4j), 2) = ((1+0j), 4j)
+divmod((2+4j), 2.2) = (0j, (2+4j))
+divmod((2+4j), 2) = ((1+0j), 4j)
+divmod((2+4j), (2+4j)) = ((1+0j), 0j)
+divmod((2+4j), [1]) ... exceptions.TypeError
+divmod((2+4j), (2,)) ... exceptions.TypeError
+divmod((2+4j), None) ... exceptions.TypeError
+divmod((2+4j), <MethodNumber 1>) ... exceptions.TypeError
+divmod((2+4j), <CoerceNumber 8>) = (0j, (2+4j))
+divmod([1], 2) ... exceptions.TypeError
+divmod([1], 2.2) ... exceptions.TypeError
+divmod([1], 2) ... exceptions.TypeError
+divmod([1], (2+4j)) ... exceptions.TypeError
+divmod([1], [1]) ... exceptions.TypeError
+divmod([1], (2,)) ... exceptions.TypeError
+divmod([1], None) ... exceptions.TypeError
+divmod([1], <MethodNumber 1>) ... exceptions.TypeError
+divmod([1], <CoerceNumber 8>) ... exceptions.TypeError
+divmod((2,), 2) ... exceptions.TypeError
+divmod((2,), 2.2) ... exceptions.TypeError
+divmod((2,), 2) ... exceptions.TypeError
+divmod((2,), (2+4j)) ... exceptions.TypeError
+divmod((2,), [1]) ... exceptions.TypeError
+divmod((2,), (2,)) ... exceptions.TypeError
+divmod((2,), None) ... exceptions.TypeError
+divmod((2,), <MethodNumber 1>) ... exceptions.TypeError
+divmod((2,), <CoerceNumber 8>) ... exceptions.TypeError
+divmod(None, 2) ... exceptions.TypeError
+divmod(None, 2.2) ... exceptions.TypeError
+divmod(None, 2) ... exceptions.TypeError
+divmod(None, (2+4j)) ... exceptions.TypeError
+divmod(None, [1]) ... exceptions.TypeError
+divmod(None, (2,)) ... exceptions.TypeError
+divmod(None, None) ... exceptions.TypeError
+divmod(None, <MethodNumber 1>) ... exceptions.TypeError
+divmod(None, <CoerceNumber 8>) ... exceptions.TypeError
+divmod(<MethodNumber 1>, 2) ... exceptions.TypeError
+divmod(<MethodNumber 1>, 2.2) ... exceptions.TypeError
+divmod(<MethodNumber 1>, 2) ... exceptions.TypeError
+divmod(<MethodNumber 1>, (2+4j)) ... exceptions.TypeError
+divmod(<MethodNumber 1>, [1]) ... exceptions.TypeError
+divmod(<MethodNumber 1>, (2,)) ... exceptions.TypeError
+divmod(<MethodNumber 1>, None) ... exceptions.TypeError
+divmod(<MethodNumber 1>, <MethodNumber 1>) ... exceptions.TypeError
+divmod(<MethodNumber 1>, <CoerceNumber 8>) ... exceptions.TypeError
+divmod(<CoerceNumber 8>, 2) = (4, 0)
+divmod(<CoerceNumber 8>, 2.2) = (3.0, 1.3999999999999995)
+divmod(<CoerceNumber 8>, 2) = (4L, 0L)
+divmod(<CoerceNumber 8>, (2+4j)) = (0j, (8+0j))
+divmod(<CoerceNumber 8>, [1]) ... exceptions.TypeError
+divmod(<CoerceNumber 8>, (2,)) ... exceptions.TypeError
+divmod(<CoerceNumber 8>, None) ... exceptions.TypeError
+divmod(<CoerceNumber 8>, <MethodNumber 1>) ... exceptions.TypeError
+divmod(<CoerceNumber 8>, <CoerceNumber 8>) = (1, 0)
