@@ -2092,6 +2092,29 @@ class TestCharset(unittest.TestCase):
         sp = c.to_splittable(s)
         eq(s, c.from_splittable(sp))
 
+    def test_body_encode(self):
+        eq = self.assertEqual
+        # Try a charset with QP body encoding
+        c = Charset('iso-8859-1')
+        eq('hello w=F6rld', c.body_encode('hello w\xf6rld'))
+        # Try a charset with Base64 body encoding
+        c = Charset('utf-8')
+        eq('aGVsbG8gd29ybGQ=\n', c.body_encode('hello world'))
+        # Try a charset with None body encoding
+        c = Charset('us-ascii')
+        eq('hello world', c.body_encode('hello world'))
+        # Try the convert argument, where input codec <> output codec
+        c = Charset('euc-jp')
+        # With apologies to Tokio Kikuchi ;)
+        try:
+            eq('\x1b$B5FCO;~IW\x1b(B',
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7'))
+            eq('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7',
+               c.body_encode('\xb5\xc6\xc3\xcf\xbb\xfe\xc9\xd7', False))
+        except LookupError:
+            # We probably don't have the Japanese codecs installed
+            pass
+
 
 
 # Test multilingual MIME headers.
