@@ -163,10 +163,10 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: modindex.py indfix.py $(LIBFILES)
-	echo '\\''begin{theindex}\end{theindex}' >$*.ind
-	echo '\\''begin{theindex}\label{modindex}\end{theindex}' >modules.ind
+	echo '\\begin{theindex}\end{theindex}' >$*.ind
+	echo '\\begin{theindex}\label{modindex}\end{theindex}' >mod$*.ind
 	$(LATEX) $*
-	./modindex.py modules.idx
+	./modindex.py mod$*.idx
 	./fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
 	./indfix.py $*.ind
