@@ -61,7 +61,6 @@ struct _inittab _PyImport_Inittab[] = {
 //        {"imageop", initimageop},
         {"math", initmath},
         {"md5", initmd5},
-        {"new", initnew},
 #if defined(MS_WINDOWS) || defined(__BORLANDC__) || defined(__WATCOMC__)
         {"nt", initnt}, /* Use the NT os functions, not posix */
 #else
