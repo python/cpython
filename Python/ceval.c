@@ -152,7 +152,7 @@ gen_iternext(genobject *gen)
 
 	/* Generators always return to their most recent caller, not
 	 * necessarily their creator. */
-	Py_INCREF(tstate->frame);
+	Py_XINCREF(tstate->frame);
 	assert(f->f_back == NULL);
 	f->f_back = tstate->frame;
 
@@ -163,7 +163,7 @@ gen_iternext(genobject *gen)
 	/* Don't keep the reference to f_back any longer than necessary.  It
 	 * may keep a chain of frames alive or it could create a reference
 	 * cycle. */
-	Py_DECREF(f->f_back);
+	Py_XDECREF(f->f_back);
 	f->f_back = NULL;
 
 	return result;
