@@ -33,7 +33,7 @@ class RCS:
     """
 
     # Characters allowed in work file names
-    okchars = string.letters + string.digits + '-_=+.'
+    okchars = string.ascii_letters + string.digits + '-_=+'
 
     def __init__(self):
         """Constructor."""

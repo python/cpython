@@ -251,7 +251,7 @@ class InsertCommand(Command):
         self.chars = self.chars + cmd.chars
         return 1
 
-    alphanumeric = string.letters + string.digits + "_"
+    alphanumeric = string.ascii_letters + string.digits + "_"
 
     def classify(self, c):
         if c in self.alphanumeric:

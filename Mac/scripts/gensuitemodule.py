@@ -825,7 +825,7 @@ def identify(str):
 	if not str:
 		return "_empty_ae_name"
 	rv = ''
-	ok = string.letters  + '_'
+	ok = string.ascii_letters + '_'
 	ok2 = ok + string.digits
 	for c in str:
 		if c in ok:

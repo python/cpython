@@ -29,7 +29,7 @@ def process(file):
     sys.stderr.write('Processing %s ...\n' % file)
     magic = 'Py_'
     for c in file:
-        if c in string.letters + string.digits:
+        if c in string.ascii_letters + string.digits:
             magic = magic + string.upper(c)
         else: magic = magic + '_'
     sys.stdout = f

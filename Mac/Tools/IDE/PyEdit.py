@@ -25,8 +25,7 @@ else:
 	haveThreading = Wthreading.haveThreading
 
 _scriptuntitledcounter = 1
-# _wordchars = string.letters + string.digits + "_"
-_wordchars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
+_wordchars = string.ascii_letters + string.digits + "_"
 
 
 runButtonLabels = ["Run all", "Stop!"]
