@@ -134,7 +134,7 @@ class URLopener:
             for file in self.__tempfiles:
                 try:
                     self.__unlink(file)
-                except:
+                except OSError:
                     pass
             del self.__tempfiles[:]
         if self.tempcache:
@@ -1069,7 +1069,7 @@ def unquote(s):
             try:
                 myappend(mychr(myatoi(item[:2], 16))
                      + item[2:])
-            except:
+            except ValueError:
                 myappend('%' + item)
         else:
             myappend('%' + item)
