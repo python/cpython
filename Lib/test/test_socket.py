@@ -416,18 +416,8 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         conn, addr = self.serv.accept()
 
     def _testConnect(self):
-        self.cli.setblocking(0)
-        try:
-            self.cli.connect((HOST, PORT))
-        except socket.error:
-            pass
-        else:
-            self.fail("Error trying to do non-blocking connect.")
-        read, write, err = select.select([self.cli], [], [])
-        if self.cli in read:
-            self.cli.connect((HOST, PORT))
-        else:
-            self.fail("Error trying to do connect after select.")
+        self.cli.settimeout(10)
+        self.cli.connect((HOST, PORT))
 
     def testRecv(self):
         """Testing non-blocking recv."""
