@@ -1121,24 +1121,6 @@ PySequence_Contains(w, v) /* v in w */
 	PyObject *x;
 	PySequenceMethods *sq;
 
-	/* Special case for char in string */
-	if (PyString_Check(w)) {
-		register char *s, *end;
-		register char c;
-		if (!PyString_Check(v) || PyString_Size(v) != 1) {
-			PyErr_SetString(PyExc_TypeError,
-			    "string member test needs char left operand");
-			return -1;
-		}
-		c = PyString_AsString(v)[0];
-		s = PyString_AsString(w);
-		end = s + PyString_Size(w);
-		while (s < end) {
-			if (c == *s++)
-				return 1;
-		}
-		return 0;
-	}
 	if(PyType_HasFeature(w->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
 		sq = w->ob_type->tp_as_sequence;
 	        if(sq != NULL && sq->sq_contains != NULL)
