@@ -2944,10 +2944,10 @@ otherwise any protocol will match.");
 static PyObject *
 socket_getservbyport(PyObject *self, PyObject *args)
 {
-	int port;
+	unsigned short port;
 	char *proto=NULL;
 	struct servent *sp;
-	if (!PyArg_ParseTuple(args, "i|s:getservbyport", &port, &proto))
+	if (!PyArg_ParseTuple(args, "H|s:getservbyport", &port, &proto))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	sp = getservbyport(htons(port), proto);
