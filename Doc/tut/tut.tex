@@ -174,11 +174,11 @@ lives is an installation option, other places are possible; check with
 your local Python guru or system administrator.  (E.g.,
 \file{/usr/local/python} is a popular alternative location.)
 
-Typing an EOF character (Control-D on \UNIX{}, Control-Z on DOS
-or Windows) at the primary prompt causes the interpreter to exit with
-a zero exit status.  If that doesn't work, you can exit the
-interpreter by typing the following commands: \samp{import sys;
-sys.exit()}.
+Typing an \EOF{} character (\kbd{Control-D} on \UNIX,
+\kbd{Control-Z} on DOS or Windows) at the primary prompt causes the
+interpreter to exit with a zero exit status.  If that doesn't work,
+you can exit the interpreter by typing the following commands:
+\samp{import sys; sys.exit()}.
 
 The interpreter's line-editing features usually aren't very
 sophisticated.  On \UNIX{}, whoever installed the interpreter may have
@@ -186,10 +186,11 @@ enabled support for the GNU readline library, which adds more
 elaborate interactive editing and history features. Perhaps the
 quickest check to see whether command line editing is supported is
 typing Control-P to the first Python prompt you get.  If it beeps, you
-have command line editing; see Appendix A for an introduction to the
-keys.  If nothing appears to happen, or if \code{\^P} is echoed,
-command line editing isn't available; you'll only be able to use
-backspace to remove characters from the current line.
+have command line editing; see Appendix \ref{interacting} for an
+introduction to the keys.  If nothing appears to happen, or if
+\code{\^P} is echoed, command line editing isn't available; you'll
+only be able to use backspace to remove characters from the current
+line.
 
 The interpreter operates somewhat like the \UNIX{} shell: when called
 with standard input connected to a tty device, it reads and executes
@@ -324,15 +325,15 @@ this file.
 
 If you want to read an additional start-up file from the current
 directory, you can program this in the global start-up file,
-e.g.\ \samp{execfile('.pythonrc.py')}\indexii{.pythonrc.py}{file}.  If
-you want to use the startup file in a script, you must do this
-explicitly in the script:
+e.g.\ \samp{if os.path.isfile('.pythonrc.py'):
+execfile('.pythonrc.py')}.  If you want to use the startup file in a
+script, you must do this explicitly in the script:
 
 \begin{verbatim}
 import os
-if os.environ.get('PYTHONSTARTUP') \
-   and os.path.isfile(os.environ['PYTHONSTARTUP']):
-    execfile(os.environ['PYTHONSTARTUP'])
+filename = os.environ.get('PYTHONSTARTUP')
+if filename and os.path.isfile(filename):
+    execfile(filename)
 \end{verbatim}
 
 
@@ -3922,30 +3923,32 @@ is yet another beast.
 If supported, input line editing is active whenever the interpreter
 prints a primary or secondary prompt.  The current line can be edited
 using the conventional Emacs control characters.  The most important
-of these are: C-A (Control-A) moves the cursor to the beginning of the
-line, C-E to the end, C-B moves it one position to the left, C-F to
-the right.  Backspace erases the character to the left of the cursor,
-C-D the character to its right.  C-K kills (erases) the rest of the
-line to the right of the cursor, C-Y yanks back the last killed
-string.  C-underscore undoes the last change you made; it can be
-repeated for cumulative effect.
+of these are: \kbd{C-A} (Control-A) moves the cursor to the beginning
+of the line, \kbd{C-E} to the end, \kbd{C-B} moves it one position to
+the left, \kbd{C-F} to the right.  Backspace erases the character to
+the left of the cursor, \kbd{C-D} the character to its right.
+\kbd{C-K} kills (erases) the rest of the line to the right of the
+cursor, \kbd{C-Y} yanks back the last killed string.
+\kbd{C-underscore} undoes the last change you made; it can be repeated
+for cumulative effect.
 
 \section{History Substitution \label{history}}
 
 History substitution works as follows.  All non-empty input lines
 issued are saved in a history buffer, and when a new prompt is given
-you are positioned on a new line at the bottom of this buffer.  C-P
-moves one line up (back) in the history buffer, C-N moves one down.
-Any line in the history buffer can be edited; an asterisk appears in
-front of the prompt to mark a line as modified.  Pressing the Return
-key passes the current line to the interpreter.  C-R starts an
-incremental reverse search; C-S starts a forward search.
+you are positioned on a new line at the bottom of this buffer.
+\kbd{C-P} moves one line up (back) in the history buffer,
+\kbd{C-N} moves one down.  Any line in the history buffer can be
+edited; an asterisk appears in front of the prompt to mark a line as
+modified.  Pressing the \kbd{Return} key passes the current line to
+the interpreter.  \kbd{C-R} starts an incremental reverse search;
+\kbd{C-S} starts a forward search.
 
 \section{Key Bindings \label{keyBindings}}
 
 The key bindings and some other parameters of the Readline library can
 be customized by placing commands in an initialization file called
-\file{\$HOME/.inputrc}.  Key bindings have the form
+\file{\~{}/.inputrc}.  Key bindings have the form
 
 \begin{verbatim}
 key-name: function-name
@@ -3968,29 +3971,33 @@ For example:
 \begin{verbatim}
 # I prefer vi-style editing:
 set editing-mode vi
+
 # Edit using a single line:
 set horizontal-scroll-mode On
+
 # Rebind some keys:
 Meta-h: backward-kill-word
 "\C-u": universal-argument
 "\C-x\C-r": re-read-init-file
 \end{verbatim}
 
-Note that the default binding for TAB in Python is to insert a TAB
-instead of Readline's default filename completion function.  If you
-insist, you can override this by putting
+Note that the default binding for \kbd{Tab} in Python is to insert a
+\kbd{Tab} character instead of Readline's default filename completion
+function.  If you insist, you can override this by putting
 
 \begin{verbatim}
-TAB: complete
+Tab: complete
 \end{verbatim}
 
-in your \file{\$HOME/.inputrc}.  (Of course, this makes it hard to type
-indented continuation lines...)
+in your \file{\~{}/.inputrc}.  (Of course, this makes it harder to
+type indented continuation lines.)
 
 Automatic completion of variable and module names is optionally
 available.  To enable it in the interpreter's interactive mode, add
-the following to your \file{\$HOME/.pythonrc.py} file:%
-\indexii{.pythonrc.py}{file}
+the following to your startup file:\footnote{
+  Python will execute the contents of a file identified by the
+  \envvar{PYTHONSTARTUP} environment variable when you start an
+  interactive interpreter.}
 \refstmodindex{rlcompleter}\refbimodindex{readline}
 
 \begin{verbatim}
@@ -4010,14 +4017,13 @@ execute application-defined code if an object with a
 
 \section{Commentary \label{commentary}}
 
-This facility is an enormous step forward compared to previous
-versions of the interpreter; however, some wishes are left: It would
-be nice if the proper indentation were suggested on continuation lines
-(the parser knows if an indent token is required next).  The
-completion mechanism might use the interpreter's symbol table.  A
-command to check (or even suggest) matching parentheses, quotes etc.
-would also be useful.
+This facility is an enormous step forward compared to earlier versions
+of the interpreter; however, some wishes are left: It would be nice if
+the proper indentation were suggested on continuation lines (the
+parser knows if an indent token is required next).  The completion
+mechanism might use the interpreter's symbol table.  A command to
+check (or even suggest) matching parentheses, quotes, etc., would also
+be useful.
 
-% XXX Lele Gaifax's readline module, which adds name completion...
 
 \end{document}
