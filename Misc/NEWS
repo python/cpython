@@ -54,6 +54,10 @@ Core and builtins
 Extension modules
 -----------------
 
+- The .*? pattern in the re module is now special-cased to avoid the
+  recursion limit.  (SF patch #720991 -- many thanks to Gary Herron
+  and Greg Chapman.)
+
 - New function sys.call_tracing() allows pdb to debug code
   recursively.
 

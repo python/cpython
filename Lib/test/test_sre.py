@@ -83,6 +83,19 @@ test(r"""sre.match(r'(a)?a','a').lastindex""", None)
 test(r"""sre.match(r'(a)(b)?b','ab').lastindex""", 1)
 test(r"""sre.match(r'(?P<a>a)(?P<b>b)?b','ab').lastgroup""", 'a')
 
+# bug 545855 -- This pattern failed to cause a compile error as it
+# should, instead provoking a TypeError.
+test(r"""sre.compile('foo[a-')""", None, sre.error)
+
+# bugs 418626 at al. -- Testing Greg Chapman's addition of op code
+# SRE_OP_MIN_REPEAT_ONE for eliminating recursion on simple uses of
+# pattern '*?' on a long string.
+test(r"""sre.match('.*?c', 10000*'ab'+'cd').end(0)""", 20001)
+test(r"""sre.match('.*?cd', 5000*'ab'+'c'+5000*'ab'+'cde').end(0)""", 20003)
+test(r"""sre.match('.*?cd', 20000*'abc'+'de').end(0)""", 60001)
+# non-simple '*?' still recurses and hits the recursion limit
+test(r"""sre.search('(a|b)*?c', 10000*'ab'+'cd').end(0)""", None, RuntimeError)
+
 if verbose:
     print 'Running tests on sre.sub'
 
