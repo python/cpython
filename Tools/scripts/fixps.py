@@ -8,23 +8,23 @@ import re
 
 
 def main():
-    for file in sys.argv[1:]:
+    for filename in sys.argv[1:]:
         try:
-            f = open(file, 'r')
+            f = open(filename, 'r')
         except IOError, msg:
-            print file, ': can\'t open :', msg
+            print filename, ': can\'t open :', msg
             continue
         line = f.readline()
         if not re.match('^#! */usr/local/bin/python', line):
-            print file, ': not a /usr/local/bin/python script'
+            print filename, ': not a /usr/local/bin/python script'
             f.close()
             continue
         rest = f.read()
         f.close()
         line = re.sub('/usr/local/bin/python',
                       '/usr/bin/env python', line)
-        print file, ':', `line`
-        f = open(file, "w")
+        print filename, ':', `line`
+        f = open(filename, "w")
         f.write(line)
         f.write(rest)
         f.close()
