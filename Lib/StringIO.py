@@ -81,6 +81,8 @@ class StringIO:
 		self.pos = newpos
 	def writelines(self, list):
 		self.write(string.joinfields(list, ''))
+	def flush(self):
+		pass
 	def getvalue(self):
 		return self.buf
 
