@@ -1302,7 +1302,7 @@ if test "$buggygetaddrinfo" = "yes"; then
 		exit 1
 	fi
 fi
-AC_CHECK_FUNCS(getaddrinfo getnameinfo)
+AC_CHECK_FUNCS(getnameinfo)
 
 # checks for structures
 AC_HEADER_TIME
