@@ -63,20 +63,12 @@ class BaseSet(object):
 
     # Constructor
 
-    def __init__(self, seq=None):
-        """Construct a set, optionally initializing it from a sequence."""
-        self._data = {}
-        if seq is not None:
-            # I don't know a faster way to do this in pure Python.
-            # Custom code written in C only did it 65% faster,
-            # preallocating the dict to len(seq); without
-            # preallocation it was only 25% faster.  So the speed of
-            # this Python code is respectable.  Just copying True into
-            # a local variable is responsible for a 7-8% speedup.
-            data = self._data
-            value = True
-            for key in seq:
-                data[key] = value
+    def __init__(self):
+        """This is an abstract class."""
+        # Don't call this from a concrete subclass!
+        if self.__class__ is BaseSet:
+            raise NotImplementedError, ("BaseSet is an abstract class.  "
+                                        "Use Set or ImmutableSet.")
 
     # Standard protocols: __len__, __repr__, __str__, __iter__
 
@@ -289,9 +281,19 @@ class ImmutableSet(BaseSet):
 
     def __init__(self, seq):
         """Construct an immutable set from a sequence."""
-        # Override the constructor to make 'seq' a required argument
-        BaseSet.__init__(self, seq)
         self._hashcode = None
+        self._data = data = {}
+        # I don't know a faster way to do this in pure Python.
+        # Custom code written in C only did it 65% faster,
+        # preallocating the dict to len(seq); without
+        # preallocation it was only 25% faster.  So the speed of
+        # this Python code is respectable.  Just copying True into
+        # a local variable is responsible for a 7-8% speedup.
+        value = True
+        # XXX Should this perhaps look for _as_immutable?
+        # XXX If so, should use self.update(seq).
+        for key in seq:
+            data[key] = value
 
     def __hash__(self):
         if self._hashcode is None:
@@ -305,6 +307,16 @@ class Set(BaseSet):
     __slots__ = []
 
     # BaseSet + operations requiring mutability; no hashing
+
+    def __init__(self, seq=None):
+        """Construct an immutable set from a sequence."""
+        self._data = data = {}
+        if seq is not None:
+            value = True
+            # XXX Should this perhaps look for _as_immutable?
+            # XXX If so, should use self.update(seq).
+            for key in seq:
+                data[key] = value
 
     # In-place union, intersection, differences
 
