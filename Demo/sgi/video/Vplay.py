@@ -1,77 +1,124 @@
+#! /ufs/guido/bin/sgi/python-405
+#! /ufs/guido/bin/sgi/python
 #! /usr/local/python
 
 # Play CMIF movie files
 
 
-# Usage:
-#
-# Vplay [-L] [-M maginfy] [-m msec] [-q] [-r msec] [-s factor] [file] ...
+# Help function
+
+def help():
+	print 'Usage: Vplay [options] [file] ...'
+	print
+	print 'Options:'
+	print '-M magnify : magnify the image by the given factor'
+	print '-d         : write some debug stuff on stderr'
+	print '-l         : loop, playing the movie over and over again'
+	print '-m delta   : drop frames closer than delta msec (default 0)'
+	print '-q         : quiet, no informative messages'
+	print '-r delta   : regenerate input time base delta msec apart'
+	print '-s speed   : speed change factor (default 1.0)'
+	print '-t         : use a 2nd thread for read-ahead'
+	print '-x left    : window offset from left of screen'
+	print '-y top     : window offset from top of screen'
+	print 'file ...   : file(s) to play; default film.video'
+	print
+	print 'User interface:'
+	print 'Press the left mouse button to stop or restart the movie.'
+	print 'Press ESC or use the window manager Close or Quit command'
+	print 'to close the window and play the next file (if any).'
 
 
-# Options:
-#
-# -L         : loop, playing the movie over and over again
-# -M magnify : magnify the image by the given factor
-# -m n       : drop frames closer than n msec (default 0)
-# -q         : quiet, no informative messages
-# -r n       : regenerate input time base n msec apart
-# -s speed   : speed change factor after other processing (default 1.0)
-# file ...   : file(s) to play; default film.video
-
-
-# User interface:
-#
-# Place the windo where you want it.  The size is determined by the
-# movie file and the -m option.
-#
-# Press ESC or select the window manager Quit or Close window option
-# to close a window; if more files are given the window for the next
-# file now pops up.  Unless looping, the window closes automatically
-# at the end of the movie.
-
+# Imported modules
 
 import sys
-sys.path.append('/ufs/guido/src/video')
+sys.path.append('/ufs/guido/src/video') # Increase chance of finding VFile
 import VFile
 import time
 import gl, GL
-from DEVICE import *
+from DEVICE import REDRAW, ESCKEY, LEFTMOUSE, WINSHUT, WINQUIT
 import getopt
 import string
 
 
 # Global options
 
-magnify = 1
+debug = 0
 looping = 0
-speed = 1.0
+magnify = 1
 mindelta = 0
+nowait = 0
 quiet = 0
 regen = None
+speed = 1.0
+threading = 0
+xoff = yoff = None
 
 
 # Main program -- mostly command line parsing
 
 def main():
-	global magnify, looping, speed, mindelta, quiet, regen
-	opts, args = getopt.getopt(sys.argv[1:], 'LM:m:qr:s:')
-	for opt, arg in opts:
-		if opt == '-L':
-			looping = 1
-		elif opt == '-M':
-			magnify = string.atoi(arg)
-		elif opt == '-m':
-			mindelta = string.atoi(arg)
-		elif opt == '-q':
-			quiet = 1
-		elif opt == '-r':
-			regen = string.atoi(arg)
-		elif opt == '-s':
-			speed = float(eval(arg))
-	if not args:
-		args = ['film.video']
+	global debug, looping, magnify, mindelta, nowait, quiet, regen, speed
+	global threading, xoff, yoff
+
+	# Parse command line
+	try:
+		opts, args = getopt.getopt(sys.argv[1:], 'M:dlm:nqr:s:tx:y:')
+	except getopt.error, msg:
+		sys.stdout = sys.stderr
+		print 'Error:', msg, '\n'
+		help()
+		sys.exit(2)
+
+	# Interpret options
+	try:
+		for opt, arg in opts:
+			if opt == '-M': magnify = string.atoi(arg)
+			if opt == '-d': debug = debug + 1
+			if opt == '-l': looping = 1
+			if opt == '-m': mindelta = string.atoi(arg)
+			if opt == '-n': nowait = 1
+			if opt == '-q': quiet = 1
+			if opt == '-r': regen = string.atoi(arg)
+			if opt == '-s':
+				try:
+					speed = float(eval(arg))
+				except:
+					sys.stdout = sys.stderr
+					print 'Option -s needs float argument'
+					sys.exit(2)
+			if opt == '-t':
+				try:
+					import thread
+					threading = 1
+				except ImportError:
+					print 'Sorry, this version of Python',
+					print 'does not support threads:',
+					print '-t ignored'
+			if opt == '-x': xoff = string.atoi(arg)
+			if opt == '-y': yoff = string.atoi(arg)
+	except string.atoi_error:
+		sys.stdout = sys.stderr
+		print 'Option', opt, 'require integer argument'
+		sys.exit(2)
+
+	# Check validity of certain options combinations
+	if nowait and looping:
+		print 'Warning: -n and -l are mutually exclusive; -n ignored'
+		nowait = 0
+	if xoff <> None and yoff == None:
+		print 'Warning: -x without -y ignored'
+	if xoff == None and yoff <> None:
+		print 'Warning: -y without -x ignored'
+
+	# Process all files
+	if not args: args = ['film.video']
+	sts = 0
 	for filename in args:
-		process(filename)
+		sts = (process(filename) or sts)
+
+	# Exit with proper exit status
+	sys.exit(sts)
 
 
 # Process one movie file
@@ -81,13 +128,13 @@ def process(filename):
 		vin = VFile.VinFile().init(filename)
 	except IOError, msg:
 		sys.stderr.write(filename + ': I/O error: ' + `msg` + '\n')
-		return
+		return 1
 	except VFile.Error, msg:
 		sys.stderr.write(msg + '\n')
-		return
+		return 1
 	except EOFError:
 		sys.stderr.write(filename + ': EOF in video header\n')
-		return
+		return 1
 
 	if not quiet:
 		print 'File:    ', filename
@@ -99,108 +146,145 @@ def process(filename):
 		print 'Offset:  ', vin.offset
 	
 	gl.foreground()
-	gl.prefsize(vin.width * magnify, vin.height * magnify)
+
+	width, height = vin.width * magnify, vin.height * magnify
+	if xoff <> None and yoff <> None:
+		scrheight = gl.getgdesc(GL.GD_YPMAX)
+		gl.prefposition(xoff, xoff+width-1, \
+			scrheight-yoff-height, scrheight-yoff-1)
+	else:
+		gl.prefsize(width, height)
+
 	win = gl.winopen(filename)
-	if quiet:
-		vin.quiet = 1
+	gl.clear()
+
+	if quiet: vin.quiet = 1
 	vin.initcolormap()
 
 	gl.qdevice(ESCKEY)
 	gl.qdevice(WINSHUT)
 	gl.qdevice(WINQUIT)
+	gl.qdevice(LEFTMOUSE)
 
-	while 1:
-		stop = playonce(vin)
-		if stop or not looping:
-			break
-
-	gl.wintitle('(done) ' + filename)
+	stop = 0
 
 	while not stop:
-		dev, val = gl.qread()
-		if dev in (ESCKEY, WINSHUT, WINQUIT):
-			stop = 1
+		gl.wintitle(filename)
+		stop = (playonce(vin) or nowait)
+		gl.wintitle('(done) ' + filename)
+		if not looping:
+			while not stop:
+				dev, val = gl.qread()
+				if dev == LEFTMOUSE and val == 1:
+					break # Continue outer loop
+				if dev == ESCKEY and val == 1 or \
+						dev in (WINSHUT, WINQUIT):
+					stop = 1
 
+	# Set xoff, yoff for the next window from the current window
+	global xoff, yoff
+	xoff, yoff = gl.getorigin()
+	width, height = gl.getsize()
+	scrheight = gl.getgdesc(GL.GD_YPMAX)
+	yoff = scrheight - yoff - height
 	gl.winclose(win)
+
+	return 0
 
 
 # Play a movie once; return 1 if user wants to stop, 0 if not
 
 def playonce(vin):
-	if vin.hascache:
-		vin.rewind()
+	vin.rewind()
 	vin.colormapinited = 1
 	vin.magnify = magnify
+
+	if threading:
+		import thread
+		queue = []
+		stop = []
+		thread.start_new_thread(read_ahead, (vin, queue, stop))
+		# Get the read-ahead thread going
+		while len(queue) < 5 and None not in queue:
+			time.millisleep(10)
 
 	tin = 0
 	told = 0
 	nin = 0
 	nout = 0
-	nmissed = 0
+	nlate = 0
 	nskipped = 0
+	data = None
 
-	t0 = time.millitimer()
+	tlast = t0 = time.millitimer()
 
 	while 1:
-		try:
-			tin, size, csize = vin.getnextframeheader()
-		except EOFError:
-			break
-		nin = nin+1
-		if regen:
-			tout = nin * regen
-		else:
-			tout = tin
-		tout = int(tout / speed)
-		if tout - told < mindelta:
-			try:
-				vin.skipnextframedata(size, csize)
-			except EOFError:
-				print '[short data at EOF]'
-				break
-			nskipped = nskipped + 1
-		else:
-			told = tout
-			dt = tout + t0 - time.millitimer()
-			if dt < 0:
-				try:
-					vin.skipnextframedata(size, csize)
-				except EOFError:
-					print '[short data at EOF]'
-					break
-				nmissed = nmissed + 1
-			else:
-				try:
-					data, cdata = vin.getnextframedata \
-						(size, csize)
-				except EOFError:
-					print '[short data at EOF]'
-					break
-				dt = tout + t0 - time.millitimer()
-				if dt > 0:
-					time.millisleep(dt)
-				vin.showframe(data, cdata)
-				nout = nout + 1
 		if gl.qtest():
 			dev, val = gl.qread()
-			if dev in (ESCKEY, WINSHUT, WINQUIT):
-				return 1
+			if dev == ESCKEY and val == 1 or \
+					dev in (WINSHUT, WINQUIT) or \
+					dev == LEFTMOUSE and val == 1:
+				if debug: sys.stderr.write('\n')
+				if threading:
+					stop.append(None)
+					while len(stop) < 2:
+						time.millisleep(10)
+				return (dev != LEFTMOUSE)
 			if dev == REDRAW:
 				gl.reshapeviewport()
-				if data:
-					vin.showframe(data, cdata)
+				if data: vin.showframe(data, cdata)
+		if threading:
+			if not queue:
+				if debug: sys.stderr.write('.')
+				time.millisleep(10)
+				continue
+			q0 = queue[0]
+			if q0 == None: break
+			del queue[0]
+			tin, data, cdata = q0
+		else:
+			try:
+				tin, size, csize = vin.getnextframeheader()
+			except EOFError:
+				break
+		nin = nin+1
+		if regen: tout = nin * regen
+		else: tout = tin
+		tout = int(tout / speed)
+		if tout - told < mindelta:
+			nskipped = nskipped + 1
+		else:
+			if not threading:
+				try:
+					data, cdata = \
+					  vin.getnextframedata(size, csize)
+				except EOFError:
+					if not quiet:
+						print '[incomplete last frame]'
+					break
+			now = time.millitimer()
+			dt = (tout-told) - (now-tlast)
+			told = tout
+			if debug: sys.stderr.write(`dt/10` + ' ')
+			if dt < 0: nlate = nlate + 1
+			if dt > 0:
+				time.millisleep(dt)
+				now = now + dt
+			tlast = now
+			vin.showframe(data, cdata)
+			nout = nout + 1
 
 	t1 = time.millitimer()
 
-	if quiet:
-		return 0
+	if debug: sys.stderr.write('\n')
+
+	if quiet: return 0
 
 	print 'Recorded:', nin, 'frames in', tin*0.001, 'sec.',
 	if tin: print '-- average', int(nin*10000.0/tin)*0.1, 'frames/sec',
 	print
 
-	if nskipped:
-		print 'Skipped', nskipped, 'frames'
+	if nskipped: print 'Skipped', nskipped, 'frames'
 
 	tout = t1-t0
 	print 'Played:', nout,
@@ -208,12 +292,25 @@ def playonce(vin):
 	if tout: print '-- average', int(nout*10000.0/tout)*0.1, 'frames/sec',
 	print
 
-	if nmissed:
-		print 'Missed', nmissed, 'frames'
+	if nlate: print 'There were', nlate, 'late frames'
 
 	return 0
 
 
+# Read-ahead thread
+
+def read_ahead(vin, queue, stop):
+	try:
+		while not stop: queue.append(vin.getnextframe())
+	except EOFError:
+		queue.append(None)
+	stop.append(None)
+
+
+
 # Don't forget to call the main program
 
-main()
+try:
+	main()
+except KeyboardInterrupt:
+	print '[Interrupt]'
