@@ -22,10 +22,10 @@ item: Global
   Dialogs Version=8
   Version File=2.1.2c1
   Version Description=Python Programming Language
-  Version Copyright=©2001 Python Software Foundation
+  Version Copyright=©2002 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&Properties
+  Step View=&All
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
