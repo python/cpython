@@ -1,4 +1,3 @@
-#! /ufs/guido/bin/sgi/python
 #! /usr/local/bin/python
 
 # A rather specialized script to make sure that a symbolic link named

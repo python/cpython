@@ -1,4 +1,3 @@
-#! /ufs/guido/bin/sgi/python
 #! /usr/local/bin/python
 
 # Perform massive identifier substitution on C source files.
