@@ -465,14 +465,21 @@ com_error(struct compiling *c, PyObject *exc, char *msg)
 		Py_INCREF(Py_None);
 		line = Py_None;
 	}
-	t = Py_BuildValue("(ziOO)", c->c_filename, c->c_lineno,
-			  Py_None, line);
-	if (t == NULL)
-		goto exit;
-	w = Py_BuildValue("(OO)", v, t);
-	if (w == NULL)
-		goto exit;
-	PyErr_SetObject(exc, w);
+	if (exc == PyExc_SyntaxError) {
+		t = Py_BuildValue("(ziOO)", c->c_filename, c->c_lineno,
+				  Py_None, line);
+		if (t == NULL)
+			goto exit;
+		w = Py_BuildValue("(OO)", v, t);
+		if (w == NULL)
+			goto exit;
+		PyErr_SetObject(exc, w);
+	} else {
+		/* Make sure additional exceptions are printed with
+		   file and line, also. */
+		PyErr_SetObject(exc, v);
+		PyErr_SyntaxLocation(c->c_filename, c->c_lineno);
+	}
  exit:
 	Py_XDECREF(t);
 	Py_XDECREF(v);
@@ -1153,7 +1160,8 @@ parsestr(struct compiling *com, char *s)
 	s++;
 	len = strlen(s);
 	if (len > INT_MAX) {
-		PyErr_SetString(PyExc_OverflowError, "string to parse is too long");
+		com_error(com, PyExc_OverflowError, 
+			  "string to parse is too long");
 		return NULL;
 	}
 	if (s[--len] != quote) {
@@ -1171,11 +1179,15 @@ parsestr(struct compiling *com, char *s)
 #ifdef Py_USING_UNICODE
 	if (unicode || Py_UnicodeFlag) {
 		if (rawmode)
-			return PyUnicode_DecodeRawUnicodeEscape(
-				s, len, NULL);
+			v = PyUnicode_DecodeRawUnicodeEscape(
+				 s, len, NULL);
 		else
-			return PyUnicode_DecodeUnicodeEscape(
+			v = PyUnicode_DecodeUnicodeEscape(
 				s, len, NULL);
+		if (v == NULL)
+			PyErr_SyntaxLocation(com->c_filename, com->c_lineno);
+		return v;
+			
 	}
 #endif
 	if (rawmode || strchr(s, '\\') == NULL)
@@ -1238,9 +1250,9 @@ parsestr(struct compiling *com, char *s)
 				*p++ = x;
 				break;
 			}
-			PyErr_SetString(PyExc_ValueError, 
-					"invalid \\x escape");
 			Py_DECREF(v);
+			com_error(com, PyExc_ValueError, 
+				  "invalid \\x escape");
 			return NULL;
 		default:
 			*p++ = '\\';
