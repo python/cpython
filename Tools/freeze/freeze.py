@@ -85,6 +85,9 @@ def main():
     odir = ''
     win = sys.platform[:3] == 'win'
 
+    # modules that are imported by the Python runtime
+    implicits = ["site", "exceptions"]
+
     # output files
     frozen_c = 'frozen.c'
     config_c = 'config.c'
@@ -216,6 +219,9 @@ def main():
         config_c = os.path.join(odir, config_c)
         target = os.path.join(odir, target)
         makefile = os.path.join(odir, makefile)
+
+    for mod in implicits:
+        modules.append(findmodules.findmodule(mod))
 
     # Actual work starts here...
 
