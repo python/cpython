@@ -1,3 +1,5 @@
+# Created by kip Montanaro <skip@mojam.com>.
+
 # Format:
 #	function ':' type ':' [param name] ':' [refcount effect] ':' [comment]
 # If the param name slot is empty, that line corresponds to the function's
@@ -70,11 +72,11 @@ PyDict_DelItemString:int:::
 PyDict_DelItemString:PyDictObject*:p:0:
 PyDict_DelItemString:char*:key::
 
-PyDict_GetItem:PyObject*::0:???
+PyDict_GetItem:PyObject*::0:0
 PyDict_GetItem:PyDictObject*:p:0:
 PyDict_GetItem:PyObject*:key:0:
 
-PyDict_GetItemString:PyObject*::0:???
+PyDict_GetItemString:PyObject*::0:
 PyDict_GetItemString:PyDictObject*:p:0:
 PyDict_GetItemString:char*:key::
 
@@ -235,7 +237,7 @@ PyFloat_Check:PyObject*:p:0:
 PyFloat_FromDouble:PyObject*::+1:
 PyFloat_FromDouble:double:v::
 
-PyImport_AddModule:PyObject*::0:???
+PyImport_AddModule:PyObject*::0:reference borrowed from sys.modules
 PyImport_AddModule:char*:name::
 
 PyImport_Cleanup:void:::
@@ -254,7 +256,7 @@ PyImport_Import:PyObject*:name:0:
 PyImport_ImportFrozenModule:int:::
 PyImport_ImportFrozenModule:char*:::
 
-PyImport_ImportModule:PyObject*::0:???
+PyImport_ImportModule:PyObject*::1:not sure...
 PyImport_ImportModule:char*:name::
 
 PyImport_ImportModuleEx:PyObject*::0:???
@@ -263,8 +265,8 @@ PyImport_ImportModuleEx:PyObject*:globals:0:???
 PyImport_ImportModuleEx:PyObject*:locals:0:???
 PyImport_ImportModuleEx:PyObject*:fromlist:0:???
 
-PyImport_ReloadModule:PyObject*::???:
-PyImport_ReloadModule:PyObject*:m:0:???
+PyImport_ReloadModule:PyObject*::0:
+PyImport_ReloadModule:PyObject*:m:0:
 
 PyInt_AS_LONG:long:::
 PyInt_AS_LONG:PyIntObject*:io:0:
@@ -375,9 +377,6 @@ PyLong_FromUnsignedLong:unsignedlong:v::
 
 PyMapping_Check:int:::
 PyMapping_Check:PyObject*:o:0:
-
-PyMapping_Clear:int:::
-PyMapping_Clear:PyObject*:o::??? don't see this one in the source code
 
 PyMapping_DelItem:int:::
 PyMapping_DelItem:PyObject*:o:0:
@@ -602,22 +601,20 @@ PyObject_Str:PyObject*:o:0:
 PyObject_Type:PyObject*::+1:
 PyObject_Type:PyObject*:o:0:
 
+PyParser_SimpleParseFile:struct _node*:::
 PyParser_SimpleParseFile:FILE*:fp::
 PyParser_SimpleParseFile:char*:filename::
 PyParser_SimpleParseFile:int:start::
 
-PyParser_SimpleParseFilestruct:_node*:::
-
+PyParser_SimpleParseString:struct _node*:::
 PyParser_SimpleParseString:char*:str::
 PyParser_SimpleParseString:int:start::
-
-PyParser_SimpleParseStringstruct:_node*:::
 
 PyRun_AnyFile:int:::
 PyRun_AnyFile:FILE*:fp::
 PyRun_AnyFile:char*:filename::
 
-PyRun_File:PyObject*:::???
+PyRun_File:PyObject*::1:??? -- same as eval_code2()
 PyRun_File:FILE*:fp::
 PyRun_File:char*:filename::
 PyRun_File:int:start::
@@ -639,7 +636,7 @@ PyRun_SimpleFile:char*:filename::
 PyRun_SimpleString:int:::
 PyRun_SimpleString:char*:command::
 
-PyRun_String:PyObject*:::???
+PyRun_String:PyObject*::1:??? -- same as eval_code2()
 PyRun_String:char*:str::
 PyRun_String:int:start::
 PyRun_String:PyObject*:globals:0:
@@ -710,11 +707,11 @@ PyString_Check:int:::
 PyString_Check:PyObject*:o:0:
 
 PyString_Concat:void:::
-PyString_Concat:PyObject**:string:+1:???
+PyString_Concat:PyObject**:string:0:??? -- replaces w/ new string or NULL
 PyString_Concat:PyObject*:newpart:0:
 
 PyString_ConcatAndDel:void:::
-PyString_ConcatAndDel:PyObject**:string:+1:???
+PyString_ConcatAndDel:PyObject**:string:0:??? -- replaces w/ new string or NULL
 PyString_ConcatAndDel:PyObject*:newpart:-1:
 
 PyString_Format:PyObject*::+1:
