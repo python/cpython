@@ -52,13 +52,15 @@ extern PyObject *Py_BuildValue();
 extern int PyArg_VaParse Py_PROTO((PyObject *, char *, va_list));
 extern PyObject *Py_VaBuildValue Py_PROTO((char *, va_list));
 
-#define PYTHON_API_VERSION 1002
+#define PYTHON_API_VERSION 1003
 /* The API version is maintained (independently from the Python version)
    so we can detect mismatches between the interpreter and dynamically
    loaded modules.
 
    Please add a line or two to the top of this log for each API
    version change:
+
+   7-Nov-1995	GvR	Keyword arguments (should've been done at 1.3 :-( )
 
    10-Jan-1995	GvR	Renamed globals to new naming scheme
 
