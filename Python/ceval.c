@@ -775,11 +775,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 				PUSH(x);
 				continue;
 			default:
-				fprintf(stderr, "Invalid argument to DUP_TOPX: %d!\n", oparg);
-				PyErr_SetString(PyExc_SystemError,
-					"invalid argument to DUP_TOPX");
-				x = NULL;
-				break;
+				Py_FatalError("invalid argument to DUP_TOPX (bytecode corruption?)");
 			}
 			break;
 
