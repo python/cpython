@@ -22,9 +22,9 @@
 \noindent
 This manual documents the API used by \C{} (or \Cpp{}) programmers who
 want to write extension modules or embed Python.  It is a companion to
-\emph{Extending and Embedding the Python Interpreter}, which describes
-the general principles of extension writing but does not document the
-API functions in detail.
+\citetitle[../ext/ext.html]{Extending and Embedding the Python
+Interpreter}, which describes the general principles of extension
+writing but does not document the API functions in detail.
 
 \strong{Warning:} The current version of this document is incomplete.
 I hope that it is nevertheless useful.  I will continue to work on it,
@@ -109,10 +109,11 @@ be declared.
 All Python objects (even Python integers) have a \dfn{type} and a
 \dfn{reference count}.  An object's type determines what kind of object 
 it is (e.g., an integer, a list, or a user-defined function; there are 
-many more as explained in the \emph{Python Reference Manual}).  For 
-each of the well-known types there is a macro to check whether an 
-object is of that type; for instance, \samp{PyList_Check(\var{a})} is
-true iff the object pointed to by \var{a} is a Python list.
+many more as explained in the \citetitle[../ref/ref.html]{Python
+Reference Manual}).  For each of the well-known types there is a macro
+to check whether an object is of that type; for instance,
+\samp{PyList_Check(\var{a})} is true if and only if the object pointed
+to by \var{a} is a Python list.
 
 
 \subsection{Reference Counts \label{refcounts}}
@@ -873,11 +874,11 @@ This utility function creates and returns a new exception object.  The
 of the form \code{module.class}.  The \var{base} and \var{dict}
 arguments are normally \NULL{}.  Normally, this creates a class
 object derived from the root for all exceptions, the built-in name
-\exception{Exception} (accessible in \C{} as \cdata{PyExc_Exception}).
+\exception{Exception} (accessible in C as \cdata{PyExc_Exception}).
 In this case the \member{__module__} attribute of the new class is set to the
 first part (up to the last dot) of the \var{name} argument, and the
 class name is set to the last part (after the last dot).  When the
-user has specified the \code{-X} command line option to use string
+user has specified the \programopt{-X} command line option to use string
 exceptions, for backward compatibility, or when the \var{base}
 argument is not a class object (and not \NULL{}), a string object
 created from the entire \var{name} argument is returned.  The
@@ -890,11 +891,10 @@ variables and methods.
 \section{Standard Exceptions \label{standardExceptions}}
 
 All standard Python exceptions are available as global variables whose
-names are \samp{PyExc_} followed by the Python exception name.
-These have the type \ctype{PyObject *}; they are all either class
-objects or string objects, depending on the use of the \code{-X}
-option to the interpreter.  For completeness, here are all the
-variables:
+names are \samp{PyExc_} followed by the Python exception name. These
+have the type \ctype{PyObject *}; they are all either class objects or
+string objects, depending on the use of the \programopt{-X} option to the
+interpreter.  For completeness, here are all the variables:
 \cdata{PyExc_Exception},
 \cdata{PyExc_StandardError},
 \cdata{PyExc_ArithmeticError},
@@ -2126,19 +2126,20 @@ specified as a \ctype{char *}, rather than a \ctype{PyObject *}.
 \begin{cfuncdesc}{PyObject*}{PyDict_Items}{PyDictObject *p}
 Returns a \ctype{PyListObject} containing all the items 
 from the dictionary, as in the dictinoary method \method{items()} (see
-the \emph{Python Library Reference}).
+the \citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Keys}{PyDictObject *p}
 Returns a \ctype{PyListObject} containing all the keys 
 from the dictionary, as in the dictionary method \method{keys()} (see the
-\emph{Python Library Reference}).
+\citetitle[../lib/lib.html]{Python Library Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyDict_Values}{PyDictObject *p}
 Returns a \ctype{PyListObject} containing all the values 
 from the dictionary \var{p}, as in the dictionary method
-\method{values()} (see the \emph{Python Library Reference}).
+\method{values()} (see the \citetitle[../lib/lib.html]{Python Library
+Reference}).
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_Size}{PyDictObject *p}
