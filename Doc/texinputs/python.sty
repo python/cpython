@@ -269,26 +269,52 @@
 \newcommand{\refstmodindex}[1]{\refmodule{#1}{standard }}
 
 % support for the module index
-\if@usemoduleindex
-  \newwrite\modindexfile
-  \openout\modindexfile=mod\jobname.idx
-\fi
+\newif\if@UseModuleIndex
+\@UseModuleIndexfalse
+
+\newcommand{\indexlabel}{genindex}
+
+% Fix the theindex environment to add an entry to the Table of
+% Contents; this is much nicer than just having to jump to the end of
+% the book and flip around, especially with multiple indexes.
+%
+\let\OldTheindex=\theindex
+\renewcommand{\theindex}{
+  \cleardoublepage
+  \OldTheindex
+  \addcontentsline{toc}{chapter}{\indexname}
+  \label{\indexlabel}
+}
+
+\newcommand{\@thismodule}{$<<$ ERROR - NO CURRENT MODULE $>>$}
 
 % Add the defining entry for a module
-\newcommand{\defmodindex}[2]{%
+\newcommand{\@modindex}[2]{%
   \index{#1@{\idxcode{#1}} (#2module)|textbf}%
   \setindexsubitem{(in module #1)}%
-  \if@usemoduleindex%
-    \write\modindexfile{#1 \thepage}%
-  \fi}
+  \if@UseModuleIndex%
+    \write\modindexfile{\protect\indexentry{#1@{\tt #1}}{\thepage}}%
+  \fi%
+  \renewcommand{\@thismodule}{#1}
+}
+
+\newcommand{\makemodindex}{
+  \newwrite\modindexfile
+  \openout\modindexfile=mod\jobname.idx
+  \@UseModuleIndextrue
+}
+
+\newcommand{\inputindex}[1]{
+  \IfFileExists{#1}{\input{#1}}{\begin{theindex}\end{theindex}}
+}
 
 % built-in & Python modules in the main distribution
-\newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
-\newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
+\newcommand{\bimodindex}[1]{\@modindex{#1}{built-in }}
+\newcommand{\stmodindex}[1]{\@modindex{#1}{standard }}
 
 % Python & extension modules outside the main distribution
-\newcommand{\modindex}[1]{\defmodindex{#1}{}}
-\newcommand{\exmodindex}[1]{\defmodindex{#1}{extension }}
+\newcommand{\modindex}[1]{\@modindex{#1}{}}
+\newcommand{\exmodindex}[1]{\@modindex{#1}{extension }}
 
 % Additional string for an index entry
 \newcommand{\index@subitem}{}
@@ -533,17 +559,6 @@
   \def\seetext##1{\par{##1}}
 }{\par}
 
-
-% Fix the theindex environment to add an entry to the Table of
-% Contents; this is much nicer than just having to jump to the end of
-% the book and flip around, especially with multiple indexes.
-%
-\let\OldTheindex=\theindex
-\renewcommand{\theindex}{
-  \cleardoublepage
-  \OldTheindex
-  \addcontentsline{toc}{chapter}{\indexname}
-}
 
 % Allow the release number to be specified independently of the
 % \date{}.  This allows the date to reflect the document's date and
