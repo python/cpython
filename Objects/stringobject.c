@@ -174,7 +174,11 @@ PyString_FromFormatV(const char *format, va_list vargs)
 #ifdef VA_LIST_IS_ARRAY
 	memcpy(count, vargs, sizeof(va_list));
 #else
+#ifdef  __va_copy
+	__va_copy(count, vargs);
+#else
 	count = vargs;
+#endif
 #endif
 	/* step 1: figure out how large a buffer we need */
 	for (f = format; *f; f++) {
