@@ -140,33 +140,33 @@ def handle_dialog(filename):
 # XXXX We could also include the builds for stdwin and such here...
 BUILD_DICT = {
 I_CORE : (buildmwproject, "CWIE", [
-		(":build.mac:PythonCore.prj", "PythonCore"),
-		(":build.mac:Python.prj", "PythonFAT"),
-		(":build.mac:PythonApplet.prj", "PythonAppletFAT"),
+		(":Mac:Build:PythonCore.prj", "PythonCore"),
+		(":Mac:Build:Python.prj", "PythonFAT"),
+		(":Mac:Build:PythonApplet.prj", "PythonAppletFAT"),
 	]),
 
 I_PPC_PLUGINS : (buildmwproject, "CWIE", [
-		(":PlugIns:PlugIns.prj",	"PlugIns.ppc"),
+		(":Mac:Build:PlugIns.prj",	"PlugIns.ppc"),
 	]),
 
 I_68K_PLUGINS : (buildmwproject, "CWIE", [
-		(":PlugIns:PlugIns.prj",	"PlugIns.CFM68K"),
+		(":Mac:Build:PlugIns.prj",	"PlugIns.CFM68K"),
 	]),
 
 I_68K_FULL : (buildmwproject, "CWIE", [
-		(":build.macstand:PythonStandalone.prj", "Python68K"),
+		(":Mac:Build:PythonStandalone.prj", "Python68K"),
 	]),
 	
 I_68K_SMALL : (buildmwproject, "CWIE", [
-		(":build.macstand:PythonStandSmall.prj", "PythonSmall68K"),
+		(":Mac:Build:PythonStandSmall.prj", "PythonSmall68K"),
 	]),
 
 I_PPC_FULL : (buildmwproject, "CWIE", [
-		(":build.macstand:PythonStandalone.prj", "PythonStandalone"),
+		(":Mac:Build:PythonStandalone.prj", "PythonStandalone"),
 	]),
 
 I_PPC_SMALL : (buildmwproject, "CWIE", [
-		(":build.macstand:PythonStandSmall.prj", "PythonStandSmall"),
+		(":Mac:Build:PythonStandSmall.prj", "PythonStandSmall"),
 	]),
 
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
