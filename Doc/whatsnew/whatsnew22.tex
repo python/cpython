@@ -741,14 +741,50 @@ changes are:
 
 \begin{itemize}
 
+  \item The code for the MacOS port for Python, maintained by Jack
+  Jansen, is now kept in the main Python CVS tree, and many changes
+  have been made to support MacOS X.
+
+The most significant change is the ability to build Python as a
+framework, enabled by supplying the \longprogramopt{enable-framework}
+option to the configure script when compiling Python.  According to
+Jack Jansen, ``This installs a self-contained Python installation plus
+the OSX framework "glue" into
+\file{/Library/Frameworks/Python.framework} (or another location of
+choice).  For now there is little immediate added benefit to this
+(actually, there is the disadvantage that you have to change your PATH
+to be able to find Python), but it is the basis for creating a
+full-blown Python application, porting the MacPython IDE, possibly
+using Python as a standard OSA scripting language and much more.''
+
+Most of the MacPython toolbox modules, which interface to MacOS APIs
+such as windowing, QuickTime, scripting, etc. have been ported to OS
+X, but they've been left commented out in setup.py.  People who want
+to experiment with these modules can uncomment them manually.
+
+% Jack's original comments:
+%The main change is the possibility to build Python as a
+%framework. This installs a self-contained Python installation plus the
+%OSX framework "glue" into /Library/Frameworks/Python.framework (or
+%another location of choice). For now there is little immedeate added
+%benefit to this (actually, there is the disadvantage that you have to
+%change your PATH to be able to find Python), but it is the basis for
+%creating a fullblown Python application, porting the MacPython IDE,
+%possibly using Python as a standard OSA scripting language and much
+%more. You enable this with "configure --enable-framework".
+ 
+%The other change is that most MacPython toolbox modules, which
+%interface to all the MacOS APIs such as windowing, quicktime,
+%scripting, etc. have been ported. Again, most of these are not of
+%immedeate use, as they need a full application to be really useful, so
+%they have been commented out in setup.py. People wanting to experiment
+%can uncomment them. Gestalt and Internet Config modules are enabled by
+%default.
+
+  
   \item Keyword arguments passed to builtin functions that don't take them
   now cause a \exception{TypeError} exception to be raised, with the
   message "\var{function} takes no keyword arguments".
-  
-  \item The code for the Mac OS port for Python, maintained by Jack
-  Jansen, is now kept in the main Python CVS tree.
-  % XXX should expand this with all of Jack's recent changes (ask him for 
-  % a summary)        
   
   \item A new script, \file{Tools/scripts/cleanfuture.py} by Tim
   Peters, automatically removes obsolete \code{__future__} statements
@@ -822,7 +858,7 @@ changes are:
 The author would like to thank the following people for offering
 suggestions and corrections to various drafts of this article: Fred
 Bremmer, Keith Briggs, Fred L. Drake, Jr., Carel Fellinger, Mark
-Hammond, Marc-Andr\'e Lemburg, Tim Peters, Neil Schemenauer, Guido van
-Rossum.
+Hammond, Jack Jansen, Marc-Andr\'e Lemburg, Tim Peters, Neil
+Schemenauer, Guido van Rossum.
 
 \end{document}
