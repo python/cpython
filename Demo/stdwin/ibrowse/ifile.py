@@ -311,7 +311,7 @@ def try_open(file):
 	for dir in INFOPATH:
 		try:
 			return open(dir + file, 'r')
-		except RuntimeError:
+		except IOError:
 			pass
 	raise NoSuchFile, file
 
