@@ -189,7 +189,6 @@ address                 { font-size: 80%; }
                           border-width: 0px 0px 1px 1px;
                           padding-left: 0.4em;
                           padding-right: 0.4em;
-                          text-align: inherit;
                           }
 .realtable td:first-child,
 .realtable th:first-child {
