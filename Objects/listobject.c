@@ -1832,7 +1832,9 @@ listindex(PyListObject *self, PyObject *args)
 	int i, start=0, stop=self->ob_size;
 	PyObject *v;
 
-	if (!PyArg_ParseTuple(args, "O|ii:index", &v, &start, &stop))
+	if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
+	                            _PyEval_SliceIndex, &start,
+	                            _PyEval_SliceIndex, &stop))
 		return NULL;
 	if (start < 0) {
 		start += self->ob_size;

@@ -374,6 +374,15 @@ if a.index(0,3) != 3: raise TestFailed, 'list index, start argument'
 if a.index(0,-3) != 3: raise TestFailed, 'list index, -start argument'
 if a.index(0,3,4) != 3: raise TestFailed, 'list index, stop argument'
 if a.index(0,-3,-2) != 3: raise TestFailed, 'list index, -stop argument'
+if a.index(0,-4*sys.maxint,4*sys.maxint) != 2:
+    raise TestFailed, 'list index, -maxint, maxint argument'
+try:
+    a.index(0, 4*sys.maxint,-4*sys.maxint)
+except ValueError:
+    pass
+else:
+    raise TestFailed, 'list index, maxint,-maxint argument'
+
 try:
     a.index(2,0,-10)
 except ValueError:
