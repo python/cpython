@@ -23,7 +23,7 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************************************************/
 
 /******************************************************************
-This is a curses implimentation. I have tried to be as complete
+This is a curses implementation. I have tried to be as complete
 as possible. If there are functions you need that are not included,
 please let me know and/or send me some diffs.
 
@@ -178,12 +178,19 @@ PyObject *PyCurses_ERR;
 
 Change Log:
 
+Version 1.1: 94/08/31:
+    Minor fixes given by Guido.
+    Changed 'ncurses' to 'curses'
+    Changed '__version__' to 'version'
+    Added PyErr_Clear() where needed
+    Moved ACS_* attribute initialization to PyCurses_InitScr() to fix
+        crash on SGI
 Version 1.0: 94/08/30:
     This is the first release of this software.
     Released to the Internet via python-list@cwi.nl
 
 ******************************************************************/
-char *PyCursesVersion = "1.0 first release"
+char *PyCursesVersion = "1.1";
 
 /* ------------- SCREEN routines --------------- */
 #ifdef NOT_YET
@@ -405,6 +412,7 @@ PyCursesWindow_DelCh(self,arg)
   int use_xy = TRUE;
   if (!PyArg_Parse(arg,"(ii);y,x", &y, &x))
     use_xy = FALSE;
+  PyErr_Clear();
   if (use_xy == TRUE)
     rtn = mvwdelch(self->win,y,x);
   else
@@ -750,6 +758,7 @@ PyCursesWindow_GetCh(self,arg)
   int rtn;
   if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
     use_xy = FALSE;
+  PyErr_Clear();
   if (use_xy == TRUE)
     rtn = mvwgetch(self->win,y,x);
   else
@@ -768,6 +777,7 @@ PyCursesWindow_GetStr(self,arg)
   int rtn2;
   if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
     use_xy = FALSE;
+  PyErr_Clear();
   if (use_xy == TRUE)
     rtn2 = mvwgetstr(self->win,y,x,rtn);
   else
@@ -787,6 +797,7 @@ PyCursesWindow_InCh(self,arg)
   int rtn;
   if (!PyArg_Parse(arg,"(ii);y,x",&y,&x))
     use_xy = FALSE;
+  PyErr_Clear();
   if (use_xy == TRUE)
     rtn = mvwinch(self->win,y,x);
   else
@@ -1028,6 +1039,7 @@ PyCurses_InitScr(self, args)
      PyObject * args;
 {
   static int already_inited = FALSE;
+  WINDOW *win;
   if (!PyArg_NoArgs(args))
     return (PyObject *)NULL;
   if (already_inited == TRUE) {
@@ -1035,7 +1047,41 @@ PyCurses_InitScr(self, args)
     return (PyObject *)PyCursesWindow_New(stdscr);
   }
   already_inited = TRUE;
-  return (PyObject *)PyCursesWindow_New(initscr());
+
+  win = initscr();
+
+/* This was moved from initcurses() because core dumped on SGI */
+#define SetDictChar(string,ch) \
+	PyDict_SetItemString(d,string,PyInt_FromLong(ch));
+ 
+	/* Here are some graphic symbols you can use */
+        SetDictChar("ACS_ULCORNER",(ACS_ULCORNER));
+	SetDictChar("ACS_ULCORNER",(ACS_ULCORNER));
+	SetDictChar("ACS_LLCORNER",(ACS_LLCORNER));
+	SetDictChar("ACS_URCORNER",(ACS_URCORNER));
+	SetDictChar("ACS_LRCORNER",(ACS_LRCORNER));
+	SetDictChar("ACS_RTEE",    (ACS_RTEE));
+	SetDictChar("ACS_LTEE",    (ACS_LTEE));
+	SetDictChar("ACS_BTEE",    (ACS_BTEE));
+	SetDictChar("ACS_TTEE",    (ACS_TTEE));
+	SetDictChar("ACS_HLINE",   (ACS_HLINE));
+	SetDictChar("ACS_VLINE",   (ACS_VLINE));
+	SetDictChar("ACS_PLUS",    (ACS_PLUS));
+	SetDictChar("ACS_S1",      (ACS_S1));
+	SetDictChar("ACS_S9",      (ACS_S9));
+	SetDictChar("ACS_DIAMOND", (ACS_DIAMOND));
+	SetDictChar("ACS_CKBOARD", (ACS_CKBOARD));
+	SetDictChar("ACS_DEGREE",  (ACS_DEGREE));
+	SetDictChar("ACS_PLMINUS", (ACS_PLMINUS));
+	SetDictChar("ACS_BULLET",  (ACS_BULLET));
+	SetDictChar("ACS_LARROW",  (ACS_RARROW));
+	SetDictChar("ACS_DARROW",  (ACS_DARROW));
+	SetDictChar("ACS_UARROW",  (ACS_UARROW));
+	SetDictChar("ACS_BOARD",   (ACS_BOARD));
+	SetDictChar("ACS_LANTERN", (ACS_LANTERN));
+	SetDictChar("ACS_BLOCK",   (ACS_BLOCK));
+
+  return (PyObject *)PyCursesWindow_New(win);
 }
 
 static PyObject * 
@@ -1328,12 +1374,12 @@ static PyMethodDef PyCurses_methods[] = {
 /* Initialization function for the module */
 
 void
-initncurses()
+initcurses()
 {
 	PyObject *m, *d, *x;
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("ncurses", PyCurses_methods);
+	m = Py_InitModule("curses", PyCurses_methods);
 
 	PyCurses_OK  = Py_True;
 	PyCurses_ERR = Py_False;
@@ -1343,42 +1389,12 @@ initncurses()
 	d = PyModule_GetDict(m);
 
 	/* Make the version available */
-	PyDict_SetItemString(d,"__version__",
+	PyDict_SetItemString(d,"version",
 			     PyString_FromString(PyCursesVersion));
 
 	/* Here are some defines */
 	PyDict_SetItemString(d,"OK", PyCurses_OK);
 	PyDict_SetItemString(d,"ERR",PyCurses_ERR);
-
-#define SetDictChar(string,ch) \
-	PyDict_SetItemString(d,string,PyInt_FromLong(ch));
- 
-	/* Here are some graphic symbols you can use */
-        SetDictChar("ACS_ULCORNER",(ACS_ULCORNER));
-	SetDictChar("ACS_ULCORNER",(ACS_ULCORNER));
-	SetDictChar("ACS_LLCORNER",(ACS_LLCORNER));
-	SetDictChar("ACS_URCORNER",(ACS_URCORNER));
-	SetDictChar("ACS_LRCORNER",(ACS_LRCORNER));
-	SetDictChar("ACS_RTEE",    (ACS_RTEE));
-	SetDictChar("ACS_LTEE",    (ACS_LTEE));
-	SetDictChar("ACS_BTEE",    (ACS_BTEE));
-	SetDictChar("ACS_TTEE",    (ACS_TTEE));
-	SetDictChar("ACS_HLINE",   (ACS_HLINE));
-	SetDictChar("ACS_VLINE",   (ACS_VLINE));
-	SetDictChar("ACS_PLUS",    (ACS_PLUS));
-	SetDictChar("ACS_S1",      (ACS_S1));
-	SetDictChar("ACS_S9",      (ACS_S9));
-	SetDictChar("ACS_DIAMOND", (ACS_DIAMOND));
-	SetDictChar("ACS_CKBOARD", (ACS_CKBOARD));
-	SetDictChar("ACS_DEGREE",  (ACS_DEGREE));
-	SetDictChar("ACS_PLMINUS", (ACS_PLMINUS));
-	SetDictChar("ACS_BULLET",  (ACS_BULLET));
-	SetDictChar("ACS_LARROW",  (ACS_RARROW));
-	SetDictChar("ACS_DARROW",  (ACS_DARROW));
-	SetDictChar("ACS_UARROW",  (ACS_UARROW));
-	SetDictChar("ACS_BOARD",   (ACS_BOARD));
-	SetDictChar("ACS_LANTERN", (ACS_LANTERN));
-	SetDictChar("ACS_BLOCK",   (ACS_BLOCK));
 
 	/* Here are some attributes you can add to chars to print */
 	PyDict_SetItemString(d, "A_NORMAL",    PyInt_FromLong(A_NORMAL));
