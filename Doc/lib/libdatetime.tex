@@ -767,8 +767,7 @@ implement all of them.  The methods are called by a \class{datetimetz}
 or \class{timetz} object, passing itself as the argument.  A
 \class{tzinfo} subclass's methods should be prepared to accept a dt
 argument of \code{None} or of type \class{timetz} or
-\class{datetimetz}.  If is not \code{None}, and dt.tzinfo is not
-\code{None} and not equal to self, an exception should be raised.
+\class{datetimetz}.
 
   - utcoffset(dt)
     Return offset of local time from UTC, in minutes east of UTC.  If
