@@ -116,6 +116,7 @@ UserData = OpaqueByValueType('UserData', 'UserDataObj')
 TimeBase = OpaqueByValueType('TimeBase', 'TimeBaseObj')
 MovieController = OpaqueByValueType('MovieController', 'MovieCtlObj')
 IdleManager = OpaqueByValueType('IdleManager', 'IdleManagerObj')
+SGOutput = OpaqueByValueType('SGOutput', 'SGOutputObj')
 
 # Other opaque objects
 Component = OpaqueByValueType('Component', 'CmpObj')
@@ -127,11 +128,25 @@ CodecComponent = OpaqueByValueType('CodecComponent', 'CmpObj')
 GraphicsImportComponent = OpaqueByValueType('GraphicsImportComponent', 'CmpObj')
 GraphicsExportComponent = OpaqueByValueType('GraphicsExportComponent', 'CmpObj')
 ImageTranscoderComponent = OpaqueByValueType('ImageTranscoderComponent', 'CmpObj')
-
+DataCodecComponent = OpaqueByValueType('DataCodecComponent', 'CmpObj')
+GraphicImageMovieImportComponent = OpaqueByValueType('GraphicImageMovieImportComponent', 'CmpObj')
+MovieExportComponent = OpaqueByValueType('MovieExportComponent', 'CmpObj')
+MovieImportComponent = OpaqueByValueType('MovieImportComponent', 'CmpObj')
+QTVideoOutputComponent = OpaqueByValueType('QTVideoOutputComponent', 'CmpObj')
+SeqGrabComponent = OpaqueByValueType('SeqGrabComponent', 'CmpObj')
+TextExportComponent = OpaqueByValueType('TextExportComponent', 'CmpObj')
+TweenerComponent = OpaqueByValueType('TweenerComponent', 'CmpObj')
+pnotComponent = OpaqueByValueType('pnotComponent', 'CmpObj')
+VideoDigitizerComponent = OpaqueByValueType('VideoDigitizerComponent', 'CmpObj')
 
 ComponentInstance = OpaqueByValueType('ComponentInstance', 'CmpInstObj')
 MediaHandler = OpaqueByValueType('MediaHandler', 'CmpInstObj')
 DataHandler = OpaqueByValueType('DataHandler', 'CmpInstObj')
+SGChannel = OpaqueByValueType('SGChannel', 'CmpInstObj')
+
+ConstFSSpecPtr = FSSpec_ptr
+GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
+Byte = Boolean # XXXX For GetPaused and SetPaused
 
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
@@ -145,6 +160,10 @@ CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GDHandle = OpaqueByValueType("GDHandle", "OptResObj")
 AliasHandle = OpaqueByValueType("AliasHandle", "ResObj")
 SoundDescriptionHandle = OpaqueByValueType("SoundDescriptionHandle", "ResObj")
+VdigBufferRecListHandle = OpaqueByValueType("VdigBufferRecListHandle", "ResObj")
+VDCompressionListHandle = OpaqueByValueType("VDCompressionListHandle", "ResObj")
+TimeCodeDescriptionHandle = OpaqueByValueType("TimeCodeDescriptionHandle", "ResObj")
+DataHFileTypeOrderingHandle = OpaqueByValueType("DataHFileTypeOrderingHandle", "ResObj")
 # Silly Apple, passing an OStype by reference...
 OSType_ptr = OpaqueType("OSType", "PyMac_BuildOSType", "PyMac_GetOSType")
 # And even sillier: passing floats by address
@@ -169,6 +188,7 @@ dataRefAttributesFlags = Type("dataRefAttributesFlags", "l")
 playHintsEnum = Type("playHintsEnum", "l")
 mediaHandlerFlagsEnum = Type("mediaHandlerFlagsEnum", "l")
 ComponentResult = Type("ComponentResult", "l")
+VideoDigitizerError = Type("ComponentResult", "l")
 HandlerError = Type("HandlerError", "l")
 Ptr = InputOnlyType("Ptr", "s")
 StringPtr = Type("StringPtr", "s")
@@ -246,6 +266,20 @@ class IdleManagerObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
 					return NULL;
 				}""")
 
+class SGOutputObjectDefinition(PEP253Mixin, GlobalObjectDefinition):
+	# XXXX I'm not sure I fully understand how SGOutput works. It seems it's always tied
+	# to a specific SeqGrabComponent, but I'm not 100% sure. Also, I'm not sure all the
+	# routines that return an SGOutput actually return a *new* SGOutput. Need to read up on
+	# this.
+	def outputCheckNewArg(self):
+		Output("""if (itself == NULL) {
+					PyErr_SetString(Qt_Error,"Cannot create null SGOutput");
+					return NULL;
+				}""")
+#	def outputFreeIt(self, itselfname):
+#		Output("SGDisposeOutput(%s);", itselfname)
+
+
 # From here on it's basically all boiler plate...
 
 # Create the generator groups and link them
@@ -257,6 +291,7 @@ UserData_object = UserDataObjectDefinition('UserData', 'UserDataObj', 'UserData'
 TimeBase_object = TimeBaseObjectDefinition('TimeBase', 'TimeBaseObj', 'TimeBase')
 MovieController_object = MovieCtlObjectDefinition('MovieController', 'MovieCtlObj', 'MovieController')
 IdleManager_object = IdleManagerObjectDefinition('IdleManager', 'IdleManagerObj', 'IdleManager')
+SGOutput_object = SGOutputObjectDefinition('SGOutput', 'SGOutputObj', 'SGOutput')
 
 module.addobject(IdleManager_object)
 module.addobject(MovieController_object)
@@ -265,6 +300,10 @@ module.addobject(UserData_object)
 module.addobject(Media_object)
 module.addobject(Track_object)
 module.addobject(Movie_object)
+module.addobject(SGOutput_object)
+
+# Test which types we are still missing.
+execfile(string.lower(MODPREFIX) + 'typetest.py')
 
 # Create the generator classes used to populate the lists
 Function = OSErrWeakLinkFunctionGenerator
@@ -279,6 +318,7 @@ UserData_methods = []
 Media_methods = []
 Track_methods = []
 Movie_methods = []
+SGOutput_methods = []
 execfile(INPUTFILE)
 
 #

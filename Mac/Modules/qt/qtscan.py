@@ -8,15 +8,18 @@ from scantools import Scanner
 
 LONG = "QuickTime"
 SHORT = "qt"
-OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", "IdleManager")
+HEADERFILES= ("Movies.h", "ImageCompression.h", "QuickTimeComponents.h")
+OBJECTS = ("Movie", "Track", "Media", "UserData", "TimeBase", "MovieController", 
+	"IdleManager", "SGOutput")
 
 def main():
-	input = ("Movies.h", "ImageCompression.h")
+	input = HEADERFILES
 	output = SHORT + "gen.py"
 	defsoutput = TOOLBOXDIR + LONG + ".py"
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 	scanner.close()
+	scanner.gentypetest(SHORT+"typetest.py")
 	print "=== Testing definitions output code ==="
 	execfile(defsoutput, {}, {})
 	print "=== Done scanning and generating, now importing the generated code... ==="
@@ -37,9 +40,11 @@ class MyScanner(Scanner):
 
 	def writeinitialdefs(self):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
+		self.defsfile.write("xmlIdentifierUnrecognized = -1\n")
 
 	def makeblacklistnames(self):
 		return [
+			"xmlIdentifierUnrecognized", # const with incompatible definition
 			"DisposeMovie",		# Done on python-object disposal
 			"DisposeMovieTrack",	# ditto
 			"DisposeTrackMedia",	# ditto
@@ -78,6 +83,13 @@ class MyScanner(Scanner):
 
             # these are ImageCompression blacklists
 			"GraphicsExportGetInputPtr",
+			
+			# QuickTimeComponents
+			# These two need some help: the first returns a point to a databuffer that
+			# the second disposes. Generate manually?
+			"VDCompressDone",
+			"VDReleaseCompressBuffer",
+			"QTVideoOutputGetGWorldParameters", # How useful is this?
 			]
 
 	def makeblacklisttypes(self):
@@ -156,6 +168,43 @@ class MyScanner(Scanner):
             "PixMapPtr",
             "GWorldFlags",
             "void_ptr",   # XXX Being lazy, this one is doable.
+            
+            # These are from QuickTimeComponents
+            "CDataHandlerUPP",
+            "CharDataHandlerUPP",
+            "CommentHandlerUPP",
+            "DataHCompletionUPP",
+            "'MovieExportGetDataUPP",
+            "MovieExportGetPropertyUPP",
+            "PreprocessInstructionHandlerUPP",
+            "SGModalFilterUPP",
+            "StartDocumentHandlerUPP",
+            "StartElementHandlerUPP",
+            "VdigIntUPP",
+            "SGDataUPP",
+            "EndDocumentHandlerUPP",
+            "EndElementHandlerUPP",
+            "VideoBottles", # Record full of UPPs
+            
+            "SCParams",
+            "ICMCompletionProcRecordPtr",
+            "DataHVolumeList",
+            "DigitizerInfo",
+            "SGCompressInfo",
+            "SeqGrabExtendedFrameInfoPtr",
+            "SeqGrabFrameInfoPtr",
+            "TCTextOptionsPtr",
+            "SGCompressInfo_ptr",
+            "SGDeviceList",
+            "TextDisplayData",
+            "TimeCodeDef",
+            "TimeCodeRecord",
+            "TweenRecord",
+            "VDGamRecPtr",
+            "ToneDescription", 	# XXXX Just lazy: this one is easy.
+            "XMLDoc",
+            "UInt64", 	# XXXX lazy
+            "UInt64_ptr", # XXXX lazy
 			]
 
 	def makerepairinstructions(self):
