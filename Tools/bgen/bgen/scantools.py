@@ -296,7 +296,10 @@ if missing: raise "Missing Types"
 			self.defsmine = mine
 
 	def openoutput(self, filename):
-		file = open(filename, 'w')
+		try:
+			file = open(filename, 'w')
+		except IOError, arg:
+			raise IOError, (filename, arg)
 		self.setfiletype(filename)
 		return file
 
