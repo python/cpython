@@ -199,6 +199,8 @@ class ImportHooksTestCase(ImportHooksBaseTestCase):
             m = __import__(mname, globals(), locals(), ["__dummy__"])
             m.__loader__  # to make sure we actually handled the import
 
+def test_main():
+    test_support.run_unittest(ImportHooksTestCase)
 
 if __name__ == "__main__":
-    test_support.run_unittest(ImportHooksTestCase)
+    test_main()

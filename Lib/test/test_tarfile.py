@@ -231,7 +231,7 @@ if not gzip:
     del WriteTestGzip
     del WriteStreamTestGzip
 
-if __name__ == "__main__":
+def test_main():
     if gzip:
         # create testtar.tar.gz
         gzip.open(tarname("gz"), "wb").write(file(tarname(), "rb").read())
@@ -240,7 +240,26 @@ if __name__ == "__main__":
         bz2.BZ2File(tarname("bz2"), "wb").write(file(tarname(), "rb").read())
 
     try:
-        unittest.main()
+        suite = unittest.TestSuite()
+
+        suite.addTest(unittest.makeSuite(ReadTest))
+        suite.addTest(unittest.makeSuite(ReadStreamTest))
+        suite.addTest(unittest.makeSuite(WriteTest))
+        suite.addTest(unittest.makeSuite(WriteStreamTest))
+
+        if gzip:
+            suite.addTest(unittest.makeSuite(ReadTestGzip))
+            suite.addTest(unittest.makeSuite(ReadStreamTestGzip))
+            suite.addTest(unittest.makeSuite(WriteTestGzip))
+            suite.addTest(unittest.makeSuite(WriteStreamTestGzip))
+
+        if bz2:
+            suite.addTest(unittest.makeSuite(ReadTestBzip2))
+            suite.addTest(unittest.makeSuite(ReadStreamTestBzip2))
+            suite.addTest(unittest.makeSuite(WriteTestBzip2))
+            suite.addTest(unittest.makeSuite(WriteStreamTestBzip2))
+
+        test_support.run_suite(suite)
     finally:
         if gzip:
             os.remove(tarname("gz"))
@@ -251,3 +270,5 @@ if __name__ == "__main__":
         if os.path.exists(tempname):
             os.remove(tempname)
 
+if __name__ == "__main__":
+    test_main()
