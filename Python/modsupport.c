@@ -520,8 +520,9 @@ PyModule_AddObject(PyObject *m, char *name, PyObject *o)
 		return -1;
 	}
 	if (!o) {
-		PyErr_SetString(PyExc_TypeError,
-				"PyModule_AddObject() needs non-NULL value");
+		if (!PyErr_Occurred())
+			PyErr_SetString(PyExc_TypeError,
+					"PyModule_AddObject() needs non-NULL value");
 		return -1;
 	}
 
