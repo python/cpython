@@ -604,7 +604,7 @@ eval_frame(PyFrameObject *f)
 	   f->f_lasti now refers to the index of the last instruction
 	   executed.  You might think this was obvious from the name, but
 	   this wasn't always true before 2.3!  PyFrame_New now sets
-	   f->f_lasti to -1 (i.e. the index *before* the first instruction
+	   f->f_lasti to -1 (i.e. the index *before* the first instruction)
 	   and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
 	   does work.  Promise. */
 	next_instr = first_instr + f->f_lasti + 1;
