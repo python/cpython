@@ -84,6 +84,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libsgmllib.tex \
 	../lib/librfc822.tex \
 	../lib/libmimetools.tex \
+	../lib/libmimewriter.tex \
 	../lib/libbinascii.tex \
 	../lib/libmm.tex \
 	../lib/libaudioop.tex \
