@@ -113,7 +113,7 @@ class WeakValueDictionary(UserDict.UserDict):
         else:
             return o
 
-    def setdefault(self, key, default):
+    def setdefault(self, key, default=None):
         try:
             wr = self.data[key]
         except KeyError:
@@ -241,7 +241,7 @@ class WeakKeyDictionary(UserDict.UserDict):
     def pop(self, key, *args):
         return self.data.pop(ref(key), *args)
 
-    def setdefault(self, key, default):
+    def setdefault(self, key, default=None):
         return self.data.setdefault(ref(key, self._remove),default)
 
     def update(self, dict=None, **kwargs):
