@@ -15,7 +15,7 @@ integers or floating point numbers, as long as it is consistent.
 
 Events are specified by tuples (time, priority, action, argument).
 As in UNIX, lower priority numbers mean higher priority; in this
-way the queue can be maintained fully sorted.  Execution of the
+way the queue can be maintained as a priority queue.  Execution of the
 event means calling the action function, passing it the argument.
 Remember that in Python, multiple function arguments can be packed
 in a tuple.   The action function may be an instance method so it
@@ -28,7 +28,7 @@ Parameterless functions or methods cannot be used, however.
 # XXX instead of having to define a module or class just to hold
 # XXX the global state of your particular time and delay functions.
 
-import bisect
+import heapq
 
 __all__ = ["scheduler"]
 
@@ -48,7 +48,7 @@ class scheduler:
 
         """
         event = time, priority, action, argument
-        bisect.insort(self.queue, event)
+        heapq.heappush(self.queue, event)
         return event # The ID
 
     def enter(self, delay, priority, action, argument):
@@ -68,10 +68,11 @@ class scheduler:
 
         """
         self.queue.remove(event)
+        heapq.heapify(self.queue)
 
     def empty(self):
         """Check whether the queue is empty."""
-        return len(self.queue) == 0
+        return not not self.queue
 
     def run(self):
         """Execute events until the queue is empty.
@@ -94,13 +95,23 @@ class scheduler:
         runnable.
 
         """
+        # localize variable access to minimize overhead
+        # and to improve thread safety
         q = self.queue
+        delayfunc = self.delayfunc
+        timefunc = self.timefunc
+        pop = heapq.heappop
         while q:
-            time, priority, action, argument = q[0]
-            now = self.timefunc()
+            time, priority, action, argument = checked_event = q[0]
+            now = timefunc()
             if now < time:
-                self.delayfunc(time - now)
+                delayfunc(time - now)
             else:
-                del q[0]
-                void = action(*argument)
-                self.delayfunc(0)   # Let other threads run
+                event = pop(q)
+                # Verify that the event was not removed or altered
+                # by another thread after we last looked at q[0].
+                if event is checked_event:
+                    void = action(*argument)
+                    delayfunc(0)   # Let other threads run
+                else:
+                    heapq.heappush(event)
