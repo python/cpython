@@ -1169,7 +1169,6 @@ _PyTrash_deposit_object(op)
 	PyObject *op;
 {
 	int typecode;
-	PyObject *hold = _PyTrash_delete_later;
 
 	if (PyTuple_Check(op))
 		typecode = Py_TRASHCAN_TUPLE;
