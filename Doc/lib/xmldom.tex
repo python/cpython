@@ -98,18 +98,21 @@ for the specific implementation (e.g. if that implementation supports
 some customization).
 \end{funcdesc}
 
-\begin{funcdesc}{getDOMImplementation}{name = None, features = ()}
+\begin{funcdesc}{getDOMImplementation}{\optional{name\optional{, features}}}
 Return a suitable DOM implementation. The \var{name} is either
 well-known, the module name of a DOM implementation, or
-\code{None}. If it is not \code{None}, imports the corresponding module and
-returns a \class{DOMImplementation} object if the import succeeds.  If
-no name is given, and if the environment variable \envvar{PYTHON_DOM} is
-set, this variable is used to find the implementation.
+\code{None}. If it is not \code{None}, imports the corresponding
+module and returns a \class{DOMImplementation} object if the import
+succeeds.  If no name is given, and if the environment variable
+\envvar{PYTHON_DOM} is set, this variable is used to find the
+implementation.
 
-If name is not given, consider the available implementations to find
-one with the required feature set. If no implementation can be found,
-raise an \exception{ImportError}. The features list must be a sequence of
-(feature, version) pairs which are passed to hasFeature.
+If name is not given, this examines the available implementations to
+find one with the required feature set.  If no implementation can be
+found, raise an \exception{ImportError}.  The features list must be a
+sequence of \code{(\var{feature}, \var{version})} pairs which are
+passed to the \method{hasFeature()} method on available
+\class{DOMImplementation} objects.
 \end{funcdesc}
 
 
