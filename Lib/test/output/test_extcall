@@ -27,3 +27,7 @@ h() got an unexpected keyword argument 'e'
 * argument must be a sequence
 ** argument must be a dictionary
 3 512 1
+3
+3
+unbound method must be called with instance as first argument
+unbound method must be called with instance as first argument
