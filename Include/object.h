@@ -337,9 +337,14 @@ given type object has a specified feature.
 /* PyNumberMethods do their own coercion */
 #define Py_TPFLAGS_CHECKTYPES (1L<<4)
 
-#define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
+#define Py_TPFLAGS_HAVE_RICHCOMPARE (1L<<5)
+
+#define Py_TPFLAGS_DEFAULT  ( \
+                             Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
-                             Py_TPFLAGS_HAVE_INPLACEOPS)
+                             Py_TPFLAGS_HAVE_INPLACEOPS | \
+                             Py_TPFLAGS_HAVE_RICHCOMPARE | \
+                            0)
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
 
