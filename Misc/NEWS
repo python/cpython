@@ -17,8 +17,23 @@ credit, let me know and I'll add you to the list!
 From 1.5.1 to 1.5.2a1
 =====================
 
-General/Miscellaneous
----------------------
+General
+-------
+
+- When searching for the library, a landmark that is a compiled module
+(string.pyc or string.pyo) is also accepted.
+
+- When following symbolic links to the python executable, use a loop
+so that a symlink to a symlink can work.
+
+- Added a hack so that when you type 'quit' or 'exit' at the
+interpreter, you get a friendly explanation of how to press Ctrl-D (or 
+Ctrl-Z) to exit.
+
+- New and improved Misc/python-mode.el (Python mode for Emacs).
+
+Miscellaneous fixed bugs
+------------------------
 
 - All patches on the patch page have been integrated.  (But much more
 has been done!)
@@ -26,46 +41,8 @@ has been done!)
 - Several memory leaks plugged (e.g. the one for classes with a
 __getattr__ method).
 
-- Better checks for invalid input to int(), long(), string.atoi(),
-string.atol().  (Formerly, a sign without digits would be accepted as
-a legal ways to spell zero.)
-
-- New standard exceptions EnvironmentError and PosixError;
-EnvironmentError is the base class for IOError and PosixError;
-PosixError is the same as os.error.  All this so that either exception
-class can be instantiated with a third argument indicating a filename.
-The built-in function open() and most os/posix functions that take a
-filename argument now use this.
-
-- When searching for the library, a landmark that is a compiled module
-(string.pyc or string.pyo) is also accepted.
-
 - Removed the only use of calloc().  This triggered an obscure bug on
 multiprocessor Sparc Solaris 2.6.
-
-- Changes to map() and filter() to use the length of a sequence only
-as a hint -- if an IndexError happens earlier, take that.  (Formerly,
-this was considered an error.)
-
-- Instance methods may now have other callable objects than just
-Python functions as their im_func.  Use new.instancemethod() or write
-your own C code to create them; new.instancemethod() may be called
-with None for the instance to create an unbound method.
-
-- Assignment to __dict__ or __bases__ of a class object is now
-allowed (with stringent type checks).  The cached values for
-__getattr__ etc. are recomputed after such assignments (but not for
-derived classes :-( ).
-
-- New and improved Misc/python-mode.el (Python mode for Emacs).
-
-- New, better performing sort() method for list objects.
-
-- List objects now have an experimental pop() method; l.pop() returns
-and removes the last item; l.pop(i) returns and removes the item at i.
-
-- Experimental feature in getattr(): a third argument can specify a
-default (instead of raising AttributeError).
 
 Documentation
 -------------
@@ -80,31 +57,91 @@ time, thread, sys, __builtin__.  Also to methods of list objects (try
 propagated to an instance if the instance has methods that are
 accessed in the usual way.
 
-Ports
------
+- Added Misc/Porting -- a mini-FAQ on porting to a new platform.
+
+Ports and build procedure
+-------------------------
 
 - The BeOS port is now integrated.  Courtesy Chris Herborth.
 
 - Symbol files for FreeBSD 2.x and 3.x have been contributed
 (Lib/plat-freebsd[23]/*).
 
-Windows
--------
+- Support HPUX 10.20 DCE threads.
 
-- The project files have been moved so they are distributed in the
-same subdirectory (PCbuild) where they must be used; this avoids
-confusion.
+- Finally fixed the configure script so that (on SGI) if -OPT:Olimit=0
+works, it won't also use -Olimit 1500 (which gives a warning for every
+file).  Also support the SGI_ABI environment variable better.
 
-- New project files for Windows 3.1 port by Jim Ahlstrom.
+- Other miscellaneous improvements to the configure script and
+Makefiles.
 
-- Got rid of the obsolete subdirectory PC/setup_nt/.
+- The makesetup script now understands absolute pathnames ending in .o
+in the module -- it assumes it's a file for which we have no source.
 
-- os.environ is now all uppercase, but accesses are case insensitive.
+- The test suite now uses a different sound sample.
 
-- Don't insist on proper case for module source files if the filename
-is all uppercase (e.g. FOO.PY now matches foo; but FOO.py still
-doesn't).  This should address problems with this feature on
-oldfashioned filesystems (Novell servers?).
+Built-in functions and exceptions
+---------------------------------
+
+- Better checks for invalid input to int(), long(), string.atoi(),
+string.atol().  (Formerly, a sign without digits would be accepted as
+a legal ways to spell zero.)
+
+- New standard exceptions EnvironmentError and PosixError;
+EnvironmentError is the base class for IOError and PosixError;
+PosixError is the same as os.error.  All this so that either exception
+class can be instantiated with a third argument indicating a filename.
+The built-in function open() and most os/posix functions that take a
+filename argument now use this.
+
+- Changes to map() and filter() to use the length of a sequence only
+as a hint -- if an IndexError happens earlier, take that.  (Formerly,
+this was considered an error.)
+
+- Experimental feature in getattr(): a third argument can specify a
+default (instead of raising AttributeError).
+
+- Implement round() slightly different, so that for negative ndigits
+no additional errors happen in the last step.
+
+Built-in types and statements
+-----------------------------
+
+- Changes to comparisons: numbers now compare smaller than any other
+type.  This is done to prevent the circularity where [] < 0L < 1 < []
+is true.  As a side effect, cmp(None, 0) is now positive instead of
+negative.  This *shouldn't* affect any working code, but I've found
+that the change caused several "sleeping" bugs to become active, so
+beware!
+
+- Instance methods may now have other callable objects than just
+Python functions as their im_func.  Use new.instancemethod() or write
+your own C code to create them; new.instancemethod() may be called
+with None for the instance to create an unbound method.
+
+- Assignment to __name__, __dict__ or __bases__ of a class object is
+now allowed (with stringent type checks); also allow assignment to
+__getattr__ etc.  The cached values for __getattr__ etc. are
+recomputed after such assignments (but not for derived classes :-( ).
+
+- New, better performing sort() method for list objects.
+
+- List objects now have an experimental pop() method; l.pop() returns
+and removes the last item; l.pop(i) returns and removes the item at
+i.  Also, the sort() method is faster again.  Sorting is now also
+safer: it is impossible for the sorting function to modify the list
+while the sort is going on (this could cause core dumps).
+
+- Fix a bug in the overflow checking when converting a Python long to
+a C long (failed to convert -2147483648L, and other spurious bugs).
+
+- Allow assignment to some attributes of function objects: func_code,
+func_defaults and func_doc / __doc__.  (With type checks except for
+__doc__ / func_doc .)
+
+- Fix a peculiar bug that would allow "import sys.time" to succeed
+(believing the built-in time module to be a part of the sys package).
 
 Library modules
 ---------------
@@ -113,9 +150,11 @@ Library modules
 sortperf.py (list sorting benchmark), test_MimeWriter.py (test case
 for the MimeWriter module).
 
-- Changes to os.py: os.environ now upcases keys before storing them on
-Windows, DOS and OS/2; new functions makedirs(), removedirs(),
-renames().
+- New functions in os.py: makedirs(), removedirs(), renames().  New
+variable: linesep (the line separator as found in binary files,
+i.e. '\n' on Unix, '\r\n' on DOS/Windows, '\r' on Mac.  Do *not* use
+this with files opened in (default) text mode; the line separator used
+will always be '\n'!
 
 - Changes to the 'os.path' submodule of os.py: added getsize(),
 getmtime(), getatime() -- these fetch the most popular items from the
@@ -134,26 +173,32 @@ problem that randint() was accidentally defined as taking an inclusive
 range.  Also, randint(a, b) is now redefined as randrange(a, b+1),
 adding extra range and type checking to its arguments!
 
+- Add some semi-thread-safety to random.gauss() (it used to be able to 
+crash when invoked from separate threads; now the worst it can do is
+give a duplicate result occasionally).
+
 - In getpass.py, don't use raw_input() to ask for the password -- we
-don't want it to show up in the readline history!
+don't want it to show up in the readline history!  Also don't catch
+interrupts (the try-finally already does all necessary cleanup).
 
 - Generalized test/regrtest.py so that it is useful for testing other
 packages.
 
-- Some small changes in urllib.py; sped up unquote() and quote(),
-fixed an obscure bug in quote_plus().  Added urlencode(dict) --
-convenience function for sending a POST request with urlopen().
-Rewrote the (test) main program so that when used as a script, it can
-retrieve one or more URLs to stdout.  Use -t to run the self-test.
+- Changes in urllib.py; sped up unquote() and quote().  Fixed an
+obscure bug in quote_plus().  Added urlencode(dict) -- convenience
+function for sending a POST request with urlopen().  Use the getpass
+module to ask for a password.  Rewrote the (test) main program so that
+when used as a script, it can retrieve one or more URLs to stdout.
+Use -t to run the self-test.  Made the proxy code work again.
 
 - In pdb.py, support for setting breaks on files/modules that haven't
 been loaded yet.
 
-- In rfc822.py, fix tell/seek when using files opened in text mode on
-Windows.  Also add a new class AddressList.
-
-- In mailbox.py, fix tell/seek when using files opened in text mode on
-Windows.
+- In rfc822.py, add a new class AddressList.  Also support a new
+overridable method, isheader().  Also add a get() method similar to
+dictionaries (and make getheader() an alias for it).  Also, be smarter
+about seekable (test whether fp.tell() works) and test for presence of
+unread() method before trying seeks.
 
 - Some speedups to re.py, especially the string substitution and split
 functions.  Also added new function/method findall(), to find all
@@ -164,7 +209,9 @@ sys.exc_info().  Also made the (test) main program a bit fancier (you
 can now use it to run arbitrary Python scripts in restricted mode).
 
 - In sgmllib.py, restore the call to report_unbalanced() that was lost
-long ago.
+long ago.  Also some other improvements: handle <? processing
+instructions >, allow . and - in entity names, and allow \r\n as line
+separator.
 
 - Major upgrade to ConfigParser.py; converted to using 're', added new 
 exceptions, support underscore in section header and option name.  No
@@ -176,8 +223,12 @@ longer add 'name' option to every section; instead, add '__name__'.
 
 - Some restructuring and generalization done to multifile.py.
 
-- In cgi.py, treat "HEAD" the same as "GET", so that CGI scripts don't 
-fail when someone asks for their HEAD.
+- In cgi.py, treat "HEAD" the same as "GET", so that CGI scripts don't
+fail when someone asks for their HEAD.  Also, for POST, set the
+default content-type to application/x-www-form-urlencoded.  Also, in
+FieldStorage.__init__(), when method='GET', always get the query
+string from environ['QUERY_STRING'] or sys.argv[1] -- ignore an
+explicitly passed in fp.
 
 - Improved imaplib.py.
 
@@ -191,30 +242,25 @@ PythonInterpreter class.  The interact() function now uses this.
 - In rlcompleter.py, in completer(), return None instead of raising an
 IndexError when there are no more completions left.
 
+- In the string and strop modules, in the replace() function, treat an
+empty pattern as an error (since it's not clear what was meant!).
 
-Tkinter
--------
+- The gzip.py module didn't work together with cPickle.  Fixed.
 
-- New demos in Demo/tkinter/guido/: brownian.py, redemo.py, switch.py.
+- Fixed a small bug in CGIHTTPServer.py.
 
-- No longer register Tcl_finalize() as a low-level exit handler.  It
-may call back into Python, and that's a bad idea.
+- In whichdb.py, support byte-swapped dbhash (bsddb) files.
 
-- On Unix, Tkinter can now safely be used from a multi-threaded
-application.  (Formerly, no threads would make progress while
-Tkinter's mainloop() was active, because it didn't release the Python
-interpreter lock.)  Unfortunately, on Windows, threads other than the
-main thread should not call update() or update_idletasks() because
-this will deadlock the application.
-
-- Allow binding of Tcl commands (given as a string).
-
-- Some minor speedups.
+- In anydbm.py, look at the type of an existing database to determine
+which module to use to open it.  (The anydbm.error exception is now a
+tuple.)
 
 Extension modules
 -----------------
 
-- In the socket module: new function gethostbyname_ex().
+- In the socket module: new function gethostbyname_ex().  Also, don't
+use #ifdef to test for some symbols that are enums on some platforms
+(and should exist everywhere).
 
 - Added some of the "wait status inspection" macros as functions:
 WEXITSTATUS(), WIFEXITED(), WIFSIGNALED(), WIFSTOPPED(), WSTOPSIG(),
@@ -223,27 +269,147 @@ WTERMSIG().
 - In cStringIO, add better argument type checking and support the
 readonly 'closed' attribute (like regular files).
 
-- On Windows, in select, put the (huge) file descriptor arrays on the
-heap.
-
 - In the struct module, unsigned 1-2 byte sized formats no longer
 result in long integer values.
 
-Build procedure
+- In the termios module, in tcsetattr(), initialize the structure vy
+calling tcgetattr().
+
+- In the time module, add strptime(), if it exists.  (This parses a
+time according to a format -- the inverse of strftime().)  Also,
+remove the call to mktime() from strftime() -- it messed up the
+formatting of some non-local times.
+
+- Fixed the marshal module to test for certain common kinds of invalid
+input.  (It's still not foolproof!)
+
+- In the operator module, add an alias (now the preferred name)
+"contains" for "sequenceincludes".
+
+- In the syslog module, make the default facility more intuitive
+(matching the docs).
+
+Tkinter
+-------
+
+- On Unix, Tkinter can now safely be used from a multi-threaded
+application.  (Formerly, no threads would make progress while
+Tkinter's mainloop() was active, because it didn't release the Python
+interpreter lock.)  Unfortunately, on Windows, threads other than the
+main thread should not call update() or update_idletasks() because
+this will deadlock the application.
+
+- An interactive interpreter that uses readline and Tkinter no longer
+uses up all available CPU time.
+
+- Even if readline is not used, Tk windows created in an interactive
+interpreter now get continuously updated.  (This even works in Windows
+as long as you don't hit a key.)
+
+- New demos in Demo/tkinter/guido/: brownian.py, redemo.py, switch.py.
+
+- No longer register Tcl_finalize() as a low-level exit handler.  It
+may call back into Python, and that's a bad idea.
+
+- Allow binding of Tcl commands (given as a string).
+
+- Some minor speedups; replace explicitly coded getint() with int() in
+most places.
+
+- In FileDialog.py, remember the directory of the selected file, if
+given.
+
+- Change the names of all methods in the Wm class: they are now
+wm_title(), etc.  The old names (title() etc.) are still defined as
+aliases.
+
+- Add a new method of interpreter objects, interpaddr().  This returns
+the address of the Tcl interpreter object, as an integer.  Not very
+useful for the Python programmer, but this can be called by another C
+extension that needs to make calls into the Tcl/Tk C API and needs to
+get the address of the Tcl interpreter object.  A simple cast of the
+return value to (Tcl_Interp *) will do the trick.
+
+Windows
+-------
+
+- The registry key used is now "1.5" instead of "1.5.x" -- so future
+versions of 1.5 and Mark Hammond's win32all installer don't need to be 
+resynchronized.
+
+- The project files have been moved so they are distributed in the
+same subdirectory (PCbuild) where they must be used; this avoids
+confusion.
+
+- New project files for Windows 3.1 port by Jim Ahlstrom.
+
+- Got rid of the obsolete subdirectory PC/setup_nt/.
+
+- os.environ is now all uppercase, but accesses are case insensitive.
+
+- Don't insist on proper case for module source files if the filename
+is all uppercase (e.g. FOO.PY now matches foo; but FOO.py still
+doesn't).  This should address problems with this feature on
+oldfashioned filesystems (Novell servers?).
+
+- Fixed os.pipe() so that it returns file descriptors acceptable to
+os.read() and os.write() (like it does on Unix), rather than Windows
+file handles.
+
+- In the select module, put the (huge) file descriptor arrays on the heap.
+
+- The getpass module now raises KeyboardInterrupt when it sees ^C.
+
+- Changes to os.py: os.environ now upcases keys before storing them on
+Windows, DOS and OS/2.
+
+- In mailbox.py, fix tell/seek when using files opened in text mode.
+
+- In rfc822.py, fix tell/seek when using files opened in text mode.
+
+- Several improvements to freeze (mostly, but not exclusively for
+Windows).
+
+- Moved the VC++ project files and the WISE installer script from PC
+to PCbuild.
+
+- The projects now use distinct filenames for the .exe, .dll, .lib and
+.pyd files built in debug mode (by appending "_d" to the base name,
+before the extension).  This makes it easier to switch between the two
+and get the right versions.  There's a pragma in config.h that directs
+the linker to include the appropriate .lib file (so python15.lib no
+longer needs to be explicit in your project).
+
+- In the msvcrt extension module, release the interpreter lock for
+calls that may block: _locking(), _getch(), _getche().  Also fix a
+bogus error return when open_osfhandle() doesn't have the right
+argument list.
+
+- Revert a new feature in Unix dynamic loading: for one or two
+revisions, modules were loaded using the RTLD_GLOBAL flag.  It turned
+out to be a bad idea.
+
+- The installer now installs more files (e.g. config.h).  The idea is
+that you shouldn't need the source distribution if you want build your
+own extensions in C or C++.
+
+- Fixed a very old bug in the parsing of "O?" format specifiers.
+
+- Added a table of WSA error codes to socket.py.
+
+- Removed samefile(), sameopenfile(), samestat() from os.path (aka
+ntpath.py) -- these cannot be made to work reliably (at least I
+wouldn't know how).
+
+Tools and Demos
 ---------------
 
-- Finally fixed the configure script so that (on SGI) if -OPT:Olimit=0
-works, it won't also use -Olimit 1500 (which gives a warning for every
-file).
-
-- Other miscellaneous improvements to the configure script.
-
-Tools
------
-
-- Some improvements to the freeze script.
+- New script nm2def.py by Marc-Andre Lemburg, to construct
+PC/python_nt.def automatically (some hand editing still required).
 
 - New tool ndiff.py: Tim Peters' text diffing tool.
+
+- Various and sundry improvements to the freeze script.
 
 - The script texi2html.py (which was part of the Doc tree but is no
 longer used there) has been moved to the Tools/scripts subdirectory.
@@ -251,12 +417,17 @@ longer used there) has been moved to the Tools/scripts subdirectory.
 - Some generalizations in the webchecker code.  There's now a
 primnitive gui for websucker.py: wsgui.py.  (In Tools/webchecker/.)
 
-- Some improvements to freeze (made it more robust on Windows).
+- The ftpmirror.py script now handles symbolic links properly, and
+also files with multiple spaces in their names.
 
-- The ftpmirror.py script now handles symbolic links properly.
+- The 1.5.1 tabnanny.py suffers an assert error if fed a script whose
+last line is both indented and lacks a newline.  This is now fixed.
 
 Python/C API
 ------------
+
+- Added missing prototypes for PyEval_CallFunction() and
+PyEval_CallMethod().
 
 - New APIs for conversion between Python longs and C 'long long' if
 your compiler supports it.
@@ -267,7 +438,7 @@ Py_SetPythonHome(), makes it easier for embedding applications to
 change the notion of Python's "home" directory (where the libraries
 etc. are sought).
 
-- Changes to PySequence_Tuple() and PySequence_List() to use the
+- Changes to PySequence_Tuple() and PySequence_Lis(t) to use the
 length of a sequence only as a hint -- if an IndexError happens
 earlier, take that.  (Formerly, this was considered an error.)
 
@@ -280,6 +451,31 @@ dynamically add one or many entries to the table of built-in modules.
 - New macro Py_InitModule3(name, methods, doc) which calls
 Py_InitModule4() with appropriate arguments.  (The -4 variant requires 
 you to pass an obscure version number constant which is always the same.)
+
+- Reformatted abstract.c to give it a more familiar "look" and fixed
+many error checking bugs.
+
+- Add NULL pointer checks to all calls of a C function through a type
+object and extensions (e.g. nb_add).
+
+- PySequence_In() is now called PySequence_Contains().
+(PySequence_In() is still supported for b/w compatibility; it is
+declared obsolete because its argument order is confusing.)
+
+- PyDict_GetItem() and PyDict_GetItemString() are changed so that they
+*never* raise an exception -- (even if the hash() fails, simply clear
+the error).  This was necessary because there is lots of code out
+there that already assumes this.
+
+- New APIs PySys_WriteStdout() and PySys_WriteStderr() to write to
+sys.stdout or sys.stderr using a printf-like interface.  (Used in
+_tkinter.c, for example.)
+
+- New macro PyList_SET_ITEM().
+
+
+======================================================================
+
 
 From 1.5 to 1.5.1
 =================
@@ -664,7 +860,6 @@ experimental feature -- if it turns out to break in too many
 situations, it will be removed (or disabled by default) in the future.
 It can be disabled on a per-case basis by setting the environment
 variable PYTHONCASEOK (to any value).
-
 
 
 ======================================================================
@@ -1398,7 +1593,6 @@ using sys.exc_info().
 - The functions in popen2 have an optional buffer size parameter.
 Also, the command argument can now be either a string (passed to the
 shell) or a list of arguments (passed directly to execv).
-
 
 - Alas, the thread support for _tkinter released with 1.5a3 didn't
 work.  It's been rewritten.  The bad news is that it now requires a
