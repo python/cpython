@@ -265,8 +265,8 @@ extern DL_IMPORT(int) PyUnicode_Resize(
       refcount.
 
    2. String and other char buffer compatible objects are decoded
-      under the assumptions that they contain UTF-8 data. Decoding
-      is done in "strict" mode.
+      under the assumptions that they contain data using the current
+      default encoding. Decoding is done in "strict" mode.
 
    3. All other objects raise an exception.
 
@@ -313,8 +313,7 @@ extern DL_IMPORT(int) PyUnicode_AsWideChar(
    parameters encoding and errors have the same semantics as the ones
    of the builtin unicode() API. 
 
-   Setting encoding to NULL causes the default encoding to be used
-   which is UTF-8.
+   Setting encoding to NULL causes the default encoding to be used.
 
    Error handling is set by errors which may also be set to NULL
    meaning to use the default handling defined for the codec. Default
@@ -325,6 +324,29 @@ extern DL_IMPORT(int) PyUnicode_AsWideChar(
    generic ones are documented.
 
 */
+
+/* --- Manage the default encoding ---------------------------------------- */
+
+/* Returns the currently active default encoding.
+
+   The default encoding is currently implemented as run-time settable
+   process global.  This may change in future versions of the
+   interpreter to become a parameter which is managed on a per-thread
+   basis.
+   
+ */
+
+extern DL_IMPORT(const char*) PyUnicode_GetDefaultEncoding();
+
+/* Sets the currently active default encoding.
+
+   Returns 0 on success, -1 in case of an error.
+   
+ */
+
+extern DL_IMPORT(int) PyUnicode_SetDefaultEncoding(
+    const char *encoding	/* Encoding name in standard form */
+    );
 
 /* --- Generic Codecs ----------------------------------------------------- */
 
