@@ -780,14 +780,14 @@ PyArg_ParseTuple(args, "O|O:ref", &object, &callback)
     Same as \samp{s\#}.
 
     \item[\samp{u} (Unicode string) {[Py_UNICODE *]}]
-    Convert a null-terminated buffer of Unicode (UCS-2) data to a
-    Python Unicode object.  If the Unicode buffer pointer is \NULL,
-    \code{None} is returned.
+    Convert a null-terminated buffer of Unicode (UCS-2 or UCS-4) 
+    data to a Python Unicode object.  If the Unicode buffer pointer 
+    is \NULL, \code{None} is returned.
 
     \item[\samp{u\#} (Unicode string) {[Py_UNICODE *, int]}]
-    Convert a Unicode (UCS-2) data buffer and its length to a Python
-    Unicode object.   If the Unicode buffer pointer is \NULL, the
-    length is ignored and \code{None} is returned.
+    Convert a Unicode (UCS-2 or UCS-4) data buffer and its length 
+    to a Python Unicode object.   If the Unicode buffer pointer 
+    is \NULL, the length is ignored and \code{None} is returned.
 
     \item[\samp{i} (integer) {[int]}]
     Convert a plain C \ctype{int} to a Python integer object.

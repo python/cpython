@@ -1109,9 +1109,10 @@ These are the UTF-16 codec APIs:
   the Unicode BOM mark (U+FEFF). In the other two modes, no BOM mark
   is prepended.
 
-  Note that \ctype{Py_UNICODE} data is being interpreted as UTF-16
-  reduced to UCS-2. This trick makes it possible to add full UTF-16
-  capabilities at a later point without comprimising the APIs.
+  If \var{Py_UNICODE_WIDE} is defined, a single \ctype{Py_UNICODE}
+  value may get represented as a surrogate pair. If it is not
+  defined, each \ctype{Py_UNICODE} values is interpreted as an
+  UCS-2 character.
 
   Returns \NULL{} if an exception was raised by the codec.
 \end{cfuncdesc}
