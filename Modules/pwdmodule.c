@@ -158,7 +158,7 @@ static PyMethodDef pwd_methods[] = {
 DL_EXPORT(void)
 initpwd(void)
 {
-	PyObject *m, *d;
+	PyObject *m;
 	m = Py_InitModule3("pwd", pwd_methods, pwd__doc__);
 
 	PyStructSequence_InitType(&StructPwdType, &struct_pwd_type_desc);
