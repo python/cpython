@@ -51,8 +51,8 @@ class OptionalFSxxxType(OpaqueByValueType):
 		Output("%s %s__buf__;", self.typeName, name)
 		Output("%s *%s = &%s__buf__;", self.typeName, name, name)
 	
-FInfo = OpaqueByValueStructType("FInfo", "PyMac_BuildFInfo", "PyMac_GetFInfo")
-FInfo_ptr = OpaqueType("FInfo", "PyMac_BuildFInfo", "PyMac_GetFInfo")
+FInfo = OpaqueType("FInfo", "FInfo")
+FInfo_ptr = OpaqueType("FInfo", "FInfo")
 AliasHandle = OpaqueByValueType("AliasHandle", "Alias")
 FSSpec = OpaqueType("FSSpec", "FSSpec")
 FSSpec_ptr = OpaqueType("FSSpec", "FSSpec")
@@ -76,15 +76,32 @@ includestuff = includestuff + """
 #include <Carbon/Carbon.h>
 #endif
 
+#ifdef USE_TOOLBOX_OBJECT_GLUE
+extern int _PyMac_GetFSSpec(PyObject *v, FSSpec *spec);
+extern int _PyMac_GetFSRef(PyObject *v, FSRef *fsr);
+extern PyObject *_PyMac_BuildFSSpec(FSSpec *spec);
+extern PyObject *_PyMac_BuildFSRef(FSRef *spec);
+
+#define PyMac_GetFSSpec _PyMac_GetFSSpec
+#define PyMac_GetFSRef _PyMac_GetFSRef
+#define PyMac_BuildFSSpec _PyMac_BuildFSSpec
+#define PyMac_BuildFSRef _PyMac_BuildFSRef
+#else
+extern int PyMac_GetFSSpec(PyObject *v, FSSpec *spec);
+extern int PyMac_GetFSRef(PyObject *v, FSRef *fsr);
+extern PyObject *PyMac_BuildFSSpec(FSSpec *spec);
+extern PyObject *PyMac_BuildFSRef(FSRef *spec);
+#endif
+
 /* Forward declarations */
-extern PyObject *FSRef_New(FSRef *itself);
-extern PyObject *FSSpec_New(FSSpec *itself);
-extern PyObject *Alias_New(AliasHandle itself);
-extern int FSRef_Convert(PyObject *v, FSRef *p_itself);
-extern int FSSpec_Convert(PyObject *v, FSSpec *p_itself);
-extern int Alias_Convert(PyObject *v, AliasHandle *p_itself);
-static int myPyMac_GetFSSpec(PyObject *v, FSSpec *spec);
-static int myPyMac_GetFSRef(PyObject *v, FSRef *fsr);
+static PyObject *FInfo_New(FInfo *itself);
+static PyObject *FSRef_New(FSRef *itself);
+static PyObject *FSSpec_New(FSSpec *itself);
+static PyObject *Alias_New(AliasHandle itself);
+static int FInfo_Convert(PyObject *v, FInfo *p_itself);
+#define FSRef_Convert PyMac_GetFSRef
+#define FSSpec_Convert PyMac_GetFSSpec
+static int Alias_Convert(PyObject *v, AliasHandle *p_itself);
 
 /*
 ** Optional fsspec and fsref pointers. None will pass NULL
@@ -96,7 +113,7 @@ myPyMac_GetOptFSSpecPtr(PyObject *v, FSSpec **spec)
 		*spec = NULL;
 		return 1;
 	}
-	return myPyMac_GetFSSpec(v, *spec);
+	return PyMac_GetFSSpec(v, *spec);
 }
 
 static int
@@ -106,7 +123,7 @@ myPyMac_GetOptFSRefPtr(PyObject *v, FSRef **ref)
 		*ref = NULL;
 		return 1;
 	}
-	return myPyMac_GetFSRef(v, *ref);
+	return PyMac_GetFSRef(v, *ref);
 }
 
 /*
@@ -119,36 +136,11 @@ PyMac_BuildHFSUniStr255(HFSUniStr255 *itself)
 	return Py_BuildValue("u#", itself->unicode, itself->length);
 }
 
-/*
-** Parse/generate objsect
-*/
-static PyObject *
-PyMac_BuildFInfo(FInfo *itself)
-{
-
-	return Py_BuildValue("O&O&HO&h",
-		PyMac_BuildOSType, itself->fdType,
-		PyMac_BuildOSType, itself->fdCreator,
-		itself->fdFlags,
-		PyMac_BuildPoint, &itself->fdLocation,
-		itself->fdFldr);
-}
-
-static int
-PyMac_GetFInfo(PyObject *v, FInfo *itself)
-{
-	return PyArg_ParseTuple(v, "O&O&HO&h",
-		PyMac_GetOSType, &itself->fdType,
-		PyMac_GetOSType, &itself->fdCreator,
-		&itself->fdFlags,
-		PyMac_GetPoint, &itself->fdLocation,
-		&itself->fdFldr);
-}
 """
 
 finalstuff = finalstuff + """
-static int
-myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
+int
+PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 {
 	Str255 path;
 	short refnum;
@@ -192,7 +184,7 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 	** on OS9 we accept only a real FSRef object
 	*/
 #if TARGET_API_MAC_OSX
-	if ( myPyMac_GetFSRef(v, &fsr) ) {
+	if ( PyMac_GetFSRef(v, &fsr) ) {
 #else
 	if ( PyArg_Parse(v, "O&", FSRef_Convert, &fsr) ) {
 #endif	
@@ -207,8 +199,8 @@ myPyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 	return 0;
 }
 
-static int
-myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
+int
+PyMac_GetFSRef(PyObject *v, FSRef *fsr)
 {
 	OSStatus err;
 	
@@ -239,22 +231,61 @@ myPyMac_GetFSRef(PyObject *v, FSRef *fsr)
 	return 0;
 }
 
+extern PyObject *
+PyMac_BuildFSSpec(FSSpec *spec)
+{
+	return FSSpec_New(spec);
+}
+
+extern PyObject *
+PyMac_BuildFSRef(FSRef *spec)
+{
+	return FSRef_New(spec);
+}
+"""
+
+initstuff = initstuff + """
+PyMac_INIT_TOOLBOX_OBJECT_NEW(FSSpec *, PyMac_BuildFSSpec);
+PyMac_INIT_TOOLBOX_OBJECT_NEW(FSRef *, PyMac_BuildFSRef);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSSpec, PyMac_GetFSSpec);
+PyMac_INIT_TOOLBOX_OBJECT_CONVERT(FSRef, PyMac_GetFSRef);
 """
 
 execfile(string.lower(MODPREFIX) + 'typetest.py')
 
 # Our object types:
-class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
+class FInfoDefinition(PEP253Mixin, ObjectDefinition):
 	getsetlist = [
-		("data",
-		 "return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));",
-		 None,
-		 "Raw data of the FSSpec object"
-		)
+		("Type",
+		 "return Py_BuildValue(\"O&\", PyMac_BuildOSType, self->ob_itself.fdType);",
+		 "return PyArg_Parse(v, \"O&\", PyMac_GetOSType, &self->ob_itself.fdType)-1;",
+		 "4-char file type"
+		),
+		("Creator",
+		 "return Py_BuildValue(\"O&\", PyMac_BuildOSType, self->ob_itself.fdCreator);",
+		 "return PyArg_Parse(v, \"O&\", PyMac_GetOSType, &self->ob_itself.fdCreator)-1;",
+		 "4-char file creator"
+		),
+		("Flags",
+		 "return Py_BuildValue(\"H\", self->ob_itself.fdFlags);",
+		 "return PyArg_Parse(v, \"H\", &self->ob_itself.fdFlags)-1;",
+		 "Finder flag bits"
+		),
+		("Location",
+		 "return Py_BuildValue(\"O&\", PyMac_BuildPoint, self->ob_itself.fdLocation);",
+		 "return PyArg_Parse(v, \"O&\", PyMac_GetPoint, &self->ob_itself.fdLocation)-1;",
+		 "(x, y) location of the file's icon in its parent finder window"
+		),
+		("Fldr",
+		 "return Py_BuildValue(\"h\", self->ob_itself.fdFldr);",
+		 "return PyArg_Parse(v, \"h\", &self->ob_itself.fdFldr)-1;",
+		 "Original folder, for 'put away'"
+		),
+		
 	]
 		 
 	def __init__(self, name, prefix, itselftype):
-		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
+		ObjectDefinition.__init__(self, name, prefix, itselftype)
 		self.argref = "*"	# Store FSSpecs, but pass them by address
 
 	def outputCheckNewArg(self):
@@ -265,7 +296,47 @@ class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output()
 		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
 		Output("memset(&((%s *)self)->ob_itself, 0, sizeof(%s));", 
-			self.objecttype, self.objecttype)
+			self.objecttype, self.itselftype)
+		Output("return self;")
+
+	def output_tp_initBody(self):
+		Output("%s *itself = NULL;", self.itselftype)
+		Output("char *kw[] = {\"itself\", 0};")
+		Output()
+		Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"|O&\", kw, FInfo_Convert, &itself))")
+		OutLbrace()
+		Output("if (itself) memcpy(&((%s *)self)->ob_itself, itself, sizeof(%s));", 
+			self.objecttype, self.itselftype)
+		Output("return 0;")
+		OutRbrace()
+		Output("return -1;")
+
+class FSSpecDefinition(PEP253Mixin, ObjectDefinition):
+	getsetlist = [
+		("data",
+		 "return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));",
+		 None,
+		 "Raw data of the FSSpec object"
+		)
+	]
+		 
+	def __init__(self, name, prefix, itselftype):
+		ObjectDefinition.__init__(self, name, prefix, itselftype)
+		self.argref = "*"	# Store FSSpecs, but pass them by address
+
+	def outputCheckNewArg(self):
+		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+		
+	# We do Convert ourselves (with PyMac_GetFSxxx)
+	def outputConvert(self):
+		pass
+
+	def output_tp_newBody(self):
+		Output("PyObject *self;");
+		Output()
+		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
+		Output("memset(&((%s *)self)->ob_itself, 0, sizeof(%s));", 
+			self.objecttype, self.itselftype)
 		Output("return self;")
 
 	def output_tp_initBody(self):
@@ -297,7 +368,7 @@ class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("memcpy(&((%s *)self)->ob_itself, rawdata, rawdatalen);", self.objecttype)
 		Output("return 0;")
 		OutRbrace()
-		Output("if (myPyMac_GetFSSpec(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
+		Output("if (PyMac_GetFSSpec(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
 		Output("return -1;")
 	
 	def outputRepr(self):
@@ -313,7 +384,7 @@ class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("return PyString_FromString(buf);")
 		OutRbrace()
 		
-class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
+class FSRefDefinition(PEP253Mixin, ObjectDefinition):
 	getsetlist = [
 		("data",
 		 "return PyString_FromStringAndSize((char *)&self->ob_itself, sizeof(self->ob_itself));",
@@ -323,18 +394,22 @@ class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
 	]
 		 
 	def __init__(self, name, prefix, itselftype):
-		GlobalObjectDefinition.__init__(self, name, prefix, itselftype)
+		ObjectDefinition.__init__(self, name, prefix, itselftype)
 		self.argref = "*"	# Store FSRefs, but pass them by address
 
 	def outputCheckNewArg(self):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
+		
+	# We do Convert ourselves (with PyMac_GetFSxxx)
+	def outputConvert(self):
+		pass
 
 	def output_tp_newBody(self):
 		Output("PyObject *self;");
 		Output()
 		Output("if ((self = type->tp_alloc(type, 0)) == NULL) return NULL;")
 		Output("memset(&((%s *)self)->ob_itself, 0, sizeof(%s));", 
-			self.objecttype, self.objecttype)
+			self.objecttype, self.itselftype)
 		Output("return self;")
 	
 	def output_tp_initBody(self):
@@ -366,10 +441,10 @@ class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("memcpy(&((%s *)self)->ob_itself, rawdata, rawdatalen);", self.objecttype)
 		Output("return 0;")
 		OutRbrace()
-		Output("if (myPyMac_GetFSRef(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
+		Output("if (PyMac_GetFSRef(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
 		Output("return -1;")
 	
-class AliasDefinition(PEP253Mixin, GlobalObjectDefinition):
+class AliasDefinition(PEP253Mixin, ObjectDefinition):
 	# XXXX Should inherit from resource?
 	getsetlist = [
 		("data",
@@ -391,11 +466,11 @@ class AliasDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("if (itself == NULL) return PyMac_Error(resNotFound);")
 		
 	def outputStructMembers(self):
-		GlobalObjectDefinition.outputStructMembers(self)
+		ObjectDefinition.outputStructMembers(self)
 		Output("void (*ob_freeit)(%s ptr);", self.itselftype)
 		
 	def outputInitStructMembers(self):
-		GlobalObjectDefinition.outputInitStructMembers(self)
+		ObjectDefinition.outputInitStructMembers(self)
 		Output("it->ob_freeit = NULL;")
 		
 	def outputCleanupStructMembers(self):
@@ -469,10 +544,12 @@ class Arg2MethodGenerator(MethodGenerator):
 module = MacModule(MODNAME, MODPREFIX, includestuff, finalstuff, initstuff,
 	longname=LONGMODNAME)
 
+finfoobject = FInfoDefinition('FInfo', 'FInfo', 'FInfo')
 aliasobject = AliasDefinition('Alias', 'Alias', 'AliasHandle')
 fsspecobject = FSSpecDefinition('FSSpec', 'FSSpec', 'FSSpec')
 fsrefobject = FSRefDefinition('FSRef', 'FSRef', 'FSRef')
 
+module.addobject(finfoobject)
 module.addobject(aliasobject)
 module.addobject(fsspecobject)
 module.addobject(fsrefobject)
