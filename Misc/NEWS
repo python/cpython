@@ -302,6 +302,11 @@ Core and builtins
 Extension modules
 -----------------
 
+- The PyBSDDB wrapper around the Sleepycat Berkely DB library has been
+  added as the package bsddb. The traditional bsddb module is still
+  available in source code, but not built automatically anymore, and
+  is now named bsddb185.
+
 - resource.getrlimit() now returns longs instead of ints.
 
 - readline now dynamically adjusts its input/output stream if
