@@ -157,7 +157,7 @@ def poll2(timeout=0.0, map=None):
 
 poll3 = poll2                           # Alias for backward compatibility
 
-def loop(timeout=30.0, use_poll=False, map=None):
+def loop(timeout=30.0, use_poll=False, map=None, count=1e309):
     if map is None:
         map = socket_map
 
@@ -166,8 +166,9 @@ def loop(timeout=30.0, use_poll=False, map=None):
     else:
         poll_fun = poll
 
-    while map:
+    while map and count >= 0:
         poll_fun(timeout, map)
+        count = count - 1
 
 class dispatcher:
 
