@@ -22,6 +22,120 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/******************************************************************
+This is a curses implimentation. I have tried to be as complete
+as possible. If there are functions you need that are not included,
+please let me know and/or send me some diffs.
+
+There are 3 basic types exported by this module:
+   1) Screen - This is not currently used
+   2) Window - This is the basic type. This is equivalent to "WINDOW *".
+   3) Pad    - This is similar to Window, but works with Pads as defined
+               in curses.
+
+Most of the routines can be looked up using the curses man page.
+
+Here is a list of the currently supported methods and attributes
+in the curses module:
+
+Return Value      Func/Attr            Description
+--------------------------------------------------------------------------
+StringObject      __version__          This returns a string representing
+                                       the current version of this module
+WindowObject      initscr()            This initializes the screen for use
+None              endwin()             Closes down the screen and returns
+                                       things as they were before calling
+                                       initscr()
+True/FalseObject  isendwin()           Has endwin() been called?
+IntObject         doupdate()           Updates screen and returns number
+                                       of bytes written to screen
+WindowObject      newwin(nlines,ncols,begin_y,begin_x)
+                  newwin(begin_y,begin_x)
+                                       newwin() creates and returns
+                                       a new window.
+None              beep()               Beep the screen if possible
+None              flash()              Flash the screen if possible
+None              ungetch(int)         Push the int back so next getch()
+                                       will return it.
+                                       Note: argument is an INT, not a CHAR
+None              flushinp()           Flush all input buffers
+None              cbreak()             Enter cbreak mode
+None              nocbreak()           Leave cbreak mode
+None              echo()               Enter echo mode
+None              noecho()             Leave echo mode
+None              nl()                 Enter nl mode
+None              nonl()               Leave nl mode
+None              raw()                Enter raw mode
+None              noraw()              Leave raw mode
+None              intrflush(int)       Set or reset interruptable flush
+                                       mode, int=1 if set, 0 if notset.
+None              meta(int)            Allow 8 bit or 7 bit chars.
+                                       int=1 is 8 bit, int=0 is 7 bit
+StringObject      keyname(int)         return the text representation
+                                       of a KEY_ value. (see below)
+
+Here is a list of the currently supported methods and attributes
+in the WindowObject:
+
+Return Value      Func/Attr            Description
+--------------------------------------------------------------------------
+IntObject         refresh()            Do refresh
+IntObject         nooutrefresh()       Mark for refresh but wait
+True/False        mvwin(new_y,new_x)   Move Window
+True/False        move(new_y,new_x)    Move Cursor
+WindowObject      subwin(nlines,ncols,begin_y,begin_x)
+                  subwin(begin_y,begin_x)
+True/False        addch(y,x,ch,attr)
+                  addch(y,x,ch)
+                  addch(ch,attr)
+                  addch(ch)
+True/False        insch(y,x,ch,attr)
+                  insch(y,x,ch)
+                  insch(ch,attr)
+                  insch(ch)
+True/False        delch(y,x)
+                  delch()
+True/False        echochar(ch,attr)
+                  echochar(ch)
+True/False        addstr(y,x,str,attr)
+                  addstr(y,x,str)
+                  addstr(str,attr)
+                  addstr(str)
+True/False        attron(attr)
+True/False        attroff(attr)
+True/False        attrset(sttr)
+True/False        standend()
+True/False        standout()
+True/False        box(vertch,horch)    vertch and horch are INTS
+                  box()
+None              erase()
+None              deleteln()
+None              insertln()
+(y,x)             getyx()
+(y,x)             getbegyx()
+(y,x)             getmaxyx()
+None              clear()
+None              clrtobot()
+None              clrtoeol()
+None              scroll()
+None              touchwin()
+None              touchline(start,count)
+IntObject         getch(y,x)
+                  getch()
+StringObject      getstr(y,x)
+                  getstr()
+IntObject         inch(y,x)
+                  inch()
+None              clearok(int)      int=0 or int=1
+None              idlok(int)        int=0 or int=1
+None              leaveok(int)      int=0 or int=1
+None              scrollok(int)     int=0 or int=1
+None              setscrreg(top,bottom)
+None              nodelay(int)      int=0 or int=1
+None              notimeout(int)    int=0 or int=1
+******************************************************************/
+
+
 /* curses module */
 
 #include "allobjects.h"
@@ -59,6 +173,17 @@ staticforward PyTypeObject PyCursesPad_Type;
 /* Defines */
 PyObject *PyCurses_OK;
 PyObject *PyCurses_ERR;
+
+/******************************************************************
+
+Change Log:
+
+Version 1.0: 94/08/30:
+    This is the first release of this software.
+    Released to the Internet via python-list@cwi.nl
+
+******************************************************************/
+char *PyCursesVersion = "1.0 first release"
 
 /* ------------- SCREEN routines --------------- */
 #ifdef NOT_YET
@@ -1203,7 +1328,7 @@ static PyMethodDef PyCurses_methods[] = {
 /* Initialization function for the module */
 
 void
-initcurses()
+initncurses()
 {
 	PyObject *m, *d, *x;
 
@@ -1216,6 +1341,11 @@ initcurses()
 	Py_INCREF(PyCurses_ERR);
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
+
+	/* Make the version available */
+	PyDict_SetItemString(d,"__version__",
+			     PyString_FromString(PyCursesVersion));
+
 	/* Here are some defines */
 	PyDict_SetItemString(d,"OK", PyCurses_OK);
 	PyDict_SetItemString(d,"ERR",PyCurses_ERR);
