@@ -782,3 +782,6 @@ def parseString(*args, **kwargs):
     """Parse a file into a DOM from a string."""
     from xml.dom import pulldom
     return _doparse(pulldom.parseString, args, kwargs)
+
+def getDOMImplementation():
+    return Document.implementation
