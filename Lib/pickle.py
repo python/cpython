@@ -300,6 +300,39 @@ class Pickler:
         memo[d] = (memo_len, object)
     dispatch[UnicodeType] = save_unicode
 
+    if StringType == UnicodeType:
+        # This is true for Jython
+        def save_string(self, object):
+            d = id(object)
+            memo = self.memo
+            unicode = object.isunicode()
+
+            if (self.bin):
+                if unicode:
+                    object = object.encode("utf-8")
+                l = len(object)
+                s = mdumps(l)[1:]
+                if (l < 256 and not unicode):
+                    self.write(SHORT_BINSTRING + s[0] + object)
+                else:
+                    if unicode:
+                        self.write(BINUNICODE + s + object)
+                    else:
+                        self.write(BINSTRING + s + object)
+            else:
+                if unicode: 
+                    object = object.replace(u"\\", u"\\u005c")
+                    object = object.replace(u"\n", u"\\u000a")
+                    object = object.encode('raw-unicode-escape')
+                    self.write(UNICODE + object + '\n')
+                else:
+                    self.write(STRING + `object` + '\n')
+
+            memo_len = len(memo)
+            self.write(self.put(memo_len))
+            memo[d] = (memo_len, object)
+        dispatch[StringType] = save_string
+            
     def save_tuple(self, object):
 
         write = self.write
