@@ -92,7 +92,8 @@ def test_division(maxdigits=MAXDIGITS):
     if verbose:
         print "long / * % divmod"
     digits = range(1, maxdigits+1) + range(KARATSUBA_CUTOFF,
-                                           KARATSUBA_CUTOFF + 15)
+                                           KARATSUBA_CUTOFF + 14)
+    digits.append(KARATSUBA_CUTOFF * 3)
     for lenx in digits:
         x = getran(lenx)
         for leny in digits:
