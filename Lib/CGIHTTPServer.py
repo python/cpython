@@ -133,7 +133,10 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             # AUTH_TYPE
             # REMOTE_USER
             # REMOTE_IDENT
-            env['CONTENT_TYPE'] = self.headers.type
+            if self.headers.typeheader is None:
+                env['CONTENT_TYPE'] = self.headers.type
+            else:
+                env['CONTENT_TYPE'] = self.headers.typeheader
             length = self.headers.getheader('content-length')
             if length:
                 env['CONTENT_LENGTH'] = length
