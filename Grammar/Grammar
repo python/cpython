@@ -79,7 +79,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
-power: atom trailer* ('**' factor)*
+power: atom trailer* ['**' factor]
 atom: '(' [testlist] ')' | '[' [listmaker] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING+
 listmaker: test ( list_for | (',' test)* [','] )
 lambdef: 'lambda' [varargslist] ':' test
