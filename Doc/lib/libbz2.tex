@@ -23,7 +23,7 @@ Here is a resume of the features offered by the bz2 module:
 \item \class{BZ2File} class implements universal newline support;
 \item \class{BZ2File} class offers an optimized line iteration using
       the readahead algorithm borrowed from file objects;
-\item \class{BZ2File} class developed inheriting builtin file type
+\item \class{BZ2File} class inherits from the builtin file type
       (\code{issubclass(BZ2File, file)} is \code{True});
 \item Sequential (de)compression supported by \class{BZ2Compressor} and
       \class{BZ2Decompressor} classes;
@@ -87,7 +87,7 @@ module.
 \end{methoddesc}
 
 \begin{methoddesc}[BZ2File]{\_\_iter\_\_}{}
-Iterate trough the file lines. Iteration optimization is implemented
+Iterate through the file lines. Iteration optimization is implemented
 using the same readahead algorithm available in \class{file} objects.
 \end{methoddesc}
 
@@ -161,7 +161,7 @@ found after the end of stream, it'll be ignored and saved in
 
 \subsection{One-shot (de)compression}
 
-One-shot compression and decompression is provided trough the
+One-shot compression and decompression is provided through the
 \function{compress()} and \function{decompress()} functions.
 
 \begin{funcdesc}{compress}{data\optional{, compresslevel}}
