@@ -440,13 +440,78 @@ is confusing.
 
 The \module{subprocess} module cleans all this up, providing a unified 
 interface that offers all the features you might need.
+Instead of \module{popen2}'s collection of classes,
+\module{subprocess} contains a single class called \class{Popen} 
+whose constructor supports a number of different keyword arguments.
 
-% XXX finish writing this section by adding some examples
+\begin{verbatim}
+class Popen(args, bufsize=0, executable=None,
+	    stdin=None, stdout=None, stderr=None,
+	    preexec_fn=None, close_fds=False, shell=False,
+	    cwd=None, env=None, universal_newlines=False,
+	    startupinfo=None, creationflags=0):
+\end{verbatim}
 
+\var{args} is commonly a sequence of strings that will be the arguments to
+the program executed as the subprocess.  (If the \var{shell} argument is true,
+\var{args} can be a string which will then be passed on to the shell for interpretation.)  
+
+\var{stdin}, \var{stdout}, and \var{stderr} specify what the
+subprocess's input, output, and error streams will be.  You can
+provide a file object or a file descriptor, or you can 
+use \code{subprocess.PIPE} to create a pipe between the subprocess 
+and the parent.
+
+The constructor has a number of handy options:
+
+\begin{itemize}
+  \item \var{close_fds} requests that all file descriptors be closed before running the subprocess.
+  \item \var{cwd} specifies the working directory in which the subprocess will be executed (defaulting to whatever the parent's working directory is).
+  \item \var{env} is a dictionary specifying environment variables.
+  \item \var{preexec_fn} is a function that gets called before the child is started.
+  \item \var{universal_newlines} opens the child's input and output using
+Python's universal newline feature.
+\end{itemize}
+
+Once you've created the \class{Popen} instance, 
+you can call \method{wait()} to pause until the subprocess has exited,
+\method{poll()} to check if it's exited without pausing, 
+or \method{communicate(\var{data})} to send the string \var{data} to 
+the subprocess's standard input.   \method{communicate(\var{data})} 
+then reads any data that the subprocess has sent to its standard output or error, returning a tuple \code{(\var{stdout_data}, \var{stderr_data})}.
+
+\function{call()} is a shortcut that passes its arguments along to
+the \class{Popen} constructor, waits for the command to complete, and
+returns the status code of the subprocess.  It can serve as an analog
+to
+\function{os.system()}:
+
+\begin{verbatim}
+sts = subprocess.call(['dpkg', '-i', '/tmp/new-package.deb'])
+if sts == 0:
+    # Success
+    ...
+else:
+    # dpkg returned an error
+    ...
+\end{verbatim}
+
+The command is invoked without use of the shell.  If you really do want to 
+use the shell, you can add \code{shell=True} as a keyword argument and provide
+a string instead of a sequence:
+
+\begin{verbatim}
+sts = subprocess.call('dpkg -i /tmp/new-package.deb', shell=True)
+\end{verbatim}
+
+The PEP takes various examples of shell and Python code and shows how
+they'd be translated into Python code that uses \module{subprocess}. 
+Reading this section of the PEP is highly recommended.
 
 \begin{seealso}
-\seepep{324}{subprocess - New process module}{Written and implemented by Peter Astrand, with assistance from Fredrik Lundh and others.}
+\seepep{324}{subprocess - New process module}{Written and implemented by Peter {\AA}strand, with assistance from Fredrik Lundh and others.}
 \end{seealso}
+
 
 %======================================================================
 \section{PEP 327: Decimal Data Type}
@@ -1491,6 +1556,7 @@ by default.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Hye-Shik Chang, Michael Dyck, Raymond Hettinger, Hamish Lawson.
+article: Hye-Shik Chang, Michael Dyck, Raymond Hettinger, Hamish Lawson,
+Fredrik Lundh.
 
 \end{document}
