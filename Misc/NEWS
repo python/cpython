@@ -445,6 +445,9 @@ Tools/Demos
 Build
 -----
 
+- Bug #934635: Fixed a bug where the configure script couldn't detect
+  getaddrinfo() properly if the KAME stack had SCTP support.
+
 - Support for missing ANSI C header files (limits.h, stddef.h, etc) was
   removed.
 
