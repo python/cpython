@@ -283,4 +283,4 @@ class Expression(Node):
 ### EPILOGUE
 for name, obj in globals().items():
     if isinstance(obj, type) and issubclass(obj, Node):
-       nodes[name.lower()] = obj
+        nodes[name.lower()] = obj
