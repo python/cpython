@@ -538,9 +538,12 @@ tok_get(tok, p_start, p_end)
 	
 	/* Identifier (most frequent token!) */
 	if (isalpha(c) || c == '_') {
-		do {
+		c = tok_nextc(tok);
+		if (c == '"' || c == '\'')
+			goto letter_quote;
+		while (isalnum(c) || c == '_') {
 			c = tok_nextc(tok);
-		} while (isalnum(c) || c == '_');
+		}
 		tok_backup(tok, c);
 		*p_start = tok->start;
 		*p_end = tok->cur;
@@ -640,9 +643,11 @@ tok_get(tok, p_start, p_end)
 		*p_end = tok->cur;
 		return NUMBER;
 	}
-	
+
+  letter_quote:
 	/* String */
 	if (c == '\'' || c == '"') {
+		char *quote2 = tok->cur+1;
 		int quote = c;
 		int triple = 0;
 		int tripcount = 0;
@@ -663,7 +668,7 @@ tok_get(tok, p_start, p_end)
 			}
 			else if (c == quote) {
 				tripcount++;
-				if (tok->cur == tok->start+2) {
+				if (tok->cur == quote2) {
 					c = tok_nextc(tok);
 					if (c == quote) {
 						triple = 1;
