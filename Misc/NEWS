@@ -122,6 +122,9 @@ Standard library
   right.  Code that doesn't care where equal elements end up should
   continue to use the old, short names ("bisect" and "insort").
 
+- The new curses.panel module wraps the panel library that forms part
+  of SYSV curses and ncurses.  Contributed by Thomas Gellekum.
+
 - The SocketServer module now sets the allow_reuse_address flag by
   default in the TCPServer class.
 
