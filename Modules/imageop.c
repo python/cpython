@@ -35,9 +35,7 @@ typedef unsigned long Py_UInt32;
 static PyObject *ImageopError;
  
 static PyObject *
-imageop_crop(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_crop(PyObject *self, PyObject *args)
 {
 	char *cp, *ncp;
 	short *nsp;
@@ -91,9 +89,7 @@ PyObject *args;
 }
  
 static PyObject *
-imageop_scale(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_scale(PyObject *self, PyObject *args)
 {
 	char *cp, *ncp;
 	short *nsp;
@@ -140,9 +136,7 @@ PyObject *args;
 /* Note: this routine can use a bit of optimizing */
 
 static PyObject *
-imageop_tovideo(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_tovideo(PyObject *self, PyObject *args)
 {
 	int maxx, maxy, x, y, len;
 	int i;
@@ -196,9 +190,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey2mono(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey2mono(PyObject *self, PyObject *args)
 {
 	int tres, x, y, len;
 	unsigned char *cp, *ncp;
@@ -238,9 +230,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey2grey4(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey2grey4(PyObject *self, PyObject *args)
 {
 	int x, y, len;
 	unsigned char *cp, *ncp;
@@ -279,9 +269,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey2grey2(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey2grey2(PyObject *self, PyObject *args)
 {
 	int x, y, len;
 	unsigned char *cp, *ncp;
@@ -320,9 +308,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_dither2mono(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_dither2mono(PyObject *self, PyObject *args)
 {
 	int sum, x, y, len;
 	unsigned char *cp, *ncp;
@@ -366,9 +352,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_dither2grey2(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_dither2grey2(PyObject *self, PyObject *args)
 {
 	int x, y, len;
 	unsigned char *cp, *ncp;
@@ -411,9 +395,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_mono2grey(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_mono2grey(PyObject *self, PyObject *args)
 {
 	int v0, v1, x, y, len, nlen;
 	unsigned char *cp, *ncp;
@@ -450,9 +432,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey22grey(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey22grey(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp, *ncp;
@@ -488,9 +468,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey42grey(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey42grey(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp, *ncp;
@@ -525,9 +503,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_rgb2rgb8(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_rgb2rgb8(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	Py_UInt32 *cp;
@@ -569,9 +545,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_rgb82rgb(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_rgb82rgb(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
@@ -612,9 +586,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_rgb2grey(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_rgb2grey(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	Py_UInt32 *cp;
@@ -650,9 +622,7 @@ PyObject *args;
 }
 
 static PyObject *
-imageop_grey2rgb(self, args)
-	PyObject *self;
-PyObject *args;
+imageop_grey2rgb(PyObject *self, PyObject *args)
 {
 	int x, y, len, nlen;
 	unsigned char *cp;
@@ -684,9 +654,7 @@ PyObject *args;
 
 /*
 static object *
-imageop_mul(self, args)
-	object *self;
-object *args;
+imageop_mul(object *self, object *args)
 {
 	char *cp, *ncp;
 	int len, size, x, y;
