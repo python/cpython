@@ -926,7 +926,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			mp->name = "__weakref__";
 			mp->type = T_OBJECT;
 			mp->offset = slotoffset;
-			mp->readonly = 1;
+			mp->flags = READONLY;
 			mp++;
 			slotoffset += sizeof(PyObject *);
 		}
