@@ -1082,7 +1082,6 @@ def _sys_version():
 
     """
     global _sys_version_cache
-    import time
 
     if _sys_version_cache is not None:
         return _sys_version_cache
