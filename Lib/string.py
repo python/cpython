@@ -1,6 +1,8 @@
 # module 'string' -- A collection of string operations
 
-# XXX Some of these operations are incredibly slow and should be built in
+# Warning: most of the code you see here isn't normally used nowadays.
+# At the end of this file most functions are replaced by built-in
+# functions imported from built-in module "strop".
 
 # Some strings for ctype-style character classification
 whitespace = ' \t\n'

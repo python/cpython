@@ -17,7 +17,8 @@ empty = (0, 0), (0, 0)
 
 # Check if a rectangle is empty.
 #
-def is_empty((left, top), (right, bottom)):
+def is_empty(r):
+	(left, top), (right, bottom) = r
 	return left >= right or top >= bottom
 
 
@@ -36,7 +37,7 @@ def intersect(list):
 		if top < t: top = t
 		if right > r: right = r
 		if bottom > b: bottom = b
-		if is_empty((left, top), (right, bottom)):
+		if is_empty(((left, top), (right, bottom))):
 			return empty
 	return (left, top), (right, bottom)
 
@@ -47,7 +48,7 @@ def intersect(list):
 def union(list):
 	(left, top), (right, bottom) = empty
 	for (l, t), (r, b) in list[1:]:
-		if not is_empty((l, t), (r, b)):
+		if not is_empty(((l, t), (r, b))):
 			if l < left: left = l
 			if t < top: top = t
 			if r > right: right = r

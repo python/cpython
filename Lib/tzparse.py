@@ -40,7 +40,7 @@ def tzset():
 	tzstr = os.environ['TZ']
 	tzparams = tzparse(tzstr)
 	timezone = tzparams[1] * 3600
-	altzone = timezone + 3600
+	altzone = timezone - 3600
 	daylight = 1
 	tzname = tzparams[0], tzparams[2]
 
