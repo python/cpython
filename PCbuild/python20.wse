@@ -817,8 +817,8 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
-  Source=%_SRC_%\PCbuild\python20.lib
-  Destination=%MAINDIR%\libs\python20.lib
+  Source=%_SRC_%\PCbuild\python21.lib
+  Destination=%MAINDIR%\libs\python21.lib
   Flags=0000000000000010
 end
 item: Remark
@@ -840,8 +840,8 @@ item: Remark
   Text=*** Main Python DLL ***
 end
 item: Install File
-  Source=%_SRC_%\pcbuild\python20.dll
-  Destination=%DLLDEST%\python20.dll
+  Source=%_SRC_%\pcbuild\python21.dll
+  Destination=%DLLDEST%\python21.dll
   Flags=0000000000000010
 end
 item: Install File

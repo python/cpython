@@ -327,9 +327,9 @@ typedef unsigned long uintptr_t;
    more (other compilers will still need to do so, but that's taken care
    of by the Distutils, so it's not a problem). */
 #ifdef _DEBUG
-#pragma comment(lib,"python20_d.lib")
+#pragma comment(lib,"python21_d.lib")
 #else
-#pragma comment(lib,"python20.lib")
+#pragma comment(lib,"python21.lib")
 #endif
 #endif /* USE_DL_EXPORT */
 
