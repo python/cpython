@@ -123,6 +123,7 @@ char *macstrerror(int err)
 		HLock(h);
 		str = (char *)*h;
 		memcpy(buf, str+1, (unsigned char)str[0]);
+		buf[(unsigned char)str[0]] = '\0';
 		HUnlock(h);
 		ReleaseResource(h);
 	} else {
