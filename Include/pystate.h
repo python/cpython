@@ -73,8 +73,6 @@ typedef struct _ts {
 	int ticker;
 	int tracing;
 
-	PyObject *dict;
-
 	PyObject *sys_profilefunc;
 	PyObject *sys_tracefunc;
 
@@ -85,6 +83,8 @@ typedef struct _ts {
 	PyObject *exc_type;
 	PyObject *exc_value;
 	PyObject *exc_traceback;
+
+	PyObject *dict;
 
 	/* XXX signal handlers should also be here */
 
