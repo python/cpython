@@ -355,7 +355,7 @@ PyImport_GetMagicNumber(void)
    loaded).  To prevent initializing an extension module more than
    once, we keep a static dictionary 'extensions' keyed by module name
    (for built-in modules) or by filename (for dynamically loaded
-   modules), containing these modules.  A copy od the module's
+   modules), containing these modules.  A copy of the module's
    dictionary is stored by calling _PyImport_FixupExtension()
    immediately after the module initialization function succeeds.  A
    copy can be retrieved from there by calling
