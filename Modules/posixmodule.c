@@ -702,6 +702,11 @@ posix_fsync(PyObject *self, PyObject *args)
 #endif /* HAVE_FSYNC */
 
 #ifdef HAVE_FDATASYNC
+
+#if defined(__hppa) || defined(hppa)
+extern int fdatasync(int); /* On HP-UX, in libc but not in unistd.h */
+#endif
+
 static char posix_fdatasync__doc__[] =
 "fdatasync(fildes) -> None\n\
 force write of file with filedescriptor to disk.\n\
