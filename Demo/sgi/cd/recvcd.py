@@ -3,7 +3,7 @@
 
 import al, AL
 from socket import *
-from CD import CDDA_DATASIZE
+from cd import DATASIZE
 
 PORT = 50505				# Must match the port in sendcd.py
 
@@ -23,7 +23,7 @@ def main():
 		port = al.openport('CD Player', 'w', config)
 
 		while 1:
-			data = s.recv(CDDA_DATASIZE)
+			data = s.recv(DATASIZE)
 			if not data:
 				print 'EOF'
 				break
