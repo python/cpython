@@ -125,24 +125,27 @@ Generator expressions are intended to be used inside functions
 such as \function{sum()}, \function{min()}, \function{set()}, and
 \function{dict()}.  These functions consume their data all at once
 and would not benefit from having a full list instead of a generator
-an input:
+as an input:
 
 \begin{verbatim}
 >>> sum(i*i for i in range(10))
 285
 
->>> sorted(set(i*i for i in xrange(-10, 11)))
-[0, 1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+>>> sorted(set(i*i for i in xrange(-20, 20) if i%2==1)) # odd squares
+[1, 9, 25, 49, 81, 121, 169, 225, 289, 361]
 
->>> words = "Adam apple baker Bill Nancy NASA nut".split()
->>> dict((word.lower(), word) for word in words)
-{'apple': 'apple', 'baker': 'baker', 'bill': 'Bill', 'nasa': 'NASA',
- 'adam': 'Adam', 'nancy': 'Nancy', 'nut': 'nut'}
-
+>>> from itertools import izip
 >>> xvec = [10, 20, 30]
 >>> yvec = [7, 5, 3]
->>> sum(x*y for x,y in itertools.izip(xvec, yvec))     # dot product
+>>> sum(x*y for x,y in izip(xvec, yvec))                # dot product
 260
+
+>>> from math import pi, sin
+>>> sine_table = dict((x, sin(x*pi/180)) for x in xrange(0, 91))
+
+>>> unique_words = set(word  for line in page  for word in line.split())
+
+>>> valedictorian = max((student.gpa, student.name) for student in graduates)
 
 \end{verbatim}     
 
