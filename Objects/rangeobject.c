@@ -71,7 +71,7 @@ range_item(r, i)
 {
 	if (i < 0 || i >= r->len * r->reps) {
 		PyErr_SetString(PyExc_IndexError,
-				"range object index out of range");
+				"xrange object index out of range");
 		return NULL;
 	}
 
@@ -126,7 +126,7 @@ range_concat(r, obj)
 	rangeobject *r;
 	PyObject *obj;
 {
-	PyErr_SetString(PyExc_TypeError, "cannot concatenate range objects");
+	PyErr_SetString(PyExc_TypeError, "cannot concatenate xrange objects");
 	return NULL;
 }
 
@@ -175,7 +175,7 @@ range_slice(r, low, high)
 {
 	if (r->reps != 1) {
 		PyErr_SetString(PyExc_TypeError,
-				"cannot slice a replicated range");
+				"cannot slice a replicated xrange");
 		return NULL;
 	}
 	if (low < 0)
