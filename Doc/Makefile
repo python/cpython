@@ -59,6 +59,7 @@ L2HARGS=	-address $$USER@`domainname` -dont_include myformat
 
 # Destination directory for output of libwww target.
 PARTPARSE=	$(PYTHON) ./partparse.pyc
+TEXI2HTMLFLAGS= -d
 TEXI2HTML=	$(PYTHON) ./texi2html.pyc
 LIBHTMLDIR=	./python-lib
 
@@ -187,7 +188,7 @@ lib.info: python-lib.info
 
 libwww: lib.texi texi2html.pyc
 	if test ! -d $(LIBHTMLDIR); then mkdir $(LIBHTMLDIR); else true; fi
-	$(TEXI2HTML) -d lib.texi $(LIBHTMLDIR)
+	$(TEXI2HTML) $(TEXI2HTMLFLAGS) lib.texi $(LIBHTMLDIR)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
