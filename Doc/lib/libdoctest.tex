@@ -154,7 +154,7 @@ if __name__ == "__main__":
     _test()
 \end{verbatim}
 
-If you want to test the module as the main module, you don't need to
+If you want to test the current module as the main module, you don't need to
 pass M to \function{testmod()}; in this case, it will test the current
 module.
 
@@ -367,19 +367,19 @@ The fine print:
   them:
 
 \begin{verbatim}
->>> def f(x): 
+>>> def f(x):
 ...     r'''Backslashes in a raw docstring: m\n'''
 >>> print f.__doc__
 Backslashes in a raw docstring: m\n
 \end{verbatim}
-  
+
   Otherwise, the backslash will be interpreted as part of the string.
   E.g., the "\textbackslash" above would be interpreted as a newline
   character.  Alternatively, you can double each backslash in the
   doctest version (and not use a raw string):
 
 \begin{verbatim}
->>> def f(x): 
+>>> def f(x):
 ...     '''Backslashes in a raw docstring: m\\n'''
 >>> print f.__doc__
 Backslashes in a raw docstring: m\n
