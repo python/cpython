@@ -29,6 +29,14 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertRaises(OverflowError, xmlrpclib.dumps,
                               (int(2L**34),))
 
+    def test_dump_none(self):
+        value = alist + [None]
+        arg1 = (alist + [None],)
+        strg = xmlrpclib.dumps(arg1, allow_none=True)
+        self.assertEquals(value,
+                          xmlrpclib.loads(strg)[0][0])
+        self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
+
 def test_main():
     test_support.run_unittest(XMLRPCTestCase)
 
