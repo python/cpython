@@ -544,7 +544,9 @@ Py_Main(argc, argv)
 void
 PyMac_OutputSeen()
 {
+#ifdef USE_GUSI
 	gusisioux_state = GUSISIOUX_STATE_LASTREAD;
+#endif
 }
 
 /*
@@ -567,11 +569,15 @@ PyMac_Exit(status)
 		keep = 0;
 		break;
 	case POPT_KEEPCONSOLE_OUTPUT:
+#ifdef USE_GUSI
 		if (gusisioux_state == GUSISIOUX_STATE_LASTWRITE ||
 				gusisioux_state == GUSISIOUX_STATE_UNKNOWN )
 			keep = 1;
 		else
 			keep = 0;
+#else
+		keep = 1;
+#endif
 		break;
 	case POPT_KEEPCONSOLE_ERROR:
 		keep = (status != 0);
