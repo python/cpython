@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Module definition and import interface */
 
+void PyImport_Init Py_PROTO((void));
 long PyImport_GetMagicNumber Py_PROTO((void));
 PyObject *PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
 PyObject *PyImport_GetModuleDict Py_PROTO((void));
@@ -37,11 +38,14 @@ PyObject *PyImport_AddModule Py_PROTO((char *name));
 PyObject *PyImport_ImportModule Py_PROTO((char *name));
 PyObject *PyImport_ReloadModule Py_PROTO((PyObject *m));
 void PyImport_Cleanup Py_PROTO((void));
+int PyImport_ImportFrozenModule Py_PROTO((char *));
 
-extern struct {
+struct _inittab {
 	char *name;
 	void (*initfunc)();
-} inittab[];
+};
+
+extern struct _inittab inittab[];
 
 #ifdef __cplusplus
 }
