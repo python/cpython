@@ -445,14 +445,14 @@ Cygwin: With recent (relative to the time of writing, 2001-12-19)
         and remove "local/" from the SSL variable.  Finally, just run
         "make"!
 
-        (b) The "proper" fix is to rebase the cygwin DLLs to prevent
+        (b) The "proper" fix is to rebase the Cygwin DLLs to prevent
         base address conflicts.  Details on how to do this can be
         found in the following mail:
 
            http://sources.redhat.com/ml/cygwin/2001-12/msg00894.html
 
         It is hoped that a version of this solution will be
-        incorporated into the cygwin distribution fairly soon.
+        incorporated into the Cygwin distribution fairly soon.
 
         Two additional problems:
 
