@@ -12,12 +12,14 @@
 import os
 import sys
 import macfs
+import MacOS
 
 import addpack
 addpack.addpack('Tools')
 addpack.addpack('bgen')
 addpack.addpack('AE')
 import aetools
+import AppleEvents
 from Metrowerks_Shell_Suite import Metrowerks_Shell_Suite
 from Required_Suite import Required_Suite 
 
@@ -38,12 +40,17 @@ def buildmwproject(top, creator, projects):
 	except 'foo':
 		print 'Not handled:', creator
 		return
+	mgr.send_timeout = AppleEvents.kNoTimeOut
+	
 	for file in projects:
 		file = os.path.join(top, file)
 		fss = macfs.FSSpec(file)
 		print 'Building', file
 		mgr.open(fss)
-		mgr.Make_Project()
+		try:
+			mgr.Make_Project()
+		except MacOS.Error, arg:
+			print '** Failed. Possible error:', arg
 		mgr.Close_Project()
 	mgr.quit()
 	
