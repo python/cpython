@@ -729,7 +729,8 @@ load_source_module(char *name, char *pathname, FILE *fp)
 		return NULL;
 	}
 #endif
-	cpathname = make_compiled_pathname(pathname, buf, (size_t)MAXPATHLEN+1);
+	cpathname = make_compiled_pathname(pathname, buf, 
+					   (size_t)MAXPATHLEN + 1);
 	if (cpathname != NULL &&
 	    (fpc = check_compiled_module(pathname, mtime, cpathname))) {
 		co = read_compiled_module(cpathname, fpc);
