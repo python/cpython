@@ -486,8 +486,7 @@ def parse150(resp):
 	global _150_re
 	if _150_re is None:
 		import re
-		_150_re = re.compile("150 .* \(([0-9][0-9]*) bytes\)",
-				     re.IGNORECASE)
+		_150_re = re.compile("150 .* \((\d+) bytes\)", re.IGNORECASE)
 	m = _150_re.match(resp)
 	if m:
 		return string.atoi(m.group(1))
