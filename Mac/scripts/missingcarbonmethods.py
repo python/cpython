@@ -79,7 +79,7 @@ missing_Qt = [
 	]
 
 missing_Qd = [
-	'device',
+##	'device',	# Too many false positives
 	'portBits',
 	'portPixMap',
 	'portVersion',
