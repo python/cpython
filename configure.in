@@ -1590,12 +1590,8 @@ AC_ARG_ENABLE(unicode,
 
 if test $enable_unicode = yes
 then
-  # Let Py_UNICODE size depend on wchar_t size
-  case  "$ac_cv_sizeof_wchar_t" in
-  2) enable_unicode="ucs2";;
-  4) enable_unicode="ucs4";;
-  *) enable_unicode="ucs4";; # default to UCS-4
-  esac
+  # Without any arguments, Py_UNICODE defaults to two-byte mode
+  enable_unicode="ucs2"
 fi
 
 case "$enable_unicode" in
