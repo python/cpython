@@ -1323,6 +1323,18 @@ Here's the message body
         eq(msg['message-id'], 'spam')
         eq(msg.get_payload(), "Here's the message body\n")
 
+    def test_crlf_separation(self):
+        eq = self.assertEqual
+        fp = openfile('msg_26.txt')
+        p = Parser()
+        msg = p.parse(fp)
+        eq(len(msg.get_payload()), 2)
+        part1 = msg.get_payload(0)
+        eq(part1.get_type(), 'text/plain')
+        eq(part1.get_payload(), 'Simple email with attachment.\r\n\r\n')
+        part2 = msg.get_payload(1)
+        eq(part2.get_type(), 'application/riscos')
+
 
 
 class TestBase64(unittest.TestCase):
@@ -1572,6 +1584,20 @@ class TestHeader(unittest.TestCase):
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
             (utf8_head, "utf-8")])
+
+    def test_explicit_maxlinelen(self):
+        eq = self.assertEqual
+        hstr = 'A very long line that must get split to something other than at the 76th character boundary to test the non-default behavior'
+        h = Header(hstr)
+        eq(h.encode(), '''\
+A very long line that must get split to something other than at the 76th cha
+ racter boundary to test the non-default behavior''')
+        h = Header(hstr, header_name='Subject')
+        eq(h.encode(), '''\
+A very long line that must get split to something other than at the
+  76th character boundary to test the non-default behavior''')
+        h = Header(hstr, maxlinelen=1024, header_name='Subject')
+        eq(h.encode(), hstr)
 
 
 
