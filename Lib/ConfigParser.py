@@ -173,12 +173,14 @@ class ConfigParser:
             except IOError:
                 pass
 
-    def get(self, section, option, raw=0):
+    def get(self, section, option, raw=0, vars=None):
         """Get an option value for a given section.
 
         All % interpolations are expanded in the return values, based
         on the defaults passed into the constructor, unless the optional
-        argument `raw' is true.
+        argument `raw' is true. Additional substitutions may be provided
+        using the vars keyword argument, which override any pre-existing
+        defaults.
 
         The section DEFAULT is special.
         """
@@ -191,6 +193,9 @@ class ConfigParser:
                 raise NoSectionError(section)
         d = self.__defaults.copy()
         d.update(sectdict)
+        # Update with the entry specific variables
+        if vars:
+            d.update(vars)
         option = string.lower(option)
         try:
             rawval = d[option]
@@ -199,11 +204,17 @@ class ConfigParser:
         # do the string interpolation
         if raw:
             return rawval
-        try:
-            return rawval % d
-        except KeyError, key:
-            raise InterpolationError(key, option, section, rawval)
 
+        value = rawval                  # Make it a pretty variable name
+        while 1:                        # Loop through this until it's done
+            if not string.find(value, "%("):
+                try:
+                    value = value % d
+                except KeyError, key:
+                    raise InterpolationError(key, option, section, rawval)
+            else:
+                return value
+    
     def __get(self, section, conv, option):
         return conv(self.get(section, option))
 
