@@ -9,6 +9,12 @@ import os
 import sys
 import new
 
+if hasattr(sys.__stdout__, "newlines"):
+    READ_MODE = "U"  # universal line endings
+else:
+    # remain compatible with Python  < 2.3
+    READ_MODE = "r"
+
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 IMPORT_FROM = dis.opname.index('IMPORT_FROM')
 STORE_NAME = dis.opname.index('STORE_NAME')
@@ -95,20 +101,14 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        if hasattr(sys.stdout, "newlines"): # detect universal newline support
-            fp = open(pathname, "U")
-        else:
-            fp = open(pathname, "r")
+        fp = open(pathname, READ_MODE)
         stuff = ("", "r", imp.PY_SOURCE)
         self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        if hasattr(sys.stdout, "newlines"):
-            fp = open(pathname, "U")
-        else:
-            fp = open(pathname, "r")
+        fp = open(pathname, READ_MODE)
         stuff = (ext, "r", imp.PY_SOURCE)
         self.load_module(name, fp, pathname, stuff)
 
