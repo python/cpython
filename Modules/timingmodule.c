@@ -2,90 +2,86 @@
  * Author: George V. Neville-Neil
  */
 
-#include "allobjects.h"
-#include "import.h"
-#include "modsupport.h"
-#include "ceval.h"
+#include "Python.h"
 
 /* Our stuff... */
 #include "timing.h"
 
-static object *
+static PyObject *
 start_timing(self, args)
-    object *self;
-    object *args;
+	PyObject *self;
+	PyObject *args;
 {
-    if (!getargs(args, ""))
-	return NULL;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
 
-    INCREF(None);
-    BEGINTIMING;
-    return None;
+	Py_INCREF(Py_None);
+	BEGINTIMING;
+	return Py_None;
 }
 
-static object *
+static PyObject *
 finish_timing(self, args)
-    object *self;
-    object *args;
+	PyObject *self;
+	PyObject *args;
 {
-    if (!getargs(args, ""))
-	return NULL;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
 
-    ENDTIMING    
-    INCREF(None);
-    return None;
+	ENDTIMING    
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
-static object *
+static PyObject *
 seconds(self, args)
-    object *self;
-    object *args;
+	PyObject *self;
+	PyObject *args;
 {
-    if (!getargs(args, ""))
-	return NULL;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
 
-    return newintobject(TIMINGS);
+	return PyInt_FromLong(TIMINGS);
 
 }
 
-static object *
+static PyObject *
 milli(self, args)
-    object *self;
-    object *args;
+	PyObject *self;
+	PyObject *args;
 {
-    if (!getargs(args, ""))
-	return NULL;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
 
-    return newintobject(TIMINGMS);
+	return PyInt_FromLong(TIMINGMS);
 
 }
-static object *
+static PyObject *
 micro(self, args)
-    object *self;
-    object *args;
+	PyObject *self;
+	PyObject *args;
 {
-    if (!getargs(args, ""))
-	return NULL;
+	if (!PyArg_Parse(args, ""))
+		return NULL;
 
-    return newintobject(TIMINGUS);
+	return PyInt_FromLong(TIMINGUS);
 
 }
 
 
-static struct methodlist timing_methods[] = {
-   {"start", start_timing},
-   {"finish", finish_timing},
-   {"seconds", seconds},
-   {"milli", milli},
-   {"micro", micro},
-   {NULL, NULL}
+static PyMethodDef timing_methods[] = {
+	{"start",   start_timing},
+	{"finish",  finish_timing},
+	{"seconds", seconds},
+	{"milli",   milli},
+	{"micro",   micro},
+	{NULL,      NULL}
 };
 
 
 void inittiming()
 {
-    object *m;
-
-    m = initmodule("timing", timing_methods);
-   
+	(void)Py_InitModule("timing", timing_methods);
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module timing");
 }
