@@ -3508,7 +3508,7 @@ static slotdef slotdefs[] = {
 	UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+x"),
 	UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
 	       "abs(x)"),
-	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_unaryfunc,
+	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_inquiry,
 	       "x != 0"),
 	UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~x"),
 	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),
