@@ -286,7 +286,7 @@ sub do_cmd_manpage{
     return "<span class='manpage'><i>$page</i>($section)</span>" . $_;
 }
 
-$PEP_FORMAT = "http://python.sourceforge.net/peps/pep-XXXX.html";
+$PEP_FORMAT = "http://www.python.org/peps/pep-XXXX.html";
 $RFC_FORMAT = "http://www.ietf.org/rfc/rfcXXXX.txt";
 
 sub get_rfc_url($$){
