@@ -29,30 +29,18 @@ This module provides an interface to Berkeley socket IPC.
 
 Limitations:
 
-- only AF_INET and AF_UNIX address families
+- only AF_INET and AF_UNIX address families are supported
 - no asynchronous I/O
-- no flags on send/receive operations
-- no socket options
-- no protocol parameter on socket() system call
-- although socket objects have read() and write() methods, they can't be
-  used everywhere where file objects can be used (e.g., sys.stdout won't
-  work and there is no readline() method)
+- no read/write operations (use send/recv instead)
+- no flags on send/recv operations
+- no setsockopt() call
 
 Interface:
 
-- socket.socket(family, type) returns a new socket object
+- socket.gethostbyname(hostname) --> host IP address (string: 'dd.dd.dd.dd')
+- socket.getservbyname(server, type) --> port number
+- socket.socket(family, type) --> new socket object
 - family and type constants from <socket.h> are accessed as socket.AF_INET etc.
-- socket methods are:
-	- s.bind(sockaddr) --> None
-	- s.connect(sockaddr) --> None
-	- s.accept() --> newsocket, sockaddr
-	- s.listen(n) --> None
-	- s.read(nbytes) --> string
-	- s.write(string) --> nbytes
-	- s.recvfrom(nbytes) --> string, sockaddr
-	- s.sendto(string, sockaddr) --> nbytes
-	- s.shutdown(how) --> None
-	- s.close() --> None
 - errors are reported as the exception socket.error
 - an Internet socket address is a pair (hostname, port)
   where hostname can be anything recognized by gethostbyname()
@@ -60,9 +48,20 @@ Interface:
 - where a hostname is returned, the dd.dd.dd.dd notation is used
 - a UNIX domain socket is a string specifying the pathname
 
-Bugs:
+Socket methods:
 
-- On the vax, the port numbers seem to be mixed up (when receiving only???)
+- s.bind(sockaddr) --> None
+- s.connect(sockaddr) --> None
+- s.accept() --> new socket object, sockaddr
+- s.listen(n) --> None
+- s.makefile(mode) --> file object
+- s.recv(nbytes) --> string
+- s.recvfrom(nbytes) --> string, sockaddr
+- s.send(string) --> None
+- s.sendto(string, sockaddr) --> None
+- s.shutdown(how) --> None
+- s.close() --> None
+
 */
 
 #include "allobjects.h"
@@ -74,7 +73,15 @@ Bugs:
 #include <sys/un.h>
 #include <netdb.h>
 
-static object *SocketError; /* Exception socket.error */
+
+/* Global variable holding the exception type for errors detected
+   by this module (but not argument type or memory errors, etc.). */
+
+static object *SocketError;
+
+
+/* Convenience function to raise an error according to errno
+   and return a NULL pointer from a function. */
 
 static object *
 socket_error()
@@ -82,15 +89,34 @@ socket_error()
 	return err_errno(SocketError);
 }
 
+
+/* The object holding a socket.  It holds some extra information,
+   like the address family, which is used to decode socket address
+   arguments properly. */
+
 typedef struct {
 	OB_HEAD
-	int sock_fd;
-	int sock_family;
-	int sock_type;
-	int sock_proto;
+	int sock_fd;		/* Socket file descriptor */
+	int sock_family;	/* Address family, e.g., AF_INET */
+	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
+	int sock_proto;		/* Protocol type, usually 0 */
 } sockobject;
 
+
+/* A forward reference to the Socktype type object.
+   The Socktype variable contains pointers to various functions,
+   some of which call newsocobject(), which uses Socktype, so
+   there has to be a circular reference.  If your compiler complains
+   that it is first declared 'extern' and later 'static', remove the
+   'static' keyword from the actual definition. */
+
 extern typeobject Socktype; /* Forward */
+
+
+/* Create a new socket object.
+   This just creates the object and initializes it.
+   If the creation fails, return NULL and set an exception (implicit
+   in NEWOBJ()). */
 
 static sockobject *
 newsockobject(fd, family, type, proto)
@@ -107,20 +133,36 @@ newsockobject(fd, family, type, proto)
 	return s;
 }
 
-static int setinetaddr PROTO((char *, struct sockaddr_in *));
+
+/* Convert a string specifying a host name or one of a few symbolic
+   names to a numeric IP address.  This usually calls gethostbyname()
+   to do the work; the names "" and "<broadcast>" are special.
+   Return the length (should always be 4 bytes), or negative if
+   an error occurred; then an exception is raised. */
+
 static int
-setinetaddr(name, addr_ret)
+setipaddr(name, addr_ret)
 	char *name;
 	struct sockaddr_in *addr_ret;
 {
 	struct hostent *hp;
+	int d1, d2, d3, d4;
+	char ch;
 
-	if (strcmp(name, "<any>") == 0) {
+	if (name[0] == '\0') {
 		addr_ret->sin_addr.s_addr = INADDR_ANY;
 		return 4;
 	}
-	if (strcmp(name, "<broadcast>") == 0) {
+	if (name[0] == '<' && strcmp(name, "<broadcast>") == 0) {
 		addr_ret->sin_addr.s_addr = INADDR_BROADCAST;
+		return 4;
+	}
+	if (sscanf(name, "%d.%d.%d.%d%c", &d1, &d2, &d3, &d4, &ch) == 4 &&
+	    0 <= d1 && d1 <= 255 && 0 <= d2 && d2 <= 255 &&
+	    0 <= d3 && d3 <= 255 && 0 <= d4 && d4 <= 255) {
+		addr_ret->sin_addr.s_addr = htonl(
+			((long) d1 << 24) | ((long) d2 << 16) |
+			((long) d3 << 8) | ((long) d4 << 0));
 		return 4;
 	}
 	hp = gethostbyname(name);
@@ -131,6 +173,13 @@ setinetaddr(name, addr_ret)
 	memcpy((char *) &addr_ret->sin_addr, hp->h_addr, hp->h_length);
 	return hp->h_length;
 }
+
+
+/* Generally useful convenience function to create a tuple from two
+   objects.  This eats references to the objects; if either is NULL
+   it destroys the other and returns NULL without raising an exception
+   (assuming the function that was called to create the argument must
+   have raised an exception and returned NULL). */
 
 static object *
 makepair(a, b)
@@ -147,32 +196,64 @@ makepair(a, b)
 	return pair;
 }
 
+
+/* Create a string object representing an IP address.
+   This is always a string of the form 'dd.dd.dd.dd' (with variable
+   size numbers). */
+
+static object *
+makeipaddr(addr)
+	struct sockaddr_in *addr;
+{
+	long x = ntohl(addr->sin_addr.s_addr);
+	char buf[100];
+	sprintf(buf, "%d.%d.%d.%d",
+		(int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
+		(int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
+	return newstringobject(buf);
+}
+
+
+/* Create an object representing the given socket address,
+   suitable for passing it back to bind(), connect() etc.
+   The family field of the sockaddr structure is inspected
+   to determine what kind of address it really is. */
+
 /*ARGSUSED*/
 static object *
 makesockaddr(addr, addrlen)
 	struct sockaddr *addr;
 	int addrlen;
 {
-	if (addr->sa_family == AF_INET) {
+	switch (addr->sa_family) {
+
+	case AF_INET:
+	{
 		struct sockaddr_in *a = (struct sockaddr_in *) addr;
-		long x = ntohl(a->sin_addr.s_addr);
-		char buf[100];
-		sprintf(buf, "%d.%d.%d.%d",
-			(int) (x>>24) & 0xff, (int) (x>>16) & 0xff,
-			(int) (x>> 8) & 0xff, (int) (x>> 0) & 0xff);
-		return makepair(newstringobject(buf),
+		return makepair(makeipaddr(a),
 				newintobject((long) ntohs(a->sin_port)));
 	}
-	if (addr->sa_family == AF_UNIX) {
+
+	case AF_UNIX:
+	{
 		struct sockaddr_un *a = (struct sockaddr_un *) addr;
 		return newstringobject(a->sun_path);
 	}
-	err_setstr(SocketError, "returning unknown socket address type");
-	return NULL;
+
+	/* More cases here... */
+
+	default:
+		err_setstr(SocketError, "return unknown socket address type");
+		return NULL;
+	}
 }
 
-static int getsockaddrarg PROTO((sockobject *, object *,
-				 struct sockaddr **, int *));
+
+/* Parse a socket address argument according to the socket object's
+   address family.  Return 1 if the address was in the proper format,
+   0 of not.  The address is returned through addr_ret, its length
+   through len_ret. */
+
 static int
 getsockaddrarg(s, args, addr_ret, len_ret)
 	sockobject *s;
@@ -180,13 +261,19 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 	struct sockaddr **addr_ret;
 	int *len_ret;
 {
-	if (s->sock_family == AF_UNIX) {
+	switch (s->sock_family) {
+
+	case AF_UNIX:
+	{
 		static struct sockaddr_un addr;
 		object *path;
 		int len;
-		if (!getstrarg(args, &path) ||
-		    (len = getstringsize(path)) > sizeof addr.sun_path)
+		if (!getstrarg(args, &path))
 			return 0;
+		if ((len = getstringsize(path)) > sizeof addr.sun_path) {
+			err_setstr(SocketError, "AF_UNIX path too long");
+			return 0;
+		}
 		addr.sun_family = AF_UNIX;
 		memcpy(addr.sun_path, getstringvalue(path), len);
 		*addr_ret = (struct sockaddr *) &addr;
@@ -194,13 +281,14 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 		return 1;
 	}
 
-	if (s->sock_family == AF_INET) {
+	case AF_INET:
+	{
 		static struct sockaddr_in addr;
 		object *host;
 		int port;
 		if (!getstrintarg(args, &host, &port))
 			return 0;
-		if (setinetaddr(getstringvalue(host), &addr) < 0)
+		if (setipaddr(getstringvalue(host), &addr) < 0)
 			return 0;
 		addr.sin_family = AF_INET;
 		addr.sin_port = htons(port);
@@ -209,9 +297,17 @@ getsockaddrarg(s, args, addr_ret, len_ret)
 		return 1;
 	}
 
-	err_setstr(SocketError, "getsockaddrarg: bad family");
-	return 0;
+	/* More cases here... */
+
+	default:
+		err_setstr(SocketError, "getsockaddrarg: bad family");
+		return 0;
+
+	}
 }
+
+
+/* s.accept() method */
 
 static object *
 sock_accept(s, args)
@@ -227,12 +323,17 @@ sock_accept(s, args)
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	if (newfd < 0)
 		return socket_error();
+	/* Create the new object with unspecified family,
+	   to avoid calls to bind() etc. on it. */
 	res = makepair((object *) newsockobject(newfd, AF_UNSPEC, 0, 0),
 		       makesockaddr((struct sockaddr *) addrbuf, addrlen));
 	if (res == NULL)
 		close(newfd);
 	return res;
 }
+
+
+/* s.bind(sockaddr) method */
 
 static object *
 sock_bind(s, args)
@@ -249,6 +350,11 @@ sock_bind(s, args)
 	return None;
 }
 
+
+/* s.close() method.
+   Set the file descriptor to -1 so operations tried subsequently
+   will surely fail. */
+
 static object *
 sock_close(s, args)
 	sockobject *s;
@@ -261,6 +367,9 @@ sock_close(s, args)
 	INCREF(None);
 	return None;
 }
+
+
+/* s.connect(sockaddr) method */
 
 static object *
 sock_connect(s, args)
@@ -277,6 +386,9 @@ sock_connect(s, args)
 	return None;
 }
 
+
+/* s.listen(n) method */
+
 static object *
 sock_listen(s, args)
 	sockobject *s;
@@ -291,25 +403,60 @@ sock_listen(s, args)
 	return None;
 }
 
+
+/* s.makefile(mode) method.
+   Create a new open file object referring to a dupped version of
+   the socket's file descriptor.  (The dup() call is necessary so
+   that the open file and socket objects may be closed independent
+   of each other.)
+   The mode argument specifies 'r' or 'w' passed to fdopen(). */
+
 static object *
-sock_read(s, args)
+sock_makefile(s, args)
 	sockobject *s;
 	object *args;
 {
-	int len, n;
-	object *buf;
-	if (!getintarg(args, &len))
+	extern int fclose PROTO((FILE *));
+	object *mode;
+	int fd;
+	FILE *fp;
+	if (!getstrarg(args, &mode))
 		return NULL;
+	if ((fd = dup(s->sock_fd)) < 0 ||
+	    (fp = fdopen(fd, getstringvalue(mode))) == NULL)
+		return socket_error();
+	return newopenfileobject(fp, "<socket>", getstringvalue(mode), fclose);
+}
+
+
+/* s.recv(nbytes) method */
+
+static object *
+sock_recv(s, args)
+	sockobject *s;
+	object *args;
+{
+	int len, n, flags;
+	object *buf;
+	if (!getintintarg(args, &len, &flags)) {
+		err_clear();
+		if (!getintarg(args, &len))
+			return NULL;
+		flags = 0;
+	}
 	buf = newsizedstringobject((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
-	n = read(s->sock_fd, getstringvalue(buf), len);
+	n = recv(s->sock_fd, getstringvalue(buf), len, flags);
 	if (n < 0)
 		return socket_error();
 	if (resizestring(&buf, n) < 0)
 		return NULL;
 	return buf;
 }
+
+
+/* s.recvfrom(nbytes) method */
 
 static object *
 sock_recvfrom(s, args)
@@ -332,6 +479,33 @@ sock_recvfrom(s, args)
 	return makepair(buf, makesockaddr(addrbuf, addrlen));
 }
 
+
+/* s.send(data) method */
+
+static object *
+sock_send(s, args)
+	sockobject *s;
+	object *args;
+{
+	object *buf;
+	int len, n, flags;
+	if (!getstrintarg(args, &buf, &flags)) {
+		err_clear();
+		if (!getstrarg(args, &buf))
+			return NULL;
+		flags = 0;
+	}
+	len = getstringsize(buf);
+	n = send(s->sock_fd, getstringvalue(buf), len, flags);
+	if (n < 0)
+		return socket_error();
+	INCREF(None);
+	return None;
+}
+
+
+/* s.sendto(data, sockaddr) method */
+
 static object *
 sock_sendto(s, args)
 	sockobject *s;
@@ -352,8 +526,12 @@ sock_sendto(s, args)
 		   addr, addrlen);
 	if (n < 0)
 		return socket_error();
-	return newintobject((long) n);
+	INCREF(None);
+	return None;
 }
+
+
+/* s.shutdown(how) method */
 
 static object *
 sock_shutdown(s, args)
@@ -369,21 +547,8 @@ sock_shutdown(s, args)
 	return None;
 }
 
-static object *
-sock_write(s, args)
-	sockobject *s;
-	object *args;
-{
-	object *buf;
-	int len, n;
-	if (!getstrarg(args, &buf))
-		return NULL;
-	len = getstringsize(buf);
-	n = write(s->sock_fd, getstringvalue(buf), len);
-	if (n < 0)
-		return socket_error();
-	return newintobject((long) n);
-}
+
+/* List of methods for socket objects */
 
 static struct methodlist sock_methods[] = {
 	{"accept",	sock_accept},
@@ -391,13 +556,18 @@ static struct methodlist sock_methods[] = {
 	{"close",	sock_close},
 	{"connect",	sock_connect},
 	{"listen",	sock_listen},
-	{"read",	sock_read},
+	{"makefile",	sock_makefile},
+	{"recv",	sock_recv},
 	{"recvfrom",	sock_recvfrom},
+	{"send",	sock_send},
 	{"sendto",	sock_sendto},
 	{"shutdown",	sock_shutdown},
-	{"write",	sock_write},
 	{NULL,		NULL}		/* sentinel */
 };
+
+
+/* Deallocate a socket object in response to the last DECREF().
+   First close the file description. */
 
 static void
 sock_dealloc(s)
@@ -407,6 +577,9 @@ sock_dealloc(s)
 	DEL(s);
 }
 
+
+/* Return a socket object's named attribute. */
+
 static object *
 sock_getattr(s, name)
 	sockobject *s;
@@ -414,6 +587,11 @@ sock_getattr(s, name)
 {
 	return findmethod(sock_methods, (object *) s, name);
 }
+
+
+/* Type object for socket objects.
+   If your compiler complains that it is first declared 'extern'
+   and later 'static', remove the 'static' keyword here. */
 
 static typeobject Socktype = {
 	OB_HEAD_INIT(&Typetype)
@@ -432,6 +610,53 @@ static typeobject Socktype = {
 	0,		/*tp_as_mapping*/
 };
 
+
+/* Python interface to gethostbyname(name). */
+
+/*ARGSUSED*/
+static object *
+socket_gethostbyname(self, args)
+	object *self;
+	object *args;
+{
+	object *name;
+	struct hostent *hp;
+	struct sockaddr_in addrbuf;
+	if (!getstrarg(args, &name))
+		return NULL;
+	if (setipaddr(getstringvalue(name), &addrbuf) < 0)
+		return NULL;
+	return makeipaddr(&addrbuf);
+}
+
+
+/* Python interface to getservbyname(name).
+   This only returns the port number, since the other info is already
+   known or not useful (like the list of aliases). */
+
+/*ARGSUSED*/
+static object *
+socket_getservbyname(self, args)
+	object *self;
+	object *args;
+{
+	object *name, *proto;
+	struct servent *sp;
+	if (!getstrstrarg(args, &name, &proto))
+		return NULL;
+	sp = getservbyname(getstringvalue(name), getstringvalue(proto));
+	if (sp == NULL) {
+		err_setstr(SocketError, "service/proto not found");
+		return NULL;
+	}
+	return newintobject((long) ntohs(sp->s_port));
+}
+
+
+/* Python interface to socket(family, type, proto).
+   The third (protocol) argument is optional.
+   Return a new socket object. */
+
 /*ARGSUSED*/
 static object *
 socket_socket(self, args)
@@ -440,22 +665,39 @@ socket_socket(self, args)
 {
 	sockobject *s;
 	int family, type, proto, fd;
-	if (!getintintarg(args, &family, &type))
-		return NULL;
-	proto = 0;
+	if (args != NULL && is_tupleobject(args) && gettuplesize(args) == 3) {
+		if (!getintintarg(args, &family, &type, &proto))
+			return NULL;
+	}
+	else {
+		if (!getintintarg(args, &family, &type))
+			return NULL;
+		proto = 0;
+	}
 	fd = socket(family, type, proto);
 	if (fd < 0)
 		return socket_error();
 	s = newsockobject(fd, family, type, proto);
+	/* If the object can't be created, don't forget to close the
+	   file descriptor again! */
 	if (s == NULL)
-		close(fd);
+		(void) close(fd);
 	return (object *) s;
 }
 
+
+/* List of functions exported by this module. */
+
 static struct methodlist socket_methods[] = {
-	{"socket",	socket_socket},
-	{NULL,		NULL}		 /* Sentinel */
+	{"gethostbyname",	socket_gethostbyname},
+	{"getservbyname",	socket_getservbyname},
+	{"socket",		socket_socket},
+	{NULL,			NULL}		 /* Sentinel */
 };
+
+
+/* Convenience routine to export an integer value.
+   For simplicity, errors (which are unlikely anyway) are ignored. */
 
 static void
 insint(d, name, value)
@@ -473,6 +715,12 @@ insint(d, name, value)
 		DECREF(v);
 	}
 }
+
+
+/* Initialize this module.
+   This is called when the first 'import socket' is done,
+   via a table in config.c, if config.c is compiled with USE_SOCKET
+   defined. */
 
 void
 initsocket()
