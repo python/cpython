@@ -264,7 +264,10 @@ rotor rotormodule.c		# enigma-inspired encryption
 #sybase sybasemodule.c
 
 
-# Generic (SunOS / SVR4) dynamic loading module
+# Generic (SunOS / SVR4) dynamic loading module.
+# This is not needed for dynamic loading of Python modules --
+# it is a highly experimental and dangerous device for calling
+# *arbitrary* C functions in *arbitrary* shared libraries.
 
 #dl dlmodule.c
 
