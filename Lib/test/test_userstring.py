@@ -42,3 +42,4 @@ def test(methodname, input, output, *args):
 
 string_tests.run_method_tests(test)
 string_tests.run_contains_tests(test)
+string_tests.run_inplace_tests(UserString)

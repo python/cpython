@@ -52,20 +52,9 @@ class UserString:
             return self.__class__(other + self.data)
         else:
             return self.__class__(str(other) + self.data)
-    def __iadd__(self, other):
-        if isinstance(other, UserString):
-            self.data += other.data
-        elif isinstance(other, StringTypes):
-            self.data += other
-        else:
-            self.data += str(other)
-        return self
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
-    def __imul__(self, n):
-        self.data *= n
-        return self
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
@@ -168,6 +157,17 @@ class MutableString(UserString):
         self.data = self.data[:start] + self.data[end:]
     def immutable(self):
         return UserString(self.data)
+    def __iadd__(self, other):
+        if isinstance(other, UserString):
+            self.data += other.data
+        elif isinstance(other, StringTypes):
+            self.data += other
+        else:
+            self.data += str(other)
+        return self
+    def __imul__(self, n):
+        self.data *= n
+        return self
 
 if __name__ == "__main__":
     # execute the regression test to stdout, if called as a script:
