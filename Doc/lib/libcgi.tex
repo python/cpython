@@ -7,7 +7,6 @@
 \indexii{MIME}{headers}
 \index{URL}
 
-\setindexsubitem{(in module cgi)}
 
 Support module for CGI (Common Gateway Interface) scripts.
 
@@ -28,11 +27,11 @@ executes the script, and sends the script's output back to the client.
 
 The script's input is connected to the client too, and sometimes the
 form data is read this way; at other times the form data is passed via
-the ``query string'' part of the URL.  This module (\file{cgi.py}) is intended
+the ``query string'' part of the URL.  This module is intended
 to take care of the different cases and provide a simpler interface to
 the Python script.  It also provides a number of utilities that help
 in debugging scripts, and the latest addition is support for file
-uploads from a form (if your browser supports it -- Grail 0.3 and
+uploads from a form (if your browser supports it --- Grail 0.3 and
 Netscape 2.0 do).
 
 The output of a CGI script should consist of two sections, separated
@@ -44,7 +43,7 @@ generate a minimal header section looks like this:
 print "Content-type: text/html"     # HTML is following
 print                               # blank line, end of headers
 \end{verbatim}
-%
+
 The second section is usually HTML, which allows the client software
 to display nicely formatted text with header, in-line images, etc.
 Here's Python code that prints a simple piece of HTML:
@@ -54,28 +53,30 @@ print "<TITLE>CGI script output</TITLE>"
 print "<H1>This is my first CGI script</H1>"
 print "Hello, world!"
 \end{verbatim}
-%
+
 (It may not be fully legal HTML according to the letter of the
 standard, but any browser will understand it.)
 
 \subsection{Using the cgi module}
 \nodename{Using the cgi module}
 
-Begin by writing \code{import cgi}.  Don't use \code{from cgi import *} -- the
-module defines all sorts of names for its own use or for backward 
-compatibility that you don't want in your namespace.
+Begin by writing \samp{import cgi}.  Do not use \samp{from cgi import
+*} --- the module defines all sorts of names for its own use or for
+backward compatibility that you don't want in your namespace.
 
-It's best to use the \code{FieldStorage} class.  The other classes define in this 
-module are provided mostly for backward compatibility.  Instantiate it 
-exactly once, without arguments.  This reads the form contents from 
-standard input or the environment (depending on the value of various 
-environment variables set according to the CGI standard).  Since it may 
-consume standard input, it should be instantiated only once.
+It's best to use the \class{FieldStorage} class.  The other classes
+defined in this module are provided mostly for backward compatibility.
+Instantiate it exactly once, without arguments.  This reads the form
+contents from standard input or the environment (depending on the
+value of various environment variables set according to the CGI
+standard).  Since it may consume standard input, it should be
+instantiated only once.
 
-The \code{FieldStorage} instance can be accessed as if it were a Python 
+The \class{FieldStorage} instance can be accessed as if it were a Python 
 dictionary.  For instance, the following code (which assumes that the 
-\code{Content-type} header and blank line have already been printed) checks that 
-the fields \code{name} and \code{addr} are both set to a non-empty string:
+\code{content-type} header and blank line have already been printed)
+checks that the fields \code{name} and \code{addr} are both set to a
+non-empty string:
 
 \begin{verbatim}
 form = cgi.FieldStorage()
@@ -89,17 +90,20 @@ if not form_ok:
     return
 ...further form processing here...
 \end{verbatim}
-%
-Here the fields, accessed through \code{form[key]}, are themselves instances
-of \code{FieldStorage} (or \code{MiniFieldStorage}, depending on the form encoding).
+
+Here the fields, accessed through \samp{form[\var{key}]}, are
+themselves instances of \class{FieldStorage} (or
+\class{MiniFieldStorage}, depending on the form encoding).
 
 If the submitted form data contains more than one field with the same
-name, the object retrieved by \code{form[key]} is not a \code{(Mini)FieldStorage}
+name, the object retrieved by \samp{form[\var{key}]} is not a
+\class{FieldStorage} or \class{MiniFieldStorage}
 instance but a list of such instances.  If you expect this possibility
 (i.e., when your HTML form comtains multiple fields with the same
-name), use the \code{type()} function to determine whether you have a single
-instance or a list of instances.  For example, here's code that
-concatenates any number of username fields, separated by commas:
+name), use the \function{type()} function to determine whether you
+have a single instance or a list of instances.  For example, here's
+code that concatenates any number of username fields, separated by
+commas:
 
 \begin{verbatim}
 username = form["username"]
@@ -117,12 +121,12 @@ else:
     # Single username field specified
     usernames = username.value
 \end{verbatim}
-%
-If a field represents an uploaded file, the value attribute reads the 
-entire file in memory as a string.  This may not be what you want.  You can 
-test for an uploaded file by testing either the filename attribute or the 
-file attribute.  You can then read the data at leasure from the file 
-attribute:
+
+If a field represents an uploaded file, the value attribute reads the
+entire file in memory as a string.  This may not be what you want.
+You can test for an uploaded file by testing either the filename
+attribute or the file attribute.  You can then read the data at
+leasure from the file attribute:
 
 \begin{verbatim}
 fileitem = form["userfile"]
@@ -134,40 +138,40 @@ if fileitem.file:
         if not line: break
         linecount = linecount + 1
 \end{verbatim}
-%
-The file upload draft standard entertains the possibility of uploading
-multiple files from one field (using a recursive \code{multipart/*}
-encoding).  When this occurs, the item will be a dictionary-like
-FieldStorage item.  This can be determined by testing its type
-attribute, which should have the value \code{multipart/form-data} (or
-perhaps another string beginning with \code{multipart/}  It this case, it
-can be iterated over recursively just like the top-level form object.
 
-When a form is submitted in the ``old'' format (as the query string or as a 
-single data part of type \code{application/x-www-form-urlencoded}), the items 
-will actually be instances of the class \code{MiniFieldStorage}.  In this case,
-the list, file and filename attributes are always \code{None}.
+The file upload draft standard entertains the possibility of uploading
+multiple files from one field (using a recursive
+\mimetype{multipart/*} encoding).  When this occurs, the item will be
+a dictionary-like \class{FieldStorage} item.  This can be determined
+by testing its \member{type} attribute, which should be
+\mimetype{multipart/form-data} (or perhaps another MIME type matching
+\mimetype{multipart/*}).  It this case, it can be iterated over
+recursively just like the top-level form object.
+
+When a form is submitted in the ``old'' format (as the query string or
+as a single data part of type
+\mimetype{application/x-www-form-urlencoded}), the items will actually
+be instances of the class \class{MiniFieldStorage}.  In this case, the
+list, file and filename attributes are always \code{None}.
 
 
 \subsection{Old classes}
 
-These classes, present in earlier versions of the \code{cgi} module, are still 
-supported for backward compatibility.  New applications should use the
-FieldStorage class.
+These classes, present in earlier versions of the \module{cgi} module,
+are still supported for backward compatibility.  New applications
+should use the \class{FieldStorage} class.
 
-\code{SvFormContentDict}
-single value form content as dictionary; assumes each 
-field name occurs in the form only once.
+\class{SvFormContentDict} stores single value form content as
+dictionary; it assumes each field name occurs in the form only once.
 
-\code{FormContentDict}
-multiple value form content as dictionary (the form
-items are lists of values).  Useful if your form contains multiple
-fields with the same name.
+\class{FormContentDict} stores multiple value form content as a
+dictionary (the form items are lists of values).  Useful if your form
+contains multiple fields with the same name.
 
-Other classes (\code{FormContent}, \code{InterpFormContentDict}) are present for
-backwards compatibility with really old applications only.  If you still 
-use these and would be inconvenienced when they disappeared from a next 
-version of this module, drop me a note.
+Other classes (\class{FormContent}, \class{InterpFormContentDict}) are
+present for backwards compatibility with really old applications only.
+If you still use these and would be inconvenienced when they
+disappeared from a next version of this module, drop me a note.
 
 
 \subsection{Functions}
@@ -178,78 +182,81 @@ some of the algorithms implemented in this module in other
 circumstances.
 
 \begin{funcdesc}{parse}{fp}
-Parse a query in the environment or from a file (default \code{sys.stdin}).
+Parse a query in the environment or from a file (default
+\code{sys.stdin}).
 \end{funcdesc}
 
 \begin{funcdesc}{parse_qs}{qs}
-parse a query string given as a string argument (data of type 
-\code{application/x-www-form-urlencoded}).
+Parse a query string given as a string argument (data of type 
+\mimetype{application/x-www-form-urlencoded}).
 \end{funcdesc}
 
 \begin{funcdesc}{parse_multipart}{fp\, pdict}
-parse input of type \code{multipart/form-data} (for 
-file uploads).  Arguments are \code{fp} for the input file and 
-    \code{pdict} for the dictionary containing other parameters of \code{content-type} header
+Parse input of type \mimetype{multipart/form-data} (for 
+file uploads).  Arguments are \var{fp} for the input file and
+\var{pdict} for the dictionary containing other parameters of
+\code{content-type} header
 
-    Returns a dictionary just like \code{parse_qs()}
-keys are the field names, each 
-    value is a list of values for that field.  This is easy to use but not 
-    much good if you are expecting megabytes to be uploaded -- in that case, 
-    use the \code{FieldStorage} class instead which is much more flexible.  Note 
-    that \code{content-type} is the raw, unparsed contents of the \code{content-type} 
-    header.
+Returns a dictionary just like \function{parse_qs()} keys are the
+field names, each value is a list of values for that field.  This is
+easy to use but not much good if you are expecting megabytes to be
+uploaded --- in that case, use the \class{FieldStorage} class instead
+which is much more flexible.  Note that \code{content-type} is the
+raw, unparsed contents of the \code{content-type} header.
 
-    Note that this does not parse nested multipart parts -- use \code{FieldStorage} for 
-    that.
+Note that this does not parse nested multipart parts --- use
+\class{FieldStorage} for that.
 \end{funcdesc}
 
 \begin{funcdesc}{parse_header}{string}
-parse a header like \code{Content-type} into a main
+Parse a header like \code{content-type} into a main
 content-type and a dictionary of parameters.
 \end{funcdesc}
 
 \begin{funcdesc}{test}{}
-robust test CGI script, usable as main program.
-    Writes minimal HTTP headers and formats all information provided to
-    the script in HTML form.
+Robust test CGI script, usable as main program.
+Writes minimal HTTP headers and formats all information provided to
+the script in HTML form.
 \end{funcdesc}
 
 \begin{funcdesc}{print_environ}{}
-format the shell environment in HTML.
+Format the shell environment in HTML.
 \end{funcdesc}
 
 \begin{funcdesc}{print_form}{form}
-format a form in HTML.
+Format a form in HTML.
 \end{funcdesc}
 
 \begin{funcdesc}{print_directory}{}
-format the current directory in HTML.
+Format the current directory in HTML.
 \end{funcdesc}
 
 \begin{funcdesc}{print_environ_usage}{}
-print a list of useful (used by CGI) environment variables in
+Print a list of useful (used by CGI) environment variables in
 HTML.
 \end{funcdesc}
 
 \begin{funcdesc}{escape}{s\optional{\, quote}}
-convert the characters
-``\code{\&}'', ``\code{<}'' and ``\code{>}'' in string \var{s} to HTML-safe
-sequences.  Use this if you need to display text that might contain
-such characters in HTML.  If the optional flag \var{quote} is true,
-the double quote character (\code{"}) is also translated; this helps
-for inclusion in an HTML attribute value, e.g. in ``\code{<A HREF="...">}''.
+Convert the characters
+\character{\&}, \character{<} and \character{>} in string \var{s} to
+HTML-safe sequences.  Use this if you need to display text that might
+contain such characters in HTML.  If the optional flag \var{quote} is
+true, the double quote character (\character{"}) is also translated;
+this helps for inclusion in an HTML attribute value, e.g. in \code{<A
+HREF="...">}.
 \end{funcdesc}
 
 
 \subsection{Caring about security}
 
 There's one important rule: if you invoke an external program (e.g.
-via the \code{os.system()} or \code{os.popen()} functions), make very sure you don't
-pass arbitrary strings received from the client to the shell.  This is
-a well-known security hole whereby clever hackers anywhere on the web
-can exploit a gullible CGI script to invoke arbitrary shell commands.
-Even parts of the URL or field names cannot be trusted, since the
-request doesn't have to come from your form!
+via the \function{os.system()} or \function{os.popen()} functions),
+make very sure you don't pass arbitrary strings received from the
+client to the shell.  This is a well-known security hole whereby
+clever hackers anywhere on the web can exploit a gullible CGI script
+to invoke arbitrary shell commands.  Even parts of the URL or field
+names cannot be trusted, since the request doesn't have to come from
+your form!
 
 To be on the safe side, if you must pass a string gotten from a form
 to a shell command, you should make sure the string contains only
@@ -263,27 +270,29 @@ system administrator to find the directory where CGI scripts should be
 installed; usually this is in a directory \file{cgi-bin} in the server tree.
 
 Make sure that your script is readable and executable by ``others''; the
-\UNIX{} file mode should be 755 (use \code{chmod 755 filename}).  Make sure
-that the first line of the script contains \code{\#!} starting in column 1
-followed by the pathname of the Python interpreter, for instance:
+\UNIX{} file mode should be \code{0755} octal (use \samp{chmod 0755
+filename}).  Make sure that the first line of the script contains
+\code{\#!} starting in column 1 followed by the pathname of the Python
+interpreter, for instance:
 
 \begin{verbatim}
 #!/usr/local/bin/python
 \end{verbatim}
-%
+
 Make sure the Python interpreter exists and is executable by ``others''.
 
 Make sure that any files your script needs to read or write are
-readable or writable, respectively, by ``others'' -- their mode should
-be 644 for readable and 666 for writable.  This is because, for
-security reasons, the HTTP server executes your script as user
-``nobody'', without any special privileges.  It can only read (write,
-execute) files that everybody can read (write, execute).  The current
-directory at execution time is also different (it is usually the
-server's cgi-bin directory) and the set of environment variables is
-also different from what you get at login.  in particular, don't count
-on the shell's search path for executables (\code{\$PATH}) or the Python
-module search path (\code{\$PYTHONPATH}) to be set to anything interesting.
+readable or writable, respectively, by ``others'' --- their mode
+should be \code{0644} for readable and \code{0666} for writable.  This
+is because, for security reasons, the HTTP server executes your script
+as user ``nobody'', without any special privileges.  It can only read
+(write, execute) files that everybody can read (write, execute).  The
+current directory at execution time is also different (it is usually
+the server's cgi-bin directory) and the set of environment variables
+is also different from what you get at login.  In particular, don't
+count on the shell's search path for executables (\envvar{PATH}) or
+the Python module search path (\envvar{PYTHONPATH}) to be set to
+anything interesting.
 
 If you need to load modules from a directory which is not on Python's
 default module search path, you can change the path in your script,
@@ -294,7 +303,7 @@ import sys
 sys.path.insert(0, "/usr/home/joe/lib/python")
 sys.path.insert(0, "/usr/local/lib/python")
 \end{verbatim}
-%
+
 (This way, the directory inserted last will be searched first!)
 
 Instructions for non-\UNIX{} systems will vary; check your HTTP server's
@@ -312,12 +321,12 @@ execute it at all, and the HTTP server will most likely send a cryptic
 error to the client.
 
 Assuming your script has no syntax errors, yet it does not work, you
-have no choice but to read the next section:
+have no choice but to read the next section.
 
 
 \subsection{Debugging CGI scripts}
 
-First of all, check for trivial installation errors -- reading the
+First of all, check for trivial installation errors --- reading the
 section above on installing your CGI script carefully can save you a
 lot of time.  If you wonder whether you have understood the
 installation procedure correctly, try installing a copy of this module
@@ -330,7 +339,7 @@ request by entering a URL into your browser of the form:
 \begin{verbatim}
 http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
 \end{verbatim}
-%
+
 If this gives an error of type 404, the server cannot find the script
 -- perhaps you need to install it in a different directory.  If it
 gives another error (e.g.  500), there's an installation problem that
@@ -341,14 +350,14 @@ and ``name'' with value ``Joe Blow''), the \file{cgi.py} script has been
 installed correctly.  If you follow the same procedure for your own
 script, you should now be able to debug it.
 
-The next step could be to call the \code{cgi} module's \code{test()}
-function from your script: replace its main code with the single
-statement
+The next step could be to call the \module{cgi} module's
+\function{test()} function from your script: replace its main code
+with the single statement
 
 \begin{verbatim}
 cgi.test()
 \end{verbatim}
-%
+
 This should produce the same results as those gotten from installing
 the \file{cgi.py} file itself.
 
@@ -360,22 +369,23 @@ raises an exception, most likely the traceback will end up in one of
 the HTTP server's log file, or be discarded altogether.
 
 Fortunately, once you have managed to get your script to execute
-*some* code, it is easy to catch exceptions and cause a traceback to
-be printed.  The \code{test()} function below in this module is an example.
-Here are the rules:
+\emph{some} code, it is easy to catch exceptions and cause a traceback
+to be printed.  The \function{test()} function below in this module is
+an example.  Here are the rules:
 
 \begin{enumerate}
-	\item Import the traceback module (before entering the
-	   try-except!)
-	
-	\item Make sure you finish printing the headers and the blank
-	   line early
-	
-	\item Assign \code{sys.stderr} to \code{sys.stdout}
-	
-	\item Wrap all remaining code in a try-except statement
-	
-	\item In the except clause, call \code{traceback.print_exc()}
+\item Import the traceback module before entering the \keyword{try}
+   ... \keyword{except} statement
+
+\item Assign \code{sys.stderr} to be \code{sys.stdout}
+
+\item Make sure you finish printing the headers and the blank line
+   early
+
+\item Wrap all remaining code in a \keyword{try} ... \keyword{except}
+   statement
+
+\item In the except clause, call \function{traceback.print_exc()}
 \end{enumerate}
 
 For example:
@@ -392,9 +402,9 @@ except:
     print "\n\n<PRE>"
     traceback.print_exc()
 \end{verbatim}
-%
-Notes: The assignment to \code{sys.stderr} is needed because the traceback
-prints to \code{sys.stderr}.
+
+Notes: The assignment to \code{sys.stderr} is needed because the
+traceback prints to \code{sys.stderr}.
 The \code{print "{\e}n{\e}n<PRE>"} statement is necessary to
 disable the word wrapping in HTML.
 
@@ -409,7 +419,7 @@ print "Content-type: text/plain"
 print
 ...your code here...
 \end{verbatim}
-%
+
 This relies on the Python interpreter to print the traceback.  The
 content type of the output is set to plain text, which disables all
 HTML processing.  If your script works, the raw HTML will be displayed
@@ -428,18 +438,18 @@ progress report on the client's display while the script is running.
 
 \item Check the installation instructions above.
 
-\item Check the HTTP server's log files.  (\code{tail -f logfile} in a separate
-window may be useful!)
+\item Check the HTTP server's log files.  (\samp{tail -f logfile} in a
+separate window may be useful!)
 
 \item Always check a script for syntax errors first, by doing something
-like \code{python script.py}.
+like \samp{python script.py}.
 
 \item When using any of the debugging techniques, don't forget to add
-\code{import sys} to the top of the script.
+\samp{import sys} to the top of the script.
 
 \item When invoking external programs, make sure they can be found.
-Usually, this means using absolute path names -- \code{\$PATH} is usually not
-set to a very useful value in a CGI script.
+Usually, this means using absolute path names --- \envvar{PATH} is
+usually not set to a very useful value in a CGI script.
 
 \item When reading or writing external files, make sure they can be read
 or written by every user on the system.
