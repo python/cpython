@@ -168,6 +168,7 @@ class MSVCCompiler (CCompiler) :
 
             self.cc   = _find_exe("cl.exe", version)
             self.link = _find_exe("link.exe", version)
+            self.lib  = _find_exe("lib.exe", version)
             set_path_env_var ('lib', version)
             set_path_env_var ('include', version)
             path=get_msvc_paths('path', version)
@@ -181,6 +182,7 @@ class MSVCCompiler (CCompiler) :
             # devstudio not found in the registry
             self.cc = "cl.exe"
             self.link = "link.exe"
+            self.lib = "lib.exe"
 
         self.preprocess_options = None
         self.compile_options = [ '/nologo', '/Ox', '/MD', '/W3' ]
@@ -243,44 +245,32 @@ class MSVCCompiler (CCompiler) :
     # compile ()
 
 
-    # XXX the signature of this method is different from CCompiler and
-    # UnixCCompiler -- but those extra parameters (libraries, library_dirs)
-    # are actually used.  So: are they really *needed*, or can they be
-    # ditched?  If needed, the CCompiler API will have to change...
-    def link_static_lib (self,
-                         objects,
-                         output_libname,
-                         output_dir=None,
-                         libraries=None,
-                         library_dirs=None,
-                         debug=0,
-                         extra_preargs=None,
-                         extra_postargs=None):
+    def create_static_lib (self,
+                           objects,
+                           output_libname,
+                           output_dir=None,
+                           debug=0,
+                           extra_preargs=None,
+                           extra_postargs=None):
 
-        (objects, output_dir, libraries, library_dirs) = \
-            self._fix_link_args (objects, output_dir, takes_libs=1,
-                                 libraries=libraries,
-                                 library_dirs=library_dirs)
-        
+        (objects, output_dir) = \
+            self._fix_link_args (objects, output_dir, takes_libs=0)
         output_filename = \
             self.library_filename (output_libname, output_dir=output_dir)
 
         if self._need_link (objects, output_filename):
-            lib_opts = gen_lib_options (libraries, library_dirs,
-                                        "%s.lib", "/LIBPATH:%s")
-            ld_args = self.ldflags_static + lib_opts + \
-                      objects + ['/OUT:' + output_filename]
+            lib_args = objects + ['/OUT:' + output_filename]
             if debug:
                 pass                    # XXX what goes here?
             if extra_preargs:
-                ld_args[:0] = extra_preargs
+                lib_args[:0] = extra_preargs
             if extra_postargs:
-                ld_args.extend (extra_postargs)
+                lib_args.extend (extra_postargs)
             self.spawn ([self.link] + ld_args)
         else:
             self.announce ("skipping %s (up-to-date)" % output_filename)
 
-    # link_static_lib ()
+    # create_static_lib ()
     
 
     def link_shared_lib (self,
