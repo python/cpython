@@ -162,7 +162,7 @@ all-formats:  $(PSFILES) $(PDFFILES)
 # We really need some support of dependency generator for this...
 
 MANSTYLES=texinputs/fncychap.sty texinputs/manual.cls \
-	  texinputs/python.sty texinputs/myindex.ist
+	  texinputs/python.sty texinputs/pypaper.sty texinputs/myindex.ist
 
 COMMONTEX=$(MANSTYLES) texinputs/copyright.tex texinputs/boilerplate.tex
 
