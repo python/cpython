@@ -119,7 +119,7 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 #STDWINPATH=:$(DESTLIB)/stdwin
 
-# For STDWIN 1.0 it's a bit different:
+# For STDWIN 0.9.9 or higher, it's a bit different:
 
 #STDWIN=/ufs/guido/src/stdwin
 #LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
@@ -146,6 +146,11 @@ md5 md5module.c md5c.c
 # compiled it against GMP 1.3.2 (the latest I believe) and it seems to
 # work OK, but I haven't tested it thoroughly (lacking knowledge about
 # it).
+
+# A compatible MP library unencombered by the GPL also exists.  It was
+# posted to comp.sources.misc in volume 40 and is widely available from
+# FTP archive sites. One URL for it is:
+# ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/volume40/fgmp/part01.Z
 
 #GMP=/ufs/guido/src/gmp
 #mpz mpzmodule.c -I$(GMP) $(GMP)/libgmp.a
