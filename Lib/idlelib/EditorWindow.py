@@ -61,7 +61,8 @@ class EditorWindow:
                     dochome = os.path.join(basepath, pyver,
                                            'Doc', 'index.html')
             elif sys.platform[:3] == 'win':
-                chmfile = os.path.join(sys.prefix, "Python%d%d.chm" % sys.version_info[:2])
+                chmfile = os.path.join(sys.prefix, 'Doc',
+                                       'Python%d%d.chm' % sys.version_info[:2])
                 if os.path.isfile(chmfile):
                     dochome = chmfile
             dochome = os.path.normpath(dochome)
