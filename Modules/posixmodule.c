@@ -2744,7 +2744,7 @@ posix_openpty(PyObject *self, PyObject *args)
 	char * slave_name;
 #endif
 #if defined(HAVE_DEV_PTMX) && !defined(HAVE_OPENPTY) && !defined(HAVE__GETPTY)
-	void *sig_saved;
+	PyOS_sighandler_t sig_saved;
 #ifdef sun
 	extern char *ptsname();
 #endif
@@ -2769,10 +2769,16 @@ posix_openpty(PyObject *self, PyObject *args)
 	if (master_fd < 0)
 		return posix_error();
 	sig_saved = signal(SIGCHLD, SIG_DFL);
-	if (grantpt(master_fd) < 0) /* change permission of slave */
+	/* change permission of slave */
+	if (grantpt(master_fd) < 0) {
+		signal(SIGCHLD, sig_saved);
 		return posix_error();
-	if (unlockpt(master_fd) < 0) /* unlock slave */
+	}
+	/* unlock slave */
+	if (unlockpt(master_fd) < 0) {
+		signal(SIGCHLD, sig_saved);
 		return posix_error();
+	}
 	signal(SIGCHLD, sig_saved);
 	slave_name = ptsname(master_fd); /* get name of slave */
 	if (slave_name == NULL)
