@@ -53,13 +53,19 @@
 # Don't edit this (usually)
 DESTLIB=$(prefix)/lib/python
 
+# Site specific path insertions -- should begin with : if non-empty
+SITEPATH=
+
+# Standard path -- don't edit
+DESTPATH=:$(DESTLIB)
+
 # Standard enabled (tests are always available)
 TESTPATH=:$(DESTLIB)/test
 
 # Path for machine- or system-dependent modules (and shared libraries)
 MACHDEPPATH=:$(DESTLIB)/$(MACHDEP)
 
-COREPYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
+COREPYTHONPATH=.$(SITEPATH)$(DESTPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
 
 
