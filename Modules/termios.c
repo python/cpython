@@ -4,6 +4,12 @@
 
 #define PyInit_termios inittermios
 
+/* Apparently, on SGI, termios.h won't define CTRL if _XOPEN_SOURCE
+   is defined, so we define it here. */
+#if defined(__sgi)
+#define CTRL(c) ((c)&037)
+#endif
+
 #include <termios.h>
 #ifdef __osf__
 /* On OSF, sys/ioctl.h requires that struct termio already be defined,
