@@ -11,28 +11,29 @@ According to the dictionary, a bastion is ``a fortified area or
 position'', or ``something that is considered a stronghold.''  It's a
 suitable name for this module, which provides a way to forbid access
 to certain attributes of an object.  It must always be used with the
-\code{rexec} module, in order to allow restricted-mode programs access
+\module{rexec} module, in order to allow restricted-mode programs access
 to certain safe attributes of an object, while denying access to
 other, unsafe attributes.
 
 % I've punted on the issue of documenting keyword arguments for now.
 
 \begin{funcdesc}{Bastion}{object\optional{\, filter\, name\, class}}
-Protect the class instance \var{object}, returning a bastion for the
+Protect the object \var{object}, returning a bastion for the
 object.  Any attempt to access one of the object's attributes will
 have to be approved by the \var{filter} function; if the access is
-denied an AttributeError exception will be raised.
+denied an \exception{AttributeError} exception will be raised.
 
 If present, \var{filter} must be a function that accepts a string
 containing an attribute name, and returns true if access to that
 attribute will be permitted; if \var{filter} returns false, the access
 is denied.  The default filter denies access to any function beginning
-with an underscore (\code{_}).  The bastion's string representation
-will be \code{<Bastion for \var{name}>} if a value for
-\var{name} is provided; otherwise, \code{repr(\var{object})} will be used.
+with an underscore (\samp{_}).  The bastion's string representation
+will be \samp{<Bastion for \var{name}>} if a value for
+\var{name} is provided; otherwise, \samp{repr(\var{object})} will be
+used.
 
-\var{class}, if present, would be a subclass of \code{BastionClass};
+\var{class}, if present, would be a subclass of \class{BastionClass};
 see the code in \file{bastion.py} for the details.  Overriding the
-default \code{BastionClass} will rarely be required.  
+default \class{BastionClass} will rarely be required.
 
 \end{funcdesc}
