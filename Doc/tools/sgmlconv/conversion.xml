@@ -601,6 +601,22 @@
     <content/>
     </macro>
 
+  <!-- Grammar production lists -->
+  <environment name="productionlist">
+    <attribute name="grammar" optional="yes"/>
+    </environment>
+  <macro name="production">
+    <attribute name="token"/>
+    <content/>
+    </macro>
+  <macro name="token">
+    <content/>
+    </macro>
+  <macro name="orgroup">
+    <content/>
+    </macro>
+  <macro name="oritem"/>
+
   <!-- Misc. -->
   <macro name="emph">
     <content/>
