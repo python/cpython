@@ -1,5 +1,6 @@
 # Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Menus.h'
 
+def FOUR_CHAR_CODE(x): return x
 kMenuStdMenuProc = 63
 kMenuStdMenuBarProc = 63
 kMenuNoModifiers = 0
