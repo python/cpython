@@ -213,6 +213,8 @@ test('replace', u'one!two!three!', u'one!two!three!', u'x', u'@', 2)
 test('replace', u'abc', u'-a-b-c-', u'', u'-')
 test('replace', u'abc', u'-a-b-c', u'', u'-', 3)
 test('replace', u'abc', u'abc', u'', u'-', 0)
+test('replace', u'abc', u'abc', u'ab', u'--', 0)
+test('replace', u'abc', u'abc', u'xy', u'--')
 test('replace', u'', u'', u'', u'')
 
 test('startswith', u'hello', True, u'he')

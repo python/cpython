@@ -3534,10 +3534,16 @@ PyObject *replace(PyUnicodeObject *self,
         n = count(self, 0, self->length, str1);
         if (n > maxcount)
             n = maxcount;
-        if (n == 0 && PyUnicode_CheckExact(self)) {
+        if (n == 0) {
             /* nothing to replace, return original string */
-            Py_INCREF(self);
-            u = self;
+            if (PyUnicode_CheckExact(self)) {
+                Py_INCREF(self);
+                u = self;
+            }
+            else {
+                u = (PyUnicodeObject *)
+                    PyUnicode_FromUnicode(self->str, self->length);
+	    }
         } else {
             u = _PyUnicode_New(
                 self->length + n * (str2->length - str1->length));
