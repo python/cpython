@@ -171,6 +171,7 @@ PyRun_String
 PyErr_Display
 PyErr_PrintEx
 PyErr_Print
+PyRun_SimpleStringFlags
 PyRun_SimpleString
 PyRun_SimpleFileExFlags
 PyRun_SimpleFileEx
@@ -319,6 +320,9 @@ PyMethod_New
 PyInstance_NewRaw
 PyClass_IsSubclass
 PyInstance_New
+PyMethod_Class
+PyMethod_Self
+PyMethod_Function
 PyClass_New
 PyCObject_Type
 PyCObject_Import
@@ -421,6 +425,7 @@ PyLong_FromString
 PyLong_AsVoidPtr
 PyLong_FromVoidPtr
 PyLong_AsDouble
+_PyLong_AsScaledDouble
 _PyLong_AsByteArray
 _PyLong_FromByteArray
 PyLong_AsUnsignedLong
@@ -450,6 +455,7 @@ _Py_NotImplementedStruct
 _Py_cobject_hack
 _Py_abstract_hack
 PyObject_ClearWeakRefs
+Py_DivisionWarningFlag
 _PyTrash_delete_later
 _PyTrash_delete_nesting
 _PyTrash_destroy_chain
@@ -463,6 +469,7 @@ PyMem_Free
 PyMem_Realloc
 PyMem_Malloc
 _Py_ReadyTypes
+PyObject_Dir
 PyCallable_Check
 PyNumber_Coerce
 PyNumber_CoerceEx
@@ -533,6 +540,7 @@ PyTuple_GetItem
 PyTuple_Size
 PyTuple_New
 type_getsets
+subtype_getsets
 PyType_Type
 PyBaseObject_Type
 PySuper_Type
@@ -648,15 +656,15 @@ PyMac_StopGUSISpin
 RotateCursor
 SpinCursor
 PyMac_GetFullPath
-__convert_to_newlines
 PyMac_AppRefNum
 PyMac_options
 console_output_state
+__convert_to_newlines
 PyMac_GetDelayConsoleFlag
 Py_GetExecPrefix
 Py_GetPrefix
-Py_GetArgcArgv
 Py_GetProgramFullPath
+Py_GetArgcArgv
 PyMac_Exit
 abort
 PyMac_OutputNotSeen
@@ -674,9 +682,9 @@ macstat
 sync
 initgestalt
 initmacfs
-PyMac_BuildFSSpec
-PyMac_BuildFSRef
-PyMac_GetFSRef
+_PyMac_BuildFSSpec
+_PyMac_BuildFSRef
+_PyMac_GetFSRef
 newmfsrobject
 newmfssobject
 _PyMac_GetFSSpec
@@ -871,7 +879,7 @@ PyOS_vsnprintf
 PyOS_snprintf
 proxytype
 wrappertype
-PyGetSet_Type
+PyProperty_Type
 PyWrapper_New
 PyDictProxy_New
 proxy_str
@@ -891,7 +899,10 @@ _PyObject_GC_Track
 _PyGC_Dump
 initgc
 PyMac_OSErrException
+PyMacGluePtr_PyMac_BuildFSSpec
 PyMacGluePtr_PyMac_GetFSSpec
+PyMacGluePtr_PyMac_BuildFSRef
+PyMacGluePtr_PyMac_GetFSRef
 PyMacGluePtr_AEDesc_New
 PyMacGluePtr_AEDesc_Convert
 PyMacGluePtr_CmpObj_New
@@ -984,7 +995,10 @@ CmpObj_Convert
 CmpObj_New
 AEDesc_Convert
 AEDesc_New
+PyMac_GetFSRef
+PyMac_BuildFSRef
 PyMac_GetFSSpec
+PyMac_BuildFSSpec
 PyMac_Buildwide
 PyMac_Getwide
 PyMac_BuildFixed

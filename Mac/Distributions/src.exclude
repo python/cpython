@@ -11,6 +11,7 @@
 *.slb
 *.xMAP
 *.xSYM
+*~[0-9]
 .#*
 .cvsignore
 @*
@@ -18,4 +19,3 @@ CVS
 Makefile.pre.in
 PyIDE-src
 [(]*[)]
-*~[0-9]
