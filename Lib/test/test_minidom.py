@@ -337,21 +337,21 @@ def testParents():
 
     doc.unlink()
 
-def testNonNSElements():
+def testSAX2DOM():
     from xml.dom import pulldom
 
-    pulldom = pulldom.PullDOM()
-    pulldom.startDocument()
-    pulldom.startElement("doc", {})
-    pulldom.characters("text")
-    pulldom.startElement("subelm", {})
-    pulldom.characters("text")
-    pulldom.endElement("subelm")
-    pulldom.characters("text")    
-    pulldom.endElement("doc")
-    pulldom.endDocument()
+    sax2dom = pulldom.SAX2DOM()
+    sax2dom.startDocument()
+    sax2dom.startElement("doc", {})
+    sax2dom.characters("text")
+    sax2dom.startElement("subelm", {})
+    sax2dom.characters("text")
+    sax2dom.endElement("subelm")
+    sax2dom.characters("text")    
+    sax2dom.endElement("doc")
+    sax2dom.endDocument()
 
-    doc = pulldom.document
+    doc = sax2dom.document
     root = doc.documentElement
     (text1, elm1, text2) = root.childNodes
     text3 = elm1.childNodes[0]
@@ -363,13 +363,13 @@ def testNonNSElements():
             text2.previousSibling is elm1 and
             text2.nextSibling is None and
             text3.previousSibling is None and
-            text3.nextSibling is None, "testNonNSElements - siblings")
+            text3.nextSibling is None, "testSAX2DOM - siblings")
 
     confirm(root.parentNode is doc and
             text1.parentNode is root and
             elm1.parentNode is root and
             text2.parentNode is root and
-            text3.parentNode is elm1, "testNonNSElements - parents")
+            text3.parentNode is elm1, "testSAX2DOM - parents")
             
     doc.unlink()
 
