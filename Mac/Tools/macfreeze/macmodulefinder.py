@@ -20,7 +20,9 @@ except ImportError:
 # (but are if they are found)
 #
 MAC_INCLUDE_MODULES=['site', 'exceptions']
-MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'dos', 'dospath', 'nturl2path', 'pwd', 'sitecustomize']
+MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'ntpath', 'dos', 'dospath', 
+		'win32api',
+		'nturl2path', 'pwd', 'sitecustomize']
 
 # An exception:
 Missing="macmodulefinder.Missing"
