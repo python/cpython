@@ -232,7 +232,7 @@ class NamespaceViewer:
 
     dict = -1
 
-    def load_dict(self, dict, force=0):
+    def load_dict(self, dict, force=0, rpc_client=None):
         if dict is self.dict and not force:
             return
         subframe = self.subframe
@@ -250,6 +250,10 @@ class NamespaceViewer:
             for name in names:
                 value = dict[name]
                 svalue = self.repr.repr(value) # repr(value)
+                # Strip extra quotes caused by calling repr on the (already)
+                # repr'd value sent across the RPC interface:
+                if rpc_client:
+                    svalue = svalue[1:-1]
                 l = Label(subframe, text=name)
                 l.grid(row=row, column=0, sticky="nw")
     ##            l = Label(subframe, text=svalue, justify="l", wraplength=300)

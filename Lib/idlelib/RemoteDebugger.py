@@ -24,6 +24,8 @@ import sys
 import rpc
 import Debugger
 
+debugging = 0
+
 # In the PYTHON subprocess
 
 frametable = {}
@@ -43,9 +45,9 @@ def wrap_info(info):
 
 class GUIProxy:
 
-    def __init__(self, conn, oid):
+    def __init__(self, conn, gui_adap_oid):
         self.conn = conn
-        self.oid = oid
+        self.oid = gui_adap_oid
 
     def interaction(self, message, frame, info=None):
         self.conn.remotecall(self.oid, "interaction",
@@ -128,24 +130,25 @@ class IdbAdapter:
     def dict_item(self, did, key):
         dict = dicttable[did]
         value = dict[key]
-        try:
-            # Test for picklability
-            import cPickle
-            cPickle.dumps(value)
-        except:
-            value = None
+        value = repr(value)
+#          try:
+#              # Test for picklability
+#              import cPickle
+#              pklstr = cPickle.dumps(value)
+#          except:
+#              print >>sys.__stderr__, "** dict_item pickle failed: ", value
+#              raise    
+#              #value = None
         return value
 
-def start_debugger(conn, gui_oid):
-    #
-    # launched in the python subprocess
-    #
-    gui = GUIProxy(conn, gui_oid)
-    idb = Debugger.Idb(gui)
-    ada = IdbAdapter(idb)
-    ada_oid = "idb_adapter"
-    conn.register(ada_oid, ada)
-    return ada_oid
+def start_debugger(conn, gui_adap_oid):
+    "Launch debugger in the remote python subprocess"
+    gui_proxy = GUIProxy(conn, gui_adap_oid)
+    idb = Debugger.Idb(gui_proxy)
+    idb_adap = IdbAdapter(idb)
+    idb_adap_oid = "idb_adapter"
+    conn.register(idb_adap_oid, idb_adap)
+    return idb_adap_oid
 
 # In the IDLE process
 
@@ -223,14 +226,14 @@ class DictProxy:
         ##print >>sys.__stderr__, "failed DictProxy.__getattr__:", name
         raise AttributeError, name
 
-class GUIAdaper:
+class GUIAdapter:
 
     def __init__(self, conn, gui):
         self.conn = conn
         self.gui = gui
 
     def interaction(self, message, fid, iid):
-        print "interaction(%s, %s, %s)" % (`message`, `fid`, `iid`)
+        ##print "interaction: (%s, %s, %s)" % (`message`,`fid`, `iid`)
         frame = FrameProxy(self.conn, fid)
         info = None # XXX for now
         self.gui.interaction(message, frame, info)
@@ -272,16 +275,23 @@ class IdbProxy:
         self.call("set_quit")
 
 def start_remote_debugger(conn, pyshell):
-    #
-    # instruct the (remote) subprocess to create
-    # a debugger instance, and lets it know that 
-    # the local GUIAdapter called "gui_adapter"
-    # is waiting notification of debugging events
-    #
-    ada_oid = "gui_adapter"
-    idb_oid = conn.remotecall("exec", "start_debugger", (ada_oid,), {})
-    idb = IdbProxy(conn, idb_oid)
-    gui = Debugger.Debugger(pyshell, idb)
-    ada = GUIAdaper(conn, gui)
-    conn.register(ada_oid, ada)
+    """Start the subprocess debugger, initialize the debugger GUI and RPC link
+
+    Start the debugger in the remote Python process.  Instantiate IdbProxy,
+    Debugger GUI, and Debugger GUIAdapter objects, and link them together.
+
+    The GUIAdapter will handle debugger GUI interaction requests coming from
+    the subprocess debugger via the GUIProxy.
+
+    The IdbAdapter will pass execution and environment requests coming from the
+    Idle debugger GUI to the subprocess debugger via the IdbProxy.
+
+    """
+    gui_adap_oid = "gui_adapter"
+    idb_adap_oid = conn.remotecall("exec", "start_the_debugger",\
+                                   (gui_adap_oid,), {})
+    idb_proxy = IdbProxy(conn, idb_adap_oid)
+    gui = Debugger.Debugger(pyshell, idb_proxy)
+    gui_adap = GUIAdapter(conn, gui)
+    conn.register(gui_adap_oid, gui_adap)
     return gui

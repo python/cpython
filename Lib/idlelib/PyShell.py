@@ -529,6 +529,9 @@ class PyShell(OutputWindow):
         self.set_debugger_indicator()
 
     def open_debugger(self):
+        # XXX KBK 13Jun02 An RPC client always exists now? Open remote
+        # debugger and return...dike the rest of this fcn and combine
+        # with open_remote_debugger?
         if self.interp.rpcclt:
             return self.open_remote_debugger()
         import Debugger
