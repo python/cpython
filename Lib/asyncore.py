@@ -53,7 +53,7 @@ import sys
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
-     ENOTCONN, ESHUTDOWN, EINTR
+     ENOTCONN, ESHUTDOWN, EINTR, EISCONN
 
 try:
     socket_map
@@ -301,17 +301,14 @@ class dispatcher:
 
     def connect (self, address):
         self.connected = 0
-        # XXX why not use connect_ex?
-        try:
-            self.socket.connect (address)
-        except socket.error, why:
-            if why[0] in (EINPROGRESS, EALREADY, EWOULDBLOCK):
-                return
-            else:
-                raise socket.error, why
-        self.addr = address
-        self.connected = 1
-        self.handle_connect()
+        err = self.socket.connect_ex(address)
+        if err in (EINPROGRESS, EALREADY, EWOULDBLOCK):
+            return
+        if err in (0, EISCONN):
+            self.addr = address
+            self.connected = 1
+            self.handle_connect()
+        raise socket.error, err
 
     def accept (self):
         try:
