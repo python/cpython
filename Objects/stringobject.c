@@ -822,8 +822,8 @@ string_find_internal(self, args, dir)
 	int n, i = 0, last = INT_MAX;
 	PyObject *subobj;
 
-	if (!PyArg_ParseTuple(args, "O|ii:find/rfind/index/rindex", 
-			      &subobj, &i, &last))
+	if (!PyArg_ParseTuple(args, "O|O&O&:find/rfind/index/rindex", 
+		&subobj, _PyEval_SliceIndex, &i, _PyEval_SliceIndex, &last))
 		return -2;
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
@@ -1194,8 +1194,10 @@ string_count(self, args)
 	int m, r;
 	PyObject *subobj;
 
-	if (!PyArg_ParseTuple(args, "O|ii:count", &subobj, &i, &last))
+	if (!PyArg_ParseTuple(args, "O|O&O&:count", &subobj,
+		_PyEval_SliceIndex, &i, _PyEval_SliceIndex, &last))
 		return NULL;
+
 	if (PyString_Check(subobj)) {
 		sub = PyString_AS_STRING(subobj);
 		n = PyString_GET_SIZE(subobj);
@@ -1617,7 +1619,8 @@ string_startswith(self, args)
 	int end = -1;
 	PyObject *subobj;
 
-	if (!PyArg_ParseTuple(args, "O|ii:startswith", &subobj, &start, &end))
+	if (!PyArg_ParseTuple(args, "O|O&O&:startswith", &subobj,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return NULL;
 	if (PyString_Check(subobj)) {
 		prefix = PyString_AS_STRING(subobj);
@@ -1671,7 +1674,8 @@ string_endswith(self, args)
 	int lower, upper;
 	PyObject *subobj;
 
-	if (!PyArg_ParseTuple(args, "O|ii:endswith", &subobj, &start, &end))
+	if (!PyArg_ParseTuple(args, "O|O&O&:endswith", &subobj,
+		_PyEval_SliceIndex, &start, _PyEval_SliceIndex, &end))
 		return NULL;
 	if (PyString_Check(subobj)) {
 		suffix = PyString_AS_STRING(subobj);
