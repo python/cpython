@@ -217,7 +217,7 @@ Socket methods:
 #ifndef MS_WINDOWS
 
 #ifndef HAVE_INET_PTON
-int inet_pton (int af, const char *src, void *dst);
+int inet_pton (int af, char *src, void *dst);
 char *inet_ntop(int af, void *src, char *dst, socklen_t size);
 #endif
 
