@@ -9,8 +9,8 @@ import sys
 from socket import *
 import getopt
 
-HOST = 'voorn.cwi.nl' # The host where readcd.py is run
-PORT = 50505 # Must match the port in readcd.py
+HOST = 'voorn.cwi.nl'			# The host where readcd.py is run
+PORT = 50505				# Must match the port in readcd.py
 
 def main():
 	try:
@@ -141,3 +141,5 @@ def triple(a, b, c):
 def zfill(n):
 	s = `n`
 	return '0' * (2 - len(s)) + s
+
+main()
