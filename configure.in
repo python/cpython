@@ -1140,6 +1140,17 @@ then
 	CYGWIN*)   SO=.dll;;
 	*)	   SO=.so;;
 	esac
+else
+	# this might also be a termcap variable, see #610332
+        echo
+        echo '====================================================================='
+        echo '+                                                                   +'
+	echo '+ WARNING: You have set SO in your environment.                     +'
+        echo '+ Do you really mean to change the extension for shared libraries?  +'
+        echo '+ Continuing in 10 seconds to let you to ponder.                    +'
+        echo '+                                                                   +'
+        echo '====================================================================='
+	sleep 10
 fi
 AC_MSG_RESULT($SO)
 # LDSHARED is the ld *command* used to create shared library
