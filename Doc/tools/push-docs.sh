@@ -64,7 +64,6 @@ if [ "$1" ] ; then
 fi
 
 if [ "$DOCTYPE" = 'maint' ] ; then
-    # 'maint' is a symlink
     DOCTYPE='maint23'
 fi
 
