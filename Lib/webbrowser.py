@@ -135,6 +135,33 @@ class Netscape:
         self.open(url, 1)
 
 
+class Galeon:
+    """Launcher class for Galeon browsers."""
+    def __init__(self, name):
+        self.name = name
+        self.basename = os.path.basename(name)
+
+    def _remote(self, action, autoraise):
+        raise_opt = ("--noraise", "")[autoraise]
+        cmd = "%s %s %s >/dev/null 2>&1" % (self.name, raise_opt, action)
+        rc = os.system(cmd)
+        if rc:
+            import time
+            os.system("%s >/dev/null 2>&1 &" % self.name)
+            time.sleep(PROCESS_CREATION_DELAY)
+            rc = os.system(cmd)
+        return not rc
+
+    def open(self, url, new=0, autoraise=1):
+        if new:
+            self._remote("-w '%s'" % url, autoraise)
+        else:
+            self._remote("-n '%s'" % url, autoraise)
+
+    def open_new(self, url):
+        self.open(url, 1)
+
+
 class Konqueror:
     """Controller for the KDE File Manager (kfm, or Konqueror).
 
@@ -234,7 +261,8 @@ class WindowsDefault:
 # the TERM and DISPLAY cases, because we might be running Python from inside
 # an xterm.
 if os.environ.get("TERM") or os.environ.get("DISPLAY"):
-    _tryorder = ["mozilla","netscape","kfm","grail","links","lynx","w3m"]
+    _tryorder = ["galeon", "mozilla", "netscape", "kfm",
+                 "grail", "links", "lynx", "w3m",]
 
     # Easy cases first -- register console browsers if we have them.
     if os.environ.get("TERM"):
@@ -260,6 +288,10 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
         if _iscommand("mosaic"):
             register("mosaic", None, GenericBrowser(
                 "mosaic '%s' >/dev/null &"))
+
+        # Gnome's Galeon
+        if _iscommand("galeon"):
+            register("galeon", None, Galeon("galeon"))
 
         # Konqueror/kfm, the KDE browser.
         if _iscommand("kfm") or _iscommand("konqueror"):
