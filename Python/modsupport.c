@@ -67,6 +67,36 @@ initmodule(name, methods)
 }
 
 
+/* Helper for getargs() and mkvalue() to scan the length of a format */
+
+static int countformat PROTO((char *format, int endchar));
+static int countformat(format, endchar)
+	char *format;
+	int endchar;
+{
+	int count = 0;
+	int level = 0;
+	while (level > 0 || *format != endchar) {
+		if (*format == '\0') {
+			/* Premature end */
+			err_setstr(SystemError, "unmatched paren in format");
+			return -1;
+		}
+		else if (*format == '(') {
+			if (level == 0)
+				count++;
+			level++;
+		}
+		else if (*format == ')')
+			level--;
+		else if (level == 0 && *format != '#')
+			count++;
+		format++;
+	}
+	return count;
+}
+
+
 /* Generic argument list parser */
 
 static int do_arg PROTO((object *arg, char** p_format, va_list *p_va));
@@ -97,7 +127,16 @@ do_arg(arg, p_format, p_va)
 			return 0;
 		break;
 		}
-	
+
+	case 'b': /* byte -- very short int */ {
+		char *p = va_arg(va, char *);
+		if (is_intobject(arg))
+			*p = getintvalue(arg);
+		else
+			return 0;
+		break;
+		}
+
 	case 'h': /* short int */ {
 		short *p = va_arg(va, short *);
 		if (is_intobject(arg))
@@ -339,78 +378,76 @@ getshortlistarg(args, a, n)
 	return 1;
 }
 
+
+/* Generic function to create a value -- the inverse of getargs() */
+/* After an original idea and first implementation by Steven Miale */
+
+static object *do_mktuple PROTO((char**, va_list *, int, int));
+static object *do_mkvalue PROTO((char**, va_list *));
+
 static object *
-do_mkval(char **p_format, va_list *p_va) {
+do_mktuple(p_format, p_va, endchar, n)
+	char **p_format;
+	va_list *p_va;
+	int endchar;
+	int n;
+{
 	object *v;
+	int i;
+	if (n < 0)
+		return NULL;
+	if ((v = newtupleobject(n)) == NULL)
+		return NULL;
+	for (i = 0; i < n; i++) {
+		object *w = do_mkvalue(p_format, p_va);
+		if (w == NULL) {
+			DECREF(v);
+			return NULL;
+		}
+		settupleitem(v, i, w);
+	}
+	if (v != NULL && **p_format != endchar) {
+		DECREF(v);
+		v = NULL;
+		err_setstr(SystemError, "Unmatched paren in format");
+	}
+	else if (endchar)
+		++*p_format;
+	return v;
+}
+
+static object *
+do_mkvalue(p_format, p_va) {
 	
 	switch (*(*p_format)++) {
 	
 	case '(':
-		{
-			int n = 0;
-			char *p = *p_format;
-			int level = 0;
-			int i;
-			while (level > 0 || *p != ')') {
-				if (*p == '\0') {
-					err_setstr(SystemError, "missing ')' in mkvalue format");
-					return NULL;
-				}
-				else if (*p == '(') {
-					if (level == 0)
-						n++;
-					level++;
-				}
-				else if (*p == ')')
-					level--;
-				else if (level == 0 && *p != '#')
-					n++;
-				p++;
-			}
-			v = newtupleobject(n);
-			if (v == NULL)
-				break;
-			for (i = 0; i < n; i++) {
-				object *w = do_mkval(p_format, p_va);
-				if (w == NULL) {
-					DECREF(v);
-					v = NULL;
-					break;
-				}
-				settupleitem(v, i, w);
-			}
-			if (v != NULL && *(*p_format)++ != ')') {
-				/* "Cannot happen" */
-				err_setstr(SystemError, "inconsistent format in mkvalue???");
-				DECREF(v);
-				v = NULL;
-			}
-		}
-		break;
-		
+		return do_mktuple(p_format, p_va, ')',
+				  countformat(*p_format, ')'));
+
+	case 'b':
 	case 'h':
-		v = newintobject((long)va_arg(*p_va, short));
-		break;
-		
 	case 'i':
-		v = newintobject((long)va_arg(*p_va, int));
-		break;
+		return newintobject((long)va_arg(*p_va, int));
 		
 	case 'l':
-		v = newintobject((long)va_arg(*p_va, long));
-		break;
+		return newintobject((long)va_arg(*p_va, long));
 		
 	case 'f':
-		v = newfloatobject((double)va_arg(*p_va, float));
-		break;
-		
 	case 'd':
-		v = newfloatobject((double)va_arg(*p_va, double));
-		break;
+		return newfloatobject((double)va_arg(*p_va, double));
+
+	case 'c':
+		{
+			char p[1];
+			p[0] = va_arg(*p_va, int);
+			return newsizedstringobject(p, 1);
+		}
 	
 	case 's':
 	case 'z':
 		{
+			object *v;
 			char *str = va_arg(*p_va, char *);
 			int n;
 			if (**p_format == '#') {
@@ -428,40 +465,69 @@ do_mkval(char **p_format, va_list *p_va) {
 					n = strlen(str);
 				v = newsizedstringobject(str, n);
 			}
+			return v;
 		}
-		break;
 	
 	case 'S':
 	case 'O':
-		v = va_arg(*p_va, object *);
-		if (v == NULL) {
-			if (!err_occurred())
-				err_setstr(SystemError, "NULL object passed to mkvalue");
+		{
+			object *v;
+			v = va_arg(*p_va, object *);
+			if (v != NULL)
+				INCREF(v);
+			else if (!err_occurred())
+				/* If a NULL was passed because a call
+				   that should have constructed a value
+				   failed, that's OK, and we pass the error
+				   on; but if no error occurred it's not
+				   clear that the caller knew what she
+				   was doing. */
+				err_setstr(SystemError,
+					   "NULL object passed to mkvalue");
+			return v;
 		}
-		else
-			INCREF(v);
-		break;
 	
 	default:
 		err_setstr(SystemError, "bad format char passed to mkvalue");
-		v = NULL;
-		break;
+		return NULL;
 	
 	}
-	
-	return v;
 }
 
-object *
-mkvalue(char *format, ...)
+#ifdef USE_STDARG
+/* VARARGS 2 */
+object *mkvalue(char *format, ...)
+#else
+/* VARARGS */
+object *mkvalue(va_alist) va_dcl
+#endif
 {
-	char *fmt = format;
-	object *v;
-	va_list p;
-	va_start(p, format);
-	v = do_mkval(&fmt, &p);
-	va_end(p);
-	if (v == NULL)
-		fprintf(stderr, "mkvalue: format = \"%s\" \"%s\"\n", format, fmt);
-	return v;
+	int n;
+	char *f;
+	va_list va;
+	object* retval;
+#ifdef USE_STDARG
+	va_start(va, format);
+#else
+	char *format;
+	
+	va_start(va);
+	format = va_arg(va, char *);
+#endif
+	f = format;
+	n = countformat(f, '\0');
+	if (n < 0)
+		retval = NULL; /* Error in the format */
+	else if (n == 0) {
+		retval = None;
+		INCREF(retval);
+	}
+	else if (n == 1)
+		retval = do_mkvalue(&f, &va);
+	else
+		retval = do_mktuple(&f, &va, '\0', n);
+	va_end(va);
+	if (retval == NULL)
+		fprintf(stderr, "format \"%s\", f \"%s\"\n", format, f);
+	return retval;
 }
