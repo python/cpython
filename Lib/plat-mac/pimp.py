@@ -1,3 +1,17 @@
+"""Package Install Manager for Python.
+
+This is currently a MacOSX-only strawman implementation. 
+Motto: "He may be shabby, but he gets you what you need" :-) 
+
+Tools to allow easy installation of packages. The idea is that there is
+an online XML database per (platform, python-version) containing packages
+known to work with that combination. This module contains tools for getting
+and parsing the database, testing whether packages are installed, computing
+dependencies and installing packages.
+
+There is a minimal main program that works as a command line tool, but the
+intention is that the end user will use this through a GUI.
+"""
 import sys
 import os
 import urllib
@@ -5,6 +19,8 @@ import urlparse
 import plistlib
 import distutils.util
 import md5
+
+__all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main"]
 
 _scriptExc_NotInstalled = "pimp._scriptExc_NotInstalled"
 _scriptExc_OldInstalled = "pimp._scriptExc_OldInstalled"
@@ -32,6 +48,9 @@ class MyURLopener(urllib.FancyURLopener):
 		urllib.URLopener.http_error_default(self, url, fp, errcode, errmsg, headers)
 
 class PimpPreferences:
+	"""Container for per-user preferences, such as the database to use
+	and where to install packages"""
+	
 	def __init__(self, 
 			flavorOrder=None,
 			downloadDir=None,
@@ -55,6 +74,9 @@ class PimpPreferences:
 		self.pimpDatabase = pimpDatabase
 		
 	def check(self):
+		"""Check that the preferences make sense: directories exist and are
+		writable, the install directory is on sys.path, etc."""
+		
 		rv = ""
 		RWX_OK = os.R_OK|os.W_OK|os.X_OK
 		if not os.path.exists(self.downloadDir):
@@ -83,6 +105,8 @@ class PimpPreferences:
 		return rv			
 		
 	def compareFlavors(self, left, right):
+		"""Compare two flavor strings. This is part of your preferences
+		because whether the user prefers installing from source or binary is."""
 		if left in self.flavorOrder:
 			if right in self.flavorOrder:
 				return cmp(self.flavorOrder.index(left), self.flavorOrder.index(right))
@@ -92,6 +116,11 @@ class PimpPreferences:
 		return cmp(left, right)
 		
 class PimpDatabase:
+	"""Class representing a pimp database. It can actually contain
+	information from multiple databases through inclusion, but the
+	toplevel database is considered the master, as its maintainer is
+	"responsible" for the contents"""
+	
 	def __init__(self, prefs):
 		self._packages = []
 		self.preferences = prefs
@@ -101,6 +130,10 @@ class PimpDatabase:
 		self._description = ""
 		
 	def appendURL(self, url, included=0):
+		"""Append packages from the database with the given URL.
+		Only the first database should specify included=0, so the
+		global information (maintainer, description) get stored."""
+		
 		if url in self._urllist:
 			return
 		self._urllist.append(url)
@@ -111,26 +144,39 @@ class PimpDatabase:
 			self._version = dict.get('version', '0.1')
 			self._maintainer = dict.get('maintainer', '')
 			self._description = dict.get('description', '')
-		self.appendPackages(dict['packages'])
+		self._appendPackages(dict['packages'])
 		others = dict.get('include', [])
 		for url in others:
 			self.appendURL(url, included=1)
 		
-	def appendPackages(self, packages):
+	def _appendPackages(self, packages):
+		"""Given a list of dictionaries containing package
+		descriptions create the PimpPackage objects and append them
+		to our internal storage."""
+		
 		for p in packages:
 			pkg = PimpPackage(self, **dict(p))
 			self._packages.append(pkg)
 			
 	def list(self):
+		"""Return a list of all PimpPackage objects in the database."""
+		
 		return self._packages
 		
 	def listnames(self):
+		"""Return a list of names of all packages in the database."""
+		
 		rv = []
 		for pkg in self._packages:
 			rv.append(_fmtpackagename(pkg))
 		return rv
 		
 	def dump(self, pathOrFile):
+		"""Dump the contents of the database to an XML .plist file.
+		
+		The file can be passed as either a file object or a pathname.
+		All data, including included databases, is dumped."""
+		
 		packages = []
 		for pkg in self._packages:
 			packages.append(pkg.dump())
@@ -144,6 +190,13 @@ class PimpDatabase:
 		plist.write(pathOrFile)
 		
 	def find(self, ident):
+		"""Find a package. The package can be specified by name
+		or as a dictionary with name, version and flavor entries.
+		
+		Only name is obligatory. If there are multiple matches the
+		best one (higher version number, flavors ordered according to
+		users' preference) is returned."""
+		
 		if type(ident) == str:
 			# Remove ( and ) for pseudo-packages
 			if ident[0] == '(' and ident[-1] == ')':
@@ -175,6 +228,8 @@ class PimpDatabase:
 		return found
 		
 class PimpPackage:
+	"""Class representing a single package."""
+	
 	def __init__(self, db, name, 
 			version=None,
 			flavor=None,
@@ -200,6 +255,7 @@ class PimpPackage:
 		self._MD5Sum = MD5Sum
 		
 	def dump(self):
+		"""Return a dict object containing the information on the package."""
 		dict = {
 			'name': self.name,
 			}
@@ -226,15 +282,24 @@ class PimpPackage:
 		return dict
 		
 	def __cmp__(self, other):
+		"""Compare two packages, where the "better" package sorts lower."""
+		
 		if not isinstance(other, PimpPackage):
 			return cmp(id(self), id(other))
 		if self.name != other.name:
 			return cmp(self.name, other.name)
 		if self.version != other.version:
-			return cmp(self.version, other.version)
+			return -cmp(self.version, other.version)
 		return self._db.preferences.compareFlavors(self.flavor, other.flavor)
 		
 	def installed(self):
+		"""Test wheter the package is installed.
+		
+		Returns two values: a status indicator which is one of
+		"yes", "no", "old" (an older version is installed) or "bad"
+		(something went wrong during the install test) and a human
+		readable string which may contain more details."""
+		
 		namespace = {
 			"NotInstalled": _scriptExc_NotInstalled,
 			"OldInstalled": _scriptExc_OldInstalled,
@@ -259,6 +324,14 @@ class PimpPackage:
 		return "yes", ""
 		
 	def prerequisites(self):
+		"""Return a list of prerequisites for this package.
+		
+		The list contains 2-tuples, of which the first item is either
+		a PimpPackage object or None, and the second is a descriptive
+		string. The first item can be None if this package depends on
+		something that isn't pimp-installable, in which case the descriptive
+		string should tell the user what to do."""
+		
 		rv = []
 		if not self.downloadURL:
 			return [(None, "This package needs to be installed manually")]
@@ -278,6 +351,8 @@ class PimpPackage:
 		return rv
 			
 	def _cmd(self, output, dir, *cmditems):
+		"""Internal routine to run a shell command in a given directory."""
+		
 		cmd = ("cd \"%s\"; " % dir) + " ".join(cmditems)
 		if output:
 			output.write("+ %s\n" % cmd)
@@ -293,7 +368,18 @@ class PimpPackage:
 		rv = fp.close()
 		return rv
 		
-	def downloadSinglePackage(self, output):
+	def downloadSinglePackage(self, output=None):
+		"""Download a single package, if needed.
+		
+		An MD5 signature is used to determine whether download is needed,
+		and to test that we actually downloaded what we expected.
+		If output is given it is a file-like object that will receive a log
+		of what happens.
+		
+		If anything unforeseen happened the method returns an error message
+		string.
+		"""
+		
 		scheme, loc, path, query, frag = urlparse.urlsplit(self.downloadURL)
 		path = urllib.url2pathname(path)
 		filename = os.path.split(path)[1]
@@ -312,6 +398,8 @@ class PimpPackage:
 			return "archive does not have correct MD5 checksum"
 			
 	def _archiveOK(self):
+		"""Test an archive. It should exist and the MD5 checksum should be correct."""
+		
 		if not os.path.exists(self.archiveFilename):
 			return 0
 		if not self._MD5Sum:
@@ -321,7 +409,9 @@ class PimpPackage:
 		checksum = md5.new(data).hexdigest()
 		return checksum == self._MD5Sum
 			
-	def unpackSinglePackage(self, output):
+	def unpackSinglePackage(self, output=None):
+		"""Unpack a downloaded package archive."""
+		
 		filename = os.path.split(self.archiveFilename)[1]
 		for ext, cmd in ARCHIVE_FORMATS:
 			if filename[-len(ext):] == ext:
@@ -337,7 +427,12 @@ class PimpPackage:
 		if not os.path.exists(setupname) and not NO_EXECUTE:
 			return "no setup.py found after unpack of archive"
 			
-	def installSinglePackage(self, output):
+	def installSinglePackage(self, output=None):
+		"""Download, unpack and install a single package.
+		
+		If output is given it should be a file-like object and it
+		will receive a log of what happened."""
+		
 		if not self.downloadURL:
 			return "%s: This package needs to be installed manually" % _fmtpackagename(self)
 		msg = self.downloadSinglePackage(output)
@@ -359,6 +454,9 @@ class PimpPackage:
 		return None
 
 class PimpInstaller:
+	"""Installer engine: computes dependencies and installs
+	packages in the right order."""
+	
 	def __init__(self, db):
 		self._todo = []
 		self._db = db
@@ -374,6 +472,12 @@ class PimpInstaller:
 				self._todo.insert(0, package)
 			
 	def _prepareInstall(self, package, force=0, recursive=1):
+		"""Internal routine, recursive engine for prepareInstall.
+		
+		Test whether the package is installed and (if not installed
+		or if force==1) prepend it to the temporary todo list and
+		call ourselves recursively on all prerequisites."""
+		
 		if not force:
 			status, message = package.installed()
 			if status == "yes":
@@ -391,6 +495,15 @@ class PimpInstaller:
 				self._curmessages.append("Requires: %s" % descr)
 				
 	def prepareInstall(self, package, force=0, recursive=1):
+		"""Prepare installation of a package.
+		
+		If the package is already installed and force is false nothing
+		is done. If recursive is true prerequisites are installed first.
+		
+		Returns a list of packages (to be passed to install) and a list
+		of messages of any problems encountered.
+		"""
+		
 		self._curtodo = []
 		self._curmessages = []
 		self._prepareInstall(package, force, recursive)
@@ -400,6 +513,8 @@ class PimpInstaller:
 		return rv
 		
 	def install(self, packages, output):
+		"""Install a list of packages."""
+		
 		self._addPackages(packages)
 		status = []
 		for pkg in self._todo:
@@ -410,6 +525,11 @@ class PimpInstaller:
 		
 		
 def _fmtpackagename(dict):
+	"""Return the full name "name-version-flavor" of a package.
+	
+	If the package is a pseudo-package, something that cannot be
+	installed through pimp, return the name in (parentheses)."""
+	
 	if isinstance(dict, PimpPackage):
 		dict = dict.dump()
 	rv = dict['name']
@@ -423,6 +543,8 @@ def _fmtpackagename(dict):
 	return rv
 	
 def _run(mode, verbose, force, args):
+	"""Engine for the main program"""
+	
 	prefs = PimpPreferences()
 	prefs.check()
 	db = PimpDatabase(prefs)
@@ -495,6 +617,8 @@ def _run(mode, verbose, force, args):
 						print "\t", m
 
 def main():
+	"""Minimal commandline tool to drive pimp."""
+	
 	import getopt
 	def _help():
 		print "Usage: pimp [-v] -s [package ...]  List installed status"
