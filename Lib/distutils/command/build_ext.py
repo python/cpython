@@ -81,6 +81,10 @@ class build_ext (Command):
          "specify the compiler type"),
         ('swig-cpp', None,
          "make SWIG create C++ files (default is C)"),
+        ('swig-opts=', None,
+         "list of SWIG command line options"),
+        ('swig=', None,
+         "path to the SWIG executable"),
         ]
 
     boolean_options = ['inplace', 'debug', 'force', 'swig-cpp']
@@ -107,8 +111,9 @@ class build_ext (Command):
         self.debug = None
         self.force = None
         self.compiler = None
+        self.swig = None
         self.swig_cpp = None
-
+        self.swig_opts = None
 
     def finalize_options (self):
         from distutils import sysconfig
@@ -204,6 +209,11 @@ class build_ext (Command):
         # be separated with commas here.
         if self.undef:
             self.undef = string.split(self.undef, ',')
+
+        if self.swig_opts is None:
+            self.swig_opts = []
+        else:
+            self.swig_opts = self.swig_opts.split(' ')
 
     # finalize_options ()
 
@@ -429,7 +439,7 @@ class build_ext (Command):
         # First, scan the sources for SWIG definition files (.i), run
         # SWIG on 'em to create .c files, and modify the sources list
         # accordingly.
-        sources = self.swig_sources(sources)
+        sources = self.swig_sources(sources, ext)
 
         # Next, compile the source code to object files.
 
@@ -492,7 +502,7 @@ class build_ext (Command):
             target_lang=language)
 
 
-    def swig_sources (self, sources):
+    def swig_sources (self, sources, extension):
 
         """Walk the list of source files in 'sources', looking for SWIG
         interface (.i) files.  Run SWIG on all that are found, and
@@ -510,6 +520,9 @@ class build_ext (Command):
         # the temp dir.
 
         if self.swig_cpp:
+            log.warn("--swig-cpp is deprecated - use --swig-opts=-c++")
+
+        if self.swig_cpp or ('-c++' in self.swig_opts):
             target_ext = '.cpp'
         else:
             target_ext = '.c'
@@ -526,10 +539,16 @@ class build_ext (Command):
         if not swig_sources:
             return new_sources
 
-        swig = self.find_swig()
+        swig = self.swig or self.find_swig()
         swig_cmd = [swig, "-python"]
+        swig_cmd.extend(self.swig_opts)
         if self.swig_cpp:
             swig_cmd.append("-c++")
+
+        # Do not override commandline arguments
+        if not self.swig_opts:
+            for o in extension.swig_opts:
+                swig_cmd.append(o)
 
         for source in swig_sources:
             target = swig_targets[source]

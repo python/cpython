@@ -75,6 +75,9 @@ class Extension:
         used on all platforms, and not generally necessary for Python
         extensions, which typically export exactly one symbol: "init" +
         extension_name.
+      swig_opts : [string]
+        any extra options to pass to SWIG if a source file has the .i
+        extension.
       depends : [string]
         list of files that the extension depends on
       language : string
@@ -95,6 +98,7 @@ class Extension:
                   extra_compile_args=None,
                   extra_link_args=None,
                   export_symbols=None,
+                  swig_opts = None,
                   depends=None,
                   language=None,
                   **kw                      # To catch unknown keywords
@@ -116,6 +120,7 @@ class Extension:
         self.extra_compile_args = extra_compile_args or []
         self.extra_link_args = extra_link_args or []
         self.export_symbols = export_symbols or []
+        self.swig_opts = swig_opts or []
         self.depends = depends or []
         self.language = language
 
