@@ -366,6 +366,7 @@ time_strftime(self, args)
 	PyObject *tup;
 	struct tm buf;
 	const char *fmt;
+	int fmtlen, buflen;
 	char *outbuf = 0;
 	int i;
 
@@ -373,25 +374,30 @@ time_strftime(self, args)
 
 	if (!PyArg_ParseTuple(args, "sO", &fmt, &tup) || !gettmarg(tup, &buf))
 		return NULL;
+	fmtlen = strlen(fmt);
+
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
-	for (i = 1024 ; i <= 8192 ; i += 1024) {
+	for (i = 1024; ; i += i) {
 		outbuf = malloc(i);
 		if (outbuf == NULL) {
 			return PyErr_NoMemory();
 		}
-		if (strftime(outbuf, i-1, fmt, &buf) != 0) {
+		buflen = strftime(outbuf, i, fmt, &buf);
+		if (buflen > 0 || i >= 256 * fmtlen) {
+			/* If the buffer is 256 times as long as the format,
+			   it's probably not failing for lack of room!
+			   More likely, the format yields an empty result,
+			   e.g. an empty format, or %Z when the timezone
+			   is unknown. */
 			PyObject *ret;
-			ret = PyString_FromString(outbuf);
+			ret = PyString_FromStringAndSize(outbuf, buflen);
 			free(outbuf);
 			return ret;
 		}
 		free(outbuf);
 	}
-	PyErr_SetString(PyExc_ValueError,
-			"bad strftime format or result too big");
-	return NULL;
 }
 
 static char strftime_doc[] =
