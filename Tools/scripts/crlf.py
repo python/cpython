@@ -2,7 +2,7 @@
 
 "Replace CRLF with LF in argument files.  Print names of changed files."
 
-import sys, regsub, os
+import sys, re, os
 for file in sys.argv[1:]:
     if os.path.isdir(file):
         print file, "Directory!"
@@ -11,7 +11,7 @@ for file in sys.argv[1:]:
     if '\0' in data:
         print file, "Binary!"
         continue
-    newdata = regsub.gsub("\r\n", "\n", data)
+    newdata = re.sub("\r\n", "\n", data)
     if newdata != data:
         print file
         f = open(file, "wb")
