@@ -8,6 +8,15 @@
 import test_support
 import os, struct, stat, sys
 
+try:
+    import signal
+    # The default handler for SIGXFSZ is to abort the process.
+    # By ignoring it, system calls exceeding the file size resource
+    # limit will raise IOError instead of crashing the interpreter.
+    oldhandler = signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+except (ImportError, AttributeError):
+    pass
+
 
 # create >2GB file (2GB = 2147483648 bytes)
 size = 2500000000L
