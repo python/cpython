@@ -880,7 +880,9 @@ static char buffer_info_doc [] =
 "buffer_info() -> (address, length)\n\
 \n\
 Return a tuple (address, length) giving the current memory address and\n\
-the length in bytes of the buffer used to hold array's contents.";
+the length in items of the buffer used to hold array's contents\n\
+The length should be multiplied by the itemsize attribute to calculate\n\
+the buffer length in bytes.";
 
 
 static PyObject *
