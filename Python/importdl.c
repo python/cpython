@@ -120,6 +120,18 @@ typedef FARPROC dl_funcptr;
 #ifdef NeXT
 #define DYNAMIC_LINK
 #define USE_RLD
+/* Define this to 1 if you want be able to load ObjC modules as well:
+   it switches between two different way of loading modules on the NeXT,
+   one that directly interfaces with the dynamic loader (rld_load(), which
+   does not correctly load ObjC object files), and another that uses the
+   ObjC runtime (objc_loadModules()) to do the job.
+   You'll have to add ``-ObjC'' to the compiler flags if you set this to 1.
+*/
+#define HANDLE_OBJC_MODULES 1
+#if HANDLE_OBJC_MODULES
+#include <objc/Object.h>
+#include <objc/objc-load.h>
+#endif
 #define SHORT_EXT ".so"
 #define LONG_EXT "module.so"
 #endif
@@ -584,8 +596,37 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		errorStream = NXOpenMemory(NULL, 0, NX_WRITEONLY);
 		filenames[0] = pathname;
 		filenames[1] = NULL;
+
+#if HANDLE_OBJC_MODULES
+
+/* The following very bogus line of code ensures that
+   objc_msgSend, etc are linked into the binary.  Without
+   it, dynamic loading of a module that includes objective-c
+   method calls will fail with "undefined symbol _objc_msgSend()".
+   This remains true even in the presence of the -ObjC flag
+   to the compiler
+*/
+
+		[Object name];
+
+/* objc_loadModules() dynamically loads the object files
+   indicated by the paths in filenames.  If there are any
+   errors generated during loading -- typically due to the
+   inability to find particular symbols -- an error message
+   will be written to errorStream.
+   It returns 0 if the module is successfully loaded, 1
+   otherwise.
+*/
+
+		ret = !objc_loadModules(filenames, errorStream,
+					NULL, &new_header, NULL);
+
+#else /* !HANDLE_OBJC_MODULES */
+
 		ret = rld_load(errorStream, &new_header, 
 				filenames, NULL);
+
+#endif /* HANDLE_OBJC_MODULES */
 
 		/* extract the error messages for the exception */
 		if(!ret) {
