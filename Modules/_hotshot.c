@@ -21,6 +21,7 @@
 #include <largeint.h>
 #include <direct.h>    /* for getcwd() */
 typedef LARGE_INTEGER hs_time;
+#define GETTIMEOFDAY(p) QueryPerformanceCounter(p)
 
 #else
 #ifndef HAVE_GETTIMEOFDAY
