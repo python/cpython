@@ -149,14 +149,17 @@ class Profile:
 			  }
 
 		if not timer:
-			if hasattr(os, 'times'):
-				self.timer = os.times
-				self.dispatcher = self.trace_dispatch
-			elif os.name == 'mac':
+			if os.name == 'mac':
 				import MacOS
 				self.timer = MacOS.GetTicks
 				self.dispatcher = self.trace_dispatch_mac
 				self.get_time = self.get_time_mac
+			elif hasattr(time, 'clock'):
+				self.timer = time.clock
+				self.dispatcher = self.trace_dispatch_i
+			elif hasattr(os, 'times'):
+				self.timer = os.times
+				self.dispatcher = self.trace_dispatch
 			else:
 				self.timer = time.time
 				self.dispatcher = self.trace_dispatch_i
