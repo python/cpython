@@ -1766,6 +1766,28 @@ def inherits():
     verify(u[0:0].__class__ is unicode)
     vereq(u[0:0], u"")
 
+    class sublist(list):
+        pass
+    a = sublist(range(5))
+    vereq(a, range(5))
+    a.append("hello")
+    vereq(a, range(5) + ["hello"])
+    a[5] = 5
+    vereq(a, range(6))
+    a.extend(range(6, 20))
+    vereq(a, range(20))
+    a[-5:] = []
+    vereq(a, range(15))
+    del a[10:15]
+    vereq(len(a), 10)
+    vereq(a, range(10))
+    vereq(list(a), range(10))
+    vereq(a[0], 0)
+    vereq(a[9], 9)
+    vereq(a[-10], 0)
+    vereq(a[-1], 9)
+    vereq(a[:5], range(5))
+
     class CountedInput(file):
         """Counts lines read by self.readline().
 
