@@ -330,7 +330,17 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
     def spawnve(mode, file, args, env):
         return _spawnvef(mode, file, args, env, execve)
 
-    # Supply the various other variants
+    # Note: spawnvp[e] is't currently supported on Windows
+
+    def spawnvp(mode, file, args):
+        return _spawnvef(mode, file, args, None, execvp)
+
+    def spawnvpe(mode, file, args, env):
+        return _spawnvef(mode, file, args, env, execvpe)
+
+if _exists("spawnv"):
+    # These aren't supplied by the basic Windows code
+    # but can be easily implemented in Python
 
     def spawnl(mode, file, *args):
         return spawnv(mode, file, args)
@@ -339,15 +349,12 @@ if _exists("fork") and not _exists("spawnv") and _exists("execv"):
         env = args[-1]
         return spawnve(mode, file, args[:-1], env)
 
+if _exists("spawnvp"):
+    # At the moment, Windows doesn't implement spawnvp[e],
+    # so it won't have spawnlp[e] either.
     def spawnlp(mode, file, *args):
         return spawnvp(mode, file, args)
 
     def spawnlpe(mode, file, *args):
         env = args[-1]
         return spawnvpe(mode, file, args[:-1], env)
-
-    def spawnvp(mode, file, args):
-        return _spawnvef(mode, file, args, None, execvp)
-
-    def spawnvpe(mode, file, args, env):
-        return _spawnvef(mode, file, args, env, execvpe)
