@@ -41,7 +41,7 @@ class FileWrapper(FileBase):
 			if not hasattr(self, m):
 				setattr(self, m, getattr(f, m))
 	
-	def close(f):
+	def close(self):
 		self.flush()
 
 
@@ -131,9 +131,10 @@ class RExec(ihooks._Verbose):
 
     ok_path = tuple(sys.path)		# That's a policy decision
 
-    ok_builtin_modules = ('array', 'binascii', 'audioop', 'imageop',
-			  'marshal', 'math',
-			  'md5', 'parser', 'regex', 'rotor', 'select',
+    ok_builtin_modules = ('audioop', 'array', 'binascii',
+			  'cmath', 'errno', 'imageop',
+			  'marshal', 'math', 'md5', 'operator',
+			  'parser', 'regex', 'rotor', 'select',
 			  'strop', 'struct', 'time')
 
     ok_posix_names = ('error', 'fstat', 'listdir', 'lstat', 'readlink',
@@ -320,11 +321,14 @@ class RExec(ihooks._Verbose):
 	sys.stdout = self.save_stdout
 	sys.stderr = self.save_stderr
     
-    def s_apply(self, func, *args, **kw):
+    def s_apply(self, func, args=(), kw=None):
 	self.save_files()
 	try:
 	    self.set_files()
-	    r = apply(func, args, kw)
+	    if kw:
+		r = apply(func, args, kw)
+	    else:
+		r = apply(func, args)
         finally:
 	    self.restore_files()
     
