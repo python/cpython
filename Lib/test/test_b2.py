@@ -105,6 +105,26 @@ for x in 2, 2L, 2.0:
                 if fcmp(pow(x, y, z), 24.0):
                     raise TestFailed, 'pow(%s, %s, %s)' % (x, y, z)
 
+try: pow(-1, -2, 3)
+except TypeError: pass
+else: raise TestFailed, 'pow(1, -2, 3) should raise TypeError'
+
+try: pow(1, 2, 0)
+except ValueError: pass
+else: raise TestFailed, 'pow(1, 2, 0) should raise ValueError'
+
+try: pow(-1L, -2L, 3L)
+except TypeError: pass
+else: raise TestFailed, 'pow(1L, -2L, 3L) should raise TypeError'
+
+try: pow(1L, 2L, 0L)
+except ValueError: pass
+else: raise TestFailed, 'pow(1L, 2L, 0L) should raise ValueError'
+
+try: pow(-342.43, 0.234)
+except ValueError: pass
+else: raise TestFailed, 'pow(-342.43, 0.234) should raise ValueError'
+
 print 'range'
 if range(3) != [0, 1, 2]: raise TestFailed, 'range(3)'
 if range(1, 5) != [1, 2, 3, 4]: raise TestFailed, 'range(1, 5)'
