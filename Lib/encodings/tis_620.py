@@ -38,7 +38,7 @@ def getregentry():
 
 decoding_map = decoding_map.copy()
 decoding_map.update({
-	0x00a0: None,
+        0x00a0: None,
 })
 
 ### Encoding Map

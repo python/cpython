@@ -69,7 +69,7 @@ class ThreadSignals(unittest.TestCase):
 
 def test_main():
     global signal_blackboard
-    
+
     signal_blackboard = { signal.SIGUSR1 : {'tripped': 0, 'tripped_by': 0 },
                           signal.SIGUSR2 : {'tripped': 0, 'tripped_by': 0 },
                           signal.SIGALRM : {'tripped': 0, 'tripped_by': 0 } }

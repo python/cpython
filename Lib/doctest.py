@@ -1601,7 +1601,7 @@ class UnexpectedException(Exception):
 
     def __str__(self):
         return str(self.test)
-    
+
 class DebugRunner(DocTestRunner):
     r"""Run doc tests but raise an exception as soon as there is a failure.
 
@@ -1673,7 +1673,7 @@ class DebugRunner(DocTestRunner):
          Traceback (most recent call last):
          ...
          UnexpectedException: <DocTest foo from foo.py:0 (2 examples)>
-         
+
          >>> del test.globs['__builtins__']
          >>> test.globs
          {'x': 2}
