@@ -1064,6 +1064,10 @@ sub do_env_tableii{
 	   . "\n</table>";
 }
 
+sub do_env_longtableii{
+    return do_env_tableii(@_);
+}
+
 sub do_cmd_lineii{
     local($_) = @_;
     my $aligns = next_optional_argument();
@@ -1106,6 +1110,10 @@ sub do_env_tableiii{
 	   . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
+}
+
+sub do_env_longtableiii{
+    return do_env_tableiii(@_);
 }
 
 sub do_cmd_lineiii{
@@ -1155,6 +1163,10 @@ sub do_env_tableiv{
 	   . $_
 	   . "\n    </tbody>"
 	   . "\n</table>";
+}
+
+sub do_env_longtableiv{
+    return do_env_tableiv(@_);
 }
 
 sub do_cmd_lineiv{
