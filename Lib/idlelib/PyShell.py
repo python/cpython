@@ -160,11 +160,24 @@ class ModifiedInterpreter(InteractiveInterpreter):
     rpcclt = None
     rpcpid = None
 
-    def spawn_subprocess(self):
-        w = ['-W' + s for s in sys.warnoptions]
-        args = [sys.executable] + w + ["-c", "__import__('run').main()",
-                                       str(self.port)]
+    def spawn_subprocess(self):         
+        w = ['-W' + s for s in sys.warnoptions]        
+        args = [self.find_executable()] + w \
+             + ["-c", "__import__('run').main()", str(self.port)]
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+    def find_executable(self):
+        if sys.platform == 'darwin' and sys.executable.count('.app'):
+            # On Mac OS X, avoid calling sys.executable because it ignores
+            # command-line options (sys.executable is an applet)
+            #
+            # Instead, find the executable by looking relative to
+            # sys.prefix.
+            executable = os.path.join(sys.prefix, 'Resources', 
+                                'Python.app', 'Contents', 'MacOS', 'python')
+            return executable
+        else:
+            return sys.executable 
 
     def start_subprocess(self):
         addr = ("localhost", self.port)
