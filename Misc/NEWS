@@ -48,6 +48,10 @@ Extension modules
 Library
 -------
 
+- The fieldnames argument to the csv module's DictReader constructor is now
+  optional.  If omitted, the first row of the file will be used as the
+  list of fieldnames.
+
 - encodings.bz2_codec was added for access to bz2 compression
   using "a long string".encode('bz2')
 
