@@ -97,15 +97,24 @@ distribution, to create or maintain whole documents or sections.
 	three-character names:
 
 	\begin{tableii}{p{.75in}|p{3in}}{filenq}{Directory}{Document Title}
-	  \lineii{api/}{\citetitle[../api/api.html]{The Python/C API}}
-	  \lineii{dist/}{\citetitle[../dist/dist.html]{Distributing Python Modules}}
-	  \lineii{doc/}{\citetitle[../doc/doc.html]{Documenting Python}}
-	  \lineii{ext/}{\citetitle[../ext/ext.html]{Extending and Embedding the Python Interpreter}}
-	  \lineii{inst/}{\citetitle[../inst/inst.html]{Installing Python Modules}}
-	  \lineii{lib/}{\citetitle[../lib/lib.html]{Python Library Reference}}
-	  \lineii{mac/}{\citetitle[../mac/mac.html]{Macintosh Module Reference}}
-	  \lineii{ref/}{\citetitle[../ref/ref.html]{Python Reference Manual}}
-	  \lineii{tut/}{\citetitle[../tut/tut.html]{Python Tutorial}}
+	  \lineii{api/}
+            {\citetitle[../api/api.html]{The Python/C API}}
+	  \lineii{dist/}
+            {\citetitle[../dist/dist.html]{Distributing Python Modules}}
+	  \lineii{doc/}
+            {\citetitle[../doc/doc.html]{Documenting Python}}
+	  \lineii{ext/}
+            {\citetitle[../ext/ext.html]{Extending and Embedding the Python Interpreter}}
+	  \lineii{inst/}
+            {\citetitle[../inst/inst.html]{Installing Python Modules}}
+	  \lineii{lib/}
+            {\citetitle[../lib/lib.html]{Python Library Reference}}
+	  \lineii{mac/}
+            {\citetitle[../mac/mac.html]{Macintosh Module Reference}}
+	  \lineii{ref/}
+            {\citetitle[../ref/ref.html]{Python Reference Manual}}
+	  \lineii{tut/}
+            {\citetitle[../tut/tut.html]{Python Tutorial}}
 	\end{tableii}
 
     \term{Format-Specific Output}
@@ -421,7 +430,7 @@ distribution, to create or maintain whole documents or sections.
 
     \begin{macrodesc}{e}{}
       Produces a backslash.  This is convenient in \macro{code} and
-      similar macros, and is only defined there.  The create a
+      similar macros, and is only defined there.  To create a
       backslash in ordinary text (such as the contents of the
       \macro{file} macro), use the standard \macro{textbackslash} macro.
     \end{macrodesc}
@@ -448,12 +457,16 @@ distribution, to create or maintain whole documents or sections.
       The name of a file or directory.  In the PDF and PostScript
       outputs, single quotes and a font change are used to indicate
       the file name, but no quotes are used in the HTML output.
+      \strong{Warning:} The \macro{file} macro cannot be used in the
+      content of a section title due to processing limitations.
     \end{macrodesc}
 
     \begin{macrodesc}{filenq}{\p{file or dir}}
       Like \macro{file}, but single quotes are never used.  This can
       be used in conjunction with tables if a column will only contain 
       file or directory names.
+      \strong{Warning:} The \macro{filenq} macro cannot be used in the
+      content of a section title due to processing limitations.
     \end{macrodesc}
 
     \begin{macrodesc}{function}{\p{name}}
