@@ -3644,7 +3644,7 @@ format_exc_check_arg(PyObject *exc, char *format_str, PyObject *obj)
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
 
-PyObject *
+static PyObject *
 getarray(long a[256])
 {
 	int i;
