@@ -70,13 +70,27 @@ class MainWindow:
         label = Label(frame, text='Input From:')
         label.grid(row=0, column=0, sticky=E)
         self.__inputvar = IntVar()
+        ##
+        btn = Radiobutton(frame,
+                          text='None',
+                          variable=self.__inputvar,
+                          value=0,
+                          command=self.__pushtodev,
+                          underline=0)
+        btn.grid(row=0, column=1, sticky=W)
+        root.bind('<Alt-n>', self.__none)
+        root.bind('<Alt-N>', self.__none)
+        if not info.i_avail_ports & MICROPHONE:
+            btn.configure(state=DISABLED)
+        buttons.append(btn)
+        ##
         btn = Radiobutton(frame,
                           text='Microphone',
                           variable=self.__inputvar,
                           value=MICROPHONE,
                           command=self.__pushtodev,
                           underline=0)
-        btn.grid(row=0, column=1, sticky=W)
+        btn.grid(row=1, column=1, sticky=W)
         root.bind('<Alt-m>', self.__mic)
         root.bind('<Alt-M>', self.__mic)
         if not info.i_avail_ports & MICROPHONE:
@@ -89,7 +103,7 @@ class MainWindow:
                           value=LINE_IN,
                           command=self.__pushtodev,
                           underline=5)
-        btn.grid(row=1, column=1, sticky=W)
+        btn.grid(row=2, column=1, sticky=W)
         root.bind('<Alt-i>', self.__linein)
         root.bind('<Alt-I>', self.__linein)
         if not info.i_avail_ports & LINE_IN:
@@ -104,7 +118,7 @@ class MainWindow:
                               value=CD,
                               command=self.__pushtodev,
                               underline=0)
-            btn.grid(row=2, column=1, sticky=W)
+            btn.grid(row=3, column=1, sticky=W)
             root.bind('<Alt-c>', self.__cd)
             root.bind('<Alt-C>', self.__cd)
             if not info.i_avail_ports & CD:
@@ -228,10 +242,14 @@ class MainWindow:
         self.__devctl.setinfo(info)
 
     def __getset(self, var, onvalue):
-        if var.get():
+        if var.get() == onvalue:
             var.set(0)
         else:
             var.set(onvalue)
+        self.__pushtodev()
+
+    def __none(self, event=None):
+        self.__inputvar.set(0)
         self.__pushtodev()
 
     def __mic(self, event=None):
