@@ -1562,7 +1562,7 @@ k_mul(PyLongObject *a, PyLongObject *b)
 	/* (ah*X+al)(bh*X+bl) = ah*bh*X*X + (ah*bl + al*bh)*X + al*bl
 	 * Let k = (ah+al)*(bh+bl) = ah*bl + al*bh  + ah*bh + al*bl
 	 * Then the original product is
-	 *     ah*bh*X*X + (k - ah*bh - ah*bl)*X + al*bl
+	 *     ah*bh*X*X + (k - ah*bh - al*bl)*X + al*bl
 	 * By picking X to be a power of 2, "*X" is just shifting, and it's
 	 * been reduced to 3 multiplies on numbers half the size.
 	 */
