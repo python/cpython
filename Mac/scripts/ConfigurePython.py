@@ -10,7 +10,14 @@
 import sys
 import os
 import macfs
+import MacOS
 verbose=0
+
+SPLASH_LOCATE=512
+SPLASH_REMOVE=513
+SPLASH_CFM68K=514
+SPLASH_PPC=515
+SPLASH_NUMPY=516
 
 ppc_goals = [
 	("AE.ppc.slb", "toolboxmodules.ppc.slb"),
@@ -148,6 +155,7 @@ def mkcorealias(src, altsrc):
 	
 
 def main():
+	MacOS.splash(SPLASH_LOCATE)
 	gotopluginfolder()
 	
 	loadtoolboxmodules()
@@ -155,6 +163,7 @@ def main():
 	import macostools
 		
 	# Remove old .slb aliases and collect a list of .slb files
+	didsplash = 0
 	LibFiles = []
 	allfiles = os.listdir(':')
 	if verbose:  print 'Removing old aliases...'
@@ -162,6 +171,9 @@ def main():
 		if f[-4:] == '.slb':
 			finfo = macfs.FSSpec(f).GetFInfo()
 			if finfo.Flags & 0x8000:
+				if not didsplash:
+					MacOS.splash(SPLASH_REMOVE)
+					didsplash = 1
 				if verbose:  print '  Removing', f
 				os.unlink(f)
 			else:
@@ -170,9 +182,13 @@ def main():
 	if verbose:  print
 	
 	# Create the new PPC aliases.
+	didsplash = 0
 	if verbose:  print 'Creating PPC aliases...'
 	for dst, src in ppc_goals:
 		if src in LibFiles:
+			if not didsplash:
+				MacOS.splash(SPLASH_PPC)
+				didsplash = 1
 			macostools.mkalias(src, dst)
 			if verbose:  print ' ', dst, '->', src
 		else:
@@ -180,9 +196,13 @@ def main():
 	if verbose:  print
 	
 	# Create the CFM68K aliases.
+	didsplash = 0
 	if verbose:  print 'Creating CFM68K aliases...'
 	for dst, src in cfm68k_goals:
 		if src in LibFiles:
+			if not didsplash:
+				MacOS.splash(SPLASH_CFM68K)
+				didsplash = 1
 			macostools.mkalias(src, dst)
 			if verbose:  print ' ', dst, '->', src
 		else:
@@ -196,6 +216,13 @@ def main():
 	n = n + mkcorealias('PythonCore', 'PythonCore')
 	n = n + mkcorealias('PythonCorePPC', ':build.macppc.shared:PythonCorePPC')
 	n = n + mkcorealias('PythonCoreCFM68K', ':build.mac68k.shared:PythonCoreCFM68K')
+	
+	# Install NumPy
+	if os.path.exists(':Extensions:NumPy:macmkaliases.py'):
+		MacOS.splash(SPLASH_NUMPY)
+		os.chdir(':Extensions:NumPy')
+		import macmkaliases
+		err = macmkaliases.main()
 	if verbose and n == 0:
 		sys.exit(1)
 			
