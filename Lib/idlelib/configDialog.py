@@ -1,9 +1,3 @@
-##---------------------------------------------------------------------------##
-##
-## idle - configuration dialog 
-## elguavas
-## 
-##---------------------------------------------------------------------------##
 """
 configuration dialog
 """
@@ -12,6 +6,7 @@ import tkMessageBox, tkColorChooser, tkFont
 
 from configHandler import idleConf
 from dynOptionMenuWidget import DynOptionMenu
+from tabpage import TabPageSet
 
 class ConfigDialog(Toplevel):
     """
@@ -41,20 +36,15 @@ class ConfigDialog(Toplevel):
             'Shell Stderr Foreground':('stderr','11','fg')}
         self.CreateWidgets()
         self.resizable(height=FALSE,width=FALSE)
-        self.ChangePage()
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
         self.parent = parent
-        self.framePages.focus_set()
+        self.tabPages.focus_set()
         #key bindings for this dialog
         self.bind('<Escape>',self.CancelBinding) #dismiss dialog, no save
         self.bind('<Alt-a>',self.ApplyBinding) #apply changes, save
         self.bind('<F1>',self.HelpBinding) #context help
-        self.bind('<Alt-f>',self.ChangePageBinding)
-        self.bind('<Alt-h>',self.ChangePageBinding)
-        self.bind('<Alt-k>',self.ChangePageBinding)
-        self.bind('<Alt-g>',self.ChangePageBinding)
         self.LoadConfigs()
         self.wait_window()
         
@@ -81,25 +71,6 @@ class ConfigDialog(Toplevel):
     
     def HelpBinding(self,event):
         self.Help()
-    
-    def ChangePage(self):
-        #pop up the active 'tab' only
-        for button in self.pageButtons: button.master.config(relief=RIDGE)
-        self.pageButtons[self.pageNum.get()].master.config(relief=RAISED)
-        #switch page
-        self.pages[self.pageNum.get()].lift()
-        self.title('Settings - '+
-                self.pageButtons[self.pageNum.get()].cget('text'))
-
-    def ChangePageBinding(self,event):
-        pageKeys=('f','h','k','g')
-        pos=0
-        for key in pageKeys:
-            if event.char == key:
-                self.pageNum.set(pos)
-                self.ChangePage()
-                return
-            pos=pos+1
     
     def SetThemeType(self):
         if self.themeIsBuiltin.get():
@@ -171,9 +142,9 @@ class ConfigDialog(Toplevel):
         self.frameColourSet.config(bg=colour)
     
     def CreateWidgets(self):
-        self.framePages = Frame(self)
+        self.tabPages = TabPageSet(self,
+                pageNames=['Fonts/Tabs','Highlighting','Keys','General'])
         frameActionButtons = Frame(self)
-        framePageButtons = Frame(self.framePages)
         #action buttons
         self.buttonHelp = Button(frameActionButtons,text='Help',
                 command=self.Help,takefocus=FALSE)
@@ -183,40 +154,17 @@ class ConfigDialog(Toplevel):
                 command=self.Apply,underline=0,takefocus=FALSE)
         self.buttonCancel = Button(frameActionButtons,text='Cancel',
                 command=self.Cancel,takefocus=FALSE)
-        #page buttons
-        self.pageNum=IntVar(self)
-        self.pageNum.set(0)
-        pageButtonNames=('Fonts/Tabs','Highlighting','Keys','General')
-        self.pageButtons=[]
-        buttonValue=0
-        buttonSelColour=framePageButtons.cget('bg')
-        for name in pageButtonNames:
-            buttonFrame=Frame(framePageButtons,borderwidth=2,relief=RIDGE)
-            buttonFrame.pack(side=LEFT)
-            button = Radiobutton(buttonFrame,command=self.ChangePage,
-                value=buttonValue,padx=5,pady=5,takefocus=FALSE,underline=0,
-                indicatoron=FALSE,highlightthickness=0,variable=self.pageNum,
-                selectcolor=buttonSelColour,borderwidth=0,text=name)
-            button.pack()
-            button.lift()
-            self.pageButtons.append(button)
-            buttonValue=buttonValue+1
-        #pages
-        self.pages=(self.CreatePageFontTab(),
-                    self.CreatePageHighlight(),
-                    self.CreatePageKeys(),
-                    self.CreatePageGeneral())
-
-        #grid in framePages so we can overlap pages
-        framePageButtons.grid(row=0,column=0,sticky=NSEW)
-        for page in self.pages: page.grid(row=1,column=0,sticky=(N,S,E,W))
-        
+        self.CreatePageFontTab()
+        self.CreatePageHighlight()
+        self.CreatePageKeys()
+        self.CreatePageGeneral()
         self.buttonHelp.pack(side=RIGHT,padx=5,pady=5)
         self.buttonOk.pack(side=LEFT,padx=5,pady=5)
         self.buttonApply.pack(side=LEFT,padx=5,pady=5)
         self.buttonCancel.pack(side=LEFT,padx=5,pady=5)
         frameActionButtons.pack(side=BOTTOM)
-        self.framePages.pack(side=TOP,expand=TRUE,fill=BOTH)
+        self.tabPages.pack(side=TOP,expand=TRUE,fill=BOTH)
+
         
     def CreatePageFontTab(self):
         #tkVars
@@ -228,7 +176,7 @@ class ConfigDialog(Toplevel):
         self.editFont=tkFont.Font(self,('courier',12,'normal'))
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
+        frame=self.tabPages.pages['Fonts/Tabs']['page']
         #body section frames
         frameFont=Frame(frame,borderwidth=2,relief=GROOVE)
         frameIndent=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -314,7 +262,7 @@ class ConfigDialog(Toplevel):
         self.highlightTarget.trace_variable('w',self.SetHighlightTargetBinding)
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
+        frame=self.tabPages.pages['Highlighting']['page']
         #body section frames
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameTheme=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -404,7 +352,7 @@ class ConfigDialog(Toplevel):
         self.keysAreDefault=IntVar(self) 
         ##widget creation
         #body frame
-        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
+        frame=self.tabPages.pages['Keys']['page']
         #body section frames
         frameCustom=Frame(frame,borderwidth=2,relief=GROOVE)
         frameKeySets=Frame(frame,borderwidth=2,relief=GROOVE)
@@ -437,7 +385,6 @@ class ConfigDialog(Toplevel):
         self.optMenuKeysCustom=DynOptionMenu(frameKeySets,
             self.customKeys,None,command=None)
         self.buttonDeleteCustomKeys=Button(frameKeySets,text='Delete Custom Key Set')
-#         self.SetKeysType()
         ##widget packing
         #body
         frameCustom.pack(side=LEFT,padx=5,pady=5,expand=TRUE,fill=BOTH)
@@ -475,7 +422,7 @@ class ConfigDialog(Toplevel):
         self.extState=IntVar(self)       
         #widget creation
         #body
-        frame=Frame(self.framePages,borderwidth=2,relief=RAISED)
+        frame=self.tabPages.pages['General']['page']
         #body section frames        
         frameRun=Frame(frame,borderwidth=2,relief=GROOVE)
         frameWinSize=Frame(frame,borderwidth=2,relief=GROOVE)
