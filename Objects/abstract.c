@@ -1381,29 +1381,14 @@ Fail:
 	return -1;
 }
 
-/* Return -1 if error; 1 if v in w; 0 if v not in w. */
+/* Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
+ * Always uses the iteration protocol, and only Py_EQ comparison.
+ */
 int
-PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
+_PySequence_IterContains(PyObject *seq, PyObject *ob)
 {
-	PyObject *it;  /* iter(w) */
 	int result;
-
-	if (PyType_HasFeature(w->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
-		PySequenceMethods *sq = w->ob_type->tp_as_sequence;
-	        if (sq != NULL && sq->sq_contains != NULL) {
-			result = (*sq->sq_contains)(w, v);
-			if (result >= 0)
-				return result;
-			assert(PyErr_Occurred());
-			if (PyErr_ExceptionMatches(PyExc_AttributeError))
-				PyErr_Clear();
-			else
-				return result;
-		}
-	}
-	
-	/* Try exhaustive iteration. */
-	it = PyObject_GetIter(w);
+	PyObject *it = PyObject_GetIter(seq);
 	if (it == NULL) {
 		PyErr_SetString(PyExc_TypeError,
 			"'in' or 'not in' needs iterable right argument");
@@ -1417,7 +1402,7 @@ PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
 			result = PyErr_Occurred() ? -1 : 0;
 			break;
 		}
-		cmp = PyObject_RichCompareBool(v, item, Py_EQ);
+		cmp = PyObject_RichCompareBool(ob, item, Py_EQ);
 		Py_DECREF(item);
 		if (cmp == 0)
 			continue;
@@ -1426,6 +1411,20 @@ PySequence_Contains(PyObject *w, PyObject *v) /* v in w */
 	}
 	Py_DECREF(it);
 	return result;
+}
+
+/* Return -1 if error; 1 if ob in seq; 0 if ob not in seq.
+ * Use sq_contains if possible, else defer to _PySequence_IterContains().
+ */
+int
+PySequence_Contains(PyObject *seq, PyObject *ob)
+{
+	if (PyType_HasFeature(seq->ob_type, Py_TPFLAGS_HAVE_SEQUENCE_IN)) {
+		PySequenceMethods *sqm = seq->ob_type->tp_as_sequence;
+	        if (sqm != NULL && sqm->sq_contains != NULL)
+			return (*sqm->sq_contains)(seq, ob);
+	}
+	return _PySequence_IterContains(seq, ob);
 }
 
 /* Backwards compatibility */
