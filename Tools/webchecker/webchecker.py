@@ -183,24 +183,28 @@ def main():
     for arg in args:
         c.addroot(arg)
 
-    if not norun:
+    try:
+
+        if not norun:
+            try:
+                c.run()
+            except KeyboardInterrupt:
+                if verbose > 0:
+                    print "[run interrupted]"
+
         try:
-            c.run()
+            c.report()
         except KeyboardInterrupt:
             if verbose > 0:
-                print "[run interrupted]"
+                print "[report interrupted]"
 
-    try:
-        c.report()
-    except KeyboardInterrupt:
-        if verbose > 0:
-            print "[report interrupted]"
-
-    if c.save_pickle(dumpfile):
-        if dumpfile == DUMPFILE:
-            print "Use ``%s -R'' to restart." % sys.argv[0]
-        else:
-            print "Use ``%s -R -d %s'' to restart." % (sys.argv[0], dumpfile)
+    finally:
+        if c.save_pickle(dumpfile):
+            if dumpfile == DUMPFILE:
+                print "Use ``%s -R'' to restart." % sys.argv[0]
+            else:
+                print "Use ``%s -R -d %s'' to restart." % (sys.argv[0],
+                                                           dumpfile)
 
 
 def load_pickle(dumpfile=DUMPFILE, verbose=VERBOSE):
