@@ -101,6 +101,8 @@ extend						= 0x40
 			'GetHWNDPort',
 			'GetPICTFromDIB',
 			'GetPortBitMapForCopyBits', # Something funny in the declaration
+			
+			'HandleToRgn', # Funny signature
 
 			]
 
@@ -109,6 +111,12 @@ extend						= 0x40
 			('#if !TARGET_API_MAC_CARBON', [
 			]),
 			('#if TARGET_API_MAC_CARBON', [
+				'IsPortOffscreen',	# Lazy
+				'IsPortColor',	# Lazy
+				'IsRegionRectangular',
+				'CreateNewPort',
+				'DisposePort',
+				'SetQDError',
 			])]
 
 
@@ -168,6 +176,43 @@ extend						= 0x40
 			 # CopyBits and friends
 			 ([('RgnHandle', 'maskRgn', 'InMode')],
 			  [('OptRgnHandle', 'maskRgn', 'InMode')]),
+			  
+			 # Accessors with reference argument also returned.
+			 ([('Rect_ptr', 'GetPortBounds', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('RGBColor_ptr', 'GetPortForeColor', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('RGBColor_ptr', 'GetPortBackColor', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('RGBColor_ptr', 'GetPortOpColor', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('RGBColor_ptr', 'GetPortHiliteColor', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Point_ptr', 'GetPortPenSize', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Point_ptr', 'GetPortPenLocation', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Rect_ptr', 'GetPixBounds', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('BitMap_ptr', 'GetQDGlobalsScreenBits', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Cursor_ptr', 'GetQDGlobalsArrow', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Rect_ptr', 'GetRegionBounds', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
+			
+			 ([('Pattern_ptr', '*', 'ReturnMode')],
+			  [('void', '*', 'ReturnMode')]),
 			
 			]
 
