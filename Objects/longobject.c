@@ -1126,15 +1126,15 @@ long_from_binary_base(char **str, int base)
 			k = ch - 'A' + 10;
 		if (k < 0 || k >= base)
 			break;
-		n += bits_per_char;
-		if (n < 0) {
-			PyErr_SetString(PyExc_ValueError,
-					"long string too large to convert");
-			return NULL;
-		}
 		++p;
 	}
 	*str = p;
+	n = (p - start) * bits_per_char;
+	if (n / bits_per_char != p - start) {
+		PyErr_SetString(PyExc_ValueError,
+				"long string too large to convert");
+		return NULL;
+	}
 	/* n <- # of Python digits needed, = ceiling(n/SHIFT). */
 	n = (n + SHIFT - 1) / SHIFT;
 	z = _PyLong_New(n);
