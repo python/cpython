@@ -402,6 +402,8 @@ See the library reference manual for formatting codes.";
 #endif /* HAVE_STRFTIME */
 
 #ifdef HAVE_STRPTIME
+extern char *strptime(); /* In case it's not declared somehow */
+
 static PyObject *
 time_strptime(self, args)
 	PyObject *self;
@@ -601,6 +603,12 @@ inittime()
 	char *p;
 	m = Py_InitModule3("time", time_methods, module_doc);
 	d = PyModule_GetDict(m);
+	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
+	p = getenv("PYTHONY2K");
+	ins(d, "accept2dyear", PyInt_FromLong((long) (!p || !*p)));
+	/* Squirrel away the module's dictionary for the y2k check */
+	Py_INCREF(d);
+	moddict = d;
 #ifdef HAVE_TZNAME
 	tzset();
 #ifdef PYOS_OS2
@@ -619,12 +627,6 @@ inittime()
 #endif
 	ins(d, "daylight", PyInt_FromLong((long)daylight));
 	ins(d, "tzname", Py_BuildValue("(zz)", tzname[0], tzname[1]));
-	/* Accept 2-digit dates unless PYTHONY2K is set and non-empty */
-	p = getenv("PYTHONY2K");
-	ins(d, "accept2dyear", PyInt_FromLong((long) (!p || !*p)));
-	/* Squirrel away the module's dictionary for the y2k check */
-	Py_INCREF(d);
-	moddict = d;
 #else /* !HAVE_TZNAME */
 #if HAVE_TM_ZONE
 	{
