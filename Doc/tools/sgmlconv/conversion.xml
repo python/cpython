@@ -98,12 +98,23 @@
     <attribute name="name"/>
     <child name="args"/>
     </environment>
+  <environment name="classdesc*" outputname="classdesc">
+    <attribute name="name"/>
+    </environment>
   <environment name="datadesc">
+    <attribute name="name"/>
+    </environment>
+  <environment name="datadescni" outputname="datadesc">
+    <attribute name="index">no</attribute>
     <attribute name="name"/>
     </environment>
   <macro name="dataline">
     <attribute name="name"/>
     </macro>
+  <environment name="excclassdesc">
+    <attribute name="name"/>
+    <child name="args"/>
+    </environment>
   <environment name="excdesc">
     <attribute name="name"/>
     </environment>
@@ -556,6 +567,9 @@
   <macro name="geq" outputname="">
     <entityref name="geq"/>
     </macro>
+  <macro name="infinity" outputname="">
+    <entityref name="infin"/>
+    </macro>
   <macro name="LaTeX" outputname="">
     <text>LaTeX</text>
     </macro>
@@ -564,6 +578,9 @@
     </macro>
   <macro name="leq" outputname="">
     <entityref name="leq"/>
+    </macro>
+  <macro name="plusminus" outputname="">
+    <entityref name="plusmn"/>
     </macro>
   <macro name="TeX" outputname="">
     <text>TeX</text>
@@ -732,8 +749,14 @@
   <macro name="UNIX" outputname="">
     <text>Unix</text>
     </macro>
+  <macro name="textasciicircum" outputname="">
+    <text>^</text>
+    </macro>
   <macro name="textasciitilde" outputname="">
     <text>~</text>
+    </macro>
+  <macro name="textbar" outputname="">
+    <text>|</text>
     </macro>
 
   <!-- These will end up disappearing as well! -->
