@@ -181,6 +181,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libmhlib.tex \
 	../lib/libtelnetlib.tex \
 	../lib/libcolorsys.tex \
+	../lib/libfpformat.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
