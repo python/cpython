@@ -967,8 +967,6 @@ Boolean operations have the lowest priority of all Python operations:
              {\token{not_test} | \token{and_test} "and" \token{not_test}}
   \production{not_test}
              {\token{comparison} | "not" \token{not_test}}
-  \production{lambda_form}
-             {"lambda" [\token{parameter_list}]: \token{expression}}
 \end{productionlist}
 
 In the context of Boolean operations, and also when expressions are
@@ -1005,6 +1003,11 @@ not \code{''}.)
 \indexii{lambda}{expression}
 \indexii{lambda}{form}
 \indexii{anonymous}{function}
+
+\begin{productionlist}
+  \production{lambda_form}
+             {"lambda" [\token{parameter_list}]: \token{expression}}
+\end{productionlist}
 
 Lambda forms (lambda expressions) have the same syntactic position as
 expressions.  They are a shorthand to create anonymous functions; the
