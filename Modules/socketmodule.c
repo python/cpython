@@ -2703,7 +2703,7 @@ init_socket(void)
 	PySocketSock_Type.ob_type = &PyType_Type;
 	PySocketSock_Type.tp_getattro = PyObject_GenericGetAttr;
 	PySocketSock_Type.tp_alloc = PyType_GenericAlloc;
-	PySocketSock_Type.tp_free = _PyObject_Del;
+	PySocketSock_Type.tp_free = PyObject_Del;
 	m = Py_InitModule3(PySocket_MODULE_NAME, 
 			   PySocket_methods, 
 			   module_doc);

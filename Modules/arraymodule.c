@@ -1719,7 +1719,7 @@ statichere PyTypeObject Arraytype = {
 	0,					/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	array_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,	                 	/* tp_free */
 };
 
 /* No functions in array module. */

@@ -992,7 +992,7 @@ PyTypeObject PyComplex_Type = {
 	0,					/* tp_init */
 	0,					/* tp_alloc */
 	complex_new,				/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,           		/* tp_free */
 };
 
 #endif

@@ -554,7 +554,7 @@ PyTypeObject PyClassMethod_Type = {
 	cm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,		                /* tp_free */
 };
 
 PyObject *
@@ -683,7 +683,7 @@ PyTypeObject PyStaticMethod_Type = {
 	sm_init,				/* tp_init */
 	PyType_GenericAlloc,			/* tp_alloc */
 	PyType_GenericNew,			/* tp_new */
-	_PyObject_Del,				/* tp_free */
+	PyObject_Del,           		/* tp_free */
 };
 
 PyObject *
