@@ -365,7 +365,7 @@ def check_config_h():
     # "config.h" check -- should probably be renamed...
 
     from distutils import sysconfig
-    import string,sys
+    import string
     # if sys.version contains GCC then python was compiled with
     # GCC, and the config.h file should be OK
     if string.find(sys.version,"GCC") >= 0:
