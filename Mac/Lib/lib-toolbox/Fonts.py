@@ -2,6 +2,8 @@
 
 systemFont = 0
 applFont = 1
+kPlatformDefaultGuiFontID = applFont
+kPlatformDefaultGuiFontID = -1
 kFontIDNewYork = 2
 kFontIDGeneva = 3
 kFontIDMonaco = 4
