@@ -2,21 +2,25 @@
 \label{module-errno}
 \stmodindex{errno}
 
-\setindexsubitem{(in module errno)}
 
 This module makes available standard errno system symbols.
 The value of each symbol is the corresponding integer value.
 The names and descriptions are borrowed from \file{linux/include/errno.h},
-which should be pretty all-inclusive.  Of the following list, symbols
-that are not used on the current platform are not defined by the
-module.
+which should be pretty all-inclusive.
 
-The module also defines the dictionary variable \code{errorcode} which
-maps numeric error codes back to their symbol names, so that e.g.
-\samp{errno.errorcode[errno.EPERM] == 'EPERM'}.  To translate a
-numeric error code to an error message, use \function{os.strerror()}.
+\begin{datadesc}{errorcode}
+  Dictionary providing a mapping from the errno value to the string
+  name in the underlying system.  For instance,
+  \code{errno.errorcode[errno.EPERM]} maps to \code{'EPERM'}.
+\end{datadesc}
 
-Symbols available can include:
+To translate a numeric error code to an error message, use
+\function{os.strerror()}.
+
+Of the following list, symbols that are not used on the current
+platform are not defined by the module.  Symbols available can
+include:
+
 \begin{datadesc}{EPERM} Operation not permitted \end{datadesc}
 \begin{datadesc}{ENOENT} No such file or directory \end{datadesc}
 \begin{datadesc}{ESRCH} No such process \end{datadesc}
