@@ -2843,7 +2843,7 @@ do_raise(PyObject *type, PyObject *value, PyObject *tb)
 {
 	if (type == NULL) {
 		/* Reraise */
-		PyThreadState *tstate = PyThreadState_Get();
+		PyThreadState *tstate = PyThreadState_GET();
 		type = tstate->exc_type == NULL ? Py_None : tstate->exc_type;
 		value = tstate->exc_value;
 		tb = tstate->exc_traceback;
@@ -3221,7 +3221,7 @@ maybe_call_line_trace(Py_tracefunc func, PyObject *obj,
 void
 PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *temp = tstate->c_profileobj;
 	Py_XINCREF(arg);
 	tstate->c_profilefunc = NULL;
@@ -3236,7 +3236,7 @@ PyEval_SetProfile(Py_tracefunc func, PyObject *arg)
 void
 PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 	PyObject *temp = tstate->c_traceobj;
 	Py_XINCREF(arg);
 	tstate->c_tracefunc = NULL;
@@ -3254,7 +3254,7 @@ PyEval_GetBuiltins(void)
 {
 	PyFrameObject *current_frame = PyEval_GetFrame();
 	if (current_frame == NULL)
-		return PyThreadState_Get()->interp->builtins;
+		return PyThreadState_GET()->interp->builtins;
 	else
 		return current_frame->f_builtins;
 }
@@ -3282,7 +3282,7 @@ PyEval_GetGlobals(void)
 PyFrameObject *
 PyEval_GetFrame(void)
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 	return _PyThreadState_GetFrame(tstate);
 }
 

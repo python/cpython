@@ -205,7 +205,7 @@ finally:
 void
 PyErr_Fetch(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 
 	*p_type = tstate->curexc_type;
 	*p_value = tstate->curexc_value;
