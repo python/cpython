@@ -71,7 +71,9 @@ static int testbool();
 static int assign_subscript PROTO((object *, object *, object *));
 static int assign_slice PROTO((object *, object *, object *, object *));
 static int import_from PROTO((object *, object *, object *));
-static object *call_trace PROTO((object *, frameobject *, char *, object *));
+static void call_exc_trace PROTO((object **, object**, frameobject *));
+static int call_trace
+	PROTO((object **, object **, frameobject *, char *, object *));
 
 
 static frameobject *current_frame;
@@ -109,7 +111,7 @@ eval_code(co, globals, locals, arg)
 	register object *u;
 	register object *t;
 	register frameobject *f; /* Current frame */
-	object *trace;		/* Trace function or NULL */
+	object *trace = NULL;	/* Trace function or NULL */
 	object *retval;		/* Return value iff why == WHY_RETURN */
 	char *name;		/* Name used by some instructions */
 	FILE *fp;		/* Used by print operations */
@@ -157,13 +159,8 @@ eval_code(co, globals, locals, arg)
 	
 	current_frame = f;
 
-	trace = sysget("trace");
-	if (trace != NULL) {
-	  if (trace == None) {
-		trace = NULL;
-	  }
-	  else {
-		/* sys.trace, if defined, is a function that will
+	if (sys_trace != NULL) {
+		/* sys_trace, if defined, is a function that will
 		   be called  on *every* entry to a code block.
 		   Its return value, if not None, is a function that
 		   will be called at the start of each executed line
@@ -175,20 +172,22 @@ eval_code(co, globals, locals, arg)
 		   depends on the situation.  The global trace function
 		   (sys.trace) is also called whenever an exception
 		   is detected. */
-		trace = call_trace(trace, f, "call", arg);
-		if (trace == NULL) {
+		if (call_trace(&sys_trace, &trace, f, "call", arg)) {
 			/* Trace function raised an error */
-			sysset("trace", (object *)NULL);
 			current_frame = f->f_back;
 			DECREF(f);
 			return NULL;
 		}
-		if (trace == None) {
-			/* No need to trace this code block */
-			DECREF(trace);
-			trace = NULL;
+	}
+
+	if (sys_profile != NULL) {
+		/* Similar for sys_profile, except it needn't return
+		   itself and isn't called for "line" events */
+		if (call_trace(&sys_profile, (object**)0, f, "call", arg)) {
+			current_frame = f->f_back;
+			DECREF(f);
+			return NULL;
 		}
-	  }
 	}
 	
 	next_instr = GETUSTRINGVALUE(f->f_code->co_code);
@@ -1005,16 +1004,8 @@ eval_code(co, globals, locals, arg)
 			if (trace != NULL) {
 				/* Trace each line of code reached */
 				f->f_lasti = INSTR_OFFSET();
-				x = call_trace(trace, f, "line", None);
-				/* The trace function must return itself
-				   in order to continue tracing */
-				DECREF(trace);
-				if (x == None) {
-					DECREF(x);
-					trace = NULL;
-				}
-				else
-					trace = x;
+				err = call_trace(&trace, &trace,
+						 f, "line", None);
 			}
 			break;
 		
@@ -1066,40 +1057,10 @@ eval_code(co, globals, locals, arg)
 				f->f_lasti -= 2;
 			tb_here(f);
 
-			if (trace) {
-				object *type, *value, *traceback, *arg;
-				err_get(&type, &value);
-				traceback = tb_fetch();
-				arg = newtupleobject(3);
-				if (arg == NULL)
-					err_clear();
-				else {
-					settupleitem(arg, 0, type);
-					settupleitem(arg, 1, value);
-					settupleitem(arg, 2, traceback);
-				}
-				v = call_trace(trace, f, "exception", arg);
-				if (v == NULL) {
-					/* Trace function raised error */
-					tb_here(f);
-					sysset("trace", (object *)NULL);
-					XDECREF(trace);
-					trace = NULL;
-				}
-				else {
-					/* Restore original exception */
-					err_setval(type, value);
-					tb_store(traceback);
-					if (v == None)
-						DECREF(v);
-					else {
-						/* Set trace function */
-						XDECREF(trace);
-						trace = v;
-					}
-				}
-				XDECREF(arg);
-			}
+			if (trace)
+				call_exc_trace(&trace, &trace, f);
+			if (sys_profile)
+				call_exc_trace(&sys_profile, (object**)0, f);
 		}
 		
 		/* For the rest, treat WHY_RERAISE as WHY_EXCEPTION */
@@ -1177,15 +1138,22 @@ eval_code(co, globals, locals, arg)
 	
 	if (trace) {
 		if (why == WHY_RETURN) {
-			x = call_trace(trace, f, "return", retval);
-			if (x == NULL) {
+			if (call_trace(&trace, &trace, f, "return", retval)) {
 				XDECREF(retval);
 				retval = NULL;
+				why = WHY_EXCEPTION;
 			}
-			else
-				DECREF(x);
 		}
-		DECREF(trace);
+		XDECREF(trace);
+	}
+	
+	if (sys_profile && why == WHY_RETURN) {
+		if (call_trace(&sys_profile, (object**)0,
+			       f, "return", retval)) {
+			XDECREF(retval);
+			retval = NULL;
+			why = WHY_EXCEPTION;
+		}
 	}
 	
 	/* Restore previous frame and release the current one */
@@ -1209,44 +1177,101 @@ prtrace(v, str)
 }
 #endif
 
-static object *
-call_trace(trace, f, msg, arg)
-	object *trace;
+static void
+call_exc_trace(p_trace, p_newtrace, f)
+	object **p_trace, **p_newtrace;
+	frameobject *f;
+{
+	object *type, *value, *traceback, *arg;
+	int err;
+	err_get(&type, &value);
+	traceback = tb_fetch();
+	arg = newtupleobject(3);
+	if (arg == NULL) {
+		err = -1;
+		goto cleanup;
+	}
+	settupleitem(arg, 0, type);
+	settupleitem(arg, 1, value);
+	settupleitem(arg, 2, traceback);
+	err = call_trace(p_trace, p_newtrace, f, "exception", arg);
+	XDECREF(arg);
+ cleanup:
+	if (!err) {
+		/* Restore original exception */
+		err_setval(type, value);
+		tb_store(traceback);
+	}
+}
+
+static int
+call_trace(p_trace, p_newtrace, f, msg, arg)
+	object **p_trace; /* in/out; may not be NULL;
+			     may not point to NULL variable initially */
+	object **p_newtrace; /* in/out; may be NULL;
+				may point to NULL variable;
+				may be same variable as p_newtrace */
 	frameobject *f;
 	char *msg;
 	object *arg;
 {
-	object *arglist, *what, *res;
+	object *arglist, *what;
+	object *res = NULL;
 	static int tracing = 0;
 	
 	if (tracing) {
-		/* Don't trace the trace code! */
-		INCREF(None);
-		return None;
+		/* Don't do recursive traces */
+		if (p_newtrace) {
+			XDECREF(*p_newtrace);
+			*p_newtrace = NULL;
+		}
+		return 0;
 	}
 	
 	arglist = newtupleobject(3);
 	if (arglist == NULL)
-		return NULL;
+		goto cleanup;
 	what = newstringobject(msg);
-	if (what == NULL) {
-		DECREF(arglist);
-		return NULL;
-	}
+	if (what == NULL)
+		goto cleanup;
 	INCREF(f);
+	settupleitem(arglist, 0, (object *)f);
+	settupleitem(arglist, 1, what);
 	if (arg == NULL)
 		arg = None;
 	INCREF(arg);
-	settupleitem(arglist, 0, (object *)f);
-	settupleitem(arglist, 1, what);
 	settupleitem(arglist, 2, arg);
 	tracing++;
-	res = call_object(trace, arglist);
+	res = call_object(*p_trace, arglist);
 	tracing--;
-	if (res == NULL)
+ cleanup:
+	XDECREF(arglist);
+	if (res == NULL) {
+		/* The trace proc raised an exception */
 		tb_here(f);
-	DECREF(arglist);
-	return res;
+		XDECREF(*p_trace);
+		*p_trace = NULL;
+		if (p_newtrace) {
+			XDECREF(*p_newtrace);
+			*p_newtrace = NULL;
+		}
+	}
+	else {
+		if (p_newtrace) {
+			XDECREF(*p_newtrace);
+			if (res == None)
+				*p_newtrace = NULL;
+			else {
+				INCREF(res);
+				*p_newtrace = res;
+			}
+		}
+		DECREF(res);
+	}
+	if (res == NULL)
+		return -1;
+	else
+		return 0;
 }
 
 object *
