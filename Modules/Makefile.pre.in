@@ -65,10 +65,11 @@ $(LIB):		$(OBJS)
 		$(RANLIB) $(LIB)
 
 ../python:	config.o $(MYLIBS)
-		$(CC) config.o $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
+		$(CC) config.o \
+		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
 		mv python ../python
 
-config.o:	config.c Makefile
+config.o:	config.c Makefile $(MYLIBS)
 		$(CC) $(CFLAGS) -DPYTHONPATH=\"$(PYTHONPATH)\" -c config.c
 
 clean:

@@ -68,6 +68,40 @@ getprogramname()
 #endif
 
 
+/* Python version information */
+
+#include "patchlevel.h"
+
+/* Return the version string.  This is constructed from the official
+   version number (from patchlevel.h), and the current date (if known
+   to the compiler, else a manually inserted date). */
+
+#define VERSION "%s (%s)"
+
+#ifdef __DATE__
+#define DATE __DATE__
+#else
+#define DATE "Aug 17 1994"
+#endif
+
+char *
+getversion()
+{
+	static char version[80];
+	sprintf(version, VERSION, PATCHLEVEL, DATE);
+	return version;
+}
+
+
+/* Return the copyright string.  This is updated manually. */
+
+char *
+getcopyright()
+{
+	return "Copyright 1991-1994 Stichting Mathematisch Centrum, Amsterdam";
+}
+
+
 /* Return the initial python search path.  This is called once from
    initsys() to initialize sys.path.
    The environment variable PYTHONPATH is fetched and the default path
