@@ -732,6 +732,16 @@ class TestIdentities(unittest.TestCase):
         if a != b:
             self.assertNotEqual(a-b, b-a)
 
+    def test_reflexsive_relations(self):
+        a, zero = self.a, Set()
+        self.assertEqual(a ^ a, zero)
+        self.assertEqual(a - a, zero)
+        self.assertEqual(a | a, a)
+        self.assertEqual(a & a, a)
+        self.assert_(a <= a)
+        self.assert_(a >= a)
+        self.assert_(a == a)
+
     def test_summations(self):
         # check that sums of parts equal the whole
         a, b = self.a, self.b
@@ -756,6 +766,7 @@ class TestIdentities(unittest.TestCase):
         self.assertEqual(len(b), len(b-a) + len(a&b))
         self.assertEqual(len(a^b), len(a-b) + len(b-a))
         self.assertEqual(len(a|b), len(a-b) + len(a&b) + len(b-a))
+        self.assertEqual(len(a^b) + len(a&b), len(a|b))
 
 #==============================================================================
 
