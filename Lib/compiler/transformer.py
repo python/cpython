@@ -142,7 +142,7 @@ class Transformer:
             self.encoding = node[2]
             node = node[1]
             n = node[0]
-        
+
         if n == symbol.single_input:
             return self.single_input(node[1:])
         if n == symbol.file_input:

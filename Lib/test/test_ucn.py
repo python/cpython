@@ -15,7 +15,7 @@ class UnicodeNamesTest(unittest.TestCase):
 
     def checkletter(self, name, code):
         # Helper that put all \N escapes inside eval'd raw strings,
-        # to make sure this script runs even if the compiler 
+        # to make sure this script runs even if the compiler
         # chokes on \N escapes
         res = eval(ur'u"\N{%s}"' % name)
         self.assertEqual(res, code)

@@ -131,45 +131,45 @@ def disassemble(co, lasti=-1):
 
 def disassemble_string(code, lasti=-1, varnames=None, names=None,
                        constants=None):
-        labels = findlabels(code)
-        n = len(code)
-        i = 0
-        while i < n:
-                c = code[i]
-                op = ord(c)
-                if op == opmap['SET_LINENO'] and i > 0:
-                    print # Extra blank line
-                if i == lasti: print '-->',
-                else: print '   ',
-                if i in labels: print '>>',
-                else: print '  ',
-                print `i`.rjust(4),
-                print opname[op].ljust(15),
-                i = i+1
-                if op >= HAVE_ARGUMENT:
-                        oparg = ord(code[i]) + ord(code[i+1])*256
-                        i = i+2
-                        print `oparg`.rjust(5),
-                        if op in hasconst:
-                            if constants:
-                                print '(' + `constants[oparg]` + ')',
-                            else:
-                                print '(%d)'%oparg,
-                        elif op in hasname:
-                            if names is not None:
-                                print '(' + names[oparg] + ')',
-                            else:
-                                print '(%d)'%oparg,
-                        elif op in hasjrel:
-                                print '(to ' + `i + oparg` + ')',
-                        elif op in haslocal:
-                            if varnames:
-                                print '(' + varnames[oparg] + ')',
-                            else:
-                                print '(%d)' % oparg,
-                        elif op in hascompare:
-                                print '(' + cmp_op[oparg] + ')',
-                print
+    labels = findlabels(code)
+    n = len(code)
+    i = 0
+    while i < n:
+        c = code[i]
+        op = ord(c)
+        if op == opmap['SET_LINENO'] and i > 0:
+            print # Extra blank line
+        if i == lasti: print '-->',
+        else: print '   ',
+        if i in labels: print '>>',
+        else: print '  ',
+        print `i`.rjust(4),
+        print opname[op].ljust(15),
+        i = i+1
+        if op >= HAVE_ARGUMENT:
+            oparg = ord(code[i]) + ord(code[i+1])*256
+            i = i+2
+            print `oparg`.rjust(5),
+            if op in hasconst:
+                if constants:
+                    print '(' + `constants[oparg]` + ')',
+                else:
+                    print '(%d)'%oparg,
+            elif op in hasname:
+                if names is not None:
+                    print '(' + names[oparg] + ')',
+                else:
+                    print '(%d)'%oparg,
+            elif op in hasjrel:
+                print '(to ' + `i + oparg` + ')',
+            elif op in haslocal:
+                if varnames:
+                    print '(' + varnames[oparg] + ')',
+                else:
+                    print '(%d)' % oparg,
+            elif op in hascompare:
+                print '(' + cmp_op[oparg] + ')',
+        print
 
 disco = disassemble                     # XXX For backwards compatibility
 
