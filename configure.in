@@ -90,8 +90,8 @@ if test -z "$LINKCC"
 then
 	case $ac_sys_system in
 	AIX*)
-	   LINKCC="makexp_aix python.exp \"\" \$(LIBRARY); \$(CC)";;
-	*) LINKCC="\$(CC)";;
+	   LINKCC="makexp_aix python.exp \"\" \$(LIBRARY); \$(PURIFY) \$(CC)";;
+	*) LINKCC="\$(PURIFY) \$(CC)";;
 	esac
 fi
 AC_MSG_RESULT($LINKCC)
