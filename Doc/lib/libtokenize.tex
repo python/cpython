@@ -36,9 +36,12 @@ The scanner is exposed by a single function:
 
 
 All constants from the \refmodule{token} module are also exported from 
-\module{tokenize}, as is one additional token type value that might be 
+\module{tokenize}, as are two additional token type values that might be 
 passed to the \var{tokeneater} function by \function{tokenize()}:
 
 \begin{datadesc}{COMMENT}
   Token value used to indicate a comment.
+\end{datadesc}
+\begin{datadesc}{NL}
+  Token value used to indicate a newline.
 \end{datadesc}
