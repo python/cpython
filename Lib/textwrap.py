@@ -2,6 +2,10 @@
 Utilities for wrapping text strings and filling text paragraphs.
 """
 
+# Copyright (C) 2001 Gregory P. Ward.
+# Copyright (C) 2002 Python Software Foundation.
+# Written by Greg Ward <gward@python.net>
+
 __revision__ = "$Id$"
 
 import string, re
