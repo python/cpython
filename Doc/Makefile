@@ -58,6 +58,8 @@ L2H=		/ufs/guido/l2h/latex2html
 L2HARGS=	-address $$USER@`domainname` -dont_include myformat
 
 # Destination directory for output of libwww target.
+PARTPARSE=	$(PYTHON) ./partparse.pyc
+TEXI2HTML=	$(PYTHON) ./texi2html.pyc
 LIBHTMLDIR=	./python-lib
 
 # Install destination -- not used now but might be useful some time...
@@ -165,12 +167,17 @@ qua.ps:	qua.dvi
 # The remaining part of the Makefile is concerned with various
 # conversions, as described above.  See also the README file.
 
-lib.texi: lib*.tex texipre.dat texipost.dat partparse.py fix.el
-	$(PYTHON) partparse.py -o @lib.texi `./whichlibs`
-	$(EMACS) -batch -l fix.el -f save-buffer -kill
-	mv @lib.texi lib.texi
+.SUFFIXES: .py .pyc
+
+.py.pyc:
+	$(PYTHON) -c "import $*"
 
 .PRECIOUS:	lib.texi
+
+lib.texi: lib*.tex texipre.dat texipost.dat partparse.pyc fix.el
+	$(PARTPARSE) -o @lib.texi `./whichlibs`
+	$(EMACS) -batch -l fix.el -f save-buffer -kill
+	mv @lib.texi lib.texi
 
 python-lib.info: lib.texi
 	-$(MAKEINFO) --footnote-style end --fill-column 72 \
@@ -178,9 +185,9 @@ python-lib.info: lib.texi
 
 lib.info: python-lib.info
 
-libwww: lib.texi
+libwww: lib.texi texi2html.pyc
 	if test ! -d $(LIBHTMLDIR); then mkdir $(LIBHTMLDIR); else true; fi
-	$(PYTHON) texi2html.py -d lib.texi $(LIBHTMLDIR)
+	$(TEXI2HTML) -d lib.texi $(LIBHTMLDIR)
 
 # Targets to convert the manuals to HTML using Nikos Drakos' LaTeX to
 # HTML converter.  For more info on this program, see
