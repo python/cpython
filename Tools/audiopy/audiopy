@@ -95,19 +95,23 @@ class MainWindow:
         if not info.i_avail_ports & LINE_IN:
             btn.configure(state=DISABLED)
         buttons.append(btn)
-        ##
-        btn = Radiobutton(frame,
-                          text='CD',
-                          variable=self.__inputvar,
-                          value=CD,
-                          command=self.__pushtodev,
-                          underline=0)
-        btn.grid(row=2, column=1, sticky=W)
-        root.bind('<Alt-c>', self.__cd)
-        root.bind('<Alt-C>', self.__cd)
-        if not info.i_avail_ports & CD:
-            btn.configure(state=DISABLED)
-        buttons.append(btn)
+        ## if SUNAUDIODEV was built on an older version of Solaris, the CD
+        ## input device won't exist
+        try:
+            btn = Radiobutton(frame,
+                              text='CD',
+                              variable=self.__inputvar,
+                              value=CD,
+                              command=self.__pushtodev,
+                              underline=0)
+            btn.grid(row=2, column=1, sticky=W)
+            root.bind('<Alt-c>', self.__cd)
+            root.bind('<Alt-C>', self.__cd)
+            if not info.i_avail_ports & CD:
+                btn.configure(state=DISABLED)
+            buttons.append(btn)
+        except NameError:
+            pass
         #
         # where does output go to?
         frame = Frame(root, bd=1, relief=RAISED)
@@ -276,13 +280,18 @@ def main():
         return
 
     # spec:    LONG OPT, SHORT OPT, 0=input,1=output, MASK
-    options = (('--microphone', '-m', 0, MICROPHONE),
+    options = [('--microphone', '-m', 0, MICROPHONE),
                ('--linein',     '-i', 0, LINE_IN),
-               ('--cd',         '-c', 0, CD),
                ('--headphones', '-p', 1, HEADPHONE),
                ('--speaker',    '-s', 1, SPEAKER),
                ('--lineout',    '-o', 1, LINE_OUT),
-               )
+               ]
+    # See the comment above about `CD'
+    try:
+        options.append(('--cd',         '-c', 0, CD))
+    except NameError:
+        pass
+
     info = device.getinfo()
     # first get the existing values
     for arg in sys.argv[1:]:
