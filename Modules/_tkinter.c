@@ -2499,7 +2499,7 @@ static PyMethodDef Tkapp_methods[] =
 static void
 Tkapp_Dealloc(PyObject *self)
 {
-	//CHECK_TCL_APPARTMENT;
+	/*CHECK_TCL_APPARTMENT;*/
 	ENTER_TCL
 	Tcl_DeleteInterp(Tkapp_Interp(self));
 	LEAVE_TCL
