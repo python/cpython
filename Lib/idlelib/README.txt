@@ -9,6 +9,9 @@ available, complete with the IDLE debugger.  The magic "reload/import *"
 incantations are no longer required when editing/testing a module two or three
 steps down the import chain.
 
+It is possible to interrupt tightly looping user code with a control-c, even on
+Windows.
+
 There is also a new GUI configuration manager which makes it easy to select
 fonts, colors, keybindings, and startup options.  There is new feature where
 the user can specify additional help sources, either locally or on the web.
@@ -17,9 +20,6 @@ IDLEfork will be merged back into the Python distribution in the near future
 (probably 2.3), replacing the current version of IDLE.
 
 For information on this release, refer to NEWS.txt
-
-As David Scherer aptly put it in the original IDLEfork README, "It is alpha
-software and might be unstable. If it breaks, you get to keep both pieces."
 
 If you find bugs let us know about them by using the IDLEfork Bug Tracker.  See
 the IDLEfork home page at
