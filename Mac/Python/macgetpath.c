@@ -32,7 +32,7 @@
 
 
 char *
-getpythonpath()
+Py_GetPath()
 {
 	/* Modified by Jack to do something a bit more sensible:
 	** - Prepend the python home-directory (which is obtained from a Preferences
