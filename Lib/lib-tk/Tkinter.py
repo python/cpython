@@ -1298,10 +1298,18 @@ class Canvas(Widget):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'xview'))
 		self.tk.call((self._w, 'xview') + args)
+	def xview_moveto(self, fraction):
+		self.tk.call(self._w, 'xview', 'moveto', fraction)
+	def xview_scroll(self, number, what):
+		self.tk.call(self._w, 'xview', 'scroll', number, what)
 	def yview(self, *args):
 		if not args:
 			return self._getdoubles(self.tk.call(self._w, 'yview'))
 		self.tk.call((self._w, 'yview') + args)
+	def yview_moveto(self, fraction):
+		self.tk.call(self._w, 'yview', 'moveto', fraction)
+	def yview_scroll(self, number, what):
+		self.tk.call(self._w, 'yview', 'scroll', number, what)
 
 class Checkbutton(Widget):
 	def __init__(self, master=None, cnf={}, **kw):
