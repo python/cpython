@@ -512,6 +512,8 @@ class FancyURLopener(URLopener):
     def __init__(self, *args):
         apply(URLopener.__init__, (self,) + args)
         self.auth_cache = {}
+        self.tries = 0
+        self.maxtries = 10
 
     def http_error_default(self, url, fp, errcode, errmsg, headers):
         """Default error handling -- don't raise an exception."""
@@ -519,7 +521,21 @@ class FancyURLopener(URLopener):
 
     def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 302 -- relocated (temporarily)."""
-        # XXX The server can force infinite recursion here!
+        self.tries += 1
+        if self.maxtries and self.tries >= self.maxtries:
+            if hasattr(self, "http_error_500"):
+                meth = self.http_error_500
+            else:
+                meth = self.http_error_default
+            self.tries = 0
+            return meth(url, fp, 500,
+                        "Internal Server Error: Redirect Recursion", headers)
+        result = self.redirect_internal(url, fp, errcode, errmsg, headers,
+                                        data)
+        self.tries = 0
+        return result
+
+    def redirect_internal(self, url, fp, errcode, errmsg, headers, data):
         if headers.has_key('location'):
             newurl = headers['location']
         elif headers.has_key('uri'):
@@ -555,6 +571,8 @@ class FancyURLopener(URLopener):
                        return getattr(self,name)(url, realm)
                    else:
                        return getattr(self,name)(url, realm, data)
+        return URLopener.http_error_default(self, url, fp, 
+                                                  errcode, errmsg, headers)
 
     def retry_http_basic_auth(self, url, realm, data=None):
         host, selector = splithost(url)
@@ -689,7 +707,7 @@ class ftpwrapper:
                 cmd = 'RETR ' + file
                 conn = self.ftp.ntransfercmd(cmd)
             except ftplib.error_perm, reason:
-                if reason[:3] != '550':
+                if str(reason)[:3] != '550':
                     raise IOError, ('ftp error', reason), sys.exc_info()[2]
         if not conn:
             # Set transfer mode to ASCII!
@@ -1036,7 +1054,7 @@ def _fast_quote(s):
     for i in range(len(res)):
         c = res[i]
         if not _fast_safe.has_key(c):
-            res[i] = '%%%02x' % ord(c)
+            res[i] = '%%%02X' % ord(c)
     return string.join(res, '')
 
 def quote(s, safe = '/'):
@@ -1067,7 +1085,7 @@ def quote(s, safe = '/'):
     for i in range(len(res)):
         c = res[i]
         if c not in safe:
-            res[i] = '%%%02x' % ord(c)
+            res[i] = '%%%02X' % ord(c)
     return string.join(res, '')
 
 def quote_plus(s, safe = ''):
