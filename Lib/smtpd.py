@@ -540,7 +540,6 @@ if __name__ == '__main__':
         classname = classname[lastdot+1:]
     else:
         import __main__ as mod
-    print mod.__name__, dir(mod)
     class_ = getattr(mod, classname)
     proxy = class_((options.localhost, options.localport),
                    (options.remotehost, options.remoteport))
