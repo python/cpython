@@ -85,7 +85,6 @@ This module also defines an exception 'error'.
 
 
 import sys
-import string
 from pcre import *
 
 #
@@ -223,10 +222,9 @@ def escape(pattern):
 
     """
     result = list(pattern)
-    alphanum=string.letters+'_'+string.digits
     for i in range(len(pattern)):
         char = pattern[i]
-        if char not in alphanum:
+        if not char.isalnum():
             if char=='\000': result[i] = '\\000'
             else: result[i] = '\\'+char
     return ''.join(result)

@@ -110,7 +110,7 @@ def mime_decode_header(line):
             break
         match = res.group(1)
         # convert underscores to spaces (before =XX conversion!)
-        match = ' '.join(string.split(match, '_'))
+        match = ' '.join(match.split('_'))
         newline = newline + line[pos:res.start(0)] + mime_decode(match)
         pos = res.end(0)
     return newline + line[pos:]
