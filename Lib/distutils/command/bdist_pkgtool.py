@@ -303,9 +303,9 @@ class bdist_pkgtool (bdist_packager.bdist_packager):
         try:
             self.distribution.packages[0]
             file_list=string.split(
-            getoutput("pkgproto %s/%s=%s" % (build.build_lib,
-            self.distribution.packages[0],
-            self.distribution.packages[0])),"\012")
+                getoutput("pkgproto %s/%s=%s" % \
+                          (build.build_lib, self.distribution.packages[0],
+                           self.distribution.packages[0])), "\012")
         except:
             file_list=string.split(
             getoutput("pkgproto %s=" % (build.build_lib)),"\012")
