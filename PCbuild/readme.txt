@@ -102,14 +102,6 @@ bsddb
     step in an enviroment that already has the correct envars set up).
 
 
-NOTE ON CONFIGURATIONS
-----------------------
-Under Build -> Configuration ..., you'll find several Alpha configurations,
-such as "Win32 Alpha Release".  These do not refer to alpha versions (as in
-alpha, beta, final), but to the DEC/COMPAQ Alpha processor.  Ignore them if
-you're not building on an Alpha box.
-
-
 YOUR OWN EXTENSION DLLs
 -----------------------
 If you want to create your own extension module DLL, there's an example
