@@ -41,8 +41,7 @@ source distribution, but the organization is different. Look in
 directory <code>Mac/mwerks/projects</code> for the project files and
 related stuff. <BR>
 
-If you are a <a href="http://www.python.org/psa">PSA</a> member, an
-alternative is to check the sources straight out of the CVS
+An alternative is to check the sources straight out of the CVS
 repository, see below. Most of the packages mentioned here are also
 available through CVS. Check the section on <a href="#cvs">CVS
 repository use</a> below.
@@ -429,22 +428,24 @@ those routines have to be in the same code fragment as they are used from.
 
 <H2><a name="cvs">Using the CVS source archive</a></H2>
 
-It is possible to access the Python sources through remote CVS if you are
-a PSA member. The advantage of this is that you get the very latest sources,
-so any bug fixed or new features will be immedeately available. This is also
-the disadvantage, of course: as this is the same tree as is used for development it
-may sometimes be a little less stable. <p>
+It is possible to access the Python sources through remote CVS. The
+advantage of this is that you get the very latest sources, so any bug
+fixed or new features will be immedeately available. This is also the
+disadvantage, of course: as this is the same tree as is used for
+development it may sometimes be a little less stable. <p>
 
 The CVS client of choice is Alexandre Parenteau's MacCVS. It can be
-obtained through the <a href="http://www.cyclic.com">Cyclic CVS homepage</a>. MacCVS
-uses Internet Config to set file types correctly based on the filename extension. In
-the maccvs preferences you should also set (in the "binary files" section)
-"use mac encoding: applesingle" and (in the "text files" section) "use ISO latin 1
+obtained through the <a href="http://www.wincvs.org">WinCVS
+homepage</a>. MacCVS uses Internet Config to set file types correctly
+based on the filename extension. In the maccvs preferences you should
+also set (in the "binary files" section) "use mac encoding:
+applesingle" and (in the "text files" section) "use ISO latin 1
 conversion". <p>
 
 The machine-independent Python sources are checked out from the main
-Python CVS archive, see the <a href="http://www.python.org/psa">PSA
-homepage</a> for details. When you check the sources out you will get
+Python CVS archive, see the <a
+href="http://www.python.org/download/cvs.html">Source access via
+CVS</a> page for details. When you check the sources out you will get
 something like <code>Python:dist:src</code>, and under that the
 <code>Modules</code>, <code>Lib</code>, etc hierarchy. The
 <code>src</code> folder should be renamed to <code>Python</code>, and
