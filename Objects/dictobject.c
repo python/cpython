@@ -147,7 +147,7 @@ lookmapping(mp, key, hash)
 				return ep;
 		}
 		if (ep->me_key == dummy) {
-			if (freeslot != NULL)
+			if (freeslot == NULL)
 				freeslot = ep;
 		}
 		else if (ep->me_hash == hash &&
