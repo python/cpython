@@ -35,37 +35,22 @@ PERFORMANCE OF THIS SOFTWARE.
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 
 #ifdef WITHOUT_FRAMEWORKS
-#if !TARGET_API_MAC_OS8
-/* The Carbon headers define PRAGMA_ALIGN_SUPPORT to something illegal,
-** because you shouldn't use it for Carbon. All good and well, but portable
-** code still needs it. So, we undefine it here.
-*/
-#undef PRAGMA_ALIGN_SUPPORTED
-#define PRAGMA_ALIGN_SUPPORTED 0
-#endif /* !TARGET_API_MAC_OS8 */
+// #if !TARGET_API_MAC_OS8
+// /* The Carbon headers define PRAGMA_ALIGN_SUPPORT to something illegal,
+// ** because you shouldn't use it for Carbon. All good and well, but portable
+// ** code still needs it. So, we undefine it here.
+// */
+// #undef PRAGMA_ALIGN_SUPPORTED
+// #define PRAGMA_ALIGN_SUPPORTED 0
+// #endif /* !TARGET_API_MAC_OS8 */
 
-#include "ICAPI.h"
+// #include "ICAPI.h"
+#include <InternetConfig.h>
 #else
 #include <Carbon/Carbon.h>
-typedef OSStatus ICError;
-/* Some fields in ICMapEntry have changed names. */
-#define file_type fileType
-#define file_creator fileCreator
-#define post_creator postCreator
-#define creator_app_name creatorAppName
-#define post_app_name postAppName
-#define MIME_type MIMEType
-#define entry_name entryName
 #endif
 
 static PyObject *ErrorObject;
-
-static PyObject *
-ici_error(ICError err)
-{
-	PyErr_SetObject(ErrorObject, PyInt_FromLong((long)err));
-	return NULL;
-}
 
 /* ----------------------------------------------------- */
 
@@ -90,12 +75,12 @@ static char ici_ICFindConfigFile__doc__[] =
 static PyObject *
 ici_ICFindConfigFile(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICFindConfigFile(self->inst, 0, NULL)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -108,13 +93,13 @@ static char ici_ICFindUserConfigFile__doc__[] =
 static PyObject *
 ici_ICFindUserConfigFile(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	ICDirSpec where;	
 
 	if (!PyArg_ParseTuple(args, "sl", &where.vRefNum, &where.dirID))
 		return NULL;
 	if ((err=ICFindUserConfigFile(self->inst, &where)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -127,12 +112,12 @@ static char ici_ICChooseConfig__doc__[] =
 static PyObject *
 ici_ICChooseConfig(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICChooseConfig(self->inst)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -144,12 +129,12 @@ static char ici_ICChooseNewConfig__doc__[] =
 static PyObject *
 ici_ICChooseNewConfig(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICChooseNewConfig(self->inst)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -163,13 +148,13 @@ static char ici_ICGetSeed__doc__[] =
 static PyObject *
 ici_ICGetSeed(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	long seed;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICGetSeed(self->inst, &seed)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("i", (int)seed);
 }
 
@@ -181,13 +166,13 @@ static char ici_ICBegin__doc__[] =
 static PyObject *
 ici_ICBegin(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	int perm;
 	
 	if (!PyArg_ParseTuple(args, "i", &perm))
 		return NULL;
 	if ((err=ICBegin(self->inst, (ICPerm)perm)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -200,7 +185,7 @@ static char ici_ICFindPrefHandle__doc__[] =
 static PyObject *
 ici_ICFindPrefHandle(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 key;
 	ICAttr attr;
 	Handle h;
@@ -208,7 +193,7 @@ ici_ICFindPrefHandle(iciobject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "O&O&", PyMac_GetStr255, &key, ResObj_Convert, &h))
 		return NULL;
 	if ((err=ICFindPrefHandle(self->inst, key, &attr, h)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("i", (int)attr);
 }
 
@@ -220,7 +205,7 @@ static char ici_ICSetPref__doc__[] =
 static PyObject *
 ici_ICSetPref(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 key;
 	int attr;
 	char *data;
@@ -231,7 +216,7 @@ ici_ICSetPref(iciobject *self, PyObject *args)
 		return NULL;
 	if ((err=ICSetPref(self->inst, key, (ICAttr)attr, (Ptr)data, 
 			(long)datalen)) != 0)
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -244,13 +229,13 @@ static char ici_ICCountPref__doc__[] =
 static PyObject *
 ici_ICCountPref(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	long count;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICCountPref(self->inst, &count)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("i", (int)count);
 }
 
@@ -262,14 +247,14 @@ static char ici_ICGetIndPref__doc__[] =
 static PyObject *
 ici_ICGetIndPref(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	long num;
 	Str255 key;
 	
 	if (!PyArg_ParseTuple(args, "l", &num))
 		return NULL;
 	if ((err=ICGetIndPref(self->inst, num, key)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("O&", PyMac_BuildStr255, key);
 }
 
@@ -281,13 +266,13 @@ static char ici_ICDeletePref__doc__[] =
 static PyObject *
 ici_ICDeletePref(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 key;
 
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, key))
 		return NULL;
 	if ((err=ICDeletePref(self->inst, key)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -300,12 +285,12 @@ static char ici_ICEnd__doc__[] =
 static PyObject *
 ici_ICEnd(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	
 	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	if ((err=ICEnd(self->inst)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -318,13 +303,13 @@ static char ici_ICEditPreferences__doc__[] =
 static PyObject *
 ici_ICEditPreferences(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 key;
 	
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, key))
 		return NULL;
 	if ((err=ICEditPreferences(self->inst, key)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -337,7 +322,7 @@ static char ici_ICParseURL__doc__[] =
 static PyObject *
 ici_ICParseURL(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 hint;
 	char *data;
 	int datalen;
@@ -349,7 +334,7 @@ ici_ICParseURL(iciobject *self, PyObject *args)
 		return NULL;
 	if ((err=ICParseURL(self->inst, hint, (Ptr)data, (long)datalen,
 				&selStart, &selEnd, h)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("ii", (int)selStart, (int)selEnd);
 }
 
@@ -361,7 +346,7 @@ static char ici_ICLaunchURL__doc__[] =
 static PyObject *
 ici_ICLaunchURL(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 hint;
 	char *data;
 	int datalen;
@@ -372,7 +357,7 @@ ici_ICLaunchURL(iciobject *self, PyObject *args)
 		return NULL;
 	if ((err=ICLaunchURL(self->inst, hint, (Ptr)data, (long)datalen,
 				&selStart, &selEnd)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("ii", (int)selStart, (int)selEnd);
 }
 
@@ -384,24 +369,24 @@ static char ici_ICMapFilename__doc__[] =
 static PyObject *
 ici_ICMapFilename(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	Str255 filename;
 	ICMapEntry entry;
 	
 	if (!PyArg_ParseTuple(args, "O&", PyMac_GetStr255, filename))
 		return NULL;
 	if ((err=ICMapFilename(self->inst, filename, &entry)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("hO&O&O&lO&O&O&O&O&", entry.version, 
-		PyMac_BuildOSType, entry.file_type,
-		PyMac_BuildOSType, entry.file_creator, 
-		PyMac_BuildOSType, entry.post_creator, 
+		PyMac_BuildOSType, entry.fileType,
+		PyMac_BuildOSType, entry.fileCreator, 
+		PyMac_BuildOSType, entry.postCreator, 
 		entry.flags,
 		PyMac_BuildStr255, entry.extension,
-		PyMac_BuildStr255, entry.creator_app_name,
-		PyMac_BuildStr255, entry.post_app_name,
-		PyMac_BuildStr255, entry.MIME_type,
-		PyMac_BuildStr255, entry.entry_name);
+		PyMac_BuildStr255, entry.creatorAppName,
+		PyMac_BuildStr255, entry.postAppName,
+		PyMac_BuildStr255, entry.MIMEType,
+		PyMac_BuildStr255, entry.entryName);
 }
 
 
@@ -412,7 +397,7 @@ static char ici_ICMapTypeCreator__doc__[] =
 static PyObject *
 ici_ICMapTypeCreator(iciobject *self, PyObject *args)
 {
-	ICError err;
+	OSStatus err;
 	OSType type, creator;
 	Str255 filename;
 	ICMapEntry entry;
@@ -423,17 +408,17 @@ ici_ICMapTypeCreator(iciobject *self, PyObject *args)
 			PyMac_GetStr255, filename))
 		return NULL;
 	if ((err=ICMapTypeCreator(self->inst, type, creator, filename, &entry)) != 0 )
-		return ici_error(err);
+		return PyMac_Error(err);
 	return Py_BuildValue("hO&O&O&lO&O&O&O&O&", entry.version, 
-		PyMac_BuildOSType, entry.file_type,
-		PyMac_BuildOSType, entry.file_creator, 
-		PyMac_BuildOSType, entry.post_creator, 
+		PyMac_BuildOSType, entry.fileType,
+		PyMac_BuildOSType, entry.fileCreator, 
+		PyMac_BuildOSType, entry.postCreator, 
 		entry.flags,
 		PyMac_BuildStr255, entry.extension,
-		PyMac_BuildStr255, entry.creator_app_name,
-		PyMac_BuildStr255, entry.post_app_name,
-		PyMac_BuildStr255, entry.MIME_type,
-		PyMac_BuildStr255, entry.entry_name);
+		PyMac_BuildStr255, entry.creatorAppName,
+		PyMac_BuildStr255, entry.postAppName,
+		PyMac_BuildStr255, entry.MIMEType,
+		PyMac_BuildStr255, entry.entryName);
 }
 
 
@@ -468,13 +453,13 @@ static iciobject *
 newiciobject(OSType creator)
 {
 	iciobject *self;
-	ICError err;
+	OSStatus err;
 	
 	self = PyObject_NEW(iciobject, &Icitype);
 	if (self == NULL)
 		return NULL;
 	if ((err=ICStart(&self->inst, creator)) != 0 ) {
-		(void)ici_error(err);
+		(void)PyMac_Error(err);
 		PyMem_DEL(self);
 		return NULL;
 	}
@@ -569,8 +554,10 @@ initicglue(void)
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	ErrorObject = PyString_FromString("icglue.error");
-	PyDict_SetItemString(d, "error", ErrorObject);
+	ErrorObject = PyMac_GetOSErrException();
+	if (ErrorObject == NULL ||
+	    PyDict_SetItemString(d, "error", ErrorObject) != 0)
+		return;
 
 	/* XXXX Add constants here */
 	
