@@ -412,6 +412,8 @@ else:
             def update(self, dict):
                 for k, v in dict.items():
                     self[k] = v
+            def copy(self):
+                return dict(self)
 
     else:  # Where Env Var Names Can Be Mixed Case
         class _Environ(UserDict.UserDict):
@@ -432,6 +434,8 @@ else:
                 def __delitem__(self, key):
                     unsetenv(key)
                     del self.data[key]
+            def copy(self):
+                return dict(self)
 
 
     environ = _Environ(environ)
