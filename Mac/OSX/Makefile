@@ -2,12 +2,19 @@ PYTHONBUILDDIR=../..
 INSTALLDIR=/Library/Frameworks/Python.framework/Versions/Current
 APPINSTALLDIR=/Applications/Python.app
 
+# Variables for installing the "normal" unix binaries
+UNIXBINDIR=/usr/local/bin
+INSTALLED_PYTHON=$(INSTALLDIR)/bin/python
+INSTALLED_PYTHONW=$(APPINSTALLDIR)/Contents/MacOS/python
+
 # Items more-or-less copied from the main Makefile
 DIRMODE=755
 INSTALL=/usr/bin/install -c
+INSTALL_SYMLINK=/usr/bin/install -l as
 INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
+STRIPFLAG=-s
 OPT=-g -O3 -Wall -Wstrict-prototypes -no-cpp-precomp -fno-common -dynamic
 INCLUDES=-I$(PYTHONBUILDDIR) -I$(PYTHONBUILDDIR)/Include \
 	-I$(PYTHONBUILDDIR)/Mac/Include
@@ -71,7 +78,7 @@ install: pythonforbundle
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
+	$(INSTALL_PROGRAM) $(STRIPFLAG) pythonforbundle $(APPINSTALLDIR)/Contents/MacOS/python
 	# Create a temporary version of the resources here
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/dialogs.rsrc dialogs.rsrc
 	$(PYTHON) $(RFCONVERTER) -r $(RESOURCEDIR)/errors.rsrc errors.rsrc
@@ -179,5 +186,18 @@ installmacsubtree:
 	done
 
 	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
-	@echo '**' $(INSTALLDIR)/lib/python2.2/sitecustomize.py
+	@echo '**' $(INSTALLDIR)/lib/python2.3/sitecustomize.py
 	
+# Put symlinks "python" and "pythonw" in the standard place
+installunixprograms: $(INSTALLED_PYTHON) pythonw.sh
+	$(INSTALL) -d $(UNIXBINDIR)
+	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(UNIXBINDIR)/python
+	$(INSTALL) pythonw.sh $(UNIXBINDIR)/pythonw
+	
+# This is for development purposes: put a symlink to the Mac source subtree in the
+# framework
+symlinkmacsubtree:
+	ln -sf `cd $(PYTHONBUILDDIR)/Mac; pwd` $(INSTALLDIR)/Mac
+
+	@echo '** Copy the contents of sample_sitecustomize.py (or similar code) into'
+	@echo '**' $(INSTALLDIR)/lib/python2.3/sitecustomize.py
