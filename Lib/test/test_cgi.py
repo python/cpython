@@ -58,9 +58,12 @@ parse_test_cases = [
     ("", ValueError("bad query field: ''")),
     ("&", ValueError("bad query field: ''")),
     ("&&", ValueError("bad query field: ''")),
+    (";", ValueError("bad query field: ''")),
+    (";&;", ValueError("bad query field: ''")),
     # Should the next few really be valid?
     ("=", {}),
     ("=&=", {}),
+    ("=;=", {}),
     # This rest seem to make sense
     ("=a", {'': ['a']}),
     ("&=a", ValueError("bad query field: ''")),
@@ -75,6 +78,8 @@ parse_test_cases = [
     ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
     ("a=a+b&a=b+a", {'a': ['a b', 'b a']}),
     ("x=1&y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+    ("x=1;y=2.0&z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
+    ("x=1;y=2.0;z=2-3.%2b0", {'x': ['1'], 'y': ['2.0'], 'z': ['2-3.+0']}),
     ("Hbc5161168c542333633315dee1182227:key_store_seqid=400006&cuyer=r&view=bustomer&order_id=0bb2e248638833d48cb7fed300000f1b&expire=964546263&lobale=en-US&kid=130003.300038&ss=env",
      {'Hbc5161168c542333633315dee1182227:key_store_seqid': ['400006'],
       'cuyer': ['r'],
