@@ -46,7 +46,11 @@ def _PromptGetFile(prompt, *typelist):
 		good = 0
 		fss = macfs.FSSpec(':cancelled')
 	else:
-		fss = rr.selection[0]
+		if rr.selection:
+			fss = rr.selection[0]
+		else:
+			fss = None
+			good = 0
 ##	if typehandle:
 ##		typehandle.DisposeHandle()
 	return fss, good
