@@ -13,7 +13,7 @@ exports the same functions and data as found there.  The design of all
 Python's built-in OS dependent modules is such that as long as the same
 functionality is available, it uses the same interface; e.g., the
 function \code{os.stat(\var{file})} returns stat info about a \var{file} in a
-format compatible with the POSIX interface.
+format compatible with the \POSIX{} interface.
 
 Extensions peculiar to a particular OS are also available through the
 \code{os} module, but using them is of course a threat to portability!
@@ -43,20 +43,20 @@ more portable than \code{posixpath.split(\var{file})}.
 
 \begin{datadesc}{curdir}
 The constant string used by the OS to refer to the current directory,
-e.g. \code{'.'} for POSIX or \code{':'} for the Mac.
+e.g. \code{'.'} for \POSIX{} or \code{':'} for the Mac.
 \end{datadesc}
 
 \begin{datadesc}{pardir}
 The constant string used by the OS to refer to the parent directory,
-e.g. \code{'..'} for POSIX or \code{'::'} for the Mac.
+e.g. \code{'..'} for \POSIX{} or \code{'::'} for the Mac.
 \end{datadesc}
 
 \begin{datadesc}{sep}
 The character used by the OS to separate pathname components,
-e.g. \code{'/'} for POSIX or \code{':'} for the Mac.  Note that knowing this
-is not sufficient to be able to parse or concatenate pathnames---better
-use \code{os.path.split()} and \code{os.path.join()}---but it is
-occasionally useful.
+e.g. \code{'/'} for \POSIX{} or \code{':'} for the Mac.  Note that
+knowing this is not sufficient to be able to parse or concatenate
+pathnames --- better use \code{os.path.split()} and
+\code{os.path.join()}---but it is occasionally useful.
 \end{datadesc}
 
 \begin{datadesc}{altsep}
@@ -67,7 +67,7 @@ or \code{None} if only one separator character exists.  This is set to
 
 \begin{datadesc}{pathsep}
 The character conventionally used by the OS to separate search patch
-components (as in \code{\$PATH}), e.g.\ \code{':'} for POSIX or
+components (as in \code{\$PATH}), e.g.\ \code{':'} for \POSIX{} or
 \code{';'} for MS-DOS.
 \end{datadesc}
 

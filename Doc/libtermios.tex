@@ -1,15 +1,15 @@
 \section{Built-in Module \sectcode{termios}}
 \label{module-termios}
 \bimodindex{termios}
-\indexii{Posix}{I/O control}
+\indexii{\POSIX{}}{I/O control}
 \indexii{tty}{I/O control}
 
 \renewcommand{\indexsubitem}{(in module termios)}
 
-This module provides an interface to the Posix calls for tty I/O
-control.  For a complete description of these calls, see the Posix or
+This module provides an interface to the \POSIX{} calls for tty I/O
+control.  For a complete description of these calls, see the \POSIX{} or
 \UNIX{} manual pages.  It is only available for those \UNIX{} versions
-that support Posix \code{termios} style tty I/O control (and then
+that support \POSIX{} \code{termios} style tty I/O control (and then
 only if configured at installation time).
 
 All functions in this module take a file descriptor \var{fd} as their
@@ -94,13 +94,13 @@ def getpass(prompt = "Password: "):
 %
 \section{Standard Module \sectcode{TERMIOS}}
 \stmodindex{TERMIOS}
-\indexii{Posix}{I/O control}
+\indexii{\POSIX{}}{I/O control}
 \indexii{tty}{I/O control}
 
 \renewcommand{\indexsubitem}{(in module TERMIOS)}
 
 This module defines the symbolic constants required to use the
-\code{termios} module (see the previous section).  See the Posix or
+\code{termios} module (see the previous section).  See the \POSIX{} or
 \UNIX{} manual pages (or the source) for a list of those constants.
 \refbimodindex{termios}
 

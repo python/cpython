@@ -2,7 +2,7 @@
 \label{module-posixpath}
 \stmodindex{posixpath}
 
-This module implements some useful functions on POSIX pathnames.
+This module implements some useful functions on \POSIX{} pathnames.
 
 \strong{Do not import this module directly.}  Instead, import the
 module \code{os} and use \code{os.path}.
@@ -78,7 +78,7 @@ file system where a different file system has been mounted.  The
 function checks whether \var{p}'s parent, \file{\var{p}/..}, is on a
 different device than \var{p}, or whether \file{\var{p}/..} and
 \var{p} point to the same i-node on the same device --- this should
-detect mount points for all \UNIX{} and POSIX variants.
+detect mount points for all \UNIX{} and \POSIX{} variants.
 \end{funcdesc}
 
 \begin{funcdesc}{join}{p\optional{\, q\optional{\, ...}}}
