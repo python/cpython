@@ -119,10 +119,13 @@ typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
 typedef struct {
-	/* For old style numbers all arguments are guaranteed to be of the
-	   object's type (modulo coercion hacks that is); new style numbers
-	   should check both arguments for proper type and implement the
-	   necessary conversions in the slots themselves. */
+	/* For numbers without flag bit Py_TPFLAGS_CHECKTYPES set, all
+	   arguments are guaranteed to be of the object's type (modulo
+	   coercion hacks that is -- i.e. if the type's coercion function
+	   returns other types, then these are allowed as well).  Numbers that
+	   have the Py_TPFLAGS_CHECKTYPES flag bit set should check *both*
+	   arguments for proper type and implement the necessary conversions
+	   in the slot functions themselves. */
 
 	binaryfunc nb_add;
 	binaryfunc nb_subtract;
@@ -158,12 +161,6 @@ typedef struct {
 	binaryfunc nb_inplace_and;
 	binaryfunc nb_inplace_xor;
 	binaryfunc nb_inplace_or;
-
-	/* New style number slots; these are only used the
-	   Py_TPFLAGS_NEWSTYLENUMBER flag is set */
-
-	binaryfunc nb_cmp; /* XXX this should be richcmpfunc */
-
 } PyNumberMethods;
 
 typedef struct {
@@ -202,6 +199,7 @@ typedef int (*setattrofunc)(PyObject *, PyObject *, PyObject *);
 typedef int (*cmpfunc)(PyObject *, PyObject *);
 typedef PyObject *(*reprfunc)(PyObject *);
 typedef long (*hashfunc)(PyObject *);
+typedef PyObject *(*richcmpfunc) (PyObject *, PyObject *, int);
 
 typedef struct _typeobject {
 	PyObject_VAR_HEAD
@@ -245,8 +243,10 @@ typedef struct _typeobject {
 	/* delete references to contained objects */
 	inquiry tp_clear;
 
+	/* rich comparisons */
+	richcmpfunc tp_richcompare;
+
 	/* More spares */
-	long tp_xxx7;
 	long tp_xxx8;
 
 #ifdef COUNT_ALLOCS
@@ -267,6 +267,8 @@ extern DL_IMPORT(int) PyObject_Print(PyObject *, FILE *, int);
 extern DL_IMPORT(PyObject *) PyObject_Repr(PyObject *);
 extern DL_IMPORT(PyObject *) PyObject_Str(PyObject *);
 extern DL_IMPORT(int) PyObject_Compare(PyObject *, PyObject *);
+extern DL_IMPORT(PyObject *) PyObject_RichCompare(PyObject *, PyObject *, int);
+extern DL_IMPORT(int) PyObject_RichCompareBool(PyObject *, PyObject *, int);
 extern DL_IMPORT(PyObject *) PyObject_GetAttrString(PyObject *, char *);
 extern DL_IMPORT(int) PyObject_SetAttrString(PyObject *, char *, PyObject *);
 extern DL_IMPORT(int) PyObject_HasAttrString(PyObject *, char *);
@@ -334,7 +336,7 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_INPLACEOPS (1L<<3)
 
 /* PyNumberMethods do their own coercion */
-#define Py_TPFLAGS_NEWSTYLENUMBER (1L<<4)
+#define Py_TPFLAGS_CHECKTYPES (1L<<4)
 
 #define Py_TPFLAGS_DEFAULT  (Py_TPFLAGS_HAVE_GETCHARBUFFER | \
                              Py_TPFLAGS_HAVE_SEQUENCE_IN | \
@@ -456,6 +458,14 @@ not implemented for a given type combination.
 extern DL_IMPORT(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 
 #define Py_NotImplemented (&_Py_NotImplementedStruct)
+
+/* Rich comparison opcodes */
+#define Py_LT 0
+#define Py_LE 1
+#define Py_EQ 2
+#define Py_NE 3
+#define Py_GT 4
+#define Py_GE 5
 
 /*
 A common programming style in Python requires the forward declaration
