@@ -391,12 +391,13 @@ Py_BEGIN_ALLOW_THREADS
 Py_END_ALLOW_THREADS
 \end{verbatim}
 
-The \code{Py_BEGIN_ALLOW_THREADS}\ttindex{Py_BEGIN_ALLOW_THREADS} macro
-opens a new block and declares a hidden local variable; the
-\code{Py_END_ALLOW_THREADS}\ttindex{Py_END_ALLOW_THREADS} macro closes 
-the block.  Another advantage of using these two macros is that when
-Python is compiled without thread support, they are defined empty,
-thus saving the thread state and lock manipulations.
+The
+\csimplemacro{Py_BEGIN_ALLOW_THREADS}\ttindex{Py_BEGIN_ALLOW_THREADS}
+macro opens a new block and declares a hidden local variable; the
+\csimplemacro{Py_END_ALLOW_THREADS}\ttindex{Py_END_ALLOW_THREADS}
+macro closes the block.  Another advantage of using these two macros
+is that when Python is compiled without thread support, they are
+defined empty, thus saving the thread state and lock manipulations.
 
 When thread support is enabled, the block above expands to the
 following code:
@@ -574,30 +575,31 @@ look for example usage in the Python source distribution.
   This macro expands to
   \samp{\{ PyThreadState *_save; _save = PyEval_SaveThread();}.
   Note that it contains an opening brace; it must be matched with a
-  following \code{Py_END_ALLOW_THREADS} macro.  See above for further
-  discussion of this macro.  It is a no-op when thread support is
-  disabled at compile time.
+  following \csimplemacro{Py_END_ALLOW_THREADS} macro.  See above for
+  further discussion of this macro.  It is a no-op when thread support
+  is disabled at compile time.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_END_ALLOW_THREADS}
   This macro expands to \samp{PyEval_RestoreThread(_save); \}}.
   Note that it contains a closing brace; it must be matched with an
-  earlier \code{Py_BEGIN_ALLOW_THREADS} macro.  See above for further
-  discussion of this macro.  It is a no-op when thread support is
-  disabled at compile time.
+  earlier \csimplemacro{Py_BEGIN_ALLOW_THREADS} macro.  See above for
+  further discussion of this macro.  It is a no-op when thread support
+  is disabled at compile time.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_BLOCK_THREADS}
   This macro expands to \samp{PyEval_RestoreThread(_save);}: it is
-  equivalent to \code{Py_END_ALLOW_THREADS} without the closing brace.
-  It is a no-op when thread support is disabled at compile time.
+  equivalent to \csimplemacro{Py_END_ALLOW_THREADS} without the
+  closing brace.  It is a no-op when thread support is disabled at
+  compile time.
 \end{csimplemacrodesc}
 
 \begin{csimplemacrodesc}{Py_UNBLOCK_THREADS}
   This macro expands to \samp{_save = PyEval_SaveThread();}: it is
-  equivalent to \code{Py_BEGIN_ALLOW_THREADS} without the opening
-  brace and variable declaration.  It is a no-op when thread support
-  is disabled at compile time.
+  equivalent to \csimplemacro{Py_BEGIN_ALLOW_THREADS} without the
+  opening brace and variable declaration.  It is a no-op when thread
+  support is disabled at compile time.
 \end{csimplemacrodesc}
 
 All of the following functions are only available when thread support
