@@ -182,12 +182,22 @@ class TestSet(TestJointOps):
         self.assert_('a' not in self.s)
         self.assertRaises(KeyError, self.s.remove, 'Q')
         self.assertRaises(TypeError, self.s.remove, [])
+        s = self.thetype([frozenset(self.word)])
+        self.assert_(self.thetype(self.word) in s)
+        s.remove(self.thetype(self.word))
+        self.assert_(self.thetype(self.word) not in s)
+        self.assertRaises(KeyError, self.s.remove, self.thetype(self.word))
 
     def test_discard(self):
         self.s.discard('a')
         self.assert_('a' not in self.s)
         self.s.discard('Q')
         self.assertRaises(TypeError, self.s.discard, [])
+        s = self.thetype([frozenset(self.word)])
+        self.assert_(self.thetype(self.word) in s)
+        s.discard(self.thetype(self.word))
+        self.assert_(self.thetype(self.word) not in s)
+        s.discard(self.thetype(self.word))
 
     def test_pop(self):
         for i in xrange(len(self.s)):
