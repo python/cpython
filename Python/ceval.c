@@ -1524,5 +1524,5 @@ build_class(v, w)
 		err_setstr(SystemError, "build_class with non-dictionary");
 		return NULL;
 	}
-	return newclassobject(v, w);
+	return newclassobject(v, w, (object *) NULL);
 }
