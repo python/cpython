@@ -6,7 +6,7 @@
 # ftpstats [-m maxitems] [-s search] [file]
 # -m maxitems: restrict number of items in "top-N" lists, default 25.
 # -s string:   restrict statistics to lines containing this string.
-# Default file is /usr/adm/ftpd;  a "-" means read stdandard input.
+# Default file is /usr/adm/ftpd;  a "-" means read standard input.
 
 # The script must be run on the host where the ftp daemon runs.
 # (At CWI this is currently buizerd.)
