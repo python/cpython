@@ -4,7 +4,9 @@
 ## elguavas
 ## 
 ##---------------------------------------------------------------------------##
-"""Provides access to configuration information"""
+"""
+Provides access to configuration information
+"""
 
 import os
 import sys
@@ -21,20 +23,6 @@ class IdleConfParser(ConfigParser):
         self.file=cfgFile
         ConfigParser.__init__(self,defaults=cfgDefaults)
     
-#     def GetInt(self, section, option, *kw):
-#         """
-#         Get an option value as an integer
-#         """
-#         return self.Get(section, option, type='int', *kw)
-# 
-#     def GetBool(self, section, option, **kw):
-#         """
-#         Get an option value as a boolean
-#         """
-#         return self.Get(section, option, type='bool', *kw)
-        
-#    def Get(self, section, option, raw=0, vars=None, default=None, 
-#            type=None):
     def Get(self, section, option, default=None, type=None):
         """
         Get an option value for given section/option or return default.
@@ -49,10 +37,6 @@ class IdleConfParser(ConfigParser):
         else:
             return default
 
-    def GetSectionList(self):
-        # only provided for consistency
-        return self.sections()
-    
     def GetOptionList(self,section):
         """
         Get an option list for given section
@@ -138,7 +122,7 @@ class IdleConf:
             self.defaultCfg[cfgType]=IdleConfParser(defCfgFiles[cfgType])
             self.userCfg[cfgType]=IdleUserConfParser(usrCfgFiles[cfgType])
     
-    def GetDefault(self, configType, section, option, default=None, type=None):
+    def GetOption(self, configType, section, option, default=None, type=None):
         """
         Get an option value for given config type and given general 
         configuration section/option or return a default. If type is specified,
@@ -154,6 +138,42 @@ class IdleConf:
             return self.defaultCfg[configType].Get(section, option, type=type)
         else:
             return default
+    
+    def GetSectionList(self, configSet, configType):
+        """
+        Get a list of sections from either the user or default config for 
+        the given config type.
+        configSet must be either 'user' or 'default' 
+        configType must be one of ('extensions','highlight','keys')
+        """
+        if not (configType in ('extensions','highlight','keys')):
+            raise 'Invalid configType specified'
+        if configSet == 'user':
+            cfgParser=self.userCfg[configType]
+        elif configSet == 'default':
+            cfgParser=self.defaultCfg[configType]
+        else:
+            raise 'Invalid configSet specified'
+        
+        return cfgParser.sections()
+    
+    
+    def GetTheme(self, name=None):
+        """
+        Gets the requested theme or returns a final fallback theme in case 
+        one can't be obtained from either the user or default config files.
+        """
+        pass
+    
+    
+    def GetKeys(self, name=None):
+        """
+        Gets the requested keybindings or returns a final fallback keybinding 
+        set in case one can't be obtained from either the user or default 
+        config files.
+        """
+        pass
+    
     
     def LoadCfgFiles(self):
         """ 
