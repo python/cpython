@@ -295,7 +295,7 @@ class EditorWindow:
         # XXX Ought to insert current file's directory in front of path
         try:
             (f, file, (suffix, mode, type)) = imp.find_module(name)
-        except ImportError, msg:
+        except (NameError, ImportError), msg:
             tkMessageBox.showerror("Import error", str(msg), parent=self.text)
             return
         if type != imp.PY_SOURCE:
@@ -316,18 +316,12 @@ class EditorWindow:
                 "No filename",
                 "This buffer has no associated filename",
                 master=self.text)
+            self.text.focus_set()
             return None
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
-        import pyclbr
-        if pyclbr._modules.has_key(base):
-            del pyclbr._modules[base]
-        save_cursor = self.text["cursor"]
-        self.text["cursor"] = "watch"
-        self.text.update_idletasks()
         import ClassBrowser
         ClassBrowser.ClassBrowser(self.flist, base, [head])
-        self.text["cursor"] = save_cursor
 
     def open_path_browser(self, event=None):
         import PathBrowser
