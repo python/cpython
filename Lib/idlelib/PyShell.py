@@ -187,17 +187,19 @@ class ModifiedInterpreter(InteractiveInterpreter):
         InteractiveInterpreter.__init__(self, locals=locals)
         self.save_warnings_filters = None
 
+    port = 8833
     rpcclt = None
     rpcpid = None
 
     def spawn_subprocess(self):
-        port = 8833
-        addr = ("localhost", port)
-        # Spawn the Python execution "server"
         w = ['-W' + s for s in sys.warnoptions]
         args = [sys.executable] + w + ["-c", "__import__('run').main()",
-                                       str(port)]
+                                       str(self.port)]
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
+
+    def start_subprocess(self):
+        addr = ("localhost", self.port)
+        self.spawn_subprocess()
         # Idle starts listening for connection on localhost
         for i in range(6):
             time.sleep(i)
@@ -221,6 +223,21 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.register("flist", self.tkconsole.flist)
         self.poll_subprocess()
 
+    def restart_subprocess(self):
+        # close only the subprocess debugger
+        db = self.getdebugger()
+        if db:
+            RemoteDebugger.close_subprocess_debugger(self.rpcclt)           
+        # kill subprocess, spawn a new one, accept connection
+        self.rpcclt.close()
+        self.spawn_subprocess()
+        self.rpcclt.accept()
+        # restart remote debugger
+        if db:
+            gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
+            # reload remote debugger breakpoints
+            pass   # XXX KBK 04Sep02 TBD
+        
     active_seq = None
 
     def poll_subprocess(self):
@@ -383,15 +400,18 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def getdebugger(self):
         return self.debugger
 
+    def display_executing_dialog(self):
+        tkMessageBox.showerror(
+            "Already executing",
+            "The Python Shell window is already executing a command; "
+            "please wait until it is finished.",
+            master=self.tkconsole.text)
+        
     def runcommand(self, code):
         "Run the code without invoking the debugger"
         # The code better not raise an exception!
         if self.tkconsole.executing:
-            tkMessageBox.showerror(
-                "Already executing",
-                "The Python Shell window is already executing a command; "
-                "please wait until it is finished.",
-                master=self.tkconsole.text)
+            display_executing_dialog()
             return 0
         if self.rpcclt:
             self.rpcclt.remotecall("exec", "runcode", (code,), {})
@@ -402,11 +422,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
     def runcode(self, code):
         "Override base class method"
         if self.tkconsole.executing:
-            tkMessageBox.showerror(
-                "Already executing",
-                "The Python Shell window is already executing a command; "
-                "please wait until it is finished.",
-                master=self.tkconsole.text)
+            display_executing_dialog()
             return
         #
         self.checklinecache()
@@ -509,7 +525,7 @@ class PyShell(OutputWindow):
         self.history = self.History(self.text)
 
         if use_subprocess:
-            self.interp.spawn_subprocess()
+            self.interp.start_subprocess()
 
     reading = 0
     executing = 0
