@@ -57,6 +57,9 @@ Extension modules
 Library
 -------
 
+- distutils build/build_scripts now has an -e option to specify the
+  path to the Python interpreter for installed scripts.
+
 - PEP 292 classes Template and SafeTemplate are added to the string module.
 
 - tarfile now generates GNU tar files by default.

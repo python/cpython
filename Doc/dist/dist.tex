@@ -640,7 +640,9 @@ started from the command line.  Scripts don't require Distutils to do
 anything very complicated.  The only clever feature is that if the
 first line of the script starts with \code{\#!} and contains the word
 ``python'', the Distutils will adjust the first line to refer to the
-current interpreter location.
+current interpreter location. By default, it is replaced with the
+current interpreter location.  The '--executable=/-e' switch will
+allow the interpreter path to be explicitly overridden.
 
 The \option{scripts} option simply is a list of files to be handled
 in this way.  From the PyXML setup script:
