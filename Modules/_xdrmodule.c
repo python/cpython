@@ -17,7 +17,6 @@
 
 #include "Python.h"
 
-#include <netconfig.h>
 #include <rpc/rpc.h>
 #include <rpc/xdr.h>
 
@@ -131,7 +130,7 @@ unpack_double(self, args)
     double value;
     char* string;
     int strlen;
-    PyObject* rtn;
+    PyObject* rtn = NULL;
 
     if (!PyArg_ParseTuple(args, "s#", &string, &strlen))
         return NULL;
