@@ -197,7 +197,7 @@ static PyTypeObject spamdict_type = {
 	0,					/* tp_new */
 };
 
-PyObject *
+static PyObject *
 spam_bench(PyObject *self, PyObject *args)
 {
 	PyObject *obj, *name, *res;
