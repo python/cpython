@@ -1,6 +1,6 @@
 # Python test set -- part 4b, built-in functions n-z
 
-from test_support import *
+from test.test_support import TestFailed, fcmp, TESTFN, unlink, vereq
 
 print 'oct'
 if oct(100) != '0144': raise TestFailed, 'oct(100)'

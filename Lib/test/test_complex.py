@@ -1,4 +1,4 @@
-from test_support import TestFailed, vereq
+from test.test_support import TestFailed, vereq
 from random import random
 
 # These tests ensure that complex math does the right thing; tests of

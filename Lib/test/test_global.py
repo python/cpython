@@ -1,6 +1,6 @@
 """Verify that warnings are issued for global statements following use."""
 
-from test_support import check_syntax
+from test.test_support import check_syntax
 
 import warnings
 

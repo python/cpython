@@ -1,4 +1,4 @@
-from test_support import verify,verbose
+from test.test_support import verify,verbose
 import httplib
 import StringIO
 

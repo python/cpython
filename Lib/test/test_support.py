@@ -1,5 +1,8 @@
 """Supporting definitions for the Python regression test."""
 
+if __name__ != 'test.test_support':
+    raise ImportError, 'test_support must be imported from the test package'
+
 import sys
 
 class Error(Exception):

@@ -267,7 +267,7 @@ try:
 except RuntimeError, v:
     print v
 
-from re_tests import *
+from test.re_tests import *
 
 if verbose:
     print 'Running re_tests test suite'

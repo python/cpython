@@ -1,4 +1,4 @@
-from test_support import TestFailed, have_unicode
+from test.test_support import TestFailed, have_unicode
 
 class base_set:
 

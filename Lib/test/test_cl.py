@@ -3,7 +3,7 @@
    Roger E. Masse
 """
 import cl
-from test_support import verbose
+from test.test_support import verbose
 
 clattrs = ['ADDED_ALGORITHM_ERROR', 'ALAW', 'ALGORITHM_ID',
 'ALGORITHM_VERSION', 'AUDIO', 'AWARE_ERROR', 'AWARE_MPEG_AUDIO',

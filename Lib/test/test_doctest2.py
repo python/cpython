@@ -93,7 +93,7 @@ class C(object):
     clsm = classmethod(clsm)
 
 def test_main():
-    import test_doctest2
+    from test import test_doctest2
     EXPECTED = 19
     f, t = test_support.run_doctest(test_doctest2)
     if t != EXPECTED:

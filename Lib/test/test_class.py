@@ -1,6 +1,6 @@
 "Test the functionality of Python classes implementing operators."
 
-from test_support import TestFailed
+from test.test_support import TestFailed
 
 testmeths = [
 

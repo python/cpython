@@ -1,7 +1,7 @@
 import warnings
 warnings.filterwarnings("ignore", "strop functions are obsolete;",
                         DeprecationWarning,
-                        r'test_strop|unittest')
+                        r'test.test_strop|unittest')
 import strop
 import unittest
 from test import test_support

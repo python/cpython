@@ -1,6 +1,6 @@
 """Test the binascii C module."""
 
-from test_support import verify, verbose, have_unicode
+from test.test_support import verify, verbose, have_unicode
 import binascii
 
 # Show module doc string

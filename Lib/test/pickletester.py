@@ -1,5 +1,5 @@
 import unittest
-from test_support import TestFailed, have_unicode
+from test.test_support import TestFailed, have_unicode
 
 class C:
     def __cmp__(self, other):

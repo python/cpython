@@ -1,6 +1,6 @@
 # Test the frozen module defined in frozen.c.
 
-from test_support import TestFailed
+from test.test_support import TestFailed
 import sys, os
 
 try:

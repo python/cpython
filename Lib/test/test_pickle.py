@@ -1,7 +1,7 @@
 import pickle
 import unittest
 from cStringIO import StringIO
-from pickletester import AbstractPickleTests, AbstractPickleModuleTests
+from test.pickletester import AbstractPickleTests, AbstractPickleModuleTests
 from test import test_support
 
 class PickleTests(AbstractPickleTests, AbstractPickleModuleTests):
