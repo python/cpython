@@ -108,8 +108,8 @@ typedef DBCHAR (*iso2022_encode_func)(const ucs4_t *data, int *length);
 
 struct iso2022_designation {
 	unsigned char mark;
-	char plane;
-	char width;
+	unsigned char plane;
+	unsigned char width;
 	iso2022_init_func initializer;
 	iso2022_decode_func decoder;
 	iso2022_encode_func encoder;
