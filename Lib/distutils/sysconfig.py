@@ -246,7 +246,7 @@ def _init_posix():
     # On AIX, there are wrong paths to the linker scripts in the Makefile
     # -- these paths are relative to the Python source, but when installed
     # the scripts are in another directory.
-    if sys.platform: # == 'aix4':          # what about AIX 3.x ?
+    if sys.platform == 'aix4':          # what about AIX 3.x ?
         # Linker script is in the config directory, not in Modules as the
         # Makefile says.
         python_lib = get_python_lib(standard_lib=1)
