@@ -772,9 +772,18 @@ static PyObject *
 listpop(PyListObject *self, PyObject *args)
 {
 	int i = -1;
-	PyObject *v;
-	if (!PyArg_ParseTuple(args, "|i:pop", &i))
+	PyObject *v, *arg = NULL;
+
+	if (!PyArg_UnpackTuple(args, "pop", 0, 1, &arg))
 		return NULL;
+	if (arg != NULL) {
+		if (PyInt_Check(arg))
+			i = (int)(PyInt_AS_LONG((PyIntObject*) arg));
+		else {
+			PyErr_SetString(PyExc_TypeError, "an integer is required");
+			return NULL;
+		}
+	}
 	if (self->ob_size == 0) {
 		/* Special-case most common failure cause */
 		PyErr_SetString(PyExc_IndexError, "pop from empty list");
