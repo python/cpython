@@ -290,6 +290,15 @@ subtype_traverse(PyObject *self, visitproc visit, void *arg)
 		}
 	}
 
+	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
+		/* For a heaptype, the instances count as references
+		   to the type.  Traverse the type so the collector
+		   can find cycles involving this link. */
+		int err = visit((PyObject *)type, arg);
+		if (err)
+			return err;
+	}
+
 	if (basetraverse)
 		return basetraverse(self, visit, arg);
 	return 0;
@@ -332,12 +341,8 @@ subtype_clear(PyObject *self)
 		assert(base);
 	}
 
-	if (type->tp_dictoffset != base->tp_dictoffset) {
-		PyObject **dictptr = _PyObject_GetDictPtr(self);
-		if (dictptr && *dictptr) {
-			PyDict_Clear(*dictptr);
-		}
-	}
+	/* There's no need to clear the instance dict (if any);
+	   the collector will call its tp_clear handler. */
 
 	if (baseclear)
 		return baseclear(self);
@@ -1483,13 +1488,11 @@ static char type_doc[] =
 static int
 type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 {
-	etype *et;
 	int err;
 
-	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
-		return 0;
-
-	et = (etype *)type;
+	/* Because of type_is_gc(), the collector only calls this
+	   for heaptypes. */
+	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
 #define VISIT(SLOT) \
 	if (SLOT) { \
@@ -1503,8 +1506,11 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 	VISIT(type->tp_mro);
 	VISIT(type->tp_bases);
 	VISIT(type->tp_base);
-	VISIT(type->tp_subclasses);
-	VISIT(et->slots);
+
+	/* There's no need to visit type->tp_subclasses or
+	   ((etype *)type)->slots, because they can't be involved
+	   in cycles; tp_subclasses is a list of weak references,
+	   and slots is a tuple of strings. */
 
 #undef VISIT
 
@@ -1514,13 +1520,11 @@ type_traverse(PyTypeObject *type, visitproc visit, void *arg)
 static int
 type_clear(PyTypeObject *type)
 {
-	etype *et;
 	PyObject *tmp;
 
-	if (!(type->tp_flags & Py_TPFLAGS_HEAPTYPE))
-		return 0;
-
-	et = (etype *)type;
+	/* Because of type_is_gc(), the collector only calls this
+	   for heaptypes. */
+	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
 #define CLEAR(SLOT) \
 	if (SLOT) { \
@@ -1529,18 +1533,32 @@ type_clear(PyTypeObject *type)
 		Py_DECREF(tmp); \
 	}
 
-	CLEAR(type->tp_dict);
-	CLEAR(type->tp_cache);
-	CLEAR(type->tp_mro);
-	CLEAR(type->tp_bases);
-	CLEAR(type->tp_base);
-	CLEAR(type->tp_subclasses);
-	CLEAR(et->slots);
+	/* The only field we need to clear is tp_mro, which is part of a
+	   hard cycle (its first element is the class itself) that won't
+	   be broken otherwise (it's a tuple and tuples don't have a
+	   tp_clear handler).  None of the other fields need to be
+	   cleared, and here's why:
 
-	if (type->tp_doc != NULL) {
-		PyObject_FREE(type->tp_doc);
-		type->tp_doc = NULL;
-	}
+	   tp_dict:
+	       It is a dict, so the collector will call its tp_clear.
+
+	   tp_cache:
+	       Not used; if it were, it would be a dict.
+
+	   tp_bases, tp_base:
+	       If these are involved in a cycle, there must be at least
+	       one other, mutable object in the cycle, e.g. a base
+	       class's dict; the cycle will be broken that way.
+
+	   tp_subclasses:
+	       A list of weak references can't be part of a cycle; and
+	       lists have their own tp_clear.
+
+	   slots (in etype):
+	       A tuple of strings can't be part of a cycle.
+	*/
+
+	CLEAR(type->tp_mro);
 
 #undef CLEAR
 
@@ -2157,10 +2175,8 @@ PyType_Ready(PyTypeObject *type)
 	PyTypeObject *base;
 	int i, n;
 
-	if (type->tp_flags & Py_TPFLAGS_READY) {
-		assert(type->tp_dict != NULL);
+	if (type->tp_flags & Py_TPFLAGS_READY)
 		return 0;
-	}
 	assert((type->tp_flags & Py_TPFLAGS_READYING) == 0);
 
 	type->tp_flags |= Py_TPFLAGS_READYING;
