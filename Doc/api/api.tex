@@ -1012,13 +1012,13 @@ more detailed way with the interpreter.
 \begin{cfuncdesc}{struct _node *}{PyParser_SimpleParseFile}{FILE *, char *, int}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{}{PyObject *PyRun_String}{char *, int, PyObject *, PyObject *}
+\begin{cfuncdesc}{PyObject *}{PyRun_String}{char *, int, PyObject *, PyObject *}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{}{PyObject *PyRun_File}{FILE *, char *, int, PyObject *, PyObject *}
+\begin{cfuncdesc}{PyObject *}{PyRun_File}{FILE *, char *, int, PyObject *, PyObject *}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{}{PyObject *Py_CompileString}{char *, char *, int}
+\begin{cfuncdesc}{PyObject *}{Py_CompileString}{char *, char *, int}
 \end{cfuncdesc}
 
 
@@ -2670,7 +2670,7 @@ returns true if it's argument is a \code{PyLongObject}
 
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject *}{*PyLong_FromString}{char *, char **, int}
+\begin{cfuncdesc}{PyObject *}{PyLong_FromString}{char *, char **, int}
 
 \end{cfuncdesc}
 
