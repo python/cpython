@@ -36,7 +36,7 @@ sizeof_error(const char* fatname, const char* typename,
         int expected, int got)
 {
 	char buf[1024];
-	PyOS_snprintf(buf, sizeof(buf), 
+	PyOS_snprintf(buf, sizeof(buf),
 		"%.200s #define == %d but sizeof(%.200s) == %d",
 		fatname, expected, typename, got);
 	PyErr_SetString(TestError, buf);
@@ -326,13 +326,49 @@ test_u_code(PyObject *self)
 	    len != PyUnicode_GET_SIZE(obj))
         	return raiseTestError("test_u_code",
 			"u# code returned wrong values for u'test'");
-	
+
 	Py_DECREF(tuple);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
 
 #endif
+
+/* Simple test of _PyLong_NumBits. */
+static PyObject *
+test_long_numbits(PyObject *self)
+{
+	struct pair {
+		long input;
+		size_t output;
+	} testcases[] = {{0, 1},
+			 {1L, 2},
+			 {-1L, 2},
+			 {2L, 3},
+			 {-2L, 3},
+			 {3L, 3},
+			 {-3L, 3},
+			 {4L, 4},
+			 {-4L, 4},
+			 {0x7fffL, 16},		/* one Python long digit */
+			 {-0x7fffL, 16},
+			 {0xfffffffL, 29},
+			 {-0xfffffffL, 29}};
+	int i;
+
+	for (i = 0; i < sizeof(testcases) / sizeof(struct pair); ++i) {
+		long input = testcases[i].input;
+		PyObject *plong = PyLong_FromLong(input);
+		size_t nbits = _PyLong_NumBits(plong);
+
+		Py_DECREF(plong);
+		if (nbits != testcases[i].output)
+			return raiseTestError("test_long_numbits",
+					      "wrong result");
+	}
+	Py_INCREF(Py_None);
+	return Py_None;
+}
 
 static PyObject *
 raise_exception(PyObject *self, PyObject *args)
@@ -366,6 +402,7 @@ static PyMethodDef TestMethods[] = {
 	{"test_list_api",	(PyCFunction)test_list_api,	 METH_NOARGS},
 	{"test_dict_iteration",	(PyCFunction)test_dict_iteration,METH_NOARGS},
 	{"test_long_api",	(PyCFunction)test_long_api,	 METH_NOARGS},
+	{"test_long_numbits",	(PyCFunction)test_long_numbits,	 METH_NOARGS},
 #ifdef HAVE_LONG_LONG
 	{"test_longlong_api",	(PyCFunction)test_longlong_api,	 METH_NOARGS},
 	{"test_L_code",		(PyCFunction)test_L_code,	 METH_NOARGS},
