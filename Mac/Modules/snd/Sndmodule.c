@@ -69,8 +69,13 @@ NumVer_New(NumVersion nv)
 {
 	return Py_BuildValue("iiiii",
 	                     nv.majorRev,
+#ifdef THINK_C
 	                     nv.minorRev,
 	                     nv.bugFixRev,
+#else
+	                     (nv.minorAndBugRev>>4) & 0xf,
+	                     nv.minorAndBugRev & 0xf,
+#endif
 	                     nv.stage,
 	                     nv.nonRelRev);
 }
@@ -171,7 +176,7 @@ static PyObject *SndCh_SndPlay(_self, _args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	Handle sndHdl;
+	SndListHandle sndHdl;
 	Boolean async;
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      ResObj_Convert, &sndHdl,
@@ -277,7 +282,7 @@ static PyMethodDef SndCh_methods[] = {
 	{"SndDoImmediate", (PyCFunction)SndCh_SndDoImmediate, 1,
 	 "(SndCommand cmd) -> None"},
 	{"SndPlay", (PyCFunction)SndCh_SndPlay, 1,
-	 "(Handle sndHdl, Boolean async) -> None"},
+	 "(SndListHandle sndHdl, Boolean async) -> None"},
 	{"SndStartFilePlay", (PyCFunction)SndCh_SndStartFilePlay, 1,
 	 "(short fRefNum, short resNum, long bufferSize, Boolean async) -> None"},
 	{"SndPauseFilePlay", (PyCFunction)SndCh_SndPauseFilePlay, 1,
@@ -331,7 +336,7 @@ static PyObject *Snd_SndNewChannel(_self, _args)
 	                      &init,
 	                      &userRoutine))
 		return NULL;
-	if (userRoutine != Py_None && !callable(userRoutine))
+	if (userRoutine != Py_None && !PyCallable_Check(userRoutine))
 	{
 		PyErr_SetString(PyExc_TypeError, "callback must be callable");
 		goto userRoutine__error__;
@@ -399,51 +404,6 @@ static PyObject *Snd_GetSoundVol(_self, _args)
 	GetSoundVol(&level);
 	_res = Py_BuildValue("h",
 	                     level);
-	return _res;
-}
-
-static PyObject *Snd_StartSound(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	char *synthRec__in__;
-	long synthRec__len__;
-	if (!PyArg_ParseTuple(_args, "s#",
-	                      &synthRec__in__, &synthRec__len__))
-		return NULL;
-	StartSound(synthRec__in__, synthRec__len__,
-	           (SndCompletionProcPtr)0);
-	Py_INCREF(Py_None);
-	_res = Py_None;
- synthRec__error__: ;
-	return _res;
-}
-
-static PyObject *Snd_StopSound(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	StopSound();
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *Snd_SoundDone(_self, _args)
-	PyObject *_self;
-	PyObject *_args;
-{
-	PyObject *_res = NULL;
-	Boolean _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = SoundDone();
-	_res = Py_BuildValue("b",
-	                     _rv);
 	return _res;
 }
 
@@ -704,12 +664,6 @@ static PyMethodDef Snd_methods[] = {
 	 "(short level) -> None"},
 	{"GetSoundVol", (PyCFunction)Snd_GetSoundVol, 1,
 	 "() -> (short level)"},
-	{"StartSound", (PyCFunction)Snd_StartSound, 1,
-	 "(Buffer synthRec) -> None"},
-	{"StopSound", (PyCFunction)Snd_StopSound, 1,
-	 "() -> None"},
-	{"SoundDone", (PyCFunction)Snd_SoundDone, 1,
-	 "() -> (Boolean _rv)"},
 	{"SndSoundManagerVersion", (PyCFunction)Snd_SndSoundManagerVersion, 1,
 	 "() -> (NumVersion _rv)"},
 	{"SndManagerStatus", (PyCFunction)Snd_SndManagerStatus, 1,
