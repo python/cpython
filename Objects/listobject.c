@@ -652,20 +652,16 @@ listinsert(PyListObject *self, PyObject *args)
 	PyObject *v;
 	if (!PyArg_ParseTuple(args, "iO:insert", &i, &v))
 		return NULL;
-	if (ins1(self, i, v) == 0) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
+	if (ins1(self, i, v) == 0)
+		Py_RETURN_NONE;
 	return NULL;
 }
 
 static PyObject *
 listappend(PyListObject *self, PyObject *v)
 {
-	if (app1(self, v) == 0) {
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
+	if (app1(self, v) == 0)
+		Py_RETURN_NONE;
 	return NULL;
 }
 
@@ -2089,8 +2085,7 @@ listreverse(PyListObject *self)
 {
 	if (self->ob_size > 1)
 		reverse_slice(self->ob_item, self->ob_item + self->ob_size);
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 int
@@ -2190,10 +2185,9 @@ listremove(PyListObject *self, PyObject *v)
 		int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
 		if (cmp > 0) {
 			if (list_ass_slice(self, i, i+1,
-					   (PyObject *)NULL) != 0)
-				return NULL;
-			Py_INCREF(Py_None);
-			return Py_None;
+					   (PyObject *)NULL) == 0)
+				Py_RETURN_NONE;
+			return NULL;
 		}
 		else if (cmp < 0)
 			return NULL;
