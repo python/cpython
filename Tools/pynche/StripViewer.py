@@ -129,6 +129,7 @@ class RightArrow(LeftArrow):
 	text = self._canvas.create_text(
 	    x - self._ARROWWIDTH + 15,		  # TBD: kludge
 	    self._ARROWHEIGHT - self._TEXTYOFFSET,
+            justify=RIGHT,
 	    text='128',
 	    tags=self._TAG)
 	return arrow, text
