@@ -59,8 +59,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
     dirname = os.path.dirname(result)
     for p in std_dirs:
         # Ensure path doesn't end with path separator
-        if p.endswith(os.sep):
-            p = p.strip(os.sep)
+        p = p.rstrip(os.sep)
         if p == dirname:
             return [ ]
 
@@ -68,8 +67,7 @@ def find_library_file(compiler, libname, std_dirs, paths):
     # so we have to figure out which one.
     for p in paths:
         # Ensure path doesn't end with path separator
-        if p.endswith(os.sep):
-            p = p.strip(os.sep)
+        p = p.rstrip(os.sep)
         if p == dirname:
             return [p]
     else:
