@@ -87,6 +87,7 @@ FAT_INSTRUCTIONS=[
 PLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":PlugIns:ctb.ppc.µ",
+		":PlugIns:gdbm.ppc.µ",
 		":PlugIns:imgmodules.ppc.µ",
 		":PlugIns:macspeech.ppc.µ",
 		":PlugIns:toolboxmodules.ppc.µ",
@@ -98,6 +99,7 @@ PLUGIN_INSTRUCTIONS=[
 CFM68KPLUGIN_INSTRUCTIONS=[
 	(buildmwproject, "CWIE", [
 		":PlugIns:ctb.CFM68K.µ",
+		":PlugIns:gdbm.CFM68K.µ",
 		":PlugIns:imgmodules.CFM68K.µ",
 		":PlugIns:toolboxmodules.CFM68K.µ",
 		":PlugIns:qtmodules.CFM68K.µ",
