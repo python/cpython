@@ -118,8 +118,10 @@ newsadobject(arg)
 
 	/* Create and initialize the object */
 	xp = PyObject_NEW(sadobject, &Sadtype);
-	if (xp == NULL)
+	if (xp == NULL) {
+		close(fd);
 		return NULL;
+	}
 	xp->x_fd = fd;
 	xp->x_icount = xp->x_ocount = 0;
 	xp->x_isctl = (imode < 0);
@@ -162,9 +164,9 @@ sad_read(self, args)
 	}
 #if 0
 	/* TBD: why print this message if you can handle the condition?
-	   assume it's debugging info which we can just as well get rid
-	   of.  in any case this message should *not* be using printf!
-	*/
+	 * assume it's debugging info which we can just as well get rid
+	 * of.  in any case this message should *not* be using printf!
+	 */
 	if (count != size)
 		printf("sunaudio: funny read rv %d wtd %d\n", count, size);
 #endif
@@ -211,7 +213,9 @@ sad_getinfo(self, args)
 
 	if (!PyArg_Parse(args, ""))
 		return NULL;
-	rv = sads_alloc();
+	if (!(rv = sads_alloc()))
+		return NULL;
+
 	if (ioctl(self->x_fd, AUDIO_GETINFO, &rv->ai) < 0) {
 		PyErr_SetFromErrno(SunAudioError);
 		Py_DECREF(rv);
@@ -501,7 +505,8 @@ initsunaudiodev()
 	m = Py_InitModule("sunaudiodev", sunaudiodev_methods);
 	d = PyModule_GetDict(m);
 	SunAudioError = PyString_FromString("sunaudiodev.error");
-	if ( SunAudioError == NULL ||
-	     PyDict_SetItemString(d, "error", SunAudioError) )
-		Py_FatalError("can't define sunaudiodev.error");
+	if (SunAudioError)
+		PyDict_SetItemString(d, "error", SunAudioError);
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize sunaudiodev module");
 }
