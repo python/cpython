@@ -13,8 +13,10 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 	if (k == NULL)
 		goto fail;
 	v = PyDict_GetItem(st->st_symbols, k);
-	if (v) /* XXX could check that name, type, lineno match */
-	    return v;
+	if (v) /* XXX could check that name, type, lineno match */ {
+		Py_INCREF(v);
+		return v;
+	}
 	
 	ste = (PySymtableEntryObject *)PyObject_New(PySymtableEntryObject,
 						    &PySymtableEntry_Type);
@@ -69,7 +71,7 @@ PySymtableEntry_New(struct symtable *st, char *name, int type, int lineno)
 
 	if (PyDict_SetItem(st->st_symbols, ste->ste_id, (PyObject *)ste) < 0)
 	    goto fail;
-
+	
 	return (PyObject *)ste;
  fail:
 	Py_XDECREF(ste);
