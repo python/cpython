@@ -37,6 +37,9 @@ Extension Modules
 Library
 -------
 
+- Patch #1117454: Remove code to special-case cookies without values
+  in LWPCookieJar.
+
 - Patch #1117339: Add cookielib special name tests.
 
 - Patch #1112812: Make bsddb/__init__.py more friendly for modulefinder.
