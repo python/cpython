@@ -1116,7 +1116,7 @@ class Text(Widget):
 			self.tk.call(self._w, 'tag', 'names', index))
 	def tag_nextrange(self, tagName, index1, index2=None):
 		return self.tk.splitlist(self.tk.call(
-			self._w, 'tag', 'nextrange', index1, index2))
+			self._w, 'tag', 'nextrange', tagName, index1, index2))
 	def tag_raise(self, tagName, aboveThis=None):
 		self.tk.call(
 			self._w, 'tag', 'raise', tagName, aboveThis)
