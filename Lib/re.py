@@ -86,7 +86,7 @@ class RegexObject:
 	regs = self.code.match(string, pos, ANCHORED)
 	if regs is None:
 	    return None
-	self.num_regs=len(regs)/2
+	self.num_regs=len(regs)
 	return MatchObject(self,
 			   string,
 			   pos,
