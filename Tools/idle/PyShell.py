@@ -3,6 +3,7 @@
 import os
 import sys
 import string
+import re
 
 import linecache
 from code import InteractiveInterpreter
@@ -13,6 +14,27 @@ import tkMessageBox
 from EditorWindow import fixwordbreaks
 from FileList import FileList, MultiEditorWindow, MultiIOBinding
 from ColorDelegator import ColorDelegator
+
+
+class PyShellEditorWindow(MultiEditorWindow):
+      
+    def fixedwindowsmenu(self, wmenu):
+        wmenu.add_command(label="Python Shell", command=self.flist.open_shell)
+
+
+class PyShellFileList(FileList):
+    
+    EditorWindow = PyShellEditorWindow
+    
+    pyshell = None
+
+    def open_shell(self):
+        if self.pyshell:
+            self.pyshell.wakeup()
+        else:
+            self.pyshell = PyShell(self)
+            self.pyshell.begin()
+        return self.pyshell
 
 
 class ModifiedIOBinding(MultiIOBinding):
@@ -134,12 +156,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole.console.write(s)
        
 
-class PyShell(MultiEditorWindow):
+class PyShell(PyShellEditorWindow):
 
     # Override classes
     ColorDelegator = ModifiedColorDelegator
     IOBinding = ModifiedIOBinding
     
+    # Override menu bar specs
+    menu_specs = PyShellEditorWindow.menu_specs[:]
+    menu_specs.insert(len(menu_specs)-1, ("debug", "Debug"))
+   
     # New class
     from History import History
 
@@ -149,9 +175,9 @@ class PyShell(MultiEditorWindow):
             root = Tk()
             fixwordbreaks(root)
             root.withdraw()
-            flist = FileList(root)
+            flist = PyShellFileList(root)
 
-        MultiEditorWindow.__init__(self, flist, None, None)
+        PyShellEditorWindow.__init__(self, flist, None, None)
         self.config_colors()
 
         import __builtin__
@@ -165,6 +191,8 @@ class PyShell(MultiEditorWindow):
         text.bind("<<interrupt-execution>>", self.cancel_callback)
         text.bind("<<beginning-of-line>>", self.home_callback)
         text.bind("<<end-of-file>>", self.eof_callback)
+        text.bind("<<goto-traceback-line>>", self.goto_traceback_line)
+        text.bind("<<open-stack-viewer>>", self.open_stack_viewer)
 
         sys.stdout = PseudoFile(self, "stdout")
         ##sys.stderr = PseudoFile(self, "stderr")
@@ -222,8 +250,9 @@ class PyShell(MultiEditorWindow):
             if self.reading:
                 self.top.quit()
             return "cancel"
-        reply = MultiEditorWindow.close(self)
+        reply = PyShellEditorWindow.close(self)
         if reply != "cancel":
+            self.flist.pyshell = None
             # Restore std streams
             sys.stdout = sys.__stdout__
             sys.stderr = sys.__stderr__
@@ -246,7 +275,7 @@ class PyShell(MultiEditorWindow):
                 title = title + " *"
         self.top.wm_title(title)
 
-    def interact(self):
+    def begin(self):
         self.resetoutput()
         self.write("Python %s on %s\n%s\n" %
                    (sys.version, sys.platform, sys.copyright))
@@ -257,6 +286,9 @@ class PyShell(MultiEditorWindow):
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None
+    
+    def interact(self):
+        self.begin()
         self.top.mainloop()
 
     def readline(self):
@@ -415,6 +447,60 @@ class PyShell(MultiEditorWindow):
             self.canceled = 0
             raise KeyboardInterrupt
         return self._cancel_check
+    
+    file_line_pats = [
+        r'File "([^"]*)", line (\d+)',
+        r'([^\s]+)\((\d+)\)',
+        r'([^\s]+):\s*(\d+):',
+    ]
+    
+    file_line_progs = None
+    
+    def goto_traceback_line(self, event=None):
+        if self.file_line_progs is None:
+            l = []
+            for pat in self.file_line_pats:
+                l.append(re.compile(pat))
+            self.file_line_progs = l
+        # x, y = self.event.x, self.event.y
+        # self.text.mark_set("insert", "@%d,%d" % (x, y))
+        line = self.text.get("insert linestart", "insert lineend")
+        for prog in self.file_line_progs:
+            m = prog.search(line)
+            if m:
+                break
+        else:
+            tkMessageBox.showerror("No traceback line",
+                "The line you point at doesn't look "
+                "like an error message.",
+                master=self.text)
+            return
+        filename, lineno = m.group(1, 2)
+        try:
+            f = open(filename, "r")
+            f.close()
+        except IOError, msg:
+            self.text.bell()
+            return
+        edit = self.flist.open(filename)
+        try:
+            lineno = int(lineno)
+        except ValueError, msg:
+            self.text.bell()
+            return
+        edit.gotoline(lineno)
+    
+    def open_stack_viewer(self, event=None):
+        try:
+            sys.last_traceback
+        except:
+            tkMessageBox.showerror("No stack trace",
+                "There is no stack trace yet.\n"
+                "(sys.last_traceback is not defined)",
+                master=self.text)
+            return
+        from StackViewer import StackViewer
+        sv = StackViewer(self.root, self.flist)
 
     def showprompt(self):
         self.resetoutput()
@@ -464,12 +550,14 @@ def main():
     root = Tk()
     fixwordbreaks(root)
     root.withdraw()
-    flist = FileList(root)
+    flist = PyShellFileList(root)
     if sys.argv[1:]:
         for filename in sys.argv[1:]:
             flist.open(filename)
     t = PyShell(flist)
-    t.interact()
+    flist.pyshell = t
+    t.begin()
+    root.mainloop()
 
 if __name__ == "__main__":
     main()
