@@ -172,6 +172,12 @@ PyCF_Python2CF_sequence(PyObject *src, CFArrayRef *dst) {
 	PyObject *item_py = NULL;
 	int size, i;
 	
+	if( !PySequence_Check(src) ) {
+		PyErr_Format(PyExc_TypeError,
+			"Cannot convert %.500s objects to CFArray",
+			src->ob_type->tp_name);
+		return 0;
+	}
 	size = PySequence_Size(src);
 	rv = CFArrayCreateMutable((CFAllocatorRef)NULL, size, &kCFTypeArrayCallBacks);
 	if (rv == NULL) {
@@ -205,6 +211,12 @@ PyCF_Python2CF_mapping(PyObject *src, CFDictionaryRef *dst) {
 	PyObject *item_py = NULL, *key_py = NULL, *value_py = NULL;
 	int size, i;
 	
+	if( !PyMapping_Check(src) ) {
+		PyErr_Format(PyExc_TypeError,
+			"Cannot convert %.500s objects to CFDictionary",
+			src->ob_type->tp_name);
+		return 0;
+	}
 	size = PyMapping_Size(src);
 	rv = CFDictionaryCreateMutable((CFAllocatorRef)NULL, size,
 					&kCFTypeDictionaryKeyCallBacks,
@@ -241,10 +253,12 @@ err:
 int
 PyCF_Python2CF_simple(PyObject *src, CFTypeRef *dst) {
 	
+#if 0
 	if (PyObject_HasAttrString(src, "CFType")) {
 		*dst = PyObject_CallMethod(src, "CFType", "");
 		return (*dst != NULL);
 	}
+#endif
 	if (PyString_Check(src) || PyUnicode_Check(src)) 
 		return PyCF_Python2CF_string(src, (CFStringRef *)dst);
 	if (PyBool_Check(src)) {
@@ -266,7 +280,7 @@ PyCF_Python2CF_simple(PyObject *src, CFTypeRef *dst) {
 	}
 			
 	PyErr_Format(PyExc_TypeError,
-		  "Cannot convert %.500s objects to CF",
+		  "Cannot convert %.500s objects to CFType",
 				     src->ob_type->tp_name);
 	return 0;
 }
@@ -291,7 +305,7 @@ PyCF_Python2CF_string(PyObject *src, CFStringRef *dst) {
 	}
 err:
 	PyErr_Format(PyExc_TypeError,
-		  "Cannot convert %.500s objects to CF",
+		  "Cannot convert %.500s objects to CFString",
 				     src->ob_type->tp_name);
 	return 0;
 }
