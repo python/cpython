@@ -64,6 +64,12 @@ class TreeNode:
         self.x = self.y = None
         self.iconimages = {} # cache of PhotoImage instances for icons
 
+    def destroy(self):
+        for c in self.children[:]:
+            self.children.remove(c)
+            c.destroy()
+        self.parent = None
+
     def geticonimage(self, name):
         try:
             return self.iconimages[name]
