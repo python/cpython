@@ -1,5 +1,5 @@
 /*
-  winreg.c
+  _winreg.c
 
   Windows Registry access module for Python.
 
@@ -1403,10 +1403,10 @@ inskey(PyObject * d, char * name, HKEY key)
 
 #define ADD_KEY(val) inskey(d, #val, val)
 
-__declspec(dllexport) void initwinreg(void)
+__declspec(dllexport) void init_winreg(void)
 {
 	PyObject *m, *d;
-	m = Py_InitModule3("winreg", winreg_methods, module_doc);
+	m = Py_InitModule3("_winreg", winreg_methods, module_doc);
 	d = PyModule_GetDict(m);
 	PyHKEY_Type.ob_type = &PyType_Type;
 	PyHKEY_Type.tp_doc = PyHKEY_doc;
