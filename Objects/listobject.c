@@ -345,24 +345,6 @@ list_repeat(a, n)
 }
 
 static int
-list_ass_item(a, i, v)
-	listobject *a;
-	int i;
-	object *v;
-{
-	if (i < 0 || i >= a->ob_size) {
-		err_setstr(IndexError, "list assignment index out of range");
-		return -1;
-	}
-	if (v == NULL)
-		return list_ass_slice(a, i, i+1, v);
-	INCREF(v);
-	DECREF(a->ob_item[i]);
-	a->ob_item[i] = v;
-	return 0;
-}
-
-static int
 list_ass_slice(a, ilow, ihigh, v)
 	listobject *a;
 	int ilow, ihigh;
@@ -424,6 +406,24 @@ list_ass_slice(a, ilow, ihigh, v)
 	}
 	return 0;
 #undef b
+}
+
+static int
+list_ass_item(a, i, v)
+	listobject *a;
+	int i;
+	object *v;
+{
+	if (i < 0 || i >= a->ob_size) {
+		err_setstr(IndexError, "list assignment index out of range");
+		return -1;
+	}
+	if (v == NULL)
+		return list_ass_slice(a, i, i+1, v);
+	INCREF(v);
+	DECREF(a->ob_item[i]);
+	a->ob_item[i] = v;
+	return 0;
 }
 
 static object *
