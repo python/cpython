@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 # This program reads all *.py and test/*.py in "libDir", and
 # copies those files with illegal DOS names to libDir/dos_8x3.
