@@ -10,6 +10,7 @@ uses_relative = ['ftp', 'http', 'gopher', 'nntp', 'wais', 'file',
 		 'https', 'shttp',
 		 'prospero', '']
 uses_netloc = ['ftp', 'http', 'gopher', 'nntp', 'telnet', 'wais',
+	       'file',
 	       'https', 'shttp', 'snews',
 	       'prospero', '']
 non_hierarchical = ['gopher', 'hdl', 'mailto', 'news', 'telnet', 'wais',
