@@ -1,6 +1,7 @@
 """ Test script for the Unicode implementation.
 
 Written by Bill Tutt.
+Modified for Python 2.0 by Fredrik Lundh (fredrik@pythonware.com)
 
 (c) Copyright CNRI, All Rights Reserved. NO WARRANTY.
 
@@ -46,23 +47,24 @@ except UnicodeError, v:
     print v
 print "done."
 
-import ucnhash
+import unicodedata
 
 print "Testing name to code mapping....",
 for char in "SPAM":
     name = "LATIN SMALL LETTER %s" % char
-    code = ucnhash.getcode(name)
-    verify(ucnhash.getname(code) == name)
+    code = unicodedata.lookup(name)
+    verify(unicodedata.name(code) == name)
 print "done."
 
 print "Testing code to name mapping for all characters....",
 count = 0
 for code in range(65536):
     try:
-        name = ucnhash.getname(code)
-        verify(ucnhash.getcode(name) == code)
+        char = unichr(code)
+        name = unicodedata.name(char)
+        verify(unicodedata.lookup(name) == char)
         count += 1
-    except ValueError:
+    except (KeyError, ValueError):
         pass
 print "done."
 
@@ -77,7 +79,6 @@ verify(u"\N{HALFWIDTH KATAKANA SEMI-VOICED SOUND MARK}" == u"\uFF9F")
 verify(u"\N{FULLWIDTH LATIN SMALL LETTER A}" == u"\uFF41")
 """
 print "done."
-
 
 # strict error testing:
 print "Testing unicode character name expansion strict error handling....",

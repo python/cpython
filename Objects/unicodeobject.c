@@ -1103,7 +1103,7 @@ int unicodeescape_decoding_error(const char **source,
     }
 }
 
-static _PyUnicode_Name_CAPI *unicode_names = NULL;
+static _PyUnicode_Name_CAPI *ucnhash_CAPI = NULL;
 
 PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
 					int size,
@@ -1236,18 +1236,18 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
             /* Ok, we need to deal with Unicode Character Names now,
              * make sure we've imported the hash table data...
              */
-            if (unicode_names == NULL) {
+            if (ucnhash_CAPI == NULL) {
                 PyObject *mod = 0, *v = 0;
-                mod = PyImport_ImportModule("ucnhash");
+                mod = PyImport_ImportModule("unicodedata");
                 if (mod == NULL)
                     goto ucnhashError;
-                v = PyObject_GetAttrString(mod,"Unicode_Names_CAPI");
+                v = PyObject_GetAttrString(mod,"ucnhash_CAPI");
                 Py_DECREF(mod);
                 if (v == NULL)
                     goto ucnhashError;
-                unicode_names = PyCObject_AsVoidPtr(v);
+                ucnhash_CAPI = PyCObject_AsVoidPtr(v);
                 Py_DECREF(v);
-                if (unicode_names == NULL)
+                if (ucnhash_CAPI == NULL)
                     goto ucnhashError;
             }
                 
@@ -1259,7 +1259,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
                 while (*endBrace != '}' && endBrace < end)
                     endBrace++;
                 if (endBrace != end && *endBrace == '}') {
-                    if (!unicode_names->getcode(start, endBrace-start, &chr)) {
+                    if (!ucnhash_CAPI->getcode(start, endBrace-start, &chr)) {
                         if (unicodeescape_decoding_error(
                                 &s, &x, errors,
                                 "Invalid Unicode Character Name")
@@ -1312,8 +1312,10 @@ store:
     return (PyObject *)v;
     
  ucnhashError:
-    PyErr_SetString(PyExc_UnicodeError,
-                    "\\N escapes not supported (can't load ucnhash module)");
+    PyErr_SetString(
+        PyExc_UnicodeError,
+        "\\N escapes not supported (can't load unicodedata module)"
+        );
     return NULL;
 
  onError:
