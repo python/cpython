@@ -40,7 +40,7 @@ newrangeobject(start, len, step, reps)
 	long start, len, step;
 	int reps;
 {
-	rangeobject *obj = (rangeobject *) newobject(&Rangetype);
+	rangeobject *obj = NEWOBJ(rangeobject, &Rangetype);
 
 	obj->start = start;
 	obj->len   = len;
