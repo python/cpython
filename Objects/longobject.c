@@ -264,13 +264,13 @@ int
 _PyLong_Sign(PyObject *vv)
 {
 	PyLongObject *v = (PyLongObject *)vv;
-	const int ndigits = v->ob_size;
+	const int ndigits = ABS(v->ob_size);
 
 	assert(v != NULL);
 	assert(PyLong_Check(v));
 	assert(ndigits == 0 || v->ob_digit[ndigits - 1] != 0);
 
-	return ndigits == 0 ? 0 : (ndigits < 0 ? -1 : 1);
+	return v->ob_size == 0 ? 0 : (v->ob_size < 0 ? -1 : 1);
 }
 
 size_t

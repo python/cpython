@@ -1,6 +1,11 @@
 import unittest
 from test.test_support import TestFailed, have_unicode, TESTFN
 
+# Tests that try a number of pickle protocols should have a
+#     for proto in protocols:
+# kind of outer loop.  Bump the 3 to 4 if/when protocol 3 is invented.
+protocols = range(3)
+
 class C:
     def __cmp__(self, other):
         return cmp(self.__dict__, other.__dict__)
@@ -27,6 +32,9 @@ class metaclass(type):
 
 class use_metaclass(object):
     __metaclass__ = metaclass
+
+# DATA and BINDATA are the protocol 0 and protocol 1 pickles of the object
+# returned by create_data().
 
 # break into multiple strings to avoid confusing font-lock-mode
 DATA = """(lp1
@@ -210,20 +218,22 @@ class AbstractPickleTests(unittest.TestCase):
         def test_unicode(self):
             endcases = [unicode(''), unicode('<\\u>'), unicode('<\\\u1234>'),
                         unicode('<\n>'),  unicode('<\\>')]
-            for u in endcases:
-                p = self.dumps(u)
-                u2 = self.loads(p)
-                self.assertEqual(u2, u)
+            for proto in protocols:
+                for u in endcases:
+                    p = self.dumps(u, proto)
+                    u2 = self.loads(p)
+                    self.assertEqual(u2, u)
 
     def test_ints(self):
         import sys
-        n = sys.maxint
-        while n:
-            for expected in (-n, n):
-                s = self.dumps(expected)
-                n2 = self.loads(s)
-                self.assertEqual(expected, n2)
-            n = n >> 1
+        for proto in protocols:
+            n = sys.maxint
+            while n:
+                for expected in (-n, n):
+                    s = self.dumps(expected, proto)
+                    n2 = self.loads(s)
+                    self.assertEqual(expected, n2)
+                n = n >> 1
 
     def test_maxint64(self):
         maxint64 = (1L << 63) - 1
@@ -234,6 +244,34 @@ class AbstractPickleTests(unittest.TestCase):
         # Try too with a bogus literal.
         data = 'I' + str(maxint64) + 'JUNK\n.'
         self.assertRaises(ValueError, self.loads, data)
+
+    def test_long(self):
+        for proto in protocols:
+            # 256 bytes is where LONG4 begins
+            for nbits in 1, 8, 8*254, 8*255, 8*256, 8*257:
+                nbase = 1L << nbits
+                for npos in nbase-1, nbase, nbase+1:
+                    for n in npos, -npos:
+                        pickle = self.dumps(n, proto)
+                        got = self.loads(pickle)
+                        self.assertEqual(n, got)
+        # Try a monster.  This is quadratic-time in protos 0 & 1, so don't
+        # bother with those.
+        # XXX Damn.  pickle.py is still quadratic-time here, due to
+        # XXX long(string, 16).  cPickle runs this in an eyeblink, but I
+        # XXX gave up waiting for pickle.py to get beyond "loading".  Giving
+        # XXX up for now.
+        return
+        print "building long"
+        nbase = long("deadbeeffeedface", 16)
+        nbase += nbase << 1000000
+        for n in nbase, -nbase:
+            print "dumping"
+            p = self.dumps(n, 2)
+            print "loading"
+            got = self.loads(p)
+            print "checking"
+            self.assertEqual(n, got)
 
     def test_reduce(self):
         pass
