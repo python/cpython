@@ -1,4 +1,3 @@
-from __future__ import generators
 import unittest
 
 import test_support
