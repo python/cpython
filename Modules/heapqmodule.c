@@ -14,6 +14,7 @@ _siftdown(PyListObject *heap, int startpos, int pos)
 	PyObject *newitem, *parent;
 	int cmp, parentpos;
 
+	assert(PyList_Check(heap));
 	if (pos >= PyList_GET_SIZE(heap)) {
 		PyErr_SetString(PyExc_IndexError, "index out of range");
 		return -1;
@@ -48,6 +49,7 @@ _siftup(PyListObject *heap, int pos)
 	int cmp;
 	PyObject *newitem, *tmp;
 
+	assert(PyList_Check(heap));
 	endpos = PyList_GET_SIZE(heap);
 	startpos = pos;
 	if (pos >= endpos) {
@@ -97,7 +99,7 @@ heappush(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (!PyList_Check(heap)) {
-		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
 		return NULL;
 	}
 
@@ -120,7 +122,7 @@ heappop(PyObject *self, PyObject *heap)
 	int n;
 
 	if (!PyList_Check(heap)) {
-		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
 		return NULL;
 	}
 
@@ -159,7 +161,7 @@ heapreplace(PyObject *self, PyObject *args)
 		return NULL;
 
 	if (!PyList_Check(heap)) {
-		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
 		return NULL;
 	}
 
@@ -192,7 +194,7 @@ heapify(PyObject *self, PyObject *heap)
 	int i, n;
 
 	if (!PyList_Check(heap)) {
-		PyErr_SetString(PyExc_ValueError, "heap argument must be a list");
+		PyErr_SetString(PyExc_TypeError, "heap argument must be a list");
 		return NULL;
 	}
 
