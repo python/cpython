@@ -1,38 +1,73 @@
-#! /bin/sh
-#  -*- Ksh -*-
-#
-# Generate a page count report of the PostScript version of the manuals.
+#! /usr/bin/env python
+#  -*- Python -*-
 
-TOTAL=0
+"""Generate a page count report of the PostScript version of the manuals."""
 
-getpagecount() {
-    PAGECOUNT=`grep -c '^%%Page:' $1.ps`
-    echo "$2    $1.ps ($PAGECOUNT pages)"
-    TOTAL=`expr $TOTAL + $PAGECOUNT`
-}
+__version__ = '$Revision$'
 
-cat <<EOF
+
+class PageCounter:
+    def __init__(self):
+        self.doclist = []
+        self.total = 0
+        self.title_width = 0
+
+    def add_document(self, prefix, title):
+        count = count_pages(prefix + ".ps")
+        self.doclist.append((title, prefix, count))
+        self.title_width = max(self.title_width, len(title))
+        self.total = self.total + count
+
+    def dump(self):
+        fmt = "%%-%ds  (%%s.ps, %%d pages)" % self.title_width
+        for item in self.doclist:
+            print fmt % item
+        print
+        print "  Total page count:  %d" % self.total
+
+    def run(self):
+        for prefix, title in [
+            ("api", "Python/C API"),
+            ("ext", "Extending and Embedding the Python Interpreter"),
+            ("lib", "Python Library Reference"),
+            ("mac", "Macintosh Module Reference"),
+            ("ref", "Python Reference Manual"),
+            ("tut", "Python Tutorial"),
+            ("doc", "Documenting Python"),
+            ]:
+            self.add_document(prefix, title)
+        print self.PREFIX
+        self.dump()
+        print self.SUFFIX
+
+    PREFIX = """\
 This is the PostScript version of the standard Python documentation.
 If you plan to print this, be aware that some of the documents are
 long.  The following manuals are included:
-
-EOF
-
-getpagecount api "Python/C API                                  "
-getpagecount ext "Extending and Embedding the Python Interpreter"
-getpagecount lib "Python Library Reference                      "
-getpagecount mac "Macintosh Module Reference                    "
-getpagecount ref "Python Reference Manual                       "
-getpagecount tut "Python Tutorial                               "
-getpagecount doc "Documenting Python                            "
-
-echo
-echo "  Total page count:   $TOTAL"
-
-cat <<EOF
+"""
+    SUFFIX = """\
 
 
 If you have any questions, comments, or suggestions regarding these
 documents, please send them via email to python-docs@python.org.
+"""
 
-EOF
+def count_pages(filename):
+    fp = open(filename)
+    count = 0
+    while 1:
+        lines = fp.readlines(1024*40)
+        if not lines:
+            break
+        for line in lines:
+            if line[:7] == "%%Page:":
+                count = count + 1
+    fp.close()
+    return count
+
+
+def main():
+    PageCounter().run()
+
+if __name__ == "__main__":
+    main()
