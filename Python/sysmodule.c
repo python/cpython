@@ -402,7 +402,7 @@ PyDoc_STRVAR(getrecursionlimit_doc,
 \n\
 Return the current value of the recursion limit, the maximum depth\n\
 of the Python interpreter stack.  This limit prevents infinite\n\
-recursion from causing an overflow of the C stack and crashing Python.";
+recursion from causing an overflow of the C stack and crashing Python."
 );
 
 #ifdef HAVE_DLOPEN
