@@ -82,17 +82,18 @@ class EditorWindow:
         self.saved_change_hook()
 
     menu_specs = [
-        ("file", "File"),
-        ("edit", "Edit"),
-        ("help", "Help"),
+        ("file", "_File"),
+        ("edit", "_Edit"),
+        ("help", "_Help"),
     ]
 
     def createmenubar(self):
         mbar = self.menubar
         self.menudict = mdict = {}
         for name, label in self.menu_specs:
+            underline, label = self.Bindings.prepstr(label)
             mdict[name] = menu = Menu(mbar, name=name)
-            mbar.add_cascade(label=label, menu=menu)
+            mbar.add_cascade(label=label, menu=menu, underline=underline)
         self.Bindings.fill_menus(self.text, mdict)
 
     def about_dialog(self, event=None):
