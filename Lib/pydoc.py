@@ -450,7 +450,8 @@ TT { font-family: lucidatypewriter, lucida console, courier }
 
             all, scheme, rfc, pep, selfdot, name = match.groups()
             if scheme:
-                results.append('<a href="%s">%s</a>' % (all, escape(all)))
+                url = escape(all).replace('"', '&quot;')
+                results.append('<a href="%s">%s</a>' % (url, url))
             elif rfc:
                 url = 'http://www.rfc-editor.org/rfc/rfc%d.txt' % int(rfc)
                 results.append('<a href="%s">%s</a>' % (url, escape(all)))
