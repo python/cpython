@@ -867,15 +867,15 @@ arbitrary objects):
           {(1)}
   \lineiii{\var{a}.clear()}{remove all items from \code{a}}{}
   \lineiii{\var{a}.copy()}{a (shallow) copy of \code{a}}{}
-  \lineiii{\var{k} \code{in} \var{a}}
+  \lineiii{\var{a}.has_key(\var{k})}
           {\code{1} if \var{a} has a key \var{k}, else \code{0}}
           {}
+  \lineiii{\var{k} \code{in} \var{a}}
+          {Equivalent to \var{a}.has_key(\var{k})}
+          {\versionadded{2.2}}
   \lineiii{\var{k} not in \var{a}}
-          {\code{0} if \var{a} has a key \var{k}, else \code{1}}
-          {}
-  \lineiii{\var{a}.has_key(\var{k})}
-          {Equivalent to \var{k} \code{in} \var{a}}
-          {}
+          {Equivalent to \code{not} \var{a}.has_key(\var{k})}
+          {\versionadded{2.2}}
   \lineiii{\var{a}.items()}
           {a copy of \var{a}'s list of (\var{key}, \var{value}) pairs}
           {(2)}
