@@ -39,7 +39,7 @@
 #undef HAVE_ALTZONE
 
 /* Define this if you have gethostbyname() */
-#undef HAVE_GETHOSTBTNAME
+#undef HAVE_GETHOSTBYNAME
 
 /* Define this if you have some version of gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
