@@ -67,6 +67,7 @@ Library
   to tar archive files with transparent gzip and bzip2 compression.
   See SF patch #651082.
 
+- urlparse can now parse imap:// URLs.  See SF feature request #618024.
 
 Tools/Demos
 -----------
