@@ -28,6 +28,12 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "modsupport.h"
 #include "ceval.h"
 
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 extern int sginap(long);
 
 static object *
@@ -45,8 +51,32 @@ sgi_nap(self, args)
 	return None;
 }
 
+extern char *_getpty(int *, int, mode_t, int);
+
+static object *
+sgi__getpty(self, args)
+	object *self;
+	object *args;
+{
+	int oflag;
+	int mode;
+	int nofork;
+	char *name;
+	int fildes;
+	if (!getargs(args, "(iii)", &oflag, &mode, &nofork))
+		return NULL;
+	errno = 0;
+	name = _getpty(&fildes, oflag, (mode_t)mode, nofork);
+	if (name == NULL) {
+		err_errno(IOError);
+		return NULL;
+	}
+	return mkvalue("(si)", name, fildes);
+}
+
 static struct methodlist sgi_methods[] = {
 	{"nap",		sgi_nap},
+	{"_getpty",	sgi__getpty},
 	{NULL,		NULL}		/* sentinel */
 };
 
