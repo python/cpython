@@ -55,6 +55,8 @@ class UserString:
     def __mul__(self, n):
         return self.__class__(self.data*n)
     __rmul__ = __mul__
+    def __mod__(self, args):
+        return self.__class__(self.data % args)
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
