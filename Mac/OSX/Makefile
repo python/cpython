@@ -205,7 +205,9 @@ $(APPINSTALLDIR)/Contents/MacOS/python: install_Python
 
 installunixtools: $(INSTALLED_PYTHON) $(INSTALLED_PYTHONW)
 	$(INSTALL) -d $(bindir)
-	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(bindir)/python
+	$(INSTALL_SYMLINK) $(INSTALLED_PYTHON) $(bindir)/python$(VERSION)
+	$(INSTALL_SYMLINK) python$(VERSION) $(bindir)/python
 	echo "#!/bin/sh" > pythonw.sh
 	echo "exec \"$(INSTALLED_PYTHONW)\" \"\$$@\"" >> pythonw.sh
-	$(INSTALL) pythonw.sh $(bindir)/pythonw
+	$(INSTALL) pythonw.sh $(bindir)/pythonw$(VERSION)
+	$(INSTALL_SYMLINK) pythonw$(VERSION) $(bindir)/pythonw
