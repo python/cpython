@@ -60,6 +60,58 @@ envar PYTHONDUMPREFS
 ---------------------------------------------------------------------------
 PYMALLOC_DEBUG
 
+When pymalloc is enabled (WITH_PYMALLOC is defined), calls to the PyObject_
+memory routines are handled by Python's own small-object allocator, while
+calls to the PyMem_ memory routines are directed to the system malloc/
+realloc/free.  If PYMALLOC_DEBUG is also defined, calls to both PyObject_
+and PyMem_ memory routines are directed to a special debugging mode of
+Python's small-object allocator.
+
+This mode fills dynamically allocated memory blocks with special,
+recognizable bit patterns, and adds debugging info on each end of
+dynamically allocated memory blocks.  The special bit patterns are:
+
+#define CLEANBYTE     0xCB   /* clean (newly allocated) memory */
+#define DEADBYTE      0xDB   /* dead (newly freed) memory */
+#define FORBIDDENBYTE 0xFB   /* fordidden -- untouchable bytes */
+
+Strings of these bytes are unlikely to be valid addresses, floats, or 7-bit
+ASCII strings.
+
+8 bytes are added at each end of each block of N bytes requested.  The
+memory layout is like so, where p represents the address returned by a
+malloc-like or realloc-like function:
+
+p[-8:-4]
+    Number of bytes originally asked for.  4-byte unsigned integer,
+    big-endian (easier to read in a memory dump).
+p[-4:0]
+    Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
+p[0:N]
+    The requested memory, filled with copies of CLEANBYTE.
+    Used to catch reference to uninitialized memory.
+    When a realloc-like function is called requesting a larger memory
+    block, the new excess bytes are also filled with CLEANBYTE.
+    When a free-like function is called, these are overwritten with
+    DEADBYTE, to catch reference to free()ed memory.  When a realloc-
+    like function is called requesting a smaller memory block, the excess
+    old bytes are also filled with DEADBYTE.
+p[N:N+4]
+    Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
+p[N+4:N+8]
+    A serial number, incremented by 1 on each call to a malloc-like or
+    realloc-like function.
+    4-byte unsigned integer, big-endian.
+    If "bad memory" is detected later, the serial number gives an
+    excellent way to set a breakpoint on the next run, to capture the
+    instant at which this block was passed out.
+
+A malloc-like or free-like function first checks that the FORBIDDENBYTEs
+at each end are intact.  If they've been altered, diagnostic output is
+written to stderr, and the program is aborted by Py_FatalError().
+
+Note that PYMALLOC_DEBUG requires WITH_PYMALLOC.
+
 Special gimmicks:
 
 envar PYTHONMALLOCSTATS
