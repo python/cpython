@@ -1,14 +1,14 @@
 \chapter{Execution model}
 \index{execution model}
 
-\section{Code blocks, execution frames, and name spaces} \label{execframes}
+\section{Code blocks, execution frames, and namespaces} \label{execframes}
 \index{code block}
 \indexii{execution}{frame}
-\index{name space}
+\index{namespace}
 
 A {\em code block} is a piece of Python program text that can be
 executed as a unit, such as a module, a class definition or a function
-body.  Some code blocks (like modules) are executed only once, others
+body.  Some code blocks (like modules) are normally executed only once, others
 (like function bodies) may be executed many times.  Code blocks may
 textually contain other code blocks.  Code blocks may invoke other
 code blocks (that may or may not be textually contained in them) as
@@ -16,96 +16,113 @@ part of their execution, e.g. by invoking (calling) a function.
 \index{code block}
 \indexii{code}{block}
 
-The following are code blocks:  A module is a code block.  A function
+The following are code blocks: A module is a code block.  A function
 body is a code block.  A class definition is a code block.  Each
-command typed interactively is a separate code block; a script file is
-a code block.  The string argument passed to the built-in function
-\function{eval()} and to the \keyword{exec} statement are code blocks.
-And finally, the expression read and evaluated by the built-in
-function \function{input()} is a code block.
+command typed interactively is a separate code block; a script file (a
+file given as standard input to the interpreter or specified on the
+interpreter command line the first argument) is a code block; a script
+command (a command specified on the interpreter command line with the
+`\code{-c}' option) is a code block.  The file read by the built-in
+function \function{execfile()} is a code block.  The string argument
+passed to the built-in function \function{eval()} and to the
+\keyword{exec} statement is a code block.  And finally, the expression
+read and evaluated by the built-in function \function{input()} is a
+code block.
 
 A code block is executed in an execution frame.  An {\em execution
 frame} contains some administrative information (used for debugging),
 determines where and how execution continues after the code block's
 execution has completed, and (perhaps most importantly) defines two
-name spaces, the local and the global name space, that affect
+namespaces, the local and the global namespace, that affect
 execution of the code block.
 \indexii{execution}{frame}
 
-A {\em name space} is a mapping from names (identifiers) to objects.
-A particular name space may be referenced by more than one execution
-frame, and from other places as well.  Adding a name to a name space
+A {\em namespace} is a mapping from names (identifiers) to objects.
+A particular namespace may be referenced by more than one execution
+frame, and from other places as well.  Adding a name to a namespace
 is called {\em binding} a name (to an object); changing the mapping of
 a name is called {\em rebinding}; removing a name is {\em unbinding}.
-Name spaces are functionally equivalent to dictionaries.
-\index{name space}
+Namespaces are functionally equivalent to dictionaries (and often
+implemented as dictionaries).
+\index{namespace}
 \indexii{binding}{name}
 \indexii{rebinding}{name}
 \indexii{unbinding}{name}
 
-The {\em local name space} of an execution frame determines the default
-place where names are defined and searched.  The {\em global name
-space} determines the place where names listed in \keyword{global}
+The {\em local namespace} of an execution frame determines the default
+place where names are defined and searched.  The {\em global
+namespace} determines the place where names listed in \keyword{global}
 statements are defined and searched, and where names that are not
-explicitly bound in the current code block are searched.
-\indexii{local}{name space}
-\indexii{global}{name space}
+bound anywhere in the current code block are searched.
+\indexii{local}{namespace}
+\indexii{global}{namespace}
 \stindex{global}
 
 Whether a name is local or global in a code block is determined by
 static inspection of the source text for the code block: in the
-absence of \keyword{global} statements, a name that is bound anywhere in
-the code block is local in the entire code block; all other names are
-considered global.  The \keyword{global} statement forces global
+absence of \keyword{global} statements, a name that is bound anywhere
+in the code block is local in the entire code block; all other names
+are considered global.  The \keyword{global} statement forces global
 interpretation of selected names throughout the code block.  The
-following constructs bind names: formal parameters, \keyword{import}
-statements, class and function definitions (these bind the class or
-function name), and targets that are identifiers if occurring in an
-assignment, \keyword{for} loop header, or except clause header.
+following constructs bind names: formal parameters to functions,
+\keyword{import} statements, class and function definitions (these
+bind the class or function name in the defining block), and targets
+that are identifiers if occurring in an assignment, \keyword{for} loop
+header, or in the second position of an \keyword{except} clause
+header.  Local names are searched only on the local namespace; global
+names are searched only in the global and built-in namespace.%
+%
+\footnote{If the code block contains \keyword{exec} statements or the
+construct ``\samp{from \ldots import *}'', the semantics of local
+names change: local name lookup first searches the local namespace,
+then the global namespace and the built-in namespace.}
 
 A target occurring in a \keyword{del} statement is also considered bound
 for this purpose (though the actual semantics are to ``unbind'' the
 name).
 
-When a global name is not found in the global name space, it is
-searched in the list of ``built-in'' names (which is actually the
-global name space of the module \module{__builtin__}).  When a name is not
-found at all, the \exception{NameError} exception is raised.%
-\footnote{If the code block contains \keyword{exec} statements or the
-construct \samp{from \ldots import *}, the semantics of names not
-explicitly mentioned in a {\tt global} statement change subtly: name
-lookup first searches the local name space, then the global one, then
-the built-in one.}
+When a global name is not found in the global namespace, it is
+searched in the built-in namespace (which is actually the global
+namespace of the module \module{__builtin__}).  The built-in namespace
+associated with the execution of a code block is actually found by
+looking up the name \code{__builtins__} is its global namespace; this
+should be a dictionary or a module (in the latter case its dictionary
+is used).  Normally, the \code{__builtins__} namespace is the
+dictionary of the built-in module \module{__builtin__} (note: no `s');
+if it isn't, restricted execution mode is in effect.  When a name is
+not found at all, a \exception{NameError} exception is raised.%
 \refbimodindex{__builtin__}
 \stindex{from}
 \stindex{exec}
 \stindex{global}
+\indexii{restricted}{execution}
 \withsubitem{(built-in exception)}{\ttindex{NameError}}
 
-The following table lists the meaning of the local and global name
-space for various types of code blocks.  The name space for a
+The following table lists the meaning of the local and global
+namespace for various types of code blocks.  The namespace for a
 particular module is automatically created when the module is first
-referenced.  Note that in almost all cases, the global name space is
-the name space of the containing module --- scopes in Python do not
-nest!
+imported (i.e., when it is loaded).  Note that in almost all cases,
+the global namespace is the namespace of the containing module ---
+scopes in Python do not nest!
 
 \begin{center}
 \begin{tabular}{|l|l|l|l|}
 \hline
-Code block type & Global name space & Local name space & Notes \\
+Code block type & Global namespace & Local namespace & Notes \\
 \hline
 Module & n.s. for this module & same as global & \\
-Script & n.s. for \module{__main__} & same as global & \\
+Script (file or command) & n.s. for \module{__main__} & same as global
+	& (1) \\
 Interactive command & n.s. for \module{__main__} & same as global & \\
 Class definition & global n.s. of containing block & new n.s. & \\
 Function body & global n.s. of containing block & new n.s. & (2) \\
 String passed to \keyword{exec} statement
 	& global n.s. of containing block
-		& local n.s. of containing block & (1) \\
+		& local n.s. of containing block & (2), (3) \\
 String passed to \function{eval()}
-	& global n.s. of caller & local n.s. of caller & (1) \\
+	& global n.s. of caller & local n.s. of caller & (2), (3) \\
 File read by \function{execfile()}
-	& global n.s. of caller & local n.s. of caller & (1) \\
+	& global n.s. of caller & local n.s. of caller & (2), (3) \\
 Expression read by \function{input()}
 	& global n.s. of caller & local n.s. of caller & \\
 \hline
@@ -117,25 +134,28 @@ Notes:
 
 \begin{description}
 
-\item[n.s.] means {\em name space}
+\item[n.s.] means {\em namespace}
 
-\item[(1)] The global and local name space for these can be
+\item[(1)] The main module for a script is always called
+\module{__main__}; ``the filename don't enter into it.''
+
+\item[(2)] The global and local namespace for these can be
 overridden with optional extra arguments.
 
-\item[(2)] The body of lambda forms (see section \ref{lambda}) is
-treated exactly the same as a (nested) function definition.  Lambda
-forms have their own name space consisting of their formal arguments.
-\indexii{lambda}{form}
+\item[(3)] The \keyword{exec} statement and the \function{eval()} and
+\function{execfile()} functions have optional arguments to override
+the global and local namespace.  If only one namespace is specified,
+it is used for both.
 
 \end{description}
 
 The built-in functions \function{globals()} and \function{locals()} returns a
-dictionary representing the current global and local name space,
+dictionary representing the current global and local namespace,
 respectively.  The effect of modifications to this dictionary on the
-name space are undefined.%
+namespace are undefined.%
 \footnote{The current implementations return the dictionary actually 
-used to implement the name space, {\em except} for functions, where
-the optimizer may cause the local name space to be implemented
+used to implement the namespace, {\em except} for functions, where
+the optimizer may cause the local namespace to be implemented
 differently, and \function{locals()} returns a read-only dictionary.}
 
 \section{Exceptions}
@@ -153,48 +173,39 @@ where the error occurred.
 \index{errors}
 \index{error handling}
 
-The Python interpreter raises an exception when it detects an run-time
+The Python interpreter raises an exception when it detects a run-time
 error (such as division by zero).  A Python program can also
 explicitly raise an exception with the \keyword{raise} statement.
 Exception handlers are specified with the \keyword{try} ... \keyword{except}
-statement.
+statement.  The \keyword{try} ... \keyword{finally} statement
+specifies cleanup code which does not handle the exception, but is
+executed whether an exception occurred or not in the preceding code.
 
 Python uses the ``termination'' model of error handling: an exception
 handler can find out what happened and continue execution at an outer
 level, but it cannot repair the cause of the error and retry the
-failing operation (except by re-entering the the offending piece of
+failing operation (except by re-entering the offending piece of
 code from the top).
 
 When an exception is not handled at all, the interpreter terminates
-execution of the program, or returns to its interactive main loop.
+execution of the program, or returns to its interactive main loop.  In
+either case, it prints a stack backtrace, except when the exception is 
+\exception{SystemExit}.\ttindex{SystemExit}
 
-Exceptions are identified by string objects or class instances.  Two
-different string objects with the same value identify different
-exceptions.  An exception can be raised with a class instance.  Such
-exceptions are caught by specifying an except clause that has the
-class name (or a base class) as the condition.
+Exceptions are identified by string objects or class instances.
+Selection of a matching except clause is based on object identity
+(i.e., two different string objects with the same value represent
+different exceptions!)  For string exceptions, the \keyword{except}
+clause must reference the same string object.  For class exceptions,
+the \keyword{except} clause must reference the same class or a base
+class of it.
 
 When an exception is raised, an object (maybe \code{None}) is passed
-as the exception's ``parameter''; this object does not affect the
-selection of an exception handler, but is passed to the selected
-exception handler as additional information.  For exceptions raised
-with a class instance, the instance is passed as the ``parameter''.
-
-For example:
-
-\begin{verbatim}
->>> class Error:
-...     def __init__(self, msg): self.msg = msg
-... 
->>> class SpecificError(Error): pass
-... 
->>> try:
-...     raise SpecificError('broken')
-... except Error, obj:
-...     print obj.msg
-... 
-broken
-\end{verbatim}
+as the exception's ``parameter'' or ``value''; this object does not
+affect the selection of an exception handler, but is passed to the
+selected exception handler as additional information.  For class
+exceptions, this object must be an instance of the exception class
+being raised.
 
 See also the description of the \keyword{try} and \keyword{raise}
-statements.
+statements in chapter 7.
