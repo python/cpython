@@ -176,8 +176,7 @@ class Konqueror:
             self.name = self.basename = "kfm"
 
     def _remote(self, action):
-        assert "'" not in action
-        cmd = "kfmclient '%s' >/dev/null 2>&1" % action
+        cmd = "kfmclient %s >/dev/null 2>&1" % action
         rc = os.system(cmd)
         if rc:
             import time
@@ -192,6 +191,7 @@ class Konqueror:
     def open(self, url, new=1, autoraise=1):
         # XXX Currently I know no way to prevent KFM from
         # opening a new win.
+        assert "'" not in url
         self._remote("openURL '%s'" % url)
 
     open_new = open
