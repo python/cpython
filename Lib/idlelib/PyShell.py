@@ -24,6 +24,7 @@ from UndoDelegator import UndoDelegator
 from OutputWindow import OutputWindow
 from configHandler import idleConf
 import idlever
+import os.path
 
 import rpc
 import RemoteDebugger
@@ -79,8 +80,31 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
+        self.breakpointPath=os.path.join(idleConf.GetUserCfgDir(), 'breakpoints.lst')
+
+        # whenever a file is changed, restore breakpoints
+        if self.io.filename: self.restore_file_breaks()
+        def filename_changed_hook(self,old_hook=self.io.filename_change_hook):
+            self.restore_file_breaks()
+            old_hook()
+        self.io.set_filename_change_hook(filename_changed_hook)
+
     rmenu_specs = [("Set Breakpoint", "<<set-breakpoint-here>>"),
                    ("Clear Breakpoint", "<<clear-breakpoint-here>>")]
+
+    def set_breakpoint(self, lineno):
+        text = self.text
+        filename = self.io.filename
+        text.tag_add("BREAK", "%d.0" % lineno, "%d.0" % (lineno+1))
+        try:
+            i = self.breakpoints.index(lineno)
+        except ValueError:  # only add if missing, i.e. do once
+            self.breakpoints.append(lineno)
+        try:    # update the subprocess debugger
+            debug = self.flist.pyshell.interp.debugger
+            debug.set_breakpoint_here(filename, lineno)
+        except: # but debugger may not be active right now....
+            pass
 
     def set_breakpoint_here(self, event=None):
         text = self.text
@@ -89,16 +113,7 @@ class PyShellEditorWindow(EditorWindow):
             text.bell()
             return
         lineno = int(float(text.index("insert")))
-        try:
-            i = self.breakpoints.index(lineno)
-        except:  # only add if missing, i.e. do once
-            self.breakpoints.append(lineno)
-        text.tag_add("BREAK", "insert linestart", "insert lineend +1char")
-        try:    # update the subprocess debugger
-            debug = self.flist.pyshell.interp.debugger
-            debug.set_breakpoint_here(filename, lineno)
-        except: # but debugger may not be active right now....
-            pass
+        self.set_breakpoint(lineno)
 
     def clear_breakpoint_here(self, event=None):
         text = self.text
@@ -134,6 +149,40 @@ class PyShellEditorWindow(EditorWindow):
             except:
                 pass
 
+    def store_file_breaks(self):
+        if not self.breakpoints:
+            return
+        filename=self.io.filename
+        try:
+            lines=open(self.breakpointPath,"r").readlines()
+        except IOError:
+            lines=[]
+        new_file=open(self.breakpointPath,"w")
+        for line in lines:
+            if not line.startswith(filename+"="):
+                new_file.write(line)
+        new_file.write(filename+"="+`self.get_current_breaks()`)
+        new_file.close()
+
+    def restore_file_breaks(self):
+        self.text.update()   # this enables setting "BREAK" tags to be visible
+        filename=self.io.filename
+        lines=open(self.breakpointPath,"r").readlines()
+        for line in lines:
+            if line.startswith(filename+"="):
+                breakpoint_linenumbers=eval(line[len(filename)+1:]) 
+                for breakpoint_linenumber in breakpoint_linenumbers:
+                    self.set_breakpoint(breakpoint_linenumber)
+
+    def get_current_breaks(self):
+        #
+        # retrieves all the breakpoints in the current window
+        #
+        text = self.text
+        lines = text.tag_ranges("BREAK")
+        result = [int(float((lines[i]))) for i in range(0,len(lines),2)]
+        return result
+ 
     def saved_change_hook(self):
         "Extend base method - clear breaks if module is modified"
         if not self.get_saved():
@@ -142,6 +191,7 @@ class PyShellEditorWindow(EditorWindow):
 
     def _close(self):
         "Extend base method - clear breaks when module is closed"
+        self.store_file_breaks()
         self.clear_file_breaks()
         EditorWindow._close(self)
                                 
