@@ -1,4 +1,4 @@
-What's New in Python 2.1 alpha 507?
+What's New in Python 2.1 alpha 509?
 ===================================
 
 Core language, builtins, and interpreter
@@ -34,18 +34,43 @@ Standard library
   getting information about live Python code, and pydoc.py, a module
   for interactively converting docstrings to HTML or text.
   Tools/scripts/pydoc, which is now automatically installed into
-  <prefix>/bin, uses pydoc.py to display documentation; try running 
+  <prefix>/bin, uses pydoc.py to display documentation; try running
   'pydoc' for the instructions.
+
+- New library module difflib.py, primarily packaging the SequenceMatcher
+  class at the heart of the popular ndiff.py file-comparison tool.
+
+- doctest.py (a framework for verifying Python code examples in docstrings)
+  is now part of the std library.
 
 Windows changes
 
-- Build:  Subproject _test (effectively) renamed to _testcapi.
+- Import is now case-sensitive.  PEP 235 (Import on Case-Insensitive
+  Platforms) is implemented.  See
+
+      http://python.sourceforge.net/peps/pep-0235.html
+
+  for full details, especially the "Current Lower-Left Semantics" section.
+  The new Windows import rules are simpler than before:
+
+  A. If the PYTHONCASEOK environment variable exists, same as
+     before:  silently accept the first case-insensitive match of any
+     kind; raise ImportError if none found.
+
+  B. Else search sys.path for the first case-sensitive match; raise
+     ImportError if none found.
+
+  The same rules have been implented on other platforms with case-
+  insensitive but case-preserving filesystems too (including Cygwin, and
+  several flavors of Macintosh operating systems).
 
 - winsound module:  Under Win9x, winsound.Beep() now attempts to simulate
   what it's supposed to do (and does do under NT and 2000) via direct
   port manipulation.  It's unknown whether this will work on all systems,
-  but it does work on my Win98SE system now and was known to be useless on
+  but it does work on my Win98SE systems now and was known to be useless on
   all Win9x systems before.
+
+- Build:  Subproject _test (effectively) renamed to _testcapi.
 
 
 What's New in Python 2.1 alpha 2?
