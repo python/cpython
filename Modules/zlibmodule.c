@@ -834,4 +834,5 @@ PyInit_zlib()
 
 	ver = PyString_FromString(ZLIB_VERSION);
 	PyDict_SetItemString(d, "ZLIB_VERSION", ver);
+	Py_DECREF(ver);
 }
