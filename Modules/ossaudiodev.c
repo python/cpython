@@ -103,8 +103,10 @@ newladobject(PyObject *arg)
         imode = O_RDONLY;
     else if (strcmp(mode, "w") == 0)
         imode = O_WRONLY;
+    else if (strcmp(mode, "rw") == 0)
+        imode = O_RDWR;
     else {
-        PyErr_SetString(LinuxAudioError, "mode should be 'r' or 'w'");
+        PyErr_SetString(LinuxAudioError, "mode must be 'r', 'w', or 'rw'");
         return NULL;
     }
 
@@ -628,6 +630,10 @@ static PyMethodDef linuxaudiodev_methods[] = {
     { 0, 0 },
 };
 
+
+#define _EXPORT_INT(mod, name) \
+  if (PyModule_AddIntConstant(mod, #name, (long) (name)) == -1) return;
+
 void
 initlinuxaudiodev(void)
 {
@@ -639,24 +645,94 @@ initlinuxaudiodev(void)
     if (LinuxAudioError)
 	PyModule_AddObject(m, "error", LinuxAudioError);
 
-    if (PyModule_AddIntConstant(m, "AFMT_MU_LAW", (long)AFMT_MU_LAW) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_A_LAW", (long)AFMT_A_LAW) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_U8", (long)AFMT_U8) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_S8", (long)AFMT_S8) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_U16_BE", (long)AFMT_U16_BE) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_U16_LE", (long)AFMT_U16_LE) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_S16_BE", (long)AFMT_S16_BE) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_S16_LE", (long)AFMT_S16_LE) == -1)
-	return;
-    if (PyModule_AddIntConstant(m, "AFMT_S16_NE", (long)AFMT_S16_NE) == -1)
-	return;
+    /* Expose the audio format numbers -- essential! */
+    _EXPORT_INT(m, AFMT_QUERY);
+    _EXPORT_INT(m, AFMT_MU_LAW);
+    _EXPORT_INT(m, AFMT_A_LAW);
+    _EXPORT_INT(m, AFMT_IMA_ADPCM);
+    _EXPORT_INT(m, AFMT_U8);
+    _EXPORT_INT(m, AFMT_S16_LE);
+    _EXPORT_INT(m, AFMT_S16_BE);
+    _EXPORT_INT(m, AFMT_S8);
+    _EXPORT_INT(m, AFMT_U16_LE);
+    _EXPORT_INT(m, AFMT_U16_BE);
+    _EXPORT_INT(m, AFMT_MPEG);
+    _EXPORT_INT(m, AFMT_AC3);
+    _EXPORT_INT(m, AFMT_S16_NE);
 
-    return;
+    /* Expose all the ioctl numbers for masochists who like to do this
+       stuff directly. */
+    _EXPORT_INT(m, SNDCTL_COPR_HALT);
+    _EXPORT_INT(m, SNDCTL_COPR_LOAD);
+    _EXPORT_INT(m, SNDCTL_COPR_RCODE);
+    _EXPORT_INT(m, SNDCTL_COPR_RCVMSG);
+    _EXPORT_INT(m, SNDCTL_COPR_RDATA);
+    _EXPORT_INT(m, SNDCTL_COPR_RESET);
+    _EXPORT_INT(m, SNDCTL_COPR_RUN);
+    _EXPORT_INT(m, SNDCTL_COPR_SENDMSG);
+    _EXPORT_INT(m, SNDCTL_COPR_WCODE);
+    _EXPORT_INT(m, SNDCTL_COPR_WDATA);
+    _EXPORT_INT(m, SNDCTL_DSP_BIND_CHANNEL);
+    _EXPORT_INT(m, SNDCTL_DSP_CHANNELS);
+    _EXPORT_INT(m, SNDCTL_DSP_GETBLKSIZE);
+    _EXPORT_INT(m, SNDCTL_DSP_GETCAPS);
+    _EXPORT_INT(m, SNDCTL_DSP_GETCHANNELMASK);
+    _EXPORT_INT(m, SNDCTL_DSP_GETFMTS);
+    _EXPORT_INT(m, SNDCTL_DSP_GETIPTR);
+    _EXPORT_INT(m, SNDCTL_DSP_GETISPACE);
+    _EXPORT_INT(m, SNDCTL_DSP_GETODELAY);
+    _EXPORT_INT(m, SNDCTL_DSP_GETOPTR);
+    _EXPORT_INT(m, SNDCTL_DSP_GETOSPACE);
+    _EXPORT_INT(m, SNDCTL_DSP_GETSPDIF);
+    _EXPORT_INT(m, SNDCTL_DSP_GETTRIGGER);
+    _EXPORT_INT(m, SNDCTL_DSP_MAPINBUF);
+    _EXPORT_INT(m, SNDCTL_DSP_MAPOUTBUF);
+    _EXPORT_INT(m, SNDCTL_DSP_NONBLOCK);
+    _EXPORT_INT(m, SNDCTL_DSP_POST);
+    _EXPORT_INT(m, SNDCTL_DSP_PROFILE);
+    _EXPORT_INT(m, SNDCTL_DSP_RESET);
+    _EXPORT_INT(m, SNDCTL_DSP_SAMPLESIZE);
+    _EXPORT_INT(m, SNDCTL_DSP_SETDUPLEX);
+    _EXPORT_INT(m, SNDCTL_DSP_SETFMT);
+    _EXPORT_INT(m, SNDCTL_DSP_SETFRAGMENT);
+    _EXPORT_INT(m, SNDCTL_DSP_SETSPDIF);
+    _EXPORT_INT(m, SNDCTL_DSP_SETSYNCRO);
+    _EXPORT_INT(m, SNDCTL_DSP_SETTRIGGER);
+    _EXPORT_INT(m, SNDCTL_DSP_SPEED);
+    _EXPORT_INT(m, SNDCTL_DSP_STEREO);
+    _EXPORT_INT(m, SNDCTL_DSP_SUBDIVIDE);
+    _EXPORT_INT(m, SNDCTL_DSP_SYNC);
+    _EXPORT_INT(m, SNDCTL_FM_4OP_ENABLE);
+    _EXPORT_INT(m, SNDCTL_FM_LOAD_INSTR);
+    _EXPORT_INT(m, SNDCTL_MIDI_INFO);
+    _EXPORT_INT(m, SNDCTL_MIDI_MPUCMD);
+    _EXPORT_INT(m, SNDCTL_MIDI_MPUMODE);
+    _EXPORT_INT(m, SNDCTL_MIDI_PRETIME);
+    _EXPORT_INT(m, SNDCTL_SEQ_CTRLRATE);
+    _EXPORT_INT(m, SNDCTL_SEQ_GETINCOUNT);
+    _EXPORT_INT(m, SNDCTL_SEQ_GETOUTCOUNT);
+    _EXPORT_INT(m, SNDCTL_SEQ_GETTIME);
+    _EXPORT_INT(m, SNDCTL_SEQ_NRMIDIS);
+    _EXPORT_INT(m, SNDCTL_SEQ_NRSYNTHS);
+    _EXPORT_INT(m, SNDCTL_SEQ_OUTOFBAND);
+    _EXPORT_INT(m, SNDCTL_SEQ_PANIC);
+    _EXPORT_INT(m, SNDCTL_SEQ_PERCMODE);
+    _EXPORT_INT(m, SNDCTL_SEQ_RESET);
+    _EXPORT_INT(m, SNDCTL_SEQ_RESETSAMPLES);
+    _EXPORT_INT(m, SNDCTL_SEQ_SYNC);
+    _EXPORT_INT(m, SNDCTL_SEQ_TESTMIDI);
+    _EXPORT_INT(m, SNDCTL_SEQ_THRESHOLD);
+    _EXPORT_INT(m, SNDCTL_SYNTH_CONTROL);
+    _EXPORT_INT(m, SNDCTL_SYNTH_ID);
+    _EXPORT_INT(m, SNDCTL_SYNTH_INFO);
+    _EXPORT_INT(m, SNDCTL_SYNTH_MEMAVL);
+    _EXPORT_INT(m, SNDCTL_SYNTH_REMOVESAMPLE);
+    _EXPORT_INT(m, SNDCTL_TMR_CONTINUE);
+    _EXPORT_INT(m, SNDCTL_TMR_METRONOME);
+    _EXPORT_INT(m, SNDCTL_TMR_SELECT);
+    _EXPORT_INT(m, SNDCTL_TMR_SOURCE);
+    _EXPORT_INT(m, SNDCTL_TMR_START);
+    _EXPORT_INT(m, SNDCTL_TMR_STOP);
+    _EXPORT_INT(m, SNDCTL_TMR_TEMPO);
+    _EXPORT_INT(m, SNDCTL_TMR_TIMEBASE);
 }
