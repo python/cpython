@@ -76,10 +76,8 @@
 # 
 # See also the section "Build instructions" in the README file.
 
-# Interpreter version number, for library destination pathnames
-VERSION=	1.5
-
 # Substitutions by configure
+VERSION=	@VERSION@
 srcdir=		@srcdir@
 VPATH=		@srcdir@
 RANLIB=		@RANLIB@
@@ -141,11 +139,24 @@ DISTFILES=	README ChangeLog $(CONFIGFILES)
 DISTDIRS=	$(SUBDIRS) $(SUBDIRSTOO) Ext-dummy
 DIST=		$(DISTFILES) $(DISTDIRS)
 
+LIBRARY=	libpython$(VERSION).a
+
 # Default target
-all:		python
+all:		$(LIBRARY) python
 
 # Build the interpreter
-python:		$(SUBDIRS)
+python:		$(LIBRARY)
+		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
+			LIBRARY=../$(LIBRARY) link
+
+# Build the library
+$(LIBRARY):	$(SUBDIRS)
+		if test ! -f $(LIBRARY); \
+		then for i in $(SUBDIRS); do rm -f $$i/add2lib; done; true; \
+		else true; fi
+		for i in $(SUBDIRS); do \
+			(cd $$i; $(MAKE) VERSION="$(VERSION)" add2lib); done
 
 $(SUBDIRS):	Makefiles
 
@@ -161,7 +172,7 @@ Objects:
 		cd Objects ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
-Modules: Parser Python Objects
+Modules:	Parser Python Objects
 		cd Modules ; $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
@@ -302,7 +313,7 @@ inclinstall:
 			$(INSTALL_DATA) $$i $(INCLUDEPY); \
 		done
 
-# Install the lib*.a files and miscellaneous stuff needed by extensions
+# Install the library and miscellaneous stuff needed for extending/embedding
 # This goes into $(exec_prefix)
 LIBPL=		$(LIBP)/config
 libainstall:	all
@@ -315,11 +326,8 @@ libainstall:	all
 			else	true; \
 			fi; \
 		done
-		@for i in $(SUBDIRS); do \
-			echo Installing in subdirectory $$i; \
-			$(INSTALL_DATA) $$i/lib$$i.a $(LIBPL)/lib$$i.a; \
-			$(RANLIB) $(LIBPL)/lib$$i.a; \
-		done
+		$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY)
+		$(RANLIB) $(LIBPL)/$(LIBRARY)
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
 		$(INSTALL_DATA) $(srcdir)/Modules/getpath.c $(LIBPL)/getpath.c
 		$(INSTALL_DATA) $(srcdir)/Modules/getbuildinfo.c $(LIBPL)/getbuildinfo.c
@@ -420,7 +428,7 @@ clean:		localclean
 		done
 
 localclobber:	localclean
-		-rm -f tags TAGS python
+		-rm -f tags TAGS python $(LIBRARY)
 		-rm -f config.log config.cache config.h
 
 clobber:	localclobber
