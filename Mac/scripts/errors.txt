@@ -1,0 +1,592 @@
+1     dsBusError      bus error
+2     dsAddressErr    address error
+3     dsIllInstErr    illegal instruction error
+4     dsZeroDivErr    zero divide error
+5     dsChkErr        check trap error
+6     dsOvflowErr     overflow trap error
+7     dsPrivErr       privilege violation error
+8     dsTraceErr      trace mode error
+9     dsLineAErr      line 1010 trap error
+10    dsLineFErr      line 1111 trap error
+11    dsMiscErr       miscellaneous hardware exception error
+12    dsCoreErr       unimplemented core routine error
+13    dsIrqErr        uninstalled interrupt error
+14    dsIOCoreErr     IO Core Error
+15    dsLoadErr       Segment Loader Error
+16    dsFPErr         Floating point error
+17    dsNoPackErr     package 0 not present [List Manager]
+18    dsNoPk1         package 1 not present [Reserved by Apple]
+19    dsNoPk2         package 2 not present [Disk Initialization]
+20    dsNoPk3         package 3 not present [Standard File]
+21    dsNoPk4         package 4 not present [Floating-Point Arithmetic]
+22    dsNoPk5         package 5 not present [Transcendental Functions]
+23    dsNoPk6         package 6 not present [International Utilities]
+24    dsNoPk7         package 7 not present [Binary/Decimal Conversion]
+25    dsMemFullErr    out of memory!
+26    dsBadLaunch     can't launch file
+27    dsFSErr         file system map has been trashed
+28    dsStknHeap      stack has moved into application heap
+30    dsReinsert      request user to reinsert off-line volume
+31    dsNotThe1       not the disk I wanted (obsolete)
+33    negZcbFreeErr   ZcbFree has gone negative
+40    dsGreeting      welcome to Macintosh greeting
+41    dsFinderErr     can't load the Finder error
+42    shutDownAlert   handled like a shutdown error (obsolete)
+43    dsSystemFileErr can’t find System file to open (obsolete)
+51    dsBadSlotInt    unserviceable slot interrupt
+81    dsBadSANEopcode bad opcode given to SANE Pack4
+84    menuPrgErr      happens when a menu is purged
+85    dsMBarNFnd      SysErr -- cannot find MBDF
+86    dsHMenuFindErr  SysErr -- recursively defined HMenus
+87    dsWDEFnFnd      Could not load WDEF
+88    dsCDEFnFnd      Could not load CDEF
+89    dsMDEFnFnd      Could not load MDEF
+98    dsNoPatch       Can't patch for particular Model Mac
+99    dsBadPatch      Can't load patch resource
+101   dsParityErr     memory parity error
+102   dsOldSystem     System is too old for this ROM
+103   ds32BitMode     booting in 32-bit on a 24-bit sys
+20000 dsShutDownOrRestart   user choice between ShutDown and Restart
+20001 dsSwitchOffOrRestart  user choice between switching off and Restart
+20002 dsForcedQuit    allow the user to ExitToShell, return if Cancel
+32767 dsSysErr        general system error (catch-all used in DSAT)General System Errors (VBL Mgr, Queue, Etc.)
+0     noErr           No Error
+-1    qErr            queue element not found during deletion
+-2    vTypErr         invalid queue element
+-3    corErr          core routine number out of range
+-4    unimpErr        unimplemented core routine
+-5    SlpTypeErr      invalid queue element
+-8    seNoDB          no debugger installed to handle debugger command
+-17   controlErr      Driver can't respond to Control call
+-18   statusErr       Driver can't respond to Status call
+-19   readErr         Driver can't respond to Read call
+-20   writErr         Driver can't respond to Write call
+-21   badUnitErr      Driver ref num doesn't match unit table
+-22   unitEmptyErr    Driver ref num specifies NIL handle in unit table
+-23   openErr         Requested read/write permission doesn't match
+                      driver's open permission, or
+                      Attempt to open RAM serial Driver failed
+-24   closErr         Close failed; Permission to close .MPP driver
+                      was denied
+-25   dRemovErr       tried to remove an open driver
+-26   dInstErr        DrvrInstall couldn't find driver in resources
+-27   abortErr        IO call aborted by KillIO; Publisher has written
+                      a new edition *OR* IO abort error (Printing Manager)
+-28   notOpenErr      Couldn't rd/wr/ctl/sts cause driver not opened
+-29   unitTblFullErr  Unit table has no more entries
+-30   dceExtErr       dce extension error
+-33   dirFulErr       Directory full
+-34   dskFulErr       Disk full
+-35   nsvErr          No such volume; volume not found
+-36   ioErr           I/O error (bummers)
+-37   bdNamErr        Bad file name; there may be no bad names
+                      in the final system!
+-38   fnOpnErr        File not open
+-39   eofErr          End of file; no additional data in the format
+-40   posErr          Tried to position to before start of file (r/w)
+-41   mFulErr         Memory full (open) or file won't fit (load)
+-42   tmfoErr         too many files open
+-43   fnfErr          File not found; Folder not found;
+                      Edition container not found; Target not found
+-44   wPrErr          Diskette is write protected; Volume is locked
+                      through hardware
+-45   fLckdErr        File is locked *OR* Publisher writing to an edition
+-46   vLckdErr        Volume is locked through software
+-47   fBsyErr         File is busy (delete); Section doing I/O
+-48   dupFNErr        Duplicate filename (rename); File found
+                      instead of folder
+-49   opWrErr         File already open with with write permission
+-50   paramErr        Error in user parameter list
+-51   rfNumErr        Reference number invalid
+-52   gfpErr          Get file position error
+-53   volOffLinErr    Volume is off line
+-54   permErr         Software lock on file; Not a subscriber 
+                      [permissions error on file open]
+-55   volOnLinErr     drive volume already on-line at MountVol
+-56   nsDrvErr        no such drive (tried to mount a bad drive num)
+-57   noMacDskErr     not a mac diskette (sig bytes are wrong)
+-58   extFSErr        External file system — file system identifier is nonzero
+-59   fsRnErr         file system internal error: during rename the old
+                      entry was deleted but could not be restored…
+-60   badMDBErr       bad master directory block
+-61   wrPermErr       Write permissions error; Not a publisher
+-64   fontDecError    error during font declaration *OR* drive not installed
+-65   fontNotDeclared font not declared *OR* r/w requested for an off-line drive
+-66   fontSubErr      font substitution occured *OR* couldn't find 5 nybbles in 200 tries
+-67   noAdrMkErr      couldn't find valid addr mark
+-68   dataVerErr      read verify compare failed
+-69   badCksmErr      addr mark checksum didn't check
+-70   badBtSlpErr     bad addr mark bit slip nibbles
+-71   noDtaMkErr      couldn't find a data mark header
+-72   badDCksum       bad data mark checksum
+-73   badDBtSlp       bad data mark bit slip nibbles
+-74   wrUnderrun      write underrun occurred
+-75   cantStepErr     step handshake failed
+-76   tk0BadErr       track 0 detect doesn't change
+-77   initIWMErr      unable to initialize IWM
+-78   twoSideErr      tried to read 2nd side on a 1-sided drive
+-79   spdAdjErr       unable to correctly adjust disk speed
+-80   seekErr         track number wrong on address mark
+-81   sectNFErr       sector number never found on a track
+-82   fmt1Err         can't find sector 0 after track format
+-83   fmt2Err         can't get enough sync
+-84   verErr          track failed to verify
+-85   clkRdErr        unable to read same clock value twice
+-86   clkWrErr        time written did not verify
+-87   prWrErr         parameter ram written didn't read-verify
+-88   prInitErr       InitUtil found the parameter ram uninitialized
+-89   rcvrErr         SCC receiver error (framing, parity, OR)
+-90   breakRecd       Break received (SCC)
+-91   ddpSktErr       Error opening socket *OR* Invalid address or table is full
+-92   ddpLenErr       Data length too big *OR* Packet too large or first entry of the write-data
+                      structure did not contain the full 14-byte header
+-93   noBridgeErr     No router available [for non-local send]
+-94   lapProtErr      error in attaching/detaching protocol *OR* Protocol handler is already attached, node’s
+                      protocol table is full, protocol not attached,
+                      or protocol handler pointer was not 0
+-95   excessCollsns   Hardware error [excessive collisions on write]
+-97   portInUse       driver Open error code (port is in use)
+-98   portNotCf       driver Open error code (parameter RAM not
+                      configured for this connection)
+-99   memROZErr       hard error in ROZ
+-100  noScrapErr      No scrap exists error
+-102  noTypeErr       Format not available [no object of that type in scrap]
+-108  memFullErr      Ran out of memory [not enough room in heap zone]
+-109  nilHandleErr    GetHandleSize fails on baseText or substitutionText;
+                      NIL master pointer [handle was NIL in HandleZone
+                      or other]
+-110  memAdrErr       Address was odd, or out of range
+-111  memWZErr        Attempted to operate on a free block; GetHandleSize
+                      fails on baseText or substitutionText
+                      [WhichZone failed (applied to free block)]
+-112  memPurErr       Trying to purge a locked or non-purgeable block
+-113  memAZErr        Address in zone check failed
+-114  memPCErr        Pointer Check failed
+-115  memBCErr        Block Check failed
+-116  memSCErr        Size Check failed
+-117  memLockedErr    Trying to move a locked block (MoveHHi)
+-120  dirNFErr        Directory not found
+-121  tmwdoErr        No free WDCB available
+-122  badMovErr       Move into offspring error
+-123  wrgVolTypErr    Not an HFS volume [wrong volume type error
+                      or (obsolete) operation not supported for MFS]
+-124  volGoneErr      Server volume has been disconnected.
+-125  updPixMemErr    Insufficient memory to update a pixmap
+-127  fsDSIntErr      Internal file system error *OR* Could not find HMenu's parent in MenuKey
+-126  dsMBarNFnd      System error code for MBDF not found
+-128  userCanceledErr User canceled an operation
+-130  fidNotFound     no file thread exists
+-131  fidNotAFile     directory specified
+-132  fidExists       file id already exists
+-147  regionTooBigError  Region too big or complex
+-148  pixMapTooBigErr    Pixel map record is deeper than 1 bit per pixel
+                         [passed pixelmap is too large]
+-149  notEnoughStack  Not enough stack space for the necessary buffers *OR* Insufficient stack
+-150  cMatchErr       Color2Index failed to find an index
+-151  cTempMemErr     Failed to allocate memory for temporary structures
+-152  cNoMemErr       Failed to allocate memory for structure
+-153  cRangeErr       Range error on colorTable request
+-154  cProtectErr     ColorTable entry protection violation
+-155  cDevErr         Invalid type of graphics device
+-156  cResErr         Invalid resolution for MakeITable
+-157  cDepthErr       Invalid pixel depth
+-158  cParmErr        Invalid parameter
+-185  badExtResource   Extended resource has a bad format.
+-186  CantDecompress   Resource bent ("the bends")
+                       can't decompress a compressed resource
+-188  resourceInMemory Resource already in memory
+-189  writingPastEnd   Writing past end of file
+-190  inputOutOfBounds Offset or count out of bounds
+-192  resNotFound      Resource not found
+-193  resFNotFound     Resource file not found
+-194  addResFailed     AddResource failed
+-195  addRefFailed     AddReference failed
+-196  rmvResFailed     RmveResource failed
+-197  rmvRefFailed     RmveReference failed
+-198  resAttrErr       Attribute inconsistent with operation
+-199  mapReadErr       Map inconsistent with operation
+-200  noHardware        Required sound hardware not available
+                        [no hardware support for the specified synthesizer]
+-201  notEnoughHardware Insufficient hardware available
+                        [no more channels for the specified synthesizer]
+-203  queueFull         No room in the queue
+-204  resProblem        Problem loading the resource
+-205  badChannel        Channel is corrupt or unusable
+                        [invalid channel queue length]
+-206  badFormat         Resource is corrupt or unusable
+                        [handle to 'snd ' resource was invalid]
+-207  notEnoughBufferSpace  Insufficient memory available
+-208  badFileFormat     File is corrupt or unusable, or not AIFF or AIFF-C
+-209  channel           Channel is busy
+-210  buffersTooSmall   Buffer is too small
+-211  channelNotBusy    Channel not currently used
+-212  noMoreRealTime    Not enough CPU time available
+-213  badParam          A parameter is incorrect
+-220  siNoSoundInHardware   No sound input hardware available
+-221  siBadSoundInDevice    Invalid sound input device
+-222  siNoBufferSpecified   No buffer specified
+-223  siInvalidCompression  Invalid compression type
+-224  siHardDiskTooSlow     Hard drive too slow to record
+-225  siInvalidSampleRate   Invalid sample rate
+-226  siInvalidSampleSize   Invalid sample size
+-227  siDeviceBusyErr       Sound input device is busy
+-228  siBadDeviceName       Invalid device name
+-229  siBadRefNum           Invalid reference number
+-230  siInputDeviceErr      Input device hardware failure
+-231  siUnknownInfoType     Unknown type of information
+-232  siUnknownQuality      Unknown quality
+-250  midiNoClientErr     no client with that ID found
+-251  midiNoPortErr       no port with that ID found
+-252  midiTooManyPortsErr too many ports already installed in the system
+-253  midiTooManyConsErr  too many connections made
+-254  midiVConnectErr     pending virtual connection created
+-255  midiVConnectMade    pending virtual connection resolved
+-256  midiVConnectRmvd    pending virtual connection removed
+-257  midiNoConErr        no connection exists between specified ports
+-258  midiWriteErr        couldn't write to all connected ports
+-259  midiNameLenErr      name supplied is longer than 31 characters
+-260  midiDupIDErr        duplicate client ID
+-261  midiInvalidCmdErr   command not supported for port type
+-299  nmTypErr        Invalid qType—must be ORD(nmType)
+-290  smSDMInitErr    SDM could not be initialized.
+-291  smSRTInitErr    Slot Resource Table could not be initialized.
+-292  smPRAMInitErr   Slot Resource Table could not be initialized.
+-293  smPriInitErr    Cards could not be initialized.
+-300  smEmptySlot     No card in slot
+-301  smCRCFail       CRC check failed for declaration data
+-302  smFormatErr     FHeader Format is not Apple's
+-303  smRevisionErr   Wrong revison level
+-304  smNoDir         Directory offset is Nil
+-305  smLWTstBad      Long Word test field <> $5A932BC7.
+-306  smNosInfoArray  No sInfoArray. Memory Mgr error.
+-307  smResrvErr      Fatal reserved error. Reserved field <> 0.
+-308  smUnExBusErr    Unexpected Bus Error
+-309  smBLFieldBad    ByteLanes field was bad.
+-310  smFHBlockRdErr  Error occured during _sGetFHeader.
+-311  smFHBlkDispErr  Error occured during _sDisposePtr (Dispose of
+                      FHeader block).
+-312  smDisposePErr   _DisposePointer error
+-313  smNoBoardsRsrc  No Board sResource.
+-314  smGetPRErr      Error occured during _sGetPRAMRec (See SIMStatus).
+-315  smNoBoardId     No Board Id.
+-316  smIntStatVErr   The InitStatusV field was negative after primary
+                      or secondary init.
+-317  smIntTblVErr    An error occured while trying to initialize the
+                      Slot Resource Table.
+-318  smNoJmpTbl      SDM jump table could not be created.
+-319  smBadBoardId    BoardId was wrong, re-init the PRAM record.
+-320  smBusErrTO      BusError time out.
+-330  smBadRefId      Reference Id not found in list
+-331  smBadsList      Bad sResource [sList] structure:
+                      Id1<Id2<Id3 …  format is not followed.
+-332  smReservedErr   Reserved field not zero
+-333  smCodeRevErr    Code revision is wrong
+-334  smCPUErr        Code revision is wrong
+-335  smsPointerNil   LPointer is nil {From sOffsetData. If this error
+                      occurs, check sInfo rec for more information.}
+-336  smNilsBlockErr  Nil sBlock error {Dont allocate and try to use a
+                      nil sBlock}
+-337  smSlotOOBErr    Slot out of bounds error
+-338  smSelOOBErr     Selector out of bounds error; function not implemented
+-339  smNewPErr       _NewPtr error
+-340  smBlkMoveErr    _BlockMove error
+-341  smCkStatusErr   Status of slot = fail.
+-342  smGetDrvrNamErr Error occured during _sGetDrvrName.
+-343  smDisDrvrNamErr Error occured during _sDisDrvrName.
+-344  smNoMoresRsrcs      No more sResources *OR* Specified sResource data structure not found
+-345  smsGetDrvrErr   Error occurred during _sGetDriver.
+-346  smBadsPtrErr    Bad pointer was passed to sCaldSPointer function
+-347  smByteLanesErr  ByteLanes field in card’s format block was
+                      determined to be zero
+-348  smOffsetErr     Offset was too big (temporary, should be fixed)
+-349  smNoGoodOpens   No opens were successfull in the loop.
+-350  smSRTOvrFlErr   SRT over flow.
+-351  smRecNotFnd     Record not found in the SRT.
+-360  slotNumErr      invalid slot # error
+-400  gcrOnMFMErr     gcr format on high density media error
+-450  editionMgrInitErr        Manager not initialized or could not
+                               load package
+-451  badSectionErr            Not a valid section type
+-452  notRegisteredSectionErr  Not registered
+-454  badSubPartErr            Bad edition container spec or invalid
+                               edition container
+-460  multiplePublisherWrn     Already is a publisher
+-461  containerNotFoundWrn     Alias was not resolved
+-463  notThePublisherWrn       Not the publisher
+-470  scsiBadPBErr    invalid field(s) in the parameter block
+-471  scsiOverrunErr  attempted to transfer too many bytes
+-472  scsiTransferErr write flag conflicts with data transfer phase
+-473  scsiBusTOErr    bus error during transfer
+-474  scsiSelectTOErr scsiSelTO exceeded (selection failed)
+-475  scsiTimeOutErr  scsiReqTO exceeded
+-476  scsiBusResetErr the bus was reset, so your request was aborted
+-477  scsiBadStatus   non-zero (not "Good") status returned
+-478  scsiNoStatusErr device did not go through a status phase
+-479  scsiLinkFailErr linked command never executed
+-489  scsiUnimpVctErr unimplemented routine was called
+-490  userBreak       user debugger break
+-491  strUserBreak    user debugger break - display string on stack
+-492  exUserBreak     user debugger break - execute commands on stack
+-500  rgnTooBigErr    Bitmap would convert into a region greater than 64 KB
+-501  teScrapSizeErr  scrap item too big for text edit record
+-502  hwParamrErr     bad selector for _HWPriv
+-600  procNotFound      No eligible process with specified process
+                        serial number
+-601  memFragErr        Not enough room to launch application
+                        w ith special requirements
+-602  appModeErr        Memory mode is 32-bit, but application is
+                        not 32-bit clean
+-603  protocolErr       app made module calls in improper order
+-604  hardwareConfigErr hardware configuration not correct for call
+-605  appMemFullErr     Partition size specified in 'SIZE' resource is
+                        not big enough for launch
+-606  appIsDaemon       Application is background-only
+-607  bufferIsSmall     Buffer is too small
+-608  noOutstandingHLE  No outstanding high-level event
+-609  connectionInvalid           Connection is invalid
+-610  noUserInteractionAllowed    Attempted PostHighLevelEvent from
+                          background and no session yet established
+-620  notEnoughMemoryErr      Insufficient physical memory
+-621  notHeldErr              Specified range of memory is not held
+-622  cannotMakeContiguousErr Cannot make specified range contiguous
+-623  notLockedErr            Specified range of memory is not locked
+-624  interruptsMaskedErr     Called with interrupts masked
+-625  cannotDeferErr          Unable to defer additional user functions
+-800  rcDBNull          The data item was NULL
+-801  rcDBValue         Data available or successfully retrieved
+-802  rcDBError         Error executing function
+-803  rcDBBadType       Next data item not of requested data type
+-804  rcDBBreak         Function timed out
+-805  rcDBExec          Query currently executing
+-806  reDBBadSessID     Session ID is invalid
+-807  rcDBBadSessNum    Invalid session number
+-808  rcDBBadDDEV       Couldn’t find the specified database extension,
+                        or error occurred in opening database extension
+-809  rcDBAsyncNotSupp  The database extension does not support
+                        asynchronous calls
+-810  rcDBBadAsyncPB    Invalid parameter block specified
+-811  rcDBNoHandler     There is no handler for this data type
+                        installed for the current application
+-812  rcDBWrongVersion  Wrong version number
+-813  rcDBPackNotInited The InitDBPack function has not yet been called
+-850  hmHelpDisabled         Help balloons are not enabled
+-851  hmResNotFound          ????
+-852  hmMemFullErr           ????
+-853  hmBalloonAborted       Because of constant cursor movement,
+                             the help balloon wasn’t displayed
+-854  hmSameAsLastBalloon    Menu and item are same as previous menu and item
+-855  hmHelpManagerNotInited Help menu not set up
+-856  hmBadSelector          ????
+-857  hmSkippedBalloon       No ballon content to fill in
+-858  hmWrongVersion         Wrong version of Help Manager resource
+-859  hmUnknownHelpType      Help message record contained a bad type
+-860  hmCouldNotLoadPackage  ????
+-861  hmOperationUnsupported Bad method parameter
+-862  hmNoBalloonUp          No balloon showing
+-863  hmCloseViewActive  User using Close View won’t let you remove balloon
+-900  notInitErr       PPC Toolbox has not been initialized yet
+-902  nameTypeErr      Invalid or inappropriate locationKindSelector
+                       in location name
+-903  noPortErr        Invalid port name; Unable to open port or bad
+                       port reference number
+-904  noGlobalsErr     System unable to allocate memory, critical error
+-905  localOnlyErr     Network activity is currently disabled
+-906  destPortErr      Port does not exist at destination
+-907  sessTableErr     PPC Toolbox is unable to create a session
+-908  noSessionErr     Invalid session reference number
+-909  badReqErr        Bad parameter or invalid state for this operation
+-910  portNameExistsErr  Another port is already open with this name
+-911  noUserNameErr    User name unknown on destination machine
+-912  userRejectErr    Destination rejected the session request
+-915  noResponseErr    Unable to contact application
+-916  portClosedErr    The port was closed
+-917  sessClosedErr    The session has closed
+-919  badPortNameErr   PPC port record is invalid
+-922  noDefaultUserErr User has not specified owner name in Sharing Setup
+                       control panel
+-923  notLoggedInErr   Default user reference number does not yet exist
+-924  noUserRefErr     Unable to create a new user reference number
+-925  networkErr       An error has occurred in the network
+-926  noInformErr      PPCStart failed because target application did not
+                       have an inform pending
+-927  authFailErr      User’s password is wrong
+-928  noUserRecErr         Invalid user reference number
+-930  badServiceMethodErr  Service method is other than
+                           ppcServiceRealTime
+-931  badLocNameErr        Location name is invalid
+-932  guestNotAllowedErr   Destination port requires authentication
+-1024 nbpBuffOvr      Buffer overflow in LookupName
+-1025 nbpNoConfirm    Name not confirmed on ConfirmName
+-1026 nbpConfDiff     Name confirmed at different socket
+-1027 nbpDuplicate    Duplicate name exists already
+-1028 nbpNotFound     Name not found on remove
+-1029 nbpNISErr       Error trying to open the NIS
+-1066 aspBadVersNum   Server cannot support this ASP version
+-1067 aspBufTooSmall  Buffer too small
+-1068 aspNoMoreSess   No more sessions on server
+-1069 aspNoServers    No servers at that address
+-1070 aspParamErr     Parameter error
+-1071 aspServerBusy   Server cannot open another session
+-1072 aspSessClosed   Session closed
+-1073 aspSizeErr      Command block too big
+-1074 aspTooMany      Too many clients (server error)
+-1075 aspNoAck        No ack on attention request (server err)
+-1096 reqFailed  Request to contact router failed: retry count exceeded
+-1097 tooManyReqs     Too many concurrent requests
+-1098 tooManySkts     Too many concurrent responding-sockets
+-1099 badATPSkt       Bad ATP-responding socket
+-1100 badBuffNum      Bad response buffer number specififed
+-1101 noRelErr        No release received
+-1102 cbNotFound      Control Block not found; no pending
+                      asynchronous calls
+-1103 noSendResp      AddResponse issued without SendResponse
+-1104 noDataArea      No data area for request to MPP
+-1105 reqAborted      ERdCancel function called for this ERead
+                      [SendRequest aborted by RelTCB]
+-1273 errOpenDenied   Open request denied by recipient
+-1274 errDSPQueueSize Send or receive queue is too small
+-1275 errFwdReset     Read terminated by forward reset
+-1276 errAttention    Attention message too long
+-1277 errOpening      Attempt to open connection failed
+-1278 errState        Bad connection state for this operation
+-1279 errAborted      Request aborted by dspRemove or dspClose function
+-1280 errRefNum       Bad connection reference number
+-1300 fidNotFound     File ID not found [No file thread exists]
+-1301 fidExists       File id already exists
+-1302 notAFileErr     Specified file is a directory
+-1303 diffVolErr      Files on different volumes
+-1304 catChangedErr   Catalog has changed and CatPosition may be invalid
+-1305 desktopDamagedErr  The desktop database has become corrupted —
+                      the Finder will fix this, but if your application is
+                      not running with the Finder, use DTReset or DTDelete
+-1700  errAECoercionFail     Data could not be coerced to the
+                             requested descriptor type
+-1701  errAEDescNotFound     Descriptor record was not found
+-1702  errAECorruptData      Data in an Apple event could not be read
+-1703  errAEWrongDataType    Wrong descriptor type
+-1704  errAENotAEDesc        Not a valid descriptor record
+-1705  errAEBadListItem      Operation involving a list item failed
+-1706  errAENewerVersion     Need a newer version of the Apple Event Manager
+-1707  errAENotAppleEvent    Event is not an Apple event
+-1708  errAEEventNotHandled  Event wasn’t handled by an Apple event handler
+-1709  errAEReplyNotValid    AEResetTimer was passed an invalid reply
+-1710  errAEUnknownSendMode  Invalid sending mode was passed
+-1711  errAEWaitCanceled     User canceled out of wait loop for reply
+                             or reciept
+-1712  errAETimeout          Apple event timed out
+-1713  errAENoUserInteraction    No user interaction allowed
+-1714  errAENotASpecialFunction  Wrong keyword for a special function
+-1715  errAEParamMissed      Handler did not get all required paramters
+-1716  errAEUnknownAddressType   Unknown Apple event address type
+-1717  errAEHandlerNotFound  No handler found for an Apple event
+                             or a coersion
+-1718  errAEReplyNotArrived  Reply has not yet arrived
+-1719  errAEIllegalIndex     Not a valid list index
+-3101 buf2SmallErr    Packet too large for buffer; partial data returned
+-3102 noMPPErr        No MPP error
+-3103 ckSumErr        Check sum error
+-3104 extractErr      Extraction error
+-3105 readQErr        Read queue error
+-3106 atpLenErr       ATP length error
+-3107 atpBadRsp       ATP bad response error
+-3108 recNotFnd       Record not found
+-3109 sktClosedErr    Socket closed error
+-4096 ???             No free Connect Control Blocks available
+-4097 ???             Bad connection reference number
+-4098 ???             Request already active
+-4099 ???             Write request too big
+-4100 ???             Connection just closed
+-4101 ???             Printer not found, or closed
+-5000 accessDenied    Incorrect access for this file/folder
+-5006 DenyConflict    Permission/Deny mode conflicts with the current
+                      mode in which this fork is already open
+-5015 NoMoreLocks     Byte range locking failure from Server
+-5020 RangeNotLocked  Attempt to unlock an already unlocked range
+-5021 RangeOverlap    Attempt to lock some of an already locked range
+-5001 afpAuthContinue     AFP Authorization continue
+-5002 afpBadUAM           AFP Bad UAM
+-5003 afpBadVersNum       AFP Bad version number
+-5004 afpBitmapErr        AFP Bit map error
+-5005 afpCantMove         AFP Can't move error
+-5007 afpDirNotEmpty      AFP Dir not empty
+-5008 afpDiskFull         AFP Disk full
+-5009 afpEofError         AFP End-of-File error
+-5010 afpFileBusy         AFP File busy
+-5011 afpFlatVo           AFP Flat volume
+-5012 afpItemNotFound     AFP Information not found
+-5013 afpLockErr          AFP Lock error
+-5014 afpMiscErr          AFP Misc error
+-5016 afpNoServer         AFP No server
+-5017 afpObjectExists     AFP Object already exists
+-5018 afpObjectNotFound   AFP Object not found
+-5019 afpParmErr          AFP Parm error
+-5022 afpSessClosed       AFP Session closed
+-5023 afpUserNotAuth      AFP User not authorized
+-5024 afpCallNotSupported AFP Call not supported
+-5025 afpObjectTypeErr    AFP Object type error
+-5026 afpTooManyFilesOpen AFP Too many files open
+-5027 afpServerGoingDown  AFP Server going down
+-5028 afpCantRename       AFP Can't rename
+-5029 afpDirNotFound      AFP Directory not found
+-5030 afpIconTypeError    Size of new icon and one it replaces don’t match
+-5031 afpVolLocked        Volume is Read-Only
+-5032 afpObjectLocked     Object is M/R/D/W inhibited
+-5500 envNotPresent   SysEnvirons trap not present - returned by glue.
+-5501 envBadVers      Version non-positive
+-5502 envVersTooBig   Version bigger than call can handle
+-5550 gestaltUnknownErr       Could not obtain the response
+-5551 gestaltUndefSelectorErr Undefined selector
+-5552 gestaltDupSelectorErr   Selector already exists
+-5553 gestaltLocationErr      Function not in system heapLaserWriter Driver Errors
+-8132 ????            Manual Feed time out
+-8133 ????            General PostScript Error
+-8150 ????            No LaserWriter chosen *OR* No LaserPrep dictionary installed
+-8151 ????            Version mismatch between LaserPrep dictionaries
+-8160 ????            Zoom scale factor out of range
+-11000 pictInfoVersionErr    Version number not zero
+-11001 pictInfoIDErr         Invalid PictInfo ID
+-11002 pictInfoVerbErr       Invalid verb combination specified
+-11003 cantLoadPickMethodErr Custom pick method not in resource chain
+-11004 colorsRequestedErr    Number out of range or greater than passed
+                             to NewPictInfo
+-11005 pictureDataErr        Invalid picture data
+-13000 pmBusyErr      Power Manager IC stuck busy
+-13001 pmReplyTOErr   Timed out waiting to begin reply handshake
+-13002 pmSendStartErr Power Manager IC did not start handshake
+-13003 pmSendEndErr   During send, Power Manager did not finish handshake
+-13004 pmRecvStartErr During receive, Power Manager did not start handshake
+-13005 pmRecvEndErr   During receive, Power Manager did not finish handshake
+-23000 ipBadLapErr           Bad network configuration
+-23001 ipBadCnfgErr          Bad IP configuration error
+-23002 ipNoCnfgErr           Missing IP or LAP configuration error
+-23003 ipLoadErr             Error in MacTCP load
+-23004 ipBadAddr             Error in getting address
+-23005 connectionClosing     Connection in closing
+-23006 invalidLength
+-23007 connectionExists      Request conflicts with existing connection
+-23008 connectionDoesntExist Connection does not exist
+-23009 insufficientResources Insufficient resources to perform request
+-23010 invalidStreamPtr
+-23011 streamAlreadyOpen
+-23012 connectionTerminated
+-23013 invalidBufPtr
+-23014 invalidRDS
+-23015 openFailed
+-23016 commandTimeout
+-23017 duplicateSocket
+-23030 ipOpenProtErr         Can't open new protocol, table full
+-23031 ipCloseProtErr        Can't find protocol to close
+-23032 ipDontFragErr         Packet too large to send w/o fragmenting
+-23033 ipDestDeadErr         Destination not responding
+-23034 ipBadWDSErr           Error in WDS format
+-23035 icmpEchoTimeoutErr    ICMP echo timed-out
+-23036 ipNoFragMemErr        No memory to send fragmented pkt
+-23037 ipRouteErr            Can't route packet off-net
+-23041 nameSyntaxErr
+-23042 cacheFault
+-23043 noResultProc
+-23044 noNameServer
+-23045 authNameErr
+-23046 noAnsErr
+-23047 dnrErr
+-23048 outOfMemory
