@@ -24,7 +24,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #if defined(PYOS_OS2) || defined(MS_WINDOWS)
 #define PYTHONHOMEHELP "<prefix>\\lib"
 #else
-#define PYTHONHOMEHELP "<prefix>/python1.5"
+#define PYTHONHOMEHELP "<prefix>/python2.0"
 #endif
 
 /* Interface to getopt(): */
@@ -75,9 +75,7 @@ PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
 /* Main program */
 
 DL_EXPORT(int)
-Py_Main(argc, argv)
-	int argc;
-	char **argv;
+Py_Main(int argc, char **argv)
 {
 	int c;
 	int sts;
@@ -290,9 +288,7 @@ Py_Main(argc, argv)
    This is rare, but it is needed by the secureware extension. */
 
 void
-Py_GetArgcArgv(argc, argv)
-	int *argc;
-	char ***argv;
+Py_GetArgcArgv(int *argc, char ***argv)
 {
 	*argc = orig_argc;
 	*argv = orig_argv;
