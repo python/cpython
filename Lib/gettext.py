@@ -289,7 +289,7 @@ class GNUTranslations(NullTranslations):
             # cause no problems since us-ascii should always be a subset of
             # the charset encoding.  We may want to fall back to 8-bit msgids
             # if the Unicode conversion fails.
-            if msg.find('\x00') >= 0:
+            if '\x00' in msg:
                 # Plural forms
                 msgid1, msgid2 = msg.split('\x00')
                 tmsg = tmsg.split('\x00')

@@ -348,7 +348,7 @@ class HTTPResponse:
             # An HTTP/1.1 proxy is assumed to stay open unless
             # explicitly closed.
             conn = self.msg.getheader('connection')
-            if conn and conn.lower().find("close") >= 0:
+            if conn and "close" in conn.lower():
                 return True
             return False
 
@@ -361,7 +361,7 @@ class HTTPResponse:
 
         # Proxy-Connection is a netscape hack.
         pconn = self.msg.getheader('proxy-connection')
-        if pconn and pconn.lower().find("keep-alive") >= 0:
+        if pconn and "keep-alive" in pconn.lower():
             return False
 
         # otherwise, assume it will close
