@@ -126,43 +126,8 @@ From all times, sorting has always been a Great Art! :-)
 
 def heappush(heap, item):
     """Push item onto heap, maintaining the heap invariant."""
-    pos = len(heap)
-    heap.append(None)
-    while pos:
-        parentpos = (pos - 1) >> 1
-        parent = heap[parentpos]
-        if item >= parent:
-            break
-        heap[pos] = parent
-        pos = parentpos
-    heap[pos] = item
-
-# The child indices of heap index pos are already heaps, and we want to make
-# a heap at index pos too.
-def _siftdown(heap, pos):
-    endpos = len(heap)
-    assert pos < endpos
-    item = heap[pos]
-    # Sift item into position, down from pos, moving the smaller
-    # child up, until finding pos such that item <= pos's children.
-    childpos = 2*pos + 1    # leftmost child position
-    while childpos < endpos:
-        # Set childpos and child to reflect smaller child.
-        child = heap[childpos]
-        rightpos = childpos + 1
-        if rightpos < endpos:
-            rightchild = heap[rightpos]
-            if rightchild < child:
-                childpos = rightpos
-                child = rightchild
-        # If item is no larger than smaller child, we're done, else
-        # move the smaller child up.
-        if item <= child:
-            break
-        heap[pos] = child
-        pos = childpos
-        childpos = 2*pos + 1
-    heap[pos] = item
+    heap.append(item)
+    _siftdown(heap, 0, len(heap)-1)
 
 def heappop(heap):
     """Pop the smallest item off the heap, maintaining the heap invariant."""
@@ -170,7 +135,7 @@ def heappop(heap):
     if heap:
         returnitem = heap[0]
         heap[0] = lastelt
-        _siftdown(heap, 0)
+        _siftup(heap, 0)
     else:
         returnitem = lastelt
     return returnitem
@@ -184,7 +149,82 @@ def heapify(x):
     # j-1 is the largest, which is n//2 - 1.  If n is odd = 2*j+1, this is
     # (2*j+1-1)/2 = j so j-1 is the largest, and that's again n//2-1.
     for i in xrange(n//2 - 1, -1, -1):
-        _siftdown(x, i)
+        _siftup(x, i)
+
+# 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
+# is the index of a leaf with a possibly out-of-order value.  Restore the
+# heap invariant.
+def _siftdown(heap, startpos, pos):
+    newitem = heap[pos]
+    # Follow the path to the root, moving parents down until finding a place
+    # newitem fits.
+    while pos > startpos:
+        parentpos = (pos - 1) >> 1
+        parent = heap[parentpos]
+        if parent <= newitem:
+            break
+        heap[pos] = parent
+        pos = parentpos
+    heap[pos] = newitem
+
+# The child indices of heap index pos are already heaps, and we want to make
+# a heap at index pos too.  We do this by bubbling the smaller child of
+# pos up (and so on with that child's children, etc) until hitting a leaf,
+# then using _siftdown to move the oddball originally at index pos into place.
+#
+# We *could* break out of the loop as soon as we find a pos where newitem <=
+# both its children, but turns out that's not a good idea, and despite that
+# many books write the algorithm that way.  During a heap pop, the last array
+# element is sifted in, and that tends to be large, so that comparing it
+# against values starting from the root usually doesn't pay (= usually doesn't
+# get us out of the loop early).  See Knuth, Volume 3, where this is
+# explained and quantified in an exercise.
+#
+# Cutting the # of comparisons is important, since these routines have no
+# way to extract "the priority" from an array element, so that intelligence
+# is likely to be hiding in custom __cmp__ methods, or in array elements
+# storing (priority, record) tuples.  Comparisons are thus potentially
+# expensive.
+#
+# On random arrays of length 1000, making this change cut the number of
+# comparisons made by heapify() a little, and those made by exhaustive
+# heappop() a lot, in accord with theory.  Here are typical results from 3
+# runs (3 just to demonstrate how small the variance is):
+#
+# Compares needed by heapify     Compares needed by 1000 heapppops
+# --------------------------     ---------------------------------
+# 1837 cut to 1663               14996 cut to 8680
+# 1855 cut to 1659               14966 cut to 8678
+# 1847 cut to 1660               15024 cut to 8703
+#
+# Building the heap by using heappush() 1000 times instead required
+# 2198, 2148, and 2219 compares:  heapify() is more efficient, when
+# you can use it.
+#
+# The total compares needed by list.sort() on the same lists were 8627,
+# 8627, and 8632 (this should be compared to the sum of heapify() and
+# heappop() compares):  list.sort() is (unsurprisingly!) more efficent
+# for sorting.
+
+def _siftup(heap, pos):
+    endpos = len(heap)
+    startpos = pos
+    newitem = heap[pos]
+    # Bubble up the smaller child until hitting a leaf.
+    childpos = 2*pos + 1    # leftmost child position
+    while childpos < endpos:
+        # Set childpos to index of smaller child.
+        rightpos = childpos + 1
+        if rightpos < endpos and heap[rightpos] < heap[childpos]:
+                childpos = rightpos
+        # Move the smaller child up.
+        heap[pos] = heap[childpos]
+        pos = childpos
+        childpos = 2*pos + 1
+    # The leaf at pos is empty now.  Put newitem there, and and bubble it up
+    # to its final resting place (by sifting its parents down).
+    heap[pos] = newitem
+    _siftdown(heap, startpos, pos)
 
 if __name__ == "__main__":
     # Simple sanity test
