@@ -1318,7 +1318,7 @@ initarray()
 	PyObject *m, *d;
 	m = Py_InitModule("array", a_methods);
 	d = PyModule_GetDict(m);
-	if (PyDict_SetItemString(d, "array_type",
+	if (PyDict_SetItemString(d, "ArrayType",
 				 (PyObject *)&Arraytype) != 0)
-		Py_FatalError("can't define array.array_type");
+		Py_FatalError("can't define array.ArrayType");
 }
