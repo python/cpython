@@ -1,4 +1,4 @@
-\chapter{Compound statements}
+\chapter{Compound statements\label{compound}}
 \indexii{compound}{statement}
 
 Compound statements contain (groups of) other statements; they affect
@@ -60,7 +60,7 @@ statement, thus there are no ambiguities (the `dangling
 The formatting of the grammar rules in the following sections places
 each clause on a separate line for clarity.
 
-\section{The \keyword{if} statement}
+\section{The \keyword{if} statement\label{if}}
 \stindex{if}
 
 The \keyword{if} statement is used for conditional execution:
@@ -80,7 +80,7 @@ present, is executed.
 \kwindex{elif}
 \kwindex{else}
 
-\section{The \keyword{while} statement}
+\section{The \keyword{while} statement\label{while}}
 \stindex{while}
 \indexii{loop}{statement}
 
@@ -105,7 +105,7 @@ of the suite and goes back to testing the expression.
 \stindex{break}
 \stindex{continue}
 
-\section{The \keyword{for} statement}
+\section{The \keyword{for} statement\label{for}}
 \stindex{for}
 \indexii{loop}{statement}
 
@@ -169,7 +169,7 @@ for x in a[:]:
     if x < 0: a.remove(x)
 \end{verbatim}
 
-\section{The \keyword{try} statement} \label{try}
+\section{The \keyword{try} statement\label{try}}
 \stindex{try}
 
 The \keyword{try} statement specifies exception handlers and/or cleanup
@@ -271,7 +271,7 @@ restriction may be lifted in the future).
 \stindex{break}
 \stindex{continue}
 
-\section{Function definitions} \label{function}
+\section{Function definitions\label{function}}
 \indexii{function}{definition}
 
 A function definition defines a user-defined function object (see
@@ -359,7 +359,7 @@ add1 = make_incrementer(1)
 print add1(3)  # This prints '4'
 \end{verbatim}
 
-\section{Class definitions} \label{class}
+\section{Class definitions\label{class}}
 \indexii{class}{definition}
 
 A class definition defines a class object (see section \ref{types}):

@@ -28,12 +28,12 @@ though the current implementation appears to favor Latin-1.  This
 applies both to the source character set and the run-time character
 set.
 
-\section{Line structure}
+\section{Line structure\label{line-structure}}
 
 A Python program is divided into a number of \emph{logical lines}.
 \index{line structure}
 
-\subsection{Logical lines}
+\subsection{Logical lines\label{logical}}
 
 The end of
 a logical line is represented by the token NEWLINE.  Statements cannot
@@ -46,7 +46,7 @@ by following the explicit or implicit \emph{line joining} rules.
 \index{line joining}
 \index{NEWLINE token}
 
-\subsection{Physical lines}
+\subsection{Physical lines\label{physical}}
 
 A physical line ends in whatever the current platform's convention is
 for terminating lines.  On \UNIX{}, this is the \ASCII{} LF (linefeed)
@@ -54,7 +54,7 @@ character.  On DOS/Windows, it is the \ASCII{} sequence CR LF (return
 followed by linefeed).  On Macintosh, it is the \ASCII{} CR (return)
 character.
 
-\subsection{Comments}
+\subsection{Comments\label{comments}}
 
 A comment starts with a hash character (\code{\#}) that is not part of
 a string literal, and ends at the end of the physical line.  A comment
@@ -64,7 +64,7 @@ Comments are ignored by the syntax; they are not tokens.
 \index{comment}
 \index{hash character}
 
-\subsection{Explicit line joining}
+\subsection{Explicit line joining\label{explicit-joining}}
 
 Two or more physical lines may be joined into logical lines using
 backslash characters (\code{\e}), as follows: when a physical line ends
@@ -89,7 +89,7 @@ for string literals (i.e., tokens other than string literals cannot be
 split across physical lines using a backslash).  A backslash is
 illegal elsewhere on a line outside a string literal.
 
-\subsection{Implicit line joining}
+\subsection{Implicit line joining\label{implicit-joining}}
 
 Expressions in parentheses, square brackets or curly braces can be
 split over more than one physical line without using backslashes.
@@ -108,7 +108,7 @@ allowed.  There is no NEWLINE token between implicit continuation
 lines.  Implicitly continued lines can also occur within triple-quoted
 strings (see below); in that case they cannot carry comments.
 
-\subsection{Blank lines}
+\subsection{Blank lines\label{blank-lines}}
 
 A logical line that contains only spaces, tabs, formfeeds and possibly a
 comment, is ignored (i.e., no NEWLINE token is generated), except that
@@ -117,7 +117,7 @@ during interactive input of statements, an entirely blank logical line
 terminates a multi-line statement.
 \index{blank line}
 
-\subsection{Indentation}
+\subsection{Indentation\label{indentation}}
 
 Leading whitespace (spaces and tabs) at the beginning of a logical
 line is used to compute the indentation level of the line, which in
@@ -199,7 +199,7 @@ The following example shows various indentation errors:
 last error is found by the lexical analyzer --- the indentation of
 \code{return r} does not match a level popped off the stack.)
 
-\subsection{Whitespace between tokens}
+\subsection{Whitespace between tokens\label{whitespace}}
 
 Except at the beginning of a logical line or in string literals, the
 whitespace characters space, tab and formfeed can be used
@@ -207,7 +207,7 @@ interchangeably to separate tokens.  Whitespace is needed between two
 tokens only if their concatenation could otherwise be interpreted as a
 different token (e.g., ab is one token, but a b is two tokens).
 
-\section{Other tokens}
+\section{Other tokens\label{other-tokens}}
 
 Besides NEWLINE, INDENT and DEDENT, the following categories of tokens
 exist: \emph{identifiers}, \emph{keywords}, \emph{literals},
@@ -218,7 +218,7 @@ Where
 ambiguity exists, a token comprises the longest possible string that
 forms a legal token, when read from left to right.
 
-\section{Identifiers and keywords}
+\section{Identifiers and keywords\label{identifiers}}
 
 Identifiers (also referred to as \emph{names}) are described by the following
 lexical definitions:
@@ -235,7 +235,7 @@ digit:          "0"..."9"
 
 Identifiers are unlimited in length.  Case is significant.
 
-\subsection{Keywords}
+\subsection{Keywords\label{keywords}}
 
 The following identifiers are used as reserved words, or
 \emph{keywords} of the language, and cannot be used as ordinary
@@ -254,7 +254,7 @@ def       finally   in        print
 
 % When adding keywords, use reswords.py for reformatting
 
-\subsection{Reserved classes of identifiers}
+\subsection{Reserved classes of identifiers\label{id-classes}}
 
 Certain classes of identifiers (besides keywords) have special
 meanings.  These are:
@@ -267,13 +267,13 @@ meanings.  These are:
 
 (XXX need section references here.)
 
-\section{Literals} \label{literals}
+\section{Literals\label{literals}}
 
 Literals are notations for constant values of some built-in types.
 \index{literal}
 \index{constant}
 
-\subsection{String literals}
+\subsection{String literals\label{strings}}
 
 String literals are described by the following lexical definitions:
 \index{string literal}
@@ -357,7 +357,7 @@ backslashes).  Specifically, \emph{a raw string cannot end in a single
 backslash} (since the backslash would escape the following quote
 character).
 
-\subsection{String literal concatenation}
+\subsection{String literal concatenation\label{string-catenation}}
 
 Multiple adjacent string literals (delimited by whitespace), possibly
 using different quoting conventions, are allowed, and their meaning is
@@ -379,7 +379,7 @@ concatenate string expressions at run time.  Also note that literal
 concatenation can use different quoting styles for each component
 (even mixing raw strings and triple quoted strings).
 
-\subsection{Numeric literals}
+\subsection{Numeric literals\label{numbers}}
 
 There are four types of numeric literals: plain integers, long
 integers, floating point numbers, and imaginary numbers.  There are no
@@ -401,7 +401,7 @@ Note that numeric literals do not include a sign; a phrase like
 \code{-1} is actually an expression composed of the unary operator
 `\code{-}' and the literal \code{1}.
 
-\subsection{Integer and long integer literals}
+\subsection{Integer and long integer literals\label{integers}}
 
 Integer and long integer literals are described by the following
 lexical definitions:
@@ -435,7 +435,7 @@ Some examples of plain and long integer literals:
 3L    79228162514264337593543950336L    0377L   0x100000000L
 \end{verbatim}
 
-\subsection{Floating point literals}
+\subsection{Floating point literals\label{floating}}
 
 Floating point literals are described by the following lexical
 definitions:
@@ -463,7 +463,7 @@ Note that numeric literals do not include a sign; a phrase like
 \code{-1} is actually an expression composed of the operator
 \code{-} and the literal \code{1}.
 
-\subsection{Imaginary literals}
+\subsection{Imaginary literals\label{imaginary}}
 
 Imaginary literals are described by the following lexical definitions:
 
@@ -482,7 +482,7 @@ to it, e.g., \code{(3+4j)}.  Some examples of imaginary literals:
 \end{verbatim}
 
 
-\section{Operators}
+\section{Operators\label{operators}}
 
 The following tokens are operators:
 \index{operators}
@@ -497,7 +497,7 @@ The comparison operators \code{<>} and \code{!=} are alternate
 spellings of the same operator.  \code{!=} is the preferred spelling;
 \code{<>} is obsolescent.
 
-\section{Delimiters}
+\section{Delimiters\label{delimiters}}
 
 The following tokens serve as delimiters in the grammar:
 \index{delimiters}

@@ -1,4 +1,4 @@
-\chapter{Simple statements}
+\chapter{Simple statements\label{simple}}
 \indexii{simple}{statement}
 
 Simple statements are comprised within a single logical line.
@@ -21,7 +21,7 @@ simple_stmt:    expression_stmt
               | exec_stmt
 \end{verbatim}
 
-\section{Expression statements}
+\section{Expression statements\label{exprstmts}}
 \indexii{expression}{statement}
 
 Expression statements are used (mostly interactively) to compute and
@@ -51,7 +51,7 @@ any output.)
 \indexii{writing}{values}
 \indexii{procedure}{call}
 
-\section{Assert statements}\stindex{assert}
+\section{Assert statements\label{assert}}\stindex{assert}
 
 Assert statements are a convenient way to insert debugging
 assertions\indexii{debugging}{assertions} into a program:
@@ -86,7 +86,7 @@ the source code for the expression that failed in the error message;
 it will be displayed as part of the stack trace.
 
 
-\section{Assignment statements}
+\section{Assignment statements\label{assignment}}
 \indexii{assignment}{statement}
 
 Assignment statements are used to (re)bind names to values and to
@@ -247,7 +247,7 @@ print x
 \end{verbatim}
 
 
-\section{The \keyword{pass} statement}
+\section{The \keyword{pass} statement\label{pass}}
 \stindex{pass}
 
 \begin{verbatim}
@@ -265,7 +265,7 @@ def f(arg): pass    # a function that does nothing (yet)
 class C: pass       # a class with no methods (yet)
 \end{verbatim}
 
-\section{The \keyword{del} statement}
+\section{The \keyword{del} statement\label{del}}
 \stindex{del}
 
 \begin{verbatim}
@@ -293,7 +293,7 @@ is in general equivalent to assignment of an empty slice of the
 right type (but even this is determined by the sliced object).
 \indexii{attribute}{deletion}
 
-\section{The \keyword{print} statement} \label{print}
+\section{The \keyword{print} statement\label{print}}
 \stindex{print}
 
 \begin{verbatim}
@@ -330,7 +330,7 @@ exception is raised.
 \ttindex{stdout}
 \exindex{RuntimeError}
 
-\section{The \keyword{return} statement}
+\section{The \keyword{return} statement\label{return}}
 \stindex{return}
 
 \begin{verbatim}
@@ -353,7 +353,7 @@ with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the function.
 \kwindex{finally}
 
-\section{The \keyword{raise} statement}
+\section{The \keyword{raise} statement\label{raise}}
 \stindex{raise}
 
 \begin{verbatim}
@@ -387,7 +387,7 @@ exception occurred.  This is useful to re-raise an exception
 transparently in an except clause.
 \obindex{traceback}
 
-\section{The \keyword{break} statement}
+\section{The \keyword{break} statement\label{break}}
 \stindex{break}
 
 \begin{verbatim}
@@ -414,7 +414,7 @@ with a \keyword{finally} clause, that \keyword{finally} clause is executed
 before really leaving the loop.
 \kwindex{finally}
 
-\section{The \keyword{continue} statement}
+\section{The \keyword{continue} statement\label{continue}}
 \stindex{continue}
 
 \begin{verbatim}
@@ -433,7 +433,7 @@ It continues with the next cycle of the nearest enclosing loop.
 \indexii{loop}{statement}
 \kwindex{finally}
 
-\section{The \keyword{import} statement} \label{import}
+\section{The \keyword{import} statement\label{import}}
 \stindex{import}
 
 \begin{verbatim}
@@ -527,7 +527,7 @@ about how the module search works from inside a package.]
 [XXX Also should mention __import__().]
 \bifuncindex{__import__}
 
-\section{The \keyword{global} statement} \label{global}
+\section{The \keyword{global} statement\label{global}}
 \stindex{global}
 
 \begin{verbatim}
@@ -567,7 +567,7 @@ containing the \keyword{exec} statement.  The same applies to the
 \bifuncindex{execfile}
 \bifuncindex{compile}
 
-\section{The {\tt exec} statement} \label{exec}
+\section{The \keyword{exec} statement\label{exec}}
 \stindex{exec}
 
 \begin{verbatim}
