@@ -243,6 +243,8 @@ the Emacs bell is also rung as a warning.")
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ;; NO USER DEFINABLE VARIABLES BEYOND THIS POINT
 
+(make-variable-buffer-local 'py-indent-offset)
+
 ;; Differentiate between Emacs 18, Lucid Emacs, and Emacs 19.  This
 ;; seems to be the standard way of checking this.
 ;; BAW - This is *not* the right solution.  When at all possible,
