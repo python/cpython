@@ -142,9 +142,25 @@ def customize_compiler(compiler):
         (cc, opt, ccshared, ldshared, so_ext) = \
             get_config_vars('CC', 'OPT', 'CCSHARED', 'LDSHARED', 'SO')
 
+        if os.environ.has_key('CC'):
+            cc = os.environ['CC']
+        if os.environ.has_key('CPP'):
+            cpp = os.environ['CPP']
+        else:
+            cpp = cc + " -E"           # not always
+        if os.environ.has_key('LDFLAGS'):
+            ldshared = ldshared + ' ' + os.environ['LDFLAGS']
+        if os.environ.has_key('CFLAGS'):
+            opt = opt + ' ' + os.environ['CFLAGS']
+            ldshared = ldshared + ' ' + os.environ['CFLAGS']
+        if os.environ.has_key('CPPFLAGS'):
+            cpp = cpp + ' ' + os.environ['CPPFLAGS']
+            opt = opt + ' ' + os.environ['CPPFLAGS']
+            ldshared = ldshared + ' ' + os.environ['CPPFLAGS']
+
         cc_cmd = cc + ' ' + opt
         compiler.set_executables(
-            preprocessor=cc + " -E",    # not always!
+            preprocessor=cpp,
             compiler=cc_cmd,
             compiler_so=cc_cmd + ' ' + ccshared,
             linker_so=ldshared,
