@@ -107,7 +107,8 @@ extern FSSpec *mfs_GetFSSpecFSSpec();
 static int interrupted;			/* Set to true when cmd-. seen */
 static RETSIGTYPE intcatcher Py_PROTO((int));
 
-static void PyMac_DoYield Py_PROTO((int, int));
+static int PyMac_DoYield Py_PROTO((int, int));
+static int PyMac_Yield Py_PROTO((void));
 
 /*
 ** These are the real scheduling parameters that control what we check
@@ -129,32 +130,6 @@ struct real_sched_param_struct {
 static struct real_sched_param_struct schedparams =
 	{ 1, MAINLOOP_EVENTMASK, 1, 15, 15, 1, 0};
 
-#if 0
-/*
-** We attempt to be a good citizen by giving up the CPU periodically.
-** When in the foreground we do this less often and for shorter periods
-** than when in the background. At this time we also check for events and
-** pass them off to SIOUX, if compiling with mwerks.
-** The counts here are in ticks of 1/60th second.
-** XXXX The initial values here are not based on anything.
-** FG-python gives up the cpu for 1/60th 5 times per second,
-** BG-python for .2 second 10 times per second.
-*/
-static long interval_fg = 12;
-static long interval_bg = 6;
-static long yield_fg = 1;
-static long yield_bg = 2;
-static unsigned long lastyield;
-static int in_foreground;
-
-/* 
-** When > 0, do full scanning for events (program is not event aware)
-** when == 0, only scan for Command-period
-** when < 0, don't do any event scanning 
-*/
-int PyMac_DoYieldEnabled = 1;
-#endif
-
 /*
 ** Workaround for sioux/gusi combo: set when we are exiting
 */
@@ -174,6 +149,11 @@ struct hook_args {
 };
 static DlgHookYDUPP myhook_upp;
 static int upp_inited = 0;
+
+/*
+** The python-code event handler
+*/
+static PyObject *python_event_handler;
 
 #ifdef USE_GUSI
 /*
@@ -422,23 +402,31 @@ scan_event_queue(flush)
 }
 
 int
-PyOS_InterruptOccurred()
+PyErr_CheckSignals()
 {
 	if (schedparams.enabled) {
 		if ( (unsigned long)LMGetTicks() > schedparams.next_check ) {
-			PyMac_Yield();
+			if ( PyMac_Yield() < 0)
+				return -1;
 			schedparams.next_check = (unsigned long)LMGetTicks()
 					 + schedparams.check_interval;
 			if (interrupted) {
 				scan_event_queue(1);	/* Eat events up to cmd-. */
 				interrupted = 0;
-				return 1;
+				PyErr_SetNone(PyExc_KeyboardInterrupt);
+				return -1;
 			}
 		}
 	}
 	return 0;
 }
 
+int
+PyOS_InterruptOccurred()
+{
+	scan_event_queue(1);
+	return interrupted;
+}
 /* Check whether we are in the foreground */
 int
 PyMac_InForeground()
@@ -460,19 +448,29 @@ PyMac_InForeground()
 
 }
 
+int
+PyMac_SetEventHandler(PyObject *evh)
+{
+	if ( evh && python_event_handler ) {
+		PyErr_SetString(PyExc_RuntimeError, "Python event handler already set");
+		return 0;
+	}
+	if ( python_event_handler )
+		Py_DECREF(python_event_handler);
+	if ( evh )
+		Py_INCREF(evh);
+	python_event_handler = evh;
+	return 1;
+}
+
 /*
 ** Handle an event, either one found in the mainloop eventhandler or
 ** one passed back from the python program.
 */
 void
-PyMac_HandleEvent(evp, maycallpython)
+PyMac_HandleEventIntern(evp)
 	EventRecord *evp;
-	int maycallpython;
 {
-	
-	if ( maycallpython ) {
-		/* To be implemented */
-	}		
 #ifdef __MWERKS__
 	{
 		int siouxdidit;
@@ -493,19 +491,43 @@ PyMac_HandleEvent(evp, maycallpython)
 		}
 	}
 #endif /* !__MWERKS__ */
-	printf("not handled\n");
+}
+
+/*
+** Handle an event, either through HandleEvent or by passing it to the Python
+** event handler.
+*/
+int
+PyMac_HandleEvent(evp)
+	EventRecord *evp;
+{
+	PyObject *rv;
+	
+	if ( python_event_handler ) {
+		rv = PyObject_CallFunction(python_event_handler, "(O&)", 
+			PyMac_BuildEventRecord, evp);
+		if ( rv )
+			Py_DECREF(rv);
+		else
+			return -1;	/* Propagate exception */
+	} else {
+		PyMac_HandleEventIntern(evp);
+	}
+	return 0;
 }
 
 /*
 ** Yield the CPU to other tasks without processing events.
 */
-static void
+static int
 PyMac_DoYield(int maxsleep, int maycallpython)
 {
 	EventRecord ev;
 	int gotone;
 	long latest_time_ready;
+	static int in_here = 0;
 	
+	in_here++;
 	/*
 	** First check for interrupts, if wanted.
 	** This sets a flag that will be picked up at an appropriate
@@ -522,27 +544,33 @@ PyMac_DoYield(int maxsleep, int maycallpython)
 	** - don't process events but do yield
 	** - do neither
 	*/
-	if( !schedparams.process_events ) {
+	if( in_here > 1 || !schedparams.process_events || 
+	    (python_event_handler && !maycallpython) ) {
 		if ( maxsleep >= 0 ) {
 			SystemTask();
 		}
 	} else {
 		latest_time_ready = LMGetTicks() + maxsleep;
 		while ( maxsleep >= 0 ) {
-			gotone = WaitNextEvent(schedparams.process_events, &ev, 0 /*maxsleep*/, NULL);	
+			gotone = WaitNextEvent(schedparams.process_events, &ev, maxsleep, NULL);	
 			/* Get out quickly if nothing interesting is happening */
 			if ( !gotone || ev.what == nullEvent )
 				break;
-			PyMac_HandleEvent(&ev, maycallpython);
+			if ( PyMac_HandleEvent(&ev) < 0 ) {
+				in_here--;
+				return -1;
+			}
 			maxsleep = latest_time_ready - LMGetTicks();
 		}
 	}
+	in_here--;
+	return 0;
 }
 
 /*
 ** Process events and/or yield the CPU to other tasks if opportune
 */
-void
+int
 PyMac_Yield() {
 	unsigned long maxsleep;
 	
@@ -551,7 +579,7 @@ PyMac_Yield() {
 	else
 		maxsleep = schedparams.bg_yield;
 
-	PyMac_DoYield(maxsleep, 1);
+	return PyMac_DoYield(maxsleep, 1);
 }
 
 /*
