@@ -49,15 +49,27 @@ def join(a, *p):
 
 
 # Split a path in a drive specification (a drive letter followed by a
-# colon, or a UNC resource) and the path specification.
+# colon) and the path specification.
 # It is always true that drivespec + pathspec == p
 def splitdrive(p):
-    """Split a pathname into drive and path specifiers.
-
-    Return a 2-tuple (drive, path); either part may be empty.
-    This recognizes UNC paths (e.g. '\\\\host\\mountpoint\\dir\\file')"""
+    """Split a pathname into drive and path specifiers. Returns a 2-tuple
+"(drive,path)";  either part may be empty"""
     if p[1:2] == ':':
         return p[0:2], p[2:]
+    return '', p
+
+
+# Parse UNC paths
+def splitunc(p):
+    """Split a pathname into UNC mount point and relative path specifiers.
+
+    Return a 2-tuple (unc, rest); either part may be empty.
+    If unc is not empty, it has the form '//host/mount' (or similar
+    using backslashes).  unc+rest is always the input path.
+    Paths containing drive letters never have an UNC part.
+    """
+    if p[1:2] == ':':
+        return '', p # Drive letter present
     firstTwo = p[0:2]
     if firstTwo == '//' or firstTwo == '\\\\':
         # is a UNC path:
@@ -220,11 +232,14 @@ def isfile(path):
     return stat.S_ISREG(st[stat.ST_MODE])
 
 
-# Is a path a mount point?
-# XXX This degenerates in: 'is this the root?' on DOS/Windows
+# Is a path a mount point?  Either a root (with or without drive letter)
+# or an UNC path with at most a / or \ after the mount point.
 
 def ismount(path):
     """Test whether a path is a mount point (defined as root of drive)"""
+    unc, rest = splitunc(path)
+    if unc:
+        return rest in ("", "/", "\\")
     p = splitdrive(path)[1]
     return len(p)==1 and p[0] in '/\\'
 
@@ -388,7 +403,10 @@ def abspath(path):
     """Return the absolute version of a path"""
     try:
         import win32api
-        return win32api.GetFullPathName(path)
+        try:
+            return win32api.GetFullPathName(path)
+        except win32api.error:
+            return path # Bad path - return unchanged.
     except ImportError:
         if not isabs(path):
             path = join(os.getcwd(), path)
