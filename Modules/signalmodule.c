@@ -97,9 +97,7 @@ static RETSIGTYPE (*old_siginthandler)() = SIG_DFL;
 
 
 static PyObject *
-signal_default_int_handler(self, arg)
-	PyObject *self;
-	PyObject *arg;
+signal_default_int_handler(PyObject *self, PyObject *args)
 {
 	PyErr_SetNone(PyExc_KeyboardInterrupt);
 	return NULL;
@@ -113,8 +111,7 @@ It raises KeyboardInterrupt.";
 
 
 static RETSIGTYPE
-signal_handler(sig_num)
-	int sig_num;
+signal_handler(int sig_num)
 {
 #ifdef WITH_THREAD
 	/* See NOTES section above */
@@ -146,9 +143,7 @@ signal_handler(sig_num)
 
 #ifdef HAVE_ALARM
 static PyObject *
-signal_alarm(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+signal_alarm(PyObject *self, PyObject *args)
 {
 	int t;
 	if (!PyArg_Parse(args, "i", &t))
@@ -165,9 +160,7 @@ Arrange for SIGALRM to arrive after the given number of seconds.";
 
 #ifdef HAVE_PAUSE
 static PyObject *
-signal_pause(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+signal_pause(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -193,9 +186,7 @@ Wait until a signal arrives.";
 
 
 static PyObject *
-signal_signal(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+signal_signal(PyObject *self, PyObject *args)
 {
 	PyObject *obj;
 	int sig_num;
@@ -253,9 +244,7 @@ the first is the signal number, the second is the interrupted stack frame.";
 
 
 static PyObject *
-signal_getsignal(self, args)
-	PyObject *self; /* Not used */
-	PyObject *args;
+signal_getsignal(PyObject *self, PyObject *args)
 {
 	int sig_num;
 	PyObject *old_handler;
