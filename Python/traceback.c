@@ -197,8 +197,17 @@ tb_displayline(f, filename, lineno, name)
 	if (xfp == NULL || err != 0)
 		return err;
 	for (i = 0; i < lineno; i++) {
-		if (fgets(linebuf, sizeof linebuf, xfp) == NULL)
-			break;
+		char* pLastChar = &linebuf[sizeof(linebuf)-2];
+		do {
+			*pLastChar = '\0';
+			if (fgets(linebuf, sizeof linebuf, xfp) == NULL)
+				break;
+			/* fgets read *something*; if it didn't get as
+			   far as pLastChar, it must have found a newline
+			   or hit the end of the file;	if pLastChar is \n,
+			   it obviously found a newline; else we haven't
+			   yet seen a newline, so must continue */
+		} while (*pLastChar != '\0' && *pLastChar != '\n');
 	}
 	if (i == lineno) {
 		char *p = linebuf;
