@@ -405,9 +405,11 @@ class sdist (Command):
         to be distributed.
         """
         # Create all the directories under 'base_dir' necessary to
-        # put 'files' there.
-        dir_util.create_tree (base_dir, files,
-                              verbose=self.verbose, dry_run=self.dry_run)
+        # put 'files' there; the 'mkpath()' is just so we don't die
+        # if the manifest happens to be empty.
+        self.mkpath(base_dir)
+        dir_util.create_tree(base_dir, files,
+                             verbose=self.verbose, dry_run=self.dry_run)
 
         # And walk over the list of files, either making a hard link (if
         # os.link exists) to each one that doesn't already exist in its
@@ -423,10 +425,16 @@ class sdist (Command):
             link = None
             msg = "copying files to %s..." % base_dir
 
-        self.announce (msg)
+        if not files:
+            self.warn("no files to distribute -- empty manifest?")
+        else:
+            self.announce (msg)
         for file in files:
-            dest = os.path.join (base_dir, file)
-            self.copy_file (file, dest, link=link)
+            if not os.path.isfile(file):
+                self.warn("'%s' not a regular file -- skipping" % file)
+            else:
+                dest = os.path.join (base_dir, file)
+                self.copy_file (file, dest, link=link)
 
     # make_release_tree ()
 
