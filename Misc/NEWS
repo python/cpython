@@ -21,6 +21,8 @@ Extension Modules
 Library
 -------
 
+- the depecated statcache module was removed.
+
 - the shelve module no longer uses the deprecated binary parameter.
 
 - the pstats module no longer uses the deprecated ignore() method.
