@@ -2,7 +2,6 @@
 # displays parameter information as you open parens.
 
 import string
-import sys
 import types
 
 class CallTips:

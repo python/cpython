@@ -2,7 +2,6 @@
 # After ToolTip.py, which uses ideas gleaned from PySol
 
 # Used by the CallTips IDLE extension.
-import os
 from Tkinter import *
 
 class CallTip:
