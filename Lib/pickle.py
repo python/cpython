@@ -30,6 +30,7 @@ from copy_reg import dispatch_table, safe_constructors
 import marshal
 import sys
 import struct
+import re
 
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
            "Unpickler", "dump", "dumps", "load", "loads"]
@@ -94,6 +95,8 @@ TUPLE           = 't'
 EMPTY_TUPLE     = ')'
 SETITEMS        = 'u'
 BINFLOAT        = 'G'
+
+__all__.extend([x for x in dir() if re.match("[A-Z][A-Z0-9_]+$",x)])
 
 class Pickler:
 
