@@ -217,6 +217,12 @@ by all handlers except HTTP handlers --- and there it should be an
 request to be \code{POST} rather than \code{GET}. 
 \end{methoddesc}
 
+\begin{methoddesc}[Request]{get_method}{}
+Return a string indicating the HTTP request method.  This is only
+meaningful for HTTP requests, and currently always takes one of the
+values ("GET", "POST").
+\end{methoddesc}
+
 \begin{methoddesc}[Request]{has_data}{}
 Return whether the instance has a non-\code{None} data.
 \end{methoddesc}
@@ -394,25 +400,49 @@ Arguments, return values and exceptions raised should be the same as
 for \method{http_error_default()}.
 \end{methoddesc}
 
-
 \subsection{HTTPRedirectHandler Objects \label{http-redirect-handler}}
 
-\note{303 redirection is not supported by this version of 
-\module{urllib2}.}
+\note{Some HTTP redirections require action from this module's client
+  code.  If this is the case, \exception{HTTPError} is raised.  See
+  \rfc{2616} for details of the precise meanings of the various
+  redirection codes.}
+
+\begin{methoddesc}[HTTPRedirectHandler]{redirect_request}{req,
+                                                  fp, code, msg, hdrs}
+Return a \class{Request} or \code{None} in response to a redirect.
+This is called by the default implementations of the
+\code{http_error_30x()} methods when a redirection is received from
+the server.  If a redirection should take place, return a new
+\class{Request} to allow \code{http_error_30x()} to perform the
+redirect.  Otherwise, raise \exception{HTTPError} if no other
+\class{Handler} should try to handle this URL, or return \code{None}
+if you can't but another \class{Handler} might.
+
+\note{The default implementation of this method does not strictly
+ follow \rfc{2616}: it allows automatic 302 redirection of POST
+ requests, because essentially all HTTP clients do this.}
+
+\end{methoddesc}
+
 
 \begin{methoddesc}[HTTPRedirectHandler]{http_error_301}{req,
                                                   fp, code, msg, hdrs}
 Redirect to the \code{Location:} URL.  This method is called by
 the parent \class{OpenerDirector} when getting an HTTP
-permanent-redirect response.
+`moved permanently' response.
 \end{methoddesc}
 
 \begin{methoddesc}[HTTPRedirectHandler]{http_error_302}{req,
                                                   fp, code, msg, hdrs}
 The same as \method{http_error_301()}, but called for the
-temporary-redirect response.
+`found' response.
 \end{methoddesc}
 
+\begin{methoddesc}[HTTPRedirectHandler]{http_error_303}{req,
+                                                  fp, code, msg, hdrs}
+The same as \method{http_error_301()}, but called for the
+`see other' redirect response.
+\end{methoddesc}
 
 \subsection{ProxyHandler Objects \label{proxy-handler}}
 
