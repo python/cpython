@@ -24,6 +24,8 @@ class build (Command):
         ('build-lib=', None,
          "build directory for all distribution (defaults to either " +
          "build-purelib or build-platlib"),
+        ('build-scripts=', None,
+         "build directory for scripts"),
         ('build-temp=', 't',
          "temporary build directory"),
         ('compiler=', 'c',
@@ -42,6 +44,7 @@ class build (Command):
         self.build_platlib = None
         self.build_lib = None
         self.build_temp = None
+        self.build_scripts = None
         self.compiler = None
         self.debug = None
         self.force = 0
@@ -76,6 +79,8 @@ class build (Command):
         if self.build_temp is None:
             self.build_temp = os.path.join (self.build_base,
                                             'temp.' + self.plat)
+        if self.build_scripts is None:
+            self.build_scripts = os.path.join (self.build_base, 'scripts')
     # finalize_options ()
 
 
@@ -99,5 +104,8 @@ class build (Command):
         # into the build tree
         if self.distribution.has_ext_modules():
             self.run_peer ('build_ext')
+
+        if self.distribution.scripts:
+            self.run_peer ('build_scripts')
 
 # class build
