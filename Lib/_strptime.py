@@ -399,101 +399,99 @@ class TimeRE(dict):
 
 
 def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
-    """Return a time struct based on the input data and the format string.
-
-    The format argument may either be a regular expression object compiled by
-    strptime(), or a format string.  If False is passed in for data_string
-    then the re object calculated for format will be returned.  The re object
-    must be used with the same locale as was used to compile the re object.
-    """
+    """Return a time struct based on the input data and the format string."""
     locale_time = LocaleTime()
-    if isinstance(format, RegexpType):
-        if format.pattern.find(locale_time.lang) == -1:
-            raise TypeError("re object not created with same language as "
-                            "LocaleTime instance")
-        else:
-            compiled_re = format
-    else:
-        compiled_re = TimeRE(locale_time).compile(format)
-    if data_string is False:
-        return compiled_re
-    else:
-        found = compiled_re.match(data_string)
-        if not found:
-            raise ValueError("time data did not match format")
-        year = month = day = hour = minute = second = weekday = julian = tz =-1
-        found_dict = found.groupdict()
-        for group_key in found_dict.iterkeys():
-            if group_key == 'y':
-                year = int("%s%s" %
-                           (time.strftime("%Y")[:-2], found_dict['y']))
-            elif group_key == 'Y':
-                year = int(found_dict['Y'])
-            elif group_key == 'm':
-                month = int(found_dict['m'])
-            elif group_key == 'B':
-                month = _insensitiveindex(locale_time.f_month, found_dict['B'])
-            elif group_key == 'b':
-                month = _insensitiveindex(locale_time.a_month, found_dict['b'])
-            elif group_key == 'd':
-                day = int(found_dict['d'])
-            elif group_key is 'H':
-                hour = int(found_dict['H'])
-            elif group_key == 'I':
-                hour = int(found_dict['I'])
-                ampm = found_dict.get('p', '').lower()
-                # If there was no AM/PM indicator, we'll treat this like AM
-                if ampm in ('', locale_time.am_pm[0].lower()):
-                    # We're in AM so the hour is correct unless we're
-                    # looking at 12 midnight.
-                    # 12 midnight == 12 AM == hour 0
-                    if hour == 12:
-                        hour = 0
-                elif ampm == locale_time.am_pm[1].lower():
-                    # We're in PM so we need to add 12 to the hour unless
-                    # we're looking at 12 noon.
-                    # 12 noon == 12 PM == hour 12
-                    if hour != 12:
-                        hour += 12
-            elif group_key == 'M':
-                minute = int(found_dict['M'])
-            elif group_key == 'S':
-                second = int(found_dict['S'])
-            elif group_key == 'A':
-                weekday = _insensitiveindex(locale_time.f_weekday,
-                                            found_dict['A'])
-            elif group_key == 'a':
-                weekday = _insensitiveindex(locale_time.a_weekday,
-                                            found_dict['a'])
-            elif group_key == 'w':
-                weekday = int(found_dict['w'])
-                if weekday == 0:
-                    weekday = 6
-                else:
-                    weekday -= 1
-            elif group_key == 'j':
-                julian = int(found_dict['j'])
-            elif group_key == 'Z':
-                found_zone = found_dict['Z'].lower()
-                if locale_time.timezone[0] == locale_time.timezone[1]:
-                    pass #Deals with bad locale setup where timezone info is
-                         # the same; first found on FreeBSD 4.4.
-                elif locale_time.timezone[0].lower() == found_zone:
-                    tz = 0
-                elif locale_time.timezone[1].lower() == found_zone:
-                    tz = 1
-                elif locale_time.timezone[2].lower() == found_zone:
-                    tz = 0
-        #XXX <bc>: If calculating fxns are never exposed to the general
-        #          populous then just inline calculations.
-        if julian == -1 and year != -1 and month != -1 and day != -1:
+    compiled_re = TimeRE(locale_time).compile(format)
+    found = compiled_re.match(data_string)
+    if not found:
+        raise ValueError("time data did not match format")
+    year = 1900
+    month = day = 1
+    hour = minute = second = 0
+    tz = -1
+    # Defaulted to -1 so as to signal using functions to calc values
+    weekday = julian = -1
+    found_dict = found.groupdict()
+    for group_key in found_dict.iterkeys():
+        if group_key == 'y':
+            year = int(found_dict['y'])
+            # Open Group specification for strptime() states that a %y
+            #value in the range of [00, 68] is in the century 2000, while
+            #[69,99] is in the century 1900
+            if year <= 68:
+                year += 2000
+            else:
+                year += 1900
+        elif group_key == 'Y':
+            year = int(found_dict['Y'])
+        elif group_key == 'm':
+            month = int(found_dict['m'])
+        elif group_key == 'B':
+            month = _insensitiveindex(locale_time.f_month, found_dict['B'])
+        elif group_key == 'b':
+            month = _insensitiveindex(locale_time.a_month, found_dict['b'])
+        elif group_key == 'd':
+            day = int(found_dict['d'])
+        elif group_key is 'H':
+            hour = int(found_dict['H'])
+        elif group_key == 'I':
+            hour = int(found_dict['I'])
+            ampm = found_dict.get('p', '').lower()
+            # If there was no AM/PM indicator, we'll treat this like AM
+            if ampm in ('', locale_time.am_pm[0].lower()):
+                # We're in AM so the hour is correct unless we're
+                # looking at 12 midnight.
+                # 12 midnight == 12 AM == hour 0
+                if hour == 12:
+                    hour = 0
+            elif ampm == locale_time.am_pm[1].lower():
+                # We're in PM so we need to add 12 to the hour unless
+                # we're looking at 12 noon.
+                # 12 noon == 12 PM == hour 12
+                if hour != 12:
+                    hour += 12
+        elif group_key == 'M':
+            minute = int(found_dict['M'])
+        elif group_key == 'S':
+            second = int(found_dict['S'])
+        elif group_key == 'A':
+            weekday = _insensitiveindex(locale_time.f_weekday,
+                                        found_dict['A'])
+        elif group_key == 'a':
+            weekday = _insensitiveindex(locale_time.a_weekday,
+                                        found_dict['a'])
+        elif group_key == 'w':
+            weekday = int(found_dict['w'])
+            if weekday == 0:
+                weekday = 6
+            else:
+                weekday -= 1
+        elif group_key == 'j':
+            julian = int(found_dict['j'])
+        elif group_key == 'Z':
+            found_zone = found_dict['Z'].lower()
+            if locale_time.timezone[0] == locale_time.timezone[1]:
+                pass #Deals with bad locale setup where timezone info is
+                     # the same; first found on FreeBSD 4.4.
+            elif locale_time.timezone[0].lower() == found_zone:
+                tz = 0
+            elif locale_time.timezone[1].lower() == found_zone:
+                tz = 1
+            elif locale_time.timezone[2].lower() == found_zone:
+                tz = -1
+    #XXX <bc>: If calculating fxns are never exposed to the general
+    #populous then just inline calculations.  Also might be able to use
+    #``datetime`` and the methods it provides.
+    if julian == -1:
             julian = julianday(year, month, day)
-        if (month == -1 or day == -1) and julian != -1 and year != -1:
+    else:  # Assuming that if they bothered to include Julian day it will
+           #be accurate
             year, month, day = gregorian(julian, year)
-        if weekday == -1 and year != -1 and month != -1 and day != -1:
+    if weekday == -1:
             weekday = dayofweek(year, month, day)
-        return time.struct_time(
-            (year,month,day,hour,minute,second,weekday, julian,tz))
+    return time.struct_time((year, month, day,
+                             hour, minute, second,
+                             weekday, julian, tz))
 
 def _insensitiveindex(lst, findme):
     # Perform a case-insensitive index search.
