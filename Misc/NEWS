@@ -79,6 +79,9 @@ Extension modules
 - Added CurrentByteIndex, CurrentColumnNumber, CurrentLineNumber
   members to xml.parsers.expat.XMLParser object.
 
+- The mpz, rotor, and xreadlines modules, all deprecated in earlier 
+  versions of Python, have now been removed.
+
 Library
 -------
 
