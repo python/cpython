@@ -33,12 +33,6 @@ cygwin in no-cygwin mode).
 # * cygwin gcc 2.95.2/ld 2.10.90/dllwrap 2.10.90 works now
 #   - its dllwrap doesn't work, there is a bug in binutils 2.10.90
 #     see also http://sources.redhat.com/ml/cygwin/2000-06/msg01274.html
-#   - using gcc -mdll instead dllwrap doesn't work without -static because
-#     it tries to link against dlls instead their import libraries. (If
-#     it finds the dll first.)
-#     By specifying -static we force ld to link against the import libraries,
-#     this is windows standard and there are normally not the necessary symbols
-#     in the dlls.
 #   *** only the version of June 2000 shows these problems
 
 # This module should be kept compatible with Python 1.5.2.
@@ -98,7 +92,7 @@ class CygwinCCompiler (UnixCCompiler):
         self.set_executables(compiler='gcc -mcygwin -O -Wall',
                              compiler_so='gcc -mcygwin -mdll -O -Wall',
                              linker_exe='gcc -mcygwin',
-                             linker_so=('%s -mcygwin -mdll -static' %
+                             linker_so=('%s -mcygwin -mdll' %
                                         self.linker_dll))
 
         # cygwin and mingw32 need different sets of libraries
@@ -278,7 +272,7 @@ class Mingw32CCompiler (CygwinCCompiler):
         self.set_executables(compiler='gcc -mno-cygwin -O -Wall',
                              compiler_so='gcc -mno-cygwin -mdll -O -Wall',
                              linker_exe='gcc -mno-cygwin',
-                             linker_so='%s -mno-cygwin -mdll -static %s'
+                             linker_so='%s -mno-cygwin -mdll %s'
                                         % (self.linker_dll, entry_point))
         # Maybe we should also append -mthreads, but then the finished
         # dlls need another dll (mingwm10.dll see Mingw32 docs)
