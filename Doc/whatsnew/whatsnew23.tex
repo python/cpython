@@ -2,7 +2,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.03}
+\release{0.04}
 \author{A.M. Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -520,8 +520,8 @@ With all of these features the \module{logging} package should provide
 enough flexibility for even the most complicated applications.  This
 is only a partial overview of the \module{logging} package's features,
 so please see the
-\citetitle[http://www.python.org/dev/doc/devel/lib/module-logging.html]{\module{logging}
-package's reference documentation} for all of the details.  Reading
+\ulink{\module{logging} package's reference documentation}{http://www.python.org/dev/doc/devel/lib/module-logging.html}
+for all of the details.  Reading
 \pep{282} will also be helpful.
 
 
@@ -857,10 +857,10 @@ changed, though you'll only notice the difference if you have a really
 complicated inheritance hierarchy.  (Classic classes are unaffected by
 this change.)  Python 2.2 originally used a topological sort of a
 class's ancestors, but 2.3 now uses the C3 algorithm as described in
-\citetitle[http://www.webcom.com/haahr/dylan/linearization-oopsla96.html]{``A
-Monotonic Superclass Linearization for Dylan''}.  To understand the
-motivation for this change, read the thread on python-dev starting
-with the message at
+the paper \ulink{``A Monotonic Superclass Linearization for
+Dylan''}{http://www.webcom.com/haahr/dylan/linearization-oopsla96.html}.
+To understand the motivation for this change, read the thread on
+python-dev starting with the message at
 \url{http://mail.python.org/pipermail/python-dev/2002-October/029035.html}.
 Samuele Pedroni first pointed out the problem and also implemented the
 fix by coding the C3 algorithm.
