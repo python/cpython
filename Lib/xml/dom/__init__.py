@@ -38,6 +38,7 @@ class Node:
     DOCUMENT_FRAGMENT_NODE      = 11
     NOTATION_NODE               = 12
 
+
 #ExceptionCode
 INDEX_SIZE_ERR                 = 1
 DOMSTRING_SIZE_ERR             = 2
@@ -55,11 +56,17 @@ INVALID_MODIFICATION_ERR       = 13
 NAMESPACE_ERR                  = 14
 INVALID_ACCESS_ERR             = 15
 
+
 class DOMException(Exception):
     """Abstract base class for DOM exceptions.
     Exceptions with specific codes are specializations of this class."""
     
-    pass
+    def __init__(self, *args, **kw):
+        if self.__class__ is DOMException:
+            raise RuntimeError(
+                "DOMException should not be instaniated directly")
+        apply(Exception.__init__, args, kw)
+
 
 class IndexSizeErr(DOMException):
     code = INDEX_SIZE_ERR
