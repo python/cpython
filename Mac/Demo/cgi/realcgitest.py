@@ -2,6 +2,7 @@
 """
 
 from MiniAEFrame import AEServer, MiniApplication
+import MacOS
 
 class CGITest(AEServer, MiniApplication):
 	
@@ -23,7 +24,7 @@ class CGITest(AEServer, MiniApplication):
 				
 	def cgihandler(self, pathargs, **args):
 		rv = """HTTP/1.0 200 OK
-Server: NetPresenz; python-cgi-script
+Server: Unknown; python-cgi-script
 MIME-Version: 1.0
 Content-type: text/html
 
