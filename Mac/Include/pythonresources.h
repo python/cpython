@@ -43,6 +43,7 @@
 #define OPT_DEBUGGING	7
 #define OPT_KEEPNORMAL	8
 #define OPT_KEEPERROR	9
+#define OPT_CMDLINE		10
 
 /* Dialog for 'No preferences directory' */
 #define NOPREFDIR_ID	133

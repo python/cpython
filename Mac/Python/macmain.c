@@ -208,7 +208,7 @@ PyMac_InitApplication()
 void
 PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print, 
 						 int *unbuffered, int *debugging, int *keep_normal,
-						 int *keep_error)
+						 int *keep_error, int *argcp, char ***argvp)
 {
 	KeyMap rmap;
 	unsigned char *map;
@@ -216,6 +216,8 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 	ControlHandle handle;
 	DialogPtr dialog;
 	Rect rect;
+	int old_argc = *argcp;
+	int i;
 	
 	/* Default-defaults: */
 	*keep_error = 1;
@@ -233,6 +235,8 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		printf("Option dialog not found - cannot set options\n");
 		return;
 	}
+	SetDialogDefaultItem(dialog, OPT_OK);
+	SetDialogCancelItem(dialog, OPT_CANCEL);
 	
 	/* Set default values */
 #define SET_OPT_ITEM(num, var) \
@@ -257,6 +261,24 @@ PyMac_InteractiveOptions(int *inspect, int *verbose, int *suppress_print,
 		if ( item == OPT_CANCEL ) {
 			DisposDialog(dialog);
 			exit(0);
+		}
+		if ( item == OPT_CMDLINE ) {
+			int new_argc, newer_argc;
+			char **new_argv, **newer_argv;
+			
+			new_argc = ccommand(&new_argv);
+			newer_argc = (new_argc-1) + old_argc;
+			newer_argv = malloc((newer_argc+1)*sizeof(char *));
+			if( !newer_argv )
+				Py_FatalError("Cannot malloc argv\n");
+			for(i=0; i<old_argc; i++)
+				newer_argv[i] = (*argvp)[i];
+			for(i=old_argc; i<=newer_argc; i++) /* Copy the NULL too */
+				newer_argv[i] = new_argv[i-old_argc+1];
+			*argvp = newer_argv;
+			*argcp = newer_argc;
+			
+			/* XXXX Is it not safe to use free() here, apparently */
 		}
 #define OPT_ITEM(num, var) \
 		if ( item == (num) ) { \
@@ -291,12 +313,12 @@ Py_Main(argc, argv)
 	int inspect = 0;
 	int unbuffered = 0;
 
+	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
+			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error, &argc, &argv);
+
 	orig_argc = argc;	/* For getargcargv() */
 	orig_argv = argv;
 	argv0 = argv[0];	/* For getprogramname() */
-	
-	PyMac_InteractiveOptions(&inspect, &Py_VerboseFlag, &Py_SuppressPrintingFlag,
-			&unbuffered, &Py_DebugFlag, &keep_normal, &keep_error);
 
 	if (unbuffered) {
 #ifndef MPW
@@ -366,7 +388,7 @@ PyMac_Exit(status)
 	if (keep) {
 		SIOUXSettings.standalone = 1;
 		SIOUXSettings.autocloseonquit = 0;
-		SIOUXSetTitle("\p«terminated»");
+		SIOUXSetTitle("\p´terminatedª");
 	}
 	else
 		SIOUXSettings.autocloseonquit = 1;
