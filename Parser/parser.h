@@ -25,6 +25,7 @@ typedef struct {
 	stack	 	p_stack;	/* Stack of parser states */
 	grammar		*p_grammar;	/* Grammar to use */
 	node		*p_tree;	/* Top of parse tree */
+	int		p_generators;	/* 1 if yield is a keyword */
 } parser_state;
 
 parser_state *PyParser_New(grammar *g, int start);

@@ -24,6 +24,8 @@ Here are some of the useful functions provided by this module:
 
 # This module is in the public domain.  No warranties.
 
+from __future__ import generators
+
 __author__ = 'Ka-Ping Yee <ping@lfw.org>'
 __date__ = '1 Jan 2001'
 

@@ -31,6 +31,8 @@ future_check_features(PyFutureFeatures *ff, node *n, char *filename)
 		feature = STR(CHILD(ch, 0));
 		if (strcmp(feature, FUTURE_NESTED_SCOPES) == 0) {
 			ff->ff_nested_scopes = 1;
+		} else if (strcmp(feature, FUTURE_GENERATORS) == 0) {
+			/* OK; this is processed by the parser */
 		} else if (strcmp(feature, "braces") == 0) {
 			PyErr_SetString(PyExc_SyntaxError,
 					"not a chance");

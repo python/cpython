@@ -65,6 +65,9 @@ DL_IMPORT(PyCodeObject *) PyNode_CompileFlags(struct _node *, char *,
 #define NESTED_SCOPES_DEFAULT 1
 #define FUTURE_NESTED_SCOPES "nested_scopes"
 
+#define GENERATORS_DEFAULT 0
+#define FUTURE_GENERATORS "generators"
+
 /* for internal use only */
 #define _PyCode_GETCODEPTR(co, pp) \
 	((*(co)->co_code->ob_type->tp_as_buffer->bf_getreadbuffer) \
