@@ -521,11 +521,18 @@ eval_frame(PyFrameObject *f)
 	char *filename;
 #endif
 
+/* Tuple access macros */
+
+#ifndef Py_DEBUG
+#define GETITEM(v, i) PyTuple_GET_ITEM((PyTupleObject *)(v), (i))
+#else
+#define GETITEM(v, i) PyTuple_GetItem((v), (i))
+#endif
+
 /* Code access macros */
 
-#define GETCONST(i)	Getconst(f, i)
-#define GETNAME(i)	Getname(f, i)
-#define GETNAMEV(i)	Getnamev(f, i)
+#define GETCONST(i)	(GETITEM(co->co_consts, (i)))
+#define GETNAMEV(i)	(GETITEM(co->co_names, (i)))
 #define INSTR_OFFSET()	(next_instr - first_instr)
 #define NEXTOP()	(*next_instr++)
 #define NEXTARG()	(next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
