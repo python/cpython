@@ -766,7 +766,7 @@ dict_print(register dictobject *mp, register FILE *fp, register int flags)
 				return -1;
 			}
 			fprintf(fp, ": ");
-			if (PyObject_Print(ep->me_value, fp, 0) != 0) {
+			if (PyObject_Print(pvalue, fp, 0) != 0) {
 				Py_DECREF(pvalue);
 				Py_ReprLeave((PyObject*)mp);
 				return -1;
