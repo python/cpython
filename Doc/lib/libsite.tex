@@ -15,13 +15,13 @@ It starts by constructing up to four directories from a head and a
 tail part.  For the head part, it uses \code{sys.prefix} and
 \code{sys.exec_prefix}; empty heads are skipped.  For
 the tail part, it uses the empty string (on Mac or Windows) or it uses
-first \file{lib/python\var{version}/packages} and then
+first \file{lib/python\var{version}/site-packages} and then
 \file{lib/site-python} (on Unix).  For each of the distinct head-tail
 combinations, it sees if it refers to an existing directory, and if
 so, adds to \code{sys.path}, and also inspected for path configuration
 files.
 \indexii{site-python}{directory}
-\indexii{packages}{directory}
+\indexii{site-packages}{directory}
 
 A path configuration file is a file whose name has the form
 \file{\var{package}.pth}; its contents are additional items (one
@@ -40,7 +40,7 @@ refers to a directory (rather than a file).  No item is added to
 For example, suppose \code{sys.prefix} and \code{sys.exec_prefix} are
 set to \file{/usr/local}.  The Python 1.5 library is then installed in
 \file{/usr/local/lib/python1.5}.  Suppose this has a subdirectory
-\file{/usr/local/python1.5/packages} with three subsubdirectories,
+\file{/usr/local/python1.5/site-packages} with three subsubdirectories,
 \file{foo}, \file{bar} and \file{spam}, and two path configuration
 files, \file{foo.pth} and \file{bar.pth}.  Assume \file{foo.pth}
 contains the following:
@@ -64,8 +64,8 @@ bar
 Then the following directories are added to sys.path, in this order:
 
 \bcode\begin{verbatim}
-/usr/local/python1.5/packages/bar
-/usr/local/python1.5/packages/foo
+/usr/local/python1.5/site-packages/bar
+/usr/local/python1.5/site-packages/foo
 \end{verbatim}\ecode
 
 Note that \file{bletch} is omitted because it doesn't exist; the
