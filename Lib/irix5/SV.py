@@ -2,6 +2,7 @@ NTSC_XMAX = 640
 NTSC_YMAX = 480
 PAL_XMAX = 768
 PAL_YMAX = 576
+BLANKING_BUFFER_SIZE = 2
 
 MAX_SOURCES = 2
 
@@ -22,46 +23,11 @@ INPUT = 0
 OUTPUT = 1
 IN_OUT = 2
 
-# Format constants for sv.SetCaptureFormat()
-
-RGB_FRAMES = 0		# default. noninterleaved 8 bit 3:2:3 RBG fields
-YUV_FRAMES = 1				# interleaved, 8:2:2 YUV format
-RGB_EVEN_FIELDS = 2			# 8 bit 3:2:3 RBG fields
-RGB_ODD_FIELDS = 3			# 8 bit 3:2:3 RBG fields
-RGB_ALL_FIELDS = 4			# 8 bit 3:2:3 RBG fields
-YUV_FRAMES_AND_BLANKING_BUFFER = 5
-
-# Mode constants for sv.SetCaptureMode
-
-BLOCKING_CAPTURE = 1			# block when queue full
-REVOLVING_CAPTURE = 2			# don't block when queue full
-
-# Source constants for SOURCE option to sv.SetParam
-
-SOURCE1 = 0
-SOURCE2 = 1
-SOURCE3 = 2
-
-
-# Error codes
-STATUS_OK = 0
-STATUS_ERR = -1
-
-BAD_HANDLE = 1				# bad pointer
-BADOPEN = 2				# unable to open video device
-BADSTAT = 3				# bad stat of video device
-NODEV = 4				# video device doesn't exist
-BAD_INFO = 5				# bad info call on video driver
-BAD_ATTACH = 6				# unable to attach to video device
-NO_MEM = 7				# no memory available
-NO_GL = 8				# no GL support
-BAD_VALUE = 9				# Bad value of argument to routine
-NO_WINDOW = 10				# sv.BindWindow not done yet
-NO_INIT_CAP = 11			# sv.InitCapture not done yet
-INIT_CAP = 12				# cannot call after sv.InitCapture
-EXCLUSIVE = 13				# board already in exclusive mode
-NO_X = 14				# no X server with video available
-LAST_ERROR = 14
+# Format constants for the capture routines
+RGB8_FRAMES = 0				# noninterleaved 8 bit 3:2:3 RBG fields
+RGB32_FRAMES = 1			# 32-bit 8:8:8 RGB frames
+YUV411_FRAMES = 2			# interleaved, 8:2:2 YUV format
+YUV411_FRAMES_AND_BLANKING_BUFFER = 3
 
 #
 # sv.SetParam is passed variable length argument lists,
@@ -70,6 +36,9 @@ LAST_ERROR = 14
 #
 _NAME_BASE = 1000
 SOURCE = (_NAME_BASE + 0)
+SOURCE1 = 0
+SOURCE2 = 1
+SOURCE3 = 2
 COLOR = (_NAME_BASE + 1)
 DEFAULT_COLOR = 0
 USER_COLOR = 1
@@ -140,12 +109,12 @@ VIDEO_OUTPUT = (_NAME_BASE + 33)
 CHROMA_PHASEOUT = (_NAME_BASE + 34)
 CHROMA_CENTER = (_NAME_BASE + 35)
 YUV_TO_RGB_INVERT = (_NAME_BASE + 36)
-SOURCE0_BROADCAST = (_NAME_BASE + 37)
-SOURCE0_MODE = (_NAME_BASE + 38)
-SOURCE1_BROADCAST = (_NAME_BASE + 39)
-SOURCE1_MODE = (_NAME_BASE + 40)
-SOURCE2_BROADCAST = (_NAME_BASE + 41)
-SOURCE2_MODE = (_NAME_BASE + 42)
+SOURCE1_BROADCAST = (_NAME_BASE + 37)
+SOURCE1_MODE = (_NAME_BASE + 38)
+SOURCE2_BROADCAST = (_NAME_BASE + 39)
+SOURCE2_MODE = (_NAME_BASE + 40)
+SOURCE3_BROADCAST = (_NAME_BASE + 41)
+SOURCE3_MODE = (_NAME_BASE + 42)
 SIGNAL_STD = (_NAME_BASE + 43)
 NOSIGNAL = 2
 SIGNAL_COLOR = (_NAME_BASE + 44)
