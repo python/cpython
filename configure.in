@@ -198,11 +198,18 @@ AC_ARG_WITH(suffix, [  --with-suffix=.exe              set executable suffix],[
 	*)	EXEEXT=$withval;;
 	esac])
 AC_MSG_RESULT($EXEEXT)
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
-if test -d "python" -a -z "$EXEEXT"
+AC_SUBST(BUILDEXEEXT)
+AC_MSG_CHECKING(for case-insensitive build directory)
+if test -d "python"
 then
-    AC_MSG_WARN(This filesystem is not case-sensitive so you should probably use --with-suffix)
+    AC_MSG_RESULT(yes)
+    BUILDEXEEXT=.exe
+else
+	AC_MSG_RESULT(no)
+	BUILDEXEEXT='$(EXEEXT)'
 fi
 
 case $MACHDEP in

@@ -62,6 +62,10 @@ Tools/Demos
 
 Build
 
+- It is no longer necessary to use --with-suffix when building on a
+  case-insensitive file system (such as Mac OS X HFS+). In the build
+  directory an extension is used, but not in the installed python.
+
 C API
 
 - PyArg_ParseTupleAndKeywords() requires that the number of entries in
