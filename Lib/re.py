@@ -463,7 +463,7 @@ class WordBound(Instruction):
 class NotWordBound(Instruction):
     name = 'notwordbound'
     def __init__(self):
-	Instruction.__init__(self, chr(18))
+	Instruction.__init__(self, chr(19))
 
 class SyntaxSpec(Instruction):
     name = 'syntaxspec'
@@ -748,7 +748,7 @@ def expand_escape(pattern, index, context=NORMAL):
 	elif context == CHARCLASS:
 	    set = []
 	    for char in reop.syntax_table.keys():
-		if not reop.syntax_table[char] & reop.word:
+		if not reop.syntax_table[char] & reop.whitespace:
 		    set.append(char)
 	    return SET, set, index + 1
 	else:
