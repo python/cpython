@@ -553,7 +553,7 @@ cmp(v, w)
 		return cmpobject(* (object **) v, * (object **) w);
 
 	/* Call the user-supplied comparison function */
-	t = mkvalue("OO", * (object **) v, * (object **) w);
+	t = mkvalue("(OO)", * (object **) v, * (object **) w);
 	if (t == NULL)
 		return 0;
 	res = call_object(comparefunc, t);
