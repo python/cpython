@@ -656,7 +656,7 @@ get(Picklerobject *self, PyObject *id) {
     PyObject *value, *mv;
     long c_value;
     char s[30];
-    int len;
+    size_t len;
 
     UNLESS (mv = PyDict_GetItem(self->memo, id)) {
         PyErr_SetObject(PyExc_KeyError, id);
@@ -717,7 +717,9 @@ put(Picklerobject *self, PyObject *ob) {
 static int
 put2(Picklerobject *self, PyObject *ob) {
     char c_str[30];
-    int p, len, res = -1;
+    int p;
+    size_t len;
+    int res = -1;
     PyObject *py_ob_id = 0, *memo_len = 0, *t = 0;
 
     if (self->fast) return 0;
@@ -727,7 +729,7 @@ put2(Picklerobject *self, PyObject *ob) {
 
     p++;  /* Make sure memo keys are positive! */
 
-    UNLESS (py_ob_id = PyInt_FromLong((long)ob))
+    UNLESS (py_ob_id = PyLong_FromVoidPtr(ob))
         goto finally;
 
     UNLESS (memo_len = PyInt_FromLong(p))
@@ -1255,7 +1257,7 @@ save_tuple(Picklerobject *self, PyObject *args) {
             goto finally;
     }
 
-    UNLESS (py_tuple_id = PyInt_FromLong((long)args))
+    UNLESS (py_tuple_id = PyLong_FromVoidPtr(args))
         goto finally;
 
     if (len) {
@@ -1775,12 +1777,9 @@ save(Picklerobject *self, PyObject *args, int  pers_save) {
     }
 
     if (args->ob_refcnt > 1) {
-        long ob_id;
         int  has_key;
 
-        ob_id = (long)args;
-
-        UNLESS (py_ob_id = PyInt_FromLong(ob_id))
+        UNLESS (py_ob_id = PyLong_FromVoidPtr(args))
             goto finally;
 
         if ((has_key = cPickle_PyMapping_HasKey(self->memo, py_ob_id)) < 0)
