@@ -90,7 +90,7 @@ static PyObject *msvcrt_open_osfhandle(PyObject *self, PyObject *args)
 static PyObject *msvcrt_get_osfhandle(PyObject *self, PyObject *args)
 {
 	int fd;
-	long handle;
+	intptr_t handle;
 
 	if (!PyArg_ParseTuple(args,"i:get_osfhandle", &fd))
 		return NULL;
@@ -99,7 +99,10 @@ static PyObject *msvcrt_get_osfhandle(PyObject *self, PyObject *args)
 	if (handle == -1)
 		return PyErr_SetFromErrno(PyExc_IOError);
 
-	return PyInt_FromLong(handle);
+	/* technically 'handle' is not a pointer, but a integer as
+	   large as a pointer, Python's *VoidPtr interface is the
+	   most appropriate here */
+	return PyLong_FromVoidPtr((void*)handle);
 }
 
 /* Console I/O */
