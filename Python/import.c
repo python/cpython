@@ -906,6 +906,12 @@ find_module(name, path, buf, buflen, p_fp)
 			
 			return &resfiledescr;
 		}
+		if (PyMac_FindCodeResourceModule((PyStringObject *)v, name, buf)) {
+			static struct filedescr resfiledescr =
+				{"", "", PY_CODERESOURCE};
+			
+			return &resfiledescr;
+		}
 #endif
 		if (len > 0 && buf[len-1] != SEP
 #ifdef ALTSEP
@@ -1184,6 +1190,9 @@ load_module(name, fp, buf, type)
 #ifdef macintosh
 	case PY_RESOURCE:
 		m = PyMac_LoadResourceModule(name, buf);
+		break;
+	case PY_CODERESOURCE:
+		m = PyMac_LoadCodeResourceModule(name, buf);
 		break;
 #endif
 
@@ -2306,6 +2315,7 @@ initimp()
 	if (setint(d, "PKG_DIRECTORY", PKG_DIRECTORY) < 0) goto failure;
 	if (setint(d, "C_BUILTIN", C_BUILTIN) < 0) goto failure;
 	if (setint(d, "PY_FROZEN", PY_FROZEN) < 0) goto failure;
+	if (setint(d, "PY_CODERESOURCE", PY_CODERESOURCE) < 0) goto failure;
 
   failure:
 	;
