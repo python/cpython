@@ -14,7 +14,7 @@ StringType = type('')
 
 TupleType = type(())
 ListType = type([])
-DictionaryType = type({})
+DictType = DictionaryType = type({})
 
 def _f(): pass
 FunctionType = type(_f)
