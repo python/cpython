@@ -54,6 +54,8 @@ Release date: XX-XXX-2003
 - SF #665913: fix crash on Solaris when closing an mmap'ed file which
   was already closed.
 
+- SF #639945: fix crash on 64-bit AIX when loading dynamic modules.
+
 What's New in Python 2.2.2 (final) ?
 Release date: 14-Oct-2002
 ====================================
