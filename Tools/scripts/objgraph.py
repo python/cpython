@@ -63,9 +63,9 @@ undef2file = {}
 # Read one input file and merge the data into the tables.
 # Argument is an open file.
 #
-def readinput(file):
+def readinput(fp):
     while 1:
-        s = file.readline()
+        s = fp.readline()
         if not s:
             break
         # If you get any output from this line,
@@ -88,9 +88,9 @@ def readinput(file):
 def printcallee():
     flist = file2undef.keys()
     flist.sort()
-    for file in flist:
-        print file + ':'
-        elist = file2undef[file]
+    for filename in flist:
+        print filename + ':'
+        elist = file2undef[filename]
         elist.sort()
         for ext in elist:
             if len(ext) >= 8:
@@ -107,38 +107,38 @@ def printcallee():
 def printcaller():
     files = file2def.keys()
     files.sort()
-    for file in files:
+    for filename in files:
         callers = []
-        for label in file2def[file]:
+        for label in file2def[filename]:
             if undef2file.has_key(label):
                 callers = callers + undef2file[label]
         if callers:
             callers.sort()
-            print file + ':'
+            print filename + ':'
             lastfn = ''
             for fn in callers:
                 if fn <> lastfn:
                     print '\t' + fn
                 lastfn = fn
         else:
-            print file + ': unused'
+            print filename + ': unused'
 
-# Print undefine names and where they are used.
+# Print undefined names and where they are used.
 #
 def printundef():
     undefs = {}
-    for file in file2undef.keys():
-        for ext in file2undef[file]:
+    for filename in file2undef.keys():
+        for ext in file2undef[filename]:
             if not def2file.has_key(ext):
-                store(undefs, ext, file)
+                store(undefs, ext, filename)
     elist = undefs.keys()
     elist.sort()
     for ext in elist:
         print ext + ':'
         flist = undefs[ext]
         flist.sort()
-        for file in flist:
-            print '\t' + file
+        for filename in flist:
+            print '\t' + filename
 
 # Print warning messages about names defined in more than one file.
 #
@@ -181,11 +181,11 @@ def main():
         optu = optc = optd = 1
     if not args:
         args = ['-']
-    for file in args:
-        if file == '-':
+    for filename in args:
+        if filename == '-':
             readinput(sys.stdin)
         else:
-            readinput(open(file, 'r'))
+            readinput(open(filename, 'r'))
     #
     warndups()
     #

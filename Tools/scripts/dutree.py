@@ -11,8 +11,8 @@ def main():
         while line[i] in '0123456789': i = i+1
         size = eval(line[:i])
         while line[i] in ' \t': i = i+1
-        file = line[i:-1]
-        comps = file.split('/')
+        filename = line[i:-1]
+        comps = filename.split('/')
         if comps[0] == '': comps[0] = '/'
         if comps[len(comps)-1] == '': del comps[len(comps)-1]
         total, d = store(size, comps, total, d)

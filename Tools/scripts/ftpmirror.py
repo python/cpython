@@ -384,9 +384,9 @@ def makedir(pathname):
 # rval() but is still somewhat readable (i.e. not a single long line).
 # Also creates a backup file.
 def writedict(dict, filename):
-    dir, file = os.path.split(filename)
-    tempname = os.path.join(dir, '@' + file)
-    backup = os.path.join(dir, file + '~')
+    dir, fname = os.path.split(filename)
+    tempname = os.path.join(dir, '@' + fname)
+    backup = os.path.join(dir, fname + '~')
     try:
         os.unlink(backup)
     except os.error:

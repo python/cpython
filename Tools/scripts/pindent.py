@@ -531,8 +531,8 @@ def test():
         action(sys.stdin, sys.stdout, stepsize, tabsize, expandtabs)
     else:
         action = eval(action + '_file')
-        for file in args:
-            action(file, stepsize, tabsize, expandtabs)
+        for filename in args:
+            action(filename, stepsize, tabsize, expandtabs)
         # end for
     # end if
 # end def test

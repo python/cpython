@@ -6,28 +6,28 @@ import sys
 
 def main():
     args = sys.argv[1:]
-    for file in args:
-        process(file)
+    for filename in args:
+        process(filename)
 
-def process(file):
+def process(filename):
     try:
-        f = open(file, 'r')
+        f = open(filename, 'r')
     except IOError, msg:
-        sys.stderr.write('%s: can\'t open: %s\n' % (file, str(msg)))
+        sys.stderr.write('%s: can\'t open: %s\n' % (filename, str(msg)))
         return
     data = f.read()
     f.close()
     if data[:2] <> '/*':
-        sys.stderr.write('%s does not begin with C comment\n' % file)
+        sys.stderr.write('%s does not begin with C comment\n' % filename)
         return
     try:
-        f = open(file, 'w')
+        f = open(filename, 'w')
     except IOError, msg:
-        sys.stderr.write('%s: can\'t write: %s\n' % (file, str(msg)))
+        sys.stderr.write('%s: can\'t write: %s\n' % (filename, str(msg)))
         return
-    sys.stderr.write('Processing %s ...\n' % file)
+    sys.stderr.write('Processing %s ...\n' % filename)
     magic = 'Py_'
-    for c in file:
+    for c in filename:
         if ord(c)<=0x80 and c.isalnum():
             magic = magic + c.upper()
         else: magic = magic + '_'

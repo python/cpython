@@ -164,8 +164,8 @@ def main():
         return
     files.sort()
     exit = None
-    for file in files:
-        x = process(file, warnings[file])
+    for filename in files:
+        x = process(filename, warnings[filename])
         exit = exit or x
     return exit
 
@@ -194,23 +194,23 @@ def readwarnings(warningsfile):
             if line.find("division") >= 0:
                 sys.stderr.write("Warning: ignored input " + line)
             continue
-        file, lineno, what = m.groups()
-        list = warnings.get(file)
+        filename, lineno, what = m.groups()
+        list = warnings.get(filename)
         if list is None:
-            warnings[file] = list = []
+            warnings[filename] = list = []
         list.append((int(lineno), intern(what)))
     f.close()
     return warnings
 
-def process(file, list):
+def process(filename, list):
     print "-"*70
     assert list # if this fails, readwarnings() is broken
     try:
-        fp = open(file)
+        fp = open(filename)
     except IOError, msg:
         sys.stderr.write("can't open: %s\n" % msg)
         return 1
-    print "Index:", file
+    print "Index:", filename
     f = FileContext(fp)
     list.sort()
     index = 0 # list[:index] has been processed, list[index:] is still to do

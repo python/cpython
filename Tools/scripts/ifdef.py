@@ -42,11 +42,11 @@ def main():
             undefs.append(a)
     if not args:
         args = ['-']
-    for file in args:
-        if file == '-':
+    for filename in args:
+        if filename == '-':
             process(sys.stdin, sys.stdout)
         else:
-            f = open(file, 'r')
+            f = open(filename, 'r')
             process(f, sys.stdout)
             f.close()
 

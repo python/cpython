@@ -21,12 +21,12 @@ import sys,re
 expr = r'^[ \t]*(def|class)[ \t]+([a-zA-Z_][a-zA-Z0-9_]*)[ \t]*[:\(]'
 matcher = re.compile(expr)
 
-def treat_file(file, outfp):
-    """Append tags found in file named 'file' to the open file 'outfp'"""
+def treat_file(filename, outfp):
+    """Append tags found in file named 'filename' to the open file 'outfp'"""
     try:
-        fp = open(file, 'r')
+        fp = open(filename, 'r')
     except:
-        sys.stderr.write('Cannot open %s\n'%file)
+        sys.stderr.write('Cannot open %s\n'%filename)
         return
     charno = 0
     lineno = 0
@@ -39,18 +39,18 @@ def treat_file(file, outfp):
         lineno = lineno + 1
         m = matcher.search(line)
         if m:
-            tag = m.group(0) + '\177%d,%d\n'%(lineno,charno)
+            tag = m.group(0) + '\177%d,%d\n' % (lineno, charno)
             tags.append(tag)
             size = size + len(tag)
         charno = charno + len(line)
-    outfp.write('\f\n%s,%d\n'%(file,size))
+    outfp.write('\f\n%s,%d\n' % (filename,size))
     for tag in tags:
         outfp.write(tag)
 
 def main():
     outfp = open('TAGS', 'w')
-    for file in sys.argv[1:]:
-        treat_file(file, outfp)
+    for filename in sys.argv[1:]:
+        treat_file(filename, outfp)
 
 if __name__=="__main__":
     main()

@@ -38,9 +38,9 @@ def mkrealdir(name):
     os.chmod(name, mode)
     linkto = join(os.pardir, linkto)
     #
-    for file in files:
-        if file not in (os.curdir, os.pardir):
-            os.symlink(join(linkto, file), join(name, file))
+    for filename in files:
+        if filename not in (os.curdir, os.pardir):
+            os.symlink(join(linkto, filename), join(name, filename))
 
 def main():
     sys.stdout = sys.stderr

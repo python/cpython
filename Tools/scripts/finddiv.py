@@ -37,8 +37,8 @@ def main():
         if o == "-l":
             listnames = 1
     exit = None
-    for file in args:
-        x = process(file, listnames)
+    for filename in args:
+        x = process(filename, listnames)
         exit = exit or x
     return exit
 
@@ -47,11 +47,11 @@ def usage(msg):
     sys.stderr.write("Usage: %s [-l] file ...\n" % sys.argv[0])
     sys.stderr.write("Try `%s -h' for more information.\n" % sys.argv[0])
 
-def process(file, listnames):
-    if os.path.isdir(file):
-        return processdir(file, listnames)
+def process(filename, listnames):
+    if os.path.isdir(filename):
+        return processdir(filename, listnames)
     try:
-        fp = open(file)
+        fp = open(filename)
     except IOError, msg:
         sys.stderr.write("Can't open: %s\n" % msg)
         return 1
@@ -60,11 +60,11 @@ def process(file, listnames):
     for type, token, (row, col), end, line in g:
         if token in ("/", "/="):
             if listnames:
-                print file
+                print filename
                 break
             if row != lastrow:
                 lastrow = row
-                print "%s:%d:%s" % (file, row, line),
+                print "%s:%d:%s" % (filename, row, line),
     fp.close()
 
 def processdir(dir, listnames):

@@ -20,33 +20,33 @@ def main():
         if optname == '-t':
             tabsize = int(optvalue)
 
-    for file in args:
-        process(file, tabsize)
+    for filename in args:
+        process(filename, tabsize)
 
-def process(file, tabsize):
+def process(filename, tabsize):
     try:
-        f = open(file)
+        f = open(filename)
         text = f.read()
         f.close()
     except IOError, msg:
-        print "%s: I/O error: %s" % (`file`, str(msg))
+        print "%s: I/O error: %s" % (`filename`, str(msg))
         return
     newtext = text.expandtabs(tabsize)
     if newtext == text:
         return
-    backup = file + "~"
+    backup = filename + "~"
     try:
         os.unlink(backup)
     except os.error:
         pass
     try:
-        os.rename(file, backup)
+        os.rename(filename, backup)
     except os.error:
         pass
-    f = open(file, "w")
+    f = open(filename, "w")
     f.write(newtext)
     f.close()
-    print file
+    print filename
 
 if __name__ == '__main__':
     main()

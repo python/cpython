@@ -25,29 +25,29 @@ if sys.argv[1:] and sys.argv[1][:2] == '-l':
 for prog in sys.argv[1:]:
     ident = ()
     for dir in pathlist:
-        file = os.path.join(dir, prog)
+        filename = os.path.join(dir, prog)
         try:
-            st = os.stat(file)
+            st = os.stat(filename)
         except os.error:
             continue
         if not S_ISREG(st[ST_MODE]):
-            msg(file + ': not a disk file')
+            msg(filename + ': not a disk file')
         else:
             mode = S_IMODE(st[ST_MODE])
             if mode & 0111:
                 if not ident:
-                    print file
+                    print filename
                     ident = st[:3]
                 else:
                     if st[:3] == ident:
                         s = 'same as: '
                     else:
                         s = 'also: '
-                    msg(s + file)
+                    msg(s + filename)
             else:
-                msg(file + ': not executable')
+                msg(filename + ': not executable')
         if longlist:
-            sts = os.system('ls ' + longlist + ' ' + file)
+            sts = os.system('ls ' + longlist + ' ' + filename)
             if sts: msg('"ls -l" exit status: ' + `sts`)
     if not ident:
         msg(prog + ': not found')
