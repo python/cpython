@@ -20,10 +20,6 @@ Data members:
 
 #include "osdefs.h"
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #ifdef MS_COREDLL
 extern void *PyWin_DLLhModule;
 /* A string loaded from the DLL at startup: */

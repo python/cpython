@@ -9,15 +9,6 @@ extern void PyWinFreeze_ExeTerm(void);
 extern int PyInitFrozenExtensions(void);
 #endif
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h> /* For isatty() */
-#endif
-
-/* For isatty()'s proto. - [cjh] */
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 /* Main program */
 
 int

@@ -46,11 +46,6 @@ corresponding Unix manual entries for more information on calls.";
 #include <grp.h>
 #endif
 
-/* pick up declaration of confstr on some systems? */
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif /* HAVE_UNISTD_H */
-
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into pyconfig.h */
 #if defined(PYCC_VACPP) && defined(PYOS_OS2)
@@ -111,10 +106,6 @@ corresponding Unix manual entries for more information on calls.";
 #endif /* ! __IBMC__ */
 
 #ifndef _MSC_VER
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 #if defined(sun) && !defined(__SVR4)
 /* SunOS 4.1.4 doesn't have prototypes for these: */
