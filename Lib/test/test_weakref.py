@@ -271,6 +271,12 @@ class ReferencesTestCase(TestBase):
         del f[0]
         self.assertEqual(f.result, 0)
 
+    def test_proxy_bool(self):
+        # Test clearing of SF bug #1170766
+        class List(list): pass
+        lyst = List()
+        self.assertEqual(bool(weakref.proxy(lyst)), bool(lyst))
+
     def test_getweakrefcount(self):
         o = C()
         ref1 = weakref.ref(o)
