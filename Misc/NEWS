@@ -16,6 +16,9 @@ Extension modules
 
 - Patch #954115: Properly handle UNC roots in nt.stat.
 
+- Bug #841757: xmlrpclib failed on structs with Unicode keys.
+
+
 What's New in Python 2.3.4 (final)?
 ===================================
 
