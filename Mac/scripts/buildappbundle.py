@@ -101,6 +101,8 @@ def buildappbundle(executable, output=None, copyfunc=None, creator=None,
 	#
 	if resources:
 		resdir = os.path.join(contents, 'Resources')
+		if not os.path.isdir(resdir):
+			os.mkdir(resdir)
 		for src in resources:
 			dst = os.path.join(resdir, os.path.split(src)[1])
 			if os.path.isdir(src):
