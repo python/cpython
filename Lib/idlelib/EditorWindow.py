@@ -80,6 +80,9 @@ class EditorWindow:
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
+        text.bind("<<cut>>", self.cut)
+        text.bind("<<copy>>", self.copy)
+        text.bind("<<paste>>", self.paste)
         text.bind("<<center-insert>>", self.center_insert_event)
         text.bind("<<help>>", self.help_dialog)
         text.bind("<<good-advice>>", self.good_advice)
@@ -310,6 +313,18 @@ class EditorWindow:
 
     def display_docs(self, url):
         webbrowser.open(url)
+
+    def cut(self,event):
+        self.text.event_generate("<<Cut>>")
+        return "break"
+
+    def copy(self,event):
+        self.text.event_generate("<<Copy>>")
+        return "break"
+
+    def paste(self,event):
+        self.text.event_generate("<<Paste>>")
+        return "break"
 
     def select_all(self, event=None):
         self.text.tag_add("sel", "1.0", "end-1c")
@@ -743,6 +758,7 @@ class EditorWindow:
         text = self.text
         text.keydefs = keydefs
         for event, keylist in keydefs.items():
+            ##print>>sys.__stderr__, "event, list: ", event, keylist
             if keylist:
                 apply(text.event_add, (event,) + tuple(keylist))
 
@@ -755,6 +771,7 @@ class EditorWindow:
             defs = self.Bindings.menudefs
         if keydefs is None:
             keydefs = self.Bindings.default_keydefs
+        ##print>>sys.__stderr__, "*keydefs: " , keydefs
         menudict = self.menudict
         text = self.text
         for mname, itemlist in defs:
@@ -770,6 +787,7 @@ class EditorWindow:
                     if checkbutton:
                         label = label[1:]
                     underline, label = prepstr(label)
+                    ##print>>sys.__stderr__, "*Event: " , event
                     accelerator = get_accelerator(keydefs, event)
                     def command(text=text, event=event):
                         text.event_generate(event)
@@ -779,8 +797,12 @@ class EditorWindow:
                             command=command, accelerator=accelerator,
                             variable=var)
                     else:
+                        ##print>>sys.__stderr__, "label, ul, cmd, accel: ",
+                        ##                       label, underline, command,
+                        ##                       accelerator
                         menu.add_command(label=label, underline=underline,
-                            command=command, accelerator=accelerator)
+                                         command=command,
+                                         accelerator=accelerator)
 
     def getvar(self, name):
         var = self.getrawvar(name)
