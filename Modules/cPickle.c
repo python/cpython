@@ -225,10 +225,6 @@ Pdata_popList(Pdata *self, int start)
 	return r;
 }
 
-#define PDATA_APPEND_(D,O,ER) { \
-  if (Pdata_Append(((Pdata*)(D)), O) < 0) return ER; \
-}
-
 #define PDATA_APPEND(D,O,ER) {                                 \
     if (((Pdata*)(D))->length == ((Pdata*)(D))->size &&        \
         Pdata_grow((Pdata*)(D)) < 0)                           \
@@ -897,6 +893,7 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
 		if (key == NULL)
 			return 0;
 		if (PyDict_GetItem(self->fast_memo, key)) {
+			Py_DECREF(key);
 			PyErr_Format(PyExc_ValueError,
 				     "fast mode: can't pickle cyclic objects including object type %s at %p",
 				     obj->ob_type->tp_name, obj);
@@ -904,9 +901,11 @@ fast_save_enter(Picklerobject *self, PyObject *obj)
 			return 0;
 		}
 		if (PyDict_SetItem(self->fast_memo, key, Py_None) < 0) {
+			Py_DECREF(key);
 			self->fast_container = -1;
 			return 0;
 		}
+		Py_DECREF(key);
 	}
 	return 1;
 }
@@ -919,8 +918,10 @@ fast_save_leave(Picklerobject *self, PyObject *obj)
 		if (key == NULL)
 			return 0;
 		if (PyDict_DelItem(self->fast_memo, key) < 0) {
+			Py_DECREF(key);
 			return 0;
 		}
+		Py_DECREF(key);
 	}
 	return 1;
 }
@@ -3115,6 +3116,7 @@ Instance_New(PyObject *cls, PyObject *args)
 			Py_XDECREF(safe);
 			return NULL;
 		}
+		Py_DECREF(safe);
 	}
 
 	if (args==Py_None) {
@@ -3218,7 +3220,10 @@ load_global(Unpicklerobject *self)
 	if (!module_name)  return -1;
 
 	if ((len = (*self->readline_func)(self, &s)) >= 0) {
-		if (len < 2) return bad_readline();
+		if (len < 2) {
+			Py_DECREF(module_name);
+			return bad_readline();
+		}
 		if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
 			class = find_class(module_name, class_name, 
 					   self->find_class);
