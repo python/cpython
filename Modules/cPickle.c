@@ -675,7 +675,11 @@ save_int(Picklerobject *self, PyObject *args) {
     long l = PyInt_AS_LONG((PyIntObject *)args);
     int len = 0;
 
-    if (!self->bin || sizeof(long) == 8 && (l >> 32)) {
+    if (!self->bin
+#if SIZEOF_LONG > 4
+	|| (l >> 32)
+#endif
+	    ) {
 	        /* Save extra-long ints in non-binary mode, so that
 		   we can use python long parsing code to restore,
 		   if necessary. */
@@ -3869,6 +3873,10 @@ initcPickle() {
 
 /****************************************************************************
  $Log$
+ Revision 2.6  1997/05/13 18:00:44  guido
+ Use compile-time test for 64-bit hardware instead of run-time test.
+ This silences some compilers.
+
  Revision 2.5  1997/05/07 17:46:13  guido
  Instead of importing graminit.h whenever one of the three grammar 'root'
  symbols is needed, define these in Python.h with a Py_ prefix.
