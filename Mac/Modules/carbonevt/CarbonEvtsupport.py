@@ -34,6 +34,12 @@ EventTypeSpec_ptr = OpaqueType("EventTypeSpec", "EventTypeSpec")
 void_ptr = stringptr
 # here are some types that are really other types
 
+class MyVarInputBufferType(VarInputBufferType):
+	def passInput(self, name):
+		return "%s__len__, %s__in__" % (name, name)
+
+MyInBuffer = MyVarInputBufferType('char', 'long', 'l')		# (buf, len)
+
 EventTime = double
 EventTimeout = EventTime
 EventTimerInterval = EventTime
@@ -60,6 +66,11 @@ class EventHandlerRefMethod(OSErrMethodGenerator):
 		Output('PyErr_SetString(CarbonEvents_Error, "Handler has been removed");')
 		Output('return NULL;')
 		OutRbrace()
+
+
+RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
+GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
+MouseTrackingResult = UInt16
 
 
 includestuff = r"""
