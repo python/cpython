@@ -291,7 +291,7 @@ do_mkvalue(p_format, p_va)
 		case 'l':
 			return PyInt_FromLong((long)va_arg(*p_va, long));
 
-#if HAVE_LONG_LONG
+#ifdef HAVE_LONG_LONG
 		case 'L':
 			return PyLong_FromLongLong((LONG_LONG)va_arg(*p_va, LONG_LONG));
 #endif
