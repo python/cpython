@@ -34,6 +34,11 @@ Extension modules
 - Bug #954364: inspect.getframeinfo() sometimes produces incorrect traceback
   line numbers
 
+Library
+-------
+
+- Bug #934282: make pydoc.stripid() be case-insensitive.
+
 What's New in Python 2.3.4 (final)?
 ===================================
 

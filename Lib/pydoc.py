@@ -104,12 +104,12 @@ def cram(text, maxlen):
         return text[:pre] + '...' + text[len(text)-post:]
     return text
 
+_re_stripid = re.compile(r' at 0x[0-9a-f]{6,}(>+)$', re.IGNORECASE)
 def stripid(text):
     """Remove the hexadecimal id from a Python object representation."""
-    # The behaviour of %p is implementation-dependent; we check two cases.
-    for pattern in [' at 0x[0-9a-f]{6,}(>+)$', ' at [0-9A-F]{8,}(>+)$']:
-        if re.search(pattern, repr(Exception)):
-            return re.sub(pattern, '\\1', text)
+    # The behaviour of %p is implementation-dependent in terms of case.
+    if _re_stripid.search(repr(Exception)):
+        return _re_stripid.sub(r'\1', text)
     return text
 
 def _is_some_method(object):
