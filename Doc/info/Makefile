@@ -49,25 +49,25 @@ clobber: clean
 # in case we haven't already built the HTML:
 
 $(HTMLDIR)/api/api.html:
-	(cd $(HTMLDIR); $(MAKE) api)
+	cd $(HTMLDIR) && $(MAKE) api
 
 $(HTMLDIR)/ext/ext.html:
-	(cd $(HTMLDIR); $(MAKE) ext)
+	cd $(HTMLDIR) && $(MAKE) ext
 
 $(HTMLDIR)/lib/lib.html:
-	(cd $(HTMLDIR); $(MAKE) lib)
+	cd $(HTMLDIR) && $(MAKE) lib
 
 $(HTMLDIR)/mac/mac.html:
-	(cd $(HTMLDIR); $(MAKE) mac)
+	cd $(HTMLDIR) && $(MAKE) mac
 
 $(HTMLDIR)/ref/ref.html:
-	(cd $(HTMLDIR); $(MAKE) ref)
+	cd $(HTMLDIR) && $(MAKE) ref
 
 $(HTMLDIR)/tut/tut.html:
-	(cd $(HTMLDIR); $(MAKE) tut)
+	cd $(HTMLDIR) && $(MAKE) tut
 
 $(HTMLDIR)/dist/dist.html:
-	(cd $(HTMLDIR); $(MAKE) dist)
+	cd $(HTMLDIR) && $(MAKE) dist
 
 $(HTMLDIR)/inst/inst.html:
-	(cd $(HTMLDIR); $(MAKE) inst)
+	cd $(HTMLDIR) && $(MAKE) inst
