@@ -16,8 +16,8 @@ for all major platforms, and can be freely distributed.
 Often, programmers fall in love with Python because of the increased
 productivity it provides.  Since there is no compilation step, the
 edit-test-debug cycle is incredibly fast. Debugging Python programs is
-easy: a bug or bad input will never cause a segmentation
-fault. Instead, when the interpreter discovers an error, it raises an
+easy: a bug or bad input will never cause a segmentation fault.
+Instead, when the interpreter discovers an error, it raises an
 exception.  When the program doesn't catch the exception, the
 interpreter prints a stack trace. A source level debugger allows
 inspection of local and global variables, evaluation of arbitrary
