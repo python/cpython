@@ -124,6 +124,9 @@ else:
     TESTFN = '@test'
     # Unicode name only used if TEST_FN_ENCODING exists for the platform.
     if have_unicode:
+        # Assuming sys.getfilesystemencoding()!=sys.getdefaultencoding()
+        # TESTFN_UNICODE is a filename that can be encoded using the
+        # file system encoding, but *not* with the default (ascii) encoding
         if isinstance('', unicode):
             # python -U
             # XXX perhaps unicode() should accept Unicode strings?
@@ -131,6 +134,24 @@ else:
         else:
             TESTFN_UNICODE=unicode("@test-\xe0\xf2", "latin-1") # 2 latin characters.
         TESTFN_ENCODING=sys.getfilesystemencoding()
+        # TESTFN_UNICODE_UNENCODEABLE is a filename that should *not* be 
+        # able to be encoded by *either* the default or filesystem encoding.
+        # Japanese characters (I think - from bug 846133)
+        TESTFN_UNICODE_UNENCODEABLE = u"@test-\u5171\u6709\u3055\u308c\u308b"
+        try:
+            # XXX - Note - should be using TESTFN_ENCODING here - but for
+            # Windows, "mbcs" currently always operates as if in 
+            # errors=ignore' mode - hence we get '?' characters rather than
+            # the exception.  'Latin1' operates as we expect - ie, fails.
+            # See [ 850997 ] mbcs encoding ignores errors
+            TESTFN_UNICODE_UNENCODEABLE.encode("Latin1")
+        except UnicodeEncodeError:
+            pass
+        else:
+            print \
+            'WARNING: The filename %r CAN be encoded by the filesystem.  ' \
+            'Unicode filename tests may not be effective' \
+            % TESTFN_UNICODE_UNENCODEABLE
 
 # Make sure we can write to TESTFN, try in /tmp if we can't
 fp = None
