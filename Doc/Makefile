@@ -170,43 +170,33 @@ l2h: l2htut l2hext l2hlib l2hapi
 
 l2htut: tut.dvi myformat.perl
 	$(L2H) $(L2HARGS) tut.tex
-	@rm -rf python-tut
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<tut/tut.html >tut/xxx
 	mv tut/xxx tut/tut.html
-	ln -s tut.html tut/index.html
-	mv tut python-tut
+	ln -s tut.html tut/index.html || true
 
 l2hext: ext.dvi myformat.perl
 	$(L2H) $(L2HARGS) ext.tex
-	@rm -rf python-ext
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<ext/ext.html >ext/xxx
 	mv ext/xxx ext/ext.html
-	ln -s ext.html ext/index.html
-	@rm -rf python-ext
-	mv ext python-ext
+	ln -s ext.html ext/index.html || true
 
 l2hlib: lib.dvi myformat.perl
-	./fix_libaux.sed <lib.aux >@lib.aux
-	mv @lib.aux lib.aux
+	./fix_libaux.sed <lib.aux >lib1.aux
+	mv lib1.aux lib.aux
 	$(L2H) $(L2HARGS) lib.tex
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<lib/lib.html >lib/xxx
 	mv lib/xxx lib/lib.html
-	ln -s lib.html lib/index.html
-	@rm -rf python-lib
-	mv lib python-lib
+	ln -s lib.html lib/index.html || true
 
 l2hapi: api.dvi myformat.perl
 	$(L2H) $(L2HARGS) api.tex
-	@rm -rf python-api
 	sed 's/^<P CLASS=ABSTRACT>,/<P CLASS=ABSTRACT>/' \
 		<api/api.html >api/xxx
 	mv api/xxx api/api.html
-	ln -s api.html api/index.html
-	@rm -rf python-api
-	mv api python-api
+	ln -s api.html api/index.html || true
 
 
 # Housekeeping targets
@@ -214,9 +204,12 @@ l2hapi: api.dvi myformat.perl
 # Remove temporary files; all except the following:
 # - sources: .tex, .bib, .sty
 # - useful results: .dvi, .ps, .texi, .info
-clean:
+clean:	l2hclean
 	rm -f @* *~ *.aux *.idx *.ilg *.ind *.log *.toc *.blg *.bbl *.pyc
 	rm -f *.bak *.orig
+
+l2hclean:
+	@rm -rf api ext lib tut
 
 # Remove temporaries as well as final products
 clobber: clean
