@@ -6,6 +6,7 @@ from test import test_support
 
 # Tell it we don't know about external files:
 mimetypes.knownfiles = []
+mimetypes.inited = False
 
 
 class MimeTypesTestCase(unittest.TestCase):
