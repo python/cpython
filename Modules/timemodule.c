@@ -33,6 +33,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 
+#include <ctype.h>
+
 #ifdef HAVE_SELECT
 #include "mymath.h"
 #endif
@@ -221,6 +223,22 @@ time_sleep(self, args)
 }
 
 static PyObject *
+tmtotuple(p)
+	struct tm *p;
+{
+	return Py_BuildValue("(iiiiiiiii)",
+			     p->tm_year + 1900,
+			     p->tm_mon + 1,	   /* Want January == 1 */
+			     p->tm_mday,
+			     p->tm_hour,
+			     p->tm_min,
+			     p->tm_sec,
+			     (p->tm_wday + 6) % 7, /* Want Monday == 0 */
+			     p->tm_yday + 1,	   /* Want January, 1 == 1 */
+			     p->tm_isdst);
+}
+
+static PyObject *
 time_convert(when, function)
 	time_t when;
 	struct tm * (*function) Py_PROTO((const time_t *));
@@ -235,16 +253,7 @@ time_convert(when, function)
 #endif
 		return PyErr_SetFromErrno(PyExc_IOError);
 	}
-	return Py_BuildValue("(iiiiiiiii)",
-			     p->tm_year + 1900,
-			     p->tm_mon + 1,        /* Want January == 1 */
-			     p->tm_mday,
-			     p->tm_hour,
-			     p->tm_min,
-			     p->tm_sec,
-			     (p->tm_wday + 6) % 7, /* Want Monday == 0 */
-			     p->tm_yday + 1,       /* Want January, 1 == 1 */
-			     p->tm_isdst);
+	return tmtotuple(p);
 }
 
 static PyObject *
@@ -345,6 +354,37 @@ time_strftime(self, args)
 }
 #endif /* HAVE_STRFTIME */
 
+#ifdef HAVE_STRPTIME
+static PyObject *
+time_strptime(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	struct tm tm;
+	char *fmt = "%a %b %d %H:%M:%S %Y";
+	char *buf;
+	char *s;
+
+	if (!PyArg_ParseTuple(args, "s|s", &buf, &fmt)) {
+		PyErr_SetString(PyExc_ValueError, "invalid argument");
+		return NULL;
+	}
+	s = strptime(buf, fmt, &tm);
+	if (s == NULL) {
+		PyErr_SetString(PyExc_ValueError, "format mismatch");
+		return NULL;
+	}
+	while (*s && isspace(*s))
+		s++;
+	if (*s) {
+		PyErr_Format(PyExc_ValueError,
+			     "unconverted data remains: '%.400s'", s);
+		return NULL;
+	}
+	return tmtotuple(&tm);
+}
+#endif /* HAVE_STRPTIME */
+
 static PyObject *
 time_asctime(self, args)
 	PyObject *self;
@@ -418,6 +458,9 @@ static PyMethodDef time_methods[] = {
 #endif
 #ifdef HAVE_STRFTIME
 	{"strftime",	time_strftime, 1},
+#endif
+#ifdef HAVE_STRPTIME
+	{"strptime",	time_strptime, 1},
 #endif
 	{NULL,		NULL}		/* sentinel */
 };
