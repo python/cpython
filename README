@@ -52,13 +52,10 @@ AIX users: read the file Misc/AIX-NOTES before trying to build.
 HP-UX users: read the file Misc/HPUX-NOTES if you want to be able to
 use shared libraries for dynamically loaded modules.
 
-Minix users: when using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
+DEC Alpha users: unless you like debugging GCC, pass "--without-gcc"
+to the configure script.
 
-NeXT users: everything must be linked and compiled with "-posix".
-Until I find out how to let the configure script do that
-automatically, the best way is to run compile with "CC='cc -posix'" in
-the environment; the next best way is to edit the toplevel Makefile
-(after running configure) to add -posix to OPT.
+Minix users: when using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
 You can configure the interpreter to contain fewer or more built-in
 modules by editing the file Modules/Setup.  This file is initially

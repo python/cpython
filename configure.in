@@ -50,7 +50,8 @@ AC_TRY_RUN([
 #ifdef _NEXT_SOURCE
 main() { exit(0); }
 #endif
-], AC_DEFINE(_POSIX_SOURCE) was_it_defined=yes)
+], AC_DEFINE(_POSIX_SOURCE)
+CC="$CC -posix"; was_it_defined=yes)
 AC_MSG_CHECKING(for NeXT)
 AC_MSG_RESULT($was_it_defined)
 
@@ -127,7 +128,10 @@ AC_MSG_CHECKING(CCSHARED)
 if test -z "$CCSHARED"
 then
 	case $ac_sys_system in
-	hp*|HP*) CCSHARED="+z";;
+	hp*|HP*) if test "$GCC" = yes;
+		 then CCSHARED="-fpic";
+		 else CCSHARED="+z";
+		 fi;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
