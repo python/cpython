@@ -2659,7 +2659,7 @@ static PyMethodDef date_methods[] = {
 };
 
 static char date_doc[] =
-PyDoc_STR("Basic date type.");
+PyDoc_STR("date(year, month, day) --> date object");
 
 static PyNumberMethods date_as_number = {
 	date_add,					/* nb_add */
@@ -3431,7 +3431,10 @@ static PyMethodDef time_methods[] = {
 };
 
 static char time_doc[] =
-PyDoc_STR("Time type.");
+PyDoc_STR("time([hour[, minute[, second[, microsecond[, tzinfo]]]]]) --> a time object\n\
+\n\
+All arguments are optional. tzinfo may be None, or an instance of\n\
+a tzinfo subclass. The remaining arguments may be ints or longs.\n");
 
 static PyNumberMethods time_as_number = {
 	0,					/* nb_add */
@@ -4468,7 +4471,10 @@ static PyMethodDef datetime_methods[] = {
 };
 
 static char datetime_doc[] =
-PyDoc_STR("date/time type.");
+PyDoc_STR("datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])\n\
+\n\
+The year, month and day arguments are required. tzinfo may be None, or an\n\
+instance of a tzinfo subclass. The remaining arguments may be ints or longs.\n");
 
 static PyNumberMethods datetime_as_number = {
 	datetime_add,				/* nb_add */
