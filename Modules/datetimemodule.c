@@ -683,7 +683,7 @@ call_utc_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg,
 	Py_DECREF(u);
 	if (result < -1439 || result > 1439) {
 		PyErr_Format(PyExc_ValueError,
-			     "tzinfo.%s() returned %ld; must be in "
+			     "tzinfo.%s() returned %d; must be in "
 			     "-1439 .. 1439",
 			     name, result);
 		result = -1;
