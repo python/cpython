@@ -31,14 +31,11 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* strop module */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
 #include <ctype.h>
 /* XXX This file assumes that the <ctype.h> is*() functions
    XXX are defined for all 8-bit characters! */
-
-#include <errno.h>
 
 /* The lstrip(), rstrip() and strip() functions are implemented
    in do_strip(), which uses an additional parameter to indicate what
@@ -49,7 +46,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #define BOTHSTRIP 2
 
 
-static object *
+static PyObject *
 split_whitespace(s, len, maxsplit)
 	char *s;
 	int len;
@@ -57,9 +54,9 @@ split_whitespace(s, len, maxsplit)
 {
 	int i, j, err;
 	int countsplit;
-	object *list, *item;
+	PyObject *list, *item;
 
-	list = newlistobject(0);
+	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
 
@@ -75,29 +72,30 @@ split_whitespace(s, len, maxsplit)
 			i = i+1;
 		}
 		if (j < i) {
-			item = newsizedstringobject(s+j, (int)(i-j));
+			item = PyString_FromStringAndSize(s+j, (int)(i-j));
 			if (item == NULL) {
-				DECREF(list);
+				Py_DECREF(list);
 				return NULL;
 			}
-			err = addlistitem(list, item);
-			DECREF(item);
+			err = PyList_Append(list, item);
+			Py_DECREF(item);
 			if (err < 0) {
-				DECREF(list);
+				Py_DECREF(list);
 				return NULL;
 			}
 
 			countsplit++;
 			if (maxsplit && (countsplit >= maxsplit)) {
-				item = newsizedstringobject(s+i, (int)(len - i));
+				item = PyString_FromStringAndSize(
+                                        s+i, (int)(len - i));
 				if (item == NULL) {
-					DECREF(list);
+					Py_DECREF(list);
 					return NULL;
 				}
-				err = addlistitem(list, item);
-				DECREF(item);
+				err = PyList_Append(list, item);
+				Py_DECREF(item);
 				if (err < 0) {
-					DECREF(list);
+					Py_DECREF(list);
 					return NULL;
 				}
 				i = len;
@@ -110,41 +108,41 @@ split_whitespace(s, len, maxsplit)
 }
 
 
-static object *
+static PyObject *
 strop_splitfields(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	int len, n, i, j, err;
 	int splitcount, maxsplit;
 	char *s, *sub;
-	object *list, *item;
+	PyObject *list, *item;
 
 	sub = NULL;
 	n = 0;
 	splitcount = 0;
 	maxsplit = 0;
-	if (!newgetargs(args, "s#|z#i", &s, &len, &sub, &n, &maxsplit))
+	if (!PyArg_ParseTuple(args, "s#|z#i", &s, &len, &sub, &n, &maxsplit))
 		return NULL;
 	if (sub == NULL)
 		return split_whitespace(s, len, maxsplit);
 	if (n == 0) {
-		err_setstr(ValueError, "empty separator");
+		PyErr_SetString(PyExc_ValueError, "empty separator");
 		return NULL;
 	}
 
-	list = newlistobject(0);
+	list = PyList_New(0);
 	if (list == NULL)
 		return NULL;
 
 	i = j = 0;
 	while (i+n <= len) {
 		if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
-			item = newsizedstringobject(s+j, (int)(i-j));
+			item = PyString_FromStringAndSize(s+j, (int)(i-j));
 			if (item == NULL)
 				goto fail;
-			err = addlistitem(list, item);
-			DECREF(item);
+			err = PyList_Append(list, item);
+			Py_DECREF(item);
 			if (err < 0)
 				goto fail;
 			i = j = i + n;
@@ -155,168 +153,170 @@ strop_splitfields(self, args)
 		else
 			i++;
 	}
-	item = newsizedstringobject(s+j, (int)(len-j));
+	item = PyString_FromStringAndSize(s+j, (int)(len-j));
 	if (item == NULL)
 		goto fail;
-	err = addlistitem(list, item);
-	DECREF(item);
+	err = PyList_Append(list, item);
+	Py_DECREF(item);
 	if (err < 0)
 		goto fail;
 
 	return list;
 
  fail:
-	DECREF(list);
+	Py_DECREF(list);
 	return NULL;
 }
 
 
-static object *
+static PyObject *
 strop_joinfields(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	object *seq, *item, *res;
-	object * (*getitem) FPROTO((object *, int));
+	PyObject *seq, *item, *res;
+	PyObject * (*getitem) Py_FPROTO((PyObject *, int));
 	char *sep, *p;
 	int seplen, seqlen, reslen, itemlen, i;
 
 	sep = NULL;
 	seplen = 0;
-	if (!newgetargs(args, "O|s#", &seq, &sep, &seplen))
+	if (!PyArg_ParseTuple(args, "O|s#", &seq, &sep, &seplen))
 		return NULL;
 	if (sep == NULL) {
 		sep = " ";
 		seplen = 1;
 	}
-	if (is_listobject(seq)) {
-		getitem = getlistitem;
-		seqlen = getlistsize(seq);
+	if (PyList_Check(seq)) {
+		getitem = PyList_GetItem;
+		seqlen = PyList_Size(seq);
 	}
-	else if (is_tupleobject(seq)) {
-		getitem = gettupleitem;
-		seqlen = gettuplesize(seq);
+	else if (PyTuple_Check(seq)) {
+		getitem = PyTuple_GetItem;
+		seqlen = PyTuple_Size(seq);
 	}
 	else {
-		err_setstr(TypeError, "first argument must be list/tuple");
+		PyErr_SetString(PyExc_TypeError,
+                                "first argument must be list/tuple");
 		return NULL;
 	}
 	reslen = 0;
 	for (i = 0; i < seqlen; i++) {
 		item = getitem(seq, i);
-		if (!is_stringobject(item)) {
-			err_setstr(TypeError,
+		if (!PyString_Check(item)) {
+			PyErr_SetString(PyExc_TypeError,
 			   "first argument must be list/tuple of strings");
 			return NULL;
 		}
 		if (i > 0)
 			reslen = reslen + seplen;
-		reslen = reslen + getstringsize(item);
+		reslen = reslen + PyString_Size(item);
 	}
 	if (seqlen == 1) {
 		/* Optimization if there's only one item */
 		item = getitem(seq, 0);
-		INCREF(item);
+		Py_INCREF(item);
 		return item;
 	}
-	res = newsizedstringobject((char *)NULL, reslen);
+	res = PyString_FromStringAndSize((char *)NULL, reslen);
 	if (res == NULL)
 		return NULL;
-	p = getstringvalue(res);
+	p = PyString_AsString(res);
 	for (i = 0; i < seqlen; i++) {
 		item = getitem(seq, i);
 		if (i > 0) {
 			memcpy(p, sep, seplen);
 			p += seplen;
 		}
-		itemlen = getstringsize(item);
-		memcpy(p, getstringvalue(item), itemlen);
+		itemlen = PyString_Size(item);
+		memcpy(p, PyString_AsString(item), itemlen);
 		p += itemlen;
 	}
-	if (p != getstringvalue(res) + reslen) {
-		err_setstr(SystemError, "strop.joinfields: assertion failed");
+	if (p != PyString_AsString(res) + reslen) {
+		PyErr_SetString(PyExc_SystemError,
+                                "strop.joinfields: assertion failed");
 		return NULL;
 	}
 	return res;
 }
 
 
-static object *
+static PyObject *
 strop_find(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *sub;
 	int len, n, i;
 
-	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
+	if (PyArg_Parse(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
 		if (i < 0)
 			i += len;
 		if (i < 0)
 			i = 0;
 	}
 	else {
-		err_clear();
-		if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(s#s#)", &s, &len, &sub, &n))
 			return NULL;
 		i = 0;
 	}
 
 	if (n == 0)
-		return newintobject((long)i);
+		return PyInt_FromLong((long)i);
 
 	len -= n;
 	for (; i <= len; ++i)
 		if (s[i] == sub[0] &&
 		    (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
-			return newintobject((long)i);
+			return PyInt_FromLong((long)i);
 
-	return newintobject(-1L);
+	return PyInt_FromLong(-1L);
 }
 
 
-static object *
+static PyObject *
 strop_rfind(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *sub;
 	int len, n, i, j;
 
-	if (getargs(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
+	if (PyArg_Parse(args, "(s#s#i)", &s, &len, &sub, &n, &i)) {
 		if (i < 0)
 			i += len;
 		if (i < 0)
 			i = 0;
 	}
 	else {
-		err_clear();
-		if (!getargs(args, "(s#s#)", &s, &len, &sub, &n))
+		PyErr_Clear();
+		if (!PyArg_Parse(args, "(s#s#)", &s, &len, &sub, &n))
 			return NULL;
 		i = 0;
 	}
 
 	if (n == 0)
-		return newintobject((long)len);
+		return PyInt_FromLong((long)len);
 
 	for (j = len-n; j >= i; --j)
 		if (s[j] == sub[0] &&
 		    (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
-			return newintobject((long)j);
+			return PyInt_FromLong((long)j);
 
-	return newintobject(-1L);
+	return PyInt_FromLong(-1L);
 }
 
-static object *
+static PyObject *
 do_strip(args, striptype)
-	object *args;
+	PyObject *args;
 	int striptype;
 {
 	char *s;
 	int len, i, j;
 
 
-	if (!getargs(args, "s#", &s, &len))
+	if (!PyArg_Parse(args, "s#", &s, &len))
 		return NULL;
 
 	i = 0;
@@ -336,55 +336,55 @@ do_strip(args, striptype)
 	}
 
 	if (i == 0 && j == len) {
-		INCREF(args);
+		Py_INCREF(args);
 		return args;
 	}
 	else
-		return newsizedstringobject(s+i, j-i);
+		return PyString_FromStringAndSize(s+i, j-i);
 }
 
 
-static object *
+static PyObject *
 strop_strip(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	return do_strip(args, BOTHSTRIP);
 }
 
-static object *
+static PyObject *
 strop_lstrip(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	return do_strip(args, LEFTSTRIP);
 }
 
-static object *
+static PyObject *
 strop_rstrip(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	return do_strip(args, RIGHTSTRIP);
 }
 
 
-static object *
+static PyObject *
 strop_lower(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *s_new;
 	int i, n;
-	object *new;
+	PyObject *new;
 	int changed;
 
-	if (!getargs(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(NULL, n);
+	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s_new = getstringvalue(new);
+	s_new = PyString_AsString(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -396,30 +396,30 @@ strop_lower(self, args)
 		s_new++;
 	}
 	if (!changed) {
-		DECREF(new);
-		INCREF(args);
+		Py_DECREF(new);
+		Py_INCREF(args);
 		return args;
 	}
 	return new;
 }
 
 
-static object *
+static PyObject *
 strop_upper(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *s_new;
 	int i, n;
-	object *new;
+	PyObject *new;
 	int changed;
 
-	if (!getargs(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(NULL, n);
+	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s_new = getstringvalue(new);
+	s_new = PyString_AsString(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -431,30 +431,30 @@ strop_upper(self, args)
 		s_new++;
 	}
 	if (!changed) {
-		DECREF(new);
-		INCREF(args);
+		Py_DECREF(new);
+		Py_INCREF(args);
 		return args;
 	}
 	return new;
 }
 
 
-static object *
+static PyObject *
 strop_capitalize(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *s_new;
 	int i, n;
-	object *new;
+	PyObject *new;
 	int changed;
 
-	if (!getargs(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(NULL, n);
+	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s_new = getstringvalue(new);
+	s_new = PyString_AsString(new);
 	changed = 0;
 	if (0 < n) {
 		int c = Py_CHARMASK(*s++);
@@ -475,30 +475,30 @@ strop_capitalize(self, args)
 		s_new++;
 	}
 	if (!changed) {
-		DECREF(new);
-		INCREF(args);
+		Py_DECREF(new);
+		Py_INCREF(args);
 		return args;
 	}
 	return new;
 }
 
 
-static object *
+static PyObject *
 strop_swapcase(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *s_new;
 	int i, n;
-	object *new;
+	PyObject *new;
 	int changed;
 
-	if (!getargs(args, "s#", &s, &n))
+	if (!PyArg_Parse(args, "s#", &s, &n))
 		return NULL;
-	new = newsizedstringobject(NULL, n);
+	new = PyString_FromStringAndSize(NULL, n);
 	if (new == NULL)
 		return NULL;
-	s_new = getstringvalue(new);
+	s_new = PyString_AsString(new);
 	changed = 0;
 	for (i = 0; i < n; i++) {
 		int c = Py_CHARMASK(*s++);
@@ -515,90 +515,93 @@ strop_swapcase(self, args)
 		s_new++;
 	}
 	if (!changed) {
-		DECREF(new);
-		INCREF(args);
+		Py_DECREF(new);
+		Py_INCREF(args);
 		return args;
 	}
 	return new;
 }
 
 
-static object *
+static PyObject *
 strop_atoi(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	extern long mystrtol PROTO((const char *, char **, int));
-	extern unsigned long mystrtoul PROTO((const char *, char **, int));
+	extern long PyOS_strtol Py_PROTO((const char *, char **, int));
+	extern unsigned long
+                PyOS_strtoul Py_PROTO((const char *, char **, int));
 	char *s, *end;
 	int base = 10;
 	long x;
 	char buffer[256]; /* For errors */
 
-	if (args != NULL && is_tupleobject(args)) {
-		if (!getargs(args, "(si)", &s, &base))
+	if (args != NULL && PyTuple_Check(args)) {
+		if (!PyArg_Parse(args, "(si)", &s, &base))
 			return NULL;
 		if ((base != 0 && base < 2) || base > 36) {
-			err_setstr(ValueError, "invalid base for atoi()");
+			PyErr_SetString(PyExc_ValueError,
+                                        "invalid base for atoi()");
 			return NULL;
 		}
 	}
-	else if (!getargs(args, "s", &s))
+	else if (!PyArg_Parse(args, "s", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
-		err_setstr(ValueError, "empty string for atoi()");
+		PyErr_SetString(PyExc_ValueError, "empty string for atoi()");
 		return NULL;
 	}
 	errno = 0;
 	if (base == 0 && s[0] == '0')
-		x = (long) mystrtoul(s, &end, base);
+		x = (long) PyOS_strtoul(s, &end, base);
 	else
-		x = mystrtol(s, &end, base);
+		x = PyOS_strtol(s, &end, base);
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;
 	if (*end != '\0') {
 		sprintf(buffer, "invalid literal for atoi(): %.200s", s);
-		err_setstr(ValueError, buffer);
+		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
 	else if (errno != 0) {
 		sprintf(buffer, "atoi() literal too large: %.200s", s);
-		err_setstr(ValueError, buffer);
+		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
 
-static object *
+static PyObject *
 strop_atol(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
 	char *s, *end;
 	int base = 10;
-	object *x;
+	PyObject *x;
 	char buffer[256]; /* For errors */
 
-	if (args != NULL && is_tupleobject(args)) {
-		if (!getargs(args, "(si)", &s, &base))
+	if (args != NULL && PyTuple_Check(args)) {
+		if (!PyArg_Parse(args, "(si)", &s, &base))
 			return NULL;
 		if ((base != 0 && base < 2) || base > 36) {
-			err_setstr(ValueError, "invalid base for atol()");
+			PyErr_SetString(PyExc_ValueError,
+                                        "invalid base for atol()");
 			return NULL;
 		}
 	}
-	else if (!getargs(args, "s", &s))
+	else if (!PyArg_Parse(args, "s", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
-		err_setstr(ValueError, "empty string for atol()");
+		PyErr_SetString(PyExc_ValueError, "empty string for atol()");
 		return NULL;
 	}
-	x = long_escan(s, &end, base);
+	x = PyLong_FromString(s, &end, base);
 	if (x == NULL)
 		return NULL;
 	if (base == 0 && (*end == 'l' || *end == 'L'))
@@ -607,30 +610,30 @@ strop_atol(self, args)
 		end++;
 	if (*end != '\0') {
 		sprintf(buffer, "invalid literal for atol(): %.200s", s);
-		err_setstr(ValueError, buffer);
-		DECREF(x);
+		PyErr_SetString(PyExc_ValueError, buffer);
+		Py_DECREF(x);
 		return NULL;
 	}
 	return x;
 }
 
 
-static object *
+static PyObject *
 strop_atof(self, args)
-	object *self; /* Not used */
-	object *args;
+	PyObject *self; /* Not used */
+	PyObject *args;
 {
-	extern double strtod PROTO((const char *, char **));
+	extern double strtod Py_PROTO((const char *, char **));
 	char *s, *end;
 	double x;
 	char buffer[256]; /* For errors */
 
-	if (!getargs(args, "s", &s))
+	if (!PyArg_Parse(args, "s", &s))
 		return NULL;
 	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (s[0] == '\0') {
-		err_setstr(ValueError, "empty string for atof()");
+		PyErr_SetString(PyExc_ValueError, "empty string for atof()");
 		return NULL;
 	}
 	errno = 0;
@@ -639,15 +642,15 @@ strop_atof(self, args)
 		end++;
 	if (*end != '\0') {
 		sprintf(buffer, "invalid literal for atof(): %.200s", s);
-		err_setstr(ValueError, buffer);
+		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
 	else if (errno != 0) {
 		sprintf(buffer, "atof() literal too large: %.200s", s);
-		err_setstr(ValueError, buffer);
+		PyErr_SetString(PyExc_ValueError, buffer);
 		return NULL;
 	}
-	return newfloatobject(x);
+	return PyFloat_FromDouble(x);
 }
 
 
@@ -666,7 +669,7 @@ strop_maketrans(self, args)
 	}
 
 	if (fromlen!=tolen) {
-		PyErr_SetString(ValueError,
+		PyErr_SetString(PyExc_ValueError,
 				"maketrans arguments must have same length");
 		return NULL;
 	}
@@ -679,10 +682,10 @@ strop_maketrans(self, args)
 }
 
 
-static object *
+static PyObject *
 strop_translate(self, args)
-	object *self;
-	object *args;
+	PyObject *self;
+	PyObject *args;
 {
 	char *input, *table, *output, *output_start, *delete=NULL;
 	int inlen, tablen, dellen;
@@ -693,7 +696,7 @@ strop_translate(self, args)
 			      &table, &tablen, &delete, &dellen))
 		return NULL;
 	if (tablen != 256) {
-		PyErr_SetString(ValueError,
+		PyErr_SetString(PyExc_ValueError,
 			   "translation table must be 256 characters long");
 		return NULL;
 	}
@@ -730,7 +733,7 @@ strop_translate(self, args)
 
 /* List of functions defined in the module */
 
-static struct methodlist strop_methods[] = {
+static PyMethodDef strop_methods[] = {
 	{"atof",	strop_atof},
 	{"atoi",	strop_atoi},
 	{"atol",	strop_atol},
@@ -756,11 +759,11 @@ static struct methodlist strop_methods[] = {
 void
 initstrop()
 {
-	object *m, *d, *s;
+	PyObject *m, *d, *s;
 	char buf[256];
 	int c, n;
-	m = initmodule("strop", strop_methods);
-	d = getmoduledict(m);
+	m = Py_InitModule("strop", strop_methods);
+	d = PyModule_GetDict(m);
 
 	/* Create 'whitespace' object */
 	n = 0;
@@ -768,10 +771,10 @@ initstrop()
 		if (isspace(c))
 			buf[n++] = c;
 	}
-	s = newsizedstringobject(buf, n);
+	s = PyString_FromStringAndSize(buf, n);
 	if (s) {
-		dictinsert(d, "whitespace", s);
-		DECREF(s);
+		PyDict_SetItemString(d, "whitespace", s);
+		Py_DECREF(s);
 	}
 	/* Create 'lowercase' object */
 	n = 0;
@@ -779,10 +782,10 @@ initstrop()
 		if (islower(c))
 			buf[n++] = c;
 	}
-	s = newsizedstringobject(buf, n);
+	s = PyString_FromStringAndSize(buf, n);
 	if (s) {
-		dictinsert(d, "lowercase", s);
-		DECREF(s);
+		PyDict_SetItemString(d, "lowercase", s);
+		Py_DECREF(s);
 	}
 
 	/* Create 'uppercase' object */
@@ -791,12 +794,12 @@ initstrop()
 		if (isupper(c))
 			buf[n++] = c;
 	}
-	s = newsizedstringobject(buf, n);
+	s = PyString_FromStringAndSize(buf, n);
 	if (s) {
-		dictinsert(d, "uppercase", s);
-		DECREF(s);
+		PyDict_SetItemString(d, "uppercase", s);
+		Py_DECREF(s);
 	}
 
-	if (err_occurred())
-		fatal("can't initialize module strop");
+	if (PyErr_Occurred())
+		Py_FatalError("can't initialize module strop");
 }
