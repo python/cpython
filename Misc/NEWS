@@ -2,19 +2,83 @@
 ==> Release 1.4 (sometime 3Q 1996) <==
 ======================================
 
-XXX This file still has to be updated!
 
-Some highlights:
+What's new since 1.4 beta 1?
+----------------------------
 
-- "make install" overhaul to install everything and use a version number
+- Portability bug in the md5.h header solved.
 
-- new builtin modules operator, errno
+- The PC build procedure now really works, and sets sys.platform to a
+meaningful value (a few things were botched in beta 1).  Lib/dos_8x3
+is now a standard part of the distribution (alas).
 
-- changes needed by Numeric Python extensions:
+- Installation has been completely overhauled.  Typing "make install"
+now installs everything (not just the binary), inserts the version
+number in the pathnames of almost everything installed, uses the
+install-sh script to install each file, and creates the machine
+dependent modules (FCNTL.py etc.) if not supplied by the
+distribution.  (XXX There's still a problem with the latter because
+the "regen" script requires that Python is installed.  Some manual
+intervention may still be required.)
 
-	- x[lo:hi:stride]
-	- x[a, b, c]
-	- x[a, ..., z]
+- New modules: errno, operator.
 
-  plus "ellipses" and "slice" objects
+- Changes for use with Numerical Python: builtin function slice() and
+Ellipses object, and corresponding syntax:
 
+	x[lo:hi:stride]		==	x[slice(lo, hi, stride)]
+	x[a, ..., z]		==	x[(a, Ellipses, z)]
+
+- New documentation for errno and cgi mdoules.
+
+- The directory containing the script passed to the interpreter is
+inserted in from of sys.path; "." is no longer a default path
+component.
+
+- Optional third string argument to string.translate() specifies
+characters to delete.  New function string.maketrans() creates a
+translation table for translate() or for regex.compile().
+
+- Module posix (and hence module os under Unix) now supports putenv().
+Moreover, module os is enhanced so that if putenv() is supported,
+assignments to os.environ entries make the appropriate putenv() call.
+(XXX the putenv() implementation can leak a small amount of memory per
+call.)
+
+- pdb.py can now be invoked from the command line to debug a script:
+python pdb.py <script> <arg> ...
+
+- Much improved parseaddr() in rfc822.
+
+- In cgi.py, you can now pass an alternative value for environ to
+nearly all functions.
+
+- You can now assign to instance variables whose name begins and ends
+with '__'.
+
+- New version of Fred Drake's parser module and associates (token,
+symbol, AST).
+
+- New PYTHON_API_VERSION value.
+
+- The "complex" internal structure type is now called "Py_complex" to
+avoid name conflicts.
+
+- Numerous small bugs fixed.
+
+- Slight pickle speedups.
+
+- Some slight speedups suggested by Sjoerd (more coming in 1.4 final).
+
+- NeXT portability mods by Bill Bumgarner integrated.
+
+- Modules regexmodule.c, bsddbmodule.c and xxmodule.c have been
+converted to new naming style.
+
+
+What's new since Python release 1.3?
+------------------------------------
+
+- Added sys.platform and sys.exec_platform for Bill Janssen.
+
+XXX more...
