@@ -25,6 +25,7 @@ INSTALL_SYMLINK=/usr/bin/install -l as
 INSTALL_PROGRAM=${INSTALL}
 INSTALL_SCRIPT= ${INSTALL_PROGRAM}
 INSTALL_DATA=	${INSTALL} -m 644
+LN=ln
 STRIPFLAG=-s
 OPT=-g -O3 -Wall -Wstrict-prototypes -Wno-long-double -no-cpp-precomp \
 	-fno-common -dynamic
@@ -116,6 +117,9 @@ install_Python: $(PYTHON)
 	fi
 	$(REZ) -useDF -o $(RESOURCEFILE) dialogs.r errors.r 
 	$(INSTALL_DATA) $(RESOURCEFILE) $(APPINSTALLDIR)/Contents/Resources/$(RESOURCEFILE)
+# Finally create the documentation symlink
+	$(LN) -fsn ../../../../English.lproj/Documentation $(APPINSTALLDIR)/Contents/Resources/English.lproj/Documentation
+	
 	
 install_IDE: $(INSTALLED_PYTHONW)
 	@if $(INSTALLED_PYTHONW) -c "import waste"; then ; else \

@@ -29,14 +29,21 @@
 	<key>CFBundleShortVersionString</key>
 	<string>2.3</string>
 
+	<key>CFBundleHelpBookFolder</key>
+	<string>Documentation</string>
+	<key>CFBundleHelpBookName</key>
+	<string>Python Help</string>
+	<key>CFBundleHelpTOCFile</key>
+	<string>index.html</string>
+
 	<key>CFBundleIconFile</key>
 	<string>PythonInterpreter.icns</string>
 	<key>CFBundleIdentifier</key>
-	<string>org.python.pythonw</string>
+	<string>org.python.python</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>PythonW</string>
+	<string>Python</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleSignature</key>
