@@ -581,6 +581,11 @@ then
 		else
 			LDSHARED="ld -Bshareable ${LDFLAGS}"
 		fi;;
+	UnixWare*)
+		if test "$GCC" = "yes"
+		then LDSHARED="$(CC) -shared"
+		else LDSHARED="$(CC) -G"
+		fi;;
 	SCO_SV*) LDSHARED="cc -G -KPIC -Ki486 -belf -Wl,-Bexport";;
 	Monterey*) LDSHARED="cc -G -dy -Bdynamic -Bexport -L/usr/lib/ia64l64";;
 	CYGWIN*) LDSHARED="gcc -shared -Wl,--enable-auto-image-base";;
@@ -606,6 +611,11 @@ then
 	BSD/OS*/4*) CCSHARED="-fpic";;
 	OpenBSD*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*) CCSHARED="-fPIC";;
+	UnixWare*)
+		if test "$GCC" = "yes"
+		then CCSHARED="-fPIC"
+		else CCSHARED="-KPIC"
+		fi;;
 	SCO_SV*) CCSHARED="-KPIC -dy -Bdynamic";;
 	Monterey*) CCSHARED="-G";;
 	IRIX*/6*)  case $CC in
@@ -635,6 +645,7 @@ then
 	# loading of any modules which reference it in System.framework
 	next/4*|next/5*) LINKFORSHARED="-u __dummy -framework System" ;;
 	Darwin/*) LINKFORSHARED="-u __dummy -framework System -framework Foundation" ;;
+	UnixWare*) LINKFORSHARED="-Wl,-Bexport";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*) 
