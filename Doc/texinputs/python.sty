@@ -20,6 +20,11 @@
 %\RequirePackage{showkeys}
 %\RequirePackage{showidx}
 
+% If we ever want to indent paragraphs, this needs to be changed.
+% This is used inside the macros defined here instead of coding
+% \noindent directly.
+\let\py@parindent=\noindent
+
 % for PDF output, use maximal compression & a lot of other stuff
 % (test for PDF recommended by Tanmoy Bhattacharya <tanmoy@qcd.lanl.gov>)
 %
@@ -56,12 +61,19 @@
     \let\pdfstartlink=\pdfannotlink
   }{}
   %
+  % The \py@parindent here is a hack -- we're forcing pdfTeX into
+  % horizontal mode since \pdfstartlink requires that.
+  \def\py@pdfstartlink{%
+    \ifvmode\py@parindent\fi%
+    \pdfstartlink%
+  }
+  %
   % Macro that takes two args: the name to link to and the content of
   % the link.  This takes care of the PDF magic, getting the colors
   % the same for each link, and avoids having lots of garbage all over 
   % this style file.
   \newcommand{\py@linkToName}[2]{%
-    \pdfstartlink attr{/Border [0 0 0]} goto name{#1}%
+    \py@pdfstartlink attr{/Border [0 0 0]} goto name{#1}%
       \py@LinkColor#2\py@NormalColor%
     \pdfendlink%
   }
@@ -857,8 +869,7 @@
 % but only if we actually used hyperref:
 \ifpdf
   \newcommand{\url}[1]{{%
-    \noindent%
-    \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
+    \py@pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
     \py@smallsize\sf #1%
     \py@NormalColor%                    Turn it back off; these are declarative
@@ -933,11 +944,9 @@
 
 % \ulink{link text}{URL}
 \ifpdf
-  % The \noindent here is a hack -- we're forcing pdfTeX into
-  % horizontal mode since \pdfstartlink requires that.
-  % For PDF, we *should* only generate a link when the URL is absolute.
-  \newcommand{\ulink}[2]{\noindent{%
-    \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
+  \newcommand{\ulink}[2]{{%
+    % For PDF, we *should* only generate a link when the URL is absolute.
+    \py@pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#2)}%
     \py@LinkColor%                              color of the link text
     #1%
     \py@NormalColor%                    Turn it back off; these are declarative
