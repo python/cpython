@@ -9,13 +9,8 @@
 # define _GNU_SOURCE	1
 #endif
 
-/* Forcing SUSv2 compatibility still produces problems on some
-   platforms, True64 and SGI IRIX being two of them, so for now the
-   define is switched off. */
-#if 0
 #ifndef _XOPEN_SOURCE
-# define _XOPEN_SOURCE	500
-#endif
+# define _XOPEN_SOURCE 500
 #endif
 
 /* Include nearly all Python header files */
