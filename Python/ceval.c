@@ -657,6 +657,7 @@ eval_frame(PyFrameObject *f)
 
 		if (things_to_do || --tstate->ticker < 0) {
 			tstate->ticker = tstate->interp->checkinterval;
+			tstate->tick_counter++;
 			if (things_to_do) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;

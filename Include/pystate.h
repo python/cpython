@@ -69,6 +69,8 @@ typedef struct _ts {
 
     PyObject *dict;
 
+    int tick_counter;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
