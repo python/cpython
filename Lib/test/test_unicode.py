@@ -391,3 +391,11 @@ for encoding in (
         print '*** codec for "%s" failed: %s' % (encoding, why)
 
 print 'done.'
+
+print 'Testing Unicode string concatenation...',
+assert (u"abc" u"def") == u"abcdef"
+assert ("abc" u"def") == u"abcdef"
+assert (u"abc" "def") == u"abcdef"
+assert (u"abc" u"def" "ghi") == u"abcdefghi"
+assert ("abc" "def" u"ghi") == u"abcdefghi"
+print 'done.'
