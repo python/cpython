@@ -106,7 +106,7 @@ install_Python:
 			esac; \
 		done; \
 	done
-	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/python	
+	$(INSTALL_PROGRAM) $(STRIPFLAG) $(BUILDPYTHON) $(DESTDIR)$(APPINSTALLDIR)/Contents/MacOS/Python	
 	
 install_IDE:
 	@if ! $(BUILDPYTHON) -c "import waste"; then  \
