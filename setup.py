@@ -270,8 +270,9 @@ class PyBuildExt(build_ext):
                 parser.error = lambda msg: None
                 parser.add_option(arg_name, dest="dirs", action="append")
                 options = parser.parse_args(env_val.split())[0]
-                for directory in options.dirs:
-                    add_dir_to_list(dir_list, directory)
+                if options.dirs:
+                    for directory in options.dirs:
+                        add_dir_to_list(dir_list, directory)
 
         if os.path.normpath(sys.prefix) != '/usr':
             add_dir_to_list(self.compiler.library_dirs,
