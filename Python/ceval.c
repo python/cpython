@@ -775,43 +775,88 @@ eval_code(co, globals, locals, owner, arg)
 		case BREAK_LOOP:
 			why = WHY_BREAK;
 			break;
-		
+
 		case RAISE_EXCEPTION:
-			v = POP();
-			w = POP();
+			oparg = 2;
+			/* Fallthrough */
+		case RAISE_VARARGS:
+			u = v = w = NULL;
+			switch (oparg) {
+			case 3:
+				u = POP(); /* traceback */
+				if (u == None) {
+					DECREF(u);
+					u = NULL;
+				}
+				else if (strcmp(u->ob_type->tp_name,
+						"traceback") != 0) {
+					/* XXX traceback.h needs to define
+					   is_traceback() */
+					err_setstr(TypeError,
+				    "raise 3rd arg must be traceback or None");
+					goto raise_error;
+				}
+				/* Fallthrough */
+			case 2:
+				v = POP(); /* value */
+				/* Fallthrough */
+			case 1:
+				w = POP(); /* exc */
+				break;
+			default:
+				err_setstr(SystemError,
+					   "bad RAISE_VARARGS oparg");
+				goto raise_error;
+			}
+			if (v == NULL) {
+				v = None;
+				INCREF(v);
+			}
 			/* A tuple is equivalent to its first element here */
 			while (is_tupleobject(w) && gettuplesize(w) > 0) {
-				u = w;
-				w = GETTUPLEITEM(u, 0);
+				object *t = w;
+				w = GETTUPLEITEM(t, 0);
 				INCREF(w);
-				DECREF(u);
+				DECREF(t);
 			}
 			if (is_stringobject(w)) {
-				err_setval(w, v);
+				;
 			} else if (is_classobject(w)) {
 				if (!is_instanceobject(v)
 				    || !issubclass((object*)((instanceobject*)v)->in_class,
-						   w))
+						   w)) {
 					err_setstr(TypeError,
 						   "a class exception must have a value that is an instance of the class");
-				else
-					err_setval(w,v);
+					goto raise_error;
+				}
 			} else if (is_instanceobject(w)) {
-				if (v != None)
+				if (v != None) {
 					err_setstr(TypeError,
 						   "an instance exception may not have a separate value");
+					goto raise_error;
+				}
 				else {
 					DECREF(v);
 					v = w;
 					w = (object*) ((instanceobject*)w)->in_class;
 					INCREF(w);
-					err_setval(w, v);
 				}
-			} else
+			}
+			else {
 				err_setstr(TypeError,
 					"exceptions must be strings, classes, or instances");
-			DECREF(v);
-			DECREF(w);
+				goto raise_error;
+			}
+			err_restore(w, v, u);
+			if (u == NULL)
+				why = WHY_EXCEPTION;
+			else
+				why = WHY_RERAISE;
+			break;
+		raise_error:
+			XDECREF(v);
+			XDECREF(w);
+			XDECREF(u);
 			why = WHY_EXCEPTION;
 			break;
 		
@@ -876,11 +921,8 @@ eval_code(co, globals, locals, owner, arg)
 			}
 			else if (is_stringobject(v) || is_classobject(v)) {
 				w = POP();
-				err_setval(v, w);
-				DECREF(w);
-				w = POP();
-				tb_store(w);
-				DECREF(w);
+				u = POP();
+				err_restore(v, w, u);
 				why = WHY_RERAISE;
 			}
 			else if (v != None) {
@@ -1000,6 +1042,7 @@ eval_code(co, globals, locals, owner, arg)
 					err_setstr(TypeError,
 						   "bad argument list");
 					why = WHY_EXCEPTION;
+					DECREF(v);
 					break;
 				}
 				n = gettuplesize(v);
@@ -1308,8 +1351,7 @@ eval_code(co, globals, locals, owner, arg)
 			}
 			x = call_object(x, w);
 			DECREF(w);
-			if (x)
-				PUSH(x);
+			PUSH(x);
 			break;
 		
 		case IMPORT_FROM:
@@ -1402,6 +1444,85 @@ eval_code(co, globals, locals, owner, arg)
 						 f, "line", None);
 			}
 			break;
+
+		case CALL_FUNCTION:
+		{
+			/* XXX To do:
+			   - fill in default arguments here
+			   - proper handling of keyword parameters
+			   - change eval_code interface to take an
+			     array of arguments instead of a tuple
+			   */
+			int na = oparg & 0xff;
+			int nk = (oparg>>8) & 0xff;
+			int n = na + 2*nk;
+			object **pfunc = stack_pointer - n - 1;
+			object *func = *pfunc;
+			object *self = NULL;
+			object *class = NULL;
+			object *args;
+			f->f_lasti = INSTR_OFFSET() - 3; /* For tracing */
+			INCREF(func);
+			if (is_instancemethodobject(func)) {
+				self = instancemethodgetself(func);
+				if (self != NULL) {
+					class = instancemethodgetclass(func);
+					DECREF(func);
+					func = instancemethodgetfunc(func);
+					INCREF(func);
+					INCREF(self);
+					DECREF(*pfunc);
+					*pfunc = self;
+					na++;
+					n++;
+				}
+			}
+			args = newtupleobject(n);
+			if (args == NULL)
+				x = NULL;
+			else {
+				while (--n >= 0) {
+					w = POP();
+					SETTUPLEITEM(args, n, w);
+				}
+				if (self == NULL)
+					 POP();
+				if (is_funcobject(func)) {
+					int argcount;
+					object *argdefs =
+					    getfuncargstuff(func, &argcount);
+					if (argdefs == NULL) { /* Fast path */
+						object *co, *loc, *glob;
+						co = getfunccode(func);
+						loc = newdictobject();
+						if (loc == NULL) {
+							x = NULL;
+							DECREF(func);
+							break;
+						}
+						glob = getfuncglobals(func);
+						INCREF(glob);
+						x = eval_code(
+							(codeobject *)co,
+							glob,
+							loc,
+							class,
+							args);
+						DECREF(glob);
+						DECREF(loc);
+						DECREF(args);
+						DECREF(func);
+						PUSH(x);
+						break;
+					}
+				}
+				x = call_object(func, args);
+				DECREF(args);
+				PUSH(x);
+			}
+			DECREF(func);
+			break;
+		}
 		
 		default:
 			fprintf(stderr,
@@ -1613,7 +1734,7 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	char *msg;
 	object *arg;
 {
-	object *arglist, *what;
+	object *args, *what;
 	object *res = NULL;
 	static int tracing = 0;
 	
@@ -1626,26 +1747,26 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 		return 0;
 	}
 	
-	arglist = newtupleobject(3);
-	if (arglist == NULL)
+	args = newtupleobject(3);
+	if (args == NULL)
 		goto cleanup;
 	what = newstringobject(msg);
 	if (what == NULL)
 		goto cleanup;
 	INCREF(f);
-	SETTUPLEITEM(arglist, 0, (object *)f);
-	SETTUPLEITEM(arglist, 1, what);
+	SETTUPLEITEM(args, 0, (object *)f);
+	SETTUPLEITEM(args, 1, what);
 	if (arg == NULL)
 		arg = None;
 	INCREF(arg);
-	SETTUPLEITEM(arglist, 2, arg);
+	SETTUPLEITEM(args, 2, arg);
 	tracing++;
 	fast_2_locals(f);
-	res = call_object(*p_trace, arglist); /* May clear *p_trace! */
+	res = call_object(*p_trace, args); /* May clear *p_trace! */
 	locals_2_fast(f, 1);
 	tracing--;
  cleanup:
-	XDECREF(arglist);
+	XDECREF(args);
 	if (res == NULL) {
 		/* The trace proc raised an exception */
 		tb_here(f);
