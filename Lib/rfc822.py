@@ -728,6 +728,10 @@ class AddressList(AddrlistClass):
                 newaddr.addresslist.append(x)
         return newaddr
 
+    def __getitem__(self, index):
+        # Make indexing, slices, and 'in' work
+        return self.addrlist[index]
+
 def dump_address_pair(pair):
     """Dump a (name, address) pair in a canonicalized form."""
     if pair[0]:
