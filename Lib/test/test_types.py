@@ -165,6 +165,7 @@ if a <> [2,1,0,-1,-2]: raise TestFailed, 'list sort with cmp func'
 print '6.6 Mappings == Dictionaries'
 d = {}
 if d.keys() <> []: raise TestFailed, '{}.keys()'
+if d.has_key('a') <> 0: raise TestFailed, '{}.has_key(\'a\')'
 if len(d) <> 0: raise TestFailed, 'len({})'
 d = {'a': 1, 'b': 2}
 if len(d) <> 2: raise TestFailed, 'len(dict)'

@@ -2,6 +2,14 @@
 
 from test_support import *
 
+print '__import__'
+__import__('sys')
+__import__('strop')
+__import__('string')
+try: __import__('spamspam')
+except ImportError: pass
+else: raise TestFailed, "__import__('spamspam') should fail"
+
 print 'abs'
 if abs(0) <> 0: raise TestFailed, 'abs(0)'
 if abs(1234) <> 1234: raise TestFailed, 'abs(1234)'
