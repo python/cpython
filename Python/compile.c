@@ -4477,6 +4477,7 @@ symtable_update_cur(struct symtable *st)
 			Py_DECREF(d);
 			return -1;
 		}
+		Py_DECREF(d);
 		if (st->st_cur_type == TYPE_FUNCTION) {
 			if ((l = PyList_New(0)) == NULL)
 				return -1;
