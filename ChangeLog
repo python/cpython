@@ -1,4 +1,116 @@
+Thu Apr 14 12:36:25 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/ref7.tex (section{Function definitions}): describe default
+	parameter values
+
+	* Lib/test/test_grammar.py: added grammar variants for default
+	argument expressions
+
+	* Python/compile.c: compile default argument values (com_argdefs
+	plus related stuff)
+
+	* Python/bltinmodule.c (builtin_apply): require that the argument
+	list is a tuple
+
+	* Misc/python-mode.el: change by Donald Beaudry to
+	py-compute-indentation; and fix to that by Sjoerd
+
+Wed Apr 13 10:08:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (eval_code): implement SET_FUNC_ARGS opcode
+
+	* Include/opcode.h: added SET_FUNC_ARGS opcode
+
+	* Objects/funcobject.c (newfuncobject, func_memberlist): added
+	func_argcount and func_argdefs fields and {get,set}funcargstuff()
+	functions.
+
+	* Include/funcobject.h: Added func_argcount and func_argdefs
+	fields and {get,set}funcargstuff() functions.
+
+	* Python/import.c (init_builtin): Give error message if module's
+	initialization function is NULL (e.g. for 'sys').
+	(get_module): Give error message if reloading a dynamically
+	loadable module.
+	(reload_module): Give error message if reloading a built-in
+	module; correctly (I hope) reload a frozen module.
+
+	* Doc/ref6.tex (break and continue): rephrase definition of
+	restrictions on where these may occur; change rules for continue
+	to match implementation.
+
+	* Doc/ref4.tex (section{Code blocks, execution frames, and name
+	spaces}): fix definition of what's local to include deleted
+	targets; added footnote describing exec and from - import *
+	restriction.
+
+	* Lib/dis.py: added LOAD_GLOBALS and EXEC_STMT to list of opcodes.
+
+Tue Apr 12 10:27:19 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/ceval.c (eval_code): fix core dump on "raise ()" -- found
+	by Tim Peters
+
+Mon Apr 11 20:48:26 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/compile.c (optimize): added optimization for LOAD_NAME
+	suggested by Steve Majewski
+
+	* Python/ceval.c (eval_code: case DELETE_FAST): fix cut-paste
+	error (w should be x) found by Steve Majewski
+
+Tue Mar 22 15:37:06 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/profile.py: fix handle_return for exceptional case (fix
+	suggested by Jim Roskind)
+
+	* Lib/tzparse.py (tzprog): Fix typo in test for regex.match
+
+	* Lib/urlopen.py: renamed to Lib/urllib.py
+
+Thu Mar 17 01:24:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/urlopen.py: added quote() and unquote() functions
+
+Wed Mar 16 11:26:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/mappingobject.c: allow dictionaries with more than
+	20,000 entries.
+
+Thu Mar 10 11:13:24 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/{pdb,profile,bdb,codehack,stdwin/wdb}.py:
+	codehack.getcodename() is obsolete now we have co.co_name; same
+	for getfuncname(): f.func_name.  Module codehack is still needed
+	for getlineno(), used in profile and pdb
+
+Tue Mar  8 10:37:21 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/modsupport.c (do_arg): Format "O!" means typechecked
+	object; pointer argument must be preceded by typeobject
+
+	* Modules/threadmodule.c: don't define exit_prog if NO_EXIT_PROG
+	is defined
+
+	* Python/thread.c: don't define [_]exit_prog if NO_EXIT_PROG is
+	defined; in the SGI version, don't use signals if exit_prog is
+	node defined defined; in the SGI version, waitpid() for exited
+	threads.
+
+	* Python/pythonrun.c: don't call [_]exit_prog if NO_EXIT_PROG is
+	defined
+
+	* Include/thread.h: define NO_EXIT_PROG and then don't define
+	[_]exit_prog
+
+	* Modules/dbmmodule.c: Add calls to dbm_clearerr() after error on
+	assignment (fix by Jack)
+
 Mon Mar  7 12:41:32 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Lib/test/test_rgbimg.py: search test file along sys.path
+
+	* Lib/test/test_{b1,b2,grammar}.py: tests for indefinite sequences
 
 	* Python/{bltinmodule,ceval}.c: Changed implied and explicit loops
 	over sequences to allow for "indefinite" sequences a la Steve
