@@ -28,10 +28,7 @@ macstat(path, buf)
 	pb.d.ioFDirIndex = 0;
 	pb.d.ioDrDirID = 0;
 	pb.f.ioFVersNum = 0; /* Fix found by Timo! See Tech Note 102 */
-	if (hfsrunning())
-		err = PBGetCatInfoSync((CInfoPBPtr)&pb);
-	else
-		err = PBGetFInfoSync((ParmBlkPtr)&pb);
+	err = PBGetCatInfoSync((CInfoPBPtr)&pb);
 	if (err != noErr) {
 		errno = ENOENT;
 		return -1;

@@ -9,6 +9,7 @@
 #define DIR  struct _dir
 
 struct _dir {
+	short vrefnum;
 	long dirid;
 	int nextfile;
 };

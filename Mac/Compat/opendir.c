@@ -20,6 +20,31 @@ DIR *
 opendir(path)
 	char *path;
 {
+#ifdef TARGET_API_MAC_CARBON
+	Str255 ppath;
+	FSSpec fss;
+	int plen;
+	OSErr err;
+	
+	if (opened.nextfile != 0) {
+		errno = EBUSY;
+		return NULL; /* A directory is already open. */
+	}
+	plen = strlen(path);
+	c2pstrcpy(ppath, path);
+	if ( ppath[plen] != ':' )
+		ppath[++plen] = ':';
+	ppath[++plen] = 'x';
+	ppath[0] = plen;
+	if( (err = FSMakeFSSpec(0, 0, ppath, &fss)) < 0 && err != fnfErr ) {
+		errno = EIO;
+		return NULL;
+	}
+	opened.dirid = fss.parID;
+	opened.vrefnum = fss.vRefNum;
+	opened.nextfile = 1;
+	return &opened;
+#else
 	union {
 		WDPBRec d;
 		VolumeParam v;
@@ -34,15 +59,9 @@ opendir(path)
 	strncpy(ppath+1, path, ppath[0]= strlen(path));
 	pb.d.ioNamePtr= (unsigned char *)ppath;
 	pb.d.ioVRefNum= 0;
-	if (hfsrunning()) {
-		pb.d.ioWDProcID= 0;
-		pb.d.ioWDDirID= 0;
-		err= PBOpenWD((WDPBPtr)&pb, 0);
-	}
-	else {
-		pb.v.ioVolIndex= 0;
-		err= PBGetVInfo((ParmBlkPtr)&pb, 0);
-	}
+	pb.d.ioWDProcID= 0;
+	pb.d.ioWDDirID= 0;
+	err= PBOpenWD((WDPBPtr)&pb, 0);
 	if (err != noErr) {
 		errno = ENOENT;
 		return NULL;
@@ -50,6 +69,7 @@ opendir(path)
 	opened.dirid= pb.d.ioVRefNum;
 	opened.nextfile= 1;
 	return &opened;
+#endif
 }
 
 /*
@@ -60,14 +80,16 @@ void
 closedir(dirp)
 	DIR *dirp;
 {
-	if (hfsrunning()) {
-		WDPBRec pb;
-		
-		pb.ioVRefNum= dirp->dirid;
-		(void) PBCloseWD(&pb, 0);
-	}
+#ifdef TARGET_API_MAC_CARBON
+	dirp->nextfile = 0;
+#else
+	WDPBRec pb;
+	
+	pb.ioVRefNum= dirp->dirid;
+	(void) PBCloseWD(&pb, 0);
 	dirp->dirid= 0;
 	dirp->nextfile= 0;
+#endif
 }
 
 /*
@@ -88,17 +110,23 @@ readdir(dp)
 	
 	dir.d_name[0]= 0;
 	pb.d.ioNamePtr= (unsigned char *)dir.d_name;
+#ifdef TARGET_API_MAC_CARBON
+	pb.d.ioVRefNum= dp->vrefnum;
+	pb.d.ioDrDirID= dp->dirid;
+#else
 	pb.d.ioVRefNum= dp->dirid;
-	pb.d.ioFDirIndex= dp->nextfile++;
 	pb.d.ioDrDirID= 0;
-	if (hfsrunning())
-		err= PBGetCatInfo((CInfoPBPtr)&pb, 0);
-	else
-		err= PBGetFInfo((ParmBlkPtr)&pb, 0);
+#endif
+	pb.d.ioFDirIndex= dp->nextfile++;
+	err= PBGetCatInfo((CInfoPBPtr)&pb, 0);
 	if (err != noErr) {
 		errno = EIO;
 		return NULL;
 	}
+#ifdef TARGET_API_MAC_CARBON
+	p2cstrcpy(dir.d_name, (StringPtr)dir.d_name);
+#else
 	(void) p2cstr((unsigned char *)dir.d_name);
+#endif
 	return &dir;
 }
