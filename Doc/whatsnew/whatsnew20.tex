@@ -38,10 +38,10 @@ distinct characters can be supported.
 
 The final interface for Unicode support was arrived at through
 countless often-stormy discussions on the python-dev mailing list, and
-mostly implemented by Marc-Andr\'e Lemburg.  A detailed explanation of
-the interface is in the file
-\file{Misc/unicode.txt} in the Python source distribution; it's also
-available on the Web at
+mostly implemented by Marc-Andr\'e Lemburg, based on a Unicode string
+type implementation by Fredrik Lundh.  A detailed explanation of the
+interface is in the file \file{Misc/unicode.txt} in the Python source
+distribution; it's also available on the Web at
 \url{http://starship.python.net/crew/lemburg/unicode-proposal.txt}.
 This article will simply cover the most significant points from the
 full interface.
@@ -56,7 +56,7 @@ by \code{\e 777}.
 
 Unicode strings, just like regular strings, are an immutable sequence
 type.  They can be indexed and sliced, but not modified in place.
-Unicode strings have an \method{encode( \optional{\var{encoding}} )} method
+Unicode strings have an \method{encode( \optional{encoding} )} method
 that returns an 8-bit string in the desired encoding.  Encodings are
 named by strings, such as \code{'ascii'}, \code{'utf-8'},
 \code{'iso-8859-1'}, or whatever.  A codec API is defined for
@@ -362,8 +362,11 @@ For example, the number 8.1 can't be represented exactly in binary, so
 \code{'8.1'}.
 
 The \code{-X} command-line option, which turned all standard
-exceptions into strings instead of classes, has been removed;
-the standard exceptions will now always be classes.
+exceptions into strings instead of classes, has been removed; the
+standard exceptions will now always be classes.  The
+\module{exceptions} module containing the standard exceptions was
+translated from Python to a built-in C module, written by Barry Warsaw
+and Fredrik Lundh.
 
 % ======================================================================
 \section{Optional Collection of Cycles}
@@ -409,6 +412,8 @@ An experimental step has been made toward fixing this problem.  When
 compiling Python, the \verb|--with-cycle-gc| option can be specified.
 This causes a cycle detection algorithm to be periodically executed,
 which looks for inaccessible cycles and deletes the objects involved.
+A new \module{gc} module provides functions to perform a garbage
+collection, obtain debugging statistics, and tuning the collector's parameters.
 
 Why isn't cycle detection enabled by default?  Running the cycle detection
 algorithm takes some time, and some tuning will be required to
@@ -540,7 +545,14 @@ The version number of the Python C API was incremented, so C
 extensions compiled for 1.5.2 must be recompiled in order to work with
 2.0.  On Windows, attempting to import a third party extension built
 for Python 1.5.x usually results in an immediate crash; there's not
-much we can do about this.  (XXX can anyone tell me why it crashes?)
+much we can do about this.  (Here's Mark Hammond's explanation of the
+reasons for the crash.  The 1.5 module is linked against
+\file{Python15.dll}.  When \file{Python.exe} , linked against
+\file{Python16.dll}, starts up, it initializes the Python data
+structures in \file{Python16.dll}.  When Python then imports the
+module \file{foo.pyd} linked against \file{Python15.dll}, it
+immediately tries to call the functions in that DLL.  As Python has
+not been initialized in that DLL, the program immediately crashes.)
 
 Users of Jim Fulton's ExtensionClass module will be pleased to find
 out that hooks have been added so that ExtensionClasses are now
@@ -633,6 +645,15 @@ particular module.
 
 \begin{itemize}
 
+\item{\module{atexit}}: 
+For registering functions to be called before the Python interpreter exits.
+Code that currently sets
+\code{sys.exitfunc} directly should be changed to 
+use the \module{atexit} module instead, importing \module{atexit}
+and calling \function{atexit.register()} with 
+the function to be called on exit.
+(Contributed by Skip Montanaro.)
+
 \item{\module{codecs}, \module{encodings}, \module{unicodedata}:}  Added as part of the new Unicode support. 
 
 \item{\module{filecmp}:} Supersedes the old \module{cmp} and
@@ -666,7 +687,7 @@ checks Python source code for ambiguous indentation.
 
 \item{\module{UserString}:} A base class useful for deriving objects that behave like strings.  
 
-\item{\module{winreg} and \module{_wingreg}:} An interface to the
+\item{\module{winreg} and \module{_winreg}:} An interface to the
 Windows registry.  \module{winreg} has been part of PythonWin since
 1995, but now has been added to the core distribution, and enhanced to
 support Unicode.  \module{_winreg} is a low-level wrapper of the
@@ -742,11 +763,9 @@ these modules.
 
 \section{Acknowledgements}
 
-The author would like to thank the following people for offering suggestions on earlier drafts of this article: 
-Skip Montanaro,
-Vladimir Marangozov,
-Guido van Rossum, 
-Neil Schemenauer.
+The author would like to thank the following people for offering
+suggestions on drafts of this article: Fredrik Lundh, Skip
+Montanaro, Vladimir Marangozov, Guido van Rossum, Neil Schemenauer.
 
 \end{document}
 
