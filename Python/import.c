@@ -37,6 +37,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "compile.h"
 #include "ceval.h"
 
+/* Magic word to reject pre-0.9.4 .pyc files */
+
+#define MAGIC 0x949494L
+
 /* Define pathname separator used in file names */
 
 #ifdef macintosh
@@ -160,9 +164,10 @@ get_module(m, name, m_ret)
 	fpc = fopen(namebuf, "rb");
 	if (fpc != NULL) {
 		long pyc_mtime;
-		(void) rd_long(fpc); /* Reserved for magic word */
+		long magic;
+		magic = rd_long(fpc);
 		pyc_mtime = rd_long(fpc);
-		if (pyc_mtime != 0 && pyc_mtime != -1 && pyc_mtime == mtime) {
+		if (magic == MAGIC && pyc_mtime == mtime && mtime != 0 && mtime != -1) {
 			v = rd_object(fpc);
 			if (v == NULL || err_occurred() || !is_codeobject(v)) {
 				err_clear();
@@ -202,7 +207,7 @@ get_module(m, name, m_ret)
 		namebuf[namelen+1] = '\0';
 		fpc = fopen(namebuf, "wb");
 		if (fpc != NULL) {
-			wr_long(0L, fpc); /* Reserved for magic word */
+			wr_long(MAGIC, fpc);
 			/* First write a 0 for mtime */
 			wr_long(0L, fpc);
 			wr_object((object *)co, fpc);
