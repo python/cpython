@@ -214,7 +214,21 @@ PyZlib_decompress(PyObject *self, PyObject *args)
         case(Z_STREAM_END):
 	    break;
 	case(Z_BUF_ERROR):
-        case(Z_OK):
+	    /*
+	     * If there is at least 1 byte of room according to zst.avail_out
+	     * and we get this error, assume that it means zlib cannot
+	     * process the inflate call() due to an error in the data.
+	     */
+	    if (zst.avail_out > 0)
+            {
+              PyErr_Format(ZlibError, "Error %i while decompressing data",
+                           err);
+              inflateEnd(&zst);
+              Py_DECREF(result_str);
+              return NULL;
+            }
+	    /* fall through */
+	case(Z_OK):
 	    /* need more memory */
 	    if (_PyString_Resize(&result_str, r_strlen << 1) == -1)
             {
