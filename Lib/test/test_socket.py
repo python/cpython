@@ -127,7 +127,7 @@ try:
     else:
 	try:
 	    # child is client
-	    time.sleep(1)
+	    time.sleep(5)
 	    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	    if verbose:
 		print 'child connecting'
