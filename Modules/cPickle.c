@@ -464,7 +464,7 @@ write_other(Picklerobject *self, char *s, int  n)
 
 
 static int
-read_file(Unpicklerobject *self, char **s, int  n)
+read_file(Unpicklerobject *self, char **s, int n)
 {
 	size_t nbytesread;
 
@@ -472,7 +472,7 @@ read_file(Unpicklerobject *self, char **s, int  n)
 		int size;
 
 		size = ((n < 32) ? 32 : n);
-		if (!( self->buf = (char *)malloc(size * sizeof(char))))  {
+		if (!( self->buf = (char *)malloc(size))) {
 			PyErr_NoMemory();
 			return -1;
 		}
@@ -480,12 +480,11 @@ read_file(Unpicklerobject *self, char **s, int  n)
 		self->buf_size = size;
 	}
 	else if (n > self->buf_size) {
-		self->buf = (char *)realloc(self->buf, n * sizeof(char));
+		self->buf = (char *)realloc(self->buf, n);
 		if (!self->buf)  {
 			PyErr_NoMemory();
 			return -1;
 		}
-
 		self->buf_size = n;
 	}
 
@@ -514,16 +513,16 @@ readline_file(Unpicklerobject *self, char **s)
 	int i;
 
 	if (self->buf_size == 0) {
-		if (!( self->buf = (char *)malloc(40 * sizeof(char))))  {
+		if (!( self->buf = (char *)malloc(40))) {
 			PyErr_NoMemory();
 			return -1;
 		}
-
 		self->buf_size = 40;
 	}
 
 	i = 0;
 	while (1) {
+		int bigger;
 		for (; i < (self->buf_size - 1); i++) {
 			if (feof(self->fp) ||
 			    (self->buf[i] = getc(self->fp)) == '\n') {
@@ -532,14 +531,17 @@ readline_file(Unpicklerobject *self, char **s)
 				return i + 1;
 			}
 		}
-		self->buf = (char *)realloc(self->buf,
-					    (self->buf_size * 2) * sizeof(char));
+		bigger = self->buf_size << 1;
+		if (bigger <= 0) {	/* overflow */
+			PyErr_NoMemory();
+			return -1;
+		}
+		self->buf = (char *)realloc(self->buf, bigger);
 		if (!self->buf)  {
 			PyErr_NoMemory();
 			return -1;
 		}
-
-		self->buf_size *= 2;
+		self->buf_size = bigger;
 	}
 }
 
@@ -620,14 +622,18 @@ readline_other(Unpicklerobject *self, char **s)
 	return str_size;
 }
 
-
+/* Copy the first n bytes from s into newly malloc'ed memory, plus a
+ * trailing 0 byte.  Return a pointer to that, or NULL if out of memory.
+ * The caller is responsible for free()'ing the return value.
+ */
 static char *
-pystrndup(char *s, int l)
+pystrndup(char *s, int n)
 {
-	char *r;
-	if (!( r=malloc((l+1)*sizeof(char))))  return (char*)PyErr_NoMemory();
-	memcpy(r,s,l);
-	r[l]=0;
+	char *r = (char *)malloc(n+1);
+	if (r == NULL)
+		return (char*)PyErr_NoMemory();
+	memcpy(r, s, n);
+	r[n] = 0;
 	return r;
 }
 
@@ -1012,11 +1018,93 @@ save_int(Picklerobject *self, PyObject *args)
 static int
 save_long(Picklerobject *self, PyObject *args)
 {
-	int size, res = -1;
-	PyObject *repr = 0;
+	int size;
+	int res = -1;
+	PyObject *repr = NULL;
 
 	static char l = LONG;
 
+	if (self->proto >= 2) {
+		/* Linear-time pickling. */
+		size_t nbits;
+		size_t nbytes;
+		unsigned char *pdata;
+		char c_str[5];
+		int i;
+		int sign = _PyLong_Sign(args);
+
+		if (sign == 0) {
+			/* It's 0 -- an empty bytestring. */
+			c_str[0] = LONG1;
+			c_str[1] = 0;
+			i = self->write_func(self, c_str, 2);
+			if (i < 0) goto finally;
+			res = 0;
+			goto finally;
+		}
+		nbits = _PyLong_NumBits(args);
+		if (nbits == (size_t)-1 && PyErr_Occurred())
+			goto finally;
+		/* How many bytes do we need?  There are nbits >> 3 full
+		 * bytes of data, and nbits & 7 leftover bits.  If there
+		 * are any leftover bits, then we clearly need another
+		 * byte.  Wnat's not so obvious is that we *probably*
+		 * need another byte even if there aren't any leftovers:
+		 * the most-significant bit of the most-significant byte
+		 * acts like a sign bit, and it's usually got a sense
+		 * opposite of the one we need.  The exception is longs
+		 * of the form -(2**(8*j-1)) for j > 0.  Such a long is
+		 * its own 256's-complement, so has the right sign bit
+		 * even without the extra byte.  That's a pain to check
+		 * for in advance, though, so we always grab an extra
+		 * byte at the start, and cut it back later if possible.
+		 */
+		nbytes = (nbits >> 3) + 1;
+		if ((int)nbytes < 0 || (size_t)(int)nbytes != nbytes) {
+			PyErr_SetString(PyExc_OverflowError, "long too large "
+				"to pickle");
+			goto finally;
+		}
+		repr = PyString_FromStringAndSize(NULL, (int)nbytes);
+		if (repr == NULL) goto finally;
+		pdata = (unsigned char *)PyString_AS_STRING(repr);
+		i = _PyLong_AsByteArray((PyLongObject *)args,
+	 			pdata, nbytes,
+				1 /* little endian */, 1 /* signed */);
+		if (i < 0) goto finally;
+		/* If the long is negative, this may be a byte more than
+		 * needed.  This is so iff the MSB is all redundant sign
+		 * bits.
+		 */
+		if (sign < 0 && nbytes > 1 && pdata[nbytes - 1] == 0xff &&
+		    (pdata[nbytes - 2] & 0x80) != 0)
+			--nbytes;
+
+		if (nbytes < 256) {
+			c_str[0] = LONG1;
+			c_str[1] = (char)nbytes;
+			size = 2;
+		}
+		else {
+			c_str[0] = LONG4;
+			size = (int)nbytes;
+			for (i = 1; i < 5; i++) {
+				c_str[i] = (char)(size & 0xff);
+				size >>= 8;
+			}
+			size = 5;
+		}
+		i = self->write_func(self, c_str, size);
+		if (i < 0) goto finally;
+		i = self->write_func(self, (char *)pdata, (int)nbytes);
+		if (i < 0) goto finally;
+		res = 0;
+		goto finally;
+	}
+
+	/* proto < 2:  write the repr and newline.  This is quadratic-time
+	 * (in the number of digits), in both directions.
+	 */
 	if (!( repr = PyObject_Repr(args)))
 		goto finally;
 
@@ -1038,7 +1126,6 @@ save_long(Picklerobject *self, PyObject *args)
 
   finally:
 	Py_XDECREF(repr);
-
 	return res;
 }
 
@@ -2687,9 +2774,13 @@ load_int(Unpicklerobject *self)
 	return res;
 }
 
-
+/* s contains x bytes of a little-endian integer.  Return its value as a
+ * C int.  Obscure:  when x is 1 or 2, this is an unsigned little-endian
+ * int, but when x is 4 it's a signed one.  This is an historical source
+ * of x-platform bugs.
+ */
 static long
-calc_binint(char *s, int  x)
+calc_binint(char *s, int x)
 {
 	unsigned char c;
 	int i;
@@ -2786,6 +2877,45 @@ load_long(Unpicklerobject *self)
 	return res;
 }
 
+/* 'size' bytes contain the # of bytes of little-endian 256's-complement
+ * data following.
+ */
+static int
+load_counted_long(Unpicklerobject *self, int size)
+{
+	int i;
+	char *nbytes;
+	unsigned char *pdata;
+	PyObject *along;
+
+	assert(size == 1 || size == 4);
+	i = self->read_func(self, &nbytes, size);
+	if (i < 0) return -1;
+
+	size = calc_binint(nbytes, size);
+	if (size < 0) {
+		/* Corrupt or hostile pickle -- we never write one like
+		 * this.
+		 */
+		PyErr_SetString(PyExc_ValueError, "LONG pickle has negative "
+				"byte count");
+		return -1;
+	}
+
+	if (size == 0)
+		along = PyLong_FromLong(0L);
+	else {
+		/* Read the raw little-endian bytes & convert. */
+		i = self->read_func(self, &(char *)pdata, size);
+		if (i < 0) return -1;
+		along = _PyLong_FromByteArray(pdata, (size_t)size,
+				1 /* little endian */, 1 /* signed */);
+	}
+	if (along == NULL)
+		return -1;
+	PDATA_PUSH(self->stack, along, -1);
+	return 0;
+}
 
 static int
 load_float(Unpicklerobject *self)
@@ -3781,6 +3911,16 @@ load(Unpicklerobject *self)
 
 		case LONG:
 			if (load_long(self) < 0)
+				break;
+			continue;
+
+		case LONG1:
+			if (load_counted_long(self, 1) < 0)
+				break;
+			continue;
+
+		case LONG4:
+			if (load_counted_long(self, 4) < 0)
 				break;
 			continue;
 

@@ -553,6 +553,7 @@ class Pickler:
                 self.write(LONG1 + chr(n) + bytes)
             else:
                 self.write(LONG4 + pack("<i", n) + bytes)
+            return
         self.write(LONG + `obj` + '\n')
     dispatch[LongType] = save_long
 
@@ -1042,13 +1043,13 @@ class Unpickler:
     def load_long1(self):
         n = ord(self.read(1))
         bytes = self.read(n)
-        return decode_long(bytes)
+        self.append(decode_long(bytes))
     dispatch[LONG1] = load_long1
 
     def load_long4(self):
         n = mloads('i' + self.read(4))
         bytes = self.read(n)
-        return decode_long(bytes)
+        self.append(decode_long(bytes))
     dispatch[LONG4] = load_long4
 
     def load_float(self):
@@ -1404,24 +1405,31 @@ def encode_long(x):
         njunkchars = 2 + ashex.endswith('L')
         nibbles = len(ashex) - njunkchars
         if nibbles & 1:
-            # need an even # of nibbles for unhexlify
+            # Extend to a full byte.
             nibbles += 1
         nbits = nibbles * 4
         x += 1L << nbits
         assert x > 0
         ashex = hex(x)
-        if x >> (nbits - 1) == 0:
+        njunkchars = 2 + ashex.endswith('L')
+        newnibbles = len(ashex) - njunkchars
+        if newnibbles < nibbles:
+            ashex = "0x" + "0" * (nibbles - newnibbles) + ashex[2:]
+        if int(ashex[2], 16) < 8:
             # "looks positive", so need a byte of sign bits
-            ashex = "0xff" + x[2:]
+            ashex = "0xff" + ashex[2:]
 
     if ashex.endswith('L'):
         ashex = ashex[2:-1]
     else:
         ashex = ashex[2:]
-    assert len(ashex) & 1 == 0
+    assert len(ashex) & 1 == 0, (x, ashex)
     binary = _binascii.unhexlify(ashex)
     return binary[::-1]
 
+# XXX OOPS!  This is still quadratic-time.  While hex(n) is linear-time
+# XXX in the # of digits in n, long(s, 16) is still quadratic-time
+# XXX in len(s).
 def decode_long(data):
     r"""Decode a long from a two's complement little-endian binary string.
 
@@ -1445,7 +1453,7 @@ def decode_long(data):
     if nbytes == 0:
         return 0L
     ashex = _binascii.hexlify(data[::-1])
-    n = long(ashex, 16)
+    n = long(ashex, 16) # quadratic time
     if data[-1] >= '\x80':
         n -= 1L << (nbytes * 8)
     return n
