@@ -1168,7 +1168,7 @@ class CacheFTPHandler(FTPHandler):
         self.max_conns = m
 
     def connect_ftp(self, user, passwd, host, port, dirs):
-        key = user, passwd, host, port
+        key = user, host, port, '/'.join(dirs)
         if key in self.cache:
             self.timeout[key] = time.time() + self.delay
         else:
