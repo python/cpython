@@ -304,19 +304,20 @@ sub do_cmd_textohtmlinfopage {
     if ($INFO) {					# 
 	anchor_label("about",$CURRENT_FILE,$_);		# this is added
     }							#
-    ( ($INFO == 1)
-     ? join('', $close_all
-	, "<STRONG>$t_title</STRONG><P>\nThis document was generated using the\n"
-	, "<A HREF=\"$TEX2HTMLADDRESS\"><STRONG>LaTeX</STRONG>2<tt>HTML</tt></A>"
-	, " translator Version $TEX2HTMLVERSION\n"
-	, "<P>Copyright &#169; 1993, 1994, 1995, 1996, 1997,\n"
-	, "<A HREF=\"$AUTHORADDRESS\">Nikos Drakos</A>, \n"
-	, "Computer Based Learning Unit, University of Leeds.\n"
-	, "<P>The command line arguments were: <BR>\n "
-	, "<STRONG>latex2html</STRONG> <tt>$argv</tt>.\n"
-	, "<P>The translation was initiated by $address_data[0] on $address_data[1]"
+    my $the_version = '';				# and the rest is
+    if ($t_date) {					# mostly ours
+	$the_version = ",\n$t_date";
+	if ($PYTHON_VERSION) {
+	    $the_version .= ", Release $PYTHON_VERSION";
+	}
+    }
+    $_ = (($INFO == 1)
+      ? join('', $close_all
+	, "<strong>$t_title</strong>$the_version\n"
+	, `cat $myrootdir${dd}html${dd}about.dat`
 	, $open_all, $_)
-      : join('', $close_all, $INFO,"\n", $open_all, $_))
+      : join('', $close_all, $INFO,"\n", $open_all, $_));
+    $_;
 }
 
 # $idx_mark will be replaced with the real index at the end
