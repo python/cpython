@@ -28,6 +28,7 @@ corresponding Unix manual entries for more information on calls.";
 
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>		/* For WNOHANG */
 #endif
@@ -39,6 +40,10 @@ corresponding Unix manual entries for more information on calls.";
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif /* HAVE_FCNTL_H */
+
+#ifdef HAVE_GRP_H
+#include <grp.h>
+#endif
 
 /* pick up declaration of confstr on some systems? */
 #ifdef HAVE_UNISTD_H

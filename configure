@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.270 
+# From configure.in Revision: 1.272 
 
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.13 
@@ -1968,7 +1968,7 @@ EOF
 
 fi
 
-for ac_hdr in dlfcn.h fcntl.h limits.h langinfo.h locale.h \
+for ac_hdr in dlfcn.h fcntl.h grp.h limits.h langinfo.h locale.h \
 ncurses.h poll.h pthread.h \
 signal.h stdarg.h stddef.h stdlib.h thread.h unistd.h utime.h termios.h \
 sys/audioio.h sys/file.h sys/lock.h sys/modem.h db_185.h db.h \
