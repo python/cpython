@@ -68,7 +68,8 @@ class Alias(Carbon.File.Alias):
 		print "Alias.Update not yet implemented"
 		
 	def Resolve(self, src=None):
-		return self.ResolveAlias(src)[1:]
+		fss, changed = self.ResolveAlias(src)
+		return FSSpec(fss), changed
 		
 from Carbon.File import FInfo
 	
@@ -78,7 +79,8 @@ AliasType = Alias
 FInfoType = FInfo
 
 def ResolveAliasFile(fss, chain=1):
-	return Carbon.File.ResolveAliasFile(fss, chain)
+	fss, isdir, isalias = Carbon.File.ResolveAliasFile(fss, chain)
+	return FSSpec(fss), isdir, isalias
 	
 def RawFSSpec(data):
 	return FSSpec(rawdata=data)
@@ -90,7 +92,7 @@ def FindApplication(*args):
 	raise NotImplementedError, "FindApplication no longer implemented"
 	
 def NewAliasMinimalFromFullPath(path):
-	return Carbon.Files.NewAliasMinimalFromFullPath(path, '', '')
+	return Alias(Carbon.File.NewAliasMinimalFromFullPath(path, '', ''))
 	
 # Finally, install nav services
 import macfsn
