@@ -277,6 +277,8 @@ class NNTP:
 	# - id: article number or message id
 	# Returns:
 	# - resp: server response if succesful
+	# - nr: article number
+	# - id: message id
 	# - list: the lines of the article's header
 
 	def head(self, id):
@@ -286,6 +288,8 @@ class NNTP:
 	# - id: article number or message id
 	# Returns:
 	# - resp: server response if succesful
+	# - nr: article number
+	# - id: message id
 	# - list: the lines of the article's body
 
 	def body(self, id):
@@ -295,6 +299,8 @@ class NNTP:
 	# - id: article number or message id
 	# Returns:
 	# - resp: server response if succesful
+	# - nr: article number
+	# - id: message id
 	# - list: the lines of the article
 
 	def article(self, id):
