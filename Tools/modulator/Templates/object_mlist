@@ -1,7 +1,8 @@
 
-static struct methodlist $abbrev$_methods[] = {
- $methodlist$
- {NULL,		NULL}		/* sentinel */
+static struct PyMethodDef $abbrev$_methods[] = {
+	$methodlist$
+	{NULL,		NULL}		/* sentinel */
 };
 
 /* ---------- */
+

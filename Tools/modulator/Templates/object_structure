@@ -1,3 +1,4 @@
+
 /* Code to access structure members by accessing attributes */
 
 #include "structmember.h"
@@ -6,22 +7,23 @@
 
 static struct memberlist $abbrev$_memberlist[] = {
 	/* XXXX Add lines like { "foo", T_INT, OFF(foo), RO }  */
+
 	{NULL}	/* Sentinel */
 };
 
-static object *
+static PyObject *
 $abbrev$_getattr(self, name)
 	$abbrev$object *self;
 	char *name;
 {
-	object *rv;
+	PyObject *rv;
 	
 	/* XXXX Add your own getattr code here */
-	rv = getmember((char *)/*XXXX*/0, $abbrev$_memberlist, name);
+	rv = PyMember_Get((char *)/*XXXX*/0, $abbrev$_memberlist, name);
 	if (rv)
 		return rv;
-	err_clear();
-	return findmethod($abbrev$_methods, (object *)self, name);
+	PyErr_Clear();
+	return Py_FindMethod($abbrev$_methods, (PyObject *)self, name);
 }
 
 
@@ -29,13 +31,12 @@ static int
 $abbrev$_setattr(self, name, v)
 	$abbrev$object *self;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 	/* XXXX Add your own setattr code here */
 	if ( v == NULL ) {
-		err_setstr(AttributeError, "Cannot delete attribute");
+		PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
 		return -1;
 	}
-	return setmember((char *)/*XXXX*/0, $abbrev$_memberlist, name, v);
+	return PyMember_Set((char *)/*XXXX*/0, $abbrev$_memberlist, name, v);
 }
-

@@ -8,15 +8,15 @@ $abbrev$_length(self)
 	/* XXXX Return the size of the object */
 }
 
-static object *
+static PyObject *
 $abbrev$_concat(self, bb)
 	$abbrev$object *self;
-	object *bb;
+	PyObject *bb;
 {
 	/* XXXX Return the concatenation of self and bb */
 }
 
-static object *
+static PyObject *
 $abbrev$_repeat(self, n)
 	$abbrev$object *self;
 	int n;
@@ -24,7 +24,7 @@ $abbrev$_repeat(self, n)
 	/* XXXX Return a new object that is n times self */
 }
 
-static object *
+static PyObject *
 $abbrev$_item(self, i)
 	$abbrev$object *self;
 	int i;
@@ -32,7 +32,7 @@ $abbrev$_item(self, i)
 	/* XXXX Return the i-th object of self */
 }
 
-static object *
+static PyObject *
 $abbrev$_slice(self, ilow, ihigh)
 	$abbrev$object *self;
 	int ilow, ihigh;
@@ -44,7 +44,7 @@ static int
 $abbrev$_ass_item(self, i, v)
 	$abbrev$object *self;
 	int i;
-	object *v;
+	PyObject *v;
 {
 	/* XXXX Assign to the i-th element of self */
 	return 0;
@@ -52,15 +52,15 @@ $abbrev$_ass_item(self, i, v)
 
 static int
 $abbrev$_ass_slice(self, ilow, ihigh, v)
-	listobject *self;
+	PyListObject *self;
 	int ilow, ihigh;
-	object *v;
+	PyObject *v;
 {
 	/* XXXX Replace ilow..ihigh slice of self with v */
 	return 0;
 }
 
-static sequence_methods $abbrev$_as_sequence = {
+static PySequenceMethods $abbrev$_as_sequence = {
 	(inquiry)$abbrev$_length,		/*sq_length*/
 	(binaryfunc)$abbrev$_concat,		/*sq_concat*/
 	(intargfunc)$abbrev$_repeat,		/*sq_repeat*/
