@@ -907,13 +907,9 @@ PyObject *PyUnicode_AsUTF8String(PyObject *unicode)
         PyErr_BadArgument();
         return NULL;
     }
-    str = PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
-			       PyUnicode_GET_SIZE(unicode),
-			       NULL);
-    if (str == NULL)
-        return NULL;
-    Py_INCREF(str);
-    return str;
+    return PyUnicode_EncodeUTF8(PyUnicode_AS_UNICODE(unicode),
+				PyUnicode_GET_SIZE(unicode),
+				NULL);
 }
 
 /* --- UTF-16 Codec ------------------------------------------------------- */
