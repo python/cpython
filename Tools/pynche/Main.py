@@ -55,9 +55,9 @@ RGB_TXT = [
 
 
 def usage(status, msg=''):
+    print __doc__ % globals()
     if msg:
 	print msg
-    print __doc__ % globals()
     sys.exit(status)
 
 
@@ -88,11 +88,12 @@ def main():
     for f in RGB_TXT:
 	try:
 	    colordb = ColorDB.get_colordb(f)
-	    break
+            if colordb:
+                break
 	except IOError:
 	    pass
     else:
-	raise IOError('No color database file found')
+        usage(1, 'No color database file found, see the -d option.')
 
     # get triplet for initial color
     try:
