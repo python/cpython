@@ -94,9 +94,11 @@ TkIsTheBoss(void)
     WindowRef windowRef;
 
     windowRef = FrontWindow();
-    if ( windowRef && !TkMacGetXWindow(windowRef) ) {
+    if ( !windowRef )
     	return 0;
-    }
+    if ( TkMacGetXWindow(windowRef) )
+    	return 1;
+    return 0;
 }
 /*
  *----------------------------------------------------------------------
@@ -209,7 +211,7 @@ HandleMacEvents(void)
      */
 
     while (needsUpdate || (GetEvQHdr()->qHead != NULL)) {
-    	/* Give Python command-. handling a chance */
+   	/* Give Python command-. handling a chance */
 	PyMac_DoYield(0, 0);
 	
 	GetGlobalMouse(&currentMouse);
@@ -347,8 +349,6 @@ Tcl_WaitForEvent(
 		found = 1;
 	}
 
-	if ( !TkIsTheBoss() )
-		found = 1;
 	/*
 	 * Check for window events.  We may receive a NULL event for
 	 * various reasons. 1) the timer has expired, 2) a mouse moved
