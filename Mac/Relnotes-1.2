@@ -143,17 +143,29 @@ copies resources into the application file from a file
 ================
 
 The subdirectory MPW contains a README.MPW file, a buildall script and
-several Makefiles (in respective subdirectories), kindly contributed
-by Richard Walker of Island Software.  Move these files to the
-corresponding locations relative to the Python root directory, and run
-the buildall script.  The README.MPW file contains more instructions
-and caveats (I've added some remarks of my own at the end).  I haven't
-tried building STDWIN with MPW recently (there is MPW specific code
-all over the STDWIN source but it is for a much older version of the
-compiler and library).  The MPW and THINK C ports share all source
-files, including config.c and config.h -- all differentiation is done
-based on #ifdef THINK_C or #ifdef MPW (#ifdef macintosh is used for
-code that should be seen by all Mac compilers).
+several Makefiles, kindly contributed by Richard Walker of Island
+Software.  Move these files to the corresponding locations relative to
+the Python root directory (where Mac-Makefile should become Makefile
+in the Mac subdirectory, etc.), and run the buildall script.  The
+README.MPW file contains more instructions and caveats (I've added
+some remarks of my own at the end).
+
+Some notes:
+
+- The MPW and THINK C ports share all source files, including config.c
+  and config.h -- all differentiation is done based on #ifdef THINK_C
+  or #ifdef MPW (#ifdef macintosh is used for code that should be seen
+  by all Mac compilers).
+
+- The dynload subdirectory contains an attempt to create dynamically
+  loadable modules from CODE segments.  This was not very successful
+  due to the restrictions on CODE segments (no global variables, no
+  calls to external functions).  Maybe Apple's new shared library
+  manager will be a better starting point.
+
+- I haven't tried building STDWIN with MPW recently.  There is MPW
+  specific code all over the STDWIN source but it is for a much older
+  version of the compiler and library.
 
 
 --Guido van Rossum, CWI, Amsterdam <Guido.van.Rossum@cwi.nl>
