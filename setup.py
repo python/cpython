@@ -322,6 +322,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # fast iterator tools implemented in C
         exts.append( Extension("itertools", ["itertoolsmodule.c"]) )
+        # bisect
+        exts.append( Extension("_bisect", ["_bisectmodule.c"]) )
         # heapq
         exts.append( Extension("heapq", ["heapqmodule.c"]) )
         # operator.add() and similar goodies
