@@ -340,7 +340,7 @@ class DevNullTests (unittest.TestCase):
         f.write('hello')
         f.close()
         f = file(os.devnull, 'r')
-        assert f.read() == ''
+        self.assertEqual(f.read(), '')
         f.close()
 
 def test_main():
