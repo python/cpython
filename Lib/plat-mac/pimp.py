@@ -44,7 +44,7 @@ DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
-DEFAULT_PIMPDATABASE="http://homepages.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
+DEFAULT_PIMPDATABASE="http://homepages.cwi.nl/~jack/pimp-0.2/pimp-%s.plist" % distutils.util.get_platform()
 
 def _cmd(output, dir, *cmditems):
     """Internal routine to run a shell command in a given directory."""
@@ -266,7 +266,7 @@ class PimpDatabase:
                 sys.stderr.write("Warning: database version %s newer than pimp version %s\n" 
                     % (self._version, PIMP_VERSION))
             self._maintainer = dict.get('Maintainer', '')
-            self._description = dict.get('Description', '')
+            self._description = dict.get('Description', '').strip()
         self._appendPackages(dict['Packages'])
         others = dict.get('Include', [])
         for url in others:
@@ -390,7 +390,7 @@ class PimpPackage:
     def name(self): return self._dict['Name']
     def version(self): return self._dict.get('Version')
     def flavor(self): return self._dict.get('Flavor')
-    def description(self): return self._dict['Description']
+    def description(self): return self._dict['Description'].strip()
     def homepage(self): return self._dict.get('Home-page')
     def downloadURL(self): return self._dict.get('Download-URL')
     
@@ -825,7 +825,7 @@ def _run(mode, verbose, force, args, prefargs):
         for pkgname in args:
             pkg = db.find(pkgname)
             if pkg:
-                description = pkg.description()
+                description = pkg.description().split('\r\n')[0]
                 pkgname = pkg.fullname()
             else:
                 description = 'Error: no such package'
@@ -836,6 +836,9 @@ def _run(mode, verbose, force, args, prefargs):
                     print "\tDownload URL:\t", pkg.downloadURL()
                 except KeyError:
                     pass
+                description = pkg.description()
+                description = '\n\t\t\t\t\t'.join(description.split('\r\n'))
+                print "\tDescription:\t%s" % description
     elif mode =='status':
         if not args:
             args = db.listnames()
