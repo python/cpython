@@ -1098,8 +1098,8 @@ PyErr_PrintEx(int set_sys_last_vars)
 void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 {
 	int err = 0;
-	PyObject *v = value;
 	PyObject *f = PySys_GetObject("stderr");
+	Py_INCREF(value);
 	if (f == NULL)
 		fprintf(stderr, "lost sys.stderr\n");
 	else {
@@ -1109,12 +1109,12 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		if (tb && tb != Py_None)
 			err = PyTraceBack_Print(tb, f);
 		if (err == 0 &&
-		    PyObject_HasAttrString(v, "print_file_and_line"))
+		    PyObject_HasAttrString(value, "print_file_and_line"))
 		{
 			PyObject *message;
 			const char *filename, *text;
 			int lineno, offset;
-			if (!parse_syntax_error(v, &message, &filename,
+			if (!parse_syntax_error(value, &message, &filename,
 						&lineno, &offset, &text))
 				PyErr_Clear();
 			else {
@@ -1130,7 +1130,8 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 				PyFile_WriteString("\n", f);
 				if (text != NULL)
 					print_error_text(f, offset, text);
-				v = message;
+				Py_DECREF(value);
+				value = message;
 				/* Can't be bothered to check all those
 				   PyFile_WriteString() calls */
 				if (PyErr_Occurred())
@@ -1167,8 +1168,8 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		else
 			err = PyFile_WriteObject(exception, f, Py_PRINT_RAW);
 		if (err == 0) {
-			if (v != NULL && v != Py_None) {
-				PyObject *s = PyObject_Str(v);
+			if (value != Py_None) {
+				PyObject *s = PyObject_Str(value);
 				/* only print colon if the str() of the
 				   object is not the empty string
 				*/
@@ -1185,6 +1186,7 @@ void PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
 		if (err == 0)
 			err = PyFile_WriteString("\n", f);
 	}
+	Py_DECREF(value);
 	/* If an error happened here, don't show it.
 	   XXX This is wrong, but too many callers rely on this behavior. */
 	if (err != 0)
