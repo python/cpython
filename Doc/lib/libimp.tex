@@ -57,7 +57,7 @@ search is unsuccessful, \exception{ImportError} is raised.  Other
 exceptions indicate problems with the arguments or environment.
 
 This function does not handle hierarchical module names (names
-containing dots).  In order to find \var{P}.\var{M}, i.e., submodule
+containing dots).  In order to find \var{P}.\var{M}, that is, submodule
 \var{M} of package \var{P}, use \function{find_module()} and
 \function{load_module()} to find and load package \var{P}, and then use
 \function{find_module()} with the \var{path} argument set to
@@ -211,7 +211,7 @@ source file.
 \label{examples-imp}
 
 The following function emulates what was the standard import statement
-up to Python 1.4 (i.e., no hierarchical module names).  (This
+up to Python 1.4 (no hierarchical module names).  (This
 \emph{implementation} wouldn't work in that version, since
 \function{find_module()} has been extended and
 \function{load_module()} has been added in 1.4.)

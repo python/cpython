@@ -112,7 +112,7 @@ name, the object retrieved by \samp{form[\var{key}]} is not a
 instance but a list of such instances.  Similarly, in this situation,
 \samp{form.getvalue(\var{key})} would return a list of strings.
 If you expect this possibility
-(i.e., when your HTML form contains multiple fields with the same
+(when your HTML form contains multiple fields with the same
 name), use the \function{type()} function to determine whether you
 have a single instance or a list of instances.  For example, here's
 code that concatenates any number of username fields, separated by
@@ -283,21 +283,21 @@ Convert the characters
 HTML-safe sequences.  Use this if you need to display text that might
 contain such characters in HTML.  If the optional flag \var{quote} is
 true, the double quote character (\character{"}) is also translated;
-this helps for inclusion in an HTML attribute value, e.g. in \code{<A
+this helps for inclusion in an HTML attribute value, as in \code{<A
 HREF="...">}.
 \end{funcdesc}
 
 
 \subsection{Caring about security}
 
-There's one important rule: if you invoke an external program (e.g.
-via the \function{os.system()} or \function{os.popen()} functions),
-make very sure you don't pass arbitrary strings received from the
-client to the shell.  This is a well-known security hole whereby
-clever hackers anywhere on the web can exploit a gullible CGI script
-to invoke arbitrary shell commands.  Even parts of the URL or field
-names cannot be trusted, since the request doesn't have to come from
-your form!
+There's one important rule: if you invoke an external program (via the
+\function{os.system()} or \function{os.popen()} functions. or others
+with similar functionality), make very sure you don't pass arbitrary
+strings received from the client to the shell.  This is a well-known
+security hole whereby clever hackers anywhere on the web can exploit a
+gullible CGI script to invoke arbitrary shell commands.  Even parts of
+the URL or field names cannot be trusted, since the request doesn't
+have to come from your form!
 
 To be on the safe side, if you must pass a string gotten from a form
 to a shell command, you should make sure the string contains only
@@ -337,7 +337,7 @@ anything interesting.
 
 If you need to load modules from a directory which is not on Python's
 default module search path, you can change the path in your script,
-before importing other modules, e.g.:
+before importing other modules.  For example:
 
 \begin{verbatim}
 import sys
@@ -383,7 +383,7 @@ http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
 
 If this gives an error of type 404, the server cannot find the script
 -- perhaps you need to install it in a different directory.  If it
-gives another error (e.g.  500), there's an installation problem that
+gives another error, there's an installation problem that
 you should fix before trying to go any further.  If you get a nicely
 formatted listing of the environment and form content (in this
 example, the fields should be listed as ``addr'' with value ``At Home''
@@ -402,12 +402,12 @@ cgi.test()
 This should produce the same results as those gotten from installing
 the \file{cgi.py} file itself.
 
-When an ordinary Python script raises an unhandled exception
-(e.g. because of a typo in a module name, a file that can't be opened,
-etc.), the Python interpreter prints a nice traceback and exits.
-While the Python interpreter will still do this when your CGI script
-raises an exception, most likely the traceback will end up in one of
-the HTTP server's log file, or be discarded altogether.
+When an ordinary Python script raises an unhandled exception (for
+whatever reason: of a typo in a module name, a file that can't be
+opened, etc.), the Python interpreter prints a nice traceback and
+exits.  While the Python interpreter will still do this when your CGI
+script raises an exception, most likely the traceback will end up in
+one of the HTTP server's log file, or be discarded altogether.
 
 Fortunately, once you have managed to get your script to execute
 \emph{some} code, it is easy to catch exceptions and cause a traceback

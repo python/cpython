@@ -41,12 +41,12 @@ where \var{languages} is searched for in the environment variables
 
 If \var{localedir} is omitted or \code{None}, then the current binding
 for \var{domain} is returned.\footnote{
-        The default locale directory is system dependent; e.g.\ on
-        RedHat Linux it is \file{/usr/share/locale}, but on Solaris it
-        is \file{/usr/lib/locale}.  The \module{gettext} module does
-        not try to support these system dependent defaults; instead
-        its default is \file{\code{sys.prefix}/share/locale}.  For
-        this reason, it is always best to call
+        The default locale directory is system dependent; for example,
+        on RedHat Linux it is \file{/usr/share/locale}, but on Solaris
+        it is \file{/usr/lib/locale}.  The \module{gettext} module
+        does not try to support these system dependent defaults;
+        instead its default is \file{\code{sys.prefix}/share/locale}.
+        For this reason, it is always best to call
         \function{bindtextdomain()} with an explicit absolute path at
         the start of your application.}
 \end{funcdesc}
@@ -141,8 +141,8 @@ function \function{translation()}.  The \var{unicode} flag is passed to
 the resulting translation object's \method{install} method.
 
 As seen below, you usually mark the strings in your application that are
-candidates for translation, by wrapping them in a call to the function
-\function{_()}, e.g.
+candidates for translation, by wrapping them in a call to the
+\function{_()} function, like this:
 
 \begin{verbatim}
 print _('This string will be translated.')
@@ -287,8 +287,8 @@ steps:
 
 In order to prepare your code for I18N, you need to look at all the
 strings in your files.  Any string that needs to be translated
-should be marked by wrapping it in \code{_('...')} -- i.e. a call to
-the function \function{_()}.  For example:
+should be marked by wrapping it in \code{_('...')} --- that is, a call
+to the function \function{_()}.  For example:
 
 \begin{verbatim}
 filename = 'mylog.txt'
@@ -317,7 +317,7 @@ previously marked as translatable.  It is similar to the GNU
 \program{gettext} program except that it understands all the
 intricacies of Python source code, but knows nothing about C or C++
 source code.  You don't need GNU \code{gettext} unless you're also
-going to be translating C code (e.g. C extension modules).
+going to be translating C code (such as C extension modules).
 
 \program{pygettext} generates textual Uniforum-style human readable
 message catalog \file{.pot} files, essentially structured human
