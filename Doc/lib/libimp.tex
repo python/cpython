@@ -135,7 +135,7 @@ The following function emulates the default import statement:
 import imp
 from sys import modules
 
-def __import__(name):
+def __import__(name, globals=None, locals=None, fromlist=None):
     # Fast path: let's see if it's already in sys.modules.
     # Two speed optimizations are worth mentioning:
     # - We use 'modules' instead of 'sys.modules'; this saves a
