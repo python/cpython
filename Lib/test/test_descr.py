@@ -1054,6 +1054,36 @@ def consistency_with_epg():
           (EditableScrollablePane, ScrollablePane, EditablePane,
            Pane, ScrollingMixin, EditingMixin, object))
 
+def mro_disagreement():
+    if verbose: print "Testing error messages for MRO disagreement..."
+    def raises(exc, expected, callable, *args):
+        try:
+            callable(*args)
+        except exc, msg:
+            if str(msg) != expected:
+                raise TestFailed, "Message %r, expected %r" % (str(msg),
+                                                               expected)
+        else:
+            raise TestFailed, "Expected %s" % exc
+    class A(object): pass
+    class B(A): pass
+    class C(object): pass
+    # Test some very simple errors
+    raises(TypeError, "duplicate base class A",
+           type, "X", (A, A), {})
+    raises(TypeError, "MRO conflict among bases B, A",
+           type, "X", (A, B), {})
+    raises(TypeError, "MRO conflict among bases C, B, A",
+           type, "X", (A, C, B), {})
+    # Test a slightly more complex error
+    class GridLayout(object): pass
+    class HorizontalGrid(GridLayout): pass
+    class VerticalGrid(GridLayout): pass
+    class HVGrid(HorizontalGrid, VerticalGrid): pass
+    class VHGrid(VerticalGrid, HorizontalGrid): pass
+    raises(TypeError, "MRO conflict among bases VerticalGrid, HorizontalGrid",
+           type, "ConfusedGrid", (HVGrid, VHGrid), {})
+
 def objects():
     if verbose: print "Testing object class..."
     a = object()
@@ -3422,6 +3452,7 @@ def test_main():
     metaclass()
     pymods()
     multi()
+    mro_disagreement()
     diamond()
     ex5()
     monotonicity()
