@@ -99,7 +99,7 @@ mfsa_Resolve(self, args)
 	else
 		fromp = NULL;
 	err = ResolveAlias(fromp, self->alias, &result, &changed);
-	if ( err ) {
+	if ( err && err != fnfErr ) {
 		PyErr_Mac(ErrorObject, err);
 		return NULL;
 	}
@@ -920,6 +920,32 @@ mfs_FInfo(self, args)
 	return (PyObject *)newmfsiobject();
 }
 
+static PyObject *
+mfs_NewAliasMinimalFromFullPath(self, args)
+	PyObject *self;	/* Not used */
+	PyObject *args;
+{
+	OSErr err;
+	char *fullpath;
+	int fullpathlen;
+	AliasHandle alias;
+	Str32 zonename;
+	Str31 servername;
+			
+	if (!PyArg_ParseTuple(args, "s#", &fullpath, &fullpathlen) )
+		return NULL;
+	zonename[0] = 0;
+	servername[0] = 0;
+	err = NewAliasMinimalFromFullPath(fullpathlen, (Ptr)fullpath, zonename, 
+			servername, &alias);
+	if ( err ) {
+		PyErr_Mac(ErrorObject, err);
+		return NULL;
+	}
+	return (PyObject *)newmfsaobject(alias);
+}
+
+
 /* List of methods defined in the module */
 
 static struct PyMethodDef mfs_methods[] = {
@@ -935,6 +961,7 @@ static struct PyMethodDef mfs_methods[] = {
 	{"FindFolder",			mfs_FindFolder,			1},
 	{"FindApplication",		mfs_FindApplication,	1},
 	{"FInfo",				mfs_FInfo,				1},
+	{"NewAliasMinimalFromFullPath",	mfs_NewAliasMinimalFromFullPath,	1},
  
 	{NULL,		NULL}		/* sentinel */
 };
