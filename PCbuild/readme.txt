@@ -40,23 +40,11 @@ python
     .exe
 pythonw
     pythonw.exe, a variant of python.exe that doesn't pop up a DOS box
-_csv
-    C support for the comma-separated values module
 _socket
     socketmodule.c
-_sre
-    Unicode-aware regular expression engine
-_symtable
-    the _symtable module, symtablemodule.c
 _testcapi
     tests of the Python C API, run via Lib/test/test_capi.py, and
     implemented by module Modules/_testcapimodule.c
-datetime
-    datetimemodule.c
-mmap
-    mmapmodule.c
-parser
-    the parser module
 pyexpat
     Python wrapper for accelerated XML parsing, which incorporates stable
     code from the Expat project:  http://sourceforge.net/projects/expat/
@@ -64,8 +52,6 @@ select
     selectmodule.c
 unicodedata
     large tables of Unicode data
-winreg
-    Windows registry API
 winsound
     play sounds (typically .wav files) under Windows
 
@@ -161,7 +147,7 @@ bz2
         FC: no differences encountered
     If FC finds differences, see the warning abou WinZip above (when I
     first tried it, sample3.ref failed due to CRLF conversion).
-    
+
     # XXX: it fails with vc 7.1, so the tests are skipped for now.
 
     All of this managed to build bzip2-1.0.2\libbz2.lib, which the Python
