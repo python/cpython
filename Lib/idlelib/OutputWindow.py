@@ -134,7 +134,7 @@ class OutputWindow(EditorWindow):
 
     def write(self, s, tags=(), mark="iomark"):
         self.text.mark_gravity(mark, RIGHT)
-        self.text.insert(mark, str(s), tags)
+        self.text.insert(mark, s, tags)
         self.text.mark_gravity(mark, LEFT)
         self.text.see(mark)
         self.text.update()
