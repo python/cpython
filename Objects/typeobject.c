@@ -2761,17 +2761,18 @@ half_compare(PyObject *self, PyObject *other)
 	return 2;
 }
 
-static int
-slot_tp_compare(PyObject *self, PyObject *other)
+/* This slot is published for the benefit of try_3way_compare in object.c */
+int
+_PyObject_SlotCompare(PyObject *self, PyObject *other)
 {
 	int c;
 
-	if (self->ob_type->tp_compare == slot_tp_compare) {
+	if (self->ob_type->tp_compare == _PyObject_SlotCompare) {
 		c = half_compare(self, other);
 		if (c <= 1)
 			return c;
 	}
-	if (other->ob_type->tp_compare == slot_tp_compare) {
+	if (other->ob_type->tp_compare == _PyObject_SlotCompare) {
 		c = half_compare(other, self);
 		if (c < -1)
 			return -2;
@@ -3190,7 +3191,7 @@ override_slots(PyTypeObject *type, PyObject *dict)
 	    PyDict_GetItemString(dict, "__repr__"))
 		type->tp_print = NULL;
 
-	TPSLOT("__cmp__", tp_compare, slot_tp_compare);
+	TPSLOT("__cmp__", tp_compare, _PyObject_SlotCompare);
 	TPSLOT("__repr__", tp_repr, slot_tp_repr);
 	TPSLOT("__hash__", tp_hash, slot_tp_hash);
 	TPSLOT("__call__", tp_call, slot_tp_call);
