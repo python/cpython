@@ -333,9 +333,9 @@ typedef int pid_t;
    more (other compilers will still need to do so, but that's taken care
    of by the Distutils, so it's not a problem). */
 #ifdef _DEBUG
-#pragma comment(lib,"python22_d.lib")
+#pragma comment(lib,"python23_d.lib")
 #else
-#pragma comment(lib,"python22.lib")
+#pragma comment(lib,"python23.lib")
 #endif
 #endif /* USE_DL_EXPORT */
 
