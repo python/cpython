@@ -20,7 +20,7 @@ parameter.  Message relies only on the input object having a
 \method{readline()} method; in particular, ordinary file objects
 qualify.  Instantiation reads headers from the input object up to a
 delimiter line (normally a blank line) and stores them in the
-instance.
+instance.  The message body, following the headers, is not consumed.
 
 This class can work with any input object that supports a
 \method{readline()} method.  If the input object has seek and tell
@@ -263,6 +263,6 @@ Finally, \class{AddressList} instances have one public instance variable:
 
 \begin{memberdesc}{addresslist}
 A list of tuple string pairs, one per address.  In each member, the
-first is the canonicalized name part of the address, the second is the
-route-address (@-separated host-domain pair).
+first is the canonicalized name part, the second is the
+actual route-address (@-separated username-host.domain pair).
 \end{memberdesc}
