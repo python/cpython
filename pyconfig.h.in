@@ -37,6 +37,9 @@
 /* Define this if your time.h defines altzone. */
 #undef HAVE_ALTZONE
 
+/* Define to 1 if you have the `bind_textdomain_codeset' function. */
+#undef HAVE_BIND_TEXTDOMAIN_CODESET
+
 /* Define to 1 if you have the <bluetooth/bluetooth.h> header file. */
 #undef HAVE_BLUETOOTH_BLUETOOTH_H
 

@@ -33,6 +33,8 @@ Core and builtins
   will cause a TypeError to be raised.  This matches the behavior of
   Jython.
 
+- Implemented bind_textdomain_codeset() in locale module.
+
 Extension modules
 -----------------
 
@@ -111,6 +113,12 @@ Library
 
 - Bug #990307: when keep_empty_values is True, cgi.parse_qsl()
   no longer returns spurious empty fields.
+
+- Implemented bind_textdomain_codeset() in gettext module.
+
+- Introduced in gettext module the l*gettext() family of functions,
+  which return translation strings encoded in the preferred encoding,
+  as informed by locale module's getpreferredencoding().
 
 
 Tools/Demos
