@@ -68,8 +68,7 @@ yourself.  Never edit Setup.in -- always edit Setup.  Read the
 comments in the file for information on what kind of edits you can
 make.  When you have edited Setup, Makefile and config.c in Modules
 will automatically be rebuilt the next time you run make in the
-toplevel directory.  (There are some example Setup files which you may
-copy to Setup for specific systems; have a look at Setup.*.)
+toplevel directory.
 
 If you want to change the optimization level of the build, assign to
 the OPT variable on the toplevel make command; e.g. "make OPT=-g" will

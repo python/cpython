@@ -1,3 +1,45 @@
+Thu Oct 20 08:31:02 1994  Guido van Rossum  <guido@tesla>
+
+	* Modules/makesetup: should use $cc not cc
+
+	* configure.in, configure, config.h.in: test for presence of
+        stddef.h
+
+	* Include/structmember.h: include <stddef.h> if it exists
+
+Wed Oct 19 11:45:35 1994  Guido Van Rossum  <guido@tesla>
+
+	* Makefile.in: patch by Wolf-D. Ihlenfeld to use BINDIR etc
+
+	* Lib/tkinter/Tkinter.py: added option_{add,clear,get,readfile} to
+	Misc class
+
+	* Lib/poly.py: fix bug in minus()
+
+	* Modules/Setup.in: clarified optional SGI modules and improved
+	template for using *noconfig*
+
+	* Doc/Makefile: don't assum '.' is in $PATH
+
+	* Modules/mathmodule.c, Doc/libmath.tex: add hypot()
+
+	* Makefile.in: on libinstall, automatically run sharedinstall in
+	Modules
+
+	* Modules/Makefile.pre.in: always make sharedmods
+
+	* Modules/makesetup: quote $ in two places
+
+	* configure.in, acconfig.h.in, config.h.in, configure,
+	Modules/posixmodule.c: separate arg requirements for getpgrp() and
+	setpgrp()
+
+	* Nt/Python/makefile.nt.mak: added getargs()
+
+Thu Oct 13 07:51:03 1994  Guido van Rossum  <guido@voorn.cwi.nl>
+
+	* README: removed misleading comment about example Setup.* files
+
 =================================
 ==> Release 1.1 (11 Oct 1994) <==
 =================================
