@@ -730,6 +730,18 @@ class usageError:
 
 class main:
     def __init__(self, noshell=1):
+        
+        global flist, root
+        root = Tk(className="Idle")
+        fixwordbreaks(root)
+        root.withdraw()
+        flist = PyShellFileList(root)
+
+        dbg=OnDemandOutputWindow(flist)
+        dbg.set_title('IDLE Debugging Messages')
+        sys.stdout = PseudoFile(dbg,['stdout'])
+        sys.stderr = PseudoFile(dbg,['stderr'])
+        
         try:
             self.server = protocol.Server(connection_hook = self.address_ok)
             protocol.publish( 'IDLE', self.connect )
@@ -749,9 +761,27 @@ class main:
             except protocol.connectionLost:
                 pass
 
-        # xxx Should scream via Tk()
-        print "Something already has our socket, but it won't open a window for me!"
-        print "Unable to proceed."
+        #maybe the following should be handled by a tkmessagebox for 
+        #users who don't start idle from a console??
+        print """\
+IDLE cannot run.
+
+IDLE needs to use a specific TCP/IP port (7454) in order to execute and
+debug programs. IDLE is unable to bind to this port, and so cannot
+start. Here are some possible causes of this problem:
+
+  1. TCP/IP networking is not installed or not working on this computer
+  2. Another program is running that uses this port
+  3. Another copy of IDLE stopped responding but is still bound to the port
+  4. Personal firewall software is preventing IDLE from using this port
+
+IDLE makes and accepts connections only with this computer, and does not
+communicate over the internet in any way. It's use of port 7454 should not 
+be a security risk on a single-user machine.
+"""
+        dbg.owin.gotoline(1)
+        dbg.owin.remove_selection()
+        root.mainloop() # wait for user to read message
 
     def idle(self):
         spawn.kill_zombies()
@@ -828,12 +858,6 @@ class main:
             if not dir in sys.path:
                 sys.path.insert(0, dir)
 
-        global flist, root
-        root = Tk(className="Idle")
-        fixwordbreaks(root)
-        root.withdraw()
-        flist = PyShellFileList(root)
-    
         if edit:
             for filename in args:
                 flist.open(filename)
@@ -845,11 +869,6 @@ class main:
             else:
                 sys.argv = args or [""]
 
-        #dbg=OnDemandOutputWindow(flist)
-        #dbg.set_title('Internal IDLE Problem')
-        #sys.stdout = PseudoFile(dbg,['stdout'])
-        #sys.stderr = PseudoFile(dbg,['stderr'])
-    
         if noshell:
           flist.pyshell = None
         else:
