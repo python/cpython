@@ -160,6 +160,9 @@ class MatchObject:
     def group(self, *groups):
 	if len(groups) == 0:
 	    groups = range(1, self.re.num_regs)
+	    use_all = 1
+	else:
+	    use_all = 0
 	result = []
 	for g in groups:
 	    if type(g) == type(''):
@@ -171,7 +174,7 @@ class MatchObject:
 		result.append(None)
 	    else:
 		result.append(self.string[self.regs[g][0]:self.regs[g][1]])
-	if len(result) > 1:
+	if use_all or len(result) > 1:
 	    return tuple(result)
 	elif len(result) == 1:
 	    return result[0]
