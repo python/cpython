@@ -94,6 +94,13 @@ Suspend execution for the given number of seconds.  The argument may
 be a floating point number to indicate a more precise sleep time.
 \end{funcdesc}
 
+\begin{funcdesc}{strftime}{format, tuple}
+Convert a tuple representing a time as returned by \code{gmtime()} or
+\code{localtime()} to a string as specified by the format argument.
+See the \code{strftime(3)} man page for details of the syntax of
+format strings.
+\end{funcdesc}
+
 \begin{funcdesc}{time}{}
 Return the time as a floating point number expressed in seconds since
 the epoch, in UTC.  Note that even though the time is always returned
