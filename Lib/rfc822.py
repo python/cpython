@@ -633,7 +633,6 @@ class AddrlistClass:
                 expectroute = 1
             elif self.field[self.pos] == ':':
                 self.pos = self.pos + 1
-                expectaddrspec = 1
             else:
                 adlist = self.getaddrspec()
                 self.pos = self.pos + 1
