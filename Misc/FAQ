@@ -10,8 +10,8 @@ Reply-to: guido@cwi.nl (Guido van Rossum)
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Version: 1.15
-Last-modified: 6 October 1994
+Version: 1.16
+Last-modified: 11 November 1994
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -91,17 +91,20 @@ Here's an overview of the questions per chapter:
   3.2. Q. When running the test set, I get complaints about floating point
        operations, but when playing with floating point operations I cannot
        find anything wrong with them.
-  3.3. Q. Link errors building Python with STDWIN on SGI IRIX.
-  3.4. Q. Link errors after rerunning the configure script.
-  3.5. Q. The python interpreter complains about options passed to a
+  3.3. Q. Link errors building Python with STDWIN 0.9.8. on SGI IRIX.
+  3.4. Q. Link errors building Python with STDWIN 0.9.9.
+  3.5. Q. Link errors after rerunning the configure script.
+  3.6. Q. The python interpreter complains about options passed to a
        script (after the script name).
-  3.6. Q. When building on the SGI, make tries to run python to create
+  3.7. Q. When building on the SGI, make tries to run python to create
        glmodule.c, but python hasn't been built or installed yet.
-  3.7. Q. Python built with gcc for the DEC Alpha doesn't work.
-  3.8. Q. I use VPATH but some targets are built in the source directory.
-  3.9. Q. Trouble building or linking with the GNU readline library.
-  3.10. Q. Trouble building Python on Linux.
-  3.11. Q. Other trouble building Python on platform X.
+  3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
+  3.9. Q. I use VPATH but some targets are built in the source directory.
+  3.10. Q. Trouble building or linking with the GNU readline library.
+  3.11. Q. Trouble building Python on Linux.
+  3.12. Q. Trouble with prototypes on Ultrix.
+  3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+  3.14. Q. Other trouble building Python on platform X.
 
  4. Programming in Python
   4.1. Q. Is there a source code level debugger with breakpoints, step,
@@ -482,7 +485,7 @@ offending floating point tests and execute similar tests manually.
 
 A. Get STDWIN 0.9.9 from ftp://ftp.cwi.nl/pub/stdwin/stdwin0.9.9.tar.gz.
 
-Q. Link errors building Python with STDWIN 0.9.9.
+3.4. Q. Link errors building Python with STDWIN 0.9.9.
 
 A. Probably routines liek 'tereate', 'tenew' etc.  The STDWIN 0.9.9
 distribution requires that you add TWO libraries from stdwin to the
@@ -491,12 +494,12 @@ line!):
 
 stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Packs/textedit/libtextedit.a $(STDWIN)/Ports/x11/libstdwin.a -lX11
 
-3.4. Q. Link errors after rerunning the configure script.
+3.5. Q. Link errors after rerunning the configure script.
 
 A. It is generally necessary to run "make clean" after a configuration
 change.
 
-3.5. Q. The python interpreter complains about options passed to a
+3.6. Q. The python interpreter complains about options passed to a
 script (after the script name).
 
 A. You are probably linking with GNU getopt, e.g. through -liberty.
@@ -511,7 +514,7 @@ You can also use this interactively:
 
 	python -- script.py [options]
 
-3.6. Q. When building on the SGI, make tries to run python to create
+3.7. Q. When building on the SGI, make tries to run python to create
 glmodule.c, but python hasn't been built or installed yet.
 
 A. Comment out the line mentioning glmodule.c in Setup and build a
@@ -521,7 +524,7 @@ again.  You don't need to do "make clean"; you do need to run "make
 Makefile" in the Modules subdirectory (or just run "make" at the
 toplevel).
 
-3.7. Q. Python built with gcc for the DEC Alpha doesn't work.
+3.8. Q. Python built with gcc for the DEC Alpha doesn't work.
 
 People have reported problems with both gcc 2.5.8 and 2.6.0.  The DEC
 OSF/1 cc compiler does not have these problems so it's probably gcc's
@@ -529,14 +532,14 @@ fault.  One person reported that the problem went away when using -g
 instead of -O so this may be an option if you insist on using gcc.  If
 someone tracks it down more completely I'd like to hear about it!
 
-3.8. Q. I use VPATH but some targets are built in the source directory.
+3.9. Q. I use VPATH but some targets are built in the source directory.
 
 A. On some systems (e.g. Sun), if the target already exists in the
 source directory, it is created there instead of in the build
 directory.  This is usually because you have previously built without
 VPATH.  Try running "make clobber" in the source directory.
 
-3.9. Q. Trouble building or linking with the GNU readline library.
+3.10. Q. Trouble building or linking with the GNU readline library.
 
 A. Consider using readline 2.0.  From the Python 1.1 README:
 
@@ -578,18 +581,37 @@ hack that forces use of the static version of the termcap library.
 readline library (I don't get this group here but I've been told
 that it is the place for readline bugs.)
 
-3.10. Q. Trouble building Python on Linux.
+3.11. Q. Trouble building Python on Linux.
 
 A. There shouldn't be any -- I've seen several complaints but more
 reports on successful "out-of-the-box" ports on Linux.  The standard
 configure script runs just fine on Linux.
 
-Q. Trouble with prototypes on Ultrix.
+3.12. Q. Trouble with prototypes on Ultrix.
 
 A. Ultrix cc seems broken -- use gcc, or edit config.h to #undef
 HAVE_PROTOTYPES.
 
-3.11. Q. Other trouble building Python on platform X.
+3.13. Q. Trouble with posix.listdir on NeXTSTEP 3.2.
+
+A. The problem seems to be that that the NeXT posix library and the
+NeXT dynamic loading library are incompatible.  Mike Carlton reports
+that the following worked for him (from a clean 1.1 distribution):
+
+	1) ./configure
+	2) edited config.status and changed 
+		OPT='-O'
+	   to
+		OPT='-posix -O'
+	3) edited Python/import.c and commented out the section
+		#if defined(NeXT) || defined(WITH_RLD) 
+		#define DYNAMIC_LINK
+		#define USE_RLD
+		#endif
+	   this disables dynamic loading
+	4) make
+
+3.14. Q. Other trouble building Python on platform X.
 
 A. Please email the details to <guido@cwi.nl> and I'll look into it.
 
