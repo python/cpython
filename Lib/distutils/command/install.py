@@ -101,17 +101,6 @@ class install (Command):
          "filename in which to record list of installed files"),
         ]
 
-    # 'sub_commands': a list of commands this command might have to run to
-    # get its work done.  Each command is represented as a tuple (method,
-    # command) where 'method' is the name of a method to call that returns
-    # true if 'command' (the sub-command name, a string) needs to be run.
-    # If 'method' is None, assume that 'command' must always be run.
-    sub_commands = [('has_lib', 'install_lib'),
-                    ('has_headers', 'install_headers'),
-                    ('has_scripts', 'install_scripts'),
-                    ('has_data', 'install_data'),
-                   ]
-
 
     def initialize_options (self):
 
@@ -444,20 +433,6 @@ class install (Command):
     # handle_extra_path ()
 
 
-    def get_sub_commands (self):
-        """Return the list of subcommands that we need to run.  This is
-        based on the 'subcommands' class attribute: each tuple in that list
-        can name a method that we call to determine if the subcommand needs
-        to be run for the current distribution."""
-        commands = []
-        for (method, cmd_name) in self.sub_commands:
-            if method is not None:
-                method = getattr(self, method)
-            if method is None or method():
-                commands.append(cmd_name)
-        return commands
-
-
     def run (self):
 
         # Obviously have to build before we can install
@@ -493,6 +468,8 @@ class install (Command):
 
     # run ()
 
+
+    # -- Predicates for sub-command list -------------------------------
 
     def has_lib (self):
         """Return true if the current distribution has any Python
@@ -543,5 +520,13 @@ class install (Command):
                         "installation (path files only work with standard " +
                         "installations)") %
                        filename)
+
+    # 'sub_commands': a list of commands this command might have to run to
+    # get its work done.  See cmd.py for more info.
+    sub_commands = [('install_lib',     has_lib),
+                    ('install_headers', has_headers),
+                    ('install_scripts', has_scripts),
+                    ('install_data',    has_data),
+                   ]
 
 # class install
