@@ -782,6 +782,7 @@ Electric behavior is inhibited inside a string or comment."
 
 
 ;;; Functions that execute Python commands in a subprocess
+;;;###autoload
 (defun py-shell ()
   "Start an interactive Python interpreter in another window.
 This is like Shell mode, except that Python is running in the window
