@@ -389,6 +389,9 @@ Extension modules
 Library
 -------
 
+- doctest.testmod can now be called without argument, which means to
+  test the current module.
+
 - When cancelling a server that implemented threading with a keyboard
   interrupt, the server would shut down but not terminate (waiting on
   client threads). A new member variable, daemon_threads, was added to

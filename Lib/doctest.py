@@ -1044,12 +1044,13 @@ see its docs for details.
 
 master = None
 
-def testmod(m, name=None, globs=None, verbose=None, isprivate=None,
+def testmod(m=None, name=None, globs=None, verbose=None, isprivate=None,
                report=1):
-    """m, name=None, globs=None, verbose=None, isprivate=None, report=1
+    """m=None, name=None, globs=None, verbose=None, isprivate=None, report=1
 
-    Test examples in docstrings in functions and classes reachable from
-    module m, starting with m.__doc__.  Private names are skipped.
+    Test examples in docstrings in functions and classes reachable
+    from module m (or the current module if m is not supplied), starting
+    with m.__doc__.  Private names are skipped.
 
     Also test examples reachable from dict m.__test__ if it exists and is
     not None.  m.__dict__ maps names to functions, classes and strings;
@@ -1089,6 +1090,13 @@ def testmod(m, name=None, globs=None, verbose=None, isprivate=None,
     """
 
     global master
+
+    if m is None:
+        import sys
+        # DWA - m will still be None if this wasn't invoked from the command
+        # line, in which case the following TypeError is about as good an error
+        # as we should expect
+        m = sys.modules.get('__main__')
 
     if not _ismodule(m):
         raise TypeError("testmod: module required; " + `m`)

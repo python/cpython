@@ -152,6 +152,10 @@ if __name__ == "__main__":
     _test()
 \end{verbatim}
 
+If you want to test the module as the main module, you don't need to
+pass M to \function{testmod}; in this case, it will test the current
+module.
+
 Then running the module as a script causes the examples in the docstrings
 to get executed and verified:
 
@@ -392,7 +396,7 @@ definition of \function{_test()} is
 \begin{verbatim}
 def _test():
     import doctest, sys
-    doctest.testmod(sys.modules["__main__"])
+    doctest.testmod()
 \end{verbatim}
 \end{enumerate}
 
