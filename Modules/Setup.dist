@@ -504,6 +504,7 @@ GLHACK=-Dclear=__GLclear
 # ko_KR codecs
 #_codecs_cp949 cjkcodecs/_cp949.c
 #_codecs_euc_kr cjkcodecs/_euc_kr.c
+#_codecs_iso2022_kr cjkcodecs/_iso2022_kr.c
 #_codecs_johab cjkcodecs/_johab.c
 
 # zh_CN codecs
