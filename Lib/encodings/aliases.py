@@ -17,6 +17,8 @@
 """
 aliases = {
 
+    # Please keep this list sorted alphabetically !
+
     # ascii codec
     '646'                : 'ascii',
     'ansi_x3.4_1968'     : 'ascii',
@@ -243,6 +245,11 @@ aliases = {
 
     # hex_codec codec
     'hex'                : 'hex_codec',
+
+    # hp_roman8 codec
+    'roman8'             : 'hp_roman8',
+    'r8'                 : 'hp_roman8',
+    'csHPRoman8'         : 'hp_roman8',
 
     # hz codec
     'hzgb'               : 'hz',
