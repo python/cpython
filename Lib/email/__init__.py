@@ -6,26 +6,28 @@
 
 __version__ = '2.4'
 
-__all__ = ['Charset',
-           'Encoders',
-           'Errors',
-           'Generator',
-           'Header',
-           'Iterators',
-           'MIMEAudio',
-           'MIMEBase',
-           'MIMEImage',
-           'MIMEMessage',
-           'MIMEText',
-           'Message',
-           'Parser',
-           'Utils',
-           'base64MIME',
-           'quopriMIME',
-           'message_from_string',
-           'message_from_file',
-           ]
-
+__all__ = [
+    'base64MIME',
+    'Charset',
+    'Encoders',
+    'Errors',
+    'Generator',
+    'Header',
+    'Iterators',
+    'Message',
+    'MIMEAudio',
+    'MIMEBase',
+    'MIMEImage',
+    'MIMEMessage',
+    'MIMEMultipart',
+    'MIMENonMultipart',
+    'MIMEText',
+    'Parser',
+    'quopriMIME',
+    'Utils',
+    'message_from_string',
+    'message_from_file',
+    ]
 
 try:
     True, False
