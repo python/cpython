@@ -284,6 +284,28 @@ class Message:
         """Get a specific header, as from a dictionary."""
         return self.dict[string.lower(name)]
     
+    def __delitem__(self, name):
+        """Delete all occurrences of a specific header, if it is present."""
+        name = string.lower(name)
+        if not self.dict.has_key(name):
+            return
+        del self.dict[name]
+        name = name + ':'
+        n = len(name)
+        list = []
+        hit = 0
+        for i in range(len(self.headers)):
+            line = self.headers[i]
+            if string.lower(line[:n]) == name:
+                hit = 1
+            elif line[:1] not in string.whitespace:
+                hit = 0
+            if hit:
+                list.append(i)
+        list.reverse()
+        for i in list:
+            del self.headers[i]
+
     def has_key(self, name):
         """Determine whether a message contains the named header."""
         return self.dict.has_key(string.lower(name))
