@@ -172,6 +172,8 @@ newframeobject(back, code, globals, locals)
 			if (f == NULL)
 				return (PyFrameObject *)err_nomem();
 		}
+		else
+			extras = f->f_nlocals + f->f_stacksize;
 		f->ob_type = &Frametype;
 		NEWREF(f);
 	}
@@ -203,11 +205,11 @@ newframeobject(back, code, globals, locals)
 	f->f_trace = NULL;
 
 	f->f_lasti = 0;
-	f->f_lineno = -1;
+	f->f_lineno = code->co_firstlineno;
 	f->f_restricted = (builtins != getbuiltindict());
 	f->f_iblock = 0;
 	f->f_nlocals = code->co_nlocals;
-	f->f_stacksize = code->co_stacksize;
+	f->f_stacksize = extras - code->co_nlocals;
 
 	while (--extras >= 0)
 		f->f_localsplus[extras] = NULL;
