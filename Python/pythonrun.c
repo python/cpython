@@ -47,6 +47,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef NT
 #undef BYTE
+#undef arglist
 #include "windows.h"
 #endif
 
