@@ -33,6 +33,16 @@ Core and builtins
   in a debug build, a segfault occurred reliably very soon after).
   This has been repaired.
 
+- At Python shutdown time (Py_Finalize()), 2.3 called cyclic garbage
+  collection twice, both before and after tearing down modules.  The
+  call after tearing down modules has been disabled, because too much
+  of Python has been torn down then for __del__ methods and weakref
+  callbacks to execute sanely.  The most common symptom was a sequence
+  of uninformative messages on stderr when Python shut down, produced
+  by threads trying to raise exceptions, but unable to report the nature
+  of their problems because too much of the sys module had already been
+  destroyed.
+
 - Patch #820195: object.__contains__() now returns True or False instead
   of 1 or 0.
 
