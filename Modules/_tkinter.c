@@ -425,47 +425,6 @@ Split(list)
 	return v;
 }
 
-static Tcl_Obj*
-AsObj(value)
-	PyObject *value;
-{
-	Tcl_Obj *result;
-
-	if (PyString_Check(value))
-		return Tcl_NewStringObj(PyString_AS_STRING(value),
-					PyString_GET_SIZE(value));
-	else if (PyInt_Check(value))
-		return Tcl_NewLongObj(PyInt_AS_LONG(value));
-	else if (PyFloat_Check(value))
-		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
-	else if (PyTuple_Check(value)) {
-		Tcl_Obj **argv = (Tcl_Obj**)
-			ckalloc(PyTuple_Size(value)*sizeof(Tcl_Obj*));
-		int i;
-		if(!argv)
-		  return 0;
-		for(i=0;i<PyTuple_Size(value);i++)
-		  argv[i] = AsObj(PyTuple_GetItem(value,i));
-		result = Tcl_NewListObj(PyTuple_Size(value), argv);
-		ckfree(FREECAST argv);
-		return result;
-	}
-	else if (PyUnicode_Check(value)) {
-		PyObject* utf8 = PyUnicode_AsUTF8String (value);
-		if (!utf8)
-			return 0;
-		return Tcl_NewStringObj (PyString_AS_STRING (utf8),
-					 PyString_GET_SIZE (utf8));
-	}
-	else {
-		PyObject *v = PyObject_Str(value);
-		if (!v)
-			return 0;
-		result = AsObj(v);
-		Py_DECREF(v);
-		return result;
-	}
-}
 
 
 /**** Tkapp Object ****/
@@ -559,6 +518,54 @@ Tkapp_New(screenName, baseName, className, interactive)
 
 /** Tcl Eval **/
 
+#if TKMAJORMINOR >= 8001
+#define USING_OBJECTS
+#endif
+
+#ifdef USING_OBJECTS
+
+static Tcl_Obj*
+AsObj(value)
+	PyObject *value;
+{
+	Tcl_Obj *result;
+
+	if (PyString_Check(value))
+		return Tcl_NewStringObj(PyString_AS_STRING(value),
+					PyString_GET_SIZE(value));
+	else if (PyInt_Check(value))
+		return Tcl_NewLongObj(PyInt_AS_LONG(value));
+	else if (PyFloat_Check(value))
+		return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
+	else if (PyTuple_Check(value)) {
+		Tcl_Obj **argv = (Tcl_Obj**)
+			ckalloc(PyTuple_Size(value)*sizeof(Tcl_Obj*));
+		int i;
+		if(!argv)
+		  return 0;
+		for(i=0;i<PyTuple_Size(value);i++)
+		  argv[i] = AsObj(PyTuple_GetItem(value,i));
+		result = Tcl_NewListObj(PyTuple_Size(value), argv);
+		ckfree(FREECAST argv);
+		return result;
+	}
+	else if (PyUnicode_Check(value)) {
+		PyObject* utf8 = PyUnicode_AsUTF8String (value);
+		if (!utf8)
+			return 0;
+		return Tcl_NewStringObj (PyString_AS_STRING (utf8),
+					 PyString_GET_SIZE (utf8));
+	}
+	else {
+		PyObject *v = PyObject_Str(value);
+		if (!v)
+			return 0;
+		result = AsObj(v);
+		Py_DECREF(v);
+		return result;
+	}
+}
+
 static PyObject *
 Tkapp_Call(self, args)
 	PyObject *self;
@@ -626,6 +633,122 @@ Tkapp_Call(self, args)
 	return res;
 }
 
+#else /* !USING_OBJECTS */
+
+static PyObject *
+Tkapp_Call(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	/* This is copied from Merge() */
+	PyObject *tmp = NULL;
+	char *argvStore[ARGSZ];
+	char **argv = NULL;
+	int fvStore[ARGSZ];
+	int *fv = NULL;
+	int argc = 0, i;
+	PyObject *res = NULL; /* except this has a different type */
+	Tcl_CmdInfo info; /* and this is added */
+	Tcl_Interp *interp = Tkapp_Interp(self); /* and this too */
+
+	if (!(tmp = PyList_New(0)))
+	    return NULL;
+
+	argv = argvStore;
+	fv = fvStore;
+
+	if (args == NULL)
+		argc = 0;
+
+	else if (!PyTuple_Check(args)) {
+		argc = 1;
+		fv[0] = 0;
+		argv[0] = AsString(args, tmp);
+	}
+	else {
+		argc = PyTuple_Size(args);
+
+		if (argc > ARGSZ) {
+			argv = (char **)ckalloc(argc * sizeof(char *));
+			fv = (int *)ckalloc(argc * sizeof(int));
+			if (argv == NULL || fv == NULL) {
+				PyErr_NoMemory();
+				goto finally;
+			}
+		}
+
+		for (i = 0; i < argc; i++) {
+			PyObject *v = PyTuple_GetItem(args, i);
+			if (PyTuple_Check(v)) {
+				fv[i] = 1;
+				if (!(argv[i] = Merge(v)))
+					goto finally;
+			}
+			else if (v == Py_None) {
+				argc = i;
+				break;
+			}
+			else {
+				fv[i] = 0;
+				argv[i] = AsString(v, tmp);
+			}
+		}
+	}
+	/* End code copied from Merge() */
+
+	/* All this to avoid a call to Tcl_Merge() and the corresponding call
+	   to Tcl_SplitList() inside Tcl_Eval()...  It can save a bundle! */
+	if (Py_VerboseFlag >= 2) {
+		for (i = 0; i < argc; i++)
+			PySys_WriteStderr("%s ", argv[i]);
+	}
+	ENTER_TCL
+	info.proc = NULL;
+	if (argc < 1 ||
+	    !Tcl_GetCommandInfo(interp, argv[0], &info) ||
+	    info.proc == NULL)
+	{
+		char *cmd;
+		cmd = Tcl_Merge(argc, argv);
+		i = Tcl_Eval(interp, cmd);
+		ckfree(cmd);
+	}
+	else {
+		Tcl_ResetResult(interp);
+		i = (*info.proc)(info.clientData, interp, argc, argv);
+	}
+	ENTER_OVERLAP
+	if (info.proc == NULL && Py_VerboseFlag >= 2)
+		PySys_WriteStderr("... use TclEval ");
+	if (i == TCL_ERROR) {
+		if (Py_VerboseFlag >= 2)
+			PySys_WriteStderr("... error: '%s'\n",
+				interp->result);
+		Tkinter_Error(self);
+	}
+	else {
+		if (Py_VerboseFlag >= 2)
+			PySys_WriteStderr("-> '%s'\n", interp->result);
+		res = PyString_FromString(interp->result);
+	}
+	LEAVE_OVERLAP_TCL
+
+	/* Copied from Merge() again */
+  finally:
+	for (i = 0; i < argc; i++)
+		if (fv[i]) {
+			ckfree(argv[i]);
+		}
+	if (argv != argvStore)
+		ckfree(FREECAST argv);
+	if (fv != fvStore)
+		ckfree(FREECAST fv);
+
+	Py_DECREF(tmp);
+	return res;
+}
+
+#endif /* !USING_OBJECTS */
 
 static PyObject *
 Tkapp_GlobalCall(self, args)
