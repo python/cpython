@@ -1546,7 +1546,8 @@ class Tk(Misc, Wm):
     """Toplevel widget of Tk which represents mostly the main window
     of an appliation. It has an associated Tcl interpreter."""
     _w = '.'
-    def __init__(self, screenName=None, baseName=None, className='Tk', useTk=1):
+    def __init__(self, screenName=None, baseName=None, className='Tk',
+                 useTk=1, sync=0, use=None):
         """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
@@ -1565,7 +1566,7 @@ class Tk(Misc, Wm):
             if ext not in ('.py', '.pyc', '.pyo'):
                 baseName = baseName + ext
         interactive = 0
-        self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk)
+        self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
         self.readprofile(baseName, className)
