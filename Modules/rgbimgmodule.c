@@ -788,7 +788,7 @@ rgbimg_methods[] = {
 };
 
 
-void
+DL_EXPORT(void)
 initrgbimg()
 {
 	PyObject *m, *d;

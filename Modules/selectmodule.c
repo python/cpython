@@ -378,7 +378,7 @@ static char module_doc[] =
 *** IMPORTANT NOTICE ***\n\
 On Windows, only sockets are supported; on Unix, all file descriptors.";
 
-void
+DL_EXPORT(void)
 initselect()
 {
 	PyObject *m, *d;

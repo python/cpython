@@ -1819,7 +1819,7 @@ void mp_free( ptr, size )
 
 /* Initialize this module. */
 
-void
+DL_EXPORT(void)
 initmpz()
 {
 	PyObject *module;

@@ -301,7 +301,7 @@ static PyMethodDef cmath_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-void
+DL_EXPORT(void)
 initcmath()
 {
 	PyObject *m, *d, *v;

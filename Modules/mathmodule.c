@@ -233,7 +233,7 @@ static PyMethodDef math_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-void
+DL_EXPORT(void)
 initmath()
 {
 	PyObject *m, *d, *v;

@@ -125,7 +125,7 @@ static PyMethodDef grp_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-void
+DL_EXPORT(void)
 initgrp()
 {
 	Py_InitModule("grp", grp_methods);

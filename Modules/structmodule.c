@@ -1358,7 +1358,7 @@ static PyMethodDef struct_methods[] = {
 
 /* Module initialization */
 
-void
+DL_EXPORT(void)
 initstruct()
 {
 	PyObject *m, *d;

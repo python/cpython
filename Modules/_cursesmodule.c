@@ -1522,7 +1522,7 @@ static PyMethodDef PyCurses_methods[] = {
 
 /* Initialization function for the module */
 
-void
+DL_EXPORT(void)
 initcurses()
 {
 	PyObject *m, *d, *v;

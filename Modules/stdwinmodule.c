@@ -2611,7 +2611,7 @@ putbackstringlist(list, s, n)
 }
 #endif /* macintosh */
 
-void
+DL_EXPORT(void)
 initstdwin()
 {
 	PyObject *m, *d;

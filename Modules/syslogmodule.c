@@ -182,7 +182,7 @@ ins(d, s, x)
 
 /* Initialization function for the module */
 
-void
+DL_EXPORT(void)
 initsyslog()
 {
 	PyObject *m, *d;

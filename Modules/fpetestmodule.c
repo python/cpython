@@ -172,7 +172,7 @@ static double overflow(double b)
   return a;
 }
 
-void initfpetest(void)
+DL_EXPORT(void) initfpetest(void)
 {
     PyObject *m, *d;
 

@@ -304,7 +304,7 @@ call_readline(prompt)
 static char doc_module[] =
 "Importing this module enables command line editing using GNU readline.";
 
-void
+DL_EXPORT(void)
 initreadline()
 {
 	PyObject *m;

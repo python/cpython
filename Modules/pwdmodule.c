@@ -164,7 +164,7 @@ static PyMethodDef pwd_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-void
+DL_EXPORT(void)
 initpwd()
 {
 	Py_InitModule4("pwd", pwd_methods, pwd__doc__,

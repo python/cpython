@@ -514,7 +514,7 @@ static PyMethodDef dbmmodule_methods[] = {
 	{ 0, 0 },
 };
 
-void
+DL_EXPORT(void)
 initgdbm() {
 	PyObject *m, *d;
 

@@ -589,7 +589,7 @@ static struct PycStringIO_CAPI CAPI = {
   &Otype,
 };
 
-void
+DL_EXPORT(void)
 initcStringIO() {
   PyObject *m, *d, *v;
 

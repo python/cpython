@@ -227,7 +227,7 @@ static void sigfpe_handler(int signo)
     }
 }
 
-void initfpectl(void)
+DL_EXPORT(void) initfpectl(void)
 {
     PyObject *m, *d;
     m = Py_InitModule("fpectl", fpectl_methods);
