@@ -28,7 +28,7 @@ import shutil
 import time
 
 __all__ = ["PimpPreferences", "PimpDatabase", "PimpPackage", "main",
-    "PIMP_VERSION", "main"]
+    "getDefaultDatabase", "PIMP_VERSION", "main"]
 
 _scriptExc_NotInstalled = "pimp._scriptExc_NotInstalled"
 _scriptExc_OldInstalled = "pimp._scriptExc_OldInstalled"
@@ -55,7 +55,7 @@ def getDefaultDatabase(experimental=False):
 
     major, minor, micro, state, extra = sys.version_info
     pyvers = '%d.%d' % (major, minor)
-    if state != 'final':
+    if micro == 0 and state != 'final':
         pyvers = pyvers + '%s%d' % (state, extra)
 
     longplatform = distutils.util.get_platform()
