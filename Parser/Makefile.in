@@ -51,7 +51,7 @@ $(LIB):		$(PARSEROBJS)
 		$(RANLIB) $(LIB)
 
 $(PGEN):	$(PGENOBJS) $(LIB)
-		$(CC) $(PGENOBJS) $(LIB) -o $(PGEN)
+		$(CC) $(OPT) $(PGENOBJS) $(LIB) -o $(PGEN)
 
 clean:
 		-rm -f *.o core *~ [@,#]* *.old *.orig *.rej
