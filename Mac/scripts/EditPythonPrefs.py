@@ -151,7 +151,10 @@ def interact(options, title):
 	
 def edit_preferences():
 	handler = pythonprefs.PythonOptions()
-	result = interact(handler.load(), 'System-wide preferences')
+	options = handler.load()
+	if options['noargs']:
+		EasyDialogs.Message('Warning: system-wide sys.argv processing is off.\nIf you dropped an applet I have not seen it.')
+	result = interact(options, 'System-wide preferences')
 	if result:
 		handler.save(result)
 	
