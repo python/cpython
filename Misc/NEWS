@@ -232,6 +232,9 @@ Tests
 Windows
 -------
 
+- os.fsync() now exists on Windows, and calls the Microsoft _commit()
+  function.
+
 - New function winsound.MessageBeep() wraps the Win32 API
   MessageBeep().
 
