@@ -18,7 +18,7 @@ import Res # For Res.Error
 # resource IDs in our own resources (dialogs, etc)
 MESSAGE_ID = 256
 
-DIALOG_ID = 131
+DIALOG_ID = 512
 TEXT_ITEM = 1
 OK_ITEM = 2
 CANCEL_ITEM = 3
@@ -85,7 +85,7 @@ def interact(list, pythondir):
 		if n == REVERT_ITEM:
 			return [], pythondir
 		if n == DIR_ITEM:
-			fss, ok = macfs.GetDirectory()
+			fss, ok = macfs.GetDirectory('Select python home folder:')
 			if ok:
 				pythondir = fss
 	tmp = string.splitfields(GetDialogItemText(h), '\r')

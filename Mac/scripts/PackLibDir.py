@@ -77,14 +77,10 @@ def handlesubdir(handle, id, srcdir):
 if __name__ == '__main__':
 	args = sys.argv[1:]
 	if not args:
-		ifss, ok = macfs.StandardGetFile('PYC ')
-		if ok:
-			args = [ifss.as_pathname()]
-		else:
-			ifss, ok = macfs.GetDirectory()
-			if not ok:
-				sys.exit(0)
-			args = [ifss.as_pathname()]
+		ifss, ok = macfs.GetDirectory('Select root of tree to pack:')
+		if not ok:
+			sys.exit(0)
+		args = [ifss.as_pathname()]
 	for ifn in args:
 		ofss, ok = macfs.StandardPutFile('Output for '+os.path.split(ifn)[1])
 		if not ok:
