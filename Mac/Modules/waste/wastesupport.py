@@ -36,6 +36,7 @@ OptSoupHandle = OpaqueByValueType("WESoupHandle", "OptResObj")
 OptStScrpHandle = OpaqueByValueType("StScrpHandle", "OptResObj")
 
 WEStyleMode = Type("WEStyleMode", "H")
+WERulerMode = Type("WERulerMode", "l")
 WEActionKind = Type("WEActionKind", "h")
 WEAlignment = Type("WEAlignment", "B")
 WEEdge = Type("WEEdge", "B")
@@ -54,6 +55,9 @@ LongPt = OpaqueType("LongPt", "LongPt")
 LongPt_ptr = LongPt
 LongRect = OpaqueType("LongRect", "LongRect")
 LongRect_ptr = LongRect
+
+TextEncodingVariant = Type("TextEncodingVariant", "l")
+TextEncodingFormat = Type("TextEncodingFormat", "l")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
