@@ -23,7 +23,6 @@ __all__ = ["CGIHTTPRequestHandler"]
 
 import os
 import sys
-import string
 import urllib
 import BaseHTTPServer
 import SimpleHTTPServer
@@ -164,7 +163,7 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             env['CONTENT_LENGTH'] = length
         accept = []
         for line in self.headers.getallmatchingheaders('accept'):
-            if line[:1] in string.whitespace:
+            if line[:1] in "\t\n\r ":
                 accept.append(line.strip())
             else:
                 accept = accept + line[7:].split(',')
