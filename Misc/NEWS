@@ -30,6 +30,9 @@ Extension modules
 Library
 -------
 
+- Bug #796149: time.strptime() now handles having parentheses in the
+  format string properly.
+
 - The email package handles some RFC 2231 parameters with missing
   CHARSET fields better.
 
