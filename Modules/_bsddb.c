@@ -348,7 +348,7 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
     int type;
 
     CLEAR_DBT(*key);
-    if (keyobj == Py_None) {  /* TODO: is None really okay for keys? */
+    if (keyobj == Py_None) {
         type = _DB_get_type(self);
         if (type == -1)
             return 0;
