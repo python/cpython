@@ -26,6 +26,7 @@ Core
     XXX TODO string.join(), unicode.join()
     XXX TODO tuple()
     XXX TODO zip()
+    XXX TODO 'x in y' (!) (?)
 
 What's New in Python 2.1 (final)?
 =================================
