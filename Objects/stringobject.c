@@ -651,7 +651,7 @@ string_split(self, args)
 
 	i = j = 0;
 	while (i+n <= len) {
-		if (s[i] == sub[0] && (n == 1 || memcmp(s+i, sub, n) == 0)) {
+		if (s[i] == sub[0] && memcmp(s+i, sub, n) == 0) {
 			if (maxsplit-- <= 0)
 				break;
 			item = PyString_FromStringAndSize(s+j, (int)(i-j));
@@ -852,8 +852,7 @@ string_find_internal(self, args, dir)
 			return (long)i;
 		last -= n;
 		for (; i <= last; ++i)
-			if (s[i] == sub[0] &&
-			    (n == 1 || memcmp(&s[i+1], &sub[1], n-1) == 0))
+			if (s[i] == sub[0] && memcmp(&s[i], sub, n) == 0)
 				return (long)i;
 	}
 	else {
@@ -862,8 +861,7 @@ string_find_internal(self, args, dir)
         	if (n == 0 && i <= last)
 			return (long)last;
 		for (j = last-n; j >= i; --j)
-			if (s[j] == sub[0] &&
-			    (n == 1 || memcmp(&s[j+1], &sub[1], n-1) == 0))
+			if (s[j] == sub[0] && memcmp(&s[j], sub, n) == 0)
 				return (long)j;
 	}
 	
@@ -1415,9 +1413,7 @@ mymemfind(mem, len, pat, pat_len)
 	len -= pat_len;
 
 	for (ii = 0; ii <= len; ii++) {
-		if (mem[ii] == pat[0] &&
-		    (pat_len == 1 ||
-		     memcmp(&mem[ii+1], &pat[1], pat_len-1) == 0)) {
+		if (mem[ii] == pat[0] && memcmp(&mem[ii], pat, pat_len) == 0) {
 			return ii;
 		}
 	}
