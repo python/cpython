@@ -797,7 +797,7 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
       case Cexact:
       {
 	 ch = (unsigned char)*p1++;
-	 if (map[ch])
+	 if (map[(int)ch])
 	    goto make_normal_jump;
 	 break;
       }
@@ -873,7 +873,6 @@ static int re_optimize_star_jump(regexp_t bufp, char *code)
       }
    }
 
-  make_update_jump:
    code -= 3;
    a += 3;  /* jump to after the Cfailure_jump */
    code[0] = Cupdate_failure_jump;
@@ -1094,12 +1093,12 @@ char *re_compile_pattern(char *regex, int size, regexp_t bufp)
    int current_level;
    int level;
    int opcode;
-   int pattern_offset, alloc;
+   int pattern_offset = 0, alloc;
    int starts[NUM_LEVELS * MAX_NESTING];
    int starts_base;
    int future_jumps[MAX_NESTING];
    int num_jumps;
-   unsigned char ch;
+   unsigned char ch = '\0';
    char *pattern;
    char *translate;
    int next_register;
