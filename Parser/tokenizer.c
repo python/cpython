@@ -46,6 +46,14 @@ extern char *PyOS_Readline Py_PROTO((char *));
 /* Don't ever change this -- it would break the portability of Python code */
 #define TABSIZE 8
 
+/* Convert a possibly signed character to a nonnegative int */
+/* XXX This assumes characters are 8 bits wide */
+#ifdef __CHAR_UNSIGNED__
+#define Py_CHARMASK(c)		(c)
+#else
+#define Py_CHARMASK(c)		((c) & 0xff)
+#endif
+
 /* Forward */
 static struct tok_state *tok_new Py_PROTO((void));
 static int tok_nextc Py_PROTO((struct tok_state *tok));
@@ -178,7 +186,7 @@ tok_nextc(tok)
 {
 	for (;;) {
 		if (tok->cur != tok->inp) {
-			return *tok->cur++; /* Fast path */
+			return Py_CHARMASK(*tok->cur++); /* Fast path */
 		}
 		if (tok->done != E_OK)
 			return EOF;
@@ -197,7 +205,7 @@ tok_nextc(tok)
 				tok->buf = tok->cur;
 			tok->lineno++;
 			tok->inp = end;
-			return *tok->cur++;
+			return Py_CHARMASK(*tok->cur++);
 		}
 		if (tok->prompt != NULL) {
 			char *new = PyOS_Readline(tok->prompt);
