@@ -5223,11 +5223,12 @@ void _PyUnicode_Init(void)
 void
 _PyUnicode_Fini(void)
 {
-    PyUnicodeObject *u = unicode_freelist;
+    PyUnicodeObject *u;
 
     Py_XDECREF(unicode_empty);
     unicode_empty = NULL;
-    while (u != NULL) {
+
+    for (u = unicode_freelist; u != NULL;) {
 	PyUnicodeObject *v = u;
 	u = *(PyUnicodeObject **)u;
 	if (v->str)
