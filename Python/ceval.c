@@ -35,7 +35,6 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 static PyObject *eval_frame(PyFrameObject *);
 static PyObject *call_function(PyObject ***, int);
 static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
-static PyObject *fast_cfunction(PyObject *, PyObject ***, int);
 static PyObject *do_call(PyObject *, PyObject ***, int, int);
 static PyObject *ext_do_call(PyObject *, PyObject ***, int, int, int);
 static PyObject *update_keyword_args(PyObject *, int, PyObject ***,PyObject *);
@@ -3146,6 +3145,21 @@ PyEval_GetFuncDesc(PyObject *func)
 
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 
+void
+err_args(PyObject *func, int flags, int nargs)
+{
+	if (flags & METH_NOARGS)
+		PyErr_Format(PyExc_TypeError, 
+			     "%.200s() takes 1 argument (%d given)",
+			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
+			     nargs);
+	else
+		PyErr_Format(PyExc_TypeError, 
+			     "%.200s() takes no arguments (%d given)",
+			     ((PyCFunctionObject *)func)->m_ml->ml_name, 
+			     nargs);
+}
+
 static PyObject *
 call_function(PyObject ***pp_stack, int oparg)
 {
@@ -3162,13 +3176,27 @@ call_function(PyObject ***pp_stack, int oparg)
 	*/
 	if (PyCFunction_Check(func) && nk == 0) {
 		int flags = PyCFunction_GET_FLAGS(func);
-		if (flags  & (METH_VARARGS | METH_KEYWORDS)) {
+		if (flags & (METH_NOARGS | METH_O)) {
+			PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+			PyObject *self = PyCFunction_GET_SELF(func);
+			if (flags & METH_NOARGS && na == 0) 
+				x = (*meth)(self, NULL);
+			else if (flags & METH_O && na == 1) {
+				PyObject *arg = EXT_POP(*pp_stack);
+				x = (*meth)(self, arg);
+				Py_DECREF(arg);
+			}
+			else {
+				err_args(func, flags, na);
+				x = NULL;
+			}
+		}
+		else {
 			PyObject *callargs;
 			callargs = load_args(pp_stack, na);
 			x = PyCFunction_Call(func, callargs, NULL);
 			Py_XDECREF(callargs); 
-		} else
-			x = fast_cfunction(func, pp_stack, na);
+		} 
 	} else {
 		if (PyMethod_Check(func) && PyMethod_GET_SELF(func) != NULL) {
 			/* optimize access to bound methods */
@@ -3196,59 +3224,9 @@ call_function(PyObject ***pp_stack, int oparg)
 	return x;
 }
 
-/* The two fast_xxx() functions optimize calls for which no argument
+/* The fast_function() function optimize calls for which no argument
    tuple is necessary; the objects are passed directly from the stack.
-   fast_cfunction() is called for METH_OLDARGS functions.
-   fast_function() is for functions with no special argument handling.
 */
-
-static PyObject *
-fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
-{
-	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-	PyObject *self = PyCFunction_GET_SELF(func);
-	int flags = PyCFunction_GET_FLAGS(func);
-
-	switch (flags) {
-	case METH_OLDARGS:
-		if (na == 0)
-			return (*meth)(self, NULL);
-		else if (na == 1) {
-			PyObject *arg = EXT_POP(*pp_stack);
-			PyObject *result =  (*meth)(self, arg);
-			Py_DECREF(arg);
-			return result;
-		} else {
-			PyObject *args = load_args(pp_stack, na);
-			PyObject *result = (*meth)(self, args);
-			Py_DECREF(args);
-			return result;
-		}
-	case METH_NOARGS:
-		if (na == 0)
-			return (*meth)(self, NULL);
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes no arguments (%d given)",
-			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
-		return NULL;
-	case METH_O:
-		if (na == 1) {
-			PyObject *arg = EXT_POP(*pp_stack);
-			PyObject *result = (*meth)(self, arg);
-			Py_DECREF(arg);
-			return result;
-		}
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes exactly one argument (%d given)",
-			     ((PyCFunctionObject*)func)->m_ml->ml_name, na);
-		return NULL;
-	default:
-		fprintf(stderr, "%.200s() flags = %d\n", 
-			((PyCFunctionObject*)func)->m_ml->ml_name, flags);
-		PyErr_BadInternalCall();
-		return NULL;
-	}		
-}
 
 static PyObject *
 fast_function(PyObject *func, PyObject ***pp_stack, int n, int na, int nk)
