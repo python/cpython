@@ -136,6 +136,7 @@ class Telnet:
             port = TELNET_PORT
         self.host = host
         self.port = port
+        msg = "getaddrinfo returns an empty list"
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
             try:
