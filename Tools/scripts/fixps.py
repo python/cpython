@@ -1,6 +1,6 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
-# Fix Python script(s) to reference the interpreter in /usr/local/bin.
+# Fix Python script(s) to reference the interpreter via /usr/bin/env python.
 
 import sys
 import regex
@@ -15,13 +15,13 @@ def main():
 			print file, ': can\'t open for update'
 			continue
 		line = f.readline()
-		if regex.match('^#! */usr/local/python', line) < 0:
-			print file, ': not a /usr/local/python script'
+		if regex.match('^#! */usr/local/bin/python', line) < 0:
+			print file, ': not a /usr/local/bin/python script'
 			f.close()
 			continue
 		rest = f.read()
-		line = regsub.sub('/usr/local/python', \
-			'/usr/local/bin/python', line)
+		line = regsub.sub('/usr/local/bin/python',
+				  '/usr/bin/env python', line)
 		print file, ':', `line`
 		f.seek(0)
 		f.write(line)
