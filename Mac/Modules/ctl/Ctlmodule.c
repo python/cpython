@@ -1016,6 +1016,34 @@ static PyObject *CtlObj_getattr(self, name)
 
 #define CtlObj_setattr NULL
 
+static int CtlObj_compare(self, other)
+	ControlObject *self, *other;
+{
+	unsigned long v, w;
+
+	if (!CtlObj_Check((PyObject *)other))
+	{
+		v=(unsigned long)self;
+		w=(unsigned long)other;
+	}
+	else
+	{
+		v=(unsigned long)self->ob_itself;
+		w=(unsigned long)other->ob_itself;
+	}
+	if( v < w ) return -1;
+	if( v > w ) return 1;
+	return 0;
+}
+
+#define CtlObj_repr NULL
+
+static long CtlObj_hash(self)
+	ControlObject *self;
+{
+	return (long)self->ob_itself;
+}
+
 PyTypeObject Control_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -1027,6 +1055,12 @@ PyTypeObject Control_Type = {
 	0, /*tp_print*/
 	(getattrfunc) CtlObj_getattr, /*tp_getattr*/
 	(setattrfunc) CtlObj_setattr, /*tp_setattr*/
+	(cmpfunc) CtlObj_compare, /*tp_compare*/
+	(reprfunc) CtlObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) CtlObj_hash, /*tp_hash*/
 };
 
 /* -------------------- End object type Control --------------------- */
@@ -1388,18 +1422,33 @@ static PyMethodDef Ctl_methods[] = {
 
 
 
+PyObject *CtlObj_NewUnmanaged(itself)
+	ControlHandle itself;
+{
+	ControlObject *it;
+	if (itself == NULL) return PyMac_Error(resNotFound);
+	it = PyObject_NEW(ControlObject, &Control_Type);
+	if (it == NULL) return NULL;
+	it->ob_itself = itself;
+	return (PyObject *)it;
+}
+
 PyObject *
 CtlObj_WhichControl(ControlHandle c)
 {
 	PyObject *it;
 	
-	/* XXX What if we find a control belonging to some other package? */
 	if (c == NULL)
-		it = NULL;
-	else
-		it = (PyObject *) GetControlReference(c);
-	if (it == NULL || ((ControlObject *)it)->ob_itself != c)
 		it = Py_None;
+	else {
+		it = (PyObject *) GetControlReference(c);
+		/*
+		** If the refcon is zero or doesn't point back to the Python object
+		** the control is not ours. Return a temporary object.
+		*/
+		if (it == NULL || ((ControlObject *)it)->ob_itself != c)
+			return CtlObj_NewUnmanaged(c);
+	}
 	Py_INCREF(it);
 	return it;
 }
