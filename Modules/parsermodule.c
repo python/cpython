@@ -1719,9 +1719,6 @@ validate_global_stmt(node *tree)
     if (!res && !PyErr_Occurred())
         err_string("illegal global statement");
 
-    if (!res && !PyErr_Occurred())
-        err_string("illegal global statement");
-
     if (res)
         res = (validate_name(CHILD(tree, 0), "global")
                && validate_ntype(CHILD(tree, 1), NAME));
