@@ -3183,6 +3183,25 @@ def slices():
     a.__setitem__(slice(0, 2, 1), [2,3])
     vereq(a, [2,3,1])
 
+def subtype_resurrection():
+    if verbose:
+        print "Testing resurrection of new-style instance."
+
+    class C(object):
+        container = []
+
+        def __del__(self):
+            # resurrect the instance
+            C.container.append(self)
+
+    c = C()
+    c.attr = 42
+    # The only interesting thing here is whether this blows up in a
+    # debug build, due to flawed GC tracking logic in typeobject.c's
+    # call_finalizer() (a 2.2.1 bug).
+    del c
+    del C.container[-1]  # resurrect it again for the heck of it
+    vereq(C.container[-1].attr, 42)
 
 def do_this_first():
     if verbose:
@@ -3274,6 +3293,7 @@ def test_main():
     string_exceptions()
     copy_setstate()
     slices()
+    subtype_resurrection()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
