@@ -489,6 +489,8 @@ class TestLoader:
 
     def loadTestsFromTestCase(self, testCaseClass):
         """Return a suite of all tests cases contained in testCaseClass"""
+        if issubclass(testCaseClass, TestSuite):
+            raise TypeError("Test cases should not be derived from TestSuite. Maybe you meant to derive from TestCase?")
         testCaseNames = self.getTestCaseNames(testCaseClass)
         if not testCaseNames and hasattr(testCaseClass, 'runTest'):
             testCaseNames = ['runTest']
