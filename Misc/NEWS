@@ -1,8 +1,21 @@
 What's New in Python 2.2b2?
-XXX Planned XXX Release date: 14-Nov-2001
+Release date: 16-Nov-2001
 ===========================
 
 Type/class unification and new-style classes
+
+- Restrictions on multiple inheritance from classes with different
+  metatypes have been relaxed.  The only builtin metatypes are one for
+  classic classes a second for new-style classes, so the primary
+  visible effect is that this works now:
+
+      class Classic: pass
+      class Mixed(Classic, object): now
+
+  The MRO (method resolution order) for each base class is respected
+  according to its kind, but the MRO for the derived class is computed
+  using new-style MRO rules if any base clase is a new-style class.
+  This needs to be documented.
 
 - The new builtin dictionary() constructor, and dictionary type, have
   been renamed to dict.  This reflects a decade of common usage.
