@@ -111,10 +111,14 @@ class Options:
         s = HEAD % self.variables
         if self.uplink:
             if self.uptitle:
-                link = ('<link rel="up" href="%s" title="%s">'
-                        % (self.uplink, self.uptitle))
+                link = ('<link rel="up" href="%s" title="%s">\n  '
+                        '<link rel="start" href="%s" title="%s">'
+                        % (self.uplink, self.uptitle,
+                           self.uplink, self.uptitle))
             else:
-                link = '<link rel="up" href="%s">' % self.uplink
+                link = ('<link rel="up" href="%s">\n  '
+                        '<link rel="start" href="%s">'
+                        % (self.uplink, self.uplink))
             repl = "  %s\n</head>" % link
             s = s.replace("</head>", repl, 1)
         if self.aesop_type:
