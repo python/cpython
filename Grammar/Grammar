@@ -2,6 +2,9 @@
 
 # Change log:
 
+# 30-Nov-93:
+#	Removed lambda_input, added lambdef
+
 # 25-Oct-93:
 #	Added lambda_input
 
@@ -77,14 +80,12 @@
 # Start symbols for the grammar:
 #	single_input is a single interactive statement;
 #	file_input is a module or sequence of commands read from an input file;
-#	eval_input is the input for the eval() and input() functions;
-#	lambda_input is the input for the proposed lambda() function.
+#	eval_input is the input for the eval() and input() functions.
 
 # NB: compound_stmt in single_input is followed by extra NEWLINE!
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 eval_input: testlist NEWLINE* ENDMARKER
-lambda_input: varargslist ':' testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
@@ -134,7 +135,10 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'/'|'%') factor)*
 factor: ('+'|'-'|'~') factor | atom trailer*
-atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | NAME | NUMBER | STRING
+atom: '(' [testlist] ')' | '[' [testlist] ']' | '{' [dictmaker] '}' | '`' testlist '`' | lambdef | NAME | NUMBER | STRING
+# Note ambiguity in grammar: "lambda x: x[1]" could mean "(lambda x: x)[1]"
+# but the parser is eager so interprets it as "lambda x: (x[1])"...
+lambdef: 'lambda' [varargslist] ':' test
 trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
 subscript: test | [test] ':' [test]
 exprlist: expr (',' expr)* [',']

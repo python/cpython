@@ -174,7 +174,8 @@ get_module(m, name, m_ret)
 
 	case PY_SOURCE:
 		mtime = getmtime(namebuf);
-		strcat(namebuf, "c");
+		len = strlen(namebuf);
+		strcpy(namebuf + len, "c");
 		fpc = fopen(namebuf, "rb");
 		if (fpc != NULL) {
 			magic = rd_long(fpc);
@@ -204,6 +205,7 @@ get_module(m, name, m_ret)
 			}
 			fclose(fpc);
 		}
+		namebuf[len] = '\0';
 		err = parse_file(fp, namebuf, file_input, &n);
 		if (err != E_DONE) {
 			err_input(err);
@@ -215,9 +217,9 @@ get_module(m, name, m_ret)
 			return NULL;
 		if (verbose)
 			fprintf(stderr,
-				"import %s # from %.*s\n",
-				name, strlen(namebuf)-1, namebuf);
+				"import %s # from %s\n", name, namebuf);
 		/* Now write the code object to the ".pyc" file */
+		strcpy(namebuf + len, "c");
 		fpc = fopen(namebuf, "wb");
 		if (fpc == NULL) {
 			if (verbose)

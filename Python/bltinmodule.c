@@ -79,23 +79,13 @@ builtin_filter(self, args)
 	if (!getargs(args, "(OO)", &func, &seq))
 		return NULL;
 
-	if (is_stringobject(func)) {
-		if ((func = exec_eval(func, lambda_input)) == NULL)
-			return NULL;
-	}
-	else {
-		INCREF(func);
-	}
-
 	if (is_stringobject(seq)) {
 		object *r = filterstring(func, seq);
-		DECREF(func);
 		return r;
 	}
 
 	if (is_tupleobject(seq)) {
 		object *r = filtertuple(func, seq);
-		DECREF(func);
 		return r;
 	}
 
@@ -150,13 +140,11 @@ builtin_filter(self, args)
 	if (setlistslice(result, j, len, NULL) < 0)
 		goto Fail_1;
 
-	DECREF(func);
 	return result;
 
 Fail_1:
 	DECREF(result);
 Fail_2:
-	DECREF(func);
 	return NULL;
 }
 
@@ -306,10 +294,10 @@ exec_eval(v, start)
 			globals != NULL && !is_dictobject(globals) ||
 			locals != NULL && !is_dictobject(locals)) {
 		err_setstr(TypeError,
-		  "eval/lambda arguments must be (string|code)[,dict[,dict]]");
+		  "eval arguments must be (string|code)[,dict[,dict]]");
 		return NULL;
 	}
-	/* XXX The following is only correct for eval(), not for lambda() */
+
 	if (is_codeobject(str))
 		return eval_code((codeobject *) str, globals, locals,
 				 (object *)NULL, (object *)NULL);
@@ -318,7 +306,7 @@ exec_eval(v, start)
 		err_setstr(ValueError, "embedded '\\0' in string arg");
 		return NULL;
 	}
-	if (start == eval_input || start == lambda_input) {
+	if (start == eval_input) {
 		while (*s == ' ' || *s == '\t')
 			s++;
 	}
@@ -460,14 +448,6 @@ builtin_map(self, args)
 	func = gettupleitem(args, 0);
 	n    = gettuplesize(args) - 1;
 
-	if (is_stringobject(func)) {
-		if ((func = exec_eval(func, lambda_input)) == NULL)
-			return NULL;
-	}
-	else {
-		INCREF(func);
-	}
-
 	if ((seqs = NEW(sequence, n)) == NULL) {
 		err_nomem();
 		goto Fail_2;
@@ -549,13 +529,11 @@ builtin_map(self, args)
 	}
 
 	if (seqs) DEL(seqs);
-	DECREF(func);
 	return result;
 
 Fail_1:
 	DECREF(result);
 Fail_2:
-	DECREF(func);
 	if (seqs) DEL(seqs);
 	return NULL;
 }
@@ -636,14 +614,6 @@ builtin_int(self, v)
 		return NULL;
 	}
 	return (*nb->nb_int)(v);
-}
-
-static object *
-builtin_lambda(self, v)
-	object *self;
-	object *v;
-{
-	return exec_eval(v, lambda_input);
 }
 
 static object *
@@ -977,14 +947,6 @@ builtin_reduce(self, args)
 		return NULL;
 	}
 
-	if (is_stringobject(func)) {
-		if ((func = exec_eval(func, lambda_input)) == NULL)
-			return NULL;
-	}
-	else {
-		INCREF(func);
-	}
-
 	if ((len = (*sqf->sq_length)(seq)) < 0)
 		goto Fail_2;
 
@@ -1025,7 +987,6 @@ builtin_reduce(self, args)
 	}
 
 	DECREF(args);
-	DECREF(func);
 
 	return result;
 
@@ -1035,7 +996,6 @@ Fail_0:
 Fail_1:
 	DECREF(result);
 Fail_2:
-	DECREF(func);
 	return NULL;
 }
 
@@ -1133,7 +1093,6 @@ static struct methodlist builtin_methods[] = {
 	{"id",		builtin_id},
 	{"input",	builtin_input},
 	{"int",		builtin_int},
-	{"lambda",	builtin_lambda},
 	{"len",		builtin_len},
 	{"long",	builtin_long},
 	{"map",		builtin_map},
