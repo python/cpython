@@ -870,7 +870,7 @@ class PyShell(OutputWindow):
             nosub = ''
         else:
             nosub = "==== No Subprocess ===="
-        self.write("Python %s on %s\n%s\nIDLEfork %s      %s\n" %
+        self.write("Python %s on %s\n%s\nIDLE %s      %s\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION, nosub))
         self.showprompt()
