@@ -1,10 +1,11 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """A parser of RFC 2822 and MIME email messages.
 """
 
 from cStringIO import StringIO
+from types import ListType
 
 # Intrapackage imports
 import Errors
@@ -133,7 +134,11 @@ class Parser:
                 msgobj = self.parsestr(part)
                 container.preamble = preamble
                 container.epilogue = epilogue
-                container.add_payload(msgobj)
+                # Ensure that the container's payload is a list
+                if not isinstance(container.get_payload(), ListType):
+                    container.set_payload([msgobj])
+                else:
+                    container.add_payload(msgobj)
         elif container.get_type() == 'message/delivery-status':
             # This special kind of type contains blocks of headers separated
             # by a blank line.  We'll represent each header block as a
