@@ -2082,11 +2082,49 @@ Return element of \var{o} corresponding to the object \var{key} or
 \samp{\var{o}[\var{key}]}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyMapping_SetItemString}{PyObject *o, char *key, PyObject *v}
+\begin{cfuncdesc}{int}{PyMapping_SetItemString}{PyObject *o, char *key,
+                                                PyObject *v}
 Map the object \var{key} to the value \var{v} in object \var{o}.
 Returns \code{-1} on failure.  This is the equivalent of the Python
 statement \samp{\var{o}[\var{key}] = \var{v}}.
 \end{cfuncdesc}
+
+
+\section{Iterator Protocol \label{iterator}}
+
+There are only a couple of functions specifically for working with
+iterators.
+
+\begin{cfuncdesc}{int}{PyIter_Check}{PyObject *o}
+  Return true if the object \var{o} supports the iterator protocol.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyIter_Next}{PyObject *o}
+  Return the next value from the iteration \var{o}.  If the object is
+  an iterator, this retrieves the next value from the iteration, and
+  returns \NULL{} with no exception set if there are no remaining
+  items.  If the object is not an iterator, \exception{TypeError} is
+  raised, or if there is an error in retrieving the item, returns
+  \NULL{} and passes along the exception.
+\end{cfuncdesc}
+
+To write a loop which iterates over an iterator, the C code should
+look something like this:
+
+\begin{verbatim}
+PyObject *iterator = ...;
+PyObject *item;
+
+while (item = PyIter_Next(iter)) {
+    /* do something with item */
+}
+if (PyErr_Occurred()) {
+    /* propogate error */
+}
+else {
+    /* continue doing useful work */
+}
+\end{verbatim}
 
 
 \chapter{Concrete Objects Layer \label{concrete}}
