@@ -8,9 +8,11 @@ This module defines a class, \code{Message}, which represents a
 collection of ``email headers'' as defined by the Internet standard
 RFC 822.  It is used in various contexts, usually to read such headers
 from a file.
+\index{RFC!822}
 
-(Note that there's a separate, currently undocumented, module to read
-Unix style mailbox files: \code{mailbox}.)
+Note that there's a separate module to read \UNIX{}, MH, and MMDF
+style mailbox files: \code{mailbox}.
+\refstmodindex{mailbox}
 
 A \code{Message} instance is instantiated with an open file object as
 parameter.  The optional \code{seekable} parameter indicates if the
