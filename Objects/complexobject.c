@@ -642,7 +642,7 @@ complex_conjugate(PyObject *self)
 static PyObject *
 complex_getnewargs(PyComplexObject *v)
 {
-	return Py_BuildValue("(D)", v->cval);
+	return Py_BuildValue("(D)", &v->cval);
 }
 
 static PyMethodDef complex_methods[] = {
@@ -832,7 +832,8 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		return NULL;
 
 	/* Special-case for single argumet that is already complex */
-	if (PyComplex_CheckExact(r) && i == NULL) {
+	if (PyComplex_CheckExact(r) && i == NULL &&
+	    type == &PyComplex_Type) {
 		/* Note that we can't know whether it's safe to return
 		   a complex *subclass* instance as-is, hence the restriction
 		   to exact complexes here.  */
