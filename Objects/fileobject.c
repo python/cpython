@@ -44,6 +44,12 @@ PERFORMANCE OF THIS SOFTWARE.
 #define HAVE_FTRUNCATE
 #endif
 
+#ifdef macintosh
+#ifdef USE_GUSI
+#define HAVE_FTRUNCATE
+#endif
+#endif
+
 #ifdef THINK_C
 #define HAVE_FOPENRF
 #endif
