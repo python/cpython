@@ -28,10 +28,10 @@ def gcd(a, b):
 
 def rat(num, den = 1):
 	# must check complex before float
-	if type(num) is ComplexType or type(den) is ComplexType:
+	if isinstance(num, complex) or isinstance(den, complex):
 		# numerator or denominator is complex: return a complex
 		return complex(num) / complex(den)
-	if type(num) is FloatType or type(den) is FloatType:
+	if isinstance(num, float) or isinstance(den, float):
 		# numerator or denominator is float: return a float
 		return float(num) / float(den)
 	# otherwise return a rational
@@ -47,28 +47,26 @@ class Rat:
 		# normalize
 
 		# must check complex before float
-		if type(num) is ComplexType or type(den) is ComplexType:
+                if (isinstance(num, complex) or
+                    isinstance(den, complex)):
 			# numerator or denominator is complex:
 			# normalized form has denominator == 1+0j
 			self.__num = complex(num) / complex(den)
 			self.__den = complex(1)
 			return
-		if type(num) is FloatType or type(den) is FloatType:
+		if isinstance(num, float) or isinstance(den, float):
 			# numerator or denominator is float:
 			# normalized form has denominator == 1.0
 			self.__num = float(num) / float(den)
 			self.__den = 1.0
 			return
-		if (type(num) is InstanceType and
-		    num.__class__ is self.__class__) or \
-		   (type(den) is InstanceType and
-		    den.__class__ is self.__class__):
+		if (isinstance(num, self.__class__) or 
+                    isinstance(den, self.__class__)):
 			# numerator or denominator is rational
 			new = num / den
-			if type(new) is not InstanceType or \
-			   new.__class__ is not self.__class__:
+			if not isinstance(new, self.__class__):
 				self.__num = new
-				if type(new) is ComplexType:
+				if isinstance(new, complex):
 					self.__den = complex(1)
 				else:
 					self.__den = 1.0
@@ -165,11 +163,11 @@ class Rat:
 	# a ** b
 	def __pow__(a, b):
 		if b.__den != 1:
-			if type(a.__num) is ComplexType:
+			if isinstance(a.__num, complex):
 				a = complex(a)
 			else:
 				a = float(a)
-			if type(b.__num) is ComplexType:
+			if isinstance(b.__num, complex):
 				b = complex(b)
 			else:
 				b = float(b)
@@ -296,14 +294,14 @@ def test():
 	list = [2, 1.5, rat(3,2), 1.5+1.5j]
 	for i in list:
 		print i,
-		if type(i) is not ComplexType:
+		if not isinstance(i, complex):
 			print int(i), float(i),
 		print complex(i)
 		print
 		for j in list:
 			print i + j, i - j, i * j, i / j, i ** j,
-                        if not (isinstance(i, ComplexType) or
-                                isinstance(j, ComplexType)):
+                        if not (isinstance(i, complex) or
+                                isinstance(j, complex)):
                                 print cmp(i, j)
                         print
 
