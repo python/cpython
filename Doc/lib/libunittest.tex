@@ -91,7 +91,7 @@ class.
 \end{seealso}
 
 
-\subsection{Minimal example \label{minimal-example}}
+\subsection{Basic example \label{minimal-example}}
 
 The \module{unittest} module provides a rich set of tools for
 constructing and running tests.  This section demonstrates that a
@@ -387,7 +387,7 @@ alltests = unittest.TestSuite((suite1, suite2))
 \end{verbatim}
 
 You can place the definitions of test cases and test suites in the
-same modules as the code they are to test (e.g.\ \file{widget.py}),
+same modules as the code they are to test (such as \file{widget.py}),
 but there are several advantages to placing the test code in a
 separate module, such as \file{widgettests.py}:
 
@@ -515,6 +515,12 @@ if __name__ == '__main__':
     unittest.main()
 \end{verbatim}
 \end{funcdesc}
+
+In some cases, the existing tests may have be written using the
+\module{doctest} module.  If so, that module provides a 
+\class{DocTestSuite} class that can automatically build
+\class{unittest.TestSuite} instances from the existing test code.
+\versionadded{2.3}
 
 
 \subsection{TestCase Objects
