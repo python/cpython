@@ -3680,6 +3680,32 @@ or if it is not a string, raise \exception{SystemError} and return
 \withsubitem{(built-in exception)}{\ttindex{SystemError}}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyModule_AddObject}{PyObject *module,
+                                           char *name, PyObject *value}
+Add an object to \var{module} as \var{name}.  This is a convenience
+function which can be used from the module's initialization function.
+This steals a reference to \var{value}.  Returns \code{-1} on error,
+\code{0} on success.
+\versionadded{2.0}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyModule_AddIntConstant}{PyObject *module,
+                                                char *name, int value}
+Add an integer constant to \var{module} as \var{name}.  This convenience
+function can be used from the module's initialization function.
+Returns \code{-1} on error, \code{0} on success.
+\versionadded{2.0}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{int}{PyModule_AddStringConstant}{PyObject *module,
+                                                   char *name, char *value}
+Add a string constant to \var{module} as \var{name}.  This convenience
+function can be used from the module's initialization function.  The
+string \var{value} must be null-terminated.  Returns \code{-1} on
+error, \code{0} on success.
+\versionadded{2.0}
+\end{cfuncdesc}
+
 
 \subsection{CObjects \label{cObjects}}
 
