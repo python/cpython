@@ -108,9 +108,15 @@ def do_one_test(t, outdir):
 			if warn:
 				sys.stderr.write(msg+': Un-installed'
 						 ' optional module?\n')
+			try:
+				fake_stdout.close()
+			except TestFailed:
+				pass
+			fake_stdout = None
 	finally:
 		sys.stdout = real_stdout
-		fake_stdout.close()
+		if fake_stdout:
+			fake_stdout.close()
 
 
 
@@ -139,26 +145,17 @@ def main():
 	else:
 	    import testall
 	    tests = testall.tests
-	failed = []
-	missing = []
+	failed = 0
 	for test in tests:
+		print 'testing:', test
 		try:
 			do_one_test(test, outdir)
 		except TestFailed, msg:
-			traceback.print_exc()
-			failed.append(test)
-		except TestMissing:
-			missing.append(test)
-	print '**********\n* Report *\n**********'
-	if not failed and not missing:
+			print 'test', test, 'failed'
+			failed = failed + 1
+	if not failed:
 		print 'All tests OK.'
-	if failed:
-		print 'Failed tests:'
-		for t in failed:
-			print '    ', t
-	if missing:
-		print 'Missing tests:'
-		for t in missing:
-			print '    ', t
+	else:
+		print failed, 'tests failed'
 			
 main()
