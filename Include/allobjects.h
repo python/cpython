@@ -30,6 +30,19 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* "allobjects.c" -- Source for precompiled header "allobjects.h" */
 
+/* Some systems (well, NT anyway!) require special declarations for
+ data items imported from dynamic modules.  Note that this defn is
+ only turned on for the modules built as DL modules, not for python
+ itself.
+*/
+#define DL_IMPORT /* Save lots of #else/#if's */
+#ifdef USE_DL_IMPORT
+#ifdef NT
+#undef DL_IMPORT
+#define DL_IMPORT __declspec(dllimport)
+#endif /* NT */
+#endif /* USE_DL_IMPORT */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif

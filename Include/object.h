@@ -227,7 +227,7 @@ typedef struct _typeobject {
 #endif
 } typeobject;
 
-extern typeobject Typetype; /* The type of type objects */
+extern DL_IMPORT typeobject Typetype; /* The type of type objects */
 
 #define is_typeobject(op) ((op)->ob_type == &Typetype)
 
@@ -341,7 +341,7 @@ where NULL (nil) is not suitable (since NULL often means 'error').
 Don't forget to apply INCREF() when returning this value!!!
 */
 
-extern object NoObject; /* Don't use this directly */
+extern DL_IMPORT object NoObject; /* Don't use this directly */
 
 #define None (&NoObject)
 

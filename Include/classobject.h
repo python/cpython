@@ -57,7 +57,7 @@ typedef struct {
 #endif
 } instanceobject;
 
-extern typeobject Classtype, Instancetype, Instancemethodtype;
+extern DL_IMPORT typeobject Classtype, Instancetype, Instancemethodtype;
 
 #define is_classobject(op) ((op)->ob_type == &Classtype)
 #define is_instanceobject(op) ((op)->ob_type == &Instancetype)

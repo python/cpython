@@ -34,7 +34,7 @@ Range objects behave like the corresponding tuple objects except that
 they are represented by a start, stop, and step datamembers.
 */
 
-extern typeobject Rangetype;
+extern DL_IMPORT typeobject Rangetype;
 
 #define is_rangeobject(op) ((op)->ob_type == &Rangetype)
 

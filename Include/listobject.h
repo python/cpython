@@ -49,7 +49,7 @@ typedef struct {
 	object **ob_item;
 } listobject;
 
-extern typeobject Listtype;
+extern DL_IMPORT typeobject Listtype;
 
 #define is_listobject(op) ((op)->ob_type == &Listtype)
 

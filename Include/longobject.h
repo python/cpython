@@ -32,7 +32,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 typedef struct _longobject longobject; /* Revealed in longintrepr.h */
 
-extern typeobject Longtype;
+extern DL_IMPORT typeobject Longtype;
 
 #define is_longobject(op) ((op)->ob_type == &Longtype)
 

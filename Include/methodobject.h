@@ -30,7 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Method object interface */
 
-extern typeobject Methodtype;
+extern DL_IMPORT typeobject Methodtype;
 
 #define is_methodobject(op) ((op)->ob_type == &Methodtype)
 
