@@ -1172,13 +1172,14 @@ int utf8_encoding_error(const Py_UNICODE **source,
 }
 #endif
 
-PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
-			       int size,
-			       const char *errors)
+PyObject *
+PyUnicode_EncodeUTF8(const Py_UNICODE *s,
+		     int size,
+		     const char *errors)
 {
     PyObject *v;
     char *p;
-    unsigned int allocated = 0;
+    int allocated = 0;
     int i;
 
     /* Short-cut for emtpy strings */
