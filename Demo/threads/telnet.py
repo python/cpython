@@ -28,8 +28,8 @@ WONT = chr(252)
 WILL = chr(251)
 
 def main():
-	if len(sys.argv) != 2:
-		sys.stderr.write('usage: telnet hostname\n')
+	if len(sys.argv) < 2:
+		sys.stderr.write('usage: telnet hostname [port]\n')
 		sys.exit(2)
 	host = sys.argv[1]
 	try:
@@ -55,7 +55,7 @@ def main():
 	s = socket(AF_INET, SOCK_STREAM)
 	#
 	try:
-		s.connect(host, port)
+		s.connect((host, port))
 	except error, msg:
 		sys.stderr.write('connect failed: ' + `msg` + '\n')
 		sys.exit(1)
