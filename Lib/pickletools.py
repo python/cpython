@@ -653,10 +653,10 @@ def read_long4(f):
 
     n = read_int4(f)
     if n < 0:
-        raise ValueError("unicodestring4 byte count < 0: %d" % n)
+        raise ValueError("long4 byte count < 0: %d" % n)
     data = f.read(n)
     if len(data) != n:
-        raise ValueError("not enough data in stream to read long1")
+        raise ValueError("not enough data in stream to read long4")
     return decode_long(data)
 
 long4 = ArgumentDescriptor(
