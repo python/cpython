@@ -1714,6 +1714,7 @@ com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 	}
 	else {
 		PyObject *v = PyString_InternFromString(STR(m));
+		(void) none_assignment_check(c, STR(m), 1);
 		if (v != NULL && *pkeywords == NULL)
 			*pkeywords = PyDict_New();
 		if (v == NULL)
