@@ -190,11 +190,10 @@ Py_Initialize(void)
 	if (!Py_FileSystemDefaultEncoding) {
 		char *saved_locale = setlocale(LC_CTYPE, NULL);
 		char *codeset;
-		PyObject *enc = NULL;
 		setlocale(LC_CTYPE, "");
 		codeset = nl_langinfo(CODESET);
 		if (*codeset) {
-			enc = PyCodec_Encoder(codeset);
+			PyObject *enc = PyCodec_Encoder(codeset);
 			if (enc) {
 				Py_FileSystemDefaultEncoding = strdup(codeset);
 				Py_DECREF(enc);
