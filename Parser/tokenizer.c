@@ -346,7 +346,8 @@ fp_readl(char *s, int size, struct tok_state *tok)
 	PyObject* utf8;
 	PyObject* buf = tok->decoding_buffer;
 	if (buf == NULL) {
-		PyObject *args = PyTuple_New(0);
+		/* Ask for one less byte so we can terminate it */
+		PyObject *args = Py_BuildValue("(i)", size-1);
 		if (args == NULL)
 			return error_ret(tok);
 		buf = PyObject_Call(tok->decoding_readline, args, NULL);
