@@ -54,7 +54,7 @@ class WeakValueDictionary(UserDict.UserDict):
                 new[key] = o
         return new
 
-    def get(self, key, default):
+    def get(self, key, default=None):
         try:
             ref = self.data[key]
         except KeyError:
@@ -100,7 +100,7 @@ class WeakValueDictionary(UserDict.UserDict):
         for key, o in dict.items():
             def remove(o, data=d, key=key):
                 del data[key]
-            L.append(key, ref(o, remove))
+            L.append((key, ref(o, remove)))
         for key, r in L:
             d[key] = r
 
@@ -139,8 +139,11 @@ class WeakKeyDictionary(UserDict.UserDict):
                 new[o] = value
         return new
 
-    def get(self, key, default):
+    def get(self, key, default=None):
         return self.data.get(ref(key),default)
+
+    def has_key(self, key):
+        return self.data.has_key(ref(key))
 
     def items(self):
         L = []
@@ -148,6 +151,14 @@ class WeakKeyDictionary(UserDict.UserDict):
             o = key()
             if o is not None:
                 L.append((o, value))
+        return L
+
+    def keys(self):
+        L = []
+        for ref in self.data.keys():
+            o = ref()
+            if o is not None:
+                L.append(o)
         return L
 
     def popitem(self):
@@ -164,7 +175,7 @@ class WeakKeyDictionary(UserDict.UserDict):
         d = self.data
         L = []
         for key, value in dict.items():
-            L.append(ref(key, self._remove), value)
+            L.append((ref(key, self._remove), value))
         for key, r in L:
             d[key] = r
 
