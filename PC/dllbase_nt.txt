@@ -1,0 +1,38 @@
+In Win32, DLL's are "pre-linked" using a specified base address.
+When the DLL is loaded, an attempt is made to place it at
+that address.  If that address is already in use, a new base address
+is selected, and the DLL subject to fixups.  Apparently, these
+fixups are very slow, and significant performance gains can be
+made by selecting a good base address.
+
+This document is to allocate base addresses to core Python 
+and Python .PYD files, to give a better change of optimal performance.
+This base address is passed to the linker using the /BASE
+command line switch.
+
+
+
+Python.dll                 - 1e100000 - 1e180000
+Standard Extension Modules - 1e180000 - 1e200000
+ - socket                    1e180000 - 1e188000
+ - _tkinter                  1e190000 - 1e1A0000
+
+Other extension modules
+ - win32api                  1e200000 - 1e220000
+ - win32ras                  1e220000 - 1e230000
+ - win32lz                   1e230000 - 1e240000
+ - timer                     1e240000 - 1e250000
+ - mmapfile                  1e250000 - 1e260000
+ - avl                       1e270000 - 1e270000
+ - dbhash                    1e280000 - 1e290000
+ - win32net                  1e290000 - 1e2A0000
+ - oleauto                   1e2A0000 - 1e2B0000
+ - oleautsv                  1e2B0000 - 1e2c0000
+ - nspi                      1e2d0000 - 1e2e0000
+ - npipw.dll                 1e2e0000 - 1e2f0000
+ - _imaging                  1e2f0000 - 1e300000
+ - multiarray                1e300000 - 1e310000
+ - bsddb                     1e320000 - 1e330000
+
+PythonWin
+ win32ui                     1e400000 - 1e500000
