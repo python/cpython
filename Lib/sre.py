@@ -23,6 +23,8 @@ __all__ = [ "match", "search", "sub", "subn", "split", "findall",
     "U", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
     "UNICODE", "error" ]
 
+__version__ = "2.1b2"
+
 # this module works under 1.5.2 and later.  don't use string methods
 import string
 
@@ -90,6 +92,7 @@ def compile(pattern, flags=0):
 def purge():
     "Clear the regular expression cache"
     _cache.clear()
+    _cache_repl.clear()
 
 def template(pattern, flags=0):
     "Compile a template pattern, returning a pattern object"
@@ -111,6 +114,8 @@ def escape(pattern):
 # internals
 
 _cache = {}
+_cache_repl = {}
+
 _MAXCACHE = 100
 
 def _join(seq, sep):
@@ -134,6 +139,21 @@ def _compile(*key):
     _cache[key] = p
     return p
 
+def _compile_repl(*key):
+    # internal: compile replacement pattern
+    p = _cache_repl.get(key)
+    if p is not None:
+        return p
+    repl, pattern = key
+    try:
+        p = sre_parse.parse_template(repl, pattern)
+    except error, v:
+        raise error, v # invalid expression
+    if len(_cache_repl) >= _MAXCACHE:
+        _cache_repl.clear()
+    _cache_repl[key] = p
+    return p
+
 def _expand(pattern, match, template):
     # internal: match.expand implementation hook
     template = sre_parse.parse_template(template, pattern)
@@ -148,7 +168,7 @@ def _subn(pattern, template, string, count=0):
     if callable(template):
         filter = template
     else:
-        template = sre_parse.parse_template(template, pattern)
+        template = _compile_repl(template, pattern)
         def filter(match, template=template):
             return sre_parse.expand_template(template, match)
     n = i = 0

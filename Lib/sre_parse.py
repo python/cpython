@@ -638,6 +638,16 @@ def parse_template(source, pattern):
     s = Tokenizer(source)
     p = []
     a = p.append
+    def literal(literal, p=p):
+        if p and p[-1][0] is LITERAL:
+            p[-1] = LITERAL, p[-1][1] + literal
+        else:
+            p.append((LITERAL, literal))
+    sep = source[:0]
+    if type(sep) is type(""):
+        char = chr
+    else:
+        char = unichr
     while 1:
         this = s.get()
         if this is None:
@@ -681,33 +691,42 @@ def parse_template(source, pattern):
                         break
                 if not code:
                     this = this[1:]
-                    code = LITERAL, atoi(this[-6:], 8) & 0xff
-                a(code)
+                    code = LITERAL, char(atoi(this[-6:], 8) & 0xff)
+                if code[0] is LITERAL:
+                    literal(code[1])
+                else:
+                    a(code)
             else:
                 try:
-                    a(ESCAPES[this])
+                    this = char(ESCAPES[this][1])
                 except KeyError:
-                    for c in this:
-                        a((LITERAL, ord(c)))
+                    pass
+                literal(this)
         else:
-            a((LITERAL, ord(this)))
-    return p
+            literal(this)
+    # convert template to groups and literals lists
+    i = 0
+    groups = []
+    literals = []
+    for c, s in p:
+        if c is MARK:
+            groups.append((i, s))
+            literals.append(None)
+        else:
+            literals.append(s)
+        i = i + 1
+    return groups, literals
 
 def expand_template(template, match):
-    # XXX: <fl> this is sooooo slow.  drop in the slicelist code instead
-    p = []
-    a = p.append
+    g = match.group
     sep = match.string[:0]
-    if type(sep) is type(""):
-        char = chr
-    else:
-        char = unichr
-    for c, s in template:
-        if c is LITERAL:
-            a(char(s))
-        elif c is MARK:
-            s = match.group(s)
+    groups, literals = template
+    literals = literals[:]
+    try:
+        for index, group in groups:
+            literals[index] = s = g(group)
             if s is None:
-                raise error, "empty group"
-            a(s)
-    return string.join(p, sep)
+                raise IndexError
+    except IndexError:
+        raise error, "empty group"
+    return string.join(literals, sep)
