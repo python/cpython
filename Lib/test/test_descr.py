@@ -785,7 +785,7 @@ def metaclass():
     c = C()
     try: c()
     except TypeError: pass
-    else: raise TestError, "calling object w/o call method should raise TypeError"
+    else: raise TestFailed, "calling object w/o call method should raise TypeError"
 
 def pymods():
     if verbose: print "Testing Python subclass of module..."
