@@ -140,6 +140,9 @@ structseq_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 	}
 
 	res = (PyStructSequence*) PyStructSequence_New(type);
+	if (res == NULL) {
+		return NULL;
+	}
 	for (i = 0; i < len; ++i) {
 		PyObject *v = PySequence_Fast_GET_ITEM(arg, i);
 		Py_INCREF(v);
@@ -346,6 +349,8 @@ PyStructSequence_InitType(PyTypeObject *type, PyStructSequence_Desc *desc)
 	type->tp_itemsize = 0;
 
 	members = PyMem_NEW(PyMemberDef, n_members+1);
+	if (members == NULL)
+		return;
 	
 	for (i = 0; i < n_members; ++i) {
 		members[i].name = desc->fields[i].name;
