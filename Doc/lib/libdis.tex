@@ -2,8 +2,7 @@
          Disassembler for Python byte code}
 
 \declaremodule{standard}{dis}
-\modulesynopsis{Disassembler for Python byte code, as stored in code
-                objects and \file{.pyc}/\file{.pyo} files.}
+\modulesynopsis{Disassembler for Python byte code.}
 
 
 The \module{dis} module supports the analysis of Python byte code by
@@ -35,7 +34,7 @@ the following command can be used to get the disassembly of
          19 RETURN_VALUE   
 \end{verbatim}
 
-The \module{dis} module defines the following functions:
+The \module{dis} module defines the following functions and constants:
 
 \begin{funcdesc}{dis}{\optional{bytesource}}
 Disassemble the \var{bytesource} object. \var{bytesource} can denote
@@ -75,7 +74,7 @@ for compatibility with earlier Python releases.
 \end{funcdesc}
 
 \begin{datadesc}{opname}
-Sequence of a operation names, indexable using the byte code.
+Sequence of operation names, indexable using the byte code.
 \end{datadesc}
 
 \begin{datadesc}{cmp_op}
@@ -87,7 +86,7 @@ Sequence of byte codes that have a constant parameter.
 \end{datadesc}
 
 \begin{datadesc}{hasname}
-Sequence of byte codes that access a attribute by name.
+Sequence of byte codes that access an attribute by name.
 \end{datadesc}
 
 \begin{datadesc}{hasjrel}
@@ -99,7 +98,7 @@ Sequence of byte codes that have an absolute jump target.
 \end{datadesc}
 
 \begin{datadesc}{haslocal}
-Sequence of byte codes that access a a local variable.
+Sequence of byte codes that access a local variable.
 \end{datadesc}
 
 \begin{datadesc}{hascompare}
@@ -196,11 +195,11 @@ Implements \code{TOS = TOS1[TOS]}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_LSHIFT}{}
-Implements \code{TOS = TOS1 << TOS}.
+Implements \code{TOS = TOS1 <\code{}< TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_RSHIFT}{}
-Implements \code{TOS = TOS1 >> TOS}.
+Implements \code{TOS = TOS1 >\code{}> TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{BINARY_AND}{}
@@ -245,11 +244,11 @@ Implements in-place \code{TOS = TOS1 - TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{INPLACE_LSHIFT}{}
-Implements in-place \code{TOS = TOS1 << TOS}.
+Implements in-place \code{TOS = TOS1 <\code{}< TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{INPLACE_RSHIFT}{}
-Implements in-place \code{TOS = TOS1 >> TOS}.
+Implements in-place \code{TOS = TOS1 >\code{}> TOS}.
 \end{opcodedesc}
 
 \begin{opcodedesc}{INPLACE_AND}{}

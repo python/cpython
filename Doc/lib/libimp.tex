@@ -70,14 +70,14 @@ Load a module that was previously found by \function{find_module()} (or by
 an otherwise conducted search yielding compatible results).  This
 function does more than importing the module: if the module was
 already imported, it is equivalent to a
-\function{reload()}\bifuncindex{reload}!  The
-\var{name} argument indicates the full module name (including the
-package name, if this is a submodule of a package).  The \var{file}
-argument is an open file, and \var{filename} is the corresponding
-file name; these can be \code{None} and \code{''}, respectively, when
-the module is not being loaded from a file.  The \var{description}
-argument is a tuple as returned by \function{find_module()} describing
-what kind of module must be loaded.
+\function{reload()}\bifuncindex{reload}!  The \var{name} argument
+indicates the full module name (including the package name, if this is
+a submodule of a package).  The \var{file} argument is an open file,
+and \var{filename} is the corresponding file name; these can be
+\code{None} and \code{''}, respectively, when the module is not being
+loaded from a file.  The \var{description} argument is a tuple, as
+would be returned by \function{get_suffixes()}, describing what kind
+of module must be loaded.
 
 If the load is successful, the return value is the module object;
 otherwise, an exception (usually \exception{ImportError}) is raised.

@@ -49,5 +49,6 @@ object (see the \refmodule{rfc822} module).  Depending on the mailbox
 implementation the \var{fp} attribute of this object may be a true
 file object or a class instance simulating a file object, taking care
 of things like message boundaries if multiple mail messages are
-contained in a single file, etc.
+contained in a single file, etc.  If no more messages are available,
+this method returns \code{None}.
 \end{methoddesc}

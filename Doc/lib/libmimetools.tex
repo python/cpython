@@ -61,15 +61,15 @@ open file \var{output}.  The block size is currently fixed at 8192.
 \end{seealso}
 
 
-\subsection{Additional Methods of Message objects}
-\nodename{mimetools.Message Methods}
+\subsection{Additional Methods of Message Objects
+            \label{mimetools-message-objects}}
 
 The \class{Message} class defines the following methods in
 addition to the \class{rfc822.Message} methods:
 
 \begin{methoddesc}{getplist}{}
 Return the parameter list of the \code{content-type} header.  This is
-a list if strings.  For parameters of the form
+a list of strings.  For parameters of the form
 \samp{\var{key}=\var{value}}, \var{key} is converted to lower case but
 \var{value} is not.  For example, if the message contains the header
 \samp{Content-type: text/html; spam=1; Spam=2; Spam} then
