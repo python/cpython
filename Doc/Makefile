@@ -291,7 +291,7 @@ tarps:	postscript-$(VERSION).tar.gz
 
 tarpdf:	pdf-$(VERSION).tar.gz
 
-tarballs:  tarpdf tarps tarhtml
+tarballs:  tarpdf tarps tarhtml tarinfo
 
 
 # Housekeeping targets
