@@ -10,7 +10,7 @@ import os
 import sys
 import types
 
-__all__ = ["popen2", "popen3", "popen4"]
+__all__ = ["popen2", "popen3", "popen4", "Popen3", "Popen4"]
 
 MAXFD = 256     # Max number of file descriptors (os.getdtablesize()???)
 
