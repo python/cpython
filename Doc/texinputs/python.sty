@@ -185,6 +185,27 @@
   \end{minipage}%
 }
 
+% This does a similar thing for the {alltt} environment:
+\RequirePackage{alltt}
+\let\py@OldAllTT=\alltt
+\let\py@OldEndAllTT=\endalltt
+
+\renewcommand{\alltt}{%
+  \setlength{\parindent}{1cm}%
+  % Calculate the text width for the minipage:
+  \setlength{\py@codewidth}{\linewidth}%
+  \addtolength{\py@codewidth}{-\parindent}%
+  %
+  \par\indent%
+  \begin{minipage}[t]{\py@codewidth}%
+    \small%
+    \py@OldAllTT%
+}
+\renewcommand{\endalltt}{%
+    \py@OldEndAllTT%
+  \end{minipage}%
+}
+
 
 \newcommand{\py@modulebadkey}{{--just-some-junk--}}
 
