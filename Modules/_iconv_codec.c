@@ -42,6 +42,10 @@ PyDoc_STRVAR(iconvcodec_doc, "iconvcodec object");
 
 staticforward PyTypeObject iconvcodec_Type;
 
+/* does the choosen internal encoding require
+ * byteswapping to get native endianness?
+ * 0=no, 1=yes, -1=unknown */
+static int byteswap = -1;
 
 #define ERROR_STRICT                (PyObject *)(1)
 #define ERROR_IGNORE                (PyObject *)(2)
@@ -88,6 +92,8 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     size_t               inplen, inplen_total, outlen, outlen_total, estep;
     PyObject            *outputobj = NULL, *errorcb = NULL,
                         *exceptionobj = NULL;
+    Py_UNICODE          *swappedinput;
+    int                  swapi;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "u#|s:encode",
                 kwlist, &input, &inputlen, &errors))
@@ -121,6 +127,24 @@ iconvcodec_encode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     out = PyString_AS_STRING(outputobj) + (out - out_top);  \
     out_top = PyString_AS_STRING(outputobj);                \
 }
+    if (byteswap) {
+        swappedinput = PyMem_Malloc(inplen);
+        if (swappedinput == NULL)
+            return NULL;
+        for (swapi = 0; swapi<inputlen; ++swapi)
+        {
+           Py_UNICODE c = input[swapi];
+#if Py_UNICODE_SIZE == 2
+           c = ((char *)&c)[0]<<8 | ((char *)&c)[1];
+#else
+           c = ((char *)&c)[0]<<24 | ((char *)&c)[1]<<16 |
+               ((char *)&c)[2]<<8 | ((char *)&c)[3];
+#endif
+           swappedinput[swapi] = c;
+        }
+        inp = inp_top = (char *)swappedinput;
+    }
+
     while (inplen > 0) {
         if (iconv(self->enchdl, (char**)&inp, &inplen, &out, &outlen) == -1) {
             char         reason[128];
@@ -253,6 +277,8 @@ errorexit_cbpad:        Py_XDECREF(retobj);
         rettup = PyTuple_New(2);
         if (rettup == NULL) {
             Py_DECREF(outputobj);
+            if (byteswap)
+                PyMem_Free(swappedinput);
             return NULL;
         }
         PyTuple_SET_ITEM(rettup, 0, outputobj);
@@ -266,6 +292,8 @@ errorexit:
         Py_DECREF(errorcb);
     }
     Py_XDECREF(exceptionobj);
+    if (byteswap)
+        PyMem_Free(swappedinput);
 
     return NULL;
 }
@@ -319,7 +347,27 @@ iconvcodec_decode(iconvcodecObject *self, PyObject *args, PyObject *kwargs)
     out_top = (char *)PyUnicode_AS_UNICODE(outputobj);                      \
 }
     while (inplen > 0) {
-        if (iconv(self->dechdl, (char**)&inp, &inplen, &out, &outlen) == -1) {
+        char *oldout = out;
+        char res = iconv(self->dechdl, (char**)&inp, &inplen, &out, &outlen);
+
+        if (byteswap) {
+            while (oldout < out)
+            {
+                char c0 = oldout[0];
+#if Py_UNICODE_SIZE == 2
+                oldout[0] = oldout[1];
+                oldout[1] = c0;
+#else
+                char c1 = oldout[1];
+                oldout[0] = oldout[3];
+                oldout[1] = oldout[2];
+                oldout[2] = c1;
+                oldout[3] = c0;
+#endif
+                oldout += sizeof(Py_UNICODE);
+            }
+        }
+        if (res == -1) {
             char         reason[128], *reasonpos = (char *)reason;
             int          errpos;
 
@@ -601,6 +649,36 @@ void
 init_iconv_codec(void)
 {
     PyObject *m;
+
+    char in = 1;
+    char *inptr = &in;
+    int insize = 1;
+    Py_UNICODE out = 0;
+    char *outptr = (char *)&out;
+    int outsize = sizeof(out);
+    int res;
+
+    iconv_t hdl = iconv_open(UNICODE_ENCODING, "ASCII");
+
+    if (hdl == (iconv_t)-1)
+        Py_FatalError("can't initialize the _iconv_codec module: iconv_open() failed");
+
+    res = iconv(hdl, &inptr, &insize, &outptr, &outsize);
+    if (res == -1)
+        Py_FatalError("can't initialize the _iconv_codec module: iconv() failed");
+
+    /* Check whether conv() returned native endianess or not for the choosen encoding */
+    if (out == 0x1)
+       byteswap = 0;
+#if Py_UNICODE_SIZE == 2
+    else if (out == 0x0100)
+#else
+    else if (out == 0x01000000)
+#endif
+       byteswap = 1;
+    else
+        Py_FatalError("can't initialize the _iconv_codec module: mixed endianess");
+    iconv_close(hdl);
 
     m = Py_InitModule("_iconv_codec", _iconv_codec_methods);
 
