@@ -74,6 +74,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - Patch #103636: Allow writing strings containing null bytes to an SSL socket
 
+- #232787 -- Modules/timemodule.c, Python/errors.c, Objects/intobject.c
+
 What's New in Python 2.0?
 =========================
 

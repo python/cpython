@@ -382,7 +382,7 @@ time_strptime(PyObject *self, PyObject *args)
 		PyErr_SetString(PyExc_ValueError, "format mismatch");
 		return NULL;
 	}
-	while (*s && isspace(*s))
+	while (*s && isspace(Py_CHARMASK(*s)))
 		s++;
 	if (*s) {
 		PyErr_Format(PyExc_ValueError,

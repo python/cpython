@@ -182,7 +182,7 @@ PyInt_FromString(char *s, char **pend, int base)
 		x = (long) PyOS_strtoul(s, &end, base);
 	else
 		x = PyOS_strtol(s, &end, base);
-	if (end == s || !isalnum(end[-1]))
+	if (end == s || !isalnum(Py_CHARMASK(end[-1])))
 		goto bad;
 	while (*end && isspace(Py_CHARMASK(*end)))
 		end++;

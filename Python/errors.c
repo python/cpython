@@ -402,7 +402,7 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 	for (f = format; *f; f++) {
 		if (*f == '%') {
 			const char* p = f;
-			while (*++f && *f != '%' && !isalpha(*f))
+			while (*++f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				;
 			switch (*f) {
 			case 'c':
@@ -457,15 +457,15 @@ PyErr_Format(PyObject *exception, const char *format, ...)
 			/* parse the width.precision part (we're only
 			   interested in the precision value, if any) */
 			n = 0;
-			while (isdigit(*f))
+			while (isdigit(Py_CHARMASK(*f)))
 				n = (n*10) + *f++ - '0';
 			if (*f == '.') {
 				f++;
 				n = 0;
-				while (isdigit(*f))
+				while (isdigit(Py_CHARMASK(*f)))
 					n = (n*10) + *f++ - '0';
 			}
-			while (*f && *f != '%' && !isalpha(*f))
+			while (*f && *f != '%' && !isalpha(Py_CHARMASK(*f)))
 				f++;
 			switch (*f) {
 			case 'c':
