@@ -32,13 +32,13 @@ if 'publish' not in dir(b):
 
 try:
     del b.__dict__
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed, 'del func.__dict__ expected TypeError'
 
 b.publish = 1
 try:
     b.__dict__ = None
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed, 'func.__dict__ = None expected TypeError'
 
 d = {'hello': 'world'}
@@ -65,8 +65,8 @@ else: raise TestFailed, 'expected AttributeError'
 # (it was already disallowed on bound methods).  See the PEP for details.
 try:
     F.a.publish = 1
-except TypeError: pass
-else: raise TestFailed, 'expected TypeError'
+except (AttributeError, TypeError): pass
+else: raise TestFailed, 'expected AttributeError or TypeError'
 
 # But setting it explicitly on the underlying function object is okay.
 F.a.im_func.publish = 1
@@ -85,14 +85,14 @@ if 'publish' not in dir(F.a):
 
 try:
     f1.a.publish = 0
-except TypeError: pass
-else: raise TestFailed, 'expected TypeError'
+except (AttributeError, TypeError): pass
+else: raise TestFailed, 'expected AttributeError or TypeError'
 
 # See the comment above about the change in semantics for Python 2.1b1
 try:
     F.a.myclass = F
-except TypeError: pass
-else: raise TestFailed, 'expected TypeError'
+except (AttributeError, TypeError): pass
+else: raise TestFailed, 'expected AttributeError or TypeError'
 
 F.a.im_func.myclass = F
 
@@ -108,7 +108,7 @@ if f1.a.myclass is not f2.a.myclass or \
 # try setting __dict__
 try:
     F.a.__dict__ = (1, 2, 3)
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed, 'expected TypeError'
 
 F.a.im_func.__dict__ = {'one': 11, 'two': 22, 'three': 33}
@@ -121,7 +121,7 @@ d = UserDict({'four': 44, 'five': 55})
 
 try:
     F.a.__dict__ = d
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 if f2.a.one <> f1.a.one <> F.a.one <> 11:
@@ -142,7 +142,7 @@ else: raise TestFailed
 
 try:
     F.id.foo = 12
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 try:
@@ -157,7 +157,7 @@ else: raise TestFailed
 
 try:
     eff.id.foo = 12
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 try:
@@ -171,17 +171,17 @@ def another():
 
 try:
     del another.__dict__
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 try:
     del another.func_dict
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 try:
     another.func_dict = None
-except TypeError: pass
+except (AttributeError, TypeError): pass
 else: raise TestFailed
 
 try:
@@ -214,6 +214,21 @@ d[foo]
 
 # Test all predefined function attributes systematically
 
+def cantset(obj, name, value):
+    verify(hasattr(obj, name)) # Otherwise it's probably a typo
+    try:
+        setattr(obj, name, value)
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be able to set %s to %r" % (name, value)
+    try:
+        delattr(obj, name)
+    except (AttributeError, TypeError):
+        pass
+    else:
+        raise TestFailed, "shouldn't be able to del %s" % name
+
 def test_func_closure():
     a = 12
     def f(): print a
@@ -221,18 +236,7 @@ def test_func_closure():
     verify(isinstance(c, tuple))
     verify(len(c) == 1)
     verify(c[0].__class__.__name__ == "cell") # don't have a type object handy
-    try:
-        f.func_closure = c
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to set func_closure"
-    try:
-        del a.func_closure
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to del func_closure"
+    cantset(f, "func_closure", c)
 
 def test_func_doc():
     def f(): pass
@@ -254,59 +258,21 @@ def test_func_doc():
 def test_func_globals():
     def f(): pass
     verify(f.func_globals is globals())
-    try:
-        f.func_globals = globals()
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to set func_globals"
-    try:
-        del f.func_globals
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to del func_globals"
+    cantset(f, "func_globals", globals())
 
 def test_func_name():
     def f(): pass
     verify(f.__name__ == "f")
     verify(f.func_name == "f")
-    try:
-        f.func_name = "f"
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to set func_name"
-    try:
-        f.__name__ = "f"
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to set __name__"
-    try:
-        del f.func_name
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to del func_name"
-    try:
-        del f.__name__
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to del __name__"
+    cantset(f, "func_name", "f")
+    cantset(f, "__name__", "f")
 
 def test_func_code():
     def f(): pass
     def g(): print 12
     verify(type(f.func_code) is types.CodeType)
     f.func_code = g.func_code
-    try:
-        del f.func_code
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to del func_code"
+    cantset(f, "func_code", None)
 
 def test_func_defaults():
     def f(a, b): return (a, b)
@@ -335,27 +301,64 @@ def test_func_dict():
     verify(a == {'hello': 'world'})
     verify(f.func_dict is a is f.__dict__)
     f.func_dict = {}
-    try:
-        f.hello
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "hello attribute should have disappeared"
+    verify(not hasattr(f, "hello"))
     f.__dict__ = {'world': 'hello'}
     verify(f.world == "hello")
     verify(f.__dict__ is f.func_dict == {'world': 'hello'})
-    try:
-        del f.func_dict
-    except (AttributeError, TypeError):
+    cantset(f, "func_dict", None)
+    cantset(f, "__dict__", None)
+
+def test_im_class():
+    class C:
+        def foo(self): pass
+    verify(C.foo.im_class is C)
+    verify(C().foo.im_class is C)
+    cantset(C.foo, "im_class", C)
+    cantset(C().foo, "im_class", C)
+
+def test_im_func():
+    def foo(self): pass
+    class C:
         pass
-    else:
-        raise TestFailed, "shouldn't be allowed to delete func_dict"
-    try:
-        del f.__dict__
-    except (AttributeError, TypeError):
-        pass
-    else:
-        raise TestFailed, "shouldn't be allowed to delete __dict__"
+    C.foo = foo
+    verify(C.foo.im_func is foo)
+    verify(C().foo.im_func is foo)
+    cantset(C.foo, "im_func", foo)
+    cantset(C().foo, "im_func", foo)
+
+def test_im_self():
+    class C:
+        def foo(self): pass
+    verify(C.foo.im_self is None)
+    c = C()
+    verify(c.foo.im_self is c)
+    cantset(C.foo, "im_self", None)
+    cantset(c.foo, "im_self", c)
+
+def test_im_dict():
+    class C:
+        def foo(self): pass
+        foo.bar = 42
+    verify(C.foo.__dict__ == {'bar': 42})
+    verify(C().foo.__dict__ == {'bar': 42})
+    cantset(C.foo, "__dict__", C.foo.__dict__)
+    cantset(C().foo, "__dict__", C.foo.__dict__)
+
+def test_im_doc():
+    class C:
+        def foo(self): "hello"
+    verify(C.foo.__doc__ == "hello")
+    verify(C().foo.__doc__ == "hello")
+    cantset(C.foo, "__doc__", "hello")
+    cantset(C().foo, "__doc__", "hello")
+
+def test_im_name():
+    class C:
+        def foo(self): pass
+    verify(C.foo.__name__ == "foo")
+    verify(C().foo.__name__ == "foo")
+    cantset(C.foo, "__name__", "foo")
+    cantset(C().foo, "__name__", "foo")
 
 def testmore():
     test_func_closure()
@@ -365,5 +368,12 @@ def testmore():
     test_func_code()
     test_func_defaults()
     test_func_dict()
+    # Tests for instance method attributes
+    test_im_class()
+    test_im_func()
+    test_im_self()
+    test_im_dict()
+    test_im_doc()
+    test_im_name()
 
 testmore()
