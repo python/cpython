@@ -7,6 +7,8 @@ resource named __main__ containing the compiled, marshalled script.
 """
 
 import sys
+sys.stdout = sys.stderr
+
 import string
 import os
 import marshal
@@ -38,21 +40,35 @@ def main():
 		template = os.path.join(p, TEMPLATE)
 		try:
 			tmpl = open(template, "rb")
+			tmpl.close()
 			break
 		except IOError:
 			continue
 	else:
 		# XXX Ought to put up a dialog
-		print "Template not found.  Exit."
+		print "Template", `template`, "not found"
 		return
 	
-	# Ask for source text
+	# Ask for source text if not specified in sys.argv[1:]
 	
-	srcfss, ok = macfs.StandardGetFile('TEXT')
-	if not ok:
-		tmpl.close()
-		return
-	filename = srcfss.as_pathname()
+	if not sys.argv[1:]:
+		srcfss, ok = macfs.StandardGetFile('TEXT')
+		if not ok:
+			return
+		filename = srcfss.as_pathname()
+		if not sys.argv: sys.argv.append('')
+		sys.argv.append(filename)
+	
+	# Loop over all files to be processed
+	
+	for filename in sys.argv[1:]:
+		process(template, filename)
+
+undefs = ('????', '    ', '\0\0\0\0')
+
+def process(template, filename):
+	
+	print "Processing", `filename`, "..."
 	
 	# Read the source and compile it
 	# (there's no point overwriting the destination if it has a syntax error)
@@ -63,8 +79,7 @@ def main():
 	try:
 		code = compile(text, filename, "exec")
 	except (SyntaxError, EOFError):
-		print "Syntax error in script"
-		tmpl.close()
+		print "Syntax error in script", `filename`
 		return
 	
 	# Set the destination file name
@@ -76,6 +91,7 @@ def main():
 	
 	# Copy the data from the template (creating the file as well)
 	
+	tmpl = open(template, "rb")
 	dest = open(destname, "wb")
 	data = tmpl.read()
 	if data:
@@ -84,8 +100,12 @@ def main():
 	tmpl.close()
 	
 	# Copy the creator and type of the template to the destination
+	# unless it already has one
 	
-	ctor, type = MacOS.GetCreatorAndType(template)
+	tctor, ttype = MacOS.GetCreatorAndType(template)
+	ctor, type = MacOS.GetCreatorAndType(destname)
+	if type in undefs: type = ttype
+	if ctor in undefs: ctor = tctor
 	MacOS.SetCreatorAndType(destname, ctor, type)
 	
 	# Open the input and output resource forks
@@ -161,6 +181,9 @@ def main():
 	# Close the resource file
 	
 	CloseResFile(output)
+	
+	print "Done with", `filename`, "..."
+
 
 if __name__ == '__main__':
 	main()
