@@ -1874,9 +1874,9 @@ def dis(pickle, out=None, indentlevel=4):
         if pos is not None:
             print >> out, "%5d:" % pos,
 
-        line = "%s %s%s" % (opcode.code,
-                            indentchunk * len(markstack),
-                            opcode.name)
+        line = "%-4s %s%s" % (repr(opcode.code)[1:-1],
+                              indentchunk * len(markstack),
+                              opcode.name)
 
         markmsg = None
         if markstack and markobject in opcode.stack_before:
@@ -1904,103 +1904,103 @@ _dis_test = """
 >>> x = [1, 2, (3, 4), {'abc': u"def"}]
 >>> pkl = pickle.dumps(x, 0)
 >>> dis(pkl)
-    0: ( MARK
-    1: l     LIST       (MARK at 0)
-    2: p PUT        0
-    5: I INT        1
-    8: a APPEND
-    9: I INT        2
-   12: a APPEND
-   13: ( MARK
-   14: I     INT        3
-   17: I     INT        4
-   20: t     TUPLE      (MARK at 13)
-   21: p PUT        1
-   24: a APPEND
-   25: ( MARK
-   26: d     DICT       (MARK at 25)
-   27: p PUT        2
-   30: S STRING     'abc'
-   37: p PUT        3
-   40: V UNICODE    u'def'
-   45: p PUT        4
-   48: s SETITEM
-   49: a APPEND
-   50: . STOP
+    0: (    MARK
+    1: l        LIST       (MARK at 0)
+    2: p    PUT        0
+    5: I    INT        1
+    8: a    APPEND
+    9: I    INT        2
+   12: a    APPEND
+   13: (    MARK
+   14: I        INT        3
+   17: I        INT        4
+   20: t        TUPLE      (MARK at 13)
+   21: p    PUT        1
+   24: a    APPEND
+   25: (    MARK
+   26: d        DICT       (MARK at 25)
+   27: p    PUT        2
+   30: S    STRING     'abc'
+   37: p    PUT        3
+   40: V    UNICODE    u'def'
+   45: p    PUT        4
+   48: s    SETITEM
+   49: a    APPEND
+   50: .    STOP
 
 Try again with a "binary" pickle.
 
 >>> pkl = pickle.dumps(x, 1)
 >>> dis(pkl)
-    0: ] EMPTY_LIST
-    1: q BINPUT     0
-    3: ( MARK
-    4: K     BININT1    1
-    6: K     BININT1    2
-    8: (     MARK
-    9: K         BININT1    3
-   11: K         BININT1    4
-   13: t         TUPLE      (MARK at 8)
-   14: q     BINPUT     1
-   16: }     EMPTY_DICT
-   17: q     BINPUT     2
-   19: U     SHORT_BINSTRING 'abc'
-   24: q     BINPUT     3
-   26: X     BINUNICODE u'def'
-   34: q     BINPUT     4
-   36: s     SETITEM
-   37: e     APPENDS    (MARK at 3)
-   38: . STOP
+    0: ]    EMPTY_LIST
+    1: q    BINPUT     0
+    3: (    MARK
+    4: K        BININT1    1
+    6: K        BININT1    2
+    8: (        MARK
+    9: K            BININT1    3
+   11: K            BININT1    4
+   13: t            TUPLE      (MARK at 8)
+   14: q        BINPUT     1
+   16: }        EMPTY_DICT
+   17: q        BINPUT     2
+   19: U        SHORT_BINSTRING 'abc'
+   24: q        BINPUT     3
+   26: X        BINUNICODE u'def'
+   34: q        BINPUT     4
+   36: s        SETITEM
+   37: e        APPENDS    (MARK at 3)
+   38: .    STOP
 
 Exercise the INST/OBJ/BUILD family.
 
 >>> import random
 >>> dis(pickle.dumps(random.random, 0))
-    0: c GLOBAL     'random random'
-   15: p PUT        0
-   18: . STOP
+    0: c    GLOBAL     'random random'
+   15: p    PUT        0
+   18: .    STOP
 
 >>> x = [pickle.PicklingError()] * 2
 >>> dis(pickle.dumps(x, 0))
-    0: ( MARK
-    1: l     LIST       (MARK at 0)
-    2: p PUT        0
-    5: ( MARK
-    6: i     INST       'pickle PicklingError' (MARK at 5)
-   28: p PUT        1
-   31: ( MARK
-   32: d     DICT       (MARK at 31)
-   33: p PUT        2
-   36: S STRING     'args'
-   44: p PUT        3
-   47: ( MARK
-   48: t     TUPLE      (MARK at 47)
-   49: s SETITEM
-   50: b BUILD
-   51: a APPEND
-   52: g GET        1
-   55: a APPEND
-   56: . STOP
+    0: (    MARK
+    1: l        LIST       (MARK at 0)
+    2: p    PUT        0
+    5: (    MARK
+    6: i        INST       'pickle PicklingError' (MARK at 5)
+   28: p    PUT        1
+   31: (    MARK
+   32: d        DICT       (MARK at 31)
+   33: p    PUT        2
+   36: S    STRING     'args'
+   44: p    PUT        3
+   47: (    MARK
+   48: t        TUPLE      (MARK at 47)
+   49: s    SETITEM
+   50: b    BUILD
+   51: a    APPEND
+   52: g    GET        1
+   55: a    APPEND
+   56: .    STOP
 
 >>> dis(pickle.dumps(x, 1))
-    0: ] EMPTY_LIST
-    1: q BINPUT     0
-    3: ( MARK
-    4: (     MARK
-    5: c         GLOBAL     'pickle PicklingError'
-   27: q         BINPUT     1
-   29: o         OBJ        (MARK at 4)
-   30: q     BINPUT     2
-   32: }     EMPTY_DICT
-   33: q     BINPUT     3
-   35: U     SHORT_BINSTRING 'args'
-   41: q     BINPUT     4
-   43: )     EMPTY_TUPLE
-   44: s     SETITEM
-   45: b     BUILD
-   46: h     BINGET     2
-   48: e     APPENDS    (MARK at 3)
-   49: . STOP
+    0: ]    EMPTY_LIST
+    1: q    BINPUT     0
+    3: (    MARK
+    4: (        MARK
+    5: c            GLOBAL     'pickle PicklingError'
+   27: q            BINPUT     1
+   29: o            OBJ        (MARK at 4)
+   30: q        BINPUT     2
+   32: }        EMPTY_DICT
+   33: q        BINPUT     3
+   35: U        SHORT_BINSTRING 'args'
+   41: q        BINPUT     4
+   43: )        EMPTY_TUPLE
+   44: s        SETITEM
+   45: b        BUILD
+   46: h        BINGET     2
+   48: e        APPENDS    (MARK at 3)
+   49: .    STOP
 
 Try "the canonical" recursive-object test.
 
@@ -2016,24 +2016,24 @@ True
 >>> T[0][0] is T
 True
 >>> dis(pickle.dumps(L, 0))
-    0: ( MARK
-    1: l     LIST       (MARK at 0)
-    2: p PUT        0
-    5: ( MARK
-    6: g     GET        0
-    9: t     TUPLE      (MARK at 5)
-   10: p PUT        1
-   13: a APPEND
-   14: . STOP
+    0: (    MARK
+    1: l        LIST       (MARK at 0)
+    2: p    PUT        0
+    5: (    MARK
+    6: g        GET        0
+    9: t        TUPLE      (MARK at 5)
+   10: p    PUT        1
+   13: a    APPEND
+   14: .    STOP
 >>> dis(pickle.dumps(L, 1))
-    0: ] EMPTY_LIST
-    1: q BINPUT     0
-    3: ( MARK
-    4: h     BINGET     0
-    6: t     TUPLE      (MARK at 3)
-    7: q BINPUT     1
-    9: a APPEND
-   10: . STOP
+    0: ]    EMPTY_LIST
+    1: q    BINPUT     0
+    3: (    MARK
+    4: h        BINGET     0
+    6: t        TUPLE      (MARK at 3)
+    7: q    BINPUT     1
+    9: a    APPEND
+   10: .    STOP
 
 The protocol 0 pickle of the tuple causes the disassembly to get confused,
 as it doesn't realize that the POP opcode at 16 gets rid of the MARK at 0
@@ -2043,31 +2043,55 @@ POP_MARK gets rid of the MARK.  Doing a better job on the protocol 0
 pickle would require the disassembler to emulate the stack.
 
 >>> dis(pickle.dumps(T, 0))
-    0: ( MARK
-    1: (     MARK
-    2: l         LIST       (MARK at 1)
-    3: p     PUT        0
-    6: (     MARK
-    7: g         GET        0
-   10: t         TUPLE      (MARK at 6)
-   11: p     PUT        1
-   14: a     APPEND
-   15: 0     POP
-   16: 0     POP
-   17: g     GET        1
-   20: .     STOP
+    0: (    MARK
+    1: (        MARK
+    2: l            LIST       (MARK at 1)
+    3: p        PUT        0
+    6: (        MARK
+    7: g            GET        0
+   10: t            TUPLE      (MARK at 6)
+   11: p        PUT        1
+   14: a        APPEND
+   15: 0        POP
+   16: 0        POP
+   17: g        GET        1
+   20: .        STOP
 >>> dis(pickle.dumps(T, 1))
-    0: ( MARK
-    1: ]     EMPTY_LIST
-    2: q     BINPUT     0
-    4: (     MARK
-    5: h         BINGET     0
-    7: t         TUPLE      (MARK at 4)
-    8: q     BINPUT     1
-   10: a     APPEND
-   11: 1     POP_MARK   (MARK at 0)
-   12: h BINGET     1
-   14: . STOP
+    0: (    MARK
+    1: ]        EMPTY_LIST
+    2: q        BINPUT     0
+    4: (        MARK
+    5: h            BINGET     0
+    7: t            TUPLE      (MARK at 4)
+    8: q        BINPUT     1
+   10: a        APPEND
+   11: 1        POP_MARK   (MARK at 0)
+   12: h    BINGET     1
+   14: .    STOP
+
+Try protocol 2.
+
+>>> dis(pickle.dumps(L, 2))
+    0: \x80 PROTO      2
+    2: ]    EMPTY_LIST
+    3: q    BINPUT     0
+    5: h    BINGET     0
+    7: \x85 TUPLE1
+    8: q    BINPUT     1
+   10: a    APPEND
+   11: .    STOP
+
+>>> dis(pickle.dumps(T, 2))
+    0: \x80 PROTO      2
+    2: ]    EMPTY_LIST
+    3: q    BINPUT     0
+    5: h    BINGET     0
+    7: \x85 TUPLE1
+    8: q    BINPUT     1
+   10: a    APPEND
+   11: 0    POP
+   12: h    BINGET     1
+   14: .    STOP
 """
 
 __test__ = {'disassembler_test': _dis_test,
