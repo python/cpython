@@ -139,8 +139,13 @@ class _Database:
         return len(self._index)
 
     def close(self):
+        self._commit()
         self._index = None
         self._datfile = self._dirfile = self._bakfile = None
+
+    def __del__(self):
+        if self._index is not None:
+            self._commit()
 
 
 def open(file, flag = None, mode = None):
