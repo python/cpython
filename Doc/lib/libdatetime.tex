@@ -16,7 +16,7 @@
 The \module{datetime} module supplies classes for manipulating dates
 and times in both simple and complex ways.  While date and time
 arithmetic is supported, the focus of the implementation is on
-efficient member extraction, for output formatting and manipulation.
+efficient member extraction for output formatting and manipulation.
 
 There are two kinds of date and time objects: ``naive'' and ``aware''.
 This distinction refers to whether the object has any notion of time
@@ -28,15 +28,17 @@ whether a particular number represents meters, miles, or mass.  Naive
 \class{datetime} objects are easy to understand and to work with, at
 the cost of ignoring some aspects of reality.
 
-For applications requiring more, \class{datetime} and \class{time} objects
-have an optional time zone information member.
-These \class{tzinfo} objects capture information about the offset from
-UTC time, the time zone name, and whether Daylight Saving Time is in
-effect.  Note that no concrete \class{tzinfo} classes are supplied by
-the \module{datetime} module.  Instead, they provide a framework for
-incorporating the level of detail an app may require.  The rules for
-time adjustment across the world are more political than rational, and
-there is no standard suitable for every app.
+For applications requiring more, \class{datetime} and \class{time}
+objects have an optional time zone information member,
+\member{tzinfo}, that can contain an instance of a subclass of 
+the abstract \class{tzinfo} class.  These \class{tzinfo} objects
+capture information about the offset from UTC time, the time zone
+name, and whether Daylight Saving Time is in effect.  Note that no
+concrete \class{tzinfo} classes are supplied by the \module{datetime}
+module.  Instead, they provide a framework for incorporating the level
+of detail an application may require.  The rules for time adjustment across
+the world are more political than rational, and there is no standard
+suitable for every application.
 
 The \module{datetime} module exports the following constants:
 
@@ -73,22 +75,22 @@ The \module{datetime} module exports the following constants:
 \end{classdesc*}
 
 \begin{classdesc*}{datetime}
-  A combination of a naive date and a time.
+  A combination of a date and a time.
   Attributes: \member{year}, \member{month}, \member{day},
               \member{hour}, \member{minute}, \member{second},
               \member{microsecond}, and \member{tzinfo}.
 \end{classdesc*}
 
 \begin{classdesc*}{timedelta}
-  A duration, expressing the difference between two \class{date},
-  \class{time}, or \class{datetime} instances, to microsecond
+  A duration expressing the difference between two \class{date},
+  \class{time}, or \class{datetime} instances to microsecond
   resolution.
 \end{classdesc*}
 
 \begin{classdesc*}{tzinfo}
   An abstract base class for time zone information objects.  These
   are used by the  \class{datetime} and \class{time} classes to
-  provided a customizable notion of time adjustment (for example, to
+  provide a customizable notion of time adjustment (for example, to
   account for time zone and/or daylight saving time).
 \end{classdesc*}
 
@@ -98,7 +100,7 @@ Objects of the \class{date} type are always naive.
 
 An object \var{d} of type \class{time} or \class{datetime} may be
 naive or aware.  \var{d} is aware if \code{\var{d}.tzinfo} is not
-\code{None}, and \code{\var{d}.tzinfo.utcoffset(\var{d})} does not return
+\code{None} and \code{\var{d}.tzinfo.utcoffset(\var{d})} does not return
 \code{None}.  If \code{\var{d}.tzinfo} is \code{None}, or if
 \code{\var{d}.tzinfo} is not \code{None} but
 \code{\var{d}.tzinfo.utcoffset(\var{d})} returns \code{None}, \var{d}
@@ -132,12 +134,12 @@ between two dates or times.
   Only \var{days}, \var{seconds} and \var{microseconds} are stored
   internally.  Arguments are converted to those units:
 
-\begin{verbatim}
-A millisecond is converted to 1000 microseconds.
-A minute is converted to 60 seconds.
-An hour is converted to 3600 seconds.
-A week is converted to 7 days.
-\end{verbatim}
+\begin{itemize}
+  \item A millisecond is converted to 1000 microseconds.
+  \item A minute is converted to 60 seconds.
+  \item An hour is converted to 3600 seconds.
+  \item A week is converted to 7 days.
+\end{itemize}
 
   and days, seconds and microseconds are then normalized so that the
   representation is unique, with
@@ -148,7 +150,7 @@ A week is converted to 7 days.
   \item \code{-999999999 <= \var{days} <= 999999999}
 \end{itemize}
 
-  If any argument is a float, and there are fractional microseconds,
+  If any argument is a float and there are fractional microseconds,
   the fractional microseconds left over from all arguments are combined
   and their sum is rounded to the nearest microsecond.  If no
   argument is a float, the conversion and normalization processes
@@ -199,6 +201,7 @@ Instance attributes (read-only):
 
 Supported operations:
 
+% XXX this table is too wide!
 \begin{tableiii}{c|l|c}{code}{Operation}{Result}{Notes}
   \lineiii{\var{t1} = \var{t2} + \var{t3}}
           {Sum of \var{t2} and \var{t3}.
@@ -224,12 +227,11 @@ Supported operations:
           {(2)}
   \lineiii{-\var{t1}}
           {equivalent to \class{timedelta}(-\var{t1.days}, -\var{t1.seconds},
-           -\var{t1.microseconds}),and to \var{t1}* -1.}
+           -\var{t1.microseconds}), and to \var{t1}* -1.}
           {(1)(4)}
   \lineiii{abs(\var{t})}
           {equivalent to +\var{t} when \code{t.days >= 0}, and to
-           -\var{t} when \code{t.days < 0}.
-           overflow.}
+           -\var{t} when \code{t.days < 0}.}
           {(2)}
 \end{tableiii}
 \noindent
@@ -257,7 +259,7 @@ Comparisons of \class{timedelta} objects are supported with the
 \class{timedelta} object representing the smaller duration considered
 to be the smaller timedelta.
 
-\class{timedelta} objects are hashable (usable as dictionary key),
+\class{timedelta} objects are hashable (usable as dictionary keys),
 support efficient pickling, and in Boolean contexts, a \class{timedelta}
 object is considered to be true if and only if it isn't equal to
 \code{timedelta(0)}.
@@ -332,7 +334,7 @@ Class attributes:
 Instance attributes (read-only):
 
 \begin{memberdesc}{year}
-  Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive
+  Between \constant{MINYEAR} and \constant{MAXYEAR} inclusive.
 \end{memberdesc}
 
 \begin{memberdesc}{month}
@@ -346,6 +348,7 @@ Instance attributes (read-only):
 
 Supported operations:
 
+% XXX rewrite to be a table
 \begin{itemize}
   \item
     date1 + timedelta -> date2
