@@ -46,6 +46,11 @@ Extension modules
 
 Library
 
+- Tix exposes more commands through the classes DirSelectBox,
+  DirSelectDialog, ListNoteBook, Meter, CheckList, and the
+  methods tix_addbitmapdir, tix_cget, tix_configure, tix_filedialog,
+  tix_getbitmap, tix_getimage, tix_option_get, and tix_resetoptions.
+
 - Traceback objects are now scanned by cyclic garbage collection, so
   cycles created by casual use of sys.exc_info() no longer cause
   permanent memory leaks (provided garbage collection is enabled).
