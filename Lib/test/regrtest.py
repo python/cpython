@@ -8,16 +8,24 @@ additional facilities.
 
 Command line options:
 
--v: verbose -- run tests in verbose mode with output to stdout
--q: quiet -- don't print anything except if a test fails
+-v: verbose  -- run tests in verbose mode with output to stdout
+-q: quiet    -- don't print anything except if a test fails
 -g: generate -- write the output file for a test instead of comparing it
--x: exclude -- arguments are tests to *exclude*
+-x: exclude  -- arguments are tests to *exclude*
+-s: single   -- run only a single test (see below)
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
 -v is incompatible with -g and does not compare test output files.
+
+-s means to run only a single test and exit.  This is useful when Purifying
+the Python interpreter.  The file /tmp/pynexttest is read to find the next
+test to run.  If this file is missing, the first test_*.py file in testdir or
+on the command line is used.  (actually tempfile.gettempdir() is used instead
+of /tmp).
+
 """
 
 import sys
@@ -48,7 +56,7 @@ def main(tests=None, testdir=None):
     """
     
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'vgqx')
+        opts, args = getopt.getopt(sys.argv[1:], 'vgqxs')
     except getopt.error, msg:
         print msg
         print __doc__
@@ -57,17 +65,30 @@ def main(tests=None, testdir=None):
     quiet = 0
     generate = 0
     exclude = 0
+    single = 0
     for o, a in opts:
         if o == '-v': verbose = verbose+1
         if o == '-q': quiet = 1; verbose = 0
         if o == '-g': generate = 1
         if o == '-x': exclude = 1
+        if o == '-s': single = 1
     if generate and verbose:
         print "-g and -v don't go together!"
         return 2
     good = []
     bad = []
     skipped = []
+
+    if single:
+        from tempfile import gettempdir
+        filename = os.path.join(gettempdir(), 'pynexttest')
+        try:
+            fp = open(filename, 'r')
+            next = string.strip(fp.read())
+            tests = [next]
+            fp.close()
+        except IOError:
+            pass
     for i in range(len(args)):
         # Strip trailing ".py" from arguments
         if args[i][-3:] == '.py':
@@ -81,6 +102,8 @@ def main(tests=None, testdir=None):
         nottests[:0] = args
         args = []
     tests = tests or args or findtests(testdir, stdtests, nottests)
+    if single:
+        tests = tests[:1]
     test_support.verbose = verbose      # Tell tests to be moderately quiet
     for test in tests:
         if not quiet:
@@ -105,6 +128,21 @@ def main(tests=None, testdir=None):
     if skipped and not quiet:
         print count(len(skipped), "test"), "skipped:",
         print string.join(skipped)
+
+    if single:
+        alltests = findtests(testdir, stdtests, nottests)
+        for i in range(len(alltests)):
+            if tests[0] == alltests[i]:
+                if i == len(alltests) - 1:
+                    os.unlink(filename)
+                else:
+                    fp = open(filename, 'w')
+                    fp.write(alltests[i+1] + '\n')
+                    fp.close()
+                break
+        else:
+            os.unlink(filename)
+
     return len(bad) > 0
 
 STDTESTS = [
