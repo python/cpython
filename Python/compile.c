@@ -4731,7 +4731,7 @@ jcompile(node *n, const char *filename, struct compiling *base,
 		cellvars = dict_keys_inorder(sc.c_cellvars, 0);
 		freevars = dict_keys_inorder(sc.c_freevars,
 					     PyTuple_GET_SIZE(cellvars));
-		filename = PyString_InternFromString(sc.c_filename);
+		filename = PyString_FromString(sc.c_filename);
 		name = PyString_InternFromString(sc.c_name);
 		if (!PyErr_Occurred())
 			co = PyCode_New(sc.c_argcount,
