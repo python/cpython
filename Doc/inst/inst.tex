@@ -1,6 +1,7 @@
 \documentclass{howto}
 \usepackage{ltxmarkup}
 \usepackage{times}
+\usepackage{distutils}
 
 \title{Installing Python Modules}
 
@@ -23,19 +24,6 @@
 % Hey wow, Guido didn't write this one either!
 \author{Greg Ward}
 \authoraddress{E-mail: \email{gward@python.net}}
-
-% Should these be added to the standard Python doc tools?  (They'll be
-% needed for my "Distributing Python Modules" guide, too.)
-\newcommand{\command}[1]{\code{#1}}
-\newcommand{\option}[1]{\textsf{\small{#1}}}
-\newcommand{\filevar}[1]{{\textsl{\filenq{#1}}}}
-\newcommand{\homefile}[1]{\file{\tilde/#1}}
-\newcommand{\comingsoon}{\emph{Coming soon...}}
-
-% And how about these?  Very handy for writing pathnames (tilde for
-% Unix, backslash for DOS/Windows).
-\renewcommand{\tilde}{\raisebox{-0.5ex}{\symbol{126}}}
-\newcommand{\bslash}{\symbol{92}}      % XXX only works in tt fonts!
 
 
 \begin{document}
