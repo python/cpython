@@ -5,7 +5,7 @@
     
 import gdbm
 from gdbm import error
-from test_support import verbose
+from test_support import verbose, TestFailed
 
 filename= '/tmp/delete_me'
 
@@ -18,6 +18,12 @@ if verbose:
     
 g.has_key('a')
 g.close()
+try:
+    g['a']
+except error:
+    pass
+else:
+    raise TestFailed, "expected gdbm.error accessing closed database"
 g = gdbm.open(filename, 'r')
 g.close()
 g = gdbm.open(filename, 'rw')
