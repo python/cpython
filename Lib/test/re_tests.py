@@ -34,8 +34,10 @@ benchmarks = [
 #         3: a string that will be eval()'ed to produce a test string.
 #            This is an arbitrary Python expression; the available
 #            variables are "found" (the whole match), and "g1", "g2", ...
-#            up to "g10" contain the contents of each group, or the
-#            string 'None' if the group wasn't given a value.
+#            up to "g99" contain the contents of each group, or the
+#            string 'None' if the group wasn't given a value, or the
+#            string 'Error' if the group index was out of range;
+#            also "groups", the return value of m.group() (a tuple).
 #         4: The expected result of evaluating the expression.
 #            If the two don't match, an error is reported.
 #
@@ -137,7 +139,7 @@ tests = [
  'found+"-"+g1', 'ef-'),
 ('$b', 'b', FAIL),
 ('a\\(b', 'a(b', SUCCEED,
- 'found+"-"+g1', 'a(b-None'),
+ 'found+"-"+g1', 'a(b-Error'),
 ('a\\(*b', 'ab', SUCCEED,
  'found', 'ab'),
 ('a\\(*b', 'a((b', SUCCEED,

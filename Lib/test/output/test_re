@@ -59,7 +59,7 @@ test_re
 ('()ef', 'def', 0, 'found+"-"+g1', 'ef-')
 === Syntax error: ('()ef', 'def', 0, 'found+"-"+g1', 'ef-')
 ('$b', 'b', 1)
-('a\\(b', 'a(b', 0, 'found+"-"+g1', 'a(b-None')
+('a\\(b', 'a(b', 0, 'found+"-"+g1', 'a(b-Error')
 ('a\\(*b', 'ab', 0, 'found', 'ab')
 ('a\\(*b', 'a((b', 0, 'found', 'a((b')
 ('a\\\\b', 'a\\b', 0, 'found', 'a\\b')
