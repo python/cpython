@@ -47,9 +47,9 @@ if verbose:
     print 'Running tests on character literals'
 
 for i in [0, 8, 16, 32, 64, 127, 128, 255]:
-    test(r"""sre.match("\%03o" % i, chr(i)) != None""", 1)
-    test(r"""sre.match("\%03o0" % i, chr(i)+"0") != None""", 1)
-    test(r"""sre.match("\%03o8" % i, chr(i)+"8") != None""", 1)
+    test(r"""sre.match(r"\%03o" % i, chr(i)) != None""", 1)
+    test(r"""sre.match(r"\%03o0" % i, chr(i)+"0") != None""", 1)
+    test(r"""sre.match(r"\%03o8" % i, chr(i)+"8") != None""", 1)
     test(r"""sre.match(r"\x%02x" % i, chr(i)) != None""", 1)
     test(r"""sre.match(r"\x%02x0" % i, chr(i)+"0") != None""", 1)
     test(r"""sre.match(r"\x%02xz" % i, chr(i)+"z") != None""", 1)
@@ -61,27 +61,27 @@ test(r"""sre.match("\911", "")""", None, sre.error)
 if verbose:
     print 'Running tests on sre.search and sre.match'
 
-test(r"""sre.search('x*', 'axx').span(0)""", (0, 0))
-test(r"""sre.search('x*', 'axx').span()""", (0, 0))
-test(r"""sre.search('x+', 'axx').span(0)""", (1, 3))
-test(r"""sre.search('x+', 'axx').span()""", (1, 3))
-test(r"""sre.search('x', 'aaa')""", None)
+test(r"""sre.search(r'x*', 'axx').span(0)""", (0, 0))
+test(r"""sre.search(r'x*', 'axx').span()""", (0, 0))
+test(r"""sre.search(r'x+', 'axx').span(0)""", (1, 3))
+test(r"""sre.search(r'x+', 'axx').span()""", (1, 3))
+test(r"""sre.search(r'x', 'aaa')""", None)
 
-test(r"""sre.match('a*', 'xxx').span(0)""", (0, 0))
-test(r"""sre.match('a*', 'xxx').span()""", (0, 0))
-test(r"""sre.match('x*', 'xxxa').span(0)""", (0, 3))
-test(r"""sre.match('x*', 'xxxa').span()""", (0, 3))
-test(r"""sre.match('a+', 'xxx')""", None)
+test(r"""sre.match(r'a*', 'xxx').span(0)""", (0, 0))
+test(r"""sre.match(r'a*', 'xxx').span()""", (0, 0))
+test(r"""sre.match(r'x*', 'xxxa').span(0)""", (0, 3))
+test(r"""sre.match(r'x*', 'xxxa').span()""", (0, 3))
+test(r"""sre.match(r'a+', 'xxx')""", None)
 
 # bug 113254
-test(r"""sre.match('(a)|(b)', 'b').start(1)""", -1)
-test(r"""sre.match('(a)|(b)', 'b').end(1)""", -1)
-test(r"""sre.match('(a)|(b)', 'b').span(1)""", (-1, -1))
+test(r"""sre.match(r'(a)|(b)', 'b').start(1)""", -1)
+test(r"""sre.match(r'(a)|(b)', 'b').end(1)""", -1)
+test(r"""sre.match(r'(a)|(b)', 'b').span(1)""", (-1, -1))
 
 if verbose:
     print 'Running tests on sre.sub'
 
-test(r"""sre.sub("(?i)b+", "x", "bbbb BBBB")""", 'x x')
+test(r"""sre.sub(r"(?i)b+", "x", "bbbb BBBB")""", 'x x')
 
 def bump_num(matchobj):
     int_value = int(matchobj.group(0))
@@ -90,97 +90,97 @@ def bump_num(matchobj):
 test(r"""sre.sub(r'\d+', bump_num, '08.2 -2 23x99y')""", '9.3 -3 24x100y')
 test(r"""sre.sub(r'\d+', bump_num, '08.2 -2 23x99y', 3)""", '9.3 -3 23x99y')
 
-test(r"""sre.sub('.', lambda m: r"\n", 'x')""", '\\n')
-test(r"""sre.sub('.', r"\n", 'x')""", '\n')
+test(r"""sre.sub(r'.', lambda m: r"\n", 'x')""", '\\n')
+test(r"""sre.sub(r'.', r"\n", 'x')""", '\n')
 
 s = r"\1\1"
 
-test(r"""sre.sub('(.)', s, 'x')""", 'xx')
-test(r"""sre.sub('(.)', sre.escape(s), 'x')""", s)
-test(r"""sre.sub('(.)', lambda m: s, 'x')""", s)
+test(r"""sre.sub(r'(.)', s, 'x')""", 'xx')
+test(r"""sre.sub(r'(.)', sre.escape(s), 'x')""", s)
+test(r"""sre.sub(r'(.)', lambda m: s, 'x')""", s)
 
-test(r"""sre.sub('(?P<a>x)', '\g<a>\g<a>', 'xx')""", 'xxxx')
-test(r"""sre.sub('(?P<a>x)', '\g<a>\g<1>', 'xx')""", 'xxxx')
-test(r"""sre.sub('(?P<unk>x)', '\g<unk>\g<unk>', 'xx')""", 'xxxx')
-test(r"""sre.sub('(?P<unk>x)', '\g<1>\g<1>', 'xx')""", 'xxxx')
+test(r"""sre.sub(r'(?P<a>x)', '\g<a>\g<a>', 'xx')""", 'xxxx')
+test(r"""sre.sub(r'(?P<a>x)', '\g<a>\g<1>', 'xx')""", 'xxxx')
+test(r"""sre.sub(r'(?P<unk>x)', '\g<unk>\g<unk>', 'xx')""", 'xxxx')
+test(r"""sre.sub(r'(?P<unk>x)', '\g<1>\g<1>', 'xx')""", 'xxxx')
 
-test(r"""sre.sub('a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a')""", '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
-test(r"""sre.sub('a', '\t\n\v\r\f\a', 'a')""", '\t\n\v\r\f\a')
-test(r"""sre.sub('a', '\t\n\v\r\f\a', 'a')""", (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
+test(r"""sre.sub(r'a', r'\t\n\v\r\f\a\b\B\Z\a\A\w\W\s\S\d\D', 'a')""", '\t\n\v\r\f\a\b\\B\\Z\a\\A\\w\\W\\s\\S\\d\\D')
+test(r"""sre.sub(r'a', '\t\n\v\r\f\a', 'a')""", '\t\n\v\r\f\a')
+test(r"""sre.sub(r'a', '\t\n\v\r\f\a', 'a')""", (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)))
 
-test(r"""sre.sub('^\s*', 'X', 'test')""", 'Xtest')
+test(r"""sre.sub(r'^\s*', 'X', 'test')""", 'Xtest')
 
 # qualified sub
-test(r"""sre.sub('a', 'b', 'aaaaa')""", 'bbbbb')
-test(r"""sre.sub('a', 'b', 'aaaaa', 1)""", 'baaaa')
+test(r"""sre.sub(r'a', 'b', 'aaaaa')""", 'bbbbb')
+test(r"""sre.sub(r'a', 'b', 'aaaaa', 1)""", 'baaaa')
 
 if verbose:
     print 'Running tests on symbolic references'
 
-test(r"""sre.sub('(?P<a>x)', '\g<a', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)', '\g<', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)', '\g', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)', '\g<a a>', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)', '\g<1a1>', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)', '\g<ab>', 'xx')""", None, IndexError)
-test(r"""sre.sub('(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')""", None, sre.error)
-test(r"""sre.sub('(?P<a>x)|(?P<b>y)', '\\2', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g<a', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g<', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g<a a>', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g<1a1>', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)', '\g<ab>', 'xx')""", None, IndexError)
+test(r"""sre.sub(r'(?P<a>x)|(?P<b>y)', '\g<b>', 'xx')""", None, sre.error)
+test(r"""sre.sub(r'(?P<a>x)|(?P<b>y)', '\\2', 'xx')""", None, sre.error)
 
 if verbose:
     print 'Running tests on sre.subn'
 
-test(r"""sre.subn("(?i)b+", "x", "bbbb BBBB")""", ('x x', 2))
-test(r"""sre.subn("b+", "x", "bbbb BBBB")""", ('x BBBB', 1))
-test(r"""sre.subn("b+", "x", "xyz")""", ('xyz', 0))
-test(r"""sre.subn("b*", "x", "xyz")""", ('xxxyxzx', 4))
-test(r"""sre.subn("b*", "x", "xyz", 2)""", ('xxxyz', 2))
+test(r"""sre.subn(r"(?i)b+", "x", "bbbb BBBB")""", ('x x', 2))
+test(r"""sre.subn(r"b+", "x", "bbbb BBBB")""", ('x BBBB', 1))
+test(r"""sre.subn(r"b+", "x", "xyz")""", ('xyz', 0))
+test(r"""sre.subn(r"b*", "x", "xyz")""", ('xxxyxzx', 4))
+test(r"""sre.subn(r"b*", "x", "xyz", 2)""", ('xxxyz', 2))
 
 if verbose:
     print 'Running tests on sre.split'
 
-test(r"""sre.split(":", ":a:b::c")""", ['', 'a', 'b', '', 'c'])
-test(r"""sre.split(":*", ":a:b::c")""", ['', 'a', 'b', 'c'])
-test(r"""sre.split("(:*)", ":a:b::c")""", ['', ':', 'a', ':', 'b', '::', 'c'])
-test(r"""sre.split("(?::*)", ":a:b::c")""", ['', 'a', 'b', 'c'])
-test(r"""sre.split("(:)*", ":a:b::c")""", ['', ':', 'a', ':', 'b', ':', 'c'])
-test(r"""sre.split("([b:]+)", ":a:b::c")""", ['', ':', 'a', ':b::', 'c'])
-test(r"""sre.split("(b)|(:+)", ":a:b::c")""",
+test(r"""sre.split(r":", ":a:b::c")""", ['', 'a', 'b', '', 'c'])
+test(r"""sre.split(r":*", ":a:b::c")""", ['', 'a', 'b', 'c'])
+test(r"""sre.split(r"(:*)", ":a:b::c")""", ['', ':', 'a', ':', 'b', '::', 'c'])
+test(r"""sre.split(r"(?::*)", ":a:b::c")""", ['', 'a', 'b', 'c'])
+test(r"""sre.split(r"(:)*", ":a:b::c")""", ['', ':', 'a', ':', 'b', ':', 'c'])
+test(r"""sre.split(r"([b:]+)", ":a:b::c")""", ['', ':', 'a', ':b::', 'c'])
+test(r"""sre.split(r"(b)|(:+)", ":a:b::c")""",
      ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c'])
-test(r"""sre.split("(?:b)|(?::+)", ":a:b::c")""", ['', 'a', '', '', 'c'])
+test(r"""sre.split(r"(?:b)|(?::+)", ":a:b::c")""", ['', 'a', '', '', 'c'])
 
-test(r"""sre.split(":", ":a:b::c", 2)""", ['', 'a', 'b::c'])
-test(r"""sre.split(':', 'a:b:c:d', 2)""", ['a', 'b', 'c:d'])
+test(r"""sre.split(r":", ":a:b::c", 2)""", ['', 'a', 'b::c'])
+test(r"""sre.split(r':', 'a:b:c:d', 2)""", ['a', 'b', 'c:d'])
 
-test(r"""sre.split("(:)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
-test(r"""sre.split("(:*)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
+test(r"""sre.split(r"(:)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
+test(r"""sre.split(r"(:*)", ":a:b::c", 2)""", ['', ':', 'a', ':', 'b::c'])
 
 if verbose:
     print "Running tests on sre.findall"
 
-test(r"""sre.findall(":+", "abc")""", [])
-test(r"""sre.findall(":+", "a:b::c:::d")""", [":", "::", ":::"])
-test(r"""sre.findall("(:+)", "a:b::c:::d")""", [":", "::", ":::"])
-test(r"""sre.findall("(:)(:*)", "a:b::c:::d")""",
+test(r"""sre.findall(r":+", "abc")""", [])
+test(r"""sre.findall(r":+", "a:b::c:::d")""", [":", "::", ":::"])
+test(r"""sre.findall(r"(:+)", "a:b::c:::d")""", [":", "::", ":::"])
+test(r"""sre.findall(r"(:)(:*)", "a:b::c:::d")""",
      [(":", ""), (":", ":"), (":", "::")])
-test(r"""sre.findall("(a)|(b)", "abc")""", [("a", ""), ("", "b")])
+test(r"""sre.findall(r"(a)|(b)", "abc")""", [("a", ""), ("", "b")])
 
 if verbose:
     print "Running tests on sre.match"
 
-test(r"""sre.match('a', 'a').groups()""", ())
-test(r"""sre.match('(a)', 'a').groups()""", ('a',))
-test(r"""sre.match('(a)', 'a').group(0)""", 'a')
-test(r"""sre.match('(a)', 'a').group(1)""", 'a')
-test(r"""sre.match('(a)', 'a').group(1, 1)""", ('a', 'a'))
+test(r"""sre.match(r'a', 'a').groups()""", ())
+test(r"""sre.match(r'(a)', 'a').groups()""", ('a',))
+test(r"""sre.match(r'(a)', 'a').group(0)""", 'a')
+test(r"""sre.match(r'(a)', 'a').group(1)""", 'a')
+test(r"""sre.match(r'(a)', 'a').group(1, 1)""", ('a', 'a'))
 
-pat = sre.compile('((a)|(b))(c)?')
+pat = sre.compile(r'((a)|(b))(c)?')
 test(r"""pat.match('a').groups()""", ('a', 'a', None, None))
 test(r"""pat.match('b').groups()""", ('b', None, 'b', None))
 test(r"""pat.match('ac').groups()""", ('a', 'a', None, 'c'))
 test(r"""pat.match('bc').groups()""", ('b', None, 'b', 'c'))
 test(r"""pat.match('bc').groups("")""", ('b', "", 'b', 'c'))
 
-pat = sre.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
+pat = sre.compile(r'(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
 test(r"""pat.match('a').group(1, 2, 3)""", ('a', None, None))
 test(r"""pat.match('b').group('a1', 'b2', 'c3')""", (None, 'b', None))
 test(r"""pat.match('ac').group(1, 'b2', 3)""", ('a', None, 'c'))
@@ -203,7 +203,7 @@ if verbose:
 
 try:
     import pickle
-    pat = sre.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
+    pat = sre.compile(r'a(?:b|(c|e){1,2}?|d)+?(.)')
     s = pickle.dumps(pat)
     pat = pickle.loads(s)
 except:
@@ -211,7 +211,7 @@ except:
 
 try:
     import cPickle
-    pat = sre.compile('a(?:b|(c|e){1,2}?|d)+?(.)')
+    pat = sre.compile(r'a(?:b|(c|e){1,2}?|d)+?(.)')
     s = cPickle.dumps(pat)
     pat = cPickle.loads(s)
 except:
@@ -237,9 +237,12 @@ if verbose:
 
 # Try nasty case that overflows the straightforward recursive
 # implementation of repeated groups.
-test(r"""sre.match('(x)*', 50000*'x').span()""", (0, 50000), RuntimeError)
-test(r"""sre.match('(x)*y', 50000*'x'+'y').span()""", (0, 50001), RuntimeError)
-test(r"""sre.match('(x)*?y', 50000*'x'+'y').span()""", (0, 50001), RuntimeError)
+test(r"""sre.match(r'(x)*', 50000*'x').span()""",
+     (0, 50000), RuntimeError)
+test(r"""sre.match(r'(x)*y', 50000*'x'+'y').span()""",
+     (0, 50001), RuntimeError)
+test(r"""sre.match(r'(x)*?y', 50000*'x'+'y').span()""",
+     (0, 50001), RuntimeError)
 
 from re_tests import *
 
@@ -277,8 +280,7 @@ for t in tests:
         except (sre.error), msg:
             print '=== Unexpected exception', t, repr(msg)
         if outcome==SYNTAX_ERROR:
-            # This should have been a syntax error; forget it.
-            pass
+            print '=== Compiled incorrectly', t
         elif outcome==FAIL:
             if result is None: pass   # No match, as expected
             else: print '=== Succeeded incorrectly', t
