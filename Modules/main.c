@@ -1,4 +1,3 @@
-
 /* Python interpreter main program */
 
 #include "Python.h"
@@ -51,6 +50,8 @@ static char *usage_mid = "\
 -U     : Unicode literals: treats '...' literals like u'...'\n\
 -v     : verbose (trace import statements) (also PYTHONVERBOSE=x)\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
+-h     : print this help message and exit\n\
+-V     : print the Python version number and exit\n\
 -c cmd : program passed in as string (terminates option list)\n\
 file   : program read from script file\n\
 -      : program read from stdin (default; interactive mode if a tty)\n\
@@ -64,6 +65,18 @@ PYTHONPATH   : '%c'-separated list of directories prefixed to the\n\
 PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n\
                The default module search path uses %s.\n\
 ";
+
+
+static void
+usage(int exitcode, char* program)
+{
+	fprintf(stderr, usage_line, program);
+	fprintf(stderr, usage_top);
+	fprintf(stderr, usage_mid);
+	fprintf(stderr, usage_bot, DELIM, DELIM, PYTHONHOMEHELP);
+	exit(exitcode);
+	/*NOTREACHED*/
+}
 
 
 /* Main program */
@@ -81,6 +94,8 @@ Py_Main(int argc, char **argv)
 	int unbuffered = 0;
 	int skipfirstline = 0;
 	int stdin_is_interactive = 0;
+	int help = 0;
+	int version = 0;
 
 	orig_argc = argc;	/* For Py_GetArgcArgv() */
 	orig_argv = argv;
@@ -90,7 +105,7 @@ Py_Main(int argc, char **argv)
 	if ((p = getenv("PYTHONUNBUFFERED")) && *p != '\0')
 		unbuffered = 1;
 
-	while ((c = getopt(argc, argv, "c:diOStuUvxX")) != EOF) {
+	while ((c = getopt(argc, argv, "c:diOStuUvxXhV")) != EOF) {
 		if (c == 'c') {
 			/* -c is the last option; following arguments
 			   that look like options are left for the
@@ -142,19 +157,28 @@ Py_Main(int argc, char **argv)
 		case 'U':
 			Py_UnicodeFlag++;
 			break;
+		case 'h':
+			help++;
+			break;
+		case 'V':
+			version++;
+			break;
 
 		/* This space reserved for other options */
 
 		default:
-			fprintf(stderr, usage_line, argv[0]);
-			fprintf(stderr, usage_top);
-			fprintf(stderr, usage_mid);
-			fprintf(stderr, usage_bot,
-				DELIM, DELIM, PYTHONHOMEHELP);
-			exit(2);
+			usage(2, argv[0]);
 			/*NOTREACHED*/
 
 		}
+	}
+
+	if (help)
+		usage(0, argv[0]);
+
+	if (version) {
+		fprintf(stderr, "Python %s\n", PY_VERSION);
+		exit(0);
 	}
 
 	if (command == NULL && optind < argc &&
