@@ -360,11 +360,19 @@ class Application(FrameWork.Application):
 	def getprefs(self):
 		import MacPrefs
 		return MacPrefs.GetPrefs(self.preffilepath)
-
+	
 	def do_editorprefs(self, *args):
 		import PyEdit
 		PyEdit.EditorDefaultSettings()
 	
+	def do_setwindowfont(self, *args):
+		import FontSettings, W
+		prefs = self.getprefs()
+		settings = FontSettings.FontDialog(prefs.defaultfont)
+		if settings:
+			prefs.defaultfont, tabsettings = settings
+			raise W.AlertError, "Note that changes will only affect new windows!"
+
 
 
 class MenuBar(FrameWork.MenuBar):
