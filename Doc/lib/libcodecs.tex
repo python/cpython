@@ -142,16 +142,21 @@ for reading and writing to platform dependent files:
 \begin{datadesc}{BOM}
 \dataline{BOM_BE}
 \dataline{BOM_LE}
-\dataline{BOM32_BE}
-\dataline{BOM32_LE}
-\dataline{BOM64_BE}
-\dataline{BOM64_LE}
-These constants define the byte order marks (BOM) used in data
-streams to indicate the byte order used in the stream or file.
-\constant{BOM} is either \constant{BOM_BE} or \constant{BOM_LE}
-depending on the platform's native byte order, while the others
-represent big endian (\samp{_BE} suffix) and little endian
-(\samp{_LE} suffix) byte order using 32-bit and 64-bit encodings.
+\dataline{BOM_UTF8}
+\dataline{BOM_UTF16}
+\dataline{BOM_UTF16_BE}
+\dataline{BOM_UTF16_LE}
+\dataline{BOM_UTF32}
+\dataline{BOM_UTF32_BE}
+\dataline{BOM_UTF32_LE}
+These constants define various encodings of the Unicode byte order mark
+(BOM) used in UTF-16 and UTF-32 data streams to indicate the byte order
+used in the stream or file and in UTF-8 as a Unicode signature.
+\constant{BOM_UTF16} is either \constant{BOM_UTF16_BE} or
+\constant{BOM_UTF16_LE} depending on the platform's native byte order,
+\constant{BOM} is an alias for \constant{BOM_UTF16}, \constant{BOM_LE}
+for \constant{BOM_UTF16_LE} and \constant{BOM_BE} for \constant{BOM_UTF16_BE}.
+The others represent the BOM in UTF-8 and UTF-32 encodings.
 \end{datadesc}
 
 

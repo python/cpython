@@ -124,6 +124,12 @@ Extension modules
 
 Library
 
+- Constants BOM_UTF8, BOM_UTF16, BOM_UTF16_LE, BOM_UTF16_BE,
+  BOM_UTF32, BOM_UTF32_LE and BOM_UTF32_BE that represent the Byte
+  Order Mark in UTF-8, UTF-16 and UTF-32 encodings for little and
+  big endian systems were added to the codecs module. The old names
+  BOM32_* and BOM64_* were off by a factor of 2.
+
 - added degree/radian conversion functions to the math module.
 
 - ftplib.retrlines() now tests for callback is None rather than testing
