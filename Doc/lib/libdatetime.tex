@@ -365,6 +365,12 @@ Supported operations:
 
 Instance methods:
 
+  - replace(year=, month=, day=)
+    Return a date with the same value, except for those fields given
+    new values by whichever keyword arguments are specified.  For
+    example, if \code{d == date(2002, 12, 31)}, then
+    \code{d.replace(day=26) == date(2000, 12, 26)}.
+
   - timetuple()
     Return a 9-element tuple of the form returned by
     \function{time.localtime()}.  The hours, minutes and seconds are
@@ -591,6 +597,10 @@ Instance methods:
   - time()
     Return time object with same hour, minute, second and microsecond.
 
+  - replace(year=, month=, day=, hour=, minute=, second=, microsecond=)
+    Return a datetime with the same value, except for those fields given
+    new values by whichever keyword arguments are specified.
+
   - timetuple()
     Return a 9-element tuple of the form returned by
     \function{time.localtime()}.
@@ -709,6 +719,10 @@ Supported operations:
 \end{itemize}
 
 Instance methods:
+
+  - replace(hour=, minute=, second=, microsecond=)
+    Return a time with the same value, except for those fields given
+    new values by whichever keyword arguments are specified.
 
   - isoformat()
     Return a string representing the time in ISO 8601 format,
@@ -856,6 +870,12 @@ Supported operations:
 \end{itemize}
 
 Instance methods:
+
+  - replace(hour=, minute=, second=, microsecond=, tzinfo=)
+    Return a timetz with the same value, except for those fields given
+    new values by whichever keyword arguments are specified.  Note that
+    \code{tzinfo=None} can be specified to create a naive timetz from an
+    aware timetz.
 
   - isoformat()
     Return a string representing the time in ISO 8601 format,
@@ -1048,11 +1068,18 @@ Instance methods:
     Return \class{timetz} object with same hour, minute, second, microsecond,
     and tzinfo.
 
+  - replace(year=, month=, day=, hour=, minute=, second=, microsecond=,
+            tzinfo=)
+    Return a datetimetz with the same value, except for those fields given
+    new values by whichever keyword arguments are specified.  Note that
+    \code{tzinfo=None} can be specified to create a naive datetimetz from
+    an aware datetimetz.
+
   - utcoffset()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
     \code{tzinfo.utcoffset(self)}.
 
-  - tzname():
+  - tzname()
     If \member{tzinfo} is \code{None}, returns \code{None}, else
     \code{tzinfo.tzname(self)}.
 

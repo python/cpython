@@ -874,6 +874,28 @@ class TestDate(unittest.TestCase):
         self.assertEqual(cls(1900, 1, 1).strftime("%Y"), "1900")
         for y in 1, 49, 51, 99, 100, 1000, 1899:
             self.assertRaises(ValueError, cls(y, 1, 1).strftime, "%Y")
+
+    def test_replace(self):
+        cls = self.theclass
+        args = [1, 2, 3]
+        base = cls(*args)
+        self.assertEqual(base, base.replace())
+
+        i = 0
+        for name, newval in (("year", 2),
+                             ("month", 3),
+                             ("day", 4)):
+            newargs = args[:]
+            newargs[i] = newval
+            expected = cls(*newargs)
+            got = base.replace(**{name: newval})
+            self.assertEqual(expected, got)
+            i += 1
+
+        # Out of bounds.
+        base = cls(2000, 2, 29)
+        self.assertRaises(ValueError, base.replace, year=2001)
+
 #############################################################################
 # datetime tests
 
@@ -1248,6 +1270,32 @@ class TestDateTime(TestDate):
         self.assertRaises(TypeError, combine, d, t, 1) # too many args
         self.assertRaises(TypeError, combine, "date", "time") # wrong types
 
+    def test_replace(self):
+        cls = self.theclass
+        args = [1, 2, 3, 4, 5, 6, 7]
+        base = cls(*args)
+        self.assertEqual(base, base.replace())
+
+        i = 0
+        for name, newval in (("year", 2),
+                             ("month", 3),
+                             ("day", 4),
+                             ("hour", 5),
+                             ("minute", 6),
+                             ("second", 7),
+                             ("microsecond", 8)):
+            newargs = args[:]
+            newargs[i] = newval
+            expected = cls(*newargs)
+            got = base.replace(**{name: newval})
+            self.assertEqual(expected, got)
+            i += 1
+
+        # Out of bounds.
+        base = cls(2000, 2, 29)
+        self.assertRaises(ValueError, base.replace, year=2001)
+
+
 class TestTime(unittest.TestCase):
 
     theclass = time
@@ -1463,6 +1511,31 @@ class TestTime(unittest.TestCase):
         self.failUnless(cls(0, 0, 0, 1))
         self.failUnless(not cls(0))
         self.failUnless(not cls())
+
+    def test_replace(self):
+        cls = self.theclass
+        args = [1, 2, 3, 4]
+        base = cls(*args)
+        self.assertEqual(base, base.replace())
+
+        i = 0
+        for name, newval in (("hour", 5),
+                             ("minute", 6),
+                             ("second", 7),
+                             ("microsecond", 8)):
+            newargs = args[:]
+            newargs[i] = newval
+            expected = cls(*newargs)
+            got = base.replace(**{name: newval})
+            self.assertEqual(expected, got)
+            i += 1
+
+        # Out of bounds.
+        base = cls(1)
+        self.assertRaises(ValueError, base.replace, hour=24)
+        self.assertRaises(ValueError, base.replace, minute=-1)
+        self.assertRaises(ValueError, base.replace, second=100)
+        self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
@@ -1734,6 +1807,45 @@ class TestTimeTZ(TestTime, TZInfoBase):
         # Likewise.
         t = cls(0, tzinfo=FixedOffset(-24*60, ""))
         self.assertRaises(ValueError, lambda: bool(t))
+
+    def test_replace(self):
+        cls = self.theclass
+        z100 = FixedOffset(100, "+100")
+        zm200 = FixedOffset(timedelta(minutes=-200), "-200")
+        args = [1, 2, 3, 4, z100]
+        base = cls(*args)
+        self.assertEqual(base, base.replace())
+
+        i = 0
+        for name, newval in (("hour", 5),
+                             ("minute", 6),
+                             ("second", 7),
+                             ("microsecond", 8),
+                             ("tzinfo", zm200)):
+            newargs = args[:]
+            newargs[i] = newval
+            expected = cls(*newargs)
+            got = base.replace(**{name: newval})
+            self.assertEqual(expected, got)
+            i += 1
+
+        # Ensure we can get rid of a tzinfo.
+        self.assertEqual(base.tzname(), "+100")
+        base2 = base.replace(tzinfo=None)
+        self.failUnless(base2.tzinfo is None)
+        self.failUnless(base2.tzname() is None)
+
+        # Ensure we can add one.
+        base3 = base2.replace(tzinfo=z100)
+        self.assertEqual(base, base3)
+        self.failUnless(base.tzinfo is base3.tzinfo)
+
+        # Out of bounds.
+        base = cls(1)
+        self.assertRaises(ValueError, base.replace, hour=24)
+        self.assertRaises(ValueError, base.replace, minute=-1)
+        self.assertRaises(ValueError, base.replace, second=100)
+        self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
 class TestDateTimeTZ(TestDateTime, TZInfoBase):
     theclass = datetimetz
@@ -2157,6 +2269,44 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
                 self.assertEqual(d.isoformat('k'), datestr + 'k' + tailstr)
                 self.assertEqual(str(d), datestr + ' ' + tailstr)
 
+    def test_replace(self):
+        cls = self.theclass
+        z100 = FixedOffset(100, "+100")
+        zm200 = FixedOffset(timedelta(minutes=-200), "-200")
+        args = [1, 2, 3, 4, 5, 6, 7, z100]
+        base = cls(*args)
+        self.assertEqual(base, base.replace())
+
+        i = 0
+        for name, newval in (("year", 2),
+                             ("month", 3),
+                             ("day", 4),
+                             ("hour", 5),
+                             ("minute", 6),
+                             ("second", 7),
+                             ("microsecond", 8),
+                             ("tzinfo", zm200)):
+            newargs = args[:]
+            newargs[i] = newval
+            expected = cls(*newargs)
+            got = base.replace(**{name: newval})
+            self.assertEqual(expected, got)
+            i += 1
+
+        # Ensure we can get rid of a tzinfo.
+        self.assertEqual(base.tzname(), "+100")
+        base2 = base.replace(tzinfo=None)
+        self.failUnless(base2.tzinfo is None)
+        self.failUnless(base2.tzname() is None)
+
+        # Ensure we can add one.
+        base3 = base2.replace(tzinfo=z100)
+        self.assertEqual(base, base3)
+        self.failUnless(base.tzinfo is base3.tzinfo)
+
+        # Out of bounds.
+        base = cls(2000, 2, 29)
+        self.assertRaises(ValueError, base.replace, year=2001)
 
 def test_suite():
     allsuites = [unittest.makeSuite(klass, 'test')
