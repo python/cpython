@@ -45,6 +45,9 @@ ControlFontStyleRec_ptr = ControlFontStyleRec
 ControlID = OpaqueType('ControlID', 'PyControlID')
 ControlID_ptr = ControlID
 
+DragTrackingMessage = Type("DragTrackingMessage", "h")
+DragReference = OpaqueByValueType("DragReference", "DragObj")
+
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 #ifndef kControlCheckBoxUncheckedValue

@@ -41,20 +41,9 @@ class SoundScanner(Scanner):
 			'SndDisposeChannel',		# automatic on deallocation
 			'SndAddModifier',		# for internal use only
 			'SndPlayDoubleBuffer',		# very low level routine
-			# Obsolete:
-			'StartSound',
-			'StopSound',
-			'SoundDone',
-			# These do not work for cfm68k:
-## 			'SndGetInfo',
-## 			'SndSetInfo',
-## 			'GetCompressionInfo',
-## 			'GetCompressionName',
-## 			'GetSoundPreference',
-## 			'SetSoundPreference',
-			# And old calls that are no longer supported
-			'SetSoundVol',
-			'GetSoundVol',
+			# Missing from libraries (UH332)
+			'SoundManagerSetInfo',
+			'SoundManagerGetInfo',
 			# Constants with funny definitions
 			'rate48khz',
 			'rate44khz',

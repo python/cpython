@@ -57,6 +57,13 @@ class ResourcesScanner(Scanner):
 				'RsrcZoneInit',
 				'InitResources',
 				'RsrcMapEntry',
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'GetNextResourceFile',
+				'GetTopResourceFile',
+				'FSpOpenOrphanResFile',
+				'DetachResourceFile',
+				'InsertResourceFile',
 			])]
 
 	def makerepairinstructions(self):

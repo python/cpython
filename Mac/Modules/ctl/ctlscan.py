@@ -35,6 +35,7 @@ class MyScanner(Scanner):
 		self.defsfile.write("def FOUR_CHAR_CODE(x): return x\n")
 		self.defsfile.write("from TextEdit import *\n")
 		self.defsfile.write("from QuickDraw import *\n")
+		self.defsfile.write("from Dragconst import *\n")
 		self.defsfile.write("\n")
 
 	def makeblacklistnames(self):
@@ -98,6 +99,8 @@ class MyScanner(Scanner):
 			('#if TARGET_API_MAC_CARBON', [
 				'IsAutomaticControlDragTrackingEnabledForWindow',
 				'SetAutomaticControlDragTrackingEnabledForWindow',
+				'HandleControlDragReceive',
+				'HandleControlDragTracking',
 				'GetControlByID',
 				'IsControlDragTrackingEnabled',
 				'SetControlDragTrackingEnabled',
@@ -134,8 +137,6 @@ class MyScanner(Scanner):
 			'ControlDefSpec', # Don't know how to do this yet
 			'ControlDefSpec_ptr', # ditto
 			'Collection', # Ditto
-			'DragTrackingMessage', # Needs Drag module, must implement later
-			'DragReference', # ditto
 			]
 
 	def makerepairinstructions(self):

@@ -1184,6 +1184,53 @@ static PyObject *CtlObj_GetControlDataSize(_self, _args)
 
 #if TARGET_API_MAC_CARBON
 
+static PyObject *CtlObj_HandleControlDragTracking(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	DragTrackingMessage inMessage;
+	DragReference inDrag;
+	Boolean outLikesDrag;
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &inMessage,
+	                      DragObj_Convert, &inDrag))
+		return NULL;
+	_err = HandleControlDragTracking(_self->ob_itself,
+	                                 inMessage,
+	                                 inDrag,
+	                                 &outLikesDrag);
+	if (_err != noErr) return PyMac_Error(_err);
+	_res = Py_BuildValue("b",
+	                     outLikesDrag);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *CtlObj_HandleControlDragReceive(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	DragReference inDrag;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      DragObj_Convert, &inDrag))
+		return NULL;
+	_err = HandleControlDragReceive(_self->ob_itself,
+	                                inDrag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
 static PyObject *CtlObj_SetControlDragTrackingEnabled(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -2063,6 +2110,16 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (UInt32 outFeatures)"},
 	{"GetControlDataSize", (PyCFunction)CtlObj_GetControlDataSize, 1,
 	 "(ControlPartCode inPart, ResType inTagName) -> (Size outMaxSize)"},
+
+#if TARGET_API_MAC_CARBON
+	{"HandleControlDragTracking", (PyCFunction)CtlObj_HandleControlDragTracking, 1,
+	 "(DragTrackingMessage inMessage, DragReference inDrag) -> (Boolean outLikesDrag)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"HandleControlDragReceive", (PyCFunction)CtlObj_HandleControlDragReceive, 1,
+	 "(DragReference inDrag) -> None"},
+#endif
 
 #if TARGET_API_MAC_CARBON
 	{"SetControlDragTrackingEnabled", (PyCFunction)CtlObj_SetControlDragTrackingEnabled, 1,

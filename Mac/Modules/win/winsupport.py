@@ -29,6 +29,8 @@ WindowPeek.passInput = lambda name: "(WindowPeek)(%s)" % name
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
 GrafPtr = OpaqueByValueType("GrafPtr", "GrafObj")
 
+DragReference = OpaqueByValueType("DragReference", "DragObj")
+
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 WCTabHandle = OpaqueByValueType("WCTabHandle", "ResObj")
@@ -44,11 +46,22 @@ WindowPositionMethod = Type("WindowPositionMethod", "l")
 WindowTransitionEffect = Type("WindowTransitionEffect", "l")
 WindowTransitionAction = Type("WindowTransitionAction", "l")
 RGBColor = OpaqueType("RGBColor", "QdRGB")
+RGBColor_ptr = RGBColor
+ScrollWindowOptions = Type("ScrollWindowOptions", "l")
+WindowPartCode = Type("WindowPartCode", "h")
+
 PropertyCreator = OSTypeType("PropertyCreator")
 PropertyTag = OSTypeType("PropertyTag")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+#if !ACCESSOR_CALLS_ARE_FUNCTIONS
+#define GetWindowSpareFlag(win) (((CWindowPeek)(win))->spareFlag)
+#define GetWindowFromPort(port) ((WindowRef)(port))
+#define GetWindowPortBounds(win, rectp) (*(rectp) = ((CWindowPeek)(win))->port.portRect)
+#endif
+
 /* Function to dispose a window, with a "normal" calling sequence */
 static void
 PyMac_AutoDisposeWindow(WindowPtr w)

@@ -1304,6 +1304,159 @@ static PyObject *Res_FSpCreateResFile(_self, _args)
 	return _res;
 }
 
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Res_InsertResourceFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	SInt16 refNum;
+	RsrcChainLocation where;
+	if (!PyArg_ParseTuple(_args, "hh",
+	                      &refNum,
+	                      &where))
+		return NULL;
+	_rv = InsertResourceFile(refNum,
+	                         where);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Res_DetachResourceFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &refNum))
+		return NULL;
+	_rv = DetachResourceFile(refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+#endif
+
+static PyObject *Res_FSpResourceFileAlreadyOpen(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	FSSpec resourceFile;
+	Boolean inChain;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      PyMac_GetFSSpec, &resourceFile))
+		return NULL;
+	_rv = FSpResourceFileAlreadyOpen(&resourceFile,
+	                                 &inChain,
+	                                 &refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("bbh",
+	                     _rv,
+	                     inChain,
+	                     refNum);
+	return _res;
+}
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Res_FSpOpenOrphanResFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	FSSpec spec;
+	SignedByte permission;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, "O&b",
+	                      PyMac_GetFSSpec, &spec,
+	                      &permission))
+		return NULL;
+	_rv = FSpOpenOrphanResFile(&spec,
+	                           permission,
+	                           &refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("hh",
+	                     _rv,
+	                     refNum);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Res_GetTopResourceFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetTopResourceFile(&refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("hh",
+	                     _rv,
+	                     refNum);
+	return _res;
+}
+#endif
+
+#if TARGET_API_MAC_CARBON
+
+static PyObject *Res_GetNextResourceFile(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	SInt16 curRefNum;
+	SInt16 nextRefNum;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &curRefNum))
+		return NULL;
+	_rv = GetNextResourceFile(curRefNum,
+	                          &nextRefNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("hh",
+	                     _rv,
+	                     nextRefNum);
+	return _res;
+}
+#endif
+
 static PyObject *Res_Resource(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -1437,6 +1590,33 @@ static PyMethodDef Res_methods[] = {
 	 "(FSSpec spec, SignedByte permission) -> (short _rv)"},
 	{"FSpCreateResFile", (PyCFunction)Res_FSpCreateResFile, 1,
 	 "(FSSpec spec, OSType creator, OSType fileType, ScriptCode scriptTag) -> None"},
+
+#if TARGET_API_MAC_CARBON
+	{"InsertResourceFile", (PyCFunction)Res_InsertResourceFile, 1,
+	 "(SInt16 refNum, RsrcChainLocation where) -> (OSErr _rv)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"DetachResourceFile", (PyCFunction)Res_DetachResourceFile, 1,
+	 "(SInt16 refNum) -> (OSErr _rv)"},
+#endif
+	{"FSpResourceFileAlreadyOpen", (PyCFunction)Res_FSpResourceFileAlreadyOpen, 1,
+	 "(FSSpec resourceFile) -> (Boolean _rv, Boolean inChain, SInt16 refNum)"},
+
+#if TARGET_API_MAC_CARBON
+	{"FSpOpenOrphanResFile", (PyCFunction)Res_FSpOpenOrphanResFile, 1,
+	 "(FSSpec spec, SignedByte permission) -> (OSErr _rv, SInt16 refNum)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetTopResourceFile", (PyCFunction)Res_GetTopResourceFile, 1,
+	 "() -> (OSErr _rv, SInt16 refNum)"},
+#endif
+
+#if TARGET_API_MAC_CARBON
+	{"GetNextResourceFile", (PyCFunction)Res_GetNextResourceFile, 1,
+	 "(SInt16 curRefNum) -> (OSErr _rv, SInt16 nextRefNum)"},
+#endif
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n"},
 	{"Handle", (PyCFunction)Res_Handle, 1,
@@ -1499,7 +1679,7 @@ void initRes()
 	Res_Error = PyMac_GetOSErrException();
 	if (Res_Error == NULL ||
 	    PyDict_SetItemString(d, "Error", Res_Error) != 0)
-		Py_FatalError("can't initialize Res.Error");
+		return;
 	Resource_Type.ob_type = &PyType_Type;
 	Py_INCREF(&Resource_Type);
 	if (PyDict_SetItemString(d, "ResourceType", (PyObject *)&Resource_Type) != 0)

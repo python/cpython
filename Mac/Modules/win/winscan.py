@@ -42,8 +42,10 @@ class MyScanner(Scanner):
 			'GetWindowPropertySize',
 			'RemoveWindowProperty',
 			'MacCloseWindow',
+			'GetWindowList', # Don't know whether this is safe...
 			# Constants with funny definitions
 			'kMouseUpOutOfSlop',
+			'kAllWindowClasses',
 			]
 			
 	def makegreylist(self):
@@ -64,14 +66,28 @@ class MyScanner(Scanner):
 				'InvalRgn',
 				'InvalRect',
 				'IsValidWindowPtr', # I think this is useless for Python, but not sure...
+			]),
+			('#if TARGET_API_MAC_CARBON', [
+				'IsWindowUpdatePending',
+				'FindWindowOfClass',
+				'GetFrontWindowOfClass',
+				'ChangeWindowPropertyAttributes',
+				'GetWindowPropertyAttributes',
+				'GetNextWindowOfClass',
+				'ScrollWindowRegion',
+				'ScrollWindowRect',
+				'ChangeWindowAttributes',
+				'ReshapeCustomWindow',
 			])]
 			
 	def makeblacklisttypes(self):
 		return [
 			'ProcPtr',
 			'DragGrayRgnUPP',
+			'WindowPaintUPP',
 			'Collection',		# For now, to be done later
-			'DragReference',	# Ditto, dragmodule doesn't export it yet.
+			'WindowDefSpec',	# Too difficult for now
+			'WindowDefSpec_ptr',
 			]
 
 	def makerepairinstructions(self):
@@ -104,6 +120,9 @@ class MyScanner(Scanner):
 			 [("ExistingWindowPtr", "*", "*")]),
 			([("WindowRef", "FrontNonFloatingWindow", "ReturnMode")],	# Ditto
 			 [("ExistingWindowPtr", "*", "*")]),
+			 
+			([("Rect_ptr", "*", "ReturnMode")], # GetWindowXXXState accessors
+			 [("void", "*", "ReturnMode")]),
 			]
 
 if __name__ == "__main__":
