@@ -367,7 +367,7 @@ class FTP:
         conn.close()
         return self.voidresp()
 
-    def storbinary(self, cmd, fp, blocksize):
+    def storbinary(self, cmd, fp, blocksize=8192):
         '''Store a file in binary mode.'''
         self.voidcmd('TYPE I')
         conn = self.transfercmd(cmd)
