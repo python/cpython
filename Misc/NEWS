@@ -25,6 +25,13 @@ Core and builtins
   is provided.
 
 
+Extension Modules
+-----------------
+
+- Patch #1093585: raise a ValueError for negative history items in readline.
+  {remove_history,replace_history}
+
+
 Library
 -------
 
@@ -58,7 +65,6 @@ Library
 
 - Bug #1083110: ``zlib.decompress.flush()`` would segfault if called immediately
   after creating the object, without any intervening ``.decompress()`` calls.
-
 
 Build
 -----
