@@ -6,6 +6,7 @@ import signal
 import os
 import tempfile
 import time
+import re
 
 mswindows = (sys.platform == "win32")
 
@@ -18,6 +19,14 @@ if mswindows:
                                                 'os.O_BINARY);')
 else:
     SETBINARY = ''
+
+# In a debug build, stuff like "[6580 refs]" is printed to stderr at
+# shutdown time.  That frustrates tests trying to check stderr produced
+# from a spawned Python process.
+def remove_stderr_debug_decorations(stderr):
+    if __debug__:
+        stderr = re.sub(r"\[\d+ refs\]\r?\n?$", "", stderr)
+    return stderr
 
 class ProcessTestCase(unittest.TestCase):
     def mkstemp(self):
@@ -144,7 +153,8 @@ class ProcessTestCase(unittest.TestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=subprocess.PIPE)
-        self.assertEqual(p.stderr.read(), "strawberry")
+        self.assertEqual(remove_stderr_debug_decorations(p.stderr.read()),
+                         "strawberry")
 
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
@@ -155,7 +165,8 @@ class ProcessTestCase(unittest.TestCase):
                          stderr=d)
         p.wait()
         os.lseek(d, 0, 0)
-        self.assertEqual(os.read(d, 1024), "strawberry")
+        self.assertEqual(remove_stderr_debug_decorations(os.read(d, 1024)),
+                         "strawberry")
 
     def test_stderr_fileobj(self):
         # stderr is set to open file object
@@ -165,7 +176,8 @@ class ProcessTestCase(unittest.TestCase):
                          stderr=tf)
         p.wait()
         tf.seek(0)
-        self.assertEqual(tf.read(), "strawberry")
+        self.assertEqual(remove_stderr_debug_decorations(tf.read()),
+                         "strawberry")
 
     def test_stdout_stderr_pipe(self):
         # capture stdout and stderr to the same pipe
@@ -176,7 +188,9 @@ class ProcessTestCase(unittest.TestCase):
                           'sys.stderr.write("orange")'],
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
-        self.assertEqual(p.stdout.read(), "appleorange")
+        output = p.stdout.read()
+        stripped = remove_stderr_debug_decorations(output)
+        self.assertEqual(stripped, "appleorange")
 
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
@@ -190,7 +204,9 @@ class ProcessTestCase(unittest.TestCase):
                          stderr=tf)
         p.wait()
         tf.seek(0)
-        self.assertEqual(tf.read(), "appleorange")
+        output = tf.read()
+        stripped = remove_stderr_debug_decorations(output)
+        self.assertEqual(stripped, "appleorange")
 
     def test_cwd(self):
         tmpdir = os.getenv("TEMP", "/tmp")
@@ -222,7 +238,8 @@ class ProcessTestCase(unittest.TestCase):
                          stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate("banana")
         self.assertEqual(stdout, "banana")
-        self.assertEqual(stderr, "pineapple")
+        self.assertEqual(remove_stderr_debug_decorations(stderr),
+                         "pineapple")
 
     def test_communicate_returns(self):
         # communicate() should return None if no redirection is active
@@ -266,7 +283,7 @@ class ProcessTestCase(unittest.TestCase):
         p.stdin.write("banana")
         (stdout, stderr) = p.communicate("split")
         self.assertEqual(stdout, "bananasplit")
-        self.assertEqual(stderr, "")
+        self.assertEqual(remove_stderr_debug_decorations(stderr), "")
 
     def test_universal_newlines(self):
         p = subprocess.Popen([sys.executable, "-c",
