@@ -61,11 +61,11 @@ def urlopen(url, data=None):
         return _urlopener.open(url)
     else:
         return _urlopener.open(url, data)
-def urlretrieve(url, filename=None, reporthook=None):
+def urlretrieve(url, filename=None, reporthook=None, data=None):
     global _urlopener
     if not _urlopener:
         _urlopener = FancyURLopener()
-    return _urlopener.retrieve(url, filename, reporthook)
+    return _urlopener.retrieve(url, filename, reporthook, data)
 def urlcleanup():
     if _urlopener:
         _urlopener.cleanup()
@@ -186,7 +186,7 @@ class URLopener:
                 return url2pathname(splithost(url1)[1]), hdrs
             except IOError, msg:
                 pass
-        fp = self.open(url)
+        fp = self.open(url, data)
         headers = fp.info()
         if not filename:
             import tempfile
