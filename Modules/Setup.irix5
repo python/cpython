@@ -123,7 +123,7 @@ rotor rotormodule.o
 #cd cdmodule.o -lcdaudio -lds	#
 #cl clmodule.o -lcl
 fm fmmodule.o -lfm_s -lgl_s
-gl glmodule.o -lgl_s
+gl glmodule.o -lgl_s -lX11_s
 #imgfile imgfilemodule.o -limage -lgutil -lm
 sgi sgimodule.o
 #sv svmodule.o yuvconvert.o -lsvideo -lXext -lX11_s
