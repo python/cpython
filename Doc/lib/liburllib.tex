@@ -1,0 +1,102 @@
+\section{Built-in module \sectcode{urllib}}
+\stmodindex{urllib}
+\index{WWW}
+\indexii{World-Wide}{Web}
+\index{URLs}
+
+This module provides a high-level interface for fetching data across
+the World-Wide Web.  In particular, the \code{urlopen} function is
+similar to the built-in function \code{open}, but accepts URLs
+(Universal Resource Locators) instead of filenames.  Some restrictions
+apply --- it can only open URLs for reading, and no seek operations
+are available.
+
+it defines the following public functions:
+
+\begin{funcdesc}{urlopen}{url}
+Open a network object denoted by a URL for reading.  If the URL does
+not have a scheme identifier, or if it has \code{file:} as its scheme
+identifier, this opens a local file; otherwise it opens a socket to a
+server somewhere on the network.  If the connection cannot be made, or
+if the server returns an error code, the \code{IOError} exception is
+raised.  If all went well, a file-like object is returned.  This
+supports the following methods: \code{read()}, \code{readline()},
+\code{readlines()}, \code{fileno()}, \code{close()} and \code{info()}.
+Except for the last one, these methods have the same interface as for
+file objects --- see the section on File Objects earlier in this
+manual.
+
+The \code{info()} method returns an instance of the class
+\code{rfc822.Message} containing the headers received from the server,
+if the protocol uses such headers (currently the only supported
+protocol that uses this is HTTP).  See the description of the
+\code{rfc822} module.
+\end{funcdesc}
+
+\begin{funcdesc}{urlretrieve}{url}
+Copy a network object denoted by a URL to a local file, if necessary.
+If the URL points to a local file, or a valid cached copy of the the
+object exists, the object is not copied.  Return a tuple (\var{filename},
+\var{headers}) where \var{filename} is the local file name under which
+the object can be found, and \var{headers} is either \code{None} (for
+a local object) or whatever the \code{info()} method of the object
+returned by \code{urlopen()} returned (for a remote object, possibly
+cached).  Exceptions are the same as for \code{urlopen()}.
+\end{funcdesc}
+
+\begin{funcdesc}{urlcleanup}{}
+Clear the cache that may have been built up by previous calls to
+\code{urlretrieve()}.
+\end{funcdesc}
+
+Restrictions:
+
+\begin{itemize}
+
+\item
+Currently, only the following protocols are supported: HTTP, (versions
+0.9 and 1.0), Gopher (but not Gopher-+), FTP, and local files.
+\index{HTTP}
+\index{Gopher}
+\index{FTP}
+
+\item
+The caching feature of \code{urlretrieve()} has been disabled until I
+find the time to hack proper processing of Expiration time headers.
+
+\item
+There should be an function to query whether a particular URL is in
+the cache.
+
+\item
+For backward compatibility, if a URL appears to point to a local file
+but the file can't be opened, the URL is re-interpreted using the FTP
+protocol.  This can sometimes cause confusing error messages.
+
+\item
+The \code{urlopen()} and \code{urlretrieve()} functions can cause
+arbitrarily long delays while waiting for a network connection to be
+set up.  This means that it is difficult to build an interactive
+web client using these functions without using threads.
+
+\item
+The data returned by \code{urlopen()} or \code{urlretrieve()} is the
+raw data returned by the server.  This may be binary data (e.g. an
+image), plain text or (for example) HTML.  The HTTP protocol provides
+type information in the reply header, which can be inspected by
+looking at the \code{Content-type} header.  For the Gopher protocol,
+type information is encoded in the URL; there is currently no easy way
+to extract it.  If the returned data is HTML, you can use the module
+\code{htmllib} to parse it.
+\index{HTML}
+\index{HTTP}
+\index{Gopher}
+\stmodindex{htmllib}
+
+\item
+Although the \code{urllib} module contains (undocumented) routines to
+parse and unparse URL strings, the recommended interface for URL
+manipulation is in module \code{urlparse}.
+\stmodindex{urlparse}
+
+\end{itemize}
