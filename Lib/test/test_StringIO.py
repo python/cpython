@@ -14,6 +14,13 @@ def do_test(module):
     f.write('!')
     print `f.getvalue()`
     f.close()
+
+    f = module.StringIO()
+    f.writelines(["a", "b", "c"])
+    f.seek(0)
+    print `f.getvalue()`
+    f.close()
+
     f = module.StringIO()
     f.write(s)
     f.seek(10)
@@ -31,7 +38,6 @@ def do_test(module):
     else:
         print "Failed to catch ValueError writing to closed StringIO."
 
-# Don't bother testing cStringIO without
 import StringIO, cStringIO
 do_test(StringIO)
 do_test(cStringIO)
