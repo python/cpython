@@ -1,8 +1,5 @@
-How to install Python 2.2c1 on your Macintosh
+How to install Python 2.2 on your Macintosh
 ---------------------------------------------
-
-This is a release candidate for MacPython 2.2, please report any problems as
-soon as possible, by email to pythonmac-sig@python.org.
 
 This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
@@ -32,19 +29,19 @@ Mac:Demo. The documentation is sparse, but it will have to serve for
 now. The documentation is in HTML format, start with index.html.
 
 This installer installs MacPython for classic PPC MacOS, MacPython for Carbon
-(OS X, OS 9 or OS8 with CarbonLib installed) or both, depending on your
+(OS X, OS 9 or OS 8 with CarbonLib installed) or both, depending on your
 configuration. By selecting custom install you can bypass these tests and
 install what you want.
 
-If you want 68k support you will have to stay with MacPython 1.5.2.
+If you want 68k support you will have get MacPython 1.5.2.
 
 Toolbox module reorganization and more
 --------------------------------------
 
 You can safely skip this section if this is your first encounter with MacPython.
 
-I am working on a new organization of the mac-specific modules, and in
-general bringing the MacPython folder structure more in line with
+This release has a new organization of the mac-specific modules, and in
+general brings the MacPython folder structure more in line with
 unix-Python. This is not only a good idea, it will also immensely
 facilitate moving MacPython functionality to an OSX Python that is based
 on Mach-O and the unix-Python distribution. But don't worry: MacPython
@@ -92,6 +89,8 @@ But:
 - this works only for input, and there's no way to find out what the original
   linefeed convention of the file was.
 - Windows \r\n linefeeds are not supported and get turned into \n\n.
+- in 2.3 this feature will be replaced by a more general, platform independent
+  way of handling files with foreign newline conventions.
 
 What to install
 ---------------
@@ -169,20 +168,18 @@ ways.
 Uninstalling
 ------------
 
-Two items are installed in the system folder: the interpreter shared
-libraries PythonCore and PythonCoreCarbon lives in the Extensions
-folder and the "Python 2.2c1 Preferences" file in the Python subfolder
+Up to three items are installed in the system folder: the interpreter shared
+libraries PythonCore and PythonCoreCarbon live in the Extensions
+folder and the "Python 2.2 Preferences" file in the Python subfolder
 in the Preferences folder. All the rest of Python lives in the folder
 you installed in.
 
-On OSX the libraries are installed in /Library/CFMSupport. There is a
-nasty bug in OSX that is triggered by Python: if any orphaned aliases
-are left in /Library/CFMSupport your machine will start to behave very
-badly. 2.1 beta installers triggered this problem if you simply threw
-away your Python folder, so if you installed a 2.1beta you should
-clean out the aliases in /Library/CFMSupport too. The final 2.1 and
-2.1.1 installers always copied the shared libraries on OSX, so it does
-not have the problem anymore.
+On OSX the libraries are installed in /Library/CFMSupport. The ConfigurePython
+applets will complain if you have no right to create the libraries there
+(you need Admin privileges). This has one consequence: you will not be able to
+run applets unless they reside in the MacPython folder (such as the IDE or
+EditPythonPrefs). If you try to run an applet stored elsewhere you will
+get a "Cannot locate PythonCore" error message.
 
 Things to see
 -------------
@@ -221,9 +218,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2c1 works as expected you can trash
+After you are satisfied that 2.2 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2c1".
+"2.2".
 
 The ConfigurePython... applets will try to detect incompatible
 preferences files and offer to remove them. This means that re-running
@@ -278,9 +275,9 @@ this purpose.
 
 
 Jack Jansen
-Oratrix Development BV
-Valeriusplein 30
-Amsterdam
+CWI
+Kruislaan 413
+1098 SJ Amsterdam
 the Netherlands
 
 <jack@cwi.nl>, http://www.cwi.nl/~jack

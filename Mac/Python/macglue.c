@@ -392,6 +392,17 @@ Pstring(char *str)
 }
 
 #if TARGET_API_MAC_OS8
+Point
+LMGetMouse(void)
+{
+	return LMGetMouseLocation();
+}
+
+long LMGetExpandMem(void)
+{
+	return 0;
+}
+
 void
 c2pstrcpy(unsigned char *dst, const char *src)
 {
