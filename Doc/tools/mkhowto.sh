@@ -1,6 +1,10 @@
 #! /depot/gnu/plat/bin/bash
 
 MYDIR=`dirname $0`
+WORKDIR=`pwd`
+cd $MYDIR
+MYDIR=`pwd`
+cd $WORKDIR
 
 # DEFAULT_FORMAT must be upper case...
 DEFAULT_FORMAT=PDF
