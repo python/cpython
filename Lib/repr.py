@@ -18,16 +18,15 @@ class Repr:
 		if ' ' in typename:
 			parts = string.split(typename)
 			typename = string.joinfields(parts, '_')
-		try:
-			f = eval('self.repr_' + typename)
-		except AttributeError:
+		if hasattr(self, 'repr_' + typename):
+			return getattr(self, 'repr_' + typename)(x, level)
+		else:
 			s = `x`
 			if len(s) > self.maxother:
 				i = max(0, (self.maxother-3)/2)
 				j = max(0, self.maxother-3-i)
 				s = s[:i] + '...' + s[len(s)-j:]
 			return s
-		return f(x, level)
 	def repr_tuple(self, x, level):
 		n = len(x)
 		if n == 0: return '()'
@@ -68,6 +67,7 @@ class Repr:
 		if len(s) > self.maxstring:
 			i = max(0, (self.maxstring-3)/2)
 			j = max(0, self.maxstring-3-i)
+			s = `x[:i] + x[len(x)-j:]`
 			s = s[:i] + '...' + s[len(s)-j:]
 		return s
 	def repr_long_int(self, x, level):
