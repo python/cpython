@@ -20,6 +20,10 @@
 
 #include "Python.h"
 
+/* Caution:  MS Visual C++ 6 errors if a single string literal exceeds
+ * 2Kb.  So the module docstring has been broken roughly in half, using
+ * compile-time literal concatenation.
+ */
 static char
 module__doc__[] = 
 "Python's standard exception class hierarchy.\n\
@@ -41,8 +45,9 @@ interpreter.\n\
 Here is a rundown of the class hierarchy.  The classes found here are\n\
 inserted into both the exceptions module and the `built-in' module.  It is\n\
 recommended that user defined class based exceptions be derived from the\n\
-`Exception' class, although this is currently not enforced.\n\
-\n\
+`Exception' class, although this is currently not enforced.\n"
+	/* keep string pieces "small" */
+"\n\
 Exception\n\
  |\n\
  +-- SystemExit\n\
