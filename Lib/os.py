@@ -26,6 +26,7 @@ _osindex = {
 # For freeze.py script:
 if 0:
 	import posix
+	import posixpath
 
 import sys
 for name in _osindex.keys():
