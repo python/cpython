@@ -540,7 +540,7 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	PyFrameObject *back = tstate->frame;
 	PyFrameObject *f;
 	PyObject *builtins;
-	int extras, ncells, nfrees;
+	int extras, ncells, nfrees, i;
 
 #ifdef Py_DEBUG
 	if (code == NULL || globals == NULL || !PyDict_Check(globals) ||
@@ -641,7 +641,9 @@ PyFrame_New(PyThreadState *tstate, PyCodeObject *code, PyObject *globals,
 	f->f_nfreevars = nfrees;
 
 	extras = f->f_nlocals + ncells + nfrees;
-	memset(f->f_localsplus, 0, extras * sizeof(f->f_localsplus[0]));
+	/* Tim said it's ok to replace memset */
+	for (i=0; i<extras; i++)
+		f->f_localsplus[i] = NULL;
 
 	f->f_valuestack = f->f_localsplus + extras;
 	f->f_stacktop = f->f_valuestack;
