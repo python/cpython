@@ -261,6 +261,8 @@ code_compare(PyCodeObject *co, PyCodeObject *cp)
 	if (cmp) return (cmp<0)?-1:1;
 	cmp = co->co_flags - cp->co_flags;
 	if (cmp) return (cmp<0)?-1:1;
+	cmp = co->co_firstlineno - cp->co_firstlineno;
+	if (cmp) return (cmp<0)?-1:1;
 	cmp = PyObject_Compare(co->co_code, cp->co_code);
 	if (cmp) return cmp;
 	cmp = PyObject_Compare(co->co_consts, cp->co_consts);

@@ -37,7 +37,10 @@ Core and builtins
 Extension Modules
 -----------------
 
-...
+- Bug #1048870:  the compiler now generates distinct code objects for
+  functions with identical bodies.  This was producing confusing
+  traceback messages which pointed to the function where the code
+  object was first defined rather than the function being executed.
 
 Library
 -------
