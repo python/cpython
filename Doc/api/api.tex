@@ -1923,6 +1923,40 @@ that has been interned, or a new (``owned'') reference to an earlier
 interned string object with the same value.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyString_Decode}{const char *s,
+                                               int size,
+                                               const char *encoding,
+                                               const char *errors}
+Create a string object by decoding \var{size} bytes of the encoded
+buffer \var{s}. \var{encoding} and \var{errors} have the same meaning
+as the parameters of the same name in the unicode() builtin
+function. The codec to be used is looked up using the Python codec
+registry. Returns \NULL{} in case an exception was raised by the
+codec.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_Encode}{const Py_UNICODE *s,
+                                               int size,
+                                               const char *encoding,
+                                               const char *errors}
+Encodes the \ctype{Py_UNICODE} buffer of the given size and returns a
+Python string object. \var{encoding} and \var{errors} have the same
+meaning as the parameters of the same name in the string .encode()
+method. The codec to be used is looked up using the Python codec
+registry. Returns \NULL{} in case an exception was raised by the
+codec.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyString_AsEncodedString}{PyObject *unicode,
+                                               const char *encoding,
+                                               const char *errors}
+Encodes a string object and returns the result as Python string
+object. \var{encoding} and \var{errors} have the same meaning as the
+parameters of the same name in the string .encode() method. The codec
+to be used is looked up using the Python codec registry. Returns
+\NULL{} in case an exception was raised by the codec.
+\end{cfuncdesc}
+
 
 \subsection{Unicode Objects \label{unicodeObjects}}
 \sectionauthor{Marc-Andre Lemburg}{mal@lemburg.com}
@@ -2076,24 +2110,35 @@ Return a read-only pointer to the Unicode object's internal
 Return the length of the Unicode object.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyUnicode_FromObject}{PyObject *obj}
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromEncodedObject}{PyObject *obj,
+                                                      const char *encoding,
+                                                      const char *errors}
 
-Coerce obj to an Unicode object and return a reference with
-incremented refcount.
+Coerce an encoded object obj to an Unicode object and return a
+reference with incremented refcount.
 
 Coercion is done in the following way:
 \begin{enumerate}
 \item  Unicode objects are passed back as-is with incremented
-      refcount.
+      refcount. Note: these cannot be decoded; passing a non-NULL
+      value for encoding will result in a TypeError.
 
 \item String and other char buffer compatible objects are decoded
-      under the assumptions that they contain UTF-8 data. Decoding
-      is done in "strict" mode.
+      according to the given encoding and using the error handling
+      defined by errors. Both can be NULL to have the interface use
+      the default values (see the next section for details).
 
-\item All other objects raise an exception.
+\item All other objects cause an exception.
 \end{enumerate}
 The API returns NULL in case of an error. The caller is responsible
 for decref'ing the returned objects.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyUnicode_FromObject}{PyObject *obj}
+
+Shortcut for PyUnicode_FromEncodedObject(obj, NULL, ``strict'')
+which is used throughout the interpreter whenever coercion to
+Unicode is needed.
 \end{cfuncdesc}
 
 % --- wchar_t support for platforms which support it ---------------------
