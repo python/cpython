@@ -35,7 +35,8 @@ TBD
 Build
 -----
 
-TBD
+- Fix problem building on OSF1 because the compiler only accepted
+  preprocessor directives that start in column 1.  (SF bug #691793.)
 
 C API
 -----
