@@ -77,6 +77,10 @@ Windows
 Mac
 ---
 
+- There's a new module called "autoGIL", which offers a mechanism to
+  automatically release the Global Interpreter Lock when an event loop
+  goes to sleep, allowing other threads to run. It's currently only
+  supported on OSX, in the Mach-O version.
 
 What's New in Python 2.3 beta 1?
 ================================
