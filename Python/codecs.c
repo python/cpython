@@ -197,8 +197,8 @@ PyObject *_PyCodec_Lookup(const char *encoding)
     }
     if (i == len) {
 	/* XXX Perhaps we should cache misses too ? */
-	PyErr_SetString(PyExc_LookupError,
-			"unknown encoding");
+	PyErr_Format(PyExc_LookupError,
+                     "unknown encoding: %s", encoding);
 	goto onError;
     }
 
