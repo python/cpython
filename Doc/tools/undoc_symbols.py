@@ -1,5 +1,3 @@
-# Thomas Heller, 11/2001
-
 """This script prints out a list of undocumented symbols found in
 Python include files, prefixed by their tag kind.
 
