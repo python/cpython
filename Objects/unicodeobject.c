@@ -426,8 +426,9 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
 
 #if 0
     /* For b/w compatibility we also accept Unicode objects provided
-       that no encodings is given and then redirect to PyObject_Unicode() 
-       which then applies the additional logic for Unicode subclasses.
+       that no encodings is given and then redirect to
+       PyObject_Unicode() which then applies the additional logic for
+       Unicode subclasses.
 
        NOTE: This API should really only be used for object which
              represent *encoded* Unicode !

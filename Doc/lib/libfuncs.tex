@@ -758,19 +758,33 @@ def my_import(name):
   \versionadded{2.0}
 \end{funcdesc}
 
-\begin{funcdesc}{unicode}{string\optional{, encoding\optional{, errors}}}
-  Create a Unicode string from an 8-bit string \var{string} using the
-  codec for \var{encoding}.  The \var{encoding} parameter is a string
-  giving the name of an encoding.  Error handling is done according to
-  \var{errors}; this specifies the treatment of characters which are
-  invalid in the input encoding.  If \var{errors} is \code{'strict'}
-  (the default), a \exception{ValueError} is raised on errors, while a
-  value of \code{'ignore'} causes errors to be silently ignored, and a
-  value of \code{'replace'} causes the official Unicode replacement
-  character, \code{U+FFFD}, to be used to replace input characters
-  which cannot be decoded.  The default behavior is to decode UTF-8 in
-  strict mode, meaning that encoding errors raise
-  \exception{ValueError}.  See also the \refmodule{codecs} module.
+\begin{funcdesc}{unicode}{object\optional{, encoding\optional{, errors}}}
+  Return the Unicode string version of \var{object} using one of the
+  following modes:
+
+  If \var{encoding} and/or \var{errors} are given, \code{unicode()}
+  will decode the object which can either be an 8-bit string or a
+  character buffer using the codec for \var{encoding}. The
+  \var{encoding} parameter is a string giving the name of an encoding.
+  Error handling is done according to \var{errors}; this specifies the
+  treatment of characters which are invalid in the input encoding.  If
+  \var{errors} is \code{'strict'} (the default), a
+  \exception{ValueError} is raised on errors, while a value of
+  \code{'ignore'} causes errors to be silently ignored, and a value of
+  \code{'replace'} causes the official Unicode replacement character,
+  \code{U+FFFD}, to be used to replace input characters which cannot
+  be decoded.  See also the \refmodule{codecs} module.
+
+  If no optional parameters are given, \code{unicode()} will mimic the
+  behaviour of \code{str()} except that it returns Unicode strings
+  instead of 8-bit strings. More precisely, if \var{object} is an
+  Unicode string or subclass it will return a Unicode string without
+  any additional decoding applied. For objects which provide a
+  \code{__unicode__} method, it will call this method without
+  arguments to create a Unicode string. For all other objects, the
+  8-bit string version or representation is requested and then
+  converted to a Unicode string using the codec for the default
+  encoding in \code{'strict'} mode.
   \versionadded{2.0}
 \end{funcdesc}
 
