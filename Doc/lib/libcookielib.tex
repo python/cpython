@@ -140,17 +140,18 @@ RFC 2965.}
 
 \subsection{CookieJar and FileCookieJar Objects \label{cookie-jar-objects}}
 
-\class{CookieJar} objects support the iterator protocol.
+\class{CookieJar} objects support the iterator protocol for iterating
+over contained \class{Cookie} objects.
 
 \class{CookieJar} has the following methods:
 
 \begin{methoddesc}[CookieJar]{add_cookie_header}{request}
 Add correct \mailheader{Cookie} header to \var{request}.
 
-If the CookiePolicy allows (ie. the \class{CookiePolicy} instance's
-\member{rfc2965} and \member{hide_cookie2} attributes are true and
-false respectively), the \mailheader{Cookie2} header is also added
-when appropriate.
+If policy allows (ie. the \member{rfc2965} and \member{hide_cookie2}
+attributes of the \class{CookieJar}'s \class{CookiePolicy} instance
+are true and false respectively), the \mailheader{Cookie2} header is
+also added when appropriate.
 
 The \var{request} object (usually a \class{urllib2.Request} instance)
 must support the methods \method{get_full_url()}, \method{get_host()},
@@ -279,15 +280,17 @@ this happens.
 \class{FileCookieJar} instances have the following public attributes:
 
 \begin{memberdesc}{filename}
-Filename of default file in which to keep cookies.
+Filename of default file in which to keep cookies.  This attribute may
+be assigned to.
 \end{memberdesc}
 
 \begin{memberdesc}{delayload}
-If true, load cookies lazily from disk.  This is only a hint, since
-this only affects performance, not behaviour (unless the cookies on
-disk are changing).  A \class{CookieJar} object may ignore it.  None
-of the \class{FileCookieJar} classes included in the standard library
-lazily loads cookies.
+If true, load cookies lazily from disk.  This attribute should not be
+assigned to.  This is only a hint, since this only affects
+performance, not behaviour (unless the cookies on disk are changing).
+A \class{CookieJar} object may ignore it.  None of the
+\class{FileCookieJar} classes included in the standard library lazily
+loads cookies.
 \end{memberdesc}
 
 
@@ -303,7 +306,7 @@ that reads Microsoft Internet Explorer cookies, are available at
  policy=\constant{None}}
 A \class{FileCookieJar} that can load from and save cookies to disk in
 the Mozilla \code{cookies.txt} file format (which is also used by the
-lynx and Netscape browsers).  \note{This loses information about RFC
+Lynx and Netscape browsers).  \note{This loses information about RFC
 2965 cookies, and also about newer or non-standard cookie-attributes
 such as \code{port}.}
 
@@ -351,9 +354,8 @@ Return false if cookies should not be returned, given cookie domain.
 
 This method is an optimization.  It removes the need for checking
 every cookie with a particular domain (which might involve reading
-many files).  The default implementations of
-\method{domain_return_ok()} and \method{path_return_ok()}
-(\samp{return True}) leave all the work to \method{return_ok()}.
+many files).  Returning true from \method{domain_return_ok()} and
+\method{path_return_ok()} leaves all the work to \method{return_ok()}.
 
 If \method{domain_return_ok()} returns true for the cookie domain,
 \method{path_return_ok()} is called for the cookie path.  Otherwise,
@@ -386,20 +388,22 @@ attributes, indicating which protocols should be used, and how.  All
 of these attributes may be assigned to.
 
 \begin{memberdesc}{netscape}
-Implement netscape protocol.
+Implement Netscape protocol.
 \end{memberdesc}
 \begin{memberdesc}{rfc2965}
 Implement RFC 2965 protocol.
 \end{memberdesc}
 \begin{memberdesc}{hide_cookie2}
-Don't add Cookie2 header to requests (the presence of this header
-indicates to the server that we understand RFC 2965 cookies).
+Don't add \mailheader{Cookie2} header to requests (the presence of
+this header indicates to the server that we understand RFC 2965
+cookies).
 \end{memberdesc}
 
 The most useful way to define a \class{CookiePolicy} class is by
 subclassing from \class{DefaultCookiePolicy} and overriding some or
 all of the methods above.  \class{CookiePolicy} itself may be used as
-a 'null policy' to allow setting and receiving any and all cookies.
+a 'null policy' to allow setting and receiving any and all cookies
+(this is unlikely to be useful).
 
 
 \subsection{DefaultCookiePolicy Objects \label{default-cookie-policy-objects}}
@@ -440,8 +444,9 @@ the \var{blocked_domains} constructor argument, and
 \var{allowed_domains}).  If you set a whitelist, you can turn it off
 again by setting it to \constant{None}.
 
-Domains in block or allow lists that do not start with a dot must be
-equal.  For example, \code{"example.com"} matches a blacklist entry of
+Domains in block or allow lists that do not start with a dot must
+equal the cookie domain to be matched.  For example,
+\code{"example.com"} matches a blacklist entry of
 \code{"example.com"}, but \code{"www.example.com"} does not.  Domains
 that do start with a dot are matched by more specific domains too.
 For example, both \code{"www.example.com"} and
@@ -534,10 +539,10 @@ because \code{www.foo} contains a dot).
 \end{memberdesc}
 \begin{memberdesc}{DomainStrictNonDomain}
 Cookies that did not explicitly specify a \code{domain}
-cookie-attribute can only be returned to a domain that string-compares
-equal to the domain that set the cookie (eg. \code{spam.example.com}
-won't be returned cookies from \code{example.com} that had no
-\code{domain} cookie-attribute).
+cookie-attribute can only be returned to a domain equal to the domain
+that set the cookie (eg. \code{spam.example.com} won't be returned
+cookies from \code{example.com} that had no \code{domain}
+cookie-attribute).
 \end{memberdesc}
 \begin{memberdesc}{DomainRFC2965Match}
 When setting cookies, require a full RFC 2965 domain-match.
@@ -574,17 +579,17 @@ Integer or \constant{None}.  Netscape cookies have version 0.  RFC
 2965 and RFC 2109 cookies have version 1.
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{name}
-Cookie name (a string), or \constant{None}.
+Cookie name (a string).
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{value}
-Cookie value (a string).
+Cookie value (a string), or \constant{None}.
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{port}
 String representing a port or a set of ports (eg. '80', or '80,8080'),
 or \constant{None}.
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{path}
-Cookie path (a string, eg. '/acme/rocket_launchers').
+Cookie path (a string, eg. \code{'/acme/rocket_launchers'}).
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{secure}
 True if cookie should only be returned over a secure connection.
@@ -614,7 +619,7 @@ True if a domain was explicitly specified by the server.
 \end{memberdesc}
 \begin{memberdesc}[Cookie]{domain_initial_dot}
 True if the domain explicitly specified by the server began with a
-dot ('.').
+dot (\code{'.'}).
 \end{memberdesc}
 
 Cookies may have additional non-standard cookie-attributes.  These may
@@ -652,13 +657,13 @@ r = opener.open("http://example.com/")
 \end{verbatim}
 
 This example illustrates how to open a URL using your Netscape,
-Mozilla, or lynx cookies (assumes \UNIX{} convention for location of
-the cookies file):
+Mozilla, or Lynx cookies (assumes \UNIX{}/Netscape convention for
+location of the cookies file):
 
 \begin{verbatim}
 import os, cookielib, urllib2
 cj = cookielib.MozillaCookieJar()
-cj.load(os.path.join(os.environ["HOME"], "/.netscape/cookies.txt"))
+cj.load(os.path.join(os.environ["HOME"], ".netscape/cookies.txt"))
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 r = opener.open("http://example.com/")
 \end{verbatim}
@@ -670,9 +675,10 @@ cookies or having them returned:
 
 \begin{verbatim}
 import urllib2
-from cookielib import CookieJar, DefaultCookiePolicy as Policy
-policy = Policy(rfc2965=True, strict_ns_domain=Policy.DomainStrict,
-                blocked_domains=["ads.net", ".ads.net"])
+from cookielib import CookieJar, DefaultCookiePolicy
+policy = DefaultCookiePolicy(
+    rfc2965=True, strict_ns_domain=Policy.DomainStrict,
+    blocked_domains=["ads.net", ".ads.net"])
 cj = CookieJar(policy)
 opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
 r = opener.open("http://example.com/")
