@@ -1610,14 +1610,14 @@ static FSSpec library_fss;
 ** resources.
 */
 OSErr pascal
-init_tkinter_shlib(InitBlockPtr data)
+init_tkinter_shlib(CFragInitBlockPtr data)
 {
 	__initialize();
 	if ( data == nil ) return noErr;
-	if ( data->fragLocator.where == kOnDiskFlat ) {
+	if ( data->fragLocator.where == kDataForkCFragLocator ) {
 		library_fss = *data->fragLocator.u.onDisk.fileSpec;
 		loaded_from_shlib = 1;
-	} else if ( data->fragLocator.where == kOnDiskSegmented ) {
+	} else if ( data->fragLocator.where == kResourceCFragLocator ) {
 		library_fss = *data->fragLocator.u.inSegs.fileSpec;
 		loaded_from_shlib = 1;
 	}
