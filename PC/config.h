@@ -57,7 +57,6 @@ standard macro MS_COREDLL to find out.  If you have an exception
 you must define MS_NO_COREDLL (do not test this macro) */
 #ifndef MS_NO_COREDLL
 #define MS_COREDLL	/* Python core is in a DLL */
-#define main Py_Main
 #ifndef USE_DL_EXPORT
 #define USE_DL_IMPORT
 #endif /* !USE_DL_EXPORT */
@@ -68,7 +67,7 @@ you must define MS_NO_COREDLL (do not test this macro) */
 #else
 #define COMPILER "[MSC (Unknown)]"
 #endif
-#define PYTHONPATH ".\\lib;.\\lib\\win;.\\lib\\test;.\\lib\\tkinter;.\\vc40"
+#define PYTHONPATH ".\\lib;.\\lib\\win;.\\lib\\test;.\\lib\\tkinter"
 typedef int pid_t;
 #define WORD_BIT 32
 #pragma warning(disable:4113)
