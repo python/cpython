@@ -189,6 +189,13 @@ values are checked in a case-insensitive manner.  Any other value will
 cause it to raise \exception{ValueError}.
 \end{methoddesc}
 
+\begin{methoddesc}{items}{section\optional{, raw\optional{, vars}}}
+Create a generator which will return a tuple \code{(name, value)} for
+each option in the given \var{section}. Optional arguments have the
+same meaning as for the \code{get()} method.
+\versionadded{2.3}
+\end{methoddesc}
+
 \begin{methoddesc}{set}{section, option, value}
 If the given section exists, set the given option to the specified value;
 otherwise raise \exception{NoSectionError}.

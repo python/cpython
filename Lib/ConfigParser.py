@@ -70,6 +70,10 @@ ConfigParser -- responsible for for parsing a list of
         insensitively defined as 0, false, no, off for 0, and 1, true,
         yes, on for 1).  Returns 0 or 1.
 
+    items(section, raw=0, vars=None)
+        return a list of tuples with (name, value) for each option
+        in the section.
+
     remove_section(section)
         remove the given file section and all its options
 
@@ -277,6 +281,35 @@ class ConfigParser:
         if raw:
             return value
         return self._interpolate(section, option, value, d)
+
+    def items(self, section, raw=0, vars=None):
+        """Return a list of tuples with (name, value) for each option
+        in the section.
+
+        All % interpolations are expanded in the return values, based on the
+        defaults passed into the constructor, unless the optional argument
+        `raw' is true.  Additional substitutions may be provided using the
+        `vars' argument, which must be a dictionary whose contents overrides
+        any pre-existing defaults.
+
+        The section DEFAULT is special.
+        """
+        d = self.__defaults.copy()
+        try:
+            d.update(self.__sections[section])
+        except KeyError:
+            if section != DEFAULTSECT:
+                raise NoSectionError(section)
+        # Update with the entry specific variables
+        if vars:
+            d.update(vars)
+        if raw:
+            for option in self.options(section):
+                yield (option, d[option])
+        else:
+            for option in self.options(section):
+                yield (option,
+                       self._interpolate(section, option, d[option], d))
 
     def _interpolate(self, section, option, rawval, vars):
         # do the string interpolation
