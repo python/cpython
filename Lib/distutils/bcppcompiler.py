@@ -253,6 +253,16 @@ class BCPPCompiler(CCompiler) :
                 
             ld_args.extend(objects)     # list of object files
 
+            # XXX the command-line syntax for Borland C++ is a bit wonky;
+            # certain filenames are jammed together in one big string, but
+            # comma-delimited.  This doesn't mesh too well with the
+            # Unix-centric attitude (with a DOS/Windows quoting hack) of
+            # 'spawn()', so constructing the argument list is a bit
+            # awkward.  Note that doing the obvious thing and jamming all
+            # the filenames and commas into one argument would be wrong,
+            # because 'spawn()' would quote any filenames with spaces in
+            # them.  Arghghh!.  Apparently it works fine as coded...
+
             # name of dll file
             ld_args.extend([',',output_filename])
             # no map file and start libraries 
