@@ -6,12 +6,12 @@ import struct
 import fcntl
 import FCNTL
 import os, sys
-from test_support import verbose
+from test_support import verbose, TESTFN
 
-filename = '/tmp/delete-me'
+filename = TESTFN
 
 # the example from the library docs
-f = open(filename,'w')
+f = open(filename, 'w')
 rv = fcntl.fcntl(f.fileno(), FCNTL.F_SETFL, os.O_NONBLOCK)
 if verbose:
     print 'Status from fnctl with O_NONBLOCK: ', rv
