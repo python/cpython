@@ -9,16 +9,24 @@
 #pragma lib_export off
 #endif
 
+#ifndef HAVE_HYPOT
+extern double hypot Py_PROTO((double, double));
+#ifdef __MWERKS__
+#define hypot we_dont_want_faulty_hypot_decl
+#endif
+#endif
+
 #include <math.h>
+
+#ifndef HAVE_HYPOT
+#ifdef __MWERKS__
+#undef hypot
+#endif
+#endif
 
 #ifdef SYMANTEC__CFM68K__
 #pragma lib_export on
 #endif
-
-#ifndef HAVE_HYPOT
-extern double hypot Py_PROTO((double, double));
-#endif
-
 
 #if defined(USE_MSL) && defined(__MC68K__)
 /* CodeWarrior MSL 2.1.1 has weird define overrides that don't work
