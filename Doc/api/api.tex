@@ -1241,7 +1241,8 @@ created in this case --- examine \code{sys.modules} to find out).
 \withsubitem{(in module sys)}{\ttindex{modules}}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyImport_ImportModuleEx}{char *name, PyObject *globals, PyObject *locals, PyObject *fromlist}
+\begin{cfuncdesc}{PyObject*}{PyImport_ImportModuleEx}{char *name,
+                       PyObject *globals, PyObject *locals, PyObject *fromlist}
 Import a module.  This is best described by referring to the built-in
 Python function \function{__import__()}\bifuncindex{__import__}, as
 the standard \function{__import__()} function calls this function
@@ -1500,7 +1501,8 @@ This is the equivalent of the Python expression
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{int}{PyObject_SetAttrString}{PyObject *o, char *attr_name, PyObject *v}
+\begin{cfuncdesc}{int}{PyObject_SetAttrString}{PyObject *o,
+                                               char *attr_name, PyObject *v}
 Set the value of the attribute named \var{attr_name}, for object
 \var{o}, to the value \var{v}. Returns \code{-1} on failure.  This is
 the equivalent of the Python statement \samp{\var{o}.\var{attr_name} =
@@ -1508,7 +1510,8 @@ the equivalent of the Python statement \samp{\var{o}.\var{attr_name} =
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{int}{PyObject_SetAttr}{PyObject *o, PyObject *attr_name, PyObject *v}
+\begin{cfuncdesc}{int}{PyObject_SetAttr}{PyObject *o,
+                                         PyObject *attr_name, PyObject *v}
 Set the value of the attribute named \var{attr_name}, for
 object \var{o},
 to the value \var{v}. Returns \code{-1} on failure.  This is
@@ -1695,7 +1698,8 @@ Return element of \var{o} corresponding to the object \var{key} or
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{int}{PyObject_SetItem}{PyObject *o, PyObject *key, PyObject *v}
+\begin{cfuncdesc}{int}{PyObject_SetItem}{PyObject *o,
+                                         PyObject *key, PyObject *v}
 Map the object \var{key} to the value \var{v}.
 Returns \code{-1} on failure.  This is the equivalent
 of the Python statement \samp{\var{o}[\var{key}] = \var{v}}.
@@ -1715,6 +1719,7 @@ object's \method{fileno()} method is called if it exists; the method
 must return an integer or long integer, which is returned as the file
 descriptor value.  Returns \code{-1} on failure.
 \end{cfuncdesc}
+
 
 \section{Number Protocol \label{number}}
 
@@ -1754,6 +1759,24 @@ This is the equivalent of the Python expression \samp{\var{o1} /
 \end{cfuncdesc}
 
 
+\begin{cfuncdesc}{PyObject*}{PyNumber_FloorDivide}{PyObject *o1, PyObject *o2}
+Return the floor of \var{o1} divided by \var{o2}, or \NULL{} on
+failure.  This is equivalent to the ``classic'' division of integers.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_TrueDivide}{PyObject *o1, PyObject *o2}
+Return a reasonable approximation for the mathematical value of
+\var{o1} divided by \var{o2}, or \NULL{} on failure.  The return value
+is ``approximate'' because binary floating point numbers are
+approximate; it is not possible to represent all real numbers in base
+two.  This function can return a floating point value when passed two
+integers.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+
 \begin{cfuncdesc}{PyObject*}{PyNumber_Remainder}{PyObject *o1, PyObject *o2}
 Returns the remainder of dividing \var{o1} by \var{o2}, or \NULL{} on
 failure.  This is the equivalent of the Python expression
@@ -1768,7 +1791,8 @@ expression \samp{divmod(\var{o1}, \var{o2})}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_Power}{PyObject *o1, PyObject *o2, PyObject *o3}
+\begin{cfuncdesc}{PyObject*}{PyNumber_Power}{PyObject *o1,
+                                             PyObject *o2, PyObject *o3}
 See the built-in function \function{pow()}\bifuncindex{pow}.  Returns
 \NULL{} on failure. This is the equivalent of the Python expression
 \samp{pow(\var{o1}, \var{o2}, \var{o3})}, where \var{o3} is optional.
@@ -1838,87 +1862,120 @@ Returns the ``bitwise or'' of \var{o1} and \var{o2} on success, or
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceAdd}{PyObject *o1, PyObject *o2}
-Returns the result of adding \var{o1} and \var{o2}, or \NULL{} on failure. 
-The operation is done \emph{in-place} when \var{o1} supports it.  This is the
-equivalent of the Python expression \samp{\var{o1} += \var{o2}}.
+Returns the result of adding \var{o1} and \var{o2}, or \NULL{} on
+failure.  The operation is done \emph{in-place} when \var{o1} supports
+it.  This is the equivalent of the Python statement \samp{\var{o1} +=
+\var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceSubtract}{PyObject *o1, PyObject *o2}
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceSubtract}{PyObject *o1,
+                                                       PyObject *o2}
 Returns the result of subtracting \var{o2} from \var{o1}, or
-\NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
-supports it.  This is the equivalent of the Python expression \samp{\var{o1}
--= \var{o2}}.
+\NULL{} on failure.  The operation is done \emph{in-place} when
+\var{o1} supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} -= \var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceMultiply}{PyObject *o1, PyObject *o2}
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceMultiply}{PyObject *o1,
+                                                       PyObject *o2}
 Returns the result of multiplying \var{o1} and \var{o2}, or \NULL{} on
 failure.  The operation is done \emph{in-place} when \var{o1} supports it. 
-This is the equivalent of the Python expression \samp{\var{o1} *= \var{o2}}.
+This is the equivalent of the Python statement \samp{\var{o1} *= \var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceDivide}{PyObject *o1, PyObject *o2}
-Returns the result of dividing \var{o1} by \var{o2}, or \NULL{} on failure. 
-The operation is done \emph{in-place} when \var{o1} supports it. This is the
-equivalent of the Python expression \samp{\var{o1} /= \var{o2}}.
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceDivide}{PyObject *o1,
+                                                     PyObject *o2}
+Returns the result of dividing \var{o1} by \var{o2}, or \NULL{} on
+failure.  The operation is done \emph{in-place} when \var{o1} supports
+it. This is the equivalent of the Python statement \samp{\var{o1} /=
+\var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceRemainder}{PyObject *o1, PyObject *o2}
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceFloorDivide}{PyObject *o1,
+                                                          PyObject *o2}
+Returns the mathematical of dividing \var{o1} by \var{o2}, or \NULL{}
+on failure.  The operation is done \emph{in-place} when \var{o1}
+supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} //= \var{o2}}.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceTrueDivide}{PyObject *o1,
+                                                         PyObject *o2}
+Return a reasonable approximation for the mathematical value of
+\var{o1} divided by \var{o2}, or \NULL{} on failure.  The return value
+is ``approximate'' because binary floating point numbers are
+approximate; it is not possible to represent all real numbers in base
+two.  This function can return a floating point value when passed two
+integers.  The operation is done \emph{in-place} when \var{o1}
+supports it.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceRemainder}{PyObject *o1,
+                                                        PyObject *o2}
 Returns the remainder of dividing \var{o1} by \var{o2}, or \NULL{} on
 failure.  The operation is done \emph{in-place} when \var{o1} supports it. 
-This is the equivalent of the Python expression \samp{\var{o1} \%= \var{o2}}.
+This is the equivalent of the Python statement \samp{\var{o1} \%= \var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlacePower}{PyObject *o1, PyObject *o2, PyObject *o3}
-See the built-in function \function{pow()}\bifuncindex{pow}.  Returns
-\NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
-supports it.  This is the equivalent of the Python expression \samp{\var{o1}
-**= \var{o2}} when o3 is \cdata{Py_None}, or an in-place variant of
-\samp{pow(\var{o1}, \var{o2}, \var{o3})} otherwise. If \var{o3} is to be
-ignored, pass \cdata{Py_None} in its place (passing \NULL{} for \var{o3}
-would cause an illegal memory access).
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlacePower}{PyObject *o1,
+                                                    PyObject *o2, PyObject *o3}
+See the built-in function \function{pow()}.\bifuncindex{pow}  Returns
+\NULL{} on failure.  The operation is done \emph{in-place} when
+\var{o1} supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} **= \var{o2}} when o3 is \cdata{Py_None}, or an
+in-place variant of \samp{pow(\var{o1}, \var{o2}, \var{o3})}
+otherwise. If \var{o3} is to be ignored, pass \cdata{Py_None} in its
+place (passing \NULL{} for \var{o3} would cause an illegal memory
+access).
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceLshift}{PyObject *o1, PyObject *o2}
-Returns the result of left shifting \var{o1} by \var{o2} on success, or
-\NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
-supports it.  This is the equivalent of the Python expression \samp{\var{o1}
-<\code{<=} \var{o2}}.
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceLshift}{PyObject *o1,
+                                                     PyObject *o2}
+Returns the result of left shifting \var{o1} by \var{o2} on success,
+or \NULL{} on failure.  The operation is done \emph{in-place} when
+\var{o1} supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} <\code{<=} \var{o2}}.
 \end{cfuncdesc}
 
 
-\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceRshift}{PyObject *o1, PyObject *o2}
-Returns the result of right shifting \var{o1} by \var{o2} on success, or
-\NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
-supports it.  This is the equivalent of the Python expression \samp{\var{o1}
->\code{>=} \var{o2}}.
+\begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceRshift}{PyObject *o1,
+                                                     PyObject *o2}
+Returns the result of right shifting \var{o1} by \var{o2} on success,
+or \NULL{} on failure.  The operation is done \emph{in-place} when
+\var{o1} supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} >\code{>=} \var{o2}}.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceAnd}{PyObject *o1, PyObject *o2}
 Returns the ``bitwise and'' of \var{o1} and \var{o2} on success
 and \NULL{} on failure. The operation is done \emph{in-place} when
-\var{o1} supports it.  This is the equivalent of the Python expression
+\var{o1} supports it.  This is the equivalent of the Python statement
 \samp{\var{o1} \&= \var{o2}}.
 \end{cfuncdesc}
 
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceXor}{PyObject *o1, PyObject *o2}
-Returns the ``bitwise exclusive or'' of \var{o1} by \var{o2} on success, or
-\NULL{} on failure.  The operation is done \emph{in-place} when \var{o1}
-supports it.  This is the equivalent of the Python expression \samp{\var{o1}
-\textasciicircum= \var{o2}}.
+Returns the ``bitwise exclusive or'' of \var{o1} by \var{o2} on
+success, or \NULL{} on failure.  The operation is done \emph{in-place}
+when \var{o1} supports it.  This is the equivalent of the Python
+statement \samp{\var{o1} \textasciicircum= \var{o2}}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyNumber_InPlaceOr}{PyObject *o1, PyObject *o2}
-Returns the ``bitwise or'' of \var{o1} and \var{o2} on success, or \NULL{}
-on failure.  The operation is done \emph{in-place} when \var{o1} supports
-it.  This is the equivalent of the Python expression \samp{\var{o1} |=
-\var{o2}}.
+Returns the ``bitwise or'' of \var{o1} and \var{o2} on success, or
+\NULL{} on failure.  The operation is done \emph{in-place} when
+\var{o1} supports it.  This is the equivalent of the Python statement
+\samp{\var{o1} |= \var{o2}}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyNumber_Coerce}{PyObject **p1, PyObject **p2}
@@ -1985,7 +2042,8 @@ Return the result of repeating sequence object
 equivalent of the Python expression \samp{\var{o} * \var{count}}.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PySequence_InPlaceConcat}{PyObject *o1, PyObject *o2}
+\begin{cfuncdesc}{PyObject*}{PySequence_InPlaceConcat}{PyObject *o1,
+                                                       PyObject *o2}
 Return the concatenation of \var{o1} and \var{o2} on success, and \NULL{} on
 failure.  The operation is done \emph{in-place} when \var{o1} supports it. 
 This is the equivalent of the Python expression \samp{\var{o1} += \var{o2}}.
@@ -4797,6 +4855,38 @@ previous versions.
   Set the the tracing function to \var{func}.  This is similar to
   \cfunction{PyEval_SetProfile()}, except the tracing function does
   receive line-number events.
+\end{cfuncdesc}
+
+
+\section{Advanced Debugger Support \label{advanced-debugging}}
+\sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
+
+These functions are only intended to be used by advanced debugging
+tools.
+
+\begin{cfuncdesc}{PyInterpreterState*}{PyInterpreterState_Head}{}
+Return the interpreter state object at the head of the list of all
+such objects.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyInterpreterState*}{PyInterpreterState_Next}{PyInterpreterState *interp}
+Return the next interpreter state object after \var{interp} from the
+list of all such objects.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState *}{PyInterpreterState_ThreadHead}{PyInterpreterState *interp}
+Return the a pointer to the first \ctype{PyThreadState} object in the
+list of threads associated with the interpreter \var{interp}.
+\versionadded{2.2}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyThreadState*}{PyThreadState_Next}{PyThreadState *tstate}
+Return the next thread state object after \var{tstate} from the list
+of all such objects belonging to the same \ctype{PyInterpreterState}
+object.
+\versionadded{2.2}
 \end{cfuncdesc}
 
 
