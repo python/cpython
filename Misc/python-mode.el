@@ -6,8 +6,7 @@
 ;;         1992-1994 Tim Peters
 ;; Maintainer:    python-mode@python.org
 ;; Created:       Feb 1992
-;; Version:       $Revision$
-;; Last Modified: $Date$
+;; Version:       3.0
 ;; Keywords: python languages oop
 
 ;; This software is provided as-is, without express or implied
