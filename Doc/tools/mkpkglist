@@ -1,0 +1,97 @@
+#! /usr/bin/env python
+#
+# Simple script to create the table that lists the packages available
+# for download.  This expects the downloadable files and the Makefile
+# to be in the current directory.
+#
+# The output of this script can be pasted directly into the download
+# page for the documentation.
+
+import os
+import sys
+
+from os.path import isfile
+
+
+PKG_TYPES = [
+    # human name, filename prefix
+    ("HTML", "html"),
+    ("PDF (US-Letter)", "pdf-letter"),
+    ("PDF (A4)", "pdf-a4"),
+    ("PostScript (US-Letter)", "postscript-letter"),
+    ("PostScript (A4)", "postscript-a4"),
+    ("GNU info", "info"),
+    ("iSilo", "isilo"),
+    ("LaTeX", "latex"),
+    ]
+
+
+fp = open("Makefile")
+for line in fp:
+    line = line.replace('=', ' ', 1)
+    parts = line.split()
+    if parts[:1] == ["RELEASE"]:
+        release = parts[1]
+        break
+else:
+    print >>sys.stderr, "Could not locate RELEASE in Makefile."
+    sys.exit(1)
+
+print '''\
+<table border="1" cellpadding="3" align="center">
+  <thead>
+    <tr bgcolor="#3399ff"><th rowspan="2">Content</th>
+                          <th colspan="3">Format</th>
+      </tr>
+    <tr bgcolor="#3399ff"><th>ZIP</th><th>GZip</th><th>BZip2</th>
+    </thead>
+  <tbody>'''
+
+# formatted using FILE_TEMPLATE % (release, prefix, release, extension)
+FILE_TEMPLATE = '''\
+        <td><a href="../../ftp/python/doc/%s/%s-%s%s"
+            >%dK</a></td>'''
+
+NO_FILE_TEMPLATE = '''\
+        <td>&nbsp;</td>'''
+
+def get_size(prefix, ext):
+    fn = "%s-%s%s" % (prefix, release, ext)
+    return int(round(os.path.getsize(fn) / 1024.0))
+
+for name, prefix in PKG_TYPES:
+    zip_fn = "%s-%s.zip" % (prefix, release)
+    tgz_fn = "%s-%s.tgz" % (prefix, release)
+    bz2_fn = "%s-%s.tar.bz2" % (prefix, release)
+
+    have_zip = isfile(zip_fn)
+    have_tgz = isfile(tgz_fn)
+    have_bz2 = isfile(bz2_fn)
+
+    if have_zip or have_tgz or have_bz2:
+        print "    <tr><td>%s</td>" % name
+
+        if have_zip:
+            kb = get_size(prefix, ".zip")
+            print FILE_TEMPLATE % (release, prefix, release, ".zip", kb)
+        else:
+            print NO_FILE_TEMPLATE
+
+        if have_tgz:
+            kb = get_size(prefix, ".tgz")
+            print FILE_TEMPLATE % (release, prefix, release, ".tgz", kb)
+        else:
+            print NO_FILE_TEMPLATE
+
+        if have_bz2:
+            kb = get_size(prefix, ".tar.bz2")
+            print FILE_TEMPLATE % (release, prefix, release, ".tar.bz2", kb)
+        else:
+            print NO_FILE_TEMPLATE
+
+        print "      </tr>"
+
+print '''\
+    </tbody>
+</table>
+'''
