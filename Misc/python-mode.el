@@ -204,13 +204,14 @@ as indentation hints, unless the comment character is in column zero."
     (or (funcall ok (getenv "TMPDIR"))
 	(funcall ok "/usr/tmp")
 	(funcall ok "/tmp")
+	(funcall ok "/var/tmp")
 	(funcall ok  ".")
 	(error
 	 "Couldn't find a usable temp directory -- set `py-temp-directory'")))
-  "*Directory used for temp files created by a *Python* process.
+  "*Directory used for temporary files created by a *Python* process.
 By default, the first directory from this list that exists and that you
-can write into:  the value (if any) of the environment variable TMPDIR,
-/usr/tmp, /tmp, or the current directory."
+can write into: the value (if any) of the environment variable TMPDIR,
+/usr/tmp, /tmp, /var/tmp, or the current directory."
   :type 'string
   :group 'python)
 
