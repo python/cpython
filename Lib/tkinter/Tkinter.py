@@ -1522,13 +1522,36 @@ class Text(Widget):
 	def yview_pickplace(self, *what):
 		apply(self.tk.call, (self._w, 'yview', '-pickplace')+what)
 
-class OptionMenu(Widget):
+class _setit:
+	def __init__(self, var, value):
+		self.__value = value
+		self.__var = var
+
+	def __call__(self, *args):
+		self.__var.set(value)
+
+class OptionMenu(Menubutton):
 	def __init__(self, master, variable, value, *values):
+		kw = {"borderwidth": 2, "textvariable": variable,
+		      "indicatoron": 1, "relief": RAISED, "anchor": "c",
+		      "highlightthickness": 2}
+		Widget.__init__(self, master, "menubutton", kw)
 		self.widgetName = 'tk_optionMenu'
-		Widget._setup(self, master, {})
-		self.menuname = apply(
-			self.tk.call,
-			(self.widgetName, self._w, variable, value) + values)
+		menu = self.__menu = Menu(self, name="menu", tearoff=0)
+		self.menuname = menu._w
+		menu.add_command(label=value, command=_setit(variable, value))
+		for v in values:
+			menu.add_command(label=v, command=_setit(variable, v))
+		self["menu"] = menu
+
+	def __getitem__(self, name):
+		if name == 'menu':
+			return self.__menu
+		return Widget.__getitem__(self, name)
+
+	def destroy(self):
+		Menubutton.destroy(self)
+		self.__menu = None
 
 class Image:
 	def __init__(self, imgtype, name=None, cnf={}, **kw):
