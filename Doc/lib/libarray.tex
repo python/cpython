@@ -15,21 +15,21 @@ which is a single character.  The following type codes are defined:
 
 \begin{tableiii}{c|l|c}{code}{Type code}{C Type}{Minimum size in bytes}
 \lineiii{'c'}{character}{1}
-\lineiii{'b'}{signed integer}{1}
-\lineiii{'B'}{unsigned integer}{1}
-\lineiii{'h'}{signed integer}{2}
-\lineiii{'H'}{unsigned integer}{2}
-\lineiii{'i'}{signed integer}{2}
-\lineiii{'I'}{unsigned integer}{2}
-\lineiii{'l'}{signed integer}{4}
-\lineiii{'L'}{unsigned integer}{4}
-\lineiii{'f'}{floating point}{4}
-\lineiii{'d'}{floating point}{8}
+\lineiii{'b'}{signed int}{1}
+\lineiii{'B'}{unsigned int}{1}
+\lineiii{'h'}{signed int}{2}
+\lineiii{'H'}{unsigned int}{2}
+\lineiii{'i'}{signed int}{2}
+\lineiii{'I'}{unsigned int}{2}
+\lineiii{'l'}{signed int}{4}
+\lineiii{'L'}{unsigned int}{4}
+\lineiii{'f'}{float}{4}
+\lineiii{'d'}{double}{8}
 \end{tableiii}
 
 The actual representation of values is determined by the machine
 architecture (strictly speaking, by the \C{} implementation).  The actual
-size can be accessed through the \var{itemsize} attribute.  The values
+size can be accessed through the \member{itemsize} attribute.  The values
 stored  for \code{'L'} and \code{'I'} items will be represented as
 Python long integers when retrieved, because Python's plain integer
 type cannot represent the full range of \C{}'s unsigned (long) integers.
