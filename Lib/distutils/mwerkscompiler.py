@@ -161,7 +161,7 @@ class MWerksCompiler (CCompiler) :
             return
         # Build the export file
         exportfilename = os.path.join(build_temp, exportname)
-        log.debug("\tCreate export file", exportfilename)
+        log.debug("\tCreate export file %s", exportfilename)
         fp = open(exportfilename, 'w')
         fp.write('%s\n'%export_symbols[0])
         fp.close()
@@ -182,7 +182,7 @@ class MWerksCompiler (CCompiler) :
         # because we pass this pathname to CodeWarrior in an AppleEvent, and CW
         # doesn't have a clue about our working directory.
         xmlfilename = os.path.join(os.getcwd(), os.path.join(build_temp, xmlname))
-        log.debug("\tCreate XML file", xmlfilename)
+        log.debug("\tCreate XML file %s", xmlfilename)
         xmlbuilder = mkcwproject.cwxmlgen.ProjectBuilder(settings)
         xmlbuilder.generate()
         xmldata = settings['tmp_projectxmldata']
@@ -191,7 +191,7 @@ class MWerksCompiler (CCompiler) :
         fp.close()
         # Generate the project. Again a full pathname.
         projectfilename = os.path.join(os.getcwd(), os.path.join(build_temp, projectname))
-        log.debug('\tCreate project file', projectfilename)
+        log.debug('\tCreate project file %s', projectfilename)
         mkcwproject.makeproject(xmlfilename, projectfilename)
         # And build it
         log.debug('\tBuild project')
@@ -213,3 +213,31 @@ class MWerksCompiler (CCompiler) :
             if components[i] == '..':
                 components[i] = ''
         return string.join(components, ':')
+
+    def library_dir_option (self, dir):
+        """Return the compiler option to add 'dir' to the list of
+        directories searched for libraries.
+        """
+        return # XXXX Not correct...
+
+    def runtime_library_dir_option (self, dir):
+        """Return the compiler option to add 'dir' to the list of
+        directories searched for runtime libraries.
+        """
+        # Nothing needed or Mwerks/Mac.
+        return
+
+    def library_option (self, lib):
+        """Return the compiler option to add 'dir' to the list of libraries
+        linked into the shared library or executable.
+        """
+        return
+
+    def find_library_file (self, dirs, lib, debug=0):
+        """Search the specified list of directories for a static or shared
+        library file 'lib' and return the full path to that file.  If
+        'debug' true, look for a debugging version (if that makes sense on
+        the current platform).  Return None if 'lib' wasn't found in any of
+        the specified directories.
+        """
+        return 0
