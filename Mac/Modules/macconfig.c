@@ -167,6 +167,7 @@ extern void initpyexpat();
 extern void initcPickle();
 extern void initcStringIO();
 extern void init_codecs();
+extern void initsha();
 extern void init_locale();
 #ifdef USE_UCNHASH
 extern void initucnhash();
@@ -206,6 +207,7 @@ struct _inittab _PyImport_Inittab[] = {
 	{"pcre", initpcre},
 	{"unicodedata", initunicodedata},
 	{"_codecs", init_codecs},
+	{"sha", initsha},
 #ifdef USE_MACCTB
 	{"ctb", initctb},
 #endif
