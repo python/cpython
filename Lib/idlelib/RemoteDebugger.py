@@ -287,19 +287,21 @@ class GUIAdapter:
 
 class IdbProxy:
 
-    def __init__(self, conn, oid):
+    def __init__(self, conn, shell, oid):
         self.oid = oid
         self.conn = conn
+        self.shell = shell
 
     def call(self, methodname, *args, **kwargs):
-        ##print "call %s %s %s" % (methodname, args, kwargs)
+        ##print "**IdbProxy.call %s %s %s" % (methodname, args, kwargs)
         value = self.conn.remotecall(self.oid, methodname, args, kwargs)
-        ##print "return %s" % `value`
+        ##print "**IdbProxy.call %s returns %s" % (methodname, `value`)
         return value
 
     def run(self, cmd, locals):
         # Ignores locals on purpose!
-        self.call("run", cmd)
+        seq = self.conn.asynccall(self.oid, "run", (cmd,), {})
+        self.shell.interp.active_seq = seq
 
     def get_stack(self, frame, tbid):
         # passing frame and traceback IDs, not the objects themselves
@@ -352,7 +354,7 @@ def start_remote_debugger(rpcclt, pyshell):
 
     idb_adap_oid = rpcclt.remotecall("exec", "start_the_debugger",\
                                    (gui_adap_oid,), {})
-    idb_proxy = IdbProxy(rpcclt, idb_adap_oid)
+    idb_proxy = IdbProxy(rpcclt, pyshell, idb_adap_oid)
     gui = Debugger.Debugger(pyshell, idb_proxy)
     gui_adap = GUIAdapter(rpcclt, gui)
     rpcclt.register(gui_adap_oid, gui_adap)

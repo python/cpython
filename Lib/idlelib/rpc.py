@@ -361,9 +361,10 @@ class SocketIO:
             seq, resq = message
             self.debug("pollresponse:%d:myseq:%s" % (seq, myseq))
             if resq[0] == "call":
-                self.debug("pollresponse:%d:call_localcall" % seq)
+                self.debug("pollresponse:%d:localcall:call:" % seq)
                 response = self.localcall(resq)
-                self.debug("pollresponse:%d:response:%s" % (seq, response))
+                self.debug("pollresponse:%d:localcall:response:%s"
+                           % (seq, response))
                 self.putmessage((seq, response))
                 continue
             elif seq == myseq:

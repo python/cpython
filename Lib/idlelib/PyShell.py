@@ -399,16 +399,16 @@ class ModifiedInterpreter(InteractiveInterpreter):
             self.tkconsole.resetoutput()
             self.active_seq = None
             how, what = response
-            file = self.tkconsole.console
+            console = self.tkconsole.console
             if how == "OK":
                 if what is not None:
-                    print >>file, `what`
+                    print >>console, `what`
             elif how == "EXCEPTION":
                 mod, name, args, tb = what
-                print >>file, 'Traceback (most recent call last):'
-                exclude = ("run.py", "rpc.py")
-                self.cleanup_traceback(tb, exclude)
-                traceback.print_list(tb, file=file)
+                print >>console, 'Traceback (most recent call last):'
+                exclude = ("run.py", "rpc.py", "RemoteDebugger.py", "bdb.py")
+                self.cleanup_traceback(tb, exclude, console)
+                traceback.print_list(tb, file=console)
                 # try to reinstantiate the exception, stuff in the args:
                 try:
                     etype = eval(mod + '.' + name)
@@ -419,18 +419,20 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     val = args
                 lines = traceback.format_exception_only(etype, val)
                 for line in lines[:-1]:
-                    traceback._print(file, line, '')
-                traceback._print(file, lines[-1], '')
+                    traceback._print(console, line, '')
+                traceback._print(console, lines[-1], '')
                 if self.tkconsole.getvar("<<toggle-jit-stack-viewer>>"):
                     self.remote_stack_viewer()
             elif how == "ERROR":
                 errmsg = "PyShell.ModifiedInterpreter: Subprocess ERROR:\n"
                 print >>sys.__stderr__, errmsg, what
-                print >>file, errmsg, what
+                print >>console, errmsg, what
+            # we received a response to the currently active seq number:
             self.tkconsole.endexecuting()
 
-    def cleanup_traceback(self, tb, exclude):
+    def cleanup_traceback(self, tb, exclude, console):
         "Remove excluded traces from beginning/end of tb; get cached lines"
+        orig_tb = tb[:]
         while tb:
             for rpcfile in exclude:
                 if tb[0][0].count(rpcfile):
@@ -445,6 +447,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
             else:
                 break
             del tb[-1]
+        if len(tb) == 0:
+            # error was in IDLE internals, don't prune!
+            tb[:] = orig_tb[:]
+            print>>sys.__stderr__, "** IDLE Internal Error: ", tb
+            print>>console, "** IDLE Internal Error **"
         for i in range(len(tb)):
             fn, ln, nm, line = tb[i]
             if nm == '?':
@@ -617,31 +624,26 @@ class ModifiedInterpreter(InteractiveInterpreter):
             warnings.filters[:] = self.save_warnings_filters
             self.save_warnings_filters = None
         debugger = self.debugger
-        if not debugger and self.rpcclt is not None:
-            self.tkconsole.beginexecuting()
-            self.active_seq = self.rpcclt.asynccall("exec", "runcode",
-                                                    (code,), {})
-            return
+        self.tkconsole.beginexecuting()
         try:
-            self.tkconsole.beginexecuting()
-            try:
-                if debugger:
-                    debugger.run(code, self.locals)
-                else:
-                    exec code in self.locals
-            except SystemExit:
-                if tkMessageBox.askyesno(
-                    "Exit?",
-                    "Do you want to exit altogether?",
-                    default="yes",
-                    master=self.tkconsole.text):
-                    raise
-                else:
-                    self.showtraceback()
-            except:
+            if not debugger and self.rpcclt is not None:
+                self.active_seq = self.rpcclt.asynccall("exec", "runcode",
+                                                        (code,), {})
+            elif debugger:
+                debugger.run(code, self.locals)
+            else:
+                exec code in self.locals
+        except SystemExit:
+            if tkMessageBox.askyesno(
+                "Exit?",
+                "Do you want to exit altogether?",
+                default="yes",
+                master=self.tkconsole.text):
+                raise
+            else:
                 self.showtraceback()
-        finally:
-            self.tkconsole.endexecuting()
+        except:
+            self.showtraceback()
 
     def write(self, s):
         "Override base class method"
