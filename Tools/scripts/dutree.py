@@ -1,0 +1,52 @@
+#! /usr/local/python
+# Format du output in a tree shape
+
+import posix, string, sys, path
+
+def main():
+	p = posix.popen('du ' + string.join(sys.argv[1:]), 'r')
+	total, d = None, {}
+	for line in p.readlines():
+		[num, file] = string.split(line)
+		size = eval(num)
+		comps = string.splitfields(file, '/')
+		if comps[0] == '': comps[0] = '/'
+		if comps[len(comps)-1] == '': del comps[len(comps)-1]
+		total, d = store(size, comps, total, d)
+	display(total, d)
+
+def store(size, comps, total, d):
+	if comps == []:
+		return size, d
+	if not d.has_key(comps[0]):
+		d[comps[0]] = None, {}
+	t1, d1 = d[comps[0]]
+	d[comps[0]] = store(size, comps[1:], t1, d1)
+	return total, d
+
+def display(total, d):
+	show(total, d, '')
+
+def show(total, d, prefix):
+	if not d: return
+	list = []
+	sum = 0
+	for key in d.keys():
+		tsub, dsub = d[key]
+		list.append((tsub, key))
+		if tsub is not None: sum = sum + tsub
+	if sum < total:
+		list.append((total - sum, '.'))
+	list.sort()
+	list.reverse()
+	width = len(`list[0][0]`)
+	for tsub, key in list:
+		if tsub is None:
+			psub = prefix
+		else:
+			print prefix + string.rjust(`tsub`, width) + ' ' + key
+			psub = prefix + ' '*(width-1) + '|' + ' '*(len(key)+1)
+		if d.has_key(key):
+			show(tsub, d[key][1], psub)
+
+main()
