@@ -136,7 +136,6 @@ Py_Initialize()
 		Py_FatalError("Py_Initialize: can't initialize __builtin__");
 	interp->builtins = PyModule_GetDict(bimod);
 	Py_INCREF(interp->builtins);
-	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
 	sysmod = _PySys_Init();
 	if (sysmod == NULL)
@@ -150,6 +149,7 @@ Py_Initialize()
 
 	/* phase 2 of builtins */
 	_PyBuiltin_Init_2(interp->builtins);
+	_PyImport_FixupExtension("__builtin__", "__builtin__");
 
 	_PyImport_Init();
 
