@@ -1382,6 +1382,36 @@ static PyObject *Res_FSOpenResFile(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *Res_FSCreateResFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	FSRef parentRef;
+	UniChar *nameLength__in__;
+	UniCharCount nameLength__len__;
+	int nameLength__in_len__;
+	FSRef newRef;
+	FSSpec newSpec;
+	if (!PyArg_ParseTuple(_args, "O&u#",
+	                      PyMac_GetFSRef, &parentRef,
+	                      &nameLength__in__, &nameLength__in_len__))
+		return NULL;
+	nameLength__len__ = nameLength__in_len__;
+	FSCreateResFile(&parentRef,
+	                nameLength__len__, nameLength__in__,
+	                0,
+	                (FSCatalogInfo *)0,
+	                &newRef,
+	                &newSpec);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("O&O&",
+	                     PyMac_BuildFSRef, newRef,
+	                     PyMac_BuildFSSpec, newSpec);
+	return _res;
+}
+
 static PyObject *Res_FSResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1402,6 +1432,74 @@ static PyObject *Res_FSResourceFileAlreadyOpen(PyObject *_self, PyObject *_args)
 	_res = Py_BuildValue("bbh",
 	                     _rv,
 	                     inChain,
+	                     refNum);
+	return _res;
+}
+
+static PyObject *Res_FSCreateResourceFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	FSRef parentRef;
+	UniChar *nameLength__in__;
+	UniCharCount nameLength__len__;
+	int nameLength__in_len__;
+	UniChar *forkNameLength__in__;
+	UniCharCount forkNameLength__len__;
+	int forkNameLength__in_len__;
+	FSRef newRef;
+	FSSpec newSpec;
+	if (!PyArg_ParseTuple(_args, "O&u#u#",
+	                      PyMac_GetFSRef, &parentRef,
+	                      &nameLength__in__, &nameLength__in_len__,
+	                      &forkNameLength__in__, &forkNameLength__in_len__))
+		return NULL;
+	nameLength__len__ = nameLength__in_len__;
+	forkNameLength__len__ = forkNameLength__in_len__;
+	_rv = FSCreateResourceFile(&parentRef,
+	                           nameLength__len__, nameLength__in__,
+	                           0,
+	                           (FSCatalogInfo *)0,
+	                           forkNameLength__len__, forkNameLength__in__,
+	                           &newRef,
+	                           &newSpec);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("hO&O&",
+	                     _rv,
+	                     PyMac_BuildFSRef, newRef,
+	                     PyMac_BuildFSSpec, newSpec);
+	return _res;
+}
+
+static PyObject *Res_FSOpenResourceFile(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _rv;
+	FSRef ref;
+	UniChar *forkNameLength__in__;
+	UniCharCount forkNameLength__len__;
+	int forkNameLength__in_len__;
+	SignedByte permissions;
+	SInt16 refNum;
+	if (!PyArg_ParseTuple(_args, "O&u#b",
+	                      PyMac_GetFSRef, &ref,
+	                      &forkNameLength__in__, &forkNameLength__in_len__,
+	                      &permissions))
+		return NULL;
+	forkNameLength__len__ = forkNameLength__in_len__;
+	_rv = FSOpenResourceFile(&ref,
+	                         forkNameLength__len__, forkNameLength__in__,
+	                         permissions,
+	                         &refNum);
+	{
+		OSErr _err = ResError();
+		if (_err != noErr) return PyMac_Error(_err);
+	}
+	_res = Py_BuildValue("hh",
+	                     _rv,
 	                     refNum);
 	return _res;
 }
@@ -1569,8 +1667,14 @@ static PyMethodDef Res_methods[] = {
 #endif
 	{"FSOpenResFile", (PyCFunction)Res_FSOpenResFile, 1,
 	 "(FSRef ref, SignedByte permission) -> (short _rv)"},
+	{"FSCreateResFile", (PyCFunction)Res_FSCreateResFile, 1,
+	 "(FSRef parentRef, Buffer nameLength) -> (FSRef newRef, FSSpec newSpec)"},
 	{"FSResourceFileAlreadyOpen", (PyCFunction)Res_FSResourceFileAlreadyOpen, 1,
 	 "(FSRef resourceFileRef) -> (Boolean _rv, Boolean inChain, SInt16 refNum)"},
+	{"FSCreateResourceFile", (PyCFunction)Res_FSCreateResourceFile, 1,
+	 "(FSRef parentRef, Buffer nameLength, Buffer forkNameLength) -> (OSErr _rv, FSRef newRef, FSSpec newSpec)"},
+	{"FSOpenResourceFile", (PyCFunction)Res_FSOpenResourceFile, 1,
+	 "(FSRef ref, Buffer forkNameLength, SignedByte permissions) -> (OSErr _rv, SInt16 refNum)"},
 	{"Resource", (PyCFunction)Res_Resource, 1,
 	 "Convert a string to a resource object.\n\nThe created resource object is actually just a handle,\napply AddResource() to write it to a resource file.\nSee also the Handle() docstring.\n"},
 	{"Handle", (PyCFunction)Res_Handle, 1,

@@ -93,9 +93,6 @@ MovieFileType = FOUR_CHAR_CODE('moov')
 			"TXNTypeAttributes", #TBD
 			"TXNMatchTextRecord", #TBD
 			"TXNBackground", #TBD
-			"UniChar", #TBD
-			"UniCharCount", #TBD
-			"UniChar_ptr", #TBD
 			"TXNFindUPP", 
 			"ATSUStyle", #TBD
 			"TXNActionKeyMapperProcPtr",
