@@ -138,12 +138,26 @@ An \class{IMAP4} instance has the following methods:
 
 
 \begin{methoddesc}{append}{mailbox, flags, date_time, message}
-  Append message to named mailbox. 
+  Append \var{message} to named mailbox. 
 \end{methoddesc}
 
-\begin{methoddesc}{authenticate}{func}
-  Authenticate command --- requires response processing. This is
-  currently unimplemented, and raises an exception. 
+\begin{methoddesc}{authenticate}{mechanism, authobject}
+  Authenticate command --- requires response processing.
+
+  \var{mechanism} specifies which authentication mechanism is to
+  be used - it should appear in the instance variable \code{capabilities} in the
+  form \code{AUTH=mechanism}.
+
+  \var{authobject} must be a callable object:
+
+\begin{verbatim}
+data = authobject(response)
+\end{verbatim}
+
+  It will be called to process server continuation responses.
+  It should return \code{data} that will be encoded and sent to server.
+  It should return \code{None} if the client abort response \samp{*} should
+  be sent instead.
 \end{methoddesc}
 
 \begin{methoddesc}{check}{}
@@ -226,6 +240,11 @@ An \class{IMAP4} instance has the following methods:
   \var{directory} defaults to the top level directory and
   \var{pattern} defaults to match any mailbox.
   Returned data are tuples of message part envelope and data.
+\end{methoddesc}
+
+\begin{methoddesc}{namespace}{}
+  Returns IMAP namespaces as defined in RFC2342.
+\versionadded{2.3}
 \end{methoddesc}
 
 \begin{methoddesc}{noop}{}
