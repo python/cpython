@@ -113,7 +113,7 @@ getargcargv(argc,argv)
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE "Feb 13 1995"
+#define DATE "July 7 1995"
 #endif
 
 #ifdef THINK_C
@@ -188,6 +188,16 @@ getcopyright()
 #ifndef __cplusplus
 extern char *getenv();
 #endif
+
+#ifndef PLATFORM
+#define PLATFORM "unknown"
+#endif
+
+char *
+getplatform()
+{
+	return PLATFORM;
+}
 
 char *
 getpythonpath()
