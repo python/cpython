@@ -178,15 +178,25 @@ class URLopener:
 		if not filename and (not type or type == 'file'):
 			try:
 				fp = self.open_local_file(url1)
+                                hdrs = fp.info()
 				del fp
-				return url2pathname(splithost(url1)[1]), None
+				return url2pathname(splithost(url1)[1]), hdrs
 			except IOError, msg:
 				pass
 		fp = self.open(url)
 		headers = fp.info()
 		if not filename:
 			import tempfile
-			filename = tempfile.mktemp()
+                        garbage, path = splittype(url)
+                        print (garbage, path)
+                        garbage, path = splithost(path or "")
+                        print (garbage, path)
+                        path, garbage = splitquery(path or "")
+                        print (path, garbage)
+                        path, garbage = splitattr(path or "")
+                        print (path, garbage)
+			suffix = os.path.splitext(path)[1]
+			filename = tempfile.mktemp(suffix)
 			self.__tempfiles.append(filename)
 		result = filename, headers
 		if self.tempcache is not None:
@@ -297,18 +307,22 @@ class URLopener:
 
 	# Use local file
 	def open_local_file(self, url):
+		import mimetypes, mimetools, StringIO
+		mtype = mimetypes.guess_type(url)[0]
+		headers = mimetools.Message(StringIO.StringIO(
+			'Content-Type: %s\n' % (mtype or 'text/plain')))
 		host, file = splithost(url)
 		if not host:
 			return addinfourl(
 				open(url2pathname(file), 'rb'),
-				noheaders(), 'file:'+file)
+				headers, 'file:'+file)
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
 			return addinfourl(
 				open(url2pathname(file), 'rb'),
-				noheaders(), 'file:'+file)
+				headers, 'file:'+file)
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
