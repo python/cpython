@@ -139,24 +139,26 @@ sub bot_navigation_panel {
 }
 
 
-# similar to make_index_entry(), but includes the string in the result
-# instead of the dummy filler.
-#
-sub make_str_index_entry {
+sub gen_index_id {
+    # this is used to ensure common index key generation and a stable sort
+    local($str,$extra) = @_;
+    sprintf("%s###%s%010d", $str, $extra, ++$global{'max_id'});
+}
+
+sub make_index_entry {
     local($br_id,$str) = @_;
-    # If TITLE is not yet available (i.e the \index command is in the title
-    # of the current section), use $ref_before.
+    # If TITLE is not yet available (i.e the \index command is in the title of the
+    # current section), use $ref_before.
     $TITLE = $ref_before unless $TITLE;
     # Save the reference
-    local($nstr) = "$str###" . ++$global{'max_id'}; # Make unique
-    $index{$nstr} .= &make_half_href("$CURRENT_FILE#$br_id");
-    "<a name=\"$br_id\">$str<\/a>";
+    $str = gen_index_id($str, '');
+    $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
+    "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
 
 sub add_idx {
     print "\nDoing the index ...";
-    local($key, $str, @keys, $index, $level, $count,
-	  @previous, @current);
+    local($key, $str, @keys, $index, $level, $count, @previous, @current);
     @keys = keys %index;
     @keys = sort keysort  @keys;
     $level = 0;
@@ -180,12 +182,12 @@ sub add_idx {
 	    $level++;
 	}
 	$str = $current[$#current];
-	$str =~ s/\#\#\#\d+$//o;  # Remove the unique id's
-	$index .= #$index{$key} .
-	    # If it's the same string don't start a new line
-	    (&index_key_eq(join('',@current), join('',@previous)) ?
-	     ", $index{$key}" . $cross_ref_visible_mark . "</a>\n" :
-	     "<dt>$index{$key}<strong>" . $str . "</strong></a>\n");
+	$str =~ s/\#\#\#\d+$//o;	# Remove the unique id's
+	$str =~ s/\#\#\#[DR]EF\d+$//o;	# Remove the unique id's
+	if (&index_key_eq(join('',@current), join('',@previous))) {
+	    $index .= ",\n$index{$key}" . $cross_ref_visible_mark . "</a>"; }
+	else {
+	    $index .= "\n<dt>$index{$key}" . $str . "</a>"; }
 	@previous = @current;
     }
     while ($count < $level) {
@@ -196,12 +198,22 @@ sub add_idx {
 }
 
 
+sub index_key_eq {
+    local($a,$b) = @_;
+    $a = &clean_key($a);
+    $a =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
+    $a =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
+    $b = &clean_key($b);
+    $b =~ s/\#\#\#\d+$//o;  		# Remove the unique id's
+    $b =~ s/\#\#\#[dr]ef\d+$//o;	# Remove the unique id's
+    $a eq $b;
+}
+
 # need to remove leading <...>
 sub clean_key {
     local ($_) = @_;
     tr/A-Z/a-z/;
     s/\s//;
-    s/\#\#\#\d+$//o;  		# Remove the unique id
     s/^<[a-z][-._a-z0-9]*>//;	# Remove leading <gi>
     $_
 }
