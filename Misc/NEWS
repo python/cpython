@@ -47,6 +47,8 @@ Extension modules
 Library
 -------
 
+- Bug #792649:  logging.ConfigStreamHandler had an uninitialized variable
+
 - The csv module's DictReader and DictWriter classes now accept keyword
   arguments.  This was an omission in the initial implementation.
 

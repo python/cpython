@@ -32,6 +32,10 @@ from SocketServer import ThreadingTCPServer, StreamRequestHandler
 
 
 DEFAULT_LOGGING_CONFIG_PORT = 9030
+if sys.platform == "win32":
+    RESET_ERROR = 10054   #WSAECONNRESET
+else:
+    RESET_ERROR = 104     #ECONNRESET
 
 #
 #   The following code implements a socket listener for on-the-fly
