@@ -142,7 +142,7 @@ def heappop(heap):
     returnitem = heap[0]
     item = heap.pop()
     pos = 0
-    while 1:
+    while True:
         child2pos = (pos + 1) * 2
         child1pos = child2pos - 1
         if child2pos < endpos:
