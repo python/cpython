@@ -620,8 +620,8 @@ eval_frame(PyFrameObject *f)
 
 #define PREDICT(op)		if (*next_instr == op) goto PRED_##op
 #define PREDICTED(op)		PRED_##op: next_instr++
-#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr += 3, \
-				(next_instr[-1]<<8) + next_instr[-2])
+#define PREDICTED_WITH_ARG(op)	PRED_##op: oparg = (next_instr[2]<<8) + \
+				next_instr[1]; next_instr += 3
 
 /* Stack manipulation macros */
 
@@ -889,6 +889,7 @@ eval_frame(PyFrameObject *f)
 			PUSH(x);
 			goto fast_next_opcode;
 
+		PREDICTED_WITH_ARG(STORE_FAST);
 		case STORE_FAST:
 			v = POP();
 			SETLOCAL(oparg, v);
@@ -1675,6 +1676,7 @@ eval_frame(PyFrameObject *f)
 							NAME_ERROR_MSG ,w);
 			break;
 
+		PREDICTED_WITH_ARG(UNPACK_SEQUENCE);
 		case UNPACK_SEQUENCE:
 			v = POP();
 			if (PyTuple_CheckExact(v)) {
@@ -2051,17 +2053,21 @@ eval_frame(PyFrameObject *f)
 			Py_DECREF(v);
 			if (x != NULL) {
 				SET_TOP(x);
+				PREDICT(FOR_ITER);
 				continue;
 			}
 			STACKADJ(-1);
 			break;
 
+		PREDICTED_WITH_ARG(FOR_ITER);
 		case FOR_ITER:
 			/* before: [iter]; after: [iter, iter()] *or* [] */
 			v = TOP();
 			x = PyIter_Next(v);
 			if (x != NULL) {
 				PUSH(x);
+				PREDICT(STORE_FAST);
+				PREDICT(UNPACK_SEQUENCE);
 				continue;
 			}
 			if (!PyErr_Occurred()) {
