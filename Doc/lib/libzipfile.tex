@@ -11,7 +11,13 @@
 
 The ZIP file format is a common archive and compression standard.
 This module provides tools to create, read, write, append, and list a
-ZIP file.
+ZIP file.  Any advanced use of this module will require an
+understanding of the format, as defined in
+\citetitle[http://www.pkware.com/appnote.html]{PKZIP Application
+Note}.
+
+This module does not currently handle ZIP files which have appended
+comments, or multi-disk ZIP files.
 
 The available attributes of this module are:
 
@@ -23,34 +29,32 @@ The available attributes of this module are:
   Level of printing, defaults to \code{1}.
 \end{datadesc}
 
-\begin{classdesc}{ZipFile}{...}
+\begin{classdesc}{ZipFile}{\unspecified}
   The class for reading and writing ZIP files.  See
   ``\citetitle{ZipFile Objects}'' (section \ref{zipfile-objects}) for
   constructor details.
+\end{classdesc}
+
+\begin{classdesc}{PyZipFile}{\unspecified}
+  Class for creating ZIP archives containing Python libraries.
+\end{classdesc}
+
+\begin{classdesc}{ZipInfo}{\optional{filename\optional{, date_time}}}
+  Class used the represent infomation about a member of an archive.
+  Instances of this class are returned by the \method{getinfo()} and
+  \method{listinfo()} methods of \class{ZipFile} objects.  Most users
+  of the \module{zipfile} module will not need to create these, but
+  only use those created by this module.
+  \var{filename} should be the full name of the archive member, and
+  \var{date_time} should be a tuple containing six fields which
+  describe the time of the last modification to the file; the fields
+  are described in section \ref{zipinfo-objects}, ``ZipInfo Objects.''
 \end{classdesc}
 
 \begin{funcdesc}{is_zipfile}{path} 
   Returns true if \var{path} is a valid ZIP file based on its magic
   number, otherwise returns false.  This module does not currently
   handle ZIP files which have appended comments.
-\end{funcdesc}
-
-\begin{funcdesc}{zip2date}{zdate}
-  Return \code{(\var{year}, \var{month}, \var{day})} for a ZIP date
-  code.
-\end{funcdesc}
-
-\begin{funcdesc}{zip2time}{ztime}
-  Return \code{(\var{hour}, \var{minute}, \var{second})} for a ZIP
-  time code.
-\end{funcdesc}
-
-\begin{funcdesc}{date2zip}{year, month, day}
-  Return a ZIP date code. 
-\end{funcdesc}
-
-\begin{funcdesc}{time2zip}{hour, minute, second}
-  Return a ZIP time code.
 \end{funcdesc}
 
 \begin{datadesc}{ZIP_STORED}
@@ -86,9 +90,11 @@ The available attributes of this module are:
   it.  If \var{filename} does not refer to a ZIP file, then a new ZIP
   archive is appended to the file.  This is meant for adding a ZIP
   archive to another file, such as \file{python.exe}.  Using
+
 \begin{verbatim}
 cat myzip.zip >> python.exe
 \end{verbatim}
+
   also works, and at least \program{WinZip} can read such files.
   \var{compression} is the ZIP compression method to use when writing
   the archive, and should be \constant{ZIP_STORED} or
@@ -97,34 +103,18 @@ cat myzip.zip >> python.exe
   \constant{ZIP_STORED}. 
 \end{classdesc}
 
-XXX explain the "extra" string for the ZIP format
+\begin{methoddesc}{namelist}{}
+  Return a list of archive members by name.
+\end{methoddesc}
 
-\begin{memberdesc}{TOC}
-  A read-only dictionary whose keys are the names in the archive, and
-  whose values are tuples as follows:
-
-\begin{tableii}{c|l}{code}{Index}{Meaning}
-  \lineii{0}{File data seek offset}
-  \lineii{1}{ZIP file "extra" data as a string}
-  \lineii{2}{ZIP file bit flags}
-  \lineii{3}{ZIP file compression type}
-  \lineii{4}{File modification time in DOS format}
-  \lineii{5}{File modification date in DOS format}
-  \lineii{6}{The CRC-32 of the uncompressed data}
-  \lineii{7}{The compressed size of the file}
-  \lineii{8}{The uncompressed size of the file}
-\end{tableii}
-\end{memberdesc}
-
-The class ZipFile has these methods: 
-
-\begin{methoddesc}{listdir}{}
-  Return a list of names in the archive.  Equivalent to
-  \code{\var{zipfile}.TOC.keys()}.
+\begin{methoddesc}{infolist}{}
+  Return a list containing a \class{ZipInfo} object for each member of
+  the archive.  The objects are in the same order as their entries in
+  the actual ZIP file on disk if an existing archive was opened.
 \end{methoddesc}
 
 \begin{methoddesc}{printdir}{}
-  Print a table of contents for the archive to stdout. 
+  Print a table of contents for the archive to \code{sys.stdout}.
 \end{methoddesc}
 
 \begin{methoddesc}{read}{name}
@@ -132,29 +122,53 @@ The class ZipFile has these methods:
   open for read or append.
 \end{methoddesc}
 
-\begin{methoddesc}{writestr}{bytes, arcname, year, month, day, hour,
-                             minute, second\optional{, extra}}
+\begin{methoddesc}{testzip}{}
+  Read all the files in the archive and check their CRC's.  Return the
+  name of the first bad file, or else return \code{None}.
+\end{methoddesc}
+
+\begin{methoddesc}{writestr}{bytes, arcname, year, month, day,
+                             hour, minute, second}
   Write the string \var{bytes} and the other data to the archive, and
-  give the archive member the name \var{arcname}.  \var{extra} is the
-  ZIP extra data string.  The archive must be opened with mode
+  give the archive member the name \var{arcname}.  The archive must be
+  opened with mode \code{'w'} or \code{'a'}.
+\end{methoddesc}
+
+\begin{methoddesc}{write}{filename, arcname}
+  Write the file named \var{filename} to the archive, giving it the
+  archive name \var{arcname}.  The archive must be open with mode
   \code{'w'} or \code{'a'}.
 \end{methoddesc}
 
-\begin{methoddesc}{write}{filename, arcname\optional{, extra}}
-  Write the file named \var{filename} to the archive, giving it the
-  archive name \var{arcname}.  \var{extra} is the ZIP extra data
-  string.  The archive must be open with mode \code{'w'} or
-  \code{'a'}.
+\begin{methoddesc}{close}{}
+  Close the archive file.  You must call \method{close()} before
+  exiting your program or essential records will not be written. 
 \end{methoddesc}
 
-\begin{methoddesc}{writepy}{pathname\optional{, basename}}
+
+The following data attribute is also available:
+
+\begin{memberdesc}{debug}
+  The level of debug output to use.  This may be set from \code{0}
+  (the default, no output) to \code{3} (the most output).  Debugging
+  information is written to \code{sys.stdout}.
+\end{memberdesc}
+
+
+\subsection{PyZipFile Objects \label{pyzipfile-objects}}
+
+The \class{PyZipFile} constructor takes the same parameters as the
+\class{ZipFile} constructor.  Instances have one method in addition to
+those of \class{ZipFile} objects.
+
+\begin{methoddesc}[PyZipFile]{writepy}{pathname\optional{, basename}}
   Search for files \file{*.py} and add the corresponding file to the
   archive.  The corresponding file is a \file{*.pyo} file if
   available, else a \file{*.pyc} file, compiling if necessary.  If the
   pathname is a file, the filename must end with \file{.py}, and just
-  the (corresponding \file{*.py[oc]}) file is added at the top level
+  the (corresponding \file{*.py[co]}) file is added at the top level
   (no path information).  If it is a directory, and the directory is
-  not a package directory, then all the files \file{*.py[oc]} are
+  not a package directory, then all the files \file{*.py[co]} are
   added at the top level.  If the directory is a package directory,
   then all \file{*.py[oc]} are added under the package name as a file
   path, and if any subdirectories are package directories, all of
@@ -171,7 +185,97 @@ The class ZipFile has these methods:
 \end{verbatim}
 \end{methoddesc}
 
-\begin{methoddesc}{close}{}
-  Close the archive file.  You must call \method{close()} before
-  exiting your program or essential records will not be written. 
-\end{methoddesc}
+
+\subsection{ZipInfo Objects \label{zipinfo-objects}}
+
+Instances of the \class{ZipInfo} class are returned by the
+\method{getinfo()} and \method{listinfo()} methods of
+\class{ZipFile} objects.  Each object stores information about a
+single member of the ZIP archive.
+
+Instances have the following attributes:
+
+\begin{memberdesc}[ZipInfo]{filename}
+  Name of the file in the archive.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{date_time}
+  The time and date of the last modification to to the archive
+  member.  This is a tuple of six values:
+
+\begin{tableii}{c|l}{code}{Index}{Value}
+  \lineii{0}{Year}
+  \lineii{1}{Month (one-based)}
+  \lineii{2}{Day of month (one-based)}
+  \lineii{3}{Hours (zero-based)}
+  \lineii{4}{Minutes (zero-based)}
+  \lineii{5}{Seconds (zero-based)}
+\end{tableii}
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{compress_type}
+  Type of compression for the archive member.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{comment}
+  Comment for the individual archive member.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{extra}
+  Expansion field data.  The
+  \citetitle[http://www.pkware.com/appnote.html]{PKZIP Application
+  Note} contains some comments on the internal structure of the data
+  contained in this string.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{create_system}
+  System which created ZIP archive.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{create_version}
+  PKZIP version which created ZIP archive.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{extract_version}
+  PKZIP version needed to extract archive.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{reserved}
+  Must be zero.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{flag_bits}
+  ZIP flag bits.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{volume}
+  Volume number of file header.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{internal_attr}
+  Internal attributes.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{external_attr}
+ External file attributes.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{header_offset}
+  Byte offset to the file header.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{file_offset}
+  Byte offset to the start of the file data.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{CRC}
+  CRC-32 of the uncompressed file.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{compress_size}
+  Size of the compressed data.
+\end{memberdesc}
+
+\begin{memberdesc}[ZipInfo]{file_size}
+  Size of the uncompressed file.
+\end{memberdesc}
