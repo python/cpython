@@ -1,3 +1,24 @@
+What's New in Python 2.1 (final)?
+=================================
+
+We only changed a few things since the last release candidate, all in
+Python library code:
+
+- A bug in the locale module was fixed that affected locales which
+  define no grouping for numeric formatting.
+
+- A few bugs in the weakref module's implementations of weak
+  dictionaries (WeakValueDictionary and WeakKeyDictionary) were fixed,
+  and the test suite was updated to check for these bugs.
+
+- An old bug in the os.path.walk() function (introduced in Python
+  2.0!) was fixed: a non-existent file would cause an exception
+  instead of being ignored.
+
+- Fixed a few bugs in the new symtable module found by Neil Norwitz's
+  PyChecker.
+
+
 What's New in Python 2.1c2?
 ===========================
 
