@@ -18,10 +18,10 @@ VERSION=
 all:	check-emacs-version \
 	python$(VERSION)-api.info python$(VERSION)-ext.info \
 	python$(VERSION)-lib.info python$(VERSION)-ref.info \
-	python$(VERSION)-tut.info python$(VERSION)-dist.info
+	python$(VERSION)-tut.info python$(VERSION)-dist.info \
+	python$(VERSION)-mac.info
 
 #	python$(VERSION)-doc.info python$(VERSION)-inst.info
-#	python$(VERSION)-mac.info
 
 check-emacs-version:
 	@v="`$(EMACS) --version 2>&1 | egrep '^(GNU |X)Emacs [12]*'`"; \
