@@ -48,6 +48,10 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 PyAPI_FUNC(char *) PyEval_GetFuncName(PyObject *);
 PyAPI_FUNC(char *) PyEval_GetFuncDesc(PyObject *);
 
+/* this used to be handled on a per-thread basis - now just two globals */
+PyAPI_DATA(volatile int) _Py_Ticker;
+PyAPI_DATA(int) _Py_CheckInterval;
+
 /* Interface for threads.
 
    A module that plans to do a blocking system call (or something else

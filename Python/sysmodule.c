@@ -352,8 +352,7 @@ and return.  See the profiler chapter in the library manual."
 static PyObject *
 sys_setcheckinterval(PyObject *self, PyObject *args)
 {
-	PyThreadState *tstate = PyThreadState_Get();
-	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &tstate->interp->checkinterval))
+	if (!PyArg_ParseTuple(args, "i:setcheckinterval", &_Py_CheckInterval))
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;

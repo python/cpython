@@ -28,11 +28,9 @@ static PyLongObject *muladd1(PyLongObject *, wdigit, wdigit);
 static PyLongObject *divrem1(PyLongObject *, digit, digit *);
 static PyObject *long_format(PyObject *aa, int base, int addL);
 
-static int ticker;	/* XXX Could be shared with ceval? */
-
 #define SIGCHECK(PyTryBlock) \
-	if (--ticker < 0) { \
-		ticker = 100; \
+	if (--_Py_Ticker < 0) { \
+		_Py_Ticker = _Py_CheckInterval; \
 		if (PyErr_CheckSignals()) { PyTryBlock; } \
 	}
 

@@ -22,7 +22,6 @@ typedef struct _is {
     PyObject *sysdict;
     PyObject *builtins;
 
-    int checkinterval;
 #ifdef HAVE_DLOPEN
     int dlopenflags;
 #endif
@@ -50,7 +49,6 @@ typedef struct _ts {
 
     struct _frame *frame;
     int recursion_depth;
-    int ticker;
     int tracing;
     int use_tracing;
 
