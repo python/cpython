@@ -205,8 +205,8 @@ def my_import(name):
   Without arguments, return the list of names in the current local
   symbol table.  With an argument, attempts to return a list of valid
   attribute for that object.  This information is gleaned from the
-  object's \member{__dict__}, \member{__methods__} and \member{__members__}
-  attributes, if defined.  The list is not necessarily complete.  For
+  object's \member{__dict__} attribute, if defined, and from the class
+  or type object.  The list is not necessarily complete.  For
   example, for classes, attributes defined in base classes are not
   included, and for class instances, methods are not included.
   The resulting list is sorted alphabetically.  For example:
