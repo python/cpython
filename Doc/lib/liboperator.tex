@@ -55,6 +55,7 @@ Return the absolute value of \var{o}.
 \end{funcdesc}
 
 \begin{funcdesc}{inv}{o}
+\funcline{invert}{o}
 \funcline{__inv__}{o}
 \funcline{__invert__}{o}
 Return the inverse of \var{o}.  The names \function{invert()} and
@@ -220,3 +221,62 @@ Example: Build a dictionary that maps the ordinals from \code{0} to
 >>> vals = map(chr, keys)
 >>> map(operator.setitem, [d]*len(keys), keys, vals)
 \end{verbatim}
+
+
+\subsection{Mapping Operators to Functions \label{operator-map}}
+
+This table shows how abstract operations correspond to operator
+symbols in the Python syntax and the functions in the
+\refmodule{operator} module.
+
+
+\begin{tableiii}{l|c|l}{textrm}{Operation}{Syntax}{Function}
+  \lineiii{Addition}{\code{\var{a} + \var{b}}}
+          {\code{add(\var{a}, \var{b})}}
+  \lineiii{Concatenation}{\code{\var{seq1} + \var{seq2}}}
+          {\code{concat(\var{seq1}, \var{seq2})}}
+  \lineiii{Containment Test}{\code{\var{o} in \var{seq}}}
+          {\code{contains(\var{seq}, \var{o})}}
+  \lineiii{Division}{\code{\var{a} / \var{b}}}
+          {\code{div(\var{a}, \var{b})}}
+  \lineiii{Bitwise And}{\code{\var{a} \&\ \var{b}}}
+          {\code{and_(\var{a}, \var{b})}}
+  \lineiii{Bitwise Exclusive Or}{\code{\var{a} \^\ \var{b}}}
+          {\code{xor(\var{a}, \var{b})}}
+  \lineiii{Bitwise Inversion}{\code{\~{} \var{a}}}
+          {\code{invert(\var{a})}}
+  \lineiii{Bitwise Or}{\code{\var{a} | \var{b}}}
+          {\code{or_(\var{a}, \var{b})}}
+  \lineiii{Indexed Assignment}{\code{\var{o}[\var{k}] = \var{v}}}
+          {\code{setitem(\var{o}, \var{k}, \var{v})}}
+  \lineiii{Indexed Deletion}{\code{del \var{o}[\var{k}]}}
+          {\code{delitem(\var{o}, \var{k})}}
+  \lineiii{Indexing}{\code{\var{o}[\var{k}]}}
+          {\code{getitem(\var{o}, \var{k})}}
+  \lineiii{Left Shift}{\code{\var{a} <\code{<} \var{b}}}
+          {\code{lshift(\var{a}, \var{b})}}
+  \lineiii{Modulo}{\code{\var{a} \%\ \var{b}}}
+          {\code{mod(\var{a}, \var{b})}}
+  \lineiii{Multiplication}{\code{\var{a} * \var{b}}}
+          {\code{mul(\var{a}, \var{b})}}
+  \lineiii{Negation (Arithmetic)}{\code{- \var{a}}}
+          {\code{neg(\var{a})}}
+  \lineiii{Negation (Logical)}{\code{not \var{a}}}
+          {\code{not_(\var{a})}}
+  \lineiii{Right Shift}{\code{\var{a} >\code{>} \var{b}}}
+          {\code{rshift(\var{a}, \var{b})}}
+  \lineiii{Sequence Repitition}{\code{\var{seq} * \var{i}}}
+          {\code{repeat(\var{seq}, \var{i})}}
+  \lineiii{Slice Assignment}{\code{\var{seq}[\var{i}:\var{j}]} = \var{values}}
+          {\code{setslice(\var{seq}, \var{i}, \var{j}, \var{values})}}
+  \lineiii{Slice Deletion}{\code{del \var{seq}[\var{i}:\var{j}]}}
+          {\code{delslice(\var{seq}, \var{i}, \var{j})}}
+  \lineiii{Slicing}{\code{\var{seq}[\var{i}:\var{j}]}}
+          {\code{getslice(\var{seq}, \var{i}, \var{j})}}
+  \lineiii{String Formatting}{\code{\var{s} \%\ \var{o}}}
+          {\code{mod(\var{s}, \var{o})}}
+  \lineiii{Subtraction}{\code{\var{a} - \var{b}}}
+          {\code{sub(\var{a}, \var{b})}}
+  \lineiii{Truth Test}{\code{\var{o}}}
+          {\code{truth(\var{o})}}
+\end{tableiii}
