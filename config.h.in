@@ -184,6 +184,9 @@
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
 
+/* Define if you have the plock function.  */
+#undef HAVE_PLOCK
+
 /* Define if you have the readlink function.  */
 #undef HAVE_READLINK
 
@@ -276,6 +279,9 @@
 
 /* Define if you have the <sys/dir.h> header file.  */
 #undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/lock.h> header file.  */
+#undef HAVE_SYS_LOCK_H
 
 /* Define if you have the <sys/ndir.h> header file.  */
 #undef HAVE_SYS_NDIR_H
