@@ -346,7 +346,8 @@ class config (Command):
         exists and can be found by the preprocessor; return true if so,
         false otherwise.
         """
-        return self.try_cpp(headers=[header], include_dirs=include_dirs)
+        return self.try_cpp(body="/* No body */", headers=[header],
+                            include_dirs=include_dirs)
 
 
 # class config
