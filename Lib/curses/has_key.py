@@ -173,7 +173,6 @@ def has_key(ch):
 if __name__ == '__main__':
     # Compare the output of this implementation and the ncurses has_key,
     # on platforms where has_key is already available
-    import _curses
     try:
         L = []
         _curses.initscr()
