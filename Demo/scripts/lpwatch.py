@@ -19,7 +19,13 @@ def main():
 	except:
 		thisuser = posix.environ['USER']
 	printers = sys.argv[1:]
-	if not printers:
+	if printers:
+		# Strip '-P' from printer names just in case
+		# the user specified it...
+		for i in range(len(printers)):
+			if printers[i][:2] = '-P':
+				printers[i] = printers[i][2:]
+	else:
 		if posix.environ.has_key('PRINTER'):
 			printers = [posix.environ['PRINTER']]
 		else:
@@ -96,12 +102,12 @@ def showstatus(name, pipe, thisuser):
 			print 'for', users.keys()[0],
 		else:
 			print 'for', len(users), 'users',
-		if userseen:
-			if aheadjobs = 0:
-				print '(' + thisuser + ' first)',
-			else:
-				print '(' + `(aheadbytes+1023)/1024`,
-				print 'K before', thisuser + ')'
+			if userseen:
+				if aheadjobs = 0:
+					print '(' + thisuser + ' first)',
+				else:
+					print '(' + `(aheadbytes+1023)/1024`,
+					print 'K before', thisuser + ')'
 	if lines:
 		print
 
