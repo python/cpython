@@ -292,7 +292,7 @@ static PyObject *
 mmap_write_method(mmap_object *self,
 		  PyObject *args)
 {
-	long length;
+	int length;
 	char *data;
 
 	CHECK_VALID(NULL);
