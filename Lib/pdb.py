@@ -10,6 +10,13 @@ import bdb
 import repr
 
 
+# Interaction prompt line will separate file and call info from code
+# text using value of line_prefix string.  A newline and arrow may
+# be to your liking.  You can set it once pdb is imported using the
+# command "pdb.line_prefix = '\n% '".
+# line_prefix = ': '	# Use this to get the old situation back
+line_prefix = '\n-> '	# Probably a better default
+
 class Pdb(bdb.Bdb, cmd.Cmd):
 	
 	def __init__(self):
@@ -55,7 +62,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 	
 	def interaction(self, frame, traceback):
 		self.setup(frame, traceback)
-		self.print_stack_entry(self.stack[self.curindex])
+		self.print_stack_entry(self.stack[self.curindex],
+				       line_prefix)
 		self.cmdloop()
 		self.forget()
 
@@ -280,13 +288,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		except KeyboardInterrupt:
 			pass
 	
-	def print_stack_entry(self, frame_lineno):
+	def print_stack_entry(self, frame_lineno, prompt_prefix=''):
 		frame, lineno = frame_lineno
 		if frame is self.curframe:
 			print '>',
 		else:
 			print ' ',
-		print self.format_stack_entry(frame_lineno)
+		print self.format_stack_entry(frame_lineno, prompt_prefix)
 
 
 	# Help methods (derived from pdb.doc)

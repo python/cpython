@@ -242,7 +242,7 @@ class Bdb: # Basic Debugger
 	
 	# 
 	
-	def format_stack_entry(self, frame_lineno):
+	def format_stack_entry(self, frame_lineno, lprefix=': '):
 		import linecache, repr, string
 		frame, lineno = frame_lineno
 		filename = frame.f_code.co_filename
@@ -260,7 +260,7 @@ class Bdb: # Basic Debugger
 			s = s + '->'
 			s = s + repr.repr(rv)
 		line = linecache.getline(filename, lineno)
-		if line: s = s + ': ' + string.strip(line)
+		if line: s = s + lprefix + string.strip(line)
 		return s
 	
 	# The following two methods can be called by clients to use
