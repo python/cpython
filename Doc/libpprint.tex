@@ -103,7 +103,7 @@ parameters for formatting are used.
 \begin{funcdesc}{isreadable}{object}
 Determine if the formatted representation of \var{object} is
 ``readable,'' or can be used to reconstruct the value using
-\function{eval()}\bifuncindex{eval}.  Note that this returns false for
+\function{eval()}\bifuncindex{eval}.  This always returns false for
 recursive objects.
 
 \begin{verbatim}
@@ -131,9 +131,9 @@ representation is not otherwise formatted.
 % the right margin.
 \begin{verbatim}
 >>> pprint.saferepr(stuff)
-"[<Recursion on list with id=682968>, '', '/usr/local/lib/python1.4', '/usr/loca
-l/lib/python1.4/test', '/usr/local/lib/python1.4/sunos5', '/usr/local/lib/python
-1.4/sharedmodules', '/usr/local/lib/python1.4/tkinter']"
+"[<Recursion on list with id=682968>, '', '/usr/local/lib/python1.5', '/usr/loca
+l/lib/python1.5/test', '/usr/local/lib/python1.5/sunos5', '/usr/local/lib/python
+1.5/sharedmodules', '/usr/local/lib/python1.5/tkinter']"
 \end{verbatim}
 
 
