@@ -7,16 +7,11 @@ function which is called once for each token found.  The latter function is
 passed the token type, a string containing the token, the starting and
 ending (row, column) coordinates of the token, and the original line.  It is
 designed to match the working of the Python tokenizer exactly, except that
-it produces COMMENT tokens for comments and gives type OP for all operators.
+it produces COMMENT tokens for comments and gives type OP for all operators."""
 
-For compatibility with the older 'tokenize' module, this also compiles a
-regular expression into 'tokenprog' that matches Python tokens in individual
-lines of text, leaving the token in 'tokenprog.group(3)', but does not
-handle indentation, continuations, or multi-line strings."""
+__version__ = "Ka-Ping Yee, 26 October 1997"
 
-__version__ = "Ka-Ping Yee, 29 March 1997"
-
-import string, regex
+import string, re
 from token import *
 
 COMMENT = N_TOKENS
@@ -26,56 +21,55 @@ tok_name[COMMENT] = 'COMMENT'
 #     Ignore now accepts \f as whitespace.  Operator now includes '**'.
 #     Ignore and Special now accept \n or \r\n at the end of a line.
 #     Imagnumber is new.  Expfloat is corrected to reject '0e4'.
-# Note: to get a quoted backslash in a regex, it must be enclosed in brackets.
+# Note: to quote a backslash in a regex, it must be doubled in a r'aw' string.
 
-def group(*choices): return '\(' + string.join(choices, '\|') + '\)'
+def group(*choices): return '(' + string.join(choices, '|') + ')'
+def any(*choices): return apply(group, choices) + '*'
+def maybe(*choices): return apply(group, choices) + '?'
 
-Whitespace = '[ \f\t]*'
-Comment = '\(#[^\r\n]*\)'
-Ignore = Whitespace + group('[\]\r?\n' + Whitespace)+'*' + Comment+'?'
-Name = '[a-zA-Z_][a-zA-Z0-9_]*'
+Whitespace = r'[ \f\t]*'
+Comment = r'#[^\r\n]*'
+Ignore = Whitespace + any(r'\\\r?\n' + Whitespace) + maybe(Comment)
+Name = r'[a-zA-Z_]\w*'
 
-Hexnumber = '0[xX][0-9a-fA-F]*[lL]?'
-Octnumber = '0[0-7]*[lL]?'
-Decnumber = '[1-9][0-9]*[lL]?'
+Hexnumber = r'0[xX][\da-fA-F]*[lL]?'
+Octnumber = r'0[0-7]*[lL]?'
+Decnumber = r'[1-9]\d*[lL]?'
 Intnumber = group(Hexnumber, Octnumber, Decnumber)
-Exponent = '[eE][-+]?[0-9]+'
-Pointfloat = group('[0-9]+\.[0-9]*', '\.[0-9]+') + group(Exponent) + '?'
-Expfloat = '[1-9][0-9]*' + Exponent
+Exponent = r'[eE][-+]?\d+'
+Pointfloat = group(r'\d+\.\d*', r'\.\d+') + maybe(Exponent)
+Expfloat = r'[1-9]\d*' + Exponent
 Floatnumber = group(Pointfloat, Expfloat)
-Imagnumber = group('0[jJ]', '[1-9][0-9]*[jJ]', Floatnumber + '[jJ]')
+Imagnumber = group(r'0[jJ]', r'[1-9]\d*[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-Single = group("[^'\]", "[\].") + "*'"
-Double = group('[^"\]', '[\].') + '*"'
-Single3 = group("[^'\]","[\].","'[^'\]","'[\].","''[^'\]","''[\].") + "*'''"
-Double3 = group('[^"\]','[\].','"[^"\]','"[\].','""[^"\]','""[\].') + '*"""'
-Triple = group("'''", '"""')
-String = group("'" + group("[^\n'\]", "[\].") + "*'",
-               '"' + group('[^\n"\]', '[\].') + '*"')
+Single = any(r"[^'\\]", r'\\.') + "'"
+Double = any(r'[^"\\]', r'\\.') + '"'
+Single3 = any(r"[^'\\]",r'\\.',r"'[^'\\]",r"'\\.",r"''[^'\\]",r"''\\.") + "'''"
+Double3 = any(r'[^"\\]',r'\\.',r'"[^"\\]',r'"\\.',r'""[^"\\]',r'""\\.') + '"""'
+Triple = group("'''", '"""', "r'''", 'r"""')
+String = group("[rR]?'" + any(r"[^\n'\\]", r'\\.') + "'",
+               '[rR]?"' + any(r'[^\n"\\]', r'\\.') + '"')
 
-Operator = group('\+', '\-', '\*\*', '\*', '\^', '~', '/', '%', '&', '|',
+Operator = group('\+', '\-', '\*\*', '\*', '\^', '~', '/', '%', '&', '\|',
                  '<<', '>>', '==', '<=', '<>', '!=', '>=', '=', '<', '>')
 Bracket = '[][(){}]'
-Special = group('\r?\n', '[:;.,`]')
+Special = group(r'\r?\n', r'[:;.,`]')
 Funny = group(Operator, Bracket, Special)
 
-PlainToken = group(Name, Number, String, Funny)
+PlainToken = group(Number, Funny, String, Name)
 Token = Ignore + PlainToken
 
-ContStr = group("'" + group('[\].', "[^\n'\]")+'*' + group("'", '[\]\r?\n'),
-                '"' + group('[\].', '[^\n"\]')+'*' + group('"', '[\]\r?\n'))
-PseudoExtras = group('[\]\r?\n', Comment, Triple)
-PseudoToken = Whitespace + group(PseudoExtras, Name, Number, ContStr, Funny)
+ContStr = group("r?'" + any(r'\\.', r"[^\n'\\]") + group("'", r'\\\r?\n'),
+                'r?"' + any(r'\\.', r'[^\n"\\]') + group('"', r'\\\r?\n'))
+PseudoExtras = group(r'\\\r?\n', Comment, Triple)
+PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
-try:
-    saved_syntax = regex.set_syntax(0)         # use default syntax
-    tokenprog = regex.compile(Token)
-    pseudoprog = regex.compile(PseudoToken)
-    endprogs = { '\'': regex.compile(Single), '"': regex.compile(Double),
-        '\'\'\'': regex.compile(Single3), '"""': regex.compile(Double3) }
-finally:
-    regex.set_syntax(saved_syntax)             # restore original syntax
+tokenprog, pseudoprog, single3prog, double3prog = map(
+    re.compile, (Token, PseudoToken, Single3, Double3))
+endprogs = {"'": re.compile(Single), '"': re.compile(Double), 'r': None,
+            "'''": single3prog, '"""': double3prog,
+            "r'''": single3prog, 'r"""': double3prog}
 
 tabsize = 8
 TokenError = 'TokenError'
@@ -97,8 +91,9 @@ def tokenize(readline, tokeneater=printtoken):
         if contstr:                            # continued string
             if not line:
                 raise TokenError, ("EOF in multi-line string", strstart)
-            if endprog.match(line) >= 0:
-                pos = end = endprog.regs[0][1]
+            endmatch = endprog.match(line)
+            if endmatch:
+                pos = end = endmatch.end(0)
                 tokeneater(STRING, contstr + line[:end],
                            strstart, (lnum, end), line)
                 contstr, needcont = '', 0
@@ -140,40 +135,42 @@ def tokenize(readline, tokeneater=printtoken):
             continued = 0
 
         while pos < max:
-            if pseudoprog.match(line, pos) > 0:            # scan for tokens
-                start, end = pseudoprog.regs[1]
+            pseudomatch = pseudoprog.match(line, pos)
+            if pseudomatch:                                # scan for tokens
+                start, end = pseudomatch.span(1)
                 spos, epos, pos = (lnum, start), (lnum, end), end
                 token, initial = line[start:end], line[start]
 
-                if initial in namechars:                   # ordinary name
-                    tokeneater(NAME, token, spos, epos, line)
-                elif initial in numchars \
+                if initial in numchars \
                     or (initial == '.' and token != '.'):  # ordinary number
                     tokeneater(NUMBER, token, spos, epos, line)
                 elif initial in '\r\n':
                     tokeneater(NEWLINE, token, spos, epos, line)
                 elif initial == '#':
                     tokeneater(COMMENT, token, spos, epos, line)
-                elif initial == '\\':                      # continued stmt
-                    continued = 1
-                elif token in ('\'\'\'', '"""'):           # triple-quoted
+                elif token in ("'''",'"""',"r'''",'r"""'): # triple-quoted
                     endprog = endprogs[token]
-                    if endprog.match(line, pos) >= 0:      # all on one line
-                        pos = endprog.regs[0][1]
+                    endmatch = endprog.match(line, pos)
+                    if endmatch:                           # all on one line
+                        pos = endmatch.end(0)
                         token = line[start:pos]
                         tokeneater(STRING, token, spos, (lnum, pos), line)
                     else:
                         strstart = (lnum, start)           # multiple lines
                         contstr = line[start:]
                         break
-                elif initial in '\'"':
+                elif initial in ("'", '"') or token[:2] in ("r'", 'r"'):
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
-                        endprog = endprogs[initial]
+                        endprog = endprogs[initial] or endprogs[token[1]]
                         contstr, needcont = line[start:], 1
                         break
                     else:                                  # ordinary string
                         tokeneater(STRING, token, spos, epos, line)
+                elif initial in namechars:                 # ordinary name
+                    tokeneater(NAME, token, spos, epos, line)
+                elif initial == '\\':                      # continued stmt
+                    continued = 1
                 else:
                     if initial in '([{': parenlev = parenlev + 1
                     elif initial in ')]}': parenlev = parenlev - 1
@@ -191,3 +188,4 @@ if __name__ == '__main__':                     # testing
     import sys
     if len(sys.argv) > 1: tokenize(open(sys.argv[1]).readline)
     else: tokenize(sys.stdin.readline)
+
