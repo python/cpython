@@ -50,7 +50,7 @@ ConfigParser -- responsible for for parsing a list of
     readfp(fp, filename=None)
         read and parse one configuration file, given as a file object.
         The filename defaults to fp.name; it is only used in error
-        messages.
+        messages (if fp has no `name' attribute, the string `<???>' is used).
 
     get(section, option, raw=0, vars=None)
         return a string value for the named option.  All % interpolations are
@@ -188,11 +188,10 @@ class ConfigParser:
         return opts.has_key(option)
 
     def read(self, filenames):
-
         """Read and parse a filename or a list of filenames.
         
         Files that cannot be opened are silently ignored; this is
-        designed so that you can specifiy a list of potential
+        designed so that you can specify a list of potential
         configuration file locations (e.g. current directory, user's
         home directory, systemwide directory), and all existing
         configuration files in the list will be read.  A single
