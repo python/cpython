@@ -271,10 +271,10 @@ def test():
 		],
 		'pow(a,b)': [
 			(1, 10, 1),
-			(1, Complex(0,10), 'TypeError'),
+			(1, Complex(0,10), 1),
 			(Complex(0,10), 1, Complex(0,10)),
 			(Complex(0,10), Complex(1), Complex(0,10)),
-			(Complex(1), Complex(0,10), 'TypeError'),
+			(Complex(1), Complex(0,10), 1),
 			(2, Complex(4,0), 16),
 		],
 		'cmp(a,b)': [
