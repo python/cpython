@@ -1012,7 +1012,7 @@ class CacheFTPHandler(FTPHandler):
         # first check for old ones
         t = time.time()
         if self.soonest <= t:
-            for k, v in self.timeout.iteritems():
+            for k, v in self.timeout.items():
                 if v < t:
                     self.cache[k].close()
                     del self.cache[k]
