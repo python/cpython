@@ -9,6 +9,9 @@
    (as it does on SCI ODT 3.0) */
 #undef BAD_STATIC_FORWARD
 
+/* Define if you have the Mach cthreads package */
+#undef C_THREADS
+
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
 
