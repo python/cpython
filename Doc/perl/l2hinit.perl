@@ -26,7 +26,7 @@ $BOTTOM_NAVIGATION = 1;
 $AUTO_NAVIGATION = 0;
 
 $BODYTEXT = '';
-$CHILDLINE = "\n<p></p><hr />\n";
+$CHILDLINE = "\n<p><br /></p><hr class='online-navigation' />\n";
 $VERBOSITY = 0;
 
 # default # of columns for the indexes
@@ -180,20 +180,23 @@ sub make_nav_panel() {
     $s = ('<table align="center" width="100%" cellpadding="0" cellspacing="2">'
           . "\n<tr>"
           # left-hand side
-          . "\n<td>$PREVIOUS</td>"
-          . "\n<td>$UP</td>"
-          . "\n<td>$NEXT</td>"
+          . "\n<td class='online-navigation'>$PREVIOUS</td>"
+          . "\n<td class='online-navigation'>$UP</td>"
+          . "\n<td class='online-navigation'>$NEXT</td>"
           # title box
           . "\n<td align=\"center\" width=\"100%\">$t_title</td>"
           # right-hand side
-          . "\n<td>$CONTENTS</td>"
-          . "\n<td>$CUSTOM_BUTTONS</td>" # module index
-          . "\n<td>$INDEX</td>"
+          . "\n<td class='online-navigation'>$CONTENTS</td>"
+          # module index
+          . "\n<td class='online-navigation'>$CUSTOM_BUTTONS</td>"
+          . "\n<td class='online-navigation'>$INDEX</td>"
           . "\n</tr></table>\n"
           # textual navigation
+          . "<div class='online-navigation'>\n"
           . make_nav_sectref("Previous", "prev", $PREVIOUS_TITLE)
           . make_nav_sectref("Up", "parent", $UP_TITLE)
           . make_nav_sectref("Next", "next", $NEXT_TITLE)
+          . "</div>\n"
           );
     # remove these; they are unnecessary and cause errors from validation
     $s =~ s/ NAME="tex2html\d+"\n */ /g;
@@ -205,6 +208,9 @@ sub add_child_links {
     $toc =~ s|\s*</[aA]>|</a>|g;
     $toc =~ s/ NAME=\"tex2html\d+\"\s*href=/ href=/gi;
     $toc =~ s|</UL>(\s*<BR( /)?>)?|</ul>|gi;
+    if ($toc =~ / NAME=["']CHILD_LINKS["']/) {
+        return "<div class='online-navigation'>\n$toc</div>\n";
+    }
     return $toc;
 }
 
@@ -233,7 +239,7 @@ sub top_navigation_panel() {
 }
 
 sub bot_navigation_panel() {
-    return "\n<div id='bottom-navigation-panel'>\n"
+    return "\n<div class='online-navigation'>\n"
            . "<p></p><hr />\n"
            . make_nav_panel()
            . "</div>\n"

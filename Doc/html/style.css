@@ -146,5 +146,5 @@ div.note .label         { margin-right: 0.5em;
  * Some specialization for printed output.
  */
 @media print {
-  #bottom-navigation-panel { display: none; }
+  .online-navigation    { display: none; }
   }
