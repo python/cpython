@@ -191,9 +191,9 @@ read until \EOF{} from the open file object \var{file} using its
 
 \begin{methoddesc}{transfercmd}{cmd\optional{, rest}}
 Initiate a transfer over the data connection.  If the transfer is
-active, send a \samp{PORT} command and the transfer command specified
+active, send a \samp{EPRT} or  \samp{PORT} command and the transfer command specified
 by \var{cmd}, and accept the connection.  If the server is passive,
-send a \samp{PASV} command, connect to it, and start the transfer
+send a \samp{EPSV} or \samp{PASV} command, connect to it, and start the transfer
 command.  Either way, return the socket for the connection.
 
 If optional \var{rest} is given, a \samp{REST} command is

@@ -19,6 +19,8 @@ for the various socket-related system calls are also a valuable source
 of information on the details of socket semantics.  For \UNIX, refer
 to the manual pages; for Windows, see the WinSock (or Winsock 2)
 specification.
+For IPv6-ready APIs, readers may want to refer to RFC2553 titled
+\cite{Basic Socket Interface Extensions for IPv6}.
 
 The Python interface is a straightforward transliteration of the
 \UNIX{} system call and library interface for sockets to Python's
@@ -30,20 +32,40 @@ higher-level than in the C interface: as with \method{read()} and
 receive operations is automatic, and buffer length is implicit on send
 operations.
 
-Socket addresses are represented as a single string for the
-\constant{AF_UNIX} address family and as a pair
-\code{(\var{host}, \var{port})} for the \constant{AF_INET} address
-family, where \var{host} is a string representing
-either a hostname in Internet domain notation like
-\code{'daring.cwi.nl'} or an IP address like \code{'100.50.200.5'},
-and \var{port} is an integral port number.  Other address families are
-currently not supported.  The address format required by a particular
-socket object is automatically selected based on the address family
-specified when the socket object was created.
+Socket addresses are represented as follows:
+A single string is used for the \constant{AF_UNIX} address family.
+A pair \code{(\var{host}, \var{port})} is used for the
+\constant{AF_INET} address family, where \var{host} is a string
+representing either a hostname in Internet domain notation like
+\code{'daring.cwi.nl'} or an IPv4 address like \code{'100.50.200.5'},
+and \var{port} is an integral port number.
+For \constant{AF_INET6} address family, a four-tuple
+\code{(\var{host}, \var{port}, \var{flowinfo}, \var{scopeid})} is
+used, where \var{flowinfo} and \var{scopeid} represents
+\code{sin6_flowinfo} and \code{sin6_scope_id} member in
+\constant{struct sockaddr_in6} in C.
+For \module{socket} module methods, \var{flowinfo} and \var{scopeid}
+can be omitted just for backward compatibility. Note, however,
+omission of \var{scopeid} can cause problems in manipulating scoped
+IPv6 addresses. Other address families are currently not supported.
+The address format required by a particular socket object is
+automatically selected based on the address family specified when the
+socket object was created.
 
-For IP addresses, two special forms are accepted instead of a host
+For IPv4 addresses, two special forms are accepted instead of a host
 address: the empty string represents \constant{INADDR_ANY}, and the string
 \code{'<broadcast>'} represents \constant{INADDR_BROADCAST}.
+The behavior is not available for IPv6 for backward compatibility,
+therefore, you may want to avoid these if you intend to support IPv6 with
+your Python programs.
+
+If you use a hostname in the \var{host} portion of IPv4/v6 socket
+address, the program may show a nondeterministic behavior, as Python
+uses the first address returned from the DNS resolution.  The socket
+address will be resolved differently into an actual IPv4/v6 address,
+depending on the results from DNS resolution and/or the host
+configuration.  For deterministic behavior use a numeric address in
+\var{host} portion.
 
 All errors raise exceptions.  The normal exceptions for invalid
 argument types and out-of-memory conditions can be raised; errors
@@ -57,7 +79,7 @@ The module \module{socket} exports the following constants and functions:
 
 
 \begin{excdesc}{error}
-This exception is raised for socket- or address-related errors.
+This exception is raised for socket-related errors.
 The accompanying value is either a string telling what went wrong or a
 pair \code{(\var{errno}, \var{string})}
 representing an error returned by a system
@@ -66,8 +88,29 @@ See the module \refmodule{errno}\refbimodindex{errno}, which contains
 names for the error codes defined by the underlying operating system.
 \end{excdesc}
 
+\begin{excdesc}{herror}
+This exception is raised for address-related errors, i.e. for
+functions that use \var{h_errno} in C API, including
+\function{gethostbyname_ex} and \function{gethostbyaddr}.
+
+The accompanying value is a pair \code{(\var{h_errno}, \var{string})}
+representing an error returned by a library call. \var{string}
+represents the description of \var{h_errno}, as returned by
+\cfunction{hstrerror} C API. 
+\end{excdesc}
+
+\begin{excdesc}{gaierror}
+This exception is raised for address-related errors, for
+\function{getaddrinfo} and \function{getnameinfo}.
+The accompanying value is a pair \code{(\var{error}, \var{string})}
+representing an error returned by a library call.
+\var{string} represents the description of \var{error}, as returned
+by \cfunction{gai_strerror} C API.
+\end{excdesc}
+
 \begin{datadesc}{AF_UNIX}
 \dataline{AF_INET}
+\dataline{AF_INET6}
 These constants represent the address (and protocol) families,
 used for the first argument to \function{socket()}.  If the
 \constant{AF_UNIX} constant is not defined then this protocol is
@@ -93,6 +136,10 @@ used for the second argument to \function{socket()}.
 \dataline{IPPORT_*}
 \dataline{INADDR_*}
 \dataline{IP_*}
+\dataline{IPV6_*}
+\dataline{EAI_*}
+\dataline{AI_*}
+\dataline{NI_*}
 Many constants of these forms, documented in the \UNIX{} documentation on
 sockets and/or the IP protocol, are also defined in the socket module.
 They are generally used in arguments to the \method{setsockopt()} and
@@ -100,6 +147,34 @@ They are generally used in arguments to the \method{setsockopt()} and
 those symbols that are defined in the \UNIX{} header files are defined;
 for a few symbols, default values are provided.
 \end{datadesc}
+
+\begin{funcdesc}{getaddrinfo}{host, port\optional{, family, socktype, proto, flags}}
+
+Resolves the \var{host}/\var{port} argument, into a sequence of
+5-tuples that contain all the necessary argument for the sockets
+manipulation. \var{host} is a domain name, a string representation of
+IPv4/v6 address or \code{None}.
+\var{port} is a string service name (like \code{``http''}), a numeric
+port number or \code{None}.
+
+The rest of the arguments are optional and must be numeric if
+specified.  For \var{host} and \var{port}, by passing either an empty
+string or \code{None}, you can pass \code{NULL} to the C API.  The
+\function{getaddrinfo()} function returns a list of 5-tuples with
+the following structure:
+
+\code{(\var{family}, \var{socktype}, \var{proto}, \var{canonname}, \var{sockaddr})}.
+
+\var{family}, \var{socktype}, \var{proto} are all integer and are meant to
+be passed to the \function{socket()} function.
+\var{canonname} is a string representing the canonical name of the \var{host}.
+It can be a numeric IPv4/v6 address when \code{AI_CANONNAME} is specified
+for a numeric \var{host}.
+\var{sockaddr} is a tuple describing a socket address, as described above.
+See \code{Lib/httplib.py} and other library files
+for a typical usage of the function.
+\versionadded{2.2}
+\end{funcdesc}
 
 \begin{funcdesc}{getfqdn}{\optional{name}}
 Return a fully qualified domain name for \var{name}.
@@ -113,26 +188,33 @@ returned.
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyname}{hostname}
-Translate a host name to IP address format.  The IP address is
+Translate a host name to IPv4 address format.  The IPv4 address is
 returned as a string, e.g.,  \code{'100.50.200.5'}.  If the host name
-is an IP address itself it is returned unchanged.  See
+is an IPv4 address itself it is returned unchanged.  See
 \function{gethostbyname_ex()} for a more complete interface.
+\function{gethostbyname()} does not support IPv6 name resolution, and
+\function{getaddrinfo()} should be used instead for IPv4/v6 dual stack support.
 \end{funcdesc}
 
 \begin{funcdesc}{gethostbyname_ex}{hostname}
-Translate a host name to IP address format, extended interface.
+Translate a host name to IPv4 address format, extended interface.
 Return a triple \code{(hostname, aliaslist, ipaddrlist)} where
 \code{hostname} is the primary host name responding to the given
 \var{ip_address}, \code{aliaslist} is a (possibly empty) list of
 alternative host names for the same address, and \code{ipaddrlist} is
-a list of IP addresses for the same interface on the same
+a list of IPv4 addresses for the same interface on the same
 host (often but not always a single address).
+\function{gethostbyname_ex()} does not support IPv6 name resolution, and
+\function{getaddrinfo()} should be used instead for IPv4/v6 dual stack support.
 \end{funcdesc}
 
 \begin{funcdesc}{gethostname}{}
 Return a string containing the hostname of the machine where 
-the Python interpreter is currently executing.  If you want to know the
-current machine's IP address, use \code{gethostbyname(gethostname())}.
+the Python interpreter is currently executing.
+If you want to know the current machine's IP address, you may want to use
+\code{gethostbyname(gethostname())}.
+This operation assumes that there is a valid address-to-host mapping for
+the host, and the assumption does not always hold.
 Note: \function{gethostname()} doesn't always return the fully qualified
 domain name; use \code{gethostbyaddr(gethostname())}
 (see below).
@@ -143,10 +225,21 @@ Return a triple \code{(\var{hostname}, \var{aliaslist},
 \var{ipaddrlist})} where \var{hostname} is the primary host name
 responding to the given \var{ip_address}, \var{aliaslist} is a
 (possibly empty) list of alternative host names for the same address,
-and \var{ipaddrlist} is a list of IP addresses for the same interface
+and \var{ipaddrlist} is a list of IPv4/v6 addresses for the same interface
 on the same host (most likely containing only a single address).
 To find the fully qualified domain name, use the function
 \function{getfqdn()}.
+\function{gethostbyaddr} supports both IPv4 and IPv6.
+\end{funcdesc}
+
+\begin{funcdesc}{getnameinfo}{sockaddr, flags}
+Translate a socket address \var{sockaddr} into a 2-tuple
+\code{(\var{host}, \var{port})}.
+Depending on the settings of \var{flags}, the result can contain a
+fully-qualified domain name or numeric address representation in
+\var{host}.  Similarly, \var{port} can contain a string port name or a
+numeric port number.
+\versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{getprotobyname}{protocolname}
@@ -166,7 +259,7 @@ for that service.  The protocol name should be \code{'tcp'} or
 
 \begin{funcdesc}{socket}{family, type\optional{, proto}}
 Create a new socket using the given address family, socket type and
-protocol number.  The address family should be \constant{AF_INET} or
+protocol number.  The address family should be \constant{AF_INET}, \constant{AF_INET6} or
 \constant{AF_UNIX}.  The socket type should be \constant{SOCK_STREAM},
 \constant{SOCK_DGRAM} or perhaps one of the other \samp{SOCK_} constants.
 The protocol number is usually zero and may be omitted in that case.
@@ -209,7 +302,7 @@ no-op; otherwise, it performs a 2-byte swap operation.
 \end{funcdesc}
 
 \begin{funcdesc}{inet_aton}{ip_string}
-Convert an IP address from dotted-quad string format
+Convert an IPv4 address from dotted-quad string format
 (e.g.\ '123.45.67.89') to 32-bit packed binary format, as a string four
 characters in length.
 
@@ -217,14 +310,17 @@ Useful when conversing with a program that uses the standard C library
 and needs objects of type \ctype{struct in_addr}, which is the C type
 for the 32-bit packed binary this function returns.
 
-If the IP address string passed to this function is invalid,
+If the IPv4 address string passed to this function is invalid,
 \exception{socket.error} will be raised. Note that exactly what is
 valid depends on the underlying C implementation of
 \cfunction{inet_aton()}.
+
+\function{inet_aton} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
 \end{funcdesc}
 
 \begin{funcdesc}{inet_ntoa}{packed_ip}
-Convert a 32-bit packed IP address (a string four characters in
+Convert a 32-bit packed IPv4 address (a string four characters in
 length) to its standard dotted-quad string representation
 (e.g. '123.45.67.89').
 
@@ -234,6 +330,9 @@ for the 32-bit packed binary this function takes as an argument.
 
 If the string passed to this function is not exactly 4 bytes in
 length, \exception{socket.error} will be raised.
+
+\function{inet_ntoa} does not support IPv6, and
+\function{getnameinfo()} should be used instead for IPv4/v6 dual stack support.
 \end{funcdesc}
 
 \begin{datadesc}{SocketType}
@@ -306,14 +405,14 @@ with \function{select.select()}.
 
 \begin{methoddesc}[socket]{getpeername}{}
 Return the remote address to which the socket is connected.  This is
-useful to find out the port number of a remote IP socket, for instance.
+useful to find out the port number of a remote IPv4/v6 socket, for instance.
 (The format of the address returned depends on the address family ---
 see above.)  On some systems this function is not supported.
 \end{methoddesc}
 
 \begin{methoddesc}[socket]{getsockname}{}
 Return the socket's own address.  This is useful to find out the port
-number of an IP socket, for instance.
+number of an IPv4/v6 socket, for instance.
 (The format of the address returned depends on the address family ---
 see above.)
 \end{methoddesc}
@@ -413,7 +512,7 @@ instead.
 
 \subsection{Example \label{socket-example}}
 
-Here are two minimal example programs using the TCP/IP protocol:\ a
+Here are four minimal example programs using the TCP/IP protocol:\ a
 server that echoes all data that it receives back (servicing only one
 client), and a client using it.  Note that a server must perform the
 sequence \function{socket()}, \method{bind()}, \method{listen()},
@@ -423,6 +522,8 @@ more than one client), while a client only needs the sequence
 does not \method{send()}/\method{recv()} on the 
 socket it is listening on but on the new socket returned by
 \method{accept()}.
+
+The first two examples support IPv4 only.
 
 \begin{verbatim}
 # Echo server program
@@ -450,6 +551,82 @@ HOST = 'daring.cwi.nl'    # The remote host
 PORT = 50007              # The same port as used by the server
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.connect((HOST, PORT))
+s.send('Hello, world')
+data = s.recv(1024)
+s.close()
+print 'Received', `data`
+\end{verbatim}
+
+The next two examples are identical to the above two, but support both
+IPv4 and IPv6.
+The server side will listen to the first address family available
+(it should listen to both instead).
+On most of IPv6-ready systems, IPv6 will take precedence
+and the server may not accept IPv4 traffic.
+The client side will try to connect to the all addresses returned as a result
+of the name resolution, and sends traffic to the first one connected
+successfully.
+
+\begin{verbatim}
+# Echo server program
+import socket
+import sys
+
+HOST = ''                 # Symbolic name meaning the local host
+PORT = 50007              # Arbitrary non-privileged port
+s = None
+for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM, 0, socket.AI_PASSIVE):
+    af, socktype, proto, canonname, sa = res
+    try:
+	s = socket.socket(af, socktype, proto)
+    except socket.error, msg:
+	s = None
+	continue
+    try:
+	s.bind(sa)
+	s.listen(1)
+    except socket.error, msg:
+	s.close()
+	s = None
+	continue
+    break
+if s is None:
+    print 'could not open socket'
+    sys.exit(1)
+conn, addr = s.accept()
+print 'Connected by', addr
+while 1:
+    data = conn.recv(1024)
+    if not data: break
+    conn.send(data)
+conn.close()
+\end{verbatim}
+
+\begin{verbatim}
+# Echo client program
+import socket
+import sys
+
+HOST = 'daring.cwi.nl'    # The remote host
+PORT = 50007              # The same port as used by the server
+s = None
+for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
+    af, socktype, proto, canonname, sa = res
+    try:
+	s = socket.socket(af, socktype, proto)
+    except socket.error, msg:
+	s = None
+	continue
+    try:
+	s.connect(sa)
+    except socket.error, msg:
+	s.close()
+	s = None
+	continue
+    break
+if s is None:
+    print 'could not open socket'
+    sys.exit(1)
 s.send('Hello, world')
 data = s.recv(1024)
 s.close()
