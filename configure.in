@@ -928,7 +928,7 @@ then
 	SunOS/5*) 
 		if test "$GCC" = "yes"
 		then LDSHARED='$(CC) -shared'
-		else LDSHARED="$(CC) -G";
+		else LDSHARED='$(CC) -G';
 		fi ;;
 	hp*|HP*) LDSHARED="ld -b";;
 	OSF*) LDSHARED="ld -shared -expect_unresolved \"*\"";;
