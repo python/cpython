@@ -1139,15 +1139,19 @@ AC_C_BIGENDIAN
 # Check whether right shifting a negative integer extends the sign bit
 # or fills with zeros (like the Cray J90, according to Tim Peters).
 AC_MSG_CHECKING(whether right shift extends the sign bit)
+AC_CACHE_VAL(ac_cv_rshift_extends_sign, [
 AC_TRY_RUN([
 int main()
 {
-	return ((-1)>>3 == -1) ? 1 : 0;
+	exit(((-1)>>3 == -1) ? 0 : 1);
 }
-],
-[AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS)
- AC_MSG_RESULT(yes)],
-[AC_MSG_RESULT(no)])
+], ac_cv_rshift_extends_sign=yes, ac_cv_rshift_extends_sign=no)])
+AC_MSG_RESULT($ac_cv_rshift_extends_sign)
+if test "$ac_cv_rshift_extends_sign" = no
+then
+  AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS)
+fi
+
 
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!
 # Add sys/socket.h to confdefs.h
