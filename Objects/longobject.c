@@ -497,7 +497,7 @@ PyLong_FromString(str, pend, base)
 static PyLongObject *x_divrem
 	Py_PROTO((PyLongObject *, PyLongObject *, PyLongObject **));
 static PyObject *long_pos Py_PROTO((PyLongObject *));
-static long_divrem Py_PROTO((PyLongObject *, PyLongObject *,
+static int long_divrem Py_PROTO((PyLongObject *, PyLongObject *,
 	PyLongObject **, PyLongObject **));
 
 /* Long division with remainder, top-level routine */

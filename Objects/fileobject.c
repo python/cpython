@@ -190,10 +190,12 @@ file_dealloc(f)
 		(*f->f_close)(f->f_fp);
 		Py_END_ALLOW_THREADS
 	}
-	if (f->f_name != NULL)
+	if (f->f_name != NULL) {
 		Py_DECREF(f->f_name);
-	if (f->f_mode != NULL)
+	}
+	if (f->f_mode != NULL) {
 		Py_DECREF(f->f_mode);
+	}
 	free((char *)f);
 }
 
@@ -771,8 +773,9 @@ file_readlines(f, args)
 			goto error;
 	}
   cleanup:
-	if (big_buffer)
+	if (big_buffer) {
 		Py_DECREF(big_buffer);
+	}
 	return list;
 }
 
