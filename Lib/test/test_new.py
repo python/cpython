@@ -1,4 +1,4 @@
-from test.test_support import verbose, verify
+from test.test_support import verbose, verify, TestFailed
 import sys
 import new
 
@@ -99,11 +99,67 @@ print 'new.code()'
 # bogus test of new.code()
 # Note: Jython will never have new.code()
 if hasattr(new, 'code'):
-    # XXX should use less criminally bogus arguments!
-    d = new.code(3, 3, 3, 3, codestr, (), (), (),
-                 "<string>", "<name>", 1, "", (), ())
+    def f(a): pass
+    
+    c = f.func_code
+    argcount = c.co_argcount
+    nlocals = c.co_nlocals
+    stacksize = c.co_stacksize
+    flags = c.co_flags
+    codestring = c.co_code
+    constants = c.co_consts
+    names = c.co_names
+    varnames = c.co_varnames
+    filename = c.co_filename
+    name = c.co_name
+    firstlineno = c.co_firstlineno
+    lnotab = c.co_lnotab
+    freevars = c.co_freevars
+    cellvars = c.co_cellvars
+    
+    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+                 constants, names, varnames, filename, name,
+                 firstlineno, lnotab, freevars, cellvars)
+    
     # test backwards-compatibility version with no freevars or cellvars
-    d = new.code(3, 3, 3, 3, codestr, (), (), (),
-                 "<string>", "<name>", 1, "")
+    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+                 constants, names, varnames, filename, name,
+                 firstlineno, lnotab)
+    
+    try: # this used to trigger a SystemError
+        d = new.code(-argcount, nlocals, stacksize, flags, codestring,
+                     constants, names, varnames, filename, name,
+                     firstlineno, lnotab)
+    except ValueError:
+        pass
+    else:
+        raise TestFailed, "negative co_argcount didn't trigger an exception"
+
+    try: # this used to trigger a SystemError
+        d = new.code(argcount, -nlocals, stacksize, flags, codestring,
+                     constants, names, varnames, filename, name,
+                     firstlineno, lnotab)
+    except ValueError:
+        pass
+    else:
+        raise TestFailed, "negative co_nlocals didn't trigger an exception"
+    
+    try: # this used to trigger a Py_FatalError!
+        d = new.code(argcount, nlocals, stacksize, flags, codestring,
+                     constants, (5,), varnames, filename, name,
+                     firstlineno, lnotab)
+    except TypeError:
+        pass
+    else:
+        raise TestFailed, "non-string co_name didn't trigger an exception"
+
+    # new.code used to be a way to mutate a tuple...
+    class S(str): pass
+    t = (S("ab"),)
+    d = new.code(argcount, nlocals, stacksize, flags, codestring,
+                 constants, t, varnames, filename, name,
+                 firstlineno, lnotab)
+    verify(type(t[0]) is S, "eek, tuple changed under us!")
+
     if verbose:
         print d
