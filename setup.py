@@ -271,6 +271,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('_weakref', ['_weakref.c']) )
         exts.append( Extension('xreadlines', ['xreadlinesmodule.c']) )
 
+        exts.append( Extension("bits", ["bits.c"]) )
+
         # array objects
         exts.append( Extension('array', ['arraymodule.c']) )
         # complex math library functions
@@ -385,7 +387,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('crypt', ['cryptmodule.c'], libraries=libs) )
 
         # socket(2)
-        exts.append( Extension('_socket', ['socketmodule.c']) )
+        exts.append( Extension('_socket', ['socketmodule.c'],
+                               depends = ['Modules/socketmodule.h']) )
         # Detect SSL support for the socket module (via _ssl)
         ssl_incs = find_file('openssl/ssl.h', inc_dirs,
                              ['/usr/local/ssl/include',
@@ -402,7 +405,8 @@ class PyBuildExt(build_ext):
             exts.append( Extension('_ssl', ['_ssl.c'],
                                    include_dirs = ssl_incs,
                                    library_dirs = ssl_libs,
-                                   libraries = ['ssl', 'crypto']) )
+                                   libraries = ['ssl', 'crypto'],
+                                   depends = ['Modules/socketmodule.h']), )
 
         # Modules that provide persistent dictionary-like semantics.  You will
         # probably want to arrange for at least one of them to be available on
