@@ -3,7 +3,7 @@ import regex
 
 # Write the config.c file
 
-never = ['marshal', '__main__', '__builtin__', 'sys']
+never = ['marshal', '__main__', '__builtin__', 'sys', 'exceptions']
 
 def makeconfig(infp, outfp, modules, with_ifdef=0):
 	m1 = regex.compile('-- ADDMODULE MARKER 1 --')
