@@ -28,23 +28,6 @@ static PyTypeObject noddy_NoddyType = {
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
     "Noddy objects",           /* tp_doc */
-    0,		               /* tp_traverse */
-    0,		               /* tp_clear */
-    0,		               /* tp_richcompare */
-    0,		               /* tp_weaklistoffset */
-    0,		               /* tp_iter */
-    0,		               /* tp_iternext */
-    0,		               /* tp_methods */
-    0,                         /* tp_members */
-    0,                         /* tp_getset */
-    0,                         /* tp_base */
-    0,                         /* tp_dict */
-    0,                         /* tp_descr_get */
-    0,                         /* tp_descr_set */
-    0,                         /* tp_dictoffset */
-    0,                         /* tp_init */
-    0,                         /* tp_alloc */
-    PyType_GenericNew,         /* tp_new */
 };
 
 static PyMethodDef noddy_methods[] = {
@@ -59,6 +42,7 @@ initnoddy(void)
 {
     PyObject* m;
 
+    noddy_NoddyType.tp_new = PyType_GenericNew;
     if (PyType_Ready(&noddy_NoddyType) < 0)
         return;
 
