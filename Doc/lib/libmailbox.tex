@@ -1,0 +1,42 @@
+\section{Standard Module \sectcode{mailbox}}
+\stmodindex{mailbox}
+
+\renewcommand{\indexsubitem}{(in module mailbox)}
+
+This module defines a number of classes that allow easy and uniform
+access to mail messages in a (unix) mailbox.
+
+\begin{funcdesc}{UnixMailbox}{fp}
+Access a classic unix-style mailbox, where all messages are contained
+in a single file and separated by ``From name time'' lines. \var{Fp}
+is the file object pointing to the mailbox file.
+\end{funcdesc}
+
+\begin{funcdesc}{MmdfMailbox}{fp}
+Access an MMDF-style mailbox, where all messages are contained
+in a single file and separated by lines consisting of 4 control-A
+characters. \var{Fp}
+is the file object pointing to the mailbox file.
+\end{funcdesc}
+
+\begin{funcdesc}{MHMailbox}{dirname}
+Access an MH mailbox, a directory with each message in a separate
+file with a numeric name. \var{Dirname}
+is the name of the mailbox directory.
+\end{funcdesc}
+
+\subsection{Mailbox Objects}
+
+All implementations of Mailbox objects have one externally visible
+method:
+
+\begin{funcdesc}{next}{}
+Return the next message in the mailbox, as a \code{rfc822.Message} object=
+=2E
+Depending on the mailbox implementation the \var{fp} attribute of this
+object may be a true file object or a class instance simulating a file ob=
+ject,
+taking care of things like message boundaries if multiple mail messages a=
+re
+contained in a single file, etc.
+\end{funcdesc}
