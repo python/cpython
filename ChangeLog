@@ -1,3 +1,71 @@
+Fri Aug 12 15:00:20 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/libfuncs.tex: don't use $math$ in description of pow(x,y,z);
+	describe tuple()
+
+	* Doc/libposixfile.tex: use tableiii instead of tableii, so
+	partparse will work again (I know, chicken!)
+
+	* Doc/libthread.tex: Added get_ident(); updated text on module
+	availability
+
+	* Doc/myformat.perl: Added sub do_cmd_Cpp
+
+	* Python/compile.c (com_argdefs, com_arglist): avoid referencing
+	CHILD(n,i) for i >= NCH(n)
+
+	* Python/bltinmodule.c: added tuple() builtin
+
+Thu Aug 11 16:41:14 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/classobject.c, Include/classobject.h: added __getattr__
+	and __setattr__ support to override getattr(x, name) and
+	setattr(x, name, value) for class instances.  This uses a special
+	hack whereby the class is supposed to be static: the __getattr__
+	and __setattr__ methods are looked up only once and saved in the
+	instance structure for speed
+
+Wed Aug 10 13:42:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in, Makefile.in: remove the AC_PREFIX() call -- it's
+	more trouble than it's worth at CWI and most other people seem to
+	install Python in the default (/usr/local) anway.  Changed comment
+	describing --prefix in Makefile.in
+
+	* Lib/urllib.py (ftpcache): remove debug print statement
+
+Tue Aug  9 14:32:45 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Objects/{int,long,float}object.c, Include/object.h,
+	Python/bltinmodule.c: mods by Andrew Kuchling to implement
+	pow(x,y,z) == pow(x,y)%z, but without incurring overflow
+
+	* Python/import.c: if initializing a module did not enter the
+	module into sys.modules, it may have raised an exception -- don't
+	override this exception.
+
+	* Include/rename1.h: added PyMethodDef and PyObject
+
+Mon Aug  8 09:51:08 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Doc/{Makefile,*.tex}: Changes by Andrew Kuchling:
+	  * Added dependencies to the Makefile
+	  * Added \optional{} commands all over the place (possibly not
+	    finished yet)
+	  * Defined \optional and \Cpp in myformat.sty
+	  * Changed all occurrences of C++ to \Cpp{}, for nicely
+	    formatting the + signs.
+	  * Fixed typos, sentence structure in lots of places
+	  * Added documentation for the rotor module
+	  * Added a commented-out paragraph to libcrypto.tex that can be
+	    added once the Python Cryptography Kit is released.
+	  * Altered the table in libposixfile.tex a bit.
+	  * Documented socket.gethostname()
+	  * Started completely rewriting the Extending manual.
+
+	* Modules/{Setup.in, gdbmmodule.c}, Doc/{lib,libgdbm}.tex: added
+	Anthony Baxter's gdbm module (derived from Jack's dbm module)
+
 Fri Aug  5 11:43:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* BUGS: new file (merger of unofficial BUGS1.0.x files)
@@ -23,7 +91,9 @@ Mon Aug  1 01:28:29 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* Makefile.in (TAGS): Call etags w/o -t option
 
-	* Lib/rfc822.py: fix two bugs
+	* Lib/rfc822.py: fix two bugs: error in readheaders interpreting
+	regex.match() result, and wrong logic in getfirstmatchingheader()
+	when the same header occurs twice consecutively
 
 	* Lib/test/test_types.py (6.4.1): test for particular bug in
 	integer multiply

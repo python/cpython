@@ -10,6 +10,31 @@ nother to make an ehtry in this file, unless it was a serious bug
 BUGS found in 1.0.3
 -------------------
 
+(-) unwanted entries in stack trace if err_clear() clears an error
+that also set a stack trace
+
+(-) i, x[i] = a, b assigns b to x[a] rather than to x[i] as expected
+(if we don't fix this, it should be documented with a warning!)
+
+(-) various memory leaks (see purify report from anthony.baxter@aaii.oz.au)
+
+(*) etags no longer supports -t flag
+
+(-) compile.c:com_argdefs() references unalloc'ed memory for def
+f(a=1,): ...
+
+(-) Syntax errors are reported in a silly way if multi-line tokens are
+involved.
+
+(-) SyntaxError exception for compile('...') are reported wrongly
+(lineno is always zero and offset is offset into the whole string).
+
+(-) If you have a python binary in your path like
+/ufs/guido/bin/sgi/python then the default prefix option computed by
+the configure script is bogus!
+
+(-) Make rule for making lib*.a should remove the lib*.a file first.
+
 (*) vars() error message is wrong (copied from dir() obviously).
 
 (*) socket.gethostname() is undocumented.
@@ -19,9 +44,9 @@ BUGS found in 1.0.3
 (-) urllib caching is wrong (should use date from Expires header)
 
 (*) On a related matter: regexpr.c still has two malloc()s the results
-    of which are not tested for being NULL (lines 1253 and 1530). There
-    are also some in rgbimagemodule.c. Am I overlooking something or is
-    this a crasher?
+of which are not tested for being NULL (lines 1253 and 1530). There
+are also some in rgbimagemodule.c. Am I overlooking something or is
+this a crasher?
 
 (*) strop.rindex('abc', '') returns 0 instead of 3
 
