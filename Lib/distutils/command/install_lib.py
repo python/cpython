@@ -5,6 +5,7 @@ __revision__ = "$Id$"
 import sys, os, string
 from distutils.core import Command
 from distutils.dir_util import copy_tree
+from distutils.util import byte_compile
 
 class install_lib (Command):
 
@@ -82,21 +83,9 @@ class install_lib (Command):
         return outfiles
 
     def bytecompile (self, files):
-        # XXX hey! we can't control whether we optimize or not; that's up
-        # to the invocation of the current Python interpreter (at least
-        # according to the py_compile docs).  That sucks.
-        if self.compile:
-            from py_compile import compile
-
-            for f in files:
-                # only compile the file if it is actually a .py file
-                if f[-3:] == '.py':
-                    out_fn = f + (__debug__ and "c" or "o")
-                    compile_msg = "byte-compiling %s to %s" % \
-                                  (f, os.path.basename(out_fn))
-                    skip_msg = "skipping byte-compilation of %s" % f
-                    self.make_file(f, out_fn, compile, (f,),
-                                   compile_msg, skip_msg)
+        byte_compile(files,
+                     force=self.force,
+                     verbose=self.verbose, dry_run=self.dry_run)
 
 
     # -- Utility methods -----------------------------------------------
