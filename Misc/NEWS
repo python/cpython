@@ -56,6 +56,10 @@ Extension Modules
 Library
 -------
 
+- Patch #1056967 changes the semantics of Template.safe_substitute() so that
+  no ValueError is raised on an 'invalid' match group.  Now the delimiter is
+  returned.
+
 - Bug #1052503 pdb.runcall() was not passing along keyword arguments.
 
 - Bug #902037: XML.sax.saxutils.prepare_input_source() now combines relative

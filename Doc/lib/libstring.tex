@@ -131,8 +131,16 @@ precedence.
 Like \method{substitute()}, except that if placeholders are missing from
 \var{mapping} and \var{kws}, instead of raising a \exception{KeyError}
 exception, the original placeholder will appear in the resulting string
-intact.  Note that other exceptions may still be raised, including
-\exception{ValueError} as described above.
+intact.  Also, unlike with \method{substitute()}, any other appearances of the
+\samp{\$} will simply return \samp{\$} instead of raising
+\exception{ValueError}.
+
+While other exceptions may still occur, this method is called ``safe'' because
+substitutions always tries to return a usable string instead of raising an
+exception.  In another sense, \method{safe_substitute()} may be anything other
+than safe, since it will silently ignore malformed templates containing
+dangling delimiters, unmatched braces, or placeholders that are not valid
+Python identifiers.
 \end{methoddesc}
 
 \class{Template} instances also provide one public data attribute:

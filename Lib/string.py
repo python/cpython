@@ -199,7 +199,7 @@ class Template:
             if mo.group('escaped') is not None:
                 return self.delimiter
             if mo.group('invalid') is not None:
-                self._invalid(mo)
+                return self.delimiter
             raise ValueError('Unrecognized named group in pattern',
                              self.pattern)
         return self.pattern.sub(convert, self.template)

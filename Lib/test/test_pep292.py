@@ -163,20 +163,19 @@ class TestTemplate(unittest.TestCase):
         raises(TypeError, s.safe_substitute, d, {})
 
     def test_delimiter_override(self):
+        eq = self.assertEqual
+        raises = self.assertRaises
         class AmpersandTemplate(Template):
             delimiter = '&'
         s = AmpersandTemplate('this &gift is for &{who} &&')
-        self.assertEqual(s.substitute(gift='bud', who='you'),
-                         'this bud is for you &')
-        self.assertRaises(KeyError, s.substitute)
-        self.assertEqual(s.safe_substitute(gift='bud', who='you'),
-                         'this bud is for you &')
-        self.assertEqual(s.safe_substitute(),
-                         'this &gift is for &{who} &')
+        eq(s.substitute(gift='bud', who='you'), 'this bud is for you &')
+        raises(KeyError, s.substitute)
+        eq(s.safe_substitute(gift='bud', who='you'), 'this bud is for you &')
+        eq(s.safe_substitute(), 'this &gift is for &{who} &')
         s = AmpersandTemplate('this &gift is for &{who} &')
-        self.assertRaises(ValueError, s.substitute,
-                          dict(gift='bud', who='you'))
-        self.assertRaises(ValueError, s.safe_substitute)
+        raises(ValueError, s.substitute, dict(gift='bud', who='you'))
+        eq(s.safe_substitute(), 'this &gift is for &{who} &')
+
 
 def test_main():
     from test import test_support
