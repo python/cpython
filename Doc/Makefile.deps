@@ -142,6 +142,10 @@ LIBFILES= $(MANSTYLES) $(INDEXSTYLES) $(COMMONTEX) \
 	lib/tzinfo-examples.py \
 	lib/libtime.tex \
 	lib/libgetopt.tex \
+	lib/liboptparse.tex \
+	lib/caseless.py \
+	lib/required_1.py \
+	lib/required_2.py \
 	lib/libtempfile.tex \
 	lib/liberrno.tex \
 	lib/libsomeos.tex \

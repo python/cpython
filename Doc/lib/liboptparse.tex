@@ -1,0 +1,1693 @@
+\section{\module{optparse} ---
+        Powerful parser for command line options.}
+
+\declaremodule{standard}{optparse}
+\moduleauthor{Greg Ward}{gward@python.net}
+\sectionauthor{Johannes Gijsbers}{jlgijsbers@users.sf.net}
+\sectionauthor{Greg Ward}{gward@python.net}
+
+\modulesynopsis{Powerful, flexible, extensible, easy-to-use command-line
+                parsing library.}
+
+\versionadded{2.3}
+
+The \module{optparse} module is a powerful, flexible, extensible,
+easy-to-use command-line parsing library for Python.  Using
+\module{optparse}, you can add intelligent, sophisticated handling of
+command-line options to your scripts with very little overhead.
+
+Here's an example of using \module{optparse} to add some command-line
+options to a simple script:
+
+\begin{verbatim}
+from optparse import OptionParser
+[...]
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="filename",
+                  help="write report to FILE", metavar="FILE")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", default=1,
+                  help="don't print status messages to stdout")
+
+(options, args) = parser.parse_args()
+\end{verbatim}
+
+With these few lines of code, users of your script can now do the
+"usual thing" on the command-line:
+
+\begin{verbatim}
+$ <yourscript> -f outfile --quiet
+$ <yourscript> -qfoutfile
+$ <yourscript> --file=outfile -q
+$ <yourscript> --quiet --file outfile
+\end{verbatim}
+
+(All of these result in \code{options.filename == "outfile"} and
+\code{options.verbose == 0} ...just as you might expect.)
+
+Even niftier, users can run one of
+\begin{verbatim}
+$ <yourscript> -h
+$ <yourscript> --help
+\end{verbatim}
+and \module{optparse} will print out a brief summary of your script's
+options:
+
+\begin{verbatim}
+usage: <yourscript> [options]
+
+options:
+  -h, --help           show this help message and exit
+  -fFILE, --file=FILE  write report to FILE
+  -q, --quiet          don't print status messages to stdout
+\end{verbatim}
+
+That's just a taste of the flexibility \module{optparse} gives you in
+parsing your command-line.
+
+\subsection{The Tao of Option Parsing\label{optparse-tao}}
+
+\module{optparse} is an implementation of what I have always
+considered the most obvious, straightforward, and user-friendly way to
+design a user interface for command-line programs.  In short, I have
+fairly firm ideas of the Right Way (and the many Wrong Ways) to do
+argument parsing, and \module{optparse} reflects many of those ideas.
+This section is meant to explain this philosophy, which in turn is
+heavily influenced by the Unix and GNU toolkits.
+
+\subsubsection{Terminology\label{optparse-terminology}}
+
+First, we need to establish some terminology.
+
+\begin{definitions}
+\term{argument}
+a chunk of text that a user enters on the command-line, and that the
+shell passes to \cfunction{execl()} or \cfunction{execv()}.  In
+Python, arguments are elements of
+\var{sys.argv[1:]}. (\var{sys.argv[0]} is the name of the program
+being executed; in the context of parsing arguments, it's not very
+important.)  Unix shells also use the term ``word''.
+
+It's occasionally desirable to substitute an argument list other
+than \var{sys.argv[1:]}, so you should read ``argument'' as ``an element of
+\var{sys.argv[1:]}, or of some other list provided as a substitute for
+\var{sys.argv[1:]}''.
+
+\term{option}
+  an argument used to supply extra information to guide or customize
+  the execution of a program.  There are many different syntaxes for
+  options; the traditional Unix syntax is \programopt{-} followed by a
+  single letter, e.g. \programopt{-x} or \programopt{-F}.  Also,
+  traditional Unix syntax allows multiple options to be merged into a
+  single argument, e.g.  \programopt{-x -F} is equivalent to
+  \programopt{-xF}.  The GNU project introduced \longprogramopt{}
+  followed by a series of hyphen-separated words,
+  e.g. \longprogramopt{file} or \longprogramopt{dry-run}.  These are
+  the only two option syntaxes provided by \module{optparse}.
+
+  Some other option syntaxes that the world has seen include:
+
+\begin{itemize}
+\item a hyphen followed by a few letters, e.g. \programopt{-pf} (this is
+      *not* the same as multiple options merged into a single
+      argument.)
+\item a hyphen followed by a whole word, e.g. \programopt{-file} (this is
+      technically equivalent to the previous syntax, but they aren't
+      usually seen in the same program.)
+\item a plus sign followed by a single letter, or a few letters,
+      or a word, e.g. \programopt{+f}, \programopt{+rgb}.
+\item a slash followed by a letter, or a few letters, or a word, e.g.
+      \programopt{/f}, \programopt{/file}.
+\end{itemize}
+
+These option syntaxes are not supported by \module{optparse}, and they
+never will be.  (If you really want to use one of those option
+syntaxes, you'll have to subclass OptionParser and override all the
+difficult bits.  But please don't!  \module{optparse} does things the
+traditional Unix/GNU way deliberately; the first three are
+non-standard anywhere, and the last one makes sense only if you're
+exclusively targeting MS-DOS/Windows and/or VMS.)
+
+\term{option argument}
+an argument that follows an option, is closely associated with that
+option, and is consumed from the argument list when the option is.
+Often, option arguments may also be included in the same argument as
+the option, e.g. :
+
+\begin{verbatim}
+    ["-f", "foo"]
+\end{verbatim}
+
+may be equivalent to:
+
+\begin{verbatim}
+    ["-ffoo"]
+\end{verbatim}
+
+(\module{optparse} supports this syntax.)
+
+Some options never take an argument.  Some options always take an
+argument.  Lots of people want an ``optional option arguments'' feature,
+meaning that some options will take an argument if they see it, and
+won't if they don't.  This is somewhat controversial, because it makes
+parsing ambiguous: if \programopt{-a} takes an optional argument and
+\programopt{-b} is another option entirely, how do we interpret
+\programopt{-ab}?  \module{optparse} does not currently support this.
+
+\term{positional argument}
+something leftover in the argument list after options have been
+parsed, ie. after options and their arguments have been parsed and
+removed from the argument list.
+
+\term{required option}
+an option that must be supplied on the command-line; the phrase
+"required option" is an oxymoron and I personally consider it poor UI
+design.  \module{optparse} doesn't prevent you from implementing
+required options, but doesn't give you much help at it either.  See
+Extending Examples (section \ref{optparse-extending-examples}) for two
+ways to implement required options with \module{optparse}.
+
+\end{definitions}
+
+For example, consider this hypothetical command-line:
+
+\begin{verbatim}
+  prog -v --report /tmp/report.txt foo bar
+\end{verbatim}
+
+\programopt{-v} and \longprogramopt{report} are both options.  Assuming
+the \longprogramopt{report} option takes one argument,
+``/tmp/report.txt'' is an option argument.  ``foo'' and ``bar'' are
+positional arguments.
+
+\subsubsection{What are options for?\label{optparse-options}}
+
+Options are used to provide extra information to tune or customize the
+execution of a program.  In case it wasn't clear, options are usually
+\emph{optional}.  A program should be able to run just fine with no
+options whatsoever.  (Pick a random program from the Unix or GNU
+toolsets.  Can it run without any options at all and still make sense?
+The only exceptions I can think of are find, tar, and dd -- all of
+which are mutant oddballs that have been rightly criticized for their
+non-standard syntax and confusing interfaces.)
+
+Lots of people want their programs to have ``required options''.
+Think about it.  If it's required, then it's \emph{not optional}!  If
+there is a piece of information that your program absolutely requires
+in order to run successfully, that's what positional arguments are
+for.  (However, if you insist on adding ``required options'' to your
+programs, look in Extending Examples (section
+\ref{optparse-extending-examples}) for two ways of implementing them
+with \module{optparse}.)
+
+Consider the humble \program{cp} utility, for copying files.  It
+doesn't make much sense to try to copy files without supplying a
+destination and at least one source.  Hence, \program{cp} fails if you
+run it with no arguments.  However, it has a flexible, useful syntax
+that does not rely on options at all:
+
+\begin{verbatim}
+$ cp SOURCE DEST
+$ cp SOURCE ... DEST-DIR
+\end{verbatim}
+
+You can get pretty far with just that.  Most \program{cp}
+implementations provide a bunch of options to tweak exactly how the
+files are copied: you can preserve mode and modification time, avoid
+following symlinks, ask before clobbering existing files, etc.  But
+none of this distracts from the core mission of \program{cp}, which is
+to copy one file to another, or N files to another directory.
+
+\subsubsection{What are positional arguments for? \label{optparse-positional-arguments}}
+
+In case it wasn't clear from the above example: positional arguments
+are for those pieces of information that your program absolutely,
+positively requires to run.
+
+A good user interface should have as few absolute requirements as
+possible.  If your program requires 17 distinct pieces of information in
+order to run successfully, it doesn't much matter \emph{how} you get that
+information from the user -- most people will give up and walk away
+before they successfully run the program.  This applies whether the user
+interface is a command-line, a configuration file, a GUI, or whatever:
+if you make that many demands on your users, most of them will just give
+up.
+
+In short, try to minimize the amount of information that users are
+absolutely required to supply -- use sensible defaults whenever
+possible.  Of course, you also want to make your programs reasonably
+flexible.  That's what options are for.  Again, it doesn't matter if
+they are entries in a config file, checkboxes in the ``Preferences''
+dialog of a GUI, or command-line options -- the more options you
+implement, the more flexible your program is, and the more complicated
+its implementation becomes.  It's quite easy to overwhelm users (and
+yourself!) with too much flexibility, so be careful there.
+
+\subsection{Basic Usage\label{optparse-basic-usage}}
+
+While \module{optparse} is quite flexible and powerful, you don't have
+to jump through hoops or read reams of documentation to get it working
+in basic cases.  This document aims to demonstrate some simple usage
+patterns that will get you started using \module{optparse} in your
+scripts.
+
+To parse a command line with \module{optparse}, you must create an
+\class{OptionParser} instance and populate it.  Obviously, you'll have
+to import the \class{OptionParser} classes in any script that uses
+\module{optparse}:
+
+\begin{verbatim}
+from optparse import OptionParser
+\end{verbatim}
+
+Early on in the main program, create a parser:
+
+\begin{verbatim}
+parser = OptionParser()
+\end{verbatim}
+
+Then you can start populating the parser with options.  Each option is
+really a set of synonymous option strings; most commonly, you'll have
+one short option string and one long option string --
+e.g. \programopt{-f} and \longprogramopt{file}:
+
+\begin{verbatim}
+parser.add_option("-f", "--file", ...)
+\end{verbatim}
+
+The interesting stuff, of course, is what comes after the option
+strings.  In this document, we'll only cover four of the things you
+can put there: \var{action}, \var{type}, \var{dest} (destination), and
+\var{help}.
+
+\subsubsection{The "store" action\label{optparse-store-action}}
+
+The action tells \module{optparse} what to do when it sees one of the
+option strings for this option on the command-line.  For example, the
+action \var{store} means: take the next argument (or the remainder of
+the current argument), ensure that it is of the correct type, and
+store it to your chosen destination.
+
+For example, let's fill in the "..." of that last option:
+
+\begin{verbatim}
+parser.add_option("-f", "--file",
+                  action="store", type="string", dest="filename")
+\end{verbatim}
+
+Now let's make up a fake command-line and ask \module{optparse} to
+parse it:
+
+\begin{verbatim}
+args = ["-f", "foo.txt"]
+(options, args) = parser.parse_args(args)
+\end{verbatim}
+
+(Note that if you don't pass an argument list to
+\function{parse_args()}, it automatically uses \var{sys.argv[1:]}.)
+
+When \module{optparse} sees the \programopt{-f}, it sucks in the next
+argument -- ``foo.txt'' -- and stores it in the \var{filename}
+attribute of a special object.  That object is the first return value
+from \programopt{parse_args()}, so:
+
+\begin{verbatim}
+print options.filename
+\end{verbatim}
+
+will print ``foo.txt''.
+
+Other option types supported by \module{optparse} are ``int'' and
+``float''.  Here's an option that expects an integer argument:
+
+\begin{verbatim}
+parser.add_option("-n", type="int", dest="num")
+\end{verbatim}
+
+Note that I didn't supply a long option, which is perfectly acceptable.
+I also didn't specify the action -- it defaults to ``store''.
+  
+Let's parse another fake command-line.  This time, we'll jam the
+option argument right up against the option -- \programopt{-n42} (one
+argument) is equivalent to \programopt{-n 42} (two arguments). :
+
+\begin{verbatim}
+(options, args) = parser.parse_args(["-n42"])
+print options.num
+\end{verbatim}
+
+will print ``42''.
+
+Trying out the ``float'' type is left as an exercise for the reader.
+
+If you don't specify a type, \module{optparse} assumes ``string''.
+Combined with the fact that the default action is ``store'', that
+means our first example can be a lot shorter:
+
+\begin{verbatim}
+parser.add_option("-f", "--file", dest="filename")
+\end{verbatim}
+
+If you don't supply a destination, \module{optparse} figures out a
+sensible default from the option strings: if the first long option
+string is \longprogramopt{foo-bar}, then the default destination is
+\var{foo_bar}.  If there are no long option strings,
+\module{optparse} looks at the first short option: the default
+destination for \programopt{-f} is \var{f}.
+
+Adding types is fairly easy; please refer to section
+\ref{optparse-adding-types}: Adding new types.
+
+\subsubsection{Other "store_*" actions\label{optparse-other-store-actions}}
+
+Flag options -- set a variable to true or false when a particular
+option is seen -- are quite common.  \module{optparse} supports them
+with two separate actions, ``store_true'' and ``store_false''.  For
+example, you might have a \var{verbose} flag that is turned on with
+\programopt{-v} and off with \programopt{-q}:
+
+\begin{verbatim}
+parser.add_option("-v", action="store_true", dest="verbose")
+parser.add_option("-q", action="store_false", dest="verbose")
+\end{verbatim}
+
+Here we have two different options with the same destination, which is
+perfectly OK.  (It just means you have to be a bit careful when setting
+default values -- see below.)
+
+When \module{optparse} sees \programopt{-v} on the command line, it
+sets the \var{verbose} attribute of the special {option values}
+object to 1; when it sees \programopt{-q}, it sets \var{verbose} to
+0.
+
+\subsubsection{Setting default values\label{optparse-setting-default-values}}
+
+All of the above examples involve setting some variable (the
+``destination'') when certain command-line options are seen.  What
+happens if those options are never seen?  Since we didn't supply any
+defaults, they are all set to None.  Sometimes, this is just fine
+(which is why it's the default), but sometimes, you want more control.
+To address that need, \module{optparse} lets you supply a default
+value for each destination, which is assigned before the command-line
+is parsed.
+
+First, consider the verbose/quiet example.  If we want
+\module{optparse} to set \var{verbose} to 1 unless -q is seen, then
+we can do this:
+
+\begin{verbatim}
+parser.add_option("-v", action="store_true", dest="verbose", default=1)
+parser.add_option("-q", action="store_false", dest="verbose")
+\end{verbatim}
+
+Oddly enough, this is exactly equivalent:
+
+\begin{verbatim}
+parser.add_option("-v", action="store_true", dest="verbose")
+parser.add_option("-q", action="store_false", dest="verbose", default=1)
+\end{verbatim}
+
+Those are equivalent because you're supplying a default value for the
+option's \emph{destination}, and these two options happen to have the same
+destination (the \var{verbose} variable).
+
+Consider this:
+
+\begin{verbatim}
+parser.add_option("-v", action="store_true", dest="verbose", default=0)
+parser.add_option("-q", action="store_false", dest="verbose", default=1)
+\end{verbatim}
+
+Again, the default value for \var{verbose} will be 1: the last
+default value supplied for any particular destination attribute is the
+one that counts.
+
+\subsubsection{Generating help\label{optparse-generating-help}}
+
+The last feature that you will use in every script is
+\module{optparse}'s ability to generate help messages.  All you have
+to do is supply a \var{help} value when you add an option.  Let's
+create a new parser and populate it with user-friendly (documented)
+options:
+
+\begin{verbatim}
+usage = "usage: %prog [options] arg1 arg2"
+parser = OptionParser(usage=usage)
+parser.add_option("-v", "--verbose",
+                  action="store_true", dest="verbose", default=1,
+                  help="make lots of noise [default]")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose", 
+                  help="be vewwy quiet (I'm hunting wabbits)")
+parser.add_option("-f", "--file", dest="filename",
+                  metavar="FILE", help="write output to FILE"),
+parser.add_option("-m", "--mode",
+                  default="intermediate",
+                  help="interaction mode: one of 'novice', "
+                       "'intermediate' [default], 'expert'")
+\end{verbatim}
+
+If \module{optparse} encounters either \programopt{-h} or
+\longprogramopt{--help} on the command-line, or if you just call
+\method{parser.print_help()}, it prints the following to stdout:
+
+\begin{verbatim}
+usage: <yourscript> [options] arg1 arg2
+
+options:
+  -h, --help           show this help message and exit
+  -v, --verbose        make lots of noise [default]
+  -q, --quiet          be vewwy quiet (I'm hunting wabbits)
+  -fFILE, --file=FILE  write output to FILE
+  -mMODE, --mode=MODE  interaction mode: one of 'novice', 'intermediate'
+                       [default], 'expert'
+\end{verbatim}
+
+There's a lot going on here to help \module{optparse} generate the
+best possible help message:
+
+\begin{itemize}
+\item the script defines its own usage message:
+
+\begin{verbatim}
+usage = "usage: %prog [options] arg1 arg2"
+\end{verbatim}
+
+\module{optparse} expands "\%prog" in the usage string to the name of the
+current script, ie. \code{os.path.basename(sys.argv[0])}.  The
+expanded string is then printed before the detailed option help.
+
+If you don't supply a usage string, \module{optparse} uses a bland but
+sensible default: ``usage: \%prog [options]'', which is fine if your
+script doesn't take any positional arguments.
+
+\item every option defines a help string, and doesn't worry about 
+line-wrapping -- \module{optparse} takes care of wrapping lines and 
+making the help output look good.
+
+\item options that take a value indicate this fact in their
+automatically-generated help message, e.g. for the ``mode'' option:
+
+\begin{verbatim}
+-mMODE, --mode=MODE
+\end{verbatim}
+
+Here, ``MODE'' is called the meta-variable: it stands for the argument
+that the user is expected to supply to
+\programopt{-m}/\longprogramopt{mode}.  By default, \module{optparse}
+converts the destination variable name to uppercase and uses that for
+the meta-variable.  Sometimes, that's not what you want -- for
+example, the \var{filename} option explicitly sets
+\code{metavar="FILE"}, resulting in this automatically-generated
+option description:
+
+\begin{verbatim}
+-fFILE, --file=FILE
+\end{verbatim}
+
+This is important for more than just saving space, though: the
+manually written help text uses the meta-variable ``FILE'', to clue
+the user in that there's a connection between the formal syntax
+``-fFILE'' and the informal semantic description ``write output to
+FILE''.  This is a simple but effective way to make your help text a
+lot clearer and more useful for end users.
+\end{itemize}
+
+\subsubsection{Print a version number\label{optparse-print-version}}
+
+Similar to the brief usage string, \module{optparse} can also print a
+version string for your program.  You have to supply the string, as
+the \var{version} argument to \class{OptionParser}:
+
+\begin{verbatim}
+parser = OptionParser(usage="%prog [-f] [-q]", version="%prog 1.0")
+\end{verbatim}
+
+Note that ``\%prog'' is expanded just like it is in \var{usage}.  Apart from
+that, \var{version} can contain anything you like.  When you supply it,
+\module{optparse} automatically adds a\ longprogramopt{version} option to your
+parser. If it encounters this option on the command line, it expands
+your \var{version} string (by replacing ``\%prog''), prints it to
+stdout, and exits.
+
+For example, if your script is called /usr/bin/foo, a user might do:
+
+\begin{verbatim}
+$ /usr/bin/foo --version
+foo 1.0
+$
+\end{verbatim}
+
+\subsubsection{Error-handling\label{optparse-error-handling}}
+
+The one thing you need to know for basic usage is how
+\module{optparse} behaves when it encounters an error on the
+command-line -- e.g. \programopt{-n4x} where \programopt{-n} is an
+integer-valued option.  \module{optparse} prints your usage message to
+stderr, followed by a useful and human-readable error message.  Then
+it terminates (calls \function{sys.exit()}) with a non-zero exit
+status.
+
+If you don't like this, subclass \class{OptionParser} and override the
+\method{error()} method.  See section \ref{optparse-extending}:
+Extending \module{optparse}.
+
+\subsubsection{Putting it all together\label{optparse-basic-summary}}
+
+Here's what my \module{optparse}-based scripts usually look like:
+
+\begin{verbatim}
+from optparse import OptionParser
+
+[...]
+
+def main ():
+    usage = "usage: %prog [options] arg"
+    parser = OptionParser(usage)
+    parser.add_option("-f", "--file", type="string", dest="filename",
+                      help="read data from FILENAME")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose")
+    parser.add_option("-q", "--quiet",
+                      action="store_false", dest="verbose")
+    [... more options ...]
+
+    (options, args) = parser.parse_args()
+    if len(args) != 1:
+        parser.error("incorrect number of arguments")
+
+    if options.verbose:
+        print "reading %s..." % options.filename
+
+    [... go to work ...]
+
+if __name__ == "__main__":
+    main()
+\end{verbatim}
+
+\subsection{Advanced Usage\label{optparse-advanced-usage}}
+
+This is reference documentation.  If you haven't read the basic
+documentation in section \ref{optparse-basic-usage}, do so now.
+
+\subsubsection{Creating and populating the parser\label{optparse-creating-the-parser}}
+
+There are several ways to populate the parser with options.  One way
+is to pass a list of \class{Options} to the \class{OptionParser}
+constructor:
+
+\begin{verbatim}
+parser = OptionParser(option_list=[
+    make_option("-f", "--filename",
+                action="store", type="string", dest="filename"),
+    make_option("-q", "--quiet",
+                action="store_false", dest="verbose")])
+\end{verbatim}
+
+(As of \module{optparse} 1.3, \function{make_option()} is an alias for
+the \class{Option} class, ie. this just calls the \class{Option}
+constructor.  A future version of \module{optparse} will probably
+split \class{Option} into several classes, and
+\function{make_option()} will become a factory function that picks the
+right class to instantiate.)
+
+For long option lists, it's often more convenient/readable to create the
+list separately:
+
+\begin{verbatim}
+option_list = [make_option("-f", "--filename",
+                           action="store", type="string", dest="filename"),
+               # ... 17 other options ...
+               make_option("-q", "--quiet",
+                           action="store_false", dest="verbose")]
+parser = OptionParser(option_list=option_list)
+\end{verbatim}
+
+Or, you can use the \method{add_option()} method of
+\class{OptionParser} to add options one-at-a-time:
+
+\begin{verbatim}
+parser = OptionParser()
+parser.add_option("-f", "--filename",
+                  action="store", type="string", dest="filename")
+parser.add_option("-q", "--quiet",
+                  action="store_false", dest="verbose")
+\end{verbatim}
+
+This method makes it easier to track down exceptions raised by the
+\class{Option} constructor, which are common because of the complicated
+interdependencies among the various keyword arguments -- if you get it
+wrong, \module{optparse} raises \exception{OptionError}.
+
+\method{add_option()} can be called in one of two ways:
+
+\begin{itemize}
+\item pass it an \class{Option} instance  (as returned by \function{make_option()})
+\item pass it any combination of positional and keyword arguments that
+are acceptable to \function{make_option()} (ie., to the \class{Option}
+constructor), and it will create the \class{Option} instance for you
+(shown above).
+\end{itemize}
+
+\subsubsection{Defining options\label{optparse-defining-options}}
+
+Each \class{Option} instance represents a set of synonymous
+command-line options, ie. options that have the same meaning and
+effect, but different spellings.  You can specify any number of short
+or long option strings, but you must specify at least one option
+string.
+
+To define an option with only a short option string:
+
+\begin{verbatim}
+make_option("-f", ...)
+\end{verbatim}
+
+And to define an option with only a long option string:
+
+\begin{verbatim}
+make_option("--foo", ...)
+\end{verbatim}
+
+The ``...'' represents a set of keyword arguments that define
+attributes of the \class{Option} object.  Just which keyword args you
+must supply for a given \class{Option} is fairly complicated (see the
+various \method{_check_*()} methods in the \class{Option} class if you
+don't believe me), but you always have to supply \emph{some}.  If you
+get it wrong, \module{optparse} raises an \exception{OptionError}
+exception explaining your mistake.
+
+The most important attribute of an option is its action, ie. what to do
+when we encounter this option on the command-line.  The possible actions
+are:
+
+\begin{definitions}
+\term{store} [default]
+store this option's argument.
+\term{store_const}
+store a constant value.
+\term{store_true}
+store a true value.
+\term{store_false}
+store a false value.
+\term{append}
+append this option's argument to a list.
+\term{count}
+increment a counter by one.
+\term{callback}
+call a specified function.
+\term{help}
+print a usage message including all options and the documentation for
+them.
+\end{definitions}
+
+(If you don't supply an action, the default is ``store''.  For this
+action, you may also supply \var{type} and \var{dest} keywords; see
+below.)
+
+As you can see, most actions involve storing or updating a value
+somewhere. \module{optparse} always creates a particular object (an
+instance of the \class{Values} class) specifically for this
+purpose. Option arguments (and various other values) are stored as
+attributes of this object, according to the \var{dest} (destination)
+argument to \function{make_option()}/\method{add_option()}.
+
+For example, when you call:
+
+\begin{verbatim}
+parser.parse_args()
+\end{verbatim}
+
+one of the first things \module{optparse} does is create a
+\var{values} object:
+
+\begin{verbatim}
+values = Values()
+\end{verbatim}
+
+If one of the options in this parser is defined with:
+
+\begin{verbatim}
+make_option("-f", "--file", action="store", type="string", dest="filename")
+\end{verbatim}
+
+and the command-line being parsed includes any of the following:
+
+\begin{verbatim}
+-ffoo
+-f foo
+--file=foo
+--file foo
+\end{verbatim}
+
+then \module{optparse}, on seeing the \programopt{-f} or
+\longprogramopt{file} option, will do the equivalent of this:
+
+\begin{verbatim}
+  values.filename = "foo"
+\end{verbatim}
+
+Clearly, the \var{type} and \var{dest} arguments are (usually) almost
+as important as \var{action}.  \var{action} is the only attribute that
+is meaningful for *all* options, though, so it is the most important.
+
+\subsubsection{Option actions\label{optparse-option-actions}}
+
+The various option actions all have slightly different requirements
+and effects.  Except for the ``help'' action, you must supply at least
+one other keyword argument when creating the \class{Option}; the exact
+requirements for each action are listed here.
+
+\begin{definitions}
+\term{store} [relevant: \var{type}, \var{dest}, \var{nargs}, \var{choices}]
+
+The option must be followed by an argument, which is converted to a
+value according to \var{type} and stored in \var{dest}.  If
+\var{nargs} > 1, multiple arguments will be consumed from the command
+line; all will be converted according to \var{type} and stored to
+\var{dest} as a tuple.  See section \ref{optparse-option-types}:
+Option types below.
+
+If \var{choices} is supplied (a list or tuple of strings), the type
+defaults to ``choice''.
+
+If \var{type} is not supplied, it defaults to ``string''.
+
+If \var{dest} is not supplied, \module{optparse} derives a
+destination from the first long option strings (e.g.,
+\longprogramopt{foo-bar} -> \var{foo_bar}).  If there are no long
+option strings, \module{optparse} derives a destination from the first
+short option string (e.g., \programopt{-f} -> \var{f}).
+
+Example:
+
+\begin{verbatim}
+make_option("-f")
+make_option("-p", type="float", nargs=3, dest="point")
+\end{verbatim}
+
+Given the following command line:
+
+\begin{verbatim}
+-f foo.txt -p 1 -3.5 4 -fbar.txt
+\end{verbatim}
+
+\module{optparse} will set:
+
+\begin{verbatim}
+values.f = "bar.txt"
+values.point = (1.0, -3.5, 4.0)
+\end{verbatim}
+
+(Actually, \member{values.f} will be set twice, but only the second
+time is visible in the end.)
+
+\term{store_const} [required: \var{const}, \var{dest}]
+
+The \var{const} value supplied to the \class{Option} constructor is
+stored in \var{dest}.
+
+Example:
+
+\begin{verbatim}
+make_option("-q", "--quiet",
+       action="store_const", const=0, dest="verbose"),
+make_option("-v", "--verbose",
+       action="store_const", const=1, dest="verbose"),
+make_option(None, "--noisy",
+       action="store_const", const=2, dest="verbose"),
+\end{verbatim}
+
+If \longprogramopt{noisy} is seen, \module{optparse} will set:
+
+\begin{verbatim}
+values.verbose = 2
+\end{verbatim}
+
+\term{store_true} [required: \var{dest}]
+
+A special case of ``store_const'' that stores a true value
+(specifically, the integer 1) to \var{dest}.
+
+\term{store_false} [required: \var{dest}]
+
+Like ``store_true'', but stores a false value (the integer 0).
+
+Example:
+
+\begin{verbatim}
+make_option(None, "--clobber", action="store_true", dest="clobber")
+make_option(None, "--no-clobber", action="store_false", dest="clobber")
+\end{verbatim}
+
+\term{append} [relevant: \var{type}, \var{dest}, \var{nargs}, \var{choices}]
+
+The option must be followed by an argument, which is appended to the
+list in \var{dest}. If no default value for \var{dest} is supplied
+(ie. the default is None), an empty list is automatically created when
+\module{optparse} first encounters this option on the command-line.
+If \samp{nargs > 1}, multiple arguments are consumed, and a tuple of
+length \var{nargs} is appended to \var{dest}.
+
+The defaults for \var{type} and \var{dest} are the same as for the
+``store'' action.
+
+Example:
+
+\begin{verbatim}
+make_option("-t", "--tracks", action="append", type="int")
+\end{verbatim}
+
+If \programopt{-t3} is seen on the command-line, \module{optparse} does the equivalent of:
+
+\begin{verbatim}
+values.tracks = []
+values.tracks.append(int("3"))
+\end{verbatim}
+
+If, a little later on, \samp{--tracks=4} is seen, it does:
+
+\begin{verbatim}
+values.tracks.append(int("4"))
+\end{verbatim}
+
+See Error handling (section \ref{optparse-error-handling}) for
+information on how \module{optparse} deals with something like
+\samp{--tracks=x}.
+
+\term{count} [required: \var{dest}]
+
+Increment the integer stored at \var{dest}. \var{dest} is set to zero
+before being incremented the first time (unless you supply a default
+value).
+
+Example:
+
+\begin{verbatim}
+make_option("-v", action="count", dest="verbosity")
+\end{verbatim}
+
+The first time \programopt{-v} is seen on the command line,
+\module{optparse} does the equivalent of:
+
+\begin{verbatim}
+values.verbosity = 0
+values.verbosity += 1
+\end{verbatim}
+
+Every subsequent occurrence of \programopt{-v} results in:
+
+\begin{verbatim}
+values.verbosity += 1
+\end{verbatim}
+
+\term{callback} [required: \var{'callback'};
+      relevant: \var{type}, \var{nargs}, \var{callback_args},
+      \var{callback_kwargs}]
+
+Call the function specified by \var{callback}.  The signature of
+this function should be:
+
+\begin{verbatim}
+func(option : Option,
+     opt : string,
+     value : any,
+     parser : OptionParser,
+     *args, **kwargs)
+\end{verbatim}
+
+Callback options are covered in detail in section
+\ref{optparse-callback-options}: Callback Options.
+
+\term{help} [required: none]
+
+Prints a complete help message for all the options in the current
+option parser.  The help message is constructed from the \var{usage}
+string passed to \class{OptionParser}'s constructor and the \var{help}
+string passed to every option.
+
+If no \var{help} string is supplied for an option, it will still be
+listed in the help message.  To omit an option entirely, use the
+special value \constant{optparse.SUPPRESS_HELP}.
+
+Example:
+
+\begin{verbatim}
+from optparse import Option, OptionParser, SUPPRESS_HELP
+
+usage = "usage: %prog [options]"
+parser = OptionParser(usage, option_list=[
+  make_option("-h", "--help", action="help"),
+  make_option("-v", action="store_true", dest="verbose",
+              help="Be moderately verbose")
+  make_option("--file", dest="filename",
+              help="Input file to read data from"),
+  make_option("--secret", help=SUPPRESS_HELP)
+\end{verbatim}
+
+If \module{optparse} sees either \longprogramopt{-h} or \longprogramopt{help} on
+the command line, it will print something like the following help
+message to stdout:
+
+\begin{verbatim}
+usage: <yourscript> [options]
+
+options:
+  -h, --help        Show this help message and exit
+  -v                Be moderately verbose
+  --file=FILENAME   Input file to read data from
+\end{verbatim}
+
+After printing the help message, \module{optparse} terminates your process
+with \code{sys.exit(0)}.
+
+\term{version} [required: none]
+
+Prints the version number supplied to the \class{OptionParser} to
+stdout and exits.  The version number is actually formatted and
+printed by the \method{print_version()} method of
+\class{OptionParser}.  Generally only relevant if the \var{version}
+argument is supplied to the \class{OptionParser} constructor.
+\end{definitions}
+
+\subsubsection{Option types\label{optparse-option-types}}
+
+\module{optparse} supports six option types out of the box: \dfn{string},
+\dfn{int}, \dfn{long}, \dfn{choice}, \dfn{float} and \dfn{complex}.
+(Of these, string, int, float, and choice are the most commonly used
+-- long and complex are there mainly for completeness.)  It's easy to
+add new option types by subclassing the \class{Option} class; see
+section \ref{optparse-extending}: Extending \module{optparse}.
+
+Arguments to string options are not checked or converted in any way:
+the text on the command line is stored in the destination (or passed
+to the callback) as-is.
+
+Integer arguments are passed to \function{int()} to convert them to
+Python integers.  If \function{int()} fails, so will
+\module{optparse}, although with a more useful error message.
+Internally, \module{optparse} raises \exception{OptionValueError} in
+\function{optparse.check_builtin()}; at a higher level (in
+\class{OptionParser}) this is caught and \module{optparse} terminates
+your program with a useful error message.
+
+Likewise, float arguments are passed to \function{float()} for
+conversion, long arguments to \function{long()}, and complex arguments
+to \function{complex()}.  Apart from that, they are handled
+identically to integer arguments.
+
+Choice options are a subtype of string options. A master list or
+tuple of choices (strings) must be passed to the option constructor
+(\function{make_option()} or \method{OptionParser.add_option()}) as
+the ``choices'' keyword argument. Choice option arguments are
+compared against this master list in
+\function{optparse.check_choice()}, and \exception{OptionValueError}
+is raised if an unknown string is given.
+
+\subsubsection{Querying and manipulating your option parser\label{optparse-querying-and-manipulating}}
+
+Sometimes, it's useful to poke around your option parser and see what's
+there. \class{OptionParser} provides a couple of methods to help you out:
+
+\begin{methoddesc}{has_option}{opt_str}
+    Given an option string such as \programopt{-q} or
+    \longprogramopt{verbose}, returns true if the \class{OptionParser}
+    has an option with that option string.
+\end{methoddesc}
+
+\begin{methoddesc}{get_option}{opt_str}
+    Returns the \class{Option} instance that implements the option
+    string you supplied, or None if no options implement it.
+\end{methoddesc}
+
+\begin{methoddesc}{remove_option}{opt_str}
+    If the \class{OptionParser} has an option corresponding to
+    \var{opt_str}, that option is removed.  If that option provided
+    any other option strings, all of those option strings become
+    invalid.
+
+    If \var{opt_str} does not occur in any option belonging to this
+    \class{OptionParser}, raises \exception{ValueError}.
+\end{methoddesc}
+
+\subsubsection{Conflicts between options\label{optparse-conflicts}}
+
+If you're not careful, it's easy to define conflicting options:
+
+\begin{verbatim}
+parser.add_option("-n", "--dry-run", ...)
+[...]
+parser.add_option("-n", "--noisy", ...)
+\end{verbatim} 
+
+(This is even easier to do if you've defined your own
+\class{OptionParser} subclass with some standard options.)
+
+On the assumption that this is usually a mistake, \module{optparse}
+1.2 and later raise an exception (\exception{OptionConflictError}) by
+default when this happens.  Since this is an easily-fixed programming
+error, you shouldn't try to catch this exception -- fix your mistake
+and get on with life.
+
+Sometimes, you want newer options to deliberately replace the option
+strings used by older options.  You can achieve this by calling:
+
+\begin{verbatim}
+parser.set_conflict_handler("resolve")
+\end{verbatim}
+
+which instructs \module{optparse} to resolve option conflicts
+intelligently.
+
+Here's how it works: every time you add an option, \module{optparse}
+checks for conflicts with previously-added options.  If it finds any,
+it invokes the conflict-handling mechanism you specify either to the
+\class{OptionParser} constructor:
+
+\begin{verbatim}
+parser = OptionParser(..., conflict_handler="resolve")
+\end{verbatim}
+
+or via the \method{set_conflict_handler()} method.
+
+The default conflict-handling mechanism is ``error''.  The only other
+one is ``ignore'', which restores the (arguably broken) behaviour of
+\module{optparse} 1.1 and earlier.
+
+Here's an example: first, define an \class{OptionParser} set to
+resolve conflicts intelligently:
+
+\begin{verbatim}
+parser = OptionParser(conflict_handler="resolve")
+\end{verbatim}
+
+Now add all of our options:
+
+\begin{verbatim}
+parser.add_option("-n", "--dry-run", ..., help="original dry-run option")
+[...]
+parser.add_option("-n", "--noisy", ..., help="be noisy")
+\end{verbatim} 
+
+At this point, \module{optparse} detects that a previously-added option is already
+using the \programopt{-n} option string.  Since \code{conflict_handler
+== "resolve"}, it resolves the situation by removing \programopt{-n}
+from the earlier option's list of option strings.  Now,
+\longprogramopt{dry-run} is the only way for the user to activate that
+option.  If the user asks for help, the help message will reflect
+that, e.g.:
+
+\begin{verbatim}
+options:
+  --dry-run     original dry-run option
+  [...]
+  -n, --noisy   be noisy
+\end{verbatim}
+
+Note that it's possible to whittle away the option strings for a
+previously-added option until there are none left, and the user has no
+way of invoking that option from the command-line.  In that case,
+\module{optparse} removes that option completely, so it doesn't show
+up in help text or anywhere else.  E.g. if we carry on with our
+existing \class{OptionParser}:
+
+\begin{verbatim}
+parser.add_option("--dry-run", ..., help="new dry-run option")
+\end{verbatim}
+
+At this point, the first \programopt{-n}/\longprogramopt{dry-run}
+option is no longer accessible, so \module{optparse} removes it.  If
+the user asks for help, they'll get something like this:
+
+\begin{verbatim}
+options:
+  [...]
+  -n, --noisy   be noisy
+  --dry-run     new dry-run option
+\end{verbatim}
+
+\subsection{Callback Options\label{optparse-callback-options}}
+
+If \module{optparse}'s built-in actions and types just don't fit the
+bill for you, but it's not worth extending \module{optparse} to define
+your own actions or types, you'll probably need to define a callback
+option.  Defining callback options is quite easy; the tricky part is
+writing a good callback (the function that is called when
+\module{optparse} encounters the option on the command line).
+
+\subsubsection{Defining a callback option\label{optparse-defining-callback-option}}
+
+As always, you can define a callback option either by directly
+instantiating the \class{Option} class, or by using the
+\method{add_option()} method of your \class{OptionParser} object. The
+only option attribute you must specify is \var{callback}, the function
+to call:
+
+\begin{verbatim}
+parser.add_option("-c", callback=my_callback)
+\end{verbatim}
+
+Note that you supply a function object here -- so you must have
+already defined a function \function{my_callback()} when you define
+the callback option.  In this simple case, \module{optparse} knows
+nothing about the arguments the \programopt{-c} option expects to
+take.  Usually, this means that the option doesn't take any arguments
+-- the mere presence of \programopt{-c} on the command-line is all it
+needs to know.  In some circumstances, though, you might want your
+callback to consume an arbitrary number of command-line arguments.
+This is where writing callbacks gets tricky; it's covered later in
+this document.
+
+There are several other option attributes that you can supply when you
+define an option attribute:
+
+\begin{definitions}
+\term{type}
+has its usual meaning: as with the ``store'' or ``append'' actions, it
+instructs \module{optparse} to consume one argument that must be
+convertible to \var{type}.  Rather than storing the value(s) anywhere,
+though, \module{optparse} converts it to \var{type} and passes it to
+your callback function.
+
+\term{nargs}
+also has its usual meaning: if it is supplied and \samp{nargs > 1},
+\module{optparse} will consume \var{nargs} arguments, each of which
+must be convertible to \var{type}.  It then passes a tuple of
+converted values to your callback.
+
+\term{callback_args}
+a tuple of extra positional arguments to pass to the callback.
+    
+\term{callback_kwargs}
+a dictionary of extra keyword arguments to pass to the callback.
+\end{definitions}
+
+\subsubsection{How callbacks are called\label{optparse-callbacks-called}}
+
+All callbacks are called as follows:
+
+\begin{verbatim}
+func(option, opt, value, parser, *args, **kwargs)
+\end{verbatim}
+
+where
+
+\begin{definitions}
+\term{option}
+is the \class{Option} instance that's calling the callback.
+
+\term{opt}
+is the option string seen on the command-line that's triggering the
+callback.  (If an abbreviated long option was used, \var{opt} will be
+the full, canonical option string -- e.g. if the user puts
+\longprogramopt{foo} on the command-line as an abbreviation for
+\longprogramopt{foobar}, then \var{opt} will be
+\longprogramopt{foobar}.)
+
+\term{value}
+is the argument to this option seen on the command-line.
+\module{optparse} will only expect an argument if \var{type} is
+set; the type of \var{value} will be the type implied by the
+option's type (see \ref{optparse-option-types}: Option types).  If
+\var{type} for this option is None (no argument expected), then
+\var{value} will be None.  If \samp{nargs > 1}, \var{value} will
+be a tuple of values of the appropriate type.
+
+\term{parser}
+is the \class{OptionParser} instance driving the whole thing, mainly
+useful because you can access some other interesting data through it,
+as instance attributes:
+
+\begin{definitions}
+\term{parser.rargs}
+the current remaining argument list, ie. with \var{opt} (and
+\var{value}, if any) removed, and only the arguments following
+them still there.  Feel free to modify \member{parser.rargs},
+e.g. by consuming more arguments.
+    
+\term{parser.largs}
+the current set of leftover arguments, ie. arguments that have been
+processed but have not been consumed as options (or arguments to
+options).  Feel free to modify \member{parser.largs} e.g. by adding
+more arguments to it.
+    
+\term{parser.values}
+the object where option values are by default stored.  This is useful
+because it lets callbacks use the same mechanism as the rest of
+\module{optparse} for storing option values; you don't need to mess
+around with globals or closures.  You can also access the value(s) of
+any options already encountered on the command-line.
+\end{definitions}
+
+\term{args}
+is a tuple of arbitrary positional arguments supplied via the
+\var{callback}_args option attribute.
+
+\term{kwargs}
+is a dictionary of arbitrary keyword arguments supplied via
+\var{callback_kwargs}.
+\end{definitions}
+
+Since \var{args} and \var{kwargs} are optional (they are only passed
+if you supply \var{callback_args} and/or \var{callback_kwargs} when
+you define your callback option), the minimal callback function is:
+
+\begin{verbatim}
+def my_callback (option, opt, value, parser):
+    pass
+\end{verbatim}
+
+\subsubsection{Error handling\label{optparse-callback-error-handling}}
+
+The callback function should raise \exception{OptionValueError} if
+there are any problems with the option or its
+argument(s). \module{optparse} catches this and terminates the
+program, printing the error message you supply to stderr.  Your
+message should be clear, concise, accurate, and mention the option at
+fault.  Otherwise, the user will have a hard time figuring out what he
+did wrong.
+
+\subsubsection{Examples\label{optparse-callback-examples}}
+
+Here's an example of a callback option that takes no arguments, and
+simply records that the option was seen:
+
+\begin{verbatim}
+def record_foo_seen (option, opt, value, parser):
+    parser.saw_foo = 1
+
+parser.add_option("--foo", action="callback", callback=record_foo_seen)
+\end{verbatim}
+
+Of course, you could do that with the ``store_true'' action.  Here's a
+slightly more interesting example: record the fact that
+\programopt{-a} is seen, but blow up if it comes after \programopt{-b}
+in the command-line.
+
+\begin{verbatim}
+def check_order (option, opt, value, parser):
+    if parser.values.b:
+        raise OptionValueError("can't use -a after -b")
+    parser.values.a = 1
+[...]
+parser.add_option("-a", action="callback", callback=check_order)
+parser.add_option("-b", action="store_true", dest="b")
+\end{verbatim}
+
+If you want to reuse this callback for several similar options (set a
+flag, but blow up if \programopt{-b} has already been seen), it needs
+a bit of work: the error message and the flag that it sets must be
+generalized.
+
+\begin{verbatim}
+def check_order (option, opt, value, parser):
+    if parser.values.b:
+        raise OptionValueError("can't use %s after -b" % opt)
+    setattr(parser.values, option.dest, 1)
+[...]
+parser.add_option("-a", action="callback", callback=check_order, dest='a')
+parser.add_option("-b", action="store_true", dest="b")
+parser.add_option("-c", action="callback", callback=check_order, dest='c')
+\end{verbatim}
+
+Of course, you could put any condition in there -- you're not limited
+to checking the values of already-defined options.  For example, if
+you have options that should not be called when the moon is full, all
+you have to do is this:
+
+\begin{verbatim}
+def check_moon (option, opt, value, parser):
+    if is_full_moon():
+        raise OptionValueError("%s option invalid when moon full" % opt)
+    setattr(parser.values, option.dest, 1)
+[...]
+parser.add_option("--foo",
+                  action="callback", callback=check_moon, dest="foo")
+\end{verbatim}
+
+(The definition of is_full_moon() is left as an exercise for the
+reader.)
+
+\strong{Fixed arguments}
+
+Things get slightly more interesting when you define callback options
+that take a fixed number of arguments.  Specifying that a callback
+option takes arguments is similar to defining a ``store'' or
+``append'' option: if you define \var{type}, then the option takes one
+argument that must be convertible to that type; if you further define
+\var{nargs}, then the option takes that many arguments.
+
+Here's an example that just emulates the standard ``store'' action:
+
+\begin{verbatim}
+def store_value (option, opt, value, parser):
+    setattr(parser.values, option.dest, value)
+[...]
+parser.add_option("--foo",
+                  action="callback", callback=store_value,
+                  type="int", nargs=3, dest="foo")
+\end{verbatim}
+
+Note that \module{optparse} takes care of consuming 3 arguments and
+converting them to integers for you; all you have to do is store them.
+(Or whatever: obviously you don't need a callback for this example.
+Use your imagination!)
+
+\strong{Variable arguments}
+
+Things get hairy when you want an option to take a variable number of
+arguments.  For this case, you have to write a callback;
+\module{optparse} doesn't provide any built-in capabilities for it.
+You have to deal with the full-blown syntax for conventional Unix
+command-line parsing.  (Previously, \module{optparse} took care of
+this for you, but I got it wrong.  It was fixed at the cost of making
+this kind of callback more complex.)  In particular, callbacks have to
+worry about bare \longprogramopt{} and \programopt{-} arguments; the
+convention is:
+
+\begin{itemize}
+\item bare \longprogramopt{}, if not the argument to some option,
+causes command-line processing to halt and the \longprogramopt{}
+itself is lost.
+
+\item bare \programopt{-} similarly causes command-line processing to
+halt, but the \programopt{-} itself is kept.
+
+\item either \longprogramopt{} or \programopt{-} can be option
+arguments.
+\end{itemize}
+
+If you want an option that takes a variable number of arguments, there
+are several subtle, tricky issues to worry about.  The exact
+implementation you choose will be based on which trade-offs you're
+willing to make for your application (which is why \module{optparse}
+doesn't support this sort of thing directly).
+
+Nevertheless, here's a stab at a callback for an option with variable
+arguments:
+
+\begin{verbatim}
+def varargs (option, opt, value, parser):
+    assert value is None
+    done = 0
+    value = []
+    rargs = parser.rargs
+    while rargs:
+        arg = rargs[0]
+
+        # Stop if we hit an arg like "--foo", "-a", "-fx", "--file=f",
+        # etc.  Note that this also stops on "-3" or "-3.0", so if
+        # your option takes numeric values, you will need to handle
+        # this.
+        if ((arg[:2] == "--" and len(arg) > 2) or
+            (arg[:1] == "-" and len(arg) > 1 and arg[1] != "-")):
+            break
+        else:
+            value.append(arg)
+            del rargs[0]
+
+     setattr(parser.values, option.dest, value)
+
+[...]
+parser.add_option("-c", "--callback",
+                  action="callback", callback=varargs)
+\end{verbatim}
+
+The main weakness with this particular implementation is that negative
+numbers in the arguments following \programopt{-c} will be interpreted
+as further options, rather than as arguments to \programopt{-c}.
+Fixing this is left as an exercise for the reader.
+
+\subsection{Extending \module{optparse}\label{optparse-extending}}
+
+Since the two major controlling factors in how \module{optparse}
+interprets command-line options are the action and type of each
+option, the most likely direction of extension is to add new actions
+and new types.
+
+Also, the examples section includes several demonstrations of
+extending \module{optparse} in different ways: eg. a case-insensitive
+option parser, or two kinds of option parsers that implement
+``required options''.
+
+\subsubsection{Adding new types\label{optparse-adding-types}}
+
+To add new types, you need to define your own subclass of
+\module{optparse}'s \class{Option} class.  This class has a couple of
+attributes that define \module{optparse}'s types: \member{TYPES} and
+\member{TYPE_CHECKER}.
+
+\member{TYPES} is a tuple of type names; in your subclass, simply
+define a new tuple \member{TYPES} that builds on the standard one.
+
+\member{TYPE_CHECKER} is a dictionary mapping type names to
+type-checking functions.  A type-checking function has the following
+signature:
+
+\begin{verbatim}
+def check_foo (option : Option, opt : string, value : string)
+               -> foo
+\end{verbatim}
+
+You can name it whatever you like, and make it return any type you
+like.  The value returned by a type-checking function will wind up in
+the \class{OptionValues} instance returned by
+\method{OptionParser.parse_args()}, or be passed to callbacks as the
+\var{value} parameter.
+
+Your type-checking function should raise \exception{OptionValueError}
+if it encounters any problems.  \exception{OptionValueError} takes a
+single string argument, which is passed as-is to
+\class{OptionParser}'s \method{error()} method, which in turn prepends
+the program name and the string ``error:'' and prints everything to
+stderr before terminating the process.
+
+Here's a silly example that demonstrates adding a ``complex'' option
+type to parse Python-style complex numbers on the command line.  (This
+is even sillier than it used to be, because \module{optparse} 1.3 adds
+built-in support for complex numbers [purely for completeness], but
+never mind.)
+
+First, the necessary imports:
+
+\begin{verbatim}
+from copy import copy
+from optparse import Option, OptionValueError
+\end{verbatim}
+
+You need to define your type-checker first, since it's referred to
+later (in the \member{TYPE_CHECKER} class attribute of your
+\class{Option} subclass):
+
+\begin{verbatim}
+def check_complex (option, opt, value):
+    try:
+        return complex(value)
+    except ValueError:
+        raise OptionValueError(
+            "option %s: invalid complex value: %r" % (opt, value))
+\end{verbatim}
+
+Finally, the \class{Option} subclass:
+
+\begin{verbatim}
+class MyOption (Option):
+    TYPES = Option.TYPES + ("complex",)
+    TYPE_CHECKER = copy(Option.TYPE_CHECKER)
+    TYPE_CHECKER["complex"] = check_complex
+\end{verbatim}
+
+(If we didn't make a \function{copy()} of
+\member{Option.TYPE_CHECKER}, we would end up modifying the
+\member{TYPE_CHECKER} attribute of \module{optparse}'s Option class.
+This being Python, nothing stops you from doing that except good
+manners and common sense.)
+
+That's it!  Now you can write a script that uses the new option type
+just like any other \module{optparse}-based script, except you have to
+instruct your \class{OptionParser} to use \class{MyOption} instead of
+\class{Option}:
+
+\begin{verbatim}
+parser = OptionParser(option_class=MyOption)
+parser.add_option("-c", action="store", type="complex", dest="c")
+\end{verbatim}
+
+Alternately, you can build your own option list and pass it to
+\class{OptionParser}; if you don't use \method{add_option()} in the
+above way, you don't need to tell \class{OptionParser} which option
+class to use:
+
+\begin{verbatim}
+option_list = [MyOption("-c", action="store", type="complex", dest="c")]
+parser = OptionParser(option_list=option_list)
+\end{verbatim}
+
+\subsubsection{Adding new actions\label{optparse-adding-actions}}
+
+Adding new actions is a bit trickier, because you have to understand
+that \module{optparse} has a couple of classifications for actions:
+
+\begin{definitions}
+\term{"store" actions}
+    actions that result in \module{optparse} storing a value to an attribute
+    of the OptionValues instance; these options require a 'dest'
+    attribute to be supplied to the Option constructor
+\term{"typed" actions}
+    actions that take a value from the command line and expect it to be
+    of a certain type; or rather, a string that can be converted to a
+    certain type.  These options require a 'type' attribute to the
+    Option constructor.
+\end{definitions}
+
+Some default ``store'' actions are ``store'', ``store_const'',
+``append'', and ``count''. The default ``typed'' actions are
+``store'', ``append'', and ``callback''.
+
+When you add an action, you need to decide if it's a ``store'' action,
+a ``typed'', neither, or both.  Three class attributes of
+\class{Option} (or your \class{Option} subclass) control this:
+
+\begin{memberdesc}{ACTIONS}
+    All actions must be listed as strings in ACTIONS.
+\end{memberdesc}
+\begin{memberdesc}{STORE_ACTIONS}
+    "store" actions are additionally listed here.
+\end{memberdesc}
+\begin{memberdesc}{TYPED_ACTIONS}
+    "typed" actions are additionally listed here.
+\end{memberdesc}
+
+In order to actually implement your new action, you must override
+\class{Option}'s \method{take_action()} method and add a case that
+recognizes your action.
+
+For example, let's add an ``extend'' action.  This is similar to the
+standard ``append'' action, but instead of taking a single value from
+the command-line and appending it to an existing list, ``extend'' will
+take multiple values in a single comma-delimited string, and extend an
+existing list with them.  That is, if \longprogramopt{names} is an
+``extend'' option of type string, the command line:
+
+\begin{verbatim}
+--names=foo,bar --names blah --names ding,dong
+\end{verbatim}
+
+would result in a list:
+
+\begin{verbatim}
+["foo", "bar", "blah", "ding", "dong"]
+\end{verbatim}
+
+Again we define a subclass of \class{Option}:
+
+\begin{verbatim}
+class MyOption (Option):
+
+    ACTIONS = Option.ACTIONS + ("extend",)
+    STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+    TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+
+    def take_action (self, action, dest, opt, value, values, parser):
+        if action == "extend":
+            lvalue = value.split(",")
+            values.ensure_value(dest, []).extend(lvalue)
+        else:
+            Option.take_action(
+                self, action, dest, opt, value, values, parser)
+\end{verbatim}
+
+Features of note:
+
+\begin{itemize}
+\item ``extend'' both expects a value on the command-line and stores that
+value somewhere, so it goes in both \member{STORE_ACTIONS} and
+\member{TYPED_ACTIONS}.
+
+\item \method{MyOption.take_action()} implements just this one new
+action, and passes control back to \method{Option.take_action()} for
+the standard \module{optparse} actions.
+
+\item \var{values} is an instance of the \class{Values} class, which
+provides the very useful \method{ensure_value()}
+method. \method{ensure_value()} is essentially \function{getattr()}
+with a safety valve; it is called as:
+
+\begin{verbatim}
+values.ensure_value(attr, value)
+\end{verbatim}
+\end{itemize}
+
+If the \member{attr} attribute of \var{values} doesn't exist or is
+None, then \method{ensure_value()} first sets it to \var{value}, and
+then returns \var{value}. This is very handy for actions like
+``extend'', ``append'', and ``count'', all of which accumulate data in
+a variable and expect that variable to be of a certain type (a list
+for the first two, an integer for the latter).  Using
+\method{ensure_value()} means that scripts using your action don't
+have to worry about setting a default value for the option
+destinations in question; they can just leave the default as None and
+\method{ensure_value()} will take care of getting it right when it's
+needed.
+
+\subsubsection{Other reasons to extend \module{optparse}\label{optparse-extending-other-reasons}}
+
+Adding new types and new actions are the big, obvious reasons why you
+might want to extend \module{optparse}.  I can think of at least two
+other areas to play with.
+
+First, the simple one: \class{OptionParser} tries to be helpful by
+calling \function{sys.exit()} when appropriate, ie. when there's an
+error on the command-line or when the user requests help.  In the
+former case, the traditional course of letting the script crash with a
+traceback is unacceptable; it will make users think there's a bug in
+your script when they make a command-line error.  In the latter case,
+there's generally not much point in carrying on after printing a help
+message.
+
+If this behaviour bothers you, it shouldn't be too hard to ``fix'' it.
+You'll have to
+
+\begin{enumerate}
+\item subclass OptionParser and override the error() method
+\item subclass Option and override the take_action() method -- you'll
+      need to provide your own handling of the "help" action that
+      doesn't call sys.exit()
+\end{enumerate}
+
+The second, much more complex, possibility is to override the
+command-line syntax implemented by \module{optparse}.  In this case,
+you'd leave the whole machinery of option actions and types alone, but
+rewrite the code that processes \var{sys.argv}.  You'll need to
+subclass \class{OptionParser} in any case; depending on how radical a
+rewrite you want, you'll probably need to override one or all of
+\method{parse_args()}, \method{_process_long_opt()}, and
+\method{_process_short_opts()}.
+
+Both of these are left as an exercise for the reader.  I have not
+tried to implement either myself, since I'm quite happy with
+\module{optparse}'s default behaviour (naturally).
+
+Happy hacking, and don't forget: Use the Source, Luke.
+
+\subsubsection{Examples\label{optparse-extending-examples}}
+
+Here are a few examples of extending the \module{optparse} module.
+
+First, let's change the option-parsing to be case-insensitive:
+
+\verbatiminput{caseless.py}
+
+And two ways of implementing ``required options'' with
+\module{optparse}.
+
+Version 1: Add a method to \class{OptionParser} which applications
+must call after parsing arguments:
+
+\verbatiminput{required_1.py}
+
+Version 2: Extend \class{Option} and add a \member{required}
+attribute; extend \class{OptionParser} to ensure that required options
+are present after parsing:
+
+\verbatiminput{required_2.py}
