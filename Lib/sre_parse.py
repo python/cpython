@@ -393,6 +393,8 @@ def _parse(source, state):
                     # potential range
                     this = source.get()
                     if this == "]":
+                        if code1[0] is IN:
+                            code1 = code1[1][0]
                         set.append(code1)
                         set.append((LITERAL, ord("-")))
                         break
