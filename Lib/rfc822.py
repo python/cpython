@@ -421,6 +421,26 @@ class Message:
         for i in list:
             del self.headers[i]
 
+    def get(self, name, default=None):
+        name = name.lower()
+        if self.dict.has_key(name):
+            return self.dict[name]
+        else:
+            return default
+
+    def setdefault(self, name, default=''):
+        lowername = name.lower()
+        if self.dict.has_key(lowername):
+            return self.dict[lowername]
+        else:
+            default = default or ""
+            self.dict[lowername] = default
+            text = "%s: %s" % (name, default)
+            lines = text.split("\n")
+            for line in lines:
+                self.headers.append(line + "\n")
+            return default
+
     def has_key(self, name):
         """Determine whether a message contains the named header."""
         return self.dict.has_key(name.lower())
