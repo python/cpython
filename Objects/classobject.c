@@ -40,6 +40,10 @@ newclassobject(bases, dict, name)
 	int pos;
 	object *key, *value;
 	classobject *op, *dummy;
+	if (dictlookup(dict, "__doc__") == NULL) {
+		if (dictinsert(dict, "__doc__", None) < 0)
+			return NULL;
+	}
 	if (bases == NULL) {
 		bases = newtupleobject(0);
 		if (bases == NULL)
@@ -515,22 +519,28 @@ instance_repr(inst)
 	return res;
 }
 
+static object *
+instance_compare1(inst, other)
+	object *inst, *other;
+{
+	return instancebinop(inst, other, "__cmp__", "__rcmp__",
+			     instance_compare1);
+}
+
 static int
 instance_compare(inst, other)
 	object *inst, *other;
 {
 	object *result;
-	int outcome;
-	result  = instancebinop(inst, other, "__cmp__", "__rcmp__");
-	if (result == NULL) {
+	long outcome;
+	result = instance_compare1(inst, other);
+	if (result == NULL || !is_intobject(result)) {
 	error:
 		err_clear();
 		return (inst < other) ? -1 : 1;
 	}
 	outcome = getintvalue(result);
 	DECREF(result);
-	if (outcome == -1 && err_occurred())
-		goto error;
 	if (outcome < 0)
 		return -1;
 	else if (outcome > 0)
@@ -799,23 +809,26 @@ generic_unary_op(self, methodname)
 
 
 /* Forward */
-static int halfbinop PROTO((object *, object *, char *, object **));
+static int halfbinop PROTO((object *, object *, char *, object **,
+			    object * (*) PROTO((object *, object *)), int ));
 
 
 /* Implement a binary operator involving at least one class instance. */
 
 object *
-instancebinop(v, w, opname, ropname)
+instancebinop(v, w, opname, ropname, thisfunc)
 	object *v;
 	object *w;
 	char *opname;
 	char *ropname;
+	object * (*thisfunc) PROTO((object *, object *));
 {
+	object *v1, *w1;
 	char buf[256];
 	object *result = NULL;
-	if (halfbinop(v, w, opname, &result) <= 0)
+	if (halfbinop(v, w, opname, &result, thisfunc, 0) <= 0)
 		return result;
-	if (halfbinop(w, v, ropname, &result) <= 0)
+	if (halfbinop(w, v, ropname, &result, thisfunc, 1) <= 0)
 		return result;
 	sprintf(buf, "%s nor %s defined for these operands", opname, ropname);
 	err_setstr(TypeError, buf);
@@ -831,11 +844,13 @@ instancebinop(v, w, opname, ropname)
 */
 
 static int
-halfbinop(v, w, opname, r_result)
+halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	object *v;
 	object *w;
 	char *opname;
 	object **r_result;
+	object * (*thisfunc) PROTO((object *, object *));
+	int swapped;
 {
 	object *func;
 	object *args;
@@ -845,13 +860,6 @@ halfbinop(v, w, opname, r_result)
 	
 	if (!is_instanceobject(v))
 		return 1;
-	func = getattr(v, opname);
-	if (func == NULL) {
-		if (err_occurred() != AttributeError)
-			return -1;
-		err_clear();
-		return 1;
-	}
 	coerce = getattr(v, "__coerce__");
 	if (coerce == NULL) {
 		err_clear();
@@ -859,38 +867,46 @@ halfbinop(v, w, opname, r_result)
 	else {
 		args = mkvalue("(O)", w);
 		if (args == NULL) {
-			DECREF(func);
 			return -1;
 		}
 		coerced = call_object(coerce, args);
 		DECREF(args);
 		DECREF(coerce);
 		if (coerced == NULL) {
-			DECREF(func);
 			return -1;
 		}
 		if (coerced == None) {
 			DECREF(coerced);
-			DECREF(func);
 			return 1;
 		}
 		if (!is_tupleobject(coerced) || gettuplesize(coerced) != 2) {
 			DECREF(coerced);
-			DECREF(func);
-			err_setstr(TypeError, "coercion should return None or 2-tuple");
+			err_setstr(TypeError,
+				   "coercion should return None or 2-tuple");
 			return -1;
 		}
 		v1 = gettupleitem(coerced, 0);
+		w = gettupleitem(coerced, 1);
 		if (v1 != v) {
 			v = v1;
-			DECREF(func);
-			func = getattr(v, opname);
-			if (func == NULL) {
-				XDECREF(coerced);
-				return -1;
+			if (!is_instanceobject(v) && !is_instanceobject(w)) {
+				if (swapped)
+					*r_result = (*thisfunc)(w, v);
+				else
+					*r_result = (*thisfunc)(v, w);
+				DECREF(coerced);
+				return *r_result == NULL ? -1 : 0;
 			}
 		}
 		w = gettupleitem(coerced, 1);
+	}
+	func = getattr(v, opname);
+	if (func == NULL) {
+		XDECREF(coerced);
+		if (err_occurred() != AttributeError)
+			return -1;
+		err_clear();
+		return 1;
 	}
 	args = mkvalue("(O)", w);
 	if (args == NULL) {
@@ -1037,6 +1053,7 @@ typedef struct {
 	object	*im_func;	/* The function implementing the method */
 	object	*im_self;	/* The instance it is bound to, or NULL */
 	object	*im_class;	/* The class that defined the method */
+	object	*im_doc;	/* The documentation string */
 } instancemethodobject;
 
 object *
@@ -1059,6 +1076,8 @@ newinstancemethodobject(func, self, class)
 	im->im_self = self;
 	INCREF(class);
 	im->im_class = class;
+	XINCREF(((funcobject *)func)->func_doc);
+	im->im_doc = ((funcobject *)func)->func_doc;
 	return (object *)im;
 }
 
@@ -1103,6 +1122,8 @@ static struct memberlist instancemethod_memberlist[] = {
 	{"im_func",	T_OBJECT,	OFF(im_func)},
 	{"im_self",	T_OBJECT,	OFF(im_self)},
 	{"im_class",	T_OBJECT,	OFF(im_class)},
+	{"im_doc",	T_OBJECT,	OFF(im_doc)},
+	{"__doc__",	T_OBJECT,	OFF(im_doc)},
 	{NULL}	/* Sentinel */
 };
 
@@ -1121,6 +1142,7 @@ instancemethod_dealloc(im)
 	DECREF(im->im_func);
 	XDECREF(im->im_self);
 	DECREF(im->im_class);
+	XDECREF(im->im_doc);
 	free((ANY *)im);
 }
 
