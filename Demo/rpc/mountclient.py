@@ -11,9 +11,12 @@
 import rpc
 from rpc import Packer, Unpacker, TCPClient, UDPClient
 
+
+# Program number and version for the mount protocol
 MOUNTPROG = 100005
 MOUNTVERS = 1
 
+# Size of the 'fhandle' opaque structure
 FHSIZE = 32
 
 
@@ -77,14 +80,21 @@ class PartialMountClient:
 		self.packer = MountPacker().init()
 		self.unpacker = MountUnpacker().init('')
 
-	# This function is called to gobble up a suitable
+	# This method is called by Client.init to bind the socket
+	# to a particular network interface and port.  We use the
+	# default network interface, but if we're running as root,
+	# we want to bind to a reserved port
+	def bindsocket(self):
+		import os
+		if os.getuid() == 0:
+			port = rpc.bindresvport(self.sock, '')
+			# 'port' is not used
+		else:
+			self.sock.bind(('', 0))
+
+	# This function is called to cough up a suitable
 	# authentication object for a call to procedure 'proc'.
-	# (Experiments suggest that for Mnt/Umnt, Unix authentication
-	# is necessary, while the other calls require no
-	# authentication.)
-	def mkcred(self, proc):
-		if proc not in (1, 3, 4): # not Mnt/Umnt/Umntall
-			return rpc.AUTH_NULL, ''
+	def mkcred(self):
 		if self.cred == None:
 			self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
 		return self.cred
@@ -158,13 +168,23 @@ class UDPMountClient(PartialMountClient, UDPClient):
 
 # A little test program for the Mount client.  This takes a host as
 # command line argument (default the local machine), prints its export
-# list, and attempt to mount and unmount each exported files system.
+# list, and attempts to mount and unmount each exported files system.
+# An optional first argument of -t or -u specifies the protocol to use
+# (TCP or UDP), default is UDP.
 
 def test():
 	import sys
+	if sys.argv[1:] and sys.argv[1] == '-t':
+		C = TCPMountClient
+		del sys.argv[1]
+	elif sys.argv[1:] and sys.argv[1] == '-u':
+		C = UDPMountClient
+		del sys.argv[1]
+	else:
+		C = UDPMountClient
 	if sys.argv[1:]: host = sys.argv[1]
 	else: host = ''
-	mcl = UDPMountClient().init(host)
+	mcl = C().init(host)
 	list = mcl.Export()
 	for item in list:
 		print item
@@ -174,4 +194,3 @@ def test():
 			print 'Sorry'
 			continue
 		mcl.Umnt(item[0])
-	return
