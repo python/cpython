@@ -3,6 +3,14 @@ What's New in IDLE 1.0.4?
 
 *Release date: XX-Jan-2005*
 
+- rpc.py:SocketIO - Large modules were generating large pickles when downloaded
+  to the execution server.  The return of the OK response from the subprocess
+  initialization was interfering and causing the sending socket to be not
+  ready.  Add an IO ready test to fix this.  Moved the polling IO ready test
+  into pollpacket(). (Backporting rpc.py rev 1.28 21Jan04)
+
+- Fix typo in rpc.py, s/b "pickle.PicklingError" not "pickle.UnpicklingError".
+
 - If an extension can't be loaded, print warning and skip it instead of
   erroring out.
 
