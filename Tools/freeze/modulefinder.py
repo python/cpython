@@ -220,6 +220,7 @@ class ModuleFinder:
             return m
         if self.badmodules.has_key(fqname):
             self.msgout(3, "import_module -> None")
+            self.badmodules[fqname][parent.__name__] = None
             return None
         try:
             fp, pathname, stuff = self.find_module(partname,
@@ -279,7 +280,7 @@ class ModuleFinder:
                         self.import_hook(name, m)
                     except ImportError, msg:
                         self.msg(2, "ImportError:", str(msg))
-                        self.badmodules[name] = None
+                        self.badmodules[name] = {m.__name__:None}
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
                 assert lastname is not None
@@ -289,7 +290,7 @@ class ModuleFinder:
                     except ImportError, msg:
                         self.msg(2, "ImportError:", str(msg))
                         fullname = lastname + "." + name
-                        self.badmodules[fullname] = None
+                        self.badmodules[fullname] = {m.__name__:None}
             else:
                 lastname = None
         for c in co.co_consts:
@@ -361,7 +362,9 @@ class ModuleFinder:
         for key in keys:
             # ... but not if they were explicitely excluded.
             if key not in self.excludes:
-                print "?", key
+                mods = self.badmodules[key].keys()
+                mods.sort()
+                print "?", key, "from", string.join(mods, ', ')
 
 
 def test():
