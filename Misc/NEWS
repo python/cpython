@@ -42,6 +42,8 @@ Library
   encourage people to stitch doctests together via doctest's unittest
   integration features instead.  It would help if those were documented.
 
+- httplib now handles ipv6 address/port pairs.
+
 Build
 -----
 
