@@ -59,10 +59,10 @@ except KeyError:
 else:
     print 'fakename', fakename, 'did not except pwd.getpwnam()'
 
-uids = byuids.keys()
-uids.sort()
-uids.reverse()
-fakeuid = uids[0] + 1
+# Choose a non-existant uid.
+fakeuid = 4127
+while byuids.has_key(fakeuid):
+    print 'fakeuid =', fakeuid
 
 try:
     pwd.getpwuid(fakeuid)
