@@ -18,6 +18,7 @@ sub do_cmd_ecode{ @_[0]; }
 sub do_cmd_ABC{ join('', 'ABC', @_[0]); }
 sub do_cmd_UNIX{ join('', 'Unix', @_[0]); }
 sub do_cmd_ASCII{ join('', 'ASCII', @_[0]); }
+sub do_cmd_POSIX{ join('', 'POSIX', @_[0]); }
 sub do_cmd_C{ join('', 'C', @_[0]); }
 sub do_cmd_Cpp{ join('', 'C++', @_[0]); }
 sub do_cmd_EOF{ join('', 'EOF', @_[0]); }
@@ -46,6 +47,30 @@ sub do_cmd_code{
 }
 
 sub do_cmd_sectcode{ &do_cmd_code(@_); }
+sub do_cmd_module{ &do_cmd_code(@_); }
+sub do_cmd_keyword{ &do_cmd_code(@_); }
+sub do_cmd_exception{ &do_cmd_code(@_); }
+sub do_cmd_class{ &do_cmd_code(@_); }
+sub do_cmd_function{ &do_cmd_code(@_); }
+sub do_cmd_cfunction{ &do_cmd_code(@_); }
+sub do_cmd_constant{ &do_cmd_code(@_); }
+sub do_cmd_method{ &do_cmd_code(@_); }
+sub do_cmd_email{ &do_cmd_code(@_); }
+
+sub do_cmd_url{
+    # use the URL as both text and hyperlink
+    local($_) = @_;
+    s/$any_next_pair_pr_rx/<code><a href="\2">\2<\/a><\/code>/;
+    $_;
+}
+
+sub do_cmd_manpage{
+    # two parameters:  \manpage{name}{section}
+    local($_) = @_;
+    local($any_next_pair_pr_rx3) = "$OP(\\d+)$CP([\\s\\S]*)$OP\\3$CP";
+    s/$next_pair_pr_rx$any_next_pair_pr_rx3/<em>\2<\/em>(\4)/;
+    $_;
+}
 
 sub do_cmd_kbd{
 	local($_) = @_;
@@ -61,7 +86,7 @@ sub do_cmd_key{
 
 sub do_cmd_var{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<var>\2<\/var>/;
+	s/$any_next_pair_pr_rx/<em>\2<\/em>/;
 	$_;
 }
 
@@ -427,8 +452,7 @@ sub do_cmd_lineiii{
 }
 
 sub do_env_seealso{
-  local($_) = @_;
-  "<p><b>See Also:</b></p>\n" . $_;
+  "<p><b>See Also:</b></p>\n" . @_[0];
 }
 
 sub do_cmd_seemodule{
@@ -439,8 +463,7 @@ sub do_cmd_seemodule{
 }
 
 sub do_cmd_seetext{
-  local($_) = @_;
-  "<p>" . $_;
+  "<p>" . @_[0];
 }
 
 # These are located down here since they screw up fontlock.
