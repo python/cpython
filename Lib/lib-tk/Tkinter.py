@@ -456,7 +456,7 @@ class Misc:
 	def unbind_all(self, sequence):
 		self.tk.call('bind', 'all' , sequence, '')
 	def bind_class(self, className, sequence=None, func=None, add=None):
-		self._bind(('bind', className), sequence, func, add)
+		return self._bind(('bind', className), sequence, func, add)
 	def unbind_class(self, className, sequence):
 		self.tk.call('bind', className , sequence, '')
 	def mainloop(self, n=0):
