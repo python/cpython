@@ -105,9 +105,12 @@ def _compile(code, pattern, flags):
         elif op is AT:
             emit(OPCODES[op])
             if flags & SRE_FLAG_MULTILINE:
-                emit(ATCODES[AT_MULTILINE.get(av, av)])
-            else:
-                emit(ATCODES[av])
+                av = AT_MULTILINE.get(av, av)
+            if flags & SRE_FLAG_LOCALE:
+                av = AT_LOCALE.get(av, av)
+            elif flags & SRE_FLAG_UNICODE:
+                av = AT_UNICODE.get(av, av)
+            emit(ATCODES[av])
         elif op is BRANCH:
             emit(OPCODES[op])
             tail = []
@@ -124,11 +127,10 @@ def _compile(code, pattern, flags):
         elif op is CATEGORY:
             emit(OPCODES[op])
             if flags & SRE_FLAG_LOCALE:
-                emit(CHCODES[CH_LOCALE[av]])
+                av = CH_LOCALE[av]
             elif flags & SRE_FLAG_UNICODE:
-                emit(CHCODES[CH_UNICODE[av]])
-            else:
-                emit(CHCODES[av])
+                av = CH_UNICODE[av]
+            emit(CHCODES[av])
         elif op is GROUPREF:
             if flags & SRE_FLAG_IGNORECASE:
                 emit(OPCODES[OP_IGNORE[op]])

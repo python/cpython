@@ -11,7 +11,7 @@
 
 # update when constants are added or removed
 
-MAGIC = 20010115
+MAGIC = 20010320
 
 # max code word in this release
 
@@ -67,6 +67,10 @@ AT_NON_BOUNDARY = "at_non_boundary"
 AT_END = "at_end"
 AT_END_LINE = "at_end_line"
 AT_END_STRING = "at_end_string"
+AT_LOC_BOUNDARY = "at_loc_boundary"
+AT_LOC_NON_BOUNDARY = "at_loc_non_boundary"
+AT_UNI_BOUNDARY = "at_uni_boundary"
+AT_UNI_NON_BOUNDARY = "at_uni_non_boundary"
 
 # categories
 CATEGORY_DIGIT = "category_digit"
@@ -119,7 +123,9 @@ OPCODES = [
 
 ATCODES = [
     AT_BEGINNING, AT_BEGINNING_LINE, AT_BEGINNING_STRING, AT_BOUNDARY,
-    AT_NON_BOUNDARY, AT_END, AT_END_LINE, AT_END_STRING
+    AT_NON_BOUNDARY, AT_END, AT_END_LINE, AT_END_STRING,
+    AT_LOC_BOUNDARY, AT_LOC_NON_BOUNDARY, AT_UNI_BOUNDARY,
+    AT_UNI_NON_BOUNDARY
 ]
 
 CHCODES = [
@@ -155,6 +161,16 @@ OP_IGNORE = {
 AT_MULTILINE = {
     AT_BEGINNING: AT_BEGINNING_LINE,
     AT_END: AT_END_LINE
+}
+
+AT_LOCALE = {
+    AT_BOUNDARY: AT_LOC_BOUNDARY,
+    AT_NON_BOUNDARY: AT_LOC_NON_BOUNDARY
+}
+
+AT_UNICODE = {
+    AT_BOUNDARY: AT_UNI_BOUNDARY,
+    AT_NON_BOUNDARY: AT_UNI_NON_BOUNDARY
 }
 
 CH_LOCALE = {

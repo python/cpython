@@ -329,6 +329,8 @@ for t in tests:
                 u = unicode(s, "latin-1")
             except NameError:
                 pass
+            except TypeError:
+                continue # skip unicode test strings
             else:
                 result=obj.search(u)
                 if result==None:

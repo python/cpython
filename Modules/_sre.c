@@ -24,8 +24,9 @@
  * 2000-10-24 fl  really fixed assert_not; reset groups in findall
  * 2000-12-21 fl  fixed memory leak in groupdict
  * 2001-01-02 fl  properly reset pointer after failed assertion in MIN_UNTIL
- * 2001-01-15 fl  avoid recursion for MIN_UTIL; fixed uppercase literal bug
+ * 2001-01-15 fl  avoid recursion for MIN_UNTIL; fixed uppercase literal bug
  * 2001-01-16 fl  fixed memory leak in pattern destructor
+ * 2001-03-20 fl  lots of fixes for 2.1b2
  *
  * Copyright (c) 1997-2001 by Secret Labs AB.  All rights reserved.
  *
@@ -40,7 +41,7 @@
 
 #ifndef SRE_RECURSIVE
 
-char copyright[] = " SRE 2.1 Copyright (c) 1997-2001 by Secret Labs AB ";
+char copyright[] = " SRE 2.1b2 Copyright (c) 1997-2001 by Secret Labs AB ";
 
 #include "Python.h"
 
@@ -141,11 +142,6 @@ static char sre_char_lower[128] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119,
 120, 121, 122, 123, 124, 125, 126, 127 };
 
-static unsigned int sre_lower(unsigned int ch)
-{
-    return ((ch) < 128 ? sre_char_lower[ch] : ch);
-}
-
 #define SRE_IS_DIGIT(ch)\
     ((ch) < 128 ? (sre_char_info[(ch)] & SRE_DIGIT_MASK) : 0)
 #define SRE_IS_SPACE(ch)\
@@ -157,30 +153,39 @@ static unsigned int sre_lower(unsigned int ch)
 #define SRE_IS_WORD(ch)\
     ((ch) < 128 ? (sre_char_info[(ch)] & SRE_WORD_MASK) : 0)
 
+static unsigned int sre_lower(unsigned int ch)
+{
+    return ((ch) < 128 ? sre_char_lower[ch] : ch);
+}
+
 /* locale-specific character predicates */
 
-static unsigned int sre_lower_locale(unsigned int ch)
-{
-    return ((ch) < 256 ? tolower((ch)) : ch);
-}
 #define SRE_LOC_IS_DIGIT(ch) ((ch) < 256 ? isdigit((ch)) : 0)
 #define SRE_LOC_IS_SPACE(ch) ((ch) < 256 ? isspace((ch)) : 0)
 #define SRE_LOC_IS_LINEBREAK(ch) ((ch) == '\n')
 #define SRE_LOC_IS_ALNUM(ch) ((ch) < 256 ? isalnum((ch)) : 0)
 #define SRE_LOC_IS_WORD(ch) (SRE_LOC_IS_ALNUM((ch)) || (ch) == '_')
 
+static unsigned int sre_lower_locale(unsigned int ch)
+{
+    return ((ch) < 256 ? tolower((ch)) : ch);
+}
+
 /* unicode-specific character predicates */
 
 #if defined(HAVE_UNICODE)
-static unsigned int sre_lower_unicode(unsigned int ch)
-{
-    return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
-}
+
 #define SRE_UNI_IS_DIGIT(ch) Py_UNICODE_ISDIGIT((Py_UNICODE)(ch))
 #define SRE_UNI_IS_SPACE(ch) Py_UNICODE_ISSPACE((Py_UNICODE)(ch))
 #define SRE_UNI_IS_LINEBREAK(ch) Py_UNICODE_ISLINEBREAK((Py_UNICODE)(ch))
 #define SRE_UNI_IS_ALNUM(ch) Py_UNICODE_ISALNUM((Py_UNICODE)(ch))
 #define SRE_UNI_IS_WORD(ch) (SRE_UNI_IS_ALNUM((ch)) || (ch) == '_')
+
+static unsigned int sre_lower_unicode(unsigned int ch)
+{
+    return (unsigned int) Py_UNICODE_TOLOWER((Py_UNICODE)(ch));
+}
+
 #endif
 
 LOCAL(int)
@@ -417,6 +422,42 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
             SRE_IS_WORD((int) ptr[-1]) : 0;
         this = ((void*) ptr < state->end) ?
             SRE_IS_WORD((int) ptr[0]) : 0;
+        return this == that;
+
+    case SRE_AT_LOC_BOUNDARY:
+        if (state->beginning == state->end)
+            return 0;
+        that = ((void*) ptr > state->beginning) ?
+            SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
+        this = ((void*) ptr < state->end) ?
+            SRE_LOC_IS_WORD((int) ptr[0]) : 0;
+        return this != that;
+
+    case SRE_AT_LOC_NON_BOUNDARY:
+        if (state->beginning == state->end)
+            return 0;
+        that = ((void*) ptr > state->beginning) ?
+            SRE_LOC_IS_WORD((int) ptr[-1]) : 0;
+        this = ((void*) ptr < state->end) ?
+            SRE_LOC_IS_WORD((int) ptr[0]) : 0;
+        return this == that;
+
+    case SRE_AT_UNI_BOUNDARY:
+        if (state->beginning == state->end)
+            return 0;
+        that = ((void*) ptr > state->beginning) ?
+            SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
+        this = ((void*) ptr < state->end) ?
+            SRE_UNI_IS_WORD((int) ptr[0]) : 0;
+        return this != that;
+
+    case SRE_AT_UNI_NON_BOUNDARY:
+        if (state->beginning == state->end)
+            return 0;
+        that = ((void*) ptr > state->beginning) ?
+            SRE_UNI_IS_WORD((int) ptr[-1]) : 0;
+        this = ((void*) ptr < state->end) ?
+            SRE_UNI_IS_WORD((int) ptr[0]) : 0;
         return this == that;
     }
 
@@ -1037,7 +1078,8 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
 
             /* see if the tail matches */
             state->repeat = rp->prev;
-            if (rp->pattern[2] == 65535) {
+            /* FIXME: the following fix doesn't always work (#133283) */
+            if (0 && rp->pattern[2] == 65535) {
                 /* unbounded repeat */
                 for (;;) {
                     i = SRE_MATCH(state, pattern, level + 1);

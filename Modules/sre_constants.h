@@ -11,7 +11,7 @@
  * See the _sre.c file for information on usage and redistribution.
  */
 
-#define SRE_MAGIC 20010115
+#define SRE_MAGIC 20010320
 #define SRE_OP_FAILURE 0
 #define SRE_OP_SUCCESS 1
 #define SRE_OP_ANY 2
@@ -49,6 +49,10 @@
 #define SRE_AT_END 5
 #define SRE_AT_END_LINE 6
 #define SRE_AT_END_STRING 7
+#define SRE_AT_LOC_BOUNDARY 8
+#define SRE_AT_LOC_NON_BOUNDARY 9
+#define SRE_AT_UNI_BOUNDARY 10
+#define SRE_AT_UNI_NON_BOUNDARY 11
 #define SRE_CATEGORY_DIGIT 0
 #define SRE_CATEGORY_NOT_DIGIT 1
 #define SRE_CATEGORY_SPACE 2

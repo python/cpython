@@ -639,3 +639,14 @@ xyzabc
     # bug 130748: ^* should be an error (nothing to repeat)
     (r'^*', '', SYNTAX_ERROR),
 ]
+
+try:
+    u = eval("u'\N{LATIN CAPITAL LETTER A WITH DIAERESIS}'")
+except SyntaxError:
+    pass
+else:
+    tests.extend([
+    # bug 410271: \b broken under locales
+    (r'\b.\b', 'a', SUCCEED, 'found', 'a'),
+    (r'(?u)\b.\b', u, SUCCEED, 'found', u),
+    ])
