@@ -34,11 +34,6 @@ typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 static PyObject *eval_frame(PyFrameObject *);
-static PyObject *call_object(PyObject *, PyObject *, PyObject *);
-static PyObject *call_cfunction(PyObject *, PyObject *, PyObject *);
-static PyObject *call_instance(PyObject *, PyObject *, PyObject *);
-static PyObject *call_method(PyObject *, PyObject *, PyObject *);
-static PyObject *call_eval_code2(PyObject *, PyObject *, PyObject *);
 static PyObject *fast_function(PyObject *, PyObject ***, int, int, int);
 static PyObject *fast_cfunction(PyObject *, PyObject ***, int);
 static PyObject *do_call(PyObject *, PyObject ***, int, int);
@@ -1949,11 +1944,11 @@ eval_frame(PyFrameObject *f)
 			    else if (flags == METH_VARARGS) {
 				    PyObject *callargs;
 				    callargs = load_args(&stack_pointer, na);
-				    x = call_cfunction(func, callargs, NULL);
+				    x = PyCFunction_Call(func, callargs, NULL);
 				    Py_XDECREF(callargs); 
-			    } else if (flags == 0) 
-				    x = fast_cfunction(func,
-						       &stack_pointer, na);
+			    } else if (!(flags & METH_KEYWORDS))
+				       x = fast_cfunction(func,
+							  &stack_pointer, na);
 		    } else {
 			    if (PyMethod_Check(func)
 				&& PyMethod_GET_SELF(func) != NULL) {
@@ -2307,7 +2302,8 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	PyObject *x, *u;
 
 	if (globals == NULL) {
-		PyErr_SetString(PyExc_SystemError, "eval_code2: NULL globals");
+		PyErr_SetString(PyExc_SystemError, 
+				"PyEval_EvalCodeEx: NULL globals");
 		return NULL;
 	}
 
@@ -3000,20 +2996,6 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 	return result;
 }
 
-/* How often is each kind of object called?  The answer depends on the
-   program.  An instrumented PyObject_Call() was used to run the Python
-   regression test suite.  The results were:
-   4200000 PyCFunctions
-    390000 fast_function() calls
-     94000 other functions
-    480000 all functions (sum of prev two)
-    150000 methods
-    100000 classes
-
-    Tests on other bodies of code show that PyCFunctions are still
-    most common, but not by such a large margin.
-*/
-
 char *
 PyEval_GetFuncName(PyObject *func)
 {
@@ -3051,190 +3033,6 @@ PyEval_GetFuncDesc(PyObject *func)
 	}
 }
 
-static PyObject *
-call_object(PyObject *func, PyObject *arg, PyObject *kw)
-{
-        ternaryfunc call;
-        PyObject *result;
-
-	if (PyMethod_Check(func))
-		result = call_method(func, arg, kw);
-	else if (PyFunction_Check(func))
-		result = call_eval_code2(func, arg, kw);
-	else if (PyCFunction_Check(func))
-		result = call_cfunction(func, arg, kw);
-	else if (PyClass_Check(func))
-		result = PyInstance_New(func, arg, kw);
-	else if (PyInstance_Check(func))
-		result = call_instance(func, arg, kw);
-	else if ((call = func->ob_type->tp_call) != NULL)
-		result = (*call)(func, arg, kw);
-	else {
-		PyErr_Format(PyExc_TypeError,
-			     "object of type '%.100s' is not callable",
-			     func->ob_type->tp_name);
-		return NULL;
-	}
-        if (result == NULL && !PyErr_Occurred())
-		PyErr_SetString(PyExc_SystemError,
-			   "NULL result without error in call_object");
-
-        return result;
-}
-
-static PyObject *
-call_cfunction(PyObject *func, PyObject *arg, PyObject *kw)
-{
-	PyCFunctionObject* f = (PyCFunctionObject*)func;
-	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-	PyObject *self = PyCFunction_GET_SELF(func);
-	int flags = PyCFunction_GET_FLAGS(func);
-
-	if (flags & METH_KEYWORDS) {
-		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
-	}
-	if (kw != NULL && PyDict_Size(kw) != 0) {
-		PyErr_Format(PyExc_TypeError,
-			     "%.200s() takes no keyword arguments",
-			     f->m_ml->ml_name);
-		return NULL;
-	}
-	if (flags & METH_VARARGS) {
-		return (*meth)(self, arg);
-	}
-	if (!(flags & METH_VARARGS)) {
-		/* the really old style */
-		int size = PyTuple_GET_SIZE(arg);
-		if (size == 1)
-			arg = PyTuple_GET_ITEM(arg, 0);
-		else if (size == 0)
-			arg = NULL;
-		return (*meth)(self, arg);
-	}
-	/* should never get here ??? */
-	PyErr_BadInternalCall();
-	return NULL;
-}
-
-static PyObject *
-call_instance(PyObject *func, PyObject *arg, PyObject *kw)
-{
-	PyObject *res, *call = PyObject_GetAttrString(func, "__call__");
-	if (call == NULL) {
-		PyInstanceObject *inst = (PyInstanceObject*) func;
-		PyErr_Clear();
-		PyErr_Format(PyExc_AttributeError,
-			     "%.200s instance has no __call__ method",
-			     PyString_AsString(inst->in_class->cl_name));
-		return NULL;
-	}
-	res = call_object(call, arg, kw);
-	Py_DECREF(call);
-	return res;
-}
-
-static PyObject *
-call_method(PyObject *func, PyObject *arg, PyObject *kw)
-{
-	PyObject *self = PyMethod_GET_SELF(func);
-	PyObject *class = PyMethod_GET_CLASS(func);
-	PyObject *result;
-
-	func = PyMethod_GET_FUNCTION(func);
-	if (self == NULL) {
-		/* Unbound methods must be called with an instance of
-		   the class (or a derived class) as first argument */
-		int ok;
-		if (PyTuple_Size(arg) >= 1)
-			self = PyTuple_GET_ITEM(arg, 0);
-		if (self == NULL)
-			ok = 0;
-		else {
-			ok = PyObject_IsInstance(self, class);
-			if (ok < 0)
-				return NULL;
-		}
-		if (!ok) {
-			PyErr_Format(PyExc_TypeError,
-				     "unbound method %s%s must be "
-				     "called with instance as first argument",
-				     PyEval_GetFuncName(func),
-				     PyEval_GetFuncDesc(func));
-			return NULL;
-		}
-		Py_INCREF(arg);
-	}
-	else {
-		int argcount = PyTuple_Size(arg);
-		PyObject *newarg = PyTuple_New(argcount + 1);
-		int i;
-		if (newarg == NULL)
-			return NULL;
-		Py_INCREF(self);
-		PyTuple_SET_ITEM(newarg, 0, self);
-		for (i = 0; i < argcount; i++) {
-			PyObject *v = PyTuple_GET_ITEM(arg, i);
-			Py_XINCREF(v);
-			PyTuple_SET_ITEM(newarg, i+1, v);
-		}
-		arg = newarg;
-	}
-	result = call_object(func, arg, kw);
-	Py_DECREF(arg);
-	return result;
-}
-
-static PyObject *
-call_eval_code2(PyObject *func, PyObject *arg, PyObject *kw)
-{
-	PyObject *result;
-	PyObject *argdefs;
-	PyObject **d, **k;
-	int nk, nd;
-
-	argdefs = PyFunction_GET_DEFAULTS(func);
-	if (argdefs != NULL && PyTuple_Check(argdefs)) {
-		d = &PyTuple_GET_ITEM((PyTupleObject *)argdefs, 0);
-		nd = PyTuple_Size(argdefs);
-	}
-	else {
-		d = NULL;
-		nd = 0;
-	}
-
-	if (kw != NULL) {
-		int pos, i;
-		nk = PyDict_Size(kw);
-		k = PyMem_NEW(PyObject *, 2*nk);
-		if (k == NULL) {
-			PyErr_NoMemory();
-			Py_DECREF(arg);
-			return NULL;
-		}
-		pos = i = 0;
-		while (PyDict_Next(kw, &pos, &k[i], &k[i+1]))
-			i += 2;
-		nk = i/2;
-		/* XXX This is broken if the caller deletes dict items! */
-	}
-	else {
-		k = NULL;
-		nk = 0;
-	}
-
-	result = PyEval_EvalCodeEx(
-		(PyCodeObject *)PyFunction_GET_CODE(func),
-		PyFunction_GET_GLOBALS(func), (PyObject *)NULL,
-		&PyTuple_GET_ITEM(arg, 0), PyTuple_Size(arg),
-		k, nk, d, nd,
-		PyFunction_GET_CLOSURE(func));
-
-	if (k != NULL)
-		PyMem_DEL(k);
-
-	return result;
-}
-
 #define EXT_POP(STACK_POINTER) (*--(STACK_POINTER))
 
 /* The two fast_xxx() functions optimize calls for which no argument
@@ -3249,18 +3047,18 @@ fast_cfunction(PyObject *func, PyObject ***pp_stack, int na)
 	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
 	PyObject *self = PyCFunction_GET_SELF(func);
 
-	if (na == 0)
-		return (*meth)(self, NULL);
-	else if (na == 1) {
-		PyObject *arg = EXT_POP(*pp_stack);
-		PyObject *result =  (*meth)(self, arg);
-		Py_DECREF(arg);
-		return result;
-	} else {
-		PyObject *args = load_args(pp_stack, na);
-		PyObject *result = (*meth)(self, args);
-		Py_DECREF(args);
-		return result;
+ 	if (na == 0)
+ 		return (*meth)(self, NULL);
+ 	else if (na == 1) {
+ 		PyObject *arg = EXT_POP(*pp_stack);
+ 		PyObject *result =  (*meth)(self, arg);
+ 		Py_DECREF(arg);
+ 		return result;
+ 	} else {
+ 		PyObject *args = load_args(pp_stack, na);
+ 		PyObject *result = (*meth)(self, args);
+ 		Py_DECREF(args);
+ 		return result;
 	}
 }
 
