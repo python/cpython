@@ -8,7 +8,6 @@ distributions)."""
 
 import os, string, sys, pwd, grp
 from types import *
-from distutils.core import Command, DEBUG
 from distutils.util import get_platform
 from distutils.file_util import write_file
 from distutils.errors import *
