@@ -41,6 +41,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- cpickle now supports the same keyword arguments as pickle.
+
 Library
 -------
 

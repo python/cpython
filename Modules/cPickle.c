@@ -2850,13 +2850,14 @@ newPicklerobject(PyObject *file, int proto)
 
 
 static PyObject *
-get_Pickler(PyObject *self, PyObject *args)
+get_Pickler(PyObject *self, PyObject *args, PyObject *kwds)
 {
+	static char *kwlist[] = {"file", "protocol", NULL};
 	PyObject *file = NULL;
 	int proto = 0;
 
 	/* XXX
-	 * The documented signature is Pickler(file, proto=0), but this
+	 * The documented signature is Pickler(file, protocol=0), but this
 	 * accepts Pickler() and Pickler(integer) too.  The meaning then
 	 * is clear as mud, undocumented, and not supported by pickle.py.
 	 * I'm told Zope uses this, but I haven't traced into this code
@@ -2865,7 +2866,8 @@ get_Pickler(PyObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, "|i:Pickler", &proto)) {
 		PyErr_Clear();
 		proto = 0;
-		if (!PyArg_ParseTuple(args, "O|i:Pickler", &file, &proto))
+		if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|i:Pickler",
+			    kwlist, &file, &proto))
 			return NULL;
 	}
 	return (PyObject *)newPicklerobject(file, proto);
@@ -5377,15 +5379,17 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
  * Module-level functions.
  */
 
-/* dump(obj, file, proto=0). */
+/* dump(obj, file, protocol=0). */
 static PyObject *
-cpm_dump(PyObject *self, PyObject *args)
+cpm_dump(PyObject *self, PyObject *args, PyObject *kwds)
 {
+	static char *kwlist[] = {"obj", "file", "protocol", NULL};
 	PyObject *ob, *file, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;
 
-	if (!( PyArg_ParseTuple(args, "OO|i", &ob, &file, &proto)))
+	if (!( PyArg_ParseTupleAndKeywords(args, kwds, "OO|i", kwlist,
+		   &ob, &file, &proto)))
 		goto finally;
 
 	if (!( pickler = newPicklerobject(file, proto)))
@@ -5404,15 +5408,17 @@ cpm_dump(PyObject *self, PyObject *args)
 }
 
 
-/* dumps(obj, proto=0). */
+/* dumps(obj, protocol=0). */
 static PyObject *
-cpm_dumps(PyObject *self, PyObject *args)
+cpm_dumps(PyObject *self, PyObject *args, PyObject *kwds)
 {
+	static char *kwlist[] = {"obj", "protocol", NULL};
 	PyObject *ob, *file = 0, *res = NULL;
 	Picklerobject *pickler = 0;
 	int proto = 0;
 
-	if (!( PyArg_ParseTuple(args, "O|i:dumps", &ob, &proto)))
+	if (!( PyArg_ParseTupleAndKeywords(args, kwds, "O|i:dumps", kwlist,
+		   &ob, &proto)))
 		goto finally;
 
 	if (!( file = PycStringIO->NewOutput(128)))
@@ -5513,15 +5519,15 @@ static PyTypeObject Unpicklertype = {
 };
 
 static struct PyMethodDef cPickle_methods[] = {
-  {"dump",         (PyCFunction)cpm_dump,         METH_VARARGS,
-   PyDoc_STR("dump(object, file, proto=0) -- "
+  {"dump",         (PyCFunction)cpm_dump,         METH_VARARGS | METH_KEYWORDS,
+   PyDoc_STR("dump(obj, file, protocol=0) -- "
    "Write an object in pickle format to the given file.\n"
    "\n"
    "See the Pickler docstring for the meaning of optional argument proto.")
   },
 
-  {"dumps",        (PyCFunction)cpm_dumps,        METH_VARARGS,
-   PyDoc_STR("dumps(object, proto=0) -- "
+  {"dumps",        (PyCFunction)cpm_dumps,        METH_VARARGS | METH_KEYWORDS,
+   PyDoc_STR("dumps(obj, protocol=0) -- "
    "Return a string containing an object in pickle format.\n"
    "\n"
    "See the Pickler docstring for the meaning of optional argument proto.")
@@ -5533,8 +5539,8 @@ static struct PyMethodDef cPickle_methods[] = {
   {"loads",        (PyCFunction)cpm_loads,        METH_VARARGS,
    PyDoc_STR("loads(string) -- Load a pickle from the given string")},
 
-  {"Pickler",      (PyCFunction)get_Pickler,      METH_VARARGS,
-   PyDoc_STR("Pickler(file, proto=0) -- Create a pickler.\n"
+  {"Pickler",      (PyCFunction)get_Pickler,      METH_VARARGS | METH_KEYWORDS,
+   PyDoc_STR("Pickler(file, protocol=0) -- Create a pickler.\n"
    "\n"
    "This takes a file-like object for writing a pickle data stream.\n"
    "The optional proto argument tells the pickler to use the given\n"
