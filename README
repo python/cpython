@@ -151,21 +151,18 @@ where things are not quite as smooth; see the platform specific notes
 below.  If you want to build for multiple platforms sharing the same
 source tree, see the section on VPATH below.
 
-Start by running the script "./configure", which determines your
-system configuration and creates several Makefiles.  (It takes a
-minute or two -- please be patient!)  You may want to pass options to
-the configure script or edit the Modules/Setup file after running
-configure -- see the section below on configuration options and
-variables.  When it's done, you are ready to run make.
+Start by running the script "./configure", which determines your system
+configuration and creates the Makefile.  (It takes a minute or two --
+please be patient!)  You may want to pass options to the configure
+script or edit the Modules/Setup file after running configure -- see the
+section below on configuration options and variables.  When it's done,
+you are ready to run make.
 
-To build Python, you normally type "make" in the toplevel directory.
-This will recursively run make in each of the subdirectories: Grammar,
-Parser, Objects, Python and Modules, creating a library file in each
-one (except Grammar).  The interpreter executable is built in the top
-level directory.  If you want or need to, you can also chdir into each
-subdirectory in turn and run make there manually (do the Modules
-subdirectory last; you must use "make all sharedmods" to build the
-dynamically loadable modules, if you have any).
+To build Python, you normally type "make" in the toplevel directory.  If
+you have changed the configuration or have modified Modules/Setup, the
+Makefile may have to be rebuilt.  In this case you may have to run make
+again to correctly build your desired target.  The interpreter
+executable is built in the top level directory.
 
 Once you have built a Python interpreter, see the subsections below on
 testing, configuring additional modules, and installation.  If you run
@@ -178,8 +175,6 @@ Troubleshooting
 ---------------
 
 See also the platform specific notes in the next section.
-
-If recursive makes fail, try invoking make as "make MAKE=make".
 
 If you run into other trouble, see section 3 of the FAQ
 (http://www.python.org/cgi-bin/faqw.py or
@@ -816,7 +811,7 @@ Grammar/        Input for the parser generator
 Include/        Public header files
 LICENSE		Licensing information
 Lib/            Python library modules
-Makefile.in     Source from which config.status creates the Makefile
+Makefile.pre.in Source from which config.status creates the Makefile.pre
 Misc/           Miscellaneous useful files
 Modules/        Implementation of most built-in modules
 Objects/        Implementation of most built-in object types
@@ -836,6 +831,7 @@ The following files will (may) be created in the toplevel directory by
 the configuration and build processes:
 
 Makefile        Build rules
+Makefile.pre    Build rules before running Modules/makesetup
 buildno		Keeps track of the build number
 config.cache    Cache of configuration variables
 config.h        Configuration header
