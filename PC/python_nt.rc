@@ -8,7 +8,7 @@
 #include "modsupport.h"
 #include "patchlevel.h"
 
-#define MS_DLL_ID "1.5.1"
+#define MS_DLL_ID "1.5.2"
 
 #define PYTHON_VERSION MS_DLL_ID "." PYTHON_API_STRING "\0"
 
