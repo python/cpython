@@ -148,6 +148,7 @@ exec_eval(v, start)
 	int start;
 {
 	object *str = NULL, *globals = NULL, *locals = NULL;
+	char *s;
 	int n;
 	if (v != NULL) {
 		if (is_stringobject(v))
@@ -167,7 +168,12 @@ exec_eval(v, start)
 		    "exec/eval arguments must be string[,dict[,dict]]");
 		return NULL;
 	}
-	return run_string(getstringvalue(str), start, globals, locals);
+	s = getstringvalue(str);
+	if (start == eval_input) {
+		while (*s == ' ' || *s == '\t')
+			s++;
+	}
+	return run_string(s, start, globals, locals);
 }
 
 static object *
