@@ -22,10 +22,6 @@ import htmllib
 import string
 import getopt
 
-
-
-# moved all the triple_quote up here because my syntax-coloring editor
-# sucks a little bit.
 usage_mode = '''
 Usage: make_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
     -c: does not build filename.hhc (Table of Contents)
@@ -35,23 +31,27 @@ Usage: make_chm.py [-c] [-k] [-p] [-v 1.5[.x]] filename
         (default is python 1.5.2 docs)
 '''
 
-# project file (*.hhp) template. there are seven %s
+# Project file (*.hhp) template.  'arch' is the file basename (like
+# the pythlp in pythlp.hhp); 'version' is the doc version number (like
+# the 2.2 in Python 2.2).
+# The magical numbers in the long line under [WINDOWS] set most of the
+# user-visible features (visible buttons, tabs, etc).
 project_template = '''
 [OPTIONS]
 Compatibility=1.1
-Compiled file=%s.chm
-Contents file=%s.hhc
-Default Window=%s
+Compiled file=%(arch)s.chm
+Contents file=%(arch)s.hhc
+Default Window=%(arch)s
 Default topic=index.html
 Display compile progress=No
 Full-text search=Yes
-Index file=%s.hhk
+Index file=%(arch)s.hhk
 Language=0x409
-Title=Python %s Documentation
+Title=Python %(version)s Documentation
 
 [WINDOWS]
-%s="Python %s Documentation","%s.hhc","%s.hhk","index.html","index.html",\
-,,,,0x63520,220,0x384e,[271,372,740,718],,,,,,,0
+%(arch)s="Python %(version)s Documentation","%(arch)s.hhc","%(arch)s.hhk",\
+"index.html","index.html",,,,,0x63520,220,0x384e,[271,372,740,718],,,,,,,0
 
 [FILES]
 '''
@@ -285,8 +285,7 @@ def do_content(library, version, output) :
 
 
 def do_project( library, output, arch, version) :
-    output.write( project_template % \
-            (arch, arch, arch, arch, version, arch, version, arch, arch) )
+    output.write(project_template % locals())
     for book in library :
         for page in os.listdir(book[0]) :
             if page[string.rfind(page, '.'):] == '.html' or \
