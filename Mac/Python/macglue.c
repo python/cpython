@@ -40,8 +40,14 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Desk.h>
 #include <Traps.h>
 #include <Processes.h>
+#include <Fonts.h>
+#include <Menus.h>
 #ifdef THINK_C
 #include <OSEvents.h> /* For EvQElPtr */
+#endif
+
+#ifndef HAVE_UNIVERSAL_HEADERS
+#define GetResourceSizeOnDisk(x) SizeResource(x)
 #endif
 
 #include <signal.h>
@@ -116,8 +122,8 @@ Pstring(char *str)
 	return buf;
 }
 
-/* Replace strerror with something that might work */
-char *macstrerror(int err)
+/* Like strerror() but for Mac OS error numbers */
+char *PyMac_StrError(int err)
 {
 	static char buf[256];
 	Handle h;
@@ -162,7 +168,7 @@ PyErr_Mac(PyObject *eobj, int err)
 	}
 	if (err == -1 && PyErr_Occurred())
 		return NULL;
-	msg = macstrerror(err);
+	msg = PyMac_StrError(err);
 	v = Py_BuildValue("(is)", err, msg);
 	PyErr_SetObject(eobj, v);
 	Py_DECREF(v);
@@ -500,12 +506,10 @@ char *filename;
 		return 0;			/* It doesn't exist */
 	if ( FSpGetFInfo(&fss, &finfo) != noErr )
 		return 0;			/* shouldn't happen, I guess */
-	if ( finfo.fdType != 'rsrc' || finfo.fdCreator != 'PYTH' )
-		return 0;			/* Not the right type */
 	oldrh = CurResFile();
 	filerh = FSpOpenResFile(&fss, fsRdPerm);
 	if ( filerh == -1 )
-		return 0;			/* Again, shouldn't happen */
+		return 0;
 	UseResFile(filerh);
 	SetResLoad(0);
 	h = Get1NamedResource('PYC ', Pstring(module));
@@ -537,10 +541,6 @@ char *filename;
 		goto error;
 	if ( (err=FSpGetFInfo(&fss, &finfo)) != noErr )
 		goto error;
-	if ( finfo.fdType != 'rsrc' || finfo.fdCreator != 'PYTH' ) {
-		PyErr_SetString(PyExc_ImportError, "Incorrect typed file in sys.path");
-		return NULL;
-	}
 	oldrh = CurResFile();
 	filerh = FSpOpenResFile(&fss, fsRdPerm);
 	if ( filerh == -1 ) {
@@ -561,7 +561,7 @@ char *filename;
 	size = GetHandleSize(h);
 	if ( size < 8 ) {
 		PyErr_SetString(PyExc_ImportError, "Resource too small");
-		m = NULL;
+		co = NULL;
 	} else {
 		num = (*h)[0] & 0xff;
 		num = num | (((*h)[1] & 0xff) << 8);
@@ -588,7 +588,7 @@ error:
 	{
 		char buf[512];
 		
-		sprintf(buf, "%s: %s", filename, macstrerror(err));
+		sprintf(buf, "%s: %s", filename, PyMac_StrError(err));
 		PyErr_SetString(PyExc_ImportError, buf);
 		return NULL;
 	}
@@ -745,4 +745,66 @@ PyMac_BuildEventRecord(EventRecord *e)
 	                     e->where.h,
 	                     e->where.v,
 	                     e->modifiers);
+}
+
+
+/* What follows is used only by applets. */
+
+static void
+init_mac_world()
+{
+	MaxApplZone();
+	InitGraf(&qd.thePort);
+	InitFonts();
+	InitWindows();
+	TEInit();
+	InitDialogs((long)0);
+	InitMenus();
+	InitCursor();
+}
+
+static int
+run_main_resource()
+{
+	Handle h;
+	long size;
+	PyObject *code;
+	PyObject *result;
+	
+	h = GetNamedResource('PYC ', "\p__main__");
+	if (h == NULL) {
+		fprintf(stderr, "No 'PYC ' resource named __main__ found\n");
+		return 1;
+	}
+	size = GetResourceSizeOnDisk(h);
+	HLock(h);
+	code = PyMarshal_ReadObjectFromString(*h + 8, (int)(size - 8));
+	HUnlock(h);
+	ReleaseResource(h);
+	if (code == NULL) {
+		PyErr_Print();
+		return 1;
+	}
+	result = PyImport_ExecCodeModule("__main__", code);
+	Py_DECREF(code);
+	if (result == NULL) {
+		PyErr_Print();
+		return 1;
+	}
+	Py_DECREF(result);
+	return 0;
+}
+
+void
+PyMac_InitApplet()
+{
+	static char *argv[] = {"__main__", NULL};
+	
+	init_mac_world();
+	Py_Initialize();
+	PySys_SetArgv((sizeof argv / sizeof argv[0]) - 1, argv);
+	run_main_resource();
+	fflush(stderr);
+	fflush(stdout);
+	/* XXX Should we bother to Py_Exit(sts)? */
 }
