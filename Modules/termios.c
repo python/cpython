@@ -384,7 +384,9 @@ static struct constant {
 #ifdef OLCUC
 	{"OLCUC", OLCUC},
 #endif
+#ifdef ONLCR
 	{"ONLCR", ONLCR},
+#endif
 #ifdef OCRNL
 	{"OCRNL", OCRNL},
 #endif
@@ -552,7 +554,9 @@ static struct constant {
 #ifdef VLNEXT
 	{"VLNEXT", VLNEXT},
 #endif
+#ifdef VEOL2
 	{"VEOL2", VEOL2},
+#endif
 
 
 #ifdef B460800

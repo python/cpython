@@ -33,7 +33,7 @@ extern void bzero(void *, int);
 #include <sys/types.h>
 #endif
 
-#if defined(PYOS_OS2)
+#if defined(PYOS_OS2) && !defined(PYCC_GCC)
 #include <sys/time.h>
 #include <utils.h>
 #endif

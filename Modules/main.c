@@ -8,10 +8,14 @@
 #include <fcntl.h>
 #endif
 
-#if defined(PYOS_OS2) || defined(MS_WINDOWS)
+#if (defined(PYOS_OS2) && !defined(PYCC_GCC)) || defined(MS_WINDOWS)
 #define PYTHONHOMEHELP "<prefix>\\lib"
 #else
+#if defined(PYOS_OS2) && defined(PYCC_GCC)
+#define PYTHONHOMEHELP "<prefix>/Lib"
+#else
 #define PYTHONHOMEHELP "<prefix>/pythonX.X"
+#endif
 #endif
 
 #include "pygetopt.h"

@@ -54,6 +54,12 @@ extern int ftime(struct timeb *);
 #undef HAVE_CLOCK /* We have our own version down below */
 #endif /* MS_WIN32 && !MS_WIN64 */
 
+#if defined(PYOS_OS2)
+#define INCL_DOS
+#define INCL_ERRORS
+#include <os2.h>
+#endif
+
 #if defined(PYCC_VACPP)
 #include <sys/time.h>
 #endif
@@ -752,7 +758,7 @@ static int
 floatsleep(double secs)
 {
 /* XXX Should test for MS_WIN32 first! */
-#if defined(HAVE_SELECT) && !defined(__BEOS__)
+#if defined(HAVE_SELECT) && !defined(__BEOS__) && !defined(__EMX__)
 	struct timeval t;
 	double frac;
 	frac = fmod(secs, 1.0);
