@@ -11,21 +11,80 @@ typedef struct {
 	long	step;
 	long	len;
 	int	reps;
+	long	totlen;
 } rangeobject;
 
+static int
+long_mul(long i, long j, long *kk)
+{
+	PyObject *a;
+	PyObject *b;
+	PyObject *c;
+	
+	if ((a = PyInt_FromLong(i)) == NULL)
+		return 0;
+	
+	if ((b = PyInt_FromLong(j)) == NULL)
+		return 0;
+	
+	c = PyNumber_Multiply(a, b);
+	
+	Py_DECREF(a);
+	Py_DECREF(b);
+	
+	if (c == NULL)
+		return 0;
+
+	*kk = PyInt_AS_LONG(c);
+	Py_DECREF(c);
+
+	if (*kk > INT_MAX) {
+		PyErr_SetString(PyExc_OverflowError,
+				"integer multiplication");
+		return 0;
+	}
+	else
+		return 1;
+}
 
 PyObject *
 PyRange_New(long start, long len, long step, int reps)
 {
+	long totlen = -1;
 	rangeobject *obj = PyObject_NEW(rangeobject, &PyRange_Type);
 
 	if (obj == NULL)
 		return NULL;
 
+	if (len == 0 || reps <= 0) {
+		start = 0;
+		len = 0;
+		step = 1;
+		reps = 1;
+		totlen = 0;
+	}
+	else {
+		long last = start + (len - 1) * step;
+		if ((step > 0) ?
+		    (last > (PyInt_GetMax() - step))
+		    :(last < (-1 - PyInt_GetMax() - step))) {
+			PyErr_SetString(PyExc_OverflowError,
+					"integer addition");
+			return NULL;
+		}			
+		if (! long_mul(len, (long) reps, &totlen)) {
+			if(!PyErr_ExceptionMatches(PyExc_OverflowError))
+				return NULL;
+			PyErr_Clear();
+			totlen = -1;
+		}
+	}
+
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
 	obj->reps  = reps;
+	obj->totlen = totlen;
 
 	return (PyObject *) obj;
 }
@@ -39,11 +98,12 @@ range_dealloc(rangeobject *r)
 static PyObject *
 range_item(rangeobject *r, int i)
 {
-	if (i < 0 || i >= r->len * r->reps) {
-		PyErr_SetString(PyExc_IndexError,
+	if (i < 0 || i >= r->totlen)
+		if (r->totlen!=-1) {
+			PyErr_SetString(PyExc_IndexError,
 				"xrange object index out of range");
-		return NULL;
-	}
+			return NULL;
+		}
 
 	return PyInt_FromLong(r->start + (i % r->len) * r->step);
 }
@@ -51,7 +111,10 @@ range_item(rangeobject *r, int i)
 static int
 range_length(rangeobject *r)
 {
-	return r->len * r->reps;
+	if (r->totlen == -1)
+		PyErr_SetString(PyExc_OverflowError,
+				"xrange object has too many items");
+	return r->totlen;
 }
 
 static PyObject *
@@ -93,7 +156,9 @@ range_concat(rangeobject *r, PyObject *obj)
 static PyObject *
 range_repeat(rangeobject *r, int n)
 {
-	if (n < 0)
+	long lreps = 0;
+
+	if (n <= 0)
 		return (PyObject *) PyRange_New(0, 0, 1, 1);
 
 	else if (n == 1) {
@@ -101,12 +166,15 @@ range_repeat(rangeobject *r, int n)
 		return (PyObject *) r;
 	}
 
+	else if (! long_mul((long) r->reps, (long) n, &lreps))
+		return NULL;
+	
 	else
 		return (PyObject *) PyRange_New(
 						r->start,
 						r->len,
 						r->step,
-						r->reps * n);
+						(int) lreps);
 }
 
 static int
@@ -161,15 +229,17 @@ range_tolist(rangeobject *self, PyObject *args)
 {
 	PyObject *thelist;
 	int j;
-	int len = self->len * self->reps;
 
 	if (! PyArg_ParseTuple(args, ":tolist"))
 		return NULL;
 
-	if ((thelist = PyList_New(len)) == NULL)
+	if (self->totlen == -1)
+		return PyErr_NoMemory();
+
+	if ((thelist = PyList_New(self->totlen)) == NULL)
 		return NULL;
 
-	for (j = 0; j < len; ++j)
+	for (j = 0; j < self->totlen; ++j)
 		if ((PyList_SetItem(thelist, j, (PyObject *) PyInt_FromLong(
 			self->start + (j % self->len) * self->step))) < 0)
 			return NULL;
