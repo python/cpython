@@ -282,7 +282,6 @@ eval_code(co, globals, locals, owner, arg)
 	register frameobject *f; /* Current frame */
 	register listobject *fastlocals = NULL;
 	object *retval;		/* Return value iff why == WHY_RETURN */
-	char *name;		/* Name used by some instructions */
 	int needmerge = 0;	/* Set if need to merge locals back at end */
 	int defmode = 0;	/* Default access mode for new variables */
 #ifdef LLTRACE
