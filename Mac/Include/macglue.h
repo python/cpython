@@ -114,3 +114,8 @@ int PyMac_GetFixed(PyObject *, Fixed *);	/* argument parser for Fixed */
 PyObject *PyMac_BuildFixed(Fixed);			/* Convert Fixed to PyObject */
 void PyMac_InitApplet(void);			/* Initialize and run an Applet */
 void PyMac_Initialize(void);			/* Initialize function for embedding Python */
+
+/* From macfiletype.c: */
+
+long getfiletype(char *);			/* Get file type */
+int setfiletype(char *, long, long);		/* Set file creator and type */
