@@ -7,7 +7,7 @@
 #	intercom hostname	- start talking to person on other host
 #	intercom -r hostname	- called remotely to do the setup
 
-import names
+from names import *
 import sys, time, posix, gl, fl, FL, al, AL, getopt, rand
 from socket import *
 
