@@ -29,7 +29,7 @@ parser.add_option("-q", "--quiet",
                   action="store_false", dest="verbose", default=True,
                   help="don't print status messages to stdout")
 
-(options, args) = parser.parse_args()
+options, args = parser.parse_args()
 \end{verbatim}
 
 With these few lines of code, users of your script can now do the
@@ -302,7 +302,7 @@ parse it:
 
 \begin{verbatim}
 args = ["-f", "foo.txt"]
-(options, args) = parser.parse_args(args)
+options, args = parser.parse_args(args)
 \end{verbatim}
 
 (Note that if you don't pass an argument list to
@@ -335,7 +335,7 @@ argument right up against the option, since \programopt{-n42} (one
 argument) is equivalent to \programopt{-n 42} (two arguments).
 
 \begin{verbatim}
-(options, args) = parser.parse_args(["-n42"])
+options, args = parser.parse_args(["-n42"])
 print options.num
 \end{verbatim}
 
@@ -605,7 +605,7 @@ def main():
     parser.add_option("-q", "--quiet",
                       action="store_false", dest="verbose")
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
     if len(args) != 1:
         parser.error("incorrect number of arguments")
 
@@ -1271,7 +1271,7 @@ if you supply \var{callback_args} and/or \var{callback_kwargs} when
 you define your callback option), the minimal callback function is:
 
 \begin{verbatim}
-def my_callback (option, opt, value, parser):
+def my_callback(option, opt, value, parser):
     pass
 \end{verbatim}
 
@@ -1291,7 +1291,7 @@ Here's an example of a callback option that takes no arguments, and
 simply records that the option was seen:
 
 \begin{verbatim}
-def record_foo_seen (option, opt, value, parser):
+def record_foo_seen(option, opt, value, parser):
     parser.saw_foo = 1
 
 parser.add_option("--foo", action="callback", callback=record_foo_seen)
@@ -1303,7 +1303,7 @@ slightly more interesting example: record the fact that
 in the command-line.
 
 \begin{verbatim}
-def check_order (option, opt, value, parser):
+def check_order(option, opt, value, parser):
     if parser.values.b:
         raise OptionValueError("can't use -a after -b")
     parser.values.a = 1
@@ -1318,7 +1318,7 @@ a bit of work: the error message and the flag that it sets must be
 generalized.
 
 \begin{verbatim}
-def check_order (option, opt, value, parser):
+def check_order(option, opt, value, parser):
     if parser.values.b:
         raise OptionValueError("can't use %s after -b" % opt)
     setattr(parser.values, option.dest, 1)
@@ -1334,7 +1334,7 @@ you have options that should not be called when the moon is full, all
 you have to do is this:
 
 \begin{verbatim}
-def check_moon (option, opt, value, parser):
+def check_moon(option, opt, value, parser):
     if is_full_moon():
         raise OptionValueError("%s option invalid when moon full" % opt)
     setattr(parser.values, option.dest, 1)
@@ -1358,7 +1358,7 @@ argument that must be convertible to that type; if you further define
 Here's an example that just emulates the standard ``store'' action:
 
 \begin{verbatim}
-def store_value (option, opt, value, parser):
+def store_value(option, opt, value, parser):
     setattr(parser.values, option.dest, value)
 ...
 parser.add_option("--foo",
@@ -1405,7 +1405,7 @@ Nevertheless, here's a stab at a callback for an option with variable
 arguments:
 
 \begin{verbatim}
-def varargs (option, opt, value, parser):
+def varargs(option, opt, value, parser):
     assert value is None
     done = 0
     value = []
@@ -1463,8 +1463,8 @@ type-checking functions.  A type-checking function has the following
 signature:
 
 \begin{verbatim}
-def check_foo (option : Option, opt : string, value : string)
-               -> foo
+def check_foo(option : Option, opt : string, value : string)
+              -> foo
 \end{verbatim}
 
 You can name it whatever you like, and make it return any type you
@@ -1498,7 +1498,7 @@ later (in the \member{TYPE_CHECKER} class attribute of your
 \class{Option} subclass):
 
 \begin{verbatim}
-def check_complex (option, opt, value):
+def check_complex(option, opt, value):
     try:
         return complex(value)
     except ValueError:
@@ -1509,7 +1509,7 @@ def check_complex (option, opt, value):
 Finally, the \class{Option} subclass:
 
 \begin{verbatim}
-class MyOption (Option):
+class MyOption(Option):
     TYPES = Option.TYPES + ("complex",)
     TYPE_CHECKER = copy(Option.TYPE_CHECKER)
     TYPE_CHECKER["complex"] = check_complex
@@ -1600,13 +1600,13 @@ would result in a list:
 Again we define a subclass of \class{Option}:
 
 \begin{verbatim}
-class MyOption (Option):
+class MyOption(Option):
 
     ACTIONS = Option.ACTIONS + ("extend",)
     STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
     TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
 
-    def take_action (self, action, dest, opt, value, values, parser):
+    def take_action(self, action, dest, opt, value, values, parser):
         if action == "extend":
             lvalue = value.split(",")
             values.ensure_value(dest, []).extend(lvalue)
