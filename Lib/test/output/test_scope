@@ -18,3 +18,4 @@ test_scope
 17. class and global
 18. verify that locals() works
 19. var is bound and free in class
+20. interaction with trace function
