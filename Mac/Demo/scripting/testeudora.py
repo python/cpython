@@ -12,10 +12,10 @@ class Eudora(aetools.TalkTo, Required_Suite.Required_Suite, \
 	pass
 	
 # The Creator signature of eudora:
-SIGNATURE="????"
+SIGNATURE="CSOm"
 
 def main():
-	talker = Eudora(SIGNATURE)
+	talker = Eudora(SIGNATURE, start=1)
 	while 1:
 		print 'get, put, quit (eudora) or exit (this program) ?'
 		line = sys.stdin.readline()

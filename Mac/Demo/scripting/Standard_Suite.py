@@ -1,10 +1,9 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from Moes:Programma's:Eudora:Eudora Light
+Generated from flap:Programma's:Eudora Light
 AETE/AEUT resource version 2/16, language 0, script 0
 """
-
 
 import aetools
 import MacOS
@@ -28,7 +27,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -54,7 +53,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -75,7 +74,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -96,7 +95,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -123,7 +122,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -149,7 +148,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -175,7 +174,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -195,7 +194,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -215,7 +214,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -235,7 +234,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
@@ -260,7 +259,7 @@ class Standard_Suite:
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
 		if _arguments.has_key('errn'):
-			raise MacOS.Error, aetools.decodeerror(_arguments)
+			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
