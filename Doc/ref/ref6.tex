@@ -481,14 +481,14 @@ global_stmt:    "global" identifier ("," identifier)*
 \end{verbatim}
 
 The \verb@global@ statement is a declaration which holds for the
-entire current scope.  It means that the listed identifiers are to be
+entire current code block.  It means that the listed identifiers are to be
 interpreted as globals.  While {\em using} global names is automatic
 if they are not defined in the local scope, {\em assigning} to global
 names would be impossible without \verb@global@.
 \indexiii{global}{name}{binding}
 
 Names listed in a \verb@global@ statement must not be used in the same
-scope before that \verb@global@ statement is executed.
+code block before that \verb@global@ statement is executed.
 
 Names listed in a \verb@global@ statement must not be defined as formal
 parameters or in a \verb@for@ loop control target, \verb@class@
@@ -498,6 +498,19 @@ definition, function definition, or \verb@import@ statement.
 restrictions, but programs should not abuse this freedom, as future
 implementations may enforce them or silently change the meaning of the
 program.)
+
+Note: the \verb@global@ is a directive to the parser.  Therefore, it
+applies only to code parsed at the same time as the \verb@global@
+statement.  In particular, a \verb@global@ statement contained in an
+\verb@exec@ statement does not affect the code block {\em containing}
+the \verb@exec@ statement, and code contained in an \verb@exec@
+statement is unaffected by \verb@global@ statements in the code
+containing the \verb@exec@ statement.  The same applies to the
+\verb@eval()@, \verb@execfie()@ and \verb@compile()@ functions.
+\stindex{exec}
+\ttindex{eval}
+\ttindex{execfile}
+\ttindex{compile}
 
 \section{The {\tt access} statement} \label{access}
 \stindex{access}
