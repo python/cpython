@@ -1,8 +1,8 @@
-Changes in 2.2b2 since 2.1.1
+Changes in 2.2c1 since 2.1.1
 ----------------------------
 
 These release notes refer to Mac-specific changes only. See NEWS (in the Misc folder)
-for machine-independent changes. Changes that are new in 2.2b2 are flagged as such.
+for machine-independent changes. Changes that are new in 2.2c1 are flagged as such.
 
 
 - The main change is that all toolbox modules have moved to a package called Carbon.
@@ -11,20 +11,27 @@ for machine-independent changes. Changes that are new in 2.2b2 are flagged as su
   some open questions and join the discussions on pythonmac-sig if you have anything
   to contribute. Aside from reducing clutter this change will also benefit the
   port to Mach-O/OSX Python later.
+- All toolbox modules have been updated to Universal Headers 3.4. [2.2c1]
+- Toolbox modules are weaklinked against InterfaceLib (for PPC builds) and raise
+  an exception when you call an unimplemented one on an old MacOS. [2.2c1]
 - On input MacPython now accepts either \n (unix style) or \r (mac style) newlines
   for text files. This behaviour can be turned off with a preference.
   This is an experimental feature; again: feedback is requested.
+- The IDE looks better on OS X, but still not as good as on OS9. [2.2c1]
 - Command-dot handling has been improved a lot: scripts are now much easier to interrupt,
-  and they only scan for cmd-. while in the foreground. [2.2b2]
-- "Copy" from the MacPython console window was always disabled. Fixed. [2.2b2]
-- This release should run on MacOS 8.1 again. [2.2b2 build 116]
-- A new, rather different GUSI I/O library is used. Please report any strange behaviour
-  with I/O to the pythonmac-sig mailing list! [2.2b2]
+  and they only scan for cmd-. while in the foreground.
+- "Copy" from the MacPython console window was always disabled. Fixed.
+- This release should run on MacOS 8.1 again.
+- A new, rather different GUSI I/O library is used.
+- time.time() returns positive values again. [2.2c1]
 - There is a new module macresource which makes it easier to open a resource file
   accompanying your script when the script is not (yet) converted to an applet.
   This module will later also do the right thing in Mach-O/OSX Python.
+- (Carbon only) experimental modules Carbon.CG (CoreGraphics) and CarbonEvt have
+  been added. [2.2c1]
 - A new, experimental module hfsplus is included, which gives access to some of the
-  functionality of the HFS+ API. [2.2b2]
+  functionality of the HFS+ API.
+- A new, experimental module gives access to Carbon Events. [2.2c1]
 - Threads had a stack that was too small for many serious Python applications (20K).
   They now get 64K. There is still no overflow check, though.
 - Garbage collection and the gc module have (finally) been enabled.
@@ -48,9 +55,7 @@ for machine-independent changes. Changes that are new in 2.2b2 are flagged as su
 What is not in this distribution
 --------------------------------
 
-- Stackless Python/microthreads hasn't been ported to 2.2 yet. If/when it becomes available
-  Just will undoubtedly announce it on pythonmac-sig and the MacPython homepage.
-- The toolbox modules have not been updated to Universal Header 3.4 or CarbonLib 1.4 yet.
+- The toolbox modules have not all been updated to Universal Header 3.4 or CarbonLib 1.4 yet.
 
 Known problems
 --------------
@@ -58,13 +63,14 @@ Known problems
 This list is probably incomplete, more problems may be listed on the MacPython homepage,
 http://www.cwi.nl/~jack/macpython.html.
 
-- MacPython 2.2b2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
+- MacPython 2.2 (and MacPython 2.1) will not run correctly on a multiprocessor MacOS X
   machine, it will quickly deadlock during I/O operations. The GUSI I/O library is suspected,
   hints/clues/workarounds are solicited.
 - Tkinter does not work under Carbon.
 - The IDE and Tkinter do not work together. Run tkinter programs under PythonInterpreter.
 - Tkinter file events do not work, unless you have opened the file through Tcl (but then
   you cannot access it from Python).
+- The IDE object and class browser look funny on OSX, but they work fine.
 - Aliases may not work in sys.path entries.
 - PythonInterpreter used interactively will eat a lot of processor cycles. You should use
   PythonIDE for interactive work and PythonInterpreter for scripts only. This is especially

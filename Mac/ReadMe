@@ -1,9 +1,14 @@
-How to install Python 2.2b2 on your Macintosh
+How to install Python 2.2c1 on your Macintosh
 ---------------------------------------------
+
+This is a release candidate for MacPython 2.2, please report any problems as
+soon as possible, by email to pythonmac-sig@python.org.
 
 This is a MacPython that can run on classic MacOS (from 8.1
 onwards) and natively on MacOSX. The installer tries to work out whether you can
-use the Carbon version or not.
+use the Carbon version or not. For Mac OS X users: this version of Python
+does not run from the command line, it is a pure "Mac only" app. Use the standard
+unix Python from the commandline, the two Pythons will be merged in the future.
 
 You should definitely read the Relnotes file too, and the section below about
 toolbox module reorganization. You should also read :Misc:NEWS, which lists
@@ -62,6 +67,11 @@ Note that although the package is called Carbon the modules work fine under
 classic PPC, and they are normal classic modules. Also note that some
 modules you may think of as toolbox modules (such as Waste) really are not,
 and they are not in the Carbon package.
+
+Also, all toolbox modules have been updated to Universal Headers 3.4, and
+are (for classic PPC) weak-linked against InterfaceLib so that they should
+work on all systems back to MacOS 8.1. Calling an unimplemented function will
+raise an exception, not crash your interpreter.
   
 Another change related to the OSX growth path is that there is a new module
 macresource that you can use to easily open a resource file accompanying your
@@ -161,7 +171,7 @@ Uninstalling
 
 Two items are installed in the system folder: the interpreter shared
 libraries PythonCore and PythonCoreCarbon lives in the Extensions
-folder and the "Python 2.2b2 Preferences" file in the Python subfolder
+folder and the "Python 2.2c1 Preferences" file in the Python subfolder
 in the Preferences folder. All the rest of Python lives in the folder
 you installed in.
 
@@ -211,9 +221,9 @@ this means you can keep your older version around if you are unsure
 whether to upgrade. The bad news is that your old preference settings
 are lost and you have to set them again.
 
-After you are satisfied that 2.2b2 works as expected you can trash
+After you are satisfied that 2.2c1 works as expected you can trash
 anything in the system folder that has "python" in the name and not
-"2.2b2".
+"2.2c1".
 
 The ConfigurePython... applets will try to detect incompatible
 preferences files and offer to remove them. This means that re-running
@@ -246,7 +256,8 @@ Corran Webster, Tony Ingraldi, Erik van Blokland, Bill Bedford, Chris
 Stern, Gordon Worley, Oliver Steele, M. Papillon, Steven Majewski, David
 Goodger, Chris Barker, Luc Lefebvre, Tattoo Mabonzo K., Russell Finn,
 Tom Bridgman, Russel Owen, Pascal Oberndoerfer, Dean Draayer,
-Alexandre Parenteau, Donovan Preston
+Alexandre Parenteau, Donovan Preston, Daniel Brotsky, Jason Harper,
+Nitin Ganatra, 
 and all the other people who provided feedback, code or both!
 
 MacPython includes waste, a TextEdit replacement which is (c) 1998

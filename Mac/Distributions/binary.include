@@ -219,3 +219,5 @@
 (':pystone.py', None)
 (':setup.py', None)
 (':site-packages', None)
+(':Mac:ReadMe~0', None)
+(':Mac:Contrib:mpwsystem', '')
