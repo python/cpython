@@ -5999,20 +5999,31 @@ formatfloat(Py_UNICODE *buf,
 	prec = 6;
     if (type == 'f' && (fabs(x) / 1e25) >= 1e25)
 	type = 'g';
-    PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
-		  (flags & F_ALT) ? "#" : "", prec, type);
-    /* worst case length calc to ensure no buffer overrun:
-         fmt = %#.<prec>g
-         buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
-            for any double rep.)
-         len = 1 + prec + 1 + 2 + 5 = 9 + prec
+    /* Worst case length calc to ensure no buffer overrun:
+
+       'g' formats:
+	 fmt = %#.<prec>g
+	 buf = '-' + [0-9]*prec + '.' + 'e+' + (longest exp
+	    for any double rep.)
+	 len = 1 + prec + 1 + 2 + 5 = 9 + prec
+
+       'f' formats:
+	 buf = '-' + [0-9]*x + '.' + [0-9]*prec (with x < 50)
+	 len = 1 + 50 + 1 + prec = 52 + prec
+
        If prec=0 the effective precision is 1 (the leading digit is
-       always given), therefore increase by one to 10+prec. */
-    if (buflen <= (size_t)10 + (size_t)prec) {
+       always given), therefore increase the length by one. 
+
+    */
+    if ((type == 'g' && buflen <= (size_t)10 + (size_t)prec) ||
+	(type == 'f' && buflen <= (size_t)53 + (size_t)prec)) {
 	PyErr_SetString(PyExc_OverflowError,
-	    "formatted float is too long (precision too long?)");
+			"formatted float is too long (precision too large?)");
 	return -1;
     }
+    PyOS_snprintf(fmt, sizeof(fmt), "%%%s.%d%c",
+		  (flags&F_ALT) ? "#" : "",
+		  prec, type);
     return usprintf(buf, fmt, x);
 }
 
