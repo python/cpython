@@ -1,0 +1,83 @@
+\section{Built-in module \sectcode{macspeech}}
+\bimodindex{macspeech}
+
+This module provides an interface to the Macintosh Speech Manager,
+allowing you to let the macintosh utter phrases. You need a version of
+the speech manager extension (version 1 and 2 have been tested) in
+your \code{Extensions} folder for this to work. The module does not
+provide full access to all features of the Speech Manager yet.
+
+\begin{funcdesc}{Available}{}
+Test availability of the Speech Manager extension (and, on the
+PowerPC, the Speech Manager shared library). Returns 0 or 1. 
+\end{funcdesc}
+
+\begin{funcdesc}{Version}{}
+Return the (integer) version of the Speech Manager.
+\end{funcdesc}
+
+\begin{funcdesc}{SpeakString}{str}
+Utter the string \var{str} using the default voice,
+asynchronously. This aborts any speech that may still be active from
+prior \code{SpeakString} invocations.
+\end{funcdesc}
+
+\begin{funcdesc}{Busy}{}
+Return the number of speech channels busy, system-wide.
+\end{funcdesc}
+
+\begin{funcdesc}{CountVoices}{}
+Return the number of different voices available.
+\end{funcdesc}
+
+\begin{funcdesc}{GetIndVoice}{num}
+Return a voice object for voice number \var{num}.
+\end{funcdesc}
+
+\subsection{voice objects}
+Voice objects contain the description of a voice. It is currently not
+yet possible to access the parameters of a voice.
+
+\renewcommand{\indexsubitem}{(voice object method)}
+
+\begin{funcdesc}{GetGender}{}
+Return the gender of the voice: 0 for male, 1 for female and -1 for neuter.
+\end{funcdesc}
+
+\begin{funcdesc}{NewChannel}{}
+Return a new speech channel object using this voice.
+\end{funcdesc}
+
+\subsection{speech channel objects}
+A speech channel object allows you to speak strings with slightly more
+control than \code{SpeakString()}, and allows you to use multiple
+speakers at the same time. Please note that channel pitch and rate are
+interrelated in some way, so that to make your macintosh sing you will
+have to adjust both.
+
+\renewcommand{\indexsubitem}{(speech channel object method)}
+\begin{funcdesc}{SpeakText}{str}
+Start uttering the given string.
+\end{funcdesc}
+
+\begin{funcdesc}{Stop}{}
+Stop babbling.
+\end{funcdesc}
+
+\begin{funcdesc}{GetPitch}{}
+Returns the current pitch of the channel, as a floating-point number.
+\end{funcdesc}
+
+\begin{funcdesc}{SetPitch}{pitch}
+Set the pitch of the channel.
+\end{funcdesc}
+
+\begin{funcdesc}{GetRate}{}
+Get the speech rate (utterances per minute) of the channel as a
+floating point number.
+\end{funcdesc}
+
+\begin{funcdesc}{SetRate}{rate}
+Set the speech rate of the channel.
+\end{funcdesc}
+
