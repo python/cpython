@@ -143,10 +143,10 @@ def compare(slave, master):
     sf.close()
     if fun:
 	print "***UPDATING MASTER (BINARY COPY)***"
-	copy(slave, master, "rb", write_master)
+	copy(slave, master, "rb", answer=write_master)
     else:
 	print "***UPDATING MASTER***"
-	copy(slave, master, "r", write_master)
+	copy(slave, master, "r", answer=write_master)
 
 BUFSIZE = 16*1024
 
