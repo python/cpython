@@ -1,16 +1,16 @@
 Subject: FAQ: Python -- an object-oriented language
 Newsgroups: comp.lang.python,comp.answers,news.answers
 Followup-to: comp.lang.python
-From: guido@cwi.nl (Guido van Rossum)
+From: guido@cnri.reston.va.us (Guido van Rossum)
 Reply-to: guido@cnri.reston.va.us (Guido van Rossum)
-Expires: Wed, 1 Nov 1995 00:00:00 GMT
+Expires: Fri, 1 Nov 1996 00:00:00 GMT
 Supersedes: <DFMAv8.3Hp@cwi.nl>
 Approved: news-answers-request@MIT.Edu
 
 Archive-name: python-faq/part1
-Submitted-by: Guido van Rossum <guido@cwi.nl>
-Version: 1.31
-Last-modified: 26 June 1996
+Submitted-by: Guido van Rossum <guido@cnri.reston.va.us>
+Version: 1.33
+Last-modified: 6 September 1996
 
 This article contains answers to Frequently Asked Questions about
 Python (an object-oriented interpreted programming language -- see
@@ -24,9 +24,9 @@ Author's address:
         Guido van Rossum
         C.N.R.I.
         1895 Preston White Drive
-        Reston, VA 22091
+        Reston, VA 20191
         U.S.A.
-Email:  <guido@python.org>, <guido@cnri.reston.va.us>, <guido@cwi.nl>
+Email:  <guido@python.org>, <guido@cnri.reston.va.us>
 
 The latest version of this FAQ is available by anonymous ftp from
 <URL:ftp://ftp.python.org/pub/python/doc/FAQ>.  It will also be posted
@@ -655,7 +655,7 @@ wishes Python well should join the PSA.
 A. The full scoop is available on the web, see
 <URL:http://www.python.org/psa/Joining.html>.  Summary: send a check
 of at least $50 to CNRI/PSA, 1895 Preston White Drive, Suite 100, in
-Reston, VA 22091.  Full-time students pay $25.  Companies can join for
+Reston, VA 20191.  Full-time students pay $25.  Companies can join for
 a mere $500.
 
 2.11. Q. What are the benefits of joining the PSA?
@@ -819,12 +819,12 @@ gcc is wrong.
 
 3.13. Q. Other trouble building Python on platform X.
 
-A. Please email the details to <guido@cwi.nl> and I'll look into it.
-Please provide as many details as possible.  In particular, if you
-don't tell me what type of computer and what operating system (and
-version) you are using it will be difficult for me to figure out what
-is the matter.  If you get a specific error message, please email it
-to me too.
+A. Please email the details to <guido@cnri.reston.va.us> and I'll look
+into it.  Please provide as many details as possible.  In particular,
+if you don't tell me what type of computer and what operating system
+(and version) you are using it will be difficult for me to figure out
+what is the matter.  If you get a specific error message, please email
+it to me too.
 
 3.14. Q. How to configure dynamic loading on Linux.
 
