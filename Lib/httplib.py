@@ -9,6 +9,7 @@ Example:
 >>> from httplib import HTTP
 >>> h = HTTP('www.python.org')
 >>> h.putrequest('GET', '/index.html')
+>>> h.putheader('Host', 'www.python.org')
 >>> h.putheader('Accept', 'text/html')
 >>> h.putheader('Accept', 'text/plain')
 >>> h.endheaders()
