@@ -12,7 +12,6 @@
 # -- totally static, though different between PackDialog and WidgetDialog
 #    (but even that could be unified)
 
-
 from Tkinter import *
 
 class Option:
@@ -406,9 +405,8 @@ def test():
 	import sys
 	root = Tk()
 	root.minsize(1, 1)
-	if sys.argv[2:]:
-		pd = RemotePackDialog(root, sys.argv[1], sys.argv[2])
-		wd = RemoteWidgetDialog(root, sys.argv[1], sys.argv[2])
+	if sys.argv[1:]:
+		remotetest(root, sys.argv[1])
 	else:
 		frame = Frame(root, {'name': 'frame',
 				     Pack: {'expand': 1, 'fill': 'both'},
@@ -425,5 +423,25 @@ def test():
 		cpd = PackDialog(canvas)
 		cwd = WidgetDialog(canvas)
 	root.mainloop()
+
+def remotetest(root, app):
+	from listtree import listtree
+	list = listtree(root, app)
+	list.bind('<Any-Double-1>', opendialogs)
+	list.app = app			# Pass it on to handler
+
+def opendialogs(e):
+	import string
+	list = e.widget
+	sel = list.curselection()
+	for i in sel:
+		item = list.get(i)
+		widget = string.split(item)[0]
+		RemoteWidgetDialog(list, list.app, widget)
+		if widget == '.': continue
+		try:
+			RemotePackDialog(list, list.app, widget)
+		except TclError, msg:
+			print msg
 
 test()
