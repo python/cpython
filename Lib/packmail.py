@@ -1,7 +1,6 @@
 # Module 'packmail' -- create a shell script out of some files.
 
-import mac
-import macpath
+import os
 from stat import ST_MTIME
 import string
 
@@ -21,25 +20,25 @@ def pack(outfp, file, name):
 def packsome(outfp, dirname, names):
 	for name in names:
 		print name
-		file = macpath.join(dirname, name)
+		file = os.path.join(dirname, name)
 		pack(outfp, file, name)
 
 # Pack all files from a directory
 def packall(outfp, dirname):
-	names = mac.listdir(dirname)
+	names = os.listdir(dirname)
 	names.sort()
 	packsome(outfp, dirname, names)
 
 # Pack all files from a directory that are not older than a give one
 def packnotolder(outfp, dirname, oldest):
-	names = mac.listdir(dirname)
-	oldest = macpath.join(dirname, oldest)
-	st = mac.stat(oldest)
+	names = os.listdir(dirname)
+	oldest = os.path.join(dirname, oldest)
+	st = os.stat(oldest)
 	mtime = st[ST_MTIME]
 	todo = []
 	for name in names:
 		print name, '...',
-		st = mac.stat(macpath.join(dirname, name))
+		st = os.stat(os.path.join(dirname, name))
 		if st[ST_MTIME] >= mtime:
 			print 'Yes.'
 			todo.append(name)
@@ -52,11 +51,11 @@ def packnotolder(outfp, dirname, oldest):
 def packtree(outfp, dirname):
 	print 'packtree', dirname
 	outfp.write('mkdir ' + unixfix(dirname) + '\n')
-	names = mac.listdir(dirname)
+	names = os.listdir(dirname)
 	subdirs = []
 	for name in names:
-		fullname = macpath.join(dirname, name)
-		if macpath.isdir(fullname):
+		fullname = os.path.join(dirname, name)
+		if os.path.isdir(fullname):
 			subdirs.append(fullname)
 		else:
 			print 'pack', fullname
