@@ -66,12 +66,6 @@ Type/class unification and new-style classes
 Core and builtins
 -----------------
 
-- The repr() function for 8-bit strings now preserves all characters
-  that are considered printable in the current locale.  (Previously,
-  all bytes that are not printable ASCII would be encoded in hex.)
-  This requires the user to set the current locale; in the initial "C"
-  locale the old behavior is maintained.  [SF patch 479898]
-
 - Unicode file name processing for Windows (PEP 277) is implemented.
   All platforms now have an os.path.supports_unicode_filenames attribute,
   which is set to True on Windows NT/2000/XP, and False elsewhere.
