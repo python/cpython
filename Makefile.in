@@ -147,7 +147,7 @@ CFLAGS=		$(OPT) -I. $(DEFS)
 LIBRARY=	libpython$(VERSION).a
 
 # Default target
-all:		$(LIBRARY) python
+all:		$(LIBRARY) python sharedmods
 
 # Build the interpreter
 python:		$(LIBRARY) buildno
@@ -163,6 +163,12 @@ python:		$(LIBRARY) buildno
 
 buildno:
 		echo 0 >buildno
+
+# Build the shared modules
+sharedmods: 	python
+		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
+			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
+			sharedmods
 
 # Build the library
 $(LIBRARY):	$(SUBDIRS)
