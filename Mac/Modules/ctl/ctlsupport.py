@@ -48,6 +48,38 @@ ControlID_ptr = ControlID
 DragTrackingMessage = Type("DragTrackingMessage", "h")
 DragReference = OpaqueByValueType("DragReference", "DragObj")
 
+CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
+CFMutableStringRef = OpaqueByValueType("CFMutableStringRef", "CFMutableStringRefObj")
+CFDataRef = OpaqueByValueType("CFDataRef", "CFDataRefObj")
+
+ControlTabSize = UInt16
+ControlTabDirection = UInt16
+ControlPopupArrowOrientation = UInt16
+ControlPopupArrowSize = UInt16
+ControlClockType = UInt16
+ControlClockFlags = UInt32
+ControlRoundButtonSize = SInt16
+DataBrowserViewStyle = OSType
+DataBrowserItemID = UInt32
+DataBrowserEditCommand = UInt32
+DataBrowserSelectionAnchorDirection = UInt32
+DataBrowserItemState = UInt32
+DataBrowserPropertyID = UInt32
+DataBrowserRevealOptions = UInt8
+DataBrowserSortOrder = UInt16
+DataBrowserSelectionFlags = UInt32
+DataBrowserPropertyFlags = UInt32
+DataBrowserPropertyPart = OSType
+DataBrowserTableViewColumnID = DataBrowserPropertyID
+#DataBrowserTableViewColumnDesc = DataBrowserPropertyDesc
+DataBrowserTableViewHiliteStyle = UInt32
+DataBrowserTableViewRowIndex = UInt32
+DataBrowserTableViewColumnIndex = UInt32
+DataBrowserPropertyType = OSType
+ControlDisclosureTriangleOrientation = UInt16
+
+
+
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
 #include <Controls.h>

@@ -36,6 +36,11 @@ class MyScanner(Scanner):
 		self.defsfile.write("from TextEdit import *\n")
 		self.defsfile.write("from QuickDraw import *\n")
 		self.defsfile.write("from Dragconst import *\n")
+		self.defsfile.write("from CarbonEvents import *\n")
+		self.defsfile.write("from Appearance import *\n")
+		self.defsfile.write("kDataBrowserItemAnyState = -1\n")
+		self.defsfile.write("kControlBevelButtonCenterPopupGlyphTag = -1\n")
+		self.defsfile.write("kDataBrowserClientPropertyFlagsMask = 0xFF << 24  # kDataBrowserClientPropertyFlagsOffset\n")
 		self.defsfile.write("\n")
 
 	def makeblacklistnames(self):
@@ -48,7 +53,8 @@ class MyScanner(Scanner):
 			'SetControlData',	# Generated manually
 			'GetControlData',	# Generated manually
 			'kControlBevelButtonCenterPopupGlyphTag', # Constant with funny definition
-			'kControlProgressBarIndeterminateTag', # ditto
+			'kDataBrowserClientPropertyFlagsMask',  # ditto
+			'kDataBrowserItemAnyState',   # and ditto
 			# The following are unavailable for static 68k (appearance manager)
 ##			'GetBevelButtonMenuValue',
 ##			'SetBevelButtonMenuValue',
@@ -80,6 +86,14 @@ class MyScanner(Scanner):
 			'SetControlProperty',
 			'GetControlPropertySize',
 			'SendControlMessage', # Parameter changed from long to void* from UH3.3 to UH3.4
+			# unavailable in Just's CW6 + UH 3.4 libs
+			'CreateDisclosureButtonControl',
+			'CreateRelevanceBarControl',
+			'DisableControl',
+			'EnableControl',
+			'IsControlEnabled',
+			'CreateEditUnicodeTextControl',
+			'CopyDataBrowserEditText',
 			]
 
 	def makegreylist(self):
@@ -138,6 +152,23 @@ class MyScanner(Scanner):
 			'ControlDefSpec', # Don't know how to do this yet
 			'ControlDefSpec_ptr', # ditto
 			'Collection', # Ditto
+			# not-yet-supported stuff in Universal Headers 3.4:
+			'ControlColorUPP',
+			'ControlKind',  # XXX easy: 2-tuple containing 2 OSType's
+			'ControlTabEntry_ptr', # XXX needed for tabs
+			'ControlButtonContentInfo',  # XXX ugh: a union
+			'ControlButtonContentInfo_ptr',  # XXX ugh: a union
+			'ListDefSpec_ptr',  # XXX see _Listmodule.c, tricky but possible
+			'DataBrowserItemID_ptr',  # XXX array of UInt32, for BrowserView
+			'DataBrowserItemUPP',
+			'DataBrowserItemDataRef', # XXX void *
+			'DataBrowserCallbacks', # difficult struct
+			'DataBrowserCallbacks_ptr',
+			'DataBrowserCustomCallbacks',
+			'DataBrowserCustomCallbacks_ptr',
+			'DataBrowserTableViewColumnDesc',
+			'DataBrowserListViewColumnDesc',
+			'CFDataRef',
 			]
 
 	def makerepairinstructions(self):
