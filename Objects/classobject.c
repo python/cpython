@@ -2208,6 +2208,12 @@ instancemethod_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 	}
 	if (self == Py_None)
 		self = NULL;
+	if (self == NULL && classObj == NULL) {
+		PyErr_SetString(PyExc_TypeError,
+			"unbound methods must have non-NULL im_class");
+		return NULL;
+	}
+
 	return PyMethod_New(func, self, classObj);
 }
 
