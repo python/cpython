@@ -1427,39 +1427,6 @@ PyMethodDef array_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
-static int
-array_print(arrayobject *a, FILE *fp, int flags)
-{
-	int ok = 0;
-	int i, len;
-	PyObject *v;
-	len = a->ob_size;
-	if (len == 0) {
-		fprintf(fp, "array('%c')", a->ob_descr->typecode);
-		return ok;
-	}
-	if (a->ob_descr->typecode == 'c') {
-		PyObject *t_empty = PyTuple_New(0);
-		fprintf(fp, "array('c', ");
-		v = array_tostring(a, t_empty);
-		Py_DECREF(t_empty);
-		ok = PyObject_Print(v, fp, 0);
-		Py_XDECREF(v);
-		fprintf(fp, ")");
-		return ok;
-	}
-	fprintf(fp, "array('%c', [", a->ob_descr->typecode);
-	for (i = 0; i < len && ok == 0; i++) {
-		if (i > 0)
-			fprintf(fp, ", ");
-		v = (a->ob_descr->getitem)(a, i);
-		ok = PyObject_Print(v, fp, 0);
-		Py_XDECREF(v);
-	}
-	fprintf(fp, "])");
-	return ok;
-}
-
 static PyObject *
 array_repr(arrayobject *a)
 {
@@ -1719,7 +1686,7 @@ statichere PyTypeObject Arraytype = {
 	sizeof(arrayobject),
 	0,
 	(destructor)array_dealloc,		/* tp_dealloc */
-	(printfunc)array_print,			/* tp_print */
+	0,					/* tp_print */
 	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	0,					/* tp_compare */
