@@ -6,6 +6,9 @@
 % Feel free to add commented-out reminders of things that need
 % to be covered.  --amk
 
+% XXX pydoc can display links to module docs -- but when?
+% 
+
 \title{What's New in Python 2.4}
 \release{0.0}
 \author{A.M.\ Kuchling}
@@ -442,7 +445,7 @@ language.
 
 \item The \method{dict.update()} method now accepts the same
 argument forms as the \class{dict} constructor.  This includes any
-mapping, any iterable of key/value pairs, and/or keyword arguments.       
+mapping, any iterable of key/value pairs, and keyword arguments.       
 
 \item The string methods, \method{ljust()}, \method{rjust()}, and
 \method{center()} now take an optional argument for specifying a
@@ -547,6 +550,10 @@ yellow 5
 
 \end{verbatim}
 
+\item The \function{eval(\var{expr}, \var{globals}, \var{locals})}
+function now accepts any mapping type for the \var{locals} argument.
+Previously this had to be a regular Python dictionary.
+
 \item The \function{zip()} built-in function and \function{itertools.izip()}
   now return an empty list instead of raising a \exception{TypeError}
   exception if called with no arguments.  This makes them more
@@ -624,6 +631,11 @@ details.
 
 \begin{itemize}
 
+\item The \module{asyncore} module's \function{loop()} now has a 
+   \var{count} parameter that lets you perform a limited number 
+   of passes through the polling loop.  The default is still to loop
+   forever.
+
 \item The \module{curses} modules now supports the ncurses extension 
    \function{use_default_colors()}.  On platforms where the terminal
    supports transparency, this makes it possible to use a transparent
@@ -683,7 +695,7 @@ improved performance:  \module{Queue}, \module{mutex}, \module{shlex}
    tenfold improvement in speed makes the module suitable for handling
    high volumes of data.  In addition, the module has two new functions
    \function{nlargest()} and \function{nsmallest()} that use heaps to
-   find the largest or smallest n values in a dataset without the
+   find the N largest or smallest values in a dataset without the
    expense of a full sort.
 
 \item The \module{imaplib} module now supports IMAP's THREAD command.
@@ -760,10 +772,6 @@ If the separation is large, then it becomes preferable to use
 another, \function{tee()} is ideal.  Possible applications include
 bookmarking, windowing, or lookahead iterators.
 
-\item A new \function{getsid()} function was added to the
-\module{posix} module that underlies the \module{os} module.
-(Contributed by J. Raynor.)
-
 \item The \module{operator} module gained two new functions, 
 \function{attrgetter(\var{attr})} and \function{itemgetter(\var{index})}.
 Both functions return callables that take a single argument and return
@@ -781,6 +789,15 @@ For example:
 [('d', 1), ('c', 2), ('b', 3), ('a', 4)]
 \end{verbatim}
 
+\item A new \function{getsid()} function was added to the
+\module{posix} module that underlies the \module{os} module.
+(Contributed by J. Raynor.)
+
+\item The \module{poplib} module now supports POP over SSL.
+
+\item The \module{profile} module can now profile C extension functions.
+% XXX more to say about this? 
+
 \item The \module{random} module has a new method called \method{getrandbits(N)} 
    which returns an N-bit long integer.  This method supports the existing
    \method{randrange()} method, making it possible to efficiently generate
@@ -797,6 +814,9 @@ For example:
 \item The \module{weakref} module now supports a wider variety of objects
    including Python functions, class instances, sets, frozensets, deques,
    arrays, files, sockets, and regular expression pattern objects.
+
+\item The \module{xmlrpclib} module now supports a multi-call extension for 
+tranmitting multiple XML-RPC calls in a single HTTP operation.
    
 \end{itemize}
 
@@ -846,7 +866,16 @@ Changes to Python's build process and to the C API include:
   \item A new method flag, \constant{METH_COEXISTS}, allows a function
   defined in slots to co-exist with a PyCFunction having the same name.
   This can halve the access to time to a method such as
-  \method{set.__contains__()}
+  \method{set.__contains__()}.
+
+  \item Python can now be built with additional profiling for the interpreter
+   itself, useful if you're working on the Python core.  
+   Providing \longprogramopt{--enable-profiling} to the  
+   \program{configure} script will let you profile the interpreter with 
+   \program{gprof}, and providing the \longprogramopt{--with-tsc} switch 
+   enables profiling using the Pentium's Time-Stamp-Counter.
+
+  \item The \ctype{tracebackobject} type has been renamed to \ctype{PyTracebackObject}.
 
 \end{itemize}
 
