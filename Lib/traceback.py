@@ -166,7 +166,11 @@ def format_exception_only(etype, value):
 						s = s + ' '
 				list.append('%s^\n' % s)
 				value = msg
-		list.append('%s: %s\n' % (str(stype), _some_str(value)))
+		s = _some_str(value)
+		if s:
+			list.append('%s: %s\n' % (str(stype), s))
+		else:
+			list.append('%s\n' % str(stype))
 	return list
 
 def _some_str(value):
