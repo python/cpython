@@ -367,6 +367,14 @@ object'' with \method{read()} and \method{write()} methods (and many
 more).
 \end{funcdesc}
 
+\begin{funcdesc}{openpty}{}
+Open a new pseudo-terminal pair. Return a pair of file descriptors
+\code{(\var{master}, \var{slave})} for the pty and the tty,
+respectively. For a (slightly) more portable approach, use the
+\refmodule{pty}\refstmodindex{pty} module.
+Availability: Some flavors of \UNIX{}
+\end{funcdesc}
+
 \begin{funcdesc}{pipe}{}
 Create a pipe.  Return a pair of file descriptors \code{(\var{r},
 \var{w})} usable for reading and writing, respectively.
@@ -789,6 +797,16 @@ after a \function{fork()}.
 Fork a child process.  Return \code{0} in the child, the child's
 process id in the parent.
 Availability: \UNIX{}.
+\end{funcdesc}
+
+\begin{funcdesc}{forkpty}{}
+Fork a child process, using a new pseudo-terminal as the child's
+controlling terminal. Return a pair of \code{(\var{pid}, \var{fd})},
+where \var{pid} is \code{0} in the child, the new child's process id
+in the parent, and \code{fd} is the file descriptor of the master end
+of the pseudo-terminal.  For a more portable approach, use the
+\refmodule{pty} module.
+Availability: Some flavors of \UNIX{}
 \end{funcdesc}
 
 \begin{funcdesc}{kill}{pid, sig}
