@@ -3,8 +3,8 @@ initimgformat
 initimggif
 initimgjpeg
 initimgop
+initimgpbm
+initimgsgi
 initimgpgm
 initimgppm
 initimgtiff
-initimgpbm
-initimgsgi
