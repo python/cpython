@@ -255,9 +255,70 @@ def test_misc(maxdigits=MAXDIGITS):
     except:
         raise TestFailed, "int(long(-sys.maxint-1) - 1) didn't overflow"
 
+# ----------------------------------- tests of auto int->long conversion
+
+def test_auto_overflow():
+    import math, sys
+
+    if verbose:
+        print "auto-convert int->long on overflow"
+
+    special = [0, 1, 2, 3, sys.maxint-1, sys.maxint, sys.maxint+1]
+    sqrt = int(math.sqrt(sys.maxint))
+    special.extend([sqrt-1, sqrt, sqrt+1])
+    special.extend([-i for i in special])
+
+    def checkit(*args):
+        # Heavy use of nested scopes here!
+        verify(got == expected, "for %r expected %r got %r" %
+                                (args, expected, got))
+
+    for x in special:
+        longx = long(x)
+
+        expected = -longx
+        got = -x
+        checkit('-', x)
+
+        for y in special:
+            longy = long(y)
+
+            expected = longx + longy
+            got = x + y
+            checkit(x, '+', y)
+
+            expected = longx - longy
+            got = x - y
+            checkit(x, '-', y)
+
+            expected = longx * longy
+            got = x * y
+            checkit(x, '*', y)
+
+            if y:
+                expected = longx / longy
+                got = x / y
+                checkit(x, '/', y)
+
+                expected = divmod(longx, longy)
+                got = divmod(longx, longy)
+                checkit(x, 'divmod', y)
+
+            if abs(y) < 5 and not (x == 0 and y < 0):
+                expected = longx ** longy
+                got = x ** y
+                checkit(x, '**', y)
+
+                for z in special:
+                    if z != 0:
+                        expected = pow(longx, longy, long(z))
+                        got = pow(x, y, z)
+                        checkit('pow', x, y, '%', z)
+
 # ---------------------------------------------------------------- do it
 
 test_division()
 test_bitop_identities()
 test_format()
 test_misc()
+test_auto_overflow()
