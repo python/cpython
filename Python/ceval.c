@@ -315,8 +315,8 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 	int lastopcode = 0;
 #endif
 	register unsigned char *next_instr;
-	register int opcode;	/* Current opcode */
-	register int oparg;	/* Current opcode argument, if any */
+	register int opcode=0;	/* Current opcode */
+	register int oparg=0;	/* Current opcode argument, if any */
 	register PyObject **stack_pointer;
 	register enum why_code why; /* Reason for block stack unwind */
 	register int err;	/* Error status -- nonzero if error */
