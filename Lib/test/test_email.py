@@ -1,4 +1,4 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # email package unit tests
 
 import os
@@ -788,6 +788,10 @@ class TestIdempotent(unittest.TestCase):
 
     def test_preamble_epilogue(self):
         msg, text = self._msgobj('msg_21.txt')
+        self._idempotent(msg, text)
+
+    def test_multipart_one_part(self):
+        msg, text = self._msgobj('msg_23.txt')
         self._idempotent(msg, text)
 
     def test_content_type(self):
