@@ -212,14 +212,18 @@ file_close(PyFileObject *f, PyObject *args)
 }
 
 
+/* An 8-byte off_t-like type */
+#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
+typedef fpos_t Py_off_t;
+#else
+typedef off_t Py_off_t;
+#endif
+
+
 /* a portable fseek() function
    return 0 on success, non-zero on failure (with errno set) */
 int
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
-_portable_fseek(FILE *fp, fpos_t offset, int whence)
-#else
-_portable_fseek(FILE *fp, off_t offset, int whence)
-#endif
+_portable_fseek(FILE *fp, Py_off_t offset, int whence)
 {
 #if defined(HAVE_FSEEKO)
 	return fseeko(fp, offset, whence);
@@ -253,22 +257,18 @@ _portable_fseek(FILE *fp, off_t offset, int whence)
 /* a portable ftell() function
    Return -1 on failure with errno set appropriately, current file
    position on success */
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
-fpos_t
-#else
-off_t
-#endif
+Py_off_t
 _portable_ftell(FILE* fp)
 {
-#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
-	return ftello(fp);
-#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
-	return ftell64(fp);
-#elif SIZEOF_FPOS_T >= 8 && defined(HAVE_LARGEFILE_SUPPORT)
+#if SIZEOF_FPOS_T >= 8 && defined(HAVE_LARGEFILE_SUPPORT)
 	fpos_t pos;
 	if (fgetpos(fp, &pos) != 0)
 		return -1;
 	return pos;
+#elif defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
+	return ftello(fp);
+#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
+	return ftell64(fp);
 #else
 	return ftell(fp);
 #endif
@@ -280,11 +280,7 @@ file_seek(PyFileObject *f, PyObject *args)
 {
 	int whence;
 	int ret;
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
-	fpos_t offset, pos;
-#else
-	off_t offset;
-#endif /* !MS_WIN64 */
+	Py_off_t offset;
 	PyObject *offobj;
 
 	if (f->f_fp == NULL)
@@ -321,11 +317,7 @@ static PyObject *
 file_truncate(PyFileObject *f, PyObject *args)
 {
 	int ret;
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
-	fpos_t newsize;
-#else
-	off_t newsize;
-#endif
+	Py_off_t newsize;
 	PyObject *newsizeobj;
 
 	if (f->f_fp == NULL)
@@ -396,11 +388,7 @@ onioerror:
 static PyObject *
 file_tell(PyFileObject *f, PyObject *args)
 {
-#if defined(HAVE_LARGEFILE_SUPPORT) && SIZEOF_OFF_T < 8 && SIZEOF_FPOS_T >= 8
-	fpos_t pos;
-#else
-	off_t pos;
-#endif
+	Py_off_t pos;
 
 	if (f->f_fp == NULL)
 		return err_closed();
