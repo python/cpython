@@ -6,6 +6,9 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Added a new dict method pop(key).  This removes and returns the
+  value corresponding to key.  [SF patch #539949]
+
 - Changed new-style class instantiation so that when C's __new__
   method returns something that's not a C instance, its __init__ is
   not called.  [SF bug #537450]
