@@ -1291,11 +1291,15 @@ PySequence_List(PyObject *v)
 			break;
 		}
 		if (i < n)
-			PyList_SET_ITEM(result, i, item);
-		else if (PyList_Append(result, item) < 0) {
-			Py_DECREF(result);
-			result = NULL;
-			break;
+			PyList_SET_ITEM(result, i, item); /* steals ref */
+		else {
+			int status = PyList_Append(result, item);
+			Py_DECREF(item);  /* append creates a new ref */
+			if (status < 0) {
+				Py_DECREF(result);
+				result = NULL;
+				break;
+			}
 		}
 	}
 
