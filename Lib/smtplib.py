@@ -77,7 +77,7 @@ class SMTPResponseException(SMTPException):
 class SMTPSenderRefused(SMTPResponseException):
     """Sender address refused.
     In addition to the attributes set by on all SMTPResponseException
-    exceptions, this sets `sender' to the string that the SMTP refused
+    exceptions, this sets `sender' to the string that the SMTP refused.
     """
 
     def __init__(self, code, msg, sender):
@@ -87,7 +87,7 @@ class SMTPSenderRefused(SMTPResponseException):
         self.args = (code, msg, sender)
 
 class SMTPRecipientsRefused(SMTPException):
-    """All recipient  addresses refused.
+    """All recipient addresses refused.
     The errors for each recipient are accessable thru the attribute
     'recipients', which is a dictionary of exactly the same sort as 
     SMTP.sendmail() returns.  
@@ -103,10 +103,10 @@ class SMTPDataError(SMTPResponseException):
     """The SMTP server didn't accept the data."""
 
 class SMTPConnectError(SMTPResponseException):
-    """Error during connection establishment"""
+    """Error during connection establishment."""
 
 class SMTPHeloError(SMTPResponseException):
-    """The server refused our HELO reply"""
+    """The server refused our HELO reply."""
 
 def quoteaddr(addr):
     """Quote a subset of the email addresses defined by RFC 821.
@@ -127,7 +127,7 @@ def quoteaddr(addr):
 def quotedata(data):
     """Quote data for email.
 
-    Double leading '.', and change Unix newline '\n', or Mac '\r' into
+    Double leading '.', and change Unix newline '\\n', or Mac '\\r' into
     Internet CRLF end-of-line.
     """
     return re.sub(r'(?m)^\.', '..',
@@ -138,11 +138,11 @@ class SMTP:
     SMTP Objects:
         SMTP objects have the following attributes:    
             helo_resp 
-                This is the message given by the server in responce to the 
+                This is the message given by the server in response to the 
                 most recent HELO command.
                 
             ehlo_resp
-                This is the message given by the server in responce to the 
+                This is the message given by the server in response to the 
                 most recent EHLO command. This is usually multiline.
 
             does_esmtp 
@@ -151,17 +151,17 @@ class SMTP:
 
             esmtp_features 
                 This is a dictionary, which, if the server supports ESMTP,
-                will  _after you do an EHLO command_, contain the names of the
-                SMTP service  extentions this server supports, and their 
+                will _after you do an EHLO command_, contain the names of the
+                SMTP service extensions this server supports, and their
                 parameters (if any).
-                Note, all extention names are mapped to lower case in the 
+
+                Note, all extension names are mapped to lower case in the 
                 dictionary. 
 
-        For method docs, see each method's docstrings. In general, there is 
-            a method of the same name to perform each SMTP command, and there 
-            is a method called 'sendmail' that will do an entire mail 
-            transaction.
-    """
+        See each method's docstrings for details.  In general, there is a
+        method of the same name to perform each SMTP command.  There is also a
+        method called 'sendmail' that will do an entire mail transaction.
+        """
     debuglevel = 0
     file = None
     helo_resp = None
@@ -173,8 +173,8 @@ class SMTP:
 
         If specified, `host' is the name of the remote host to which to
         connect.  If specified, `port' specifies the port to which to connect.
-        By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is
-        raised if the specified `host' doesn't respond correctly.
+        By default, smtplib.SMTP_PORT is used.  An SMTPConnectError is raised
+        if the specified `host' doesn't respond correctly.
 
         """
         self.esmtp_features = {}
@@ -424,16 +424,15 @@ class SMTP:
         fails, HELO will be tried and ESMTP options suppressed.
 
         This method will return normally if the mail is accepted for at least
-        one recipient. It returns a dictionary, with one entry for each
-        recipient that was refused.  Each entry contains a tuple of
-        the SMTP error code and the accompanying error message sent by
-        the server.
+        one recipient.  It returns a dictionary, with one entry for each
+        recipient that was refused.  Each entry contains a tuple of the SMTP
+        error code and the accompanying error message sent by the server.
 
         This method may raise the following exceptions:
 
          SMTPHeloError          The server didn't reply properly to
                                 the helo greeting. 
-         SMTPRecipientsRefused  The server rejected for ALL recipients
+         SMTPRecipientsRefused  The server rejected ALL recipients
                                 (no mail was sent).
          SMTPSenderRefused      The server didn't accept the from_addr.
          SMTPDataError          The server replied with an unexpected
@@ -458,7 +457,7 @@ class SMTP:
         
         In the above example, the message was accepted for delivery to three
         of the four addresses, and one was rejected, with the error code
-        550. If all addresses are accepted, then the method will return an
+        550.  If all addresses are accepted, then the method will return an
         empty dictionary.
 
         """
