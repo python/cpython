@@ -34,6 +34,8 @@ class PageCounter:
             ("ref", "Python Reference Manual"),
             ("tut", "Python Tutorial"),
             ("doc", "Documenting Python"),
+            ("inst", "Installing Python Modules"),
+            ("dist", "Distributing Python Modules"),
             ]:
             self.add_document(prefix, title)
         print self.PREFIX
