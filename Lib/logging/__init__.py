@@ -874,7 +874,7 @@ class Logger(Filterer):
         if self.manager.disable >= DEBUG:
             return
         if DEBUG >= self.getEffectiveLevel():
-            self._log(DEBUG, msg, args, **kwargs)
+            apply(self._log, (DEBUG, msg, args), kwargs)
 
     def info(self, msg, *args, **kwargs):
         """
@@ -888,7 +888,7 @@ class Logger(Filterer):
         if self.manager.disable >= INFO:
             return
         if INFO >= self.getEffectiveLevel():
-            self._log(INFO, msg, args, **kwargs)
+            apply(self._log, (INFO, msg, args), kwargs)
 
     def warning(self, msg, *args, **kwargs):
         """
@@ -902,7 +902,7 @@ class Logger(Filterer):
         if self.manager.disable >= WARNING:
             return
         if self.isEnabledFor(WARNING):
-            self._log(WARNING, msg, args, **kwargs)
+            apply(self._log, (WARNING, msg, args), kwargs)
 
     warn = warning
 
@@ -918,13 +918,13 @@ class Logger(Filterer):
         if self.manager.disable >= ERROR:
             return
         if self.isEnabledFor(ERROR):
-            self._log(ERROR, msg, args, **kwargs)
+            apply(self._log, (ERROR, msg, args), kwargs)
 
     def exception(self, msg, *args):
         """
         Convenience method for logging an ERROR with exception information.
         """
-        self.error(msg, exc_info=1, *args)
+        apply(self.error, (msg,) + args, {'exc_info': 1})
 
     def critical(self, msg, *args, **kwargs):
         """
@@ -938,7 +938,7 @@ class Logger(Filterer):
         if self.manager.disable >= CRITICAL:
             return
         if CRITICAL >= self.getEffectiveLevel():
-            self._log(CRITICAL, msg, args, **kwargs)
+            apply(self._log, (CRITICAL, msg, args), kwargs)
 
     fatal = critical
 
@@ -954,7 +954,7 @@ class Logger(Filterer):
         if self.manager.disable >= level:
             return
         if self.isEnabledFor(level):
-            self._log(level, msg, args, **kwargs)
+            apply(self._log, (level, msg, args), kwargs)
 
     def findCaller(self):
         """
@@ -1131,7 +1131,7 @@ def critical(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    root.critical(msg, *args, **kwargs)
+    apply(root.critical, (msg,)+args, kwargs)
 
 fatal = critical
 
@@ -1141,14 +1141,14 @@ def error(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    root.error(msg, *args, **kwargs)
+    apply(root.error, (msg,)+args, kwargs)
 
 def exception(msg, *args):
     """
     Log a message with severity 'ERROR' on the root logger,
     with exception information.
     """
-    error(msg, exc_info=1, *args)
+    apply(error, (msg,)+args, {'exc_info': 1})
 
 def warning(msg, *args, **kwargs):
     """
@@ -1156,7 +1156,7 @@ def warning(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    root.warning(msg, *args, **kwargs)
+    apply(root.warning, (msg,)+args, kwargs)
 
 warn = warning
 
@@ -1166,7 +1166,7 @@ def info(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    root.info(msg, *args, **kwargs)
+    apply(root.info, (msg,)+args, kwargs)
 
 def debug(msg, *args, **kwargs):
     """
@@ -1174,7 +1174,7 @@ def debug(msg, *args, **kwargs):
     """
     if len(root.handlers) == 0:
         basicConfig()
-    root.debug(msg, *args, **kwargs)
+    apply(root.debug, (msg,)+args, kwargs)
 
 def disable(level):
     """
