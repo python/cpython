@@ -430,6 +430,10 @@ b[slice(2,3)] = ["two", "elements"]
 c[2:3:] = ["two", "elements"]
 vereq(a, b)
 vereq(a, c)
+a = range(10)
+a[::2] = tuple(range(5))
+vereq(a, [0, 1, 1, 3, 2, 5, 3, 7, 4, 9])
+
 
 print '6.6 Mappings == Dictionaries'
 d = {}

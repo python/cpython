@@ -2238,33 +2238,36 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 		}
 		else {
 			/* assign slice */
-			PyObject **garbage, *ins;
+			PyObject **garbage, *ins, *seq;
 			int cur, i;
-
-			if (!PyList_Check(value)) {
-				PyErr_Format(PyExc_TypeError,
-			     "must assign list (not \"%.200s\") to slice",
-					     value->ob_type->tp_name);
-				return -1;
-			}
-
-			if (PyList_GET_SIZE(value) != slicelength) {
-				PyErr_Format(PyExc_ValueError,
-            "attempt to assign list of size %d to extended slice of size %d",
-					     PyList_Size(value), slicelength);
-				return -1;
-			}
-
-			if (!slicelength)
-				return 0;
 
 			/* protect against a[::-1] = a */
 			if (self == (PyListObject*)value) {
-				value = list_slice((PyListObject*)value, 0,
+				seq = list_slice((PyListObject*)value, 0,
 						   PyList_GET_SIZE(value));
 			}
 			else {
-				Py_INCREF(value);
+				char msg[256];
+				PyOS_snprintf(msg, sizeof(msg),
+		      "must assign sequence (not \"%.200s\") to extended slice",
+					      value->ob_type->tp_name);
+				seq = PySequence_Fast(value, msg);
+				if (!seq)
+					return -1;
+			}
+
+			if (PySequence_Fast_GET_SIZE(seq) != slicelength) {
+				PyErr_Format(PyExc_ValueError,
+            "attempt to assign sequence of size %d to extended slice of size %d",
+					     PySequence_Fast_GET_SIZE(seq),
+					     slicelength);
+				Py_DECREF(seq);
+				return -1;
+			}
+
+			if (!slicelength) {
+				Py_DECREF(seq);
+				return 0;
 			}
 
 			garbage = (PyObject**)
@@ -2274,7 +2277,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			     cur += step, i++) {
 				garbage[i] = PyList_GET_ITEM(self, cur);
 
-				ins = PyList_GET_ITEM(value, i);
+				ins = PySequence_Fast_GET_ITEM(seq, i);
 				Py_INCREF(ins);
 				PyList_SET_ITEM(self, cur, ins);
 			}
@@ -2284,7 +2287,7 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
 			}
 
 			PyMem_FREE(garbage);
-			Py_DECREF(value);
+			Py_DECREF(seq);
 
 			return 0;
 		}
