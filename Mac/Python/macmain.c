@@ -81,7 +81,7 @@ int console_output_state = STATE_UNKNOWN;
 
 PyMac_PrefRecord PyMac_options;
 
-static void Py_Main(int, char **); /* Forward */
+static void Py_Main(int, char **, char *); /* Forward */
 void PyMac_Exit(int); /* Forward */
 
 static void init_appearance(void)
@@ -488,17 +488,87 @@ PyMac_Initialize(void)
 #endif /* USE_MAC_APPLET_SUPPORT */
 
 #if TARGET_API_MAC_OSX
+
+static int
+locateResourcePy(char * resourceName, char * resourceURLCStr, int length) {
+    CFBundleRef mainBundle = NULL;
+    CFURLRef URL, absoluteURL;
+    CFStringRef filenameString, filepathString, rsrcString;
+    CFIndex size, i;
+    CFArrayRef arrayRef;
+    Boolean success = 0;
+
+    /* Create a CFString with the resource name in it */
+    rsrcString = CFStringCreateWithCString(0, resourceName, kCFStringEncodingMacRoman);
+
+    /* Get a reference to our main bundle */
+    mainBundle = CFBundleGetMainBundle();
+
+    /* Look for py files in the main bundle by type */
+    arrayRef = CFBundleCopyResourceURLsOfType( mainBundle, 
+            CFSTR("py"), 
+           NULL );
+
+    /* See if there are any filename matches */
+    size = CFArrayGetCount(arrayRef);
+    for (i = 0; i < size; i++) {
+        URL = CFArrayGetValueAtIndex(arrayRef, i);
+        filenameString = CFURLCopyLastPathComponent(URL);
+        if (CFStringCompare(filenameString, rsrcString, 0) == kCFCompareEqualTo) {
+            /* We found a match, get the file's full path */
+            absoluteURL = CFURLCopyAbsoluteURL(URL);
+            filepathString = CFURLCopyFileSystemPath(absoluteURL, kCFURLPOSIXPathStyle);
+            CFRelease(absoluteURL);
+
+            /* Copy the full path into the caller's character buffer */
+            success = CFStringGetCString(filepathString, resourceURLCStr, length,
+                                        kCFStringEncodingMacRoman);
+
+            CFRelease(filepathString);
+        }
+        CFRelease(filenameString);
+    }
+    CFRelease(rsrcString);
+    CFRelease(arrayRef);
+
+    return success;
+}
+
 int
 main(int argc, char **argv)
 {
-	int i;
-	printf("first argc=%d\n", argc);
-	for(i=0; i<argc; i++) printf("first argv[%d] = \"%s\"\n", i, argv[i]);
-	init_common(&argc, &argv, 0);
-	printf("second argc=%d\n", argc);
-	for(i=0; i<argc; i++) printf("second argv[%d] = \"%s\"\n", i, argv[i]);
-	Py_Main(argc, argv);
-	return 0;
+    int i;
+    static char scriptpath[1024];
+    char *script = NULL;
+
+	/* First we see whether we have __rawmain__.py and run that if it
+	** is there
+	*/
+	if (locateResourcePy("__rawmain__.py", scriptpath, 1024)) {
+		/* If we have a raw main we don't do AppleEvent processing.
+		** Notice that this also means we keep the -psn.... argv[1]
+		** value intact. Not sure whether that is important to someone,
+		** but you never know...
+		*/
+		script = scriptpath;
+	} else {
+		/* Otherwise we look for __main__.py. Whether that is
+		** found or not we also process AppleEvent arguments.
+		*/
+		if (locateResourcePy("__main__.py", scriptpath, 1024))
+			script = scriptpath;
+			
+		printf("original argc=%d\n", argc);
+		for(i=0; i<argc; i++) printf("original argv[%d] = \"%s\"\n", i, argv[i]);
+
+		init_common(&argc, &argv, 0);
+
+		printf("modified argc=%d\n", argc);
+		for(i=0; i<argc; i++) printf("modified argv[%d] = \"%s\"\n", i, argv[i]);
+	}
+
+	Py_Main(argc, argv, script);
+    return 0;
 }
 
 #else
@@ -533,21 +603,27 @@ PyMac_InitApplication(void)
 			exit(0);
 		}
 	}
-	Py_Main(argc, argv);
+	Py_Main(argc, argv, NULL);
 }
 #endif /* TARGET_API_MAC_OSX */
 
 /* Main program */
 
 static void
-Py_Main(int argc, char **argv)
+Py_Main(int argc, char **argv, char *filename)
 {
 	int sts;
 	char *command = NULL;
-	char *filename = NULL;
 	FILE *fp = stdin;
 
-	filename = argv[1];
+	if ( filename ) {
+		/* Someone else has found our "script" already */
+		argv[0] = filename;
+	} else {
+		filename = argv[1];
+		argv++;
+		argc--;
+	}
 
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && isatty((int)fileno(fp))))
@@ -573,7 +649,7 @@ Py_Main(int argc, char **argv)
 	
 	PyMac_InstallNavServicesForSF();
 
-	PySys_SetArgv(argc-1, argv+1);
+	PySys_SetArgv(argc, argv);
 
 	if (filename == NULL && isatty((int)fileno(fp))) {
 		FILE *fp = fopen(STARTUP, "r");
