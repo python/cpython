@@ -63,6 +63,7 @@ char copyright[] = " SRE 0.9.5 Copyright (c) 1997-2000 by Secret Labs AB ";
 
 #if defined(_MSC_VER)
 #pragma optimize("agtw", on) /* doesn't seem to make much difference... */
+#pragma warning(disable: 4710) /* who cares if functions are not inlined ;-) */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
 #else
@@ -240,8 +241,8 @@ stack_extend(SRE_STATE* state, int lo, int hi)
 		/* grow the stack (typically by a factor of two) */
 		while (stacksize < lo)
 			stacksize = 2 * stacksize;
-		/* FIXME: <fl> could trim size if it's larger than lo, and
-		   much larger than hi */
+		/* FIXME: <fl> could trim size if it's much larger than hi,
+           as long it's larger than lo */
 		TRACE(("grow stack to %d\n", stacksize));
 		stack = realloc(state->stack, sizeof(SRE_STACK) * stacksize);
 	}
@@ -816,22 +817,6 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
                points to the stack */
 
             while (pattern[2] == 65535 || count < (int) pattern[2]) {
-                void *mark0, *mark1;
-                if (pattern[3] != 65535) {
-                    mark0 = state->mark[pattern[3]];
-                    mark1 = state->mark[pattern[3]+1];
-                }
-				state->stackbase = stack;
-				i = SRE_MATCH(state, pattern + 4);
-				state->stackbase = stackbase; /* rewind */
-                if (i < 0)
-                    return i;
-				if (!i)
-					break;
-				if (state->ptr == ptr) {
-					count = (int) pattern[2];
-                    break;
-				}
 				/* this position was valid; add it to the retry
                    stack */
 				if (stack >= state->stacksize) {
@@ -840,16 +825,29 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
 					if (i < 0)
 						return i; /* out of memory */
 				}
-                TRACE(("%8d: stack[%d] = %d\n", PTR(ptr), stack, PTR(ptr)));
+                TRACE(("%8d: stack[%d]\n", PTR(ptr), stack));
+                TRACE(("          ptr %d mark %d %d %d\n",
+                       PTR(ptr), pattern[3], PTR(mark0), PTR(mark1)));
                 sp = state->stack + stack;
 				sp->ptr = ptr;
 				sp->pattern = pattern + pattern[0];
                 sp->mark = pattern[3];
                 if (pattern[3] != 65535) {
-                    sp->mark0 = mark0;
-                    sp->mark1 = mark1;
+                    sp->mark0 = state->mark[pattern[3]];
+                    sp->mark1 = state->mark[pattern[3]+1];
                 }
                 stack++;
+				state->stackbase = stack;
+				i = SRE_MATCH(state, pattern + 4);
+				state->stackbase = stackbase;
+                if (i < 0)
+                    return i;
+				if (!i)
+					break;
+				if (state->ptr == ptr) {
+					count = (int) pattern[2];
+                    break;
+				}
 				/* move forward */
 				ptr = state->ptr;
 				count++;
@@ -954,6 +952,7 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern)
   failure:
     TRACE(("%8d: leave (failure)\n", PTR(ptr)));
     if (stack-- > stackbase) {
+        TRACE(("%8d: pop stack[%d]\n", stack));
         sp = state->stack + stack;
         ptr = sp->ptr;
         pattern = sp->pattern;
@@ -982,7 +981,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
 	SRE_CHAR* ptr = state->start;
 	SRE_CHAR* end = state->end;
 	int status = 0;
-    int prefix_len;
+    int prefix_len = 0;
     SRE_CODE* prefix = NULL;
     SRE_CODE* charset = NULL;
     SRE_CODE* overlap = NULL;
@@ -1015,7 +1014,7 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     }
 
 #if defined(USE_FAST_SEARCH)
-    if (prefix && overlap && prefix_len > 1) {
+    if (prefix_len > 1) {
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
         int i = 0;
@@ -1467,8 +1466,8 @@ pattern_sub(PatternObject* self, PyObject* args)
 {
 	PyObject* template;
 	PyObject* string;
-    PyObject* count;
-	if (!PyArg_ParseTuple(args, "OOO", &template, &string, &count))
+    PyObject* count = Py_False; /* zero */
+	if (!PyArg_ParseTuple(args, "OO|O", &template, &string, &count))
 		return NULL;
 
     /* delegate to Python code */
@@ -1480,8 +1479,8 @@ pattern_subn(PatternObject* self, PyObject* args)
 {
 	PyObject* template;
 	PyObject* string;
-    PyObject* count;
-	if (!PyArg_ParseTuple(args, "OOO", &template, &string, &count))
+    PyObject* count = Py_False; /* zero */
+	if (!PyArg_ParseTuple(args, "OO|O", &template, &string, &count))
 		return NULL;
 
     /* delegate to Python code */
@@ -1492,8 +1491,8 @@ static PyObject*
 pattern_split(PatternObject* self, PyObject* args)
 {
 	PyObject* string;
-    PyObject* maxsplit;
-	if (!PyArg_ParseTuple(args, "OO", &string, &maxsplit))
+    PyObject* maxsplit = Py_False; /* zero */
+	if (!PyArg_ParseTuple(args, "O|O", &string, &maxsplit))
 		return NULL;
 
     /* delegate to Python code */
@@ -1830,7 +1829,7 @@ match_start(MatchObject* self, PyObject* args)
 {
     int index;
 
-	PyObject* index_ = Py_False;
+	PyObject* index_ = Py_False; /* zero */
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
@@ -1857,7 +1856,7 @@ match_end(MatchObject* self, PyObject* args)
 {
     int index;
 
-	PyObject* index_ = Py_False;
+	PyObject* index_ = Py_False; /* zero */
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
@@ -1884,7 +1883,7 @@ match_span(MatchObject* self, PyObject* args)
 {
     int index;
 
-	PyObject* index_ = Py_False;
+	PyObject* index_ = Py_False; /* zero */
 	if (!PyArg_ParseTuple(args, "|O", &index_))
 		return NULL;
 
