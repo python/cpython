@@ -106,9 +106,6 @@ PERFORMANCE OF THIS SOFTWARE.
  * PREFIX and EXEC_PREFIX.  These are supplied by the Makefile but can be
  * passed in as options to the configure script.
  *
- * Step 5. Search some `standard' directories, namely: /usr/local, /usr,
- * then finally /.
- *
  * That's it!
  *
  * Well, almost.  Once we have determined prefix and exec_prefix, the
@@ -152,8 +149,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #ifndef LANDMARK
 #define LANDMARK "string.py"
 #endif
-
-static char *std_dirs[] = {"/usr/local/", "/usr/", "/", NULL};
 
 static char prefix[MAXPATHLEN+1];
 static char exec_prefix[MAXPATHLEN+1];
@@ -266,14 +261,7 @@ search_for_prefix(argv0_path, home)
 	if (exists(prefix))
 		return 1;
 
-	/* Look at `standard' directories */
-	for (i = 0; std_dirs[i]; i++) {
-		strcpy(prefix, std_dirs[i]);
-		join(prefix, lib_python);
-		join(prefix, LANDMARK);
-		if (exists(prefix))
-			return 1;
-	}
+	/* Fail */
 	return 0;
 }
 
@@ -326,14 +314,7 @@ search_for_exec_prefix(argv0_path, home)
 	if (exists(exec_prefix))
 		return 1;
 
-	/* Look at `standard' directories */
-	for (i = 0; std_dirs[i]; i++) {
-		strcpy(exec_prefix, std_dirs[i]);
-		join(exec_prefix, lib_python);
-		join(exec_prefix, "sharedmodules");
-		if (exists(exec_prefix))
-			return 1;
-	}
+	/* Fail */
 	return 0;
 }
 
