@@ -238,6 +238,10 @@ PyErr_BadArgument(void)
 PyObject *
 PyErr_NoMemory(void)
 {
+	if (PyErr_ExceptionMatches(PyExc_MemoryError))
+		/* already current */
+		return NULL;
+
 	/* raise the pre-allocated instance if it still exists */
 	if (PyExc_MemoryErrorInst)
 		PyErr_SetObject(PyExc_MemoryError, PyExc_MemoryErrorInst);
