@@ -24,32 +24,33 @@ matcher = re.compile(expr)
 def treat_file(file, outfp):
     """Append tags found in file named 'file' to the open file 'outfp'"""
     try:
-	fp = open(file, 'r')
+        fp = open(file, 'r')
     except:
-	sys.stderr.write('Cannot open %s\n'%file)
-	return
+        sys.stderr.write('Cannot open %s\n'%file)
+        return
     charno = 0
     lineno = 0
     tags = []
     size = 0
     while 1:
-	line = fp.readline()
-	if not line: break
-	lineno = lineno + 1
-	m = matcher.search(line)
-	if m:
-	    tag = m.group(0) + '\177%d,%d\n'%(lineno,charno)
-	    tags.append(tag)
-	    size = size + len(tag)
-	charno = charno + len(line)
+        line = fp.readline()
+        if not line:
+            break
+        lineno = lineno + 1
+        m = matcher.search(line)
+        if m:
+            tag = m.group(0) + '\177%d,%d\n'%(lineno,charno)
+            tags.append(tag)
+            size = size + len(tag)
+        charno = charno + len(line)
     outfp.write('\f\n%s,%d\n'%(file,size))
     for tag in tags:
-	outfp.write(tag)
+        outfp.write(tag)
 
 def main():
     outfp = open('TAGS', 'w')
     for file in sys.argv[1:]:
-	treat_file(file, outfp)
+        treat_file(file, outfp)
 
 if __name__=="__main__":
     main()
