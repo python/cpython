@@ -1,5 +1,12 @@
 /* Boolean object interface */
 
+#ifndef Py_BOOLOBJECT_H
+#define Py_BOOLOBJECT_H
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 typedef PyIntObject PyBoolObject;
 
 extern DL_IMPORT(PyTypeObject) PyBool_Type;
@@ -18,3 +25,8 @@ extern DL_IMPORT(PyIntObject) _Py_ZeroStruct, _Py_TrueStruct;
 
 /* Function to return a bool from a C long */
 PyObject *PyBool_FromLong(long);
+
+#ifdef __cplusplus
+}
+#endif
+#endif /* !Py_BOOLOBJECT_H */
