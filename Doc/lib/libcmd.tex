@@ -19,9 +19,9 @@ interpreter class you define yourself in order to inherit
 \class{Cmd}'s methods and encapsulate action methods.
 
 The optional argument is the \refmodule{readline} name of a completion
-key; it defaults to \code{``tab''}. If \var{completekey} is not
-\code{None} and \module{readline} is available, command completion is
-done automatically.
+key; it defaults to \kbd{Tab}. If \var{completekey} is not \code{None}
+and \module{readline} is available, command completion is done
+automatically.
 
 \end{classdesc}
 
@@ -51,20 +51,20 @@ and only if it has a method \method{do_foo()}.  As a special case,
 a line beginning with the character \character{?} is dispatched to
 the method \method{do_help()}.  As another special case, a line
 beginning with the character \character{!} is dispatched to the
-method \method{do_shell} (if such a method is defined).
+method \method{do_shell()} (if such a method is defined).
 
 If completion is enabled, completing commands will be done
 automatically, and completing of commands args is done by calling
-\method{complete_foo()} with arguments \samp{text}, \samp{line},
-\samp{begidx}, \samp{endidx}.  \samp{text} is string we are matching
-against, all returned matches must begin with it.  \samp{line} is the
-current input line (lstripped), \samp{begidx} and \samp{endidx} are
-the beginning and end indexes of the text being matched, which could
-be used to provide different completion depending upon which position
-the argument is in.
+\method{complete_foo()} with arguments \var{text}, \var{line},
+\var{begidx}, and \var{endidx}.  \var{text} is the string prefix we
+are attempting to match: all returned matches must begin with it.
+\var{line} is the current input line with leading whitespace removed,
+\var{begidx} and \var{endidx} are the beginning and ending indexes
+of the prefix text, which could be used to provide different
+completion depending upon which position the argument is in.
 
-All subclasses of \class{Cmd} inherit a predefined \method{do_help}.
-This method, called with an argument \code{bar}, invokes the
+All subclasses of \class{Cmd} inherit a predefined \method{do_help()}.
+This method, called with an argument \code{'bar'}, invokes the
 corresponding method \method{help_bar()}.  With no argument,
 \method{do_help()} lists all available help topics (that is, all
 commands with corresponding \method{help_*()} methods), and also lists
@@ -90,7 +90,7 @@ error message and returns.
 
 \begin{methoddesc}{completedefault}{text, line, begidx, endidx}
 Method called to complete an input line when no command-specific
-\code{complete_} method is available. By default, it returns an
+\method{complete_*()} method is available.  By default, it returns an
 empty list.
 \end{methoddesc}
 
@@ -164,8 +164,8 @@ headers.  If empty, no ruler line is drawn.  It defaults to
 \begin{memberdesc}{use_rawinput}
 A flag, defaulting to true.  If true, \method{cmdloop()} uses
 \function{raw_input()} to display a prompt and read the next command;
-if false, \function{sys.stdout.write()} and
-\function{sys.stdin.readline()} are used. (This means that by
+if false, \method{sys.stdout.write()} and
+\method{sys.stdin.readline()} are used. (This means that by
 importing \module{readline}, on systems that support it, the
 interpreter will automatically support Emacs-like line editing 
 and command-history keystrokes.)
