@@ -88,6 +88,11 @@ def pack(x, forcetype = None):
 		return AE.AECreateDesc('doub', struct.pack('d', x))
 	if t == StringType:
 		return AE.AECreateDesc('TEXT', x)
+	if t == UnicodeType:
+		data = t.encode('utf16')
+		if data[:2] == '\xfe\xff':
+			data = data[2:]
+		return AE.AECreateDesc('utxt', data)
 	if t == ListType:
 		list = AE.AECreateList('', 0)
 		for item in x:
@@ -132,6 +137,8 @@ def unpack(desc):
 		return struct.unpack('b', desc.data)[0]
 	if t == typeChar:
 		return desc.data
+	if t == typeUnicodeText:
+		return unicode(desc.data, 'utf16')
 	# typeColorTable coerced to typeAEList
 	# typeComp coerced to extended
 	# typeData returned as unknown
