@@ -1079,11 +1079,12 @@ posix_times(self, args)
 	c = times(&t);
 	if (c == (clock_t) -1)
 		return posix_error();
-	return mkvalue("dddd",
+	return mkvalue("ddddd",
 		       (double)t.tms_utime / HZ,
 		       (double)t.tms_stime / HZ,
 		       (double)t.tms_cutime / HZ,
-		       (double)t.tms_cstime / HZ);
+		       (double)t.tms_cstime / HZ,
+		       (double)c / HZ);
 }
 #endif /* HAVE_TIMES */
 #if defined(NT) && !defined(HAVE_TIMES)
@@ -1099,9 +1100,10 @@ posix_times(self, args)
 		return NULL;
 	hProc = GetCurrentProcess();
 	GetProcessTimes(hProc,&create, &exit, &kernel, &user);
-	return mkvalue("dddd",
+	return mkvalue("ddddd",
 		       (double)(kernel.dwHighDateTime*2E32+kernel.dwLowDateTime) / 2E6,
 		       (double)(user.dwHighDateTime*2E32+user.dwLowDateTime) / 2E6,
+		       (double)0,
 		       (double)0,
 		       (double)0);
 }
