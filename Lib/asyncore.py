@@ -50,6 +50,7 @@ import exceptions
 import select
 import socket
 import sys
+import time
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
@@ -100,11 +101,14 @@ def poll(timeout=0.0, map=None):
                 r.append(fd)
             if obj.writable():
                 w.append(fd)
-        try:
-            r, w, e = select.select(r, w, e, timeout)
-        except select.error, err:
-            if err[0] != EINTR:
-                raise
+        if [] == r == w == e:
+            time.sleep(timeout)
+        else:
+            try:
+                r, w, e = select.select(r, w, e, timeout)
+            except select.error, err:
+                if err[0] not in (EINTR, ENOENT):
+                    raise
 
         for fd in r:
             obj = map.get(fd)
