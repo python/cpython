@@ -1862,8 +1862,6 @@ wrap_descr_get(PyObject *self, PyObject *args, void *wrapped)
 
 	if (!PyArg_ParseTuple(args, "O|O", &obj, &type))
 		return NULL;
-	if (type == NULL)
-		type = (PyObject *)obj->ob_type;
 	return (*func)(self, obj, type);
 }
 
