@@ -60,26 +60,6 @@ def my_import(name):
   complex number, its magnitude is returned.
 \end{funcdesc}
 
-\begin{funcdesc}{apply}{function, args\optional{, keywords}}
-  The \var{function} argument must be a callable object (a
-  user-defined or built-in function or method, or a class object) and
-  the \var{args} argument must be a sequence.  The \var{function} is
-  called with \var{args} as the argument list; the number of arguments
-  is the length of the tuple.
-  If the optional \var{keywords} argument is present, it must be a
-  dictionary whose keys are strings.  It specifies keyword arguments
-  to be added to the end of the argument list.
-  Calling \function{apply()} is different from just calling
-  \code{\var{function}(\var{args})}, since in that case there is always
-  exactly one argument.  The use of \function{apply()} is equivalent
-  to \code{\var{function}(*\var{args}, **\var{keywords})}.
-  Use of \function{apply()} is not necessary since the ``extended call
-  syntax,'' as used in the last example, is completely equivalent.
-
-  \deprecated{2.3}{Use the extended call syntax instead, as described
-                   above.}
-\end{funcdesc}
-
 \begin{funcdesc}{basestring}{}
   This abstract type is the superclass for \class{str} and \class{unicode}.
   It cannot be called or instantiated, but it can be used to test whether
@@ -102,16 +82,6 @@ def my_import(name):
 
   \versionchanged[If no argument is given, this function returns 
                   \code{False}]{2.3}
-\end{funcdesc}
-
-\begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
-  The \var{object} argument must be an object that supports the buffer
-  call interface (such as strings, arrays, and buffers).  A new buffer
-  object will be created which references the \var{object} argument.
-  The buffer object will be a slice from the beginning of \var{object}
-  (or from the specified \var{offset}). The slice will extend to the
-  end of \var{object} (or will have a length given by the \var{size}
-  argument).
 \end{funcdesc}
 
 \begin{funcdesc}{callable}{object}
@@ -160,12 +130,6 @@ class C:
   according to the outcome.  The return value is negative if \code{\var{x}
   < \var{y}}, zero if \code{\var{x} == \var{y}} and strictly positive if
   \code{\var{x} > \var{y}}.
-\end{funcdesc}
-
-\begin{funcdesc}{coerce}{x, y}
-  Return a tuple consisting of the two numeric arguments converted to
-  a common type, using the same rules as used by arithmetic
-  operations.
 \end{funcdesc}
 
 \begin{funcdesc}{compile}{string, filename, kind\optional{,
@@ -580,21 +544,6 @@ class C:
   point numbers to integers truncates (towards zero).
   If the argument is outside the integer range a long object will
   be returned instead.  If no arguments are given, returns \code{0}.
-\end{funcdesc}
-
-\begin{funcdesc}{intern}{string}
-  Enter \var{string} in the table of ``interned'' strings and return
-  the interned string -- which is \var{string} itself or a copy.
-  Interning strings is useful to gain a little performance on
-  dictionary lookup -- if the keys in a dictionary are interned, and
-  the lookup key is interned, the key comparisons (after hashing) can
-  be done by a pointer compare instead of a string compare.  Normally,
-  the names used in Python programs are automatically interned, and
-  the dictionaries used to hold module, class or instance attributes
-  have interned keys.  \versionchanged[Interned strings are not
-  immortal (like they used to be in Python 2.2 and before);
-  you must keep a reference to the return value of \function{intern()}
-  around to benefit from it]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{isinstance}{object, classinfo}
@@ -1115,4 +1064,72 @@ It's a function
   \versionchanged[Formerly, \function{zip()} required at least one argument
   and \code{zip()} raised a \exception{TypeError} instead of returning
   \code{[]}]{2.4} 
+\end{funcdesc}
+
+
+% ---------------------------------------------------------------------------	
+
+
+\section{Non-essential Built-in Functions \label{non-essential-built-in-funcs}}
+
+There are several built-in functions that are no longer essential to learn,
+know or use in modern Python programming.  They have been kept here to
+maintain backwards compatability with programs written for older versions
+of Python.
+
+Python programmers, trainers, students and bookwriters should feel free to
+bypass these functions without concerns about missing something important.
+
+
+\setindexsubitem{(non-essential built-in functions)}
+
+\begin{funcdesc}{apply}{function, args\optional{, keywords}}
+  The \var{function} argument must be a callable object (a
+  user-defined or built-in function or method, or a class object) and
+  the \var{args} argument must be a sequence.  The \var{function} is
+  called with \var{args} as the argument list; the number of arguments
+  is the length of the tuple.
+  If the optional \var{keywords} argument is present, it must be a
+  dictionary whose keys are strings.  It specifies keyword arguments
+  to be added to the end of the argument list.
+  Calling \function{apply()} is different from just calling
+  \code{\var{function}(\var{args})}, since in that case there is always
+  exactly one argument.  The use of \function{apply()} is equivalent
+  to \code{\var{function}(*\var{args}, **\var{keywords})}.
+  Use of \function{apply()} is not necessary since the ``extended call
+  syntax,'' as used in the last example, is completely equivalent.
+
+  \deprecated{2.3}{Use the extended call syntax instead, as described
+                   above.}
+\end{funcdesc}
+
+\begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
+  The \var{object} argument must be an object that supports the buffer
+  call interface (such as strings, arrays, and buffers).  A new buffer
+  object will be created which references the \var{object} argument.
+  The buffer object will be a slice from the beginning of \var{object}
+  (or from the specified \var{offset}). The slice will extend to the
+  end of \var{object} (or will have a length given by the \var{size}
+  argument).
+\end{funcdesc}
+
+\begin{funcdesc}{coerce}{x, y}
+  Return a tuple consisting of the two numeric arguments converted to
+  a common type, using the same rules as used by arithmetic
+  operations.
+\end{funcdesc}
+
+\begin{funcdesc}{intern}{string}
+  Enter \var{string} in the table of ``interned'' strings and return
+  the interned string -- which is \var{string} itself or a copy.
+  Interning strings is useful to gain a little performance on
+  dictionary lookup -- if the keys in a dictionary are interned, and
+  the lookup key is interned, the key comparisons (after hashing) can
+  be done by a pointer compare instead of a string compare.  Normally,
+  the names used in Python programs are automatically interned, and
+  the dictionaries used to hold module, class or instance attributes
+  have interned keys.  \versionchanged[Interned strings are not
+  immortal (like they used to be in Python 2.2 and before);
+  you must keep a reference to the return value of \function{intern()}
+  around to benefit from it]{2.3}
 \end{funcdesc}
