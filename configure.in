@@ -2552,10 +2552,10 @@ int main()
 	int eastern_hour;
 	time_t now;
 	now = time((time_t*)NULL);
-	putenv("TZ=GMT");
+	putenv("TZ=UTC+0");
 	tzset();
 	gmt_hour = localtime(&now)->tm_hour;
-	putenv("TZ=US/Eastern");
+	putenv("TZ=EST+5EDT,M4.1.0,M10.5.0");
 	tzset();
 	eastern_hour = localtime(&now)->tm_hour;
 	if (eastern_hour == gmt_hour)
