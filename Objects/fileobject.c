@@ -2074,8 +2074,10 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
 	}
 	else if (PyFile_Check(f)) {
 		FILE *fp = PyFile_AsFile(f);
+#ifdef Py_USING_UNICODE
 		PyObject *enc = ((PyFileObject*)f)->f_encoding;
 		int result;
+#endif
 		if (fp == NULL) {
 			err_closed();
 			return -1;
