@@ -224,10 +224,20 @@ What a mess!
         self.check_split("what the--.", ["what", " ", "the--."])
         self.check_split("--text--.", ["--text--."])
 
-        # I think David got this wrong in the bug report, but it can't
-        # hurt to make sure it stays right!
+        # My initial mis-interpretation of part of the bug report --
+        # These were always handled correctly, but it can't hurt to make
+        # sure that they *stay* correct!
         self.check_split("--option", ["--option"])
         self.check_split("--option-opt", ["--option-", "opt"])
+
+    def test_initial_whitespace(self):
+        # SF bug #622849 reported inconsistent handling of leading
+        # whitespace; let's test that a bit, shall we?
+        text = " This is a sentence with leading whitespace."
+        self.check_wrap(text, 50,
+                        [" This is a sentence with leading whitespace."])
+        self.check_wrap(text, 30,
+                        [" This is a sentence with", "leading whitespace."])
 
     def test_split(self):
         # Ensure that the standard _split() method works as advertised
@@ -244,7 +254,7 @@ What a mess!
 class LongWordTestCase (BaseTestCase):
     def setUp(self):
         self.wrapper = TextWrapper()
-        self.text = '''
+        self.text = '''\
 Did you say "supercalifragilisticexpialidocious?"
 How *do* you spell that odd word, anyways?
 '''
