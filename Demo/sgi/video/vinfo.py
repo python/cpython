@@ -61,7 +61,11 @@ def main():
 	    else:
 	        size = (w/pf) * (h/pf)
 	    print name, ':', w, 'x', h, '; pf =', pf, ', size =', size,
-	    if pf == 0: print '(color)',
+	    if pf == 0:
+		    print '(color)',
+	    else:
+		    print '(' + `(w/pf)` + 'x' + `(h/pf)` + ')',
+		    if (w/pf)%4 <> 0: print '!!!',
 	    print
 	    num = 0
 	    try:
