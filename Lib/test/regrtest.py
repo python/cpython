@@ -868,6 +868,7 @@ _expectations = {
         test_locale
         test_mpz
         test_nis
+        test_ossaudiodev
         test_socketserver
         test_sunaudiodev
         test_unicode_file
