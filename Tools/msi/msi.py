@@ -1,10 +1,11 @@
 # Python MSI Generator
 # (C) 2003 Martin v. Loewis
 # See "FOO" in comments refers to MSDN sections with the title FOO.
-import msilib, schema, sequence, os, glob, time
+import msilib, schema, sequence, os, glob, time, re
 from msilib import Feature, CAB, Directory, Dialog, Binary, add_data
 import uisample
 from win32com.client import constants
+from distutils.spawn import find_executable
 
 # Settings can be overridden in config.py below
 # 1 for Itanium build
@@ -115,6 +116,52 @@ if major+minor <= "23":
     'mmap.pyd',
     'parser.pyd',
     ])
+
+# Build the mingw import library, libpythonXY.a
+# This requires 'nm' and 'dlltool' executables on your PATH
+def build_mingw_lib(lib_file, def_file, dll_file, mingw_lib):
+    warning = "WARNING: %s - libpythonXX.a not built"
+    nm = find_executable('nm')
+    dlltool = find_executable('dlltool')
+
+    if not nm or not dlltool:
+        print warning % "nm and/or dlltool were not found"
+        return False
+
+    nm_command = '%s -Cs %s' % (nm, lib_file)
+    dlltool_command = "%s --dllname %s --def %s --output-lib %s" % \
+        (dlltool, dll_file, def_file, mingw_lib)
+    export_match = re.compile(r"^_imp__(.*) in python\d+\.dll").match
+
+    f = open(def_file,'w')
+    print >>f, "LIBRARY %s" % dll_file
+    print >>f, "EXPORTS"
+
+    nm_pipe = os.popen(nm_command)
+    for line in nm_pipe.readlines():
+        m = export_match(line)
+        if m:
+            print >>f, m.group(1)
+    f.close()
+    exit = nm_pipe.close()
+
+    if exit:
+        print warning % "nm did not run successfully"
+        return False
+
+    if os.system(dlltool_command) != 0:
+        print warning % "dlltool did not run successfully"
+        return False
+
+    return True
+
+# Target files (.def and .a) go in PCBuild directory
+lib_file = os.path.join(srcdir, "PCBuild", "python%s%s.lib" % (major, minor))
+def_file = os.path.join(srcdir, "PCBuild", "python%s%s.def" % (major, minor))
+dll_file = "python%s%s.dll" % (major, minor)
+mingw_lib = os.path.join(srcdir, "PCBuild", "libpython%s%s.a" % (major, minor))
+
+have_mingw = build_mingw_lib(lib_file, def_file, dll_file, mingw_lib)
 
 if testpackage:
     ext = 'px'
@@ -924,6 +971,9 @@ def add_files(db):
     for f in dlls:
         lib.add_file(f.replace('pyd','lib'))
     lib.add_file('python%s%s.lib' % (major, minor))
+    # Add the mingw-format library
+    if have_mingw:
+	lib.add_file('libpython%s%s.a' % (major, minor))
     if have_tcl:
         # Add Tcl/Tk
         tcldirs = [(root, '../tcltk/lib', 'tcl')]
