@@ -43,7 +43,7 @@ type_name(PyTypeObject *type, void *context)
 
 	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
 		etype* et = (etype*)type;
-		
+
 		Py_INCREF(et->name);
 		return et->name;
 	}
@@ -78,7 +78,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 			     type->tp_name, value->ob_type->tp_name);
 		return -1;
 	}
-	if (strlen(PyString_AS_STRING(value)) 
+	if (strlen(PyString_AS_STRING(value))
 	    != (size_t)PyString_GET_SIZE(value)) {
 		PyErr_Format(PyExc_ValueError,
 			     "__name__ must not contain null bytes");
@@ -310,10 +310,10 @@ type_set_bases(PyTypeObject *type, PyObject *value, void *context)
 	type->tp_bases = old_bases;
 	type->tp_base = old_base;
 	type->tp_mro = old_mro;
-	
+
 	Py_DECREF(value);
 	Py_DECREF(new_base);
-	
+
 	return -1;
 }
 
@@ -884,21 +884,21 @@ classic_mro(PyObject *cls)
 	return NULL;
 }
 
-/*  
+/*
     Method resolution order algorithm C3 described in
     "A Monotonic Superclass Linearization for Dylan",
     by Kim Barrett, Bob Cassel, Paul Haahr,
-    David A. Moon, Keith Playford, and P. Tucker Withington. 
+    David A. Moon, Keith Playford, and P. Tucker Withington.
     (OOPSLA 1996)
 
     Some notes about the rules implied by C3:
 
-    No duplicate bases. 
+    No duplicate bases.
     It isn't legal to repeat a class in a list of base classes.
 
     The next three properties are the 3 constraints in "C3".
 
-    Local precendece order.  
+    Local precendece order.
     If A precedes B in C's MRO, then A will precede B in the MRO of all
     subclasses of C.
 
@@ -912,7 +912,7 @@ classic_mro(PyObject *cls)
     the paper for definition of EPG.
  */
 
-static int 
+static int
 tail_contains(PyObject *list, int whence, PyObject *o) {
 	int j, size;
 	size = PyList_GET_SIZE(list);
@@ -1010,12 +1010,12 @@ set_mro_error(PyObject *to_merge, int *remain)
 	Py_DECREF(set);
 }
 
-static int 
+static int
 pmerge(PyObject *acc, PyObject* to_merge) {
 	int i, j, to_merge_size;
 	int *remain;
 	int ok, empty_cnt;
-	
+
 	to_merge_size = PyList_GET_SIZE(to_merge);
 
 	/* remain stores an index into each sublist of to_merge.
@@ -1032,7 +1032,7 @@ pmerge(PyObject *acc, PyObject* to_merge) {
 	empty_cnt = 0;
 	for (i = 0; i < to_merge_size; i++) {
 		PyObject *candidate;
-		
+
 		PyObject *cur_list = PyList_GET_ITEM(to_merge, i);
 
 		if (remain[i] >= PyList_GET_SIZE(cur_list)) {
@@ -1092,7 +1092,7 @@ mro_implementation(PyTypeObject *type)
 
 	/* Find a superclass linearization that honors the constraints
 	   of the explicit lists of bases and the constraints implied by
-	   each base class.  
+	   each base class.
 
 	   to_merge is a list of lists, where each list is a superclass
 	   linearization implied by a base class.  The last element of
@@ -2288,7 +2288,7 @@ compatible_for_assignment(PyTypeObject* old, PyTypeObject* new, char* attr)
 			     old->tp_name);
 		return 0;
 	}
-	
+
 	return 1;
 }
 
@@ -2355,7 +2355,7 @@ object_reduce(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef object_methods[] = {
-	{"__reduce__", object_reduce, METH_NOARGS, 
+	{"__reduce__", object_reduce, METH_NOARGS,
 	 PyDoc_STR("helper for pickle")},
 	{0}
 };
@@ -3734,30 +3734,29 @@ SLOT0(slot_nb_absolute, "__abs__")
 static int
 slot_nb_nonzero(PyObject *self)
 {
-	PyObject *func, *res, *args;
+	PyObject *func, *args;
 	static PyObject *nonzero_str, *len_str;
+	int result = -1;
 
 	func = lookup_maybe(self, "__nonzero__", &nonzero_str);
 	if (func == NULL) {
 		if (PyErr_Occurred())
 			return -1;
 		func = lookup_maybe(self, "__len__", &len_str);
-		if (func == NULL) {
-			if (PyErr_Occurred())
-				return -1;
-			else
-				return 1;
+		if (func == NULL)
+			return PyErr_Occurred() ? -1 : 1;
+ 	}
+	args = PyTuple_New(0);
+	if (args != NULL) {
+		PyObject *temp = PyObject_Call(func, args, NULL);
+		Py_DECREF(args);
+		if (temp != NULL) {
+			result = PyObject_IsTrue(temp);
+			Py_DECREF(temp);
 		}
 	}
-	args = res = PyTuple_New(0);
-	if (args != NULL) {
-		res = PyObject_Call(func, args, NULL);
-		Py_DECREF(args);
-	}
 	Py_DECREF(func);
-	if (res == NULL)
-		return -1;
-	return PyObject_IsTrue(res);
+	return result;
 }
 
 SLOT0(slot_nb_invert, "__invert__")
