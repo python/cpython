@@ -11,6 +11,10 @@
 #undef destructor
 #endif
 #include <signal.h>
+
+/* The POSIX spec says that implementations supporting the sem_*
+   family of functions must indicate this by defining
+   _POSIX_SEMAPHORES. */   
 #ifdef _POSIX_SEMAPHORES
 #include <semaphore.h>
 #include <errno.h>
