@@ -108,6 +108,23 @@ If your program uses Tkinter you MUST run it under PythonInterpreter,
 Tkinter and IDE are incompatible and your program will fail in strange
 ways.
 
+OSX Multiple users note
+-----------------------
+
+Interaction with Mac OS X multiple users has been tested only very lightly.
+If you install as a privileged user everything installs fine. 
+
+If you install as a non-privileged user everything should install in your local
+per-user folders. But: as there is no global PythonCore you can only run applets
+if they reside in your toplevel Python folder.
+
+If you install as a privileged user and then try to run
+Python as another (non-privileged) user you may encounter a problem with
+not having a preference file: the symptom is failing to import all sorts
+of standard modules. If you remove your per-user Python preference files
+(in ~/Library/Preferences) and then run PythonIntpreter once everything should
+be fine.
+
 Uninstalling
 ------------
 
