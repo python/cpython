@@ -533,10 +533,14 @@
   <macro name="constant">
     <content/>
     </macro>
-  <macro name="envvar">
+  <macro name="envvar" outputname="envar">
     <content/>
     </macro>
   <macro name="file" outputname="filename">
+    <content/>
+    </macro>
+  <macro name="filenq" outputname="filename">
+    <attribute name="quote">no</attribute>
     <content/>
     </macro>
   <macro name="function">
@@ -560,16 +564,16 @@
   <macro name="newsgroup">
     <content/>
     </macro>
-  <macro name="program">
+  <macro name="program" outputname="command">
     <content/>
     </macro>
-  <macro name="programopt">
+  <macro name="programopt" outputname="option">
     <content/>
     </macro>
   <macro name="regexp">
     <content/>
     </macro>
-  <macro name="var" outputname="varname">
+  <macro name="var">
     <content/>
     </macro>
   <macro name="email">
@@ -590,6 +594,7 @@
     </macro>
 
   <!-- minimal math stuff to get by -->
+  <macro name="pi"/>
   <macro name="sqrt">
     <content/>
     </macro>
