@@ -8,6 +8,7 @@
 *.in
 *.lib
 *.pyc
+*.pyo
 *.slb
 *.xMAP
 *.xSYM
@@ -19,4 +20,3 @@ CVS
 Makefile.pre.in
 PyIDE-src
 [(]*[)]
-*.pyo

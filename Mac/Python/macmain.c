@@ -489,7 +489,10 @@ PyMac_Main(int argc, char **argv, char *filename)
 
 	Py_Initialize();
 	
+#if 0
+	/* According to Martin v. Loewis this is a bad idea... */
 	PyUnicode_SetDefaultEncoding(PyMac_getscript());
+#endif
 	
 	PySys_SetArgv(argc, argv);
 

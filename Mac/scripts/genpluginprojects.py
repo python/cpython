@@ -114,52 +114,47 @@ def	genallprojects(force=0):
 	# Example/test modules
 	genpluginproject("carbon", "_testcapi")
 	genpluginproject("carbon", "xx")
+	genpluginproject("carbon", "datetime")
 	genpluginproject("carbon", "xxsubtype", sources=["xxsubtype.c"])
 	genpluginproject("carbon", "_hotshot", sources=["_hotshot.c"])
 	
 	# bgen-generated Toolbox modules
-	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_AH", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_App", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
-	# XXX can't work properly because we need to set a custom fragment initializer
-	#genpluginproject("carbon", "_CG", 
-	#		sources=["_CGModule.c", "CFMLateImport.c"],
-	#		libraries=["CGStubLib"],
-	#		outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Ctl", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Dlg", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Drag", outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_AE")
+	genpluginproject("carbon", "_AH")
+	genpluginproject("carbon", "_App")
+	genpluginproject("carbon", "_Cm")
+	genpluginproject("carbon", "_Ctl")
+	genpluginproject("carbon", "_Dlg")
+	genpluginproject("carbon", "_Drag")
 	genpluginproject("carbon", "_Evt", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_File", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_Fm", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_Folder", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Help", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_IBCarbon", sources=[":ibcarbon:_IBCarbon.c"], 
-			outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Icn", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_List", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Menu", outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
+	genpluginproject("carbon", "_Help")
+	genpluginproject("carbon", "_IBCarbon", sources=[":ibcarbon:_IBCarbon.c"])
+	genpluginproject("carbon", "_Icn")
+	genpluginproject("carbon", "_List")
+	genpluginproject("carbon", "_Menu")
 	genpluginproject("carbon", "_Qd", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_Qt", 
-			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			libraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_Qdoffs", 
-			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
 	genpluginproject("carbon", "_Res", 
-			stdlibraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Scrap", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Snd", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Sndihooks", sources=[":snd:_Sndihooks.c"], outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_TE", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Mlte", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Win", outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_CF", sources=["_CFmodule.c", "pycfbridge.c"], outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_CarbonEvt", outputdir="::Lib:Carbon")
+			stdlibraryflags="Debug, WeakImport")
+	genpluginproject("carbon", "_Scrap")
+	genpluginproject("carbon", "_Snd")
+	genpluginproject("carbon", "_Sndihooks", sources=[":snd:_Sndihooks.c"])
+	genpluginproject("carbon", "_TE")
+	genpluginproject("carbon", "_Mlte")
+	genpluginproject("carbon", "_Win")
+	genpluginproject("carbon", "_CF", sources=["_CFmodule.c", "pycfbridge.c"])
+	genpluginproject("carbon", "_CarbonEvt")
 	genpluginproject("carbon", "hfsplus")
 	
 	# Other Mac modules

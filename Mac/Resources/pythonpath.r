@@ -89,8 +89,9 @@ resource 'STR#' (PYTHONPATH_ID, "sys.path initialization") {
 	{
 		"$(PYTHON)",
 		"$(PYTHON):Lib",
-		"$(PYTHON):Lib:plat-mac",
 		"$(PYTHON):Lib:lib-dynload",
+		"$(PYTHON):Lib:plat-mac",
+		"$(PYTHON):Lib:plat-mac:lib-scriptpackages",
 		"$(PYTHON):Mac:Lib",
 		"$(PYTHON):Extensions:img:Mac",
 		"$(PYTHON):Extensions:img:Lib",
