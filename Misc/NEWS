@@ -10,10 +10,12 @@ Many bugs were fixed. The following is a list of some of the major or
 notable fixes:
 
 - Fix for incorrectly swapped arguments to PyFrame_BlockSetup in ceval.c.
-  This bug could cause python to crash.
+  This bug could cause python to crash. It was related to using a 'continue'
+  inside a 'try' block.
 
 - SF bug #422004: Py_Initialise fix that allows reload(exceptions) to 
-  work - this is apparently very important for embedded python.
+  work - this is apparently very important for embedded python working
+  with multiple interpreters.
 
 - SF patch #500401: webbrowser: tightened up the command passed to
   os.system() so that arbitrary shell code can't be executed because a
@@ -38,7 +40,8 @@ notable fixes:
 
 - Lib/dumbdbm is now merely dumb, rather than terminally broken.
 
-- SF bug #441712: more liberal handling of ftp servers' 227 responses.
+- SF bug #441712: more liberal handling of ftp servers' 227 responses
+  (don't require parentheses).
 
 - SF bug #440693: make sure zip files use "/" as directory separator.
 
