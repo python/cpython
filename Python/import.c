@@ -287,12 +287,14 @@ doneimport()
 		/* Explicitly erase all modules; this is the safest way
 		   to get rid of at least *some* circular dependencies */
 		for (i = getdictsize(modules); --i >= 0; ) {
-			char *k;
-			k = getdictkey(modules, i);
+			object *k;
+			k = getdict2key(modules, i);
 			if (k != NULL) {
 				object *m;
-				m = dictlookup(modules, k);
-				if (m != NULL && is_moduleobject(m)) {
+				m = dict2lookup(modules, k);
+				if (m == NULL)
+					err_clear();
+				else if (is_moduleobject(m)) {
 					object *d;
 					d = getmoduledict(m);
 					if (d != NULL && is_dictobject(d)) {
