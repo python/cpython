@@ -391,6 +391,34 @@ list_builtin_module_names(void)
 	return list;
 }
 
+static PyObject *warnoptions = NULL;
+
+void
+PySys_ResetWarnOptions(void)
+{
+	if (warnoptions == NULL || !PyList_Check(warnoptions))
+		return;
+	PyList_SetSlice(warnoptions, 0, PyList_GET_SIZE(warnoptions), NULL);
+}
+
+void
+PySys_AddWarnOption(char *s)
+{
+	PyObject *str;
+
+	if (warnoptions == NULL || !PyList_Check(warnoptions)) {
+		Py_XDECREF(warnoptions);
+		warnoptions = PyList_New(0);
+		if (warnoptions == NULL)
+			return;
+	}
+	str = PyString_FromString(s);
+	if (str != NULL) {
+		PyList_Append(warnoptions, str);
+		Py_DECREF(str);
+	}
+}
+
 /* XXX This doc string is too long to be a single string literal in VC++ 5.0.
    Two literals concatenated works just fine.  If you have a K&R compiler
    or other abomination that however *does* understand longer strings,
@@ -553,6 +581,17 @@ _PySys_Init(void)
 			     v = PyString_FromString(PyWin_DLLVersionString));
 	Py_XDECREF(v);
 #endif
+	if (warnoptions == NULL) {
+		warnoptions = PyList_New(0);
+	}
+	else {
+		Py_INCREF(warnoptions);
+	}
+	if (warnoptions != NULL) {
+		PyDict_SetItemString(sysdict, "warnoptions", v = warnoptions);
+		Py_DECREF(v);
+	}
+	
 	if (PyErr_Occurred())
 		return NULL;
 	return m;
