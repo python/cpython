@@ -2117,6 +2117,7 @@ posix_popen(PyObject *self, PyObject *args)
  *
  * Written by Bill Tutt <billtut@microsoft.com>.  Minor tweaks
  * and 2.0 integration by Fredrik Lundh <fredrik@pythonware.com>
+ * Return code handling by David Bolen.
  */
 
 #include <malloc.h>
@@ -2130,6 +2131,15 @@ posix_popen(PyObject *self, PyObject *args)
 #define POPEN_4 4
 
 static PyObject *_PyPopen(char *, int, int);
+static int _PyPclose(FILE *file);
+
+/*
+ * Internal dictionary mapping popen* file pointers to process handles,
+ * in order to maintain a link to the process handle until the file is
+ * closed, at which point the process exit code is returned to the caller.
+ */
+static PyObject *_PyPopenProcs = NULL;
+
 
 /* popen that works from a GUI.
  *
@@ -2285,7 +2295,7 @@ win32_popen4(PyObject *self, PyObject  *args)
 }
 
 static int
-_PyPopenCreateProcess(char *cmdstring,
+_PyPopenCreateProcess(char *cmdstring, FILE *file,
 		      HANDLE hStdin,
 		      HANDLE hStdout,
 		      HANDLE hStderr)
@@ -2361,8 +2371,28 @@ _PyPopenCreateProcess(char *cmdstring,
 			  &siStartInfo,
 			  &piProcInfo) ) {
 		/* Close the handles now so anyone waiting is woken. */
-		CloseHandle(piProcInfo.hProcess);
 		CloseHandle(piProcInfo.hThread);
+
+		/*
+		 * Try to insert our process handle into the internal
+		 * dictionary so we can find it later when trying 
+		 * to close this file.
+		 */
+		if (!_PyPopenProcs)
+			_PyPopenProcs = PyDict_New();
+		if (_PyPopenProcs) {
+			PyObject *hProcessObj, *fileObj;
+
+			hProcessObj = PyLong_FromVoidPtr(piProcInfo.hProcess);
+			fileObj = PyLong_FromVoidPtr(file);
+
+			if (!hProcessObj || !fileObj ||
+				PyDict_SetItem(_PyPopenProcs,
+							   fileObj, hProcessObj) < 0) {
+				/* Insert failure - close handle to prevent leak */
+				CloseHandle(piProcInfo.hProcess);
+			}
+		}
 		return TRUE;
 	}
 	return FALSE;
@@ -2439,7 +2469,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 /* Case for writing to child Stdin in text mode. */
 			 fd1 = _open_osfhandle((long)hChildStdinWrDup, mode);
 			 f1 = _fdopen(fd1, "w");
-			 f = PyFile_FromFile(f1, cmdstring, "w", fclose);
+			 f = PyFile_FromFile(f1, cmdstring, "w", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
 			 /* We don't care about these pipes anymore, so close them. */
 			 CloseHandle(hChildStdoutRdDup);
@@ -2450,7 +2480,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 /* Case for reading from child Stdout in text mode. */
 			 fd1 = _open_osfhandle((long)hChildStdoutRdDup, mode);
 			 f1 = _fdopen(fd1, "r");
-			 f = PyFile_FromFile(f1, cmdstring, "r", fclose);
+			 f = PyFile_FromFile(f1, cmdstring, "r", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
 			 /* We don't care about these pipes anymore, so close them. */
 			 CloseHandle(hChildStdinWrDup);
@@ -2461,7 +2491,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 /* Case for readinig from child Stdout in binary mode. */
 			 fd1 = _open_osfhandle((long)hChildStdoutRdDup, mode);
 			 f1 = _fdopen(fd1, "rb");
-			 f = PyFile_FromFile(f1, cmdstring, "rb", fclose);
+			 f = PyFile_FromFile(f1, cmdstring, "rb", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
 			 /* We don't care about these pipes anymore, so close them. */
 			 CloseHandle(hChildStdinWrDup);
@@ -2472,7 +2502,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 			 /* Case for writing to child Stdin in binary mode. */
 			 fd1 = _open_osfhandle((long)hChildStdinWrDup, mode);
 			 f1 = _fdopen(fd1, "wb");
-			 f = PyFile_FromFile(f1, cmdstring, "wb", fclose);
+			 f = PyFile_FromFile(f1, cmdstring, "wb", _PyPclose);
 			 PyFile_SetBufSize(f, 0);
 			 /* We don't care about these pipes anymore, so close them. */
 			 CloseHandle(hChildStdoutRdDup);
@@ -2499,7 +2529,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 f1 = _fdopen(fd1, m2);
 		 fd2 = _open_osfhandle((long)hChildStdoutRdDup, mode);
 		 f2 = _fdopen(fd2, m1);
-		 p1 = PyFile_FromFile(f1, cmdstring, m2, fclose);
+		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
 		 PyFile_SetBufSize(p1, 0);
 		 p2 = PyFile_FromFile(f2, cmdstring, m1, fclose);
 		 PyFile_SetBufSize(p2, 0);
@@ -2530,7 +2560,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 f2 = _fdopen(fd2, m1);
 		 fd3 = _open_osfhandle((long)hChildStderrRdDup, mode);
 		 f3 = _fdopen(fd3, m1);
-		 p1 = PyFile_FromFile(f1, cmdstring, m2, fclose);
+		 p1 = PyFile_FromFile(f1, cmdstring, m2, _PyPclose);
 		 p2 = PyFile_FromFile(f2, cmdstring, m1, fclose);
 		 p3 = PyFile_FromFile(f3, cmdstring, m1, fclose);
 		 PyFile_SetBufSize(p1, 0);
@@ -2543,6 +2573,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 
 	 if (n == POPEN_4) {
 		 if (!_PyPopenCreateProcess(cmdstring,
+					    f1,
 					    hChildStdinRd,
 					    hChildStdoutWr,
 					    hChildStdoutWr))
@@ -2550,6 +2581,7 @@ _PyPopen(char *cmdstring, int mode, int n)
 	 }
 	 else {
 		 if (!_PyPopenCreateProcess(cmdstring,
+					    f1,
 					    hChildStdinRd,
 					    hChildStdoutWr,
 					    hChildStderrWr))
@@ -2572,6 +2604,56 @@ _PyPopen(char *cmdstring, int mode, int n)
 		 return win32_error("CloseHandle", NULL);
 
 	 return f;
+}
+
+/*
+ * Wrapper for fclose() to use for popen* files, so we can retrieve the
+ * exit code for the child process and return as a result of the close.
+ */
+static int _PyPclose(FILE *file)
+{
+	int result = 0;
+	DWORD exit_code;
+	HANDLE hProcess;
+	PyObject *hProcessObj, *fileObj;
+   
+	if (_PyPopenProcs) {
+		fileObj = PyLong_FromVoidPtr(file);
+		if (fileObj) {
+			hProcessObj = PyDict_GetItem(_PyPopenProcs, fileObj);
+			if (hProcessObj) {
+				hProcess = PyLong_AsVoidPtr(hProcessObj);
+				if (GetExitCodeProcess(hProcess, &exit_code)) {
+					/* Possible truncation here in 16-bit environments, but
+					 * real exit codes are just the lower byte in any event.
+					 */
+					result = exit_code;
+					if (result == STILL_ACTIVE)
+						result = 0; /* Minimize confusion */
+				} else {
+					/* No good way to bubble up an error, so instead we just
+					 * return the Windows last error shifted above standard
+					 * exit codes.	This will truncate in 16-bits but should
+					 * be fine in 32 and at least distinguishes the problem.
+					 */
+					result = (GetLastError() << 8);
+				}
+
+				/* Free up the native handle at this point */
+				CloseHandle(hProcess);
+
+				/* Remove from dictionary and flush dictionary if empty */
+				PyDict_DelItem(_PyPopenProcs, fileObj);
+				if (PyDict_Size(_PyPopenProcs) == 0) {
+					Py_DECREF(_PyPopenProcs);
+					_PyPopenProcs = NULL;
+				}
+			} /* if hProcessObj */
+		} /* if fileObj */
+	} /* if _PyPopenProcs */
+
+	fclose(file);
+	return result;
 }
 #else
 static PyObject *
