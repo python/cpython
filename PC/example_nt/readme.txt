@@ -4,7 +4,7 @@ Example Python extension for Windows NT
 This directory contains everything you need to build a Python
 extension module using Microsoft VC++ 4.x ("Developer Studio"), except
 for the Python distribution.  It has been tested most recently with
-version 4.2.
+version 4.2.  (Yes, it has been tested with the latest Python 1.5a3.)
 
 The "example_nt" subdirectory should be an immediate subdirectory of
 the Python source directory -- a direct sibling of Include and PC, in
@@ -16,7 +16,9 @@ they belong.)
 
 It is also assumed that the build results of Python are in the
 directory ..\vc40.  In particular, the python15.lib file is referred
-to as "..\vc40\python15.lib".
+to as "..\vc40\python15.lib".  If you have problems with this file,
+the best thing to do is to delete it from the project and add it
+again.
 
 In order to use the example project from Developer Studio, use the
 "File->Open Workspace..." dialog (*not* the "File->Open..." dialog!).
