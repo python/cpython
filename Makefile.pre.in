@@ -272,8 +272,9 @@ LIBRARY_OBJS=	\
 all:		$(PYTHON) oldsharedmods sharedmods 
 
 # Build the interpreter
-$(PYTHON):	$(MAINOBJ) $(LDLIBRARY)
-		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ $(MAINOBJ) \
+$(PYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
+		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
+			Modules/$(MAINOBJ) \
 			$(LDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(PYTHON)
@@ -451,7 +452,7 @@ PYTHON_HEADERS= \
 		Include/abstract.h \
 		Include/pyfpe.h
 
-$(LIBRARY_OBJS) $(MODOBJS) $(MAINOBJ): $(PYTHON_HEADERS)
+$(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
 
 
 ######################################################################
@@ -661,7 +662,7 @@ libainstall:	all
 		$(RANLIB) $(LIBPL)/$(LDLIBRARY) ; \
 	fi
 	$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
-	$(INSTALL_DATA) Modules/python.o $(LIBPL)/python.o
+	$(INSTALL_DATA) Modules/$(MAINOBJ) $(LIBPL)/$(MAINOBJ)
 	$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in
 	$(INSTALL_DATA) Makefile $(LIBPL)/Makefile
 	$(INSTALL_DATA) Modules/Setup $(LIBPL)/Setup

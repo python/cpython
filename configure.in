@@ -128,7 +128,7 @@ AC_MSG_RESULT($without_gcc)
 
 AC_SUBST(CXX)
 AC_SUBST(MAINOBJ)
-MAINOBJ=Modules/python.o
+MAINOBJ=python.o
 AC_MSG_CHECKING(for --with-cxx=<compiler>)
 AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 	check_cxx=no
@@ -136,7 +136,7 @@ AC_ARG_WITH(cxx, [  --with-cxx=<compiler>           enable C++ support],[
 	no)	CXX=
 		with_cxx=no;;
 	*)	CXX=$withval
-		MAINOBJ=Modules/ccpython.o
+		MAINOBJ=ccpython.o
 		with_cxx=$withval;;
 	esac], [
 	with_cxx=no
