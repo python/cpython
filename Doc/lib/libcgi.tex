@@ -598,7 +598,9 @@ Usually, this means using absolute path names --- \envvar{PATH} is
 usually not set to a very useful value in a CGI script.
 
 \item When reading or writing external files, make sure they can be read
-or written by every user on the system.
+or written by the userid under which your CGI script will be running:
+this is typically the userid under which the web server is running, or some
+explicitly specified userid for a web server's \samp{suexec} feature.
 
 \item Don't try to give a CGI script a set-uid mode.  This doesn't work on
 most systems, and is a security liability as well.
