@@ -3836,7 +3836,7 @@ static char posix_strerror__doc__[] =
 "strerror(code) -> string\n\
 Translate an error code to a message string.";
 
-PyObject *
+static PyObject *
 posix_strerror(PyObject *self, PyObject *args)
 {
 	int code;
