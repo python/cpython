@@ -322,13 +322,17 @@ escapes are treated as characters.
 
 \item[\code{\e b}] Matches the empty string, but only at the
 beginning or end of a word.  A word is defined as a sequence of
-alphanumeric or underscore characters , so the end of a word is indicated by
-whitespace or a non-alphanumeric, non-underscore character.  Inside a character range,
-\regexp{\e b} represents the backspace character, for compatibility with
-Python's string literals.
+alphanumeric or underscore characters, so the end of a word is indicated by
+whitespace or a non-alphanumeric, non-underscore character.  Note that 
+{}\code{\e b} is defined as the boundary between \code{\e w} and \code{\e
+W}, so the precise set of characters deemed to be alphanumeric depends on the
+values of the \code{UNICODE} and \code{LOCALE} flags.  Inside a character
+range, \regexp{\e b} represents the backspace character, for compatibility
+with Python's string literals.
 
-\item[\code{\e B}] Matches the empty string, but only when it is
-\emph{not} at the beginning or end of a word.
+\item[\code{\e B}] Matches the empty string, but only when it is \emph{not}
+at the beginning or end of a word.  This is just the opposite of {}\code{\e
+b}, so is also subject to the settings of \code{LOCALE} and \code{UNICODE}.
 
 \item[\code{\e d}]Matches any decimal digit; this is
 equivalent to the set \regexp{[0-9]}.
