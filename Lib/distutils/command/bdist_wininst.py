@@ -38,7 +38,8 @@ class bdist_wininst (Command):
                      "title to display on the installer background instead of default"),
                    ]
 
-    boolean_options = ['keep-temp']
+    boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
+                       'skip-build']
 
     def initialize_options (self):
         self.bdist_dir = None
