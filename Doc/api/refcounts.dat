@@ -760,6 +760,11 @@ PyString_AS_STRING:PyObject*:string:0:
 PyString_AsString:char*:::
 PyString_AsString:PyObject*:string:0:
 
+PyString_AsStringAndSize:int:::
+PyString_AsStringAndSize:PyObject*:obj:0:
+PyString_AsStringAndSize:char**:buffer::
+PyString_AsStringAndSize:int*:length::
+
 PyString_Check:int:::
 PyString_Check:PyObject*:o:0:
 

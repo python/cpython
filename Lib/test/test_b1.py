@@ -161,6 +161,18 @@ if eval('b', globals, locals) <> 200:
     raise TestFailed, "eval(3)"
 if eval('c', globals, locals) <> 300:
     raise TestFailed, "eval(4)"
+if eval(u'1+1') <> 2: raise TestFailed, 'eval(u\'1+1\')'
+if eval(u' 1+1\n') <> 2: raise TestFailed, 'eval(u\' 1+1\\n\')'
+globals = {'a': 1, 'b': 2}
+locals = {'b': 200, 'c': 300}
+if eval(u'a', globals) <> 1:
+    raise TestFailed, "eval(1) == %s" % eval(u'a', globals)
+if eval(u'a', globals, locals) <> 1:
+    raise TestFailed, "eval(2)"
+if eval(u'b', globals, locals) <> 200:
+    raise TestFailed, "eval(3)"
+if eval(u'c', globals, locals) <> 300:
+    raise TestFailed, "eval(4)"
 
 print 'execfile'
 z = 0

@@ -2105,6 +2105,23 @@ Macro form of \cfunction{PyString_AsString()} but without error
 checking.
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{int}{PyString_AsStringAndSize}{PyObject *obj,
+                                                 char **buffer,
+                                                 int *length}
+Returns a null-terminated representation of the contents of the object
+\var{obj} through the output variables \var{buffer} and \var{length}.
+
+The function accepts both string and Unicode objects as input. For
+Unicode objects it returns the default encoded version of the object.
+If \var{length} is set to \NULL{}, the resulting buffer may not contain
+null characters; if it does, the function returns -1 and a
+TypeError is raised.
+
+The buffer refers to an internal string buffer of \var{obj}, not a
+copy. The data must not be modified in any way.  It must not be
+de-allocated.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{void}{PyString_Concat}{PyObject **string,
                                          PyObject *newpart}
 Creates a new string object in \var{*string} containing the
