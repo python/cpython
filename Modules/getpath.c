@@ -1,6 +1,12 @@
 #include "Python.h"
 #include "osdefs.h"
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#else
+extern char *getenv Py_PROTO((const char *));
+#endif
+
 
 #ifndef PYTHONPATH
 #define PYTHONPATH ".:/usr/local/lib/python"
