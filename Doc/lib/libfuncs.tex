@@ -859,7 +859,8 @@ def my_import(name):
   If \var{encoding} and/or \var{errors} are given, \code{unicode()}
   will decode the object which can either be an 8-bit string or a
   character buffer using the codec for \var{encoding}. The
-  \var{encoding} parameter is a string giving the name of an encoding.
+  \var{encoding} parameter is a string giving the name of an encoding;
+  if the encoding is not known, \exception{LookupError} is raised.
   Error handling is done according to \var{errors}; this specifies the
   treatment of characters which are invalid in the input encoding.  If
   \var{errors} is \code{'strict'} (the default), a
