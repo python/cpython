@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 # Conversions to/from quoted-printable transport encoding as per RFC-1521
 # (Dec 1991 version).
 
