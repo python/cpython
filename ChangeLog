@@ -1,3 +1,50 @@
+
+===================================
+==> Release 1.1.1 (10 Nov 1994) <==
+===================================
+
+Thu Nov 10 13:09:26 1994  Guido van Rossum  <guido@tesla>
+
+	* Objects/classobject.c (instance_compare): don't ever raise an
+	exception or return -2
+
+	* Python/compile.c: stick "<lambda>" in function name instead of
+	NULL or None
+
+	* Doc/tut.tex: corrected a few typos
+
+	* Modules/tkintermodule.c: added timer and file handler interfaces
+	and made mainloop/quit global functions (as well still being tk
+	methods)
+
+	* Modules/newmodule.c: made it compile on SunOS4.1.3 (there were
+	continuation backslashes on non-cpp lines :-)
+
+	* Modules/gdbmmodule.c: fix some bugs (freed the wrong objects)
+
+	* Modules/Setup.in: clarified some things a little in the comments
+
+	* Modules/Makefile.pre.in (sharedinstall): don't fail if there
+	aren't any shared modules
+
+	* Include/structmember.h: include stddef.h (for offsetof)
+
+	* Include/rename1.h: added PyArg_ParseTuple for newgetargs
+
+	* Python/bltinmodule.c: fix core dump in pow() (should be declared
+	varargs in methodlist array)
+
+	* Python/ceval.c: replace abort() calls with fatal() calls
+
+	* Python/errors.c (err_setval): call err_clear() to clear existing
+	error instead of calling XDECREF
+
+	* Python/getargs.c: fix core dump when old style call expecting
+	some arguments receives none
+
+	* Lib/test/{test_b[12].py,testall.out}: added more tests (now all
+	built-ins are covered again)
+
 Thu Oct 20 08:31:02 1994  Guido van Rossum  <guido@tesla>
 
 	* Modules/makesetup: should use $cc not cc
