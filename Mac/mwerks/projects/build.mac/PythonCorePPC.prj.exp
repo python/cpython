@@ -1,240 +1,8 @@
-ADSPCompletion__FP23AnnotatedADSPParamBlock		# ADSPCompletion(AnnotatedADSPParamBlock*)
-AbortConnect_UnixChannel__FP12UnixChannel2P11UnixChannel		# AbortConnect_UnixChannel(UnixChannel2*,UnixChannel*)
-AbortConnect__12UnixChannel2FP11UnixChannel		# UnixChannel2::AbortConnect(UnixChannel*)
-Accept_UnixChannel__FP11UnixChannelP11UnixChannel		# Accept_UnixChannel(UnixChannel*,UnixChannel*)
-Accept__11UnixChannelFP11UnixChannel		# UnixChannel::Accept(UnixChannel*)
-AddIconsToFile__FRC9TFileSpecsUlUlRC6FSSpecs		# AddIconsToFile(const TFileSpec&,short,unsigned long,unsigned long,const FSSpec&,short)
-AddPathComponent__9TFileSpecFPCci		# TFileSpec::AddPathComponent(const char*,int)
-AddrToName
-AddrToStr
-Address_UnixChannel__FP11UnixChannel		# Address_UnixChannel(UnixChannel*)
-Address__11UnixChannelFv		# UnixChannel::Address()
-AdjustText
-Alloc__9PPCSocketFv		# PPCSocket::Alloc()
-AppleTalkIdentity__FRsRs		# AppleTalkIdentity(short&,short&)
-AppleTalkSockets
-AtlkLookup__FRC10EntityNameP9AddrBlock		# AtlkLookup(const EntityName&,AddrBlock*)
-Available__10INETSocketFv		# INETSocket::Available()
-Available__9TCPSocketFv		# TCPSocket::Available()
-Available__9UDPSocketFv		# UDPSocket::Available()
-Bind_UnixChannel__FP11UnixChannelR14UnixSocketAddr		# Bind_UnixChannel(UnixChannel*,UnixSocketAddr&)
-Bind__11UnixChannelFR14UnixSocketAddr		# UnixChannel::Bind(UnixSocketAddr&)
-Bless__9TFileSpecFv		# TFileSpec::Bless()
-BufSize_UnixChannel__FP11UnixChannel		# BufSize_UnixChannel(UnixChannel*)
-BufSize__11UnixChannelFv		# UnixChannel::BufSize()
-CatInfo__9TFileSpecCFR10CInfoPBRecUc		# TFileSpec::CatInfo(CInfoPBRec&,unsigned char) const
-CatchStdIO
-ChDir__9TFileSpecFRC9TFileSpec		# TFileSpec::ChDir(const TFileSpec&)
-CloseResolver
-CloseSocket__16INETSocketDomainFv		# INETSocketDomain::CloseSocket()
-Connect_UnixChannel__FP11UnixChannelP11UnixChannel		# Connect_UnixChannel(UnixChannel*,UnixChannel*)
-Connect__11UnixChannelFP11UnixChannel		# UnixChannel::Connect(UnixChannel*)
-Consume__10RingBufferFPcRl		# RingBuffer::Consume(char*,long&)
-Consumer__10RingBufferFRl		# RingBuffer::Consumer(long&)
-CopyC2PStr__FPCcPUc		# CopyC2PStr(const char*,unsigned char*)
-CopyIconFamily__Fssss		# CopyIconFamily(short,short,short,short)
-DefaultDir__9TFileSpecFv		# TFileSpec::DefaultDir()
-Default__9TFileSpecFv		# TFileSpec::Default()
-DelayConsole__17GUSIConfigurationCFv		# GUSIConfiguration::DelayConsole() const
-Delete_UnixChannel__FP11UnixChannel		# Delete_UnixChannel(UnixChannel*)
-Dequeue__FP16FileSocketDomainM16FileSocketDomainP16FileSocketDomainPP16FileSocketDomainPP16FileSocketDomain		# Dequeue(FileSocketDomain*,FileSocketDomain* FileSocketDomain::*,FileSocketDomain**,FileSocketDomain**)
-DiscardRead_UnixChannel__FP11UnixChanneli		# DiscardRead_UnixChannel(UnixChannel*,int)
-DiscardRead__11UnixChannelFi		# UnixChannel::DiscardRead(int)
-Disconnect_UnixChannel__FP11UnixChannel		# Disconnect_UnixChannel(UnixChannel*)
-Disconnect__11UnixChannelFv		# UnixChannel::Disconnect()
-DisposeFileGlob
-DoAutoInitGraf__17GUSIConfigurationCFv		# GUSIConfiguration::DoAutoInitGraf() const
-DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
-DoMPPOpen__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::DoMPPOpen()
-DontStrip__12SocketDomainFv		# SocketDomain::DontStrip()
-Driver__16INETSocketDomainFv		# INETSocketDomain::Driver()
-Encode__9TFileSpecCFv		# TFileSpec::Encode() const
-Enqueue__FP16FileSocketDomainM16FileSocketDomainP16FileSocketDomainPP16FileSocketDomainPP16FileSocketDomain		# Enqueue(FileSocketDomain*,FileSocketDomain* FileSocketDomain::*,FileSocketDomain**,FileSocketDomain**)
-EnumCache
-Exists__9TFileSpecCFv		# TFileSpec::Exists() const
-FRefNum2FSSpec
-FSp2DirRelPath
-FSp2Encoding
-FSp2FullPath
-FSp2RelPath
-FSpCatInfo
-FSpDown
-FSpIndex
-FSpResolve
-FSpSmartMove
-FSpTouchFolder
-FSpUp
-FileGlob2FSSpec
-FileSockets
-File_error__Fs		# File_error(short)
-FindApplicationFromCreator
-FindDomain__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::FindDomain(const GUSIFileRef&,FileSocketDomain::Request)
-FindVol__9TFileSpecFs		# TFileSpec::FindVol(short)
-FlushReadAhead__9UDPSocketFv		# UDPSocket::FlushReadAhead()
-FullAliasPath__9TFileSpecCFv		# TFileSpec::FullAliasPath() const
-FullPath__9TFileSpecCFv		# TFileSpec::FullPath() const
-GUSICheckAlarm__Fv		# GUSICheckAlarm()
-GUSIConfig
-GUSIDefaultExec
-GUSIDefaultSetup
-GUSIDefaultSpin
-GUSIExec
-GUSIFType
-GUSIGetEvents
-GUSIGetHook
-GUSIInterrupt__Fv		# GUSIInterrupt()
-GUSILoadConfiguration
-GUSILoadConfiguration__17GUSIConfigurationFPPc		# GUSIConfiguration::GUSILoadConfiguration(char**)
-GUSIOpenFRef
-GUSISIOUXEvents
-GUSISetEvents
-GUSISetHook
-GUSISetup
-GUSISetupMSLSIOUX__Fv		# GUSISetupMSLSIOUX()
-GUSISpin
-GUSI_error
-GUSI_error_UnixChannel__FP11UnixChanneli		# GUSI_error_UnixChannel(UnixChannel*,int)
-GUSI_error__11UnixChannelFi		# UnixChannel::GUSI_error(int)
-GUSI_error_nil
-GUSIwithAppleTalkSockets
-GUSIwithInternetSockets
-GUSIwithPAPSockets
-GUSIwithPPCSockets
-GUSIwithSIOUXSockets
-GUSIwithUnixSockets
-GetCPanelFolder__FPsPl		# GetCPanelFolder(short*,long*)
-GetDSP__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::GetDSP()
-GetPAPCode__5PAPIDFslPUc		# PAPID::GetPAPCode(short,long,unsigned char*)
-GetPB__16INETSocketDomainFv		# INETSocketDomain::GetPB()
-GetPB__9TCPSocketFv		# TCPSocket::GetPB()
-GetPB__9UDPSocketFv		# UDPSocket::GetPB()
-GetSystemFolder__FPsPl		# GetSystemFolder(short*,long*)
-GetTrapType__Fs		# GetTrapType(short)
-HInfo
-HellHoundsOnMyTrail__9PPCSocketFv		# PPCSocket::HellHoundsOnMyTrail()
-INETSockets
-Info__11GUSIFileRefCFv		# GUSIFileRef::Info() const
-InitConsole__11SocketTableFv		# SocketTable::InitConsole()
-Init__10ADSPSocketFv		# ADSPSocket::Init()
-InstallConsole
-Install__11SocketTableFP6Socketi		# SocketTable::Install(Socket*,int)
-Invalidate__10RingBufferFl		# RingBuffer::Invalidate(long)
-IsDevice__FPCc		# IsDevice(const char*)
-IsEncodedFSSpec__9TFileSpecFPCcUc		# TFileSpec::IsEncodedFSSpec(const char*,unsigned char)
-IsParentOf__9TFileSpecCFRC9TFileSpec		# TFileSpec::IsParentOf(const TFileSpec&) const
-IsRoot__9TFileSpecFv		# TFileSpec::IsRoot()
-MXInfo
-MacOS_Init
-MoveScrollBox
-NewFileGlob
-NewStream__9UDPSocketFv		# UDPSocket::NewStream()
-NextFileGlob
-Next__9TFileGlobFPQ29TFileGlob9BackTrackiUc		# TFileGlob::Next(TFileGlob::BackTrack*,int,unsigned char)
-Next__9TFileGlobFv		# TFileGlob::Next()
-NumToolboxTraps__Fv		# NumToolboxTraps()
-OpenOurRF__Fv		# OpenOurRF()
-OpenResolver
-OpenSocket__16INETSocketDomainFv		# INETSocketDomain::OpenSocket()
-Orphan_UnixChannel__FP12UnixChannel2		# Orphan_UnixChannel(UnixChannel2*)
-Orphan__12UnixChannel2Fv		# UnixChannel2::Orphan()
-OurResidentAliasExpert__FR9TFileSpecPUlPUlP9TFileSpecPs		# OurResidentAliasExpert(TFileSpec&,unsigned long*,unsigned long*,TFileSpec*,short*)
-PAPClose__FsPc		# PAPClose(short,char*)
-PAPOpen__FPsPcsP12PAPStatusRecPsPc		# PAPOpen(short*,char*,short,PAPStatusRec*,short*,char*)
-PAPRead__FsPcPsPsPsPc		# PAPRead(short,char*,short*,short*,short*,char*)
-PAPSockets
-PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,AddrBlock*,char*)
-PAPUnload__FPc		# PAPUnload(char*)
-PAPWrite__FsPcssPsPc		# PAPWrite(short,char*,short,short,short*,char*)
-PLstrcmp
-PLstrcpy
-PLstrrchr
-PPCSockets
-Path2FSSpec
-Powerup__9PAPSocketFv		# PAPSocket::Powerup()
-Produce__10RingBufferFPcRl		# RingBuffer::Produce(char*,long&)
-Producer__10RingBufferFRl		# RingBuffer::Producer(long&)
-Pstring
-PyAST_Type
-PyArg_GetChar
-PyArg_GetDoubleArray
-PyArg_GetFloat
-PyArg_GetFloatArray
-PyArg_GetLong
-PyArg_GetLongArray
-PyArg_GetLongArraySize
-PyArg_GetObject
-PyArg_GetShort
-PyArg_GetShortArray
-PyArg_GetShortArraySize
-PyArg_GetString
-PyArg_Parse
-PyArg_ParseTuple
-PyArg_ParseTupleAndKeywords
-PyArg_VaParse
-PyCFunction_GetFlags
-PyCFunction_GetFunction
-PyCFunction_GetSelf
-PyCFunction_New
-PyCFunction_Type
-PyCObject_AsVoidPtr
-PyCObject_FromVoidPtr
-PyCObject_Import
-PyCObject_Type
-PyCallable_Check
-PyClass_IsSubclass
-PyClass_New
-PyClass_Type
-PyCode_Addr2Line
-PyCode_New
-PyCode_Type
-PyComplex_AsCComplex
-PyComplex_FromCComplex
-PyComplex_FromDoubles
-PyComplex_ImagAsDouble
-PyComplex_RealAsDouble
-PyComplex_Type
-PyDict_Clear
-PyDict_DelItem
-PyDict_DelItemString
-PyDict_GetItem
-PyDict_GetItemString
-PyDict_Items
-PyDict_Keys
-PyDict_New
-PyDict_Next
-PyDict_SetItem
-PyDict_SetItemString
-PyDict_Size
-PyDict_Type
-PyDict_Values
-PyErr_BadArgument
-PyErr_BadInternalCall
-PyErr_CheckSignals
-PyErr_Clear
-PyErr_Fetch
-PyErr_Format
-PyErr_Mac
-PyErr_NewException
-PyErr_NoMemory
-PyErr_Occurred
-PyErr_Print
-PyErr_Restore
-PyErr_SetFromErrno
-PyErr_SetNone
-PyErr_SetObject
-PyErr_SetString
-PyEval_CallFunction
-PyEval_CallMethod
-PyEval_CallObject
-PyEval_CallObjectWithKeywords
-PyEval_EvalCode
-PyEval_GetBuiltins
-PyEval_GetFrame
-PyEval_GetGlobals
-PyEval_GetLocals
-PyEval_GetRestricted
-PyEval_RestoreThread
-PyEval_SaveThread
+_PyImport_Inittab
+PyExc_Exception
+PyExc_StandardError
+PyExc_ArithmeticError
+PyExc_LookupError
 PyExc_AssertionError
 PyExc_AttributeError
 PyExc_EOFError
@@ -254,931 +22,415 @@ PyExc_SystemExit
 PyExc_TypeError
 PyExc_ValueError
 PyExc_ZeroDivisionError
-PyFile_AsFile
-PyFile_FromFile
-PyFile_FromString
-PyFile_GetLine
-PyFile_Name
-PyFile_SetBufSize
-PyFile_SoftSpace
-PyFile_Type
-PyFile_WriteObject
-PyFile_WriteString
-PyFloat_AsDouble
-PyFloat_AsString
-PyFloat_FromDouble
-PyFloat_Type
-PyFrame_BlockPop
-PyFrame_BlockSetup
-PyFrame_FastToLocals
-PyFrame_LocalsToFast
-PyFrame_New
-PyFrame_Type
-PyFunction_GetCode
-PyFunction_GetDefaults
-PyFunction_GetGlobals
-PyFunction_New
-PyFunction_SetDefaults
-PyFunction_Type
-PyGrammar_AddAccelerators
-PyGrammar_FindDFA
-PyGrammar_LabelRepr
-PyImport_AddModule
-PyImport_Cleanup
-PyImport_ExecCodeModule
+PyExc_MemoryErrorInst
+_PyBuiltin_Fini_2
+_PyBuiltin_Fini_1
+_PyBuiltin_Init_2
+_PyBuiltin_Init_1
+PyEval_CallObjectWithKeywords
+PyEval_CallObject
+Py_FlushLine
+PyEval_GetRestricted
+PyEval_GetFrame
+PyEval_GetGlobals
+PyEval_GetLocals
+PyEval_GetBuiltins
+PyEval_EvalCode
+Py_MakePendingCalls
+Py_AddPendingCall
+PyEval_RestoreThread
+PyEval_SaveThread
+PyArg_GetFloatArray
+PyArg_GetDoubleArray
+PyArg_GetShortArray
+PyArg_GetLongArray
+PyArg_GetShortArraySize
+PyArg_GetLongArraySize
+PyArg_GetChar
+PyArg_GetString
+PyArg_GetFloat
+PyArg_GetShort
+PyArg_GetLong
+PyArg_GetObject
+PyErr_NewException
+PyErr_Format
+PyErr_BadInternalCall
+PyErr_SetFromErrno
+PyErr_NoMemory
+PyErr_BadArgument
+PyErr_Clear
+PyErr_Fetch
+PyErr_NormalizeException
+PyErr_ExceptionMatches
+PyErr_GivenExceptionMatches
+PyErr_Occurred
+PyErr_SetString
+PyErr_SetNone
+PyErr_SetObject
+PyErr_Restore
 PyImport_FrozenModules
-PyImport_GetMagicNumber
-PyImport_GetModuleDict
-PyImport_ImportFrozenModule
-PyImport_ImportModule
+PyArg_ParseTupleAndKeywords
+PyArg_VaParse
+PyArg_ParseTuple
+PyArg_Parse
+Py_GetCopyright
+PyOS_GetLastModificationTime
+opterr
+optind
+optarg
+getopt
+Py_GetVersion
+_PyParser_Grammar
+PyImport_Inittab
+initimp
+setint
+PyImport_Import
 PyImport_ReloadModule
-PyInstance_DoBinOp
-PyInstance_New
-PyInstance_Type
-PyInt_AsLong
-PyInt_FromLong
-PyInt_GetMax
-PyInt_Type
+PyImport_ImportModuleEx
+PyImport_ImportModule
+PyImport_ImportFrozenModule
+PyImport_ExecCodeModule
+PyImport_AddModule
+_PyImport_FindExtension
+_PyImport_FixupExtension
+PyImport_GetMagicNumber
+PyImport_Cleanup
+PyImport_GetModuleDict
+_PyImport_Fini
+_PyImport_Init
+_PyImport_Filetab
+_PyImport_LoadDynamicModule
+PyMarshal_Init
+PyMarshal_WriteObjectToString
+PyMarshal_ReadObjectFromString
+PyMarshal_ReadObjectFromFile
+PyMarshal_ReadLongFromFile
+PyMarshal_WriteObjectToFile
+PyMarshal_WriteLongToFile
+_Py_PackageContext
+PyEval_CallMethod
+PyEval_CallFunction
+Py_VaBuildValue
+Py_BuildValue
+Py_InitModule4
+PyOS_strtol
+PyOS_strtoul
+Py_UseClassExceptionsFlag
+Py_DebugFlag
+Py_VerboseFlag
+Py_InteractiveFlag
+Py_NoSiteFlag
+Py_FdIsInteractive
+Py_Exit
+Py_AtExit
+Py_FatalError
+PyParser_SimpleParseString
+PyParser_SimpleParseFile
+Py_CompileString
+PyRun_File
+PyRun_String
+PyErr_Print
+PyRun_SimpleString
+PyRun_SimpleFile
+PyRun_InteractiveOne
+PyRun_InteractiveLoop
+PyRun_AnyFile
+Py_GetProgramName
+Py_SetProgramName
+Py_EndInterpreter
+Py_NewInterpreter
+Py_Finalize
+Py_Initialize
+Py_IsInitialized
+PyThreadState_Swap
+PyThreadState_Get
+PyThreadState_Delete
+PyThreadState_Clear
+PyThreadState_New
 PyInterpreterState_Delete
+PyInterpreterState_Clear
 PyInterpreterState_New
-PyList_Append
-PyList_AsTuple
-PyList_GetItem
-PyList_GetSlice
-PyList_Insert
-PyList_New
-PyList_Reverse
-PyList_SetItem
-PyList_SetSlice
-PyList_Size
-PyList_Sort
-PyList_Type
-PyLong_AsDouble
-PyLong_AsLong
-PyLong_AsUnsignedLong
-PyLong_FromDouble
-PyLong_FromLong
-PyLong_FromString
-PyLong_FromUnsignedLong
-PyLong_Type
-PyMac_AddLibResources
-PyMac_AppRefNum
-PyMac_ApplicationFSSpec
-PyMac_ApplicationPath
-PyMac_BuildEventRecord
-PyMac_BuildFixed
-PyMac_BuildNumVersion
-PyMac_BuildOSType
-PyMac_BuildPoint
-PyMac_BuildRect
-PyMac_BuildStr255
-PyMac_ConsoleIsDead
-PyMac_Error
-PyMac_Exit
-PyMac_FindModuleExtension
-PyMac_FindResourceModule
-PyMac_FixGUSIcd
-PyMac_GetArgv
-PyMac_GetDirectory
-PyMac_GetEventRecord
-PyMac_GetFSSpec
-PyMac_GetFixed
-PyMac_GetFullPath
-PyMac_GetOSErrException
-PyMac_GetOSType
-PyMac_GetPoint
-PyMac_GetRect
-PyMac_GetSchedParams
-PyMac_GetStr255
-PyMac_HandleEvent
-PyMac_HandleEventIntern
-PyMac_InForeground
-PyMac_InitApplet
-PyMac_InitApplication
-PyMac_InitMenuBar
-PyMac_Initialize
-PyMac_LoadResourceModule
-PyMac_OSErrException
-PyMac_PreferenceOptions
-PyMac_PromptGetFile
-PyMac_RestoreMenuBar
-PyMac_SetEventHandler
-PyMac_SetGUSIOptions
-PyMac_SetGUSISpin
-PyMac_SetSchedParams
-PyMac_StopGUSISpin
-PyMac_StrError
-PyMac_init_process_location
-PyMapping_Check
+PyMember_Set
+PyMember_Get
+PySys_SetArgv
+PySys_SetPath
+_PySys_Init
+PySys_SetObject
+PySys_GetFile
+PySys_GetObject
+PyTraceBack_Type
+PyTraceBack_Print
+PyTraceBack_Here
+PyCode_Type
+Py_OptimizeFlag
+PyCode_Addr2Line
+PyNode_Compile
+PyCode_New
+PyMapping_SetItemString
 PyMapping_GetItemString
+PyObject_CallMethod
+PyObject_CallFunction
+PyObject_CallObject
 PyMapping_HasKey
 PyMapping_HasKeyString
 PyMapping_Length
-PyMapping_SetItemString
-PyMarshal_Init
-PyMarshal_ReadLongFromFile
-PyMarshal_ReadObjectFromFile
-PyMarshal_ReadObjectFromString
-PyMarshal_WriteLongToFile
-PyMarshal_WriteObjectToFile
-PyMarshal_WriteObjectToString
-PyMember_Get
-PyMember_Set
+PyMapping_Check
+PySequence_Index
+PySequence_In
+PySequence_Count
+PySequence_List
+PySequence_Tuple
+PySequence_DelSlice
+PySequence_SetSlice
+PySequence_DelItem
+PySequence_SetItem
+PySequence_GetSlice
+PySequence_GetItem
+PySequence_Repeat
+PySequence_Concat
+PySequence_Length
+PySequence_Check
+PyNumber_Float
+PyNumber_Long
+PyNumber_Int
+PyNumber_Absolute
+PyNumber_Invert
+PyNumber_Positive
+PyNumber_Negative
+PyNumber_Power
+PyNumber_Divmod
+PyNumber_Remainder
+PyNumber_Divide
+PyNumber_Multiply
+PyNumber_Subtract
+PyNumber_Add
+PyNumber_Rshift
+PyNumber_Lshift
+PyNumber_And
+PyNumber_Xor
+PyNumber_Or
+PyNumber_Check
+PyObject_DelItem
+PyObject_SetItem
+PyObject_GetItem
+PyObject_Length
+PyObject_Type
+PyObject_Cmp
+PyClass_Type
+PyInstance_Type
+PyMethod_Type
+PyMethod_Fini
 PyMethod_Class
+PyMethod_Self
 PyMethod_Function
 PyMethod_New
-PyMethod_Self
-PyMethod_Type
-PyModule_GetDict
-PyModule_GetName
-PyModule_New
+PyInstance_DoBinOp
+PyInstance_New
+PyClass_IsSubclass
+PyClass_New
+PyCObject_Type
+PyCObject_Import
+PyCObject_GetDesc
+PyCObject_AsVoidPtr
+PyCObject_FromVoidPtrAndDesc
+PyCObject_FromVoidPtr
+PyComplex_Type
+PyComplex_AsCComplex
+PyComplex_ImagAsDouble
+PyComplex_RealAsDouble
+PyComplex_FromDoubles
+PyComplex_FromCComplex
+_Py_c_pow
+_Py_c_quot
+_Py_c_prod
+_Py_c_neg
+_Py_c_diff
+_Py_c_sum
+PyDict_Type
+PyDict_DelItemString
+PyDict_SetItemString
+PyDict_GetItemString
+PyDict_Items
+PyDict_Values
+PyDict_Keys
+PyDict_Size
+PyDict_Next
+PyDict_Clear
+PyDict_DelItem
+PyDict_SetItem
+PyDict_GetItem
+PyDict_New
+PyFile_Type
+PyFile_WriteString
+PyFile_WriteObject
+PyFile_SoftSpace
+PyFile_GetLine
+PyFile_SetBufSize
+PyFile_FromString
+PyFile_FromFile
+PyFile_Name
+PyFile_AsFile
+PyFloat_Type
+PyFloat_Fini
+PyFloat_AsString
+PyFloat_AsDouble
+PyFloat_FromDouble
+PyFrame_Type
+PyFrame_Fini
+PyFrame_LocalsToFast
+PyFrame_FastToLocals
+PyFrame_BlockPop
+PyFrame_BlockSetup
+PyFrame_New
+PyFunction_Type
+PyFunction_SetDefaults
+PyFunction_GetDefaults
+PyFunction_GetGlobals
+PyFunction_GetCode
+PyFunction_New
+_Py_ZeroStruct
+_Py_TrueStruct
+PyInt_Type
+PyInt_Fini
+PyInt_AsLong
+PyInt_FromLong
+PyInt_GetMax
+PyList_Type
+PyList_AsTuple
+PyList_Sort
+PyList_Reverse
+PyList_SetSlice
+PyList_GetSlice
+PyList_Append
+PyList_Insert
+PyList_SetItem
+PyList_GetItem
+PyList_Size
+PyList_New
+PyLong_Type
+PyLong_FromString
+PyLong_AsDouble
+PyLong_AsUnsignedLong
+PyLong_AsLong
+PyLong_FromDouble
+PyLong_FromUnsignedLong
+PyLong_FromLong
+_PyLong_New
+PyCFunction_Type
+PyCFunction_Fini
+Py_FindMethod
+Py_FindMethodInChain
+PyCFunction_GetFlags
+PyCFunction_GetSelf
+PyCFunction_GetFunction
+PyCFunction_New
 PyModule_Type
-PyNode_AddChild
-PyNode_Compile
-PyNode_Free
-PyNode_New
-PyNumber_Absolute
-PyNumber_Add
-PyNumber_And
-PyNumber_Check
+PyModule_GetName
+PyModule_GetDict
+PyModule_New
+_Py_NoneStruct
+_Py_cobject_hack
+_Py_abstract_hack
+PyMem_Free
+PyMem_Realloc
+PyMem_Malloc
+Py_Free
+Py_Realloc
+Py_Malloc
+PyCallable_Check
 PyNumber_Coerce
-PyNumber_Divide
-PyNumber_Divmod
-PyNumber_Float
-PyNumber_Int
-PyNumber_Invert
-PyNumber_Long
-PyNumber_Lshift
-PyNumber_Multiply
-PyNumber_Negative
-PyNumber_Or
-PyNumber_Positive
-PyNumber_Power
-PyNumber_Remainder
-PyNumber_Rshift
-PyNumber_Subtract
-PyNumber_Xor
-PyOS_CheckStack
-PyOS_GetLastModificationTime
-PyOS_InitInterrupts
-PyOS_InputHook
-PyOS_InterruptOccurred
-PyOS_Readline
-PyOS_ReadlineFunctionPointer
-PyOS_StdioReadline
-PyOS_strtol
-PyOS_strtoul
-PyObject_CallFunction
-PyObject_CallMethod
-PyObject_CallObject
-PyObject_Cmp
-PyObject_Compare
-PyObject_DelItem
-PyObject_GetAttr
-PyObject_GetAttrString
-PyObject_GetItem
-PyObject_HasAttrString
-PyObject_Hash
+PyNumber_CoerceEx
 PyObject_IsTrue
-PyObject_Length
-PyObject_Print
-PyObject_Repr
 PyObject_SetAttr
+PyObject_HasAttr
+PyObject_GetAttr
 PyObject_SetAttrString
-PyObject_SetItem
+PyObject_HasAttrString
+PyObject_GetAttrString
+PyObject_Hash
+PyObject_Compare
 PyObject_Str
-PyObject_Type
+PyObject_Repr
+PyObject_Print
+_PyObject_NewVar
+_PyObject_New
+PyRange_Type
+PyRange_New
+_Py_EllipsisObject
+PySlice_Type
+PySlice_GetIndices
+PySlice_New
+PyString_Type
+PyString_Fini
+PyString_InternFromString
+PyString_InternInPlace
+PyString_Format
+_PyString_Resize
+PyString_ConcatAndDel
+PyString_Concat
+PyString_AsString
+PyString_Size
+PyString_FromString
+PyString_FromStringAndSize
+PyTuple_Type
+PyTuple_Fini
+_PyTuple_Resize
+PyTuple_GetSlice
+PyTuple_SetItem
+PyTuple_GetItem
+PyTuple_Size
+PyTuple_New
+PyType_Type
+PyGrammar_RemoveAccelerators
+PyGrammar_AddAccelerators
+PyGrammar_LabelRepr
+PyGrammar_FindDFA
+PyOS_AfterFork
+PyOS_ReadlineFunctionPointer
+PyOS_InputHook
+PyOS_Readline
+PyOS_StdioReadline
+PyNode_Free
+PyNode_AddChild
+PyNode_New
 PyParser_AddToken
 PyParser_Delete
 PyParser_New
 PyParser_ParseFile
 PyParser_ParseString
-PyParser_SimpleParseFile
-PyParser_SimpleParseString
-PyRange_New
-PyRange_Type
-PyRun_AnyFile
-PyRun_File
-PyRun_InteractiveLoop
-PyRun_InteractiveOne
-PyRun_SimpleFile
-PyRun_SimpleString
-PyRun_String
-PySequence_Check
-PySequence_Concat
-PySequence_Count
-PySequence_DelItem
-PySequence_DelSlice
-PySequence_GetItem
-PySequence_GetSlice
-PySequence_In
-PySequence_Index
-PySequence_Length
-PySequence_List
-PySequence_Repeat
-PySequence_SetItem
-PySequence_SetSlice
-PySequence_Tuple
-PySlice_GetIndices
-PySlice_New
-PySlice_Type
-PyString_AsString
-PyString_Concat
-PyString_ConcatAndDel
-PyString_Format
-PyString_FromString
-PyString_FromStringAndSize
-PyString_InternFromString
-PyString_InternInPlace
-PyString_Size
-PyString_Type
-PySys_GetFile
-PySys_GetObject
-PySys_SetArgv
-PySys_SetObject
-PySys_SetPath
-PyThreadState_Clear
-PyThreadState_Delete
-PyThreadState_Get
-PyThreadState_New
-PyThreadState_Swap
-PyToken_OneChar
+_PyParser_TokenNames
+PyTokenizer_Get
 PyToken_TwoChars
+PyToken_OneChar
 PyTokenizer_Free
 PyTokenizer_FromFile
 PyTokenizer_FromString
-PyTokenizer_Get
-PyTraceBack_Here
-PyTraceBack_Print
-PyTraceBack_Type
-PyTuple_GetItem
-PyTuple_GetSlice
-PyTuple_New
-PyTuple_SetItem
-PyTuple_Size
-PyTuple_Type
-PyType_Type
-Py_AddPendingCall
-Py_AtExit
-Py_BuildValue
-Py_CompileString
-Py_DebugFlag
-Py_Exit
-Py_FatalError
-Py_FdIsInteractive
-Py_FindMethod
-Py_FindMethodInChain
-Py_FlushLine
-Py_GetArgcArgv
-Py_GetBuildInfo
-Py_GetCompiler
-Py_GetCopyright
-Py_GetExecPrefix
-Py_GetPath
-Py_GetPlatform
-Py_GetPrefix
-Py_GetProgramFullPath
-Py_GetProgramName
-Py_GetVersion
-Py_InitModule4
-Py_Initialize
-Py_InteractiveFlag
-Py_MakePendingCalls
-Py_OptimizeFlag
-Py_VaBuildValue
-Py_VerboseFlag
-ReadAhead__9UDPSocketFv		# UDPSocket::ReadAhead()
-ReadAvail_UnixChannel__FP11UnixChannel		# ReadAvail_UnixChannel(UnixChannel*)
-ReadAvail__11UnixChannelFv		# UnixChannel::ReadAvail()
-ReadCharsFromConsole
-Read_UnixChannel__FP11UnixChannelPvi		# Read_UnixChannel(UnixChannel*,void*,int)
-Read__11UnixChannelFPvi		# UnixChannel::Read(void*,int)
-Ready__12SocketDomainFv		# SocketDomain::Ready()
-Register__11AtlkSymAddrFUc		# AtlkSymAddr::Register(unsigned char)
-RelPath__9TFileSpecCFRC6FSSpec		# TFileSpec::RelPath(const FSSpec&) const
-RelPath__9TFileSpecCFsl		# TFileSpec::RelPath(short,long) const
-RelPath__9TFileSpecCFv		# TFileSpec::RelPath() const
-RemoveConsole
-Remove__11SocketTableFi		# SocketTable::Remove(int)
-Resolve__9TFileSpecFRC10CInfoPBRec		# TFileSpec::Resolve(const CInfoPBRec&)
-Resolve__9TFileSpecFUc		# TFileSpec::Resolve(unsigned char)
-Resolver__16INETSocketDomainFv		# INETSocketDomain::Resolver()
-RingDist__FPcPcPcPc		# RingDist(char*,char*,char*,char*)
-Root__9TFileSpecFv		# TFileSpec::Root()
-SIOUXBigRect
-SIOUXCantSaveAlert
-SIOUXDoAboutBox
-SIOUXDoContentClick
-SIOUXDoEditClear
-SIOUXDoEditCopy
-SIOUXDoEditCut
-SIOUXDoEditPaste
-SIOUXDoEditSelectAll
-SIOUXDoMenuChoice
-SIOUXDoPageSetup
-SIOUXDoPrintText
-SIOUXDoSaveText
-SIOUXDragRect
-SIOUXDrawGrowBox
-SIOUXHandleOneEvent
-SIOUXIsAppWindow
-SIOUXMyGrowWindow
-SIOUXQuitting
-SIOUXSetTitle
-SIOUXSettings
-SIOUXSetupMenus
-SIOUXSetupTextWindow
-SIOUXState
-SIOUXTextWindow
-SIOUXUpdateMenuItems
-SIOUXUpdateScrollbar
-SIOUXUpdateStatusLine
-SIOUXUpdateWindow
-SIOUXUseWaitNextEvent
-SIOUXYesNoCancelAlert
-SIOUXisinrange
-SIOUXselstart
-SearchFolderForDNRP__Fllsl		# SearchFolderForDNRP(long,long,short,long)
-Send_UnixChannel__FP11UnixChannelP11UnixChannelPvi		# Send_UnixChannel(UnixChannel*,UnixChannel*,void*,int)
-Send__11UnixChannelFP11UnixChannelPvi		# UnixChannel::Send(UnixChannel*,void*,int)
-SetDefaultFType__17GUSIConfigurationCFRC9TFileSpec		# GUSIConfiguration::SetDefaultFType(const TFileSpec&) const
-ShutDown_UnixChannel__FP11UnixChanneli		# ShutDown_UnixChannel(UnixChannel*,int)
-ShutDown__11UnixChannelFi		# UnixChannel::ShutDown(int)
-Sockets
-Special2FSSpec
-SpinCursor
-StandAlone
-StrToAddr
-TCP_error__Fi		# TCP_error(int)
-TrapExists__Fs		# TrapExists(short)
-UnBind__11UnixChannelFv		# UnixChannel::UnBind()
-UnInit__10ADSPSocketFUc		# ADSPSocket::UnInit(unsigned char)
-UnixChannel_EmulatedVTable
-VRef2Icon__FsPPPc		# VRef2Icon(short,char***)
-Validate__10RingBufferFl		# RingBuffer::Validate(long)
-Validate__12UnixSocketIDFv		# UnixSocketID::Validate()
-Validate__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::Validate()
-Version_UnixChannel__FP11UnixChannel		# Version_UnixChannel(UnixChannel*)
-Version__11UnixChannelFv		# UnixChannel::Version()
-WD2FSSpec
-WriteAvail_UnixChannel__FP11UnixChannel		# WriteAvail_UnixChannel(UnixChannel*)
-WriteAvail__11UnixChannelFv		# UnixChannel::WriteAvail()
-WriteCharsToConsole
-Write_UnixChannel__FP11UnixChannelPvi		# Write_UnixChannel(UnixChannel*,void*,int)
-Write__11UnixChannelFPvi		# UnixChannel::Write(void*,int)
-Yours__15PAPSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# PAPSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-Yours__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-Yours__16NullSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# NullSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-Yours__17SIOUXSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# SIOUXSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
-_PyImport_Filetab
-_PyImport_Inittab
-_PyImport_LoadDynamicModule
-_PyLong_New
-_PyObject_New
-_PyObject_NewVar
-_PyParser_Grammar
-_PyParser_TokenNames
-_PyString_Resize
-_PyTuple_Resize
-_Py_EllipsisObject
-_Py_MD5Final
-_Py_MD5Init
-_Py_MD5Update
-_Py_NoneStruct
-_Py_TrueStruct
-_Py_ZeroStruct
-_Py_abstract_hack
-_Py_c_diff
-_Py_c_neg
-_Py_c_pow
-_Py_c_prod
-_Py_c_quot
-_Py_c_sum
-_Py_cobject_hack
-_Py_re_compile_fastmap
-_Py_re_compile_pattern
-_Py_re_match
-_Py_re_search
-_Py_re_set_syntax
-_Py_re_syntax
-__aborting
-__add
-__ami__9TFileSpecFi		# TFileSpec::operator -=(int)
-__apl__9TFileSpecFPCUc		# TFileSpec::operator +=(const unsigned char*)
-__apl__9TFileSpecFPCc		# TFileSpec::operator +=(const char*)
-__as__9bad_allocFRC9bad_alloc		# bad_alloc::operator =(const bad_alloc&)
-__as__9exceptionFRC9exception		# exception::operator =(const exception&)
-__as__9type_infoFRC9type_info		# type_info::operator =(const type_info&)
-__assertion_failed
-__atexit
-__begin_critical_region
-__close_all
-__close_console
-__close_file
-__close_string
-__console_exit
-__construct_array
-__construct_new_array
-__convert_from_newlines
-__convert_to_newlines
-__copy_longs_aligned
-__copy_longs_rev_aligned
-__copy_longs_rev_unaligned
-__copy_longs_unaligned
-__copy_mem
-__ct__10ADSPSocketFUc		# ADSPSocket::ADSPSocket(unsigned char)
-__ct__10INETSocketFUl		# INETSocket::INETSocket(unsigned long)
-__ct__10INETSocketFv		# INETSocket::INETSocket()
-__ct__10NullSocketFv		# NullSocket::NullSocket()
-__ct__10RingBufferFUs		# RingBuffer::RingBuffer(unsigned short)
-__ct__10UnixSocketFs		# UnixSocket::UnixSocket(short)
-__ct__10bad_typeidFv		# bad_typeid::bad_typeid()
-__ct__11AtlkSymAddrFRC10EntityName		# AtlkSymAddr::AtlkSymAddr(const EntityName&)
-__ct__11GUSIFileRefFPCcQ216FileSocketDomain7RequestUc		# GUSIFileRef::GUSIFileRef(const char*,FileSocketDomain::Request,unsigned char)
-__ct__11GUSIFileRefFsQ216FileSocketDomain7Request		# GUSIFileRef::GUSIFileRef(short,FileSocketDomain::Request)
-__ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
-__ct__11SocketTableFv		# SocketTable::SocketTable()
-__ct__11UnixChannelFP10UnixSocket		# UnixChannel::UnixChannel(UnixSocket*)
-__ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
-__ct__12UnixChannel2FP10UnixSocket		# UnixChannel2::UnixChannel2(UnixSocket*)
-__ct__12UnixSocketIDFP11UnixChannel		# UnixSocketID::UnixSocketID(UnixChannel*)
-__ct__14UnixSocketAddrF9TFileSpec		# UnixSocketAddr::UnixSocketAddr(TFileSpec)
-__ct__15AppleTalkSocketFUc		# AppleTalkSocket::AppleTalkSocket(unsigned char)
-__ct__15PPCSocketDomainFv		# PPCSocketDomain::PPCSocketDomain()
-__ct__15UnixDgramSocketFv		# UnixDgramSocket::UnixDgramSocket()
-__ct__16FileSocketDomainFiUcUc		# FileSocketDomain::FileSocketDomain(int,unsigned char,unsigned char)
-__ct__16FileSocketDomainFv		# FileSocketDomain::FileSocketDomain()
-__ct__16INETSocketDomainFv		# INETSocketDomain::INETSocketDomain()
-__ct__16UnixStreamSocketFv		# UnixStreamSocket::UnixStreamSocket()
-__ct__17GUSIConfigurationFv		# GUSIConfiguration::GUSIConfiguration()
-__ct__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::AppleTalkSocketDomain()
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const char*,const allocator<char>&)
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const allocator<char>&)
-__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUl		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const char*,const allocator<char>&)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const allocator<char>&)
-__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUlRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long,const allocator<char>&)
-__ct__5PAPIDFv		# PAPID::PAPID()
-__ct__6SocketFv		# Socket::Socket()
-__ct__7FeatureFPFv_s		# Feature::Feature(short (*)(void))
-__ct__7FeatureFPFv_v		# Feature::Feature(void (*)(void))
-__ct__7FeatureFRC7FeaturePFv_s		# Feature::Feature(const Feature&,short (*)(void))
-__ct__7FeatureFRC7FeaturePFv_v		# Feature::Feature(const Feature&,void (*)(void))
-__ct__7FeatureFRC7FeatureRC7Feature		# Feature::Feature(const Feature&,const Feature&)
-__ct__7FeatureFUll		# Feature::Feature(unsigned long,long)
-__ct__7FeatureFUlll		# Feature::Feature(unsigned long,long,long)
-__ct__7FeatureFUsSc		# Feature::Feature(unsigned short,signed char)
-__ct__8GathererFPC5ioveci		# Gatherer::Gatherer(const iovec*,int)
-__ct__9PAPSocketFv		# PAPSocket::PAPSocket()
-__ct__9PPCSocketFRC9PPCSocket		# PPCSocket::PPCSocket(const PPCSocket&)
-__ct__9PPCSocketFv		# PPCSocket::PPCSocket()
-__ct__9ScattGathFPC5ioveci		# ScattGath::ScattGath(const iovec*,int)
-__ct__9ScattererFPC5ioveci		# Scatterer::Scatterer(const iovec*,int)
-__ct__9TCPSocketFP9TCPSocket		# TCPSocket::TCPSocket(TCPSocket*)
-__ct__9TCPSocketFUl		# TCPSocket::TCPSocket(unsigned long)
-__ct__9TCPSocketFv		# TCPSocket::TCPSocket()
-__ct__9TFileGlobFPCcPC9TFileSpec		# TFileGlob::TFileGlob(const char*,const TFileSpec*)
-__ct__9TFileSpecFPCcUc		# TFileSpec::TFileSpec(const char*,unsigned char)
-__ct__9TFileSpecFRC6FSSpecUc		# TFileSpec::TFileSpec(const FSSpec&,unsigned char)
-__ct__9TFileSpecFRC9TFileSpec		# TFileSpec::TFileSpec(const TFileSpec&)
-__ct__9TFileSpecFUlsl		# TFileSpec::TFileSpec(unsigned long,short,long)
-__ct__9TFileSpecFs		# TFileSpec::TFileSpec(short)
-__ct__9TFileSpecFsPCUcUc		# TFileSpec::TFileSpec(short,const unsigned char*,unsigned char)
-__ct__9TFileSpecFslPCUcUc		# TFileSpec::TFileSpec(short,long,const unsigned char*,unsigned char)
-__ct__9UDPSocketFUl		# UDPSocket::UDPSocket(unsigned long)
-__ct__9UDPSocketFv		# UDPSocket::UDPSocket()
-__ct__9exceptionFPCc		# exception::exception(const char*)
-__ct__9exceptionFRC47basic_string<c,14char_traits<c>,12allocator<c>>		# exception::exception(const basic_string<char, char_traits<char>, allocator<char>>&)
-__ct__9exceptionFRC9exception		# exception::exception(const exception&)
-__ct__9type_infoFRC9type_info		# type_info::type_info(const type_info&)
-__ctopstring
-__ctype_map
-__del_hdl
-__delete_file
-__destroy_arr
-__destroy_global_chain
-__destroy_new_array
-__div
-__dl__FPv		# operator delete(void*)
-__double_epsilon
-__double_huge
-__double_max
-__double_min
-__double_nan
-__double_tiny
-__dt__10ADSPSocketFv		# ADSPSocket::~ADSPSocket()
-__dt__10FileSocketFv		# FileSocket::~FileSocket()
-__dt__10INETSocketFv		# INETSocket::~INETSocket()
-__dt__10NullSocketFv		# NullSocket::~NullSocket()
-__dt__10RingBufferFv		# RingBuffer::~RingBuffer()
-__dt__10UnixSocketFv		# UnixSocket::~UnixSocket()
-__dt__10bad_typeidFv		# bad_typeid::~bad_typeid()
-__dt__11AtlkSymAddrFv		# AtlkSymAddr::~AtlkSymAddr()
-__dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
-__dt__11SocketTableFv		# SocketTable::~SocketTable()
-__dt__11UnixChannelFv		# UnixChannel::~UnixChannel()
-__dt__11logic_errorFv		# logic_error::~logic_error()
-__dt__11range_errorFv		# range_error::~range_error()
-__dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
-__dt__12allocator<c>Fv		# allocator<char>::~allocator()
-__dt__12domain_errorFv		# domain_error::~domain_error()
-__dt__12length_errorFv		# length_error::~length_error()
-__dt__12out_of_rangeFv		# out_of_range::~out_of_range()
-__dt__13MacFileSocketFv		# MacFileSocket::~MacFileSocket()
-__dt__13bad_exceptionFv		# bad_exception::~bad_exception()
-__dt__13runtime_errorFv		# runtime_error::~runtime_error()
-__dt__14overflow_errorFv		# overflow_error::~overflow_error()
-__dt__15AppleTalkSocketFv		# AppleTalkSocket::~AppleTalkSocket()
-__dt__15PAPSocketDomainFv		# PAPSocketDomain::~PAPSocketDomain()
-__dt__15PPCSocketDomainFv		# PPCSocketDomain::~PPCSocketDomain()
-__dt__15UnixDgramSocketFv		# UnixDgramSocket::~UnixDgramSocket()
-__dt__16FileSocketDomainFv		# FileSocketDomain::~FileSocketDomain()
-__dt__16INETSocketDomainFv		# INETSocketDomain::~INETSocketDomain()
-__dt__16NullSocketDomainFv		# NullSocketDomain::~NullSocketDomain()
-__dt__16UnixSocketDomainFv		# UnixSocketDomain::~UnixSocketDomain()
-__dt__16UnixStreamSocketFv		# UnixStreamSocket::~UnixStreamSocket()
-__dt__16invalid_argumentFv		# invalid_argument::~invalid_argument()
-__dt__17SIOUXSocketDomainFv		# SIOUXSocketDomain::~SIOUXSocketDomain()
-__dt__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::~AppleTalkSocketDomain()
-__dt__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::~basic_string()
-__dt__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::~basic_string_ref()
-__dt__5PAPIDFv		# PAPID::~PAPID()
-__dt__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>Fv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::~allocator()
-__dt__6SocketFv		# Socket::~Socket()
-__dt__8GathererFv		# Gatherer::~Gatherer()
-__dt__8bad_castFv		# bad_cast::~bad_cast()
-__dt__9MPWDomainFv		# MPWDomain::~MPWDomain()
-__dt__9PAPSocketFv		# PAPSocket::~PAPSocket()
-__dt__9PPCSocketFv		# PPCSocket::~PPCSocket()
-__dt__9ScattGathFv		# ScattGath::~ScattGath()
-__dt__9ScattererFv		# Scatterer::~Scatterer()
-__dt__9TCPSocketFv		# TCPSocket::~TCPSocket()
-__dt__9UDPSocketFv		# UDPSocket::~UDPSocket()
-__dt__9bad_allocFv		# bad_alloc::~bad_alloc()
-__dt__9exceptionFv		# exception::~exception()
-__dt__9type_infoFv		# type_info::~type_info()
-__dynamic_cast
-__end__catch
-__end_critical_region
-__eq__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator ==(const TFileSpec&) const
-__eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
-__exit
-__file_to_num
-__files
-__fill_mem
-__find_unopened_file
-__float_epsilon
-__float_huge
-__float_max
-__float_min
-__float_nan
-__float_tiny
-__flush_all
-__flush_buffer
-__get_char
-__get_clock
-__get_file_modes
-__get_time
-__get_typeid
-__getcreator
-__gettype
-__global_destructor_chain
-__handle_open
-__handle_reopen
-__huge_val
-__init_critical_regions
-__init_file
-__init_pool_obj
-__initialize_with_resources
-__kill_critical_regions
-__ladd
-__lconv
-__ldiv
-__lmod
-__lmul
-__load_buffer
-__lower_map
-__malloc_pool
-__memrchr
-__mi__9TFileSpecCFi		# TFileSpec::operator -(int) const
-__mm__9TFileSpecFv		# TFileSpec::operator --()
-__mod
-__move_mem
-__mul
-__myraise
-__nan_val
-__ne__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator !=(const TFileSpec&) const
-__ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
-__new_handler
-__new_hdl
-__num_to_file
-__nw__FUl		# operator new(unsigned long)
-__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
-__open_file
-__open_string_file
-__open_temp_file
-__open_temp_file__FPUl
-__path2fss
-__pl__9TFileSpecCFPCUc		# TFileSpec::operator +(const unsigned char*) const
-__pl__9TFileSpecCFPCc		# TFileSpec::operator +(const char*) const
-__pool_alloc
-__pool_alloc_clear
-__pool_free
-__pool_free_all
-__pool_preallocate
-__pool_preassign
-__pool_realloc
-__position_file
-__pp__9TFileSpecFv		# TFileSpec::operator ++()
-__prep_buffer
-__priv_throwbadcast__Fv		# __priv_throwbadcast()
-__put_char
-__read_console
-__read_file
-__read_string
-__register_fragment
-__register_global_object
-__rename_file
-__set_idle_proc
-__som_check_ev
-__som_check_new
-__stdio_atexit
-__stdio_exit
-__strerror
-__strtold
-__strtoul
-__strtoull
-__sys_alloc
-__sys_free
-__system7present
-__temp_file_mode
-__temp_file_name
-__throw
-__throw_bad_alloc__Fv		# __throw_bad_alloc()
-__throw_catch_compare
-__throws_bad_alloc
-__to_gm_time
-__ttyname
-__unexpected
-__ungotten
-__unregister_fragment
-__upper_map
-__vc__11SocketTableFi		# SocketTable::operator [](int)
-__vc__9TFileSpecCFs		# TFileSpec::operator [](short) const
-__vfscanf
-__vsscanf
-__vt__10ADSPSocket		# ADSPSocket::__vt
-__vt__10FileSocket		# FileSocket::__vt
-__vt__10INETSocket		# INETSocket::__vt
-__vt__10NullSocket		# NullSocket::__vt
-__vt__10UnixSocket		# UnixSocket::__vt
-__vt__10bad_typeid		# bad_typeid::__vt
-__vt__11SIOUXSocket		# SIOUXSocket::__vt
-__vt__11logic_error		# logic_error::__vt
-__vt__11range_error		# range_error::__vt
-__vt__12SocketDomain		# SocketDomain::__vt
-__vt__12domain_error		# domain_error::__vt
-__vt__12length_error		# length_error::__vt
-__vt__12out_of_range		# out_of_range::__vt
-__vt__13MacFileSocket		# MacFileSocket::__vt
-__vt__13bad_exception		# bad_exception::__vt
-__vt__13runtime_error		# runtime_error::__vt
-__vt__14overflow_error		# overflow_error::__vt
-__vt__15AppleTalkSocket		# AppleTalkSocket::__vt
-__vt__15PAPSocketDomain		# PAPSocketDomain::__vt
-__vt__15PPCSocketDomain		# PPCSocketDomain::__vt
-__vt__15UnixDgramSocket		# UnixDgramSocket::__vt
-__vt__16FileSocketDomain		# FileSocketDomain::__vt
-__vt__16INETSocketDomain		# INETSocketDomain::__vt
-__vt__16NullSocketDomain		# NullSocketDomain::__vt
-__vt__16UnixSocketDomain		# UnixSocketDomain::__vt
-__vt__16UnixStreamSocket		# UnixStreamSocket::__vt
-__vt__16invalid_argument		# invalid_argument::__vt
-__vt__17SIOUXSocketDomain		# SIOUXSocketDomain::__vt
-__vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
-__vt__6Socket		# Socket::__vt
-__vt__8Gatherer		# Gatherer::__vt
-__vt__8bad_cast		# bad_cast::__vt
-__vt__9MPWDomain		# MPWDomain::__vt
-__vt__9PAPSocket		# PAPSocket::__vt
-__vt__9PPCSocket		# PPCSocket::__vt
-__vt__9ScattGath		# ScattGath::__vt
-__vt__9Scatterer		# Scatterer::__vt
-__vt__9TCPSocket		# TCPSocket::__vt
-__vt__9UDPSocket		# UDPSocket::__vt
-__vt__9bad_alloc		# bad_alloc::__vt
-__vt__9exception		# exception::__vt
-__vt__9type_info		# type_info::__vt
-__write_console
-__write_file
-__write_string
-_fcreator
-_ftype
-_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
-_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
-_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
-abort
-abs
-accept
-accept__10ADSPSocketFPvPi		# ADSPSocket::accept(void*,int*)
-accept__16UnixStreamSocketFPvPi		# UnixStreamSocket::accept(void*,int*)
-accept__6SocketFPvPi		# Socket::accept(void*,int*)
-accept__9PPCSocketFPvPi		# PPCSocket::accept(void*,int*)
-accept__9TCPSocketFPvPi		# TCPSocket::accept(void*,int*)
-access
-access__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::access(const GUSIFileRef&,int)
-acosf
-alarm
-alloc_msg__9bad_alloc		# bad_alloc::alloc_msg
-asctime
-asinf
-atan
-atan2
-atan2f
-atanf
-atexit
-atof
-atoi
-atol
-before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
-bind
-bind__10INETSocketFPvi		# INETSocket::bind(void*,int)
-bind__10UnixSocketFPvi		# UnixSocket::bind(void*,int)
-bind__15AppleTalkSocketFPvi		# AppleTalkSocket::bind(void*,int)
-bind__6SocketFPvi		# Socket::bind(void*,int)
-bind__9PPCSocketFPvi		# PPCSocket::bind(void*,int)
-bind__9UDPSocketFPvi		# UDPSocket::bind(void*,int)
-bsearch
-c_str__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::c_str() const
-calloc
-ccommand
-ceilf
-chdir
-chmod
-chmod__16FileSocketDomainFRC11GUSIFileRefUs		# FileSocketDomain::chmod(const GUSIFileRef&,unsigned short)
-choose
-choose__12SocketDomainFiPcPviPvPi		# SocketDomain::choose(int,char*,void*,int,void*,int*)
-choose__15PPCSocketDomainFiPcPviPvPi		# PPCSocketDomain::choose(int,char*,void*,int,void*,int*)
-choose__16FileSocketDomainFiPcPviPvPi		# FileSocketDomain::choose(int,char*,void*,int,void*,int*)
-choose__16UnixSocketDomainFiPcPviPvPi		# UnixSocketDomain::choose(int,char*,void*,int,void*,int*)
-choose__21AppleTalkSocketDomainFiPcPviPvPi		# AppleTalkSocketDomain::choose(int,char*,void*,int,void*,int*)
-cleanup__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::cleanup()
-cleanup__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::cleanup()
-clearerr
-clock
-close
-closedir
-connect
-connect__10ADSPSocketFPvi		# ADSPSocket::connect(void*,int)
-connect__15UnixDgramSocketFPvi		# UnixDgramSocket::connect(void*,int)
-connect__16UnixStreamSocketFPvi		# UnixStreamSocket::connect(void*,int)
-connect__6SocketFPvi		# Socket::connect(void*,int)
-connect__9PPCSocketFPvi		# PPCSocket::connect(void*,int)
-connect__9TCPSocketFPvi		# TCPSocket::connect(void*,int)
-connect__9UDPSocketFPvi		# UDPSocket::connect(void*,int)
-cos
-cosf
-coshf
-creat
-ctime
-curDir__9TFileSpec		# TFileSpec::curDir
-curVol__9TFileSpec		# TFileSpec::curVol
-cuserid
-defaultbind__10UnixSocketFv		# UnixSocket::defaultbind()
-destroy__FP51basic_string_ref<c,14char_traits<c>,12allocator<c>>		# destroy(basic_string_ref<char, char_traits<char>, allocator<char>>*)
-difftime
-div
-domains__12SocketDomain		# SocketDomain::domains
-dup
-dup2
-endservent
-errno
-error__9TFileSpec		# TFileSpec::error
-exec
-exit
-exp
-expf
-fabsf
-faccess__16FileSocketDomainFRC11GUSIFileRefUiPl		# FileSocketDomain::faccess(const GUSIFileRef&,unsigned int,long*)
-faccess__FPcUiPl		# faccess(char*,unsigned int,long*)
-fclose
-fcntl
-fcntl__10FileSocketFUii		# FileSocket::fcntl(unsigned int,int)
-fcntl__10INETSocketFUii		# INETSocket::fcntl(unsigned int,int)
-fcntl__10UnixSocketFUii		# UnixSocket::fcntl(unsigned int,int)
-fcntl__15AppleTalkSocketFUii		# AppleTalkSocket::fcntl(unsigned int,int)
-fcntl__6SocketFUii		# Socket::fcntl(unsigned int,int)
-fcntl__9PAPSocketFUii		# PAPSocket::fcntl(unsigned int,int)
-fcntl__9PPCSocketFUii		# PPCSocket::fcntl(unsigned int,int)
-fdopen
-feof
-ferror
-fflush
-fgetc
-fgetfileinfo
-fgetfileinfo__16FileSocketDomainFRC11GUSIFileRefPUlPUl		# FileSocketDomain::fgetfileinfo(const GUSIFileRef&,unsigned long*,unsigned long*)
-fgetpos
-fgets
-fileno
-firstDeviceDomain__16FileSocketDomain		# FileSocketDomain::firstDeviceDomain
-firstFileDomain__16FileSocketDomain		# FileSocketDomain::firstFileDomain
-firstTime__17GUSIConfiguration		# GUSIConfiguration::firstTime
-floorf
-fmodf
-fopen
-fprintf
-fputc
-fputs
-fread
-free
-freopen
-frexpf
-fscanf
-fseek
-fsetfileinfo
-fsetfileinfo__16FileSocketDomainFRC11GUSIFileRefUlUl		# FileSocketDomain::fsetfileinfo(const GUSIFileRef&,unsigned long,unsigned long)
-fsetpos
-fstat
-fstat__10FileSocketFP4stat		# FileSocket::fstat(stat*)
-fstat__10NullSocketFP4stat		# NullSocket::fstat(stat*)
-fstat__6SocketFP4stat		# Socket::fstat(stat*)
-ftell
-ftruncate
-ftruncate__13MacFileSocketFl		# MacFileSocket::ftruncate(long)
-ftruncate__6SocketFl		# Socket::ftruncate(long)
-fwalk
-fwrite
-getbootvol
-getc
-getch
-getchar
-getcwd
-getdtablesize
-getenv
-getfiletype
-gethostbyaddr
-gethostbyname
-gethostid
-gethostname
-getlogin
-getopt
-getpeername
-getpeername__10INETSocketFPvPi		# INETSocket::getpeername(void*,int*)
-getpeername__10UnixSocketFPvPi		# UnixSocket::getpeername(void*,int*)
-getpeername__15AppleTalkSocketFPvPi		# AppleTalkSocket::getpeername(void*,int*)
-getpeername__6SocketFPvPi		# Socket::getpeername(void*,int*)
-getpeername__9PPCSocketFPvPi		# PPCSocket::getpeername(void*,int*)
-getprotobyname
-getprotobynumber
-gets
-getservbyname
-getservbyport
-getservent
-getsockname
-getsockname__10INETSocketFPvPi		# INETSocket::getsockname(void*,int*)
-getsockname__10UnixSocketFPvPi		# UnixSocket::getsockname(void*,int*)
-getsockname__15AppleTalkSocketFPvPi		# AppleTalkSocket::getsockname(void*,int*)
-getsockname__6SocketFPvPi		# Socket::getsockname(void*,int*)
-getsockname__9PPCSocketFPvPi		# PPCSocket::getsockname(void*,int*)
-getsockname__9UDPSocketFPvPi		# UDPSocket::getsockname(void*,int*)
-getsockopt
-getsockopt__6SocketFiiPvPi		# Socket::getsockopt(int,int,void*,int*)
-getwd
-gmtime
-guesstabsize
-h_errno
-hasAlias
-hasAppleEvents
-hasCRM
-hasCRM_P
-hasCTB
-hasMakeFSSpec
-hasNewSF
-hasPPC
-hasProcessMgr
-hasRevisedTimeMgr
-hasStdNBP
-hasStdNBP_P
-htonl
-htons
-inet_addr
-inet_ntoa
 initarray
 initaudioop
 initbinascii
 initcmath
 initerrno
-initgestalt
+Py_GetBuildInfo
 initimageop
-initimp
-initmac
-initmacfs
 initmath
+_Py_MD5Final
+_Py_MD5Update
+_Py_MD5Init
 initmd5
+new_doc
 initnew
 initoperator
+PyAST_Type
 initparser
 initregex
+_Py_re_syntax_table
+_Py_re_syntax
+_Py_re_search
+_Py_re_match
+_Py_re_compile_pattern
+_Py_re_compile_fastmap
+_Py_re_set_syntax
+_Py_re_compile_initialize
 initrgbimg
 initrotor
 initselect
@@ -1187,296 +439,1115 @@ initsoundex
 initstrop
 initstruct
 inittime
-ioctl
-ioctl__10ADSPSocketFUiPv		# ADSPSocket::ioctl(unsigned int,void*)
-ioctl__10FileSocketFUiPv		# FileSocket::ioctl(unsigned int,void*)
-ioctl__10INETSocketFUiPv		# INETSocket::ioctl(unsigned int,void*)
-ioctl__10UnixSocketFUiPv		# UnixSocket::ioctl(unsigned int,void*)
-ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
-ioctl__13MacFileSocketFUiPv		# MacFileSocket::ioctl(unsigned int,void*)
-ioctl__15AppleTalkSocketFUiPv		# AppleTalkSocket::ioctl(unsigned int,void*)
-ioctl__6SocketFUiPv		# Socket::ioctl(unsigned int,void*)
-ioctl__9PAPSocketFUiPv		# PAPSocket::ioctl(unsigned int,void*)
-ioctl__9PPCSocketFUiPv		# PPCSocket::ioctl(unsigned int,void*)
-isalnum
-isalpha
-isatty
-isatty__11SIOUXSocketFv		# SIOUXSocket::isatty()
-isatty__6SocketFv		# Socket::isatty()
-iscntrl
-isdigit
-isgraph
-islower
-isprint
-ispunct
-isspace
-isupper
-isxdigit
-kbhit
-labs
-lastDeviceDomain__16FileSocketDomain		# FileSocketDomain::lastDeviceDomain
-lastFileDomain__16FileSocketDomain		# FileSocketDomain::lastFileDomain
-lastInfo__9TFileSpec		# TFileSpec::lastInfo
-ldexpf
-ldiv
-listen
-listen__10ADSPSocketFi		# ADSPSocket::listen(int)
-listen__16UnixStreamSocketFi		# UnixStreamSocket::listen(int)
-listen__6SocketFi		# Socket::listen(int)
-listen__9PPCSocketFi		# PPCSocket::listen(int)
-listen__9TCPSocketFi		# TCPSocket::listen(int)
-localeconv
-localtime
-log
-log10
-log10f
-logf
-lseek
-lseek__13MacFileSocketFli		# MacFileSocket::lseek(long,int)
-lseek__6SocketFli		# Socket::lseek(long,int)
-lstat
-macstat
-malloc
-mblen
-mbstowcs
-mbtowc
-memchr
-memcmp
-memcpy
-memmove
-memset
-mfs_GetFSSpecFSSpec
-mkdir
-mktime
-name__9type_infoCFv		# type_info::name() const
-new_doc
-newmfsaobject
-newmfssobject
-not_upp
-npos__47basic_string<c,14char_traits<c>,12allocator<c>>		# basic_string<char, char_traits<char>, allocator<char>>::npos
-ntohl
-ntohs
-open
-open__13MacFileSocketFRC9TFileSpeci		# MacFileSocket::open(const TFileSpec&,int)
-open__15PAPSocketDomainFRC11GUSIFileRefi		# PAPSocketDomain::open(const GUSIFileRef&,int)
-open__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::open(const GUSIFileRef&,int)
-open__16NullSocketDomainFRC11GUSIFileRefi		# NullSocketDomain::open(const GUSIFileRef&,int)
-open__17SIOUXSocketDomainFRC11GUSIFileRefi		# SIOUXSocketDomain::open(const GUSIFileRef&,int)
-open__9MPWDomain		# MPWDomain::open
-open_app_upp
+FindApplicationFromCreator
+PyMac_ApplicationFSSpec
+PyMac_ApplicationPath
 open_doc_upp
-opendir
-optarg
-opterr
-optind
+open_app_upp
+not_upp
+PyMac_GetArgv
+PyMac_GetFullPath
+PyMac_init_process_location
+strdup
+Py_GetCompiler
+PyMac_SetGUSIOptions
+PyMac_PreferenceOptions
+PyMac_GetPythonPath
+PyMac_GetPythonDir
+Py_GetPath
+Py_GetPlatform
+PyMac_ConsoleIsDead
+PyMac_OSErrException
+PyMac_BuildFixed
+PyMac_GetFixed
+PyMac_GetEventRecord
+PyMac_BuildPoint
+PyMac_GetPoint
+PyMac_BuildRect
+PyMac_GetRect
+PyMac_GetFSSpec
+PyMac_BuildStr255
+PyMac_GetStr255
+PyMac_BuildNumVersion
+PyMac_BuildOSType
+PyMac_GetOSType
+PyMac_PromptGetFile
+PyMac_GetDirectory
+PyMac_FindModuleExtension
+PyMac_LoadResourceModule
+PyMac_FindResourceModule
+SIOUXDoAboutBox
+PyMac_RestoreMenuBar
+PyMac_InitMenuBar
+PyMac_SetSchedParams
+PyMac_GetSchedParams
+PyMac_HandleEvent
+PyMac_BuildEventRecord
+PyMac_HandleEventIntern
+PyMac_SetEventHandler
+PyMac_InForeground
+PyOS_InterruptOccurred
+PyErr_CheckSignals
+PyOS_FiniInterrupts
+PyOS_InitInterrupts
+PyOS_CheckStack
+PyMac_Error
+PyErr_Mac
+PyMac_GetOSErrException
+PyMac_StrError
+Pstring
+PLstrrchr
+PLstrcmp
+PLstrcpy
+PyMac_StopGUSISpin
+PyMac_SetGUSISpin
+RotateCursor
+SpinCursor
+PyMac_FixGUSIcd
+guesstabsize
+PyMac_AppRefNum
 options
-perror
-pipe
-post_select__6SocketFUcUcUc		# Socket::post_select(unsigned char,unsigned char,unsigned char)
-pow
-powf
-pre_select__6SocketFUcUcUc		# Socket::pre_select(unsigned char,unsigned char,unsigned char)
-printf
-process__12SocketDomain		# SocketDomain::process
-putc
-putchar
-puts
-qd
-qsort
-raise
-rand
-rdAbortConnect
-rdAccept
-rdAddress
-rdBind
-rdBufSize
-rdConnect
-rdDelete
-rdDiscardRead
-rdDisconnect
-rdGUSI_error
-rdOrphan
-rdRead
-rdReadAvail
-rdSend
-rdShutDown
-rdVersion
-rdWrite
-rdWriteAvail
-read
-read__10NullSocketFPvi		# NullSocket::read(void*,int)
-read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
-read__13MacFileSocketFPvi		# MacFileSocket::read(void*,int)
-read__6SocketFPvi		# Socket::read(void*,int)
-readdir
-readlink
-readv
+Py_GetExecPrefix
+Py_GetPrefix
+Py_GetArgcArgv
+Py_GetProgramFullPath
+PyMac_Exit
+PyMac_InitApplication
+PyMac_Initialize
+PyMac_InitApplet
+getfiletype
+setfiletype
+PyMac_AddLibResources
+__initialize_with_resources
+getbootvol
+getwd
+macstat
+sync
+initgestalt
+initmacfs
+newmfssobject
+mfs_GetFSSpecFSSpec
+newmfsaobject
+initmac
+MacOS_Init
+calloc
 realloc
-recv
-recvfrom
-recvfrom__10ADSPSocketFPviiPvPi		# ADSPSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__15UnixDgramSocketFPviiPvPi		# UnixDgramSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__16UnixStreamSocketFPviiPvPi		# UnixStreamSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__6SocketFPviiPvPi		# Socket::recvfrom(void*,int,int,void*,int*)
-recvfrom__9PAPSocketFPviiPvPi		# PAPSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__9PPCSocketFPviiPvPi		# PPCSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__9TCPSocketFPviiPvPi		# TCPSocket::recvfrom(void*,int,int,void*,int*)
-recvfrom__9UDPSocketFPviiPvPi		# UDPSocket::recvfrom(void*,int,int,void*,int*)
-recvmsg
-remove
-remove__16FileSocketDomainFRC11GUSIFileRef		# FileSocketDomain::remove(const GUSIFileRef&)
-rename
-rename__16FileSocketDomainFRC11GUSIFileRefPCc		# FileSocketDomain::rename(const GUSIFileRef&,const char*)
-rewind
-rewinddir
-rmdir
-scandir
-scanf
-seekdir
-select
+free
+malloc
+initreop
+Pcre_Type
+initpcre
+pcre_lcc
+pcre_fcc
+pcre_cbits
+pcre_ctypes
+pcre_malloc
+pcre_free
+pcre_exec
+pcre_compile
+pcre_info
+pcre_version
+pcre_study
+initcPickle
+Pickler_setattr
+cPickle_PyMapping_HasKey
+initcStringIO
+uADSPCompletion
+__vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
+__vt__10ADSPSocket		# ADSPSocket::__vt
+__vt__15AppleTalkSocket		# AppleTalkSocket::__vt
+AppleTalkSockets
+__dt__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::~AppleTalkSocketDomain()
+AtlkLookup__FRC10EntityNameP9AddrBlock		# AtlkLookup(const EntityName&,AddrBlock*)
+__dt__11AtlkSymAddrFv		# AtlkSymAddr::~AtlkSymAddr()
+Register__11AtlkSymAddrFUc		# AtlkSymAddr::Register(unsigned char)
+__ct__11AtlkSymAddrFRC10EntityName		# AtlkSymAddr::AtlkSymAddr(const EntityName&)
+choose__21AppleTalkSocketDomainFiPcPviPvPi		# AppleTalkSocketDomain::choose(int,char*,void*,int,void*,int*)
+socket__21AppleTalkSocketDomainFis		# AppleTalkSocketDomain::socket(int,short)
+GetDSP__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::GetDSP()
+Validate__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::Validate()
+DoMPPOpen__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::DoMPPOpen()
+__ct__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::AppleTalkSocketDomain()
+GUSIwithAppleTalkSockets
 select__10ADSPSocketFPUcPUcPUc		# ADSPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__10FileSocketFPUcPUcPUc		# FileSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__10NullSocketFPUcPUcPUc		# NullSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__10UnixSocketFPUcPUcPUc		# UnixSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__11SIOUXSocketFPUcPUcPUc		# SIOUXSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__6SocketFPUcPUcPUc		# Socket::select(unsigned char*,unsigned char*,unsigned char*)
-select__9PAPSocketFPUcPUcPUc		# PAPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__9PPCSocketFPUcPUcPUc		# PPCSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__9TCPSocketFPUcPUcPUc		# TCPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-select__9UDPSocketFPUcPUcPUc		# UDPSocket::select(unsigned char*,unsigned char*,unsigned char*)
-send
+ioctl__10ADSPSocketFUiPv		# ADSPSocket::ioctl(unsigned int,void*)
+shutdown__10ADSPSocketFi		# ADSPSocket::shutdown(int)
+sendto__10ADSPSocketFPviiPvi		# ADSPSocket::sendto(void*,int,int,void*,int)
+recvfrom__10ADSPSocketFPviiPvPi		# ADSPSocket::recvfrom(void*,int,int,void*,int*)
+accept__10ADSPSocketFPvPi		# ADSPSocket::accept(void*,int*)
+connect__10ADSPSocketFPvi		# ADSPSocket::connect(void*,int)
+UnInit__10ADSPSocketFUc		# ADSPSocket::UnInit(unsigned char)
+Init__10ADSPSocketFv		# ADSPSocket::Init()
+listen__10ADSPSocketFi		# ADSPSocket::listen(int)
+__dt__10ADSPSocketFv		# ADSPSocket::~ADSPSocket()
+__ct__10ADSPSocketFUc		# ADSPSocket::ADSPSocket(unsigned char)
+getpeername__15AppleTalkSocketFPvPi		# AppleTalkSocket::getpeername(void*,int*)
+getsockname__15AppleTalkSocketFPvPi		# AppleTalkSocket::getsockname(void*,int*)
+__dt__10ErrnoSaverFv		# ErrnoSaver::~ErrnoSaver()
+bind__15AppleTalkSocketFPvi		# AppleTalkSocket::bind(void*,int)
+ioctl__15AppleTalkSocketFUiPv		# AppleTalkSocket::ioctl(unsigned int,void*)
+fcntl__15AppleTalkSocketFUii		# AppleTalkSocket::fcntl(unsigned int,int)
+__dt__15AppleTalkSocketFv		# AppleTalkSocket::~AppleTalkSocket()
+__ct__15AppleTalkSocketFUc		# AppleTalkSocket::AppleTalkSocket(unsigned char)
+__vt__8Gatherer		# Gatherer::__vt
+__vt__9Scatterer		# Scatterer::__vt
+__vt__9ScattGath		# ScattGath::__vt
+CopyC2PStr__FPCcPUc		# CopyC2PStr(const char*,unsigned char*)
+__dt__8GathererFv		# Gatherer::~Gatherer()
+__ct__8GathererFPC5ioveci		# Gatherer::Gatherer(const iovec*,int)
+__dt__9ScattererFv		# Scatterer::~Scatterer()
+__ct__9ScattererFPC5ioveci		# Scatterer::Scatterer(const iovec*,int)
+__dt__9ScattGathFv		# ScattGath::~ScattGath()
+__ct__9ScattGathFPC5ioveci		# ScattGath::ScattGath(const iovec*,int)
+Produce__10RingBufferFPcRl		# RingBuffer::Produce(char*,long&)
+Consume__10RingBufferFPcRl		# RingBuffer::Consume(char*,long&)
+Invalidate__10RingBufferFl		# RingBuffer::Invalidate(long)
+Validate__10RingBufferFl		# RingBuffer::Validate(long)
+Consumer__10RingBufferFRl		# RingBuffer::Consumer(long&)
+Producer__10RingBufferFRl		# RingBuffer::Producer(long&)
+__dt__10RingBufferFv		# RingBuffer::~RingBuffer()
+__ct__10RingBufferFUs		# RingBuffer::RingBuffer(unsigned short)
+GUSISpin
+GUSIExec
+gGUSISpeed
+StandAlone
+__vt__12SocketDomain		# SocketDomain::__vt
+gGUSISpinControl
+process__12SocketDomain		# SocketDomain::process
+domains__12SocketDomain		# SocketDomain::domains
+we__17GUSIConfiguration		# GUSIConfiguration::we
+firstTime__17GUSIConfiguration		# GUSIConfiguration::firstTime
+hasRevisedTimeMgr
+hasAppleEvents
+hasStdNBP
+hasStdNBP_P
+hasCTB
+hasCRM
+hasCRM_P
+hasProcessMgr
+hasNewSF
+hasAlias
+hasMakeFSSpec
+CatchStdIO
+GUSIFType
+Sockets
+GUSIConfig
+GUSILoadConfiguration
+GUSISetup
+GUSIDefaultSetup
+AppleTalkIdentity__FRsRs		# AppleTalkIdentity(short&,short&)
+__ct__7FeatureFRC7FeatureRC7Feature		# Feature::Feature(const Feature&,const Feature&)
+__ct__7FeatureFPFv_v		# Feature::Feature(void (*)(void))
+__ct__7FeatureFRC7FeaturePFv_v		# Feature::Feature(const Feature&,void (*)(void))
+__ct__7FeatureFPFv_s		# Feature::Feature(short (*)(void))
+__ct__7FeatureFRC7FeaturePFv_s		# Feature::Feature(const Feature&,short (*)(void))
+__ct__7FeatureFUlll		# Feature::Feature(unsigned long,long,long)
+__ct__7FeatureFUll		# Feature::Feature(unsigned long,long)
+__ct__7FeatureFUsSc		# Feature::Feature(unsigned short,signed char)
+GUSIInterrupt__Fv		# GUSIInterrupt()
+usleep
+sleep
+alarm
+GUSICheckAlarm__Fv		# GUSICheckAlarm()
+__dt__11SocketTableFv		# SocketTable::~SocketTable()
+__vc__11SocketTableFi		# SocketTable::operator [](int)
+Remove__11SocketTableFi		# SocketTable::Remove(int)
+Install__11SocketTableFP6Socketi		# SocketTable::Install(Socket*,int)
+__ct__11SocketTableFv		# SocketTable::SocketTable()
+DontStrip__12SocketDomainFv		# SocketDomain::DontStrip()
+choose__12SocketDomainFiPcPviPvPi		# SocketDomain::choose(int,char*,void*,int,void*,int*)
+socketpair__12SocketDomainFisPP6Socket		# SocketDomain::socketpair(int,short,Socket**)
+socket__12SocketDomainFis		# SocketDomain::socket(int,short)
+__dt__12SocketDomainFv		# SocketDomain::~SocketDomain()
+__ct__12SocketDomainFi		# SocketDomain::SocketDomain(int)
+Ready__12SocketDomainFv		# SocketDomain::Ready()
+GUSIGetEvents
+GUSISetEvents
+GUSIGetHook
+GUSISetHook
+isatty
+ftruncate
+lseek
+fstat
+setsockopt
+getsockopt
+ioctl
+dup2
+dup
+fcntl
+shutdown
+getpeername
+getsockname
+select
 sendmsg
 sendto
-sendto__10ADSPSocketFPviiPvi		# ADSPSocket::sendto(void*,int,int,void*,int)
-sendto__15UnixDgramSocketFPviiPvi		# UnixDgramSocket::sendto(void*,int,int,void*,int)
-sendto__16UnixStreamSocketFPviiPvi		# UnixStreamSocket::sendto(void*,int,int,void*,int)
-sendto__6SocketFPviiPvi		# Socket::sendto(void*,int,int,void*,int)
-sendto__9PAPSocketFPviiPvi		# PAPSocket::sendto(void*,int,int,void*,int)
-sendto__9PPCSocketFPviiPvi		# PPCSocket::sendto(void*,int,int,void*,int)
-sendto__9TCPSocketFPviiPvi		# TCPSocket::sendto(void*,int,int,void*,int)
-sendto__9UDPSocketFPviiPvi		# UDPSocket::sendto(void*,int,int,void*,int)
-set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
-set_terminate__FPFv_v		# set_terminate(void (*)(void))
-set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
-setbuf
-setfiletype
-setlocale
-setservent
-setsockopt
-setsockopt__6SocketFiiPvi		# Socket::setsockopt(int,int,void*,int)
-setvbuf
-shutdown
-shutdown__10ADSPSocketFi		# ADSPSocket::shutdown(int)
-shutdown__10INETSocketFi		# INETSocket::shutdown(int)
-shutdown__10UnixSocketFi		# UnixSocket::shutdown(int)
-shutdown__6SocketFi		# Socket::shutdown(int)
-shutdown__9PAPSocketFi		# PAPSocket::shutdown(int)
-shutdown__9PPCSocketFi		# PPCSocket::shutdown(int)
-signal
-sin
-sinf
-sinhf
-size__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::size() const
-sleep
-socket
-socket__12SocketDomainFis		# SocketDomain::socket(int,short)
-socket__15PPCSocketDomainFis		# PPCSocketDomain::socket(int,short)
-socket__16INETSocketDomainFis		# INETSocketDomain::socket(int,short)
-socket__16UnixSocketDomainFis		# UnixSocketDomain::socket(int,short)
-socket__21AppleTalkSocketDomainFis		# AppleTalkSocketDomain::socket(int,short)
+send
+writev
+write
+recvmsg
+recvfrom
+recv
+readv
+read
+close
+accept
+listen
+connect
+bind
+choose
+pipe
 socketpair
-socketpair__12SocketDomainFisPP6Socket		# SocketDomain::socketpair(int,short,Socket**)
-socketpair__16UnixSocketDomainFisPP6Socket		# UnixSocketDomain::socketpair(int,short,Socket**)
-sprintf
-sqrt
-sqrtf
-srand
-sscanf
-stat
-stat__16FileSocketDomainFRC11GUSIFileRefP4stat		# FileSocketDomain::stat(const GUSIFileRef&,stat*)
-stdopen__9MPWDomain		# MPWDomain::stdopen
-strcat
-strchr
-strcmp
-strcoll
-strcpy
-strcspn
-strdup
-strerror
-strftime
-strlen
-strncat
-strncmp
-strncpy
-strpbrk
-strrchr
-strspn
-strstr
-strtod
-strtok
-strtol
-strtoll
-strtoul
-strtoull
-strxfrm
-symlink
-sync
-system
-tanf
-tanhf
-tcp_connect_done__FP11AnnotatedPB		# tcp_connect_done(AnnotatedPB*)
-tcp_listen_done__FP11AnnotatedPB		# tcp_listen_done(AnnotatedPB*)
-tcp_recv_done__FP11AnnotatedPB		# tcp_recv_done(AnnotatedPB*)
-tcp_send_done__FP11AnnotatedPB		# tcp_send_done(AnnotatedPB*)
-tell
-telldir
-terminate__Fv		# terminate()
-throwrange__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::throwrange()
-time
-tmpfile
-tmpnam
-tolower
-toupper
-truncate
-ttyname
-uADSPCompletion
-uDNRDone
+socket
+getdtablesize
+InitConsole__11SocketTableFv		# SocketTable::InitConsole()
+DelayConsole__17GUSIConfigurationCFv		# GUSIConfiguration::DelayConsole() const
+DoAutoInitGraf__17GUSIConfigurationCFv		# GUSIConfiguration::DoAutoInitGraf() const
+SetDefaultFType__17GUSIConfigurationCFRC9TFileSpec		# GUSIConfiguration::SetDefaultFType(const TFileSpec&) const
+__ct__17GUSIConfigurationFv		# GUSIConfiguration::GUSIConfiguration()
+GUSILoadConfiguration__17GUSIConfigurationFPPc		# GUSIConfiguration::GUSILoadConfiguration(char**)
+GUSI_error_nil
+GUSI_error
+GUSIDefaultSpin
 uFolderFFilter
-uGUSIBrowseFilter
 uGetDirDlgHook
+__vt__10FileSocket		# FileSocket::__vt
+FileSockets
+getcwd
+rmdir
+mkdir
+chdir
+scandir
+closedir
+rewinddir
+seekdir
+telldir
+readdir
+opendir
+readlink
+symlink
+CopyIconFamily__Fssss		# CopyIconFamily(short,short,short,short)
+__dt__10FileSocketFv		# FileSocket::~FileSocket()
+__ct__10FileSocketFsUc		# FileSocket::FileSocket(short,unsigned char)
+MarkTemporary__10FileSocketFRC6FSSpec		# FileSocket::MarkTemporary(const FSSpec&)
+select__10FileSocketFPUcPUcPUc		# FileSocket::select(unsigned char*,unsigned char*,unsigned char*)
+fstat__10FileSocketFP4stat		# FileSocket::fstat(stat*)
+ioctl__10FileSocketFUiPv		# FileSocket::ioctl(unsigned int,void*)
+fcntl__10FileSocketFUii		# FileSocket::fcntl(unsigned int,int)
+QueueSocket__16FileSocketDomainFP10FileSocketUc		# FileSocketDomain::QueueSocket(FileSocket*,unsigned char)
+MarkTemporary__16FileSocketDomainFRC6FSSpec		# FileSocketDomain::MarkTemporary(const FSSpec&)
+GUSIDefaultExec
+access__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::access(const GUSIFileRef&,int)
+utime__16FileSocketDomainFRC11GUSIFileRefPC7utimbuf		# FileSocketDomain::utime(const GUSIFileRef&,const utimbuf*)
+chmod__16FileSocketDomainFRC11GUSIFileRefUs		# FileSocketDomain::chmod(const GUSIFileRef&,unsigned short)
+stat__16FileSocketDomainFRC11GUSIFileRefP4stat		# FileSocketDomain::stat(const GUSIFileRef&,stat*)
+faccess__16FileSocketDomainFRC11GUSIFileRefUiPl		# FileSocketDomain::faccess(const GUSIFileRef&,unsigned int,long*)
+fgetfileinfo__16FileSocketDomainFRC11GUSIFileRefPUlPUl		# FileSocketDomain::fgetfileinfo(const GUSIFileRef&,unsigned long*,unsigned long*)
+fsetfileinfo__16FileSocketDomainFRC11GUSIFileRefUlUl		# FileSocketDomain::fsetfileinfo(const GUSIFileRef&,unsigned long,unsigned long)
+rename__16FileSocketDomainFRC11GUSIFileRefPCc		# FileSocketDomain::rename(const GUSIFileRef&,const char*)
+remove__16FileSocketDomainFRC11GUSIFileRef		# FileSocketDomain::remove(const GUSIFileRef&)
+choose__16FileSocketDomainFiPcPviPvPi		# FileSocketDomain::choose(int,char*,void*,int,void*,int*)
+open__16FileSocketDomainFRC11GUSIFileRefi		# FileSocketDomain::open(const GUSIFileRef&,int)
+File_error__Fs		# File_error(short)
+IsDevice__FPCc		# IsDevice(const char*)
+__vt__16FileSocketDomain		# FileSocketDomain::__vt
+lastFileDomain__16FileSocketDomain		# FileSocketDomain::lastFileDomain
+firstFileDomain__16FileSocketDomain		# FileSocketDomain::firstFileDomain
+lastDeviceDomain__16FileSocketDomain		# FileSocketDomain::lastDeviceDomain
+firstDeviceDomain__16FileSocketDomain		# FileSocketDomain::firstDeviceDomain
+Yours__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
+__ct__16FileSocketDomainFv		# FileSocketDomain::FileSocketDomain()
+FindDomain__16FileSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# FileSocketDomain::FindDomain(const GUSIFileRef&,FileSocketDomain::Request)
+__dt__16FileSocketDomainFv		# FileSocketDomain::~FileSocketDomain()
+__ct__16FileSocketDomainFiUcUc		# FileSocketDomain::FileSocketDomain(int,unsigned char,unsigned char)
+Info__11GUSIFileRefCFv		# GUSIFileRef::Info() const
+__ct__11GUSIFileRefFsQ216FileSocketDomain7Request		# GUSIFileRef::GUSIFileRef(short,FileSocketDomain::Request)
+__ct__11GUSIFileRefFPCcQ216FileSocketDomain7RequestUc		# GUSIFileRef::GUSIFileRef(const char*,FileSocketDomain::Request,unsigned char)
+access
+utime
+chmod
+lstat
+stat
+truncate
+faccess
+fgetfileinfo
+fsetfileinfo
+rename
+unlink
+remove
+creat
+open
+curDir__9TFileSpec		# TFileSpec::curDir
+lastInfo__9TFileSpec		# TFileSpec::lastInfo
+curVol__9TFileSpec		# TFileSpec::curVol
+error__9TFileSpec		# TFileSpec::error
+FSpTouchFolder
+FSpResolve
+FSpSmartMove
+FSpIndex
+FSpCatInfo
+FSpDown
+FSpUp
+Special2FSSpec
+Path2FSSpec
+WD2FSSpec
+FRefNum2FSSpec
+FSp2Encoding
+FSp2DirRelPath
+FSp2RelPath
+FSp2FullPath
+__ct__9TFileSpecFPCcUc		# TFileSpec::TFileSpec(const char*,unsigned char)
+IsEncodedFSSpec__9TFileSpecFPCcUc		# TFileSpec::IsEncodedFSSpec(const char*,unsigned char)
+__vc__9TFileSpecCFs		# TFileSpec::operator [](short) const
+__pl__9TFileSpecCFPCc		# TFileSpec::operator +(const char*) const
+__apl__9TFileSpecFPCc		# TFileSpec::operator +=(const char*)
+__pl__9TFileSpecCFPCUc		# TFileSpec::operator +(const unsigned char*) const
+__apl__9TFileSpecFPCUc		# TFileSpec::operator +=(const unsigned char*)
+AddPathComponent__9TFileSpecFPCci		# TFileSpec::AddPathComponent(const char*,int)
+IsParentOf__9TFileSpecCFRC9TFileSpec		# TFileSpec::IsParentOf(const TFileSpec&) const
+__ne__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator !=(const TFileSpec&) const
+__eq__9TFileSpecCFRC9TFileSpec		# TFileSpec::operator ==(const TFileSpec&) const
+Exists__9TFileSpecCFv		# TFileSpec::Exists() const
+Resolve__9TFileSpecFUc		# TFileSpec::Resolve(unsigned char)
+Resolve__9TFileSpecFRC10CInfoPBRec		# TFileSpec::Resolve(const CInfoPBRec&)
+__mi__9TFileSpecCFi		# TFileSpec::operator -(int) const
+__ami__9TFileSpecFi		# TFileSpec::operator -=(int)
+__pp__9TFileSpecFv		# TFileSpec::operator ++()
+__mm__9TFileSpecFv		# TFileSpec::operator --()
+CatInfo__9TFileSpecCFR10CInfoPBRecUc		# TFileSpec::CatInfo(CInfoPBRec&,unsigned char) const
+Encode__9TFileSpecCFv		# TFileSpec::Encode() const
+RelPath__9TFileSpecCFsl		# TFileSpec::RelPath(short,long) const
+RelPath__9TFileSpecCFRC6FSSpec		# TFileSpec::RelPath(const FSSpec&) const
+RelPath__9TFileSpecCFv		# TFileSpec::RelPath() const
+FullAliasPath__9TFileSpecCFv		# TFileSpec::FullAliasPath() const
+FullPath__9TFileSpecCFv		# TFileSpec::FullPath() const
+Bless__9TFileSpecFv		# TFileSpec::Bless()
+__ct__9TFileSpecFs		# TFileSpec::TFileSpec(short)
+__ct__9TFileSpecFUlsl		# TFileSpec::TFileSpec(unsigned long,short,long)
+__ct__9TFileSpecFsPCUcUc		# TFileSpec::TFileSpec(short,const unsigned char*,unsigned char)
+__ct__9TFileSpecFslPCUcUc		# TFileSpec::TFileSpec(short,long,const unsigned char*,unsigned char)
+__ct__9TFileSpecFRC6FSSpecUc		# TFileSpec::TFileSpec(const FSSpec&,unsigned char)
+__ct__9TFileSpecFRC9TFileSpec		# TFileSpec::TFileSpec(const TFileSpec&)
+Default__9TFileSpecFv		# TFileSpec::Default()
+IsRoot__9TFileSpecFv		# TFileSpec::IsRoot()
+Root__9TFileSpecFv		# TFileSpec::Root()
+FindVol__9TFileSpecFs		# TFileSpec::FindVol(short)
+DefaultDir__9TFileSpecFv		# TFileSpec::DefaultDir()
+ChDir__9TFileSpecFRC9TFileSpec		# TFileSpec::ChDir(const TFileSpec&)
+DisposeFileGlob
+FileGlob2FSSpec
+NextFileGlob
+NewFileGlob
+Next__9TFileGlobFPQ29TFileGlob9BackTrackiUc		# TFileGlob::Next(TFileGlob::BackTrack*,int,unsigned char)
+Next__9TFileGlobFv		# TFileGlob::Next()
+__ct__9TFileGlobFPCcPC9TFileSpec		# TFileGlob::TFileGlob(const char*,const TFileSpec*)
+__vt__16INETSocketDomain		# INETSocketDomain::__vt
+__vt__10INETSocket		# INETSocket::__vt
+INETSockets
+__dt__16INETSocketDomainFv		# INETSocketDomain::~INETSocketDomain()
+CloseSocket__16INETSocketDomainFv		# INETSocketDomain::CloseSocket()
+OpenSocket__16INETSocketDomainFv		# INETSocketDomain::OpenSocket()
+GetPB__16INETSocketDomainFv		# INETSocketDomain::GetPB()
+socket__16INETSocketDomainFis		# INETSocketDomain::socket(int,short)
+Resolver__16INETSocketDomainFv		# INETSocketDomain::Resolver()
+Driver__16INETSocketDomainFv		# INETSocketDomain::Driver()
+__ct__16INETSocketDomainFv		# INETSocketDomain::INETSocketDomain()
+GUSIwithInternetSockets
+ioctl__10INETSocketFUiPv		# INETSocket::ioctl(unsigned int,void*)
+fcntl__10INETSocketFUii		# INETSocket::fcntl(unsigned int,int)
+shutdown__10INETSocketFi		# INETSocket::shutdown(int)
+getpeername__10INETSocketFPvPi		# INETSocket::getpeername(void*,int*)
+getsockname__10INETSocketFPvPi		# INETSocket::getsockname(void*,int*)
+bind__10INETSocketFPvi		# INETSocket::bind(void*,int)
+Available__10INETSocketFv		# INETSocket::Available()
+__dt__10INETSocketFv		# INETSocket::~INETSocket()
+__ct__10INETSocketFUl		# INETSocket::INETSocket(unsigned long)
+__ct__10INETSocketFv		# INETSocket::INETSocket()
+TCP_error__Fi		# TCP_error(int)
+ntohs
+ntohl
+htons
+htonl
+__vt__13MacFileSocket		# MacFileSocket::__vt
+__dt__13MacFileSocketFv		# MacFileSocket::~MacFileSocket()
+ftruncate__13MacFileSocketFl		# MacFileSocket::ftruncate(long)
+lseek__13MacFileSocketFli		# MacFileSocket::lseek(long,int)
+ioctl__13MacFileSocketFUiPv		# MacFileSocket::ioctl(unsigned int,void*)
+write__13MacFileSocketFPvi		# MacFileSocket::write(void*,int)
+read__13MacFileSocketFPvi		# MacFileSocket::read(void*,int)
+GUSIOpenFRef
+open__13MacFileSocketFRC9TFileSpeci		# MacFileSocket::open(const TFileSpec&,int)
+stdopen__9MPWDomain		# MPWDomain::stdopen
+open__9MPWDomain		# MPWDomain::open
+uDNRDone
+h_errno
+getprotobynumber
+getprotobyname
+getservbyport
+getservbyname
+getservent
+endservent
+setservent
+gethostname
+gethostid
+inet_addr
+inet_ntoa
+gethostbyaddr
+gethostbyname
+MXInfo
+HInfo
+AddrToName
+EnumCache
+AddrToStr
+StrToAddr
+CloseResolver
+OpenResolver
+OpenOurRF__Fv		# OpenOurRF()
+SearchFolderForDNRP__Fllsl		# SearchFolderForDNRP(long,long,short,long)
+GetCPanelFolder__FPsPl		# GetCPanelFolder(short*,long*)
+GetSystemFolder__FPsPl		# GetSystemFolder(short*,long*)
+TrapExists__Fs		# TrapExists(short)
+GetTrapType__Fs		# GetTrapType(short)
+NumToolboxTraps__Fv		# NumToolboxTraps()
+__vt__16NullSocketDomain		# NullSocketDomain::__vt
+__vt__10NullSocket		# NullSocket::__vt
+__dt__10NullSocketFv		# NullSocket::~NullSocket()
+__dt__16NullSocketDomainFv		# NullSocketDomain::~NullSocketDomain()
+open__16NullSocketDomainFRC11GUSIFileRefi		# NullSocketDomain::open(const GUSIFileRef&,int)
+Yours__16NullSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# NullSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
+fstat__10NullSocketFP4stat		# NullSocket::fstat(stat*)
+select__10NullSocketFPUcPUcPUc		# NullSocket::select(unsigned char*,unsigned char*,unsigned char*)
+write__10NullSocketFPvi		# NullSocket::write(void*,int)
+read__10NullSocketFPvi		# NullSocket::read(void*,int)
+__ct__10NullSocketFv		# NullSocket::NullSocket()
 uPAPReadTimer
 uPAPWriteTimer
+__vt__15PAPSocketDomain		# PAPSocketDomain::__vt
+__vt__9PAPSocket		# PAPSocket::__vt
+PAPSockets
+__dt__15PAPSocketDomainFv		# PAPSocketDomain::~PAPSocketDomain()
+open__15PAPSocketDomainFRC11GUSIFileRefi		# PAPSocketDomain::open(const GUSIFileRef&,int)
+Yours__15PAPSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# PAPSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
+GUSIwithPAPSockets
+select__9PAPSocketFPUcPUcPUc		# PAPSocket::select(unsigned char*,unsigned char*,unsigned char*)
+shutdown__9PAPSocketFi		# PAPSocket::shutdown(int)
+sendto__9PAPSocketFPviiPvi		# PAPSocket::sendto(void*,int,int,void*,int)
+recvfrom__9PAPSocketFPviiPvPi		# PAPSocket::recvfrom(void*,int,int,void*,int*)
+ioctl__9PAPSocketFUiPv		# PAPSocket::ioctl(unsigned int,void*)
+fcntl__9PAPSocketFUii		# PAPSocket::fcntl(unsigned int,int)
+Powerup__9PAPSocketFv		# PAPSocket::Powerup()
+__dt__9PAPSocketFv		# PAPSocket::~PAPSocket()
+__ct__9PAPSocketFv		# PAPSocket::PAPSocket()
+__dt__5PAPIDFv		# PAPID::~PAPID()
+__ct__5PAPIDFv		# PAPID::PAPID()
+GetPAPCode__5PAPIDFslPUc		# PAPID::GetPAPCode(short,long,unsigned char*)
+PAPWriteHellHound
+PAPReadHellHound
+PAPUnload__FPc		# PAPUnload(char*)
+PAPClose__FsPc		# PAPClose(short,char*)
+PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,AddrBlock*,char*)
+PAPWrite__FsPcssPsPc		# PAPWrite(short,char*,short,short,short*,char*)
+PAPRead__FsPcPsPsPsPc		# PAPRead(short,char*,short*,short*,short*,char*)
+PAPOpen__FPsPcsP12PAPStatusRecPsPc		# PAPOpen(short*,char*,short,PAPStatusRec*,short*,char*)
 uPPCReadHellHound
 uPPCWriteHellHound
+uGUSIBrowseFilter
+__vt__15PPCSocketDomain		# PPCSocketDomain::__vt
+__vt__9PPCSocket		# PPCSocket::__vt
+hasPPC
+PPCSockets
+__dt__15PPCSocketDomainFv		# PPCSocketDomain::~PPCSocketDomain()
+choose__15PPCSocketDomainFiPcPviPvPi		# PPCSocketDomain::choose(int,char*,void*,int,void*,int*)
+socket__15PPCSocketDomainFis		# PPCSocketDomain::socket(int,short)
+__ct__15PPCSocketDomainFv		# PPCSocketDomain::PPCSocketDomain()
+GUSIwithPPCSockets
+select__9PPCSocketFPUcPUcPUc		# PPCSocket::select(unsigned char*,unsigned char*,unsigned char*)
+shutdown__9PPCSocketFi		# PPCSocket::shutdown(int)
+sendto__9PPCSocketFPviiPvi		# PPCSocket::sendto(void*,int,int,void*,int)
+recvfrom__9PPCSocketFPviiPvPi		# PPCSocket::recvfrom(void*,int,int,void*,int*)
+accept__9PPCSocketFPvPi		# PPCSocket::accept(void*,int*)
+connect__9PPCSocketFPvi		# PPCSocket::connect(void*,int)
+listen__9PPCSocketFi		# PPCSocket::listen(int)
+getpeername__9PPCSocketFPvPi		# PPCSocket::getpeername(void*,int*)
+getsockname__9PPCSocketFPvPi		# PPCSocket::getsockname(void*,int*)
+bind__9PPCSocketFPvi		# PPCSocket::bind(void*,int)
+ioctl__9PPCSocketFUiPv		# PPCSocket::ioctl(unsigned int,void*)
+fcntl__9PPCSocketFUii		# PPCSocket::fcntl(unsigned int,int)
+HellHoundsOnMyTrail__9PPCSocketFv		# PPCSocket::HellHoundsOnMyTrail()
+Alloc__9PPCSocketFv		# PPCSocket::Alloc()
+__dt__9PPCSocketFv		# PPCSocket::~PPCSocket()
+__ct__9PPCSocketFRC9PPCSocket		# PPCSocket::PPCSocket(const PPCSocket&)
+__ct__9PPCSocketFv		# PPCSocket::PPCSocket()
+PPCWriteHellHound
+PPCReadHellHound
+PPCInit_P
+GUSISIOUXEvents
+__vt__17SIOUXSocketDomain		# SIOUXSocketDomain::__vt
+__vt__11SIOUXSocket		# SIOUXSocket::__vt
+open__17SIOUXSocketDomainFRC11GUSIFileRefi		# SIOUXSocketDomain::open(const GUSIFileRef&,int)
+Yours__17SIOUXSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# SIOUXSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
+GUSIwithSIOUXSockets
+__dt__17SIOUXSocketDomainFv		# SIOUXSocketDomain::~SIOUXSocketDomain()
+isatty__11SIOUXSocketFv		# SIOUXSocket::isatty()
+select__11SIOUXSocketFPUcPUcPUc		# SIOUXSocket::select(unsigned char*,unsigned char*,unsigned char*)
+write__11SIOUXSocketFPvi		# SIOUXSocket::write(void*,int)
+read__11SIOUXSocketFPvi		# SIOUXSocket::read(void*,int)
+ioctl__11SIOUXSocketFUiPv		# SIOUXSocket::ioctl(unsigned int,void*)
+__dt__11SIOUXSocketFv		# SIOUXSocket::~SIOUXSocket()
+__ct__11SIOUXSocketFv		# SIOUXSocket::SIOUXSocket()
+DoInitialize__11SIOUXSocketFv		# SIOUXSocket::DoInitialize()
+__vt__6Socket		# Socket::__vt
+post_select__6SocketFUcUcUc		# Socket::post_select(unsigned char,unsigned char,unsigned char)
+select__6SocketFPUcPUcPUc		# Socket::select(unsigned char*,unsigned char*,unsigned char*)
+pre_select__6SocketFUcUcUc		# Socket::pre_select(unsigned char,unsigned char,unsigned char)
+shutdown__6SocketFi		# Socket::shutdown(int)
+isatty__6SocketFv		# Socket::isatty()
+ftruncate__6SocketFl		# Socket::ftruncate(long)
+lseek__6SocketFli		# Socket::lseek(long,int)
+fstat__6SocketFP4stat		# Socket::fstat(stat*)
+ioctl__6SocketFUiPv		# Socket::ioctl(unsigned int,void*)
+fcntl__6SocketFUii		# Socket::fcntl(unsigned int,int)
+setsockopt__6SocketFiiPvi		# Socket::setsockopt(int,int,void*,int)
+getsockopt__6SocketFiiPvPi		# Socket::getsockopt(int,int,void*,int*)
+getpeername__6SocketFPvPi		# Socket::getpeername(void*,int*)
+getsockname__6SocketFPvPi		# Socket::getsockname(void*,int*)
+sendto__6SocketFPviiPvi		# Socket::sendto(void*,int,int,void*,int)
+recvfrom__6SocketFPviiPvPi		# Socket::recvfrom(void*,int,int,void*,int*)
+write__6SocketFPvi		# Socket::write(void*,int)
+read__6SocketFPvi		# Socket::read(void*,int)
+accept__6SocketFPvPi		# Socket::accept(void*,int*)
+listen__6SocketFi		# Socket::listen(int)
+connect__6SocketFPvi		# Socket::connect(void*,int)
+bind__6SocketFPvi		# Socket::bind(void*,int)
+__dt__6SocketFv		# Socket::~Socket()
+__ct__6SocketFv		# Socket::Socket()
+u_tcp_notify
 u_tcp_connect_done
 u_tcp_listen_done
-u_tcp_notify
 u_tcp_recv_done
 u_tcp_send_done
+__vt__9TCPSocket		# TCPSocket::__vt
+select__9TCPSocketFPUcPUcPUc		# TCPSocket::select(unsigned char*,unsigned char*,unsigned char*)
+sendto__9TCPSocketFPviiPvi		# TCPSocket::sendto(void*,int,int,void*,int)
+recvfrom__9TCPSocketFPviiPvPi		# TCPSocket::recvfrom(void*,int,int,void*,int*)
+accept__9TCPSocketFPvPi		# TCPSocket::accept(void*,int*)
+listen__9TCPSocketFi		# TCPSocket::listen(int)
+connect__9TCPSocketFPvi		# TCPSocket::connect(void*,int)
+Available__9TCPSocketFv		# TCPSocket::Available()
+GetPB__9TCPSocketFv		# TCPSocket::GetPB()
+__dt__9TCPSocketFv		# TCPSocket::~TCPSocket()
+__ct__9TCPSocketFP9TCPSocket		# TCPSocket::TCPSocket(TCPSocket*)
+__ct__9TCPSocketFUl		# TCPSocket::TCPSocket(unsigned long)
+__ct__9TCPSocketFv		# TCPSocket::TCPSocket()
+tcp_send_done__FP11AnnotatedPB		# tcp_send_done(AnnotatedPB*)
+tcp_recv_done__FP11AnnotatedPB		# tcp_recv_done(AnnotatedPB*)
+tcp_listen_done__FP11AnnotatedPB		# tcp_listen_done(AnnotatedPB*)
+tcp_connect_done__FP11AnnotatedPB		# tcp_connect_done(AnnotatedPB*)
+tcp_notify
 u_udp_read_ahead_done
 u_udp_send_done
+__vt__9UDPSocket		# UDPSocket::__vt
+select__9UDPSocketFPUcPUcPUc		# UDPSocket::select(unsigned char*,unsigned char*,unsigned char*)
+sendto__9UDPSocketFPviiPvi		# UDPSocket::sendto(void*,int,int,void*,int)
+recvfrom__9UDPSocketFPviiPvPi		# UDPSocket::recvfrom(void*,int,int,void*,int*)
+connect__9UDPSocketFPvi		# UDPSocket::connect(void*,int)
+getsockname__9UDPSocketFPvPi		# UDPSocket::getsockname(void*,int*)
+bind__9UDPSocketFPvi		# UDPSocket::bind(void*,int)
+ReadAhead__9UDPSocketFv		# UDPSocket::ReadAhead()
+FlushReadAhead__9UDPSocketFv		# UDPSocket::FlushReadAhead()
+NewStream__9UDPSocketFv		# UDPSocket::NewStream()
+Available__9UDPSocketFv		# UDPSocket::Available()
+GetPB__9UDPSocketFv		# UDPSocket::GetPB()
+__dt__9UDPSocketFv		# UDPSocket::~UDPSocket()
+__ct__9UDPSocketFUl		# UDPSocket::UDPSocket(unsigned long)
+__ct__9UDPSocketFv		# UDPSocket::UDPSocket()
 udp_read_ahead_done__FP11AnnotatedPB		# udp_read_ahead_done(AnnotatedPB*)
-udp_send_done__FP11AnnotatedPB		# udp_send_done(AnnotatedPB*)
-uname
-unexpected__Fv		# unexpected()
-ungetc
-unlink
-usleep
-utime
-utime__16FileSocketDomainFRC11GUSIFileRefPC7utimbuf		# FileSocketDomain::utime(const GUSIFileRef&,const utimbuf*)
-utimes
-vfprintf
-vprintf
-vsprintf
-wcstombs
-wctomb
-we__17GUSIConfiguration		# GUSIConfiguration::we
+rdDelete
+rdVersion
+rdBind
+rdConnect
+rdAccept
+rdRead
+rdWrite
+rdSend
+rdReadAvail
+rdWriteAvail
+rdBufSize
+rdDiscardRead
+rdShutDown
+rdDisconnect
+rdGUSI_error
+rdAddress
+rdOrphan
+rdAbortConnect
+UnixChannel_EmulatedVTable
+__vt__16UnixSocketDomain		# UnixSocketDomain::__vt
+__vt__15UnixDgramSocket		# UnixDgramSocket::__vt
+__vt__16UnixStreamSocket		# UnixStreamSocket::__vt
+__vt__10UnixSocket		# UnixSocket::__vt
+__dt__16UnixSocketDomainFv		# UnixSocketDomain::~UnixSocketDomain()
+choose__16UnixSocketDomainFiPcPviPvPi		# UnixSocketDomain::choose(int,char*,void*,int,void*,int*)
+socketpair__16UnixSocketDomainFisPP6Socket		# UnixSocketDomain::socketpair(int,short,Socket**)
+socket__16UnixSocketDomainFis		# UnixSocketDomain::socket(int,short)
+GUSIwithUnixSockets
+Validate__12UnixSocketIDFv		# UnixSocketID::Validate()
+__ct__12UnixSocketIDFP11UnixChannel		# UnixSocketID::UnixSocketID(UnixChannel*)
+AbortConnect__12UnixChannel2FP11UnixChannel		# UnixChannel2::AbortConnect(UnixChannel*)
+Orphan__12UnixChannel2Fv		# UnixChannel2::Orphan()
+__ct__12UnixChannel2FP10UnixSocket		# UnixChannel2::UnixChannel2(UnixSocket*)
+Address__11UnixChannelFv		# UnixChannel::Address()
+GUSI_error__11UnixChannelFi		# UnixChannel::GUSI_error(int)
+Disconnect__11UnixChannelFv		# UnixChannel::Disconnect()
+DiscardRead__11UnixChannelFi		# UnixChannel::DiscardRead(int)
+ShutDown__11UnixChannelFi		# UnixChannel::ShutDown(int)
+BufSize__11UnixChannelFv		# UnixChannel::BufSize()
+WriteAvail__11UnixChannelFv		# UnixChannel::WriteAvail()
+ReadAvail__11UnixChannelFv		# UnixChannel::ReadAvail()
+Send__11UnixChannelFP11UnixChannelPvi		# UnixChannel::Send(UnixChannel*,void*,int)
+Write__11UnixChannelFPvi		# UnixChannel::Write(void*,int)
+Read__11UnixChannelFPvi		# UnixChannel::Read(void*,int)
+Accept__11UnixChannelFP11UnixChannel		# UnixChannel::Accept(UnixChannel*)
+Connect__11UnixChannelFP11UnixChannel		# UnixChannel::Connect(UnixChannel*)
+Bind__11UnixChannelFR14UnixSocketAddr		# UnixChannel::Bind(UnixSocketAddr&)
+Version__11UnixChannelFv		# UnixChannel::Version()
+UnBind__11UnixChannelFv		# UnixChannel::UnBind()
+__dt__11UnixChannelFv		# UnixChannel::~UnixChannel()
+__ct__11UnixChannelFP10UnixSocket		# UnixChannel::UnixChannel(UnixSocket*)
+sendto__15UnixDgramSocketFPviiPvi		# UnixDgramSocket::sendto(void*,int,int,void*,int)
+recvfrom__15UnixDgramSocketFPviiPvPi		# UnixDgramSocket::recvfrom(void*,int,int,void*,int*)
+connect__15UnixDgramSocketFPvi		# UnixDgramSocket::connect(void*,int)
+__dt__15UnixDgramSocketFv		# UnixDgramSocket::~UnixDgramSocket()
+__ct__15UnixDgramSocketFv		# UnixDgramSocket::UnixDgramSocket()
+sendto__16UnixStreamSocketFPviiPvi		# UnixStreamSocket::sendto(void*,int,int,void*,int)
+recvfrom__16UnixStreamSocketFPviiPvPi		# UnixStreamSocket::recvfrom(void*,int,int,void*,int*)
+accept__16UnixStreamSocketFPvPi		# UnixStreamSocket::accept(void*,int*)
+connect__16UnixStreamSocketFPvi		# UnixStreamSocket::connect(void*,int)
+listen__16UnixStreamSocketFi		# UnixStreamSocket::listen(int)
+__dt__16UnixStreamSocketFv		# UnixStreamSocket::~UnixStreamSocket()
+__ct__16UnixStreamSocketFv		# UnixStreamSocket::UnixStreamSocket()
+shutdown__10UnixSocketFi		# UnixSocket::shutdown(int)
+select__10UnixSocketFPUcPUcPUc		# UnixSocket::select(unsigned char*,unsigned char*,unsigned char*)
+getpeername__10UnixSocketFPvPi		# UnixSocket::getpeername(void*,int*)
+getsockname__10UnixSocketFPvPi		# UnixSocket::getsockname(void*,int*)
+bind__10UnixSocketFPvi		# UnixSocket::bind(void*,int)
+ioctl__10UnixSocketFUiPv		# UnixSocket::ioctl(unsigned int,void*)
+fcntl__10UnixSocketFUii		# UnixSocket::fcntl(unsigned int,int)
+defaultbind__10UnixSocketFv		# UnixSocket::defaultbind()
+__dt__10UnixSocketFv		# UnixSocket::~UnixSocket()
+__ct__10UnixSocketFs		# UnixSocket::UnixSocket(short)
+__ct__14UnixSocketAddrF9TFileSpec		# UnixSocketAddr::UnixSocketAddr(TFileSpec)
+GUSISetupMSLSIOUX__Fv		# GUSISetupMSLSIOUX()
+fwalk
+fdopen
+__close_file
+__position_file
+__write_file
+__read_file
+__open_file
+__open_temp_file
+atan
+atan2
+memmove
+memcpy
+pow
+exp
+log
+log10
+sqrt
+strcmp
+strlen
+strncmp
+sin
+cos
+__dc_arr
+__del_arr
+__new_arr
+__init_arr
+__copy
+__som_check_ev
+__som_check_new
+__vt__13bad_exception		# bad_exception::__vt
 what__13bad_exceptionCFv		# bad_exception::what() const
+__end__catch
+__throw
+__unexpected
+__dt__13bad_exceptionFv		# bad_exception::~bad_exception()
+__unregister_fragment
+__register_fragment
+__global_destructor_chain
+__destroy_global_chain
+__register_global_object
+__destroy_new_array
+__destroy_arr
+__construct_array
+__dt__26__partial_array_destructorFv		# __partial_array_destructor::~__partial_array_destructor()
+__construct_new_array
+__throw_catch_compare
+unexpected__Fv		# unexpected()
+set_unexpected__FPFv_v		# set_unexpected(void (*)(void))
+terminate__Fv		# terminate()
+set_terminate__FPFv_v		# set_terminate(void (*)(void))
+__vt__10bad_typeid		# bad_typeid::__vt
+__vt__9type_info		# type_info::__vt
+__dt__9type_infoFv		# type_info::~type_info()
+__dynamic_cast
+__get_typeid
+__dt__10bad_typeidFv		# bad_typeid::~bad_typeid()
+__as__9type_infoFRC9type_info		# type_info::operator =(const type_info&)
+__ct__9type_infoFRC9type_info		# type_info::type_info(const type_info&)
+name__9type_infoCFv		# type_info::name() const
+before__9type_infoCFRC9type_info		# type_info::before(const type_info&) const
+__ne__9type_infoCFRC9type_info		# type_info::operator !=(const type_info&) const
+__eq__9type_infoCFRC9type_info		# type_info::operator ==(const type_info&) const
+__dl__FPv		# operator delete(void*)
+__nw__FUlRC9nothrow_t		# operator new(unsigned long,const nothrow_t&)
+__nw__FUl		# operator new(unsigned long)
+_prealloc_newpool__FUl		# _prealloc_newpool(unsigned long)
+_set_newnonptrmax__FUl		# _set_newnonptrmax(unsigned long)
+_set_newpoolsize__FUl		# _set_newpoolsize(unsigned long)
+__throws_bad_alloc
+__new_handler
+__del_hdl
+__new_hdl
+set_new_handler__FPFv_v		# set_new_handler(void (*)(void))
+__throw_bad_alloc__Fv		# __throw_bad_alloc()
+qd
+__vt__9bad_alloc		# bad_alloc::__vt
+__vt__14overflow_error		# overflow_error::__vt
+__vt__11range_error		# range_error::__vt
+__vt__13runtime_error		# runtime_error::__vt
+__vt__12out_of_range		# out_of_range::__vt
+__vt__12length_error		# length_error::__vt
+__vt__16invalid_argument		# invalid_argument::__vt
+__vt__12domain_error		# domain_error::__vt
+__vt__11logic_error		# logic_error::__vt
+__vt__8bad_cast		# bad_cast::__vt
+__vt__9exception		# exception::__vt
+npos__47basic_string<c,14char_traits<c>,12allocator<c>>		# basic_string<char, char_traits<char>, allocator<char>>::npos
+alloc_msg__9bad_alloc		# bad_alloc::alloc_msg
+cleanup__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::cleanup()
+__dt__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::~basic_string_ref()
+__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const allocator<char>&)
+__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const allocator<char>&)
+c_str__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::c_str() const
+cleanup__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::cleanup()
+__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const char*,const allocator<char>&)
+__ct__51basic_string_ref<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUlRC12allocator<c>		# basic_string_ref<char, char_traits<char>, allocator<char>>::basic_string_ref(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long,const allocator<char>&)
+throwrange__51basic_string_ref<c,14char_traits<c>,12allocator<c>>Fv		# basic_string_ref<char, char_traits<char>, allocator<char>>::throwrange()
+__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FPCcRC12allocator<c>		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const char*,const allocator<char>&)
+__dt__64allocator<51basic_string_ref<c,14char_traits<c>,12allocator<c>>>Fv		# allocator<basic_string_ref<char, char_traits<char>, allocator<char>>>::~allocator()
+__ct__47basic_string<c,14char_traits<c>,12allocator<c>>FRC47basic_string<c,14char_traits<c>,12allocator<c>>UlUl		# basic_string<char, char_traits<char>, allocator<char>>::basic_string(const basic_string<char, char_traits<char>, allocator<char>>&,unsigned long,unsigned long)
+size__47basic_string<c,14char_traits<c>,12allocator<c>>CFv		# basic_string<char, char_traits<char>, allocator<char>>::size() const
+__dt__9bad_allocFv		# bad_alloc::~bad_alloc()
+__as__9bad_allocFRC9bad_alloc		# bad_alloc::operator =(const bad_alloc&)
+__dt__14overflow_errorFv		# overflow_error::~overflow_error()
+__dt__11range_errorFv		# range_error::~range_error()
+__dt__13runtime_errorFv		# runtime_error::~runtime_error()
+__dt__12out_of_rangeFv		# out_of_range::~out_of_range()
+__dt__12length_errorFv		# length_error::~length_error()
+__dt__16invalid_argumentFv		# invalid_argument::~invalid_argument()
+__dt__12domain_errorFv		# domain_error::~domain_error()
+__dt__11logic_errorFv		# logic_error::~logic_error()
+__priv_throwbadcast__Fv		# __priv_throwbadcast()
+__dt__8bad_castFv		# bad_cast::~bad_cast()
+__dt__47basic_string<c,14char_traits<c>,12allocator<c>>Fv		# basic_string<char, char_traits<char>, allocator<char>>::~basic_string()
+__ct__10bad_typeidFv		# bad_typeid::bad_typeid()
 what__9bad_allocCFv		# bad_alloc::what() const
 what__9exceptionCFv		# exception::what() const
-write
-write__10NullSocketFPvi		# NullSocket::write(void*,int)
-write__11SIOUXSocketFPvi		# SIOUXSocket::write(void*,int)
-write__13MacFileSocketFPvi		# MacFileSocket::write(void*,int)
-write__6SocketFPvi		# Socket::write(void*,int)
-writev
+__dt__9exceptionFv		# exception::~exception()
+__as__9exceptionFRC9exception		# exception::operator =(const exception&)
+__ct__9exceptionFPCc		# exception::exception(const char*)
+__dt__12allocator<c>Fv		# allocator<char>::~allocator()
+__ct__9exceptionFRC9exception		# exception::exception(const exception&)
+__ct__9exceptionFRC47basic_string<c,14char_traits<c>,12allocator<c>>		# exception::exception(const basic_string<char, char_traits<char>, allocator<char>>&)
+exit
+abort
+__aborting
+__console_exit
+__stdio_exit
+__exit
+exit
+__atexit
+atexit
+abort
+__malloc_pool
+__files
+__num_to_file
+__file_to_num
+__flush_line_buffered_output_files
+__flush_all
+__close_all
+__init_file
+__find_unopened_file
+__lmod
+__mod
+__ldiv
+__div
+__lmul
+__mul
+__ladd
+__add
+ldiv
+div
+labs
+abs
+__assertion_failed
+bsearch
+setbuf
+setvbuf
+__flush_buffer
+__load_buffer
+__prep_buffer
+__convert_to_newlines
+__convert_from_newlines
+ccommand
+puts
+fputs
+putchar
+putc
+fputc
+__put_char
+__ungotten
+ungetc
+gets
+fgets
+getchar
+getc
+fgetc
+__get_char
+__close_console
+__write_console
+__read_console
+__end_critical_region
+__begin_critical_region
+__kill_critical_regions
+__init_critical_regions
+__ctype_map
+__lower_map
+__upper_map
+toupper
+tolower
+isxdigit
+isupper
+isspace
+ispunct
+isprint
+islower
+isgraph
+isdigit
+iscntrl
+isalpha
+isalnum
+fwrite
+fread
+errno
+__temp_file_mode
+__set_idle_proc
+__get_file_modes
+__handle_reopen
+__handle_open
+freopen
+fopen
+fflush
+fclose
+tmpfile
+tmpnam
+__rename_file
+__delete_file
+__temp_file_name
+rewind
+fsetpos
+fseek
+_fseek
+fgetpos
+ftell
+_ftell
+fmodf
+floorf
+ceilf
+sqrtf
+powf
+fabsf
+log10f
+logf
+ldexpf
+frexpf
+expf
+tanhf
+sinhf
+coshf
+atan2f
+atanf
+asinf
+acosf
+tanf
+sinf
+cosf
+__lconv
+localeconv
+setlocale
+wcstombs
+mbstowcs
+wctomb
+mbtowc
+mblen
+memcmp
+__memrchr
+memchr
+memset
+__fill_mem
+__copy_longs_rev_unaligned
+__copy_longs_unaligned
+__copy_longs_rev_aligned
+__copy_longs_aligned
+__move_mem
+__copy_mem
+__stdio_atexit
+perror
+ferror
+feof
+clearerr
+__path2fss
+__pool_free_all
+__pool_free
+__pool_realloc
+__pool_alloc_clear
+__pool_alloc
+__pool_preassign
+__pool_preallocate
+__init_pool_obj
+__sys_free
+__sys_alloc
+sprintf
+vsprintf
+printf
+vprintf
+fprintf
+vfprintf
+qsort
+srand
+rand
+sscanf
+__vsscanf
+scanf
+fscanf
+__vfscanf
+raise
+signal
+__strerror
+strerror
+strstr
+strtok
+strcspn
+strspn
+strpbrk
+strrchr
+strxfrm
+strcoll
+strchr
+strncat
+strcat
+strncpy
+strcpy
+__close_string
+__write_string
+__read_string
+__open_string_file
+atof
+strtod
+__strtold
+atol
+atoi
+strtoll
+strtol
+strtoull
+strtoul
+__strtoull
+__strtoul
+system
+getenv
+strftime
+localtime
+gmtime
+ctime
+asctime
+time
+mktime
+difftime
+clock
+__to_gm_time
+__get_time
+__get_clock
+ttyname
+getlogin
+exec
+cuserid
+_ftype
+_fcreator
+tell
+fileno
+__gettype
+__getcreator
+__ctopstring
+__system7present
+__myraise
+utimes
+uname
+__float_min
+__float_max
+__float_epsilon
+__float_tiny
+__float_nan
+__float_huge
+__double_min
+__double_max
+__double_epsilon
+__double_tiny
+__double_huge
+__double_nan
+__extended_min
+__extended_max
+__extended_epsilon
+__extended_tiny
+__extended_huge
+__extended_nan
+getch
+kbhit
+SIOUXSetTitle
+__ttyname
+ReadCharsFromConsole
+WriteCharsToConsole
+RemoveConsole
+InstallConsole
+SIOUXHandleOneEvent
+SIOUXisinrange
+SIOUXDragRect
+SIOUXBigRect
+SIOUXSettings
+SIOUXTextWindow
+SIOUXState
+SIOUXUseWaitNextEvent
+SIOUXQuitting
+SIOUXselstart
+SIOUXDoMenuChoice
+SIOUXDoEditSelectAll
+SIOUXDoEditClear
+SIOUXDoEditPaste
+SIOUXDoEditCopy
+SIOUXDoEditCut
+SIOUXDoSaveText
+SIOUXUpdateMenuItems
+SIOUXSetupMenus
+SIOUXDoPrintText
+SIOUXDoPageSetup
+SIOUXYesNoCancelAlert
+SIOUXCantSaveAlert
+SIOUXSetupTextWindow
+SIOUXDoContentClick
+SIOUXMyGrowWindow
+SIOUXUpdateStatusLine
+MoveScrollBox
+SIOUXUpdateScrollbar
+SIOUXUpdateWindow
+SIOUXDrawGrowBox
+AdjustText
+SIOUXIsAppWindow
