@@ -247,11 +247,11 @@ specification, and are replaced by the indicated characters in the
   \lineiii{\%S}{Second as a decimal number [00,61].}{(2)}
   \lineiii{\%U}{Week number of the year (Sunday as the first day of the
                 week) as a decimal number [00,53].  All days in a new year
-                preceding the first Sunday are considered to be in week 0.}{}
+                preceding the first Sunday are considered to be in week 0.}{(3)}
   \lineiii{\%w}{Weekday as a decimal number [0(Sunday),6].}{}
   \lineiii{\%W}{Week number of the year (Monday as the first day of the
                 week) as a decimal number [00,53].  All days in a new year
-                preceding the first Monday are considered to be in week 0.}{}
+                preceding the first Monday are considered to be in week 0.}{(3)}
   \lineiii{\%x}{Locale's appropriate date representation.}{}
   \lineiii{\%X}{Locale's appropriate time representation.}{}
   \lineiii{\%y}{Year without century as a decimal number [00,99].}{}
@@ -271,6 +271,9 @@ Notes:
   \item[(2)]
     The range really is \code{0} to \code{61}; this accounts for leap
     seconds and the (very rare) double leap seconds.
+  \item[(3)]
+    \code{\%U} and \code{\%W} are only used in calculations when the day of the
+    week and the year are specified.
 \end{description}
 
 Here is an example, a format for dates compatible with that specified 
