@@ -4,7 +4,6 @@
 # using the "scantools" package (customized for this particular manager).
 #
 # XXXX TO DO:
-# - implement rawdata initializers
 # - Implement correct missing FSSpec handling for Alias methods
 # - Implement FInfo
 
@@ -47,13 +46,20 @@ HFSUniStr255 = OpaqueType("HFSUniStr255", "PyMac_BuildHFSUniStr255", "PyMac_GetH
 UInt8_ptr = InputOnlyType("UInt8 *", "s")
 
 # Other types:
+class OptionalFSxxxType(OpaqueByValueType):
+	def declare(self, name):
+		Output("%s %s__buf__;", self.typeName, name)
+		Output("%s *%s = &%s__buf__;", self.typeName, name, name)
+	
 FInfo = OpaqueByValueStructType("FInfo", "PyMac_BuildFInfo", "PyMac_GetFInfo")
 FInfo_ptr = OpaqueType("FInfo", "PyMac_BuildFInfo", "PyMac_GetFInfo")
 AliasHandle = OpaqueByValueType("AliasHandle", "Alias")
 FSSpec = OpaqueType("FSSpec", "FSSpec")
 FSSpec_ptr = OpaqueType("FSSpec", "FSSpec")
+OptFSSpecPtr = OptionalFSxxxType("FSSpec", "BUG", "myPyMac_GetOptFSSpecPtr")
 FSRef = OpaqueType("FSRef", "FSRef")
 FSRef_ptr = OpaqueType("FSRef", "FSRef")
+OptFSRefPtr = OptionalFSxxxType("FSRef", "BUG", "myPyMac_GetOptFSRefPtr")
 
 # To be done:
 #CatPositionRec
@@ -79,6 +85,29 @@ extern int FSSpec_Convert(PyObject *v, FSSpec *p_itself);
 extern int Alias_Convert(PyObject *v, AliasHandle *p_itself);
 static int myPyMac_GetFSSpec(PyObject *v, FSSpec *spec);
 static int myPyMac_GetFSRef(PyObject *v, FSRef *fsr);
+
+/*
+** Optional fsspec and fsref pointers. None will pass NULL
+*/
+static int
+myPyMac_GetOptFSSpecPtr(PyObject *v, FSSpec **spec)
+{
+	if (v == Py_None) {
+		*spec = NULL;
+		return 1;
+	}
+	return myPyMac_GetFSSpec(v, *spec);
+}
+
+static int
+myPyMac_GetOptFSRefPtr(PyObject *v, FSRef **ref)
+{
+	if (v == Py_None) {
+		*ref = NULL;
+		return 1;
+	}
+	return myPyMac_GetFSRef(v, *ref);
+}
 
 /*
 ** Parse/generate objsect
@@ -240,11 +269,34 @@ class FSSpecDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("return self;")
 
 	def output_tp_initBody(self):
-		Output("PyObject *v;")
-		Output("char *kw[] = {\"itself\", 0};")
+		Output("PyObject *v = NULL;")
+		Output("char *rawdata = NULL;")
+		Output("int rawdatalen = 0;")
+		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
-		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"O\", kw, &v))")
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|Os#\", kw, &v, &rawdata, &rawdatalen))")
 		Output("return -1;")
+		Output("if (v && rawdata)")
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"Only one of itself or rawdata may be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (!v && !rawdata)")
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"One of itself or rawdata must be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (rawdata)")
+		OutLbrace()
+		Output("if (rawdatalen != sizeof(%s))", self.itselftype)
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"%s rawdata incorrect size\");",
+			self.itselftype)
+		Output("return -1;")
+		OutRbrace()
+		Output("memcpy(&((%s *)self)->ob_itself, rawdata, rawdatalen);", self.objecttype)
+		Output("return 0;")
+		OutRbrace()
 		Output("if (myPyMac_GetFSSpec(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
 		Output("return -1;")
 	
@@ -286,11 +338,34 @@ class FSRefDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("return self;")
 	
 	def output_tp_initBody(self):
-		Output("PyObject *v;")
-		Output("char *kw[] = {\"itself\", 0};")
+		Output("PyObject *v = NULL;")
+		Output("char *rawdata = NULL;")
+		Output("int rawdatalen = 0;")
+		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
-		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"O\", kw, &v))")
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|Os#\", kw, &v, &rawdata, &rawdatalen))")
 		Output("return -1;")
+		Output("if (v && rawdata)")
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"Only one of itself or rawdata may be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (!v && !rawdata)")
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"One of itself or rawdata must be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (rawdata)")
+		OutLbrace()
+		Output("if (rawdatalen != sizeof(%s))", self.itselftype)
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"%s rawdata incorrect size\");",
+			self.itselftype)
+		Output("return -1;")
+		OutRbrace()
+		Output("memcpy(&((%s *)self)->ob_itself, rawdata, rawdatalen);", self.objecttype)
+		Output("return 0;")
+		OutRbrace()
 		Output("if (myPyMac_GetFSRef(v, &((%s *)self)->ob_itself)) return 0;", self.objecttype)
 		Output("return -1;")
 	
@@ -338,16 +413,40 @@ class AliasDefinition(PEP253Mixin, GlobalObjectDefinition):
 		Output("return self;")
 	
 	def output_tp_initBody(self):
-		Output("%s itself;", self.itselftype);
-		Output("char *kw[] = {\"itself\", 0};")
+		Output("%s itself = NULL;", self.itselftype)
+		Output("char *rawdata = NULL;")
+		Output("int rawdatalen = 0;")
+		Output("Handle h;")
+		Output("char *kw[] = {\"itself\", \"rawdata\", 0};")
 		Output()
-		Output("if (PyArg_ParseTupleAndKeywords(args, kwds, \"O&\", kw, %s_Convert, &itself))",
+		Output("if (!PyArg_ParseTupleAndKeywords(args, kwds, \"|O&s#\", kw, %s_Convert, &itself, &rawdata, &rawdatalen))",
 			self.prefix)
+		Output("return -1;")
+		Output("if (itself && rawdata)")
 		OutLbrace()
-		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+		Output("PyErr_SetString(PyExc_TypeError, \"Only one of itself or rawdata may be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (!itself && !rawdata)")
+		OutLbrace()
+		Output("PyErr_SetString(PyExc_TypeError, \"One of itself or rawdata must be specified\");")
+		Output("return -1;")
+		OutRbrace()
+		Output("if (rawdata)")
+		OutLbrace()
+		Output("if ((h = NewHandle(rawdatalen)) == NULL)")
+		OutLbrace()
+		Output("PyErr_NoMemory();")
+		Output("return -1;")
+		OutRbrace()
+		Output("HLock(h);")
+		Output("memcpy((char *)*h, rawdata, rawdatalen);")
+		Output("HUnlock(h);")
+		Output("((%s *)self)->ob_itself = (%s)h;", self.objecttype, self.itselftype)
 		Output("return 0;")
 		OutRbrace()
-		Output("return -1;")
+		Output("((%s *)self)->ob_itself = itself;", self.objecttype)
+		Output("return 0;")
 	
 # Alias methods come in two flavors: those with the alias as arg1 and
 # those with the alias as arg 2.
