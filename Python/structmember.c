@@ -261,7 +261,8 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
 		}
 		break;
 	default:
-		PyErr_SetString(PyExc_SystemError, "bad memberdescr type");
+		PyErr_Format(PyExc_SystemError,
+			     "bad memberdescr type for %s", l->name);
 		return -1;
 	}
 	return 0;
