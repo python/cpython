@@ -181,7 +181,7 @@ class MT_IconTextWidget(MT_TextWidget):
 		self.breakpointlist = []
 		self.curline = None
 		self.iconrect = (self.rect[0]+1, self.rect[1]+1, 
-				self.terect[0]-1, self.terect[3]-1)
+				self.terect[0]-1, self.rect[3]-SCROLLBAR)
 		self.curlinerange = (self.terect[1]+self.ted.lineHeight,
 				self.terect[3]-2*self.ted.lineHeight)
 		self.piccurrent = 512

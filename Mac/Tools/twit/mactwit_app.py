@@ -234,7 +234,7 @@ class Twit(FrameWork.Application, TwitCore.Application, MiniAEFrame.AEServer):
 		return mactwit_browser.VarBrowser(parent).open(var)
 	
 	def edit(self, file, line):
-		return mactwit_edit(file, line)
+		return mactwit_edit.edit(file, line)
 	
 		
 def Initialize():

@@ -250,7 +250,6 @@ class StackBrowser:
 	"""Base code for stack browser"""
 	def mi_open(self):
 		"""Setup initial data structures"""
-		self.create_items()
 		self.cur_stackitem = None
 		self.cur_source = None
 		self.cur_modname = None
@@ -269,9 +268,9 @@ class StackBrowser:
 		self.setprogramstate(self.parent.dbg.getprogramstate())
 		
 		names, locations = self.parent.dbg.getstacktrace()
-		self.stack.setcontent(names, locations)
+		self.stack_setcontent(names, locations)
 		self.cur_stackitem = len(names)-1
-		self.stack.select(self.cur_stackitem)
+		self.stack_select(self.cur_stackitem)
 		self.setup_frame()
 		
 	def setup_frame(self):
@@ -280,7 +279,7 @@ class StackBrowser:
 		self.cont_varnames, self.cont_varvalues = \
 			self.parent.dbg.getframevars(self.cur_stackitem, 
 			self.show_complex, self.show_system)
-		self.vars.setcontent(self.cont_varnames, self.cont_varvalues)
+		self.setvars()
 		self.set_var_buttons()
 	
 		msg = ""
@@ -304,9 +303,9 @@ class StackBrowser:
 				
 		self.setsource(msg)
 		if not self.cur_line:
-			self.source.setcurline(1, ICON_ZERO)
+			self.source_setline(1, ICON_ZERO)
 		else:
-			self.source.setcurline(self.cur_line, self.parent.dbg.icon)
+			self.source_setline(self.cur_line, self.parent.dbg.icon)
 		self.breaks_changed(self.cur_source)
 		
 		
@@ -323,7 +322,7 @@ class StackBrowser:
 	def click_stack(self, number, *dummy):
 		if number == self.cur_stackitem: return
 		self.cur_stackitem = number
-		self.stack.select(self.cur_stackitem)
+		self.stack_select(self.cur_stackitem)
 		self.setup_frame()
 				
 	def click_var(self, var, *dummy):
@@ -332,7 +331,7 @@ class StackBrowser:
 		
 	def click_source(self, lineno, inborder):
 		if not inborder:
-			self.source.select(lineno)
+			self.source_select(lineno)
 			self.cur_line = lineno
 		if lineno == None or not self.cur_source or not inborder:
 			return
@@ -345,7 +344,7 @@ class StackBrowser:
 	def breaks_changed(self, filename):
 		if filename == self.cur_source:
 			list = self.parent.dbg.get_file_breaks(filename)
-			self.source.setbreaks(list)
+			self.source_setbreaks(list)
 		
 	def click_quit(self):
 		self.parent.quit()
@@ -391,7 +390,6 @@ class ModuleBrowser:
 
 	def mi_open(self, module):
 		"""Setup initial data structures"""
-		self.create_items()
 		self.cur_module = module
 		self.cur_source = None
 		self.cur_line = None
@@ -408,22 +406,23 @@ class ModuleBrowser:
 		if not self.cur_module in modnames:
 			self.cur_module = None
 		if modnames <> self.cont_modules:
-			self.modules.setcontent(modnames)
 			self.cont_modules = modnames
+			self.setmodulenames()
 		if self.cur_module:
-			self.modules.select(self.cont_modules.index(self.cur_module))
+			self.module_select(self.cont_modules.index(self.cur_module))
 		else:
-			self.modules.select(None)
+			self.module_select(None)
 		self.setup_module()
 		
 	def setup_module(self):
 		"""Setup module-dependent widget data"""
 		self.parent.SetWatch()
 		if not self.cur_module:
-			self.vars.setcontent([], [])
+			self.cont_varnames = []
+			self.cont_varvalues = []
 		else:
 			self.cont_varnames, self.cont_varvalues = getmodulevars(self.cur_module)
-			self.vars.setcontent(self.cont_varnames, self.cont_varvalues)
+		self.setvars()
 			
 		msg = ""
 		if not self.cur_module:
@@ -438,7 +437,7 @@ class ModuleBrowser:
 				msg = "Not a python module"
 		self.cur_lineno = 0	
 		self.setsource(msg)
-		self.source.select(self.cur_line)
+		self.source_select(self.cur_line)
 		self.breaks_changed(self.cur_source)
 		
 		self.parent.SetCursor()
@@ -464,7 +463,7 @@ class ModuleBrowser:
 				
 	def click_source(self, lineno, inborder):
 		if not inborder:
-			self.source.select(lineno)
+			self.source_select(lineno)
 			self.cur_lineno = lineno
 		if lineno == None or not self.cur_source or not inborder:
 			return
@@ -477,7 +476,7 @@ class ModuleBrowser:
 	def breaks_changed(self, filename):
 		if filename == self.cur_source:
 			list = self.parent.dbg.get_file_breaks(filename)
-			self.source.setbreaks(list)
+			self.source_setbreaks(list)
 		
 	def click_edit(self):
 		lino = self.cur_lineno
