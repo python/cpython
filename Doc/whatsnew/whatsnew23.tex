@@ -17,6 +17,8 @@
 %
 % Bug #580462: changes to GC API
 %
+% Pure Python strptime implementation by Brett Cannon.  See SF patch 474274.
+%
 
 %\section{Introduction \label{intro}}
 
@@ -836,7 +838,7 @@ will enable buffering.
 % ======================================================================
 \section{Build and C API Changes}
 
-Changes to Python's build process, and to the C API, include:
+Changes to Python's build process and to the C API include:
 
 \begin{itemize}
 
@@ -845,10 +847,12 @@ Changes to Python's build process, and to the C API, include:
 when running Python's \file{configure} script.  (Contributed by Ondrej
 Palkovsky.)
 
-\item The public Python C API will generally be declared using PyAPI_FUNC
-and PyAPI_DATA macros, while Python extension module init functions
-will be declared with PyMODINIT_FUNC.  DL_EXPORT/DL_IMPORT macros
-are deprecated.
+\item The  \csimplemacro{DL_EXPORT} and \csimplemacro{DL_IMPORT} macros are now
+deprecated.  Initialization functions for Python extension modules
+should now be declared using the new macro
+\csimplemacro{PyMODINIT_FUNC}, while the Python core will generally
+use the \csimplemacro{PyAPI_FUNC} and \csimplemacro{PyAPI_DATA}
+macros.
 
 \item The interpreter can be compiled without any docstrings for 
 the built-in functions and modules by supplying
