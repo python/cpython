@@ -1374,7 +1374,7 @@ def weakrefs():
     try:
         weakref.ref(no)
     except TypeError, msg:
-        verify(str(msg).find("weakly") >= 0)
+        verify(str(msg).find("weak reference") >= 0)
     else:
         verify(0, "weakref.ref(no) should be illegal")
     class Weak(object):
