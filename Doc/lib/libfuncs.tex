@@ -142,7 +142,7 @@ class C:
   object is passed as the implied first argument.
 
   Class methods are different than C++ or Java static methods.
-  If you want those, see \function{staticmethod} in this section.
+  If you want those, see \function{staticmethod()} in this section.
   \versionadded{2.2}
 \end{funcdesc}
 
@@ -681,13 +681,13 @@ class C:
 \end{funcdesc}
 
 \begin{funcdesc}{object}{}
-Return a new featureless object.  \function{object} is a base 
-for all new style classes.  It has the methods that are common
-to all instances of new style classes.
-\versionadded{2.2}
+  Return a new featureless object.  \function{object()} is a base 
+  for all new style classes.  It has the methods that are common
+  to all instances of new style classes.
+  \versionadded{2.2}
 
-\versionchanged[This function does not accept any arguments.
-Formerly, it accepted arguments but ignored them]{2.3}
+  \versionchanged[This function does not accept any arguments.
+  Formerly, it accepted arguments but ignored them]{2.3}
 \end{funcdesc}
 
 \begin{funcdesc}{oct}{x}
@@ -916,8 +916,9 @@ class C:
   instance (such as \code{C().f()}).  The instance is ignored except
   for its class.
 
-  Static methods in Python are similar to those found in Java or C++.
-  For a more advanced concept, see \function{classmethod} in this section.
+  Static methods in Python are similar to those found in Java or \Cpp.
+  For a more advanced concept, see \function{classmethod()} in this
+  section.
   \versionadded{2.2}
 \end{funcdesc}
 
