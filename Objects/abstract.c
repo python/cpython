@@ -1670,20 +1670,18 @@ PyObject_CallFunction(PyObject *callable, char *format, ...)
 {
 	va_list va;
 	PyObject *args, *retval;
-	va_start(va, format);
 
-	if (callable == NULL) {
-		va_end(va);
+	if (callable == NULL)
 		return null_error();
-	}
 
-	if (format)
+	if (format && *format) {
+		va_start(va, format);
 		args = Py_VaBuildValue(format, va);
+		va_end(va);
+	}
 	else
 		args = PyTuple_New(0);
 
-	va_end(va);
-	
 	if (args == NULL)
 		return NULL;
 
@@ -1709,31 +1707,26 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 {
 	va_list va;
 	PyObject *args, *func = 0, *retval;
-	va_start(va, format);
 
-	if (o == NULL || name == NULL) {
-		va_end(va);
+	if (o == NULL || name == NULL)
 		return null_error();
-	}
 
 	func = PyObject_GetAttrString(o, name);
 	if (func == NULL) {
-		va_end(va);
 		PyErr_SetString(PyExc_AttributeError, name);
 		return 0;
 	}
 
-	if (!PyCallable_Check(func)) {
-		va_end(va);
+	if (!PyCallable_Check(func))
 		return type_error("call of non-callable attribute");
-	}
 
-	if (format && *format)
+	if (format && *format) {
+		va_start(va, format);
 		args = Py_VaBuildValue(format, va);
+		va_end(va);
+	}
 	else
 		args = PyTuple_New(0);
-
-	va_end(va);
 
 	if (!args)
 		return NULL;
