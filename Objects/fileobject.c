@@ -1621,7 +1621,9 @@ PyDoc_STRVAR(seek_doc,
 "0 (offset from start of file, offset should be >= 0); other values are 1\n"
 "(move relative to current position, positive or negative), and 2 (move\n"
 "relative to end of file, usually negative, although many platforms allow\n"
-"seeking beyond the end of a file).\n"
+"seeking beyond the end of a file).  If the file is opened in text mode,\n"
+"only offsets returned by tell() are legal.  Use of other offsets causes\n"
+"undefined behavior."
 "\n"
 "Note that not all file objects are seekable.");
 

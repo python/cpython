@@ -1345,7 +1345,12 @@ flush the read-ahead buffer.
   \method{seek()} operations will be undone at the next write.  If the
   file is only opened for writing in append mode (mode \code{'a'}),
   this method is essentially a no-op, but it remains useful for files
-  opened in append mode with reading enabled (mode \code{'a+'}).
+  opened in append mode with reading enabled (mode \code{'a+'}).  If the
+  file is opened in text mode (mode \code{'t'}), only offsets returned
+  by \method{tell()} are legal.  Use of other offsets causes undefined
+  behavior.
+
+  Note that not all file objects are seekable.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{tell}{}
