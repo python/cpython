@@ -422,7 +422,7 @@ decoding_fgets(char *s, int size, struct tok_state *tok)
 #ifndef PGEN
 	if (warn && line && !tok->issued_encoding_warning && !tok->encoding) {
 		unsigned char *c;
-		for (c = line; *c; c++)
+		for (c = (unsigned char *)line; *c; c++)
 			if (*c > 127) {
 				badchar = *c;
 				break;
