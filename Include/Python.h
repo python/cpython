@@ -87,6 +87,8 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "pyerrors.h"
 #include "mymalloc.h"
 
+#include "pystate.h"
+
 #include "modsupport.h"
 #include "ceval.h"
 #include "pythonrun.h"
@@ -94,8 +96,6 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "intrcheck.h"
 #include "import.h"
 #include "bltinmodule.h"
-
-#include "pystate.h"
 
 #include "abstract.h"
 
