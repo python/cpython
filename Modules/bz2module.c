@@ -1432,7 +1432,7 @@ BZ2Comp_compress(BZ2CompObject *self, PyObject *args)
 	char *data;
 	int datasize;
 	int bufsize = SMALLCHUNK;
-	long totalout;
+	LONG_LONG totalout;
 	PyObject *ret = NULL;
 	bz_stream *bzs = &self->bzs;
 	int bzerror;
