@@ -394,31 +394,32 @@ static char O_write__doc__[] =
 static int
 O_cwrite(PyObject *self, char *c, int  l) {
         int newl;
+        Oobject *oself;
 
         UNLESS (IO__opencheck(IOOOBJECT(self))) return -1;
+        oself = (Oobject *)self;
 
-        newl=((Oobject*)self)->pos+l;
-        if (newl >= ((Oobject*)self)->buf_size) {
-            ((Oobject*)self)->buf_size*=2;
-            if (((Oobject*)self)->buf_size <= newl) 
-                    ((Oobject*)self)->buf_size=newl+1;
-            UNLESS (((Oobject*)self)->buf=
-                   (char*)realloc(
-                        ((Oobject*)self)->buf,
-                        (((Oobject*)self)->buf_size) *sizeof(char))) {
+        newl = oself->pos+l;
+        if (newl >= oself->buf_size) {
+            oself->buf_size *= 2;
+            if (oself->buf_size <= newl) 
+                    oself->buf_size = newl+1;
+            UNLESS (oself->buf = 
+                    (char*)realloc(oself->buf,
+                                   (oself->buf_size) * sizeof(char))) {
                     PyErr_SetString(PyExc_MemoryError,"out of memory");
-                    ((Oobject*)self)->buf_size=((Oobject*)self)->pos=0;
+                    oself->buf_size = oself->pos = 0;
                     return -1;
               }
           }
 
-        memcpy(((Oobject*)((Oobject*)self))->buf+((Oobject*)self)->pos,c,l);
+        memcpy(oself->buf+oself->pos,c,l);
 
-        ((Oobject*)self)->pos += l;
+        oself->pos += l;
 
-        if (((Oobject*)self)->string_size < ((Oobject*)self)->pos) {
-            ((Oobject*)self)->string_size = ((Oobject*)self)->pos;
-          }
+        if (oself->string_size < oself->pos) {
+            oself->string_size = oself->pos;
+        }
 
         return l;
 }
