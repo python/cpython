@@ -2,6 +2,7 @@
 #  -*- Python -*-
 
 import fileinput
+import getopt
 import glob
 import os
 import re
@@ -15,7 +16,15 @@ module_rx = re.compile(r"\\module{([a-zA-Z_0-9]+)}")
 
 def main():
     try:
-        files = sys.argv[1:]
+        just_list = 0
+        print_lineno = 0
+        opts, args = getopt.getopt(sys.argv[1:], "ln", ["list", "number"])
+        for opt, arg in opts:
+            if opt in ("-l", "--list"):
+                just_list = 1
+            elif opt in ("-n", "--number"):
+                print_lineno = 1
+        files = args
         if not files:
             files = glob.glob("*.tex")
             files.sort()
@@ -36,7 +45,16 @@ def main():
             if m:
                 name = m.group(1)
                 if name != modulename:
-                    print "%s:%s" % (fileinput.filename(), line[:-1])
+                    filename = fileinput.filename()
+                    if just_list:
+                        print filename
+                        fileinput.nextfile()
+                        modulename = None
+                    elif print_lineno:
+                        print "%s(%d):%s" \
+                              % (filename, fileinput.filelineno(), line[:-1])
+                    else:
+                        print "%s:%s" % (filename, line[:-1])
     except KeyboardInterrupt:
         sys.exit(1)
 
