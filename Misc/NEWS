@@ -1268,7 +1268,7 @@ must compile with a -I option pointing to the standard Tcl source
 tree.  For this reason, the thread support is disabled by default.
 
 - The errno extension module adds two tables: errorcode maps errno
-numbers to errno names (e.g. EINTR), and errorcode maps them to
+numbers to errno names (e.g. EINTR), and errorstr maps them to
 message strings.  (The latter is redundant because the new call
 posix.strerror() now does the same, but alla...)  (Marc-Andre Lemburg)
 
@@ -1420,3 +1420,6 @@ operate on.
 
 - In ftplib.py, changed most methods to return their status (even when
 it is always "200 OK") rather than swallowing it.
+
+- main() now calls setlocale(LC_ALL, ""), if setlocale() and
+<locale.h> are defined.
