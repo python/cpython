@@ -676,15 +676,6 @@ better alternative for finding the index.")
 (defvar imenu-example--python-generic-parens nil)
 
 
-;;;###autoload
-(eval-when-compile
-  ;; Imenu isn't used in XEmacs, so just ignore load errors
-  (condition-case ()
-      (progn
-	(require 'cl)
-	(require 'imenu))
-    (error nil)))
-
 (defun imenu-example--create-python-index ()
   "Python interface function for imenu package.
 Finds all python classes and functions/methods. Calls function
@@ -898,13 +889,16 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
     (goto-char start))
 
   ;; install imenu
-  (make-variable-buffer-local 'imenu-create-index-function)
-  (setq imenu-create-index-function
-	(function imenu-example--create-python-index))
-  (setq imenu-generic-expression
-	imenu-example--generic-python-expression)
-  (if (fboundp 'imenu-add-to-menubar)
-      (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
+  (if (py-safe (require 'imenu))
+      (progn
+	(make-variable-buffer-local 'imenu-create-index-function)
+	(setq imenu-create-index-function
+	      (function imenu-example--create-python-index))
+	(setq imenu-generic-expression
+	      imenu-example--generic-python-expression)
+	(if (fboundp 'imenu-add-to-menubar)
+	    (imenu-add-to-menubar (format "%s-%s" "IM" mode-name)))
+	))
 
   ;; run the mode hook. py-mode-hook use is deprecated
   (if python-mode-hook
@@ -2249,7 +2243,7 @@ of some continuation line.
 Primarily for entering new code:
 \t\\[indent-for-tab-command]\t indent line appropriately
 \t\\[py-newline-and-indent]\t insert newline, then indent
-\t\\[py-delete-char]\t reduce indentation, or delete single character
+\t\\[py-electric-backspace]\t reduce indentation, or delete single character
 
 Primarily for reindenting existing code:
 \t\\[py-guess-indent-offset]\t guess py-indent-offset from file content; change locally
@@ -2288,7 +2282,7 @@ indentation of the (closest code or indenting-comment) preceding
 statement, or adds an extra py-indent-offset blanks if the preceding
 statement has `:' as its last significant (non-whitespace and non-
 comment) character.  If the suggested indentation is too much, use
-\\[py-delete-char] to reduce it.
+\\[py-electric-backspace] to reduce it.
 
 Continuation lines are given extra indentation.  If you don't like the
 suggested indentation, change it to something you do like, and Python-
@@ -2317,7 +2311,7 @@ repeatedly, and as explained above, \\[indent-for-tab-command] can't guess the b
 structure you intend.
 %c:indent-for-tab-command
 %c:py-newline-and-indent
-%c:py-delete-char
+%c:py-electric-backspace
 
 
 The next function may be handy when editing code you didn't write:
