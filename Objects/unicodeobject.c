@@ -5851,8 +5851,8 @@ PyDoc_STRVAR(unicode_doc,
 "unicode(string [, encoding[, errors]]) -> object\n\
 \n\
 Create a new Unicode object from the given encoded string.\n\
-encoding defaults to the current default string encoding and \n\
-errors, defining the error handling, to 'strict'.");
+encoding defaults to the current default string encoding.\n\
+errors can be 'strict', 'replace' or 'ignore' and defaults to 'strict'.");
 
 PyTypeObject PyUnicode_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
