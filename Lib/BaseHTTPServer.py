@@ -68,10 +68,8 @@ __all__ = ["HTTPServer", "BaseHTTPRequestHandler"]
 import sys
 import time
 import socket # For gethostbyaddr()
-import string
 import mimetools
 import SocketServer
-import re
 
 # Default error message
 DEFAULT_ERROR_MESSAGE = """\
