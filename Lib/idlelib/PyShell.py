@@ -298,24 +298,27 @@ class ModifiedInterpreter(InteractiveInterpreter):
     rpcpid = None
 
     def spawn_subprocess(self):         
-        w = ['-W' + s for s in sys.warnoptions]        
-        args = [self.find_executable()] + w \
-             + ["-c", "__import__('run').main()", str(self.port)]
+        args = self.build_subprocess_arglist()
         self.rpcpid = os.spawnv(os.P_NOWAIT, args[0], args)
 
-    def find_executable(self):
-        if sys.platform == 'darwin' and sys.executable.count('.app'):
-            # On Mac OS X, avoid calling sys.executable because it ignores
-            # command-line options (sys.executable is an applet)
+    def build_subprocess_arglist(self):
+        if sys.platform == 'darwin' and sys.argv[0].count('.app'):
+            # We need to avoid using sys.executable because it fails on some
+            # of the applet architectures On Mac OS X.
             #
-            # Instead, find the executable by looking relative to
-            # sys.prefix.
-            executable = os.path.join(sys.prefix, 'Resources', 
-                                      'Python.app', 'Contents',
-                                      'MacOS', 'python')
-            return executable
+            # here are the applet architectures tried:
+            #
+            # framework applet: sys.executable + -p is correct
+            # python 2.2 + pure python main applet: 
+            #                   sys.executable + -p is correct
+            # pythonw idle.py:  sys.executable + -c is correct
+            #
+            # XXX what about warnoptions?
+            return [sys.executable, '-p', str(self.port)]
         else:
-            return sys.executable 
+            w = ['-W' + s for s in sys.warnoptions]        
+            return [sys.executable] + w \
+                 + ["-c", "__import__('run').main()", str(self.port)]
 
     def start_subprocess(self):
         addr = ("localhost", self.port)
@@ -1174,6 +1177,7 @@ def main():
     fixwordbreaks(root)
     root.withdraw()
     flist = PyShellFileList(root)
+
     if enable_edit:
         if not (cmd or script):
             for filename in args:
