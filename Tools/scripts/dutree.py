@@ -1,10 +1,10 @@
 #! /usr/local/python
 # Format du output in a tree shape
 
-import posix, string, sys, path
+import os, string, sys
 
 def main():
-	p = posix.popen('du ' + string.join(sys.argv[1:]), 'r')
+	p = os.popen('du ' + string.join(sys.argv[1:]), 'r')
 	total, d = None, {}
 	for line in p.readlines():
 		[num, file] = string.split(line)
@@ -36,7 +36,7 @@ def show(total, d, prefix):
 		list.append((tsub, key))
 		if tsub is not None: sum = sum + tsub
 	if sum < total:
-		list.append((total - sum, '.'))
+		list.append((total - sum, os.curdir))
 	list.sort()
 	list.reverse()
 	width = len(`list[0][0]`)
