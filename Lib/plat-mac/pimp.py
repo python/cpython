@@ -43,13 +43,13 @@ ARCHIVE_FORMATS = [
 ]
 
 class MyURLopener(urllib.FancyURLopener):
-	"""Like FancyURLOpener, but we do want to get errors as exceptions"""
+	"""Like FancyURLOpener, but we do want to get errors as exceptions."""
 	def http_error_default(self, url, fp, errcode, errmsg, headers):
 		urllib.URLopener.http_error_default(self, url, fp, errcode, errmsg, headers)
 
 class PimpPreferences:
 	"""Container for per-user preferences, such as the database to use
-	and where to install packages"""
+	and where to install packages."""
 	
 	def __init__(self, 
 			flavorOrder=None,
@@ -119,7 +119,7 @@ class PimpDatabase:
 	"""Class representing a pimp database. It can actually contain
 	information from multiple databases through inclusion, but the
 	toplevel database is considered the master, as its maintainer is
-	"responsible" for the contents"""
+	"responsible" for the contents."""
 	
 	def __init__(self, prefs):
 		self._packages = []
