@@ -245,8 +245,9 @@ class AppBuilder(BundleBuilder):
 
 		BundleBuilder.setup(self)
 
-	def preProcess(self):
 		self.plist.CFBundleExecutable = self.name
+
+	def preProcess(self):
 		resdir = pathjoin("Contents", "Resources")
 		if self.executable is not None:
 			if self.mainprogram is None:
@@ -311,7 +312,7 @@ def pathjoin(*args):
 
 cmdline_doc = """\
 Usage:
-  python [options] command
+  python bundlebuilder.py [options] command
   python mybuildscript.py [options] command
 
 Commands:
