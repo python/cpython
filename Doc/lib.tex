@@ -223,12 +223,20 @@ add new extensions to Python and how to embed it in other applications.
 
 \input{libundoc}
 
-\renewcommand{\indexname}{Module Index}
-\renewcommand{\indexlabel}{modindex}
-\inputindex{modlib.ind}		% Module Index
+%
+%  The ugly "%begin{latexonly}" pseudo-environments are really just to
+%  keep LaTeX2HTML quiet during the \renewcommand{} macros; they're
+%  not really valuable.
+%
 
+%begin{latexonly}
+\renewcommand{\indexname}{Module Index}
+%end{latexonly}
+\input{modlib.ind}		% Module Index
+
+%begin{latexonly}
 \renewcommand{\indexname}{Index}
-\renewcommand{\indexlabel}{genindex}
-\inputindex{lib.ind}			% Index
+%end{latexonly}
+\input{lib.ind}			% Index
 
 \end{document}
