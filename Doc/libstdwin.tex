@@ -1,13 +1,24 @@
-\chapter{STDWIN ONLY}
+\chapter{Standard Windowing Interface}
+
+The modules in this chapter are available only on those systems where
+the STDWIN library is available.  STDWIN runs on \UNIX{} under X11 and
+on the Macintosh.  See CWI report CS-R8817.
+
+\strong{Warning:} Using STDWIN is not recommended for new
+applications.  It has never been ported to Microsoft Windows or
+Windows NT, and for X11 or the Macintosh it lacks important
+functionality --- in particular, it has no tools for the construction
+of dialogs.  For most platforms, alternative, native solutions exist
+(though none are currently documented in this manual): Tkinter for
+\UNIX{} under X11, native Xt with Motif or Athena widgets for \UNIX{}
+under X11, Win32 for Windows and Windows NT, and a collection of
+native toolkit interfaces for the Macintosh.
 
 \section{Built-in Module \sectcode{stdwin}}
 \bimodindex{stdwin}
 
 This module defines several new object types and functions that
-provide access to the functionality of the Standard Window System
-Interface, STDWIN [CWI report CR-R8817].
-It is available on systems to which STDWIN has been ported (which is
-most systems).
+provide access to the functionality of STDWIN.
 
 On Unix running X11, it can only be used if the \code{DISPLAY}
 environment variable is set or an explicit \samp{-display

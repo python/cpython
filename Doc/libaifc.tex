@@ -11,8 +11,14 @@ The sampling rate or frame rate is the number of times per second the
 sound is sampled.  The number of channels indicate if the audio is
 mono, stereo, or quadro.  Each frame consists of one sample per
 channel.  The sample size is the size in bytes of each sample.  Thus a
-frame consists of \var{nchannels}*\var{framesize} bytes, and a second's worth of
-audio consists of \var{nchannels}*\var{framesize}*\var{framerate} bytes.
+frame consists of \var{nchannels}*\var{samplesize} bytes, and a
+second's worth of audio consists of
+\var{nchannels}*\var{samplesize}*\var{framerate} bytes.
+
+For example, CD quality audio has a sample size of two bytes (16
+bits), uses two channels (stereo) and has a frame rate of 44,100
+frames/second.  This gives a frame size of 4 bytes (2*2), and a
+second's worth occupies 2*2*44100 bytes, i.e.\ 176,400 bytes.
 
 Module \code{aifc} defines the following function:
 
@@ -148,7 +154,7 @@ string.  Currently the following compression types are supported:
 NONE, ULAW, ALAW, G722.
 \end{funcdesc}
 
-\begin{funcdesc}{setparams}{(nchannels\, sampwidth\, framerate\, comptype\, compname)}
+\begin{funcdesc}{setparams}{nchannels\, sampwidth\, framerate\, comptype\, compname}
 Set all the above parameters at once.  The argument is a tuple
 consisting of the various parameters.  This means that it is possible
 to use the result of a \code{getparams} call as argument to
