@@ -160,6 +160,9 @@ class ReferencesTestCase(TestBase):
         ref1('twinkies!')
         self.assert_(o.bar == 'twinkies!',
                      "call through proxy not passed through to original")
+        ref1(x='Splat.')
+        self.assert_(o.bar == 'Splat.',
+                     "call through proxy not passed through to original")
 
         # expect due to too few args
         self.assertRaises(TypeError, ref1)
