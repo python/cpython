@@ -212,7 +212,7 @@ Modules:	Parser Python Objects
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" all
 
 # Test the interpreter (twice, once without .pyc files, once with)
-TESTOPTS=	
+TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
 TESTPYTHON=	./python$(EXE) -tt
 test:		all
