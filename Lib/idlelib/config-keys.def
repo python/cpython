@@ -1,35 +1,35 @@
 # IDLE reads several config files to determine user preferences.  This
 # file is the default config file for idle key binding settings.
 # Where multiple keys are specified for an action: if they are separated
-# by a space (eg. action=<key1> <key2>) then the keys are altenatives, if
+# by a space (eg. action=<key1> <key2>) then the keys are alternatives, if
 # there is no space (eg. action=<key1><key2>) then the keys comprise a
 # single 'emacs style' multi-keystoke binding. The tk event specifier 'Key'
 # is used in all cases, for consistency in auto key conflict checking in the
 # configuration gui.
 
 [IDLE Classic Windows]
-copy=<Control-Key-c>
-cut=<Control-Key-x>
-paste=<Control-Key-v>
+copy=<Control-Key-c> <Control-Key-C>
+cut=<Control-Key-x> <Control-Key-X>
+paste=<Control-Key-v> <Control-Key-V>
 beginning-of-line= <Key-Home>
-center-insert=<Control-Key-l>
+center-insert=<Control-Key-l> <Control-Key-L>
 close-all-windows=<Control-Key-q>
 close-window=<Alt-Key-F4> <Meta-Key-F4>
 do-nothing=<Control-Key-F12>
-end-of-file=<Control-Key-d>
+end-of-file=<Control-Key-d> <Control-Key-D>
 python-docs=<Key-F1>
 python-context-help=<Shift-Key-F1>
 history-next=<Alt-Key-n> <Meta-Key-n>
 history-previous=<Alt-Key-p> <Meta-Key-p>
-interrupt-execution=<Control-Key-c>
+interrupt-execution=<Control-Key-c> <Control-Key-C>
 view-restart=<Key-F6>
 restart-shell=<Control-Key-F6>
-open-class-browser=<Alt-Key-c> <Meta-Key-c>
-open-module=<Alt-Key-m> <Meta-Key-m>
-open-new-window=<Control-Key-n>
-open-window-from-file=<Control-Key-o>
-plain-newline-and-indent=<Control-Key-j>
-print-window=<Control-Key-p>
+open-class-browser=<Alt-Key-c> <Meta-Key-c> <Alt-Key-C>
+open-module=<Alt-Key-m> <Meta-Key-m> <Alt-Key-M>
+open-new-window=<Control-Key-n> <Control-Key-N>
+open-window-from-file=<Control-Key-o> <Control-Key-O>
+plain-newline-and-indent=<Control-Key-j> <Control-Key-J>
+print-window=<Control-Key-p> <Control-Key-P>
 redo=<Control-Shift-Key-Z>
 remove-selection=<Key-Escape>
 save-copy-of-window-as-file=<Alt-Shift-Key-S>
@@ -37,12 +37,12 @@ save-window-as-file=<Control-Shift-Key-S>
 save-window=<Control-Key-s>
 select-all=<Control-Key-a>
 toggle-auto-coloring=<Control-Key-slash>
-undo=<Control-Key-z>
-find=<Control-Key-f>
+undo=<Control-Key-z> <Control-Key-Z>
+find=<Control-Key-f> <Control-Key-F>
 find-again=<Control-Key-g> <Key-F3>
 find-in-files=<Alt-Key-F3> <Meta-Key-F3>
 find-selection=<Control-Key-F3>
-replace=<Control-Key-h>
+replace=<Control-Key-h> <Control-Key-H>
 goto-line=<Alt-Key-g> <Meta-Key-g>
 smart-backspace=<Key-BackSpace>
 newline-and-indent=<Key-Return> <Key-KP_Enter>
@@ -53,8 +53,8 @@ comment-region=<Alt-Key-3> <Meta-Key-3>
 uncomment-region=<Alt-Key-4> <Meta-Key-4>
 tabify-region=<Alt-Key-5> <Meta-Key-5>
 untabify-region=<Alt-Key-6> <Meta-Key-6>
-toggle-tabs=<Alt-Key-t> <Meta-Key-t>
-change-indentwidth=<Alt-Key-u> <Meta-Key-u>
+toggle-tabs=<Alt-Key-t> <Meta-Key-t> <Alt-Key-T>
+change-indentwidth=<Alt-Key-u> <Meta-Key-u> <Alt-Key-U>
 
 [IDLE Classic Unix]
 copy=<Alt-Key-w> <Meta-Key-w>
