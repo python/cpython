@@ -1,5 +1,5 @@
 % XXX what order should the types be discussed in?
- 
+
 \section{\module{datetime} ---
          Basic date and time types}
 
@@ -785,13 +785,13 @@ Instance attributes (read-only):
 \begin{memberdesc}{hour}
 In \code{range(24)}.
 \end{memberdesc}
-\begin{memberdesc}{minute}     
+\begin{memberdesc}{minute}
 In \code{range(60)}.
 \end{memberdesc}
-\begin{memberdesc}{second}         
+\begin{memberdesc}{second}
 In \code{range(60)}.
 \end{memberdesc}
-\begin{memberdesc}{microsecond}    
+\begin{memberdesc}{microsecond}
 In \code{range(1000000)}.
 \end{memberdesc}
 
@@ -844,7 +844,7 @@ Instance methods:
 should not be instantiated directly.  You need to derive a concrete
 subclass, and (at least) supply implementations of the standard
 \class{tzinfo} methods needed by the \class{datetime} methods you
-use. The \module{datetime} module does not supply any concrete
+use.  The \module{datetime} module does not supply any concrete
 subclasses of \class{tzinfo}.
 
 An instance of (a concrete subclass of) \class{tzinfo} can be passed
@@ -854,21 +854,17 @@ The latter objects view their fields as being in local time, and the
 from UTC, the name of the time zone, and DST offset, all relative to a
 date or time object passed to them.
 
-Special requirement for pickling:  A tzinfo subclass must have an
+Special requirement for pickling:  A \class{tzinfo} subclass must have an
 \method{__init__} method that can be called with no arguments, else it
 can be pickled but possibly not unpickled again.  This is a technical
 requirement that may be relaxed in the future.
 
 A concrete subclass of \class{tzinfo} may need to implement the
 following methods.  Exactly which methods are needed depends on the
-uses made of aware \module{datetime} objects; if in doubt, simply
-implement all of them.  The methods are called by a \class{datetimetz}
-or \class{timetz} object, passing itself as the argument.  A
-\class{tzinfo} subclass's methods should be prepared to accept a dt
-argument of \code{None} or of type \class{timetz} or
-\class{datetimetz}.
+uses made of aware \module{datetime} objects.  If in doubt, simply
+implement all of them.
 
-\begin{methoddesc}{utcoffset}{dt}
+\begin{methoddesc}{utcoffset}{self, dt}
     Return offset of local time from UTC, in minutes east of UTC.  If
     local time is west of UTC, this should be negative.  Note that this
     is intended to be the total offset from UTC; for example, if a
@@ -878,10 +874,14 @@ argument of \code{None} or of type \class{timetz} or
     an integer, in the range -1439 to 1439 inclusive (1440 = 24*60;
     the magnitude of the offset must be less than one day), or a
     \class{timedelta} object representing a whole number of minutes
-    in the same range.
+    in the same range.  Most implementations of \method{utcoffset()}
+    will probably look like:
+\begin{verbatim}
+        return CONSTANT  # fixed-offset class
+        return CONSTANT + self.dst(dt)  # daylight-aware class
 \end{methoddesc}
 
-\begin{methoddesc}{tzname}{dt}
+\begin{methoddesc}{tzname}{self, dt}
     Return the timezone name corresponding to the \class{datetime} represented
     by dt, as a string.  Nothing about string names is defined by the
     \module{datetime} module, and there's no requirement that it mean anything
@@ -893,7 +893,7 @@ argument of \code{None} or of type \class{timetz} or
     of dt passed, especially if the \class{tzinfo} class is accounting for DST.
 \end{methoddesc}
 
-\begin{methoddesc}{dst}{dt}
+\begin{methoddesc}{dst}{self, dt}
     Return the DST offset, in minutes east of UTC, or \code{None} if
     DST information isn't known.  Return 0 if DST is not in effect.
     If DST is in effect, return the offset as an integer or
@@ -906,6 +906,26 @@ argument of \code{None} or of type \class{timetz} or
     member's \method{dst()} method to determine how the
     \member{tm_isdst} flag should be set.
 \end{methoddesc}
+
+These methods are called by a \class{datetimetz} or \class{timetz} object,
+in response to their methods of the same names.  A \class{datetimetz}
+object passes itself as the argument, and a \class{timetz} object passes
+\code{None} as the argument.  A \class{tzinfo} subclass's methods should
+therefore be prepared to accept a \var{dt} argument of \code{None}, or of
+class \class{datetimetz}.
+
+When \code{None} is passed, it's up to the class designer to decide the
+best response.  For example, returning \code{None} is appropriate if the
+class wishes to say that timetz objects don't participate in the
+\class{tzinfo} protocol.  In other applications, it may be more useful
+for \code{utcoffset(None}} to return the standard UTC offset.
+
+When a \class{datetimetz} object is passed in response to a
+\class{datetimetz} method, \code{dt.tzinfo} is the same object as
+\var{self}.  \class{tzinfo} methods can rely on this, unless
+user code calls \class{tzinfo} methods directly.  The intent is that
+the \class{tzinfo} methods interpret \var{dt} as being in local time,
+and not need to worry about objects in other timezones.
 
 Example \class{tzinfo} classes:
 
