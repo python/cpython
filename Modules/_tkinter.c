@@ -209,7 +209,7 @@ typedef struct {
 
 #define Tkapp_Check(v) ((v)->ob_type == &Tkapp_Type)
 #define Tkapp_Interp(v) (((TkappObject *) (v))->interp)
-#define Tkapp_Result(v) (((TkappObject *) (v))->interp->result)
+#define Tkapp_Result(v) Tcl_GetStringResult(Tkapp_Interp(v))
 
 #define DEBUG_REFCNT(v) (printf("DEBUG: id=%p, refcnt=%i\n", \
 (void *) v, ((PyObject *) v)->ob_refcnt))
@@ -420,11 +420,11 @@ Tcl_AppInit(Tcl_Interp *interp)
 
 	main = Tk_MainWindow(interp);
 	if (Tcl_Init(interp) == TCL_ERROR) {
-		PySys_WriteStderr("Tcl_Init error: %s\n", interp->result);
+		PySys_WriteStderr("Tcl_Init error: %s\n", Tcl_GetStringResult(interp));
 		return TCL_ERROR;
 	}
 	if (Tk_Init(interp) == TCL_ERROR) {
-		PySys_WriteStderr("Tk_Init error: %s\n", interp->result);
+		PySys_WriteStderr("Tk_Init error: %s\n", Tcl_GetStringResult(interp));
 		return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -739,13 +739,13 @@ Tkapp_Call(PyObject *self, PyObject *args)
 	if (i == TCL_ERROR) {
 		if (Py_VerboseFlag >= 2)
 			PySys_WriteStderr("... error: '%s'\n",
-				interp->result);
+				Tcl_GetStringResult(interp));
 		Tkinter_Error(self);
 	}
 	else {
 		if (Py_VerboseFlag >= 2)
-			PySys_WriteStderr("-> '%s'\n", interp->result);
-		res = PyString_FromString(interp->result);
+			PySys_WriteStderr("-> '%s'\n", Tcl_GetStringResult(interp));
+		res = PyString_FromString(Tcl_GetStringResult(interp));
 	}
 	LEAVE_OVERLAP_TCL
 
