@@ -6,6 +6,9 @@ DESTC=		$(TOP)/Python/graminit.c
 
 all:		install
 
+# This target is used by the master Makefile to add the objects to the library
+add2lib:
+
 install:	$(DESTH) $(DESTC)
 
 depend:
