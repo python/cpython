@@ -5,8 +5,7 @@ from Tkinter import *
 
 
 def do_motion(event):
-    app.button.place({'x' : event.x, 
-		      'y' : event.y})
+    app.button.place(x=event.x, y=event.y)
 
 def dothis():
     print 'calling me!'
@@ -16,27 +15,20 @@ def createWidgets(top):
     # and the window containing is 400x400. We do this
     # simply to show that this is possible. The rest of the
     # area is inaccesssible.
-    f = Frame(top, {'width' : '200', 
-		    'height' : '200',
-		    'bg' : 'green'})
+    f = Frame(top, width=200, height=200, background='green')
 
     # note that we use a different manager here. 
     # This way, the top level frame widget resizes when the 
     # application window does. 
-    f.pack({'fill' : 'both', 
-	    'expand' : 1})
+    f.pack(fill=BOTH, expand=1)
 
     # now make a button
-    f.button = Button(f, {'fg' : 'red', 
-			  'text' : 'amazing', 
-			  'command' : dothis})
-    
+    f.button = Button(f, foreground='red', text='amazing', command=dothis)
+
     # and place it so that the nw corner is 
     # 1/2 way along the top X edge of its' parent
-    f.button.place({'relx' : '0.5', 
-		    'rely' : '0.0', 
-		    'anchor' : 'nw'})
-    
+    f.button.place(relx=0.5, rely=0.0, anchor=NW)
+
     # allow the user to move the button SUIT-style.
     f.bind('<Control-Shift-Motion>', do_motion)
 

@@ -6,19 +6,12 @@ from ScrolledText import ScrolledText
 from Dialog import Dialog
 import signal
 
-TK_READABLE  = 1
-TK_WRITABLE  = 2
-TK_EXCEPTION = 4
-
 BUFSIZE = 512
 
 class ShellWindow(ScrolledText):
 
-	def __init__(self, master = None, cnf = {}):
-		try:
-			shell = cnf['shell']
-			del cnf['shell']
-		except KeyError:
+	def __init__(self, master=None, shell=None, **cnf):
+		if not shell:
 			try:
 				shell = os.environ['SHELL']
 			except KeyError:
@@ -27,7 +20,7 @@ class ShellWindow(ScrolledText):
 		args = string.split(shell)
 		shell = args[0]
 
-		ScrolledText.__init__(self, master, cnf)
+		apply(ScrolledText.__init__, (self, master), cnf)
 		self.pos = '1.0'
 		self.bind('<Return>', self.inputhandler)
 		self.bind('<Control-c>', self.sigint)
@@ -36,7 +29,7 @@ class ShellWindow(ScrolledText):
 		self.bind('<Control-d>', self.sendeof)
 
 		self.pid, self.fromchild, self.tochild = spawn(shell, args)
-		self.tk.createfilehandler(self.fromchild, TK_READABLE,
+		self.tk.createfilehandler(self.fromchild, READABLE,
 					  self.outputhandler)
 
 	def outputhandler(self, file, mask):
@@ -54,68 +47,60 @@ class ShellWindow(ScrolledText):
 				msg = "killed by signal %d" % (cause & 0x7f)
 				if cause & 0x80:
 					msg = msg + " -- core dumped"
-			Dialog(self.master, {
-				'text': msg,
-				'title': "Exit status",
-				'bitmap': 'warning',
-				'default': 0,
-				'strings': ('OK',),
-			})
+			Dialog(self.master,
+			       text=msg,
+			       title="Exit status",
+			       bitmap='warning',
+			       default=0,
+			       strings=('OK',))
 			return
-		self.insert('end', data)
-		self.pos = self.index('end')
-		self.yview_pickplace('end')
+		self.insert(END, data)
+		self.pos = self.index("end - 1 char")
+		self.yview_pickplace(END)
 
 	def inputhandler(self, *args):
 		if not self.pid:
-			Dialog(self.master, {
-				'text': "No active process",
-				'title': "No process",
-				'bitmap': 'error',
-				'default': 0,
-				'strings': ('OK',),
-			})
-			return
-		self.insert('end', '\n')
-		line = self.get(self.pos, 'end')
-		self.pos = self.index('end')
+			self.no_process()
+			return "break"
+		self.insert(END, "\n")
+		line = self.get(self.pos, "end - 1 char")
+		self.pos = self.index(END)
 		os.write(self.tochild, line)
+		return "break"
 
 	def sendeof(self, *args):
 		if not self.pid:
-			Dialog(self.master, {
-				'text': "No active process",
-				'title': "No process",
-				'bitmap': 'error',
-				'default': 0,
-				'strings': ('OK',),
-			})
-			return
+			self.no_process()
+			return "break"
 		os.close(self.tochild)
+		return "break"
 
 	def sendsig(self, sig):
 		if not self.pid:
-			Dialog(self.master, {
-				'text': "No active process",
-				'title': "No process",
-				'bitmap': 'error',
-				'default': 0,
-				'strings': ('OK',),
-			})
-			return
+			self.no_process()
+			return "break"
 		os.kill(self.pid, sig)
+		return "break"
 
 	def sigint(self, *args):
-		self.sendsig(signal.SIGINT)
+		return self.sendsig(signal.SIGINT)
 
 	def sigquit(self, *args):
-		self.sendsig(signal.SIGQUIT)
+		return self.sendsig(signal.SIGQUIT)
 
 	def sigterm(self, *args):
-		self.sendsig(signal.SIGTERM)
+		return self.sendsig(signal.SIGTERM)
 
 	def sigkill(self, *args):
-		self.sendsig(signal.SIGKILL)
+		return self.sendsig(signal.SIGKILL)
+
+	def no_process(self):
+		Dialog(self.master,
+		       text="No active process",
+		       title="No process",
+		       bitmap='error',
+		       default=0,
+		       strings=('OK',))
 
 MAXFD = 100	# Max number of file descriptors (os.getdtablesize()???)
 
@@ -142,7 +127,7 @@ def spawn(prog, args):
 		try:
 			os.execvp(prog, args)
 		finally:
-			print 'execvp failed'
+			sys.stderr.write('execvp failed\n')
 			os._exit(1)
 	os.close(p2cread)
 	os.close(c2pwrite)
@@ -150,13 +135,13 @@ def spawn(prog, args):
 
 def test():
 	shell = string.join(sys.argv[1:])
-	cnf = {}
-	if shell:
-		cnf['shell'] = shell
 	root = Tk()
 	root.minsize(1, 1)
-	w = ShellWindow(root, cnf)
-	w.pack({'expand': 1, 'fill': 'both'})
+	if shell:
+	    w = ShellWindow(root, shell=shell)
+	else:
+	    w = ShellWindow(root)
+	w.pack(expand=1, fill=BOTH)
 	w.focus_set()
 	w.tk.mainloop()
 

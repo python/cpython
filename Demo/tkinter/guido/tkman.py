@@ -1,4 +1,3 @@
-#! /home/guido/bin.sgi/python
 #! /usr/local/bin/python
 
 # Tk man page browser -- currently only shows the Tcl/Tk man pages
@@ -32,81 +31,66 @@ class SelectionBox:
 	def __init__(self, master=None):
 		self.choices = []
 
-		self.frame = Frame(master, {
-			'name': 'frame',
-			Pack: {'expand': 1, 'fill': 'both'}})
+		self.frame = Frame(master, name="frame")
+		self.frame.pack(expand=1, fill=BOTH)
 		self.master = self.frame.master
-		self.subframe = Frame(self.frame, {
-			'name': 'subframe',
-			Pack: {'expand': 0, 'fill': 'both'}})
-		self.leftsubframe = Frame(self.subframe, {
-			'name': 'leftsubframe',
-			Pack: {'side': 'left', 'expand': 1, 'fill': 'both'}})
-		self.rightsubframe = Frame(self.subframe, {
-			'name': 'rightsubframe',
-			Pack: {'side': 'right', 'expand': 1, 'fill': 'both'}})
+		self.subframe = Frame(self.frame, name="subframe")
+		self.subframe.pack(expand=0, fill=BOTH)
+		self.leftsubframe = Frame(self.subframe, name='leftsubframe')
+		self.leftsubframe.pack(side=LEFT, expand=1, fill=BOTH)
+		self.rightsubframe = Frame(self.subframe, name='rightsubframe')
+		self.rightsubframe.pack(side=RIGHT, expand=1, fill=BOTH)
 		self.chaptervar = StringVar(master)
-		self.chapter = Menubutton(self.rightsubframe,
-					  {'name': 'chapter',
-					   'text': 'Directory',
-					   'relief': 'raised', 'bd': 2,
-					   Pack: {'side': 'top'}})
-		self.chaptermenu = Menu(self.chapter, {'name': 'chaptermenu'})
-		self.chaptermenu.add_radiobutton({'label': 'C functions',
-						  'value': MAN3DIR,
-						  'variable': self.chaptervar,
-						  'command': self.newchapter})
-		self.chaptermenu.add_radiobutton({'label': 'Tcl/Tk functions',
-						  'value': MANNDIR,
-						  'variable': self.chaptervar,
-						  'command': self.newchapter})
+		self.chapter = Menubutton(self.rightsubframe, name='chapter',
+					  text='Directory', relief=RAISED,
+					  borderwidth=2)
+		self.chapter.pack(side=TOP)
+		self.chaptermenu = Menu(self.chapter, name='chaptermenu')
+		self.chaptermenu.add_radiobutton(label='C functions',
+						 value=MAN3DIR,
+						 variable=self.chaptervar,
+						 command=self.newchapter)
+		self.chaptermenu.add_radiobutton(label='Tcl/Tk functions',
+						 value=MANNDIR,
+						 variable=self.chaptervar,
+						 command=self.newchapter)
 		self.chapter['menu'] = self.chaptermenu
-		self.listbox = Listbox(self.rightsubframe,
-				       {'name': 'listbox',
-					'relief': 'sunken', 'bd': 2,
-					'width': 20, 'height': 5,
-					Pack: {'expand': 1, 'fill': 'both'}})
-		self.l1 = Button(self.leftsubframe,
-				{'name': 'l1',
-				 'text': 'Display manual page named:',
-				 'command': self.entry_cb,
-				 Pack: {'side': 'top'}})
-		self.entry = Entry(self.leftsubframe,
-				   {'name': 'entry',
-				    'relief': 'sunken', 'bd': 2,
-				    'width': 20,
-				    Pack: {'side': 'top',
-					   'expand': 0, 'fill': 'x'}})
-		self.l2frame = Frame(self.leftsubframe,
-				     {'name': 'l2frame',
-				      Pack: {'expand': 0, 'fill': 'none'}})
-		self.l2 = Button(self.l2frame,
-				{'name': 'l2',
-				 'text': 'Search regexp:',
-				 'command': self.search_cb,
-				 Pack: {'side': 'left'}})
-		self.casesense = Checkbutton(self.l2frame,
-					     {'name': 'casesense',
-					      'text': 'Case sensitive',
-					      'variable': 'casesense',
-					      'relief': 'flat',
-					      Pack: {'side': 'left'}})
-		self.search = Entry(self.leftsubframe,
-				   {'name': 'search',
-				    'relief': 'sunken', 'bd': 2,
-				    'width': 20,
-				    Pack: {'side': 'top',
-					   'expand': 0, 'fill': 'x'}})
-		self.title = Label(self.leftsubframe,
-				   {'name': 'title',
-				    'text': '(none)',
-				    Pack: {'side': 'bottom'}})
-		self.text = ManPage(self.frame,
-					 {'name': 'text',
-					  'relief': 'sunken', 'bd': 2,
-					  'wrap': 'none', 'width': 72,
-					  'selectbackground': 'pink',
-					  Pack: {'expand': 1, 'fill': 'both'}})
+		self.listbox = Listbox(self.rightsubframe, name='listbox',
+				       relief=SUNKEN, borderwidth=2,
+				       width=20, height=5)
+		self.listbox.pack(expand=1, fill=BOTH)
+		self.l1 = Button(self.leftsubframe, name='l1',
+				 text='Display manual page named:',
+				 command=self.entry_cb)
+		self.l1.pack(side=TOP)
+		self.entry = Entry(self.leftsubframe, name='entry',
+				    relief=SUNKEN, borderwidth=2,
+				    width=20)
+		self.entry.pack(expand=0, fill=X)
+		self.l2frame = Frame(self.leftsubframe, name='l2frame')
+		self.l2frame.pack(expand=0, fill=NONE)
+		self.l2 = Button(self.l2frame, name='l2',
+				 text='Search regexp:',
+				 command=self.search_cb)
+		self.l2.pack(side=LEFT)
+		self.casevar = BooleanVar()
+		self.casesense = Checkbutton(self.l2frame, name='casesense',
+					     text='Case sensitive',
+					     variable=self.casevar,
+					     relief=FLAT)
+		self.casesense.pack(side=LEFT)
+		self.search = Entry(self.leftsubframe, name='search',
+				    relief=SUNKEN, borderwidth=2,
+				    width=20)
+		self.search.pack(expand=0, fill=X)
+		self.title = Label(self.leftsubframe, name='title',
+				   text='(none)')
+		self.title.pack(side=BOTTOM)
+		self.text = ManPage(self.frame, name='text',
+				    relief=SUNKEN, borderwidth=2,
+				    wrap=NONE, width=72,
+				    selectbackground='pink')
+		self.text.pack(expand=1, fill=BOTH)
 
 		self.entry.bind('<Return>', self.entry_cb)
 		self.search.bind('<Return>', self.search_cb)
@@ -195,7 +179,7 @@ class SelectionBox:
 			self.frame.bell()
 			print 'Empty search string'
 			return
-		if self.frame.tk.getvar('casesense') != '1':
+		if not self.casevar.get():
 			map = regex.casefold
 		else:
 			map = None

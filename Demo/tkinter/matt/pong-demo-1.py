@@ -5,31 +5,28 @@ import string
 
 class Pong(Frame):
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})	
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)
+	self.QUIT.pack(side=LEFT, fill=BOTH)
 
 	## The playing field
-	self.draw = Canvas(self, {"width" : "5i", "height" : "5i"})
+	self.draw = Canvas(self, width="5i", height="5i")
 
 	## The speed control for the ball
-	self.speed = Scale(self, {"orient":  "horiz", 
-				  "label" : "ball speed", 
-				  "from" : -100, 
-				  "to" : 100})
+	self.speed = Scale(self, orient=HORIZONTAL, label="ball speed", 
+			   from_=-100, to=100)
 
-	self.speed.pack({'side': 'bottom', "fill" : "x"})
+	self.speed.pack(side=BOTTOM, fill=X)
 
 	# The ball
-	self.ball = self.draw.create_oval("0i", "0i", "0.10i", "0.10i", {"fill" : "red"})
+	self.ball = self.draw.create_oval("0i", "0i", "0.10i", "0.10i",
+					  fill="red")
 	self.x = 0.05
 	self.y = 0.05
 	self.velocity_x = 0.3
 	self.velocity_y = 0.5
 
-	self.draw.pack({'side': 'left'})
-
+	self.draw.pack(side=LEFT)
 
     def moveBall(self, *args):
 	if (self.x > 5.0) or (self.x < 0.0): 
@@ -44,8 +41,6 @@ class Pong(Frame):
 
 	self.draw.move(self.ball,  `deltax` + "i", `deltay` + "i")
 	self.after(10, self.moveBall)
-	
-
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

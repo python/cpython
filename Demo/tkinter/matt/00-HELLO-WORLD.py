@@ -8,18 +8,15 @@ class Test(Frame):
 	print "hi"
 
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)
 	
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})
-
+	self.QUIT.pack(side=LEFT, fill=BOTH)
 
 	# a hello button
-	self.hi_there = Button(self, {'text': 'Hello', 
-				      'command' : self.printit})
-	self.hi_there.pack({'side': 'left'})
-
+	self.hi_there = Button(self, text='Hello', 
+			       command=self.printit)
+	self.hi_there.pack(side=LEFT)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

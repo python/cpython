@@ -5,55 +5,49 @@
 # Cf. Ousterhout, Tcl and the Tk Toolkit, Figs. 27.2-3, pp. 269-270.
 
 from Tkinter import *
+import sys
+
 
 def dialog(master, title, text, bitmap, default, *args):
 
     # 1. Create the top-level window and divide it into top
     # and bottom parts.
 
-    w = Toplevel(master, {'class': 'Dialog'})
+    w = Toplevel(master, class_='Dialog')
     w.title(title)
     w.iconname('Dialog')
 
-    top = Frame(w, {'relief': 'raised', 'bd': 1,
-		    Pack: {'side': 'top', 'fill': 'both'}})
-    bot = Frame(w, {'relief': 'raised', 'bd': 1,
-		    Pack: {'side': 'bottom', 'fill': 'both'}})
+    top = Frame(w, relief=RAISED, borderwidth=1)
+    top.pack(side=TOP, fill=BOTH)
+    bot = Frame(w, relief=RAISED, borderwidth=1)
+    bot.pack(side=BOTTOM, fill=BOTH)
 
     # 2. Fill the top part with the bitmap and message.
 
-    msg = Message(top,
-		  {'width': '3i',
-		   'text': text,
-		   'font': '-Adobe-Times-Medium-R-Normal-*-180-*',
-		   Pack: {'side': 'right', 'expand': 1,
-			  'fill': 'both',
-			  'padx': '3m', 'pady': '3m'}})
+    msg = Message(top, width='3i', text=text,
+		  font='-Adobe-Times-Medium-R-Normal-*-180-*')
+    msg.pack(side=RIGHT, expand=1, fill=BOTH, padx='3m', pady='3m')
     if bitmap:
-	bm = Label(top, {'bitmap': bitmap,
-			 Pack: {'side': 'left',
-				'padx': '3m', 'pady': '3m'}})
+	bm = Label(top, bitmap=bitmap)
+	bm.pack(side=LEFT, padx='3m', pady='3m')
 
     # 3. Create a row of buttons at the bottom of the dialog.
 
+    var = IntVar()
     buttons = []
     i = 0
     for but in args:
-	b = Button(bot, {'text': but,
-			 'command': ('set', 'button', i)})
+	b = Button(bot, text=but, command=lambda v=var,i=i: v.set(i))
 	buttons.append(b)
 	if i == default:
-	    bd = Frame(bot, {'relief': 'sunken', 'bd': 1,
-			     Pack: {'side': 'left', 'expand': 1,
-				    'padx': '3m', 'pady': '2m'}})
+	    bd = Frame(bot, relief=SUNKEN, borderwidth=1)
+	    bd.pack(side=LEFT, expand=1, padx='3m', pady='2m')
 	    b.lift()
-	    b.pack ({'in': bd, 'side': 'left',
-		     'padx': '2m', 'pady': '2m',
-		     'ipadx': '2m', 'ipady': '1m'})
+	    b.pack (in_=bd, side=LEFT,
+		    padx='2m', pady='2m', ipadx='2m', ipady='1m')
 	else:
-	    b.pack ({'side': 'left', 'expand': 1,
-		     'padx': '3m', 'pady': '3m',
-		     'ipady': '2m', 'ipady': '1m'})
+	    b.pack (side=LEFT, expand=1,
+		    padx='3m', pady='3m', ipady='2m', ipady='1m')
 	i = i+1
 
     # 4. Set up a binding for <Return>, if there's a default,
@@ -61,21 +55,21 @@ def dialog(master, title, text, bitmap, default, *args):
 
     if default >= 0:
 	w.bind('<Return>',
-	       lambda e, b=buttons[default], i=default:
+	       lambda e, b=buttons[default], v=var, i=default:
 	       (b.flash(),
-		b.setvar('button', i)))
+		v.set(i)))
 
-    oldFocus = w.tk.call('focus') # XXX
+    oldFocus = w.focus_get()
     w.grab_set()
-    w.focus()
+    w.focus_set()
 
     # 5. Wait for the user to respond, then restore the focus
     # and return the index of the selected button.
 
-    w.waitvar('button')
+    w.waitvar(var)
     w.destroy()
-    w.tk.call('focus', oldFocus) # XXX
-    return w.getint(w.getvar('button'))
+    if oldFocus: oldFocus.focus_set()
+    return var.get()
 
 # The rest is the test program.
 
@@ -105,13 +99,10 @@ def test():
     global mainWidget
     mainWidget = Frame()
     Pack.config(mainWidget)
-    start = Button(mainWidget,
-		   {'text': 'Press Here To Start', 'command': go})
+    start = Button(mainWidget, text='Press Here To Start', command=go)
     start.pack()
-    endit = Button(mainWidget,
-		   {'text': 'Exit',
-		    'command': 'exit',
-		    Pack: {'fill' : 'both'}})
+    endit = Button(mainWidget, text="Exit", command=sys.exit)
+    endit.pack(fill=BOTH)
     mainWidget.mainloop()
 
 if __name__ == '__main__':

@@ -7,18 +7,16 @@ class Test(Frame):
 	print "hi"
 
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
-	self.QUIT.pack({'side': 'bottom', 'fill': 'both'})	
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)
+	self.QUIT.pack(side=BOTTOM, fill=BOTH)
 
-	self.draw = Canvas(self, {"width" : "5i", "height" : "5i"})
+	self.draw = Canvas(self, width="5i", height="5i")
 
 	# see the other demos for other ways of specifying coords for a polygon
-	self.draw.create_polygon("0i", "0i", "3i", "0i", "3i", "3i", "0i" , "3i")
+	self.draw.create_rectangle(0, 0, "3i", "3i", fill="black")
 
-	self.draw.pack({'side': 'left'})
-
+	self.draw.pack(side=LEFT)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)

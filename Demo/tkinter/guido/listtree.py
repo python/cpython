@@ -6,16 +6,16 @@ import string
 from Tkinter import *
 
 def listtree(master, app):
-	list = Listbox(master, {'name': 'list',
-				Pack: {'expand': 1, 'fill': 'both'}})
+	list = Listbox(master, name='list')
+	list.pack(expand=1, fill=BOTH)
 	listnodes(list, app, '.', 0)
 	return list
 
 def listnodes(list, app, widget, level):
 	klass = list.send(app, 'winfo', 'class', widget)
 ##	i = string.rindex(widget, '.')
-##	list.insert('end', '%s%s (%s)' % ((level-1)*'.   ', widget[i:], klass))
-	list.insert('end', '%s (%s)' % (widget, klass))
+##	list.insert(END, '%s%s (%s)' % ((level-1)*'.   ', widget[i:], klass))
+	list.insert(END, '%s (%s)' % (widget, klass))
 	children = list.tk.splitlist(
 		list.send(app, 'winfo', 'children', widget))
 	for c in children:
@@ -28,7 +28,8 @@ def main():
 	app = sys.argv[1]
 	tk = Tk()
 	tk.minsize(1, 1)
-	f = Frame(tk, {'name': 'f', Pack: {'expand': 1, 'fill': 'both'}})
+	f = Frame(tk, name='f')
+	f.pack(expand=1, fill=BOTH)
 	list = listtree(f, app)
 	tk.mainloop()
 

@@ -24,12 +24,10 @@ class Option:
 		self.master = dialog.top
 		self.default, self.klass = dialog.options[option]
 		self.var = self.varclass(self.master)
-		self.frame = Frame(self.master,
-				   {Pack: {'expand': 0, 'fill': 'x'}})
-		self.label = Label(self.frame,
-				   {'text': option + ':',
-				    Pack: {'side': 'left'},
-				    })
+		self.frame = Frame(self.master)
+		self.frame.pack(fill=X)
+		self.label = Label(self.frame, text=(option + ":"))
+		self.label.pack(side=LEFT)
 		self.update()
 		self.addoption()
 
@@ -53,55 +51,48 @@ class BooleanOption(Option):
 
 	def addoption(self):
 		self.button = Checkbutton(self.frame,
-					 {'text': 'on/off',
-					  'onvalue': '1',
-					  'offvalue': '0',
-					  'variable': self.var,
-					  'relief': 'raised',
-					  'borderwidth': 2,
-					  'command': self.set,
-					  Pack: {'side': 'right'},
-					  })
+					 text='on/off',
+					 onvalue=1,
+					 offvalue=0,
+					 variable=self.var,
+					 relief=RAISED,
+					 borderwidth=2,
+					 command=self.set)
+		self.button.pack(side=RIGHT)
 
 class EnumOption(Option):
 
 	def addoption(self):
 		self.button = Menubutton(self.frame,
-					 {'textvariable': self.var,
-					  'relief': 'raised',
-					  'borderwidth': 2,
-					  Pack: {'side': 'right'},
-					  })
+					 textvariable=self.var,
+					 relief=RAISED, borderwidth=2)
+		self.button.pack(side=RIGHT)
 		self.menu = Menu(self.button)
 		self.button['menu'] = self.menu
 		for v in self.dialog.classes[self.klass]:
 			self.menu.add_radiobutton(
-				{'label': v,
-				 'variable': self.var,
-				 'value': v,
-				 'command': self.set,
-				 })
+			    label=v,
+			    variable=self.var,
+			    value=v,
+			    command=self.set)
 
 class StringOption(Option):
 
 	def addoption(self):
 		self.entry = Entry(self.frame,
-				   {'textvariable': self.var,
-				    'width': 10,
-				    'relief': 'sunken',
-				    'borderwidth': 2,
-				    Pack: {'side': 'right',
-					   'fill': 'x', 'expand': 1},
-				    })
+				   textvariable=self.var,
+				   width=10,
+				   relief=SUNKEN,
+				   borderwidth=2)
+		self.entry.pack(side=RIGHT, fill=X, expand=1)
 		self.entry.bind('<Return>', self.set)
 
 class ReadonlyOption(Option):
 
 	def addoption(self):
-		self.label = Label(self.frame,
-				   {'textvariable': self.var,
-				    'anchor': 'e',
-				    Pack: {'side': 'right'}})
+		self.label = Label(self.frame, textvariable=self.var,
+				   anchor=E)
+		self.label.pack(side=RIGHT)
 
 class Dialog:
 
@@ -156,7 +147,7 @@ class PackDialog(Dialog):
 		Dialog.__init__(self, widget)
 
 	def refresh(self):
-		self.current = self.widget.newinfo()
+		self.current = self.widget.info()
 		self.current['.class'] = self.widget.winfo_class()
 		self.current['.name'] = self.widget._w
 
@@ -164,8 +155,8 @@ class PackDialog(Dialog):
 		def set(self, e=None):
 			self.current = self.var.get()
 			try:
-				Pack.config(self.dialog.widget,
-					    {self.option: self.current})
+				apply(self.dialog.widget.pack, (),
+				      {self.option: self.current})
 			except TclError, msg:
 				print msg
 				self.refresh()
@@ -192,14 +183,14 @@ class PackDialog(Dialog):
 		}
 
 	classes = {
-		'Anchor': ('n','ne', 'e','se', 's','sw', 'w','nw', 'center'),
+		'Anchor': (N, NE, E, SE, S, SW, W, NW, CENTER),
 		'Boolean': 'boolean',
 		'Class': 'readonly',
 		'Expand': 'boolean',
-		'Fill': ('none', 'x', 'y', 'both'),
+		'Fill': (NONE, X, Y, BOTH),
 		'Name': 'readonly',
 		'Pad': 'pixel',
-		'Side': ('top', 'right', 'bottom', 'left'),
+		'Side': (TOP, RIGHT, BOTTOM, LEFT),
 		'Widget': 'readonly',
 		}
 
@@ -220,7 +211,7 @@ class RemotePackDialog(PackDialog):
 			words = self.master.tk.splitlist(
 				self.master.send(self.app,
 						 'pack',
-						 'newinfo',
+						 'info',
 						 self.widget))
 		except TclError, msg:
 			print msg
@@ -306,7 +297,7 @@ class WidgetDialog(Dialog):
 
 	# Universal classes
 	classes = {
-		'Anchor': ('n','ne', 'e','se', 's','sw', 'w','nw', 'center'),
+		'Anchor': (N, NE, E, SE, S, SW, W, NW, CENTER),
 		'Aspect': 'integer',
 		'Background': 'color',
 		'Bitmap': 'bitmap',
@@ -325,16 +316,16 @@ class WidgetDialog(Dialog):
 		'Geometry': 'geometry',
 		'Height': 'pixel',
 		'InsertWidth': 'time',
-		'Justify': ('left', 'center', 'right'),
+		'Justify': (LEFT, CENTER, RIGHT),
 		'Label': 'string',
 		'Length': 'pixel',
 		'MenuName': 'widget',
 		'Name': 'readonly',
 		'OffTime': 'time',
 		'OnTime': 'time',
-		'Orient': ('horizontal', 'vertical'),
+		'Orient': (HORIZONTAL, VERTICAL),
 		'Pad': 'pixel',
-		'Relief': ('raised', 'sunken', 'flat', 'ridge', 'groove'),
+		'Relief': (RAISED, SUNKEN, FLAT, RIDGE, GROOVE),
 		'RepeatDelay': 'time',
 		'RepeatInterval': 'time',
 		'ScrollCommand': 'command',
@@ -351,12 +342,12 @@ class WidgetDialog(Dialog):
 		'Variable': 'variable',
 		'Value': 'string',
 		'Width': 'pixel',
-		'Wrap': ('none', 'char', 'word'),
+		'Wrap': (NONE, CHAR, WORD),
 		}
 
 	# Classes that (may) differ per widget type
-	_tristate = {'State': ('normal', 'active', 'disabled')}
-	_bistate = {'State': ('normal', 'disabled')}
+	_tristate = {'State': (NORMAL, ACTIVE, DISABLED)}
+	_bistate = {'State': (NORMAL, DISABLED)}
 	addclasses = {
 		'Button': _tristate,
 		'Radiobutton': _tristate,
@@ -424,14 +415,12 @@ def test():
 	if sys.argv[1:]:
 		remotetest(root, sys.argv[1])
 	else:
-		frame = Frame(root, {'name': 'frame',
-				     Pack: {'expand': 1, 'fill': 'both'},
-				     })
-		button = Button(frame, {'name': 'button',
-					'text': 'button',
-					Pack: {'expand': 1}})
-		canvas = Canvas(frame, {'name': 'canvas',
-					Pack: {}})
+		frame = Frame(root, name='frame')
+		frame.pack(expand=1, fill=BOTH)
+		button = Button(frame, name='button', text='button')
+		button.pack(expand=1)
+		canvas = Canvas(frame, name='canvas')
+		canvas.pack()
 		fpd = PackDialog(frame)
 		fwd = WidgetDialog(frame)
 		bpd = PackDialog(button)

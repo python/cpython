@@ -37,7 +37,6 @@ from Tkinter import *
 def new_file():
     print "opening new file"
 
-
 def open_file():
     print "opening OLD file"
 
@@ -55,53 +54,43 @@ def print_anchovies():
 
 def makeCommandMenu():
     # make menu button 
-    Command_button = Menubutton(mBar, {'text': 'Simple Button Commands', 
-				    'underline': 0,
-				    Pack: {'side': 'left', 
-					   'padx': '2m'}})
+    Command_button = Menubutton(mBar, text='Simple Button Commands', 
+				underline=0)
+    Command_button.pack(side=LEFT, padx="2m")
     
     # make the pulldown part of the File menu. The parameter passed is the master.
     # we attach it to the button as a python attribute called "menu" by convention.
     # hopefully this isn't too confusing...
     Command_button.menu = Menu(Command_button)
-    
 
     # just to be cute, let's disable the undo option:
-    Command_button.menu.add('command', {"label" : "Undo"} )
+    Command_button.menu.add_command(label="Undo")
     # undo is the 0th entry...
-    Command_button.menu.entryconfig(0, {"state" : "disabled"})
+    Command_button.menu.entryconfig(0, state=DISABLED)
 
-    Command_button.menu.add('command', {'label': 'New...',
-
-				     'underline': 0, 
-				     'command' : new_file})
-    
-    
-    Command_button.menu.add('command', {'label': 'Open...', 
-				     'underline': 0, 
-				     'command' : open_file})
-
-    Command_button.menu.add('command', {'label': 'Different Font', 
-					'underline': 0, 
-					'font' : '-*-helvetica-*-r-*-*-*-180-*-*-*-*-*-*', 
-					'command' : print_something})
+    Command_button.menu.add_command(label='New...', underline=0, 
+				    command=new_file)
+    Command_button.menu.add_command(label='Open...', underline=0, 
+				    command=open_file)
+    Command_button.menu.add_command(label='Different Font', underline=0,
+				    font='-*-helvetica-*-r-*-*-*-180-*-*-*-*-*-*',
+				    command=print_something)
     
     # we can make bitmaps be menu entries too. File format is X11 bitmap.
     # if you use XV, save it under X11 bitmap format. duh-uh.,..
-#    Command_button.menu.add('command', {'bitmap' : '@/home/mjc4y/ftp/tcl/tk3.6/library/demos/bitmaps/face'})
-    Command_button.menu.add('command', {'bitmap' : '@/home/mjc4y/dilbert/project.status.is.doomed.last.panel.bm'})
+    Command_button.menu.add_command(
+	bitmap="info")
+	#bitmap='@/home/mjc4y/dilbert/project.status.is.doomed.last.panel.bm')
     
     # this is just a line
     Command_button.menu.add('separator')
 
     # change the color
-    Command_button.menu.add('command', {'label': 'Quit', 
-					'underline': 0, 
-					'background' : 'red', 
-					'activebackground' : 'green', 
-					'command': 'exit'})
-    
-    
+    Command_button.menu.add_command(label='Quit', underline=0, 
+				    background='red', 
+				    activebackground='green', 
+				    command=Command_button.quit)
+
     # set up a pointer from the file menubutton back to the file menu
     Command_button['menu'] = Command_button.menu
 
@@ -111,10 +100,8 @@ def makeCommandMenu():
 
 def makeCascadeMenu():
     # make menu button 
-    Cascade_button = Menubutton(mBar, {'text': 'Cascading Menus', 
-				       'underline': 0,
-				       Pack: {'side': 'left', 
-					      'padx': '2m'}})
+    Cascade_button = Menubutton(mBar, text='Cascading Menus', underline=0)
+    Cascade_button.pack(side=LEFT, padx="2m")
     
     # the primary pulldown
     Cascade_button.menu = Menu(Cascade_button)
@@ -126,24 +113,24 @@ def makeCascadeMenu():
     Cascade_button.menu.choices.wierdones = Menu(Cascade_button.menu.choices)
 
     # then you define the menus from the deepest level on up.
-    Cascade_button.menu.choices.wierdones.add('command', {'label' : 'avacado'})
-    Cascade_button.menu.choices.wierdones.add('command', {'label' : 'belgian endive'})
-    Cascade_button.menu.choices.wierdones.add('command', {'label' : 'beefaroni'})
+    Cascade_button.menu.choices.wierdones.add_command(label='avacado')
+    Cascade_button.menu.choices.wierdones.add_command(label='belgian endive')
+    Cascade_button.menu.choices.wierdones.add_command(label='beefaroni')
 
     # definition of the menu one level up...
-    Cascade_button.menu.choices.add('command', {'label' : 'Chocolate'})
-    Cascade_button.menu.choices.add('command', {'label' : 'Vanilla'})
-    Cascade_button.menu.choices.add('command', {'label' : 'TuttiFruiti'})
-    Cascade_button.menu.choices.add('command', {'label' : 'WopBopaLoopBapABopBamBoom'})
-    Cascade_button.menu.choices.add('command', {'label' : 'Rocky Road'})
-    Cascade_button.menu.choices.add('command', {'label' : 'BubbleGum'})
-    Cascade_button.menu.choices.add('cascade', {'label' : 'Wierd Flavors', 
-						'menu'  : Cascade_button.menu.choices.wierdones})
+    Cascade_button.menu.choices.add_command(label='Chocolate')
+    Cascade_button.menu.choices.add_command(label='Vanilla')
+    Cascade_button.menu.choices.add_command(label='TuttiFruiti')
+    Cascade_button.menu.choices.add_command(label='WopBopaLoopBapABopBamBoom')
+    Cascade_button.menu.choices.add_command(label='Rocky Road')
+    Cascade_button.menu.choices.add_command(label='BubbleGum')
+    Cascade_button.menu.choices.add_cascade(
+	label='Wierd Flavors', 
+	menu=Cascade_button.menu.choices.wierdones)
 
     # and finally, the definition for the top level
-    Cascade_button.menu.add('cascade', {'label' : 'more choices', 
-					'menu' : Cascade_button.menu.choices})
-
+    Cascade_button.menu.add_cascade(label='more choices', 
+				    menu=Cascade_button.menu.choices)
 
     Cascade_button['menu'] = Cascade_button.menu
 
@@ -152,10 +139,9 @@ def makeCascadeMenu():
 def makeCheckbuttonMenu():
     global fred
     # make menu button 
-    Checkbutton_button = Menubutton(mBar, {'text': 'Checkbutton Menus', 
-					   'underline': 0,
-					   Pack: {'side': 'left', 
-					      'padx': '2m'}})
+    Checkbutton_button = Menubutton(mBar, text='Checkbutton Menus', 
+				    underline=0)
+    Checkbutton_button.pack(side=LEFT, padx='2m')
     
     # the primary pulldown
     Checkbutton_button.menu = Menu(Checkbutton_button)
@@ -163,13 +149,13 @@ def makeCheckbuttonMenu():
     # and all the check buttons. Note that the "variable" "onvalue" and "offvalue" options
     # are not supported correctly at present. You have to do all your application 
     # work through the calback.
-    Checkbutton_button.menu.add('checkbutton', {'label': 'Pepperoni'})
-    Checkbutton_button.menu.add('checkbutton', {'label': 'Sausage'})
-    Checkbutton_button.menu.add('checkbutton', {'label': 'Extra Cheese'})
+    Checkbutton_button.menu.add_checkbutton(label='Pepperoni')
+    Checkbutton_button.menu.add_checkbutton(label='Sausage')
+    Checkbutton_button.menu.add_checkbutton(label='Extra Cheese')
 
     # so here's a callback
-    Checkbutton_button.menu.add('checkbutton', {'label': 'Anchovy', 
-						'command' : print_anchovies})
+    Checkbutton_button.menu.add_checkbutton(label='Anchovy', 
+					    command=print_anchovies)
 
     # and start with anchovies selected to be on. Do this by 
     # calling invoke on this menu option. To refer to the "anchovy" menu
@@ -196,10 +182,9 @@ def makeCheckbuttonMenu():
 
 def makeRadiobuttonMenu():
     # make menu button 
-    Radiobutton_button = Menubutton(mBar, {'text': 'Radiobutton Menus', 
-					   'underline': 0,
-					   Pack: {'side': 'left', 
-					      'padx': '2m'}})
+    Radiobutton_button = Menubutton(mBar, text='Radiobutton Menus', 
+				    underline=0)
+    Radiobutton_button.pack(side=LEFT, padx='2m')
     
     # the primary pulldown
     Radiobutton_button.menu = Menu(Radiobutton_button)
@@ -207,16 +192,16 @@ def makeRadiobuttonMenu():
     # and all the Radio buttons. Note that the "variable" "onvalue" and "offvalue" options
     # are not supported correctly at present. You have to do all your application 
     # work through the calback.
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Republican'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Democrat'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Libertarian'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Commie'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Facist'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Labor Party'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Torie'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Independent'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'Anarchist'})
-    Radiobutton_button.menu.add('radiobutton', {'label': 'No Opinion'})
+    Radiobutton_button.menu.add_radiobutton(label='Republican')
+    Radiobutton_button.menu.add_radiobutton(label='Democrat')
+    Radiobutton_button.menu.add_radiobutton(label='Libertarian')
+    Radiobutton_button.menu.add_radiobutton(label='Commie')
+    Radiobutton_button.menu.add_radiobutton(label='Facist')
+    Radiobutton_button.menu.add_radiobutton(label='Labor Party')
+    Radiobutton_button.menu.add_radiobutton(label='Torie')
+    Radiobutton_button.menu.add_radiobutton(label='Independent')
+    Radiobutton_button.menu.add_radiobutton(label='Anarchist')
+    Radiobutton_button.menu.add_radiobutton(label='No Opinion')
 
     # set up a pointer from the file menubutton back to the file menu
     Radiobutton_button['menu'] = Radiobutton_button.menu
@@ -225,14 +210,13 @@ def makeRadiobuttonMenu():
 
 
 def makeDisabledMenu(): 
-    Dummy_button = Menubutton(mBar, {'text': 'Dead Menu', 
-				     'underline': 0,
-				     Pack: {'side': 'left', 
-					    'padx': '2m'}})
+    Dummy_button = Menubutton(mBar, text='Dead Menu', underline=0)
+    Dummy_button.pack(side=LEFT, padx='2m')
 
     # this is the standard way of turning off a whole menu
-    Dummy_button["state"] = "disabled"
+    Dummy_button["state"] = DISABLED
     return Dummy_button
+
 
 #################################################
 #### Main starts here ...
@@ -240,10 +224,8 @@ root = Tk()
 
 
 # make a menu bar
-mBar = Frame(root, {'relief': 'raised', 
-		    'bd': 2,
-		    Pack: {'side': 'top', 
-			   'fill': 'x'}})
+mBar = Frame(root, relief=RAISED, borderwidth=2)
+mBar.pack(fill=X)
 
 Command_button     = makeCommandMenu()
 Cascade_button     = makeCascadeMenu()

@@ -1,58 +1,57 @@
 from Tkinter import *
+from Dialog import Dialog
 
-# this shows how to create a new window with a button in it that can create new windows
+# this shows how to create a new window with a button in it
+# that can create new windows
 
 class Test(Frame):
     def printit(self):
 	print "hi"
 
     def makeWindow(self):
-	# there is no Tkinter interface to the dialog box. Making one would mean putting 
-	# a few wrapper functions in the Tkinter.py file.
-	# even better is to put in a SUIT-like selection of commonly-used dialogs.
+	"""Create a top-level dialog with some buttons.
+
+	This uses the Dialog class, which is a wrapper around the Tcl/Tk
+	tk_dialog script.  The function returns 0 if the user clicks 'yes'
+	or 1 if the user clicks 'no'.
+	"""
 	# the parameters to this call are as follows: 
+	d = Dialog(
+	    self,			## name of a toplevel window
+	    title="fred the dialog box",## title on the window
+	    text="click on a choice",	## message to appear in window
+	    bitmap="info",		## bitmap (if any) to appear;
+					## if none, use ""
+	    #     legal values here are:
+	    #      string      what it looks like
+	    #      ----------------------------------------------
+	    #      error       a circle with a slash through it
+	    #	   grey25      grey square
+	    #	   grey50      darker grey square
+	    #	   hourglass   use for "wait.."
+	    #	   info        a large, lower case "i"
+	    #	   questhead   a human head with a "?" in it
+	    #	   question    a large "?"
+	    #	   warning     a large "!" 
+	    #        @fname    X bitmap where fname is the path to the file  
+	    #
+	    default=0,    # the index of the default button choice.
+			  # hitting return selects this
+	    strings=("yes", "no"))
+			  # values of the 'strings' key are the labels for the 
+			  # buttons that appear left to right in the dialog box
+	return d.num
 
-	fred = Toplevel()               # a toplevel window that the dialog goes into
-
-
-	# this function returns the index of teh button chosen. In this case, 0 for "yes" and 1 for "no"
-
-	print self.tk.call("tk_dialog",           # the command name
-			   fred,                  # the name of a toplevel window
-			   "fred the dialog box", # the title on the window
-			   "click on a choice",   # the message to appear in the window
-			   "info",                # the bitmap (if any) to appear. If no bitmap is desired, pass ""
-			                          #     legal values here are:
-			                          #        string      what it looks like
-			                          #        ----------------------------------------------
-			                          #        error       a circle with a slash through it
-						  #	   grey25      grey square
-						  #	   grey50      darker grey square
-						  #	   hourglass   use for "wait.."
-						  #	   info        a large, lower case "i"
-						  #	   questhead   a human head with a "?" in it
-						  #	   question    a large "?"
-						  #	   warning     a large "!" 
-			                          #        @fname      any X bitmap where fname is the path to the file  
-			                          #
-			   "0",                   # the index of the default button choice. hitting return selects this
-			   "yes", "no")           # all remaining parameters are the labels for the 
-	                                          # buttons that appear left to right in the dialog box
-
-      
 
     def createWidgets(self):
-	self.QUIT = Button(self, {'text': 'QUIT', 
-				  'fg': 'red', 
-				  'command': self.quit})
-	
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})
-
+	self.QUIT = Button(self, text='QUIT', foreground='red', 
+			   command=self.quit)	
+	self.QUIT.pack(side=LEFT, fill=BOTH)
 
 	# a hello button
-	self.hi_there = Button(self, {'text': 'Make a New Window', 
-				      'command' : self.makeWindow})
-	self.hi_there.pack({'side': 'left'})
+	self.hi_there = Button(self, text='Make a New Window', 
+			       command=self.makeWindow)
+	self.hi_there.pack(side=LEFT)
 
 
     def __init__(self, master=None):

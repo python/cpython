@@ -15,7 +15,6 @@
 from Tkinter import *
 
 
-
 # The graphical interface
 class Electrons:
 
@@ -30,14 +29,13 @@ class Electrons:
 		# Add background bitmap
 		if bitmap:
 			self.bitmap = c.create_bitmap(width/2, height/2,
-						      {'bitmap': bitmap,
-						       'foreground': 'blue'})
+						      bitmap=bitmap,
+						      foreground='blue')
 
 		self.pieces = {}
 		x1, y1, x2, y2 = 10,70,14,74
 		for i in range(n,0,-1):
-			p = c.create_oval(x1, y1, x2, y2,
-					       {'fill': 'red'})
+			p = c.create_oval(x1, y1, x2, y2, fill='red')
 			self.pieces[i] = p
 			y1, y2 = y1 +2, y2 + 2
 		self.tk.update()
@@ -51,11 +49,12 @@ class Electrons:
 			y = rand.choice(range(-3,4))
 			c.move(p, x, y)
 		self.tk.update()
+
 	# Run -- never returns
 	def run(self):
 		while 1:
 			self.random_move(self.n)
-		self.tk.mainloop() # Hang around...
+
 
 # Main program
 def main():

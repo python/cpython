@@ -4,15 +4,15 @@ import sys
 sys.path.append("/users/mjc4y/projects/python/tkinter/utils")
 from TkinterUtils  import *
 
-# this shows how to create a new window with a button in it that can create new windows
+# this shows how to create a new window with a button in it that
+# can create new windows
 
 
 class Test(Frame):
     def makeWindow(self, *args):
 	fred = Toplevel()
 
-	fred.label = Canvas (fred, {"width" : "2i", 
-				       "height" : "2i"})
+	fred.label = Canvas (fred, width="2i", height="2i")
 
 	fred.label.create_line("0", "0", "2i", "2i")
 	fred.label.create_line("0", "2i", "2i", "0")
@@ -22,14 +22,12 @@ class Test(Frame):
 
     def createWidgets(self):
 	self.QUIT = QuitButton(self)
-	self.QUIT.pack({'side': 'left', 'fill': 'both'})
+	self.QUIT.pack(side=LEFT, fill=BOTH)
 
-
-	self.makeWindow = Button(self, {'text': 'Make a New Window', 
-				  'width' : 50,
-				  'height' : 20,
-				      'command' : self.makeWindow})
-	self.makeWindow.pack({'side': 'left'})
+	self.makeWindow = Button(self, text='Make a New Window',
+				 width=50, height=20,
+				 command=self.makeWindow)
+	self.makeWindow.pack(side=LEFT)
 
     def __init__(self, master=None):
 	Frame.__init__(self, master)
