@@ -4,8 +4,8 @@
 # Usage is as follows:
 #
 # import readcd
-# r = readcd.Readcd().init()
-# c = Cdplayer().init(r.gettrackinfo())
+# r = readcd.Readcd()
+# c = Cdplayer(r.gettrackinfo())
 #
 # Now you can use c.artist, c.title and c.track[trackno] (where trackno
 # starts at 1).  When the CD is not recognized, all values will be the empty
@@ -17,7 +17,7 @@
 cdplayerrc = '.cdplayerrc'
 
 class Cdplayer:
-	def init(self, tracklist):
+	def __init__(self, tracklist):
 		import string
 		self.artist = ''
 		self.title = ''
@@ -38,7 +38,7 @@ class Cdplayer:
 			import posix
 			f = open(posix.environ['HOME'] + '/' + cdplayerrc, 'r')
 		except IOError:
-			return self
+			return
 		import regex
 		reg = regex.compile('^\\([^:]*\\):\t\\(.*\\)')
 		s = self.id + '.'
@@ -62,7 +62,6 @@ class Cdplayer:
 					trackno = string.atoi(name[6:])
 					self.track[trackno] = value
 		f.close()
-		return self
 
 	def write(self):
 		import posix
