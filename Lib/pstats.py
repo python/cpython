@@ -4,7 +4,7 @@
 # Based on prior profile module by Sjoerd Mullender...
 #   which was hacked somewhat by: Guido van Rossum
 #
-# see jprofile.doc and jprofile.py for more info.
+# see profile.doc and profile.py for more info.
 
 # Copyright 1994, by InfoSeek Corporation, all rights reserved.
 # Written by James Roskind
