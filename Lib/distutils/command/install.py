@@ -74,12 +74,6 @@ class install (Command):
         ('install-data=', None,
          "installation directory for data files"),
 
-        # Build directories: where to find the files to install
-        ('build-base=', None,
-         "base build directory"),
-        ('build-lib=', None,
-         "build directory for all Python modules"),
-
         # Where to install documentation (eventually!)
         #('doc-format=', None, "format of documentation to generate"),
         #('install-man=', None, "directory for Unix man pages"),
@@ -113,12 +107,17 @@ class install (Command):
         self.install_scripts = None
         self.install_data = None
 
-        self.build_base = None
-        self.build_lib = None
-        self.build_platlib = None
-
         self.extra_path = None
         self.install_path_file = 0
+
+        # These are only here as a conduit from the 'build' command to the
+        # 'install_*' commands that do the real work.  ('build_base' isn't
+        # actually used anywhere, but it might be useful in future.)  They
+        # are not user options, because if the user told the install
+        # command where the build directory is, that wouldn't affect the
+        # build command.
+        self.build_base = None
+        self.build_lib = None
 
         #self.install_man = None
         #self.install_html = None
@@ -242,11 +241,9 @@ class install (Command):
         self.install_lib = os.path.join (self.install_lib, self.extra_dirs)
 
         # Figure out the build directories, ie. where to install from
-        self.set_peer_option ('build', 'build_base', self.build_base)
         self.set_undefined_options ('build',
                                     ('build_base', 'build_base'),
-                                    ('build_lib', 'build_lib'),
-                                    ('build_platlib', 'build_platlib'))
+                                    ('build_lib', 'build_lib'))
 
         # Punt on doc directories for now -- after all, we're punting on
         # documentation completely!
