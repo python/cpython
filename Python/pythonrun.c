@@ -862,7 +862,7 @@ PyObject *
 PyRun_File(FILE *fp, char *filename, int start, PyObject *globals,
 	   PyObject *locals)
 {
-	PyRun_FileEx(fp, filename, start, globals, locals, 0);
+	return PyRun_FileEx(fp, filename, start, globals, locals, 0);
 }
 
 PyObject *
