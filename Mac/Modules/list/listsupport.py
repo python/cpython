@@ -137,11 +137,12 @@ class ListMethodGenerator(MethodGenerator):
 		self.argumentList.append(self.itself)
 
 getattrHookCode = """{
-	/* XXXX Should we HLock() here?? */
 	if ( strcmp(name, "listFlags") == 0 )
 		return Py_BuildValue("l", (long)GetListFlags(self->ob_itself) & 0xff);
 	if ( strcmp(name, "selFlags") == 0 )
 		return Py_BuildValue("l", (long)GetListSelectionFlags(self->ob_itself) & 0xff);
+	if ( strcmp(name, "cellSize") == 0 )
+		return Py_BuildValue("O&", PyMac_BuildPoint, (*self->ob_itself)->cellSize);
 }"""
 
 setattrCode = """
@@ -149,19 +150,22 @@ static int
 ListObj_setattr(ListObject *self, char *name, PyObject *value)
 {
 	long intval;
-		
-	if ( value == NULL || !PyInt_Check(value) )
+	int err = 0;
+	
+	if ( value == NULL ) {
+		PyErr_SetString(PyExc_AttributeError, "Cannot delete attribute");
 		return -1;
-	intval = PyInt_AsLong(value);
-	if (strcmp(name, "listFlags") == 0 ) {
-		SetListFlags(self->ob_itself, intval);
-		return 0;
 	}
-	if (strcmp(name, "selFlags") == 0 ) {
-		SetListSelectionFlags(self->ob_itself, intval);
-		return 0;
-	}
-	return -1;
+	if (strcmp(name, "listFlags") == 0 )
+		err = PyArg_Parse(value, "B", &(*self->ob_itself)->listFlags);
+	else if (strcmp(name, "selFlags") == 0 )
+		err = PyArg_Parse(value, "B", &(*self->ob_itself)->selFlags);
+	else if (strcmp(name, "cellSize") == 0 )
+		err = PyArg_Parse(value, "O&", PyMac_GetPoint, &(*self->ob_itself)->cellSize);
+	else
+		PyErr_SetString(PyExc_AttributeError, "No such attribute");
+	if (err) return 0;
+	else return -1;
 }
 """
 
