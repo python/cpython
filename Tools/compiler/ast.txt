@@ -16,6 +16,7 @@ Raise: expr1, expr2, expr3
 TryFinally: body, final
 TryExcept: body, handlers, else_
 Return: value
+Yield: value
 Const: value
 Print: nodes, dest
 Printnl: nodes, dest
