@@ -12,7 +12,7 @@ __revision__ = "$Id$"
 
 import sys, os, string
 from distutils.errors import *
-
+from distutils import log
 
 def spawn (cmd,
            search_path=1,
@@ -27,19 +27,18 @@ def spawn (cmd,
 
     If 'search_path' is true (the default), the system's executable search
     path will be used to find the program; otherwise, cmd[0] must be the
-    exact path to the executable.  If 'verbose' is true, a one-line summary
-    of the command will be printed before it is run.  If 'dry_run' is true,
+    exact path to the executable.If 'dry_run' is true,
     the command will not actually be run.
 
     Raise DistutilsExecError if running the program fails in any way; just
     return on success.
     """
     if os.name == 'posix':
-        _spawn_posix(cmd, search_path, verbose, dry_run)
+        _spawn_posix(cmd, search_path, dry_run=dry_run)
     elif os.name == 'nt':
-        _spawn_nt(cmd, search_path, verbose, dry_run)
+        _spawn_nt(cmd, search_path, dry_run=dry_run)
     elif os.name == 'os2':
-        _spawn_os2(cmd, search_path, verbose, dry_run)
+        _spawn_os2(cmd, search_path, dry_run=dry_run)
     else:
         raise DistutilsPlatformError, \
               "don't know how to spawn programs on platform '%s'" % os.name
@@ -74,8 +73,7 @@ def _spawn_nt (cmd,
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable
-    if verbose:
-        print string.join([executable] + cmd[1:], ' ')
+    log.info(string.join([executable] + cmd[1:], ' '))
     if not dry_run:
         # spawn for NT requires a full path to the .exe
         try:
@@ -100,8 +98,7 @@ def _spawn_os2 (cmd,
     if search_path:
         # either we find one or it stays the same
         executable = find_executable(executable) or executable 
-    if verbose:
-        print string.join([executable] + cmd[1:], ' ')
+    log.info(string.join([executable] + cmd[1:], ' '))
     if not dry_run:
         # spawnv for OS/2 EMX requires a full path to the .exe
         try:
@@ -122,8 +119,7 @@ def _spawn_posix (cmd,
                   verbose=0,
                   dry_run=0):
 
-    if verbose:
-        print string.join(cmd, ' ')
+    log.info(string.join(cmd, ' '))
     if dry_run:
         return
     exec_fn = search_path and os.execvp or os.execv

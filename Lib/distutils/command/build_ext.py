@@ -15,6 +15,7 @@ from distutils.errors import *
 from distutils.sysconfig import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.extension import Extension
+from distutils import log
 
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
@@ -291,9 +292,9 @@ class build_ext (Command):
                                         # by Extension constructor)
 
             (ext_name, build_info) = ext
-            self.warn(("old-style (ext_name, build_info) tuple found in "
-                       "ext_modules for extension '%s'"
-                       "-- please convert to Extension instance" % ext_name))
+            log.warn(("old-style (ext_name, build_info) tuple found in "
+                      "ext_modules for extension '%s'"
+                      "-- please convert to Extension instance" % ext_name))
             if type(ext) is not TupleType and len(ext) != 2:
                 raise DistutilsSetupError, \
                       ("each element of 'ext_modules' option must be an "
@@ -329,8 +330,8 @@ class build_ext (Command):
             # Medium-easy stuff: same syntax/semantics, different names.
             ext.runtime_library_dirs = build_info.get('rpath')
             if build_info.has_key('def_file'):
-                self.warn("'def_file' element of build info dict "
-                          "no longer supported")
+                log.warn("'def_file' element of build info dict "
+                         "no longer supported")
 
             # Non-trivial stuff: 'macros' split into 'define_macros'
             # and 'undef_macros'.
@@ -422,11 +423,10 @@ class build_ext (Command):
                                         self.get_ext_filename(fullname))
 
         if not (self.force or newer_group(sources, ext_filename, 'newer')):
-            self.announce("skipping '%s' extension (up-to-date)" %
-                          ext.name)
+            log.debug("skipping '%s' extension (up-to-date)", ext.name)
             return
         else:
-            self.announce("building '%s' extension" % ext.name)
+            log.info("building '%s' extension", ext.name)
 
         # First, scan the sources for SWIG definition files (.i), run
         # SWIG on 'em to create .c files, and modify the sources list
@@ -539,7 +539,7 @@ class build_ext (Command):
 
         for source in swig_sources:
             target = swig_targets[source]
-            self.announce("swigging %s to %s" % (source, target))
+            log.info("swigging %s to %s", source, target)
             self.spawn(swig_cmd + ["-o", target, source])
 
         return new_sources

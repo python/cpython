@@ -28,6 +28,7 @@ from distutils.ccompiler import gen_preprocess_options, gen_lib_options
 from distutils.unixccompiler import UnixCCompiler
 from distutils.file_util import write_file
 from distutils.errors import DistutilsExecError, CompileError, UnknownFileError
+from distutils import log
 
 class EMXCCompiler (UnixCCompiler):
 
@@ -109,7 +110,7 @@ class EMXCCompiler (UnixCCompiler):
             src = sources[i] ; obj = objects[i]
             ext = (os.path.splitext (src))[1]
             if skip_sources[src]:
-                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+                log.debug("skipping %s (%s up-to-date)", src, obj)
             else:
                 self.mkpath (os.path.dirname (obj))
                 if ext == '.rc':

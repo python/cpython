@@ -11,6 +11,7 @@ import os
 from distutils.errors import DistutilsExecError
 from distutils.spawn import spawn
 from distutils.dir_util import mkpath
+from distutils import log
 
 def make_tarball (base_name, base_dir, compress="gzip",
                   verbose=0, dry_run=0):
@@ -42,13 +43,13 @@ def make_tarball (base_name, base_dir, compress="gzip",
               "bad value for 'compress': must be None, 'gzip', or 'compress'"
 
     archive_name = base_name + ".tar"
-    mkpath(os.path.dirname(archive_name), verbose=verbose, dry_run=dry_run)
+    mkpath(os.path.dirname(archive_name), dry_run=dry_run)
     cmd = ["tar", "-cf", archive_name, base_dir]
-    spawn(cmd, verbose=verbose, dry_run=dry_run)
+    spawn(cmd, dry_run=dry_run)
 
     if compress:
         spawn([compress] + compress_flags[compress] + [archive_name],
-              verbose=verbose, dry_run=dry_run)
+              dry_run=dry_run)
         return archive_name + compress_ext[compress]
     else:
         return archive_name
@@ -69,10 +70,10 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
     # no changes needed!
 
     zip_filename = base_name + ".zip"
-    mkpath(os.path.dirname(zip_filename), verbose=verbose, dry_run=dry_run)
+    mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
     try:
         spawn(["zip", "-rq", zip_filename, base_dir],
-              verbose=verbose, dry_run=dry_run)
+              dry_run=dry_run)
     except DistutilsExecError:
 
         # XXX really should distinguish between "couldn't find
@@ -89,10 +90,10 @@ def make_zipfile (base_name, base_dir, verbose=0, dry_run=0):
                    "could neither find a standalone zip utility nor " +
                    "import the 'zipfile' module") % zip_filename
 
-        if verbose:
-            print "creating '%s' and adding '%s' to it" % \
-                  (zip_filename, base_dir)
-
+        
+        log.info("creating '%s' and adding '%s' to it", 
+                 zip_filename, base_dir)
+         
         def visit (z, dirname, names):
             for name in names:
                 path = os.path.normpath(os.path.join(dirname, name))
@@ -141,8 +142,7 @@ def make_archive (base_name, format,
     """
     save_cwd = os.getcwd()
     if root_dir is not None:
-        if verbose:
-            print "changing into '%s'" % root_dir
+        log.debug("changing into '%s'", root_dir)
         base_name = os.path.abspath(base_name)
         if not dry_run:
             os.chdir(root_dir)
@@ -150,8 +150,7 @@ def make_archive (base_name, format,
     if base_dir is None:
         base_dir = os.curdir
 
-    kwargs = { 'verbose': verbose,
-               'dry_run': dry_run }
+    kwargs = { 'dry_run': dry_run }
 
     try:
         format_info = ARCHIVE_FORMATS[format]
@@ -164,8 +163,7 @@ def make_archive (base_name, format,
     filename = apply(func, (base_name, base_dir), kwargs)
 
     if root_dir is not None:
-        if verbose:
-            print "changing back to '%s'" % save_cwd
+        log.debug("changing back to '%s'", save_cwd)
         os.chdir(save_cwd)
 
     return filename

@@ -16,7 +16,7 @@ from distutils.file_util import move_file
 from distutils.dir_util import mkpath
 from distutils.dep_util import newer_pairwise, newer_group
 from distutils.util import split_quoted, execute
-
+from distutils import log
 
 class CCompiler:
     """Abstract base class to define the interface that must be implemented
@@ -80,7 +80,6 @@ class CCompiler:
                   dry_run=0,
                   force=0):
 
-        self.verbose = verbose
         self.dry_run = dry_run
         self.force = force
 
@@ -808,8 +807,7 @@ class CCompiler:
     # -- Utility methods -----------------------------------------------
 
     def announce (self, msg, level=1):
-        if self.verbose >= level:
-            print msg
+        log.debug(msg)
 
     def debug_print (self, msg):
         from distutils.core import DEBUG
@@ -820,16 +818,16 @@ class CCompiler:
         sys.stderr.write ("warning: %s\n" % msg)
 
     def execute (self, func, args, msg=None, level=1):
-        execute(func, args, msg, self.verbose >= level, self.dry_run)
+        execute(func, args, msg, self.dry_run)
 
     def spawn (self, cmd):
-        spawn (cmd, verbose=self.verbose, dry_run=self.dry_run)
+        spawn (cmd, dry_run=self.dry_run)
 
     def move_file (self, src, dst):
-        return move_file (src, dst, verbose=self.verbose, dry_run=self.dry_run)
+        return move_file (src, dst, dry_run=self.dry_run)
 
     def mkpath (self, name, mode=0777):
-        mkpath (name, mode, self.verbose, self.dry_run)
+        mkpath (name, mode, self.dry_run)
 
 
 # class CCompiler
@@ -957,7 +955,10 @@ def new_compiler (plat=None,
               ("can't compile C/C++ code: unable to find class '%s' " +
                "in module '%s'") % (class_name, module_name)
 
-    return klass (verbose, dry_run, force)
+    # XXX The None is necessary to preserve backwards compatibility
+    # with classes that expect verbose to be the first positional
+    # argument.
+    return klass (None, dry_run, force)
 
 
 def gen_preprocess_options (macros, include_dirs):

@@ -22,6 +22,7 @@ from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
 from distutils.file_util import write_file
 from distutils.dep_util import newer
+from distutils import log
 
 class BCPPCompiler(CCompiler) :
     """Concrete class that implements an interface to the Borland C/C++
@@ -108,7 +109,7 @@ class BCPPCompiler(CCompiler) :
             ext = (os.path.splitext (src))[1]
 
             if skip_sources[src]:
-                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+                log.debug("skipping %s (%s up-to-date)", src, obj)
             else:
                 src = os.path.normpath(src)
                 obj = os.path.normpath(obj)
@@ -178,7 +179,7 @@ class BCPPCompiler(CCompiler) :
             except DistutilsExecError, msg:
                 raise LibError, msg
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # create_static_lib ()
 
@@ -205,8 +206,8 @@ class BCPPCompiler(CCompiler) :
             self._fix_lib_args (libraries, library_dirs, runtime_library_dirs)
 
         if runtime_library_dirs:
-            self.warn ("I don't know what to do with 'runtime_library_dirs': "
-                       + str (runtime_library_dirs))
+            log.warn("I don't know what to do with 'runtime_library_dirs': %s",
+                     str(runtime_library_dirs))
 
         if output_dir is not None:
             output_filename = os.path.join (output_dir, output_filename)
@@ -285,7 +286,6 @@ class BCPPCompiler(CCompiler) :
                 if libfile is None:
                     ld_args.append(lib)
                     # probably a BCPP internal library -- don't warn
-                    #    self.warn('library %s not found.' % lib)
                 else:
                     # full name which prefers bcpp_xxx.lib over xxx.lib
                     ld_args.append(libfile)
@@ -313,7 +313,7 @@ class BCPPCompiler(CCompiler) :
                 raise LinkError, msg
 
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # link ()
 

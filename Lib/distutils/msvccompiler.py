@@ -17,6 +17,7 @@ from distutils.errors import \
      CompileError, LibError, LinkError
 from distutils.ccompiler import \
      CCompiler, gen_preprocess_options, gen_lib_options
+from distutils import log
 
 _can_read_reg = 0
 try:
@@ -305,7 +306,7 @@ class MSVCCompiler (CCompiler) :
             ext = (os.path.splitext (src))[1]
 
             if skip_sources[src]:
-                self.announce ("skipping %s (%s up-to-date)" % (src, obj))
+                log.debug("skipping %s (%s up-to-date)", src, obj)
             else:
                 self.mkpath (os.path.dirname (obj))
 
@@ -403,7 +404,7 @@ class MSVCCompiler (CCompiler) :
                 raise LibError, msg
 
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # create_static_lib ()
 
@@ -480,7 +481,7 @@ class MSVCCompiler (CCompiler) :
                 raise LinkError, msg
 
         else:
-            self.announce ("skipping %s (up-to-date)" % output_filename)
+            log.debug("skipping %s (up-to-date)", output_filename)
 
     # link ()
 

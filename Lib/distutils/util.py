@@ -12,7 +12,7 @@ import sys, os, string, re
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
-
+from distutils import log
 
 def get_platform ():
     """Return a string that identifies the current platform.  This is used
@@ -275,33 +275,27 @@ def split_quoted (s):
 
 
 def execute (func, args, msg=None, verbose=0, dry_run=0):
-    """Perform some action that affects the outside world (eg.  by writing
-    to the filesystem).  Such actions are special because they are disabled
-    by the 'dry_run' flag, and announce themselves if 'verbose' is true.
-    This method takes care of all that bureaucracy for you; all you have to
-    do is supply the function to call and an argument tuple for it (to
-    embody the "external action" being performed), and an optional message
-    to print.
+    """Perform some action that affects the outside world (eg.  by
+    writing to the filesystem).  Such actions are special because they
+    are disabled by the 'dry_run' flag.  This method takes care of all
+    that bureaucracy for you; all you have to do is supply the
+    function to call and an argument tuple for it (to embody the
+    "external action" being performed), and an optional message to
+    print.
     """
-    # Generate a message if we weren't passed one
     if msg is None:
         msg = "%s%s" % (func.__name__, `args`)
         if msg[-2:] == ',)':        # correct for singleton tuple
             msg = msg[0:-2] + ')'
 
-    # Print it if verbosity level is high enough
-    if verbose:
-        print msg
-
-    # And do it, as long as we're not in dry-run mode
+    log.info(msg)
     if not dry_run:
         apply(func, args)
-
-# execute()
 
 
 def strtobool (val):
     """Convert a string representation of truth to true (1) or false (0).
+    
     True values are 'y', 'yes', 't', 'true', 'on', and '1'; false values
     are 'n', 'no', 'f', 'false', 'off', and '0'.  Raises ValueError if
     'val' is anything else.
@@ -337,8 +331,8 @@ def byte_compile (py_files,
     prepended (after 'prefix' is stripped).  You can supply either or both
     (or neither) of 'prefix' and 'base_dir', as you wish.
 
-    If 'verbose' is true, prints out a report of each file.  If 'dry_run'
-    is true, doesn't actually do anything that would affect the filesystem.
+    If 'dry_run' is true, doesn't actually do anything that would
+    affect the filesystem.
 
     Byte-compilation is either done directly in this interpreter process
     with the standard py_compile module, or indirectly by writing a
@@ -367,8 +361,7 @@ def byte_compile (py_files,
     if not direct:
         from tempfile import mktemp
         script_name = mktemp(".py")
-        if verbose:
-            print "writing byte-compilation script '%s'" % script_name
+        log.info("writing byte-compilation script '%s'", script_name)
         if not dry_run:
             script = open(script_name, "w")
 
@@ -406,9 +399,9 @@ byte_compile(files, optimize=%s, force=%s,
             cmd.insert(1, "-O")
         elif optimize == 2:
             cmd.insert(1, "-OO")
-        spawn(cmd, verbose=verbose, dry_run=dry_run)
+        spawn(cmd, dry_run=dry_run)
         execute(os.remove, (script_name,), "removing %s" % script_name,
-                verbose=verbose, dry_run=dry_run)
+                dry_run=dry_run)
 
     # "Direct" byte-compilation: use the py_compile module to compile
     # right here, right now.  Note that the script generated in indirect
@@ -440,14 +433,12 @@ byte_compile(files, optimize=%s, force=%s,
             cfile_base = os.path.basename(cfile)
             if direct:
                 if force or newer(file, cfile):
-                    if verbose:
-                        print "byte-compiling %s to %s" % (file, cfile_base)
+                    log.info("byte-compiling %s to %s", file, cfile_base)
                     if not dry_run:
                         compile(file, cfile, dfile)
                 else:
-                    if verbose:
-                        print "skipping byte-compilation of %s to %s" % \
-                              (file, cfile_base)
+                    log.debug("skipping byte-compilation of %s to %s",
+                              file, cfile_base)
 
 # byte_compile ()
 

@@ -13,7 +13,7 @@ from glob import glob
 from distutils.core import Command
 from distutils.errors import *
 from distutils.util import convert_path
-
+from distutils import log
 
 class build_py (Command):
 
@@ -176,8 +176,8 @@ class build_py (Command):
             if os.path.isfile(init_py):
                 return init_py
             else:
-                self.warn(("package init file '%s' not found " +
-                           "(or not a regular file)") % init_py)
+                log.warn(("package init file '%s' not found " +
+                          "(or not a regular file)"), init_py)
 
         # Either not in a package at all (__init__.py not expected), or
         # __init__.py doesn't exist -- so don't return the filename.
@@ -188,8 +188,7 @@ class build_py (Command):
 
     def check_module (self, module, module_file):
         if not os.path.isfile(module_file):
-            self.warn("file %s (for module %s) not found" %
-                      (module_file, module))
+            log.warn("file %s (for module %s) not found", module_file, module)
             return 0
         else:
             return 1
@@ -389,13 +388,9 @@ class build_py (Command):
 
         if self.compile:
             byte_compile(files, optimize=0,
-                         force=self.force,
-                         prefix=prefix,
-                         verbose=self.verbose, dry_run=self.dry_run)
+                         force=self.force, prefix=prefix, dry_run=self.dry_run)
         if self.optimize > 0:
             byte_compile(files, optimize=self.optimize,
-                         force=self.force,
-                         prefix=prefix,
-                         verbose=self.verbose, dry_run=self.dry_run)
+                         force=self.force, prefix=prefix, dry_run=self.dry_run)
 
 # class build_py

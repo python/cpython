@@ -13,6 +13,7 @@ from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
 from distutils.errors import *
+from distutils import log
 
 class bdist_dumb (Command):
 
@@ -83,7 +84,7 @@ class bdist_dumb (Command):
         install.skip_build = self.skip_build
         install.warn_dir = 0
 
-        self.announce("installing to %s" % self.bdist_dir)
+        log.info("installing to %s" % self.bdist_dir)
         self.run_command('install')
 
         # And make an archive relative to the root of the
@@ -101,7 +102,7 @@ class bdist_dumb (Command):
                           root_dir=self.bdist_dir)
 
         if not self.keep_temp:
-            remove_tree(self.bdist_dir, self.verbose, self.dry_run)
+            remove_tree(self.bdist_dir, dry_run=self.dry_run)
 
     # run()
 
