@@ -18,7 +18,7 @@ most 255 characters long, is displayed. Control is returned when the
 user clicks ``OK''.
 \end{funcdesc}
 
-\begin{funcdesc}{AskString}{prompt\optional{\, default}}
+\begin{funcdesc}{AskString}{prompt\optional{, default}}
 Ask the user to input a string value, in a modal dialog. \var{Prompt}
 is the promt message, the optional \var{default} arg is the initial
 value for the string. All strings can be at most 255 bytes
@@ -26,7 +26,7 @@ long. \var{AskString} returns the string entered or \code{None} in
 case the user cancelled.
 \end{funcdesc}
 
-\begin{funcdesc}{AskYesNoCancel}{question\optional{\, default}}
+\begin{funcdesc}{AskYesNoCancel}{question\optional{, default}}
 Present a dialog with text \var{question} and three buttons labelled
 ``yes'', ``no'' and ``cancel''. Return \code{1} for yes, \code{0} for
 no and \code{-1} for cancel. The default return value chosen by
@@ -34,7 +34,7 @@ hitting return is \code{0}. This can be changed with the optional
 \var{default} argument.
 \end{funcdesc}
 
-\begin{funcdesc}{ProgressBar}{\optional{label\, maxval}}
+\begin{funcdesc}{ProgressBar}{\optional{label, maxval}}
 Display a modeless progress dialog with a thermometer bar. \var{Label}
 is the textstring displayed (default ``Working...''), \var{maxval} is
 the value at which progress is complete (default 100). The returned

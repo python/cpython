@@ -80,16 +80,16 @@ matches any single character.
 On the Macintosh this function currently returns an empty list.
 \end{funcdesc}
 
-\begin{funcdesc}{setdefscrollbars}{hflag\, vflag}
+\begin{funcdesc}{setdefscrollbars}{hflag, vflag}
 Set the flags controlling whether subsequently opened windows will
 have horizontal and/or vertical scroll bars.
 \end{funcdesc}
 
-\begin{funcdesc}{setdefwinpos}{h\, v}
+\begin{funcdesc}{setdefwinpos}{h, v}
 Set the default window position for windows opened subsequently.
 \end{funcdesc}
 
-\begin{funcdesc}{setdefwinsize}{width\, height}
+\begin{funcdesc}{setdefwinsize}{width, height}
 Set the default window size for windows opened subsequently.
 \end{funcdesc}
 
@@ -176,7 +176,7 @@ Note: normally, menus are created locally; see the window method
 returned by this call exists.
 \end{funcdesc}
 
-\begin{funcdesc}{newbitmap}{width\, height}
+\begin{funcdesc}{newbitmap}{width, height}
 Create a new bitmap object of the given dimensions.
 Methods of bitmap objects are described below.
 Not available on the Macintosh.
@@ -192,7 +192,7 @@ Display a dialog box containing the string.
 The user must click OK before the function returns.
 \end{funcdesc}
 
-\begin{funcdesc}{askync}{prompt\, default}
+\begin{funcdesc}{askync}{prompt, default}
 Display a dialog that prompts the user to answer a question with yes or
 no.
 Return 0 for no, 1 for yes.
@@ -203,7 +203,7 @@ If the user cancels the dialog, the
 exception is raised.
 \end{funcdesc}
 
-\begin{funcdesc}{askstr}{prompt\, default}
+\begin{funcdesc}{askstr}{prompt, default}
 Display a dialog that prompts the user for a string.
 If the user hits the Return key, the default string is returned.
 If the user cancels the dialog, the
@@ -211,7 +211,7 @@ If the user cancels the dialog, the
 exception is raised.
 \end{funcdesc}
 
-\begin{funcdesc}{askfile}{prompt\, default\, new}
+\begin{funcdesc}{askfile}{prompt, default, new}
 Ask the user to specify a filename.
 If
 \var{new}
@@ -221,7 +221,7 @@ If the user cancels the dialog, the
 exception is raised.
 \end{funcdesc}
 
-\begin{funcdesc}{setcutbuffer}{i\, string}
+\begin{funcdesc}{setcutbuffer}{i, string}
 Store the string in the system's cut buffer number
 \var{i},
 where it can be found (for pasting) by other applications.
@@ -278,7 +278,7 @@ characters).
 Return the total line height of the current font.
 \end{funcdesc}
 
-\begin{funcdesc}{textbreak}{str\, width}
+\begin{funcdesc}{textbreak}{str, width}
 Return the number of characters of the string that fit into a space of
 \var{width}
 bits wide when drawn in the curent font.
@@ -365,7 +365,7 @@ Methods of menu objects are described below.
 returned by this call exists.
 \end{funcdesc}
 
-\begin{funcdesc}{scroll}{rect\, point}
+\begin{funcdesc}{scroll}{rect, point}
 Scroll the given rectangle by the vector given by the point.
 \end{funcdesc}
 
@@ -378,7 +378,7 @@ Move the origin of the window (its upper left corner)
 to the given point in the document.
 \end{funcdesc}
 
-\begin{funcdesc}{setselection}{i\, str}
+\begin{funcdesc}{setselection}{i, str}
 Attempt to set X11 selection number
 \var{i}
 to the string
@@ -428,12 +428,12 @@ On X11, there are many more (see
 \end{sloppypar}
 \end{funcdesc}
 
-\begin{funcdesc}{setwinpos}{h\, v}
+\begin{funcdesc}{setwinpos}{h, v}
 Set the the position of the window's upper left corner (relative to
 the upper left corner of the screen).
 \end{funcdesc}
 
-\begin{funcdesc}{setwinsize}{width\, height}
+\begin{funcdesc}{setwinsize}{width, height}
 Set the window's size.
 \end{funcdesc}
 
@@ -474,11 +474,11 @@ Drawing objects have the following methods:
 Draw a box just inside a rectangle.
 \end{funcdesc}
 
-\begin{funcdesc}{circle}{center\, radius}
+\begin{funcdesc}{circle}{center, radius}
 Draw a circle with given center point and radius.
 \end{funcdesc}
 
-\begin{funcdesc}{elarc}{center\, \(rh\, rv\)\, \(a1\, a2\)}
+\begin{funcdesc}{elarc}{center, \(rh, rv\), \(a1, a2\)}
 Draw an elliptical arc with given center point.
 \code{(\var{rh}, \var{rv})}
 gives the half sizes of the horizontal and vertical radii.
@@ -491,11 +491,11 @@ gives the angles (in degrees) of the begin and end points.
 Erase a rectangle.
 \end{funcdesc}
 
-\begin{funcdesc}{fillcircle}{center\, radius}
+\begin{funcdesc}{fillcircle}{center, radius}
 Draw a filled circle with given center point and radius.
 \end{funcdesc}
 
-\begin{funcdesc}{fillelarc}{center\, \(rh\, rv\)\, \(a1\, a2\)}
+\begin{funcdesc}{fillelarc}{center, \(rh, rv\), \(a1, a2\)}
 Draw a filled elliptical arc; arguments as for \code{elarc}.
 \end{funcdesc}
 
@@ -507,7 +507,7 @@ Draw a filled polygon given by a list (or tuple) of points.
 Invert a rectangle.
 \end{funcdesc}
 
-\begin{funcdesc}{line}{p1\, p2}
+\begin{funcdesc}{line}{p1, p2}
 Draw a line from point
 \var{p1}
 to
@@ -522,20 +522,20 @@ Fill a rectangle.
 Draw the lines connecting the given list (or tuple) of points.
 \end{funcdesc}
 
-\begin{funcdesc}{shade}{rect\, percent}
+\begin{funcdesc}{shade}{rect, percent}
 Fill a rectangle with a shading pattern that is about
 \var{percent}
 percent filled.
 \end{funcdesc}
 
-\begin{funcdesc}{text}{p\, str}
+\begin{funcdesc}{text}{p, str}
 Draw a string starting at point p (the point specifies the
 top left coordinate of the string).
 \end{funcdesc}
 
-\begin{funcdesc}{xorcircle}{center\, radius}
-\funcline{xorelarc}{center\, \(rh\, rv\)\, \(a1\, a2\)}
-\funcline{xorline}{p1\, p2}
+\begin{funcdesc}{xorcircle}{center, radius}
+\funcline{xorelarc}{center, \(rh, rv\), \(a1, a2\)}
+\funcline{xorline}{p1, p2}
 \funcline{xorpoly}{points}
 Draw a circle, an elliptical arc, a line or a polygon, respectively,
 in XOR mode.
@@ -570,7 +570,7 @@ default font, which is in turn initialized from the global default
 font when the window is created.
 \end{funcdesc}
 
-\begin{funcdesc}{bitmap}{point\, bitmap\, mask}
+\begin{funcdesc}{bitmap}{point, bitmap, mask}
 Draw the \var{bitmap} with its top left corner at \var{point}.
 If the optional \var{mask} argument is present, it should be either
 the same object as \var{bitmap}, to draw only those bits that are set
@@ -608,23 +608,23 @@ The following methods are defined:
 
 \setindexsubitem{(menu method)}
 
-\begin{funcdesc}{additem}{text\, shortcut}
+\begin{funcdesc}{additem}{text, shortcut}
 Add a menu item with given text.
 The shortcut must be a string of length 1, or omitted (to specify no
 shortcut).
 \end{funcdesc}
 
-\begin{funcdesc}{setitem}{i\, text}
+\begin{funcdesc}{setitem}{i, text}
 Set the text of item number
 \var{i}.
 \end{funcdesc}
 
-\begin{funcdesc}{enable}{i\, flag}
+\begin{funcdesc}{enable}{i, flag}
 Enable or disables item
 \var{i}.
 \end{funcdesc}
 
-\begin{funcdesc}{check}{i\, flag}
+\begin{funcdesc}{check}{i, flag}
 Set or clear the
 \dfn{check mark}
 for item
@@ -652,7 +652,7 @@ Return a tuple representing the width and height of the bitmap.
 function.)
 \end{funcdesc}
 
-\begin{funcdesc}{setbit}{point\, bit}
+\begin{funcdesc}{setbit}{point, bit}
 Set the value of the bit indicated by \var{point} to \var{bit}.
 \end{funcdesc}
 
@@ -691,7 +691,7 @@ Pass a draw event to the text-edit block.
 The rectangle specifies the redraw area.
 \end{funcdesc}
 
-\begin{funcdesc}{event}{type\, window\, detail}
+\begin{funcdesc}{event}{type, window, detail}
 Pass an event gotten from
 \code{stdwin.getevent()}
 to the text-edit block.
@@ -727,7 +727,7 @@ Replace the text in the focus by the given string.
 The new focus is an insert point at the end of the string.
 \end{funcdesc}
 
-\begin{funcdesc}{setfocus}{i\, j}
+\begin{funcdesc}{setfocus}{i, j}
 Specify the new focus.
 Out-of-bounds values are silently clipped.
 \end{funcdesc}
@@ -869,7 +869,7 @@ Returns
 if the list is empty or all its rectangles are empty.
 \end{funcdesc}
 
-\begin{funcdesc}{pointinrect}{point\, rect}
+\begin{funcdesc}{pointinrect}{point, rect}
 Returns true if the point is inside the rectangle.
 By definition, a point
 \code{(\var{h}, \var{v})}
@@ -884,7 +884,7 @@ $\var{top} \leq \var{v} < \var{bottom}$.
 \fi
 \end{funcdesc}
 
-\begin{funcdesc}{inset}{rect\, \(dh\, dv\)}
+\begin{funcdesc}{inset}{rect, \(dh, dv\)}
 Returns a rectangle that lies inside the
 \code{rect}
 argument by

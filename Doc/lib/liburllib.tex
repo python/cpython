@@ -55,7 +55,7 @@ Clear the cache that may have been built up by previous calls to
 \function{urlretrieve()}.
 \end{funcdesc}
 
-\begin{funcdesc}{quote}{string\optional{\, addsafe}}
+\begin{funcdesc}{quote}{string\optional{, addsafe}}
 Replace special characters in \var{string} using the \samp{\%xx} escape.
 Letters, digits, and the characters \character{_,.-} are never quoted.
 The optional \var{addsafe} parameter specifies additional characters
@@ -64,7 +64,7 @@ that should not be quoted --- its default value is \code{'/'}.
 Example: \code{quote('/\~connolly/')} yields \code{'/\%7econnolly/'}.
 \end{funcdesc}
 
-\begin{funcdesc}{quote_plus}{string\optional{\, addsafe}}
+\begin{funcdesc}{quote_plus}{string\optional{, addsafe}}
 Like \function{quote()}, but also replaces spaces by plus signs, as
 required for quoting HTML form values.
 \end{funcdesc}

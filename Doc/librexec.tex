@@ -151,7 +151,7 @@ Import the module \var{modulename}, raising an \exception{ImportError}
 exception if the module is considered unsafe.
 \end{funcdesc}
 
-\begin{funcdesc}{r_open}{filename\optional{\, mode\optional{\, bufsize}}}
+\begin{funcdesc}{r_open}{filename\optional{, mode\optional{, bufsize}}}
 Method called when \function{open()} is called in the restricted
 environment.  The arguments are identical to those of \function{open()},
 and a file object (or a class instance compatible with file objects)
@@ -172,7 +172,7 @@ restricted environment's \code{sys.modules} dictionary).
 
 And their equivalents with access to restricted standard I/O streams:
 
-\begin{funcdesc}{s_import}{modulename\optional{\, globals, locals, fromlist}}
+\begin{funcdesc}{s_import}{modulename\optional{, globals, locals, fromlist}}
 Import the module \var{modulename}, raising an \exception{ImportError}
 exception if the module is considered unsafe.
 \end{funcdesc}

@@ -66,7 +66,7 @@ Add a hard line break if one does not already exist.  This does not
 break the logical paragraph.
 \end{funcdesc}
 
-\begin{funcdesc}{add_hor_rule}{*args\, **kw}
+\begin{funcdesc}{add_hor_rule}{*args, **kw}
 Insert a horizontal rule in the output.  A hard break is inserted if
 there is data in the current paragraph, but the logical paragraph is
 not broken.  The arguments and keywords are passed on to the writer's
@@ -268,7 +268,7 @@ lines, or the equivelent.  The \var{blankline} value will be an
 integer.
 \end{funcdesc}
 
-\begin{funcdesc}{send_hor_rule}{*args\, **kw}
+\begin{funcdesc}{send_hor_rule}{*args, **kw}
 Display a horizontal rule on the output device.  The arguments to this
 method are entirely application- and writer-specific, and should be
 interpreted with care.  The method implementation may assume that a
@@ -317,7 +317,7 @@ else.  Each method simply announces itself by printing its name and
 arguments on standard output.
 \end{classdesc}
 
-\begin{classdesc}{DumbWriter}{\optional{file\optional{\, maxcol\code{ = 72}}}}
+\begin{classdesc}{DumbWriter}{\optional{file\optional{, maxcol\code{ = 72}}}}
 Simple writer class which writes output on the file object passed in
 as \var{file} or, if \var{file} is omitted, on standard output.  The
 output is simply word-wrapped to the number of columns specified by

@@ -191,7 +191,7 @@ Parse a query string given as a string argument (data of type
 \mimetype{application/x-www-form-urlencoded}).
 \end{funcdesc}
 
-\begin{funcdesc}{parse_multipart}{fp\, pdict}
+\begin{funcdesc}{parse_multipart}{fp, pdict}
 Parse input of type \mimetype{multipart/form-data} (for 
 file uploads).  Arguments are \var{fp} for the input file and
 \var{pdict} for the dictionary containing other parameters of
@@ -236,7 +236,7 @@ Print a list of useful (used by CGI) environment variables in
 HTML.
 \end{funcdesc}
 
-\begin{funcdesc}{escape}{s\optional{\, quote}}
+\begin{funcdesc}{escape}{s\optional{, quote}}
 Convert the characters
 \character{\&}, \character{<} and \character{>} in string \var{s} to
 HTML-safe sequences.  Use this if you need to display text that might

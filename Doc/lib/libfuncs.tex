@@ -54,7 +54,7 @@ find the \code{eggs} variable.
   complex number, its magnitude is returned.
 \end{funcdesc}
 
-\begin{funcdesc}{apply}{function\, args\optional{, keywords}}
+\begin{funcdesc}{apply}{function, args\optional{, keywords}}
 The \var{function} argument must be a callable object (a user-defined or
 built-in function or method, or a class object) and the \var{args}
 argument must be a tuple.  The \var{function} is called with
@@ -82,20 +82,20 @@ class instances are callable if they have a \method{__call__()} method.
   inclusive.
 \end{funcdesc}
 
-\begin{funcdesc}{cmp}{x\, y}
+\begin{funcdesc}{cmp}{x, y}
   Compare the two objects \var{x} and \var{y} and return an integer
   according to the outcome.  The return value is negative if \code{\var{x}
   < \var{y}}, zero if \code{\var{x} == \var{y}} and strictly positive if
   \code{\var{x} > \var{y}}.
 \end{funcdesc}
 
-\begin{funcdesc}{coerce}{x\, y}
+\begin{funcdesc}{coerce}{x, y}
   Return a tuple consisting of the two numeric arguments converted to
   a common type, using the same rules as used by arithmetic
   operations.
 \end{funcdesc}
 
-\begin{funcdesc}{compile}{string\, filename\, kind}
+\begin{funcdesc}{compile}{string, filename, kind}
   Compile the \var{string} into a code object.  Code objects can be
   executed by an \keyword{exec} statement or evaluated by a call to
   \function{eval()}.  The \var{filename} argument should
@@ -117,7 +117,7 @@ class instances are callable if they have a \method{__call__()} method.
   \function{long()} and \function{float()}.
 \end{funcdesc}
 
-\begin{funcdesc}{delattr}{object\, name}
+\begin{funcdesc}{delattr}{object, name}
   This is a relative of \function{setattr()}.  The arguments are an
   object and a string.  The string must be the name
   of one of the object's attributes.  The function deletes
@@ -146,7 +146,7 @@ class instances are callable if they have a \method{__call__()} method.
 \end{verbatim}
 \end{funcdesc}
 
-\begin{funcdesc}{divmod}{a\, b}
+\begin{funcdesc}{divmod}{a, b}
   Take two numbers as arguments and return a pair of numbers consisting
   of their quotient and remainder when using long division.  With mixed
   operand types, the rules for binary arithmetic operators apply.  For
@@ -156,7 +156,7 @@ class instances are callable if they have a \method{__call__()} method.
   \code{(math.floor(\var{a} / \var{b}), \var{a} \%{} \var{b})}.
 \end{funcdesc}
 
-\begin{funcdesc}{eval}{expression\optional{\, globals\optional{\, locals}}}
+\begin{funcdesc}{eval}{expression\optional{, globals\optional{, locals}}}
   The arguments are a string and two optional dictionaries.  The
   \var{expression} argument is parsed and evaluated as a Python
   expression (technically speaking, a condition list) using the
@@ -188,7 +188,7 @@ class instances are callable if they have a \method{__call__()} method.
   \function{execfile()}.
 \end{funcdesc}
 
-\begin{funcdesc}{execfile}{file\optional{\, globals\optional{\, locals}}}
+\begin{funcdesc}{execfile}{file\optional{, globals\optional{, locals}}}
   This function is similar to the
   \keyword{exec} statement, but parses a file instead of a string.  It
   is different from the \keyword{import} statement in that it does not
@@ -206,7 +206,7 @@ class instances are callable if they have a \method{__call__()} method.
   \code{None}.
 \end{funcdesc}
 
-\begin{funcdesc}{filter}{function\, list}
+\begin{funcdesc}{filter}{function, list}
 Construct a list from those elements of \var{list} for which
 \var{function} returns true.  If \var{list} is a string or a tuple,
 the result also has that type; otherwise it is always a list.  If
@@ -226,7 +226,7 @@ removed.
   returned.
 \end{funcdesc}
 
-\begin{funcdesc}{getattr}{object\, name}
+\begin{funcdesc}{getattr}{object, name}
   The arguments are an object and a string.  The string must be the
   name of one of the object's attributes.  The result is the value of
   that attribute.  For example, \code{getattr(\var{x},
@@ -240,7 +240,7 @@ function or method, this is the module where it is defined, not the
 module from which it is called).
 \end{funcdesc}
 
-\begin{funcdesc}{hasattr}{object\, name}
+\begin{funcdesc}{hasattr}{object, name}
   The arguments are an object and a string.  The result is 1 if the
   string is the name of one of the object's attributes, 0 if not.
   (This is implemented by calling \code{getattr(\var{object},
@@ -355,7 +355,7 @@ desired effect.
   see the description of \function{int()}.
 \end{funcdesc}
 
-\begin{funcdesc}{map}{function\, list\, ...}
+\begin{funcdesc}{map}{function, list, ...}
 Apply \var{function} to every item of \var{list} and return a list
 of the results.  If additional \var{list} arguments are passed, 
 \var{function} must take that many arguments and is applied to
@@ -388,7 +388,7 @@ any kind of sequence; the result is always a list.
   \exception{OverflowError} exception.
 \end{funcdesc}
 
-\begin{funcdesc}{open}{filename\optional{\, mode\optional{\, bufsize}}}
+\begin{funcdesc}{open}{filename\optional{, mode\optional{, bufsize}}}
   Return a new file object (described earlier under Built-in Types).
   The first two arguments are the same as for \code{stdio}'s
   \cfunction{fopen()}: \var{filename} is the file name to be opened,
@@ -423,7 +423,7 @@ there's no reliable way to determine whether this is the case.}
   \function{chr()}.
 \end{funcdesc}
 
-\begin{funcdesc}{pow}{x\, y\optional{\, z}}
+\begin{funcdesc}{pow}{x, y\optional{, z}}
   Return \var{x} to the power \var{y}; if \var{z} is present, return
   \var{x} to the power \var{y}, modulo \var{z} (computed more
   efficiently than \code{pow(\var{x}, \var{y}) \% \var{z}}).
@@ -435,7 +435,7 @@ there's no reliable way to determine whether this is the case.}
   35000)} is not allowed.
 \end{funcdesc}
 
-\begin{funcdesc}{range}{\optional{start\,} stop\optional{\, step}}
+\begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
   This is a versatile function to create lists containing arithmetic
   progressions.  It is most often used in \keyword{for} loops.  The
   arguments must be plain integers.  If the \var{step} argument is
@@ -487,7 +487,7 @@ If the \module{readline} module was loaded, then
 line editing and history features.
 \end{funcdesc}
 
-\begin{funcdesc}{reduce}{function\, list\optional{\, initializer}}
+\begin{funcdesc}{reduce}{function, list\optional{, initializer}}
 Apply the binary \var{function} to the items of \var{list} so as to
 reduce the list to a single value.  E.g.,
 \code{reduce(lambda x, y: x*y, \var{list}, 1)} returns the product of
@@ -551,7 +551,7 @@ to return a string that would yield an object with the same value
 when passed to \function{eval()}.
 \end{funcdesc}
 
-\begin{funcdesc}{round}{x\, n}
+\begin{funcdesc}{round}{x, n}
   Return the floating point value \var{x} rounded to \var{n} digits
   after the decimal point.  If \var{n} is omitted, it defaults to zero.
   The result is a floating point number.  Values are rounded to the
@@ -560,7 +560,7 @@ when passed to \function{eval()}.
   \code{round(0.5)} is \code{1.0} and \code{round(-0.5)} is \code{-1.0}).
 \end{funcdesc}
 
-\begin{funcdesc}{setattr}{object\, name\, value}
+\begin{funcdesc}{setattr}{object, name, value}
   This is the counterpart of \function{getattr()}.  The arguments are an
   object, a string and an arbitrary value.  The string must be the name
   of one of the object's attributes.  The function assigns the value to
@@ -569,7 +569,7 @@ when passed to \function{eval()}.
   \code{\var{x}.\var{foobar} = 123}.
 \end{funcdesc}
 
-\begin{funcdesc}{slice}{\optional{start\,} stop\optional{\, step}}
+\begin{funcdesc}{slice}{\optional{start,} stop\optional{, step}}
 Return a slice object representing the set of indices specified by
 \code{range(\var{start}, \var{stop}, \var{step})}.  The \var{start}
 and \var{step} arguments default to None.  Slice objects have
@@ -623,7 +623,7 @@ cannot normally be affected this way, but variables retrieved from
 other scopes (e.g. modules) can be.  This may change.}
 \end{funcdesc}
 
-\begin{funcdesc}{xrange}{\optional{start\,} stop\optional{\, step}}
+\begin{funcdesc}{xrange}{\optional{start,} stop\optional{, step}}
 This function is very similar to \function{range()}, but returns an
 ``xrange object'' instead of a list.  This is an opaque sequence type
 which yields the same values as the corresponding list, without

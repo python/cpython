@@ -269,7 +269,7 @@ Profiler Extensions, which includes discussion of how to derive
 ``better'' profilers from the classes presented, or reading the source
 code for these modules.
 
-\begin{funcdesc}{profile.run}{string\optional{\, filename\optional{\, ...}}}
+\begin{funcdesc}{profile.run}{string\optional{, filename\optional{, ...}}}
 
 This function takes a single argument that has can be passed to the
 \keyword{exec} statement, and an optional file name.  In all cases this
@@ -338,7 +338,7 @@ Analysis of the profiler data is done using this class from the
 
 \setindexsubitem{(in module pstats)}
 
-\begin{classdesc}{Stats}{filename\optional{\, ...}}
+\begin{classdesc}{Stats}{filename\optional{, ...}}
 This class constructor creates an instance of a ``statistics object''
 from a \var{filename} (or set of filenames).  \class{Stats} objects are
 manipulated by methods, in order to print useful reports.
@@ -375,7 +375,7 @@ statistics for these two entries are accumulated into a single entry.
 \end{funcdesc}
 
 
-\begin{funcdesc}{add}{filename\optional{\, ...}}
+\begin{funcdesc}{add}{filename\optional{, ...}}
 This method of the \class{Stats} class accumulates additional
 profiling information into the current profiling object.  Its
 arguments should refer to filenames created by the corresponding
@@ -384,7 +384,7 @@ version of \function{profile.run()}.  Statistics for identically named
 single function statistics.
 \end{funcdesc}
 
-\begin{funcdesc}{sort_stats}{key\optional{\, ...}}
+\begin{funcdesc}{sort_stats}{key\optional{, ...}}
 This method modifies the \class{Stats} object by sorting it according
 to the supplied criteria.  The argument is typically a string
 identifying the basis of a sort (example: \code{"time"} or
@@ -441,7 +441,7 @@ now that ascending vs descending order is properly selected based on
 the sort key of choice.
 \end{funcdesc}
 
-\begin{funcdesc}{print_stats}{restriction\optional{\, ...}}
+\begin{funcdesc}{print_stats}{restriction\optional{, ...}}
 This method for the \class{Stats} class prints out a report as described
 in the \function{profile.run()} definition.
 
@@ -476,7 +476,7 @@ and then proceed to only print the first 10\% of them.
 \end{funcdesc}
 
 
-\begin{funcdesc}{print_callers}{restrictions\optional{\, ...}}
+\begin{funcdesc}{print_callers}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all functions
 that called each function in the profiled database.  The ordering is
 identical to that provided by \method{print_stats()}, and the definition
@@ -486,7 +486,7 @@ times this specific call was made.  A second non-parenthesized number
 is the cumulative time spent in the function at the right.
 \end{funcdesc}
 
-\begin{funcdesc}{print_callees}{restrictions\optional{\, ...}}
+\begin{funcdesc}{print_callees}{restrictions\optional{, ...}}
 This method for the \class{Stats} class prints a list of all function
 that were called by the indicated function.  Aside from this reversal
 of direction of calls (re: called vs was called by), the arguments and

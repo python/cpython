@@ -31,14 +31,14 @@ An object representing the menubar. This object is usually not created
 by the user.
 \end{funcdesc}
 
-\begin{funcdesc}{Menu}{bar\, title\optional{\, after}}
+\begin{funcdesc}{Menu}{bar, title\optional{, after}}
 An object representing a menu. Upon creation you pass the
 \code{MenuBar} the menu appears in, the \var{title} string and a
 position (1-based) \var{after} where the menu should appear (default:
 at the end).
 \end{funcdesc}
 
-\begin{funcdesc}{MenuItem}{menu\, title\optional{\, shortcut\, callback}}
+\begin{funcdesc}{MenuItem}{menu, title\optional{, shortcut, callback}}
 Create a menu item object. The arguments are the menu to crate the
 item it, the item title string and optionally the keyboard shortcut
 and a callback routine. The callback is called with the arguments
@@ -58,7 +58,7 @@ correct dimming for all menu items based on the current front window.
 Add a separator to the end of a menu.
 \end{funcdesc}
 
-\begin{funcdesc}{SubMenu}{menu\, label}
+\begin{funcdesc}{SubMenu}{menu, label}
 Create a submenu named \var{label} under menu \var{menu}. The menu
 object is returned.
 \end{funcdesc}
@@ -72,7 +72,7 @@ which the window belongs. The window is not displayed until later.
 Creates a modeless dialog window.
 \end{funcdesc}
 
-\begin{funcdesc}{windowbounds}{width\, height}
+\begin{funcdesc}{windowbounds}{width, height}
 Return a \code{(left, top, right, bottom)} tuple suitable for creation
 of a window of given width and height. The window will be staggered
 with respect to previous windows, and an attempt is made to keep the
@@ -104,7 +104,7 @@ application. Alternatively, override the \code{do_about} method for
 more elaborate about messages.
 \end{funcdesc}
 
-\begin{funcdesc}{mainloop}{\optional{mask\, wait}}
+\begin{funcdesc}{mainloop}{\optional{mask, wait}}
 This routine is the main event loop, call it to set your application
 rolling. \var{Mask} is the mask of events you want to handle,
 \var{wait} is the number of ticks you want to leave to other
@@ -145,7 +145,7 @@ The old on/off value is returned.
 Terminate the event \code{mainloop} at the next convenient moment.
 \end{funcdesc}
 
-\begin{funcdesc}{do_char}{c\, event}
+\begin{funcdesc}{do_char}{c, event}
 The user typed character \var{c}. The complete details of the event
 can be found in the \var{event} structure. This method can also be
 provided in a \code{Window} object, which overrides the
@@ -181,22 +181,22 @@ Override this method to do any special processing on window
 close. Call \code{self.do_postclose} to cleanup the parent state.
 \end{funcdesc}
 
-\begin{funcdesc}{do_postresize}{width\, height\, macoswindowid}
+\begin{funcdesc}{do_postresize}{width, height, macoswindowid}
 Called after the window is resized. Override if more needs to be done
 than calling \code{InvalRect}.
 \end{funcdesc}
 
-\begin{funcdesc}{do_contentclick}{local\, modifiers\, event}
+\begin{funcdesc}{do_contentclick}{local, modifiers, event}
 The user clicked in the content part of a window. The arguments are
 the coordinates (window-relative), the key modifiers and the raw
 event.
 \end{funcdesc}
 
-\begin{funcdesc}{do_update}{macoswindowid\, event}
+\begin{funcdesc}{do_update}{macoswindowid, event}
 An update event for the window was received. Redraw the window.
 \end{funcdesc}
 
-\begin{funcdesc}{do_activate}{activate\, event}
+\begin{funcdesc}{do_activate}{activate, event}
 The window was activated (\code{activate==1}) or deactivated
 (\code{activate==0}). Handle things like focus highlighting, etc.
 \end{funcdesc}
@@ -208,7 +208,7 @@ ControlsWindow objects have the following methods besides those of
 
 \setindexsubitem{(ControlsWindow method)}
 
-\begin{funcdesc}{do_controlhit}{window\, control\, pcode\, event}
+\begin{funcdesc}{do_controlhit}{window, control, pcode, event}
 Part \code{pcode} of control \code{control} was hit by the
 user. Tracking and such has already been taken care of.
 \end{funcdesc}
@@ -220,7 +220,7 @@ extra methods:
 
 \setindexsubitem{(ScrolledWindow method)}
 
-\begin{funcdesc}{scrollbars}{\optional{wantx\, wanty}}
+\begin{funcdesc}{scrollbars}{\optional{wantx, wanty}}
 Create (or destroy) horizontal and vertical scrollbars. The arguments
 specify which you want (default: both). The scrollbars always have
 minimum \code{0} and maximum \code{32767}.
@@ -238,32 +238,32 @@ Call this method when the document has changed. It will call
 \code{getscrollbarvalues} and update the scrollbars.
 \end{funcdesc}
 
-\begin{funcdesc}{scrollbar_callback}{which\, what\, value}
+\begin{funcdesc}{scrollbar_callback}{which, what, value}
 Supplied by you and called after user interaction. \code{Which} will
 be \code{'x'} or \code{'y'}, \code{what} will be \code{'-'},
 \code{'--'}, \code{'set'}, \code{'++'} or \code{'+'}. For
 \code{'set'}, \code{value} will contain the new scrollbar position.
 \end{funcdesc}
 
-\begin{funcdesc}{scalebarvalues}{absmin\, absmax\, curmin\, curmax}
+\begin{funcdesc}{scalebarvalues}{absmin, absmax, curmin, curmax}
 Auxiliary method to help you calculate values to return from
 \code{getscrollbarvalues}. You pass document minimum and maximum value
 and topmost (leftmost) and bottommost (rightmost) visible values and
 it returns the correct number or \code{None}.
 \end{funcdesc}
 
-\begin{funcdesc}{do_activate}{onoff\, event}
+\begin{funcdesc}{do_activate}{onoff, event}
 Takes care of dimming/highlighting scrollbars when a window becomes
 frontmost vv. If you override this method call this one at the end of
 your method.
 \end{funcdesc}
 
-\begin{funcdesc}{do_postresize}{width\, height\, window}
+\begin{funcdesc}{do_postresize}{width, height, window}
 Moves scrollbars to the correct position. Call this method initially
 if you override it.
 \end{funcdesc}
 
-\begin{funcdesc}{do_controlhit}{window\, control\, pcode\, event}
+\begin{funcdesc}{do_controlhit}{window, control, pcode, event}
 Handles scrollbar interaction. If you override it call this method
 first, a nonzero return value indicates the hit was in the scrollbars
 and has been handled.
@@ -281,7 +281,7 @@ Create the dialog window, from the DLOG resource with id
 \var{resid}. The dialog object is stored in \code{self.wid}.
 \end{funcdesc}
 
-\begin{funcdesc}{do_itemhit}{item\, event}
+\begin{funcdesc}{do_itemhit}{item, event}
 Item number \var{item} was hit. You are responsible for redrawing
 toggle buttons, etc.
 \end{funcdesc}

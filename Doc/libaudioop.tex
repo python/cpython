@@ -19,46 +19,46 @@ This exception is raised on all errors, such as unknown number of bytes
 per sample, etc.
 \end{excdesc}
 
-\begin{funcdesc}{add}{fragment1\, fragment2\, width}
+\begin{funcdesc}{add}{fragment1, fragment2, width}
 Return a fragment which is the addition of the two samples passed as
 parameters.  \var{width} is the sample width in bytes, either
 \code{1}, \code{2} or \code{4}.  Both fragments should have the same
 length.
 \end{funcdesc}
 
-\begin{funcdesc}{adpcm2lin}{adpcmfragment\, width\, state}
+\begin{funcdesc}{adpcm2lin}{adpcmfragment, width, state}
 Decode an Intel/DVI ADPCM coded fragment to a linear fragment.  See
 the description of \code{lin2adpcm} for details on ADPCM coding.
 Return a tuple \code{(\var{sample}, \var{newstate})} where the sample
 has the width specified in \var{width}.
 \end{funcdesc}
 
-\begin{funcdesc}{adpcm32lin}{adpcmfragment\, width\, state}
+\begin{funcdesc}{adpcm32lin}{adpcmfragment, width, state}
 Decode an alternative 3-bit ADPCM code.  See \code{lin2adpcm3} for
 details.
 \end{funcdesc}
 
-\begin{funcdesc}{avg}{fragment\, width}
+\begin{funcdesc}{avg}{fragment, width}
 Return the average over all samples in the fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{avgpp}{fragment\, width}
+\begin{funcdesc}{avgpp}{fragment, width}
 Return the average peak-peak value over all samples in the fragment.
 No filtering is done, so the usefulness of this routine is
 questionable.
 \end{funcdesc}
 
-\begin{funcdesc}{bias}{fragment\, width\, bias}
+\begin{funcdesc}{bias}{fragment, width, bias}
 Return a fragment that is the original fragment with a bias added to
 each sample.
 \end{funcdesc}
 
-\begin{funcdesc}{cross}{fragment\, width}
+\begin{funcdesc}{cross}{fragment, width}
 Return the number of zero crossings in the fragment passed as an
 argument.
 \end{funcdesc}
 
-\begin{funcdesc}{findfactor}{fragment\, reference}
+\begin{funcdesc}{findfactor}{fragment, reference}
 Return a factor \var{F} such that
 \code{rms(add(fragment, mul(reference, -F)))} is minimal, i.e.,
 return the factor with which you should multiply \var{reference} to
@@ -68,7 +68,7 @@ should both contain 2-byte samples.
 The time taken by this routine is proportional to \code{len(fragment)}. 
 \end{funcdesc}
 
-\begin{funcdesc}{findfit}{fragment\, reference}
+\begin{funcdesc}{findfit}{fragment, reference}
 This routine (which only accepts 2-byte sample fragments)
 
 Try to match \var{reference} as well as possible to a portion of
@@ -82,7 +82,7 @@ and \var{factor} is the (floating-point) factor as per
 \code{findfactor}.
 \end{funcdesc}
 
-\begin{funcdesc}{findmax}{fragment\, length}
+\begin{funcdesc}{findmax}{fragment, length}
 Search \var{fragment} for a slice of length \var{length} samples (not
 bytes!)\ with maximum energy, i.e., return \var{i} for which
 \code{rms(fragment[i*2:(i+length)*2])} is maximal.  The fragments
@@ -91,15 +91,15 @@ should both contain 2-byte samples.
 The routine takes time proportional to \code{len(fragment)}.
 \end{funcdesc}
 
-\begin{funcdesc}{getsample}{fragment\, width\, index}
+\begin{funcdesc}{getsample}{fragment, width, index}
 Return the value of sample \var{index} from the fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{lin2lin}{fragment\, width\, newwidth}
+\begin{funcdesc}{lin2lin}{fragment, width, newwidth}
 Convert samples between 1-, 2- and 4-byte formats.
 \end{funcdesc}
 
-\begin{funcdesc}{lin2adpcm}{fragment\, width\, state}
+\begin{funcdesc}{lin2adpcm}{fragment, width, state}
 Convert samples to 4 bit Intel/DVI ADPCM encoding.  ADPCM coding is an
 adaptive coding scheme, whereby each 4 bit number is the difference
 between one sample and the next, divided by a (varying) step.  The
@@ -113,41 +113,41 @@ initial call \code{None} can be passed as the state.  \var{adpcmfrag}
 is the ADPCM coded fragment packed 2 4-bit values per byte.
 \end{funcdesc}
 
-\begin{funcdesc}{lin2adpcm3}{fragment\, width\, state}
+\begin{funcdesc}{lin2adpcm3}{fragment, width, state}
 This is an alternative ADPCM coder that uses only 3 bits per sample.
 It is not compatible with the Intel/DVI ADPCM coder and its output is
 not packed (due to laziness on the side of the author).  Its use is
 discouraged.
 \end{funcdesc}
 
-\begin{funcdesc}{lin2ulaw}{fragment\, width}
+\begin{funcdesc}{lin2ulaw}{fragment, width}
 Convert samples in the audio fragment to U-LAW encoding and return
 this as a Python string.  U-LAW is an audio encoding format whereby
 you get a dynamic range of about 14 bits using only 8 bit samples.  It
 is used by the Sun audio hardware, among others.
 \end{funcdesc}
 
-\begin{funcdesc}{minmax}{fragment\, width}
+\begin{funcdesc}{minmax}{fragment, width}
 Return a tuple consisting of the minimum and maximum values of all
 samples in the sound fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{max}{fragment\, width}
+\begin{funcdesc}{max}{fragment, width}
 Return the maximum of the \emph{absolute value} of all samples in a
 fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{maxpp}{fragment\, width}
+\begin{funcdesc}{maxpp}{fragment, width}
 Return the maximum peak-peak value in the sound fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{mul}{fragment\, width\, factor}
+\begin{funcdesc}{mul}{fragment, width, factor}
 Return a fragment that has all samples in the original framgent
 multiplied by the floating-point value \var{factor}.  Overflow is
 silently ignored.
 \end{funcdesc}
 
-\begin{funcdesc}{ratecv}{fragment\, width\, nchannels\, inrate\, outrate\, state\optional{\, weightA\, weightB}}
+\begin{funcdesc}{ratecv}{fragment, width, nchannels, inrate, outrate, state\optional{, weightA, weightB}}
 Convert the frame rate of the input fragment.
 
 \code{State} is a tuple containing the state of the converter.  The
@@ -158,11 +158,11 @@ The \code{weightA} and \code{weightB} arguments are parameters for a
 simple digital filter and default to 1 and 0 respectively.
 \end{funcdesc}
 
-\begin{funcdesc}{reverse}{fragment\, width}
+\begin{funcdesc}{reverse}{fragment, width}
 Reverse the samples in a fragment and returns the modified fragment.
 \end{funcdesc}
 
-\begin{funcdesc}{rms}{fragment\, width}
+\begin{funcdesc}{rms}{fragment, width}
 Return the root-mean-square of the fragment, i.e.
 \iftexi
 the square root of the quotient of the sum of all squared sample value,
@@ -177,20 +177,20 @@ divided by the sumber of samples.
 This is a measure of the power in an audio signal.
 \end{funcdesc}
 
-\begin{funcdesc}{tomono}{fragment\, width\, lfactor\, rfactor} 
+\begin{funcdesc}{tomono}{fragment, width, lfactor, rfactor} 
 Convert a stereo fragment to a mono fragment.  The left channel is
 multiplied by \var{lfactor} and the right channel by \var{rfactor}
 before adding the two channels to give a mono signal.
 \end{funcdesc}
 
-\begin{funcdesc}{tostereo}{fragment\, width\, lfactor\, rfactor}
+\begin{funcdesc}{tostereo}{fragment, width, lfactor, rfactor}
 Generate a stereo fragment from a mono fragment.  Each pair of samples
 in the stereo fragment are computed from the mono sample, whereby left
 channel samples are multiplied by \var{lfactor} and right channel
 samples by \var{rfactor}.
 \end{funcdesc}
 
-\begin{funcdesc}{ulaw2lin}{fragment\, width}
+\begin{funcdesc}{ulaw2lin}{fragment, width}
 Convert sound fragments in ULAW encoding to linearly encoded sound
 fragments.  ULAW encoding always uses 8 bits samples, so \var{width}
 refers only to the sample width of the output fragment here.

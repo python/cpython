@@ -37,17 +37,17 @@ A number of \emph{extra} functions are defined in this module. Non
 mpz-arguments are converted to mpz-values first, and the functions
 return mpz-numbers.
 
-\begin{funcdesc}{powm}{base\, exponent\, modulus}
+\begin{funcdesc}{powm}{base, exponent, modulus}
   Return \code{pow(\var{base}, \var{exponent}) \%{} \var{modulus}}. If
   \code{\var{exponent} == 0}, return \code{mpz(1)}. In contrast to the
   \C-library function, this version can handle negative exponents.
 \end{funcdesc}
 
-\begin{funcdesc}{gcd}{op1\, op2}
+\begin{funcdesc}{gcd}{op1, op2}
   Return the greatest common divisor of \var{op1} and \var{op2}.
 \end{funcdesc}
 
-\begin{funcdesc}{gcdext}{a\, b}
+\begin{funcdesc}{gcdext}{a, b}
   Return a tuple \code{(\var{g}, \var{s}, \var{t})}, such that
   \code{\var{a}*\var{s} + \var{b}*\var{t} == \var{g} == gcd(\var{a}, \var{b})}.
 \end{funcdesc}
@@ -61,7 +61,7 @@ return mpz-numbers.
   \code{\var{root}*\var{root} + \var{remainder} == \var{op}}.
 \end{funcdesc}
 
-\begin{funcdesc}{divm}{numerator\, denominator\, modulus}
+\begin{funcdesc}{divm}{numerator, denominator, modulus}
   Returns a number \var{q}. such that
   \code{\var{q} * \var{denominator} \%{} \var{modulus} == \var{numerator}}.
   One could also implement this function in Python, using \code{gcdext}.

@@ -16,14 +16,14 @@ The module defines the following exception and functions:
   describing what is wrong.
 \end{excdesc}
 
-\begin{funcdesc}{pack}{fmt\, v1\, v2\, {\rm \ldots}}
+\begin{funcdesc}{pack}{fmt, v1, v2, {\rm \ldots}}
   Return a string containing the values
   \code{\var{v1}, \var{v2}, {\rm \ldots}} packed according to the given
   format.  The arguments must match the values required by the format
   exactly.
 \end{funcdesc}
 
-\begin{funcdesc}{unpack}{fmt\, string}
+\begin{funcdesc}{unpack}{fmt, string}
   Unpack the string (presumably packed by \code{pack(\var{fmt}, {\rm \ldots})})
   according to the given format.  The result is a tuple even if it
   contains exactly one item.  The string must contain exactly the

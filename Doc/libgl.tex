@@ -119,7 +119,7 @@ Similar to
 but the pairs have the point first and the normal second.
 \end{funcdesc}
 
-\begin{funcdesc}{nurbssurface}{s_k\, t_k\, ctl\, s_ord\, t_ord\, type}
+\begin{funcdesc}{nurbssurface}{s_k, t_k, ctl, s_ord, t_ord, type}
 % XXX s_k[], t_k[], ctl[][]
 Defines a nurbs surface.
 The dimensions of
@@ -129,13 +129,13 @@ are computed as follows:
 \code{[len(\var{t_k}) - \var{t_ord}]}.
 \end{funcdesc}
 
-\begin{funcdesc}{nurbscurve}{knots\, ctlpoints\, order\, type}
+\begin{funcdesc}{nurbscurve}{knots, ctlpoints, order, type}
 Defines a nurbs curve.
 The length of ctlpoints is
 \code{len(\var{knots}) - \var{order}}.
 \end{funcdesc}
 
-\begin{funcdesc}{pwlcurve}{points\, type}
+\begin{funcdesc}{pwlcurve}{points, type}
 Defines a piecewise-linear curve.
 \var{points}
 is a list of points.

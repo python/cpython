@@ -24,7 +24,7 @@ second's worth occupies 2*2*44100 bytes, i.e.\ 176,400 bytes.
 Module \code{aifc} defines the following function:
 
 \setindexsubitem{(in module aifc)}
-\begin{funcdesc}{open}{file\, mode}
+\begin{funcdesc}{open}{file, mode}
 Open an AIFF or AIFF-C file and return an object instance with
 methods that are described below.  The argument file is either a
 string naming a file or a file object.  The mode is either the string
@@ -146,7 +146,7 @@ If this parameter is not set, or not set correctly, the file needs to
 support seeking.
 \end{funcdesc}
 
-\begin{funcdesc}{setcomptype}{type\, name}
+\begin{funcdesc}{setcomptype}{type, name}
 Specify the compression type.  If not specified, the audio data will
 not be compressed.  In AIFF files, compression is not possible.  The
 name parameter should be a human-readable description of the
@@ -155,14 +155,14 @@ string.  Currently the following compression types are supported:
 NONE, ULAW, ALAW, G722.
 \end{funcdesc}
 
-\begin{funcdesc}{setparams}{nchannels\, sampwidth\, framerate\, comptype\, compname}
+\begin{funcdesc}{setparams}{nchannels, sampwidth, framerate, comptype, compname}
 Set all the above parameters at once.  The argument is a tuple
 consisting of the various parameters.  This means that it is possible
 to use the result of a \code{getparams()} call as argument to
 \code{setparams()}.
 \end{funcdesc}
 
-\begin{funcdesc}{setmark}{id\, pos\, name}
+\begin{funcdesc}{setmark}{id, pos, name}
 Add a mark with the given id (larger than 0), and the given name at
 the given position.  This method can be called at any time before
 \code{close()}.

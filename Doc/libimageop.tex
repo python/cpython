@@ -17,7 +17,7 @@ per pixel, etc.
 \end{excdesc}
 
 
-\begin{funcdesc}{crop}{image\, psize\, width\, height\, x0\, y0\, x1\, y1}
+\begin{funcdesc}{crop}{image, psize, width, height, x0, y0, x1, y1}
 Return the selected part of \var{image}, which should by
 \var{width} by \var{height} in size and consist of pixels of
 \var{psize} bytes. \var{x0}, \var{y0}, \var{x1} and \var{y1} are like
@@ -28,14 +28,14 @@ that fall outside the old image will have their value set to zero.  If
 holds for the y coordinates.
 \end{funcdesc}
 
-\begin{funcdesc}{scale}{image\, psize\, width\, height\, newwidth\, newheight}
+\begin{funcdesc}{scale}{image, psize, width, height, newwidth, newheight}
 Return \var{image} scaled to size \var{newwidth} by \var{newheight}.
 No interpolation is done, scaling is done by simple-minded pixel
 duplication or removal.  Therefore, computer-generated images or
 dithered images will not look nice after scaling.
 \end{funcdesc}
 
-\begin{funcdesc}{tovideo}{image\, psize\, width\, height}
+\begin{funcdesc}{tovideo}{image, psize, width, height}
 Run a vertical low-pass filter over an image.  It does so by computing
 each destination pixel as the average of two vertically-aligned source
 pixels.  The main use of this routine is to forestall excessive
@@ -43,18 +43,18 @@ flicker if the image is displayed on a video device that uses
 interlacing, hence the name.
 \end{funcdesc}
 
-\begin{funcdesc}{grey2mono}{image\, width\, height\, threshold}
+\begin{funcdesc}{grey2mono}{image, width, height, threshold}
 Convert a 8-bit deep greyscale image to a 1-bit deep image by
 tresholding all the pixels.  The resulting image is tightly packed and
 is probably only useful as an argument to \code{mono2grey}.
 \end{funcdesc}
 
-\begin{funcdesc}{dither2mono}{image\, width\, height}
+\begin{funcdesc}{dither2mono}{image, width, height}
 Convert an 8-bit greyscale image to a 1-bit monochrome image using a
 (simple-minded) dithering algorithm.
 \end{funcdesc}
 
-\begin{funcdesc}{mono2grey}{image\, width\, height\, p0\, p1}
+\begin{funcdesc}{mono2grey}{image, width, height, p0, p1}
 Convert a 1-bit monochrome image to an 8 bit greyscale or color image.
 All pixels that are zero-valued on input get value \var{p0} on output
 and all one-value input pixels get value \var{p1} on output.  To
@@ -62,26 +62,26 @@ convert a monochrome black-and-white image to greyscale pass the
 values \code{0} and \code{255} respectively.
 \end{funcdesc}
 
-\begin{funcdesc}{grey2grey4}{image\, width\, height}
+\begin{funcdesc}{grey2grey4}{image, width, height}
 Convert an 8-bit greyscale image to a 4-bit greyscale image without
 dithering.
 \end{funcdesc}
 
-\begin{funcdesc}{grey2grey2}{image\, width\, height}
+\begin{funcdesc}{grey2grey2}{image, width, height}
 Convert an 8-bit greyscale image to a 2-bit greyscale image without
 dithering.
 \end{funcdesc}
 
-\begin{funcdesc}{dither2grey2}{image\, width\, height}
+\begin{funcdesc}{dither2grey2}{image, width, height}
 Convert an 8-bit greyscale image to a 2-bit greyscale image with
 dithering.  As for \code{dither2mono}, the dithering algorithm is
 currently very simple.
 \end{funcdesc}
 
-\begin{funcdesc}{grey42grey}{image\, width\, height}
+\begin{funcdesc}{grey42grey}{image, width, height}
 Convert a 4-bit greyscale image to an 8-bit greyscale image.
 \end{funcdesc}
 
-\begin{funcdesc}{grey22grey}{image\, width\, height}
+\begin{funcdesc}{grey22grey}{image, width, height}
 Convert a 2-bit greyscale image to an 8-bit greyscale image.
 \end{funcdesc}

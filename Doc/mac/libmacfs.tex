@@ -2,16 +2,16 @@
 \label{module-macfs}
 \bimodindex{macfs}
 
-\setindexsubitem{(in module macfs)}
 
-This module provides access to macintosh FSSpec handling, the Alias
+This module provides access to Macintosh FSSpec handling, the Alias
 Manager, finder aliases and the Standard File package.
 
 Whenever a function or method expects a \var{file} argument, this
 argument can be one of three things:\ (1) a full or partial Macintosh
-pathname, (2) an FSSpec object or (3) a 3-tuple \code{(wdRefNum,
-parID, name)} as described in Inside Mac VI\@. A description of aliases
-and the standard file package can also be found there.
+pathname, (2) an FSSpec object or (3) a 3-tuple \code{(\var{wdRefNum},
+\var{parID}, \var{name})} as described in \emph{Inside Macintosh
+VI}\@. A description of aliases and the standard file package can also
+be found there.
 
 \begin{funcdesc}{FSSpec}{file}
 Create an FSSpec object for the specified file.
@@ -41,7 +41,7 @@ Resolve an alias file. Returns a 3-tuple \code{(\var{fsspec}, \var{isfolder},
 (otherwise the FSSpec object for the file itself is returned).
 \end{funcdesc}
 
-\begin{funcdesc}{StandardGetFile}{\optional{type\, ...}}
+\begin{funcdesc}{StandardGetFile}{\optional{type, ...}}
 Present the user with a standard ``open input file''
 dialog. Optionally, you can pass up to four 4-char file types to limit
 the files the user can choose from. The function returns an FSSpec
@@ -49,11 +49,11 @@ object and a flag indicating that the user completed the dialog
 without cancelling.
 \end{funcdesc}
 
-\begin{funcdesc}{PromptGetFile}{prompt\optional{\, type\, ...}}
+\begin{funcdesc}{PromptGetFile}{prompt\optional{, type, ...}}
 Similar to \var{StandardGetFile} but allows you to specify a prompt.
 \end{funcdesc}
 
-\begin{funcdesc}{StandardPutFile}{prompt\, \optional{default}}
+\begin{funcdesc}{StandardPutFile}{prompt, \optional{default}}
 Present the user with a standard ``open output file''
 dialog. \var{prompt} is the prompt string, and the optional
 \var{default} argument initializes the output file name. The function
@@ -79,7 +79,7 @@ behaviour with the ``general controls'' controlpanel, thereby making
 this call inoperative.
 \end{funcdesc}
 
-\begin{funcdesc}{FindFolder}{where\, which\, create}
+\begin{funcdesc}{FindFolder}{where, which, create}
 Locates one of the ``special'' folders that MacOS knows about, such as
 the trash or the Preferences folder. \var{Where} is the disk to
 search, \var{which} is the 4-char string specifying which folder to
@@ -133,7 +133,7 @@ Create a minimal alias pointing to this file.
 Return the 4-char creator and type of the file.
 \end{funcdesc}
 
-\begin{funcdesc}{SetCreatorType}{creator\, type}
+\begin{funcdesc}{SetCreatorType}{creator, type}
 Set the 4-char creator and type of the file.
 \end{funcdesc}
 
@@ -151,7 +151,7 @@ Return a tuple with three floating point values representing the
 creation date, modification date and backup date of the file.
 \end{funcdesc}
 
-\begin{funcdesc}{SetDates}{crdate\, moddate\, backupdate}
+\begin{funcdesc}{SetDates}{crdate, moddate, backupdate}
 Set the creation, modification and backup date of the file. The values
 are in the standard floating point format used for times throughout
 Python.
@@ -179,7 +179,7 @@ is returned.
 An interface to the C routine \code{GetAliasInfo()}.
 \end{funcdesc}
 
-\begin{funcdesc}{Update}{file\, \optional{file2}}
+\begin{funcdesc}{Update}{file, \optional{file2}}
 Update the alias to point to the \var{file} given. If \var{file2} is
 present a relative alias will be created.
 \end{funcdesc}

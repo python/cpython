@@ -153,7 +153,7 @@ converted to parse trees represented as list- or tuple- trees, or may
 be compiled into executable code objects.  Parse trees may be
 extracted with or without line numbering information.
 
-\begin{funcdesc}{ast2list}{ast\optional{\, line_info\code{ = 0}}}
+\begin{funcdesc}{ast2list}{ast\optional{, line_info\code{ = 0}}}
 This function accepts an AST object from the caller in
 \code{\var{ast}} and returns a Python list representing the
 equivelent parse tree.  The resulting list representation can be used
@@ -172,7 +172,7 @@ the line on which the token \emph{ends}.  This information is
 omitted if the flag is false or omitted.
 \end{funcdesc}
 
-\begin{funcdesc}{ast2tuple}{ast\optional{\, line_info\code{ = 0}}}
+\begin{funcdesc}{ast2tuple}{ast\optional{, line_info\code{ = 0}}}
 This function accepts an AST object from the caller in
 \code{\var{ast}} and returns a Python tuple representing the
 equivelent parse tree.  Other than returning a tuple instead of a
@@ -184,7 +184,7 @@ representing the token.  This information is omitted if the flag is
 false or omitted.
 \end{funcdesc}
 
-\begin{funcdesc}{compileast}{ast\optional{\, filename\code{ = '<ast>'}}}
+\begin{funcdesc}{compileast}{ast\optional{, filename\code{ = '<ast>'}}}
 The Python byte compiler can be invoked on an AST object to produce
 code objects which can be used as part of an \code{exec} statement or
 a call to the built-in \function{eval()}\bifuncindex{eval} function.

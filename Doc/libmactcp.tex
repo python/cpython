@@ -78,13 +78,13 @@ Return the TCP address of this side of a connection as a 2-tuple
 \code{(host, port)}, both integers.
 \end{funcdesc}
 
-\begin{funcdesc}{ActiveOpen}{lport\, host\, rport}
+\begin{funcdesc}{ActiveOpen}{lport, host, rport}
 Open an outgoing connection to TCP address \code{(\var{host}, \var{rport})}. Use
 local port \var{lport} (zero makes the system pick a free port). This
 call blocks until the connection has been established.
 \end{funcdesc}
 
-\begin{funcdesc}{Send}{buf\, push\, urgent}
+\begin{funcdesc}{Send}{buf, push, urgent}
 Send data \var{buf} over the connection. \var{Push} and \var{urgent}
 are flags as specified by the TCP standard.
 \end{funcdesc}
@@ -168,7 +168,7 @@ Read a datagram, waiting at most \var{timeout} seconds (-1 is
 infinite).  Return the data.
 \end{funcdesc}
 
-\begin{funcdesc}{Write}{host\, port\, buf}
+\begin{funcdesc}{Write}{host, port, buf}
 Send \var{buf} as a datagram to IP-address \var{host}, port
 \var{port}.
 \end{funcdesc}

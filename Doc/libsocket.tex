@@ -260,7 +260,7 @@ specifies the maximum number of queued connections and should be at
 least 1; the maximum value is system-dependent (usually 5).
 \end{funcdesc}
 
-\begin{funcdesc}{makefile}{\optional{mode\optional{\, bufsize}}}
+\begin{funcdesc}{makefile}{\optional{mode\optional{, bufsize}}}
 Return a \dfn{file object} associated with the socket.  (File objects
 were described earlier in \ref{bltin-file-objects}, ``File Objects.'')
 The file object references a \cfunction{dup()}ped version of the
@@ -293,7 +293,7 @@ socket.  The optional \var{flags} argument has the same meaning as for
 \method{recv()} above.  Returns the number of bytes sent.
 \end{funcdesc}
 
-\begin{funcdesc}{sendto}{string\optional{\, flags}\, address}
+\begin{funcdesc}{sendto}{string\optional{, flags}, address}
 Send data to the socket.  The socket should not be connected to a
 remote socket, since the destination socket is specified by
 \var{address}.  The optional \var{flags} argument has the same
@@ -310,7 +310,7 @@ immediately dispose of the data, a \exception{error} exception is
 raised; in blocking mode, the calls block until they can proceed.
 \end{funcdesc}
 
-\begin{funcdesc}{setsockopt}{level\, optname\, value}
+\begin{funcdesc}{setsockopt}{level, optname, value}
 Set the value of the given socket option (see the \UNIX{} man page
 \manpage{setsockopt}{2}).  The needed symbolic constants are defined in
 the \module{socket} module (\code{SO_*} etc.).  The value can be an

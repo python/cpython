@@ -123,14 +123,14 @@ the \emph{new} socket object to be used to communicate with the
 client, and the client's address.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_error}{request\, client_address}
+\begin{funcdesc}{handle_error}{request, client_address}
 This function is called if the \member{RequestHandlerClass}'s
 \method{handle()} method raises an exception.  The default action is
 to print the traceback to standard output and continue handling
 further requests.
 \end{funcdesc}
 
-\begin{funcdesc}{process_request}{request\, client_address}
+\begin{funcdesc}{process_request}{request, client_address}
 Calls \method{finish_request()} to create an instance of the
 \member{RequestHandlerClass}.  If desired, this function can create a
 new process or thread to handle the request; the \class{ForkingMixIn}
@@ -151,7 +151,7 @@ Called by the server's constructor to bind the socket to the desired
 address.  May be overridden.
 \end{funcdesc}
 
-\begin{funcdesc}{verify_request}{request\, client_address}
+\begin{funcdesc}{verify_request}{request, client_address}
 Must return a Boolean value; if the value is true, the request will be
 processed, and if it's false, the request will be denied.
 This function can be overridden to implement access controls for a server.

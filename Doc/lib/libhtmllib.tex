@@ -86,7 +86,7 @@ affects the operation of \method{handle_data()} and \method{save_end()}.
 
 \setindexsubitem{(HTMLParser method)}
 
-\begin{funcdesc}{anchor_bgn}{href\, name\, type}
+\begin{funcdesc}{anchor_bgn}{href, name, type}
 This method is called at the start of an anchor region.  The arguments
 correspond to the attributes of the \code{<A>} tag with the same
 names.  The default implementation maintains a list of hyperlinks
@@ -100,7 +100,7 @@ implementation adds a textual footnote marker using an index into the
 list of hyperlinks created by \method{anchor_bgn()}.
 \end{funcdesc}
 
-\begin{funcdesc}{handle_image}{source\, alt\optional{\, ismap\optional{\, align\optional{\, width\optional{\, height}}}}}
+\begin{funcdesc}{handle_image}{source, alt\optional{, ismap\optional{, align\optional{, width\optional{, height}}}}}
 This method is called to handle images.  The default implementation
 simply passes the \var{alt} value to the \method{handle_data()}
 method.

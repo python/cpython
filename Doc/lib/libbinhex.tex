@@ -11,14 +11,14 @@ The \code{binhex} module defines the following functions:
 
 \setindexsubitem{(in module binhex)}
 
-\begin{funcdesc}{binhex}{input\, output}
+\begin{funcdesc}{binhex}{input, output}
 Convert a binary file with filename \var{input} to binhex file
 \var{output}. The \var{output} parameter can either be a filename or a
 file-like object (any object supporting a \var{write} and \var{close}
 method).
 \end{funcdesc}
 
-\begin{funcdesc}{hexbin}{input\optional{\, output}}
+\begin{funcdesc}{hexbin}{input\optional{, output}}
 Decode a binhex file \var{input}. \var{input} may be a filename or a
 file-like object supporting \var{read} and \var{close} methods.
 The resulting file is written to a file named \var{output}, unless the
