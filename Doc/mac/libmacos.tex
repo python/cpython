@@ -40,6 +40,8 @@ continues (by passing the event to the console window package, for instance).
 Call \function{SetEventHandler()} without a parameter to clear the
 event handler. Setting an event handler while one is already set is an
 error.
+
+Availability: MacPython-OS9.
 \end{funcdesc}
 
 \begin{funcdesc}{SchedParams}{\optional{doint\optional{, evtmask\optional{,
@@ -63,6 +65,8 @@ background.
 
 The most common use case is to call \code{SchedParams(0, 0)} to completely disable
 event handling in the interpreter mainloop.
+
+Availability: MacPython-OS9.
 \end{funcdesc}
 
 \begin{funcdesc}{HandleEvent}{ev}
@@ -74,6 +78,8 @@ window-switching capability.
 
 If you attempt to call this function from an event handler set through
 \function{SetEventHandler()} you will get an exception.
+
+Availability: MacPython-OS9.
 \end{funcdesc}
 
 \begin{funcdesc}{GetErrorString}{errno}
@@ -87,17 +93,41 @@ on-screen, with the contents of the DLOG resource specified by
 screen. This function is useful if you want an applet to post a splash screen
 early in initialization without first having to load numerous
 extension modules.
+
+Availability: MacPython-OS9.
 \end{funcdesc}
 
 \begin{funcdesc}{DebugStr}{message \optional{, object}}
-Drop to the low-level debugger with message \var{message}. The
+On Mac OS 9, drop to the low-level debugger with message \var{message}. The
 optional \var{object} argument is not used, but can easily be
-inspected from the debugger.
+inspected from the debugger. On Mac OS X the string is simply printed
+to stderr.
 
 Note that you should use this function with extreme care: if no
 low-level debugger like MacsBug is installed this call will crash your
 system. It is intended mainly for developers of Python extension
 modules.
+\end{funcdesc}
+
+\begin{funcdesc}{SysBeep}{}
+Ring the bell.
+\end{funcdesc}
+
+\begin{funcdesc}{GetTicks}{}
+Get the number of clock ticks (1/60th of a second) since system boot.
+\end{funcdesc}
+
+\begin{funcdesc}{GetCreatorAndType}{file}
+Return the file creator and file type as two four-character strings.
+The \var{file} parameter can be a pathname or an \code{FSSpec} or 
+\code{FSRef} object.
+\end{funcdesc}
+
+\begin{funcdesc}{SetCreatorAndType}{file, creator, type}
+Set the file creator and file type.
+The \var{file} parameter can be a pathname or an \code{FSSpec} or 
+\code{FSRef} object. \var{creator} and \var{type} must be four character
+strings.
 \end{funcdesc}
 
 \begin{funcdesc}{openrf}{name \optional{, mode}}

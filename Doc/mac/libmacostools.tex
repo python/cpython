@@ -7,14 +7,14 @@
 
 
 This module contains some convenience routines for file-manipulation
-on the Macintosh.
+on the Macintosh. All file parameters can be specified as
+pathnames, \class{FSRef} or \class{FSSpec} objects.
 
 The \module{macostools} module defines the following functions:
 
 
 \begin{funcdesc}{copy}{src, dst\optional{, createpath\optional{, copytimes}}}
-Copy file \var{src} to \var{dst}. The files can be specified as
-pathnames or \pytype{FSSpec} objects. If \var{createpath} is non-zero
+Copy file \var{src} to \var{dst}.  If \var{createpath} is non-zero
 the folders leading to \var{dst} are created if necessary.
 The method copies data and
 resource fork and some finder information (creator, type, flags) and
@@ -29,8 +29,7 @@ pathnames.
 \end{funcdesc}
 
 \begin{funcdesc}{mkalias}{src, dst}
-Create a finder alias \var{dst} pointing to \var{src}. Both may be
-specified as pathnames or \pytype{FSSpec} objects.
+Create a finder alias \var{dst} pointing to \var{src}.
 \end{funcdesc}
 
 \begin{funcdesc}{touched}{dst}
@@ -62,7 +61,7 @@ functionality provided by the finder. They are implemented as wrappers
 around the AppleEvent\index{AppleEvents} interface to the finder.
 
 All file and folder parameters can be specified either as full
-pathnames or as \pytype{FSSpec} objects.
+pathnames, or as \class{FSRef} or \class{FSSpec} objects.
 
 The \module{findertools} module defines the following functions:
 
@@ -74,20 +73,19 @@ in the correct application.
 \end{funcdesc}
 
 \begin{funcdesc}{Print}{file}
-Tell the finder to print a file (again specified by full pathname or
-\pytype{FSSpec}). The behaviour is identical to selecting the file and using
+Tell the finder to print a file. The behaviour is identical to selecting the file and using
 the print command in the finder's file menu.
 \end{funcdesc}
 
 \begin{funcdesc}{copy}{file, destdir}
 Tell the finder to copy a file or folder \var{file} to folder
-\var{destdir}. The function returns an \pytype{Alias} object pointing to
+\var{destdir}. The function returns an \class{Alias} object pointing to
 the new file.
 \end{funcdesc}
 
 \begin{funcdesc}{move}{file, destdir}
 Tell the finder to move a file or folder \var{file} to folder
-\var{destdir}. The function returns an \pytype{Alias} object pointing to
+\var{destdir}. The function returns an \class{Alias} object pointing to
 the new file.
 \end{funcdesc}
 
