@@ -629,7 +629,10 @@ struct compiling {
 	int c_maxstacklevel;	/* Maximum stack level */
 	int c_firstlineno;
 	PyObject *c_lnotab;	/* Table mapping address to line number */
-	int c_last_addr, c_last_line, c_lnotab_next;
+	int c_last_addr;	/* last op addr seen and recorded in lnotab */
+	int c_last_line;	/* last line seen and recorded in lnotab */
+	int c_lnotab_next;	/* current length of lnotab */
+	int c_lnotab_last;	/* start of last lnotab record added */
 	char *c_private;	/* for private name mangling */
 	int c_tmpname;		/* temporary local name counter */
 	int c_nested;		/* Is block nested funcdef or lamdef? */
@@ -848,6 +851,7 @@ com_init(struct compiling *c, const char *filename)
 	c->c_last_addr = 0;
 	c->c_last_line = 0;
 	c->c_lnotab_next = 0;
+	c->c_lnotab_last = 0;
 	c->c_tmpname = 0;
 	c->c_nested = 0;
 	c->c_closure = 0;
@@ -964,6 +968,7 @@ com_set_lineno(struct compiling *c, int lineno)
 	else {
 		int incr_addr = c->c_nexti - c->c_last_addr;
 		int incr_line = lineno - c->c_last_line;
+		c->c_lnotab_last = c->c_lnotab_next;
 		while (incr_addr > 255) {
 			com_add_lnotab(c, 255, 0);
 			incr_addr -= 255;
@@ -977,6 +982,27 @@ com_set_lineno(struct compiling *c, int lineno)
 			com_add_lnotab(c, incr_addr, incr_line);
 		c->c_last_addr = c->c_nexti;
 		c->c_last_line = lineno;
+	}
+}
+
+static void
+com_strip_lnotab(struct compiling *c)
+{
+	/* strip the last lnotab entry if no opcode were emitted.
+	 * This prevents a line number to be generated on a final
+	 * pass, like in the following example:
+	 *
+	 *    if a:
+	 *        print 5
+	 *    else:
+	 *        pass
+	 *
+	 * Without the fix, a line trace event would be generated
+	 * on the pass even if a is true (because of the implicit
+	 * return).
+	 */
+	if (c->c_nexti == c->c_last_addr && c->c_lnotab_last > 0) {
+		c->c_lnotab_next = c->c_lnotab_last;
 	}
 }
 
@@ -4167,6 +4193,7 @@ compile_funcdef(struct compiling *c, node *n)
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
+	com_strip_lnotab(c);
 	com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 	com_push(c, 1);
 	com_addbyte(c, RETURN_VALUE);
@@ -4218,6 +4245,7 @@ compile_classdef(struct compiling *c, node *n)
 	else
 		(void) com_addconst(c, Py_None);
 	com_node(c, ch);
+	com_strip_lnotab(c);
 	com_addbyte(c, LOAD_LOCALS);
 	com_push(c, 1);
 	com_addbyte(c, RETURN_VALUE);
@@ -4237,6 +4265,7 @@ compile_node(struct compiling *c, node *n)
 		n = CHILD(n, 0);
 		if (TYPE(n) != NEWLINE)
 			com_node(c, n);
+		com_strip_lnotab(c);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 		com_push(c, 1);
 		com_addbyte(c, RETURN_VALUE);
@@ -4246,6 +4275,7 @@ compile_node(struct compiling *c, node *n)
 	
 	case file_input: /* A whole file, or built-in function exec() */
 		com_file_input(c, n);
+		com_strip_lnotab(c);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, Py_None));
 		com_push(c, 1);
 		com_addbyte(c, RETURN_VALUE);
