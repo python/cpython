@@ -211,7 +211,11 @@ AIX:	A complete overhaul of the shared library support is now in
 	(The optimizer bug reported at this place in previous releases
 	has been worked around by a minimal code change.)
 
-HP-UX:	Please read the file Misc/HPUX-NOTES.
+HP-UX:	Please read the file Misc/HPUX-NOTES for shared libraries.
+	When using threading, you may have to add -D_REENTRANT to the
+	OPT variable in the top-level Makefile; reported by Pat Knight
+	this seems to make a difference (at least for HP-UX 10.20)
+	even though config.h defines it.
 
 Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
