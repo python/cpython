@@ -290,6 +290,10 @@ calls to \code{os.putenv()} don't update \code{os.environ}, so it is
 actually preferable to assign to items of \code{os.environ}.  
 \end{funcdesc}
 
+\begin{funcdesc}{strerror}{code}
+Return the error message corresponding to the error code in \var{code}.
+\end{funcdesc}
+
 \begin{funcdesc}{read}{fd\, n}
 Read at most \var{n} bytes from file descriptor \var{fd}.
 Return a string containing the bytes read.
