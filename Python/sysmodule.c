@@ -49,6 +49,10 @@ int sys_checkinterval = 10;
 
 static object *sysdict;
 
+#ifdef NT
+extern void *PyWin_DLLhModule;
+#endif
+
 object *
 sysget(name)
 	char *name;
@@ -256,6 +260,12 @@ initsys()
 	dictinsert(sysdict, "builtin_module_names",
 		   v = list_builtin_module_names());
 	XDECREF(v);
+#ifdef NT
+	dictinsert(sysdict, "dllhandle", v = newintobject((int)PyWin_DLLhModule));
+	XDECREF(v);
+	dictinsert(sysdict, "winver", v = newstringobject(WIN32_PATCH_LEVEL));
+	XDECREF(v);
+#endif
 	if (err_occurred())
 		fatal("can't insert sys.* objects in sys dict");
 }
