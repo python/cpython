@@ -28,10 +28,6 @@ try:
 except:
     raise TestFailed, "re.search"
 
-# Try nasty case that overflows the straightforward recursive
-# implementation of repeated groups.
-#assert re.match('(x)*', 50000*'x').span() == (0, 50000)
-
 if verbose:
     print 'Running tests on re.sub'
 
@@ -154,8 +150,8 @@ try:
     assert re.split("(?::*)", ":a:b::c") == ['', 'a', 'b', 'c']
     assert re.split("(:)*", ":a:b::c") == ['', ':', 'a', ':', 'b', ':', 'c']
     assert re.split("([b:]+)", ":a:b::c") == ['', ':', 'a', ':b::', 'c']
-##    assert re.split("(b)|(:+)", ":a:b::c") == \
-##           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
+    assert re.split("(b)|(:+)", ":a:b::c") == \
+           ['', None, ':', 'a', None, ':', '', 'b', None, '', None, '::', 'c']
     assert re.split("(?:b)|(?::+)", ":a:b::c") == ['', 'a', '', '', 'c']
 except AssertionError:
     raise TestFailed, "re.split"
@@ -253,6 +249,16 @@ for flags in [re.I, re.M, re.X, re.S, re.L]:
     except:
         print 'Exception raised on flag', flags
 
+if verbose:
+    print 'Test engine limitations'
+
+# Try nasty case that overflows the straightforward recursive
+# implementation of repeated groups.
+try:
+    assert re.match('(x)*', 50000*'x').span() == (0, 50000)
+except RuntimeError, v:
+    print v
+
 from re_tests import *
 
 if verbose:
@@ -326,6 +332,19 @@ for t in tests:
             else:
                 print '=== Failed incorrectly', t
 
+            # Try the match on a unicode string, and check that it
+            # still succeeds.
+            result=obj.search(unicode(s, "latin-1"))
+            if result==None:
+                print '=== Fails on unicode match', t
+
+            # Try the match on a unicode pattern, and check that it
+            # still succeeds.
+            obj=re.compile(unicode(pattern, "latin-1"))
+            result=obj.search(s)
+            if result==None:
+                print '=== Fails on unicode pattern match', t
+
             # Try the match with the search area limited to the extent
             # of the match and see if it still succeeds.  \B will
             # break (because it won't match at the end or start of a
@@ -350,3 +369,10 @@ for t in tests:
             result=obj.search(s)
             if result==None:
                 print '=== Fails on locale-sensitive match', t
+
+            # Try the match with UNICODE locale enabled, and check
+            # that it still succeeds.
+            obj=re.compile(pattern, re.UNICODE)
+            result=obj.search(s)
+            if result==None:
+                print '=== Fails on unicode-sensitive match', t
