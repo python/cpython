@@ -2143,6 +2143,8 @@ static PyGetSetDef date_getset[] = {
 
 /* Constructors. */
 
+static char *date_kws[] = {"year", "month", "day", NULL};
+
 static PyObject *
 date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -2151,11 +2153,7 @@ date_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int month;
 	int day;
 
-	static char *keywords[] = {
-		"year", "month", "day", NULL
-	};
-
-	if (PyArg_ParseTupleAndKeywords(args, kw, "iii", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "iii", date_kws,
 					&year, &month, &day)) {
 		if (check_date_args(year, month, day) < 0)
 			return NULL;
@@ -2454,6 +2452,26 @@ date_timetuple(PyDateTime_Date *self)
 				 0, 0, 0, -1);
 }
 
+static PyObject *
+date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
+{
+	PyObject *clone;
+	PyObject *tuple;
+	int year = GET_YEAR(self);
+	int month = GET_MONTH(self);
+	int day = GET_DAY(self);
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kws,
+					  &year, &month, &day))
+		return NULL;
+	tuple = Py_BuildValue("iii", year, month, day);
+	if (tuple == NULL)
+		return NULL;
+	clone = date_new(self->ob_type, tuple, NULL);
+	Py_DECREF(tuple);
+	return clone;
+}
+
 static PyObject *date_getstate(PyDateTime_Date *self);
 
 static long
@@ -2602,6 +2620,9 @@ static PyMethodDef date_methods[] = {
 	 PyDoc_STR("Return the day of the week represented by the date.\n"
 		   "Monday == 0 ... Sunday == 6")},
 
+	{"replace",     (PyCFunction)date_replace,      METH_KEYWORDS,
+	 PyDoc_STR("Return date with new specified fields.")},
+
 	{"__setstate__", (PyCFunction)date_setstate,	METH_O,
 	 PyDoc_STR("__setstate__(state)")},
 
@@ -2712,6 +2733,11 @@ static PyGetSetDef datetime_getset[] = {
 
 /* Constructors. */
 
+
+static char *datetime_kws[] = {"year", "month", "day",
+			       "hour", "minute", "second", "microsecond",
+			       NULL};
+
 static PyObject *
 datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -2724,12 +2750,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int second = 0;
 	int usecond = 0;
 
-	static char *keywords[] = {
-		"year", "month", "day", "hour", "minute", "second",
-		"microsecond", NULL
-	};
-
-	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiii", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiii", datetime_kws,
 					&year, &month, &day, &hour, &minute,
 					&second, &usecond)) {
 		if (check_date_args(year, month, day) < 0)
@@ -3201,6 +3222,31 @@ datetime_hash(PyDateTime_DateTime *self)
 }
 
 static PyObject *
+datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
+{
+	PyObject *clone;
+	PyObject *tuple;
+	int y = GET_YEAR(self);
+	int m = GET_MONTH(self);
+	int d = GET_DAY(self);
+	int hh = DATE_GET_HOUR(self);
+	int mm = DATE_GET_MINUTE(self);
+	int ss = DATE_GET_SECOND(self);
+	int us = DATE_GET_MICROSECOND(self);
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiiii:replace",
+					  datetime_kws,
+					  &y, &m, &d, &hh, &mm, &ss, &us))
+		return NULL;
+	tuple = Py_BuildValue("iiiiiii", y, m, d, hh, mm, ss, us);
+	if (tuple == NULL)
+		return NULL;
+	clone = datetime_new(self->ob_type, tuple, NULL);
+	Py_DECREF(tuple);
+	return clone;
+}
+
+static PyObject *
 datetime_timetuple(PyDateTime_DateTime *self)
 {
 	return build_struct_time(GET_YEAR(self),
@@ -3348,6 +3394,9 @@ static PyMethodDef datetime_methods[] = {
 	 	   "defaults\n"
 	 	   "to 'T'.")},
 
+	{"replace",     (PyCFunction)datetime_replace,	METH_KEYWORDS,
+	 PyDoc_STR("Return datetime with new specified fields.")},
+
 	{"__setstate__", (PyCFunction)datetime_setstate, METH_O,
 	 PyDoc_STR("__setstate__(state)")},
 
@@ -3457,6 +3506,8 @@ static PyGetSetDef time_getset[] = {
 
 /* Constructors. */
 
+static char *time_kws[] = {"hour", "minute", "second", "microsecond", NULL};
+
 static PyObject *
 time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -3466,11 +3517,8 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int second = 0;
 	int usecond = 0;
 
-	static char *keywords[] = {
-		"hour", "minute", "second", "microsecond", NULL
-	};
 
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiii", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiii", time_kws,
 					&hour, &minute, &second, &usecond)) {
 		if (check_time_args(hour, minute, second, usecond) < 0)
 			return NULL;
@@ -3669,6 +3717,28 @@ time_hash(PyDateTime_Time *self)
 	return self->hashcode;
 }
 
+static PyObject *
+time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
+{
+	PyObject *clone;
+	PyObject *tuple;
+	int hh = TIME_GET_HOUR(self);
+	int mm = TIME_GET_MINUTE(self);
+	int ss = TIME_GET_SECOND(self);
+	int us = TIME_GET_MICROSECOND(self);
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiii:replace",
+					  time_kws,
+					  &hh, &mm, &ss, &us))
+		return NULL;
+	tuple = Py_BuildValue("iiii", hh, mm, ss, us);
+	if (tuple == NULL)
+		return NULL;
+	clone = time_new(self->ob_type, tuple, NULL);
+	Py_DECREF(tuple);
+	return clone;
+}
+
 static int
 time_nonzero(PyDateTime_Time *self)
 {
@@ -3758,6 +3828,9 @@ static PyMethodDef time_methods[] = {
 
 	{"strftime",   	(PyCFunction)time_strftime,	METH_KEYWORDS,
 	 PyDoc_STR("format -> strftime() style string.")},
+
+	{"replace",     (PyCFunction)time_replace,	METH_KEYWORDS,
+	 PyDoc_STR("Return datetime with new specified fields.")},
 
 	{"__setstate__", (PyCFunction)time_setstate,	METH_O,
 	 PyDoc_STR("__setstate__(state)")},
@@ -3977,6 +4050,9 @@ static PyGetSetDef timetz_getset[] = {
  * Constructors.
  */
 
+static char *timetz_kws[] = {"hour", "minute", "second", "microsecond",
+			     "tzinfo", NULL};
+
 static PyObject *
 timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -3987,11 +4063,7 @@ timetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int usecond = 0;
 	PyObject *tzinfo = Py_None;
 
-	static char *keywords[] = {
-		"hour", "minute", "second", "microsecond", "tzinfo", NULL
-	};
-
-	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO", timetz_kws,
 					&hour, &minute, &second, &usecond,
 					&tzinfo)) {
 		if (check_time_args(hour, minute, second, usecond) < 0)
@@ -4077,6 +4149,29 @@ timetz_isoformat(PyDateTime_TimeTZ *self)
  */
 
 /* Note:  tp_richcompare and tp_hash are inherited from time. */
+
+static PyObject *
+timetz_replace(PyDateTime_TimeTZ *self, PyObject *args, PyObject *kw)
+{
+	PyObject *clone;
+	PyObject *tuple;
+	int hh = TIME_GET_HOUR(self);
+	int mm = TIME_GET_MINUTE(self);
+	int ss = TIME_GET_SECOND(self);
+	int us = TIME_GET_MICROSECOND(self);
+	PyObject *tzinfo = self->tzinfo;
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO:replace",
+					  timetz_kws,
+					  &hh, &mm, &ss, &us, &tzinfo))
+		return NULL;
+	tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
+	if (tuple == NULL)
+		return NULL;
+	clone = timetz_new(self->ob_type, tuple, NULL);
+	Py_DECREF(tuple);
+	return clone;
+}
 
 static int
 timetz_nonzero(PyDateTime_TimeTZ *self)
@@ -4204,6 +4299,9 @@ static PyMethodDef timetz_methods[] = {
 	{"dst",		(PyCFunction)timetz_dst,	METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.dst(self).")},
 
+	{"replace",     (PyCFunction)timetz_replace,	METH_KEYWORDS,
+	 PyDoc_STR("Return timetz with new specified fields.")},
+
 	{"__setstate__", (PyCFunction)timetz_setstate,	METH_O,
 	 PyDoc_STR("__setstate__(state)")},
 
@@ -4314,6 +4412,11 @@ replace_tzinfo(PyObject *self, PyObject *newtzinfo)
 	((PyDateTime_DateTimeTZ *)self)->tzinfo = newtzinfo;
 }
 
+static char *datetimetz_kws[] = {
+	"year", "month", "day", "hour", "minute", "second",
+	"microsecond", "tzinfo", NULL
+};
+
 static PyObject *
 datetimetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
@@ -4327,12 +4430,7 @@ datetimetz_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 	int usecond = 0;
 	PyObject *tzinfo = Py_None;
 
-	static char *keywords[] = {
-		"year", "month", "day", "hour", "minute", "second",
-		"microsecond", "tzinfo", NULL
-	};
-
-	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO", keywords,
+	if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO", datetimetz_kws,
 					&year, &month, &day, &hour, &minute,
 					&second, &usecond, &tzinfo)) {
 		if (check_date_args(year, month, day) < 0)
@@ -4572,6 +4670,33 @@ datetimetz_isoformat(PyDateTime_DateTimeTZ *self,
 /* Note:  tp_richcompare and tp_hash are inherited from datetime. */
 
 static PyObject *
+datetimetz_replace(PyDateTime_DateTimeTZ *self, PyObject *args, PyObject *kw)
+{
+	PyObject *clone;
+	PyObject *tuple;
+	int y = GET_YEAR(self);
+	int m = GET_MONTH(self);
+	int d = GET_DAY(self);
+	int hh = DATE_GET_HOUR(self);
+	int mm = DATE_GET_MINUTE(self);
+	int ss = DATE_GET_SECOND(self);
+	int us = DATE_GET_MICROSECOND(self);
+	PyObject *tzinfo = self->tzinfo;
+
+	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiiiiO:replace",
+					  datetimetz_kws,
+					  &y, &m, &d, &hh, &mm, &ss, &us,
+					  &tzinfo))
+		return NULL;
+	tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
+	if (tuple == NULL)
+		return NULL;
+	clone = datetimetz_new(self->ob_type, tuple, NULL);
+	Py_DECREF(tuple);
+	return clone;
+}
+
+static PyObject *
 datetimetz_timetuple(PyDateTime_DateTimeTZ *self)
 {
 	int dstflag = -1;
@@ -4779,6 +4904,9 @@ static PyMethodDef datetimetz_methods[] = {
 
 	{"dst",		(PyCFunction)datetimetz_dst, METH_NOARGS,
 	 PyDoc_STR("Return self.tzinfo.dst(self).")},
+
+	{"replace",     (PyCFunction)datetimetz_replace,	METH_KEYWORDS,
+	 PyDoc_STR("Return datetimetz with new specified fields.")},
 
 	{"__setstate__", (PyCFunction)datetimetz_setstate, METH_O,
 	 PyDoc_STR("__setstate__(state)")},
