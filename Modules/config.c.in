@@ -62,17 +62,17 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "patchlevel.h"
 
-#define VERSION "0.9.%d BETA (%s)"
+#define VERSION "0.9.%d (%s)"
 
 #ifdef __DATE__
 #define DATE __DATE__
 #else
-#define DATE ">= 27 Mar 1993"
+#define DATE ">= 29 Jul 1993"
 #endif
 
 #ifdef USE_STDWIN
 #ifdef macintosh
-#include ":::src:stdwin:H:stdwin.h"
+#include ":::stdwin:H:stdwin.h"
 #else /* !macintosh */
 #include "stdwin.h"
 #endif /* !macintosh */

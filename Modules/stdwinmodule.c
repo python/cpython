@@ -68,9 +68,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "ceval.h"
 
 #ifdef macintosh
-#include ":::src:stdwin:H:stdwin.h"
+#include ":::stdwin:H:stdwin.h"
 #else /* !macintosh */
 #include "stdwin.h"
+#define HAVE_BITMAPS
 #endif /* !macintosh */
 
 #ifdef USE_THREAD
@@ -684,6 +685,8 @@ drawing_setfgcolor(self, args)
 	return None;
 }
 
+#ifdef HAVE_BITMAPS
+
 static object *
 drawing_bitmap(self, args)
 	object *self;
@@ -722,8 +725,12 @@ drawing_bitmap(self, args)
 	return None;
 }
 
+#endif /* HAVE_BITMAPS */
+
 static struct methodlist drawing_methods[] = {
+#ifdef HAVE_BITMAPS
 	{"bitmap",	drawing_bitmap},
+#endif
 	{"box",		drawing_box},
 	{"circle",	drawing_circle},
 	{"cliprect",	drawing_cliprect},
@@ -1352,6 +1359,8 @@ typeobject Menutype = {
 };
 
 
+#ifdef HAVE_BITMAPS
+
 /* Bitmaps objects */
 
 static bitmapobject *newbitmapobject PROTO((int, int));
@@ -1505,6 +1514,8 @@ typeobject Bitmaptype = {
 	0,			/*tp_compare*/
 	0,			/*tp_repr*/
 };
+
+#endif /* HAVE_BITMAPS */
 
 
 /* Windows */
@@ -2438,6 +2449,7 @@ stdwin_listfontnames(self, args)
 	return list;
 }
 
+#ifdef HAVE_BITMAPS
 static object *
 stdwin_newbitmap(self, args)
 	object *self;
@@ -2449,6 +2461,7 @@ stdwin_newbitmap(self, args)
 		return NULL;
 	return (object *)newbitmapobject(width, height);
 }
+#endif
 
 static struct methodlist stdwin_methods[] = {
 	{"askfile",		stdwin_askfile},
@@ -2472,7 +2485,9 @@ static struct methodlist stdwin_methods[] = {
 	{"listfontnames",	stdwin_listfontnames},
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
+#ifdef HAVE_BITMAPS
 	{"newbitmap",		stdwin_newbitmap},
+#endif
 	{"open",		stdwin_open},
 	{"pollevent",		stdwin_pollevent},
 	{"resetselection",	stdwin_resetselection},
