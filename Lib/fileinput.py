@@ -89,6 +89,13 @@ _state = None
 DEFAULT_BUFSIZE = 8*1024
 
 def input(files=None, inplace=0, backup="", bufsize=0):
+    """input([files[, inplace[, backup]]])
+
+    Create an instance of the FileInput class. The instance will be used
+    as global state for the functions of this module, and is also returned
+    to use during iteration. The parameters to this function will be passed
+    along to the constructor of the FileInput class. 
+    """
     global _state
     if _state and _state._file:
         raise RuntimeError, "input() already active"
@@ -96,6 +103,7 @@ def input(files=None, inplace=0, backup="", bufsize=0):
     return _state
 
 def close():
+    """Close the sequence."""
     global _state
     state = _state
     _state = None
@@ -103,36 +111,77 @@ def close():
         state.close()
 
 def nextfile():
+    """
+    Close the current file so that the next iteration will read the first
+    line from the next file (if any); lines not read from the file will
+    not count towards the cumulative line count. The filename is not
+    changed until after the first line of the next file has been read.
+    Before the first line has been read, this function has no effect;
+    it cannot be used to skip the first file. After the last line of the
+    last file has been read, this function has no effect. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.nextfile()
 
 def filename():
+    """
+    Return the name of the file currently being read.
+    Before the first line has been read, returns None. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.filename()
 
 def lineno():
+    """
+    Return the cumulative line number of the line that has just been read.
+    Before the first line has been read, returns 0. After the last line
+    of the last file has been read, returns the line number of that line. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.lineno()
 
 def filelineno():
+    """
+    Return the line number in the current file. Before the first line
+    has been read, returns 0. After the last line of the last file has
+    been read, returns the line number of that line within the file. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.filelineno()
 
 def isfirstline():
+    """
+    Returns true the line just read is the first line of its file,
+    otherwise returns false. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.isfirstline()
 
 def isstdin():
+    """
+    Returns true if the last line was read from sys.stdin,
+    otherwise returns false. 
+    """
     if not _state:
         raise RuntimeError, "no active input()"
     return _state.isstdin()
 
 class FileInput:
+    """class FileInput([files[, inplace[, backup]]])
+    
+    Class FileInput is the implementation of the module; its methods
+    filename(), lineno(), fileline(), isfirstline(), isstdin(), nextfile()
+    and close() correspond to the functions of the same name in the module.
+    In addition it has a readline() method which returns the next
+    input line, and a __getitem__() method which implements the
+    sequence behavior. The sequence must be accessed in strictly
+    sequential order; random access and readline() cannot be mixed. 
+    """
 
     def __init__(self, files=None, inplace=0, backup="", bufsize=0):
         if type(files) == type(''):
