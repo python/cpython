@@ -501,7 +501,6 @@
 (':Modules:md5module.c', None)
 (':Modules:mmapmodule.c', None)
 (':Modules:mpzmodule.c', None)
-(':Modules:newmodule.c', None)
 (':Modules:nismodule.c', None)
 (':Modules:operator.c', None)
 (':Modules:parsermodule.c', None)

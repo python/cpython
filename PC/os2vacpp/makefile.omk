@@ -152,7 +152,6 @@ MODULES		=                   \
                   MathModule.obj    \
                   MD5c.obj          \
                   MD5Module.obj     \
-                  NewModule.obj     \
                   Operator.obj      \
                   PosixModule.obj   \
                   RegexModule.obj   \
@@ -618,14 +617,6 @@ mpzmodule.obj: abstract.h ceval.h classobject.h cobject.h \
 	 moduleobject.h mymalloc.h myproto.h object.h objimpl.h pydebug.h \
 	 pyerrors.h pyfpe.h pystate.h python.h pythonrun.h rangeobject.h \
 	 sliceobject.h stringobject.h sysmodule.h traceback.h tupleobject.h
-
-newmodule.obj: abstract.h ceval.h classobject.h cobject.h compile.h \
-	 complexobject.h pyconfig.h dictobject.h fileobject.h floatobject.h \
-	 funcobject.h import.h intobject.h intrcheck.h listobject.h \
-	 longobject.h methodobject.h modsupport.h moduleobject.h mymalloc.h \
-	 myproto.h object.h objimpl.h pydebug.h pyerrors.h pyfpe.h \
-	 pystate.h python.h pythonrun.h rangeobject.h sliceobject.h \
-	 stringobject.h sysmodule.h traceback.h tupleobject.h
 
 nismodule.obj: abstract.h c:\mptn\include\sys\time.h ceval.h classobject.h \
 	 cobject.h complexobject.h pyconfig.h dictobject.h fileobject.h \

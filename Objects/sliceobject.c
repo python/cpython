@@ -164,6 +164,30 @@ PySlice_GetIndicesEx(PySliceObject *r, int length,
 	return 0;
 }
 
+static PyObject *
+slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+	PyObject *start, *stop, *step;
+
+	start = stop = step = NULL;
+
+	if (!PyArg_ParseTuple(args, "O|OO:slice", &start, &stop, &step))
+		return NULL;
+
+	/* This swapping of stop and start is to maintain similarity with
+	   range(). */
+	if (stop == NULL) {
+		stop = start;
+		start = NULL;
+	}
+	return PySlice_New(start, stop, step);
+}
+
+PyDoc_STRVAR(slice_doc,
+"slice([start,] stop[, step])\n\
+\n\
+Create a slice object.  This is used for extended slicing (e.g. a[0:10:2]).");
+
 static void
 slice_dealloc(PySliceObject *r)
 {
@@ -240,7 +264,7 @@ PyTypeObject PySlice_Type = {
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT,			/* tp_flags */
-	0,					/* tp_doc */
+	slice_doc,				/* tp_doc */
 	0,					/* tp_traverse */
 	0,					/* tp_clear */
 	0,					/* tp_richcompare */
@@ -252,4 +276,10 @@ PyTypeObject PySlice_Type = {
 	0,					/* tp_getset */
 	0,					/* tp_base */
 	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	slice_new,				/* tp_new */
 };

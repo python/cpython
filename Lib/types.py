@@ -23,13 +23,17 @@ except NameError:
     pass
 
 StringType = str
+
+# StringTypes is already outdated.  Instead of writing "type(x) in
+# types.StringTypes", you should use "isinstance(x, basestring)".  But
+# we keep around for compatibility with Python 2.2.
 try:
     UnicodeType = unicode
     StringTypes = (StringType, UnicodeType)
 except NameError:
     StringTypes = (StringType,)
 
-BufferType = type(buffer(''))
+BufferType = buffer
 
 TupleType = tuple
 ListType = list
@@ -77,7 +81,7 @@ except TypeError:
         pass
     tb = None; del tb
 
-SliceType = type(slice(0))
+SliceType = slice
 EllipsisType = type(Ellipsis)
 
 DictProxyType = type(TypeType.__dict__)
