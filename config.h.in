@@ -175,6 +175,9 @@
 /* Define if you have the lstat function.  */
 #undef HAVE_LSTAT
 
+/* Define if you have the mkfifo function.  */
+#undef HAVE_MKFIFO
+
 /* Define if you have the nice function.  */
 #undef HAVE_NICE
 
@@ -202,8 +205,14 @@
 /* Define if you have the setvbuf function.  */
 #undef HAVE_SETVBUF
 
+/* Define if you have the sigaction function.  */
+#undef HAVE_SIGACTION
+
 /* Define if you have the siginterrupt function.  */
 #undef HAVE_SIGINTERRUPT
+
+/* Define if you have the sigrelse function.  */
+#undef HAVE_SIGRELSE
 
 /* Define if you have the strftime function.  */
 #undef HAVE_STRFTIME
@@ -240,6 +249,9 @@
 
 /* Define if you have the <limits.h> header file.  */
 #undef HAVE_LIMITS_H
+
+/* Define if you have the <ncurses.h> header file.  */
+#undef HAVE_NCURSES_H
 
 /* Define if you have the <ndir.h> header file.  */
 #undef HAVE_NDIR_H
