@@ -493,6 +493,7 @@ class CCompiler:
                          libraries=None,
                          library_dirs=None,
                          runtime_library_dirs=None,
+                         export_symbols=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
@@ -515,7 +516,13 @@ class CCompiler:
            search for libraries that were specified as bare library names
            (ie. no directory component).  These are on top of the system
            default and those supplied to 'add_library_dir()' and/or
-           'set_library_dirs()'.
+           'set_library_dirs()'.  'runtime_library_dirs' is a list of
+           directories that will be embedded into the shared library and
+           used to search for other shared libraries that *it* depends on
+           at run-time.  (This may only be relevant on Unix.)
+
+           'export_symbols' is a list of symbols that the shared library
+           will export.  (This appears to be relevant only on Windows.)
 
            'debug' is as for 'compile()' and 'create_static_lib()', with the
            slight distinction that it actually matters on most platforms
@@ -536,6 +543,7 @@ class CCompiler:
                             libraries=None,
                             library_dirs=None,
                             runtime_library_dirs=None,
+                            export_symbols=None,
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
