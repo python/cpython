@@ -17,6 +17,7 @@ DEFS=		@DEFS@
 LIBOBJS=	@LIBOBJS@
 LIBS=		@LIBS@
 DLINCLDIR=	@DLINCLDIR@
+DYNLOADFILE=	@DYNLOADFILE@
 
 # Machine-dependent subdirectories
 MACHDEP=	@MACHDEP@
@@ -46,6 +47,7 @@ AROBJS=		\
 		pyfpe.o pystate.o pythonrun.o \
 		structmember.o sysmodule.o \
 		traceback.o \
+		$(DYNLOADFILE) \
 		$(LIBOBJS)
 OBJS=		$(AROBJS) sigcheck.o
 
@@ -91,6 +93,16 @@ bltinmodule.o: bltinmodule.c
 ceval.o: ceval.c
 compile.o: compile.c
 dup2.o: dup2.c
+dynload_aix.o: dynload_aix.c
+dynload_beos.o: dynload_beos.c
+dynload_dl.o: dynload_dl.c
+dynload_hpux.o: dynload_hpux.c
+dynload_mac.o: dynload_mac.c
+dynload_next.o: dynload_next.c
+dynload_os2.o: dynload_os2.c
+dynload_shlib.o: dynload_shlib.c
+dynload_stub.o: dynload_stub.c
+dynload_win.o: dynload_win.c
 errors.o: errors.c
 fmod.o: fmod.c
 frozen.o: frozen.c
