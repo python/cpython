@@ -27,6 +27,8 @@ class Dialog:
 
         self.master  = master
         self.options = options
+        if not master and options.get('parent'):
+            self.master = options['parent']
 
     def _fixoptions(self):
         pass # hook
