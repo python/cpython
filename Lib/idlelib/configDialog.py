@@ -158,8 +158,83 @@ class ConfigDialog(Toplevel):
         self.framePages.pack(side=TOP,expand=TRUE,fill=BOTH)
         
     def CreatePageFontTab(self):
+        #tkVars
+        self.fontName=StringVar()
+        self.fontSize=StringVar()
+        self.spaceNum=IntVar()
+        self.tabCols=IntVar()
+        self.indentType=IntVar() 
+        ##widget creation
+        #body frame
         frame=Frame(self.framePages,borderwidth=2,relief=SUNKEN)
-        Button(frame,text='font/tabs page test').pack(padx=90,pady=90)
+        #body section frames
+        frameFont=Frame(frame,borderwidth=2,relief=GROOVE)
+        frameIndent=Frame(frame,borderwidth=2,relief=GROOVE)
+        #frameFont
+        labelFontTitle=Label(frameFont,text='Set Base Editor Font')
+        frameFontName=Frame(frameFont)
+        frameFontSize=Frame(frameFont)
+        labelFontNameTitle=Label(frameFontName,justify=LEFT,
+                text='Choose from available\nmonospaced fonts :')
+        optFontName=OptionMenu(frameFontName,
+            self.fontName,'Courier','Font Name 2','Font Name 3')
+        self.fontName.set('Courier')
+        labelFontSizeTitle=Label(frameFontSize,text='Choose font size :')
+        optFontSize=OptionMenu(frameFontSize,
+            self.fontSize,'8','10','12','14','16','18','20')
+        self.fontSize.set('12')
+        frameFontSample=Frame(frameFont,relief=SOLID,borderwidth=1,
+                bg=self.workingTestColours['Foo-Bg'])
+        labelFontSample=Label(frameFontSample,bg=self.workingTestColours['Foo-Bg'], 
+                fg='#000000',text='Font\nSample',justify=LEFT,
+                font=('courier',12,''))
+        #frameIndent
+        labelIndentTitle=Label(frameIndent,text='Set Indentation Defaults')
+        frameIndentType=Frame(frameIndent)
+        frameIndentSize=Frame(frameIndent)
+        labelIndentTypeTitle=Label(frameIndentType,
+                text='Choose indentation type :')
+        radioUseSpaces=Radiobutton(frameIndentType,variable=self.indentType,
+            value=0,text='Tab key inserts spaces')
+        radioUseTabs=Radiobutton(frameIndentType,variable=self.indentType,
+            value=1,text='Tab key inserts tabs')
+        labelIndentSizeTitle=Label(frameIndentSize,
+                text='Choose indentation size :')
+        labelSpaceNumTitle=Label(frameIndentSize,justify=LEFT,
+                text='when tab key inserts spaces,\nspaces per tab')
+        self.scaleSpaceNum=Scale(frameIndentSize,variable=self.spaceNum,
+                orient='horizontal',tickinterval=2,from_=2,to=8)
+        labeltabColsTitle=Label(frameIndentSize,justify=LEFT,
+                text='when tab key inserts tabs,\ncolumns per tab')
+        self.scaleTabCols=Scale(frameIndentSize,variable=self.tabCols,
+                orient='horizontal',tickinterval=2,from_=2,to=8)
+        
+        #widget packing
+        #body
+        frameFont.pack(side=LEFT,padx=5,pady=10,fill=Y)
+        frameIndent.pack(side=LEFT,padx=5,pady=10,expand=TRUE,fill=BOTH)
+        #frameFont
+        labelFontTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        frameFontName.pack(side=TOP,padx=5,pady=5,fill=X)
+        frameFontSize.pack(side=TOP,padx=5,pady=5,fill=BOTH)
+        labelFontNameTitle.pack(side=TOP,anchor=W)
+        optFontName.pack(side=TOP,pady=5,fill=X)
+        labelFontSizeTitle.pack(side=TOP,anchor=W)
+        optFontSize.pack(side=TOP,pady=5,fill=X)
+        frameFontSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
+        labelFontSample.pack(expand=TRUE,fill=BOTH)
+        #frameIndent
+        labelIndentTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        frameIndentType.pack(side=TOP,padx=5,fill=X)
+        frameIndentSize.pack(side=TOP,padx=5,pady=5,fill=BOTH)
+        labelIndentTypeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        radioUseSpaces.pack(side=TOP,anchor=W,padx=5)
+        radioUseTabs.pack(side=TOP,anchor=W,padx=5)
+        labelIndentSizeTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
+        labelSpaceNumTitle.pack(side=TOP,anchor=W,padx=5)
+        self.scaleSpaceNum.pack(side=TOP,padx=5,fill=X)
+        labeltabColsTitle.pack(side=TOP,anchor=W,padx=5)
+        self.scaleTabCols.pack(side=TOP,padx=5,fill=X)
         return frame
 
     def CreatePageHighlight(self):
@@ -198,8 +273,11 @@ class ConfigDialog(Toplevel):
             onvalue='Bold',offvalue='',text='Bold')
         checkFontItalic=Checkbutton(frameFontSet,variable=self.fontItalic,
             onvalue='Italic',offvalue='',text='Italic')
-        labelTestSample=Label(frameSample,justify=LEFT,
-            text='def Ahem(foo,bar):\n    test=foo\n    text=bar\n    return',
+        labelTestSample=Label(frameSample,justify=LEFT,font=('courier',12,''),
+            text='#when finished, this\n#sample area will\n#be interactive\n'+
+            'def Ahem(foo,bar):\n    '+
+            '"""'+'doc hazard'+'"""'+
+            '\n    test=foo\n    text=bar\n    return',
             bg=self.workingTestColours['Foo-Bg'])        
         buttonSaveCustomTheme=Button(frameCustom, 
             text='Save as a Custom Theme')
@@ -227,18 +305,18 @@ class ConfigDialog(Toplevel):
         frameTheme.pack(side=LEFT,padx=5,pady=10,fill=Y)
         #frameCustom
         labelCustomTitle.pack(side=TOP,anchor=W,padx=5,pady=5)
-        frameTarget.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=X)
+        frameTarget.pack(side=TOP,padx=5,pady=5,fill=X)
         frameSample.pack(side=TOP,padx=5,pady=5,expand=TRUE,fill=BOTH)
         frameSet.pack(side=TOP,fill=X)
         frameColourSet.pack(side=LEFT,padx=5,pady=5,fill=BOTH)
         frameFontSet.pack(side=RIGHT,padx=5,pady=5,anchor=W)
         labelTargetTitle.pack(side=LEFT,anchor=E)
-        optMenuTarget.pack(side=RIGHT,anchor=W,fill=X,expand=TRUE)
+        optMenuTarget.pack(side=RIGHT,anchor=W,expand=TRUE,fill=X)
         buttonSetColour.pack(expand=TRUE,fill=BOTH,padx=10,pady=10)
         labelFontTitle.pack(side=TOP,anchor=W)
         checkFontBold.pack(side=LEFT,anchor=W,pady=2)
         checkFontItalic.pack(side=RIGHT,anchor=W)
-        labelTestSample.pack()
+        labelTestSample.pack(anchor=CENTER,expand=TRUE,fill=BOTH)
         buttonSaveCustomTheme.pack(side=BOTTOM,fill=X,padx=5,pady=5)        
         #frameTheme
         #frameDivider.pack(side=LEFT,fill=Y,padx=5,pady=5)
@@ -283,7 +361,7 @@ class ConfigDialog(Toplevel):
         entryKey=Entry(frameSet,width=4)
         buttonSaveCustomKeys=Button(frameCustom,text='Save as a Custom Key Set')
         #frameKeySets
-        labelKeysTitle=Label(frameKeySets,text='Select a Key Binding Set')
+        labelKeysTitle=Label(frameKeySets,text='Select a Key Set')
         labelTypeTitle=Label(frameKeySets,text='Select : ')
         radioKeysBuiltin=Radiobutton(frameKeySets,variable=self.keysType,
             value=0,command=self.SetKeysType,text='a Built-in Key Set')
