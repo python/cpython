@@ -4,65 +4,73 @@ HISTORY OF THE SOFTWARE
 Python was created in the early 1990s by Guido van Rossum at Stichting
 Mathematisch Centrum (CWI) in the Netherlands as a successor of a
 language called ABC.  Guido is Python's principal author, although it
-includes many contributions by others.  The last version released from
-CWI was Python 1.2.  In 1995, Guido continued his work on Python at
-the Corporation for National Research Initiatives (CNRI) in Reston,
+includes many contributions from others.  The last version released
+from CWI was Python 1.2.  In 1995, Guido continued his work on Python
+at the Corporation for National Research Initiatives (CNRI) in Reston,
 Virginia where he released several versions of the software.  Python
 1.6 was the last of the versions released by CNRI.  In 2000, Guido and
-the Python core developement team moved to BeOpen.com to form tbe
-BeOpen PythonLabs group.  Python 2.0 is a derivative work of Python
-1.6, developed by PythonLabs and many outside volunteers, under
-Guido's direction.
+the Python core developement team moved to BeOpen.com to form the
+BeOpen PythonLabs team (www.pythonlabs.com).  Python 2.0 is the first
+release from PythonLabs.  Thanks to the many outside volunteers who
+have worked under Guido's direction to make this release possible.
 
 
-TERMS AND CONDITIONS FOR ACCESSING OR OTHERWISE USING PYTHON 2.0
-================================================================
 
-BEOPEN LICENSE AGREEMENT
-------------------------
+BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0
+==============================================
+
+BEOPEN PYTHON LICENSE AGREEMENT
+-------------------------------
 
 BEOPEN OPEN SOURCE LICENSE AGREEMENT
 
-1. This LICENSE AGREEMENT is between BeOpen.com, having an office at
-160 Saratoga Avenue, Santa Clara, CA 95051 ("BeOpen"), and the
+1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
+office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
 Individual or Organization ("Licensee") accessing and otherwise using
 this software in source or binary form and its associated
 documentation ("the Software").
 
-2. Subject to the terms and conditions of this License Agreement,
-BeOpen hereby grants Licensee a non-exclusive, royalty-free,
-world-wide license to reproduce, analyze, test, perform and/or display
-publicly, prepare derivative works, distribute, and otherwise use the
-Software alone or in any derivative version, provided, however, that
-BeOpen's License Agreement is retained in the Software, alone or in
-any derivative version prepared by Licensee.
+2. Subject to the terms and conditions of this BeOpen Python License
+Agreement, BeOpen hereby grants Licensee a non-exclusive,
+royalty-free, world-wide license to reproduce, analyze, test, perform
+and/or display publicly, prepare derivative works, distribute, and
+otherwise use the Software alone or in any derivative version,
+provided, however, that the BeOpen Python License is retained in the
+Software, alone or in any derivative version prepared by Licensee.
 
-3. BeOpen is making the Software available to Licensee on an "AS IS"
+3. Instead of using this License, you can redistribute and/or modify
+the Software under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2, or (at
+your option) any later version.  For a copy of the GPL, see
+http://www.gnu.org/copyleft/gpl.html.
+
+4. BeOpen is making the Software available to Licensee on an "AS IS"
 basis.  BEOPEN MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR
 IMPLIED.  BY WAY OF EXAMPLE, BUT NOT LIMITATION, BEOPEN MAKES NO AND
 DISCLAIMS ANY REPRESENTATION OR WARRANTY OF MERCHANTABILITY OR FITNESS
 FOR ANY PARTICULAR PURPOSE OR THAT THE USE OF THE SOFTWARE WILL NOT
 INFRINGE ANY THIRD PARTY RIGHTS.
 
-4. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
+5. BEOPEN SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF THE
 SOFTWARE FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS
 AS A RESULT OF USING, MODIFYING OR DISTRIBUTING THE SOFTWARE, OR ANY
 DERIVATIVE THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
-5. This License Agreement will automatically terminate upon a material
+6. This License Agreement will automatically terminate upon a material
 breach of its terms and conditions.
 
-6. This License Agreement shall be governed by and interpreted in all
+7. This License Agreement shall be governed by and interpreted in all
 respects by the law of the State of California, excluding conflict of
 law provisions.  Nothing in this License Agreement shall be deemed to
 create any relationship of agency, partnership, or joint venture
 between BeOpen and Licensee.  This License Agreement does not grant
 permission to use BeOpen trademarks or trade name in a trademark sense
 to endorse or promote products or services of Licensee, or any third
-party.  The "BeOpen Python" logos may be downloaded and used according
-to the permissions granted on the logo download page.
+party.  As an exception, the "BeOpen Python" logos available at
+http://www.pythonlabs.com/logos.html may be used according to the
+permissions granted on that web page.
 
-7. By copying, installing or otherwise using the software, Licensee
+8. By copying, installing or otherwise using the software, Licensee
 agrees to be bound by the terms and conditions of this License
 Agreement.
 
@@ -71,12 +79,11 @@ CNRI LICENSE AGREEMENT
 ----------------------
 
 Python 1.6 is made available subject to the terms and conditions in
-CNRI's License Agreement.  This Agreement may be located on the
-Internet using the following unique, persistent identifier (known as a
-handle): 1895.22/1011.  This Agreement may also be obtained from a
-proxy server on the Internet using the
-URL:http://hdl.handle.net/1895.22/1011"
-
+CNRI's License Agreement.  This Agreement together with Python 1.6 may
+be located on the Internet using the following unique, persistent
+identifier (known as a handle): 1895.22/1012.  This Agreement may also
+be obtained from a proxy server on the Internet using the following
+URL: http://hdl.handle.net/1895.22/1012.
 
 
 CWI PERMISSIONS STATEMENT AND DISCLAIMER
