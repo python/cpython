@@ -66,6 +66,8 @@ class build_ext (Command):
          "extra explicit link objects to include in the link"),
         ('debug', 'g',
          "compile/link with debugging information"),
+        ('force', 'f',
+         "forcibly build everything (ignore file timestamps"),
         ]
 
 
@@ -84,6 +86,7 @@ class build_ext (Command):
         self.rpath = None
         self.link_objects = None
         self.debug = None
+        self.force = None
 
 
     def finalize_options (self):
@@ -92,7 +95,8 @@ class build_ext (Command):
         self.set_undefined_options ('build',
                                     ('build_lib', 'build_lib'),
                                     ('build_temp', 'build_temp'),
-                                    ('debug', 'debug'))
+                                    ('debug', 'debug'),
+                                    ('force', 'force'))
 
         if self.package is None:
             self.package = self.distribution.ext_package

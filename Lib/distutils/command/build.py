@@ -28,6 +28,8 @@ class build (Command):
          "temporary build directory"),
         ('debug', 'g',
          "compile extensions and libraries with debugging information"),
+        ('force', 'f',
+         "forcibly build everything (ignore file timestamps"),
         ]
 
     def initialize_options (self):
@@ -39,8 +41,11 @@ class build (Command):
         self.build_lib = None
         self.build_temp = None
         self.debug = None
+        self.force = 0
 
     def finalize_options (self):
+
+        print "build.finalize: force=%s" % self.force
 
         # Need this to name platform-specific directories, but sys.platform
         # is not enough -- it only names the OS and version, not the

@@ -20,6 +20,7 @@ class build_py (Command):
 
     user_options = [
         ('build-lib=', 'd', "directory to \"build\" (copy) to"),
+        ('force', 'f', "forcibly build everything (ignore file timestamps"),
         ]
 
 
@@ -28,10 +29,14 @@ class build_py (Command):
         self.modules = None
         self.package = None
         self.package_dir = None
+        self.force = None
 
     def finalize_options (self):
+        print "build_py.finalize: force=%s" % self.force
         self.set_undefined_options ('build',
-                                    ('build_lib', 'build_lib'))
+                                    ('build_lib', 'build_lib'),
+                                    ('force', 'force'))
+        print "build_py.finalize: force=%s" % self.force
 
         # Get the distribution options that are aliases for build_py
         # options -- list of packages and list of modules.
