@@ -577,14 +577,14 @@ int_pow(v, w, z)
 			if (temp == 0)
 				break; /* Avoid ix / 0 */
 			if (ix / temp != prev)
-				return err_ovf("integer pow()");
+				return err_ovf("integer exponentiation");
 		}
 	 	iw >>= 1;	/* Shift exponent down by 1 bit */
 	        if (iw==0) break;
 	 	prev = temp;
 	 	temp *= temp;	/* Square the value of temp */
 	 	if (prev!=0 && temp/prev!=prev)
-			return err_ovf("integer pow()");
+			return err_ovf("integer exponentiation");
 	 	if (iz) {
 			/* If we did a multiplication, perform a modulo */
 		 	ix = ix % iz;
@@ -630,7 +630,7 @@ int_pow(v, w, z)
 		if (iv == 0)
 			break; /* 0 to some power -- avoid ix / 0 */
 		if (ix / iv != prev)
-			return err_ovf("integer pow()");
+			return err_ovf("integer exponentiation");
 	}
 	return PyInt_FromLong(ix);
 #endif
