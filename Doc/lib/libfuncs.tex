@@ -319,7 +319,7 @@ module from which it is called).
   representable as a Python integer, possibly embedded in whitespace;
   this behaves identical to \code{string.atoi(\var{x}\optional{,
   \var{radix}})}.  The \var{radix} parameter gives the base for the
-  conversion and may be any integer in the range $[2, 36]$.  If
+  conversion and may be any integer in the range [2, 36].  If
   \var{radix} is specified and \var{x} is not a string,
   \exception{TypeError} is raised.
   Otherwise, the argument may be a plain or
@@ -704,11 +704,12 @@ machine (e.g. MS-DOS) or when all of the range's elements are never
 used (e.g. when the loop is usually terminated with \keyword{break}).
 \end{funcdesc}
 
-\begin{funcdesc}{zip}{seq1\optional{, seq2\optional{, ...}}}
+\begin{funcdesc}{zip}{seq1, \moreargs}
 This function returns a list of tuples, where each tuple contains the
-i-th element from each of the argument sequences.  At least one
+\var{i}-th element from each of the argument sequences.  At least one
 sequence is required, otherwise a \exception{TypeError} is raised.
 The returned list is truncated in length to the length of the shortest
 argument sequence.  When the argument sequences are all of the same
-length, \function{zip} is similar to \function{map} with an initial
-None argument.
+length, \function{zip()} is similar to \function{map()} with an
+initial argument of \code{None}.
+\end{funcdesc}
