@@ -1004,7 +1004,11 @@ parenthesize the format string.
 When memory buffers are passed as parameters to supply data to build
 objects, as for the \samp{s} and \samp{s\#} formats, the required data
 is copied.  Buffers provided by the caller are never referenced by the
-objects created by \cfunction{Py_BuildValue()}.
+objects created by \cfunction{Py_BuildValue()}.  In other words, if
+your code invokes \cfunction{malloc()} and passes the allocated memory
+to \cfunction{Py_BuildValue()}, your code is responsible for
+calling \cfunction{free()} for that memory once
+\cfunction{Py_BuildValue()} returns.
 
 In the following description, the quoted form is the format unit; the
 entry in (round) parentheses is the Python object type that the format
