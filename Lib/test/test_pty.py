@@ -1,5 +1,5 @@
 import pty, os, sys, string
-from test_support import verbose, TestFailed
+from test_support import verbose, TestFailed, TestSkipped
 
 TEST_STRING_1 = "I wish to buy a fish license."
 TEST_STRING_2 = "For my pet fish, Eric."
@@ -25,7 +25,7 @@ try:
     debug("Got slave_fd '%d'"%slave_fd)
 except OSError:
     # " An optional feature could not be imported " ... ?
-    raise ImportError, "Pseudo-terminals (seemingly) not functional."
+    raise TestSkipped, "Pseudo-terminals (seemingly) not functional."
 
 if not os.isatty(master_fd):
     raise TestFailed, "master_fd is not a tty"

@@ -1,4 +1,4 @@
-from test_support import verbose
+from test_support import verbose, TestSkipped
 import string_tests
 import string, sys
 
@@ -6,7 +6,7 @@ import string, sys
 try:
     ''.join
 except AttributeError:
-    raise ImportError
+    raise TestSkipped
 
 def test(name, input, output, *args):
     if verbose:

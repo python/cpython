@@ -1,11 +1,11 @@
 # Test the signal module
-from test_support import verbose
+from test_support import verbose, TestSkipped
 import signal
 import os
 import sys
 
 if sys.platform[:3] in ('win', 'os2'):
-    raise ImportError, "Can't test signal on %s" % sys.platform[:3]
+    raise TestSkipped, "Can't test signal on %s" % sys.platform[:3]
 
 if verbose:
 	x = '-x'
