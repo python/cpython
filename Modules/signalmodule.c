@@ -91,6 +91,13 @@ PySignal_CDefaultIntHandler(self, arg)
 	return (PyObject *)NULL;
 }
 
+void
+PyErr_SetInterrupt()
+{
+	PySignal_IsTripped++;
+	PySignal_SignalHandlerArray[SIGINT].tripped = 1;
+}
+
 static RETSIGTYPE
 PySignal_Handler(sig_num)
 	int sig_num;
@@ -115,8 +122,9 @@ PySignal_Handler(sig_num)
 #endif
 	(void *)signal(sig_num, &PySignal_Handler);
 }
- 
 
+
+#ifndef DONT_HAVE_SIG_ALARM
 static PyObject *
 PySignal_Alarm(self, args)
 	PyObject *self; /* Not used */
@@ -128,7 +136,9 @@ PySignal_Alarm(self, args)
 	/* alarm() returns the number of seconds remaining */
 	return PyInt_FromLong(alarm(t));
 }
+#endif
 
+#ifndef DONT_HAVE_SIG_PAUSE
 static PyObject *
 PySignal_Pause(self, args)
 	PyObject *self; /* Not used */
@@ -142,6 +152,7 @@ PySignal_Pause(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif
 
 static PyObject *
 PySignal_Signal(self, args)
@@ -210,10 +221,14 @@ PySignal_GetSignal(self, args)
 /* List of functions defined in the module */
 
 static PyMethodDef PySignal_methods[] = {
+#ifndef DONT_HAVE_SIG_ALARM
 	{"alarm",	PySignal_Alarm},
+#endif
 	{"signal",	PySignal_Signal},
 	{"getsignal",	PySignal_GetSignal},
+#ifndef DONT_HAVE_SIG_PAUSE
 	{"pause",	PySignal_Pause},
+#endif
 	{"default_int_handler", PySignal_CDefaultIntHandler},
 	{NULL,		NULL}		/* sentinel */
 };
