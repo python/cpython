@@ -30,9 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 extern void PyMac_InitApplication();
 
+void
 main() {
-#if defined(__MWERKS__) && defined(__CFM68K__)
-	printf("Hello, world!\n");
-#endif
 	PyMac_InitApplication();
 }
