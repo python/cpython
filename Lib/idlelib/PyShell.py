@@ -27,6 +27,7 @@ import string
 import getopt
 import re
 import protocol
+import warnings
 
 import linecache
 from code import InteractiveInterpreter
@@ -146,7 +147,7 @@ class ModifiedColorDelegator(ColorDelegator):
         "stderr": cconf.getcolor("stderr"),
         "console": cconf.getcolor("console"),
         "ERROR": cconf.getcolor("ERROR"),
-	None: cconf.getcolor("normal"),
+        None: cconf.getcolor("normal"),
     })
 
 
@@ -178,6 +179,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
+        self.save_warnings_filters = None
 
     gid = 0
 
@@ -202,7 +204,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # Extend base class to stuff the source in the line cache first
         filename = self.stuffsource(source)
         self.more = 0
-        return InteractiveInterpreter.runsource(self, source, filename)
+        self.save_warnings_filters = warnings.filters[:]
+        warnings.filterwarnings(action="error", category=SyntaxWarning)
+        try:
+            return InteractiveInterpreter.runsource(self, source, filename)
+        finally:
+            if self.save_warnings_filters is not None:
+                warnings.filters[:] = self.save_warnings_filters
+                self.save_warnings_filters = None
 
     def stuffsource(self, source):
         # Stuff source in the filename cache
@@ -271,6 +280,9 @@ class ModifiedInterpreter(InteractiveInterpreter):
 
     def runcode(self, code):
         # Override base class method
+        if self.save_warnings_filters is not None:
+            warnings.filters[:] = self.save_warnings_filters
+            self.save_warnings_filters = None
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
@@ -451,10 +463,13 @@ class PyShell(OutputWindow):
     def short_title(self):
         return self.shell_title
 
+    COPYRIGHT = \
+              'Type "copyright", "credits" or "license" for more information.'
+
     def begin(self):
         self.resetoutput()
         self.write("Python %s on %s\n%s\nIDLE %s -- press F1 for help\n" %
-                   (sys.version, sys.platform, sys.copyright,
+                   (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION))
         try:
             sys.ps1
@@ -790,12 +805,6 @@ class main:
     
         if noshell: edit=1
     
-        if not edit:
-            if cmd:
-                sys.argv = ["-c"] + args
-            else:
-                sys.argv = args or [""]
-    
         for i in range(len(sys.path)):
             sys.path[i] = os.path.abspath(sys.path[i])
     
@@ -813,7 +822,7 @@ class main:
                 sys.path.insert(0, dir)
 
         global flist, root
-        root = Tk()
+        root = Tk(className="Idle")
         fixwordbreaks(root)
         root.withdraw()
         flist = PyShellFileList(root)
@@ -823,7 +832,12 @@ class main:
                 flist.open(filename)
             if not args:
                 flist.new()
-    
+        else:
+            if cmd:
+                sys.argv = ["-c"] + args
+            else:
+                sys.argv = args or [""]
+
         #dbg=OnDemandOutputWindow(flist)
         #dbg.set_title('Internal IDLE Problem')
         #sys.stdout = PseudoFile(dbg,['stdout'])
