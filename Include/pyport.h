@@ -96,7 +96,7 @@ int shutdown( int, int );
 #endif
 
 #ifdef HAVE__GETPTY
-/* Unchecked */
+#include <sys/types.h>		/* we need to import mode_t */
 extern char * _getpty(int *, int, mode_t, int);
 #endif
 
