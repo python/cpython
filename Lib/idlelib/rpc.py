@@ -192,7 +192,7 @@ class SocketIO:
 
     def asyncreturn(self, seq):
         self.debug("asyncreturn:%d:call getresponse(): " % seq)
-        response = self.getresponse(seq)
+        response = self.getresponse(seq, wait=None)
         self.debug(("asyncreturn:%d:response: " % seq), response)
         return self.decoderesponse(response)
 
@@ -211,17 +211,17 @@ class SocketIO:
     def mainloop(self):
         """Listen on socket until I/O not ready or EOF
 
-        pollpacket() will loop looking for seq number None, which never
-        comes.  The loop will exit when self.ioready() returns 0.
+        Main thread pollresponse() will loop looking for seq number None, which
+        never comes, and exit on EOFError.
 
         """
         try:
-            self.getresponse(None)
+            self.getresponse(myseq=None, wait=None)
         except EOFError:
             pass
 
-    def getresponse(self, myseq):
-        response = self._getresponse(myseq)
+    def getresponse(self, myseq, wait):
+        response = self._getresponse(myseq, wait)
         if response is not None:
             how, what = response
             if how == "OK":
@@ -236,13 +236,13 @@ class SocketIO:
         # XXX Check for other types -- not currently needed
         return obj
 
-    def _getresponse(self, myseq):
+    def _getresponse(self, myseq, wait):
         self.debug("_getresponse:myseq:", myseq)
         if threading.currentThread() is self.mainthread:
             # Main thread: does all reading of requests or responses
             # Loop here, blocking each time until socket is ready.
             while 1:
-                response = self.pollresponse(myseq, wait=None)
+                response = self.pollresponse(myseq, wait)
                 if response is not None:
                     return response
         else:
