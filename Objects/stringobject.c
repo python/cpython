@@ -855,8 +855,20 @@ formatstring(format, args)
 				if (len < 0)
 					goto error;
 				sign = (c == 'd');
-				if (flags&F_ZERO)
+				if (flags&F_ZERO) {
 					fill = '0';
+					if ((flags&F_ALT) &&
+					    (c == 'x' || c == 'X') &&
+					    buf[0] == '0' && buf[1] == c) {
+						*res++ = *buf++;
+						*res++ = *buf++;
+						rescnt -= 2;
+						len -= 2;
+						width -= 2;
+						if (width < 0)
+							width = 0;
+					}
+				}
 				break;
 			case 'e':
 			case 'E':
