@@ -658,6 +658,7 @@ PLATMACDIRS= plat-mac plat-mac/Carbon plat-mac/lib-scriptpackages \
 	plat-mac/lib-scriptpackages/Terminal
 PLATMACPATH=:plat-mac:plat-mac/lib-scriptpackages
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
+		test/decimaltestdata \
 		encodings email email/test email/test/data compiler hotshot \
 		logging bsddb bsddb/test csv idlelib idlelib/Icons \
 		distutils distutils/command $(XMLLIBSUBDIRS) curses $(MACHDEPS)
