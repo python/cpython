@@ -238,7 +238,7 @@ Monterey*)
     esac;;
 SunOS*)
     # Some functions have a prototype only with that define, e.g. confstr
-    AC_DEFINE(__EXTENSIONS__)
+    AC_DEFINE(__EXTENSIONS__, 1, [Defined on Solaris to see additional function prototypes.])
     ;;
 esac
 
@@ -412,7 +412,11 @@ AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug, 
 [  --with-pydebug                  build with Py_DEBUG defined], [
 if test "$withval" != no
-then AC_DEFINE(Py_DEBUG) AC_MSG_RESULT(yes); Py_DEBUG='true'
+then 
+  AC_DEFINE(Py_DEBUG, 1, 
+  [Define if you want to build an interpreter with many run-time checks.]) 
+  AC_MSG_RESULT(yes); 
+  Py_DEBUG='true'
 else AC_MSG_RESULT(no); Py_DEBUG='false'
 fi],
 [AC_MSG_RESULT(no)])
@@ -580,13 +584,17 @@ AC_HEADER_DIRENT
 # checks for typedefs
 was_it_defined=no
 AC_MSG_CHECKING(for clock_t in time.h)
-AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, AC_DEFINE(clock_t, long))
+AC_EGREP_HEADER(clock_t, time.h, was_it_defined=yes, [
+    AC_DEFINE(clock_t, long, [Define to 'long' if <time.h> doesn't define.])
+])
 AC_MSG_RESULT($was_it_defined)
 
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs
-AC_DEFINE(_LARGEFILE_SOURCE)
-AC_DEFINE(_FILE_OFFSET_BITS, 64)
+AC_DEFINE(_LARGEFILE_SOURCE, 1, 
+[This must be defined on some systems to enable large file support.])
+AC_DEFINE(_FILE_OFFSET_BITS, 64,
+[This must be set to 64 on some systems to enable large file support.])
 
 # Add some code to confdefs.h so that the test for off_t works on SCO
 cat >> confdefs.h <<\EOF
@@ -615,7 +623,10 @@ AC_CHECK_SIZEOF(fpos_t, 4)
 
 AC_MSG_CHECKING(for long long support)
 have_long_long=no
-AC_TRY_COMPILE([], [long long x; x = (long long)0;], AC_DEFINE(HAVE_LONG_LONG) have_long_long=yes)
+AC_TRY_COMPILE([], [long long x; x = (long long)0;], [
+  AC_DEFINE(HAVE_LONG_LONG, 1, [Define this if you have the type long long.]) 
+  have_long_long=yes
+])
 AC_MSG_RESULT($have_long_long)
 if test "$have_long_long" = yes ; then
 AC_CHECK_SIZEOF(long long, 8)
@@ -623,7 +634,10 @@ fi
 
 AC_MSG_CHECKING(for uintptr_t support)
 have_uintptr_t=no
-AC_TRY_COMPILE([], [uintptr_t x; x = (uintptr_t)0;], AC_DEFINE(HAVE_UINTPTR_T) have_uintptr_t=yes)
+AC_TRY_COMPILE([], [uintptr_t x; x = (uintptr_t)0;], [
+  AC_DEFINE(HAVE_UINTPTR_T, 1, [Define this if you have the type uintptr_t.]) 
+  have_uintptr_t=yes
+])
 AC_MSG_RESULT($have_uintptr_t)
 if test "$have_uintptr_t" = yes ; then
 AC_CHECK_SIZEOF(uintptr_t, 4)
@@ -646,13 +660,18 @@ ac_cv_sizeof_off_t=0,
 ac_cv_sizeof_off_t=4)
 ])
 AC_MSG_RESULT($ac_cv_sizeof_off_t)
-AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t)
+AC_DEFINE_UNQUOTED(SIZEOF_OFF_T, $ac_cv_sizeof_off_t,
+[The number of bytes in an off_t.])
 
 AC_MSG_CHECKING(whether to enable large file support)
 if test "$have_long_long" = yes -a \
 	"$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
-  AC_DEFINE(HAVE_LARGEFILE_SUPPORT)
+  AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1, 
+  [Defined to enable large file support when an off_t is bigger than a long
+   and long long is available and at least as big as an off_t. You may need
+   to add some flags for configuration and compilation to enable this mode.
+   (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
 else
   AC_MSG_RESULT(no)
@@ -675,7 +694,8 @@ ac_cv_sizeof_time_t=0,
 ac_cv_sizeof_time_t=4)
 ])
 AC_MSG_RESULT($ac_cv_sizeof_time_t)
-AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t)
+AC_DEFINE_UNQUOTED(SIZEOF_TIME_T, $ac_cv_sizeof_time_t, 
+[The number of bytes in a time_t.])
 
 
 # if have pthread_t then define SIZEOF_PTHREAD_T
@@ -705,7 +725,8 @@ if test "$have_pthread_t" = yes ; then
   ac_cv_sizeof_pthread_t=4)
   ])
   AC_MSG_RESULT($ac_cv_sizeof_pthread_t)
-  AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_PTHREAD_T, $ac_cv_sizeof_pthread_t,
+   [The number of bytes in a pthread_t.])
 fi
 CC="$ac_save_cc"
 
@@ -727,7 +748,8 @@ yes)
 	extra_frameworks="-framework CoreServices -framework Foundation"
 	extra_machdep_objs="Python/mactoolboxglue.o"
 	extra_undefs="-u __dummy -u _PyMac_Error"
-	AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE)
+	AC_DEFINE(USE_TOOLBOX_OBJECT_GLUE, 1,
+         [Define if you want to use MacPython modules on MacOSX in unix-Python.])
 	;;
 *)
 	extra_frameworks=""
@@ -766,7 +788,9 @@ then
 	    Darwin/1.3*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-U,$ns_undef_sym";;
 	    Darwin/*)LDFLAGS="$LDFLAGS -Wl,-F. -Wl,-flat_namespace,-U,$ns_undef_sym";;
 	esac
-	AC_DEFINE(WITH_NEXT_FRAMEWORK)
+	AC_DEFINE(WITH_NEXT_FRAMEWORK, 1, 
+         [Define if you want to produce an OpenStep/Rhapsody framework
+         (shared library plus accessory files).])
 	AC_MSG_RESULT(yes)
 else
 	AC_MSG_RESULT(no)
@@ -775,7 +799,10 @@ fi
 AC_MSG_CHECKING(for dyld)
 case $ac_sys_system/$ac_sys_release in
   Darwin/*)
-  	AC_DEFINE(WITH_DYLD)
+  	AC_DEFINE(WITH_DYLD, 1, 
+        [Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
+         dynamic linker (dyld) instead of the old-style (NextStep) dynamic
+         linker (rld). Dyld is necessary to support frameworks.])
   	AC_MSG_RESULT(always on for Darwin)
   	;;
   *)
@@ -972,7 +999,9 @@ case "$ac_sys_system" in
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
 		AC_TRY_LINK([#include "/usr/lpp/xlC/include/load.h"],
 			    [loadAndInit("", 0, "")],
-			    [AC_DEFINE(AIX_GENUINE_CPLUSPLUS)
+			    [AC_DEFINE(AIX_GENUINE_CPLUSPLUS, 1,
+                      [Define for AIX if your compiler is a genuine IBM xlC/xlC_r
+                       and you want support for AIX C++ shared extension modules.])
 			     AC_MSG_RESULT(yes)],
 			    [AC_MSG_RESULT(no)]);;
 	*) ;;
@@ -1089,19 +1118,21 @@ else
     AC_DEFINE(_REENTRANT)
     AC_CHECK_HEADER(cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
-    AC_DEFINE(HURD_C_THREADS)
+    AC_DEFINE(HURD_C_THREADS, 1,
+    [Define if you are using Mach cthreads directly under /include])
     LIBS="$LIBS -lthreads"
     THREADOBJ="Python/thread.o"],[
     AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
     AC_DEFINE(C_THREADS)
-    AC_DEFINE(MACH_C_THREADS)
+    AC_DEFINE(MACH_C_THREADS, 1,
+    [Define if you are using Mach cthreads under mach /])
     THREADOBJ="Python/thread.o"],[
     AC_MSG_CHECKING(for --with-pth)
     AC_ARG_WITH(pth,
     [  --with-pth                      use GNU pth threading libraries], [
     AC_MSG_RESULT($withval)
     AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(HAVE_PTH)
+    AC_DEFINE(HAVE_PTH, 1, [Define if you have GNU PTH threads.])
     LIBS="-lpth $LIBS"
     THREADOBJ="Python/thread.o"],[
     AC_MSG_RESULT(no)
@@ -1125,7 +1156,8 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
     posix_threads=yes
     THREADOBJ="Python/thread.o"],[
     AC_CHECK_HEADER(kernel/OS.h, [AC_DEFINE(WITH_THREAD)
-    AC_DEFINE(BEOS_THREADS)
+    AC_DEFINE(BEOS_THREADS, 1,
+    [Define this if you have BeOS threads.])
     THREADOBJ="Python/thread.o"],[
     AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
     posix_threads=yes
@@ -1152,7 +1184,9 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
 
     if test "$posix_threads" = "yes"; then
       if test "$unistd_defines_pthreads" = "no"; then
-         AC_DEFINE(_POSIX_THREADS)
+         AC_DEFINE(_POSIX_THREADS, 1,
+         [Define if you have POSIX threads, 
+          and your system does not define that.])
       fi
 
       AC_MSG_CHECKING(if PTHREAD_SCOPE_SYSTEM is supported)
@@ -1175,7 +1209,7 @@ pthread_create (NULL, NULL, start_routine, NULL)], [
       ])
       AC_MSG_RESULT($ac_cv_pthread_system_supported)
       if test "$ac_cv_pthread_system_supported" = "yes"; then
-        AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED)
+        AC_DEFINE(PTHREAD_SYSTEM_SCHED_SUPPORTED, 1, [Defined if PTHREAD_SCOPE_SYSTEM supported.])
       fi
       AC_CHECK_FUNCS(pthread_sigmask)
     fi
@@ -1378,7 +1412,8 @@ then with_cycle_gc="yes"
 fi
 if test "$with_cycle_gc" != "no"
 then
-    AC_DEFINE(WITH_CYCLE_GC)
+    AC_DEFINE(WITH_CYCLE_GC, 1, 
+     [Define if you want to compile in cycle garbage collection.])
 fi
 AC_MSG_RESULT($with_cycle_gc)
 
@@ -1392,7 +1427,8 @@ then with_pymalloc="yes"
 fi
 if test "$with_pymalloc" != "no"
 then
-    AC_DEFINE(WITH_PYMALLOC)
+    AC_DEFINE(WITH_PYMALLOC, 1, 
+     [Define if you want to compile in Python-specific mallocs])
 fi
 AC_MSG_RESULT($with_pymalloc)
 
@@ -1401,7 +1437,11 @@ AC_MSG_CHECKING(for --with-wctype-functions)
 AC_ARG_WITH(wctype-functions, 
 [  --with-wctype-functions         use wctype.h functions], [
 if test "$withval" != no
-then AC_DEFINE(WANT_WCTYPE_FUNCTIONS) AC_MSG_RESULT(yes)
+then 
+  AC_DEFINE(WANT_WCTYPE_FUNCTIONS, 1,
+  [Define if you want wctype.h functions to be used instead of the
+   one supplied by Python itself. (see Include/unicodectype.h).]) 
+  AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
 fi],
 [AC_MSG_RESULT(no)])
@@ -1414,7 +1454,12 @@ AC_MSG_CHECKING(for --with-sgi-dl)
 AC_ARG_WITH(sgi-dl,
 [  --with-sgi-dl=DIRECTORY         IRIX 4 dynamic linking], [
 AC_MSG_RESULT($withval)
-AC_DEFINE(WITH_SGI_DL)
+AC_DEFINE(WITH_SGI_DL, 1,
+  [Define if you want to use SGI (IRIX 4) dynamic linking.
+   This requires the "dl" library by Jack Jansen,
+   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
+   Do not bother on IRIX 5, it already has dynamic linking using SunOS
+   style shared libraries])
 DYNLOADFILE="dynload_dl.o"
 dldir=$withval
 if test ! -z "$dldir" -a -d "$dldir"
@@ -1427,7 +1472,16 @@ LIBS="$LIBS -ldl -lmld"], AC_MSG_RESULT(no))
 AC_MSG_CHECKING(for --with-dl-dld)
 AC_ARG_WITH(dl-dld, [  --with-dl-dld=DL_DIR,DLD_DIR    GNU dynamic linking], [
 AC_MSG_RESULT($withval)
-AC_DEFINE(WITH_DL_DLD)
+AC_DEFINE(WITH_DL_DLD, 1, 
+  [Define if you want to emulate SGI (IRIX 4) dynamic linking.
+   This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
+   Sequent Symmetry (Dynix), and Atari ST.
+   This requires the 'dl-dld' library,
+   ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z,
+   as well as the 'GNU dld' library,
+   ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
+   Do not bother on SunOS 4 or 5, they already have dynamic linking using
+   shared libraries.])
 DYNLOADFILE="dynload_dl.o"
 dldir=`echo "$withval" | sed 's/,.*//'`
 dlddir=`echo "$withval" | sed 's/.*,//'`
@@ -1466,7 +1520,8 @@ fi
 AC_MSG_RESULT($DYNLOADFILE)
 if test "$DYNLOADFILE" != "dynload_stub.o"
 then
-	AC_DEFINE(HAVE_DYNAMIC_LOADING)
+	AC_DEFINE(HAVE_DYNAMIC_LOADING, 1,
+        [Defined when any dynamic module loading is enabled.])
 fi
 
 # MACHDEP_OBJS can be set to platform-specific object files needed by Python
@@ -1496,16 +1551,35 @@ AC_CHECK_FUNCS(alarm chown chroot clock confstr ctermid ctermid_r execv \
 
 # check for openpty and forkpty
 
-AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY)] [LIBS="$LIBS -lutil"]))
-AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY)] [LIBS="$LIBS -lutil"]))
+AC_CHECK_FUNCS(openpty,, AC_CHECK_LIB(util,openpty, [AC_DEFINE(HAVE_OPENPTY) LIBS="$LIBS -lutil"]))
+AC_CHECK_FUNCS(forkpty,, AC_CHECK_LIB(util,forkpty, [AC_DEFINE(HAVE_FORKPTY) LIBS="$LIBS -lutil"]))
 
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
 AC_REPLACE_FUNCS(dup2 getcwd strdup strerror memmove)
-AC_CHECK_FUNCS(getpgrp, AC_TRY_COMPILE([#include <unistd.h>], [getpgrp(0);], AC_DEFINE(GETPGRP_HAVE_ARG)))
-AC_CHECK_FUNCS(setpgrp, AC_TRY_COMPILE([#include <unistd.h>], [setpgrp(0,0);], AC_DEFINE(SETPGRP_HAVE_ARG)))
-AC_CHECK_FUNCS(gettimeofday, AC_TRY_COMPILE([#include <sys/time.h>], [gettimeofday((struct timeval*)0,(struct timezone*)0);], ,AC_DEFINE(GETTIMEOFDAY_NO_TZ)))
+AC_CHECK_FUNCS(getpgrp, 
+  AC_TRY_COMPILE([#include <unistd.h>], 
+   [getpgrp(0);], 
+   AC_DEFINE(GETPGRP_HAVE_ARG, 1,
+   [Define if getpgrp() must be called as getpgrp(0).])
+ )
+)
+AC_CHECK_FUNCS(setpgrp, 
+  AC_TRY_COMPILE([#include <unistd.h>], 
+   [setpgrp(0,0);], 
+   AC_DEFINE(SETPGRP_HAVE_ARG, 1,
+   [Define if setpgrp() must be called as setpgrp(0, 0).])
+  )
+)
+AC_CHECK_FUNCS(gettimeofday, 
+  AC_TRY_COMPILE([#include <sys/time.h>], 
+    [gettimeofday((struct timeval*)0,(struct timezone*)0);], ,
+    AC_DEFINE(GETTIMEOFDAY_NO_TZ, 1,
+    [Define if gettimeofday() does not have second (timezone) argument
+     This is the case on Motorola V4 (R40V4.2)])
+  )
+)
 
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
@@ -1624,7 +1698,7 @@ if test "$buggygetaddrinfo" = "yes"; then
 		exit 1
 	fi
 else
-	AC_DEFINE(HAVE_GETADDRINFO)
+	AC_DEFINE(HAVE_GETADDRINFO, 1, [Define if you have the getaddrinfo function.])
 fi
 AC_CHECK_FUNCS(getnameinfo)
 
@@ -1643,7 +1717,7 @@ AC_CACHE_VAL(ac_cv_header_time_altzone,
   ac_cv_header_time_altzone=no)])
 AC_MSG_RESULT($ac_cv_header_time_altzone)
 if test $ac_cv_header_time_altzone = yes; then
-  AC_DEFINE(HAVE_ALTZONE)
+  AC_DEFINE(HAVE_ALTZONE, 1, [Define this if your time.h defines altzone.])
 fi
 
 was_it_defined=no
@@ -1652,7 +1726,12 @@ AC_TRY_COMPILE([
 #include <sys/types.h>
 #include <sys/select.h>
 #include <sys/time.h>
-], [;], [AC_DEFINE(SYS_SELECT_WITH_SYS_TIME) was_it_defined=yes])
+], [;], [
+  AC_DEFINE(SYS_SELECT_WITH_SYS_TIME, 1,
+  [Define if  you can safely include both <sys/select.h> and <sys/time.h>
+   (which you can't on SCO ODT 3.0).]) 
+  was_it_defined=yes
+])
 AC_MSG_RESULT($was_it_defined)
 
 AC_MSG_CHECKING(for addrinfo)
@@ -1664,7 +1743,7 @@ AC_TRY_COMPILE([
 	ac_cv_struct_addrinfo=no))
 AC_MSG_RESULT($ac_cv_struct_addrinfo)
 if test $ac_cv_struct_addrinfo = yes; then
-	AC_DEFINE(HAVE_ADDRINFO)
+	AC_DEFINE(HAVE_ADDRINFO, 1, [struct addrinfo (netdb.h)])
 fi
 
 AC_MSG_CHECKING(for sockaddr_storage)
@@ -1677,7 +1756,7 @@ AC_TRY_COMPILE([
 	ac_cv_struct_sockaddr_storage=no))
 AC_MSG_RESULT($ac_cv_struct_sockaddr_storage)
 if test $ac_cv_struct_sockaddr_storage = yes; then
-	AC_DEFINE(HAVE_SOCKADDR_STORAGE)
+	AC_DEFINE(HAVE_SOCKADDR_STORAGE, 1, [struct sockaddr_storage (sys/socket.h)])
 fi
 
 # checks for compiler characteristics
@@ -1687,18 +1766,25 @@ AC_C_CONST
 
 works=no
 AC_MSG_CHECKING(for working volatile)
-AC_TRY_COMPILE([],[volatile int x; x = 0;], works=yes, AC_DEFINE(volatile, []))
+AC_TRY_COMPILE([],[volatile int x; x = 0;], works=yes, 
+  AC_DEFINE(volatile, [], [Define to empty if the keyword does not work.])
+)
 AC_MSG_RESULT($works)
 
 works=no
 AC_MSG_CHECKING(for working signed char)
-AC_TRY_COMPILE([], [signed char c;], works=yes, AC_DEFINE(signed, []))
+AC_TRY_COMPILE([], [signed char c;], works=yes, 
+  AC_DEFINE(signed, [], [Define to empty if the keyword does not work.])
+)
 AC_MSG_RESULT($works)
 
 have_prototypes=no
 AC_MSG_CHECKING(for prototypes)
-AC_TRY_COMPILE([int foo(int x) { return 0; }], [return foo(10);],
-AC_DEFINE(HAVE_PROTOTYPES) have_prototypes=yes)
+AC_TRY_COMPILE([int foo(int x) { return 0; }], [return foo(10);],[
+  AC_DEFINE(HAVE_PROTOTYPES, 1, 
+   [Define if your compiler supports function prototype]) 
+  have_prototypes=yes
+])
 AC_MSG_RESULT($have_prototypes)
 
 works=no
@@ -1713,15 +1799,23 @@ int foo(int x, ...) {
 	va_arg(va, double);
 	return 0;
 }
-], [return foo(10, "", 3.14);],
-AC_DEFINE(HAVE_STDARG_PROTOTYPES) works=yes)
+], [return foo(10, "", 3.14);], [
+  AC_DEFINE(HAVE_STDARG_PROTOTYPES, 1,
+   [Define if your compiler supports variable length function prototypes
+   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h>]) 
+  works=yes
+])
 AC_MSG_RESULT($works)
 
 if test "$have_prototypes" = yes; then
 bad_prototypes=no
 AC_MSG_CHECKING(for bad exec* prototypes)
 AC_TRY_COMPILE([#include <unistd.h>], [char **t;execve("@",t,t);], ,
-	AC_DEFINE(BAD_EXEC_PROTOTYPES) bad_prototypes=yes)
+    AC_DEFINE(BAD_EXEC_PROTOTYPES, 1,
+    [Define if your <unistd.h> contains bad prototypes for exec*()
+    (as it does on SGI IRIX 4.x)]) 
+    bad_prototypes=yes
+)
 AC_MSG_RESULT($bad_prototypes)
 fi
 
@@ -1732,7 +1826,7 @@ AC_TRY_COMPILE([#include <sys/types.h>
 [struct sockaddr x;
 x.sa_len = 0;],
 	AC_MSG_RESULT(yes)
-	AC_DEFINE(HAVE_SOCKADDR_SA_LEN),
+	AC_DEFINE(HAVE_SOCKADDR_SA_LEN, 1, [Define if sockaddr has sa_len member]),
 	AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for bad static forward)
@@ -1755,7 +1849,9 @@ ac_cv_bad_static_forward=no)])
 AC_MSG_RESULT($ac_cv_bad_static_forward)
 if test "$ac_cv_bad_static_forward" = yes
 then
-    AC_DEFINE(BAD_STATIC_FORWARD)
+    AC_DEFINE(BAD_STATIC_FORWARD, 1, 
+    [Define if your compiler botches static forward declarations
+    (as it does on SCI ODT 3.0)])
 fi
 
 va_list_is_array=no
@@ -1766,8 +1862,10 @@ AC_TRY_COMPILE([
 #else
 #include <varargs.h>
 #endif
-], [va_list list1, list2; list1 = list2;], , 
-AC_DEFINE(VA_LIST_IS_ARRAY) va_list_is_array=yes)
+], [va_list list1, list2; list1 = list2;], , [
+ AC_DEFINE(VA_LIST_IS_ARRAY, 1, [Define if a va_list is an array of some kind]) 
+ va_list_is_array=yes
+])
 AC_MSG_RESULT($va_list_is_array)
 
 # sigh -- gethostbyname_r is a mess; it can have 3, 5 or 6 arguments :-(
@@ -1788,7 +1886,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
     (void) gethostbyname_r(name, he, buffer, buflen, &res, &h_errnop)
   ], [
     AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-    AC_DEFINE(HAVE_GETHOSTBYNAME_R_6_ARG)
+    AC_DEFINE(HAVE_GETHOSTBYNAME_R_6_ARG, 1,
+    [Define this if you have the 6-arg version of gethostbyname_r().])
     AC_MSG_RESULT(yes)
   ], [
     AC_MSG_RESULT(no)
@@ -1805,7 +1904,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
       (void) gethostbyname_r(name, he, buffer, buflen, &h_errnop)
     ], [
       AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-      AC_DEFINE(HAVE_GETHOSTBYNAME_R_5_ARG)
+      AC_DEFINE(HAVE_GETHOSTBYNAME_R_5_ARG, 1,
+      [Define this if you have the 5-arg version of gethostbyname_r().])
       AC_MSG_RESULT(yes)
     ], [
       AC_MSG_RESULT(no)
@@ -1820,7 +1920,8 @@ AC_CHECK_FUNC(gethostbyname_r, [
         (void) gethostbyname_r(name, he, &data);
       ], [
         AC_DEFINE(HAVE_GETHOSTBYNAME_R)
-        AC_DEFINE(HAVE_GETHOSTBYNAME_R_3_ARG)
+        AC_DEFINE(HAVE_GETHOSTBYNAME_R_3_ARG, 1,
+        [Define this if you have the 3-arg version of gethostbyname_r().])
         AC_MSG_RESULT(yes)
       ], [
         AC_MSG_RESULT(no)
@@ -1851,7 +1952,10 @@ AC_MSG_CHECKING(for --with-fpectl)
 AC_ARG_WITH(fpectl,
 [  --with-fpectl                   enable SIGFPE catching], [
 if test "$withval" != no
-then AC_DEFINE(WANT_SIGFPE_HANDLER) AC_MSG_RESULT(yes)
+then 
+  AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
+  [Define if you want SIGFPE handled (see Include/pyfpe.h).]) 
+  AC_MSG_RESULT(yes)
 else AC_MSG_RESULT(no)
 fi],
 [AC_MSG_RESULT(no)])
@@ -1920,12 +2024,16 @@ ac_cv_malloc_zero=nonnull)]) # XXX arm cross-compile?
 AC_MSG_RESULT($ac_cv_malloc_zero)
 if test "$ac_cv_malloc_zero" = null
 then
-  AC_DEFINE(MALLOC_ZERO_RETURNS_NULL)
+  AC_DEFINE(MALLOC_ZERO_RETURNS_NULL, 1,
+  [Define if malloc(0) returns a NULL pointer.])
 fi
 
 # check for wchar.h
-AC_CHECK_HEADER(wchar.h,
-AC_DEFINE(HAVE_WCHAR_H) wchar_h="yes",
+AC_CHECK_HEADER(wchar.h, [
+  AC_DEFINE(HAVE_WCHAR_H, 1, 
+  [Define if the compiler provides a wchar.h header file.]) 
+  wchar_h="yes"
+],
 wchar_h="no"
 )
 
@@ -1961,11 +2069,15 @@ then
   AC_MSG_RESULT(not used)
 else
   UNICODE_OBJS="Objects/unicodeobject.o Objects/unicodectype.o"
-  AC_DEFINE(Py_USING_UNICODE)
+  AC_DEFINE(Py_USING_UNICODE, 1,
+  [Define if you want to have a Unicode type.])
   if test "$unicode_size" = "$ac_cv_sizeof_wchar_t"
   then
     PY_UNICODE_TYPE="wchar_t"
-    AC_DEFINE(HAVE_USABLE_WCHAR_T)
+    AC_DEFINE(HAVE_USABLE_WCHAR_T, 1,
+    [Define if you have a useable wchar_t type defined in wchar.h; useable
+     means wchar_t must be 16-bit unsigned type. (see
+     Include/unicodeobject.h).])
     AC_DEFINE(PY_UNICODE_TYPE,wchar_t)
   elif test "$ac_cv_sizeof_short" = "$unicode_size"
   then
@@ -2000,7 +2112,9 @@ ac_cv_rshift_extends_sign=yes)])
 AC_MSG_RESULT($ac_cv_rshift_extends_sign)
 if test "$ac_cv_rshift_extends_sign" = no
 then
-  AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS)
+  AC_DEFINE(SIGNED_RIGHT_SHIFT_ZERO_FILLS, 1,
+  [Define if i>>j for signed int i does not extend the sign bit
+   when i < 0])
 fi
 
 # check for getc_unlocked and related locking functions
@@ -2015,16 +2129,19 @@ AC_TRY_LINK([#include <stdio.h>],[
 AC_MSG_RESULT($ac_cv_have_getc_unlocked)
 if test "$ac_cv_have_getc_unlocked" = yes
 then
-  AC_DEFINE(HAVE_GETC_UNLOCKED)
+  AC_DEFINE(HAVE_GETC_UNLOCKED, 1,
+  [Define this if you have flockfile(), getc_unlocked(), and funlockfile()])
 fi
 
 # check for readline 4.0
 AC_CHECK_LIB(readline, rl_pre_input_hook,
-	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK), , -ltermcap)
+	AC_DEFINE(HAVE_RL_PRE_INPUT_HOOK, 1,
+        [Define if you have readline 4.0]), , -ltermcap)
 
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
-	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES), , -ltermcap)
+	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,
+        [Define if you have readline 4.2]), , -ltermcap)
 
 AC_MSG_CHECKING(for broken nice())
 AC_CACHE_VAL(ac_cv_broken_nice, [
@@ -2043,7 +2160,8 @@ ac_cv_broken_nice=no)])
 AC_MSG_RESULT($ac_cv_broken_nice)
 if test "$ac_cv_broken_nice" = yes
 then
-  AC_DEFINE(HAVE_BROKEN_NICE)
+  AC_DEFINE(HAVE_BROKEN_NICE, 1,
+  [Define if nice() returns success/failure instead of the new priority.])
 fi
 
 # On HP/UX 11.0, mvwdelch is a block with a return statement
@@ -2059,7 +2177,8 @@ AC_MSG_RESULT($ac_cv_mvwdelch_is_expression)
 
 if test "$ac_cv_mvwdelch_is_expression" = yes
 then
-  AC_DEFINE(MVWDELCH_IS_EXPRESSION)
+  AC_DEFINE(MVWDELCH_IS_EXPRESSION, 1,
+  [Define if mvwdelch in curses.h is an expression.])
 fi
 
 AC_MSG_CHECKING(whether WINDOW has _flags)
@@ -2075,7 +2194,8 @@ AC_MSG_RESULT($ac_cv_window_has_flags)
 
 if test "$ac_cv_window_has_flags" = yes
 then
-  AC_DEFINE(WINDOW_HAS_FLAGS)
+  AC_DEFINE(WINDOW_HAS_FLAGS, 1, 
+  [Define if WINDOW in curses.h offers a field _flags.])
 fi
 
 # THIS MUST BE LAST, IT CAN BREAK OTHER TESTS!

@@ -75,124 +75,14 @@
    byte first (like Motorola and SPARC, unlike Intel and VAX).  */
 #undef WORDS_BIGENDIAN
 
-/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
-   and you want support for AIX C++ shared extension modules. */
-#undef AIX_GENUINE_CPLUSPLUS
-
-/* Define if your <unistd.h> contains bad prototypes for exec*()
-   (as it does on SGI IRIX 4.x) */
-#undef BAD_EXEC_PROTOTYPES
-
-/* Define if your compiler botches static forward declarations
-   (as it does on SCI ODT 3.0) */
-#undef BAD_STATIC_FORWARD
-
-/* Define this if you have BeOS threads */
-#undef BEOS_THREADS
-
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
-
-/* Define if you are using Mach cthreads under mach / */
-#undef MACH_C_THREADS
-
-/* Define if you are using Mach cthreads directly under /include */
-#undef HURD_C_THREADS
-
-/* Define to `long' if <time.h> doesn't define.  */
-#undef clock_t
-
-/* Defined on Solaris to see additional function prototypes. */
-#undef __EXTENSIONS__
-
-/* This must be set to 64 on some systems to enable large file support */
-#undef _FILE_OFFSET_BITS
-
-/* Define if getpgrp() must be called as getpgrp(0). */
-#undef GETPGRP_HAVE_ARG
-
-/* Define if gettimeofday() does not have second (timezone) argument
-   This is the case on Motorola V4 (R40V4.2) */
-#undef GETTIMEOFDAY_NO_TZ
-
-/* Define this if your time.h defines altzone */
-#undef HAVE_ALTZONE
 
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Define if sockaddr has sa_len member */
-#undef HAVE_SOCKADDR_SA_LEN
-
-/* struct addrinfo (netdb.h) */
-#undef HAVE_ADDRINFO
-
-/* Define if you have the getaddrinfo function. */
-#undef HAVE_GETADDRINFO
-
-/* struct sockaddr_storage (sys/socket.h) */
-#undef HAVE_SOCKADDR_STORAGE
-
-/* Defined when any dynamic module loading is enabled */
-#undef HAVE_DYNAMIC_LOADING
-
-/* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
-#undef HAVE_GETC_UNLOCKED
-
 /* Define this if you have some version of gethostbyname_r() */
 #undef HAVE_GETHOSTBYNAME_R
-
-/* Define this if you have the 3-arg version of gethostbyname_r() */
-#undef HAVE_GETHOSTBYNAME_R_3_ARG
-
-/* Define this if you have the 5-arg version of gethostbyname_r() */
-#undef HAVE_GETHOSTBYNAME_R_5_ARG
-
-/* Define this if you have the 6-arg version of gethostbyname_r() */
-#undef HAVE_GETHOSTBYNAME_R_6_ARG
-
-/* Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
-   to add some flags for configuration and compilation to enable this mode.
-   (For Solaris and Linux, the necessary defines are already defined.)
-*/
-#undef HAVE_LARGEFILE_SUPPORT
-
-/* Define this if you have the type long long */
-#undef HAVE_LONG_LONG
-
-/* Define if your compiler supports function prototypes */
-#undef HAVE_PROTOTYPES
-
-/* Define if you have GNU PTH threads */
-#undef HAVE_PTH
-
-/* Define if you have readline 4.0 */
-#undef HAVE_RL_PRE_INPUT_HOOK
-
-/* Define if you have readline 4.2 */
-#undef HAVE_RL_COMPLETION_MATCHES
-
-/* Define if your compiler supports variable length function prototypes
-   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
-#undef HAVE_STDARG_PROTOTYPES
-
-/* Define this if you have the type uintptr_t */
-#undef HAVE_UINTPTR_T
-
-/* Define if you have a useable wchar_t type defined in wchar.h; useable
-   means wchar_t must be 16-bit unsigned type. (see
-   Include/unicodeobject.h). */
-#undef HAVE_USABLE_WCHAR_T
-
-/* Define if the compiler provides a wchar.h header file. */
-#undef HAVE_WCHAR_H
-
-/* This must be defined on some systems to enable large file support */
-#undef _LARGEFILE_SOURCE
-
-/* Define if you want to have a Unicode type. */
-#undef Py_USING_UNICODE
 
 /* Define as the integral type used for Unicode representation. */
 #undef PY_UNICODE_TYPE
@@ -200,108 +90,14 @@
 /* Define as the size of the unicode type. */
 #undef Py_UNICODE_SIZE
 
-/* Define if nice() returns success/failure instead of the new priority. */
-#undef HAVE_BROKEN_NICE
-
-/* Define if malloc(0) returns a NULL pointer */
-#undef MALLOC_ZERO_RETURNS_NULL
-
-/* Define if you have POSIX threads */
-#undef _POSIX_THREADS
-
-/* Define if you want to build an interpreter with many run-time checks  */
-#undef Py_DEBUG
-
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
-
-/* Define if setpgrp() must be called as setpgrp(0, 0). */
-#undef SETPGRP_HAVE_ARG
-
-/* Define to empty if the keyword does not work.  */
-#undef signed
-
-/* Define if i>>j for signed int i does not extend the sign bit
-   when i < 0
-*/
-#undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
-
-/* The number of bytes in an off_t. */
-#undef SIZEOF_OFF_T
-
-/* The number of bytes in a time_t. */
-#undef SIZEOF_TIME_T
-
-/* The number of bytes in a pthread_t. */
-#undef SIZEOF_PTHREAD_T
-
-/* Defined if PTHREAD_SCOPE_SYSTEM supported. */
-#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
 /* Define to `int' if <sys/types.h> doesn't define.  */
 #undef socklen_t
 
-/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
-   (which you can't on SCO ODT 3.0). */
-#undef SYS_SELECT_WITH_SYS_TIME
-
-/* Define if a va_list is an array of some kind */
-#undef VA_LIST_IS_ARRAY
-
-/* Define to empty if the keyword does not work.  */
-#undef volatile
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
-
-/* Define if you want wctype.h functions to be used instead of the
-   one supplied by Python itself. (see Include/unicodectype.h). */
-#undef WANT_WCTYPE_FUNCTIONS
-
-/* Define if you want to compile in cycle garbage collection */
-#undef WITH_CYCLE_GC
-
-/* Define if you want to emulate SGI (IRIX 4) dynamic linking.
-   This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
-   Sequent Symmetry (Dynix), and Atari ST.
-   This requires the "dl-dld" library,
-   ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z,
-   as well as the "GNU dld" library,
-   ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
-   Don't bother on SunOS 4 or 5, they already have dynamic linking using
-   shared libraries */ 
-#undef WITH_DL_DLD
-
-/* Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
-   dynamic linker (dyld) instead of the old-style (NextStep) dynamic
-   linker (rld). Dyld is necessary to support frameworks. */
-#undef WITH_DYLD
-
-/* Define if you want to compile in Python-specific mallocs */
-#undef WITH_PYMALLOC
-
-/* Define if you want to produce an OpenStep/Rhapsody framework
-   (shared library plus accessory files). */
-#undef WITH_NEXT_FRAMEWORK
-
-/* Define if you want to use MacPython modules on MacOSX in unix-Python */
-#undef USE_TOOLBOX_OBJECT_GLUE
-
-/* Define if you want to use SGI (IRIX 4) dynamic linking.
-   This requires the "dl" library by Jack Jansen,
-   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
-   Don't bother on IRIX 5, it already has dynamic linking using SunOS
-   style shared libraries */ 
-#undef WITH_SGI_DL
-
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
-
-/* Define if mvwdelch in curses.h is an expression. */
-#undef MVWDELCH_IS_EXPRESSION
-
-/* Define if WINDOW in curses.h offers a field _flags. */
-#undef WINDOW_HAS_FLAGS
 
 /* The number of bytes in a char.  */
 #undef SIZEOF_CHAR
@@ -764,6 +560,210 @@
 
 /* Define if you have the rt library (-lrt).  */
 #undef HAVE_LIBRT
+
+/* Defined on Solaris to see additional function prototypes. */
+#undef __EXTENSIONS__
+
+/* Define if you want to build an interpreter with many run-time checks. */
+#undef Py_DEBUG
+
+/* Define to 'long' if <time.h> doesn't define. */
+#undef clock_t
+
+/* This must be defined on some systems to enable large file support. */
+#undef _LARGEFILE_SOURCE
+
+/* This must be set to 64 on some systems to enable large file support. */
+#undef _FILE_OFFSET_BITS
+
+/* Define this if you have the type long long. */
+#undef HAVE_LONG_LONG
+
+/* Define this if you have the type uintptr_t. */
+#undef HAVE_UINTPTR_T
+
+/* The number of bytes in an off_t. */
+#undef SIZEOF_OFF_T
+
+/* Defined to enable large file support when an off_t is bigger than a long
+   and long long is available and at least as big as an off_t. You may need
+   to add some flags for configuration and compilation to enable this mode.
+   (For Solaris and Linux, the necessary defines are already defined.) */
+#undef HAVE_LARGEFILE_SUPPORT
+
+/* The number of bytes in a time_t. */
+#undef SIZEOF_TIME_T
+
+/* The number of bytes in a pthread_t. */
+#undef SIZEOF_PTHREAD_T
+
+/* Define if you want to use MacPython modules on MacOSX in unix-Python. */
+#undef USE_TOOLBOX_OBJECT_GLUE
+
+/* Define if you want to produce an OpenStep/Rhapsody framework
+         (shared library plus accessory files). */
+#undef WITH_NEXT_FRAMEWORK
+
+/* Define if you want to use the new-style (Openstep, Rhapsody, MacOS)
+         dynamic linker (dyld) instead of the old-style (NextStep) dynamic
+         linker (rld). Dyld is necessary to support frameworks. */
+#undef WITH_DYLD
+
+/* Define for AIX if your compiler is a genuine IBM xlC/xlC_r
+                       and you want support for AIX C++ shared extension modules. */
+#undef AIX_GENUINE_CPLUSPLUS
+
+/* Define if you are using Mach cthreads directly under /include */
+#undef HURD_C_THREADS
+
+/* Define if you are using Mach cthreads under mach / */
+#undef MACH_C_THREADS
+
+/* Define if you have GNU PTH threads. */
+#undef HAVE_PTH
+
+/* Define this if you have BeOS threads. */
+#undef BEOS_THREADS
+
+/* Define if you have POSIX threads, 
+          and your system does not define that. */
+#undef _POSIX_THREADS
+
+/* Defined if PTHREAD_SCOPE_SYSTEM supported. */
+#undef PTHREAD_SYSTEM_SCHED_SUPPORTED
+
+/* Define if you want to compile in cycle garbage collection. */
+#undef WITH_CYCLE_GC
+
+/* Define if you want to compile in Python-specific mallocs */
+#undef WITH_PYMALLOC
+
+/* Define if you want wctype.h functions to be used instead of the
+   one supplied by Python itself. (see Include/unicodectype.h). */
+#undef WANT_WCTYPE_FUNCTIONS
+
+/* Define if you want to use SGI (IRIX 4) dynamic linking.
+   This requires the dl library by Jack Jansen,
+   ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
+   Do not bother on IRIX 5, it already has dynamic linking using SunOS
+   style shared libraries */
+#undef WITH_SGI_DL
+
+/* Define if you want to emulate SGI (IRIX 4) dynamic linking.
+   This is rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4),
+   Sequent Symmetry (Dynix), and Atari ST.
+   This requires the 'dl-dld' library,
+   ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z,
+   as well as the 'GNU dld' library,
+   ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z.
+   Do not bother on SunOS 4 or 5, they already have dynamic linking using
+   shared libraries. */
+#undef WITH_DL_DLD
+
+/* Defined when any dynamic module loading is enabled. */
+#undef HAVE_DYNAMIC_LOADING
+
+/* Define if getpgrp() must be called as getpgrp(0). */
+#undef GETPGRP_HAVE_ARG
+
+/* Define if setpgrp() must be called as setpgrp(0, 0). */
+#undef SETPGRP_HAVE_ARG
+
+/* Define if gettimeofday() does not have second (timezone) argument
+     This is the case on Motorola V4 (R40V4.2) */
+#undef GETTIMEOFDAY_NO_TZ
+
+/* Define if you have the getaddrinfo function. */
+#undef HAVE_GETADDRINFO
+
+/* Define this if your time.h defines altzone. */
+#undef HAVE_ALTZONE
+
+/* Define if  you can safely include both <sys/select.h> and <sys/time.h>
+   (which you can't on SCO ODT 3.0). */
+#undef SYS_SELECT_WITH_SYS_TIME
+
+/* struct addrinfo (netdb.h) */
+#undef HAVE_ADDRINFO
+
+/* struct sockaddr_storage (sys/socket.h) */
+#undef HAVE_SOCKADDR_STORAGE
+
+/* Define to empty if the keyword does not work. */
+#undef volatile
+
+/* Define to empty if the keyword does not work. */
+#undef signed
+
+/* Define if your compiler supports function prototype */
+#undef HAVE_PROTOTYPES
+
+/* Define if your compiler supports variable length function prototypes
+   (e.g. void fprintf(FILE *, char *, ...);) *and* <stdarg.h> */
+#undef HAVE_STDARG_PROTOTYPES
+
+/* Define if your <unistd.h> contains bad prototypes for exec*()
+    (as it does on SGI IRIX 4.x) */
+#undef BAD_EXEC_PROTOTYPES
+
+/* Define if sockaddr has sa_len member */
+#undef HAVE_SOCKADDR_SA_LEN
+
+/* Define if your compiler botches static forward declarations
+    (as it does on SCI ODT 3.0) */
+#undef BAD_STATIC_FORWARD
+
+/* Define if a va_list is an array of some kind */
+#undef VA_LIST_IS_ARRAY
+
+/* Define this if you have the 6-arg version of gethostbyname_r(). */
+#undef HAVE_GETHOSTBYNAME_R_6_ARG
+
+/* Define this if you have the 5-arg version of gethostbyname_r(). */
+#undef HAVE_GETHOSTBYNAME_R_5_ARG
+
+/* Define this if you have the 3-arg version of gethostbyname_r(). */
+#undef HAVE_GETHOSTBYNAME_R_3_ARG
+
+/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
+#undef WANT_SIGFPE_HANDLER
+
+/* Define if malloc(0) returns a NULL pointer. */
+#undef MALLOC_ZERO_RETURNS_NULL
+
+/* Define if the compiler provides a wchar.h header file. */
+#undef HAVE_WCHAR_H
+
+/* Define if you want to have a Unicode type. */
+#undef Py_USING_UNICODE
+
+/* Define if you have a useable wchar_t type defined in wchar.h; useable
+     means wchar_t must be 16-bit unsigned type. (see
+     Include/unicodeobject.h). */
+#undef HAVE_USABLE_WCHAR_T
+
+/* Define if i>>j for signed int i does not extend the sign bit
+   when i < 0 */
+#undef SIGNED_RIGHT_SHIFT_ZERO_FILLS
+
+/* Define this if you have flockfile(), getc_unlocked(), and funlockfile() */
+#undef HAVE_GETC_UNLOCKED
+
+/* Define if you have readline 4.0 */
+#undef HAVE_RL_PRE_INPUT_HOOK
+
+/* Define if you have readline 4.2 */
+#undef HAVE_RL_COMPLETION_MATCHES
+
+/* Define if nice() returns success/failure instead of the new priority. */
+#undef HAVE_BROKEN_NICE
+
+/* Define if mvwdelch in curses.h is an expression. */
+#undef MVWDELCH_IS_EXPRESSION
+
+/* Define if WINDOW in curses.h offers a field _flags. */
+#undef WINDOW_HAS_FLAGS
+
 
 #ifdef __CYGWIN__
 #ifdef USE_DL_IMPORT
