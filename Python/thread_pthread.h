@@ -69,10 +69,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #elif defined(__DGUX)
 #  define PY_PTHREAD_D6
 
-#elif defined(__hpux)
-/* From what I can see, HP-UX 10.20 pthreads looks
- * like D4 flavour.
- */
+#elif defined(__hpux) && defined(_DECTHREADS_)
 #  define PY_PTHREAD_D4
 
 #else /* Default case */
