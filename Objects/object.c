@@ -12,6 +12,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
+#ifdef macintosh
+#include "macglue.h"
+#endif
+
 #include "mymath.h"
 
 /* just for trashcan: */
