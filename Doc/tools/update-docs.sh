@@ -11,7 +11,8 @@ if [ -z "$HOME" ] ; then
     export HOME
 fi
 
-UPDATES=/home/users/fdrake/python-docs-update.tar.bz2
+UPDATES=$HOME/python-docs-update.tar.bz2
+INFO=$HOME/python-docs-update.txt
 
 if [ -f "$UPDATES" ] ; then
     cd /home/groups/python/htdocs
@@ -20,11 +21,15 @@ if [ -f "$UPDATES" ] ; then
     cd devel-docs || exit $?
     (bzip2 -dc "$UPDATES" | tar xf -) || exit $?
     rm "$UPDATES" || exit $?
+    EXPLANATION="`cat $INFO`"
     Mail -s '[development doc updates]' \
      python-dev@python.org doc-sig@python.org \
      <<EOF
 The development version of the documentation has been updated:
 
 	http://python.sourceforge.net/devel-docs/
+
+$EXPLANATION
 EOF
+    rm -f $HOME/python-docs-update.txt
 fi
