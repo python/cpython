@@ -16,16 +16,11 @@ Compare the files named \var{f1} and \var{f2}, returning \code{True} if
 they seem equal, \code{False} otherwise.
 
 Unless \var{shallow} is given and is false, files with identical
-\function{os.stat()} signatures are taken to be equal.  If
-\var{use_statcache} is given and is true,
-\function{statcache.stat()} will be called rather then
-\function{os.stat()}; the default is to use \function{os.stat()}.
+\function{os.stat()} signatures are taken to be equal.
+\versionchanged[\var{use_statcache} is obsolete and ignored.]{2.3}
 
 Files that were compared using this function will not be compared again
-unless their \function{os.stat()} signature changes. Note that using
-\var{use_statcache} true will cause the cache invalidation mechanism to 
-fail --- the stale stat value will be used from \refmodule{statcache}'s 
-cache.
+unless their \function{os.stat()} signature changes.
 
 Note that no external programs are called from this function, giving it
 portability and efficiency.
