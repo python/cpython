@@ -265,8 +265,20 @@ sys_getrefcount(self, args)
 	PyObject *arg;
 	if (!PyArg_ParseTuple(args, "O:getrefcount", &arg))
 		return NULL;
-	return PyInt_FromLong((long) arg->ob_refcnt);
+	return PyInt_FromLong(arg->ob_refcnt);
 }
+
+#ifdef Py_TRACE_REFS
+static PyObject *
+sys_gettotalrefcount(PyObject *self, PyObject *args)
+{
+	extern long _Py_RefTotal;
+	if (!PyArg_ParseTuple(args, ":gettotalrefcount"))
+		return NULL;
+	return PyInt_FromLong(_Py_RefTotal);
+}
+
+#endif /* Py_TRACE_REFS */
 
 static char getrefcount_doc[] =
 "getrefcount(object) -> integer\n\
@@ -310,6 +322,7 @@ static PyMethodDef sys_methods[] = {
 #endif
 #ifdef Py_TRACE_REFS
 	{"getobjects",	_Py_GetObjects, 1},
+	{"gettotalrefcount", sys_gettotalrefcount, 1},
 #endif
 	{"getrefcount",	sys_getrefcount, 1, getrefcount_doc},
 #ifdef USE_MALLOPT
