@@ -275,7 +275,8 @@ class IMAP4:
 
 		(typ, [data]) = <instance>.list(user, password)
 		"""
-		if not 'AUTH-LOGIN' in self.capabilities:
+		if not 'AUTH=LOGIN' in self.capabilities \
+		and not 'AUTH-LOGIN' in self.capabilities:
 			raise self.error("server doesn't allow LOGIN authorisation")
 		typ, dat = self._simple_command('LOGIN', user, password)
 		if typ != 'OK':
@@ -391,6 +392,8 @@ class IMAP4:
 		(typ, [data]) = <instance>.status(mailbox, names)
 		"""
 		name = 'STATUS'
+		if self.PROTOCOL_VERSION == 'IMAP4':
+			raise self.error('%s unimplemented in IMAP4 (obtain IMAP4rev1 server, or re-code)' % name)
 		typ, dat = self._simple_command(name, mailbox, names)
 		return self._untagged_response(typ, name)
 
@@ -783,7 +786,7 @@ if __debug__ and __name__ == '__main__':
 		return dat
 
 	Debug = 4
-	M = IMAP4("newcnri")
+	M = IMAP4()
 	print 'PROTOCOL_VERSION = %s' % M.PROTOCOL_VERSION
 
 	for cmd,args in test_seq1:
