@@ -2379,7 +2379,7 @@ date_isoformat(PyDateTime_Date *self)
 	return PyString_FromString(buffer);
 }
 
-/* str() calls the appropriate isofomat() method. */
+/* str() calls the appropriate isoformat() method. */
 static PyObject *
 date_str(PyDateTime_Date *self)
 {
