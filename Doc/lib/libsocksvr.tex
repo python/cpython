@@ -2,15 +2,15 @@
 \label{module-SocketServer}
 \stmodindex{SocketServer}
 
-The \code{SocketServer} module simplifies the task of writing network
+The \module{SocketServer} module simplifies the task of writing network
 servers.
 
-There are four basic server classes: \code{TCPServer} uses the
+There are four basic server classes: \class{TCPServer} uses the
 Internet TCP protocol, which provides for continuous streams of data
-between the client and server.  \code{UDPServer} uses datagrams, which
+between the client and server.  \class{UDPServer} uses datagrams, which
 are discrete packets of information that may arrive out of order or be
 lost while in transit.  The more infrequently used
-\code{UnixStreamServer} and \code{UnixDatagramServer} classes are
+\class{UnixStreamServer} and \class{UnixDatagramServer} classes are
 similar, but use \UNIX{} domain sockets; they're not available on
 non-\UNIX{} platforms.  For more details on network programming, consult
 a book such as W. Richard Steven's \emph{UNIX Network Programming}
@@ -22,16 +22,16 @@ suitable if each request takes a long time to complete, because it
 requires a lot of computation, or because it returns a lot of data
 which the client is slow to process.  The solution is to create a
 separate process or thread to handle each request; the
-\code{ForkingMixIn} and \code{ThreadingMixIn} mix-in classes can be
+\class{ForkingMixIn} and \class{ThreadingMixIn} mix-in classes can be
 used to support asynchronous behaviour.
 
 Creating a server requires several steps.  First, you must create a
-request handler class by subclassing the \code{BaseRequestHandler}
-class and overriding its \code{handle()} method; this method will
+request handler class by subclassing the \class{BaseRequestHandler}
+class and overriding its \method{handle()} method; this method will
 process incoming requests.  Second, you must instantiate one of the
 server classes, passing it the server's address and the request
-handler class.  Finally, call the \code{handle_request()} or
-\code{serve_forever()} method of the server object to process one or
+handler class.  Finally, call the \method{handle_request()} or
+\method{serve_forever()} method of the server object to process one or
 many requests.
 
 Server classes have the same external methods and attributes, no
@@ -46,26 +46,27 @@ matter what network protocol they use:
 \begin{funcdesc}{fileno}{}
 Return an integer file descriptor for the socket on which the server
 is listening.  This function is most commonly passed to
-\code{select.select()}, to allow monitoring multiple servers in the
+\function{select.select()}, to allow monitoring multiple servers in the
 same process.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_request}{}
 Process a single request.  This function calls the following methods
-in order: \code{get_request()}, \code{verify_request()}, and
-\code{process_request()}.  If the user-provided \code{handle()} method
-of the handler class raises an exception, the server's
-\code{handle_error()} method will be called.
+in order: \method{get_request()}, \method{verify_request()}, and
+\method{process_request()}.  If the user-provided \method{handle()}
+method of the handler class raises an exception, the server's
+\method{handle_error()} method will be called.
 \end{funcdesc}
 
 \begin{funcdesc}{serve_forever}{}
 Handle an infinite number of requests.  This simply calls
-\code{handle_request()} inside an infinite loop.
+\method{handle_request()} inside an infinite loop.
 \end{funcdesc}
 
 \begin{datadesc}{address_family}
 The family of protocols to which the server's socket belongs.
-\code{socket.AF_INET} and \code{socket.AF_UNIX} are two possible values.
+\constant{socket.AF_INET} and \constant{socket.AF_UNIX} are two
+possible values.
 \end{datadesc}
 
 \begin{datadesc}{RequestHandlerClass}
@@ -93,19 +94,19 @@ The server classes support the following class variables:
 \begin{datadesc}{request_queue_size}
 The size of the request queue.  If it takes a long time to process a
 single request, any requests that arrive while the server is busy are
-placed into a queue, up to \code{request_queue_size} requests.  Once
+placed into a queue, up to \member{request_queue_size} requests.  Once
 the queue is full, further requests from clients will get a
 ``Connection denied'' error.  The default value is usually 5, but this
 can be overridden by subclasses.
 \end{datadesc}
 
 \begin{datadesc}{socket_type}
-The type of socket used by the server; \code{socket.SOCK_STREAM} and
-\code{socket.SOCK_DGRAM} are two possible values.
+The type of socket used by the server; \constant{socket.SOCK_STREAM}
+and \constant{socket.SOCK_DGRAM} are two possible values.
 \end{datadesc}
 
 There are various server methods that can be overridden by subclasses
-of base server classes like \code{TCPServer}; these methods aren't
+of base server classes like \class{TCPServer}; these methods aren't
 useful to external users of the server object.
 
 % should the default implementations of these be documented, or should
@@ -113,7 +114,7 @@ useful to external users of the server object.
 
 \begin{funcdesc}{finish_request}{}
 Actually processes the request by instantiating
-\code{RequestHandlerClass} and calling its \code{handle()} method.
+\member{RequestHandlerClass} and calling its \method{handle()} method.
 \end{funcdesc}
 
 \begin{funcdesc}{get_request}{}
@@ -123,16 +124,17 @@ client, and the client's address.
 \end{funcdesc}
 
 \begin{funcdesc}{handle_error}{request\, client_address}
-This function is called if the \code{RequestHandlerClass}'s
-\code{handle} method raises an exception.  The default action is to print
-the traceback to standard output and continue handling further requests.
+This function is called if the \member{RequestHandlerClass}'s
+\method{handle()} method raises an exception.  The default action is
+to print the traceback to standard output and continue handling
+further requests.
 \end{funcdesc}
 
 \begin{funcdesc}{process_request}{request\, client_address}
-Calls \code{finish_request()} to create an instance of the
-\code{RequestHandlerClass}.  If desired, this function can create a new
-process or thread to handle the request; the \code{ForkingMixIn} and
-\code{ThreadingMixIn} classes do this.
+Calls \method{finish_request()} to create an instance of the
+\member{RequestHandlerClass}.  If desired, this function can create a
+new process or thread to handle the request; the \class{ForkingMixIn}
+and \class{ThreadingMixIn} classes do this.
 \end{funcdesc}
 
 % Is there any point in documenting the following two functions?
@@ -156,36 +158,39 @@ This function can be overridden to implement access controls for a server.
 The default implementation always return true.
 \end{funcdesc}
 
-The request handler class must define a new \code{handle} method, and
-can override any of the following methods.  A new instance is created
-for each request.
+The request handler class must define a new \method{handle()} method,
+and can override any of the following methods.  A new instance is
+created for each request.
 
 \begin{funcdesc}{finish}{}
-Called after the \code{handle} method to perform any clean-up actions
-required.  The default implementation does nothing.  If \code{setup()}
-or \code{handle()} raise an exception, this function will not be called.
+Called after the \method{handle()} method to perform any clean-up
+actions required.  The default implementation does nothing.  If
+\method{setup()} or \method{handle()} raise an exception, this
+function will not be called.
 \end{funcdesc}
 
 \begin{funcdesc}{handle}{}
 This function must do all the work required to service a request.
 Several instance attributes are available to it; the request is
-available as \code{self.request}; the client address as
-\code{self.client_request}; and the server instance as \code{self.server}, in
-case it needs access to per-server information.
+available as \member{self.request}; the client address as
+\member{self.client_request}; and the server instance as
+\member{self.server}, in case it needs access to per-server
+information.
 
-The type of \code{self.request} is different for datagram or stream
-services.  For stream services, \code{self.request} is a socket
-object; for datagram services, \code{self.request} is a string.
+The type of \member{self.request} is different for datagram or stream
+services.  For stream services, \member{self.request} is a socket
+object; for datagram services, \member{self.request} is a string.
 However, this can be hidden by using the mix-in request handler
 classes
-\code{StreamRequestHandler} or \code{DatagramRequestHandler}, which
-override the \code{setup} and \code{finish} methods, and provides
-\code{self.rfile} and \code{self.wfile} attributes.  \code{self.rfile}
-and \code{self.wfile} can be read or written, respectively, to get the
-request data or return data to the client.
+\class{StreamRequestHandler} or \class{DatagramRequestHandler}, which
+override the \method{setup()} and \method{finish()} methods, and
+provides \member{self.rfile} and \member{self.wfile} attributes.
+\member{self.rfile} and \member{self.wfile} can be read or written,
+respectively, to get the request data or return data to the client.
 \end{funcdesc}
 
 \begin{funcdesc}{setup}{}
-Called before the \code{handle} method to perform any initialization
-actions required.  The default implementation does nothing.
+Called before the \method{handle()} method to perform any
+initialization actions required.  The default implementation does
+nothing.
 \end{funcdesc}
