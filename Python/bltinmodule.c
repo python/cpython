@@ -1726,7 +1726,7 @@ static PyMethodDef builtin_methods[] = {
 
 PyObject *PyExc_Exception;
 PyObject *PyExc_StandardError;
-PyObject *PyExc_NumberError;
+PyObject *PyExc_ArithmeticError;
 PyObject *PyExc_LookupError;
 
 PyObject *PyExc_AssertionError;
@@ -1760,7 +1760,7 @@ static struct
 bltin_exc[] = {
 	{"Exception",          &PyExc_Exception,          0},
 	{"StandardError",      &PyExc_StandardError,      0},
-	{"NumberError",        &PyExc_NumberError,        0},
+	{"ArithmeticError",    &PyExc_ArithmeticError,    0},
 	{"LookupError",        &PyExc_LookupError,        0},
 	{"AssertionError",     &PyExc_AssertionError,     1},
 	{"AttributeError",     &PyExc_AttributeError,     1},
@@ -1887,14 +1887,14 @@ initerrors(dict)
 	PyTuple_SET_ITEM(PyExc_LookupError, 1, PyExc_KeyError);
 	PyDict_SetItemString(dict, "LookupError", PyExc_LookupError);
 
-	PyExc_NumberError = PyTuple_New(3);
+	PyExc_ArithmeticError = PyTuple_New(3);
 	Py_INCREF(PyExc_OverflowError);
-	PyTuple_SET_ITEM(PyExc_NumberError, 0, PyExc_OverflowError);
+	PyTuple_SET_ITEM(PyExc_ArithmeticError, 0, PyExc_OverflowError);
 	Py_INCREF(PyExc_ZeroDivisionError);
-	PyTuple_SET_ITEM(PyExc_NumberError, 1, PyExc_ZeroDivisionError);
+	PyTuple_SET_ITEM(PyExc_ArithmeticError, 1, PyExc_ZeroDivisionError);
 	Py_INCREF(PyExc_FloatingPointError);
-	PyTuple_SET_ITEM(PyExc_NumberError, 2, PyExc_FloatingPointError);
-	PyDict_SetItemString(dict, "NumberError", PyExc_NumberError);
+	PyTuple_SET_ITEM(PyExc_ArithmeticError, 2, PyExc_FloatingPointError);
+	PyDict_SetItemString(dict, "ArithmeticError", PyExc_ArithmeticError);
 
 	PyExc_StandardError = PyTuple_New(exccnt-1);
 	for (i = 1; bltin_exc[i].name; i++) {
