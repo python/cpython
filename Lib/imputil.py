@@ -604,3 +604,103 @@ def _test_revamp():
   sys.path.insert(0, BuiltinImporter())
 
 ######################################################################
+
+#
+# TODO
+#
+# from Finn Bock:
+#   remove use of "strop" -- not available in JPython
+#   type(sys) is not a module in JPython. what to use instead?
+#   imp.C_EXTENSION is not in JPython. same for get_suffixes and new_module
+#
+#   given foo.py of:
+#      import sys
+#      sys.modules['foo'] = sys
+#
+#   ---- standard import mechanism
+#   >>> import foo
+#   >>> foo
+#   <module 'sys' (built-in)>
+#
+#   ---- revamped import mechanism
+#   >>> import imputil
+#   >>> imputil._test_revamp()
+#   >>> import foo
+#   >>> foo
+#   <module 'foo' from 'foo.py'>
+#
+#
+# from MAL:
+#   should BuiltinImporter exist in sys.path or hard-wired in ImportManager?
+#   need __path__ processing
+#   performance
+#   move chaining to a subclass [gjs: it's been nuked]
+#   avoid strop
+#   deinstall should be possible
+#   query mechanism needed: is a specific Importer installed?
+#   py/pyc/pyo piping hooks to filter/process these files
+#   wish list:
+#     distutils importer hooked to list of standard Internet repositories
+#     module->file location mapper to speed FS-based imports
+#     relative imports
+#     keep chaining so that it can play nice with other import hooks
+#
+# from Gordon:
+#   push MAL's mapper into sys.path[0] as a cache (hard-coded for apps)
+#
+# from Guido:
+#   need to change sys.* references for rexec environs
+#   need hook for MAL's walk-me-up import strategy, or Tim's absolute strategy
+#   watch out for sys.modules[...] == None
+#   flag to force absolute imports? (speeds _determine_import_context and
+#       checking for a relative module)
+#   insert names of archives into sys.path  (see quote below)
+#   note: reload does NOT blast module dict
+#   shift import mechanisms and policies around; provide for hooks, overrides
+#       (see quote below)
+#   add get_source stuff
+#   get_topcode and get_subcode
+#   CRLF handling in _compile
+#   race condition in _compile
+#   refactoring of os.py to deal with _os_bootstrap problem
+#   any special handling to do for importing a module with a SyntaxError?
+#       (e.g. clean up the traceback)
+#   implement "domain" for path-type functionality using pkg namespace
+#       (rather than FS-names like __path__)
+#   don't use the word "private"... maybe "internal"
+#
+#
+# Guido's comments on sys.path caching:
+# 
+# We could cache this in a dictionary: the ImportManager can have a
+# cache dict mapping pathnames to importer objects, and a separate
+# method for coming up with an importer given a pathname that's not yet
+# in the cache.  The method should do a stat and/or look at the
+# extension to decide which importer class to use; you can register new
+# importer classes by registering a suffix or a Boolean function, plus a
+# class.  If you register a new importer class, the cache is zapped.
+# The cache is independent from sys.path (but maintained per
+# ImportManager instance) so that rearrangements of sys.path do the
+# right thing.  If a path is dropped from sys.path the corresponding
+# cache entry is simply no longer used.
+#
+# My/Guido's comments on factoring ImportManager and Importer:
+#
+# > However, we still have a tension occurring here:
+# > 
+# > 1) implementing policy in ImportManager assists in single-point policy
+# >    changes for app/rexec situations
+# > 2) implementing policy in Importer assists in package-private policy
+# >    changes for normal, operating conditions
+# > 
+# > I'll see if I can sort out a way to do this. Maybe the Importer class will
+# > implement the methods (which can be overridden to change policy) by
+# > delegating to ImportManager.
+# 
+# Maybe also think about what kind of policies an Importer would be
+# likely to want to change.  I have a feeling that a lot of the code
+# there is actually not so much policy but a *necessity* to get things
+# working given the calling conventions for the __import__ hook: whether
+# to return the head or tail of a dotted name, or when to do the "finish
+# fromlist" stuff.
+#
