@@ -132,11 +132,13 @@ def	genallprojects(force=0):
 	
 	# bgen-generated Toolbox modules
 	genpluginproject("carbon", "_AE", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_AE", libraries=["ObjectSupportLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_AE", libraries=["ObjectSupportLib"], 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_App", libraries=["CarbonAccessors.o", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_App", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Cm", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Cm", libraries=["QuickTimeLib"], 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Cm", outputdir="::Lib:Carbon")
 	# XXX can't work properly because we need to set a custom fragment initializer
 	#genpluginproject("carbon", "_CG", 
@@ -150,29 +152,40 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Dlg", libraries=["CarbonAccessors.o", "DialogsLib", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Drag", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Drag", libraries=["DragLib"], outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Evt", outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Fm", outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Drag", libraries=["DragLib"], 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Evt", 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Fm", 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Help", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Icn", libraries=["IconServicesLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Icn", libraries=["IconServicesLib"], 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Icn", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_List", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Menu", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Menu", libraries=["CarbonAccessors.o", "MenusLib", "ContextualMenu", "AppearanceLib"],
 			libraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Qd", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Qt", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
-	genpluginproject("carbon", "_Qt", outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Qdoffs", outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Qd", 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Qt", libraries=["QuickTimeLib"], 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("carbon", "_Qt", 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Qdoffs", 
+			stdlibraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Res", 
 			stdlibraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Scrap", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Snd", libraries=["CarbonAccessors.o", "SoundLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Snd", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Sndihooks", sources=[":snd:_Sndihooks.c"], outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_TE", libraries=["CarbonAccessors.o", "DragLib"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_TE", libraries=["CarbonAccessors.o", "DragLib"], 
+			stdlibraryflags="Debug, WeakImport", 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_TE", outputdir="::Lib:Carbon")
-	genpluginproject("ppc", "_Mlte", libraries=["Textension"], outputdir="::Lib:Carbon")
+	genpluginproject("ppc", "_Mlte", libraries=["Textension"], 
+			libraryflags="Debug, WeakImport",  outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Mlte", outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Win", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Win", libraries=["CarbonAccessors.o", "WindowsLib", "AppearanceLib"],
