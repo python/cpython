@@ -37,6 +37,7 @@ DL_IMPORT(PyObject *) PyRun_FileEx(FILE *, char *, int,
 				   PyObject *, PyObject *, int);
 
 DL_IMPORT(PyObject *) Py_CompileString(char *, char *, int);
+DL_IMPORT(struct symtable *) Py_SymtableString(char *, char *, int);
 
 DL_IMPORT(void) PyErr_Print(void);
 DL_IMPORT(void) PyErr_PrintEx(int);

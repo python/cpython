@@ -9,6 +9,7 @@
 #include "parsetok.h"
 #include "errcode.h"
 #include "compile.h"
+#include "symtable.h"
 #include "eval.h"
 #include "marshal.h"
 
@@ -961,6 +962,19 @@ Py_CompileString(char *str, char *filename, int start)
 	co = PyNode_Compile(n, filename);
 	PyNode_Free(n);
 	return (PyObject *)co;
+}
+
+struct symtable *
+Py_SymtableString(char *str, char *filename, int start)
+{
+	node *n;
+	struct symtable *st;
+	n = PyParser_SimpleParseString(str, start);
+	if (n == NULL)
+		return NULL;
+	st = PyNode_CompileSymtable(n, filename);
+	PyNode_Free(n);
+	return st;
 }
 
 /* Simplified interface to parsefile -- return node or set exception */
