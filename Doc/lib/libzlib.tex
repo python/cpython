@@ -1,8 +1,8 @@
-% XXX The module has been extended (by Jeremy) but this documentation
-% hasn't been updated completely.
+% XXX The module has been extended (by Jeremy and Andrew) but this
+% documentation is incorrect in some cases.
 
 \section{\module{zlib} ---
-         Compression library compatible with \program{gzip}.}
+         Compression library compatible with \program{gzip}}
 
 \declaremodule{builtin}{zlib}
 \modulesynopsis{Low-level interface to compression and decompression
@@ -12,9 +12,14 @@ routines compatible with \program{gzip}.}
 For applications that require data compression, the functions in this
 module allow compression and decompression, using the zlib library.
 The zlib library has its own home page at
-\url{http://www.cdrom.com/pub/infozip/zlib/}.  Version 1.0.4 is the
-most recent version as of December, 1997; use a later version if one
-is available.
+\url{http://www.cdrom.com/pub/infozip/zlib/}.  Version 1.1.3 is the
+most recent version as of April 199; use a later version if one
+is available.  There are known incompatibilities between the Python
+module and earlier versions of the zlib library.
+
+The documentation for this module is woefully out of date.  In some
+cases, the doc strings have been updated more recently.  In other
+cases, they are both stale.
 
 The available exception and functions in this module are:
 
