@@ -223,9 +223,10 @@ class BaseSet(object):
             return NotImplemented
         result = self.__class__()
         data = result._data
+        otherdata = other._data
         value = True
         for elt in self:
-            if elt not in other:
+            if elt not in otherdata:
                 data[elt] = value
         return result
 
