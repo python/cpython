@@ -1054,7 +1054,7 @@ def do_funcdesc(length, buf, pp, i):
     idxsi = hist.indexsubitem	# words
     command = ''
     cat_class = ''
-    if idxsi and idxsi[-1] in ('method', 'protocol'):
+    if idxsi and idxsi[-1] in ('method', 'protocol', 'attribute'):
 	command = 'defmethod'
 	cat_class = string.join(idxsi[:-1])
     elif len(idxsi) == 2 and idxsi[1] == 'function':
