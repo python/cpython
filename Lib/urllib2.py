@@ -640,7 +640,7 @@ class HTTPBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
     def http_error_401(self, req, fp, code, msg, headers):
         host = urlparse.urlparse(req.get_full_url())[1]
-        return self.http_error_auth_reqed('www-authenticate', 
+        return self.http_error_auth_reqed('www-authenticate',
                                           host, req, headers)
 
 
@@ -650,7 +650,7 @@ class ProxyBasicAuthHandler(AbstractBasicAuthHandler, BaseHandler):
 
     def http_error_407(self, req, fp, code, msg, headers):
         host = req.get_host()
-        return self.http_error_auth_reqed('proxy-authenticate', 
+        return self.http_error_auth_reqed('proxy-authenticate',
                                           host, req, headers)
 
 

@@ -6,7 +6,7 @@ if os.sep==".":
     endsep = "/"
 else:
     endsep = "."
- 
+
 def whichdb(filename):
     """Guess which db package to use to open a db file.
 

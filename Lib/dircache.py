@@ -11,9 +11,9 @@ __all__ = ["listdir", "opendir", "annotate", "reset"]
 cache = {}
 
 def reset():
-      """Reset the cache completely."""
-      global cache
-      cache = {}
+    """Reset the cache completely."""
+    global cache
+    cache = {}
 
 def listdir(path):
     """List directory contents, using cache."""
