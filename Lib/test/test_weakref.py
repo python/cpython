@@ -516,6 +516,57 @@ class MappingTestCase(TestBase):
         self.assert_(len(d) == 1)
         self.assert_(d.items() == [('something else', o2)])
 
+    def test_weak_keyed_bad_delitem(self):
+        d = weakref.WeakKeyDictionary()
+        o = Object('1')
+        # An attempt to delete an object that isn't there should raise
+        # KetError.  It didn't before 2.3.
+        self.assertRaises(KeyError, d.__delitem__, o)
+
+    def test_weak_keyed_cascading_deletes(self):
+        # SF bug 742860.  For some reason, before 2.3 __delitem__ iterated
+        # over the keys via self.data.iterkeys().  If things vanished from
+        # the dict during this (or got added), that caused a RuntimeError.
+
+        d = weakref.WeakKeyDictionary()
+        mutate = False
+
+        class C(object):
+            def __init__(self, i):
+                self.value = i
+            def __hash__(self):
+                return hash(self.value)
+            def __eq__(self, other):
+                if mutate:
+                    # Side effect that mutates the dict, by removing the
+                    # last strong reference to a key.
+                    del objs[-1]
+                return self.value == other.value
+
+        objs = [C(i) for i in range(4)]
+        for o in objs:
+            d[o] = o.value
+        del o   # now the only strong references to keys are in objs
+        # Find the order in which iterkeys sees the keys.
+        objs = d.keys()
+        # Reverse it, so that the iteration implementation of __delitem__
+        # has to keep looping to find the first object we delete.
+        objs.reverse()
+        # Turn on mutation in C.__eq__.  The first time thru the loop,
+        # under the iterkeys() business the first comparison will delete
+        # the last item iterkeys() would see, and that causes a
+        #     RuntimeError: dictionary changed size during iteration
+        # when the iterkeys() loop goes around to try comparing the next
+        # key.  After ths was fixed, it just deletes the last object *our*
+        # "for o in obj" loop would have gotten to.
+        mutate = True
+        count = 0
+        for o in objs:
+            count += 1
+            del d[o]
+        self.assertEqual(len(d), 0)
+        self.assertEqual(count, 2)
+
 from test_userdict import TestMappingProtocol
 
 class WeakValueDictionaryTestCase(TestMappingProtocol):

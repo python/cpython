@@ -12,6 +12,12 @@ What's New in Python 2.3 beta 2?
 Core and builtins
 -----------------
 
+- SF bug 742860: WeakKeyDictionary __delitem__ uses iterkeys.  This
+  wasn't as threadsafe as it should be, was very inefficient, and could
+  raise RuntimeError if another thread mutated the dict during
+  __delitem__, or if a comparison function mutated it.  A new
+  implementation of WeakKeyDictionary.__delitem__ repairs all that.
+
 - SF bug 705231:  builtin pow() no longer lets the platform C pow()
   raise -1.0 to integer powers, because (at least) glibc gets it wrong
   in some cases.  The result should be -1.0 if the power is odd and 1.0
