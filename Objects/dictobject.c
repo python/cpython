@@ -964,6 +964,8 @@ dict_get(mp, args)
 
 	if (!PyArg_ParseTuple(args, "O|O", &key, &failobj))
 		return NULL;
+	if (mp->ma_table == NULL)
+		goto finally;
 
 #ifdef CACHE_HASH
 	if (!PyString_Check(key) ||
@@ -976,6 +978,7 @@ dict_get(mp, args)
 	}
 	val = lookdict(mp, key, hash)->me_value;
 
+  finally:
 	if (val == NULL)
 		val = failobj;
 	Py_INCREF(val);
