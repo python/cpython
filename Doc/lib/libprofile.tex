@@ -553,75 +553,55 @@ calibration.
 
 \section{Calibration \label{profile-calibration}}
 
-The profiler class has a hard coded constant that is added to each
+The profiler subtracts a constant from each
 event handling time to compensate for the overhead of calling the time
-function, and socking away the results.  The following procedure can
-be used to obtain this constant for a given platform (see discussion
+function, and socking away the results.  By default, the constant is 0.
+The following procedure can
+be used to obtain a better constant for a given platform (see discussion
 in section Limitations above).
 
 \begin{verbatim}
 import profile
 pr = profile.Profile()
-print pr.calibrate(100)
-print pr.calibrate(100)
-print pr.calibrate(100)
+for i in range(5):
+    print pr.calibrate(10000)
 \end{verbatim}
 
-The argument to \method{calibrate()} is the number of times to try to
-do the sample calls to get the CPU times.  If your computer is
-\emph{very} fast, you might have to do:
-
-\begin{verbatim}
-pr.calibrate(1000)
-\end{verbatim}
-
-or even:
-
-\begin{verbatim}
-pr.calibrate(10000)
-\end{verbatim}
+The method executes the number of Python calls given by the argument,
+directly and again under the profiler, measuring the time for both.
+It then computes the hidden overhead per profiler event, and returns
+that as a float.  For example, on an 800 MHz Pentium running
+Windows 2000, and using Python's time.clock() as the timer,
+the magical number is about 12.5e-6.
 
 The object of this exercise is to get a fairly consistent result.
-When you have a consistent answer, you are ready to use that number in
-the source code.  For a Sun Sparcstation 1000 running Solaris 2.3, the
-magical number is about .00053.  If you have a choice, you are better
-off with a smaller constant, and your results will ``less often'' show
-up as negative in profile statistics.
+If your computer is \emph{very} fast, or your timer function has poor
+resolution, you might have to pass 100000, or even 1000000, to get
+consistent results.
 
-The following shows how the trace_dispatch() method in the Profile
-class should be modified to install the calibration constant on a Sun
-Sparcstation 1000:
-
-\begin{verbatim}
-def trace_dispatch(self, frame, event, arg):
-    t = self.timer()
-    t = t[0] + t[1] - self.t - .00053 # Calibration constant
-
-    if self.dispatch[event](frame,t):
-        t = self.timer()
-        self.t = t[0] + t[1]
-    else:
-        r = self.timer()
-        self.t = r[0] + r[1] - t # put back unrecorded delta
-    return
-\end{verbatim}
-
-Note that if there is no calibration constant, then the line
-containing the callibration constant should simply say:
+When you have a consistent answer,
+there are three ways you can use it:\footnote{Prior to Python 2.2, it
+  was necessary to edit the profiler source code to embed the bias as
+  a literal number.  You still can, but that method is no longer
+  described, because no longer needed.}
 
 \begin{verbatim}
-t = t[0] + t[1] - self.t  # no calibration constant
+import profile
+
+# 1. Apply computed bias to all Profile instances created hereafter.
+profile.Profile.bias =
+
+# 2. Apply computed bias to a specific Profile instance.
+pr = profile.Profile()
+pr.bias = your_computed_bias
+
+# 3. Specify computed bias in instance constructor.
+pr = profile.Profile(bias=your_computed_bias)
 \end{verbatim}
 
-You can also achieve the same results using a derived class (and the
-profiler will actually run equally fast!!), but the above method is
-the simplest to use.  I could have made the profiler ``self
-calibrating,'' but it would have made the initialization of the
-profiler class slower, and would have required some \emph{very} fancy
-coding, or else the use of a variable where the constant \samp{.00053}
-was placed in the code shown.  This is a \strong{VERY} critical
-performance section, and there is no reason to use a variable lookup
-at this point, when a constant can be used.
+If you have a choice, you are better off choosing a smaller constant, and
+then your results will ``less often'' show up as negative in profile
+statistics.
 
 
 \section{Extensions --- Deriving Better Profilers}
