@@ -43,14 +43,14 @@ class BZ2FileTest(BaseTest):
 		f.close()
 
 	def testRead(self):
-		"Test BZ2File.read()"
+		# "Test BZ2File.read()"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		self.assertEqual(bz2f.read(), self.TEXT)
 		bz2f.close()
 
 	def testReadChunk10(self):
-		"Test BZ2File.read() in chunks of 10 bytes"
+		# "Test BZ2File.read() in chunks of 10 bytes"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		text = ''
@@ -63,14 +63,14 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testRead100(self):
-		"Test BZ2File.read(100)"
+		# "Test BZ2File.read(100)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		self.assertEqual(bz2f.read(100), self.TEXT[:100])
 		bz2f.close()
 
 	def testReadLine(self):
-		"Test BZ2File.readline()"
+		# "Test BZ2File.readline()"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		sio = StringIO(self.TEXT)
@@ -79,7 +79,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testReadLines(self):
-		"Test BZ2File.readlines()"
+		# "Test BZ2File.readlines()"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		sio = StringIO(self.TEXT)
@@ -87,7 +87,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testIterator(self):
-		"Test iter(BZ2File)"
+		# "Test iter(BZ2File)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		sio = StringIO(self.TEXT)
@@ -95,7 +95,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testXReadLines(self):
-		"Test BZ2File.xreadlines()"
+		# "Test BZ2File.xreadlines()"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		sio = StringIO(self.TEXT)
@@ -103,7 +103,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testUniversalNewlinesLF(self):
-		"Test BZ2File.read() with universal newlines (\\n)"
+		# "Test BZ2File.read() with universal newlines (\\n)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename, "rU")
 		self.assertEqual(bz2f.read(), self.TEXT)
@@ -111,7 +111,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testUniversalNewlinesCRLF(self):
-		"Test BZ2File.read() with universal newlines (\\r\\n)"
+		# "Test BZ2File.read() with universal newlines (\\r\\n)"
 		self.createTempFile(crlf=1)
 		bz2f = BZ2File(self.filename, "rU")
 		self.assertEqual(bz2f.read(), self.TEXT)
@@ -119,7 +119,7 @@ class BZ2FileTest(BaseTest):
 		bz2f.close()
 
 	def testWrite(self):
-		"Test BZ2File.write()"
+		# "Test BZ2File.write()"
 		bz2f = BZ2File(self.filename, "w")
 		bz2f.write(self.TEXT)
 		bz2f.close()
@@ -128,7 +128,7 @@ class BZ2FileTest(BaseTest):
 		f.close()
 
 	def testWriteChunks10(self):
-		"Test BZ2File.write() with chunks of 10 bytes"
+		# "Test BZ2File.write() with chunks of 10 bytes"
 		bz2f = BZ2File(self.filename, "w")
 		n = 0
 		while 1:
@@ -143,7 +143,7 @@ class BZ2FileTest(BaseTest):
 		f.close()
 
 	def testWriteLines(self):
-		"Test BZ2File.writelines()"
+		# "Test BZ2File.writelines()"
 		bz2f = BZ2File(self.filename, "w")
 		sio = StringIO(self.TEXT)
 		bz2f.writelines(sio.readlines())
@@ -153,14 +153,14 @@ class BZ2FileTest(BaseTest):
 		f.close()
 
 	def testSeekForward(self):
-		"Test BZ2File.seek(150, 0)"
+		# "Test BZ2File.seek(150, 0)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(150)
 		self.assertEqual(bz2f.read(), self.TEXT[150:])
 
 	def testSeekBackwards(self):
-		"Test BZ2File.seek(-150, 1)"
+		# "Test BZ2File.seek(-150, 1)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.read(500)
@@ -168,14 +168,14 @@ class BZ2FileTest(BaseTest):
 		self.assertEqual(bz2f.read(), self.TEXT[500-150:])
 
 	def testSeekBackwardsFromEnd(self):
-		"Test BZ2File.seek(-150, 2)"
+		# "Test BZ2File.seek(-150, 2)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(-150, 2)
 		self.assertEqual(bz2f.read(), self.TEXT[len(self.TEXT)-150:])
 
 	def testSeekPostEnd(self):
-		"Test BZ2File.seek(150000)"
+		# "Test BZ2File.seek(150000)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(150000)
@@ -183,7 +183,7 @@ class BZ2FileTest(BaseTest):
 		self.assertEqual(bz2f.read(), "")
 
 	def testSeekPostEndTwice(self):
-		"Test BZ2File.seek(150000) twice"
+		# "Test BZ2File.seek(150000) twice"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(150000)
@@ -192,7 +192,7 @@ class BZ2FileTest(BaseTest):
 		self.assertEqual(bz2f.read(), "")
 
 	def testSeekPreStart(self):
-		"Test BZ2File.seek(-150, 0)"
+		# "Test BZ2File.seek(-150, 0)"
 		self.createTempFile()
 		bz2f = BZ2File(self.filename)
 		bz2f.seek(-150)
@@ -201,14 +201,14 @@ class BZ2FileTest(BaseTest):
 
 class BZ2CompressorTest(BaseTest):
 	def testCompress(self):
-		"Test BZ2Compressor.compress()/flush()"
+		# "Test BZ2Compressor.compress()/flush()"
 		bz2c = BZ2Compressor()
 		data = bz2c.compress(self.TEXT)
 		data += bz2c.flush()
 		self.assertEqual(self.decompress(data), self.TEXT)
 
 	def testCompressChunks10(self):
-		"Test BZ2Compressor.compress()/flush() with chunks of 10 bytes"
+		# "Test BZ2Compressor.compress()/flush() with chunks of 10 bytes"
 		bz2c = BZ2Compressor()
 		n = 0
 		data = ''
@@ -223,13 +223,13 @@ class BZ2CompressorTest(BaseTest):
 
 class BZ2DecompressorTest(BaseTest):
 	def testDecompress(self):
-		"Test BZ2Decompressor.decompress()"
+		# "Test BZ2Decompressor.decompress()"
 		bz2d = BZ2Decompressor()
 		text = bz2d.decompress(self.DATA)
 		self.assertEqual(text, self.TEXT)
 
 	def testDecompressChunks10(self):
-		"Test BZ2Decompressor.decompress() with chunks of 10 bytes"
+		# "Test BZ2Decompressor.decompress() with chunks of 10 bytes"
 		bz2d = BZ2Decompressor()
 		text = ''
 		n = 0
@@ -242,7 +242,7 @@ class BZ2DecompressorTest(BaseTest):
 		self.assertEqual(text, self.TEXT)
 
 	def testDecompressUnusedData(self):
-		"Test BZ2Decompressor.decompress() with unused data"
+		# "Test BZ2Decompressor.decompress() with unused data"
 		bz2d = BZ2Decompressor()
 		unused_data = "this is unused data"
 		text = bz2d.decompress(self.DATA+unused_data)
@@ -250,7 +250,7 @@ class BZ2DecompressorTest(BaseTest):
 		self.assertEqual(bz2d.unused_data, unused_data)
 
 	def testEOFError(self):
-		"Calling BZ2Decompressor.decompress() after EOS must raise EOFError"
+		# "Calling BZ2Decompressor.decompress() after EOS must raise EOFError"
 		bz2d = BZ2Decompressor()
 		text = bz2d.decompress(self.DATA)
 		self.assertRaises(EOFError, bz2d.decompress, "anything")
@@ -260,22 +260,22 @@ class FuncTest(BaseTest):
 	"Test module functions"
 
 	def testCompress(self):
-		"Test compress() function"
+		# "Test compress() function"
 		data = compress(self.TEXT)
 		self.assertEqual(self.decompress(data), self.TEXT)
 
 	def testDecompress(self):
-		"Test decompress() function"
+		# "Test decompress() function"
 		text = decompress(self.DATA)
 		self.assertEqual(text, self.TEXT)
 
 	def testDecompressEmpty(self):
-		"Test decompress() function with empty string"
+		# "Test decompress() function with empty string"
 		text = decompress("")
 		self.assertEqual(text, "")
 
 	def testDecompressIncomplete(self):
-		"Test decompress() function with incomplete data"
+		# "Test decompress() function with incomplete data"
 		self.assertRaises(ValueError, decompress, self.DATA[:-10])
 
 def test_main():
