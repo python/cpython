@@ -42,6 +42,9 @@ class MyScanner(Scanner):
 			'KillControls', # Implied by close of dialog
 			'SetCtlAction',
 			'TrackControl',	# Generated manually
+			'HandleControlClick',	# Generated manually
+			'SetControlData',	# Generated manually
+			'GetControlData',	# Generated manually
 			'kControlBevelButtonCenterPopupGlyphTag', # Constant with funny definition
 			'kControlProgressBarIndeterminateTag', # ditto
 			# The following are unavailable for static 68k (appearance manager)
@@ -58,6 +61,10 @@ class MyScanner(Scanner):
 			'SetDisclosureTriangleLastValue',
 			# Unavailable in CW Pro 3 libraries
 			'SetUpControlTextColor',
+			# Generally Bad News
+			'GetControlProperty',
+			'SetControlProperty',
+			'GetControlPropertySize',
 			]
 
 	def makeblacklisttypes(self):
@@ -72,21 +79,21 @@ class MyScanner(Scanner):
 		return [
 			([("void_ptr", "*", "InMode"), ("long", "*", "InMode")],
 			 [("InBuffer", "*", "*")]),
-			
+
 			([("void", "*", "OutMode"), ("long", "*", "InMode"),
 			                            ("long", "*", "OutMode")],
 			 [("VarVarOutBuffer", "*", "InOutMode")]),
-			
+
 ##			# For TrackControl
 ##			([("ProcPtr", "actionProc", "InMode")],
 ##			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
 ##			([("ControlActionUPP", "actionProc", "InMode")],
 ##			 [("FakeType('(ControlActionUPP)0')", "*", "*")]),
-			
+
 			# For GetControlTitle
 			([('Str255', 'title', 'InMode')],
 			 [('Str255', 'title', 'OutMode')]),
-			 
+
 			([("ControlHandle", "*", "OutMode")],
 			 [("ExistingControlHandle", "*", "*")]),
 			([("ControlRef", "*", "OutMode")],	# Ditto, for Universal Headers
