@@ -4,7 +4,7 @@
 
 usage: ftpmirror [-v] [-q] [-i] [-m] [-n] [-r] [-s pat]
                  [-l username [-p passwd [-a account]]]
-                 hostname [remotedir [localdir]]
+                 hostname[:port] [remotedir [localdir]]
 -v: verbose
 -q: quiet
 -i: interactive mode
@@ -13,7 +13,7 @@ usage: ftpmirror [-v] [-q] [-i] [-m] [-n] [-r] [-s pat]
 -r: remove local files/directories no longer pertinent
 -l username [-p passwd [-a account]]: login info (default .netrc or anonymous)
 -s pat: skip files matching pattern
-hostname: remote host
+hostname: remote host w/ optional port separated by ':'
 remotedir: remote directory (default initial)
 localdir: local directory (default current)
 """
@@ -52,6 +52,9 @@ def main():
     account = ''
     if not args: usage('hostname missing')
     host = args[0]
+    port = 0
+    if ':' in host:
+        host, port = host.split(':', 1)
     try:
         auth = netrc.netrc().authenticators(host)
         if auth is not None:
@@ -79,7 +82,7 @@ def main():
     #
     f = ftplib.FTP()
     if verbose: print 'Connecting to %s...' % `host`
-    f.connect(host)
+    f.connect(host,port)
     if not nologin:
         if verbose:
             print 'Logging in as %s...' % `login or 'anonymous'`
