@@ -1054,7 +1054,8 @@ which is used to set the access and modified times, respectively.
 Availability: Macintosh, \UNIX, Windows.
 \end{funcdesc}
 
-\begin{funcdesc}{walk}{top\optional{, topdown\code{=True}}}
+\begin{funcdesc}{walk}{top\optional{, topdown\code{=True}
+                       \optional{, onerror\code{=None}}}}
 \index{directory!walking}
 \index{directory!traversal}
 \function{walk()} generates the file names in a directory tree, by
@@ -1086,6 +1087,13 @@ about directories the caller creates or renames before it resumes
 \function{walk()} again.  Modifying \var{dirnames} when \var{topdown} is
 false is ineffective, because in bottom-up mode the directories in
 \var{dirnames} are generated before \var{dirnames} itself is generated.
+
+By default errors from the \code{os.listdir()} call are ignored.  If
+optional argument \var{onerror} is specified, it should be a function;
+it will be called with one argument, an os.error instance.  It can
+report the error to continue with the walk, or raise the exception
+to abort the walk.  Note that the filename is available as the
+\code{filename} attribute of the exception object.
 
 \begin{notice}
 If you pass a relative pathname, don't change the current working

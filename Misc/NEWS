@@ -38,6 +38,9 @@ Extension modules
 Library
 -------
 
+- Added optional 'onerror' argument to os.walk(), to control error
+  handling.
+
 - inspect.is{method|data}descriptor was added, to allow pydoc display
   __doc__ of data descriptors.
 
