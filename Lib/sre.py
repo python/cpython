@@ -221,7 +221,7 @@ def _compile(*key):
     pattern, flags = key
     if isinstance(pattern, _pattern_type):
         return pattern
-    if not isinstance(pattern, sre_compile.STRING_TYPES):
+    if not sre_compile.isstring(pattern):
         raise TypeError, "first argument must be string or compiled pattern"
     try:
         p = sre_compile.compile(pattern, flags)
