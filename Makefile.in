@@ -88,13 +88,15 @@ install:	python
 
 # Install the library.
 # If your system does not support "cp -r", try "copy -r" or perhaps
-# something like find Lib -print | cpio -pacvdmu $(DESTDIR)/lib/python
+# something like find Lib -print | cpio -pacvdmu $(LIBDEST)
+LIBDEST=	$(prefix)/lib/python
 libinstall:
-		-if test ! -d $(prefix)/lib/python; \
-		then mkdir $(prefix)/lib/python; \
+		-if test ! -d $(LIBDEST); \
+		then mkdir $(LIBDEST); \
 		fi
-		cp -r $(srcdir)/Lib/* $(prefix)/lib/python
-		@echo Ideally, run something to compile all modules now...
+		cp -r $(srcdir)/Lib/* $(LIBDEST)
+		PYTHONPATH=$(LIBDEST) \
+			./python $(LIBDEST)/compileall.py $(LIBDEST)
 
 # install the manual page
 maninstall:

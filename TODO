@@ -1,3 +1,37 @@
+(-) redesign error handling (cf. Donald's mail)
+
+(-) do MPW and THINK still not support sys_errlist?
+
+(-) does MPW 3.2 need the MPW_881_BUG defined in Parser/acceler.c
+
+(-) rename MPW_3_1 define (which really means 3.x)
+
+(-) incorporate urlparse.py, uu.py
+
+(-) rewrite instance __getattr__ etc. to store ptr in class instead of
+instance -- also have separate __delattr__
+
+(-) add warning to docs about sys.exc_traceback and sys.last_traceback.
+
+(-) Some stdwin wishes:
+
+    (-) stdwinmodule should keep track of textedit rec's per window
+	(in a chain) so it can unlink them when the window is closed
+	before the te rec
+
+    (-) textedit flashes at return or backspace
+
+    (-) there's no way to show the text caret after a multi-line paste?
+
+(-) termios module
+
+(*) put signal patches out separately
+
+(-) latex docs for signal module
+
+(*) More MPW and Mac changes
+
+(() Sjoerd's compileall script
 
 (-) systematically create /usr/local/lib/python/<machine>-<os>/
     subdirectories, with a lib/ subdirectory containing the lib*.a
