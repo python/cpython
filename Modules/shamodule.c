@@ -21,7 +21,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* See below for information about the original code this module was
    based upon. Additional work performed by:
 
-   Andrew Kuchling (amk1@erols.com)
+   Andrew Kuchling (amk1@bigfoot.com)
    Greg Stein (gstein@lyra.org)
 */
 
