@@ -12,7 +12,7 @@ macdef macro2
 line3
 line4
 
-default login log2 password pass2 
+default login log2 password pass2
 
 """
 
@@ -25,7 +25,7 @@ class NetrcTestCase(unittest.TestCase):
         fp.write(TEST_NETRC)
         fp.close()
         self.netrc = netrc.netrc(temp_filename)
-        
+
     def tearDown (self):
         del self.netrc
         os.unlink(temp_filename)
@@ -36,8 +36,7 @@ class NetrcTestCase(unittest.TestCase):
                                            )
         self.assert_(self.netrc.hosts['foo'] == ('log1', 'acct1', 'pass1'))
         self.assert_(self.netrc.hosts['default'] == ('log2', None, 'pass2'))
-            
-        
+
+
 if __name__ == "__main__":
     test_support.run_unittest(NetrcTestCase)
-

@@ -92,7 +92,7 @@ from pcre import *
 import warnings as _warnings
 _warnings.warn("Please use the 're' module, not the 'pre' module",
                DeprecationWarning)
-			     
+
 __all__ = ["match","search","sub","subn","split","findall","escape","compile",
            "I","L","M","S","X","IGNORECASE","LOCALE","MULTILINE","DOTALL",
            "VERBOSE","error"]

@@ -67,7 +67,7 @@ foo = another very
 foo = this line is much, much longer than my editor
         likes it.
 """)
-           
+
 def case_sensitivity():
     print "Testing case sensitivity..."
     cf = ConfigParser.ConfigParser()
