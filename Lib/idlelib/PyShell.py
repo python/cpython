@@ -825,10 +825,6 @@ class PyShell(OutputWindow):
         self.write("Python %s on %s\n%s\nIDLEfork %s\n" %
                    (sys.version, sys.platform, self.COPYRIGHT,
                     idlever.IDLE_VERSION))
-        try:
-            sys.ps1
-        except AttributeError:
-            sys.ps1 = ">>> "
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None
@@ -943,14 +939,17 @@ class PyShell(OutputWindow):
             if next and self.text.compare("insert lineend", ">=", next[0]):
                 self.recall(self.text.get(next[0], next[1]))
                 return "break"
-            # No stdin mark -- just get the current line
-            self.recall(self.text.get("insert linestart", "insert lineend"))
+            # No stdin mark -- just get the current line, less any prompt
+            line = self.text.get("insert linestart", "insert lineend")
+            last_line_of_prompt = sys.ps1.split('\n')[-1]
+            if line.startswith(last_line_of_prompt):
+                line = line[len(last_line_of_prompt):]
+            self.recall(line)
             return "break"
         # If we're between the beginning of the line and the iomark, i.e.
-        # in the prompt area, complain.
+        # in the prompt area, move to the end of the prompt
         if self.text.compare("insert", "<", "iomark"):
-            self.text.bell()
-            return "break"
+            self.text.mark_set("insert", "iomark")
         # If we're in the current input and there's only whitespace
         # beyond the cursor, erase that whitespace first
         s = self.text.get("insert", "end-1c")
@@ -1135,6 +1134,10 @@ def main():
     cmd = None
     script = None
     startup = False
+    try:
+        sys.ps1
+    except AttributeError:
+        sys.ps1 = '>>> '
     try:
         opts, args = getopt.getopt(sys.argv[1:], "c:deihr:st:")
     except getopt.error, msg:
