@@ -98,20 +98,21 @@ that same prefix to Freeze with the -p option:
 
 	python freeze.py -p your-prefix hello.py
 
-(If you haven't run "make libainstall" yet, go and do it now and don't
-come back until you've done it.)
+If you haven't run "make libainstall" yet, you should do it now
+(perhaps figuring out first *where* you want everything to be
+installed).
 
 
 How do I configure Freeze?
 --------------------------
 
-It's a good idea to change the line marked with XXX in freeze.py (an
-assignment to variable PACK) to point to the absolute pathname of the
-directory where Freeze lives (Tools/freeze in the Python source tree.)
-This makes it possible to call Freeze from other directories.
+It's a good idea to change the first line marked with XXX in freeze.py
+(an assignment to variable PACK) to point to the absolute pathname of
+the directory where Freeze lives (Tools/freeze in the Python source
+tree.)  This makes it possible to call Freeze from other directories.
 
-You can also edit the assignment to variable PREFIX -- this saves a
-lot of -p options.
+You can also edit the assignment to variable PREFIX (also marked with
+XXX) -- this saves a lot of -p options.
 
 
 How do I use Freeze with extensions modules?
@@ -127,7 +128,6 @@ XXX to be written.  (In short: pass -e modulebuilddir -- this even
 works if you built the modules in Python's own Modules directory.)
 
 
-
 What do I do next?
 ------------------
 
@@ -141,20 +141,29 @@ In any case, the name of the file will be printed as the last message
 from Freeze.
 
 
-Help!  I've tried everything but it doesn't work!
--------------------------------------------------
+Troubleshooting
+---------------
 
-Freeze is currently beta software.  You could email me a bug report.
-Please give as much context as possible -- "Freeze doesn't work" is
-not going to get much sympathy.  You could fix the bug and send me a
-patch.  You could learn Tcl.
+If you have trouble using Freeze for a large program, it's probably
+best to start playing with a really simple program first (like the
+file hello.py).  If you can't get that to work there's something
+fundamentally wrong -- read the text above to find out how to install
+relevant parts of Python properly and how to configure Freeze to find
+them.
 
-If you are thinking about debugging Freeze, start playing with a
-really simple program first (like "print 'hello world'").  If you
-can't get that to work there's something fundamentally wrong with your
-environment (or with your understanding of it).  Gradually build it up
-to use more modules and extensions until you find where it stops
-working.  After that, you're on your own -- happy hacking!
+A common problem is having installed an old version -- rerunning "make
+libainstall" often clears up problems with missing modules or
+libraries at link time.
+
+
+What is nfreeze.py?
+-------------------
+
+The script nfreeze.py is an unsupported variant on freeze.py which
+creates all files in a temporary directory and runs "make" there.  It
+has the advantage that it doesn't overwrite files in the current
+directory, but the disadvantage is that it removes all files when it
+is finished.
 
 
 --Guido van Rossum, CWI, Amsterdam <mailto:Guido.van.Rossum@cwi.nl>
