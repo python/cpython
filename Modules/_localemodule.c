@@ -26,6 +26,10 @@ This software comes with no warranty. Use at your own risk.
 #include "macglue.h"
 #endif
 
+#ifdef RISCOS
+char *strdup(const char *);
+#endif
+
 static char locale__doc__[] = "Support for POSIX locales.";
 
 static PyObject *Error;
