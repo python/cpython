@@ -2,6 +2,8 @@
 
 TestFailed = 'test_support -- test failed'	# Exception
 
+verbose = 1				# Flag set to 0 by regrtest.py
+
 def unload(name):
 	import sys
 	try:
