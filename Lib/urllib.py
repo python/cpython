@@ -406,18 +406,12 @@ class URLopener:
 
     def open_local_file(self, url):
         """Use local file."""
-        import mimetypes, mimetools, StringIO
+        import mimetypes, mimetools, rfc822, StringIO
         host, file = splithost(url)
         localname = url2pathname(file)
         stats = os.stat(localname)
         size = stats[stat.ST_SIZE]
-        modified = time.gmtime(stats[stat.ST_MTIME])
-        modified = "%s, %02d %s %04d %02d:%02d:%02d GMT" % (
-            ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][modified[6]],
-            modified[2],
-            ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][modified[1]-1],
-            modified[0], modified[3], modified[4], modified[5])
+        modified = rfc822.formatdate(stats[stat.ST_MTIME])
         mtype = mimetypes.guess_type(url)[0]
         headers = mimetools.Message(StringIO.StringIO(
             'Content-Type: %s\nContent-Length: %d\nLast-modified: %s\n' %
