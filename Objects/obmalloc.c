@@ -876,9 +876,16 @@ PyObject_Free(void *p)
  * it wraps a real allocator, adding extra debugging info to the memory blocks.
  */
 
-#define PYMALLOC_CLEANBYTE      0xCB    /* uninitialized memory */
-#define PYMALLOC_DEADBYTE       0xDB    /* free()ed memory */
-#define PYMALLOC_FORBIDDENBYTE  0xFB    /* unusable memory */
+/* Special bytes broadcast into debug memory blocks at appropriate times.
+ * Strings of these are unlikely to be valid addresses, floats, ints or
+ * 7-bit ASCII.
+ */
+#undef CLEANBYTE
+#undef DEADBYTE
+#undef FORBIDDENBYTE
+#define CLEANBYTE      0xCB    /* clean (newly allocated) memory */
+#define DEADBYTE       0xDB    /* deed (newly freed) memory */
+#define FORBIDDENBYTE  0xFB    /* untouchable bytes at each end of a block */
 
 static ulong serialno = 0;	/* incremented on each debug {m,re}alloc */
 
@@ -922,16 +929,14 @@ p[0:4]
     Number of bytes originally asked for.  4-byte unsigned integer,
     big-endian (easier to read in a memory dump).
 p[4:8]
-    Copies of PYMALLOC_FORBIDDENBYTE.  Used to catch under- writes
-    and reads.
+    Copies of FORBIDDENBYTE.  Used to catch under- writes and reads.
 p[8:8+n]
-    The requested memory, filled with copies of PYMALLOC_CLEANBYTE.
+    The requested memory, filled with copies of CLEANBYTE.
     Used to catch reference to uninitialized memory.
     &p[8] is returned.  Note that this is 8-byte aligned if pymalloc
     handled the request itself.
 p[8+n:8+n+4]
-    Copies of PYMALLOC_FORBIDDENBYTE.  Used to catch over- writes
-    and reads.
+    Copies of FORBIDDENBYTE.  Used to catch over- writes and reads.
 p[8+n+4:8+n+8]
     A serial number, incremented by 1 on each call to _PyObject_DebugMalloc
     and _PyObject_DebugRealloc.
@@ -964,21 +969,21 @@ _PyObject_DebugMalloc(size_t nbytes)
 		return NULL;
 
 	write4(p, nbytes);
-	p[4] = p[5] = p[6] = p[7] = PYMALLOC_FORBIDDENBYTE;
+	p[4] = p[5] = p[6] = p[7] = FORBIDDENBYTE;
 
 	if (nbytes > 0)
-		memset(p+8, PYMALLOC_CLEANBYTE, nbytes);
+		memset(p+8, CLEANBYTE, nbytes);
 
 	tail = p + 8 + nbytes;
-	tail[0] = tail[1] = tail[2] = tail[3] = PYMALLOC_FORBIDDENBYTE;
+	tail[0] = tail[1] = tail[2] = tail[3] = FORBIDDENBYTE;
 	write4(tail + 4, serialno);
 
 	return p+8;
 }
 
 /* The debug free first checks the 8 bytes on each end for sanity (in
-   particular, that the PYMALLOC_FORBIDDENBYTEs are still intact).
-   Then fills the original bytes with PYMALLOC_DEADBYTE.
+   particular, that the FORBIDDENBYTEs are still intact).
+   Then fills the original bytes with DEADBYTE.
    Then calls the underlying free.
 */
 void
@@ -992,7 +997,7 @@ _PyObject_DebugFree(void *p)
 	_PyObject_DebugCheckAddress(p);
 	nbytes = read4(q-8);
 	if (nbytes > 0)
-		memset(q, PYMALLOC_DEADBYTE, nbytes);
+		memset(q, DEADBYTE, nbytes);
 	PyObject_Free(q-8);
 }
 
@@ -1024,9 +1029,9 @@ _PyObject_DebugRealloc(void *p, size_t nbytes)
 		write4(q-8, nbytes);
 		/* kill the excess bytes plus the trailing 8 pad bytes */
 		q += nbytes;
-		q[0] = q[1] = q[2] = q[3] = PYMALLOC_FORBIDDENBYTE;
+		q[0] = q[1] = q[2] = q[3] = FORBIDDENBYTE;
 		write4(q+4, serialno);
-		memset(q+8, PYMALLOC_DEADBYTE, excess);
+		memset(q+8, DEADBYTE, excess);
 		return p;
 	}
 
@@ -1059,7 +1064,7 @@ _PyObject_DebugCheckAddress(const void *p)
 	}
 
 	for (i = 4; i >= 1; --i) {
-		if (*(q-i) != PYMALLOC_FORBIDDENBYTE) {
+		if (*(q-i) != FORBIDDENBYTE) {
 			msg = "bad leading pad byte";
 			goto error;
 		}
@@ -1069,7 +1074,7 @@ _PyObject_DebugCheckAddress(const void *p)
 		const ulong nbytes = read4(q-8);
 		const uchar *tail = q + nbytes;
 		for (i = 0; i < 4; ++i) {
-			if (tail[i] != PYMALLOC_FORBIDDENBYTE) {
+			if (tail[i] != FORBIDDENBYTE) {
 				msg = "bad trailing pad byte";
 				goto error;
 			}
@@ -1103,19 +1108,19 @@ _PyObject_DebugDumpAddress(const void *p)
 	   the serial number (the address deref could blow up). */
 
 	fputs("    the 4 pad bytes at p-4 are ", stderr);
-	if (*(q-4) == PYMALLOC_FORBIDDENBYTE &&
-	    *(q-3) == PYMALLOC_FORBIDDENBYTE &&
-	    *(q-2) == PYMALLOC_FORBIDDENBYTE &&
-	    *(q-1) == PYMALLOC_FORBIDDENBYTE) {
-		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
+	if (*(q-4) == FORBIDDENBYTE &&
+	    *(q-3) == FORBIDDENBYTE &&
+	    *(q-2) == FORBIDDENBYTE &&
+	    *(q-1) == FORBIDDENBYTE) {
+		fputs("FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
-		fprintf(stderr, "not all PYMALLOC_FORBIDDENBYTE (0x%02x):\n",
-			PYMALLOC_FORBIDDENBYTE);
+		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
+			FORBIDDENBYTE);
 		for (i = 4; i >= 1; --i) {
 			const uchar byte = *(q-i);
 			fprintf(stderr, "        at p-%d: 0x%02x", i, byte);
-			if (byte != PYMALLOC_FORBIDDENBYTE)
+			if (byte != FORBIDDENBYTE)
 				fputs(" *** OUCH", stderr);
 			fputc('\n', stderr);
 		}
@@ -1123,20 +1128,20 @@ _PyObject_DebugDumpAddress(const void *p)
 
 	tail = q + nbytes;
 	fprintf(stderr, "    the 4 pad bytes at tail=%p are ", tail);
-	if (tail[0] == PYMALLOC_FORBIDDENBYTE &&
-	    tail[1] == PYMALLOC_FORBIDDENBYTE &&
-	    tail[2] == PYMALLOC_FORBIDDENBYTE &&
-	    tail[3] == PYMALLOC_FORBIDDENBYTE) {
-		fputs("PYMALLOC_FORBIDDENBYTE, as expected\n", stderr);
+	if (tail[0] == FORBIDDENBYTE &&
+	    tail[1] == FORBIDDENBYTE &&
+	    tail[2] == FORBIDDENBYTE &&
+	    tail[3] == FORBIDDENBYTE) {
+		fputs("FORBIDDENBYTE, as expected\n", stderr);
 	}
 	else {
-		fprintf(stderr, "not all PYMALLOC_FORBIDDENBYTE (0x%02x):\n",
-			PYMALLOC_FORBIDDENBYTE);
+		fprintf(stderr, "not all FORBIDDENBYTE (0x%02x):\n",
+			FORBIDDENBYTE);
 		for (i = 0; i < 4; ++i) {
 			const uchar byte = tail[i];
 			fprintf(stderr, "        at tail+%d: 0x%02x",
 				i, byte);
-			if (byte != PYMALLOC_FORBIDDENBYTE)
+			if (byte != FORBIDDENBYTE)
 				fputs(" *** OUCH", stderr);
 			fputc('\n', stderr);
 		}
