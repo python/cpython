@@ -59,6 +59,15 @@ class Distribution:
                       ('help', 'h', "show detailed help message"),
                      ]
 
+    # 'common_usage' is a short (2-3 line) string describing the common
+    # usage of the setup script.
+    common_usage = """\
+Common commands: (see '--help-commands' for more)
+
+  setup.py build      will build the package underneath 'build/'
+  setup.py install    will install the package
+"""
+
     # options that are not propagated to the commands
     display_options = [
         ('help-commands', None,
@@ -608,7 +617,7 @@ class Distribution:
             else:
                 options = self.global_options
             parser.set_option_table(options)
-            parser.print_help("Global options:")
+            parser.print_help(self.common_usage + "\nGlobal options:")
             print
 
         if display_options:
