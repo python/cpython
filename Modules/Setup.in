@@ -164,7 +164,7 @@ socket socketmodule.c	# socket(2); not on ancient System V
 # Some more UNIX dependent modules -- off by default, since these
 # are not supported by all UNIX systems:
 
-#nis nismodule.c 	# Sun yellow pages -- not everywhere
+#nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
 #termios termios.c	# Steen Lumholt's termios module
 #resource resource.c	# Jeremy Hylton's rlimit interface
 
