@@ -37,6 +37,9 @@ Extension modules
 Library
 -------
 
+- Bug #453515:  filecmp.dircmp() can now make case insensitive
+  filename comparisons.
+
 - Bug #798254:  doctest.py can now handle unbound methods.
 
 - Bug #797650:  textwrap.py now avoids an infinite loop when one of the
