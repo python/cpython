@@ -19,10 +19,6 @@ extern char *getenv(const char *);
 #endif
 #endif
 
-#ifdef __DGUX
-#define _USING_POSIX4A_DRAFT6
-#endif
-
 #ifdef __sgi
 #ifndef HAVE_PTHREAD_H /* XXX Need to check in configure.in */
 #undef _POSIX_THREADS

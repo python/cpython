@@ -55,10 +55,6 @@
 #    error Systems with PY_PTHREAD_D7 are unsupported. See README.
 #  endif
 
-#elif defined(__DGUX)
-#  define PY_PTHREAD_D6
-#  error Systems with PY_PTHREAD_D6 are unsupported. See README.
-
 #elif defined(__hpux) && defined(_DECTHREADS_)
 #  define PY_PTHREAD_D4
 #  error Systems with PY_PTHREAD_D4 are unsupported. See README.
@@ -80,7 +76,7 @@
 #if !defined(pthread_condattr_default)
 #  define pthread_condattr_default pthread_condattr_default
 #endif
-#elif defined(PY_PTHREAD_STD) || defined(PY_PTHREAD_D6)
+#elif defined(PY_PTHREAD_STD)
 #if !defined(pthread_attr_default)
 #  define pthread_attr_default ((pthread_attr_t *)NULL)
 #endif
@@ -211,10 +207,6 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 				 pthread_attr_default,
 				 (pthread_startroutine_t)func, 
 				 (pthread_addr_t)arg
-#elif defined(PY_PTHREAD_D6)
-				 pthread_attr_default,
-				 (void* (*)(void *))func,
-				 arg
 #elif defined(PY_PTHREAD_D7)
 				 pthread_attr_default,
 				 func,
@@ -239,7 +231,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 	if (status != 0)
             return -1;
 
-#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D6) || defined(PY_PTHREAD_D7)
+#if defined(PY_PTHREAD_D4) || defined(PY_PTHREAD_D7)
         pthread_detach(&th);
 #elif defined(PY_PTHREAD_STD)
         pthread_detach(th);
