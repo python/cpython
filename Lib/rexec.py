@@ -38,7 +38,7 @@ class FileWrapper(FileBase):
 	def __init__(self, f):
 		self.f = f
 		for m in self.ok_file_methods:
-			if not hasattr(self, m):
+			if not hasattr(self, m) and hasattr(f, m):
 				setattr(self, m, getattr(f, m))
 	
 	def close(self):
