@@ -162,7 +162,9 @@ LIBFILES= ../lib/lib.tex \
 	../lib/internet.tex \
 	../lib/netdata.tex \
 	../lib/libpycompile.tex \
-	../lib/libcompileall.tex
+	../lib/libcompileall.tex \
+	../lib/libshlex.tex \
+	../lib/libnetrc.tex
 
 # LaTeX source files for Macintosh Library Modules.
 MACFILES= ../mac/mac.tex \
