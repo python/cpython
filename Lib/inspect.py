@@ -406,6 +406,7 @@ def findsource(object):
             if pat.match(lines[lnum]): break
             lnum = lnum - 1
         return lines, lnum
+    raise IOError, 'could not find code object'
 
 def getcomments(object):
     """Get lines of comments immediately preceding an object's source code."""
