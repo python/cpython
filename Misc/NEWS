@@ -32,11 +32,16 @@ C API
   against buffer overruns.
 
 - Unicode APIs now use name mangling to assure that mixing interpreters
-  and extensions using different Unicode widths is rendered next to 
-  impossible. Trying to import an incompatible Unicode-aware extension 
+  and extensions using different Unicode widths is rendered next to
+  impossible. Trying to import an incompatible Unicode-aware extension
   will result in an ImportError.  Unicode extensions writers must make
   sure to check the Unicode width compatibility in their extensions by
   using at least one of the mangled Unicode APIs in the extension.
+
+Windows
+
+- "import module" now compiles module.pyw if it exists and nothing else
+  relevant is found.
 
 
 What's New in Python 2.2a1?
