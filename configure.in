@@ -82,6 +82,13 @@ fi
 
 AC_PROG_CC
 
+case $ac_sys_system in
+hp*|HP*)
+    case $CC in
+    cc|*/cc) CC="$CC -Aa -D_HPUX_SOURCE";;
+    esac;;
+esac
+
 # LINKCC is the command that links the python executable -- default is $(CC).
 # This is altered for AIX in order to build the export list before linking.
 AC_SUBST(LINKCC)
