@@ -52,12 +52,14 @@ class TracebackCases(unittest.TestCase):
 def test():
     raise ValueError"""
 
-            # XXX Unclear why we're doing this next bit.
+            # if this test runs fast, test_bug737473.py will have same mtime
+            # even if it's rewrited and it'll not reloaded.  so adjust mtime
+            # of original to past.
             if hasattr(os, 'utime'):
                 past = time.time() - 3
                 os.utime(testfile, (past, past))
             else:
-                time.sleep(3) # not to stay in same mtime.
+                time.sleep(3)
 
             if 'test_bug737473' in sys.modules:
                 del sys.modules['test_bug737473']
