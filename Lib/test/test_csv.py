@@ -152,25 +152,35 @@ class Test_Csv(unittest.TestCase):
                          (bigstring, bigstring))
 
     def test_write_quoting(self):
-        self._write_test(['a','1','p,q'], 'a,1,"p,q"')
+        self._write_test(['a',1,'p,q'], 'a,1,"p,q"')
         self.assertRaises(csv.Error,
                           self._write_test,
-                          ['a','1','p,q'], 'a,1,"p,q"',
+                          ['a',1,'p,q'], 'a,1,p,q',
                           quoting = csv.QUOTE_NONE)
-        self._write_test(['a','1','p,q'], 'a,1,"p,q"',
+        self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
                          quoting = csv.QUOTE_MINIMAL)
-        self._write_test(['a','1','p,q'], '"a",1,"p,q"',
+        self._write_test(['a',1,'p,q'], '"a",1,"p,q"',
                          quoting = csv.QUOTE_NONNUMERIC)
-        self._write_test(['a','1','p,q'], '"a","1","p,q"',
+        self._write_test(['a',1,'p,q'], '"a","1","p,q"',
                          quoting = csv.QUOTE_ALL)
 
     def test_write_escape(self):
-        self._write_test(['a','1','p,q'], 'a,1,"p,q"',
+        self._write_test(['a',1,'p,q'], 'a,1,"p,q"',
                          escapechar='\\')
-# FAILED - needs to be fixed [am]:
-#        self._write_test(['a','1','p,"q"'], 'a,1,"p,\\"q\\"',
-#                         escapechar='\\', doublequote = 0)
-        self._write_test(['a','1','p,q'], 'a,1,p\\,q',
+        self.assertRaises(csv.Error,
+                          self._write_test,
+                          ['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
+                          escapechar=None, doublequote=False) 
+        self._write_test(['a',1,'p,"q"'], 'a,1,"p,\\"q\\""',
+                         escapechar='\\', doublequote = False)
+        self._write_test(['"'], '""""', 
+                         escapechar='\\', quoting = csv.QUOTE_MINIMAL)
+        self._write_test(['"'], '\\"', 
+                         escapechar='\\', quoting = csv.QUOTE_MINIMAL,
+                         doublequote = False)
+        self._write_test(['"'], '\\"', 
+                         escapechar='\\', quoting = csv.QUOTE_NONE)
+        self._write_test(['a',1,'p,q'], 'a,1,p\\,q',
                          escapechar='\\', quoting = csv.QUOTE_NONE)
 
     def test_writerows(self):
