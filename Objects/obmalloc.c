@@ -541,8 +541,8 @@ error:
 /* This is only useful when running memory debuggers such as
  * Purify or Valgrind.  Uncomment to use.
  *
- */
 #define Py_USING_MEMORY_DEBUGGER
+ */
 
 #ifdef Py_USING_MEMORY_DEBUGGER
 
