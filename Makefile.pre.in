@@ -190,15 +190,15 @@ POBJS=		\
 		Parser/node.o \
 		Parser/parser.o \
 		Parser/parsetok.o \
-		Parser/tokenizer.o \
 		Parser/bitset.o \
 		Parser/metagrammar.o
 
-PARSER_OBJS=	$(POBJS) Parser/myreadline.o
+PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/tokenizer.o
 
 PGOBJS=		\
 		Objects/obmalloc.o \
 		Python/mysnprintf.o \
+		Parser/tokenizer_pgen.o \
 		Parser/firstsets.o \
 		Parser/grammar.o \
 		Parser/pgen.o \
@@ -433,6 +433,8 @@ Parser/grammar.o:	$(srcdir)/Parser/grammar.c \
 				$(srcdir)/Include/token.h \
 				$(srcdir)/Include/grammar.h
 Parser/metagrammar.o:	$(srcdir)/Parser/metagrammar.c
+
+Parser/tokenizer_pgen.o:	$(srcdir)/Parser/tokenizer.c
 
 
 Python/compile.o Python/symtable.o: $(GRAMMAR_H)

@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "parsetok.h"
 #include "errcode.h"
+#include "graminit.h"
 
 int Py_TabcheckFlag;
 
@@ -45,8 +46,8 @@ PyParser_ParseStringFlagsFilename(char *s, char *filename,
 		return NULL;
 	}
 
+        tok->filename = filename ? filename : "<string>";
 	if (Py_TabcheckFlag || Py_VerboseFlag) {
-		tok->filename = filename ? filename : "<string>";
 		tok->altwarning = (tok->filename != NULL);
 		if (Py_TabcheckFlag >= 2)
 			tok->alterror++;
@@ -78,8 +79,8 @@ PyParser_ParseFileFlags(FILE *fp, char *filename, grammar *g, int start,
 		err_ret->error = E_NOMEM;
 		return NULL;
 	}
+	tok->filename = filename;
 	if (Py_TabcheckFlag || Py_VerboseFlag) {
-		tok->filename = filename;
 		tok->altwarning = (filename != NULL);
 		if (Py_TabcheckFlag >= 2)
 			tok->alterror++;
@@ -185,6 +186,13 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 				err_ret->text[len] = '\0';
 			}
 		}
+	} else if (tok->encoding != NULL) {
+		node* r = PyNode_New(encoding_decl);
+		r->n_str = tok->encoding;
+		r->n_nchildren = 1;
+		r->n_child = n;
+		tok->encoding = NULL;
+		n = r;
 	}
 
 	PyTokenizer_Free(tok);

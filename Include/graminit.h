@@ -65,3 +65,4 @@
 #define list_for 320
 #define list_if 321
 #define testlist1 322
+#define encoding_decl 323

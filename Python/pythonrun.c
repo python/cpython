@@ -1221,6 +1221,7 @@ static void
 err_input(perrdetail *err)
 {
 	PyObject *v, *w, *errtype;
+	PyObject* u = NULL;
 	char *msg = NULL;
 	errtype = PyExc_SyntaxError;
 	v = Py_BuildValue("(ziiz)", err->filename,
@@ -1272,12 +1273,24 @@ err_input(perrdetail *err)
 		errtype = PyExc_IndentationError;
 		msg = "too many levels of indentation";
 		break;
+	case E_DECODE: {	/* XXX */
+		PyThreadState* tstate = PyThreadState_Get();
+		PyObject* value = tstate->curexc_value;
+		if (value != NULL) {
+			u = PyObject_Repr(value);
+			if (u != NULL) {
+				msg = PyString_AsString(u);
+				break;
+			}
+		}
+	}
 	default:
 		fprintf(stderr, "error=%d\n", err->error);
 		msg = "unknown parsing error";
 		break;
 	}
 	w = Py_BuildValue("(sO)", msg, v);
+	Py_XDECREF(u);
 	Py_XDECREF(v);
 	PyErr_SetObject(errtype, w);
 	Py_XDECREF(w);

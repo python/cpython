@@ -7,11 +7,14 @@ chapter describes how the lexical analyzer breaks a file into tokens.
 \index{parser}
 \index{token}
 
-Python uses the 7-bit \ASCII{} character set for program text and string
-literals. 8-bit characters may be used in string literals and comments
-but their interpretation is platform dependent; the proper way to
-insert 8-bit characters in string literals is by using octal or
-hexadecimal escape sequences.
+Python uses the 7-bit \ASCII{} character set for program text.
+\versionadded[An encoding declaration can be used to indicate that 
+string literals and comments use an encoding different from ASCII.]{2.3}
+For compatibility with older versions, Python only warns if it finds
+8-bit characters; those warnings should be corrected by either declaring
+an explicit encoding, or using escape sequences if those bytes are binary
+data, instead of characters.
+
 
 The run-time character set depends on the I/O devices connected to the
 program but is generally a superset of \ASCII.
@@ -68,6 +71,37 @@ Comments are ignored by the syntax; they are not tokens.
 \index{comment}
 \index{hash character}
 
+
+\subsection{Encoding declarations\label{encodings}}
+
+If a comment in the first or second line of the Python script matches
+the regular expression "coding[=:]\s*([\w-_.]+)", this comment is
+processed as an encoding declaration; the first group of this
+expression names the encoding of the source code file. The recommended
+forms of this expression are
+
+\begin{verbatim}
+# -*- coding: <encoding-name> -*-
+\end{verbatim}
+
+which is recognized also by GNU Emacs, and
+
+\begin{verbatim}
+# vim:fileencoding=<encoding-name>
+\end{verbatim}
+
+which is recognized by Bram Moolenar's VIM. In addition, if the first
+bytes of the file are the UTF-8 signature ($'\xef\xbb\xbf'$), the
+declared file encoding is UTF-8 (this is supported, among others, by
+Microsoft's notepad.exe).
+
+If an encoding is declared, the encoding name must be recognized by
+Python. % XXX there should be a list of supported encodings.
+The encoding is used for all lexical analysis, in particular to find
+the end of a string, and to interpret the contents of Unicode literals.
+String literals are converted to Unicode for syntactical analysis,
+then converted back to their original encoding before interpretation
+starts.
 
 \subsection{Explicit line joining\label{explicit-joining}}
 
