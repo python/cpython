@@ -21,7 +21,7 @@ break-fontStyle= normal
 hit-background= #000000
 hit-foreground= #ffffff
 hit-fontStyle= normal
-cursor-background= black
+cursor-foreround= black
 error-background= #ff7777
 #shell window
 stdout-foreground= blue
@@ -48,7 +48,7 @@ hilite-background= #006868
 break-foreground= #ff7777
 hit-background= #000000
 hit-foreground= #ffffff
-cursor-background= black
+cursor-foreground= black
 error-background= #ff7777
 #shell window
 stdout-foreground= blue

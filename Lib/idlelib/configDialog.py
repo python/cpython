@@ -320,10 +320,11 @@ class ConfigDialog(Toplevel):
             ('#to choose items','comment'),('\n','normal'),('def','keyword'),
             (' ','normal'),('func','definition'),('(param):','normal'),
             ('\n  ','normal'),('"""string"""','string'),('\n  var0 = ','normal'),
-            ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'selected'),('\n  var2 = ','normal'),
-            ("'found'",'found'),('\n\n','normal'),(' error ','error'),
-            ('cursor |','cursor'),('\n ','normal'),('shell','shfg'),(' ','normal'),('stdout','shstdout'),(' ','normal'),
-            ('stderr','shstderr'))
+            ("'string'",'string'),('\n  var1 = ','normal'),("'selected'",'selected'),
+            ('\n  var2 = ','normal'),("'found'",'found'),('\n\n','normal'),
+            (' error ','error'),(' ','normal'),('cursor |','cursor'),
+            ('\n ','normal'),('shell','shfg'),(' ','normal'),('stdout','shstdout'),
+            (' ','normal'),('stderr','shstderr'),('\n','normal'))
         for txTa in textAndTags:
             text.insert(END,txTa[0],txTa[1])
         for element in self.themeElements.keys(): 
@@ -535,8 +536,36 @@ class ConfigDialog(Toplevel):
         return frame
 
     def PaintThemeSample(self):
-        pass
-                
+        if self.themeBuiltin.get: #a default theme
+            theme=self.builtinTheme.get()
+        else: #a user theme
+            theme=self.customTheme.get()
+        colours=idleConf.GetHighlight(theme, 'normal')
+        #normalBg=colours['background']
+        apply(self.textHighlightSample.tag_config,('normal',),colours)
+        colours=idleConf.GetHighlight(theme, 'keyword')
+        apply(self.textHighlightSample.tag_config,('keyword',),colours)
+        colours=idleConf.GetHighlight(theme, 'comment')
+        apply(self.textHighlightSample.tag_config,('comment',),colours)
+        colours=idleConf.GetHighlight(theme, 'definition')
+        apply(self.textHighlightSample.tag_config,('definition',),colours)
+        colours=idleConf.GetHighlight(theme, 'string')
+        apply(self.textHighlightSample.tag_config,('string',),colours)
+        colours=idleConf.GetHighlight(theme, 'hilite')
+        apply(self.textHighlightSample.tag_config,('selected',),colours)
+        colours=idleConf.GetHighlight(theme, 'hit')
+        apply(self.textHighlightSample.tag_config,('found',),colours)
+        colours=idleConf.GetHighlight(theme, 'cursor')
+        apply(self.textHighlightSample.tag_config,('cursor',),colours)
+        colours=idleConf.GetHighlight(theme, 'error')
+        apply(self.textHighlightSample.tag_config,('error',),colours)
+        colours=idleConf.GetHighlight(theme, 'console')
+        apply(self.textHighlightSample.tag_config,('shfg',),colours)
+        colours=idleConf.GetHighlight(theme, 'stdout')
+        apply(self.textHighlightSample.tag_config,('shstdout',),colours)
+        colours=idleConf.GetHighlight(theme, 'stderr')
+        apply(self.textHighlightSample.tag_config,('shstderr',),colours)
+        
     def LoadFontCfg(self):
         ##base editor font selection list
         fonts=list(tkFont.families(self))
