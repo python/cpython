@@ -2153,7 +2153,7 @@ static void
 initerrors(dict)
 	PyObject *dict;
 {
-	int i;
+	int i, j;
 	int exccnt = 0;
 	for (i = 0; bltin_exc[i].name; i++, exccnt++) {
 		Py_XDECREF(*bltin_exc[i].exc);
@@ -2190,22 +2190,32 @@ initerrors(dict)
 	PyTuple_SET_ITEM(PyExc_EnvironmentError, 1, PyExc_OSError);
 	PyDict_SetItemString(dict, "EnvironmentError", PyExc_EnvironmentError);
 
-	PyExc_StandardError = PyTuple_New(exccnt-2);
-	for (i = 2; bltin_exc[i].name; i++) {
+	/* missing from the StandardError tuple: Exception, StandardError,
+	 * and SystemExit
+	 */
+	PyExc_StandardError = PyTuple_New(exccnt-3);
+	for (i = 2, j = 0; bltin_exc[i].name; i++) {
 		PyObject *exc = *bltin_exc[i].exc;
-		Py_INCREF(exc);
-		PyTuple_SET_ITEM(PyExc_StandardError, i-2, exc);
+		/* SystemExit is not an error, but it is an exception */
+		if (exc != PyExc_SystemExit) {
+			Py_INCREF(exc);
+			PyTuple_SET_ITEM(PyExc_StandardError, j++, exc);
+		}
 	}
 	PyDict_SetItemString(dict, "StandardError", PyExc_StandardError);
 
-	/* Exception is treated differently; for now, it's == StandardError */
-	PyExc_Exception = PyExc_StandardError;
-	Py_INCREF(PyExc_Exception);
+	/* Exception is a 2-tuple */
+	PyExc_Exception = PyTuple_New(2);
+	Py_INCREF(PyExc_SystemExit);
+	PyTuple_SET_ITEM(PyExc_Exception, 0, PyExc_SystemExit);
+	Py_INCREF(PyExc_StandardError);
+	PyTuple_SET_ITEM(PyExc_Exception, 1, PyExc_StandardError);
 	PyDict_SetItemString(dict, "Exception", PyExc_Exception);
 	
 	if (PyErr_Occurred())
 	      Py_FatalError("Could not initialize built-in string exceptions");
 }
+
 
 static void
 finierrors()
