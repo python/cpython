@@ -19,7 +19,7 @@ written in Python.
 # responsible for its maintenance.
 # 
 
-__version__ = "2.4"
+__version__ = "2.5"
 
 
 # Imports
@@ -497,7 +497,6 @@ class FieldStorage:
 
         self.list = self.file = None
         self.done = 0
-        self.lines = []
         if ctype == 'application/x-www-form-urlencoded':
             self.read_urlencoded()
         elif ctype[:10] == 'multipart/':
@@ -633,7 +632,6 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
-            self.lines.append(line)
             self.file.write(line)
 
     def read_lines_to_outerboundary(self):
@@ -646,7 +644,6 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
-            self.lines.append(line)
             if line[:2] == "--":
                 strippedline = string.strip(line)
                 if strippedline == next:
@@ -676,7 +673,6 @@ class FieldStorage:
             if not line:
                 self.done = -1
                 break
-            self.lines.append(line)
             if line[:2] == "--":
                 strippedline = string.strip(line)
                 if strippedline == next:
