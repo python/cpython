@@ -182,7 +182,7 @@ I_PPC_PLUGINS : (buildmwproject, "CWIE", [
 	(":Mac:Build:waste.mcp", "waste.ppc"),
 	(":Mac:Build:zlib.mcp", "zlib.ppc"),
 ##	(":Mac:Build:_tkinter.mcp", "_tkinter.ppc"),
-	(":Extensions:Imaging:_tkinter.prj", "_tkinter.ppc"),
+	(":Extensions:Imaging:_tkinter.mcp", "_tkinter.ppc"),
 	(":Mac:Build:ColorPicker.mcp", "ColorPicker.ppc"),
 	(":Mac:Build:Printing.mcp", "Printing.ppc"),
 	(":Mac:Build:App.mcp", "App.ppc"),
@@ -244,7 +244,7 @@ I_PPC_SMALL : (buildmwproject, "CWIE", [
 I_PPC_EXTENSIONS : (buildmwproject, "CWIE", [
 		(":Extensions:Imaging:_imaging.mcp", "_imaging.ppc"),
 ##		(":Extensions:Imaging:_tkinter.mcp", "_tkinter.ppc"),
-		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules PPC"),
+		(":Extensions:img:Mac:imgmodules.mcp", "imgmodules"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "multiarraymodule"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "_numpy"),
 ##		(":Extensions:Numerical:Mac:numpymodules.mcp", "umathmodule"),
