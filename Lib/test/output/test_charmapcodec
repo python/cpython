@@ -1,1 +1,16 @@
 test_charmapcodec
+u'abc' == u'abc': OK
+u'abcdef' == u'abcdef': OK
+u'defabc' == u'defabc': OK
+u'dabcf' == u'dabcf': OK
+u'dabcfabc' == u'dabcfabc': OK
+'abc' == 'abc': OK
+'abcdef' == 'abcdef': OK
+'defabc' == 'defabc': OK
+'dabcf' == 'dabcf': OK
+'dabcfabc' == 'dabcfabc': OK
+u'def' == u'def': OK
+u'def' == u'def': OK
+u'df' == u'df': OK
+u'df' == u'df': OK
+\001 maps to undefined: OK
