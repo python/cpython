@@ -5,8 +5,8 @@
 
 The \code{glob} module finds all the pathnames matching a specified
 pattern according to the rules used by the \UNIX{} shell.  No tilde
-expansion is done, but \verb\*\, \verb\?\, and character ranges
-expressed with \verb\[]\ will be correctly matched.  This is done by
+expansion is done, but \code{*}, \code{?}, and character ranges
+expressed with \code{[]} will be correctly matched.  This is done by
 using the \code{os.listdir()} and \code{fnmatch.fnmatch()} functions
 in concert, and not by actually invoking a subshell.  (For tilde and
 shell variable expansion, use \code{os.path.expanduser(}) and
