@@ -3,3 +3,4 @@ test_opcodes
 XXX Not yet fully implemented
 2.1 try inside for loop
 2.2 raise class exceptions
+2.3 comparing function objects
