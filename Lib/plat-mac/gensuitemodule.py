@@ -530,8 +530,8 @@ def compileaete(aete, resinfo, fname, output=None, basepkgname=None,
         for codenamemapper in allprecompinfo:
             for k, v in codenamemapper.getall('class'):
                 fp.write("    %s : %s,\n" % (`k`, v))
-            if k == 'capp':
-                application_class = v
+                if k == 'capp':
+                    application_class = v
         fp.write("}\n")
 
     
