@@ -932,42 +932,47 @@ See the `\\[py-shell]' docs for additional warnings."
     ;; read_process_output has update_mode_lines++ for a similar
     ;; reason?  beats me ...
 
-    ;; BAW - we want to check to see if this still applies
-    (if (eq curbuf pbuf)		; mysterious ugly hack
-	(set-buffer (get-buffer-create "*scratch*")))
+    (unwind-protect
+	;; make sure current buffer is restored
+	;; BAW - we want to check to see if this still applies
+	(progn
+	  ;; mysterious ugly hack
+	  (if (eq curbuf pbuf)
+	      (set-buffer (get-buffer-create "*scratch*")))
 
-    (set-buffer pbuf)
-    (let* ((start (point))
-	   (goback (< start pmark))
-	   (goend (and (not goback) (= start (point-max))))
-	   (buffer-read-only nil))
-      (goto-char pmark)
-      (insert string)
-      (move-marker pmark (point))
-      (setq file-finished
-	    (and py-file-queue
-		 (equal ">>> "
-			(buffer-substring
-			 (prog2 (beginning-of-line) (point)
-				(goto-char pmark))
-			 (point)))))
-      (if goback (goto-char start)
-	;; else
-	(if py-scroll-process-buffer
-	    (let* ((pop-up-windows t)
-		   (pwin (display-buffer pbuf)))
-	      (set-window-point pwin (point)))))
-      (set-buffer curbuf)
-      (if file-finished
-	  (progn
-	    (py-delete-file-silently (car py-file-queue))
-	    (setq py-file-queue (cdr py-file-queue))
-	    (if py-file-queue
-		(py-execute-file pyproc (car py-file-queue)))))
-      (and goend
-	   (progn (set-buffer pbuf)
-		  (goto-char (point-max))))
-      )))
+	  (set-buffer pbuf)
+	  (let* ((start (point))
+		 (goback (< start pmark))
+		 (goend (and (not goback) (= start (point-max))))
+		 (buffer-read-only nil))
+	    (goto-char pmark)
+	    (insert string)
+	    (move-marker pmark (point))
+	    (setq file-finished
+		  (and py-file-queue
+		       (equal ">>> "
+			      (buffer-substring
+			       (prog2 (beginning-of-line) (point)
+				 (goto-char pmark))
+			       (point)))))
+	    (if goback (goto-char start)
+	      ;; else
+	      (if py-scroll-process-buffer
+		  (let* ((pop-up-windows t)
+			 (pwin (display-buffer pbuf)))
+		    (set-window-point pwin (point)))))
+	    (set-buffer curbuf)
+	    (if file-finished
+		(progn
+		  (py-delete-file-silently (car py-file-queue))
+		  (setq py-file-queue (cdr py-file-queue))
+		  (if py-file-queue
+		      (py-execute-file pyproc (car py-file-queue)))))
+	    (and goend
+		 (progn (set-buffer pbuf)
+			(goto-char (point-max))))
+	    ))
+      (set-buffer curbuf))))
 
 (defun py-execute-buffer ()
   "Send the contents of the buffer to a Python interpreter.
