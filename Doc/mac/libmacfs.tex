@@ -86,6 +86,11 @@ search, \var{which} is the 4-char string specifying which folder to
 locate. Setting \var{create} causes the folder to be created if it
 does not exist. Returns a \code{(vrefnum, dirid)} tuple.
 
+\begin{funcdesc}{NewAliasMinimalFromFullPath}{pathname}
+Return a minimal alias record object that points to the given file, which
+must be specified as a full pathname. This is the only way to create an
+alias record pointing to a non-existing file.
+
 The constants for \var{where} and \var{which} can be obtained from the
 standard module \var{MACFS}.
 \end{funcdesc}
@@ -164,7 +169,9 @@ or transmitting to other programs.
 Resolve the alias. If the alias was created as a relative alias you
 should pass the file relative to which it is. Return the FSSpec for
 the file pointed to and a flag indicating whether the alias object
-itself was modified during the search process. 
+itself was modified during the search process. If the file does
+not exist but the path leading up to it does exist a valid fsspec
+is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{GetInfo}{num}

@@ -4,7 +4,9 @@
 
 The \code{EasyDialogs} module contains some simple dialogs for
 the Macintosh, modelled after the \code{stdwin} dialogs with similar
-names.
+names. All routines have an optional parameter \var{id} with which you
+can override the DLOG resource used for the dialog, as long as the
+item numbers correspond. See the source for details.
 
 The \code{EasyDialogs} module defines the following functions:
 
@@ -170,6 +172,29 @@ The event loop is split into many small parts, each of which can be
 overridden. The default methods take care of dispatching events to
 windows and dialogs, handling drags and resizes, Apple Events, events
 for non-FrameWork windows, etc.
+
+In general, all event handlers should return 1 if the event is fully
+handled and 0 otherwise (because the front window was not a FrameWork
+window, for instance). This is needed so that update events and such
+can be passed on to other windows like the Sioux console window.
+Calling \code{MacOS.HandleEvent} is not allowed within \var{our_dispatch}
+or its callees, since this may result in an infinite loop if the
+code is called through the python inner-loop event handler.
+\end{funcdesc}
+
+\begin{funcdesc}{asyncevents}{onoff}
+Call this method with a nonzero parameter to enable
+asynchronous event handling. This will tell the inner interpreter loop
+to call the application event handler \var{async_dispatch} whenever events
+are available. This will cause FrameWork window updates and the user
+interface to remain working during long computations, but will slow the
+interpreter down and may cause surprising results in non-reentrant code
+(such as FrameWork itself). By default \var{async_dispatch} will immedeately
+call \var{our_dispatch} but you may override this to handle only certain
+events asynchronously. Events you do not handle will be passed to Sioux
+and such.
+
+The old on/off value is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{_quit}{}
