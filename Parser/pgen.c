@@ -58,6 +58,12 @@ typedef struct _nfa {
 	int		nf_start, nf_finish;
 } nfa;
 
+/* Forward */
+static compile_rhs PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
+static compile_alt PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
+static compile_item PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
+static compile_atom PROTO((labellist *ll, nfa *nf, node *n, int *pa, int *pb));
+
 static int
 addnfastate(nf)
 	nfa *nf;
@@ -113,6 +119,9 @@ typedef struct _nfagrammar {
 	nfa		**gr_nfa;
 	labellist	gr_ll;
 } nfagrammar;
+
+/* Forward */
+static compile_rule PROTO((nfagrammar *gr, node *n));
 
 static nfagrammar *
 newnfagrammar()
@@ -419,6 +428,12 @@ typedef struct _ss_dfa {
 	int	sd_nstates;
 	ss_state *sd_state;
 } ss_dfa;
+
+/* Forward */
+static printssdfa PROTO((int xx_nstates, ss_state *xx_state, int nbits,
+			 labellist *ll, char *msg));
+static simplify PROTO((int xx_nstates, ss_state *xx_state));
+static convert PROTO((dfa *d, int xx_nstates, ss_state *xx_state));
 
 static
 makedfa(gr, nf, d)
