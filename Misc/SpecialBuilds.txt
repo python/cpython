@@ -141,7 +141,8 @@ assert()s are enabled (via the C way: by not defining NDEBUG), and
 some routines do additional sanity checks inside "#ifdef Py_DEBUG"
 blocks.
 ---------------------------------------------------------------------------
-COUNT_ALLOCS introduced in 0.9.9 partly broken in 2.2 and 2.2.1
+COUNT_ALLOCS                                            introduced in 0.9.9
+                                             partly broken in 2.2 and 2.2.1
 
 Each type object grows three new members:
 
@@ -186,15 +187,15 @@ sys.getcounts()
     for which the first allocation of an object of that type occurred
     most recently is at the front of the list.
 ---------------------------------------------------------------------------
-LLTRACE                                    introduced ...?  Long time ago!
+LLTRACE                                          introduced well before 1.0
 
-Compile in support of Low Level TRACE-ing of the man interpreter loop.
+Compile in support of Low Level TRACE-ing of the main interpreter loop.
 
 When this preprocessor symbol is defined, before eval_frame
-(eval_code2 before 2.2) executes a frame's code checks its global
-namespace for a variable "__lltrace__".  If such a variable is found,
-mounds of information about what the interpreter is doing are sprayed
-to stdout, such as every opcode and opcode argument and values pushed
-onto and popped off the value stack.
+(eval_code2 before 2.2) executes a frame's code it checks the frame's
+global namespace for a variable "__lltrace__".  If such a variable is
+found, mounds of information about what the interpreter is doing are
+sprayed to stdout, such as every opcode and opcode argument and values
+pushed onto and popped off the value stack.
 
 Not useful very often, but very useful when needed.
