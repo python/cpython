@@ -75,6 +75,8 @@ mmap_object_dealloc(mmap_object * m_obj)
 static PyObject *
 mmap_close_method (mmap_object * self, PyObject * args)
 {
+        if (!PyArg_NoArgs(args))
+		return NULL;
 #ifdef MS_WIN32
 	UnmapViewOfFile (self->data);
 	CloseHandle (self->map_handle);
@@ -118,6 +120,8 @@ mmap_read_byte_method (mmap_object * self,
 	char value;
 	char * where;
 	CHECK_VALID(NULL);
+        if (!PyArg_NoArgs(args))
+		return NULL;
 	if (self->pos >= 0 && self->pos < self->size) {
 	        where = self->data + self->pos;
 		value = (char) *(where);
@@ -131,7 +135,7 @@ mmap_read_byte_method (mmap_object * self,
 
 static PyObject *
 mmap_read_line_method (mmap_object * self,
-			   PyObject * args)
+		       PyObject * args)
 {
 	char * start = self->data+self->pos;
 	char * eof = self->data+self->size;
@@ -139,6 +143,8 @@ mmap_read_line_method (mmap_object * self,
 	PyObject * result;
 
 	CHECK_VALID(NULL);
+        if (!PyArg_NoArgs(args))
+		return NULL;
 
 	eol = memchr(start, '\n', self->size - self->pos);
 	if (!eol)
@@ -153,7 +159,7 @@ mmap_read_line_method (mmap_object * self,
 
 static PyObject *
 mmap_read_method (mmap_object * self,
-		      PyObject * args)
+		  PyObject * args)
 {
 	long num_bytes;
 	PyObject *result;
@@ -225,7 +231,7 @@ mmap_write_method (mmap_object * self,
 
 static PyObject *
 mmap_write_byte_method (mmap_object * self,
-			    PyObject * args)
+			PyObject * args)
 {
 	char value;
 
@@ -241,9 +247,11 @@ mmap_write_byte_method (mmap_object * self,
 
 static PyObject *
 mmap_size_method (mmap_object * self,
-		      PyObject * args)
+		  PyObject * args)
 {
 	CHECK_VALID(NULL);
+        if (!PyArg_NoArgs(args))
+		return NULL;
 
 #ifdef MS_WIN32
 	if (self->file_handle != (HFILE) 0xFFFFFFFF) {
@@ -346,6 +354,8 @@ static PyObject *
 mmap_tell_method (mmap_object * self, PyObject * args)
 {
 	CHECK_VALID(NULL);
+        if (!PyArg_NoArgs(args))
+		return NULL;
 	return (Py_BuildValue ("l", self->pos) );
 }
 
@@ -462,10 +472,7 @@ static struct PyMethodDef mmap_object_methods[] = {
 /* Functions for treating an mmap'ed file as a buffer */
 
 static int
-mmap_buffer_getreadbuf(self, index, ptr)
-	mmap_object *self;
-int index;
-const void **ptr;
+mmap_buffer_getreadbuf(mmap_object *self, int index, const void **ptr)
 {
 	CHECK_VALID(-1);
 	if ( index != 0 ) {
@@ -867,3 +874,4 @@ initmmap(void)
 #endif /* MS_WIN32 */
 
 }
+
