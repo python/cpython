@@ -85,8 +85,6 @@ class XMLReader:
         "Sets the value of a SAX2 property."
         raise SAXNotRecognizedException("Property '%s' not recognized" % name)
 
-import saxutils
-    
 class IncrementalParser(XMLReader):
     """This interface adds three extra methods to the XMLReader
     interface that allow XML parsers to support incremental
@@ -112,6 +110,7 @@ class IncrementalParser(XMLReader):
         XMLReader.__init__(self)
 
     def parse(self, source):
+        import saxutils
         source = saxutils.prepare_input_source(source)
             
         self.prepareParser(source)
