@@ -1,12 +1,13 @@
 This is Python release 1.4 beta 2
 =================================
 
-It's a beta release.   Use this only if you want to help me iron the
-last wrinkles out of the distribution before I release the real 1.4
-release.  In particular, I'm interested in porting experiences to Unix
-boxes.  It should build out of the box using "./configure; make".
+It's a beta release.  Use this if you want to help me iron the last
+wrinkles out of the distribution before I release the real version
+1.4.  In particular, I'm interested in porting experiences to Unix
+boxes.  Python should build out of the box using "./configure; make".
 Also try running configue with the --with-thread and --with-readline
-options (described below).
+options (described below).  AIX users: please try the new shared
+library support!
 
 
 What's new in this release?
@@ -14,16 +15,19 @@ What's new in this release?
 
 A list of things that changed since 1.4 beta 1 can be found in
 Misc/NEWS.  This file will eventually be updated to also list what's
-new since to 1.3.
+new since to 1.3; in the mean time, you can have a look at
+http://www.python.org/workshops/1996-06/future.html (though there are
+some minor deviations from what was promised there, as usual).
 
 
 What is Python anyway?
 ----------------------
 
 Python is an interpreted object-oriented programming language, and is
-often compared to Tcl, Perl or Scheme.  For a quick summary of what
-Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.  If you
-have web access, point your browser to <URL:http://www.python.org>.
+often compared to Tcl, Perl, Scheme or Java.  For a quick summary of
+what Python can mean for a UNIX/C programmer, read Misc/BLURB.LUTZ.
+If you have web access, point your browser to
+http://www.python.org.
 
 
 If you don't read instructions
@@ -48,9 +52,9 @@ optional and no GNU code is distributed with Python.  For all these
 packages, GPL-free public domain versions also exist.
 
 
+
 A modest plug
 =============
-
 
 *************************************************************************
 *                                                                       *
@@ -63,34 +67,51 @@ A modest plug
 *************************************************************************
 
 
+
 Build instructions
 ==================
 
-Before you start building Python, you must first configure it.  This
-entails (at least) running the script "./configure", which figures out
-your system configuration and creates several Makefiles.  (It takes a
-minute or two -- please be patient!)  When it's done, you are ready to
-run make.  Typing "make" in the toplevel directory will recursively
-run make in each of the subdirectories Parser, Objects, Python and
-Modules, creating a library file in each one.  The executable of the
-interpreter is built in the Modules subdirectory and moved up here
-when it is built.  If you want or need to, you can also chdir into
-each subdirectory in turn and run make there manually (do the Modules
-subdirectory last!).
+Before you can build Python, you must first configure it.
+Fortunately, the configuration and build process has been streamlined
+for most Unix installations, so all you have to do is type a few
+commands, optionally edit one file, and sit back.  There are some
+platforms where things are not quite as smooth; see the platform
+specific notes below.  If you want to build for multiple platforms
+sharing the same source tree, see the section on VPATH below.
 
-NOTE: if you rerun the configure script with different options, remove
-all object files by running "make clean" before rebuilding.  Believe
-it or not, "make clean" sometimes helps to clean up other inexplicable
-problems as well.  Try it before sending in a bug report!
+You start by running the script "./configure", which figures out your
+system configuration and creates several Makefiles.  (It takes a
+minute or two -- please be patient!)  When it's done, you are ready to
+run make.  You may want to pass options to the configure script -- see
+the section below on configuration options and variables.
+
+To build Python, you normally type "make" in the toplevel directory.
+This will recursively run make in each of the subdirectories Parser,
+Objects, Python and Modules, creating a library file in each one.  The
+executable of the interpreter is built in the Modules subdirectory and
+moved up here when it is built.  If you want or need to, you can also
+chdir into each subdirectory in turn and run make there manually (do
+the Modules subdirectory last!).
+
+Once you have built an interpreter, see the subsections below on
+testing, configuring additional modules, and installation.  If you run
+in trouble, see the next section.
 
 
 Troubleshooting
 ---------------
 
+See also the platform specific notes in the next section.
+
 If recursive makes fail, try invoking make as "make MAKE=make".
 
 If you run into other trouble, see section 3 of the FAQ (file
 Misc/FAQ) for hints on what can go wrong, and how to fix it.
+
+If you rerun the configure script with different options, remove all
+object files by running "make clean" before rebuilding.  Believe it or
+not, "make clean" sometimes helps to clean up other inexplicable
+problems as well.  Try it before sending in a bug report!
 
 
 Platform specific notes
@@ -100,22 +121,29 @@ Platform specific notes
 on these platforms without the special directions mentioned here, let
 me know so I can remove them!)
 
-Linux:	Once you've built Python, use it to run the regen.py script in
-	the Lib/linux1 directory.  Apparently the files as distributed
-	don't match the system headers on some Linux versions.
+Linux:  On Linux version 1.x, once you've built Python, use it to run
+	the regen script in the Lib/linux1 directory.  Apparently
+	the files as distributed don't match the system headers on
+	some Linux versions.  (The "h2py" command refers to
+	Tools/scripts/h2py.py.)  The modules distributed for Linux 2.x
+	should be okay.
 
-AIX:	Read the files Misc/AIX-NOTES* before trying to build.
+AIX:    The notes in Misc/AIX-NOTES probably no longer apply.  A
+	complete overhaul of the shared library support is now in
+	place, the only thing that's missing is a bit of explanation.
+	Search for AIX in Modules/Setup(.in) for a clue.
+
 	WARNING!  In some versions of AIX, you get errors about
 	Invalid Indent when running the Python test set.  This appears
 	to be a bug in the AIX compiler.  Rebuild Parser/tokenizer.c
 	using OPT="" or OPT=-g, or use gcc.
 
-HP-UX:	Read the file Misc/HPUX-NOTES if you want to be able to
+HP-UX:  Read the file Misc/HPUX-NOTES if you want to be able to
 	use shared libraries for dynamically loaded modules.
 
-Minix:	When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
+Minix:  When using ack, use "CC=cc AR=aal RANLIB=: ./configure"!
 
-SCO:	1) Everything works much better if you add -U__STDC__ to the
+SCO:    1) Everything works much better if you add -U__STDC__ to the
 	defs.  This is because all the SCO header files are broken.
 	Anything that isn't mentioned in the C standard it's
 	conditionally excluded when __STDC__ is defined.
@@ -129,8 +157,19 @@ SCO:	1) Everything works much better if you add -U__STDC__ to the
 	3) According to at least one report, the above apply only to
 	SCO 3 -- Python builds out of the box on SCO 5.
 
+SunOS:  On SunOS 4.x, when using the native "cc" compiler, you have to
+	disable modules "cmath" and "operator" in Modules/Setup (see
+	the next section) and edit the various Makefiles to add
+	"-DWITHOUT_COMPLEX" to the CFLAGS variable, in order to
+	overcome the limitation to pre-ANSI C.  (Or, of course, you
+	could get gcc :-).
 
-Configuring the set of built-in modules
+NeXT:   Some more changes are in the works, but were submitted too
+	late to make it to beta2.  You may want to remove "-Wall" from
+	the OPT variable, for instance, unless you are a masochist.
+
+
+Configuring additional built-in modules
 ---------------------------------------
 
 You can configure the interpreter to contain fewer or more built-in
@@ -141,22 +180,33 @@ yourself.  Never edit Setup.in -- always edit Setup.  Read the
 comments in the file for information on what kind of edits you can
 make.  When you have edited Setup, Makefile and config.c in Modules
 will automatically be rebuilt the next time you run make in the
-toplevel directory.
+toplevel directory.  (When working inside the Modules directory, use
+"make Makefile; make".)
 
-Especially on SGI IRIX, there are modules that interface to many SGI
-specific system libraries, e.g. the GL library and the audio hardware.
+The default collection of modules should build on any Unix system, but
+many optional modules should work on all modern Unices (e.g. try dbm,
+mis, termios, timing, syslog, curses, new, soundex, parser).  Often
+the quickest way to determine whether a particular module works or not
+is to see if it will build: enable it in Setup, then if you get
+compilation or link errors, disable it -- you're missing support.
+
+On SGI IRIX, there are modules that interface to many SGI specific
+system libraries, e.g. the GL library and the audio hardware.
+
+For SunOS and Solaris, enable module "sunaudiodev" to support the
+audio device.
 
 
 Setting the optimization/debugging options
 ------------------------------------------
 
-If you want to change the optimization/debugging options for the C
-compiler, assign to the OPT variable on the toplevel make command;
-e.g. "make OPT=-g" will build a debugging version of Python on most
-platforms.  The default is OPT=-O; a value for OPT in the environment
-when the configure script is run overrides this default (likewise for
-CC; and the initial value for LIBS is used as the base set of
-libraries to link with).
+If you want or need to change the optimization/debugging options for
+the C compiler, assign to the OPT variable on the toplevel make
+command; e.g. "make OPT=-g" will build a debugging version of Python
+on most platforms.  The default is OPT=-O; a value for OPT in the
+environment when the configure script is run overrides this default
+(likewise for CC; and the initial value for LIBS is used as the base
+set of libraries to link with).
 
 
 Testing
@@ -183,37 +233,47 @@ which test failed.
 Installing
 ----------
 
-XXX TO be rewritten for new install procedure.
+Installing Python was never this easy!
 
-To install the interpreter as /usr/local/bin/python, type "make
-bininstall".  To install the library as /usr/local/lib/python, type
-"make libinstall".  To install the manual page as
-/usr/local/man/man1/python.1, type "make maninstall".  To install the
-Emacs editing mode for Python, manually copy the file
-Misc/python-mode.el to your local Emacs lisp directory.  The directory
-/usr/local can be overridden at configuration time by passing
---prefix=DIRECTORY to the configure script, or at make time by passing
-"prefix=DIRECTORY" to make.  See below for more information on
---prefix.
+To install the Python binary, library modules, shared library modules
+(see below), include files, configuration files, and the manual page,
+just type "make install".  This will install all platform-independent
+files in subdirectories the directory given with the --prefix option
+to configure or the 'prefix' Make variable (default /usr/local), and
+all binary and other platform-specific files in subdirectories if the
+directory given by --exec-prefix or the 'exec_prefix' Make variable
+(defaults to the --prefix directory).  All subdirectories created will
+have Python's version number in their name, e.g. the library modules
+are installed in "/usr/local/lib/python1.4/" by default.  The Python
+binary is installed as "python1.4" and a hard link named "python" is
+created.  The only file not installed with a version number in its
+name is the manual page, installed as "/usr/local/man/man1/python.1"
+by default.
 
-If you plan to do development of extension modules or to embed Python
-in another application and don't want to reference the original source
-tree, you can type "make inclinstall" and "make libainstall" to
-install the include files and lib*.a files, respectively, as
-/usr/local/include/Py/*.h and /usr/local/lib/python/lib/lib*.a.  The
-make libainstall target also installs copies of several other files
-used or produced during the build process which are needed to build
-extensions or to generate their Makefiles.
+If you have a previous installation of a pre-1.4 Python that you don't
+want to replace yet, use "make altinstall".  This installs the same
+set of files as "make install" except it doesn't create the hard link
+to "python1.4" named "python" and it doesn't install the manual page
+at all.
+
+The only thing you may have to install manually is the Python mode for
+Emacs.  (But then again, more recent versions of Emacs may already
+have it!)  This is the file Misc/python-mode.el; follow the
+instructions that came with Emacs for installation of site specific
+files.
 
 
 Configuration options and variables
 -----------------------------------
 
-Some special cases are handled by passing environment variables or
-options to the configure script.
+Some special cases are handled by passing options to the configure
+script.
 
-NOTE: if you rerun the configure script with different options, remove
-all object files by running "make clean" before rebuilding.
+WARNING: if you rerun the configure script with different options, you
+must run "make clean" before rebuilding.  Exceptions to this rule:
+after changing --prefix or --exec-prefix, all you need to do is remove
+Modules/getpath.o; after changing --with-readline, just remove
+Parser/myreadline.o.
 
 --with(out)-gcc: The configure script uses gcc (the GNU C compiler) if
 	it finds it.  If you don't want this, or if this compiler is
@@ -247,14 +307,13 @@ all object files by running "make clean" before rebuilding.
 	running the configure script.  Its sources are not distributed
 	with Python; you can ftp them from any GNU mirror site, or
 	from its home site:
-	<URL:ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz> (or
+	ftp://slc2.ins.cwru.edu/pub/dist/readline-2.0.tar.gz (or
 	a higher version number -- using version 1.x is not
 	recommended).
 
 	A GPL-free version was posted to comp.sources.misc in volume
 	31 and is widely available from FTP archive sites, e.g.
-	<URL:ftp://gatekeeper.dec.com/.b/usenet/comp.sources.misc/
-	volume31/editline/part01.Z>
+	ftp://gatekeeper.dec.com/.
 
 	Pass the Python configure script the option
 	--with-readline=DIRECTORY where DIRECTORY is the absolute
@@ -269,11 +328,13 @@ all object files by running "make clean" before rebuilding.
 	--with-thread=DIRECTORY.  In the Modules/Setup file, enable
 	the thread module.  (Threads aren't enabled automatically
 	because there are run-time penalties when support for them is
-	compiled in even if you don't use them.)
+	compiled in even if you don't use them.)  IMPORTANT: run "make
+	clean" after changing (either enabling or disabling) this
+	option!
 
 --with-sgi-dl: On SGI IRIX 4, dynamic loading of extension modules is
 	supported by the "dl" library by Jack Jansen, which is
-	ftp'able from <URL:ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z>.
+	ftp'able from ftp://ftp.cwi.nl/pub/dynload/dl-1.6.tar.Z.
 	This is enabled (after you've ftp'ed and compiled the dl
 	library!) by passing --with-sgi-dl=DIRECTORY where DIRECTORY
 	is the absolute pathname of the dl library.  (Don't bother on
@@ -284,10 +345,10 @@ all object files by running "make clean" before rebuilding.
 	on some other systems: VAX (Ultrix), Sun3 (SunOS 3.4), Sequent
 	Symmetry (Dynix), and Atari ST.  This is done using a
 	combination of the GNU dynamic loading package
-	(<URL:ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z>) and an
+	(ftp://ftp.cwi.nl/pub/dynload/dl-dld-1.1.tar.Z) and an
 	emulation of the SGI dl library mentioned above (the emulation
 	can be found at
-	<URL:ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z>).  To
+	ftp://ftp.cwi.nl/pub/dynload/dld-3.2.3.tar.Z).  To
 	enable this, ftp and compile both libraries, then call the
 	configure passing it the option
 	--with-dl-dld=DL_DIRECTORY,DLD_DIRECTORY where DL_DIRECTORY is
@@ -356,10 +417,25 @@ however this assumes that you only need to add modules.)
 Building on non-UNIX systems
 ----------------------------
 
-XXX Rewrite -- nothing in this chapter is true any more.
+Building Python for a PC is now a piece of cake!
 
-On non-UNIX systems, you will have to fake the effect of running the
-configure script manually.  A good start is to copy the file
+Enter the directory "PC" and read the file "readme.txt".  Most popular
+non-Unix PC platforms and compilers are supported (Unix ports to the
+PC such as Linux, FreeBSD or Solaris-x86 of course use the standard
+Unix build instructions).
+
+For the Mac, a separate source distribution will be made available,
+for use with the CodeWarrior compiler.  If you are interested in Mac
+development, join the PythonMac Special Interest Group
+(http://www.python.org/sigs/pythonmac-sig/, or send email to
+pythonmac-sig-request@python.org).
+
+Of course, there are also binary distributions available for these
+platforms -- see http://www.python.org/python/.
+
+To port Python to a new non-UNIX system, you will have to fake the
+effect of running the configure script manually (for Mac and PC, this
+has already been done for you).  A good start is to copy the file
 config.h.in to config.h and edit the latter to reflect the actual
 configuration of your system.  Most symbols must simply be defined as
 1 only if the corresponding feature is present and can be left alone
@@ -370,25 +446,10 @@ HAVE_CONFIG_H is defined during compilation (usually by passing an
 argument of the form `-DHAVE_CONFIG_H' to the compiler, but this is
 necessarily system-dependent).
 
-I have tried to collect instructions, Makefiles and additional sources
-for various platforms in this release.  The following directories
-exist:
-
-Mac/		Apple Macintosh, using THINK C 6.0 or MPW 3.2.
-Dos/		MS-DOS and Windows 3.1, using Microsoft C.
-Nt/		Windows NT, using Microsoft Visual C/C++.
-Os2/		OS/2.
-
-Most of these instructions were last tested with a previous Python
-release, so you may still experience occasional problems.  If you have
-fixes or suggestions, please let me know and I'll try to incorporate
-them in the next release.
-
 
 
 Miscellaneous issues
 ====================
-
 
 Documentation
 -------------
@@ -406,7 +467,7 @@ send the four resulting PostScript files (tut.ps, lib.ps, ref.ps, and
 ext.ps) to the printer.  See the README file there.
 
 All documentation is also available on-line via the World-Wide Web
-(WWW): <URL:http://www.python.org>.  It can also be downloaded
+(WWW): http://www.python.org.  It can also be downloaded
 separately from the ftp archives (see below) in Emacs INFO, HTML or
 PostScript form -- see the FAQ (file Misc/FAQ) for more info.
 
@@ -442,6 +503,8 @@ Web site
 --------
 
 Python's own web site has URL http://www.python.org/.  Come visit us!
+There are a number of mirrors, listed on the home page -- try a mirror
+that's close you you.
 
 
 Ftp access
@@ -467,82 +530,87 @@ messages, so no LISTPROC or Majordomo commands, please).
 The Tk interface
 ----------------
 
-XXX To be rewritten in the light of _tkinter and Tk 4.1.
-
 Tk (the user interface component of John Ousterhout's Tcl language) is
 also usable from Python.  Since this requires that you first build and
-install Tcl/Tk, the Tk interface is not enabled by default.  It
-requires Tcl 7.4 and Tk 4.0.  (Support for Tk 3.6 and Tcl 7.3 can be
-found in Lib/tk3inter/.)
+install Tcl/Tk, the Tk interface is not enabled by default.  It works
+with Tcl 7.5 and Tk 4.1 as well as with Tcl 7.4 and Tk 4.0.
+
+See http://www.smli.com/research/tcl/ for more info on where to get
+Tcl/Tk.
 
 To enable the Python/Tk interface, once you've built and installed
 Tcl/Tk, all you need to do is edit two lines in Modules/Setup; search
-for the string "_tkinter".  Un-comment one (normally the first) of the
-lines beginning with "#_tkinter" and un-comment the line beginning with
-"#TKPATH".  (If you have installed Tcl/Tk in unusual places you will
-have to edit the first line as well to fix the -I and -L options.)
-See the Build Instructions above for more details.
+for the string "_tkinter".  Uncomment one (normally the first) of the
+lines beginning with "#_tkinter" and un-comment the line beginning
+with "#TKPATH".  If you have installed Tcl/Tk or X11 in unusual
+places, you will have to edit the first line to fix or add -I and -L
+options.  See the Build Instructions above for more details.
 
-There is little documentation.  Begin with fetching the "Tk Lifesaver"
-document,
-e.g. <URL:ftp://ftp.python.org/pub/python/doc/tkinter-doc.tar.gz> (a
-gzipped tar file containing a PostScript file).  There are demos in
-the Demo/tkinter directory, in the subdirectories guido, matt and www.
+There is little documentation on how to use Tkinter; however most of
+the Tk manual pages apply quite straightforwardly.  Begin with
+fetching the "Tk Lifesaver" document,
+e.g. ftp://ftp.python.org/pub/python/doc/tkinter-doc.tar.gz (a gzipped
+tar file containing a PostScript file) or the on-line version
+http://www.python.org/doc/life-preserver/index.html.  Reading the
+Tkinter.py source will reveal most details on how Tkinter calls are
+translated into Tcl code.
+
+There are demos in the Demo/tkinter directory, in the subdirectories
+guido, matt and www (the matt and guido subdirectories have been
+overhauled to use more recent Tkinter coding conventions).
 
 Note that there's a Python module called "Tkinter" (capital T) which
-lives in Lib/tkinter/Tkinter.py, and a C module called "tkinter"
-(lower case t) which lives in Modules/_tkinter.c.  Demos and
-normal Tk applications only import the Python Tkinter module -- only
-the latter uses the C _tkinter module directly.  In order to find the C
-_tkinter module, it must be compiled and linked into the Python
-interpreter -- the _tkinter line in the Setup file does this.  In order
-to find the Python Tkinter module, sys.path must be set correctly --
-the TKPATH assignment in the Setup file takes care of this, but only
-if you install Python properly ("make install libinstall").  (You can
-also use dynamic loading for the C _tkinter module, in which case you
-must manually fix up sys.path or set $PYTHONPATH for the Python
-Tkinter module.)
-
-See <URL:http://www.smli.com/research/tcl/> for more info on where
-to get Tcl/Tk.
+lives in Lib/tkinter/Tkinter.py, and a C module called "_tkinter"
+(lower case t and leading underscore) which lives in
+Modules/_tkinter.c.  Demos and normal Tk applications only import the
+Python Tkinter module -- only the latter uses the C _tkinter module
+directly.  In order to find the C _tkinter module, it must be compiled
+and linked into the Python interpreter -- the _tkinter line in the
+Setup file does this.  In order to find the Python Tkinter module,
+sys.path must be set correctly -- the TKPATH assignment in the Setup
+file takes care of this, but only if you install Python properly
+("make install libinstall").  (You can also use dynamic loading for
+the C _tkinter module, in which case you must manually fix up sys.path
+or set $PYTHONPATH for the Python Tkinter module.)
 
 
 Distribution structure
 ----------------------
 
-XXX To be redone!
-
 Most subdirectories have their own README file.  Most files have
 comments.
 
-Demo/		Demonstration scripts, modules and programs
-Doc/		Documentation (LaTeX sources)
-Grammar/	Input for the parser generator
-Include/	Public header files
-Lib/		Python library modules
-Makefile.in	Source from which config.status creates Makefile
-Misc/		Miscellaneous files
-Modules/	Implementation of most built-in modules
-Objects/	Implementation of most built-in object types
-Parser/		The parser and tokenizer and their input handling
-Python/		The "compiler" and interpreter
-README		The file you're reading now
-Tools/		Some useful programs written in Python
-acconfig.h	Additional input for the autoheader program
-config.h.in	Source from which config.status creates config.h
-configure	Configuration shell script (GNU autoconf output)
-configure.in	Configuration specification (GNU autoconf input)
+BUGS            A list of known bugs (not completely up-to-date)
+TODO            A list of things that could be done (not up-to-date)
+Demo/           Demonstration scripts, modules and programs
+Doc/            Documentation (LaTeX sources)
+Grammar/        Input for the parser generator
+Include/        Public header files
+Lib/            Python library modules
+Makefile.in     Source from which config.status creates Makefile
+Misc/           Miscellaneous files
+Modules/        Implementation of most built-in modules
+Objects/        Implementation of most built-in object types
+Parser/         The parser and tokenizer and their input handling
+Python/         The "compiler" and interpreter
+README          The file you're reading now
+Tools/          Some useful programs written in Python
+acconfig.h      Additional input for the autoheader program
+config.h.in     Source from which config.status creates config.h
+configure       Configuration shell script (GNU autoconf output)
+configure.in    Configuration specification (GNU autoconf input)
+install-sh      Shell script used to install files
 
 The following files will (may) be created in the toplevel directory by
 the configuration and build processes:
 
-Makefile	Build rules
-config.cache	cache of configuration variables
-config.h	Configuration header
-config.log	log from last configure run
-config.status	status from last run of configure script
-python		The executable interpreter
-tags, TAGS	Tags files for vi and Emacs
+Makefile        Build rules
+config.cache    cache of configuration variables
+config.h        Configuration header
+config.log      log from last configure run
+config.status   status from last run of configure script
+python          The executable interpreter
+tags, TAGS      Tags files for vi and Emacs
 
 
 Author's address
