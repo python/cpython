@@ -101,6 +101,8 @@ Extension modules
 Library
 -------
 
+- xmlrpclib.MultiCall has been added.
+
 - poplib.POP3_SSL has been added.
 
 - tmpfile.mkstemp now returns an absolute path even if dir is relative.
