@@ -498,7 +498,7 @@ Currently-active file is at the head of the list.")
   (define-key py-mode-map "\C-c\C-u"  'py-goto-block-up)
   (define-key py-mode-map "\C-c#"     'py-comment-region)
   (define-key py-mode-map "\C-c?"     'py-describe-mode)
-  (define-key py-mode-map "\C-c\C-hm" 'py-describe-mode)
+  (define-key py-mode-map "\C-c\C-h"  'py-help-at-point)
   (define-key py-mode-map "\e\C-a"    'py-beginning-of-def-or-class)
   (define-key py-mode-map "\e\C-e"    'py-end-of-def-or-class)
   (define-key py-mode-map "\C-c-"     'py-up-exception)
@@ -553,8 +553,7 @@ Currently-active file is at the head of the list.")
 
 (defvar py-mode-syntax-table nil
   "Syntax table used in `python-mode' buffers.")
-(if py-mode-syntax-table
-    nil
+(when (not py-mode-syntax-table)
   (setq py-mode-syntax-table (make-syntax-table))
   (modify-syntax-entry ?\( "()" py-mode-syntax-table)
   (modify-syntax-entry ?\) ")(" py-mode-syntax-table)
@@ -595,10 +594,19 @@ Currently-active file is at the head of the list.")
   (modify-syntax-entry ?\n ">"  py-mode-syntax-table)
   )
 
+;; An auxiliary syntax table which places underscore and dot in the
+;; symbol class for simplicity
+(defvar py-dotted-expression-syntax-table nil
+  "Syntax table used to identify Python dotted expressions.")
+(when (not py-dotted-expression-syntax-table)
+  (setq py-dotted-expression-syntax-table
+	(copy-syntax-table py-mode-syntax-table))
+  (modify-syntax-entry ?_ "_" py-dotted-expression-syntax-table)
+  (modify-syntax-entry ?. "_" py-dotted-expression-syntax-table))
+
 
 
 ;; Utilities
-
 (defmacro py-safe (&rest body)
   "Safely execute BODY, return nil if an error occurred."
   (` (condition-case nil
@@ -2598,6 +2606,48 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
 (defun turn-off-pdbtrack ()
   (interactive)
   (py-pdbtrack-toggle-stack-tracking 0))
+
+
+
+;; Skip's python-help commands. The guts of this function is stolen
+;; from XEmacs's symbol-near-point, but without the useless
+;; regexp-quote call on the results, nor the interactive bit.  Also,
+;; we've added the temporary syntax table setting, which Skip
+;; originally had broken out into a separate function.  Note that
+;; Emacs doesn't have the original function.
+(defun py-symbol-near-point ()
+  "Return the first textual item to the nearest point."
+  ;; alg stolen from etag.el
+  (save-excursion
+    (with-syntax-table py-dotted-expression-syntax-table
+      (if (or (bobp) (not (memq (char-syntax (char-before)) '(?w ?_))))
+	  (while (not (looking-at "\\sw\\|\\s_\\|\\'"))
+	    (forward-char 1)))
+      (while (looking-at "\\sw\\|\\s_")
+	(forward-char 1))
+      (if (re-search-backward "\\sw\\|\\s_" nil t)
+	  (progn (forward-char 1)
+		 (buffer-substring (point)
+				   (progn (forward-sexp -1)
+					  (while (looking-at "\\s'")
+					    (forward-char 1))
+					  (point))))
+	nil))))
+
+(defun py-help-at-point ()
+  "Get help from Python based on the symbol nearest point."
+  (interactive)
+  (let* ((sym (py-symbol-near-point))
+	 (base (substring sym 0 (or (search "." sym :from-end t) 0)))
+	 cmd)
+    (if (not (equal base ""))
+        (setq cmd (concat "import " base "\n")))
+    (setq cmd (concat "import pydoc\n"
+                      cmd
+		      "try: pydoc.help(" sym ")\n"
+		      "except: print 'No help available on:', \"" sym "\""))
+    (message cmd)
+    (py-execute-string cmd)))
 
 
 
