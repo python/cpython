@@ -842,7 +842,7 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     if (v == NULL)
         return NULL;
     if (size == 0)
-        goto done;
+        return v;
 
     p = q = PyString_AS_STRING(v);
     while (i < size) {
@@ -892,8 +892,6 @@ PyObject *PyUnicode_EncodeUTF8(const Py_UNICODE *s,
     *p = '\0';
     if (_PyString_Resize(&v, p - q))
 	goto onError;
-
- done:
     return v;
 
  onError:
@@ -1082,7 +1080,7 @@ PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
     if (byteorder == 0)
 	*p++ = 0xFEFF;
     if (size == 0)
-        goto done;
+        return v;
     if (byteorder == 0 ||
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN	
 	byteorder == -1
@@ -1096,7 +1094,6 @@ PyObject *PyUnicode_EncodeUTF16(const Py_UNICODE *s,
 	    Py_UNICODE ch = *s++;
 	    *p++ = (ch >> 8) | (ch << 8);
 	}
- done:
     return v;
 }
 
@@ -1563,6 +1560,8 @@ PyObject *PyUnicode_EncodeRawUnicodeEscape(const Py_UNICODE *s,
     repr = PyString_FromStringAndSize(NULL, 6 * size);
     if (repr == NULL)
         return NULL;
+    if (size == 0)
+	return repr;
 
     p = q = PyString_AS_STRING(repr);
     while (size-- > 0) {
@@ -1662,9 +1661,12 @@ PyObject *PyUnicode_EncodeLatin1(const Py_UNICODE *p,
 {
     PyObject *repr;
     char *s, *start;
+
     repr = PyString_FromStringAndSize(NULL, size);
     if (repr == NULL)
         return NULL;
+    if (size == 0)
+	return repr;
 
     s = PyString_AS_STRING(repr);
     start = s;
@@ -1802,9 +1804,12 @@ PyObject *PyUnicode_EncodeASCII(const Py_UNICODE *p,
 {
     PyObject *repr;
     char *s, *start;
+
     repr = PyString_FromStringAndSize(NULL, size);
     if (repr == NULL)
         return NULL;
+    if (size == 0)
+	return repr;
 
     s = PyString_AS_STRING(repr);
     start = s;
@@ -1890,7 +1895,7 @@ PyObject *PyUnicode_EncodeMBCS(const Py_UNICODE *p,
     repr = PyString_FromStringAndSize(NULL, mbcssize);
     if (repr == NULL)
         return NULL;
-    if (mbcssize==0)
+    if (mbcssize == 0)
         return repr;
 
     /* Do the conversion */
@@ -2067,6 +2072,8 @@ PyObject *PyUnicode_EncodeCharmap(const Py_UNICODE *p,
     v = PyString_FromStringAndSize(NULL, size);
     if (v == NULL)
         return NULL;
+    if (size == 0)
+	return v;
     s = PyString_AS_STRING(v);
     while (size-- > 0) {
 	Py_UNICODE ch = *p++;
