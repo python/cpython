@@ -50,17 +50,19 @@
 # Edit the definitions below to indicate which options you are using.
 # Don't add any whitespace or comments!
 
-# Don't edit this (usually)
-DESTLIB=$(prefix)/lib/python$(VERSION)
-MACHDESTLIB=$(exec_prefix)/lib/python$(VERSION)
+# Directories where library files get installed.
+# DESTLIB is for Python modules; MACHDESTLIB for shared libraries.
+DESTLIB=$(LIBDEST)
+MACHDESTLIB=$(BINLIBDEST)
 
-# Site specific path insertions -- should begin with : if non-empty
-SITEPATH=
-
-# Standard path -- don't edit
+# Standard path -- don't edit.
+# No leading colon since this is the first entry
 DESTPATH=$(DESTLIB)
 
-# Standard enabled (tests are always available)
+# Site specific path components -- should begin with : if non-empty
+SITEPATH=
+
+# Standard path components for test modules
 TESTPATH=:$(DESTLIB)/test
 
 # Path components for machine- or system-dependent modules and shared libraries
