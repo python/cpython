@@ -914,7 +914,10 @@ sub cfuncline_helper($$$){
     $idx =~ s/\(\)//;		# ???? - why both of these?
     $args =~ s/(\s|\*)([a-z_][a-z_0-9]*),/\1<var>\2<\/var>,/g;
     $args =~ s/(\s|\*)([a-z_][a-z_0-9]*)$/\1<var>\2<\/var>/s;
-    return "$type <b>$idx</b>(<var>$args</var>)";
+    return ('<table cellpadding="0" cellspacing="0"><tr valign="baseline">'
+            . "<td><nobr>$type\&nbsp;<b>$idx</b>(</nobr></td>"
+            . "<td>$args)</td>"
+            . '</tr></table>');
 }
 sub do_cmd_cfuncline{
     local($_) = @_;
@@ -1021,7 +1024,9 @@ sub convert_args($){
 sub funcline_helper($$$){
     my($first, $idxitem, $arglist) = @_;
     return (($first ? '<dl>' : '')
-            . "<dt><b>$idxitem</b>(<var>$arglist</var>)\n<dd>");
+            . '<dt><table cellpadding="0" cellspacing="0"><tr valign="baseline">'
+            . "\n  <td><nobr><b>$idxitem</b>(</nobr></td>"
+            . "\n  <td><var>$arglist</var>)</td></tr></table>\n<dd>");
 }
 
 sub do_env_funcdesc{
@@ -2007,7 +2012,6 @@ sub get_verbatim_output_name($){
         # We've seen this one before; re-use the same output file.
         return $VerbatimFiles{$file};
     }
-    use File::Basename;
     my $srcname, $srcdir, $srcext;
     ($srcname, $srcdir, $srcext) = fileparse($file, '\..*');
     $filename = "$srcname.txt";
