@@ -2339,7 +2339,7 @@ imp_set_frozenmodules(PyObject *self, PyObject *args)
 			goto typeerror;
 		frozenmodules[i].name = PyString_AsString(name);
 		if (PyObject_IsTrue(code)) {
-			frozenmodules[i].code = PyString_AsString(code);
+			frozenmodules[i].code = (unsigned char *)PyString_AsString(code);
 			frozenmodules[i].size = PyString_Size(code);
 		} else {
 			frozenmodules[i].code = NULL;
@@ -2407,7 +2407,7 @@ imp_get_frozenmodules(PyObject *self, PyObject *args)
 		Py_INCREF(ob);
 		PyTuple_SET_ITEM(item, 0, ob);
 		if (p->code != NULL) {
-			ob = PyString_FromStringAndSize(p->code,
+			ob = PyString_FromStringAndSize((char *)p->code,
 				p->size >= 0 ? p->size : -(p->size));
 			if (ob == NULL)
 				goto error;
