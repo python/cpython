@@ -32,6 +32,8 @@ def loadfile(fp):
             # blank lines and comments
             continue
         parts = string.split(line, ":", 4)
+        if len(parts) != 5:
+            raise ValueError("Not enough fields in " + `line`)
         function, type, arg, refcount, comment = parts
         if refcount == "null":
             refcount = None
