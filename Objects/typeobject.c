@@ -2251,12 +2251,11 @@ wrap_hashfunc(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_call(PyObject *self, PyObject *args, void *wrapped)
+wrap_call(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 {
 	ternaryfunc func = (ternaryfunc)wrapped;
 
-	/* XXX What about keyword arguments? */
-	return (*func)(self, args, NULL);
+	return (*func)(self, args, kwds);
 }
 
 static PyObject *
@@ -2328,12 +2327,11 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
-wrap_init(PyObject *self, PyObject *args, void *wrapped)
+wrap_init(PyObject *self, PyObject *args, void *wrapped, PyObject *kwds)
 {
 	initproc func = (initproc)wrapped;
 
-	/* XXX What about keyword arguments? */
-	if (func(self, args, NULL) < 0)
+	if (func(self, args, kwds) < 0)
 		return NULL;
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -3177,6 +3175,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 typedef struct wrapperbase slotdef;
 
 #undef TPSLOT
+#undef FLSLOT
 #undef ETSLOT
 #undef SQSLOT
 #undef MPSLOT
@@ -3188,6 +3187,9 @@ typedef struct wrapperbase slotdef;
 
 #define TPSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
 	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
+#define FLSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC, FLAGS) \
+	{NAME, offsetof(PyTypeObject, SLOT), (void *)(FUNCTION), WRAPPER, \
+	 DOC, FLAGS}
 #define ETSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
 	{NAME, offsetof(etype, SLOT), (void *)(FUNCTION), WRAPPER, DOC}
 #define SQSLOT(NAME, SLOT, FUNCTION, WRAPPER, DOC) \
@@ -3346,8 +3348,8 @@ static slotdef slotdefs[] = {
 	       "x.__cmp__(y) <==> cmp(x,y)"),
 	TPSLOT("__hash__", tp_hash, slot_tp_hash, wrap_hashfunc,
 	       "x.__hash__() <==> hash(x)"),
-	TPSLOT("__call__", tp_call, slot_tp_call, wrap_call,
-	       "x.__call__(...) <==> x(...)"),
+	FLSLOT("__call__", tp_call, slot_tp_call, (wrapperfunc)wrap_call,
+	       "x.__call__(...) <==> x(...)", PyWrapperFlag_KEYWORDS),
 	TPSLOT("__getattribute__", tp_getattro, slot_tp_getattr_hook,
 	       wrap_binaryfunc, "x.__getattribute__('name') <==> x.name"),
 	TPSLOT("__getattribute__", tp_getattr, NULL, NULL, ""),
@@ -3379,11 +3381,11 @@ static slotdef slotdefs[] = {
 	       "descr.__get__(obj[, type]) -> value"),
 	TPSLOT("__set__", tp_descr_set, slot_tp_descr_set, wrap_descr_set,
 	       "descr.__set__(obj, value)"),
-	TPSLOT("__init__", tp_init, slot_tp_init, wrap_init,
+	FLSLOT("__init__", tp_init, slot_tp_init, (wrapperfunc)wrap_init,
 	       "x.__init__(...) initializes x; "
-	       "see x.__class__.__doc__ for signature"),
-	TPSLOT("__new__", tp_new, slot_tp_new, NULL,
-		""),
+	       "see x.__class__.__doc__ for signature",
+	       PyWrapperFlag_KEYWORDS),
+	TPSLOT("__new__", tp_new, slot_tp_new, NULL, ""),
 	{NULL}
 };
 

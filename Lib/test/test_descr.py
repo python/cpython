@@ -2340,6 +2340,14 @@ def str_of_str_subclass():
     vereq(capture.getvalue(), '41\n41\n')
     capture.close()
 
+def kwdargs():
+    if verbose: print "Testing keyword arguments to __init__, __call__..."
+    def f(a): return a
+    vereq(f.__call__(a=42), 42)
+    a = []
+    list.__init__(a, sequence=[0, 1, 2])
+    vereq(a, [0, 1, 2]) 
+
 def test_main():
     class_docstrings()
     lists()
@@ -2389,6 +2397,7 @@ def test_main():
     subclasspropagation()
     buffer_inherit()
     str_of_str_subclass()
+    kwdargs()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
