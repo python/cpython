@@ -192,7 +192,17 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 
 /* XXX Using _SGIAPI is the wrong thing, 
    but I don't know what the right thing is. */
+#undef _SGIAPI /* to avoid warning */
 #define _SGIAPI 1
+
+#undef _XOPEN_SOURCE
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#ifdef _SS_ALIGNSIZE
+#define HAVE_GETADDRINFO 1
+#define HAVE_GETNAMEINFO 1
+#endif
 
 #define HAVE_INET_PTON
 #include <netdb.h>
