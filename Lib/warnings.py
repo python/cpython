@@ -85,7 +85,7 @@ def showwarning(message, category, filename, lineno, file=None):
     file.write(formatwarning(message, category, filename, lineno))
 
 def formatwarning(message, category, filename, lineno):
-    """Hook to format a warning the standard way."""
+    """Function to format a warning the standard way."""
     import linecache
     s =  "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
     line = linecache.getline(filename, lineno).strip()
@@ -93,7 +93,8 @@ def formatwarning(message, category, filename, lineno):
         s = s + "  " + line + "\n"
     return s
 
-def filterwarnings(action, message="", category=Warning, module="", lineno=0):
+def filterwarnings(action, message="", category=Warning, module="", lineno=0,
+                   append=0):
     """Insert an entry into the list of warnings filters (at the front).
 
     Use assertions to check that all arguments have the right type."""
@@ -105,8 +106,12 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0):
     assert type(module) is types.StringType, "module must be a string"
     assert type(lineno) is types.IntType and lineno >= 0, \
            "lineno must be an int >= 0"
-    filters.insert(0, (action, re.compile(message, re.I), category,
-                       re.compile(module), lineno))
+    item = (action, re.compile(message, re.I), category,
+            re.compile(module), lineno)
+    if append:
+        filters.append(item)
+    else:
+        filters.insert(0, item)
 
 def resetwarnings():
     """Reset the list of warnings filters to its default state."""
@@ -128,7 +133,7 @@ def _processoptions(args):
 def _setoption(arg):
         parts = arg.split(':')
         if len(parts) > 5:
-            raise _OptionError("unparsable -W option %s" % `arg`)
+            raise _OptionError("too many fields (max 5): %s" % `arg`)
         while len(parts) < 5:
             parts.append('')
         action, message, category, module, lineno = [s.strip()
