@@ -591,11 +591,11 @@ parameter and are called with a non-string parameter.
   object is not one.
   Pass the address of an existing string object as an lvalue (it may
   be written into), and the new size desired.  On success, \var{*string}
-  holds the resized string object and 0 is returned; the address in
+  holds the resized string object and \code{0} is returned; the address in
   \var{*string} may differ from its input value.  If the
   reallocation fails, the original string object at \var{*string} is
   deallocated, \var{*string} is set to \NULL{}, a memory exception is set,
-  and -1 is returned.
+  and \code{-1} is returned.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyString_Format}{PyObject *format,
