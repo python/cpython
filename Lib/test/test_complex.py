@@ -1,26 +1,13 @@
-from test_support import TestFailed
+from test_support import TestFailed, fcmp
 from random import random
 
 # XXX need many, many more tests here.
 
 nerrors = 0
 
-def check_close_real(x, y, eps=1e-9):
-    """Return true iff floats x and y "are close\""""
-    # put the one with larger magnitude second
-    if abs(x) > abs(y):
-        x, y = y, x
-    if y == 0:
-        return abs(x) < eps
-    if x == 0:
-        return abs(y) < eps
-    # check that relative difference < eps
-    return abs((x-y)/y) < eps
-
-def check_close(x, y, eps=1e-9):
+def check_close(x, y):
     """Return true iff complexes x and y "are close\""""
-    return check_close_real(x.real, y.real, eps) and \
-           check_close_real(x.imag, y.imag, eps)
+    return fcmp(x.real, y.real) == 0 == fcmp(x.imag, y.imag)
 
 def test_div(x, y):
     """Compute complex z=x*y, and check that z/x==y and z/y==x."""
