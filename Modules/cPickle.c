@@ -127,9 +127,6 @@ LONG            Long (unbounded) integer; repr(i), then newline.
 
 static char MARKv = MARK;
 
-/* atol function from string module */
-static PyObject *atol_func;
-
 static PyObject *PickleError;
 static PyObject *PicklingError;
 static PyObject *UnpickleableError;
@@ -145,7 +142,7 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
   *__getstate___str, *__setstate___str, *__name___str, *__reduce___str,
   *write_str, *__safe_for_unpickling___str, *append_str,
   *read_str, *readline_str, *__main___str, *__basicnew___str,
-  *copy_reg_str, *dispatch_table_str, *safe_constructors_str, *empty_str;
+  *copy_reg_str, *dispatch_table_str, *safe_constructors_str;
 
 #ifndef PyList_SET_ITEM
 #define PyList_SET_ITEM(op, i, v) (((PyListObject *)(op))->ob_item[i] = (v))
@@ -1000,7 +997,8 @@ save_float(Picklerobject *self, PyObject *args) {
         int s, e;
         double f;
         long fhi, flo;
-        char str[9], *p = str;
+        char str[9];
+        unsigned char *p = (unsigned char *)str;
 
         *p = BINFLOAT;
         p++;
@@ -1056,31 +1054,31 @@ save_float(Picklerobject *self, PyObject *args) {
         p++;
 
         /* Second byte */
-        *p = (char) (((e&0xF)<<4) | (fhi>>24));
+        *p = (unsigned char) (((e&0xF)<<4) | (fhi>>24));
         p++;
 
         /* Third byte */
-        *p = (fhi>>16) & 0xFF;
+        *p = (unsigned char) ((fhi>>16) & 0xFF);
         p++;
 
         /* Fourth byte */
-        *p = (fhi>>8) & 0xFF;
+        *p = (unsigned char) ((fhi>>8) & 0xFF);
         p++;
 
         /* Fifth byte */
-        *p = fhi & 0xFF;
+        *p = (unsigned char) (fhi & 0xFF);
         p++;
 
         /* Sixth byte */
-        *p = (flo>>16) & 0xFF;
+        *p = (unsigned char) ((flo>>16) & 0xFF);
         p++;
 
         /* Seventh byte */
-        *p = (flo>>8) & 0xFF;
+        *p = (unsigned char) ((flo>>8) & 0xFF);
         p++;
 
         /* Eighth byte */
-        *p = flo & 0xFF;
+        *p = (unsigned char) (flo & 0xFF);
 
         if ((*self->write_func)(self, str, 9) < 0)
             return -1;
@@ -4458,7 +4456,7 @@ static struct PyMethodDef cPickle_methods[] = {
 
 static int
 init_stuff(PyObject *module_dict) {
-    PyObject *string, *copy_reg, *t, *r;
+    PyObject *copy_reg, *t, *r;
 
 #define INIT_STR(S) UNLESS(S ## _str=PyString_FromString(#S)) return -1;
 
@@ -4479,7 +4477,6 @@ init_stuff(PyObject *module_dict) {
     INIT_STR(dispatch_table);
     INIT_STR(safe_constructors);
     INIT_STR(__basicnew__);
-    UNLESS (empty_str=PyString_FromString("")) return -1;
 
     UNLESS (copy_reg = PyImport_ImportModule("copy_reg"))
         return -1;
@@ -4497,14 +4494,6 @@ init_stuff(PyObject *module_dict) {
     Py_DECREF(copy_reg);
 
     /* Down to here ********************************** */
-
-    UNLESS (string = PyImport_ImportModule("string"))
-        return -1;
-
-    UNLESS (atol_func = PyObject_GetAttrString(string, "atol"))
-        return -1;
-
-    Py_DECREF(string);
 
     UNLESS (empty_tuple = PyTuple_New(0))
         return -1;
