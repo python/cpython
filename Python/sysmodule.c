@@ -467,7 +467,7 @@ If true, tell the Python interpreter to dump VM measurements to\n\
 stderr.  If false, turn off dump.  The measurements are based on the\n\
 Pentium time-stamp counter."
 ); 
-#endif TSC
+#endif /* TSC */
 
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
