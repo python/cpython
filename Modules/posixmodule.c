@@ -1795,6 +1795,30 @@ posix_listdir(PyObject *self, PyObject *args)
 			d = NULL;
 			break;
 		}
+#ifdef Py_USING_UNICODE
+		if (Py_FileSystemDefaultEncoding != NULL) {
+			PyObject *w;
+
+			w = PyUnicode_FromEncodedObject(v,
+					Py_FileSystemDefaultEncoding, 
+					"strict");
+			Py_DECREF(v);
+			v = w;
+			if (v == NULL) {
+				Py_DECREF(d);
+				d = NULL;
+				break;
+			}
+			/* attempt to convert to ASCII */
+			w = PyUnicode_AsASCIIString(v);
+			if (w != NULL) {
+				Py_DECREF(v);
+				v = w;
+			}
+			else
+				PyErr_Clear();
+		}
+#endif
 		if (PyList_Append(d, v) != 0) {
 			Py_DECREF(v);
 			Py_DECREF(d);

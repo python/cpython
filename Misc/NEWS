@@ -25,7 +25,11 @@ Extension modules
 Library
 -------
 
-TBD
+- os.listdir() now returns Unicode strings on platforms that set
+  Py_FileSystemDefaultEncoding, for file names that are not representable
+  in ASCII.  (This currently only affects MacOS X; on Windows versions
+  with wide file name support os.listdir() already returned Unicode
+  strings.)
 
 Tools/Demos
 -----------
@@ -60,6 +64,9 @@ TBD
 
 Mac
 ---
+
+- os.listdir() now may return Unicode strings on MacOS X. See the general
+  news item under "Library".
 
 - A new method MacOS.WMAvailable() returns true if it is safe to access
   the window manager, false otherwise.
