@@ -30,6 +30,14 @@ Core and builtins
   to convert a long integer into a float which couldn't fit.
   See SF bug #676155.
 
+- Function objects now have an __module__ attribute that is bound to
+  the name of the module in which the function was defined.  This
+  attribute is used by pickle.whichmodule(), which changes the 
+  behavior of whichmodule slightly.  In Python 2.2 whichmodule()
+  returns "__main__" for functions that are not defined at the
+  top-level of a module (examples: methods, nested functions).  Now
+  whichmodule() will return the proper module name.
+
 Extension modules
 -----------------
 
