@@ -1,4 +1,4 @@
-# A parallelized "find(1)" using the thread module (SGI only for now).
+# A parallelized "find(1)" using the thread module.
 
 # This demonstrates the use of a work queue and worker threads.
 # It really does do more stats/sec when using multiple threads,
