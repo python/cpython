@@ -13,6 +13,7 @@ class TestShutil(unittest.TestCase):
         filename = tempfile.mktemp()
         self.assertRaises(OSError, shutil.rmtree, filename)
         self.assertEqual(shutil.rmtree(filename, True), None)
+        shutil.rmtree(filename, False, lambda func, arg, exc: None)
 
     def test_dont_move_dir_in_itself(self):
         src_dir = tempfile.mkdtemp()
