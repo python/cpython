@@ -350,6 +350,7 @@ long_format(aa, base)
 	return (object *)str;
 }
 
+#if 0
 /* Convert a string to a long int object, in a given base.
    Base zero implies a default depending on the number.
    External linkage: used in compile.c and stropmodule.c. */
@@ -361,6 +362,7 @@ long_scan(str, base)
 {
 	return long_escan(str, (char **)NULL, base);
 }
+#endif
 
 object *
 long_escan(str, pend, base)
