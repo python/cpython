@@ -6,7 +6,7 @@
 #
 # XXX Not complete: \indexii etc.; \funcitem etc.
 
-package main; 
+package main;
 
 # \bcode and \ecode brackets around verbatim
 
@@ -28,7 +28,7 @@ sub do_cmd_e{ "\\" }
 
 sub do_cmd_optional{
 	local($_) = @_;
-	s/$any_next_pair_pr_rx/<BIG>\[<\/BIG><VAR>\2<\/VAR><BIG>\]<\/BIG>/;
+	s/$any_next_pair_pr_rx/<BIG>\[<\/BIG>\2<BIG>\]<\/BIG>/;
 	$_;
 }
 
