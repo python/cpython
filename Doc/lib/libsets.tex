@@ -110,6 +110,15 @@ subset of the second set (is a subset, but is not equal).
 A set is greater than another set if and only if the first set is a proper
 superset of the second set (is a superset, but is not equal).
 
+The subset and equality comparisons do not generalize to a complete
+ordering function.  For example, any two disjoint sets are not equal and
+are not subsets of each other, so \emph{none} of the following are true:
+\code{\var{a}<\var{b}}, \code{\var{a}==\var{b}}, or \code{\var{a}>\var{b}}.
+Accordingly, sets do not implement the \method{__cmp__} method.
+
+Since sets only define partial ordering (subset relationships), the output
+of the \method{list.sort()} method is undefined for lists of sets.
+
 The following table lists operations available in \class{ImmutableSet}
 but not found in \class{Set}:
 
@@ -175,9 +184,9 @@ False
 >>> employees.issuperset(engineers)
 True
 >>> for group in [engineers, programmers, management, employees]:
-        group.discard('Susan')                # unconditionally remove element
-        print group
-
+...     group.discard('Susan')                # unconditionally remove element
+...     print group
+...
 Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
 Set(['Janice', 'Jack', 'Sam'])
 Set(['Jane', 'Zack', 'Jack'])
