@@ -418,6 +418,52 @@ class TestCase(unittest.TestCase):
             except OSError:
                 pass
 
+    # Test zip()'s use of iterators.
+    def test_builtin_zip(self):
+        self.assertRaises(TypeError, zip)
+        self.assertRaises(TypeError, zip, None)
+        self.assertRaises(TypeError, zip, range(10), 42)
+        self.assertRaises(TypeError, zip, range(10), zip)
+
+        self.assertEqual(zip(IteratingSequenceClass(3)),
+                         [(0,), (1,), (2,)])
+        self.assertEqual(zip(SequenceClass(3)),
+                         [(0,), (1,), (2,)])
+
+        d = {"one": 1, "two": 2, "three": 3}
+        self.assertEqual(d.items(), zip(d, d.itervalues()))
+
+        # Generate all ints starting at constructor arg.
+        class IntsFrom:
+            def __init__(self, start):
+                self.i = start
+
+            def __iter__(self):
+                return self
+
+            def next(self):
+                i = self.i
+                self.i = i+1
+                return i
+
+        f = open(TESTFN, "w")
+        try:
+            f.write("a\n" "bbb\n" "cc\n")
+        finally:
+            f.close()
+        f = open(TESTFN, "r")
+        try:
+            self.assertEqual(zip(IntsFrom(0), f, IntsFrom(-100)),
+                             [(0, "a\n", -100),
+                              (1, "bbb\n", -99),
+                              (2, "cc\n", -98)])
+        finally:
+            f.close()
+            try:
+                unlink(TESTFN)
+            except OSError:
+                pass
+
     # Test reduces()'s use of iterators.
     def test_builtin_reduce(self):
         from operator import add

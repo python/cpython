@@ -17,17 +17,13 @@ Core
 
 - The following functions were generalized to work nicely with iterator
   arguments:
-    filter()
-    list()
-    map()
-    max()
-    min()
-    reduce()
-    tuple() (PySequence_Tuple() and PySequence_Fast() in C API)
+    map(), filter(), reduce()
+    list(), tuple() (PySequence_Tuple() and PySequence_Fast() in C API)
+    max(), min()
+    zip()
     .join() method of strings
     'x in y' and 'x not in y' (PySequence_Contains() in C API)
     operator.countOf() (PySequence_Count() in C API)
-    XXX TODO zip()
 
 
 What's New in Python 2.1 (final)?
