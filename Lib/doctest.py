@@ -314,16 +314,13 @@ def _normalize_module(module, depth=2):
     else:
         raise TypeError("Expected a module, string, or None")
 
-def _tag_msg(tag, msg, indent_msg=True):
+def _tag_msg(tag, msg, indent='    '):
     """
     Return a string that displays a tag-and-message pair nicely,
     keeping the tag and its message on the same line when that
-    makes sense.  If `indent_msg` is true, then messages that are
-    put on separate lines will be indented.
+    makes sense.  If the message is displayed on separate lines,
+    then `indent` is added to the beginning of each line.
     """
-    # What string should we use to indent contents?
-    INDENT = '    '
-
     # If the message doesn't end in a newline, then add one.
     if msg[-1:] != '\n':
         msg += '\n'
@@ -334,10 +331,8 @@ def _tag_msg(tag, msg, indent_msg=True):
         msg.find('\n', 0, len(msg)-1) == -1):
         return '%s: %s' % (tag, msg)
     else:
-        if indent_msg:
-            msg = '\n'.join([INDENT+l for l in msg.split('\n')])
-            msg = msg[:-len(INDENT)]
-        return '%s:\n%s' % (tag, msg)
+        msg = '\n'.join([indent+l for l in msg[:-1].split('\n')])
+        return '%s:\n%s\n' % (tag, msg)
 
 # Override some StringIO methods.
 class _SpoofOut(StringIO):
@@ -367,14 +362,14 @@ class _SpoofOut(StringIO):
 ##   "source."  The Example class also includes information about
 ##   where the example was extracted from.
 ##
-## - A "doctest" is a collection of examples extracted from a string
-##   (such as an object's docstring).  The DocTest class also includes
-##   information about where the string was extracted from.
+## - A "doctest" is a collection of examples, typically extracted from
+##   a string (such as an object's docstring).  The DocTest class also
+##   includes information about where the string was extracted from.
 
 class Example:
     """
     A single doctest example, consisting of source code and expected
-    output.  Example defines the following attributes:
+    output.  `Example` defines the following attributes:
 
       - source:  A single Python statement, always ending with a newline.
         The constructor adds a newline if needed.
@@ -402,7 +397,7 @@ class Example:
 class DocTest:
     """
     A collection of doctest examples that should be run in a single
-    namespace.  Each DocTest defines the following attributes:
+    namespace.  Each `DocTest` defines the following attributes:
 
       - examples: the list of examples.
 
@@ -412,29 +407,30 @@ class DocTest:
       - name: A name identifying the DocTest (typically, the name of
         the object whose docstring this DocTest was extracted from).
 
-      - docstring: The docstring being tested
-
       - filename: The name of the file that this DocTest was extracted
-        from.
+        from, or `None` if the filename is unknown.
 
       - lineno: The line number within filename where this DocTest
-        begins.  This line number is zero-based, with respect to the
-        beginning of the file.
+        begins, or `None` if the line number is unavailable.  This
+        line number is zero-based, with respect to the beginning of
+        the file.
+
+      - docstring: The string that the examples were extracted from,
+        or `None` if the string is unavailable.
     """
-    def __init__(self, docstring, globs, name, filename, lineno):
+    def __init__(self, examples, globs, name, filename, lineno, docstring):
         """
-        Create a new DocTest, by extracting examples from `docstring`.
-        The DocTest's globals are initialized with a copy of `globs`.
+        Create a new DocTest containing the given examples.  The
+        DocTest's globals are initialized with a copy of `globs`.
         """
-        # Store a copy of the globals
+        assert not isinstance(examples, basestring), \
+               "DocTest no longer accepts str; use DocTestParser instead"
+        self.examples = examples
+        self.docstring = docstring
         self.globs = globs.copy()
-        # Store identifying information
         self.name = name
         self.filename = filename
         self.lineno = lineno
-        # Parse the docstring.
-        self.docstring = docstring
-        self.examples = Parser(name, docstring).get_examples()
 
     def __repr__(self):
         if len(self.examples) == 0:
@@ -455,23 +451,13 @@ class DocTest:
                    (other.name, other.filename, other.lineno, id(other)))
 
 ######################################################################
-## 2. Example Parser
+## 2. DocTestParser
 ######################################################################
 
-class Parser:
+class DocTestParser:
     """
-    Extract doctests from a string.
+    A class used to parse strings containing doctest examples.
     """
-    def __init__(self, name, string):
-        """
-        Prepare to extract doctests from string `string`.
-
-        `name` is an arbitrary (string) name associated with the string,
-        and is used only in error messages.
-        """
-        self.name = name
-        self.string = string.expandtabs()
-
     _EXAMPLE_RE = re.compile(r'''
         # Source consists of a PS1 line followed by zero or more PS2 lines.
         (?P<source>
@@ -486,13 +472,28 @@ class Parser:
         ''', re.MULTILINE | re.VERBOSE)
     _IS_BLANK_OR_COMMENT = re.compile('^[ ]*(#.*)?$').match
 
-    def get_examples(self):
+    def get_doctest(self, string, globs, name, filename, lineno):
         """
-        Extract all doctest examples, from the string, and return them
-        as a list of `Example` objects.  Line numbers are 0-based,
-        because it's most common in doctests that nothing interesting
-        appears on the same line as opening triple-quote, and so the
-        first interesting line is called \"line 1\" then.
+        Extract all doctest examples from the given string, and
+        collect them into a `DocTest` object.
+
+        `globs`, `name`, `filename`, and `lineno` are attributes for
+        the new `DocTest` object.  See the documentation for `DocTest`
+        for more information.
+        """
+        return DocTest(self.get_examples(string, name), globs,
+                       name, filename, lineno, string)
+
+    def get_examples(self, string, name='<string>'):
+        """
+        Extract all doctest examples from the given string, and return
+        them as a list of `Example` objects.  Line numbers are
+        0-based, because it's most common in doctests that nothing
+        interesting appears on the same line as opening triple-quote,
+        and so the first interesting line is called \"line 1\" then.
+
+        The optional argument `name` is a name identifying this
+        string, and is only used for error messages.
 
         >>> text = '''
         ...        >>> x, y = 2, 3  # no output expected
@@ -506,7 +507,7 @@ class Parser:
         ...        >>> x+y
         ...        5
         ...        '''
-        >>> for x in Parser('<string>', text).get_examples():
+        >>> for x in DocTestParser().get_examples(text):
         ...     print (x.source, x.want, x.lineno)
         ('x, y = 2, 3  # no output expected\\n', '', 1)
         ('if 1:\\n    print x\\n    print y\\n', '2\\n3\\n', 2)
@@ -515,31 +516,34 @@ class Parser:
         examples = []
         charno, lineno = 0, 0
         # Find all doctest examples in the string:
-        for m in self._EXAMPLE_RE.finditer(self.string):
+        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
             # Update lineno (lines before this example)
-            lineno += self.string.count('\n', charno, m.start())
+            lineno += string.count('\n', charno, m.start())
 
             # Extract source/want from the regexp match.
-            (source, want) = self._parse_example(m, lineno)
+            (source, want) = self._parse_example(m, name, lineno)
             if self._IS_BLANK_OR_COMMENT(source):
                 continue
             examples.append( Example(source, want, lineno) )
 
             # Update lineno (lines inside this example)
-            lineno += self.string.count('\n', m.start(), m.end())
+            lineno += string.count('\n', m.start(), m.end())
             # Update charno.
             charno = m.end()
         return examples
 
-    def get_program(self):
+    def get_program(self, string, name="<string>"):
         """
-        Return an executable program from the string, as a string.
+        Return an executable program from the given string, as a string.
 
         The format of this isn't rigidly defined.  In general, doctest
         examples become the executable statements in the result, and
         their expected outputs become comments, preceded by an \"#Expected:\"
         comment.  Everything else (text, comments, everything not part of
         a doctest test) is also placed in comments.
+
+        The optional argument `name` is a name identifying this
+        string, and is only used for error messages.
 
         >>> text = '''
         ...        >>> x, y = 2, 3  # no output expected
@@ -553,7 +557,7 @@ class Parser:
         ...        >>> x+y
         ...        5
         ...        '''
-        >>> print Parser('<string>', text).get_program()
+        >>> print DocTestParser().get_program(text)
         x, y = 2, 3  # no output expected
         if 1:
             print x
@@ -570,15 +574,15 @@ class Parser:
         output = []
         charnum, lineno = 0, 0
         # Find all doctest examples in the string:
-        for m in self._EXAMPLE_RE.finditer(self.string):
+        for m in self._EXAMPLE_RE.finditer(string.expandtabs()):
             # Add any text before this example, as a comment.
             if m.start() > charnum:
-                lines = self.string[charnum:m.start()-1].split('\n')
+                lines = string[charnum:m.start()-1].split('\n')
                 output.extend([self._comment_line(l) for l in lines])
                 lineno += len(lines)
 
             # Extract source/want from the regexp match.
-            (source, want) = self._parse_example(m, lineno, False)
+            (source, want) = self._parse_example(m, name, lineno, False)
             # Display the source
             output.append(source)
             # Display the expected output, if any
@@ -587,11 +591,11 @@ class Parser:
                 output.extend(['#     '+l for l in want.split('\n')])
 
             # Update the line number & char number.
-            lineno += self.string.count('\n', m.start(), m.end())
+            lineno += string.count('\n', m.start(), m.end())
             charnum = m.end()
         # Add any remaining text, as comments.
         output.extend([self._comment_line(l)
-                       for l in self.string[charnum:].split('\n')])
+                       for l in string[charnum:].split('\n')])
         # Trim junk on both ends.
         while output and output[-1] == '#':
             output.pop()
@@ -600,15 +604,15 @@ class Parser:
         # Combine the output, and return it.
         return '\n'.join(output)
 
-    def _parse_example(self, m, lineno, add_newlines=True):
+    def _parse_example(self, m, name, lineno, add_newlines=True):
         # Get the example's indentation level.
         indent = len(m.group('indent'))
 
         # Divide source into lines; check that they're properly
         # indented; and then strip their indentation & prompts.
         source_lines = m.group('source').split('\n')
-        self._check_prompt_blank(source_lines, indent, lineno)
-        self._check_prefix(source_lines[1:], ' '*indent+'.', lineno)
+        self._check_prompt_blank(source_lines, indent, name, lineno)
+        self._check_prefix(source_lines[1:], ' '*indent+'.', name, lineno)
         source = '\n'.join([sl[indent+4:] for sl in source_lines])
         if len(source_lines) > 1 and add_newlines:
             source += '\n'
@@ -616,7 +620,7 @@ class Parser:
         # Divide want into lines; check that it's properly
         # indented; and then strip the indentation.
         want_lines = m.group('want').rstrip().split('\n')
-        self._check_prefix(want_lines, ' '*indent,
+        self._check_prefix(want_lines, ' '*indent, name,
                            lineno+len(source_lines))
         want = '\n'.join([wl[indent:] for wl in want_lines])
         if len(want) > 0 and add_newlines:
@@ -631,20 +635,20 @@ class Parser:
         else:
             return '#'
 
-    def _check_prompt_blank(self, lines, indent, lineno):
+    def _check_prompt_blank(self, lines, indent, name, lineno):
         for i, line in enumerate(lines):
             if len(line) >= indent+4 and line[indent+3] != ' ':
                 raise ValueError('line %r of the docstring for %s '
                                  'lacks blank after %s: %r' %
-                                 (lineno+i+1, self.name,
+                                 (lineno+i+1, name,
                                   line[indent:indent+3], line))
 
-    def _check_prefix(self, lines, prefix, lineno):
+    def _check_prefix(self, lines, prefix, name, lineno):
         for i, line in enumerate(lines):
             if line and not line.startswith(prefix):
                 raise ValueError('line %r of the docstring for %s has '
                                  'inconsistent leading whitespace: %r' %
-                                 (lineno+i+1, self.name, line))
+                                 (lineno+i+1, name, line))
 
 
 ######################################################################
@@ -660,12 +664,12 @@ class DocTestFinder:
     classmethods, and properties.
     """
 
-    def __init__(self, verbose=False, doctest_factory=DocTest,
+    def __init__(self, verbose=False, parser=DocTestParser(),
                  recurse=True, _namefilter=None):
         """
         Create a new doctest finder.
 
-        The optional argument `doctest_factory` specifies a class or
+        The optional argument `parser` specifies a class or
         function that should be used to create new DocTest objects (or
         objects that implement the same interface as DocTest).  The
         signature for this factory function should match the signature
@@ -674,7 +678,7 @@ class DocTestFinder:
         If the optional argument `recurse` is false, then `find` will
         only examine the given object, and not any contained objects.
         """
-        self._doctest_factory = doctest_factory
+        self._parser = parser
         self._verbose = verbose
         self._recurse = recurse
         # _namefilter is undocumented, and exists only for temporary backward-
@@ -885,7 +889,8 @@ class DocTestFinder:
             filename = None
         else:
             filename = getattr(module, '__file__', module.__name__)
-        return self._doctest_factory(docstring, globs, name, filename, lineno)
+        return self._parser.get_doctest(docstring, globs, name,
+                                        filename, lineno)
 
     def _find_lineno(self, obj, source_lines):
         """
@@ -1254,30 +1259,27 @@ class DocTestRunner:
         if compileflags is None:
             compileflags = _extract_future_flags(test.globs)
 
-        save_stdout = sys.stdout
         if out is None:
-            out = save_stdout.write
-        sys.stdout = self._fakeout
+            out = sys.stdout.write
+        saveout = sys.stdout
 
-        # Patch pdb.set_trace to restore sys.stdout, so that interactive
-        # debugging output is visible (not still redirected to self._fakeout).
-        # Note that we run "the real" pdb.set_trace (captured at doctest
-        # import time) in our replacement.  Because the current run() may
-        # run another doctest (and so on), the current pdb.set_trace may be
-        # our set_trace function, which changes sys.stdout.  If we called
-        # a chain of those, we wouldn't be left with the save_stdout
-        # *this* run() invocation wants.
+        # Note that don't save away the previous pdb.set_trace. Rather,
+        # we safe pdb.set_trace on import (see import section above).
+        # We then call and restore that original cersion.  We do it this
+        # way to make this feature testable.  If we kept and called the
+        # previous version, we'd end up restoring the original stdout,
+        # which is not what we want.
         def set_trace():
-            sys.stdout = save_stdout
+            sys.stdout = saveout
             real_pdb_set_trace()
 
-        save_set_trace = pdb.set_trace
-        pdb.set_trace = set_trace
         try:
+            sys.stdout = self._fakeout
+            pdb.set_trace = set_trace
             return self.__run(test, compileflags, out)
         finally:
-            sys.stdout = save_stdout
-            pdb.set_trace = save_set_trace
+            sys.stdout = saveout
+            pdb.set_trace = real_pdb_set_trace
             if clear_globs:
                 test.globs.clear()
 
@@ -1492,7 +1494,8 @@ class DebugRunner(DocTestRunner):
        It contains the test, the example, and the original exception:
 
          >>> runner = DebugRunner(verbose=False)
-         >>> test = DocTest('>>> raise KeyError\n42', {}, 'foo', 'foo.py', 0)
+         >>> test = DocTestParser().get_doctest('>>> raise KeyError\n42',
+         ...                                    {}, 'foo', 'foo.py', 0)
          >>> try:
          ...     runner.run(test)
          ... except UnexpectedException, failure:
@@ -1515,7 +1518,7 @@ class DebugRunner(DocTestRunner):
 
        If the output doesn't match, then a DocTestFailure is raised:
 
-         >>> test = DocTest('''
+         >>> test = DocTestParser().get_doctest('''
          ...      >>> x = 1
          ...      >>> x
          ...      2
@@ -1547,7 +1550,7 @@ class DebugRunner(DocTestRunner):
          >>> test.globs
          {'x': 1}
 
-         >>> test = DocTest('''
+         >>> test = DocTestParser().get_doctest('''
          ...      >>> x = 2
          ...      >>> raise KeyError
          ...      ''', {}, 'foo', 'foo.py', 0)
@@ -1563,7 +1566,7 @@ class DebugRunner(DocTestRunner):
 
        But the globals are cleared if there is no error:
 
-         >>> test = DocTest('''
+         >>> test = DocTestParser().get_doctest('''
          ...      >>> x = 2
          ...      ''', {}, 'foo', 'foo.py', 0)
 
@@ -1779,7 +1782,7 @@ class Tester:
                                         optionflags=optionflags)
 
     def runstring(self, s, name):
-        test = DocTest(s, self.globs, name, None, None)
+        test = DocTestParser().get_doctest(s, self.globs, name, None, None)
         if self.verbose:
             print "Running string", name
         (f,t) = self.testrunner.run(test)
@@ -1887,7 +1890,7 @@ class DocTestCase(unittest.TestCase):
            UnexpectedException errors if there is an unexepcted
            exception:
 
-             >>> test = DocTest('>>> raise KeyError\n42',
+             >>> test = DocTestParser().get_doctest('>>> raise KeyError\n42',
              ...                {}, 'foo', 'foo.py', 0)
              >>> case = DocTestCase(test)
              >>> try:
@@ -1912,7 +1915,7 @@ class DocTestCase(unittest.TestCase):
 
            If the output doesn't match, then a DocTestFailure is raised:
 
-             >>> test = DocTest('''
+             >>> test = DocTestParser().get_doctest('''
              ...      >>> x = 1
              ...      >>> x
              ...      2
@@ -2032,7 +2035,7 @@ def DocFileTest(path, package=None, globs=None,
     if globs is None:
         globs = {}
 
-    test = DocTest(doc, globs, name, path, 0)
+    test = DocTestParser().get_doctest(doc, globs, name, path, 0)
 
     return DocFileCase(test, optionflags, setUp, tearDown)
 
@@ -2138,7 +2141,7 @@ def script_from_examples(s):
        #            Ho hum
        """
 
-    return Parser('<string>', s).get_program()
+    return DocTestParser().get_program(s)
 
 def _want_comment(example):
     """

@@ -183,7 +183,9 @@ constructor:
     ...     example
     ... '''
     >>> globs = {} # globals to run the test in.
-    >>> test = doctest.DocTest(docstring, globs, 'some_test', 'some_file', 20)
+    >>> parser = doctest.DocTestParser()
+    >>> test = parser.get_doctest(docstring, globs, 'some_test',
+    ...                           'some_file', 20)
     >>> print test
     <DocTest some_test from some_file:20 (2 examples)>
     >>> len(test.examples)
@@ -217,7 +219,7 @@ expected output of an example, then `DocTest` will raise a ValueError:
     ...       bad
     ...     indentation
     ...     '''
-    >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
+    >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
     ValueError: line 4 of the docstring for some_test has inconsistent leading whitespace: '    indentation'
 
@@ -229,7 +231,7 @@ continuation lines, then `DocTest` will raise a ValueError:
     ...     ...          2)
     ...       ('bad', 'indentation')
     ...     '''
-    >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
+    >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
     ValueError: line 2 of the docstring for some_test has inconsistent leading whitespace: '    ...          2)'
 
@@ -237,7 +239,7 @@ If there's no blank space after a PS1 prompt ('>>>'), then `DocTest`
 will raise a ValueError:
 
     >>> docstring = '>>>print 1\n1'
-    >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
+    >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
     ValueError: line 1 of the docstring for some_test lacks blank after >>>: '>>>print 1'
 
@@ -245,7 +247,7 @@ If there's no blank space after a PS2 prompt ('...'), then `DocTest`
 will raise a ValueError:
 
     >>> docstring = '>>> if 1:\n...print 1\n1'
-    >>> doctest.DocTest(docstring, globs, 'some_test', 'filename', 0)
+    >>> parser.get_doctest(docstring, globs, 'some_test', 'filename', 0)
     Traceback (most recent call last):
     ValueError: line 2 of the docstring for some_test lacks blank after ...: '...print 1'
 
@@ -998,7 +1000,8 @@ def test_pdb_set_trace():
       ... >>> x = 42
       ... >>> import pdb; pdb.set_trace()
       ... '''
-      >>> test = doctest.DocTest(doc, {}, "foo", "foo.py", 0)
+      >>> parser = doctest.DocTestParser()
+      >>> test = parser.get_doctest(doc, {}, "foo", "foo.py", 0)
       >>> runner = doctest.DocTestRunner(verbose=False)
 
     To demonstrate this, we'll create a fake standard input that
@@ -1040,7 +1043,7 @@ def test_pdb_set_trace():
       ... >>> x=1
       ... >>> calls_set_trace()
       ... '''
-      >>> test = doctest.DocTest(doc, globals(), "foo", "foo.py", 0)
+      >>> test = parser.get_doctest(doc, globals(), "foo", "foo.py", 0)
 
       >>> fake_stdin = tempfile.TemporaryFile(mode='w+')
       >>> fake_stdin.write('\n'.join([
