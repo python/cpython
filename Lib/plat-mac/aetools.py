@@ -154,7 +154,7 @@ class TalkTo:
         Evt.WaitNextEvent(0,0)
         return 1
     __ensure_WMAvailable = classmethod(__ensure_WMAvailable)
-
+    
     def __init__(self, signature=None, start=0, timeout=0):
         """Create a communication channel with a particular application.
         
@@ -284,6 +284,18 @@ class TalkTo:
             
     set = _set
 
+	# Magic glue to allow suite-generated classes to function somewhat
+	# like the "application" class in OSA.
+	
+    def __getattr__(self, name):
+        if self._elemdict.has_key(name):
+            cls = self._elemdict[name]
+            return DelayedComponentItem(cls, None)
+        if self._propdict.has_key(name):
+            cls = self._propdict[name]
+            return cls()
+        raise AttributeError, name
+        
 # Tiny Finder class, for local use only
 
 class _miniFinder(TalkTo):
