@@ -41,15 +41,6 @@ import string
 import marshal
 
 
-# Global variables
-func_norm_dict = {}
-func_norm_counter = 0
-if hasattr(os, 'getpid'):
-	pid_string = `os.getpid()`
-else:
-	pid_string = ''
-
-
 # Sample timer for use with 
 #i_count = 0
 #def integer_timer():
@@ -125,15 +116,6 @@ def help():
 #       all subfunctions.
 # [5] = A dictionary indicating for each function name, the number of times
 #       it was called by us.
-#**************************************************************************
-# We produce function names via a repr() call on the f_code object during
-# profiling. This save a *lot* of CPU time.  This results in a string that
-# always looks like:
-#   <code object main at 87090, file "/a/lib/python-local/myfib.py", line 76>
-# After we "normalize it, it is a tuple of filename, line, function-name.
-# We wait till we are done profiling to do the normalization.
-# *IF* this repr format changes, then only the normalization routine should
-# need to be fixed.
 #**************************************************************************
 class Profile:
 
@@ -350,44 +332,11 @@ class Profile:
 		self.stats = {}
 		for func in self.timings.keys():
 			cc, ns, tt, ct, callers = self.timings[func]
-			nor_func = self.func_normalize(func)
-			nor_callers = {}
+			callers = callers.copy()
 			nc = 0
 			for func_caller in callers.keys():
-				nor_callers[self.func_normalize(func_caller)]=\
-					  callers[func_caller]
 				nc = nc + callers[func_caller]
-			self.stats[nor_func] = cc, nc, tt, ct, nor_callers
-
-
-	# Override the following function if you can figure out
-	# a better name for the binary f_code entries.  I just normalize
-	# them sequentially in a dictionary.  It would be nice if we could
-	# *really* see the name of the underlying C code :-).  Sometimes
-	#  you can figure out what-is-what by looking at caller and callee
-	# lists (and knowing what your python code does).
-	
-	def func_normalize(self, func_name):
-		global func_norm_dict
-		global func_norm_counter
-		global func_sequence_num
-
-		if func_norm_dict.has_key(func_name):
-			return func_norm_dict[func_name]
-		if type(func_name) == type(""):
-			long_name = string.split(func_name)
-			file_name = long_name[-3][1:-2]
-			func = long_name[2]
-			lineno = long_name[-1][:-1]
-			if '?' == func:   # Until I find out how to may 'em...
-				file_name = 'python'
-				func_norm_counter = func_norm_counter + 1
-				func = pid_string + ".C." + `func_norm_counter`
-			result =  file_name ,  string.atoi(lineno) , func
-		else:
-			result = func_name
-		func_norm_dict[func_name] = result
-		return result
+			self.stats[func] = cc, nc, tt, ct, callers
 
 
 	# The following two methods can be called by clients to use
@@ -553,14 +502,11 @@ class OldProfile(Profile):
 		self.stats = {}
 		for func in self.timings.keys():
 			tt, ct, callers = self.timings[func]
-			nor_func = self.func_normalize(func)
-			nor_callers = {}
+			callers = callers.copy()
 			nc = 0
 			for func_caller in callers.keys():
-				nor_callers[self.func_normalize(func_caller)]=\
-					  callers[func_caller]
 				nc = nc + callers[func_caller]
-			self.stats[nor_func] = nc, nc, tt, ct, nor_callers
+			self.stats[func] = nc, nc, tt, ct, callers
 
 		
 
@@ -605,8 +551,7 @@ class HotProfile(Profile):
 		self.stats = {}
 		for func in self.timings.keys():
 			nc, tt = self.timings[func]
-			nor_func = self.func_normalize(func)
-			self.stats[nor_func] = nc, nc, tt, 0, {}
+			self.stats[func] = nc, nc, tt, 0, {}
 
 		
 
