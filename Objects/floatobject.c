@@ -14,6 +14,11 @@
 #include "objimpl.h"
 #include "errors.h"
 
+#ifndef THINK_C
+extern double fmod PROTO((double, double));
+extern double pow PROTO((double, double));
+#endif
+
 object *
 newfloatobject(fval)
 	double fval;
@@ -157,7 +162,6 @@ float_rem(v, w)
 	object *w;
 {
 	double wx;
-	extern double fmod PROTO((double, double));
 	if (!is_floatobject(w)) {
 		err_badarg();
 		return NULL;
@@ -176,7 +180,6 @@ float_pow(v, w)
 	object *w;
 {
 	double iv, iw, ix;
-	extern double pow PROTO((double, double));
 	if (!is_floatobject(w)) {
 		err_badarg();
 		return NULL;
