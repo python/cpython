@@ -35,10 +35,10 @@ class _localized_month:
         self.format = format
 
     def __getitem__(self, i):
-        self.data = [strftime(self.format, (2001, j, 1, 12, 0, 0, 1, 1, 0))
+        data = [strftime(self.format, (2001, j, 1, 12, 0, 0, 1, 1, 0))
                      for j in range(1, 13)]
-        self.data.insert(0, "")
-        return self.data[i]
+        data.insert(0, "")
+        return data[i]
 
     def __len__(self):
         return 13
@@ -49,9 +49,9 @@ class _localized_day:
 
     def __getitem__(self, i):
         # January 1, 2001, was a Monday.
-        self.data = [strftime(self.format, (2001, 1, j+1, 12, 0, 0, j, j+1, 0))
+        data = [strftime(self.format, (2001, 1, j+1, 12, 0, 0, j, j+1, 0))
                      for j in range(7)]
-        return self.data[i]
+        return data[i]
 
     def __len__(self_):
         return 7
