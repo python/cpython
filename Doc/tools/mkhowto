@@ -43,7 +43,6 @@ import glob
 import os
 import re
 import shutil
-import string
 import sys
 
 
@@ -243,13 +242,18 @@ class Options:
         if not self.formats:
             self.formats = self.DEFAULT_FORMATS
         # determine the base set of texinputs directories:
-        texinputs = string.split(os.environ.get("TEXINPUTS", ""), os.pathsep)
+        texinputs = os.environ.get("TEXINPUTS", "").split(os.pathsep)
         if not texinputs:
             texinputs = ['']
-        self.base_texinputs = [
-            os.path.join(TOPDIR, "paper-" + self.paper),
-            os.path.join(TOPDIR, "texinputs"),
-            ] + texinputs
+        mydirs = [os.path.join(TOPDIR, "paper-" + self.paper),
+                  os.path.join(TOPDIR, "texinputs"),
+                  ]
+        if '' in texinputs:
+            i = texinputs.index('')
+            texinputs[i:i] = mydirs
+        else:
+            texinputs += mydirs
+        self.base_texinputs = texinputs
         if self.builddir:
             self.builddir = os.path.abspath(self.builddir)
 
@@ -320,8 +324,9 @@ class Job:
             self.cleanup()
 
     def setup_texinputs(self):
-        texinputs = [self.filedir] + list(self.options.base_texinputs)
-        os.environ["TEXINPUTS"] = string.join(texinputs, os.pathsep)
+        texinputs = [self.filedir] + self.options.base_texinputs
+        texinputs = os.pathsep.join(texinputs)
+        os.environ["TEXINPUTS"] = texinputs
         self.message("TEXINPUTS=" + os.environ["TEXINPUTS"])
 
     def build_aux(self, binary=None):
@@ -391,7 +396,7 @@ class Job:
         if max_split_depth is None:
             max_split_depth = self.options.max_split_depth
         texfile = None
-        for p in string.split(os.environ["TEXINPUTS"], os.pathsep):
+        for p in os.environ["TEXINPUTS"].split(os.pathsep):
             fn = os.path.join(p, self.doc + ".tex")
             if os.path.isfile(fn):
                 texfile = fn
@@ -413,7 +418,7 @@ class Job:
                 "-dir", builddir,
                 texfile
                 ]
-        self.run(string.join(args))     # XXX need quoting!
+        self.run(" ".join(args))     # XXX need quoting!
         # ... postprocess
         shutil.copyfile(self.options.style_file,
                         os.path.join(builddir, self.doc + ".css"))
@@ -636,12 +641,12 @@ _to_perl["$"] = "\\$"
 _to_perl['"'] = '\\"'
 
 def string_to_perl(s):
-    return string.join(map(_to_perl.get, s), '')
+    return "".join(map(_to_perl.get, s))
 
 
 def check_for_bibtex(filename):
     fp = open(filename)
-    pos = string.find(fp.read(), r"\bibdata{")
+    pos = fp.read().find(r"\bibdata{")
     fp.close()
     return pos >= 0
 
