@@ -10,33 +10,41 @@ class Chooser:
     """Ask for a color"""
     def __init__(self,
                  master = None,
-                 initialcolor = None,
                  databasefile = None,
                  initfile = None,
                  ignore = None,
                  wantspec = None):
         self.__master = master
-        self.__initialcolor = initialcolor
         self.__databasefile = databasefile
         self.__initfile = initfile or os.path.expanduser('~/.pynche')
         self.__ignore = ignore
         self.__pw = None
         self.__wantspec = wantspec
 
-    def show(self):
+    def show(self, color=None):
+        if not self.__master:
+            from Tkinter import Tk
+            self.__master = Tk()
         if not self.__pw:
             self.__pw, self.__sb = \
                        Main.build(master = self.__master,
-                                  initialcolor = self.__initialcolor,
                                   initfile = self.__initfile,
                                   ignore = self.__ignore)
+        else:
+            self.__pw.deiconify()
+        # convert color
+        colordb = self.__sb.colordb()
+        if color:
+            r, g, b = Main.initial_color(color, colordb)
+            self.__sb.update_views(r, g, b)
+        # reset the canceled flag and run it
+        self.__sb.canceled(0)
         Main.run(self.__pw, self.__sb)
         rgbtuple = self.__sb.current_rgb()
         self.__pw.withdraw()
         # check to see if the cancel button was pushed
         if self.__sb.canceled_p():
             return None, None
-        colordb = self.__sb.colordb()
         # try to return the color name from the database if there is an exact
         # match, otherwise use the "#rrggbb" spec.  TBD: Forget about color
         # aliases for now, maybe later we should return these too.
@@ -50,13 +58,25 @@ class Chooser:
             name = ColorDB.triplet_to_rrggbb(rgbtuple)
         return rgbtuple, name
 
+    def save(self):
+        if self.__sb:
+            self.__sb.save_views()
 
 
 # convenience stuff
+_chooser = None
+
 def askcolor(color = None, **options):
     """Ask for a color"""
-    return apply(Chooser, (), options).show()
+    global _chooser
+    if not _chooser:
+        _chooser = apply(Chooser, (), options)
+    return _chooser.show(color)
 
+def save():
+    global _chooser
+    if _chooser:
+        _chooser.save()
 
 
 # test stuff
