@@ -247,6 +247,7 @@ AC_MSG_RESULT($withval)
 if test -d "$withval"
 then LIBS="$LIBS -L$withval"
 fi
+AC_DEFINE(_REENTRANT)
 AC_CHECK_HEADER(mach/cthreads.h, [AC_DEFINE(WITH_THREAD)
 AC_DEFINE(C_THREADS)
 LIBOBJS="$LIBOBJS thread.o"],[
