@@ -161,7 +161,7 @@ only by sequence types (below).
 
 \subsection{Numeric Types \label{typesnumeric}}
 
-There are four numeric types: \dfn{plain integers}, \dfn{long integers}, 
+There are four numeric types: \dfn{plain integers}, \dfn{long integers},
 \dfn{floating point numbers}, and \dfn{complex numbers}.
 Plain integers (also just called \dfn{integers})
 are implemented using \ctype{long} in C, which gives them at least 32
@@ -178,7 +178,7 @@ working with.
 
 Complex numbers have a real and imaginary part, which are both
 implemented using \ctype{double} in C.  To extract these parts from
-a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.  
+a complex number \var{z}, use \code{\var{z}.real} and \code{\var{z}.imag}.
 
 Numbers are created by numeric literals or as the result of built-in
 functions and operators.  Unadorned integer literals (including hex
@@ -248,7 +248,7 @@ Notes:
 
 \item[(1)]
 For (plain or long) integer division, the result is an integer.
-The result is always rounded towards minus infinity: 1/2 is 0, 
+The result is always rounded towards minus infinity: 1/2 is 0,
 (-1)/2 is -1, 1/(-2) is -1, and (-1)/(-2) is 0.  Note that the result
 is a long integer if either operand is a long integer, regardless of
 the numeric value.
@@ -472,7 +472,7 @@ Notes:
   the end of the string: \code{len(\var{s}) + \var{i}} or
   \code{len(\var{s}) + \var{j}} is substituted.  But note that \code{-0} is
   still \code{0}.
-  
+
 \item[(3)] The slice of \var{s} from \var{i} to \var{j} is defined as
   the sequence of items with index \var{k} such that \code{\var{i} <=
   \var{k} < \var{j}}.  If \var{i} or \var{j} is greater than
@@ -808,7 +808,7 @@ are replaced by \code{\%g} conversions.\footnote{
 
 Additional string operations are defined in standard modules
 \refmodule{string}\refstmodindex{string} and
-\refmodule{re}.\refstmodindex{re} 
+\refmodule{re}.\refstmodindex{re}
 
 
 \subsubsection{XRange Type \label{typesseq-xrange}}
@@ -881,7 +881,7 @@ Notes:
   no longer works in Python 2.0.  Use of this misfeature has been
   deprecated since Python 1.4.
 
-\item[(2)] Raises an exception when \var{x} is not a list object.  The 
+\item[(2)] Raises an exception when \var{x} is not a list object.  The
   \method{extend()} method is experimental and not supported by
   mutable sequence types other than lists.
 
@@ -1034,7 +1034,7 @@ over a dictionary, as often used in set algorithms.
 
 File objects\obindex{file} are implemented using C's \code{stdio}
 package and can be created with the built-in constructor
-\function{file()}\bifuncindex{file} described in section 
+\function{file()}\bifuncindex{file} described in section
 \ref{built-in-funcs}, ``Built-in Functions.''\footnote{\function{file()}
 is new in Python 2.2.  The older built-in \function{open()} is an
 alias for \function{file()}.}
@@ -1100,10 +1100,10 @@ Files have the following methods:
 \begin{methoddesc}[file]{readline}{\optional{size}}
   Read one entire line from the file.  A trailing newline character is
   kept in the string\footnote{
-	The advantage of leaving the newline on is that an empty string 
-	can be returned to mean \EOF{} without being ambiguous.  Another 
-	advantage is that (in cases where it might matter, for example. if you 
-	want to make an exact copy of a file while scanning its lines) 
+	The advantage of leaving the newline on is that an empty string
+	can be returned to mean \EOF{} without being ambiguous.  Another
+	advantage is that (in cases where it might matter, for example. if you
+	want to make an exact copy of a file while scanning its lines)
 	you can tell whether the last line of a file ended in a newline
 	or not (yes this happens!).
   } (but may be absent when a file ends with an
@@ -1152,11 +1152,15 @@ Files have the following methods:
 \end{methoddesc}
 
 \begin{methoddesc}[file]{truncate}{\optional{size}}
-  Truncate the file's size.  If the optional \var{size} argument
+  Truncate the file's size.  If the optional \var{size} argument is
   present, the file is truncated to (at most) that size.  The size
-  defaults to the current position.  Availability of this function
-  depends on the operating system version (for example, not all
-  \UNIX{} versions support this operation).
+  defaults to the current position.  The current file position is
+  not changed.  Note that if a specified size exceeds the file's
+  current size, the result is platform-dependent:  possibilities
+  include that file may remain unchanged, increase to the specified
+  size as if zero-filled, or increase to the specified size with
+  undefined new content.
+  Availability:  Windows, many \UNIX variants.
 \end{methoddesc}
 
 \begin{methoddesc}[file]{write}{str}

@@ -4,6 +4,12 @@ Release date: XXX
 
 Core and builtins
 
+- If you try to pickle an instance of a class that has __slots__ but
+  doesn't define or override __getstate__, a TypeError is now raised.
+  This is done by adding a bozo __getstate__ to the class that always
+  raises TypeError.  (Before, this would appear to be pickled, but the
+  state of the slots would be lost.)
+
 - PyErr_Display will provide file and line information for all exceptions
   that have an attribute print_file_and_line, not just SyntaxErrors. This
   fixes the bug that no proper line number is given for bad \x escapes.
@@ -20,6 +26,12 @@ Library
 - webbrowser: tightened up the command passed to os.system() so that
   arbitrary shell code can't be executed because a bogus URL was
   passed in.
+
+Windows
+
+- file.truncate([newsize]) now works on Windows for all newsize values.
+  It used to fail if newsize didn't fit in 32 bits, reflecting a
+  limitation of MS _chsize (which is no longer used).
 
 What's New in Python 2.2 final?
 Release date: 21-Dec-2001
