@@ -18,8 +18,8 @@ from Tkinter import *
 import Pmw
 
 class ChipWidget(Pmw.MegaWidget):
-    _WIDTH = 80
-    _HEIGHT = 100
+    _WIDTH = 150
+    _HEIGHT = 80
 
     def __init__(self, parent=None, **kw):
 	optionsdefs = (('chip_borderwidth', 2,            None),
