@@ -95,9 +95,11 @@ API
 
 New platforms
 
-- Patches from Stephen Hansen for the Borland C compiler (under Windows)
-  are reported to yield a clean compile, but a Python that doesn't yet
-  run correctly.  Volunteers?
+- Stephen Hansen contributed patches sufficient to get a clean compile
+  under Borland C (Windows), but he reports problems running it and ran
+  out of time to complete the port.  Volunteers?  Expect a MemoryError
+  when importing the types module; this is probably shallow, and
+  causing later failures too.
 
 Tests
 
