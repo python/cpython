@@ -173,40 +173,36 @@ extern DL_IMPORT(void) _PyObject_Del(PyObject *);
 
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
 
-/* _PyObject_VAR_SIZE computes the amount of memory allocated for a vrbl-
-  size object with nitems items, exclusive of gc overhead (if any).  The
-  value is rounded up to the closest multiple of sizeof(void *), in order
-  to ensure that pointer fields at the end of the object are correctly
-  aligned for the platform (this is of special importance for subclasses
-  of, e.g., str or long, so that pointers can be stored after the embedded
-  data).
+/* _PyObject_VAR_SIZE returns the number of bytes (as size_t) allocated for a
+   vrbl-size object with nitems items, exclusive of gc overhead (if any).  The
+   value is rounded up to the closest multiple of sizeof(void *), in order to
+   ensure that pointer fields at the end of the object are correctly aligned
+   for the platform (this is of special importance for subclasses of, e.g.,
+   str or long, so that pointers can be stored after the embedded data).
 
-  Note that there's no memory wastage in doing this, as malloc has to
-  return (at worst) pointer-aligned memory anyway
-
-  However, writing the macro to *return* the result is clumsy due to the
-  calculations needed.  Instead you must pass the result lvalue as the first
-  argument, and it should be of type size_t (both because that's the
-  correct conceptual type, and because using an unsigned type allows the
-  compiler to generate faster code for the mod computation inside the
-  macro).
+   Note that there's no memory wastage in doing this, as malloc has to
+   return (at worst) pointer-aligned memory anyway.
 */
-#define _PyObject_VAR_SIZE(result, typeobj, nitems)			\
-	do {								\
-    		size_t mod;						\
-		(result) = (size_t) (typeobj)->tp_basicsize;		\
-		(result) += (size_t) ((nitems)*(typeobj)->tp_itemsize);	\
-		mod = (result) % SIZEOF_VOID_P;				\
-		if (mod)						\
-			(result) += SIZEOF_VOID_P - mod;		\
-    	} while(0)
+#if ((SIZEOF_VOID_P - 1) & SIZEOF_VOID_P) != 0
+#   error "_PyObject_VAR_SIZE requires SIZEOF_VOID_P be a power of 2"
+#endif
+
+#define _PyObject_VAR_SIZE(typeobj, nitems)	\
+	(size_t)				\
+	( ( (typeobj)->tp_basicsize +		\
+	    (nitems)*(typeobj)->tp_itemsize +	\
+	    (SIZEOF_VOID_P - 1)			\
+	  ) & ~(SIZEOF_VOID_P - 1)		\
+	)
 
 #define PyObject_NEW(type, typeobj) \
 ( (type *) PyObject_Init( \
 	(PyObject *) PyObject_MALLOC( _PyObject_SIZE(typeobj) ), (typeobj)) )
 
-#define PyObject_NEW_VAR(type, typeobj, nitems) \
-	((type *) _PyObject_NewVar(typeobj, nitems))
+#define PyObject_NEW_VAR(type, typeobj, n) \
+( (type *) PyObject_InitVar( \
+      (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE((typeobj),(n)) ),\
+      (typeobj), (n)) )
 
 #define PyObject_DEL(op) PyObject_FREE(op)
 
