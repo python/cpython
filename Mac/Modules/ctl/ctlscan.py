@@ -61,6 +61,18 @@ class MyScanner(Scanner):
 			'SetDisclosureTriangleLastValue',
 			# Unavailable in CW Pro 3 libraries
 			'SetUpControlTextColor',
+			# Unavailable in Jack's CW Pro 5.1 libraries
+			'GetControlRegion',
+			'RemoveControlProperty',
+			'IsValidControlHandle',
+			'SetControl32BitMinimum',
+			'GetControl32BitMinimum',
+			'SetControl32BitMaximum',
+			'GetControl32BitMaximum',
+			'SetControl32BitValue',
+			'GetControl32BitValue',
+			'SetControlViewSize',
+			'GetControlViewSize',
 			# Generally Bad News
 			'GetControlProperty',
 			'SetControlProperty',
