@@ -358,8 +358,8 @@ tok_get(tok, p_start, p_end)
 		   This is also recognized by vi, when it occurs near the
 		   beginning or end of the file.  (Will vi never die...?) */
 		int x;
-		/* XXX The case to (unsigned char *) is needed by THINK C */
-		if (sscanf((unsigned char *)tok->cur,
+		/* XXX The case to (unsigned char *) is needed by THINK C 3.0 */
+		if (sscanf(/*(unsigned char *)*/tok->cur,
 				" vi:set tabsize=%d:", &x) == 1 &&
 						x >= 1 && x <= 40) {
 			fprintf(stderr, "# vi:set tabsize=%d:\n", x);

@@ -2,11 +2,22 @@
    This is a precompiled header for THINK C. */
 
 #include <stdio.h>
+#include <string.h>
 
 #ifdef THINK_C
+/* #define THINK_C_3_0			/*** TURN THIS ON FOR THINK C 3.0 ****/
 #define label label_
-#include <proto.h>
 #undef label
+#endif
+
+#ifdef THINK_C_3_0
+#include <proto.h>
+#endif
+
+#ifdef THINK_C
+#ifndef THINK_C_3_0
+#include <stdlib.h>
+#endif
 #endif
 
 #include "PROTO.h"
