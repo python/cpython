@@ -33,15 +33,16 @@ second's worth occupies 2*2*44100 bytes, i.e.\ 176,400 bytes.
 
 Module \module{aifc} defines the following function:
 
-\begin{funcdesc}{open}{file, mode}
+\begin{funcdesc}{open}{file\optional{, mode}}
 Open an AIFF or AIFF-C file and return an object instance with
-methods that are described below.  The argument file is either a
-string naming a file or a file object.  The mode is either the string
-\code{'r'} when the file must be opened for reading, or \code{'w'}
-when the file must be opened for writing.  When used for writing, the
-file object should be seekable, unless you know ahead of time how many
-samples you are going to write in total and use
-\method{writeframesraw()} and \method{setnframes()}.
+methods that are described below.  The argument \var{file} is either a
+string naming a file or a file object.  \var{mode} must be \code{'r'}
+or \code{'rb'} when the file must be opened for reading, or \code{'w'} 
+or \code{'wb'} when the file must be opened for writing.  If omitted,
+\code{\var{file}.mode} is used if it exists, otherwise \code{'rb'} is
+used.  When used for writing, the file object should be seekable,
+unless you know ahead of time how many samples you are going to write
+in total and use \method{writeframesraw()} and \method{setnframes()}.
 \end{funcdesc}
 
 Objects returned by \function{open()} when a file is opened for
