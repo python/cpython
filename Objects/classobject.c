@@ -283,7 +283,7 @@ set_name(c, v)
 {
 	if (v == NULL || !PyString_Check(v))
 		return "__name__ must be a string object";
-	if ((long)strlen(PyString_AS_STRING(v)) != PyString_GET_SIZE(v))
+	if (strlen(PyString_AS_STRING(v)) != (size_t)PyString_GET_SIZE(v))
 		return "__name__ must not contain null bytes";
 	set_slot(&c->cl_name, v);
 	return "";

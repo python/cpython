@@ -366,7 +366,7 @@ make_pair(v, w)
 	if (pair == NULL) {
 		return NULL;
 	}
-	if ((long)v <= (long)w) {
+	if (v <= w) {
 		PyTuple_SET_ITEM(pair, 0, PyLong_FromVoidPtr((void *)v));
 		PyTuple_SET_ITEM(pair, 1, PyLong_FromVoidPtr((void *)w));
 	} else {
