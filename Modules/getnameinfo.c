@@ -98,7 +98,9 @@ getnameinfo(sa, salen, host, hostlen, serv, servlen, flags)
 	int family, len, i;
 	char *addr, *p;
 	u_long v4a;
+#ifdef INET6
 	u_char pfx;
+#endif
 	int h_error;
 	char numserv[512];
 	char numaddr[512];
