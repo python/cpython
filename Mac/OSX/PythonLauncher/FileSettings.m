@@ -165,7 +165,7 @@
         tabs?" -t":"",
         others,
         script,
-        with_terminal? "" : " &"];
+        with_terminal? "&& exit" : " &"];
 }
 
 // FileSettingsSource protocol 

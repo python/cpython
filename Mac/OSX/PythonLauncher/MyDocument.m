@@ -8,6 +8,7 @@
 
 #import "MyDocument.h"
 #import "MyAppDelegate.h"
+#import "doscript.h"
 
 @implementation MyDocument
 
@@ -71,12 +72,12 @@
     const char *cmdline;
     int sts;
     
-    if ([settings with_terminal]) {
-        NSLog(@"Terminal not implemented yet\n");
-        return NO;
+     cmdline = [[settings commandLineForScript: script] cString];
+   if ([settings with_terminal]) {
+        sts = doscript(cmdline);
+    } else {
+        sts = system(cmdline);
     }
-    cmdline = [[settings commandLineForScript: script] cString];
-    sts = system(cmdline);
     if (sts) {
         NSLog(@"Exit status: %d\n", sts);
         return NO;
