@@ -943,7 +943,7 @@ property is O(lg~n).  (See
 \url{http://www.nist.gov/dads/HTML/priorityque.html} for more
 information about the priority queue data structure.)
 
-The Python \module{heapq} module provides \function{heappush()} and
+The \module{heapq} module provides \function{heappush()} and
 \function{heappop()} functions for adding and removing items while
 maintaining the heap property on top of some other mutable Python
 sequence type.  For example:
@@ -999,6 +999,31 @@ can now optionally buffer character data, resulting in fewer calls to
 your character data handler and therefore faster performance.  Setting
 the parser object's \member{buffer_text} attribute to \constant{True} 
 will enable buffering.
+
+\item The \function{sample(\var{population}, \var{k})} function was
+added to the \module{random} module.  \var{population} is a sequence
+containing the elements of a population, and \function{sample()}
+chooses \var{k} elements from the population without replacing chosen
+elements.  \var{k} can be any value up to \code{len(\var{population})}.
+For example:
+
+\begin{verbatim}
+>>> pop = range(6) ; pop
+[0, 1, 2, 3, 4, 5]
+>>> random.sample(pop, 3)          # Choose three elements
+[0, 4, 3]
+>>> random.sample(pop, 6)          # Choose all six elements
+[4, 5, 0, 3, 2, 1]
+>>> random.sample(pop, 6)          # Choose six again
+[4, 2, 3, 0, 5, 1]
+>>> random.sample(pop, 7)          # Can't choose more than six
+Traceback (most recent call last):
+  File ``<stdin>'', line 1, in ?
+  File ``/home/amk/src/sf/python/dist/src/Lib/random.py'', line 396, in sample
+    raise ValueError, ``sample larger than population''
+ValueError: sample larger than population
+>>>
+\end{verbatim}
 
 \item The \module{readline} module also gained a number of new
 functions: \function{get_history_item()},
@@ -1338,7 +1363,42 @@ under ``python -O'' in earlier versions of Python.
 %======================================================================
 \section{Porting to Python 2.3}
 
-XXX write this
+This section lists changes that may actually require changes to your code:
+
+\begin{itemize}
+
+\item \keyword{yield} is now always a keyword; if it's used as a
+variable name in your code, a different name must be chosen.
+
+\item You can no longer disable assertions by assigning to \code{__debug__}.
+
+\item Using \code{None} as a variable name will now result in a
+\exception{SyntaxWarning} warning. 
+
+\item Names of extension types defined by the modules included with
+Python now contain the module and a \samp{.} in front of the type
+name.  
+
+\item For strings \var{X} and \var{Y}, \code{\var{X} in \var{Y}} now works
+if \var{X} is more than one character long.
+
+\item The Distutils \function{setup()} function has gained various new
+keyword arguments such as \samp{depends}.  Old versions of the
+Distutils will abort if passed unknown keywords.  The fix is to check
+for the presence of the new \function{get_distutil_options()} function
+in your \file{setup.py} if you want to only support the new keywords
+with a version of the Distutils that supports them:
+
+\begin{verbatim}
+from distutils import core
+
+kw = {'sources': 'foo.c', ...}
+if hasattr(core, 'get_distutil_options'):
+    kw['depends'] = ['foo.h']
+ext = Extension(**kw) 
+\end{verbatim}
+
+\end{itemize}
 
 
 %======================================================================
