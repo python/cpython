@@ -363,7 +363,7 @@ class AppBuilder(BundleBuilder):
     # Include these packages.
     includePackages = []
 
-    # Strip binaries.
+    # Strip binaries from debug info.
     strip = 0
 
     # Found Python modules: [(name, codeobject, ispkg), ...]
@@ -372,9 +372,6 @@ class AppBuilder(BundleBuilder):
     # Modules that modulefinder couldn't find:
     missingModules = []
     maybeMissingModules = []
-
-    # List of all binaries (executables or shared libs), for stripping purposes
-    binaries = []
 
     def setup(self):
         if self.standalone and self.mainprogram is None:
@@ -425,7 +422,6 @@ class AppBuilder(BundleBuilder):
             execpath = pathjoin(self.execdir, execname)
             if not self.symlink_exec:
                 self.files.append((self.executable, execpath))
-                self.binaries.append(execpath)
             self.execpath = execpath
 
         if self.mainprogram is not None:
@@ -502,8 +498,6 @@ class AppBuilder(BundleBuilder):
         for item in PYTHONFRAMEWORKGOODIES:
             src = pathjoin(frameworkpath, item)
             dst = pathjoin(destbase, item)
-            if item == "Python":
-                self.binaries.append(dst)
             self.files.append((src, dst))
 
     def addPythonModules(self):
@@ -546,12 +540,30 @@ class AppBuilder(BundleBuilder):
             self.message("Error: can't strip binaries: no strip program at "
                 "%s" % STRIP_EXEC, 0)
         else:
+            import stat
             self.message("Stripping binaries", 1)
-            for relpath in self.binaries:
-                self.message("Stripping %s" % relpath, 2)
-                abspath = pathjoin(self.bundlepath, relpath)
-                if not os.path.islink(abspath):
-                    rv = os.system("%s -S \"%s\"" % (STRIP_EXEC, abspath))
+            def walk(top):
+                for name in os.listdir(top):
+                    path = pathjoin(top, name)
+                    if os.path.islink(path):
+                        continue
+                    if os.path.isdir(path):
+                        walk(path)
+                    else:
+                        mod = os.stat(path)[stat.ST_MODE]
+                        if not (mod & 0100):
+                            continue
+                        relpath = path[len(self.bundlepath):]
+                        self.message("Stripping %s" % relpath, 2)
+                        inf, outf = os.popen4("%s -S \"%s\"" %
+                                              (STRIP_EXEC, path))
+                        output = outf.read().strip()
+                        if output:
+                            # usually not a real problem, like when we're
+                            # trying to strip a script
+                            self.message("Problem stripping %s:" % relpath, 3)
+                            self.message(output, 3)
+            walk(self.bundlepath)
 
     def findDependencies(self):
         self.message("Finding module dependencies", 1)
@@ -598,7 +610,6 @@ class AppBuilder(BundleBuilder):
                     dstpath = name.split(".")[:-1] + [filename]
                     dstpath = pathjoin("Contents", "Resources", *dstpath)
                 self.files.append((path, dstpath))
-                self.binaries.append(dstpath)
             if mod.__code__ is not None:
                 ispkg = mod.__path__ is not None
                 if not USE_ZIPIMPORT or name != "site":
