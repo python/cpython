@@ -484,6 +484,27 @@ class AbstractPickleTests(unittest.TestCase):
         self.assertEqual(x, y)
 
     def test_short_tuples(self):
+        # Map (proto, len(tuple)) to expected opcode.
+        expected_opcode = {(0, 0): pickle.TUPLE,
+                           (0, 1): pickle.TUPLE,
+                           (0, 2): pickle.TUPLE,
+                           (0, 3): pickle.TUPLE,
+                           (0, 4): pickle.TUPLE,
+
+                           (1, 0): pickle.EMPTY_TUPLE,
+                           (1, 1): pickle.TUPLE,
+                           (1, 2): pickle.TUPLE,
+                           (1, 3): pickle.TUPLE,
+                           (1, 4): pickle.TUPLE,
+
+                           (2, 0): pickle.EMPTY_TUPLE,
+                           (2, 1): pickle.TUPLE1,
+                           (2, 2): pickle.TUPLE2,
+                           (2, 3): pickle.TUPLE3,
+                           (2, 4): pickle.TUPLE,
+                          }
+        all_tuple_opcodes = (pickle.TUPLE, pickle.EMPTY_TUPLE,
+                             pickle.TUPLE1, pickle.TUPLE2, pickle.TUPLE3)
         a = ()
         b = (1,)
         c = (1, 2)
@@ -494,6 +515,16 @@ class AbstractPickleTests(unittest.TestCase):
                 s = self.dumps(x, proto)
                 y = self.loads(s)
                 self.assertEqual(x, y, (proto, x, s, y))
+
+                # Verify that the protocol-correct tuple-building opcode
+                # was generated.
+                expected = expected_opcode[proto, len(x)]
+                for opcode in s:
+                    if opcode in all_tuple_opcodes:
+                        self.assertEqual(expected, opcode)
+                        break
+                else:
+                    self.fail("didn't find a tuple-building opcode in pickle")
 
     def test_singletons(self):
         for proto in protocols:

@@ -621,8 +621,11 @@ class Pickler:
         proto = self.proto
 
         n = len(obj)
-        if n == 0 and proto:
-            write(EMPTY_TUPLE)
+        if n == 0:
+            if proto:
+                write(EMPTY_TUPLE)
+            else:
+                write(MARK + TUPLE)
             return
 
         save = self.save
@@ -639,13 +642,13 @@ class Pickler:
                 self.memoize(obj)
             return
 
-        # proto 0, or proto 1 and tuple isn't empty, or proto > 1 and tuple
+        # proto 0 or proto 1 and tuple isn't empty, or proto > 1 and tuple
         # has more than 3 elements.
         write(MARK)
         for element in obj:
             save(element)
 
-        if n and id(obj) in memo:
+        if id(obj) in memo:
             # Subtle.  d was not in memo when we entered save_tuple(), so
             # the process of saving the tuple's elements must have saved
             # the tuple itself:  the tuple is recursive.  The proper action
@@ -660,10 +663,9 @@ class Pickler:
                 write(POP * (n+1) + get)
             return
 
-        # No recursion (including the empty-tuple case for protocol 0).
+        # No recursion.
         self.write(TUPLE)
-        if obj:                      # No need to memoize empty tuple
-            self.memoize(obj)
+        self.memoize(obj)
 
     dispatch[TupleType] = save_tuple
 

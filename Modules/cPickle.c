@@ -110,7 +110,8 @@ static PyObject *__class___str, *__getinitargs___str, *__dict___str,
 
 typedef struct {
 	PyObject_HEAD
-	int length, size;
+	int length;	/* number of initial slots in data currently used */
+	int size;	/* number of slots in data allocated */
 	PyObject **data;
 } Pdata;
 
@@ -120,10 +121,11 @@ Pdata_dealloc(Pdata *self)
 	int i;
 	PyObject **p;
 
-	for (i=self->length, p=self->data; --i >= 0; p++) Py_DECREF(*p);
-
-	if (self->data) free(self->data);
-
+	for (i = self->length, p = self->data; --i >= 0; p++) {
+		Py_DECREF(*p);
+	}
+	if (self->data)
+		free(self->data);
 	PyObject_Del(self);
 }
 
@@ -140,11 +142,13 @@ Pdata_New(void)
 {
 	Pdata *self;
 
-	if (!( self = PyObject_New(Pdata, &PdataType)))  return NULL;
-	self->size=8;
-	self->length=0;
-	self->data=malloc(self->size * sizeof(PyObject*));
-	if (self->data) return (PyObject*)self;
+	if (!(self = PyObject_New(Pdata, &PdataType)))
+		return NULL;
+	self->size = 8;
+	self->length = 0;
+	self->data = malloc(self->size * sizeof(PyObject*));
+	if (self->data)
+		return (PyObject*)self;
 	Py_DECREF(self);
 	return PyErr_NoMemory();
 }
@@ -156,6 +160,9 @@ stackUnderflow(void)
 	return -1;
 }
 
+/* Retain only the initial clearto items.  If clearto >= the current
+ * number of items, this is a (non-erroneous) NOP.
+ */
 static int
 Pdata_clear(Pdata *self, int clearto)
 {
@@ -165,39 +172,56 @@ Pdata_clear(Pdata *self, int clearto)
 	if (clearto < 0) return stackUnderflow();
 	if (clearto >= self->length) return 0;
 
-	for (i=self->length, p=self->data+clearto; --i >= clearto; p++)
+	for (i = self->length, p = self->data + clearto;
+	     --i >= clearto;
+	     p++) {
 		Py_DECREF(*p);
-	self->length=clearto;
+	}
+	self->length = clearto;
 
 	return 0;
 }
-
 
 static int
 Pdata_grow(Pdata *self)
 {
-	if (! self->size) {
-		PyErr_NoMemory();
-		return -1;
-	}
-	self->size *= 2;
-	self->data = realloc(self->data, self->size*sizeof(PyObject*));
-	if (! self->data) {
-		self->size = 0;
-		PyErr_NoMemory();
-		return -1;
-	}
+	int bigger;
+	size_t nbytes;
+
+	if (! self->size)
+		goto nomemory;
+	bigger = self->size << 1;
+	if (bigger <= 0)
+		goto nomemory;
+	if ((int)(size_t)bigger != bigger)
+		goto nomemory;
+	nbytes = (size_t)bigger * sizeof(PyObject *);
+	if (nbytes / sizeof(PyObject *) != (size_t)bigger)
+		goto nomemory;
+	self->data = realloc(self->data, nbytes);
+	if (self->data == NULL)
+		goto nomemory;
+	self->size = bigger;
 	return 0;
+
+  nomemory:
+	self->size = 0;
+	PyErr_NoMemory();
+	return -1;
 }
 
-#define PDATA_POP(D,V) {                                      \
-    if ((D)->length) V=D->data[--((D)->length)];              \
-    else {                                                    \
-        PyErr_SetString(UnpicklingError, "bad pickle data");  \
-        V=NULL;                                               \
-    }                                                         \
+/* D is a Pdata *.  Pop the topmost element and store it into V, which
+ * must be an lvalue holding PyObject *.  On stack underflow, UnpicklingError
+ * is raised and V is set to NULL.  D and V may be evaluated several times.
+ */
+#define PDATA_POP(D, V) {					\
+    if ((D)->length)						\
+    	(V) = (D)->data[--((D)->length)];			\
+    else {							\
+        PyErr_SetString(UnpicklingError, "bad pickle data");	\
+        (V) = NULL;						\
+    }								\
 }
-
 
 static PyObject *
 Pdata_popTuple(Pdata *self, int start)
@@ -205,12 +229,14 @@ Pdata_popTuple(Pdata *self, int start)
 	PyObject *r;
 	int i, j, l;
 
-	l=self->length-start;
-	if (!( r=PyTuple_New(l)))  return NULL;
-	for (i=start, j=0 ; j < l; i++, j++)
+	l = self->length-start;
+	r = PyTuple_New(l);
+	if (r == NULL)
+		return NULL;
+	for (i = start, j = 0 ; j < l; i++, j++)
 		PyTuple_SET_ITEM(r, j, self->data[i]);
 
-	self->length=start;
+	self->length = start;
 	return r;
 }
 
@@ -1444,80 +1470,141 @@ save_unicode(Picklerobject *self, PyObject *args, int doput)
 }
 #endif
 
+/* A helper for save_tuple.  Push the len elements in tuple t on the stack. */
+static int
+store_tuple_elememts(Picklerobject *self, PyObject *t, int len)
+{
+	int i;
+	int res = -1;	/* guilty until proved innocent */
 
+	assert(PyTuple_Size(t) == len);
+
+	for (i = 0; i < len; i++) {
+		PyObject *element = PyTuple_GET_ITEM(t, i);
+
+		if (element == NULL)
+			goto finally;
+		if (save(self, element, 0) < 0)
+			goto finally;
+	}
+	res = 0;
+
+  finally:
+	return res;
+}
+
+/* Tuples are ubiquitous in the pickle protocols, so many techniques are
+ * used across protocols to minimize the space needed to pickle them.
+ * Tuples are also the only builtin immuatable type that can be recursive
+ * (a tuple can be reached from itself), and that requires some subtle
+ * magic so that it works in all cases.  IOW, this is a long routine.
+ */
 static int
 save_tuple(Picklerobject *self, PyObject *args)
 {
-	PyObject *element = 0, *py_tuple_id = 0;
-	int len, i, res = -1;
+	PyObject *py_tuple_id = NULL;
+	int len, i;
+	int res = -1;
 
 	static char tuple = TUPLE;
-
-	if (self->write_func(self, &MARKv, 1) < 0)
-		goto finally;
+	static char pop = POP;
+	static char pop_mark = POP_MARK;
+	static char len2opcode[] = {EMPTY_TUPLE, TUPLE1, TUPLE2, TUPLE3};
 
 	if ((len = PyTuple_Size(args)) < 0)
 		goto finally;
 
-	for (i = 0; i < len; i++) {
-		if (!( element = PyTuple_GET_ITEM((PyTupleObject *)args, i)))
-			goto finally;
+	if (len == 0) {
+		char c_str[2];
 
-		if (save(self, element, 0) < 0)
-			goto finally;
+		if (self->proto) {
+			c_str[0] = EMPTY_TUPLE;
+			len = 1;
+		}
+		else {
+			c_str[0] = MARK;
+			c_str[1] = TUPLE;
+			len = 2;
+		}
+		if (self->write_func(self, c_str, len) >= 0)
+			res = 0;
+		/* Don't memoize an empty tuple. */
+		goto finally;
 	}
 
-	if (!( py_tuple_id = PyLong_FromVoidPtr(args)))
+	/* A non-empty tuple. */
+
+	/* id(tuple) isn't in the memo now.  If it shows up there after
+	 * saving the tuple elements, the tuple must be recursive, in
+	 * which case we'll pop everything we put on the stack, and fetch
+	 * its value from the memo.
+	 */
+	py_tuple_id = PyLong_FromVoidPtr(args);
+	if (py_tuple_id == NULL)
 		goto finally;
 
-	if (len) {
+	if (len <= 3 && self->proto >= 2) {
+		/* Use TUPLE{1,2,3} opcodes. */
+		if (store_tuple_elememts(self, args, len) < 0)
+			goto finally;
 		if (PyDict_GetItem(self->memo, py_tuple_id)) {
-			if (self->bin) {
-				static char pop_mark = POP_MARK;
-
-				if (self->write_func(self, &pop_mark, 1) < 0)
+			/* pop the len elements */
+			for (i = 0; i < len; ++i)
+				if (self->write_func(self, &pop, 1) < 0)
 					goto finally;
-			}
-			else {
-				static char pop = POP;
-
-				for (i = 0; i <= len; i++) {
-					if (self->write_func(self, &pop, 1) < 0)
-						goto finally;
-				}
-			}
-
+			/* fetch from memo */
 			if (get(self, py_tuple_id) < 0)
 				goto finally;
-
 			res = 0;
 			goto finally;
 		}
+		/* Not recursive. */
+		if (self->write_func(self, len2opcode + len, 1) < 0)
+			goto finally;
+		goto memoize;
 	}
 
-	if (self->write_func(self, &tuple, 1) < 0) {
+	/* proto < 2 and len > 0, or proto >= 2 and len > 3.
+	 * Generate MARK elt1 elt2 ... TUPLE
+	 */
+	if (self->write_func(self, &MARKv, 1) < 0)
+		goto finally;
+
+	if (store_tuple_elememts(self, args, len) < 0)
+		goto finally;
+
+	if (PyDict_GetItem(self->memo, py_tuple_id)) {
+		/* pop the stack stuff we pushed */
+		if (self->bin) {
+			if (self->write_func(self, &pop_mark, 1) < 0)
+				goto finally;
+		}
+		else {
+			/* Note that we pop one more than len, to remove
+			 * the MARK too.
+			 */
+			for (i = 0; i <= len; i++)
+				if (self->write_func(self, &pop, 1) < 0)
+					goto finally;
+		}
+		/* fetch from memo */
+		if (get(self, py_tuple_id) >= 0)
+			res = 0;
 		goto finally;
 	}
 
-	if (put(self, args) < 0)
+	/* Not recursive. */
+	if (self->write_func(self, &tuple, 1) < 0)
 		goto finally;
 
-	res = 0;
+  memoize:
+	if (put(self, args) >= 0)
+		res = 0;
 
   finally:
 	Py_XDECREF(py_tuple_id);
-
 	return res;
 }
-
-static int
-save_empty_tuple(Picklerobject *self, PyObject *args)
-{
-	static char tuple = EMPTY_TUPLE;
-
-	return self->write_func(self, &tuple, 1);
-}
-
 
 static int
 save_list(Picklerobject *self, PyObject *args)
@@ -1972,7 +2059,7 @@ save_reduce(Picklerobject *self, PyObject *callable,
 }
 
 static int
-save(Picklerobject *self, PyObject *args, int  pers_save)
+save(Picklerobject *self, PyObject *args, int pers_save)
 {
 	PyTypeObject *type;
 	PyObject *py_ob_id = 0, *__reduce__ = 0, *t = 0, *arg_tup = 0,
@@ -2028,9 +2115,8 @@ save(Picklerobject *self, PyObject *args, int  pers_save)
 		break;
 
         case 't':
-		if (type == &PyTuple_Type && PyTuple_Size(args)==0) {
-			if (self->bin) res = save_empty_tuple(self, args);
-			else          res = save_tuple(self, args);
+		if (type == &PyTuple_Type && PyTuple_Size(args) == 0) {
+			res = save_tuple(self, args);
 			goto finally;
 		}
 		break;
@@ -3193,11 +3279,21 @@ load_tuple(Unpicklerobject *self)
 }
 
 static int
-load_empty_tuple(Unpicklerobject *self)
+load_counted_tuple(Unpicklerobject *self, int len)
 {
-	PyObject *tup;
+	PyObject *tup = PyTuple_New(len);
 
-	if (!( tup=PyTuple_New(0)))  return -1;
+	if (tup == NULL)
+		return -1;
+
+	while (--len >= 0) {
+		PyObject *element;
+
+		PDATA_POP(self->stack, element);
+		if (element == NULL)
+			return -1;
+		PyTuple_SET_ITEM(tup, len, element);
+	}
 	PDATA_PUSH(self->stack, tup, -1);
 	return 0;
 }
@@ -4018,7 +4114,22 @@ load(Unpicklerobject *self)
 #endif
 
 		case EMPTY_TUPLE:
-			if (load_empty_tuple(self) < 0)
+			if (load_counted_tuple(self, 0) < 0)
+				break;
+			continue;
+
+		case TUPLE1:
+			if (load_counted_tuple(self, 1) < 0)
+				break;
+			continue;
+
+		case TUPLE2:
+			if (load_counted_tuple(self, 2) < 0)
+				break;
+			continue;
+
+		case TUPLE3:
+			if (load_counted_tuple(self, 3) < 0)
 				break;
 			continue;
 
@@ -4346,7 +4457,22 @@ noload(Unpicklerobject *self)
 #endif
 
 		case EMPTY_TUPLE:
-			if (load_empty_tuple(self) < 0)
+			if (load_counted_tuple(self, 0) < 0)
+				break;
+			continue;
+
+		case TUPLE1:
+			if (load_counted_tuple(self, 1) < 0)
+				break;
+			continue;
+
+		case TUPLE2:
+			if (load_counted_tuple(self, 2) < 0)
+				break;
+			continue;
+
+		case TUPLE3:
+			if (load_counted_tuple(self, 3) < 0)
 				break;
 			continue;
 
