@@ -269,7 +269,10 @@ def walk(top, func, arg):
     func(arg, top, names)
     for name in names:
         name = join(top, name)
-        st = os.lstat(name)
+        try:
+            st = os.lstat(name)
+        except os.error:
+            continue
         if stat.S_ISDIR(st[stat.ST_MODE]):
             walk(name, func, arg)
 
