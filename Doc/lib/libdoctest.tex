@@ -100,21 +100,28 @@ end:
 
 \begin{verbatim}
 $ python example.py -v
-Trying: factorial(5)
-Expecting: 120
+Trying:
+    factorial(5)
+Expecting:
+    120
 ok
-Trying: [factorial(n) for n in range(6)]
-Expecting: [1, 1, 2, 6, 24, 120]
+Trying:
+    [factorial(n) for n in range(6)]
+Expecting:
+    [1, 1, 2, 6, 24, 120]
 ok
-Trying: [factorial(long(n)) for n in range(6)]
-Expecting: [1, 1, 2, 6, 24, 120]
+Trying:
+    [factorial(long(n)) for n in range(6)]
+Expecting:
+    [1, 1, 2, 6, 24, 120]
 ok
 \end{verbatim}
 
 And so on, eventually ending with:
 
 \begin{verbatim}
-Trying: factorial(1e100)
+Trying:
+    factorial(1e100)
 Expecting:
     Traceback (most recent call last):
         ...
@@ -181,7 +188,7 @@ prohibit it by passing \code{verbose=False}.  In either of those cases,
 In any case, \function{testmod()} returns a 2-tuple of ints \code{(\var{f},
 \var{t})}, where \var{f} is the number of docstring examples that
 failed and \var{t} is the total number of docstring examples
-attempted.
+tried.
 
 \subsection{Which Docstrings Are Examined?}
 
@@ -266,7 +273,7 @@ ValueError: multi
 detail
 \end{verbatim}
 
-The last three (starting with \exception{ValueError}) lines are
+The last three lines (starting with \exception{ValueError}) are
 compared against the exception's type and detail, and the rest are
 ignored.
 
@@ -442,16 +449,20 @@ example:
 
 \begin{productionlist}[doctest]
     \production{directive}
-               {"\#" "doctest:" \token{on_or_off} \token{directive_name}}
+               {"\#" "doctest:" \token{directive_options}}
+    \production{directive_options}
+               {\token{directive_option} ("," \token{directive_option})*}
+    \production{directive_option}
+               {\token{on_or_off} \token{directive_option_name}}
     \production{on_or_off}
                {"+" | "-"}
-    \production{directive_name}
+    \production{directive_option_name}
                {"DONT_ACCEPT_BLANKLINE" | "NORMALIZE_WHITESPACE" | ...}
 \end{productionlist}
 
 Whitespace is not allowed between the \code{+} or \code{-} and the
-directive name.  The directive name can be any of the option names
-explained above.
+directive option name.  The directive option name can be any of the
+option names explained above.
 
 The doctest directives appearing in a single example modify doctest's
 behavior for that single example.  Use \code{+} to enable the named
@@ -475,14 +486,32 @@ and also requires a directive to do so:
 [0, 1, ..., 18, 19]
 \end{verbatim}
 
-Only one directive per physical line is accepted.  If you want to
-use multiple directives for a single example, you can add
-\samp{...} lines to your example containing only directives:
+Multiple directives can be used on a single physical line, separated
+by commas:
 
 \begin{verbatim}
->>> print range(20) #doctest: +ELLIPSIS
-...                 #doctest: +NORMALIZE_WHITESPACE
+>>> print range(20) # doctest: +ELLIPSIS, +NORMALIZE_WHITESPACE
 [0,    1, ...,   18,    19]
+\end{verbatim}
+
+If multiple directives are used for a single example, then they are
+combined:
+
+\begin{verbatim}
+>>> print range(20) # doctest: +ELLIPSIS
+...                 # doctest: +NORMALIZE_WHITESPACE
+[0,    1, ...,   18,    19]
+\end{verbatim}
+
+As the previous example shows, you can add \samp{...} lines to your
+example containing only directives.  This can also be useful when an
+example is too long for a directive to comfortably fit on the same
+line:
+
+\begin{verbatim}
+>>> print range(5) + range(10,20) + range(30,40) + range(50,60)
+... # doctest: +ELLIPSIS
+[0, ..., 4, 10, ..., 19, 30, ..., 39, 50, ..., 59]
 \end{verbatim}
 
 Note that since all options are disabled by default, and directives apply
