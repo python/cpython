@@ -61,7 +61,7 @@ static struct PyMethodDef hashMethods[] = {
 #ifdef _MSC_VER
 _declspec(dllexport)
 #endif
-void initperfhash()
+void initperfhash(void)
 {
         PyObject *m;
 

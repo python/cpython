@@ -92,7 +92,7 @@ typedef struct {
 } dictobject;
 
 PyObject *
-PyDict_New()
+PyDict_New(void)
 {
 	register dictobject *mp;
 	if (dummy == NULL) { /* Auto-initialize dummy */

@@ -15,48 +15,48 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include "Python.h"
 
-extern void initarray();
+extern void initarray(void);
 #ifndef MS_WIN64
-extern void initaudioop();
-extern void initbinascii();
+extern void initaudioop(void);
+extern void initbinascii(void);
 #endif
-extern void initcmath();
-extern void initerrno();
+extern void initcmath(void);
+extern void initerrno(void);
 #ifdef WITH_CYCLE_GC
-extern void initgc();
+extern void initgc(void);
 #endif
 #ifndef MS_WIN64
-extern void initimageop();
+extern void initimageop(void);
 #endif
-extern void initmath();
-extern void initmd5();
-extern void initnew();
-extern void initnt();
-extern void initoperator();
-extern void initregex();
+extern void initmath(void);
+extern void initmd5(void);
+extern void initnew(void);
+extern void initnt(void);
+extern void initoperator(void);
+extern void initregex(void);
 #ifndef MS_WIN64
-extern void initrgbimg();
+extern void initrgbimg(void);
 #endif
-extern void initrotor();
-extern void initsignal();
-extern void initsha();
-extern void initstrop();
-extern void initstruct();
-extern void inittime();
-extern void initthread();
-extern void initcStringIO();
-extern void initcPickle();
-extern void initpcre();
+extern void initrotor(void);
+extern void initsignal(void);
+extern void initsha(void);
+extern void initstrop(void);
+extern void initstruct(void);
+extern void inittime(void);
+extern void initthread(void);
+extern void initcStringIO(void);
+extern void initcPickle(void);
+extern void initpcre(void);
 #ifdef WIN32
-extern void initmsvcrt();
-extern void init_locale();
+extern void initmsvcrt(void);
+extern void init_locale(void);
 #endif
-extern void init_codecs();
+extern void init_codecs(void);
 
 /* -- ADDMODULE MARKER 1 -- */
 
-extern void PyMarshal_Init();
-extern void initimp();
+extern void PyMarshal_Init(void);
+extern void initimp(void);
 
 struct _inittab _PyImport_Inittab[] = {
 

@@ -98,8 +98,7 @@ static char *module_search_path = NULL;
 
 
 static int
-is_sep(ch)	/* determine if "ch" is a separator character */
-	char ch;
+is_sep(char ch)	/* determine if "ch" is a separator character */
 {
 #ifdef ALTSEP
 	return ch == SEP || ch == ALTSEP;
@@ -110,8 +109,7 @@ is_sep(ch)	/* determine if "ch" is a separator character */
 
 
 static void
-reduce(dir)
-	char *dir;
+reduce(char *dir)
 {
 	size_t i = strlen(dir);
 	while (i > 0 && !is_sep(dir[i]))
@@ -121,8 +119,7 @@ reduce(dir)
 	
 
 static int
-exists(filename)
-	char *filename;
+exists(char *filename)
 {
 	struct stat buf;
 	return stat(filename, &buf) == 0;
@@ -130,8 +127,7 @@ exists(filename)
 
 
 static int
-ismodule(filename)	/* Is module -- check for .pyc/.pyo too */
-	char *filename;
+ismodule(char *filename)	/* Is module -- check for .pyc/.pyo too */
 {
 	if (exists(filename))
 		return 1;
@@ -147,9 +143,7 @@ ismodule(filename)	/* Is module -- check for .pyc/.pyo too */
 
 
 static void
-join(buffer, stuff)
-	char *buffer;
-	char *stuff;
+join(char *buffer, char *stuff)
 {
 	size_t n, k;
 	if (is_sep(stuff[0]))
@@ -168,8 +162,7 @@ join(buffer, stuff)
 
 
 static int
-gotlandmark(landmark)
-	char *landmark;
+gotlandmark(char *landmark)
 {
 	int n, ok;
 
@@ -182,9 +175,7 @@ gotlandmark(landmark)
 
 
 static int
-search_for_prefix(argv0_path, landmark)
-	char *argv0_path;
-	char *landmark;
+search_for_prefix(char *argv0_path, char *landmark)
 {
 	/* Search from argv0_path, until landmark is found */
 	strcpy(prefix, argv0_path);
@@ -343,7 +334,7 @@ done:
 #endif /* MS_WIN32 */
 
 static void
-get_progpath()
+get_progpath(void)
 {
 	extern char *Py_GetProgramName();
 	char *path = getenv("PATH");
@@ -403,7 +394,7 @@ get_progpath()
 }
 
 static void
-calculate_path()
+calculate_path(void)
 {
 	char argv0_path[MAXPATHLEN+1];
 	char *buf;
@@ -565,7 +556,7 @@ calculate_path()
 /* External interface */
 
 char *
-Py_GetPath()
+Py_GetPath(void)
 {
 	if (!module_search_path)
 		calculate_path();
@@ -573,7 +564,7 @@ Py_GetPath()
 }
 
 char *
-Py_GetPrefix()
+Py_GetPrefix(void)
 {
 	if (!module_search_path)
 		calculate_path();
@@ -581,13 +572,13 @@ Py_GetPrefix()
 }
 
 char *
-Py_GetExecPrefix()
+Py_GetExecPrefix(void)
 {
 	return Py_GetPrefix();
 }
 
 char *
-Py_GetProgramFullPath()
+Py_GetProgramFullPath(void)
 {
 	if (!module_search_path)
 		calculate_path();

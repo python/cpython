@@ -34,7 +34,7 @@ extern int Py_VerboseFlag;
 
 extern int optind;
 extern char *optarg;
-extern int getopt();
+extern int getopt(int, char **, char *);
 
 struct workorder {
 	int conn;
@@ -97,7 +97,7 @@ main(int argc, char **argv)
 static char usage_line[] = "usage: %s [port]\n";
 
 static void
-usage()
+usage(void)
 {
 	fprintf(stderr, usage_line, progname);
 	exit(2);
@@ -220,7 +220,7 @@ static PyInterpreterState *the_interp;
 static PyObject *the_builtins;
 
 static void
-init_python()
+init_python(void)
 {
 	if (gtstate)
 		return;
@@ -268,7 +268,7 @@ service_thread(struct workorder *work)
 }
 
 static void
-oprogname()
+oprogname(void)
 {
 	int save = errno;
 	fprintf(stderr, "%s: ", progname);
@@ -364,7 +364,7 @@ run_command(char *buffer, PyObject *globals)
 }
 
 static void
-ps()
+ps(void)
 {
 	char buffer[100];
 	sprintf(buffer, "ps -l -p %d </dev/null | tail +2l\n", getpid());
