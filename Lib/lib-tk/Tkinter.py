@@ -935,6 +935,9 @@ class Tk(Misc, Wm):
 	def report_callback_exception(self, exc, val, tb):
 		import traceback, sys
 		sys.stderr.write("Exception in Tkinter callback\n")
+		sys.last_type = exc
+		sys.last_value = val
+		sys.last_traceback = tb
 		traceback.print_exception(exc, val, tb)
 
 # Ideally, the classes Pack, Place and Grid disappear, the
