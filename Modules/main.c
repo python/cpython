@@ -49,6 +49,7 @@ extern int getopt(); /* PROTO((int, char **, char *)); -- not standardized */
 
 /* Subroutines that live in their own file */
 extern char *Py_GetVersion();
+extern char *Py_GetPlatform();
 extern char *Py_GetCopyright();
 
 
@@ -219,8 +220,8 @@ main(argc, argv)
 
 	if (Py_VerboseFlag ||
 	    (command == NULL && filename == NULL && stdin_is_interactive))
-		fprintf(stderr, "Python %s\n%s\n",
-			Py_GetVersion(), Py_GetCopyright());
+		fprintf(stderr, "Python %s on %s\n%s\n",
+			Py_GetVersion(), Py_GetPlatform(), Py_GetCopyright());
 	
 	Py_Initialize();
 	
