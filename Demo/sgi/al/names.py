@@ -1,3 +1,4 @@
+import sys
 
 # My home directory/
 GUIDO = '/ufs/guido/'
@@ -10,4 +11,4 @@ if LIB not in sys.path: sys.path.insert(0, LIB)
 PYTHON = GUIDO + 'bin/sgi/python'
 
 # Directory where the programs live
-AUDIODIR = GUIDO + 'src/python/demo/srg/al'
+AUDIODIR = GUIDO + 'src/python/demo/sgi/al'
