@@ -24,3 +24,19 @@ Retrieve the entire contents of the ``file'' at any time before the
 \begin{methoddesc}{close}{}
 Free the memory buffer.
 \end{methoddesc}
+
+
+\section{Built-in Module \module{cStringIO}}
+\bimodindex{cStringIO}
+\label{module-cStringIO}
+
+% This section was written by Fred L. Drake, Jr. <fdrake@acm.org>
+
+The module \module{cStringIO} provides an interface similar to that of
+the \module{StringIO} module.  Heavy use of \class{StringIO.StringIO}
+objects can be made more efficient by using the function
+\function{StringIO()} from this module instead.
+
+Since this module provides a factory function which returns objects of
+built-in types, there's no way to build your own version using
+subclassing.  Use the original \module{StringIO} module in that case.
