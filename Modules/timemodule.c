@@ -233,22 +233,35 @@ static struct methodlist time_methods[] = {
 	{NULL,		NULL}		/* sentinel */
 };
 
+static void
+ins(d, name, v)
+	object *d;
+	char *name;
+	object *v;
+{
+	if (v == NULL)
+		fatal("Can't initialize time module -- NULL value");
+	if (dictinsert(d, name, v) != 0)
+		fatal("Can't initialize time module -- dictinsert failed");
+	DECREF(v);
+}
+
 void
 inittime()
 {
-	object *m, *d;
+	object *m, *d, *v;
 	m = initmodule("time", time_methods);
 	d = getmoduledict(m);
 #ifdef HAVE_TZNAME
 	tzset();
-	dictinsert(d, "timezone", newintobject((long)timezone));
+	ins(d, "timezone", newintobject((long)timezone));
 #ifdef HAVE_ALTZONE
-	dictinsert(d, "altzone", newintobject((long)altzone));
+	ins(d, "altzone", newintobject((long)altzone));
 #else
-	dictinsert(d, "altzone", newintobject((long)timezone-3600));
+	ins(d, "altzone", newintobject((long)timezone-3600));
 #endif
-	dictinsert(d, "daylight", newintobject((long)daylight));
-	dictinsert(d, "tzname", mkvalue("(zz)", tzname[0], tzname[1]));
+	ins(d, "daylight", newintobject((long)daylight));
+	ins(d, "tzname", mkvalue("(zz)", tzname[0], tzname[1]));
 #else /* !HAVE_TZNAME */
 #if HAVE_TM_ZONE
 	{
@@ -269,12 +282,10 @@ inittime()
 		summerzone = -p->tm_gmtoff;
 		strncpy(summername, p->tm_zone ? p->tm_zone : "   ", 9);
 		summername[9] = '\0';
-		dictinsert(d, "timezone", newintobject(winterzone));
-		dictinsert(d, "altzone", newintobject(summerzone));
-		dictinsert(d, "daylight",
-			   newintobject((long)(winterzone != summerzone)));
-		dictinsert(d, "tzname",
-			   mkvalue("(zz)", wintername, summername));
+		ins(d, "timezone", newintobject(winterzone));
+		ins(d, "altzone", newintobject(summerzone));
+		ins(d, "daylight", newintobject((long)(winterzone != summerzone)));
+		ins(d, "tzname",  mkvalue("(zz)", wintername, summername));
 	}
 #endif /* HAVE_TM_ZONE */
 #endif /* !HAVE_TZNAME */
