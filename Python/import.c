@@ -462,13 +462,12 @@ find_module(name, path, buf, buflen, p_fp)
 				else
 					buf[len++] = ch;
 		}
-		else{	/* Not in dos_8x3, use the full name */
+		else /* Not in dos_8x3, use the full name */
+#else
+		{
 			strcpy(buf+len, name);
 			len += namelen;
 		}
-#else
-		strcpy(buf+len, name);
-		len += namelen;
 #endif
 		for (fdp = import_filetab; fdp->suffix != NULL; fdp++) {
 			strcpy(buf+len, fdp->suffix);
