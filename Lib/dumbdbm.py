@@ -150,9 +150,21 @@ class _Database:
     def __del__(self):
         if self._index is not None:
             self._commit()
-  
+
 
 
 def open(file, flag=None, mode=0666):
+    """Open the database file, filename, and return corresponding object.
+
+    The flag argument, used to control how the database is opened in the
+    other DBM implementations, is ignored in the dumbdbm module; the
+    database is always opened for update, and will be created if it does
+    not exist.
+
+    The optional mode argument is the UNIX mode of the file, used only when
+    the database has to be created.  It defaults to octal code 0666 (and
+    will be modified by the prevailing umask).
+
+    """
     # flag, mode arguments are currently ignored
     return _Database(file, mode)
