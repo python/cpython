@@ -42,7 +42,7 @@ import sys, os
 import types
 import textwrap
 
-__version__ = "1.4"
+__version__ = "1.4+"
 
 class OptParseError (Exception):
     def __init__ (self, msg):
