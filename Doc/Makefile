@@ -366,10 +366,10 @@ lib-info-$(RELEASE).tgz: info
 latex-$(RELEASE).tgz:
 	$(srcdir)/tools/mktarball.sh $(RELEASE)
 
-pdf-$(PAPER)-$(RELEASE).tgz: all-pdf
+pdf-$(PAPER)-$(RELEASE).tgz: pdf
 	(cd paper-$(PAPER); tar cf - $(PDFFILES)) | gzip -9 >$@
 
-postscript-$(PAPER)-$(RELEASE).tgz: all-ps
+postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); tar cf - $(PSFILES)) | gzip -9 >$@
 
 html-$(RELEASE).tgz:
