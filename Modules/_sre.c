@@ -1996,6 +1996,7 @@ match_groupdict(MatchObject* self, PyObject* args, PyObject* kw)
         }
         /* FIXME: <fl> this can fail, right? */
         PyDict_SetItem(result, key, item);
+	Py_DECREF(item);
     }
 
     Py_DECREF(keys);
