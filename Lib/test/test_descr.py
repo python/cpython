@@ -1060,6 +1060,24 @@ def slots():
     vereq(x.b, 2)
     vereq(x.c, 3)
 
+    class C4(object):
+        """Validate name mangling"""
+        __slots__ = ['__a']
+        def __init__(self, value):
+            self.__a = value
+        def get(self):
+            return self.__a
+    x = C4(5)
+    verify(not hasattr(x, '__dict__'))
+    verify(not hasattr(x, '__a'))
+    vereq(x.get(), 5)
+    try:
+        x.__a = 6
+    except AttributeError:
+        pass
+    else:
+        raise TestFailed, "Double underscored names not mangled"
+
     # Make sure slot names are proper identifiers
     try:
         class C(object):

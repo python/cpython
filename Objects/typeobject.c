@@ -1001,7 +1001,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
 	PyObject *name, *bases, *dict;
 	static char *kwlist[] = {"name", "bases", "dict", 0};
-	PyObject *slots, *tmp;
+	static char buffer[256];
+	PyObject *slots, *tmp, *newslots;
 	PyTypeObject *type, *base, *tmptype, *winner;
 	etype *et;
 	PyMemberDef *mp;
@@ -1115,6 +1116,25 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				return NULL;
 			}
 		}
+
+		newslots = PyTuple_New(nslots);
+		if (newslots == NULL)
+			return NULL;
+		for (i = 0; i < nslots; i++) {
+			tmp = PyTuple_GET_ITEM(slots, i);
+			if (_Py_Mangle(PyString_AS_STRING(name),
+				PyString_AS_STRING(tmp),
+				buffer, sizeof(buffer)))
+			{
+				tmp = PyString_FromString(buffer);
+			} else {
+				Py_INCREF(tmp);
+			}
+			PyTuple_SET_ITEM(newslots, i, tmp);
+		}
+		Py_DECREF(slots);
+		slots = newslots;
+
 	}
 	if (slots != NULL) {
 		/* See if *this* class defines __getstate__ */

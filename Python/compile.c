@@ -928,8 +928,8 @@ com_addname(struct compiling *c, PyObject *v)
 	return com_add(c, c->c_names, c->c_name_dict, v);
 }
 
-static int
-mangle(char *p, char *name, char *buffer, size_t maxlen)
+int
+_Py_Mangle(char *p, char *name, char *buffer, size_t maxlen)
 {
 	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
@@ -963,7 +963,7 @@ com_addop_name(struct compiling *c, int op, char *name)
 	int i;
 	char buffer[MANGLE_LEN];
 
-	if (mangle(c->c_private, name, buffer, sizeof(buffer)))
+	if (_Py_Mangle(c->c_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
 		c->c_errors++;
@@ -1000,7 +1000,7 @@ com_addop_varname(struct compiling *c, int kind, char *name)
 	int op = STOP_CODE;
 	char buffer[MANGLE_LEN];
 
-	if (mangle(c->c_private, name, buffer, sizeof(buffer)))
+	if (_Py_Mangle(c->c_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if (name == NULL || (v = PyString_InternFromString(name)) == NULL) {
 		c->c_errors++;
@@ -4956,7 +4956,7 @@ symtable_lookup(struct symtable *st, char *name)
 	PyObject *v;
 	int flags;
 
-	if (mangle(st->st_private, name, buffer, sizeof(buffer)))
+	if (_Py_Mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	v = PyDict_GetItemString(st->st_cur->ste_symbols, name);
 	if (v == NULL) {
@@ -4977,7 +4977,7 @@ symtable_add_def(struct symtable *st, char *name, int flag)
 	char buffer[MANGLE_LEN];
 	int ret;
 
-	if (mangle(st->st_private, name, buffer, sizeof(buffer)))
+	if (_Py_Mangle(st->st_private, name, buffer, sizeof(buffer)))
 		name = buffer;
 	if ((s = PyString_InternFromString(name)) == NULL)
 		return -1;
