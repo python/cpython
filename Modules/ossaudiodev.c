@@ -964,7 +964,9 @@ initossaudiodev(void)
     _EXPORT_INT(m, AFMT_U16_LE);
     _EXPORT_INT(m, AFMT_U16_BE);
     _EXPORT_INT(m, AFMT_MPEG);
+#ifdef AFMT_AC3
     _EXPORT_INT(m, AFMT_AC3);
+#endif
 #ifdef AFMT_S16_NE
     _EXPORT_INT(m, AFMT_S16_NE);
 #endif
