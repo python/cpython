@@ -164,6 +164,22 @@ class TestPlistlib(unittest.TestCase):
         pl2 = plistlib.readPlist(StringIO(f.getvalue()))
         self.assertEqual(dict(pl), dict(pl2))
 
+    def test_controlcharacters(self):
+        # chars in the range 0..31 are replaced by '?', except for
+        # \r, \n and \t since they aren't legal XML characters
+        testString = "".join([chr(i) for i in range(32)])
+        expectedResult = '?????????\t\n??\n??????????????????'
+        xml = plistlib.writePlistToString(testString)
+        result = plistlib.readPlistFromString(xml)
+        self.assertEqual(result, expectedResult)
+
+    def test_nondictroot(self):
+        test1 = "abc"
+        test2 = [1, 2, 3, "abc"]
+        result1 = plistlib.readPlistFromString(plistlib.writePlistToString(test1))
+        result2 = plistlib.readPlistFromString(plistlib.writePlistToString(test2))
+        self.assertEqual(test1, result1)
+        self.assertEqual(test2, result2)
 
 
 def test_main():
