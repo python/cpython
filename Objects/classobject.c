@@ -1289,8 +1289,6 @@ instance_coerce(PyObject **pv, PyObject **pw)
 	if (coercefunc == NULL) {
 		/* No __coerce__ method */
 		PyErr_Clear();
-		Py_INCREF(v);
-		Py_INCREF(w);
 		return 1;
 	}
 	/* Has __coerce__ method: call it */
