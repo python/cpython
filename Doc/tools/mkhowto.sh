@@ -38,6 +38,7 @@ Options specifying formats to build:
     --pdf		Portable Document Format (default)
     --ps		PostScript
     --dvi		"DeVice Indepentent" format from TeX
+    --text		ASCII text
 
     More than one output format may be specified.
 
