@@ -104,11 +104,14 @@ time_sleep(self, args)
 	object *self;
 	object *args;
 {
+	void *save, *save_thread(), restore_thread();
 	int secs;
 	SIGTYPE (*sigsave)() = 0; /* Initialized to shut lint up */
 	if (!getintarg(args, &secs))
 		return NULL;
+	save = save_thread();
 	if (setjmp(sleep_intr)) {
+		restore_thread(save);
 		signal(SIGINT, sigsave);
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -117,6 +120,7 @@ time_sleep(self, args)
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
 	sleep(secs);
+	restore_thread(save);
 	signal(SIGINT, sigsave);
 	INCREF(None);
 	return None;
@@ -147,11 +151,14 @@ time_millisleep(self, args)
 	object *self;
 	object *args;
 {
+	void *save, *save_thread(), restore_thread();
 	long msecs;
 	SIGTYPE (*sigsave)();
 	if (!getlongarg(args, &msecs))
 		return NULL;
+	save = save_thread();
 	if (setjmp(sleep_intr)) {
+		restore_thread(save);
 		signal(SIGINT, sigsave);
 		err_set(KeyboardInterrupt);
 		return NULL;
@@ -160,6 +167,7 @@ time_millisleep(self, args)
 	if (sigsave != (SIGTYPE (*)()) SIG_IGN)
 		signal(SIGINT, sleep_catcher);
 	millisleep(msecs);
+	restore_thread(save);
 	signal(SIGINT, sigsave);
 	INCREF(None);
 	return None;

@@ -123,6 +123,7 @@ extern void initpwd();
 extern void initgrp();
 extern void initmarshal();
 extern void initselect();
+extern void initsocket();
 
 #ifdef USE_AUDIO
 extern void initaudio();
@@ -148,14 +149,14 @@ extern void initpanel();
 #ifdef USE_STDWIN
 extern void initstdwin();
 #endif
-#ifdef USE_SOCKET
-extern void initsocket();
-#endif
 #ifdef USE_JPEG
 extern void initjpeg();
 #endif
 #ifdef USE_CD
 extern void initcd();
+#endif
+#ifdef USE_THREAD
+extern void initthread();
 #endif
 
 struct {
@@ -173,6 +174,7 @@ struct {
 	{"grp",		initgrp},
 	{"marshal",	initmarshal},
 	{"select",	initselect},
+	{"socket",	initsocket},
 
 
 	/* Optional modules */
@@ -206,16 +208,16 @@ struct {
 	{"stdwin",	initstdwin},
 #endif
 
-#ifdef USE_SOCKET
-	{"socket",	initsocket},
-#endif
-
 #ifdef USE_JPEG
 	{"jpeg",	initjpeg},
 #endif
 
 #ifdef USE_CD
 	{"cd",		initcd},
+#endif
+
+#ifdef USE_THREAD
+	{"thread",	initthread},
 #endif
 
 	{0,		0}		/* Sentinel */

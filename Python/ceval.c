@@ -84,6 +84,79 @@ static object *build_class PROTO((object *, object *));
 static frameobject *current_frame;
 
 
+/* Interface for threads.
+
+   A module that plans to do a blocking system call (or something else
+   that lasts a long time and doesn't touch Python data) can allow other
+   threads to run as follows:
+
+	void *x;
+
+	...preparations here...
+	x = save_thread();
+	...blocking system call here...
+	restore_thread(x);
+	...interpretr result here...
+
+   For convenience, that the value of 'errno' is restored across the
+   the call to restore_thread().
+
+   The function init_save_thread() should be called only from
+   initthread() in "threadmodule.c".
+
+   Note that not yet all candidates have been converted to use this
+   mechanism!
+*/
+
+#ifdef USE_THREAD
+#include <errno.h>
+#include "thread.h"
+static type_lock interpreter_lock;
+
+void
+init_save_thread()
+{
+#ifdef USE_THREAD
+	if (interpreter_lock)
+		fatal("2nd call to init_save_thread");
+	interpreter_lock = allocate_lock();
+	acquire_lock(interpreter_lock, 1);
+#endif
+}
+#endif
+
+void *
+save_thread()
+{
+#ifdef USE_THREAD
+	if (interpreter_lock) {
+		void *res;
+		res = (void *)current_frame;
+		current_frame = NULL;
+		release_lock(interpreter_lock);
+		return res;
+	}
+	else
+		return NULL;
+#endif
+}
+
+void
+restore_thread(x)
+	void *x;
+{
+#ifdef USE_THREAD
+	if (interpreter_lock) {
+		int err;
+		err = errno;
+		acquire_lock(interpreter_lock, 1);
+		errno = err;
+		current_frame = (frameobject *)x;
+	}
+#endif
+}
+
+
 /* Status code for main loop (reason for stack unwind) */
 
 enum why_code {
@@ -210,17 +283,34 @@ eval_code(co, globals, locals, arg)
 	for (;;) {
 		static int ticker;
 		
-		/* Do periodic things */
+		/* Do periodic things.
+		   Doing this every time through the loop would add
+		   too much overhead (a function call per instruction).
+		   So we do it only every tenth instruction. */
 		
 		if (--ticker < 0) {
-			ticker = 100;
+			ticker = 10;
 			if (intrcheck()) {
 				err_set(KeyboardInterrupt);
 				why = WHY_EXCEPTION;
 				goto on_error;
 			}
+
+#ifdef USE_THREAD
+			if (interpreter_lock) {
+				/* Give another thread a chance */
+
+				current_frame = NULL;
+				release_lock(interpreter_lock);
+
+				/* Other threads may run now */
+
+				acquire_lock(interpreter_lock, 1);
+				current_frame = f;
+			}
+#endif
 		}
-		
+
 		/* Extract opcode and argument */
 		
 		opcode = NEXTOP();

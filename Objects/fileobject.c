@@ -321,6 +321,7 @@ getline(f, n)
 	fileobject *f;
 	int n;
 {
+	void *save, *save_thread(), restore_thread();
 	register FILE *fp;
 	register int c;
 	register char *buf, *end;
@@ -334,16 +335,19 @@ getline(f, n)
 		return NULL;
 	buf = BUF(v);
 	end = buf + n2;
-	
+
+	save = save_thread();
 	for (;;) {
 		if ((c = getc(fp)) == EOF) {
 			clearerr(fp);
 			if (intrcheck()) {
+				restore_thread(save);
 				DECREF(v);
 				err_set(KeyboardInterrupt);
 				return NULL;
 			}
 			if (n < 0 && buf == BUF(v)) {
+				restore_thread(save);
 				DECREF(v);
 				err_setstr(EOFError,
 					   "EOF when reading a line");
@@ -361,13 +365,16 @@ getline(f, n)
 				break;
 			n1 = n2;
 			n2 += 1000;
+			restore_thread(save);
 			if (resizestring(&v, n2) < 0)
 				return NULL;
+			save = save_thread();
 			buf = BUF(v) + n1;
 			end = BUF(v) + n2;
 		}
 	}
-	
+	restore_thread(save);
+
 	n1 = buf - BUF(v);
 	if (n1 != n2)
 		resizestring(&v, n1);
