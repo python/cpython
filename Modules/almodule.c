@@ -26,6 +26,16 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "audio.h"
 
+/* Check which version audio library we have: */
+#ifdef AL_ERROR_NUMBER
+#define AL_405
+/* XXXX 4.0.5 libaudio also allows us to provide better error
+** handling (with ALseterrorhandler). We should implement that
+** sometime.
+*/
+
+#endif
+
 #include "allobjects.h"
 #include "import.h"
 #include "modsupport.h"
@@ -127,6 +137,52 @@ al_setchannels (self, args)
 	return (setConfig (self, args, ALsetchannels));
 }
 
+#ifdef AL_405
+
+static object *
+al_getsampfmt (self, args)
+	configobject *self;
+	object *args;
+{
+	return (getConfig (self, args, ALgetsampfmt));	
+}
+
+static object *
+al_setsampfmt (self, args)
+	configobject *self;
+	object *args;
+{
+	return (setConfig (self, args, ALsetsampfmt));
+}
+
+static object *
+al_getfloatmax(self, args)
+	configobject *self;
+	object *args;
+{
+	double arg;
+
+	if ( !getnoarg(args) )
+	  return 0;
+	arg = ALgetfloatmax(self->ob_config);
+	return newfloatobject(arg);
+}
+
+static object *
+al_setfloatmax(self, args)
+	configobject *self;
+	object *args;
+{
+	double arg;
+
+	if ( !getargs(args, "d", &arg) )
+	  return 0;
+	ALsetfloatmax(self->ob_config, arg);
+	INCREF(None);
+	return None;
+}
+#endif /* AL_405 */
+	
 static struct methodlist config_methods[] = {
 	{"getqueuesize",	al_getqueuesize},
 	{"setqueuesize",	al_setqueuesize},
@@ -134,6 +190,12 @@ static struct methodlist config_methods[] = {
 	{"setwidth",		al_setwidth},
 	{"getchannels",		al_getchannels},
 	{"setchannels",		al_setchannels},
+#ifdef AL_405
+	{"getsampfmt",		al_getsampfmt},
+	{"setsampfmt",		al_setsampfmt},
+	{"getfloatmax",		al_getfloatmax},
+	{"setfloatmax",		al_setfloatmax},
+#endif /* AL_405 */
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -270,7 +332,17 @@ al_readsamps (self, args)
 	}
 
 	c = ALgetconfig(self->ob_port);
+#ifdef AL_405
+	width = ALgetsampfmt(c);
+	if ( width == AL_SAMPFMT_FLOAT )
+	  width = sizeof(float);
+	else if ( width == AL_SAMPFMT_DOUBLE )
+	  width = sizeof(double);
+	else
+	  width = ALgetwidth(c);
+#else
 	width = ALgetwidth(c);
+#endif /* AL_405 */
 	ALfreeconfig(c);
 	v = newsizedstringobject ((char *)NULL, width * count);
 	if (v == NULL) return NULL;
@@ -295,7 +367,17 @@ al_writesamps (self, args)
 	if (!getargs (args, "s#", &buf, &size)) return NULL;
 
 	c = ALgetconfig(self->ob_port);
+#ifdef AL_405
+	width = ALgetsampfmt(c);
+	if ( width == AL_SAMPFMT_FLOAT )
+	  width = sizeof(float);
+	else if ( width == AL_SAMPFMT_DOUBLE )
+	  width = sizeof(double);
+	else
+	  width = ALgetwidth(c);
+#else
 	width = ALgetwidth(c);
+#endif /* AL_405 */
 	ALfreeconfig(c);
 	BGN_SAVE
 	ALwritesamps (self-> ob_port, (void *) buf, (long) size / width);
@@ -363,6 +445,49 @@ al_getconfig (self, args)
 	return newconfigobject (config);
 }
 
+#ifdef AL_405
+static object *
+al_getstatus (self, args)
+	portobject *self;
+	object *args;
+{
+	object *list, *v;
+	long *PVbuffer;
+	long length;
+	int i;
+	
+	if (!getargs(args, "O", &list))
+		return NULL;
+	if (!is_listobject(list)) {
+		err_badarg();
+		return NULL;
+	}
+	length = getlistsize(list);
+	PVbuffer = NEW(long, length);
+	if (PVbuffer == NULL)
+		return err_nomem();
+	for (i = 0; i < length; i++) {
+		v = getlistitem(list, i);
+		if (!is_intobject(v)) {
+			DEL(PVbuffer);
+			err_badarg();
+			return NULL;
+		}
+		PVbuffer[i] = getintvalue(v);
+	}
+
+	ALgetstatus(self->ob_port, PVbuffer, length);
+
+	for (i = 0; i < length; i++)
+	  setlistitem(list, i, newintobject(PVbuffer[i]));
+
+	DEL(PVbuffer);
+
+	INCREF(None);
+	return None;
+}
+#endif /* AL_405 */
+
 static struct methodlist port_methods[] = {
 	{"closeport",		al_closeport},
 	{"getfd",		al_getfd},
@@ -375,6 +500,9 @@ static struct methodlist port_methods[] = {
 	{"getfillpoint",	al_getfillpoint},
 	{"setconfig",		al_setconfig},
 	{"getconfig",		al_getconfig},
+#ifdef AL_405
+	{"getstatus",		al_getstatus},
+#endif /* AL_405 */	    
 	{NULL,			NULL}		/* sentinel */
 };
 
