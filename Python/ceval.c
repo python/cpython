@@ -2139,10 +2139,10 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	
 	args = PyTuple_New(3);
 	if (args == NULL)
-		goto Py_Cleanup;
+		goto cleanup;
 	what = PyString_FromString(msg);
 	if (what == NULL)
-		goto Py_Cleanup;
+		goto cleanup;
 	Py_INCREF(f);
 	PyTuple_SET_ITEM(args, 0, (PyObject *)f);
 	PyTuple_SET_ITEM(args, 1, what);
@@ -2155,7 +2155,7 @@ call_trace(p_trace, p_newtrace, f, msg, arg)
 	res = PyEval_CallObject(*p_trace, args); /* May clear *p_trace! */
 	PyFrame_LocalsToFast(f, 1);
 	tstate->tracing--;
- Py_Cleanup:
+ cleanup:
 	Py_XDECREF(args);
 	if (res == NULL) {
 		/* The trace proc raised an exception */
