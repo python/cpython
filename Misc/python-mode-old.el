@@ -1,4 +1,4 @@
-;;; Major mode for editing Python programs, version 1.08a+
+;;; Major mode for editing Python programs, version 1.08ax
 ;; by: Tim Peters <tim@ksr.com>
 ;; after an original idea by: Michael A. Guravage
 ;;
@@ -39,16 +39,6 @@
   "*Indentation increment.
 Note that `\\[py-guess-indent-offset]' can usually guess a good value when you're
 editing someone else's Python code.")
-
-(defvar py-continuation-offset 2
-  "*Indentation (in addition to py-indent-offset) for continued lines.
-The additional indentation given to the first continuation line in a
-multi-line statement.  Each subsequent continuation line in the
-statement inherits its indentation from the line that precedes it, so if
-you don't like the default indentation given to the first continuation
-line, change it to something you do like and Python-mode will
-automatically use that for the remaining continuation lines (or, until
-you change the indentation again).")
 
 (defvar py-block-comment-prefix "##"
   "*String used by py-comment-region to comment out a block of code.
@@ -204,19 +194,20 @@ Emacs bell is also rung as a warning.")
 	    ( ?\# . "<")	; hash starts comment
 	    ( ?\n . ">"))))	; newline ends comment
 
-(defvar py-nested-indent t
-  "*If non-nil, indent nested continuation lines to inside the opening paren")
-
-(defconst py-stringlit-re "'\\([^'\n\\]\\|\\\\.\\)*'"
+(defconst py-stringlit-re
+  (concat
+   "'\\([^'\n\\]\\|\\\\.\\)*'"		; single-quoted
+   "\\|"				; or
+   "\"\\([^\"\n\\]\\|\\\\.\\)*\"")	; double-quoted
   "regexp matching a Python string literal")
 
 ;; this is tricky because a trailing backslash does not mean
 ;; continuation if it's in a comment
 (defconst py-continued-re
   (concat
-   "\\(" "[^#'\n\\]" "\\|" py-stringlit-re "\\)*"
+   "\\(" "[^#'\"\n\\]" "\\|" py-stringlit-re "\\)*"
    "\\\\$")
-  "regexp matching Python lines that are continued")
+  "regexp matching Python lines that are continued via backslash")
 
 (defconst py-blank-or-comment-re "[ \t]*\\($\\|#\\)"
   "regexp matching blank or comment lines")
@@ -234,7 +225,6 @@ COMMANDS
 VARIABLES
 
 py-indent-offset\tindentation increment
-py-continuation-offset\textra indentation given to continuation lines
 py-block-comment-prefix\tcomment string used by py-comment-region
 py-python-command\tshell command to invoke Python interpreter
 py-scroll-process-buffer\talways scroll Python process buffer
@@ -257,6 +247,7 @@ py-beep-if-tab-change\tring the bell if tab-width is changed"
 	     (comment-start .		"# ")
 	     (comment-start-skip .	"# *")
 	     (comment-column . 40)
+	     (indent-region-function . py-indent-region)
 	     (indent-line-function . py-indent-line)))
 
   ;; hack to allow overriding the tabsize in the file (see tokenizer.c)
@@ -518,17 +509,27 @@ the new line indented."
     (cond
      ;; are we on a continuation line?
      ( (py-continuation-line-p)
-       (let ((nest (and py-nested-indent (py-nesting-level))))
-	 (if nest
-	     (save-excursion
-	       (goto-char nest)
-	       (1+ (current-column)))
+       (let ( (open-bracket-pos (py-nesting-level)) )
+	 (if open-bracket-pos
+	     ;; line up with first real character (not whitespace or
+	     ;; comment hash) after open bracket; if none, to one
+	     ;; column beyond the open bracket
+	     (progn
+	       (goto-char (1+ open-bracket-pos)) ; just beyond bracket
+	       (and (looking-at "[ \t]*[^ \t\n#]")
+		    (goto-char (1- (match-end 0))))
+	       (current-column))
+	   ;; else on backslash continuation line
 	   (forward-line -1)
-	   (if (py-continuation-line-p) ; on at least 3rd line in block
-	       (current-indentation)    ; so just continue the pattern
-	 ;; else on 2nd line in block, so indent more
-	     (+ (current-indentation) py-indent-offset
-		py-continuation-offset)))))
+	   (if (py-continuation-line-p)	; on at least 3rd line in block
+	       (current-indentation)	; so just continue the pattern
+	     ;; else started on 2nd line in block, so indent more;
+	     ;; skip first chunk of non-whitespace characters on base
+	     ;; line, + 1 more column
+	     (back-to-indentation)
+	     (skip-chars-forward "^ \t\n")
+	     (1+ (current-column))))))
+
      ;; not on a continuation line
 
      ;; if at start of restriction, or on a non-indenting comment line,
@@ -1152,7 +1153,6 @@ variable docs begin with `->'.
 @VARIABLES
 
 py-indent-offset\tindentation increment
-py-continuation-offset\textra indentation given to continuation lines
 py-block-comment-prefix\tcomment string used by py-comment-region
 
 py-python-command\tshell command to invoke Python interpreter
@@ -1161,7 +1161,6 @@ py-temp-directory\tdirectory used for temp files (if needed)
 
 py-beep-if-tab-change\tring the bell if tab-width is changed
 %v:py-indent-offset
-%v:py-continuation-offset
 %v:py-block-comment-prefix
 %v:py-python-command
 %v:py-scroll-process-buffer
@@ -1217,16 +1216,6 @@ generally (when it makes sense) automatically move to the start of the
 statement containing point, even if point happens to be in the middle of
 some continuation line.
 
-A Bad Idea
-
-Always put something on the initial line of a multi-line statement
-besides the backslash!  E.g., don't do this:
-
-\t\\
-\ta = b # what's the indentation of this stmt?
-
-While that's legal Python, it's silly & would be very expensive for
-Python mode to handle correctly.
 
 @INDENTATION
 
@@ -1273,6 +1262,19 @@ statement, or adds an extra py-indent-offset blanks if the preceding
 statement has `:' as its last significant (non-whitespace and non-
 comment) character.  If the suggested indentation is too much, use
 \\[py-delete-char] to reduce it.
+
+Continuation lines are given extra indentation.  If a line is a
+continuation line by virtue of being in an unclosed paren/bracket/
+brace structure, it's indented to line up with the first non-whitespace
+and non-comment character following the opening paren/bracket/brace
+of the smallest such enclosing structure.  If no such character exists,
+it's indented to one column beyond the opening paren/bracket/brace.
+
+If a line is a continuation line because the line preceding it ends with
+a backslash, the third and following lines of the continuation block
+inherit their indentation from the line preceding them, while the second
+line in the block is indented to one column beyond the first chunk of
+non-whitespace characters in the block's initial line.
 
 Warning:  indent-region should not normally be used!  It calls \\[indent-for-tab-command]
 repeatedly, and as explained above, \\[indent-for-tab-command] can't guess the block
