@@ -57,10 +57,9 @@ class DocBuild(build):
 		self.spawn('tar', '-xzf', '../html-%s.tgz' % self.doc_version)
 		os.chdir(workdir);
 		
-	def buildDocsFromSouce(self):
-		#Totally untested
-		spawn(('make','--directory', '../Docs'), 1, self.verbose, self.dry_run)
-		copy_tree('../Docs/html', self.doc_dir)
+	def buildDocsFromSource(self):
+		spawn(('make','--directory', '../../Doc', 'html'), 1, self.verbose, self.dry_run)
+		copy_tree('../../Doc/html', self.doc_dir)
 		
 	def ensureHtml(self):
 		if not os.path.exists(self.doc_dir):
