@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\Include" /I ".." /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
 # ADD RSC /l 0x409 /d "NDEBUG"
 BSC32=bscmake.exe
@@ -56,8 +56,8 @@ LINK32=link.exe
 InputPath=.\make_versioninfo.exe
 SOURCE="$(InputPath)"
 
-"..\PC\pythonnt_rc.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	.\make_versioninfo.exe >..\PC\pythonnt_rc.h
+"..\pythonnt_rc.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	.\make_versioninfo.exe >..\pythonnt_rc.h
 
 # End Custom Build
 
@@ -75,9 +75,9 @@ SOURCE="$(InputPath)"
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\Include" /I ".." /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR /YX /FD /c
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /i "..\Include" /d "_DEBUG"
+# ADD RSC /l 0x409 /i "..\..\Include" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -89,8 +89,8 @@ LINK32=link.exe
 InputPath=.\make_versioninfo_d.exe
 SOURCE="$(InputPath)"
 
-"..\PC\pythonnt_rc_d.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
-	.\make_versioninfo_d.exe >..\PC\pythonnt_rc_d.h
+"..\pythonnt_rc_d.h" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+	.\make_versioninfo_d.exe >..\pythonnt_rc_d.h
 
 # End Custom Build
 
@@ -102,7 +102,7 @@ SOURCE="$(InputPath)"
 # Name "make_versioninfo - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\PC\make_versioninfo.c
+SOURCE=..\..\make_versioninfo.c
 # End Source File
 # End Target
 # End Project

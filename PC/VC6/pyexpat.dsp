@@ -44,7 +44,7 @@ RSC=rc.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /I "..\Modules\expat" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D BYTEORDER=1234 /D XML_CONTEXT_BYTES=1024 /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D BYTEORDER=1234 /D XML_CONTEXT_BYTES=1024 /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -72,7 +72,7 @@ LINK32=link.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /I "..\Modules\expat" /D "_DEBUG" /D "HAVE_EXPAT_H" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D BYTEORDER=1234 /D XML_CONTEXT_BYTES=1024 /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\Include" /I ".." /I "..\..\Modules\expat" /D "_DEBUG" /D "HAVE_EXPAT_H" /D "WIN32" /D "_WINDOWS" /D "XML_NS" /D "XML_DTD" /D BYTEORDER=1234 /D XML_CONTEXT_BYTES=1024 /D "XML_STATIC" /D "HAVE_MEMMOVE" /YX /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o "NUL" /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -93,19 +93,19 @@ LINK32=link.exe
 # Name "pyexpat - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\Modules\pyexpat.c
+SOURCE=..\..\Modules\pyexpat.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\expat\xmlparse.c
+SOURCE=..\..\Modules\expat\xmlparse.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\expat\xmlrole.c
+SOURCE=..\..\Modules\expat\xmlrole.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\expat\xmltok.c
+SOURCE=..\..\Modules\expat\xmltok.c
 # End Source File
 # End Target
 # End Project

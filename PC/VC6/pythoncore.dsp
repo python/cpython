@@ -44,11 +44,11 @@ RSC=rc.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\Include" /I "..\PC" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /Zm200 /c
+# ADD CPP /nologo /MD /W3 /GX /Zi /O2 /I "..\..\Include" /I ".." /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "USE_DL_EXPORT" /YX /FD /Zm200 /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
-# ADD RSC /l 0x409 /i "..\Include" /d "NDEBUG"
+# ADD RSC /l 0x409 /i "..\..\Include" /d "NDEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -72,11 +72,11 @@ LINK32=link.exe
 # PROP Target_Dir ""
 F90=df.exe
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
-# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\Include" /I "..\PC" /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /Zm200 /c
+# ADD CPP /nologo /MDd /W3 /Gm /GX /Zi /Od /I "..\..\Include" /I ".." /D "_DEBUG" /D "USE_DL_EXPORT" /D "WIN32" /D "_WINDOWS" /YX /FD /Zm200 /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o /win32 "NUL"
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
-# ADD RSC /l 0x409 /i "..\Include" /d "_DEBUG"
+# ADD RSC /l 0x409 /i "..\..\Include" /d "_DEBUG"
 BSC32=bscmake.exe
 # ADD BASE BSC32 /nologo
 # ADD BSC32 /nologo
@@ -93,477 +93,477 @@ LINK32=link.exe
 # Name "pythoncore - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\Modules\_codecsmodule.c
+SOURCE=..\..\Modules\_codecsmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\_hotshot.c
+SOURCE=..\..\Modules\_hotshot.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\_localemodule.c
+SOURCE=..\..\Modules\_localemodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\_randommodule.c
+SOURCE=..\..\Modules\_randommodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\_weakref.c
+SOURCE=..\..\Modules\_weakref.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\abstract.c
+SOURCE=..\..\Objects\abstract.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\acceler.c
+SOURCE=..\..\Parser\acceler.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\arraymodule.c
+SOURCE=..\..\Modules\arraymodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\audioop.c
+SOURCE=..\..\Modules\audioop.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\binascii.c
+SOURCE=..\..\Modules\binascii.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\bitset.c
+SOURCE=..\..\Parser\bitset.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\bltinmodule.c
+SOURCE=..\..\Python\bltinmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\boolobject.c
+SOURCE=..\..\Objects\boolobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\bufferobject.c
+SOURCE=..\..\Objects\bufferobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\cellobject.c
+SOURCE=..\..\Objects\cellobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\ceval.c
+SOURCE=..\..\Python\ceval.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\classobject.c
+SOURCE=..\..\Objects\classobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\cmathmodule.c
+SOURCE=..\..\Modules\cmathmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\cobject.c
+SOURCE=..\..\Objects\cobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\codecs.c
+SOURCE=..\..\Python\codecs.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\compile.c
+SOURCE=..\..\Python\compile.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\complexobject.c
+SOURCE=..\..\Objects\complexobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\config.c
+SOURCE=..\config.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\cPickle.c
+SOURCE=..\..\Modules\cPickle.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\cStringIO.c
+SOURCE=..\..\Modules\cStringIO.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\descrobject.c
+SOURCE=..\..\Objects\descrobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\dictobject.c
+SOURCE=..\..\Objects\dictobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\dl_nt.c
+SOURCE=..\dl_nt.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\dynload_win.c
+SOURCE=..\..\Python\dynload_win.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\enumobject.c
+SOURCE=..\..\Objects\enumobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\errnomodule.c
+SOURCE=..\..\Modules\errnomodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\errors.c
+SOURCE=..\..\Python\errors.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\exceptions.c
+SOURCE=..\..\Python\exceptions.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\fileobject.c
+SOURCE=..\..\Objects\fileobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\floatobject.c
+SOURCE=..\..\Objects\floatobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\frameobject.c
+SOURCE=..\..\Objects\frameobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\frozen.c
+SOURCE=..\..\Python\frozen.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\funcobject.c
+SOURCE=..\..\Objects\funcobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\future.c
+SOURCE=..\..\Python\future.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\gcmodule.c
+SOURCE=..\..\Modules\gcmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getargs.c
+SOURCE=..\..\Python\getargs.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\getbuildinfo.c
+SOURCE=..\..\Modules\getbuildinfo.c
 # ADD CPP /D BUILD=46
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getcompiler.c
+SOURCE=..\..\Python\getcompiler.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getcopyright.c
+SOURCE=..\..\Python\getcopyright.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getmtime.c
+SOURCE=..\..\Python\getmtime.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getopt.c
+SOURCE=..\..\Python\getopt.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\getpathp.c
+SOURCE=..\getpathp.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getplatform.c
+SOURCE=..\..\Python\getplatform.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\getversion.c
+SOURCE=..\..\Python\getversion.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\graminit.c
+SOURCE=..\..\Python\graminit.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\grammar1.c
+SOURCE=..\..\Parser\grammar1.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\heapqmodule.c
+SOURCE=..\..\Modules\heapqmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\imageop.c
+SOURCE=..\..\Modules\imageop.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\import.c
+SOURCE=..\..\Python\import.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\import_nt.c
-# ADD CPP /I "..\Python"
+SOURCE=..\import_nt.c
+# ADD CPP /I "..\..\Python"
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\importdl.c
+SOURCE=..\..\Python\importdl.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\intobject.c
+SOURCE=..\..\Objects\intobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\iterobject.c
+SOURCE=..\..\Objects\iterobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\itertoolsmodule.c
+SOURCE=..\..\Modules\itertoolsmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\listnode.c
+SOURCE=..\..\Parser\listnode.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\listobject.c
+SOURCE=..\..\Objects\listobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\longobject.c
+SOURCE=..\..\Objects\longobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\main.c
+SOURCE=..\..\Modules\main.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\marshal.c
+SOURCE=..\..\Python\marshal.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\mathmodule.c
+SOURCE=..\..\Modules\mathmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\md5c.c
+SOURCE=..\..\Modules\md5c.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\md5module.c
+SOURCE=..\..\Modules\md5module.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\metagrammar.c
+SOURCE=..\..\Parser\metagrammar.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\methodobject.c
+SOURCE=..\..\Objects\methodobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\modsupport.c
+SOURCE=..\..\Python\modsupport.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\moduleobject.c
+SOURCE=..\..\Objects\moduleobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\msvcrtmodule.c
+SOURCE=..\msvcrtmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\myreadline.c
+SOURCE=..\..\Parser\myreadline.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\mysnprintf.c
+SOURCE=..\..\Python\mysnprintf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\mystrtoul.c
+SOURCE=..\..\Python\mystrtoul.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\node.c
+SOURCE=..\..\Parser\node.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\object.c
+SOURCE=..\..\Objects\object.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\obmalloc.c
+SOURCE=..\..\Objects\obmalloc.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\operator.c
+SOURCE=..\..\Modules\operator.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\parser.c
+SOURCE=..\..\Parser\parser.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\parsetok.c
+SOURCE=..\..\Parser\parsetok.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\pcremodule.c
+SOURCE=..\..\Modules\pcremodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\posixmodule.c
+SOURCE=..\..\Modules\posixmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\pyfpe.c
+SOURCE=..\..\Python\pyfpe.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\pypcre.c
+SOURCE=..\..\Modules\pypcre.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\pystate.c
+SOURCE=..\..\Python\pystate.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\PC\python_nt.rc
+SOURCE=..\python_nt.rc
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\pythonrun.c
+SOURCE=..\..\Python\pythonrun.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\rangeobject.c
+SOURCE=..\..\Objects\rangeobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\regexmodule.c
+SOURCE=..\..\Modules\regexmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\regexpr.c
+SOURCE=..\..\Modules\regexpr.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\rgbimgmodule.c
+SOURCE=..\..\Modules\rgbimgmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\rotormodule.c
+SOURCE=..\..\Modules\rotormodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\setobject.c
+SOURCE=..\..\Objects\setobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\shamodule.c
+SOURCE=..\..\Modules\shamodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\signalmodule.c
+SOURCE=..\..\Modules\signalmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\sliceobject.c
+SOURCE=..\..\Objects\sliceobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\stringobject.c
+SOURCE=..\..\Objects\stringobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\stropmodule.c
+SOURCE=..\..\Modules\stropmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\structmember.c
+SOURCE=..\..\Python\structmember.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\structmodule.c
+SOURCE=..\..\Modules\structmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\structseq.c
+SOURCE=..\..\Objects\structseq.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\symtable.c
+SOURCE=..\..\Python\symtable.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\sysmodule.c
+SOURCE=..\..\Python\sysmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\thread.c
+SOURCE=..\..\Python\thread.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\threadmodule.c
+SOURCE=..\..\Modules\threadmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\timemodule.c
+SOURCE=..\..\Modules\timemodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Parser\tokenizer.c
+SOURCE=..\..\Parser\tokenizer.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Python\traceback.c
+SOURCE=..\..\Python\traceback.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\tupleobject.c
+SOURCE=..\..\Objects\tupleobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\typeobject.c
+SOURCE=..\..\Objects\typeobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\unicodectype.c
+SOURCE=..\..\Objects\unicodectype.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\unicodeobject.c
+SOURCE=..\..\Objects\unicodeobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Objects\weakrefobject.c
+SOURCE=..\..\Objects\weakrefobject.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\xreadlinesmodule.c
+SOURCE=..\..\Modules\xreadlinesmodule.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\xxsubtype.c
+SOURCE=..\..\Modules\xxsubtype.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\yuvconvert.c
+SOURCE=..\..\Modules\yuvconvert.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\Modules\zipimport.c
+SOURCE=..\..\Modules\zipimport.c
 # End Source File
 # End Target
 # End Project

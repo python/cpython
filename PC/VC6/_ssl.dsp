@@ -83,7 +83,7 @@ CFG=_ssl - Win32 Debug
 
 # Begin Source File
 
-SOURCE=..\Modules\_ssl.c
+SOURCE=..\..\Modules\_ssl.c
 # End Source File
 # End Target
 # End Project
