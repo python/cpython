@@ -1,0 +1,35 @@
+% Documentation based on module docstrings, by Fred L. Drake, Jr.
+% <fdrake@acm.org>
+
+\section{\module{py_compile} ---
+         Compile Python source files.}
+
+\declaremodule[pycompile]{standard}{py_compile}
+
+\modulesynopsis{Compile Python source files to byte-code files.}
+
+
+\indexii{file}{byte-code}
+The \module{py_compile} module provides a single function to generate
+a byte-code file from a source file.
+
+Though not often needed, this function can be useful when installing
+modules for shared use, especially if some of the users may not have
+permission to write the byte-code cache files in the directory
+containing the source code.
+
+
+\begin{funcdesc}{compile}{file\optional{, cfile\optional{, dfile}}}
+  Compile a source file to byte-code and write out the byte-code cache 
+  file.  The source code is loaded from the file name \var{file}.  The 
+  byte-code is written to \var{cfile}, which defaults to \var{file}
+  \code{+} \code{'c'} (\code{'o'} if optimization is enabled in the
+  current interpreter).  If \var{dfile} is specified, it is used as
+  the name of the source file in error messages instead of \var{file}. 
+\end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{compileall}{Utilities to compile all Python source files
+                         in a directory tree.}
+\end{seealso}
