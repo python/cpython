@@ -556,7 +556,10 @@ all_ins(PyObject* d)
 	INS(I_FDINSERT);
 	INS(I_STR);
 	INS(I_SWROPT);
+#ifdef I_GWROPT
+	/* despite the comment above, old-ish glibcs miss a couple... */
 	INS(I_GWROPT);
+#endif
 	INS(I_SENDFD);
 	INS(I_RECVFD);
 	INS(I_LIST);
@@ -565,7 +568,9 @@ all_ins(PyObject* d)
 	INS(I_GETBAND);
 	INS(I_CANPUT);
 	INS(I_SETCLTIME);
+#ifdef I_GETCLTIME
 	INS(I_GETCLTIME);
+#endif
 	INS(I_LINK);
 	INS(I_UNLINK);
 	INS(I_PLINK);
