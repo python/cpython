@@ -1300,6 +1300,9 @@ AC_CHECK_TYPE(socklen_t, int)
 
 AC_MSG_CHECKING(for Modules/Setup)
 if test ! -f Modules/Setup ; then
+    if test ! -d Modules ; then
+        mkdir Modules
+    fi
     cp "$srcdir/Modules/Setup.dist" Modules/Setup
     AC_MSG_RESULT(creating)
 else
