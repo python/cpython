@@ -45,6 +45,10 @@ Core
 
 Library
 
+- StringIO.StringIO instances and cStringIO.StringIO instances support
+  iteration just like file objects (i.e. their .readline() method is
+  called for each iteration until it returns an empty string).
+
 - The codecs module has grown four new helper APIs to access
   builtin codecs: getencoder(), getdecoder(), getreader(),
   getwriter().
