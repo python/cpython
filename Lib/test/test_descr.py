@@ -3441,6 +3441,8 @@ def do_this_first():
     type.mro(tuple)
 
 def test_mutable_bases():
+    if verbose:
+        print "Testing mutable bases..."
     # stuff that should work:
     class C(object):
         pass
@@ -3538,6 +3540,8 @@ def test_mutable_bases():
         raise TestFailed, "new-style class must have a new-style base"
 
 def test_mutable_bases_with_failing_mro():
+    if verbose:
+        print "Testing mutable bases with failing mro..."
     class WorkOnce(type):
         def __new__(self, name, bases, ns):
             self.flag = 0
@@ -3591,6 +3595,8 @@ def test_mutable_bases_with_failing_mro():
         raise TestFailed, "exception not propagated"
 
 def test_mutable_bases_catch_mro_conflict():
+    if verbose:
+        print "Testing mutable bases catch mro conflict..."
     class A(object):
         pass
 
@@ -3614,6 +3620,8 @@ def test_mutable_bases_catch_mro_conflict():
         raise TestFailed, "didn't catch MRO conflict"
 
 def mutable_names():
+    if verbose:
+        print "Testing mutable names..."
     class C(object):
         pass
 
