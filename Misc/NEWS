@@ -26,6 +26,10 @@ Extension modules
 Library
 -------
 
+- bug #679953: zipfile.py should now work for files over 2 GB.  The packed data
+  for file sizes (compressed and uncompressed) was being stored as signed
+  instead of unsigned.
+
 - decimal.py now only uses signals in the spec.  The other conditions are
   no longer part of the public API.
 
