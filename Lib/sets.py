@@ -280,13 +280,14 @@ class BaseSet(object):
 
     def _update(self, iterable):
         # The main loop for update() and the subclass __init__() methods.
-        # XXX This can be optimized a bit by first trying the loop
-        # without setting up a try/except for each element.
         data = self._data
         value = True
-        for element in iterable:
+        it = iter(iterable)
+        while True:
             try:
-                data[element] = value
+                for element in it:
+                    data[element] = value
+                return
             except TypeError:
                 transform = getattr(element, "_as_immutable", None)
                 if transform is None:
