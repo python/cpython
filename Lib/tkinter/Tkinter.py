@@ -119,8 +119,7 @@ def getboolean(s):
 	return _default_root.tk.getboolean(s)
 
 class Misc:
-	def __init__(self):
-		self._tclCommands = None
+	_tclCommands = None
 	def destroy(self):
 		if self._tclCommands is not None:
 			for name in self._tclCommands:
@@ -661,7 +660,6 @@ class Wm:
 class Tk(Misc, Wm):
 	_w = '.'
 	def __init__(self, screenName=None, baseName=None, className='Tk'):
-		Misc.__init__(self)
 		global _default_root
 		self.master = None
 		self.children = {}
@@ -907,7 +905,6 @@ class Widget(Misc, Pack, Place, Grid):
 			self.master.children[self._name].destroy()
 		self.master.children[self._name] = self
 	def __init__(self, master, widgetName, cnf={}, kw={}, extra=()):
-		Misc.__init__(self)
 		if kw:
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
