@@ -57,8 +57,7 @@ def join(a, *p):
 def split(p):
     """Split a pathname.  Returns tuple "(head, tail)" where "tail" is 
 everything after the final slash.  Either part may be empty"""
-    import string
-    i = string.rfind(p, '/') + 1
+    i = p.rfind('/') + 1
     head, tail = p[:i], p[i:]
     if head and head <> '/'*len(head):
         while head[-1] == '/':
@@ -344,9 +343,8 @@ def normpath(path):
     """Normalize path, eliminating double slashes, etc."""
     if path == '':
         return '.'
-    import string
     initial_slash = (path[0] == '/')
-    comps = string.split(path, '/')
+    comps = path.split('/')
     new_comps = []
     for comp in comps:
         if comp in ('', '.'):
@@ -357,7 +355,7 @@ def normpath(path):
         elif new_comps:
             new_comps.pop()
     comps = new_comps
-    path = string.join(comps, '/')
+    path = '/'.join(comps)
     if initial_slash:
         path = '/' + path
     return path or '.'
