@@ -447,7 +447,8 @@ class HTTPRedirectHandler(BaseHandler):
         new = Request(newurl, req.get_data())
         new.error_302_dict = {}
         if hasattr(req, 'error_302_dict'):
-            if len(error_302_dict)>10 or req.error_302_dict.has_key(newurl):
+            if len(req.error_302_dict)>10 or \
+               req.error_302_dict.has_key(newurl):
                 raise HTTPError(req.get_full_url(), code,
                                 self.inf_msg + msg, headers)
             new.error_302_dict.update(req.error_302_dict)
