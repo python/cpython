@@ -221,6 +221,20 @@ int shutdown( int, int );
 #define FORCE_ANSI_FUNC_DEFS
 #endif
 
+/* abstract the socket file descriptor type */
+#ifdef MS_WINDOWS
+typedef SOCKET SOCKET_T;
+#	ifdef MS_WIN64
+#		define SIZEOF_SOCKET_T 8
+#	else
+#		define SIZEOF_SOCKET_T 4
+#	endif
+#else
+typedef int SOCKET_T;
+#	define SIZEOF_SOCKET_T SIZEOF_INT
+#endif
+
+
 #if defined(PYOS_OS2)
 #define SOCKETCLOSE soclose
 #define NO_DUP /* Sockets are Not Actual File Handles under OS/2 */
@@ -337,7 +351,7 @@ PySocket_Err()
 
 typedef struct {
 	PyObject_HEAD
-	int sock_fd;		/* Socket file descriptor */
+	SOCKET_T sock_fd;		/* Socket file descriptor */
 	int sock_family;	/* Address family, e.g., AF_INET */
 	int sock_type;		/* Socket type, e.g., SOCK_STREAM */
 	int sock_proto;		/* Protocol type, usually 0 */
@@ -387,7 +401,7 @@ staticforward PyTypeObject PySocketSock_Type;
    in NEWOBJ()). */
 
 static PySocketSockObject *
-BUILD_FUNC_DEF_4(PySocketSock_New,int,fd, int,family, int,type, int,proto)
+BUILD_FUNC_DEF_4(PySocketSock_New,SOCKET_T,fd, int,family, int,type, int,proto)
 {
 	PySocketSockObject *s;
 	PySocketSock_Type.ob_type = &PyType_Type;
@@ -666,7 +680,7 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 {
 	char addrbuf[256];
-	int newfd;
+	SOCKET_T newfd;
 	socklen_t addrlen;
 	PyObject *sock = NULL;
 	PyObject *addr = NULL;
@@ -679,7 +693,11 @@ BUILD_FUNC_DEF_2(PySocketSock_accept,PySocketSockObject *,s, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	newfd = accept(s->sock_fd, (struct sockaddr *) addrbuf, &addrlen);
 	Py_END_ALLOW_THREADS
+#ifdef MS_WINDOWS
+	if (newfd == INVALID_SOCKET)
+#else
 	if (newfd < 0)
+#endif
 		return PySocket_Err();
 
 	/* Create the new object with unspecified family,
@@ -968,7 +986,11 @@ BUILD_FUNC_DEF_2(PySocketSock_fileno,PySocketSockObject *,s, PyObject *,args)
 {
 	if (!PyArg_ParseTuple(args, ":fileno"))
 		return NULL;
+#if SIZEOF_SOCKET_T <= SIZEOF_LONG
 	return PyInt_FromLong((long) s->sock_fd);
+#else
+	return PyLong_FromLongLong((LONG_LONG)s->sock_fd);
+#endif
 }
 
 static char fileno_doc[] =
@@ -983,7 +1005,7 @@ Return the integer file descriptor of the socket.";
 static PyObject *
 BUILD_FUNC_DEF_2(PySocketSock_dup,PySocketSockObject *,s, PyObject *,args)
 {
-	int newfd;
+	SOCKET_T newfd;
 	PyObject *sock;
 	if (!PyArg_ParseTuple(args, ":dup"))
 		return NULL;
@@ -1109,7 +1131,11 @@ BUILD_FUNC_DEF_2(PySocketSock_makefile,PySocketSockObject *,s, PyObject *,args)
 	extern int fclose Py_PROTO((FILE *));
 	char *mode = "r";
 	int bufsize = -1;
+#ifdef MS_WIN32
+	intptr_t fd;
+#else
 	int fd;
+#endif	
 	FILE *fp;
 	PyObject *f;
 
@@ -1387,9 +1413,19 @@ static PyObject *
 BUILD_FUNC_DEF_1(PySocketSock_repr,PySocketSockObject *,s)
 {
 	char buf[512];
+#if SIZEOF_SOCKET_T > SIZEOF_LONG
+	if (s->sock_fd > LONG_MAX) {
+		/* this can occur on Win64, and actually there is a special
+		   ugly printf formatter for decimal pointer length integer
+		   printing, only bother if necessary*/
+		PyErr_SetString(PyExc_OverflowError,
+			"no printf formatter to display the socket descriptor in decimal");
+		return NULL;
+	}
+#endif
 	sprintf(buf, 
-		"<socket object, fd=%d, family=%d, type=%d, protocol=%d>", 
-		s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
+		"<socket object, fd=%ld, family=%d, type=%d, protocol=%d>", 
+		(long)s->sock_fd, s->sock_family, s->sock_type, s->sock_proto);
 	return PyString_FromString(buf);
 }
 
@@ -1716,11 +1752,7 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocket_socket,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
-#ifdef MS_WINDOWS
-	SOCKET fd;
-#else
-	int fd;
-#endif
+	SOCKET_T fd;
 	int family, type, proto = 0;
 	if (!PyArg_ParseTuple(args, "ii|i:socket", &family, &type, &proto))
 		return NULL;
@@ -1766,7 +1798,8 @@ static PyObject *
 BUILD_FUNC_DEF_2(PySocket_fromfd,PyObject *,self, PyObject *,args)
 {
 	PySocketSockObject *s;
-	int fd, family, type, proto = 0;
+	SOCKET_T fd;
+	int family, type, proto = 0;
 	if (!PyArg_ParseTuple(args, "iii|i:fromfd",
 			      &fd, &family, &type, &proto))
 		return NULL;
@@ -2113,7 +2146,7 @@ staticforward PyTypeObject SSL_Type = {
 static PyObject *SSL_SSLwrite(SSLObject *self, PyObject *args)
 {
 	char *data;
-	int len = 0;
+	size_t len = 0;
   
 	if (!PyArg_ParseTuple(args, "s|i:write", &data, &len))
 		return NULL;
