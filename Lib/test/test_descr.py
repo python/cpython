@@ -2843,6 +2843,25 @@ def modules():
     m.foo = 1
     vereq(m.__dict__, {"foo": 1})
 
+def docdescriptor():
+    # SF bug 542984
+    if verbose: print "Testing __doc__ descriptor..."
+    class DocDescr(object):
+        def __get__(self, object, otype):
+            if object:
+                object = object.__class__.__name__ + ' instance'
+            if otype:
+                otype = otype.__name__
+            return 'object=%s; type=%s' % (object, otype)
+    class OldClass:
+        __doc__ = DocDescr()
+    class NewClass(object):
+        __doc__ = DocDescr()
+    vereq(OldClass.__doc__, 'object=None; type=OldClass')
+    vereq(OldClass().__doc__, 'object=OldClass instance; type=OldClass')
+    vereq(NewClass.__doc__, 'object=None; type=NewClass')
+    vereq(NewClass().__doc__, 'object=NewClass instance; type=NewClass')
+
 def test_main():
     class_docstrings()
     lists()
@@ -2900,6 +2919,7 @@ def test_main():
     deepcopyrecursive()
     modules()
     pickleslots()
+    docdescriptor()
     if verbose: print "All OK"
 
 if __name__ == "__main__":
