@@ -55,8 +55,11 @@ def _compile(code, pattern, flags):
                 _compile(code, av[2], flags)
                 emit(OPCODES[SUCCESS])
                 code[skip] = len(code) - skip
-            elif _simple(av) and op == MAX_REPEAT:
-                emit(OPCODES[REPEAT_ONE])
+            elif _simple(av) and op != REPEAT:
+                if op == MAX_REPEAT:
+                    emit(OPCODES[REPEAT_ONE])
+                else:
+                    emit(OPCODES[MIN_REPEAT_ONE])
                 skip = len(code); emit(0)
                 emit(av[0])
                 emit(av[1])

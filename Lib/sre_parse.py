@@ -419,7 +419,7 @@ def _parse(source, state):
                         set.append(code1)
                         set.append((LITERAL, ord("-")))
                         break
-                    else:
+                    elif this:
                         if this[0] == "\\":
                             code2 = _class_escape(source, this)
                         else:
@@ -431,6 +431,8 @@ def _parse(source, state):
                         if hi < lo:
                             raise error, "bad character range"
                         set.append((RANGE, (lo, hi)))
+                    else:
+                        raise error, "unexpected end of regular expression"
                 else:
                     if code1[0] is IN:
                         code1 = code1[1][0]

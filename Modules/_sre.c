@@ -993,6 +993,66 @@ SRE_MATCH(SRE_STATE* state, SRE_CODE* pattern, int level)
             }
             return 0;
 
+        case SRE_OP_MIN_REPEAT_ONE:
+            /* match repeated sequence (minimizing regexp) */
+
+            /* this operator only works if the repeated item is
+               exactly one character wide, and we're not already
+               collecting backtracking points.  for other cases,
+               use the MIN_REPEAT operator */
+
+            /* <MIN_REPEAT_ONE> <skip> <1=min> <2=max> item <SUCCESS> tail */
+
+            TRACE(("|%p|%p|MIN_REPEAT_ONE %d %d\n", pattern, ptr,
+                   pattern[1], pattern[2]));
+
+            if (ptr + pattern[1] > end)
+                return 0; /* cannot match */
+
+            state->ptr = ptr;
+
+            if (pattern[1] == 0)
+                count = 0;
+            else {
+                /* count using pattern min as the maximum */
+                count = SRE_COUNT(state, pattern + 3, pattern[1], level + 1);
+
+                if (count < 0)
+                    return count;   /* exception */
+                if (count < (int) pattern[1])
+                    return 0;       /* did not match minimum number of times */ 
+                ptr += count;       /* advance past minimum matches of repeat */
+            }
+
+            if (pattern[pattern[0]] == SRE_OP_SUCCESS) {
+                /* tail is empty.  we're finished */
+                state->ptr = ptr;
+                return 1;
+
+            } else {
+                /* general case */
+                int matchmax = ((int)pattern[2] == 65535);
+                int c;
+                lastmark = state->lastmark;
+                while (matchmax || count <= (int) pattern[2]) {
+                    state->ptr = ptr;
+                    i = SRE_MATCH(state, pattern + pattern[0], level + 1);
+                    if (i)
+                        return i;
+                    state->ptr = ptr;
+                    c = SRE_COUNT(state, pattern+3, 1, level+1);
+                    if (c < 0)
+                        return c;
+                    if (c == 0)
+                        break;
+                    assert(c == 1);
+                    ptr++;
+                    count++;
+                }
+                lastmark_restore(state, lastmark);
+            }
+            return 0;
+
         case SRE_OP_REPEAT:
             /* create repeat context.  all the hard work is done
                by the UNTIL operator (MAX_UNTIL, MIN_UNTIL) */
