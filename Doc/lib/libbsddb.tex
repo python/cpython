@@ -100,8 +100,9 @@ systems which ship with the old Berkeley DB 1.85 database library.  The
 
 \subsection{Hash, BTree and Record Objects \label{bsddb-objects}}
 
-Once instantiated, hash, btree and record objects support the following
-methods:
+Once instantiated, hash, btree and record objects support
+the same methods as dictionaries.  In addition, they support
+the following methods:
 
 \begin{methoddesc}{close}{}
 Close the underlying file.  The object can no longer be accessed.  Since
@@ -177,6 +178,20 @@ Example:
 ('2', '4')
 >>> db.previous() 
 ('1', '1')
+>>> for k, v in db.iteritems():
+...     print k, v
+0 0
+1 1
+2 4
+3 9
+4 16
+5 25
+6 36
+7 49
+8 64
+9 81
+>>> 8 in db
+True
 >>> db.sync()
 0
 \end{verbatim}
