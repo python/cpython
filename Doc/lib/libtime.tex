@@ -29,12 +29,13 @@ determined by the C library; for \UNIX, it is typically in
 \strong{Year 2000 (Y2K) issues}:\index{Year 2000}\index{Y2K}  Python
 depends on the platform's C library, which generally doesn't have year
 2000 issues, since all dates and times are represented internally as
-seconds since the epoch.  Functions accepting a time tuple (see below)
-generally require a 4-digit year.  For backward compatibility, 2-digit
-years are supported if the module variable \code{accept2dyear} is a
-non-zero integer; this variable is initialized to \code{1} unless the
-environment variable \envvar{PYTHONY2K} is set to a non-empty string,
-in which case it is initialized to \code{0}.  Thus, you can set
+seconds since the epoch.  Functions accepting a \class{struct_time}
+(see below) generally require a 4-digit year.  For backward
+compatibility, 2-digit years are supported if the module variable
+\code{accept2dyear} is a non-zero integer; this variable is
+initialized to \code{1} unless the environment variable
+\envvar{PYTHONY2K} is set to a non-empty string, in which case it is
+initialized to \code{0}.  Thus, you can set
 \envvar{PYTHONY2K} to a non-empty string in the environment to require 4-digit
 years for all year input.  When 2-digit years are accepted, they are
 converted according to the \POSIX{} or X/Open standard: values 69-99
@@ -99,11 +100,11 @@ daylight savings flag, passed to \function{mktime()} will usually
 result in the correct daylight savings state to be filled in.
 
 When a tuple with an incorrect length is passed to a function
-expecting a time tuple, or having elements of the wrong type, a
+expecting a \class{struct_time}, or having elements of the wrong type, a
 \exception{TypeError} is raised.
 
 \versionchanged[The time value sequence was changed from a tuple to a
-                specialized type, with the addition of attribute names
+                \class{struct_time}, with the addition of attribute names
                 for the fields]{2.2}
 \end{itemize}
 
@@ -124,15 +125,16 @@ is defined.  This is negative if the local DST timezone is east of UTC
 \code{daylight} is nonzero.
 \end{datadesc}
 
-\begin{funcdesc}{asctime}{\optional{tuple}}
-Convert a tuple representing a time as returned by \function{gmtime()}
+\begin{funcdesc}{asctime}{\optional{t}}
+Convert a tuple or \class{struct_time} representing a time as returned
+by \function{gmtime()}
 or \function{localtime()} to a 24-character string of the following form:
-\code{'Sun Jun 20 23:21:05 1993'}.  If \var{tuple} is not provided, the
+\code{'Sun Jun 20 23:21:05 1993'}.  If \var{t} is not provided, the
 current time as returned by \function{localtime()} is used.
 Locale information is not used by \function{asctime()}.
 \note{Unlike the C function of the same name, there is no trailing
 newline.}
-\versionchanged[Allowed \var{tuple} to be omitted]{2.1}
+\versionchanged[Allowed \var{t} to be omitted]{2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{clock}{}
@@ -164,11 +166,11 @@ Nonzero if a DST timezone is defined.
 \end{datadesc}
 
 \begin{funcdesc}{gmtime}{\optional{secs}}
-Convert a time expressed in seconds since the epoch to a time tuple
+Convert a time expressed in seconds since the epoch to a \class{struct_time}
 in UTC in which the dst flag is always zero.  If \var{secs} is not
 provided, the current time as returned by \function{time()} is used.
 Fractions of a second are ignored.  See above for a description of the
-tuple lay-out.
+\class{struct_time} object.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
@@ -178,10 +180,11 @@ set to \code{1} when DST applies to the given time.
 \versionchanged[Allowed \var{secs} to be omitted]{2.1}
 \end{funcdesc}
 
-\begin{funcdesc}{mktime}{tuple}
+\begin{funcdesc}{mktime}{t}
 This is the inverse function of \function{localtime()}.  Its argument
-is the full 9-tuple (since the dst flag is needed; use \code{-1} as
-the dst flag if it is unknown) which expresses the time in
+is the \class{struct_time} or full 9-tuple (since the dst flag is
+needed; use \code{-1} as the dst flag if it is unknown) which
+expresses the time in
 \emph{local} time, not UTC.  It returns a floating point number, for
 compatibility with \function{time()}.  If the input value cannot be
 represented as a valid time, either \exception{OverflowError} or
@@ -200,12 +203,13 @@ time may be longer than requested by an arbitrary amount because of
 the scheduling of other activity in the system.
 \end{funcdesc}
 
-\begin{funcdesc}{strftime}{format\optional{, tuple}}
-Convert a tuple representing a time as returned by \function{gmtime()}
-or \function{localtime()} to a string as specified by the \var{format}
-argument.  If \var{tuple} is not provided, the current time as returned by
-\function{localtime()} is used.  \var{format} must be a string.
-\versionchanged[Allowed \var{tuple} to be omitted]{2.1}
+\begin{funcdesc}{strftime}{format\optional{, t}}
+Convert a tuple or \class{struct_time} representing a time as returned
+by \function{gmtime()} or \function{localtime()} to a string as
+specified by the \var{format} argument.  If \var{t} is not
+provided, the current time as returned by \function{localtime()} is
+used.  \var{format} must be a string.
+\versionchanged[Allowed \var{t} to be omitted]{2.1}
 
 The following directives can be embedded in the \var{format} string.
 They are shown without the optional field width and precision
@@ -277,7 +281,7 @@ The field width is normally 2 except for \code{\%j} where it is 3.
 
 \begin{funcdesc}{strptime}{string\optional{, format}}
 Parse a string representing a time according to a format.  The return 
-value is a tuple as returned by \function{gmtime()} or
+value is a \class{struct_time} as returned by \function{gmtime()} or
 \function{localtime()}.  The \var{format} parameter uses the same
 directives as those used by \function{strftime()}; it defaults to
 \code{"\%a \%b \%d \%H:\%M:\%S \%Y"} which matches the formatting
