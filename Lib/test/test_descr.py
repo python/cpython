@@ -342,17 +342,18 @@ def test_dir():
     import sys
     class M(type(sys)):
         pass
-    minstance = M()
+    minstance = M("m")
     minstance.b = 2
     minstance.a = 1
-    vereq(dir(minstance), ['a', 'b'])
+    names = [x for x in dir(minstance) if x not in ["__name__", "__doc__"]]
+    vereq(names, ['a', 'b'])
 
     class M2(M):
         def getdict(self):
             return "Not a dict!"
         __dict__ = property(getdict)
 
-    m2instance = M2()
+    m2instance = M2("m2")
     m2instance.b = 2
     m2instance.a = 1
     vereq(m2instance.__dict__, "Not a dict!")
@@ -818,8 +819,8 @@ def pymods():
     import sys
     MT = type(sys)
     class MM(MT):
-        def __init__(self):
-            MT.__init__(self)
+        def __init__(self, name):
+            MT.__init__(self, name)
         def __getattribute__(self, name):
             log.append(("getattr", name))
             return MT.__getattribute__(self, name)
@@ -829,7 +830,7 @@ def pymods():
         def __delattr__(self, name):
             log.append(("delattr", name))
             MT.__delattr__(self, name)
-    a = MM()
+    a = MM("a")
     a.foo = 12
     x = a.foo
     del a.foo
