@@ -225,7 +225,7 @@ associated with this name.  So you write a script containing for
 example this code:
 
 \begin{verbatim}
-user = form.getvalue("user").toupper()
+user = form.getvalue("user").upper()
 \end{verbatim}
 
 The problem with the code is that you should never expect that a
@@ -272,7 +272,7 @@ Using these methods you can write nice compact code:
 \begin{verbatim}
 import cgi
 form = cgi.FieldStorage()
-user = form.getfirst("user", "").toupper()    # This way it's safe.
+user = form.getfirst("user", "").upper()    # This way it's safe.
 for item in form.getlist("item"):
     do_something(item)
 \end{verbatim}
