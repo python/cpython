@@ -913,10 +913,13 @@ only if there exists an index \var{i} such that
 \code{\var{x} == \var{y}[\var{i}]} is true.
 
 For the Unicode and string types, \code{\var{x} in \var{y}} is true if
-and only if there exists an index \var{i} such that \code{\var{x} ==
-\var{y}[\var{i}]} is true. If \code{\var{x}} is not a string or
-Unicode object of length \code{1}, a \exception{TypeError} exception
-is raised.
+and only if \var{x} is a substring of \var{y}.  An equivalent test is
+\code{y.find(x) != -1}.  Note, \var{x} and \var{y} need not be the
+same type; consequently, \code{u'ab' in 'abc'} will return \code{True}.
+Empty strings are always considered to be a substring of any other string,
+so \code{"" in "abc"} will return \code{True}.
+\versionchanged[Previously, \var{x} was required to be a string of
+length \code{1}]{2.3}
 
 For user-defined classes which define the \method{__contains__()} method,
 \code{\var{x} in \var{y}} is true if and only if
