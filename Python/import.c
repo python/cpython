@@ -1111,8 +1111,11 @@ case_ok(char *buf, int len, int namelen, char *name)
 #elif defined(__MACH__) && defined(__APPLE__)
 	DIR *dirp;
 	struct dirent *dp;
-	char pathname[MAX_PATH + 1];
+	char pathname[MAXPATHLEN + 1];
 	const int pathlen = len - namelen - 1; /* don't want trailing SEP */
+
+	if (getenv("PYTHONCASEOK") != NULL)
+		return 1;
 
 	/* Copy the path component into pathname; substitute "." if empty */
 	if (pathlen <= 0) {
@@ -1120,7 +1123,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 		pathname[1] = '\0';
 	}
 	else {
-		assert(pathlen <= MAX_PATH);
+		assert(pathlen <= MAXPATHLEN);
 		memcpy(pathname, buf, pathlen);
 		pathname[pathlen] = '\0';
 	}
@@ -1128,18 +1131,19 @@ case_ok(char *buf, int len, int namelen, char *name)
 	dirp = opendir(pathname);
 	if (dirp) {
 		while ((dp = readdir(dirp)) != NULL) {
+			const int thislen =
 #ifdef _DIRENT_HAVE_D_NAMELEN
-			const int thislen = dp->d_namlen;
+						dp->d_namlen;
 #else
-			const int thislen = strlen(dp->d_name);
+						strlen(dp->d_name);
 #endif
 			if (thislen == namelen && !strcmp(dp->d_name, name)) {
 				(void)closedir(dirp);
 				return 1; /* Found */
 			}
 		}
+		(void)closedir(dirp);
 	}
-	(void)closedir(dirp);
 	return 0 ; /* Not found */
 
 /* assuming it's a case-sensitive filesystem, so there's nothing to do! */
