@@ -497,23 +497,6 @@ my_##NAME##Handler PARAMS {\
 			rc = PyInt_AsLong(rv);, rc, \
 	(xmlparseobject *)userData)
 
-#if EXPAT_VERSION == 0x010200
-#if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
-VOID_HANDLER(StartElement,
-             (void *userData, const XML_Char *name, const XML_Char **atts), 
-             ("(O&O&)", STRING_CONV_FUNC, name, 
-              conv_atts_using_string, atts))
-#else
-/* Python 1.6 and later */
-VOID_HANDLER(StartElement,
-             (void *userData, const XML_Char *name, const XML_Char **atts), 
-             ("(O&O&)", STRING_CONV_FUNC, name, 
-              (self->returns_unicode  
-               ? conv_atts_using_unicode 
-               : conv_atts_using_string), atts))
-#endif
-#endif
-
 VOID_HANDLER(EndElement, 
              (void *userData, const XML_Char *name), 
              ("(O&)", STRING_CONV_FUNC, name))
