@@ -57,10 +57,25 @@ extern void bzero();
 
 static PyObject *SelectError;
 
-typedef struct {	/* list of Python objects and their file descriptor */
-	PyObject *obj;
+/* list of Python objects and their file descriptor */
+typedef struct {
+	PyObject *obj;			     /* owned reference */
 	SOCKET fd;
+	int sentinel;			     /* -1 == sentinel */
 } pylist;
+
+static void
+reap_obj(fd2obj)
+	pylist fd2obj[FD_SETSIZE + 3];
+{
+	int i;
+	for (i = 0; i < FD_SETSIZE + 3 && fd2obj[i].sentinel >= 0; i++) {
+		Py_XDECREF(fd2obj[i].obj);
+		fd2obj[i].obj = NULL;
+	}
+	fd2obj[0].sentinel = -1;
+}
+
 
 /* returns -1 and sets the Python exception if an error occurred, otherwise
    returns a number >= 0
@@ -71,67 +86,76 @@ list2set(list, set, fd2obj)
 	fd_set *set;
 	pylist fd2obj[FD_SETSIZE + 3];
 {
-	int i, len, index, max = -1;
-	PyObject *o, *fno;
-	PyObject *meth;
-	SOCKET v;
+	int i;
+	int max = -1;
+	int index = 0;
+	int len = PyList_Size(list);
+	PyObject* o = NULL;
 
-	index = 0;
 	fd2obj[0].obj = (PyObject*)0;	     /* set list to zero size */
-    
 	FD_ZERO(set);
-	len = PyList_Size(list);
-	for (i=0; i<len; i++)  {
+
+	for (i = 0; i < len; i++)  {
+		PyObject *meth;
+		SOCKET v;
+
+		/* any intervening fileno() calls could decr this refcnt */
 		o = PyList_GetItem(list, i);
+		Py_INCREF(o);
+
 		if (PyInt_Check(o)) {
 			v = PyInt_AsLong(o);
 		}
 		else if ((meth = PyObject_GetAttrString(o, "fileno")) != NULL)
 		{
-			fno = PyEval_CallObject(meth, NULL);
+			PyObject *fno = PyEval_CallObject(meth, NULL);
 			Py_DECREF(meth);
 			if (fno == NULL)
-				return -1;
+				goto finally;
+
                         if (!PyInt_Check(fno)) {
-                            PyErr_SetString(PyExc_TypeError,
+				PyErr_SetString(PyExc_TypeError,
                                        "fileno method returned a non-integer");
-                            Py_DECREF(fno);
-                            return -1;
+				Py_DECREF(fno);
+				goto finally;
                         }
                         v = PyInt_AsLong(fno);
 			Py_DECREF(fno);
 		}
 		else {
 			PyErr_SetString(PyExc_TypeError,
-			  "argument must be an int, or have a fileno() method."
-				);
-			return -1;
+			"argument must be an int, or have a fileno() method.");
+			goto finally;
 		}
 #ifdef _MSC_VER
-		max = 0;	/* not used for Win32 */
-#else
+		max = 0;		     /* not used for Win32 */
+#else  /* !_MSC_VER */
 		if (v < 0 || v >= FD_SETSIZE) {
-			PyErr_SetString(
-				PyExc_ValueError,
-				"filedescriptor out of range in select()");
-			return -1;
+			PyErr_SetString(PyExc_ValueError,
+				    "filedescriptor out of range in select()");
+			goto finally;
 		}
 		if (v > max)
 			max = v;
-#endif
+#endif /* _MSC_VER */
 		FD_SET(v, set);
+
 		/* add object and its file descriptor to the list */
 		if (index >= FD_SETSIZE) {
-			PyErr_SetString(
-				PyExc_ValueError,
-				"too many file descriptors in select()");
-			return -1;
+			PyErr_SetString(PyExc_ValueError,
+				      "too many file descriptors in select()");
+			goto finally;
 		}
 		fd2obj[index].obj = o;
 		fd2obj[index].fd = v;
-		fd2obj[++index].obj = (PyObject *)0; /* sentinel */
+		fd2obj[index].sentinel = 0;
+		fd2obj[++index].sentinel = -1;
 	}
 	return max+1;
+
+  finally:
+	Py_XDECREF(o);
+	return -1;
 }
 
 /* returns NULL and sets the Python exception if an error occurred */
@@ -140,40 +164,44 @@ set2list(set, fd2obj)
 	fd_set *set;
 	pylist fd2obj[FD_SETSIZE + 3];
 {
-	int j, num=0;
+	int i, j, count=0;
 	PyObject *list, *o;
 	SOCKET fd;
 
-	for (j=0; fd2obj[j].obj; j++)
+	for (j = 0; fd2obj[j].sentinel >= 0; j++) {
 		if (FD_ISSET(fd2obj[j].fd, set))
-			num++;
-
-	list = PyList_New(num);
+			count++;
+	}
+	list = PyList_New(count);
 	if (!list)
 		return NULL;
 
-	num = 0;
-	for (j=0; fd2obj[j].obj; j++) {
+	i = 0;
+	for (j = 0; fd2obj[j].sentinel >= 0; j++) {
 		fd = fd2obj[j].fd;
 		if (FD_ISSET(fd, set)) {
 #ifndef _MSC_VER
 			if (fd > FD_SETSIZE) {
 				PyErr_SetString(PyExc_SystemError,
 			   "filedescriptor out of range returned in select()");
-				return NULL;
+				goto finally;
 			}
 #endif
 			o = fd2obj[j].obj;
-			Py_INCREF(o);
-			if (PyList_SetItem(list, num, o) < 0) {
-				Py_DECREF(list);
-				return NULL;
-			}
-			num++;
+			fd2obj[j].obj = NULL;
+			/* transfer ownership */
+			if (PyList_SetItem(list, i, o) < 0)
+				goto finally;
+
+			i++;
 		}
 	}
 	return list;
+  finally:
+	Py_DECREF(list);
+	return NULL;
 }
+
     
 static PyObject *
 select_select(self, args)
@@ -184,7 +212,7 @@ select_select(self, args)
 	pylist wfd2obj[FD_SETSIZE + 3];
 	pylist efd2obj[FD_SETSIZE + 3];
 	PyObject *ifdlist, *ofdlist, *efdlist;
-	PyObject *ret;
+	PyObject *ret = NULL;
 	PyObject *tout = Py_None;
 	fd_set ifdset, ofdset, efdset;
 	double timeout;
@@ -200,9 +228,11 @@ select_select(self, args)
 
 	if (tout == Py_None)
 		tvp = (struct timeval *)0;
-	else if (!PyArg_Parse(tout, "d;timeout must be float or None",
-			      &timeout))
+	else if (!PyArg_Parse(tout, "d", &timeout)) {
+		PyErr_SetString(PyExc_TypeError,
+				"timeout must be a float or None");
 		return NULL;
+	}
 	else {
 		seconds = (int)timeout;
 		timeout = timeout - (double)seconds;
@@ -224,12 +254,15 @@ select_select(self, args)
 	/* Convert lists to fd_sets, and get maximum fd number
 	 * propagates the Python exception set in list2set()
 	 */
+	rfd2obj[0].sentinel = -1;
+	wfd2obj[0].sentinel = -1;
+	efd2obj[0].sentinel = -1;
 	if ((imax=list2set(ifdlist, &ifdset, rfd2obj)) < 0) 
-		return NULL;
+		goto finally;
 	if ((omax=list2set(ofdlist, &ofdset, wfd2obj)) < 0) 
-		return NULL;
+		goto finally;
 	if ((emax=list2set(efdlist, &efdset, efd2obj)) < 0) 
-		return NULL;
+		goto finally;
 	max = imax;
 	if (omax > max) max = omax;
 	if (emax > max) max = emax;
@@ -240,33 +273,37 @@ select_select(self, args)
 
 	if (n < 0) {
 		PyErr_SetFromErrno(SelectError);
-		return NULL;
 	}
-
-	if (n == 0) {			     /* Speedup hack */
+	else if (n == 0) {
+                /* optimization */
 		ifdlist = PyList_New(0);
-		if (!ifdlist)
-			return NULL;
-		ret = Py_BuildValue("OOO", ifdlist, ifdlist, ifdlist);
-		Py_XDECREF(ifdlist);
-		return ret;
+		if (ifdlist) {
+			ret = Py_BuildValue("OOO", ifdlist, ifdlist, ifdlist);
+			Py_DECREF(ifdlist);
+		}
 	}
+	else {
+		/* any of these three calls can raise an exception.  it's more
+		   convenient to test for this after all three calls... but
+		   is that acceptable?
+		*/
+		ifdlist = set2list(&ifdset, rfd2obj);
+		ofdlist = set2list(&ofdset, wfd2obj);
+		efdlist = set2list(&efdset, efd2obj);
+		if (PyErr_Occurred())
+			ret = NULL;
+		else
+			ret = Py_BuildValue("OOO", ifdlist, ofdlist, efdlist);
 
-	/* any of these three calls can raise an exception.  it's more
-	   convenient to test for this after all three calls... but is that
-	   acceptable?
-	*/
-	ifdlist = set2list(&ifdset, rfd2obj);
-	ofdlist = set2list(&ofdset, wfd2obj);
-	efdlist = set2list(&efdset, efd2obj);
-	if (PyErr_Occurred())
-		ret = NULL;
-	else
-		ret = Py_BuildValue("OOO", ifdlist, ofdlist, efdlist);
-
-	Py_DECREF(ifdlist);
-	Py_DECREF(ofdlist);
-	Py_DECREF(efdlist);
+		Py_DECREF(ifdlist);
+		Py_DECREF(ofdlist);
+		Py_DECREF(efdlist);
+	}
+	
+  finally:
+	reap_obj(rfd2obj);
+	reap_obj(wfd2obj);
+	reap_obj(efd2obj);
 	return ret;
 }
 
