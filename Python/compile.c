@@ -193,19 +193,19 @@ PyTypeObject PyCode_Type = {
 static int
 all_name_chars(unsigned char *s)
 {
-       static char ok_name_char[256];
-       static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
+	static char ok_name_char[256];
+	static unsigned char *name_chars = (unsigned char *)NAME_CHARS;
 
-       if (ok_name_char[*name_chars] == 0) {
-	       unsigned char *p;
-	       for (p = name_chars; *p; p++)
-		       ok_name_char[*p] = 1;
-       }
-       while (*s) {
-	       if (ok_name_char[*s++] == 0)
-		       return 0;
-       }
-       return 1;
+	if (ok_name_char[*name_chars] == 0) {
+		unsigned char *p;
+		for (p = name_chars; *p; p++)
+			ok_name_char[*p] = 1;
+	}
+	while (*s) {
+		if (ok_name_char[*s++] == 0)
+			return 0;
+	}
+	return 1;
 }
 
 static int
@@ -353,9 +353,9 @@ struct compiling {
 	int c_last_addr, c_last_line, c_lnotab_next;
 	char *c_private;	/* for private name mangling */
 	int c_tmpname;		/* temporary local name counter */
-	int c_nested;           /* Is block nested funcdef or lamdef? */
-	int c_closure;          /* Is nested w/freevars? */
-	struct symtable *c_symtable;   /* pointer to module symbol table */
+	int c_nested;		/* Is block nested funcdef or lamdef? */
+	int c_closure;		/* Is nested w/freevars? */
+	struct symtable *c_symtable; /* pointer to module symbol table */
 };
 
 int is_free(int v)
