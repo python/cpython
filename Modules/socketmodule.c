@@ -257,7 +257,19 @@ int h_errno; /* not used */
 # define O_NONBLOCK O_NDELAY
 #endif
 
-#include "addrinfo.h"
+/* include Python's addrinfo.h unless it causes trouble */
+#if defined(__sgi) && _COMPILER_VERSION>700 && defined(_SS_ALIGNSIZE)
+  /* Do not include addinfo.h on some newer IRIX versions.
+   * _SS_ALIGNSIZE is defined in sys/socket.h by 6.5.21,
+   * for example, but not by 6.5.10.
+   */
+#elif defined(_MSC_VER) && _MSC_VER>1200
+  /* Do not include addrinfo.h for MSVC7 or greater. 'addrinfo' and
+   * EAI_* constants are defined in (the already included) ws2tcpip.h.
+   */
+#else
+#  include "addrinfo.h"
+#endif
 
 #ifndef HAVE_INET_PTON
 int inet_pton(int af, const char *src, void *dst);
