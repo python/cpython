@@ -87,9 +87,9 @@ const char *_PyUnicode_BidirectionalNames[21] = {
     0  /* Sentinel */
 };
 
-/* --- Unicode Database --------------------------------------------------- */
+/* --- Unicode Database Pages --------------------------------------------- */
 
-const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_0[4096] = {
     
 /* U+0000 */ { 13, 0, 15, 0, 0 },
 /* U+0001 */ { 13, 0, 15, 0, 0 },
@@ -4187,6 +4187,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+0ffd */ { 0, 0, 0, 0, 0 },
 /* U+0ffe */ { 0, 0, 0, 0, 0 },
 /* U+0fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_1[4096] = {
+    
 /* U+1000 */ { 19, 0, 1, 0, 0 },
 /* U+1001 */ { 19, 0, 1, 0, 0 },
 /* U+1002 */ { 19, 0, 1, 0, 0 },
@@ -8283,6 +8288,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+1ffd */ { 29, 0, 19, 0, "00B4" },
 /* U+1ffe */ { 29, 0, 19, 0, "<compat> 0020 0314" },
 /* U+1fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_2[4096] = {
+    
 /* U+2000 */ { 10, 0, 18, 0, "2002" },
 /* U+2001 */ { 10, 0, 18, 0, "2003" },
 /* U+2002 */ { 10, 0, 18, 0, "<compat> 0020" },
@@ -12379,6 +12389,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+2ffd */ { 0, 0, 0, 0, 0 },
 /* U+2ffe */ { 0, 0, 0, 0, 0 },
 /* U+2fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_3[4096] = {
+    
 /* U+3000 */ { 10, 0, 18, 0, "<wide> 0020" },
 /* U+3001 */ { 26, 0, 19, 0, 0 },
 /* U+3002 */ { 26, 0, 19, 0, 0 },
@@ -16475,6 +16490,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+3ffd */ { 0, 0, 0, 0, 0 },
 /* U+3ffe */ { 0, 0, 0, 0, 0 },
 /* U+3fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_4[4096] = {
+    
 /* U+4000 */ { 0, 0, 0, 0, 0 },
 /* U+4001 */ { 0, 0, 0, 0, 0 },
 /* U+4002 */ { 0, 0, 0, 0, 0 },
@@ -20571,6 +20591,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+4ffd */ { 0, 0, 0, 0, 0 },
 /* U+4ffe */ { 0, 0, 0, 0, 0 },
 /* U+4fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_5[4096] = {
+    
 /* U+5000 */ { 0, 0, 0, 0, 0 },
 /* U+5001 */ { 0, 0, 0, 0, 0 },
 /* U+5002 */ { 0, 0, 0, 0, 0 },
@@ -24667,6 +24692,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+5ffd */ { 0, 0, 0, 0, 0 },
 /* U+5ffe */ { 0, 0, 0, 0, 0 },
 /* U+5fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_6[4096] = {
+    
 /* U+6000 */ { 0, 0, 0, 0, 0 },
 /* U+6001 */ { 0, 0, 0, 0, 0 },
 /* U+6002 */ { 0, 0, 0, 0, 0 },
@@ -28763,6 +28793,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+6ffd */ { 0, 0, 0, 0, 0 },
 /* U+6ffe */ { 0, 0, 0, 0, 0 },
 /* U+6fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_7[4096] = {
+    
 /* U+7000 */ { 0, 0, 0, 0, 0 },
 /* U+7001 */ { 0, 0, 0, 0, 0 },
 /* U+7002 */ { 0, 0, 0, 0, 0 },
@@ -32859,6 +32894,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+7ffd */ { 0, 0, 0, 0, 0 },
 /* U+7ffe */ { 0, 0, 0, 0, 0 },
 /* U+7fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_8[4096] = {
+    
 /* U+8000 */ { 0, 0, 0, 0, 0 },
 /* U+8001 */ { 0, 0, 0, 0, 0 },
 /* U+8002 */ { 0, 0, 0, 0, 0 },
@@ -36955,6 +36995,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+8ffd */ { 0, 0, 0, 0, 0 },
 /* U+8ffe */ { 0, 0, 0, 0, 0 },
 /* U+8fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_9[4096] = {
+    
 /* U+9000 */ { 0, 0, 0, 0, 0 },
 /* U+9001 */ { 0, 0, 0, 0, 0 },
 /* U+9002 */ { 0, 0, 0, 0, 0 },
@@ -41051,6 +41096,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+9ffd */ { 0, 0, 0, 0, 0 },
 /* U+9ffe */ { 0, 0, 0, 0, 0 },
 /* U+9fff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_10[4096] = {
+    
 /* U+a000 */ { 19, 0, 1, 0, 0 },
 /* U+a001 */ { 19, 0, 1, 0, 0 },
 /* U+a002 */ { 19, 0, 1, 0, 0 },
@@ -45147,6 +45197,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+affd */ { 0, 0, 0, 0, 0 },
 /* U+affe */ { 0, 0, 0, 0, 0 },
 /* U+afff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_11[4096] = {
+    
 /* U+b000 */ { 0, 0, 0, 0, 0 },
 /* U+b001 */ { 0, 0, 0, 0, 0 },
 /* U+b002 */ { 0, 0, 0, 0, 0 },
@@ -49243,6 +49298,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+bffd */ { 0, 0, 0, 0, 0 },
 /* U+bffe */ { 0, 0, 0, 0, 0 },
 /* U+bfff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_12[4096] = {
+    
 /* U+c000 */ { 0, 0, 0, 0, 0 },
 /* U+c001 */ { 0, 0, 0, 0, 0 },
 /* U+c002 */ { 0, 0, 0, 0, 0 },
@@ -53339,6 +53399,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+cffd */ { 0, 0, 0, 0, 0 },
 /* U+cffe */ { 0, 0, 0, 0, 0 },
 /* U+cfff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_13[4096] = {
+    
 /* U+d000 */ { 0, 0, 0, 0, 0 },
 /* U+d001 */ { 0, 0, 0, 0, 0 },
 /* U+d002 */ { 0, 0, 0, 0, 0 },
@@ -57435,6 +57500,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+dffd */ { 0, 0, 0, 0, 0 },
 /* U+dffe */ { 0, 0, 0, 0, 0 },
 /* U+dfff */ { 15, 0, 1, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_14[4096] = {
+    
 /* U+e000 */ { 16, 0, 1, 0, 0 },
 /* U+e001 */ { 0, 0, 0, 0, 0 },
 /* U+e002 */ { 0, 0, 0, 0, 0 },
@@ -61531,6 +61601,11 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+effd */ { 0, 0, 0, 0, 0 },
 /* U+effe */ { 0, 0, 0, 0, 0 },
 /* U+efff */ { 0, 0, 0, 0, 0 },
+
+};
+
+const _PyUnicode_DatabaseRecord _PyUnicode_Database_15[4096] = {
+    
 /* U+f000 */ { 0, 0, 0, 0, 0 },
 /* U+f001 */ { 0, 0, 0, 0, 0 },
 /* U+f002 */ { 0, 0, 0, 0, 0 },
@@ -65627,4 +65702,27 @@ const _PyUnicode_DatabaseRecord _PyUnicode_Database[65536] = {
 /* U+fffd */ { 30, 0, 19, 0, 0 },
 /* U+fffe */ { 0, 0, 0, 0, 0 },
 /* U+ffff */ { 0, 0, 0, 0, 0 },
+
 };
+
+/* --- Unicode Database --------------------------------------------------- */
+
+const _PyUnicode_DatabaseRecord *_PyUnicode_Database[16] = {
+    _PyUnicode_Database_0,
+    _PyUnicode_Database_1,
+    _PyUnicode_Database_2,
+    _PyUnicode_Database_3,
+    _PyUnicode_Database_4,
+    _PyUnicode_Database_5,
+    _PyUnicode_Database_6,
+    _PyUnicode_Database_7,
+    _PyUnicode_Database_8,
+    _PyUnicode_Database_9,
+    _PyUnicode_Database_10,
+    _PyUnicode_Database_11,
+    _PyUnicode_Database_12,
+    _PyUnicode_Database_13,
+    _PyUnicode_Database_14,
+    _PyUnicode_Database_15,
+};
+

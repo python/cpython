@@ -13,6 +13,18 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 #include "Python.h"
 #include "unicodedatabase.h"
 
+/* --- Helpers ------------------------------------------------------------ */
+
+static 
+const _PyUnicode_DatabaseRecord *unicode_db(register int i)
+{
+    register int page = i >> 12;
+    
+    if (page < sizeof(_PyUnicode_Database))
+	return &_PyUnicode_Database[page][i & 0x0fff];
+    return &_PyUnicode_Database[0][0];
+}
+
 /* --- Module API --------------------------------------------------------- */
 
 static PyObject *
@@ -132,7 +144,7 @@ unicodedata_category(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    index = (int)_PyUnicode_Database[(int)*PyUnicode_AS_UNICODE(v)].category;
+    index = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->category;
     if (index < 0 || 
 	index > sizeof(_PyUnicode_CategoryNames) / 
 	        sizeof(_PyUnicode_CategoryNames[0])) {
@@ -162,8 +174,7 @@ unicodedata_bidirectional(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    index = (int)_PyUnicode_Database[
-			  (int)*PyUnicode_AS_UNICODE(v)].bidirectional;
+    index = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->bidirectional;
     if (index < 0 || 
 	index > sizeof(_PyUnicode_CategoryNames) / 
 	        sizeof(_PyUnicode_CategoryNames[0])) {
@@ -193,8 +204,7 @@ unicodedata_combining(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = (int)_PyUnicode_Database[
-                          (int)*PyUnicode_AS_UNICODE(v)].combining;
+    value = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->combining;
     return PyInt_FromLong(value);
     
  onError:
@@ -216,7 +226,7 @@ unicodedata_mirrored(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = (int)_PyUnicode_Database[(int)*PyUnicode_AS_UNICODE(v)].mirrored;
+    value = (int)unicode_db((int)*PyUnicode_AS_UNICODE(v))->mirrored;
     return PyInt_FromLong(value);
     
  onError:
@@ -238,7 +248,7 @@ unicodedata_decomposition(PyObject *self,
 			"need a single Unicode character as parameter");
 	goto onError;
     }
-    value = _PyUnicode_Database[(int)*PyUnicode_AS_UNICODE(v)].decomposition;
+    value = unicode_db((int)*PyUnicode_AS_UNICODE(v))->decomposition;
     if (value == NULL)
 	return PyString_FromString("");
     else
