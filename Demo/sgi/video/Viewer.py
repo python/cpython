@@ -71,7 +71,7 @@ class InputViewer:
 		self.fillq()
 		gl.winset(self.wid)
 		if self.qindex >= len(self.queue):
-			gl.clear()
+			self.vin.clear()
 			return
 		dt, d, cd = self.queue[self.qindex]
 		self.vin.showframe(d, cd)
@@ -80,6 +80,7 @@ class InputViewer:
 		if wid == self.wid >= 0:
 			gl.winset(self.wid)
 			gl.reshapeviewport()
+			self.vin.clear()
 			self.show()
 
 	def get(self):
@@ -175,7 +176,7 @@ class OutputViewer:
 			self.vout.initcolormap()
 		gl.winset(self.wid)
 		if not self.queue:
-			gl.clear()
+			self.vout.clear()
 			return
 		dt, d, cd = self.queue[-1]
 		self.vout.showframe(d, cd)
@@ -184,6 +185,7 @@ class OutputViewer:
 		if wid == self.wid >= 0:
 			gl.winset(self.wid)
 			gl.reshapeviewport()
+			self.vout.clear()
 			self.show()
 
 	def backup(self):
