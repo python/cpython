@@ -1618,12 +1618,15 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 
 	/* Calculate best base, and check that all bases are type objects */
 	base = best_base(bases);
-	if (base == NULL)
+	if (base == NULL) {
+		Py_DECREF(bases);
 		return NULL;
+	}
 	if (!PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
 		PyErr_Format(PyExc_TypeError,
 			     "type '%.100s' is not an acceptable base type",
 			     base->tp_name);
+		Py_DECREF(bases);
 		return NULL;
 	}
 
@@ -1650,8 +1653,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 			slots = Py_BuildValue("(O)", slots);
 		else
 			slots = PySequence_Tuple(slots);
-		if (slots == NULL)
+		if (slots == NULL) {
+			Py_DECREF(bases);
 			return NULL;
+		}
 		assert(PyTuple_Check(slots));
 
 		/* Are slots allowed? */
@@ -1662,6 +1667,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 				     "not supported for subtype of '%s'",
 				     base->tp_name);
 		  bad_slots:
+			Py_DECREF(bases);
 			Py_DECREF(slots);
 			return NULL;
 		}
@@ -1773,6 +1779,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	type = (PyTypeObject *)metatype->tp_alloc(metatype, nslots);
 	if (type == NULL) {
 		Py_XDECREF(slots);
+		Py_DECREF(bases);
 		return NULL;
 	}
 
