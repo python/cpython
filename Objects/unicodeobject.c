@@ -67,12 +67,6 @@ Copyright (c) Corporation for National Research Initiatives.
 #include "unicodeobject.h"
 #include "ucnhash.h"
 
-#if defined(HAVE_LIMITS_H)
-#include <limits.h>
-#else
-#define INT_MAX 2147483647
-#endif
-
 #ifdef MS_WIN32
 #include <windows.h>
 #endif

@@ -2,9 +2,6 @@
 /* Generic object operations; and implementation of None (NoObject) */
 
 #include "Python.h"
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #ifdef macintosh
 #include "macglue.h"

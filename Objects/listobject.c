@@ -8,9 +8,6 @@
 #else
 #include <sys/types.h>		/* For size_t */
 #endif
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 #define ROUNDUP(n, PyTryBlock) \
 	((((n)+(PyTryBlock)-1)/(PyTryBlock))*(PyTryBlock))

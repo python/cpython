@@ -31,7 +31,6 @@ The variable struct.error is an exception raised on errors.";
 
 #include "Python.h"
 
-#include <limits.h>
 #include <ctype.h>
 
 

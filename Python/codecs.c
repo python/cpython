@@ -10,9 +10,6 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include <ctype.h>
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
 
 /* --- Globals ------------------------------------------------------------ */
 

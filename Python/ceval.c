@@ -20,12 +20,6 @@
 
 #include <ctype.h>
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#else
-#define INT_MAX 2147483647
-#endif
-
 /* Turn this on if your compiler chokes on the big switch: */
 /* #define CASE_TOO_BIG 1 */
 

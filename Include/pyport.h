@@ -354,6 +354,38 @@ typedef	struct fd_set {
 #endif /* fd manipulation macros */
 
 
+/* limits.h constants that may be missing */
+
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
+
+#ifndef LONG_MAX
+#if SIZEOF_LONG == 4
+#define LONG_MAX 0X7FFFFFFFL
+#elif SIZEOF_LONG == 8
+#define LONG_MAX 0X7FFFFFFFFFFFFFFFL
+#else
+#error "could not set LONG_MAX in pyport.h"
+#endif
+#endif
+
+#ifndef LONG_MIN
+#define LONG_MIN (-LONG_MAX-1)
+#endif
+
+#ifdef __NeXT__
+#ifdef __sparc__
+/*
+ * This works around a bug in the NS/Sparc 3.3 pre-release
+ * limits.h header file.
+ * 10-Feb-1995 bwarsaw@cnri.reston.va.us
+ */
+#undef LONG_MIN
+#define LONG_MIN (-LONG_MAX-1)
+#endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

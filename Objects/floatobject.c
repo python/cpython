@@ -23,36 +23,6 @@
 #define CHECK(x) /* Don't know how to check */
 #endif
 
-#ifdef HAVE_LIMITS_H
-#include <limits.h>
-#endif
-
-#ifndef LONG_MAX
-#if SIZEOF_LONG == 4
-#define LONG_MAX 0X7FFFFFFFL
-#elif SIZEOF_LONG == 8
-#define LONG_MAX 0X7FFFFFFFFFFFFFFFL
-#else
-#error "could not set LONG_MAX"
-#endif
-#endif
-
-#ifndef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-
-#ifdef __NeXT__
-#ifdef __sparc__
-/*
- * This works around a bug in the NS/Sparc 3.3 pre-release
- * limits.h header file.
- * 10-Feb-1995 bwarsaw@cnri.reston.va.us
- */
-#undef LONG_MIN
-#define LONG_MIN (-LONG_MAX-1)
-#endif
-#endif
-
 #if !defined(__STDC__) && !defined(macintosh)
 extern double fmod(double, double);
 extern double pow(double, double);
