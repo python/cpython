@@ -19,9 +19,6 @@
 /* Define if you have the Mach cthreads package */
 #undef C_THREADS
 
-/* Defined when case of imported modules are checked against case of file. */
-#undef CHECK_IMPORT_CASE
-
 /* Define to `long' if <time.h> doesn't define.  */
 #undef clock_t
 

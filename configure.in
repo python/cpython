@@ -1188,18 +1188,6 @@ else AC_ERROR(proper usage is --with-libc=STRING)
 fi],
 [AC_MSG_RESULT(default LIBC=\"$LIBC\")])
 
-# check for --with-check-import-case
-AC_ARG_WITH(check-import-case,
-[  --with-check-import-case        enable imported module name case checking],,)
-AC_MSG_CHECKING(for --with-check-import-case)
-if test "$with_check_import_case"
-then
-	AC_DEFINE(CHECK_IMPORT_CASE)
-	AC_MSG_RESULT(yes)
-else
-	AC_MSG_RESULT(no)
-fi
-
 # check for hypot() in math library
 LIBS_SAVE=$LIBS
 LIBS="$LIBS $LIBM"
