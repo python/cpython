@@ -8,6 +8,8 @@
 # See the sre.py file for information on usage and redistribution.
 #
 
+"""Internal support module for sre"""
+
 import _sre,sys
 
 from sre_constants import *

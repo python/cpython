@@ -1,6 +1,5 @@
-#
-# Minimal "re" compatibility wrapper
-#
+"""Minimal "re" compatibility wrapper"""
+
 # If your regexps don't work well under 2.0b1, you can switch
 # to the old engine ("pre") down below.
 #
