@@ -22,6 +22,8 @@ Core and builtins
 Library
 -------
 
+- Bug #1067732: wininst --install-script doesn't leave residual files anymore.
+
 - StringIO.truncate() now correctly adjusts the size attribute.
   (Bug #951915).
 
