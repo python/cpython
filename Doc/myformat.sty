@@ -161,6 +161,12 @@
 \let\enddatadesc\endfulllineitems
 
 
+% opcodedesc should be called as an \begin{opcodedesc} ... \end{opcodedesc}
+\newcommand{\opcodeline}[2]{\item[\code{#1\quad\varvars{#2}}]\ttindex{#1}}
+\newcommand{\opcodedesc}[2]{\fulllineitems\opcodeline{#1}{#2}}
+\let\endopcodedesc\endfulllineitems
+
+
 % Define \dataitem{name}: define a data item
 \newcommand{\dataitem}[1]{%
 \ttindex{#1}%
