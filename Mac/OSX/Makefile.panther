@@ -54,5 +54,5 @@ install_PythonLauncher:
 	ln -fsn $(APPLE_PYTHONLAUNCHER) $(DESTDIR)$(PYTHONAPPSDIR)/PythonLauncher
 	
 install_pimpupdate:
-    cp ../../Lib/plat-mac/pimp.py $(DESTDIR)/Library/Python/2.3/pimp_update.py
+	cp ../../Lib/plat-mac/pimp.py $(DESTDIR)/Library/Python/2.3/pimp_update.py
     
