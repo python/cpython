@@ -312,6 +312,7 @@ extern DL_IMPORT(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
 extern DL_IMPORT(PyTypeObject) PySuper_Type; /* built-in 'super' */
 
 #define PyType_Check(op) PyObject_TypeCheck(op, &PyType_Type)
+#define PyType_CheckExact(op) ((op)->ob_type == &PyType_Type)
 
 extern DL_IMPORT(int) PyType_Ready(PyTypeObject *);
 extern DL_IMPORT(PyObject *) PyType_GenericAlloc(PyTypeObject *, int);

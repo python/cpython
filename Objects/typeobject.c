@@ -713,13 +713,28 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 	PyMemberDef *mp;
 	int i, nbases, nslots, slotoffset, add_dict, add_weak;
 
+	assert(args != NULL && PyTuple_Check(args));
+	assert(kwds == NULL || PyDict_Check(kwds));
+
 	/* Special case: type(x) should return x->ob_type */
-	if (metatype == &PyType_Type &&
-	    PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
-	    (kwds == NULL || (PyDict_Check(kwds) && PyDict_Size(kwds) == 0))) {
-		PyObject *x = PyTuple_GET_ITEM(args, 0);
-		Py_INCREF(x->ob_type);
-		return (PyObject *) x->ob_type;
+	{
+		const int nargs = PyTuple_GET_SIZE(args);
+		const int nkwds = kwds == NULL ? 0 : PyDict_Size(kwds);
+
+		if (PyType_CheckExact(metatype) && nargs == 1 && nkwds == 0) {
+			PyObject *x = PyTuple_GET_ITEM(args, 0);
+			Py_INCREF(x->ob_type);
+			return (PyObject *) x->ob_type;
+		}
+
+		/* SF bug 475327 -- if that didn't trigger, we need 3
+		   arguments. but PyArg_ParseTupleAndKeywords below may give
+		   a msg saying type() needs exactly 3. */
+		if (nargs + nkwds != 3) {
+			PyErr_SetString(PyExc_TypeError,
+					"type() takes 1 or 3 arguments");
+			return NULL;
+		}
 	}
 
 	/* Check arguments: (name, bases, dict) */
