@@ -374,6 +374,13 @@ SGI:	SGI's standard "make" utility (/bin/make or /usr/bin/make)
 	you set the first line of the Makefile to #!/usr/sbin/smake
 	smake will be invoked by make (likewise for GNU make).
 
+	There is a bug in the SGI compiler's optimization that causes a
+	bus error in PyComplex_ImagAsDouble(); this has been reported to
+	be triggered when importing Numeric Python and may be caused at
+	other times.  The work-around is to build Python, delete the
+	Objects/complexobject.o file, and then recompile without
+	optimization (use "make OPT=").
+
 OS/2:   If you are running Warp3 or Warp4 and have IBM's VisualAge C/C++
         compiler installed, just change into the pc\os2vacpp directory
         and type NMAKE.  Threading and sockets are supported by default
