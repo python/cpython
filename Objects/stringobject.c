@@ -3502,7 +3502,6 @@ PyString_Format(PyObject *format, PyObject *args)
 				len = 1;
 				break;
 			case 's':
-  			case 'r':
 #ifdef Py_USING_UNICODE
 				if (PyUnicode_Check(v)) {
 					fmt = fmt_start;
@@ -3510,6 +3509,8 @@ PyString_Format(PyObject *format, PyObject *args)
 					goto unicode;
 				}
 #endif
+				/* Fall through */
+  			case 'r':
 				if (c == 's')
 					temp = PyObject_Str(v);
 				else
