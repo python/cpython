@@ -544,6 +544,8 @@ objects support:
 
 \begin{methoddesc}[string]{capitalize}{}
 Return a copy of the string with only its first character capitalized.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{center}{width}
@@ -605,26 +607,36 @@ substring is not found.
 \begin{methoddesc}[string]{isalnum}{}
 Return true if all characters in the string are alphanumeric and there
 is at least one character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isalpha}{}
 Return true if all characters in the string are alphabetic and there
 is at least one character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isdigit}{}
 Return true if all characters in the string are digits and there
 is at least one character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{islower}{}
 Return true if all cased characters in the string are lowercase and
 there is at least one cased character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isspace}{}
 Return true if there are only whitespace characters in the string and
 there is at least one character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{istitle}{}
@@ -632,11 +644,15 @@ Return true if the string is a titlecased string and there is at least one
 character, i.e. uppercase characters may only follow uncased
 characters and lowercase characters only cased ones.  Return false
 otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{isupper}{}
 Return true if all cased characters in the string are uppercase and
 there is at least one cased character, false otherwise.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{join}{seq}
@@ -653,6 +669,8 @@ Padding is done using spaces.  The original string is returned if
 
 \begin{methoddesc}[string]{lower}{}
 Return a copy of the string converted to lowercase.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{lstrip}{\optional{chars}}
@@ -731,11 +749,15 @@ the both ends of the string this method is called on.
 \begin{methoddesc}[string]{swapcase}{}
 Return a copy of the string with uppercase characters converted to
 lowercase and vice versa.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{title}{}
 Return a titlecased version of the string: words start with uppercase
 characters, all remaining cased characters are lowercase.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{translate}{table\optional{, deletechars}}
@@ -757,6 +779,8 @@ character mapping codec using the \refmodule{codecs} module (see
 
 \begin{methoddesc}[string]{upper}{}
 Return a copy of the string converted to uppercase.
+
+For 8-bit strings, this method is locale-dependent.
 \end{methoddesc}
 
 \begin{methoddesc}[string]{zfill}{width}
