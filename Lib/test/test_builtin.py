@@ -322,6 +322,15 @@ class BuiltinTest(unittest.TestCase):
         ss['a3'] = 'a2*7'
         self.assertEqual(ss['a3'], 210)
 
+        # Verify that dir() catches a non-list returned by eval
+        # SF bug #1004669
+        class C:
+            def __getitem__(self, item):
+                raise KeyError(item)
+            def keys(self):
+                return 'a'
+        self.assertRaises(TypeError, eval, 'dir()', globals(), C())
+
     # Done outside of the method test_z to get the correct scope
     z = 0
     f = open(TESTFN, 'w')
