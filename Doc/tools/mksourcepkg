@@ -99,9 +99,10 @@ def main():
      else:
           run("cvs -Q -d%s checkout -d Doc python/dist/src/Doc" % cvsroot)
           # remove CVS directories
-          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS',
-                    '.cvsignore', '*/.cvsignore'):
+          for p in ('*/CVS', '*/*/CVS', '*/*/*/CVS'):
                map(shutil.rmtree, glob.glob(p))
+          for f in ('.cvsignore', '*/.cvsignore'):
+               map(os.unlink, glob.glob(f))
      LICENSE = os.path.normpath(
           os.path.join(mydir, os.pardir, os.pardir, "LICENSE"))
      shutil.copyfile(LICENSE, "Doc/LICENSE")
