@@ -2560,7 +2560,15 @@ PyEval_EvalCodeEx(PyCodeObject *co, PyObject *globals, PyObject *locals,
 
   fail: /* Jump here from prelude on failure */
 
+	/* decref'ing the frame can cause __del__ methods to get invoked,
+	   which can call back into Python.  While we're done with the
+	   current Python frame (f), the associated C stack is still in use,
+	   so recursion_depth must be boosted for the duration.
+	*/
+	assert(tstate != NULL);
+	++tstate->recursion_depth;
         Py_DECREF(f);
+	--tstate->recursion_depth;
 	return retval;
 }
 
