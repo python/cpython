@@ -702,13 +702,6 @@ AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
 ], AC_MSG_RESULT(no))
 
-AC_MSG_CHECKING(for --with(out)-readline)
-AC_ARG_WITH(readline,
-[  --with(out)-readline            obsolete, edit Modules/Setup instead],
-[AC_MSG_RESULT($withval)
-AC_ERROR(--with(out)-readline is obsolete, edit Modules/Setup instead)],
-[AC_MSG_RESULT(not specified.)])
-
 AC_SUBST(USE_THREAD_MODULE)
 USE_THREAD_MODULE=""
 
