@@ -69,7 +69,7 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 funcdef: 'def' NAME parameters ':' suite
 parameters: '(' [varargslist] ')'
-varargslist: (fpdef ',')* ('+'|'*') NAME | fpdef (',' fpdef)* [',']
+varargslist: (fpdef ',')* '*' NAME | fpdef (',' fpdef)* [',']
 fpdef: NAME | '(' fplist ')'
 fplist: fpdef (',' fpdef)* [',']
 
