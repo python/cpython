@@ -51,9 +51,16 @@ class Parser:
         lastvalue = []
         lineno = 0
         while 1:
-            line = fp.readline()[:-1]
-            if not line or not line.strip():
+            # Don't strip the line before we test for the end condition,
+            # because whitespace-only header lines are RFC compliant
+            # continuation lines.
+            line = fp.readline()
+            if not line:
                 break
+            line = line.splitlines()[0]
+            if not line:
+                break
+            # Ignore the trailing newline
             lineno += 1
             # Check for initial Unix From_ line
             if line.startswith('From '):
@@ -63,7 +70,6 @@ class Parser:
                 else:
                     raise Errors.HeaderParseError(
                         'Unix-from in headers after first rfc822 header')
-            #
             # Header continuation line
             if line[0] in ' \t':
                 if not lastheader:
@@ -134,11 +140,11 @@ class Parser:
                 msgobj = self.parsestr(part)
                 container.preamble = preamble
                 container.epilogue = epilogue
-                # Ensure that the container's payload is a list
-                if not isinstance(container.get_payload(), ListType):
-                    container.set_payload([msgobj])
-                else:
-                    container.add_payload(msgobj)
+                container.attach(msgobj)
+        elif container.get_main_type() == 'multipart':
+            # Very bad.  A message is a multipart with no boundary!
+            raise Errors.BoundaryError(
+                'multipart message with no defined boundary')
         elif container.get_type() == 'message/delivery-status':
             # This special kind of type contains blocks of headers separated
             # by a blank line.  We'll represent each header block as a
@@ -160,9 +166,9 @@ class Parser:
             except Errors.HeaderParseError:
                 msg = self._class()
                 self._parsebody(msg, fp)
-            container.add_payload(msg)
+            container.set_payload(msg)
         else:
-            container.add_payload(fp.read())
+            container.set_payload(fp.read())
 
 
 

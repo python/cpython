@@ -1,16 +1,26 @@
-# Copyright (C) 2001 Python Software Foundation
+# Copyright (C) 2001,2002 Python Software Foundation
 # Author: barry@zope.com (Barry Warsaw)
 
 """Miscellaneous utilities.
 """
 
 import time
+import socket
 import re
+import random
+import os
+import warnings
+from cStringIO import StringIO
+from types import ListType
 
-from rfc822 import unquote, quote, parseaddr
-from rfc822 import dump_address_pair
+from rfc822 import unquote, quote
 from rfc822 import AddrlistClass as _AddrlistClass
-from rfc822 import parsedate_tz, parsedate, mktime_tz
+from rfc822 import mktime_tz
+
+# We need wormarounds for bugs in these methods in older Pythons (see below)
+from rfc822 import parsedate as _parsedate
+from rfc822 import parsedate_tz as _parsedate_tz
+from rfc822 import parseaddr as _parseaddr
 
 from quopri import decodestring as _qdecode
 import base64
@@ -20,6 +30,10 @@ from Encoders import _bencode, _qencode
 
 COMMASPACE = ', '
 UEMPTYSTRING = u''
+CRLF = '\r\n'
+
+specialsre = re.compile(r'[][\()<>@,:;".]')
+escapesre = re.compile(r'[][\()"]')
 
 
 
@@ -44,6 +58,41 @@ def _bdecode(s):
 
 
 
+def fix_eols(s):
+    """Replace all line-ending characters with \r\n."""
+    # Fix newlines with no preceding carriage return
+    s = re.sub(r'(?<!\r)\n', CRLF, s)
+    # Fix carriage returns with no following newline
+    s = re.sub(r'\r(?!\n)', CRLF, s)
+    return s
+
+
+
+def formataddr(pair):
+    """The inverse of parseaddr(), this takes a 2-tuple of the form
+    (realname, email_address) and returns the string value suitable
+    for an RFC 2822 From:, To: or Cc:.
+    
+    If the first element of pair is false, then the second element is
+    returned unmodified.
+    """
+    name, address = pair
+    if name:
+        quotes = ''
+        if specialsre.search(name):
+            quotes = '"'
+        name = escapesre.sub(r'\\\g<0>', name)
+        return '%s%s%s <%s>' % (quotes, name, quotes, address)
+    return address
+
+# For backwards compatibility
+def dump_address_pair(pair):
+    warnings.warn('Use email.Utils.formataddr() instead',
+                  DeprecationWarning, 2)
+    return formataddr(pair)
+
+
+
 def getaddresses(fieldvalues):
     """Return a list of (REALNAME, EMAIL) for each fieldvalue."""
     all = COMMASPACE.join(fieldvalues)
@@ -64,30 +113,26 @@ ecre = re.compile(r'''
 
 
 def decode(s):
-    """Return a decoded string according to RFC 2047, as a unicode string."""
+    """Return a decoded string according to RFC 2047, as a unicode string.
+
+    NOTE: This function is deprecated.  Use Header.decode_header() instead.
+    """
+    warnings.warn('Use Header.decode_header() instead.', DeprecationWarning, 2)
+    # Intra-package import here to avoid circular import problems.
+    from Header import decode_header
+    L = decode_header(s)
+    if not isinstance(L, ListType):
+        # s wasn't decoded
+        return s
+
     rtn = []
-    parts = ecre.split(s, 1)
-    while parts:
-        # If there are less than 4 parts, it can't be encoded and we're done
-        if len(parts) < 5:
-            rtn.extend(parts)
-            break
-        # The first element is any non-encoded leading text
-        rtn.append(parts[0])
-        charset = parts[1]
-        encoding = parts[2].lower()
-        atom = parts[3]
-        # The next chunk to decode should be in parts[4]
-        parts = ecre.split(parts[4])
-        # The encoding must be either `q' or `b', case-insensitive
-        if encoding == 'q':
-            func = _qdecode
-        elif encoding == 'b':
-            func = _bdecode
+    for atom, charset in L:
+        if charset is None:
+            rtn.append(atom)
         else:
-            func = _identity
-        # Decode and get the unicode in the charset
-        rtn.append(unicode(func(atom), charset))
+            # Convert the string to Unicode using the given encoding.  Leave
+            # Unicode conversion errors to strict.
+            rtn.append(unicode(atom, charset))
     # Now that we've decoded everything, we just need to join all the parts
     # together into the final string.
     return UEMPTYSTRING.join(rtn)
@@ -96,6 +141,7 @@ def decode(s):
 
 def encode(s, charset='iso-8859-1', encoding='q'):
     """Encode a string according to RFC 2047."""
+    warnings.warn('Use Header.Header.encode() instead.', DeprecationWarning, 2)
     encoding = encoding.lower()
     if encoding == 'q':
         estr = _qencode(s)
@@ -150,3 +196,48 @@ def formatdate(timeval=None, localtime=0):
          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][now[1] - 1],
         now[0], now[3], now[4], now[5],
         zone)
+
+
+
+def make_msgid(idstring=None):
+    """Returns a string suitable for RFC 2822 compliant Message-ID:, e.g:
+
+    <20020201195627.33539.96671@nightshade.la.mastaler.com>
+
+    Optional idstring if given is a string used to strengthen the
+    uniqueness of the Message-ID, otherwise an empty string is used.
+    """
+    timeval = time.time()
+    utcdate = time.strftime('%Y%m%d%H%M%S', time.gmtime(timeval))
+    pid = os.getpid()
+    randint = random.randrange(100000)
+    if idstring is None:
+        idstring = ''
+    else:
+        idstring = '.' + idstring
+    idhost = socket.getfqdn()
+    msgid = '<%s.%s.%s%s@%s>' % (utcdate, pid, randint, idstring, idhost)
+    return msgid
+
+
+
+# These functions are in the standalone mimelib version only because they've
+# subsequently been fixed in the latest Python versions.  We use this to worm
+# around broken older Pythons.
+def parsedate(data):
+    if not data:
+        return None
+    return _parsedate(data)
+
+
+def parsedate_tz(data):
+    if not data:
+        return None
+    return _parsedate_tz(data)
+
+
+def parseaddr(addr):
+    realname, emailaddr = _parseaddr(addr)
+    if realname == '' and emailaddr is None:
+        return '', ''
+    return realname, emailaddr
