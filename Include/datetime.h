@@ -42,13 +42,6 @@ typedef struct
 	PyObject_HEAD		/* a pure abstract base clase */
 } PyDateTime_TZInfo;
 
-typedef struct
-{
-	PyObject_HEAD
-	long hashcode;
-	unsigned char data[_PyDateTime_DATE_DATASIZE];
-} PyDateTime_Date;
-
 
 /* The datetime and time types have hashcodes, and an optional tzinfo member,
  * present if and only if hastzinfo is true.
@@ -88,25 +81,35 @@ typedef struct
 	PyObject *tzinfo;
 } PyDateTime_Time;		/* hastzinfo true */
 
-/* XXX The date type will be reworked similarly. */
+
+/* All datetime objects are of PyDateTime_DateTimeType, but that can be
+ * allocated in two ways too, just like for time objects above.  In addition,
+ * the plain date type is a base class for datetime, so it must also have
+ * a hastzinfo member (although it's unused there).
+ */
+typedef struct
+{
+	_PyTZINFO_HEAD
+	unsigned char data[_PyDateTime_DATE_DATASIZE];
+} PyDateTime_Date;
+
+#define _PyDateTime_DATETIMEHEAD	\
+	_PyTZINFO_HEAD			\
+	unsigned char data[_PyDateTime_DATETIME_DATASIZE];
 
 typedef struct
 {
-	PyObject_HEAD
-	long hashcode;
-	unsigned char data[_PyDateTime_DATETIME_DATASIZE];
-} PyDateTime_DateTime;
+	_PyDateTime_DATETIMEHEAD
+} _PyDateTime_BaseDateTime;	/* hastzinfo false */
 
 typedef struct
 {
-	PyObject_HEAD
-	long hashcode;
-	unsigned char data[_PyDateTime_DATETIME_DATASIZE];
+	_PyDateTime_DATETIMEHEAD
 	PyObject *tzinfo;
-} PyDateTime_DateTimeTZ;
+} PyDateTime_DateTime;		/* hastzinfo true */
 
 
-/* Apply for date, datetime, and datetimetz instances. */
+/* Apply for date and datetime instances. */
 #define PyDateTime_GET_YEAR(o)     ((((PyDateTime_Date*)o)->data[0] << 8) | \
                                      ((PyDateTime_Date*)o)->data[1])
 #define PyDateTime_GET_MONTH(o)    (((PyDateTime_Date*)o)->data[2])
@@ -134,9 +137,6 @@ typedef struct
 
 #define PyDateTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeType)
 #define PyDateTime_CheckExact(op) ((op)->ob_type == &PyDateTime_DateTimeType)
-
-#define PyDateTimeTZ_Check(op) PyObject_TypeCheck(op, &PyDateTime_DateTimeTZType)
-#define PyDateTimeTZ_CheckExact(op) ((op)->ob_type == &PyDateTime_DateTimeTZType)
 
 #define PyTime_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeType)
 #define PyTime_CheckExact(op) ((op)->ob_type == &PyDateTime_TimeType)
