@@ -331,10 +331,6 @@ then
 	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
-        IRIX*/6*) case $CC in
-                  *gcc*) LINKFORSHARED="-shared -Xlinker -all";;
-                  *) LINKFORSHARED="-shared -all";;
-                  esac;;
 	SunOS/5*) case $CC in
 		  *gcc*)
 		    if $CC -Xlinker -V 2>/dev/null | grep BFD >/dev/null
