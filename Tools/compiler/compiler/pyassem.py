@@ -15,17 +15,6 @@ def xxx_sort(l):
     l.sort(sorter)
     return l
 
-def list2dict(l):
-    d = {}
-    for i in range(len(l)):
-        d[l[i]] = i
-    return d
-
-def dict2list(d):
-    l = [(v, k) for k, v in d.items()]
-    l.sort()
-    return [k for v, k in l]
-
 class FlowGraph:
     def __init__(self):
         self.current = self.entry = Block()
@@ -457,12 +446,6 @@ class PyFlowGraph(FlowGraph):
         assert self.stage == FLAT
         self.consts.insert(0, self.docstring)
         self.sort_cellvars()
-
-        self.c_varnames = list2dict(self.varnames)
-        self.c_names = list2dict(self.names)
-        self.c_consts = list2dict(self.consts)
-        self.c_closure = list2dict(self.closure)
-
         for i in range(len(self.insts)):
             t = self.insts[i]
             if len(t) == 2:
@@ -470,12 +453,6 @@ class PyFlowGraph(FlowGraph):
                 conv = self._converters.get(opname, None)
                 if conv:
                     self.insts[i] = opname, conv(self, oparg)
-
-        self.varnames = dict2list(self.c_varnames)
-        self.names = dict2list(self.c_names)
-        self.consts = dict2list(self.c_consts)
-        self.closure = dict2list(self.c_closure)
-
         self.stage = CONV
 
     def sort_cellvars(self):
@@ -491,23 +468,18 @@ class PyFlowGraph(FlowGraph):
         self.cellvars = self.cellvars + cells.keys()
         self.closure = self.cellvars + self.freevars
 
-    def _lookupName(self, name, dict):
-        i = dict.get(name, None)
-        if i is None:
-            i = dict[name] = len(dict)
-        return i
+    def _lookupName(self, name, list):
+        """Return index of name in list, appending if necessary
 
-    def XXX_lookupName(self, name, list):
-        """Return index of name in list, appending if necessary"""
-        # XXX It should be possible to replace this with some
-        # dictionary operations, but not sure how
+        This routine uses a list instead of a dictionary, because a
+        dictionary can't store two different keys if the keys have the
+        same value but different types, e.g. 2 and 2L.  The compiler
+        must treat these two separately, so it does an explicit type
+        comparison before comparing the values.
+        """
         t = type(name)
         for i in range(len(list)):
-            # must do a comparison on type first to prevent UnicodeErrors
-            # not clear that a dictionary would work, because we could
-            # get UnicodeErrors on lookups 
-            elt = list[i]
-            if isinstance(elt, t) and elt == name:
+            if t == type(list[i]) and list[i] == name:
                 return i
         end = len(list)
         list.append(name)
@@ -517,21 +489,22 @@ class PyFlowGraph(FlowGraph):
     def _convert_LOAD_CONST(self, arg):
         if hasattr(arg, 'getCode'):
             arg = arg.getCode()
-        return self._lookupName(arg, self.c_consts)
+        return self._lookupName(arg, self.consts)
 
     def _convert_LOAD_FAST(self, arg):
-        self._lookupName(arg, self.c_names)
-        return self._lookupName(arg, self.c_varnames)
+        self._lookupName(arg, self.names)
+        return self._lookupName(arg, self.varnames)
     _convert_STORE_FAST = _convert_LOAD_FAST
     _convert_DELETE_FAST = _convert_LOAD_FAST
 
     def _convert_LOAD_NAME(self, arg):
-        return self._lookupName(arg, self.c_names)
+        if self.klass is None:
+            self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.names)
 
     def _convert_NAME(self, arg):
-        if self.klass is None:
-            self._lookupName(arg, self.c_varnames)
-        return self._lookupName(arg, self.c_names)
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.names)
     _convert_STORE_NAME = _convert_NAME
     _convert_DELETE_NAME = _convert_NAME
     _convert_IMPORT_NAME = _convert_NAME
@@ -544,15 +517,15 @@ class PyFlowGraph(FlowGraph):
     _convert_DELETE_GLOBAL = _convert_NAME
 
     def _convert_DEREF(self, arg):
-        self._lookupName(arg, self.c_names)
-        self._lookupName(arg, self.c_varnames)
-        return self._lookupName(arg, self.c_closure)
+        self._lookupName(arg, self.names)
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.closure)
     _convert_LOAD_DEREF = _convert_DEREF
     _convert_STORE_DEREF = _convert_DEREF
 
     def _convert_LOAD_CLOSURE(self, arg):
-        self._lookupName(arg, self.c_varnames)
-        return self._lookupName(arg, self.c_closure)
+        self._lookupName(arg, self.varnames)
+        return self._lookupName(arg, self.closure)
 
     _cmp = list(dis.cmp_op)
     def _convert_COMPARE_OP(self, arg):
