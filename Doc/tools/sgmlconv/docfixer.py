@@ -20,6 +20,9 @@ import xml.dom.core
 import xml.dom.esis_builder
 
 
+DEBUG_PARA_FIXER = 0
+
+
 # Workaround to deal with invalid documents (multiple root elements).  This
 # does not indicate a bug in the DOM implementation.
 #
@@ -323,12 +326,157 @@ def cleanup_synopses(doc):
             create_module_info(doc, node)
 
 
+FIXUP_PARA_ELEMENTS = (
+    "chapter",
+    "section", "subsection", "subsubsection",
+    "paragraph", "subparagraph")
+
+PARA_LEVEL_ELEMENTS = (
+    "moduleinfo", "title", "opcodedesc",
+    "verbatim", "funcdesc", "methoddesc", "excdesc", "datadesc",
+    "funcdescni", "methoddescni", "excdescni", "datadescni",
+    "tableii", "tableiii", "tableiv", "localmoduletable",
+    "sectionauthor",
+    # include <para>, so we can just do it again to get subsequent paras:
+    "para",
+    )
+
+PARA_LEVEL_PRECEEDERS = (
+    "index", "indexii", "indexiii", "indexiv",
+    "stindex", "obindex", "COMMENT", "label",
+    )
+
 def fixup_paras(doc):
-    pass
+    for child in doc.childNodes:
+        if child.nodeType == xml.dom.core.ELEMENT \
+           and child.tagName in FIXUP_PARA_ELEMENTS:
+            fixup_paras_helper(doc, child)
+            descriptions = child.getElementsByTagName("description")
+            for description in descriptions:
+                if DEBUG_PARA_FIXER:
+                    sys.stderr.write("-- Fixing up <description> element...\n")
+                fixup_paras_helper(doc, description)
+
+
+def fixup_paras_helper(doc, container):
+    # document is already normalized
+    children = container.childNodes
+    start = 0
+    start_fixed = 0
+    i = 0
+    SKIP_ELEMENTS = PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS
+    for child in children:
+        if child.nodeType == xml.dom.core.ELEMENT:
+            if child.tagName in FIXUP_PARA_ELEMENTS:
+                fixup_paras_helper(doc, child)
+                break
+            elif child.tagName in SKIP_ELEMENTS:
+                if not start_fixed:
+                    start = i + 1
+            elif not start_fixed:
+                start_fixed = 1
+            i = i + 1
+        else:
+            if child.nodeType == xml.dom.core.TEXT \
+               and string.strip(child.data) and not start_fixed:
+                start_fixed = 1
+            i = i + 1
+    if DEBUG_PARA_FIXER:
+        sys.stderr.write("fixup_paras_helper() called on <%s>; %d, %d\n"
+                         % (container.tagName, start, i))
+    if i > start:
+        # the first [start:i] children shoudl be rewritten as <para> elements
+        # start by breaking text nodes that contain \n\n+ into multiple nodes
+        nstart, i = skip_leading_nodes(container.childNodes, start, i)
+        if i > nstart:
+            build_para(doc, container, nstart, i)
+            fixup_paras_helper(doc, container)
+
+
+def build_para(doc, parent, start, i):
+    children = parent.childNodes
+    # collect all children until \n\n+ is found in a text node or a
+    # PARA_LEVEL_ELEMENT is found.
+    after = start + 1
+    have_last = 0
+    BREAK_ELEMENTS = PARA_LEVEL_ELEMENTS + FIXUP_PARA_ELEMENTS
+    for j in range(start, i):
+        after = j + 1
+        child = children[j]
+        nodeType = child.nodeType
+        if nodeType == xml.dom.core.ELEMENT:
+            if child.tagName in BREAK_ELEMENTS:
+                after = j
+                break
+        elif nodeType == xml.dom.core.TEXT:
+            pos = string.find(child.data, "\n\n")
+            if pos == 0:
+                after = j
+                break
+            if pos >= 1:
+                child.splitText(pos)
+                break
+    else:
+        have_last = 1
+    if children[after - 1].nodeType == xml.dom.core.TEXT:
+        # we may need to split off trailing white space:
+        child = children[after - 1]
+        data = child.data
+        if string.rstrip(data) != data:
+            have_last = 0
+            child.splitText(len(string.rstrip(data)))
+    children = parent.childNodes
+    para = doc.createElement("para")
+    prev = None
+    indexes = range(start, after)
+    indexes.reverse()
+    for j in indexes:
+        node = children[j]
+        parent.removeChild(node)
+        para.insertBefore(node, prev)
+        prev = node
+    if have_last:
+        parent.appendChild(para)
+    else:
+        parent.insertBefore(para, parent.childNodes[start])
+
+
+def skip_leading_nodes(children, start, i):
+    i = min(i, len(children))
+    while i > start:
+        # skip over leading comments and whitespace:
+        try:
+            child = children[start]
+        except IndexError:
+            sys.stderr.write(
+                "skip_leading_nodes() failed at index %d\n" % start)
+            raise
+        nodeType = child.nodeType
+        if nodeType == xml.dom.core.COMMENT:
+            start = start + 1
+        elif nodeType == xml.dom.core.TEXT:
+            data = child.data
+            shortened = string.lstrip(data)
+            if shortened:
+                if data != shortened:
+                    # break into two nodes: whitespace and non-whitespace
+                    child.splitText(len(data) - len(shortened))
+                    return start + 1, i + 1
+                break
+            # all whitespace, just skip
+            start = start + 1
+        elif nodeType == xml.dom.core.ELEMENT:
+            if child.tagName in PARA_LEVEL_ELEMENTS + PARA_LEVEL_PRECEEDERS:
+                start = start + 1
+            else:
+                break
+        else:
+            break
+    return start, i
 
 
 _token_rx = re.compile(r"[a-zA-Z][a-zA-Z0-9.-]*$")
-  
+
 def write_esis(doc, ofp, knownempty):
     for node in doc.childNodes:
         nodeType = node.nodeType
