@@ -32,7 +32,7 @@ def read_sound_file(path):
 
 def play_sound_file(data, rate, ssize, nchannels):
     try:
-        a = ossaudiodev.open('w')
+        dsp = ossaudiodev.open('w')
     except IOError, msg:
         if msg[0] in (errno.EACCES, errno.ENODEV, errno.EBUSY):
             raise TestSkipped, msg
@@ -45,47 +45,46 @@ def play_sound_file(data, rate, ssize, nchannels):
         fmt = ossaudiodev.AFMT_S16_BE
 
     # at least check that these methods can be invoked
-    a.bufsize()
-    a.obufcount()
-    a.obuffree()
-    a.getptr()
-    a.fileno()
+    dsp.bufsize()
+    dsp.obufcount()
+    dsp.obuffree()
+    dsp.getptr()
+    dsp.fileno()
 
     # set parameters based on .au file headers
-    a.setparameters(rate, 16, nchannels, fmt)
-    a.write(data)
-    a.flush()
-    a.close()
+    dsp.setparameters(fmt, nchannels, rate)
+    dsp.write(data)
+    dsp.flush()
+    dsp.close()
 
 def test_errors():
-    a = ossaudiodev.open("w")
-    size = 8
+    dsp = ossaudiodev.open("w")
     fmt = ossaudiodev.AFMT_U8
     rate = 8000
     nchannels = 1
     try:
-        a.setparameters(-1, size, nchannels, fmt)
-    except ValueError, msg:
+        dsp.setparameters(fmt, nchannels, -1)
+    except ossaudiodev.error, msg:
         print msg
     try:
-        a.setparameters(rate, -2, nchannels, fmt)
-    except ValueError, msg:
+        dsp.setparameters(fmt, nchannels, rate)
+    except ossaudiodev.error, msg:
         print msg
     try:
-        a.setparameters(rate, size, 3, fmt)
-    except ValueError, msg:
+        dsp.setparameters(fmt, 3, rate)
+    except ossaudiodev.error, msg:
         print msg
     try:
-        a.setparameters(rate, size, nchannels, 177)
-    except ValueError, msg:
+        dsp.setparameters(177, nchannels, rate)
+    except ossaudiodev.error, msg:
         print msg
     try:
-        a.setparameters(rate, size, nchannels, ossaudiodev.AFMT_U16_LE)
-    except ValueError, msg:
+        dsp.setparameters(ossaudiodev.AFMT_U16_LE, nchannels, rate)
+    except ossaudiodev.error, msg:
         print msg
     try:
-        a.setparameters(rate, 16, nchannels, fmt)
-    except ValueError, msg:
+        dsp.setparameters(rate, nchannels, fmt)
+    except ossaudiodev.error, msg:
         print msg
 
 def test():
