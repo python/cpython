@@ -371,6 +371,10 @@ PyObject_Unicode(PyObject *v)
 }
 
 
+/* Macro to get the tp_richcompare field of a type if defined */
+#define RICHCOMPARE(t) (PyType_HasFeature((t), Py_TPFLAGS_HAVE_RICHCOMPARE) \
+                         ? (t)->tp_richcompare : NULL)
+
 /* Map rich comparison operators to their swapped version, e.g. LT --> GT */
 static int swapped_op[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
@@ -387,13 +391,13 @@ try_rich_compare(PyObject *v, PyObject *w, int op)
 	richcmpfunc f;
 	PyObject *res;
 
-	if ((f = v->ob_type->tp_richcompare) != NULL) {
+	if ((f = RICHCOMPARE(v->ob_type)) != NULL) {
 		res = (*f)(v, w, op);
 		if (res != Py_NotImplemented)
 			return res;
 		Py_DECREF(res);
 	}
-	if ((f = w->ob_type->tp_richcompare) != NULL) {
+	if ((f = RICHCOMPARE(w->ob_type)) != NULL) {
 		return (*f)(w, v, swapped_op[op]);
 	}
 	res = Py_NotImplemented;
@@ -414,8 +418,7 @@ try_rich_compare_bool(PyObject *v, PyObject *w, int op)
 	PyObject *res;
 	int ok;
 
-	if (v->ob_type->tp_richcompare == NULL &&
-	    w->ob_type->tp_richcompare == NULL)
+	if (RICHCOMPARE(v->ob_type) == NULL && RICHCOMPARE(w->ob_type) == NULL)
 		return 2; /* Shortcut, avoid INCREF+DECREF */
 	res = try_rich_compare(v, w, op);
 	if (res == NULL)
@@ -447,8 +450,7 @@ try_rich_to_3way_compare(PyObject *v, PyObject *w)
 	};
 	int i;
 
-	if (v->ob_type->tp_richcompare == NULL &&
-	    w->ob_type->tp_richcompare == NULL)
+	if (RICHCOMPARE(v->ob_type) == NULL && RICHCOMPARE(w->ob_type) == NULL)
 		return 2; /* Shortcut */
 
 	for (i = 0; i < 3; i++) {
@@ -954,7 +956,7 @@ PyObject_Hash(PyObject *v)
 	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
-	if (tp->tp_compare == NULL && tp->tp_richcompare == NULL) {
+	if (tp->tp_compare == NULL && RICHCOMPARE(tp) == NULL) {
 		return _Py_HashPointer(v); /* Use address as hash value */
 	}
 	/* If there's a cmp but no hash defined, the object can't be hashed */
