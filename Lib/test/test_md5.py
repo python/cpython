@@ -22,3 +22,9 @@ print md5test('message digest')
 print md5test('abcdefghijklmnopqrstuvwxyz')
 print md5test('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
 print md5test('12345678901234567890123456789012345678901234567890123456789012345678901234567890')
+
+# hexdigest is new with Python 2.0
+m = md5('testing the hexdigest method')
+h = m.hexdigest()
+if hexstr(m.digest()) <> h:
+	print 'hexdigest() failed'
