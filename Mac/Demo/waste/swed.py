@@ -43,6 +43,7 @@ class WasteWindow(ScrolledWindow):
 		flags = WASTEconst.weDoAutoScroll | WASTEconst.weDoOutlineHilite | \
 			WASTEconst.weDoMonoStyled | WASTEconst.weDoUndo
 		self.ted = waste.WENew(dr, vr, flags)
+		self.ted.WEInstallTabHooks()
 		style, soup = self.getstylesoup()
 		self.ted.WEInsert(data, style, soup)
 		self.ted.WESetSelection(0,0)
