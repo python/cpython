@@ -59,6 +59,8 @@ Extension modules
 Library
 -------
 
+- Bug #709491: Reset __starttext_tag in sgmllib.
+
 - The bsddb module and dbhash module now support the iterator and
   mapping protocols. 
 
