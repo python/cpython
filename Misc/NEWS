@@ -257,6 +257,9 @@ optionally support the RFC 959 REST command.
 
 socket - new function getfqdn()
 
+readline - new functions to read, write and truncate history files.  The
+readline section of the library reference manual contains an example.
+
 XXX: I'm sure there are others
 
 
