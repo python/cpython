@@ -15,7 +15,15 @@ kIsInvisible				= 0x4000
 kIsAlias					= 0x8000
 
 # Constants for FindFolder
-kOnSystemDisk				= 0x8000
+kOnSystemDisk                 = -32768	# previously was 0x8000 but that is an unsigned value whereas vRefNum is signed
+kOnAppropriateDisk            = -32767	# Generally, the same as kOnSystemDisk, but it's clearer that this isn't always the 'boot' disk.
+# Folder Domains - Carbon only.  
+kSystemDomain                 = -32766	# Read-only system hierarchy.
+kLocalDomain                  = -32765	# All users of a single machine have access to these resources.
+kNetworkDomain                = -32764	# All users configured to use a common network server has access to these resources.
+kUserDomain                   = -32763	# Read/write. Resources that are private to the user.
+kClassicDomain                = -32762	# Domain referring to the currently configured Classic System Folder
+
 kSystemFolderType			= 'macs'	# the system folder
 kDesktopFolderType			= 'desk'	# the desktop folder; objects in this folder show on the desk top.
 kTrashFolderType			= 'trsh'	# the trash folder; objects in this folder show up in the trash
