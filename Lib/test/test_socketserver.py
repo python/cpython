@@ -58,7 +58,7 @@ def testdgram(proto, addr):
 def teststream(proto, addr):
     s = socket.socket(proto, socket.SOCK_STREAM)
     s.connect(addr)
-    s.send(teststring)
+    s.sendall(teststring)
     buf = data = receive(s, 100)
     while data and '\n' not in buf:
         data = receive(s, 100)
