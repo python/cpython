@@ -94,6 +94,8 @@ http://sourceforge.net/tracker/index.php?func=detail&aid=<id>&group_id=5470&atid
 
 - #123924 - httplib.py - Windows - using OpenSSL, problem with socket
 
+- atexit.py - mutate list of functions in thread-safe way
+
 What's New in Python 2.0?
 =========================
 

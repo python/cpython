@@ -14,9 +14,8 @@ def _run_exitfuncs():
     """
     
     while _exithandlers:
-        func, targs, kargs = _exithandlers[-1]
+        func, targs, kargs = _exithandlers.pop()
         apply(func, targs, kargs)
-        _exithandlers.remove(_exithandlers[-1])
 
 def register(func, *targs, **kargs):
     """register a function to be executed upon normal program termination
