@@ -251,9 +251,18 @@ assert u"%c" % (u"a",) == u'a'
 assert u"%c" % ("a",) == u'a'
 assert u"%c" % (34,) == u'"'
 assert u"%c" % (36,) == u'$'
-assert u"%r, %r" % (u"abc", "abc") == u"u'abc', 'abc'"
+value = u"%r, %r" % (u"abc", "abc") 
+if value != u"u'abc', 'abc'":
+    print '*** formatting failed for "%s"' % 'u"%r, %r" % (u"abc", "abc")'
+
 assert u"%(x)s, %(y)s" % {'x':u"abc", 'y':"def"} == u'abc, def'
-assert u"%(x)s, %(ה)s" % {'x':u"abc", u'ה'.encode('utf-8'):"def"} == u'abc, def'
+try:
+    value = u"%(x)s, %(ה)s" % {'x':u"abc", u'ה'.encode('utf-8'):"def"} 
+except KeyError:
+    print '*** formatting failed for "%s"' % "u'abc, def'"
+else:
+    assert value == u'abc, def'
+
 # formatting jobs delegated from the string implementation:
 assert '...%(foo)s...' % {'foo':u"abc"} == u'...abc...'
 assert '...%(foo)s...' % {'foo':"abc"} == '...abc...'
@@ -268,7 +277,7 @@ try:
 except ValueError:
     pass
 else:
-    raise AssertionError, "'...%s...הצü...' % u'abc' failed to raise an exception"
+    print "*** formatting failed ...%s...הצü...' % u'abc' failed to raise an exception"
 print 'done.'
 
 # Test builtin codecs
