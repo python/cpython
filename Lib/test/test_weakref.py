@@ -280,6 +280,31 @@ class MappingTestCase(TestBase):
         self.assert_(len(dict) == 0,
                      "deleting the keys did not clear the dictionary")
 
+    def check_update(self, klass, dict):
+        weakdict = klass()
+        weakdict.update(dict)
+        self.assert_(len(weakdict) == len(dict))
+        for k in weakdict.keys():
+            self.assert_(dict.has_key(k),
+                         "mysterious new key appeared in weak dict")
+            v = dict.get(k)
+            self.assert_(v is weakdict[k])
+            self.assert_(v is weakdict.get(k))
+        for k in dict.keys():
+            self.assert_(weakdict.has_key(k),
+                         "original key disappeared in weak dict")
+            v = dict[k]
+            self.assert_(v is weakdict[k])
+            self.assert_(v is weakdict.get(k))
+
+    def test_weak_valued_dict_update(self):
+        self.check_update(weakref.WeakValueDictionary,
+                          {1: C(), 'a': C(), C(): C()})
+
+    def test_weak_keyed_dict_update(self):
+        self.check_update(weakref.WeakKeyDictionary,
+                          {C(): 1, C(): 2, C(): 3})
+
 
 run_unittest(ReferencesTestCase)
 run_unittest(MappingTestCase)
