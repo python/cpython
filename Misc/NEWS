@@ -24,6 +24,8 @@ Core and builtins
 Extension modules
 -----------------
 
+- Added socket.socketpair().
+
 Library
 -------
 

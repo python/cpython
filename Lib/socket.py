@@ -10,6 +10,7 @@ socket are available as methods of the socket object.
 Functions:
 
 socket() -- create a new socket object
+socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number

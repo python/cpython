@@ -428,6 +428,9 @@
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
 
+/* Define to 1 if you have the `socketpair' function. */
+#undef HAVE_SOCKETPAIR
+
 /* Define if sockaddr has sa_len member */
 #undef HAVE_SOCKADDR_SA_LEN
 

@@ -28,6 +28,7 @@ Module interface:
 - socket.getservbyname(servicename[, protocolname]) --> port number
 - socket.getservbyport(portnumber[, protocolname]) --> service name
 - socket.socket([family[, type [, proto]]]) --> new socket object
+- socket.socketpair([family[, type [, proto]]]) --> (socket, socket)
 - socket.ntohs(16 bit value) --> new int object
 - socket.ntohl(32 bit value) --> new int object
 - socket.htons(16 bit value) --> new int object
@@ -3009,6 +3010,63 @@ PyDoc_STRVAR(getprotobyname_doc,
 Return the protocol number for the named protocol.  (Rarely used.)");
 
 
+#ifdef HAVE_SOCKETPAIR
+/* Create a pair of sockets using the socketpair() function.
+   Arguments as for socket(). */
+
+/*ARGSUSED*/
+static PyObject *
+socket_socketpair(PyObject *self, PyObject *args)
+{
+	PySocketSockObject *s0 = NULL, *s1 = NULL;
+	SOCKET_T sv[2];
+	int family, type = SOCK_STREAM, proto = 0;
+	PyObject *res = NULL;
+
+#if defined(AF_UNIX)
+	family = AF_UNIX;
+#else
+	family = AF_INET;
+#endif
+	if (!PyArg_ParseTuple(args, "|iii:socketpair",
+			      &family, &type, &proto))
+		return NULL;
+	/* Create a pair of socket fds */
+	if (socketpair(family, type, proto, sv) < 0)
+		return set_error();
+#ifdef SIGPIPE
+	(void) signal(SIGPIPE, SIG_IGN);
+#endif
+	s0 = new_sockobject(sv[0], family, type, proto);
+	if (s0 == NULL)
+		goto finally;
+	s1 = new_sockobject(sv[1], family, type, proto);
+	if (s1 == NULL)
+		goto finally;
+	res = PyTuple_Pack(2, s0, s1);
+
+finally:
+	if (res == NULL) {
+		if (s0 == NULL)
+			SOCKETCLOSE(sv[0]);
+		if (s1 == NULL)
+			SOCKETCLOSE(sv[1]);
+	}
+	Py_XDECREF(s0);
+	Py_XDECREF(s1);
+	return res;
+}
+
+PyDoc_STRVAR(socketpair_doc,
+"socketpair([family[, type[, proto]]]) -> (socket object, socket object)\n\
+\n\
+Create a pair of socket objects from the sockets returned by the platform\n\
+socketpair() function.\n\
+The arguments are the same as for socket().");
+
+#endif /* HAVE_SOCKETPAIR */
+
+
 #ifndef NO_DUP
 /* Create a socket object from a numeric file description.
    Useful e.g. if stdin is a socket.
@@ -3607,6 +3665,10 @@ static PyMethodDef socket_methods[] = {
 #ifndef NO_DUP
 	{"fromfd",		socket_fromfd,
 	 METH_VARARGS, fromfd_doc},
+#endif
+#ifdef HAVE_SOCKETPAIR
+	{"socketpair",		socket_socketpair,
+	 METH_VARARGS, socketpair_doc},
 #endif
 	{"ntohs",		socket_ntohs,
 	 METH_VARARGS, ntohs_doc},

@@ -303,6 +303,14 @@ success, a new \class{SSLObject} is returned.
 \warning{This does not do any certificate verification!}
 \end{funcdesc}
 
+\begin{funcdesc}{socketpair}{\optional{family\optional{, type\optional{, proto}}}}
+Build a pair of connected socket objects using the given address
+family, socket type and protocol number.  Address family, socket type
+and protocol number are as for the \function{socket()} function above.
+Availability: \UNIX.
+\versionadded{2.3}
+\end{funcdesc}
+
 \begin{funcdesc}{fromfd}{fd, family, type\optional{, proto}}
 Build a socket object from an existing file descriptor (an integer as
 returned by a file object's \method{fileno()} method).  Address family,
