@@ -75,7 +75,7 @@ extern void initimp();
 struct _inittab _PyImport_Inittab[] = {
 
         {"array", initarray},
-#ifdef M_I386
+#ifdef MS_WINDOWS
         {"audioop", initaudioop},
 #endif
         {"binascii", initbinascii},
