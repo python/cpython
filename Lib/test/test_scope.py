@@ -154,7 +154,7 @@ class Test:
     def str(self):
         return str(self)
 
-t = test()
+t = Test()
 verify(t.test() == "var")
 verify(t.method_and_var() == "method")
 verify(t.actual_global() == "global")
@@ -247,3 +247,32 @@ f8 = lambda x, y, z: lambda a, b, c: lambda : z * (b + y)
 g = f8(1, 2, 3)
 h = g(2, 4, 6)
 verify(h() == 18)
+
+print "13. UnboundLocal"
+
+def errorInOuter():
+    print y
+    def inner():
+        return y
+    y = 1
+
+def errorInInner():
+    def inner():
+        return y
+    inner()
+    y = 1
+
+try:
+    errorInOuter()
+except UnboundLocalError:
+    pass
+else:
+    raise TestFailed
+
+try:
+    errorInInner()
+except UnboundLocalError:
+    pass
+else:
+    raise TestFailed
+
