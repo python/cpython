@@ -886,31 +886,31 @@ item: If/While Statement
 end
 item: Install File
   Source=%_SRC_%\Lib\test\audiotest.au
-  Destination=%MAINDIR%\Lib\Test\audiotest.au
+  Destination=%MAINDIR%\Lib\test\audiotest.au
   Description=Python Test files
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\test\*.uue
-  Destination=%MAINDIR%\Lib\Test
+  Destination=%MAINDIR%\Lib\test
   Description=Python Test files
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\test\*.py
-  Destination=%MAINDIR%\Lib\Test
+  Destination=%MAINDIR%\Lib\test
   Description=Python Test files
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\test\output\*.*
-  Destination=%MAINDIR%\Lib\Test\output
+  Destination=%MAINDIR%\Lib\test\output
   Description=Python Test output files
   Flags=0000000000000010
 end
 item: Install File
   Source=%_SRC_%\Lib\test\*.py
-  Destination=%MAINDIR%\Lib\Test
+  Destination=%MAINDIR%\Lib\test
   Flags=0000000000000010
 end
 item: End Block
