@@ -143,9 +143,7 @@ signal_handler(int sig_num)
 	siginterrupt(sig_num, 1);
 #endif
 	signal(sig_num, signal_handler);
-#if RETSIGTYPE != void
-	return 0;
-#endif
+	Py_RETURN_FROM_SIGNAL_HANDLER(0);
 }
 
 

@@ -11,7 +11,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to basic
-C-language operations whose spellings vary across platforms.
+C language & library operations whose spellings vary across platforms.
 
 Please try to make documentation here as clear as possible:  by definition,
 the stuff here is trying to illuminate C's darkest corners.
@@ -22,6 +22,11 @@ SIGNED_RIGHT_SHIFT_ZERO_FILLS
 Meaning:  To be defined iff i>>j does not extend the sign bit when i is a
           signed integral type and i < 0.
 Used in:  Py_ARITHMETIC_RIGHT_SHIFT
+
+RETSIGTYPE
+Meaning:  Expands to void or int, depending on what the platform wants
+          signal handlers to return.  Note that only void is ANSI!
+Used in:  Py_RETURN_FROM_SIGNAL_HANDLER
 **************************************************************************/
 
 
@@ -49,6 +54,25 @@ extern "C" {
 #else
 #define Py_ARITHMETIC_RIGHT_SHIFT(TYPE, I, J) ((I) >> (J))
 #endif
+
+/* Py_FORCE_EXPANSION
+ * "Simply" returns its argument.  However, macro expansions within the
+ * argument are evaluated.  This unfortunate trickery is needed to get
+ * token-pasting to work as desired in some cases.
+ */
+#define Py_FORCE_EXPANSION(X) X
+
+/* Py_RETURN_FROM_SIGNAL_HANDLER
+ * The return from a signal handler varies depending on whether RETSIGTYPE
+ * is int or void.  The macro Py_RETURN_FROM_SIGNAL_HANDLER(VALUE) expands
+ * to
+ *     return VALUE
+ * if RETSIGTYPE is int, else to nothing if RETSIGTYPE is void.
+ */
+#define int_PySIGRETURN(VALUE) return VALUE
+#define void_PySIGRETURN(VALUE)
+#define Py_RETURN_FROM_SIGNAL_HANDLER(VALUE) \
+        Py_FORCE_EXPANSION(RETSIGTYPE) ## _PySIGRETURN(VALUE)
 
 #ifdef __cplusplus
 }
