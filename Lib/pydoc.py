@@ -62,7 +62,7 @@ def synopsis(filename, cache={}):
             while strip(line) == '':
                 line = file.readline()
                 if not line: break
-            result = split(line, '"""')[0]
+            result = strip(split(line, '"""')[0])
         else: result = None
         file.close()
         cache[filename] = (mtime, result)
@@ -86,7 +86,7 @@ def getdoc(object):
     if not result:
         try: result = inspect.getcomments(object)
         except: pass
-    return result and rstrip(result) or ''
+    return result and re.sub('^ *\n', '', rstrip(result)) or ''
 
 def classname(object, modname):
     """Get a class name and qualify it with a module name if necessary."""
@@ -393,9 +393,7 @@ class HTMLDoc(Doc):
         linkedname = join(links + parts[-1:], '.')
         head = '<big><big><strong>%s</strong></big></big>' % linkedname
         try:
-            path = os.path.abspath(inspect.getfile(object))
-            sourcepath = os.path.abspath(inspect.getsourcefile(object))
-            if os.path.isfile(sourcepath): path = sourcepath
+            path = inspect.getabsfile(object)
             filelink = '<a href="file:%s">%s</a>' % (path, path)
         except TypeError:
             filelink = '(built-in)'
@@ -675,9 +673,9 @@ class TextDoc(Doc):
             if lines[0]: name = name + ' - ' + lines[0]
             lines = lines[2:]
         result = result + self.section('NAME', name)
-        try: file = inspect.getfile(object) # XXX or getsourcefile?
-        except TypeError: file = None
-        result = result + self.section('FILE', file or '(built-in)')
+        try: file = inspect.getabsfile(object)
+        except TypeError: file = '(built-in)'
+        result = result + self.section('FILE', file)
         if lines:
             result = result + self.section('DESCRIPTION', join(lines, '\n'))
 
@@ -1049,10 +1047,11 @@ class ModuleScanner(Scanner):
         seen = {}
 
         for modname in sys.builtin_module_names:
-            seen[modname] = 1
-            desc = split(__import__(modname).__doc__ or '', '\n')[0]
-            if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
-                callback(None, modname, desc)
+            if modname != '__main__':
+                seen[modname] = 1
+                desc = split(__import__(modname).__doc__ or '', '\n')[0]
+                if find(lower(modname + ' - ' + desc), lower(key)) >= 0:
+                    callback(None, modname, desc)
 
         while not self.quit:
             node = self.next()
@@ -1124,10 +1123,13 @@ def serve(port, callback=None):
                 heading = html.heading(
 '<big><big><strong>Python: Index of Modules</strong></big></big>',
 '#ffffff', '#7799ee')
-                builtins = []
-                for name in sys.builtin_module_names:
-                    builtins.append('<a href="%s.html">%s</a>' % (name, name))
-                indices = ['<p>Built-in modules: ' + join(builtins, ', ')]
+                def bltinlink(name):
+                    return '<a href="%s.html">%s</a>' % (name, name)
+                names = filter(lambda x: x != '__main__', sys.builtin_module_names)
+                contents = html.multicolumn(names, bltinlink)
+                indices = ['<p>' + html.bigsection(
+                    'Built-in Modules', '#ffffff', '#ee77aa', contents)]
+
                 seen = {}
                 for dir in pathdirs():
                     indices.append(html.index(dir, seen))
@@ -1206,8 +1208,8 @@ def gui():
             self.search_frm.pack(side='top', fill='x')
             self.search_ent.focus_set()
 
-            self.result_lst = Tkinter.Listbox(window, 
-                font=('helvetica', 8), height=6)
+            font = ('helvetica', sys.platform in ['win32', 'win', 'nt'] and 8 or 10)
+            self.result_lst = Tkinter.Listbox(window, font=font, height=6)
             self.result_lst.bind('<Button-1>', self.select)
             self.result_lst.bind('<Double-Button-1>', self.goto)
             self.result_scr = Tkinter.Scrollbar(window,
@@ -1244,9 +1246,22 @@ def gui():
             self.open_btn.config(state='normal')
             self.quit_btn.config(state='normal')
 
-        def open(self, event=None):
-            import webbrowser
-            webbrowser.open(self.server.url)
+        def open(self, event=None, url=None):
+            url = url or self.server.url
+            try:
+                import webbrowser
+                webbrowser.open(url)
+            except ImportError: # pre-webbrowser.py compatibility
+                if sys.platform in ['win', 'win32', 'nt']:
+                    os.system('start "%s"' % url)
+                elif sys.platform == 'mac':
+                    try:
+                        import ic
+                        ic.launchurl(url)
+                    except ImportError: pass
+                else:
+                    rc = os.system('netscape -remote "openURL(%s)" &' % url)
+                    if rc: os.system('netscape "%s" &' % url)
 
         def quit(self, event=None):
             if self.server:
@@ -1296,9 +1311,8 @@ def gui():
         def goto(self, event=None):
             selection = self.result_lst.curselection()
             if selection:
-                import webbrowser
                 modname = split(self.result_lst.get(selection[0]))[0]
-                webbrowser.open(self.server.url + modname + '.html')
+                self.open(url=self.server.url + modname + '.html')
 
         def collapse(self):
             if not self.expanded: return
