@@ -351,11 +351,20 @@ scan_event_queue(flush)
 	}
 }
 
+#define TICKCOUNT 6
+
 int
 PyOS_InterruptOccurred()
 {
+	static unsigned long nextticktime;
+	unsigned long curticktime;
+
 	if (PyMac_DoYieldEnabled < 0)
 		return 0;
+	curticktime = (unsigned long)LMGetTicks();
+	if ( curticktime < nextticktime )
+		return 0;
+	nextticktime = curticktime + TICKCOUNT;
 #ifdef THINK_C
 	scan_event_queue(1);
 #endif
