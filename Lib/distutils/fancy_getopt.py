@@ -45,8 +45,9 @@ class FancyGetopt:
 
     def __init__ (self, option_table=None):
 
-        # The option table is (currently) a list of 3-tuples:
-        #   (long_option, short_option, help_string)
+        # The option table is (currently) a list of tuples.  The
+        # tuples may have 3 or four values:
+        #   (long_option, short_option, help_string [, repeatable])
         # if an option takes an argument, its long_option should have '='
         # appended; short_option should just be a single character, no ':'
         # in any case.  If a long_option doesn't have a corresponding
@@ -162,7 +163,7 @@ class FancyGetopt:
             else:
                 # the option table is part of the code, so simply
                 # assert that it is correct
-                assert "invalid option tuple: %r" % (option,)
+                raise ValueError, "invalid option tuple: %r" % (option,)
 
             # Type- and value-check the option names
             if type(long) is not StringType or len(long) < 2:
