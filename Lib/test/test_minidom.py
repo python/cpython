@@ -79,11 +79,56 @@ def testInsertBefore():
             , "testInsertBefore -- node properly placed in tree")
     dom.unlink()
 
+def _create_fragment_test_nodes():
+    dom = parseString("<doc/>")
+    orig = dom.createTextNode("original")
+    c1 = dom.createTextNode("foo")
+    c2 = dom.createTextNode("bar")
+    c3 = dom.createTextNode("bat")
+    dom.documentElement.appendChild(orig)
+    frag = dom.createDocumentFragment()
+    frag.appendChild(c1)
+    frag.appendChild(c2)
+    frag.appendChild(c3)
+    return dom, orig, c1, c2, c3, frag
+
+def testInsertBeforeFragment():
+    dom, orig, c1, c2, c3, frag = _create_fragment_test_nodes()
+    dom.documentElement.insertBefore(frag, None)
+    confirm(tuple(dom.documentElement.childNodes) == (orig, c1, c2, c3),
+            "insertBefore(<fragment>, None)")
+    frag.unlink()
+    dom.unlink()
+    #
+    dom, orig, c1, c2, c3, frag = _create_fragment_test_nodes()
+    dom.documentElement.insertBefore(frag, orig)
+    confirm(tuple(dom.documentElement.childNodes) == (c1, c2, c3, orig),
+            "insertBefore(<fragment>, orig)")
+    frag.unlink()
+    dom.unlink()
+
 def testAppendChild():
     dom = parse(tstfile)
     dom.documentElement.appendChild(dom.createComment(u"Hello"))
     confirm(dom.documentElement.childNodes[-1].nodeName == "#comment")
     confirm(dom.documentElement.childNodes[-1].data == "Hello")
+    dom.unlink()
+
+def testAppendChildFragment():
+    dom, orig, c1, c2, c3, frag = _create_fragment_test_nodes()
+    dom.documentElement.appendChild(frag)
+    confirm(tuple(dom.documentElement.childNodes) == (orig, c1, c2, c3),
+            "appendChild(<fragment>)")
+    frag.unlink()
+    dom.unlink()
+
+def testReplaceChildFragment():
+    dom, orig, c1, c2, c3, frag = _create_fragment_test_nodes()
+    dom.documentElement.replaceChild(frag, orig)
+    orig.unlink()
+    confirm(tuple(dom.documentElement.childNodes) == (c1, c2, c3),
+            "replaceChild(<fragment>)")
+    frag.unlink()
     dom.unlink()
 
 def testLegalChildren():

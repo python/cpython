@@ -132,7 +132,7 @@ class Node(xml.dom.Node):
 
     def insertBefore(self, newChild, refChild):
         if newChild.nodeType == self.DOCUMENT_FRAGMENT_NODE:
-            for c in newChild.childNodes:
+            for c in tuple(newChild.childNodes):
                 self.insertBefore(c, refChild)
             ### The DOM does not clearly specify what to return in this case
             return newChild
@@ -160,7 +160,7 @@ class Node(xml.dom.Node):
 
     def appendChild(self, node):
         if node.nodeType == self.DOCUMENT_FRAGMENT_NODE:
-            for c in node.childNodes:
+            for c in tuple(node.childNodes):
                 self.appendChild(c)
             ### The DOM does not clearly specify what to return in this case
             return node
