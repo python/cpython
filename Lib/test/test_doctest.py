@@ -283,7 +283,7 @@ We'll simulate a __file__ attr that ends in pyc:
     'test_doctest.py'
 
     >>> test.test_doctest.__file__ = old
-    
+
 
     >>> e = tests[0].examples[0]
     >>> (e.source, e.want, e.lineno)
@@ -931,7 +931,33 @@ and actual outputs to be displayed using a context diff:
           g
     <BLANKLINE>
     (1, 1)
-"""
+
+
+The NDIFF_DIFF flag causes failures to use the difflib.Differ algorithm
+used by the popular ndiff.py utility.  This does intraline difference
+marking, as well as interline differences.
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> print "a b  c d e f g h i   j k l m"
+    ...     a b c d e f g h i j k 1 m
+    ...     '''
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.NDIFF_DIFF
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    **********************************************************************
+    Line 2, in f
+    Failed example:
+        print "a b  c d e f g h i   j k l m"
+    Differences (ndiff with -expected +actual):
+        - a b c d e f g h i j k 1 m
+        ?                       ^
+        + a b  c d e f g h i   j k l m
+        ?     +              ++    ^
+    <BLANKLINE>
+    (1, 1)
+    """
+
     def option_directives(): r"""
 Tests of `DocTestRunner`'s option directive mechanism.
 
@@ -1468,7 +1494,7 @@ def test_DocFileSuite():
 def test_trailing_space_in_test():
     """
     Trailing spaces in expcted output are significant:
-    
+
       >>> x, y = 'foo', ''
       >>> print x, y
       foo \n

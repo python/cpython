@@ -356,6 +356,15 @@ can also be used in doctest directives (see below).
     actual outputs will be displayed using a context diff.
 \end{datadesc}
 
+\begin{datadesc}{NDIFF_DIFF}
+    When specified, differences are computed by \code{difflib.Differ},
+    using the same algorithm as the popular \file{ndiff.py} utility.
+    This is the only method that marks differences within lines as
+    well as across lines.  For example, if a line of expected output
+    contains digit \code{1} where actual output contains letter \code{l},
+    a line is inserted with a caret marking the mismatching column
+    positions.
+\end{datadesc}
 
 A "doctest directive" is a trailing Python comment on a line of a doctest
 example:
@@ -414,7 +423,8 @@ can be useful.
 
 \versionchanged[Constants \constant{DONT_ACCEPT_BLANKLINE},
     \constant{NORMALIZE_WHITESPACE}, \constant{ELLIPSIS},
-    \constant{UNIFIED_DIFF}, and \constant{CONTEXT_DIFF}
+    \constant{UNIFIED_DIFF}, \constant{CONTEXT_DIFF}, and
+    \constant{NDIFF_DIFF}
     were added; by default \code{<BLANKLINE>} in expected output
     matches an empty line in actual output; and doctest directives
     were added]{2.4}
