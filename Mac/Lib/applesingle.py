@@ -28,7 +28,6 @@ def decode(input, output, resonly=0):
 		input = open(input, 'rb')
 	# Should we also test for FSSpecs or FSRefs?
 	header = input.read(AS_HEADER_LENGTH)
-	print `header`
 	try:
 		magic, version, dummy, nentry = struct.unpack(AS_HEADER_FORMAT, header)
 	except ValueError, arg:
