@@ -751,7 +751,11 @@ floatsleep(double secs)
 	Py_BEGIN_ALLOW_THREADS
 	if (select(0, (fd_set *)0, (fd_set *)0, (fd_set *)0, &t) != 0) {
 		Py_BLOCK_THREADS
+#ifdef EINTR
 		if (errno != EINTR) {
+#else
+		if (1) {
+#endif
 			PyErr_SetFromErrno(PyExc_IOError);
 			return -1;
 		}
