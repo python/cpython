@@ -136,6 +136,12 @@ typedef struct {
 	object *(*nb_positive) FPROTO((object *));
 	object *(*nb_absolute) FPROTO((object *));
 	int (*nb_nonzero) FPROTO((object *));
+	object *(*nb_invert) FPROTO((object *));
+	object *(*nb_lshift) FPROTO((object *, object *));
+	object *(*nb_rshift) FPROTO((object *, object *));
+	object *(*nb_and) FPROTO((object *, object *));
+	object *(*nb_xor) FPROTO((object *, object *));
+	object *(*nb_or) FPROTO((object *, object *));
 } number_methods;
 
 typedef struct {
