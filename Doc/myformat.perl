@@ -161,7 +161,7 @@ sub make_mod_index_entry {
     # Save the reference
     $str = &gen_index_id($str, $define);
     $index{$str} .= &make_half_href("$CURRENT_FILE#$br_id");
-    "<A NAME=\"$br_id\">$anchor_invisible_mark<\/A>";
+    "<a name=\"$br_id\">$anchor_invisible_mark<\/a>";
 }
 
 sub my_module_index_helper{
