@@ -285,8 +285,14 @@ according to the current dialect.
 
 \subsection{Writer Objects}
 
-Writer objects (\class{DictWriter} instances and objects returned by
-the \function{writer()} function) have the following public methods:
+\class{Writer} objects (\class{DictWriter} instances and objects returned by
+the \function{writer()} function) have the following public methods.  A
+{}\var{row} must be a sequence of strings or numbers for \class{Writer}
+objects and a dictionary mapping fieldnames to strings or numbers (by
+passing them through \function{str()} first) for {}\class{DictWriter}
+objects.  Note that complex numbers are written out surrounded by parens.
+This may cause some problems for other programs which read CSV files
+(assuming they support complex numbers at all).
 
 \begin{methoddesc}[csv writer]{writerow}{row}
 Write the \var{row} parameter to the writer's file object, formatted
@@ -294,7 +300,8 @@ according to the current dialect.
 \end{methoddesc}
 
 \begin{methoddesc}[csv writer]{writerows}{rows}
-Write all the \var{rows} parameters to the writer's file object, formatted
+Write all the \var{rows} parameters (a list of \var{row} objects as
+described above) to the writer's file object, formatted
 according to the current dialect.
 \end{methoddesc}
 
