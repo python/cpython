@@ -178,6 +178,7 @@ class _socketobject(object):
           "%s.__doc__ = _realsocket.%s.__doc__\n")
     for _m in _socketmethods:
         exec _s % (_m, _m, _m, _m)
+    del _m, _s
 
 if _needwrapper:
     socket = _socketobject
