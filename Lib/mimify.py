@@ -448,7 +448,7 @@ if __name__ == '__main__' or (len(sys.argv) > 0 and sys.argv[0] == 'mimify'):
         elif o == '-l':
             try:
                 MAXLEN = int(a)
-            except:
+            except (ValueError, OverflowError):
                 print usage
                 sys.exit(1)
         elif o == '-b':
