@@ -228,7 +228,10 @@ class PythonIDE(Wapplication.Application):
 		PyConsole.output.writeprefs()
 		PyEdit.searchengine.writeprefs()
 		for window in self._windows.values():
-			rv = window.close()
+			try:
+				rv = window.close() # ignore any errors while quitting
+			except:
+				rv = 0   # (otherwise, we can get stuck!)
 			if rv and rv > 0:
 				return
 		self.quitting = 1
