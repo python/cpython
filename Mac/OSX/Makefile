@@ -58,8 +58,8 @@ installapps: install_PythonLauncher install_Python install_BuildApplet install_I
 
 install_PythonLauncher:
 	cd $(srcdir)/Mac/OSX/PythonLauncher/PythonLauncher.pbproj ; \
-	pbxbuild -target PythonLauncher -buildstyle Deployment \
-		DSTROOT=$(DESTDIR) INSTALL_PATH=$(PYTHONAPPSPATH) install
+	pbxbuild -target PythonLauncher -buildstyle Deployment install \
+		DSTROOT=$(DESTDIR)/ INSTALL_PATH=$(PYTHONAPPSPATH)
 	
 install_Python:
 	@if test ! -f $(DOCINDEX); then \
