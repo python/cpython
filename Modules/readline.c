@@ -823,15 +823,16 @@ readline_until_enter_or_signal(char *prompt, int *signal)
 static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 {
+	size_t n;
+	char *p, *q;
+	int signal;
+
 #ifdef SAVE_LOCALE
 	char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
 	if (!saved_locale)
 		Py_FatalError("not enough memory to save locale");
 	setlocale(LC_CTYPE, "");
 #endif
-	size_t n;
-	char *p, *q;
-	int signal;
 
 	rl_event_hook = PyOS_InputHook;
 
