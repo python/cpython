@@ -289,7 +289,7 @@ calculate_path(void)
 	char *buf;
 	int bufsz;
 	char *pythonhome = Py_GetPythonHome();
-	char *envpath = getenv("PYTHONPATH");
+	char *envpath = Py_GETENV("PYTHONPATH");
 #ifdef MS_WIN32
 	char *machinepath, *userpath;
 

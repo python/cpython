@@ -281,12 +281,12 @@ $(PYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
 			$(LDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 platform: $(PYTHON)
-	./$(PYTHON) -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
+	./$(PYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
 
 
 # Build the shared modules
 sharedmods: $(PYTHON)
-	PYTHONPATH= ./$(PYTHON) $(srcdir)/setup.py build
+	./$(PYTHON) -E $(srcdir)/setup.py build
 
 # buildno should really depend on something like LIBRARY_SRC
 buildno: $(PARSER_OBJS) \
@@ -466,26 +466,26 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	./$(PYTHON) -tt
+TESTPYTHON=	./$(PYTHON) -E -tt
 test:		all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
-		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 
 QUICKTESTOPTS=	$(TESTOPTS) -x test_thread test_signal test_strftime \
 		test_unicodedata test_re test_sre test_select test_poll \
 		test_linuxaudiodev test_sunaudiodev
 quicktest:	all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
-		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
-		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
+		-$(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) $(QUICKTESTOPTS)
 
 MEMTESTOPTS=    $(QUICKTESTOPTS) -x test_dl test___all__ test_fork1 \
 		test_longexp
 memtest:	all platform
 		-rm -f $(srcdir)/Lib/test/*.py[co]
-		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
-		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
+		-$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
+		$(TESTPYTHON) $(TESTPROG) $(MEMTESTOPTS)
 
 # Install everything
 install:	altinstall bininstall maninstall
@@ -708,7 +708,7 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	PYTHONPATH= ./$(PYTHON) $(srcdir)/setup.py install \
+	./$(PYTHON) -E $(srcdir)/setup.py install \
 		--install-platlib=$(DESTSHARED)
 
 # Build the toplevel Makefile

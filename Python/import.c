@@ -1069,7 +1069,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	char tempbuf[MAX_PATH];
 #endif
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 #ifdef __CYGWIN__
@@ -1092,7 +1092,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	struct ffblk ffblk;
 	int done;
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 	done = findfirst(buf, &ffblk, FA_ARCH|FA_RDONLY|FA_HIDDEN|FA_DIREC);
@@ -1109,7 +1109,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	FSSpec fss;
 	OSErr err;
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 #ifndef USE_GUSI1
@@ -1147,7 +1147,7 @@ case_ok(char *buf, int len, int namelen, char *name)
 	char dirname[MAXPATHLEN + 1];
 	const int dirlen = len - namelen - 1; /* don't want trailing SEP */
 
-	if (getenv("PYTHONCASEOK") != NULL)
+	if (Py_GETENV("PYTHONCASEOK") != NULL)
 		return 1;
 
 	/* Copy the dir component into dirname; substitute "." if empty */

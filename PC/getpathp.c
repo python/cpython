@@ -425,7 +425,7 @@ calculate_path(void)
 	char *buf;
 	size_t bufsz;
 	char *pythonhome = Py_GetPythonHome();
-	char *envpath = getenv("PYTHONPATH");
+	char *envpath = Py_GETENV("PYTHONPATH");
 
 #ifdef MS_WIN32
 	int skiphome, skipdefault;

@@ -63,6 +63,7 @@ int Py_NoSiteFlag; /* Suppress 'import site' */
 int Py_UseClassExceptionsFlag = 1; /* Needed by bltinmodule.c: deprecated */
 int Py_FrozenFlag; /* Needed by getpath.c */
 int Py_UnicodeFlag = 0; /* Needed by compile.c */
+int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 
 static int initialized = 0;
 
@@ -98,11 +99,11 @@ Py_Initialize(void)
 		return;
 	initialized = 1;
 	
-	if ((p = getenv("PYTHONDEBUG")) && *p != '\0')
+	if ((p = Py_GETENV("PYTHONDEBUG")) && *p != '\0')
 		Py_DebugFlag = Py_DebugFlag ? Py_DebugFlag : 1;
-	if ((p = getenv("PYTHONVERBOSE")) && *p != '\0')
+	if ((p = Py_GETENV("PYTHONVERBOSE")) && *p != '\0')
 		Py_VerboseFlag = Py_VerboseFlag ? Py_VerboseFlag : 1;
-	if ((p = getenv("PYTHONOPTIMIZE")) && *p != '\0')
+	if ((p = Py_GETENV("PYTHONOPTIMIZE")) && *p != '\0')
 		Py_OptimizeFlag = Py_OptimizeFlag ? Py_OptimizeFlag : 1;
 
 	interp = PyInterpreterState_New();
@@ -225,7 +226,7 @@ Py_Finalize(void)
 #ifdef Py_TRACE_REFS
 	if (
 #ifdef MS_WINDOWS /* Only ask on Windows if env var set */
-	    getenv("PYTHONDUMPREFS") &&
+	    Py_GETENV("PYTHONDUMPREFS") &&
 #endif /* MS_WINDOWS */
 	    _Py_AskYesNo("Print left references?")) {
 		_Py_PrintReferences(stderr);
@@ -394,8 +395,8 @@ char *
 Py_GetPythonHome(void)
 {
 	char *home = default_home;
-	if (home == NULL)
-		home = getenv("PYTHONHOME");
+	if (home == NULL && !Py_IgnoreEnvironmentFlag)
+		home = Py_GETENV("PYTHONHOME");
 	return home;
 }
 

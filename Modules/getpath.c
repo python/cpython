@@ -365,7 +365,7 @@ calculate_path(void)
     static char delimiter[2] = {DELIM, '\0'};
     static char separator[2] = {SEP, '\0'};
     char *pythonpath = PYTHONPATH;
-    char *rtpypath = getenv("PYTHONPATH");
+    char *rtpypath = Py_GETENV("PYTHONPATH");
     char *home = Py_GetPythonHome();
     char *path = getenv("PATH");
     char *prog = Py_GetProgramName();
