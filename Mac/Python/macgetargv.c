@@ -27,10 +27,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include <stdlib.h>
 
-#ifndef SystemSevenOrLater
-#define SystemSevenOrLater 1
-#endif
-
 #include <Types.h>
 #include <Files.h>
 #include <Events.h>
@@ -47,19 +43,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #include "Python.h"
 #include "macglue.h"
-
-#ifdef GENERATINGCFM	/* Defined to 0 or 1 in Universal headers */
-#define HAVE_UNIVERSAL_HEADERS
-#endif
-
-#ifdef SYMANTEC__CFM68K__
-#pragma lib_export on
-#endif
-
-#ifndef HAVE_UNIVERSAL_HEADERS
-#define NewAEEventHandlerProc(x) (x)
-#define AEEventHandlerUPP EventHandlerProcPtr
-#endif
 
 static int arg_count;
 static char *arg_vector[256];
