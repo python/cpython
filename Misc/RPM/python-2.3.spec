@@ -127,7 +127,7 @@ formats.
 %endif
 
 %changelog
-* Sat Mar 27 2003 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-3pydotorg]
+* Sat Mar 27 2004 Sean Reifschneider <jafo-rpms@tummy.com> [2.3.2-3pydotorg]
 - Being more agressive about finding the paths to fix for
   #!/usr/local/bin/python.
 
