@@ -1,7 +1,7 @@
 """Suite QuickDraw Graphics Supplemental Suite: Defines transformations of graphic objects
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -60,8 +60,8 @@ _classdeclarations = {
 
 _propdeclarations = {
 	'prot' : rotation,
-	'pscl' : scale,
 	'ptrs' : translation,
+	'pscl' : scale,
 }
 
 _compdeclarations = {

@@ -1,8 +1,9 @@
 """
-Package generated from Macintosh HD:SWdev:CodeWarrior 6 MPTP:Metrowerks CodeWarrior:CodeWarrior IDE 4.1B9
+Package generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
 Resource aete resid 0 AppleEvent Suites
 """
 import aetools
+Error = aetools.Error
 import Required
 import Standard_Suite
 import CodeWarrior_suite

@@ -1,7 +1,7 @@
 """Suite PowerPlant: 
 Level 0, version 0
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
+Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -31,7 +31,7 @@ class PowerPlant_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -55,17 +55,17 @@ class PowerPlant_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
 			return _arguments['----']
 
 _Enum_dbac = {
-	'DoNothing' : '\000\000\000\000',	# No debugging action is taken.
-	'PostAlert' : '\000\000\000\001',	# Post an alert.
-	'LowLevelDebugger' : '\000\000\000\002',	# Break into the low level debugger (MacsBug).
-	'SourceDebugger' : '\000\000\000\003',	# Break into the source level debugger (if source debugger is executing).
+	'DoNothing' : '\x00\x00\x00\x00',	# No debugging action is taken.
+	'PostAlert' : '\x00\x00\x00\x01',	# Post an alert.
+	'LowLevelDebugger' : '\x00\x00\x00\x02',	# Break into the low level debugger (MacsBug).
+	'SourceDebugger' : '\x00\x00\x00\x03',	# Break into the source level debugger (if source debugger is executing).
 }
 
 

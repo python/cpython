@@ -1,7 +1,7 @@
 """Suite Window classes: Classes representing windows
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -50,8 +50,10 @@ class modal(aetools.NProperty):
 	"""modal - Is the window modal? """
 	which = 'pmod'
 	want = 'bool'
-
-resizable = titled
+class resizable(aetools.NProperty):
+	"""resizable - Is the window resizable? """
+	which = 'prsz'
+	want = 'bool'
 class zoomable(aetools.NProperty):
 	"""zoomable - Is the window zoomable? """
 	which = 'iszm'
@@ -227,6 +229,12 @@ class version(aetools.NProperty):
 
 information_windows = information_window
 
+class view_options_window(aetools.ComponentItem):
+	"""view options window - A View Options window """
+	want = 'vwnd'
+
+view_options_windows = view_options_window
+
 class preferences_window(aetools.ComponentItem):
 	"""preferences window - The Finder Preferences window """
 	want = 'pwnd'
@@ -305,6 +313,12 @@ information_window._propdict = {
 }
 information_window._elemdict = {
 }
+view_options_window._propdict = {
+	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
+	'item' : item,
+}
+view_options_window._elemdict = {
+}
 preferences_window._propdict = {
 	'_3c_Inheritance_3e_' : _3c_Inheritance_3e_,
 	'current_panel' : current_panel,
@@ -325,63 +339,65 @@ content_space._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
+	'pwnd' : preferences_window,
+	'vwnd' : view_options_window,
+	'cwin' : window,
+	'cwnd' : container_window,
 	'dwnd' : content_space,
 	'iwnd' : information_window,
 	'lwnd' : clipping_window,
-	'cwnd' : container_window,
-	'cwin' : window,
-	'pwnd' : preferences_window,
 }
 
 _propdeclarations = {
+	'prsz' : resizable,
+	'barr' : button_view_arrangement,
+	'pzum' : zoomed,
+	'iarr' : spatial_view_arrangement,
+	'hclb' : closeable,
+	'c@#^' : _3c_Inheritance_3e_,
+	'ver2' : product_version,
+	'sfsz' : calculates_folder_sizes,
+	'sprt' : suggested_size,
+	'zumf' : zoomed_full_size,
+	'urdt' : uses_relative_dates,
+	'panl' : current_panel,
+	'pmod' : modal,
+	'pspd' : stationery,
+	'scom' : shows_comments,
+	'appt' : preferred_size,
+	'aslk' : locked,
+	'pbnd' : bounds,
+	'iimg' : icon,
+	'mprt' : minimum_size,
+	'pnam' : name,
+	'ssiz' : shows_size,
+	'asmo' : modification_date,
+	'cobj' : item,
+	'ptit' : titled,
+	'posn' : position,
+	'cuss' : has_custom_view_settings,
+	'phys' : physical_size,
+	'sknd' : shows_kind,
+	'svrs' : shows_version,
+	'svew' : previous_list_view,
+	'comt' : comment,
+	'iszm' : zoomable,
+	'sord' : sort_direction,
+	'ascd' : creation_date,
+	'ctnr' : container,
+	'wshd' : collapsed,
+	'slbl' : shows_label,
+	'pull' : pulled_open,
+	'ptsz' : size,
+	'pvis' : visible,
 	'pidx' : index,
+	'isfl' : floating,
+	'warn' : warns_before_emptying,
+	'drwr' : popup,
+	'sdat' : shows_modification_date,
+	'pvew' : view,
 	'scda' : shows_creation_date,
 	'vers' : version,
-	'aslk' : locked,
-	'pvew' : view,
-	'sdat' : shows_modification_date,
-	'drwr' : popup,
-	'sprt' : suggested_size,
-	'pvis' : visible,
-	'ptsz' : size,
-	'pull' : pulled_open,
-	'slbl' : shows_label,
-	'wshd' : collapsed,
-	'ctnr' : container,
-	'ascd' : creation_date,
-	'warn' : warns_before_emptying,
-	'sord' : sort_direction,
-	'iszm' : zoomable,
-	'comt' : comment,
-	'svew' : previous_list_view,
-	'svrs' : shows_version,
-	'sknd' : shows_kind,
-	'phys' : physical_size,
-	'iarr' : spatial_view_arrangement,
-	'posn' : position,
-	'ptit' : titled,
-	'cobj' : item,
-	'asmo' : modification_date,
-	'ssiz' : shows_size,
-	'pnam' : name,
-	'pbnd' : bounds,
-	'mprt' : minimum_size,
-	'iimg' : icon,
-	'cuss' : has_custom_view_settings,
-	'appt' : preferred_size,
-	'scom' : shows_comments,
-	'pmod' : modal,
-	'panl' : current_panel,
-	'urdt' : uses_relative_dates,
-	'zumf' : zoomed_full_size,
-	'sfsz' : calculates_folder_sizes,
-	'c@#^' : _3c_Inheritance_3e_,
-	'isfl' : floating,
-	'hclb' : closeable,
-	'pspd' : stationery,
-	'pzum' : zoomed,
-	'barr' : button_view_arrangement,
-	'ver2' : product_version,
 }
 
 _compdeclarations = {

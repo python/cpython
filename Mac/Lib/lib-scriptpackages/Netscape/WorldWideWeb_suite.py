@@ -1,7 +1,7 @@
 """Suite WorldWideWeb suite, as defined in Spyglass spec.: 
 Level 1, version 1
 
-Generated from Macintosh HD:Internet:Internet-programma's:Netscape Communicatoré-map:Netscape Communicatoré
+Generated from Moes:Applications (Mac OS 9):Netscape Communicatoré Folder:Netscape Communicatoré
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -42,7 +42,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -72,7 +72,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -98,7 +98,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -123,7 +123,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -144,7 +144,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -164,7 +164,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -184,7 +184,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -205,7 +205,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -225,7 +225,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -245,7 +245,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -273,7 +273,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -299,7 +299,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -325,7 +325,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -351,7 +351,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -377,7 +377,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -403,7 +403,7 @@ class WorldWideWeb_suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):

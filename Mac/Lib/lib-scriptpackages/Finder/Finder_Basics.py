@@ -1,7 +1,7 @@
 """Suite Finder Basics: Commonly-used Finder commands and object classes
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -32,7 +32,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -51,7 +51,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -70,7 +70,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -89,7 +89,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -108,7 +108,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -134,7 +134,7 @@ class Finder_Basics_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -196,6 +196,10 @@ class desktop(aetools.NProperty):
 	"""desktop - the desktop """
 	which = 'desk'
 	want = 'cdsk'
+class execution_state(aetools.NProperty):
+	"""execution state - the current execution state of the Finder """
+	which = 'exec'
+	want = 'ese0'
 class Finder_preferences(aetools.NProperty):
 	"""Finder preferences - Various preferences that apply to the Finder as a whole """
 	which = 'pfrp'
@@ -224,6 +228,7 @@ class Finder_preferences(aetools.NProperty):
 #        element 'cwin' as ['indx', 'name']
 #        element 'cwnd' as ['indx', 'name']
 #        element 'iwnd' as ['indx', 'name']
+#        element 'vwnd' as ['indx', 'name']
 #        element 'lwnd' as ['indx', 'name']
 #        element 'dwnd' as ['indx', 'name']
 
@@ -285,6 +290,7 @@ application._propdict = {
 	'version' : version,
 	'about_this_computer' : about_this_computer,
 	'desktop' : desktop,
+	'execution_state' : execution_state,
 	'Finder_preferences' : Finder_preferences,
 }
 application._elemdict = {
@@ -312,6 +318,7 @@ application._elemdict = {
 	'window' : Earlier_terms.window,
 	'container_window' : Earlier_terms.container_window,
 	'information_window' : Earlier_terms.information_window,
+	'view_options_window' : Window_classes.view_options_window,
 	'clipping_window' : Window_classes.clipping_window,
 	'content_space' : Window_classes.content_space,
 }
@@ -333,34 +340,35 @@ special_folders._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'spfl' : special_folders,
 	'capp' : application,
+	'spfl' : special_folders,
 }
 
 _propdeclarations = {
-	'amnu' : apple_menu_items_folder,
-	'extn' : extensions_folder,
-	'pnam' : name,
-	'fshr' : file_sharing,
-	'pcli' : clipboard,
-	'strt' : startup_items_folder,
-	'pref' : preferences_folder,
-	'pisf' : frontmost,
-	'pins' : insertion_location,
-	'pvis' : visible,
-	'abbx' : about_this_computer,
-	'temp' : temporary_items_folder,
-	'font' : fonts_folder,
-	'pfrp' : Finder_preferences,
-	'desk' : desktop,
-	'fsup' : sharing_starting_up,
-	'mfre' : largest_free_block,
-	'ctrl' : control_panels_folder,
-	'sele' : selection,
-	'shdf' : shutdown_items_folder,
-	'macs' : system_folder,
-	'ver2' : product_version,
 	'vers' : version,
+	'ver2' : product_version,
+	'pfrp' : Finder_preferences,
+	'exec' : execution_state,
+	'pins' : insertion_location,
+	'mfre' : largest_free_block,
+	'fsup' : sharing_starting_up,
+	'desk' : desktop,
+	'ctrl' : control_panels_folder,
+	'macs' : system_folder,
+	'font' : fonts_folder,
+	'abbx' : about_this_computer,
+	'shdf' : shutdown_items_folder,
+	'temp' : temporary_items_folder,
+	'pvis' : visible,
+	'sele' : selection,
+	'pisf' : frontmost,
+	'pref' : preferences_folder,
+	'strt' : startup_items_folder,
+	'pcli' : clipboard,
+	'fshr' : file_sharing,
+	'pnam' : name,
+	'extn' : extensions_folder,
+	'amnu' : apple_menu_items_folder,
 }
 
 _compdeclarations = {

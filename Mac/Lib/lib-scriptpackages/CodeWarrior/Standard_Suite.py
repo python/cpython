@@ -1,7 +1,7 @@
 """Suite Standard Suite: Common terms for most applications
 Level 1, version 1
 
-Generated from Macintosh HD:SWdev:CodeWarrior 6 MPTP:Metrowerks CodeWarrior:CodeWarrior IDE 4.1B9
+Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -35,7 +35,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -61,7 +61,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -87,7 +87,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -120,7 +120,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -140,7 +140,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -165,7 +165,7 @@ class Standard_Suite_Events(Standard_Suite_Events):
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -233,15 +233,10 @@ files = file
 class insertion_point(aetools.ComponentItem):
 	"""insertion point - An insertion location between two objects """
 	want = 'cins'
-# repeated property length length of text object (in characters)
-# repeated property offset offset of a text object from the beginning of the document (first char has offset 1)
 
 class line(aetools.ComponentItem):
 	"""line - lines of text """
 	want = 'clin'
-# repeated property index index of a line object from the beginning of the document (first line has index 1)
-# repeated property offset offset  (in characters) of a line object from the beginning of the document
-# repeated property length length in characters of this object
 #        element 'cha ' as ['indx', 'rang', 'rele']
 
 lines = line
@@ -253,8 +248,6 @@ class contents(aetools.NProperty):
 	"""contents - the contents of the selection """
 	which = 'pcnt'
 	want = 'type'
-# repeated property length length of text object (in characters)
-# repeated property offset offset of a text object from the beginning of the document (first char has offset 1)
 #        element 'cha ' as ['indx', 'rele', 'rang', 'test']
 #        element 'clin' as ['indx', 'rang', 'rele']
 #        element 'ctxt' as ['rang']
@@ -262,8 +255,6 @@ class contents(aetools.NProperty):
 class text(aetools.ComponentItem):
 	"""text - Text """
 	want = 'ctxt'
-# repeated property length length of text object (in characters)
-# repeated property offset offset of a text object from the beginning of the document (first char has offset 1)
 #        element 'cha ' as ['indx', 'rele', 'rang']
 #        element 'cins' as ['rele']
 #        element 'clin' as ['indx', 'rang', 'rele']
@@ -272,8 +263,6 @@ class text(aetools.ComponentItem):
 class window(aetools.ComponentItem):
 	"""window - A window """
 	want = 'cwin'
-# repeated property name the title of the window
-# repeated property index the number of the window
 class bounds(aetools.NProperty):
 	"""bounds - the boundary rectangle for the window """
 	which = 'pbnd'
@@ -368,40 +357,38 @@ window._propdict = {
 }
 window._elemdict = {
 }
-import Metrowerks_Shell_Suite
-from Metrowerks_Shell_Suite import _Enum_savo
 
 #
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'docu' : document,
-	'cins' : insertion_point,
-	'capp' : application,
-	'ctxt' : text,
-	'csel' : selection_2d_object,
-	'clin' : line,
-	'file' : file,
-	'cwin' : window,
 	'cha ' : character,
+	'ctxt' : text,
+	'cwin' : window,
+	'file' : file,
+	'clin' : line,
+	'csel' : selection_2d_object,
+	'capp' : application,
+	'cins' : insertion_point,
+	'docu' : document,
 }
 
 _propdeclarations = {
-	'pzum' : zoomed,
-	'DKND' : kind,
-	'pOff' : offset,
-	'pLen' : length,
-	'pnam' : name,
-	'FILE' : location,
-	'pcnt' : contents,
-	'cwin' : window,
-	'ppos' : position,
-	'pidx' : index,
-	'docu' : document,
-	'PERM' : file_permissions,
-	'pbnd' : bounds,
-	'pvis' : visible,
 	'inte' : user_interaction,
+	'pvis' : visible,
+	'DKND' : kind,
+	'pbnd' : bounds,
+	'PERM' : file_permissions,
+	'docu' : document,
+	'pidx' : index,
+	'pOff' : offset,
+	'cwin' : window,
+	'FILE' : location,
+	'pnam' : name,
+	'pLen' : length,
+	'ppos' : position,
+	'pzum' : zoomed,
+	'pcnt' : contents,
 }
 
 _compdeclarations = {

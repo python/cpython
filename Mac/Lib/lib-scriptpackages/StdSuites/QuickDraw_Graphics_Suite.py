@@ -1,7 +1,7 @@
 """Suite QuickDraw Graphics Suite: A set of basic classes for graphics
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Extensies:AppleScript
+Generated from Moes:Systeemmap:Extensies:AppleScript
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -188,7 +188,6 @@ ovals = oval
 class pixel(aetools.ComponentItem):
 	"""pixel - A pixel """
 	want = 'cpxl'
-# repeated property color the color
 
 pixels = pixel
 
@@ -344,62 +343,62 @@ _Enum_arro = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'crec' : rectangle,
-	'cpix' : pixel_map,
-	'carc' : arc,
+	'cpic' : graphic_group,
+	'covl' : oval,
+	'cgtx' : graphic_text,
 	'cgsh' : graphic_shape,
+	'glin' : graphic_line,
+	'cgob' : graphic_object,
+	'cdrw' : drawing_area,
+	'cpgn' : polygon,
 	'cpxl' : pixel,
 	'crrc' : rounded_rectangle,
-	'cpgn' : polygon,
-	'cdrw' : drawing_area,
-	'cgob' : graphic_object,
-	'glin' : graphic_line,
-	'cgtx' : graphic_text,
-	'covl' : oval,
-	'cpic' : graphic_group,
+	'carc' : arc,
+	'cpix' : pixel_map,
+	'crec' : rectangle,
 }
 
 _propdeclarations = {
-	'pend' : end_point,
-	'pupd' : update_on_change,
-	'pstp' : start_point,
-	'pdrt' : definition_rect,
-	'pnam' : name,
-	'pbcl' : background_color,
-	'pptm' : transfer_mode,
-	'pnel' : default_location,
-	'pdpt' : pixel_depth,
-	'gobs' : ordering,
-	'ustl' : uniform_styles,
-	'ptlt' : point_list,
-	'pdst' : dash_style,
-	'psct' : writing_code,
-	'txst' : style,
-	'font' : font,
-	'pchd' : corner_curve_height,
-	'arro' : arrow_style,
-	'ppwd' : pen_width,
-	'ptps' : default_size,
-	'ppcl' : pen_color,
-	'ptxf' : default_font,
-	'pcwd' : corner_curve_width,
-	'ptxc' : text_color,
-	'cltb' : color_table,
-	'pppa' : pen_pattern,
-	'pang' : start_angle,
-	'flpt' : fill_pattern,
-	'colr' : color,
-	'pbnd' : bounds,
-	'ptsz' : size,
-	'parc' : arc_angle,
-	'flcl' : fill_color,
 	'pbpt' : background_pattern,
+	'flcl' : fill_color,
+	'parc' : arc_angle,
+	'pbnd' : bounds,
+	'colr' : color,
+	'flpt' : fill_pattern,
+	'ustl' : uniform_styles,
+	'font' : font,
+	'pend' : end_point,
+	'pstp' : start_point,
+	'pang' : start_angle,
+	'pptm' : transfer_mode,
+	'cltb' : color_table,
+	'ptxc' : text_color,
+	'ptxf' : default_font,
+	'ppcl' : pen_color,
+	'ptps' : default_size,
+	'ppwd' : pen_width,
+	'arro' : arrow_style,
+	'pcwd' : corner_curve_width,
+	'txst' : style,
+	'psct' : writing_code,
+	'pdst' : dash_style,
+	'ptlt' : point_list,
+	'gobs' : ordering,
+	'pdpt' : pixel_depth,
+	'pnel' : default_location,
+	'pchd' : corner_curve_height,
+	'pbcl' : background_color,
+	'pnam' : name,
+	'pdrt' : definition_rect,
+	'ptsz' : size,
+	'pupd' : update_on_change,
+	'pppa' : pen_pattern,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'tran' : _Enum_tran,
 	'arro' : _Enum_arro,
+	'tran' : _Enum_tran,
 }

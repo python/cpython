@@ -1,7 +1,7 @@
 """Suite Metrowerks Shell Suite: Events supported by the Metrowerks Project Shell
 Level 1, version 1
 
-Generated from Macintosh HD:SWdev:CodeWarrior 6 MPTP:Metrowerks CodeWarrior:CodeWarrior IDE 4.1B9
+Generated from Moes:Applications (Mac OS 9):Metrowerks CodeWarrior 7.0:Metrowerks CodeWarrior:CodeWarrior IDE 4.2.6
 AETE/AEUT resource version 1/0, language 0, script 0
 """
 
@@ -32,7 +32,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -58,7 +58,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -77,7 +77,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -103,7 +103,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -129,7 +129,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -154,7 +154,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -175,7 +175,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -195,7 +195,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -222,7 +222,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -248,7 +248,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -268,7 +268,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -288,7 +288,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -308,7 +308,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -328,7 +328,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -349,7 +349,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -374,7 +374,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -402,7 +402,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -428,7 +428,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -447,7 +447,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -468,7 +468,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -487,7 +487,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -514,7 +514,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -534,7 +534,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -554,7 +554,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -574,7 +574,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -600,7 +600,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -626,7 +626,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -651,7 +651,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -676,7 +676,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -697,7 +697,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -722,7 +722,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -742,7 +742,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -762,7 +762,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -783,7 +783,7 @@ class Metrowerks_Shell_Suite_Events:
 
 		_reply, _arguments, _attributes = self.send(_code, _subcode,
 				_arguments, _attributes)
-		if _arguments.has_key('errn'):
+		if _arguments.get('errn', 0):
 			raise aetools.Error, aetools.decodeerror(_arguments)
 		# XXXX Optionally decode result
 		if _arguments.has_key('----'):
@@ -808,6 +808,10 @@ class Always_Full_Search(aetools.NProperty):
 class Convert_Paths(aetools.NProperty):
 	"""Convert Paths - Enables conversion of DOS & Unix-style relative paths when searching for files. """
 	which = 'PA04'
+	want = 'bool'
+class Require_Framework_Includes(aetools.NProperty):
+	"""Require Framework Includes - Causes the IDE to only look in the framework access paths if a Mac OS X framework style include (i.e. <Carbon/Carbon.h> ) is used. """
+	which = 'PA05'
 	want = 'bool'
 
 class Browser_Coloring(aetools.ComponentItem):
@@ -1033,7 +1037,6 @@ class Data_Update_Interval(aetools.NProperty):
 	"""Data Update Interval - How often to update the data while running (in seconds) """
 	which = 'Dt09'
 	want = 'long'
-# repeated property Auto_Target_Libraries Automatically target libraries when debugging
 class Stop_at_temp_breakpoint(aetools.NProperty):
 	"""Stop at temp breakpoint - Stop at a temp breakpoint on program launch. Set breakpoint type in Temp Breakpoint Type AppleEvent. """
 	which = 'Dt13'
@@ -1270,8 +1273,6 @@ class Text_Size(aetools.NProperty):
 class Function_Information(aetools.ComponentItem):
 	"""Function Information - Describes the location of any function or global data definition within the current project. """
 	want = 'FDef'
-# repeated property disk_file The location on disk of the file containing the definition.
-# repeated property lineNumber The line number where the definition begins.
 
 class Global_Source_Trees(aetools.ComponentItem):
 	"""Global Source Trees - Globally-defined source tree roots """
@@ -1284,7 +1285,6 @@ class Source_Trees(aetools.NProperty):
 class Path_Information(aetools.ComponentItem):
 	"""Path Information - Contains all of the parameters that describe an access path. """
 	want = 'PInf'
-# repeated property name The actual path name.
 class format(aetools.NProperty):
 	"""format - Format of the a """
 	which = 'Frmt'
@@ -1300,6 +1300,10 @@ class root(aetools.NProperty):
 class recursive(aetools.NProperty):
 	"""recursive - Will the path be searched recursively?  (Default is true) """
 	which = 'Recu'
+	want = 'bool'
+class framework(aetools.NProperty):
+	"""framework - Is the path a Mac OS X framework style path?  (This flag is readable but not writeable from AppleScript.) """
+	which = 'Frmw'
 	want = 'bool'
 class host_flags(aetools.NProperty):
 	"""host flags - Bit fields enabling the access path for each host OS (1 = Mac OS, 2 = Windows) """
@@ -1325,8 +1329,6 @@ class filetype(aetools.NProperty):
 	"""filetype - What kind of file is this ? """
 	which = 'SrcT'
 	want = 'SrcT'
-# repeated property name The file’s name
-# repeated property disk_file The file’s location on disk
 class codesize(aetools.NProperty):
 	"""codesize - The size of this file’s code. """
 	which = 'CSiz'
@@ -1359,10 +1361,6 @@ class includes(aetools.NProperty):
 class Relative_Path(aetools.ComponentItem):
 	"""Relative Path - Relative path from some root """
 	want = 'RlPt'
-# repeated property name relative path from the root
-# repeated property format Format of the relative path
-# repeated property origin Origin of the relative path
-# repeated property root Name of user-defined root
 
 class Runtime_Settings(aetools.ComponentItem):
 	"""Runtime Settings - Runtime settings """
@@ -1387,7 +1385,6 @@ class Environment_Variables(aetools.NProperty):
 class Segment(aetools.ComponentItem):
 	"""Segment - A segment or group in the project """
 	want = 'Seg '
-# repeated property name 
 class filecount(aetools.NProperty):
 	"""filecount -  """
 	which = 'NumF'
@@ -1440,7 +1437,6 @@ class Shielded_Items(aetools.NProperty):
 class Source_Tree(aetools.ComponentItem):
 	"""Source Tree - User-defined source tree root """
 	want = 'SrcT'
-# repeated property name name of the user-defined source tree root
 class path(aetools.NProperty):
 	"""path - path for the user-defined source tree root """
 	which = 'Path'
@@ -1449,7 +1445,6 @@ class path_kind(aetools.NProperty):
 	"""path kind - kind of path """
 	which = 'Kind'
 	want = 'STKd'
-# repeated property format Format of the absolute path
 
 class Syntax_Coloring(aetools.ComponentItem):
 	"""Syntax Coloring -  """
@@ -1470,10 +1465,6 @@ class String_Color(aetools.NProperty):
 	"""String Color - The color for strings. """
 	which = 'GH04'
 	want = 'cRGB'
-# repeated property Custom_Color_1 The color for the first set of custom keywords.
-# repeated property Custom_Color_2 The color for the second set custom keywords.
-# repeated property Custom_Color_3 The color for the third set of custom keywords.
-# repeated property Custom_Color_4 The color for the fourth set of custom keywords.
 
 class Target_Settings(aetools.ComponentItem):
 	"""Target Settings - Contains the definitions of a project’s target. """
@@ -1514,7 +1505,6 @@ class Use_Relative_Paths(aetools.NProperty):
 class Target_Source_Trees(aetools.ComponentItem):
 	"""Target Source Trees - Target-specific user-defined source tree roots """
 	want = 'TSTs'
-# repeated property Source_Trees List of source tree roots
 
 class VCS_Setup(aetools.ComponentItem):
 	"""VCS Setup - The version control system preferences. """
@@ -1567,7 +1557,6 @@ class Local_Path(aetools.NProperty):
 class _class(aetools.ComponentItem):
 	"""class - A class, struct, or record type in the current project. """
 	want = 'Clas'
-# repeated property name 
 class language(aetools.NProperty):
 	"""language - Implementation language of this class """
 	which = 'Lang'
@@ -1601,7 +1590,6 @@ classes = _class
 class member_function(aetools.ComponentItem):
 	"""member function - A class member function or method. """
 	want = 'MbFn'
-# repeated property name 
 class access(aetools.NProperty):
 	"""access -  """
 	which = 'Acce'
@@ -1614,9 +1602,6 @@ class static(aetools.NProperty):
 	"""static -  """
 	which = 'Stat'
 	want = 'bool'
-# repeated property declaration_file Source file containing the member function declaration
-# repeated property declaration_start_offset start of member function declaration source code
-# repeated property declaration_end_offset end of member function declaration
 class implementation_file(aetools.NProperty):
 	"""implementation file - Source file containing the member function definition """
 	which = 'DfFl'
@@ -1635,11 +1620,6 @@ member_functions = member_function
 class data_member(aetools.ComponentItem):
 	"""data member - A class data member or field """
 	want = 'DtMb'
-# repeated property name 
-# repeated property access 
-# repeated property static 
-# repeated property declaration_start_offset 
-# repeated property declaration_end_offset 
 
 data_members = data_member
 
@@ -1650,8 +1630,6 @@ class _class(aetools.NProperty):
 	"""class - The class object corresponding to this base class """
 	which = 'Clas'
 	want = 'obj '
-# repeated property access 
-# repeated property virtual 
 
 base_classes = base_class
 
@@ -1664,6 +1642,7 @@ Access_Paths._propdict = {
 	'System_Paths' : System_Paths,
 	'Always_Full_Search' : Always_Full_Search,
 	'Convert_Paths' : Convert_Paths,
+	'Require_Framework_Includes' : Require_Framework_Includes,
 }
 Access_Paths._elemdict = {
 }
@@ -1844,6 +1823,7 @@ Path_Information._propdict = {
 	'origin' : origin,
 	'root' : root,
 	'recursive' : recursive,
+	'framework' : framework,
 	'host_flags' : host_flags,
 }
 Path_Information._elemdict = {
@@ -2120,236 +2100,238 @@ _Enum_PthF = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'DbDS' : Debugger_Display,
-	'TSTs' : Target_Source_Trees,
-	'VCSs' : VCS_Setup,
-	'mFNT' : Font,
-	'BRKW' : Browser_Coloring,
-	'PSTG' : Plugin_Settings,
-	'RSTG' : Runtime_Settings,
-	'MbFn' : member_function,
-	'DbGL' : Debugger_Global,
-	'SHFL' : Shielded_Folders,
-	'EnvV' : Environment_Variable,
-	'TARG' : Target_Settings,
-	'RlPt' : Relative_Path,
-	'BsCl' : base_class,
-	'PInf' : Path_Information,
-	'Seg ' : Segment,
-	'DtMb' : data_member,
-	'SNTX' : Syntax_Coloring,
-	'LXTR' : Build_Extras,
-	'DbWN' : Debugger_Windowing,
-	'PATH' : Access_Paths,
-	'FDef' : Function_Information,
-	'SrcT' : Source_Tree,
-	'SFit' : Shielded_Folder,
-	'FLMP' : File_Mappings,
-	'GXTR' : Extras,
-	'CUKW' : Custom_Keywords,
-	'GSTs' : Global_Source_Trees,
-	'EDTR' : Editor,
-	'DbTG' : Debugger_Target,
-	'ErrM' : Error_Information,
-	'Clas' : _class,
-	'SrcF' : ProjectFile,
-	'BSTG' : Build_Settings,
-	'Cata' : browser_catalog,
 	'FMap' : File_Mapping,
+	'Cata' : browser_catalog,
+	'BSTG' : Build_Settings,
+	'SrcF' : ProjectFile,
+	'BRKW' : Browser_Coloring,
+	'ErrM' : Error_Information,
+	'VCSs' : VCS_Setup,
+	'EDTR' : Editor,
+	'SHFL' : Shielded_Folders,
+	'SFit' : Shielded_Folder,
+	'CUKW' : Custom_Keywords,
+	'PInf' : Path_Information,
+	'FLMP' : File_Mappings,
+	'Seg ' : Segment,
+	'DbTG' : Debugger_Target,
+	'FDef' : Function_Information,
+	'PATH' : Access_Paths,
+	'GXTR' : Extras,
+	'DbWN' : Debugger_Windowing,
+	'GSTs' : Global_Source_Trees,
+	'SNTX' : Syntax_Coloring,
+	'BsCl' : base_class,
+	'RlPt' : Relative_Path,
+	'TARG' : Target_Settings,
+	'EnvV' : Environment_Variable,
+	'SrcT' : Source_Tree,
+	'DbGL' : Debugger_Global,
+	'MbFn' : member_function,
+	'RSTG' : Runtime_Settings,
+	'PSTG' : Plugin_Settings,
+	'DtMb' : data_member,
+	'LXTR' : Build_Extras,
+	'mFNT' : Font,
+	'TSTs' : Target_Source_Trees,
+	'DbDS' : Debugger_Display,
+	'Clas' : _class,
 }
 
 _propdeclarations = {
 	'SymG' : symbols,
+	'BX02' : Success_Sound,
+	'BX03' : Failure_Sound,
+	'BX01' : Completion_Sound,
+	'BX06' : Compiler_Thread_Stack_Size,
+	'BX07' : Save_Before_Building,
+	'BX04' : Build_Before_Running,
+	'BX05' : Include_Cache_Size,
+	'NumF' : filecount,
+	'Frmw' : framework,
+	'Frmt' : format,
+	'FN01' : Auto_Indent,
+	'FN02' : Tab_Size,
+	'FN03' : Tab_Indents_Selection,
+	'FN04' : Tab_Inserts_Spaces,
+	'Dg07' : Dont_Step_in_Runtime,
+	'Dg06' : Select_Stack_Crawl,
+	'Dg05' : Stop_at_Main,
+	'Dg04' : Confirm_Kill,
+	'Dg03' : Launch_Apps_on_Open,
+	'Dg02' : Open_All_Classes,
+	'Dg01' : Ignore_Mod_Dates,
+	'Weak' : weak_link,
+	'DcFl' : declaration_file,
+	'Path' : path,
+	'Recu' : recursive,
+	'TA16' : Output_Directory_Location,
+	'Db10' : Show_As_Decimal,
 	'CSiz' : codesize,
+	'ErrL' : lineNumber,
+	'Dt16' : Temp_Breakpoint_Type,
+	'ErrS' : message,
+	'BW07' : Templates_Color,
+	'ErrT' : messageKind,
+	'EX18' : Use_ToolServer_Menu,
+	'EX19' : Automatic_Toolbar_Help,
+	'TA15' : Use_Relative_Paths,
+	'TA12' : Output_Directory_Origin,
+	'TA13' : Pre_Linker,
+	'TA10' : Target_Name,
+	'TA11' : Output_Directory_Path,
+	'EX10' : Use_Editor_Extensions,
+	'EX11' : Use_External_Editor,
+	'EX12' : Use_Script_Menu,
+	'EX16' : Recent_Editor_Count,
+	'EX17' : Recent_Project_Count,
 	'DfEn' : implementation_end_offset,
-	'DcEn' : declaration_end_offset,
-	'VC10' : Local_Path,
-	'FMps' : Mappings,
-	'VC02' : Connection_Method,
-	'VC03' : Username,
-	'TA02' : Extension,
-	'UpTD' : up_to_date,
-	'VC07' : Always_Prompt,
-	'VC04' : Password,
-	'VC05' : Auto_Connect,
-	'Dg13' : File_Cache_Duration,
-	'Dg12' : Cache_Edited_Files,
-	'Dg11' : Auto_Target_Libraries,
-	'VC09' : Database_Path,
-	'VC06' : Store_Password,
-	'Clas' : _class,
-	'PA02' : Always_Full_Search,
-	'PA03' : System_Paths,
-	'GH04' : String_Color,
-	'PA01' : User_Paths,
-	'TA09' : Post_Linker,
-	'PA04' : Convert_Paths,
-	'Lang' : language,
-	'EX31' : Cache_Subproject_Data,
-	'EX30' : Dump_Browser_Info,
+	'Acce' : access,
+	'BW02' : Constants_Color,
+	'Kind' : path_kind,
+	'Db08' : Default_Array_Size,
+	'Db09' : Show_Locals,
 	'SrcT' : filetype,
+	'Db02' : Sort_By_Method,
+	'Db03' : Use_RTTI,
+	'Db01' : Show_Variable_Types,
+	'Db06' : Watchpoint_Hilite,
+	'Db07' : Variable_Changed_Hilite,
+	'Db04' : Threads_in_Window,
+	'Db05' : Variable_Hints,
+	'TA01' : Linker,
+	'EX09' : Browser_Active,
+	'EX08' : External_Reference,
+	'TA05' : Launchable,
+	'TA04' : Resource_File,
+	'TA07' : Compiler,
+	'TA06' : Ignored_by_Make,
+	'RS01' : Host_Application,
+	'RS03' : Working_Directory,
+	'RS02' : Command_Line_Arguments,
+	'EX07' : Full_Screen_Zoom,
+	'RS04' : Environment_Variables,
+	'EX04' : Modification_Date_Caching,
+	'PR04' : File_Type,
+	'DfSt' : implementation_start_offset,
+	'pnam' : name,
+	'GH01' : Syntax_Coloring,
+	'GH03' : Keyword_Color,
+	'GH02' : Comment_Color,
+	'GH05' : Custom_Color_1,
+	'GH04' : String_Color,
+	'GH07' : Custom_Color_3,
+	'GH06' : Custom_Color_2,
+	'GH08' : Custom_Color_4,
 	'ST01' : Source_Trees,
+	'EX30' : Dump_Browser_Info,
+	'EX31' : Cache_Subproject_Data,
+	'Clas' : _class,
+	'DSiz' : datasize,
+	'ED14' : Context_Popup_Delay,
+	'ED15' : Relaxed_C_Popup_Parsing,
+	'ED16' : Left_Margin_Line_Select,
+	'ED17' : Default_Text_File_Format,
+	'ED10' : Remember_Window,
+	'ED12' : Main_Text_Color,
+	'ED13' : Background_Color,
+	'Prot' : seg_2d_protected,
+	'Purg' : seg_2d_purgeable,
+	'HstF' : host_flags,
+	'Stat' : static,
+	'ptps' : Text_Size,
+	'PA01' : User_Paths,
+	'DcSt' : declaration_start_offset,
+	'IncF' : includes,
+	'Valu' : value,
+	'ED07' : Use_Multiple_Undo,
+	'ED06' : Sort_Function_Popup,
+	'ED04' : Use_Drag__26__Drop_Editing,
+	'ED03' : Balance,
+	'ED02' : Dynamic_Scroll,
+	'ED01' : Flash_Delay,
+	'ED09' : Remember_Selection,
+	'ED08' : Remember_Font,
+	'SF03' : Skip_Find_And_Compare_Operations,
+	'SF02' : Skip_Project_Operations,
+	'SF01' : Expression_To_Match,
+	'SubC' : subclasses,
+	'SubA' : all_subclasses,
+	'ptxf' : Text_Font,
+	'Dg11' : Auto_Target_Libraries,
+	'PX01' : Plugin_Diagnostics_Level,
+	'PX02' : Disable_Third_Party_COM_Plugins,
+	'Lang' : language,
+	'BW10' : Template_Commands_in_Menu,
+	'Dt08' : Update_Data_While_Running,
+	'Dt09' : Data_Update_Interval,
+	'VC04' : Password,
+	'Dt02' : Log_System_Messages,
+	'Orig' : origin,
+	'Prel' : seg_2d_preloaded,
+	'UpTD' : up_to_date,
+	'Dw02' : Do_Nothing_To_Projects,
+	'SFis' : Shielded_Items,
+	'SysH' : seg_2d_system_heap,
+	'file' : disk_file,
+	'Bfor' : initialize_before,
+	'VC10' : Local_Path,
 	'VC11' : Use_Global_Settings,
 	'PLck' : seg_2d_locked,
-	'GH08' : Custom_Color_4,
-	'DfFl' : implementation_file,
-	'GH06' : Custom_Color_2,
-	'GH07' : Custom_Color_3,
-	'Db10' : Show_As_Decimal,
-	'GH05' : Custom_Color_1,
-	'GH02' : Comment_Color,
-	'Kind' : path_kind,
-	'GH01' : Syntax_Coloring,
-	'Dt10' : Relocated_Executable_Path,
-	'BW03' : Enums_Color,
-	'BW00' : Browser_Keywords,
-	'Dt13' : Stop_at_temp_breakpoint,
-	'Dt14' : Temp_breakpoint_names,
-	'Dt15' : Cache_symbolics,
-	'Dt16' : Temp_Breakpoint_Type,
-	'pnam' : name,
-	'DfSt' : implementation_start_offset,
-	'Dw01' : Debugging_Start_Action,
-	'BW08' : Typedefs_Color,
-	'TA16' : Output_Directory_Location,
-	'PR04' : File_Type,
-	'EX04' : Modification_Date_Caching,
-	'RS04' : Environment_Variables,
-	'EX07' : Full_Screen_Zoom,
-	'RS02' : Command_Line_Arguments,
-	'RS03' : Working_Directory,
-	'RS01' : Host_Application,
-	'TA06' : Ignored_by_Make,
-	'TA07' : Compiler,
-	'TA04' : Resource_File,
-	'TA05' : Launchable,
-	'EX08' : External_Reference,
-	'EX09' : Browser_Active,
-	'Prot' : seg_2d_protected,
-	'TA01' : Linker,
-	'Db05' : Variable_Hints,
-	'Db04' : Threads_in_Window,
-	'Db07' : Variable_Changed_Hilite,
-	'Db06' : Watchpoint_Hilite,
-	'Db01' : Show_Variable_Types,
-	'Db03' : Use_RTTI,
-	'Db02' : Sort_By_Method,
-	'file' : disk_file,
-	'SysH' : seg_2d_system_heap,
-	'Db09' : Show_Locals,
-	'Db08' : Default_Array_Size,
-	'GH03' : Keyword_Color,
-	'VC08' : Mount_Volume,
-	'SFis' : Shielded_Items,
-	'SubA' : all_subclasses,
-	'Prel' : seg_2d_preloaded,
-	'Orig' : origin,
-	'Dt02' : Log_System_Messages,
-	'DcFl' : declaration_file,
-	'BW02' : Constants_Color,
-	'Dt09' : Data_Update_Interval,
-	'Dt08' : Update_Data_While_Running,
-	'BW10' : Template_Commands_in_Menu,
-	'BW01' : Classes_Color,
-	'EX17' : Recent_Project_Count,
-	'EX16' : Recent_Editor_Count,
-	'BW07' : Templates_Color,
-	'BW04' : Functions_Color,
-	'EX12' : Use_Script_Menu,
-	'BW05' : Globals_Color,
-	'EX10' : Use_Editor_Extensions,
-	'TA11' : Output_Directory_Path,
-	'TA10' : Target_Name,
-	'TA13' : Pre_Linker,
-	'TA12' : Output_Directory_Origin,
-	'TA15' : Use_Relative_Paths,
-	'EX19' : Automatic_Toolbar_Help,
-	'EX18' : Use_ToolServer_Menu,
-	'ErrT' : messageKind,
-	'ptxf' : Text_Font,
-	'Weak' : weak_link,
-	'ptps' : Text_Size,
-	'Root' : root,
-	'ErrS' : message,
-	'SubC' : subclasses,
-	'Dg04' : Confirm_Kill,
-	'SF01' : Expression_To_Match,
-	'SF02' : Skip_Project_Operations,
-	'SF03' : Skip_Find_And_Compare_Operations,
-	'ED08' : Remember_Font,
-	'ED09' : Remember_Selection,
-	'DSiz' : datasize,
-	'VC01' : VCS_Active,
-	'ErrL' : lineNumber,
-	'ED01' : Flash_Delay,
-	'ED02' : Dynamic_Scroll,
-	'ED03' : Balance,
-	'ED04' : Use_Drag__26__Drop_Editing,
-	'ED06' : Sort_Function_Popup,
-	'ED07' : Use_Multiple_Undo,
-	'Recu' : recursive,
-	'Valu' : value,
-	'Path' : path,
-	'IncF' : includes,
-	'Bfor' : initialize_before,
-	'Dw02' : Do_Nothing_To_Projects,
-	'TA03' : Precompiled,
-	'PX01' : Plugin_Diagnostics_Level,
-	'EX11' : Use_External_Editor,
-	'PX02' : Disable_Third_Party_COM_Plugins,
-	'DcSt' : declaration_start_offset,
-	'Dg01' : Ignore_Mod_Dates,
-	'Dg02' : Open_All_Classes,
-	'Dg03' : Launch_Apps_on_Open,
 	'BW06' : Macros_Color,
-	'Dg05' : Stop_at_Main,
-	'Dg06' : Select_Stack_Crawl,
-	'Dg07' : Dont_Step_in_Runtime,
-	'HstF' : host_flags,
-	'FN04' : Tab_Inserts_Spaces,
-	'FN03' : Tab_Indents_Selection,
-	'FN02' : Tab_Size,
-	'FN01' : Auto_Indent,
-	'Frmt' : format,
-	'Stat' : static,
+	'BW08' : Typedefs_Color,
+	'Dw01' : Debugging_Start_Action,
+	'BW05' : Globals_Color,
+	'BW04' : Functions_Color,
+	'Dt15' : Cache_symbolics,
+	'Dt14' : Temp_breakpoint_names,
+	'Dt13' : Stop_at_temp_breakpoint,
+	'BW00' : Browser_Keywords,
+	'BW03' : Enums_Color,
+	'Dt10' : Relocated_Executable_Path,
+	'DfFl' : implementation_file,
+	'BW01' : Classes_Color,
+	'TA03' : Precompiled,
+	'TA02' : Extension,
+	'PA05' : Require_Framework_Includes,
+	'PA04' : Convert_Paths,
+	'Root' : root,
+	'PA03' : System_Paths,
+	'PA02' : Always_Full_Search,
+	'VC09' : Database_Path,
+	'VC08' : Mount_Volume,
+	'Dg12' : Cache_Edited_Files,
+	'Dg13' : File_Cache_Duration,
+	'VC05' : Auto_Connect,
 	'Virt' : virtual,
-	'Purg' : seg_2d_purgeable,
-	'NumF' : filecount,
-	'Acce' : access,
-	'BX05' : Include_Cache_Size,
-	'BX04' : Build_Before_Running,
-	'BX07' : Save_Before_Building,
-	'BX06' : Compiler_Thread_Stack_Size,
-	'BX01' : Completion_Sound,
-	'BX03' : Failure_Sound,
-	'BX02' : Success_Sound,
-	'ED13' : Background_Color,
-	'ED12' : Main_Text_Color,
-	'ED10' : Remember_Window,
-	'ED17' : Default_Text_File_Format,
-	'ED16' : Left_Margin_Line_Select,
-	'ED15' : Relaxed_C_Popup_Parsing,
-	'ED14' : Context_Popup_Delay,
+	'VC07' : Always_Prompt,
+	'VC06' : Store_Password,
+	'VC01' : VCS_Active,
+	'VC03' : Username,
+	'VC02' : Connection_Method,
+	'FMps' : Mappings,
+	'TA09' : Post_Linker,
+	'DcEn' : declaration_end_offset,
 }
 
 _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'PPrm' : _Enum_PPrm,
-	'BXbr' : _Enum_BXbr,
-	'PthF' : _Enum_PthF,
 	'Lang' : _Enum_Lang,
-	'PXdg' : _Enum_PXdg,
-	'SrcT' : _Enum_SrcT,
-	'savo' : _Enum_savo,
-	'TmpB' : _Enum_TmpB,
-	'DbSA' : _Enum_DbSA,
-	'ErrT' : _Enum_ErrT,
-	'TxtF' : _Enum_TxtF,
-	'RefP' : _Enum_RefP,
-	'Acce' : _Enum_Acce,
+	'Inte' : _Enum_Inte,
 	'STKd' : _Enum_STKd,
 	'DgBL' : _Enum_DgBL,
-	'Inte' : _Enum_Inte,
+	'Acce' : _Enum_Acce,
+	'RefP' : _Enum_RefP,
+	'TxtF' : _Enum_TxtF,
+	'DbSA' : _Enum_DbSA,
+	'TmpB' : _Enum_TmpB,
+	'savo' : _Enum_savo,
+	'PthF' : _Enum_PthF,
+	'SrcT' : _Enum_SrcT,
+	'PXdg' : _Enum_PXdg,
+	'ErrT' : _Enum_ErrT,
+	'BXbr' : _Enum_BXbr,
+	'PPrm' : _Enum_PPrm,
 }

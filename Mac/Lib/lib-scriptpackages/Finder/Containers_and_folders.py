@@ -1,7 +1,7 @@
 """Suite Containers and folders: Classes that can contain other file system items
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -46,6 +46,10 @@ class icon_size(aetools.NProperty):
 	"""icon size - the size of icons displayed in the window. Can be specified as a number, or ... """
 	which = 'lvis'
 	want = 'long'
+class view_options_window(aetools.NProperty):
+	"""view options window - the view options window for the container (can only be opened when the container window is open) """
+	which = 'vwnd'
+	want = 'vwnd'
 #        element 'cobj' as ['indx', 'name']
 #        element 'ctnr' as ['indx', 'name']
 #        element 'sctr' as ['indx', 'name']
@@ -276,6 +280,7 @@ container._propdict = {
 	'completely_expanded' : completely_expanded,
 	'icon_size' : icon_size,
 	'icon_size' : icon_size,
+	'view_options_window' : view_options_window,
 }
 container._elemdict = {
 	'item' : Earlier_terms.item,
@@ -437,44 +442,45 @@ trash_2d_object._elemdict = {
 # Indices of types declared in this module
 #
 _classdeclarations = {
-	'priv' : sharing_privileges,
-	'cfol' : folder,
-	'cdis' : disk,
-	'sctr' : sharable_container,
-	'ctnr' : container,
-	'cdsk' : desktop_2d_object,
 	'ctrs' : trash_2d_object,
+	'cdsk' : desktop_2d_object,
+	'sctr' : sharable_container,
+	'priv' : sharing_privileges,
+	'cdis' : disk,
+	'cfol' : folder,
+	'ctnr' : container,
 }
 
 _propdeclarations = {
-	'ownr' : owner_privileges,
-	'spro' : protected,
-	'frsp' : free_space,
-	'sgrp' : group,
-	'pexc' : completely_expanded,
-	'sele' : selection,
-	'smou' : mounted,
-	'pexa' : expandable,
-	'istd' : startup,
-	'sdsk' : startup_disk,
+	'pexp' : expanded,
 	'gppr' : group_privileges,
-	'shar' : shared,
-	'capa' : capacity,
-	'isej' : ejectable,
-	'gstp' : guest_privileges,
+	'prvr' : see_files,
+	'ects' : entire_contents,
+	'lvis' : icon_size,
+	'iprv' : privileges_inherited,
+	'isrv' : local_volume,
+	'frsp' : free_space,
+	'pexa' : expandable,
+	'pexc' : completely_expanded,
+	'vwnd' : view_options_window,
 	'warn' : warns_before_emptying,
 	'sown' : owner,
-	'c@#^' : _3c_Inheritance_3e_,
-	'sexp' : exported,
-	'isrv' : local_volume,
-	'iprv' : privileges_inherited,
-	'lvis' : icon_size,
-	'trsh' : trash,
-	'prvs' : see_folders,
-	'prvr' : see_files,
 	'prvw' : make_changes,
-	'pexp' : expanded,
-	'ects' : entire_contents,
+	'isej' : ejectable,
+	'capa' : capacity,
+	'shar' : shared,
+	'sexp' : exported,
+	'sdsk' : startup_disk,
+	'istd' : startup,
+	'gstp' : guest_privileges,
+	'trsh' : trash,
+	'smou' : mounted,
+	'sele' : selection,
+	'prvs' : see_folders,
+	'sgrp' : group,
+	'c@#^' : _3c_Inheritance_3e_,
+	'spro' : protected,
+	'ownr' : owner_privileges,
 }
 
 _compdeclarations = {

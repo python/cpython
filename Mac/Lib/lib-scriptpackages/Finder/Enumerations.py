@@ -1,7 +1,7 @@
 """Suite Enumerations: Enumerations for the Finder
 Level 1, version 1
 
-Generated from Macintosh HD:Systeemmap:Finder
+Generated from Moes:Systeemmap:Finder
 AETE/AEUT resource version 0/144, language 0, script 0
 """
 
@@ -16,30 +16,30 @@ class Enumerations_Events(Type_Names_Suite_Events):
 	pass
 
 _Enum_ipnl = {
-	'General Information panel' : 'gpnl',	# 
-	'Sharing panel' : 'spnl',	# 
-	'Memory panel' : 'mpnl',	# 
-	'Status and Configuration panel' : 'scnl',	# 
-	'Fonts panel' : 'fpnl',	# 
+	'General_Information_panel' : 'gpnl',	# 
+	'Sharing_panel' : 'spnl',	# 
+	'Memory_panel' : 'mpnl',	# 
+	'Status_and_Configuration_panel' : 'scnl',	# 
+	'Fonts_panel' : 'fpnl',	# 
 }
 
 _Enum_pple = {
-	'General Preferences panel' : 'pgnp',	# 
-	'Label Preferences panel' : 'plbp',	# 
-	'Icon View Preferences panel' : 'pivp',	# 
-	'Button View Preferences panel' : 'pbvp',	# 
-	'List View Preferences panel' : 'plvp',	# 
+	'General_Preferences_panel' : 'pgnp',	# 
+	'Label_Preferences_panel' : 'plbp',	# 
+	'Icon_View_Preferences_panel' : 'pivp',	# 
+	'Button_View_Preferences_panel' : 'pbvp',	# 
+	'List_View_Preferences_panel' : 'plvp',	# 
 }
 
 _Enum_earr = {
-	'not arranged' : 'narr',	# 
-	'snap to grid' : 'grda',	# 
-	'arranged by name' : 'nama',	# 
-	'arranged by modification date' : 'mdta',	# 
-	'arranged by creation date' : 'cdta',	# 
-	'arranged by size' : 'siza',	# 
-	'arranged by kind' : 'kina',	# 
-	'arranged by label' : 'laba',	# 
+	'not_arranged' : 'narr',	# 
+	'snap_to_grid' : 'grda',	# 
+	'arranged_by_name' : 'nama',	# 
+	'arranged_by_modification_date' : 'mdta',	# 
+	'arranged_by_creation_date' : 'cdta',	# 
+	'arranged_by_size' : 'siza',	# 
+	'arranged_by_kind' : 'kina',	# 
+	'arranged_by_label' : 'laba',	# 
 }
 
 _Enum_sodr = {
@@ -55,19 +55,19 @@ _Enum_isiz = {
 
 _Enum_vwby = {
 	'conflicts' : 'cflc',	# 
-	'existing items' : 'exsi',	# 
-	'small icon' : 'smic',	# 
+	'existing_items' : 'exsi',	# 
+	'small_icon' : 'smic',	# 
 	'icon' : 'iimg',	# 
 	'name' : 'pnam',	# 
-	'modification date' : 'asmo',	# 
+	'modification_date' : 'asmo',	# 
 	'size' : 'ptsz',	# 
 	'kind' : 'kind',	# 
 	'comment' : 'comt',	# 
 	'label' : 'labi',	# 
 	'version' : 'vers',	# 
-	'creation date' : 'ascd',	# 
-	'small button' : 'smbu',	# 
-	'large button' : 'lgbu',	# 
+	'creation_date' : 'ascd',	# 
+	'small_button' : 'smbu',	# 
+	'large_button' : 'lgbu',	# 
 	'grid' : 'grid',	# 
 	'all' : 'kyal',	# 
 }
@@ -77,10 +77,19 @@ _Enum_gsen = {
 	'FPU' : 'fpu ',	# 
 	'MMU' : 'mmu ',	# 
 	'hardware' : 'hdwr',	# 
-	'operating system' : 'os  ',	# 
-	'sound system' : 'snd ',	# 
-	'memory available' : 'lram',	# 
-	'memory installed' : 'ram ',	# 
+	'operating_system' : 'os  ',	# 
+	'sound_system' : 'snd ',	# 
+	'memory_available' : 'lram',	# 
+	'memory_installed' : 'ram ',	# 
+}
+
+_Enum_ese0 = {
+	'starting_up' : 'ese2',	# 
+	'running' : 'ese3',	# 
+	'rebuilding_desktop' : 'ese5',	# 
+	'copying' : 'ese4',	# 
+	'restarting' : 'ese6',	# 
+	'quitting' : 'ese7',	# 
 }
 
 
@@ -97,11 +106,12 @@ _compdeclarations = {
 }
 
 _enumdeclarations = {
-	'gsen' : _Enum_gsen,
-	'earr' : _Enum_earr,
-	'isiz' : _Enum_isiz,
-	'vwby' : _Enum_vwby,
-	'pple' : _Enum_pple,
-	'ipnl' : _Enum_ipnl,
 	'sodr' : _Enum_sodr,
+	'ipnl' : _Enum_ipnl,
+	'ese0' : _Enum_ese0,
+	'vwby' : _Enum_vwby,
+	'gsen' : _Enum_gsen,
+	'isiz' : _Enum_isiz,
+	'earr' : _Enum_earr,
+	'pple' : _Enum_pple,
 }

@@ -1,5 +1,5 @@
 """
-Package generated from Macintosh HD:Systeemmap:Finder
+Package generated from Moes:Systeemmap:Finder
 Resource aete resid 0 
 """
 import aetools
