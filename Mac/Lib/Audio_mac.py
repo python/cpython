@@ -40,7 +40,7 @@ class Play_Audio_mac:
 
 	def writeframes(self, data):
 		import time
-		from Sound import *
+		from Sound import bufferCmd, callBackCmd, extSH
 		import struct
 		import MacOS
 		if not self._chan:
