@@ -304,7 +304,7 @@ static PyTypeObject Rftype = {
 /*----------------------------------------------------------------------*/
 /* Miscellaneous File System Operations */
 
-static char getcrtp_doc[] = "Obsolete, use macfs module";
+static char getcrtp_doc[] = "Get MacOS 4-char creator and type for a file";
 
 static PyObject *
 MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
@@ -326,7 +326,7 @@ MacOS_GetCreatorAndType(PyObject *self, PyObject *args)
 	return res;
 }
 
-static char setcrtp_doc[] = "Obsolete, use macfs module";
+static char setcrtp_doc[] = "Set MacOS 4-char creator and type for a file";
 
 static PyObject *
 MacOS_SetCreatorAndType(PyObject *self, PyObject *args)
