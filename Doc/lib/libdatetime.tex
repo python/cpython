@@ -381,6 +381,14 @@ Supported operations:
     comparison of date to date, where date1 is considered less than
     date2 when date1 precedes date2 in time.  In other words,
     date1 < date2 if and only if date1.toordinal() < date2.toordinal().
+    \note{In order to stop comparison from falling back to the default
+          scheme of comparing object addresses, date comparison
+          normally raises \exception{TypeError} if the other comparand
+          isn't also a \class{date} object.  However, \code{NotImplemented}
+          is returned instead if the other comparand has a
+          \method{timetuple} attribute.  This hook gives other kinds of
+          date objects a chance at implementing mixed-type comparison.}
+
 
   \item
     hash, use as dict key
@@ -711,6 +719,14 @@ Supported operations:
     are compared.  If both comparands are aware and have different
     \member{tzinfo} members, the comparands are first adjusted by
     subtracting their UTC offsets (obtained from \code{self.utcoffset()}).
+    \note{In order to stop comparison from falling back to the default
+          scheme of comparing object addresses, datetime comparison
+          normally raises \exception{TypeError} if the other comparand
+          isn't also a \class{datetime} object.  However,
+          \code{NotImplemented} is returned instead if the other comparand
+          has a \method{timetuple} attribute.  This hook gives other
+          kinds of date objects a chance at implementing mixed-type
+          comparison.}
 
   \item
     hash, use as dict key
