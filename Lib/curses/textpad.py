@@ -20,13 +20,13 @@ class Textbox:
     Ctrl-A      Go to left edge of window.
     Ctrl-B      Cursor left, wrapping to previous line if appropriate.
     Ctrl-D      Delete character under cursor.
-    Ctrl-E      Go to right edge (nospaces off) or end of line (nospaces on).
+    Ctrl-E      Go to right edge (stripspaces off) or end of line (stripspaces on).
     Ctrl-F      Cursor right, wrapping to next line when appropriate.
     Ctrl-G      Terminate, returning the window contents.
     Ctrl-H      Delete character backward.
     Ctrl-J      Terminate if the window is 1 line, otherwise insert newline.
     Ctrl-K      If line is blank, delete it, otherwise clear to end of line.
-    Ctrl-L      Refresh screen
+    Ctrl-L      Refresh screen.
     Ctrl-N      Cursor down; move down one line.
     Ctrl-O      Insert a blank line at cursor location.
     Ctrl-P      Cursor up; move up one line.
@@ -46,7 +46,7 @@ class Textbox:
         self.lastcmd = None
         win.keypad(1)
 
-    def firstblank(self, y):
+    def _end_of_line(self, y):
         "Go to the location of the first blank on the given line."
         last = self.maxx
         while 1:
@@ -79,7 +79,7 @@ class Textbox:
             elif y == 0:
                 pass
             elif self.stripspaces:
-                self.win.move(y-1, self.firstblank(y-1))
+                self.win.move(y-1, self._end_of_line(y-1))
             else:
                 self.win.move(y-1, self.maxx)
             if ch in (ascii.BS, curses.KEY_BACKSPACE):
@@ -88,7 +88,7 @@ class Textbox:
             self.win.delch()
         elif ch == ascii.ENQ:				# ^e
             if self.stripspaces:
-                self.win.move(y, self.firstblank(y))
+                self.win.move(y, self._end_of_line(y))
             else:
                 self.win.move(y, self.maxx)
         elif ch in (ascii.ACK, curses.KEY_RIGHT):	# ^f
@@ -106,7 +106,7 @@ class Textbox:
             elif y < self.maxy:
                 self.win.move(y+1, 0)
         elif ch == ascii.VT:				# ^k
-            if x == 0 and self.firstblank(y) == 0:
+            if x == 0 and self._end_of_line(y) == 0:
                 self.win.deleteln()
             else:
                 self.win.clrtoeol()
@@ -115,11 +115,15 @@ class Textbox:
         elif ch in (ascii.SO, curses.KEY_DOWN):		# ^n
             if y < self.maxy:
                 self.win.move(y+1, x)
+                if x > self._end_of_line(y+1):
+                    self.win.move(y+1, self._end_of_line(y+1))
         elif ch == ascii.SI:				# ^o
             self.win.insertln()
         elif ch in (ascii.DLE, curses.KEY_UP):		# ^p
             if y > 0:
                 self.win.move(y-1, x)
+                if x > self._end_of_line(y-1):
+                    self.win.move(y-1, self._end_of_line(y-1))
         return 1
         
     def gather(self):
@@ -127,8 +131,8 @@ class Textbox:
         result = ""
         for y in range(self.maxy+1):
             self.win.move(y, 0)
-            stop = self.firstblank(y)
-            #sys.stderr.write("y=%d, firstblank(y)=%d\n" % (y, stop))
+            stop = self._end_of_line(y)
+            #sys.stderr.write("y=%d, _end_of_line(y)=%d\n" % (y, stop))
             if stop == 0 and self.stripspaces:
                 continue
             for x in range(self.maxx+1):
