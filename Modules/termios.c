@@ -28,37 +28,16 @@ sys.stdin.fileno(), or a file object, such as sys.stdin itself.";
 
 static PyObject *TermiosError;
 
-static char* fname;
-
 static int fdconv(PyObject* obj, void* p)
 {
 	int fd;
 
 	fd = PyObject_AsFileDescriptor(obj);
-	if (fd == -1) {
-		if (PyInt_Check(obj)) {
-			fd = PyInt_AS_LONG(obj);
-		}
-		else {
-			char* tname;
-
-			if (PyInstance_Check(obj)) {
-				tname = PyString_AS_STRING(
-		((PyInstanceObject*)obj)->in_class->cl_name);
-			}
-			else {
-				tname = obj->ob_type->tp_name;
-			}
-
-			PyErr_Format(PyExc_TypeError,
-		"%s, arg 1: can't extract file descriptor from \"%.500s\"",
-				     fname, tname);
-			return 0;
-		}
+	if (fd >= 0) {
+		*(int*)p = fd;
+		return 1;
 	}
-
-	*(int*)p = fd;
-	return 1;
+	return 0;
 }
 
 static char termios_tcgetattr__doc__[] = "\
@@ -82,8 +61,6 @@ termios_tcgetattr(PyObject *self, PyObject *args)
 	PyObject *v;
 	int i;
 	char ch;
-
-	fname = "tcgetattr";
 
 	if (!PyArg_ParseTuple(args, "O&:tcgetattr", 
 			      fdconv, (void*)&fd))
@@ -160,8 +137,6 @@ termios_tcsetattr(PyObject *self, PyObject *args)
 	PyObject *term, *cc, *v;
 	int i;
 
-	fname = "tcsetattr";
-
 	if (!PyArg_ParseTuple(args, "O&iO:tcsetattr", 
 			      fdconv, &fd, &when, &term))
 		return NULL;
@@ -228,8 +203,6 @@ termios_tcsendbreak(PyObject *self, PyObject *args)
 {
 	int fd, duration;
 
-	fname = "tcsendbreak";
-
 	if (!PyArg_ParseTuple(args, "O&i:tcsendbreak", 
 			      fdconv, &fd, &duration))
 		return NULL;
@@ -249,8 +222,6 @@ static PyObject *
 termios_tcdrain(PyObject *self, PyObject *args)
 {
 	int fd;
-
-	fname = "tcdrain";
 
 	if (!PyArg_ParseTuple(args, "O&:tcdrain", 
 			      fdconv, &fd))
@@ -275,8 +246,6 @@ termios_tcflush(PyObject *self, PyObject *args)
 {
 	int fd, queue;
 
-	fname = "tcflush";
-
 	if (!PyArg_ParseTuple(args, "O&i:tcflush", 
 			      fdconv, &fd, &queue))
 		return NULL;
@@ -299,8 +268,6 @@ static PyObject *
 termios_tcflow(PyObject *self, PyObject *args)
 {
 	int fd, action;
-
-	fname = "tcflow";
 
 	if (!PyArg_ParseTuple(args, "O&i:tcflow", 
 			      fdconv, &fd, &action))
