@@ -51,6 +51,17 @@ class LiveVideoOut:
 		self.disp.setsize(vw, vh)
 		self.reshapewindow()
 
+	# Return the number of bytes in one video line
+	def linewidth(self):
+		if self.disp.format == 'mono':
+			return (self.vw+7)/8
+		elif self.disp.format == 'grey2':
+			return (self.vw+3)/4
+		elif self.disp.format == 'grey4':
+			return (self.vw+1)/2
+		else:
+			return self.vw
+
 	# Call this to display the next video packet.  Arguments:
 	# pos:  line number where the packet begins
 	# data: image data of the packet
@@ -58,19 +69,10 @@ class LiveVideoOut:
 	# LiveVideoIn.getnextpacket()).
 
 	def putnextpacket(self, pos, data):
-		if self.disp.format == 'mono':
-			# Unfortunately size-check is difficult for
-			# packed video
-			nline = (len(data)*8)/self.vw
-		elif self.disp.format == 'grey2':
-			nline = (len(data)*4)/self.vw
-		elif self.disp.format == 'grey4':
-			nline = (len(data)*2)/self.vw
-		else:
-			nline = len(data)/self.vw
-			if nline*self.vw <> len(data):
-				print 'Incorrect-sized video fragment ignored'
-				return
+		nline = len(data)/self.linewidth()
+		if nline*self.linewidth() <> len(data):
+			print 'Incorrect-sized video fragment ignored'
+			return
 		oldwid = gl.winget()
 		gl.winset(self.wid)
 		self.disp.showpartframe(data, None, (0, pos, self.vw, nline))
@@ -92,4 +94,32 @@ class LiveVideoOut:
 		if mirrored:
 			xpf = -xpf
 		info = (f, w, h, (xpf, ypf), c0, c1, c2, o, cp)
-		self.disp.setinfo(inf0)
+		self.disp.setinfo(info)
+		self.disp.initcolormap()
+		self.disp.clear()
+
+#
+# This derived class has one difference with the base class: the video is
+# not displayed until an entire image has been gotten
+#
+class LiveVideoOutSlow(LiveVideoOut):
+
+	# Reshapewindow - Realloc buffer.
+	# (is also called by init() indirectly)
+
+	def reshapewindow(self):
+		LiveVideoOut.reshapewindow(self)
+		self.buffer = '\0'*self.linewidth()*self.vh
+		self.isbuffered = []
+
+	# putnextpacket - buffer incoming data until a complete
+	# image has been received
+
+	def putnextpacket(self, pos, data):
+		if pos in self.isbuffered or pos == 0:
+			LiveVideoOut.putnextpacket(self, 0, self.buffer)
+			self.isbuffered = []
+		self.isbuffered.append(pos)
+		bpos = pos * self.linewidth()
+		epos = bpos + len(data)
+		self.buffer = self.buffer[:bpos] + data + self.buffer[epos:]
