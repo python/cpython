@@ -263,7 +263,7 @@ system administrator to find the directory where CGI scripts should be
 installed; usually this is in a directory \file{cgi-bin} in the server tree.
 
 Make sure that your script is readable and executable by ``others''; the
-Unix file mode should be 755 (use \code{chmod 755 filename}).  Make sure
+\UNIX{} file mode should be 755 (use \code{chmod 755 filename}).  Make sure
 that the first line of the script contains \code{\#!} starting in column 1
 followed by the pathname of the Python interpreter, for instance:
 
@@ -297,7 +297,7 @@ sys.path.insert(0, "/usr/local/lib/python")
 %
 (This way, the directory inserted last will be searched first!)
 
-Instructions for non-Unix systems will vary; check your HTTP server's
+Instructions for non-\UNIX{} systems will vary; check your HTTP server's
 documentation (it will usually have a section on CGI scripts).
 
 
