@@ -311,7 +311,7 @@ then
 	AIX*)	LINKFORSHARED='-Wl,-bE:$(srcdir)/python.exp -lld';;
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	Linux*) LINKFORSHARED="-rdynamic";;
+	Linux*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	next/*) LINKFORSHARED="-u libsys_s";;
 	SCO_SV*) LINKFORSHARED="-Bdynamic -dy -Wl,-Bexport";;
 	IRIX*/6*) LINKFORSHARED="-all";;
