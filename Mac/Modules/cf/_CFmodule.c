@@ -2046,6 +2046,26 @@ static PyObject *CFMutableStringRefObj_CFStringAppend(CFMutableStringRefObject *
 	return _res;
 }
 
+static PyObject *CFMutableStringRefObj_CFStringAppendCharacters(CFMutableStringRefObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UniChar *chars__in__;
+	UniCharCount chars__len__;
+	int chars__in_len__;
+#ifndef CFStringAppendCharacters
+	PyMac_PRECHECK(CFStringAppendCharacters);
+#endif
+	if (!PyArg_ParseTuple(_args, "u#",
+	                      &chars__in__, &chars__in_len__))
+		return NULL;
+	chars__len__ = chars__in_len__;
+	CFStringAppendCharacters(_self->ob_itself,
+	                         chars__in__, chars__len__);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CFMutableStringRefObj_CFStringAppendPascalString(CFMutableStringRefObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -2217,6 +2237,8 @@ static PyObject *CFMutableStringRefObj_CFStringTrimWhitespace(CFMutableStringRef
 static PyMethodDef CFMutableStringRefObj_methods[] = {
 	{"CFStringAppend", (PyCFunction)CFMutableStringRefObj_CFStringAppend, 1,
 	 "(CFStringRef appendedString) -> None"},
+	{"CFStringAppendCharacters", (PyCFunction)CFMutableStringRefObj_CFStringAppendCharacters, 1,
+	 "(Buffer chars) -> None"},
 	{"CFStringAppendPascalString", (PyCFunction)CFMutableStringRefObj_CFStringAppendPascalString, 1,
 	 "(Str255 pStr, CFStringEncoding encoding) -> None"},
 	{"CFStringAppendCString", (PyCFunction)CFMutableStringRefObj_CFStringAppendCString, 1,
@@ -3221,6 +3243,27 @@ static PyObject *CF_CFStringCreateWithCString(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *CF_CFStringCreateWithCharacters(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	UniChar *chars__in__;
+	UniCharCount chars__len__;
+	int chars__in_len__;
+#ifndef CFStringCreateWithCharacters
+	PyMac_PRECHECK(CFStringCreateWithCharacters);
+#endif
+	if (!PyArg_ParseTuple(_args, "u#",
+	                      &chars__in__, &chars__in_len__))
+		return NULL;
+	chars__len__ = chars__in_len__;
+	_rv = CFStringCreateWithCharacters((CFAllocatorRef)NULL,
+	                                   chars__in__, chars__len__);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
 static PyObject *CF_CFStringCreateWithPascalStringNoCopy(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -3260,6 +3303,28 @@ static PyObject *CF_CFStringCreateWithCStringNoCopy(PyObject *_self, PyObject *_
 	                                      cStr,
 	                                      encoding,
 	                                      (CFAllocatorRef)NULL);
+	_res = Py_BuildValue("O&",
+	                     CFStringRefObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CF_CFStringCreateWithCharactersNoCopy(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	CFStringRef _rv;
+	UniChar *chars__in__;
+	UniCharCount chars__len__;
+	int chars__in_len__;
+#ifndef CFStringCreateWithCharactersNoCopy
+	PyMac_PRECHECK(CFStringCreateWithCharactersNoCopy);
+#endif
+	if (!PyArg_ParseTuple(_args, "u#",
+	                      &chars__in__, &chars__in_len__))
+		return NULL;
+	chars__len__ = chars__in_len__;
+	_rv = CFStringCreateWithCharactersNoCopy((CFAllocatorRef)NULL,
+	                                         chars__in__, chars__len__,
+	                                         (CFAllocatorRef)NULL);
 	_res = Py_BuildValue("O&",
 	                     CFStringRefObj_New, _rv);
 	return _res;
@@ -3667,10 +3732,14 @@ static PyMethodDef CF_methods[] = {
 	 "(Str255 pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithCString", (PyCFunction)CF_CFStringCreateWithCString, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	{"CFStringCreateWithCharacters", (PyCFunction)CF_CFStringCreateWithCharacters, 1,
+	 "(Buffer chars) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithPascalStringNoCopy", (PyCFunction)CF_CFStringCreateWithPascalStringNoCopy, 1,
 	 "(Str255 pStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
 	{"CFStringCreateWithCStringNoCopy", (PyCFunction)CF_CFStringCreateWithCStringNoCopy, 1,
 	 "(char* cStr, CFStringEncoding encoding) -> (CFStringRef _rv)"},
+	{"CFStringCreateWithCharactersNoCopy", (PyCFunction)CF_CFStringCreateWithCharactersNoCopy, 1,
+	 "(Buffer chars) -> (CFStringRef _rv)"},
 	{"CFStringCreateMutable", (PyCFunction)CF_CFStringCreateMutable, 1,
 	 "(CFIndex maxLength) -> (CFMutableStringRef _rv)"},
 	{"CFStringCreateMutableCopy", (PyCFunction)CF_CFStringCreateMutableCopy, 1,

@@ -48,7 +48,6 @@ class ResourcesScanner(Scanner):
 			
 	def makeblacklisttypes(self):
 		return [
-			"UniCharCount", #TBD
 			]
 			
 	def makegreylist(self):
@@ -86,7 +85,11 @@ class ResourcesScanner(Scanner):
 			 [("OutBuffer", "*", "InOutMode")]),
 			 
 			([("SInt8", "*", "*")],
-			 [("SignedByte", "*", "*")])
+			 [("SignedByte", "*", "*")]),
+			 
+			
+			([("UniCharCount", "*", "InMode"), ("UniChar_ptr", "*", "InMode")],
+			 [("UnicodeReverseInBuffer", "*", "*")]),
 			]
 
 if __name__ == "__main__":

@@ -1006,6 +1006,31 @@ static PyObject *TXNObj_TXNActivate(TXNObjectObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *TXNObj_TXNEchoMode(TXNObjectObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	UniChar iEchoCharacter;
+	TextEncoding iEncoding;
+	Boolean iOn;
+#ifndef TXNEchoMode
+	PyMac_PRECHECK(TXNEchoMode);
+#endif
+	if (!PyArg_ParseTuple(_args, "hlb",
+	                      &iEchoCharacter,
+	                      &iEncoding,
+	                      &iOn))
+		return NULL;
+	_err = TXNEchoMode(_self->ob_itself,
+	                   iEchoCharacter,
+	                   iEncoding,
+	                   iOn);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *TXNObj_TXNDoFontMenuSelection(TXNObjectObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1251,6 +1276,8 @@ static PyMethodDef TXNObj_methods[] = {
 	 "(TXNFrameID iTXNFrameID, WindowPtr iWindow, DragReference iDragReference, Boolean iDifferentObjectSameWindow) -> None"},
 	{"TXNActivate", (PyCFunction)TXNObj_TXNActivate, 1,
 	 "(TXNFrameID iTXNFrameID, TXNScrollBarState iActiveState) -> None"},
+	{"TXNEchoMode", (PyCFunction)TXNObj_TXNEchoMode, 1,
+	 "(UniChar iEchoCharacter, TextEncoding iEncoding, Boolean iOn) -> None"},
 	{"TXNDoFontMenuSelection", (PyCFunction)TXNObj_TXNDoFontMenuSelection, 1,
 	 "(TXNFontMenuObject iTXNFontMenuObject, SInt16 iMenuID, SInt16 iMenuItem) -> None"},
 	{"TXNPrepareFontMenu", (PyCFunction)TXNObj_TXNPrepareFontMenu, 1,

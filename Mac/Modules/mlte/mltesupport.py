@@ -129,6 +129,8 @@ CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
 
 OptFSSpecPtr = OpaqueByValueType("FSSpec *", "OptFSSpecPtr")
 OptRectPtr = OpaqueByValueType("Rect *", "OptRectPtr")
+
+UniChar = Type("UniChar", "h") # XXXX For now...
 # ADD object type here
 
 execfile("mltetypetest.py")
