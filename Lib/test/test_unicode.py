@@ -11,7 +11,8 @@ from test import test_support, string_tests
 
 class UnicodeTest(
     string_tests.CommonTest,
-    string_tests.MixinStrUnicodeUserStringTest
+    string_tests.MixinStrUnicodeUserStringTest,
+    string_tests.MixinStrUnicodeTest,
     ):
     type2test = unicode
 

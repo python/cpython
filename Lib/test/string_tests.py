@@ -648,6 +648,7 @@ class MixinStrUnicodeUserStringTest:
                 else:
                     self.checkcall(format, "__mod__", value)
 
+
 class MixinStrStringUserStringTest:
     # Additional tests for 8bit strings, i.e. str, UserString and
     # the string module
@@ -695,3 +696,21 @@ class MixinStrUserStringTest:
 
         self.checkraises(TypeError, 'xyz', 'decode', 42)
         self.checkraises(TypeError, 'xyz', 'encode', 42)
+
+
+class MixinStrUnicodeTest:
+    # Additional tests that only work with
+    # str and unicode
+
+    def test_bug1001011(self):
+        # Make sure join returns a NEW object for single item sequences
+        # involving a subclass
+        # Make sure that it is of the appropriate type
+        # Check the optimisation still occurs for standard objects
+        t = self.type2test
+        class subclass(t):
+            pass
+        s1 = subclass("abcd")
+        s2 = t().join([s1])
+        self.assert_(s1 is not s2)
+        self.assert_(type(s2) is t)

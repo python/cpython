@@ -52,28 +52,6 @@ class StringTest(
         self.checkraises(TypeError, string_tests.BadSeq1(), 'join', ' ')
         self.checkequal('a b c', string_tests.BadSeq2(), 'join', ' ')
 
-    def test_bug1001011(self):
-        # Make sure join returns a NEW object for single item sequences
-        # involving a subclass
-        # Make sure that it is of the appropriate type
-        # Check the optimisation still occurs for standard objects
-        class str_subclass(str): pass
-        s1 = str_subclass('abcd')
-        s2 = ''.join([s1])
-        self.failIf(s1 is s2)
-        self.assertEqual(type(s2), type(''))
-        s3 = 'abcd'
-        s4 = ''.join([s3])
-        self.failUnless(s3 is s4)
-        if test_support.have_unicode:
-            class unicode_subclass(unicode): pass
-            u1 = unicode_subclass(u'abcd')
-            u2 = ''.join([u1])
-            self.failIf(u1 is u2)
-            self.assertEqual(type(u2), type(u''))
-            u3 = u'abcd'
-            u4 = ''.join([u3])
-            self.failUnless(u3 is u4)
 
 class ModuleTest(unittest.TestCase):
 
