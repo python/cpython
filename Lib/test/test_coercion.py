@@ -65,8 +65,8 @@ class MethodNumber:
         return cmp(self.arg, other)
 
 
-candidates = [ 2, 2.2, 2L, 2+4j, [1], (2,), None,
-               MethodNumber(1), CoerceNumber(8)]
+candidates = [ 2, 4.0, 2L, 2+0j, [1], (2,), None,
+               MethodNumber(1), CoerceNumber(2)]
 
 infix_binops = [ '+', '-', '*', '/', '**', '%' ]
 prefix_binops = [ 'divmod' ]
