@@ -149,6 +149,10 @@ void init_thread _P0()
 #include "thread_nt.h"
 #endif
 
+#ifdef OS2_THREADS
+#include "thread_os2.h"
+#endif
+
 /*
 #ifdef FOOBAR_THREADS
 #include "thread_foobar.h"

@@ -91,8 +91,23 @@ Socket methods:
 #include <unistd.h>
 #endif
 
-#ifndef MS_WINDOWS
+#if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
 extern int gethostname(); /* For Solaris, at least */
+#endif
+
+#if defined(PYCC_VACPP)
+#include <types.h>
+#include <io.h>
+#include <sys/ioctl.h>
+#include <utils.h>
+#include <ctype.h>
+#endif
+
+#if defined(PYOS_OS2)
+#define  INCL_DOS
+#define  INCL_DOSERRORS
+#define  INCL_NOPMAPI
+#include <os2.h>
 #endif
 
 #include <sys/types.h>
@@ -133,6 +148,12 @@ extern int gethostname(); /* For Solaris, at least */
 /* seem to be a few differences in the API */
 #define close closesocket
 #define NO_DUP /* Actually it exists on NT 3.5, but what the heck... */
+#define FORCE_ANSI_FUNC_DEFS
+#endif
+
+#if defined(PYOS_OS2)
+#define close soclose
+#define NO_DUP /* Sockets are Not Actual File Handles under OS/2 */
 #define FORCE_ANSI_FUNC_DEFS
 #endif
 
@@ -198,6 +219,36 @@ PySocket_Err()
 	}
 	else
 #endif
+
+#if defined(PYOS_OS2)
+    if (sock_errno() != NO_ERROR) {
+        APIRET rc;
+        ULONG  msglen;
+        char   outbuf[100];
+        int    myerrorcode = sock_errno();
+
+        /* Retrieve Socket-Related Error Message from MPTN.MSG File */
+        rc = DosGetMessage(NULL, 0, outbuf, sizeof(outbuf),
+                           myerrorcode - SOCBASEERR + 26, "mptn.msg", &msglen);
+        if (rc == NO_ERROR) {
+            PyObject *v;
+
+            outbuf[msglen] = '\0'; /* OS/2 Doesn't Guarantee a Terminator */
+            if (strlen(outbuf) > 0) { /* If Non-Empty Msg, Trim CRLF */
+                char *lastc = &outbuf[ strlen(outbuf)-1 ];
+                while (lastc > outbuf && isspace(*lastc))
+                    *lastc-- = '\0'; /* Trim Trailing Whitespace (CRLF) */
+            }
+            v = Py_BuildValue("(is)", myerrorcode, outbuf);
+            if (v != NULL) {
+                PyErr_SetObject(PySocket_Error, v);
+                Py_DECREF(v);
+            }
+            return NULL;
+        }
+    }
+#endif
+
 	return PyErr_SetFromErrno(PySocket_Error);
 }
 
@@ -527,16 +578,21 @@ BUILD_FUNC_DEF_2(PySocketSock_setblocking,PySocketSockObject*,s,PyObject*,args)
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 #ifndef MS_WINDOWS
+#ifdef PYOS_OS2
+	block = !block;
+	ioctl(s->sock_fd, FIONBIO, (caddr_t)&block, sizeof(block));
+#else /* !PYOS_OS2 */
 	delay_flag = fcntl (s->sock_fd, F_GETFL, 0);
 	if (block)
 		delay_flag &= (~O_NDELAY);
 	else
 		delay_flag |= O_NDELAY;
 	fcntl (s->sock_fd, F_SETFL, delay_flag);
-#else
+#endif /* !PYOS_OS2 */
+#else /* MS_WINDOWS */
 	block = !block;
 	ioctlsocket(s->sock_fd, FIONBIO, (u_long*)&block);
-#endif
+#endif /* MS_WINDOWS */
 	Py_END_ALLOW_THREADS
 
 	Py_INCREF(Py_None);
@@ -883,7 +939,11 @@ BUILD_FUNC_DEF_2(PySocketSock_recvfrom,PySocketSockObject *,s, PyObject *,args)
 	Py_BEGIN_ALLOW_THREADS
 	n = recvfrom(s->sock_fd, PyString_AsString(buf), len, flags,
 #ifndef MS_WINDOWS
+   #if defined(PYOS_OS2)
+		     (struct sockaddr *)addrbuf, &addrlen
+   #else
 		     (ANY *)addrbuf, &addrlen
+   #endif
 #else
 		     (struct sockaddr *)addrbuf, &addrlen
 #endif
@@ -1388,22 +1448,57 @@ NTinit()
 
 #endif /* MS_WINDOWS */
 
+#if defined(PYOS_OS2)
+
+/* Additional initialization and cleanup for OS/2 */
+
+static void
+OS2cleanup()
+{
+    /* No cleanup is necessary for OS/2 Sockets */
+}
+
+static int
+OS2init()
+{
+    char reason[64];
+    int rc = sock_init();
+
+    if (rc == 0) {
+		atexit(OS2cleanup);
+        return 1; // Indicate Success
+    }
+
+    sprintf(reason, "OS/2 TCP/IP Error# %d", sock_errno());
+    PyErr_SetString(PyExc_ImportError, reason);
+
+	return 0;  // Indicate Failure
+}
+
+#endif /* PYOS_OS2 */
+
 
 /* Initialize this module.
-   This is called when the first 'import socket' is done,
-   via a table in config.c, if config.c is compiled with USE_SOCKET
-   defined.
-
-   For MS_WINDOWS (which means any Windows variant), this module
-   is actually called "_socket", and there's a wrapper "socket.py"
-   which implements some missing functionality (such as makefile(),
-   dup() and fromfd()).  The import of "_socket" may fail with an
-   ImportError exception if initialization of WINSOCK fails.  When
-   WINSOCK is initialized succesfully, a call to WSACleanup() is
-   scheduled to be made at exit time.  */
+ *   This is called when the first 'import socket' is done,
+ *   via a table in config.c, if config.c is compiled with USE_SOCKET
+ *   defined.
+ *
+ *   For MS_WINDOWS (which means any Windows variant), this module
+ *   is actually called "_socket", and there's a wrapper "socket.py"
+ *   which implements some missing functionality (such as makefile(),
+ *   dup() and fromfd()).  The import of "_socket" may fail with an
+ *   ImportError exception if initialization of WINSOCK fails.  When
+ *   WINSOCK is initialized succesfully, a call to WSACleanup() is
+ *   scheduled to be made at exit time.
+ *
+ *   For OS/2, this module is also called "_socket" and uses a wrapper
+ *   "socket.py" which implements that functionality that is missing
+ *   when PC operating systems don't put socket descriptors in the
+ *   operating system's filesystem layer.
+ */
 
 void
-#ifdef MS_WINDOWS
+#if defined(MS_WINDOWS) || defined(PYOS_OS2)
 init_socket()
 #else
 initsocket()
@@ -1415,7 +1510,13 @@ initsocket()
 		return;
 	m = Py_InitModule("_socket", PySocket_methods);
 #else
+  #if defined(__TOS_OS2__)
+	if (!OS2init())
+		return;
+	m = Py_InitModule("_socket", PySocket_methods);
+  #else
 	m = Py_InitModule("socket", PySocket_methods);
+  #endif
 #endif
 	d = PyModule_GetDict(m);
 	PySocket_Error = PyErr_NewException("socket.error", NULL, NULL);

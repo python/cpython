@@ -46,9 +46,15 @@ standardized by the C Standard and the POSIX standard (a thinly\n\
 disguised Unix interface).  Refer to the library manual and\n\
 corresponding Unix manual entries for more information on calls.";
 
-
-
 #include "Python.h"
+
+#if defined(PYOS_OS2)
+#define  INCL_DOS
+#define  INCL_DOSERRORS
+#define  INCL_DOSPROCESS
+#define  INCL_NOPMAPI
+#include <os2.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -68,6 +74,24 @@ corresponding Unix manual entries for more information on calls.";
 
 /* Various compilers have only certain posix functions */
 /* XXX Gosh I wish these were all moved into config.h */
+#if defined(PYCC_VACPP) && defined(PYOS_OS2)
+  #define HAVE_EXECV      1
+  #define HAVE_GETCWD     1
+  #define HAVE_SYSTEM     1
+  #define HAVE_WAIT       1
+  #define HAVE_KILL       1
+  #define HAVE_PIPE       1
+  #define HAVE_POPEN      1
+
+// #define HAVE_FORK       1
+// #define HAVE_GETEGID    1
+// #define HAVE_GETEUID    1
+// #define HAVE_GETGID     1
+// #define HAVE_GETPPID    1
+// #define HAVE_GETUID     1
+// #define HAVE_OPENDIR    1
+#include <process.h>
+#else
 #ifdef __WATCOMC__		/* Watcom compiler */
 #define HAVE_GETCWD     1
 #define HAVE_OPENDIR    1
@@ -121,6 +145,7 @@ corresponding Unix manual entries for more information on calls.";
 #endif  /* _MSC_VER */
 #endif  /* __BORLANDC__ */
 #endif  /* ! __WATCOMC__ */
+#endif /* ! __IBMC__ */
 
 #ifndef _MSC_VER
 
@@ -143,13 +168,22 @@ extern int pclose();
 extern int lstat();
 extern int symlink();
 #else /* !HAVE_UNISTD_H */
+#if defined(PYCC_VACPP)
+extern int mkdir Py_PROTO((char *));
+#else
 #if defined(__WATCOMC__) || defined(_MSC_VER)
 extern int mkdir Py_PROTO((const char *));
 #else
 extern int mkdir Py_PROTO((const char *, mode_t));
 #endif
+#endif
+#if defined(__IBMC__) || defined(__IBMCPP__)
+extern int chdir Py_PROTO((char *));
+extern int rmdir Py_PROTO((char *));
+#else
 extern int chdir Py_PROTO((const char *));
 extern int rmdir Py_PROTO((const char *));
+#endif
 extern int chmod Py_PROTO((const char *, mode_t));
 extern int chown Py_PROTO((const char *, uid_t, gid_t));
 extern char *getcwd Py_PROTO((char *, int));
@@ -310,7 +344,7 @@ posix_2str(args, func)
 	Py_BEGIN_ALLOW_THREADS
 	res = (*func)(path1, path2);
 	Py_END_ALLOW_THREADS
-	if (res < 0)
+	if (res != 0)
 		return posix_error();
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -480,7 +514,7 @@ posix_listdir(self, args)
 	PyObject *self;
 	PyObject *args;
 {
-	/* XXX Should redo this putting the three versions of opendir
+	/* XXX Should redo this putting the (now four) versions of opendir
 	   in separate files instead of having them all here... */
 #if defined(MS_WIN32) && !defined(HAVE_OPENDIR)
 
@@ -601,6 +635,78 @@ posix_listdir(self, args)
 	return d;
 
 #else
+#if defined(PYOS_OS2)
+
+#ifndef MAX_PATH
+#define MAX_PATH    CCHMAXPATH
+#endif
+    char *name, *pt;
+    int len;
+    PyObject *d, *v;
+    char namebuf[MAX_PATH+5];
+    HDIR  hdir = 1;
+    ULONG srchcnt = 1;
+    FILEFINDBUF3   ep;
+    APIRET rc;
+
+	if (!PyArg_Parse(args, "s#", &name, &len))
+        return NULL;
+    if (len >= MAX_PATH) {
+		PyErr_SetString(PyExc_ValueError, "path too long");
+        return NULL;
+    }
+    strcpy(namebuf, name);
+    for (pt = namebuf; *pt; pt++)
+        if (*pt == '/')
+            *pt = '\\';
+    if (namebuf[len-1] != '\\')
+        namebuf[len++] = '\\';
+    strcpy(namebuf + len, "*.*");
+
+	if ((d = PyList_New(0)) == NULL)
+        return NULL;
+
+    rc = DosFindFirst(namebuf,         // Wildcard Pattern to Match
+                      &hdir,           // Handle to Use While Search Directory
+                      FILE_READONLY | FILE_HIDDEN | FILE_SYSTEM | FILE_DIRECTORY,
+                      &ep, sizeof(ep), // Structure to Receive Directory Entry
+                      &srchcnt,        // Max and Actual Count of Entries Per Iteration
+                      FIL_STANDARD);   // Format of Entry (EAs or Not)
+
+    if (rc != NO_ERROR) {
+        errno = ENOENT;
+        return posix_error();
+    }
+
+    if (srchcnt > 0) { // If Directory is NOT Totally Empty,
+        do {
+            if (ep.achName[0] == '.'
+            && (ep.achName[1] == '\0' || ep.achName[1] == '.' && ep.achName[2] == '\0'))
+                continue; // Skip Over "." and ".." Names
+
+            strcpy(namebuf, ep.achName);
+
+            // Leave Case of Name Alone -- In Native Form
+            // (Removed Forced Lowercasing Code)
+
+            v = PyString_FromString(namebuf);
+            if (v == NULL) {
+                Py_DECREF(d);
+                d = NULL;
+                break;
+            }
+            if (PyList_Append(d, v) != 0) {
+                Py_DECREF(v);
+                Py_DECREF(d);
+                d = NULL;
+                break;
+            }
+            Py_DECREF(v);
+        } while (DosFindNext(hdir, &ep, sizeof(ep), &srchcnt) == NO_ERROR && srchcnt > 0);
+    }
+
+    return d;
+#else
 
 	char *name;
 	PyObject *d, *v;
@@ -642,6 +748,7 @@ posix_listdir(self, args)
 
 	return d;
 
+#endif /* !PYOS_OS2 */
 #endif /* !_MSC_VER */
 #endif /* !MS_WIN32 */
 }
@@ -661,7 +768,7 @@ posix_mkdir(self, args)
 	if (!PyArg_ParseTuple(args, "s|i", &path, &mode))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
-#if defined(__WATCOMC__) || defined(_MSC_VER)
+#if defined(__WATCOMC__) || defined(_MSC_VER) || defined(PYCC_VACPP)
 	res = mkdir(path);
 #else
 	res = mkdir(path, mode);
@@ -1246,8 +1353,23 @@ posix_kill(self, args)
 	int pid, sig;
 	if (!PyArg_Parse(args, "(ii)", &pid, &sig))
 		return NULL;
+#if defined(__TOS_OS2__)
+    if (sig == XCPT_SIGNAL_INTR || sig == XCPT_SIGNAL_BREAK) {
+        APIRET rc;
+        if ((rc = DosSendSignalException(pid, sig)) != NO_ERROR)
+            return posix_error();
+
+    } else if (sig == XCPT_SIGNAL_KILLPROC) {
+        APIRET rc;
+        if ((rc = DosKillProcess(DKP_PROCESS, pid)) != NO_ERROR)
+            return posix_error();
+
+    } else
+        return NULL; // Unrecognized Signal Requested
+#else
 	if (kill(pid, sig) == -1)
 		return posix_error();
+#endif
 	Py_INCREF(Py_None);
 	return Py_None;
 }
@@ -1284,6 +1406,108 @@ static char posix_popen__doc__[] =
 "popen(command [, mode='r' [, bufsize]]) -> pipe\n\
 Open a pipe to/from a command returning a file object.";
 
+#if defined(PYOS_OS2)
+int
+async_system(const char *command)
+{
+    char        *p, errormsg[256], args[1024];
+    RESULTCODES  rcodes;
+    APIRET       rc;
+    char        *shell = getenv("COMSPEC");
+    if (!shell)
+        shell = "cmd";
+
+    strcpy(args, shell);
+    p = &args[ strlen(args)+1 ];
+    strcpy(p, "/c ");
+    strcat(p, command);
+    p += strlen(p) + 1;
+    *p = '\0';
+
+    rc = DosExecPgm(errormsg, sizeof(errormsg),
+                    EXEC_ASYNC, // Execute Async w/o Wait for Results
+                    args,
+                    NULL,       // Inherit Parent's Environment
+                    &rcodes, shell);
+    return rc;
+}
+
+FILE *
+popen(const char *command, const char *mode, int pipesize)
+{
+    HFILE    rhan, whan;
+    FILE    *retfd = NULL;
+    APIRET   rc = DosCreatePipe(&rhan, &whan, pipesize);
+
+    if (rc != NO_ERROR)
+        return NULL; // ERROR - Unable to Create Anon Pipe
+
+    if (strchr(mode, 'r') != NULL) { // Treat Command as a Data Source
+        int oldfd = dup(1);      // Save STDOUT Handle in Another Handle
+
+        DosEnterCritSec();       // Stop Other Threads While Changing Handles
+        close(1);                // Make STDOUT Available for Reallocation
+
+        if (dup2(whan, 1) == 0) {      // Connect STDOUT to Pipe Write Side
+            DosClose(whan);            // Close Now-Unused Pipe Write Handle
+
+            if (async_system(command) == NO_ERROR)
+                retfd = fdopen(rhan, "rb"); // And Return Pipe Read Handle
+        }
+
+        dup2(oldfd, 1);          // Reconnect STDOUT to Original Handle
+        DosExitCritSec();        // Now Allow Other Threads to Run
+
+        close(oldfd);            // And Close Saved STDOUT Handle
+        return retfd;            // Return fd of Pipe or NULL if Error
+
+    } else if (strchr(mode, 'w')) { // Treat Command as a Data Sink
+        int oldfd = dup(0);      // Save STDIN Handle in Another Handle
+
+        DosEnterCritSec();       // Stop Other Threads While Changing Handles
+        close(0);                // Make STDIN Available for Reallocation
+
+        if (dup2(rhan, 0) == 0)     { // Connect STDIN to Pipe Read Side
+            DosClose(rhan);           // Close Now-Unused Pipe Read Handle
+
+            if (async_system(command) == NO_ERROR)
+                retfd = fdopen(whan, "wb"); // And Return Pipe Write Handle
+        }
+
+        dup2(oldfd, 0);          // Reconnect STDIN to Original Handle
+        DosExitCritSec();        // Now Allow Other Threads to Run
+
+        close(oldfd);            // And Close Saved STDIN Handle
+        return retfd;            // Return fd of Pipe or NULL if Error
+
+    } else
+        return NULL; // ERROR - Invalid Mode (Neither Read nor Write)
+}
+
+static PyObject *
+posix_popen(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *name;
+	char *mode = "r";
+	int   bufsize = -1;
+	FILE *fp;
+	PyObject *f;
+	if (!PyArg_ParseTuple(args, "s|si", &name, &mode, &bufsize))
+		return NULL;
+	Py_BEGIN_ALLOW_THREADS
+	fp = popen(name, mode, (bufsize > 0) ? bufsize : 4096);
+	Py_END_ALLOW_THREADS
+	if (fp == NULL)
+		return posix_error();
+	f = PyFile_FromFile(fp, name, mode, fclose);
+	if (f != NULL)
+		PyFile_SetBufSize(f, bufsize);
+	return f;
+}
+
+#else
 static PyObject *
 posix_popen(self, args)
 	PyObject *self;
@@ -1306,6 +1530,8 @@ posix_popen(self, args)
 		PyFile_SetBufSize(f, bufsize);
 	return f;
 }
+#endif
+
 #endif /* HAVE_POPEN */
 
 
@@ -1840,6 +2066,21 @@ posix_pipe(self, args)
 	PyObject *self;
 	PyObject *args;
 {
+#if defined(PYOS_OS2)
+    HFILE read, write;
+    APIRET rc;
+
+    if (!PyArg_Parse(args, ""))
+        return NULL;
+
+	Py_BEGIN_ALLOW_THREADS
+    rc = DosCreatePipe( &read, &write, 4096);
+	Py_END_ALLOW_THREADS
+    if (rc != NO_ERROR)
+        return posix_error();
+
+    return Py_BuildValue("(ii)", read, write);
+#else
 #if !defined(MS_WIN32)
 	int fds[2];
 	int res;
@@ -1863,6 +2104,7 @@ posix_pipe(self, args)
 		return posix_error();
 	return Py_BuildValue("(ii)", read, write);
 #endif /* MS_WIN32 */
+#endif
 }
 #endif  /* HAVE_PIPE */
 
@@ -2259,8 +2501,13 @@ all_ins(d)
 #define INITFUNC initnt
 #define MODNAME "nt"
 #else
+#if defined(PYOS_OS2)
+#define INITFUNC initos2
+#define MODNAME "os2"
+#else
 #define INITFUNC initposix
 #define MODNAME "posix"
+#endif
 #endif
 
 void

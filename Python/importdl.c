@@ -47,6 +47,7 @@ PERFORMANCE OF THIS SOFTWARE.
    _AIX		-- AIX style dynamic linking
    MS_WIN32	-- Windows NT style dynamic linking (using DLLs)
    MS_WIN16	-- Windows 16-bit dynamic linking (using DLLs)
+   PYOS_OS2 -- IBM OS/2 dynamic linking (using DLLs)
    _DL_FUNCPTR_DEFINED	-- if the typedef dl_funcptr has been defined
    USE_MAC_DYNAMIC_LOADING -- Mac CFM shared libraries
    SHORT_EXT	-- short extension for dynamic module, e.g. ".so"
@@ -75,6 +76,17 @@ typedef void (*dl_funcptr)();
 #define SHORT_EXT ".sl"
 #define LONG_EXT "module.sl"
 #endif 
+
+#if defined(PYOS_OS2)
+#define DYNAMIC_LINK
+#define  INCL_DOSERRORS
+#define  INCL_DOSMODULEMGR
+#include <os2.h>
+typedef int (* APIENTRY dl_funcptr)();
+#define _DL_FUNCPTR_DEFINED 1
+#define SHORT_EXT ".pyd"
+#define LONG_EXT ".dll"
+#endif
 
 #if defined(__NetBSD__)
 #define DYNAMIC_LINK
@@ -458,6 +470,32 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		p = GetProcAddress(hDLL, funcname);
 	}
 #endif /* MS_WIN16 */
+
+#if defined(PYOS_OS2)
+	{
+		APIRET  rc;
+		HMODULE hDLL;
+        char failreason[256];
+
+		rc = DosLoadModule(failreason,
+                           sizeof(failreason),
+                           pathname,
+                           &hDLL);
+
+		if (rc != NO_ERROR) {
+			char errBuf[256];
+			sprintf(errBuf,
+				"DLL load failed, rc = %d, problem '%s': %s", rc, failreason);
+			PyErr_SetString(PyExc_ImportError, errBuf);
+			return NULL;
+		}
+
+        rc = DosQueryProcAddr(hDLL, 0L, funcname, &p);
+        if (rc != NO_ERROR)
+            p = NULL; /* Signify Failure to Acquire Entrypoint */
+	}
+#endif /* PYOS_OS2 */
+
 #ifdef USE_DL
 	p =  dl_loadmod(Py_GetProgramName(), pathname, funcname);
 #endif /* USE_DL */

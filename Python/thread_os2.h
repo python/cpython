@@ -56,7 +56,7 @@ int start_new_thread(void (*func)(void *), void *arg)
   int aThread;
   int success = 1;
 
-  aThread = _beginthread(func,4096,arg);
+  aThread = _beginthread(func,NULL,65536,arg);
 
   if( aThread == -1 ) {
     success = 0;
@@ -210,7 +210,7 @@ void free_sema(type_sema aSemaphore)
 
 }
 
-void down_sema(type_sema aSemaphore, int waitflag)
+int down_sema(type_sema aSemaphore, int waitflag)
 {
   return -1;
 }

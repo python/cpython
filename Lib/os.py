@@ -59,6 +59,18 @@ elif 'dos' in _names:
 	import dospath
 	path = dospath
 	del dospath
+elif 'os2' in _names:
+	name = 'os2'
+	curdir = '.'; pardir = '..'; sep = '\\'; pathsep = ';'
+	defpath = '.;C:\\bin'
+	from os2 import *
+	try:
+		from os2 import _exit
+	except ImportError:
+		pass
+	import ntpath
+	path = ntpath
+	del ntpath
 elif 'mac' in _names:
 	name = 'mac'
 	curdir = ':'; pardir = '::'; sep = ':'; pathsep = '\n'
