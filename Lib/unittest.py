@@ -277,7 +277,8 @@ class TestCase:
         finally:
             result.stopTest(self)
 
-    __call__ = run
+    def __call__(self, *args, **kwds):
+        return self.run(*args, **kwds)
 
     def debug(self):
         """Run the test without collecting errors in a TestResult"""
@@ -417,14 +418,14 @@ class TestSuite:
             self.addTest(test)
 
     def run(self, result):
-        return self(result)
-
-    def __call__(self, result):
         for test in self._tests:
             if result.shouldStop:
                 break
             test(result)
         return result
+
+    def __call__(self, *args, **kwds):
+        return self.run(*args, **kwds)
 
     def debug(self):
         """Run the tests without collecting errors in a TestResult"""
