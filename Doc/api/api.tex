@@ -2178,6 +2178,255 @@ no methods.
 \end{cvardesc}
 
 
+\section{Numeric Objects \label{numericObjects}}
+
+\obindex{numeric}
+
+
+\subsection{Plain Integer Objects \label{intObjects}}
+
+\obindex{integer}
+\begin{ctypedesc}{PyIntObject}
+This subtype of \ctype{PyObject} represents a Python integer object.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyInt_Type}
+This instance of \ctype{PyTypeObject} represents the Python plain 
+integer type.  This is the same object as \code{types.IntType}.
+\withsubitem{(in modules types)}{\ttindex{IntType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyInt_Check}{PyObject* o}
+Returns true if \var{o} is of type \cdata{PyInt_Type}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
+Creates a new integer object with a value of \var{ival}.
+
+The current implementation keeps an array of integer objects for all
+integers between \code{-1} and \code{100}, when you create an int in
+that range you actually just get back a reference to the existing
+object. So it should be possible to change the value of \code{1}. I
+suspect the behaviour of Python in this case is undefined. :-)
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyInt_AsLong}{PyObject *io}
+Will first attempt to cast the object to a \ctype{PyIntObject}, if
+it is not already one, and then return its value.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyObject *io}
+Returns the value of the object \var{io}.  No error checking is
+performed.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyInt_GetMax}{}
+Returns the system's idea of the largest integer it can handle
+(\constant{LONG_MAX}\ttindex{LONG_MAX}, as defined in the system
+header files).
+\end{cfuncdesc}
+
+
+\subsection{Long Integer Objects \label{longObjects}}
+
+\obindex{long integer}
+\begin{ctypedesc}{PyLongObject}
+This subtype of \ctype{PyObject} represents a Python long integer
+object.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyLong_Type}
+This instance of \ctype{PyTypeObject} represents the Python long
+integer type.  This is the same object as \code{types.LongType}.
+\withsubitem{(in modules types)}{\ttindex{LongType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyLong_Check}{PyObject *p}
+Returns true if its argument is a \ctype{PyLongObject}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
+Returns a new \ctype{PyLongObject} object from \var{v}, or \NULL{} on
+failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLong}{unsigned long v}
+Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
+long}, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
+Returns a new \ctype{PyLongObject} object from the integer part of
+\var{v}, or \NULL{} on failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
+Returns a C \ctype{long} representation of the contents of
+\var{pylong}.  If \var{pylong} is greater than
+\constant{LONG_MAX}\ttindex{LONG_MAX}, an \exception{OverflowError} is
+raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
+Returns a C \ctype{unsigned long} representation of the contents of 
+\var{pylong}.  If \var{pylong} is greater than
+\constant{ULONG_MAX}\ttindex{ULONG_MAX}, an \exception{OverflowError}
+is raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
+Returns a C \ctype{double} representation of the contents of \var{pylong}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
+                                                int base}
+Return a new \ctype{PyLongObject} based on the string value in
+\var{str}, which is interpreted according to the radix in \var{base}.
+If \var{pend} is non-\NULL, \code{*\var{pend}} will point to the first 
+character in \var{str} which follows the representation of the
+number.  If \var{base} is \code{0}, the radix will be determined base
+on the leading characters of \var{str}: if \var{str} starts with
+\code{'0x'} or \code{'0X'}, radix 16 will be used; if \var{str} starts 
+with \code{'0'}, radix 8 will be used; otherwise radix 10 will be
+used.  If \var{base} is not \code{0}, it must be between \code{2} and
+\code{36}, inclusive.  Leading spaces are ignored.  If there are no
+digits, \exception{ValueError} will be raised.
+\end{cfuncdesc}
+
+
+\subsection{Floating Point Objects \label{floatObjects}}
+
+\obindex{floating point}
+\begin{ctypedesc}{PyFloatObject}
+This subtype of \ctype{PyObject} represents a Python floating point
+object.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyFloat_Type}
+This instance of \ctype{PyTypeObject} represents the Python floating
+point type.  This is the same object as \code{types.FloatType}.
+\withsubitem{(in modules types)}{\ttindex{FloatType}}
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyFloat_Check}{PyObject *p}
+Returns true if its argument is a \ctype{PyFloatObject}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
+Creates a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
+failure.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
+Returns a C \ctype{double} representation of the contents of \var{pyfloat}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
+Returns a C \ctype{double} representation of the contents of
+\var{pyfloat}, but without error checking.
+\end{cfuncdesc}
+
+
+\subsection{Complex Number Objects \label{complexObjects}}
+
+\obindex{complex number}
+Python's complex number objects are implemented as two distinct types
+when viewed from the C API:  one is the Python object exposed to
+Python programs, and the other is a C structure which represents the
+actual complex number value.  The API provides functions for working
+with both.
+
+\subsubsection{Complex Numbers as C Structures}
+
+Note that the functions which accept these structures as parameters
+and return them as results do so \emph{by value} rather than
+dereferencing them through pointers.  This is consistent throughout
+the API.
+
+\begin{ctypedesc}{Py_complex}
+The C structure which corresponds to the value portion of a Python
+complex number object.  Most of the functions for dealing with complex
+number objects use structures of this type as input or output values,
+as appropriate.  It is defined as:
+
+\begin{verbatim}
+typedef struct {
+   double real;
+   double imag;
+} Py_complex;
+\end{verbatim}
+\end{ctypedesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_sum}{Py_complex left, Py_complex right}
+Return the sum of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_diff}{Py_complex left, Py_complex right}
+Return the difference between two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_neg}{Py_complex complex}
+Return the negation of the complex number \var{complex}, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_prod}{Py_complex left, Py_complex right}
+Return the product of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_quot}{Py_complex dividend,
+                                          Py_complex divisor}
+Return the quotient of two complex numbers, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{_Py_c_pow}{Py_complex num, Py_complex exp}
+Return the exponentiation of \var{num} by \var{exp}, using the C
+\ctype{Py_complex} representation.
+\end{cfuncdesc}
+
+
+\subsubsection{Complex Numbers as Python Objects}
+
+\begin{ctypedesc}{PyComplexObject}
+This subtype of \ctype{PyObject} represents a Python complex number object.
+\end{ctypedesc}
+
+\begin{cvardesc}{PyTypeObject}{PyComplex_Type}
+This instance of \ctype{PyTypeObject} represents the Python complex 
+number type.
+\end{cvardesc}
+
+\begin{cfuncdesc}{int}{PyComplex_Check}{PyObject *p}
+Returns true if its argument is a \ctype{PyComplexObject}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyComplex_FromCComplex}{Py_complex v}
+Create a new Python complex number object from a C
+\ctype{Py_complex} value.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{PyObject*}{PyComplex_FromDoubles}{double real, double imag}
+Returns a new \ctype{PyComplexObject} object from \var{real} and \var{imag}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyComplex_RealAsDouble}{PyObject *op}
+Returns the real part of \var{op} as a C \ctype{double}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{double}{PyComplex_ImagAsDouble}{PyObject *op}
+Returns the imaginary part of \var{op} as a C \ctype{double}.
+\end{cfuncdesc}
+
+\begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
+Returns the \ctype{Py_complex} value of the complex number \var{op}.
+\end{cfuncdesc}
+
+
+
 \section{Sequence Objects \label{sequenceObjects}}
 
 \obindex{sequence}
@@ -3470,255 +3719,6 @@ while (PyDict_Next(self->dict, &pos, &key, &value)) {
 }
 \end{verbatim}
 \end{cfuncdesc}
-
-
-\section{Numeric Objects \label{numericObjects}}
-
-\obindex{numeric}
-
-
-\subsection{Plain Integer Objects \label{intObjects}}
-
-\obindex{integer}
-\begin{ctypedesc}{PyIntObject}
-This subtype of \ctype{PyObject} represents a Python integer object.
-\end{ctypedesc}
-
-\begin{cvardesc}{PyTypeObject}{PyInt_Type}
-This instance of \ctype{PyTypeObject} represents the Python plain 
-integer type.  This is the same object as \code{types.IntType}.
-\withsubitem{(in modules types)}{\ttindex{IntType}}
-\end{cvardesc}
-
-\begin{cfuncdesc}{int}{PyInt_Check}{PyObject* o}
-Returns true if \var{o} is of type \cdata{PyInt_Type}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
-Creates a new integer object with a value of \var{ival}.
-
-The current implementation keeps an array of integer objects for all
-integers between \code{-1} and \code{100}, when you create an int in
-that range you actually just get back a reference to the existing
-object. So it should be possible to change the value of \code{1}. I
-suspect the behaviour of Python in this case is undefined. :-)
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{long}{PyInt_AsLong}{PyObject *io}
-Will first attempt to cast the object to a \ctype{PyIntObject}, if
-it is not already one, and then return its value.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{long}{PyInt_AS_LONG}{PyObject *io}
-Returns the value of the object \var{io}.  No error checking is
-performed.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{long}{PyInt_GetMax}{}
-Returns the system's idea of the largest integer it can handle
-(\constant{LONG_MAX}\ttindex{LONG_MAX}, as defined in the system
-header files).
-\end{cfuncdesc}
-
-
-\subsection{Long Integer Objects \label{longObjects}}
-
-\obindex{long integer}
-\begin{ctypedesc}{PyLongObject}
-This subtype of \ctype{PyObject} represents a Python long integer
-object.
-\end{ctypedesc}
-
-\begin{cvardesc}{PyTypeObject}{PyLong_Type}
-This instance of \ctype{PyTypeObject} represents the Python long
-integer type.  This is the same object as \code{types.LongType}.
-\withsubitem{(in modules types)}{\ttindex{LongType}}
-\end{cvardesc}
-
-\begin{cfuncdesc}{int}{PyLong_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyLongObject}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromLong}{long v}
-Returns a new \ctype{PyLongObject} object from \var{v}, or \NULL{} on
-failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromUnsignedLong}{unsigned long v}
-Returns a new \ctype{PyLongObject} object from a C \ctype{unsigned
-long}, or \NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromDouble}{double v}
-Returns a new \ctype{PyLongObject} object from the integer part of
-\var{v}, or \NULL{} on failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{long}{PyLong_AsLong}{PyObject *pylong}
-Returns a C \ctype{long} representation of the contents of
-\var{pylong}.  If \var{pylong} is greater than
-\constant{LONG_MAX}\ttindex{LONG_MAX}, an \exception{OverflowError} is
-raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{unsigned long}{PyLong_AsUnsignedLong}{PyObject *pylong}
-Returns a C \ctype{unsigned long} representation of the contents of 
-\var{pylong}.  If \var{pylong} is greater than
-\constant{ULONG_MAX}\ttindex{ULONG_MAX}, an \exception{OverflowError}
-is raised.\withsubitem{(built-in exception)}{\ttindex{OverflowError}}
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{double}{PyLong_AsDouble}{PyObject *pylong}
-Returns a C \ctype{double} representation of the contents of \var{pylong}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyLong_FromString}{char *str, char **pend,
-                                                int base}
-Return a new \ctype{PyLongObject} based on the string value in
-\var{str}, which is interpreted according to the radix in \var{base}.
-If \var{pend} is non-\NULL, \code{*\var{pend}} will point to the first 
-character in \var{str} which follows the representation of the
-number.  If \var{base} is \code{0}, the radix will be determined base
-on the leading characters of \var{str}: if \var{str} starts with
-\code{'0x'} or \code{'0X'}, radix 16 will be used; if \var{str} starts 
-with \code{'0'}, radix 8 will be used; otherwise radix 10 will be
-used.  If \var{base} is not \code{0}, it must be between \code{2} and
-\code{36}, inclusive.  Leading spaces are ignored.  If there are no
-digits, \exception{ValueError} will be raised.
-\end{cfuncdesc}
-
-
-\subsection{Floating Point Objects \label{floatObjects}}
-
-\obindex{floating point}
-\begin{ctypedesc}{PyFloatObject}
-This subtype of \ctype{PyObject} represents a Python floating point
-object.
-\end{ctypedesc}
-
-\begin{cvardesc}{PyTypeObject}{PyFloat_Type}
-This instance of \ctype{PyTypeObject} represents the Python floating
-point type.  This is the same object as \code{types.FloatType}.
-\withsubitem{(in modules types)}{\ttindex{FloatType}}
-\end{cvardesc}
-
-\begin{cfuncdesc}{int}{PyFloat_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyFloatObject}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
-Creates a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
-failure.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{double}{PyFloat_AsDouble}{PyObject *pyfloat}
-Returns a C \ctype{double} representation of the contents of \var{pyfloat}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{double}{PyFloat_AS_DOUBLE}{PyObject *pyfloat}
-Returns a C \ctype{double} representation of the contents of
-\var{pyfloat}, but without error checking.
-\end{cfuncdesc}
-
-
-\subsection{Complex Number Objects \label{complexObjects}}
-
-\obindex{complex number}
-Python's complex number objects are implemented as two distinct types
-when viewed from the C API:  one is the Python object exposed to
-Python programs, and the other is a C structure which represents the
-actual complex number value.  The API provides functions for working
-with both.
-
-\subsubsection{Complex Numbers as C Structures}
-
-Note that the functions which accept these structures as parameters
-and return them as results do so \emph{by value} rather than
-dereferencing them through pointers.  This is consistent throughout
-the API.
-
-\begin{ctypedesc}{Py_complex}
-The C structure which corresponds to the value portion of a Python
-complex number object.  Most of the functions for dealing with complex
-number objects use structures of this type as input or output values,
-as appropriate.  It is defined as:
-
-\begin{verbatim}
-typedef struct {
-   double real;
-   double imag;
-} Py_complex;
-\end{verbatim}
-\end{ctypedesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_sum}{Py_complex left, Py_complex right}
-Return the sum of two complex numbers, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_diff}{Py_complex left, Py_complex right}
-Return the difference between two complex numbers, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_neg}{Py_complex complex}
-Return the negation of the complex number \var{complex}, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_prod}{Py_complex left, Py_complex right}
-Return the product of two complex numbers, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_quot}{Py_complex dividend,
-                                          Py_complex divisor}
-Return the quotient of two complex numbers, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{_Py_c_pow}{Py_complex num, Py_complex exp}
-Return the exponentiation of \var{num} by \var{exp}, using the C
-\ctype{Py_complex} representation.
-\end{cfuncdesc}
-
-
-\subsubsection{Complex Numbers as Python Objects}
-
-\begin{ctypedesc}{PyComplexObject}
-This subtype of \ctype{PyObject} represents a Python complex number object.
-\end{ctypedesc}
-
-\begin{cvardesc}{PyTypeObject}{PyComplex_Type}
-This instance of \ctype{PyTypeObject} represents the Python complex 
-number type.
-\end{cvardesc}
-
-\begin{cfuncdesc}{int}{PyComplex_Check}{PyObject *p}
-Returns true if its argument is a \ctype{PyComplexObject}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyComplex_FromCComplex}{Py_complex v}
-Create a new Python complex number object from a C
-\ctype{Py_complex} value.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{PyObject*}{PyComplex_FromDoubles}{double real, double imag}
-Returns a new \ctype{PyComplexObject} object from \var{real} and \var{imag}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{double}{PyComplex_RealAsDouble}{PyObject *op}
-Returns the real part of \var{op} as a C \ctype{double}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{double}{PyComplex_ImagAsDouble}{PyObject *op}
-Returns the imaginary part of \var{op} as a C \ctype{double}.
-\end{cfuncdesc}
-
-\begin{cfuncdesc}{Py_complex}{PyComplex_AsCComplex}{PyObject *op}
-Returns the \ctype{Py_complex} value of the complex number \var{op}.
-\end{cfuncdesc}
-
 
 
 \section{Other Objects \label{otherObjects}}
