@@ -133,14 +133,8 @@ module_getattr(m, name)
 	res = PyDict_GetItemString(m->md_dict, name);
 	if (res == NULL)
 		PyErr_SetString(PyExc_AttributeError, name);
-	else {
-#ifdef SUPPORT_OBSOLETE_ACCESS
-		if (PyAccess_Check(res))
-			res = PyAccess_AsValue(res, PyEval_GetGlobals());
-		else
-#endif
-			Py_INCREF(res);
-	}
+	else
+		Py_INCREF(res);
 	return res;
 }
 
@@ -150,19 +144,11 @@ module_setattr(m, name, v)
 	char *name;
 	PyObject *v;
 {
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	PyObject *ac;
-#endif
 	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
 		PyErr_SetString(PyExc_TypeError,
 				"read-only special attribute");
 		return -1;
 	}
-#ifdef SUPPORT_OBSOLETE_ACCESS
-	ac = PyDict_GetItemString(m->md_dict, name);
-	if (ac != NULL && PyAccess_Check(ac))
-		return PyAccess_SetValue(ac, PyEval_GetGlobals(), v);
-#endif
 	if (v == NULL) {
 		int rv = PyDict_DelItemString(m->md_dict, name);
 		if (rv < 0)
