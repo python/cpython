@@ -348,10 +348,6 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if the closedir function returns void instead of int.  */
 /* #undef VOID_CLOSEDIR */
 
-/* Define if your <unistd.h> contains bad prototypes for exec*()
-   (as it does on SGI IRIX 4.x) */
-/* #undef BAD_EXEC_PROTOTYPES */
-
 /* Define if getpgrp() must be called as getpgrp(0)
    and (consequently) setpgrp() as setpgrp(0, 0). */
 /* #undef GETPGRP_HAVE_ARGS */

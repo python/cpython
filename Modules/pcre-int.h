@@ -35,14 +35,6 @@ restrictions:
 modules, but which are not relevant to the outside. */
 
 
-/* To cope with SunOS4 and other systems that lack memmove() but have bcopy(),
-define a macro for memmove() if USE_BCOPY is defined. */
-
-#ifdef USE_BCOPY
-#undef  memmove        /* some systems may have a macro */
-#define memmove(a, b, c) bcopy(b, a, c)
-#endif
- 
 /* Standard C headers plus the external interface definition */
 
 #include <ctype.h>
