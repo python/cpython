@@ -963,9 +963,9 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     xmlparseobject *new_parser;
     int i;
 
-    if (!PyArg_ParseTuple(args, "s|s:ExternalEntityParserCreate", &context,
-			  &encoding)) {
-	    return NULL;
+    if (!PyArg_ParseTuple(args, "s|s:ExternalEntityParserCreate",
+                          &context, &encoding)) {
+        return NULL;
     }
 
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
@@ -1143,7 +1143,7 @@ newxmlparseobject(char *encoding, char *namespace_separator)
     self->specified_attributes = 0;
     self->in_callback = 0;
     self->handlers = NULL;
-    if (namespace_separator) {
+    if (namespace_separator != NULL) {
         self->itself = XML_ParserCreateNS(encoding, *namespace_separator);
     }
     else {
@@ -1186,8 +1186,11 @@ xmlparse_dealloc(xmlparseobject *self)
     self->itself = NULL;
 
     if (self->handlers != NULL) {
+        PyObject *temp;
         for (i = 0; handler_info[i].name != NULL; i++) {
-            Py_XDECREF(self->handlers[i]);
+            temp = self->handlers[i];
+            self->handlers[i] = NULL;
+            Py_XDECREF(temp);
         }
         free(self->handlers);
     }
@@ -1318,22 +1321,22 @@ xmlparse_setattr(xmlparseobject *self, char *name, PyObject *v)
 static int
 xmlparse_traverse(xmlparseobject *op, visitproc visit, void *arg)
 {
-	int i, err;
-	for (i = 0; handler_info[i].name != NULL; i++) {
-		if (!op->handlers[i])
-			continue;
-		err = visit(op->handlers[i], arg);
-		if (err)
-			return err;
-	}
-	return 0;
+    int i, err;
+    for (i = 0; handler_info[i].name != NULL; i++) {
+        if (!op->handlers[i])
+            continue;
+        err = visit(op->handlers[i], arg);
+        if (err)
+            return err;
+    }
+    return 0;
 }
 
 static int
 xmlparse_clear(xmlparseobject *op)
 {
-	clear_handlers(op, 1);
-	return 0;
+    clear_handlers(op, 1);
+    return 0;
 }
 #endif
 
@@ -1382,21 +1385,21 @@ Return a new XML parser object.";
 static PyObject *
 pyexpat_ParserCreate(PyObject *notused, PyObject *args, PyObject *kw)
 {
-	char *encoding = NULL;
-        char *namespace_separator = NULL;
-	static char *kwlist[] = {"encoding", "namespace_separator", NULL};
+    char *encoding = NULL;
+    char *namespace_separator = NULL;
+    static char *kwlist[] = {"encoding", "namespace_separator", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "|zz:ParserCreate", kwlist,
-					 &encoding, &namespace_separator))
-		return NULL;
-	if (namespace_separator != NULL
-	    && strlen(namespace_separator) != 1) {
-		PyErr_SetString(PyExc_ValueError,
-				"namespace_separator must be one character,"
-				" omitted, or None");
-		return NULL;
-	}
-	return newxmlparseobject(encoding, namespace_separator);
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|zz:ParserCreate", kwlist,
+                                     &encoding, &namespace_separator))
+        return NULL;
+    if (namespace_separator != NULL
+        && strlen(namespace_separator) > 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "namespace_separator must be at most one"
+                        " character, omitted, or None");
+        return NULL;
+    }
+    return newxmlparseobject(encoding, namespace_separator);
 }
 
 static char pyexpat_ErrorString__doc__[] =
@@ -1429,38 +1432,34 @@ static struct PyMethodDef pyexpat_methods[] = {
 static char pyexpat_module_documentation[] = 
 "Python wrapper for Expat parser.";
 
-/* Initialization function for the module */
-
-void initpyexpat(void);  /* avoid compiler warnings */
-
 #if PY_VERSION_HEX < 0x20000F0
 
 /* 1.5 compatibility: PyModule_AddObject */
 static int
 PyModule_AddObject(PyObject *m, char *name, PyObject *o)
 {
-	PyObject *dict;
-        if (!PyModule_Check(m) || o == NULL)
-                return -1;
-	dict = PyModule_GetDict(m);
-	if (dict == NULL)
-		return -1;
-        if (PyDict_SetItemString(dict, name, o))
-                return -1;
-        Py_DECREF(o);
-        return 0;
+    PyObject *dict;
+    if (!PyModule_Check(m) || o == NULL)
+        return -1;
+    dict = PyModule_GetDict(m);
+    if (dict == NULL)
+        return -1;
+    if (PyDict_SetItemString(dict, name, o))
+        return -1;
+    Py_DECREF(o);
+    return 0;
 }
 
 int 
 PyModule_AddIntConstant(PyObject *m, char *name, long value)
 {
-	return PyModule_AddObject(m, name, PyInt_FromLong(value));
+    return PyModule_AddObject(m, name, PyInt_FromLong(value));
 }
 
 static int 
 PyModule_AddStringConstant(PyObject *m, char *name, char *value)
 {
-	return PyModule_AddObject(m, name, PyString_FromString(value));
+    return PyModule_AddObject(m, name, PyString_FromString(value));
 }
 
 #endif
@@ -1486,11 +1485,23 @@ get_version_string(void)
     return PyString_FromStringAndSize(rev, i);
 }
 
+/* Initialization function for the module */
+
+#ifndef MODULE_NAME
+#define MODULE_NAME "pyexpat"
+#endif
+
+#ifndef MODULE_INITFUNC
+#define MODULE_INITFUNC initpyexpat
+#endif
+
+void MODULE_INITFUNC(void);  /* avoid compiler warnings */
+
 DL_EXPORT(void)
-initpyexpat(void)
+MODULE_INITFUNC(void)
 {
     PyObject *m, *d;
-    PyObject *errmod_name = PyString_FromString("pyexpat.errors");
+    PyObject *errmod_name = PyString_FromString(MODULE_NAME ".errors");
     PyObject *errors_module;
     PyObject *modelmod_name;
     PyObject *model_module;
@@ -1498,14 +1509,14 @@ initpyexpat(void)
 
     if (errmod_name == NULL)
         return;
-    modelmod_name = PyString_FromString("pyexpat.model");
+    modelmod_name = PyString_FromString(MODULE_NAME ".model");
     if (modelmod_name == NULL)
         return;
 
     Xmlparsetype.ob_type = &PyType_Type;
 
     /* Create the module and add the functions */
-    m = Py_InitModule3("pyexpat", pyexpat_methods,
+    m = Py_InitModule3(MODULE_NAME, pyexpat_methods,
                        pyexpat_module_documentation);
 
     /* Add some symbolic constants to the module */
@@ -1547,7 +1558,7 @@ initpyexpat(void)
     d = PyModule_GetDict(m);
     errors_module = PyDict_GetItem(d, errmod_name);
     if (errors_module == NULL) {
-        errors_module = PyModule_New("pyexpat.errors");
+        errors_module = PyModule_New(MODULE_NAME ".errors");
         if (errors_module != NULL) {
             PyDict_SetItem(sys_modules, errmod_name, errors_module);
             /* gives away the reference to errors_module */
@@ -1557,7 +1568,7 @@ initpyexpat(void)
     Py_DECREF(errmod_name);
     model_module = PyDict_GetItem(d, modelmod_name);
     if (model_module == NULL) {
-        model_module = PyModule_New("pyexpat.model");
+        model_module = PyModule_New(MODULE_NAME ".model");
         if (model_module != NULL) {
             PyDict_SetItem(sys_modules, modelmod_name, model_module);
             /* gives away the reference to model_module */
@@ -1632,15 +1643,18 @@ initpyexpat(void)
 static void
 clear_handlers(xmlparseobject *self, int decref)
 {
-	int i = 0;
+    int i = 0;
+    PyObject *temp;
 
-	for (; handler_info[i].name!=NULL; i++) {
-		if (decref){
-			Py_XDECREF(self->handlers[i]);
-		}
-		self->handlers[i]=NULL;
-		handler_info[i].setter(self->itself, NULL);
-	}
+    for (; handler_info[i].name!=NULL; i++) {
+        if (decref) {
+            temp = self->handlers[i];
+            self->handlers[i] = NULL;
+            Py_XDECREF(temp);
+        }
+        self->handlers[i]=NULL;
+        handler_info[i].setter(self->itself, NULL);
+    }
 }
 
 typedef void (*pairsetter)(XML_Parser, void *handler1, void *handler2);
@@ -1651,16 +1665,16 @@ pyxml_UpdatePairedHandlers(xmlparseobject *self,
                            int endHandler,
                            pairsetter setter)
 {
-    void *start_handler=NULL;
-    void *end_handler=NULL;
+    void *start_handler = NULL;
+    void *end_handler = NULL;
 
     if (self->handlers[startHandler]
-        && self->handlers[endHandler]!=Py_None) {
-        start_handler=handler_info[startHandler].handler;
+        && self->handlers[endHandler] != Py_None) {
+        start_handler = handler_info[startHandler].handler;
     }
     if (self->handlers[EndElement]
-        && self->handlers[EndElement] !=Py_None) {
-        end_handler=handler_info[endHandler].handler;
+        && self->handlers[EndElement] != Py_None) {
+        end_handler = handler_info[endHandler].handler;
     }
     setter(self->itself, start_handler, end_handler);
 }
