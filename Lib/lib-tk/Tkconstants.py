@@ -68,3 +68,9 @@ CHECKBUTTON='checkbutton'
 COMMAND='command'
 RADIOBUTTON='radiobutton'
 SEPARATOR='separator'
+
+# Selection modes for list boxes
+SINGLE='single'
+BROWSE='browse'
+MULTIPLE='multiple'
+EXTENDED='extended'
