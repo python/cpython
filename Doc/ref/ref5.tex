@@ -16,6 +16,7 @@ and no semantics are given, the semantics of this form of \code{name}
 are the same as for \code{othername}.
 \index{syntax}
 
+
 \section{Arithmetic conversions\label{conversions}}
 \indexii{arithmetic}{conversion}
 
@@ -53,6 +54,7 @@ categorized syntactically as atoms.  The syntax for atoms is:
 atom:      identifier | literal | enclosure
 enclosure: parenth_form|list_display|dict_display|string_conversion
 \end{verbatim}
+
 
 \subsection{Identifiers (Names)\label{atom-identifiers}}
 \index{name}
@@ -99,6 +101,7 @@ transformed name is extremely long (longer than 255 characters),
 implementation defined truncation may happen.  If the class name
 consists only of underscores, no transformation is done.
 
+
 \subsection{Literals\label{atom-literals}}
 \index{literal}
 
@@ -121,6 +124,7 @@ occurrence in the program text or a different occurrence) may obtain
 the same object or a different object with the same value.
 \indexiii{immutable}{data}{type}
 \indexii{immutable}{object}
+
 
 \subsection{Parenthesized forms\label{parenthesized}}
 \index{parenthesized form}
@@ -149,6 +153,7 @@ in expressions would cause ambiguities and allow common typos to
 pass uncaught.
 \index{comma}
 \indexii{tuple}{display}
+
 
 \subsection{List displays\label{lists}}
 \indexii{list}{display}
@@ -181,6 +186,7 @@ each time the innermost block is reached.
 \obindex{list}
 \indexii{empty}{list}
 
+
 \subsection{Dictionary displays\label{dict}}
 \indexii{dictionary}{display}
 
@@ -209,6 +215,7 @@ which excludes all mutable objects.)  Clashes between duplicate keys
 are not detected; the last datum (textually rightmost in the display)
 stored for a given key value prevails.
 \indexii{immutable}{object}
+
 
 \subsection{String conversions\label{string-conversions}}
 \indexii{string}{conversion}
@@ -249,6 +256,7 @@ similar but more user-friendly conversion.
 \bifuncindex{repr}
 \bifuncindex{str}
 
+
 \section{Primaries\label{primaries}}
 \index{primary}
 
@@ -258,6 +266,7 @@ Their syntax is:
 \begin{verbatim}
 primary:        atom | attributeref | subscription | slicing | call
 \end{verbatim}
+
 
 \subsection{Attribute references\label{attribute-references}}
 \indexii{attribute}{reference}
@@ -278,6 +287,7 @@ the object.  Multiple evaluations of the same attribute reference may
 yield different objects.
 \obindex{module}
 \obindex{list}
+
 
 \subsection{Subscriptions\label{subscriptions}}
 \index{subscription}
@@ -315,6 +325,7 @@ A string's items are characters.  A character is not a separate data
 type but a string of exactly one character.
 \index{character}
 \indexii{string}{item}
+
 
 \subsection{Slicings\label{slicings}}
 \index{slicing}
@@ -381,6 +392,7 @@ stride, respectively, substituting \code{None} for missing
 expressions.
 \withsubitem{(slice object attribute)}{\ttindex{start}
   \ttindex{stop}\ttindex{step}}
+
 
 \subsection{Calls\label{calls}}
 \index{call}
@@ -556,6 +568,7 @@ In all three cases, if the argument does not have the proper type,
 a \exception{TypeError} exception is raised.
 \exindex{TypeError}
 
+
 \section{Binary arithmetic operations\label{binary}}
 \indexiii{binary}{arithmetic}{operation}
 
@@ -626,6 +639,7 @@ arguments.  The numeric arguments are first converted to a common
 type.
 \index{subtraction}
 
+
 \section{Shifting operations\label{shifting}}
 \indexii{shifting}{operation}
 
@@ -649,6 +663,7 @@ the sign if the result is not less than \code{pow(2,31)} in absolute
 value.  Negative shift counts raise a \exception{ValueError}
 exception.
 \exindex{ValueError}
+
 
 \section{Binary bit-wise operations\label{bitwise}}
 \indexiii{binary}{bit-wise}{operation}
@@ -677,6 +692,7 @@ arguments, which must be plain or long integers.  The arguments are
 converted to a common type.
 \indexii{bit-wise}{or}
 \indexii{inclusive}{or}
+
 
 \section{Comparisons\label{comparisons}}
 \index{comparison}
@@ -807,6 +823,7 @@ truth value.
 \opindex{is}
 \opindex{is not}
 \indexii{identity}{test}
+
 
 \section{Boolean operations\label{Booleans}}
 \indexii{Boolean}{operation}

@@ -6,6 +6,7 @@ typed in interactively, from a module source file, etc.  This chapter
 gives the syntax used in these cases.
 \index{interpreter}
 
+
 \section{Complete Python programs\label{programs}}
 \index{program}
 
@@ -43,6 +44,7 @@ program.
 \index{command line}
 \index{standard input}
 
+
 \section{File input\label{file-input}}
 
 All input read from non-interactive files has the same form:
@@ -63,6 +65,7 @@ This syntax is used in the following situations:
 
 \end{itemize}
 
+
 \section{Interactive input\label{interactive}}
 
 Input in interactive mode is parsed using the following grammar:
@@ -74,6 +77,7 @@ interactive_input: [stmt_list] NEWLINE | compound_stmt NEWLINE
 Note that a (top-level) compound statement must be followed by a blank
 line in interactive mode; this is needed to help the parser detect the
 end of the input.
+
 
 \section{Expression input\label{expression-input}}
 \index{input}
