@@ -1,4 +1,4 @@
-#! /usr/local/python
+#! /usr/local/bin/python
 
 # Call ibrowse (the info file browser) under UNIX.
 
