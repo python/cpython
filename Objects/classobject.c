@@ -324,6 +324,8 @@ instance_length(inst)
 		return -1;
 	res = call_object(func, (object *)NULL);
 	DECREF(func);
+	if (res == NULL)
+		return -1;
 	if (is_intobject(res)) {
 		outcome = getintvalue(res);
 		if (outcome < 0)
