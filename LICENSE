@@ -19,10 +19,8 @@ have worked under Guido's direction to make this release possible.
 BEOPEN.COM TERMS AND CONDITIONS FOR PYTHON 2.0
 ==============================================
 
-BEOPEN PYTHON LICENSE AGREEMENT
--------------------------------
-
-BEOPEN OPEN SOURCE LICENSE AGREEMENT
+BEOPEN OPEN SOURCE PYTHON LICENSE AGREEMENT VERSION 1
+-----------------------------------------------------
 
 1. This LICENSE AGREEMENT is between BeOpen.com ("BeOpen"), having an
 office at 160 Saratoga Avenue, Santa Clara, CA 95051, and the
@@ -64,9 +62,9 @@ respects by the law of the State of California, excluding conflict of
 law provisions.  Nothing in this License Agreement shall be deemed to
 create any relationship of agency, partnership, or joint venture
 between BeOpen and Licensee.  This License Agreement does not grant
-permission to use BeOpen trademarks or trade name in a trademark sense
-to endorse or promote products or services of Licensee, or any third
-party.  As an exception, the "BeOpen Python" logos available at
+permission to use BeOpen trademarks or trade names in a trademark
+sense to endorse or promote products or services of Licensee, or any
+third party.  As an exception, the "BeOpen Python" logos available at
 http://www.pythonlabs.com/logos.html may be used according to the
 permissions granted on that web page.
 
