@@ -146,6 +146,8 @@ ALLHTMLFILES=$(INDEXFILES) html/index.html html/modindex.html html/acks.html
 
 COMMONPERL= perl/manual.perl perl/python.perl perl/l2hinit.perl
 
+ANNOAPI=api/refcounts.dat tools/anno-api.py
+
 include Makefile.deps
 
 # These must be declared phony since there
@@ -173,14 +175,44 @@ world:	ps pdf html distfiles
 
 # Targets for each document:
 # Python/C API Reference Manual
-paper-$(PAPER)/api.dvi: paper-$(PAPER)/api.tex $(APIFILES)
+paper-$(PAPER)/api.dvi: $(ANNOAPIFILES)
 	cd paper-$(PAPER) && $(MKDVI) api.tex
 
-paper-$(PAPER)/api.pdf: paper-$(PAPER)/api.tex $(APIFILES)
+paper-$(PAPER)/api.pdf: $(ANNOAPIFILES)
 	cd paper-$(PAPER) && $(MKPDF) api.tex
 
-paper-$(PAPER)/api.tex: api/api.tex api/refcounts.dat tools/anno-api.py
+paper-$(PAPER)/api.tex: api/api.tex $(ANNOAPI)
 	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/api.tex
+
+paper-$(PAPER)/abstract.tex: api/abstract.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/abstract.tex
+
+paper-$(PAPER)/concrete.tex: api/concrete.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/concrete.tex
+
+paper-$(PAPER)/exceptions.tex: api/exceptions.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/exceptions.tex
+
+paper-$(PAPER)/init.tex: api/init.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/init.tex
+
+paper-$(PAPER)/intro.tex: api/intro.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/intro.tex
+
+paper-$(PAPER)/memory.tex: api/memory.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/memory.tex
+
+paper-$(PAPER)/newtypes.tex: api/newtypes.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/newtypes.tex
+
+paper-$(PAPER)/refcounting.tex: api/refcounting.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/refcounting.tex
+
+paper-$(PAPER)/utilities.tex: api/utilities.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/utilities.tex
+
+paper-$(PAPER)/veryhigh.tex: api/veryhigh.tex $(ANNOAPI)
+	$(PYTHON) $(TOOLSDIR)/anno-api.py -o $@ api/veryhigh.tex
 
 # Distributing Python Modules
 paper-$(PAPER)/dist.dvi: $(DISTFILES)
