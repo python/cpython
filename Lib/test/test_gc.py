@@ -3,7 +3,6 @@ import gc
 def test_list():
     l = []
     l.append(l)
-    print 'list 0x%x' % id(l)
     gc.collect()
     del l
     assert gc.collect() == 1
@@ -11,7 +10,6 @@ def test_list():
 def test_dict():
     d = {}
     d[1] = d
-    print 'dict 0x%x' % id(d)
     gc.collect()
     del d
     assert gc.collect() == 1
@@ -20,8 +18,6 @@ def test_tuple():
     l = []
     t = (l,)
     l.append(t)
-    print 'list 0x%x' % id(l)
-    print 'tuple 0x%x' % id(t)
     gc.collect()
     del t
     del l
@@ -31,7 +27,6 @@ def test_class():
     class A:
         pass
     A.a = A
-    print 'class 0x%x' % id(A)
     gc.collect()
     del A
     assert gc.collect() > 0
@@ -41,7 +36,6 @@ def test_instance():
         pass
     a = A()
     a.a = a
-    print repr(a)
     gc.collect()
     del a
     assert gc.collect() > 0
@@ -65,8 +59,6 @@ def test_finalizer():
     id_a = id(a)
     b = B()
     b.b = b
-    print 'a', repr(a)
-    print 'b', repr(b)
     gc.collect()
     gc.garbage[:] = []
     del a
@@ -77,16 +69,12 @@ def test_finalizer():
 def test_function():
     d = {}
     exec("def f(): pass\n") in d
-    print 'dict 0x%x' % id(d)
-    print 'func 0x%x' % id(d['f'])
     gc.collect()
     del d
     assert gc.collect() == 2
 
 
 def test_all():
-    debug = gc.get_debug()
-    gc.set_debug(gc.DEBUG_LEAK | gc.DEBUG_STATS)
     test_list()
     test_dict()
     test_tuple()
@@ -95,6 +83,5 @@ def test_all():
     test_method()
     test_finalizer()
     test_function()
-    gc.set_debug(debug)
 
 test_all()
