@@ -93,7 +93,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.2.0.1"
+#define PY_BSDDB_VERSION "4.2.0.2"
 static char *rcs_id = "$Id$";
 
 
@@ -2372,7 +2372,7 @@ DB_has_key(DBObject* self, PyObject* args)
     data.flags = DB_DBT_USERMEM;
 
     MYDB_BEGIN_ALLOW_THREADS;
-    err = self->db->get(self->db, NULL, &key, &data, 0);
+    err = self->db->get(self->db, txn, &key, &data, 0);
     MYDB_END_ALLOW_THREADS;
     FREE_DBT(key);
     return PyInt_FromLong((err == ENOMEM) || (err == 0));
@@ -2849,7 +2849,15 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                                    data.data, data.size);
             break;
         }
-        FREE_DBT(key);
+        if (_DB_get_type(self->mydb) == DB_BTREE) {
+            /* the only time a malloced key is returned is when we
+             * call this on a BTree database because it performs
+             * partial matching and needs to return the real key.
+             * All others leave key untouched [where calling free()
+             * on it would often segfault].
+             */
+            FREE_DBT(key);
+        }
         FREE_DBT(data);
     }
 
