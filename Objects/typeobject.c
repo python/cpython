@@ -90,7 +90,8 @@ type_get_doc(PyTypeObject *type, void *context)
 		Py_INCREF(result);
 	}
 	else if (result->ob_type->tp_descr_get) {
-		result = result->ob_type->tp_descr_get(result, NULL, type);
+		result = result->ob_type->tp_descr_get(result, NULL,
+						       (PyObject *)type);
 	}
 	else {
 		Py_INCREF(result);
