@@ -102,7 +102,7 @@ handle XML-RPC requests sent to Python CGI scripts.
 
 \begin{methoddesc}{register_function}{function\optional{, name}}
 Register a function that can respond to XML-RPC requests. If 
-\var{name] is given, it will be the method name associated with 
+\var{name} is given, it will be the method name associated with 
 function, otherwise \var{function.__name__} will be used. \var{name}
 can be either a normal or Unicode string, and may contain 
 characters not legal in Python identifiers, including the period
@@ -115,7 +115,7 @@ which have not been registered using \method{register_function()}. If
 instance contains a \method{_dispatch()} method, it is called with the 
 requested method name and the parameters from the 
 request; the return value is returned to the client as the result.
-If instance does not have a \methode{_dispatch()} method, it is searched 
+If instance does not have a \method{_dispatch()} method, it is searched 
 for an attribute matching the name of the requested method; if 
 the requested method name contains periods, each 
 component of the method name is searched for individually, 
