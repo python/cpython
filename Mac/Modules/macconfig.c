@@ -167,6 +167,7 @@ extern void init_hotshot();
 extern void initpyexpat();
 #endif
 extern void initgc();
+extern void init_random();
 
 extern void initcPickle();
 extern void initcStringIO();
@@ -175,6 +176,7 @@ extern void initsha();
 extern void init_locale();
 extern void init_sre();
 extern void initxreadlines();
+extern void initzipimport();
 /* -- ADDMODULE MARKER 1 -- */
 
 extern void PyMarshal_Init();
@@ -292,11 +294,13 @@ struct _inittab _PyImport_Inittab[] = {
 	{"pyexpat", initpyexpat},
 #endif
 	{"gc", initgc},
+	{"_random", init_random},
 	{"cPickle",	initcPickle},
 	{"cStringIO",	initcStringIO},
 	{"_locale", init_locale},
 	{"_sre", init_sre},
 	{"xreadlines", initxreadlines},
+	{"zipimport", initzipimport},
 /* -- ADDMODULE MARKER 2 -- */
 
 	/* This module "lives in" with marshal.c */
