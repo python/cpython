@@ -1,15 +1,14 @@
-\section{Built-in Module \sectcode{imgfile}}
+\section{Built-in Module \module{imgfile}}
 \label{module-imgfile}
 \bimodindex{imgfile}
 
-The imgfile module allows python programs to access SGI imglib image
+The \module{imgfile} module allows Python programs to access SGI imglib image
 files (also known as \file{.rgb} files).  The module is far from
 complete, but is provided anyway since the functionality that there is
 is enough in some cases.  Currently, colormap files are not supported.
 
 The module defines the following variables and functions:
 
-\setindexsubitem{(in module imgfile)}
 \begin{excdesc}{error}
 This exception is raised on all errors, such as unsupported file type, etc.
 \end{excdesc}
@@ -24,9 +23,9 @@ are currently supported.
 
 \begin{funcdesc}{read}{file}
 This function reads and decodes the image on the specified file, and
-returns it as a python string. The string has either 1 byte greyscale
+returns it as a Python string. The string has either 1 byte greyscale
 pixels or 4 byte RGBA pixels. The bottom left pixel is the first in
-the string. This format is suitable to pass to \code{gl.lrectwrite},
+the string. This format is suitable to pass to \function{gl.lrectwrite()},
 for instance.
 \end{funcdesc}
 
