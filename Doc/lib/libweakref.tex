@@ -226,28 +226,26 @@ PyTypeObject PyInstance_Type = {
     0,
     "instance",
 
-    /* lots of stuff omitted for brevity */
+    /* Lots of stuff omitted for brevity... */
 
     offsetof(PyInstanceObject, in_weakreflist) /* tp_weaklistoffset */
 };
 \end{verbatim}
 
 The only further addition is that the destructor needs to call the
-weak reference manager to clear any weak references and return if the
-object has been resurrected.  This needs to occur before any other
-parts of the destruction have occurred:
+weak reference manager to clear any weak references.  This should be
+done before any other parts of the destruction have occurred:
 
 \begin{verbatim}
 static void
 instance_dealloc(PyInstanceObject *inst)
 {
-    /* allocate tempories if needed, but do not begin
-       destruction here
+    /* Allocate tempories if needed, but do not begin
+       destruction just yet.
      */
 
-    if (!PyObject_ClearWeakRefs((PyObject *) inst))
-        return;
+    PyObject_ClearWeakRefs((PyObject *) inst);
 
-    /* proceed with object destuction normally */
+    /* Proceed with object destuction normally. */
 }
 \end{verbatim}
