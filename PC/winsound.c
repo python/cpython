@@ -218,7 +218,7 @@ initwinsound(void)
 
 	version.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&version);
-        whichOS = Win9X;
+	whichOS = Win9X;
 	if (version.dwPlatformId != VER_PLATFORM_WIN32s &&
 	    version.dwPlatformId != VER_PLATFORM_WIN32_WINDOWS)
 		whichOS = WinNT2000;
