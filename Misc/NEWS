@@ -12,6 +12,15 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- list.sort() now supports three keyword arguments:  cmp, key, and reverse.
+  The key argument can be a function of one argument that extracts a
+  comparison key from the original record:  mylist.sort(key=str.lower).
+  The reverse argument is a boolean value and if True will change the
+  sort order as if the comparison arguments were reversed.  In addition,
+  the documentation has been amended to provide a guarantee that all sorts
+  starting with Py2.3 are guaranteed to be stable (the relative order of
+  records with equal keys is unchanged).
+
 - Added test whether wchar_t is signed or not. A signed wchar_t is not
   usable as internal unicode type base for Py_UNICODE since the
   unicode implementation assumes an unsigned type.

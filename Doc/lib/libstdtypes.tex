@@ -970,7 +970,8 @@ The following operations are defined on mutable sequence types (where
 	{same as \code{del \var{s}[\var{s}.index(\var{x})]}}{(4)}
   \lineiii{\var{s}.reverse()}
 	{reverses the items of \var{s} in place}{(7)}
-  \lineiii{\var{s}.sort(\optional{\var{cmpfunc=None}})}
+  \lineiii{\var{s}.sort(\optional{\var{cmp}=None\optional{, \var{key}=None
+                        \optional{, \var{reverse}=False}}})}
 	{sort the items of \var{s} in place}{(7), (8), (9), (10)}
 \end{tableiii}
 \indexiv{operations on}{mutable}{sequence}{types}
@@ -1021,47 +1022,38 @@ Notes:
   list.  To remind you that they operate by side effect, they don't return
   the sorted or reversed list.
 
-\item[(8)] The \method{sort()} method takes an optional argument
-  specifying a comparison function of two arguments (list items) which
-  should return a negative, zero or positive number depending on whether
-  the first argument is considered smaller than, equal to, or larger
-  than the second argument.  Note that this slows the sorting process
-  down considerably; for example to sort a list in reverse order it is much
-  faster to call \method{sort()} followed by \method{reverse()}
-  than to use \method{sort()} with a comparison function that
-  reverses the ordering of the elements.  Passing \constant{None} as the
-  comparison function is semantically equivalent to calling
-  \method{sort()} with no comparison function.
+\item[(8)] The \method{sort()} method takes optional arguments for
+  controlling the comparisions.
+
+  \var{cmp} specifies a custom comparison function of two arguments
+     (list items) which should return a negative, zero or positive number
+     depending on whether the first argument is considered smaller than,
+     equal to, or larger than the second argument:
+     \samp{\var{cmp}=\keyword{lambda} \var{x},\var{y}:
+     \function{cmp}(x.lower(), y.lower())}
+     
+  \var{key} specifies a function of one argument that is used to
+     extract a comparison key from each list element:
+     \samp{\var{cmp}=\function{str.lower}}
+
+  \var{reverse} is a boolean value.  If set to \code{True}, then the
+     list elements are sorted as if each comparison were reversed.
+
+  In general, the \var{key} and \var{reverse} conversion processes are
+  much faster than specifying an equivalent \var{cmp} function.  This is
+  because \var{cmp} is called multiple times for each list element while
+  \var{key} and \{reverse} touch each element only once.
+
   \versionchanged[Support for \code{None} as an equivalent to omitting
   \var{cmpfunc} was added]{2.3}
 
-  As an example of using the \var{cmpfunc} argument to the
-  \method{sort()} method, consider sorting a list of sequences by the
-  second element of that list:
+  \versionadded[Support for \var{key} and \var{reverse} was added]{2.4}
 
-\begin{verbatim}
-def mycmp(a, b):
-    return cmp(a[1], b[1])
-
-mylist.sort(mycmp)
-\end{verbatim}
-
-  A more time-efficient approach for reasonably-sized data structures can
-  often be used:
-
-\begin{verbatim}
-tmplist = [(x[1], x) for x in mylist]
-tmplist.sort()
-mylist = [x for (key, x) in tmplist]
-\end{verbatim}
-
-\item[(9)] Whether the \method{sort()} method is stable is not defined by
-  the language (a sort is stable if it guarantees not to change the
-  relative order of elements that compare equal).  In the C
-  implementation of Python, sorts were stable only by accident through
-  Python 2.2.  The C implementation of Python 2.3 introduced a stable
-  \method{sort()} method, but code that intends to be portable across
-  implementations and versions must not rely on stability.
+\item[(9)]  Starting with Python 2.3, the \method{sort()} method is
+  guaranteed to be stable.  A sort is stable if it guarantees not to
+  change the relative order of elements that compare equal --- this is
+  helpful for sorting in multiple passes (for example, sort by
+  department, then by salary grade).
 
 \item[(10)] While a list is being sorted, the effect of attempting to
   mutate, or even inspect, the list is undefined.  The C implementation
