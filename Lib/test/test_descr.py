@@ -178,12 +178,12 @@ def dict_constructor():
     vereq(d, {})
     d = dictionary({})
     vereq(d, {})
-    d = dictionary(x={})
+    d = dictionary(items={})
     vereq(d, {})
     d = dictionary({1: 2, 'a': 'b'})
     vereq(d, {1: 2, 'a': 'b'})
     vereq(d, dictionary(d.items()))
-    vereq(d, dictionary(x=d.iteritems()))
+    vereq(d, dictionary(items=d.iteritems()))
     for badarg in 0, 0L, 0j, "0", [0], (0,):
         try:
             dictionary(badarg)
@@ -226,7 +226,7 @@ def dict_constructor():
 
     Mapping.keys = lambda self: self.dict.keys()
     Mapping.__getitem__ = lambda self, i: self.dict[i]
-    d = dictionary(x=Mapping())
+    d = dictionary(items=Mapping())
     vereq(d, Mapping.dict)
 
     # Init from sequence of iterable objects, each producing a 2-sequence.
@@ -1865,7 +1865,7 @@ def keywords():
     vereq(unicode(string='abc', errors='strict'), u'abc')
     vereq(tuple(sequence=range(3)), (0, 1, 2))
     vereq(list(sequence=(0, 1, 2)), range(3))
-    vereq(dictionary(x={1: 2}), {1: 2})
+    vereq(dictionary(items={1: 2}), {1: 2})
 
     for constructor in (int, float, long, complex, str, unicode,
                         tuple, list, dictionary, file):
