@@ -309,10 +309,11 @@ class Displayer(VideoParams):
 			data, width, height, bytes = jpeg.decompress(data)
 			if self.format == 'jpeg':
 				b = 4
+				p = 1
 			else:
 				b = 1
-				width, height = width*pf, height*pf
-			if (width, height, bytes) <> (w, h, b):
+				p = pf
+			if (width, height, bytes) <> (w/p, h/p, b):
 				raise Error, 'jpeg data has wrong size'
 		if not self.colormapinited:
 			self.initcolormap()
@@ -359,14 +360,15 @@ class Displayer(VideoParams):
 			gl.RGBcolor(200, 200, 200) # XXX rather light grey
 			gl.clear()
 			return
-## XXX Unfortunately this doesn't work on IRIX 4.0.1...
-##		if self.format == 'rgb8' and is_entry_indigo():
-##			gl.RGBmode()
-##			gl.gconfig()
-##			gl.RGBcolor(200, 200, 200) # XXX rather light grey
-##			gl.clear()
-##			gl.pixmode(GL.PM_SIZE, 8)
-##			return
+		# This only works on an Entry-level Indigo from IRIX 4.0.5
+		if self.format == 'rgb8' and is_entry_indigo() and \
+			  gl.gversion() == 'GL4DLG-4.0.': # Note trailing '.'!
+			gl.RGBmode()
+			gl.gconfig()
+			gl.RGBcolor(200, 200, 200) # XXX rather light grey
+			gl.clear()
+			gl.pixmode(GL.PM_SIZE, 8)
+			return
 		gl.cmode()
 		gl.gconfig()
 		self.skipchrom = 0
@@ -571,6 +573,9 @@ def readfileheader(fp, filename):
 		packfactor = 2
 	else:
 		raise Error, filename + ': Bad (w,h,pf) info'
+	if packfactor > 1:
+		width = (width / packfactor) * packfactor
+		height = (height / packfactor) * packfactor
 	#
 	# Return (version, values)
 	#
