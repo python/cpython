@@ -250,8 +250,9 @@ constructor sets this attribute to 1.
 \begin{methoddesc}{setLevel}{lvl}
 Sets the threshold for this logger to \var{lvl}. Logging messages
 which are less severe than \var{lvl} will be ignored. When a logger is
-created, the level is set to \constant{ALL} (which causes all messages
-to be processed).
+created, the level is set to \constant{NOTSET} (which causes all messages
+to be processed in the root logger, or delegation to the parent in non-root
+loggers).
 \end{methoddesc}
 
 \begin{methoddesc}{isEnabledFor}{lvl}
@@ -263,9 +264,9 @@ determined by \method{getEffectiveLevel()}.
 
 \begin{methoddesc}{getEffectiveLevel}{}
 Indicates the effective level for this logger. If a value other than
-\constant{ALL} has been set using \method{setLevel()}, it is returned.
+\constant{NOTSET} has been set using \method{setLevel()}, it is returned.
 Otherwise, the hierarchy is traversed towards the root until a value
-other than \constant{ALL} is found, and that value is returned.
+other than \constant{NOTSET} is found,and that value is returned.
 \end{methoddesc}
 
 \begin{methoddesc}{debug}{msg\optional{, *args\optional{, **kwargs}}}
@@ -355,7 +356,7 @@ Handlers have the following attributes and methods. Note that
 base for more useful subclasses. However, the \method{__init__()}
 method in subclasses needs to call \method{Handler.__init__()}.
 
-\begin{methoddesc}{__init__}{level=\constant{ALL}}
+\begin{methoddesc}{__init__}{level=\constant{NOTSET}}
 Initializes the \class{Handler} instance by setting its level, setting
 the list of filters to the empty list and creating a lock (using
 \method{getLock()}) for serializing access to an I/O mechanism.
@@ -377,7 +378,7 @@ Releases the thread lock acquired with \method{acquire()}.
 \begin{methoddesc}{setLevel}{lvl}
 Sets the threshold for this handler to \var{lvl}. Logging messages which are
 less severe than \var{lvl} will be ignored. When a handler is created, the
-level is set to \constant{ALL} (which causes all messages to be processed).
+level is set to \constant{NOTSET} (which causes all messages to be processed).
 \end{methoddesc}
 
 \begin{methoddesc}{setFormatter}{form}
@@ -487,7 +488,7 @@ Outputs the record to the file.
 The \class{RotatingFileHandler} class supports rotation of disk log files.
 
 \begin{classdesc}{RotatingFileHandler}{filename\optional{, mode, maxBytes,
-							 backupCount}}
+																			 backupCount}}
 Returns a new instance of the \class{RotatingFileHandler} class. The
 specified file is opened and used as the stream for logging. If
 \var{mode} is not specified, \code{'a'} is used. By default, the
@@ -736,7 +737,7 @@ overridden to implement custom flushing strategies.
 \end{methoddesc}
 
 \begin{classdesc}{MemoryHandler}{capacity\optional{, flushLevel
-				 \optional{, target}}}
+\optional{, target}}}
 Returns a new instance of the \class{MemoryHandler} class. The
 instance is initialized with a buffer size of \var{capacity}. If
 \var{flushLevel} is not specified, \constant{ERROR} is used. If no
@@ -813,9 +814,9 @@ described by:
                      relative to the time the logging module was loaded
                      (typically at application startup time)
 \%(thread)d          Thread ID (if available)
+\%(process)d         Process ID (if available)
 \%(message)s         The result of msg \% args, computed just as the
                      record is emitted
-
 
 \begin{classdesc}{Formatter}{\optional{fmt\optional{, datefmt}}}
 Returns a new instance of the \class{Formatter} class. The
@@ -889,7 +890,7 @@ logging event. The only reason it's a class rather than a dictionary is to
 facilitate extension.
 
 \begin{classdesc}{LogRecord}{name, lvl, pathname, lineno, msg, args,
-			     exc_info}
+														 exc_info}
 Returns an instance of \class{LogRecord} initialized with interesting
 information. The \var{name} is the logger name; \var{lvl} is the
 numeric level; \var{pathname} is the absolute pathname of the source

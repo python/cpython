@@ -4,11 +4,11 @@ CRITICAL:ERR:Message 0
 ERROR:ERR:Message 1
 CRITICAL:INF:Message 2
 ERROR:INF:Message 3
-WARN:INF:Message 4
+WARNING:INF:Message 4
 INFO:INF:Message 5
 CRITICAL:INF.UNDEF:Message 6
 ERROR:INF.UNDEF:Message 7
-WARN:INF.UNDEF:Message 8
+WARNING:INF.UNDEF:Message 8
 INFO:INF.UNDEF:Message 9
 CRITICAL:INF.ERR:Message 10
 ERROR:INF.ERR:Message 11
@@ -16,12 +16,12 @@ CRITICAL:INF.ERR.UNDEF:Message 12
 ERROR:INF.ERR.UNDEF:Message 13
 CRITICAL:DEB:Message 14
 ERROR:DEB:Message 15
-WARN:DEB:Message 16
+WARNING:DEB:Message 16
 INFO:DEB:Message 17
 DEBUG:DEB:Message 18
 CRITICAL:UNDEF:Message 19
 ERROR:UNDEF:Message 20
-WARN:UNDEF:Message 21
+WARNING:UNDEF:Message 21
 INFO:UNDEF:Message 22
 CRITICAL:INF.BADPARENT.UNDEF:Message 23
 CRITICAL:INF.BADPARENT:Message 24
@@ -259,10 +259,10 @@ Silent:root:This should only be seen at the 'Silent' logging level (or lower)
 -- log_test2  begin  ---------------------------------------------------
 -- logging at DEBUG, nothing should be seen yet --
 -- logging at INFO, nothing should be seen yet --
--- logging at WARN, 3 messages should be seen --
+-- logging at WARNING, 3 messages should be seen --
 DEBUG:root:Debug message
 INFO:root:Info message
-WARN:root:Warn message
+WARNING:root:Warn message
 -- logging 0 at INFO, messages should be seen every 10 events --
 -- logging 1 at INFO, messages should be seen every 10 events --
 -- logging 2 at INFO, messages should be seen every 10 events --
@@ -490,11 +490,11 @@ ERR -> CRITICAL: Message 0 (via logrecv.tcp.ERR)
 ERR -> ERROR: Message 1 (via logrecv.tcp.ERR)
 INF -> CRITICAL: Message 2 (via logrecv.tcp.INF)
 INF -> ERROR: Message 3 (via logrecv.tcp.INF)
-INF -> WARN: Message 4 (via logrecv.tcp.INF)
+INF -> WARNING: Message 4 (via logrecv.tcp.INF)
 INF -> INFO: Message 5 (via logrecv.tcp.INF)
 INF.UNDEF -> CRITICAL: Message 6 (via logrecv.tcp.INF.UNDEF)
 INF.UNDEF -> ERROR: Message 7 (via logrecv.tcp.INF.UNDEF)
-INF.UNDEF -> WARN: Message 8 (via logrecv.tcp.INF.UNDEF)
+INF.UNDEF -> WARNING: Message 8 (via logrecv.tcp.INF.UNDEF)
 INF.UNDEF -> INFO: Message 9 (via logrecv.tcp.INF.UNDEF)
 INF.ERR -> CRITICAL: Message 10 (via logrecv.tcp.INF.ERR)
 INF.ERR -> ERROR: Message 11 (via logrecv.tcp.INF.ERR)
@@ -502,12 +502,12 @@ INF.ERR.UNDEF -> CRITICAL: Message 12 (via logrecv.tcp.INF.ERR.UNDEF)
 INF.ERR.UNDEF -> ERROR: Message 13 (via logrecv.tcp.INF.ERR.UNDEF)
 DEB -> CRITICAL: Message 14 (via logrecv.tcp.DEB)
 DEB -> ERROR: Message 15 (via logrecv.tcp.DEB)
-DEB -> WARN: Message 16 (via logrecv.tcp.DEB)
+DEB -> WARNING: Message 16 (via logrecv.tcp.DEB)
 DEB -> INFO: Message 17 (via logrecv.tcp.DEB)
 DEB -> DEBUG: Message 18 (via logrecv.tcp.DEB)
 UNDEF -> CRITICAL: Message 19 (via logrecv.tcp.UNDEF)
 UNDEF -> ERROR: Message 20 (via logrecv.tcp.UNDEF)
-UNDEF -> WARN: Message 21 (via logrecv.tcp.UNDEF)
+UNDEF -> WARNING: Message 21 (via logrecv.tcp.UNDEF)
 UNDEF -> INFO: Message 22 (via logrecv.tcp.UNDEF)
 INF.BADPARENT.UNDEF -> CRITICAL: Message 23 (via logrecv.tcp.INF.BADPARENT.UNDEF)
 INF.BADPARENT -> CRITICAL: Message 24 (via logrecv.tcp.INF.BADPARENT)
