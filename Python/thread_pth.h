@@ -47,7 +47,6 @@ static void PyThread__init_thread(void)
 int PyThread_start_new_thread(void (*func)(void *), void *arg)
 {
 	pth_t th;
-	int success;
 	dprintf(("PyThread_start_new_thread called\n"));
 	if (!initialized)
 		PyThread_init_thread();
@@ -145,7 +144,6 @@ PyThread_type_lock PyThread_allocate_lock(void)
 void PyThread_free_lock(PyThread_type_lock lock)
 {
 	pth_lock *thelock = (pth_lock *)lock;
-	int status, error = 0;
 
 	dprintf(("PyThread_free_lock(%p) called\n", lock));
 
@@ -246,7 +244,6 @@ PyThread_type_sema PyThread_allocate_sema(int value)
 
 void PyThread_free_sema(PyThread_type_sema sema)
 {
-	int status, error = 0;
 	struct semaphore *thesema = (struct semaphore *) sema;
 
 	dprintf(("PyThread_free_sema(%p) called\n",  sema));
