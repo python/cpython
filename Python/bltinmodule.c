@@ -1395,13 +1395,47 @@ With two arguments, equivalent to x**y.  With three arguments,\n\
 equivalent to (x**y) % z, but may be more efficient (e.g. for longs).";
 
 
+/* Return number of items in range/xrange (lo, hi, step).  step > 0
+ * required.  Return a value < 0 if & only if the true value is too
+ * large to fit in a signed long.
+ */
+static long
+get_len_of_range(lo, hi, step)
+	long lo;
+	long hi;
+	long step;	/* must be > 0 */
+{
+	/* -------------------------------------------------------------
+	If lo >= hi, the range is empty.
+	Else if n values are in the range, the last one is
+	lo + (n-1)*step, which must be <= hi-1.  Rearranging,
+	n <= (hi - lo - 1)/step + 1, so taking the floor of the RHS gives
+	the proper value.  Since lo < hi in this case, hi-lo-1 >= 0, so
+	the RHS is non-negative and so truncation is the same as the
+	floor.  Letting M be the largest positive long, the worst case
+	for the RHS numerator is hi=M, lo=-M-1, and then
+	hi-lo-1 = M-(-M-1)-1 = 2*M.  Therefore unsigned long has enough
+	precision to compute the RHS exactly.
+	---------------------------------------------------------------*/
+	long n = 0;
+	if (lo < hi) {
+		unsigned long uhi = (unsigned long)hi;
+		unsigned long ulo = (unsigned long)lo;
+		unsigned long diff = uhi - ulo - 1;
+		n = (long)(diff / (unsigned long)step + 1);
+	}
+	return n;
+}
+
 static PyObject *
 builtin_range(self, args)
 	PyObject *self;
 	PyObject *args;
 {
 	long ilow = 0, ihigh = 0, istep = 1;
+	long bign;
 	int i, n;
+
 	PyObject *v;
 
 	if (PyTuple_Size(args) <= 1) {
@@ -1420,32 +1454,14 @@ builtin_range(self, args)
 		PyErr_SetString(PyExc_ValueError, "zero step for range()");
 		return NULL;
 	}
-	/* A bit convoluted because this might overflow; due to Tim Peters */
-	if (istep > 0) {
-		if (ihigh <= ilow)
-			n = 0;
-		else {
-			unsigned long hi = (unsigned long)ihigh;
-			unsigned long lo = (unsigned long)ilow;
-			unsigned long diff = hi - lo - 1;
-			n = (long)(diff / istep + 1);
-		}
-	}
-	else {
-		/* But any errors in this branch are my own --Guido */
-		if (ihigh >= ilow)
-			n = 0;
-		else {
-			/* Swap lo and hi; use abs(istep) */
-			unsigned long hi = (unsigned long)ilow;
-			unsigned long lo = (unsigned long)ihigh;
-			unsigned long diff = hi - lo - 1;
-			n = (long)(diff / (-istep) + 1);
-		}
-	}
-	if (n < 0) {
+	if (istep > 0)
+		bign = get_len_of_range(ilow, ihigh, istep);
+	else
+		bign = get_len_of_range(ihigh, ilow, -istep);
+	n = (int)bign;
+	if (bign < 0 || (long)n != bign) {
 		PyErr_SetString(PyExc_OverflowError,
-				"range() has more than sys.maxint items");
+				"range() has too many items");
 		return NULL;
 	}
 	v = PyList_New(n);
@@ -1497,13 +1513,15 @@ builtin_xrange(self, args)
 		PyErr_SetString(PyExc_ValueError, "zero step for xrange()");
 		return NULL;
 	}
-	/* XXX ought to check overflow of subtraction */
 	if (istep > 0)
-		n = (ihigh - ilow + istep - 1) / istep;
+		n = get_len_of_range(ilow, ihigh, istep);
 	else
-		n = (ihigh - ilow + istep + 1) / istep;
-	if (n < 0)
-		n = 0;
+		n = get_len_of_range(ihigh, ilow, -istep);
+	if (n < 0) {
+		PyErr_SetString(PyExc_OverflowError,
+				"xrange() has more than sys.maxint items");
+		return NULL;
+	}
 	return PyRange_New(ilow, n, istep, 1);
 }
 
