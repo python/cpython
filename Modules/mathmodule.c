@@ -158,7 +158,6 @@ FUNC1(tan, tan,
 FUNC1(tanh, tanh,
       "tanh(x)\n\nReturn the hyperbolic tangent of x.")
 
-
 static PyObject *
 math_frexp(PyObject *self, PyObject *args)
 {
@@ -176,12 +175,11 @@ math_frexp(PyObject *self, PyObject *args)
 }
 
 static char math_frexp_doc [] =
-"frexp(x)\n\
-\n\
-Return the mantissa and exponent of x, as pair (m, e).\n\
-m is a float and e is an int, such that x = m * 2.**e.\n\
-If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.";
-
+"frexp(x)\n"
+"\n"
+"Return the mantissa and exponent of x, as pair (m, e).\n"
+"m is a float and e is an int, such that x = m * 2.**e.\n"
+"If x is 0, m and e are both 0.  Else 0.5 <= abs(m) < 1.0.";
 
 static PyObject *
 math_ldexp(PyObject *self, PyObject *args)
@@ -202,10 +200,7 @@ math_ldexp(PyObject *self, PyObject *args)
 }
 
 static char math_ldexp_doc [] =
-"ldexp_doc(x, i)\n\
-\n\
-Return x * (2**i).";
-
+"ldexp(x, i) -> x * (2**i)";
 
 static PyObject *
 math_modf(PyObject *self, PyObject *args)
@@ -231,11 +226,10 @@ math_modf(PyObject *self, PyObject *args)
 }
 
 static char math_modf_doc [] =
-"modf(x)\n\
-\n\
-Return the fractional and integer parts of x. Both results carry the sign\n\
-of x.  The integer part is returned as a real.";
-
+"modf(x)\n"
+"\n"
+"Return the fractional and integer parts of x.  Both results carry the sign\n"
+"of x.  The integer part is returned as a real.";
 
 static PyMethodDef math_methods[] = {
 	{"acos",	math_acos,	METH_VARARGS,	math_acos_doc},
@@ -266,8 +260,8 @@ static PyMethodDef math_methods[] = {
 
 
 static char module_doc [] =
-"This module is always available.  It provides access to the\n\
-mathematical functions defined by the C standard.";
+"This module is always available.  It provides access to the\n"
+"mathematical functions defined by the C standard.";
 
 DL_EXPORT(void)
 initmath(void)
