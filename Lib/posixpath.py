@@ -280,7 +280,7 @@ def walk(top, func, arg):
             st = os.lstat(name)
         except os.error:
             continue
-        if stat.S_ISDIR(st[stat.ST_MODE]):
+        if stat.S_ISDIR(st.st_mode):
             walk(name, func, arg)
 
 
