@@ -24,12 +24,7 @@
 % implement, and is used to put the chapter and section information in 
 % the footers.
 %
-% The "times" package makes the default font the PostScript Times
-% font, which makes for smaller PostScript and a font that more people 
-% like.
-%
 \RequirePackage{fancyhdr}\typeout{Using fancier footers than usual.}
-\RequirePackage{times}\typeout{Using times fonts instead of Computer Modern.}
 
 
 % Required package:
