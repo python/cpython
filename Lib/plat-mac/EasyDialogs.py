@@ -4,6 +4,10 @@ Message(msg) -- display a message and an OK button.
 AskString(prompt, default) -- ask for a string, display OK and Cancel buttons.
 AskPassword(prompt, default) -- like AskString(), but shows text as bullets.
 AskYesNoCancel(question, default) -- display a question and Yes, No and Cancel buttons.
+GetArgv(optionlist, commandlist) -- fill a sys.argv-like list using a dialog
+AskFileForOpen(...) -- Ask the user for an existing file 
+AskFileForSave(...) -- Ask the user for an output file
+AskFolder(...) -- Ask the user to select a folder
 bar = Progress(label, maxvalue) -- Display a progress bar
 bar.set(value) -- Set value
 bar.inc( *amount ) -- increment value by amount (default=1)
@@ -31,6 +35,10 @@ import Carbon.File
 import macresource
 import os
 
+__all__ = ['Message', 'AskString', 'AskPassword', 'AskYesNoCancel',
+	'GetArgv', 'AskFileForOpen', 'AskFileForSave', 'AskFolder',
+	'Progress']
+	
 _initialized = 0
 
 def _initialize():
@@ -549,49 +557,13 @@ def GetArgv(optionlist=None, commandlist=None, addoldfile=1, addnewfile=1, addfo
 			apply(MacOS.SchedParams, appsw)
 		del d
 
-def _mktypelist(typelist):
-	# Workaround for OSX typeless files:
-	if 'TEXT' in typelist and not '\0\0\0\0' in typelist:
-		typelist = typelist + ('\0\0\0\0',)
-	if not typelist:
-		return None
-	data = 'Pyth' + struct.pack("hh", 0, len(typelist))
-	for type in typelist:
-		data = data+type
-	return Carbon.Res.Handle(data)
-	
-_ALLOWED_KEYS = {
-	'version':1,
-	'defaultLocation':1,
-	'dialogOptionFlags':1,
-	'location':1,
-	'clientName':1,
-	'windowTitle':1,
-	'actionButtonLabel':1,
-	'cancelButtonLabel':1,
-	'savedFileName':1,
-	'message':1,
-	'preferenceKey':1,
-	'popupExtension':1,
-	'eventProc':1,
-	'previewProc':1,
-	'filterProc':1,
-	'typeList':1,
-	'fileType':1,
-	'fileCreator':1,
-	# Our extension:
-	'wanted':1,
-	'multiple':1,
-}
-
-def _process_Nav_args(argsargs, allowed, dftflags):
+def _process_Nav_args(dftflags, **args):
 	import aepack
 	import Carbon.AE
 	import Carbon.File
-	args = argsargs.copy()
 	for k in args.keys():
-		if not allowed.has_key(k):
-			raise TypeError, "Unknown keyword argument: %s" % repr(k)
+		if args[k] is None:
+			del args[k]
 	# Set some defaults, and modify some arguments
 	if not args.has_key('dialogOptionFlags'):
 		args['dialogOptionFlags'] = dftflags
@@ -618,9 +590,37 @@ def _process_Nav_args(argsargs, allowed, dftflags):
 		del args['wanted']
 	return args, tpwanted
 	
-def AskFileForOpen(**args):
+def AskFileForOpen(
+		version=None,
+		defaultLocation=None,
+		dialogOptionFlags=None,
+		location=None,
+		clientName=None,
+		windowTitle=None,
+		actionButtonLabel=None,
+		cancelButtonLabel=None,
+		message=None,
+		preferenceKey=None,
+		popupExtension=None,
+		eventProc=None,
+		previewProc=None,
+		filterProc=None,
+		typeList=None,
+		wanted=None,
+		multiple=None):
+	"""Display a dialog asking the user for a file to open.
+	
+	wanted is the return type wanted: FSSpec, FSRef, unicode or string (default)
+	the other arguments can be looked up in Apple's Navigation Services documentation"""
+		
 	default_flags = 0x56 # Or 0xe4?
-	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	args, tpwanted = _process_Nav_args(default_flags, version=version,
+		defaultLocation=defaultLocation, dialogOptionFlags=dialogOptionFlags,
+		location=location,clientName=clientName,windowTitle=windowTitle,
+		actionButtonLabel=actionButtonLabel,cancelButtonLabel=cancelButtonLabel,
+		message=message,preferenceKey=preferenceKey,
+		popupExtension=popupExtension,eventProc=eventProc,previewProc=previewProc,
+		filterProc=filterProc,typeList=typeList,wanted=wanted,multiple=multiple) 
 	try:
 		rr = Nav.NavChooseFile(args)
 		good = 1
@@ -640,9 +640,38 @@ def AskFileForOpen(**args):
 		return tpwanted(rr.selection_fsr[0].FSRefMakePath(), 'utf8')
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 
-def AskFileForSave(**args):
+def AskFileForSave(
+		version=None,
+		defaultLocation=None,
+		dialogOptionFlags=None,
+		location=None,
+		clientName=None,
+		windowTitle=None,
+		actionButtonLabel=None,
+		cancelButtonLabel=None,
+		savedFileName=None,
+		message=None,
+		preferenceKey=None,
+		popupExtension=None,
+		eventProc=None,
+		fileType=None,
+		fileCreator=None,
+		wanted=None,
+		multiple=None):
+	"""Display a dialog asking the user for a filename to save to.
+	
+	wanted is the return type wanted: FSSpec, FSRef, unicode or string (default)
+	the other arguments can be looked up in Apple's Navigation Services documentation"""
+		
+
 	default_flags = 0x07
-	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	args, tpwanted = _process_Nav_args(default_flags, version=version,
+		defaultLocation=defaultLocation, dialogOptionFlags=dialogOptionFlags,
+		location=location,clientName=clientName,windowTitle=windowTitle,
+		actionButtonLabel=actionButtonLabel,cancelButtonLabel=cancelButtonLabel,
+		savedFileName=savedFileName,message=message,preferenceKey=preferenceKey,
+		popupExtension=popupExtension,fileType=fileType,fileCreator=fileCreator,
+		wanted=wanted,multiple=multiple) 
 	try:
 		rr = Nav.NavPutFile(args)
 		good = 1
@@ -669,9 +698,35 @@ def AskFileForSave(**args):
 		return tpwanted(fullpath)
 	raise TypeError, "Unknown value for argument 'wanted': %s" % repr(tpwanted)
 		
-def AskFolder(**args):
+def AskFolder(
+		version=None,
+		defaultLocation=None,
+		dialogOptionFlags=None,
+		location=None,
+		clientName=None,
+		windowTitle=None,
+		actionButtonLabel=None,
+		cancelButtonLabel=None,
+		message=None,
+		preferenceKey=None,
+		popupExtension=None,
+		eventProc=None,
+		filterProc=None,
+		wanted=None,
+		multiple=None):
+	"""Display a dialog asking the user for select a folder.
+	
+	wanted is the return type wanted: FSSpec, FSRef, unicode or string (default)
+	the other arguments can be looked up in Apple's Navigation Services documentation"""
+		
 	default_flags = 0x17
-	args, tpwanted = _process_Nav_args(args, _ALLOWED_KEYS, default_flags) 
+	args, tpwanted = _process_Nav_args(default_flags, version=version,
+		defaultLocation=defaultLocation, dialogOptionFlags=dialogOptionFlags,
+		location=location,clientName=clientName,windowTitle=windowTitle,
+		actionButtonLabel=actionButtonLabel,cancelButtonLabel=cancelButtonLabel,
+		message=message,preferenceKey=preferenceKey,
+		popupExtension=popupExtension,eventProc=eventProc,filterProc=filterProc,
+		wanted=wanted,multiple=multiple) 
 	try:
 		rr = Nav.NavChooseFolder(args)
 		good = 1
