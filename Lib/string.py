@@ -152,6 +152,7 @@ class Template:
             mapping = _multimap(kws, args[0])
         else:
             mapping = args[0]
+        delimiter = self.delimiter[-1]
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -162,9 +163,10 @@ class Template:
                 # fail if val is a Unicode containing non-ASCII characters.
                 return '%s' % val
             if mo.group('escaped') is not None:
-                return '$'
+                return delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
+            raise ValueError('Unrecognized named group in pattern', pattern)
         return self.pattern.sub(convert, self.template)
 
     def safe_substitute(self, *args, **kws):
@@ -176,6 +178,7 @@ class Template:
             mapping = _multimap(kws, args[0])
         else:
             mapping = args[0]
+        delimiter = self.delimiter[-1]            
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named')
@@ -185,16 +188,18 @@ class Template:
                     # will fail if val is a Unicode containing non-ASCII
                     return '%s' % mapping[named]
                 except KeyError:
-                    return '$' + named
+                    return delimiter + named
             braced = mo.group('braced')
-            try:
-                return '%s' % mapping[braced]
-            except KeyError:
-                return '${' + braced + '}'
+            if braced is not None:
+                try:
+                    return '%s' % mapping[braced]
+                except KeyError:
+                    return delimiter + '{' + braced + '}'
             if mo.group('escaped') is not None:
-                return '$'
+                return delimiter
             if mo.group('invalid') is not None:
                 self._invalid(mo)
+            raise ValueError('Unrecognized named group in pattern', pattern)
         return self.pattern.sub(convert, self.template)
 
 
