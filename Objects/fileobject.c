@@ -249,18 +249,33 @@ file_seek(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	long offset;
 	int whence;
 	int ret;
+	off_t offset;
+	PyObject *offobj;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
 	whence = 0;
-	if (!PyArg_ParseTuple(args, "l|i", &offset, &whence))
+	if (!PyArg_ParseTuple(args, "O|i", &offobj, &whence))
+		return NULL;
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+	offset = PyInt_AsLong(offobj);
+#else
+	offset = PyLong_Check(offobj) ?
+		PyLong_AsLongLong(offobj) : PyInt_AsLong(offobj);
+#endif
+	if (PyErr_Occurred())
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
+#if defined(HAVE_FSEEKO)
+	ret = fseeko(f->f_fp, offset, whence);
+#elif defined(HAVE_FSEEK64)
+	ret = fseek64(f->f_fp, offset, whence);
+#else
 	ret = fseek(f->f_fp, offset, whence);
+#endif
 	Py_END_ALLOW_THREADS
 	if (ret != 0) {
 		PyErr_SetFromErrno(PyExc_IOError);
@@ -277,21 +292,38 @@ file_truncate(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	long newsize;
 	int ret;
+	off_t newsize;
+	PyObject *newsizeobj;
 	
 	if (f->f_fp == NULL)
 		return err_closed();
-	newsize = -1;
-	if (!PyArg_ParseTuple(args, "|l", &newsize)) {
+	newsizeobj = NULL;
+	if (!PyArg_ParseTuple(args, "|O", &newsizeobj))
 		return NULL;
-	}
-	if (newsize < 0) {
+	if (newsizeobj != NULL) {
+#if !defined(HAVE_LARGEFILE_SUPPORT)
+		newsize = PyInt_AsLong(newsizeobj);
+#else
+		newsize = PyLong_Check(newsizeobj) ?
+				PyLong_AsLongLong(newsizeobj) :
+				PyInt_AsLong(newsizeobj);
+#endif
+		if (PyErr_Occurred())
+			return NULL;
+	} else {
+		/* Default to current position*/
 		Py_BEGIN_ALLOW_THREADS
 		errno = 0;
-		newsize =  ftell(f->f_fp); /* default to current position*/
+#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
+		newsize =  ftello(f->f_fp);
+#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
+		newsize =  ftell64(f->f_fp);
+#else
+		newsize =  ftell(f->f_fp);
+#endif
 		Py_END_ALLOW_THREADS
-		if (newsize == -1L) {
+		if (newsize == -1) {
 		        PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(f->f_fp);
 			return NULL;
@@ -322,21 +354,31 @@ file_tell(f, args)
 	PyFileObject *f;
 	PyObject *args;
 {
-	long offset;
+	off_t offset;
 	if (f->f_fp == NULL)
 		return err_closed();
 	if (!PyArg_NoArgs(args))
 		return NULL;
 	Py_BEGIN_ALLOW_THREADS
 	errno = 0;
+#if defined(HAVE_FTELLO) && defined(HAVE_LARGEFILE_SUPPORT)
+	offset = ftello(f->f_fp);
+#elif defined(HAVE_FTELL64) && defined(HAVE_LARGEFILE_SUPPORT)
+	offset = ftell64(f->f_fp);
+#else
 	offset = ftell(f->f_fp);
+#endif
 	Py_END_ALLOW_THREADS
-	if (offset == -1L) {
+	if (offset == -1) {
 		PyErr_SetFromErrno(PyExc_IOError);
 		clearerr(f->f_fp);
 		return NULL;
 	}
+#if !defined(HAVE_LARGEFILE_SUPPORT)
 	return PyInt_FromLong(offset);
+#else
+	return PyLong_FromLongLong(offset);
+#endif
 }
 
 static PyObject *
