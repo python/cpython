@@ -151,7 +151,7 @@ def split_letters(nodes):
 # need a function to separate the nodes into columns...
 def split_columns(nodes, columns=1):
     if columns <= 1:
-        return (nodes,)
+        return [nodes]
     # This is a rough height; we may have to increase to avoid breaks before
     # a subitem.
     colheight = len(nodes) / columns
@@ -176,7 +176,7 @@ def split_columns(nodes, columns=1):
             start = i * colheight
             end = start + colheight
             cols.append(nodes[start:end])
-    return tuple(cols)
+    return cols
 
 
 DL_LEVEL_INDENT = "  "
@@ -249,7 +249,7 @@ def format_letter(letter):
            % (letter, lettername)
 
 
-def format_html(nodes, columns=1):
+def format_html_letters(nodes, columns=1):
     letter_groups = split_letters(nodes)
     items = []
     for letter, nodes in letter_groups:
@@ -260,6 +260,9 @@ def format_html(nodes, columns=1):
         s.append(format_letter(letter))
         s.append(format_nodes(nodes, columns))
     return string.join(s, '')
+
+def format_html(nodes, columns):
+    return format_nodes(nodes, columns)
 
 
 def collapse(nodes):
@@ -289,12 +292,16 @@ def main():
     ifn = "-"
     ofn = "-"
     columns = 1
-    opts, args = getopt.getopt(sys.argv[1:], "c:o:", ["columns=", "output="])
+    letters = 0
+    opts, args = getopt.getopt(sys.argv[1:], "c:lo:",
+                               ["columns=", "letters", "output="])
     for opt, val in opts:
         if opt in ("-o", "--output"):
             ofn = val
         elif opt in ("-c", "--columns"):
             columns = string.atoi(val)
+        elif opt in ("-l", "--letters"):
+            letters = 1
     if not args:
         args = [ifn]
     nodes = []
@@ -302,7 +309,10 @@ def main():
         nodes = nodes + load(open(fn))
     nodes.sort()
     collapse(nodes)
-    html = format_html(nodes, columns)
+    if letters:
+        html = format_html_letters(nodes, columns)
+    else:
+        html = format_html(nodes, columns)
     if ofn == "-":
         sys.stdout.write(html)
     else:
