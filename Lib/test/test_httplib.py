@@ -2,12 +2,17 @@ import httplib
 import StringIO
 import sys
 
-from test.test_support import verify,verbose
+from unittest import TestCase
+
+from test import test_support
 
 class FakeSocket:
     def __init__(self, text, fileclass=StringIO.StringIO):
         self.text = text
         self.fileclass = fileclass
+
+    def sendall(self, data):
+        self.data = data
 
     def makefile(self, mode, bufsize=None):
         if mode != 'r' and mode != 'rb':
@@ -31,6 +36,39 @@ class NoEOFStringIO(StringIO.StringIO):
         if data == '':
             raise AssertionError('caller tried to read past EOF')
         return data
+
+
+class HeaderTests(TestCase):
+    def test_auto_headers(self):
+        # Some headers are added automatically, but should not be added by
+        # .request() if they are explicitly set.
+
+        import httplib
+
+        class HeaderCountingBuffer(list):
+            def __init__(self):
+                self.count = {}
+            def append(self, item):
+                kv = item.split(':')
+                if len(kv) > 1:
+                    # item is a 'Key: Value' header string
+                    lcKey = kv[0].lower()
+                    self.count.setdefault(lcKey, 0)
+                    self.count[lcKey] += 1
+                list.append(self, item)
+
+        for explicit_header in True, False:
+            for header in 'Content-length', 'Host', 'Accept-encoding':
+                conn = httplib.HTTPConnection('example.com')
+                conn.sock = FakeSocket('blahblahblah')
+                conn._buffer = HeaderCountingBuffer()
+
+                body = 'spamspamspam'
+                headers = {}
+                if explicit_header:
+                    headers[header] = str(len(body))
+                conn.request('POST', '/', body, headers)
+                self.assertEqual(conn._buffer.count[header.lower()], 1)
 
 # Collect output to a buffer so that we don't have to cope with line-ending
 # issues across platforms.  Specifically, the headers will have \r\n pairs
@@ -109,5 +147,10 @@ def _test():
     if resp.read() != "":
         raise AssertionError, "Did not expect response from HEAD request"
     resp.close()
+
+
+def test_main(verbose=None):
+    tests = [HeaderTests,]
+    test_support.run_unittest(*tests)
 
 test()
