@@ -256,10 +256,28 @@ if float(u"  \u0663.\u0661\u0664  ") != 3.14:
 print 'getattr'
 import sys
 if getattr(sys, 'stdout') is not sys.stdout: raise TestFailed, 'getattr'
+try:
+    getattr(sys, 1)
+except TypeError:
+    pass
+else:
+    raise TestFailed, "getattr(sys, 1) should raise an exception"
+try:
+    getattr(sys, 1, "foo")
+except TypeError:
+    pass
+else:
+    raise TestFailed, 'getattr(sys, 1, "foo") should raise an exception'
 
 print 'hasattr'
 import sys
 if not hasattr(sys, 'stdout'): raise TestFailed, 'hasattr'
+try:
+    hasattr(sys, 1)
+except TypeError:
+    pass
+else:
+    raise TestFailed, "hasattr(sys, 1) should raise an exception"
 
 print 'hash'
 hash(None)
