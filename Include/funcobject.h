@@ -14,6 +14,7 @@ typedef struct {
     PyObject *func_defaults;
     PyObject *func_doc;
     PyObject *func_name;
+    PyObject *func_dict;
 } PyFunctionObject;
 
 extern DL_IMPORT(PyTypeObject) PyFunction_Type;

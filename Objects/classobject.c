@@ -1693,12 +1693,38 @@ static struct memberlist instancemethod_memberlist[] = {
 	/* Dummies that are not handled by getattr() except for __members__ */
 	{"__doc__",	T_INT,		0},
 	{"__name__",	T_INT,		0},
+	{"__dict__",    T_OBJECT,       0},
 	{NULL}	/* Sentinel */
 };
 
-static PyObject *
-instancemethod_getattr(register PyMethodObject *im, PyObject *name)
+static int
+instancemethod_setattro(register PyMethodObject *im, PyObject *name,
+			PyObject *v)
 {
+	char *sname = PyString_AsString(name);
+
+	if (PyEval_GetRestricted() ||
+	    strcmp(sname, "im_func") == 0 ||
+	    strcmp(sname, "im_self") == 0 ||
+	    strcmp(sname, "im_class") == 0)
+	{
+		PyErr_Format(PyExc_TypeError, "read-only attribute: %s",
+			     sname);
+		return -1;
+	}
+	if (im->im_self != NULL) {
+		PyErr_Format(PyExc_TypeError,
+			     "cannot set attributes through bound methods");
+		return -1;
+	}
+	return PyObject_SetAttr(im->im_func, name, v);
+}
+ 
+
+static PyObject *
+instancemethod_getattro(register PyMethodObject *im, PyObject *name)
+{
+	PyObject *rtn;
 	char *sname = PyString_AsString(name);
 	if (sname[0] == '_') {
 		/* Inherit __name__ and __doc__ from the callable object
@@ -1712,7 +1738,15 @@ instancemethod_getattr(register PyMethodObject *im, PyObject *name)
 	    "instance-method attributes not accessible in restricted mode");
 		return NULL;
 	}
-	return PyMember_Get((char *)im, instancemethod_memberlist, sname);
+	if (sname[0] == '_' && strcmp(sname, "__dict__") == 0)
+		return PyObject_GetAttr(im->im_func, name);
+
+	rtn = PyMember_Get((char *)im, instancemethod_memberlist, sname);
+	if (rtn == NULL && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+		PyErr_Clear();
+		rtn = PyObject_GetAttr(im->im_func, name);
+	}
+	return rtn;
 }
 
 static void
@@ -1832,8 +1866,8 @@ PyTypeObject PyMethod_Type = {
 	(hashfunc)instancemethod_hash, /*tp_hash*/
 	0,			/*tp_call*/
 	0,			/*tp_str*/
-	(getattrofunc)instancemethod_getattr, /*tp_getattro*/
-	0,			/*tp_setattro*/
+	(getattrofunc)instancemethod_getattro, /*tp_getattro*/
+	(setattrofunc)instancemethod_setattro, /*tp_setattro*/
 	0,			/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/
 	0,			/* tp_doc */
