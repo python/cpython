@@ -1,0 +1,129 @@
+#!/bin/sh -e
+#----------------------------------------------------------------------
+# Build MacPython 2.3 and make an Installer package of it
+
+# TODO:  Parameterize the versions, builddirs, etc...
+
+# Script configs
+PYVERSION=2.3a2
+PYVER=2.3
+BUILDNUM=3
+DOCLEANUP=no
+
+PROGDIR="`dirname \"$0\"`"
+TMPDIR=/tmp/_py
+#TMPDIR=/projects/_py
+
+BUILDROOT=$TMPDIR/build
+INSTALLROOT=$TMPDIR/install
+DMGDIR=$TMPDIR/dmg
+RESOURCEDIR=$PROGDIR/resources
+DESTDIR=/projects/wx/wxPython/dist
+PYTHONSRC=/projects/Python-$PYVERSION
+WASTEDIR=/projects/waste
+
+# Setup
+mkdir -p $BUILDROOT
+mkdir -p $INSTALLROOT
+rm -rf $DMGDIR
+mkdir -p $DMGDIR/root
+
+
+# Configure and build Python
+pushd $BUILDROOT
+
+# Check if we should build and install the docs, but only if it
+# doesn't appear to be done already.  TODO: fix this path to be version independent
+if [ ! -e "build/temp.darwin-6.3-Power Macintosh-2.3/build-html/build-html idx" ]; then
+    read -p "Build the Python docs? (y/N)? " builddocs
+fi
+
+# If the filesystem is case-sensitive then "python" will be built, but
+# some parts of the install expect "python.exe which is what is built
+# on a case-insensitive filesystem.  Make a link just in case it is
+# needed.
+if [ ! -e python.exe ]; then
+    ln -s python python.exe
+fi
+
+# Make a link to the waste dir so that lib can be found.  This allows
+# the PythonIDE to be built
+if [ ! -e waste ]; then
+    ln -s $WASTEDIR waste
+fi
+
+$PYTHONSRC/configure --enable-framework=$INSTALLROOT/Library/Frameworks LDFLAGS=-Wl,-x
+make
+make frameworkinstall
+
+if [ "$builddocs" = "y" -o "$builddocs" = "Y" ]; then
+    ./python.exe $PYTHONSRC/Mac/OSX/setupDocs.py build
+    echo ""
+    read -p "When the help indexer is done press Enter..." ans
+    ./python.exe $PYTHONSRC/Mac/OSX/setupDocs.py install \
+	--prefix=$INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER
+fi
+
+popd
+
+
+
+# Make the Installer package:
+# First, remove the unix tools as their paths will be wrong.  We'll recreate
+# them in the postinstall.
+rm -r $INSTALLROOT/usr
+
+# Next, remove the .pyc/.pyo files
+python $PROGDIR/../zappycfiles.py $INSTALLROOT/Library/Frameworks/Python.framework/Versions/$PYVER/lib/python$PYVER
+
+# Make the welcome message
+cat > $RESOURCEDIR/Welcome.txt <<EOF
+Welcome!
+
+This program will install Python $PYVERSION for Mac OS X as a Framework.
+
+Build number: $BUILDNUM
+Build date:   `date`
+EOF
+
+
+# fix a bug in the IDLE install
+IDLERES=$INSTALLROOT/Applications/MacPython-2.3/IDLE.app/Contents/Resources
+mv $IDLERES/idlelib/idle $IDLERES
+
+
+# Finally, build the package...
+rm -rf MacPython-OSX.pkg
+python $PROGDIR/../buildpkg.py \
+    --Title=MacPython-OSX \
+    --Version=$PYVERSION-$BUILDNUM \
+    --Description="Python $PYVERSION for Mac OS X, framework based" \
+    --NeedsAuthorization="YES" \
+    --Relocatable="NO" \
+    --InstallOnly="YES" \
+    $INSTALLROOT \
+    $RESOURCEDIR
+
+##    --RootVolumeOnly="YES" \
+
+# ...and then make a disk image containing the package.
+mv MacPython-OSX.pkg $DMGDIR/root
+$PROGDIR/../makedmg $DMGDIR/root $DMGDIR MacPython-OSX-$PYVERSION-$BUILDNUM
+
+echo Moving $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM to $DESTDIR
+mv $DMGDIR/MacPython-OSX-$PYVERSION-$BUILDNUM.dmg $DESTDIR
+
+
+# Cleanup build/install dirs
+if [ $DOCLEANUP = yes ]; then
+    echo "Cleaning up..."
+    rm -rf $BUILDROOT
+    rm -rf $INSTALLROOT
+    rm -rf $DMGDIR
+else
+    echo "Cleanup is disabled.  You should remove these dirs when done:"
+    echo "          $BUILDROOT"
+    echo "          $INSTALLROOT"
+    echo "          $DMGDIR"
+fi
+
