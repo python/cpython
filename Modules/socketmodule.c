@@ -1801,12 +1801,13 @@ Convert a 32-bit integer from host to network byte order.";
 static char inet_aton_doc[] = 
 "inet_aton(string) -> packed 32-bit IP representation\n\
 \n\
-Convert an IP address in string format (123.45.67.89) to the 32-bit packed
+Convert an IP address in string format (123.45.67.89) to the 32-bit packed\n\
 binary format used in low-level network functions.";
 
 static PyObject*
 BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 {
+#ifndef MS_WINDOWS
 	char *ip_addr;
 	struct in_addr packed_addr;
 	int err;
@@ -1825,6 +1826,26 @@ BUILD_FUNC_DEF_2(PySocket_inet_aton, PyObject *, self, PyObject *, args)
 
 	return PyString_FromStringAndSize((char *) &packed_addr,
 					  sizeof(packed_addr));
+#else /* MS_WINDOWS */
+	/* Have to use inet_addr() instead */
+	char *ip_addr;
+	long packed_addr;
+
+	if (!PyArg_Parse(args, "s", &ip_addr)) {
+		return NULL;
+	}
+	
+	packed_addr = inet_addr(ip_addr);
+
+	if (packed_addr == INADDR_NONE) {	/* invalid address */
+		PyErr_SetString(PySocket_Error,
+			"illegal IP address string passed to inet_aton");
+		return NULL;
+	}
+
+	return PyString_FromStringAndSize((char *) &packed_addr,
+					  sizeof(packed_addr));
+#endif /* MS_WINDOWS */
 }
 
 static char inet_ntoa_doc[] = 
@@ -1836,7 +1857,7 @@ static PyObject*
 BUILD_FUNC_DEF_2(PySocket_inet_ntoa, PyObject *, self, PyObject *, args)
 {
 	char *packed_str;
-	int err, addr_len;
+	int addr_len;
 	struct in_addr packed_addr;
 
 	if (!PyArg_Parse(args, "s#", &packed_str, &addr_len)) {
