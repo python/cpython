@@ -2014,6 +2014,14 @@ end
 item: Remark
 end
 item: Install File
+  Source=..\lib\logging\*.py
+  Destination=%MAINDIR%\Lib\logging
+  Description=Logging package
+  Flags=0000000000000010
+end
+item: Remark
+end
+item: Install File
   Source=..\lib\site-packages\readme
   Destination=%MAINDIR%\Lib\site-packages\README.txt
   Description=Site packages

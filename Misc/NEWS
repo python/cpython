@@ -56,6 +56,9 @@ Tests
 Windows
 -------
 
+- The new logging package is now installed by the Windows installer.  It
+  wasn't in 2.3a1 due to oversight.
+
 Mac
 ---
 
@@ -143,7 +146,7 @@ Core and builtins
   Jython 2.1.
 
 - PEP 302 has been accepted.  Although it was inititally developed to
-  support zipimport, it offers a new, general import hook mechanism. 
+  support zipimport, it offers a new, general import hook mechanism.
   Several new variables have been added to the sys module:
   sys.meta_path, sys.path_hooks, and sys.path_importer_cache; these
   make extending the import statement much more convenient than
@@ -1078,7 +1081,7 @@ Mac
   with an interpreter living in such a .app bundle, this interpreter should
   be used to run any Python script using the window manager (including
   Tkinter or wxPython scripts).
-  
+
 - Most of Mac/Lib has moved to Lib/plat-mac, which is again used both in
   MacPython-OSX and MacPython-OS9. The only modules remaining in Mac/Lib
   are specifically for MacPython-OS9 (CFM support, preference resources, etc).
