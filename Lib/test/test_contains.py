@@ -119,3 +119,50 @@ try:
 	check(0, "u'ab' in 'abc' did not raise error")
 except TypeError:
 	pass
+
+# A collection of tests on builtin sequence types
+a = range(10)
+for i in a:
+	check(i in a, "%s not in %s" % (`i`, `a`))
+check(16 not in a, "16 not in %s" % `a`)
+check(a not in a, "%s not in %s" % (`a`, `a`))
+
+a = tuple(a)
+for i in a:
+	check(i in a, "%s not in %s" % (`i`, `a`))
+check(16 not in a, "16 not in %s" % `a`)
+check(a not in a, "%s not in %s" % (`a`, `a`))
+
+class Deviant1:
+	"""Behaves strangely when compared
+
+	This class is designed to make sure that the contains code
+	works when the list is modified during the check.
+	"""
+
+	aLongList = range(15)
+	aShortList = range(5)
+	aList = aLongList
+	
+	def __cmp__(self, other):
+		if other == 12:
+			self.aList = self.aShortList
+		return 1
+
+check(Deviant1() not in Deviant1.aList, "Deviant1 failed")
+
+class Deviant2:
+	"""Behaves strangely when compared
+
+	This class raises an exception during comparison.  That in
+	turn causes the comparison to fail with a TypeError.
+	"""
+
+	def __cmp__(self, other):
+		if other == 4:
+			raise RuntimeError, "gotcha"
+
+try:
+	check(Deviant2() not in a, "oops")
+except TypeError:
+	pass
