@@ -194,6 +194,20 @@ getattr(v, name)
 }
 
 int
+hasattr(v, name)
+	object *v;
+	char *name;
+{
+	object *res = getattr(v, name);
+	if (res != NULL) {
+		DECREF(res);
+		return 1;
+	}
+	err_clear();
+	return 0;
+}
+
+int
 setattr(v, name, w)
 	object *v;
 	char *name;
