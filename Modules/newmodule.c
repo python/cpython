@@ -150,8 +150,9 @@ new_code(unused, args)
 	PyObject* name;
 	int firstlineno;
 	PyObject* lnotab;
-  
-	if (!PyArg_ParseTuple(args, "iiiiSO!O!O!SSiS",
+	PyBufferProcs *pb;
+
+	if (!PyArg_ParseTuple(args, "iiiiOO!O!O!SSiS",
 			      &argcount, &nlocals, &stacksize, &flags,
 			      &code,
 			      &PyTuple_Type, &consts,
@@ -160,6 +161,18 @@ new_code(unused, args)
 			      &filename, &name,
 			      &firstlineno, &lnotab))
 		return NULL;
+
+	pb = code->ob_type->tp_as_buffer;
+	if (pb == NULL ||
+	    pb->bf_getreadbuffer == NULL ||
+	    pb->bf_getsegcount == NULL ||
+	    (*pb->bf_getsegcount)(code, NULL) != 1)
+	{
+		PyErr_SetString(PyExc_TypeError,
+		  "bytecode object must be a single-segment read-only buffer");
+		return NULL;
+	}
+
 	return (PyObject *)PyCode_New(argcount, nlocals, stacksize, flags,
 				      code, consts, names, varnames,
 				      filename, name, firstlineno, lnotab);
