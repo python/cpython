@@ -1680,7 +1680,7 @@ compile_node(c, n)
 	
 	switch (TYPE(n)) {
 	
-	case single_input:
+	case single_input: /* One interactive command */
 		/* NEWLINE | simple_stmt | compound_stmt NEWLINE */
 		com_addbyte(c, REFUSE_ARGS);
 		n = CHILD(n, 0);
@@ -1690,31 +1690,30 @@ compile_node(c, n)
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
-	case file_input:
+	case file_input: /* A whole file, or built-in function exec() */
 		com_addbyte(c, REFUSE_ARGS);
 		com_file_input(c, n);
 		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
-	case expr_input:
-		com_addbyte(c, REFUSE_ARGS);
-		com_node(c, CHILD(n, 0));
-		com_addoparg(c, LOAD_CONST, com_addconst(c, None));
-		com_addbyte(c, RETURN_VALUE);
-		break;
-	
-	case eval_input:
+	case expr_input: /* Built-in function eval() */
 		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, 0));
 		com_addbyte(c, RETURN_VALUE);
 		break;
 	
-	case funcdef:
+	case eval_input: /* Built-in function input() */
+		com_addbyte(c, REFUSE_ARGS);
+		com_node(c, CHILD(n, 0));
+		com_addbyte(c, RETURN_VALUE);
+		break;
+	
+	case funcdef: /* A function definition */
 		compile_funcdef(c, n);
 		break;
 	
-	case classdef:
+	case classdef: /* A class definition */
 		/* 'class' NAME parameters ['=' baselist] ':' suite */
 		com_addbyte(c, REFUSE_ARGS);
 		com_node(c, CHILD(n, NCH(n)-1));
