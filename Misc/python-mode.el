@@ -1252,7 +1252,7 @@ filter."
   (switch-to-buffer-other-window
    (apply 'make-comint py-which-bufname py-which-shell nil py-which-args))
   (make-local-variable 'comint-prompt-regexp)
-  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
+  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] \\|^(pdb) ")
   (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
   (set-syntax-table py-mode-syntax-table)
   ;; set up keybindings for this subshell
@@ -1354,7 +1354,9 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 
 (defun py-jump-to-exception (file line)
   (let ((buffer (cond ((string-equal file "<stdin>")
-		       py-exception-buffer)
+		       (if (consp py-exception-buffer)
+			   (cdr py-exception-buffer)
+			 py-exception-buffer))
 		      ((and (consp py-exception-buffer)
 			    (string-equal file (car py-exception-buffer)))
 		       (cdr py-exception-buffer))
@@ -1365,6 +1367,9 @@ See the `\\[py-execute-region]' docs for an account of some subtleties."
 						    nil
 						    file t))))))
     (pop-to-buffer buffer)
+    ;; Force Python mode
+    (if (not (eq major-mode) 'python-mode)
+	(python-mode))
     (goto-line line)
     (message "Jumping to exception in file %s on line %d" file line)))
 
