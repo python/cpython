@@ -796,6 +796,7 @@
 % but only if we actually used hyperref:
 \ifpdf
   \newcommand{\url}[1]{{%
+    \noindent%
     \pdfstartlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
     \py@LinkColor%                              color of the link text
     \small\sf #1%
