@@ -1727,7 +1727,7 @@ format.
 \begin{cfuncdesc}{int}{PyDict_DelItem}{PyObject *p, PyObject *key}
   Removes the entry in dictionary \var{p} with key \var{key}.
   \var{key} must be hashable; if it isn't, \exception{TypeError} is
-  raised.
+  raised.  Returns \code{0} on success or \code{-1} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyDict_DelItemString}{PyObject *p, char *key}
