@@ -14,7 +14,7 @@ insert the contents of this file into the "dir" or "localdir" file at
 an appropriate point and copy the python-*.info* files to the same
 directory.
 
-Thanks go to Milan Zamazal <pdm@freesoft.cz> for providing this
+Thanks go to Milan Zamazal <pdm@zamazal.org> for providing this
 conversion to the info format.
 
 Questions and comments on these documents should be directed to
