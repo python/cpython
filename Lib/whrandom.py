@@ -36,6 +36,11 @@ down in the serial case by using a lock here.)
 # Translated by Guido van Rossum from C source provided by
 # Adrian Baddeley.
 
+import warnings
+warnings.warn("the whrandom module is deprecated; please use random",
+              DeprecationWarning)
+del warnings
+
 
 class whrandom:
     def __init__(self, x = 0, y = 0, z = 0):
