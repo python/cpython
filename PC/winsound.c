@@ -129,7 +129,7 @@ sound_beep(PyObject *self, PyObject *args)
 	 * particular port addresses and running at particular clock speeds,
 	 * and the poor sound card folks have been forced to emulate that in
 	 * all particulars ever since.  But NT and 2000 don't support port
-	 * manipulation,   Don't know about WinME; guessing it's like 98.
+	 * manipulation.  Don't know about WinME; guessing it's like 98.
 	 */
 
 	if (whichOS == WinNT2000) {
