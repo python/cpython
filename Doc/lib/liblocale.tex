@@ -108,6 +108,15 @@ locale.setlocale(locale.LC_ALL, '')
   \end{tableii}
 \end{funcdesc}
 
+\begin{funcdesc}{nl_langinfo}{option}
+
+Return some locale-specific information as a string. This function is
+not available on all systems, and the set of possible options might
+also vary across platforms. The possible argument values are numbers,
+for which symbolic constants are available in the locale module.
+
+\end{funcdesc}
+
 \begin{funcdesc}{getdefaultlocale}{\optional{envvars}}
   Tries to determine the default locale settings and returns
   them as a tuple of the form \code{(\var{language code},
@@ -257,6 +266,116 @@ locale.setlocale(locale.LC_ALL, '')
 \begin{datadesc}{CHAR_MAX}
   This is a symbolic constant used for different values returned by
   \function{localeconv()}.
+\end{datadesc}
+
+The \function{nl_langinfo} function accepts one of the following keys.
+Most descriptions are taken from the corresponding description in the
+GNU C library.
+
+\begin{datadesc}{CODESET}
+Return a string with the name of the character encoding used in the
+selected locale.
+\end{datadesc}
+
+\begin{datadesc}{D_T_FMT}
+Return a string that can be used as a format string for strftime(3) to
+represent time and date in a locale-specific way.
+\end{datadesc}
+
+\begin{datadesc}{D_FMT}
+Return a string that can be used as a format string for strftime(3) to
+represent a date in a locale-specific way.
+\end{datadesc}
+
+\begin{datadesc}{T_FMT}
+Return a string that can be used as a format string for strftime(3) to
+represent a time in a locale-specific way.
+\end{datadesc}
+
+\begin{datadesc}{T_FMT_AMPM}
+The return value can be used as a format string for `strftime' to
+represent time in the am/pm format.
+\end{datadesc}
+
+\begin{datadesc}{DAY_1 ... DAY_7}
+Return name of the n-th day of the week. \[Warning: this follows the US
+convention DAY_1 = Sunday, not the international convention (ISO 8601)
+that Monday is the first day of the week.\]
+\end{datadesc}
+
+\begin{datadesc}{ABDAY_1 ... ABDAY_7}
+Return abbreviated name of the n-th day of the week.
+\end{datadesc}
+
+\begin{datadesc}{MON_1 ... MON_12}
+Return name of the n-th month.
+\end{datadesc}
+
+\begin{datadesc}{ABMON_1 ... ABMON_12}
+Return abbreviated name of the n-th month.
+\end{datadesc}
+
+\begin{datadesc}{RADIXCHAR}
+Return radix character (decimal dot, decimal comma, etc.)
+\end{datadesc}
+
+\begin{datadesc}{THOUSEP}
+Return separator character for thousands (groups of three digits).
+\end{datadesc}
+
+\begin{datadesc}{YESEXPR}
+Return a regular expression that can be used with the regex
+function to recognize a positive response to a yes/no question.
+\[Warning: the expression is in the syntax suitable for the
+  regex C library function, which might differ from the syntax
+  used in \module{re}\]
+\end{datadesc}
+
+\begin{datadesc}{NOEXPR}
+Return a regular expression that can be used with the regex(3)
+function to recognize a negative response to a yes/no question.
+\end{datadesc}
+
+\begin{datadesc}{CRNCYSTR}
+Return the currency symbol, preceded by "-" if the symbol should
+appear before the value, "+" if the symbol should appear after the
+value, or "." if the symbol should replace the radix character.
+\end{datadesc}
+
+\begin{datadesc}{ERA}
+The return value represents the era used in the current locale.
+
+Most locales do not define this value.  An example of a locale which
+does define this value is the Japanese one.  In Japan, the traditional
+representation of dates includes the name of the era corresponding to
+the then-emperor's reign.
+
+Normally it should not be necessary to use this value directly.
+Specifying the \code{E} modifier in their format strings causes the
+\function{strftime} function to use this information.  The format of the
+returned string is not specified, and therefore you should not assume
+knowledge of it on different systems.
+\end{datadesc}
+
+\begin{datadesc}{ERA_YEAR}
+The return value gives the year in the relevant era of the locale.
+\end{datadesc}
+
+\begin{datadesc}{ERA_D_T_FMT}
+This return value can be used as a format string for
+\function{strftime} to represent dates and times in a locale-specific
+era-based way.
+\end{datadesc}
+
+\begin{datadesc}{ERA_D_FMT}
+This return value can be used as a format string for
+\function{strftime} to represent time in a locale-specific era-based
+way.
+\end{datadesc}
+
+\begin{datadesc}{ALT_DIGITS}
+The return value is a representation of up to 100 values used to
+represent the values 0 to 99.
 \end{datadesc}
 
 Example:
