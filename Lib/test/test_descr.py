@@ -3486,6 +3486,14 @@ def test_mutable_bases():
         raise TestFailed, "shouldn't be able to delete .__bases__"
 
     try:
+        D.__bases__ = ()
+    except TypeError, msg:
+        if str(msg) == "a new-style class can't have only classic bases":
+            raise TestFailed, "wrong error message for .__bases__ = ()"
+    else:
+        raise TestFailed, "shouldn't be able to set .__bases__ to ()"
+
+    try:
         D.__bases__ = (D,)
     except TypeError:
         pass
