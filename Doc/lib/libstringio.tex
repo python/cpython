@@ -1,14 +1,14 @@
 \section{\module{StringIO} ---
-         Read and write strings as if they were files.}
+         Read and write strings as files}
+
 \declaremodule{standard}{StringIO}
-
-
 \modulesynopsis{Read and write strings as if they were files.}
 
 
 This module implements a file-like class, \class{StringIO},
 that reads and writes a string buffer (also known as \emph{memory
-files}). See the description on file objects for operations.
+files}). See the description on file objects for operations (section
+\ref{bltin-file-objects}).
 
 \begin{classdesc}{StringIO}{\optional{buffer}}
 When a \class{StringIO} object is created, it can be initialized
@@ -30,17 +30,36 @@ Free the memory buffer.
 
 
 \section{\module{cStringIO} ---
-         Faster version of \module{StringIO}, but not subclassable.}
+         Faster version of \module{StringIO}}
 
 \declaremodule{builtin}{cStringIO}
-\modulesynopsis{Faster version of \module{StringIO}, but not subclassable.}
+\modulesynopsis{Faster version of \module{StringIO}, but not
+                subclassable.}
+\moduleauthor{Jim Fulton}{jfulton@digicool.com}
 \sectionauthor{Fred L. Drake, Jr.}{fdrake@acm.org}
 
 The module \module{cStringIO} provides an interface similar to that of
-the \module{StringIO} module.  Heavy use of \class{StringIO.StringIO}
+the \refmodule{StringIO} module.  Heavy use of \class{StringIO.StringIO}
 objects can be made more efficient by using the function
 \function{StringIO()} from this module instead.
 
 Since this module provides a factory function which returns objects of
 built-in types, there's no way to build your own version using
-subclassing.  Use the original \module{StringIO} module in that case.
+subclassing.  Use the original \refmodule{StringIO} module in that case.
+
+The following data objects are provided as well:
+
+
+\begin{datadesc}{InputType}
+  The type object of the objects created by calling
+  \function{StringIO} with a string parameter.
+\end{datadesc}
+
+\begin{datadesc}{OutputType}
+  The type object of the objects returned by calling
+  \function{StringIO} with no parameters.
+\end{datadesc}
+
+
+There is a C API to the module as well; refer to the module source for 
+more information.
