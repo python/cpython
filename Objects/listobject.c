@@ -1617,6 +1617,13 @@ list_init(PyListObject *self, PyObject *args, PyObject *kw)
 	return 0;
 }
 
+static long
+list_nohash(PyObject *self)
+{
+	PyErr_SetString(PyExc_TypeError, "list objects are unhashable");
+	return -1;
+}
+
 static char append_doc[] =
 "L.append(object) -- append object to end";
 static char extend_doc[] =
@@ -1681,7 +1688,7 @@ PyTypeObject PyList_Type = {
 	0,					/* tp_as_number */
 	&list_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
+	list_nohash,				/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
@@ -1771,7 +1778,7 @@ static PyTypeObject immutable_list_type = {
 	0,					/* tp_as_number */
 	&immutable_list_as_sequence,		/* tp_as_sequence */
 	0,					/* tp_as_mapping */
-	0,					/* tp_hash */
+	list_nohash,				/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */

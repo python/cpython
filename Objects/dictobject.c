@@ -1797,6 +1797,13 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 	return result;
 }
 
+static long
+dict_nohash(PyObject *self)
+{
+	PyErr_SetString(PyExc_TypeError, "dict objects are unhashable");
+	return -1;
+}
+
 static PyObject *
 dict_iter(dictobject *dict)
 {
@@ -1827,7 +1834,7 @@ PyTypeObject PyDict_Type = {
 	0,					/* tp_as_number */
 	&dict_as_sequence,			/* tp_as_sequence */
 	&dict_as_mapping,			/* tp_as_mapping */
-	0,					/* tp_hash */
+	dict_nohash,				/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
 	PyObject_GenericGetAttr,		/* tp_getattro */
