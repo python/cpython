@@ -1810,7 +1810,7 @@ class OptionMenu(Menubutton):
 		self.menuname = menu._w
 		# 'command' is the only supported keyword
 		callback = kwargs.get('command')
-		if kwargs.has_key('command')
+		if kwargs.has_key('command'):
 			del kwargs['command']
 		if kwargs:
 			raise TclError, 'unknown option -'+kwargs.keys()[0]
