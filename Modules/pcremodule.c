@@ -193,7 +193,6 @@ PyPcre_compile(self, args)
 	PyObject *dictionary;
 	char *pattern;
 	const char *error;
-	int num_zeros, i, j;
 	
 	int options, erroroffset;
 	if (!PyArg_ParseTuple(args, "siO!", &pattern, &options,

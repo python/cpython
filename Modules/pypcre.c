@@ -3044,8 +3044,8 @@ if (md->off_num)    free(md->off_num);
 if (md->offset_top) free(md->offset_top); 
 if (md->r1)         free(md->r1); 
 if (md->r2)         free(md->r2); 
-if (md->eptr)       free(md->eptr); 
-if (md->ecode)      free(md->ecode);
+if (md->eptr)       free((char *)md->eptr); 
+if (md->ecode)      free((char *)md->ecode);
 return 0;
 }
 
