@@ -695,13 +695,15 @@ version. This information includes:
   \lineiii{author_email}{email address of the package author}{(2)}
   \lineiii{maintainer}{package maintainer's name}{(2)}
   \lineiii{maintainer_email}{email address of the package maintainer}{(2)}
-  \lineiii{home_page}{url}{(1)}
+  \lineiii{url}{URL of the package's home page}{(1)}
   \lineiii{license}{the terms the package is released under}{}
   \lineiii{description}{a short, summary description of the package}{}
   \lineiii{long_description}{a longer description of the package}{}
   \lineiii{keywords}{some keywords appropriate to the package}{}
-  \lineiii{platform}{a list of the target platforms}{}
-  \lineiii{classifiers}{a list of Trove classifiers}{(3)}
+  \lineiii{platforms}{a list of the target platforms}{}
+  \lineiii{classifiers}{a list of Trove classifiers}{(3),(4)}
+  \lineiii{download_url}{a single URL containing the download location 
+           for this version of the package}{(3)}
 \end{tableiii}
 
 \noindent Notes:
@@ -709,8 +711,9 @@ version. This information includes:
 \item[(1)] these fields are required
 \item[(2)] either the author or the maintainer must be nominated
 \item[(3)] should not be used if your package is to be compatible with
-  Python versions prior to 2.2.3 or 2.3. The list is available from the
-  PyPI website.
+  Python versions prior to 2.2.3 or 2.3.  
+\item[(4)] The list of classifiers is available from the
+  PyPI website (\url{http://www.python.org/pypi}).
 \end{description}
 
 \option{classifiers} are specified in a python list:
