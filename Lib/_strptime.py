@@ -298,9 +298,12 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     month = day = 1
     hour = minute = second = 0
     tz = -1
+    # Default to -1 to signify that values not known; not critical to have,
+    # though
     week_of_year = -1
     week_of_year_start = -1
-    # weekday and julian defaulted to -1 so as to signal need to calculate values
+    # weekday and julian defaulted to -1 so as to signal need to calculate
+    # values
     weekday = julian = -1
     found_dict = found.groupdict()
     for group_key in found_dict.iterkeys():
@@ -388,7 +391,6 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year
     # Calculations below assume 0 is a Monday
-    # XXX only works for W
     if julian == -1 and week_of_year != -1 and weekday != -1 and year != -1:
         # Adjust for U directive so that calculations are not dependent on
         # directive used to figure out week of year
