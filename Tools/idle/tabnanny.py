@@ -2,9 +2,9 @@
 
 """The Tab Nanny despises ambiguous indentation.  She knows no mercy."""
 
-# Released to the public domain, by Tim Peters, 4 April 1998.
+# Released to the public domain, by Tim Peters, 6 April 1998.
 
-__version__ = "3"
+__version__ = "4"
 
 import os
 import sys
@@ -24,7 +24,7 @@ def main():
         if o == '-v':
             verbose = verbose + 1
     if not args:
-        print "Usage:", sys.argv[0], "file_or_directory ..."
+        print "Usage:", sys.argv[0], "[-v] file_or_directory ..."
         return
     for arg in args:
         check(arg)
@@ -245,18 +245,10 @@ if hasattr(tokenize, 'NL'):
                 INDENT=tokenize.INDENT,
                 DEDENT=tokenize.DEDENT,
                 NEWLINE=tokenize.NEWLINE,
-                COMMENT=tokenize.COMMENT,
-                NL=tokenize.NL):
+                JUNK=(tokenize.COMMENT, tokenize.NL) ):
      global indents, check_equal
 
-     # test in decreasing order of frequency, although the check_equal
-     # test *must* be last; INDENT and DEDENT appear equally often
-
-     if type in (COMMENT, NL):
-         # the indentation of these guys is meaningless
-         pass
-
-     elif type == NEWLINE:
+     if type == NEWLINE:
          # a program statement, or ENDMARKER, will eventually follow,
          # after some (possibly empty) run of tokens of the form
          #     (NL | COMMENT)* (INDENT | DEDENT+)?
@@ -281,7 +273,7 @@ if hasattr(tokenize, 'NL'):
          assert check_equal  # else no earlier NEWLINE, or an earlier INDENT
          del indents[-1]
 
-     elif check_equal:
+     elif check_equal and type not in JUNK:
          # this is the first "real token" following a NEWLINE, so it
          # must be the first token of the next program statement, or an
          # ENDMARKER; the "line" argument exposes the leading whitespace
