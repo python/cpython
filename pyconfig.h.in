@@ -471,9 +471,6 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
-/* Define to 1 if you have the `strptime' function. */
-#undef HAVE_STRPTIME
-
 /* Define to 1 if `st_blksize' is member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 

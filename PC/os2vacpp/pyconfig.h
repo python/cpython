@@ -143,7 +143,6 @@ typedef int pid_t;
 #define HAVE_FTIME               1 /* We have ftime() in <sys/timeb.h>      */
 #define HAVE_CLOCK               1 /* clock()                               */
 #define HAVE_STRFTIME            1 /* strftime()                            */
-#define HAVE_STRPTIME            1 /* strptime()                            */
 #define HAVE_MKTIME              1 /* mktime()                              */
 #define HAVE_TZNAME              1 /* No tm_zone but do have tzname[]       */
 #define HAVE_TIMES               1 /* #include <sys/times.h>                */
