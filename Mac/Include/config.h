@@ -31,6 +31,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
    with CodeWarrior, we generally use the most recent version.
 */
 
+#include "macbuildno.h"
+
 #define USE_STACKCHECK
 
 #ifdef applec
