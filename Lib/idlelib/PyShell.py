@@ -67,10 +67,6 @@ linecache.checkcache = extended_linecache_checkcache
 class PyShellEditorWindow(EditorWindow):
     "Regular text edit window when a shell is present"
 
-    # XXX KBK 10Dec02 Breakpoints are currently removed if module is modified.
-    # In the future, it may be possible to preserve breakpoints by changing
-    # their line numbers as a module is modified.
-
     def __init__(self, *args):
         self.breakpoints = []
         apply(EditorWindow.__init__, (self,) + args)
@@ -78,11 +74,12 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
-        self.breakpointPath=os.path.join(idleConf.GetUserCfgDir(), 'breakpoints.lst')
-
+        self.breakpointPath = os.path.join(idleConf.GetUserCfgDir(),
+                                           'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
         if self.io.filename: self.restore_file_breaks()
-        def filename_changed_hook(old_hook=self.io.filename_change_hook,self=self):
+        def filename_changed_hook(old_hook=self.io.filename_change_hook,
+                                  self=self):
             self.restore_file_breaks()
             old_hook()
         self.io.set_filename_change_hook(filename_changed_hook)
@@ -148,49 +145,82 @@ class PyShellEditorWindow(EditorWindow):
                 pass
 
     def store_file_breaks(self):
-        if not self.breakpoints:
-            return
-        filename=self.io.filename
+        "Save breakpoints when file is saved"
+        # XXX 13 Dec 2002 KBK Currently the file must be saved before it can
+        #     be run.  The breaks are saved at that time.  If we introduce
+        #     a temporary file save feature the save breaks functionality
+        #     needs to be re-verified, since the breaks at the time the
+        #     temp file is created may differ from the breaks at the last
+        #     permanent save of the file.  A break introduced after a save
+        #     will be effective,  but not persistent.  This is necessary to
+        #     keep the saved breaks synched with the saved file.
+        #
+        #     Breakpoints are set as tagged ranges in the text.  Certain
+        #     kinds of edits cause these ranges to be deleted: Inserting
+        #     or deleting a line just before a breakpoint, and certain
+        #     deletions prior to a breakpoint.  These issues need to be
+        #     investigated and understood.  It's not clear if they are
+        #     Tk issues or IDLE issues, or whether they can actually
+        #     be fixed.  Since a modified file has to be saved before it is
+        #     run, and since self.breakpoints (from which the subprocess
+        #     debugger is loaded) is updated during the save, the visible
+        #     breaks stay synched with the subprocess even if one of these
+        #     unexpected breakpoint deletions occurs.
+        breaks = self.breakpoints
+        filename = self.io.filename
         try:
-            lines=open(self.breakpointPath,"r").readlines()
+            lines = open(self.breakpointPath,"r").readlines()
         except IOError:
-            lines=[]
-        new_file=open(self.breakpointPath,"w")
+            lines = []
+        new_file = open(self.breakpointPath,"w")
         for line in lines:
-            if not line.startswith(filename+"="):
+            if not line.startswith(filename + '='):
                 new_file.write(line)
-        new_file.write(filename+"="+`self.get_current_breaks()`+"\n")
+        self.update_breakpoints()
+        breaks = self.breakpoints
+        if breaks:
+            new_file.write(filename + '=' + str(breaks) + '\n')
         new_file.close()
 
     def restore_file_breaks(self):
         self.text.update()   # this enables setting "BREAK" tags to be visible
-        filename=self.io.filename
+        filename = self.io.filename
+        if filename is None:
+            return
         if os.path.isfile(self.breakpointPath):
-            lines=open(self.breakpointPath,"r").readlines()
+            lines = open(self.breakpointPath,"r").readlines()
             for line in lines:
-                if line.startswith(filename+"="):
-                    breakpoint_linenumbers=eval(line[len(filename)+1:]) 
+                if line.startswith(filename + '='):
+                    breakpoint_linenumbers = eval(line[len(filename)+1:]) 
                     for breakpoint_linenumber in breakpoint_linenumbers:
                         self.set_breakpoint(breakpoint_linenumber)
 
-    def get_current_breaks(self):
-        #
-        # retrieves all the breakpoints in the current window
-        #
+    def update_breakpoints(self):
+        "Retrieves all the breakpoints in the current window"
         text = self.text
-        lines = text.tag_ranges("BREAK")
-        result = [int(float((lines[i]))) for i in range(0,len(lines),2)]
-        return result
- 
-    def saved_change_hook(self):
-        "Extend base method - clear breaks if module is modified"
-        if not self.get_saved():
-            self.clear_file_breaks()
-        EditorWindow.saved_change_hook(self)
+        ranges = text.tag_ranges("BREAK")
+        linenumber_list = self.ranges_to_linenumbers(ranges)
+        self.breakpoints = linenumber_list
+
+    def ranges_to_linenumbers(self, ranges):
+        lines = []
+        for index in range(0, len(ranges), 2):
+            lineno = int(float(ranges[index]))
+            end = int(float(ranges[index+1]))
+            while lineno < end:
+                lines.append(lineno)
+                lineno += 1
+        return lines
+
+# XXX 13 Dec 2020 KBK Not used currently
+#    def saved_change_hook(self):
+#        "Extend base method - clear breaks if module is modified"
+#        if not self.get_saved():
+#            self.clear_file_breaks()
+#        EditorWindow.saved_change_hook(self)
 
     def _close(self):
         "Extend base method - clear breaks when module is closed"
-        self.store_file_breaks()
         self.clear_file_breaks()
         EditorWindow._close(self)
                                 

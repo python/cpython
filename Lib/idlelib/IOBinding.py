@@ -13,27 +13,8 @@ import tempfile
 import tkFileDialog
 import tkMessageBox
 import re
+
 from configHandler import idleConf
-
-#$ event <<open-window-from-file>>
-#$ win <Control-o>
-#$ unix <Control-x><Control-f>
-
-#$ event <<save-window>>
-#$ win <Control-s>
-#$ unix <Control-x><Control-s>
-
-#$ event <<save-window-as-file>>
-#$ win <Alt-s>
-#$ unix <Control-x><Control-w>
-
-#$ event <<print-window>>
-#$ win <Control-p>
-#$ unix <Control-x><Control-p>
-
-#$ event <<save-copy-of-window-as-file>>
-#$ win <Alt-Shift-s>
-#$ unix <Control-x><w>
 
 try:
     from codecs import BOM_UTF8
@@ -85,11 +66,12 @@ else:
 encoding = encoding.lower()
 
 coding_re = re.compile("coding[:=]\s*([-\w_.]+)")
+
 def coding_spec(str):
-
     """Return the encoding declaration according to PEP 263.
-    Raise LookupError if the encoding is declared but unknown."""
 
+    Raise LookupError if the encoding is declared but unknown.
+    """
     # Only consider the first two lines
     str = str.split("\n")[:2]
     str = "\n".join(str)
@@ -106,6 +88,7 @@ def coding_spec(str):
         # The standard encoding error does not indicate the encoding
         raise LookupError, "Unknown encoding "+name
     return name
+
 
 class IOBinding:
 
@@ -218,14 +201,14 @@ class IOBinding:
         self.set_filename(filename)
         self.text.mark_set("insert", "1.0")
         self.text.see("insert")
-
         self.updaterecentfileslist(filename)
         return True
 
     def decode(self, chars):
-        # Try to create a Unicode string. If that fails, let Tcl try
-        # its best
+        """Create a Unicode string
 
+        If that fails, let Tcl try its best
+        """
         # Check presence of a UTF-8 signature first
         if chars.startswith(BOM_UTF8):
             try:
@@ -237,7 +220,6 @@ class IOBinding:
                 # Indicates that this file originally had a BOM
                 self.fileencoding = BOM_UTF8
                 return chars
-
         # Next look for coding specification
         try:
             enc = coding_spec(chars)
@@ -248,19 +230,16 @@ class IOBinding:
                 "installation. The file may not display correctly" % name,
                 master = self.text)
             enc = None
-
         if enc:
             try:
                 return unicode(chars, enc)
             except UnicodeError:
                 pass
-
         # If it is ASCII, we need not to record anything
         try:
             return unicode(chars, 'ascii')
         except UnicodeError:
             pass
-
         # Finally, try the locale's encoding. This is deprecated;
         # the user should declare a non-ASCII encoding
         try:
@@ -295,8 +274,8 @@ class IOBinding:
         else:
             if self.writefile(self.filename):
                 self.set_saved(1)
+                self.editwin.store_file_breaks()
         self.text.focus_set()
-
         return "break"
 
     def save_as(self, event):
@@ -305,8 +284,8 @@ class IOBinding:
             if self.writefile(filename):
                 self.set_filename(filename)
                 self.set_saved(1)
+                self.editwin.store_file_breaks()
         self.text.focus_set()
-
         self.updaterecentfileslist(filename)
         return "break"
 
@@ -315,7 +294,6 @@ class IOBinding:
         if filename:
             self.writefile(filename)
         self.text.focus_set()
-
         self.updaterecentfileslist(filename)
         return "break"
 
@@ -326,7 +304,6 @@ class IOBinding:
             f = open(filename, "w")
             f.write(chars)
             f.close()
-            ## print "saved to", `filename`
             return True
         except IOError, msg:
             tkMessageBox.showerror("I/O Error", str(msg),
@@ -338,14 +315,12 @@ class IOBinding:
             # This is either plain ASCII, or Tk was returning mixed-encoding
             # text to us. Don't try to guess further.
             return chars
-
         # See whether there is anything non-ASCII in it.
         # If not, no need to figure out the encoding.
         try:
             return chars.encode('ascii')
         except UnicodeError:
             pass
-
         # If there is an encoding declared, try this first.
         try:
             enc = coding_spec(chars)
@@ -358,17 +333,14 @@ class IOBinding:
                 return chars.encode(enc)
             except UnicodeError:
                 failed = "Invalid encoding '%s'" % enc
-
         if failed:
             tkMessageBox.showerror(
                 "I/O Error",
                 "%s. Saving as UTF-8" % failed,
                 master = self.text)
-
         # If there was a UTF-8 signature, use that. This should not fail
         if self.fileencoding == BOM_UTF8 or failed:
             return BOM_UTF8 + chars.encode("utf-8")
-
         # Try the original file encoding next, if any
         if self.fileencoding:
             try:
@@ -380,7 +352,6 @@ class IOBinding:
                     % self.fileencoding,
                     master = self.text)
                 return BOM_UTF8 + chars.encode("utf-8")
-
         # Nothing was declared, and we had not determined an encoding
         # on loading. Recommend an encoding line.
         try:
@@ -469,11 +440,8 @@ class IOBinding:
                                                   filetypes=self.filetypes)
         return self.savedialog.show(initialdir=dir, initialfile=base)
 
-
     def updaterecentfileslist(self,filename):
-        #
-        # Updates recent file list on all editor windows
-        #
+        "Update recent file list on all editor windows"
         self.editwin.UpdateRecentFilesList(filename)
 
 def test():

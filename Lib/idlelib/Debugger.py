@@ -331,7 +331,7 @@ class Debugger:
         for editwin in pyshell_edit_windows:
             filename = editwin.io.filename
             try:
-                for lineno in editwin.get_current_breaks():
+                for lineno in editwin.breakpoints:
                     self.set_breakpoint_here(filename, lineno)
             except AttributeError:
                 continue
