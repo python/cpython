@@ -45,8 +45,23 @@ typedef unsigned char *POINTER;
 /* UINT2 defines a two byte word */
 typedef unsigned short int UINT2;
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#else
+#ifndef LONG_BIT
+#define LONG_BIT 32
+#endif
+#endif
+
 /* UINT4 defines a four byte word */
+#if WORD_BIT == 32
+typedef unsigned int UINT4;
+#else
+#if LONG_BIT == 32
 typedef unsigned long int UINT4;
+#endif
+/* Too bad if neither is */
+#endif
 
 /* PROTO_LIST is defined depending on how PROTOTYPES is defined above.
 If using PROTOTYPES, then PROTO_LIST returns the list, otherwise it
