@@ -1787,24 +1787,63 @@ imp_new_module(self, args)
 	return PyModule_New(name);
 }
 
+/* Doc strings */
+
+static char doc_imp[] = "\
+This module provides the components needed to build your own\n\
+__import__ function.  Undocumented functions are obsolete.\n\
+";
+
+static char doc_find_module[] = "\
+find_module(name, [path]) -> (file, filename, (suffix, mode, type))\n\
+Search for a module.  If path is omitted or None, search for a\n\
+built-in, frozen or special module and continue search in sys.path.\n\
+The module name cannot contain '.'; to search for a submodule of a\n\
+package, pass the submodule name and the package's __path__.\
+";
+
+static char doc_load_module[] = "\
+load_module(name, file, filename, (suffix, mode, type)) -> module\n\
+Load a module, given information returned by find_module().\n\
+The module name must include the full package name, if any.\
+";
+
+static char doc_get_magic[] = "\
+get_magic() -> string\n\
+Return the magic number for .pyc or .pyo files.\
+";
+
+static char doc_get_suffixes[] = "\
+get_suffixes() -> [(suffix, mode, type), ...]\n\
+Return a list of (suffix, mode, type) tuples describing the files\n\
+that find_module() looks for.\
+";
+
+static char doc_new_module[] = "\
+new_module(name) -> module\n\
+Create a new module.  Do not enter it in sys.modules.\n\
+The module name must include the full package name, if any.\
+";
+
 static PyMethodDef imp_methods[] = {
-	{"find_module",		imp_find_module,	1},
+	{"find_module",		imp_find_module,	1, doc_find_module},
+	{"get_magic",		imp_get_magic,		1, doc_get_magic},
+	{"get_suffixes",	imp_get_suffixes,	1, doc_get_suffixes},
+	{"load_module",		imp_load_module,	1, doc_load_module},
+	{"new_module",		imp_new_module,		1, doc_new_module},
+	/* The rest are obsolete */
 	{"get_frozen_object",	imp_get_frozen_object,	1},
-	{"get_magic",		imp_get_magic,		1},
-	{"get_suffixes",	imp_get_suffixes,	1},
 	{"init_builtin",	imp_init_builtin,	1},
 	{"init_frozen",		imp_init_frozen,	1},
 	{"is_builtin",		imp_is_builtin,		1},
 	{"is_frozen",		imp_is_frozen,		1},
 	{"load_compiled",	imp_load_compiled,	1},
 	{"load_dynamic",	imp_load_dynamic,	1},
-	{"load_module",		imp_load_module,	1},
 	{"load_package",	imp_load_package,	1},
 #ifdef macintosh
 	{"load_resource",	imp_load_resource,	1},
 #endif
 	{"load_source",		imp_load_source,	1},
-	{"new_module",		imp_new_module,		1},
 	{NULL,			NULL}		/* sentinel */
 };
 
@@ -1828,7 +1867,8 @@ initimp()
 {
 	PyObject *m, *d;
 
-	m = Py_InitModule("imp", imp_methods);
+	m = Py_InitModule4("imp", imp_methods, doc_imp,
+			   NULL, PYTHON_API_VERSION);
 	d = PyModule_GetDict(m);
 
 	if (setint(d, "SEARCH_ERROR", SEARCH_ERROR) < 0) goto failure;
