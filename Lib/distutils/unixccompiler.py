@@ -81,20 +81,20 @@ class UnixCCompiler (CCompiler):
 
 
 
-    def __init__ (self,
-                  verbose=0,
-                  dry_run=0,
-                  force=0):
+    def __init__(self,
+                 verbose=0,
+                 dry_run=0,
+                 force=0):
         CCompiler.__init__ (self, verbose, dry_run, force)
 
 
-    def preprocess (self,
-                    source,
-                    output_file=None,
-                    macros=None,
-                    include_dirs=None,
-                    extra_preargs=None,
-                    extra_postargs=None):
+    def preprocess(self,
+                   source,
+                   output_file=None,
+                   macros=None,
+                   include_dirs=None,
+                   extra_preargs=None,
+                   extra_postargs=None):
 
         (_, macros, include_dirs) = \
             self._fix_compile_args(None, macros, include_dirs)
@@ -120,14 +120,14 @@ class UnixCCompiler (CCompiler):
                 raise CompileError, msg
 
 
-    def compile (self,
-                 sources,
-                 output_dir=None,
-                 macros=None,
-                 include_dirs=None,
-                 debug=0,
-                 extra_preargs=None,
-                 extra_postargs=None):
+    def compile(self,
+                sources,
+                output_dir=None,
+                macros=None,
+                include_dirs=None,
+                debug=0,
+                extra_preargs=None,
+                extra_postargs=None):
 
         (output_dir, macros, include_dirs) = \
             self._fix_compile_args(output_dir, macros, include_dirs)
@@ -164,11 +164,11 @@ class UnixCCompiler (CCompiler):
     # compile ()
 
 
-    def create_static_lib (self,
-                           objects,
-                           output_libname,
-                           output_dir=None,
-                           debug=0):
+    def create_static_lib(self,
+                          objects,
+                          output_libname,
+                          output_dir=None,
+                          debug=0):
 
         (objects, output_dir) = self._fix_object_args(objects, output_dir)
 
@@ -197,19 +197,19 @@ class UnixCCompiler (CCompiler):
     # create_static_lib ()
 
 
-    def link (self,
-              target_desc,
-              objects,
-              output_filename,
-              output_dir=None,
-              libraries=None,
-              library_dirs=None,
-              runtime_library_dirs=None,
-              export_symbols=None,
-              debug=0,
-              extra_preargs=None,
-              extra_postargs=None,
-              build_temp=None):
+    def link(self,
+             target_desc,
+             objects,
+             output_filename,
+             output_dir=None,
+             libraries=None,
+             library_dirs=None,
+             runtime_library_dirs=None,
+             export_symbols=None,
+             debug=0,
+             extra_preargs=None,
+             extra_postargs=None,
+             build_temp=None):
 
         (objects, output_dir) = self._fix_object_args(objects, output_dir)
         (libraries, library_dirs, runtime_library_dirs) = \
@@ -250,10 +250,10 @@ class UnixCCompiler (CCompiler):
     # These are all used by the 'gen_lib_options() function, in
     # ccompiler.py.
 
-    def library_dir_option (self, dir):
+    def library_dir_option(self, dir):
         return "-L" + dir
 
-    def runtime_library_dir_option (self, dir):
+    def runtime_library_dir_option(self, dir):
         # XXX Hackish, at the very least.  See Python bug #445902:
         # http://sourceforge.net/tracker/index.php
         #   ?func=detail&aid=445902&group_id=5470&atid=105470
@@ -272,11 +272,11 @@ class UnixCCompiler (CCompiler):
         else:
             return "-R" + dir
 
-    def library_option (self, lib):
+    def library_option(self, lib):
         return "-l" + lib
 
 
-    def find_library_file (self, dirs, lib, debug=0):
+    def find_library_file(self, dirs, lib, debug=0):
 
         for dir in dirs:
             shared = os.path.join(
