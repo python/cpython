@@ -36,7 +36,7 @@ class StreamReader(Codec,codecs.StreamReader):
 
     def __init__(self,stream,errors='strict',mapping=None):
 
-        codecs.StreamReader.__init__(self,strict,errors)
+        codecs.StreamReader.__init__(self,stream,errors)
         self.mapping = mapping
 
     def decode(self,input,errors='strict'):
