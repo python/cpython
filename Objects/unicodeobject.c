@@ -1001,31 +1001,39 @@ PyObject *PyUnicode_DecodeUTF16(const char *s,
     if (byteorder)
 	bo = *byteorder;
 
+    /* Check for BOM marks (U+FEFF) in the input and adjust current
+       byte order setting accordingly. In native mode, the leading BOM
+       mark is skipped, in all other modes, it is copied to the output
+       stream as-is (giving a ZWNBSP character). */
+    if (bo == 0) {
+#ifdef BYTEORDER_IS_LITTLE_ENDIAN
+	if (*q == 0xFEFF) {
+	    q++;
+	    bo = -1;
+	} else if (*q == 0xFFFE) {
+	    q++;
+	    bo = 1;
+	}
+#else    
+	if (*q == 0xFEFF) {
+	    q++;
+	    bo = 1;
+	} else if (*q == 0xFFFE) {
+	    q++;
+	    bo = -1;
+	}
+#endif
+    }
+    
     while (q < e) {
 	register Py_UNICODE ch = *q++;
 
-	/* Check for BOM marks (U+FEFF) in the input and adjust
-	   current byte order setting accordingly. Swap input
-	   bytes if needed. (This assumes sizeof(Py_UNICODE) == 2
-	   !) */
+	/* Swap input bytes if needed. (This assumes
+	   sizeof(Py_UNICODE) == 2 !) */
 #ifdef BYTEORDER_IS_LITTLE_ENDIAN
-	if (ch == 0xFEFF) {
-	    bo = -1;
-	    continue;
-	} else if (ch == 0xFFFE) {
-	    bo = 1;
-	    continue;
-	}
 	if (bo == 1)
 	    ch = (ch >> 8) | (ch << 8);
 #else    
-	if (ch == 0xFEFF) {
-	    bo = 1;
-	    continue;
-	} else if (ch == 0xFFFE) {
-	    bo = -1;
-	    continue;
-	}
 	if (bo == -1)
 	    ch = (ch >> 8) | (ch << 8);
 #endif
