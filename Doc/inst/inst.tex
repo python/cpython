@@ -249,7 +249,7 @@ Python and extensions) that will be installed.
 
 In the future, more directories will be added to handle Python scripts,
 documentation, binary executables, and whatever else is needed to handle
-the job of installing Python modules and applicatins.
+the job of installing Python modules and applications.
 
 
 \subsection{How installation works}
@@ -266,26 +266,37 @@ the standard location for third-party Python modules.  This location
 varies by platform and by how you built/installed Python itself.  On
 Unix and Mac OS, it also depends on whether the module distribution
 being installed is pure Python or contains extensions (``non-pure''):
-\begin{tableiii}{lll}{textrm}%
-  {Platform}{Standard installation location}{Default value}
-  \lineiii{Unix (pure Python modules)}
-          {\file{\filevar{prefix}/lib/python1.6/site-packages}}
-          {\file{/usr/local/lib/python1.6/site-packages}}
-  \lineiii{Unix (non-pure distribution)}
-          {\file{\filevar{exec-prefix}/lib/python1.6/site-packages}}
-          {\file{/usr/local/lib/python1.6/site-packages}}
-  \lineiii{Windows}
-          {\filevar{prefix}}
-          {\file{C:\bslash{}Python}
-            \footnote{\file{C:\bslash{}Program Files\bslash{}Python}
-            under Python 1.6a1 and earlier}}
-  \lineiii{Mac~OS (pure Python modules)}
-          {\file{\filevar{prefix}}:Lib}
-          {\file{Python:Lib}\XXX{???}}
-  \lineiii{Mac~OS (non-pure distribution)}
-          {\file{\filevar{prefix}}:Mac:PlugIns}
-          {\file{Python:Mac:PlugIns}\XXX{???}}
-\end{tableiii}
+\begin{tableiv}{l|l|l|c}{textrm}%
+  {Platform}{Standard installation location}{Default value}{Notes}
+  \lineiv{Unix (pure)}
+          {\filenq{\var{prefix}/lib/python1.6/site-packages}}
+          {\filenq{/usr/local/lib/python1.6/site-packages}}
+          {}
+  \lineiv{Unix (non-pure)}
+          {\filenq{\var{exec-prefix}/lib/python1.6/site-packages}}
+          {\filenq{/usr/local/lib/python1.6/site-packages}}
+          {}
+  \lineiv{Windows}
+          {\filenq{\var{prefix}}}
+          {\filenq{C:\bslash{}Python}}
+          {(1)}
+  \lineiv{Mac~OS (pure)}
+          {\filenq{\var{prefix}:Lib}}
+          {\filenq{Python:Lib}  \XXX{???}}
+          {}
+  \lineiv{Mac~OS (non-pure)}
+          {\var{prefix}:Mac:PlugIns}
+          {\filenq{Python:Mac:PlugIns}\XXX{???}}
+          {}
+\end{tableiv}
+
+\noindent Notes:
+\begin{description}
+\item[(1)] The default installation directory on Windows was
+  \file{C:\bslash{}Program Files\bslash{}Python} under Python 1.6a1,
+  1.5.2, and earlier.
+\end{description}
+
 \filevar{prefix} and \filevar{exec-prefix} stand for the directories
 that Python is installed to, and where it finds its libraries at
 run-time.  They are always the same under Windows and Mac~OS, and very
