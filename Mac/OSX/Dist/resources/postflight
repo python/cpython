@@ -66,24 +66,25 @@ if [ "$DEST" = "/" ]; then
 	done
 fi
 
-
-# The link in the app bundles and in pydoc need updating.
-installed_python=$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python
-for app in BuildApplet IDLE PackageManager PythonIDE; do
-    ln -fsh  $installed_python \
-          $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS
-    ed -s $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS/$app << xyzzy
+if [ "$DEST" != "/" ]; then
+	# The link in the app bundles and in pydoc need updating.
+	installed_python=$DEST/Library/Frameworks/Python.framework/Versions/$PYVER/Resources/Python.app/Contents/MacOS/python
+	for app in BuildApplet IDLE PackageManager PythonIDE; do
+		ln -fsh  $installed_python \
+			  $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS
+		ed -s $DEST/Applications/MacPython-$PYVER/$app.app/Contents/MacOS/$app << xyzzy
 1c
 #!$installed_python
 .
 w
 q
 xyzzy
-ed -s $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/bin/pydoc << xyzzy
+	ed -s $DEST/Library/Frameworks/Python.framework/Versions/$PYVER/bin/pydoc << xyzzy
 1c
 #!$installed_python
 .
 w
 q
 xyzzy
-done
+	done
+fi
