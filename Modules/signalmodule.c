@@ -104,6 +104,8 @@ static PyObject *DefaultHandler;
 static PyObject *IgnoreHandler;
 static PyObject *IntHandler;
 
+static RETSIGTYPE (*old_siginthandler)() = SIG_DFL;
+
 
 
 static PyObject *
@@ -286,7 +288,6 @@ initsignal()
 	x = DefaultHandler = PyInt_FromLong((long)SIG_DFL);
         if (!x || PyDict_SetItemString(d, "SIG_DFL", x) < 0)
                 goto finally;
-        Py_DECREF(x);
 
 	x = IgnoreHandler = PyInt_FromLong((long)SIG_IGN);
         if (!x || PyDict_SetItemString(d, "SIG_IGN", x) < 0)
@@ -295,10 +296,12 @@ initsignal()
         x = PyInt_FromLong((long)NSIG);
         if (!x || PyDict_SetItemString(d, "NSIG", x) < 0)
                 goto finally;
+        Py_DECREF(x);
 
 	x = IntHandler = PyDict_GetItemString(d, "default_int_handler");
         if (!x)
                 goto finally;
+	Py_INCREF(IntHandler);
 
 	Handlers[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
@@ -322,10 +325,10 @@ initsignal()
 	}
 	if (Handlers[SIGINT].func == DefaultHandler) {
 		/* Install default int handler */
+		Py_INCREF(IntHandler);
 		Py_DECREF(Handlers[SIGINT].func);
 		Handlers[SIGINT].func = IntHandler;
-		Py_INCREF(IntHandler);
-		signal(SIGINT, &signal_handler);
+		old_siginthandler = signal(SIGINT, &signal_handler);
 	}
 
 #ifdef SIGHUP
@@ -503,7 +506,28 @@ initsignal()
 
 	/* Check for errors */
   finally:
-        Py_FatalError("can't initialize module signal");
+        return;
+}
+
+static void
+finisignal()
+{
+	int i;
+
+	signal(SIGINT, old_siginthandler);
+
+	for (i = 1; i < NSIG; i++) {
+		Handlers[i].tripped = 0;
+		Py_XDECREF(Handlers[i].func);
+		Handlers[i].func = NULL;
+	}
+
+	Py_XDECREF(IntHandler);
+	IntHandler = NULL;
+	Py_XDECREF(DefaultHandler);
+	DefaultHandler = NULL;
+	Py_XDECREF(IgnoreHandler);
+	IgnoreHandler = NULL;
 }
 
 
@@ -561,6 +585,13 @@ void
 PyOS_InitInterrupts()
 {
 	initsignal();
+	_PyImport_FixupExtension("signal", "signal");
+}
+
+void
+PyOS_FiniInterrupts()
+{
+	finisignal();
 }
 
 int
