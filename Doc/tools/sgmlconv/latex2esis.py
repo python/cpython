@@ -336,6 +336,8 @@ def main():
         "excdesc": (["name"], 0, 0, 1, 0),
         "funcdesc": (["name", ("args",)], 0, 0, 1, 0),
         "funcdescni": (["name", ("args",)], 0, 0, 1, 0),
+        "funcline": (["name"], 0, 0, 0, 0),
+        "funclineni": (["name"], 0, 0, 0, 0),
         "geq": ([], 0, 1, 0, 0),
         "hline": ([], 0, 1, 0, 0),
         "indexii": (["ie1", "ie2"], 0, 1, 0, 0),
