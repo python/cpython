@@ -112,13 +112,14 @@ finally:
 	fp.close()
 
 print 'reduce'
-if reduce('x,y:x+y', ['a', 'b', 'c'], '') <> 'abc':
+if reduce(lambda x, y: x+y, ['a', 'b', 'c'], '') <> 'abc':
 	raise TestFailed, 'reduce(): implode a string'
-if reduce('x,y:x+y', [['a', 'c'], [], ['d', 'w']], []) <> ['a','c','d','w']:
+if reduce(lambda x, y: x+y,
+	  [['a', 'c'], [], ['d', 'w']], []) <> ['a','c','d','w']:
 	raise TestFailed, 'reduce(): append'
-if reduce('x,y: x*y', range(2,8), 1) <> 5040:
+if reduce(lambda x, y: x*y, range(2,8), 1) <> 5040:
 	raise TestFailed, 'reduce(): compute 7!'
-if reduce('x,y:x*y', range(2,21), 1L) <> 2432902008176640000L:
+if reduce(lambda x, y: x*y, range(2,21), 1L) <> 2432902008176640000L:
 	raise TestFailed, 'reduce(): compute 20!, use long'
 
 print 'reload'

@@ -1,7 +1,5 @@
 # Testing select module
 
-from test_support import *
-
 def test():
 	import select
 	import os

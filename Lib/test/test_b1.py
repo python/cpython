@@ -91,11 +91,11 @@ execfile(TESTFN)
 unlink(TESTFN)
 
 print 'filter'
-if filter("c: 'a' <= c <= 'z'", 'Hello World') <> 'elloorld':
+if filter(lambda c: 'a' <= c <= 'z', 'Hello World') <> 'elloorld':
 	raise TestFailed, 'filter (filter a string)'
 if filter(None, [1, 'hello', [], [3], '', None, 9, 0]) <> [1, 'hello', [3], 9]:
 	raise TestFailed, 'filter (remove false values)'
-if filter('x: x > 0', [1, -3, 9, 0, 2]) <> [1, 9, 2]:
+if filter(lambda x: x > 0, [1, -3, 9, 0, 2]) <> [1, 9, 2]:
 	raise TestFailed, 'filter (keep positives)'
 
 print 'float'
@@ -120,11 +120,6 @@ if int(314) <> 314: raise TestFailed, 'int(314)'
 if int(3.14) <> 3: raise TestFailed, 'int(3.14)'
 if int(314L) <> 314: raise TestFailed, 'int(314L)'
 
-print 'lambda'
-binary_plus = lambda('x, y: x+y')
-if binary_plus(2, 10) <> 12:
-	raise TestFailed, 'binary_plus(2, 10)'
-
 print 'len'
 if len('123') <> 3: raise TestFailed, 'len(\'123\')'
 if len(()) <> 0: raise TestFailed, 'len(())'
@@ -146,13 +141,13 @@ if map(None, 'abcd', 'efg') <> \
 	raise TestFailed, 'map(None, \'abcd\', \'efg\')'
 if map(None, range(10)) <> [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
 	raise TestFailed, 'map(None, range(10))'
-if map('x: x*x', range(1,4)) <> [1, 4, 9]:
-	raise TestFailed, 'map(\'x: x*x\', range(1,4))'
+if map(lambda x: x*x, range(1,4)) <> [1, 4, 9]:
+	raise TestFailed, 'map(lambda x: x*x, range(1,4))'
 from math import sqrt
-if map('x: map(sqrt,x)', [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
-	raise TestFailed, map('x: map(sqrt,x)', [[16, 4], [81, 9]])
-if map('x,y: x+y', [1,3,2], [9,1,4]) <> [10, 4, 6]:
-	raise TestFailed, 'map(\'x,y: x+y\', [1,3,2], [9,1,4])'
+if map(lambda x: map(sqrt,x), [[16, 4], [81, 9]]) <> [[4.0, 2.0], [9.0, 3.0]]:
+	raise TestFailed, 'map(lambda x: map(sqrt,x), [[16, 4], [81, 9]])'
+if map(lambda x, y: x+y, [1,3,2], [9,1,4]) <> [10, 4, 6]:
+	raise TestFailed, 'map(lambda x,y: x+y, [1,3,2], [9,1,4])'
 def plus(*v):
 	accu = 0
 	for i in v: accu = accu + i
