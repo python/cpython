@@ -61,7 +61,9 @@ class GlobTests(unittest.TestCase):
         else:
             pattern = os.path.join(*parts)
         p = os.path.join(self.tempdir, pattern)
-        return glob.glob(p)
+        res = glob.glob(p)
+        self.assertEqual(list(glob.iglob(p)), res)
+        return res
 
     def assertSequencesEqual_noorder(self, l1, l2):
         self.assertEqual(set(l1), set(l2))
