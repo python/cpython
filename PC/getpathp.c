@@ -263,7 +263,9 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		if (reqdSize) {
 			ppPaths[index] = malloc(reqdSize);
 			if (ppPaths[index]) {
-				RegQueryValueEx(subKey, NULL, 0, NULL, (LPBYTE)ppPaths[index], &reqdSize);
+				RegQueryValueEx(subKey, NULL, 0, NULL, 
+				                (LPBYTE)ppPaths[index], 
+				                &reqdSize);
 				dataSize += reqdSize + 1; /* 1 for the ";" */
 			}
 		}
@@ -275,23 +277,27 @@ getpythonregpath(HKEY keyBase, int skipcore)
 		DWORD reqdSize = dataSize;
 		/* Copy our collected strings */
 		for (index=0;index<numKeys;index++) {
-			int len;
 			if (index > 0) {
 				*(szCur++) = _T(';');
 				dataSize--;
 			}
-			len = _tcslen(ppPaths[index]);
-			_tcsncpy(szCur, ppPaths[index], len);
-			szCur += len;
-			dataSize -= len;
+			if (ppPaths[index]) {
+				int len = _tcslen(ppPaths[index]);
+				_tcsncpy(szCur, ppPaths[index], len);
+				szCur += len;
+				dataSize -= len;
+			}
 		}
 		if (skipcore)
 			*szCur = '\0';
 		else {
 			*(szCur++) = _T(';');
 			dataSize--;
-			/* Now append the core path entries - this will include the NULL */
-			rc = RegQueryValueEx(newKey, NULL, 0, NULL, (LPBYTE)szCur, &dataSize);
+			/* Now append the core path entries - 
+			   this will include the NULL 
+			*/
+			rc = RegQueryValueEx(newKey, NULL, 0, NULL, 
+			                     (LPBYTE)szCur, &dataSize);
 		}
 		/* And set the result - caller must free 
 		   If MBCS, it is fine as is.  If Unicode, allocate new
