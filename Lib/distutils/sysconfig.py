@@ -38,6 +38,11 @@ else:
                                                "Lib", "os.py"))
 del argv0_path, landmark
 
+# set_python_build() was present in 2.2 and 2.2.1; it's not needed
+# any more, but so 3rd party build scripts don't break, we leave
+# a do-nothing version:
+def set_python_build():
+    pass
 
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
