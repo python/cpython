@@ -269,21 +269,24 @@ the class names from the \module{compiler.ast} module.
 >>> mod = compiler.parseFile("/tmp/doublelib.py")
 >>> mod
 Module('This is an example module.\n\nThis is the docstring.\n', 
-       Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
-       Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+       Stmt([Function(None, 'double', ['x'], [], 0,
+                      'Return twice the argument', 
+                      Stmt([Return(Mul((Name('x'), Const(2))))]))]))
 >>> from compiler.ast import *
 >>> Module('This is an example module.\n\nThis is the docstring.\n', 
-...    Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
-...    Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+...    Stmt([Function(None, 'double', ['x'], [], 0,
+...                   'Return twice the argument', 
+...                   Stmt([Return(Mul((Name('x'), Const(2))))]))]))
 Module('This is an example module.\n\nThis is the docstring.\n', 
-       Stmt([Function('double', ['x'], [], 0, 'Return twice the argument', 
-       Stmt([Return(Mul((Name('x'), Const(2))))]))]))
+       Stmt([Function(None, 'double', ['x'], [], 0,
+                      'Return twice the argument', 
+                      Stmt([Return(Mul((Name('x'), Const(2))))]))]))
 >>> mod.doc
 'This is an example module.\n\nThis is the docstring.\n'
 >>> for node in mod.node.nodes:
 ...     print node
 ... 
-Function('double', ['x'], [], 0, 'Return twice the argument',
+Function(None, 'double', ['x'], [], 0, 'Return twice the argument',
          Stmt([Return(Mul((Name('x'), Const(2))))]))
 >>> func = mod.node.nodes[0]
 >>> func.code
