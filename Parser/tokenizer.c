@@ -435,30 +435,37 @@ tok_get(tok, p_start, p_end)
 					c = tok_nextc(tok);
 				}
 			}
+			if (c == 'l' || c == 'L')
+				c = tok_nextc(tok);
 		}
 		else {
 			/* Decimal */
 			do {
 				c = tok_nextc(tok);
 			} while (isdigit(c));
-			/* Accept floating point numbers.
-			   XXX This accepts incomplete things like 12e or 1e+;
-			       worry about that at run-time.
-			   XXX Doesn't accept numbers starting with a dot */
-			if (c == '.') {
-	fraction:
-				/* Fraction */
-				do {
-					c = tok_nextc(tok);
-				} while (isdigit(c));
-			}
-			if (c == 'e' || c == 'E') {
-				/* Exponent part */
+			if (c == 'l' || c == 'L')
 				c = tok_nextc(tok);
-				if (c == '+' || c == '-')
+			else {
+				/* Accept floating point numbers.
+				   XXX This accepts incomplete things like
+				   XXX 12e or 1e+; worry run-time.
+				   XXX Doesn't accept numbers
+				   XXX starting with a dot */
+				if (c == '.') {
+		fraction:
+					/* Fraction */
+					do {
+						c = tok_nextc(tok);
+					} while (isdigit(c));
+				}
+				if (c == 'e' || c == 'E') {
+					/* Exponent part */
 					c = tok_nextc(tok);
-				while (isdigit(c)) {
-					c = tok_nextc(tok);
+					if (c == '+' || c == '-')
+						c = tok_nextc(tok);
+					while (isdigit(c)) {
+						c = tok_nextc(tok);
+					}
 				}
 			}
 		}
