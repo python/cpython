@@ -169,17 +169,17 @@ def AskPassword(prompt,	 default='', id=257):
 	return string
 
 def AskYesNoCancel(question, default = 0, yes=None, no=None, cancel=None, id=258):
-##	"""Display a QUESTION string which can be answered with Yes or No.
-##	
-##	Return 1 when the user clicks the Yes button.
-##	Return 0 when the user clicks the No button.
-##	Return -1 when the user clicks the Cancel button.
-##	
-##	When the user presses Return, the DEFAULT value is returned.
-##	If omitted, this is 0 (No).
-##	
-##	The QUESTION strign ca be at most 255 characters.
-##	"""
+	"""Display a QUESTION string which can be answered with Yes or No.
+	
+	Return 1 when the user clicks the Yes button.
+	Return 0 when the user clicks the No button.
+	Return -1 when the user clicks the Cancel button.
+	
+	When the user presses Return, the DEFAULT value is returned.
+	If omitted, this is 0 (No).
+	
+	The QUESTION strign ca be at most 255 characters.
+	"""
 	
 	d = GetNewDialog(id, -1)
 	if not d:
