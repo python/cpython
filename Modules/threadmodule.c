@@ -321,7 +321,6 @@ initthread()
 	/* Add a symbolic constant */
 	d = PyModule_GetDict(m);
 	ThreadError = PyString_FromString("thread.error");
-	Py_INCREF(ThreadError);
 	PyDict_SetItemString(d, "error", ThreadError);
 
 	/* Check for errors */
