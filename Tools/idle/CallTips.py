@@ -93,27 +93,47 @@ class CallTips:
                     pass
         return None # Can't find an object.
 
+def _find_constructor(class_ob):
+    # Given a class object, return a function object used for the
+    # constructor (ie, __init__() ) or None if we can't find one.
+    try:
+        return class_ob.__init__.im_func
+    except AttributeError:
+        for base in class_ob.__bases__:
+            rc = _find_constructor(base)
+            if rc is not None: return rc
+    return None
+
 def get_arg_text(ob):
     # Get a string describing the arguments for the given object.
     argText = ""
     if ob is not None:
         argOffset = 0
-        # bit of a hack for methods - turn it into a function
-        # but we drop the "self" param.
-        if type(ob)==types.MethodType:
-            ob = ob.im_func
+        if type(ob)==types.ClassType:
+            # Look for the highest __init__ in the class chain.
+            fob = _find_constructor(ob)
+            if fob is None:
+                fob = lambda: None
+            else:
+                argOffset = 1
+        elif type(ob)==types.MethodType:
+            # bit of a hack for methods - turn it into a function
+            # but we drop the "self" param.
+            fob = ob.im_func
             argOffset = 1
+        else:
+            fob = ob
         # Try and build one for Python defined functions
-        if type(ob) in [types.FunctionType, types.LambdaType]:
+        if type(fob) in [types.FunctionType, types.LambdaType]:
             try:
-                realArgs = ob.func_code.co_varnames[argOffset:ob.func_code.co_argcount]
-                defaults = ob.func_defaults or []
+                realArgs = fob.func_code.co_varnames[argOffset:fob.func_code.co_argcount]
+                defaults = fob.func_defaults or []
                 defaults = list(map(lambda name: "=%s" % name, defaults))
                 defaults = [""] * (len(realArgs)-len(defaults)) + defaults
                 items = map(lambda arg, dflt: arg+dflt, realArgs, defaults)
-                if ob.func_code.co_flags & 0x4:
+                if fob.func_code.co_flags & 0x4:
                     items.append("...")
-                if ob.func_code.co_flags & 0x8:
+                if fob.func_code.co_flags & 0x8:
                     items.append("***")
                 argText = string.join(items , ", ")
                 argText = "(%s)" % argText
@@ -139,26 +159,29 @@ if __name__=='__main__':
     def t3(a, *args): "(a, ...)"
     def t4(*args): "(...)"
     def t5(a, *args): "(a, ...)"
-    def t6(a, b=None, *args, **kw): "(a, b=None, ...)"
+    def t6(a, b=None, *args, **kw): "(a, b=None, ..., ***)"
 
     class TC:
+        "(a=None, ...)"
+        def __init__(self, a=None, *b): "(a=None, ...)"
         def t1(self): "()"
         def t2(self, a, b=None): "(a, b=None)"
         def t3(self, a, *args): "(a, ...)"
         def t4(self, *args): "(...)"
         def t5(self, a, *args): "(a, ...)"
-        def t6(self, a, b=None, *args, **kw): "(a, b=None, ...)"
+        def t6(self, a, b=None, *args, **kw): "(a, b=None, ..., ***)"
 
     def test( tests ):
         failed=[]
         for t in tests:
-            if get_arg_text(t) != t.__doc__ + "\n" + t.__doc__:
+            expected = t.__doc__ + "\n" + t.__doc__
+            if get_arg_text(t) != expected:
                 failed.append(t)
-                print "%s - expected %s, but got %s" % (t, `t.__doc__`, `get_arg_text(t)`)
+                print "%s - expected %s, but got %s" % (t, `expected`, `get_arg_text(t)`)
         print "%d of %d tests failed" % (len(failed), len(tests))
 
     tc = TC()
     tests = t1, t2, t3, t4, t5, t6, \
-            tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6
+            TC, tc.t1, tc.t2, tc.t3, tc.t4, tc.t5, tc.t6
 
     test(tests)
