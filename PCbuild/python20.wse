@@ -2357,6 +2357,12 @@ item: Install File
   Description=Python Test files
   Flags=0000000000000010
 end
+item: Install File
+  Source=..\lib\test\*.txt
+  Destination=%MAINDIR%\Lib\test
+  Description=Python Test files
+  Flags=0000000000000010
+end
 item: Remark
 end
 item: Install File
