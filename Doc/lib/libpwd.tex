@@ -29,9 +29,10 @@ The uid and gid items are integers, all others are strings.
 contains a password encrypted with a DES derived algorithm (see module
 \refmodule{crypt}\refbimodindex{crypt}).  However most modern unices 
 use a so-called \emph{shadow password} system.  On those unices the
-field \code{pw_passwd} only contains a asterisk (\code{'*'}) or the 
+\var{pw_passwd} field only contains an asterisk (\code{'*'}) or the 
 letter \character{x} where the encrypted password is stored in a file
-\file{/etc/shadow} which is not world readable.}
+\file{/etc/shadow} which is not world readable.  Whether the \var{pw_passwd}
+field contains anything useful is system-dependent.}
 
 It defines the following items:
 
