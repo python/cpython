@@ -2740,7 +2740,6 @@ exec_statement(f, prog, globals, locals)
 	PyObject *globals;
 	PyObject *locals;
 {
-	char *s;
 	int n;
 	PyObject *v;
 	int plain = 0;
@@ -2777,33 +2776,27 @@ exec_statement(f, prog, globals, locals)
 	if (PyDict_GetItemString(globals, "__builtins__") == NULL)
 		PyDict_SetItemString(globals, "__builtins__", f->f_builtins);
 	if (PyCode_Check(prog)) {
-		v = PyEval_EvalCode((PyCodeObject *) prog,
-				    globals, locals);
-		if (v == NULL)
-			return -1;
-		Py_DECREF(v);
-		return 0;
+		v = PyEval_EvalCode((PyCodeObject *) prog, globals, locals);
 	}
-	if (PyFile_Check(prog)) {
+	else if (PyFile_Check(prog)) {
 		FILE *fp = PyFile_AsFile(prog);
 		char *name = PyString_AsString(PyFile_Name(prog));
-		if (PyRun_File(fp, name, Py_file_input,
-			       globals, locals) == NULL)
+		v = PyRun_File(fp, name, Py_file_input, globals, locals);
+	}
+	else {
+		char *s = PyString_AsString(prog);
+		if ((int)strlen(s) != PyString_Size(prog)) {
+			PyErr_SetString(PyExc_ValueError,
+					"embedded '\\0' in exec string");
 			return -1;
-		return 0;
+		}
+		v = PyRun_String(s, Py_file_input, globals, locals);
 	}
-	s = PyString_AsString(prog);
-	if ((int)strlen(s) != PyString_Size(prog)) {
-		PyErr_SetString(PyExc_ValueError,
-				"embedded '\\0' in exec string");
-		return -1;
-	}
-	v = PyRun_String(s, Py_file_input, globals, locals);
+	if (plain)
+		PyFrame_LocalsToFast(f, 0);
 	if (v == NULL)
 		return -1;
 	Py_DECREF(v);
-	if (plain)
-		PyFrame_LocalsToFast(f, 0);
 	return 0;
 }
 
