@@ -30,8 +30,8 @@ class BaseTestCase(unittest.TestCase):
 
     def check(self, result, expect):
         self.assertEquals(result, expect, 
-            'Expected:\n%s\nbut got:\n%s' % (
-                self.show(result), self.show(expect)))
+            'expected:\n%s\nbut got:\n%s' % (
+                self.show(expect), self.show(result)))
 
     def check_wrap (self, text, width, expect):
         result = wrap(text, width)
@@ -111,6 +111,57 @@ What a mess!
                         ["this-is-a-useful-feature-for-reformatting-",
                          "posts-from-tim-peters'ly"])
 
+    def test_em_dash(self):
+        '''Test text with em-dashes.'''
+        text = "Em-dashes should be written -- thus."
+        self.check_wrap(text, 25,
+                        ["Em-dashes should be",
+                         "written -- thus."])
+
+        # Probe the boundaries of the properly written em-dash,
+        # ie. " -- ".
+        self.check_wrap(text, 29,
+                        ["Em-dashes should be written",
+                         "-- thus."])
+        expect = ["Em-dashes should be written --",
+                  "thus."]
+        self.check_wrap(text, 30, expect)
+        self.check_wrap(text, 35, expect)
+        self.check_wrap(text, 36,
+                        ["Em-dashes should be written -- thus."])
+        
+        # The improperly written em-dash is handled too, because
+        # it's adjacent to non-whitespace on both sides.
+        text = "You can also do--this or even---this."
+        expect = ["You can also do",
+                  "--this or even",
+                  "---this."]
+        self.check_wrap(text, 15, expect)
+        self.check_wrap(text, 16, expect)
+        expect = ["You can also do--",
+                  "this or even---",
+                  "this."]
+        self.check_wrap(text, 17, expect)
+        self.check_wrap(text, 19, expect)
+        expect = ["You can also do--this or even",
+                  "---this."]
+        self.check_wrap(text, 29, expect)
+        self.check_wrap(text, 31, expect)
+        expect = ["You can also do--this or even---",
+                  "this."]
+        self.check_wrap(text, 32, expect)
+        self.check_wrap(text, 35, expect)
+
+        # All of the above behaviour could be deduced by probing the
+        # _split() method.
+        text = "Here's an -- em-dash and--here's another---and another!"
+        result = self.wrapper._split(text)
+        expect = ["Here's", " ", "an", " ", "--", " ", "em-", "dash", " ",
+                  "and", "--", "here's", " ", "another", "---",
+                  "and", " ", "another!"]
+        self.assertEquals(result, expect,
+                          "\nexpected %r\n"
+                          "but got  %r" % (expect, result))
 
     def test_split(self):
         '''Ensure that the standard _split() method works as advertised 
