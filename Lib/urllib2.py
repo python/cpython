@@ -319,7 +319,6 @@ class OpenerDirector:
             req = fullurl
             if data is not None:
                 req.add_data(data)
-        assert isinstance(req, Request) # really only care about interface
 
         result = self._call_chain(self.handle_open, 'default',
                                   'default_open', req)
