@@ -338,16 +338,11 @@ class CCompiler:
     # _prep_compile ()
 
 
-    def _fix_link_args (self, objects, output_dir,
-                        takes_libs=0, libraries=None, library_dirs=None):
-        """Typecheck and fix up some of the arguments supplied to the
-           'link_*' methods and return the fixed values.  Specifically:
-           ensure that 'objects' is a list; if output_dir is None, use
-           self.output_dir; ensure that 'libraries' and 'library_dirs' are
-           both lists, and augment them with 'self.libraries' and
-           'self.library_dirs'.  If 'takes_libs' is true, return a tuple
-           (objects, output_dir, libraries, library_dirs; else return
-           (objects, output_dir)."""
+    def _fix_object_args (self, objects, output_dir):
+        """Typecheck and fix up some arguments supplied to various
+           methods.  Specifically: ensure that 'objects' is a list; if
+           output_dir is None, replace with self.output_dir.  Return fixed
+           versions of 'objects' and 'output_dir'."""
 
         if type (objects) not in (ListType, TupleType):
             raise TypeError, \
@@ -359,28 +354,45 @@ class CCompiler:
         elif type (output_dir) is not StringType:
             raise TypeError, "'output_dir' must be a string or None"
 
-        if takes_libs:
-            if libraries is None:
-                libraries = self.libraries
-            elif type (libraries) in (ListType, TupleType):
-                libraries = list (libraries) + (self.libraries or [])
-            else:
-                raise TypeError, \
-                      "'libraries' (if supplied) must be a list of strings"
+        return (objects, output_dir)
 
-            if library_dirs is None:
-                library_dirs = self.library_dirs
-            elif type (library_dirs) in (ListType, TupleType):
-                library_dirs = list (library_dirs) + (self.library_dirs or [])
-            else:
-                raise TypeError, \
-                      "'library_dirs' (if supplied) must be a list of strings"
 
-            return (objects, output_dir, libraries, library_dirs)
+    def _fix_lib_args (self, libraries, library_dirs, runtime_library_dirs):
+        """Typecheck and fix up some of the arguments supplied to the
+           'link_*' methods.  Specifically: ensure that all arguments are
+           lists, and augment them with their permanent versions
+           (eg. 'self.libraries' augments 'libraries').  Return a tuple
+           with fixed versions of all arguments."""
+
+        if libraries is None:
+            libraries = self.libraries
+        elif type (libraries) in (ListType, TupleType):
+            libraries = list (libraries) + (self.libraries or [])
         else:
-            return (objects, output_dir)
+            raise TypeError, \
+                  "'libraries' (if supplied) must be a list of strings"
 
-    # _fix_link_args ()
+        if library_dirs is None:
+            library_dirs = self.library_dirs
+        elif type (library_dirs) in (ListType, TupleType):
+            library_dirs = list (library_dirs) + (self.library_dirs or [])
+        else:
+            raise TypeError, \
+                  "'library_dirs' (if supplied) must be a list of strings"
+
+        if runtime_library_dirs is None:
+            runtime_library_dirs = self.runtime_library_dirs
+        elif type (runtime_library_dirs) in (ListType, TupleType):
+            runtime_library_dirs = (list (runtime_library_dirs) +
+                                    (self.runtime_library_dirs or []))
+        else:
+            raise TypeError, \
+                  "'runtime_library_dirs' (if supplied) " + \
+                  "must be a list of strings"
+
+        return (libraries, library_dirs, runtime_library_dirs)
+
+    # _fix_lib_args ()
 
 
     def _need_link (self, objects, output_file):
@@ -480,6 +492,7 @@ class CCompiler:
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         runtime_library_dirs=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
@@ -522,6 +535,7 @@ class CCompiler:
                             output_dir=None,
                             libraries=None,
                             library_dirs=None,
+                            runtime_library_dirs=None,
                             debug=0,
                             extra_preargs=None,
                             extra_postargs=None):
@@ -540,6 +554,7 @@ class CCompiler:
                          output_dir=None,
                          libraries=None,
                          library_dirs=None,
+                         runtime_library_dirs=None,
                          debug=0,
                          extra_preargs=None,
                          extra_postargs=None):
