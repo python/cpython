@@ -66,8 +66,9 @@ Req-started-unread-response    _CS_REQ_STARTED    <response_class>
 Req-sent-unread-response       _CS_REQ_SENT       <response_class>
 """
 
-import socket
+import errno
 import mimetools
+import socket
 
 try:
     from cStringIO import StringIO
@@ -604,8 +605,18 @@ class FakeSocket:
         while 1:
             try:
                 buf = self.__ssl.read()
-            except socket.sslerror, msg:
-                break
+            except socket.sslerror, err:
+                if (err[0] == socket.SSL_ERROR_WANT_READ
+                    or err[0] == socket.SSL_ERROR_WANT_WRITE
+                    or 0):
+                    continue
+                if err[0] == socket.SSL_ERROR_ZERO_RETURN:
+                    break
+                raise
+            except socket.error, err:
+                if err[0] = errno.EINTR:
+                    continue
+                raise
             if buf == '':
                 break
             msgbuf.append(buf)
