@@ -661,6 +661,11 @@ item: Install File
   Flags=0000000000000010
 end
 item: Install File
+  Source=%_SRC_%\PCbuild\w9xpopen.exe
+  Destination=%MAINDIR%\w9xpopen.exe
+  Flags=0000000000000010
+end
+item: Install File
   Source=%_SRC_%\pcbuild\*.pyd
   Destination=%MAINDIR%\DLLs
   Description=Extension modules
@@ -695,7 +700,7 @@ item: Install File
   Description=Library Modules
   Flags=0000000000000010
 end
-item: Install File
+remarked item: Install File
   Source=%_SRC_%\Lib\plat-win\*.py
   Destination=%MAINDIR%\Lib\Plat-Win
   Description=Windows-specific library modules
