@@ -128,7 +128,7 @@ class NFSClient(UDPClient):
 		self.packer = NFSPacker().init()
 		self.unpacker = NFSUnpacker().init('')
 
-	def mkcred(self, proc):
+	def mkcred(self):
 		if self.cred == None:
 			self.cred = rpc.AUTH_UNIX, rpc.make_auth_unix_default()
 		return self.cred
