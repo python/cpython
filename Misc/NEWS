@@ -32,14 +32,14 @@ Core
   this situation, and -Werror::OverflowWarning to revert to the old
   OverflowError exception.
 
-- A new command line option, -D<arg>, is added to control run-time
+- A new command line option, -Q<arg>, is added to control run-time
   warnings for the use of classic division.  (See PEP 238.)  Possible
-  values are -Dold, -Dwarn, and -Dnew.  The default is -Dold, meaning
+  values are -Qold, -Qwarn, and -Qnew.  The default is -Qold, meaning
   the / operator has its classic meaning and no warnings are issued.
-  Using -Dwarn issues a run-time warning about all uses of classic
-  division for int, long, float and complex arguments.  Using -Dnew is
+  Using -Qwarn issues a run-time warning about all uses of classic
+  division for int, long, float and complex arguments.  Using -Qnew is
   questionable; it turns on new division by default, but only in the
-  __main__ module.  You can usefully combine -Dwarn and -Dnew: this
+  __main__ module.  You can usefully combine -Qwarn and -Qnew: this
   gives the __main__ module new division, and warns about classic
   division everywhere else.
 
