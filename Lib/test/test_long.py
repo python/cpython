@@ -99,7 +99,32 @@ def test_division(maxdigits=MAXDIGITS):
         for leny in digits:
             y = getran(leny) or 1L
             test_division_2(x, y)
+# ------------------------------------------------------------ karatsuba
 
+def test_karatsuba():
+
+    if verbose:
+        print "Karatsuba"
+
+    digits = range(1, 5) + range(KARATSUBA_CUTOFF, KARATSUBA_CUTOFF + 10)
+    digits.extend([KARATSUBA_CUTOFF * 10, KARATSUBA_CUTOFF * 100])
+
+    bits = [digit * SHIFT for digit in digits]
+
+    # Test products of long strings of 1 bits -- (2**x-1)*(2**y-1) ==
+    # 2**(x+y) - 2**x - 2**y + 1, so the proper result is easy to check.
+    for abits in bits:
+        a = (1L << abits) - 1
+        for bbits in bits:
+            if bbits < abits:
+                continue
+            b = (1L << bbits) - 1
+            x = a * b
+            y = ((1L << (abits + bbits)) -
+                 (1L << abits) -
+                 (1L << bbits) +
+                 1)
+            check(x == y, "bad result for", a, "*", b, x, y)
 # -------------------------------------------------------------- ~ & | ^
 
 def test_bitop_identities_1(x):
@@ -403,6 +428,7 @@ def test_logs():
 # ---------------------------------------------------------------- do it
 
 test_division()
+test_karatsuba()
 test_bitop_identities()
 test_format()
 test_misc()
