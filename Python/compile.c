@@ -406,14 +406,10 @@ tuple_of_constants(unsigned char *codestr, int n, PyObject *consts)
 
 	/* Pre-conditions */
 	assert(PyList_CheckExact(consts));
-	assert(codestr[0] == LOAD_CONST);
 	assert(codestr[n*3] == BUILD_TUPLE);
 	assert(GETARG(codestr, (n*3)) == n);
-
-	/* Verify chain of n load_constants */
 	for (i=0 ; i<n ; i++)
-		if (codestr[i*3] != LOAD_CONST)
-			return 0;
+		assert(codestr[i*3] == LOAD_CONST);
 
 	/* Buildup new tuple of constants */
 	newconst = PyTuple_New(n);
@@ -447,11 +443,13 @@ static unsigned int *
 markblocks(unsigned char *code, int len)
 {
 	unsigned int *blocks = PyMem_Malloc(len*sizeof(int));
-	int i,j, opcode, oldblock, newblock, blockcnt = 0;
+	int i,j, opcode, blockcnt = 0;
 
 	if (blocks == NULL)
 		return NULL;
 	memset(blocks, 0, len*sizeof(int));
+
+	/* Mark labels in the first pass */
 	for (i=0 ; i<len ; i+=CODESIZE(opcode)) {
 		opcode = code[i];
 		switch (opcode) {
@@ -465,15 +463,14 @@ markblocks(unsigned char *code, int len)
 			case SETUP_EXCEPT:
 			case SETUP_FINALLY:
 				j = GETJUMPTGT(code, i);
-				oldblock = blocks[j];
-				newblock = ++blockcnt;
-				for (; j<len ; j++) {
-					if (blocks[j] != (unsigned)oldblock)
-						break;
-					blocks[j] = newblock;
-				}
+				blocks[j] = 1;
 			break;
 		}
+	}
+	/* Build block numbers in the second pass */
+	for (i=0 ; i<len ; i++) {
+		blockcnt += blocks[i];  /* increment blockcnt over labels */
+		blocks[i] = blockcnt;
 	}
 	return blocks;
 }
@@ -503,8 +500,12 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	int *addrmap = NULL;
 	int new_line, cum_orig_line, last_line, tabsiz;
 	int cumlc=0, lastlc=0;	/* Count runs of consecutive LOAD_CONST codes */
-	unsigned int *blocks;
+	unsigned int *blocks = NULL;
 	char *name;
+
+	/* Bail out if an exception is set */
+	if (PyErr_Occurred())
+		goto exitUnchanged;
 
 	/* Bypass optimization when the lineno table is too complex */
 	assert(PyString_Check(lineno_obj));
@@ -614,7 +615,7 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 			j = GETARG(codestr, i);
 			h = i - 3 * j;
 			if (h >= 0  &&
-			    j == lastlc  &&
+			    j <= lastlc  &&
 			    codestr[h] == LOAD_CONST  && 
 			    ISBASICBLOCK(blocks, h, 3*(j+1))  &&
 			    tuple_of_constants(&codestr[h], j, consts)) {
@@ -647,6 +648,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 		   result of the first test implies the success of a similar
 		   test or the failure of the opposite test.
 		   Arises in code like:
+		        "if a and b:"
+			"if a or b:"
 		        "a and b or c"
 			"a and b and c"
 		   x:JUMP_IF_FALSE y   y:JUMP_IF_FALSE z  -->  x:JUMP_IF_FALSE z
@@ -755,6 +758,8 @@ optimize_code(PyObject *code, PyObject* consts, PyObject *names, PyObject *linen
 	return code;
 
 exitUnchanged:
+	if (blocks != NULL)
+		PyMem_Free(blocks);
 	if (addrmap != NULL)
 		PyMem_Free(addrmap);
 	if (codestr != NULL)
