@@ -230,7 +230,17 @@ if USE_ZIPIMPORT:
 		path = fullname.replace(".", os.sep) + PYC_EXT
 		return path, MAGIC + '\0\0\0\0' + marshal.dumps(code)
 
+SITECUSTOMIZE_PY = """\
+import sys, os
+executable = os.getenv("PYTHONEXECUTABLE")
+if executable is not None:
+    sys.executable = executable
+"""
+
+SITE_PY += SITECUSTOMIZE_PY
 SITE_CO = compile(SITE_PY, "<-bundlebuilder.py->", "exec")
+SITECUSTOMIZE_CO = compile(SITECUSTOMIZE_PY, "<-bundlebuilder.py->", "exec")
+
 
 EXT_LOADER = """\
 def __load():
@@ -255,15 +265,18 @@ MAYMISS_MODULES = ['mac', 'os2', 'nt', 'ntpath', 'dos', 'dospath',
 STRIP_EXEC = "/usr/bin/strip"
 
 BOOTSTRAP_SCRIPT = """\
-#!/bin/sh
+#!/usr/bin/env python
 
-execdir=$(dirname "${0}")
-executable="${execdir}/%(executable)s"
-resdir=$(dirname "${execdir}")/Resources
-main="${resdir}/%(mainprogram)s"
-PYTHONPATH="$resdir"
-export PYTHONPATH
-exec "${executable}" "${main}" "$@"
+import sys, os
+execdir = os.path.dirname(sys.argv[0])
+executable = os.path.join(execdir, "%(executable)s")
+resdir = os.path.join(os.path.dirname(execdir), "Resources")
+mainprogram = os.path.join(resdir, "%(mainprogram)s")
+
+sys.argv.insert(1, mainprogram)
+os.environ["PYTHONPATH"] = resdir
+os.environ["PYTHONEXECUTABLE"] = executable
+os.execve(executable, sys.argv, os.environ)
 """
 
 ARGVEMULATOR="""\
@@ -415,6 +428,10 @@ class AppBuilder(BundleBuilder):
 	def postProcess(self):
 		if self.standalone:
 			self.addPythonModules()
+		else:
+			sitecustomizepath = pathjoin(self.bundlepath, "Contents", "Resources",
+					"sitecustomize" + PYC_EXT)
+			writePyc(SITECUSTOMIZE_CO, sitecustomizepath)
 		if self.strip and not self.symlink:
 			self.stripBinaries()
 
@@ -486,6 +503,9 @@ class AppBuilder(BundleBuilder):
 		site = mf.add_module("site")
 		site.__code__ = SITE_CO
 		mf.scan_code(SITE_CO, site)
+
+		# warnings.py gets imported implicitly from C
+		mf.import_hook("warnings")
 
 		includeModules = self.includeModules[:]
 		for name in self.includePackages:
