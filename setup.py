@@ -504,16 +504,7 @@ class PyBuildExt(build_ext):
 
     def detect_tkinter(self, inc_dirs, lib_dirs):
         # The _tkinter module.
-        #
-        # The command for _tkinter is long and site specific.  Please
-        # uncomment and/or edit those parts as indicated.  If you don't have a
-        # specific extension (e.g. Tix or BLT), leave the corresponding line
-        # commented out.  (Leave the trailing backslashes in!  If you
-        # experience strange errors, you may want to join all uncommented
-        # lines and remove the backslashes -- the backslash interpretation is
-        # done by the shell's "read" command and it may not be implemented on
-        # every system.
-
+        
         # Assume we haven't found any of the libraries or include files
         tcllib = tklib = tcl_includes = tk_includes = None
         for version in ['8.4', '8.3', '8.2', '8.1', '8.0']:
@@ -561,11 +552,6 @@ class PyBuildExt(build_ext):
             # Assume default location for X11
             include_dirs.append('/usr/X11/include')
             added_lib_dirs.append('/usr/X11/lib')
-
-        # Check for Tix extension
-        if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'tix4.1.8.0'):
-            defs.append( ('WITH_TIX', 1) )
-            libs.append('tix4.1.8.0')
 
         # Check for BLT extension
         if self.compiler.find_library_file(lib_dirs + added_lib_dirs, 'BLT8.0'):
