@@ -384,7 +384,7 @@ builtin_eval(self, args)
 	object *args;
 {
 	object *cmd;
-	object *globals = NULL, *locals = NULL;
+	object *globals = None, *locals = None;
 	char *str;
 
 	if (!newgetargs(args, "O|O!O!:eval",
@@ -392,12 +392,12 @@ builtin_eval(self, args)
 			&Mappingtype, &globals,
 			&Mappingtype, &locals))
 		return NULL;
-	if (globals == NULL) {
+	if (globals == None) {
 		globals = getglobals();
-		if (globals == NULL)
-			return NULL;
+		if (locals == None)
+			locals = getlocals();
 	}
-	if (locals == NULL)
+	else if (locals == None)
 		locals = globals;
 	if (dictlookup(globals, "__builtins__") == NULL) {
 		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
@@ -428,7 +428,7 @@ builtin_execfile(self, args)
 	object *args;
 {
 	char *filename;
-	object *globals = NULL, *locals = NULL;
+	object *globals = None, *locals = None;
 	object *res;
 	FILE* fp;
 	char *s;
@@ -439,12 +439,12 @@ builtin_execfile(self, args)
 			&Mappingtype, &globals,
 			&Mappingtype, &locals))
 		return NULL;
-	if (globals == NULL) {
+	if (globals == None) {
 		globals = getglobals();
-		if (globals == NULL)
-			return NULL;
+		if (locals == None)
+			locals = getlocals();
 	}
-	if (locals == NULL)
+	else if (locals == None)
 		locals = globals;
 	if (dictlookup(globals, "__builtins__") == NULL) {
 		if (dictinsert(globals, "__builtins__", getbuiltins()) != 0)
