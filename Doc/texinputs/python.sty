@@ -6,6 +6,12 @@
 \ProvidesPackage{python}
              [1998/01/11 LaTeX package (Python markup)]
 
+% Uncomment these two lines to ignore the paper size and make the page 
+% size more like a typical published manual.
+%\renewcommand{\paperheight}{9in}
+%\renewcommand{\paperwidth}{8.5in}   % typical squarish manual
+%\renewcommand{\paperwidth}{7in}     % O'Reilly ``Programmming Python''
+
 % These packages can be used to add marginal annotations which indicate
 % index entries and labels; useful for reviewing this messy documentation!
 %
@@ -91,23 +97,16 @@
 \advance \topmargin by -\headsep
 
 % attempt to work a little better for A4 users
-\@ifundefined{paperheight}{
-  \textheight 9in
-}{
-  \textheight \paperheight
-  \advance\textheight by -2in
-}
+\textheight \paperheight
+\advance\textheight by -2in
 
 \oddsidemargin 0pt
-\evensidemargin \oddsidemargin
+\evensidemargin 0pt
+%\evensidemargin -.25in  % for ``manual size'' documents
 \marginparwidth 0.5in
 
-\@ifundefined{paperwidth}{
-  \textwidth 6.5in
-}{
-  \textwidth \paperwidth
-  \advance\textwidth by -2in
-}
+\textwidth \paperwidth
+\advance\textwidth by -2in
 
 
 % Style parameters and macros used by most documents here
@@ -162,24 +161,20 @@
 % and to have all the other mostly nice properties that we want for
 % code samples.
 
+\let\py@OldVerbatim=\verbatim
+\let\py@OldEndVerbatim=\endverbatim
+\RequirePackage{verbatim}
+
 % Variable used by begin code command
 \newlength{\py@codewidth}
 
-\newcommand{\py@examplevspace}{2mm}
-\newcommand{\py@exampleindent}{1cm}
-
-\let\py@OldVerbatim=\verbatim
-\let\py@OldEndVerbatim=\endverbatim
 \renewcommand{\verbatim}{%
-  \begingroup%
-  \setlength{\parindent}\py@exampleindent%
+  \setlength{\parindent}{1cm}%
   % Calculate the text width for the minipage:
   \setlength{\py@codewidth}{\linewidth}%
   \addtolength{\py@codewidth}{-\parindent}%
   %
-  \par%
-  \vspace\py@examplevspace%
-  \indent%
+  \par\indent%
   \begin{minipage}[t]{\py@codewidth}%
     \small%
     \py@OldVerbatim%
@@ -187,7 +182,6 @@
 \renewcommand{\endverbatim}{%
     \py@OldEndVerbatim%
   \end{minipage}%
-  \endgroup%
 }
 
 
@@ -264,18 +258,24 @@
     \@ifundefined{py@modplat@\py@thismodulekey}{
       \write\modindexfile{\protect\indexentry{#1@{\texttt{#1}}}{\thepage}}%
     }{\write\modindexfile{\protect\indexentry{#1@{\texttt{#1} %
-        \emph{(\platformof[\py@thismodulekey]{})}}}{\thepage}}%
+        \emph{(\py@platformof[\py@thismodulekey]{})}}}{\thepage}}%
     }
   \fi%
 }
 
+% *** XXX *** THE NEXT FOUR MACROS ARE NOW OBSOLETE !!! ***
+
 % built-in & Python modules in the main distribution
-\newcommand{\bimodindex}[1]{\py@modindex{#1}{built-in }}
-\newcommand{\stmodindex}[1]{\py@modindex{#1}{standard }}
+\newcommand{\bimodindex}[1]{\py@modindex{#1}{built-in }%
+  \typeout{*** MACRO bimodindex IS OBSOLETE -- USE declaremodule INSTEAD!}}
+\newcommand{\stmodindex}[1]{\py@modindex{#1}{standard }%
+  \typeout{*** MACRO stmodindex IS OBSOLETE -- USE declaremodule INSTEAD!}}
 
 % Python & extension modules outside the main distribution
-\newcommand{\modindex}[1]{\py@modindex{#1}{}}
-\newcommand{\exmodindex}[1]{\py@modindex{#1}{extension }}
+\newcommand{\modindex}[1]{\py@modindex{#1}{}%
+  \typeout{*** MACRO modindex IS OBSOLETE -- USE declaremodule INSTEAD!}}
+\newcommand{\exmodindex}[1]{\py@modindex{#1}{extension }%
+  \typeout{*** MACRO exmodindex IS OBSOLETE -- USE declaremodule INSTEAD!}}
 
 % Additional string for an index entry
 \newcommand{\index@subitem}{}
@@ -296,10 +296,10 @@
 \newcommand{\py@thismodulekey}{}
 \newcommand{\py@thismoduletype}{}
 
-\newcommand{\py@standardIndexModule}[1]{\stmodindex{#1}}
-\newcommand{\py@builtinIndexModule}[1]{\bimodindex{#1}}
-\newcommand{\py@extensionIndexModule}[1]{\exmodindex{#1}}
-\newcommand{\py@IndexModule}[1]{\modindex{#1}}
+\newcommand{\py@standardIndexModule}[1]{\py@modindex{#1}{standard }}
+\newcommand{\py@builtinIndexModule}[1]{\py@modindex{#1}{built-in }}
+\newcommand{\py@extensionIndexModule}[1]{\py@modindex{#1}{extension }}
+\newcommand{\py@IndexModule}[1]{\py@modindex{#1}{}}
 
 \newif\ifpy@HaveModSynopsis       \py@HaveModSynopsisfalse
 \newif\ifpy@ModSynopsisFileIsOpen \py@ModSynopsisFileIsOpenfalse
@@ -325,16 +325,9 @@
     \openout\py@ModPlatformFile=\py@ModPlatformFilename
     \py@ModPlatformFileIsOpentrue
   \fi
-  \@ifundefined{py@modplat@\py@thismodulekey}{
-    \py@writeModPlatformFile{%
-      \newcommand{\csname py@modplat@\py@thismodulekey\endcsname}{#1}}%
-  }{\py@writeModPlatformFile{%
-      \newcommand{\string\py@modplat@\py@thismodulekey}{#1}%
-    }
-  }
 }
 \InputIfFileExists{\jobname.pla}{}{}
-\newcommand{\platformof}[2][\py@modulebadkey]{%
+\newcommand{\py@platformof}[2][\py@modulebadkey]{%
   \ifx\py@modulebadkey#1 \def\py@key{#2}%
   \else \def\py@key{#1}%
   \fi%
@@ -852,6 +845,7 @@
   }
 }
 \newenvironment{seealso}[0]{
+  \par
   \strong{See Also:}\par
   \def\seetext##1{\par{##1}}
   \let\seemodule=\py@seemodule
