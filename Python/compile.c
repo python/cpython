@@ -545,7 +545,7 @@ fold_binops_on_constants(unsigned char *codestr, PyObject *consts)
 static int
 fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 {
-	PyObject *newconst, *v;
+	PyObject *newconst=NULL, *v;
 	int len_consts, opcode;
 
 	/* Pre-conditions */
@@ -557,7 +557,9 @@ fold_unaryops_on_constants(unsigned char *codestr, PyObject *consts)
 	opcode = codestr[3];
 	switch (opcode) {
 	case UNARY_NEGATIVE:
-		newconst = PyNumber_Negative(v);
+		/* Preserve the sign of -0.0 */
+		if (PyObject_IsTrue(v) == 1)
+			newconst = PyNumber_Negative(v);
 		break;
 	case UNARY_CONVERT:
 		newconst = PyObject_Repr(v);
