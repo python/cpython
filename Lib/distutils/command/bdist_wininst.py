@@ -8,6 +8,7 @@ exe-program."""
 __revision__ = "$Id$"
 
 import sys, os, string
+import base64
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
@@ -231,7 +232,6 @@ class bdist_wininst (Command):
     # create_exe()
 
     def get_exe_bytes (self):
-        import base64
         return base64.decodestring(EXEDATA)
 # class bdist_wininst
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     # - Built wininst.exe from the MSVC project file distutils/misc/wininst.dsw
     # - Execute this file (distutils/distutils/command/bdist_wininst.py)
 
-    import re, base64
+    import re
     moddata = open("bdist_wininst.py", "r").read()
     exedata = open("../../misc/wininst.exe", "rb").read()
     print "wininst.exe length is %d bytes" % len(exedata)
