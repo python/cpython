@@ -123,7 +123,7 @@ PyFloat_FromString(PyObject *v, char **pend)
 #endif
 	else if (PyObject_AsCharBuffer(v, &s, &len)) {
 		PyErr_SetString(PyExc_TypeError,
-				"float() needs a string argument");
+				"float() argument must be a string or a number");
 		return NULL;
 	}
 
