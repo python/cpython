@@ -1,4 +1,7 @@
-#define HAVE_CONFIG_H
-#define USE_TK
-#define MAC_TCL
-#define USE_GUSI
+/*
+** Special config-file for _tkinter plugin.
+*/
+
+#define USE_GUSI		/* Stdio implemented with GUSI */
+#define USE_TK			/* Include _tkinter module in core Python */
+#define MAC_TCL			/* This *must* be on if USE_TK is on */
