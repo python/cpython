@@ -1,5 +1,5 @@
 =============================================================================
- Python Unicode Integration                            Proposal Version: 1.3
+ Python Unicode Integration                            Proposal Version: 1.4
 -----------------------------------------------------------------------------
 
 
@@ -161,6 +161,17 @@ encoding>.
 
 For the same reason, Unicode objects should return the same hash value
 as their UTF-8 equivalent strings.
+
+When compared using cmp() (or PyObject_Compare()) the implementation
+should mask TypeErrors raised during the conversion to remain in synch
+with the string behavior. All other errors such as ValueErrors raised
+during coercion of strings to Unicode should not be masked and passed
+through to the user.
+
+In containment tests ('a' in u'abc' and u'a' in 'abc') both sides
+should be coerced to Unicode before applying the test. Errors occuring
+during coercion (e.g. None in u'abc') should not be masked.
+
 
 Coercion:
 ---------
@@ -380,6 +391,13 @@ class StreamWriter(Codec):
         data, consumed = self.encode(object,self.errors)
         self.stream.write(data)
         
+    def writelines(self, list):
+
+        """ Writes the concatenated list of strings to the stream
+            using .write().
+        """
+        self.write(''.join(list))
+        
     def reset(self):
 
         """ Flushes and resets the codec buffers used for keeping state.
@@ -463,6 +481,47 @@ class StreamReader(Codec):
             else:
                 return object
 
+    def readline(self, size=None):
+
+        """ Read one line from the input stream and return the
+            decoded data.
+
+            Note: Unlike the .readlines() method, this method inherits
+            the line breaking knowledge from the underlying stream's
+            .readline() method -- there is currently no support for
+            line breaking using the codec decoder due to lack of line
+            buffering. Sublcasses should however, if possible, try to
+            implement this method using their own knowledge of line
+            breaking.
+
+            size, if given, is passed as size argument to the stream's
+            .readline() method.
+            
+        """
+        if size is None:
+            line = self.stream.readline()
+        else:
+            line = self.stream.readline(size)
+        return self.decode(line)[0]
+
+    def readlines(self, sizehint=0):
+
+        """ Read all lines available on the input stream
+            and return them as list of lines.
+
+            Line breaks are implemented using the codec's decoder
+            method and are included in the list entries.
+            
+            sizehint, if given, is passed as size argument to the
+            stream's .read() method.
+
+        """
+        if sizehint is None:
+            data = self.stream.read()
+        else:
+            data = self.stream.read(sizehint)
+        return self.decode(data)[0].splitlines(1)
+
     def reset(self):
 
         """ Resets the codec buffers used for keeping state.
@@ -482,9 +541,6 @@ class StreamReader(Codec):
         """
         return getattr(self.stream,name)
 
-XXX What about .readline(), .readlines() ? These could be implemented
-    using .read() as generic functions instead of requiring their
-    implementation by all codecs. Also see Line Breaks.
 
 Stream codec implementors are free to combine the StreamWriter and
 StreamReader interfaces into one class. Even combining all these with
@@ -692,9 +748,10 @@ Format markers are used in Python format strings. If Python strings
 are used as format strings, the following interpretations should be in
 effect:
 
-  '%s':                 '%s' does str(u) for Unicode objects embedded
-                        in Python strings, so the output will be
-                        u.encode(<default encoding>)
+  '%s':                 For Unicode objects this will cause coercion of the
+			whole format string to Unicode. Note that
+			you should use a Unicode format string to start
+			with for performance reasons.
 
 In case the format string is an Unicode object, all parameters are coerced
 to Unicode first and then put together and formatted according to the format
@@ -922,6 +979,9 @@ For comparison:
 	Introducing Unicode to ECMAScript --
 	http://www-4.ibm.com/software/developer/library/internationalization-support.html
 
+IANA Character Set Names:
+	ftp://ftp.isi.edu/in-notes/iana/assignments/character-sets
+
 Encodings:
 
     Overview:
@@ -944,6 +1004,12 @@ Encodings:
 
 History of this Proposal:
 -------------------------
+1.4: Added note about mixed type comparisons and contains tests.
+     Changed treating of Unicode objects in format strings (if used
+     with '%s' % u they will now cause the format string to be
+     coerced to Unicode, thus producing a Unicode object on return).
+     Added link to IANA charset names (thanks to Lars Marius Garshol).
+     Added new codec methods .readline(), .readlines() and .writelines().
 1.3: Added new "es" and "es#" parser markers
 1.2: Removed POD about codecs.open()
 1.1: Added note about comparisons and hash values. Added note about
