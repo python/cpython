@@ -1625,6 +1625,10 @@ class Text(Widget):
 		self.tk.call(
 			self._w, 'tag', 'remove', tagName, index1, index2)
 	def window_cget(self, index, option):
+		if option[:1] != '-':
+			option = '-' + option
+		if option[-1:] == '_':
+			option = option[:-1]
 		return self.tk.call(self._w, 'window', 'cget', index, option)
 	def window_configure(self, index, cnf={}, **kw):
 		if type(cnf) == StringType:
