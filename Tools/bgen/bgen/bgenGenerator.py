@@ -37,12 +37,8 @@ class BaseFunctionGenerator:
 
 	def functionheader(self):
 		Output()
-		Output("static PyObject *%s_%s(_self, _args)",
-		       self.prefix, self.name)
-		IndentLevel()
-		Output("%s *_self;", self.objecttype)
-		Output("PyObject *_args;")
-		DedentLevel()
+		Output("static PyObject *%s_%s(%s *_self, PyObject *_args)",
+		       self.prefix, self.name, self.objecttype)
 		OutLbrace()
 		Output("PyObject *_res = NULL;")
 
