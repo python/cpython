@@ -6,7 +6,7 @@ can be found here.  Some functions meant for external use:
 genops(pickle)
    Generate all the opcodes in a pickle, as (opcode, arg, position) triples.
 
-dis(pickle, out=None, indentlevel=4)
+dis(pickle, out=None, memo=None, indentlevel=4)
    Print a symbolic disassembly of a pickle.
 '''
 
