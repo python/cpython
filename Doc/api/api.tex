@@ -2914,8 +2914,9 @@ is enabled at compile time, and must be called only when the
 interpreter lock has been created.
 
 \begin{cfuncdesc}{PyInterpreterState*}{PyInterpreterState_New}{}
-Create a new interpreter state object.  The interpreter lock must be
-held.
+Create a new interpreter state object.  The interpreter lock need not
+be held, but may be held if it is necessary to serialize calls to this
+function.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyInterpreterState_Clear}{PyInterpreterState *interp}
@@ -2931,7 +2932,8 @@ call to \cfunction{PyInterpreterState_Clear()}.
 
 \begin{cfuncdesc}{PyThreadState*}{PyThreadState_New}{PyInterpreterState *interp}
 Create a new thread state object belonging to the given interpreter
-object.  The interpreter lock must be held.
+object.  The interpreter lock need not be held, but may be held if it
+is necessary to serialize calls to this function.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{void}{PyThreadState_Clear}{PyThreadState *tstate}
