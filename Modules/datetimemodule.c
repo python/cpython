@@ -75,6 +75,11 @@
 #define SET_TD_SECONDS(o, v)	((o)->seconds = (v))
 #define SET_TD_MICROSECONDS(o, v) ((o)->microseconds = (v))
 
+/* p is a pointer to a time or a datetime object; HASTZINFO(p) returns
+ * p->hastzinfo.
+ */
+#define HASTZINFO(p)		(((_PyDateTime_BaseTZInfo *)(p))->hastzinfo)
+
 /* Forward declarations. */
 static PyTypeObject PyDateTime_DateType;
 static PyTypeObject PyDateTime_DateTimeType;
@@ -606,7 +611,7 @@ get_tzinfo_member(PyObject *self)
 
 	if (PyDateTimeTZ_Check(self))
 		tzinfo = ((PyDateTime_DateTimeTZ *)self)->tzinfo;
-	else if (PyTime_Check(self) && ((PyDateTime_Time *)self)->hastzinfo)
+	else if (PyTime_Check(self) && HASTZINFO(self))
 		tzinfo = ((PyDateTime_Time *)self)->tzinfo;
 
 	return tzinfo;
@@ -2966,9 +2971,7 @@ datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 				    		TIME_GET_MINUTE(time),
 				    		TIME_GET_SECOND(time),
 				    		TIME_GET_MICROSECOND(time));
-	if (result &&
-	    ((PyDateTime_Time *)time)->hastzinfo &&
-	    PyDateTimeTZ_Check(result)) {
+	if (result && HASTZINFO(time) && PyDateTimeTZ_Check(result)) {
 		/* Copy the tzinfo field. */
 		replace_tzinfo(result, ((PyDateTime_Time *)time)->tzinfo);
 	}
@@ -3618,7 +3621,7 @@ time_microsecond(PyDateTime_Time *self, void *unused)
 static PyObject *
 time_tzinfo(PyDateTime_Time *self, void *unused)
 {
-	PyObject *result = self->hastzinfo ? self->tzinfo : Py_None;
+	PyObject *result = HASTZINFO(self) ? self->tzinfo : Py_None;
 	Py_INCREF(result);
 	return result;
 }
@@ -3668,7 +3671,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 static void
 time_dealloc(PyDateTime_Time *self)
 {
-	if (self->hastzinfo) {
+	if (HASTZINFO(self)) {
 		Py_XDECREF(self->tzinfo);
 	}
 	self->ob_type->tp_free((PyObject *)self);
@@ -3681,19 +3684,19 @@ time_dealloc(PyDateTime_Time *self)
 /* These are all METH_NOARGS, so don't need to check the arglist. */
 static PyObject *
 time_utcoffset(PyDateTime_Time *self, PyObject *unused) {
-	return offset_as_timedelta(self->hastzinfo ? self->tzinfo : Py_None,
+	return offset_as_timedelta(HASTZINFO(self) ? self->tzinfo : Py_None,
 				   "utcoffset", Py_None);
 }
 
 static PyObject *
 time_dst(PyDateTime_Time *self, PyObject *unused) {
-	return offset_as_timedelta(self->hastzinfo ? self->tzinfo : Py_None,
+	return offset_as_timedelta(HASTZINFO(self) ? self->tzinfo : Py_None,
 				   "dst", Py_None);
 }
 
 static PyObject *
 time_tzname(PyDateTime_Time *self, PyObject *unused) {
-	return call_tzname(self->hastzinfo ? self->tzinfo : Py_None,
+	return call_tzname(HASTZINFO(self) ? self->tzinfo : Py_None,
 			   Py_None);
 }
 
@@ -3722,7 +3725,7 @@ time_repr(PyDateTime_Time *self)
 		PyOS_snprintf(buffer, sizeof(buffer),
 			      "%s(%d, %d)", typename, h, m);
 	result = PyString_FromString(buffer);
-	if (result != NULL && self->hastzinfo)
+	if (result != NULL && HASTZINFO(self))
 		result = append_keyword_tzinfo(result, self->tzinfo);
 	return result;
 }
@@ -3749,7 +3752,7 @@ time_isoformat(PyDateTime_Time *self)
 
 	isoformat_time(pdatetime, buf, sizeof(buf));
 	result = PyString_FromString(buf);
-	if (result == NULL || ! self->hastzinfo || self->tzinfo == Py_None)
+	if (result == NULL || ! HASTZINFO(self) || self->tzinfo == Py_None)
 		return result;
 
 	/* We need to append the UTC offset. */
@@ -3876,7 +3879,7 @@ time_hash(PyDateTime_Time *self)
 			int minute;
 
 			assert(n == OFFSET_AWARE);
-			assert(self->hastzinfo);
+			assert(HASTZINFO(self));
 			hour = divmod(TIME_GET_HOUR(self) * 60 +
 					TIME_GET_MINUTE(self) - offset,
 				      60,
@@ -3909,7 +3912,7 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 	int mm = TIME_GET_MINUTE(self);
 	int ss = TIME_GET_SECOND(self);
 	int us = TIME_GET_MICROSECOND(self);
-	PyObject *tzinfo = self->hastzinfo ? self->tzinfo : Py_None;
+	PyObject *tzinfo = HASTZINFO(self) ? self->tzinfo : Py_None;
 
 	if (! PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO:replace",
 					  time_kws,
@@ -3936,7 +3939,7 @@ time_nonzero(PyDateTime_Time *self)
 		return 1;
 	}
 	offset = 0;
-	if (self->hastzinfo && self->tzinfo != Py_None) {
+	if (HASTZINFO(self) && self->tzinfo != Py_None) {
 		offset = call_utcoffset(self->tzinfo, Py_None, &none);
 		if (offset == -1 && PyErr_Occurred())
 			return -1;
@@ -3961,7 +3964,7 @@ time_getstate(PyDateTime_Time *self)
 	basestate =  PyString_FromStringAndSize((char *)self->data,
 						_PyDateTime_TIME_DATASIZE);
 	if (basestate != NULL) {
-		if (! self->hastzinfo || self->tzinfo == Py_None)
+		if (! HASTZINFO(self) || self->tzinfo == Py_None)
 			result = Py_BuildValue("(O)", basestate);
 		else
 			result = Py_BuildValue("OO", basestate, self->tzinfo);
@@ -3986,7 +3989,7 @@ time_setstate(PyDateTime_Time *self, PyObject *state)
 				"bad argument to time.__setstate__");
 		return NULL;
 	}
-	if (tzinfo != Py_None && ! self->hastzinfo) {
+	if (tzinfo != Py_None && ! HASTZINFO(self)) {
 		PyErr_SetString(PyExc_ValueError, "time.__setstate__ can't "
 				"add a non-None tzinfo to a time object that "
 				"doesn't have one already");
@@ -3996,7 +3999,7 @@ time_setstate(PyDateTime_Time *self, PyObject *state)
 	       PyString_AsString(basestate),
 	       _PyDateTime_TIME_DATASIZE);
 	self->hashcode = -1;
-	if (self->hastzinfo) {
+	if (HASTZINFO(self)) {
 		Py_INCREF(tzinfo);
 		Py_XDECREF(self->tzinfo);
 		self->tzinfo = tzinfo;
