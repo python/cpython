@@ -1,5 +1,7 @@
-IDLE 0.2 - January 1999
------------------------
+IDLE 0.2 - 8 January 1999
+-------------------------
+
+For news about this release, see the file NEWS.txt.
 
 This is an early release of IDLE, my own attempt at a Tkinter-based
 IDE for Python.  It has the following features:
