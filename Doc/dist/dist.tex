@@ -171,12 +171,14 @@ following glossary of common Python terms:
 \item[package] a module that contains other modules; typically contained
   in a directory in the filesystem and distinguished from other
   directories by the presence of a file \file{\_\_init\_\_.py}.
-\item[root package] the ``package'' that modules not in a package live
-  in.  The vast majority of the standard library is in the root package,
-  as are many small, standalone third-party modules that don't belong to
-  a larger module collection.  (The root package isn't really a package,
-  since it doesn't have an \file{\_\_init\_\_.py} file.  But we have to
-  call it something.)
+\item[root package] the root of the hierarchy of packages.  (This isn't
+  really a package, since it doesn't have an \file{\_\_init\_\_.py}
+  file.  But we have to call it something.)  The vast majority of the
+  standard library is in the root package, as are many small, standalone
+  third-party modules that don't belong to a larger module collection.
+  Unlike regular packages, modules in the root package can be found in
+  many directories: in fact, every directory listed in \code{sys.path}
+  can contribute modules to the root package.
 \end{description}
 
 
