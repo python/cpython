@@ -1,6 +1,7 @@
 /* This module makes GNU readline available to Python.  It has ideas
  * contributed by Lee Busby, LLNL, and William Magro, Cornell Theory
- * Center.  The completer interface was inspired by Lele Gaifax.
+ * Center.  The completer interface was inspired by Lele Gaifax.  More
+ * recently, it was largely rewritten by Guido van Rossum.
  */
 
 /* Standard definitions */
