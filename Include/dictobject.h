@@ -17,9 +17,3 @@ extern int dictinsert PROTO((object *dp, char *key, object *item));
 extern int dictremove PROTO((object *dp, char *key));
 extern int getdictsize PROTO((object *dp));
 extern char *getdictkey PROTO((object *dp, int i));
-
-/* New interface with (string)object * instead of char * arguments */
-extern object *dict2lookup PROTO((object *dp, object *key));
-extern int dict2insert PROTO((object *dp, object *key, object *item));
-extern int dict2remove PROTO((object *dp, object *key));
-extern object *getdict2key PROTO((object *dp, int i));
