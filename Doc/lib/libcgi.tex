@@ -204,10 +204,8 @@ In the previous section, you learned to write following code anytime
 you expected a user to post more than one value under one name:
 
 \begin{verbatim}
-from types import ListType
-
 item = form.getvalue("item")
-if isinstance(item, ListType):
+if isinstance(item, list):
     # The user is requesting more than one item.
 else:
     # The user is requesting only one item.
@@ -252,10 +250,14 @@ and \method{getlist()} provided by this higher level interface.
   \var{name}.  The method returns only the first value in case that
   more values were posted under such name.  Please note that the order
   in which the values are received may vary from browser to browser
-  and should not be counted on.  If no such form field or value exists
-  then the method returns the value specified by the optional
-  parameter \var{default}.  This parameter defaults to \code{None} if
-  not specified.
+  and should not be counted on.\footnote{Note that some recent
+      versions of the HTML specification do state what order the
+      field values should be supplied in, but knowing whether a
+      request was received from a conforming browser, or even from a
+      browser at all, is tedious and error-prone.}  If no such form
+  field or value exists then the method returns the value specified by
+  the optional parameter \var{default}.  This parameter defaults to
+  \code{None} if not specified.
 \end{methoddesc}
 
 \begin{methoddesc}[FieldStorage]{getlist}{name}
@@ -270,7 +272,7 @@ Using these methods you can write nice compact code:
 \begin{verbatim}
 import cgi
 form = cgi.FieldStorage()
-user = form.getfirst("user").toupper()    # This way it's safe.
+user = form.getfirst("user", "").toupper()    # This way it's safe.
 for item in form.getlist("item"):
     do_something(item)
 \end{verbatim}
