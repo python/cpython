@@ -1163,6 +1163,21 @@ SOURCE=..\Parser\myreadline.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\Python\mysnprintf.c
+
+!IF  "$(CFG)" == "pythoncore - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Debug"
+
+!ELSEIF  "$(CFG)" == "pythoncore - Win32 Alpha Release"
+
+!ENDIF 
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\Python\mystrtoul.c
 
 !IF  "$(CFG)" == "pythoncore - Win32 Release"
