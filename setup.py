@@ -138,8 +138,8 @@ class PyBuildExt(build_ext):
         # unfortunately, distutils doesn't let us provide separate C and C++
         # compilers
         if compiler is not None:
-            (ccshared,) = sysconfig.get_config_vars('CCSHARED')
-            args['compiler_so'] = compiler + ' ' + ccshared
+            (ccshared,opt) = sysconfig.get_config_vars('CCSHARED','OPT')
+            args['compiler_so'] = compiler + ' ' + opt + ' ' + ccshared
         if linker_so is not None:
             args['linker_so'] = linker_so + ' -shared'
         self.compiler.set_executables(**args)
