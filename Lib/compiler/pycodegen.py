@@ -596,7 +596,6 @@ class CodeGenerator:
             if expr: # XXX
                 self.emit('POP_TOP')
         self.emit('END_FINALLY')
-        self.setups.pop()
         if node.else_:
             self.nextBlock(lElse)
             self.visit(node.else_)
