@@ -1,3 +1,29 @@
+"""Strip viewer and related widgets.
+
+The classes in this file implement the StripViewer shown in the top two thirds 
+of the main Pynche window.  It consists of three StripWidgets which display
+the variations in red, green, and blue respectively of the currently selected
+r/g/b color value.
+
+Each StripWidget shows the color variations that are reachable by varying an
+axis of the currently selected color.  So for example, if the color is
+
+  (R,G,B)=(127,163,196)
+
+then the Red variations show colors from (0,163,196) to (255,163,196), the
+Green variations show colors from (127,0,196) to (127,255,196), and the Blue
+variations show colors from (127,163,0) to (127,163,255).
+
+The selected color is always visible in all three StripWidgets, and in fact
+each StripWidget highlights the selected color, and has an arrow pointing to
+the selected chip, which includes the value along that particular axis.
+
+Clicking on any chip in any StripWidget selects that color, and updates all
+arrows and other windows.  By toggling on Update while dragging, Pynche will
+select the color under the cursor while you drag it, but be forewarned that
+this can be slow.
+"""
+
 import string
 from Tkinter import *
 import ColorDB
