@@ -1056,12 +1056,52 @@ class PyBuildInstallLib(install_lib):
     def is_chmod_supported(self):
         return hasattr(os, 'chmod')
 
+SUMMARY = """
+Python is an interpreted, interactive, object-oriented programming
+language. It is often compared to Tcl, Perl, Scheme or Java.
+
+Python combines remarkable power with very clear syntax. It has
+modules, classes, exceptions, very high level dynamic data types, and
+dynamic typing. There are interfaces to many system calls and
+libraries, as well as to various windowing systems (X11, Motif, Tk,
+Mac, MFC). New built-in modules are easily written in C or C++. Python
+is also usable as an extension language for applications that need a
+programmable interface.
+
+The Python implementation is portable: it runs on many brands of UNIX,
+on Windows, DOS, OS/2, Mac, Amiga... If your favorite system isn't
+listed here, it may still be supported, if there's a C compiler for
+it. Ask around on comp.lang.python -- or just try compiling Python
+yourself.
+"""
+
+CLASSIFIERS = """
+Development Status :: 3 - Alpha
+Development Status :: 6 - Mature
+License :: OSI Approved :: Python Software Foundation License
+Natural Language :: English
+Programming Language :: C
+Programming Language :: Python
+Topic :: Software Development
+"""
+
 def main():
     # turn off warnings when deprecated modules are imported
     import warnings
     warnings.filterwarnings("ignore",category=DeprecationWarning)
-    setup(name = 'Python standard library',
-          version = '%d.%d' % sys.version_info[:2],
+    setup(# PyPI Metadata (PEP 301)
+          name = "Python",
+          version = sys.version.split()[0],
+          url = "http://www.python.org/%s" % sys.version[:3],
+          maintainer = "Guido van Rossum and the Python community",
+          maintainer_email = "python-dev@python.org",
+          description = "A high-level object-oriented programming language",
+          long_description = SUMMARY.strip(),
+          license = "PSF license",
+          classifiers = filter(None, CLASSIFIERS.split("\n")),
+          platforms = ["Many"],
+
+          # Build info
           cmdclass = {'build_ext':PyBuildExt, 'install':PyBuildInstall,
                       'install_lib':PyBuildInstallLib},
           # The struct module is defined here, because build_ext won't be
