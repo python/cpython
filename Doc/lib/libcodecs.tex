@@ -227,13 +227,20 @@ string values are defined and implemented by all standard Python
 codecs:
 
 \begin{tableii}{l|l}{code}{Value}{Meaning}
-  \lineii{'strict'}{Raise \exception{ValueError} (or a subclass);
+  \lineii{'strict'}{Raise \exception{UnicodeError} (or a subclass);
                     this is the default.}
   \lineii{'ignore'}{Ignore the character and continue with the next.}
   \lineii{'replace'}{Replace with a suitable replacement character;
                      Python will use the official U+FFFD REPLACEMENT
-                     CHARACTER for the built-in Unicode codecs.}
+                     CHARACTER for the built-in Unicode codecs on
+                     decoding and '?' on encoding.}
+  \lineii{'xmlcharrefreplace'}{Replace with the appropriate XML
+                     character reference (only for encoding).}
+  \lineii{'backslashreplace'}{Replace with backslashed escape sequences
+                     (only for encoding).}
 \end{tableii}
+
+The set of allowed values can be extended via \method{register_error}.
 
 
 \subsubsection{Codec Objects \label{codec-objects}}
@@ -303,14 +310,25 @@ order to be compatible to the Python codec registry.
 
   The \class{StreamWriter} may implement different error handling
   schemes by providing the \var{errors} keyword argument. These
-  parameters are defined:
+  parameters are predefined:
 
   \begin{itemize}
     \item \code{'strict'} Raise \exception{ValueError} (or a subclass);
                           this is the default.
     \item \code{'ignore'} Ignore the character and continue with the next.
     \item \code{'replace'} Replace with a suitable replacement character
+    \item \code{'xmlcharrefreplace'} Replace with the appropriate XML
+                     character reference
+    \item \code{'backslashreplace'} Replace with backslashed escape sequences.
   \end{itemize}
+
+  The \var{errors} argument will be assigned to an attribute of the
+  same name. Assigning to this attribute makes it possible to switch
+  between different error handling strategies during the lifetime
+  of the \class{StreamWriter} object.
+
+  The set of allowed values for the \var{errors} argument can
+  be extended with \function{register_error()}.
 \end{classdesc}
 
 \begin{methoddesc}{write}{object}
@@ -360,6 +378,14 @@ order to be compatible to the Python codec registry.
     \item \code{'ignore'} Ignore the character and continue with the next.
     \item \code{'replace'} Replace with a suitable replacement character.
   \end{itemize}
+
+  The \var{errors} argument will be assigned to an attribute of the
+  same name. Assigning to this attribute makes it possible to switch
+  between different error handling strategies during the lifetime
+  of the \class{StreamReader} object.
+
+  The set of allowed values for the \var{errors} argument can
+  be extended with \function{register_error()}.
 \end{classdesc}
 
 \begin{methoddesc}{read}{\optional{size}}
