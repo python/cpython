@@ -329,8 +329,8 @@ class TestCase(unittest.TestCase):
                 self.truth = truth
             def __nonzero__(self):
                 return self.truth
-        True = Boolean(1)
-        False = Boolean(0)
+        bTrue = Boolean(1)
+        bFalse = Boolean(0)
 
         class Seq:
             def __init__(self, *args):
@@ -351,9 +351,9 @@ class TestCase(unittest.TestCase):
                             raise StopIteration
                 return SeqIter(self.vals)
 
-        seq = Seq(*([True, False] * 25))
-        self.assertEqual(filter(lambda x: not x, seq), [False]*25)
-        self.assertEqual(filter(lambda x: not x, iter(seq)), [False]*25)
+        seq = Seq(*([bTrue, bFalse] * 25))
+        self.assertEqual(filter(lambda x: not x, seq), [bFalse]*25)
+        self.assertEqual(filter(lambda x: not x, iter(seq)), [bFalse]*25)
 
     # Test max() and min()'s use of iterators.
     def test_builtin_max_min(self):
