@@ -277,101 +277,84 @@ class MSVCCompiler (CCompiler) :
     # object_filenames ()
 
 
-    def compile (self,
-                 sources,
-                 output_dir=None,
-                 macros=None,
-                 include_dirs=None,
-                 debug=0,
-                 extra_preargs=None,
-                 extra_postargs=None):
+    def compile(self, sources,
+                output_dir=None, macros=None, include_dirs=None, debug=0,
+                extra_preargs=None, extra_postargs=None, depends=None):
 
-        (output_dir, macros, include_dirs) = \
-            self._fix_compile_args (output_dir, macros, include_dirs)
-        (objects, skip_sources) = self._prep_compile (sources, output_dir)
+        macros, objects, extra_postargs, pp_opts, build = \
+                self._setup_compile(output_dir, macros, include_dirs, sources,
+                                    depends, extra_postargs)
 
-        if extra_postargs is None:
-            extra_postargs = []
-
-        pp_opts = gen_preprocess_options (macros, include_dirs)
         compile_opts = extra_preargs or []
         compile_opts.append ('/c')
         if debug:
-            compile_opts.extend (self.compile_options_debug)
+            compile_opts.extend(self.compile_options_debug)
         else:
-            compile_opts.extend (self.compile_options)
+            compile_opts.extend(self.compile_options)
 
-        for i in range (len (sources)):
-            src = sources[i] ; obj = objects[i]
-            ext = (os.path.splitext (src))[1]
+        for obj, (src, ext) in build.items():
+            if debug:
+                # pass the full pathname to MSVC in debug mode,
+                # this allows the debugger to find the source file
+                # without asking the user to browse for it
+                src = os.path.abspath(src)
 
-            if skip_sources[src]:
-                log.debug("skipping %s (%s up-to-date)", src, obj)
-            else:
-                self.mkpath (os.path.dirname (obj))
-
-                if debug:
-                    # pass the full pathname to MSVC in debug mode,
-                    # this allows the debugger to find the source file
-                    # without asking the user to browse for it
-                    src = os.path.abspath(src)
-
-                if ext in self._c_extensions:
-                    input_opt = "/Tc" + src
-                elif ext in self._cpp_extensions:
-                    input_opt = "/Tp" + src
-                elif ext in self._rc_extensions:
-                    # compile .RC to .RES file
-                    input_opt = src
-                    output_opt = "/fo" + obj
-                    try:
-                        self.spawn ([self.rc] +
-                                    [output_opt] + [input_opt])
-                    except DistutilsExecError, msg:
-                        raise CompileError, msg
-                    continue
-                elif ext in self._mc_extensions:
-
-                    # Compile .MC to .RC file to .RES file.
-                    #   * '-h dir' specifies the directory for the
-                    #     generated include file
-                    #   * '-r dir' specifies the target directory of the
-                    #     generated RC file and the binary message resource
-                    #     it includes
-                    #
-                    # For now (since there are no options to change this),
-                    # we use the source-directory for the include file and
-                    # the build directory for the RC file and message
-                    # resources. This works at least for win32all.
-
-                    h_dir = os.path.dirname (src)
-                    rc_dir = os.path.dirname (obj)
-                    try:
-                        # first compile .MC to .RC and .H file
-                        self.spawn ([self.mc] +
-                                    ['-h', h_dir, '-r', rc_dir] + [src])
-                        base, _ = os.path.splitext (os.path.basename (src))
-                        rc_file = os.path.join (rc_dir, base + '.rc')
-                        # then compile .RC to .RES file
-                        self.spawn ([self.rc] +
-                                    ["/fo" + obj] + [rc_file])
-
-                    except DistutilsExecError, msg:
-                        raise CompileError, msg
-                    continue
-                else:
-                    # how to handle this file?
-                    raise CompileError (
-                        "Don't know how to compile %s to %s" % \
-                        (src, obj))
-
-                output_opt = "/Fo" + obj
+            if ext in self._c_extensions:
+                input_opt = "/Tc" + src
+            elif ext in self._cpp_extensions:
+                input_opt = "/Tp" + src
+            elif ext in self._rc_extensions:
+                # compile .RC to .RES file
+                input_opt = src
+                output_opt = "/fo" + obj
                 try:
-                    self.spawn ([self.cc] + compile_opts + pp_opts +
-                                [input_opt, output_opt] +
-                                extra_postargs)
+                    self.spawn ([self.rc] +
+                                [output_opt] + [input_opt])
                 except DistutilsExecError, msg:
                     raise CompileError, msg
+                continue
+            elif ext in self._mc_extensions:
+
+                # Compile .MC to .RC file to .RES file.
+                #   * '-h dir' specifies the directory for the
+                #     generated include file
+                #   * '-r dir' specifies the target directory of the
+                #     generated RC file and the binary message resource
+                #     it includes
+                #
+                # For now (since there are no options to change this),
+                # we use the source-directory for the include file and
+                # the build directory for the RC file and message
+                # resources. This works at least for win32all.
+
+                h_dir = os.path.dirname (src)
+                rc_dir = os.path.dirname (obj)
+                try:
+                    # first compile .MC to .RC and .H file
+                    self.spawn ([self.mc] +
+                                ['-h', h_dir, '-r', rc_dir] + [src])
+                    base, _ = os.path.splitext (os.path.basename (src))
+                    rc_file = os.path.join (rc_dir, base + '.rc')
+                    # then compile .RC to .RES file
+                    self.spawn ([self.rc] +
+                                ["/fo" + obj] + [rc_file])
+
+                except DistutilsExecError, msg:
+                    raise CompileError, msg
+                continue
+            else:
+                # how to handle this file?
+                raise CompileError (
+                    "Don't know how to compile %s to %s" % \
+                    (src, obj))
+
+            output_opt = "/Fo" + obj
+            try:
+                self.spawn ([self.cc] + compile_opts + pp_opts +
+                            [input_opt, output_opt] +
+                            extra_postargs)
+            except DistutilsExecError, msg:
+                raise CompileError, msg
 
         return objects
 
