@@ -521,6 +521,8 @@ class ftpwrapper:
 			except ftplib.error_perm, reason:
 				raise IOError, ('ftp error', reason), \
 				      sys.exc_info()[2]
+			# Restore the transfer mode!
+			self.ftp.voidcmd(cmd)
 			# Try to retrieve as a file
 			try:
 				cmd = 'RETR ' + file
@@ -530,6 +532,8 @@ class ftpwrapper:
 					raise IOError, ('ftp error', reason), \
 					      sys.exc_info()[2]
 		if not conn:
+			# Set transfer mode to ASCII!
+			self.ftp.voidcmd('TYPE A')
 			# Try a directory listing
 			if file: cmd = 'LIST ' + file
 			else: cmd = 'LIST'
