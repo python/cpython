@@ -40,21 +40,21 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     # the creation of the whole path? (quite easy to do the latter since
     # we're not using a recursive algorithm)
 
-    name = os.path.normpath (name)
+    name = os.path.normpath(name)
     created_dirs = []
-    if os.path.isdir (name) or name == '':
+    if os.path.isdir(name) or name == '':
         return created_dirs
-    if _path_created.get (name):
+    if _path_created.get(name):
         return created_dirs
 
-    (head, tail) = os.path.split (name)
+    (head, tail) = os.path.split(name)
     tails = [tail]                      # stack of lone dirs to create
     
-    while head and tail and not os.path.isdir (head):
+    while head and tail and not os.path.isdir(head):
         #print "splitting '%s': " % head,
-        (head, tail) = os.path.split (head)
+        (head, tail) = os.path.split(head)
         #print "to ('%s','%s')" % (head, tail)
-        tails.insert (0, tail)          # push next higher dir onto stack
+        tails.insert(0, tail)          # push next higher dir onto stack
 
     #print "stack of tails:", tails
 
@@ -63,8 +63,8 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
     # that does *not* exist)
     for d in tails:
         #print "head = %s, d = %s: " % (head, d),
-        head = os.path.join (head, d)
-        if _path_created.get (head):
+        head = os.path.join(head, d)
+        if _path_created.get(head):
             continue
 
         if verbose:
@@ -72,7 +72,7 @@ def mkpath (name, mode=0777, verbose=0, dry_run=0):
 
         if not dry_run:
             try:
-                os.mkdir (head)
+                os.mkdir(head)
                 created_dirs.append(head)
             except OSError, exc:
                 raise DistutilsFileError, \
@@ -97,13 +97,13 @@ def create_tree (base_dir, files, mode=0777, verbose=0, dry_run=0):
     # First get the list of directories to create
     need_dir = {}
     for file in files:
-        need_dir[os.path.join (base_dir, os.path.dirname (file))] = 1
+        need_dir[os.path.join(base_dir, os.path.dirname(file))] = 1
     need_dirs = need_dir.keys()
     need_dirs.sort()
 
     # Now create them
     for dir in need_dirs:
-        mkpath (dir, mode, verbose, dry_run)
+        mkpath(dir, mode, verbose, dry_run)
 
 # create_tree ()
 
@@ -136,11 +136,11 @@ def copy_tree (src, dst,
 
     from distutils.file_util import copy_file
 
-    if not dry_run and not os.path.isdir (src):
+    if not dry_run and not os.path.isdir(src):
         raise DistutilsFileError, \
               "cannot copy tree '%s': not a directory" % src    
     try:
-        names = os.listdir (src)
+        names = os.listdir(src)
     except os.error, (errno, errstr):
         if dry_run:
             names = []
@@ -149,32 +149,32 @@ def copy_tree (src, dst,
                   "error listing files in '%s': %s" % (src, errstr)
 
     if not dry_run:
-        mkpath (dst, verbose=verbose)
+        mkpath(dst, verbose=verbose)
 
     outputs = []
 
     for n in names:
-        src_name = os.path.join (src, n)
-        dst_name = os.path.join (dst, n)
+        src_name = os.path.join(src, n)
+        dst_name = os.path.join(dst, n)
 
-        if preserve_symlinks and os.path.islink (src_name):
-            link_dest = os.readlink (src_name)
+        if preserve_symlinks and os.path.islink(src_name):
+            link_dest = os.readlink(src_name)
             if verbose:
                 print "linking %s -> %s" % (dst_name, link_dest)
             if not dry_run:
-                os.symlink (link_dest, dst_name)
-            outputs.append (dst_name)
+                os.symlink(link_dest, dst_name)
+            outputs.append(dst_name)
             
-        elif os.path.isdir (src_name):
-            outputs.extend (
-                copy_tree (src_name, dst_name,
-                           preserve_mode, preserve_times, preserve_symlinks,
-                           update, verbose, dry_run))
+        elif os.path.isdir(src_name):
+            outputs.extend(
+                copy_tree(src_name, dst_name,
+                          preserve_mode, preserve_times, preserve_symlinks,
+                          update, verbose, dry_run))
         else:
-            copy_file (src_name, dst_name,
-                       preserve_mode, preserve_times,
-                       update, None, verbose, dry_run)
-            outputs.append (dst_name)
+            copy_file(src_name, dst_name,
+                      preserve_mode, preserve_times,
+                      update, None, verbose, dry_run)
+            outputs.append(dst_name)
 
     return outputs
 
