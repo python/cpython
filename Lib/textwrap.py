@@ -22,6 +22,12 @@ class TextWrapper:
       width (default: 70)
         the maximum width of wrapped lines (unless break_long_words
         is false)
+      initial_indent (default: "")
+        string that will be prepended to the first line of wrapped
+        output.  Counts towards the line's width.
+      subsequent_indent (default: "")
+        string that will be prepended to all lines save the first
+        of wrapped output; also counts towards each line's width.
       expand_tabs (default: true)
         Expand tabs in input text to spaces before further processing.
         Each tab will become 1 .. 8 spaces, depending on its position in
@@ -63,11 +69,15 @@ class TextWrapper:
 
     def __init__ (self,
                   width=70,
+                  initial_indent="",
+                  subsequent_indent="",
                   expand_tabs=True,
                   replace_whitespace=True,
                   fix_sentence_endings=False,
                   break_long_words=True):
         self.width = width
+        self.initial_indent = initial_indent
+        self.subsequent_indent = subsequent_indent
         self.expand_tabs = expand_tabs
         self.replace_whitespace = replace_whitespace
         self.fix_sentence_endings = fix_sentence_endings
@@ -124,15 +134,15 @@ class TextWrapper:
             else:
                 i += 1
 
-    def _handle_long_word(self, chunks, cur_line, cur_len):
+    def _handle_long_word(self, chunks, cur_line, cur_len, width):
         """_handle_long_word(chunks : [string],
                              cur_line : [string],
-                             cur_len : int)
+                             cur_len : int, width : int)
 
         Handle a chunk of text (most likely a word, not whitespace) that
         is too long to fit in any line.
         """
-        space_left = self.width - cur_len
+        space_left = width - cur_len
 
         # If we're allowed to break long words, then do so: put as much
         # of the next chunk onto the current line as will fit.
@@ -166,12 +176,22 @@ class TextWrapper:
         lines, but apart from that whitespace is preserved.
         """
         lines = []
-        width = self.width
 
         while chunks:
 
-            cur_line = []                   # list of chunks (to-be-joined)
-            cur_len = 0                     # length of current line
+            # Start the list of chunks that will make up the current line.
+            # cur_len is just the length of all the chunks in cur_line.
+            cur_line = []
+            cur_len = 0
+
+            # Figure out which static string will prefix this line.
+            if lines:
+                indent = self.subsequent_indent
+            else:
+                indent = self.initial_indent
+
+            # Maximum width for this line.
+            width = self.width - len(indent)
 
             # First chunk on line is whitespace -- drop it.
             if chunks[0].strip() == '':
@@ -192,7 +212,7 @@ class TextWrapper:
             # The current line is full, and the next chunk is too big to
             # fit on *any* line (not just this one).  
             if chunks and len(chunks[0]) > width:
-                self._handle_long_word(chunks, cur_line, cur_len)
+                self._handle_long_word(chunks, cur_line, cur_len, width)
 
             # If the last chunk on this line is all whitespace, drop it.
             if cur_line and cur_line[-1].strip() == '':
@@ -201,7 +221,7 @@ class TextWrapper:
             # Convert current line back to a string and store it in list
             # of all lines (return value).
             if cur_line:
-                lines.append(''.join(cur_line))
+                lines.append(indent + ''.join(cur_line))
 
         return lines
 
@@ -225,21 +245,13 @@ class TextWrapper:
             self._fix_sentence_endings(chunks)
         return self._wrap_chunks(chunks)
 
-    def fill(self, text, initial_tab="", subsequent_tab=""):
-        """fill(text : string,
-                initial_tab : string = "",
-                subsequent_tab : string = "")
-           -> string
+    def fill(self, text):
+        """fill(text : string) -> string
 
         Reformat the paragraph in 'text' to fit in lines of no more than
-        'width' columns.  The first line is prefixed with 'initial_tab',
-        and subsequent lines are prefixed with 'subsequent_tab'; the
-        lengths of the tab strings are accounted for when wrapping lines
-        to fit in 'width' columns.
+        'width' columns.
         """
-        lines = self.wrap(text)
-        sep = "\n" + subsequent_tab
-        return initial_tab + sep.join(lines)
+        return "\n".join(self.wrap(text))
 
 
 # Convenience interface
@@ -248,6 +260,6 @@ def wrap(text, width=70, **kwargs):
     w = TextWrapper(width=width, **kwargs)
     return w.wrap(text)
 
-def fill(text, width=70, initial_tab="", subsequent_tab="", **kwargs):
+def fill(text, width=70, **kwargs):
     w = TextWrapper(width=width, **kwargs)
-    return w.fill(text, initial_tab, subsequent_tab)
+    return w.fill(text)
