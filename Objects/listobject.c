@@ -389,8 +389,8 @@ list_concat(a, bb)
 	PyListObject *np;
 	if (!PyList_Check(bb)) {
 		PyErr_Format(PyExc_TypeError,
-			     "can only append list (not \"%.200s\") to list",
-			     bb->ob_type->tp_name);
+			  "can only concatenate list (not \"%.200s\") to list",
+			  bb->ob_type->tp_name);
 		return NULL;
 	}
 #define b ((PyListObject *)bb)
