@@ -160,6 +160,24 @@ an SMTP error code of 400 or greater and an error string.
 Note: many sites disable SMTP \samp{VRFY} in order to foil spammers.
 \end{methoddesc}
 
+\begin{methoddesc}{login}{user, password}
+Log in on an SMTP server that requires authentication.
+The arguments are the username and the password to authenticate with.
+If there has been no previous \samp{EHLO} or \samp{HELO} command this
+session, this method tries ESMTP \samp{EHLO} first.
+This method will return normally if the authentication was successful,
+or may raise the following exceptions:
+
+\begin{description}
+  \item[\exception{SMTPHeloError}]
+    The server didn't reply properly to the \samp{HELO} greeting.
+  \item[\exception{SMTPAuthenticationError}]
+    The server didn't accept the username/password combination.
+  \item[\exception{SMTPError}]
+    No suitable authentication method was found.
+\end{description}
+\end{methoddesc}
+
 \begin{methoddesc}{sendmail}{from_addr, to_addrs, msg\optional{,
                              mail_options, rcpt_options}}
 Send mail.  The required arguments are an \rfc{822} from-address
