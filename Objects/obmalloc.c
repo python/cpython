@@ -1197,14 +1197,37 @@ _PyMalloc_DebugDumpAddress(const void *p)
 static ulong
 printone(const char* msg, ulong value)
 {
-	const size_t len = strlen(msg);
-	size_t i;
+	int i, k;
+	char buf[100];
+	ulong origvalue = value;
 
 	fputs(msg, stderr);
-	for (i = len; i < 40; ++i)
+	for (i = (int)strlen(msg); i < 35; ++i)
 		fputc(' ', stderr);
-	fprintf(stderr, "= %15lu\n", value);
-	return value;
+	fputc('=', stderr);
+
+	/* Write the value with commas. */
+	i = 22;
+	buf[i--] = '\0';
+	buf[i--] = '\n';
+	k = 3;
+	do {
+		ulong nextvalue = value / 10UL;
+		uint digit = value - nextvalue * 10UL;
+		value = nextvalue;
+		buf[i--] = (char)(digit + '0');
+		--k;
+		if (k == 0 && value && i >= 0) {
+			k = 3;
+			buf[i--] = ',';
+		}
+	} while (value && i >= 0);
+
+	while (i >= 0)
+		buf[i--] = ' ';
+	fputs(buf, stderr);
+
+	return origvalue;
 }
 
 /* Print summary info to stderr about the state of pymalloc's structures. */
@@ -1284,8 +1307,8 @@ _PyMalloc_DebugDumpStats(void)
 	}
 
 	fputc('\n', stderr);
-	fputs("class   num bytes   num pools   blocks in use  avail blocks\n"
-	      "-----   ---------   ---------   -------------  ------------\n",
+	fputs("class   size   num pools   blocks in use  avail blocks\n"
+	      "-----   ----   ---------   -------------  ------------\n",
 		stderr);
 
 	for (i = 0; i < numclasses; ++i) {
@@ -1297,7 +1320,7 @@ _PyMalloc_DebugDumpStats(void)
 			assert(b == 0 && f == 0);
 			continue;
 		}
-		fprintf(stderr, "%5u %11u %11lu %15lu %13lu\n",
+		fprintf(stderr, "%5u %6u %11lu %15lu %13lu\n",
 			i, size, p, b, f);
 		allocated_bytes += b * size;
 		available_bytes += f * size;
@@ -1312,11 +1335,12 @@ _PyMalloc_DebugDumpStats(void)
 
 	fputc('\n', stderr);
 
+	total = printone("# bytes in allocated blocks", allocated_bytes);
+
 	PyOS_snprintf(buf, sizeof(buf),
 		"%u unused pools * %d bytes", numfreepools, POOL_SIZE);
-	total  = printone(buf, (ulong)numfreepools * POOL_SIZE);
+	total += printone(buf, (ulong)numfreepools * POOL_SIZE);
 
-	total += printone("# bytes in allocated blocks", allocated_bytes);
 	total += printone("# bytes in available blocks", available_bytes);
 	total += printone("# bytes lost to pool headers", pool_header_bytes);
 	total += printone("# bytes lost to quantization", quantization);
