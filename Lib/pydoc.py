@@ -269,9 +269,9 @@ class HTMLDoc(Doc):
 <table width="100%%" cellspacing=0 cellpadding=2 border=0>
 <tr bgcolor="%s">
 <td valign=bottom><small>&nbsp;<br></small
-><font color="%s" face="helvetica">&nbsp;<br>%s</font></td
+><font color="%s" face="helvetica, arial">&nbsp;<br>%s</font></td
 ><td align=right valign=bottom
-><font color="%s" face="helvetica">%s</font></td></tr></table>
+><font color="%s" face="helvetica, arial">%s</font></td></tr></table>
     ''' % (bgcol, fgcol, title, fgcol, extras or '&nbsp;')
 
     def section(self, title, fgcol, bgcol, contents, width=20,
@@ -287,9 +287,11 @@ class HTMLDoc(Doc):
     ''' % (bgcol, fgcol, title)
         if prelude:
             result = result + '''
-<tr bgcolor="%s"><td>%s</td>
-<td colspan=2>%s</td></tr>''' % (bgcol, marginalia, prelude)
-        result = result + '''
+<tr bgcolor="%s"><td rowspan=2>%s</td>
+<td colspan=2>%s</td></tr>
+<tr><td>%s</td>''' % (bgcol, marginalia, prelude, gap)
+        else:
+            result = result + '''
 <tr><td bgcolor="%s">%s</td><td>%s</td>''' % (bgcol, marginalia, gap)
 
         return result + '<td width="100%%">%s</td></tr></table>' % contents
@@ -556,7 +558,7 @@ class HTMLDoc(Doc):
             title = title + '(%s)' % join(parents, ', ')
         doc = self.markup(
             getdoc(object), self.preformat, funcs, classes, mdict)
-        doc = self.small('<tt>%s<br>&nbsp;</tt>' % doc)
+        doc = self.small(doc and '<tt>%s<br>&nbsp;</tt>' % doc or '<tt>&nbsp;</tt>')
         return self.section(title, '#000000', '#ffc8d8', contents, 10, doc)
 
     def formatvalue(self, object):
@@ -584,7 +586,7 @@ class HTMLDoc(Doc):
                     skipdocs = 1
             else:
                 note = (object.im_self and
-                        'method of ' + self.repr(object.im_self) or
+                        ' method of ' + self.repr(object.im_self) or
                         ' unbound %s method' % object.im_class.__name__)
             object = object.im_func
 
@@ -610,15 +612,16 @@ class HTMLDoc(Doc):
                 decl = '<em>lambda</em>'
                 argspec = argspec[1:-1] # remove parentheses
 
-        decl = title + argspec + (note and self.small(self.grey(note)))
+        decl = title + argspec + (note and self.small(self.grey(
+            '<font face="helvetica, arial">%s</font>' % note)))
 
         if skipdocs:
-            return '<dl><dt>%s</dl>' % decl
+            return '<dl><dt>%s</dl>\n' % decl
         else:
             doc = self.markup(
                 getdoc(object), self.preformat, funcs, classes, methods)
             doc = doc and '<tt>%s</tt>' % doc
-            return '<dl><dt>%s<dd>%s</dl>' % (decl, self.small(doc))
+            return '<dl><dt>%s<dd>%s</dl>\n' % (decl, self.small(doc))
 
     def docother(self, object, name=None):
         """Produce HTML documentation for a data object."""
