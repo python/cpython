@@ -23,12 +23,11 @@
 
 import string
 import socket
-import regex
 import os
 import sys
 
 
-__version__ = '1.7'
+__version__ = '1.8'
 
 MAXFTPCACHE = 10		# Trim the ftp cache beyond this size
 
@@ -140,8 +139,8 @@ class URLopener:
 			url = (host, fullurl) # Signal special case to open_*()
 		name = 'open_' + type
 		if '-' in name:
-			import regsub
-			name = regsub.gsub('-', '_', name)
+		        # replace - with _
+			name = string.join(string.split(name, '-'), '_')
 		if not hasattr(self, name):
 			if data is None:
 				return self.open_unknown(fullurl)
@@ -153,7 +152,7 @@ class URLopener:
 			else:
 				return getattr(self, name)(url, data)
 		except socket.error, msg:
-			raise IOError, ('socket error', msg), sys.exc_traceback
+			raise IOError, ('socket error', msg), sys.exc_info()[2]
 
 	# Overridable interface to open unknown URL type
 	def open_unknown(self, fullurl, data=None):
@@ -347,7 +346,7 @@ class URLopener:
 				self.ftpcache[key].retrfile(file, type),
 				noheaders(), self.openedurl)
 		except ftperrors(), msg:
-			raise IOError, ('ftp error', msg), sys.exc_traceback
+			raise IOError, ('ftp error', msg), sys.exc_info()[2]
 
 
 # Derived class with handlers for errors we can handle (perhaps)
@@ -383,10 +382,11 @@ class FancyURLopener(URLopener):
 	def http_error_401(self, url, fp, errcode, errmsg, headers):
 		if headers.has_key('www-authenticate'):
 			stuff = headers['www-authenticate']
-			p = regex.compile(
-				'[ \t]*\([^ \t]+\)[ \t]+realm="\([^"]*\)"')
-			if p.match(stuff) >= 0:
-				scheme, realm = p.group(1, 2)
+			import re
+			match = re.match(
+			    '[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
+			if match:
+			        scheme, realm = match.group()
 				if string.lower(scheme) == 'basic':
 					return self.retry_http_basic_auth(
 						url, realm)
@@ -514,7 +514,7 @@ class ftpwrapper:
 			except ftplib.error_perm, reason:
 				if reason[:3] != '550':
 					raise IOError, ('ftp error', reason), \
-					      sys.exc_traceback
+					      sys.exc_info()[2]
 		if not conn:
 			# Try a directory listing
 			if file: cmd = 'LIST ' + file
@@ -664,41 +664,77 @@ def unwrap(url):
 	if url[:4] == 'URL:': url = string.strip(url[4:])
 	return url
 
-_typeprog = regex.compile('^\([^/:]+\):')
+_typeprog = None
 def splittype(url):
-	if _typeprog.match(url) >= 0:
-		scheme = _typeprog.group(1)
+	global _typeprog
+	if _typeprog is None:
+	    import re
+	    _typeprog = re.compile('^([^/:]+):')
+
+        match = _typeprog.match(url)
+	if match:
+		scheme = match.group(1)
 		return scheme, url[len(scheme) + 1:]
 	return None, url
 
-_hostprog = regex.compile('^//\([^/]+\)\(.*\)$')
+_hostprog = None
 def splithost(url):
-	if _hostprog.match(url) >= 0: return _hostprog.group(1, 2)
+	global _hostprog
+	if _hostprog is None:
+	    import re
+	    _hostprog = re.compile('^//([^/]+)(.*)$')
+
+        match = _hostprog.match(url) 
+	if match: return match.group(1, 2)
 	return None, url
 
-_userprog = regex.compile('^\([^@]*\)@\(.*\)$')
+_userprog = None
 def splituser(host):
-	if _userprog.match(host) >= 0: return _userprog.group(1, 2)
+	global _userprog
+	if _userprog is None:
+	    import re
+	    _userprog = re.compile('^([^@]*)@(.*)$')
+
+        match = _userprog.match(host)
+	if match: return match.group(1, 2)
 	return None, host
 
-_passwdprog = regex.compile('^\([^:]*\):\(.*\)$')
+_passwdprog = None
 def splitpasswd(user):
-	if _passwdprog.match(user) >= 0: return _passwdprog.group(1, 2)
+	global _passwdprog
+	if _passwdprog is None:
+	    import re
+	    _passwdprog = re.compile('^([^:]*):(.*)$')
+
+        match = _passwdprog.match(host)
+	if match: return match.group(1, 2)
 	return user, None
 
-_portprog = regex.compile('^\(.*\):\([0-9]+\)$')
+_portprog = None
 def splitport(host):
-	if _portprog.match(host) >= 0: return _portprog.group(1, 2)
+	global _portprog
+	if _portprog is None:
+	    import re
+	    _portprog = re.compile('^(.*):([0-9]+)$')
+
+        match = _portprog.match(host)
+	if match: return match.group(1, 2)
 	return host, None
 
 # Split host and port, returning numeric port.
 # Return given default port if no ':' found; defaults to -1.
 # Return numerical port if a valid number are found after ':'.
 # Return None if ':' but not a valid number.
-_nportprog = regex.compile('^\(.*\):\(.*\)$')
+_nportprog = None
 def splitnport(host, defport=-1):
-	if _nportprog.match(host) >= 0:
-	    host, port = _nportprog.group(1, 2)
+	global _nportprog
+	if _nportprog is None:
+	    import re
+	    _nportprog = re.compile('^(.*):(.*)$')
+	    
+        match = _nportprog.match(host)
+	if match:
+	    host, port = match.group(1, 2)
 	    try:
 		if not port: raise string.atoi_error, "no digits"
 		nport = string.atoi(port)
@@ -707,23 +743,41 @@ def splitnport(host, defport=-1):
 	    return host, nport
 	return host, defport
 
-_queryprog = regex.compile('^\(.*\)\?\([^?]*\)$')
+_queryprog = None
 def splitquery(url):
-	if _queryprog.match(url) >= 0: return _queryprog.group(1, 2)
+	global _queryprog
+	if _queryprog is None:
+	    import re
+	    _queryprog = re.compile('^(.*)\?([^?]*)$')
+
+        match = _queryprog.match(url)
+	if match: return match.group(1, 2)
 	return url, None
 
-_tagprog = regex.compile('^\(.*\)#\([^#]*\)$')
+_tagprog = None
 def splittag(url):
-	if _tagprog.match(url) >= 0: return _tagprog.group(1, 2)
+	global _tagprog
+	if _tagprog is None:
+	    import re
+	    _tagprog = re.compile('^(.*)#([^#]*)$')
+	    
+        match = _tagprog.match(url)
+	if match: return match.group(1, 2)
 	return url, None
 
 def splitattr(url):
 	words = string.splitfields(url, ';')
 	return words[0], words[1:]
 
-_valueprog = regex.compile('^\([^=]*\)=\(.*\)$')
+_valueprog = None
 def splitvalue(attr):
-	if _valueprog.match(attr) >= 0: return _valueprog.group(1, 2)
+	global _valueprog
+	if _valueprog is None:
+	    import re
+	    _valueprog = re.compile('^([^=]*)=(.*)$')
+
+        match = _valueprog.match(attr)
+	if match: return match.group(1, 2)
 	return attr, None
 
 def splitgophertype(selector):
@@ -731,24 +785,30 @@ def splitgophertype(selector):
 		return selector[1], selector[2:]
 	return None, selector
 
-_quoteprog = regex.compile('%[0-9a-fA-F][0-9a-fA-F]')
+_quoteprog = None
 def unquote(s):
+	global _quoteprog
+	if _quoteprog is None:
+	    import re
+	    _quoteprog = re.compile('%[0-9a-fA-F][0-9a-fA-F]')
+	    
 	i = 0
 	n = len(s)
 	res = []
 	while 0 <= i < n:
-		j = _quoteprog.search(s, i)
-		if j < 0:
+		match = _quoteprog.search(s, i)
+		if not match:
 			res.append(s[i:])
 			break
+		j = match.start(0)
 		res.append(s[i:j] + chr(string.atoi(s[j+1:j+3], 16)))
 		i = j+3
 	return string.joinfields(res, '')
 
 def unquote_plus(s):
     if '+' in s:
-	import regsub
-	s = regsub.gsub('+', ' ', s)
+	# replace '+' with ' '
+	s = string.join(string.split(s, '+'), ' ')
     return unquote(s)
 
 always_safe = string.letters + string.digits + '_,.-'
@@ -764,8 +824,8 @@ def quote(s, safe = '/'):
 
 def quote_plus(s, safe = '/'):
     if ' ' in s:
-	import regsub
-	s = regsub.gsub(' ', '+', s)
+	# replace ' ' with '+'
+	s = string.join(string.split(s, ' '), '+')
 	return quote(s, safe + '+')
     else:
 	return quote(s, safe)
@@ -810,16 +870,15 @@ def test1():
 # Test program
 def test():
 	import sys
-	import regsub
 	args = sys.argv[1:]
 	if not args:
 		args = [
 			'/etc/passwd',
 			'file:/etc/passwd',
 			'file://localhost/etc/passwd',
-			'ftp://ftp.cwi.nl/etc/passwd',
-			'gopher://gopher.cwi.nl/11/',
-			'http://www.cwi.nl/index.html',
+			'ftp://ftp.python.org/etc/passwd',
+			'gopher://gopher.micro.umn.edu/1/',
+			'http://www.python.org/index.html',
 			]
 	try:
 		for url in args:
@@ -833,7 +892,10 @@ def test():
 			fp = open(fn, 'rb')
 			data = fp.read()
 			del fp
-			print regsub.gsub('\r', '', data)
+			if '\r' in data:
+			    table = string.maketrans("", "")
+			    data = string.translate(data, table, "\r")
+			print data
 			fn, h = None, None
 		print '-'*40
 	finally:
@@ -841,5 +903,5 @@ def test():
 
 # Run test program when run as a script
 if __name__ == '__main__':
-##	test1()
+	test1()
 	test()
