@@ -1,7 +1,6 @@
 """Shared support for scanning document type declarations in HTML and XHTML."""
 
 import re
-import string
 
 _declname_match = re.compile(r'[a-zA-Z][-_.a-zA-Z0-9]*\s*').match
 _declstringlit_match = re.compile(r'(\'[^\']*\'|"[^"]*")\s*').match
@@ -151,7 +150,7 @@ class ParserBase:
                     j = j + 1
             elif c == "]":
                 j = j + 1
-                while j < n and rawdata[j] in string.whitespace:
+                while j < n and rawdata[j].isspace():
                     j = j + 1
                 if j < n:
                     if rawdata[j] == ">":
@@ -160,7 +159,7 @@ class ParserBase:
                     self.error("unexpected char after internal subset")
                 else:
                     return -1
-            elif c in string.whitespace:
+            elif c.isspace():
                 j = j + 1
             else:
                 self.updatepos(declstartpos, j)
@@ -203,7 +202,7 @@ class ParserBase:
                     j = rawdata.find(")", j) + 1
                 else:
                     return -1
-                while rawdata[j:j+1] in string.whitespace:
+                while rawdata[j:j+1].isspace():
                     j = j + 1
                 if not rawdata[j:]:
                     # end of buffer, incomplete
@@ -268,7 +267,7 @@ class ParserBase:
                 c = rawdata[j:j+1]
                 if not c:
                     return -1
-                if c in string.whitespace:
+                if c.isspace():
                     j = j + 1
                 else:
                     break

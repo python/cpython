@@ -125,11 +125,11 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     Use assertions to check that all arguments have the right type."""
     assert action in ("error", "ignore", "always", "default", "module",
                       "once"), "invalid action: %s" % `action`
-    assert isinstance(message, types.StringType), "message must be a string"
+    assert isinstance(message, str), "message must be a string"
     assert isinstance(category, types.ClassType), "category must be a class"
     assert issubclass(category, Warning), "category must be a Warning subclass"
-    assert type(module) is types.StringType, "module must be a string"
-    assert type(lineno) is types.IntType and lineno >= 0, \
+    assert isinstance(module, str), "module must be a string"
+    assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
     item = (action, re.compile(message, re.I), category,
             re.compile(module), lineno)

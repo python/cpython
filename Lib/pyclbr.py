@@ -208,12 +208,10 @@ def readmodule_ex(module, path=[], inpackage=0):
     f.close()
 
     # To avoid having to stop the regexp at each newline, instead
-    # when we need a line number we simply string.count the number of
+    # when we need a line number we simply count the number of
     # newlines in the string since the last time we did this; i.e.,
-    #    lineno = lineno + \
-    #             string.count(src, '\n', last_lineno_pos, here)
+    #    lineno += src.count('\n', last_lineno_pos, here)
     #    last_lineno_pos = here
-    countnl = string.count
     lineno, last_lineno_pos = 1, 0
     i = 0
     while 1:
@@ -226,9 +224,7 @@ def readmodule_ex(module, path=[], inpackage=0):
             # found a method definition or function
             thisindent = _indent(m.group("MethodIndent"))
             meth_name = m.group("MethodName")
-            lineno = lineno + \
-                     countnl(src, '\n',
-                             last_lineno_pos, start)
+            lineno += src.count('\n', last_lineno_pos, start)
             last_lineno_pos = start
             # close all classes indented at least as much
             while classstack and \
@@ -254,8 +250,7 @@ def readmodule_ex(module, path=[], inpackage=0):
             while classstack and \
                   classstack[-1][1] >= thisindent:
                 del classstack[-1]
-            lineno = lineno + \
-                     countnl(src, '\n', last_lineno_pos, start)
+            lineno += src.count('\n', last_lineno_pos, start)
             last_lineno_pos = start
             class_name = m.group("ClassName")
             inherit = m.group("ClassSupers")

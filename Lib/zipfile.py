@@ -65,13 +65,6 @@ _FH_UNCOMPRESSED_SIZE = 9
 _FH_FILENAME_LENGTH = 10
 _FH_EXTRA_FIELD_LENGTH = 11
 
-# Used to compare file passed to ZipFile
-import types
-_STRING_TYPES = (types.StringType,)
-if hasattr(types, "UnicodeType"):
-    _STRING_TYPES = _STRING_TYPES + (types.UnicodeType,)
-
-
 def is_zipfile(filename):
     """Quickly see if file is a ZIP file by checking the magic number.
 
@@ -175,7 +168,7 @@ class ZipFile:
         self.mode = key = mode[0]
 
         # Check if we were passed a file-like object
-        if type(file) in _STRING_TYPES:
+        if isinstance(file, basestring):
             self._filePassed = 0
             self.filename = file
             modeDict = {'r' : 'rb', 'w': 'wb', 'a' : 'r+b'}

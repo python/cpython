@@ -8,7 +8,6 @@ and popen3(cmd) which return two or three pipes to the spawned command.
 
 import os
 import sys
-import types
 
 __all__ = ["popen2", "popen3", "popen4"]
 
@@ -57,7 +56,7 @@ class Popen3:
         _active.append(self)
 
     def _run_child(self, cmd):
-        if isinstance(cmd, types.StringTypes):
+        if isinstance(cmd, basestring):
             cmd = ['/bin/sh', '-c', cmd]
         for i in range(3, MAXFD):
             try:

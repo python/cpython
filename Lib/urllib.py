@@ -27,7 +27,6 @@ import socket
 import os
 import time
 import sys
-import types
 
 __all__ = ["urlopen", "URLopener", "FancyURLopener", "urlretrieve",
            "urlcleanup", "quote", "quote_plus", "unquote", "unquote_plus",
@@ -254,7 +253,7 @@ class URLopener:
         """Use HTTP protocol."""
         import httplib
         user_passwd = None
-        if type(url) is types.StringType:
+        if isinstance(url, str):
             host, selector = splithost(url)
             if host:
                 user_passwd, host = splituser(host)
@@ -332,7 +331,7 @@ class URLopener:
             """Use HTTPS protocol."""
             import httplib
             user_passwd = None
-            if type(url) is types.StringType:
+            if isinstance(url, str):
                 host, selector = splithost(url)
                 if host:
                     user_passwd, host = splituser(host)
@@ -906,12 +905,14 @@ def basejoin(base, url):
 # unquote('abc%20def') -> 'abc def'
 # quote('abc def') -> 'abc%20def')
 
-if hasattr(types, "UnicodeType"):
-    def _is_unicode(x):
-        return isinstance(x, unicode)
-else:
+try:
+    unicode
+except NameError:
     def _is_unicode(x):
         return 0
+else:
+    def _is_unicode(x):
+        return isinstance(x, unicode)
 
 def toBytes(url):
     """toBytes(u"URL") --> 'URL'."""
@@ -1173,7 +1174,7 @@ def urlencode(query,doseq=0):
         try:
             # non-sequence items should not work with len()
             # non-empty strings will fail this
-            if len(query) and type(query[0]) != types.TupleType:
+            if len(query) and not isinstance(query[0], tuple):
                 raise TypeError
             # zero-length sequences of all types will get here and succeed,
             # but that's a minor nit - since the original implementation
@@ -1193,7 +1194,7 @@ def urlencode(query,doseq=0):
     else:
         for k, v in query:
             k = quote_plus(str(k))
-            if type(v) == types.StringType:
+            if isinstance(v, str):
                 v = quote_plus(v)
                 l.append(k + '=' + v)
             elif _is_unicode(v):

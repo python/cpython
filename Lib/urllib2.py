@@ -92,7 +92,6 @@ import httplib
 import inspect
 import re
 import base64
-import types
 import urlparse
 import md5
 import mimetypes
@@ -303,7 +302,7 @@ class OpenerDirector:
 
     def open(self, fullurl, data=None):
         # accept a URL or a Request object
-        if isinstance(fullurl, types.StringTypes):
+        if isinstance(fullurl, basestring):
             req = Request(fullurl, data)
         else:
             req = fullurl
@@ -516,7 +515,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if isinstance(uri, types.StringTypes):
+        if isinstance(uri, basestring):
             uri = [uri]
         uri = tuple(map(self.reduce_uri, uri))
         if not realm in self.passwd:
@@ -1084,7 +1083,7 @@ if __name__ == "__main__":
     install_opener(build_opener(cfh, GopherHandler))
 
     for url in urls:
-        if isinstance(url, types.TupleType):
+        if isinstance(url, tuple):
             url, req = url
         else:
             req = None

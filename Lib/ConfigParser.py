@@ -83,7 +83,7 @@ ConfigParser -- responsible for for parsing a list of
         write the configuration state in .ini format
 """
 
-import string, types
+import types
 import re
 
 __all__ = ["NoSectionError","DuplicateSectionError","NoOptionError",
@@ -223,7 +223,7 @@ class ConfigParser:
         configuration files in the list will be read.  A single
         filename may also be given.
         """
-        if type(filenames) in types.StringTypes:
+        if isinstance(filenames, basestring):
             filenames = [filenames]
         for filename in filenames:
             try:
@@ -454,7 +454,7 @@ class ConfigParser:
                             # ';' is a comment delimiter only if it follows
                             # a spacing character
                             pos = optval.find(';')
-                            if pos and optval[pos-1] in string.whitespace:
+                            if pos and optval[pos-1].isspace():
                                 optval = optval[:pos]
                         optval = optval.strip()
                         # allow empty values
