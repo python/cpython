@@ -21,6 +21,12 @@ _upper = _idmap[:ord('a')] + uppercase + _idmap[ord('z')+1:]
 _swapcase = _upper[:ord('A')] + lowercase + _upper[ord('Z')+1:]
 del i
 
+# Backward compatible names for exceptions
+index_error = ValueError
+atoi_error = ValueError
+atof_error = ValueError
+atol_error = ValueError
+
 # convert UPPER CASE letters to lower case
 def lower(s):
 	res = ''
@@ -94,28 +100,18 @@ def joinfields(words, sep):
 	return res[len(sep):]
 
 # Find substring, raise exception if not found
-index_error = 'substring not found in string.index'
 def index(s, sub, i = 0):
-	if i < 0: i = i + len(s)
-	n = len(sub)
-	m = len(s) + 1 - n
-	while i < m:
-		if sub == s[i:i+n]: return i
-		i = i+1
-	raise index_error, (s, sub, i)
+	res = find(s, sub, i)
+	if res < 0:
+		raise ValueError, 'substring not found in string.index'
+	return res
 
 # Find last substring, raise exception if not found
 def rindex(s, sub, i = 0):
-	if i < 0: i = i + len(s)
-	n = len(sub)
-	m = len(s) + 1 - n
-	r = None
-	while i < m:
-		if sub == s[i:i+n]: r = i
-		i = i+1
-	if r is None:
-		raise index_error, (s, sub, i)
-	return r
+	res = rfind(s, sub, i)
+	if res < 0:
+		raise ValueError, 'substring not found in string.index'
+	return res
 
 # Count non-overlapping occurrences of substring
 def count(s, sub, i = 0):
@@ -134,20 +130,26 @@ def count(s, sub, i = 0):
 
 # Find substring, return -1 if not found
 def find(s, sub, i = 0):
-	try:
-		return index(s, sub, i)
-	except index_error:
-		return -1
+	if i < 0: i = i + len(s)
+	n = len(sub)
+	m = len(s) + 1 - n
+	while i < m:
+		if sub == s[i:i+n]: return i
+		i = i+1
+	return -1
 
 # Find last substring, return -1 if not found
 def rfind(s, sub, i = 0):
-	try:
-		return rindex(s, sub, i)
-	except index_error:
-		return -1
+	if i < 0: i = i + len(s)
+	n = len(sub)
+	m = len(s) + 1 - n
+	r = -1
+	while i < m:
+		if sub == s[i:i+n]: r = i
+		i = i+1
+	return r
 
 # Convert string to float
-atof_error = 'non-float argument to string.atof'
 def atof(str):
 	import regex
 	sign = ''
@@ -155,41 +157,44 @@ def atof(str):
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
-	if not s: raise atof_error, str
+	if not s:
+		raise ValueError, 'non-float argument to string.atof'
 	while s[0] == '0' and len(s) > 1 and s[1] in digits: s = s[1:]
 	if regex.match('[0-9]*\(\.[0-9]*\)?\([eE][-+]?[0-9]+\)?', s) != len(s):
-		raise atof_error, str
+		raise ValueError, 'non-float argument to string.atof'
 	try:
 		return float(eval(sign + s))
 	except SyntaxError:
-		raise atof_error, str
+		raise ValueError, 'non-float argument to string.atof'
 
 # Convert string to integer
-atoi_error = 'non-integer argument to string.atoi'
 def atoi(str):
 	sign = ''
 	s = str
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
-	if not s: raise atoi_error, str
+	if not s:
+		raise ValueError, 'non-integer argument to string.atoi'
 	while s[0] == '0' and len(s) > 1: s = s[1:]
 	for c in s:
-		if c not in digits: raise atoi_error, str
+		if c not in digits:
+			raise ValueError, 'non-integer argument to string.atoi'
 	return eval(sign + s)
 
 # Convert string to long integer
-atol_error = 'non-integer argument to string.atol'
 def atol(str):
 	sign = ''
 	s = str
 	if s and s[0] in '+-':
 		sign = s[0]
 		s = s[1:]
-	if not s: raise atoi_error, str
+	if not s:
+		raise ValueError, 'non-integer argument to string.atol'
 	while s[0] == '0' and len(s) > 1: s = s[1:]
 	for c in s:
-		if c not in digits: raise atoi_error, str
+		if c not in digits:
+			raise ValueError, 'non-integer argument to string.atol'
 	return eval(sign + s + 'L')
 
 # Left-justify a string
@@ -249,32 +254,5 @@ def expandtabs(s, tabsize):
 try:
 	from strop import *
 	letters = lowercase + uppercase
-except ImportError:
-	pass # Use the original, slow versions
-
-# If certain functions are found, redefine the corresponding exceptions
-# as ValueError
-
-try:
-	from strop import index
-	index_error = ValueError
-except ImportError:
-	pass # Use the original, slow versions
-
-try:
-	from strop import atoi
-	atoi_error = ValueError
-except ImportError:
-	pass # Use the original, slow versions
-
-try:
-	from strop import atof
-	atof_error = ValueError
-except ImportError:
-	pass # Use the original, slow versions
-
-try:
-	from strop import atol
-	atol_error = ValueError
 except ImportError:
 	pass # Use the original, slow versions
