@@ -65,41 +65,40 @@ elements must be known when the constructor is called.
 Instances of \class{Set} and \class{ImmutableSet} both provide
 the following operations:
 
-\begin{tableii}{c|l}{code}{Operation}{Result}
-  \lineii{len(\var{s})}{cardinality of set \var{s}}
+\begin{tableiii}{c|c|l}{code}{Operation}{Equivalent}{Result}
+  \lineiii{len(\var{s})}{}{cardinality of set \var{s}}
 
   \hline
-  \lineii{\var{x} in \var{s}}
+  \lineiii{\var{x} in \var{s}}{}
          {test \var{x} for membership in \var{s}}
-  \lineii{\var{x} not in \var{s}}
+  \lineiii{\var{x} not in \var{s}}{}
          {test \var{x} for non-membership in \var{s}}
-  \lineii{\var{s}.issubset(\var{t})}
-         {test whether every element in \var{s} is in \var{t};
-         \code{\var{s} <= \var{t}} is equivalent}
-  \lineii{\var{s}.issuperset(\var{t})}
-         {test whether every element in \var{t} is in \var{s};
-         \code{\var{s} >= \var{t}} is equivalent}
+  \lineiii{\var{s}.issubset(\var{t})}{\code{\var{s} <= \var{t}}}
+         {test whether every element in \var{s} is in \var{t}}
+  \lineiii{\var{s}.issuperset(\var{t})}{\code{\var{s} >= \var{t}}}
+         {test whether every element in \var{t} is in \var{s}}
 
   \hline
-  \lineii{\var{s} | \var{t}}
+  \lineiii{\var{s}.union(\var{t})}{\var{s} | \var{t}}
          {new set with elements from both \var{s} and \var{t}}
-  \lineii{\var{s}.union(\var{t})}
-         {new set with elements from both \var{s} and \var{t}}
-  \lineii{\var{s} \&\ \var{t}}
+  \lineiii{\var{s}.intersection(\var{t})}{\var{s} \&\ \var{t}}
          {new set with elements common to \var{s} and \var{t}}
-  \lineii{\var{s}.intersection(\var{t})}
-         {new set with elements common to \var{s} and \var{t}}
-  \lineii{\var{s} - \var{t}}
+  \lineiii{\var{s}.difference(\var{t})}{\var{s} - \var{t}}
          {new set with elements in \var{s} but not in \var{t}}
-  \lineii{\var{s}.difference(\var{t})}
-         {new set with elements in \var{s} but not in \var{t}}
-  \lineii{\var{s} \^\ \var{t}}
+  \lineiii{\var{s}.symmetric_difference(\var{t})}{\var{s} \^\ \var{t}}
          {new set with elements in either \var{s} or \var{t} but not both}
-  \lineii{\var{s}.symmetric_difference(\var{t})}
-         {new set with elements in either \var{s} or \var{t} but not both}
-  \lineii{\var{s}.copy()}
+  \lineiii{\var{s}.copy()}{}
          {new set with a shallow copy of \var{s}}
-\end{tableii}
+\end{tableiii}
+
+Note, this non-operator versions of \method{union()},
+\method{intersection()}, \method{difference()}, and
+\method{symmetric_difference()} will accept any iterable as an argument.
+In contrast, their operator based counterparts require their arguments to
+be sets.  This precludes error-prone constructions like
+\code{Set('abc') \&\ 'cbs'} in favor of the more readable
+\code{Set('abc').intersection('cbs')}.
+\versionchanged[Formerly all arguments were required to be sets]{2.3.1}
 
 In addition, both \class{Set} and \class{ImmutableSet}
 support set to set comparisons.  Two sets are equal if and only if
@@ -112,8 +111,9 @@ superset of the second set (is a superset, but is not equal).
 
 The subset and equality comparisons do not generalize to a complete
 ordering function.  For example, any two disjoint sets are not equal and
-are not subsets of each other, so \emph{none} of the following are true:
-\code{\var{a}<\var{b}}, \code{\var{a}==\var{b}}, or \code{\var{a}>\var{b}}.
+are not subsets of each other, so \emph{all} of the following return
+\code{False}:  \code{\var{a}<\var{b}}, \code{\var{a}==\var{b}}, or
+\code{\var{a}>\var{b}}.
 Accordingly, sets do not implement the \method{__cmp__} method.
 
 Since sets only define partial ordering (subset relationships), the output
@@ -122,47 +122,50 @@ of the \method{list.sort()} method is undefined for lists of sets.
 The following table lists operations available in \class{ImmutableSet}
 but not found in \class{Set}:
 
-\begin{tableii}{c|l|c}{code}{Operation}{Result}
+\begin{tableii}{c|l}{code}{Operation}{Result}
   \lineii{hash(\var{s})}{returns a hash value for \var{s}}
 \end{tableii}
 
 The following table lists operations available in \class{Set}
 but not found in \class{ImmutableSet}:
 
-\begin{tableii}{c|l}{code}{Operation}{Result}
-  \lineii{\var{s} |= \var{t}}
+\begin{tableiii}{c|c|l}{code}{Operation}{Equivalent}{Result}
+  \lineiii{\var{s}.union_update(\var{t})}
+         {\var{s} |= \var{t}}
          {return set \var{s} with elements added from \var{t}}
-  \lineii{\var{s}.union_update(\var{t})}
-         {return set \var{s} with elements added from \var{t}}
-  \lineii{\var{s} \&= \var{t}}
+  \lineiii{\var{s}.intersection_update(\var{t})}
+         {\var{s} \&= \var{t}}
          {return set \var{s} keeping only elements also found in \var{t}}
-  \lineii{\var{s}.intersection_update(\var{t})}
-         {return set \var{s} keeping only elements also found in \var{t}}
-  \lineii{\var{s} -= \var{t}}
+  \lineiii{\var{s}.difference_update(\var{t})}
+         {\var{s} -= \var{t}}
          {return set \var{s} after removing elements found in \var{t}}
-  \lineii{\var{s}.difference_update(\var{t})}
-         {return set \var{s} after removing elements found in \var{t}}
-  \lineii{\var{s} \textasciicircum= \var{t}}
-         {return set \var{s} with elements from \var{s} or \var{t}
-          but not both}
-  \lineii{\var{s}.symmetric_difference_update(\var{t})}
+  \lineiii{\var{s}.symmetric_difference_update(\var{t})}
+         {\var{s} \textasciicircum= \var{t}}
          {return set \var{s} with elements from \var{s} or \var{t}
           but not both}
 
   \hline
-  \lineii{\var{s}.add(\var{x})}
+  \lineiii{\var{s}.add(\var{x})}{}
          {add element \var{x} to set \var{s}}
-  \lineii{\var{s}.remove(\var{x})}
-         {remove \var{x} from set \var{s}}
-  \lineii{\var{s}.discard(\var{x})}
+  \lineiii{\var{s}.remove(\var{x})}{}
+         {remove \var{x} from set \var{s}; raises KeyError if not present}
+  \lineiii{\var{s}.discard(\var{x})}{}
          {removes \var{x} from set \var{s} if present}
-  \lineii{\var{s}.pop()}
-         {remove and return an arbitrary element from \var{s}}
-  \lineii{\var{s}.update(\var{t})}
-         {add elements from \var{t} to set \var{s}}
-  \lineii{\var{s}.clear()}
+  \lineiii{\var{s}.pop()}{}
+         {remove and return an arbitrary element from \var{s}; raises
+	  KeyError if empty}
+  \lineiii{\var{s}.clear()}{}
          {remove all elements from set \var{s}}
-\end{tableii}
+\end{tableiii}
+
+\versionchanged[Earlier versions had an \method{update()} method; use
+                \method{union_update()} instead]{2.3.1}
+
+Note, this non-operator versions of \method{union_update()},
+\method{intersection_update()}, \method{difference_update()}, and
+\method{symmetric_difference_update()} will accept any iterable as
+an argument.
+\versionchanged[Formerly all arguments were required to be sets]{2.3.1}
 
 
 \subsection{Example \label{set-example}}
@@ -171,16 +174,16 @@ but not found in \class{ImmutableSet}:
 >>> from sets import Set
 >>> engineers = Set(['John', 'Jane', 'Jack', 'Janice'])
 >>> programmers = Set(['Jack', 'Sam', 'Susan', 'Janice'])
->>> management = Set(['Jane', 'Jack', 'Susan', 'Zack'])
->>> employees = engineers | programmers | management           # union
->>> engineering_management = engineers & programmers           # intersection
->>> fulltime_management = management - engineers - programmers # difference
->>> engineers.add('Marvin')                                    # add element
+>>> managers = Set(['Jane', 'Jack', 'Susan', 'Zack'])
+>>> employees = engineers | programmers | managers           # union
+>>> engineering_management = engineers & managers            # intersection
+>>> fulltime_management = managers - engineers - programmers # difference
+>>> engineers.add('Marvin')                                  # add element
 >>> print engineers
 Set(['Jane', 'Marvin', 'Janice', 'John', 'Jack'])
 >>> employees.issuperset(engineers)           # superset test
 False
->>> employees.update(engineers)               # update from another set
+>>> employees.union_update(engineers)         # update from another set
 >>> employees.issuperset(engineers)
 True
 >>> for group in [engineers, programmers, management, employees]:
