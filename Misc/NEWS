@@ -155,6 +155,12 @@ New platforms
 - Python should compile and run out of the box using the Borland C
   compiler (under Windows), thanks to Stephen Hansen.
 
+C API
+
+- Removed the unused last_is_sticky argument from the internal
+  _PyTuple_Resize().  If this affects you, you were cheating.
+
+
 What's New in Python 2.1 (final)?
 =================================
 

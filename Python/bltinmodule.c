@@ -2329,7 +2329,7 @@ filtertuple(PyObject *func, PyObject *tuple)
 		}
 	}
 
-	if (_PyTuple_Resize(&result, j, 0) < 0)
+	if (_PyTuple_Resize(&result, j) < 0)
 		return NULL;
 
 	return result;

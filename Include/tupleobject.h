@@ -33,7 +33,7 @@ extern DL_IMPORT(int) PyTuple_Size(PyObject *);
 extern DL_IMPORT(PyObject *) PyTuple_GetItem(PyObject *, int);
 extern DL_IMPORT(int) PyTuple_SetItem(PyObject *, int, PyObject *);
 extern DL_IMPORT(PyObject *) PyTuple_GetSlice(PyObject *, int, int);
-extern DL_IMPORT(int) _PyTuple_Resize(PyObject **, int, int);
+extern DL_IMPORT(int) _PyTuple_Resize(PyObject **, int);
 
 /* Macro, trading safety for speed */
 #define PyTuple_GET_ITEM(op, i) (((PyTupleObject *)(op))->ob_item[i])
