@@ -1906,7 +1906,27 @@ wchar_h="no"
 # determine wchar_t size
 if test "$wchar_h" = yes
 then
-  AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
+  dnl autoconf 2.13 fails to automatically include additional headers
+  dnl Therefore, we expand
+  dnl AC_CHECK_SIZEOF(wchar_t, 4, [#include <wchar.h>])
+  dnl inline
+  AC_MSG_CHECKING(size of wchar_t)
+  AC_CACHE_VAL(ac_cv_sizeof_wchar_t,
+  [AC_TRY_RUN([
+   #include <stdio.h>
+   #include <wchar.h>
+   main()
+   {
+     FILE *f=fopen("conftestval", "w");
+     if (!f) exit(1);
+     fprintf(f, "%d\n", sizeof(wchar_t));
+     exit(0);
+   }], ac_cv_sizeof_wchar_t=`cat conftestval`,
+       ac_cv_sizeof_wchar_t=0,
+       ac_cv_sizeof_wchar_t=4)
+  ])
+  AC_MSG_RESULT($ac_cv_sizeof_wchar_t)
+  AC_DEFINE_UNQUOTED(SIZEOF_WCHAR_T,$ac_cv_sizeof_wchar_t)
 fi
 
 AC_MSG_CHECKING(what type to use for unicode)
