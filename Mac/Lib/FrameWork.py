@@ -57,25 +57,25 @@ partname[8] = 'inZoomOut'
 
 #
 # The useable portion of the screen
-#
+#	## but what happens with multiple screens? jvr
 screenbounds = qd.screenBits.bounds
 screenbounds = screenbounds[0]+4, screenbounds[1]+4, \
 	screenbounds[2]-4, screenbounds[3]-4
 	
-next_window_x = 40
-next_window_y = 40
+next_window_x = 16		# jvr
+next_window_y = 44		# jvr
 
 def windowbounds(width, height):
 	"Return sensible window bounds"
 	global next_window_x, next_window_y
 	r, b = next_window_x+width, next_window_y+height
 	if r > screenbounds[2]:
-		next_window_x = 40
+		next_window_x = 16
 	if b > screenbounds[3]:
-		next_window_y = 40
+		next_window_y = 44
 	l, t = next_window_x, next_window_y
 	r, b = next_window_x+width, next_window_y+height
-	next_window_x, next_window_y = next_window_x+20, next_window_y+20
+	next_window_x, next_window_y = next_window_x + 8, next_window_y + 20	# jvr
 	return l, t, r, b
 
 
@@ -381,7 +381,7 @@ class MenuBar:
 		if DEBUG: print 'Newmenu', title, id # XXXX
 		m = NewMenu(id, title)
 		m.InsertMenu(after)
-		DrawMenuBar()
+		DrawMenuBar()	# XXX appears slow! better do this when we're done. jvr
 		return id, m
 		
 	def delmenu(self, id):
@@ -530,7 +530,7 @@ class Window:
 			self.wid = GetNewWindow(resid, -1)
 		else:
 			self.wid = NewWindow(bounds, self.__class__.__name__, 1,
-				0, -1, 1, 0)
+				8, -1, 1, 0)	# changed to proc id 8 to include zoom box. jvr
 		self.do_postopen()
 		
 	def do_postopen(self):
@@ -564,6 +564,8 @@ class Window:
 		(what, message, when, where, modifiers) = event
 		if window.TrackBox(where, partcode):
 			window.ZoomWindow(partcode, 1)
+			rect = window.GetWindowUserState()				# so that zoom really works... jvr
+			self.do_postresize(rect[2] - rect[0], rect[3] - rect[1], window)	# jvr
 	
 	def do_inZoomIn(self, partcode, window, event):
 		SetPort(window) # !!!
@@ -581,10 +583,13 @@ class Window:
 			width = result & 0xffff		# Lo word
 			self.do_resize(width, height, window)
 	
-	growlimit = screenbounds
+	growlimit = (50, 50, screenbounds[2] - screenbounds[0], screenbounds[3] - screenbounds[1])	# jvr
 	
 	def do_resize(self, width, height, window):
-		window.SizeWindow(width, height, 0)
+		l, t, r, b = self.wid.GetWindowPort().portRect			# jvr, forGrowIcon
+		self.SetPort()							# jvr
+		InvalRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr
+		window.SizeWindow(width, height, 1)		# changed updateFlag to true jvr
 		self.do_postresize(width, height, window)
 	
 	def do_postresize(self, width, height, window):
@@ -606,7 +611,8 @@ class Window:
 		self.do_contentclick(local, modifiers, event)
 		
 	def do_contentclick(self, local, modifiers, event):
-		print 'Click in contents at %s, modifiers %s'%(local, modifiers)
+		if DEBUG:
+			print 'Click in contents at %s, modifiers %s'%(local, modifiers)
 	
 	def do_rawupdate(self, window, event):
 		if DEBUG: print "raw update for", window
@@ -616,7 +622,14 @@ class Window:
 		window.EndUpdate()
 	
 	def do_update(self, window, event):
-		EraseRgn(window.GetWindowPort().visRgn)
+		if DEBUG:
+			import time
+			for i in range(8):
+				time.sleep(0.1)
+				InvertRgn(window.GetWindowPort().visRgn)
+			FillRgn(window.GetWindowPort().visRgn, qd.gray)
+		else:
+			EraseRgn(window.GetWindowPort().visRgn)
 		
 	def do_activate(self, activate, event):
 		if DEBUG: print 'Activate %d for %s'%(activate, self.wid)
@@ -628,7 +641,8 @@ class ControlsWindow(Window):
 		SetPort(window)
 		window.BeginUpdate()
 		self.do_update(window, event)
-		DrawControls(window)
+		#DrawControls(window)					# jvr
+		UpdateControls(window, window.GetWindowPort().visRgn)	# jvr
 		window.DrawGrowIcon()
 		window.EndUpdate()
 	
@@ -686,24 +700,36 @@ class ScrolledWindow(ControlsWindow):
 		self.activated = onoff
 		if onoff:
 			if self.barx and self.barx_enabled:
-				self.barx.HiliteControl(0)
+				self.barx.ShowControl()	# jvr
 			if self.bary and self.bary_enabled:
-				self.bary.HiliteControl(0)
+				self.bary.ShowControl()	# jvr
 		else:
 			if self.barx:
-				self.barx.HiliteControl(255)
+				self.barx.HideControl()	# jvr; An inactive window should have *hidden*
+							# scrollbars, not just dimmed (no matter what
+							# BBEdit does... look at the Finder)
 			if self.bary:
-				self.bary.HiliteControl(255)
+				self.bary.HideControl()	# jvr
+		self.wid.DrawGrowIcon()			# jvr
 			
 	def do_postresize(self, width, height, window):
 		l, t, r, b = self.wid.GetWindowPort().portRect
+		self.SetPort()
 		if self.barx:
+			self.barx.HideControl()		# jvr
 			self.barx.MoveControl(l-1, b-(SCROLLBARWIDTH-1))
-			self.barx.SizeControl((r-l)-(SCROLLBARWIDTH-2), SCROLLBARWIDTH)
+			self.barx.SizeControl((r-l)-(SCROLLBARWIDTH-3), SCROLLBARWIDTH)	# jvr
 		if self.bary:
+			self.bary.HideControl()		# jvr
 			self.bary.MoveControl(r-(SCROLLBARWIDTH-1), t-1)
-			self.bary.SizeControl(SCROLLBARWIDTH, (b-t)-(SCROLLBARWIDTH-2))
-		InvalRect((l, t, r, b))
+			self.bary.SizeControl(SCROLLBARWIDTH, (b-t)-(SCROLLBARWIDTH-3))	# jvr
+		if self.barx:
+			self.barx.ShowControl()		# jvr
+			ValidRect((l, b - SCROLLBARWIDTH + 1, r - SCROLLBARWIDTH + 2, b))	# jvr
+		if self.bary:
+			self.bary.ShowControl()		# jvr
+			ValidRect((r - SCROLLBARWIDTH + 1, t, r, b - SCROLLBARWIDTH + 2))	# jvr
+		InvalRect((r - SCROLLBARWIDTH + 1, b - SCROLLBARWIDTH + 1, r, b))	# jvr, growicon
 
 	def do_controlhit(self, window, control, pcode, event):
 		if control == self.barx:
