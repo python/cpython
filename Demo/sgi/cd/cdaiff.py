@@ -1,22 +1,22 @@
 import sys
 import readcd
-import aiff
+import aifc
 import AL
 import CD
 
 Error = 'cdaiff.Error'
 
 def writeaudio(a, type, data):
-	a.writesampsraw(data)
+	a.writeframesraw(data)
 
 def main():
 	if len(sys.argv) > 1:
-		a = aiff.Aiff().init(sys.argv[1], 'w')
+		a = aifc.open(sys.argv[1], 'w')
 	else:
-		a = aiff.Aiff().init('@', 'w')
-	a.sampwidth = AL.SAMPLE_16
-	a.nchannels = AL.STEREO
-	a.samprate = AL.RATE_44100
+		a = aifc.open('@', 'w')
+	a.setsampwidth(AL.SAMPLE_16)
+	a.setnchannels(AL.STEREO)
+	a.setframerate(AL.RATE_44100)
 	r = readcd.Readcd().init()
 	for arg in sys.argv[2:]:
 		x = eval(arg)
@@ -28,6 +28,6 @@ def main():
 			r.appendtrack(x)
 	r.setcallback(CD.AUDIO, writeaudio, a)
 	r.play()
-	a.destroy()
+	a.close()
 
 main()
