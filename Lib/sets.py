@@ -54,9 +54,27 @@ what's tested is actually `z in y'.
 # - Raymond Hettinger added a number of speedups and other
 #   improvements.
 
+from __future__ import generators
+try:
+    from itertools import ifilter, ifilterfalse
+except ImportError:
+    # Code to make the module run under Py2.2
+    def ifilter(predicate, iterable):
+        if predicate is None:
+            def predicate(x):
+                return x
+        for x in iterable:
+            if predicate(x):
+                yield x
+    def ifilterfalse(predicate, iterable):
+        if predicate is None:
+            def predicate(x):
+                return x
+        for x in iterable:
+            if not predicate(x):
+                yield x
 
 __all__ = ['BaseSet', 'Set', 'ImmutableSet']
-from itertools import ifilter, ifilterfalse
 
 class BaseSet(object):
     """Common base class for mutable and immutable sets."""
