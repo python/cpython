@@ -1,6 +1,6 @@
-from test_support import verify, TESTFN, unlink
+from test_support import verify, TESTFN
 import mmap
-import os, re, sys
+import os, re
 
 PAGESIZE = mmap.PAGESIZE
 
@@ -8,6 +8,8 @@ def test_both():
     "Test mmap module on Unix systems and Windows"
 
     # Create a file to be mmap'ed.
+    if os.path.exists(TESTFN):
+        os.unlink(TESTFN)
     f = open(TESTFN, 'w+')
 
     try:    # unlink TESTFN no matter what
@@ -36,7 +38,7 @@ def test_both():
         # Modify the file's content
         print "\n  Modifying file's content..."
         m[0] = '3'
-        m[PAGESIZE +3: PAGESIZE +3+3]='bar'
+        m[PAGESIZE +3: PAGESIZE +3+3] = 'bar'
 
         # Check that the modification worked
         print '  Contents of byte 0:', repr(m[0])
@@ -49,7 +51,7 @@ def test_both():
         m.flush()
 
         # Test doing a regular expression match in an mmap'ed file
-        match=re.search('[A-Za-z]+', m)
+        match = re.search('[A-Za-z]+', m)
         if match is None:
             print '  ERROR: regex match on mmap failed!'
         else:
@@ -126,7 +128,7 @@ def test_both():
         except OSError:
             pass
         try:
-            unlink(TESTFN)
+            os.unlink(TESTFN)
         except OSError:
             pass
 
