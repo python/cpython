@@ -576,7 +576,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #undef HAVE_STATVFS
 
 /* Define if you have the strdup function.  */
-#undef HAVE_STRDUP
+#define HAVE_STRDUP
 
 /* Define if you have the strerror function.  */
 #define HAVE_STRERROR
