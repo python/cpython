@@ -101,12 +101,12 @@ def _once(var, initializer):
     lock = _once_lock
 
     # Check first outside the lock.
-    if var in vars and vars[var] is not None:
+    if vars.get(var) is not None:
         return
     try:
         lock.acquire()
         # Check again inside the lock.
-        if var in vars and vars[var] is not None:
+        if vars.get(var) is not None:
             return
         vars[var] = initializer()
     finally:
