@@ -3938,6 +3938,36 @@ def filefault():
     except RuntimeError:
         pass
 
+def vicious_descriptor_nonsense():
+    # A potential segfault spotted by Thomas Wouters in mail to
+    # python-dev 2003-04-17, turned into an example & fixed by Michael
+    # Hudson just less than four months later...
+    if verbose:
+        print "Testing vicious_descriptor_nonsense..."
+
+    class Evil(object):
+        def __hash__(self):
+            return hash('attr')
+        def __eq__(self, other):
+            del C.attr
+            return 0
+
+    class Descr(object):
+        def __get__(self, ob, type=None):
+            return 1
+
+    class C(object):
+        attr = Descr()
+
+    c = C()
+    c.__dict__[Evil()] = 0
+
+    vereq(c.attr, 1)
+    # this makes a crash more likely:
+    import gc; gc.collect()
+    vereq(hasattr(c, 'attr'), False)
+    
+
 def test_main():
     weakref_segfault() # Must be first, somehow
     do_this_first()
@@ -4029,6 +4059,7 @@ def test_main():
     proxysuper()
     carloverre()
     filefault()
+    vicious_descriptor_nonsense()
 
     if verbose: print "All OK"
 

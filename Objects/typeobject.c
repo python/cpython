@@ -2010,6 +2010,7 @@ type_getattro(PyTypeObject *type, PyObject *name)
 			return meta_get(meta_attribute, (PyObject *)type,
 					(PyObject *)metatype);
 		}
+		Py_INCREF(meta_attribute);
 	}
 
 	/* No data descriptor found on metatype. Look in tp_dict of this
@@ -2018,6 +2019,9 @@ type_getattro(PyTypeObject *type, PyObject *name)
 	if (attribute != NULL) {
 		/* Implement descriptor functionality, if any */
 		descrgetfunc local_get = attribute->ob_type->tp_descr_get;
+
+		Py_XDECREF(meta_attribute);
+
 		if (local_get != NULL) {
 			/* NULL 2nd argument indicates the descriptor was
 			 * found on the target object itself (or a base)  */
@@ -2031,13 +2035,16 @@ type_getattro(PyTypeObject *type, PyObject *name)
 
 	/* No attribute found in local __dict__ (or bases): use the
 	 * descriptor from the metatype, if any */
-	if (meta_get != NULL)
-		return meta_get(meta_attribute, (PyObject *)type,
-				(PyObject *)metatype);
+	if (meta_get != NULL) {
+		PyObject *res;
+		res = meta_get(meta_attribute, (PyObject *)type,
+			       (PyObject *)metatype);
+		Py_DECREF(meta_attribute);
+		return res;
+	}
 
 	/* If an ordinary attribute was found on the metatype, return it now */
 	if (meta_attribute != NULL) {
-		Py_INCREF(meta_attribute);
 		return meta_attribute;
 	}
 
