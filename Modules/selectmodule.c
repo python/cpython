@@ -33,6 +33,8 @@ PERFORMANCE OF THIS SOFTWARE.
    Under Unix, the file descriptors are small integers.
    Under Win32, select only exists for sockets, and sockets may
    have any value except INVALID_SOCKET.
+   Under BeOS, we suffer the same dichotomy as Win32; sockets can be anything
+   >= 0.
 */
 
 #include "Python.h"
@@ -56,8 +58,13 @@ extern void bzero();
 #ifdef MS_WINDOWS
 #include <winsock.h>
 #else
+#ifdef __BEOS__
+#include <net/socket.h>
+#define SOCKET int
+#else
 #include "myselect.h" /* Also includes mytime.h */
 #define SOCKET int
+#endif
 #endif
 
 static PyObject *SelectError;
@@ -134,7 +141,7 @@ list2set(list, set, fd2obj)
 			"argument must be an int, or have a fileno() method.");
 			goto finally;
 		}
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__BEOS__)
 		max = 0;		     /* not used for Win32 */
 #else  /* !_MSC_VER */
 		if (v < 0 || v >= FD_SETSIZE) {

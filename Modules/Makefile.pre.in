@@ -82,7 +82,7 @@ SHELL=		/bin/sh
 
 MAKESETUP=	$(srcdir)/makesetup
 
-# (The makesetup script inserts all variable definitions found
+# (The makesetup script inserts all variable definitions
 # found in the Setup file just below the following line.
 # This means that the Setup file can override any of the definitions
 # given before this point, but not any given below.
@@ -112,7 +112,7 @@ all:		$(OBJS)
 add2lib:	$(OBJS)
 		-for i in $(OBJS); do \
 		     if test "$$i" = "signalmodule.o"; then \
-		        ar d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; \
+		        $(AR) d $(LIBRARY) sigcheck.o intrcheck.o 2>/dev/null; \
 			break; \
 		     fi; \
 		done

@@ -56,7 +56,7 @@ staticforward PyTypeObject Locktype;
 
 #define is_lockobject(v)		((v)->ob_type == &Locktype)
 
-type_lock
+static type_lock
 getlocklock(lock)
 	PyObject *lock;
 {
@@ -252,7 +252,14 @@ t_bootstrap(boot_raw)
 	PyThreadState_Clear(tstate);
 	PyEval_ReleaseThread(tstate);
 	PyThreadState_Delete(tstate);
+#ifdef __BEOS__
+	/* Dunno if this will cause problems with other ports; the BeOS thread
+	 * support features only 100% renamed functions. [cjh]
+	 */
+	PyThread_exit_thread();
+#else
 	exit_thread();
+#endif
 }
 
 static PyObject *

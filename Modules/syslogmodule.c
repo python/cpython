@@ -207,7 +207,9 @@ initsyslog()
 	ins(d, "LOG_PID",	LOG_PID);
 	ins(d, "LOG_CONS",	LOG_CONS);
 	ins(d, "LOG_NDELAY",	LOG_NDELAY);
+#ifdef LOG_NOWAIT
 	ins(d, "LOG_NOWAIT",	LOG_NOWAIT);
+#endif
 #ifdef LOG_PERROR
 	ins(d, "LOG_PERROR",	LOG_PERROR);
 #endif

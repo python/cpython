@@ -142,6 +142,7 @@ pwd pwdmodule.c		# pwd(3)
 grp grpmodule.c		# grp(3)
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
+#_socket socketmodule.c	# socket(2); use this one for BeOS sockets
 errno errnomodule.c	# posix (UNIX) errno values
 
 # The crypt module is now disabled by default because it breaks builds

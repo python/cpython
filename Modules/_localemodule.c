@@ -92,7 +92,7 @@ fixup_ulcase()
     if (isupper(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize((char *)ul,n);
+  ulo=PyString_FromStringAndSize((const char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"uppercase",ulo);
@@ -105,7 +105,7 @@ fixup_ulcase()
     if (islower(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize((char *)ul,n);
+  ulo=PyString_FromStringAndSize((const char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"lowercase",ulo);
@@ -118,7 +118,7 @@ fixup_ulcase()
     if (isalpha(c))
        ul[n++] = c;
   }
-  ulo=PyString_FromStringAndSize((char *)ul,n);
+  ulo=PyString_FromStringAndSize((const char *)ul,n);
   if(!ulo)return;
   if(string)
      PyDict_SetItemString(string,"letters",ulo);
