@@ -25,6 +25,7 @@ AR=		@AR@
 
 OPT=		@OPT@
 LDFLAGS=	@LDFLAGS@
+LDLAST=		@LDLAST@
 
 DEFS=		@DEFS@
 LIBS=		@LIBS@
@@ -126,7 +127,7 @@ $(LIB):		$& $(OBJS) Makefile
 		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` $(srcdir)/getbuildinfo.c
 		$(AR) r $(LIB) getbuildinfo.o
 		$(LINKCC) $(LDFLAGS) $(OPT) $(LINKFORSHARED) $(ADDOBJS) \
-		      $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python
+		  $(MYLIBS) $(MODLIBS) $(LIBS) $(SYSLIBS) -o python $(LDLAST)
 		mv python ../python
 
 buildno:
