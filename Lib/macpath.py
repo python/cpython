@@ -125,7 +125,7 @@ def islink(s):
     """Return true if the pathname refers to a symbolic link."""
 
     try:
-    	import macfs
+        import macfs
         return macfs.ResolveAliasFile(s)[2]
     except:
         return False
