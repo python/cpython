@@ -402,6 +402,40 @@ static PyObject *CmpObj_OpenComponent(ComponentObject *_self, PyObject *_args)
 	return _res;
 }
 
+static PyObject *CmpObj_ResolveComponentAlias(ComponentObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Component _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = ResolveComponentAlias(_self->ob_itself);
+	_res = Py_BuildValue("O&",
+	                     CmpObj_New, _rv);
+	return _res;
+}
+
+static PyObject *CmpObj_GetComponentPublicIndString(ComponentObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	Str255 theString;
+	short strListID;
+	short index;
+	if (!PyArg_ParseTuple(_args, "O&hh",
+	                      PyMac_GetStr255, theString,
+	                      &strListID,
+	                      &index))
+		return NULL;
+	_err = GetComponentPublicIndString(_self->ob_itself,
+	                                   theString,
+	                                   strListID,
+	                                   index);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CmpObj_GetComponentRefcon(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -483,18 +517,6 @@ static PyObject *CmpObj_GetComponentIndString(ComponentObject *_self, PyObject *
 	return _res;
 }
 
-static PyObject *CmpObj_ResolveComponentAlias(ComponentObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	Component _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = ResolveComponentAlias(_self->ob_itself);
-	_res = Py_BuildValue("O&",
-	                     CmpObj_New, _rv);
-	return _res;
-}
-
 static PyObject *CmpObj_CountComponentInstances(ComponentObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -573,6 +595,10 @@ static PyMethodDef CmpObj_methods[] = {
 	 "(Handle componentName, Handle componentInfo, Handle componentIcon) -> (ComponentDescription cd)"},
 	{"OpenComponent", (PyCFunction)CmpObj_OpenComponent, 1,
 	 "() -> (ComponentInstance _rv)"},
+	{"ResolveComponentAlias", (PyCFunction)CmpObj_ResolveComponentAlias, 1,
+	 "() -> (Component _rv)"},
+	{"GetComponentPublicIndString", (PyCFunction)CmpObj_GetComponentPublicIndString, 1,
+	 "(Str255 theString, short strListID, short index) -> None"},
 	{"GetComponentRefcon", (PyCFunction)CmpObj_GetComponentRefcon, 1,
 	 "() -> (long _rv)"},
 	{"SetComponentRefcon", (PyCFunction)CmpObj_SetComponentRefcon, 1,
@@ -583,8 +609,6 @@ static PyMethodDef CmpObj_methods[] = {
 	 "(OSType resType, short resID) -> (Handle theResource)"},
 	{"GetComponentIndString", (PyCFunction)CmpObj_GetComponentIndString, 1,
 	 "(Str255 theString, short strListID, short index) -> None"},
-	{"ResolveComponentAlias", (PyCFunction)CmpObj_ResolveComponentAlias, 1,
-	 "() -> (Component _rv)"},
 	{"CountComponentInstances", (PyCFunction)CmpObj_CountComponentInstances, 1,
 	 "() -> (long _rv)"},
 	{"SetDefaultComponent", (PyCFunction)CmpObj_SetDefaultComponent, 1,

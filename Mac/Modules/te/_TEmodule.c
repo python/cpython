@@ -960,6 +960,31 @@ static PyObject *TE_TESetScrapHandle(PyObject *_self, PyObject *_args)
 }
 #endif
 
+static PyObject *TE_LMGetWordRedraw(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetWordRedraw();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *TE_LMSetWordRedraw(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetWordRedraw(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *TE_as_TE(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1001,6 +1026,10 @@ static PyMethodDef TE_methods[] = {
 	{"TESetScrapHandle", (PyCFunction)TE_TESetScrapHandle, 1,
 	 "(Handle value) -> None"},
 #endif
+	{"LMGetWordRedraw", (PyCFunction)TE_LMGetWordRedraw, 1,
+	 "() -> (UInt8 _rv)"},
+	{"LMSetWordRedraw", (PyCFunction)TE_LMSetWordRedraw, 1,
+	 "(UInt8 value) -> None"},
 	{"as_TE", (PyCFunction)TE_as_TE, 1,
 	 "(Handle h) -> (TEHandle _rv)"},
 	{NULL, NULL, 0}

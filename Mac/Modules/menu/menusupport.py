@@ -28,12 +28,15 @@ Handle = OpaqueByValueType("Handle", "ResObj")
 MenuBarHandle = OpaqueByValueType("MenuBarHandle", "ResObj")
 MenuID = Type("MenuID", "h")
 MenuItemIndex = Type("MenuItemIndex", "h")
+MenuItemID = Type("MenuItemID", "l")
 MenuCommand = Type("MenuCommand", "l")
 MenuAttributes = Type("MenuAttributes", "l")
 MenuItemAttributes = Type("MenuItemAttributes", "l")
 unsigned_char = Type('unsigned char', 'b')
 FMFontFamily = Type("FMFontFamily", "h")
 FMFontStyle = Type("FMFontStyle", "h")
+CFStringRef = OpaqueByValueType("CFStringRef", "CFStringRefObj")
+UniChar = Type("UniChar", "h")
 
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS

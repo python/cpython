@@ -24,7 +24,7 @@ static PyObject *Help_HMGetHelpMenuHandle(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
-	MenuHandle mh;
+	MenuRef mh;
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = HMGetHelpMenuHandle(&mh);
@@ -239,13 +239,13 @@ static PyObject *Help_HMGetBalloonWindow(PyObject *_self, PyObject *_args)
 	_err = HMGetBalloonWindow(&window);
 	if (_err != noErr) return PyMac_Error(_err);
 	_res = Py_BuildValue("O&",
-	                     WinObj_WhichWindow, window);
+	                     WinObj_New, window);
 	return _res;
 }
 
 static PyMethodDef Help_methods[] = {
 	{"HMGetHelpMenuHandle", (PyCFunction)Help_HMGetHelpMenuHandle, 1,
-	 "() -> (MenuHandle mh)"},
+	 "() -> (MenuRef mh)"},
 	{"HMRemoveBalloon", (PyCFunction)Help_HMRemoveBalloon, 1,
 	 "() -> None"},
 	{"HMIsBalloon", (PyCFunction)Help_HMIsBalloon, 1,

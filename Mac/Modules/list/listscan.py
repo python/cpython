@@ -56,6 +56,7 @@ class MyScanner(Scanner):
 	def makeblacklisttypes(self):
 		return [
 			"ListClickLoopUPP",  # Too difficult for now
+			"ListDefSpecPtr", # later
 			]
 
 	def makerepairinstructions(self):

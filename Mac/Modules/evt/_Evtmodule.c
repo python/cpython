@@ -73,18 +73,6 @@ static PyObject *Evt_WaitMouseUp(PyObject *_self, PyObject *_args)
 	return _res;
 }
 
-static PyObject *Evt_TickCount(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	UInt32 _rv;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_rv = TickCount();
-	_res = Py_BuildValue("l",
-	                     _rv);
-	return _res;
-}
-
 static PyObject *Evt_GetCaretTime(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -337,6 +325,136 @@ static PyObject *Evt_CheckEventQueueForUserCancel(PyObject *_self, PyObject *_ar
 }
 #endif
 
+static PyObject *Evt_KeyScript(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	short code;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &code))
+		return NULL;
+	KeyScript(code);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Evt_IsCmdChar(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	EventRecord event;
+	short test;
+	if (!PyArg_ParseTuple(_args, "O&h",
+	                      PyMac_GetEventRecord, &event,
+	                      &test))
+		return NULL;
+	_rv = IsCmdChar(&event,
+	                test);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_LMGetKeyThresh(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetKeyThresh();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_LMSetKeyThresh(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 value;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &value))
+		return NULL;
+	LMSetKeyThresh(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Evt_LMGetKeyRepThresh(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetKeyRepThresh();
+	_res = Py_BuildValue("h",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_LMSetKeyRepThresh(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	SInt16 value;
+	if (!PyArg_ParseTuple(_args, "h",
+	                      &value))
+		return NULL;
+	LMSetKeyRepThresh(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Evt_LMGetKbdLast(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetKbdLast();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_LMSetKbdLast(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetKbdLast(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *Evt_LMGetKbdType(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = LMGetKbdType();
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *Evt_LMSetKbdType(PyObject *_self, PyObject *_args)
+{
+	PyObject *_res = NULL;
+	UInt8 value;
+	if (!PyArg_ParseTuple(_args, "b",
+	                      &value))
+		return NULL;
+	LMSetKbdType(value);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *Evt_WaitNextEvent(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -372,8 +490,6 @@ static PyMethodDef Evt_methods[] = {
 	 "() -> (Boolean _rv)"},
 	{"WaitMouseUp", (PyCFunction)Evt_WaitMouseUp, 1,
 	 "() -> (Boolean _rv)"},
-	{"TickCount", (PyCFunction)Evt_TickCount, 1,
-	 "() -> (UInt32 _rv)"},
 	{"GetCaretTime", (PyCFunction)Evt_GetCaretTime, 1,
 	 "() -> (UInt32 _rv)"},
 	{"GetKeys", (PyCFunction)Evt_GetKeys, 1,
@@ -430,6 +546,26 @@ static PyMethodDef Evt_methods[] = {
 	{"CheckEventQueueForUserCancel", (PyCFunction)Evt_CheckEventQueueForUserCancel, 1,
 	 "() -> (Boolean _rv)"},
 #endif
+	{"KeyScript", (PyCFunction)Evt_KeyScript, 1,
+	 "(short code) -> None"},
+	{"IsCmdChar", (PyCFunction)Evt_IsCmdChar, 1,
+	 "(EventRecord event, short test) -> (Boolean _rv)"},
+	{"LMGetKeyThresh", (PyCFunction)Evt_LMGetKeyThresh, 1,
+	 "() -> (SInt16 _rv)"},
+	{"LMSetKeyThresh", (PyCFunction)Evt_LMSetKeyThresh, 1,
+	 "(SInt16 value) -> None"},
+	{"LMGetKeyRepThresh", (PyCFunction)Evt_LMGetKeyRepThresh, 1,
+	 "() -> (SInt16 _rv)"},
+	{"LMSetKeyRepThresh", (PyCFunction)Evt_LMSetKeyRepThresh, 1,
+	 "(SInt16 value) -> None"},
+	{"LMGetKbdLast", (PyCFunction)Evt_LMGetKbdLast, 1,
+	 "() -> (UInt8 _rv)"},
+	{"LMSetKbdLast", (PyCFunction)Evt_LMSetKbdLast, 1,
+	 "(UInt8 value) -> None"},
+	{"LMGetKbdType", (PyCFunction)Evt_LMGetKbdType, 1,
+	 "() -> (UInt8 _rv)"},
+	{"LMSetKbdType", (PyCFunction)Evt_LMSetKbdType, 1,
+	 "(UInt8 value) -> None"},
 	{"WaitNextEvent", (PyCFunction)Evt_WaitNextEvent, 1,
 	 "(EventMask eventMask, UInt32 sleep [,RegionHandle]) -> (Boolean _rv, EventRecord theEvent)"},
 	{NULL, NULL, 0}

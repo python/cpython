@@ -552,105 +552,6 @@ static PyObject *AEDesc_AEGetDescDataSize(AEDescObject *_self, PyObject *_args)
 }
 #endif
 
-static PyObject *AEDesc_AESend(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AppleEvent reply;
-	AESendMode sendMode;
-	AESendPriority sendPriority;
-	long timeOutInTicks;
-	if (!PyArg_ParseTuple(_args, "lhl",
-	                      &sendMode,
-	                      &sendPriority,
-	                      &timeOutInTicks))
-		return NULL;
-	_err = AESend(&_self->ob_itself,
-	              &reply,
-	              sendMode,
-	              sendPriority,
-	              timeOutInTicks,
-	              upp_AEIdleProc,
-	              (AEFilterUPP)0);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("O&",
-	                     AEDesc_New, &reply);
-	return _res;
-}
-
-static PyObject *AEDesc_AEResetTimer(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AEResetTimer(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AESuspendTheCurrentEvent(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AESuspendTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AEResumeTheCurrentEvent(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AppleEvent reply;
-	AEEventHandlerUPP dispatcher__proc__ = upp_GenericEventHandler;
-	PyObject *dispatcher;
-	if (!PyArg_ParseTuple(_args, "O&O",
-	                      AEDesc_Convert, &reply,
-	                      &dispatcher))
-		return NULL;
-	_err = AEResumeTheCurrentEvent(&_self->ob_itself,
-	                               &reply,
-	                               dispatcher__proc__, (long)dispatcher);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	Py_INCREF(dispatcher); /* XXX leak, but needed */
-	return _res;
-}
-
-static PyObject *AEDesc_AEGetTheCurrentEvent(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AEGetTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AEDesc_AESetTheCurrentEvent(AEDescObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AESetTheCurrentEvent(&_self->ob_itself);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *AEDesc_AEResolve(AEDescObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -715,18 +616,6 @@ static PyMethodDef AEDesc_methods[] = {
 	{"AEGetDescDataSize", (PyCFunction)AEDesc_AEGetDescDataSize, 1,
 	 "() -> (Size _rv)"},
 #endif
-	{"AESend", (PyCFunction)AEDesc_AESend, 1,
-	 "(AESendMode sendMode, AESendPriority sendPriority, long timeOutInTicks) -> (AppleEvent reply)"},
-	{"AEResetTimer", (PyCFunction)AEDesc_AEResetTimer, 1,
-	 "() -> None"},
-	{"AESuspendTheCurrentEvent", (PyCFunction)AEDesc_AESuspendTheCurrentEvent, 1,
-	 "() -> None"},
-	{"AEResumeTheCurrentEvent", (PyCFunction)AEDesc_AEResumeTheCurrentEvent, 1,
-	 "(AppleEvent reply, EventHandler dispatcher) -> None"},
-	{"AEGetTheCurrentEvent", (PyCFunction)AEDesc_AEGetTheCurrentEvent, 1,
-	 "() -> None"},
-	{"AESetTheCurrentEvent", (PyCFunction)AEDesc_AESetTheCurrentEvent, 1,
-	 "() -> None"},
 	{"AEResolve", (PyCFunction)AEDesc_AEResolve, 1,
 	 "(short callbackFlags) -> (AEDesc theToken)"},
 	{NULL, NULL, 0}
@@ -928,67 +817,6 @@ static PyObject *AE_AEReplaceDescData(PyObject *_self, PyObject *_args)
 }
 #endif
 
-static PyObject *AE_AEProcessAppleEvent(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	EventRecord theEventRecord;
-	if (!PyArg_ParseTuple(_args, "O&",
-	                      PyMac_GetEventRecord, &theEventRecord))
-		return NULL;
-	_err = AEProcessAppleEvent(&theEventRecord);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AE_AEGetInteractionAllowed(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEInteractAllowed level;
-	if (!PyArg_ParseTuple(_args, ""))
-		return NULL;
-	_err = AEGetInteractionAllowed(&level);
-	if (_err != noErr) return PyMac_Error(_err);
-	_res = Py_BuildValue("b",
-	                     level);
-	return _res;
-}
-
-static PyObject *AE_AESetInteractionAllowed(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	AEInteractAllowed level;
-	if (!PyArg_ParseTuple(_args, "b",
-	                      &level))
-		return NULL;
-	_err = AESetInteractionAllowed(level);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
-static PyObject *AE_AEInteractWithUser(PyObject *_self, PyObject *_args)
-{
-	PyObject *_res = NULL;
-	OSErr _err;
-	long timeOutInTicks;
-	if (!PyArg_ParseTuple(_args, "l",
-	                      &timeOutInTicks))
-		return NULL;
-	_err = AEInteractWithUser(timeOutInTicks,
-	                          (NMRecPtr)0,
-	                          upp_AEIdleProc);
-	if (_err != noErr) return PyMac_Error(_err);
-	Py_INCREF(Py_None);
-	_res = Py_None;
-	return _res;
-}
-
 static PyObject *AE_AEInstallEventHandler(PyObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
@@ -1177,14 +1005,6 @@ static PyMethodDef AE_methods[] = {
 	{"AEReplaceDescData", (PyCFunction)AE_AEReplaceDescData, 1,
 	 "(DescType typeCode, Buffer dataPtr) -> (AEDesc theAEDesc)"},
 #endif
-	{"AEProcessAppleEvent", (PyCFunction)AE_AEProcessAppleEvent, 1,
-	 "(EventRecord theEventRecord) -> None"},
-	{"AEGetInteractionAllowed", (PyCFunction)AE_AEGetInteractionAllowed, 1,
-	 "() -> (AEInteractAllowed level)"},
-	{"AESetInteractionAllowed", (PyCFunction)AE_AESetInteractionAllowed, 1,
-	 "(AEInteractAllowed level) -> None"},
-	{"AEInteractWithUser", (PyCFunction)AE_AEInteractWithUser, 1,
-	 "(long timeOutInTicks) -> None"},
 	{"AEInstallEventHandler", (PyCFunction)AE_AEInstallEventHandler, 1,
 	 "(AEEventClass theAEEventClass, AEEventID theAEEventID, EventHandler handler) -> None"},
 	{"AERemoveEventHandler", (PyCFunction)AE_AERemoveEventHandler, 1,

@@ -36,6 +36,7 @@ RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 DataHandle = OpaqueByValueType("DataHandle", "ResObj")
 Handle = OpaqueByValueType("Handle", "ResObj")
 CGrafPtr = OpaqueByValueType("CGrafPtr", "GrafObj")
+EventModifiers = Type("EventModifiers", "H")
 
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS

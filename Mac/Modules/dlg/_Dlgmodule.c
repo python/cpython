@@ -957,7 +957,6 @@ static PyMethodDef DlgObj_methods[] = {
 	 "() -> None"},
 	{"GetDialogPort", (PyCFunction)DlgObj_GetDialogPort, 1,
 	 "() -> (CGrafPtr _rv)"},
-
 	{NULL, NULL, 0}
 };
 
