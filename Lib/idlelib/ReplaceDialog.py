@@ -90,7 +90,7 @@ class ReplaceDialog(SearchDialogBase):
             line, m = res
             chars = text.get("%d.0" % line, "%d.0" % (line+1))
             orig = m.group()
-            new = self._expand(m, repl)
+            new = m.expand(repl)
             i, j = m.span()
             first = "%d.%d" % (line, i)
             last = "%d.%d" % (line, j)
@@ -142,7 +142,7 @@ class ReplaceDialog(SearchDialogBase):
         m = prog.match(chars, col)
         if not prog:
             return 0
-        new = self._expand(m, self.replvar.get())
+        new = m.expand(self.replvar.get())
         text.mark_set("insert", first)
         text.undo_block_start()
         if m.group():
@@ -153,22 +153,6 @@ class ReplaceDialog(SearchDialogBase):
         self.show_hit(first, text.index("insert"))
         self.ok = 0
         return 1
-
-    def _expand(self, m, template):
-        # XXX This code depends on internals of the regular expression
-        # engine!  There's no standard API to do a substitution when you
-        # have already found the match.  One should be added.
-        # The solution here is designed to be backwards compatible
-        # with previous Python versions, e.g. 1.5.2.
-        # XXX This dynamic test should be done only once.
-        if getattr(re, "engine", "pre") == "pre":
-            return re.pcre_expand(m, template)
-        else: # sre
-            # XXX This import should be avoidable...
-            import sre_parse
-            # XXX This parses the template over and over...
-            ptemplate = sre_parse.parse_template(template, m.re)
-            return sre_parse.expand_template(ptemplate, m)
 
     def show_hit(self, first, last):
         text = self.text
