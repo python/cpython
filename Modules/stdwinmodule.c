@@ -1282,8 +1282,8 @@ stdwin_open(sw, args)
 }
 
 static object *
-stdwin_getevent(sw, args)
-	object *sw;
+stdwin_get_poll_event(poll, args)
+	int poll;
 	object *args;
 {
 	EVENT e;
@@ -1294,15 +1294,24 @@ stdwin_getevent(sw, args)
 		err_setstr(RuntimeError, "cannot getevent() while drawing");
 		return NULL;
 	}
-    again:
-	wgetevent(&e);
+/* again: */
+	if (poll) {
+		if (!wpollevent(&e)) {
+			INCREF(None);
+			return None;
+		}
+	}
+	else
+		wgetevent(&e);
 	if (e.type == WE_COMMAND && e.u.command == WC_CANCEL) {
 		/* Turn keyboard interrupts into exceptions */
 		err_set(KeyboardInterrupt);
 		return NULL;
 	}
+/*
 	if (e.window == NULL && (e.type == WE_COMMAND || e.type == WE_CHAR))
 		goto again;
+*/
 	if (e.type == WE_COMMAND && e.u.command == WC_CLOSE) {
 		/* Turn WC_CLOSE commands into WE_CLOSE events */
 		e.type = WE_CLOSE;
@@ -1323,11 +1332,15 @@ stdwin_getevent(sw, args)
 			w = None;
 		else
 			w = (object *)windowlist[tag];
+#ifdef sgi
+		/* XXX Trap for unexplained weird bug */
+		if ((long)w == (long)0x80000001) {
+			err_setstr(SystemError,
+				"bad pointer in stdwin.getevent()");
+			return NULL;
+		}
+#endif
 	}
-if ((long)w == (long)0x80000001) {
-err_setstr(SystemError, "bad pointer in stdwin.getevent()");
-return NULL;
-}
 	INCREF(w);
 	settupleitem(v, 1, w);
 	switch (e.type) {
@@ -1375,6 +1388,22 @@ return NULL;
 	}
 	settupleitem(v, 2, w);
 	return v;
+}
+
+static object *
+stdwin_getevent(sw, args)
+	object *sw;
+	object *args;
+{
+	return stdwin_get_poll_event(0, args);
+}
+
+static object *
+stdwin_pollevent(sw, args)
+	object *sw;
+	object *args;
+{
+	return stdwin_get_poll_event(1, args);
 }
 
 static object *
@@ -1584,6 +1613,7 @@ static struct methodlist stdwin_methods[] = {
 	{"menucreate",		stdwin_menucreate},
 	{"message",		stdwin_message},
 	{"open",		stdwin_open},
+	{"pollevent",		stdwin_pollevent},
 	{"resetselection",	stdwin_resetselection},
 	{"rotatecutbuffers",	stdwin_rotatecutbuffers},
 	{"setcutbuffer",	stdwin_setcutbuffer},
