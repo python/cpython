@@ -98,10 +98,10 @@ Bookkeeping functions:
 \begin{funcdesc}{seed}{\optional{x}}
   Initialize the basic random number generator.
   Optional argument \var{x} can be any hashable object.
-  If \var(x) is omitted or \code{None}, current system time is used;
+  If \var{x} is omitted or \code{None}, current system time is used;
   current system time is also used to initialize the generator when the
   module is first imported.
-  If \var(x) is not \code{None} or an int or long,
+  If \var{x} is not \code{None} or an int or long,
   \code{hash(\var{x})} is used instead.
   If \var{x} is an int or long, \var{x} is used directly.
   Distinct values between 0 and 27814431486575L inclusive are guaranteed
@@ -137,7 +137,7 @@ Bookkeeping functions:
   Change the internal state to what it would be if \function{random()}
   were called \var{n} times, but do so quickly.  \var{n} is a
   non-negative integer.  This is most useful in multi-threaded
-  programs, in conjuction with multiple instances of the \var{Random}
+  programs, in conjuction with multiple instances of the \class{Random}
   class: \method{setstate()} or \method{seed()} can be used to force
   all instances into the same internal state, and then
   \method{jumpahead()} can be used to force the instances' states as
