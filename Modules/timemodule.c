@@ -664,6 +664,13 @@ inittime(void)
 	ins(d, "tzname", Py_BuildValue("(zz)", "", ""));
 #endif /* macintosh */
 #endif /* HAVE_TM_ZONE */
+#ifdef __CYGWIN__
+	tzset();
+	ins(d, "timezone", PyInt_FromLong(_timezone));
+	ins(d, "altzone", PyInt_FromLong(_timezone));
+	ins(d, "daylight", PyInt_FromLong(_daylight));
+	ins(d, "tzname", Py_BuildValue("(zz)", _tzname[0], _tzname[1]));
+#endif /* __CYGWIN__ */
 #endif /* !HAVE_TZNAME || __GLIBC__ */
 }
 
