@@ -4,9 +4,10 @@
 
 """reindent [-d][-r][-v] [ path ... ]
 
--d  Dry run.  Analyze, but don't make any changes to, files.
--r  Recurse.  Search for all .py files in subdirectories too.
--v  Verbose.  Print informative msgs; else no output.
+-d (--dryrun)  Dry run.  Analyze, but don't make any changes to, files.
+-r (--recurse) Recurse.  Search for all .py files in subdirectories too.
+-v (--verbose) Verbose.  Print informative msgs; else no output.
+-h (--help)    Help.     Print this usage information and exit.
 
 Change Python (.py) files to use 4-space indents and no hard tab characters.
 Also trim excess spaces and tabs from ends of lines, and remove empty lines
@@ -42,6 +43,11 @@ verbose = 0
 recurse = 0
 dryrun  = 0
 
+def usage(msg=None):
+    if msg is not None:
+        print >> sys.stderr, msg
+    print >> sys.stderr, __doc__
+
 def errprint(*args):
     sep = ""
     for arg in args:
@@ -53,17 +59,21 @@ def main():
     import getopt
     global verbose, recurse, dryrun
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "drv")
+        opts, args = getopt.getopt(sys.argv[1:], "drvh",
+                                   ["dryrun", "recurse", "verbose", "help"])
     except getopt.error, msg:
-        errprint(msg)
+        usage(msg)
         return
     for o, a in opts:
-        if o == '-d':
+        if o in ('-d', '--dryrun'):
             dryrun += 1
-        elif o == '-r':
+        elif o in ('-r', '--recurse'):
             recurse += 1
-        elif o == '-v':
+        elif o in ('-v', '--verbose'):
             verbose += 1
+        elif o in ('-h', '--help'):
+            usage()
+            return
     if not args:
         r = Reindenter(sys.stdin)
         r.run()
