@@ -77,12 +77,23 @@ class TestBasicOps(unittest.TestCase):
                 ]:
             self.assertEqual(list(islice(xrange(100), *args)), range(*tgtargs))
 
-        self.assertRaises(TypeError, islice, xrange(10))
+        # Test stop=None
+        self.assertEqual(list(islice(xrange(10))), range(10))
+        self.assertEqual(list(islice(xrange(10), None)), range(10))
+        self.assertEqual(list(islice(xrange(10), 2, None)), range(2, 10))
+        self.assertEqual(list(islice(xrange(10), 1, None, 2)), range(1, 10, 2))
+
+        # Test invalid arguments
         self.assertRaises(TypeError, islice, xrange(10), 1, 2, 3, 4)
         self.assertRaises(ValueError, islice, xrange(10), -5, 10, 1)
         self.assertRaises(ValueError, islice, xrange(10), 1, -5, -1)
         self.assertRaises(ValueError, islice, xrange(10), 1, 10, -1)
         self.assertRaises(ValueError, islice, xrange(10), 1, 10, 0)
+        self.assertRaises(ValueError, islice, xrange(10), 'a')
+        self.assertRaises(ValueError, islice, xrange(10), 'a', 1)
+        self.assertRaises(ValueError, islice, xrange(10), 1, 'a')
+        self.assertRaises(ValueError, islice, xrange(10), 'a', 1, 1)
+        self.assertRaises(ValueError, islice, xrange(10), 1, 'a', 1)
         self.assertEqual(len(list(islice(count(), 1, 10, sys.maxint))), 1)
 
     def test_takewhile(self):
@@ -155,16 +166,69 @@ Samuele
 ...     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
 ...     return izip(seq, islice(seq,1,len(seq)))
 
+>>> def padnone(seq):
+...     "Returns the sequence elements and then returns None indefinitely"
+...     return chain(seq, repeat(None))
+
+>>> def ncycles(seq, n):
+...     "Returns the sequence elements n times"
+...     return chain(*repeat(seq, n))
+
+>>> def dotproduct(vec1, vec2):
+...     return sum(imap(operator.mul, vec1, vec2))
+
+
+This is not part of the examples but it tests to make sure the definitions
+perform as purported.
+
+>>> list(enumerate('abc'))
+[(0, 'a'), (1, 'b'), (2, 'c')]
+
+>>> list(islice(tabulate(lambda x: 2*x), 4))
+[0, 2, 4, 6]
+
+>>> nth('abcde', 3)
+['d']
+
+>>> all(lambda x: x%2==0, [2, 4, 6, 8])
+True
+
+>>> all(lambda x: x%2==0, [2, 3, 6, 8])
+False
+
+>>> some(lambda x: x%2==0, [2, 4, 6, 8])
+True
+
+>>> some(lambda x: x%2==0, [1, 3, 5, 9])
+False
+
+>>> no(lambda x: x%2==0, [1, 3, 5, 9])
+True
+
+>>> no(lambda x: x%2==0, [1, 2, 5, 9])
+False
+
+>>> list(pairwise('abc'))
+[('a', 'b'), ('b', 'c')]
+
+>>> list(islice(padnone('abc'), 0, 6))
+['a', 'b', 'c', None, None, None]
+
+>>> list(ncycles('abc', 3))
+['a', 'b', 'c', 'a', 'b', 'c', 'a', 'b', 'c']
+
+>>> dotproduct([1,2,3], [4,5,6])
+32
+
+
 """
 
 __test__ = {'libreftest' : libreftest}
 
 def test_main(verbose=None):
-    import test_itertools
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(TestBasicOps))
     test_support.run_suite(suite)
-    test_support.run_doctest(test_itertools, verbose)
 
     # verify reference counting
     import sys
@@ -174,6 +238,10 @@ def test_main(verbose=None):
             test_support.run_suite(suite)
             counts.append(sys.gettotalrefcount()-i)
         print counts
+
+    # doctest the examples in the library reference
+    import doctest
+    doctest.testmod(sys.modules[__name__])
 
 if __name__ == "__main__":
     test_main(verbose=True)

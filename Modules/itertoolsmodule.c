@@ -471,27 +471,47 @@ static PyObject *
 islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyObject *seq;
-	long a1=0, a2=0, a3=0, start=0, stop=0, step=1;
-	PyObject *it;
+	long start=0, stop=-1, step=1;
+	PyObject *it, *a1=NULL, *a2=NULL;
 	int numargs;
 	isliceobject *lz;
 
 	numargs = PyTuple_Size(args);
-	if (!PyArg_ParseTuple(args, "Ol|ll:islice", &seq, &a1, &a2, &a3))
+	if (!PyArg_ParseTuple(args, "O|OOl:islice", &seq, &a1, &a2, &step))
 		return NULL;
 
 	if (numargs == 2) {
-		stop = a1;
-	} else if (numargs == 3) {
-		start = a1;
-		stop = a2;
-	} else {
-		start = a1;
-		stop = a2;
-		step = a3;
+		if (a1 != Py_None) {
+			stop = PyInt_AsLong(a1);
+			if (stop == -1) {
+				if (PyErr_Occurred())
+					PyErr_Clear();
+				PyErr_SetString(PyExc_ValueError,
+				   "Stop argument must be an integer or None.");
+				return NULL;
+			}
+		}
+	} else if (numargs == 3 || numargs == 4) {
+		start = PyInt_AsLong(a1);
+		if (start == -1 && PyErr_Occurred()) {
+			PyErr_Clear();
+			PyErr_SetString(PyExc_ValueError,
+			   "Start argument must be an integer.");
+			return NULL;
+		}
+		if (a2 != Py_None) {
+			stop = PyInt_AsLong(a2);
+			if (stop == -1) {
+				if (PyErr_Occurred())
+					PyErr_Clear();
+				PyErr_SetString(PyExc_ValueError,
+				   "Stop argument must be an integer or None.");
+				return NULL;
+			}
+		}
 	}
 
-	if (start<0 || stop<0) {
+	if (start<0 || stop<-1) {
 		PyErr_SetString(PyExc_ValueError,
 		   "Indices for islice() must be positive.");
 		return NULL;
@@ -554,7 +574,7 @@ islice_next(isliceobject *lz)
 		Py_DECREF(item);
 		lz->cnt++;
 	}
-	if (lz->cnt >= lz->stop)
+	if (lz->stop != -1 && lz->cnt >= lz->stop)
 		return NULL;
 	assert(PyIter_Check(it));
 	item = (*it->ob_type->tp_iternext)(it);
