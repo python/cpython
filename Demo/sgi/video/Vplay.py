@@ -200,13 +200,15 @@ def playonce(vin):
 	vin.magnify = magnify
 
 	if threading:
+		MAXSIZE = 20 # Don't read ahead too much
 		import thread
-		queue = []
+		import Queue
+		queue = Queue.Queue().init(MAXSIZE)
 		stop = []
 		thread.start_new_thread(read_ahead, (vin, queue, stop))
 		# Get the read-ahead thread going
-		while len(queue) < 5 and None not in queue:
-			time.millisleep(10)
+		while queue.qsize() < MAXSIZE/2 and not stop:
+			time.millisleep(100)
 
 	tin = 0
 	told = 0
@@ -227,21 +229,18 @@ def playonce(vin):
 				if debug: sys.stderr.write('\n')
 				if threading:
 					stop.append(None)
-					while len(stop) < 2:
-						time.millisleep(10)
+					while 1:
+						item = queue.get()
+						if item == None: break
 				return (dev != LEFTMOUSE)
 			if dev == REDRAW:
 				gl.reshapeviewport()
 				if data: vin.showframe(data, cdata)
 		if threading:
-			if not queue:
-				if debug: sys.stderr.write('.')
-				time.millisleep(10)
-				continue
-			q0 = queue[0]
-			if q0 == None: break
-			del queue[0]
-			tin, data, cdata = q0
+			if debug and queue.empty(): sys.stderr.write('.')
+			item = queue.get()
+			if item == None: break
+			tin, data, cdata = item
 		else:
 			try:
 				tin, size, csize = vin.getnextframeheader()
@@ -301,11 +300,11 @@ def playonce(vin):
 
 def read_ahead(vin, queue, stop):
 	try:
-		while not stop: queue.append(vin.getnextframe())
+		while not stop: queue.put(vin.getnextframe())
 	except EOFError:
-		queue.append(None)
+		pass
+	queue.put(None)
 	stop.append(None)
-
 
 
 # Don't forget to call the main program

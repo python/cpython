@@ -52,116 +52,12 @@ def conv_rgb8(rgb,d1,d2):
 # xorigin, yorigin
 # fallback
 
-class VinFile:
 
-	# init() and initfp() raise Error if the header is bad.
-	# init() raises whatever open() raises if the file can't be opened.
 
-	def init(self, filename):
-		if filename == '-':
-			return self.initfp(sys.stdin, filename)
-		return self.initfp(open(filename, 'r'), filename)
+# XXX it's a total mess now -- VFile is a new base class
+# XXX to support common functionality (e.g. showframe)
 
-	def initfp(self, fp, filename):
-		self.colormapinited = 0
-		self.magnify = 1.0
-		self.xorigin = self.yorigin = 0
-		self.fallback = 1
-		self.skipchrom = 0
-		self.fp = fp
-		self.filename = filename
-		self.quiet = 0
-		#
-		line = self.fp.readline()
-		if line == 'CMIF video 1.0\n':
-			self.version = 1.0
-		elif line == 'CMIF video 2.0\n':
-			self.version = 2.0
-		elif line == 'CMIF video 3.0\n':
-			self.version = 3.0
-		else:
-			raise Error, self.filename + ': bad video format'
-		#
-		if self.version < 2.0:
-			self.c0bits, self.c1bits, self.c2bits = 8, 0, 0
-			self.chrompack = 0
-			self.offset = 0
-			self.format = 'grey'
-		elif self.version == 2.0:
-			line = self.fp.readline()
-			try:
-				self.c0bits, self.c1bits, self.c2bits, \
-					self.chrompack = eval(line[:-1])
-				if self.c1bits or self.c2bits:
-					self.format = 'yiq'
-				else:
-					self.format = 'grey'
-				self.offset = 0
-			except:
-				raise Error, \
-				  self.filename + ': bad 2.0 color info'
-		elif self.version == 3.0:
-			line = self.fp.readline()
-			try:
-				self.format, rest = eval(line[:-1])
-				if self.format == 'rgb':
-					self.offset = 0
-					self.c0bits = 0
-					self.c1bits = 0
-					self.c2bits = 0
-					self.chrompack = 0
-				elif self.format == 'grey':
-					self.offset = 0
-					self.c0bits = rest
-					self.c1bits = self.c2bits = \
-						self.chrompack = 0
-				else:
-					self.c0bits,self.c1bits,self.c2bits,\
-					  self.chrompack,self.offset = rest
-			except:
-				raise Error, \
-					self.filename + ': bad 3.0 color info'
-
-		try:
-			self.convcolor = eval('conv_'+self.format)
-		except:
-			raise Error, \
-			  self.filename + ': unknown colorsys ' + self.format
-		#
-		line = self.fp.readline()
-		try:
-			x = eval(line[:-1])
-			if self.version > 1.0 or len(x) == 3:
-				self.width, self.height, self.packfactor = x
-				if self.packfactor == 0:
-					self.format = 'rgb'
-			else:
-				sef.width, self.height = x
-				self.packfactor = 2
-		except:
-			raise Error, self.filename + ': bad (w,h,pf) info'
-		self.frameno = 0
-		self.framecache = []
-		self.hascache = 0
-		#
-		return self
-
-	def warmcache(self):
-		if self.hascache: return
-		n = 0
-		try:
-			while 1:
-				void = self.skipnextframe()
-				n = n + 1
-		except EOFError:
-			pass
-		if not self.hascache:
-			raise Error, 'Cannot warm cache'
-
-	def close(self):
-		self.fp.close()
-		self.fp = None
-
+class VFile:
 
 	#
 	# getinfo returns all info pertaining to a film. The returned tuple
@@ -179,96 +75,12 @@ class VinFile:
 		self.fp.seek(0)
 		x = self.initfp(self.fp, self.filename)
 
-	def rewind(self):
-		if self.hascache:
-			self.frameno = 0
-		else:
-			self.reopen()
-
-	def position(self):
-		if self.frameno >= len(self.framecache):
-			raise EOFError
-		self.fp.seek(self.framecache[self.frameno][0])
-
-	# getnextframe() raises EOFError (built-in) if there is no next frame,
-	# or if the next frame is broken.
-	# So to getnextframeheader(), getnextframedata() and skipnextframe().
-
-	def getnextframe(self):
-		time, size, chromsize = self.getnextframeheader()
-		data, chromdata = self.getnextframedata(size, chromsize)
-		return time, data, chromdata
-
-	def getnextframedata(self, size, chromsize):
-		if self.hascache:
-			self.position()
-		self.frameno = self.frameno + 1
-		data = self.fp.read(size)
-		if len(data) <> size: raise EOFError
-		if chromsize:
-			chromdata = self.fp.read(chromsize)
-			if len(chromdata) <> chromsize: raise EOFError
-		else:
-			chromdata = None
-		#
-		return data, chromdata
-
-	def skipnextframe(self):
-		time, size, chromsize = self.getnextframeheader()
-		self.skipnextframedata(size, chromsize)
-		return time
-
-	def skipnextframedata(self, size, chromsize):
-		if self.hascache:
-			self.frameno = self.frameno + 1
-			return
-		# Note that this won't raise EOFError for a partial frame.
+	def setconvcolor(self):
 		try:
-			self.fp.seek(size + chromsize, 1) # Relative seek
+			self.convcolor = eval('conv_'+self.format)
 		except:
-			# Assume it's a pipe -- read the data to discard it
-			dummy = self.fp.read(size + chromsize)
-
-	def getnextframeheader(self):
-		if self.hascache:
-			if self.frameno >= len(self.framecache):
-				raise EOFError
-			return self.framecache[self.frameno][1]
-		line = self.fp.readline()
-		if not line:
-			self.hascache = 1
-			raise EOFError
-		#
-		w, h, pf = self.width, self.height, self.packfactor
-		try:
-			x = eval(line[:-1])
-			if type(x) in (type(0), type(0.0)):
-				time = x
-				if pf == 0:
-					size = w * h * 4
-				else:
-					size = (w/pf) * (h/pf)
-			elif len(x) == 2:
-				time, size = x
-				cp = self.chrompack
-				if cp:
-					cw = (w + cp - 1) / cp
-					ch = (h + cp - 1) / cp
-					chromsize = 2 * cw * ch
-				else:
-					chromsize = 0
-			else:
-				time, size, chromsize = x
-		except:
-			raise Error, self.filename + ': bad frame header'
-		cdata = (self.fp.tell(), (time, size, chromsize))
-		self.framecache.append(cdata)
-		return time, size, chromsize
-
-	def shownextframe(self):
-		time, data, chromdata = self.getnextframe()
-		self.showframe(data, chromdata)
-		return time
+			raise Error, \
+			  self.filename + ': unknown colorsys ' + self.format
 
 	def showframe(self, data, chromdata):
 		w, h, pf = self.width, self.height, self.packfactor
@@ -369,6 +181,205 @@ class VinFile:
 						gl.mapcolor(index, r, g, b)
 		void = gl.gflush()
 
+	
+
+class VinFile(VFile):
+
+	# init() and initfp() raise Error if the header is bad.
+	# init() raises whatever open() raises if the file can't be opened.
+
+	def init(self, filename):
+		if filename == '-':
+			return self.initfp(sys.stdin, filename)
+		return self.initfp(open(filename, 'r'), filename)
+
+	def initfp(self, fp, filename):
+		self.colormapinited = 0
+		self.magnify = 1.0
+		self.xorigin = self.yorigin = 0
+		self.fallback = 1
+		self.skipchrom = 0
+		self.fp = fp
+		self.filename = filename
+		self.quiet = 0
+		#
+		line = self.fp.readline()
+		if line == 'CMIF video 1.0\n':
+			self.version = 1.0
+		elif line == 'CMIF video 2.0\n':
+			self.version = 2.0
+		elif line == 'CMIF video 3.0\n':
+			self.version = 3.0
+		else:
+			raise Error, self.filename + ': bad video format'
+		#
+		if self.version < 2.0:
+			self.c0bits, self.c1bits, self.c2bits = 8, 0, 0
+			self.chrompack = 0
+			self.offset = 0
+			self.format = 'grey'
+		elif self.version == 2.0:
+			line = self.fp.readline()
+			try:
+				self.c0bits, self.c1bits, self.c2bits, \
+					self.chrompack = eval(line[:-1])
+				if self.c1bits or self.c2bits:
+					self.format = 'yiq'
+				else:
+					self.format = 'grey'
+				self.offset = 0
+			except:
+				raise Error, \
+				  self.filename + ': bad 2.0 color info'
+		elif self.version == 3.0:
+			line = self.fp.readline()
+			try:
+				self.format, rest = eval(line[:-1])
+				if self.format == 'rgb':
+					self.offset = 0
+					self.c0bits = 0
+					self.c1bits = 0
+					self.c2bits = 0
+					self.chrompack = 0
+				elif self.format == 'grey':
+					self.offset = 0
+					self.c0bits = rest
+					self.c1bits = self.c2bits = \
+						self.chrompack = 0
+				else:
+					self.c0bits,self.c1bits,self.c2bits,\
+					  self.chrompack,self.offset = rest
+			except:
+				raise Error, \
+					self.filename + ': bad 3.0 color info'
+
+		self.setconvcolor()
+		#
+		line = self.fp.readline()
+		try:
+			x = eval(line[:-1])
+			if self.version > 1.0 or len(x) == 3:
+				self.width, self.height, self.packfactor = x
+				if self.packfactor == 0:
+					self.format = 'rgb'
+			else:
+				sef.width, self.height = x
+				self.packfactor = 2
+		except:
+			raise Error, self.filename + ': bad (w,h,pf) info'
+		self.frameno = 0
+		self.framecache = []
+		self.hascache = 0
+		#
+		return self
+
+	def warmcache(self):
+		if self.hascache: return
+		n = 0
+		try:
+			while 1:
+				void = self.skipnextframe()
+				n = n + 1
+		except EOFError:
+			pass
+		if not self.hascache:
+			raise Error, 'Cannot warm cache'
+
+	def close(self):
+		self.fp.close()
+		self.fp = None
+
+	def rewind(self):
+		if self.hascache:
+			self.frameno = 0
+		else:
+			self.reopen()
+
+	def position(self):
+		if self.frameno >= len(self.framecache):
+			raise EOFError
+		self.fp.seek(self.framecache[self.frameno][0])
+
+	# getnextframe() raises EOFError (built-in) if there is no next frame,
+	# or if the next frame is broken.
+	# So to getnextframeheader(), getnextframedata() and skipnextframe().
+
+	def getnextframe(self):
+		time, size, chromsize = self.getnextframeheader()
+		data, chromdata = self.getnextframedata(size, chromsize)
+		return time, data, chromdata
+
+	def getnextframedata(self, size, chromsize):
+		if self.hascache:
+			self.position()
+		self.frameno = self.frameno + 1
+		data = self.fp.read(size)
+		if len(data) <> size: raise EOFError
+		if chromsize:
+			chromdata = self.fp.read(chromsize)
+			if len(chromdata) <> chromsize: raise EOFError
+		else:
+			chromdata = None
+		#
+		return data, chromdata
+
+	def skipnextframe(self):
+		time, size, chromsize = self.getnextframeheader()
+		self.skipnextframedata(size, chromsize)
+		return time
+
+	def skipnextframedata(self, size, chromsize):
+		if self.hascache:
+			self.frameno = self.frameno + 1
+			return
+		# Note that this won't raise EOFError for a partial frame.
+		try:
+			self.fp.seek(size + chromsize, 1) # Relative seek
+		except:
+			# Assume it's a pipe -- read the data to discard it
+			dummy = self.fp.read(size + chromsize)
+
+	def getnextframeheader(self):
+		if self.hascache:
+			if self.frameno >= len(self.framecache):
+				raise EOFError
+			return self.framecache[self.frameno][1]
+		line = self.fp.readline()
+		if not line:
+			self.hascache = 1
+			raise EOFError
+		#
+		w, h, pf = self.width, self.height, self.packfactor
+		try:
+			x = eval(line[:-1])
+			if type(x) in (type(0), type(0.0)):
+				time = x
+				if pf == 0:
+					size = w * h * 4
+				else:
+					size = (w/pf) * (h/pf)
+			elif len(x) == 2:
+				time, size = x
+				cp = self.chrompack
+				if cp:
+					cw = (w + cp - 1) / cp
+					ch = (h + cp - 1) / cp
+					chromsize = 2 * cw * ch
+				else:
+					chromsize = 0
+			else:
+				time, size, chromsize = x
+		except:
+			raise Error, self.filename + ': bad frame header'
+		cdata = (self.fp.tell(), (time, size, chromsize))
+		self.framecache.append(cdata)
+		return time, size, chromsize
+
+	def shownextframe(self):
+		time, data, chromdata = self.getnextframe()
+		self.showframe(data, chromdata)
+		return time
+
 #
 # A set of routines to grab images from windows
 #
@@ -417,7 +428,7 @@ def grab_hsv(w, h, pf):
 # Notably it will accept almost any garbage and write it to the video
 # output file
 #
-class VoutFile:
+class VoutFile(VFile):
 	def init(self, filename):
 		if filename == '-':
 			return self.initfp(sys.stdout, filename)
@@ -434,21 +445,21 @@ class VoutFile:
 		self.offset = 0
 		self.chrompack = 0
 		self.headerwritten = 0
+		self.quiet = 0
+		self.magnify = 1
+		self.setconvcolor()
+		self.xorigin = self.yorigin = 0
 		return self
 
 	def close(self):
 		self.fp.close()
 		x = self.initfp(None, None)
 
-	def getinfo(self):
-		return (self.format, self.width, self.height, self.packfactor,\
-			  self.c0bits, self.c1bits, self.c2bits, self.offset, \
-			  self.chrompack)
-
 	def setinfo(self, values):
 		self.format, self.width, self.height, self.packfactor,\
 			  self.c0bits, self.c1bits, self.c2bits, self.offset, \
 			  self.chrompack = values
+		self.setconvcolor()
 
 	def writeheader(self):
 		self.headerwritten = 1
