@@ -78,6 +78,14 @@ PyObject_Size(PyObject *o)
 	return PyMapping_Size(o);
 }
 
+#undef PyObject_Length
+int
+PyObject_Length(PyObject *o)
+{
+	return PyObject_Size(o);
+}
+#define PyObject_Length PyObject_Size
+
 PyObject *
 PyObject_GetItem(PyObject *o, PyObject *key)
 {
@@ -820,6 +828,14 @@ PySequence_Size(PyObject *s)
 	return -1;
 }
 
+#undef PySequence_Length
+int
+PySequence_Length(PyObject *s)
+{
+	return PySequence_Size(s);
+}
+#define PySequence_Length PySequence_Size
+
 PyObject *
 PySequence_Concat(PyObject *s, PyObject *o)
 {
@@ -1277,6 +1293,14 @@ PyMapping_Size(PyObject *o)
 	type_error("len() of unsized object");
 	return -1;
 }
+
+#undef PyMapping_Length
+int
+PyMapping_Length(PyObject *o)
+{
+	return PyMapping_Size(o);
+}
+#define PyMapping_Length PyMapping_Size
 
 PyObject *
 PyMapping_GetItemString(PyObject *o, char *key)
