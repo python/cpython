@@ -19,6 +19,8 @@ Core and builtins
 Library
 -------
 
+- The decimal module wouldn't run on builds without threads (Bug #1083645).
+
 - Bug #1086555:  Fix leak in syslog module.
 
 - atexit.register no longer references the sys module before importing it.
