@@ -96,8 +96,6 @@ newparser(g, start)
 	ps->p_grammar = g;
 	ps->p_tree = newnode(start);
 	if (ps->p_tree == NULL) {
-		if (ps->p_tree != NULL)
-			DEL(ps->p_tree); /* XXX freeing a node!?! */
 		DEL(ps);
 		return NULL;
 	}
@@ -110,6 +108,9 @@ void
 delparser(ps)
 	parser_state *ps;
 {
+	/* NB If you want to save the parse tree,
+	   you must set p_tree to NULL before calling delparser! */
+	freenode(ps->p_tree);
 	DEL(ps);
 }
 
