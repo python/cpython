@@ -1,0 +1,178 @@
+*** /src/python/dist/src/Modules/Setup.in	Mon Oct  9 10:40:21 2000
+--- Modules/Setup.in	Mon Oct  9 16:27:33 2000
+***************
+*** 111,117 ****
+  # modules are to be built as shared libraries (see above for more
+  # detail; also note that *static* reverses this effect):
+  
+! #*shared*
+  
+  # GNU readline.  Unlike previous Python incarnations, GNU readline is
+  # now incorporated in an optional module, configured in the Setup file
+--- 111,117 ----
+  # modules are to be built as shared libraries (see above for more
+  # detail; also note that *static* reverses this effect):
+  
+! *shared*
+  
+  # GNU readline.  Unlike previous Python incarnations, GNU readline is
+  # now incorporated in an optional module, configured in the Setup file
+***************
+*** 121,127 ****
+  # it, depending on your system -- see the GNU readline instructions.
+  # It's okay for this to be a shared library, too.
+  
+! #readline readline.c -lreadline -ltermcap
+  
+  
+  # Modules that should always be present (non UNIX dependent):
+--- 121,127 ----
+  # it, depending on your system -- see the GNU readline instructions.
+  # It's okay for this to be a shared library, too.
+  
+! readline readline.c -lreadline -ltermcap
+  
+  
+  # Modules that should always be present (non UNIX dependent):
+***************
+*** 170,187 ****
+  # Some more UNIX dependent modules -- off by default, since these
+  # are not supported by all UNIX systems:
+  
+! #nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
+! #termios termios.c	# Steen Lumholt's termios module
+! #resource resource.c	# Jeremy Hylton's rlimit interface
+  
+  
+  # Multimedia modules -- off by default.
+  # These don't work for 64-bit platforms!!!
+  # These represent audio samples or images as strings:
+  
+! #audioop audioop.c	# Operations on audio samples
+! #imageop imageop.c	# Operations on images
+! #rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
+  
+  
+  # The md5 module implements the RSA Data Security, Inc. MD5
+--- 170,187 ----
+  # Some more UNIX dependent modules -- off by default, since these
+  # are not supported by all UNIX systems:
+  
+! nis nismodule.c -lnsl	# Sun yellow pages -- not everywhere
+! termios termios.c	# Steen Lumholt's termios module
+! resource resource.c	# Jeremy Hylton's rlimit interface
+  
+  
+  # Multimedia modules -- off by default.
+  # These don't work for 64-bit platforms!!!
+  # These represent audio samples or images as strings:
+  
+! audioop audioop.c	# Operations on audio samples
+! imageop imageop.c	# Operations on images
+! rgbimg rgbimgmodule.c	# Read SGI RGB image files (but coded portably)
+  
+  
+  # The md5 module implements the RSA Data Security, Inc. MD5
+***************
+*** 255,261 ****
+  
+  # Linux specific modules -- off by default:
+  
+! #linuxaudiodev linuxaudiodev.c
+  
+  
+  # George Neville-Neil's timing module:
+--- 255,261 ----
+  
+  # Linux specific modules -- off by default:
+  
+! linuxaudiodev linuxaudiodev.c
+  
+  
+  # George Neville-Neil's timing module:
+***************
+*** 311,317 ****
+  # Lance Ellinghaus's modules:
+  
+  rotor rotormodule.c		# enigma-inspired encryption
+! #syslog syslogmodule.c		# syslog daemon interface
+  
+  
+  # Curses support, requring the System V version of curses, often
+--- 311,317 ----
+  # Lance Ellinghaus's modules:
+  
+  rotor rotormodule.c		# enigma-inspired encryption
+! syslog syslogmodule.c		# syslog daemon interface
+  
+  
+  # Curses support, requring the System V version of curses, often
+***************
+*** 319,325 ****
+  # instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
+  # -L/usr/5lib before -lcurses).
+  
+! #_curses _cursesmodule.c -lcurses -ltermcap
+  
+  
+  
+--- 319,325 ----
+  # instead of -lcurses; on SunOS 4.1.3, insert -I/usr/5include
+  # -L/usr/5lib before -lcurses).
+  
+! _curses _cursesmodule.c -lcurses -ltermcap
+  
+  
+  
+***************
+*** 349,355 ****
+  
+  # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
+  
+! #gdbm gdbmmodule.c -I/usr/local/include -L/usr/local/lib -lgdbm
+  
+  
+  # Berkeley DB interface.
+--- 349,355 ----
+  
+  # Anthony Baxter's gdbm module.  GNU dbm(3) will require -lgdbm:
+  
+! gdbm gdbmmodule.c -I/usr/include -L/usr/lib -lgdbm
+  
+  
+  # Berkeley DB interface.
+***************
+*** 406,412 ****
+  # Andrew Kuchling's zlib module.
+  # This require zlib 1.1.3 (or later).
+  # See http://www.cdrom.com/pub/infozip/zlib/
+! #zlib zlibmodule.c -I$(prefix)/include -L$(exec_prefix)/lib -lz
+  
+  # Interface to the Expat XML parser
+  #
+--- 406,412 ----
+  # Andrew Kuchling's zlib module.
+  # This require zlib 1.1.3 (or later).
+  # See http://www.cdrom.com/pub/infozip/zlib/
+! zlib zlibmodule.c -I/usr/include -L/usr/lib -lz
+  
+  # Interface to the Expat XML parser
+  #
+***************
+*** 427,434 ****
+  #
+  #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
+  #
+! #EXPAT_DIR=/usr/local/src/expat
+! #pyexpat pyexpat.c -I$(EXPAT_DIR)/xmlparse -L$(EXPAT_DIR) -lexpat
+  
+  
+  # Example -- included for reference only:
+--- 427,433 ----
+  #
+  #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
+  #
+! pyexpat pyexpat.c -I/usr/local/include/xmlparse -L/usr/local/lib -lexpat
+  
+  
+  # Example -- included for reference only:

@@ -1,0 +1,19 @@
+This directory contains support file used to build RPM releases of
+Python. 
+
+beopen-python.spec: 
+    Template for the spec file used to build Python.  The make-spec.sh
+    program below converts fills in the template with current release
+    information. 
+BeOpen-Python-Setup.patch:
+    This patch modifies Setup.in to include many extension modules
+    that compile cleanly on a generic Linux system.
+make-spec.sh:
+    Copies the .spec and .patch files into /usr/src/redhat/SPECS and
+    SOURCES respectively.  The generated versions of these files have
+    version numbers set from the source tree.
+Tkinter:
+    The files in this directory are used to package the _tkinter
+    extension module with distutils.  The src subdirectory should
+    contain copies of _tkinter.c and tkappinit.c from the Modules
+    directory of the source tree.
