@@ -3858,7 +3858,6 @@ PyString_Format(PyObject *format, PyObject *args)
 				len = 1;
 				break;
 			case 's':
-  			case 'r':
 #ifdef Py_USING_UNICODE
 				if (PyUnicode_Check(v)) {
 					fmt = fmt_start;
@@ -3866,6 +3865,8 @@ PyString_Format(PyObject *format, PyObject *args)
 					goto unicode;
 				}
 #endif
+				/* Fall through */
+  			case 'r':
 				if (c == 's')
 					temp = PyObject_Str(v);
 				else
@@ -3874,7 +3875,9 @@ PyString_Format(PyObject *format, PyObject *args)
 					goto error;
 				if (!PyString_Check(temp)) {
 					PyErr_SetString(PyExc_TypeError,
-					  "%s argument has non-string str()");
+					  c == 's' ?
+					  "%s argument has non-string str()" :
+					  "%r argument has non-string repr()");
 					Py_DECREF(temp);
 					goto error;
 				}
