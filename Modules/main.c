@@ -84,6 +84,8 @@ Other environment variables:\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
 PYTHONPATH   : colon-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
+PYTHONHOME   : alternate <prefix> directory (or <prefix>:<exec_prefix>).\n\
+               The default module search path uses <prefix>/lib/python1.5.\n\
 ";
 
 
