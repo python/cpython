@@ -398,10 +398,6 @@ def _ellipsis_match(want, got):
     """
     if ELLIPSIS_MARKER not in want:
         return want == got
-    # Remove \n from ...\n, else the newline will be required,
-    # and (for example) ... on a line by itself can't match
-    # nothing gracefully.
-    want = want.replace(ELLIPSIS_MARKER + '\n', ELLIPSIS_MARKER)
 
     # Find "the real" strings.
     ws = want.split(ELLIPSIS_MARKER)
