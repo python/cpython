@@ -41,16 +41,15 @@ for t in tests:
 		# Matched, as expected, so now we compute the
 		# result string and compare it to our expected result.
 		start, end = result.span(0)
-		vardict={'found': result.group(0)}
+		vardict={'found': result.group(0), 'groups': result.group()}
 		for i in range(1, 100):
 		    try:
 			gi = result.group(i)
 			# Special hack because else the string concat fails:
 			if gi is None: gi = "None"
 		    except IndexError:
-			break
-		    else:
-			vardict['g%d' % i] = gi
+			gi = "None"
+		    vardict['g%d' % i] = gi
 		repl=eval(repl, vardict)
 		if repl!=expected:
 		    print '=== grouping error', t,

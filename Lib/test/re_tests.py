@@ -136,7 +136,7 @@ tests = [
 ('()ef', 'def', SUCCEED,
  'found+"-"+g1', 'ef-'),
 ('$b', 'b', FAIL),
-('a(b', 'a(b', SUCCEED,
+('a\\(b', 'a(b', SUCCEED,
  'found+"-"+g1', 'a(b-None'),
 ('a\\(*b', 'ab', SUCCEED,
  'found', 'ab'),
