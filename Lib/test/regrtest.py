@@ -163,11 +163,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             print "CAUTION:  stdout isn't compared in verbose mode:  a test"
             print "that passes in verbose mode may fail without it."
     if bad:
-        print count(len(bad), "test"), "failed:",
-        print " ".join(bad)
+        print count(len(bad), "test"), "failed:"
+        printlist(bad)
     if skipped and not quiet:
-        print count(len(skipped), "test"), "skipped:",
-        print " ".join(skipped)
+        print count(len(skipped), "test"), "skipped:"
+        printlist(skipped)
 
         e = _ExpectedSkips()
         plat = sys.platform
@@ -175,8 +175,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             surprise = _Set(skipped) - e.getexpected()
             if surprise:
                 print count(len(surprise), "skip"), \
-                      "unexpected on", plat + ":", \
-                      " ".join(surprise.tolist())
+                      "unexpected on", plat + ":"
+                printlist(surprise)
             else:
                 print "Those skips are all expected on", plat + "."
         else:
@@ -320,6 +320,30 @@ def count(n, word):
         return "%d %s" % (n, word)
     else:
         return "%d %ss" % (n, word)
+
+def printlist(x, width=70, indent=4):
+    """Print the elements of a sequence to stdout.
+
+    Optional arg width (default 70) is the maximum line length.
+    Optional arg indent (default 4) is the number of blanks with which to
+    begin each line.
+    """
+
+    line = ' ' * indent
+    for one in map(str, x):
+        w = len(line) + len(one)
+        if line[-1:] == ' ':
+            pad = ''
+        else:
+            pad = ' '
+            w += 1
+        if w > width:
+            print line
+            line = ' ' * indent + one
+        else:
+            line += pad + one
+    if len(line) > indent:
+        print line
 
 class Compare:
 
