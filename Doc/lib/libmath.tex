@@ -17,7 +17,7 @@ complex result allows earlier detection of the unexpected complex
 number used as a parameter, so that the programmer can determine how
 and why it was generated in the first place.
 
-The following functions provided by this module:
+The following functions are provided by this module:
 
 \begin{funcdesc}{acos}{x}
 Return the arc cosine of \var{x}.
@@ -134,6 +134,16 @@ The mathematical constant \emph{pi}.
 \begin{datadesc}{e}
 The mathematical constant \emph{e}.
 \end{datadesc}
+
+\begin{notice}
+  Specific exceptions raised in assorted error cases (and even whether some
+  arguments are considered to be exceptional at all) are not defined in any
+  useful cross-platform or cross-release way.  For example, whether
+  \code{math.log(0)} returns \code{-Inf} or raises \exception{ValueError} or
+  \exception{OverflowError} is both platform- and release-dependent, and in
+  cases where \code{math.log(0)} raises an \exception{OverflowError},
+  \code{math.log(0L)} often raises a \exception{ValueError}.
+\end{notice}
 
 \begin{seealso}
   \seemodule{cmath}{Complex number versions of many of these functions.}
