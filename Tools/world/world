@@ -6,13 +6,11 @@
 #
 # $Id$
 
-# This little perl program will take an internet address of the form
+# This little script will take an Internet address of the form
 # foobar@some.place.domain and will print out where in the world that
 # message originated from.  Its pretty dumb in that it just matches
-# the `domain' part against a hard-coded list.  Also, I haven't
-# checked the list for validity -- I picked it up from someplace. With
-# the speed in which political boundaries are changing these days, no
-# doubt there are some incorrect mappings.
+# the `domain' part against a hard-coded list, which can probably
+# change fairly quickly given the world's political fluidity.
 
 import sys
 prog = sys.argv[0]
