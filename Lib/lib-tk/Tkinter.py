@@ -2299,6 +2299,31 @@ class Listbox(Widget):
         i = self.tk.call(self._w, 'index', index)
         if i == 'none': return None
         return getint(i)
+    def itemcget(self, index, option):
+        """Return the resource value for an ITEM and an OPTION."""
+        return self.tk.call(
+            (self._w, 'itemcget') + (index, '-'+option))
+    def itemconfigure(self, index, cnf=None, **kw):
+        """Configure resources of an ITEM.
+
+        The values for resources are specified as keyword arguments.
+        To get an overview about the allowed keyword arguments
+        call the method without arguments.
+        Valid resource names: background, foreground,
+        selectbackground, selectforeground."""
+        if cnf is None and not kw:
+            cnf = {}
+            for x in self.tk.split(
+                self.tk.call(self._w, 'itemconfigure', index)):
+                cnf[x[0][1:]] = (x[0][1:],) + x[1:]
+            return cnf
+        if type(cnf) == StringType and not kw:
+            x = self.tk.split(self.tk.call(
+                self._w, 'itemconfigure', index, '-'+cnf))
+            return (x[0][1:],) + x[1:]
+        self.tk.call((self._w, 'itemconfigure', index) +
+                     self._options(cnf, kw))
+    itemconfig = itemconfigure
     def insert(self, index, *elements):
         """Insert ELEMENTS at INDEX."""
         self.tk.call((self._w, 'insert', index) + elements)
