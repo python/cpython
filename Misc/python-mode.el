@@ -784,6 +784,20 @@ the new line indented."
   (save-excursion
     (beginning-of-line)
     (cond
+     ;; are we inside a string or comment?
+     ((save-excursion
+	(let ((pps (parse-partial-sexp (save-excursion
+					 (beginning-of-python-def-or-class)
+					 (point))
+				       (point))))
+	  (or (nth 3 pps) (nth 4 pps))))
+      (save-excursion
+	;; skip back over blank & non-indenting comment lines note:
+	;; will skip a blank or non-indenting comment line that
+	;; happens to be a continuation line too
+	(re-search-backward "^[ \t]*\\([^ \t\n#]\\|#[ \t\n]\\)" nil 'move)
+	(back-to-indentation)
+	(current-column)))
      ;; are we on a continuation line?
      ((py-continuation-line-p)
       (let ((startpos (point))
