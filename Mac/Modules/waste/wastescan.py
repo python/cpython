@@ -19,7 +19,7 @@ OBJECT2 = "WEObjectReference"
 def main():
 	input = WASTEDIR + "WASTE.h"
 	output = SHORT + "gen.py"
-	defsoutput = TOOLBOXDIR + "WASTEconst.py"
+	defsoutput = os.path.join(os.path.split(TOOLBOXDIR)[0], "WASTEconst.py")
 	scanner = MyScanner(input, output, defsoutput)
 	scanner.scan()
 ##	scanner.gentypetest(SHORT+"typetest.py")
