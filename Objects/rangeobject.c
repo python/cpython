@@ -19,6 +19,9 @@ PyRange_New(long start, long len, long step, int reps)
 {
 	rangeobject *obj = PyObject_NEW(rangeobject, &PyRange_Type);
 
+	if (obj == NULL)
+		return NULL;
+
 	obj->start = start;
 	obj->len   = len;
 	obj->step  = step;
