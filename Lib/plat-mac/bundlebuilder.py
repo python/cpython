@@ -332,6 +332,9 @@ class AppBuilder(BundleBuilder):
     # If True, build standalone app.
     standalone = 0
     
+    # If set, use this for #! lines in stead of sys.executable
+    python = None
+    
     # If True, add a real main program that emulates sys.argv before calling
     # mainprogram
     argv_emulation = 0
@@ -442,6 +445,8 @@ class AppBuilder(BundleBuilder):
                 # XXX we're screwed when the end user has deleted
                 # /usr/bin/python
                 hashbang = "/usr/bin/python"
+            elif self.python:
+                hashbang = self.python
             else:
                 hashbang = os.path.realpath(sys.executable)
             standalone = self.standalone
@@ -706,6 +711,7 @@ Options:
       --link-exec        symlink the executable instead of copying it
       --standalone       build a standalone application, which is fully
                          independent of a Python installation
+      --python=FILE      Python to use in #! line in stead of current Python
       --lib=FILE         shared library or framework to be copied into
                          the bundle
   -x, --exclude=MODULE   exclude module (with --standalone)
@@ -732,7 +738,7 @@ def main(builder=None):
         "mainprogram=", "creator=", "nib=", "plist=", "link",
         "link-exec", "help", "verbose", "quiet", "argv", "standalone",
         "exclude=", "include=", "package=", "strip", "iconfile=",
-        "lib=")
+        "lib=", "python=")
 
     try:
         options, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -780,6 +786,8 @@ def main(builder=None):
             builder.verbosity -= 1
         elif opt == '--standalone':
             builder.standalone = 1
+        elif opt == '--python':
+            builder.python = arg
         elif opt in ('-x', '--exclude'):
             builder.excludeModules.append(arg)
         elif opt in ('-i', '--include'):

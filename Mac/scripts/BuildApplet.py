@@ -53,8 +53,8 @@ def buildapplet():
 			buildtools.process(template, filename, dstfilename, 1)
 	else:
 		
-		SHORTOPTS = "o:r:ne:v?"
-		LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help")
+		SHORTOPTS = "o:r:ne:v?P"
+		LONGOPTS=("output=", "resource=", "noargv", "extra=", "verbose", "help", "python=")
 		try:
 			options, args = getopt.getopt(sys.argv[1:], SHORTOPTS, LONGOPTS)
 		except getopt.error:
@@ -78,6 +78,11 @@ def buildapplet():
 				if ':' in arg:
 					arg = arg.split(':')
 				extras.append(arg)
+			elif opt in ('-P', '--python'):
+				# This is a very dirty trick. We set sys.executable
+				# so that bundlebuilder will use this in the #! line
+				# for the applet bootstrap.
+				sys.executable = arg
 			elif opt in ('-v', '--verbose'):
 				verbose = Verbose()
 			elif opt in ('-?', '--help'):
