@@ -20,7 +20,7 @@ sys.path.insert(0, os.curdir)
 
 source = TESTFN + ".py"
 pyo = TESTFN + ".pyo"
-if sys.platform.endswith('java'):
+if sys.platform.startswith('java'):
     pyc = TESTFN + "$py.class"
 else:
     pyc = TESTFN + ".pyc"
