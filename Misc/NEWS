@@ -343,7 +343,7 @@ Drake.
 determine whether an interactively entered command is complete or not,
 distinguishing incomplete from invalid input.
 
-- There is now a library module xdr.py which can read and write the
+- There is now a library module xdrlib.py which can read and write the
 XDR data format as used by Sun RPC, for example.  It uses the struct
 module.
 
@@ -742,28 +742,159 @@ The following changes have been made to the source base after the
 release of 1.5a3.  These need to be merged into their respective
 categories for the next release.
 
-- regrtest.py is slightly more verbose, printing the name of each test
-as it runs them.
+- faqwiz.py: version 0.8; Recognize https:// as URL; <html>...</html>
+feature; better install instructions; removed faqmain.py (which was an
+older version).
+
+- nntplib.py: Fixed some bugs reported by Lars Wirzenius (to Debian)
+about the treatment of lines starting with '.'.  Added a minimal test
+function.
+
+- struct module: ignore most whitespace in format strings.
+
+- urllib.py: close the socket and temp file in URLopener.retrieve() so
+that multiple retrievals using the same connection work.
+
+- Three new C API functions:
+
+  - int PyErr_GivenExceptionMatches(obj1, obj2)
+
+    Returns 1 if obj1 and obj2 are the same object, or if obj1 is an
+    instance of type obj2, or of a class derived from obj2
+
+  - int PyErr_ExceptionMatches(obj)
+
+    Higher level wrapper around PyErr_GivenExceptionMatches() which uses
+    PyErr_Occurred() as obj1.  This will be the more commonly called
+    function.
+
+  - void PyErr_NormalizeException(typeptr, valptr, tbptr)
+
+    Normalizes exceptions, and places the normalized values in the
+    arguments.  If type is not a class, this does nothing.  If type is a
+    class, then it makes sure that value is an instance of the class by:
+
+    1. if instance is of the type, or a class derived from type, it does
+       nothing.
+
+    2. otherwise it instantiates the class, using the value as an
+       argument.  If value is None, it uses an empty arg tuple, and if
+       the value is a tuple, it uses just that.
+
+- Demo/metaclasses: new demo subdir explains metaclasses (read
+index.html in a browser).
+
+- core interpreter: remove the distinction between tuple and list
+unpacking; allow an arbitrary sequence on the right hand side of any
+unpack instruction.  (UNPACK_LIST and UNPACK_TUPLE now do the same
+thing, which should really be called UNPACK_SEQUENCE.)
+
+- classes: Allow assignments to an instance's __dict__ or __class__,
+so you can change ivars (including shared ivars -- shock horror) and
+change classes dynamically.  Also make the check on read-only
+attributes of classes less draconic -- only the specials names
+__dict__, __bases__, __name__ and __{get,set,del}attr__ can't be
+assigned.
+
+- Two new built-in functions: issubclass() and isinstance().  Both
+take classes as their second arguments.  The former takes a class as
+the first argument and returns true iff first is second, or is a
+subclass of second.  The latter takes any object as the first argument
+and returns true iff first is an instance of the second, or any
+subclass of second.
+
+- configure: Added configuration tests for presence of alarm(),
+pause(), and getpwent().
+
+- Doc/Makefile: changed latex2html targets.
+
+- classes: Reverse the search order for the Don Beaudry hook so that
+the first class with an applicable hook wins.  Makes more sense.
+
+- Changed the checks made in Py_Initialize() and Py_Finalize().  It is
+now legal to call these more than once.  The first call to
+Py_Initialize() initializes, the first call to Py_Finalize()
+finalizes.  There's also a new API, Py_IsInitalized() which checks
+whether we are already initialized (in case you want to leave things
+as they were).
+
+- Completely disable the declarations for malloc(), realloc() and
+free().  Any 90's C compiler has these in header files, and the tests
+to decide whether to suppress the declarations kept failing on some
+platforms.
+
+- *Before* (instead of after) signalmodule.o is added, remove both
+intrcheck.o and sigcheck.o.  This should get rid of warnings in ar or
+ld on various systems.
+
+- Added reop to PC/config.c
+
+- configure: Decided to use -Aa -D_HPUX_SOURCE on HP-UX platforms.
+Removed outdated HP-UX comments from README.  Added Cray T3E comments.
+
+- Various renames of statically defined functions that had name
+conflicts on some systems, e.g. strndup (GNU libc), join (Cray),
+roundup (sys/types.h).
+
+- urllib.py: Interpret three slashes in file: URL as local file (for
+Netscape on Windows/Mac).
+
+- copy.py: Make sure the objects returned by __getinitargs__() are
+kept alive (in the memo) to avoid a certain kind of nasty crash.  (Not
+easily reproducable because it requires a later call to
+__getinitargs__() to return a tuple that happens to be allocated at
+the same address.)
+
+- Added definition of AR to toplevel Makefile.  Renamed @buildno temp
+file to buildno1.
+
+- Moved Include/assert.h to Parser/assert.h, which seems to be the
+only place where it's needed.
+
+- Alas, the thread support for _tkinter didn't work.  Withdrew it.
+
+- Tweaked the dictionary lookup code again for some more speed
+(Vladimir Marangozov).
+
+- NT build: Changed the way python15.lib is included in the other
+projects.  Per Mark Hammond's suggestion, add it to the extra libs in
+Settings instead of to the project's source files.
+
+- regrtest.py: Change default verbosity so that there are only three
+levels left: -q, default and -v.  In default mode, the name of each
+test is now printed.  -v is the same as the old -vv.  -q is more quiet
+than the old default mode.
+
+- Removed the old FAQ from the distribution.  You now have to get it
+from the web!
+
+- Removed the PC/make_nt.in file from the distribution; it is no
+longer needed.
+
+- Changed the build sequence so that shared modules are built last.
+This fixes things for AIX and doesn't hurt elsewhere.
+
+- Improved test for GNU MP v1 in mpzmodule.c
 
 - fileobject.c: ftell() on Linux discards all buffered data; changed
-read() code to use lseek() instead
+read() code to use lseek() instead to get the same effect
 
 - configure.in, configure, importdl.c: NeXT sharedlib fixes
 
 - tupleobject.c: PyTuple_SetItem asserts refcnt==1
 
-- resource.c: Change how and when to declare getpagesize() and
-getrlimit()
-
-- mpzmodule.c: CPP hack to support GMP 1.x for real
+- resource.c: Different strategy regarding whether to declare
+getrusage() and getpagesize() -- #ifdef doesn't work, Linux has
+conflicting decls in its headers.  Choice: only declare the return
+type, not the argument prototype, and not on Linux.
 
 - importdl.c, configure*: set sharedlib extensions properly for NeXT
 
 - configure*, Makefile.in, Modules/Makefile.pre.in: AIX shared libraries
 fixed; moved addition of PURIFY to LINKCC to configure
 
-- reopmodule.c, regexmodule.c, regexpr.c, zlibmodule.c: casts to shut
-up Mac compiler
+- reopmodule.c, regexmodule.c, regexpr.c, zlibmodule.c: needed casts
+added to shup up various compilers.
 
 - _tkinter.c: removed buggy mac #ifndef
 
@@ -771,10 +902,9 @@ up Mac compiler
 
 - PC/make_nt.in: deleted
 
-- test_time.py, test_strftime.py: tweaks to catch %Z
+- test_time.py, test_strftime.py: tweaks to catch %Z (which may return
+"")
 
 - test_rotor.py: print b -> print `b`
 
 - Tkinter.py: (tagOrId) -> (tagOrId,)
-
-- faqwiz.py: Recognize https:// as URL
