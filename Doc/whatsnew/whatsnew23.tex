@@ -894,7 +894,7 @@ the same number of items as the slice it is replacing:
 >>> a[::2] = [0,1,2]
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
-ValueError: attempt to assign list of size 3 to extended slice of size 2
+ValueError: attempt to assign sequence of size 3 to extended slice of size 2
 \end{verbatim}
 
 Deletion is more straightforward:
@@ -1000,7 +1000,7 @@ KeyError: 4
 >>> d.pop(1)
 Traceback (most recent call last):
   File "stdin", line 1, in ?
-KeyError: pop(): dictionary is empty
+KeyError: 'pop(): dictionary is empty'
 >>> d
 {}
 >>>
@@ -1682,7 +1682,7 @@ objects:
 '2002-12-30T21:27:03.994956'
 >>> now.ctime()  # Only available on date, datetime
 'Mon Dec 30 21:27:03 2002'
->>> now.strftime('%Y %d %h')
+>>> now.strftime('%Y %d %b')
 '2002 30 Dec'
 \end{verbatim}
 
