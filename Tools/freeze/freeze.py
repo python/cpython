@@ -6,14 +6,18 @@ usage: freeze [options...] script.py [module]...
 
 Options:
 
--p prefix:    This is the prefix used when you ran ``name install''
+-p prefix:    This is the prefix used when you ran ``make install''
               in the Python build directory.
               (If you never ran this, freeze won't work.)
               The default is whatever sys.prefix evaluates to.
+	      It can also be the top directory of the Python source
+	      tree; then -P must point to the build tree.
 
 -P exec_prefix: Like -p but this is the 'exec_prefix', used to
 		install objects etc.  The default is whatever sys.exec_prefix
 		evaluates to, or the -p argument if given.
+		If -p points to the Python source tree, -P must point
+		to the build tree, if different.
 
 -e extension: A directory containing additional .o files that
               may be used to resolve modules.  This directory
@@ -21,6 +25,8 @@ Options:
               More than one -e option may be given.
 
 -o dir:       Directory where the output files are created; default '.'.
+
+-h:           Print this help message.
 
 Arguments:
 
@@ -79,12 +85,15 @@ def main():
 
 	# parse command line
 	try:
-		opts, args = getopt.getopt(sys.argv[1:], 'e:o:p:P:')
+		opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:')
 	except getopt.error, msg:
 		usage('getopt error: ' + str(msg))
 
 	# proces option arguments
 	for o, a in opts:
+		if o == '-h':
+			print __doc__
+			return
 		if o == '-e':
 			extensions.append(a)
 		if o == '-o':
@@ -103,14 +112,26 @@ def main():
 	if not prefix:
 		prefix = sys.prefix
 
+	# determine whether -p points to the Python source tree
+	ishome = os.path.exists(os.path.join(prefix, 'Include', 'pythonrun.h'))
+
 	# locations derived from options
 	version = sys.version[:3]
-	binlib = os.path.join(exec_prefix, 'lib/python%s/config' % version)
-	incldir = os.path.join(prefix, 'include/python%s' % version)
-	config_c_in = os.path.join(binlib, 'config.c.in')
-	frozenmain_c = os.path.join(binlib, 'frozenmain.c')
+	if ishome:
+	    print "(Using Python source directory)"
+	    binlib = exec_prefix
+	    incldir = os.path.join(prefix, 'Include')
+	    config_c_in = os.path.join(prefix, 'Modules', 'config.c.in')
+	    frozenmain_c = os.path.join(prefix, 'Modules', 'frozenmain.c')
+	    makefile_in = os.path.join(exec_prefix, 'Modules', 'Makefile')
+	else:
+	    binlib = os.path.join(exec_prefix,
+				  'lib', 'python%s' % version, 'config')
+	    incldir = os.path.join(prefix, 'include', 'python%s' % version)
+	    config_c_in = os.path.join(binlib, 'config.c.in')
+	    frozenmain_c = os.path.join(binlib, 'frozenmain.c')
+	    makefile_in = os.path.join(binlib, 'Makefile')
 	supp_sources = []
-	makefile_in = os.path.join(binlib, 'Makefile')
 	defines = []
 	includes = ['-I' + incldir, '-I' + binlib]
 
@@ -283,11 +304,10 @@ def main():
 
 # Print usage message and exit
 
-def usage(msg = None):
-	sys.stderr.write(__doc__)
-	# Put the error last since the usage message scrolls off the screen
-	if msg:
-		sys.stderr.write('\nError: ' + str(msg) + '\n')
+def usage(msg):
+	sys.stdout = sys.stderr
+	print "Error:", msg
+	print "Use ``%s -h'' for help" % sys.argv[0]
 	sys.exit(2)
 
 
