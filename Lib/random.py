@@ -448,10 +448,10 @@ class Random:
         
         # alpha > 0, beta > 0, mean is alpha*beta, variance is alpha*beta**2
         
-	# Warning: a few older sources define the gamma distribution in terms
-	# of alpha > -1.0
-	if alpha <= 0.0 or beta <= 0.0:
-	    raise ValueError, 'gammavariate: alpha and beta must be > 0.0'
+        # Warning: a few older sources define the gamma distribution in terms
+        # of alpha > -1.0
+        if alpha <= 0.0 or beta <= 0.0:
+            raise ValueError, 'gammavariate: alpha and beta must be > 0.0'
         
         random = self.random
         if alpha > 1.0:
