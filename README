@@ -271,8 +271,8 @@ Solaris: When using Sun's C compiler with threads, at least on Solaris
         versions built using it.  This mistakenly enables the
         -zcombreloc option which creates broken shared libraries on
         Solaris.  binutils 2.12 works, and the binutils maintainers
-        are aware of the problem, so binutils 2.13.1 will probably fix
-        this problem.
+        are aware of the problem.  Binutils 2.13.1 only partially fixed
+        things.  It appears that 2.13.2 solves the problem completely.
 
 	When the dynamic loader complains about errors finding shared
 	libraries, such as
