@@ -166,10 +166,10 @@ fh_getstrwidth(self, args)
 	fhobject *self;
 	object *args;
 {
-	object *str;
+	char *str;
 	if (!getstrarg(args, &str))
 		return NULL;
-	return newintobject(fmgetstrwidth(self->fh_fh, getstringvalue(str)));
+	return newintobject(fmgetstrwidth(self->fh_fh, str));
 }
 
 static struct methodlist fh_methods[] = {
@@ -234,20 +234,20 @@ static object *
 fm_findfont(self, args)
 	object *self, *args;
 {
-	object *str;
+	char *str;
 	if (!getstrarg(args, &str))
 		return NULL;
-	return newfhobject(fmfindfont(getstringvalue(str)));
+	return newfhobject(fmfindfont(str));
 }
 
 static object *
 fm_prstr(self, args)
 	object *self, *args;
 {
-	object *str;
+	char *str;
 	if (!getstrarg(args, &str))
 		return NULL;
-	fmprstr(getstringvalue(str));
+	fmprstr(str);
 	INCREF(None);
 	return None;
 }
@@ -297,10 +297,10 @@ static object *
 fm_setpath(self, args)
 	object *self, *args;
 {
-	object *str;
+	char *str;
 	if (!getstrarg(args, &str))
 		return NULL;
-	fmsetpath(getstringvalue(str));
+	fmsetpath(str);
 	INCREF(None);
 	return None;
 }
