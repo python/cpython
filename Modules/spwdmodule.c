@@ -121,23 +121,21 @@ static PyObject* spwd_getspnam(PyObject *self, PyObject *args)
 	return mkspent(p);
 }
 
+#endif /* HAVE_GETSPNAM */
+
+#ifdef HAVE_GETSPENT
+
 PyDoc_STRVAR(spwd_getspall__doc__,
 "getspall() -> list_of_entries\n\
 Return a list of all available shadow password database entries, \
 in arbitrary order.\n\
 See spwd.__doc__ for more on shadow password database entries.");
 
-#endif /* HAVE_GETSPNAM */
-
-#ifdef HAVE_GETSPENT
-
 static PyObject *
 spwd_getspall(PyObject *self, PyObject *args)
 {
 	PyObject *d;
 	struct spwd *p;
-//	if (!PyArg_NoArgs(args))
-//		return NULL;
 	if ((d = PyList_New(0)) == NULL)
 		return NULL;
 	setspent();
