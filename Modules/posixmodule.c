@@ -3468,7 +3468,7 @@ posix_fdopen(PyObject *self, PyObject *args)
 static char posix_isatty__doc__[] =
 "isatty(fd) -> Boolean\n\
 Return true if the file descriptor 'fd' is an open file descriptor\n\
-connected to a terminal.";
+connected to the slave end of a terminal.";
 
 static PyObject *
 posix_isatty(PyObject *self, PyObject *args)
