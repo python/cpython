@@ -1,0 +1,59 @@
+                             NEWSLIST
+                             ========    
+            A program to assist HTTP browsing of newsgroups
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WWW browsers such as NCSA Mosaic allow the user to read newsgroup
+articles by specifying the group name in a URL eg 'news:comp.answers'.
+
+To browse through many groups, though, (and there are several thousand
+of them) you really need a page or pages containing links to all the
+groups. There are some good ones out there, for example,
+
+    http://info.cern.ch/hypertext/DataSources/News/Groups/Overview.html
+
+is the standard one at CERN, but it only shows the groups available there,
+which may be rather different from those available on your machine.
+
+Newslist is a program which creates a hierarchy of pages for you based
+on the groups available from YOUR server. It is written in python - a
+splendid interpreted object-oriented language which I suggest you get
+right now from the directory /pub/python at ftp.cwi.nl, if you haven't
+already got it.
+
+You should be able to see some sample output by looking at:
+   http://pelican.cl.cam.ac.uk/newspage/root.html
+
+Descriptions of newsgroups can be added from a file with one group
+per line. eg:
+
+	alt.foo   Articles about foo
+	comp.bar  Programming in 'bar' and related languages
+
+A suitable list detailing most groups can be found at ftp.uu.net in
+/uunet-info/newsgroups.gz.
+
+Make sure you read the information at the beginning of the program source and
+configure the variables before running.
+
+In addition to python, you need:
+
+	An NNTP-based news feed.
+	A directory in which to put the pages.
+
+The programming is not very beautiful, but it works!  It comes with no
+warranty, express or implied, but with the hope that some others may
+find it useful.
+
+Comments, improvements & suggestions welcomed.
+Quentin Stafford-Fraser
+
+ ----------------------------------------------------------------------
+                       Quentin Stafford-Fraser
+            http://pelican.cl.cam.ac.uk/people/qs101/me.html
+ 
+ Cambridge University Computer Lab        Rank Xerox Cambridge EuroPARC
+ qs101@cl.cam.ac.uk                           fraser@europarc.xerox.com
+ Tel: +44 223 334411                                Tel: +44 223 341521
+ Fax: +44 223 334679                                Fax: +44 223 341510
+ ----------------------------------------------------------------------
