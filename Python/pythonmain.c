@@ -15,6 +15,10 @@
 int use_stdwin;
 #endif
 
+#ifdef USE_AUDIO
+#include "asa.h"
+#endif
+
 extern char *getenv();
 
 #include "PROTO.h"
@@ -176,6 +180,9 @@ goaway(sts)
 #ifdef USE_STDWIN
 	if (use_stdwin)
 		wdone();
+#endif
+#ifdef USE_AUDIO
+	asa_done();
 #endif
 #ifdef THINK_C
 #ifndef TRACE_REFS
