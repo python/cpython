@@ -38,8 +38,8 @@ INSTALL_SCHEMES = {
         'data'   : '$base',
         },
     'mac': {
-        'purelib': '$base:Lib',
-        'platlib': '$base:Mac:PlugIns',
+        'purelib': '$base:Lib:site-packages',
+        'platlib': '$base:Lib:site-packages',
         'headers': '$base:Include:$dist_name',
         'scripts': '$base:Scripts',
         'data'   : '$base',
