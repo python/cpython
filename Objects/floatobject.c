@@ -34,10 +34,8 @@ PERFORMANCE OF THIS SOFTWARE.
 /* XXX There should be overflow checks here, but it's hard to check
    for any kind of float exception without losing portability. */
 
-#include "allobjects.h"
-#include "modsupport.h"
+#include "Python.h"
 
-#include <errno.h>
 #include <ctype.h>
 #include "mymath.h"
 
@@ -81,62 +79,64 @@ PERFORMANCE OF THIS SOFTWARE.
 #endif
 
 #if !defined(__STDC__) && !defined(macintosh)
-extern double fmod PROTO((double, double));
-extern double pow PROTO((double, double));
+extern double fmod Py_PROTO((double, double));
+extern double pow Py_PROTO((double, double));
 #endif
 
-object *
+PyObject *
 #ifdef __SC__
-newfloatobject(double fval)
+PyFloat_FromDouble(double fval)
 #else
-newfloatobject(fval)
+PyFloat_FromDouble(fval)
 	double fval;
 #endif
 {
 	/* For efficiency, this code is copied from newobject() */
-	register floatobject *op = (floatobject *) malloc(sizeof(floatobject));
+	register PyFloatObject *op =
+		(PyFloatObject *) malloc(sizeof(PyFloatObject));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Floattype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyFloat_Type;
 	op->ob_fval = fval;
-	NEWREF(op);
-	return (object *) op;
+	_Py_NewReference(op);
+	return (PyObject *) op;
 }
 
 static void
 float_dealloc(op)
-	object *op;
+	PyObject *op;
 {
-	DEL(op);
+	PyMem_DEL(op);
 }
 
 double
-getfloatvalue(op)
-	object *op;
+PyFloat_AsDouble(op)
+	PyObject *op;
 {
-	number_methods *nb;
-	floatobject *fo;
+	PyNumberMethods *nb;
+	PyFloatObject *fo;
 	double val;
 	
-	if (op && is_floatobject(op))
-		return GETFLOATVALUE((floatobject*) op);
+	if (op && PyFloat_Check(op))
+		return PyFloat_AS_DOUBLE((PyFloatObject*) op);
 	
 	if (op == NULL || (nb = op->ob_type->tp_as_number) == NULL ||
 	    nb->nb_float == NULL) {
-		err_badarg();
+		PyErr_BadArgument();
 		return -1;
 	}
 	
-	fo = (floatobject*) (*nb->nb_float) (op);
+	fo = (PyFloatObject*) (*nb->nb_float) (op);
 	if (fo == NULL)
 		return -1;
-	if (!is_floatobject(fo)) {
-		err_setstr(TypeError, "nb_float should return float object");
+	if (!PyFloat_Check(fo)) {
+		PyErr_SetString(PyExc_TypeError,
+				"nb_float should return float object");
 		return -1;
 	}
 	
-	val = GETFLOATVALUE(fo);
-	DECREF(fo);
+	val = PyFloat_AS_DOUBLE(fo);
+	Py_DECREF(fo);
 	
 	return val;
 }
@@ -144,9 +144,9 @@ getfloatvalue(op)
 /* Methods */
 
 void
-float_buf_repr(buf, v)
+PyFloat_AsString(buf, v)
 	char *buf;
-	floatobject *v;
+	PyFloatObject *v;
 {
 	register char *cp;
 	/* Subroutine for float_repr and float_print.
@@ -174,28 +174,28 @@ float_buf_repr(buf, v)
 /* ARGSUSED */
 static int
 float_print(v, fp, flags)
-	floatobject *v;
+	PyFloatObject *v;
 	FILE *fp;
 	int flags; /* Not used but required by interface */
 {
 	char buf[100];
-	float_buf_repr(buf, v);
+	PyFloat_AsString(buf, v);
 	fputs(buf, fp);
 	return 0;
 }
 
-static object *
+static PyObject *
 float_repr(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
 	char buf[100];
-	float_buf_repr(buf, v);
-	return newstringobject(buf);
+	PyFloat_AsString(buf, v);
+	return PyString_FromString(buf);
 }
 
 static int
 float_compare(v, w)
-	floatobject *v, *w;
+	PyFloatObject *v, *w;
 {
 	double i = v->ob_fval;
 	double j = w->ob_fval;
@@ -204,7 +204,7 @@ float_compare(v, w)
 
 static long
 float_hash(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
 	double intpart, fractpart;
 	int expo;
@@ -226,11 +226,11 @@ float_hash(v)
 	if (fractpart == 0.0) {
 		if (intpart > 0x7fffffffL || -intpart > 0x7fffffffL) {
 			/* Convert to long int and use its hash... */
-			object *w = dnewlongobject(v->ob_fval);
+			PyObject *w = PyLong_FromDouble(v->ob_fval);
 			if (w == NULL)
 				return -1;
-			x = hashobject(w);
-			DECREF(w);
+			x = PyObject_Hash(w);
+			Py_DECREF(w);
 			return x;
 		}
 		x = (long)intpart;
@@ -252,69 +252,69 @@ float_hash(v)
 	return x;
 }
 
-static object *
+static PyObject *
 float_add(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double result;
 	PyFPE_START_PROTECT("add", return 0)
 	result = v->ob_fval + w->ob_fval;
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
-static object *
+static PyObject *
 float_sub(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double result;
 	PyFPE_START_PROTECT("subtract", return 0)
 	result = v->ob_fval - w->ob_fval;
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
-static object *
+static PyObject *
 float_mul(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double result;
 
 	PyFPE_START_PROTECT("multiply", return 0)
 	result = v->ob_fval * w->ob_fval;
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
-static object *
+static PyObject *
 float_div(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double result;
 	if (w->ob_fval == 0) {
-		err_setstr(ZeroDivisionError, "float division");
+		PyErr_SetString(PyExc_ZeroDivisionError, "float division");
 		return NULL;
 	}
 	PyFPE_START_PROTECT("divide", return 0)
 	result = v->ob_fval / w->ob_fval;
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
-static object *
+static PyObject *
 float_rem(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double vx, wx;
 	double /* div, */ mod;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
-		err_setstr(ZeroDivisionError, "float modulo");
+		PyErr_SetString(PyExc_ZeroDivisionError, "float modulo");
 		return NULL;
 	}
 	PyFPE_START_PROTECT("modulo", return 0)
@@ -326,19 +326,19 @@ float_rem(v, w)
 		/* div -= 1.0; */
 	}
 	PyFPE_END_PROTECT(mod)
-	return newfloatobject(mod);
+	return PyFloat_FromDouble(mod);
 }
 
-static object *
+static PyObject *
 float_divmod(v, w)
-	floatobject *v;
-	floatobject *w;
+	PyFloatObject *v;
+	PyFloatObject *w;
 {
 	double vx, wx;
 	double div, mod;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
-		err_setstr(ZeroDivisionError, "float divmod()");
+		PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
 		return NULL;
 	}
 	PyFPE_START_PROTECT("divmod", return 0)
@@ -350,7 +350,7 @@ float_divmod(v, w)
 		div -= 1.0;
 	}
 	PyFPE_END_PROTECT(div)
-	return mkvalue("(dd)", div, mod);
+	return Py_BuildValue("(dd)", div, mod);
 }
 
 static double powu(x, n)
@@ -369,11 +369,11 @@ static double powu(x, n)
 	return r;
 }
 
-static object *
+static PyObject *
 float_pow(v, w, z)
-	floatobject *v;
-	object *w;
-	floatobject *z;
+	PyFloatObject *v;
+	PyObject *w;
+	PyFloatObject *z;
 {
 	double iv, iw, ix;
 	long intw;
@@ -383,19 +383,19 @@ float_pow(v, w, z)
   * [AMK]
   */
 	iv = v->ob_fval;
-	iw = ((floatobject *)w)->ob_fval;
+	iw = ((PyFloatObject *)w)->ob_fval;
 	intw = (long)iw;
 	if (iw == intw && -10000 < intw && intw < 10000) {
 		/* Sort out special cases here instead of relying on pow() */
 		if (intw == 0) { 		/* x**0 is 1, even 0**0 */
 			PyFPE_START_PROTECT("pow", return 0)
-		 	if ((object *)z!=None) {
+		 	if ((PyObject *)z!=Py_None) {
 			 	ix=fmod(1.0, z->ob_fval);
 			 	if (ix!=0 && z->ob_fval<0) ix+=z->ob_fval;
 			}
 		 	else ix=1.0;
 			PyFPE_END_PROTECT(ix)
-	    		return newfloatobject(ix); 
+	    		return PyFloat_FromDouble(ix); 
 		}
 		errno = 0;
 		PyFPE_START_PROTECT("pow", return 0)
@@ -409,14 +409,14 @@ float_pow(v, w, z)
 		/* Sort out special cases here instead of relying on pow() */
 		if (iv == 0.0) {
 			if (iw < 0.0) {
-				err_setstr(ValueError,
+				PyErr_SetString(PyExc_ValueError,
 					   "0.0 to a negative power");
 				return NULL;
 			}
-			return newfloatobject(0.0);
+			return PyFloat_FromDouble(0.0);
 		}
 		if (iv < 0.0) {
-			err_setstr(ValueError,
+			PyErr_SetString(PyExc_ValueError,
 				   "negative number to a float power");
 			return NULL;
 		}
@@ -428,10 +428,10 @@ float_pow(v, w, z)
 	CHECK(ix);
 	if (errno != 0) {
 		/* XXX could it be another type of error? */
-		err_errno(OverflowError);
+		PyErr_SetFromErrno(PyExc_OverflowError);
 		return NULL;
 	}
- 	if ((object *)z!=None) {
+ 	if ((PyObject *)z!=Py_None) {
 		PyFPE_START_PROTECT("pow", return 0)
 	 	ix=fmod(ix, z->ob_fval);	/* XXX To Be Rewritten */
 	 	if ( ix!=0 &&
@@ -440,27 +440,27 @@ float_pow(v, w, z)
 		    }
 		PyFPE_END_PROTECT(ix)
 	}
-	return newfloatobject(ix);
+	return PyFloat_FromDouble(ix);
 }
 
-static object *
+static PyObject *
 float_neg(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
-	return newfloatobject(-v->ob_fval);
+	return PyFloat_FromDouble(-v->ob_fval);
 }
 
-static object *
+static PyObject *
 float_pos(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
-	INCREF(v);
-	return (object *)v;
+	Py_INCREF(v);
+	return (PyObject *)v;
 }
 
-static object *
+static PyObject *
 float_abs(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
 	if (v->ob_fval < 0)
 		return float_neg(v);
@@ -470,61 +470,62 @@ float_abs(v)
 
 static int
 float_nonzero(v)
-	floatobject *v;
+	PyFloatObject *v;
 {
 	return v->ob_fval != 0.0;
 }
 
 static int
 float_coerce(pv, pw)
-	object **pv;
-	object **pw;
+	PyObject **pv;
+	PyObject **pw;
 {
-	if (is_intobject(*pw)) {
-		long x = getintvalue(*pw);
-		*pw = newfloatobject((double)x);
-		INCREF(*pv);
+	if (PyInt_Check(*pw)) {
+		long x = PyInt_AsLong(*pw);
+		*pw = PyFloat_FromDouble((double)x);
+		Py_INCREF(*pv);
 		return 0;
 	}
-	else if (is_longobject(*pw)) {
-		*pw = newfloatobject(dgetlongvalue(*pw));
-		INCREF(*pv);
+	else if (PyLong_Check(*pw)) {
+		*pw = PyFloat_FromDouble(PyLong_AsDouble(*pw));
+		Py_INCREF(*pv);
 		return 0;
 	}
 	return 1; /* Can't do it */
 }
 
-static object *
+static PyObject *
 float_int(v)
-	object *v;
+	PyObject *v;
 {
-	double x = getfloatvalue(v);
+	double x = PyFloat_AsDouble(v);
 	if (x < 0 ? (x = ceil(x)) < (double)LONG_MIN
 	          : (x = floor(x)) > (double)LONG_MAX) {
-		err_setstr(OverflowError, "float too large to convert");
+		PyErr_SetString(PyExc_OverflowError,
+				"float too large to convert");
 		return NULL;
 	}
-	return newintobject((long)x);
+	return PyInt_FromLong((long)x);
 }
 
-static object *
+static PyObject *
 float_long(v)
-	object *v;
+	PyObject *v;
 {
-	double x = getfloatvalue(v);
-	return dnewlongobject(x);
+	double x = PyFloat_AsDouble(v);
+	return PyLong_FromDouble(x);
 }
 
-static object *
+static PyObject *
 float_float(v)
-	object *v;
+	PyObject *v;
 {
-	INCREF(v);
+	Py_INCREF(v);
 	return v;
 }
 
 
-static number_methods float_as_number = {
+static PyNumberMethods float_as_number = {
 	(binaryfunc)float_add, /*nb_add*/
 	(binaryfunc)float_sub, /*nb_subtract*/
 	(binaryfunc)float_mul, /*nb_multiply*/
@@ -550,11 +551,11 @@ static number_methods float_as_number = {
 	0,		/*nb_hex*/
 };
 
-typeobject Floattype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyFloat_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"float",
-	sizeof(floatobject),
+	sizeof(PyFloatObject),
 	0,
 	(destructor)float_dealloc, /*tp_dealloc*/
 	(printfunc)float_print, /*tp_print*/

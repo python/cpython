@@ -31,153 +31,154 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Module object implementation */
 
-#include "allobjects.h"
-#include "ceval.h"
+#include "Python.h"
 
 typedef struct {
-	OB_HEAD
-	object *md_dict;
-} moduleobject;
+	PyObject_HEAD
+	PyObject *md_dict;
+} PyModuleObject;
 
-object *
-newmoduleobject(name)
+PyObject *
+PyModule_New(name)
 	char *name;
 {
-	moduleobject *m;
-	object *nameobj;
-	m = NEWOBJ(moduleobject, &Moduletype);
+	PyModuleObject *m;
+	PyObject *nameobj;
+	m = PyObject_NEW(PyModuleObject, &PyModule_Type);
 	if (m == NULL)
 		return NULL;
-	nameobj = newstringobject(name);
-	m->md_dict = newdictobject();
+	nameobj = PyString_FromString(name);
+	m->md_dict = PyDict_New();
 	if (m->md_dict == NULL || nameobj == NULL)
 		goto fail;
-	if (dictinsert(m->md_dict, "__name__", nameobj) != 0)
+	if (PyDict_SetItemString(m->md_dict, "__name__", nameobj) != 0)
 		goto fail;
-	if (dictinsert(m->md_dict, "__doc__", None) != 0)
+	if (PyDict_SetItemString(m->md_dict, "__doc__", Py_None) != 0)
 		goto fail;
-	DECREF(nameobj);
-	return (object *)m;
+	Py_DECREF(nameobj);
+	return (PyObject *)m;
 
  fail:
-	XDECREF(nameobj);
-	DECREF(m);
+	Py_XDECREF(nameobj);
+	Py_DECREF(m);
 	return NULL;
 }
 
-object *
-getmoduledict(m)
-	object *m;
+PyObject *
+PyModule_GetDict(m)
+	PyObject *m;
 {
-	if (!is_moduleobject(m)) {
-		err_badcall();
+	if (!PyModule_Check(m)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((moduleobject *)m) -> md_dict;
+	return ((PyModuleObject *)m) -> md_dict;
 }
 
 char *
-getmodulename(m)
-	object *m;
+PyModule_GetName(m)
+	PyObject *m;
 {
-	object *nameobj;
-	if (!is_moduleobject(m)) {
-		err_badarg();
+	PyObject *nameobj;
+	if (!PyModule_Check(m)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-	nameobj = dictlookup(((moduleobject *)m)->md_dict, "__name__");
-	if (nameobj == NULL || !is_stringobject(nameobj)) {
-		err_setstr(SystemError, "nameless module");
+	nameobj = PyDict_GetItemString(((PyModuleObject *)m)->md_dict,
+				       "__name__");
+	if (nameobj == NULL || !PyString_Check(nameobj)) {
+		PyErr_SetString(PyExc_SystemError, "nameless module");
 		return NULL;
 	}
-	return getstringvalue(nameobj);
+	return PyString_AsString(nameobj);
 }
 
 /* Methods */
 
 static void
 module_dealloc(m)
-	moduleobject *m;
+	PyModuleObject *m;
 {
 	if (m->md_dict != NULL) {
-		mappingclear(m->md_dict);
-		DECREF(m->md_dict);
+		PyDict_Clear(m->md_dict);
+		Py_DECREF(m->md_dict);
 	}
 	free((char *)m);
 }
 
-static object *
+static PyObject *
 module_repr(m)
-	moduleobject *m;
+	PyModuleObject *m;
 {
 	char buf[100];
-	char *name = getmodulename((object *)m);
+	char *name = PyModule_GetName((PyObject *)m);
 	if (name == NULL) {
-		err_clear();
+		PyErr_Clear();
 		name = "?";
 	}
 	sprintf(buf, "<module '%.80s'>", name);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-static object *
+static PyObject *
 module_getattr(m, name)
-	moduleobject *m;
+	PyModuleObject *m;
 	char *name;
 {
-	object *res;
+	PyObject *res;
 	if (strcmp(name, "__dict__") == 0) {
-		INCREF(m->md_dict);
+		Py_INCREF(m->md_dict);
 		return m->md_dict;
 	}
-	res = dictlookup(m->md_dict, name);
+	res = PyDict_GetItemString(m->md_dict, name);
 	if (res == NULL)
-		err_setstr(AttributeError, name);
+		PyErr_SetString(PyExc_AttributeError, name);
 	else {
 #ifdef SUPPORT_OBSOLETE_ACCESS
-		if (is_accessobject(res))
-			res = getaccessvalue(res, getglobals());
+		if (PyAccess_Check(res))
+			res = PyAccess_AsValue(res, PyEval_GetGlobals());
 		else
 #endif
-			INCREF(res);
+			Py_INCREF(res);
 	}
 	return res;
 }
 
 static int
 module_setattr(m, name, v)
-	moduleobject *m;
+	PyModuleObject *m;
 	char *name;
-	object *v;
+	PyObject *v;
 {
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	object *ac;
+	PyObject *ac;
 #endif
 	if (name[0] == '_' && strcmp(name, "__dict__") == 0) {
-		err_setstr(TypeError, "read-only special attribute");
+		PyErr_SetString(PyExc_TypeError,
+				"read-only special attribute");
 		return -1;
 	}
 #ifdef SUPPORT_OBSOLETE_ACCESS
-	ac = dictlookup(m->md_dict, name);
-	if (ac != NULL && is_accessobject(ac))
-		return setaccessvalue(ac, getglobals(), v);
+	ac = PyDict_GetItemString(m->md_dict, name);
+	if (ac != NULL && PyAccess_Check(ac))
+		return PyAccess_SetValue(ac, PyEval_GetGlobals(), v);
 #endif
 	if (v == NULL) {
-		int rv = dictremove(m->md_dict, name);
+		int rv = PyDict_DelItemString(m->md_dict, name);
 		if (rv < 0)
-			err_setstr(AttributeError,
+			PyErr_SetString(PyExc_AttributeError,
 				   "delete non-existing module attribute");
 		return rv;
 	}
 	else
-		return dictinsert(m->md_dict, name, v);
+		return PyDict_SetItemString(m->md_dict, name, v);
 }
 
-typeobject Moduletype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyModule_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/*ob_size*/
 	"module",		/*tp_name*/
-	sizeof(moduleobject),	/*tp_size*/
+	sizeof(PyModuleObject),	/*tp_size*/
 	0,			/*tp_itemsize*/
 	(destructor)module_dealloc, /*tp_dealloc*/
 	0,			/*tp_print*/

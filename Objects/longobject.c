@@ -33,36 +33,37 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* XXX The functional organization of this file is terrible */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "longintrepr.h"
 #include "mymath.h"
+
 #include <assert.h>
 #include <ctype.h>
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 /* Forward */
-static longobject *long_normalize PROTO((longobject *));
-static longobject *mul1 PROTO((longobject *, wdigit));
-static longobject *muladd1 PROTO((longobject *, wdigit, wdigit));
-static longobject *divrem1 PROTO((longobject *, wdigit, digit *));
-static object *long_format PROTO((object *aa, int base));
+static PyLongObject *long_normalize Py_PROTO((PyLongObject *));
+static PyLongObject *mul1 Py_PROTO((PyLongObject *, wdigit));
+static PyLongObject *muladd1 Py_PROTO((PyLongObject *, wdigit, wdigit));
+static PyLongObject *divrem1 Py_PROTO((PyLongObject *, wdigit, digit *));
+static PyObject *long_format Py_PROTO((PyObject *aa, int base));
 
 static int ticker;	/* XXX Could be shared with ceval? */
 
-#define SIGCHECK(block) \
+#define SIGCHECK(PyTryBlock) \
 	if (--ticker < 0) { \
 		ticker = 100; \
-		if (sigcheck()) { block; } \
+		if (PyErr_CheckSignals()) { PyTryBlock; } \
 	}
 
 /* Normalize (remove leading zeros from) a long int object.
    Doesn't attempt to free the storage--in most cases, due to the nature
    of the algorithms used, this could save at most be one word anyway. */
 
-static longobject *
+static PyLongObject *
 long_normalize(v)
-	register longobject *v;
+	register PyLongObject *v;
 {
 	int j = ABS(v->ob_size);
 	register int i = j;
@@ -77,22 +78,22 @@ long_normalize(v)
 /* Allocate a new long int object with size digits.
    Return NULL and set exception if we run out of memory. */
 
-longobject *
-alloclongobject(size)
+PyLongObject *
+_PyLong_New(size)
 	int size;
 {
-	return NEWVAROBJ(longobject, &Longtype, size);
+	return PyObject_NEW_VAR(PyLongObject, &PyLong_Type, size);
 }
 
 /* Create a new long int object from a C long int */
 
-object *
-newlongobject(ival)
+PyObject *
+PyLong_FromLong(ival)
 	long ival;
 {
 	/* Assume a C long fits in at most 5 'digits' */
 	/* Works on both 32- and 64-bit machines */
-	longobject *v = alloclongobject(5);
+	PyLongObject *v = _PyLong_New(5);
 	if (v != NULL) {
 		unsigned long t = ival;
 		int i;
@@ -106,18 +107,18 @@ newlongobject(ival)
 		}
 		v = long_normalize(v);
 	}
-	return (object *)v;
+	return (PyObject *)v;
 }
 
 /* Create a new long int object from a C unsigned long int */
 
-object *
+PyObject *
 PyLong_FromUnsignedLong(ival)
 	unsigned long ival;
 {
 	/* Assume a C long fits in at most 5 'digits' */
 	/* Works on both 32- and 64-bit machines */
-	longobject *v = alloclongobject(5);
+	PyLongObject *v = _PyLong_New(5);
 	if (v != NULL) {
 		unsigned long t = ival;
 		int i;
@@ -127,20 +128,20 @@ PyLong_FromUnsignedLong(ival)
 		}
 		v = long_normalize(v);
 	}
-	return (object *)v;
+	return (PyObject *)v;
 }
 
 /* Create a new long int object from a C double */
 
-object *
+PyObject *
 #ifdef MPW
-dnewlongobject(double dval)
+PyLong_FromDouble(double dval)
 #else
-dnewlongobject(dval)
+PyLong_FromDouble(dval)
 	double dval;
 #endif /* MPW */
 {
-	longobject *v;
+	PyLongObject *v;
 	double frac;
 	int i, ndig, expo, neg;
 	neg = 0;
@@ -150,9 +151,9 @@ dnewlongobject(dval)
 	}
 	frac = frexp(dval, &expo); /* dval = frac*2**expo; 0.0 <= frac < 1.0 */
 	if (expo <= 0)
-		return newlongobject(0L);
+		return PyLong_FromLong(0L);
 	ndig = (expo-1) / SHIFT + 1; /* Number of 'digits' in result */
-	v = alloclongobject(ndig);
+	v = _PyLong_New(ndig);
 	if (v == NULL)
 		return NULL;
 	frac = ldexp(frac, (expo-1) % SHIFT + 1);
@@ -164,25 +165,25 @@ dnewlongobject(dval)
 	}
 	if (neg)
 		v->ob_size = -(v->ob_size);
-	return (object *)v;
+	return (PyObject *)v;
 }
 
 /* Get a C long int from a long int object.
    Returns -1 and sets an error condition if overflow occurs. */
 
 long
-getlongvalue(vv)
-	object *vv;
+PyLong_AsLong(vv)
+	PyObject *vv;
 {
-	register longobject *v;
+	register PyLongObject *v;
 	long x, prev;
 	int i, sign;
 	
-	if (vv == NULL || !is_longobject(vv)) {
-		err_badcall();
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	v = (longobject *)vv;
+	v = (PyLongObject *)vv;
 	i = v->ob_size;
 	sign = 1;
 	x = 0;
@@ -194,7 +195,7 @@ getlongvalue(vv)
 		prev = x;
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
-			err_setstr(OverflowError,
+			PyErr_SetString(PyExc_OverflowError,
 				"long int too long to convert");
 			return -1;
 		}
@@ -207,21 +208,21 @@ getlongvalue(vv)
 
 unsigned long
 PyLong_AsUnsignedLong(vv)
-	object *vv;
+	PyObject *vv;
 {
-	register longobject *v;
+	register PyLongObject *v;
 	unsigned long x, prev;
 	int i;
 	
-	if (vv == NULL || !is_longobject(vv)) {
-		err_badcall();
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
 		return (unsigned long) -1;
 	}
-	v = (longobject *)vv;
+	v = (PyLongObject *)vv;
 	i = v->ob_size;
 	x = 0;
 	if (i < 0) {
-		err_setstr(OverflowError,
+		PyErr_SetString(PyExc_OverflowError,
 			   "can't convert negative value to unsigned long");
 		return (unsigned long) -1;
 	}
@@ -229,7 +230,7 @@ PyLong_AsUnsignedLong(vv)
 		prev = x;
 		x = (x << SHIFT) + v->ob_digit[i];
 		if ((x >> SHIFT) != prev) {
-			err_setstr(OverflowError,
+			PyErr_SetString(PyExc_OverflowError,
 				"long int too long to convert");
 			return (unsigned long) -1;
 		}
@@ -240,19 +241,19 @@ PyLong_AsUnsignedLong(vv)
 /* Get a C double from a long int object. */
 
 double
-dgetlongvalue(vv)
-	object *vv;
+PyLong_AsDouble(vv)
+	PyObject *vv;
 {
-	register longobject *v;
+	register PyLongObject *v;
 	double x;
 	double multiplier = (double) (1L << SHIFT);
 	int i, sign;
 	
-	if (vv == NULL || !is_longobject(vv)) {
-		err_badcall();
+	if (vv == NULL || !PyLong_Check(vv)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	v = (longobject *)vv;
+	v = (PyLongObject *)vv;
 	i = v->ob_size;
 	sign = 1;
 	x = 0.0;
@@ -268,9 +269,9 @@ dgetlongvalue(vv)
 
 /* Multiply by a single digit, ignoring the sign. */
 
-static longobject *
+static PyLongObject *
 mul1(a, n)
-	longobject *a;
+	PyLongObject *a;
 	wdigit n;
 {
 	return muladd1(a, n, (digit)0);
@@ -278,14 +279,14 @@ mul1(a, n)
 
 /* Multiply by a single digit and add a single digit, ignoring the sign. */
 
-static longobject *
+static PyLongObject *
 muladd1(a, n, extra)
-	longobject *a;
+	PyLongObject *a;
 	wdigit n;
 	wdigit extra;
 {
 	int size_a = ABS(a->ob_size);
-	longobject *z = alloclongobject(size_a+1);
+	PyLongObject *z = _PyLong_New(size_a+1);
 	twodigits carry = extra;
 	int i;
 	
@@ -304,19 +305,19 @@ muladd1(a, n, extra)
    (as function result) and the remainder (through *prem).
    The sign of a is ignored; n should not be zero. */
 
-static longobject *
+static PyLongObject *
 divrem1(a, n, prem)
-	longobject *a;
+	PyLongObject *a;
 	wdigit n;
 	digit *prem;
 {
 	int size = ABS(a->ob_size);
-	longobject *z;
+	PyLongObject *z;
 	int i;
 	twodigits rem = 0;
 	
 	assert(n > 0 && n <= MASK);
-	z = alloclongobject(size);
+	z = _PyLong_New(size);
 	if (z == NULL)
 		return NULL;
 	for (i = size; --i >= 0; ) {
@@ -333,21 +334,21 @@ divrem1(a, n, prem)
    If base is 8 or 16, add the proper prefix '0' or '0x'.
    External linkage: used in bltinmodule.c by hex() and oct(). */
 
-static object *
+static PyObject *
 long_format(aa, base)
-	object *aa;
+	PyObject *aa;
 	int base;
 {
-	register longobject *a = (longobject *)aa;
-	stringobject *str;
+	register PyLongObject *a = (PyLongObject *)aa;
+	PyStringObject *str;
 	int i;
 	int size_a = ABS(a->ob_size);
 	char *p;
 	int bits;
 	char sign = '\0';
 
-	if (a == NULL || !is_longobject(a)) {
-		err_badcall();
+	if (a == NULL || !PyLong_Check(a)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
 	assert(base >= 2 && base <= 36);
@@ -360,39 +361,39 @@ long_format(aa, base)
 		i >>= 1;
 	}
 	i = 6 + (size_a*SHIFT + bits-1) / bits;
-	str = (stringobject *) newsizedstringobject((char *)0, i);
+	str = (PyStringObject *) PyString_FromStringAndSize((char *)0, i);
 	if (str == NULL)
 		return NULL;
-	p = GETSTRINGVALUE(str) + i;
+	p = PyString_AS_STRING(str) + i;
 	*p = '\0';
 	*--p = 'L';
 	if (a->ob_size < 0)
 		sign = '-';
 	
-	INCREF(a);
+	Py_INCREF(a);
 	do {
 		digit rem;
-		longobject *temp = divrem1(a, (digit)base, &rem);
+		PyLongObject *temp = divrem1(a, (digit)base, &rem);
 		if (temp == NULL) {
-			DECREF(a);
-			DECREF(str);
+			Py_DECREF(a);
+			Py_DECREF(str);
 			return NULL;
 		}
 		if (rem < 10)
 			rem += '0';
 		else
 			rem += 'A'-10;
-		assert(p > GETSTRINGVALUE(str));
+		assert(p > PyString_AS_STRING(str));
 		*--p = (char) rem;
-		DECREF(a);
+		Py_DECREF(a);
 		a = temp;
 		SIGCHECK({
-			DECREF(a);
-			DECREF(str);
+			Py_DECREF(a);
+			Py_DECREF(str);
 			return NULL;
 		})
 	} while (ABS(a->ob_size) != 0);
-	DECREF(a);
+	Py_DECREF(a);
 	if (base == 8) {
 		if (size_a != 0)
 			*--p = '0';
@@ -409,15 +410,16 @@ long_format(aa, base)
 	}
 	if (sign)
 		*--p = sign;
-	if (p != GETSTRINGVALUE(str)) {
-		char *q = GETSTRINGVALUE(str);
+	if (p != PyString_AS_STRING(str)) {
+		char *q = PyString_AS_STRING(str);
 		assert(p > q);
 		do {
 		} while ((*q++ = *p++) != '\0');
 		q--;
-		resizestring((object **)&str, (int) (q - GETSTRINGVALUE(str)));
+		_PyString_Resize((PyObject **)&str,
+				 (int) (q - PyString_AS_STRING(str)));
 	}
-	return (object *)str;
+	return (PyObject *)str;
 }
 
 #if 0
@@ -425,26 +427,27 @@ long_format(aa, base)
    Base zero implies a default depending on the number.
    External linkage: used in compile.c and stropmodule.c. */
 
-object *
+PyObject *
 long_scan(str, base)
 	char *str;
 	int base;
 {
-	return long_escan(str, (char **)NULL, base);
+	return PyLong_FromString(str, (char **)NULL, base);
 }
 #endif
 
-object *
-long_escan(str, pend, base)
+PyObject *
+PyLong_FromString(str, pend, base)
 	char *str;
 	char **pend;
 	int base;
 {
 	int sign = 1;
-	longobject *z;
+	PyLongObject *z;
 	
 	if ((base != 0 && base < 2) || base > 36) {
-		err_setstr(ValueError, "invalid base for long literal");
+		PyErr_SetString(PyExc_ValueError,
+				"invalid base for long literal");
 		return NULL;
 	}
 	while (*str != '\0' && isspace(Py_CHARMASK(*str)))
@@ -467,10 +470,10 @@ long_escan(str, pend, base)
 	}
 	if (base == 16 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X'))
 		str += 2;
-	z = alloclongobject(0);
+	z = _PyLong_New(0);
 	for ( ; z != NULL; ++str) {
 		int k = -1;
-		longobject *temp;
+		PyLongObject *temp;
 		
 		if (*str <= '9')
 			k = *str - '0';
@@ -481,43 +484,44 @@ long_escan(str, pend, base)
 		if (k < 0 || k >= base)
 			break;
 		temp = muladd1(z, (digit)base, (digit)k);
-		DECREF(z);
+		Py_DECREF(z);
 		z = temp;
 	}
 	if (sign < 0 && z != NULL && z->ob_size != 0)
 		z->ob_size = -(z->ob_size);
 	if (pend)
 		*pend = str;
-	return (object *) z;
+	return (PyObject *) z;
 }
 
-static longobject *x_divrem PROTO((longobject *, longobject *, longobject **));
-static object *long_pos PROTO((longobject *));
-static long_divrem PROTO((longobject *, longobject *,
-	longobject **, longobject **));
+static PyLongObject *x_divrem
+	Py_PROTO((PyLongObject *, PyLongObject *, PyLongObject **));
+static PyObject *long_pos Py_PROTO((PyLongObject *));
+static long_divrem Py_PROTO((PyLongObject *, PyLongObject *,
+	PyLongObject **, PyLongObject **));
 
 /* Long division with remainder, top-level routine */
 
 static int
 long_divrem(a, b, pdiv, prem)
-	longobject *a, *b;
-	longobject **pdiv;
-	longobject **prem;
+	PyLongObject *a, *b;
+	PyLongObject **pdiv;
+	PyLongObject **prem;
 {
 	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
-	longobject *z;
+	PyLongObject *z;
 	
 	if (size_b == 0) {
-		err_setstr(ZeroDivisionError, "long division or modulo");
+		PyErr_SetString(PyExc_ZeroDivisionError, "long division or modulo");
 		return -1;
 	}
 	if (size_a < size_b ||
 	    (size_a == size_b &&
 	     a->ob_digit[size_a-1] < b->ob_digit[size_b-1])) {
 		/* |a| < |b|. */
-		*pdiv = alloclongobject(0);
-		INCREF(a);
-		*prem = (longobject *) a;
+		*pdiv = _PyLong_New(0);
+		Py_INCREF(a);
+		*prem = (PyLongObject *) a;
 		return 0;
 	}
 	if (size_b == 1) {
@@ -525,7 +529,7 @@ long_divrem(a, b, pdiv, prem)
 		z = divrem1(a, b->ob_digit[0], &rem);
 		if (z == NULL)
 			return -1;
-		*prem = (longobject *) newlongobject((long)rem);
+		*prem = (PyLongObject *) PyLong_FromLong((long)rem);
 	}
 	else {
 		z = x_divrem(a, b, prem);
@@ -546,21 +550,21 @@ long_divrem(a, b, pdiv, prem)
 
 /* Unsigned long division with remainder -- the algorithm */
 
-static longobject *
+static PyLongObject *
 x_divrem(v1, w1, prem)
-	longobject *v1, *w1;
-	longobject **prem;
+	PyLongObject *v1, *w1;
+	PyLongObject **prem;
 {
 	int size_v = ABS(v1->ob_size), size_w = ABS(w1->ob_size);
 	digit d = (digit) ((twodigits)BASE / (w1->ob_digit[size_w-1] + 1));
-	longobject *v = mul1(v1, d);
-	longobject *w = mul1(w1, d);
-	longobject *a;
+	PyLongObject *v = mul1(v1, d);
+	PyLongObject *w = mul1(w1, d);
+	PyLongObject *a;
 	int j, k;
 	
 	if (v == NULL || w == NULL) {
-		XDECREF(v);
-		XDECREF(w);
+		Py_XDECREF(v);
+		Py_XDECREF(w);
 		return NULL;
 	}
 	
@@ -569,7 +573,7 @@ x_divrem(v1, w1, prem)
 	assert(size_w == ABS(w->ob_size)); /* That's how d was calculated */
 	
 	size_v = ABS(v->ob_size);
-	a = alloclongobject(size_v - size_w + 1);
+	a = _PyLong_New(size_v - size_w + 1);
 	
 	for (j = size_v, k = a->ob_size-1; a != NULL && k >= 0; --j, --k) {
 		digit vj = (j >= size_v) ? 0 : v->ob_digit[j];
@@ -578,7 +582,7 @@ x_divrem(v1, w1, prem)
 		int i;
 		
 		SIGCHECK({
-			DECREF(a);
+			Py_DECREF(a);
 			a = NULL;
 			break;
 		})
@@ -600,7 +604,8 @@ x_divrem(v1, w1, prem)
 		for (i = 0; i < size_w && i+k < size_v; ++i) {
 			twodigits z = w->ob_digit[i] * q;
 			digit zz = (digit) (z >> SHIFT);
-			carry += v->ob_digit[i+k] - z + ((twodigits)zz << SHIFT);
+			carry += v->ob_digit[i+k] - z
+				+ ((twodigits)zz << SHIFT);
 			v->ob_digit[i+k] = carry & MASK;
 			carry = (carry >> SHIFT) - zz;
 		}
@@ -631,58 +636,59 @@ x_divrem(v1, w1, prem)
 		*prem = divrem1(v, d, &d);
 		/* d receives the (unused) remainder */
 		if (*prem == NULL) {
-			DECREF(a);
+			Py_DECREF(a);
 			a = NULL;
 		}
 	}
-	DECREF(v);
-	DECREF(w);
+	Py_DECREF(v);
+	Py_DECREF(w);
 	return a;
 }
 
 /* Methods */
 
 /* Forward */
-static void long_dealloc PROTO((object *));
-static object *long_repr PROTO((object *));
-static int long_compare PROTO((longobject *, longobject *));
-static long long_hash PROTO((longobject *));
+static void long_dealloc Py_PROTO((PyObject *));
+static PyObject *long_repr Py_PROTO((PyObject *));
+static int long_compare Py_PROTO((PyLongObject *, PyLongObject *));
+static long long_hash Py_PROTO((PyLongObject *));
 
-static object *long_add PROTO((longobject *, longobject *));
-static object *long_sub PROTO((longobject *, longobject *));
-static object *long_mul PROTO((longobject *, longobject *));
-static object *long_div PROTO((longobject *, longobject *));
-static object *long_mod PROTO((longobject *, longobject *));
-static object *long_divmod PROTO((longobject *, longobject *));
-static object *long_pow PROTO((longobject *, longobject *, longobject *));
-static object *long_neg PROTO((longobject *));
-static object *long_pos PROTO((longobject *));
-static object *long_abs PROTO((longobject *));
-static int long_nonzero PROTO((longobject *));
-static object *long_invert PROTO((longobject *));
-static object *long_lshift PROTO((longobject *, longobject *));
-static object *long_rshift PROTO((longobject *, longobject *));
-static object *long_and PROTO((longobject *, longobject *));
-static object *long_xor PROTO((longobject *, longobject *));
-static object *long_or PROTO((longobject *, longobject *));
+static PyObject *long_add Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_sub Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_mul Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_div Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_mod Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_divmod Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_pow
+	Py_PROTO((PyLongObject *, PyLongObject *, PyLongObject *));
+static PyObject *long_neg Py_PROTO((PyLongObject *));
+static PyObject *long_pos Py_PROTO((PyLongObject *));
+static PyObject *long_abs Py_PROTO((PyLongObject *));
+static int long_nonzero Py_PROTO((PyLongObject *));
+static PyObject *long_invert Py_PROTO((PyLongObject *));
+static PyObject *long_lshift Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_rshift Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_and Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_xor Py_PROTO((PyLongObject *, PyLongObject *));
+static PyObject *long_or Py_PROTO((PyLongObject *, PyLongObject *));
 
 static void
 long_dealloc(v)
-	object *v;
+	PyObject *v;
 {
-	DEL(v);
+	PyMem_DEL(v);
 }
 
-static object *
+static PyObject *
 long_repr(v)
-	object *v;
+	PyObject *v;
 {
 	return long_format(v, 10);
 }
 
 static int
 long_compare(a, b)
-	longobject *a, *b;
+	PyLongObject *a, *b;
 {
 	int sign;
 	
@@ -709,7 +715,7 @@ long_compare(a, b)
 
 static long
 long_hash(v)
-	longobject *v;
+	PyLongObject *v;
 {
 	long x;
 	int i, sign;
@@ -738,22 +744,24 @@ long_hash(v)
 
 /* Add the absolute values of two long integers. */
 
-static longobject *x_add PROTO((longobject *, longobject *));
-static longobject *
+static PyLongObject *x_add Py_PROTO((PyLongObject *, PyLongObject *));
+static PyLongObject *
 x_add(a, b)
-	longobject *a, *b;
+	PyLongObject *a, *b;
 {
 	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
-	longobject *z;
+	PyLongObject *z;
 	int i;
 	digit carry = 0;
 	
 	/* Ensure a is the larger of the two: */
 	if (size_a < size_b) {
-		{ longobject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
+		{ PyLongObject *temp = a; a = b; b = temp; }
+		{ int size_temp = size_a;
+		  size_a = size_b;
+		  size_b = size_temp; }
 	}
-	z = alloclongobject(size_a+1);
+	z = _PyLong_New(size_a+1);
 	if (z == NULL)
 		return NULL;
 	for (i = 0; i < size_b; ++i) {
@@ -774,13 +782,13 @@ x_add(a, b)
 
 /* Subtract the absolute values of two integers. */
 
-static longobject *x_sub PROTO((longobject *, longobject *));
-static longobject *
+static PyLongObject *x_sub Py_PROTO((PyLongObject *, PyLongObject *));
+static PyLongObject *
 x_sub(a, b)
-	longobject *a, *b;
+	PyLongObject *a, *b;
 {
 	int size_a = ABS(a->ob_size), size_b = ABS(b->ob_size);
-	longobject *z;
+	PyLongObject *z;
 	int i;
 	int sign = 1;
 	digit borrow = 0;
@@ -788,8 +796,10 @@ x_sub(a, b)
 	/* Ensure a is the larger of the two: */
 	if (size_a < size_b) {
 		sign = -1;
-		{ longobject *temp = a; a = b; b = temp; }
-		{ int size_temp = size_a; size_a = size_b; size_b = size_temp; }
+		{ PyLongObject *temp = a; a = b; b = temp; }
+		{ int size_temp = size_a;
+		  size_a = size_b;
+		  size_b = size_temp; }
 	}
 	else if (size_a == size_b) {
 		/* Find highest digit where a and b differ: */
@@ -797,14 +807,14 @@ x_sub(a, b)
 		while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
 			;
 		if (i < 0)
-			return alloclongobject(0);
+			return _PyLong_New(0);
 		if (a->ob_digit[i] < b->ob_digit[i]) {
 			sign = -1;
-			{ longobject *temp = a; a = b; b = temp; }
+			{ PyLongObject *temp = a; a = b; b = temp; }
 		}
 		size_a = size_b = i+1;
 	}
-	z = alloclongobject(size_a);
+	z = _PyLong_New(size_a);
 	if (z == NULL)
 		return NULL;
 	for (i = 0; i < size_b; ++i) {
@@ -826,12 +836,12 @@ x_sub(a, b)
 	return long_normalize(z);
 }
 
-static object *
+static PyObject *
 long_add(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
-	longobject *z;
+	PyLongObject *z;
 	
 	if (a->ob_size < 0) {
 		if (b->ob_size < 0) {
@@ -848,15 +858,15 @@ long_add(a, b)
 		else
 			z = x_add(a, b);
 	}
-	return (object *)z;
+	return (PyObject *)z;
 }
 
-static object *
+static PyObject *
 long_sub(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
-	longobject *z;
+	PyLongObject *z;
 	
 	if (a->ob_size < 0) {
 		if (b->ob_size < 0)
@@ -872,22 +882,22 @@ long_sub(a, b)
 		else
 			z = x_sub(a, b);
 	}
-	return (object *)z;
+	return (PyObject *)z;
 }
 
-static object *
+static PyObject *
 long_mul(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
 	int size_a;
 	int size_b;
-	longobject *z;
+	PyLongObject *z;
 	int i;
 	
 	size_a = ABS(a->ob_size);
 	size_b = ABS(b->ob_size);
-	z = alloclongobject(size_a + size_b);
+	z = _PyLong_New(size_a + size_b);
 	if (z == NULL)
 		return NULL;
 	for (i = 0; i < z->ob_size; ++i)
@@ -898,7 +908,7 @@ long_mul(a, b)
 		int j;
 		
 		SIGCHECK({
-			DECREF(z);
+			Py_DECREF(z);
 			return NULL;
 		})
 		for (j = 0; j < size_b; ++j) {
@@ -917,7 +927,7 @@ long_mul(a, b)
 		z->ob_size = -(z->ob_size);
 	if (b->ob_size < 0)
 		z->ob_size = -(z->ob_size);
-	return (object *) long_normalize(z);
+	return (PyObject *) long_normalize(z);
 }
 
 /* The / and % operators are now defined in terms of divmod().
@@ -935,40 +945,40 @@ long_mul(a, b)
    have different signs.  We then subtract one from the 'div'
    part of the outcome to keep the invariant intact. */
 
-static int l_divmod PROTO((longobject *, longobject *,
-	longobject **, longobject **));
+static int l_divmod Py_PROTO((PyLongObject *, PyLongObject *,
+	PyLongObject **, PyLongObject **));
 static int
 l_divmod(v, w, pdiv, pmod)
-	longobject *v;
-	longobject *w;
-	longobject **pdiv;
-	longobject **pmod;
+	PyLongObject *v;
+	PyLongObject *w;
+	PyLongObject **pdiv;
+	PyLongObject **pmod;
 {
-	longobject *div, *mod;
+	PyLongObject *div, *mod;
 	
 	if (long_divrem(v, w, &div, &mod) < 0)
 		return -1;
 	if ((mod->ob_size < 0 && w->ob_size > 0) ||
 	    (mod->ob_size > 0 && w->ob_size < 0)) {
-		longobject *temp;
-		longobject *one;
-		temp = (longobject *) long_add(mod, w);
-		DECREF(mod);
+		PyLongObject *temp;
+		PyLongObject *one;
+		temp = (PyLongObject *) long_add(mod, w);
+		Py_DECREF(mod);
 		mod = temp;
 		if (mod == NULL) {
-			DECREF(div);
+			Py_DECREF(div);
 			return -1;
 		}
-		one = (longobject *) newlongobject(1L);
+		one = (PyLongObject *) PyLong_FromLong(1L);
 		if (one == NULL ||
-		    (temp = (longobject *) long_sub(div, one)) == NULL) {
-			DECREF(mod);
-			DECREF(div);
-			XDECREF(one);
+		    (temp = (PyLongObject *) long_sub(div, one)) == NULL) {
+			Py_DECREF(mod);
+			Py_DECREF(div);
+			Py_XDECREF(one);
 			return -1;
 		}
-		DECREF(one);
-		DECREF(div);
+		Py_DECREF(one);
+		Py_DECREF(div);
 		div = temp;
 	}
 	*pdiv = div;
@@ -976,81 +986,82 @@ l_divmod(v, w, pdiv, pmod)
 	return 0;
 }
 
-static object *
+static PyObject *
 long_div(v, w)
-	longobject *v;
-	longobject *w;
+	PyLongObject *v;
+	PyLongObject *w;
 {
-	longobject *div, *mod;
+	PyLongObject *div, *mod;
 	if (l_divmod(v, w, &div, &mod) < 0)
 		return NULL;
-	DECREF(mod);
-	return (object *)div;
+	Py_DECREF(mod);
+	return (PyObject *)div;
 }
 
-static object *
+static PyObject *
 long_mod(v, w)
-	longobject *v;
-	longobject *w;
+	PyLongObject *v;
+	PyLongObject *w;
 {
-	longobject *div, *mod;
+	PyLongObject *div, *mod;
 	if (l_divmod(v, w, &div, &mod) < 0)
 		return NULL;
-	DECREF(div);
-	return (object *)mod;
+	Py_DECREF(div);
+	return (PyObject *)mod;
 }
 
-static object *
+static PyObject *
 long_divmod(v, w)
-	longobject *v;
-	longobject *w;
+	PyLongObject *v;
+	PyLongObject *w;
 {
-	object *z;
-	longobject *div, *mod;
+	PyObject *z;
+	PyLongObject *div, *mod;
 	if (l_divmod(v, w, &div, &mod) < 0)
 		return NULL;
-	z = newtupleobject(2);
+	z = PyTuple_New(2);
 	if (z != NULL) {
-		settupleitem(z, 0, (object *) div);
-		settupleitem(z, 1, (object *) mod);
+		PyTuple_SetItem(z, 0, (PyObject *) div);
+		PyTuple_SetItem(z, 1, (PyObject *) mod);
 	}
 	else {
-		DECREF(div);
-		DECREF(mod);
+		Py_DECREF(div);
+		Py_DECREF(mod);
 	}
 	return z;
 }
 
-static object *
+static PyObject *
 long_pow(a, b, c)
-	longobject *a;
-	longobject *b;
-	longobject *c;
+	PyLongObject *a;
+	PyLongObject *b;
+	PyLongObject *c;
 {
-	longobject *z, *div, *mod;
+	PyLongObject *z, *div, *mod;
 	int size_b, i;
 	
 	size_b = b->ob_size;
 	if (size_b < 0) {
-		err_setstr(ValueError, "long integer to the negative power");
+		PyErr_SetString(PyExc_ValueError,
+				"long integer to the negative power");
 		return NULL;
 	}
-	z = (longobject *)newlongobject(1L);
-	INCREF(a);
+	z = (PyLongObject *)PyLong_FromLong(1L);
+	Py_INCREF(a);
 	for (i = 0; i < size_b; ++i) {
 		digit bi = b->ob_digit[i];
 		int j;
 	
 		for (j = 0; j < SHIFT; ++j) {
-			longobject *temp;
+			PyLongObject *temp;
 		
 			if (bi & 1) {
-				temp = (longobject *)long_mul(z, a);
-				DECREF(z);
-			 	if ((object*)c!=None && temp!=NULL) {
+				temp = (PyLongObject *)long_mul(z, a);
+				Py_DECREF(z);
+			 	if ((PyObject*)c!=Py_None && temp!=NULL) {
 			 		l_divmod(temp, c, &div, &mod);
-				 	XDECREF(div);
-				 	DECREF(temp);
+				 	Py_XDECREF(div);
+				 	Py_DECREF(temp);
 				 	temp = mod;
 				}
 			 	z = temp;
@@ -1060,17 +1071,17 @@ long_pow(a, b, c)
 			bi >>= 1;
 			if (bi == 0 && i+1 == size_b)
 				break;
-			temp = (longobject *)long_mul(a, a);
-			DECREF(a);
-		 	if ((object*)c!=None && temp!=NULL) {
+			temp = (PyLongObject *)long_mul(a, a);
+			Py_DECREF(a);
+		 	if ((PyObject*)c!=Py_None && temp!=NULL) {
 			 	l_divmod(temp, c, &div, &mod);
-			 	XDECREF(div);
-			 	DECREF(temp);
+			 	Py_XDECREF(div);
+			 	Py_DECREF(temp);
 			 	temp = mod;
 			}
 			a = temp;
 			if (a == NULL) {
-				DECREF(z);
+				Py_DECREF(z);
 				z = NULL;
 				break;
 			}
@@ -1078,124 +1089,124 @@ long_pow(a, b, c)
 		if (a == NULL || z == NULL)
 			break;
 	}
-	XDECREF(a);
-	if ((object*)c!=None && z!=NULL) {
+	Py_XDECREF(a);
+	if ((PyObject*)c!=Py_None && z!=NULL) {
 			l_divmod(z, c, &div, &mod);
-			XDECREF(div);
-			DECREF(z);
+			Py_XDECREF(div);
+			Py_DECREF(z);
 			z=mod;
 	}
-	return (object *)z;
+	return (PyObject *)z;
 }
 
-static object *
+static PyObject *
 long_invert(v)
-	longobject *v;
+	PyLongObject *v;
 {
 	/* Implement ~x as -(x+1) */
-	longobject *x;
-	longobject *w;
-	w = (longobject *)newlongobject(1L);
+	PyLongObject *x;
+	PyLongObject *w;
+	w = (PyLongObject *)PyLong_FromLong(1L);
 	if (w == NULL)
 		return NULL;
-	x = (longobject *) long_add(v, w);
-	DECREF(w);
+	x = (PyLongObject *) long_add(v, w);
+	Py_DECREF(w);
 	if (x == NULL)
 		return NULL;
 	if (x->ob_size != 0)
 		x->ob_size = -(x->ob_size);
-	return (object *)x;
+	return (PyObject *)x;
 }
 
-static object *
+static PyObject *
 long_pos(v)
-	longobject *v;
+	PyLongObject *v;
 {
-	INCREF(v);
-	return (object *)v;
+	Py_INCREF(v);
+	return (PyObject *)v;
 }
 
-static object *
+static PyObject *
 long_neg(v)
-	longobject *v;
+	PyLongObject *v;
 {
-	longobject *z;
+	PyLongObject *z;
 	int i, n;
 	n = ABS(v->ob_size);
 	if (n == 0) {
 		/* -0 == 0 */
-		INCREF(v);
-		return (object *) v;
+		Py_INCREF(v);
+		return (PyObject *) v;
 	}
-	z = alloclongobject(ABS(n));
+	z = _PyLong_New(ABS(n));
 	if (z == NULL)
 		return NULL;
 	for (i = 0; i < n; i++)
 		z->ob_digit[i] = v->ob_digit[i];
 	z->ob_size = -(v->ob_size);
-	return (object *)z;
+	return (PyObject *)z;
 }
 
-static object *
+static PyObject *
 long_abs(v)
-	longobject *v;
+	PyLongObject *v;
 {
 	if (v->ob_size < 0)
 		return long_neg(v);
 	else {
-		INCREF(v);
-		return (object *)v;
+		Py_INCREF(v);
+		return (PyObject *)v;
 	}
 }
 
 static int
 long_nonzero(v)
-	longobject *v;
+	PyLongObject *v;
 {
 	return ABS(v->ob_size) != 0;
 }
 
-static object *
+static PyObject *
 long_rshift(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
-	longobject *z;
+	PyLongObject *z;
 	long shiftby;
 	int newsize, wordshift, loshift, hishift, i, j;
 	digit lomask, himask;
 	
 	if (a->ob_size < 0) {
 		/* Right shifting negative numbers is harder */
-		longobject *a1, *a2, *a3;
-		a1 = (longobject *) long_invert(a);
+		PyLongObject *a1, *a2, *a3;
+		a1 = (PyLongObject *) long_invert(a);
 		if (a1 == NULL) return NULL;
-		a2 = (longobject *) long_rshift(a1, b);
-		DECREF(a1);
+		a2 = (PyLongObject *) long_rshift(a1, b);
+		Py_DECREF(a1);
 		if (a2 == NULL) return NULL;
-		a3 = (longobject *) long_invert(a2);
-		DECREF(a2);
-		return (object *) a3;
+		a3 = (PyLongObject *) long_invert(a2);
+		Py_DECREF(a2);
+		return (PyObject *) a3;
 	}
 	
-	shiftby = getlongvalue((object *)b);
-	if (shiftby == -1L && err_occurred())
+	shiftby = PyLong_AsLong((PyObject *)b);
+	if (shiftby == -1L && PyErr_Occurred())
 		return NULL;
 	if (shiftby < 0) {
-		err_setstr(ValueError, "negative shift count");
+		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
 	wordshift = shiftby / SHIFT;
 	newsize = ABS(a->ob_size) - wordshift;
 	if (newsize <= 0) {
-		z = alloclongobject(0);
-		return (object *)z;
+		z = _PyLong_New(0);
+		return (PyObject *)z;
 	}
 	loshift = shiftby % SHIFT;
 	hishift = SHIFT - loshift;
 	lomask = ((digit)1 << hishift) - 1;
 	himask = MASK ^ lomask;
-	z = alloclongobject(newsize);
+	z = _PyLong_New(newsize);
 	if (z == NULL)
 		return NULL;
 	if (a->ob_size < 0)
@@ -1206,29 +1217,30 @@ long_rshift(a, b)
 			z->ob_digit[i] |=
 			  (a->ob_digit[j+1] << hishift) & himask;
 	}
-	return (object *) long_normalize(z);
+	return (PyObject *) long_normalize(z);
 }
 
-static object *
+static PyObject *
 long_lshift(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
 	/* This version due to Tim Peters */
-	longobject *z;
+	PyLongObject *z;
 	long shiftby;
 	int oldsize, newsize, wordshift, remshift, i, j;
 	twodigits accum;
 	
-	shiftby = getlongvalue((object *)b);
-	if (shiftby == -1L && err_occurred())
+	shiftby = PyLong_AsLong((PyObject *)b);
+	if (shiftby == -1L && PyErr_Occurred())
 		return NULL;
 	if (shiftby < 0) {
-		err_setstr(ValueError, "negative shift count");
+		PyErr_SetString(PyExc_ValueError, "negative shift count");
 		return NULL;
 	}
 	if ((long)(int)shiftby != shiftby) {
-		err_setstr(ValueError, "outrageous left shift count");
+		PyErr_SetString(PyExc_ValueError,
+				"outrageous left shift count");
 		return NULL;
 	}
 	/* wordshift, remshift = divmod(shiftby, SHIFT) */
@@ -1239,7 +1251,7 @@ long_lshift(a, b)
 	newsize = oldsize + wordshift;
 	if (remshift)
 		++newsize;
-	z = alloclongobject(newsize);
+	z = _PyLong_New(newsize);
 	if (z == NULL)
 		return NULL;
 	if (a->ob_size < 0)
@@ -1256,7 +1268,7 @@ long_lshift(a, b)
 		z->ob_digit[newsize-1] = (digit)accum;
 	else	
 		assert(!accum);
-	return (object *) long_normalize(z);
+	return (PyObject *) long_normalize(z);
 }
 
 
@@ -1265,46 +1277,46 @@ long_lshift(a, b)
 #define MAX(x, y) ((x) < (y) ? (y) : (x))
 #define MIN(x, y) ((x) > (y) ? (y) : (x))
 
-static object *long_bitwise PROTO((longobject *, int, longobject *));
-static object *
+static PyObject *long_bitwise Py_PROTO((PyLongObject *, int, PyLongObject *));
+static PyObject *
 long_bitwise(a, op, b)
-	longobject *a;
+	PyLongObject *a;
 	int op; /* '&', '|', '^' */
-	longobject *b;
+	PyLongObject *b;
 {
 	digit maska, maskb; /* 0 or MASK */
 	int negz;
 	int size_a, size_b, size_z;
-	longobject *z;
+	PyLongObject *z;
 	int i;
 	digit diga, digb;
-	object *v;
+	PyObject *v;
 	
 	if (a->ob_size < 0) {
-		a = (longobject *) long_invert(a);
+		a = (PyLongObject *) long_invert(a);
 		maska = MASK;
 	}
 	else {
-		INCREF(a);
+		Py_INCREF(a);
 		maska = 0;
 	}
 	if (b->ob_size < 0) {
-		b = (longobject *) long_invert(b);
+		b = (PyLongObject *) long_invert(b);
 		maskb = MASK;
 	}
 	else {
-		INCREF(b);
+		Py_INCREF(b);
 		maskb = 0;
 	}
 	
 	size_a = a->ob_size;
 	size_b = b->ob_size;
 	size_z = MAX(size_a, size_b);
-	z = alloclongobject(size_z);
+	z = _PyLong_New(size_z);
 	if (a == NULL || b == NULL || z == NULL) {
-		XDECREF(a);
-		XDECREF(b);
-		XDECREF(z);
+		Py_XDECREF(a);
+		Py_XDECREF(b);
+		Py_XDECREF(z);
 		return NULL;
 	}
 	
@@ -1344,93 +1356,93 @@ long_bitwise(a, op, b)
 		}
 	}
 	
-	DECREF(a);
-	DECREF(b);
+	Py_DECREF(a);
+	Py_DECREF(b);
 	z = long_normalize(z);
 	if (negz == 0)
-		return (object *) z;
+		return (PyObject *) z;
 	v = long_invert(z);
-	DECREF(z);
+	Py_DECREF(z);
 	return v;
 }
 
-static object *
+static PyObject *
 long_and(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
 	return long_bitwise(a, '&', b);
 }
 
-static object *
+static PyObject *
 long_xor(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
 	return long_bitwise(a, '^', b);
 }
 
-static object *
+static PyObject *
 long_or(a, b)
-	longobject *a;
-	longobject *b;
+	PyLongObject *a;
+	PyLongObject *b;
 {
 	return long_bitwise(a, '|', b);
 }
 
 static int
 long_coerce(pv, pw)
-	object **pv;
-	object **pw;
+	PyObject **pv;
+	PyObject **pw;
 {
-	if (is_intobject(*pw)) {
-		*pw = newlongobject(getintvalue(*pw));
-		INCREF(*pv);
+	if (PyInt_Check(*pw)) {
+		*pw = PyLong_FromLong(PyInt_AsLong(*pw));
+		Py_INCREF(*pv);
 		return 0;
 	}
 	return 1; /* Can't do it */
 }
 
-static object *
+static PyObject *
 long_int(v)
-	object *v;
+	PyObject *v;
 {
 	long x;
-	x = getlongvalue(v);
-	if (err_occurred())
+	x = PyLong_AsLong(v);
+	if (PyErr_Occurred())
 		return NULL;
-	return newintobject(x);
+	return PyInt_FromLong(x);
 }
 
-static object *
+static PyObject *
 long_long(v)
-	object *v;
+	PyObject *v;
 {
-	INCREF(v);
+	Py_INCREF(v);
 	return v;
 }
 
-static object *
+static PyObject *
 long_float(v)
-	object *v;
+	PyObject *v;
 {
 	double result;
 	PyFPE_START_PROTECT("long_float", return 0)
-	result = dgetlongvalue(v);
+	result = PyLong_AsDouble(v);
 	PyFPE_END_PROTECT(result)
-	return newfloatobject(result);
+	return PyFloat_FromDouble(result);
 }
 
-static object *
+static PyObject *
 long_oct(v)
-	object *v;
+	PyObject *v;
 {
 	return long_format(v, 8);
 }
 
-static object *
+static PyObject *
 long_hex(v)
-	object *v;
+	PyObject *v;
 {
 	return long_format(v, 16);
 }
@@ -1441,7 +1453,7 @@ long_hex(v)
 #define TF (ternaryfunc)
 #define IF (inquiry)
 
-static number_methods long_as_number = {
+static PyNumberMethods long_as_number = {
 	BF long_add,	/*nb_add*/
 	BF long_sub,	/*nb_subtract*/
 	BF long_mul,	/*nb_multiply*/
@@ -1459,7 +1471,7 @@ static number_methods long_as_number = {
 	BF long_and,	/*nb_and*/
 	BF long_xor,	/*nb_xor*/
 	BF long_or,	/*nb_or*/
-	(int (*) FPROTO((object **, object **)))
+	(int (*) Py_FPROTO((PyObject **, PyObject **)))
 	(coercion)long_coerce, /*nb_coerce*/
 	UF long_int,	/*nb_int*/
 	UF long_long,	/*nb_long*/
@@ -1468,22 +1480,22 @@ static number_methods long_as_number = {
 	UF long_hex,	/*nb_hex*/
 };
 
-typeobject Longtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyLong_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"long int",
-	sizeof(longobject) - sizeof(digit),
+	sizeof(PyLongObject) - sizeof(digit),
 	sizeof(digit),
 	(destructor)long_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
-	(int (*) FPROTO((object *, object *)))
+	(int (*) Py_FPROTO((PyObject *, PyObject *)))
 	(cmpfunc)long_compare, /*tp_compare*/
 	(reprfunc)long_repr, /*tp_repr*/
 	&long_as_number,/*tp_as_number*/
 	0,		/*tp_as_sequence*/
 	0,		/*tp_as_mapping*/
-	(long (*) FPROTO((object *)))
+	(long (*) Py_FPROTO((PyObject *)))
 	(hashfunc)long_hash, /*tp_hash*/
 };

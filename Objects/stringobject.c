@@ -31,7 +31,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* String object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #include <ctype.h>
 
@@ -47,9 +47,9 @@ int null_strings, one_strings;
 #endif
 #endif
 
-static stringobject *characters[UCHAR_MAX + 1];
+static PyStringObject *characters[UCHAR_MAX + 1];
 #ifndef DONT_SHARE_SHORT_STRINGS
-static stringobject *nullstring;
+static PyStringObject *nullstring;
 #endif
 
 /*
@@ -67,33 +67,35 @@ static stringobject *nullstring;
    newsizedstringobject() with a NULL first argument, because in the
    future these routines may try to do even more sharing of objects.
 */
-object *
-newsizedstringobject(str, size)
+PyObject *
+PyString_FromStringAndSize(str, size)
 	const char *str;
 	int size;
 {
-	register stringobject *op;
+	register PyStringObject *op;
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
 #endif
-		INCREF(op);
-		return (object *)op;
+		Py_INCREF(op);
+		return (PyObject *)op;
 	}
-	if (size == 1 && str != NULL && (op = characters[*str & UCHAR_MAX]) != NULL) {
+	if (size == 1 && str != NULL &&
+	    (op = characters[*str & UCHAR_MAX]) != NULL)
+	{
 #ifdef COUNT_ALLOCS
 		one_strings++;
 #endif
-		INCREF(op);
-		return (object *)op;
+		Py_INCREF(op);
+		return (PyObject *)op;
 	}
 #endif /* DONT_SHARE_SHORT_STRINGS */
-	op = (stringobject *)
-		malloc(sizeof(stringobject) + size * sizeof(char));
+	op = (PyStringObject *)
+		malloc(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Stringtype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyString_Type;
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
@@ -101,49 +103,49 @@ newsizedstringobject(str, size)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	NEWREF(op);
+	_Py_NewReference(op);
 	if (str != NULL)
 		memcpy(op->ob_sval, str, size);
 	op->ob_sval[size] = '\0';
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
 		nullstring = op;
-		INCREF(op);
+		Py_INCREF(op);
 	} else if (size == 1 && str != NULL) {
 		characters[*str & UCHAR_MAX] = op;
-		INCREF(op);
+		Py_INCREF(op);
 	}
 #endif
-	return (object *) op;
+	return (PyObject *) op;
 }
 
-object *
-newstringobject(str)
+PyObject *
+PyString_FromString(str)
 	const char *str;
 {
 	register unsigned int size = strlen(str);
-	register stringobject *op;
+	register PyStringObject *op;
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0 && (op = nullstring) != NULL) {
 #ifdef COUNT_ALLOCS
 		null_strings++;
 #endif
-		INCREF(op);
-		return (object *)op;
+		Py_INCREF(op);
+		return (PyObject *)op;
 	}
 	if (size == 1 && (op = characters[*str & UCHAR_MAX]) != NULL) {
 #ifdef COUNT_ALLOCS
 		one_strings++;
 #endif
-		INCREF(op);
-		return (object *)op;
+		Py_INCREF(op);
+		return (PyObject *)op;
 	}
 #endif /* DONT_SHARE_SHORT_STRINGS */
-	op = (stringobject *)
-		malloc(sizeof(stringobject) + size * sizeof(char));
+	op = (PyStringObject *)
+		malloc(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Stringtype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyString_Type;
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
@@ -151,54 +153,54 @@ newstringobject(str)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	NEWREF(op);
+	_Py_NewReference(op);
 	strcpy(op->ob_sval, str);
 #ifndef DONT_SHARE_SHORT_STRINGS
 	if (size == 0) {
 		nullstring = op;
-		INCREF(op);
+		Py_INCREF(op);
 	} else if (size == 1) {
 		characters[*str & UCHAR_MAX] = op;
-		INCREF(op);
+		Py_INCREF(op);
 	}
 #endif
-	return (object *) op;
+	return (PyObject *) op;
 }
 
 static void
 string_dealloc(op)
-	object *op;
+	PyObject *op;
 {
-	DEL(op);
+	PyMem_DEL(op);
 }
 
 int
-getstringsize(op)
-	register object *op;
+PyString_Size(op)
+	register PyObject *op;
 {
-	if (!is_stringobject(op)) {
-		err_badcall();
+	if (!PyString_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	return ((stringobject *)op) -> ob_size;
+	return ((PyStringObject *)op) -> ob_size;
 }
 
 /*const*/ char *
-getstringvalue(op)
-	register object *op;
+PyString_AsString(op)
+	register PyObject *op;
 {
-	if (!is_stringobject(op)) {
-		err_badcall();
+	if (!PyString_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((stringobject *)op) -> ob_sval;
+	return ((PyStringObject *)op) -> ob_sval;
 }
 
 /* Methods */
 
 static int
 string_print(op, fp, flags)
-	stringobject *op;
+	PyStringObject *op;
 	FILE *fp;
 	int flags;
 {
@@ -206,7 +208,7 @@ string_print(op, fp, flags)
 	char c;
 	int quote;
 	/* XXX Ought to check for interrupts when writing long strings */
-	if (flags & PRINT_RAW) {
+	if (flags & Py_PRINT_RAW) {
 		fwrite(op->ob_sval, 1, (int) op->ob_size, fp);
 		return 0;
 	}
@@ -230,13 +232,13 @@ string_print(op, fp, flags)
 	return 0;
 }
 
-static object *
+static PyObject *
 string_repr(op)
-	register stringobject *op;
+	register PyStringObject *op;
 {
 	/* XXX overflow? */
 	int newsize = 2 + 4 * op->ob_size * sizeof(char);
-	object *v = newsizedstringobject((char *)NULL, newsize);
+	PyObject *v = PyString_FromStringAndSize((char *)NULL, newsize);
 	if (v == NULL) {
 		return NULL;
 	}
@@ -251,7 +253,7 @@ string_repr(op)
 		if (strchr(op->ob_sval, '\'') && !strchr(op->ob_sval, '"'))
 			quote = '"';
 
-		p = ((stringobject *)v)->ob_sval;
+		p = ((PyStringObject *)v)->ob_sval;
 		*p++ = quote;
 		for (i = 0; i < op->ob_size; i++) {
 			c = op->ob_sval[i];
@@ -267,45 +269,46 @@ string_repr(op)
 		}
 		*p++ = quote;
 		*p = '\0';
-		resizestring(&v, (int) (p - ((stringobject *)v)->ob_sval));
+		_PyString_Resize(
+			&v, (int) (p - ((PyStringObject *)v)->ob_sval));
 		return v;
 	}
 }
 
 static int
 string_length(a)
-	stringobject *a;
+	PyStringObject *a;
 {
 	return a->ob_size;
 }
 
-static object *
+static PyObject *
 string_concat(a, bb)
-	register stringobject *a;
-	register object *bb;
+	register PyStringObject *a;
+	register PyObject *bb;
 {
 	register unsigned int size;
-	register stringobject *op;
-	if (!is_stringobject(bb)) {
-		err_badarg();
+	register PyStringObject *op;
+	if (!PyString_Check(bb)) {
+		PyErr_BadArgument();
 		return NULL;
 	}
-#define b ((stringobject *)bb)
+#define b ((PyStringObject *)bb)
 	/* Optimize cases with empty left or right operand */
 	if (a->ob_size == 0) {
-		INCREF(bb);
+		Py_INCREF(bb);
 		return bb;
 	}
 	if (b->ob_size == 0) {
-		INCREF(a);
-		return (object *)a;
+		Py_INCREF(a);
+		return (PyObject *)a;
 	}
 	size = a->ob_size + b->ob_size;
-	op = (stringobject *)
-		malloc(sizeof(stringobject) + size * sizeof(char));
+	op = (PyStringObject *)
+		malloc(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Stringtype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyString_Type;
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
@@ -313,34 +316,34 @@ string_concat(a, bb)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	NEWREF(op);
+	_Py_NewReference(op);
 	memcpy(op->ob_sval, a->ob_sval, (int) a->ob_size);
 	memcpy(op->ob_sval + a->ob_size, b->ob_sval, (int) b->ob_size);
 	op->ob_sval[size] = '\0';
-	return (object *) op;
+	return (PyObject *) op;
 #undef b
 }
 
-static object *
+static PyObject *
 string_repeat(a, n)
-	register stringobject *a;
+	register PyStringObject *a;
 	register int n;
 {
 	register int i;
 	register int size;
-	register stringobject *op;
+	register PyStringObject *op;
 	if (n < 0)
 		n = 0;
 	size = a->ob_size * n;
 	if (size == a->ob_size) {
-		INCREF(a);
-		return (object *)a;
+		Py_INCREF(a);
+		return (PyObject *)a;
 	}
-	op = (stringobject *)
-		malloc(sizeof(stringobject) + size * sizeof(char));
+	op = (PyStringObject *)
+		malloc(sizeof(PyStringObject) + size * sizeof(char));
 	if (op == NULL)
-		return err_nomem();
-	op->ob_type = &Stringtype;
+		return PyErr_NoMemory();
+	op->ob_type = &PyString_Type;
 	op->ob_size = size;
 #ifdef CACHE_HASH
 	op->ob_shash = -1;
@@ -348,18 +351,18 @@ string_repeat(a, n)
 #ifdef INTERN_STRINGS
 	op->ob_sinterned = NULL;
 #endif
-	NEWREF(op);
+	_Py_NewReference(op);
 	for (i = 0; i < size; i += a->ob_size)
 		memcpy(op->ob_sval+i, a->ob_sval, (int) a->ob_size);
 	op->ob_sval[size] = '\0';
-	return (object *) op;
+	return (PyObject *) op;
 }
 
 /* String slice a[i:j] consists of characters a[i] ... a[j-1] */
 
-static object *
+static PyObject *
 string_slice(a, i, j)
-	register stringobject *a;
+	register PyStringObject *a;
 	register int i, j; /* May be negative! */
 {
 	if (i < 0)
@@ -369,45 +372,45 @@ string_slice(a, i, j)
 	if (j > a->ob_size)
 		j = a->ob_size;
 	if (i == 0 && j == a->ob_size) { /* It's the same as a */
-		INCREF(a);
-		return (object *)a;
+		Py_INCREF(a);
+		return (PyObject *)a;
 	}
 	if (j < i)
 		j = i;
-	return newsizedstringobject(a->ob_sval + i, (int) (j-i));
+	return PyString_FromStringAndSize(a->ob_sval + i, (int) (j-i));
 }
 
-static object *
+static PyObject *
 string_item(a, i)
-	stringobject *a;
+	PyStringObject *a;
 	register int i;
 {
 	int c;
-	object *v;
+	PyObject *v;
 	if (i < 0 || i >= a->ob_size) {
-		err_setstr(IndexError, "string index out of range");
+		PyErr_SetString(PyExc_IndexError, "string index out of range");
 		return NULL;
 	}
 	c = a->ob_sval[i] & UCHAR_MAX;
-	v = (object *) characters[c];
+	v = (PyObject *) characters[c];
 #ifdef COUNT_ALLOCS
 	if (v != NULL)
 		one_strings++;
 #endif
 	if (v == NULL) {
-		v = newsizedstringobject((char *)NULL, 1);
+		v = PyString_FromStringAndSize((char *)NULL, 1);
 		if (v == NULL)
 			return NULL;
-		characters[c] = (stringobject *) v;
-		((stringobject *)v)->ob_sval[0] = c;
+		characters[c] = (PyStringObject *) v;
+		((PyStringObject *)v)->ob_sval[0] = c;
 	}
-	INCREF(v);
+	Py_INCREF(v);
 	return v;
 }
 
 static int
 string_compare(a, b)
-	stringobject *a, *b;
+	PyStringObject *a, *b;
 {
 	int len_a = a->ob_size, len_b = b->ob_size;
 	int min_len = (len_a < len_b) ? len_a : len_b;
@@ -424,7 +427,7 @@ string_compare(a, b)
 
 static long
 string_hash(a)
-	stringobject *a;
+	PyStringObject *a;
 {
 	register int len;
 	register unsigned char *p;
@@ -436,7 +439,7 @@ string_hash(a)
 #ifdef INTERN_STRINGS
 	if (a->ob_sinterned != NULL)
 		return (a->ob_shash =
-			((stringobject *)(a->ob_sinterned))->ob_shash);
+			((PyStringObject *)(a->ob_sinterned))->ob_shash);
 #endif
 #endif
 	len = a->ob_size;
@@ -453,7 +456,7 @@ string_hash(a)
 	return x;
 }
 
-static sequence_methods string_as_sequence = {
+static PySequenceMethods string_as_sequence = {
 	(inquiry)string_length, /*sq_length*/
 	(binaryfunc)string_concat, /*sq_concat*/
 	(intargfunc)string_repeat, /*sq_repeat*/
@@ -463,11 +466,11 @@ static sequence_methods string_as_sequence = {
 	0,		/*sq_ass_slice*/
 };
 
-typeobject Stringtype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyString_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"string",
-	sizeof(stringobject),
+	sizeof(PyStringObject),
 	sizeof(char),
 	(destructor)string_dealloc, /*tp_dealloc*/
 	(printfunc)string_print, /*tp_print*/
@@ -489,30 +492,30 @@ typeobject Stringtype = {
 };
 
 void
-joinstring(pv, w)
-	register object **pv;
-	register object *w;
+PyString_Concat(pv, w)
+	register PyObject **pv;
+	register PyObject *w;
 {
-	register object *v;
+	register PyObject *v;
 	if (*pv == NULL)
 		return;
-	if (w == NULL || !is_stringobject(*pv)) {
-		DECREF(*pv);
+	if (w == NULL || !PyString_Check(*pv)) {
+		Py_DECREF(*pv);
 		*pv = NULL;
 		return;
 	}
-	v = string_concat((stringobject *) *pv, w);
-	DECREF(*pv);
+	v = string_concat((PyStringObject *) *pv, w);
+	Py_DECREF(*pv);
 	*pv = v;
 }
 
 void
-joinstring_decref(pv, w)
-	register object **pv;
-	register object *w;
+PyString_ConcatAndDel(pv, w)
+	register PyObject **pv;
+	register PyObject *w;
 {
-	joinstring(pv, w);
-	XDECREF(w);
+	PyString_Concat(pv, w);
+	Py_XDECREF(w);
 }
 
 
@@ -524,34 +527,34 @@ joinstring_decref(pv, w)
    already be known to some other part of the code... */
 
 int
-resizestring(pv, newsize)
-	object **pv;
+_PyString_Resize(pv, newsize)
+	PyObject **pv;
 	int newsize;
 {
-	register object *v;
-	register stringobject *sv;
+	register PyObject *v;
+	register PyStringObject *sv;
 	v = *pv;
-	if (!is_stringobject(v) || v->ob_refcnt != 1) {
+	if (!PyString_Check(v) || v->ob_refcnt != 1) {
 		*pv = 0;
-		DECREF(v);
-		err_badcall();
+		Py_DECREF(v);
+		PyErr_BadInternalCall();
 		return -1;
 	}
 	/* XXX UNREF/NEWREF interface should be more symmetrical */
 #ifdef Py_REF_DEBUG
 	--_Py_RefTotal;
 #endif
-	UNREF(v);
-	*pv = (object *)
+	_Py_ForgetReference(v);
+	*pv = (PyObject *)
 		realloc((char *)v,
-			sizeof(stringobject) + newsize * sizeof(char));
+			sizeof(PyStringObject) + newsize * sizeof(char));
 	if (*pv == NULL) {
-		DEL(v);
-		err_nomem();
+		PyMem_DEL(v);
+		PyErr_NoMemory();
 		return -1;
 	}
-	NEWREF(*pv);
-	sv = (stringobject *) *pv;
+	_Py_NewReference(*pv);
+	sv = (PyStringObject *) *pv;
 	sv->ob_size = newsize;
 	sv->ob_sval[newsize] = '\0';
 	return 0;
@@ -559,9 +562,9 @@ resizestring(pv, newsize)
 
 /* Helpers for formatstring */
 
-static object *
+static PyObject *
 getnextarg(args, arglen, p_argidx)
-	object *args;
+	PyObject *args;
 	int arglen;
 	int *p_argidx;
 {
@@ -571,9 +574,10 @@ getnextarg(args, arglen, p_argidx)
 		if (arglen < 0)
 			return args;
 		else
-			return gettupleitem(args, argidx);
+			return PyTuple_GetItem(args, argidx);
 	}
-	err_setstr(TypeError, "not enough arguments for format string");
+	PyErr_SetString(PyExc_TypeError,
+			"not enough arguments for format string");
 	return NULL;
 }
 
@@ -583,7 +587,7 @@ getnextarg(args, arglen, p_argidx)
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
-extern double fabs PROTO((double));
+extern double fabs Py_PROTO((double));
 
 static int
 formatfloat(buf, flags, prec, type, v)
@@ -591,11 +595,11 @@ formatfloat(buf, flags, prec, type, v)
 	int flags;
 	int prec;
 	int type;
-	object *v;
+	PyObject *v;
 {
 	char fmt[20];
 	double x;
-	if (!getargs(v, "d;float argument required", &x))
+	if (!PyArg_Parse(v, "d;float argument required", &x))
 		return -1;
 	if (prec < 0)
 		prec = 6;
@@ -614,11 +618,11 @@ formatint(buf, flags, prec, type, v)
 	int flags;
 	int prec;
 	int type;
-	object *v;
+	PyObject *v;
 {
 	char fmt[20];
 	long x;
-	if (!getargs(v, "l;int argument required", &x))
+	if (!PyArg_Parse(v, "l;int argument required", &x))
 		return -1;
 	if (prec < 0)
 		prec = 1;
@@ -630,14 +634,14 @@ formatint(buf, flags, prec, type, v)
 static int
 formatchar(buf, v)
 	char *buf;
-	object *v;
+	PyObject *v;
 {
-	if (is_stringobject(v)) {
-		if (!getargs(v, "c;%c requires int or char", &buf[0]))
+	if (PyString_Check(v)) {
+		if (!PyArg_Parse(v, "c;%c requires int or char", &buf[0]))
 			return -1;
 	}
 	else {
-		if (!getargs(v, "b;%c requires int or char", &buf[0]))
+		if (!PyArg_Parse(v, "b;%c requires int or char", &buf[0]))
 			return -1;
 	}
 	buf[1] = '\0';
@@ -647,29 +651,29 @@ formatchar(buf, v)
 
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
 
-object *
-formatstring(format, args)
-	object *format;
-	object *args;
+PyObject *
+PyString_Format(format, args)
+	PyObject *format;
+	PyObject *args;
 {
 	char *fmt, *res;
 	int fmtcnt, rescnt, reslen, arglen, argidx;
 	int args_owned = 0;
-	object *result;
-	object *dict = NULL;
-	if (format == NULL || !is_stringobject(format) || args == NULL) {
-		err_badcall();
+	PyObject *result;
+	PyObject *dict = NULL;
+	if (format == NULL || !PyString_Check(format) || args == NULL) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	fmt = getstringvalue(format);
-	fmtcnt = getstringsize(format);
+	fmt = PyString_AsString(format);
+	fmtcnt = PyString_Size(format);
 	reslen = rescnt = fmtcnt + 100;
-	result = newsizedstringobject((char *)NULL, reslen);
+	result = PyString_FromStringAndSize((char *)NULL, reslen);
 	if (result == NULL)
 		return NULL;
-	res = getstringvalue(result);
-	if (is_tupleobject(args)) {
-		arglen = gettuplesize(args);
+	res = PyString_AsString(result);
+	if (PyTuple_Check(args)) {
+		arglen = PyTuple_Size(args);
 		argidx = 0;
 	}
 	else {
@@ -683,9 +687,10 @@ formatstring(format, args)
 			if (--rescnt < 0) {
 				rescnt = fmtcnt + 100;
 				reslen += rescnt;
-				if (resizestring(&result, reslen) < 0)
+				if (_PyString_Resize(&result, reslen) < 0)
 					return NULL;
-				res = getstringvalue(result) + reslen - rescnt;
+				res = PyString_AsString(result)
+					+ reslen - rescnt;
 				--rescnt;
 			}
 			*res++ = *fmt++;
@@ -698,8 +703,8 @@ formatstring(format, args)
 			int size = 0;
 			int c = '\0';
 			int fill;
-			object *v = NULL;
-			object *temp = NULL;
+			PyObject *v = NULL;
+			PyObject *temp = NULL;
 			char *buf;
 			int sign;
 			int len;
@@ -708,10 +713,10 @@ formatstring(format, args)
 			if (*fmt == '(') {
 				char *keystart;
 				int keylen;
-				object *key;
+				PyObject *key;
 
 				if (dict == NULL) {
-					err_setstr(TypeError,
+					PyErr_SetString(PyExc_TypeError,
 						 "format requires a mapping"); 
 					goto error;
 				}
@@ -723,19 +728,20 @@ formatstring(format, args)
 				keylen = fmt - keystart;
 				++fmt;
 				if (fmtcnt < 0) {
-					err_setstr(ValueError,
+					PyErr_SetString(PyExc_ValueError,
 						   "incomplete format key");
 					goto error;
 				}
-				key = newsizedstringobject(keystart, keylen);
+				key = PyString_FromStringAndSize(keystart,
+								 keylen);
 				if (key == NULL)
 					goto error;
 				if (args_owned) {
-					DECREF(args);
+					Py_DECREF(args);
 					args_owned = 0;
 				}
 				args = PyObject_GetItem(dict, key);
-				DECREF(key);
+				Py_DECREF(key);
 				if (args == NULL) {
 					goto error;
 				}
@@ -757,11 +763,12 @@ formatstring(format, args)
 				v = getnextarg(args, arglen, &argidx);
 				if (v == NULL)
 					goto error;
-				if (!is_intobject(v)) {
-					err_setstr(TypeError, "* wants int");
+				if (!PyInt_Check(v)) {
+					PyErr_SetString(PyExc_TypeError,
+							"* wants int");
 					goto error;
 				}
-				width = getintvalue(v);
+				width = PyInt_AsLong(v);
 				if (width < 0)
 					width = 0;
 				if (--fmtcnt >= 0)
@@ -774,8 +781,9 @@ formatstring(format, args)
 					if (!isdigit(c))
 						break;
 					if ((width*10) / 10 != width) {
-						err_setstr(ValueError,
-							   "width too big");
+						PyErr_SetString(
+							PyExc_ValueError,
+							"width too big");
 						goto error;
 					}
 					width = width*10 + (c - '0');
@@ -789,12 +797,13 @@ formatstring(format, args)
 					v = getnextarg(args, arglen, &argidx);
 					if (v == NULL)
 						goto error;
-					if (!is_intobject(v)) {
-						err_setstr(TypeError,
-							   "* wants int");
+					if (!PyInt_Check(v)) {
+						PyErr_SetString(
+							PyExc_TypeError,
+							"* wants int");
 						goto error;
 					}
-					prec = getintvalue(v);
+					prec = PyInt_AsLong(v);
 					if (prec < 0)
 						prec = 0;
 					if (--fmtcnt >= 0)
@@ -807,7 +816,8 @@ formatstring(format, args)
 						if (!isdigit(c))
 							break;
 						if ((prec*10) / 10 != prec) {
-							err_setstr(ValueError,
+							PyErr_SetString(
+							    PyExc_ValueError,
 							    "prec too big");
 							goto error;
 						}
@@ -823,7 +833,8 @@ formatstring(format, args)
 				}
 			}
 			if (fmtcnt < 0) {
-				err_setstr(ValueError, "incomplete format");
+				PyErr_SetString(PyExc_ValueError,
+						"incomplete format");
 				goto error;
 			}
 			if (c != '%') {
@@ -839,11 +850,11 @@ formatstring(format, args)
 				len = 1;
 				break;
 			case 's':
-				temp = strobject(v);
+				temp = PyObject_Str(v);
 				if (temp == NULL)
 					goto error;
-				buf = getstringvalue(temp);
-				len = getstringsize(temp);
+				buf = PyString_AsString(temp);
+				len = PyString_Size(temp);
 				if (prec >= 0 && len > prec)
 					len = prec;
 				break;
@@ -895,7 +906,7 @@ formatstring(format, args)
 					goto error;
 				break;
 			default:
-				err_setstr(ValueError,
+				PyErr_SetString(PyExc_ValueError,
 					   "unsupported format character");
 				goto error;
 			}
@@ -917,9 +928,10 @@ formatstring(format, args)
 				reslen -= rescnt;
 				rescnt = width + fmtcnt + 100;
 				reslen += rescnt;
-				if (resizestring(&result, reslen) < 0)
+				if (_PyString_Resize(&result, reslen) < 0)
 					return NULL;
-				res = getstringvalue(result) + reslen - rescnt;
+				res = PyString_AsString(result)
+					+ reslen - rescnt;
 			}
 			if (sign) {
 				if (fill != ' ')
@@ -944,25 +956,26 @@ formatstring(format, args)
 				*res++ = ' ';
 			}
                         if (dict && (argidx < arglen) && c != '%') {
-                                err_setstr(TypeError,
+                                PyErr_SetString(PyExc_TypeError,
                                            "not all arguments converted");
                                 goto error;
                         }
-			XDECREF(temp);
+			Py_XDECREF(temp);
 		} /* '%' */
 	} /* until end */
 	if (argidx < arglen && !dict) {
-		err_setstr(TypeError, "not all arguments converted");
+		PyErr_SetString(PyExc_TypeError,
+				"not all arguments converted");
 		goto error;
 	}
 	if (args_owned)
-		DECREF(args);
-	resizestring(&result, reslen - rescnt);
+		Py_DECREF(args);
+	_PyString_Resize(&result, reslen - rescnt);
 	return result;
  error:
-	DECREF(result);
+	Py_DECREF(result);
 	if (args_owned)
-		DECREF(args);
+		Py_DECREF(args);
 	return NULL;
 }
 

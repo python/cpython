@@ -31,44 +31,44 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Type object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 
 /* Type object implementation */
 
-static object *
+static PyObject *
 type_getattr(t, name)
-	typeobject *t;
+	PyTypeObject *t;
 	char *name;
 {
 	if (strcmp(name, "__name__") == 0)
-		return newstringobject(t->tp_name);
+		return PyString_FromString(t->tp_name);
 	if (strcmp(name, "__doc__") == 0) {
 		char *doc = t->tp_doc;
 		if (doc != NULL)
-			return newstringobject(doc);
-		INCREF(None);
-		return None;
+			return PyString_FromString(doc);
+		Py_INCREF(Py_None);
+		return Py_None;
 	}
 	if (strcmp(name, "__members__") == 0)
-		return mkvalue("[ss]", "__doc__", "__name__");
-	err_setstr(AttributeError, name);
+		return Py_BuildValue("[ss]", "__doc__", "__name__");
+	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
-static object *
+static PyObject *
 type_repr(v)
-	typeobject *v;
+	PyTypeObject *v;
 {
 	char buf[100];
 	sprintf(buf, "<type '%.80s'>", v->tp_name);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
-typeobject Typetype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyType_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,			/* Number of items for varobject */
 	"type",			/* Name of this type */
-	sizeof(typeobject),	/* Basic object size */
+	sizeof(PyTypeObject),	/* Basic object size */
 	0,			/* Item size for varobject */
 	0,			/*tp_dealloc*/
 	0,			/*tp_print*/

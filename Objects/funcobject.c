@@ -31,98 +31,99 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Function object implementation */
 
-#include "allobjects.h"
+#include "Python.h"
 #include "compile.h"
 #include "structmember.h"
 
-object *
-newfuncobject(code, globals)
-	object *code;
-	object *globals;
+PyObject *
+PyFunction_New(code, globals)
+	PyObject *code;
+	PyObject *globals;
 {
-	funcobject *op = NEWOBJ(funcobject, &Functype);
+	PyFunctionObject *op = PyObject_NEW(PyFunctionObject,
+					    &PyFunction_Type);
 	if (op != NULL) {
-		object *doc;
-		object *consts;
-		INCREF(code);
+		PyObject *doc;
+		PyObject *consts;
+		Py_INCREF(code);
 		op->func_code = code;
-		INCREF(globals);
+		Py_INCREF(globals);
 		op->func_globals = globals;
-		op->func_name = ((codeobject *)code)->co_name;
-		INCREF(op->func_name);
+		op->func_name = ((PyCodeObject *)code)->co_name;
+		Py_INCREF(op->func_name);
 		op->func_defaults = NULL; /* No default arguments */
-		consts = ((codeobject *)code)->co_consts;
-		if (gettuplesize(consts) >= 1) {
-			doc = gettupleitem(consts, 0);
-			if (!is_stringobject(doc))
-				doc = None;
+		consts = ((PyCodeObject *)code)->co_consts;
+		if (PyTuple_Size(consts) >= 1) {
+			doc = PyTuple_GetItem(consts, 0);
+			if (!PyString_Check(doc))
+				doc = Py_None;
 		}
 		else
-			doc = None;
-		INCREF(doc);
+			doc = Py_None;
+		Py_INCREF(doc);
 		op->func_doc = doc;
 	}
-	return (object *)op;
+	return (PyObject *)op;
 }
 
-object *
-getfunccode(op)
-	object *op;
+PyObject *
+PyFunction_GetCode(op)
+	PyObject *op;
 {
-	if (!is_funcobject(op)) {
-		err_badcall();
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((funcobject *) op) -> func_code;
+	return ((PyFunctionObject *) op) -> func_code;
 }
 
-object *
-getfuncglobals(op)
-	object *op;
+PyObject *
+PyFunction_GetGlobals(op)
+	PyObject *op;
 {
-	if (!is_funcobject(op)) {
-		err_badcall();
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((funcobject *) op) -> func_globals;
+	return ((PyFunctionObject *) op) -> func_globals;
 }
 
-object *
+PyObject *
 PyFunction_GetDefaults(op)
-	object *op;
+	PyObject *op;
 {
-	if (!is_funcobject(op)) {
-		err_badcall();
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return NULL;
 	}
-	return ((funcobject *) op) -> func_defaults;
+	return ((PyFunctionObject *) op) -> func_defaults;
 }
 
 int
 PyFunction_SetDefaults(op, defaults)
-	object *op;
-	object *defaults;
+	PyObject *op;
+	PyObject *defaults;
 {
-	if (!is_funcobject(op)) {
-		err_badcall();
+	if (!PyFunction_Check(op)) {
+		PyErr_BadInternalCall();
 		return -1;
 	}
-	if (defaults == None)
+	if (defaults == Py_None)
 		defaults = NULL;
-	else if (is_tupleobject(defaults))
-		XINCREF(defaults);
+	else if (PyTuple_Check(defaults))
+		Py_XINCREF(defaults);
 	else {
-		err_setstr(SystemError, "non-tuple default args");
+		PyErr_SetString(PyExc_SystemError, "non-tuple default args");
 		return -1;
 	}
-	XDECREF(((funcobject *) op) -> func_defaults);
-	((funcobject *) op) -> func_defaults = defaults;
+	Py_XDECREF(((PyFunctionObject *) op) -> func_defaults);
+	((PyFunctionObject *) op) -> func_defaults = defaults;
 	return 0;
 }
 
 /* Methods */
 
-#define OFF(x) offsetof(funcobject, x)
+#define OFF(x) offsetof(PyFunctionObject, x)
 
 static struct memberlist func_memberlist[] = {
 	{"func_code",	T_OBJECT,	OFF(func_code),		READONLY},
@@ -135,75 +136,75 @@ static struct memberlist func_memberlist[] = {
 	{NULL}	/* Sentinel */
 };
 
-static object *
+static PyObject *
 func_getattr(op, name)
-	funcobject *op;
+	PyFunctionObject *op;
 	char *name;
 {
-	if (name[0] != '_' && getrestricted()) {
-		err_setstr(RuntimeError,
+	if (name[0] != '_' && PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_RuntimeError,
 		  "function attributes not accessible in restricted mode");
 		return NULL;
 	}
-	return getmember((char *)op, func_memberlist, name);
+	return PyMember_Get((char *)op, func_memberlist, name);
 }
 
 static void
 func_dealloc(op)
-	funcobject *op;
+	PyFunctionObject *op;
 {
-	DECREF(op->func_code);
-	DECREF(op->func_globals);
-	DECREF(op->func_name);
-	XDECREF(op->func_defaults);
-	XDECREF(op->func_doc);
-	DEL(op);
+	Py_DECREF(op->func_code);
+	Py_DECREF(op->func_globals);
+	Py_DECREF(op->func_name);
+	Py_XDECREF(op->func_defaults);
+	Py_XDECREF(op->func_doc);
+	PyMem_DEL(op);
 }
 
-static object*
+static PyObject*
 func_repr(op)
-	funcobject *op;
+	PyFunctionObject *op;
 {
 	char buf[140];
-	if (op->func_name == None)
+	if (op->func_name == Py_None)
 		sprintf(buf, "<anonymous function at %lx>", (long)op);
 	else
 		sprintf(buf, "<function %.100s at %lx>",
-			getstringvalue(op->func_name),
+			PyString_AsString(op->func_name),
 			(long)op);
-	return newstringobject(buf);
+	return PyString_FromString(buf);
 }
 
 static int
 func_compare(f, g)
-	funcobject *f, *g;
+	PyFunctionObject *f, *g;
 {
 	int c;
 	if (f->func_globals != g->func_globals)
 		return (f->func_globals < g->func_globals) ? -1 : 1;
-	c = cmpobject(f->func_defaults, g->func_defaults);
+	c = PyObject_Compare(f->func_defaults, g->func_defaults);
 	if (c != 0)
 		return c;
-	return cmpobject(f->func_code, g->func_code);
+	return PyObject_Compare(f->func_code, g->func_code);
 }
 
 static long
 func_hash(f)
-	funcobject *f;
+	PyFunctionObject *f;
 {
 	long h;
-	h = hashobject(f->func_code);
+	h = PyObject_Hash(f->func_code);
 	if (h == -1) return h;
 	h = h ^ (long)f->func_globals;
 	if (h == -1) h = -2;
 	return h;
 }
 
-typeobject Functype = {
-	OB_HEAD_INIT(&Typetype)
+PyTypeObject PyFunction_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"function",
-	sizeof(funcobject),
+	sizeof(PyFunctionObject),
 	0,
 	(destructor)func_dealloc, /*tp_dealloc*/
 	0,		/*tp_print*/

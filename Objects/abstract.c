@@ -979,7 +979,7 @@ PyObject_CallObject(o, a)
 PyObject *
 #ifdef HAVE_STDARG_PROTOTYPES
 /* VARARGS 2 */
-PyObject_CallFunction(PyObject *callable, char *format, ...)
+PyObject_CallFunction(PyObject *PyCallable_Check, char *format, ...)
 #else
 /* VARARGS */
 PyObject_CallFunction(va_alist) va_dcl
@@ -990,14 +990,14 @@ PyObject_CallFunction(va_alist) va_dcl
 #ifdef HAVE_STDARG_PROTOTYPES
   va_start(va, format);
 #else
-  PyObject *callable;
+  PyObject *PyCallable_Check;
   char *format;
   va_start(va);
-  callable = va_arg(va, PyObject *);
+  PyCallable_Check = va_arg(va, PyObject *);
   format   = va_arg(va, char *);
 #endif
 
-  if( ! callable)
+  if( ! PyCallable_Check)
     {
       va_end(va);
       return Py_ReturnNullError();
@@ -1019,7 +1019,7 @@ PyObject_CallFunction(va_alist) va_dcl
       Py_TRY(PyTuple_SetItem(a,0,args) != -1);
       args=a;
     }
-  retval = PyObject_CallObject(callable,args);
+  retval = PyObject_CallObject(PyCallable_Check,args);
   Py_DECREF(args);
   return retval;
 }
@@ -1034,7 +1034,7 @@ PyObject_CallMethod(va_alist) va_dcl
 #endif
 {
   va_list va;
-  PyObject *args, *method=0, *retval;
+  PyObject *args, *PyCFunction=0, *retval;
 #ifdef HAVE_STDARG_PROTOTYPES
   va_start(va, format);
 #else
@@ -1053,15 +1053,15 @@ PyObject_CallMethod(va_alist) va_dcl
       return Py_ReturnNullError();
     }
 
-  method=PyObject_GetAttrString(o,name);
-  if(! method)
+  PyCFunction=PyObject_GetAttrString(o,name);
+  if(! PyCFunction)
     {
       va_end(va);
       PyErr_SetString(PyExc_AttributeError,name);
       return 0;
     }
    
-  if(! (PyCallable_Check(method)))
+  if(! (PyCallable_Check(PyCFunction)))
     {
       va_end(va);
       PyErr_SetString(PyExc_TypeError,"call of non-callable attribute");
@@ -1086,9 +1086,9 @@ PyObject_CallMethod(va_alist) va_dcl
       args=a;
     }
 
-  retval = PyObject_CallObject(method,args);
+  retval = PyObject_CallObject(PyCFunction,args);
   Py_DECREF(args);
-  Py_DECREF(method);
+  Py_DECREF(PyCFunction);
   return retval;
 }
 

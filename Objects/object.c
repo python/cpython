@@ -31,10 +31,10 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /* Generic object operations; and implementation of None (NoObject) */
 
-#include "allobjects.h"
+#include "Python.h"
 
 #if defined( Py_TRACE_REFS ) || defined( Py_REF_DEBUG )
-long ref_total;
+long _Py_RefTotal;
 #endif
 
 /* Object allocation routines used by NEWOBJ and NEWVAROBJ macros.
@@ -42,14 +42,14 @@ long ref_total;
    Do not call them otherwise, they do not initialize the object! */
 
 #ifdef COUNT_ALLOCS
-static typeobject *type_list;
+static PyTypeObject *type_list;
 extern int tuple_zero_allocs, fast_tuple_allocs;
 extern int quick_int_allocs, quick_neg_int_allocs;
 extern int null_strings, one_strings;
 void
 dump_counts()
 {
-	typeobject *tp;
+	PyTypeObject *tp;
 
 	for (tp = type_list; tp; tp = tp->tp_next)
 		fprintf(stderr, "%s alloc'd: %d, freed: %d, max in use: %d\n",
@@ -92,12 +92,12 @@ get_counts()
 
 void
 inc_count(tp)
-	typeobject *tp;
+	PyTypeObject *tp;
 {
 	if (tp->tp_alloc == 0) {
 		/* first time; insert in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
-			fatal("XXX inc_count sanity check");
+			Py_FatalError("XXX inc_count sanity check");
 		tp->tp_next = type_list;
 		type_list = tp;
 	}
@@ -108,35 +108,35 @@ inc_count(tp)
 #endif
 
 #ifndef MS_COREDLL
-object *
-newobject(tp)
-	typeobject *tp;
+PyObject *
+_PyObject_New(tp)
+	PyTypeObject *tp;
 #else
-object *
-newobject(tp,op)
-	typeobject *tp;
+PyObject *
+_PyObject_New(tp,op)
+	PyTypeObject *tp;
 	PyObject *op;
 #endif
 {
 #ifndef MS_COREDLL
-	object *op = (object *) malloc(tp->tp_basicsize);
+	PyObject *op = (PyObject *) malloc(tp->tp_basicsize);
 #endif
 	if (op == NULL)
-		return err_nomem();
+		return PyErr_NoMemory();
 	op->ob_type = tp;
-	NEWREF(op);
+	_Py_NewReference(op);
 	return op;
 }
 
 #ifndef MS_COREDLL
 varobject *
-newvarobject(tp, size)
-	typeobject *tp;
+_PyObject_NewVar(tp, size)
+	PyTypeObject *tp;
 	int size;
 #else
 varobject *
-newvarobject(tp, size, op)
-	typeobject *tp;
+_PyObject_NewVar(tp, size, op)
+	PyTypeObject *tp;
 	int size;
 	varobject *op;
 #endif
@@ -146,21 +146,21 @@ newvarobject(tp, size, op)
 		malloc(tp->tp_basicsize + size * tp->tp_itemsize);
 #endif
 	if (op == NULL)
-		return (varobject *)err_nomem();
+		return (varobject *)PyErr_NoMemory();
 	op->ob_type = tp;
 	op->ob_size = size;
-	NEWREF(op);
+	_Py_NewReference(op);
 	return op;
 }
 
 int
-printobject(op, fp, flags)
-	object *op;
+PyObject_Print(op, fp, flags)
+	PyObject *op;
 	FILE *fp;
 	int flags;
 {
 	int ret = 0;
-	if (sigcheck())
+	if (PyErr_CheckSignals())
 		return -1;
 	if (op == NULL) {
 		fprintf(fp, "<nil>");
@@ -175,22 +175,23 @@ printobject(op, fp, flags)
 					op->ob_type->tp_name, (long)op);
 			}
 			else {
-				object *s;
-				if (flags & PRINT_RAW)
-					s = strobject(op);
+				PyObject *s;
+				if (flags & Py_PRINT_RAW)
+					s = PyObject_Str(op);
 				else
-					s = reprobject(op);
+					s = PyObject_Repr(op);
 				if (s == NULL)
 					ret = -1;
-				else if (!is_stringobject(s)) {
-					err_setstr(TypeError,
+				else if (!PyString_Check(s)) {
+					PyErr_SetString(PyExc_TypeError,
 						   "repr not string");
 					ret = -1;
 				}
 				else {
-					fprintf(fp, "%s", getstringvalue(s));
+					fprintf(fp, "%s",
+						PyString_AsString(s));
 				}
-				XDECREF(s);
+				Py_XDECREF(s);
 			}
 		}
 		else
@@ -198,7 +199,7 @@ printobject(op, fp, flags)
 	}
 	if (ret == 0) {
 		if (ferror(fp)) {
-			err_errno(IOError);
+			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(fp);
 			ret = -1;
 		}
@@ -206,104 +207,104 @@ printobject(op, fp, flags)
 	return ret;
 }
 
-object *
-reprobject(v)
-	object *v;
+PyObject *
+PyObject_Repr(v)
+	PyObject *v;
 {
-	if (sigcheck())
+	if (PyErr_CheckSignals())
 		return NULL;
 	if (v == NULL)
-		return newstringobject("<NULL>");
+		return PyString_FromString("<NULL>");
 	else if (v->ob_type->tp_repr == NULL) {
 		char buf[120];
 		sprintf(buf, "<%.80s object at %lx>",
 			v->ob_type->tp_name, (long)v);
-		return newstringobject(buf);
+		return PyString_FromString(buf);
 	}
 	else
 		return (*v->ob_type->tp_repr)(v);
 }
 
-object *
-strobject(v)
-	object *v;
+PyObject *
+PyObject_Str(v)
+	PyObject *v;
 {
 	if (v == NULL)
-		return newstringobject("<NULL>");
-	else if (is_stringobject(v)) {
-		INCREF(v);
+		return PyString_FromString("<NULL>");
+	else if (PyString_Check(v)) {
+		Py_INCREF(v);
 		return v;
 	}
 	else if (v->ob_type->tp_str != NULL)
 		return (*v->ob_type->tp_str)(v);
 	else {
-		object *func;
-		object *res;
-		if (!is_instanceobject(v) ||
-		    (func = getattr(v, "__str__")) == NULL) {
-			err_clear();
-			return reprobject(v);
+		PyObject *func;
+		PyObject *res;
+		if (!PyInstance_Check(v) ||
+		    (func = PyObject_GetAttrString(v, "__str__")) == NULL) {
+			PyErr_Clear();
+			return PyObject_Repr(v);
 		}
-		res = call_object(func, (object *)NULL);
-		DECREF(func);
+		res = PyEval_CallObject(func, (PyObject *)NULL);
+		Py_DECREF(func);
 		return res;
 	}
 }
 
-static object *
+static PyObject *
 do_cmp(v, w)
-	object *v, *w;
+	PyObject *v, *w;
 {
 	/* __rcmp__ actually won't be called unless __cmp__ isn't defined,
 	   because the check in cmpobject() reverses the objects first.
-	   This is intentional -- it makes no sense to define cmp(x,y) different
-	   than -cmp(y,x). */
-	if (is_instanceobject(v) || is_instanceobject(w))
-		return instancebinop(v, w, "__cmp__", "__rcmp__", do_cmp);
-	return newintobject((long)cmpobject(v, w));
+	   This is intentional -- it makes no sense to define cmp(x,y)
+	   different than -cmp(y,x). */
+	if (PyInstance_Check(v) || PyInstance_Check(w))
+		return PyInstance_DoBinOp(v, w, "__cmp__", "__rcmp__", do_cmp);
+	return PyInt_FromLong((long)PyObject_Compare(v, w));
 }
 
 int
-cmpobject(v, w)
-	object *v, *w;
+PyObject_Compare(v, w)
+	PyObject *v, *w;
 {
-	typeobject *tp;
+	PyTypeObject *tp;
 	if (v == w)
 		return 0;
 	if (v == NULL)
 		return -1;
 	if (w == NULL)
 		return 1;
-	if (is_instanceobject(v) || is_instanceobject(w)) {
-		object *res;
+	if (PyInstance_Check(v) || PyInstance_Check(w)) {
+		PyObject *res;
 		int c;
-		if (!is_instanceobject(v))
-			return -cmpobject(w, v);
+		if (!PyInstance_Check(v))
+			return -PyObject_Compare(w, v);
 		res = do_cmp(v, w);
 		if (res == NULL) {
-			err_clear();
+			PyErr_Clear();
 			return (v < w) ? -1 : 1;
 		}
-		if (!is_intobject(res)) {
-			DECREF(res);
+		if (!PyInt_Check(res)) {
+			Py_DECREF(res);
 			return (v < w) ? -1 : 1;
 		}
-		c = getintvalue(res);
-		DECREF(res);
+		c = PyInt_AsLong(res);
+		Py_DECREF(res);
 		return (c < 0) ? -1 : (c > 0) ? 1 : 0;	
 	}
 	if ((tp = v->ob_type) != w->ob_type) {
 		if (tp->tp_as_number != NULL &&
 				w->ob_type->tp_as_number != NULL) {
-			if (coerce(&v, &w) != 0) {
-				err_clear();
+			if (PyNumber_Coerce(&v, &w) != 0) {
+				PyErr_Clear();
 				/* XXX Should report the error,
 				   XXX but the interface isn't there... */
 			}
 			else {
 				int cmp = (*v->ob_type->tp_compare)(v, w);
-				DECREF(v);
-				DECREF(w);
+				Py_DECREF(v);
+				Py_DECREF(w);
 				return cmp;
 			}
 		}
@@ -315,36 +316,36 @@ cmpobject(v, w)
 }
 
 long
-hashobject(v)
-	object *v;
+PyObject_Hash(v)
+	PyObject *v;
 {
-	typeobject *tp = v->ob_type;
+	PyTypeObject *tp = v->ob_type;
 	if (tp->tp_hash != NULL)
 		return (*tp->tp_hash)(v);
 	if (tp->tp_compare == NULL)
 		return (long) v; /* Use address as hash value */
 	/* If there's a cmp but no hash defined, the object can't be hashed */
-	err_setstr(TypeError, "unhashable type");
+	PyErr_SetString(PyExc_TypeError, "unhashable type");
 	return -1;
 }
 
-object *
-getattr(v, name)
-	object *v;
+PyObject *
+PyObject_GetAttrString(v, name)
+	PyObject *v;
 	char *name;
 {
 	if (v->ob_type->tp_getattro != NULL) {
-		object *w, *res;
+		PyObject *w, *res;
 		w = PyString_InternFromString(name);
 		if (w == NULL)
 			return NULL;
 		res = (*v->ob_type->tp_getattro)(v, w);
-		XDECREF(w);
+		Py_XDECREF(w);
 		return res;
 	}
 
 	if (v->ob_type->tp_getattr == NULL) {
-		err_setstr(AttributeError, "attribute-less object");
+		PyErr_SetString(PyExc_AttributeError, "attribute-less object");
 		return NULL;
 	}
 	else {
@@ -353,42 +354,42 @@ getattr(v, name)
 }
 
 int
-hasattr(v, name)
-	object *v;
+PyObject_HasAttrString(v, name)
+	PyObject *v;
 	char *name;
 {
-	object *res = getattr(v, name);
+	PyObject *res = PyObject_GetAttrString(v, name);
 	if (res != NULL) {
-		DECREF(res);
+		Py_DECREF(res);
 		return 1;
 	}
-	err_clear();
+	PyErr_Clear();
 	return 0;
 }
 
 int
-setattr(v, name, w)
-	object *v;
+PyObject_SetAttrString(v, name, w)
+	PyObject *v;
 	char *name;
-	object *w;
+	PyObject *w;
 {
 	if (v->ob_type->tp_setattro != NULL) {
-		object *s;
+		PyObject *s;
 		int res;
 		s = PyString_InternFromString(name);
 		if (s == NULL)
 			return -1;
 		res = (*v->ob_type->tp_setattro)(v, s, w);
-		XDECREF(s);
+		Py_XDECREF(s);
 		return res;
 	}
 
 	if (v->ob_type->tp_setattr == NULL) {
 		if (v->ob_type->tp_getattr == NULL)
-			err_setstr(TypeError,
+			PyErr_SetString(PyExc_TypeError,
 				   "attribute-less object (assign or del)");
 		else
-			err_setstr(TypeError,
+			PyErr_SetString(PyExc_TypeError,
 				   "object has read-only attributes");
 		return -1;
 	}
@@ -401,11 +402,11 @@ setattr(v, name, w)
    Return -1 if an error occurred */
 
 int
-testbool(v)
-	object *v;
+PyObject_IsTrue(v)
+	PyObject *v;
 {
 	int res;
-	if (v == None)
+	if (v == Py_None)
 		res = 0;
 	else if (v->ob_type->tp_as_number != NULL)
 		res = (*v->ob_type->tp_as_number->nb_nonzero)(v);
@@ -427,16 +428,16 @@ testbool(v)
 */
 
 int
-coerce(pv, pw)
-	object **pv, **pw;
+PyNumber_Coerce(pv, pw)
+	PyObject **pv, **pw;
 {
-	register object *v = *pv;
-	register object *w = *pw;
+	register PyObject *v = *pv;
+	register PyObject *w = *pw;
 	int res;
 
-	if (v->ob_type == w->ob_type && !is_instanceobject(v)) {
-		INCREF(v);
-		INCREF(w);
+	if (v->ob_type == w->ob_type && !PyInstance_Check(v)) {
+		Py_INCREF(v);
+		Py_INCREF(w);
 		return 0;
 	}
 	if (v->ob_type->tp_as_number && v->ob_type->tp_as_number->nb_coerce) {
@@ -449,7 +450,7 @@ coerce(pv, pw)
 		if (res <= 0)
 			return res;
 	}
-	err_setstr(TypeError, "number coercion failed");
+	PyErr_SetString(PyExc_TypeError, "number coercion failed");
 	return -1;
 }
 
@@ -457,26 +458,26 @@ coerce(pv, pw)
 /* Test whether an object can be called */
 
 int
-callable(x)
-	object *x;
+PyCallable_Check(x)
+	PyObject *x;
 {
 	if (x == NULL)
 		return 0;
 	if (x->ob_type->tp_call != NULL ||
-	    is_funcobject(x) ||
-	    is_instancemethodobject(x) ||
-	    is_methodobject(x) ||
-	    is_classobject(x))
+	    PyFunction_Check(x) ||
+	    PyMethod_Check(x) ||
+	    PyCFunction_Check(x) ||
+	    PyClass_Check(x))
 		return 1;
-	if (is_instanceobject(x)) {
-		object *call = getattr(x, "__call__");
+	if (PyInstance_Check(x)) {
+		PyObject *call = PyObject_GetAttrString(x, "__call__");
 		if (call == NULL) {
-			err_clear();
+			PyErr_Clear();
 			return 0;
 		}
 		/* Could test recursively but don't, for fear of endless
 		   recursion if some joker sets self.__call__ = self */
-		DECREF(call);
+		Py_DECREF(call);
 		return 1;
 	}
 	return 0;
@@ -490,15 +491,15 @@ so there is exactly one (which is indestructible, by the way).
 */
 
 /* ARGSUSED */
-static object *
+static PyObject *
 none_repr(op)
-	object *op;
+	PyObject *op;
 {
-	return newstringobject("None");
+	return PyString_FromString("None");
 }
 
-static typeobject Notype = {
-	OB_HEAD_INIT(&Typetype)
+static PyTypeObject PyNothing_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
 	0,
 	"None",
 	0,
@@ -515,20 +516,20 @@ static typeobject Notype = {
 	0,		/*tp_hash */
 };
 
-object NoObject = {
-	OB_HEAD_INIT(&Notype)
+PyObject _Py_NoneStruct = {
+	PyObject_HEAD_INIT(&PyNothing_Type)
 };
 
 
 #ifdef Py_TRACE_REFS
 
-static object refchain = {&refchain, &refchain};
+static PyObject refchain = {&refchain, &refchain};
 
 void
-NEWREF(op)
-	object *op;
+_Py_NewReference(op)
+	PyObject *op;
 {
-	ref_total++;
+	_Py_RefTotal++;
 	op->ob_refcnt = 1;
 	op->_ob_next = refchain._ob_next;
 	op->_ob_prev = &refchain;
@@ -540,22 +541,22 @@ NEWREF(op)
 }
 
 void
-UNREF(op)
-	register object *op;
+_Py_ForgetReference(op)
+	register PyObject *op;
 {
-	register object *p;
+	register PyObject *p;
 	if (op->ob_refcnt < 0)
-		fatal("UNREF negative refcnt");
+		Py_FatalError("UNREF negative refcnt");
 	if (op == &refchain ||
 	    op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
-		fatal("UNREF invalid object");
+		Py_FatalError("UNREF invalid object");
 #ifdef SLOW_UNREF_CHECK
 	for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
 		if (p == op)
 			break;
 	}
 	if (p == &refchain) /* Not found */
-		fatal("UNREF unknown object");
+		Py_FatalError("UNREF unknown object");
 #endif
 	op->_ob_next->_ob_prev = op->_ob_prev;
 	op->_ob_prev->_ob_next = op->_ob_next;
@@ -566,11 +567,11 @@ UNREF(op)
 }
 
 void
-DELREF(op)
-	object *op;
+_Py_Dealloc(op)
+	PyObject *op;
 {
 	destructor dealloc = op->ob_type->tp_dealloc;
-	UNREF(op);
+	_Py_ForgetReference(op);
 	op->ob_type = NULL;
 	(*dealloc)(op);
 }
@@ -579,14 +580,14 @@ void
 _Py_PrintReferences(fp)
 	FILE *fp;
 {
-	object *op;
+	PyObject *op;
 	fprintf(fp, "Remaining objects (except strings referenced once):\n");
 	for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-		if (op->ob_refcnt == 1 && is_stringobject(op))
+		if (op->ob_refcnt == 1 && PyString_Check(op))
 			continue; /* Will be printed elsewhere */
 		fprintf(fp, "[%d] ", op->ob_refcnt);
-		if (printobject(op, fp, 0) != 0)
-			err_clear();
+		if (PyObject_Print(op, fp, 0) != 0)
+			PyErr_Clear();
 		putc('\n', fp);
 	}
 }
@@ -630,4 +631,4 @@ PyTypeObject *_Py_cobject_hack = &PyCObject_Type;
 
 
 /* Hack to force loading of abstract.o */
-int (*_Py_abstract_hack) FPROTO((PyObject *)) = &PyObject_Length;
+int (*_Py_abstract_hack) Py_FPROTO((PyObject *)) = &PyObject_Length;
