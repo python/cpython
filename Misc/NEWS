@@ -7,7 +7,7 @@ Python News
 What's New in Python 2.3 alpha 2?
 =================================
 
-*Release date: XX-XXX-2003
+*Release date: XX-XXX-2003*
 
 Core and builtins
 -----------------
@@ -38,8 +38,12 @@ Extension modules
 Library
 -------
 
+TBD
+
 Tools/Demos
 -----------
+
+TBD
 
 Build
 -----
@@ -65,11 +69,17 @@ Build
 C API
 -----
 
+TBD
+
 New platforms
 -------------
 
+TBD
+
 Tests
 -----
+
+TBD
 
 Windows
 -------
@@ -79,6 +89,8 @@ Windows
 
 Mac
 ---
+
+TBD
 
 
 What's New in Python 2.3 alpha 1?
@@ -98,7 +110,7 @@ Type/class unification and new-style classes
   a different meaning than before.
 
 - int() now returns a long object if the argument is outside the
-  integer range, so int("4"*1000), int(1e200) and int(1L<<1000) will
+  integer range, so int("4" * 1000), int(1e200) and int(1L<<1000) will
   all return long objects instead of raising an OverflowError.
 
 - Assignment to __class__ is disallowed if either the old or the new
@@ -801,15 +813,15 @@ Library
   has changed slightly so that an explicit maxlinelen value is always
   honored, and so unicode conversion error handling can be specified.
 
-- distutils' build_ext command now links c++ extensions with the c++
+- distutils' build_ext command now links C++ extensions with the C++
   compiler available in the Makefile or CXX environment variable, if
-  running under *nix.
+  running under \*nix.
 
 - New module bz2: provides a comprehensive interface for the bz2 compression
   library.  It implements a complete file interface, one-shot (de)compression
   functions, and types for sequential (de)compression.
 
-- New pdb command `pp' which is like `p' except that it pretty-prints
+- New pdb command 'pp' which is like 'p' except that it pretty-prints
   the value of its expression argument.
 
 - Now bdist_rpm distutils command understands a verify_script option in
@@ -1936,9 +1948,6 @@ Library
   Python 2.2 bytecode generation.  It has also been promoted from a
   Tool to a standard library package.  (Tools/compiler still exists as
   a sample driver.)
-
-Tools
------
 
 Build
 -----
