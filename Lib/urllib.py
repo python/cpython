@@ -16,7 +16,7 @@ Related standards and specs:
 The object returned by URLopener().open(file) will differ per
 protocol.  All you know is that is has methods read(), readline(),
 readlines(), fileno(), close() and info().  The read*(), fileno()
-and close() methods work like those of open files. 
+and close() methods work like those of open files.
 The info() method returns a mimetools.Message object which can be
 used to query various info about the object, if available.
 (mimetools.Message objects are queried with the getheader() method.)
@@ -36,7 +36,7 @@ MAXFTPCACHE = 10        # Trim the ftp cache beyond this size
 if os.name == 'mac':
     from macurl2path import url2pathname, pathname2url
 elif os.name == 'nt':
-    from nturl2path import url2pathname, pathname2url 
+    from nturl2path import url2pathname, pathname2url
 else:
     def url2pathname(pathname):
         return unquote(pathname)
@@ -395,7 +395,7 @@ class URLopener:
                               headers, urlfile)
         host, port = splitport(host)
         if not port \
-           and socket.gethostbyname(host) in (localhost(), thishost()): 
+           and socket.gethostbyname(host) in (localhost(), thishost()):
             urlfile = file
             if file[:1] == '/':
                 urlfile = 'file://' + file
@@ -509,7 +509,7 @@ class FancyURLopener(URLopener):
         """Default error handling -- don't raise an exception."""
         return addinfourl(fp, headers, "http:" + url)
 
-    def http_error_302(self, url, fp, errcode, errmsg, headers, data=None): 
+    def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 302 -- relocated (temporarily)."""
         # XXX The server can force infinite recursion here!
         if headers.has_key('location'):
@@ -527,11 +527,11 @@ class FancyURLopener(URLopener):
         else:
             return self.open(newurl, data)
 
-    def http_error_301(self, url, fp, errcode, errmsg, headers, data=None): 
+    def http_error_301(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 301 -- also relocated (permanently)."""
         return self.http_error_302(url, fp, errcode, errmsg, headers, data)
 
-    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None): 
+    def http_error_401(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 401 -- authentication required.
         See this URL for a description of the basic authentication scheme:
         http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
@@ -560,7 +560,7 @@ class FancyURLopener(URLopener):
             return self.open(newurl)
         else:
             return self.open(newurl, data)
-   
+
     def retry_https_basic_auth(self, url, realm, data=None):
             host, selector = splithost(url)
             i = string.find(host, '@') + 1
@@ -587,7 +587,7 @@ class FancyURLopener(URLopener):
         import getpass
         try:
             user = raw_input("Enter username for %s at %s: " % (realm,
-                                                                host)) 
+                                                                host))
             passwd = getpass.getpass("Enter password for %s in %s at %s: " %
                 (user, realm, host))
             return user, passwd
@@ -693,7 +693,7 @@ class ftpwrapper:
         self.busy = 1
         # Pass back both a suitably decorated object and a retrieval length
         return (addclosehook(conn[0].makefile('rb'),
-                             self.endtransfer), conn[1]) 
+                             self.endtransfer), conn[1])
     def endtransfer(self):
         if not self.busy:
             return
@@ -722,7 +722,7 @@ class addbase:
 
     def __repr__(self):
         return '<%s at %s whose fp = %s>' % (self.__class__.__name__,
-                                             `id(self)`, `self.fp`) 
+                                             `id(self)`, `self.fp`)
 
     def close(self):
         self.read = None
@@ -820,7 +820,7 @@ def basejoin(base, url):
                 break
             else:
                 basepath = ''
-            
+
         path = basepath + path
     if type and host: return type + '://' + host + path
     elif type: return type + ':' + path
@@ -874,7 +874,7 @@ def splithost(url):
         import re
         _hostprog = re.compile('^//([^/]*)(.*)$')
 
-    match = _hostprog.match(url) 
+    match = _hostprog.match(url)
     if match: return match.group(1, 2)
     return None, url
 
@@ -1011,7 +1011,7 @@ def unquote_plus(s):
         s = string.join(string.split(s, '+'), ' ')
     return unquote(s)
 
-always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ' 
+always_safe = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
                'abcdefghijklmnopqrstuvwxyz'
                '0123456789' '_.-')
 
@@ -1033,7 +1033,7 @@ def _fast_quote(s):
 
 def quote(s, safe = '/'):
     """quote('abc def') -> 'abc%20def'
-    
+
     Each part of a URL, e.g. the path info, the query, etc., has a
     different set of reserved characters that must be quoted.
 
@@ -1111,7 +1111,7 @@ if os.name == 'mac':
             import ic
         except ImportError:
             return {}
-        
+
         try:
             config = ic.IC()
         except ic.error:
@@ -1143,21 +1143,26 @@ elif os.name == 'nt':
             # Std module, so should be around - but you never know!
             return proxies
         try:
-            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER, 
-                'Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings')
+            internetSettings = _winreg.OpenKey(_winreg.HKEY_CURRENT_USER,
+                r'Software\Microsoft\Windows\CurrentVersion\Internet Settings')
             proxyEnable = _winreg.QueryValueEx(internetSettings,
                                                'ProxyEnable')[0]
             if proxyEnable:
                 # Returned as Unicode but problems if not converted to ASCII
                 proxyServer = str(_winreg.QueryValueEx(internetSettings,
                                                        'ProxyServer')[0])
-                if ';' in proxyServer:        # Per-protocol settings
+                if '=' in proxyServer:
+                    # Per-protocol settings
                     for p in proxyServer.split(';'):
-                        protocol, address = p.split('=')
+                        protocol, address = p.split('=', 1)
                         proxies[protocol] = '%s://%s' % (protocol, address)
-                else:        # Use one setting for all protocols
-                    proxies['http'] = 'http://%s' % proxyServer
-                    proxies['ftp'] = 'ftp://%s' % proxyServer
+                else:
+                    # Use one setting for all protocols
+                    if proxyServer[:5] == 'http:':
+                        proxies['http'] = proxyServer
+                    else:
+                        proxies['http'] = 'http://%s' % proxyServer
+                        proxies['ftp'] = 'ftp://%s' % proxyServer
             internetSettings.Close()
         except (WindowsError, ValueError, TypeError):
             # Either registry key not found etc, or the value in an
