@@ -50,10 +50,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif
 #include <unistd.h>
 
-#ifdef THINK_C
-#include <console.h>
-#endif
-
 #define STARTUP "PythonStartup"
 
 extern int Py_DebugFlag; /* For parser.c, declared in pythonrun.c */
@@ -89,9 +85,6 @@ no_appearance:
 static void
 init_mac_world()
 {
-#ifdef THINK_C
-	printf("\n");
-#else
 #ifndef TARGET_API_MAC_CARBON
 	/* These aren't needed for carbon */
 	MaxApplZone();
@@ -104,7 +97,6 @@ init_mac_world()
 #endif
 	InitCursor();
 	init_appearance();
-#endif
 }
 
 /*
@@ -541,9 +533,6 @@ PyMac_Exit(status)
 	else
 		SIOUXSettings.autocloseonquit = 1;
 #endif /* USE_SIOUX */
-#ifdef THINK_C
-	console_options.pause_atexit = keep;
-#endif
 
 	exit(status);
 }

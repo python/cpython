@@ -37,15 +37,9 @@ getwd(cwd)
 {
 	/* Universal parameter block. */
 	union {
-#ifdef THINK_C
-		HFileInfo f;
-		DirInfo d;
-		WDPBRec w;
-#else /* MPW */
 		struct HFileInfo f;
 		struct DirInfo d;
 		struct WDPBRec w;
-#endif
 	} pb;
 	char buf[MAXPATH]; /* Buffer to store the name components */
 	char *ecwd, *ebuf; /* Pointers to end of used part of cwd and buf */
