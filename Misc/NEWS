@@ -32,6 +32,17 @@ License Version 2.
 Core and builtins
 -----------------
 
+- Bug #1055820 Cyclic garbage collection was not protecting against that
+  calling a live weakref to a piece of cyclic trash could resurrect an
+  insane mutation of the trash if any Python code ran during gc (via
+  running a dead object's __del__ method, running another callback on a
+  weakref to a dead object, or via any Python code run in any other thread
+  that managed to obtain the GIL while a __del__ or callback was running
+  in the thread doing gc).  The most likely symptom was "impossible"
+  ``AttributeEror`` exceptions, appearing seemingly at random, on weakly
+  referenced objects.  The cure was to clear all weakrefs to unreachable
+  objects before allowing any callbacks to run.
+
 - Bug #1054139 _PyString_Resize() now invalidates its cached hash value.
 
 Extension Modules

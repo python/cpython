@@ -1,6 +1,7 @@
 from test.test_support import verify, verbose, TestFailed, vereq
 import sys
 import gc
+import weakref
 
 def expect(actual, expected, name):
     if actual != expected:
@@ -369,6 +370,191 @@ def test_get_referents():
 
     expect(gc.get_referents(1, 'a', 4j), [], "get_referents")
 
+# Bug 1055820 has several tests of longstanding bugs involving weakrefs and
+# cyclic gc.
+
+# An instance of C1055820 has a self-loop, so becomes cyclic trash when
+# unreachable.
+class C1055820(object):
+    def __init__(self, i):
+        self.i = i
+        self.loop = self
+
+class GC_Detector(object):
+    # Create an instance I.  Then gc hasn't happened again so long as
+    # I.gc_happened is false.
+
+    def __init__(self):
+        self.gc_happened = False
+
+        def it_happened(ignored):
+            self.gc_happened = True
+
+        # Create a piece of cyclic trash that triggers it_happened when
+        # gc collects it.
+        self.wr = weakref.ref(C1055820(666), it_happened)
+
+def test_bug1055820b():
+    # Corresponds to temp2b.py in the bug report.
+
+    ouch = []
+    def callback(ignored):
+        ouch[:] = [wr() for wr in WRs]
+
+    Cs = [C1055820(i) for i in range(2)]
+    WRs = [weakref.ref(c, callback) for c in Cs]
+    c = None
+
+    gc.collect()
+    expect(len(ouch), 0, "bug1055820b")
+    # Make the two instances trash, and collect again.  The bug was that
+    # the callback materialized a strong reference to an instance, but gc
+    # cleared the instance's dict anyway.
+    Cs = None
+    gc.collect()
+    expect(len(ouch), 2, "bug1055820b")  # else the callbacks didn't run
+    for x in ouch:
+        # If the callback resurrected one of these guys, the instance
+        # would be damaged, with an empty __dict__.
+        expect(x, None, "bug1055820b")
+
+def test_bug1055820c():
+    # Corresponds to temp2c.py in the bug report.  This is pretty elaborate.
+
+    c0 = C1055820(0)
+    # Move c0 into generation 2.
+    gc.collect()
+
+    c1 = C1055820(1)
+    c1.keep_c0_alive = c0
+    del c0.loop # now only c1 keeps c0 alive
+
+    c2 = C1055820(2)
+    c2wr = weakref.ref(c2) # no callback!
+
+    ouch = []
+    def callback(ignored):
+        ouch[:] = [c2wr()]
+
+    # The callback gets associated with a wr on an object in generation 2.
+    c0wr = weakref.ref(c0, callback)
+
+    c0 = c1 = c2 = None
+
+    # What we've set up:  c0, c1, and c2 are all trash now.  c0 is in
+    # generation 2.  The only thing keeping it alive is that c1 points to it.
+    # c1 and c2 are in generation 0, and are in self-loops.  There's a global
+    # weakref to c2 (c2wr), but that weakref has no callback.  There's also
+    # a global weakref to c0 (c0wr), and that does have a callback, and that
+    # callback references c2 via c2wr().
+    #
+    #               c0 has a wr with callback, which references c2wr
+    #               ^
+    #               |
+    #               |     Generation 2 above dots
+    #. . . . . . . .|. . . . . . . . . . . . . . . . . . . . . . . .
+    #               |     Generation 0 below dots
+    #               |
+    #               |
+    #            ^->c1   ^->c2 has a wr but no callback
+    #            |  |    |  |
+    #            <--v    <--v
+    #
+    # So this is the nightmare:  when generation 0 gets collected, we see that
+    # c2 has a callback-free weakref, and c1 doesn't even have a weakref.
+    # Collecting generation 0 doesn't see c0 at all, and c0 is the only object
+    # that has a weakref with a callback.  gc clears c1 and c2.  Clearing c1
+    # has the side effect of dropping the refcount on c0 to 0, so c0 goes
+    # away (despite that it's in an older generation) and c0's wr callback
+    # triggers.  That in turn materializes a reference to c2 via c2wr(), but
+    # c2 gets cleared anyway by gc.
+
+    # We want to let gc happen "naturally", to preserve the distinction
+    # between generations.
+    junk = []
+    i = 0
+    detector = GC_Detector()
+    while not detector.gc_happened:
+        i += 1
+        if i > 10000:
+            raise TestFailed("gc didn't happen after 10000 iterations")
+        expect(len(ouch), 0, "bug1055820c")
+        junk.append([])  # this will eventually trigger gc
+
+    expect(len(ouch), 1, "bug1055820c")  # else the callback wasn't invoked
+    for x in ouch:
+        # If the callback resurrected c2, the instance would be damaged,
+        # with an empty __dict__.
+        expect(x, None, "bug1055820c")
+
+def test_bug1055820d():
+    # Corresponds to temp2d.py in the bug report.  This is very much like
+    # test_bug1055820c, but uses a __del__ method instead of a weakref
+    # callback to sneak in a resurrection of cyclic trash.
+
+    ouch = []
+    class D(C1055820):
+        def __del__(self):
+            ouch[:] = [c2wr()]
+
+    d0 = D(0)
+    # Move all the above into generation 2.
+    gc.collect()
+
+    c1 = C1055820(1)
+    c1.keep_d0_alive = d0
+    del d0.loop # now only c1 keeps d0 alive
+
+    c2 = C1055820(2)
+    c2wr = weakref.ref(c2) # no callback!
+
+    d0 = c1 = c2 = None
+
+    # What we've set up:  d0, c1, and c2 are all trash now.  d0 is in
+    # generation 2.  The only thing keeping it alive is that c1 points to it.
+    # c1 and c2 are in generation 0, and are in self-loops.  There's a global
+    # weakref to c2 (c2wr), but that weakref has no callback.  There are no
+    # other weakrefs.
+    #
+    #               d0 has a __del__ method that references c2wr
+    #               ^
+    #               |
+    #               |     Generation 2 above dots
+    #. . . . . . . .|. . . . . . . . . . . . . . . . . . . . . . . .
+    #               |     Generation 0 below dots
+    #               |
+    #               |
+    #            ^->c1   ^->c2 has a wr but no callback
+    #            |  |    |  |
+    #            <--v    <--v
+    #
+    # So this is the nightmare:  when generation 0 gets collected, we see that
+    # c2 has a callback-free weakref, and c1 doesn't even have a weakref.
+    # Collecting generation 0 doesn't see d0 at all.  gc clears c1 and c2.
+    # Clearing c1 has the side effect of dropping the refcount on d0 to 0, so
+    # d0 goes away (despite that it's in an older generation) and d0's __del__
+    # triggers.  That in turn materializes a reference to c2 via c2wr(), but
+    # c2 gets cleared anyway by gc.
+
+    # We want to let gc happen "naturally", to preserve the distinction
+    # between generations.
+    detector = GC_Detector()
+    junk = []
+    i = 0
+    while not detector.gc_happened:
+        i += 1
+        if i > 10000:
+            raise TestFailed("gc didn't happen after 10000 iterations")
+        expect(len(ouch), 0, "bug1055820d")
+        junk.append([])  # this will eventually trigger gc
+
+    expect(len(ouch), 1, "bug1055820d")  # else __del__ wasn't invoked
+    for x in ouch:
+        # If __del__ resurrected c2, the instance would be damaged, with an
+        # empty __dict__.
+        expect(x, None, "bug1055820d")
+
+
 def test_all():
     gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
@@ -392,6 +578,19 @@ def test_all():
     run_test("boom_new", test_boom_new)
     run_test("boom2_new", test_boom2_new)
     run_test("get_referents", test_get_referents)
+    run_test("bug1055820b", test_bug1055820b)
+
+    gc.enable()
+    try:
+        run_test("bug1055820c", test_bug1055820c)
+    finally:
+        gc.disable()
+
+    gc.enable()
+    try:
+        run_test("bug1055820d", test_bug1055820d)
+    finally:
+        gc.disable()
 
 def test():
     if verbose:

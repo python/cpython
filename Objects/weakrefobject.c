@@ -850,7 +850,9 @@ PyWeakref_GetObject(PyObject *ref)
     return PyWeakref_GET_OBJECT(ref);
 }
 
-
+/* Note that there's an inlined copy-paste of handle_callback() in gcmodule.c's
+ * handle_weakrefs().
+ */
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
