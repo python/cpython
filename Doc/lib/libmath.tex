@@ -79,6 +79,14 @@ argument and return a pair of values, rather than returning their
 second return value through an `output parameter' (there is no such
 thing in Python).
 
+For the \function{ceil()}, \function{floor()}, and \function{modf()}
+functions, note that \emph{all} floating-point numbers of sufficiently
+large magnitude are exact integers.  Python floats typically carry no more
+than 53 bits of precision (the same as the platform C double type), in
+which case any float \var{x} with \code{abs(\var{x}) >= 2**52}
+necessarily has no fractional bits.
+
+
 Power and logarithmic functions:
 
 \begin{funcdesc}{exp}{x}
