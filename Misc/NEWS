@@ -67,6 +67,9 @@ Library
 
 Build
 
+- The fpectl module is not built by default; it's dangerous or useless
+  except in the hands of experts.
+
 - A bug was fixed that could cause COUNT_ALLOCS builds to segfault, or
   get into infinite loops, when a new-style class got garbage-collected.
   Unfortunately, to avoid this, the way COUNT_ALLOCS works requires
