@@ -24,18 +24,18 @@ OptionalRelease records the first release in which
 
 was accepted.
 
-In the case of MandatoryReleases that have not yet occurred, 
-MandatoryRelease predicts the release in which the feature will become part 
+In the case of MandatoryReleases that have not yet occurred,
+MandatoryRelease predicts the release in which the feature will become part
 of the language.
 
-Else MandatoryRelease records when the feature became part of the language; 
+Else MandatoryRelease records when the feature became part of the language;
 in releases at or after that, modules no longer need
 
     from __future__ import FeatureName
 
 to use the feature in question, but may continue to use such imports.
 
-MandatoryRelease may also be None, meaning that a planned feature got 
+MandatoryRelease may also be None, meaning that a planned feature got
 dropped.
 
 No line is ever to be deleted from this file.

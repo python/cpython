@@ -561,17 +561,17 @@ class FancyURLopener(URLopener):
         See this URL for a description of the basic authentication scheme:
         http://www.ics.uci.edu/pub/ietf/http/draft-ietf-http-v10-spec-00.txt"""
         if not headers.has_key('www-authenticate'):
-            URLopener.http_error_default(self, url, fp, 
+            URLopener.http_error_default(self, url, fp,
                                          errmsg, headers)
         stuff = headers['www-authenticate']
         import re
         match = re.match('[ \t]*([^ \t]+)[ \t]+realm="([^"]*)"', stuff)
         if not match:
-            URLopener.http_error_default(self, url, fp, 
+            URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         scheme, realm = match.groups()
         if scheme.lower() != 'basic':
-            URLopener.http_error_default(self, url, fp, 
+            URLopener.http_error_default(self, url, fp,
                                          errcode, errmsg, headers)
         name = 'retry_' + self.type + '_basic_auth'
         if data is None:

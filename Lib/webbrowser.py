@@ -154,7 +154,7 @@ if os.environ.get("TERM") or os.environ.get("DISPLAY"):
 
                 def open(self, url, new=1, autoraise=1):
                     # XXX Currently I know no way to prevent KFM from
-                    # opening a new win. 
+                    # opening a new win.
                     self._remote("openURL %s" % url)
 
                 # Deprecated.  May be removed in 2.1.

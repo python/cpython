@@ -445,7 +445,7 @@ class HTMLDoc(Doc):
                         modpkgs.append((modname, name, 0, 0))
                         modnames.append(modname)
                     elif ispackage(path):
-                            modpkgs.append((file, name, 1, 0))
+                        modpkgs.append((file, name, 1, 0))
             modpkgs.sort()
             contents = self.multicolumn(modpkgs, self.modpkglink)
             result = result + self.bigsection(
@@ -576,7 +576,7 @@ class HTMLDoc(Doc):
             if ispackage(path): found(file, 1)
         for file in files:
             path = os.path.join(dir, file)
-            if file[:1] != '_' and os.path.isfile(path): 
+            if file[:1] != '_' and os.path.isfile(path):
                 modname = modulename(file)
                 if modname: found(modname, 0)
 
