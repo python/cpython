@@ -1059,11 +1059,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 		for (i = 0; i < nslots; i++, mp++) {
 			mp->name = PyString_AS_STRING(
 				PyTuple_GET_ITEM(slots, i));
-			mp->type = T_OBJECT;
+			mp->type = T_OBJECT_EX;
 			mp->offset = slotoffset;
 			if (base->tp_weaklistoffset == 0 &&
-			    strcmp(mp->name, "__weakref__") == 0)
+			    strcmp(mp->name, "__weakref__") == 0) {
+				mp->type = T_OBJECT;
 				type->tp_weaklistoffset = slotoffset;
+			}
 			slotoffset += sizeof(PyObject *);
 		}
 	}
