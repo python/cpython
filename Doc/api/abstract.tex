@@ -82,9 +82,9 @@ for which they do not apply, they will raise a Python exception.
 
 
 \begin{cfuncdesc}{PyObject*}{PyObject_RichCompare}{PyObject *o1,
-                                                   PyObject *o2, int op}
+                                                   PyObject *o2, int opid}
   Compare the values of \var{o1} and \var{o2} using the operation
-  specified by \var{op}, which must be one of 
+  specified by \var{opid}, which must be one of
   \constant{Py_LT},
   \constant{Py_LE},
   \constant{Py_EQ},
@@ -97,15 +97,15 @@ for which they do not apply, they will raise a Python exception.
   \code{!=},
   \code{>}, or
   \code{>=} respectively. This is the equivalent of the Python expression
-  \samp{\var{o1} \emph{op} \var{o2}}, where \emph{op} is the operator
-  corresponding to \var{op}. Returns the value of the comparison on
+  \samp{\var{o1} op \var{o2}}, where \code{op} is the operator
+  corresponding to \var{opid}. Returns the value of the comparison on
   success, or \NULL{} on failure.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_RichCompareBool}{PyObject *o1,
-                                                 PyObject *o2, int op}
+                                                 PyObject *o2, int opid}
   Compare the values of \var{o1} and \var{o2} using the operation
-  specified by \var{op}, which must be one of 
+  specified by \var{opid}, which must be one of
   \constant{Py_LT},
   \constant{Py_LE},
   \constant{Py_EQ},
@@ -119,8 +119,8 @@ for which they do not apply, they will raise a Python exception.
   \code{>}, or
   \code{>=} respectively. Returns \code{-1} on error, \code{0} if the
   result is false, \code{1} otherwise. This is the equivalent of the
-  Python expression \samp{\var{o1} \emph{op} \var{o2}}, where
-  \emph{op} is the operator corresponding to \var{op}.
+  Python expression \samp{\var{o1} op \var{o2}}, where
+  \code{op} is the operator corresponding to \var{opid}.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{int}{PyObject_Cmp}{PyObject *o1, PyObject *o2, int *result}

@@ -843,6 +843,16 @@ PyObject_Print:int:flags::
 PyObject_Repr:PyObject*::+1:
 PyObject_Repr:PyObject*:o:0:
 
+PyObject_RichCompare:PyObject*::+1:
+PyObject_RichCompare:PyObject*:o1:0:
+PyObject_RichCompare:PyObject*:o2:0:
+PyObject_RichCompare:int:opid::
+
+PyObject_RichCompareBool:int:::
+PyObject_RichCompareBool:PyObject*:o1:0:
+PyObject_RichCompareBool:PyObject*:o2:0:
+PyObject_RichCompareBool:int:opid::
+
 PyObject_SetAttr:int:::
 PyObject_SetAttr:PyObject*:o:0:
 PyObject_SetAttr:PyObject*:attr_name:0:
