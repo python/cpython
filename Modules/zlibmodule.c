@@ -355,40 +355,46 @@ PyZlib_objcompress(self, args)
         compobject *self;
         PyObject *args;
 {
-  int length=0, err, inplen;
-  Byte *buf=NULL;
+  int err = Z_OK, inplen;
+  int length = DEFAULTALLOC;
   PyObject *RetVal;
   Byte *input;
   
   if (!PyArg_ParseTuple(args, "s#", &input, &inplen))
-    return NULL;
+      return NULL;
   self->zst.avail_in=inplen;
   self->zst.next_in=input;
-  do 
-    {
-      buf=(Byte *)realloc(buf, length << 1);
-      if (buf==NULL) 
-	{
-	  PyErr_SetString(PyExc_MemoryError,
-			  "Can't allocate memory to compress data");
-	  return NULL;
-	}
-      self->zst.next_out=buf+length;
-      self->zst.avail_out=length;
-      length = length << 1;
-      err=deflate(&(self->zst), Z_NO_FLUSH);
-    } while (self->zst.avail_in!=0 && err==Z_OK);
-  if (err!=Z_OK) 
+  if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
+      PyErr_SetString(PyExc_MemoryError,
+		      "Can't allocate memory to compress data");
+      return NULL;
+  }
+  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.avail_out = length;
+  while (self->zst.avail_in != 0 && err == Z_OK)
+  {
+      err = deflate(&(self->zst), Z_NO_FLUSH);
+      if (self->zst.avail_out <= 0) {
+	  if (_PyString_Resize(&RetVal, length << 1) == -1)  {
+	      PyErr_SetString(PyExc_MemoryError,
+			      "Can't allocate memory to compress data");
+	      return NULL;
+	  }
+	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.avail_out = length;
+	  length = length << 1;
+      }
+  }
+  if (err != Z_OK) 
     {
       char temp[500];
-	if (self->zst.msg==Z_NULL) self->zst.msg="";
+      if (self->zst.msg==Z_NULL) self->zst.msg="";
       sprintf(temp, "Error %i while compressing [%s]",
 	      err, self->zst.msg);
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
-  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out-buf);
-  free(buf);
+  _PyString_Resize(&RetVal, self->zst.total_out);
   return RetVal;
 }
 
@@ -456,48 +462,53 @@ PyZlib_flush(self, args)
         compobject *self;
         PyObject *args;
 {
-  int length=0, err;
-  Byte *buf=NULL;
+  int length=DEFAULTALLOC, err = Z_OK;
   PyObject *RetVal;
   
   if (!PyArg_NoArgs(args))
-    return NULL;
-  self->zst.avail_in=0;
-  do 
-    {
-      buf=(Byte *)realloc(buf, length << 1);
-      if (buf==NULL) 
-	{
-	  PyErr_SetString(PyExc_MemoryError,
-			  "Can't allocate memory to compress data");
-	  return NULL;
-	}
-      self->zst.next_out=buf+length;
-      self->zst.avail_out=length;
-      length = length << 1;
-      err=deflate(&(self->zst), Z_FINISH);
-    } while (err==Z_OK);
-  if (err!=Z_STREAM_END) 
-    {
+      return NULL;
+  self->zst.avail_in = 0;
+  self->zst.next_in = Z_NULL;
+  if (!(RetVal = PyString_FromStringAndSize(NULL, length))) {
+      PyErr_SetString(PyExc_MemoryError,
+		      "Can't allocate memory to compress data");
+      return NULL;
+  }
+  self->zst.next_out = PyString_AsString(RetVal);
+  self->zst.avail_out = length;
+  while (err == Z_OK)
+  {
+      err = deflate(&(self->zst), Z_FINISH);
+      if (self->zst.avail_out <= 0) {
+	  if (_PyString_Resize(&RetVal, length << 1) == -1)  {
+	      PyErr_SetString(PyExc_MemoryError,
+			      "Can't allocate memory to compress data");
+	      return NULL;
+	  }
+	  self->zst.next_out = PyString_AsString(RetVal) + length;
+	  self->zst.avail_out = length;
+	  length = length << 1;
+      }
+  }
+  if (err!=Z_STREAM_END) {
       char temp[500];
-	if (self->zst.msg==Z_NULL) self->zst.msg="";
+      if (self->zst.msg==Z_NULL) self->zst.msg="";
       sprintf(temp, "Error %i while compressing [%s]",
 	      err, self->zst.msg);
       PyErr_SetString(ZlibError, temp);
       return NULL;
-    }
-  RetVal=PyString_FromStringAndSize((char *)buf, self->zst.next_out-buf);
-  free(buf);
+  }
   err=deflateEnd(&(self->zst));
-  if (err!=Z_OK) 
-    {
+  if (err!=Z_OK) {
       char temp[500];
-	if (self->zst.msg==Z_NULL) self->zst.msg="";
+      if (self->zst.msg==Z_NULL) self->zst.msg="";
       sprintf(temp, "Error %i while flushing compression object [%s]",
 	      err, self->zst.msg);
       PyErr_SetString(ZlibError, temp);
       return NULL;
-    }
+  }
+  _PyString_Resize(&RetVal,
+		   (char *)self->zst.next_out - PyString_AsString(RetVal));
   return RetVal;
 }
 
@@ -516,7 +527,12 @@ PyZlib_unflush(self, args)
   
   if (!PyArg_NoArgs(args))
       return NULL;
-  RetVal = PyString_FromStringAndSize(NULL, DEFAULTALLOC);
+  if (!(RetVal = PyString_FromStringAndSize(NULL, DEFAULTALLOC)))
+  {
+      PyErr_SetString(PyExc_MemoryError,
+		      "Can't allocate memory to decompress data");
+      return NULL;
+  }
   self->zst.avail_in=0;
   self->zst.next_out = PyString_AsString(RetVal);
   length = self->zst.avail_out = DEFAULTALLOC;
@@ -541,7 +557,7 @@ PyZlib_unflush(self, args)
   if (err!=Z_STREAM_END) 
     {
       char temp[500];
-	if (self->zst.msg==Z_NULL) self->zst.msg="";
+      if (self->zst.msg==Z_NULL) self->zst.msg="";
       sprintf(temp, "Error %i while decompressing [%s]",
 	      err, self->zst.msg);
       PyErr_SetString(ZlibError, temp);
@@ -551,12 +567,14 @@ PyZlib_unflush(self, args)
   if (err!=Z_OK) 
     {
       char temp[500];
-	if (self->zst.msg==Z_NULL) self->zst.msg="";
+      if (self->zst.msg==Z_NULL) self->zst.msg="";
       sprintf(temp, "Error %i while flushing decompression object [%s]",
 	      err, self->zst.msg);
       PyErr_SetString(ZlibError, temp);
       return NULL;
     }
+  _PyString_Resize(&RetVal, 
+		   (char *)self->zst.next_out - PyString_AsString(RetVal));
   return RetVal;
 }
 
