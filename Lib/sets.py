@@ -455,7 +455,7 @@ class Set(BaseSet):
             pass
 
     def pop(self):
-        """Remove and return a randomly-chosen set element."""
+        """Remove and return an arbitrary set element."""
         return self._data.popitem()[0]
 
     def _as_immutable(self):
