@@ -1155,11 +1155,6 @@ dict_popitem(dictobject *mp, PyObject *args)
 
 	if (!PyArg_NoArgs(args))
 		return NULL;
-	if (mp->ma_used == 0) {
-		PyErr_SetString(PyExc_KeyError,
-				"popitem(): dictionary is empty");
-		return NULL;
-	}
 	/* Allocate the result tuple first.  Believe it or not,
 	 * this allocation could trigger a garbage collection which
 	 * could resize the dict, which would invalidate the pointer
@@ -1169,6 +1164,12 @@ dict_popitem(dictobject *mp, PyObject *args)
 	res = PyTuple_New(2);
 	if (res == NULL)
 		return NULL;
+	if (mp->ma_used == 0) {
+		Py_DECREF(res);
+		PyErr_SetString(PyExc_KeyError,
+				"popitem(): dictionary is empty");
+		return NULL;
+	}
 	/* Set ep to "the first" dict entry with a value.  We abuse the hash
 	 * field of slot 0 to hold a search finger:
 	 * If slot 0 has a value, use slot 0.
