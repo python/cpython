@@ -302,11 +302,11 @@ module from which it is called).
 \end{funcdesc}
 
 \begin{funcdesc}{id}{object}
-  Return the `identity' of an object.  This is an integer which is
-  guaranteed to be unique and constant for this object during its
-  lifetime.  (Two objects whose lifetimes are disjunct may have the
-  same \function{id()} value.)  (Implementation note: this is the
-  address of the object.)
+  Return the `identity' of an object.  This is an integer (or long
+  integer) which is guaranteed to be unique and constant for this
+  object during its lifetime.  Two objects whose lifetimes are
+  disjunct may have the same \function{id()} value.  (Implementation
+  note: this is the address of the object.)
 \end{funcdesc}
 
 \begin{funcdesc}{input}{\optional{prompt}}
