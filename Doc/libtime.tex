@@ -86,7 +86,8 @@ to 1 when DST applies to the given time.
 
 \begin{funcdesc}{mktime}{tuple}
 This is the inverse function of \code{localtime}.  Its argument is the
-full 9-tuple (since the dst flag is needed).  It returns an integer.
+full 9-tuple (since the dst flag is needed).  It returns an integer.  If the
+input value can't be represented as a non-negative integer, OverflowError is raised.
 \end{funcdesc}
 
 \begin{funcdesc}{sleep}{secs}
