@@ -293,9 +293,9 @@ class Main:
 						try:
 							macostools.copy(fullname, os.path.join(destprefix, dest), 1)
 						except: #DBG
-							print 'cwd', os.path.getcwd() #DBG
+							print 'cwd', os.getcwd() #DBG
 							print 'fsspec', macfs.FSSpec(fullname) #DBG
-							sys.exit(1)
+							raise
 		for d in todo:
 			if not self.rundir(d, destprefix, doit):
 				rv = 0
