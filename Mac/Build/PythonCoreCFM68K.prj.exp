@@ -52,6 +52,9 @@ wmemchr
 wmemset
 wmemmove
 wmemcpy
+iswctype
+wctype
+wctob
 towupper
 towlower
 iswxdigit
@@ -67,6 +70,8 @@ iswalpha
 iswalnum
 wctrans
 towctrans
+wcstoumax
+wcstoimax
 watol
 watoi
 wcstoll
@@ -103,6 +108,8 @@ clock
 __leap_year
 system
 getenv
+strtoumax
+strtoimax
 atol
 atoi
 strtoll
@@ -329,11 +336,11 @@ unexpected__3stdFv		# std::unexpected()
 set_unexpected__3stdFPFv_v		# std::set_unexpected(void (*)(void))
 terminate__3stdFv		# std::terminate()
 set_terminate__3stdFPFv_v		# std::set_terminate(void (*)(void))
-__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 what__Q23std9bad_allocCFv		# std::bad_alloc::what() const
 __del_hdl
 __new_hdl
 set_new_handler__3stdFPFv_v		# std::set_new_handler(void (*)(void))
+__dt__Q23std9bad_allocFv		# std::bad_alloc::~bad_alloc()
 __throw_bad_alloc__3stdFv		# std::__throw_bad_alloc()
 __dla__FPv		# operator delete[](void*)
 __nwa__FUlRCQ23std9nothrow_t		# operator new[](unsigned long,const std::nothrow_t&)
@@ -344,19 +351,19 @@ __nw__FUl		# operator new(unsigned long)
 _prealloc_newpool__3stdFUl		# std::_prealloc_newpool(unsigned long)
 _set_newnonptrmax__3stdFUl		# std::_set_newnonptrmax(unsigned long)
 _set_newpoolsize__3stdFUl		# std::_set_newpoolsize(unsigned long)
-__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
-__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
-what__Q23std8bad_castCFv		# std::bad_cast::what() const
 what__Q23std10bad_typeidCFv		# std::bad_typeid::what() const
+what__Q23std8bad_castCFv		# std::bad_cast::what() const
+__dt__Q23std8bad_castFv		# std::bad_cast::~bad_cast()
 __dynamic_cast
+__dt__Q23std10bad_typeidFv		# std::bad_typeid::~bad_typeid()
 __get_typeid
-__dt__Q23std9exceptionFv		# std::exception::~exception()
-__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
-what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
 what__Q23std9exceptionCFv		# std::exception::what() const
+what__Q23std13bad_exceptionCFv		# std::bad_exception::what() const
 __end__catch
 Ex68K_CatchInfoDtor
 __throw
+__dt__Q23std9exceptionFv		# std::exception::~exception()
+__dt__Q23std13bad_exceptionFv		# std::bad_exception::~bad_exception()
 __unexpected
 __unregister_fragment
 __register_fragment
@@ -482,10 +489,10 @@ connect__6SocketFPvi		# Socket::connect(void*,int)
 bind__6SocketFPvi		# Socket::bind(void*,int)
 __dt__6SocketFv		# Socket::~Socket()
 __ct__6SocketFv		# Socket::Socket()
-__dt__17SIOUXSocketDomainFv		# SIOUXSocketDomain::~SIOUXSocketDomain()
 open__17SIOUXSocketDomainFRC11GUSIFileRefi		# SIOUXSocketDomain::open(const GUSIFileRef&,int)
-Yours__17SIOUXSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# SIOUXSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
+__dt__17SIOUXSocketDomainFv		# SIOUXSocketDomain::~SIOUXSocketDomain()
 GUSIwithSIOUXSockets
+Yours__17SIOUXSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# SIOUXSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
 isatty__11SIOUXSocketFv		# SIOUXSocket::isatty()
 select__11SIOUXSocketFPUcPUcPUc		# SIOUXSocket::select(unsigned char*,unsigned char*,unsigned char*)
 write__11SIOUXSocketFPvi		# SIOUXSocket::write(void*,int)
@@ -543,8 +550,8 @@ PAPStatus__FPcP12PAPStatusRecP9AddrBlockPc		# PAPStatus(char*,PAPStatusRec*,Addr
 PAPWrite__FsPcssPsPc		# PAPWrite(short,char*,short,short,short*,char*)
 PAPRead__FsPcPsPsPsPc		# PAPRead(short,char*,short*,short*,short*,char*)
 PAPOpen__FPsPcsP12PAPStatusRecPsPc		# PAPOpen(short*,char*,short,PAPStatusRec*,short*,char*)
-__dt__16NullSocketDomainFv		# NullSocketDomain::~NullSocketDomain()
 __dt__10NullSocketFv		# NullSocket::~NullSocket()
+__dt__16NullSocketDomainFv		# NullSocketDomain::~NullSocketDomain()
 open__16NullSocketDomainFRC11GUSIFileRefi		# NullSocketDomain::open(const GUSIFileRef&,int)
 Yours__16NullSocketDomainFRC11GUSIFileRefQ216FileSocketDomain7Request		# NullSocketDomain::Yours(const GUSIFileRef&,FileSocketDomain::Request)
 fstat__10NullSocketFP4stat		# NullSocket::fstat(stat*)
@@ -552,7 +559,6 @@ select__10NullSocketFPUcPUcPUc		# NullSocket::select(unsigned char*,unsigned cha
 write__10NullSocketFPvi		# NullSocket::write(void*,int)
 read__10NullSocketFPvi		# NullSocket::read(void*,int)
 __ct__10NullSocketFv		# NullSocket::NullSocket()
-make_in_addr__FUl		# make_in_addr(unsigned long)
 getprotobynumber
 getprotobyname
 getservbyport
@@ -565,6 +571,7 @@ gethostid
 inet_addr
 inet_ntoa
 gethostbyaddr
+make_in_addr__FUl		# make_in_addr(unsigned long)
 gethostbyname
 MXInfo
 HInfo
@@ -824,7 +831,6 @@ Consumer__10RingBufferFRl		# RingBuffer::Consumer(long&)
 Producer__10RingBufferFRl		# RingBuffer::Producer(long&)
 __dt__10RingBufferFv		# RingBuffer::~RingBuffer()
 __ct__10RingBufferFUs		# RingBuffer::RingBuffer(unsigned short)
-__dt__10ErrnoSaverFv		# ErrnoSaver::~ErrnoSaver()
 __dt__21AppleTalkSocketDomainFv		# AppleTalkSocketDomain::~AppleTalkSocketDomain()
 AtlkLookup__FRC10EntityNameP9AddrBlock		# AtlkLookup(const EntityName&,AddrBlock*)
 __dt__11AtlkSymAddrFv		# AtlkSymAddr::~AtlkSymAddr()
@@ -851,75 +857,164 @@ __dt__10ADSPSocketFv		# ADSPSocket::~ADSPSocket()
 __ct__10ADSPSocketFUc		# ADSPSocket::ADSPSocket(unsigned char)
 getpeername__15AppleTalkSocketFPvPi		# AppleTalkSocket::getpeername(void*,int*)
 getsockname__15AppleTalkSocketFPvPi		# AppleTalkSocket::getsockname(void*,int*)
+__dt__10ErrnoSaverFv		# ErrnoSaver::~ErrnoSaver()
 bind__15AppleTalkSocketFPvi		# AppleTalkSocket::bind(void*,int)
 ioctl__15AppleTalkSocketFUiPv		# AppleTalkSocket::ioctl(unsigned int,void*)
 fcntl__15AppleTalkSocketFUii		# AppleTalkSocket::fcntl(unsigned int,int)
 __dt__15AppleTalkSocketFv		# AppleTalkSocket::~AppleTalkSocket()
 __ct__15AppleTalkSocketFUc		# AppleTalkSocket::AppleTalkSocket(unsigned char)
+fminl
+fmaxl
+fdiml
+nextafterxl
+remquol
+copysignl
+remainderl
 fmodl
+truncl
+llroundl
+lroundl
+roundl
+llrintl
+lrintl
+rintl
+nearbyintl
 floorl
 ceill
+lgammal
+gammal
+erfcl
+erfl
+hypotl
 sqrtl
 powl
 fabsl
+scalblnl
+scalbnl
+logbl
+log2l
+log1pl
+expm1l
+exp2l
 log10l
 logl
 ldexpl
 frexpl
 expl
+atanhl
+asinhl
+acoshl
 tanhl
 sinhl
 coshl
+tanl
+sinl
+cosl
 atan2l
 atanl
 asinl
 acosl
-tanl
-sinl
-cosl
+fmind
+fmaxd
+fdimd
+copysignd
+remquod
+remainderd
 fmodd
+truncd
+llround
+lround
+roundd
+llrint
+lrint
+rintd
+nearbyintd
 floord
 ceild
+lgammad
+gammad
+erfcd
+erfd
+hypotd
 sqrtd
 powd
 fabsd
+scalbln
+scalbn
+logbd
+log2d
+log1pd
+expm1d
+exp2d
 modfd
 log10d
 logd
 ldexpd
 frexpd
 expd
+atanhd
+asinhd
+acoshd
 tanhd
 sinhd
 coshd
+tand
+sind
+cosd
 atan2d
 atand
 asind
 acosd
-tand
-sind
-cosd
+fminf
+fmaxf
+fdimf
+remquof
+copysignf
+remainderf
 fmodf
+truncf
+llroundf
+lroundf
+roundf
+llrintf
+lrintf
+rintf
+nearbyintf
 floorf
 ceilf
+lgammaf
+gammaf
+erfcf
+erff
+hypotf
 sqrtf
 powf
 fabsf
+scalblnf
+scalbnf
+logbf
+log2f
+log1pf
+expm1f
+exp2f
 log10f
 logf
 ldexpf
 frexpf
 expf
+atanhf
+asinhf
+acoshf
 tanhf
 sinhf
 coshf
+tanf
+sinf
+cosf
 atan2f
 atanf
 asinf
 acosf
-tanf
-sinf
-cosf
 NaN
 GetPrecision
 SetPrecision
@@ -1049,7 +1144,6 @@ getwd
 getbootvol
 sync
 macstat
-main
 PyMac_AddLibResources
 __initialize_with_resources
 getfiletype
@@ -1230,6 +1324,12 @@ PyCFunction_GetSelf
 PyCFunction_GetFunction
 PyCFunction_New
 PyLong_FromString
+PyLong_AsUnsignedLongLong
+PyLong_AsLongLong
+PyLong_FromUnsignedLongLong
+PyLong_FromLongLong
+PyLong_AsVoidPtr
+PyLong_FromVoidPtr
 PyLong_AsDouble
 PyLong_AsUnsignedLong
 PyLong_AsLong
@@ -1501,6 +1601,32 @@ _PyBuiltin_Fini_2
 _PyBuiltin_Fini_1
 _PyBuiltin_Init_2
 _PyBuiltin_Init_1
+initWin
+WinObj_WhichWindow
+WinObj_Convert
+WinObj_New
+initRes
+OptResObj_Convert
+OptResObj_New
+ResObj_Convert
+ResObj_New
+initQd
+BMObj_Convert
+BMObj_New
+GrafObj_Convert
+GrafObj_New
+QdRGB_Convert
+QdRGB_New
+initMenu
+MenuObj_Convert
+MenuObj_New
+initDlg
+DlgObj_Convert
+initCtl
+CtlObj_WhichControl
+CtlObj_Convert
+CtlObj_New
+ControlFontStyle_Convert
 PyMac_FindModuleExtension
 PyMac_LoadResourceModule
 PyMac_LoadCodeResourceModule
@@ -1625,6 +1751,7 @@ __vt__10ADSPSocket		# ADSPSocket::__vt
 __vt__21AppleTalkSocketDomain		# AppleTalkSocketDomain::__vt
 uADSPCompletion
 new_doc
+array_methods
 _PyParser_TokenNames
 PyType_Type
 PyTuple_Type
@@ -1661,6 +1788,21 @@ optind
 opterr
 PyImport_FrozenModules
 PyCode_Type
+Window_Type
+WinObj_chain
+Resource_Type
+ResObj_chain
+QDGlobalsAccess_Type
+BitMap_Type
+BMObj_chain
+GrafPort_Type
+GrafObj_chain
+Menu_Type
+MenuObj_chain
+Dialog_Type
+DlgObj_chain
+Control_Type
+CtlObj_chain
 _PyImport_Inittab
 pcre_free
 pcre_malloc
@@ -1731,6 +1873,7 @@ _Py_re_syntax
 Py_TabcheckFlag
 PyOS_ReadlineFunctionPointer
 PyOS_InputHook
+_PyThreadState_Current
 Py_DebugFlag
 Py_VerboseFlag
 Py_InteractiveFlag
@@ -1758,6 +1901,7 @@ PyExc_MemoryError
 PyExc_NameError
 PyExc_OverflowError
 PyExc_RuntimeError
+PyExc_NotImplementedError
 PyExc_SyntaxError
 PyExc_SystemError
 PyExc_SystemExit
