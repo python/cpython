@@ -150,7 +150,7 @@ multiple files from one field (using a recursive
 a dictionary-like \class{FieldStorage} item.  This can be determined
 by testing its \member{type} attribute, which should be
 \mimetype{multipart/form-data} (or perhaps another MIME type matching
-\mimetype{multipart/*}).  It this case, it can be iterated over
+\mimetype{multipart/*}).  In this case, it can be iterated over
 recursively just like the top-level form object.
 
 When a form is submitted in the ``old'' format (as the query string or
@@ -276,7 +276,7 @@ installed; usually this is in a directory \file{cgi-bin} in the server tree.
 
 Make sure that your script is readable and executable by ``others''; the
 \UNIX{} file mode should be \code{0755} octal (use \samp{chmod 0755
-filename}).  Make sure that the first line of the script contains
+\var{filename}}).  Make sure that the first line of the script contains
 \code{\#!} starting in column 1 followed by the pathname of the Python
 interpreter, for instance:
 
