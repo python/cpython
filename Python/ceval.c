@@ -51,7 +51,7 @@ static int call_trace(Py_tracefunc, PyObject *, PyFrameObject *,
 static void call_trace_protected(Py_tracefunc, PyObject *,
 				 PyFrameObject *, int);
 static void call_exc_trace(Py_tracefunc, PyObject *, PyFrameObject *);
-static void maybe_call_line_trace(int, Py_tracefunc, PyObject *, 
+static void maybe_call_line_trace(Py_tracefunc, PyObject *, 
 				  PyFrameObject *, int *, int *);
 
 static PyObject *apply_slice(PyObject *, PyObject *, PyObject *);
@@ -599,24 +599,6 @@ eval_frame(PyFrameObject *f)
 	}
 
 	tstate->frame = f;
-	co = f->f_code;
-	names = co->co_names;
-	consts = co->co_consts;
-	fastlocals = f->f_localsplus;
-	freevars = f->f_localsplus + f->f_nlocals;
-	_PyCode_GETCODEPTR(co, &first_instr);
-	/* An explanation is in order for the next line.
-
-	   f->f_lasti now refers to the index of the last instruction
-	   executed.  You might think this was obvious from the name, but
-	   this wasn't always true before 2.3!  PyFrame_New now sets
-	   f->f_lasti to -1 (i.e. the index *before* the first instruction)
-	   and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
-	   does work.  Promise. */
-	next_instr = first_instr + f->f_lasti + 1;
-	stack_pointer = f->f_stacktop;
-	assert(stack_pointer != NULL);
-	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
 
 	if (tstate->use_tracing) {
 		if (tstate->c_tracefunc != NULL) {
@@ -655,6 +637,25 @@ eval_frame(PyFrameObject *f)
 		}
 	}
 
+	co = f->f_code;
+	names = co->co_names;
+	consts = co->co_consts;
+	fastlocals = f->f_localsplus;
+	freevars = f->f_localsplus + f->f_nlocals;
+	_PyCode_GETCODEPTR(co, &first_instr);
+	/* An explanation is in order for the next line.
+
+	   f->f_lasti now refers to the index of the last instruction
+	   executed.  You might think this was obvious from the name, but
+	   this wasn't always true before 2.3!  PyFrame_New now sets
+	   f->f_lasti to -1 (i.e. the index *before* the first instruction)
+	   and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
+	   does work.  Promise. */
+	next_instr = first_instr + f->f_lasti + 1;
+	stack_pointer = f->f_stacktop;
+	assert(stack_pointer != NULL);
+	f->f_stacktop = NULL;	/* remains NULL unless yield suspends frame */
+
 #ifdef LLTRACE
 	lltrace = PyDict_GetItemString(f->f_globals,"__lltrace__") != NULL;
 #endif
@@ -681,6 +682,7 @@ eval_frame(PyFrameObject *f)
 
 		if (--_Py_Ticker < 0) {
 			_Py_Ticker = _Py_CheckInterval;
+			tstate->tick_counter++;
 			if (things_to_do) {
 				if (Py_MakePendingCalls() < 0) {
 					why = WHY_EXCEPTION;
@@ -716,9 +718,25 @@ eval_frame(PyFrameObject *f)
 		}
 
 	fast_next_opcode:
-		/* Extract opcode and argument */
-
 		f->f_lasti = INSTR_OFFSET();
+
+		/* line-by-line tracing support */
+
+		if (tstate->c_tracefunc != NULL && !tstate->tracing) {
+			/* see maybe_call_line_trace
+			   for expository comments */
+			f->f_stacktop = stack_pointer;
+			maybe_call_line_trace(tstate->c_tracefunc,
+					      tstate->c_traceobj,
+					      f, &instr_lb, &instr_ub);
+			/* Reload possibly changed frame fields */
+			JUMPTO(f->f_lasti);
+			stack_pointer = f->f_stacktop;
+			assert(stack_pointer != NULL);
+			f->f_stacktop = NULL;
+		}
+
+		/* Extract opcode and argument */
 
 		opcode = NEXTOP();
 		if (HAS_ARG(opcode))
@@ -746,17 +764,6 @@ eval_frame(PyFrameObject *f)
 			}
 		}
 #endif
-
-		/* line-by-line tracing support */
-
-		if (tstate->c_tracefunc != NULL && !tstate->tracing) {
-			/* see maybe_call_line_trace
-			   for expository comments */
-			maybe_call_line_trace(opcode, 
-					      tstate->c_tracefunc,
-					      tstate->c_traceobj,
-					      f, &instr_lb, &instr_ub);
-		}
 
 		/* Main switch on opcode */
 
@@ -2866,7 +2873,7 @@ call_trace(Py_tracefunc func, PyObject *obj, PyFrameObject *frame,
 }
 
 static void
-maybe_call_line_trace(int opcode, Py_tracefunc func, PyObject *obj, 
+maybe_call_line_trace(Py_tracefunc func, PyObject *obj, 
 		      PyFrameObject *frame, int *instr_lb, int *instr_ub)
 {
 	/* The theory of SET_LINENO-less tracing.
@@ -3025,10 +3032,9 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 PyObject *
 PyEval_GetBuiltins(void)
 {
-	PyThreadState *tstate = PyThreadState_Get();
-	PyFrameObject *current_frame = tstate->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
-		return tstate->interp->builtins;
+		return PyThreadState_Get()->interp->builtins;
 	else
 		return current_frame->f_builtins;
 }
@@ -3036,7 +3042,7 @@ PyEval_GetBuiltins(void)
 PyObject *
 PyEval_GetLocals(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
 		return NULL;
 	PyFrame_FastToLocals(current_frame);
@@ -3046,7 +3052,7 @@ PyEval_GetLocals(void)
 PyObject *
 PyEval_GetGlobals(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	if (current_frame == NULL)
 		return NULL;
 	else
@@ -3056,21 +3062,21 @@ PyEval_GetGlobals(void)
 PyObject *
 PyEval_GetFrame(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
-	return (PyObject *)current_frame;
+	PyThreadState *tstate = PyThreadState_Get();
+	return _PyThreadState_GetFrame((PyObject *)tstate);
 }
 
 int
 PyEval_GetRestricted(void)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	return current_frame == NULL ? 0 : current_frame->f_restricted;
 }
 
 int
 PyEval_MergeCompilerFlags(PyCompilerFlags *cf)
 {
-	PyFrameObject *current_frame = PyThreadState_Get()->frame;
+	PyFrameObject *current_frame = (PyFrameObject *)PyEval_GetFrame();
 	int result = 0;
 
 	if (current_frame != NULL) {

@@ -67,6 +67,8 @@ typedef struct _ts {
 
     PyObject *dict;
 
+    int tick_counter;
+
     /* XXX signal handlers should also be here */
 
 } PyThreadState;
@@ -104,6 +106,9 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+
+/* hook for PyEval_GetFrame(), requested for Psyco */
+PyAPI_DATA(unaryfunc) _PyThreadState_GetFrame;
 
 #ifdef __cplusplus
 }
