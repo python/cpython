@@ -43,6 +43,7 @@ import sys
 import imp
 import tokenize # Python tokenizer
 from token import NAME, DEDENT, NEWLINE
+from operator import itemgetter
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
@@ -326,8 +327,7 @@ def _main():
     for obj in objs:
         if isinstance(obj, Class):
             print "class", obj.name, obj.super, obj.lineno
-            methods = obj.methods.items()
-            methods.sort(lambda a, b: cmp(a[1], b[1]))
+            methods = list.sorted(obj.methods.iteritems(), key=itemgetter(1))
             for name, lineno in methods:
                 if name != "__path__":
                     print "  def", name, lineno
