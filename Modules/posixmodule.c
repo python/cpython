@@ -2274,12 +2274,14 @@ popen(const char *command, const char *mode, int pipesize, int *err)
         if (dup2(whan, 1) == 0) {      /* Connect STDOUT to Pipe Write Side */
             DosClose(whan);            /* Close Now-Unused Pipe Write Handle */
 
-            if (async_system(command) == NO_ERROR)
-                retfd = fdopen(rhan, mode); /* And Return Pipe Read Handle */
+            rc = async_system(command);
         }
 
         dup2(oldfd, 1);          /* Reconnect STDOUT to Original Handle */
         DosExitCritSec();        /* Now Allow Other Threads to Run */
+
+        if (rc == NO_ERROR)
+            retfd = fdopen(rhan, mode); /* And Return Pipe Read Handle */
 
         close(oldfd);            /* And Close Saved STDOUT Handle */
         return retfd;            /* Return fd of Pipe or NULL if Error */
@@ -2293,12 +2295,14 @@ popen(const char *command, const char *mode, int pipesize, int *err)
         if (dup2(rhan, 0) == 0)     { /* Connect STDIN to Pipe Read Side */
             DosClose(rhan);           /* Close Now-Unused Pipe Read Handle */
 
-            if (async_system(command) == NO_ERROR)
-                retfd = fdopen(whan, mode); /* And Return Pipe Write Handle */
+            rc = async_system(command);
         }
 
         dup2(oldfd, 0);          /* Reconnect STDIN to Original Handle */
         DosExitCritSec();        /* Now Allow Other Threads to Run */
+
+        if (rc == NO_ERROR)
+            retfd = fdopen(whan, mode); /* And Return Pipe Write Handle */
 
         close(oldfd);            /* And Close Saved STDIN Handle */
         return retfd;            /* Return fd of Pipe or NULL if Error */
