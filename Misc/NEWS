@@ -6,6 +6,10 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- New builtin function enumerate(x), from PEP 279.  Example:
+  enumerate("abc") is an iterator returning (0,"a"), (1,"b"), (2,"c").
+  The argument can be an arbitrary iterable object.
+
 - The assert statement no longer tests __debug__ at runtime.  This means
   that assert statements cannot be disabled by assigning a false value
   to __debug__.
