@@ -212,5 +212,30 @@ pdb.pm() or traceback.py instead)
 
 \section{Extension modules}
 
-There are some undocumented goodies here, too.  Someone should make a
-list.
+bsddbmodule.c -- Interface to the Berkeley DB interface (yet another
+dbm clone).
+
+cmathmodule.c -- Exactly the same as math, except takes complex
+arguments and returns complex results.
+
+cursesmodule.c -- Curses interface.
+
+dbhashmodule.c -- Obsolete.
+
+dlmodule.c --  A highly experimental and dangerous device for calling
+arbitrary C functions in arbitrary shared libraries.
+
+newmodule.c -- Tommy Burnette's `new' module (creates new empty
+objects of certain kinds) -- dangerous.
+
+nismodule.c -- NIS (a.k.a. Sun's Yellow Pages) interface.
+
+timingmodule.c -- Measure time intervals to high resolution (obsolete
+-- use time.clock() instead).
+
+The following are SGI specific:
+
+clmodule.c -- Interface to the SGI compression library.
+
+svmodule.c -- Interface to the ``simple video'' board on SGI Indigo
+(obsolete hardware).
