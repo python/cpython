@@ -57,7 +57,6 @@ There are also some utility functions here.
 """
 # Cleanup and extensions by Eric S. Raymond <esr@thyrsus.com>
 
-import string
 import time
 
 
@@ -230,7 +229,7 @@ class Message:
         for line in self.headers:
             if line[:n].lower() == name:
                 hit = 1
-            elif line[:1] not in string.whitespace:
+            elif not line[:1].isspace():
                 hit = 0
             if hit:
                 list.append(line)
@@ -249,7 +248,7 @@ class Message:
         hit = 0
         for line in self.headers:
             if hit:
-                if line[:1] not in string.whitespace:
+                if not line[:1].isspace():
                     break
             elif line[:n].lower() == name:
                 hit = 1
@@ -299,7 +298,7 @@ class Message:
         current = ''
         have_header = 0
         for s in self.getallmatchingheaders(name):
-            if s[0] in string.whitespace:
+            if s[0].isspace():
                 if current:
                     current = "%s\n %s" % (current, s.strip())
                 else:
@@ -413,7 +412,7 @@ class Message:
             line = self.headers[i]
             if line[:n].lower() == name:
                 hit = 1
-            elif line[:1] not in string.whitespace:
+            elif not line[:1].isspace():
                 hit = 0
             if hit:
                 list.append(i)
@@ -855,7 +854,7 @@ def parsedate_tz(data):
         yy, tm = tm, yy
     if yy[-1] == ',':
         yy = yy[:-1]
-    if yy[0] not in string.digits:
+    if not yy[0].isdigit():
         yy, tz = tz, yy
     if tm[-1] == ',':
         tm = tm[:-1]
