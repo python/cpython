@@ -452,7 +452,4 @@ init_locale(void)
     x = PyString_FromString(locale__doc__);
     PyDict_SetItemString(d, "__doc__", x);
     Py_XDECREF(x);
-
-    if (PyErr_Occurred())
-        Py_FatalError("Can't initialize module _locale");
 }
