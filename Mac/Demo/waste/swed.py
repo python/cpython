@@ -41,7 +41,7 @@ class WasteWindow(ScrolledWindow):
 		Qd.TextFont(4)
 		Qd.TextSize(9)
 		flags = WASTEconst.weDoAutoScroll | WASTEconst.weDoOutlineHilite | \
-			WASTEconst.weDoMonoStyled | WASTEconst.weDoUndo
+				WASTEconst.weDoUndo
 		self.ted = waste.WENew(dr, vr, flags)
 		self.ted.WEInstallTabHooks()
 		style, soup = self.getstylesoup()
