@@ -90,7 +90,7 @@ def pickport():
     seed += 1
     return 10000 + (os.getpid() % 1000)*10 + seed
 
-host = ""
+host = "localhost"
 testfiles = []
 def pickaddr(proto):
     if proto == socket.AF_INET:
@@ -147,10 +147,11 @@ else:
 def testall():
     testloop(socket.AF_INET, tcpservers, MyStreamHandler, teststream)
     testloop(socket.AF_INET, udpservers, MyDatagramHandler, testdgram)
-    testloop(socket.AF_UNIX, streamservers, MyStreamHandler, teststream)
-    # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
-    # client address so this cannot work:
-    ##testloop(socket.AF_UNIX, dgramservers, MyDatagramHandler, testdgram)
+    if hasattr(socket, 'AF_UNIX'):
+        testloop(socket.AF_UNIX, streamservers, MyStreamHandler, teststream)
+        # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
+        # client address so this cannot work:
+        ##testloop(socket.AF_UNIX, dgramservers, MyDatagramHandler, testdgram)
 
 def main():
     try:
