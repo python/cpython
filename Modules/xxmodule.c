@@ -38,7 +38,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 /* Xxo objects */
 
 #include "allobjects.h"
-#include "modsupport.h"		/* For getargs() etc. */
 
 static object *ErrorObject;
 
@@ -126,7 +125,7 @@ xxo_setattr(self, name, v)
 		return dictinsert(self->x_attr, name, v);
 }
 
-static typeobject Xxotype = {
+staticforward typeobject Xxotype = {
 	OB_HEAD_INIT(&Typetype)
 	0,			/*ob_size*/
 	"xxo",			/*tp_name*/
