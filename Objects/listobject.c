@@ -404,7 +404,7 @@ list_ass_slice(a, ilow, ihigh, v)
 	d = n - (ihigh-ilow);
 	if (d <= 0) { /* Delete -d items; XDECREF ihigh-ilow items */
 		for (k = ilow; k < ihigh; k++)
-			XDECREF(item[k]);
+			XDECREF(item[k]);  /* bug: reentrant side effects */
 		if (d < 0) {
 			for (/*k = ihigh*/; k < a->ob_size; k++)
 				item[k+d] = item[k];
@@ -422,7 +422,7 @@ list_ass_slice(a, ilow, ihigh, v)
 		for (k = a->ob_size; --k >= ihigh; )
 			item[k+d] = item[k];
 		for (/*k = ihigh-1*/; k >= ilow; --k)
-			XDECREF(item[k]);
+			XDECREF(item[k]); /* bug: side effects :-( */
 		a->ob_item = item;
 		a->ob_size += d;
 	}
@@ -454,6 +454,7 @@ list_ass_item(a, i, v)
 	int i;
 	object *v;
 {
+	object *old_value;
 	if (i < 0 || i >= a->ob_size) {
 		err_setstr(IndexError, "list assignment index out of range");
 		return -1;
@@ -461,8 +462,9 @@ list_ass_item(a, i, v)
 	if (v == NULL)
 		return list_ass_slice(a, i, i+1, v);
 	INCREF(v);
-	DECREF(a->ob_item[i]);
+	old_value = a->ob_item[i];
 	a->ob_item[i] = v;
+	DECREF(old_value); 
 	return 0;
 }
 

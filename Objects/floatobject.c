@@ -285,7 +285,6 @@ float_divmod(v, w)
 {
 	double vx, wx;
 	double div, mod;
-	object *t;
 	wx = w->ob_fval;
 	if (wx == 0.0) {
 		err_setstr(ZeroDivisionError, "float divmod()");

@@ -46,9 +46,9 @@ static long primes[] = {
 	3, 7, 13, 31, 61, 127, 251, 509, 1021, 2017, 4093,
 	5987,
 	9551, 15683, 19609, 31397,
-        65521L, 131071L, 262139L, 524287L, 1048573L, 2097143L,
-        4194301L, 8388593L, 16777213L, 33554393L, 67108859L,
-        134217689L, 268435399L, 536870909L, 1073741789L,
+	65521L, 131071L, 262139L, 524287L, 1048573L, 2097143L,
+	4194301L, 8388593L, 16777213L, 33554393L, 67108859L,
+	134217689L, 268435399L, 536870909L, 1073741789L,
 	0
 };
 
@@ -95,12 +95,8 @@ newmappingobject()
 	mp = NEWOBJ(mappingobject, &Mappingtype);
 	if (mp == NULL)
 		return NULL;
-	mp->ma_size = primes[0];
-	mp->ma_table = (mappingentry *) calloc(sizeof(mappingentry), mp->ma_size);
-	if (mp->ma_table == NULL) {
-		DEL(mp);
-		return err_nomem();
-	}
+	mp->ma_size = 0;
+	mp->ma_table = NULL;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
 	return (object *)mp;
@@ -173,10 +169,13 @@ insertmapping(mp, key, hash, value)
 	long hash;
 	object *value;
 {
+	object *old_value;
 	register mappingentry *ep;
 	ep = lookmapping(mp, key, hash);
 	if (ep->me_value != NULL) {
-		DECREF(ep->me_value);
+		old_value = ep->me_value;
+		ep->me_value = value;
+		DECREF(old_value); /* which **CAN** re-enter */
 		DECREF(key);
 	}
 	else {
@@ -186,9 +185,9 @@ insertmapping(mp, key, hash, value)
 			DECREF(ep->me_key);
 		ep->me_key = key;
 		ep->me_hash = hash;
+		ep->me_value = value;
 		mp->ma_used++;
 	}
-	ep->me_value = value;
 }
 
 /*
@@ -233,14 +232,19 @@ mappingresize(mp)
 	mp->ma_table = newtable;
 	mp->ma_fill = 0;
 	mp->ma_used = 0;
+
+	/* Make two passes, so we can avoid decrefs
+	   (and possible side effects) till the table is copied */
 	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
 		if (ep->me_value != NULL)
 			insertmapping(mp,ep->me_key,ep->me_hash,ep->me_value);
-		else {
-			XDECREF(ep->me_key);
-		}
 	}
-	DEL(oldtable);
+	for (i = 0, ep = oldtable; i < oldsize; i++, ep++) {
+		if (ep->me_value == NULL)
+			XDECREF(ep->me_key);
+	}
+
+	XDEL(oldtable);
 	return 0;
 }
 
@@ -254,6 +258,8 @@ mappinglookup(op, key)
 		err_badcall();
 		return NULL;
 	}
+	if (((mappingobject *)op)->ma_table == NULL)
+		return NULL;
 #ifdef CACHE_HASH
 	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
@@ -303,6 +309,8 @@ mappingremove(op, key)
 	register mappingobject *mp;
 	register long hash;
 	register mappingentry *ep;
+	object *old_value, *old_key;
+
 	if (!is_mappingobject(op)) {
 		err_badcall();
 		return -1;
@@ -319,12 +327,14 @@ mappingremove(op, key)
 		err_setval(KeyError, key);
 		return -1;
 	}
-	DECREF(ep->me_key);
+	old_key = ep->me_key;
 	INCREF(dummy);
 	ep->me_key = dummy;
-	DECREF(ep->me_value);
+	old_value = ep->me_value;
 	ep->me_value = NULL;
 	mp->ma_used--;
+	DECREF(old_value); 
+	DECREF(old_key); 
 	return 0;
 }
 
@@ -332,18 +342,23 @@ void
 mappingclear(op)
 	object *op;
 {
-	int i;
-	register mappingobject *mp;
+	int i, n;
+	register mappingentry *table;
+	mappingobject *mp;
 	if (!is_mappingobject(op))
 		return;
 	mp = (mappingobject *)op;
-	for (i = 0; i < mp->ma_size; i++) {
-		XDECREF(mp->ma_table[i].me_key);
-		XDECREF(mp->ma_table[i].me_value);
-		mp->ma_table[i].me_key = NULL;
-		mp->ma_table[i].me_value = NULL;
+	table = mp->ma_table;
+	if (table == NULL)
+		return;
+	n = mp->ma_size;
+	mp->ma_size = mp->ma_used = mp->ma_fill = 0;
+	mp->ma_table = NULL;
+	for (i = 0; i < n; i++) {
+		XDECREF(table[i].me_key);
+		XDECREF(table[i].me_value);
 	}
-	mp->ma_used = 0;
+	DEL(table);
 }
 
 int
@@ -387,8 +402,7 @@ mapping_dealloc(mp)
 		if (ep->me_value != NULL)
 			DECREF(ep->me_value);
 	}
-	if (mp->ma_table != NULL)
-		DEL(mp->ma_table);
+	XDEL(mp->ma_table);
 	DEL(mp);
 }
 
@@ -460,6 +474,10 @@ mapping_subscript(mp, key)
 {
 	object *v;
 	long hash;
+	if (mp->ma_table == NULL) {
+		err_setval(KeyError, key);
+		return NULL;
+	}
 #ifdef CACHE_HASH
 	if (!is_stringobject(key) || (hash = ((stringobject *) key)->ob_shash) == -1)
 #endif
@@ -700,7 +718,7 @@ mapping_has_key(mp, args)
 	hash = hashobject(key);
 	if (hash == -1)
 		return NULL;
-	ok = lookmapping(mp, key, hash)->me_value != NULL;
+	ok = mp->ma_size != 0 && lookmapping(mp, key, hash)->me_value != NULL;
 	return newintobject(ok);
 }
 

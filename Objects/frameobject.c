@@ -39,7 +39,9 @@ static struct memberlist frame_memberlist[] = {
 	{"f_globals",	T_OBJECT,	OFF(f_globals),	RO},
 	{"f_locals",	T_OBJECT,	OFF(f_locals),	RO},
 	{"f_owner",	T_OBJECT,	OFF(f_owner),	RO},
-/*	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals),RO}, /* XXX Unsafe */
+#if 0
+	{"f_fastlocals",T_OBJECT,	OFF(f_fastlocals),RO}, /* XXX Unsafe */
+#endif
 	{"f_localmap",	T_OBJECT,	OFF(f_localmap),RO},
 	{"f_lasti",	T_INT,		OFF(f_lasti),	RO},
 	{"f_lineno",	T_INT,		OFF(f_lineno),	RO},
@@ -217,10 +219,8 @@ setup_block(f, type, handler, level)
 	int level;
 {
 	block *b;
-	if (f->f_iblock >= f->f_nblocks) {
-		fprintf(stderr, "XXX block stack overflow\n");
-		abort();
-	}
+	if (f->f_iblock >= f->f_nblocks)
+		fatal("XXX block stack overflow");
 	b = &f->f_blockstack[f->f_iblock++];
 	b->b_type = type;
 	b->b_level = level;
@@ -232,10 +232,8 @@ pop_block(f)
 	frameobject *f;
 {
 	block *b;
-	if (f->f_iblock <= 0) {
-		fprintf(stderr, "XXX block stack underflow\n");
-		abort();
-	}
+	if (f->f_iblock <= 0)
+		fatal("XXX block stack underflow");
 	b = &f->f_blockstack[--f->f_iblock];
 	return b;
 }
@@ -248,7 +246,7 @@ fast_2_locals(f)
 {
 	/* Merge f->f_fastlocals into f->f_locals */
 	object *locals, *fast, *map;
-	object *error_type, *error_value;
+	object *error_type, *error_value, *error_traceback;
 	int j;
 	if (f == NULL)
 		return;
@@ -260,7 +258,7 @@ fast_2_locals(f)
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_tupleobject(map))
 		return;
-	err_get(&error_type, &error_value);
+	err_fetch(&error_type, &error_value, &error_traceback);
 	for (j = gettuplesize(map); --j >= 0; ) {
 		object *key = gettupleitem(map, j);
 		object *value = getlistitem(fast, j);
@@ -274,7 +272,7 @@ fast_2_locals(f)
 				err_clear();
 		}
 	}
-	err_setval(error_type, error_value);
+	err_restore(error_type, error_value, error_traceback);
 }
 
 void
@@ -284,7 +282,7 @@ locals_2_fast(f, clear)
 {
 	/* Merge f->f_locals into f->f_fastlocals */
 	object *locals, *fast, *map;
-	object *error_type, *error_value;
+	object *error_type, *error_value, *error_traceback;
 	int j;
 	if (f == NULL)
 		return;
@@ -296,7 +294,7 @@ locals_2_fast(f, clear)
 	if (!is_dictobject(locals) || !is_listobject(fast) ||
 	    !is_tupleobject(map))
 		return;
-	err_get(&error_type, &error_value);
+	err_fetch(&error_type, &error_value, &error_traceback);
 	for (j = gettuplesize(map); --j >= 0; ) {
 		object *key = gettupleitem(map, j);
 		object *value = dict2lookup(locals, key);
@@ -308,5 +306,5 @@ locals_2_fast(f, clear)
 			if (setlistitem(fast, j, value) != 0)
 				err_clear();
 	}
-	err_setval(error_type, error_value);
+	err_restore(error_type, error_value, error_traceback);
 }
