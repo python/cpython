@@ -8,7 +8,7 @@ module as os.path.
 import os
 import stat
 import string
-import copy
+
 
 # Normalize the case of a pathname and map slashes to backslashes.
 # Other normalizations (such as optimizing '../' away) are not done
@@ -158,7 +158,7 @@ def dirname(p):
 def commonprefix(m):
     "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
-    n = copy.copy(m)
+    n = m[:]
     for i in range(len(n)):
         n[i] = n[i].split(os.sep)
     prefix = n[0]
