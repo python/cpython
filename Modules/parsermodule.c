@@ -647,7 +647,7 @@ build_node_children(tuple, root, line_num)
 	if (ISNONTERMINAL(type)) {
 	    node* new_child = CHILD(root, i - 1);
 
-	    if (new_child != build_node_children(elem, new_child))
+	    if (new_child != build_node_children(elem, new_child, line_num))
 		return (0);
 	}
 	else if (type == NEWLINE)	/* It's true:  we increment the     */
