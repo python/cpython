@@ -324,11 +324,11 @@ class StreamReaderWriter:
 
         return self.reader.read(size)
 
-    def readline(size=None):
+    def readline(self, size=None):
 
         return self.reader.readline(size)
 
-    def readlines(sizehint=None):
+    def readlines(self, sizehint=None):
 
         return self.reader.readlines(sizehint)
 
