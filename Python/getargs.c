@@ -387,6 +387,19 @@ converterr(char *expected, PyObject *arg, char *msgbuf, size_t bufsize)
 
 #define CONV_UNICODE "(unicode conversion error)"
 
+/* explicitly check for float arguments when integers are expected.  For now
+ * signal a warning.  Returns true if an exception was raised. */
+static int
+float_argument_error(PyObject *arg)
+{
+	if (PyFloat_Check(arg) &&
+	    PyErr_Warn(PyExc_DeprecationWarning,
+		       "integer argument expected, got float" ))
+		return 1;
+	else
+		return 0;
+}
+
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
    or a string with a message describing the failure.  The message is
    formatted as "must be <desired type>, not <actual type>".
@@ -409,8 +422,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'b': { /* unsigned byte -- very short int */
 		char *p = va_arg(*p_va, char *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<b>", arg, msgbuf, bufsize);
@@ -433,8 +446,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		      values allowed */  
 		char *p = va_arg(*p_va, char *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<b>", arg, msgbuf, bufsize);
@@ -456,8 +469,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'h': {/* signed short int */
 		short *p = va_arg(*p_va, short *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<h>", arg, msgbuf, bufsize);
@@ -480,8 +493,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 		       unsigned allowed */ 
 		unsigned short *p = va_arg(*p_va, unsigned short *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<H>", arg, msgbuf, bufsize);
@@ -503,8 +516,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'i': {/* signed int */
 		int *p = va_arg(*p_va, int *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<i>", arg, msgbuf, bufsize);
@@ -526,8 +539,8 @@ convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf,
 	case 'l': {/* long int */
 		long *p = va_arg(*p_va, long *);
 		long ival;
-		if (PyFloat_Check(arg))
-			return converterr("integer", arg, msgbuf, bufsize);
+		if (float_argument_error(arg))
+			return NULL;
 		ival = PyInt_AsLong(arg);
 		if (ival == -1 && PyErr_Occurred())
 			return converterr("integer<l>", arg, msgbuf, bufsize);
