@@ -1,3 +1,1340 @@
+Sat Oct  7 15:18:22 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/fcntlmodule.c: add BGN/END_SAVE macros around
+	fcntl/ioctl calls
+
+Sat Oct  7 15:14:01 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/pythonrun.c: keep exitfunc alive while calling it
+
+Sat Oct  7 15:08:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: better version sanity checks; get rid
+	of Widget.unbind_class()
+
+Fri Oct  6 11:31:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/formatter.py: added NullFormatter
+
+Fri Oct  6 11:30:57 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: strip <A> attribute values
+
+Fri Oct  6 11:30:28 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: typos in attrfind regex
+
+Fri Oct  6 11:26:52 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmlentitydefs.py: added lt, gt, amp back to entity
+	definitions
+
+Wed Oct  4 12:39:20 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/base64.py: Use binascii module (resulting in a 60-fold
+	speedup:-)
+
+Wed Oct  4 12:38:44 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Modules/binasciimodule.c: Added base64 support
+
+Wed Oct  4 12:36:53 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/uu.py: Fixed two minor errors.
+
+Tue Oct  3 10:41:15 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/binhex.py: Fixed hexbin handling
+
+Tue Oct  3 10:40:35 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/{Relnotes-1.3,ReadMeOrSuffer}: Clarified some things,
+	started adding mods since 1.3beta3
+
+Tue Oct  3 10:39:44 1995  Jack Jansen  <jack@cwi.nl>
+
+	* {Mac/macfs/macfsmodule.c, Modules/timemodule.c,
+        Python/{import.c,compile.c}}: Removed unused variables
+
+Sat Sep 30 13:05:26 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: new after options; text.search; new
+	image methods
+
+Sat Sep 30 13:01:49 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Makefile.pre.in: Move some stuff around so
+	customizations in Setup take precedence
+
+Sat Sep 30 13:01:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/newmodule.c: re-enable new.code(...) with new args
+
+Sat Sep 30 13:00:24 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/tkintermodule.c: clear quitMainLoop when we fall
+	through the main loop
+
+Sat Sep 30 12:51:50 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ftplib.py: actualized example, catch EOFError, print
+	retrieved lines if debugging>2
+
+Sat Sep 30 12:50:46 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/httplib.py: actualized example/reference, fix bug w/
+	nonnumeric port
+
+Sat Sep 30 12:49:58 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/formatter.py: add flush_softspace() interface
+
+Sat Sep 30 12:49:36 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: allow _ in attr names (Netscape!)
+
+Sat Sep 30 12:48:54 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/{pstats.py,profile.py}: more robust coding, adapted for mac
+
+Sat Sep 30 12:10:43 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/rename2.h: delete PyNothing_Check, which does not
+	actually exist
+
+Wed Sep 27 12:22:17 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: entity definitions from HTML 2.0 std
+
+Sun Sep 24 17:08:22 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/ReadMeOrSuffer: Added some clarifications and fixed host
+	names.
+
+Sun Sep 24 17:06:50 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/MkPluginAliases.py: Load toolbox modules "by hand"
+	using imp, so this script should now work in a virgin
+	distribution.
+
+Sun Sep 24 17:05:24 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/mkapplet.py: Changed the way .rsrc and template
+	are copied: hopefully this will finally get the bundle stuff
+	right.
+
+Fri Sep 22 19:49:28 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/tkintermodule.c: Mac changes
+
+Thu Sep 21 20:55:50 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: added verbose option; added
+	ismap/align/width/height to handle_image args
+
+Thu Sep 21 20:54:32 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: fix <!...!> parsing; added verbose option;
+	don't lowercase entityrefs
+
+Thu Sep 21 20:52:38 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/nntplib.py: actualized example; added xover, xgtitle,
+	xpath, date methods by Kevan Heydon
+
+Thu Sep 21 16:36:34 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Parser/tokenizer.c: fix bogus resize length in nextc
+
+Wed Sep 20 16:31:51 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/traceback.py: add file parameter to all printing fns,
+	default stderr
+
+Mon Sep 18 18:00:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/irix5/panel.py: new exec syntax
+
+Mon Sep 18 17:54:35 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: added getitem/setitem to Image class;
+	changed call wrapping (again)
+
+Mon Sep 18 17:52:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/cgi.py: handle missing QUERY_STRING
+
+Mon Sep 18 17:50:43 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/SimpleHTTPServer.py: recognize a few more file types
+
+Mon Sep 18 17:49:24 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/{quopri.py,base64.py}: improved test/main program
+
+Mon Sep 18 17:44:04 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/compile.c: fix bug with missing default for last arg
+	(discovered by Tommy Burnette)
+
+Mon Sep 18 17:42:42 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/pythonrun.c: #undef argument, for the Mac
+
+Mon Sep 18 17:40:19 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/{getversion.c,getcopyright.c}: include Python.h
+
+Mon Sep 18 17:31:16 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/errors.c: remove unwanted fatal() from err_badcall()
+
+Mon Sep 18 17:29:36 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/{traceback.{c,h},ceval.c}: spell TraceBack with capital B
+
+Mon Sep 18 17:20:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/abstract.h: use Py_PROTO macro
+
+Mon Sep 18 17:17:59 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/abstract.c: adapted to K&R C
+
+Mon Sep 18 06:49:04 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Objects/classobject.c: Get ordering right for
+	TRACE_REFS/COUNT_ALLOCS combination (otherwise may get inc_count
+	sanity check abort).
+
+Wed Sep 13 14:39:47 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/socketmodule.c: plug some leaks
+
+Wed Sep 13 14:39:04 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: added SITEPATH and DESTPATH variables
+
+Wed Sep 13 13:39:51 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/posixmodule.c: added 5th return item, clock time, to
+	posix.times()
+
+Wed Sep 13 13:39:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/stropmodule.c: added strop.translate(s, table)
+
+Wed Sep 13 13:38:35 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/timemodule.c: added time.strftime()
+
+Thu Sep  7 15:37:11 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/allobjects.h: removed redundant C++ hack
+
+Thu Sep  7 15:28:19 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/httplib.py: fixed the test program
+
+Thu Sep  7 15:22:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: move constants to Tkconstants; added
+	some; overridable error reporting; fix typo in propagate
+
+Fri Sep  1 18:55:11 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/mac/dbmac.py: add (dummy) mode arg to open()
+
+Fri Sep  1 18:53:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/mac/socket.py: added read/writelines, bufsize to makefile,
+	gethostbyaddr
+
+Fri Sep  1 16:36:47 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/FileDialog.py: Filter button should set
+	selection's directory, too
+
+Fri Sep  1 16:35:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: added OptionMenu class (tk_optionMenu
+	interface)
+
+Fri Sep  1 16:34:29 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: support value-less attributes, using
+	regex.group()
+
+Fri Sep  1 16:33:32 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: took out forms support (in favor a Grail
+	extension)
+
+Fri Sep  1 16:32:21 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/posixpath.py: rationalized os.path.split() so split "/a/"
+	yields "/a", ""
+
+Fri Sep  1 07:54:11 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/mkapplet.py: Slightly reorganized so it is useable
+	from another program, and put all print statements in 'if
+	DEBUG'.
+
+Fri Sep  1 07:53:17 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/binhextree.py: Fixed typo
+
+Fri Sep  1 07:50:53 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/Resources/bundle.rsrc.hqx: Minor fix
+
+Fri Sep  1 07:49:10 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/Relnotes-1.3: Updated 1.3 relnotes and added top-level
+	instructions
+
+Fri Sep  1 07:48:10 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macgetpath.c: Fixed to work on 68K (could be yet another
+	optimizer bug or something)
+
+Fri Sep  1 07:46:27 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Include/patchlevel.h: patchlevel set to 1.3b3
+
+Thu Aug 31 09:59:36 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/{pythonresources.h,macgetpath.c,macgetargv.c}: Python will
+	now attempt (again) to create at least a minimal preferences file
+	if it is missing.
+
+Thu Aug 31 09:58:28 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Added List module
+
+Thu Aug 31 09:57:40 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/{macglue.c,macmain.c,mwerks/{mwfopenrf.c,malloc/malloc.c}}:
+        Removed unused variables
+
+Thu Aug 31 09:53:10 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/Resources/dialogs.rsrc.hqx: Added version resource Added
+	dialogs for initial preference file creation
+
+Thu Aug 31 09:53:09 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/Resources/bundle.rsrc.hqx: Added version resource Added
+	dialogs for initial preference file creation
+
+Thu Aug 31 09:51:58 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/mwerks/mwfopenrf.c: removed unused var
+
+Thu Aug 31 09:51:13 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/mwerks/malloc/malloc.c: Removed unused var
+
+Thu Aug 31 09:48:43 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/mkapplet.py: - Allow PythonApplet to be an alias -
+	Correctly set bundle and init bits
+
+Thu Aug 31 09:47:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/binhextree.py: Added functionality: locate CW
+	projects, copy them, empty them and binhex them.
+
+Thu Aug 31 09:46:13 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/RunLibScript.py: - imp seems to always want a file
+	object arg - continue if resource file not found (may be an
+	applet)
+
+Thu Aug 31 09:44:23 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Modules/binasciimodule.c: Obscure bugfix
+
+Thu Aug 31 09:40:03 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/macostools.py: copy() can now create destination path
+
+Thu Aug 31 09:38:01 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/FrameWork.py: Fixed dialog-window event handling
+
+Wed Aug 30 19:44:41 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: fix typo in bsddb entry
+
+Wed Aug 30 08:19:30 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/uu.py: Changed arguments and added a lot of functionality
+	besides
+
+Tue Aug 29 15:25:11 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/mimetools.py: forget previous change (content-encoding)
+
+Tue Aug 29 15:19:51 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/mimetools.py: encoding can be content-transfer-encoding or
+	content-encoding
+
+Tue Aug 29 15:19:12 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urllib.py: support overriding how to open unknown url
+	types
+
+Tue Aug 29 15:18:24 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/CGIHTTPServer.py: changed some commas into percent signs
+
+Tue Aug 29 05:18:14 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* {Python/sysmodule.c,Objects/object.c}: Implemented two new
+	functions in sys: getcounts() returns a list of counts of
+	allocations and deallocations for all different object
+	types. getobjects(n [, type ]) returns a list of recently
+	allocated and not-yet-freed objects of the given type (all objects
+	if no type given). Only the n most recent (all if n==0) objects
+	are returned. getcounts is only available if compiled with
+	-DCOUNT_ALLOCS, getobjects is only available if compiled with
+	-DTRACE_REFS. Note that everything must be compiled with these
+	options!
+
+Mon Aug 28 05:00:43 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Objects/classobject.c: Fixed calling of __del__ method with
+	TRACE_REFS defined.
+
+Sun Aug 27 22:59:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: dbhash -> bsddb
+
+Sun Aug 27 22:58:31 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/dbmmodule.c: fix bug in close()
+
+Sun Aug 27 22:58:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/gdbmmodule.c: fix leaks in keys(); fix bug in close()
+
+Sun Aug 27 22:56:20 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/marshal.c: rd_object() with exception is fatal error
+
+Sun Aug 27 22:55:48 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/errors.c: err_badcall() is fatal error
+
+Sun Aug 27 22:54:01 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/irix5/flp.py: exec() -> exec
+
+Sun Aug 27 22:53:41 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/irix5/regen: add errno.h
+
+Thu Aug 17 10:18:20 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/FrameWork.py: Made separate window class (and
+	subclasses for special windows like dialogs). This is an
+	incompatible change.
+
+Thu Aug 17 10:17:39 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/binhex.py: Indent bug
+
+Tue Aug 15 07:33:39 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Lib/urllib.py: Removed addbase.__del__ because it can't work.
+	If code keeps a reference to self.fp or any of its methods, you
+	don't want to close self.fp just because no explicit reference
+	is kept to self.
+
+Mon Aug 14 08:41:20 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/binhex.py: Put debug output inside 'if DEBUG'.
+
+Mon Aug 14 08:39:54 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/FrameWork.py: Various fixes: missing imports, missing
+	calls to MacOS.HandleEvent. Also, prints are now inside 'if
+	DEBUG'.
+
+Mon Aug 14 08:36:37 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.h: Added PyMac_PromptGetFile, removed stuff gone
+	to other sources.
+
+Mon Aug 14 08:35:10 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.c: Lots of stuff moved to other files. Include
+	pythonresources.h.
+
+Mon Aug 14 08:33:48 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Lots of stuff removed: gone to various other
+	files.
+
+Mon Aug 14 08:33:20 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macmain.c: This is completely different from the old
+	mainmain (which wasn't used anymore) and is the new main program
+	for MacPython. Built from bits and pieces of config.c, macglue.c
+	and pythonmain.c.
+
+Mon Aug 14 08:30:15 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macgetcompiler.c: Merged Jack's macgetcompiler.c and
+	Guido's maccompiler.c and named the result macgetcompiler.c
+	(after all, *I* did the merging:-)
+
+Mon Aug 14 08:24:05 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/Resources/dialogs.rsrc.hqx: Renumbered dialogs: 128-255
+	are for interpreter use 256-511 are for extension modules,
+	libraries, etc 512 and above are for applications
+
+Mon Aug 14 08:22:56 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macfs/macfsmodule.c: Added new call PromptGetFile (like
+	StandardGetFile, but accepts a prompt) and added optional prompt
+	to GetDirectory.
+
+Mon Aug 14 08:21:50 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/mwerks/mwfopenrf.c: Added missing initializer and extra
+	error check.
+
+Mon Aug 14 08:21:12 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/*: Added prompts to various
+	file-select dialogs Renumbered resources to above 512
+
+Mon Aug 14 08:20:22 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/scripts/MkPluginAliases.{py,as}: Added List.slb alias
+
+Mon Aug 14 08:17:57 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Modules/binasciimodule.c: Added missing 'leftchar'
+	initializer.
+
+Mon Aug 14 08:17:18 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Modules/stdwinmodule.c: Shuffled include's around (name
+	conflict on Mac wrt teclick())
+
+Mon Aug 14 03:49:51 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Lib/sunau.py: Temporary fix for access statement. Definition
+	of Error was missing.
+
+Fri Aug 11 10:24:47 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/test/test_exceptions.py: exec() -> exec
+
+Fri Aug 11 10:24:35 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/test/test_b2.py: test for specific bug in vars()
+
+Fri Aug 11 10:21:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: added select_present and select_range
+	to Entry widget
+
+Fri Aug 11 10:19:16 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/shelve.py: renamed DbShelf->DbfilenameShelf;added
+	BsdDbShelf (David Ely)
+
+Fri Aug 11 10:18:27 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/anydbm.py: change default flag to match dbm/gdbm
+
+Fri Aug 11 09:56:04 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: make sure the path ends in a slash in reload()
+
+Thu Aug 10 15:46:50 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/profile.py: exec() -> exec
+
+Thu Aug 10 15:45:41 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urlparse.py: remove file: from list of protocols taking
+	host
+
+Thu Aug 10 15:44:54 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urllib.py: changed version :-)
+
+Thu Aug 10 15:43:53 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: added note about missing features
+
+Thu Aug 10 15:43:04 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tb.py: noted obsolescence; exec() -> exec
+
+Thu Aug 10 15:42:05 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/string.py: default tabsize to 8
+
+Thu Aug 10 15:40:39 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: fix reload use of __filename__
+
+Thu Aug 10 15:38:36 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/posixfile.py: fix stupid typo: r->RDLK
+
+Thu Aug 10 15:34:50 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ntpath.py: same thing as for dospath, plus
+	HOMEDRIVE/HOMEPATH support
+
+Thu Aug 10 15:32:22 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/linecache.py: don't print Cannot open/stat messages
+
+Thu Aug 10 15:31:20 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/importall.py: exec() -> exec
+
+Thu Aug 10 15:27:42 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/dospath.py: redefined normcase()
+
+Thu Aug 10 15:26:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/base64.py: upgdaded the test program
+
+Thu Aug 10 15:24:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/anydbm.py: revamped somewhat
+
+Thu Aug 10 15:23:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/aifc.py: temporarily disabled the access statements
+
+Thu Aug 10 14:09:16 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/macpath.py: added normpath() and splitdrive()
+
+Thu Aug 10 14:00:03 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/fmt.py: added note about obsolescence
+
+Thu Aug 10 14:00:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/Para.py: added note about obsolescence
+
+Wed Aug  9 11:17:23 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: re-enabled newmodule
+
+Tue Aug  8 22:33:38 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/audiodev.py: rather ugly temporary hacks to make it work
+	in grail & restricted mode
+
+Tue Aug  8 22:32:49 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ihooks.py: fix bug in reload
+
+Tue Aug  8 22:32:08 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: add module binascii; add r_unload/s_unload;
+	don't change 'rb' to 'r' in open
+
+Tue Aug  8 22:31:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: change blank line insertion at a few places
+	and fix recursion bug for </var>
+
+Tue Aug  8 10:18:12 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Makefile.pre.in: added MACHDEP back in
+
+Tue Aug  8 10:10:22 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Mac/macmodule.c: add xstat (extended stat, returns resource
+	fork size and creator/type)
+
+Tue Aug  8 10:09:33 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Mac/macstat.c: set some fields to zero for directories
+
+Mon Aug  7 16:19:27 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: added sys.std files, read-only open, reload
+
+Mon Aug  7 16:17:55 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/posixpath.py: add splitdrive()
+
+Mon Aug  7 16:17:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/popen2.py: pass the command to sh -c
+
+Mon Aug  7 16:16:58 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/pickle.py: correct typo (persis*ent)
+
+Mon Aug  7 16:16:05 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/pdb.py: use new "single" compile option
+
+Mon Aug  7 16:15:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/os.py: make sure os.environ exists (maybe empty)
+
+Mon Aug  7 16:13:56 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/mimetools.py: add seekable option to __init__
+
+Mon Aug  7 16:13:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/httplib.py: use mimetools; add close()
+
+Mon Aug  7 16:12:09 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/cgi.py: added parse_qs(query_string)
+
+Mon Aug  7 16:07:44 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: new formatter module; redid htmllib module to
+	use it
+
+Mon Aug  7 10:37:38 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/uu.py: Use binascii module for inner loop
+
+Mon Aug  7 10:36:06 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.c: Better error messages wrt missing resources and
+	preferences
+
+Mon Aug  7 10:35:24 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Added binascii
+
+Mon Aug  7 10:34:15 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Modules/Setup.in: Helper module for uuencode and binhex coders
+
+Mon Aug  7 10:09:27 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/macpath.py: Added missing walk() function
+
+Mon Aug  7 10:04:10 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macfs/macfsmodule.c: Added interfaces to {Get,Set}FInfo
+	and accompanying objects
+
+Mon Aug  7 10:03:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.h: Mwerks now also has fopenrf
+
+Mon Aug  7 10:01:46 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/mwerks/mwerks_nonshared_config.h: Fix for cfm68k
+
+Fri Aug  4 00:39:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ftplib.py: new sendport() interface; add test() program
+	call
+
+Fri Aug  4 00:30:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/traceback.py: added format_* functions (suggestion by Ken
+	M)
+
+Fri Aug  4 00:29:32 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urlparse.py: subtle changes to relative url joins
+
+Fri Aug  4 00:29:05 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urllib.py: use mimetools; add error handling and
+	authentication
+
+Fri Aug  4 00:23:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: major rewrite using different formatting
+	paradigm
+
+Fri Aug  4 00:22:39 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: changed comment parsing
+
+Fri Aug  4 00:20:45 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/{config.c.in,Setup.in,Makefile.pre.in}: split config.c
+	in 1000 parts; new main; new unfinished objective-C module
+
+Fri Aug  4 00:14:47 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/ceval.c: empty kw dict is ok for builtins
+
+Fri Aug  4 00:13:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/Makefile.in: split config.c in 1000 little files :-)
+
+Fri Aug  4 00:10:43 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/frozenmain.c: moved stuff around to resemble main.c
+
+Fri Aug  4 00:08:57 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/import.c: add imp.get_frozen_object()
+
+Fri Aug  4 00:07:45 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/bltinmodule.c: avoid resize of 0-length tuple
+
+Fri Aug  4 00:05:31 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/classobject.c: class objects are read-only in
+	restricted mode
+
+Fri Aug  4 00:05:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/tupleobject.c: better err checks in resizetuple
+
+Thu Aug  3 23:59:03 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: new package support, import hooks, restricted
+	execution support
+
+Thu Aug  3 23:51:48 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: added some missing constants
+
+Thu Aug  3 23:50:29 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Tkinter.py: keyword arguments; redid Photo image
+	class; other goodies
+
+Thu Aug  3 23:49:39 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/Dialog.py: keyword parameter changes
+
+Sat Jul 29 09:55:06 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Python/pythonrun.c: mac CW-only fix for messy windows upon
+	exit
+
+Sat Jul 29 09:52:37 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.c: Added code so you canset "command line options"
+	if you option-click/drag python. Needs a new dialog resource.
+
+Sat Jul 29 09:50:59 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macgetargv.c: Un-installing of AE handlers fixed (AE is
+	very picky that you specify the same UPP)
+
+Fri Jul 28 19:06:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/ceval.c: fix bogus DECREF in finally clause
+
+Fri Jul 28 12:44:53 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/newmodule.c: \temporary 'fix' for brokenness
+
+Fri Jul 28 07:44:29 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/chdir.c: Made more ppc-savvy
+
+Fri Jul 28 07:29:54 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: - Added getplatform() - (temporarily?) removed
+	newmodule reference
+
+Fri Jul 28 07:28:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Python/import.c: Undef 'argument' before including mac headers
+
+Wed Jul 26 14:16:42 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/ceval.c: changes for keyword args to built-in functions
+	and classes
+
+Wed Jul 26 14:13:27 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/import.c: never close the file in imp.load_...
+
+Wed Jul 26 14:07:32 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/methodobject.c: changes for keyword args to built-in
+	functions and classes
+
+Wed Jul 26 14:07:26 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/classobject.c: changes for keyword args to built-in
+	functions and classes
+
+Wed Jul 26 13:58:29 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/rename2.h: changes for keyword args to built-in
+	functions and classes
+
+Wed Jul 26 13:58:27 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/methodobject.h: changes for keyword args to built-in
+	functions and classes
+
+Wed Jul 26 13:58:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/classobject.h: changes for keyword args to built-in
+	functions and classes
+
+Wed Jul 26 13:53:29 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/object.h: add forgotten PyObject_SetAttrString
+
+Wed Jul 26 13:33:44 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/dbhashmodule.c: add locking where it exists
+
+Wed Jul 26 13:33:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/md5module.c: use newgetargs
+
+Wed Jul 26 13:31:41 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: improved comments for curses, dbhash
+
+Wed Jul 26 13:29:45 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/tkintermodule.c: use getnewargs where it makes sense
+
+Wed Jul 26 12:26:31 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/bltinmodule.c: be more suspicious of getlocals()
+
+Wed Jul 26 12:14:30 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/frameobject.c: better policy regarding NULL locals
+
+Wed Jul 19 07:21:47 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Lib/py_compile.py: Get magic number from interpreter (using
+	module imp).
+
+Wed Jul 19 07:21:21 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Lib/StringIO.py: Added flush() method.
+
+Tue Jul 18 14:33:09 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/dbhashmodule.c: fixed arg checking for keys() and
+	close()
+
+Tue Jul 18 14:18:11 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: added dbhash; Tk is now officially at 4.0
+
+Tue Jul 18 14:16:52 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/posixmodule.c: suppress . and .. in listdir return
+	value
+
+Tue Jul 18 10:51:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/*.c: keyword arguments and faster calls
+
+Tue Jul 18 10:40:09 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/importdl.c: NT specific change for nicer error message
+	(Mark H)
+
+Tue Jul 18 10:30:34 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/{Makefile.in,funcobject.c,frameobject.c,abstract.c}:
+	changes for keyword arguments and fast function call; added
+	abstract.c
+
+Tue Jul 18 10:21:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/*.h: keyword arguments and faster function
+	calls
+
+Tue Jul 18 10:07:52 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/allobjects.h: include abstract.h
+
+Mon Jul 17 09:25:15 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/FrameWork.py: Various toolbox routines have gotten new
+	names.
+
+Mon Jul 17 09:25:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/EasyDialogs.py: Various toolbox routines have gotten
+	new names.
+
+Mon Jul 17 07:36:01 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macosmodule.c: Added GetErrorString method (convert OSErr
+	number to string)
+
+Fri Jul 14 11:29:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/tkinter/{Tkinter.py,Dialog.py}: Tk 4.0 and Tcl 7.4 are now
+        standard
+
+Tue Jul 11 22:22:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/classobject.c: args to call_object must be tuple or
+	NULL
+
+Tue Jul 11 22:22:01 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/listobject.c: args to call_object must be tuple or
+	NULL
+
+Tue Jul 11 22:21:58 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/object.c: args to call_object must be tuple or NULL
+
+Mon Jul 10 19:32:26 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Objects/fileobject.c: fix read(0), readline(0); make tuple for
+	call_object args
+
+Mon Jul 10 09:52:21 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/bltinmodule.c: rename arglist to alist (conflict with
+	new grammar symbol)
+
+Fri Jul  7 18:53:21 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/compile.c: 3rd arg for raise; INCOMPLETE keyword
+	parameter passing (currently f(kw=value) is seen as f('kw',
+	value))
+
+Fri Jul  7 18:53:14 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/ceval.c: 3rd arg for raise; INCOMPLETE keyword
+	parameter passing (currently f(kw=value) is seen as f('kw',
+	value))
+
+Fri Jul  7 18:50:36 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/import.c: new MAGIC; some changes to default files for
+	imp.load_... functions
+
+Fri Jul  7 18:45:41 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/traceback.c: ignore control-l (parallelling change to
+	tokenizer.c)
+
+Fri Jul  7 18:45:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/sysmodule.c: added sys.platform
+
+Fri Jul  7 18:44:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/graminit.c: new grammar
+
+Fri Jul  7 18:43:42 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/bltinmodule.c: added locals() and globals();
+	[raw_]input() uses readline()
+
+Fri Jul  7 18:39:14 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/cgen.py: err() should be varargs -- and fix one call
+
+Fri Jul  7 18:38:14 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/config.c.in: added getpalatform()
+
+Fri Jul  7 18:37:11 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/gdbmmodule.c: normalized flag arg and made flag, mode
+	default args; minor cosmetics
+
+Fri Jul  7 18:37:09 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/dbmmodule.c: normalized flag arg and made flag, mode
+	default args; minor cosmetics
+
+Fri Jul  7 18:35:21 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Makefile.pre.in: pass $PLATFORM into config.c
+
+Fri Jul  7 18:32:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/opcode.h: new opcodes RAISE_VARARGS, CALL_FUNCTION
+
+Fri Jul  7 18:31:40 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/graminit.h: new grammar symbols arglist and argument
+
+Fri Jul  7 18:27:27 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Parser/tokenizer.c: ignore control-l in whitespace
+
+Fri Jul  7 18:26:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Grammar/Grammar: new grammar for 3rd raise arg and keyword
+	parameters
+
+Tue Jun 27 09:17:54 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/*: Initial port to CodeWarrior CFM68K support
+	(mainly by disabling unsupported features).
+
+Tue Jun 27 09:15:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Python/{importdl.c,errors.c}: Porting to CW CFM68K
+
+Tue Jun 27 09:12:09 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Include/{mymath.h,mymalloc.h,allobjects.h}: Changed ifdef
+	__CFM68K__ to ifdef SYMANTEC__CFM68K__: CW has its own unique set
+	of ideosyncracies:-(
+
+Thu Jun 22 15:06:57 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rfc822.py: added seekable option; save unix from lines;
+	speed up islast()
+
+Thu Jun 22 15:00:13 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/urllib.py: add User-agent hdr; read and close the file
+	upon http error
+
+Thu Jun 22 14:58:00 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/string.py: make split and splitfields, join and joinfields
+	synonyms
+
+Thu Jun 22 14:56:36 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/sgmllib.py: make reporting unbalanced tags an overridable
+	method
+
+Thu Jun 22 14:55:10 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/rexec.py: use imp.new_module(), not new.module(); and
+	/usr/local
+
+Thu Jun 22 14:52:35 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/profile.py: functions don't have a __name__ attribute
+
+Thu Jun 22 14:51:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/pickle.py: test other name variable
+
+Thu Jun 22 14:48:48 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/httplib.py: discard endrequest(); minor stuff; rfc822 no
+	seek flag
+
+Thu Jun 22 14:46:12 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/htmllib.py: support <HTML>, remove <HEADER>
+
+Thu Jun 22 14:45:04 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/StringIO.py: set softspace to 0 in __init__
+
+Tue Jun 20 13:21:42 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ftplib.py: add bind(0,''); better way of guessing our
+	fully qualified hostname
+
+Sun Jun 18 16:06:44 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Python/import.c: Added PY_RESOURCE (mac only) to imp module
+
+Sun Jun 18 16:05:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macfs/macfsmodule.c: Added FindFolder interface
+
+Sun Jun 18 16:03:40 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.c: Added code to obtain sys.path from a resource
+	Removed code to update the preferences file, use
+	EditPythonPrefs.py in stead (actually, code is still there if
+	you define USE_MAC_MODPREFS)
+
+Sun Jun 18 15:57:01 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Obtain path from a resource (unless
+	USE_BUILTIN_PATH is #defined)
+
+Fri Jun 16 06:57:14 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/rfc822.py: Removed >From stuff
+
+Wed Jun 14 18:54:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/posixmodule.c: sys/wait.h; NeXT changes (no unistd,
+	utime; getcwd?)
+
+Wed Jun 14 18:52:06 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/makesetup: fix NL for Linux bash bug; special
+	processing for -u options
+
+Wed Jun 14 18:49:20 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/soundex.c: edited RCS cruft
+
+Wed Jun 14 18:31:38 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/Setup.in: new modules soundex.c and environment.c
+
+Wed Jun 14 18:28:08 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/socketmodule.c: add setblocking(); NT changes;
+	null-terminate Unix path
+
+Wed Jun 14 18:23:17 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/timingmodule.c: removed rcs cruft
+
+Wed Jun 14 18:17:37 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/mathmodule.c: NeXT doesn't like me to declare
+	hypot(double, double)
+
+Wed Jun 14 18:07:26 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Python/importdl.c: re-enabled NeXT dynamic linking (#ifdef
+	NeXT)
+
+Wed Jun 14 14:26:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Parser/tokenizer.c: replace "\r\n" with "\n" at line end (Jim
+	Ahlstrom)
+
+Wed Jun 14 10:54:25 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Python/importdl.c: Mac dynloading is now enabled by
+	USE_MAC_DYNAMIC_LOADING. Mac dynloading changed to allow
+	multiple modules to live in with each other in the same file.
+
+Wed Jun 14 10:47:21 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Added USE_* ifdefs for a couple of optional
+	modules.
+
+Wed Jun 14 10:44:17 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macshlglue.c: Ported to CW6
+
+Wed Jun 14 10:43:41 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/mwerks/mwerks_{,no}shared_config.h: Split shared-library
+	support and dynamic-loading support (they were both enabled with
+	USE_SHARED_LIBRARY, now there's also USE_MAC_DYNAMIC_LOADING).
+	Added a few other USE_ defines for optional modules to nonshared
+	config (they're not included in the base shared library)
+
+Tue Jun 13 07:19:48 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/rfc822.py: Skip old-style 'From name time' lines at
+	beginning of message.
+
+Mon Jun 12 11:51:34 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Python/importdl.{h,c}: Check if we've already loaded a dynamic
+	module under a different name.
+
+Mon Jun 12 11:51:29 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Python/import.c: Check if we've already loaded a dynamic
+	module under a different name.
+
+Fri Jun  9 16:39:24 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/{mactcp/macdnrmodule.c,macstat.h,macmodule.c}: Ported to
+        CodeWarrior 6
+
+Sat Jun  3 17:16:40 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/config.c: Added img stuff (within #ifdef, so they're easy
+	to remove)
+
+Sat Jun  3 17:15:50 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macfs/macfsmodule.c: StandardGetFile without args now
+	shows all files (in stead of none)
+
+Wed May 17 07:18:20 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Lib/irix5/CL.py: Backward compatibity module for constants
+	from cl.h include file. The values are gotten from the cl
+	module. CL_old is there in case cl doesn't exist.
+
+Wed May 17 07:16:52 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Modules/clmodule.c: Make constants from cl.h include file
+	available as module variables. Also added Irix 5.3 constants.
+
+Fri May  5 11:54:14 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Lib/ftplib.py: don't show print passwords in debug output
+
+Thu May  4 11:02:18 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/ftplib.py: For anonymous ftp, make sure local hostname is
+	fully qualified.
+
+Wed May  3 13:40:23 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Modules/stropmodule.c: unified join(fields), split(fields)
+
+Fri Apr 28 17:28:02 1995  Guido van Rossum  <guido@cnri.reston.va.us>
+
+	* Include/rename2.h: removed duplicate defs for None, False,
+	True
+
+Tue Apr 25 07:53:24 1995  Sjoerd Mullender  <sjoerd@cwi.nl>
+
+	* Include/{object.h,tupleobject.h}: DL_IMPORT needs an argument.
+
+Mon Apr 24 08:41:41 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Mac/macglue.c: - The prefs file wasn't updated correctly if it
+	already existed. - Guido's r1.23 fix wrt PyMac_DoYieldEnabled
+	had somehow gotten lost.
+
+Sun Apr 23 18:12:47 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Objects/fileobject.c: MW does not always set errno on failing
+	fopen()
+
+Sun Apr 23 18:10:18 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/mac/dbmac.py: Removed seeks beyond eof (MW doesn't support
+	them)
+
+Sun Apr 23 18:06:57 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Lib/py_compile.py: Mac-specific code for setting filetype was
+	outdated.
+
+Sun Apr 23 18:06:05 1995  Jack Jansen  <jack@cwi.nl>
+
+	* Include/{object.h,tupleobject.h}: DL_IMPORT macro was called in
+	a funny way (and MW barfed on it)
+
+=================================
+==> Release 1.2 (10 Apr 1995) <==
+=================================
+
 Thu Apr  6 16:34:28 1995  Guido van Rossum  <guido@voorn.cwi.nl>
 
 	* Objects/classobject.c (instancemethod_compare): change the way
