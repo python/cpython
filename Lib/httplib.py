@@ -203,7 +203,7 @@ class HTTPResponse:
 
     # strict: If true, raise BadStatusLine if the status line can't be
     # parsed as a valid HTTP/1.0 or 1.1 status line.  By default it is
-    # false because it prvents clients from talking to HTTP/0.9
+    # false because it prevents clients from talking to HTTP/0.9
     # servers.  Note that a response with a sufficiently corrupted
     # status line will look like an HTTP/0.9 response.
 
