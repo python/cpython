@@ -43,7 +43,7 @@ DEFAULT_FLAVORORDER=['source', 'binary']
 DEFAULT_DOWNLOADDIR='/tmp'
 DEFAULT_BUILDDIR='/tmp'
 DEFAULT_INSTALLDIR=distutils.sysconfig.get_python_lib()
-DEFAULT_PIMPDATABASE="http://www.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
+DEFAULT_PIMPDATABASE="http://homepages.cwi.nl/~jack/pimp/pimp-%s.plist" % distutils.util.get_platform()
 
 def _cmd(output, dir, *cmditems):
     """Internal routine to run a shell command in a given directory."""
