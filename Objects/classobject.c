@@ -762,21 +762,28 @@ instance_hash(PyInstanceObject *inst)
 	PyObject *func;
 	PyObject *res;
 	long outcome;
-	static PyObject *hashstr, *cmpstr;
+	static PyObject *hashstr, *eqstr, *cmpstr;
 
 	if (hashstr == NULL)
 		hashstr = PyString_InternFromString("__hash__");
 	func = instance_getattr(inst, hashstr);
 	if (func == NULL) {
-		/* If there is no __cmp__ method, we hash on the address.
-		   If a __cmp__ method exists, there must be a __hash__. */
+		/* If there is no __eq__ and no __cmp__ method, we hash on the
+		   address.  If an __eq__ or __cmp__ method exists, there must
+		   be a __hash__. */
 		PyErr_Clear();
-		if (cmpstr == NULL)
-			cmpstr = PyString_InternFromString("__cmp__");
-		func = instance_getattr(inst, cmpstr);
+		if (eqstr == NULL)
+			eqstr = PyString_InternFromString("__eq__");
+		func = instance_getattr(inst, eqstr);
 		if (func == NULL) {
 			PyErr_Clear();
-			return _Py_HashPointer(inst);
+			if (cmpstr == NULL)
+				cmpstr = PyString_InternFromString("__cmp__");
+			func = instance_getattr(inst, cmpstr);
+			if (func == NULL) {
+				PyErr_Clear();
+				return _Py_HashPointer(inst);
+			}
 		}
 		PyErr_SetString(PyExc_TypeError, "unhashable instance");
 		return -1;
