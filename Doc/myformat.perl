@@ -253,7 +253,6 @@ sub do_env_cfuncdesc{
   local($return_type,$function_name,$arg_list,$idx) = ('', '', '', '');
   local($cfuncdesc_rx) =
     "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5";
-  $* = 1;
   if (/$cfuncdesc_rx/o) {
     $return_type = "$2";
     $function_name = "$4";
@@ -261,7 +260,6 @@ sub do_env_cfuncdesc{
     $idx = &make_str_index_entry($3,
 			"<tt>$function_name</tt>" . &get_indexsubitem);
   }
-  $* = 0;
   "<dl><dt>$return_type <b>$idx</b>" .
     "(<var>$arg_list</var>)\n<dd>$'\n</dl>"
 }
@@ -271,13 +269,11 @@ sub do_env_ctypedesc{
   local($type_name) = ('');
   local($cfuncdesc_rx) =
     "$next_pair_rx";
-  $* = 1;
   if (/$cfuncdesc_rx/o) {
     $type_name = "$2";
     $idx = &make_str_index_entry($1,
 				 "<tt>$type_name</tt>" . &get_indexsubitem);
   }
-  $* = 0;
   "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
 }
 
@@ -285,13 +281,11 @@ sub do_env_cvardesc{
   local($_) = @_;
   local($var_type,$var_name,$idx) = ('', '', '');
   local($cfuncdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
-  $* = 1;
   if (/$cfuncdesc_rx/o) {
     $var_type = "$2";
     $var_name = "$4";
     $idx = &make_str_index_entry($3,"<tt>$var_name</tt>" . &get_indexsubitem);
   }
-  $* = 0;
   "<dl><dt>$var_type <b>$idx</b>\n" .
     "<dd>$'\n</dl>";
 }
@@ -300,14 +294,12 @@ sub do_env_funcdesc{
   local($_) = @_;
   local($function_name,$arg_list,$idx) = ('', '', '');
   local($funcdesc_rx) = "$next_pair_rx$any_next_pair_rx3";
-  $* = 1;
   if (/$funcdesc_rx/o) {
     $function_name = "$2";
     $arg_list = "$4";
     $idx = &make_str_index_entry($3,
 			"<tt>$function_name</tt>" . &get_indexsubitem);
   }
-  $* = 0;
   "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>$'\n</dl>";
 }
 
@@ -326,32 +318,26 @@ sub do_env_opcodedesc{
   local($_) = @_;
   local($opcode_name,$arg_list,$stuff,$idx) = ('', '', '', '');
   local($opcodedesc_rx) = "$next_pair_rx$any_next_pair_rx3";
-  $* = 1;
   if (/$opcodedesc_rx/o) {
     $opcode_name = "$2";
     $arg_list = "$4";
     $idx = &make_str_index_entry($3,
 			"<tt>$opcode_name</tt> (byte code instruction)");
+    $idx =~ s/ \(byte code instruction\)//;
   }
-  $* = 0;
   $stuff = "<dl><dt><b>$idx</b>";
   if ($arg_list) {
-    $stuff = "$stuff&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
+    $stuff .= "&nbsp;&nbsp;&nbsp;&nbsp;<var>$arg_list</var>";
   }
   $stuff . "\n<dd>$'\n</dl>";
 }
 
 sub do_env_datadesc{
   local($_) = @_;
-  local($data_name,$idx) = ('', '');
-  local($datadesc_rx) = "$next_pair_rx";
-  $* = 1;
-  if (/$datadesc_rx/o) {
-    $data_name = "$2";
-    $idx = &make_str_index_entry($3,
-				 "<tt>$data_name</tt>" . &get_indexsubitem);
+  local($idx) = '';
+  if (/$next_pair_rx/o) {
+    $idx = &make_str_index_entry($1, "<tt>$2</tt>" . &get_indexsubitem);
   }
-  $* = 0;
   "<dl><dt><b>$idx</b>\n<dd>$'\n</dl>"
 }
 
@@ -391,7 +377,6 @@ sub do_env_tableii{
   local($font,$h1,$h2) = ('', '', '');
   local($tableiii_rx) =
     "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7";
-  $* = 1;
   if (/$tableiii_rx/o) {
     $font = $4;
     $h1 = $6;
@@ -422,7 +407,6 @@ sub do_env_tableiii{
   local($tableiii_rx) =
     "$next_pair_rx$any_next_pair_rx3$any_next_pair_rx5$any_next_pair_rx7"
       . "$any_next_pair_rx9";
-  $* = 1;
   if (/$tableiii_rx/o) {
     $font = $4;
     $h1 = $6;
