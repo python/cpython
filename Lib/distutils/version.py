@@ -112,12 +112,12 @@ class StrictVersion (Version):
             match.group(1, 2, 4, 5, 6)
 
         if patch:
-            self.version = tuple(map(int, [major, minor, patch]))
+            self.version = tuple(map(string.atoi, [major, minor, patch]))
         else:
-            self.version = tuple(map(int, [major, minor]) + [0])
+            self.version = tuple(map(string.atoi, [major, minor]) + [0])
 
         if prerelease:
-            self.prerelease = (prerelease[0], int(prerelease_num))
+            self.prerelease = (prerelease[0], string.atoi(prerelease_num))
         else:
             self.prerelease = None
 
@@ -125,9 +125,9 @@ class StrictVersion (Version):
     def __str__ (self):
         
         if self.version[2] == 0:
-            vstring = '.'.join(map(str, self.version[0:2]))
+            vstring = string.join(map(str, self.version[0:2]), '.')
         else:
-            vstring = '.'.join(map(str, self.version))
+            vstring = string.join(map(str, self.version), '.')
 
         if self.prerelease:
             vstring = vstring + self.prerelease[0] + str(self.prerelease[1])
