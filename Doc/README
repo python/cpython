@@ -1,36 +1,34 @@
-Python main documentation -- in LaTeX
+Python main documentation -- in Latex
 -------------------------------------
 
-This directory contains the LaTeX sources to the Python documentation
-and a published article about Python.
+This directory contains the Latex sources to the Python documentation.
 
-The Python Reference Manual is no longer maintained in LaTeX.  It is
+The Python Reference Manual is no longer maintained in Latex.  It is
 now a FrameMaker document.  The FrameMaker 5.0 files (ref.book,
 ref*.doc) as well as PostScript generated (ref.ps) from it are in the
 subdirectory ref/.  (See ftp://ftp.adobe.com/pub/adobe/framereader for
-a free reader for FrameMaker documents, for some platforms.)
+a free reader for FrameMaker documents, for some platforms.)  Many
+thanks to Robin Friedrich for the conversion of the Reference Manual
+to FrameMaker and his work on its index.
 
-If you don't have LaTeX, you can ftp a tar file containing PostScript
-of the 3 main documents.  It should be in the same place where you
-fetched the main Python distribution, in a file named
-"pythondoc-ps<version>.tar.gz".  (See "../Misc/FAQ" for more
-information about ftp-ing Python files.)
+If you don't have Latex, you can ftp a tar file containing PostScript
+of all documents.  It should be in the same place where you fetched
+the main Python distribution (try http://www.python.org or
+ftp://ftp.python.org).
 
-The following are the LaTeX source files:
+The following are the Latex source files:
 
 	tut.tex				The tutorial
 	lib.tex, lib*.tex		The library reference
 	ext.tex				How to extend Python
-	qua.tex, quabib.bib		Article published in CWI Quarterly
+	api.tex				Reference for the Python/C API
 
-All except qua.tex (which isn't built by the default target) use the
-style option file "myformat.sty".  This contains some macro
-definitions and sets some style parameters.
+All use the style option file "myformat.sty".  This contains some
+macro definitions and sets some style parameters.
 
-You need the makeindex utility to produce the index for lib.tex; you
-need bibtex to produce the references list for qua.tex.
+You need the makeindex utility to produce the index for lib.tex.
 
-There's a Makefile to call LaTeX and the other utilities in the right
+There's a Makefile to call Latex and the other utilities in the right
 order and the right number of times.  This will produce DVI files for
 each document made; to preview them, use xdvi.  PostScript is produced
 by the same Makefile target that produces the DVI files.  This uses
@@ -42,64 +40,26 @@ use lp.  For example:
 	lp lib.ps			# print on default printer
 
 
+Using Times fonts
+-----------------
+
+As distributed, the Latex documents use the default Tex fonts (CMR).
+These qre quite ugly.  If you have the "PSfont" Latex add-on
+installed, you can produce versions using Times fonts (and Courier for
+fixed text) by inserting "times," in the list of options in the
+documentstyle macro in the first line of the files lib.tex, tut.tex,
+ext.tex, api.tex, e.g.
+
+	\documentstyle[twoside,times,myformat]{report}
+
+
 Making HTML files
 -----------------
 
-The Tutorial and Extensions manual can be converted to HTML using
-Nikos Drakos' LaTeX2HTML converter.  See the Makefile; after some
-twiddling, "make l2h" should do the trick.
+The Latex documents can be converted to HTML using Nikos Drakos'
+Latex2html converter.  See the Makefile; after some twiddling, "make
+l2h" should do the trick.
 
-The Library manual doesn't work well with LaTeX2HTML; instead, there's
-a Python script texi2html.py in this directory that can be run on the
-texinfo generated as an intermediate step for generating the INFO
-files as described in the next section.  The command "make libwww"
-should do this.
-
-
-Making the INFO version of the Library Reference
-------------------------------------------------
-
-The Library Reference can also be read in hypertext form using the
-Emacs INFO system.  This uses Texinfo format as an intermediate step.
-It requires texinfo version 2 (we have used 2.14).
-
-To build the info files (python-lib.info*), say "make lib.info".  This
-takes a while, even on a machine with a 100 MHz clock and 64 Mbytes of
-RAM :-).  Please ignore the output, which appears like error messages
-but really is debugging output only.
-
-You may have to change a site dependency in fix.el: if texinfo 2.xx
-isn't installed by default at your site, you'll have to install it
-(use archie to locate a version and ftp to fetch it).  If you can't
-install it in the standard Emacs load path, uncomment the line
-containing a "(setq load-path ...)" statement, and fill in the path
-where you put it.
-
-The files used by the conversion process are:
-
-partparse.py            Python script that converts LaTeX sources to
-			texi files.
-
-texi{pre,post}.dat      Files placed before and after the result.
-
-fix.el                  Elisp file executed by Emacs. Two calls to
-                        'texinfo-all-menus-update are necessary in
-			some cases.
-
-fix_hack		Shell script to fix the results of the
-                        "underscore hack". {\ptt \char'137} is
-                        back-translated to a simple underscore.  This
-                        is needed for the texindex program.
-
-whichlibs		Shell script to print a list of lib*.tex files
-			to be processed.
-
-Thanks for Jan-Hein B\"uhrman for writing and debugging the convertor
-and related scripts, and for fixing the LaTeX sources and writing new
-macros for myformat.sty!  More thanks to Dave Ascher for adapting
-myformat.sty to the new LaTeX release, to Fred Drake for revamping the
-partparse.py and texi2html.py scripts, to the many anonymous authors
-of library manual sections and corrections (too many to mention).
-
-Many thanks to Robin Friedrich for the conversion of the Reference
-Manual to FrameMaker and his work on its index.
+For the reference manual, I use Harlequin's webmaker.  I'm not very
+happy with it and hope that eventually FrameMaker will be able to
+produce HTML without third party help.
