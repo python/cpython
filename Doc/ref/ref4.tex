@@ -105,34 +105,34 @@ imported (i.e., when it is loaded).  Note that in almost all cases,
 the global namespace is the namespace of the containing module ---
 scopes in Python do not nest!
 
-\begin{tableiv}{l|l|l|l}{textrm}%
+\begin{tableiv}{l|l|l|l}{textrm}
   {Code block type}{Global namespace}{Local namespace}{Notes}
-  \lineiv{Module}%
-         {n.s. for this module}%
+  \lineiv{Module}
+         {n.s. for this module}
          {same as global}{}
-  \lineiv{Script (file or command)}%
-         {n.s. for \module{__main__}}%
+  \lineiv{Script (file or command)}
+         {n.s. for \module{__main__}}
          {same as global}{(1)}
-  \lineiv{Interactive command}%
-         {n.s. for \module{__main__}}%
+  \lineiv{Interactive command}
+         {n.s. for \module{__main__}}
          {same as global}{}
-  \lineiv{Class definition}%
-         {global n.s. of containing block}%
+  \lineiv{Class definition}
+         {global n.s. of containing block}
          {new n.s.}{}
-  \lineiv{Function body}%
-         {global n.s. of containing block}%
+  \lineiv{Function body}
+         {global n.s. of containing block}
          {new n.s.}{(2)}
-  \lineiv{String passed to \keyword{exec} statement}%
-         {global n.s. of containing block}%
+  \lineiv{String passed to \keyword{exec} statement}
+         {global n.s. of containing block}
          {local n.s. of containing block}{(2), (3)}
-  \lineiv{String passed to \function{eval()}}%
-         {global n.s. of caller}%
+  \lineiv{String passed to \function{eval()}}
+         {global n.s. of caller}
          {local n.s. of caller}{(2), (3)}
-  \lineiv{File read by \function{execfile()}}%
-         {global n.s. of caller}%
+  \lineiv{File read by \function{execfile()}}
+         {global n.s. of caller}
          {local n.s. of caller}{(2), (3)}
-  \lineiv{Expression read by \function{input()}}%
-         {global n.s. of caller}%
+  \lineiv{Expression read by \function{input()}}
+         {global n.s. of caller}
          {local n.s. of caller}{}
 \end{tableiv}
 \refbimodindex{__main__}
