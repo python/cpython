@@ -305,13 +305,18 @@ class Checker:
 	    show("HREF ", url, " from", self.ext[url])
 	    if not checkext:
 		continue
+	    if url[:7] == 'mailto:':
+		if verbose > 2: print "Not checking", url
+		continue
 	    if verbose > 2: print "Checking", url, "..."
 	    try:
 		f = self.urlopener.open(url)
 		f.close()
 		if verbose > 3: print "OK"
 	    except IOError, msg:
-		print "Error:", msg
+		msg = sanitize(msg)
+		print "Error", msg
+		self.bad[url] = msg
 
     def report_errors(self):
 	if not self.bad:
@@ -327,7 +332,10 @@ class Checker:
 	    try:
 		origins = self.done[url]
 	    except KeyError:
-		origins = self.todo[url]
+		try:
+		    origins = self.todo[url]
+		except KeyError:
+		    origins = self.ext[url]
 	    for source, rawlink in origins:
 		triple = url, rawlink, self.bad[url]
 		try:
@@ -406,13 +414,7 @@ class Checker:
 	try:
 	    f = self.urlopener.open(url)
 	except IOError, msg:
-	    if (type(msg) == TupleType and
-		len(msg) >= 4 and
-		msg[0] == 'http error' and
-		type(msg[3]) == InstanceType):
-		# Remove the Message instance -- it may contain
-		# a file object which prevents pickling.
-		msg = msg[:3] + msg[4:]
+	    msg = sanitize(msg)
 	    if verbose > 0:
 		print "Error ", msg
 	    if verbose > 0:
@@ -547,6 +549,17 @@ def show(p1, link, p2, origins):
 	print p2, source,
 	if rawlink != link: print "(%s)" % rawlink,
 	print
+
+
+def sanitize(msg):
+    if (type(msg) == TupleType and
+	len(msg) >= 4 and
+	msg[0] == 'http error' and
+	type(msg[3]) == InstanceType):
+	# Remove the Message instance -- it may contain
+	# a file object which prevents pickling.
+	msg = msg[:3] + msg[4:]
+    return msg
 
 
 if __name__ == '__main__':
