@@ -14,7 +14,7 @@
 
 LIBS= ..\PCbuild\python23.lib
 
-CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL
+CFLAGS= /I ..\Include /I ..\PC /D MS_NO_COREDLL /MD
 
 GRAMMAR_H= ..\Include\graminit.h
 GRAMMAR_C= ..\Python\graminit.c
