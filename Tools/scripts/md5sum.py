@@ -6,12 +6,12 @@
 
 bufsize = 8096
 fnfilter = None
-rmode = 'r'
+rmode = 'rb'
 
 usage = """
 usage: sum5 [-b] [-t] [-l] [-s bufsize] [file ...]
--b        : read files in binary mode
--t        : read files in text mode (default)
+-b        : read files in binary mode (default)
+-t        : read files in text mode (you almost certainly don't want this!)
 -l        : print last pathname component only
 -s bufsize: read buffer size (default %d)
 file ...  : files to sum; '-' or no files means stdin
@@ -40,7 +40,7 @@ def sum(*files):
             sts = sum(f, out) or sts
     return sts
 
-def printsum(filename, out = sys.stdout):
+def printsum(filename, out=sys.stdout):
     try:
         fp = open(filename, rmode)
     except IOError, msg:
@@ -52,12 +52,13 @@ def printsum(filename, out = sys.stdout):
     fp.close()
     return sts
 
-def printsumfp(fp, filename, out = sys.stdout):
+def printsumfp(fp, filename, out=sys.stdout):
     m = md5.new()
     try:
         while 1:
             data = fp.read(bufsize)
-            if not data: break
+            if not data:
+                break
             m.update(data)
     except IOError, msg:
         sys.stderr.write('%s: I/O error: %s\n' % (filename, msg))
@@ -65,7 +66,7 @@ def printsumfp(fp, filename, out = sys.stdout):
     out.write('%s %s\n' % (m.hexdigest(), filename))
     return 0
 
-def main(args = sys.argv[1:], out = sys.stdout):
+def main(args = sys.argv[1:], out=sys.stdout):
     global fnfilter, rmode, bufsize
     try:
         opts, args = getopt.getopt(args, 'blts:')
@@ -75,11 +76,11 @@ def main(args = sys.argv[1:], out = sys.stdout):
     for o, a in opts:
         if o == '-l':
             fnfilter = os.path.basename
-        if o == '-b':
+        elif o == '-b':
             rmode = 'rb'
-        if o == '-t':
+        elif o == '-t':
             rmode = 'r'
-        if o == '-s':
+        elif o == '-s':
             bufsize = int(a)
     if not args:
         args = ['-']
