@@ -1955,6 +1955,28 @@ pattern_deepcopy(PatternObject* self, PyObject* args)
 #endif
 }
 
+static PyObject*
+pattern_isliteral(PatternObject* self, PyObject* args)
+{
+    /* internal: return true if pattern consists of literal text only */
+
+    SRE_CODE* code;
+    PyObject* isliteral;
+
+    if (!PyArg_ParseTuple(args, ":_isliteral"))
+        return NULL;
+
+    code = PatternObject_GetCode(self);
+
+    if (code[0] == SRE_OP_INFO && code[2] & SRE_INFO_LITERAL)
+        isliteral = Py_True;
+    else
+        isliteral = Py_False;
+
+    Py_INCREF(isliteral);
+    return isliteral;
+}
+
 static PyMethodDef pattern_methods[] = {
     {"match", (PyCFunction) pattern_match, METH_VARARGS|METH_KEYWORDS},
     {"search", (PyCFunction) pattern_search, METH_VARARGS|METH_KEYWORDS},
@@ -1965,6 +1987,7 @@ static PyMethodDef pattern_methods[] = {
     {"scanner", (PyCFunction) pattern_scanner, METH_VARARGS},
     {"__copy__", (PyCFunction) pattern_copy, METH_VARARGS},
     {"__deepcopy__", (PyCFunction) pattern_deepcopy, METH_VARARGS},
+    {"_isliteral", (PyCFunction) pattern_isliteral, METH_VARARGS},
     {NULL, NULL}
 };
 
