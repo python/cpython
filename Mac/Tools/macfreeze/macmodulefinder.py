@@ -23,7 +23,9 @@ MAC_INCLUDE_MODULES=['site', 'macfsn']
 MAC_MAYMISS_MODULES=['posix', 'os2', 'nt', 'ntpath', 'dos', 'dospath', 
 		'win32api', 'ce', '_winreg',
 		'nturl2path', 'pwd', 'sitecustomize',
-		'org.python.core']
+		'org.python.core',
+		'riscos', 'riscosenviron', 'riscospath'
+		]
 
 # An exception:
 Missing="macmodulefinder.Missing"
