@@ -5,6 +5,7 @@ new versions available for any packages you have installed."""
 import os
 import getopt
 import sys
+import string
 import pyversioncheck
 
 CHECKNAME="_checkversion.py"
