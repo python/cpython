@@ -547,13 +547,19 @@ nu_ulong(const char *p, const formatdef *f)
 static PyObject *
 nu_longlong(const char *p, const formatdef *f)
 {
-	return PyLong_FromLongLong(*(LONG_LONG *)p);
+	/* p may not be properly aligned */
+	LONG_LONG x;
+	memcpy(&x, p, sizeof(LONG_LONG));
+	return PyLong_FromLongLong(x);
 }
 
 static PyObject *
 nu_ulonglong(const char *p, const formatdef *f)
 {
-	return PyLong_FromUnsignedLongLong(*(unsigned LONG_LONG *)p);
+	/* p may not be properly aligned */
+	unsigned LONG_LONG x;
+	memcpy(&x, p, sizeof(unsigned LONG_LONG));
+	return PyLong_FromUnsignedLongLong(x);
 }
 #endif
 
@@ -700,7 +706,7 @@ np_longlong(char *p, PyObject *v, const formatdef *f)
 	LONG_LONG x;
 	if (get_longlong(v, &x) < 0)
 		return -1;
-	* (LONG_LONG *)p = x;
+	memcpy(p, &x, sizeof(LONG_LONG));
 	return 0;
 }
 
@@ -710,7 +716,7 @@ np_ulonglong(char *p, PyObject *v, const formatdef *f)
 	unsigned LONG_LONG x;
 	if (get_ulonglong(v, &x) < 0)
 		return -1;
-	* (unsigned LONG_LONG *)p = x;
+	memcpy(p, &x, sizeof(unsigned LONG_LONG));
 	return 0;
 }
 #endif
