@@ -401,7 +401,8 @@ call_finalizer(PyObject *self)
 		_Py_NewReference(self);
 		self->ob_refcnt = refcnt;
 	}
-	assert(_Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
+	assert(!PyType_IS_GC(self->ob_type) ||
+	       _Py_AS_GC(self)->gc.gc_refs != _PyGC_REFS_UNTRACKED);
 	/* If Py_REF_DEBUG, the original decref dropped _Py_RefTotal, but
 	 * _Py_NewReference bumped it again, so that's a wash.
 	 * If Py_TRACE_REFS, _Py_NewReference re-added self to the object
@@ -423,14 +424,55 @@ subtype_dealloc(PyObject *self)
 	PyTypeObject *type, *base;
 	destructor basedealloc;
 
-	/* This exists so we can DECREF self->ob_type */
+	/* Extract the type; we expect it to be a heap type */
+	type = self->ob_type;
+	assert(type->tp_flags & Py_TPFLAGS_HEAPTYPE);
 
+	/* Test whether the type has GC exactly once */
+
+	if (!PyType_IS_GC(type)) {
+		/* It's really rare to find a dynamic type that doesn't have
+		   GC; it can only happen when deriving from 'object' and not
+		   adding any slots or instance variables.  This allows
+		   certain simplifications: there's no need to call
+		   clear_slots(), or DECREF the dict, or clear weakrefs. */
+
+		/* Maybe call finalizer; exit early if resurrected */
+		if (call_finalizer(self) < 0)
+			return;
+
+		/* Find the nearest base with a different tp_dealloc */
+		base = type;
+		while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
+			assert(base->ob_size == 0);
+			base = base->tp_base;
+			assert(base);
+		}
+
+		/* Call the base tp_dealloc() */
+		assert(basedealloc);
+		basedealloc(self);
+
+		/* Can't reference self beyond this point */
+		Py_DECREF(type);
+
+		/* Done */
+		return;
+	}
+
+	/* We get here only if the type has GC */
+
+	/* UnTrack and re-Track around the trashcan macro, alas */
+	_PyObject_GC_UNTRACK(self);
+	Py_TRASHCAN_SAFE_BEGIN(self);
+	_PyObject_GC_TRACK(self); /* We'll untrack for real later */
+
+	/* Maybe call finalizer; exit early if resurrected */
 	if (call_finalizer(self) < 0)
 		return;
 
 	/* Find the nearest base with a different tp_dealloc
 	   and clear slots while we're at it */
-	type = self->ob_type;
 	base = type;
 	while ((basedealloc = base->tp_dealloc) == subtype_dealloc) {
 		if (base->ob_size)
@@ -456,7 +498,7 @@ subtype_dealloc(PyObject *self)
 		PyObject_ClearWeakRefs(self);
 
 	/* Finalize GC if the base doesn't do GC and we do */
-	if (PyType_IS_GC(type) && !PyType_IS_GC(base))
+	if (!PyType_IS_GC(base))
 		_PyObject_GC_UNTRACK(self);
 
 	/* Call the base tp_dealloc() */
@@ -464,9 +506,9 @@ subtype_dealloc(PyObject *self)
 	basedealloc(self);
 
 	/* Can't reference self beyond this point */
-	if (type->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-		Py_DECREF(type);
-	}
+	Py_DECREF(type);
+
+	Py_TRASHCAN_SAFE_END(self);
 }
 
 static PyTypeObject *solid_base(PyTypeObject *type);
@@ -2807,7 +2849,7 @@ wrap_descr_set(PyObject *self, PyObject *args, void *wrapped)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
-  
+
 static PyObject *
 wrap_descr_delete(PyObject *self, PyObject *args, void *wrapped)
 {
@@ -2992,7 +3034,7 @@ slot_sq_length(PyObject *self)
 	if (len == -1 && PyErr_Occurred())
 		return -1;
 	if (len < 0) {
-		PyErr_SetString(PyExc_ValueError, 
+		PyErr_SetString(PyExc_ValueError,
 				"__len__() should return >= 0");
 		return -1;
 	}
@@ -4039,7 +4081,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
 	return p;
 }
 
-static int recurse_down_subclasses(PyTypeObject *type, slotdef **pp, 
+static int recurse_down_subclasses(PyTypeObject *type, slotdef **pp,
 				   PyObject *name);
 
 /* In the type, update the slots whose slotdefs are gathered in the pp0 array,
