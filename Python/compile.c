@@ -383,6 +383,8 @@ static int com_argdefs PROTO((struct compiling *, node *));
 static int com_newlocal PROTO((struct compiling *, char *));
 static codeobject *icompile PROTO((struct _node *, struct compiling *));
 static codeobject *jcompile PROTO((struct _node *, char *, struct compiling *));
+static object *parsestrplus PROTO((node *));
+static object *parsestr PROTO((char *));
 
 static int
 com_init(c, filename)
@@ -2242,7 +2244,7 @@ is_constant_false(c, n)
 		return i == 0;
 
 	case STRING:
-		v = parsestrplus(n);
+		v = parsestr(STR(n));
 		if (v == NULL) {
 			err_clear();
 			break;
