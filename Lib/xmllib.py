@@ -9,9 +9,10 @@ version = '0.1'
 
 # Regular expressions used for parsing
 
-_S = '[ \t\r\n]+'
-_opS = '[ \t\r\n]*'
-_Name = '[a-zA-Z_:][-a-zA-Z0-9._:]*'
+_S = '[ \t\r\n]+'                       # white space
+_opS = '[ \t\r\n]*'                     # optional white space
+_Name = '[a-zA-Z_:][-a-zA-Z0-9._:]*'    # valid XML name
+_QStr = "(?:'[^']*'|\"[^\"]*\")"        # quoted XML string
 illegal = re.compile('[^\t\r\n -\176\240-\377]') # illegal chars in content
 interesting = re.compile('[]&<]')
 
@@ -22,17 +23,25 @@ charref = re.compile('&#(?P<char>[0-9]+[^0-9]|x[0-9a-fA-F]+[^0-9a-fA-F])')
 space = re.compile(_S + '$')
 newline = re.compile('\n')
 
+attrfind = re.compile(
+    _S + '(?P<name>' + _Name + ')'
+    '(' + _opS + '=' + _opS +
+    '(?P<value>'+_QStr+'|[-a-zA-Z0-9.:+*%?!()_#=~]+))?')
 starttagopen = re.compile('<' + _Name)
-endtagopen = re.compile('</')
 starttagend = re.compile(_opS + '(?P<slash>/?)>')
+starttagmatch = re.compile('<(?P<tagname>'+_Name+')'
+                      '(?P<attrs>(?:'+attrfind.pattern+')*)'+
+                      starttagend.pattern)
+endtagopen = re.compile('</')
 endbracket = re.compile(_opS + '>')
+endbracketfind = re.compile('(?:[^>\'"]|'+_QStr+')*>')
 tagfind = re.compile(_Name)
 cdataopen = re.compile(r'<!\[CDATA\[')
 cdataclose = re.compile(r'\]\]>')
 # this matches one of the following:
 # SYSTEM SystemLiteral
 # PUBLIC PubidLiteral SystemLiteral
-_SystemLiteral = '(?P<%s>\'[^\']*\'|"[^"]*")'
+_SystemLiteral = '(?P<%s>'+_QStr+')'
 _PublicLiteral = '(?P<%s>"[-\'()+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*"|' \
                         "'[-()+,./:=?;!*#@$_%% \n\ra-zA-Z0-9]*')"
 _ExternalId = '(?:SYSTEM|' \
@@ -41,7 +50,7 @@ _ExternalId = '(?:SYSTEM|' \
 doctype = re.compile('<!DOCTYPE'+_S+'(?P<name>'+_Name+')'
                      '(?:'+_S+_ExternalId+')?'+_opS)
 xmldecl = re.compile('<\?xml'+_S+
-                     'version'+_opS+'='+_opS+'(?P<version>\'[^\']*\'|"[^"]*")'+
+                     'version'+_opS+'='+_opS+'(?P<version>'+_QStr+')'+
                      '(?:'+_S+'encoding'+_opS+'='+_opS+
                         "(?P<encoding>'[A-Za-z][-A-Za-z0-9._]*'|"
                         '"[A-Za-z][-A-Za-z0-9._]*"))?'
@@ -53,10 +62,6 @@ procclose = re.compile(_opS + r'\?>')
 commentopen = re.compile('<!--')
 commentclose = re.compile('-->')
 doubledash = re.compile('--')
-attrfind = re.compile(
-    _S + '(?P<name>' + _Name + ')'
-    '(' + _opS + '=' + _opS +
-    '(?P<value>\'[^\']*\'|"[^"]*"|[-a-zA-Z0-9.:+*%?!()_#=~]+))')
 attrtrans = string.maketrans(' \r\n\t', '    ')
 
 
@@ -173,7 +178,7 @@ class XMLParser:
                     self.syntax_error('illegal data at start of file')
                 self.__at_start = 0
                 data = rawdata[i:j]
-                if not self.stack and not space.match(data):
+                if not self.stack and space.match(data) is None:
                     self.syntax_error('data not in content')
                 if illegal.search(data):
                     self.syntax_error('illegal character in content')
@@ -327,7 +332,7 @@ class XMLParser:
         if rawdata[i:i+4] <> '<!--':
             raise RuntimeError, 'unexpected call to handle_comment'
         res = commentclose.search(rawdata, i+4)
-        if not res:
+        if res is None:
             return -1
         if doubledash.search(rawdata, i+4, res.start(0)):
             self.syntax_error("`--' inside comment")
@@ -365,7 +370,7 @@ class XMLParser:
                     pass
                 elif level <= 0 and c == ']':
                     res = endbracket.match(rawdata, k+1)
-                    if not res:
+                    if res is None:
                         return -1
                     self.handle_doctype(name, pubid, syslit, rawdata[j+1:k])
                     return res.end(0)
@@ -376,10 +381,10 @@ class XMLParser:
                     if level < 0:
                         self.syntax_error("bogus `>' in DOCTYPE")
                 k = k+1
-        res = endbracket.search(rawdata, k)
-        if not res:
+        res = endbracketfind.match(rawdata, k)
+        if res is None:
             return -1
-        if res.start(0) != k:
+        if endbracket.match(rawdata, k) is None:
             self.syntax_error('garbage in DOCTYPE')
         self.handle_doctype(name, pubid, syslit, None)
         return res.end(0)
@@ -390,7 +395,7 @@ class XMLParser:
         if rawdata[i:i+9] <> '<![CDATA[':
             raise RuntimeError, 'unexpected call to parse_cdata'
         res = cdataclose.search(rawdata, i+9)
-        if not res:
+        if res is None:
             return -1
         if illegal.search(rawdata, i+9, res.start(0)):
             self.syntax_error('illegal character in CDATA')
@@ -404,13 +409,13 @@ class XMLParser:
     def parse_proc(self, i):
         rawdata = self.rawdata
         end = procclose.search(rawdata, i)
-        if not end:
+        if end is None:
             return -1
         j = end.start(0)
         if illegal.search(rawdata, i+2, j):
             self.syntax_error('illegal character in processing instruction')
         res = tagfind.match(rawdata, i+2)
-        if not res:
+        if res is None:
             raise RuntimeError, 'unexpected call to parse_proc'
         k = res.end(0)
         name = res.group(0)
@@ -420,9 +425,9 @@ class XMLParser:
         return end.end(0)
 
     # Internal -- parse attributes between i and j
-    def parse_attributes(self, tag, k, j, attributes = None):
+    def parse_attributes(self, tag, i, j, attributes = None):
         rawdata = self.rawdata
-        # Now parse the data between k and j into a tag and attrs
+        # Now parse the data between i and j into a tag and attrs
         attrdict = {}
         try:
             # convert attributes list to dictionary
@@ -432,79 +437,79 @@ class XMLParser:
             attributes = d
         except TypeError:
             pass
-        while k < j:
-            res = attrfind.match(rawdata, k)
-            if not res: break
+        while i < j:
+            res = attrfind.match(rawdata, i)
+            if res is None:
+                break
             attrname, attrvalue = res.group('name', 'value')
             if attrvalue is None:
-                self.syntax_error('no attribute value specified')
+                self.syntax_error("no value specified for attribute `%s'" % attrname)
                 attrvalue = attrname
             elif attrvalue[:1] == "'" == attrvalue[-1:] or \
                  attrvalue[:1] == '"' == attrvalue[-1:]:
                 attrvalue = attrvalue[1:-1]
             else:
-                self.syntax_error('attribute value not quoted')
+                self.syntax_error("attribute `%s' value not quoted" % attrname)
+            if '<' in attrvalue:
+                self.syntax_error("`<' illegal in attribute value")
             if attributes is not None and not attributes.has_key(attrname):
-                self.syntax_error('unknown attribute %s of element %s' %
+                self.syntax_error("unknown attribute `%s' of element `%s'" %
                                   (attrname, tag))
             if attrdict.has_key(attrname):
-                self.syntax_error('attribute specified twice')
+                self.syntax_error("attribute `%s' specified twice" % attrname)
             attrvalue = string.translate(attrvalue, attrtrans)
             attrdict[attrname] = self.translate_references(attrvalue)
-            k = res.end(0)
+            i = res.end(0)
         if attributes is not None:
             # fill in with default attributes
             for key, val in attributes.items():
                 if val is not None and not attrdict.has_key(key):
                     attrdict[key] = val
-        return attrdict, k
+        return attrdict, i
 
     # Internal -- handle starttag, return length or -1 if not terminated
     def parse_starttag(self, i):
         rawdata = self.rawdata
         # i points to start of tag
-        end = endbracket.search(rawdata, i+1)
-        if not end:
+        end = endbracketfind.match(rawdata, i+1)
+        if end is None:
             return -1
-        j = end.start(0)
-        res = tagfind.match(rawdata, i+1)
-        if not res:
-            raise RuntimeError, 'unexpected call to parse_starttag'
-        k = res.end(0)
-        tag = res.group(0)
-        if not self.__seen_starttag and self.__seen_doctype:
-            if tag != self.__seen_doctype:
-                self.syntax_error('starttag does not match DOCTYPE')
+        tag = starttagmatch.match(rawdata, i)
+        if tag is None or tag.end(0) != end.end(0):
+            self.syntax_error('garbage in starttag')
+            return end.end(0)
+        tagname = tag.group('tagname')
+        if not self.__seen_starttag and self.__seen_doctype and \
+           tagname != self.__seen_doctype:
+            self.syntax_error('starttag does not match DOCTYPE')
         if self.__seen_starttag and not self.stack:
             self.syntax_error('multiple elements on top level')
-        if hasattr(self, tag + '_attributes'):
-            attributes = getattr(self, tag + '_attributes')
+        if hasattr(self, tagname + '_attributes'):
+            attributes = getattr(self, tagname + '_attributes')
         else:
             attributes = None
-        attrdict, k = self.parse_attributes(tag, k, j, attributes)
-        res = starttagend.match(rawdata, k)
-        if not res:
-            self.syntax_error('garbage in start tag')
-        self.finish_starttag(tag, attrdict)
-        if res and res.group('slash') == '/':
-            self.finish_endtag(tag)
-        return end.end(0)
+        k, j = tag.span('attrs')
+        attrdict, k = self.parse_attributes(tagname, k, j, attributes)
+        self.finish_starttag(tagname, attrdict)
+        if tag.group('slash') == '/':
+            self.finish_endtag(tagname)
+        return tag.end(0)
 
     # Internal -- parse endtag
     def parse_endtag(self, i):
         rawdata = self.rawdata
-        end = endbracket.search(rawdata, i+1)
-        if not end:
+        end = endbracketfind.match(rawdata, i+1)
+        if end is None:
             return -1
         res = tagfind.match(rawdata, i+2)
-        if not res:
+        if res is None:
             self.syntax_error('no name specified in end tag')
             tag = ''
             k = i+2
         else:
             tag = res.group(0)
             k = res.end(0)
-        if k != end.start(0):
+        if endbracket.match(rawdata, k) is None:
             self.syntax_error('garbage in end tag')
         self.finish_endtag(tag)
         return end.end(0)
