@@ -259,14 +259,8 @@ class dispatcher:
     def readable(self):
         return True
 
-    if os.name == 'mac':
-        # The macintosh will select a listening socket for
-        # write if you let it.  What might this mean?
-        def writable(self):
-            return not self.accepting
-    else:
-        def writable(self):
-            return True
+    def writable(self):
+        return True
 
     # ==================================================
     # socket object methods.
