@@ -29,6 +29,29 @@ def confirm(outcome, name):
         print "Failed", name
         fails = fails + 1
 
+def test_make_parser2():
+    try:       
+        # Creating parsers several times in a row should succeed.
+        # Testing this because there have been failures of this kind
+        # before.
+        from xml.sax import make_parser
+        p = make_parser()
+        from xml.sax import make_parser
+        p = make_parser()
+        from xml.sax import make_parser
+        p = make_parser()
+        from xml.sax import make_parser
+        p = make_parser()
+        from xml.sax import make_parser
+        p = make_parser()
+        from xml.sax import make_parser
+        p = make_parser()
+    except:
+        return 0
+    else:
+        return p
+    
+        
 # ===========================================================================
 #
 #   saxutils tests
@@ -312,6 +335,67 @@ def test_expat_inpsource_stream():
     parser.parse(inpsrc)
 
     return result.getvalue() == xml_test_out
+
+# ===== IncrementalParser support
+
+def test_expat_incremental():
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+    parser = create_parser()
+    parser.setContentHandler(xmlgen)
+
+    parser.feed("<doc>")
+    parser.feed("</doc>")
+    parser.close()
+
+    return result.getvalue() == start + "<doc></doc>"
+
+def test_expat_incremental_reset():
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+    parser = create_parser()
+    parser.setContentHandler(xmlgen)
+
+    parser.feed("<doc>")
+    parser.feed("text")
+
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+    parser.setContentHandler(xmlgen)
+    parser.reset()
+
+    parser.feed("<doc>")
+    parser.feed("text")
+    parser.feed("</doc>")
+    parser.close()
+
+    return result.getvalue() == start + "<doc>text</doc>"
+
+# ===== Locator support
+
+def test_expat_locator_noinfo():
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+    parser = create_parser()
+    parser.setContentHandler(xmlgen)
+
+    parser.feed("<doc>")
+    parser.feed("</doc>")
+    parser.close()
+
+    return parser.getSystemId() == None and \
+           parser.getPublicId() == None and \
+           parser.getLineNumber() == 1 
+
+def test_expat_locator_withinfo():
+    result = StringIO()
+    xmlgen = XMLGenerator(result)
+    parser = create_parser()
+    parser.setContentHandler(xmlgen)
+    parser.parse(findfile("test.xml"))
+
+    return parser.getSystemId() == findfile("test.xml") and \
+           parser.getPublicId() == None
 
 
 # ===========================================================================
