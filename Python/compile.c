@@ -668,20 +668,21 @@ static void
 com_push(struct compiling *c, int n)
 {
 	c->c_stacklevel += n;
-	if (c->c_stacklevel > c->c_maxstacklevel)
+	if (c->c_stacklevel > c->c_maxstacklevel) {
 		c->c_maxstacklevel = c->c_stacklevel;
+		/*
+		fprintf(stderr, "%s:%s:%d max stack nexti=%d level=%d n=%d\n",
+			c->c_filename, c->c_name, c->c_lineno,
+			c->c_nexti, c->c_stacklevel, n);
+		*/
+	}
 }
 
 static void
 com_pop(struct compiling *c, int n)
 {
-	if (c->c_stacklevel < n) {
-		/* fprintf(stderr,
-			"%s:%d: underflow! nexti=%d, level=%d, n=%d\n",
-			c->c_filename, c->c_lineno,
-			c->c_nexti, c->c_stacklevel, n); */
+	if (c->c_stacklevel < n) 
 		c->c_stacklevel = 0;
-	}
 	else
 		c->c_stacklevel -= n;
 }
@@ -695,26 +696,26 @@ com_done(struct compiling *c)
 		_PyString_Resize(&c->c_lnotab, c->c_lnotab_next);
 }
 
+static int
+com_check_size(PyObject **s, int offset)
+{
+	int len = PyString_GET_SIZE(*s);
+	if (offset >= len) 
+		return _PyString_Resize(s, len * 2);
+	return 0;
+}
+
 static void
 com_addbyte(struct compiling *c, int byte)
 {
-	int len;
 	/*fprintf(stderr, "%3d: %3d\n", c->c_nexti, byte);*/
 	assert(byte >= 0 && byte <= 255);
-	if (byte < 0 || byte > 255) {
-		com_error(c, PyExc_SystemError,
-			  "com_addbyte: byte out of range");
-	}
-	if (c->c_code == NULL)
+	assert(c->c_code);
+	if (com_check_size(&c->c_code, c->c_nexti)) {
+		c->c_errors++;
 		return;
-	len = PyString_Size(c->c_code);
-	if (c->c_nexti >= len) {
-		if (_PyString_Resize(&c->c_code, len+1000) != 0) {
-			c->c_errors++;
-			return;
-		}
 	}
-	PyString_AsString(c->c_code)[c->c_nexti++] = byte;
+	PyString_AS_STRING(c->c_code)[c->c_nexti++] = byte;
 }
 
 static void
@@ -727,18 +728,14 @@ com_addint(struct compiling *c, int x)
 static void
 com_add_lnotab(struct compiling *c, int addr, int line)
 {
-	int size;
 	char *p;
 	if (c->c_lnotab == NULL)
 		return;
-	size = PyString_Size(c->c_lnotab);
-	if (c->c_lnotab_next+2 > size) {
-		if (_PyString_Resize(&c->c_lnotab, size + 1000) < 0) {
-			c->c_errors++;
-			return;
-		}
+	if (com_check_size(&c->c_lnotab, c->c_lnotab_next + 2)) {
+		c->c_errors++;
+		return;
 	}
-	p = PyString_AsString(c->c_lnotab) + c->c_lnotab_next;
+	p = PyString_AS_STRING(c->c_lnotab) + c->c_lnotab_next;
 	*p++ = addr;
 	*p++ = line;
 	c->c_lnotab_next += 2;
@@ -804,7 +801,7 @@ com_addfwref(struct compiling *c, int op, int *p_anchor)
 static void
 com_backpatch(struct compiling *c, int anchor)
 {
-	unsigned char *code = (unsigned char *) PyString_AsString(c->c_code);
+	unsigned char *code = (unsigned char *) PyString_AS_STRING(c->c_code);
 	int target = c->c_nexti;
 	int dist;
 	int prev;
@@ -2326,26 +2323,27 @@ com_test(struct compiling *c, node *n)
 {
 	REQ(n, test); /* and_test ('or' and_test)* | lambdef */
 	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) == lambdef) {
-		PyObject *co;
+		PyCodeObject *co;
 		int i, closure;
 		int ndefs = com_argdefs(c, CHILD(n, 0));
 		symtable_enter_scope(c->c_symtable, "lambda", lambdef,
 				     n->n_lineno);
-		co = (PyObject *) icompile(CHILD(n, 0), c);
+		co = icompile(CHILD(n, 0), c);
 		if (co == NULL) {
 			c->c_errors++;
 			return;
 		}
 		symtable_exit_scope(c->c_symtable);
-		i = com_addconst(c, co);
-		closure = com_make_closure(c, (PyCodeObject *)co);
-		Py_DECREF(co);
+		i = com_addconst(c, (PyObject *)co);
+		closure = com_make_closure(c, co);
 		com_addoparg(c, LOAD_CONST, i);
 		com_push(c, 1);
-		if (closure)
+		if (closure) {
 			com_addoparg(c, MAKE_CLOSURE, ndefs);
-		else
+			com_pop(c, PyTuple_GET_SIZE(co->co_freevars));
+		} else
 			com_addoparg(c, MAKE_FUNCTION, ndefs);
+		Py_DECREF(co);
 		com_pop(c, ndefs);
 	}
 	else {
@@ -3564,7 +3562,8 @@ static void
 com_classdef(struct compiling *c, node *n)
 {
 	int i;
-	PyObject *co, *v;
+	PyObject *v;
+	PyCodeObject *co;
 	char *name;
 
 	REQ(n, classdef);
@@ -3587,23 +3586,25 @@ com_classdef(struct compiling *c, node *n)
 		com_bases(c, CHILD(n, 3));
 	name = STR(CHILD(n, 1));
 	symtable_enter_scope(c->c_symtable, name, TYPE(n), n->n_lineno);
-	co = (PyObject *)icompile(n, c);
+	co = icompile(n, c);
 	symtable_exit_scope(c->c_symtable);
 	if (co == NULL)
 		c->c_errors++;
 	else {
-		int closure = com_make_closure(c, (PyCodeObject *)co);
-		i = com_addconst(c, co);
+		int closure = com_make_closure(c, co);
+		i = com_addconst(c, (PyObject *)co);
 		com_addoparg(c, LOAD_CONST, i);
 		com_push(c, 1);
-		if (closure)
+		if (closure) {
 			com_addoparg(c, MAKE_CLOSURE, 0);
-		else
+			com_pop(c, PyTuple_GET_SIZE(co->co_freevars));
+		} else
 			com_addoparg(c, MAKE_FUNCTION, 0);
 		com_addoparg(c, CALL_FUNCTION, 0);
 		com_addbyte(c, BUILD_CLASS);
 		com_pop(c, 2);
 		com_addop_varname(c, VAR_STORE, STR(CHILD(n, 1)));
+		com_pop(c, 1);
 		Py_DECREF(co);
 	}
 }
@@ -4082,8 +4083,7 @@ jcompile(node *n, char *filename, struct compiling *base,
 		if (base->c_nested 
 		    || (sc.c_symtable->st_cur->ste_type == TYPE_FUNCTION))
 			sc.c_nested = 1;
-		sc.c_flags |= base->c_flags & (CO_GENERATOR_ALLOWED |
-					       CO_FUTURE_DIVISION);
+		sc.c_flags |= base->c_flags & PyCF_MASK;
 	} else {
 		sc.c_private = NULL;
 		sc.c_future = PyNode_Future(n, filename);
