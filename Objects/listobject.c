@@ -60,7 +60,7 @@ PyList_New(int size)
 	else {
 		op->ob_item = (PyObject **) PyMem_MALLOC(nbytes);
 		if (op->ob_item == NULL) {
-			PyObject_FREE(op);
+			PyObject_FREE(PyObject_AS_GC(op));
 			return PyErr_NoMemory();
 		}
 	}
