@@ -1,3 +1,4 @@
+import os.path
 import parser
 import pprint
 import sys
@@ -12,38 +13,68 @@ from test_support import verbose
 #
 
 def roundtrip(f, s):
-    print s
     st1 = f(s)
     t = st1.totuple()
     st2 = parser.sequence2ast(t)
 
+def roundtrip_fromfile(filename):
+    roundtrip(suite, open(filename).read())
+
+def test_expr(s):
+    print "expr:", s
+    roundtrip(expr, s)
+
+def test_suite(s):
+    print "suite:", s
+    roundtrip(suite, s)
+
 
 print "Expressions:"
 
-roundtrip(expr, "foo(1)")
-roundtrip(expr, "[1, 2, 3]")
-roundtrip(expr, "[x**3 for x in range(20)]")
-roundtrip(expr, "[x**3 for x in range(20) if x % 3]")
-roundtrip(expr, "foo(*args)")
-roundtrip(expr, "foo(*args, **kw)")
-roundtrip(expr, "foo(**kw)")
-roundtrip(expr, "foo(key=value)")
-roundtrip(expr, "foo(key=value, *args)")
-roundtrip(expr, "foo(key=value, *args, **kw)")
-roundtrip(expr, "foo(key=value, **kw)")
-roundtrip(expr, "foo(a, b, c, *args)")
-roundtrip(expr, "foo(a, b, c, *args, **kw)")
-roundtrip(expr, "foo(a, b, c, **kw)")
-roundtrip(expr, "foo + bar")
+test_expr("foo(1)")
+test_expr("[1, 2, 3]")
+test_expr("[x**3 for x in range(20)]")
+test_expr("[x**3 for x in range(20) if x % 3]")
+test_expr("foo(*args)")
+test_expr("foo(*args, **kw)")
+test_expr("foo(**kw)")
+test_expr("foo(key=value)")
+test_expr("foo(key=value, *args)")
+test_expr("foo(key=value, *args, **kw)")
+test_expr("foo(key=value, **kw)")
+test_expr("foo(a, b, c, *args)")
+test_expr("foo(a, b, c, *args, **kw)")
+test_expr("foo(a, b, c, **kw)")
+test_expr("foo + bar")
 
 print
 print "Statements:"
-roundtrip(suite, "print")
-roundtrip(suite, "print 1")
-roundtrip(suite, "print 1,")
-roundtrip(suite, "print >>fp")
-roundtrip(suite, "print >>fp, 1")
-roundtrip(suite, "print >>fp, 1,")
+test_suite("print")
+test_suite("print 1")
+test_suite("print 1,")
+test_suite("print >>fp")
+test_suite("print >>fp, 1")
+test_suite("print >>fp, 1,")
+
+# expr_stmt
+test_suite("a")
+test_suite("a = b")
+test_suite("a = b = c = d = e")
+test_suite("a += b")
+test_suite("a -= b")
+test_suite("a *= b")
+test_suite("a /= b")
+test_suite("a %= b")
+test_suite("a &= b")
+test_suite("a |= b")
+test_suite("a ^= b")
+test_suite("a <<= b")
+test_suite("a >>= b")
+test_suite("a **= b")
+
+#d = os.path.dirname(os.__file__)
+#roundtrip_fromfile(os.path.join(d, "os.py"))
+#roundtrip_fromfile(os.path.join(d, "test", "test_parser.py"))
 
 #
 #  Second, we take *invalid* trees and make sure we get ParserError
@@ -114,3 +145,34 @@ tree = \
  (0, ''))
 
 check_bad_tree(tree, "a,,c")
+
+# a $= b
+tree = \
+(257,
+ (264,
+  (265,
+   (266,
+    (267,
+     (312,
+      (291,
+       (292,
+        (293,
+         (294,
+          (296,
+           (297,
+            (298,
+             (299, (300, (301, (302, (303, (304, (1, 'a'))))))))))))))),
+     (268, (37, '$=')),
+     (312,
+      (291,
+       (292,
+        (293,
+         (294,
+          (296,
+           (297,
+            (298,
+             (299, (300, (301, (302, (303, (304, (1, 'b'))))))))))))))))),
+   (4, ''))),
+ (0, ''))
+
+check_bad_tree(tree, "a $= b")

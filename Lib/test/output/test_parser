@@ -1,28 +1,42 @@
 test_parser
 Expressions:
-foo(1)
-[1, 2, 3]
-[x**3 for x in range(20)]
-[x**3 for x in range(20) if x % 3]
-foo(*args)
-foo(*args, **kw)
-foo(**kw)
-foo(key=value)
-foo(key=value, *args)
-foo(key=value, *args, **kw)
-foo(key=value, **kw)
-foo(a, b, c, *args)
-foo(a, b, c, *args, **kw)
-foo(a, b, c, **kw)
-foo + bar
+expr: foo(1)
+expr: [1, 2, 3]
+expr: [x**3 for x in range(20)]
+expr: [x**3 for x in range(20) if x % 3]
+expr: foo(*args)
+expr: foo(*args, **kw)
+expr: foo(**kw)
+expr: foo(key=value)
+expr: foo(key=value, *args)
+expr: foo(key=value, *args, **kw)
+expr: foo(key=value, **kw)
+expr: foo(a, b, c, *args)
+expr: foo(a, b, c, *args, **kw)
+expr: foo(a, b, c, **kw)
+expr: foo + bar
 
 Statements:
-print
-print 1
-print 1,
-print >>fp
-print >>fp, 1
-print >>fp, 1,
+suite: print
+suite: print 1
+suite: print 1,
+suite: print >>fp
+suite: print >>fp, 1
+suite: print >>fp, 1,
+suite: a
+suite: a = b
+suite: a = b = c = d = e
+suite: a += b
+suite: a -= b
+suite: a *= b
+suite: a /= b
+suite: a %= b
+suite: a &= b
+suite: a |= b
+suite: a ^= b
+suite: a <<= b
+suite: a >>= b
+suite: a **= b
 
 Invalid parse trees:
 
@@ -33,4 +47,7 @@ print >>fp,
 caught expected exception for invalid tree
 
 a,,c
+caught expected exception for invalid tree
+
+a $= b
 caught expected exception for invalid tree
