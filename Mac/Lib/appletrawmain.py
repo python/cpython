@@ -10,13 +10,24 @@ import sys
 import marshal
 
 #
+# Make sure we have an argv[0], and make _dir point to the Resources
+# directory.
+#
+if not sys.argv or sys.argv[0][:1] == '-':
+	# Insert our (guessed) name.
+	_dir = os.path.split(sys.executable)[0] # removes "python"
+	_dir = os.path.split(_dir)[0] # Removes "MacOS"
+	_dir = os.path.join(_dir, 'Resources')
+	sys.argv.insert(0, '__rawmain__')
+else:
+	_dir = os.path.split(sys.argv[0])[0]
+#
 # Create sys.argv
 #
 argvemulator.ArgvCollector().mainloop()
 #
-# Find the realy main program to run
+# Find the real main program to run
 #
-_dir = os.path.split(sys.argv[0])[0]
 __file__ = os.path.join(_dir, '__main__.py')
 if os.path.exists(__file__):
 	#
