@@ -23,11 +23,17 @@ import imp
 import ZoomHeight
 
 ICONDIR = "Icons"
-for _dir in sys.path:
-    _dir = os.path.join(_dir, ICONDIR)
-    if os.path.isdir(_dir):
-        ICONDIR = _dir
-        break
+
+# If this file is <prefix>/lib/python1.5/idle/TreeWidget.py,
+# we expect to find the icons in <prefix>/lib/python1.5/Icons/
+try:
+    _icondir = os.path.join(os.path.dirname(__file__), ICONDIR)
+except NameError:
+    _icondir = ICONDIR
+if os.path.isdir(_icondir):
+    ICONDIR = _icondir
+elif not os.path.isdir(ICONDIR):
+    raise RuntimeError, "can't find icon directory (%s)" % `ICONDIR`
 
 def listicons(icondir=ICONDIR):
     """Utility to display the available icons."""
