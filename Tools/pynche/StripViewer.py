@@ -209,25 +209,11 @@ class StripWidget(Pmw.MegaWidget):
 	for t in self.__generator(self.__numchips, rgbtuple):
 	    rrggbb = ColorDB.triplet_to_rrggbb(t)
 	    chips.append(rrggbb)
-## 	    self.__canvas.itemconfigure(i,
-## 					fill=rrggbb,
-## 					outline=rrggbb)
-## 	    tclcmd.append(self.__canvas._w)
-## 	    tclcmd.append('itemconfigure')
-## 	    tclcmd.append(`i`)
-## 	    tclcmd.append('-fill')
-## 	    tclcmd.append(rrggbb)
-## 	    tclcmd.append('-outline')
-## 	    tclcmd.append(rrggbb)
-## 	    tclcmd.append('\n')
 	    tred, tgreen, tblue = t
 	    if tred <= red and tgreen <= green and tblue <= blue:
 		chip = i
 	    i = i + 1
 	# call the raw tcl script
-## 	script = string.join(tclcmd, ' ')
-## 	self.__canvas.tk.eval(script)
-## 	colors = tk.merge(chips)
 	colors = string.join(chips)
  	tk.eval('setcolor %s {%s}' % (self.__canvas._w, colors))
 
