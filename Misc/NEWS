@@ -3,6 +3,36 @@ What's New in Python 2.1 alpha 1?
 
 Core language, builtins, and interpreter
 
+- File objects have a new method, xreadlines().  This is the fastest
+  way to iterate over all lines in a file:
+
+  for line in file.xreadlines():
+      ...do something to line...
+
+  See the xreadlines module (mentioned below) for how to do this for
+  other file-like objects.
+
+- Even if you don't use file.xreadlines(), you may expect a speedup on
+  line-by-line input.  The file.readline() method has been optimized
+  quite a bit in platform-specific ways, both on Windows (using an
+  incredibly complex, but nevertheless thread-safe), and on systems
+  (like Linux) that support flockfile(), getc_unlocked(), and
+  funlockfile().  In addition, the fileinput module, while still slow,
+  has been sped up too, by using file.readlines(sizehint).
+
+- Support for run-time warnings has been added, including a new
+  command line option (-W) to specify the disposition of warnings.
+  See the description of the warnings module below.
+
+- Extensive changes have been made to the coercion code.  This mostly
+  affects extension modules (which can now implement mixed-type
+  numerical operators without having to use coercion), but
+  occasionally, in boundary cases the coercion semantics have changed
+  subtly.  Since this was a terrible gray area of the language, this
+  is considered an improvement.  Also not that __rcmp__ is no longer
+  supported -- instead of calling __rcmp__, __cmp__ is called with
+  reversed arguments.
+
 - The interpreter accepts now bytecode files on the command line even
   if they do not have a .pyc or .pyo extension. On Linux, after executing
 
@@ -42,8 +72,31 @@ Core language, builtins, and interpreter
   item.  Such algorithms normally end up running in quadratic time;
   using popitem() they can usually be made to run in linear time.
 
-
 Standard library
+
+- There's a new module, warnings, which implements a mechanism for
+  issuing and filtering warnings.  There are some new built-in
+  exceptions that serve as warning categories, and a new command line
+  option, -W, to control warnings (e.g. -Wi ignores all warnings, -We
+  turns warnings into errors).  warnings.warn(message[, category])
+  issues a warning message; this can also be called from C as
+  PyErr_Warn(category, message).
+
+- A new module xreadlines was added.  This exports a single factory
+  function, xreadlines().  The intention is that this code is the
+  absolutely fastest way to iterate over all lines in an open
+  file(-like) object:
+
+  import xreadlines
+  for line in xreadlines.xreadlines(file):
+      ...do something to line...
+
+  This is equivalent to the previous the speed record holder using
+  file.readlines(sizehint).  Note that if file is a real file object
+  (as opposed to a file-like object), this is equivalent:
+
+  for line in file.xreadlines():
+      ...do something to line...
 
 - The bisect module has new functions bisect_left, insort_left,
   bisect_right and insort_right.  The old names bisect and insort
@@ -54,6 +107,27 @@ Standard library
   right.  Code that doesn't care where equal elements end up should
   continue to use the old, short names ("bisect" and "insort").
 
+- The SocketServer module now sets the allow_reuse_address flag by
+  default in the TCPServer class.
+
+- A new function, sys._getframe(), returns the stack frame pointer of
+  the caller.  This is intended only as a building block for
+  higher-level mechanisms such as string interpolation.
+
+Build issues
+
+- On Linux (and possibly other Unix platforms), the readline and
+  _curses modules are automatically configured through
+  Modules/Setup.config.  These, and the bsddb module (which was
+  already dynamically configured) are now built as shared libraries by
+  default.
+
+- Python now always uses its own (renamed) implementation of getopt()
+  -- there's too much variation among C library getopt()
+  implementations.
+
+- C++ compilers are better supported; the CXX macro is always set to a
+  C++ compiler if one is found.
 
 Windows changes
 
@@ -62,6 +136,9 @@ Windows changes
   this Microsoft default to 512.  If you need even more than
   that, see the MS docs (you'll need to #define FD_SETSIZE
   and recompile Python from source).
+
+- Support for Windows 3.1, DOS and OS/2 is gone.  The Lib/dos-8x3
+  subdirectory is no more!
 
 
 What's New in Python 2.0?
