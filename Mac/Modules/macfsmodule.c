@@ -191,7 +191,7 @@ mfsa_dealloc(self)
 	DEL(self);
 }
 
-static typeobject Mfsatype = {
+statichere typeobject Mfsatype = {
 	OB_HEAD_INIT(&Typetype)
 	0,				/*ob_size*/
 	"Alias",			/*tp_name*/
@@ -199,15 +199,15 @@ static typeobject Mfsatype = {
 	0,				/*tp_itemsize*/
 	/* methods */
 	(destructor)mfsa_dealloc,	/*tp_dealloc*/
-	(printfunc)0,		/*tp_print*/
+	(printfunc)0,			/*tp_print*/
 	(getattrfunc)mfsa_getattr,	/*tp_getattr*/
-	(setattrfunc)0,	/*tp_setattr*/
-	(cmpfunc)0,		/*tp_compare*/
-	(reprfunc)0,		/*tp_repr*/
-	0,			/*tp_as_number*/
-	0,		/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	(hashfunc)0,		/*tp_hash*/
+	(setattrfunc)0,			/*tp_setattr*/
+	(cmpfunc)0,			/*tp_compare*/
+	(reprfunc)0,			/*tp_repr*/
+	0,				/*tp_as_number*/
+	0,				/*tp_as_sequence*/
+	0,				/*tp_as_mapping*/
+	(hashfunc)0,			/*tp_hash*/
 };
 
 /* End of code for Alias objects */
@@ -394,9 +394,10 @@ mfss_repr(self)
 {
 	char buf[512];
 
-	/* XXXX Does %#s work for all compilers? */
-	sprintf(buf, "FSSpec((%d, %d, '%#s'))", self->fsspec.vRefNum, 
-				self->fsspec.parID, self->fsspec.name);
+	sprintf(buf, "FSSpec((%d, %d, '%.*s'))",
+		self->fsspec.vRefNum, 
+		self->fsspec.parID,
+		self->fsspec.name[0], self->fsspec.name+1);
 	return newstringobject(buf);
 }
 
@@ -420,7 +421,7 @@ mfss_compare(v, w)
 	return res;
 }
 
-static typeobject Mfsstype = {
+statichere typeobject Mfsstype = {
 	OB_HEAD_INIT(&Typetype)
 	0,				/*ob_size*/
 	"FSSpec",			/*tp_name*/
