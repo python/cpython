@@ -3274,7 +3274,7 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 				}
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
-				  "augmented assign to tuple literal not possible");
+				  "augmented assign to tuple literal or generator expression not possible");
 					return;
 				}
 				break;
@@ -3287,7 +3287,7 @@ com_assign(struct compiling *c, node *n, int assigning, node *augn)
 				}
 				if (assigning > OP_APPLY) {
 					com_error(c, PyExc_SyntaxError,
-				  "augmented assign to list literal not possible");
+				  "augmented assign to list literal or comprehension not possible");
 					return;
 				}
 				if (NCH(n) > 1 
