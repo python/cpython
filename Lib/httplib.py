@@ -56,10 +56,11 @@ class HTTP:
 			port = args[0]
 		else:
 			i = string.find(host, ':')
+			port = None
 			if i >= 0:
 				host, port = host[:i], host[i+1:]
 				try: port = string.atoi(port)
-				except string.atoi_error: port = None
+				except string.atoi_error: pass
 		if not port: port = HTTP_PORT
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		if self.debuglevel > 0: print 'connect:', (host, port)
