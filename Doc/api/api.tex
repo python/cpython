@@ -3984,8 +3984,7 @@ if given, the \function{str()} of the object is written instead of the
 failure; the appropriate exception will be set.
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{int}{PyFile_WriteString}{char *s, PyFileObject *p,
-                                           int flags}
+\begin{cfuncdesc}{int}{PyFile_WriteString}{char *s, PyFileObject *p}
 Writes string \var{s} to file object \var{p}.  Returns \code{0} on
 success or \code{-1} on failure; the appropriate exception will be
 set.
