@@ -49,7 +49,7 @@ references.)
 Note that the use of the implementation's tracing or debugging
 facilities may keep objects alive that would normally be collectable.
 Also note that catching an exception with a
-`\code{try}...\code{except}' statement may keep objects alive.
+`\keyword{try}...\keyword{except}' statement may keep objects alive.
 
 Some objects contain references to ``external'' resources such as open
 files or windows.  It is understood that these resources are freed
@@ -57,9 +57,8 @@ when the object is garbage-collected, but since garbage collection is
 not guaranteed to happen, such objects also provide an explicit way to
 release the external resource, usually a \method{close()} method.
 Programs are strongly recommended to explicitly close such
-objects.
-The `\code{try}...\code{finally}' statement provides a convenient way
-to do this.
+objects.  The `\keyword{try}...\keyword{finally}' statement provides
+a convenient way to do this.
 
 Some objects contain references to other objects; these are called
 \emph{containers}.  Examples of containers are tuples, lists and
@@ -110,7 +109,7 @@ object, if it has any.
 \index{attribute}
 \indexii{special}{attribute}
 \indexiii{generic}{special}{attribute}
-\withsubitem{(built-in object attribute)}{%
+\withsubitem{(built-in object attribute)}{
   \ttindex{__methods__}
   \ttindex{__members__}}
 
@@ -231,7 +230,7 @@ renumbered so that it starts at 0.
 Sequences are distinguished according to their mutability:
 
 \begin{description}
-%
+
 \item[Immutable sequences]
 An object of an immutable sequence type cannot change once it is
 created.  (If the object contains references to other objects,
@@ -388,12 +387,12 @@ defines the global namespace of the module in which the function was
 defined.  Additional information about a function's definition can be
 retrieved from its code object; see the description of internal types
 below.
-\withsubitem{(function attribute)}{%
-  \ttindex{func_doc}%
-  \ttindex{__doc__}%
-  \ttindex{__name__}%
-  \ttindex{func_defaults}%
-  \ttindex{func_code}%
+\withsubitem{(function attribute)}{
+  \ttindex{func_doc}
+  \ttindex{__doc__}
+  \ttindex{__name__}
+  \ttindex{func_defaults}
+  \ttindex{func_code}
   \ttindex{func_globals}}
 \indexii{global}{namespace}
 
@@ -411,8 +410,8 @@ base class of the class of which \member{im_self} is an instance);
 \member{__doc__} is the method's documentation (same as
 \code{im_func.__doc__}); \member{__name__} is the method name (same as
 \code{im_func.__name__}).
-\withsubitem{(method attribute)}{%
-  \ttindex{im_func}%
+\withsubitem{(method attribute)}{
+  \ttindex{im_func}
   \ttindex{im_self}}
 
 User-defined method objects are created in two ways: when getting an
@@ -430,9 +429,9 @@ function \method{f()}, \code{C.f} does not yield the function object
 instance, \code{x.f} yields a bound method object \code{m} where
 \code{m.im_class} is \code{C}, \code{m.im_func} is \method{f()}, and
 \code{m.im_self} is \code{x}.
-\withsubitem{(method attribute)}{%
-  \ttindex{im_class}%
-  \ttindex{im_func}%
+\withsubitem{(method attribute)}{
+  \ttindex{im_class}
+  \ttindex{im_func}
   \ttindex{im_self}}
 
 When an unbound user-defined method object is called, the underlying
@@ -531,9 +530,9 @@ The \member{__file__} attribute is not present for C{} modules that are
 statically linked into the interpreter; for extension modules loaded
 dynamically from a shared library, it is the pathname of the shared
 library file.
-\withsubitem{(module attribute)}{%
-  \ttindex{__name__}%
-  \ttindex{__doc__}%
+\withsubitem{(module attribute)}{
+  \ttindex{__name__}
+  \ttindex{__doc__}
   \ttindex{__file__}}
 \indexii{module}{namespace}
 
@@ -576,11 +575,11 @@ Special attributes: \member{__name__} is the class name;
 containing the base classes, in the order of their occurrence in the
 base class list; \member{__doc__} is the class's documentation string,
 or None if undefined.
-\withsubitem{(class attribute)}{%
-  \ttindex{__name__}%
-  \ttindex{__module__}%
-  \ttindex{__dict__}%
-  \ttindex{__bases__}%
+\withsubitem{(class attribute)}{
+  \ttindex{__name__}
+  \ttindex{__module__}
+  \ttindex{__dict__}
+  \ttindex{__bases__}
   \ttindex{__doc__}}
 
 \item[Class instances]
@@ -617,8 +616,8 @@ section \ref{specialnames}, ``Special method names.''
 
 Special attributes: \member{__dict__} is the attribute
 dictionary; \member{__class__} is the instance's class.
-\withsubitem{(instance attribute)}{%
-  \ttindex{__dict__}%
+\withsubitem{(instance attribute)}{
+  \ttindex{__dict__}
   \ttindex{__class__}}
 
 \item[Files]
@@ -637,9 +636,9 @@ Library Reference} for complete documentation of file objects.
 \bifuncindex{open}
 \withsubitem{(in module os)}{\ttindex{popen()}}
 \withsubitem{(socket method)}{\ttindex{makefile()}}
-\withsubitem{(in module sys)}{%
-  \ttindex{stdin}%
-  \ttindex{stdout}%
+\withsubitem{(in module sys)}{
+  \ttindex{stdin}
+  \ttindex{stdout}
   \ttindex{stderr}}
 \ttindex{sys.stdin}
 \ttindex{sys.stdout}
@@ -684,18 +683,18 @@ byte code offsets to line numbers (for detais see the source code of
 the interpreter); \member{co_stacksize} is the required stack size
 (including local variables); \member{co_flags} is an integer encoding
 a number of flags for the interpreter.
-\withsubitem{(code object attribute)}{%
-  \ttindex{co_argcount}%
-  \ttindex{co_code}%
-  \ttindex{co_consts}%
-  \ttindex{co_filename}%
-  \ttindex{co_firstlineno}%
-  \ttindex{co_flags}%
-  \ttindex{co_lnotab}%
-  \ttindex{co_name}%
-  \ttindex{co_names}%
-  \ttindex{co_nlocals}%
-  \ttindex{co_stacksize}%
+\withsubitem{(code object attribute)}{
+  \ttindex{co_argcount}
+  \ttindex{co_code}
+  \ttindex{co_consts}
+  \ttindex{co_filename}
+  \ttindex{co_firstlineno}
+  \ttindex{co_flags}
+  \ttindex{co_lnotab}
+  \ttindex{co_name}
+  \ttindex{co_names}
+  \ttindex{co_nlocals}
+  \ttindex{co_stacksize}
   \ttindex{co_varnames}}
 
 The following flag bits are defined for \member{co_flags}: bit 2 is set
@@ -724,14 +723,14 @@ executing in restricted execution mode;
 \member{f_lineno} gives the line number and \member{f_lasti} gives the
 precise instruction (this is an index into the bytecode string of
 the code object).
-\withsubitem{(frame attribute)}{%
-  \ttindex{f_back}%
-  \ttindex{f_code}%
-  \ttindex{f_globals}%
-  \ttindex{f_locals}%
-  \ttindex{f_lineno}%
-  \ttindex{f_lasti}%
-  \ttindex{f_builtins}%
+\withsubitem{(frame attribute)}{
+  \ttindex{f_back}
+  \ttindex{f_code}
+  \ttindex{f_globals}
+  \ttindex{f_locals}
+  \ttindex{f_lineno}
+  \ttindex{f_lasti}
+  \ttindex{f_builtins}
   \ttindex{f_restricted}}
 
 Special writable attributes: \member{f_trace}, if not \code{None}, is a
@@ -739,10 +738,10 @@ function called at the start of each source code line (this is used by
 the debugger); \member{f_exc_type}, \member{f_exc_value},
 \member{f_exc_traceback} represent the most recent exception caught in
 this frame.
-\withsubitem{(frame attribute)}{%
-  \ttindex{f_trace}%
-  \ttindex{f_exc_type}%
-  \ttindex{f_exc_value}%
+\withsubitem{(frame attribute)}{
+  \ttindex{f_trace}
+  \ttindex{f_exc_type}
+  \ttindex{f_exc_value}
   \ttindex{f_exc_traceback}}
 
 \item[Traceback objects] \label{traceback}
@@ -765,9 +764,9 @@ interactive, it is also made available to the user as
 \indexii{stack}{trace}
 \indexii{exception}{handler}
 \indexii{execution}{stack}
-\withsubitem{(in module sys)}{%
-  \ttindex{exc_info}%
-  \ttindex{exc_traceback}%
+\withsubitem{(in module sys)}{
+  \ttindex{exc_info}
+  \ttindex{exc_traceback}
   \ttindex{last_traceback}}
 \ttindex{sys.exc_info}
 \ttindex{sys.exc_traceback}
@@ -782,10 +781,10 @@ precise instruction.  The line number and last instruction in the
 traceback may differ from the line number of its frame object if the
 exception occurred in a \keyword{try} statement with no matching
 except clause or with a finally clause.
-\withsubitem{(traceback attribute)}{%
-  \ttindex{tb_next}%
-  \ttindex{tb_frame}%
-  \ttindex{tb_lineno}%
+\withsubitem{(traceback attribute)}{
+  \ttindex{tb_next}
+  \ttindex{tb_frame}
+  \ttindex{tb_lineno}
   \ttindex{tb_lasti}}
 \stindex{try}
 
@@ -799,9 +798,9 @@ k:l]}, or \code{a[..., i:j])}.  They are also created by the built-in
 Special read-only attributes: \member{start} is the lowerbound;
 \member{stop} is the upperbound; \member{step} is the step value; each is
 \code{None} if omitted. These attributes can have any type.
-\withsubitem{(slice object attribute)}{%
-  \ttindex{start}%
-  \ttindex{stop}%
+\withsubitem{(slice object attribute)}{
+  \ttindex{start}
+  \ttindex{stop}
   \ttindex{step}}
 
 \end{description} % Internal types
@@ -1026,27 +1025,27 @@ multiplication (meaning repetition) by defining the methods
 \method{__add__()}, \method{__radd__()}, \method{__mul__()} and
 \method{__rmul__()} described below; they should not define
 \method{__coerce__()} or other numerical operators.
-\withsubitem{(mapping object method)}{%
-  \ttindex{keys()}%
-  \ttindex{values()}%
-  \ttindex{items()}%
-  \ttindex{has_key()}%
-  \ttindex{get()}%
-  \ttindex{clear()}%
-  \ttindex{copy()}%
+\withsubitem{(mapping object method)}{
+  \ttindex{keys()}
+  \ttindex{values()}
+  \ttindex{items()}
+  \ttindex{has_key()}
+  \ttindex{get()}
+  \ttindex{clear()}
+  \ttindex{copy()}
   \ttindex{update()}}
-\withsubitem{(sequence object method)}{%
-  \ttindex{append()}%
-  \ttindex{count()}%
-  \ttindex{index()}%
-  \ttindex{insert()}%
-  \ttindex{pop()}%
-  \ttindex{remove()}%
-  \ttindex{reverse()}%
-  \ttindex{sort()}%
-  \ttindex{__add__()}%
-  \ttindex{__radd__()}%
-  \ttindex{__mul__()}%
+\withsubitem{(sequence object method)}{
+  \ttindex{append()}
+  \ttindex{count()}
+  \ttindex{index()}
+  \ttindex{insert()}
+  \ttindex{pop()}
+  \ttindex{remove()}
+  \ttindex{reverse()}
+  \ttindex{sort()}
+  \ttindex{__add__()}
+  \ttindex{__radd__()}
+  \ttindex{__mul__()}
   \ttindex{__rmul__()}}
 \withsubitem{(numberic object method)}{\ttindex{__coerce__()}}
 
