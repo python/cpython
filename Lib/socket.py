@@ -136,16 +136,16 @@ _socketmethods = (
     'recv', 'recvfrom', 'send', 'sendall', 'sendto', 'setblocking',
     'settimeout', 'gettimeout', 'shutdown')
 
+class _closedsocket(object):
+    __slots__ = []
+    def __getattr__(self, name):
+        raise error(9, 'Bad file descriptor')
+
 class _socketobject(object):
 
     __doc__ = _realsocket.__doc__
 
     __slots__ = ["_sock"]
-
-    class _closedsocket(object):
-        __slots__ = []
-        def __getattr__(self, name):
-            raise error(9, 'Bad file descriptor')
 
     def __init__(self, family=AF_INET, type=SOCK_STREAM, proto=0, _sock=None):
         if _sock is None:
@@ -153,12 +153,8 @@ class _socketobject(object):
         self._sock = _sock
 
     def close(self):
-        # Avoid referencing globals here
-        self._sock = self.__class__._closedsocket()
+        self._sock = _closedsocket()
     close.__doc__ = _realsocket.close.__doc__
-
-    def __del__(self):
-        self.close()
 
     def accept(self):
         sock, addr = self._sock.accept()
