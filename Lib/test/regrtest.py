@@ -170,9 +170,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         print " ".join(skipped)
 
         e = _ExpectedSkips()
+        plat = sys.platform
         if e.isvalid():
             surprise = _Set(skipped) - e.getexpected()
-            plat = sys.platform
             if surprise:
                 print count(len(surprise), "skip"), \
                       "unexpected on", plat + ":", \
