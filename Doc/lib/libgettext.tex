@@ -98,9 +98,9 @@ namespace as the function \function{_()}.
 \begin{funcdesc}{find}{domain\optional{, localedir\optional{, languages}}}
 This function implements the standard \file{.mo} file search
 algorithm.  It takes a \var{domain}, identical to what
-\function{textdomain()} takes, and optionally a \var{localedir} (as in
-\function{bindtextdomain()}), and a list of languages.  All arguments
-are strings.
+\function{textdomain()} takes.  Optional \var{localedir} is as in
+\function{bindtextdomain()}  Optional \var{languages} is a list of
+strings, where each string is a language code.
 
 If \var{localedir} is not given, then the default system locale
 directory is used.\footnote{See the footnote for
@@ -108,8 +108,9 @@ directory is used.\footnote{See the footnote for
 then the following environment variables are searched: \envvar{LANGUAGE},
 \envvar{LC_ALL}, \envvar{LC_MESSAGES}, and \envvar{LANG}.  The first one
 returning a non-empty value is used for the \var{languages} variable.
-The environment variables can contain a colon separated list of
-languages, which will be split.
+The environment variables should contain a colon separated list of
+languages, which will be split on the colon to produce the expected
+list of language code strings.
 
 \function{find()} then expands and normalizes the languages, and then
 iterates through them, searching for an existing file built of these
