@@ -73,7 +73,8 @@ error message and returns.
 \end{methoddesc}
 
 \begin{methoddesc}{precmd}{}
-Hook method executed just before the input prompt is issued.  This
+Hook method executed just before the command line is interpreted, but
+after the input prompt is generated and issued.  This
 method is a stub in \class{Cmd}; it exists to be overridden by
 subclasses.
 \end{methoddesc}
@@ -142,5 +143,8 @@ headers.  If empty, no ruler line is drawn.  It defaults to
 A flag, defaulting to true.  If true, \method{cmdloop()} uses
 \function{raw_input()} to display a prompt and read the next command;
 if false, \function{sys.stdout.write()} and
-\function{sys.stdin.readline()} are used.
+\function{sys.stdin.readline()} are used. (This means that by
+importing \module{readline}, on systems that support it, the
+interpreter will automatically support Emacs-like line editing 
+and command-history keystrokes.)
 \end{memberdesc}
