@@ -432,18 +432,19 @@ class TestLoader:
         for part in parts:
             obj = getattr(obj, part)
 
+        import unittest
         if type(obj) == types.ModuleType:
             return self.loadTestsFromModule(obj)
-        elif type(obj) == types.ClassType and issubclass(obj, TestCase):
+        elif type(obj) == types.ClassType and issubclass(obj, unittest.TestCase):
             return self.loadTestsFromTestCase(obj)
         elif type(obj) == types.UnboundMethodType:
             return obj.im_class(obj.__name__)
         elif callable(obj):
             test = obj()
-            if not isinstance(test, TestCase) and \
-               not isinstance(test, TestSuite):
+            if not isinstance(test, unittest.TestCase) and \
+               not isinstance(test, unittest.TestSuite):
                 raise ValueError, \
-                      "calling %s returned %s, not a test" % obj,test
+                      "calling %s returned %s, not a test" % (obj,test)
             return test
         else:
             raise ValueError, "don't know how to make test from: %s" % obj
