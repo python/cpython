@@ -1,0 +1,10 @@
+test_codeop
+test_filename (test_codeop.CodeopTests) ... ok
+test_incomplete (test_codeop.CodeopTests) ... ok
+test_invalid (test_codeop.CodeopTests) ... ok
+test_valid (test_codeop.CodeopTests) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.052s
+
+OK
