@@ -95,7 +95,19 @@ static char *rcs_id = "$Id$";
 #define MYDB_BEGIN_ALLOW_THREADS Py_BEGIN_ALLOW_THREADS;
 #define MYDB_END_ALLOW_THREADS Py_END_ALLOW_THREADS;
 
+/* For 2.3, use the PyGILState_ calls */
+#if (PY_VERSION_HEX >= 0x02030000)
+#define MYDB_USE_GILSTATE
+#endif
+
 /* and these are for calling C --> Python */
+#if defined(MYDB_USE_GILSTATE)
+#define MYDB_BEGIN_BLOCK_THREADS \
+		PyGILState_STATE __savestate = PyGILState_Ensure();
+#define MYDB_END_BLOCK_THREADS \
+		PyGILState_Release(__savestate);
+#else /* MYDB_USE_GILSTATE */
+/* Pre GILState API - do it the long old way */
 static PyInterpreterState* _db_interpreterState = NULL;
 #define MYDB_BEGIN_BLOCK_THREADS {                              \
         PyThreadState* prevState;                               \
@@ -110,9 +122,10 @@ static PyInterpreterState* _db_interpreterState = NULL;
         PyEval_ReleaseLock();                                   \
         PyThreadState_Delete(newState);                         \
         }
+#endif /* MYDB_USE_GILSTATE */
 
 #else
-
+/* Compiled without threads - avoid all this cruft */
 #define MYDB_BEGIN_ALLOW_THREADS
 #define MYDB_END_ALLOW_THREADS
 #define MYDB_BEGIN_BLOCK_THREADS
@@ -4249,7 +4262,7 @@ DL_EXPORT(void) init_bsddb(void)
     DBLock_Type.ob_type = &PyType_Type;
 
 
-#ifdef WITH_THREAD
+#if defined(WITH_THREAD) && !defined(MYDB_USE_GILSTATE)
     /* Save the current interpreter, so callbacks can do the right thing. */
     _db_interpreterState = PyThreadState_Get()->interp;
 #endif
