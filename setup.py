@@ -53,8 +53,6 @@ def module_enabled(extlist, modname):
 class PyBuildExt(build_ext):
     
     def build_extensions(self):
-        from distutils.ccompiler import new_compiler
-        from distutils.sysconfig import customize_compiler
 
         # Detect which modules should be compiled
         self.detect_modules()
@@ -87,7 +85,21 @@ class PyBuildExt(build_ext):
                 pass # Not built, so this is what we expect
             else:
                 self.extensions.remove(ext)
-            
+
+        # When you run "make CC=altcc" or something similar, you really want
+        # those environment variables passed into the setup.py phase.  Here's
+        # a small set of useful ones.
+        compiler = os.environ.get('CC')
+        linker_so = os.environ.get('LDSHARED')
+        args = {}
+        # unfortunately, distutils doesn't let us provide separate C and C++
+        # compilers
+        if compiler is not None:
+            args['compiler_so'] = compiler
+        if linker_so is not None:
+            args['linker_so'] = linker_so + ' -shared'
+        self.compiler.set_executables(**args)
+
         build_ext.build_extensions(self)
 
     def detect_modules(self):
@@ -132,7 +144,8 @@ class PyBuildExt(build_ext):
         # access to the builtin codecs and codec registry
         exts.append( Extension('_codecs', ['_codecsmodule.c']) )
         # static Unicode character database
-        exts.append( Extension('unicodedata', ['unicodedata.c', 'unicodedatabase.c']) )
+        exts.append( Extension('unicodedata',
+                               ['unicodedata.c', 'unicodedatabase.c']) )
         # Unicode Character Name expansion hash table
         exts.append( Extension('ucnhash', ['ucnhash.c']) )
         # access to ISO C locale support
@@ -162,7 +175,8 @@ class PyBuildExt(build_ext):
         # (NIST's Secure Hash Algorithm.)
         exts.append( Extension('sha', ['shamodule.c']) )
 
-        # Tommy Burnette's 'new' module (creates new empty objects of certain kinds):
+        # Tommy Burnette's 'new' module (creates new empty objects of certain
+        # kinds):
         exts.append( Extension('new', ['newmodule.c']) )
 
         # Helper module for various ascii-encoders
@@ -188,8 +202,8 @@ class PyBuildExt(build_ext):
         exts.append( Extension('timing', ['timingmodule.c']) )
 
         #
-        # Here ends the simple stuff.  From here on, modules need certain libraries,
-        # are platform-specific, or present other surprises.
+        # Here ends the simple stuff.  From here on, modules need certain
+        # libraries, are platform-specific, or present other surprises.
         #
 
         # Multimedia modules
@@ -368,16 +382,17 @@ class PyBuildExt(build_ext):
         # (see below).  The pyexpat module was written by Paul Prescod after a
         # prototype by Jack Jansen.
         #
-        # The Expat dist includes Windows .lib and .dll files.  Home page is at
-        # http://www.jclark.com/xml/expat.html, the current production release is
-        # always ftp://ftp.jclark.com/pub/xml/expat.zip.
+        # The Expat dist includes Windows .lib and .dll files.  Home page is
+        # at http://www.jclark.com/xml/expat.html, the current production
+        # release is always ftp://ftp.jclark.com/pub/xml/expat.zip.
         #
         # EXPAT_DIR, below, should point to the expat/ directory created by
         # unpacking the Expat source distribution.
         #
-        # Note: the expat build process doesn't yet build a libexpat.a; you can
-        # do this manually while we try convince the author to add it.  To do so,
-        # cd to EXPAT_DIR, run "make" if you have not done so, then run:
+        # Note: the expat build process doesn't yet build a libexpat.a; you
+        # can do this manually while we try convince the author to add it.  To
+        # do so, cd to EXPAT_DIR, run "make" if you have not done so, then
+        # run:
         #
         #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
         #
@@ -523,4 +538,3 @@ def main():
 if __name__ == '__main__':
     sysconfig.set_python_build()
     main()
-
