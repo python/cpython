@@ -11,7 +11,11 @@ import struct,types,__builtin__
 
 ### Registry and builtin stateless codec functions
 
-from _codecs import *
+try:
+    from _codecs import *
+except ImportError,why:
+    raise SystemError,\
+          'Failed to load the builtin codecs: %s' % why
 
 ### Constants
 
