@@ -40,7 +40,7 @@ extern double ldexp PROTO((double, int));
 extern double modf PROTO((double, double *));
 #endif
 
-#ifdef HAVE_HYPOT
+#if defined(HAVE_HYPOT) && !defined(NeXT)
 extern double hypot PROTO((double, double));
 #endif
 
