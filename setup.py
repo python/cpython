@@ -540,22 +540,14 @@ class PyBuildExt(build_ext):
 
         # Interface to the Expat XML parser
         #
-        # Expat is written by James Clark and must be downloaded separately
-        # (see below).  The pyexpat module was written by Paul Prescod after a
-        # prototype by Jack Jansen.
+        # Expat was written by James Clark and is now maintained by a
+        # group of developers on SourceForge.  The parser must be
+        # downloaded separately (see below).  The pyexpat module was
+        # written by Paul Prescod after a prototype by Jack Jansen.
         #
-        # The Expat dist includes Windows .lib and .dll files.  Home page is
-        # at http://sourceforge.net/projects/expat/.
-        #
-        # EXPAT_DIR, below, should point to the expat/ directory created by
-        # unpacking the Expat source distribution.
-        #
-        # Note: the expat build process doesn't yet build a libexpat.a; you
-        # can do this manually while we try convince the author to add it.  To
-        # do so, cd to EXPAT_DIR, run "make" if you have not done so, then
-        # run:
-        #
-        #    ar cr libexpat.a xmltok/*.o xmlparse/*.o
+        # The Expat dist includes Windows .lib and .dll files.  The
+        # home page for Expat is at http://www.libexpat.org/.  Using
+        # Expat version 1.95.2 or newer is recommended.
         #
         expat_defs = []
         expat_incs = find_file('expat.h', inc_dirs, [])
