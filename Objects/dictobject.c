@@ -1132,6 +1132,58 @@ dict_clear(register dictobject *mp, PyObject *args)
 	return Py_None;
 }
 
+static PyObject *
+dict_popitem(dictobject *mp, PyObject *args)
+{
+	int i = 0;
+	dictentry *ep;
+	PyObject *res;
+
+	if (!PyArg_NoArgs(args))
+		return NULL;
+	if (mp->ma_used == 0) {
+		PyErr_SetString(PyExc_KeyError,
+				"popitem(): dictionary is empty");
+		return NULL;
+	}
+	/* Set ep to "the first" dict entry with a value.  We abuse the hash
+	 * field of slot 0 to hold a search finger:
+	 * If slot 0 has a value, use slot 0.
+	 * Else slot 0 is being used to hold a search finger,
+	 * and we use its hash value as the first index to look.
+	 */
+	ep = &mp->ma_table[0];
+	if (ep->me_value == NULL) {
+		i = (int)ep->me_hash;
+		/* The hash field may be uninitialized trash, or it
+		 * may be a real hash value, or it may be a legit
+		 * search finger, or it may be a once-legit search
+		 * finger that's out of bounds now because it
+		 * wrapped around or the table shrunk -- simply
+		 * make sure it's in bounds now.
+		 */
+		if (i >= mp->ma_size || i < 1)
+			i = 1;	/* skip slot 0 */
+		while ((ep = &mp->ma_table[i])->me_value == NULL) {
+			i++;
+			if (i >= mp->ma_size)
+				i = 1;
+		}
+	}
+	res = PyTuple_New(2);
+	if (res != NULL) {
+		PyTuple_SET_ITEM(res, 0, ep->me_key);
+		PyTuple_SET_ITEM(res, 1, ep->me_value);
+		Py_INCREF(dummy);
+		ep->me_key = dummy;
+		ep->me_value = NULL;
+		mp->ma_used--;
+		assert(mp->ma_table[0].me_value == NULL);
+		mp->ma_table[0].me_hash = i + 1;  /* next place to start */
+	}
+	return res;
+}
+
 static int
 dict_traverse(PyObject *op, visitproc visit, void *arg)
 {
@@ -1167,6 +1219,7 @@ static PyMethodDef mapp_methods[] = {
 	{"copy",	(PyCFunction)dict_copy},
 	{"get",         (PyCFunction)dict_get,          METH_VARARGS},
 	{"setdefault",  (PyCFunction)dict_setdefault,   METH_VARARGS},
+	{"popitem",	(PyCFunction)dict_popitem},
 	{NULL,		NULL}		/* sentinel */
 };
 
