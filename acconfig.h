@@ -84,6 +84,9 @@
 /* sizeof(void *) */
 #undef SIZEOF_VOID_P
 
+/* Define to `int' if <sys/types.h> doesn't define.  */
+#undef socklen_t
+
 /* Define for SOLARIS 2.x */
 #undef SOLARIS
 
