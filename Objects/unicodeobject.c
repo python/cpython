@@ -425,12 +425,20 @@ PyObject *PyUnicode_FromEncodedObject(register PyObject *obj,
     }
     if (PyUnicode_Check(obj)) {
 	if (encoding) {
-	    PyErr_SetString(PyExc_TypeError,
+            PyErr_SetString(PyExc_TypeError,
 			    "decoding Unicode is not supported");
-	    return NULL;
+            return NULL;
 	}
-	Py_INCREF(obj);
-	v = obj;
+        if (PyUnicode_CheckExact(obj)) {
+	    Py_INCREF(obj);
+            v = obj;
+	}
+        else {
+            /* For a subclass of unicode, return a true unicode object
+               with the same string value. */
+            v = PyUnicode_FromUnicode(PyUnicode_AS_UNICODE(obj),
+                                      PyUnicode_GET_SIZE(obj));
+        }
 	goto done;
     }
     else if (PyString_Check(obj)) {
