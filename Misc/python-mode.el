@@ -681,8 +681,8 @@ py-beep-if-tab-change\t\tring the bell if tab-width is changed"
 	comment-start          "# "
 	comment-start-skip     "# *"
 	comment-column         40
-	indent-region-function py-indent-region
-	indent-line-function   py-indent-line
+	indent-region-function 'py-indent-region
+	indent-line-function   'py-indent-line
 	)
   (use-local-map py-mode-map)
   ;; add the menu
