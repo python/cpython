@@ -450,6 +450,14 @@ def gen_preprocess_options (macros, includes):
 
     pp_opts = []
     for macro in macros:
+
+        if not (type (macro) is TupleType and
+                1 <= len (macro) <= 2):
+            raise TypeError, \
+                  ("bad macro definition '%s': " +
+                   "each element of 'macros' list must be a 1- or 2-tuple") % \
+                  macro
+
         if len (macro) == 1:        # undefine this macro
             pp_opts.append ("-U%s" % macro[0])
         elif len (macro) == 2:
