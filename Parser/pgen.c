@@ -1,6 +1,4 @@
-
 /* Parser generator */
-/* XXX This file is not yet fully PROTOized */
 
 /* For a description, see the comments at end of this file */
 
@@ -231,11 +229,6 @@ compile_alt(labellist *ll, nfa *nf, node *n, int *pa, int *pb)
 	--i;
 	n++;
 	for (; --i >= 0; n++) {
-		if (n->n_type == COMMA) { /* XXX Temporary */
-			REQN(i, 1);
-			--i;
-			n++;
-		}
 		REQ(n, ITEM);
 		compile_item(ll, nf, n, &a, &b);
 		addnfaarc(nf, *pb, a, EMPTY);
