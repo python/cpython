@@ -84,7 +84,7 @@ def main():
 def loadMovie(theFile):
 	"""Load a movie given an fsspec. Return the movie object"""
 	movieResRef = Qt.OpenMovieFile(theFile, 1)
-	movie, dummy = Qt.NewMovieFromFile(movieResRef, QuickTime.newMovieActive)
+	movie, d1, d2 = Qt.NewMovieFromFile(movieResRef, 0, QuickTime.newMovieActive)
 	return movie
 	
 if __name__ == '__main__':
