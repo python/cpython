@@ -317,6 +317,11 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \versionadded{2.2}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str}
+  Creates a \ctype{PyFloatObject} object based on the string value in
+  \var{str}, or \NULL{} on failure.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
   Creates a \ctype{PyFloatObject} object from \var{v}, or \NULL{} on
   failure.
