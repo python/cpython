@@ -1,3 +1,12 @@
+"""distutils.command.install_data
+
+Implements the Distutils 'install_data' command, for installing
+platform-independent data files."""
+
+# contributed by Bastian Kleineidam
+
+__revision__ = "$Id$"
+
 from distutils.cmd import install_misc
 
 class install_data (install_misc):
