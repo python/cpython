@@ -1,7 +1,3 @@
-/*
- * -*- mode: c-mode; c-file-style: python -*-
- */
-
 /* regexpr.c
  *
  * Author: Tatu Ylonen <ylo@ngs.fi>
@@ -472,16 +468,15 @@ static int regexp_ansi_sequences;
 #define MAX_NESTING 100  /* max nesting level of operators */
 
 #define SYNTAX(ch) re_syntax_table[(unsigned char)(ch)]
-#define Sword 1
 
-static char re_syntax_table[256];
+char re_syntax_table[256];
 
-static void re_compile_initialize(void)
+void re_compile_initialize(void)
 {
 	int a;
   
 	static int syntax_table_inited = 0;
-	
+
 	if (!syntax_table_inited)
 	{
 		syntax_table_inited = 1;
@@ -491,7 +486,11 @@ static void re_compile_initialize(void)
 		for (a = 'A'; a <= 'Z'; a++)
 			re_syntax_table[a] = Sword;
 		for (a = '0'; a <= '9'; a++)
-			re_syntax_table[a] = Sword;
+			re_syntax_table[a] = Sword | Sdigit;
+		re_syntax_table['_'] = Sword;
+		for (a = 9; a <= 13; a++)
+			re_syntax_table[a] = Swhitespace;
+		re_syntax_table[' '] = Swhitespace;
 	}
 	re_compile_initialized = 1;
 	for (a = 0; a < 256; a++)
@@ -602,13 +601,12 @@ static void re_compile_fastmap_aux(char *code,
 		return;  /* we have already been here */
 	visited[pos] = 1;
 	for (;;)
-		switch (code[pos++])
-		{
+		switch (code[pos++]) {
 		case Cend:
-		{
-			*can_be_null = 1;
-			return;
-		}
+			{
+				*can_be_null = 1;
+				return;
+			}
 		case Cbol:
 		case Cbegbuf:
 		case Cendbuf:
@@ -1609,9 +1607,6 @@ int re_match(regexp_t bufp,
   
 	NEW_STATE(state, bufp->num_registers);
 
-	if (!re_compile_initialized)
-		re_compile_initialize();
-  
   continue_matching:
 	switch (*code++)
 	{
@@ -1883,11 +1878,11 @@ int re_match(regexp_t bufp,
 	{
 		if (text == textend)
 			goto fail;
-		if (SYNTAX(*text) != Sword)
+		if (SYNTAX(*text) & Sword)
 			goto fail;
 		if (text == textstart)
 			goto continue_matching;
-		if (SYNTAX(text[-1]) != Sword)
+		if (!(SYNTAX(text[-1]) & Sword))
 			goto continue_matching;
 		goto fail;
 	}
@@ -1895,11 +1890,11 @@ int re_match(regexp_t bufp,
 	{
 		if (text == textstart)
 			goto fail;
-		if (SYNTAX(text[-1]) != Sword)
+		if (!(SYNTAX(text[-1]) & Sword))
 			goto fail;
 		if (text == textend)
 			goto continue_matching;
-		if (SYNTAX(*text) == Sword)
+		if (SYNTAX(*text) & Sword)
 			goto fail;
 		goto continue_matching;
 	}
@@ -1910,7 +1905,7 @@ int re_match(regexp_t bufp,
 
 		if (text == textstart || text == textend)
 			goto continue_matching;
-		if ((SYNTAX(text[-1]) == Sword) ^ (SYNTAX(*text) == Sword))
+		if ((SYNTAX(text[-1]) & Sword) ^ (SYNTAX(*text) & Sword))
 			goto continue_matching;
 		goto fail;
 	}
@@ -1920,21 +1915,21 @@ int re_match(regexp_t bufp,
 		 * beginning and end of buffer.  */
 		if (text == textstart || text == textend)
 			goto fail;
-		if (!((SYNTAX(text[-1]) == Sword) ^ (SYNTAX(*text) == Sword)))
+		if (!((SYNTAX(text[-1]) & Sword) ^ (SYNTAX(*text) & Sword)))
 			goto fail;
 		goto continue_matching;
 	}
 	case Csyntaxspec:
 	{
 		NEXTCHAR(ch);
-		if (SYNTAX(ch) != (unsigned char)*code++)
+		if (!(SYNTAX(ch) & (unsigned char)*code++))
 			goto fail;
 		goto continue_matching;
 	}
 	case Cnotsyntaxspec:
 	{
 		NEXTCHAR(ch);
-		if (SYNTAX(ch) != (unsigned char)*code++)
+		if (SYNTAX(ch) & (unsigned char)*code++)
 			break;
 		goto continue_matching;
 	}
@@ -2067,3 +2062,10 @@ int re_search(regexp_t bufp,
 	}
 	return -1;
 }
+
+/*
+** Local Variables:
+** mode: c
+** c-file-style: "python"
+** End:
+*/

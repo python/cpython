@@ -67,10 +67,16 @@ typedef struct re_registers
 #define RE_SYNTAX_GREP	(RE_BK_PLUS_QM|RE_NEWLINE_OR)
 #define RE_SYNTAX_EMACS	0
 
+#define Sword       1
+#define Swhitespace 2
+#define Sdigit      4
+
 /* Rename all exported symbols to avoid conflicts with similarly named
    symbols in some systems' standard C libraries... */
 
 #define re_syntax _Py_re_syntax
+#define re_syntax_table _Py_re_syntax_table
+#define re_compile_initialize _Py_re_compile_initialize
 #define re_set_syntax _Py_re_set_syntax
 #define re_compile_pattern _Py_re_compile_pattern
 #define re_match _Py_re_match
@@ -84,6 +90,10 @@ typedef struct re_registers
 extern int re_syntax;
 /* This is the actual syntax mask.  It was added so that Python could do
  * syntax-dependent munging of patterns before compilation. */
+
+extern char re_syntax_table[256];
+
+void re_compile_initialize(void);
 
 int re_set_syntax(int syntax);
 /* This sets the syntax to use and returns the previous syntax.  The
@@ -133,6 +143,8 @@ int re_exec(char *s);
 #else /* HAVE_PROTOTYPES */
 
 extern int re_syntax;
+extern char re_syntax_table[256];
+void re_compile_initialize();
 int re_set_syntax();
 char *re_compile_pattern();
 int re_match();

@@ -43,6 +43,13 @@ PERFORMANCE OF THIS SOFTWARE.
 
 static PyObject *ReopError;	/* Exception */	
 
+#define IGNORECASE 0x01
+#define MULTILINE  0x02
+#define DOTALL     0x04
+#define VERBOSE    0x08
+
+static char *reop_casefold;
+
 static PyObject *
 makeresult(regs, num_regs)
 	struct re_registers *regs;
@@ -90,6 +97,10 @@ reop_match(self, args)
 	int flags, pos, result;
 	struct re_pattern_buffer bufp;
 	struct re_registers re_regs;
+	PyObject *modules = NULL;
+	PyObject *reopmodule = NULL;
+	PyObject *reopdict = NULL;
+	PyObject *casefold = NULL;
 	
 	if (!PyArg_Parse(args, "(s#iiis#is#i)", 
 			 &(bufp.buffer), &(bufp.allocated), 
@@ -102,20 +113,44 @@ reop_match(self, args)
 
 	/* XXX sanity-check the input data */
 	bufp.used=bufp.allocated;
-	bufp.translate=NULL;
+	if (flags & IGNORECASE)
+	{
+		if ((modules = PyImport_GetModuleDict()) == NULL)
+			return NULL;
+
+		if ((reopmodule = PyDict_GetItemString(modules,
+						       "reop")) == NULL)
+			return NULL;
+
+		if ((reopdict = PyModule_GetDict(reopmodule)) == NULL)
+			return NULL;
+
+		if ((casefold = PyDict_GetItemString(reopdict,
+						     "casefold")) == NULL)
+			return NULL;
+
+		bufp.translate = PyString_AsString(casefold);
+	}
+	else
+		bufp.translate=NULL;
 	bufp.fastmap_accurate=1;
 	bufp.can_be_null=can_be_null;
 	bufp.uses_registers=1;
 	bufp.anchor=anchor;
 	
-	for(i=0; i<bufp.num_registers; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
+	for(i=0; i<bufp.num_registers; i++) {
+		re_regs.start[i]=-1;
+		re_regs.end[i]=-1;
+	}
 	
 	result = re_match(&bufp, 
 			  string, stringlen, pos, 
 			  &re_regs);
+
 	if (result < -1) {
 		/* Failure like stack overflow */
 		PyErr_SetString(ReopError, "match failure");
+		
 		return NULL;
 	}
 	if (result == -1) {
@@ -136,6 +171,10 @@ reop_search(self, args)
 	int flags, pos, result;
 	struct re_pattern_buffer bufp;
 	struct re_registers re_regs;
+	PyObject *modules = NULL;
+	PyObject *reopmodule = NULL;
+	PyObject *reopdict = NULL;
+	PyObject *casefold = NULL;
 	
 	if (!PyArg_Parse(args, "(s#iiis#is#i)", 
 			 &(bufp.buffer), &(bufp.allocated), 
@@ -148,26 +187,51 @@ reop_search(self, args)
 
 	/* XXX sanity-check the input data */
 	bufp.used=bufp.allocated;
-	bufp.translate=NULL;
+	if (flags & IGNORECASE)
+	{
+		if ((modules = PyImport_GetModuleDict()) == NULL)
+			return NULL;
+
+		if ((reopmodule = PyDict_GetItemString(modules,
+						       "reop")) == NULL)
+			return NULL;
+
+		if ((reopdict = PyModule_GetDict(reopmodule)) == NULL)
+			return NULL;
+
+		if ((casefold = PyDict_GetItemString(reopdict,
+						     "casefold")) == NULL)
+			return NULL;
+
+		bufp.translate = PyString_AsString(casefold);
+	}
+	else
+		bufp.translate=NULL;
 	bufp.fastmap_accurate=1;
 	bufp.can_be_null=can_be_null;
 	bufp.uses_registers=1;
 	bufp.anchor=anchor;
 
-	for(i=0; i<bufp.num_registers; i++) {re_regs.start[i]=-1; re_regs.end[i]=-1;}
+	for(i = 0; i < bufp.num_registers; i++) {
+		re_regs.start[i] = -1;
+		re_regs.end[i] = -1;
+	}
 	
 	result = re_search(&bufp, 
 			   string, stringlen, pos, stringlen-pos,
 			   &re_regs);
+
 	if (result < -1) {
 		/* Failure like stack overflow */
 		PyErr_SetString(ReopError, "match failure");
 		return NULL;
 	}
+
 	if (result == -1) {
 		Py_INCREF(Py_None);
 		return Py_None;
 	}
+
 	return makeresult(&re_regs, bufp.num_registers);
 }
 
@@ -345,10 +409,13 @@ static struct PyMethodDef reop_global_methods[] = {
 void
 initreop()
 {
-	PyObject *m, *d, *v;
+	PyObject *m, *d, *k, *v, *o;
 	int i;
 	char *s;
-	
+	char j[2];
+
+	re_compile_initialize();
+
 	m = Py_InitModule("reop", reop_global_methods);
 	d = PyModule_GetDict(m);
 	
@@ -370,12 +437,64 @@ initreop()
 		else
 			s[i] = i;
 	}
+
 	if (PyDict_SetItemString(d, "casefold", v) < 0)
 		goto finally;
 	Py_DECREF(v);
 
+	/* Initialize the syntax table */
+
+	o = PyDict_New();
+	if (o == NULL)
+	   goto finally;
+
+	j[1] = '\0';
+	for (i = 0; i < 256; i++)
+	{
+	   j[0] = i;
+	   k = PyString_FromStringAndSize(j, 1);
+	   if (k == NULL)
+	      goto finally;
+	   v = PyInt_FromLong(re_syntax_table[i]);
+	   if (v == NULL)
+	      goto finally;
+	   if (PyDict_SetItem(o, k, v) < 0)
+	      goto finally;
+	   Py_DECREF(k);
+	   Py_DECREF(v);
+	}
+
+	if (PyDict_SetItemString(d, "syntax_table", o) < 0)
+	   goto finally;
+	Py_DECREF(o);
+
+	v = PyInt_FromLong(Sword);
+	if (v == NULL)
+	   goto finally;
+
+	if (PyDict_SetItemString(d, "word", v) < 0)
+	   goto finally;
+	Py_DECREF(v);
+
+	v = PyInt_FromLong(Swhitespace);
+	if (v == NULL)
+	   goto finally;
+
+	if (PyDict_SetItemString(d, "whitespace", v) < 0)
+	   goto finally;
+	Py_DECREF(v);
+
+	v = PyInt_FromLong(Sdigit);
+	if (v == NULL)
+	   goto finally;
+
+	if (PyDict_SetItemString(d, "digit", v) < 0)
+	   goto finally;
+	Py_DECREF(v);
+	
 	if (!PyErr_Occurred())
 		return;
+
   finally:
 	Py_FatalError("can't initialize reop module");
 }
