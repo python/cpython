@@ -25,7 +25,7 @@ WARNING:UNDEF:Message 21
 INFO:UNDEF:Message 22
 CRITICAL:INF.BADPARENT.UNDEF:Message 23
 CRITICAL:INF.BADPARENT:Message 24
-INFO:INF:Messages should bear numbers 0 through 24.
+INFO:INF:Finish up, it's closing time. Messages should bear numbers 0 through 24.
 -- log_test0  end    ---------------------------------------------------
 -- log_test1  begin  ---------------------------------------------------
 -- setting logging level to 'Boring' -----
@@ -511,5 +511,5 @@ UNDEF -> WARNING: Message 21 (via logrecv.tcp.UNDEF)
 UNDEF -> INFO: Message 22 (via logrecv.tcp.UNDEF)
 INF.BADPARENT.UNDEF -> CRITICAL: Message 23 (via logrecv.tcp.INF.BADPARENT.UNDEF)
 INF.BADPARENT -> CRITICAL: Message 24 (via logrecv.tcp.INF.BADPARENT)
-INF -> INFO: Messages should bear numbers 0 through 24. (via logrecv.tcp.INF)
+INF -> INFO: Finish up, it's closing time. Messages should bear numbers 0 through 24. (via logrecv.tcp.INF)
 -- logrecv output end    ---------------------------------------------------

@@ -38,6 +38,8 @@ except (ValueError, locale.Error):
 
 BANNER = "-- %-10s %-6s ---------------------------------------------------\n"
 
+FINISH_UP = "Finish up, it's closing time. Messages should bear numbers 0 through 24."
+
 #----------------------------------------------------------------------------
 # Log receiver
 #----------------------------------------------------------------------------
@@ -79,9 +81,14 @@ class LogRecordStreamHandler(StreamRequestHandler):
 
     def handleLogRecord(self, record):
         logname = "logrecv.tcp." + record.name
+        #If the end-of-messages sentinel is seen, tell the server to terminate
+        if record.msg == FINISH_UP:
+            self.server.abort = 1
         record.msg = record.msg + " (via " + logname + ")"
         logger = logging.getLogger(logname)
         logger.handle(record)
+
+socketDataProcessed = threading.Condition()
 
 class LogRecordSocketReceiver(ThreadingTCPServer):
     """
@@ -107,6 +114,10 @@ class LogRecordSocketReceiver(ThreadingTCPServer):
             if rd:
                 self.handle_request()
             abort = self.abort
+        #notify the main thread that we're about to exit
+        socketDataProcessed.acquire()
+        socketDataProcessed.notify()
+        socketDataProcessed.release()
 
     def process_request(self, request, client_address):
         #import threading
@@ -195,7 +206,7 @@ def test0():
     INF_ERR_UNDEF.info(nextmessage())
     INF_ERR_UNDEF.debug(nextmessage())
 
-    INF.info("Messages should bear numbers 0 through 24.")
+    INF.info(FINISH_UP)
 
 #----------------------------------------------------------------------------
 # Test 1
@@ -455,10 +466,10 @@ def test_main():
         banner("log_test3", "end")
 
     finally:
-        #shut down server
-        tcpserver.abort = 1
-        for thread in threads:
-            thread.join()
+        #wait for TCP receiver to terminate
+        socketDataProcessed.acquire()
+        socketDataProcessed.wait()
+        socketDataProcessed.release()
         banner("logrecv output", "begin")
         sys.stdout.write(sockOut.getvalue())
         sockOut.close()
