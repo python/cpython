@@ -1118,7 +1118,7 @@ if __debug__:
 
 if __name__ == '__main__':
 
-    import getopt, getpass, sys
+    import getopt, getpass
 
     try:
         optlist, args = getopt.getopt(sys.argv[1:], 'd:')
