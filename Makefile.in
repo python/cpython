@@ -1,13 +1,16 @@
 MAKE=		make
 
 SUBDIRS=	Parser Grammar Objects Python
+SUBDIRSTOO=	Include Extensions readline
+DISTFILES=	README Makefile configure configure.in
+DIST=		$(DISTFILES) $(SUBDIRS) $(SUBDIRSTOO)
 
 all:		config.status
 		for i in $(SUBDIRS); do (echo $$i; cd $$i; $(MAKE) all); done
 
 localclean:
 		-rm -f core *~ [@,#]* *.old *.orig *.rej
-		-(cd Py; rm -f core *~ [@,#]* *.old *.orig *.rej)
+		-(cd Include; rm -f core *~ [@,#]* *.old *.orig *.rej)
 
 clean:		localclean
 		-for i in $(SUBDIRS); do \
@@ -36,3 +39,7 @@ config.status:	configure
 configure:	configure.in
 		autoconf
  
+tar:		dist.tar.Z
+
+dist.tar.Z:	$(DIST)
+		tar cf - $(DIST) | compress >dist.tar.Z

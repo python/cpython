@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT(Py/object.h)
+AC_INIT(Include/object.h)
 
 # checks for alternative programs
 AC_PROG_CC

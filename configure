@@ -96,7 +96,7 @@ compile='${CC-cc} $CFLAGS conftest.c -o conftest $LIBS >/dev/null 2>&1'
 
 # A filename unique to this package, relative to the directory that
 # configure is in, which we can look for to find out if srcdir is correct.
-unique_file=Py/object.h
+unique_file=Include/object.h
 
 # Find the source files, if location was not specified.
 if test -z "$srcdir"; then
