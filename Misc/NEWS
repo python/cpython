@@ -1423,3 +1423,7 @@ it is always "200 OK") rather than swallowing it.
 
 - main() now calls setlocale(LC_ALL, ""), if setlocale() and
 <locale.h> are defined.
+
+- Changes to configure.in, the configure script, and both
+Makefile.pre.in files, to support SGI's SGI_ABI platform selection
+environment variable.
