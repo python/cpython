@@ -426,8 +426,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         except (EOFError, IOError, KeyboardInterrupt):
             # lost connection or subprocess terminated itself, restart
             # [the KBI is from rpc.SocketIO.handle_EOF()]
-            if self.tkconsole.closing:
-                return
             response = None
             self.restart_subprocess()
             self.tkconsole.endexecuting()
@@ -448,8 +446,10 @@ class ModifiedInterpreter(InteractiveInterpreter):
                 print >>console, errmsg, what
             # we received a response to the currently active seq number:
             self.tkconsole.endexecuting()
-        # Reschedule myself in 50 ms
-        self.tkconsole.text.after(50, self.poll_subprocess)
+        # Reschedule myself
+        if not self.tkconsole.closing:
+            self.tkconsole.text.after(self.tkconsole.pollinterval,
+                                      self.poll_subprocess)
 
     debugger = None
 
@@ -716,6 +716,7 @@ class PyShell(OutputWindow):
         #
         self.history = self.History(self.text)
         #
+        self.pollinterval = 50  # millisec
         if use_subprocess:
             self.interp.start_subprocess()
 
@@ -798,7 +799,12 @@ class PyShell(OutputWindow):
                 self.interp.interrupt_subprocess()
             return "cancel"
         else:
-            return EditorWindow.close(self)
+            self.closing = True
+            # Wait for poll_subprocess() rescheduling to stop
+            self.text.after(2 * self.pollinterval, self.close2)
+
+    def close2(self):
+        return EditorWindow.close(self)
 
     def _close(self):
         "Extend EditorWindow._close(), shut down debugger and execution server"
