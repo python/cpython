@@ -563,60 +563,6 @@ clm_GetMinMax(object *self, object *args)
 }
 
 static object *
-do_set(clobject *self, object *args, int (*func)(int, int, int))
-{
-	int scheme, paramID, value;
-	float fvalue;
-
-	CheckCompressor(self);
-
-	scheme = clQuerySchemeFromHandle(self->ob_compressorHdl);
-
-	if (!getargs(args, "(ii)", &paramID, &value)) {
-		err_clear();
-		if (!getargs(args, "(if)", &paramID, &fvalue)) {
-			err_clear();
-			err_setstr(TypeError, "bad argument list (format '(ii)' or '(if)')");
-			return NULL;
-		}
-		value = CL_TypeIsInt(fvalue);
-	} else {
-		if (param_type_is_float(self, paramID) > 0) {
-			fvalue = value;
-			value = CL_TypeIsInt(fvalue);
-		}
-	}
-
- 	error_handler_called = 0;
-	value = (*func)(scheme, paramID, value);
-	if (error_handler_called)
-		return NULL;
-
-	if (param_type_is_float(self, paramID) > 0)
-		return newfloatobject(CL_TypeIsFloat(value));
-	else
-		return newintobject(value);
-}
-
-static object *
-clm_SetDefault(object *self, object *args)
-{
-	return do_set(SELF, args, clSetDefault);
-}
-
-static object *
-clm_SetMin(object *self, object *args)
-{
-	return do_set(SELF, args, clSetMin);
-}
-
-static object *
-clm_SetMax(object *self, object *args)
-{
-	return do_set(SELF, args, clSetMax);
-}
-
-static object *
 clm_GetName(object *self, object *args)
 {
 	int param;
@@ -676,9 +622,6 @@ static struct methodlist compressor_methods[] = {
 	{"GetParams",		clm_GetParams},
 	{"QueryParams",		clm_QueryParams},
 	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle},
-	{"SetDefault",		clm_SetDefault},
-	{"SetMax",		clm_SetMax},
-	{"SetMin",		clm_SetMin},
 	{"SetParam",		clm_SetParam},
 	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
@@ -697,9 +640,6 @@ static struct methodlist decompressor_methods[] = {
 	{"ReadHeader",		clm_ReadHeader},
 	{"QueryParams",		clm_QueryParams},
 	{"QuerySchemeFromHandle",clm_QuerySchemeFromHandle},
-	{"SetDefault",		clm_SetDefault},
-	{"SetMax",		clm_SetMax},
-	{"SetMin",		clm_SetMin},
 	{"SetParam",		clm_SetParam},
 	{"SetParams",		clm_SetParams},
 	{NULL,			NULL}		/* sentinel */
@@ -901,6 +841,63 @@ cl_GetAlgorithmName(object *self, object *args)
 	return newstringobject(name);
 }
 
+static object *
+do_set(object *self, object *args, int (*func)(int, int, int))
+{
+	int scheme, paramID, value;
+	float fvalue;
+	int is_float = 0;
+
+	if (!getargs(args, "(iii)", &scheme, &paramID, &value)) {
+		err_clear();
+		if (!getargs(args, "(iif)", &scheme, &paramID, &fvalue)) {
+			err_clear();
+			err_setstr(TypeError, "bad argument list (format '(iii)' or '(iif)')");
+			return NULL;
+		}
+		value = CL_TypeIsInt(fvalue);
+		is_float = 1;
+	} else {
+		/* check some parameters which we know to be floats */
+		switch (scheme) {
+		case CL_COMPRESSION_RATIO:
+		case CL_SPEED:
+			fvalue = value;
+			value = CL_TypeIsInt(fvalue);
+			is_float = 1;
+			break;
+		}
+	}
+
+ 	error_handler_called = 0;
+	value = (*func)(scheme, paramID, value);
+	if (error_handler_called)
+		return NULL;
+
+	if (is_float)
+		return newfloatobject(CL_TypeIsFloat(value));
+	else
+		return newintobject(value);
+}
+
+static object *
+cl_SetDefault(object *self, object *args)
+{
+	return do_set(self, args, clSetDefault);
+}
+
+static object *
+cl_SetMin(object *self, object *args)
+{
+	return do_set(self, args, clSetMin);
+}
+
+static object *
+cl_SetMax(object *self, object *args)
+{
+	return do_set(self, args, clSetMax);
+}
+
 #ifdef CLDEBUG
 static object *
 cvt_type(object *self, object *args)
@@ -929,6 +926,9 @@ static struct methodlist cl_methods[] = {
 	{"QueryMaxHeaderSize",	cl_QueryMaxHeaderSize},
 	{"QueryScheme",		cl_QueryScheme},
 	{"QuerySchemeFromName",	cl_QuerySchemeFromName},
+	{"SetDefault",		cl_SetDefault},
+	{"SetMax",		cl_SetMax},
+	{"SetMin",		cl_SetMin},
 #ifdef CLDEBUG
 	{"cvt_type",		cvt_type},
 #endif
