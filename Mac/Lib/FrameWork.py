@@ -446,6 +446,7 @@ class MenuBar:
 	def close(self):
 		self.parent = None
 		self.bar = None
+		self.menus = None
 	
 	def addmenu(self, title, after = 0):
 		id = self.getnextid()
