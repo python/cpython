@@ -169,6 +169,7 @@ PyMapping_HasKeyString
 PyMapping_SetItemString
 PyMapping_GetItemString
 PyMapping_Length
+PyMapping_Size
 PyMapping_Check
 PySequence_Index
 PySequence_In
@@ -183,9 +184,12 @@ PySequence_DelItem
 PySequence_SetItem
 PySequence_GetSlice
 PySequence_GetItem
+PySequence_InPlaceRepeat
+PySequence_InPlaceConcat
 PySequence_Repeat
 PySequence_Concat
 PySequence_Length
+PySequence_Size
 PySequence_Check
 PyNumber_Float
 PyNumber_Long
@@ -194,6 +198,17 @@ PyNumber_Absolute
 PyNumber_Invert
 PyNumber_Positive
 PyNumber_Negative
+PyNumber_InPlacePower
+PyNumber_InPlaceRemainder
+PyNumber_InPlaceDivide
+PyNumber_InPlaceMultiply
+PyNumber_InPlaceSubtract
+PyNumber_InPlaceAdd
+PyNumber_InPlaceRshift
+PyNumber_InPlaceLshift
+PyNumber_InPlaceAnd
+PyNumber_InPlaceXor
+PyNumber_InPlaceOr
 PyNumber_Power
 PyNumber_Divmod
 PyNumber_Remainder
@@ -214,6 +229,7 @@ PyObject_DelItem
 PyObject_SetItem
 PyObject_GetItem
 PyObject_Length
+PyObject_Size
 PyObject_Type
 PyObject_Cmp
 PyClass_Type
@@ -224,6 +240,7 @@ PyMethod_Class
 PyMethod_Self
 PyMethod_Function
 PyMethod_New
+PyInstance_HalfBinOp
 PyInstance_DoBinOp
 PyInstance_New
 PyClass_IsSubclass
@@ -262,10 +279,13 @@ PyDict_SetItem
 PyDict_GetItem
 PyDict_New
 PyFile_Type
+PyObject_AsFileDescriptor
 PyFile_WriteString
 PyFile_WriteObject
 PyFile_SoftSpace
 PyFile_GetLine
+_portable_ftell
+_portable_fseek
 PyFile_SetBufSize
 PyFile_FromString
 PyFile_FromFile
@@ -396,6 +416,9 @@ PyString_ConcatAndDel
 PyString_Concat
 PyString_AsString
 PyString_Size
+PyString_AsEncodedString
+PyString_Encode
+PyString_Decode
 PyString_FromString
 PyString_FromStringAndSize
 PyTuple_Type
@@ -427,6 +450,7 @@ PyParser_ParseFile
 PyParser_ParseString
 _PyParser_TokenNames
 PyTokenizer_Get
+PyToken_ThreeChars
 PyToken_TwoChars
 PyToken_OneChar
 PyTokenizer_Free
@@ -462,7 +486,7 @@ initrgbimg
 initrotor
 initselect
 gethostbyname_lock
-initsocket
+init_socket
 initsoundex
 initstrop
 initstruct
@@ -516,7 +540,6 @@ PyMac_HandleEvent
 PyMac_BuildEventRecord
 PyMac_HandleEventIntern
 PyMac_SetEventHandler
-PyMac_InForeground
 PyOS_InterruptOccurred
 PyErr_CheckSignals
 PyOS_FiniInterrupts
@@ -533,7 +556,7 @@ PLstrcpy
 PyMac_StopGUSISpin
 RotateCursor
 SpinCursor
-guesstabsize
+PyMac_getscript
 PyMac_AppRefNum
 options
 Py_GetExecPrefix
@@ -544,8 +567,8 @@ PyMac_Exit
 PyMac_InitApplication
 PyMac_Initialize
 PyMac_InitApplet
-getfiletype
-setfiletype
+PyMac_getfiletype
+PyMac_setfiletype
 main
 PyMac_AddLibResources
 __initialize_with_resources
@@ -557,13 +580,8 @@ initgestalt
 initmacfs
 newmfssobject
 mfs_GetFSSpecFSSpec
-newmfsaobject
 initmac
 initMacOS
-calloc
-realloc
-free
-malloc
 Pcre_Type
 initpcre
 pcre_lcc
@@ -590,15 +608,13 @@ _PyImport_Inittab
 CtlObj_chain
 Control_Type
 initCtl
-CtlObj_NewUnmanaged
-CtlObj_WhichControl
 CtlObj_Convert
 CtlObj_New
-ControlFontStyle_Convert
 DlgObj_chain
 Dialog_Type
 initDlg
 DlgObj_Convert
+DlgObj_New
 MenuObj_chain
 Menu_Type
 initMenu
@@ -668,6 +684,7 @@ PyCodec_Decoder
 PyCodec_Encoder
 _PyCodec_Lookup
 PyCodec_Register
+_PyUnicode_IsAlpha
 _PyUnicode_ToLowercase
 _PyUnicode_ToUppercase
 _PyUnicode_IsUppercase
@@ -718,16 +735,17 @@ PyUnicode_AsUTF16String
 PyUnicode_EncodeUTF16
 PyUnicode_DecodeUTF16
 PyUnicode_AsUTF8String
-_PyUnicode_AsUTF8String
 PyUnicode_EncodeUTF8
 PyUnicode_DecodeUTF8
 PyUnicode_SetDefaultEncoding
 PyUnicode_GetDefaultEncoding
 PyUnicode_GetSize
 PyUnicode_AsUnicode
+_PyUnicode_AsDefaultEncodedString
 PyUnicode_AsEncodedString
 PyUnicode_Encode
 PyUnicode_Decode
+PyUnicode_FromEncodedObject
 PyUnicode_FromObject
 PyUnicode_FromUnicode
 PyUnicode_Resize
@@ -768,6 +786,8 @@ PyExc_OverflowError
 PyExc_RuntimeError
 PyExc_NotImplementedError
 PyExc_SyntaxError
+PyExc_IndentationError
+PyExc_TabError
 PyExc_SystemError
 PyExc_SystemExit
 PyExc_UnboundLocalError
@@ -787,6 +807,9 @@ initAE
 AEDesc_Convert
 AEDesc_New
 init_locale
+initEvt
+copyright
+init_sre
 __vt__15GUSISIOUXDevice		# GUSISIOUXDevice::__vt
 __vt__15GUSISIOUXSocket		# GUSISIOUXSocket::__vt
 sInstance__15GUSISIOUXDevice		# GUSISIOUXDevice::sInstance
@@ -1835,6 +1858,10 @@ vec_realloc
 vec_calloc
 vec_malloc
 __pool_free_all
+calloc
+realloc
+free
+malloc
 __msize
 deallocate_from_fixed_pools
 allocate_from_fixed_pools
