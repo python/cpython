@@ -1,5 +1,5 @@
 What's New in Python 2.0?
-===========================
+=========================
 
 Below is a list of all relevant changes since release 1.6.  Older
 changes are in the file HISTORY.  If you are making the jump directly
@@ -53,8 +53,8 @@ Standard library
   test for whether installed modules are on sys.path was changed to
   use both normcase() and normpath().
 
-- XXX xml minidom, pulldom, expatreader, and saxutils changes (can't
-  tell what happened from the CVS logs)
+- xml minidom, pulldom, expatreader, and saxutils had some minor bug
+  fixes.
 
 - The regression test driver (regrtest.py) behavior when invoked with
   -l changed: It now reports a count of objects that are recognized as
