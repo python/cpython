@@ -39,3 +39,10 @@ def genresconverter(longname, shortname):
 
 resmethods.append(genresconverter("Control", "Ctl"))
 resmethods.append(genresconverter("Menu", "Menu"))
+
+# The definition of this one is MacLoadResource, so we do it by hand...
+
+f = ResMethod(void, 'LoadResource',
+    (Handle, 'theResource', InMode),
+)
+resmethods.append(f)
