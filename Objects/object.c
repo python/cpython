@@ -748,7 +748,7 @@ try_3way_to_rich_compare(PyObject *v, PyObject *w, int op)
 	return result;
 }
 
-PyObject *
+static PyObject *
 do_richcmp(PyObject *v, PyObject *w, int op)
 {
 	PyObject *res;
