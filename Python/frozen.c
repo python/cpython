@@ -39,11 +39,12 @@ static unsigned char M___hello__[] = {
 	63,
 };
 
-struct frozen {
-	char *name;
-	unsigned char *code;
-	int size;
-} _PyImport_FrozenModules[] = {
+static struct _frozen _PyImport_FrozenModules[] = {
 	{"__hello__", M___hello__, 81},
 	{0, 0, 0} /* sentinel */
 };
+
+/* Embedding apps may change this pointer to point to their favorite
+   collection of frozen modules: */
+
+struct _frozen *PyImport_FrozenModules = _PyImport_FrozenModules;
