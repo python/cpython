@@ -827,8 +827,15 @@ class Widget(Misc, Pack, Place, Grid):
 			cnf = _cnfmerge((cnf, kw))
 		self.widgetName = widgetName
 		Widget._setup(self, master, cnf)
+		classes = []
+		for k in cnf.keys():
+			if type(k) is ClassType:
+				classes.append((k, cnf[k]))
+				del cnf[k]
 		apply(self.tk.call,
 		      (widgetName, self._w) + extra + self._options(cnf))
+		for k, v in classes:
+			k.config(self, v)
 	def config(self, cnf=None, **kw):
 		# XXX ought to generalize this so tag_config etc. can use it
 		if kw:
@@ -845,10 +852,6 @@ class Widget(Misc, Pack, Place, Grid):
 			x = self.tk.split(self.tk.call(
 				self._w, 'configure', '-'+cnf))
 			return (x[0][1:],) + x[1:]
-		for k in cnf.keys():
-			if type(k) is ClassType:
-				k.config(self, cnf[k])
-				del cnf[k]
 		apply(self.tk.call, (self._w, 'configure')
 		      + self._options(cnf))
 	configure = config
