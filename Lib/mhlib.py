@@ -736,7 +736,7 @@ def pickline(file, key, casefold = 1):
 	while 1:
 		line = f.readline()
 		if not line: break
-		if prog.match(line) == len(line):
+		if prog.match(line) >= 0:
 			text = line[len(key)+1:]
 			while 1:
 				line = f.readline()
