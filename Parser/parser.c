@@ -175,15 +175,21 @@ future_hack(parser_state *ps)
 {
 	node *n = ps->p_stack.s_top->s_parent;
 	node *ch;
+	int i;
 
 	if (strcmp(STR(CHILD(n, 0)), "from") != 0)
 		return;
 	ch = CHILD(n, 1);
 	if (strcmp(STR(CHILD(ch, 0)), "__future__") != 0)
 		return;
-	ch = CHILD(n, 3);
-	if (NCH(ch) == 1 && strcmp(STR(CHILD(ch, 0)), "generators") == 0)
-		ps->p_generators = 1;
+	for (i = 3; i < NCH(n); i += 2) {
+		ch = CHILD(n, i);
+		if (NCH(ch) >= 1 && TYPE(CHILD(ch, 0)) == NAME &&
+		    strcmp(STR(CHILD(ch, 0)), "generators") == 0) {
+			ps->p_generators = 1;
+			break;
+		}
+	}
 }
 
 int
