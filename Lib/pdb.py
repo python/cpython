@@ -8,9 +8,15 @@ import sys
 import linecache
 import cmd
 import bdb
-from repr import repr as _saferepr
+from repr import Repr
 import os
 import re
+
+# Create a custom safe Repr instance and increase its maxstring.
+# The default of 30 truncates error messages too easily.
+_repr = Repr()
+_repr.maxstring = 200
+_saferepr = _repr.repr
 
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
