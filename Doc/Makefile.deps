@@ -198,6 +198,7 @@ LIBFILES= ../lib/lib.tex \
 	../lib/libpipes.tex \
 	../lib/librlcompleter.tex \
 	../lib/libstatvfs.tex \
+	../lib/libtty.tex \
 	../lib/libcfgparser.tex
 
 # LaTeX source files for Macintosh Library Modules.
