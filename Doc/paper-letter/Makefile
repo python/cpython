@@ -55,10 +55,10 @@ README:	$(PSFILES) $(TOOLSDIR)/getpagecounts
 
 # Python/C API Reference Manual
 api.dvi: api.tex $(APIFILES)
-	$(MKDVI) ../api/api.tex
+	$(MKDVI) api.tex
 
 api.pdf: api.tex $(APIFILES)
-	$(MKPDF) ../api/api.tex
+	$(MKPDF) api.tex
 
 api.tex: ../api/api.tex ../api/refcounts.dat ../tools/anno-api.py
 	$(PYTHON) ../tools/anno-api.py -o $@ ../api/api.tex
