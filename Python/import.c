@@ -40,6 +40,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "osdefs.h"
 #include "importdl.h"
 #ifdef macintosh
+/* 'argument' is a grammar symbol, but also used in some mac header files */
+#undef argument
 #include "macglue.h"
 #endif
 
