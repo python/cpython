@@ -16,12 +16,6 @@ linkmodule - A shell script used by the build process to build the
              probably need this if you want to build dynamically loaded
              modules from the Python archives.
 
-PyImport_BeImageID.html - Documentation for a function added to the
-                          Python interpreter under BeOS; not interesting
-                          unless you're writing your own BeOS-specific
-                          modules for dealing with dynamically-loaded
-                          Python modules.
-
 README - This file (obviously!).
 
 README.readline-2.2 - Instructions for compiling/installing GNU readline 2.2.
