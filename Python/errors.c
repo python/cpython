@@ -75,7 +75,7 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject *
 PyErr_Occurred(void)
 {
-	PyThreadState *tstate = PyThreadState_Get();
+	PyThreadState *tstate = PyThreadState_GET();
 
 	return tstate->curexc_type;
 }
