@@ -10,7 +10,7 @@ __revision__ = "$Id$"
 import os
 from types import StringType
 from distutils.core import Command
-from distutils.util import change_root
+from distutils.util import change_root, convert_path
 
 class install_data (Command):
 
@@ -48,6 +48,7 @@ class install_data (Command):
         for f in self.data_files:
             if type(f) == StringType:
                 # it's a simple file, so copy it
+                f = convert_path(f)
                 if self.warn_dir:
                     self.warn("setup script did not provide a directory for "
                               "'%s' -- installing right in '%s'" %
@@ -56,13 +57,14 @@ class install_data (Command):
                 self.outfiles.append(out)
             else:
                 # it's a tuple with path to install to and a list of files
-                dir = f[0]
+                dir = convert_path(f[0])
                 if not os.path.isabs(dir):
                     dir = os.path.join(self.install_dir, dir)
                 elif self.root:
                     dir = change_root(self.root, dir)
                 self.mkpath(dir)
                 for data in f[1]:
+                    data = convert_path(f[1])
                     (out, _) = self.copy_file(data, dir)
                     self.outfiles.append(out)
 
