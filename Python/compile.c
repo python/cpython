@@ -1956,6 +1956,30 @@ com_fplist(c, n)
 }
 
 static void
+com_arglist(c, n)
+	struct compiling *c;
+	node *n;
+{
+	int i, nargs, op;
+	REQ(n, varargslist);
+	/* varargslist: (fpdef ',')* '+' NAME | fpdef (',' fpdef)* [','] */
+	op = UNPACK_ARG;
+	nargs = (NCH(n) + 1) / 2;
+	for (i = 0; i < NCH(n); i += 2) {
+		if (TYPE(CHILD(n, i)) == PLUS) {
+			op = UNPACK_VARARG;
+			nargs = i/2;
+			break;
+		}
+	}
+	com_addoparg(c, op, nargs);
+	for (i = 0; i < 2*nargs; i += 2)
+		com_fpdef(c, CHILD(n, i));
+	if (op == UNPACK_VARARG)
+		com_addopname(c, STORE_NAME, CHILD(n, 2*nargs+1));
+}
+
+static void
 com_file_input(c, n)
 	struct compiling *c;
 	node *n;
@@ -1978,17 +2002,12 @@ compile_funcdef(c, n)
 {
 	node *ch;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
-	ch = CHILD(n, 2); /* parameters: '(' [fplist] ')' */
-	ch = CHILD(ch, 1); /* ')' | fplist */
+	ch = CHILD(n, 2); /* parameters: '(' [varargslist] ')' */
+	ch = CHILD(ch, 1); /* ')' | varargslist */
 	if (TYPE(ch) == RPAR)
 		com_addoparg(c, UNPACK_ARG, 0);
-	else {
-		int i;
-		REQ(ch, fplist); /* fplist: fpdef (',' fpdef)* */
-		com_addoparg(c, UNPACK_ARG, (NCH(ch)+1)/2);
-		for (i = 0; i < NCH(ch); i += 2)
-			com_fpdef(c, CHILD(ch, i));
-	}
+	else
+		com_arglist(c, ch);
 	c->c_infunction = 1;
 	com_node(c, CHILD(n, 4));
 	c->c_infunction = 0;
