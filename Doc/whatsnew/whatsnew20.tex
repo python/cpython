@@ -61,7 +61,7 @@ that the current default encoding?)
 
 Combining 8-bit and Unicode strings always coerces to Unicode, using
 the default ASCII encoding; the result of \code{'a' + u'bc'} is
-\code{'abc'}.
+\code{u'abc'}.
 
 New built-in functions have been added, and existing built-ins
 modified to support Unicode:
@@ -532,11 +532,11 @@ XXX re - changed to be a frontend to sre
 % ======================================================================
 \section{New modules}
 
-winreg - Windows registry interface.
-PyExpat - interface to Expat XML parser
+winreg - Windows registry interface. (Bill Tutt, Mark Hammond)
+PyExpat - interface to Expat XML parser (Paul Prescod)
 robotparser - parse a robots.txt file (for writing web spiders)
 linuxaudio - audio for Linux
-mmap - treat a file as a memory buffer
+mmap - treat a file as a memory buffer (Sam Rushing, AMK)
 filecmp - supersedes the old cmp.py and dircmp.py modules
 tabnanny - check Python sources for tab-width dependance
 
@@ -548,7 +548,7 @@ XXX IDLE -- complete overhaul; what are the changes?
 % ======================================================================
 \section{Deleted and Deprecated Modules}
 
-XXX stdwin, others?
+XXX stdwin, cmp.py, dircmp.py, others?
 
 \end{document}
 
