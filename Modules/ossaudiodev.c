@@ -139,6 +139,15 @@ newossobject(PyObject *arg)
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
+
+    /* And (try to) put it back in blocking mode so we get the
+       expected write() semantics. */
+    if (fcntl(fd, F_SETFL, 0) == -1) {
+        close(fd);
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
+        return NULL;
+    }
+
     if (ioctl(fd, SNDCTL_DSP_GETFMTS, &afmts) == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
