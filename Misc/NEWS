@@ -30,7 +30,11 @@ Windows
 - The installer now installs Start menu shortcuts under (the local
   equivalent of) "All Users" when doing an Admin install.
 
-- A bug fix that makes SSL support work on Windows was added.
+- If you do what it takes to compile SSL support for Windows, a bug in
+  httplib.py prevented SSL from working correctly.  That bug has been
+  fixed, but note that SSL support on Windows is still not enabled in
+  this release.
+
 
 What's New in Python 2.1.2 (final)?
 ===================================
