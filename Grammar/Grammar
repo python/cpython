@@ -1,100 +1,6 @@
 # Grammar for Python
 
-# Change log:
-
-# 17-Aug-94:
-#	Added #diagram:... comments for Kees Blom's railroad diagram generator
-
-# 3-May-94:
-#	Added else clause to try-except
-
-# 17-Apr-94:
-#	Added string literal concatenation
-
-# 13-Apr-94:
-#	Added default values for function/lambda argument lists
-
-# 30-Nov-93:
-#	Removed lambda_input, added lambdef
-
-# 25-Oct-93:
-#	Added lambda_input
-
-# 18-Oct-93:
-#	Use testlist instead of exprlist in expr_stmt
-#	Add exec statement
-
-# 19-May-93:
-#	Add access statement
-
-# 18-May-93:
-#	Abolish old class header syntax
-
-# 06-Apr-92:
-#	Use only '*' for varargs list
-
-# 31-Mar-92:
-#	Tighten syntax for try statements
-
-# 27-Feb-92:
-#	Allow NEWLINE* after eval input
-
-# 16-Jan-92:
-#	Added '*' as alternative for '+' in varargs syntax
-#	(Not sure which alternative is better yet.)
-
-# 11-Jan-92:
-#	Variable length argument list syntax added: def f(a, b, +rest): ...
-
-# 8-Jan-92:
-#	Allow only '==' for equality testing
-
-# Changes since version 8:
-#	Trailing commas in formal parameter lists are allowed
-
-# Changes since version 7:
-#	New syntax to specify base classes (but old syntax retained for now)
-#	'global' statement (valid only in functions but not enforced here)
-
-# Changes since version 6:
-#	Add logical operators '|', '^', '&' and '~'
-#	Add shift operators '<<' and '>>'
-
-# Changes since version 5:
-#	Comparison operators '<=' '>' '<>' are now 1 token
-#	Also support '!=' and '==' as alternatives for '<>' and '='
-
-# Changes compared to version 4:
-#	Blank lines and lines only containing a comment are now eaten
-#		by the lexer, so the NEWLINE* things in suite are gone
-#		(but the 2nd NEWLINE terminating single_input stays!)
-#	Semicolons can separate small statements
-#	'continue' statement
-#	Dictionary constructors: {key:value, key:value, ...}
-#	More tests instead of exprs
-
-# Changes compared to version 3:
-#	Removed 'dir' statement.
-#	Function call argument is a testlist instead of exprlist.
-
-# Changes compared to version 2:
-#	The syntax of Boolean operations is changed to use more
-#	conventional priorities: or < and < not.
-
-# Changes compared to version 1:
-#	modules and scripts are unified;
-#	'quit' is gone (use ^D);
-#	empty_stmt is gone, replaced by explicit NEWLINE where appropriate;
-#	'import' and 'def' aren't special any more;
-#	added 'from' NAME option on import clause, and '*' to import all;
-#	added class definition.
-
-# Start symbols for the grammar:
-#	single_input is a single interactive statement;
-#	file_input is a module or sequence of commands read from an input file;
-#	eval_input is the input for the eval() and input() functions.
-
-# NB: compound_stmt in single_input is followed by extra NEWLINE!
+# Commands for Kees Blom's railroad program
 #diagram:token NAME
 #diagram:token NUMBER
 #diagram:token STRING
@@ -105,6 +11,12 @@
 #diagram:token DEDENT
 #diagram:output\textwidth 20.04cm\oddsidemargin  0.0cm\evensidemargin 0.0cm
 #diagram:rules
+
+# Start symbols for the grammar:
+#	single_input is a single interactive statement;
+#	file_input is a module or sequence of commands read from an input file;
+#	eval_input is the input for the eval() and input() functions.
+# NB: compound_stmt in single_input is followed by extra NEWLINE!
 single_input: NEWLINE | simple_stmt | compound_stmt NEWLINE
 file_input: (NEWLINE | stmt)* ENDMARKER
 eval_input: testlist NEWLINE* ENDMARKER
@@ -118,7 +30,7 @@ fplist: fpdef (',' fpdef)* [',']
 stmt: simple_stmt | compound_stmt
 simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
 small_stmt: expr_stmt | print_stmt  | del_stmt | pass_stmt | flow_stmt | import_stmt | global_stmt | access_stmt | exec_stmt
-expr_stmt: (testlist '=')* testlist
+expr_stmt: testlist ('=' testlist)*
 # For assignments, additional restrictions enforced by the interpreter
 print_stmt: 'print' (test ',')* [test]
 del_stmt: 'del' exprlist
@@ -130,16 +42,14 @@ return_stmt: 'return' [testlist]
 raise_stmt: 'raise' test [',' test]
 import_stmt: 'import' NAME (',' NAME)* | 'from' NAME 'import' ('*' | NAME (',' NAME)*)
 global_stmt: 'global' NAME (',' NAME)*
-access_stmt: ('access' ('*' | NAME (',' NAME)*) ':' #diagram:break
-              accesstype  (',' accesstype)*)
+access_stmt: 'access' ('*' | NAME (',' NAME)*) ':' accesstype  (',' accesstype)*
 accesstype: NAME+
 # accesstype should be ('public' | 'protected' | 'private') ['read'] ['write']
 # but can't be because that would create undesirable reserved words!
 exec_stmt: 'exec' expr ['in' test [',' test]]
 
 compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | funcdef | classdef
-if_stmt: ('if' test ':' suite ('elif' test ':' suite)* #diagram:break
-          ['else' ':' suite])
+if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 try_stmt: ('try' ':' suite (except_clause ':' suite)+ #diagram:break
