@@ -166,11 +166,11 @@ class Distribution:
         # cheap to "run" a command whenever we think we might need to -- if
         # it's already been done, no need for expensive filesystem
         # operations, we just check the 'have_run' dictionary and carry on.
-        # It's only safe to query 'have_run' for a command class
-        # that has been instantiated -- a false value will be put inserted
-        # when the command object is created, and replaced with a true
-        # value when the command is succesfully run.  Thus it's
-        # probably best to use '.get()' rather than a straight lookup.
+        # It's only safe to query 'have_run' for a command class that has
+        # been instantiated -- a false value will be inserted when the
+        # command object is created, and replaced with a true value when
+        # the command is succesfully run.  Thus it's probably best to use
+        # '.get()' rather than a straight lookup.
         self.have_run = {}
 
     # __init__ ()
