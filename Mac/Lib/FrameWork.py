@@ -120,21 +120,18 @@ class Application:
 	yield = -1
 	
 	def do1event(self, mask = everyEvent, wait = 0):
-		event = self.getevent(mask, wait)
-		if event:
+		ok, event = self.getevent(mask, wait)
+		if IsDialogEvent(event):
+			if self.do_dialogevent(event):
+				return
+		if ok:
 			self.dispatch(event)
 	
 	def getevent(self, mask = everyEvent, wait = 0):
 		ok, event = WaitNextEvent(mask, wait)
-		if ok:
-			return event
-		else:
-			return None
-	
+		return ok, event
+			
 	def dispatch(self, event):
-		if IsDialogEvent(event):
-			self.do_dialogevent(event)
-			return
 		(what, message, when, where, modifiers) = event
 		if eventname.has_key(what):
 			name = "do_" + eventname[what]
@@ -150,9 +147,11 @@ class Application:
 		gotone, window, item = DialogSelect(event)
 		if gotone:
 			if self._windows.has_key(window):
-				window.do_itemhit(item, event)
+				self._windows[window].do_itemhit(item, event)
 			else:
 				print 'Dialog event for unknown dialog'
+			return 1
+		return 0
 	
 	def do_mouseDown(self, event):
 		(what, message, when, where, modifiers) = event
@@ -579,7 +578,6 @@ class DialogWindow(Window):
 		self.do_postopen()
 		
 	def close(self):
-		self.wid.DisposeDialog()
 		self.do_postclose()
 		
 	def do_itemhit(self, item, event):
