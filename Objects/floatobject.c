@@ -83,6 +83,25 @@ extern double fmod Py_PROTO((double, double));
 extern double pow Py_PROTO((double, double));
 #endif
 
+/* Special free list -- see comments for same code in intobject.c. */
+static PyFloatObject *free_list = NULL;
+#define BLOCK_SIZE	1000	/* 1K less typical malloc overhead */
+#define N_FLOATOBJECTS	(BLOCK_SIZE / sizeof(PyFloatObject))
+
+static PyFloatObject *
+fill_free_list()
+{
+	PyFloatObject *p, *q;
+	p = PyMem_NEW(PyFloatObject, N_FLOATOBJECTS);
+	if (p == NULL)
+		return (PyFloatObject *)PyErr_NoMemory();
+	q = p + N_FLOATOBJECTS;
+	while (--q > p)
+		*(PyFloatObject **)q = q-1;
+	*(PyFloatObject **)q = NULL;
+	return p + N_FLOATOBJECTS - 1;
+}
+
 PyObject *
 #ifdef __SC__
 PyFloat_FromDouble(double fval)
@@ -91,11 +110,13 @@ PyFloat_FromDouble(fval)
 	double fval;
 #endif
 {
-	/* For efficiency, this code is copied from newobject() */
-	register PyFloatObject *op =
-		(PyFloatObject *) malloc(sizeof(PyFloatObject));
-	if (op == NULL)
-		return PyErr_NoMemory();
+	register PyFloatObject *op;
+	if (free_list == NULL) {
+		if ((free_list = fill_free_list()) == NULL)
+			return NULL;
+	}
+	op = free_list;
+	free_list = *(PyFloatObject **)free_list;
 	op->ob_type = &PyFloat_Type;
 	op->ob_fval = fval;
 	_Py_NewReference(op);
@@ -104,9 +125,10 @@ PyFloat_FromDouble(fval)
 
 static void
 float_dealloc(op)
-	PyObject *op;
+	PyFloatObject *op;
 {
-	PyMem_DEL(op);
+	*(PyFloatObject **)op = free_list;
+	free_list = op;
 }
 
 double
