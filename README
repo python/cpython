@@ -311,6 +311,9 @@ all object files by running "make clean" before rebuilding.
 	correctly setting the target architecture specific resource
 	directory.
 
+--with-libs='libs': Add 'libs' to the LIBS that the python
+	linked against.
+
 
 Building for multiple architectures (using the VPATH feature)
 -------------------------------------------------------------
