@@ -1,23 +1,27 @@
-\section{Standard module \sectcode{pdb}}
+\chapter{The Python Debugger}
 \stmodindex{pdb}
 \index{debugging}
 
-This module defines an interactive source code debugger for Python
-programs.  It supports breakpoints and single stepping at the source
-line level, inspection of stack frames, source code listing, and
-evaluation of arbitrary Python code in the context of any stack frame.
-It also supports post-mortem debugging and can be called under program
-control.
+\renewcommand{\indexsubitem}{(in module pdb)}
+
+The module \code{pdb} defines an interactive source code debugger for
+Python programs.  It supports setting breakpoints and single stepping
+at the source line level, inspection of stack frames, source code
+listing, and evaluation of arbitrary Python code in the context of any
+stack frame.  It also supports post-mortem debugging and can be called
+under program control.
 
 The debugger is extensible --- it is actually defined as a class
 \code{Pdb}.  The extension interface uses the (also undocumented)
-modules \code{bdb} and \code{cmd}; it is currently undocumented.
+modules \code{bdb} and \code{cmd}; it is currently undocumented but
+easily understood by reading the source.
 \ttindex{Pdb}
 \ttindex{bdb}
 \ttindex{cmd}
 
 A primitive windowing version of the debugger also exists --- this is
-module \code{wdb}, which requires STDWIN.
+module \code{wdb}, which requires STDWIN (see the chapter on STDWIN
+specific modules).
 \index{stdwin}
 \ttindex{wdb}
 
@@ -47,34 +51,35 @@ The module defines the following functions; each enters the debugger
 in a slightly different way:
 
 \begin{funcdesc}{run}{statement\optional{\, globals\optional{\, locals}}}
-Execute the \var{statement} (which should be a string) under debugger
+Execute the \var{statement} (given as a string) under debugger
 control.  The debugger prompt appears before any code is executed; you
-can set breakpoint and type \code{continue}, or you can step through
-the statement using \code{step} or \code{next}.  The optional
-\var{globals} and \var{locals} arguments specify the environment in
-which the code is executed; by default the dictionary of the module
-\code{__main__} is used.  (See the explanation of the \code{exec}
-statement or the \code{eval()} built-in function.)
+can set breakpoints and type \code{continue}, or you can step through
+the statement using \code{step} or \code{next} (all these commands are
+explained below).  The optional \var{globals} and \var{locals}
+arguments specify the environment in which the code is executed; by
+default the dictionary of the module \code{__main__} is used.  (See
+the explanation of the \code{exec} statement or the \code{eval()}
+built-in function.)
 \end{funcdesc}
 
 \begin{funcdesc}{runeval}{expression\optional{\, globals\optional{\, locals}}}
-Evaluate the \var{expression} (which should be a string) under
-debugger control.  When \code{runeval()} returns, it returns the value
-of the expression.  Otherwise this function is similar to
+Evaluate the \var{expression} (given as a a string) under debugger
+control.  When \code{runeval()} returns, it returns the value of the
+expression.  Otherwise this function is similar to
 \code{run()}.
 \end{funcdesc}
 
 \begin{funcdesc}{runcall}{function\optional{\, argument\, ...}}
-Call the \var{function} (which should be a callable Python object, not
-a string) with the given arguments.  When \code{runcall()} returns, it
-returns the return value of the function call.  The debugger prompt
-appears as soon as the function is entered.
+Call the \var{function} (a function or method object, not a string)
+with the given arguments.  When \code{runcall()} returns, it returns
+whatever the function call returned.  The debugger prompt appears as
+soon as the function is entered.
 \end{funcdesc}
 
 \begin{funcdesc}{set_trace}{}
 Enter the debugger at the calling stack frame.  This is useful to
-hard-code a breakpoint at a given point in code, even if the code is
-not otherwise being debugged.
+hard-code a breakpoint at a given point in a program, even if the code
+is not otherwise being debugged (e.g. when an assertion fails).
 \end{funcdesc}
 
 \begin{funcdesc}{post_mortem}{traceback}
@@ -82,7 +87,7 @@ Enter post-mortem debugging of the given \var{traceback} object.
 \end{funcdesc}
 
 \begin{funcdesc}{pm}{}
-Enter post-mortem debugging based on the traceback found in
+Enter post-mortem debugging of the traceback found in
 \code{sys.last_traceback}.
 \end{funcdesc}
 
@@ -118,9 +123,9 @@ Without argument, print the list of available commands.
 With a \var{command} as argument, print help about that command.
 ``\code{help pdb}'' displays the full documentation file; if the
 environment variable \code{PAGER} is defined, the file is piped
-through that command instead.  Since the var{command} argument must be
-an identifier, ``\code{help exec}'' gives help on the ``\code{!}''
-command.
+through that command instead.  Since the \var{command} argument must be
+an identifier, ``\code{help exec}'' must be entered to get help on the
+``\code{!}'' command.
 
 \item[{w(here)}]
 
@@ -138,13 +143,13 @@ Move the current frame one level down in the stack trace
 Move the current frame one level up in the stack trace
 (to a newer frame).
 
-\item[{b(reak) [\var{lineno} \code{|} \var{function}]}]
+\item[{b(reak) [\var{lineno}\code{|}\var{function}]}]
 
 With a \var{lineno} argument, set a break there in the current
 file.  With a \var{function} argument, set a break at the entry of
 that function.  Without argument, list all breaks.
 
-\item[{cl(ear) [lineno]}]
+\item[{cl(ear) [\var{lineno}]}]
 
 With a \var{lineno} argument, clear that break in the current file.
 Without argument, clear all breaks (but first ask confirmation).
@@ -160,8 +165,8 @@ current function).
 Continue execution until the next line in the current function
 is reached or it returns.  (The difference between \code{next} and
 \code{step} is that \code{step} stops inside a called function, while
-\code{next} executes called functions at full speed, only stopping at
-the next line in the current function.)
+\code{next} executes called functions at (nearly) full speed, only
+stopping at the next line in the current function.)
 
 \item[{r(eturn)}]
 
@@ -173,12 +178,11 @@ Continue execution, only stop when a breakpoint is encountered.
 
 \item[{l(ist) [\var{first} [, \var{last}]]}]
 
-List source code for the current file.
-Without arguments, list 11 lines around the current line
-or continue the previous listing.
-With one argument, list 11 lines around at that line.
-With two arguments, list the given range;
-if the second argument is less than the first, it is a count.
+List source code for the current file.  Without arguments, list 11
+lines around the current line or continue the previous listing.  With
+one argument, list 11 lines around at that line.  With two arguments,
+list the given range; if the second argument is less than the first,
+it is interpreted as a count.
 
 \item[{a(rgs)}]
 
@@ -187,7 +191,8 @@ Print the argument list of the current function.
 \item[{p \var{expression}}]
 
 Evaluate the \var{expression} in the current context and print its
-value.
+value.  (Note: \code{print} can also be used, but is not a debugger
+command --- this executes the Python \code{print} statement.)
 
 \item[{[!] \var{statement}}]
 
