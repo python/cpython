@@ -924,6 +924,58 @@ halfbinop(v, w, opname, r_result, thisfunc, swapped)
 	return *r_result == NULL ? -1 : 0;
 }
 
+static int
+instance_coerce(pv, pw)
+	object **pv;
+	object **pw;
+{
+	object *v = *pv;
+	object *w = *pw;
+	object *coerce;
+	object *args;
+	object *coerced;
+
+	coerce = getattr(v, "__coerce__");
+	if (coerce == NULL) {
+		/* No __coerce__ method: always OK */
+		err_clear();
+		INCREF(v);
+		INCREF(w);
+		return 0;
+	}
+	/* Has __coerce__ method: call it */
+	args = mkvalue("(O)", w);
+	if (args == NULL) {
+		return -1;
+	}
+	coerced = call_object(coerce, args);
+	DECREF(args);
+	DECREF(coerce);
+	if (coerced == NULL) {
+		/* __coerce__ call raised an exception */
+		return -1;
+	}
+	if (coerced == None) {
+		/* __coerce__ says "I can't do it" */
+		DECREF(coerced);
+		return 1;
+	}
+	if (!is_tupleobject(coerced) || gettuplesize(coerced) != 2) {
+		/* __coerce__ return value is malformed */
+		DECREF(coerced);
+		err_setstr(TypeError,
+			   "coercion should return None or 2-tuple");
+		return -1;
+	}
+	/* __coerce__ returned two new values */
+	*pv = gettupleitem(coerced, 0);
+	*pw = gettupleitem(coerced, 1);
+	INCREF(*pv);
+	INCREF(*pw);
+	DECREF(coerced);
+	return 0;
+}
+
 
 #define UNARY(funcname, methodname) \
 static object *funcname(self) instanceobject *self; { \
@@ -1018,7 +1070,7 @@ static number_methods instance_as_number = {
 	0, /*nb_and*/
 	0, /*nb_xor*/
 	0, /*nb_or*/
-	0, /*nb_coerce*/
+	(coercion)instance_coerce, /*nb_coerce*/
 	(unaryfunc)instance_int, /*nb_int*/
 	(unaryfunc)instance_long, /*nb_long*/
 	(unaryfunc)instance_float, /*nb_float*/
