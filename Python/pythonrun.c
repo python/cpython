@@ -369,6 +369,25 @@ void
 goaway(sts)
 	int sts;
 {
+	object *exitfunc = sysget("exitfunc");
+
+	if (exitfunc) {
+		object *arg;
+		object *res;
+		sysset("exitfunc", (object *)NULL);
+		arg = newtupleobject(0);
+		if (arg == NULL)
+			res = NULL;
+		else {
+			res = call_object(exitfunc, arg);
+			DECREF(arg);
+		}
+		if (res == NULL) {
+			fprintf(stderr, "Error in sys.exitfunc:\n");
+			print_error();
+		}
+	}
+
 	flushline();
 
 #ifdef USE_THREAD
@@ -411,7 +430,7 @@ goaway(sts)
 #ifdef TRACE_REFS
 /* Ask a yes/no question */
 
-static int
+int
 askyesno(prompt)
 	char *prompt;
 {
