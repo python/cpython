@@ -3,6 +3,7 @@
 from test_support import verify
 import Cookie
 from test_support import verify, verbose
+import doctest
 
 # Currently this only tests SimpleCookie
 
@@ -41,3 +42,6 @@ C.load('Customer="WILE_E_COYOTE"; Version="1"; Path="/acme"')
 verify(C['Customer'].value == 'WILE_E_COYOTE')
 verify(C['Customer']['version'] == '1')
 verify(C['Customer']['path'] == '/acme')
+
+print "If anything blows up after this line, it's from Cookie's doctest."
+doctest.testmod(Cookie)

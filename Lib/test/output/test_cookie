@@ -29,3 +29,4 @@ Set-Cookie: Customer="WILE_E_COYOTE"; Path=/acme;
         // end hiding -->
         </script>
         
+If anything blows up after this line, it's from Cookie's doctest.
