@@ -61,7 +61,11 @@ PyArg_VaParse(PyObject *args, char *format, va_list va)
 #ifdef VA_LIST_IS_ARRAY
 	memcpy(lva, va, sizeof(va_list));
 #else
+#ifdef __va_copy
+	__va_copy(lva, va);
+#else
 	lva = va;
+#endif
 #endif
 
 	return vgetargs1(args, format, &lva, 0);
