@@ -53,6 +53,9 @@ Extension modules
 Library
 -------
 
+- Bug #1045381: strptime() now uses %U and %W for date calculations if the year
+  and day of the week are also specified.
+
 - Bug #1039270: Locale data is now escaped for regex metacharacters.
 
 - Bug #807871: Fix tkMessageBox.askyesno result.
