@@ -27,7 +27,12 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result2, url)
 
     def checkJoin(self, base, relurl, expected):
-        self.assertEqual(urlparse.urljoin(base, relurl), expected)
+        self.assertEqual(urlparse.urljoin(base, relurl), expected,
+                         (base, relurl, expected))
+
+    def test_unparse_parse(self):
+        for u in ['Python', './Python']:
+            self.assertEqual(urlparse.urlunparse(urlparse.urlparse(u)), u)
 
     def test_RFC1808(self):
         # "normal" cases from RFC 1808:
