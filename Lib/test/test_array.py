@@ -15,6 +15,44 @@ def main():
     unlink(TESTFN)
 
 
+def testoverflow(type, lowerLimit, upperLimit):
+	# should not overflow assigning lower limit
+	if verbose:
+		print "overflow test: array(%s, [%s])" % (`type`, `lowerLimit`)
+	try:
+		a = array.array(type, [lowerLimit])
+	except:
+		raise TestFailed, "array(%s) overflowed assigning %s" %\
+			(`type`, `lowerLimit`)
+	# should overflow assigning less than lower limit
+	if verbose:
+		print "overflow test: array(%s, [%s])" % (`type`, `lowerLimit-1`)
+	try:
+		a = array.array(type, [lowerLimit-1])
+		raise TestFailed, "array(%s) did not overflow assigning %s" %\
+			(`type`, `lowerLimit-1`)
+	except OverflowError:
+		pass
+	# should not overflow assigning upper limit
+	if verbose:
+		print "overflow test: array(%s, [%s])" % (`type`, `upperLimit`)
+	try:
+		a = array.array(type, [upperLimit])
+	except:
+		raise TestFailed, "array(%s) overflowed assigning %s" %\
+			(`type`, `upperLimit`)
+	# should overflow assigning more than upper limit
+	if verbose:
+		print "overflow test: array(%s, [%s])" % (`type`, `upperLimit+1`)
+	try:
+		a = array.array(type, [upperLimit+1])
+		raise TestFailed, "array(%s) did not overflow assigning %s" %\
+			(`type`, `upperLimit+1`)
+	except OverflowError:
+		pass
+
+
+
 def testtype(type, example):
 
         a = array.array(type)
@@ -81,6 +119,20 @@ def testtype(type, example):
             if a != array.array(type, [1, 1, 2, 3, 4, 5, 5]):
                 raise TestFailed, "array(%s) self-slice-assign (cntr)" % `type`
 
-
+        # test that overflow exceptions are raised as expected for assignment
+        # to array of specific integral types
+        from math import pow
+        if type in ('b', 'h', 'i', 'l'):
+            # check signed and unsigned versions
+            a = array.array(type)
+            signedLowerLimit = -1 * long(pow(2, a.itemsize * 8 - 1))
+            signedUpperLimit = long(pow(2, a.itemsize * 8 - 1)) - 1L
+            unsignedLowerLimit = 0
+            unsignedUpperLimit = long(pow(2, a.itemsize * 8)) - 1L
+            testoverflow(type, signedLowerLimit, signedUpperLimit)
+            testoverflow(type.upper(), unsignedLowerLimit, unsignedUpperLimit)
+			
+			
+		
 main()
-        
+
