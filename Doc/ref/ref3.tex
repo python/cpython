@@ -1172,6 +1172,16 @@ involving extended slice notation, or in absence of the slice methods,
 \method{__getitem__()}, \method{__setitem__()} or \method{__delitem__()} is
 called with a slice object as argument.
 
+The membership test operators (\keyword{in} and \keyword{not in}) are
+normally implemented as iteration loop through the sequence.  However,
+sequence objects can supply the following special method with a more
+efficient implementation:
+
+\begin{methoddesc}[sequence object]{__contains__}{self, item}
+Called to implement membership test operators.  Should return true if
+\var{item} is in \var{self}, false otherwise.
+\end{methoddesc}
+
 
 \subsection{Emulating numeric types\label{numeric-types}}
 
