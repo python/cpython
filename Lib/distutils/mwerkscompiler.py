@@ -4,7 +4,7 @@ Contains MWerksCompiler, an implementation of the abstract CCompiler class
 for MetroWerks CodeWarrior on the Macintosh. Needs work to support CW on
 Windows."""
 
-# This module should be kept compatible with Python 1.5.2.
+# This module should be kept compatible with Python 2.1.
 
 __revision__ = "$Id$"
 

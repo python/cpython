@@ -8,7 +8,7 @@ usually raised for errors that are obviously the end-user's fault
 This module is safe to use in "from ... import *" mode; it only exports
 symbols whose names start with "Distutils" and end with "Error"."""
 
-# This module should be kept compatible with Python 1.5.2.
+# This module should be kept compatible with Python 2.1.
 
 __revision__ = "$Id$"
 
