@@ -2354,12 +2354,15 @@ com_import_stmt(struct compiling *c, node *n)
 			com_addopname(c, IMPORT_NAME, CHILD(subn, 0));
 			com_push(c, 1);
 			if (NCH(subn) > 1) {
-				if (strcmp(STR(CHILD(subn, 1)), "as") != 0 ||
-				    NCH(CHILD(subn, 0)) > 1) {
+				int j;
+				if (strcmp(STR(CHILD(subn, 1)), "as") != 0) {
 					com_error(c, PyExc_SyntaxError,
 						  "invalid syntax");
 					return;
 				}
+				for (j=2 ; j < NCH(CHILD(subn, 0)); j += 2)
+					com_addopname(c, LOAD_ATTR,
+						      CHILD(CHILD(subn, 0), j));
 				com_addopname(c, STORE_NAME, CHILD(subn, 2));
 			} else
 				com_addopname(c, STORE_NAME,
