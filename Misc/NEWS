@@ -51,7 +51,8 @@ Standard library
   and XXX_left methods differ in what happens when the new element
   compares equal to one or more elements already in the list:  the
   XXX_left methods insert to the left, the XXX_right methods to the
-  right.
+  right.  Code that doesn't care where equal elements end up should
+  continue to use the old, short names ("bisect" and "insort").
 
 
 Windows changes
