@@ -58,8 +58,7 @@
 				TypeLibraryName=".\..\..\lib\distutils\command/wininst.tlb"
 				HeaderFileName=""/>
 			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="c:\util\upx.exe --force --best &quot;$(TARGETPATH)&quot; || echo &quot;wininst.exe not compressed&quot;"/>
+				Name="VCPostBuildEventTool"/>
 			<Tool
 				Name="VCPreBuildEventTool"/>
 			<Tool
