@@ -24,9 +24,7 @@ class UserList:
     def __delitem__(self, i): del self.data[i]
     def __getslice__(self, i, j):
         i = max(i, 0); j = max(j, 0)
-        userlist = self.__class__()
-        userlist.data[:] = self.data[i:j]
-        return userlist
+        return self.__class__(self.data[i:j])
     def __setslice__(self, i, j, other):
         i = max(i, 0); j = max(j, 0)
         if isinstance(other, UserList):
