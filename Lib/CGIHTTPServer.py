@@ -10,9 +10,6 @@ __version__ = "0.3"
 
 
 import os
-import sys
-import time
-import socket
 import string
 import urllib
 import BaseHTTPServer
