@@ -1039,8 +1039,13 @@ audioop_ratecv(self, args)
 							      cur_i[chan]));
 				if (PyErr_Occurred())
 					return NULL;
-				if (_PyString_Resize(&str,
-					ncp - PyString_AsString(str)) < 0)
+				len = ncp - PyString_AsString(str);
+				if (len == 0) {
+					/*don't want to resize to zero length*/
+					rv = PyString_FromStringAndSize("", 0);
+					Py_DECREF(str);
+					str = rv;
+				} else if (_PyString_Resize(&str, len) < 0)
 					return NULL;
 				rv = Py_BuildValue("(O(iO))", str, d, samps);
 				Py_DECREF(samps);
