@@ -1606,6 +1606,53 @@ form_deactivate_form(f, args)
 	return form_call (fl_deactivate_form, f-> ob_form, args);
 }
 
+static object *
+forms_find_first_or_last (func, dummy, args)
+	FL_OBJECT *(*func)(FL_FORM *, int, float, float);
+	formobject *dummy;
+	object *args;
+{
+	int type;
+	float mx, my;
+	FL_OBJECT *generic;
+	genericobject *g;
+	
+	if (!getintfloatfloatarg (args, &type, &mx, &my)) return NULL;
+
+	generic = (*func) (dummy-> ob_form, type, mx, my);
+
+	if (generic == NULL)
+	{
+		INCREF(None);
+		return None;
+	}
+
+	g = findgeneric(generic);
+	if (g == NULL) {
+		err_setstr(RuntimeError,
+			   "do_forms returns unknown object");
+		return NULL;
+	}
+	INCREF(g);
+	return ((object *) g);
+}
+
+static object *
+form_find_first (dummy, args)
+	object *dummy;
+	object *args;
+{
+	return (forms_find_first_or_last(fl_find_first, dummy, args));
+}
+
+static object *
+form_find_last (dummy, args)
+	object *dummy;
+	object *args;
+{
+	return (forms_find_first_or_last(fl_find_last, dummy, args));
+}
+
 static struct methodlist form_methods[] = {
 /* adm */
 	{"show_form",		form_show_form},
@@ -1618,6 +1665,8 @@ static struct methodlist form_methods[] = {
 	{"remove_form",		form_remove_form},
 	{"activate_form",	form_activate_form},
 	{"deactivate_form",	form_deactivate_form},
+	{"find_first",		form_find_first},
+	{"find_last",		form_find_last},
 
 /* basic objects */
 	{"add_button",          form_add_button},
@@ -1973,6 +2022,28 @@ forms_getmcolor (self, args)
 }
 
 static object *
+forms_get_mouse (self, args)
+	object *self;
+	object *args;
+{
+	float x, y ;
+	object *v;
+
+	if (!getnoarg(args)) return NULL;
+	
+	fl_get_mouse (&x, &y);
+
+	v = newtupleobject(2);
+
+	if (v == NULL) return NULL;
+
+	settupleitem(v, 0, newfloatobject(x));
+	settupleitem(v, 1, newfloatobject(y));
+
+	return v;
+}
+
+static object *
 forms_tie(self, args)
 	object *self;
 	object *args;
@@ -2006,6 +2077,7 @@ static struct methodlist forms_methods[] = {
 	{"qreset",		forms_qreset},
 	{"qenter",		forms_qenter},
 	{"tie",		forms_tie},
+	{"get_mouse",	forms_get_mouse},
 /*	{"new_events",		forms_new_events}, */
 	{"color",               forms_color},
 	{"mapcolor",		forms_mapcolor},
