@@ -1879,14 +1879,6 @@ end
 item: Remark
 end
 item: Install File
-  Source=..\lib\compiler\*.py
-  Destination=%MAINDIR%\Lib\compiler
-  Description=Python compiler written in Python
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
   Source=..\lib\distutils\*.py
   Destination=%MAINDIR%\Lib\distutils
   Description=Distribution utility modules
@@ -1929,14 +1921,6 @@ item: Install File
   Source=..\lib\lib-tk\*.py
   Destination=%MAINDIR%\Lib\lib-tk
   Description=Tkinter related library modules
-  Flags=0000000000000010
-end
-item: Remark
-end
-item: Install File
-  Source=..\lib\site-packages\readme
-  Destination=%MAINDIR%\Lib\site-packages\README.txt
-  Description=Site packages
   Flags=0000000000000010
 end
 item: Remark
@@ -2182,6 +2166,26 @@ item: Install File
   Destination=%MAINDIR%\Tools\pynche\pynche.pyw
   Description=pynche color editor - noconsole main
   Flags=0000000100000010
+end
+item: Remark
+end
+item: Install File
+  Source=..\tools\compiler\*.py
+  Destination=%MAINDIR%\Tools\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\tools\compiler\compiler\*.py
+  Destination=%MAINDIR%\Tools\compiler\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\tools\compiler\compiler\*.txt
+  Destination=%MAINDIR%\Tools\compiler\compiler
+  Description=Python compiler written in Python
+  Flags=0000000000000010
 end
 item: End Block
 end
