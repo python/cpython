@@ -69,7 +69,6 @@ extern void initfl();
 extern void initthread();
 extern void inittiming();
 extern void initsignal();
-extern void initnew();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
@@ -199,7 +198,6 @@ struct _inittab _PyImport_Inittab[] = {
 	{"rgbimg", initrgbimg},
 	{"md5", initmd5},
 	{"rotor", initrotor},
-	{"new", initnew},
 	{"gestalt", initgestalt},
 	{"macfs", initmacfs},
 	{"binascii", initbinascii},
