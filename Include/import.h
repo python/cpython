@@ -39,6 +39,8 @@ PERFORMANCE OF THIS SOFTWARE.
 
 long PyImport_GetMagicNumber Py_PROTO((void));
 PyObject *PyImport_ExecCodeModule Py_PROTO((char *name, PyObject *co));
+PyObject *PyImport_ExecCodeModuleEx Py_PROTO((
+	char *name, PyObject *co, char *pathname));
 PyObject *PyImport_GetModuleDict Py_PROTO((void));
 PyObject *PyImport_AddModule Py_PROTO((char *name));
 PyObject *PyImport_ImportModule Py_PROTO((char *name));
