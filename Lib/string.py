@@ -82,6 +82,23 @@ def maketrans(fromstr, tostr):
 ####################################################################
 import re as _re
 
+class _multimap:
+    """Helper class for combining multiple mappings.
+
+    Used by .{safe_,}substitute() to combine the mapping and keyword
+    arguments.
+    """
+    def __init__(self, primary, secondary):
+        self._primary = primary
+        self._secondary = secondary
+
+    def __getitem__(self, key):
+        try:
+            return self._primary[key]
+        except KeyError:
+            return self._secondary[key]
+
+
 class _TemplateMetaclass(type):
     pattern = r"""
     (?P<escaped>%(delim)s{2})       |   # Escape sequence of two delimiters
@@ -126,19 +143,29 @@ class Template:
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(self, mapping):
+    def substitute(self, __mapping=None, **kws):
+        if __mapping is None:
+            __mapping = kws
+        elif kws:
+            __mapping = _multimap(kws, __mapping)
+        # Helper function for .sub()
         def convert(mo):
             if mo.group('escaped') is not None:
                 return '$'
             if mo.group('bogus') is not None:
                 self._bogus(mo)
-            val = mapping[mo.group('named') or mo.group('braced')]
+            val = __mapping[mo.group('named') or mo.group('braced')]
             # We use this idiom instead of str() because the latter will fail
             # if val is a Unicode containing non-ASCII characters.
             return '%s' % val
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(self, mapping):
+    def safe_substitute(self, __mapping=None, **kws):
+        if __mapping is None:
+            __mapping = kws
+        elif kws:
+            __mapping = _multimap(kws, __mapping)
+        # Helper function for .sub()
         def convert(mo):
             if mo.group('escaped') is not None:
                 return '$'
@@ -149,12 +176,12 @@ class Template:
                 try:
                     # We use this idiom instead of str() because the latter
                     # will fail if val is a Unicode containing non-ASCII
-                    return '%s' % mapping[named]
+                    return '%s' % __mapping[named]
                 except KeyError:
                     return '$' + named
             braced = mo.group('braced')
             try:
-                return '%s' % mapping[braced]
+                return '%s' % __mapping[braced]
             except KeyError:
                 return '${' + braced + '}'
         return self.pattern.sub(convert, self.template)
