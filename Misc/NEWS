@@ -4,6 +4,9 @@ XXX Planned XXX Release date: 14-Nov-2001
 
 Type/class unification and new-style classes
 
+- The new builtin dictionary() constructor, and dictionary type, have
+  been renamed to dict.  This reflects a decade of common usage.
+
 - New-style classes can now have a __del__ method, which is called
   when the instance is deleted (just like for classic classes).
 

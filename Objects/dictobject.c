@@ -1784,7 +1784,7 @@ dict_init(PyObject *self, PyObject *args, PyObject *kwds)
 	static char *kwlist[] = {"items", 0};
 	int result = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:dictionary",
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:dict",
 					 kwlist, &arg))
 		result = -1;
 
@@ -1804,10 +1804,10 @@ dict_iter(dictobject *dict)
 }
 
 static char dictionary_doc[] =
-"dictionary() -> new empty dictionary.\n"
-"dictionary(mapping) -> new dict initialized from a mapping object's\n"
+"dict() -> new empty dictionary.\n"
+"dict(mapping) -> new dictionary initialized from a mapping object's\n"
 "    (key, value) pairs.\n"
-"dictionary(seq) -> new dict initialized as if via:\n"
+"dict(seq) -> new dictionary initialized as if via:\n"
 "    d = {}\n"
 "    for k, v in seq:\n"
 "        d[k] = v";
@@ -1815,7 +1815,7 @@ static char dictionary_doc[] =
 PyTypeObject PyDict_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"dictionary",
+	"dict",
 	sizeof(dictobject),
 	0,
 	(destructor)dict_dealloc,		/* tp_dealloc */
