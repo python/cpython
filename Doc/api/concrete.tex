@@ -2362,6 +2362,11 @@ They are found in the dictionary of type objects.
   \versionadded{2.2}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyDescr_NewClassMethod}{PyTypeObject *type,
+						     PyMethodDef *method}
+  \versionadded{2.3}
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{int}{PyDescr_IsData}{PyObject *descr}
   Returns true if the descriptor objects \var{descr} describes a data
   attribute, or false if it describes a method.  \var{descr} must be a
