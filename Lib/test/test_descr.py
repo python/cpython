@@ -1267,6 +1267,22 @@ def slots():
         g==g
     new_objects = len(gc.get_objects())
     vereq(orig_objects, new_objects)
+    class H(object):
+        __slots__ = ['a', 'b']
+        def __init__(self):
+            self.a = 1
+            self.b = 2
+        def __del__(self):
+            assert self.a == 1
+            assert self.b == 2
+
+    save_stderr = sys.stderr
+    sys.stderr = sys.stdout
+    h = H()
+    try:
+        del h
+    finally:
+        sys.stderr = save_stderr
 
 def slotspecials():
     if verbose: print "Testing __dict__ and __weakref__ in __slots__..."
