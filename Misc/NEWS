@@ -24,6 +24,10 @@ Core and builtins
 - Bug #1077106: Poor argument checking could cause memory corruption
   in calls to os.read().
 
+- The parser did not complain about future statements in illegal
+  positions.  It once again reports a syntax error if a future
+  statement occurs after anything other than a doc string.
+
 Extension Modules
 -----------------
 
