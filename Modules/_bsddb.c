@@ -93,7 +93,7 @@
 /* 40 = 4.0, 33 = 3.3; this will break if the second number is > 9 */
 #define DBVER (DB_VERSION_MAJOR * 10 + DB_VERSION_MINOR)
 
-#define PY_BSDDB_VERSION "4.2.0.2"
+#define PY_BSDDB_VERSION "4.2.0.5"
 static char *rcs_id = "$Id$";
 
 
@@ -287,7 +287,7 @@ staticforward PyTypeObject DB_Type, DBCursor_Type, DBEnv_Type, DBTxn_Type, DBLoc
 #define CLEAR_DBT(dbt)              (memset(&(dbt), 0, sizeof(dbt)))
 
 #define FREE_DBT(dbt)               if ((dbt.flags & (DB_DBT_MALLOC|DB_DBT_REALLOC)) && \
-                                         dbt.data != NULL) { free(dbt.data); }
+                                         dbt.data != NULL) { free(dbt.data); dbt.data = NULL; }
 
 
 static int makeDBError(int err);
@@ -320,7 +320,7 @@ static int make_dbt(PyObject* obj, DBT* dbt)
     }
     else if (!PyArg_Parse(obj, "s#", &dbt->data, &dbt->size)) {
         PyErr_SetString(PyExc_TypeError,
-                        "Key and Data values must be of type string or None.");
+                        "Data values must be of type string or None.");
         return 0;
     }
     return 1;
@@ -330,7 +330,7 @@ static int make_dbt(PyObject* obj, DBT* dbt)
 /* Recno and Queue DBs can have integer keys.  This function figures out
    what's been given, verifies that it's allowed, and then makes the DBT.
 
-   Caller should call FREE_DBT(key) when done. */
+   Caller MUST call FREE_DBT(key) when done. */
 static int
 make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
 {
@@ -830,7 +830,7 @@ newDBEnvObject(int flags)
 static void
 DBEnv_dealloc(DBEnvObject* self)
 {
-    if (!self->closed) {
+    if (self->db_env) {
         MYDB_BEGIN_ALLOW_THREADS;
         self->db_env->close(self->db_env, 0);
         MYDB_END_ALLOW_THREADS;
@@ -1269,11 +1269,15 @@ DB_delete(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
-    if (!checkTxnObj(txnobj, &txn))
+    if (!checkTxnObj(txnobj, &txn)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
-    if (-1 == _DB_delete(self, txn, &key, 0))
+    if (-1 == _DB_delete(self, txn, &key, 0)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     FREE_DBT(key);
     RETURN_NONE();
@@ -1319,16 +1323,20 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, &flags))
         return NULL;
-    if (!checkTxnObj(txnobj, &txn))
+    if (!checkTxnObj(txnobj, &txn)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     CLEAR_DBT(data);
     if (CHECK_DBFLAG(self, DB_THREAD)) {
         /* Tell BerkeleyDB to malloc the return value (thread safe) */
         data.flags = DB_DBT_MALLOC;
     }
-    if (!add_partial_dbt(&data, dlen, doff))
+    if (!add_partial_dbt(&data, dlen, doff)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->get(self->db, txn, &key, &data, flags);
@@ -1350,9 +1358,9 @@ DB_get(DBObject* self, PyObject* args, PyObject* kwargs)
                                    data.size);
         else /* return just the data */
             retval = PyString_FromStringAndSize((char*)data.data, data.size);
-        FREE_DBT(key);
         FREE_DBT(data);
     }
+    FREE_DBT(key);
 
     RETURN_IF_ERR();
     return retval;
@@ -1377,8 +1385,10 @@ DB_get_size(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, &flags))
         return NULL;
-    if (!checkTxnObj(txnobj, &txn))
+    if (!checkTxnObj(txnobj, &txn)) {
+        FREE_DBT(key);
         return NULL;
+    }
     CLEAR_DBT(data);
 
     /* We don't allocate any memory, forcing a ENOMEM error and thus
@@ -1420,10 +1430,12 @@ DB_get_both(DBObject* self, PyObject* args, PyObject* kwargs)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
-    if (!make_dbt(dataobj, &data))
+    if ( !make_dbt(dataobj, &data) ||
+         !checkTxnObj(txnobj, &txn) )
+    {
+        FREE_DBT(key);
         return NULL;
-    if (!checkTxnObj(txnobj, &txn))
-        return NULL;
+    }
 
     flags |= DB_GET_BOTH;
 
@@ -1690,10 +1702,15 @@ DB_put(DBObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
 
     CHECK_DB_NOT_CLOSED(self);
-    if (!make_key_dbt(self, keyobj, &key, NULL)) return NULL;
-    if (!make_dbt(dataobj, &data)) return NULL;
-    if (!add_partial_dbt(&data, dlen, doff)) return NULL;
-    if (!checkTxnObj(txnobj, &txn)) return NULL;
+    if (!make_key_dbt(self, keyobj, &key, NULL))
+        return NULL;
+    if ( !make_dbt(dataobj, &data) ||
+         !add_partial_dbt(&data, dlen, doff) ||
+         !checkTxnObj(txnobj, &txn) )
+    {
+        FREE_DBT(key);
+        return NULL;
+    }
 
     if (-1 == _DB_put(self, txn, &key, &data, flags)) {
         FREE_DBT(key);
@@ -2361,8 +2378,10 @@ DB_has_key(DBObject* self, PyObject* args)
     CHECK_DB_NOT_CLOSED(self);
     if (!make_key_dbt(self, keyobj, &key, NULL))
         return NULL;
-    if (!checkTxnObj(txnobj, &txn))
+    if (!checkTxnObj(txnobj, &txn)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     /* This causes ENOMEM to be returned when the db has the key because
        it has a record but can't allocate a buffer for the data.  This saves
@@ -2663,20 +2682,23 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
 
     if (keyobj && !make_key_dbt(self->mydb, keyobj, &key, NULL))
         return NULL;
-    if (dataobj && !make_dbt(dataobj, &data))
+    if ( (dataobj && !make_dbt(dataobj, &data)) ||
+         (!add_partial_dbt(&data, dlen, doff)) )
+    {
+        FREE_DBT(key);
         return NULL;
-    if (!add_partial_dbt(&data, dlen, doff))
-        return NULL;
+    }
 
     if (CHECK_DBFLAG(self->mydb, DB_THREAD)) {
         data.flags = DB_DBT_MALLOC;
-        key.flags = DB_DBT_MALLOC;
+        if (!(key.flags & DB_DBT_REALLOC)) {
+            key.flags |= DB_DBT_MALLOC;
+        }
     }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags);
     MYDB_END_ALLOW_THREADS;
-
 
     if ((err == DB_NOTFOUND) && self->mydb->moduleFlags.getReturnsNone) {
         Py_INCREF(Py_None);
@@ -2702,9 +2724,9 @@ DBC_get(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                                    data.data, data.size);
             break;
         }
-        FREE_DBT(key);
         FREE_DBT(data);
     }
+    FREE_DBT(key);
     return retval;
 }
 
@@ -2781,9 +2803,12 @@ DBC_put(DBCursorObject* self, PyObject* args, PyObject* kwargs)
 
     if (!make_key_dbt(self->mydb, keyobj, &key, NULL))
         return NULL;
-    if (!make_dbt(dataobj, &data))
+    if (!make_dbt(dataobj, &data) ||
+        !add_partial_dbt(&data, dlen, doff) )
+    {
+        FREE_DBT(key);
         return NULL;
-    if (!add_partial_dbt(&data, dlen, doff)) return NULL;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_put(self->dbc, &key, &data, flags);
@@ -2819,8 +2844,10 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         /* Tell BerkeleyDB to malloc the return value (thread safe) */
         data.flags = DB_DBT_MALLOC;
     }
-    if (!add_partial_dbt(&data, dlen, doff))
+    if (!add_partial_dbt(&data, dlen, doff)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET);
@@ -2849,9 +2876,9 @@ DBC_set(DBCursorObject* self, PyObject* args, PyObject *kwargs)
                                    data.data, data.size);
             break;
         }
-        FREE_DBT(key);
         FREE_DBT(data);
     }
+    FREE_DBT(key);
 
     return retval;
 }
@@ -2877,13 +2904,18 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
         return NULL;
 
     CLEAR_DBT(data);
+    if (!add_partial_dbt(&data, dlen, doff)) {
+        FREE_DBT(key);
+        return NULL;
+    }
     if (CHECK_DBFLAG(self->mydb, DB_THREAD)) {
         /* Tell BerkeleyDB to malloc the return value (thread safe) */
-        data.flags = DB_DBT_MALLOC;
-        key.flags = DB_DBT_MALLOC;
+        data.flags |= DB_DBT_MALLOC;
+        /* only BTREE databases will return anything in the key */
+        if (!(key.flags & DB_DBT_REALLOC) && _DB_get_type(self->mydb) == DB_BTREE) {
+            key.flags |= DB_DBT_MALLOC;
+        }
     }
-    if (!add_partial_dbt(&data, dlen, doff))
-        return NULL;
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET_RANGE);
     MYDB_END_ALLOW_THREADS;
@@ -2911,16 +2943,13 @@ DBC_set_range(DBCursorObject* self, PyObject* args, PyObject* kwargs)
                                    data.data, data.size);
             break;
         }
-        if (_DB_get_type(self->mydb) == DB_BTREE) {
-            /* the only time a malloced key is returned is when we
-             * call this on a BTree database because it performs
-             * partial matching and needs to return the real key.
-             * All others leave key untouched [where calling free()
-             * on it would often segfault].
-             */
-            FREE_DBT(key);
-        }
+        FREE_DBT(key);
         FREE_DBT(data);
+    }
+    /* the only time REALLOC should be set is if we used an integer
+     * key that make_dbt_key malloc'd for us.  always free these. */
+    if (key.flags & DB_DBT_REALLOC) {
+        FREE_DBT(key);
     }
 
     return retval;
@@ -2937,8 +2966,10 @@ _DBC_get_set_both(DBCursorObject* self, PyObject* keyobj, PyObject* dataobj,
     /* the caller did this:  CHECK_CURSOR_NOT_CLOSED(self); */
     if (!make_key_dbt(self->mydb, keyobj, &key, NULL))
         return NULL;
-    if (!make_dbt(dataobj, &data))
+    if (!make_dbt(dataobj, &data)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_GET_BOTH);
@@ -3042,8 +3073,10 @@ DBC_set_recno(DBCursorObject* self, PyObject* args, PyObject *kwargs)
         /* Tell BerkeleyDB to malloc the return value (thread safe) */
         data.flags = DB_DBT_MALLOC;
     }
-    if (!add_partial_dbt(&data, dlen, doff))
+    if (!add_partial_dbt(&data, dlen, doff)) {
+        FREE_DBT(key);
         return NULL;
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->dbc->c_get(self->dbc, &key, &data, flags|DB_SET_RECNO);
@@ -3058,9 +3091,9 @@ DBC_set_recno(DBCursorObject* self, PyObject* args, PyObject *kwargs)
     else {  /* Can only be used for BTrees, so no need to return int key */
         retval = Py_BuildValue("s#s#", key.data, key.size,
                                data.data, data.size);
-        FREE_DBT(key);
         FREE_DBT(data);
     }
+    FREE_DBT(key);
 
     return retval;
 }
