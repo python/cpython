@@ -1561,6 +1561,12 @@ class TestTimeTZ(TestTime):
         self.assertEqual(t1.strftime("%H:%M %%Z='%Z' %%z='%z'"),
                                      "23:59 %Z='%z %Z %%z%%Z' %z='-2359'")
 
+        # Check that an invalid tzname result raises an exception.
+        class Badtzname(tzinfo):
+            def tzname(self, dt): return 42
+        t = timetz(2, 3, 4, tzinfo=Badtzname())
+        self.assertEqual(t.strftime("%H:%M:%S"), "02:03:04")
+        self.assertRaises(TypeError, t.strftime, "%Z")
 
     def test_hash_edge_cases(self):
         # Offsets that overflow a basic time.
