@@ -94,6 +94,54 @@ The default filename is the last filename used.\
 ";
 
 
+/* Exported function to load a readline history file */
+
+static PyObject *
+read_history_file(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s = NULL;
+	if (!PyArg_ParseTuple(args, "|z:read_history_file", &s))
+		return NULL;
+	errno = read_history(s);
+	if (errno)
+		return PyErr_SetFromErrno(PyExc_IOError);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_read_history_file[] = "\
+read_history_file([filename]) -> None\n\
+Load a readline history file.\n\
+The default filename is ~/.history.\
+";
+
+
+/* Exported function to save a readline history file */
+
+static PyObject *
+write_history_file(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+	char *s = NULL;
+	if (!PyArg_ParseTuple(args, "|z:write_history_file", &s))
+		return NULL;
+	errno = write_history(s);
+	if (errno)
+		return PyErr_SetFromErrno(PyExc_IOError);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static char doc_write_history_file[] = "\
+write_history_file([filename]) -> None\n\
+Save a readline history file.\n\
+The default filename is ~/.history.\
+";
+
+
 /* Exported function to specify a word completer in Python */
 
 static PyObject *completer = NULL;
@@ -261,6 +309,8 @@ static struct PyMethodDef readline_methods[] =
 	{"get_line_buffer", get_line_buffer, 0, doc_get_line_buffer},
 	{"insert_text", insert_text, 1, doc_insert_text},
 	{"read_init_file", read_init_file, 1, doc_read_init_file},
+	{"read_history_file", read_history_file, 1, doc_read_history_file},
+	{"write_history_file", write_history_file, 1, doc_write_history_file},
 	{"set_completer", set_completer, 1, doc_set_completer},
 	{"get_begidx", get_begidx, 0, doc_get_begidx},
 	{"get_endidx", get_endidx, 0, doc_get_endidx},
