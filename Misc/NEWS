@@ -15,6 +15,9 @@ Core and builtins
 - Bug #1085744:  Add missing overflow check to PySequence_Tuple().
   Make resize schedule linear (amortized).
 
+- marshal.dumps() no longer crashes when the optional argument ``version``
+  is provided.
+
 
 Library
 -------
