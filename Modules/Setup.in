@@ -28,6 +28,16 @@
 # <name> = <value>
 #
 # which defines a Make variable definition inserted into Makefile.in
+#
+# Finally, if a line has the literal form
+#
+# *noconfig*
+#
+# (that is including the '*' and '*' !) then the following modules will
+# not be included in the config.c file, nor in the list of objects to be
+# added to the library archive, and their linker options won't be added 
+# to the linker options, but rules to create their .o files and their
+# shared libraries will still be added to the Makefile
 
 # NOTE: As a standard policy, as many modules as can be supported by a
 # platform should be present.  The distribution comes with all modules
@@ -47,13 +57,10 @@ DESTLIB=$(prefix)/lib/python
 # Standard enabled (tests are always available)
 TESTPATH=:$(DESTLIB)/test
 
-# Enable this for SGI systems
-#ARCHPATH=:$(DESTLIB)/sgi
+# Path for machine- or system-dependent modules (and shared libraries)
+MACHDEPPATH=:$(DESTLIB)/$(MACHDEP)
 
-# Enable this for Sun systems
-#ARCHPATH=:$(DESTLIB)/sun4
-
-PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(ARCHPATH)$(STDWINPATH)$(TKPATH)
+PYTHONPATH=.:$(DESTLIB)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 
 
 # Modules that should always be present (non UNIX dependent)
@@ -86,6 +93,7 @@ signal signalmodule.c	# signal(2)
 
 #dbm dbmmodule.c 	# dbm(3) may require -lndbm or similar
 #nis nismodule.c 	# Sun yellow pages -- not everywhere
+#termios termios.c	# Steen Lumholt's termios module
 
 
 # Multimedia modules -- on by default.
@@ -108,6 +116,18 @@ rgbimg rgbimgmodule.c   # Read SGI RGB image files (but coded portably)
 #ARCH=???
 #stdwin stdwinmodule.c -I$(STDWIN)/H $(STDWIN)/Build/$(ARCH)/x11/lib/lib.a -lX11
 #STDWINPATH=:$(DESTLIB)/stdwin
+
+# For STDWIN 1.0 it's a bit different:
+
+#STDWIN=/ufs/guido/src/stdwin
+#LIBTEXTEDIT=$(STDWIN)/$(MACHDEP)/Packs/textedit/libtextedit.a
+#LIBX11STDWIN=$(STDWIN)/$(MACHDEP)/Ports/x11/libstdwin.a
+#LIBALFASTDWIN=$(STDWIN)/$(MACHDEP)/Ports/alfa/libstdwin.a
+#stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBX11STDWIN) -lX11
+
+# Or use the following for the alphanumeric version:
+
+#stdwin stdwinmodule.c -I$(STDWIN)/H $(LIBTEXTEDIT) $(LIBALFASTDWIN) -ltermcap
 
 
 # The md5 module implements the RSA Data Security, Inc. MD5

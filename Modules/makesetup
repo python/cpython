@@ -22,7 +22,7 @@
 #
 # Copying config.c.in to config.c:
 # - insert an identifying comment at the start
-# - for each <module> mentioned in Setup:
+# - for each <module> mentioned in Setup before *noconfig*:
 #   + insert 'extern void init<module>();' before MARKER 1
 #   + insert '{"<module>", initmodule},' before MARKER 2
 #
@@ -31,9 +31,10 @@
 # - replace @MODOBJS@ by the list of objects from Setup (except for
 #   Setup files after a -n option)
 # - replace @MODLIBS@ by the list of libraries from Setup
-# - for each object file mentioned in Setup, insert a rule
-#   '<file>.o: <file>.c; <build commands>' before the comment
-#   'Rules added by makesetup'
+# - for each object file mentioned in Setup, append a rule
+#   '<file>.o: <file>.c; <build commands>' to the end of the Makefile
+# - for each module mentioned in Setup, append a rule
+#   which creates a shared library version to the end of the Makefile
 # - for each variable definition found in Setup, insert the definition
 #   before the comment 'Definitions added by makesetup'
 
@@ -45,6 +46,7 @@ srcdir=''
 config=''
 makepre=''
 noobjects=''
+doconfig=yes
 while :
 do
 	case $1 in
@@ -81,17 +83,22 @@ NL="\\
 for i in ${*-Setup}
 do
 	case $i in
-	-n)	echo '<noobjects>';;
-	*)	cat "$i";;
+	-n)	echo '*noobjects*';;
+	*)	echo '*doconfig*'; cat "$i";;
 	esac
 done |
 sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 (
+	rulesf="@rules.$$"
+	trap 'rm -f $rulesf' 0 1 2 3
+	echo "
+# Rules appended by makedepend
+" >$rulesf
 	DEFS=
 	MODS=
+	SHAREDMODS=
 	OBJS=
 	LIBS=
-	RULES=
 	LOCALLIBS=
 	BASELIBS=
 	while read line
@@ -99,67 +106,90 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		# Output DEFS in reverse order so first definition overrides
 		case $line in
 		*=*)	DEFS="$line$NL$DEFS"; continue;;
-		'<noobjects>')
+		'*noobjects*')
 			case $noobjects in
 			yes)	;;
 			*)	LOCALLIBS=$LIBS; LIBS=;;
 			esac
 			noobjects=yes;
-			continue;; 
+			continue;;
+		'*doconfig*')	doconfig=yes; continue;;
+		'*noconfig*')	doconfig=no; continue;;
 		esac
-		objs=
 		srcs=
 		cpps=
-		set $line
-		for arg
+		libs=
+		mods=
+		for arg in $line
 		do
 			case $arg in
 			-[IDUC]*)	cpps="$cpps $arg";;
-			-[A-Zl]*)	LIBS="$LIBS $arg";;
-			*.a)		LIBS="$LIBS $arg";;
-			*.o)		objs="$objs $arg";;
+			-[A-Zl]*)	libs="$libs $arg";;
+			*.a)		libs="$libs $arg";;
+			*.o)		srcs="$srcs `basename $arg .o`.c";;
 			*.[cC])		srcs="$srcs $arg";;
 			*.cc)		srcs="$srcs $arg";;
 			*.c++)		srcs="$srcs $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
-			[a-zA-Z_]*)	MODS="$MODS $arg";;
+			[a-zA-Z_]*)	mods="$mods $arg";;
 			*)		echo 1>&2 "bad word $arg in $line"
 					exit 1;;
 			esac
 		done
+		case $doconfig in
+		yes)
+			LIBS="$LIBS $libs"
+			MODS="$MODS $mods"
+			;;
+		esac
 		case $noobjects in
 		yes)	continue;;
 		esac
-		for obj in $objs
-		do
-		  src=`basename $obj .o`.c
-		  case $src in
-		  glmodule.c) ;;
-		  *) src='$(srcdir)/'$src;;
-		  esac
-		  RULES="$RULES$obj: $src; \$(CC) \$(CFLAGS) $cpps -c $src$NL"
-		done
-		OBJS="$OBJS $objs"
-		objs=
+		objs=''
 		for src in $srcs
 		do
-		  case $src in
-		  *.c)   obj=`basename $src .c`.o; cc='$(CC)';;
-		  *.cc)  obj=`basename $src .cc`.o; cc='$(CCC)';;
-		  *.c++) obj=`basename $src .c++`.o; cc='$(CCC)';;
-		  *.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
-		  *)     continue;;
-		  esac
-		  objs="$objs $obj"
-		  case $src in
-		  glmodule.c) ;;
-		  *) src='$(srcdir)/'$src;;
-		  esac
-		  RULES="$RULES$obj: $src; $cc \$(CFLAGS) $cpps -c $src$NL"
+			case $src in
+			*.c)   obj=`basename $src .c`.o; cc='$(CC)';;
+			*.cc)  obj=`basename $src .cc`.o; cc='$(CCC)';;
+			*.c++) obj=`basename $src .c++`.o; cc='$(CCC)';;
+			*.C)   obj=`basename $src .C`.o; cc='$(CCC)';;
+			*)     continue;;
+			esac
+			objs="$objs $obj"
+			case $src in
+			glmodule.c) ;;
+			*) src='$(srcdir)/'$src;;
+			esac
+			case $doconfig in
+			no)	cc="cc $(CCSHARED)";;
+			esac
+			rule="$obj: $src; $cc \$(CFLAGS) $cpps -c $src"
+			echo "$rule" >>$rulesf
 		done
-		OBJS="$OBJS $objs"
+		case $doconfig in
+		yes)	OBJS="$OBJS $objs";;
+		esac
+		for mod in $mods
+		do
+			case $objs in
+			*$mod.o*)	base=$mod;;
+			*)		base=${mod}module;;
+			esac
+			file="$base\$(SO)"
+			case $doconfig in
+			no)	SHAREDMODS="$SHAREDMODS $file";;
+			esac
+			rule="$file: $objs"
+			rule="$rule; $(LDSHARED) $objs $libs -o $file"
+			echo "$rule" >>$rulesf
+		done
 	done
+
+	case $SHAREDMODS in
+	'')	;;
+	*)	DEFS="SHAREDMODS=$SHAREDMODS$NL$DEFS";;
+	esac
 
 	case $noobjects in
 	yes)	BASELIBS=$LIBS;;
@@ -177,6 +207,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		INITBITS="${INITBITS}	{\"$mod\", init$mod},$NL"
 	done
 
+
 	case $config in
 	-)  ;;
 	*)  sed -e "
@@ -189,16 +220,20 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 	esac
 
 	case $makepre in
-	-)  ;;
-	*)  sed -e "
-		1i$NL# Generated automatically from $makepre by makesetup.
-		s%@MODOBJS@%$OBJS%
-		s%@MODLIBS@%$LIBS%
-		/Rules added by makesetup/a$NL$NL$RULES
-		/Definitions added by makesetup/a$NL$NL$DEFS
-
-		" $makepre >Makefile
+	-)	;;
+	*)	sedf="@sed.in.$$"
+		trap 'rm -f $sedf' 0 1 2 3
+		echo "1i\\" >$sedf
+		str="# Generated automatically from $makepre by makesetup."
+		echo "$str" >>$sedf
+		echo "s%@MODOBJS@%$OBJS%" >>$sedf
+		echo "s%@MODLIBS@%$LIBS%" >>$sedf
+		echo "/Definitions added by makesetup/a$NL$NL$DEFS" >>$sedf
+		sed -f $sedf $makepre >Makefile
+		cat $rulesf >>Makefile
+		rm -f $sedf
 	    ;;
 	esac
 
+	rm -f $rulesf
 )
