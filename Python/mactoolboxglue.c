@@ -26,10 +26,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "pymactoolbox.h"
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <Script.h>
-#include <Resources.h>
-#endif
 
 /*
 ** Find out what the current script is.

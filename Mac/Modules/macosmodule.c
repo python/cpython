@@ -28,16 +28,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "macglue.h"
 #include "pythonresources.h"
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <Windows.h>
-#include <Files.h>
-#include <LowMem.h>
-#include <Sound.h>
-#include <Events.h>
-#else
 #include <Carbon/Carbon.h>
 #include <ApplicationServices/ApplicationServices.h>
-#endif
 
 static PyObject *MacOS_Error; /* Exception MacOS.Error */
 

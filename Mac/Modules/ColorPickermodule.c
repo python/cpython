@@ -21,11 +21,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <ColorPicker.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 #include "Python.h"
 #include "macglue.h"
 #include "pymactoolbox.h"

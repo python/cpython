@@ -32,11 +32,7 @@ PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "macglue.h"
 #include "pymactoolbox.h"
-#ifdef WITHOUT_FRAMEWORKS
-#include <Navigation.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 static PyObject *ErrorObject;
 

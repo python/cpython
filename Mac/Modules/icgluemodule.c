@@ -34,11 +34,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 extern int ResObj_Convert(PyObject *, Handle *); /* From Resmodule.c */
 
-#ifdef WITHOUT_FRAMEWORKS
-#include <InternetConfig.h>
-#else
 #include <Carbon/Carbon.h>
-#endif
 
 static PyObject *ErrorObject;
 
