@@ -58,6 +58,8 @@ sub tohtml{
     foreach $name (split /,/, $self->{names}) {
 	my($key,$type,$synopsis) = $self->get($name);
 	my $link = "<a href='module-$key.html'>";
+	$synopsis =~ s/<tex2html_percent_mark>/%/g;
+	$synopsis =~ s/<tex2html_ampersand_mark>/\&amp;/g;
 	$data .= ('  <tr'
                   . ($oddrow ? " class='oddrow'>\n      " : '>')
 		  . "<td><b><tt class='module'>$link$name</a></tt></b></td>\n"
