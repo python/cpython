@@ -36,8 +36,6 @@ class sdist (Command):
 
         ('formats=', None,
          "formats for source distribution (tar, ztar, gztar, or zip)"),
-        ('list-only', 'l',
-         "just list files that would be distributed"),
         ('keep-tree', 'k',
          "keep the distribution tree around after creating " +
          "archive file(s)"),
@@ -64,7 +62,6 @@ class sdist (Command):
         self.force_manifest = 0
 
         self.formats = None
-        self.list_only = 0
         self.keep_tree = 0
 
 
@@ -227,6 +224,10 @@ class sdist (Command):
         if self.distribution.has_ext_modules():
             build_ext = self.find_peer ('build_ext')
             self.files.extend (build_ext.get_source_files ())
+
+        if self.distribution.has_c_libraries():
+            build_clib = self.find_peer ('build_clib')
+            self.files.extend (build_clib.get_source_files ())
 
 
     def search_dir (self, dir, pattern=None):
