@@ -33,8 +33,14 @@ def test():
     finish = f.readline()
 
     if start <> finish:
-	print 'Error: binhex failed'
+	print 'Error: binhex <> hexbin'
     elif verbose:
 	print 'binhex == hexbin'
 
+    try:
+	import os
+	os.unlink(fname1)
+	os.unlink(fname2)
+    except:
+	pass
 test()
