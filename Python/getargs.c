@@ -1031,8 +1031,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	int levels[32];
 	char *fname, *message;
 	int min, max;
-	char *formatsave = format;
-	int i, len, argslen, kwlen;
+	char *formatsave;
+	int i, len, nargs, nkeywords;
 	char *msg, *ks, **p;
 	int nkwds, pos, match, converted;
 	PyObject *key, *value;
@@ -1051,6 +1051,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   Raise error if a tuple arg spec is found.
 	*/
 	fname = message = NULL;
+	formatsave = format;
 	min = -1;
 	max = 0;
 	while ((i = *format++) != '\0') {
@@ -1078,11 +1079,11 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	}
 	format = formatsave;
 
-	argslen = PyTuple_GET_SIZE(args);
+	nargs = PyTuple_GET_SIZE(args);
 
 	/* do a cursory check of the keywords just to see how many we got */
 
-	kwlen = 0;
+	nkeywords = 0;
 	if (keywords) { 	
 		if (!PyDict_Check(keywords)) {
 			PyErr_Format(PyExc_SystemError,
@@ -1090,7 +1091,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 				keywords->ob_type->tp_name);
 			return 0;
 		}	
-		kwlen = PyDict_Size(keywords);
+		nkeywords = PyDict_Size(keywords);
 	}
 			
 	/* make sure there are no duplicate values for an argument;
@@ -1098,7 +1099,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   keyword parameter in messages */
 
 	if (keywords) {
-		for (i = 0; i < argslen; i++) {
+		for (i = 0; i < nargs; i++) {
 			char *thiskw = kwlist[i];
 			if (thiskw == NULL)
 				break;
@@ -1123,9 +1124,9 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* required arguments missing from args can be supplied by keyword 
 	   arguments */
 	
-	len = argslen;
-	if (keywords && argslen < min) {
-		for (i = argslen; i < min; i++) {
+	len = nargs;
+	if (keywords && nargs < min) {
+		for (i = nargs; i < min; i++) {
 		  if (PyMapping_HasKeyString(keywords, kwlist[i])) {
 				len++;
 		  }
@@ -1155,7 +1156,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 		return 0;
 	}
 	
-	for (i = 0; i < argslen; i++) {
+	for (i = 0; i < nargs; i++) {
 		if (*format == '|')
 			format++;
 		msg = convertitem(PyTuple_GET_ITEM(args, i), &format, p_va,
@@ -1191,7 +1192,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	   string where it was left after processing args */
 	
 	converted = 0;
-	for (i = argslen; i < nkwds; i++) {
+	for (i = nargs; i < nkwds; i++) {
 		PyObject *item;
 		if (*format == '|')
 			format++;
@@ -1218,7 +1219,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
 	/* make sure there are no extraneous keyword arguments */
 	
 	pos = 0;
-	if (converted < kwlen) {
+	if (converted < nkeywords) {
 		while (PyDict_Next(keywords, &pos, &key, &value)) {
 			match = 0;
 			ks = PyString_AsString(key);
