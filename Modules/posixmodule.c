@@ -1830,6 +1830,30 @@ posix_getppid(self, args)
 #endif
 
 
+#ifdef HAVE_GETLOGIN
+static char posix_getlogin__doc__[] = "\
+getlogin() -> string\n\
+Return the actual login name.";
+
+static PyObject *
+posix_getlogin(self, args)
+	PyObject *self;
+	PyObject *args;
+{
+    PyObject *result = NULL;
+
+    if (PyArg_ParseTuple(args, ":getlogin")) {
+        char *name = getlogin();
+
+        if (name == NULL)
+            posix_error();
+        else
+            result = PyString_FromString(name);
+    }
+    return result;
+}
+#endif
+
 #ifdef HAVE_GETUID
 static char posix_getuid__doc__[] =
 "getuid() -> uid\n\
@@ -3343,14 +3367,54 @@ posix_tmpnam(self, args)
  * It maps strings representing configuration variable names to
  * integer values, allowing those functions to be called with the
  * magic names instead of poluting the module's namespace with tons of
- * rarely-used constants.
+ * rarely-used constants.  There are three separate tables that use
+ * these definitions.
  */
 struct constdef {
     char *name;
     long value;
 };
 
-static struct constdef posix_constants_pathconf[] = {
+static int
+conv_confname(arg, valuep, table, tablesize)
+     PyObject *arg;
+     int *valuep;
+     struct constdef *table;
+     size_t tablesize;
+{
+    if (PyInt_Check(arg)) {
+        *valuep = PyInt_AS_LONG(arg);
+        return 1;
+    }
+    if (PyString_Check(arg)) {
+        /* look up the value in the table using a binary search */
+        int lo = 0;
+        int hi = tablesize;
+        int cmp, mid;
+        char *confname = PyString_AS_STRING(arg);
+        while (lo < hi) {
+            mid = (lo + hi) / 2;
+            cmp = strcmp(confname, table[mid].name);
+            if (cmp < 0)
+                hi = mid;
+            else if (cmp > 0)
+                lo = mid + 1;
+            else {
+                *valuep = table[mid].value;
+                return 1;
+            }
+        }
+        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
+    }
+    else
+        PyErr_SetString(PyExc_TypeError,
+                        "configuration names must be strings or integers");
+    return 0;
+}
+
+
+#if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
+static struct constdef  posix_constants_pathconf[] = {
 #ifdef _PC_ASYNC_IO
     {"PC_ASYNC_IO",	_PC_ASYNC_IO},
 #endif
@@ -3398,46 +3462,6 @@ static struct constdef posix_constants_pathconf[] = {
 #endif
 };
 
-
-static int
-conv_confname(arg, valuep, table, tablesize)
-     PyObject *arg;
-     int *valuep;
-     struct constdef *table;
-     size_t tablesize;
-{
-    if (PyInt_Check(arg)) {
-        *valuep = PyInt_AS_LONG(arg);
-        return 1;
-    }
-    if (PyString_Check(arg)) {
-        /* look up the value in the table using a binary search */
-        int lo = 0;
-        int hi = tablesize;
-        int cmp, mid;
-        char *confname = PyString_AS_STRING(arg);
-        while (lo < hi) {
-            mid = (lo + hi) / 2;
-            cmp = strcmp(confname, table[mid].name);
-            if (cmp < 0)
-                hi = mid;
-            else if (cmp > 0)
-                lo = mid + 1;
-            else {
-                *valuep = table[mid].value;
-                return 1;
-            }
-        }
-        PyErr_SetString(PyExc_ValueError, "unrecognized configuration name");
-    }
-    else
-        PyErr_SetString(PyExc_TypeError,
-                        "configuration names must be strings or integers");
-    return 0;
-}
-
-
-#if defined(HAVE_FPATHCONF) || defined(HAVE_PATHCONF)
 static int
 conv_path_confname(arg, valuep)
      PyObject *arg;
@@ -3463,7 +3487,8 @@ posix_fpathconf(self, args)
     PyObject *result = NULL;
     int name, fd;
 
-    if (PyArg_ParseTuple(args, "iO&:fpathconf", &fd, conv_confname, &name)) {
+    if (PyArg_ParseTuple(args, "iO&:fpathconf", &fd,
+                         conv_path_confname, &name)) {
         long limit;
 
         errno = 0;
@@ -3499,12 +3524,13 @@ posix_pathconf(self, args)
 
         errno = 0;
         limit = pathconf(path, name);
-        if (limit == -1 && errno != 0)
+        if (limit == -1 && errno != 0) {
             if (errno == EINVAL)
                 /* could be a path or name problem */
                 posix_error();
             else
                 posix_error_with_filename(path);
+        }
         else
             result = PyInt_FromLong(limit);
     }
@@ -4233,6 +4259,9 @@ static PyMethodDef posix_methods[] = {
 #ifdef HAVE_GETUID
 	{"getuid",	posix_getuid, METH_VARARGS, posix_getuid__doc__},
 #endif /* HAVE_GETUID */
+#ifdef HAVE_GETLOGIN
+	{"getlogin",	posix_getlogin, METH_VARARGS, posix_getlogin__doc__},
+#endif
 #ifdef HAVE_KILL
 	{"kill",	posix_kill, METH_VARARGS, posix_kill__doc__},
 #endif /* HAVE_KILL */
