@@ -65,5 +65,6 @@ initnoddy(void)
     m = Py_InitModule3("noddy", noddy_methods,
                        "Example module that creates an extension type.");
 
+    Py_INCREF(&noddy_NoddyType);
     PyModule_AddObject(m, "Noddy", (PyObject *)&noddy_NoddyType);
 }
