@@ -46,10 +46,10 @@ badprefixes = ['.', ',', '@', '#', 'o.']
 badsuffixes = \
 	['~', '.a', '.o', '.old', '.bak', '.orig', '.new', '.prev', '.not', \
 	 '.pyc', '.elc']
+ignore = []
 
 def setup():
-	global ignore
-	ignore = badnames[:]
+	ignore[:] = badnames
 	for p in badprefixes:
 		ignore.append(p + '*')
 	for p in badsuffixes:
@@ -58,7 +58,7 @@ def setup():
 		f = open('.xxcign', 'r')
 	except IOError:
 		return
-	ignore = ignore + string.split(f.read())
+	ignore[:] = ignore + string.split(f.read())
 
 def skipfile(file):
 	for p in ignore:
