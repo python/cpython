@@ -57,8 +57,11 @@ Return the arc cosine of x.";
 static Py_complex c_acosh(x)
 	Py_complex x;
 {
-	return c_log(c_sum(x,c_prod(c_i,
-		    c_sqrt(c_diff(c_1,c_prod(x,x))))));
+	Py_complex z;
+	z = c_sqrt(c_half);
+	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x,c_1)),
+				  c_sqrt(c_diff(x,c_1)))));
+	return c_sum(z, z);
 }
 
 static char c_acosh_doc [] =
@@ -70,8 +73,11 @@ Return the hyperbolic arccosine of x.";
 static Py_complex c_asin(x)
 	Py_complex x;
 {
-	return c_neg(c_prodi(c_log(c_sum(c_prod(c_i,x),
-		    c_sqrt(c_diff(c_1,c_prod(x,x)))))));
+	Py_complex z;
+	z = c_sqrt(c_half);
+	z = c_log(c_prod(z, c_sum(c_sqrt(c_sum(x,c_i)),
+				  c_sqrt(c_diff(x,c_i)))));
+	return c_sum(z, z);
 }
 
 static char c_asin_doc [] =
@@ -85,9 +91,8 @@ static Py_complex c_asinh(x)
 {
 	/* Break up long expression for WATCOM */
 	Py_complex z;
-	z = c_sum(c_1,c_prod(x,x));
-	z = c_diff(c_sqrt(z),x);
-	return c_neg(c_log(z));
+	z = c_sum(c_1,c_prod(x, x));
+	return c_log(c_sum(c_sqrt(z), x));
 }
 
 static char c_asinh_doc [] =
