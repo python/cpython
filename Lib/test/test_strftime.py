@@ -87,7 +87,11 @@ def strftest(now):
 	      (sys.platform, string.split(sys.version)[0])
 
     for e in expectations:
-	result = time.strftime(e[0], now)
+	try:
+	    result = time.strftime(e[0], now)
+	except ValueError, error:
+	    print "Standard '%s' format gave error:" % e[0], error
+	    continue
 	if result == e[1]: continue
 	if result[0] == '%':
 	    print "Does not support standard '%s' format (%s)" % (e[0], e[2])
@@ -96,16 +100,24 @@ def strftest(now):
 	    print "  Expected %s, but got %s" % (e[1], result)
 
     for e in nonstandard_expectations:
-	result = time.strftime(e[0], now)
+	try:
+	    result = time.strftime(e[0], now)
+	except ValueError, result:
+	    if verbose:
+		print "Error for nonstandard '%s' format (%s): %s" % \
+		      (e[0], e[2], str(error))
+	    continue
 	if result == e[1]:
 	    if verbose:
 		print "Supports nonstandard '%s' format (%s)" % (e[0], e[2])
 	elif result[0] == '%':
 	    if verbose:
-		print "Does not appear to support '%s' format" % e[0]
+		print "Does not appear to support '%s' format (%s)" % (e[0],
+								       e[2])
 	else:
 	    if verbose:
-		print "Conflict for %s (%s):" % (e[0], e[2])
+		print "Conflict for nonstandard '%s' format (%s):" % (e[0],
+								      e[2])
 		print "  Expected %s, but got %s" % (e[1], result)
 
 def fixasctime(s):
