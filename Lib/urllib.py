@@ -41,6 +41,8 @@ if os.name == 'mac':
     from macurl2path import url2pathname, pathname2url
 elif os.name == 'nt':
     from nturl2path import url2pathname, pathname2url
+elif os.name == 'riscos':
+    from rourl2path import url2pathname, pathname2url
 else:
     def url2pathname(pathname):
         return unquote(pathname)

@@ -33,9 +33,13 @@ error = IOError                         # For anydbm
 class _Database:
 
     def __init__(self, file):
-        self._dirfile = file + '.dir'
-        self._datfile = file + '.dat'
-        self._bakfile = file + '.bak'
+        if _os.sep == '.':
+            endsep = '/'
+        else:
+            endsep = '.'
+        self._dirfile = file + endsep + 'dir'
+        self._datfile = file + endsep + 'dat'
+        self._bakfile = file + endsep + 'bak'
         # Mod by Jack: create data file if needed
         try:
             f = _open(self._datfile, 'r')

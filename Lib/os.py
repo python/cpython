@@ -3,7 +3,7 @@
 This exports:
   - all functions from posix, nt, dos, os2, mac, or ce, e.g. unlink, stat, etc.
   - os.path is one of the modules posixpath, ntpath, macpath, or dospath
-  - os.name is 'posix', 'nt', 'dos', 'os2', 'mac', or 'ce'
+  - os.name is 'posix', 'nt', 'dos', 'os2', 'mac', 'ce' or 'riscos'
   - os.curdir is a string representing the current directory ('.' or ':')
   - os.pardir is a string representing the parent directory ('..' or '::')
   - os.sep is the (or a most common) pathname separator ('/' or ':' or '\\')
@@ -145,6 +145,25 @@ elif 'ce' in _names:
 
     import ce
     __all__.extend(_get_exports_list(ce))
+    del ce
+
+elif 'riscos' in _names:
+    name = 'riscos'
+    linesep = '\n'
+    curdir = '@'; pardir = '^'; sep = '.'; pathsep = ','
+    defpath = '<Run$Dir>'
+    from riscos import *
+    try:
+        from riscos import _exit
+    except ImportError:
+        pass
+    import riscospath
+    path = riscospath
+    del riscospath
+    from riscosenviron import environ
+
+    import riscos
+    __all__.extend(_get_exports_list(riscos))
     del ce
 
 else:
@@ -317,14 +336,16 @@ def _execvpe(file, args, env=None):
                 exc, arg = error, (errno, msg)
     raise exc, arg
 
-# Change environ to automatically call putenv() if it exists
-try:
-    # This will fail if there's no putenv
-    putenv
-except NameError:
-    pass
-else:
-    import UserDict
+
+if name != "riscos":
+    # Change environ to automatically call putenv() if it exists
+    try:
+        # This will fail if there's no putenv
+        putenv
+    except NameError:
+        pass
+    else:
+        import UserDict
 
     if name in ('os2', 'nt', 'dos'):  # Where Env Var Names Must Be UPPERCASE
         # But we store them as upper case
@@ -363,12 +384,11 @@ else:
 
     environ = _Environ(environ)
 
-def getenv(key, default=None):
-    """Get an environment variable, return None if it doesn't exist.
-
-    The optional second argument can specify an alternate default."""
-    return environ.get(key, default)
-__all__.append("getenv")
+    def getenv(key, default=None):
+        """Get an environment variable, return None if it doesn't exist.
+        The optional second argument can specify an alternate default."""
+        return environ.get(key, default)
+    __all__.append("getenv")
 
 def _exists(name):
     try:
