@@ -185,6 +185,7 @@ Methods:\n\
 \n\
 update() -- updates the current digest with an additional string\n\
 digest() -- return the current digest value\n\
+hexdigest() -- return the current digest as a string of hexadecimal digits\n\
 copy() -- return a copy of the current md5 object");
 
 static PyTypeObject MD5type = {
