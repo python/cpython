@@ -26,6 +26,12 @@ Options:
 
 -o dir:       Directory where the output files are created; default '.'.
 
+-m:           Additional arguments are module names instead of filenames.
+
+-d:           Debugging mode for the module finder.
+
+-q:           Make the module finder totally quiet.
+
 -h:           Print this help message.
 
 -w:           Toggle Windows (NT or 95) behavior.
@@ -42,7 +48,8 @@ script.py:    The Python script to be executed by the resulting binary.
 
 module ...:   Additional Python modules (referenced by pathname)
               that will be included in the resulting binary.  These
-              may be .py or .pyc files.
+              may be .py or .pyc files.  If -m is specified, these are
+              module names that are search in the path instead.
 
 NOTES:
 
@@ -67,7 +74,7 @@ import addpack
 # Import the freeze-private modules
 
 import checkextensions
-import findmodules
+import modulefinder
 import makeconfig
 import makefreeze
 import makemakefile
@@ -82,6 +89,8 @@ def main():
     exec_prefix = None                  # settable with -P option
     extensions = []
     path = sys.path
+    modargs = 0
+    debug = 1
     odir = ''
     win = sys.platform[:3] == 'win'
 
@@ -97,7 +106,7 @@ def main():
 
     # parse command line
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'he:o:p:P:s:w')
+        opts, args = getopt.getopt(sys.argv[1:], 'deh:mo:p:P:qs:w')
     except getopt.error, msg:
         usage('getopt error: ' + str(msg))
 
@@ -106,14 +115,20 @@ def main():
         if o == '-h':
             print __doc__
             return
+        if o == '-d':
+            debug = debug + 1
         if o == '-e':
             extensions.append(a)
+        if o == '-m':
+            modargs = 1
         if o == '-o':
             odir = a
         if o == '-p':
             prefix = a
         if o == '-P':
             exec_prefix = a
+        if o == '-q':
+            debug = 0
         if o == '-w':
             win = not win
         if o == '-s':
@@ -220,18 +235,30 @@ def main():
         target = os.path.join(odir, target)
         makefile = os.path.join(odir, makefile)
 
-    for mod in implicits:
-        modules.append(findmodules.findmodule(mod))
-
     # Actual work starts here...
 
-    dict = findmodules.findmodules(scriptfile, modules, path)
-    names = dict.keys()
-    names.sort()
-    print "Modules being frozen:"
-    for name in names:
-        print '\t', name
+    # collect all modules of the program
+    mf = modulefinder.ModuleFinder(path, debug)
+    for mod in implicits:
+        mf.import_hook(mod)
+    for mod in modules:
+        if mod == '-m':
+            modargs = 1
+            continue
+        if modargs:
+            if mod[-2:] == '.*':
+                mf.import_hook(mod[:-2], None, ["*"])
+            else:
+                mf.import_hook(mod)
+        else:
+            mf.load_file(mod)
+    mf.run_script(scriptfile)
+    if debug > 0:
+        mf.report()
+        print
+    dict = mf.modules
 
+    # generate output for frozen modules
     backup = frozen_c + '~'
     try:
         os.rename(frozen_c, backup)
@@ -239,7 +266,7 @@ def main():
         backup = None
     outfp = open(frozen_c, 'w')
     try:
-        makefreeze.makefreeze(outfp, dict)
+        makefreeze.makefreeze(outfp, dict, debug)
         if win and subsystem == 'windows':
             import winmakemakefile
             outfp.write(winmakemakefile.WINMAINTEMPLATE)
@@ -251,6 +278,7 @@ def main():
                              frozen_c)
             os.rename(backup, frozen_c)
 
+    # windows gets different treatment
     if win:
         # Taking a shortcut here...
         import winmakemakefile
@@ -264,14 +292,17 @@ def main():
             outfp.close()
         return
 
+    # generate config.c and Makefile
     builtins = []
     unknown = []
     mods = dict.keys()
     mods.sort()
     for mod in mods:
-        if dict[mod] == '<builtin>':
+        if dict[mod].__code__:
+            continue
+        if not dict[mod].__file__:
             builtins.append(mod)
-        elif dict[mod] == '<unknown>':
+        else:
             unknown.append(mod)
 
     addfiles = []
