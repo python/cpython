@@ -334,18 +334,29 @@ dbhashopen(self, args)
 	  return NULL;
     if (flag != NULL) {
 	/* XXX need a way to pass O_EXCL, O_EXLOCK, O_NONBLOCK, O_SHLOCK */
-	if (strcmp(flag, "r") == 0)
+	if (flag[0] == 'r')
 	    flags = O_RDONLY;
-	else if (strcmp(flag, "w") == 0)
+	else if (flag[0] == 'w')
 	    flags = O_RDWR;
-	else if (strcmp(flag, "c") == 0)
+	else if (flag[0] == 'c')
 	    flags = O_RDWR|O_CREAT;
-	else if (strcmp(flag, "n") == 0)
+	else if (flag[0] == 'n')
 	    flags = O_RDWR|O_CREAT|O_TRUNC;
 	else {
 	    err_setstr(DbhashError,
-		       "Flag should be one of 'r', 'w', 'c' or 'n'");
+		       "Flag should begin with 'r', 'w', 'c' or 'n'");
 	    return NULL;
+	}
+	if (flag[1] == 'l') {
+#if defined(O_EXLOCK) && defined(O_SHLOCK)
+	    if (flag[0] == 'r')
+	        flags |= O_SHLOCK;
+	    else
+		flags |= O_EXLOCK;
+#else
+	    err_setstr(DbhashError, "locking not supported on this platform");
+	    return NULL;
+#endif
 	}
     }
     return newdbhashobject(file, flags, mode,
