@@ -49,10 +49,11 @@ def reraise_unmasked_exceptions(unmasked=()):
     if issubclass(etype, unmasked):
         raise
     # swallowed an exception
-    import warnings
-    warnings.warn("cookielib bug!", stacklevel=2)
-    import traceback
-    traceback.print_exc()
+    import warnings, traceback, StringIO
+    f = StringIO.StringIO()
+    traceback.print_exc(None, f)
+    msg = f.getvalue()
+    warnings.warn("cookielib bug!\n%s" % msg, stacklevel=2)
 
 
 # Date/time conversion
