@@ -162,7 +162,7 @@ class install_lib (Command):
         for py_file in py_filenames:
             if self.compile:
                 bytecode_files.append(py_file + "c")
-            if self.optmize > 0:
+            if self.optimize > 0:
                 bytecode_files.append(py_file + "o")
 
         return bytecode_files
