@@ -613,6 +613,7 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 		opcode = NEXTOP();
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
+	  dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
 		dxpairs[lastopcode][opcode]++;
@@ -1750,6 +1751,11 @@ eval_code2(PyCodeObject *co, PyObject *globals, PyObject *locals,
 			if (x != NULL) continue;
 			break;
 
+		case EXTENDED_ARG:
+			opcode = NEXTOP();
+			oparg = oparg<<16 | NEXTARG();
+			goto dispatch_opcode;
+			break;
 
 		default:
 			fprintf(stderr,

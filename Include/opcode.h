@@ -130,6 +130,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define CALL_FUNCTION_KW           141	/* #args + (#kwargs<<8) */
 #define CALL_FUNCTION_VAR_KW       142	/* #args + (#kwargs<<8) */
 
+/* Support for opargs more than 16 bits long */
+#define EXTENDED_ARG  143
+
 /* Comparison operator codes (argument to COMPARE_OP) */
 enum cmp_op {LT, LE, EQ, NE, GT, GE, IN, NOT_IN, IS, IS_NOT, EXC_MATCH, BAD};
 

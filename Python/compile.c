@@ -36,6 +36,9 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifdef HAVE_LIMITS_H
 #include <limits.h>
 #endif
+#ifndef INT_MAX
+#define INT_MAX 2147483647
+#endif
 
 /* Three symbols from graminit.h are also defined in Python.h, with
    Py_ prefixes to their names.  Python.h can't include graminit.h
@@ -572,10 +575,16 @@ com_set_lineno(struct compiling *c, int lineno)
 static void
 com_addoparg(struct compiling *c, int op, int arg)
 {
+	int extended_arg = arg >> 16;
 	if (op == SET_LINENO) {
 		com_set_lineno(c, arg);
 		if (Py_OptimizeFlag)
 			return;
+	}
+	if (extended_arg){
+		com_addbyte(c, EXTENDED_ARG);
+		com_addint(c, extended_arg);
+		arg &= 0xffff;
 	}
 	com_addbyte(c, op);
 	com_addint(c, arg);
@@ -606,7 +615,14 @@ com_backpatch(struct compiling *c, int anchor)
 		prev = code[anchor] + (code[anchor+1] << 8);
 		dist = target - (anchor+2);
 		code[anchor] = dist & 0xff;
-		code[anchor+1] = dist >> 8;
+		dist >>= 8;
+		code[anchor+1] = dist;
+		dist >>= 8;
+		if (dist) {
+			com_error(c, PyExc_SystemError,
+				  "com_backpatch: offset too large");
+			break;
+		}
 		if (!prev)
 			break;
 		anchor -= prev;
@@ -3364,6 +3380,7 @@ optimize(struct compiling *c)
 			break;
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
+	  dispatch_opcode1:
 		switch (opcode) {
 		case STORE_NAME:
 		case DELETE_NAME:
@@ -3373,6 +3390,11 @@ optimize(struct compiling *c)
 		case IMPORT_STAR:
 		case EXEC_STMT:
 			c->c_flags &= ~CO_OPTIMIZED;
+			break;
+		case EXTENDED_ARG:
+			opcode = NEXTOP();
+			oparg = oparg<<16 | NEXTARG();
+			goto dispatch_opcode1;
 			break;
 		}
 	}
@@ -3389,6 +3411,7 @@ optimize(struct compiling *c)
 			break;
 		if (HAS_ARG(opcode))
 			oparg = NEXTARG();
+	  dispatch_opcode2:
 		if (opcode == LOAD_NAME ||
 		    opcode == STORE_NAME ||
 		    opcode == DELETE_NAME) {
@@ -3403,13 +3426,20 @@ optimize(struct compiling *c)
 				continue;
 			}
 			i = PyInt_AsLong(v);
+			if (i >> 16) /* too big for 2 bytes */
+				continue;
 			switch (opcode) {
 			case LOAD_NAME: cur_instr[0] = LOAD_FAST; break;
 			case STORE_NAME: cur_instr[0] = STORE_FAST; break;
 			case DELETE_NAME: cur_instr[0] = DELETE_FAST; break;
 			}
 			cur_instr[1] = i & 0xff;
-			cur_instr[2] = (i>>8) & 0xff;
+			cur_instr[2] = i >> 8;
+		}
+		if (opcode == EXTENDED_ARG) {
+			opcode = NEXTOP();
+			oparg = oparg<<16 | NEXTARG();
+			goto dispatch_opcode2;
 		}
 	}
 

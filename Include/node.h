@@ -19,8 +19,8 @@ extern "C" {
 typedef struct _node {
     short		n_type;
     char		*n_str;
-    short		n_lineno;
-    short		n_nchildren;
+    int			n_lineno;
+    int			n_nchildren;
     struct _node	*n_child;
 } node;
 
