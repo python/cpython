@@ -6,11 +6,11 @@ def test(name, input, output, *args):
     f = getattr(operator, name)
     params = (input,) + args
     try:
-	val = apply(f, params)
+        val = apply(f, params)
     except:
-	val = sys.exc_type
+        val = sys.exc_type
     if val <> output:
-	print '%s%s = %s: %s expected' % (f.__name__, params, `val`, `output`)
+        print '%s%s = %s: %s expected' % (f.__name__, params, `val`, `output`)
 
 test('abs', -1, 1)
 test('add', 3, 7, 4)

@@ -12,20 +12,20 @@ sharedlibs = [
 
 for s, func in sharedlibs:
     try:
-	if verbose:
-	    print 'trying to open:', s,
-	l = dl.open(s)
+        if verbose:
+            print 'trying to open:', s,
+        l = dl.open(s)
     except dl.error:
-	if verbose:
-	    print 'failed'
-	pass
+        if verbose:
+            print 'failed'
+        pass
     else:
-	if verbose:
-	    print 'succeeded...',
-	l.call(func)
-	l.close()
-	if verbose:
-	    print 'worked!'
-	break
+        if verbose:
+            print 'succeeded...',
+        l.call(func)
+        l.close()
+        if verbose:
+            print 'worked!'
+        break
 else:
     print 'Could not open any shared libraries'

@@ -5,8 +5,8 @@ l = [4, 5, 6]
 
 class Seq:
     def __getitem__(self, i):
-	if i >= 0 and i < 3: return i
-	raise IndexError
+        if i >= 0 and i < 3: return i
+        raise IndexError
 
 a = -1
 b = -1
@@ -104,12 +104,12 @@ BozoError = 'BozoError'
 
 class BadSeq:
     def __getitem__(self, i):
-	if i >= 0 and i < 3:
-	    return i
-	elif i == 3:
-	    raise BozoError
-	else:
-	    raise IndexError
+        if i >= 0 and i < 3:
+            return i
+        elif i == 3:
+            raise BozoError
+        else:
+            raise IndexError
 
 
 # trigger code while not expecting an IndexError

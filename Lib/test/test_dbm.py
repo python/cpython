@@ -14,8 +14,8 @@ d['12345678910'] = '019237410982340912840198242'
 d.keys()
 if d.has_key('a'):
     if verbose:
-	print 'Test dbm keys: ', d.keys()
-	
+        print 'Test dbm keys: ', d.keys()
+        
 d.close()
 d = dbm.open(filename, 'r')
 d.close()

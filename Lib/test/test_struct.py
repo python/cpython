@@ -4,13 +4,13 @@ import struct
 
 def simple_err(func, *args):
     try:
-	apply(func, args)
+        apply(func, args)
     except struct.error:
-	pass
+        pass
     else:
-	raise TestFailed, "%s%s did not raise struct.error" % (
-	    func.__name__, args)
-## 	pdb.set_trace()
+        raise TestFailed, "%s%s did not raise struct.error" % (
+            func.__name__, args)
+##      pdb.set_trace()
 
 simple_err(struct.calcsize, 'Q')
 
@@ -24,7 +24,7 @@ sz = struct.calcsize(fmt)
 sz3 = struct.calcsize(fmt3)
 if sz * 3 <> sz3:
     raise TestFailed, 'inconsistent sizes (3*%s -> 3*%d = %d, %s -> %d)' % (
-	`fmt`, sz, 3*sz, `fmt3`, sz3)
+        `fmt`, sz, 3*sz, `fmt3`, sz3)
 
 simple_err(struct.pack, 'iii', 3)
 simple_err(struct.pack, 'i', 3, 3, 3)
@@ -44,16 +44,16 @@ d = 3.1415
 
 for prefix in ('', '@', '<', '>', '=', '!'):
     for format in ('xcbhilfd', 'xcBHILfd'):
-	format = prefix + format
-	if verbose:
-	    print "trying:", format
-	s = struct.pack(format, c, b, h, i, l, f, d)
-	cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
-	if (cp <> c or bp <> b or hp <> h or ip <> i or lp <> l or
-	    int(100 * fp) <> int(100 * f) or int(100 * dp) <> int(100 * d)):
-	    # ^^^ calculate only to two decimal places
-	    raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
-		str(format), str((cp, bp, hp, ip, lp, fp, dp)))
+        format = prefix + format
+        if verbose:
+            print "trying:", format
+        s = struct.pack(format, c, b, h, i, l, f, d)
+        cp, bp, hp, ip, lp, fp, dp = struct.unpack(format, s)
+        if (cp <> c or bp <> b or hp <> h or ip <> i or lp <> l or
+            int(100 * fp) <> int(100 * f) or int(100 * dp) <> int(100 * d)):
+            # ^^^ calculate only to two decimal places
+            raise TestFailed, "unpack/pack not transitive (%s, %s)" % (
+                str(format), str((cp, bp, hp, ip, lp, fp, dp)))
 
 # Test some of the new features in detail
 
@@ -98,24 +98,24 @@ def badpack(fmt, arg, got, exp):
 
 def badunpack(fmt, arg, got, exp):
     return "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
-	`fmt`, `arg`, `got`, `exp`)
+        `fmt`, `arg`, `got`, `exp`)
 
 isbigendian = struct.pack('=h', 1) == '\0\1'
 
 for fmt, arg, big, lil, asy in tests:
     if verbose:
-	print `fmt`, `arg`, `big`, `lil`
+        print `fmt`, `arg`, `big`, `lil`
     for (xfmt, exp) in [('>'+fmt, big), ('!'+fmt, big), ('<'+fmt, lil),
-			('='+fmt, isbigendian and big or lil)]:
-	res = struct.pack(xfmt, arg)
-	if res != exp:
-	    raise TestFailed, "pack(%s, %s) -> %s # expected %s" % (
-		`fmt`, `arg`, `res`, `exp`)
-	n = struct.calcsize(xfmt)
-	if n != len(res):
-	    raise TestFailed, "calcsize(%s) -> %d # expected %d" % (
-		`xfmt`, n, len(res))
-	rev = struct.unpack(xfmt, res)[0]
-	if rev != arg and not asy:
-	    raise TestFailed, "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
-		`fmt`, `res`, `rev`, `arg`)
+                        ('='+fmt, isbigendian and big or lil)]:
+        res = struct.pack(xfmt, arg)
+        if res != exp:
+            raise TestFailed, "pack(%s, %s) -> %s # expected %s" % (
+                `fmt`, `arg`, `res`, `exp`)
+        n = struct.calcsize(xfmt)
+        if n != len(res):
+            raise TestFailed, "calcsize(%s) -> %d # expected %d" % (
+                `xfmt`, n, len(res))
+        rev = struct.unpack(xfmt, res)[0]
+        if rev != arg and not asy:
+            raise TestFailed, "unpack(%s, %s) -> (%s,) # expected (%s,)" % (
+                `fmt`, `res`, `rev`, `arg`)

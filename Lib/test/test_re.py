@@ -15,8 +15,8 @@ try:
     assert re.sub("(?i)b+", "x", "bbbb BBBB") == 'x x'
     
     def bump_num(matchobj):
-	int_value = int(matchobj.group(0))
-	return str(int_value + 1)
+        int_value = int(matchobj.group(0))
+        return str(int_value + 1)
 
     assert re.sub(r'\d+', bump_num, '08.2 -2 23x99y') == '9.3 -3 24x100y'
     
@@ -151,9 +151,9 @@ except AssertionError:
 
 for flags in [re.I, re.M, re.X, re.S, re.L]:
     try:
-	r = re.compile('^pattern$', flags)
+        r = re.compile('^pattern$', flags)
     except:
-	print 'Exception raised on flag', flags
+        print 'Exception raised on flag', flags
 
 from re_tests import *
 if verbose:
@@ -166,86 +166,86 @@ for t in tests:
     sys.stdout.flush()
     pattern=s=outcome=repl=expected=None
     if len(t)==5:
-	pattern, s, outcome, repl, expected = t
+        pattern, s, outcome, repl, expected = t
     elif len(t)==3:
-	pattern, s, outcome = t 
+        pattern, s, outcome = t 
     else:
-	raise ValueError, ('Test tuples should have 3 or 5 fields',t)
+        raise ValueError, ('Test tuples should have 3 or 5 fields',t)
 
     try:
-	obj=re.compile(pattern)
+        obj=re.compile(pattern)
     except re.error:
-	if outcome==SYNTAX_ERROR: pass	# Expected a syntax error
-	else: 
-	    print '=== Syntax error:', t
+        if outcome==SYNTAX_ERROR: pass  # Expected a syntax error
+        else: 
+            print '=== Syntax error:', t
     except KeyboardInterrupt: raise KeyboardInterrupt
     except:
-	print '*** Unexpected error ***'
-	if verbose:
-	    traceback.print_exc(file=sys.stdout)
+        print '*** Unexpected error ***'
+        if verbose:
+            traceback.print_exc(file=sys.stdout)
     else:
-	try:
-	    result=obj.search(s)
-	except (re.error), msg:
-	    print '=== Unexpected exception', t, repr(msg)
-	if outcome==SYNTAX_ERROR:
-	    # This should have been a syntax error; forget it.
-	    pass
-	elif outcome==FAIL:
-	    if result is None: pass   # No match, as expected
-	    else: print '=== Succeeded incorrectly', t
-	elif outcome==SUCCEED:
-	    if result is not None:
-		# Matched, as expected, so now we compute the
-		# result string and compare it to our expected result.
-		start, end = result.span(0)
-		vardict={'found': result.group(0),
-			 'groups': result.group(),
-			 'flags': result.re.flags}
-		for i in range(1, 100):
-		    try:
-			gi = result.group(i)
-			# Special hack because else the string concat fails:
-			if gi is None:
-			    gi = "None"
-		    except IndexError:
-			gi = "Error"
-		    vardict['g%d' % i] = gi
-		for i in result.re.groupindex.keys():
-		    try:
-			gi = result.group(i)
-			if gi is None:
-			    gi = "None"
-		    except IndexError:
-			gi = "Error"
-		    vardict[i] = gi
-		repl=eval(repl, vardict)
-		if repl!=expected:
-		    print '=== grouping error', t,
-		    print repr(repl)+' should be '+repr(expected)
-	    else:
-		print '=== Failed incorrectly', t
+        try:
+            result=obj.search(s)
+        except (re.error), msg:
+            print '=== Unexpected exception', t, repr(msg)
+        if outcome==SYNTAX_ERROR:
+            # This should have been a syntax error; forget it.
+            pass
+        elif outcome==FAIL:
+            if result is None: pass   # No match, as expected
+            else: print '=== Succeeded incorrectly', t
+        elif outcome==SUCCEED:
+            if result is not None:
+                # Matched, as expected, so now we compute the
+                # result string and compare it to our expected result.
+                start, end = result.span(0)
+                vardict={'found': result.group(0),
+                         'groups': result.group(),
+                         'flags': result.re.flags}
+                for i in range(1, 100):
+                    try:
+                        gi = result.group(i)
+                        # Special hack because else the string concat fails:
+                        if gi is None:
+                            gi = "None"
+                    except IndexError:
+                        gi = "Error"
+                    vardict['g%d' % i] = gi
+                for i in result.re.groupindex.keys():
+                    try:
+                        gi = result.group(i)
+                        if gi is None:
+                            gi = "None"
+                    except IndexError:
+                        gi = "Error"
+                    vardict[i] = gi
+                repl=eval(repl, vardict)
+                if repl!=expected:
+                    print '=== grouping error', t,
+                    print repr(repl)+' should be '+repr(expected)
+            else:
+                print '=== Failed incorrectly', t
 
-	    # Try the match with the search area limited to the extent
-	    # of the match and see if it still succeeds.  \B will
-	    # break (because it won't match at the end or start of a
-	    # string), so we'll ignore patterns that feature it.
-	    
-	    if pattern[:2]!='\\B' and pattern[-2:]!='\\B':
-		obj=re.compile(pattern)
-		result=obj.search(s, pos=result.start(0), endpos=result.end(0)+1)
-		if result==None:
-		    print '=== Failed on range-limited match', t
+            # Try the match with the search area limited to the extent
+            # of the match and see if it still succeeds.  \B will
+            # break (because it won't match at the end or start of a
+            # string), so we'll ignore patterns that feature it.
+            
+            if pattern[:2]!='\\B' and pattern[-2:]!='\\B':
+                obj=re.compile(pattern)
+                result=obj.search(s, pos=result.start(0), endpos=result.end(0)+1)
+                if result==None:
+                    print '=== Failed on range-limited match', t
 
             # Try the match with IGNORECASE enabled, and check that it
-	    # still succeeds.
+            # still succeeds.
             obj=re.compile(pattern, re.IGNORECASE)
             result=obj.search(s)
             if result==None:
                 print '=== Fails on case-insensitive match', t
 
             # Try the match with LOCALE enabled, and check that it
-	    # still succeeds.
+            # still succeeds.
             obj=re.compile(pattern, re.LOCALE)
             result=obj.search(s)
             if result==None:
