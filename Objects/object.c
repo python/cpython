@@ -169,9 +169,11 @@ setattr(v, name, w)
 {
 	if (v->ob_type->tp_setattr == NULL) {
 		if (v->ob_type->tp_getattr == NULL)
-			err_setstr(TypeError, "attribute-less object");
+			err_setstr(TypeError,
+				   "attribute-less object (assign or del)");
 		else
-			err_setstr(TypeError, "object has read-only attributes");
+			err_setstr(TypeError,
+				   "object has read-only attributes");
 		return -1;
 	}
 	else {
