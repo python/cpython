@@ -75,7 +75,7 @@ class PyncheWidget:
         # Help menu
         #
         helpmenu = Menu(menubar, name='help', tearoff=0)
-	helpmenu.add_command(label='About Pynche...',
+        helpmenu.add_command(label='About Pynche...',
                              command=self.__popup_about,
                              underline=0)
         helpmenu.add_command(label='Help...',

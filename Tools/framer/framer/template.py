@@ -19,14 +19,14 @@ methoddef_start = """\
 static struct PyMethodDef %(MethodDefName)s[] = {"""
 
 methoddef_def = """\
-	{"%(PythonName)s", (PyCFunction)%(CName)s, %(MethType)s},"""
+        {"%(PythonName)s", (PyCFunction)%(CName)s, %(MethType)s},"""
         
 methoddef_def_doc = """\
-	{"%(PythonName)s", (PyCFunction)%(CName)s, %(MethType)s,
+        {"%(PythonName)s", (PyCFunction)%(CName)s, %(MethType)s,
          %(DocstringVar)s},"""
         
 methoddef_end = """\
-	{NULL, NULL}
+        {NULL, NULL}
 };
 """
 
@@ -43,7 +43,7 @@ memberdef_def = """\
         {"%(PythonName)s", %(Type)s, OFF(%(CName)s), %(Flags)s},"""
 
 memberdef_end = """\
-	{NULL}
+        {NULL}
 };
 
 #undef OFF
