@@ -4,25 +4,28 @@
 \bimodindex{re}
 
 This module provides regular expression matching operations similar to
-those found in Perl.  It's 8-bit clean: both patterns and strings may
-contain null bytes and characters whose high bit is set.  It is always
+those found in Perl.  It's 8-bit clean: the strings being processed
+may contain both null bytes and characters whose high bit is set.  Regular
+expression patterns may not contain null bytes, but they may contain
+characters with the high bit set.  The \module{re} module is always
 available.
 
-Regular expressions use the backslash character (\samp{\e}) to
+Regular expressions use the backslash character (\character{\e}) to
 indicate special forms or to allow special characters to be used
 without invoking their special meaning.  This collides with Python's
 usage of the same character for the same purpose in string literals;
 for example, to match a literal backslash, one might have to write
-\samp{\e\e\e\e} as the pattern string, because the regular expression
+\code{'\e\e\e\e'} as the pattern string, because the regular expression
 must be \samp{\e\e}, and each backslash must be expressed as
 \samp{\e\e} inside a regular Python string literal. 
 
 The solution is to use Python's raw string notation for regular
 expression patterns; backslashes are not handled in any special way in
-a string literal prefixed with 'r'.  So \code{r"\e n"} is a two
-character string containing a backslash and the letter 'n', while
-\code{"\e n"} is a one-character string containing a newline.  Usually
-patterns will be expressed in Python code using this raw string notation.
+a string literal prefixed with \character{r}.  So \code{r"\e n"} is a
+two-character string containing \character{\e} and \character{n},
+while \code{"\e n"} is a one-character string containing a newline.
+Usually patterns will be expressed in Python code using this raw
+string notation.
 
 \subsection{Regular Expression Syntax}
 
@@ -45,14 +48,14 @@ A brief explanation of the format of regular expressions follows.
 %For further information and a gentler presentation, consult XXX somewhere.
 
 Regular expressions can contain both special and ordinary characters.
-Most ordinary characters, like \samp{A}, \samp{a}, or \samp{0},
+Most ordinary characters, like \character{A}, \character{a}, or \character{0},
 are the simplest regular expressions; they simply match themselves.  
-You can concatenate ordinary characters, so \samp{last} matches the
-characters 'last'.  (In the rest of this section, we'll write RE's in
-\code{this special font}, usually without quotes, and strings to be
-matched 'in single quotes'.)
+You can concatenate ordinary characters, so \regexp{last} matches the
+string \code{'last'}.  (In the rest of this section, we'll write RE's in
+\regexp{this special style}, usually without quotes, and strings to be
+matched \code{'in single quotes'}.)
 
-Some characters, like \samp{|} or \samp{(}, are special.  Special
+Some characters, like \character{|} or \character{(}, are special.  Special
 characters either stand for classes of ordinary characters, or affect
 how the regular expressions around them are interpreted.
 
@@ -61,56 +64,58 @@ The special characters are:
 \newcommand{\MyLeftMargin}{0.7in}
 \newcommand{\MyLabelWidth}{0.65in}
 \begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
-\item[\code{.}] (Dot.)  In the default mode, this matches any
+\item[\character{.}] (Dot.)  In the default mode, this matches any
 character except a newline.  If the \constant{DOTALL} flag has been
 specified, this matches any character including a newline.
 %
-\item[\code{\^}] (Caret.)  Matches the start of the string, and in
-\constant{MULTILINE} mode also immediately after each newline.
+\item[\character{\^}] (Caret.)  Matches the start of the string, and in
+\constant{MULTILINE} mode also matches immediately after each newline.
 %
-\item[\code{\$}] Matches the end of the string, and in
+\item[\character{\$}] Matches the end of the string, and in
 \constant{MULTILINE} mode also matches before a newline.
-\code{foo} matches both 'foo' and 'foobar', while the regular
-expression \code{foo\$} matches only 'foo'.
+\regexp{foo} matches both 'foo' and 'foobar', while the regular
+expression \regexp{foo\$} matches only 'foo'.
 %
-\item[\code{*}] Causes the resulting RE to
+\item[\character{*}] Causes the resulting RE to
 match 0 or more repetitions of the preceding RE, as many repetitions
-as are possible.  \code{ab*} will
+as are possible.  \regexp{ab*} will
 match 'a', 'ab', or 'a' followed by any number of 'b's.
 %
-\item[\code{+}] Causes the
+\item[\character{+}] Causes the
 resulting RE to match 1 or more repetitions of the preceding RE.
-\code{ab+} will match 'a' followed by any non-zero number of 'b's; it
+\regexp{ab+} will match 'a' followed by any non-zero number of 'b's; it
 will not match just 'a'.
 %
-\item[\code{?}] Causes the resulting RE to
-match 0 or 1 repetitions of the preceding RE.  \code{ab?} will
+\item[\character{?}] Causes the resulting RE to
+match 0 or 1 repetitions of the preceding RE.  \regexp{ab?} will
 match either 'a' or 'ab'.
-\item[\code{*?}, \code{+?}, \code{??}] The \code{*}, \code{+}, and
-\code{?} qualifiers are all \dfn{greedy}; they match as much text as
+\item[\code{*?}, \code{+?}, \code{??}] The \character{*}, \character{+}, and
+\character{?} qualifiers are all \dfn{greedy}; they match as much text as
 possible.  Sometimes this behaviour isn't desired; if the RE
-\code{<.*>} is matched against \code{<H1>title</H1>}, it will match the
-entire string, and not just \code{<H1>}.
-Adding \code{?} after the qualifier makes it perform the match in
-\dfn{non-greedy} or \dfn{minimal} fashion; as few characters as
-possible will be matched.  Using \code{.*?} in the previous
-expression will match only \code{<H1>}.
+\regexp{<.*>} is matched against \code{'<H1>title</H1>'}, it will match the
+entire string, and not just \code{'<H1>'}.
+Adding \character{?} after the qualifier makes it perform the match in
+\dfn{non-greedy} or \dfn{minimal} fashion; as \emph{few} characters as
+possible will be matched.  Using \regexp{.*?} in the previous
+expression will match only \code{'<H1>'}.
 %
 \item[\code{\{\var{m},\var{n}\}}] Causes the resulting RE to match from
 \var{m} to \var{n} repetitions of the preceding RE, attempting to
-match as many repetitions as possible.   For example, \code{a\{3,5\}}  
-will match from 3 to 5 'a' characters.  
+match as many repetitions as possible.   For example, \regexp{a\{3,5\}}  
+will match from 3 to 5 \character{a} characters.  Omitting \var{m} is the same
+as specifying 0 for the lower bound; omitting \var{n} specifies an
+infinite upper bound. 
 %
 \item[\code{\{\var{m},\var{n}\}?}] Causes the resulting RE to
 match from \var{m} to \var{n} repetitions of the preceding RE,
 attempting to match as \emph{few} repetitions as possible.  This is
 the non-greedy version of the previous qualifier.  For example, on the
-6-character string 'aaaaaa', \code{a\{3,5\}} will match 5 'a'
-characters, while \code{a\{3,5\}?} will only match 3 characters.   
+6-character string \code{'aaaaaa'}, \regexp{a\{3,5\}} will match 5 \character{a}
+characters, while \regexp{a\{3,5\}?} will only match 3 characters.   
 %
-\item[\code{\e}] Either escapes special characters (permitting you to match
-characters like '*?+\&\$'), or signals a special sequence; special
-sequences are discussed below.  
+\item[\character{\e}] Either escapes special characters (permitting you to match
+characters like \character{*}, \character{?}, and so forth), or
+signals a special sequence; special sequences are discussed below.  
 
 If you're not using a raw string to
 express the pattern, remember that Python also uses the
@@ -124,42 +129,47 @@ simplest expressions.
 %
 \item[\code{[]}] Used to indicate a set of characters.  Characters can
 be listed individually, or a range of characters can be indicated by
-giving two characters and separating them by a '-'.  Special
-characters are not active inside sets.  For example, \code{[akm\$]}
+giving two characters and separating them by a \character{-}.  Special
+characters are not active inside sets.  For example, \regexp{[akm\$]}
 will match any of the characters \character{a}, \character{k},
-\character{m}, or \character{\$}; \code{[a-z]}
-will match any lowercase letter and \code{[a-zA-Z0-9]} matches any
+\character{m}, or \character{\$}; \regexp{[a-z]}
+will match any lowercase letter, and \code{[a-zA-Z0-9]} matches any
 letter or digit.  Character classes such as \code{\e w} or \code {\e
 S} (defined below) are also acceptable inside a range.  If you want to
-include a \samp{]} or a \samp{-} inside a set, precede it with a
-backslash.
+include a \character{]} or a \character{-} inside a set, precede it with a
+backslash, or place it as the first character.  The 
+pattern \regexp{[]]} will match \code{']'}, for example.  
 
-Characters \emph{not} within a range can be matched by including a
-\code{\^} as the first character of the set; \code{\^} elsewhere will
-simply match the \samp{\^} character.
+You can match the characters not within a range by \dfn{complementing}
+the set.  This is indicated by including a
+\character{\^} as the first character of the set; \character{\^} elsewhere will
+simply match the \character{\^} character.  For example, \regexp{[\^5]}
+will match any character except \character{5}.
+
 %
-\item[\code{|}]\code{A|B}, where A and B can be arbitrary REs,
+\item[\character{|}]\code{A|B}, where A and B can be arbitrary REs,
 creates a regular expression that will match either A or B.  This can
-be used inside groups (see below) as well.  To match a literal \samp{|},
-use \code{\e|}, or enclose it inside a character class, like \code{[|]}.
+be used inside groups (see below) as well.  To match a literal \character{|},
+use \regexp{\e|}, or enclose it inside a character class, as in  \regexp{[|]}.
 %
 \item[\code{(...)}] Matches whatever regular expression is inside the
 parentheses, and indicates the start and end of a group; the contents
 of a group can be retrieved after a match has been performed, and can
-be matched later in the string with the \code{\e \var{number}} special
-sequence, described below.  To match the literals '(' or ')', 
-use \code{\e(} or \code{\e)}, or enclose them inside a character
-class: \code{[(] [)]}.
+be matched later in the string with the \regexp{\e \var{number}} special
+sequence, described below.  To match the literals \character{(} or \character{')}, 
+use \regexp{\e(} or \regexp{\e)}, or enclose them inside a character
+class: \regexp{[(] [)]}.
 %
-\item[\code{(?...)}] This is an extension notation (a '?' following a
-'(' is not meaningful otherwise).  The first character after the '?'
+\item[\code{(?...)}] This is an extension notation (a \character{?} following a
+\character{(} is not meaningful otherwise).  The first character after
+the \character{?} 
 determines what the meaning and further syntax of the construct is.
 Extensions usually do not create a new group;
-\code{(?P<\var{name}>...)} is the only exception to this rule.
+\regexp{(?P<\var{name}>...)} is the only exception to this rule.
 Following are the currently supported extensions.
 %
-\item[\code{(?iLmsx)}] (One or more letters from the set \samp{i},
-\samp{L}, \samp{m}, \samp{s}, \samp{x}.)  The group matches
+\item[\code{(?iLmsx)}] (One or more letters from the set \character{i},
+\character{L}, \character{m}, \character{s}, \character{x}.)  The group matches
 the empty string; the letters set the corresponding flags
 (\constant{re.I}, \constant{re.L}, \constant{re.M}, \constant{re.S},
 \constant{re.X}) for the entire regular expression.  This is useful if
@@ -167,7 +177,8 @@ you wish to include the flags as part of the regular expression, instead
 of passing a \var{flag} argument to the \function{compile()} function. 
 %
 \item[\code{(?:...)}] A non-grouping version of regular parentheses.
-Matches whatever's inside the parentheses, but the substring matched by the
+Matches whatever regular expression is inside the parentheses, but the
+substring matched by the 
 group \emph{cannot} be retrieved after performing a match or
 referenced later in the pattern. 
 %
@@ -179,10 +190,10 @@ named.  So the group named 'id' in the example above can also be
 referenced as the numbered group 1.
 
 For example, if the pattern is
-\code{(?P<id>[a-zA-Z_]\e w*)}, the group can be referenced by its
+\regexp{(?P<id>[a-zA-Z_]\e w*)}, the group can be referenced by its
 name in arguments to methods of match objects, such as \code{m.group('id')}
 or \code{m.end('id')}, and also by name in pattern text
-(e.g. \code{(?P=id)}) and replacement text (e.g. \code{\e g<id>}).
+(e.g. \regexp{(?P=id)}) and replacement text (e.g. \code{\e g<id>}).
 %
 \item[\code{(?P=\var{name})}] Matches whatever text was matched by the
 earlier group named \var{name}.
@@ -190,34 +201,35 @@ earlier group named \var{name}.
 \item[\code{(?\#...)}] A comment; the contents of the parentheses are
 simply ignored.
 %
-\item[\code{(?=...)}] Matches if \code{...} matches next, but doesn't
+\item[\code{(?=...)}] Matches if \regexp{...} matches next, but doesn't
 consume any of the string.  This is called a lookahead assertion.  For
-example, \code{Isaac (?=Asimov)} will match 'Isaac~' only if it's
-followed by 'Asimov'.
+example, \regexp{Isaac (?=Asimov)} will match \code{'Isaac~'} only if it's
+followed by \code{'Asimov'}.
 %
-\item[\code{(?!...)}] Matches if \code{...} doesn't match next.  This
+\item[\code{(?!...)}] Matches if \regexp{...} doesn't match next.  This
 is a negative lookahead assertion.  For example,
-\code{Isaac (?!Asimov)} will match 'Isaac~' only if it's \emph{not}
-followed by 'Asimov'.
+\regexp{Isaac (?!Asimov)} will match \code{'Isaac~'} only if it's \emph{not}
+followed by \code{'Asimov'}.
 
 \end{list}
 
-The special sequences consist of \samp{\e} and a character from the
+The special sequences consist of \character{\e} and a character from the
 list below.  If the ordinary character is not on the list, then the
 resulting RE will match the second character.  For example,
-\code{\e\$} matches the character \samp{\$}.
+\regexp{\e\$} matches the character \character{\$}.
 
 \begin{list}{}{\leftmargin \MyLeftMargin \labelwidth \MyLabelWidth}
 
 %
 \item[\code{\e \var{number}}] Matches the contents of the group of the
 same number.  Groups are numbered starting from 1.  For example,
-\code{(.+) \e 1} matches 'the the' or '55 55', but not 'the end' (note
+\regexp{(.+) \e 1} matches \code{'the the'} or \code{'55 55'}, but not
+\code{'the end'} (note 
 the space after the group).  This special sequence can only be used to
 match one of the first 99 groups.  If the first digit of \var{number}
 is 0, or \var{number} is 3 octal digits long, it will not be interpreted
 as a group match, but as the character with octal value \var{number}.
-Inside the \code{[} and \code{]} of a character class, all numeric
+Inside the \character{[} and \character{]} of a character class, all numeric
 escapes are treated as characters. 
 %
 \item[\code{\e A}] Matches only at the start of the string.
@@ -226,34 +238,34 @@ escapes are treated as characters.
 beginning or end of a word.  A word is defined as a sequence of
 alphanumeric characters, so the end of a word is indicated by
 whitespace or a non-alphanumeric character.  Inside a character range,
-\code{\e b} represents the backspace character, for compatibility with
+\regexp{\e b} represents the backspace character, for compatibility with
 Python's string literals.
 %
 \item[\code{\e B}] Matches the empty string, but only when it is
 \emph{not} at the beginning or end of a word.
 %
 \item[\code{\e d}]Matches any decimal digit; this is
-equivalent to the set \code{[0-9]}.
+equivalent to the set \regexp{[0-9]}.
 %
 \item[\code{\e D}]Matches any non-digit character; this is
-equivalent to the set \code{[\^0-9]}.
+equivalent to the set \regexp{[\^0-9]}.
 %
 \item[\code{\e s}]Matches any whitespace character; this is
-equivalent to the set \code{[ \e t\e n\e r\e f\e v]}.
+equivalent to the set \regexp{[ \e t\e n\e r\e f\e v]}.
 %
 \item[\code{\e S}]Matches any non-whitespace character; this is
-equivalent to the set \code{[\^\ \e t\e n\e r\e f\e v]}.
+equivalent to the set \regexp{[\^\ \e t\e n\e r\e f\e v]}.
 %
 \item[\code{\e w}]When the \constant{LOCALE} flag is not specified,
 matches any alphanumeric character; this is equivalent to the set
-\code{[a-zA-Z0-9_]}.  With \constant{LOCALE}, it will match the set
-\code{[0-9_]} plus whatever characters are defined as letters for the
+\regexp{[a-zA-Z0-9_]}.  With \constant{LOCALE}, it will match the set
+\regexp{[0-9_]} plus whatever characters are defined as letters for the
 current locale.
 %
 \item[\code{\e W}]When the \constant{LOCALE} flag is not specified,
 matches any non-alphanumeric character; this is equivalent to the set
-\code{[\^a-zA-Z0-9_]}.   With \constant{LOCALE}, it will match any
-character not in the set \code{[0-9_]}, and not defined as a letter
+\regexp{[\^a-zA-Z0-9_]}.   With \constant{LOCALE}, it will match any
+character not in the set \regexp{[0-9_]}, and not defined as a letter
 for the current locale.
 
 \item[\code{\e Z}]Matches only at the end of the string.
@@ -301,42 +313,44 @@ expression will be used several times in a single program.
 
 \begin{datadesc}{I}
 \dataline{IGNORECASE}
-Perform case-insensitive matching; expressions like \code{[A-Z]} will match
+Perform case-insensitive matching; expressions like \regexp{[A-Z]} will match
 lowercase letters, too.  This is not affected by the current locale.
 \end{datadesc}
 
 \begin{datadesc}{L}
 \dataline{LOCALE}
-Make \code{\e w}, \code{\e W}, \code{\e b},
-\code{\e B}, dependent on the current locale. 
+Make \regexp{\e w}, \regexp{\e W}, \regexp{\e b},
+\regexp{\e B}, dependent on the current locale. 
 \end{datadesc}
 
 \begin{datadesc}{M}
 \dataline{MULTILINE}
-When specified, the pattern character \code{\^} matches at the
+When specified, the pattern character \character{\^} matches at the
 beginning of the string and at the beginning of each line
 (immediately following each newline); and the pattern character
-\code{\$} matches at the end of the string and at the end of each line
+\character{\$} matches at the end of the string and at the end of each line
 (immediately preceding each newline).
-By default, \code{\^} matches only at the beginning of the string, and
-\code{\$} only at the end of the string and immediately before the
+By default, \character{\^} matches only at the beginning of the string, and
+\character{\$} only at the end of the string and immediately before the
 newline (if any) at the end of the string. 
 \end{datadesc}
 
 \begin{datadesc}{S}
 \dataline{DOTALL}
-Make the \code{.} special character match any character at all, including a
-newline; without this flag, \code{.} will match anything \emph{except}
+Make the \character{.} special character match any character at all, including a
+newline; without this flag, \character{.} will match anything \emph{except}
 a newline.
 \end{datadesc}
 
 \begin{datadesc}{X}
 \dataline{VERBOSE}
-Ignore whitespace within the pattern
+This flag allows you to write regular expressions that look nicer.
+Whitespace within the pattern is ignored, 
 except when in a character class or preceded by an unescaped
-backslash, and, when a line contains a \code{\#} neither in a character
+backslash, and, when a line contains a \character{\#} neither in a character
 class or preceded by an unescaped backslash, all characters from the
-leftmost such \code{\#} through the end of the line are ignored.
+leftmost such \character{\#} through the end of the line are ignored.
+% XXX should add an example here
 \end{datadesc}
 
 
@@ -410,7 +424,7 @@ embedded modifiers in a pattern; e.g.
 \samp{sub("(?i)b+", "x", "bbbb BBBB")} returns \code{'x x'}.
 
 The optional argument \var{count} is the maximum number of pattern
-occurrences to be replaced; count must be a non-negative integer, and
+occurrences to be replaced; \var{count} must be a non-negative integer, and
 the default value of 0 means to replace all occurrences.
 
 Empty matches for the pattern are replaced only when not adjacent to a
@@ -419,17 +433,17 @@ previous match, so \samp{sub('x*', '-', 'abc')} returns \code{'-a-b-c-'}.
 If \var{repl} is a string, any backslash escapes in it are processed.
 That is, \samp{\e n} is converted to a single newline character,
 \samp{\e r} is converted to a linefeed, and so forth.  Unknown escapes
-such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e 6} are
+such as \samp{\e j} are left alone.  Backreferences, such as \samp{\e 6}, are
 replaced with the substring matched by group 6 in the pattern. 
 
 In addition to character escapes and backreferences as described
 above, \samp{\e g<name>} will use the substring matched by the group
-named \samp{name}, as defined by the \samp{(?P<name>...)} syntax.
+named \samp{name}, as defined by the \regexp{(?P<name>...)} syntax.
 \samp{\e g<number>} uses the corresponding group number; \samp{\e
 g<2>} is therefore equivalent to \samp{\e 2}, but isn't ambiguous in a
 replacement such as \samp{\e g<2>0}.  \samp{\e 20} would be
 interpreted as a reference to group 20, not a reference to group 2
-followed by the literal character \samp{0}.  
+followed by the literal character \character{0}.  
 \end{funcdesc}
 
 \begin{funcdesc}{subn}{pattern, repl, string\optional{, count\code{ = 0}}}
@@ -458,7 +472,7 @@ attributes:
   
   The optional second parameter \var{pos} gives an index in the string
   where the search is to start; it defaults to \code{0}.  The
-  \samp{\^} pattern character will match at the index where the
+  \character{\^} pattern character will not match at the index where the
   search is to start.
 
   The optional parameter \var{endpos} limits how far the string will
@@ -500,7 +514,7 @@ The flags argument used when the regex object was compiled, or
 
 \begin{memberdesc}[RegexObject]{groupindex}
 A dictionary mapping any symbolic group names defined by 
-\code{(?P<\var{id}>)} to group numbers.  The dictionary is empty if no
+\regexp{(?P<\var{id}>)} to group numbers.  The dictionary is empty if no
 symbolic groups were used in the pattern.
 \end{memberdesc}
 
@@ -528,7 +542,7 @@ the corresponding result is \code{None}.  If a group is contained in a
 part of the pattern that matched multiple times, the last match is
 returned.
 
-If the regular expression uses the \code{(?P<\var{name}>...)} syntax,
+If the regular expression uses the \regexp{(?P<\var{name}>...)} syntax,
 the \var{groupN} arguments may also be strings identifying groups by
 their group name.  If a string argument is not used as a group name in 
 the pattern, an \exception{IndexError} exception is raised.
@@ -610,3 +624,4 @@ O'Reilly.  The Python material in this book dates from before the
 \module{re} module, but it covers writing good regular expression
 patterns in great detail.}
 \end{seealso}
+
