@@ -627,6 +627,15 @@ sub do_cmd_funcline{
     return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
 }
 
+sub do_cmd_funclineni{
+    local($_) = @_;
+    my $function_name = next_argument();
+    my $arg_list = next_argument();
+    my $prefix = "<tt class=function>$function_name</tt>";
+
+    return "<dt><b>$prefix</b> (<var>$arg_list</var>)\n<dd>" . $_;
+}
+
 # Change this flag to index the opcode entries.  I don't think it's very
 # useful to index them, since they're only presented to describe the dis
 # module.
