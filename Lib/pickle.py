@@ -175,14 +175,18 @@ class Pickler:
     def memoize(self, obj):
         """Store an object in the memo."""
 
-        # The memo is a dictionary mapping object ids to 2-tuples
-        # that contains the memo value and the object being memoized.
-        # The memo value is written to the pickle and will become
+        # The Pickler memo is a dictionary mapping object ids to 2-tuples
+        # that contain the Unpickler memo key and the object being memoized.
+        # The memo key is written to the pickle and will become
         # the key in the Unpickler's memo.  The object is stored in the
-        # memo so that transient objects are kept alive during pickling.
+        # Pickler memo so that transient objects are kept alive during
+        # pickling.
 
-        # The use of the memo length as the memo value is just a convention.
-        # The only requirement is that the memo values by unique.
+        # The use of the Unpickler memo length as the memo key is just a
+        # convention.  The only requirement is that the memo values be unique.
+        # But there appears no advantage to any other scheme, and this
+        # scheme allows the Unpickler memo to implemented as a plain (but
+        # growable) array, indexed by memo key.
         d = id(obj)
         memo_len = len(self.memo)
         self.write(self.put(memo_len))
