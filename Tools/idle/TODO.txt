@@ -10,6 +10,9 @@ TO DO:
     - debugger should be global resource (attached to flist, not to shell)
     - fix the stupid bug where you need to step twice
     - after closing and reopening PyShell, debugger no longer works :-(
+    - display class name in stack viewer entries for methods
+    - suppress tracing through IDLE internals (e.g. print)
+    - add a button to suppress through a specific module or class or method
 - insert the initial current directory into sys.path
 - default directory attribute for each window instead of only for windows
   that have an associated filename
@@ -40,6 +43,7 @@ TO DO:
 - Way to find definition of fully-qualified name:
   In other words, select "UserDict.UserDict", hit some magic key and
   it loads up UserDict.py and finds the first def or class for UserDict.
+- need a way to force colorization on/off
 
 Details:
 
