@@ -383,6 +383,11 @@ initsignal(void)
 	PyDict_SetItemString(d, "SIGINT", x);
         Py_XDECREF(x);
 #endif
+#ifdef SIGBREAK
+	x = PyInt_FromLong(SIGBREAK);
+	PyDict_SetItemString(d, "SIGBREAK", x);
+        Py_XDECREF(x);
+#endif
 #ifdef SIGQUIT
 	x = PyInt_FromLong(SIGQUIT);
 	PyDict_SetItemString(d, "SIGQUIT", x);
