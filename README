@@ -86,9 +86,9 @@ and functions!
 All documentation is also available online at the Python web site
 (http://www.python.org/doc/, see below).  It is available online for
 occasional reference, or can be downloaded in many formats for faster
-access.  The documentation is available in HTML, PostScript, PDF, HTML
-Help, and LaTeX formats; the LaTeX version is primarily for
-documentation authors or people with special formatting requirements.
+access.  The documentation is available in HTML, PostScript, PDF, and
+LaTeX formats; the LaTeX version is primarily for documentation
+authors, translators, and people with special formatting requirements.
 
 
 Web sites
@@ -129,8 +129,9 @@ Tracker at http://sourceforge.net/bugs/?group_id=5470.
 Patches and contributions
 -------------------------
 
-To submit a patch or other contribution, please use the Python
-Patch Manager at http://sourceforge.net/patch/?group_id=5470.
+To submit a patch or other contribution, please use the Python Patch
+Manager at http://sourceforge.net/patch/?group_id=5470.  Guidelines
+for patch submission may be found at http://www.python.org/patches/.
 
 If you have a proposal to change Python, it's best to submit a Python
 Enhancement Proposal (PEP) first.  All current PEPs, as well as
@@ -160,12 +161,12 @@ where things are not quite as smooth; see the platform specific notes
 below.  If you want to build for multiple platforms sharing the same
 source tree, see the section on VPATH below.
 
-You start by running the script "./configure", which determines your
+Start by running the script "./configure", which determines your
 system configuration and creates several Makefiles.  (It takes a
-minute or two -- please be patient!)  When it's done, you are ready to
-run make.  You may want to pass options to the configure script, or
-edit the Setup file -- see the section below on configuration options
-and variables.
+minute or two -- please be patient!)  You may want to pass options to
+the configure script or edit the Modules/Setup file at this point --
+see the section below on configuration options and variables.  When
+it's done, you are ready to run make.
 
 To build Python, you normally type "make" in the toplevel directory.
 This will recursively run make in each of the subdirectories: Grammar,
@@ -462,13 +463,13 @@ Configuring additional built-in modules
 You can configure the interpreter to contain fewer or more built-in
 modules by editing the Modules/Setup file.  This file is initially
 copied (when the toplevel Makefile makes Modules/Makefile for the
-first time) from Setup.in; if it does not exist yet, make a copy
-yourself.  Never edit Setup.in -- always edit Setup.  Read the
-comments in the file for information on what kind of edits are
-allowed.  When you have edited Setup, Makefile and config.c in the
-Modules directory, the interpreter will automatically be rebuilt the
-next time you run make in the toplevel directory.  (When working
-inside the Modules directory, use "make Makefile; make".)
+first time) from Setup.in; if it does not exist yet, create it by
+copying Modules/Setup.in.  Never edit Setup.in -- always edit Setup or
+Setup.local (see below).  Read the comments in the file for
+information on what kind of edits are allowed.  When you have edited
+Setup in the Modules directory, the interpreter will automatically be
+rebuilt the next time you run make in the toplevel directory.  (When
+working inside the Modules directory, use "make Makefile; make".)
 
 The default collection of modules should build on any Unix system, but
 many optional modules should work on all modern Unices (e.g. try
@@ -476,13 +477,15 @@ audioop, imageop, crypt, dbm, gdbm, nis, resource, termios, timing,
 syslog, _curses, pyexpat, readline, rgbimg, zlib).  Often the quickest
 way to determine whether a particular module works or not is to see if
 it will build: enable it in Setup, then if you get compilation or link
-errors, disable it -- you're missing support.
+errors, disable it -- you're either missing support or need to adjust
+the compilation and linking parameters for that module.
 
 On SGI IRIX, there are modules that interface to many SGI specific
 system libraries, e.g. the GL library and the audio hardware.
 
 For SunOS and Solaris, enable module "sunaudiodev" to support the
-audio device. Likewise, for Linux systems, enable "linuxaudiodev".
+audio device. Likewise, for Linux and some *BSD systems, enable
+"linuxaudiodev".
 
 In addition to the file Setup, you can also edit the file Setup.local.
 (the makesetup script processes both).  You may find it more
@@ -501,6 +504,12 @@ on most platforms.  The default is OPT=-O; a value for OPT in the
 environment when the configure script is run overrides this default
 (likewise for CC; and the initial value for LIBS is used as the base
 set of libraries to link with).
+
+When compiling with GCC, the default value of OPT will also include
+the -Wall and -Wstrict-prototypes options.
+
+Additional debugging code to help debug memory management problems can
+be enabled by using the --with-pydebug option to the configure script.
 
 
 Testing
@@ -655,6 +664,10 @@ Modules/getpath.o.
 
 --with-libs='libs': Add 'libs' to the LIBS that the python interpreter
 	is linked against.
+
+--with-pydebug:  Enable additional debugging code to help track down
+	memory management problems.  This allows printing a list of all
+	live objects when the interpreter terminates.
 
 
 Building for multiple architectures (using the VPATH feature)
