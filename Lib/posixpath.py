@@ -118,18 +118,14 @@ def dirname(p):
 def commonprefix(m):
     "Given a list of pathnames, returns the longest common leading component"
     if not m: return ''
-    n = m[:]
-    for i in range(len(n)):
-        n[i] = n[i].split("/")
-
-    prefix = n[0]
-    for item in n:
+    prefix = m[0]
+    for item in m:
         for i in range(len(prefix)):
             if prefix[:i+1] <> item[:i+1]:
                 prefix = prefix[:i]
                 if i == 0: return ''
                 break
-    return "/".join(prefix)
+    return prefix
 
 
 # Get size, mtime, atime of files.
