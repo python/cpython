@@ -52,11 +52,14 @@ sub do_cmd_keyword{ &do_cmd_code(@_); }
 sub do_cmd_exception{ &do_cmd_code(@_); }
 sub do_cmd_class{ &do_cmd_code(@_); }
 sub do_cmd_function{ &do_cmd_code(@_); }
-sub do_cmd_cfunction{ &do_cmd_code(@_); }
 sub do_cmd_constant{ &do_cmd_code(@_); }
+sub do_cmd_member{ &do_cmd_code(@_); }
 sub do_cmd_method{ &do_cmd_code(@_); }
 sub do_cmd_email{ &do_cmd_code(@_); }
 sub do_cmd_program{ &do_cmd_code(@_); }
+sub do_cmd_cfunction{ &do_cmd_code(@_); }
+sub do_cmd_cdata{ &do_cmd_code(@_); }
+sub do_cmd_ctype{ &do_cmd_code(@_); }
 
 sub do_cmd_email{
     local($_) = @_;
@@ -455,7 +458,8 @@ sub do_cmd_dataline{
 }
 
 sub do_env_excdesc{ &do_env_datadesc(@_); }
-sub do_env_codesample{ &do_env_verbatim(@_); }
+sub do_env_classdesc{ &do_env_funcdesc(@_); }
+sub do_env_fulllineitems{ &do_env_itemize(@_); }
 
 
 @col_aligns = ("<td>", "<td>", "<td>");
@@ -552,10 +556,10 @@ sub do_cmd_seemodule{
     s/$next_pair_pr_rx$any_next_pair_pr_rx3//;
     local($module,$text,$node,$key) = ($2, $4, '', "module$2");
     $key =~ s/_//g;
+    # XXX somewhat bogus computation of $node
 #    $node = $external_labels{$key} unless
 #      ($node = $ref_files{$key});
     $node = $key;
-    print "seemodule $module: $node#$key\n";
     "<p>Module <tt><b><a href=\"$node#$key\">$module</a></b></tt>"
       . "&nbsp;&nbsp;&nbsp;($text)</p>"
       . $_;
