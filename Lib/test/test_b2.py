@@ -290,6 +290,18 @@ except:
 	raise TestFailed, 'zip(None) - expected TypeError, got %s' % e
 if not exc:
 	raise TestFailed, 'zip(None) - missing expected TypeError'
+class G:
+	pass
+exc = 0
+try:
+	zip(a, G())
+except AttributeError:
+	exc = 1
+except:
+	e = sys.exc_info()[0]
+	raise TestFailed, 'zip(a, b) - b instance w/o __getitem__'
+if not exc:
+	raise TestFailed, 'zip(a, b) - missing expected AttributeError'
 
 
 # Epilogue -- unlink the temp file
