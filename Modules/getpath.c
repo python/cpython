@@ -374,7 +374,50 @@ calculate_path(void)
     NSModule pythonModule;
 #endif
 
+	/* If there is no slash in the argv0 path, then we have to
+	 * assume python is on the user's $PATH, since there's no
+	 * other way to find a directory to start the search from.  If
+	 * $PATH isn't exported, you lose.
+	 */
+	if (strchr(prog, SEP))
+		strncpy(progpath, prog, MAXPATHLEN);
+	else if (path) {
+		while (1) {
+			char *delim = strchr(path, DELIM);
+
+			if (delim) {
+				size_t len = delim - path;
+				if (len > MAXPATHLEN)
+					len = MAXPATHLEN;
+				strncpy(progpath, path, len);
+				*(progpath + len) = '\0';
+			}
+			else
+				strncpy(progpath, path, MAXPATHLEN);
+
+			joinpath(progpath, prog);
+			if (isxfile(progpath))
+				break;
+
+			if (!delim) {
+				progpath[0] = '\0';
+				break;
+			}
+			path = delim + 1;
+		}
+	}
+	else
+		progpath[0] = '\0';
+	if (progpath[0] != SEP)
+		absolutize(progpath);
+	strncpy(argv0_path, progpath, MAXPATHLEN);
+
 #ifdef WITH_NEXT_FRAMEWORK
+	/* On Mac OS X we have a special case if we're running from a framework.
+	** This is because the python home should be set relative to the library,
+	** which is in the framework, not relative to the executable, which may
+	** be outside of the framework. Except when we're in the build directory...
+	*/
     pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
     /* Use dylib functions to find out where the framework was loaded from */
     buf = NSLibraryNameForModule(pythonModule);
@@ -394,59 +437,14 @@ calculate_path(void)
         if (!ismodule(argv0_path)) {
                 /* We are in the build directory so use the name of the
                    executable - we know that the absolute path is passed */
-                strncpy(progpath, prog, MAXPATHLEN);
+                strncpy(argv0_path, prog, MAXPATHLEN);
         }
         else {
                 /* Use the location of the library as the progpath */
-                strncpy(progpath, buf, MAXPATHLEN);
+                strncpy(argv0_path, buf, MAXPATHLEN);
         }
     }
-    else {
-        /* If we're not in a framework, fall back to the old way
-           (even though NSNameOfModule() probably does the same thing.) */
 #endif
-
-        /* If there is no slash in the argv0 path, then we have to
-         * assume python is on the user's $PATH, since there's no
-         * other way to find a directory to start the search from.  If
-         * $PATH isn't exported, you lose.
-         */
-        if (strchr(prog, SEP))
-            strncpy(progpath, prog, MAXPATHLEN);
-        else if (path) {
-            while (1) {
-                char *delim = strchr(path, DELIM);
-
-                if (delim) {
-                    size_t len = delim - path;
-                    if (len > MAXPATHLEN)
-                        len = MAXPATHLEN;
-                    strncpy(progpath, path, len);
-                    *(progpath + len) = '\0';
-                }
-                else
-                    strncpy(progpath, path, MAXPATHLEN);
-
-                joinpath(progpath, prog);
-                if (isxfile(progpath))
-                    break;
-
-                if (!delim) {
-                    progpath[0] = '\0';
-                    break;
-                }
-                path = delim + 1;
-            }
-        }
-        else
-            progpath[0] = '\0';
-        if (progpath[0] != SEP)
-            absolutize(progpath);
-#ifdef WITH_NEXT_FRAMEWORK
-    }
-#endif
-
-    strncpy(argv0_path, progpath, MAXPATHLEN);
 
 #if HAVE_READLINK
     {
