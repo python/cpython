@@ -1,3 +1,21 @@
+Tue Jan 18 11:04:16 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* Python/getmtime.c: Include config.h if we have it
+
+	* Modules/Setup.in: fixed comments about GMP version
+
+	* Modules/nismodule.c: define YPPROC_MAPLIST, YPPROG, YPVERS as
+	plain integer literals, to make it work on 64 bit machines
+
+	* Parser/grammar.c (translabel): remove redundant decl of strchr()
+	(which caused trouble on AIX)
+
+Sun Jan 16 14:13:13 1994  Guido van Rossum  (guido@voorn.cwi.nl)
+
+	* configure.in: test for fcntl.h
+
+	* Modules/posixmodule.c: include fcntl.h if it exists
+
 Fri Jan 14 17:35:33 1994  Guido van Rossum  (guido@voorn.cwi.nl)
 
 	* configure.in: check for sys/time.h; substitute and check for AR;
