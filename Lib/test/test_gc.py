@@ -253,6 +253,24 @@ def test_trashcan():
             v = {1: v, 2: Ouch()}
     gc.disable()
 
+class C:
+    def __getattr__(self, attr):
+        del self.attr
+        raise AttributeError
+
+def test_boom():
+    a = C()
+    b = C()
+    a.attr = b
+    b.attr = a
+
+    gc.collect()
+    del a, b
+    # the collection will invoke the getattr and decref one of the
+    # object.  so they are deallocated without being reported as
+    # part of a cycle.
+    expect(gc.collect(), 0, "boom")
+
 def test_all():
     gc.collect() # Delete 2nd generation garbage
     run_test("lists", test_list)
@@ -271,6 +289,7 @@ def test_all():
     run_test("__del__ (new class)", test_del_newclass)
     run_test("saveall", test_saveall)
     run_test("trashcan", test_trashcan)
+    run_test("boom", test_boom)
 
 def test():
     if verbose:
