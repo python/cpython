@@ -200,11 +200,15 @@
 \let\endctypedesc\endfulllineitems
 
 % funcdesc should be called as an \begin{funcdesc} ... \end{funcdesc}
-\newcommand{\funcline}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]\ttindex{#1}}
+\newcommand{\funcline}[2]{\funclineni{#1}{#2}\ttindex{#1}}
 \newcommand{\funcdesc}[2]{\fulllineitems\funcline{#1}{#2}}
 \let\endfuncdesc\endfulllineitems
 \newcommand{\optional}[1]{{\textnormal{\Large[}}{#1}\hspace{0.5mm}{\textnormal{\Large]}}}
 
+% similar to {funcdesc}, but doesn't add to the index
+\newcommand{\funclineni}[2]{\item[\code{\bfcode{#1}(\varvars{#2})}]}
+\newcommand{\funcdescni}[2]{\fulllineitems\funclineni{#1}{#2}}
+\let\endfuncdescni\endfulllineitems
 
 % same for excdesc
 \newcommand{\excline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
@@ -212,9 +216,14 @@
 \let\endexcdesc\endfulllineitems
 
 % same for datadesc
-\newcommand{\dataline}[1]{\item[\bfcode{#1}]\ttindex{#1}}
+\newcommand{\dataline}[1]{\datalineni{#1}\ttindex{#1}}
 \newcommand{\datadesc}[1]{\fulllineitems\dataline{#1}}
 \let\enddatadesc\endfulllineitems
+
+% similar to {datadesc}, but doesn't add to the index
+\newcommand{\datalineni}[1]{\item[\bfcode{#1}]}
+\newcommand{\datadescni}[1]{\fulllineitems\datalineni{#1}}
+\let\enddatadescni\endfulllineitems
 
 
 % opcodedesc should be called as an \begin{opcodedesc} ... \end{opcodedesc}
@@ -303,7 +312,12 @@
 %  \end{seealso}
 
 \newenvironment{seealso}[0]{\strong{See Also:}\par}{\par}
-\newcommand{\seemodule}[2]{\ref{module-#1}: \module{#1}\quad(#2)}
+\newcommand{\seemodule}[2]{\ref{module-#1}:%
+  \quad Module \module{#1}\quad(#2)}
+\newcommand{\seebimodule}[2]{\ref{module-#1}:%
+  \quad Built-in Module \module{#1}\quad(#2)}
+\newcommand{\seestmodule}[2]{\ref{module-#1}:%
+  \quad Standard Module \module{#1}\quad(#2)}
 \newcommand{\seetext}[1]{\par{#1}}
 
 % Fix the theindex environment to add an entry to the Table of
