@@ -249,6 +249,9 @@ typedef void (*dl_funcptr)();
 #define CFragConnectionID ConnectionID
 #define kLoadCFrag 0x01
 #endif
+#ifdef USE_GUSI
+#include "TFileSpec.h"		/* for Path2FSSpec() */
+#endif
 #include <Files.h>
 #include "macdefs.h"
 #include "macglue.h"
@@ -372,15 +375,21 @@ _PyImport_LoadDynamicModule(name, pathname, fp)
 		Ptr mainAddr;
 		Str255 errMessage;
 		OSErr err;
+#ifndef USE_GUSI
 		Boolean isfolder, didsomething;
+#endif
 		char buf[512];
 		Str63 fragname;
 		Ptr symAddr;
 		CFragSymbolClass class;
 		
 		/* First resolve any aliases to find the real file */
+#ifdef USE_GUSI
+		err = Path2FSSpec(pathname, &libspec);
+#else
 		(void)FSMakeFSSpec(0, 0, Pstring(pathname), &libspec);
 		err = ResolveAliasFile(&libspec, 1, &isfolder, &didsomething);
+#endif
 		if ( err ) {
 			sprintf(buf, "%.255s: %.200s",
 				pathname, PyMac_StrError(err));

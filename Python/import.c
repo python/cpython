@@ -1055,27 +1055,44 @@ check_case(char *buf, int len, int namelen, char *name)
 
 #ifdef macintosh
 #include <TextUtils.h>
+#ifdef USE_GUSI
+#include "TFileSpec.h"		/* for Path2FSSpec() */
+#endif
 static int
 check_case(char *buf, int len, int namelen, char *name)
 {
 	FSSpec fss;
 	OSErr err;
-	unsigned char mybuf[MAXPATHLEN+1];
-	
-	strcpy((char *)mybuf, buf);
-	c2pstr((char *)mybuf);
-	err = FSMakeFSSpec(0, 0, mybuf, &fss);
+#ifndef USE_GUSI
+	err = FSMakeFSSpec(0, 0, Pstring(buf), &fss);
+#else
+	/* GUSI's Path2FSSpec() resolves all possible aliases nicely on
+	   the way, which is fine for all directories, but here we need
+	   the original name of the alias file (say, Dlg.ppc.slb, not
+	   toolboxmodules.ppc.slb). */
+	char *colon;
+	err = Path2FSSpec(buf, &fss);
+	if (err == noErr) {
+		colon = strrchr(buf, ':'); /* find filename */
+		if (colon != NULL)
+			err = FSMakeFSSpec(fss.vRefNum, fss.parID,
+					   Pstring(colon+1), &fss);
+		else
+			err = FSMakeFSSpec(fss.vRefNum, fss.parID,
+					   fss.name, &fss);
+	}
+#endif
 	if (err) {
 		PyErr_Format(PyExc_NameError,
-		  "Can't find file for module %.100s\n(filename %.300s)",
-		  name, buf);
+		     "Can't find file for module %.100s\n(filename %.300s)",
+		     name, buf);
 		return 0;
 	}
 	p2cstr(fss.name);
 	if ( strncmp(name, (char *)fss.name, namelen) != 0 ) {
 		PyErr_Format(PyExc_NameError,
-		  "Case mismatch for module name %.100s\n(filename %.300s)",
-		  name, fss.name);
+		     "Case mismatch for module name %.100s\n(filename %.300s)",
+		     name, fss.name);
 		return 0;
 	}
 	return 1;
