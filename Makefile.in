@@ -382,8 +382,10 @@ libainstall:	all
 			else	true; \
 			fi; \
 		done
-		$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY)
-		$(RANLIB) $(LIBPL)/$(LIBRARY)
+		@if [ "$(MACHDEP)" != "beos" ] ; then \
+			$(INSTALL_DATA) $(LIBRARY) $(LIBPL)/$(LIBRARY) ; \
+			$(RANLIB) $(LIBPL)/$(LIBRARY) ; \
+		fi
 		$(INSTALL_DATA) Modules/config.c $(LIBPL)/config.c
 		$(INSTALL_DATA) Modules/python.o $(LIBPL)/python.o
 		$(INSTALL_DATA) $(srcdir)/Modules/config.c.in $(LIBPL)/config.c.in

@@ -8,6 +8,9 @@ What's Here?
 ar-fake - A shell script used by the build process to emulate a "real"
           POSIX ar command; helps to build the Python shared library.
 
+dl_export.h - A header defining the evil magic declaration decorations
+              required for dynamic loading.
+
 linkcc - A shell script used by the build process to build the Python
          shared library.
 
@@ -35,21 +38,7 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
 
 2) Configure with:
 
-   AR=$(pwd)/BeOS/ar-fake RANLIB=: ./configure --verbose \
-   --prefix=/boot/home/config --with-thread
-
-   When configure is done, add this anywhere in config.h:
-
-#ifndef DL_EXPORT
-#  define DL_EXPORT(RTYPE) __declspec(dllexport) RTYPE
-#endif
-#ifndef DL_IMPORT
-#  ifdef USE_DL_EXPORT
-#    define DL_IMPORT(RTYPE) __declspec(dllexport) RTYPE
-#  else
-#    define DL_IMPORT(RTYPE) __declspec(dllimport) RTYPE
-#  endif
-#endif
+   ./configure --verbose --prefix=/boot/home/config --with-thread
 
 3) Copy Modules/Setup.in to Modules/Setup.
 
@@ -68,22 +57,19 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
    operator _locale fcntl pwd grp select _socket errno crypt termios
    audioop imageop rgbimg md5 timing rotor syslog curses new gdbm soundex
    binascii parser cStringIO cPickle zlib
+   
+   Note that some of these (readline, curses, gdbm, and zlib) require extra
+   libraries that aren't supplied with Python.  If you don't have the extra
+   libs (you can probably get them from GeekGadgets), don't try to use
+   these modules; they won't compile.
 
-5) Make sure Modules/Makefile.pre has REALLIBRARY set to:
+5) Make:
 
-   REALLIBRARY=../libpython$(VERSION).so
+   make
 
-6) Make:
+6) Test:
 
-   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos
-
-   On PowerPC systems, you'll see lots of warnings about duplicate
-   symbols when things get linked; don't worry about this, it's
-   harmless (and should disappear soon).
-
-7) Test:
-
-   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos test
+   make test
 
    Expect the following errors:
 
@@ -97,16 +83,11 @@ Python 1.5.2 and later will compile "out of the box" on BeOS), try this:
    NOTE: On R4/x86, the pause() function is broken; expect the signal
          module test to crash Python!
 
-8) Install:
+7) Install:
 
-   make OPT=-DUSE_DL_EXPORT CCSHARED=-UUSE_DL_EXPORT MACHDEP=beos nstall
+   make install
 
-   This will fail trying to copy libpython1.5.a; at that point in the
-   install, everything you "normally" need is installed (all the Python
-   bits), and the stuff you need for compiling C-based modules is half-
-   installed.  This will be fixed before the 1.5.2 release.
+8) Enjoy!
 
-9) Enjoy!
-
-- Chris Herborth (chrish@qnx.com)
-  December 22, 1998
+- Chris Herborth (chrish@beoscentral.com)
+  January 12, 1999
