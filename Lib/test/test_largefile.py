@@ -133,24 +133,30 @@ if hasattr(f, 'truncate'):
         print 'try truncate'
     f = open(name, 'r+b')
     f.seek(0, 2)
-    expect(f.tell(), size+1)
+    expect(f.tell(), size+1)    # else we've lost track of the true size
     # Cut it back via seek + truncate with no argument.
     newsize = size - 10
     f.seek(newsize)
     f.truncate()
-    expect(f.tell(), newsize)
-    # Ensure that truncate(bigger than true size) doesn't grow the file.
-    f.truncate(size)
-    expect(f.tell(), newsize)
+    expect(f.tell(), newsize)   # else pointer moved
+    f.seek(0, 2)
+    expect(f.tell(), newsize)   # else wasn't truncated
     # Ensure that truncate(smaller than true size) shrinks the file.
     newsize -= 1
-    f.seek(0)
+    f.seek(42)
     f.truncate(newsize)
-    expect(f.tell(), newsize)
+    expect(f.tell(), 42)        # else pointer moved
+    f.seek(0, 2)
+    expect(f.tell(), newsize)   # else wasn't truncated
+
+    # XXX truncate(larger than true size) is ill-defined across platforms
+
     # cut it waaaaay back
-    f.truncate(1)
     f.seek(0)
-    expect(len(f.read()), 1)
+    f.truncate(1)
+    expect(f.tell(), 0)         # else pointer moved
+    expect(len(f.read()), 1)    # else wasn't truncated
+
     f.close()
 
 os.unlink(name)
