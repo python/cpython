@@ -8,7 +8,7 @@ in the distutils.command package."""
 
 __revision__ = "$Id$"
 
-import sys, string
+import sys, os, string
 from types import *
 from distutils.errors import *
 from distutils import util
@@ -355,23 +355,20 @@ class install_misc (Command):
         self.install_dir = None
         self.outfiles = None
 
-    def _install_dir_from(self, dirname):
+    def _install_dir_from (self, dirname):
         self.set_undefined_options('install', (dirname, 'install_dir'))
 
-    def _copydata(self, filelist):
+    def _copy_files (self, filelist):
         self.outfiles = []
         if not filelist:
             return
         self.mkpath(self.install_dir)
         for f in filelist:
-            self.outfiles.append(self.copy_file (f, self.install_dir))
+            self.copy_file(f, self.install_dir)
+            self.outfiles.append(os.path.join(self.install_dir, f))
 
-    def _outputdata(self, filelist):
-        if self.outfiles is not None:
-            return self.outfiles
-        # XXX de-lambda-fy
-        return map(lambda x: os.path.join(self.install_dir, x), filelist)
-
+    def get_outputs (self):
+        return self.outfiles
 
 
 if __name__ == "__main__":
