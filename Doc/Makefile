@@ -24,7 +24,7 @@ print:		$(ALL)
 		$(PRINT) $(ALL)
 
 clean:
-		rm -f *.dvi *.aux *.toc *.log *.ps core @* ,*
+		rm -f *.dvi *.aux *.toc *.log *.ps core [#@,]* *~
 
 .SUFFIXES:	# Remove default suffixes
 
