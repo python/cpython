@@ -1269,7 +1269,7 @@ class TexinfoParser:
 	self.nofill = self.nofill + 1
 	self.write('<PRE>')
     def end_example(self):
-	self.write('</PRE>')
+	self.write('</PRE>\n')
 	self.nofill = self.nofill - 1
 
     bgn_lisp = bgn_example # Synonym when contents are executable lisp code
@@ -1434,8 +1434,13 @@ class TexinfoParserHTML3(TexinfoParser):
     def end_quotation(self): self.write('</BQ>\n')
 
     def bgn_example(self, args):
+	# this use of <CODE> would not be legal in HTML 2.0,
+	# but is in more recent DTDs.
 	self.nofill = self.nofill + 1
-	self.write('<PRE CLASS=example>')
+	self.write('<PRE CLASS=example><CODE>')
+    def end_example(self):
+	self.write("</CODE></PRE>\n")
+	self.nofill = self.nofill - 1
 
     def bgn_flushleft(self, args):
 	self.nofill = self.nofill + 1
