@@ -1727,7 +1727,7 @@ PyObject_CallFunction(PyObject *callable, char *format, ...)
 			return NULL;
 		args = a;
 	}
-	retval = PyObject_CallObject(callable, args);
+	retval = PyObject_Call(callable, args, NULL);
 
 	Py_DECREF(args);
 
@@ -1774,7 +1774,7 @@ PyObject_CallMethod(PyObject *o, char *name, char *format, ...)
 		args = a;
 	}
 
-	retval = PyObject_CallObject(func, args);
+	retval = PyObject_Call(func, args, NULL);
 
 	Py_DECREF(args);
 	Py_DECREF(func);

@@ -829,7 +829,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
 
     PyTuple_SET_ITEM(arg, 0, bytes);
 
-    if ((str = PyObject_CallObject(meth, arg)) == NULL)
+    if ((str = PyObject_Call(meth, arg, NULL)) == NULL)
         goto finally;
 
     /* XXX what to do if it returns a Unicode string? */
