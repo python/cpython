@@ -28,11 +28,11 @@ class WidgetRedirector:
         tk = widget.tk
         w = widget._w
         tk.deletecommand(w)
-        tk.call("rename", w, orig)
+        tk.call("rename", orig, w)
 
     def register(self, name, function):
         if self.dict.has_key(name):
-            previous = function
+            previous = dict[name]
         else:
             previous = OriginalCommand(self, name)
         self.dict[name] = function
