@@ -2384,7 +2384,8 @@ used to access C APIs defined in dynamically loaded modules.
 \begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtr}{void* cobj, 
 	void (*destr)(void *)}
 Creates a \ctype{PyCObject} from the \code{void *} \var{cobj}.  The
-\var{destr} function will be called when the object is reclaimed.
+\var{destr} function will be called when the object is reclaimed, unless
+it is \NULL.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject *}{PyCObject_FromVoidPtrAndDesc}{void* cobj,
