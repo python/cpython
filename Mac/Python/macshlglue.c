@@ -42,8 +42,8 @@ static FSSpec library_fss;
 OSErr pascal
 PythonCore_init(InitBlockPtr data)
 {
-	/* Initialize C++ static data (if needed) */
-	__sinit();
+	/* Call the MW runtime's initialization routine */
+	__initialize();
 	
 	if ( data == nil ) return noErr;
 	if ( data->fragLocator.where == kOnDiskFlat ) {
