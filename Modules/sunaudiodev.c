@@ -79,6 +79,7 @@ static PyObject *SunAudioError;
 #define is_sadobject(v)		((v)->ob_type == &Sadtype)
 #define is_sadstatusobject(v)	((v)->ob_type == &Sadstatustype)
 
+
 static sadobject *
 newsadobject(arg)
 	PyObject *arg;
@@ -87,6 +88,9 @@ newsadobject(arg)
 	int fd;
 	char *mode;
 	int imode;
+	char* basedev;
+	char* ctldev;
+	char* opendev;
 
 	/* Check arg for r/w/rw */
 	if (!PyArg_Parse(arg, "s", &mode))
@@ -105,16 +109,34 @@ newsadobject(arg)
 		return NULL;
 	}
 	
-	/* Open the correct device */
-	if (imode < 0)
-		/* XXXX Check that this works */
-		fd = open("/dev/audioctl", 2);
-	else
-		fd = open("/dev/audio", imode);
-	if (fd < 0) {
-		PyErr_SetFromErrno(SunAudioError);
+	/* Open the correct device.  The base device name comes from the
+	 * AUDIODEV environment variable first, then /dev/audio.  The
+	 * control device tacks "ctl" onto the base device name.
+	 */
+	basedev = getenv("AUDIODEV");
+	if (!basedev)
+		basedev = "/dev/audio";
+	ctldev = PyMem_NEW(char, strlen(basedev) + 4);
+	if (!ctldev) {
+		PyErr_NoMemory();
 		return NULL;
 	}
+	strcpy(ctldev, basedev);
+	strcat(ctldev, "ctl");
+
+	if (imode < 0) {
+		opendev = ctldev;
+		fd = open(ctldev, 2);
+	}
+	else {
+		opendev = basedev;
+		fd = open(basedev, imode);
+	}
+	if (fd < 0) {
+		PyErr_SetFromErrnoWithFilename(SunAudioError, opendev);
+		return NULL;
+	}
+	PyMem_DEL(ctldev);
 
 	/* Create and initialize the object */
 	xp = PyObject_NEW(sadobject, &Sadtype);
@@ -344,6 +366,18 @@ sad_close(self, args)
 	return Py_None;
 }
 
+static PyObject *
+sad_fileno(self, args)
+	sadobject *self;
+	PyObject *args;
+{
+	if (!PyArg_Parse(args, ""))
+		return NULL;
+
+	return PyInt_FromLong(self->x_fd);
+}
+
+
 static PyMethodDef sad_methods[] = {
         { "read",	(PyCFunction)sad_read },
         { "write",	(PyCFunction)sad_write },
@@ -358,6 +392,7 @@ static PyMethodDef sad_methods[] = {
 	{ "getdev",	(PyCFunction)sad_getdev },
 #endif
         { "close",	(PyCFunction)sad_close },
+	{ "fileno",     (PyCFunction)sad_fileno },
 	{NULL,		NULL}		/* sentinel */
 };
 
