@@ -330,7 +330,7 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
     def external_entity_ref(self, context, base, sysid, pubid):
         if not self._external_ges:
             return 1
-        
+
         source = self._ent_handler.resolveEntity(pubid, sysid)
         source = saxutils.prepare_input_source(source,
                                                self._source.getSystemId() or
