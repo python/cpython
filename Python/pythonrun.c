@@ -69,9 +69,38 @@ int Py_IgnoreEnvironmentFlag; /* e.g. PYTHONPATH, PYTHONHOME */
 int _Py_QnewFlag = 0;
 
 /* Reference to 'warnings' module, to avoid importing it
-   on the fly when the import lock may be held.  See 683658
+   on the fly when the import lock may be held.  See 683658/771097
 */
-PyObject *PyModule_WarningsModule = NULL;
+static PyObject *warnings_module = NULL;
+
+/* Returns a borrowed reference to the 'warnings' module, or NULL.
+   If the module is returned, it is guaranteed to have been obtained
+   without acquiring the import lock
+*/
+PyObject *PyModule_GetWarningsModule()
+{
+	PyObject *typ, *val, *tb;
+	PyObject *all_modules;
+	/* If we managed to get the module at init time, just use it */
+	if (warnings_module)
+		return warnings_module;
+	/* If it wasn't available at init time, it may be available
+	   now in sys.modules (common scenario is frozen apps: import
+	   at init time fails, but the frozen init code sets up sys.path
+	   correctly, then does an implicit import of warnings for us
+	*/
+	/* Save and restore any exceptions */
+	PyErr_Fetch(&typ, &val, &tb);
+
+	all_modules = PySys_GetObject("__modules__");
+	if (all_modules) {
+		warnings_module = PyDict_GetItemString(all_modules, "warnings");
+		/* We keep a ref in the global */
+		Py_XINCREF(warnings_module);
+	}
+	PyErr_Restore(typ, val, tb);
+	return warnings_module;
+}
 
 static int initialized = 0;
 
@@ -190,7 +219,9 @@ Py_Initialize(void)
 	_PyGILState_Init(interp, tstate);
 #endif /* WITH_THREAD */
 
-	PyModule_WarningsModule = PyImport_ImportModule("warnings");
+	warnings_module = PyImport_ImportModule("warnings");
+	if (!warnings_module)
+		PyErr_Clear();
 
 #if defined(Py_USING_UNICODE) && defined(HAVE_LANGINFO_H) && defined(CODESET)
 	/* On Unix, set the file system encoding according to the
@@ -262,8 +293,8 @@ Py_Finalize(void)
 	PyOS_FiniInterrupts();
 
 	/* drop module references we saved */
-	Py_XDECREF(PyModule_WarningsModule);
-	PyModule_WarningsModule = NULL;
+	Py_XDECREF(warnings_module);
+	warnings_module = NULL;
 
 	/* Collect garbage.  This may call finalizers; it's nice to call these
 	   before all modules are destroyed. */
