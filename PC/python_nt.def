@@ -150,7 +150,6 @@ EXPORTS
 	PyMethod_New
 	PyInstance_New
 	PyInstance_DoBinOp
-	PyFrame_ExtendStack
 	PyFrame_New
 	PyFrame_BlockPop
 	PyFrame_BlockSetup
