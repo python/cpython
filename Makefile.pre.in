@@ -701,7 +701,6 @@ libainstall:	all
 	$(INSTALL_DATA) Modules/Setup.config $(LIBPL)/Setup.config
 	$(INSTALL_SCRIPT) $(srcdir)/Modules/makesetup $(LIBPL)/makesetup
 	$(INSTALL_SCRIPT) $(srcdir)/install-sh $(LIBPL)/install-sh
-	$(INSTALL_DATA) $(srcdir)/Misc/Makefile.pre.in $(LIBPL)/Makefile.pre.in
 	@if [ -s Modules/python.exp -a \
 		"`echo $(MACHDEP) | sed 's/^\(...\).*/\1/'`" = "aix" ]; then \
 		echo; echo "Installing support files for building shared extension modules on AIX:"; \
