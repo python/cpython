@@ -315,11 +315,11 @@ static struct memberlist generic_memberlist[] = {
 	{"focus",	T_INT,		OFF(focus),	RO},
 	{"belowmouse",	T_INT,		OFF(belowmouse),RO},
 	{"frozen",	T_INT,		OFF(frozen),	RO},
-	{"active",	T_INT,		OFF(active),	RO},
-	{"input",	T_INT,		OFF(input),	RO},
+	{"active",	T_INT,		OFF(active)},
+	{"input",	T_INT,		OFF(input)},
 	{"visible",	T_INT,		OFF(visible),	RO},
-	{"radio",	T_INT,		OFF(radio),	RO},
-	{"automatic",	T_INT,		OFF(automatic),	RO},
+	{"radio",	T_INT,		OFF(radio)},
+	{"automatic",	T_INT,		OFF(automatic)},
 	{NULL}	/* Sentinel */
 };
 
@@ -1827,6 +1827,22 @@ form_find_last(f, args)
 	return forms_find_first_or_last(fl_find_last, f, args);
 }
 
+static object *
+form_set_object_focus(f, args)
+	formobject *f;
+	object *args;
+{
+	genericobject *g;
+	if (args == NULL || !is_genericobject(args)) {
+		err_badarg();
+		return NULL;
+	}
+	g = (genericobject *)args;
+	fl_set_object_focus(f->ob_form, g->ob_generic);
+	INCREF(None);
+	return None;
+}
+
 static struct methodlist form_methods[] = {
 /* adm */
 	{"show_form",		form_show_form},
@@ -1844,6 +1860,7 @@ static struct methodlist form_methods[] = {
 	{"end_group",		form_end_group},
 	{"find_first",		form_find_first},
 	{"find_last",		form_find_last},
+	{"set_object_focus",	form_set_object_focus},
 
 /* basic objects */
 	{"add_button",		form_add_button},
@@ -1886,11 +1903,11 @@ static struct memberlist form_memberlist[] = {
 	{"window",	T_LONG,		OFF(window),	RO},
 	{"w",		T_FLOAT,	OFF(w)},
 	{"h",		T_FLOAT,	OFF(h)},
-	{"x",		T_FLOAT,	OFF(x)},
-	{"y",		T_FLOAT,	OFF(y)},
+	{"x",		T_FLOAT,	OFF(x),		RO},
+	{"y",		T_FLOAT,	OFF(y),		RO},
 	{"deactivated",	T_INT,		OFF(deactivated)},
-	{"visible",	T_INT,		OFF(visible)},
-	{"frozen",	T_INT,		OFF(frozen)},
+	{"visible",	T_INT,		OFF(visible),	RO},
+	{"frozen",	T_INT,		OFF(frozen),	RO},
 	{"doublebuf",	T_INT,		OFF(doublebuf)},
 	{NULL}	/* Sentinel */
 };
@@ -2045,7 +2062,7 @@ forms_do_or_check_forms(dummy, args, func)
 			int dev;
 			short val;
 			if (my_event_callback == NULL)
-				return newintobject(-1);
+				return newintobject(-1L);
 			dev = fl_qread(&val);
 			arg = newtupleobject(2);
 			if (arg == NULL)
@@ -2100,6 +2117,22 @@ forms_check_forms(dummy, args)
 	return forms_do_or_check_forms(dummy, args, fl_check_forms);
 }
 
+static object *
+forms_do_only_forms(dummy, args)
+	object *dummy;
+	object *args;
+{
+	return forms_do_or_check_forms(dummy, args, fl_do_only_forms);
+}
+
+static object *
+forms_check_only_forms(dummy, args)
+	object *dummy;
+	object *args;
+{
+	return forms_do_or_check_forms(dummy, args, fl_check_only_forms);
+}
+
 #ifdef UNUSED
 static object *
 fl_call(func, args)
@@ -2134,14 +2167,42 @@ forms_get_rgbmode(dummy, args)
 	object *dummy;
 	object *args;
 {
-	extern fl_rgbmode;
+	extern int fl_rgbmode;
 
 	if (args != NULL) {
 		err_badarg();
 		return NULL;
 	}
-	return newintobject(fl_rgbmode);
+	return newintobject((long)fl_rgbmode);
 }
+
+static object *
+forms_show_errors(dummy, args)
+	object *dummy;
+	object *args;
+{
+	int show;
+	if (!getargs(args, "i", &show))
+		return NULL;
+	fl_show_errors(show);
+	INCREF(None);
+	return None;
+}
+
+static object *
+forms_set_font_name(dummy, args)
+	object *dummy;
+	object *args;
+{
+	int numb;
+	char *name;
+	if (!getargs(args, "(is)", &numb, &name))
+		return NULL;
+	fl_set_font_name(numb, name);
+	INCREF(None);
+	return None;
+}
+
 #endif /* !FL_V15 */
 
 
@@ -2355,7 +2416,7 @@ forms_show_choice(f, args)
 	char *m1, *m2, *m3, *b1, *b2, *b3;
 	int nb;
 	char *format;
-	int rv;
+	long rv;
 
 	if (args == NULL || !is_tupleobject(args)) {
 		err_badarg();
@@ -2526,6 +2587,8 @@ static struct methodlist forms_methods[] = {
 #ifndef FL_V15
 	{"set_graphics_mode",	forms_set_graphics_mode},
 	{"get_rgbmode",		forms_get_rgbmode},
+	{"show_errors",		forms_show_errors},
+	{"set_font_name",	forms_set_font_name},
 #endif /* !FL_V15 */
 	{NULL,			NULL}		/* sentinel */
 };

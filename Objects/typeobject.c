@@ -28,17 +28,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 /* Type object implementation */
 
-/* ARGSUSED */
-static int
-type_print(v, fp, flags)
-	typeobject *v;
-	FILE *fp;
-	int flags;
-{
-	fprintf(fp, "<type '%s'>", v->tp_name);
-	return 0;
-}
-
 static object *
 type_repr(v)
 	typeobject *v;
@@ -55,7 +44,7 @@ typeobject Typetype = {
 	sizeof(typeobject),	/* Basic object size */
 	0,			/* Item size for varobject */
 	0,			/*tp_dealloc*/
-	type_print,		/*tp_print*/
+	0,			/*tp_print*/
 	0,			/*tp_getattr*/
 	0,			/*tp_setattr*/
 	0,			/*tp_compare*/

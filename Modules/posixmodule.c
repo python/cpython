@@ -819,7 +819,7 @@ posix_times(self, args)
 	errno = 0;
 	c = times(&t);
 	if (c == (clock_t) -1) {
-		err_errno(IOError);
+		err_errno(PosixError);
 		return NULL;
 	}
 	tuple = newtupleobject(4);
@@ -847,8 +847,10 @@ posix_setsid(self, args)
 {
 	if (!getnoarg(args))
 		return NULL;
-	if (setsid() < 0)
+	if (setsid() < 0) {
 		err_errno(PosixError);
+		return NULL;
+	}
 	INCREF(None);
 	return None;
 }
@@ -861,9 +863,43 @@ posix_setpgid(self, args)
 	int pid, pgrp;
 	if (!getargs(args, "(ii)", &pid, &pgrp))
 		return NULL;
-	if (setpgid(pid, pgrp) < 0)
+	if (setpgid(pid, pgrp) < 0) {
 		err_errno(PosixError);
+		return NULL;
+	}
 	INCREF(None);
+	return None;
+}
+
+static object *
+posix_tcgetpgrp(self, args)
+	object *self;
+	object *args;
+{
+	int fd, pgid;
+	if (!getargs(args, "i", &fd))
+		return NULL;
+	pgid = tcgetpgrp(fd);
+	if (pgid < 0) {
+		err_errno(PosixError);
+		return NULL;
+	}
+	return newintobject((long)pgid);
+}
+
+static object *
+posix_tcsetpgrp(self, args)
+	object *self;
+	object *args;
+{
+	int fd, pgid;
+	if (!getargs(args, "(ii)", &fd, &pgid))
+		return NULL;
+	if (tcsetpgrp(fd, pgid) < 0) {
+		err_errno(PosixError);
+		return NULL;
+	}
+       INCREF(None);
 	return None;
 }
 
@@ -919,6 +955,8 @@ static struct methodlist posix_methods[] = {
 #ifdef DO_PG
 	{"setsid",	posix_setsid},
 	{"setpgid",	posix_setpgid},
+	{"tcgetpgrp",	posix_tcgetpgrp},
+	{"tcsetpgrp",	posix_tcsetpgrp},
 #endif
 
 	{NULL,		NULL}		 /* Sentinel */

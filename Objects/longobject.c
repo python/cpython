@@ -581,21 +581,6 @@ long_dealloc(v)
 	DEL(v);
 }
 
-/* ARGSUSED */
-static int
-long_print(v, fp, flags)
-	object *v;
-	FILE *fp;
-	int flags; /* Not used but required by interface */
-{
-	stringobject *str = (stringobject *) long_format(v, 10);
-	if (str == NULL)
-		return -1;
-	fprintf(fp, "%s", GETSTRINGVALUE(str));
-	DECREF(str);
-	return 0;
-}
-
 static object *
 long_repr(v)
 	object *v;
@@ -1347,7 +1332,7 @@ typeobject Longtype = {
 	sizeof(longobject) - sizeof(digit),
 	sizeof(digit),
 	long_dealloc,	/*tp_dealloc*/
-	long_print,	/*tp_print*/
+	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	(int (*) FPROTO((object *, object *)))

@@ -132,29 +132,11 @@ file_dealloc(f)
 	free((char *)f);
 }
 
-static int
-file_print(f, fp, flags)
-	fileobject *f;
-	FILE *fp;
-	int flags;
-{
-	fprintf(fp, "<%s file ", f->f_fp == NULL ? "closed" : "open");
-	if (printobject(f->f_name, fp, flags) != 0)
-		return -1;
-	fprintf(fp, ", mode ");
-	if (printobject(f->f_mode, fp, flags) != 0)
-		return -1;
-	fprintf(fp, ">");
-	return 0;
-}
-
 static object *
 file_repr(f)
 	fileobject *f;
 {
 	char buf[300];
-	/* XXX This differs from file_print if the filename contains
-	   quotes or other funny characters. */
 	sprintf(buf, "<%s file '%.256s', mode '%.10s'>",
 		f->f_fp == NULL ? "closed" : "open",
 		getstringvalue(f->f_name),
@@ -535,7 +517,7 @@ typeobject Filetype = {
 	sizeof(fileobject),
 	0,
 	file_dealloc,	/*tp_dealloc*/
-	file_print,	/*tp_print*/
+	0,		/*tp_print*/
 	file_getattr,	/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/

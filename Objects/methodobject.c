@@ -99,21 +99,6 @@ meth_dealloc(m)
 	free((char *)m);
 }
 
-/* ARGSUSED */
-static int
-meth_print(m, fp, flags)
-	methodobject *m;
-	FILE *fp;
-	int flags; /* Not used but required by interface */
-{
-	if (m->m_self == NULL)
-		fprintf(fp, "<built-in function '%s'>", m->m_name);
-	else
-		fprintf(fp, "<built-in method '%s' of some %s object>",
-			m->m_name, m->m_self->ob_type->tp_name);
-	return 0;
-}
-
 static object *
 meth_repr(m)
 	methodobject *m;
@@ -131,11 +116,11 @@ meth_repr(m)
 typeobject Methodtype = {
 	OB_HEAD_INIT(&Typetype)
 	0,
-	"method",
+	"builtin_function_or_method",
 	sizeof(methodobject),
 	0,
 	meth_dealloc,	/*tp_dealloc*/
-	meth_print,	/*tp_print*/
+	0,		/*tp_print*/
 	0,		/*tp_getattr*/
 	0,		/*tp_setattr*/
 	0,		/*tp_compare*/
