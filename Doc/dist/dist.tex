@@ -234,6 +234,17 @@ a couple of dozen modules split into (so far) two packages; an explicit
 list of every module would be tedious to generate and difficult to
 maintain.
 
+Note that any pathnames (files or directories) supplied in the setup
+script should be written using the Unix convention, i.e.
+slash-separated.  The Distutils will take care of converting this
+platform-neutral representation to whatever is appropriate on your
+current platform before actually using the pathname.  This makes your
+setup script portable across operating systems, which of course is one
+of the major goals of the Distutils.  In this spirit, all pathnames in
+this document are slash-separated (Mac OS users should keep in mind that
+the \emph{absence} of a leading slash indicates a relative directory,
+the opposite of the Mac OS convention with colons).
+
 
 \subsection{Package directories}
 \label{sec:package-dirs}
@@ -351,13 +362,19 @@ option, for example:
 python setup.py sdist --formats=gztar,zip
 \end{verbatim}
 to create a gzipped tarball and a zip file.  The available formats are:
-\begin{tableii}{ll}{textrm}%
-  {Format}{Description}
-  \lineii{zip}{zip file (\file{.zip})}
-  \lineii{gztar}{gzipped tar file (\file{.tar.gz})}
-  \lineii{ztar}{compressed tar file (\file{.tar.Z})}
-  \lineii{tar}{tar file (\file{.tar})}  
-\end{tableii}
+\begin{tableiii}{l|l|c}{code}%
+  {Format}{Description}{Notes}
+  \lineiii{zip}{zip file (\file{.zip})}{(1)}
+  \lineiii{gztar}{gzipped tar file (\file{.tar.gz})}{(2)}
+  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{}
+  \lineiii{tar}{tar file (\file{.tar})}{}
+\end{tableiii}
+
+\noindent Notes:
+\begin{description}
+\item[(1)] default on Windows
+\item[(2)] default on Unix
+\end{description}
 
 
 \subsection{The manifest and manifest template}
@@ -409,8 +426,9 @@ When we have fully processed the manifest template, we have our complete
 list of files.  This list is written to the manifest for future
 reference, and then used to build the source distribution archive(s).
 
-We can now see how the \command{sdist} command will build the list of
-files to include in the Distutils source distribution:
+Following the Distutils' own manifest template, let's trace how the
+\command{sdist} command will build the list of files to include in the
+Distutils source distribution:
 \begin{enumerate}
 \item include all Python source files in the \file{distutils} and
   \file{distutils/command} subdirectories (because packages
@@ -432,6 +450,11 @@ files to include in the Distutils source distribution:
   commands
 \end{enumerate}
 
+Just like in the setup script, file and directory names in the manifest
+template should always be slash-separated; the Distutils will take care
+of converting them to the standard representation on your platform.
+That way, the manifest template is portable across operating systems.
+
 
 \subsection{Manifest-related options}
 \label{sec:manifest-options}
@@ -439,9 +462,10 @@ files to include in the Distutils source distribution:
 The normal course of operations for the \command{sdist} command is as
 follows:
 \begin{itemize}
-\item if \file{MANIFEST.in} is more recent than \file{MANIFEST}, or
-  \file{MANIFEST} doesn't exist at all, recreate \file{MANIFEST} by
-  processing \file{MANIFEST.in}
+\item if the manifest file, \file{MANIFEST} doesn't exist, read
+  \file{MANIFEST.in} and create the manifest
+\item if \file{MANIFEST.in} is more recent than \file{MANIFEST},
+  recreate \file{MANIFEST} by reading \file{MANIFEST.in}
 \item use the list of files now in \file{MANIFEST} (either just
   generated or read in) to create the source distribution archive(s)
 \end{itemize}
@@ -473,7 +497,103 @@ patterns in it), then your source distribution will be empty.
 \section{Creating Built Distributions}
 \label{sec:built-dist}
 
+A ``built distribution'' is what you're probably used to thinking of
+either as a ``binary package'' or an ``installer'' (depending on your
+background).  It's not necessarily binary, though, because it might
+contain only Python source code and/or byte-code; and we don't call it a
+package, because that word is already spoken for in Python.  (And
+``installer'' is a term specific to the Windows world.  \XXX{do Mac
+  people use it?})
 
+A built distribution is how you make life as easy as possible for
+installers of your module distribution: for users of RPM-based Linux
+systems, it's a binary RPM; for Windows users, it's an executable
+installer; for Debian-based Linux users, it's a Debian package; and so
+forth.  Obviously, no one person will be able to create built
+distributions for every platform under the sun, so the Distutils is
+designed to enable module developers to concentrate on their
+specialty---writing code and creating source distributions---while an
+intermediary species of \emph{packager} springs up to turn source
+distributions into build distributions for as many platforms as there
+are packagers.
+
+Of course, the module developer could be his own packager; or the
+packager could be a volunteer ``out there'' somewhere who has access to
+a platform which the original developer does not; or it could be
+software periodically grabbing new source distributions and turning them
+into built distributions for as many platforms as the software has
+access to.  Regardless of the nature of the beast, a packager uses the
+setup script and the \command{bdist} command family to generate built
+distributions.
+
+As a simple example, if I run the following command in the Distutils
+source tree:
+\begin{verbatim}
+python setup.py bdist
+\end{verbatim}
+then the Distutils builds my module distribution (the Distutils itself
+in this case), does a ``fake'' installation (also in the \file{build}
+directory), and creates the default type of built distribution for my
+platform.  In Distutils 0.8, only two types of built distribution are
+supported: \code{gztar} (default on non-Linux Unix) and \code{zip}
+(default on Windows).  Thus, the above command on a Unix system creates
+\file{Distutils-0.8.built-posix.tar.gz}; unpacking this tarball from
+Python's \filevar{prefix} directory installs the Distutils just as
+though you had downloaded the source distribution and run \code{python
+  setup.py install}.  Obviously, for pure Python distributions, this
+isn't a huge win---but for non-pure distributions, which include
+extensions that would need to be compiled, it can mean the difference
+between someone being able to use your extensions or not.
+
+\XXX{filenames are inaccurate here!}
+
+The \command{bdist} command has a \option{--format} option, similar to
+the \command{sdist} command, that you can use to select which formats to
+generate: for example,
+\begin{verbatim}
+python setup.py bdist --format=zip
+\end{verbatim}
+would, when run on a Unix system, create
+\file{Distutils-0.8.built-posix.tar.gz}---again, this archive would be
+unpacked from Python's \filevar{prefix} directory to install the
+Distutils.
+
+The available formats for built distributions are:
+\begin{tableiii}{l|l|c}{code}%
+  {Format}{Description}{Notes}
+  \lineiii{zip}{zip file (\file{.zip})}{(1)}
+  \lineiii{gztar}{gzipped tar file (\file{.tar.gz})}{(2)}
+  \lineiii{ztar}{compressed tar file (\file{.tar.Z})}{}
+  \lineiii{tar}{tar file (\file{.tar})}{}
+  \lineiii{rpm}{RPM}{(3)}
+  \lineiii{srpm}{source RPM}{}
+  \lineiii{wise}{Wise installer for Windows}{}
+\end{tableiii}
+
+\noindent Notes:
+\begin{description}
+\item[(1)] default on Windows
+\item[(2)] default on Unix
+\item[(3)] not implemented yet; will be default on RPM-based Linux
+  systems
+\item[(5)] not implemented yet; will be default on Windows
+\end{description}
+
+You don't have to use the \command{bdist} command with the
+\option{--formats} option; you can also use the command that directly
+implements the format you're interested in.  Many of these
+\command{bdist} ``sub-commands'' actually generate several similar
+formats; for instance, the \command{bdist\_dumb} command generates all
+the ``dumb'' archive formats (\code{tar}, \code{ztar}, \code{gztar}, and
+\code{zip}), and \command{bdist\_rpm} generates both binary and source
+RPMs.  The \command{bdist} sub-commands, and the formats generated by
+each, are:
+\begin{tableii}{l|l}{command}%
+  {Command}{Formats}
+  \lineii{bdist\_dumb}{tar, ztar, gztar, zip}
+  \lineii{bdist\_rpm}{rpm, srpm}
+  \lineii{bdist\_wise}{wise}
+\end{tableii}
 
 \section{Examples}
 \label{sec:examples}
