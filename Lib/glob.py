@@ -1,4 +1,4 @@
-# Module 'glob' -- filename globbing.
+"""Filename globbing utility."""
 
 import os
 import fnmatch
@@ -6,6 +6,11 @@ import regex
 
 
 def glob(pathname):
+	"""Return a list of paths matching a pathname pattern.
+
+	The pattern may contain simple shell-style wildcards a la fnmatch.
+
+	"""
 	if not has_magic(pathname):
 		if os.path.exists(pathname):
 			return [pathname]
