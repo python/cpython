@@ -192,7 +192,7 @@ builtin_unicode(self, args)
 static char unicode_doc[] =
 "unicode(string [, encoding[, errors]]) -> object\n\
 \n\
-Creates a new unicode object from the given encoded string.\n\
+Creates a new Unicode object from the given encoded string.\n\
 encoding defaults to 'utf-8' and errors, defining the error handling,\n\
 to 'strict'.";
 
@@ -368,9 +368,9 @@ builtin_unichr(self, args)
 }
 
 static char unichr_doc[] =
-"unichr(i) -> unicode character\n\
+"unichr(i) -> Unicode character\n\
 \n\
-Return a unicode string of one character with ordinal i; 0 <= i < 65536.";
+Return a Unicode string of one character with ordinal i; 0 <= i < 65536.";
 
 
 static PyObject *
@@ -1657,7 +1657,7 @@ builtin_ord(self, args)
 			ord = (long)*PyUnicode_AS_UNICODE(obj);
 	} else {
 		PyErr_Format(PyExc_TypeError,
-			     "expected string or unicode character, " \
+			     "expected string or Unicode character, " \
 			     "%.200s found", obj->ob_type->tp_name);
 		return NULL;
 	}
@@ -1673,7 +1673,7 @@ builtin_ord(self, args)
 static char ord_doc[] =
 "ord(c) -> integer\n\
 \n\
-Return the integer ordinal of a one character [unicode] string.";
+Return the integer ordinal of a one character string.";
 
 
 static PyObject *
