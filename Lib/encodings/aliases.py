@@ -27,7 +27,6 @@ aliases = {
     '646'                : 'ascii',
     'ansi_x3.4_1968'     : 'ascii',
     'ansi_x3.4_1986'     : 'ascii',
-    'ansi_x3_4_1968'     : 'ascii',
     'cp367'              : 'ascii',
     'csascii'            : 'ascii',
     'ibm367'             : 'ascii',
