@@ -64,14 +64,14 @@ PAPER=letter
 INFODIR=	info
 TOOLSDIR=	tools
 
-PWD=$(shell pwd)
-
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
 RELEASE=2.3.2c1
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
+
+PWD=$(shell pwd)
 
 # (The trailing colon in the value is needed; TeX places it's default
 # set of paths at the location of the empty string in the path list.)
