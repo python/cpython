@@ -1,7 +1,7 @@
 \section{\module{codecs} ---
-         Python codec registry and base classes}
+         Codec registry and base classes}
 
-\declaremodule{standard}{codec}
+\declaremodule{standard}{codecs}
 \modulesynopsis{Encode and decode data and streams.}
 \moduleauthor{Marc-Andre Lemburg}{mal@lemburg.com}
 \sectionauthor{Marc-Andre Lemburg}{mal@lemburg.com}
@@ -35,20 +35,21 @@ return a tuple of functions \code{(\var{encoder}, \var{decoder}, \var{stream_rea
   \var{stream_reader} and \var{stream_writer}: These have to be
   factory functions providing the following interface:
 
-	\code{factory(\var{stream},\var{errors}='strict')}
+	\code{factory(\var{stream}, \var{errors}='strict')}
 
   The factory functions must return objects providing the interfaces
-  defined by the base classes
-  \class{StreamWriter}/\class{StreamReader} resp. Stream codecs can
-  maintain state.
+  defined by the base classes \class{StreamWriter} and
+  \class{StreamReader}, respectively. Stream codecs can maintain
+  state.
 
-  Possible values for errors are 'strict' (raise an exception in case
-  of an encoding error), 'replace' (replace malformed data with a
-  suitable replacement marker, e.g. '?') and 'ignore' (ignore
-  malformed data and continue without further notice).
+  Possible values for errors are \code{'strict'} (raise an exception
+  in case of an encoding error), \code{'replace'} (replace malformed
+  data with a suitable replacement marker, such as \character{?}) and
+  \code{'ignore'} (ignore malformed data and continue without further
+  notice).
 
 In case a search function cannot find a given encoding, it should
-return None.
+return \code{None}.
 \end{funcdesc}
 
 \begin{funcdesc}{lookup}{encoding}
@@ -57,20 +58,21 @@ function tuple as defined above.
 
 Encodings are first looked up in the registry's cache. If not found,
 the list of registered search functions is scanned. If no codecs tuple
-is found, a LookupError is raised. Otherwise, the codecs tuple is
-stored in the cache and returned to the caller.
+is found, a \exception{LookupError} is raised. Otherwise, the codecs
+tuple is stored in the cache and returned to the caller.
 \end{funcdesc}
 
 To simplify working with encoded files or stream, the module
 also defines these utility functions:
 
-\begin{funcdesc}{open}{filename, mode\optional{, encoding=None, errors='strict', buffering=1}}
+\begin{funcdesc}{open}{filename, mode\optional{, encoding=None\optional{, errors='strict'\optional{, buffering=1}}}}
 Open an encoded file using the given \var{mode} and return
 a wrapped version providing transparent encoding/decoding.
 
-Note: The wrapped version will only accept the object format defined
-by the codecs, i.e. Unicode objects for most builtin codecs. Output is
-also codec dependent and will usually by Unicode as well.
+\strong{Note:} The wrapped version will only accept the object format
+defined by the codecs, i.e. Unicode objects for most builtin
+codecs. Output is also codec dependent and will usually by Unicode as
+well.
 
 \var{encoding} specifies the encoding which is to be used for the
 the file.
@@ -79,11 +81,11 @@ the file.
 to 'strict' which causes a \exception{ValueError} to be raised in case
 an encoding error occurs.
 
-\var{buffering} has the same meaning as for the builtin open() API.
-It defaults to line buffered.
+\var{buffering} has the same meaning as for the built-in
+\function{open()} function.  It defaults to line buffered.
 \end{funcdesc}
 
-\begin{funcdesc}{EncodedFile}{file, input\optional{, output=None, errors='strict'}}
+\begin{funcdesc}{EncodedFile}{file, input\optional{, output=None\optional{, errors='strict'}}}
 
 Return a wrapped version of file which provides transparent
 encoding translation.
