@@ -448,7 +448,7 @@ class UnicodeData:
 
     def __init__(self, filename, expand=1):
         file = open(filename)
-        table = [None] * 65536
+        table = [None] * 0x110000
         while 1:
             s = file.readline()
             if not s:
@@ -476,7 +476,7 @@ class UnicodeData:
         # public attributes
         self.filename = filename
         self.table = table
-        self.chars = range(65536) # unicode
+        self.chars = range(0x110000) # unicode 3.2
 
     def uselatin1(self):
         # restrict character range to ISO Latin 1

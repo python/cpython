@@ -2,6 +2,6 @@ test_ucn
 Testing General Unicode Character Name, and case insensitivity... done.
 Testing name to code mapping.... done.
 Testing code to name mapping for all characters.... done.
-Found 10538 characters in the unicode name database
+Found 11556 characters in the unicode name database
 Testing misc. symbols for unicode character name expansion.... done.
 Testing unicode character name expansion strict error handling.... done.

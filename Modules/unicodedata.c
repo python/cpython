@@ -36,7 +36,7 @@ _getrecord(PyUnicodeObject* v)
 
     code = (int) *PyUnicode_AS_UNICODE(v);
 
-    if (code < 0 || code >= 65536)
+    if (code < 0 || code >= 0x110000)
         index = 0;
     else {
         index = index1[(code>>SHIFT)];
@@ -219,7 +219,7 @@ unicodedata_decomposition(PyObject *self, PyObject *args)
 
     code = (int) *PyUnicode_AS_UNICODE(v);
 
-    if (code < 0 || code >= 65536)
+    if (code < 0 || code >= 0x110000)
         index = 0;
     else {
         index = decomp_index1[(code>>DECOMP_SHIFT)];
@@ -284,7 +284,7 @@ _getucname(Py_UCS4 code, char* buffer, int buflen)
     int word;
     unsigned char* w;
 
-    if (code >= 65536)
+    if (code >= 0x110000)
         return 0;
 
     /* get offset into phrasebook */
