@@ -1,6 +1,6 @@
 /* Minimal main program -- everything is loaded from the library. */
 
-#define WINDOWS_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 #include "Python.h"
