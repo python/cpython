@@ -10,7 +10,6 @@ import tempfile
 class Bsddb185Tests(unittest.TestCase):
     def test_open_existing_hash(self):
         "verify we can open a file known to be a hash v2 file"
-        # do we need to worry about big vs little endian?
         db = bsddb185.hashopen(findfile("185test.db"))
         self.assertEqual(db["1"], "1")
         db.close()
