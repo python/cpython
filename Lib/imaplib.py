@@ -1016,7 +1016,7 @@ if __debug__:
         if not l: return
         t = '\n\t\t'
         l = map(lambda x:'%s: "%s"' % (x[0], x[1][0] and '" "'.join(x[1]) or ''), l)
-        _mesg('untagged responses dump:%s%s' % (t, j(l, t)))
+        _mesg('untagged responses dump:%s%s' % (t, t.join(l)))
 
     _cmd_log = []           # Last `_cmd_log_len' interactions
     _cmd_log_len = 10
