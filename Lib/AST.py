@@ -55,12 +55,15 @@ tuple()
 """
 
 __version__ = '$Revision$'
-__copyright__ = """Copyright (c) 1995, 1996 by Fred L. Drake, Jr.
+__copyright__ = """Copyright (c) 1995, 1996, 1997 by Fred L. Drake, Jr.
 
 This software may be used and distributed freely for any purpose provided
 that this notice is included unchanged on any and all copies.  The author
 does not warrant or guarantee this software in any way.
 """
+
+import parser
+
 
 class AST:
     """Base class for Abstract Syntax Tree objects.
@@ -71,9 +74,6 @@ class AST:
     This base class provides all of the query methods for subclass
     objects defined in this module.
     """
-    import parser			# import internally to avoid
-    _p = parser				# namespace pollution at the
-					# top level
     _text = None
     _code = None
     _ast  = None
@@ -94,8 +94,8 @@ class AST:
 	    raise TypeError, 'Base AST class requires tuple parameter.'
 
 	self._tupl = tuple
-	self._ast  = self._p.tuple2ast(tuple)
-	self._type = (self._p.isexpr(self._ast) and 'expression') or 'suite'
+	self._ast  = parser.tuple2ast(tuple)
+	self._type = (parser.isexpr(self._ast) and 'expression') or 'suite'
 
     def list(self, line_info = 0):
 	"""Returns a fresh list representing the parse tree.
@@ -104,7 +104,7 @@ class AST:
 	    If true, includes line number information for terminal tokens in
 	    the output data structure,
 	"""
-	return self._p.ast2list(self._ast, line_info)
+	return parser.ast2list(self._ast, line_info)
 
     def tuple(self, line_info = 0):
 	"""Returns the tuple representing the parse tree.
@@ -114,7 +114,7 @@ class AST:
 	    the output data structure,
 	"""
 	if self._tupl is None:
-	    self._tupl = self._p.ast2tuple(self._ast, line_info)
+	    self._tupl = parser.ast2tuple(self._ast, line_info)
 	return self._tupl
 
     def code(self):
@@ -126,7 +126,7 @@ class AST:
 	regarding execution of code objects apply.
 	"""
 	if not self._code:
-	    self._code = self._p.compileast(self._ast)
+	    self._code = parser.compileast(self._ast)
 	return self._code
 
     def ast(self):
@@ -180,7 +180,7 @@ class SuiteAST(AST):
 	if type(text) is not type(''):
 	    raise TypeError, 'SuiteAST requires source text parameter.'
 	self._text = text
-	self._ast  = self._p.suite(text)
+	self._ast  = parser.suite(text)
 
     def isSuite(self):
 	return 1
@@ -228,7 +228,7 @@ class ExpressionAST(AST):
 	if type(text) is not type(''):
 	    raise TypeError, 'ExpressionAST requires source text parameter.'
 	self._text = text
-	self._ast  = self._p.expr(text)
+	self._ast  = parser.expr(text)
 
     def isSuite(self):
 	return 0
