@@ -3,7 +3,7 @@
 Implements the Distutils 'bdist' command (create a built [binary]
 distribution)."""
 
-# This module should be kept compatible with Python 1.5.2.
+# This module should be kept compatible with Python 2.1.
 
 __revision__ = "$Id$"
 
