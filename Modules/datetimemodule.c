@@ -5537,7 +5537,7 @@ magnitude less than 24 hours.  For that reason, if y is firmly in std time,
 
 In any case, the new value is
 
-    z = y + y.o - y.d - x.o
+    z.n = y.n + y.o - y.d - x.o
 
 If
     z.n - z.o = x.n - x.o                       [4]
@@ -5579,8 +5579,55 @@ Plugging that into [5],
 Therefore z is the standard-time spelling, and there's nothing left to do in
 this case.
 
-Note that we actually proved something stronger:  when [4] is true, it must
-also be true that z.dst() returns 0.
+QED
 
-XXX Flesh out the rest of the algorithm.
+Note that we actually proved something stronger:  [4] is true if and only if
+z.dst() returns 0.  The "only if" part was proved directly.  The "if" part
+is proved by starting with z.d = 0 and reading the proof bottom-up; all the
+steps are "iff", so are reversible.
+
+Next:  if [4] isn't true, we're not done.  It's helpful to step back and look
+at
+
+    z.n = y.n + y.o - y.d - x.o = y.n-x.o + y.o-y.d
+
+from a higher level.  Since y.n = x.n, the y.n-x.o part gives x's UTC
+equivalent hour.  Then since y.s=y.o-y.d, the y.o-y.d part converts x's UTC
+equivalent into tz's standard time.  IOW, z is the correct spelling of x in
+tz's standard time.
+If
+    z.n - z.o != x.n - x.o
+despite that, then either (1) x is in the "unspellable hour" at the end
+of tz's daylight period; or, (2) z.n needs to be shifted into tz's daylight
+time.
+
+Assuming #2, that would be easy if we could ask the tzinfo object what the
+daylight offset would be if DST were in effect.  And we could compute z.d,
+but we already have enough info to compute it from the quantities we know:
+
+Claim:  The adjustment needed is adding (x.n-x.o)-(z.n-z.o) to z.n.
+
+Proof:  By the comment following the last proof, z.d is not 0 now, and z.d
+is what we need to add to z.n (it's the "missing part" of the conversion from
+x's UTC equivalent to z's daylight time).
+
+    z.d = z.o - z.s by #1; z.s = y.s since they're in the same time zone, so
+    z.d = z.o - y.s; then y.s = y.o - y.d by #1, so
+    z.d = z.o - (y.o - y.d); then since z.n = y.n+y.o-y.d-x.o, y.o-y.d=
+                             z.n-y.n+x.o, so
+    z.d = z.o - (z.n - y.n + x.o); then x.n = y.n, so
+    z.d = z.o - (z.n - x.n + x.o)
+and simple rearranging gives the desired
+    z.d = (x.n - x.o) - (z.n - z.o)
+
+The code actually optimizes this some more, in a straightforward way.  Letting
+
+    z'.n = z.n + (x.n - x.o) - (z.n - z.o)
+
+we can again ask whether
+
+    z'.n - z'.o = x.n - x.o
+
+If so, we're done.  If not, the tzinfo class is insane, or we're trying to
+convert to the hour that can't be spelled in tz.
 --------------------------------------------------------------------------- */
