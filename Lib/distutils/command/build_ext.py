@@ -197,9 +197,12 @@ class BuildExt (Command):
             sources = build_info.get ('sources')
             if sources is None or type (sources) not in (ListType, TupleType):
                 raise DistutilsValueError, \
-                      "in ext_modules option, 'sources' must be present " + \
-                      "and must be a list of source filenames"
+                      ("in ext_modules option (extension '%s'), " +
+                       "'sources' must be present and must be " +
+                       "a list of source filenames") % extension_name
             sources = list (sources)
+
+            self.announce ("building '%s' extension" % extension_name)
 
             # First step: compile the source code to object files.  This
             # drops the object files in the current directory, regardless
