@@ -102,8 +102,8 @@ askfile()
 		printf("EOF\n");
 		exit(1);
 	}
-	/* XXX The (unsigned char *) case is needed by THINK C */
-	if (sscanf((unsigned char *)buf, " %s ", name) != 1) {
+	/* XXX The (unsigned char *) case is needed by THINK C 3.0 */
+	if (sscanf(/*(unsigned char *)*/buf, " %s ", name) != 1) {
 		printf("No file\n");
 		exit(1);
 	}
