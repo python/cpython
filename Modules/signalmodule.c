@@ -30,6 +30,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "intrcheck.h"
 
 #include <signal.h>
+#include <errno.h>
 
 struct signalhandler_list {
 	int	tripped;
@@ -37,6 +38,7 @@ struct signalhandler_list {
 };
 
 static struct signalhandler_list sig_list[NSIG];
+static int tripped = 0;		/* Speed up sigcheck() when none tripped */
 
 static object *default_sig_object;
 static object *default_ignore_object;
@@ -55,6 +57,7 @@ static RETSIGTYPE
 signal_handler(sig_num)
      int sig_num;
 {
+	tripped++;
 	sig_list[sig_num].tripped = 1;
 	(void *)signal(sig_num, &signal_handler);
 }
@@ -148,7 +151,7 @@ initsignal()
 
 	sig_list[0].tripped = 0;
 	for (i = 1; i < NSIG; i++) {
-		void *t; /* type cop-out */
+		RETSIGTYPE (*t)();
 		t = signal(i, SIG_IGN);
 		signal(i, t);
 		sig_list[i].tripped = 0;
@@ -313,7 +316,10 @@ int
 sigcheck()
 {
 	int i;
-	object *f = getframe();
+	object *f;
+	if (!tripped)
+		return 0;
+	f = getframe();
 	if (f == NULL)
 		f = None;
 	for (i = 1; i < NSIG; i++) {
@@ -334,6 +340,7 @@ sigcheck()
 			}
 		}
 	}
+	tripped = 0;
 	return 0;
 }
 
@@ -348,8 +355,9 @@ initintr()
 int
 intrcheck()
 {
-	if (!sigcheck())
-		return 0;
-	err_clear();
-	return 1;
+	if (sig_list[SIGINT].tripped) {
+		sig_list[SIGINT].tripped = 0;
+		return 1;
+	}
+	return 0;
 }
