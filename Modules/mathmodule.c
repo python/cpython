@@ -18,7 +18,7 @@ extern double modf (double, double *);
 #endif
 
 /* RED_FLAG 12-Oct-2000 Tim
- * What CHECK does if errno != 0 and x is a NaN is a platform-dependent crap
+ * What CHECK does if errno == 0 and x is a NaN is a platform-dependent crap
  * shoot.  Most (but not all!) platforms will end up setting errno to ERANGE
  * then, but EDOM is probably better.
  */
@@ -38,6 +38,7 @@ static int
 is_error(double x)
 {
 	int result = 1;	/* presumption of guilt */
+	assert(errno);	/* non-zero errno is a precondition for calling */
 	if (errno == EDOM)
 		PyErr_SetString(PyExc_ValueError, "math domain error");
 	else if (errno == ERANGE) {
