@@ -403,11 +403,13 @@ PyObject_Compare(PyObject *v, PyObject *w)
 		int c;
 		if (!PyInstance_Check(v))
 			return -PyObject_Compare(w, v);
-		if (++_PyCompareState_nesting > NESTING_LIMIT) {
+		_PyCompareState_nesting++;
+		if (_PyCompareState_nesting > NESTING_LIMIT) {
 			PyObject *inprogress, *pair;
 
 			inprogress = get_inprogress_dict();
 			if (inprogress == NULL) {
+				_PyCompareState_nesting--;
 				return -1;
 			}
 			pair = make_pair(v, w);
@@ -415,20 +417,21 @@ PyObject_Compare(PyObject *v, PyObject *w)
 				/* already comparing these objects.  assume
 				   they're equal until shown otherwise */
 				Py_DECREF(pair);
-				--_PyCompareState_nesting;
+				_PyCompareState_nesting--;
 				return 0;
 			}
 			if (PyDict_SetItem(inprogress, pair, pair) == -1) {
+				_PyCompareState_nesting--;
 				return -1;
 			}
 			res = do_cmp(v, w);
-			_PyCompareState_nesting--;
 			/* XXX DelItem shouldn't fail */
 			PyDict_DelItem(inprogress, pair);
 			Py_DECREF(pair);
 		} else {
 			res = do_cmp(v, w);
 		}
+		_PyCompareState_nesting--;
 		if (res == NULL)
 			return -1;
 		if (!PyInt_Check(res)) {
@@ -486,33 +489,36 @@ PyObject_Compare(PyObject *v, PyObject *w)
 	if (vtp->tp_compare == NULL) {
 		return (v < w) ? -1 : 1;
 	}
-	if (++_PyCompareState_nesting > NESTING_LIMIT
+	_PyCompareState_nesting++;
+	if (_PyCompareState_nesting > NESTING_LIMIT
 	    && (vtp->tp_as_mapping 
 		|| (vtp->tp_as_sequence && !PyString_Check(v)))) {
 		PyObject *inprogress, *pair;
 
 		inprogress = get_inprogress_dict();
 		if (inprogress == NULL) {
+			_PyCompareState_nesting--;
 			return -1;
 		}
 		pair = make_pair(v, w);
 		if (PyDict_GetItem(inprogress, pair)) {
 			/* already comparing these objects.  assume
 			   they're equal until shown otherwise */
-			_PyCompareState_nesting--;
 			Py_DECREF(pair);
+			_PyCompareState_nesting--;
 			return 0;
 		}
 		if (PyDict_SetItem(inprogress, pair, pair) == -1) {
+			_PyCompareState_nesting--;
 			return -1;
 		}
 		result = (*vtp->tp_compare)(v, w);
-		_PyCompareState_nesting--;
 		PyDict_DelItem(inprogress, pair); /* XXX shouldn't fail */
 		Py_DECREF(pair);
 	} else {
 		result = (*vtp->tp_compare)(v, w);
 	}
+	_PyCompareState_nesting--;
 	return result;
 }
 
