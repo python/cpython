@@ -24,7 +24,7 @@ import __main__
 exit_now = False
 quitting = False
 
-def main():
+def main(del_exitfunc=False):
     """Start the Python execution server in a subprocess
 
     In the Python subprocess, RPCServer is instantiated with handlerclass
@@ -44,6 +44,8 @@ def main():
     """
     global exit_now
     global quitting
+    global no_exitfunc
+    no_exitfunc = del_exitfunc
     port = 8833
     if sys.argv[1:]:
         port = int(sys.argv[1])
@@ -57,7 +59,7 @@ def main():
         try:
             if exit_now:
                 try:
-                    sys.exit(0)
+                    exit()
                 except KeyboardInterrupt:
                     # exiting but got an extra KBI? Try again!
                     continue
@@ -83,7 +85,7 @@ def main():
             except:
                 # Link didn't work, print same exception to __stderr__
                 traceback.print_exception(type, value, tb, file=sys.__stderr__)
-                sys.exit(0)
+                exit()
             else:
                 continue
 
@@ -159,6 +161,16 @@ def flush_stdout():
     except (AttributeError, EOFError):
         pass
 
+def exit():
+    """Exit subprocess, possibly after first deleting sys.exitfunc
+
+    If config-main.cfg/.def 'General' 'delete-exitfunc' is True, then any
+    sys.exitfunc will be removed before exiting.  (VPython support)
+
+    """
+    if no_exitfunc:
+        del sys.exitfunc
+    sys.exit(0)
 
 class MyRPCServer(rpc.RPCServer):
 
@@ -186,7 +198,7 @@ class MyRPCServer(rpc.RPCServer):
             traceback.print_exc(file=erf)
             print>>erf, '\n*** Unrecoverable, server exiting!'
             print>>erf, '-'*40
-            sys.exit(0)
+            exit()
 
 
 class MyHandler(rpc.RPCHandler):
@@ -229,7 +241,7 @@ class Executive:
             exec code in self.locals
         except:
             if quitting:
-                sys.exit(0)
+                exit()
             # even print a user code SystemExit exception, continue
             print_exception()
         else:
