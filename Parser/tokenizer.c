@@ -485,8 +485,8 @@ PyTokenizer_Get(tok, p_start, p_end)
 				/* Dedent -- any number, must be consistent */
 				while (tok->indent > 0 &&
 					col < tok->indstack[tok->indent]) {
-					tok->indent--;
 					tok->pendin--;
+					tok->indent--;
 				}
 				if (col != tok->indstack[tok->indent]) {
 					fprintf(stderr,
