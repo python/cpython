@@ -86,7 +86,9 @@ dl_call(dlobject *xp, PyObject *args)
 				"function name must be a string");
 		return NULL;
 	}
-	func = dlsym(xp->dl_handle, PyString_AsString(name));
+	func = (long (*)(long, long, long, long, long, 
+                         long, long, long, long, long)) 
+          dlsym(xp->dl_handle, PyString_AsString(name));
 	if (func == NULL) {
 		PyErr_SetString(PyExc_ValueError, dlerror());
 		return NULL;
