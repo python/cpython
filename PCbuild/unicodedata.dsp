@@ -95,9 +95,5 @@ LINK32=link.exe
 
 SOURCE=..\Modules\unicodedata.c
 # End Source File
-# Begin Source File
-
-SOURCE=..\Modules\unicodedatabase.c
-# End Source File
 # End Target
 # End Project
