@@ -3326,6 +3326,20 @@ wrap_inquiry(PyObject *self, PyObject *args, void *wrapped)
 }
 
 static PyObject *
+wrap_inquirypred(PyObject *self, PyObject *args, void *wrapped)
+{
+	inquiry func = (inquiry)wrapped;
+	int res;
+
+	if (!PyArg_ParseTuple(args, ""))
+		return NULL;
+	res = (*func)(self);
+	if (res == -1 && PyErr_Occurred())
+		return NULL;
+	return PyBool_FromLong((long)res);
+}
+
+static PyObject *
 wrap_binaryfunc(PyObject *self, PyObject *args, void *wrapped)
 {
 	binaryfunc func = (binaryfunc)wrapped;
@@ -4914,7 +4928,7 @@ static slotdef slotdefs[] = {
 	UNSLOT("__pos__", nb_positive, slot_nb_positive, wrap_unaryfunc, "+x"),
 	UNSLOT("__abs__", nb_absolute, slot_nb_absolute, wrap_unaryfunc,
 	       "abs(x)"),
-	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_inquiry,
+	UNSLOT("__nonzero__", nb_nonzero, slot_nb_nonzero, wrap_inquirypred,
 	       "x != 0"),
 	UNSLOT("__invert__", nb_invert, slot_nb_invert, wrap_unaryfunc, "~x"),
 	BINSLOT("__lshift__", nb_lshift, slot_nb_lshift, "<<"),
