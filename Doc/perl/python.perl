@@ -882,7 +882,7 @@ sub do_env_excdesc{
     local($_) = @_;
     my $excname = next_argument();
     my $idx = make_str_index_entry("<tt class='exception'>$excname</tt>");
-    return "<dl><dt><b>$idx</b>\n<dd>" . $_ . '</dl>'
+    return "<dl><dt><b>exception $idx</b>\n<dd>" . $_ . '</dl>'
 }
 
 sub do_env_fulllineitems{ return do_env_itemize(@_); }
@@ -895,7 +895,9 @@ sub handle_classlike_descriptor{
     $idx = make_str_index_entry(
 		"<tt class='$what'>$THIS_CLASS</tt> ($what in $THIS_MODULE)" );
     $idx =~ s/ \(.*\)//;
-    return "<dl><dt><b>$idx</b> (<var>$arg_list</var>)\n<dd>" . $_ . '</dl>';
+    return ("<dl><dt><b>$what $idx</b> (<var>$arg_list</var>)\n<dd>"
+            . $_
+            . '</dl>');
 }
 
 sub do_env_classdesc{

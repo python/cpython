@@ -116,10 +116,10 @@
 \sloppy
 \parindent = 0mm
 \parskip = 2mm
-\hbadness = 5000		% don't print trivial gripes
+\hbadness = 5000                % don't print trivial gripes
 
-\pagestyle{empty}		% start this way; change for
-\pagenumbering{roman}		% ToC & chapters
+\pagestyle{empty}               % start this way; change for
+\pagenumbering{roman}           % ToC & chapters
 
 % Use this to set the font family for headers and other decor:
 \newcommand{\py@HeaderFamily}{\sffamily}
@@ -598,7 +598,7 @@
   % Using \renewcommand doesn't work for this, for unknown reasons:
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
-    \item[\code{\bfcode{#1}(\py@varvars{#2})}%
+    \item[\strong{class }\code{\bfcode{#1}(\py@varvars{#2})}%
       \index{#1@{\py@idxcode{#1}} (class in \py@thismodule)}]
 }{\end{fulllineitems}}
 
@@ -608,7 +608,7 @@
   % Using \renewcommand doesn't work for this, for unknown reasons:
   \global\def\py@thisclass{#1}
   \begin{fulllineitems}
-    \item[\code{\bfcode{#1}(\py@varvars{#2})}%
+    \item[\strong{exception }\code{\bfcode{#1}(\py@varvars{#2})}%
       \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
 
@@ -678,7 +678,7 @@
 %  -- for constructor information, use excclassdesc instead
 \newenvironment{excdesc}[1]{
   \begin{fulllineitems}
-    \item[\bfcode{#1}%
+    \item[\strong{exception }\bfcode{#1}%
           \index{#1@{\py@idxcode{#1}} (exception in \py@thismodule)}]
 }{\end{fulllineitems}}
 
@@ -753,11 +753,11 @@
 }{
   \newcommand{\py@url}[1]{{%
     \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
-    \py@LinkColor%				color of the link text
+    \py@LinkColor%                              color of the link text
     \mbox{\small\textsf{#1}}%
-    \py@NormalColor%			Turn it back off; these are declarative
-    \pdfendlink}%			and don't appear bound to the current
-  }%					formatting "box".
+    \py@NormalColor%                    Turn it back off; these are declarative
+    \pdfendlink}%                       and don't appear bound to the current
+  }%                                    formatting "box".
 }
 \let\url=\py@url
 \newcommand{\email}[1]{{\small\textsf{#1}}}
@@ -791,11 +791,11 @@
 \newcommand{\member}[1]{\texttt{#1}}
 \newcommand{\method}[1]{\texttt{#1}}
 
-\newcommand{\pytype}[1]{#1}		% built-in Python type
+\newcommand{\pytype}[1]{#1}             % built-in Python type
 
 \newcommand{\cfunction}[1]{\texttt{#1}}
-\newcommand{\ctype}[1]{\texttt{#1}}	% C struct or typedef name
-\newcommand{\cdata}[1]{\texttt{#1}}	% C variable, typically global
+\newcommand{\ctype}[1]{\texttt{#1}}     % C struct or typedef name
+\newcommand{\cdata}[1]{\texttt{#1}}     % C variable, typically global
 
 \newcommand{\mimetype}[1]{{\small\textsf{#1}}}
 % The \! is a "negative thin space" in math mode.
@@ -809,11 +809,11 @@
   \index{#1@{#1}}%
   \index{environment variables!{#1}}%
 }
-\newcommand{\makevar}[1]{#1}		% variable in a Makefile
+\newcommand{\makevar}[1]{#1}            % variable in a Makefile
 \newcommand{\character}[1]{\samp{#1}}
 
 % constants defined in Python modules or C headers, not language constants:
-\newcommand{\constant}[1]{\code{#1}}	% manifest constant, not syntactic
+\newcommand{\constant}[1]{\code{#1}}    % manifest constant, not syntactic
 
 \newcommand{\manpage}[2]{{\emph{#1}(#2)}}
 \newcommand{\pep}[1]{PEP #1\index{Python Enhancement Proposals!PEP #1}}
