@@ -117,6 +117,7 @@ def mirrorsubdir(f, localdir):
 	listing = []
 	if verbose: print 'Listing remote directory %s...' % pwd
 	f.retrlines('LIST', listing.append)
+	filesfound = []
 	for line in listing:
 		if verbose > 1: print '-->', `line`
 		if mac:
@@ -157,6 +158,7 @@ def mirrorsubdir(f, localdir):
 				print 'Remembering subdirectory', filename
 			subdirs.append(filename)
 			continue
+		filesfound.append(filename)
 		if info.has_key(filename) and info[filename] == infostuff:
 			if verbose > 1:
 				print 'Already have this version of', filename
@@ -216,6 +218,18 @@ def mirrorsubdir(f, localdir):
 					  int(round(kbytes/dt),)
 			print
 	#
+	# Remove files from info that are no longer remote
+	deletions = 0
+	for filename in info.keys():
+		if filename not in filesfound:
+			if verbose:
+				print "Removing obsolete info entry for",
+				print filename, "in", localdir or "."
+			del info[filename]
+			deletions = deletions + 1
+	if deletions:
+		writedict(info, infofilename)
+	#
 	# Remove local files that are no longer in the remote directory
 	try:
 	    if not localdir: names = os.listdir(os.curdir)
@@ -224,6 +238,16 @@ def mirrorsubdir(f, localdir):
 	    names = []
 	for name in names:
 		if name[0] == '.' or info.has_key(name) or name in subdirs:
+			continue
+		skip = 0
+		for pat in skippats:
+			if fnmatch(name, pat):
+				if verbose > 1:
+					print 'Skip pattern', pat,
+					print 'matches', name
+				skip = 1
+				break
+		if skip:
 			continue
 		fullname = os.path.join(localdir, name)
 		if not rmok:
