@@ -1,0 +1,72 @@
+\section{\module{functional} ---
+         Higher order functions and operations on callable objects.}
+
+\declaremodule{standard}{functional}		% standard library, in Python
+
+\moduleauthor{Peter Harris}{scav@blueyonder.co.uk}
+\moduleauthor{Raymond Hettinger}{python@rcn.com}
+\sectionauthor{Peter Harris}{scav@blueyonder.co.uk}
+
+\modulesynopsis{Higher-order functions and operations on callable objects.}
+
+
+The \module{functional} module is for higher-order functions: functions
+that act on or return other functions. In general, any callable object can
+be treated as a function for the purposes of this module.
+
+
+The \module{functional} module defines the following function:
+
+\begin{funcdesc}{partial}{func\optional{,*args}\optional{, **keywords}}
+Return a new \class{partial} object which when called will behave like
+\var{func} called with the positional arguments \var{args} and keyword
+arguments \var{keywords}. If more arguments are supplied to the call, they
+are appended to \var{args}. If additional keyword arguments are supplied,
+they extend and override \var{keywords}. Roughly equivalent to:
+  \begin{verbatim}
+        def partial(func, *args, **keywords):
+            def newfunc(*fargs, **fkeywords):
+                newkeywords = keywords.copy()
+                newkeywords.update(fkeywords)
+                return func(*(args + fargs), **newkeywords)
+            newfunc.func = func
+            newfunc.args = args
+            newfunc.keywords = keywords
+            return newfunc
+  \end{verbatim}
+
+The \function{partial} is used for partial function application which
+``freezes'' some portion of a function's arguments and/or keywords
+resulting in an new object with a simplified signature.  For example,
+\function{partial} can be used to create a callable that behaves like
+the \function{int} function where the \var{base} argument defaults to
+two:
+  \begin{verbatim}
+        >>> basetwo = partial(int, base=2)
+        >>> basetwo('10010')
+        18
+  \end{verbatim}
+\end{funcdesc}
+
+
+
+\subsection{\class{partial} Objects \label{partial-objects}}
+
+
+\class{partial} objects are callable objects created by \function{partial()}.
+They have three read-only attributes:
+
+\begin{memberdesc}[callable]{func}{}
+A callable object or function.  Calls to the \class{partial} object will
+be forwarded to \member{func} with new arguments and keywords.
+\end{memberdesc}
+
+\begin{memberdesc}[tuple]{args}{}
+The leftmost positional arguments that will be prepended to the
+positional arguments provided to a \class{partial} object call.
+\end{memberdesc}
+
+\begin{memberdesc}[dict]{keywords}{}
+The keyword arguments that will be supplied when the \class{partial} object
+is called.
+\end{memberdesc}
