@@ -15,8 +15,9 @@
 # OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 """
-Logging package for Python. Based on PEP 282 and comments thereto in
-comp.lang.python, and influenced by Apache's log4j system.
+Additional handlers for the logging package for Python. The core package is
+based on PEP 282 and comments thereto in comp.lang.python, and influenced by
+Apache's log4j system.
 
 Should work under Python versions >= 1.5.2, except that source line
 information is not available unless 'sys._getframe()' is.
