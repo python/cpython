@@ -63,8 +63,8 @@ class EMXCCompiler (UnixCCompiler):
 
         # Hard-code GCC because that's what this is all about.
         # XXX optimization, warnings etc. should be customizable.
-        self.set_executables(compiler='gcc -Zomf -Zmt -O2 -Wall',
-                             compiler_so='gcc -Zomf -Zmt -O2 -Wall',
+        self.set_executables(compiler='gcc -Zomf -Zmt -O3 -fomit-frame-pointer -mprobe -Wall',
+                             compiler_so='gcc -Zomf -Zmt -O3 -fomit-frame-pointer -mprobe -Wall',
                              linker_exe='gcc -Zomf -Zmt -Zcrtdll',
                              linker_so='gcc -Zomf -Zmt -Zcrtdll -Zdll')
 
