@@ -50,9 +50,9 @@ for i in [0, 8, 16, 32, 64, 127, 128, 255]:
     test(r"""sre.match("\%03o" % i, chr(i)) != None""", 1)
     test(r"""sre.match("\%03o0" % i, chr(i)+"0") != None""", 1)
     test(r"""sre.match("\%03o8" % i, chr(i)+"8") != None""", 1)
-    test(r"""sre.match("\x%02x" % i, chr(i)) != None""", 1)
-    test(r"""sre.match("\x%02x0" % i, chr(i)+"0") != None""", 1)
-    test(r"""sre.match("\x%02xz" % i, chr(i)+"z") != None""", 1)
+    test(r"""sre.match(r"\x%02x" % i, chr(i)) != None""", 1)
+    test(r"""sre.match(r"\x%02x0" % i, chr(i)+"0") != None""", 1)
+    test(r"""sre.match(r"\x%02xz" % i, chr(i)+"z") != None""", 1)
 test(r"""sre.match("\911", "")""", None, sre.error)
 
 #
