@@ -39,8 +39,9 @@
 # added to the linker options, but rules to create their .o files and
 # their shared libraries will still be added to the Makefile, and
 # their names will be collected in the Make variable SHAREDMODS.  This
-# is used to build modules as shared libraries.  (They must be
-# installed using "make sharedinstall".)  (For compatibility,
+# is used to build modules as shared libraries.  (They can be
+# installed using "make sharedinstall", which is implied by the
+# toplevel "make install" target.)  (For compatibility,
 # *noconfig* has the same effect as *shared*.)
 
 # NOTE: As a standard policy, as many modules as can be supported by a
