@@ -358,7 +358,7 @@ class_repr(PyClassObject *op)
 	else
 		name = PyString_AsString(op->cl_name);
 	if (mod == NULL || !PyString_Check(mod))
-		return PyString_FromFormat("<class ?.s at %p>", name, op);
+		return PyString_FromFormat("<class ?.%s at %p>", name, op);
 	else
 		return PyString_FromFormat("<class %s.%s at %p>",
 					   PyString_AsString(mod),
