@@ -117,9 +117,16 @@ $my_icon_tags{'contents'} = 'Contents';
 $my_icon_tags{'index'} = 'Index';
 $my_icon_tags{'modules'} = 'Module Index';
 
+@my_icon_names = ();
+$my_icon_names{'previous_page'} = 'previous';
+$my_icon_names{'next_page'} = 'next';
+
 sub get_my_icon {
     my $name = @_[0];
     my $text = $my_icon_tags{$name};
+    if ($my_icon_names{$name}) {
+        $name = $my_icon_names{$name};
+    }
     if ($text eq '') {
         $name = 'blank';
     }
