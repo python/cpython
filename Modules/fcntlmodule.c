@@ -27,6 +27,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "allobjects.h"
 #include "modsupport.h"
 
+#include <fcntl.h>
+
 
 /* fcntl(fd, opt, [arg]) */
 
@@ -144,7 +146,32 @@ fcntl_flock(self, args)
 		return NULL;
 
 	BGN_SAVE
+#ifdef HAVE_FLOCK
 	ret = flock(fd, code);
+#else
+
+#ifndef LOCK_SH
+#define LOCK_SH		1	/* shared lock */
+#define LOCK_EX		2	/* exclusive lock */
+#define LOCK_NB		4	/* don't block when locking */
+#define LOCK_UN		8	/* unlock */
+#endif
+	{
+		struct flock l;
+		if (code == LOCK_UN)
+			l.l_type = F_UNLCK;
+		else if (code & LOCK_SH)
+			l.l_type = F_RDLCK;
+		else if (code & LOCK_EX)
+			l.l_type = F_WRLCK;
+		else {
+			err_setstr(ValueError, "unrecognized flock argument");
+			return NULL;
+		}
+		l.l_whence = l.l_start = l.l_len = 0;
+		ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+	}
+#endif /* HAVE_FLOCK */
 	END_SAVE
 	if (ret < 0) {
 		err_errno(IOError);
