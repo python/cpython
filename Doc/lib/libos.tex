@@ -113,7 +113,9 @@ Availability: \UNIX.
 \end{funcdesc}
 
 \begin{funcdesc}{getegid}{}
-Return the current process' effective group id.
+Return the effective group id of the current process.  This
+corresponds to the `set id' bit on the file being executed in the
+current process.
 Availability: \UNIX.
 \end{funcdesc}
 
@@ -125,7 +127,7 @@ Availability: \UNIX.
 
 \begin{funcdesc}{getgid}{}
 \index{process!group}
-Return the current process' group id.
+Return the real group id of the current process.
 Availability: \UNIX.
 \end{funcdesc}
 
@@ -143,7 +145,7 @@ Availability: \UNIX.
 
 \begin{funcdesc}{getpgrp}{}
 \index{process!group}
-Return the current process group id.
+Return the id of the current process group.
 Availability: \UNIX.
 \end{funcdesc}
 
@@ -218,9 +220,10 @@ Calls the system call \cfunction{setpgrp()} or \cfunction{setpgrp(0,
 Availability: \UNIX.
 \end{funcdesc}
 
-\begin{funcdesc}{setpgid}{pid, pgrp}
-Calls the system call \cfunction{setpgid()}.  See the \UNIX{} manual
-for the semantics.
+\begin{funcdesc}{setpgid}{pid, pgrp} Calls the system call
+\cfunction{setpgid()} to set the process group id of the process with
+id \var{pid} to the process group with id \var{pgrp}.  See the \UNIX{}
+manual for the semantics.
 Availability: \UNIX.
 \end{funcdesc}
 
