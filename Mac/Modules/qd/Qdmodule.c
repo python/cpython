@@ -3638,7 +3638,7 @@ static PyObject *Qd_TextFace(_self, _args)
 	PyObject *_args;
 {
 	PyObject *_res = NULL;
-	Style face;
+	StyleParameter face;
 	if (!PyArg_ParseTuple(_args, "h",
 	                      &face))
 		return NULL;
@@ -3699,7 +3699,7 @@ static PyObject *Qd_DrawChar(_self, _args)
 {
 	PyObject *_res = NULL;
 	CharParameter ch;
-	if (!PyArg_ParseTuple(_args, "c",
+	if (!PyArg_ParseTuple(_args, "h",
 	                      &ch))
 		return NULL;
 	DrawChar(ch);
@@ -3754,7 +3754,7 @@ static PyObject *Qd_CharWidth(_self, _args)
 	PyObject *_res = NULL;
 	short _rv;
 	CharParameter ch;
-	if (!PyArg_ParseTuple(_args, "c",
+	if (!PyArg_ParseTuple(_args, "h",
 	                      &ch))
 		return NULL;
 	_rv = CharWidth(ch);
@@ -4254,7 +4254,7 @@ static PyMethodDef Qd_methods[] = {
 	{"TextFont", (PyCFunction)Qd_TextFont, 1,
 	 "(short font) -> None"},
 	{"TextFace", (PyCFunction)Qd_TextFace, 1,
-	 "(Style face) -> None"},
+	 "(StyleParameter face) -> None"},
 	{"TextMode", (PyCFunction)Qd_TextMode, 1,
 	 "(short mode) -> None"},
 	{"TextSize", (PyCFunction)Qd_TextSize, 1,
