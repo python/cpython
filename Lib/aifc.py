@@ -199,9 +199,7 @@ def _write_short(f, x):
 	f.write(struct.pack('>h', x))
 
 def _write_long(f, x):
-	if x >= 1L<<31:
-		x = x - (1L<<32)
-	f.write(struct.pack('>l', x))
+	f.write(struct.pack('>L', x))
 
 def _write_string(f, s):
 	f.write(chr(len(s)))
