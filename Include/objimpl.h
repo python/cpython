@@ -17,15 +17,17 @@ You must first include "object.h".
    represent the object and 'typeobj' the address of the corresponding
    type object.  Reference count and type pointer are filled in; the
    rest of the bytes of the object are *undefined*!  The resulting
-   expression type is 'type *'.  The size of the object is actually
-   determined by the tp_basicsize field of the type object.
+   expression type is 'type *'.  The size of the object is determined
+   by the tp_basicsize field of the type object.
 
  - PyObject_NewVar(type, typeobj, n) is similar but allocates a
    variable-size object with n extra items.  The size is computed as
    tp_basicsize plus n * tp_itemsize.  This fills in the ob_size field
    as well.
 
- - PyObject_Del(op) releases the memory allocated for an object.
+ - PyObject_Del(op) releases the memory allocated for an object.  It
+   does not run a destructor -- it only frees the memory.  PyObject_Free
+   is identical.
 
  - PyObject_Init(op, typeobj) and PyObject_InitVar(op, typeobj, n) are
    similar to PyObject_{New, NewVar} except that they don't allocate
@@ -34,7 +36,9 @@ You must first include "object.h".
    allocator) and initialize its object header fields.
 
 Note that objects created with PyObject_{New, NewVar} are allocated
-using the specialized Python allocator (implemented in obmalloc.c).
+using the specialized Python allocator (implemented in obmalloc.c), if
+WITH_PYMALLOC is enabled.  In addition, a special debugging allocator
+is used if PYMALLOC_DEBUG is also #defined.
 
 In case a specific form of memory management is needed, implying that
 the objects would not reside in the Python heap (for example standard
@@ -70,11 +74,16 @@ recommended to use PyObject_{New, NewVar, Del}. */
 
 /* Functions */
 
-/* Wrappers that useful if you need to be sure that you are using the
-   same object memory allocator as Python. These wrappers *do not* make
-   sure that allocating 0 bytes returns a non-NULL pointer. Returned
-   pointers must be checked for NULL explicitly; no action is performed
-   on failure. */
+/* Functions to call the same malloc/realloc/free as used by Python's
+   object allocator.  If WITH_PYMALLOC is enabled, these may differ from
+   the platform malloc/realloc/free.  The Python object allocator is
+   designed for fast, cache-conscious allocation of many "small" objects,
+   with low hidden memory overhead.  PyObject_Malloc(0) returns a unique
+   non-NULL pointer if possible.  PyObject_Realloc(NULL, n) acts like
+   PyObject_Malloc(n).  PyObject_Realloc(p != NULL, 0) does not return
+   NULL or free the memory at p.  Returned pointers must be checked for
+   NULL explicitly; no action is performed on failure other than to return
+   NULL. */
 extern DL_IMPORT(void *) PyObject_Malloc(size_t);
 extern DL_IMPORT(void *) PyObject_Realloc(void *, size_t);
 extern DL_IMPORT(void) PyObject_Free(void *);
@@ -89,12 +98,12 @@ DL_IMPORT(void) _PyObject_DebugFree(void *p);
 DL_IMPORT(void) _PyObject_DebugDumpAddress(const void *p);
 DL_IMPORT(void) _PyObject_DebugCheckAddress(const void *p);
 DL_IMPORT(void) _PyObject_DebugDumpStats(void);
-#define PyObject_MALLOC _PyObject_DebugMalloc
-#define PyObject_Malloc _PyObject_DebugMalloc
-#define PyObject_REALLOC _PyObject_DebugRealloc
-#define PyObject_Realloc _PyObject_DebugRealloc
-#define PyObject_FREE _PyObject_DebugFree
-#define PyObject_Free _PyObject_DebugFree
+#define PyObject_MALLOC		_PyObject_DebugMalloc
+#define PyObject_Malloc		_PyObject_DebugMalloc
+#define PyObject_REALLOC	_PyObject_DebugRealloc
+#define PyObject_Realloc	_PyObject_DebugRealloc
+#define PyObject_FREE		_PyObject_DebugFree
+#define PyObject_Free		_PyObject_DebugFree
 
 #else	/* WITH_PYMALLOC && ! PYMALLOC_DEBUG */
 #define PyObject_MALLOC		PyObject_Malloc
