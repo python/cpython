@@ -2306,10 +2306,10 @@ eval_frame(PyFrameObject *f)
 		else {
 			/* This check is expensive! */
 			if (PyErr_Occurred()) {
-				fprintf(stderr,
-					"XXX undetected error (why=%d)\n",
-					why);
-				why = WHY_EXCEPTION;
+				char buf[1024];
+				sprintf(buf, "Stack unwind with exception "
+					"set and why=%d", why);
+				Py_FatalError(buf);
 			}
 		}
 #endif
