@@ -1,22 +1,33 @@
-# ASCII-art documentation
-#
-#  +---------------------------------+ +----------+
-#  | SocketServer.BaseRequestHandler | | SocketIO |
-#  +---------------------------------+ +----------+
-#                  ^                      ^  ^
-#                  |                      |  |
-#                  | + -------------------+  |
-#                  | |                       |
-#  +-------------------------+        +-----------------+
-#  | RPCHandler              |        | RPCClient       |
-#  |-------------------------|        |-----------------|
-#  | register()              |        | remotecall()    |
-#  | unregister()            |        | register()      | 
-#  |                         |        | unregister()    |
-#  |                         |        | get_remote_proxy|
-#  +-------------------------+        +-----------------+
-#
-import sys 
+"""RPC Implemention, originally written for the Python Idle IDE
+
+For security reasons, GvR requested that Idle's Python execution server process
+connect to the Idle process, which listens for the connection.  Since Idle has
+has only one client per server, this was not a limitation.
+
+   +---------------------------------+ +-------------+
+   | SocketServer.BaseRequestHandler | | SocketIO    |
+   +---------------------------------+ +-------------+
+                   ^                   | register()  |
+                   |                   | unregister()|
+                   |                   +-------------+
+                   |                      ^  ^
+                   |                      |  |
+                   | + -------------------+  |
+                   | |                       |
+   +-------------------------+        +-----------------+
+   | RPCHandler              |        | RPCClient       |
+   | [attribute of RPCServer]|        |                 |
+   +-------------------------+        +-----------------+
+
+The RPCServer handler class is expected to provide register/unregister methods.
+RPCHandler inherits the mix-in class SocketIO, which provides these methods.
+
+See the Idle run.main() docstring for further information on how this was
+accomplished in Idle.
+
+"""
+
+import sys
 import socket
 import select
 import SocketServer
@@ -55,40 +66,29 @@ class RPCServer(SocketServer.TCPServer):
     def __init__(self, addr, handlerclass=None):
         if handlerclass is None:
             handlerclass = RPCHandler
-# XXX KBK 25Jun02 Not used in Idlefork, see register/unregister note below.
+# XXX KBK 25Jun02 Not used in Idlefork.
 #        self.objtable = objecttable 
         SocketServer.TCPServer.__init__(self, addr, handlerclass)
 
-    # XXX KBK 25Jun02 Following method is not used (yet)
-#      def verify_request(self, request, client_address):
-#          host, port = client_address
-#          if host != "127.0.0.1":
-#              print "Disallowed host:", host
-#              return 0
-#          else:
-#              return 1
+    def server_bind(self):
+        "Override TCPServer method, no bind() phase for connecting entity"
+        pass
 
-# XXX KBK 25Jun02 The handlerclass is expected to provide register/unregister
-#                 methods.  In Idle, RPCServer is instantiated with
-#                 handlerclass MyHandler, which in turn inherits the
-#                 register/unregister methods from the mix-in class SocketIO.
-#                 It is true that this is asymmetric with the RPCClient's use
-#                 of register/unregister, but I guess that's how a SocketServer
-#                 is supposed to work.
+    def server_activate(self):
+        """Override TCPServer method, connect() instead of listen()
+        
+        Due to the reversed connection, self.server_address is actually the
+        address of the Idle Client to which we are connecting.
 
-#                 Exactly how this gets set up is convoluted.  When the
-#                 TCPServer is instantiated, it creates an instance of
-#                 run.MyHandler and calls its handle() method.  handle()
-#                 instantiates a run.Executive, passing it a reference to the
-#                 MyHandler object.  That reference is saved as an attribute of
-#                 the Executive instance.  The Executive methods have access to
-#                 the reference and can pass it on to entities that they
-#                 command (e.g. RemoteDebugger.Debugger.start_debugger()).  The
-#                 latter, in turn, can call MyHandler(SocketIO)
-#                 register/unregister methods via the reference to register and
-#                 unregister themselves.  Whew.
+        """
+        self.socket.connect(self.server_address)
+        
+    def get_request(self):
+        "Override TCPServer method, return already connected socket"
+        return self.socket, self.server_address
+        
 
-    # The following two methods are not currently used in Idlefork.
+# XXX The following two methods are not currently used in Idlefork.
 #      def register(self, oid, object):
 #          self.objtable[oid] = object
 
@@ -364,6 +364,8 @@ class SocketIO:
                     cv.notify()
                 self.statelock.release()
                 continue
+            
+#----------------- end class SocketIO --------------------
 
 class RemoteObject:
     # Token mix-in class
@@ -388,15 +390,8 @@ class RPCHandler(SocketServer.BaseRequestHandler, SocketIO):
         SocketIO.__init__(self, sock)
         SocketServer.BaseRequestHandler.__init__(self, sock, addr, svr)
 
-    def setup(self):
-        SocketServer.BaseRequestHandler.setup(self)
-        print >>sys.__stderr__, "Connection from", self.client_address
-
-    def finish(self):
-        print >>sys.__stderr__, "End connection from", self.client_address
-        SocketServer.BaseRequestHandler.finish(self)
-
     def handle(self):
+        "handle() method required by SocketServer"
         self.mainloop()
 
     def get_remote_proxy(self, oid):
@@ -404,12 +399,21 @@ class RPCHandler(SocketServer.BaseRequestHandler, SocketIO):
 
 class RPCClient(SocketIO):
 
-    nextseq = 1 # Requests coming from the client are odd
+    nextseq = 1 # Requests coming from the client are odd numbered
 
     def __init__(self, address, family=socket.AF_INET, type=socket.SOCK_STREAM):
-        sock = socket.socket(family, type)
-        sock.connect(address)
-        SocketIO.__init__(self, sock)
+        self.sock = socket.socket(family, type)
+        self.sock.bind(address)
+        self.sock.listen(1)
+
+    def accept(self):
+        newsock, address = self.sock.accept()
+        if address[0] == '127.0.0.1':
+            print>>sys.__stderr__, "Idle accepted connection from ", address
+            SocketIO.__init__(self, newsock)
+        else:
+            print>>sys.__stderr__, "Invalid host: ", address
+            raise socket.error
 
     def get_remote_proxy(self, oid):
         return RPCProxy(self, oid)
@@ -477,6 +481,7 @@ class MethodProxy:
 #
 
 def testServer(addr):
+    # XXX 25 Jul 02 KBK needs update to use rpc.py register/unregister methods
     class RemotePerson:
         def __init__(self,name):
             self.name = name 
@@ -505,10 +510,8 @@ def testServer(addr):
     svr.handle_request()  # process once only
 
 def testClient(addr):
-
-    #
-    # demonstrates RPC Client
-    #
+    "demonstrates RPC Client"
+    # XXX 25 Jul 02 KBK needs update to use rpc.py register/unregister methods
     import time
     clt=RPCClient(addr)
     thomas = clt.get_remote_proxy("thomas")
@@ -523,7 +526,6 @@ def testClient(addr):
     print "Done."
     print 
     time.sleep(2)
-    
     # demonstrates remote server calling local instance
     class LocalPerson:
         def __init__(self,name):
