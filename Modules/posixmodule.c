@@ -3248,86 +3248,85 @@ Open a pipe to/from a command returning a file object.");
 static int
 async_system(const char *command)
 {
-    char        *p, errormsg[256], args[1024];
-    RESULTCODES  rcodes;
-    APIRET       rc;
-    char        *shell = getenv("COMSPEC");
-    if (!shell)
-        shell = "cmd";
+	char errormsg[256], args[1024];
+	RESULTCODES rcodes;
+	APIRET rc;
 
-    strcpy(args, shell);
-    p = &args[ strlen(args)+1 ];
-    strcpy(p, "/c ");
-    strcat(p, command);
-    p += strlen(p) + 1;
-    *p = '\0';
+	char *shell = getenv("COMSPEC");
+	if (!shell)
+		shell = "cmd";
 
-    rc = DosExecPgm(errormsg, sizeof(errormsg),
-                    EXEC_ASYNC, /* Execute Async w/o Wait for Results */
-                    args,
-                    NULL,       /* Inherit Parent's Environment */
-                    &rcodes, shell);
-    return rc;
+	/* avoid overflowing the argument buffer */
+	if (strlen(shell) + 3 + strlen(command) >= 1024)
+		return ERROR_NOT_ENOUGH_MEMORY
+
+	args[0] = '\0';
+	strcat(args, shell);
+	strcat(args, "/c ");
+	strcat(args, command);
+
+	/* execute asynchronously, inheriting the environment */
+	rc = DosExecPgm(errormsg,
+			sizeof(errormsg),
+			EXEC_ASYNC,
+			args,
+			NULL,
+			&rcodes,
+			shell);
+	return rc;
 }
 
 static FILE *
 popen(const char *command, const char *mode, int pipesize, int *err)
 {
-    HFILE    rhan, whan;
-    FILE    *retfd = NULL;
-    APIRET   rc = DosCreatePipe(&rhan, &whan, pipesize);
+	int oldfd, tgtfd;
+	HFILE pipeh[2];
+	APIRET rc;
 
-    if (rc != NO_ERROR) {
-	*err = rc;
-        return NULL; /* ERROR - Unable to Create Anon Pipe */
-    }
+	/* mode determines which of stdin or stdout is reconnected to
+	 * the pipe to the child
+	 */
+	if (strchr(mode, 'r') != NULL) {
+		tgt_fd = 1;	/* stdout */
+	} else if (strchr(mode, 'w')) {
+		tgt_fd = 0;	/* stdin */
+	} else {
+		*err = ERROR_INVALID_ACCESS;
+		return NULL;
+	}
 
-    if (strchr(mode, 'r') != NULL) { /* Treat Command as a Data Source */
-        int oldfd = dup(1);      /* Save STDOUT Handle in Another Handle */
+	/* setup the pipe
+	if ((rc = DosCreatePipe(&pipeh[0], &pipeh[1], pipesize)) != NO_ERROR) {
+		*err = rc;
+		return NULL;
+	}
 
-        DosEnterCritSec();      /* Stop Other Threads While Changing Handles */
-        close(1);                /* Make STDOUT Available for Reallocation */
+	/* prevent other threads accessing stdio */
+	DosEnterCritSec();
 
-        if (dup2(whan, 1) == 0) {      /* Connect STDOUT to Pipe Write Side */
-            DosClose(whan);            /* Close Now-Unused Pipe Write Handle */
+	/* reconnect stdio and execute child */
+	oldfd = dup(tgtfd);
+	close(tgtfd);
+	if (dup2(pipeh[tgtfd], tgtfd) == 0) {
+		DosClose(pipeh[tgtfd]);
+		rc = async_system(command);
+	}
 
-            rc = async_system(command);
-        }
+	/* restore stdio */
+	dup2(oldfd, tgtfd);
+	close(oldfd);
 
-        dup2(oldfd, 1);          /* Reconnect STDOUT to Original Handle */
-        DosExitCritSec();        /* Now Allow Other Threads to Run */
+	/* allow other threads access to stdio */
+	DosExitCritSec();
 
-        if (rc == NO_ERROR)
-            retfd = fdopen(rhan, mode); /* And Return Pipe Read Handle */
-
-        close(oldfd);            /* And Close Saved STDOUT Handle */
-        return retfd;            /* Return fd of Pipe or NULL if Error */
-
-    } else if (strchr(mode, 'w')) { /* Treat Command as a Data Sink */
-        int oldfd = dup(0);      /* Save STDIN Handle in Another Handle */
-
-        DosEnterCritSec();      /* Stop Other Threads While Changing Handles */
-        close(0);                /* Make STDIN Available for Reallocation */
-
-        if (dup2(rhan, 0) == 0)     { /* Connect STDIN to Pipe Read Side */
-            DosClose(rhan);           /* Close Now-Unused Pipe Read Handle */
-
-            rc = async_system(command);
-        }
-
-        dup2(oldfd, 0);          /* Reconnect STDIN to Original Handle */
-        DosExitCritSec();        /* Now Allow Other Threads to Run */
-
-        if (rc == NO_ERROR)
-            retfd = fdopen(whan, mode); /* And Return Pipe Write Handle */
-
-        close(oldfd);            /* And Close Saved STDIN Handle */
-        return retfd;            /* Return fd of Pipe or NULL if Error */
-
-    } else {
-	*err = ERROR_INVALID_ACCESS;
-        return NULL; /* ERROR - Invalid Mode (Neither Read nor Write) */
-    }
+	/* if execution of child was successful return file stream */
+	if (rc == NO_ERROR)
+		return fdopen(pipeh[1 - tgtfd], mode);
+	else {
+		DosClose(pipeh[1 - tgtfd]);
+		*err = rc;
+		return NULL;
+	}
 }
 
 static PyObject *
