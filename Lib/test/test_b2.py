@@ -205,6 +205,12 @@ print 'setattr'
 import sys
 setattr(sys, 'spam', 1)
 if sys.spam != 1: raise TestFailed, 'setattr(sys, \'spam\', 1)'
+try:
+    setattr(sys, 1, 'spam')
+except TypeError:
+    pass
+else:
+    raise TestFailed, "setattr(sys, 1, 'spam') should raise exception"
 
 print 'str'
 if str('') != '': raise TestFailed, 'str(\'\')'
