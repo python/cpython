@@ -229,7 +229,17 @@ def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
     g = globals()
     # load the installed Makefile:
-    parse_makefile(open(get_makefile_filename()), g)
+    try:
+        filename = get_makefile_filename()
+        file = open(filename)
+    except IOError, msg:
+        my_msg = "invalid Python installation: unable to open %s" % filename
+        if hasattr(msg, "strerror"):
+            my_msg = my_msg + " (%s)" % msg.strerror
+
+        raise DistutilsPlatformError, my_msg
+              
+    parse_makefile(file, g)
 
 
 def _init_nt():
