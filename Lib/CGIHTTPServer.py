@@ -150,6 +150,9 @@ class CGIHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             ua = self.headers.getheader('user-agent')
             if ua:
                 env['HTTP_USER_AGENT'] = ua
+            co = self.headers.getheader('cookie')
+            if co:
+                env['HTTP_COOKIE'] = co
             # XXX Other HTTP_* headers
             decoded_query = string.replace(query, '+', ' ')
             try:
@@ -177,7 +180,7 @@ def nobody_uid():
     import pwd
     try:
         nobody = pwd.getpwnam('nobody')[2]
-    except pwd.error:
+    except KeyError:
         nobody = 1 + max(map(lambda x: x[2], pwd.getpwall()))
     return nobody
 
