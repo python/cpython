@@ -1017,8 +1017,12 @@ eval_code2(co, globals, locals,
 				err = Py_FlushLine();
 				if (err == 0) {
 					x = PySys_GetObject("stdout");
-					if (x == NULL)
+					if (x == NULL) {
+						PyErr_SetString(
+							PyExc_RuntimeError,
+							"lost sys.stdout");
 						err = -1;
+					}
 				}
 				if (err == 0)
 					err = PyFile_WriteObject(v, x, 0);
@@ -1037,7 +1041,12 @@ eval_code2(co, globals, locals,
 		case PRINT_ITEM:
 			v = POP();
 			w = PySys_GetObject("stdout");
-			if (PyFile_SoftSpace(w, 1))
+			if (w == NULL) {
+				PyErr_SetString(PyExc_RuntimeError,
+						"lost sys.stdout");
+				err = -1;
+			}
+			else if (PyFile_SoftSpace(w, 1))
 				err = PyFile_WriteString(" ", w);
 			if (err == 0)
 				err = PyFile_WriteObject(v, w, Py_PRINT_RAW);
