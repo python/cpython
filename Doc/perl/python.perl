@@ -837,4 +837,24 @@ sub do_cmd_maketitle {
 }
 
 
+#
+#  Definition list support.
+#
+
+sub do_env_definitions{
+    local($_) = @_;
+    swallow_newline();
+    "<dl>$_</dl>\n";
+}
+
+sub do_cmd_term{
+    local($_) = @_;
+    my($term, $id) = next_argument_id();
+    my($name,$aname,$ahref) = link_info($id);
+    swallow_newline();
+    # could easily add an index entry here...
+    "<dt><b>$aname" . $term . "</a></b>\n<dd>" . $_;
+}
+
+
 1;				# This must be the last line
