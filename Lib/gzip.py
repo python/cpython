@@ -205,7 +205,7 @@ class GzipFile:
     def read(self, size=-1):
         if self.mode != READ:
             import errno
-            raise IOError(errno.EBADF, "write() on read-only GzipFile object")
+            raise IOError(errno.EBADF, "read() on write-only GzipFile object")
 
         if self.extrasize <= 0 and self.fileobj is None:
             return ''
