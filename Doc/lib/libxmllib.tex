@@ -20,14 +20,16 @@ The \class{XMLParser} class must be instantiated without
 arguments.\footnote{Actually, a number of keyword arguments are
 recognized which influence the parser to accept certain non-standard
 constructs.  The following keyword arguments are currently
-recognized.  The defaults for all of these is \code{0} (false).
+recognized.  The defaults for all of these is \code{0} (false) except
+for the last one for which the default is \code{1} (true).
 \var{accept_unquoted_attributes} (accept certain attribute values
 without requiring quotes), \var{accept_missing_endtag_name} (accept
 end tags that look like \code{</>}), \var{map_case} (map upper case to
 lower case in tags and attributes), \var{accept_utf8} (allow UTF-8
 characters in input; this is required according to the XML standard,
 but Python does not as yet deal properly with these characters, so
-this is not the default).}
+this is not the default), \var{translate_attribute_references} (don't
+attempt to translate character and entity references in attribute values).}
 \end{classdesc}
 
 This class provides the following interface methods and instance variables:
