@@ -50,7 +50,6 @@ import exceptions
 import select
 import socket
 import sys
-import types
 
 import os
 from errno import EALREADY, EINPROGRESS, EWOULDBLOCK, ECONNRESET, \
@@ -208,28 +207,17 @@ class dispatcher:
             self.addr = sock.getpeername()
 
     def __repr__ (self):
-        try:
             status = [self.__class__.__module__+"."+self.__class__.__name__]
             if self.accepting and self.addr:
                 status.append ('listening')
             elif self.connected:
                 status.append ('connected')
-            if self.addr:
-                if type(self.addr) == types.TupleType:
+            if self.addr is not None:
+                try:
                     status.append ('%s:%d' % self.addr)
-                else:
-                    status.append (self.addr)
+                except TypeError:
+                    status.append (repr(self.addr))
             return '<%s at %#x>' % (' '.join (status), id (self))
-        except:
-            pass
-
-        try:
-            ar = repr (self.addr)
-        except AttributeError:
-            ar = 'no self.addr!'
-
-        return '<__repr__() failed for %s instance at %x (addr=%s)>' % \
-               (self.__class__.__name__, id (self), ar)
 
     def add_channel (self, map=None):
         #self.log_info ('adding channel %s' % self)
