@@ -21,7 +21,7 @@ __all__ = ["dom", "parsers", "sax"]
 __version__ = "$Revision$".split()[-2:][0]
 
 
-_MINIMUM_XMLPLUS_VERSION = (0, 8, 2)
+_MINIMUM_XMLPLUS_VERSION = (0, 8, 4)
 
 
 try:
