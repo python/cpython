@@ -1,7 +1,7 @@
 TOP=		..
 PGENDIR=	$(TOP)/Parser
 PGEN=		$(PGENDIR)/pgen
-DESTH=		$(TOP)/Py/graminit.h
+DESTH=		$(TOP)/Include/graminit.h
 DESTC=		$(TOP)/Python/graminit.c
 
 all:		install
