@@ -148,10 +148,12 @@ values from C values.
   \var{name} argument may be of the form \code{package.module}).
   First check the modules dictionary if there's one there, and if not,
   create a new one and insert in in the modules dictionary.
+  Return \NULL{} with an exception set on failure.
   \note{This function does not load or import the module; if the
   module wasn't already loaded, you will get an empty module object.
   Use \cfunction{PyImport_ImportModule()} or one of its variants to
-  import a module.  Return \NULL{} with an exception set on failure.}
+  import a module.  Package structures implied by a dotted name for
+  \var{name} are not created if not already present.}
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyImport_ExecCodeModule}{char *name, PyObject *co}
@@ -160,8 +162,10 @@ values from C values.
   built-in function \function{compile()}\bifuncindex{compile}, load
   the module.  Return a new reference to the module object, or \NULL{}
   with an exception set if an error occurred (the module may still be
-  created in this case).  (This function would reload the module if it
-  was already imported.)
+  created in this case).  This function would reload the module if it
+  was already imported.  If \var{name} points to a dotted name of the
+  form \code{package.module}, any package structures not already
+  created will still not be created.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{long}{PyImport_GetMagicNumber}{}
