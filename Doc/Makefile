@@ -125,6 +125,7 @@ tut-all:  tut.dvi tut.pdf tut.ps l2htut
 # only free software.
 #
 .dvi.pdf: $*.bkm
+	$(PDFLATEX) $*
 	$(PYTHON) tools/toc2bkm.py $*
 	$(PDFLATEX) $*
 
@@ -169,7 +170,8 @@ LIBFILES = lib.tex \
 
 # Library document
 lib.dvi: tools/indfix.py $(LIBFILES)
-	rm -f $*.ind mod$*.ind
+	tools/newind.py >$*.ind
+	tools/newind.py modindex >mod$*.ind
 	$(LATEX) $*
 	$(MAKEINDEX) mod$*.idx
 	tools/fix_hack $*.idx
@@ -185,7 +187,7 @@ tut.dvi: tut.tex
 # Extending & Embedding, Python/C API documents.
 # Done this way to avoid repeated command sets.
 .tex.dvi:
-	rm -f $*.ind
+	tools/newind.py >$*.ind
 	$(LATEX) $*
 	tools/fix_hack $*.idx
 	$(MAKEINDEX) $*.idx
