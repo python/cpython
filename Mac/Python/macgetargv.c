@@ -46,6 +46,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <Dialogs.h>
 #include <Windows.h>
 
+#include "Python.h"
+#include "macglue.h"
+
 #ifdef GENERATINGCFM	/* Defined to 0 or 1 in Universal headers */
 #define HAVE_UNIVERSAL_HEADERS
 #endif
@@ -61,6 +64,9 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 static int arg_count;
 static char *arg_vector[256];
+FSSpec PyMac_ApplicationFSSpec;
+char PyMac_ApplicationPath[256];
+static int applocation_inited;
 
 /* Duplicate a string to the heap. We also export this since it isn't standard
 ** and others use it
@@ -75,20 +81,27 @@ strdup(char *src)
 	return dst;
 }
 
-/* Return FSSpec of current application */
+/* Initialize FSSpec and full name of current application */
 
 OSErr
-PyMac_process_location(FSSpec *applicationSpec)
+PyMac_init_process_location()
 {
 	ProcessSerialNumber currentPSN;
 	ProcessInfoRec info;
+	OSErr err;
 	
+	if ( applocation_inited ) return 0;
 	currentPSN.highLongOfPSN = 0;
 	currentPSN.lowLongOfPSN = kCurrentProcess;
 	info.processInfoLength = sizeof(ProcessInfoRec);
 	info.processName = NULL;
-	info.processAppSpec = applicationSpec;
-	return GetProcessInformation(&currentPSN, &info);
+	info.processAppSpec = &PyMac_ApplicationFSSpec;
+	if ( err=GetProcessInformation(&currentPSN, &info))
+		return err;
+	if ( err=PyMac_GetFullPath(&PyMac_ApplicationFSSpec, PyMac_ApplicationPath) )
+		return err;
+	applocation_inited = 1;
+	return 0;
 }
 
 /* Given an FSSpec, return the FSSpec of the parent folder */
@@ -114,8 +127,8 @@ get_folder_parent (FSSpec * fss, FSSpec * parent)
 
 /* Given an FSSpec return a full, colon-separated pathname */
 
-static OSErr
-get_full_path (FSSpec *fss, char *buf)
+OSErr
+PyMac_GetFullPath (FSSpec *fss, char *buf)
 {
 	short err;
 	FSSpec fss_parent, fss_current;
@@ -144,21 +157,6 @@ get_full_path (FSSpec *fss, char *buf)
     			strcpy(buf, tmpbuf);
         }
         return 0;
-}
-
-/* Return the full program name */
-
-static char *
-get_application_name()
-{
-	static char appname[256];
-	FSSpec appspec;
-	
-	if (PyMac_process_location(&appspec))
-		return NULL;
-	if (get_full_path(&appspec, appname))
-		return NULL;
-	return appname;
 }
 
 /* Check that there aren't any args remaining in the event */
@@ -230,7 +228,7 @@ handle_open_doc(AppleEvent *theAppleEvent, AppleEvent *reply, long refCon)
 				  &keywd, &rttype, &fss, sizeof(fss), &size);
 		if (err)
 			break;
-		get_full_path(&fss, path);
+		PyMac_GetFullPath(&fss, path);
 		arg_vector[arg_count++] = strdup(path);
 	}
 	return err;
@@ -301,7 +299,8 @@ PyMac_GetArgv(pargv, noevents)
 {
 	
 	arg_count = 0;
-	arg_vector[arg_count++] = strdup(get_application_name());
+	(void)PyMac_init_process_location();
+	arg_vector[arg_count++] = strdup(PyMac_ApplicationPath);
 	
 	if( !noevents ) {
 		set_ae_handlers();

@@ -147,10 +147,11 @@ PyMac_OpenPrefFile()
 			printf("Cannot create preferences file, error %d\n", ResError());
 			exit(1);
 		}
-		if ( (err=PyMac_process_location(&dirspec)) != 0 ) {
-			printf("Cannot get FSSpec for application, error %d\n", err);
+		if ( (err=PyMac_init_process_location()) != 0 ) {
+			printf("Cannot get application location, error %d\n", err);
 			exit(1);
 		}
+		dirspec = PyMac_ApplicationFSSpec;
 		dirspec.name[0] = 0;
 		if ((err=NewAlias(NULL, &dirspec, &handle)) != 0 ) {
 			printf("Cannot make alias to application directory, error %d\n", err);
@@ -212,7 +213,7 @@ PyMac_GetPythonDir()
     if ( prefrh != -1 ) CloseResFile(prefrh);
     UseResFile(oldrh);
 
-   	if ( nfullpath(&dirspec, name) == 0 ) {
+   	if ( PyMac_GetFullPath(&dirspec, name) == 0 ) {
    		strcat(name, ":");
     } else {
  		/* If all fails, we return the current directory */
@@ -228,7 +229,6 @@ PyMac_GetPythonDir()
 static char *
 PyMac_GetPythonPath()
 {
-    FSSpec dirspec;
     short oldrh, prefrh = -1;
     char *rv;
     int i, newlen;
@@ -289,20 +289,16 @@ PyMac_GetPythonPath()
     		rv[newlen-1] = 0;
     	} else if ( pathitem[0] >= 14 && strncmp((char *)pathitem+1, "$(APPLICATION)", 14) == 0 ) {
     		/* This is the application itself */
-			char fullname[256];
 			
-    		if ( (err=PyMac_process_location(&dirspec)) != 0 ) {
-				printf("Cannot get FSSpec for application, error %d\n", err);
+    		if ( (err=PyMac_init_process_location()) != 0 ) {
+				printf("Cannot get  application location, error %d\n", err);
 				exit(1);
 			}
-			if ( nfullpath(&dirspec, fullname) != 0 ) {
-				printf("Cannot convert application fsspec to path\n");
-				exit(1);
-			}
-			newlen = strlen(rv) + strlen(fullname) + 2;
+
+			newlen = strlen(rv) + strlen(PyMac_ApplicationPath) + 2;
     		if( (rv=realloc(rv, newlen)) == NULL)
     			goto out;
-    		strcpy(rv+strlen(rv), fullname);
+    		strcpy(rv+strlen(rv), PyMac_ApplicationPath);
     		rv[newlen-2] = '\n';
     		rv[newlen-1] = 0;
 
