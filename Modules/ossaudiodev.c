@@ -161,7 +161,7 @@ newossmixerobject(PyObject *arg)
     int fd, imode;
     oss_mixer_t *xp;
     
-    if (!PyArg_ParseTuple (arg, "|ss", &basedev, &mode)) {
+    if (!PyArg_ParseTuple(arg, "|ss", &basedev, &mode)) {
     	return NULL;
     }
     
@@ -182,7 +182,7 @@ newossmixerobject(PyObject *arg)
         return NULL;
     }
 
-    if ((fd = open (basedev, imode)) == -1) {
+    if ((fd = open(basedev, imode)) == -1) {
         PyErr_SetFromErrnoWithFilename(PyExc_IOError, basedev);
         return NULL;
     }
@@ -672,82 +672,82 @@ oss_mixer_fileno(oss_mixer_t *self, PyObject *args)
 /* Simple mixer interface methods */
 
 static PyObject *
-oss_mixer_devices (oss_mixer_t *self, PyObject *args)
+oss_mixer_devices(oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1_internal(self->fd, args, "devices",
         SOUND_MIXER_READ_DEVMASK);
 }
 
 static PyObject *
-oss_mixer_stereodevices (oss_mixer_t *self, PyObject *args)
+oss_mixer_stereodevices(oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1_internal(self->fd, args, "stereodevices",
         SOUND_MIXER_READ_STEREODEVS);
 }
 
 static PyObject *
-oss_mixer_recdevices (oss_mixer_t *self, PyObject *args)
+oss_mixer_recdevices(oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1_internal(self->fd, args, "recdevices",
         SOUND_MIXER_READ_RECMASK);
 }
 
 static PyObject *
-oss_mixer_get (oss_mixer_t *self, PyObject *args)
+oss_mixer_get(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume;
     
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
-    if (!PyArg_ParseTuple (args, "i:get", &channel))
+    if (!PyArg_ParseTuple(args, "i:get", &channel))
     	return NULL;
     
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
-    	PyErr_SetString (OSSAudioError, "Invalid mixer channel specified.");
+    	PyErr_SetString(OSSAudioError, "Invalid mixer channel specified.");
 	return NULL;
     }
     
-    if (ioctl (self->fd, MIXER_READ(channel), &volume) == -1)
+    if (ioctl(self->fd, MIXER_READ(channel), &volume) == -1)
     	return PyErr_SetFromErrno(PyExc_IOError);
     
-    return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
+    return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }
 
 static PyObject *
-oss_mixer_set (oss_mixer_t *self, PyObject *args)
+oss_mixer_set(oss_mixer_t *self, PyObject *args)
 {
     int channel, volume, leftVol, rightVol;
     
     /* Can't use _do_ioctl_1 because of encoded arg thingy. */
-    if (!PyArg_ParseTuple (args, "i(ii):set", &channel, &leftVol, &rightVol))
+    if (!PyArg_ParseTuple(args, "i(ii):set", &channel, &leftVol, &rightVol))
     	return NULL;
 	    
     if (channel < 0 || channel > SOUND_MIXER_NRDEVICES) {
-    	PyErr_SetString (OSSAudioError, "Invalid mixer channel specified.");
+    	PyErr_SetString(OSSAudioError, "Invalid mixer channel specified.");
 	return NULL;
     }
     
     if (leftVol < 0 || rightVol < 0 || leftVol > 100 || rightVol > 100) {
-    	PyErr_SetString (OSSAudioError, "Volumes must be between 0 and 100.");
+    	PyErr_SetString(OSSAudioError, "Volumes must be between 0 and 100.");
 	return NULL;
     }
 
     volume = (rightVol << 8) | leftVol;
     
-    if (ioctl (self->fd, MIXER_WRITE(channel), &volume) == -1)
+    if (ioctl(self->fd, MIXER_WRITE(channel), &volume) == -1)
     	return PyErr_SetFromErrno(PyExc_IOError);
    
-    return Py_BuildValue ("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
+    return Py_BuildValue("(ii)", volume & 0xff, (volume & 0xff00) >> 8);
 }
 
 static PyObject *
-oss_mixer_getrecsrc (oss_mixer_t *self, PyObject *args)
+oss_mixer_getrecsrc(oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1_internal(self->fd, args, "getrecsrc",
         SOUND_MIXER_READ_RECSRC);
 }
 
 static PyObject *
-oss_mixer_setrecsrc (oss_mixer_t *self, PyObject *args)
+oss_mixer_setrecsrc(oss_mixer_t *self, PyObject *args)
 {
     return _do_ioctl_1(self->fd, args, "setrecsrc",
         SOUND_MIXER_WRITE_RECSRC);
