@@ -250,6 +250,8 @@ calculate_path(void)
 	size_t bufsz;
 	char *pythonhome = Py_GetPythonHome();
 	char *envpath = getenv("PYTHONPATH");
+	char zip_path[MAXPATHLEN+1];
+	size_t len;
 
 	get_progpath();
 	/* progpath guaranteed \0 terminated in MAXPATH+1 bytes. */
@@ -267,12 +269,26 @@ calculate_path(void)
 	if (envpath && *envpath == '\0')
 		envpath = NULL;
 
+	/* Calculate zip archive path */
+	strncpy(zip_path, progpath, MAXPATHLEN);
+	zip_path[MAXPATHLEN] = '\0';
+	len = strlen(zip_path);
+	if (len > 4) {
+		zip_path[len-3] = 'z';  /* change ending to "zip" */
+		zip_path[len-2] = 'i';
+		zip_path[len-1] = 'p';
+	}
+	else {
+		zip_path[0] = 0;
+	}
+
 	/* We need to construct a path from the following parts.
 	   (1) the PYTHONPATH environment variable, if set;
-	   (2) the PYTHONPATH config macro, with the leading "."
+	   (2) the zip archive file path;
+	   (3) the PYTHONPATH config macro, with the leading "."
 	       of each component replaced with pythonhome, if set;
-	   (3) the directory containing the executable (argv0_path).
-	   The length calculation calculates #2 first.
+	   (4) the directory containing the executable (argv0_path).
+	   The length calculation calculates #3 first.
 	*/
 
 	/* Calculate size of return buffer */
@@ -289,6 +305,7 @@ calculate_path(void)
 		bufsz = 0;
 	bufsz += strlen(PYTHONPATH) + 1;
 	bufsz += strlen(argv0_path) + 1;
+	bufsz += strlen(zip_path) + 1;
 	if (envpath != NULL)
 		bufsz += strlen(envpath) + 1;
 
@@ -309,6 +326,11 @@ calculate_path(void)
 
 	if (envpath) {
 		strcpy(buf, envpath);
+		buf = strchr(buf, '\0');
+		*buf++ = DELIM;
+	}
+	if (zip_path[0]) {
+		strcpy(buf, zip_path);
 		buf = strchr(buf, '\0');
 		*buf++ = DELIM;
 	}
