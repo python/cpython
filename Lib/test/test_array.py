@@ -600,6 +600,26 @@ class BaseTest(unittest.TestCase):
             array.array(self.typecode, self.example+self.example[::-1])
         )
 
+    def test_constructor_with_iterable_argument(self):
+        a = array.array(self.typecode, iter(self.example))
+        b = array.array(self.typecode, self.example)
+        self.assertEqual(a, b)
+
+        # non-iterable argument
+        self.assertRaises(TypeError, array.array, self.typecode, 10)
+
+        # pass through errors raised in __iter__
+        class A:
+            def __iter__(self):
+                raise UnicodeError
+        self.assertRaises(UnicodeError, array.array, self.typecode, A())
+
+        # pass through errors raised in next()
+        def B():
+            raise UnicodeError
+            yield None
+        self.assertRaises(UnicodeError, array.array, self.typecode, B())
+
     def test_coveritertraverse(self):
         try:
             import gc
@@ -904,8 +924,20 @@ class DoubleTest(FPTest):
     minitemsize = 8
 tests.append(DoubleTest)
 
-def test_main():
+def test_main(verbose=None):
+    import sys
+
     test_support.run_unittest(*tests)
 
-if __name__=="__main__":
-    test_main()
+    # verify reference counting
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(*tests)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
+
+if __name__ == "__main__":
+    test_main(verbose=True)

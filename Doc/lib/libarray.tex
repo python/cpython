@@ -41,10 +41,14 @@ The module defines the following type:
 \begin{funcdesc}{array}{typecode\optional{, initializer}}
 Return a new array whose items are restricted by \var{typecode},
 and initialized from the optional \var{initializer} value, which
-must be a list or a string.  The list or string is passed to the
+must be a list, string, or iterable over elements of the
+appropriate type.
+\versionchanged[Formerly, only lists or strings were accepted]{2.4}
+If given a list or string, the initializer is passed to the
 new array's \method{fromlist()}, \method{fromstring()}, or
 \method{fromunicode()} method (see below) to add initial items to
-the array.
+the array.  Otherwise, the iterable initializer is passed to the
+\method{extend()} method.
 \end{funcdesc}
 
 \begin{datadesc}{ArrayType}
