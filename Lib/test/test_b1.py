@@ -97,6 +97,10 @@ if fcmp(coerce(1, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1, 1.1)'
 if coerce(1, 1L) != (1L, 1L): raise TestFailed, 'coerce(1, 1L)'
 if fcmp(coerce(1L, 1.1), (1.0, 1.1)): raise TestFailed, 'coerce(1L, 1.1)'
 
+try: coerce(0.5, long("12345" * 1000))
+except OverflowError: pass
+else: raise TestFailed, 'coerce(0.5, long("12345" * 1000))'
+
 print 'compile'
 compile('print 1\n', '', 'exec')
 

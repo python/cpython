@@ -5,6 +5,9 @@ Release date: XX-XXX-2003
 - Bastion.py and rexec.py are disabled.  These modules are not safe in
   Python 2.2. or 2.3.
 
+- SF #676155: fixed errors when trying to convert a long integer
+  into a float which couldn't fit.
+
 - SF #660476 and #513033: broken threadstate swap in readline could
   cause fatal errors when a readline hook was being invoked while a
   background thread was active.
