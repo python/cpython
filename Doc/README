@@ -7,12 +7,12 @@ There are four documents and a macro file:
 
 	macros.ms		macros .so'ed by the documents
 
-	paper.ms		conference paper about Python
-	intro.ms		informal introduction to Python
-	ref.ms			Python language reference manual
-	modules.ms		description of standard modules
+	tut.ms			informal tutorial
+	mod.ms			description of standard modules
+	ref.ms			Python language reference manual (embryonic)
+	paper.ms		conference paper about Python (embryonic)
 
-XXX There should also be a man page.
+XXX There should also be a man page (extracted from sec. 2 of the tutorial)
 
 To typeset one of the documents on the default Postscript printer, chdir
 to this directory (otherwise the macros aren't found!) and issue the
@@ -22,4 +22,6 @@ command
 
 When typesetting all documents, issue a separate command for each.
 
---Guido (last modified 10 Sep 90)
+You can also use the Makefile, at your own risk.
+
+--Guido (last modified 7 Oct 90)
