@@ -75,9 +75,11 @@ class ConsoleTextWidget(W.EditText):
 			if char == Wkeys.returnkey:
 				text = self.get()[self._inputstart:selstart]
 				text = string.join(string.split(text, "\r"), "\n")
-				saveyield = MacOS.EnableAppswitch(0)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					saveyield = MacOS.EnableAppswitch(0)
 				self.pyinteractive.executeline(text, self, self._namespace)
-				MacOS.EnableAppswitch(saveyield)
+				if hasattr(MacOS, 'EnableAppswitch'):
+					MacOS.EnableAppswitch(saveyield)
 				selstart, selend = self.getselection()
 				self._inputstart = selstart
 	
@@ -106,6 +108,8 @@ class ConsoleTextWidget(W.EditText):
 		self._buf = ""
 		self.ted.WEClearUndo()
 		self.updatescrollbars()
+		if Qd.QDIsPortBuffered(self._parentwindow.wid):
+			Qd.QDFlushPortBuffer(self._parentwindow.wid, None)
 	
 	def selection_ok(self):
 		selstart, selend = self.getselection()
@@ -275,13 +279,15 @@ class PyOutput:
 		self.w.bind("<activate>", self.activate)
 	
 	def write(self, text):
-		oldyield = MacOS.EnableAppswitch(-1)
+		if hasattr(MacOS, 'EnableAppswitch'):
+			oldyield = MacOS.EnableAppswitch(-1)
 		try:
 			self._buf = self._buf + text
 			if '\n' in self._buf:
 				self.flush()
 		finally:
-			MacOS.EnableAppswitch(oldyield)
+			if hasattr(MacOS, 'EnableAppswitch'):
+				MacOS.EnableAppswitch(oldyield)
 	
 	def flush(self):
 		self.show()
@@ -294,6 +300,8 @@ class PyOutput:
 		self._buf = ""
 		self.w.outputtext.updatescrollbars()
 		self.w.outputtext.ted.WEFeatureFlag(WASTEconst.weFReadOnly, 1)
+		if Qd.QDIsPortBuffered(self.w.wid):
+			Qd.QDFlushPortBuffer(self.w.wid, None)
 	
 	def show(self):
 		if self.closed:
@@ -354,7 +362,9 @@ class SimpleStdin:
 		rv = EasyDialogs.AskString(prompt)
 		if rv is None:
 			return ""
-		return rv + '\n'
+		rv = rv + "\n"  # readline should include line terminator
+		sys.stdout.write(rv)  # echo user's reply
+		return rv
 
 
 def installconsole(defaultshow = 1):
