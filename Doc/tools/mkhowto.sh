@@ -165,7 +165,7 @@ l2hoption() {
 }
 
 cleanup() {
-    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ilg $1.ind $1.syn
+    rm -f $1.aux $1.log $1.out $1.toc $1.bkm $1.idx $1.ilg $1.ind $1.syn $1.pla
     rm -f mod$1.idx mod$1.ilg mod$1.ind
     if [ ! "$BUILD_DVI" ] ; then
 	rm -f $1.dvi
