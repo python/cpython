@@ -60,6 +60,7 @@
        element.  The processor is not powerful enough to handle this.
     -->
   <macro name="versionchanged">
+    <attribute name="how" optional="yes"/>
     <attribute name="version"/>
     </macro>
 
@@ -432,6 +433,7 @@
     <child name="definition" implied="yes"/>
     </macro>
 
+  <environment name="alltt" outputname="verbatim"/>
   <environment name="comment" verbatim="yes"/>
   <environment name="verbatim" verbatim="yes"/>
   <environment name="verbatim*" verbatim="yes">
