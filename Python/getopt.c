@@ -41,12 +41,9 @@ char *  optarg = NULL;          /* optional argument       */
 
 
 #ifndef __BEOS__
-int getopt(argc,argv,optstring)
-int argc; 
-char *argv[]; 
-char optstring[];
+int getopt(int argc, char *argv[], char optstring[])
 #else
-int getopt( int argc, char *const *argv, const char *optstring )
+int getopt(int argc, char *const *argv, const char *optstring)
 #endif
 {
 	static   char *opt_ptr = "";

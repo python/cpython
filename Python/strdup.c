@@ -3,8 +3,7 @@
 #include "pgenheaders.h"
 
 char *
-strdup(str)
-	const char *str;
+strdup(const char *str)
 {
 	if (str != NULL) {
 		register char *copy = malloc(strlen(str) + 1);

@@ -42,8 +42,7 @@ const struct filedescr _PyImport_DynLoadFiletab[] = {
 };
 
 static int
-aix_getoldmodules(modlistptr)
-	void **modlistptr;
+aix_getoldmodules(void **modlistptr)
 {
 	register ModulePtr       modptr, prevmodptr;
 	register struct ld_info  *ldiptr;
@@ -115,9 +114,7 @@ aix_getoldmodules(modlistptr)
 }
 
 static int
-aix_bindnewmodule(newmoduleptr, modlistptr)
-	void *newmoduleptr;
-	void *modlistptr;        
+aix_bindnewmodule(void *newmoduleptr, void *modlistptr)
 {
 	register ModulePtr modptr;
 
@@ -131,8 +128,7 @@ aix_bindnewmodule(newmoduleptr, modlistptr)
 }
 
 static void
-aix_loaderror(pathname)
-	char *pathname;
+aix_loaderror(char *pathname)
 {
 
 	char *message[1024], errbuf[1024];

@@ -37,7 +37,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #ifdef macintosh
 #include "macglue.h"
 #endif
-extern char *Py_GetPath();
+extern char *Py_GetPath(void);
 
 extern grammar _PyParser_Grammar; /* From graminit.c */
 
@@ -59,10 +59,10 @@ static void call_ll_exitfuncs(void);
 int _Py_AskYesNo(char *prompt);
 #endif
 
-extern void _PyUnicode_Init();
-extern void _PyUnicode_Fini();
-extern void _PyCodecRegistry_Init();
-extern void _PyCodecRegistry_Fini();
+extern void _PyUnicode_Init(void);
+extern void _PyUnicode_Fini(void);
+extern void _PyCodecRegistry_Init(void);
+extern void _PyCodecRegistry_Fini(void);
 
 
 int Py_DebugFlag; /* Needed by parser.c */
@@ -78,7 +78,7 @@ static int initialized = 0;
 /* API to access the initialized flag -- useful for esoteric use */
 
 int
-Py_IsInitialized()
+Py_IsInitialized(void)
 {
 	return initialized;
 }
@@ -96,7 +96,7 @@ Py_IsInitialized()
 */
 
 void
-Py_Initialize()
+Py_Initialize(void)
 {
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
@@ -185,7 +185,7 @@ extern void dump_counts(void);
 */
 
 void
-Py_Finalize()
+Py_Finalize(void)
 {
 	PyInterpreterState *interp;
 	PyThreadState *tstate;
@@ -283,7 +283,7 @@ Py_Finalize()
 */
 
 PyThreadState *
-Py_NewInterpreter()
+Py_NewInterpreter(void)
 {
 	PyInterpreterState *interp;
 	PyThreadState *tstate, *save_tstate;
@@ -352,8 +352,7 @@ Py_NewInterpreter()
 */
 
 void
-Py_EndInterpreter(tstate)
-	PyThreadState *tstate;
+Py_EndInterpreter(PyThreadState *tstate)
 {
 	PyInterpreterState *interp = tstate->interp;
 
@@ -373,15 +372,14 @@ Py_EndInterpreter(tstate)
 static char *progname = "python";
 
 void
-Py_SetProgramName(pn)
-	char *pn;
+Py_SetProgramName(char *pn)
 {
 	if (pn && *pn)
 		progname = pn;
 }
 
 char *
-Py_GetProgramName()
+Py_GetProgramName(void)
 {
 	return progname;
 }
@@ -389,14 +387,13 @@ Py_GetProgramName()
 static char *default_home = NULL;
 
 void
-Py_SetPythonHome(home)
-	char *home;
+Py_SetPythonHome(char *home)
 {
 	default_home = home;
 }
 
 char *
-Py_GetPythonHome()
+Py_GetPythonHome(void)
 {
 	char *home = default_home;
 	if (home == NULL)
@@ -407,7 +404,7 @@ Py_GetPythonHome()
 /* Create __main__ module */
 
 static void
-initmain()
+initmain(void)
 {
 	PyObject *m, *d;
 	m = PyImport_AddModule("__main__");
@@ -426,7 +423,7 @@ initmain()
 /* Import the site module (not into __main__ though) */
 
 static void
-initsite()
+initsite(void)
 {
 	PyObject *m, *f;
 	m = PyImport_ImportModule("site");
@@ -451,9 +448,7 @@ initsite()
 /* Parse input from a file and execute it */
 
 int
-PyRun_AnyFile(fp, filename)
-	FILE *fp;
-	char *filename;
+PyRun_AnyFile(FILE *fp, char *filename)
 {
 	if (filename == NULL)
 		filename = "???";
@@ -464,9 +459,7 @@ PyRun_AnyFile(fp, filename)
 }
 
 int
-PyRun_InteractiveLoop(fp, filename)
-	FILE *fp;
-	char *filename;
+PyRun_InteractiveLoop(FILE *fp, char *filename)
 {
 	PyObject *v;
 	int ret;
@@ -495,9 +488,7 @@ PyRun_InteractiveLoop(fp, filename)
 }
 
 int
-PyRun_InteractiveOne(fp, filename)
-	FILE *fp;
-	char *filename;
+PyRun_InteractiveOne(FILE *fp, char *filename)
 {
 	PyObject *m, *d, *v, *w;
 	node *n;
@@ -549,9 +540,7 @@ PyRun_InteractiveOne(fp, filename)
 }
 
 int
-PyRun_SimpleFile(fp, filename)
-	FILE *fp;
-	char *filename;
+PyRun_SimpleFile(FILE *fp, char *filename)
 {
 	PyObject *m, *d, *v;
 	char *ext;
@@ -592,8 +581,7 @@ PyRun_SimpleFile(fp, filename)
 }
 
 int
-PyRun_SimpleString(command)
-	char *command;
+PyRun_SimpleString(char *command)
 {
 	PyObject *m, *d, *v;
 	m = PyImport_AddModule("__main__");
@@ -612,13 +600,8 @@ PyRun_SimpleString(command)
 }
 
 static int
-parse_syntax_error(err, message, filename, lineno, offset, text)
-     PyObject* err;
-     PyObject** message;
-     char** filename;
-     int* lineno;
-     int* offset;
-     char** text;
+parse_syntax_error(PyObject *err, PyObject **message, char **filename,
+		   int *lineno, int *offset, char **text)
 {
 	long hold;
 	PyObject *v;
@@ -675,14 +658,13 @@ finally:
 }
 
 void
-PyErr_Print()
+PyErr_Print(void)
 {
 	PyErr_PrintEx(1);
 }
 
 void
-PyErr_PrintEx(set_sys_last_vars)
-	int set_sys_last_vars;
+PyErr_PrintEx(int set_sys_last_vars)
 {
 	int err = 0;
 	PyObject *exception, *v, *tb, *f;
@@ -853,31 +835,22 @@ PyErr_PrintEx(set_sys_last_vars)
 }
 
 PyObject *
-PyRun_String(str, start, globals, locals)
-	char *str;
-	int start;
-	PyObject *globals, *locals;
+PyRun_String(char *str, int start, PyObject *globals, PyObject *locals)
 {
 	return run_err_node(PyParser_SimpleParseString(str, start),
 			    "<string>", globals, locals);
 }
 
 PyObject *
-PyRun_File(fp, filename, start, globals, locals)
-	FILE *fp;
-	char *filename;
-	int start;
-	PyObject *globals, *locals;
+PyRun_File(FILE *fp, char *filename, int start, PyObject *globals,
+	   PyObject *locals)
 {
 	return run_err_node(PyParser_SimpleParseFile(fp, filename, start),
 			    filename, globals, locals);
 }
 
 static PyObject *
-run_err_node(n, filename, globals, locals)
-	node *n;
-	char *filename;
-	PyObject *globals, *locals;
+run_err_node(node *n, char *filename, PyObject *globals, PyObject *locals)
 {
 	if (n == NULL)
 		return  NULL;
@@ -885,10 +858,7 @@ run_err_node(n, filename, globals, locals)
 }
 
 static PyObject *
-run_node(n, filename, globals, locals)
-	node *n;
-	char *filename;
-	PyObject *globals, *locals;
+run_node(node *n, char *filename, PyObject *globals, PyObject *locals)
 {
 	PyCodeObject *co;
 	PyObject *v;
@@ -902,10 +872,7 @@ run_node(n, filename, globals, locals)
 }
 
 static PyObject *
-run_pyc_file(fp, filename, globals, locals)
-	FILE *fp;
-	char *filename;
-	PyObject *globals, *locals;
+run_pyc_file(FILE *fp, char *filename, PyObject *globals, PyObject *locals)
 {
 	PyCodeObject *co;
 	PyObject *v;
@@ -934,10 +901,7 @@ run_pyc_file(fp, filename, globals, locals)
 }
 
 PyObject *
-Py_CompileString(str, filename, start)
-	char *str;
-	char *filename;
-	int start;
+Py_CompileString(char *str, char *filename, int start)
 {
 	node *n;
 	PyCodeObject *co;
@@ -952,10 +916,7 @@ Py_CompileString(str, filename, start)
 /* Simplified interface to parsefile -- return node or set exception */
 
 node *
-PyParser_SimpleParseFile(fp, filename, start)
-	FILE *fp;
-	char *filename;
-	int start;
+PyParser_SimpleParseFile(FILE *fp, char *filename, int start)
 {
 	node *n;
 	perrdetail err;
@@ -969,9 +930,7 @@ PyParser_SimpleParseFile(fp, filename, start)
 /* Simplified interface to parsestring -- return node or set exception */
 
 node *
-PyParser_SimpleParseString(str, start)
-	char *str;
-	int start;
+PyParser_SimpleParseString(char *str, int start)
 {
 	node *n;
 	perrdetail err;
@@ -984,8 +943,7 @@ PyParser_SimpleParseString(str, start)
 /* Set the error appropriate to the given input error code (see errcode.h) */
 
 static void
-err_input(err)
-	perrdetail *err;
+err_input(perrdetail *err)
 {
 	PyObject *v, *w, *errtype;
 	char *msg = NULL;
@@ -1053,8 +1011,7 @@ err_input(err)
 /* Print fatal error message and abort */
 
 void
-Py_FatalError(msg)
-	char *msg;
+Py_FatalError(char *msg)
 {
 	fprintf(stderr, "Fatal Python error: %s\n", msg);
 #ifdef macintosh
@@ -1079,11 +1036,10 @@ int _PyThread_Started = 0; /* Set by threadmodule.c and maybe others */
 #endif
 
 #define NEXITFUNCS 32
-static void (*exitfuncs[NEXITFUNCS])();
+static void (*exitfuncs[NEXITFUNCS])(void);
 static int nexitfuncs = 0;
 
-int Py_AtExit(func)
-	void (*func)(void);
+int Py_AtExit(void (*func)(void))
 {
 	if (nexitfuncs >= NEXITFUNCS)
 		return -1;
@@ -1092,7 +1048,7 @@ int Py_AtExit(func)
 }
 
 static void
-call_sys_exitfunc()
+call_sys_exitfunc(void)
 {
 	PyObject *exitfunc = PySys_GetObject("exitfunc");
 
@@ -1115,7 +1071,7 @@ call_sys_exitfunc()
 }
 
 static void
-call_ll_exitfuncs()
+call_ll_exitfuncs(void)
 {
 	while (nexitfuncs > 0)
 		(*exitfuncs[--nexitfuncs])();
@@ -1125,8 +1081,7 @@ call_ll_exitfuncs()
 }
 
 void
-Py_Exit(sts)
-	int sts;
+Py_Exit(int sts)
 {
 	Py_Finalize();
 
@@ -1138,7 +1093,7 @@ Py_Exit(sts)
 }
 
 static void
-initsigs()
+initsigs(void)
 {
 #ifdef HAVE_SIGNAL_H
 #ifdef SIGPIPE
@@ -1152,8 +1107,7 @@ initsigs()
 /* Ask a yes/no question */
 
 int
-_Py_AskYesNo(prompt)
-	char *prompt;
+_Py_AskYesNo(char *prompt)
 {
 	char buf[256];
 	
@@ -1170,8 +1124,7 @@ _Py_AskYesNo(prompt)
    Pretend that stdin is always interactive, other files never. */
 
 int
-isatty(fd)
-	int fd;
+isatty(int fd)
 {
 	return fd == fileno(stdin);
 }
@@ -1185,9 +1138,7 @@ isatty(fd)
  *      the descriptor is NULL or "<stdin>" or "???".
  */
 int
-Py_FdIsInteractive(fp, filename)
-	FILE *fp;
-	char *filename;
+Py_FdIsInteractive(FILE *fp, char *filename)
 {
 	if (isatty((int)fileno(fp)))
 		return 1;

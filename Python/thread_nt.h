@@ -122,7 +122,7 @@ BOOL LeaveNonRecursiveMutex(PNRMUTEX mutex)
 		SetEvent(mutex->hevent) ; /* Other threads are waiting, wake one on them up */
 }
 
-PNRMUTEX AllocNonRecursiveMutex()
+PNRMUTEX AllocNonRecursiveMutex(void)
 {
 	PNRMUTEX mutex = (PNRMUTEX)malloc(sizeof(NRMUTEX)) ;
 	if (mutex && !InitializeNonRecursiveMutex(mutex))
@@ -231,7 +231,7 @@ void PyThread_exit_prog(int status)
 	do_PyThread_exit_prog(status, 0);
 }
 
-void PyThread__exit_prog _P1(int status)
+void PyThread__exit_prog(int status)
 {
 	do_PyThread_exit_prog(status, 1);
 }

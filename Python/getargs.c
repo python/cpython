@@ -43,54 +43,24 @@ static int vgetargskeywords(PyObject *, PyObject *,
 			    char *, char **, va_list *);
 static char *skipitem(char **, va_list *);
 
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS2 */
 int PyArg_Parse(PyObject *args, char *format, ...)
-#else
-/* VARARGS */
-int PyArg_Parse(va_alist) va_dcl
-#endif
 {
 	int retval;
 	va_list va;
-#ifdef HAVE_STDARG_PROTOTYPES
 	
 	va_start(va, format);
-#else
-	PyObject *args;
-	char *format;
-	
-	va_start(va);
-	args = va_arg(va, PyObject *);
-	format = va_arg(va, char *);
-#endif
 	retval = vgetargs1(args, format, &va, 1);
 	va_end(va);
 	return retval;
 }
 
 
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS2 */
 int PyArg_ParseTuple(PyObject *args, char *format, ...)
-#else
-/* VARARGS */
-int PyArg_ParseTuple(va_alist) va_dcl
-#endif
 {
 	int retval;
 	va_list va;
-#ifdef HAVE_STDARG_PROTOTYPES
 	
 	va_start(va, format);
-#else
-	PyObject *args;
-	char *format;
-	
-	va_start(va);
-	args = va_arg(va, PyObject *);
-	format = va_arg(va, char *);
-#endif
 	retval = vgetargs1(args, format, &va, 0);
 	va_end(va);
 	return retval;
@@ -98,10 +68,7 @@ int PyArg_ParseTuple(va_alist) va_dcl
 
 
 int
-PyArg_VaParse(args, format, va)
-	PyObject *args;
-	char *format;
-	va_list va;
+PyArg_VaParse(PyObject *args, char *format, va_list va)
 {
 	va_list lva;
 
@@ -116,11 +83,7 @@ PyArg_VaParse(args, format, va)
 
 
 static int
-vgetargs1(args, format, p_va, compat)
-	PyObject *args;
-	char *format;
-	va_list *p_va;
-	int compat;
+vgetargs1(PyObject *args, char *format, va_list *p_va, int compat)
 {
 	char msgbuf[256];
 	int levels[32];
@@ -254,12 +217,7 @@ vgetargs1(args, format, p_va, compat)
 
 
 static void
-seterror(iarg, msg, levels, fname, message)
-	int iarg;
-	char *msg;
-	int *levels;
-	char *fname;
-	char *message;
+seterror(int iarg, char *msg, int *levels, char *fname, char *message)
 {
 	char buf[256];
 	int i;
@@ -309,13 +267,8 @@ seterror(iarg, msg, levels, fname, message)
 */
 
 static char *
-converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
-	PyObject *arg;
-	char **p_format;
-	va_list *p_va;
-	int *levels;
-	char *msgbuf;
-	int toplevel;
+converttuple(PyObject *arg, char **p_format, va_list *p_va, int *levels,
+	     char *msgbuf, int toplevel)
 {
 	int level = 0;
 	int n = 0;
@@ -378,12 +331,8 @@ converttuple(arg, p_format, p_va, levels, msgbuf, toplevel)
 /* Convert a single item. */
 
 static char *
-convertitem(arg, p_format, p_va, levels, msgbuf)
-	PyObject *arg;
-	char **p_format;
-	va_list *p_va;
-	int *levels;
-	char *msgbuf;
+convertitem(PyObject *arg, char **p_format, va_list *p_va, int *levels,
+	    char *msgbuf)
 {
 	char *msg;
 	char *format = *p_format;
@@ -409,11 +358,7 @@ convertitem(arg, p_format, p_va, levels, msgbuf)
    by appending ", <actual argument type>" to error message. */
 
 static char *
-convertsimple(arg, p_format, p_va, msgbuf)
-	PyObject *arg;
-	char **p_format;
-	va_list *p_va;
-	char *msgbuf;
+convertsimple(PyObject *arg, char **p_format, va_list *p_va, char *msgbuf)
 {
 	char *msg = convertsimple1(arg, p_format, p_va);
 	if (msg != NULL) {
@@ -436,10 +381,7 @@ PyObject *_PyUnicode_AsUTF8String(PyObject *unicode,
    Don't call if a tuple is expected. */
 
 static char *
-convertsimple1(arg, p_format, p_va)
-	PyObject *arg;
-	char **p_format;
-	va_list *p_va;
+convertsimple1(PyObject *arg, char **p_format, va_list *p_va)
 {
 	char *format = *p_format;
 	char c = *format++;
@@ -961,34 +903,15 @@ convertsimple1(arg, p_format, p_va)
 /* Support for keyword arguments donated by
    Geoff Philbrick <philbric@delphi.hks.com> */
 
-#ifdef HAVE_STDARG_PROTOTYPES
-/* VARARGS2 */
 int PyArg_ParseTupleAndKeywords(PyObject *args,
 				PyObject *keywords,
 				char *format, 
 				char **kwlist, ...)
-#else
-/* VARARGS */
-int PyArg_ParseTupleAndKeywords(va_alist) va_dcl
-#endif
 {
 	int retval;
 	va_list va;
-#ifdef HAVE_STDARG_PROTOTYPES
 	
 	va_start(va, kwlist);
-#else
-	PyObject *args;
-	PyObject *keywords;
-	char *format;
-	char **kwlist;
-	
-	va_start(va);
-	args = va_arg(va, PyObject *);
-	keywords = va_arg(va, PyObject *);
-	format = va_arg(va, char *);
-	kwlist = va_arg(va, char **);
-#endif
 	retval = vgetargskeywords(args, keywords, format, kwlist, &va);	
 	va_end(va);
 	return retval;
@@ -996,12 +919,8 @@ int PyArg_ParseTupleAndKeywords(va_alist) va_dcl
 
 
 static int
-vgetargskeywords(args, keywords, format, kwlist, p_va)
-	PyObject *args;
-	PyObject *keywords;
-	char *format;
-	char **kwlist;
-	va_list *p_va;
+vgetargskeywords(PyObject *args, PyObject *keywords, char *format,
+	         char **kwlist, va_list *p_va)
 {
 	char msgbuf[256];
 	int levels[32];
@@ -1204,9 +1123,7 @@ vgetargskeywords(args, keywords, format, kwlist, p_va)
 
 
 static char *
-skipitem(p_format, p_va)
-	char **p_format;
-	va_list *p_va;
+skipitem(char **p_format, va_list *p_va)
 {
 	char *format = *p_format;
 	char c = *format++;

@@ -26,12 +26,10 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #define MAXPATHLEN 1024
 #endif
 
-extern char *getwd();
+extern char *getwd(char *);
 
 char *
-getcwd(buf, size)
-	char *buf;
-	int size;
+getcwd(char *buf, int size)
 {
 	char localbuf[MAXPATHLEN+1];
 	char *ret;
@@ -62,9 +60,7 @@ getcwd(buf, size)
 #endif
 
 char *
-getcwd(buf, size)
-	char *buf;
-	int size;
+getcwd(char *buf, int size)
 {
 	FILE *fp;
 	char *p;

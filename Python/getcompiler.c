@@ -31,7 +31,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif /* !COMPILER */
 
 const char *
-Py_GetCompiler()
+Py_GetCompiler(void)
 {
 	return COMPILER;
 }

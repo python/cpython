@@ -26,9 +26,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 time_t
-PyOS_GetLastModificationTime(path, fp)
-	char *path;
-	FILE *fp;
+PyOS_GetLastModificationTime(char *path, FILE *fp)
 {
 	struct stat st;
 	if (fstat(fileno(fp), &st) != 0)

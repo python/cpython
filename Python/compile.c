@@ -76,16 +76,13 @@ static struct memberlist code_memberlist[] = {
 };
 
 static PyObject *
-code_getattr(co, name)
-	PyCodeObject *co;
-	char *name;
+code_getattr(PyCodeObject *co, char *name)
 {
 	return PyMember_Get((char *)co, code_memberlist, name);
 }
 
 static void
-code_dealloc(co)
-	PyCodeObject *co;
+code_dealloc(PyCodeObject *co)
 {
 	Py_XDECREF(co->co_code);
 	Py_XDECREF(co->co_consts);
@@ -98,8 +95,7 @@ code_dealloc(co)
 }
 
 static PyObject *
-code_repr(co)
-	PyCodeObject *co;
+code_repr(PyCodeObject *co)
 {
 	char buf[500];
 	int lineno = -1;
@@ -118,8 +114,7 @@ code_repr(co)
 }
 
 static int
-code_compare(co, cp)
-	PyCodeObject *co, *cp;
+code_compare(PyCodeObject *co, PyCodeObject *cp)
 {
 	int cmp;
 	cmp = PyObject_Compare(co->co_name, cp->co_name);
@@ -141,8 +136,7 @@ code_compare(co, cp)
 }
 
 static long
-code_hash(co)
-	PyCodeObject *co;
+code_hash(PyCodeObject *co)
 {
 	long h, h0, h1, h2, h3, h4;
 	h0 = PyObject_Hash(co->co_name);
@@ -183,21 +177,10 @@ PyTypeObject PyCode_Type = {
 	"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
 
 PyCodeObject *
-PyCode_New(argcount, nlocals, stacksize, flags,
-	      code, consts, names, varnames, filename, name,
-	      firstlineno, lnotab)
-	int argcount;
-	int nlocals;
-	int stacksize;
-	int flags;
-	PyObject *code;
-	PyObject *consts;
-	PyObject *names;
-	PyObject *varnames;
-	PyObject *filename;
-	PyObject *name;
-	int firstlineno;
-	PyObject *lnotab;
+PyCode_New(int argcount, int nlocals, int stacksize, int flags,
+	   PyObject *code, PyObject *consts, PyObject *names,
+	   PyObject *varnames, PyObject *filename, PyObject *name,
+	   int firstlineno, PyObject *lnotab)
 {
 	PyCodeObject *co;
 	int i;
@@ -317,10 +300,7 @@ struct compiling {
 /* Error message including line number */
 
 static void
-com_error(c, exc, msg)
-	struct compiling *c;
-	PyObject *exc;
-	char *msg;
+com_error(struct compiling *c, PyObject *exc, char *msg)
 {
 	size_t n = strlen(msg);
 	PyObject *v;
@@ -347,9 +327,7 @@ com_error(c, exc, msg)
 /* Interface to the block stack */
 
 static void
-block_push(c, type)
-	struct compiling *c;
-	int type;
+block_push(struct compiling *c, int type)
 {
 	if (c->c_nblocks >= CO_MAXBLOCKS) {
 		com_error(c, PyExc_SystemError,
@@ -361,9 +339,7 @@ block_push(c, type)
 }
 
 static void
-block_pop(c, type)
-	struct compiling *c;
-	int type;
+block_pop(struct compiling *c, int type)
 {
 	if (c->c_nblocks > 0)
 		c->c_nblocks--;
@@ -401,9 +377,7 @@ static PyObject *parsestrplus(node *);
 static PyObject *parsestr(char *);
 
 static int
-com_init(c, filename)
-	struct compiling *c;
-	char *filename;
+com_init(struct compiling *c, char *filename)
 {
 	memset((void *)c, '\0', sizeof(struct compiling));
 	if ((c->c_code = PyString_FromStringAndSize((char *)NULL,
@@ -453,8 +427,7 @@ com_init(c, filename)
 }
 
 static void
-com_free(c)
-	struct compiling *c;
+com_free(struct compiling *c)
 {
 	Py_XDECREF(c->c_code);
 	Py_XDECREF(c->c_consts);
@@ -468,9 +441,7 @@ com_free(c)
 }
 
 static void
-com_push(c, n)
-	struct compiling *c;
-	int n;
+com_push(struct compiling *c, int n)
 {
 	c->c_stacklevel += n;
 	if (c->c_stacklevel > c->c_maxstacklevel)
@@ -478,9 +449,7 @@ com_push(c, n)
 }
 
 static void
-com_pop(c, n)
-	struct compiling *c;
-	int n;
+com_pop(struct compiling *c, int n)
 {
 	if (c->c_stacklevel < n) {
 		/* fprintf(stderr,
@@ -494,8 +463,7 @@ com_pop(c, n)
 }
 
 static void
-com_done(c)
-	struct compiling *c;
+com_done(struct compiling *c)
 {
 	if (c->c_code != NULL)
 		_PyString_Resize(&c->c_code, c->c_nexti);
@@ -504,9 +472,7 @@ com_done(c)
 }
 
 static void
-com_addbyte(c, byte)
-	struct compiling *c;
-	int byte;
+com_addbyte(struct compiling *c, int byte)
 {
 	int len;
 	/*fprintf(stderr, "%3d: %3d\n", c->c_nexti, byte);*/
@@ -531,19 +497,14 @@ com_addbyte(c, byte)
 }
 
 static void
-com_addint(c, x)
-	struct compiling *c;
-	int x;
+com_addint(struct compiling *c, int x)
 {
 	com_addbyte(c, x & 0xff);
 	com_addbyte(c, x >> 8); /* XXX x should be positive */
 }
 
 static void
-com_add_lnotab(c, addr, line)
-	struct compiling *c;
-	int addr;
-	int line;
+com_add_lnotab(struct compiling *c, int addr, int line)
 {
 	int size;
 	char *p;
@@ -563,9 +524,7 @@ com_add_lnotab(c, addr, line)
 }
 
 static void
-com_set_lineno(c, lineno)
-	struct compiling *c;
-	int lineno;
+com_set_lineno(struct compiling *c, int lineno)
 {
 	c->c_lineno = lineno;
 	if (c->c_firstlineno == 0) {
@@ -591,10 +550,7 @@ com_set_lineno(c, lineno)
 }
 
 static void
-com_addoparg(c, op, arg)
-	struct compiling *c;
-	int op;
-	int arg;
+com_addoparg(struct compiling *c, int op, int arg)
 {
 	if (op == SET_LINENO) {
 		com_set_lineno(c, arg);
@@ -606,10 +562,7 @@ com_addoparg(c, op, arg)
 }
 
 static void
-com_addfwref(c, op, p_anchor)
-	struct compiling *c;
-	int op;
-	int *p_anchor;
+com_addfwref(struct compiling *c, int op, int *p_anchor)
 {
 	/* Compile a forward reference for backpatching */
 	int here;
@@ -622,9 +575,7 @@ com_addfwref(c, op, p_anchor)
 }
 
 static void
-com_backpatch(c, anchor)
-	struct compiling *c;
-	int anchor; /* Must be nonzero */
+com_backpatch(struct compiling *c, int anchor)
 {
 	unsigned char *code = (unsigned char *) PyString_AsString(c->c_code);
 	int target = c->c_nexti;
@@ -645,11 +596,7 @@ com_backpatch(c, anchor)
 /* Handle literals and names uniformly */
 
 static int
-com_add(c, list, dict, v)
-	struct compiling *c;
-	PyObject *list;
-	PyObject *dict;
-	PyObject *v;
+com_add(struct compiling *c, PyObject *list, PyObject *dict, PyObject *v)
 {
 	PyObject *w, *t, *np=NULL;
 	long n;
@@ -681,28 +628,20 @@ com_add(c, list, dict, v)
 }
 
 static int
-com_addconst(c, v)
-	struct compiling *c;
-	PyObject *v;
+com_addconst(struct compiling *c, PyObject *v)
 {
 	return com_add(c, c->c_consts, c->c_const_dict, v);
 }
 
 static int
-com_addname(c, v)
-	struct compiling *c;
-	PyObject *v;
+com_addname(struct compiling *c, PyObject *v)
 {
 	return com_add(c, c->c_names, c->c_name_dict, v);
 }
 
 #ifdef PRIVATE_NAME_MANGLING
 static int
-com_mangle(c, name, buffer, maxlen)
-	struct compiling *c;
-	char *name;
-	char *buffer;
-	size_t maxlen;
+com_mangle(struct compiling *c, char *name, char *buffer, size_t maxlen)
 {
 	/* Name mangling: __private becomes _classname__private.
 	   This is independent from how the name is used. */
@@ -732,10 +671,7 @@ com_mangle(c, name, buffer, maxlen)
 #endif
 
 static void
-com_addopnamestr(c, op, name)
-	struct compiling *c;
-	int op;
-	char *name;
+com_addopnamestr(struct compiling *c, int op, char *name)
 {
 	PyObject *v;
 	int i;
@@ -771,10 +707,7 @@ com_addopnamestr(c, op, name)
 }
 
 static void
-com_addopname(c, op, n)
-	struct compiling *c;
-	int op;
-	node *n;
+com_addopname(struct compiling *c, int op, node *n)
 {
 	char *name;
 	char buffer[1000];
@@ -809,9 +742,7 @@ com_addopname(c, op, n)
 }
 
 static PyObject *
-parsenumber(co, s)
-	struct compiling *co;
-	char *s;
+parsenumber(struct compiling *co, char *s)
 {
 	extern double atof(const char *);
 	char *end;
@@ -861,8 +792,7 @@ parsenumber(co, s)
 }
 
 static PyObject *
-parsestr(s)
-	char *s;
+parsestr(char *s)
 {
 	PyObject *v;
 	size_t len;
@@ -975,8 +905,7 @@ parsestr(s)
 }
 
 static PyObject *
-parsestrplus(n)
-	node *n;
+parsestrplus(node *n)
 {
 	PyObject *v;
 	int i;
@@ -1012,9 +941,7 @@ parsestrplus(n)
 }
 
 static void
-com_list_constructor(c, n)
-	struct compiling *c;
-	node *n;
+com_list_constructor(struct compiling *c, node *n)
 {
 	int len;
 	int i;
@@ -1029,9 +956,7 @@ com_list_constructor(c, n)
 }
 
 static void
-com_dictmaker(c, n)
-	struct compiling *c;
-	node *n;
+com_dictmaker(struct compiling *c, node *n)
 {
 	int i;
 	/* dictmaker: test ':' test (',' test ':' value)* [','] */
@@ -1049,9 +974,7 @@ com_dictmaker(c, n)
 }
 
 static void
-com_atom(c, n)
-	struct compiling *c;
-	node *n;
+com_atom(struct compiling *c, node *n)
 {
 	node *ch;
 	PyObject *v;
@@ -1121,10 +1044,7 @@ com_atom(c, n)
 }
 
 static void
-com_slice(c, n, op)
-	struct compiling *c;
-	node *n;
-	int op;
+com_slice(struct compiling *c, node *n, int op)
 {
 	if (NCH(n) == 1) {
 		com_addbyte(c, op);
@@ -1149,10 +1069,7 @@ com_slice(c, n, op)
 }
 
 static void
-com_argument(c, n, pkeywords)
-	struct compiling *c;
-	node *n; /* argument */
-	PyObject **pkeywords;
+com_argument(struct compiling *c, node *n, PyObject **pkeywords)
 {
 	node *m;
 	REQ(n, argument); /* [test '='] test; really [keyword '='] test */
@@ -1196,9 +1113,7 @@ com_argument(c, n, pkeywords)
 }
 
 static void
-com_call_function(c, n)
-	struct compiling *c;
-	node *n; /* EITHER arglist OR ')' */
+com_call_function(struct compiling *c, node *n)
 {
 	if (TYPE(n) == RPAR) {
 		com_addoparg(c, CALL_FUNCTION, 0);
@@ -1254,17 +1169,13 @@ com_call_function(c, n)
 }
 
 static void
-com_select_member(c, n)
-	struct compiling *c;
-	node *n;
+com_select_member(struct compiling *c, node *n)
 {
 	com_addopname(c, LOAD_ATTR, n);
 }
 
 static void
-com_sliceobj(c, n)
-	struct compiling *c;
-	node *n;
+com_sliceobj(struct compiling *c, node *n)
 {
 	int i=0;
 	int ns=2; /* number of slice arguments */
@@ -1309,9 +1220,7 @@ com_sliceobj(c, n)
 }
 
 static void
-com_subscript(c, n)
-	struct compiling *c;
-	node *n;
+com_subscript(struct compiling *c, node *n)
 {
 	node *ch;
 	REQ(n, subscript);
@@ -1333,10 +1242,7 @@ com_subscript(c, n)
 }
 
 static void
-com_subscriptlist(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_subscriptlist(struct compiling *c, node *n, int assigning)
 {
 	int i, op;
 	REQ(n, subscriptlist);
@@ -1388,9 +1294,7 @@ com_subscriptlist(c, n, assigning)
 }
 
 static void
-com_apply_trailer(c, n)
-	struct compiling *c;
-	node *n;
+com_apply_trailer(struct compiling *c, node *n)
 {
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
@@ -1410,9 +1314,7 @@ com_apply_trailer(c, n)
 }
 
 static void
-com_power(c, n)
-	struct compiling *c;
-	node *n;
+com_power(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, power);
@@ -1430,9 +1332,7 @@ com_power(c, n)
 }
 
 static void
-com_factor(c, n)
-	struct compiling *c;
-	node *n;
+com_factor(struct compiling *c, node *n)
 {
 	REQ(n, factor);
 	if (TYPE(CHILD(n, 0)) == PLUS) {
@@ -1453,9 +1353,7 @@ com_factor(c, n)
 }
 
 static void
-com_term(c, n)
-	struct compiling *c;
-	node *n;
+com_term(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1484,9 +1382,7 @@ com_term(c, n)
 }
 
 static void
-com_arith_expr(c, n)
-	struct compiling *c;
-	node *n;
+com_arith_expr(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1512,9 +1408,7 @@ com_arith_expr(c, n)
 }
 
 static void
-com_shift_expr(c, n)
-	struct compiling *c;
-	node *n;
+com_shift_expr(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1540,9 +1434,7 @@ com_shift_expr(c, n)
 }
 
 static void
-com_and_expr(c, n)
-	struct compiling *c;
-	node *n;
+com_and_expr(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1564,9 +1456,7 @@ com_and_expr(c, n)
 }
 
 static void
-com_xor_expr(c, n)
-	struct compiling *c;
-	node *n;
+com_xor_expr(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1588,9 +1478,7 @@ com_xor_expr(c, n)
 }
 
 static void
-com_expr(c, n)
-	struct compiling *c;
-	node *n;
+com_expr(struct compiling *c, node *n)
 {
 	int i;
 	int op;
@@ -1612,8 +1500,7 @@ com_expr(c, n)
 }
 
 static enum cmp_op
-cmp_type(n)
-	node *n;
+cmp_type(node *n)
 {
 	REQ(n, comp_op);
 	/* comp_op: '<' | '>' | '=' | '>=' | '<=' | '<>' | '!=' | '=='
@@ -1644,9 +1531,7 @@ cmp_type(n)
 }
 
 static void
-com_comparison(c, n)
-	struct compiling *c;
-	node *n;
+com_comparison(struct compiling *c, node *n)
 {
 	int i;
 	enum cmp_op op;
@@ -1723,9 +1608,7 @@ com_comparison(c, n)
 }
 
 static void
-com_not_test(c, n)
-	struct compiling *c;
-	node *n;
+com_not_test(struct compiling *c, node *n)
 {
 	REQ(n, not_test); /* 'not' not_test | comparison */
 	if (NCH(n) == 1) {
@@ -1738,9 +1621,7 @@ com_not_test(c, n)
 }
 
 static void
-com_and_test(c, n)
-	struct compiling *c;
-	node *n;
+com_and_test(struct compiling *c, node *n)
 {
 	int i;
 	int anchor;
@@ -1760,9 +1641,7 @@ com_and_test(c, n)
 }
 
 static void
-com_test(c, n)
-	struct compiling *c;
-	node *n;
+com_test(struct compiling *c, node *n)
 {
 	REQ(n, test); /* and_test ('or' and_test)* | lambdef */
 	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) == lambdef) {
@@ -1800,10 +1679,7 @@ com_test(c, n)
 }
 
 static void
-com_list(c, n, toplevel)
-	struct compiling *c;
-	node *n;
-	int toplevel; /* If nonzero, *always* build a tuple */
+com_list(struct compiling *c, node *n, int toplevel)
 {
 	/* exprlist: expr (',' expr)* [',']; likewise for testlist */
 	if (NCH(n) == 1 && !toplevel) {
@@ -1827,20 +1703,14 @@ static void com_assign_name(struct compiling *, node *, int);
 static void com_assign(struct compiling *, node *, int);
 
 static void
-com_assign_attr(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign_attr(struct compiling *c, node *n, int assigning)
 {
 	com_addopname(c, assigning ? STORE_ATTR : DELETE_ATTR, n);
 	com_pop(c, assigning ? 2 : 1);
 }
 
 static void
-com_assign_trailer(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign_trailer(struct compiling *c, node *n, int assigning)
 {
 	REQ(n, trailer);
 	switch (TYPE(CHILD(n, 0))) {
@@ -1860,10 +1730,7 @@ com_assign_trailer(c, n, assigning)
 }
 
 static void
-com_assign_tuple(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign_tuple(struct compiling *c, node *n, int assigning)
 {
 	int i;
 	if (TYPE(n) != testlist)
@@ -1878,10 +1745,7 @@ com_assign_tuple(c, n, assigning)
 }
 
 static void
-com_assign_list(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign_list(struct compiling *c, node *n, int assigning)
 {
 	int i;
 	if (assigning) {
@@ -1894,10 +1758,7 @@ com_assign_list(c, n, assigning)
 }
 
 static void
-com_assign_name(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign_name(struct compiling *c, node *n, int assigning)
 {
 	REQ(n, NAME);
 	com_addopname(c, assigning ? STORE_NAME : DELETE_NAME, n);
@@ -1906,10 +1767,7 @@ com_assign_name(c, n, assigning)
 }
 
 static void
-com_assign(c, n, assigning)
-	struct compiling *c;
-	node *n;
-	int assigning;
+com_assign(struct compiling *c, node *n, int assigning)
 {
 	/* Loop to avoid trivial recursion */
 	for (;;) {
@@ -2016,9 +1874,7 @@ com_assign(c, n, assigning)
 /* Forward */ static node *get_rawdocstring(node *);
 
 static void
-com_expr_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_expr_stmt(struct compiling *c, node *n)
 {
 	REQ(n, expr_stmt); /* testlist ('=' testlist)* */
 	/* Forget it if we have just a doc string here */
@@ -2045,9 +1901,7 @@ com_expr_stmt(c, n)
 }
 
 static void
-com_assert_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_assert_stmt(struct compiling *c, node *n)
 {
 	int a = 0, b = 0;
 	int i;
@@ -2087,9 +1941,7 @@ com_assert_stmt(c, n)
 }
 
 static void
-com_print_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_print_stmt(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, print_stmt); /* 'print' (test ',')* [test] */
@@ -2104,9 +1956,7 @@ com_print_stmt(c, n)
 }
 
 static void
-com_return_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_return_stmt(struct compiling *c, node *n)
 {
 	REQ(n, return_stmt); /* 'return' [testlist] */
 	if (!c->c_infunction) {
@@ -2123,9 +1973,7 @@ com_return_stmt(c, n)
 }
 
 static void
-com_raise_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_raise_stmt(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, raise_stmt); /* 'raise' [test [',' test [',' test]]] */
@@ -2143,9 +1991,7 @@ com_raise_stmt(c, n)
 }
 
 static void
-com_import_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_import_stmt(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, import_stmt);
@@ -2174,9 +2020,7 @@ com_import_stmt(c, n)
 }
 
 static void
-com_global_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_global_stmt(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, global_stmt);
@@ -2200,9 +2044,7 @@ com_global_stmt(c, n)
 }
 
 static int
-com_newlocal_o(c, nameval)
-	struct compiling *c;
-	PyObject *nameval;
+com_newlocal_o(struct compiling *c, PyObject *nameval)
 {
 	int i;
 	PyObject *ival;
@@ -2226,9 +2068,7 @@ com_newlocal_o(c, nameval)
 }
 
 static int
-com_addlocal_o(c, nameval)
-	struct compiling *c;
-	PyObject *nameval;
+com_addlocal_o(struct compiling *c, PyObject *nameval)
 {
 	PyObject *ival =  PyDict_GetItem(c->c_locals, nameval);
 	if (ival != NULL)
@@ -2237,9 +2077,7 @@ com_addlocal_o(c, nameval)
 }
 
 static int
-com_newlocal(c, name)
-	struct compiling *c;
-	char *name;
+com_newlocal(struct compiling *c, char *name)
 {
 	PyObject *nameval = PyString_InternFromString(name);
 	int i;
@@ -2253,9 +2091,7 @@ com_newlocal(c, name)
 }
 
 static void
-com_exec_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_exec_stmt(struct compiling *c, node *n)
 {
 	REQ(n, exec_stmt);
 	/* exec_stmt: 'exec' expr ['in' expr [',' expr]] */
@@ -2277,9 +2113,7 @@ com_exec_stmt(c, n)
 }
 
 static int
-is_constant_false(c, n)
-	struct compiling *c;
-	node *n;
+is_constant_false(struct compiling *c, node *n)
 {
 	PyObject *v;
 	int i;
@@ -2361,9 +2195,7 @@ is_constant_false(c, n)
 }
 
 static void
-com_if_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_if_stmt(struct compiling *c, node *n)
 {
 	int i;
 	int anchor = 0;
@@ -2393,9 +2225,7 @@ com_if_stmt(c, n)
 }
 
 static void
-com_while_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_while_stmt(struct compiling *c, node *n)
 {
 	int break_anchor = 0;
 	int anchor = 0;
@@ -2425,9 +2255,7 @@ com_while_stmt(c, n)
 }
 
 static void
-com_for_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_for_stmt(struct compiling *c, node *n)
 {
 	PyObject *v;
 	int break_anchor = 0;
@@ -2530,9 +2358,7 @@ com_for_stmt(c, n)
 */
 
 static void
-com_try_except(c, n)
-	struct compiling *c;
-	node *n;
+com_try_except(struct compiling *c, node *n)
 {
 	int except_anchor = 0;
 	int end_anchor = 0;
@@ -2601,9 +2427,7 @@ com_try_except(c, n)
 }
 
 static void
-com_try_finally(c, n)
-	struct compiling *c;
-	node *n;
+com_try_finally(struct compiling *c, node *n)
 {
 	int finally_anchor = 0;
 	node *ch;
@@ -2630,9 +2454,7 @@ com_try_finally(c, n)
 }
 
 static void
-com_try_stmt(c, n)
-	struct compiling *c;
-	node *n;
+com_try_stmt(struct compiling *c, node *n)
 {
 	REQ(n, try_stmt);
 	/* 'try' ':' suite (except_clause ':' suite)+ ['else' ':' suite]
@@ -2644,8 +2466,7 @@ com_try_stmt(c, n)
 }
 
 static node *
-get_rawdocstring(n)
-	node *n;
+get_rawdocstring(node *n)
 {
 	int i;
 
@@ -2705,8 +2526,7 @@ get_rawdocstring(n)
 }
 
 static PyObject *
-get_docstring(n)
-	node *n;
+get_docstring(node *n)
 {
 	/* Don't generate doc-strings if run with -OO */
 	if (Py_OptimizeFlag > 1)
@@ -2718,9 +2538,7 @@ get_docstring(n)
 }
 
 static void
-com_suite(c, n)
-	struct compiling *c;
-	node *n;
+com_suite(struct compiling *c, node *n)
 {
 	REQ(n, suite);
 	/* simple_stmt | NEWLINE INDENT NEWLINE* (stmt NEWLINE*)+ DEDENT */
@@ -2739,9 +2557,7 @@ com_suite(c, n)
 
 /* ARGSUSED */
 static void
-com_continue_stmt(c, n)
-	struct compiling *c;
-	node *n; /* Not used, but passed for consistency */
+com_continue_stmt(struct compiling *c, node *n)
 {
 	int i = c->c_nblocks;
 	if (i-- > 0 && c->c_block[i] == SETUP_LOOP) {
@@ -2756,9 +2572,7 @@ com_continue_stmt(c, n)
 }
 
 static int
-com_argdefs(c, n)
-	struct compiling *c;
-	node *n;
+com_argdefs(struct compiling *c, node *n)
 {
 	int i, nch, nargs, ndefs;
 	if (TYPE(n) == lambdef) {
@@ -2812,9 +2626,7 @@ com_argdefs(c, n)
 }
 
 static void
-com_funcdef(c, n)
-	struct compiling *c;
-	node *n;
+com_funcdef(struct compiling *c, node *n)
 {
 	PyObject *v;
 	REQ(n, funcdef); /* funcdef: 'def' NAME parameters ':' suite */
@@ -2835,9 +2647,7 @@ com_funcdef(c, n)
 }
 
 static void
-com_bases(c, n)
-	struct compiling *c;
-	node *n;
+com_bases(struct compiling *c, node *n)
 {
 	int i;
 	REQ(n, testlist);
@@ -2850,9 +2660,7 @@ com_bases(c, n)
 }
 
 static void
-com_classdef(c, n)
-	struct compiling *c;
-	node *n;
+com_classdef(struct compiling *c, node *n)
 {
 	int i;
 	PyObject *v;
@@ -2891,9 +2699,7 @@ com_classdef(c, n)
 }
 
 static void
-com_node(c, n)
-	struct compiling *c;
-	node *n;
+com_node(struct compiling *c, node *n)
 {
 	switch (TYPE(n)) {
 	
@@ -3044,9 +2850,7 @@ com_node(c, n)
 static void com_fplist(struct compiling *, node *);
 
 static void
-com_fpdef(c, n)
-	struct compiling *c;
-	node *n;
+com_fpdef(struct compiling *c, node *n)
 {
 	REQ(n, fpdef); /* fpdef: NAME | '(' fplist ')' */
 	if (TYPE(CHILD(n, 0)) == LPAR)
@@ -3058,9 +2862,7 @@ com_fpdef(c, n)
 }
 
 static void
-com_fplist(c, n)
-	struct compiling *c;
-	node *n;
+com_fplist(struct compiling *c, node *n)
 {
 	REQ(n, fplist); /* fplist: fpdef (',' fpdef)* [','] */
 	if (NCH(n) == 1) {
@@ -3076,9 +2878,7 @@ com_fplist(c, n)
 }
 
 static void
-com_arglist(c, n)
-	struct compiling *c;
-	node *n;
+com_arglist(struct compiling *c, node *n)
 {
 	int nch, i;
 	int complex = 0;
@@ -3181,9 +2981,7 @@ com_arglist(c, n)
 }
 
 static void
-com_file_input(c, n)
-	struct compiling *c;
-	node *n;
+com_file_input(struct compiling *c, node *n)
 {
 	int i;
 	PyObject *doc;
@@ -3207,9 +3005,7 @@ com_file_input(c, n)
 /* Top-level compile-node interface */
 
 static void
-compile_funcdef(c, n)
-	struct compiling *c;
-	node *n;
+compile_funcdef(struct compiling *c, node *n)
 {
 	PyObject *doc;
 	node *ch;
@@ -3236,9 +3032,7 @@ compile_funcdef(c, n)
 }
 
 static void
-compile_lambdef(c, n)
-	struct compiling *c;
-	node *n;
+compile_lambdef(struct compiling *c, node *n)
 {
 	node *ch;
 	REQ(n, lambdef); /* lambdef: 'lambda' [varargslist] ':' test */
@@ -3258,9 +3052,7 @@ compile_lambdef(c, n)
 }
 
 static void
-compile_classdef(c, n)
-	struct compiling *c;
-	node *n;
+compile_classdef(struct compiling *c, node *n)
 {
 	node *ch;
 	PyObject *doc;
@@ -3290,9 +3082,7 @@ compile_classdef(c, n)
 }
 
 static void
-compile_node(c, n)
-	struct compiling *c;
-	node *n;
+compile_node(struct compiling *c, node *n)
 {
 	com_addoparg(c, SET_LINENO, n->n_lineno);
 	
@@ -3369,8 +3159,7 @@ compile_node(c, n)
    NB: this modifies the string object c->c_code!  */
 
 static void
-optimize(c)
-	struct compiling *c;
+optimize(struct compiling *c)
 {
 	unsigned char *next_instr, *cur_instr;
 	int opcode;
@@ -3446,26 +3235,19 @@ optimize(c)
 }
 
 PyCodeObject *
-PyNode_Compile(n, filename)
-	node *n;
-	char *filename;
+PyNode_Compile(node *n, char *filename)
 {
 	return jcompile(n, filename, NULL);
 }
 
 static PyCodeObject *
-icompile(n, base)
-	node *n;
-	struct compiling *base;
+icompile(node *n, struct compiling *base)
 {
 	return jcompile(n, base->c_filename, base);
 }
 
 static PyCodeObject *
-jcompile(n, filename, base)
-	node *n;
-	char *filename;
-	struct compiling *base;
+jcompile(node *n, char *filename, struct compiling *base)
 {
 	struct compiling sc;
 	PyCodeObject *co;
@@ -3517,9 +3299,7 @@ jcompile(n, filename, base)
 }
 
 int
-PyCode_Addr2Line(co, addrq)
-	PyCodeObject *co;
-	int addrq;
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
 {
 	int size = PyString_Size(co->co_lnotab) / 2;
 	unsigned char *p = (unsigned char*)PyString_AsString(co->co_lnotab);

@@ -44,10 +44,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #endif
 
 unsigned long
-PyOS_strtoul(str, ptr, base)
-register char *	str;
-char **		ptr;
-int		base;
+PyOS_strtoul(register char *str, char **ptr, int base)
 {
     register unsigned long	result;	/* return value of the function */
     register int		c;	/* current input character */
@@ -137,10 +134,7 @@ int		base;
 }
 
 long
-PyOS_strtol(str, ptr, base)
-char *	str;
-char ** ptr;
-int	base;
+PyOS_strtol(char *str, char **ptr, int base)
 {
 	long result;
 	char sign;

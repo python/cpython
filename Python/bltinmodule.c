@@ -32,9 +32,7 @@ static PyObject *filterstring(PyObject *, PyObject *);
 static PyObject *filtertuple (PyObject *, PyObject *);
 
 static PyObject *
-builtin___import__(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin___import__(PyObject *self, PyObject *args)
 {
 	char *name;
 	PyObject *globals = NULL;
@@ -60,9 +58,7 @@ fromlist is not empty.";
 
 
 static PyObject *
-builtin_abs(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_abs(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -78,9 +74,7 @@ Return the absolute value of the argument.";
 
 
 static PyObject *
-builtin_apply(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_apply(PyObject *self, PyObject *args)
 {
 	PyObject *func, *alist = NULL, *kwdict = NULL;
 	PyObject *t = NULL, *retval = NULL;
@@ -120,9 +114,7 @@ Note that classes are callable, as are instances with a __call__() method.";
 
 
 static PyObject *
-builtin_buffer(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_buffer(PyObject *self, PyObject *args)
 {
 	PyObject *ob;
 	int offset = 0;
@@ -143,9 +135,7 @@ extend to the end of the target object (or with the specified size).";
 
 
 static PyObject *
-builtin_unicode(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_unicode(PyObject *self, PyObject *args)
 {
         PyObject *v;
 	char *encoding = NULL;
@@ -165,9 +155,7 @@ errors, defining the error handling, to 'strict'.";
 
 
 static PyObject *
-builtin_callable(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_callable(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -184,9 +172,7 @@ Note that classes are callable, as are instances with a __call__() method.";
 
 
 static PyObject *
-builtin_filter(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_filter(PyObject *self, PyObject *args)
 {
 	PyObject *func, *seq, *result;
 	PySequenceMethods *sqf;
@@ -291,9 +277,7 @@ is true.  If function is None, return a list of items that are true.";
 
 
 static PyObject *
-builtin_chr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_chr(PyObject *self, PyObject *args)
 {
 	long x;
 	char s[1];
@@ -316,9 +300,7 @@ Return a string of one character with ordinal i; 0 <= i < 256.";
 
 
 static PyObject *
-builtin_unichr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_unichr(PyObject *self, PyObject *args)
 {
 	long x;
 	Py_UNICODE s[1];
@@ -341,9 +323,7 @@ Return a Unicode string of one character with ordinal i; 0 <= i < 65536.";
 
 
 static PyObject *
-builtin_cmp(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_cmp(PyObject *self, PyObject *args)
 {
 	PyObject *a, *b;
 	int c;
@@ -362,9 +342,7 @@ Return negative if x<y, zero if x==y, positive if x>y.";
 
 
 static PyObject *
-builtin_coerce(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_coerce(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w;
 	PyObject *res;
@@ -387,9 +365,7 @@ containing the coerced values.  When they can't be coerced, return None.";
 
 
 static PyObject *
-builtin_compile(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_compile(PyObject *self, PyObject *args)
 {
 	char *str;
 	char *filename;
@@ -425,8 +401,7 @@ single (interactive) statement, or 'eval' to compile an expression.";
 #ifndef WITHOUT_COMPLEX
 
 static PyObject *
-complex_from_string(v)
-	PyObject *v;
+complex_from_string(PyObject *v)
 {
 	extern double strtod(const char *, char **);
 	const char *s, *start;
@@ -579,9 +554,7 @@ complex_from_string(v)
 }
 
 static PyObject *
-builtin_complex(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_complex(PyObject *self, PyObject *args)
 {
 	PyObject *r, *i, *tmp;
 	PyNumberMethods *nbr, *nbi = NULL;
@@ -672,9 +645,7 @@ This is equivalent to (real + imag*1j) where imag defaults to 0.";
 #endif
 
 static PyObject *
-builtin_dir(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_dir(PyObject *self, PyObject *args)
 {
 	static char *attrlist[] = {"__members__", "__methods__", NULL};
 	PyObject *v = NULL, *l = NULL, *m = NULL;
@@ -748,9 +719,7 @@ returned.  For other types or arguments, this may list members or methods.";
 
 
 static PyObject *
-builtin_divmod(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_divmod(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w;
 
@@ -766,9 +735,7 @@ Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.";
 
 
 static PyObject *
-builtin_eval(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_eval(PyObject *self, PyObject *args)
 {
 	PyObject *cmd;
 	PyObject *globals = Py_None, *locals = Py_None;
@@ -820,9 +787,7 @@ globals and locals.  If only globals is given, locals defaults to it.";
 
 
 static PyObject *
-builtin_execfile(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_execfile(PyObject *self, PyObject *args)
 {
 	char *filename;
 	PyObject *globals = Py_None, *locals = Py_None;
@@ -869,9 +834,7 @@ globals and locals.  If only globals is given, locals defaults to it.";
 
 
 static PyObject *
-builtin_getattr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_getattr(PyObject *self, PyObject *args)
 {
 	PyObject *v, *result, *dflt = NULL;
 	PyObject *name;
@@ -896,9 +859,7 @@ exist; without it, an exception is raised in that case.";
 
 
 static PyObject *
-builtin_globals(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_globals(PyObject *self, PyObject *args)
 {
 	PyObject *d;
 
@@ -916,9 +877,7 @@ Return the dictionary containing the current scope's global variables.";
 
 
 static PyObject *
-builtin_hasattr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_hasattr(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	PyObject *name;
@@ -944,9 +903,7 @@ Return whether the object has an attribute with the given name.\n\
 
 
 static PyObject *
-builtin_id(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_id(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -963,9 +920,7 @@ simultaneously existing objects.  (Hint: it's the object's memory address.)";
 
 
 static PyObject *
-builtin_map(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_map(PyObject *self, PyObject *args)
 {
 	typedef struct {
 		PyObject *seq;
@@ -1130,9 +1085,7 @@ the items of the sequence (or a list of tuples if more than one sequence).";
 
 
 static PyObject *
-builtin_setattr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_setattr(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	PyObject *name;
@@ -1154,9 +1107,7 @@ Set a named attribute on an object; setattr(x, 'y', v) is equivalent to\n\
 
 
 static PyObject *
-builtin_delattr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_delattr(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	PyObject *name;
@@ -1177,9 +1128,7 @@ Delete a named attribute on an object; delattr(x, 'y') is equivalent to\n\
 
 
 static PyObject *
-builtin_hash(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_hash(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	long x;
@@ -1200,9 +1149,7 @@ the same hash value.  The reverse is not necessarily true, but likely.";
 
 
 static PyObject *
-builtin_hex(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_hex(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	PyNumberMethods *nb;
@@ -1228,9 +1175,7 @@ Return the hexadecimal representation of an integer or long integer.";
 static PyObject *builtin_raw_input(PyObject *, PyObject *);
 
 static PyObject *
-builtin_input(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_input(PyObject *self, PyObject *args)
 {
 	PyObject *line;
 	char *str;
@@ -1263,9 +1208,7 @@ Equivalent to eval(raw_input(prompt)).";
 
 
 static PyObject *
-builtin_intern(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_intern(PyObject *self, PyObject *args)
 {
 	PyObject *s;
 	if (!PyArg_ParseTuple(args, "S:intern", &s))
@@ -1285,9 +1228,7 @@ same value.";
 
 
 static PyObject *
-builtin_int(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_int(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	int base = -909;		     /* unlikely! */
@@ -1320,9 +1261,7 @@ non-string.";
 
 
 static PyObject *
-builtin_long(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_long(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	int base = -909;		     /* unlikely! */
@@ -1356,9 +1295,7 @@ converting a non-string.";
 
 
 static PyObject *
-builtin_float(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_float(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -1376,9 +1313,7 @@ Convert a string or number to a floating point number, if possible.";
 
 
 static PyObject *
-builtin_len(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_len(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	long res;
@@ -1398,9 +1333,7 @@ Return the number of items of a sequence or mapping.";
 
 
 static PyObject *
-builtin_list(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_list(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -1416,9 +1349,7 @@ Return a new list whose items are the same as those of the argument sequence.";
 
 
 static PyObject *
-builtin_slice(self, args)
-     PyObject *self;
-     PyObject *args;
+builtin_slice(PyObject *self, PyObject *args)
 {
 	PyObject *start, *stop, *step;
 
@@ -1443,9 +1374,7 @@ Create a slice object.  This is used for slicing by the Numeric extensions.";
 
 
 static PyObject *
-builtin_locals(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_locals(PyObject *self, PyObject *args)
 {
 	PyObject *d;
 
@@ -1463,9 +1392,7 @@ Return the dictionary containing the current scope's local variables.";
 
 
 static PyObject *
-min_max(args, sign)
-	PyObject *args;
-	int sign;
+min_max(PyObject *args, int sign)
 {
 	int i;
 	PyObject *v, *w, *x;
@@ -1516,9 +1443,7 @@ min_max(args, sign)
 }
 
 static PyObject *
-builtin_min(self, v)
-	PyObject *self;
-	PyObject *v;
+builtin_min(PyObject *self, PyObject *v)
 {
 	return min_max(v, -1);
 }
@@ -1532,9 +1457,7 @@ With two or more arguments, return the smallest argument.";
 
 
 static PyObject *
-builtin_max(self, v)
-	PyObject *self;
-	PyObject *v;
+builtin_max(PyObject *self, PyObject *v)
 {
 	return min_max(v, 1);
 }
@@ -1548,9 +1471,7 @@ With two or more arguments, return the largest argument.";
 
 
 static PyObject *
-builtin_oct(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_oct(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 	PyNumberMethods *nb;
@@ -1573,9 +1494,7 @@ Return the octal representation of an integer or long integer.";
 
 
 static PyObject *
-builtin_open(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_open(PyObject *self, PyObject *args)
 {
 	char *name;
 	char *mode = "r";
@@ -1603,9 +1522,7 @@ buffered, and larger numbers specify the buffer size.";
 
 
 static PyObject *
-builtin_ord(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_ord(PyObject *self, PyObject *args)
 {
 	PyObject *obj;
 	long ord;
@@ -1644,9 +1561,7 @@ Return the integer ordinal of a one character string.";
 
 
 static PyObject *
-builtin_pow(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_pow(PyObject *self, PyObject *args)
 {
 	PyObject *v, *w, *z = Py_None;
 
@@ -1695,9 +1610,7 @@ get_len_of_range(lo, hi, step)
 }
 
 static PyObject *
-builtin_range(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_range(PyObject *self, PyObject *args)
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	long bign;
@@ -1757,9 +1670,7 @@ These are exactly the valid indices for a list of 4 elements.";
 
 
 static PyObject *
-builtin_xrange(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_xrange(PyObject *self, PyObject *args)
 {
 	long ilow = 0, ihigh = 0, istep = 1;
 	long n;
@@ -1801,9 +1712,7 @@ than range() but more memory efficient.";
 
 
 static PyObject *
-builtin_raw_input(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_raw_input(PyObject *self, PyObject *args)
 {
 	PyObject *v = NULL;
 	PyObject *f;
@@ -1880,9 +1789,7 @@ is printed without a trailing newline before reading.";
 
 
 static PyObject *
-builtin_reduce(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_reduce(PyObject *self, PyObject *args)
 {
 	PyObject *seq, *func, *result = NULL;
 	PySequenceMethods *sqf;
@@ -1956,9 +1863,7 @@ sequence is empty.";
 
 
 static PyObject *
-builtin_reload(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_reload(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -1974,9 +1879,7 @@ Reload the module.  The module must have been successfully imported before.";
 
 
 static PyObject *
-builtin_repr(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_repr(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -1993,9 +1896,7 @@ For most object types, eval(repr(object)) == object.";
 
 
 static PyObject *
-builtin_round(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_round(PyObject *self, PyObject *args)
 {
 	double x;
 	double f;
@@ -2031,9 +1932,7 @@ This always returns a floating point number.  Precision may be negative.";
 
 
 static PyObject *
-builtin_str(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_str(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -2050,9 +1949,7 @@ If the argument is a string, the return value is the same object.";
 
 
 static PyObject *
-builtin_tuple(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_tuple(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -2069,9 +1966,7 @@ If the argument is a tuple, the return value is the same object.";
 
 
 static PyObject *
-builtin_type(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_type(PyObject *self, PyObject *args)
 {
 	PyObject *v;
 
@@ -2089,9 +1984,7 @@ Return the type of the object.";
 
 
 static PyObject *
-builtin_vars(self, args)
-	PyObject *self;
-	PyObject *args;
+builtin_vars(PyObject *self, PyObject *args)
 {
 	PyObject *v = NULL;
 	PyObject *d;
@@ -2126,11 +2019,7 @@ Without arguments, equivalent to locals().\n\
 With an argument, equivalent to object.__dict__.";
 
 static int
-abstract_issubclass(derived, cls, err, first)
-	PyObject *derived;
-	PyObject *cls;
-	char *err;
-	int first;
+abstract_issubclass(PyObject *derived, PyObject *cls, char *err, int first)
 {
 	static PyObject *__bases__ = NULL;
 	PyObject *bases;
@@ -2177,9 +2066,7 @@ abstract_issubclass(derived, cls, err, first)
 }
 
 static PyObject *
-builtin_isinstance(self, args)
-     PyObject *self;
-     PyObject *args;
+builtin_isinstance(PyObject *self, PyObject *args)
 {
 	PyObject *inst;
 	PyObject *cls;
@@ -2238,9 +2125,7 @@ With a type as second argument, return whether that is the object's type.";
 
 
 static PyObject *
-builtin_issubclass(self, args)
-     PyObject *self;
-     PyObject *args;
+builtin_issubclass(PyObject *self, PyObject *args)
 {
 	PyObject *derived;
 	PyObject *cls;
@@ -2336,7 +2221,7 @@ static char builtin_doc[] =
 Noteworthy: None is the `nil' object; Ellipsis represents `...' in slices.";
 
 PyObject *
-_PyBuiltin_Init()
+_PyBuiltin_Init(void)
 {
 	PyObject *mod, *dict, *debug;
 	mod = Py_InitModule4("__builtin__", builtin_methods,
@@ -2362,9 +2247,7 @@ _PyBuiltin_Init()
 /* Helper for filter(): filter a tuple through a function */
 
 static PyObject *
-filtertuple(func, tuple)
-	PyObject *func;
-	PyObject *tuple;
+filtertuple(PyObject *func, PyObject *tuple)
 {
 	PyObject *result;
 	register int i, j;
@@ -2420,9 +2303,7 @@ Fail_1:
 /* Helper for filter(): filter a string through a function */
 
 static PyObject *
-filterstring(func, strobj)
-	PyObject *func;
-	PyObject *strobj;
+filterstring(PyObject *func, PyObject *strobj)
 {
 	PyObject *result;
 	register int i, j;

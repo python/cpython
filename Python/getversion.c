@@ -15,7 +15,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #include "patchlevel.h"
 
 const char *
-Py_GetVersion()
+Py_GetVersion(void)
 {
 	static char version[250];
 	sprintf(version, "%.80s (%.80s) %.80s", PY_VERSION,
