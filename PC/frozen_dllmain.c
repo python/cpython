@@ -64,7 +64,7 @@ void PyWinFreeze_ExeInit(void)
 {
 	char **modName;
 	for (modName = possibleModules;*modName;*modName++) {
-		printf("Initialising '%s'\n", *modName);
+/*		printf("Initialising '%s'\n", *modName); */
 		CallModuleDllMain(*modName, DLL_PROCESS_ATTACH);
 	}
 }
@@ -80,7 +80,7 @@ void PyWinFreeze_ExeTerm(void)
 	for (modName = possibleModules+(sizeof(possibleModules) / sizeof(char *))-2;
 	     modName >= possibleModules;
 	     *modName--) {
-		printf("Terminating '%s'\n", *modName);
+/*		printf("Terminating '%s'\n", *modName);*/
 		CallModuleDllMain(*modName, DLL_PROCESS_DETACH);
 	}
 }
