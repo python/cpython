@@ -2,6 +2,8 @@ What's New in Python 2.2.3 ?
 Release date: XX-XXX-2003
 ============================
 
+- Skip locale test on Mac OS X.
+
 - Backported the "largefile" requirement for test_largefile on Mac OS X.
 
 - SF #710576: Backport of fix for #663074, to implement per-interpreter
