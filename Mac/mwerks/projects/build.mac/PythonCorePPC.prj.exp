@@ -421,6 +421,7 @@ PyNumber_Xor
 PyOS_CheckStack
 PyOS_GetLastModificationTime
 PyOS_InitInterrupts
+PyOS_InputHook
 PyOS_InterruptOccurred
 PyOS_Readline
 PyOS_ReadlineFunctionPointer
@@ -519,7 +520,6 @@ PyType_Type
 Py_AddPendingCall
 Py_AtExit
 Py_BuildValue
-Py_Cleanup
 Py_CompileString
 Py_DebugFlag
 Py_Exit
@@ -1070,7 +1070,6 @@ fcntl__6SocketFUii		# Socket::fcntl(unsigned int,int)
 fcntl__9PAPSocketFUii		# PAPSocket::fcntl(unsigned int,int)
 fcntl__9PPCSocketFUii		# PPCSocket::fcntl(unsigned int,int)
 fdopen
-fdopen__FiPc		# fdopen(int,char*)
 feof
 ferror
 fflush
