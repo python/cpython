@@ -16,9 +16,10 @@ from distutils.sysconfig import INCLUDEPY, SO, exec_prefix
 from distutils.errors import *
 
 
-# This is the same as a Python NAME, since we must accept any
-# valid module name for the extension name.
-extension_name_re = re.compile (r'^[a-zA-Z_][a-zA-Z_0-9]*$')
+# An extension name is just a dot-separated list of Python NAMEs (ie.
+# the same as a fully-qualified module name).
+extension_name_re = re.compile \
+    (r'^[a-zA-Z_][a-zA-Z_0-9]*(\.[a-zA-Z_][a-zA-Z_0-9]*)*$')
 
 
 class BuildExt (Command):
@@ -41,7 +42,7 @@ class BuildExt (Command):
     #     takes care of both command-line and client options
     #     in between set_default_options() and set_final_options())
 
-    options = [('dir=', 'd',
+    options = [('build-dir=', 'd',
                 "directory for compiled extension modules"),
                ('include-dirs=', 'I',
                 "list of directories to search for header files"),
@@ -57,12 +58,14 @@ class BuildExt (Command):
                 "directories to search for shared C libraries at runtime"),
                ('link-objects=', 'O',
                 "extra explicit link objects to include in the link"),
+               ('package=', 'p',
+                "Python package to put extension modules into"),
               ]
 
 
     def set_default_options (self):
         self.extensions = None
-        self.dir = None
+        self.build_dir = None
         self.package = None
 
         self.include_dirs = None
@@ -74,10 +77,13 @@ class BuildExt (Command):
         self.link_objects = None
 
     def set_final_options (self):
-        self.set_undefined_options ('build', ('platdir', 'dir'))
+        self.set_undefined_options ('build', ('platdir', 'build_dir'))
 
         if self.package is None:
-            self.package = ''
+            self.package = self.distribution.ext_package
+
+        self.extensions = self.distribution.ext_modules
+        
 
         # Make sure Python's include directories (for Python.h, config.h,
         # etc.) are in the include search path.  We have to roll our own
@@ -87,7 +93,7 @@ class BuildExt (Command):
         exec_py_include = os.path.join (exec_prefix, 'include',
                                         'python' + sys.version[0:3])
         if self.include_dirs is None:
-            self.include_dirs = []
+            self.include_dirs = self.distribution.include_dirs or []
         self.include_dirs.insert (0, py_include)
         if exec_py_include != py_include:
             self.include_dirs.insert (0, exec_py_include)
@@ -177,7 +183,9 @@ class BuildExt (Command):
             
             macros = build_info.get ('macros')
             include_dirs = build_info.get ('include_dirs')
-            self.compiler.compile (sources, macros, include_dirs)
+            self.compiler.compile (sources,
+                                   macros=macros,
+                                   includes=include_dirs)
 
             objects = self.compiler.object_filenames (sources)
             extra_objects = build_info.get ('extra_objects')
@@ -185,18 +193,23 @@ class BuildExt (Command):
                 objects.extend (extra_objects)
             libraries = build_info.get ('libraries')
             library_dirs = build_info.get ('library_dirs')
-            ext_filename = self.extension_filename (extension_name)
-            dest = os.path.dirname (
-                os.path.join (self.dir, self.package, ext_filename))
-            self.mkpath (dest)
-            self.compiler.link_shared_object (objects, ext_filename, dest,
-                                              libraries, library_dirs,
+            ext_filename = self.extension_filename \
+                           (extension_name, self.package)
+            ext_filename = os.path.join (self.build_dir, ext_filename)
+            dest_dir = os.path.dirname (ext_filename)
+            self.mkpath (dest_dir)
+            self.compiler.link_shared_object (objects, ext_filename, 
+                                              libraries=libraries,
+                                              library_dirs=library_dirs,
                                               build_info=build_info)  # XXX hack!
 
     # build_extensions ()
 
 
-    def extension_filename (self, ext_name):
-        return ext_name + SO
+    def extension_filename (self, ext_name, package=None):
+        if package:
+            ext_name = package + '.' + ext_name
+        ext_path = string.split (ext_name, '.')
+        return apply (os.path.join, ext_path) + SO
 
 # class BuildExt
