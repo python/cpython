@@ -210,6 +210,7 @@ Instead, you can get the same information from the list type:
      '__ne__',
      '__new__',
      '__reduce__',
+     '__reduce_ex__',
      '__repr__',
      '__rmul__',
      '__setattr__',
