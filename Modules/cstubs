@@ -70,6 +70,14 @@ Each definition must be contained on one line:
 #include <gl.h>
 #include <device.h>
 
+#ifdef __sgi
+extern int devport();
+extern int textwritemask();
+extern int pagewritemask();
+extern int gewrite();
+extern int gettp();
+#endif
+
 #include "allobjects.h"
 #include "import.h"
 #include "modsupport.h"
@@ -122,7 +130,7 @@ gl_varray(self, args)
 	object *self;
 	object *args;
 {
-	object *v, *w;
+	object *v, *w=NULL;
 	int i, n, width;
 	double vec[3];
 	object * (*getitem) FPROTO((object *, int));
@@ -638,7 +646,9 @@ gl_lrectwrite(self, args)
 	short y2 ;
 	string parray ;
 	object *s;
+#if 0
 	int pixcount;
+#endif
 	if (!getishortarg(args, 5, 0, &x1))
 		return NULL;
 	if (!getishortarg(args, 5, 1, &y1))
@@ -715,7 +725,7 @@ gl_readdisplay(self, args)
 	parray = (unsigned long *)getstringvalue(rv);
 	size_ret = readdisplay(x1, y1, x2, y2, parray, hints);
 	if ( size_ret != size ) {
-	    printf("gl_readdisplay: got %d pixels, expected %d\n",
+	    printf("gl_readdisplay: got %ld pixels, expected %ld\n",
 		   size_ret, size);
 	    err_setstr(RuntimeError, "readdisplay returned unexpected length");
 	    return NULL;
@@ -805,7 +815,7 @@ gl_unpackrect(self, args)
 	long width, height, packfactor;
 	char *s;
 	object *unpacked, *packed;
-	int pixcount, packedcount, y;
+	int pixcount, packedcount;
 	register unsigned char *p;
 	register unsigned long *parray;
 	if (!unpacktab_inited) {
