@@ -831,7 +831,7 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					 &r, &i))
 		return NULL;
 
-	/* Special-case for single argumet that is already complex */
+	/* Special-case for single argument that is already complex */
 	if (PyComplex_CheckExact(r) && i == NULL &&
 	    type == &PyComplex_Type) {
 		/* Note that we can't know whether it's safe to return
