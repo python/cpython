@@ -1789,8 +1789,7 @@ A `nomenclature' is a fancy way of saying AWordWithMixedCaseNotUnderscores."
 				 (where-is-internal func py-mode-map)
 				 ", "))))
 	 ((equal funckind "v")		; variable
-	  (setq funcdoc (substitute-command-keys
-			 (get func 'variable-documentation))
+	  (setq funcdoc (documentation-property func 'variable-documentation)
 		keys (if (assq func locals)
 			 (concat
 			  "Local/Global values: "
