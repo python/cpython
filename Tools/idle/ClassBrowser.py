@@ -2,7 +2,7 @@
 
 XXX TO DO:
 
-- generalize the scrolling listbox with some behavior into a base class
+- reparse when source changed
 - add popup menu with more options (e.g. doc strings, base classes, imports)
 - show function argument list (have to do pattern matching on source)
 - should the classes and methods lists also be in the module's menu bar?
