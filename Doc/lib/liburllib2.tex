@@ -2,7 +2,6 @@
          extensible library for opening URLs}
 
 \declaremodule{standard}{urllib2}
-
 \moduleauthor{Jeremy Hylton}{jhylton@users.sourceforge.net}
 \sectionauthor{Moshe Zadka}{moshez@users.sourceforge.net}
 
@@ -10,7 +9,7 @@
                 protocols}
 
 The \module{urllib2} module defines functions and classes which help
-in opening URLs (mostly HTTP) in a complex world -- basic and digest
+in opening URLs (mostly HTTP) in a complex world --- basic and digest
 authentication, redirections and more.
 
 The \module{urllib2} module defines the following functions:
@@ -18,21 +17,20 @@ The \module{urllib2} module defines the following functions:
 \begin{funcdesc}{urlopen}{url\optional{, data}}
 Open the url \var{url}, which can either a string or a \class{Request}
 object (currently the code checks that it really is a \class{Request}
-instance, or an instance of a subclass of \class{Request}.
+instance, or an instance of a subclass of \class{Request}).
 
 \var{data} should be a string, which specifies additional data to
 send to the server. In HTTP requests, which are the only ones that
 support \var{data}, it should be a buffer in the format of
-\code{application/x-www-form-urlencoded}, for example one returned
-from \function{urllib.urlencode}.
+\mimetype{application/x-www-form-urlencoded}, for example one returned
+from \function{urllib.urlencode()}.
 
 This function returns a file-like object with two additional methods:
 
 \begin{itemize}
-
-	\item \code{geturl()} --- return the URL of the resource retrieved
-	\item \code{info()} --- return the meta-information of the page, as
-                                a dictionary-like object
+  \item \method{geturl()} --- return the URL of the resource retrieved
+  \item \method{info()} --- return the meta-information of the page, as
+                            a dictionary-like object
 \end{itemize}
 
 Raises \exception{URLError} on errors.
@@ -44,8 +42,7 @@ The code does not check for a real \class{OpenerDirector}, and any
 class with the appropriate interface will work.
 \end{funcdesc}
 
-\begin{funcdesc}{build_opener}{\optional{handler\optional{, 
-                                         handler\optional{, ...}}}}
+\begin{funcdesc}{build_opener}{\optional{handler, \moreargs}}
 Return an \class{OpenerDirector} instance, which chains the
 handlers in the order given. \var{handler}s can be either instances
 of \class{BaseHandler}, or subclasses of \class{BaseHandler} (in
@@ -57,20 +54,23 @@ them, instances of them or subclasses of them:
 \code{ProxyHandler, UnknownHandler, HTTPHandler, HTTPDefaultErrorHandler, 
       HTTPRedirectHandler, FTPHandler, FileHandler}
 
-If the Python installation has SSL support (\code{socket.ssl} exists),
-\class{HTTPSHandler} will also be added.
+If the Python installation has SSL support (\function{socket.ssl()}
+exists), \class{HTTPSHandler} will also be added.
 \end{funcdesc}
 
+
+The following exceptions are raised as appropriate:
+
 \begin{excdesc}{URLError}
-The error handlers raise when they run into a problem. It is a subclass
-of \exception{IOError}.
+The error handlers raise when they run into a problem. It is a
+subclass of \exception{IOError}.
 \end{excdesc}
 
 \begin{excdesc}{HTTPError}
 A subclass of \exception{URLError}, it can also function as a 
-non-exceptional file-like return value (the same thing that \function{urlopen}
-returns). This is useful when handling exotic HTTP errors, such as
-requests for authentications.
+non-exceptional file-like return value (the same thing that
+\function{urlopen()} returns).  This is useful when handling exotic
+HTTP errors, such as requests for authentication.
 \end{excdesc}
 
 \begin{excdesc}{GopherError}
@@ -78,14 +78,130 @@ A subclass of \exception{URLError}, this is the error raised by the
 Gopher handler.
 \end{excdesc}
 
-\begin{classdesc}{Request}{url\optional{data, \optional{, headers}}}
+
+The following classes are provided:
+
+\begin{classdesc}{Request}{url\optional{, data\optional{, headers}}}
 This class is an abstraction of a URL request.
 
 \var{url} should be a string which is a valid URL. For descrtion
-of \var{data} see the \method{add_data} description.
+of \var{data} see the \method{add_data()} description.
 \var{headers} should be a dictionary, and will be treated as if
-\method{add_header} was called with each key and value as arguments.
+\method{add_header()} was called with each key and value as arguments.
 \end{classdesc}
+
+\begin{classdesc}{OpenerDirector}{}
+The \class{OpenerDirector} class opens URLs via \class{BaseHandler}s
+chained together. It manages the chaining of handlers, and recovery
+from errors.
+\end{classdesc}
+
+\begin{classdesc}{BaseHandler}{}
+This is the base class for all registered handlers --- and handles only
+the simple mechanics of registration.
+\end{classdesc}
+
+\begin{classdesc}{HTTPDefaultErrorHandler}{}
+A class which defines a default handler for HTTP error responses; all
+responses are turned into \exception{HTTPError} exceptions.
+\end{classdesc}
+
+\begin{classdesc}{HTTPRedirectHandler}{}
+A class to handle redirections.
+\end{classdesc}
+
+\begin{classdesc}{ProxyHandler}{\optional{proxies}}
+Cause requests to go through a proxy.
+If \var{proxies} is given, it must be a dictionary mapping
+protocol names to URLs of proxies.
+The default is to read the list of proxies from the environment
+variables \envvar{\var{protocol}_proxy}.
+\end{classdesc}
+
+\begin{classdesc}{HTTPPasswordMgr}{}
+Keep a database of 
+\code{(\var{realm}, \var{uri}) -> (\var{user}, \var{password})}
+mappings.
+\end{classdesc}
+
+\begin{classdesc}{HTTPPasswordMgrWithDefaultRealm}{}
+Keep a database of 
+\code{(\var{realm}, \var{uri}) -> (\var{user}, \var{password})} mappings.
+A realm of \code{None} is considered a catch-all realm, which is searched
+if no other realm fits.
+\end{classdesc}
+
+\begin{classdesc}{AbstractBasicAuthHandler}{\optional{password_mgr}}
+This is a mixin class that helps with HTTP authentication, both
+to the remote host and to a proxy.
+
+\var{password_mgr} should be something that is compatible with
+\class{HTTPPasswordMgr} --- supplies the documented interface above.
+\end{classdesc}
+
+\begin{classdesc}{HTTPBasicAuthHandler}{\optional{password_mgr}}
+Handle authentication with the remote host.
+Valid \var{password_mgr}, if given, are the same as for
+\class{AbstractBasicAuthHandler}.
+\end{classdesc}
+
+\begin{classdesc}{ProxyBasicAuthHandler}{\optional{password_mgr}}
+Handle authentication with the proxy.
+Valid \var{password_mgr}, if given, are the same as for
+\class{AbstractBasicAuthHandler}.
+\end{classdesc}
+
+\begin{classdesc}{AbstractDigestAuthHandler}{\optional{password_mgr}}
+This is a mixin class, that helps with HTTP authentication, both
+to the remote host and to a proxy.
+
+\var{password_mgr} should be something that is compatible with
+\class{HTTPPasswordMgr} --- supplies the documented interface above.
+\end{classdesc}
+
+\begin{classdesc}{HTTPDigestAuthHandler}{\optional{password_mgr}}
+Handle authentication with the remote host.
+Valid \var{password_mgr}, if given, are the same as for
+\class{AbstractBasicAuthHandler}.
+\end{classdesc}
+
+\begin{classdesc}{ProxyDigestAuthHandler}{\optional{password_mgr}}
+Handle authentication with the proxy.
+\var{password_mgr}, if given, shoudl be the same as for 
+the constructor of \class{AbstractDigestAuthHandler}.
+\end{classdesc}
+
+\begin{classdesc}{HTTPHandler}{}
+A class to handle opening of HTTP URLs.
+\end{classdesc}
+
+\begin{classdesc}{HTTPSHandler}{}
+A class to handle opening of HTTPS URLs.
+\end{classdesc}
+
+\begin{classdesc}{FileHandler}{}
+Open local files.
+\end{classdesc}
+
+\begin{classdesc}{FTPHandler}{}
+Open FTP URLs.
+\end{classdesc}
+
+\begin{classdesc}{CacheFTPHandler}{}
+Open FTP URLs, keeping a cache of open FTP connections to minimize
+delays.
+\end{classdesc}
+
+\begin{classdesc}{GopherHandler}{}
+Open gopher URLs.
+\end{classdesc}
+
+\begin{classdesc}{UnknownHandler}{}
+A catch-all class to handle unknown URLs.
+\end{classdesc}
+
+
+\subsection{Request Objects \label{request-objects}}
 
 The following methods describe all of \class{Request}'s public interface,
 and so all must be overridden in subclasses.
@@ -93,7 +209,7 @@ and so all must be overridden in subclasses.
 \begin{methoddesc}[Request]{add_data}{data}
 Set the \class{Request} data to \var{data} is ignored
 by all handlers except HTTP handlers --- and there it should be an
-\code{application/x-www-form-encoded} buffer, and will change the
+\mimetype{application/x-www-form-encoded} buffer, and will change the
 request to be \code{POST} rather then \code{GET}. 
 \end{methoddesc}
 
@@ -106,12 +222,12 @@ Return the instance's data.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{add_header}{key, val}
-Add another header to the request. Headers
-are currently ignored by all handlers except HTTP handlers, where they
-are added to the list of headers sent to the server. Note that there
-cannot be more then one header with the same name, and later calls
-will overwrite previous calls in case the \var{key} collides. Currently, 
-this is no loss of HTTP functionality, since all headers which have meaning
+Add another header to the request.  Headers are currently ignored by
+all handlers except HTTP handlers, where they are added to the list
+of headers sent to the server.  Note that there cannot be more then
+one header with the same name, and later calls will overwrite
+previous calls in case the \var{key} collides.  Currently, this is
+no loss of HTTP functionality, since all headers which have meaning
 when used more then once have a (header-specific) way of gaining the
 same functionality using only one header.
 \end{methoddesc}
@@ -121,7 +237,7 @@ Return the URL given in the constructor.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_type}{}
-Return the type of the URL --- also known as the schema.
+Return the type of the URL --- also known as the scheme.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{get_host}{}
@@ -134,28 +250,27 @@ the server.
 \end{methoddesc}
 
 \begin{methoddesc}[Request]{set_proxy}{host, type}
-Make the request by connecting to a proxy server. The \var{host} and \var{type}
-will replace those of the instance, and the instance's selector will be
-the original URL given in the constructor.
+Make the request by connecting to a proxy server. The \var{host} and
+\var{type} will replace those of the instance, and the instance's
+selector will be the original URL given in the constructor.
 \end{methoddesc}
 
-\begin{classdesc}{OpenerDirector}{}
-The \class{OpenerDirector} class opens URLs via \class{BaseHandler}s chained
-together. It manages the chaining of handlers, and recovery from errors.
-\end{classdesc}
+
+\subsection{OpenerDirector Objects \label{opener-director-objects}}
+
+\class{OpenerDirector} instances have the following methods:
 
 \begin{methoddesc}[OpenerDirector]{add_handler}{handler}
-\var{handler} should be an instance of \class{BaseHandler}. The following
-methods are searched, and added to the possible chains.
+\var{handler} should be an instance of \class{BaseHandler}.  The
+following methods are searched, and added to the possible chains.
 
 \begin{itemize}
-	\item \code{{\em protocol}_open} --- signal that the handler knows how
-                                             to open {\em protocol} URLs.
-	\item \code{{\em protocol}_error_{\em type}} -- signal that the handler
-                                             knows how to handle {\em type}
-	                                     errors from {\em protocol}.
+  \item \method{\var{protocol}_open()} ---
+    signal that the handler knows how to open \var{protocol} URLs.
+  \item \method{\var{protocol}_error_\var{type}()} ---
+    signal that the handler knows how to handle \var{type} errors from
+    \var{protocol}.
 \end{itemize}
-
 \end{methoddesc}
 
 \begin{methoddesc}[OpenerDirector]{close}{}
@@ -171,23 +286,26 @@ the cycles.
 Open the given \var{url}. (which can be a request object or a string),
 optionally passing the given \var{data}.
 Arguments, return values and exceptions raised are the same as those
-of \function{urlopen} (which simply calls the \method{open()} method
+of \function{urlopen()} (which simply calls the \method{open()} method
 on the default installed \class{OpenerDirector}.
 \end{methoddesc}
 
-\begin{methoddesc}[OpenerDirector]{error}{proto\optional{, arg\optional{, ...}}}
+\begin{methoddesc}[OpenerDirector]{error}{proto\optional{,
+                                          arg\optional{, \moreargs}}}
 Handle an error in a given protocol. The HTTP protocol is special cased to
 use the code as the error. This will call the registered error handlers
 for the given protocol with the given arguments (which are protocol specific).
 
 Return values and exceptions raised are the same as those
-of \function{urlopen}.
+of \function{urlopen()}.
 \end{methoddesc}
 
-\begin{classdesc}{BaseHandler}{}
-This is the base class for all registered handlers --- and handles only
-the simple mechanics of registration.
-\end{classdesc}
+
+\subsection{BaseHandler Objects \label{base-handler-objects}}
+
+\class{BaseHandler} objects provide a couple of methods that are
+directly useful, and others that are meant to be used by derived
+classes.  These are intended for direct use:
 
 \begin{methoddesc}[BaseHandler]{add_parent}{director}
 Add a director as parent.
@@ -197,168 +315,136 @@ Add a director as parent.
 Remove any parents.
 \end{methoddesc}
 
-The following members and methods should be used only be classes derived
-from \class{BaseHandler}:
+The following members and methods should be used only be classes
+derived from \class{BaseHandler}:
 
 \begin{memberdesc}[BaseHandler]{parent}
-A valid \class{OpenerDirector}, which can be used to open using a different
-protocol, or handle errors.
+A valid \class{OpenerDirector}, which can be used to open using a
+different protocol, or handle errors.
 \end{memberdesc}
 
 \begin{methoddesc}[BaseHandler]{default_open}{req}
-This method is {\em not} defined in \class{BaseHandler}, but subclasses
-should define it if they want to catch all URLs.
+This method is \emph{not} defined in \class{BaseHandler}, but
+subclasses should define it if they want to catch all URLs.
 
-This method, if exists, will be called by the \member{parent} 
-\class{OpenerDirector}. It should return a file-like object as described
-in the return value of the \method{open} of \class{OpenerDirector} or
-\code{None}. It should raise \exception{URLError}, unless a truly exceptional
-thing happens (for example, \exception{MemoryError} should not be mapped
-to \exception{URLError}.
+This method, if exists, will be called by the \member{parent}
+\class{OpenerDirector}.  It should return a file-like object as
+described in the return value of the \method{open()} of
+\class{OpenerDirector} or \code{None}.  It should raise
+\exception{URLError}, unless a truly exceptional thing happens (for
+example, \exception{MemoryError} should not be mapped to
+\exception{URLError}.
 
 This method will be called before any protocol-specific open method.
 \end{methoddesc}
 
-\begin{methoddesc}[BaseHandler]{{\em protocol}_open}{req}
-This method is {\em not} defined in \class{BaseHandler}, but subclasses
-should define it if they want to handle URLs with the given protocol.
+\begin{methoddesc}[BaseHandler]{\var{protocol}_open}{req}
+This method is \emph{not} defined in \class{BaseHandler}, but
+subclasses should define it if they want to handle URLs with the given
+protocol.
 
-This method, if exists, will be called by the \member{parent} 
-\class{OpenerDirector}. Return values should be the same as for 
-\method{default_open}.
+This method, if defined, will be called by the \member{parent} 
+\class{OpenerDirector}.  Return values should be the same as for 
+\method{default_open()}.
 \end{methoddesc}
 
 \begin{methoddesc}[BaseHandler]{unknown_open}{req}
-This method is {\em not} defined in \class{BaseHandler}, but subclasses
-should define it if they want to catch all URLs with no specific
-registerd handler to open it.
+This method is \var{not} defined in \class{BaseHandler}, but
+subclasses should define it if they want to catch all URLs with no
+specific registerd handler to open it.
 
 This method, if exists, will be called by the \member{parent} 
-\class{OpenerDirector}. Return values should be the same as for 
-\method{default_open}.
+\class{OpenerDirector}.  Return values should be the same as for 
+\method{default_open()}.
 \end{methoddesc}
 
 \begin{methoddesc}[BaseHandler]{http_error_default}{req, fp, code, msg, hdrs}
-This method is {\em not} defined in \class{BaseHandler}, but subclasses
-should override it if they intend to provide a catch-all for otherwise
-unhandled HTTP errors. It will be called automatically by the 
-\class{OpenerDirector} getting the error, and should not normally be called
-in other circumstances.
+This method is \emph{not} defined in \class{BaseHandler}, but
+subclasses should override it if they intend to provide a catch-all
+for otherwise unhandled HTTP errors.  It will be called automatically
+by the  \class{OpenerDirector} getting the error, and should not
+normally be called in other circumstances.
 
-\var{req} will be a \class{Request} object, \var{fp} will be a file-like
-object with the HTTP error body, \var{code} will be the three-digit code
-of the error, \var{msg} will be the user-visible explanation of the
-code and \var{hdrs} will be a dictionary-like object with the headers of
-the error.
+\var{req} will be a \class{Request} object, \var{fp} will be a
+file-like object with the HTTP error body, \var{code} will be the
+three-digit code of the error, \var{msg} will be the user-visible
+explanation of the code and \var{hdrs} will be a mapping object with
+the headers of the error.
 
 Return values and exceptions raised should be the same as those
-of \function{urlopen}.
+of \function{urlopen()}.
 \end{methoddesc}
 
-\begin{methoddesc}[BaseHandler]{http_error_{\em nnn}}{req, fp, code, msg, hdrs}
-\code{nnn} should be a three-digit HTTP error code. This method is also
-not defined in \class{BaseHandler}, but will be called, if it exists, on
-an instance of a subclass, when an HTTP error with code \code{nnn} occurse.
+\begin{methoddesc}[BaseHandler]{http_error_\var{nnn}}{req, fp, code, msg, hdrs}
+\var{nnn} should be a three-digit HTTP error code.  This method is
+also not defined in \class{BaseHandler}, but will be called, if it
+exists, on an instance of a subclass, when an HTTP error with code
+\var{nnn} occurs.
 
-Subclasses should override this method to handle specific HTTP errors.
+Subclasses should override this method to handle specific HTTP
+errors.
 
-Arguments, return values and exceptions raised shoudl be the same as for
-\method{http_error_default}
+Arguments, return values and exceptions raised should be the same as
+for \method{http_error_default()}.
 \end{methoddesc}
 
 
-\begin{classdesc}{HTTPDefaultErrorHandler}{}
-A class which catches all HTTP errors.
-\end{classdesc}
-
-\begin{methoddesc}[HTTPDefaultErrorHandler]{http_error_default}{req, fp, code, 
-                                                                msg, hdrs}
-Raise an \exception{HTTPError}
-\end{methoddesc}
-
-\begin{classdesc}{HTTPRedirectHandler}{}
-A class to handle redirections.
-\end{classdesc}
-
-\begin{methoddesc}[HTTPRedirectHandler]{http_error_301}{req, fp, code, 
-                                                        msg, hdrs}
-Redirect to the \code{Location:} URL. This method gets called by
-the parent \class{OpenerDirector} when getting an HTTP permanent-redirect
-error.
-\end{methoddesc}
-
-\begin{methoddesc}[HTTPRedirectHandler]{http_error_302}{req, fp, code, 
-                                                        msg, hdrs}
-The same as \method{http_error_301}.
-\end{methoddesc}
+\subsection{HTTPRedirectHandler Objects \label{http-redirect-handler}}
 
 \strong{Note:} 303 redirection is not supported by this version of 
 \module{urllib2}.
 
-\begin{classdesc}{ProxyHandler}{\optional{proxies}}
-Cause requests to go through a proxy.
-If \var{proxies} is given, it must be a dictionary mapping
-protocol names to URLs of proxies.
-The default is to read the list of proxies from the environment
-variables \code{{\em protocol}_proxy}.
-\end{classdesc}
-
-\begin{methoddesc}[ProxyHandler]{{\em protocol}_open}{request}
-The \class{ProxyHandler} will have a method \code{{\em protocol}_open} for
-every {\em protocol} which has a proxy in the \var{proxies} dictionary
-given in the constructor. The method will modify requests to go
-through the proxy, by calling \code{request.set_proxy()}, and call the next 
-handler in the chain to actually execute the protocol.
+\begin{methoddesc}[HTTPRedirectHandler]{http_error_301}{req,
+                                                  fp, code, msg, hdrs}
+Redirect to the \code{Location:} URL.  This method is called by
+the parent \class{OpenerDirector} when getting an HTTP
+permanent-redirect response.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPPasswordMgr}{}
-Keep a database of 
-\code{(\var{realm}, \var{uri}) -> (\var{user}, \var{password})} mapping.
-\end{classdesc}
+\begin{methoddesc}[HTTPRedirectHandler]{http_error_302}{req,
+                                                  fp, code, msg, hdrs}
+The same as \method{http_error_301()}, but called for the
+temporary-redirect response.
+\end{methoddesc}
+
+
+\subsection{ProxyHandler Objects \label{proxy-handler}}
+
+\begin{methoddesc}[ProxyHandler]{\var{protocol}_open}{request}
+The \class{ProxyHandler} will have a method
+\method{\var{protocol}_open()} for every \var{protocol} which has a
+proxy in the \var{proxies} dictionary given in the constructor.  The
+method will modify requests to go through the proxy, by calling
+\code{request.set_proxy()}, and call the next handler in the chain to
+actually execute the protocol.
+\end{methoddesc}
+
+
+\subsection{HTTPPasswordMgr Objects \label{http-password-mgr}}
+
+These methods are available on \class{HTTPPasswordMgr} and
+\class{HTTPPasswordMgrWithDefaultRealm} objects.
 
 \begin{methoddesc}[HTTPPasswordMgr]{add_password}{realm, uri, user, passwd}
 \var{uri} can be either a single URI, or a sequene of URIs. \var{realm},
 \var{user} and \var{passwd} must be strings. This causes
- \code{(\var{user}, \var{passwd})} to be used as authentication tokens
+\code{(\var{user}, \var{passwd})} to be used as authentication tokens
 when authentication for \var{realm} and a super-URI of any of the
 given URIs is given.
 \end{methoddesc}  
 
 \begin{methoddesc}[HTTPPasswordMgr]{find_user_password}{realm, authuri}
-Get user/password for given realm and URI, if any. This method will
-return \code{(None, None)} if there is no user/password is known.
+Get user/password for given realm and URI, if any.  This method will
+return \code{(None, None)} if there is no matching user/password.
+
+For \class{HTTPPasswordMgrWithDefaultRealm} objects, the realm
+\code{None} will be searched if the given \var{realm} has no matching
+user/password.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPPasswordMgrWithDefaultRealm}{}
-Keep a database of 
-\code{(\var{realm}, \var{uri}) -> (\var{user}, \var{password})} mapping.
-A realm of \code{None} is considered a catch-all realm, which is searched
-if no other realm fits.
-\end{classdesc}
 
-\begin{methoddesc}[HTTPPasswordMgrWithDefaultRealm]{add_password}
-                                                   {realm, uri, user, passwd}
-\var{uri} can be either a single URI, or a sequene of URIs. \var{realm},
-\var{user} and \var{passwd} must be strings. This causes
- \code{(\var{user}, \var{passwd})} to be used as authentication tokens
-when authentication for \var{realm} and a super-URI of any of the
-given URIs is given.
-\end{methoddesc}  
-
-\begin{methoddesc}[HTTPPasswordMgr]{find_user_password}{realm, authuri}
-Get user/password for given realm and URI, if any. This method will
-return \code{(None, None)} if there is no user/password is known.
-If the given \var{realm} has no user/password, the realm \code{None}
-will be searched.
-\end{methoddesc}
-
-\begin{classdesc}[AbstractBasicAuthHandler]{\optional{password_mgr}}
-This is a mixin class, that helps with HTTP authentication, both
-to the remote host and to a proxy.
-
-\var{password_mgr} should be something that is compatible with
-\class{HTTPPasswordMgr} --- supplies the documented interface above.
-\end{classdesc}
+\subsection{AbstractBasicAuthHandler Objects
+            \label{abstract-basic-auth-handler}}
 
 \begin{methoddesc}[AbstractBasicAuthHandler]{handle_authentication_request}
                                             {authreq, host, req, headers}
@@ -368,37 +454,29 @@ the realm, \var{host} is the host to authenticate too, \var{req} should be the
 (failed) \class{Request} object, and \var{headers} should be the error headers.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPBasicAuthHandler}{\optional{password_mgr}}
-Handle authentication with the remote host.
-Valid \var{password_mgr}, if given, are the same as for
-\class{AbstractBasicAuthHandler}.
-\end{classdesc}
+
+\subsection{HTTPBasicAuthHandler Objects
+            \label{http-basic-auth-handler}}
 
 \begin{methoddesc}[HTTPBasicAuthHandler]{http_error_401}{req, fp, code, 
                                                         msg, hdrs}
 Retry the request with authentication info, if available.
 \end{methoddesc}
 
-\begin{classdesc}{ProxyBasicAuthHandler}{\optional{password_mgr}}
-Handle authentication with the proxy.
-Valid \var{password_mgr}, if given, are the same as for
-\class{AbstractBasicAuthHandler}.
-\end{classdesc}
+
+\subsection{ProxyBasicAuthHandler Objects
+            \label{proxy-basic-auth-handler}}
 
 \begin{methoddesc}[ProxyBasicAuthHandler]{http_error_407}{req, fp, code, 
                                                         msg, hdrs}
 Retry the request with authentication info, if available.
 \end{methoddesc}
 
-\begin{classdesc}{AbstractDigestAuthHandler}{\optional{password_mgr}}
-This is a mixin class, that helps with HTTP authentication, both
-to the remote host and to a proxy.
 
-\var{password_mgr} should be something that is compatible with
-\class{HTTPPasswordMgr} --- supplies the documented interface above.
-\end{classdesc}
+\subsection{AbstractDigestAuthHandler Objects
+            \label{abstract-digest-auth-handler}}
 
-\begin{methoddesc}[AbstractBasicAuthHandler]{handle_authentication_request}
+\begin{methoddesc}[AbstractDigestAuthHandler]{handle_authentication_request}
                                             {authreq, host, req, headers}
 \var{authreq} should be the name of the header where the information about
 the realm, \var{host} should be the host to authenticate too, \var{req} 
@@ -406,83 +484,63 @@ should be the (failed) \class{Request} object, and \var{headers} should be the
 error headers.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPDigestAuthHandler}{\optional{password_mgr}}
-Handle authentication with the remote host.
-Valid \var{password_mgr}, if given, are the same as for
-\class{AbstractBasicAuthHandler}.
-\end{classdesc}
+
+\subsection{HTTPDigestAuthHandler Objects
+            \label{http-digest-auth-handler}}
 
 \begin{methoddesc}[HTTPDigestAuthHandler]{http_error_401}{req, fp, code, 
                                                         msg, hdrs}
 Retry the request with authentication info, if available.
 \end{methoddesc}
 
-\begin{classdesc}{ProxyDigestAuthHandler}{\optional{password_mgr}}
-Handle authentication with the proxy.
-\var{password_mgr}, if given, shoudl be the same as for 
-the constructor of \class{AbstractDigestAuthHandler}.
-\end{classdesc}
+
+\subsection{ProxyDigestAuthHandler Objects
+            \label{proxy-digest-auth-handler}}
 
 \begin{methoddesc}[ProxyDigestAuthHandler]{http_error_407}{req, fp, code, 
                                                         msg, hdrs}
-Retry the request with authentication info, if available.
+Retry the request with authentication information, if available.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPHandler}{}
-A class to handle opening of HTTP URLs
-\end{classdesc}
+
+\subsection{HTTPHandler Objects \label{http-handler-objects}}
 
 \begin{methoddesc}[HTTPHandler]{http_open}{req}
-Send an HTTP request (either GET or POST, depending on whether
-\code{req.has_data()}.
+Send an HTTP request, whcih can be either GET or POST, depending on
+\code{\var{req}.has_data()}.
 \end{methoddesc}
 
-\begin{classdesc}{HTTPSHandler}{}
-A class to handle opening of HTTPS URLs
-\end{classdesc}
+
+\subsection{HTTPSHandler Objects \label{https-handler-objects}}
 
 \begin{methoddesc}[HTTPSHandler]{https_open}{req}
-Send an HTTPS request (either GET or POST, depending on whether
-\code{req.has_data()}.
+Send an HTTPS request, which can be either GET or POST, depending on
+\code{\var{req}.has_data()}.
 \end{methoddesc}
 
-\begin{classdesc}{UknownHandler}{}
-A catch-all class to handle unknown URLs.
-\end{classdesc}
 
-\begin{methoddesc}[UknownHandler]{unknown_open}
-Raise a \exception{URLError} exception
-\end{methoddesc}
-
-\begin{classdesc}{FileHandler}{}
-Open local files.
-\end{classdesc}
+\subsection{FileHandler Objects \label{file-handler-objects}}
 
 \begin{methoddesc}[FileHandler]{file_open}{req}
 Open the file locally, if there is no host name, or
-the host name is \code{"localhost"}. Change the
+the host name is \code{'localhost'}. Change the
 protocol to \code{ftp} otherwise, and retry opening
 it using \member{parent}.
 \end{methoddesc}
 
-\begin{classdesc}{FTPHandler}{}
-Open FTP URLs.
-\end{classdesc}
+
+\subsection{FTPHandler Objects \label{ftp-handler-objects}}
 
 \begin{methoddesc}[FTPHandler]{ftp_open}{req}
 Open the FTP file indicated by \var{req}.
 The login is always done with empty username and password.
 \end{methoddesc}
 
-\begin{classdesc}{CacheFTPHandler}{}
-Open FTP URLs, keeping a cache of open FTP connections to minimize
-delays.
-\end{classdesc}
 
-\begin{methoddesc}[CacheFTPHandler]{ftp_open}{req}
-Open the FTP file indicated by \var{req}.
-The login is always done with empty username and password.
-\end{methoddesc}
+\subsection{CacheFTPHandler Objects \label{cacheftp-handler-objects}}
+
+\class{CacheFTPHandler} objects are \class{FTPHandler} objects with
+the following additional methods:
 
 \begin{methoddesc}[CacheFTPHandler]{setTimeout}{t}
 Set timeout of connections to \var{t} seconds.
@@ -492,10 +550,16 @@ Set timeout of connections to \var{t} seconds.
 Set maximum number of cached connections to \var{m}.
 \end{methoddesc}
 
-\begin{classdesc}{GopherHandler}{}
-Open gopher URLs.
-\end{classdesc}
+
+\subsection{GopherHandler Objects \label{gopher-handler}}
 
 \begin{methoddesc}[GopherHandler]{gopher_open}{req}
 Open the gopher resource indicated by \var{req}.
+\end{methoddesc}
+
+
+\subsection{UnknownHandler Objects \label{unknown-handler-objects}}
+
+\begin{methoddesc}[UnknownHandler]{unknown_open}
+Raise a \exception{URLError} exception.
 \end{methoddesc}
