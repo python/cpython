@@ -115,7 +115,7 @@ LIBFILES = lib.tex \
     libformatter.tex liboperator.tex libsoundex.tex libresource.tex \
     libstat.tex libstrio.tex libundoc.tex libmailcap.tex libglob.tex \
     libuser.tex libanydbm.tex librandom.tex libsite.tex libwhichdb.tex \
-    libbase64.tex libfnmatch.tex libquopri.tex
+    libbase64.tex libfnmatch.tex libquopri.tex libzlib.tex
 
 # Library document
 lib.dvi: $(LIBFILES)
