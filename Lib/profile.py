@@ -264,7 +264,7 @@ class Profile:
 		return 1
 
 	# The next few function play with self.cmd. By carefully preloading
-	# our paralell stack, we can force the profiled result to include
+	# our parallel stack, we can force the profiled result to include
 	# an arbitrary string as the name of the calling function.
 	# We use self.cmd as that string, and the resulting stats look
 	# very nice :-).
