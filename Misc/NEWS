@@ -2,8 +2,8 @@ What's new in this release?
 ===========================
 
 Below is a list of all relevant changes since the release 1.4.  The
-most recent changes (from 1.5a3 to 1.5a4 and from 1.5a4 to 1.5b1) are
-listed in separate sections at the end.
+most recent changes (from 1.5a3 to 1.5a4, from 1.5a4 to 1.5b1, and
+from 1.5b1 to 1.5b2) are listed in separate sections at the end.
 
 A note on attributions: while I have sprinkled some names throughout
 here, I'm grateful to many more people who remain unnamed.  You may
@@ -1630,5 +1630,175 @@ exit status doesn't indicate that I was using an obsolete option.
 in status of the GNU readline interface.  Fix due to by Vladimir
 Marangozov.
 
+
+======================================================================
+
+
+From 1.5b1 to 1.5b2
+===================
+
+- Fixed a bug in cPickle.c that caused it to crash right away because
+the version string had a different format.
+
+- Changes in pickle.py and cPickle.c: when unpickling an instance of a
+class that doesn't define the __getinitargs__() method, the __init__()
+constructor is no longer called.  This makes a much larger group of
+classes picklable by default, but may occasionally change semantics.
+To force calling __init__() on unpickling, define a __getinitargs__()
+method.  Other changes too, in particular cPickle now handles classes
+defined in packages correctly.  The same change applies to copying
+instances with copy.py.  The cPickle.c changes and some pickle.py
+changes are courtesy Jim Fulton.
+
+- Locale support in he "re" (Perl regular expressions) module.  Use 
+the flag re.L (or re.LOCALE) to enable locale-specific matching
+rules for \w and \b.  The in-line syntax for this flag is (?L).
+
+- The built-in function isinstance(x, y) now also succeeds when y is
+a type object and type(x) is y.
+
+- repr() and str() of class and instance objects now reflect the
+package/module in which the class is defined.
+
+- Module "ni" has been removed.  (If you really need it, it's been
+renamed to "ni1".  Let me know if this causes any problems for you.
+Package authors are encouraged to write __init__.py files that
+support both ni and 1.5 package support, so the same version can be
+used with Python 1.4 as well as 1.5.)
+
+- The thread module is now automatically included when threads are
+configured.  (You must remove it from your existing Setup file,
+since it is now in its own Setup.thread file.)
+
+- New command line option "-x" to skip the first line of the script;
+handy to make executable scripts on non-Unix platforms.
+
+- In importdl.c, add the RTLD_GLOBAL to the dlopen() flags.  I
+haven't checked how this affects things, but it should make symbols
+in one shared library available to the next one.
+
+- The Windows installer now installs in the "Program Files" folder on
+the proper volume by default.
+
+- The Windows configuration adds a new main program, "pythonw", and
+registers a new extension, ".pyw" that invokes this.  This is a
+pstandard Python interpreter that does not pop up a console window;
+handy for pure Tkinter applications.  All output to the original
+stdout and stderr is lost; reading from the original stdin yields
+EOF.  Also, both python.exe and pythonw.exe now have a pretty icon
+(a green snake in a box, courtesy Mark Hammond).
+
+- Lots of improvements to emacs-mode.el again.  See Barry's web page:
+http://www.python.org/ftp/emacs/pmdetails.html.
+
+- Lots of improvements and additions to the library reference manual;
+many by Fred Drake.
+
+- Doc strings for the following modules: rfc822.py, posixpath.py,
+ntpath.py, httplib.py.  Thanks to Mitch Chapman and Charles Waldman.
+
+- Some more regression testing.
+
+- An optional 4th (maxsplit) argument to strop.replace().
+
+- Fixed handling of maxsplit in string.splitfields().
+
+- Tweaked os.environ so it can be pickled and copied.
+
+- The portability problems caused by indented preprocessor commands
+and C++ style comments should be gone now.
+
+- In random.py, added Pareto and Weibull distributions.
+
+- The crypt module is now disabled in Modules/Setup.in by default; it
+is rarely needed and causes errors on some systems where users often
+don't know how to deal with those.
+
+- Some improvements to the _tkinter build line suggested by Case Roole.
+
+- A full suite of platform specific files for NetBSD 1.x, submitted by 
+Anders Andersen.
+
+- New Solaris specific header STROPTS.py.
+
+- Moved a confusing occurrence of *shared* from the comments in
+Modules/Setup.in (people would enable this one instead of the real
+one, and get disappointing results).
+
+- Changed the default mode for directories to be group-writable when
+the installation process creates them.
+
+- Check for pthread support in "-l_r" for FreeBSD/NetBSD, and support
+shared libraries for both.
+
+- Support FreeBSD and NetBSD in posixfile.py.
+
+- Support for the "event" command, new in Tk 4.2.  By Case Roole.
+
+- Add Tix_SafeInit() support to tkappinit.c.
+
+- Various bugs fixed in "re.py" and "pcre.c".
+
+- Fixed a bug (broken use of the syntax table) in the old "regexpr.c".
+
+- In frozenmain.c, stdin is made unbuffered too when PYTHONUNBUFFERED
+is set.
+
+- Provide default blocksize for retrbinary in ftplib.py (Skip
+Montanaro).
+
+- In NT, pick the username up from different places in user.py (Jeff
+Bauer).
+
+- Patch to urlparse.urljoin() for ".." and "..#1", Marc Lemburg.
+
+- Many small improvements to Jeff Rush' OS/2 support.
+
+- ospath.py is gone; it's been obsolete for so many years now...
+
+- The reference manual is now set up to prepare better HTML (still
+using webmaker, alas).
+
+- Add special handling to /Tools/freeze for Python modules that are
+imported implicitly by the Python runtime: 'site' and 'exceptions'.
+
+- Tools/faqwiz 0.8.3 -- add an option to suppress URL processing
+inside <PRE>, by "Scott".
+
+- Added ConfigParser.py, a generic parser for sectioned configuration
+files.
+
+- In _localemodule.c, LC_MESSAGES is not always defined; put it
+between #ifdefs.
+
+- Typo in resource.c: RUSAGE_CHILDERN -> RUSAGE_CHILDREN.
+
+- Demo/scripts/newslist.py: Fix the way the version number is gotten
+out of the RCS revision.
+
+- PyArg_Parse[Tuple] now explicitly check for bad characters at the
+end of the format string.
+
+- Revamped PC/example_nt to support VC++ 5.x.
+
+- <listobject>.sort() now uses a modified quicksort by Raymund Galvin,
+after studying the GNU libg++ quicksort.  This should be much faster
+if there are lots of duplicates, and otherwise at least as good.
+
+- Added "uue" as an alias for "uuencode" to mimetools.py.  (Hm, the
+uudecode bug where it complaints about trailing garbage is still there 
+:-( ).
+
+- pickle.py requires integers in text mode to be in decimal notation
+(it used to accept octal and hex, even though it would only generate
+decimal numbers).
+
+- In string.atof(), don't fail when the "re" module is unavailable.
+Plug the ensueing security leak by supplying an empty __builtins__
+directory to eval().
+
+- A bunch of small fixes and improvements to Tkinter.py.
+
+- Fixed a buffer overrun in PC/getpathp.c.
 
 ======================================================================
