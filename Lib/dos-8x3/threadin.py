@@ -18,6 +18,7 @@ del time
 _start_new_thread = thread.start_new_thread
 _allocate_lock = thread.allocate_lock
 _get_ident = thread.get_ident
+ThreadError = thread.error
 del thread
 
 _print_exc = traceback.print_exc

@@ -129,6 +129,18 @@ testit('pow(1,0)', math.pow(1,0), 1)
 testit('pow(2,1)', math.pow(2,1), 2)
 testit('pow(2,-1)', math.pow(2,-1), 0.5)
 
+print 'rint'
+try:
+	math.rint
+except AttributeError:
+	# this platform does not have rint, that is fine, skip the test
+	pass
+else:
+	testit('rint(0.7)', math.rint(0.7), 1)
+	testit('rint(-0.3)', math.rint(-0.3), 0)
+	testit('rint(2.5)', math.rint(2.5), 2)
+	testit('rint(3.5)', math.rint(3.5), 4) 
+
 print 'sin'
 testit('sin(0)', math.sin(0), 0)
 testit('sin(pi/2)', math.sin(math.pi/2), 1)

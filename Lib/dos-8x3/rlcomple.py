@@ -76,7 +76,7 @@ class Completer:
                      __builtin__.__dict__.keys(),
                      __main__.__dict__.keys()]:
             for word in list:
-                if word[:n] == text:
+                if word[:n] == text and word != "__builtins__":
                     matches.append(word)
         return matches
 
@@ -106,7 +106,7 @@ class Completer:
         matches = []
         n = len(attr)
         for word in words:
-            if word[:n] == attr:
+            if word[:n] == attr and word != "__builtins__":
                 matches.append("%s.%s" % (expr, word))
         return matches
 
