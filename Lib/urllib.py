@@ -693,6 +693,12 @@ def unquote(s):
 		i = j+3
 	return string.joinfields(res, '')
 
+def unquote_plus(s):
+    if '+' in s:
+	import regsub
+	s = regsub.gsub('+', ' ', s)
+    return unquote(s)
+
 always_safe = string.letters + string.digits + '_,.-'
 def quote(s, safe = '/'):
 	safe = always_safe + safe
@@ -703,6 +709,14 @@ def quote(s, safe = '/'):
 		else:
 			res.append('%%%02x' % ord(c))
 	return string.joinfields(res, '')
+
+def quote_plus(s, safe = '/'):
+    if ' ' in s:
+	import regsub
+	s = regsub.gsub(' ', '+', s)
+	return quote(s, safe + '+')
+    else:
+	return quote(s, safe)
 
 
 # Proxy handling
