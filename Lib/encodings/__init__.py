@@ -69,7 +69,9 @@ def search_function(encoding):
                          globals(), locals(), _import_tail)
     except ImportError:
         import aliases
-        modname = aliases.aliases.get(modname, modname)
+        modname = (aliases.aliases.get(modname) or
+                   aliases.aliases.get(modname.replace('.', '_')) or
+                   modname)
         try:
             mod = __import__(modname, globals(), locals(), _import_tail)
         except ImportError:
