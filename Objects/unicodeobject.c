@@ -4447,9 +4447,9 @@ static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 static const Py_UNICODE *
 unicode_memchr(const Py_UNICODE *s, Py_UNICODE c, size_t n)
 {
-	int i;
-	for (i = 0; i<n; ++i)
-		if (s[i]==c)
+	size_t i;
+	for (i = 0; i < n; ++i)
+		if (s[i] == c)
 			return s+i;
 	return NULL;
 }
