@@ -70,6 +70,10 @@ RGBColor = OpaqueType("RGBColor", "QdRGB")
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
 
+/* Exported by Qdmodule.c: */
+extern PyObject *QdRGB_New(RGBColor *);
+extern int QdRGB_Convert(PyObject *, RGBColor *);
+
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 """
 

@@ -57,38 +57,10 @@ class MyScanner(Scanner):
 			"AddTESample",
 			"AddHiliteSample",
 			"HiliteTextSample",
-			# Missing in CW11 quicktime library
-#			"SpriteMediaGetDisplayedSampleNumber",
-#			"SpriteMediaGetIndImageDescription",
-#			"SpriteMediaCountImages",
-#			"SpriteMediaCountSprites",
-#			"SpriteMediaHitTestSprites",
-#			"SpriteMediaGetProperty",
-#			"SpriteMediaSetProperty",
-#			"TextMediaSetTextSampleData",
-#			"TextMediaHiliteTextSample",
-#			"TextMediaFindNextText",
-#			"TextMediaAddHiliteSample",
-#			"TextMediaAddTESample",
-#			"TextMediaAddTextSample",
-#			"VideoMediaGetStatistics",
-#			"VideoMediaResetStatistics",
-#			"EndFullScreen",
-#			"NewMovieFromDataRef",
-#			"MCPtInController",
-#			"MCRemoveAMovie",
-#			"MCRemoveAllMovies",
-#			"MCInvalidate",
-#			"InvalidateMovieRegion",
-#			"GetMovieCompositeBufferFlags",
-#			"SetMovieCompositeBufferFlags",
-#			"SetTrackSoundLocalizationSettings",
-#			"GetTrackSoundLocalizationSettings",
-#			"GetMovieNaturalBoundsRect",
 			
 			"MakeTrackTimeTable", # Uses long * return?
 			"MakeMediaTimeTable", # ditto
-			"VideoMediaGetStallCount", # Undefined in CW Pro 3 library
+##			"VideoMediaGetStallCount", # Undefined in CW Pro 3 library
 			]
 
 	def makeblacklisttypes(self):

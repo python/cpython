@@ -1,4 +1,4 @@
-# Generated from 'flap:CodeWarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDraw.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDraw.h'
 
 
 def FOUR_CHAR_CODE(x): return x
@@ -109,6 +109,8 @@ allDevicesBit = 2
 singleDevices = 1 << singleDevicesBit
 dontMatchSeeds = 1 << dontMatchSeedsBit
 allDevices = 1 << allDevicesBit
+kPrinterFontStatus = 0
+kPrinterScalingStatus = 1
 kNoConstraint = 0
 kVerticalConstraint = 1
 kHorizontalConstraint = 2
@@ -139,7 +141,7 @@ kUYVY422PixelFormat = FOUR_CHAR_CODE('UYVY')
 kYUV211PixelFormat = FOUR_CHAR_CODE('Y211')
 kCursorImageMajorVersion = 0x0001
 kCursorImageMinorVersion = 0x0000
-# Generated from 'flap:CodeWarrior Pro 4:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:QuickDrawText.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:QuickDrawText.h'
 
 
 def FOUR_CHAR_CODE(x): return x

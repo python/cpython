@@ -46,12 +46,12 @@ class SoundScanner(Scanner):
 			'StopSound',
 			'SoundDone',
 			# These do not work for cfm68k:
-			'SndGetInfo',
-			'SndSetInfo',
-			'GetCompressionInfo',
-			'GetCompressionName',
-			'GetSoundPreference',
-			'SetSoundPreference',
+## 			'SndGetInfo',
+## 			'SndSetInfo',
+## 			'GetCompressionInfo',
+## 			'GetCompressionName',
+## 			'GetSoundPreference',
+## 			'SetSoundPreference',
 			# And old calls that are no longer supported
 			'SetSoundVol',
 			'GetSoundVol',

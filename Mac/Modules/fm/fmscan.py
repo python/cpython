@@ -42,6 +42,8 @@ class MyScanner(Scanner):
 		return [
 			"FMInput_ptr",	# Not needed for now
 			"FMOutPtr",		# Ditto
+			"void_ptr",		# Don't know how to do this right now
+			"FontInfo",		# Ditto
 			]
 
 	def makerepairinstructions(self):

@@ -1,16 +1,10 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Menus.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Menus.h'
 
 def FOUR_CHAR_CODE(x): return x
-kMenuStdMenuProc = 63
-kMenuStdMenuBarProc = 63
-kMenuNoModifiers = 0
-kMenuNoIcon = 0
-kMenuIconType = 1
-kMenuShrinkIconType = 2
-kMenuSmallIconType = 3
-kMenuColorIconType = 4
-kMenuIconSuiteType = 5
-kMenuIconRefType = 6
+gestaltMenuMgrAttr = FOUR_CHAR_CODE('menu')
+gestaltMenuMgrPresent = 1
+menuPropertyInvalid = -5603
+menuPropertyNotFoundErr = -5604
 noMark = 0
 kMenuDrawMsg = 0
 kMenuChooseMsg = 1
@@ -30,6 +24,16 @@ hierMenu = -1
 mPopUpMsg = 3
 mctAllItems = -98
 mctLastIDIndic = -99
+kMenuStdMenuProc = 63
+kMenuStdMenuBarProc = 63
+kMenuNoModifiers = 0
+kMenuNoIcon = 0
+kMenuIconType = 1
+kMenuShrinkIconType = 2
+kMenuSmallIconType = 3
+kMenuColorIconType = 4
+kMenuIconSuiteType = 5
+kMenuIconRefType = 6
 gestaltContextualMenuAttr = FOUR_CHAR_CODE('cmnu')
 gestaltContextualMenuUnusedBit = 0
 gestaltContextualMenuTrapAvailable = 1

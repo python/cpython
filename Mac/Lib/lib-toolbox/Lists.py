@@ -1,4 +1,4 @@
-# Generated from 'flap:Metrowerks:Metrowerks CodeWarrior:MacOS Support:Headers:Universal Headers:Lists.h'
+# Generated from 'SWDev:Codewarrior Pro 5:Metrowerks CodeWarrior:MacOS Support:Universal:Interfaces:CIncludes:Lists.h'
 
 def FOUR_CHAR_CODE(x): return x
 listNotifyNothing = FOUR_CHAR_CODE('nada')

@@ -39,7 +39,7 @@ class MyScanner(Scanner):
 		return [
 			"TEDispose",
 			"TEInit",
-			"TEGetHiliteRgn",
+##			"TEGetHiliteRgn",
 			]
 
 	def makeblacklisttypes(self):

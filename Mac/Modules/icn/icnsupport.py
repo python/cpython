@@ -24,10 +24,13 @@ from macsupport import *
 CIconHandle = OpaqueByValueType("CIconHandle", "ResObj")
 IconSuiteRef = OpaqueByValueType("IconSuiteRef", "ResObj")
 IconCacheRef = OpaqueByValueType("IconCacheRef", "ResObj")
+IconRef = OpaqueByValueType("IconRef", "ResObj")
+IconFamilyHandle = OpaqueByValueType("IconFamilyHandle", "ResObj")
 RgnHandle = OpaqueByValueType("RgnHandle", "ResObj")
 IconAlignmentType = Type("IconAlignmentType", "h")
 IconTransformType = Type("IconTransformType", "h")
 IconSelectorValue = Type("IconSelectorValue", "l")
+IconServicesUsageFlags = Type("IconServicesUsageFlags", "l")
 RGBColor = OpaqueType("RGBColor", "QdRGB")
 
 #WindowPeek = OpaqueByValueType("WindowPeek", OBJECTPREFIX)

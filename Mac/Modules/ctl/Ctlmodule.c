@@ -337,6 +337,27 @@ static PyObject *CtlObj_SetUpControlBackground(_self, _args)
 	return _res;
 }
 
+static PyObject *CtlObj_SetUpControlTextColor(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	SInt16 inDepth;
+	Boolean inIsColorDevice;
+	if (!PyArg_ParseTuple(_args, "hb",
+	                      &inDepth,
+	                      &inIsColorDevice))
+		return NULL;
+	_err = SetUpControlTextColor(_self->ob_itself,
+	                             inDepth,
+	                             inIsColorDevice);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyObject *CtlObj_DragControl(_self, _args)
 	ControlObject *_self;
 	PyObject *_args;
@@ -556,6 +577,182 @@ static PyObject *CtlObj_SetControlMaximum(_self, _args)
 		return NULL;
 	SetControlMaximum(_self->ob_itself,
 	                  newMaximum);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControlViewSize(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControlViewSize(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControlViewSize(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 newViewSize;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &newViewSize))
+		return NULL;
+	SetControlViewSize(_self->ob_itself,
+	                   newViewSize);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControl32BitValue(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControl32BitValue(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControl32BitValue(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 newValue;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &newValue))
+		return NULL;
+	SetControl32BitValue(_self->ob_itself,
+	                     newValue);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControl32BitMaximum(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControl32BitMaximum(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControl32BitMaximum(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 newMaximum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &newMaximum))
+		return NULL;
+	SetControl32BitMaximum(_self->ob_itself,
+	                       newMaximum);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControl32BitMinimum(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = GetControl32BitMinimum(_self->ob_itself);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_SetControl32BitMinimum(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	SInt32 newMinimum;
+	if (!PyArg_ParseTuple(_args, "l",
+	                      &newMinimum))
+		return NULL;
+	SetControl32BitMinimum(_self->ob_itself,
+	                       newMinimum);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_IsValidControlHandle(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	Boolean _rv;
+	if (!PyArg_ParseTuple(_args, ""))
+		return NULL;
+	_rv = IsValidControlHandle(_self->ob_itself);
+	_res = Py_BuildValue("b",
+	                     _rv);
+	return _res;
+}
+
+static PyObject *CtlObj_RemoveControlProperty(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	OSType propertyCreator;
+	OSType propertyTag;
+	if (!PyArg_ParseTuple(_args, "O&O&",
+	                      PyMac_GetOSType, &propertyCreator,
+	                      PyMac_GetOSType, &propertyTag))
+		return NULL;
+	_err = RemoveControlProperty(_self->ob_itself,
+	                             propertyCreator,
+	                             propertyTag);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
+static PyObject *CtlObj_GetControlRegion(_self, _args)
+	ControlObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSStatus _err;
+	ControlPartCode inPart;
+	RgnHandle outRegion;
+	if (!PyArg_ParseTuple(_args, "hO&",
+	                      &inPart,
+	                      ResObj_Convert, &outRegion))
+		return NULL;
+	_err = GetControlRegion(_self->ob_itself,
+	                        inPart,
+	                        outRegion);
+	if (_err != noErr) return PyMac_Error(_err);
 	Py_INCREF(Py_None);
 	_res = Py_None;
 	return _res;
@@ -1051,6 +1248,8 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> None"},
 	{"SetUpControlBackground", (PyCFunction)CtlObj_SetUpControlBackground, 1,
 	 "(SInt16 inDepth, Boolean inIsColorDevice) -> None"},
+	{"SetUpControlTextColor", (PyCFunction)CtlObj_SetUpControlTextColor, 1,
+	 "(SInt16 inDepth, Boolean inIsColorDevice) -> None"},
 	{"DragControl", (PyCFunction)CtlObj_DragControl, 1,
 	 "(Point startPoint, Rect limitRect, Rect slopRect, DragConstraint axis) -> None"},
 	{"TestControl", (PyCFunction)CtlObj_TestControl, 1,
@@ -1077,6 +1276,28 @@ static PyMethodDef CtlObj_methods[] = {
 	 "() -> (SInt16 _rv)"},
 	{"SetControlMaximum", (PyCFunction)CtlObj_SetControlMaximum, 1,
 	 "(SInt16 newMaximum) -> None"},
+	{"GetControlViewSize", (PyCFunction)CtlObj_GetControlViewSize, 1,
+	 "() -> (SInt32 _rv)"},
+	{"SetControlViewSize", (PyCFunction)CtlObj_SetControlViewSize, 1,
+	 "(SInt32 newViewSize) -> None"},
+	{"GetControl32BitValue", (PyCFunction)CtlObj_GetControl32BitValue, 1,
+	 "() -> (SInt32 _rv)"},
+	{"SetControl32BitValue", (PyCFunction)CtlObj_SetControl32BitValue, 1,
+	 "(SInt32 newValue) -> None"},
+	{"GetControl32BitMaximum", (PyCFunction)CtlObj_GetControl32BitMaximum, 1,
+	 "() -> (SInt32 _rv)"},
+	{"SetControl32BitMaximum", (PyCFunction)CtlObj_SetControl32BitMaximum, 1,
+	 "(SInt32 newMaximum) -> None"},
+	{"GetControl32BitMinimum", (PyCFunction)CtlObj_GetControl32BitMinimum, 1,
+	 "() -> (SInt32 _rv)"},
+	{"SetControl32BitMinimum", (PyCFunction)CtlObj_SetControl32BitMinimum, 1,
+	 "(SInt32 newMinimum) -> None"},
+	{"IsValidControlHandle", (PyCFunction)CtlObj_IsValidControlHandle, 1,
+	 "() -> (Boolean _rv)"},
+	{"RemoveControlProperty", (PyCFunction)CtlObj_RemoveControlProperty, 1,
+	 "(OSType propertyCreator, OSType propertyTag) -> None"},
+	{"GetControlRegion", (PyCFunction)CtlObj_GetControlRegion, 1,
+	 "(ControlPartCode inPart, RgnHandle outRegion) -> None"},
 	{"GetControlVariant", (PyCFunction)CtlObj_GetControlVariant, 1,
 	 "() -> (ControlVariant _rv)"},
 	{"SetControlReference", (PyCFunction)CtlObj_SetControlReference, 1,

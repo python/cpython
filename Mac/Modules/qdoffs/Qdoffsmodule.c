@@ -137,6 +137,12 @@ static PyObject *GWorldObj_getattr(self, name)
 
 #define GWorldObj_setattr NULL
 
+#define GWorldObj_compare NULL
+
+#define GWorldObj_repr NULL
+
+#define GWorldObj_hash NULL
+
 PyTypeObject GWorld_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -148,6 +154,12 @@ PyTypeObject GWorld_Type = {
 	0, /*tp_print*/
 	(getattrfunc) GWorldObj_getattr, /*tp_getattr*/
 	(setattrfunc) GWorldObj_setattr, /*tp_setattr*/
+	(cmpfunc) GWorldObj_compare, /*tp_compare*/
+	(reprfunc) GWorldObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) GWorldObj_hash, /*tp_hash*/
 };
 
 /* --------------------- End object type GWorld --------------------- */
@@ -405,6 +417,22 @@ static PyObject *Qdoffs_SetPixelsState(_self, _args)
 	return _res;
 }
 
+static PyObject *Qdoffs_GetPixRowBytes(_self, _args)
+	PyObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	long _rv;
+	PixMapHandle pm;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &pm))
+		return NULL;
+	_rv = GetPixRowBytes(pm);
+	_res = Py_BuildValue("l",
+	                     _rv);
+	return _res;
+}
+
 static PyObject *Qdoffs_NewScreenBuffer(_self, _args)
 	PyObject *_self;
 	PyObject *_args;
@@ -545,6 +573,8 @@ static PyMethodDef Qdoffs_methods[] = {
 	 "(PixMapHandle pm) -> (GWorldFlags _rv)"},
 	{"SetPixelsState", (PyCFunction)Qdoffs_SetPixelsState, 1,
 	 "(PixMapHandle pm, GWorldFlags state) -> None"},
+	{"GetPixRowBytes", (PyCFunction)Qdoffs_GetPixRowBytes, 1,
+	 "(PixMapHandle pm) -> (long _rv)"},
 	{"NewScreenBuffer", (PyCFunction)Qdoffs_NewScreenBuffer, 1,
 	 "(Rect globalRect, Boolean purgeable) -> (GDHandle gdh, PixMapHandle offscreenPixMap)"},
 	{"DisposeScreenBuffer", (PyCFunction)Qdoffs_DisposeScreenBuffer, 1,

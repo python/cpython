@@ -722,6 +722,24 @@ static PyObject *TEObj_TEFeatureFlag(_self, _args)
 	return _res;
 }
 
+static PyObject *TEObj_TEGetHiliteRgn(_self, _args)
+	TEObject *_self;
+	PyObject *_args;
+{
+	PyObject *_res = NULL;
+	OSErr _err;
+	RgnHandle region;
+	if (!PyArg_ParseTuple(_args, "O&",
+	                      ResObj_Convert, &region))
+		return NULL;
+	_err = TEGetHiliteRgn(region,
+	                      _self->ob_itself);
+	if (_err != noErr) return PyMac_Error(_err);
+	Py_INCREF(Py_None);
+	_res = Py_None;
+	return _res;
+}
+
 static PyMethodDef TEObj_methods[] = {
 	{"TESetText", (PyCFunction)TEObj_TESetText, 1,
 	 "(Buffer text) -> None"},
@@ -793,6 +811,8 @@ static PyMethodDef TEObj_methods[] = {
 	 "(long rangeStart, long rangeEnd) -> (long _rv)"},
 	{"TEFeatureFlag", (PyCFunction)TEObj_TEFeatureFlag, 1,
 	 "(short feature, short action) -> (short _rv)"},
+	{"TEGetHiliteRgn", (PyCFunction)TEObj_TEGetHiliteRgn, 1,
+	 "(RgnHandle region) -> None"},
 	{NULL, NULL, 0}
 };
 
@@ -845,6 +865,12 @@ static PyObject *TEObj_getattr(self, name)
 
 #define TEObj_setattr NULL
 
+#define TEObj_compare NULL
+
+#define TEObj_repr NULL
+
+#define TEObj_hash NULL
+
 PyTypeObject TE_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0, /*ob_size*/
@@ -856,6 +882,12 @@ PyTypeObject TE_Type = {
 	0, /*tp_print*/
 	(getattrfunc) TEObj_getattr, /*tp_getattr*/
 	(setattrfunc) TEObj_setattr, /*tp_setattr*/
+	(cmpfunc) TEObj_compare, /*tp_compare*/
+	(reprfunc) TEObj_repr, /*tp_repr*/
+	(PyNumberMethods *)0, /* tp_as_number */
+	(PySequenceMethods *)0, /* tp_as_sequence */
+	(PyMappingMethods *)0, /* tp_as_mapping */
+	(hashfunc) TEObj_hash, /*tp_hash*/
 };
 
 /* ----------------------- End object type TE ----------------------- */

@@ -37,7 +37,7 @@ class MyScanner(Scanner):
 		return [
 			'DisposeGWorld', # Implied when the object is deleted
 			'NewGWorldFromHBITMAP', # Don't know what the args do
-			'GetGDeviceAttributes', # Doesn't seem to exist
+			'GetGDeviceAttributes', # Windows-only
 			]
 
 	def makeblacklisttypes(self):

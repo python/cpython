@@ -34,11 +34,25 @@ PicHandle = OpaqueByValueType("PicHandle", "ResObj")
 WCTabHandle = OpaqueByValueType("WCTabHandle", "ResObj")
 AuxWinHandle = OpaqueByValueType("AuxWinHandle", "ResObj")
 PixPatHandle = OpaqueByValueType("PixPatHandle", "ResObj")
+AliasHandle = OpaqueByValueType("AliasHandle", "ResObj")
+IconRef = OpaqueByValueType("IconRef", "ResObj")
 
 WindowRegionCode = Type("WindowRegionCode", "h")
+WindowClass = Type("WindowClass", "l")
+WindowAttributes = Type("WindowAttributes", "l")
+WindowPositionMethod = Type("WindowPositionMethod", "l")
+WindowTransitionEffect = Type("WindowTransitionEffect", "l")
+WindowTransitionAction = Type("WindowTransitionAction", "l")
+WindowRegionCode = Type("WindowRegionCode", "h")
+RGBColor = OpaqueType("RGBColor", "QdRGB")
+PropertyCreator = OSTypeType("PropertyCreator")
+PropertyTag = OSTypeType("PropertyTag")
 
 includestuff = includestuff + """
 #include <%s>""" % MACHEADERFILE + """
+
+extern PyObject *QdRGB_New(RGBColor *);
+extern int QdRGB_Convert(PyObject *, RGBColor *);
 
 #define resNotFound -192 /* Can't include <Errors.h> because of Python's "errors.h" */
 
