@@ -113,7 +113,7 @@ class StripWidget(Pmw.MegaWidget):
 	canvasheight = chipheight + 43		  # TBD: Kludge
 
 	# create the canvas and pack it
-	self.__canvas = Canvas(
+	canvas = self.__canvas = Canvas(
 	    parent,
 	    width=canvaswidth,
 	    height=canvasheight,
@@ -121,41 +121,41 @@ class StripWidget(Pmw.MegaWidget):
 ## 	    relief=GROOVE
 	    )
 
-	self.__canvas.pack()
-	self.__canvas.bind('<ButtonRelease-1>',
-			   self.__select_chip)
-	self.__canvas.bind('<B1-Motion>',
-			   self.__select_chip)
+	canvas.pack()
+	canvas.bind('<ButtonRelease-1>', self.__select_chip)
+	canvas.bind('<B1-Motion>', self.__select_chip)
 
 	# Load a proc into the Tcl interpreter.  This is used in the
 	# set_color() method to speed up setting the chip colors.
-	self.__canvas.tk.eval(TCLPROC)
+	canvas.tk.eval(TCLPROC)
 
 	# create the color strip
 	chips = self.__chips = []
 	x = 1
 	y = 30
+	tags = ('chip',)
 	for c in range(self.__numchips):
 	    color = 'grey'
-	    rect = self.__canvas.create_rectangle(
+	    rect = canvas.create_rectangle(
 		x, y, x+chipwidth, y+chipheight,
-		fill=color, outline=color)
+		fill=color, outline=color,
+		tags=tags)
 
 	    x = x + chipwidth + 1		  # for outline
 	    chips.append(color)
 
 	# create the string tag
-	self.__label = self.__canvas.create_text(
+	self.__label = canvas.create_text(
 	    3, y + chipheight + 8,
 	    text=self['label'],
 	    anchor=W)
 
 	# create the arrow and text item
 	chipx = self.__arrow_x(0)
-	self.__leftarrow = LeftArrow(self.__canvas, chipx)
+	self.__leftarrow = LeftArrow(canvas, chipx)
 
 	chipx = self.__arrow_x(len(chips) - 1)
-	self.__rightarrow = RightArrow(self.__canvas, chipx)
+	self.__rightarrow = RightArrow(canvas, chipx)
 
 	self.__generator = self['generator']
 	self.__axis = self['axis']
@@ -174,21 +174,25 @@ class StripWidget(Pmw.MegaWidget):
 	return (x1 + x0) / 2.0
 
     def __select_chip(self, event=None):
-	chip = self.__canvas.find_closest(event.x, event.y)[0]
-	if chip and self.__delegate:
-	    color = self.__chips[chip-1]
-	    rgbtuple = ColorDB.rrggbb_to_triplet(color)
-	    self.__delegate.set_color(self, rgbtuple)
+	if self.__delegate:
+	    x = event.x
+	    y = event.y
+	    canvas = self.__canvas
+	    chip = canvas.find_overlapping(x, y, x, y)
+	    if chip and (1 <= chip[0] <= self.__numchips):
+		color = self.__chips[chip[0]-1]
+		rgbtuple = ColorDB.rrggbb_to_triplet(color)
 
-## 	    import profile
-## 	    import pstats
-## 	    import tempfile
-## 	    statfile = tempfile.mktemp()
-## 	    p = profile.Profile()
-## 	    p.runcall(self.__delegate.set_color, self, rgbtuple)
-## 	    p.dump_stats(statfile)
-## 	    s = pstats.Stats(statfile)
-## 	    s.strip_dirs().sort_stats('time').print_stats(10)
+		self.__delegate.set_color(self, rgbtuple)
+## 		import profile
+## 		import pstats
+## 		import tempfile
+## 		statfile = tempfile.mktemp()
+## 		p = profile.Profile()
+## 		p.runcall(self.__delegate.set_color, self, rgbtuple)
+## 		p.dump_stats(statfile)
+## 		s = pstats.Stats(statfile)
+## 		s.strip_dirs().sort_stats('time').print_stats(10)
 
     def __set_delegate(self):
 	self.__delegate = self['delegate']
