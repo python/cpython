@@ -2461,6 +2461,7 @@ Pickler_get_error(Picklerobject *p)
 static PyMemberDef Pickler_members[] = {
     {"binary", T_INT, offsetof(Picklerobject, bin)},
     {"fast", T_INT, offsetof(Picklerobject, fast)},
+    {NULL}
 };
 
 static PyGetSetDef Pickler_getsets[] = {
@@ -2468,7 +2469,8 @@ static PyGetSetDef Pickler_getsets[] = {
                      (setter)Pickler_set_pers_func},
     {"inst_persistent_id", NULL, (setter)Pickler_set_inst_pers_func},
     {"memo", (getter)Pickler_get_memo, (setter)Pickler_set_memo},
-    {"PicklingError", (getter)Pickler_get_error, NULL}
+    {"PicklingError", (getter)Pickler_get_error, NULL},
+    {NULL}
 };
 
 static char Picklertype__doc__[] =
