@@ -25,7 +25,7 @@ item: Global
   Version Copyright=©2001 Python Software Foundation
   Version Company=PythonLabs at Zope Corporation
   Crystal Format=10111100101100000010001001001001
-  Step View=&All
+  Step View=&Properties
   Variable Name1=_WISE_
   Variable Description1=WISE root directory
   Variable Default1=C:\PROGRAM FILES\WISE INSTALLMASTER 8.1
@@ -263,7 +263,38 @@ end
 item: Remark
 end
 item: Remark
-  Text=March thru the user GUI.
+  Text=Set vrbls for the "Advanced Options" subdialog of Components.
+end
+item: Set Variable
+  Variable=SELECT_ADMIN
+  Value=A
+end
+item: If/While Statement
+  Variable=DOADMIN
+  Value=0
+end
+item: Set Variable
+  Variable=SELECT_ADMIN
+  Value=B
+end
+item: End Block
+end
+item: Remark
+end
+item: Remark
+  Text=TASKS values:
+end
+item: Remark
+  Text=A: Register file extensions
+end
+item: Remark
+  Text=B: Create Start Menu shortcuts
+end
+item: Set Variable
+  Variable=TASKS
+  Value=AB
+end
+item: Remark
 end
 item: Remark
   Text=COMPONENTS values:
@@ -284,6 +315,11 @@ item: Set Variable
   Variable=COMPONENTS
   Value=ABCD
 end
+item: Remark
+end
+item: Remark
+  Text=March thru the user GUI.
+end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
@@ -291,6 +327,22 @@ item: Wizard Block
   X Position=9
   Y Position=10
   Filler Color=8421440
+  Dialog=Select Destination Directory
+  Dialog=Backup Replaced Files
+  Dialog=Select Components
+  Dialog=Select Program Manager Group
+  Variable=
+  Variable=
+  Variable=
+  Variable=TASKS
+  Value=
+  Value=
+  Value=
+  Value=B
+  Compare=0
+  Compare=0
+  Compare=0
+  Compare=3
   Flags=00000011
 end
 item: If/While Statement
@@ -304,8 +356,8 @@ end
 item: Remark
 end
 item: If/While Statement
-  Variable=DOADMIN
-  Value=1
+  Variable=SELECT_ADMIN
+  Value=A
 end
 item: Set Variable
   Variable=SUMMARY
@@ -398,10 +450,45 @@ item: End Block
 end
 item: Remark
 end
+item: If/While Statement
+  Variable=TASKS
+  Value=A
+  Flags=00000010
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Register file extensions.%CRLF%
+  Flags=00000001
+end
+item: Else Statement
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%Don't register file extensions.%CRLF%
+  Flags=00000001
+end
+item: End Block
+end
+item: Remark
+end
+item: If/While Statement
+  Variable=TASKS
+  Value=B
+  Flags=00000010
+end
 item: Set Variable
   Variable=SUMMARY
   Value=%CRLF%Start Menu group:  %GROUP%%CRLF%
   Flags=00000001
+end
+item: Else Statement
+end
+item: Set Variable
+  Variable=SUMMARY
+  Value=%CRLF%No Start Menu shortcuts.%CRLF%
+  Flags=00000001
+end
+item: End Block
 end
 item: End Block
 end
@@ -844,25 +931,8 @@ item: Custom Dialog Set
       Text Spanish=&Cancelar
       Text Italian=&Annulla
     end
-    item: Static
-      Rectangle=8 180 256 181
-      Action=3
-      Create Flags=01010000000000000000000000000111
-    end
-    item: Static
-      Rectangle=86 8 258 42
-      Create Flags=01010000000000000000000000000000
-      Flags=0000000000000001
-      Name=Times New Roman
-      Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
-      Text=Select Components
-      Text French=Sélectionner les composants
-      Text German=Komponenten auswählen
-      Text Spanish=Seleccione componentes
-      Text Italian=Selezionare i componenti
-    end
     item: Checkbox
-      Rectangle=86 62 256 134
+      Rectangle=86 55 250 127
       Variable=COMPONENTS
       Create Flags=01010000000000010000000000000011
       Flags=0000000000000110
@@ -897,18 +967,52 @@ item: Custom Dialog Set
       Text Italian=
     end
     item: Static
-      Rectangle=194 162 242 172
+      Rectangle=86 36 256 53
+      Create Flags=01010000000000000000000000000000
+      Text=Choose which components to install by checking the boxes below.
+      Text French=Choisissez les composants que vous voulez installer en cochant les cases ci-dessous.
+      Text German=Wählen Sie die zu installierenden Komponenten, indem Sie in die entsprechenden Kästchen klicken.
+      Text Spanish=Elija los componentes que desee instalar marcando los cuadros de abajo.
+      Text Italian=Scegliere quali componenti installare selezionando le caselle sottostanti.
+    end
+    item: Push Button
+      Rectangle=150 162 215 176
+      Destination Dialog=1
+      Action=2
+      Enabled Color=00000000000000000000000011111111
+      Create Flags=01010000000000010000000000000000
+      Text=Advanced Options ...
+    end
+    item: Static
+      Rectangle=8 180 256 181
+      Action=3
+      Create Flags=01010000000000000000000000000111
+    end
+    item: Static
+      Rectangle=86 8 258 34
+      Create Flags=01010000000000000000000000000000
+      Flags=0000000000000001
+      Name=Times New Roman
+      Font Style=-24 0 0 0 700 255 0 0 0 3 2 1 18
+      Text=Select Components
+      Text French=Sélectionner les composants
+      Text German=Komponenten auswählen
+      Text Spanish=Seleccione componentes
+      Text Italian=Selezionare i componenti
+    end
+    item: Static
+      Rectangle=201 144 249 154
       Variable=COMPONENTS
       Value=MAINDIR
       Create Flags=01010000000000000000000000000010
     end
     item: Static
-      Rectangle=194 153 242 162
+      Rectangle=201 134 249 143
       Variable=COMPONENTS
       Create Flags=01010000000000000000000000000010
     end
     item: Static
-      Rectangle=107 153 196 164
+      Rectangle=98 134 187 145
       Create Flags=01010000000000000000000000000000
       Text=Disk Space Required:
       Text French=Espace disque requis :
@@ -917,7 +1021,7 @@ item: Custom Dialog Set
       Text Italian=Spazio su disco necessario:
     end
     item: Static
-      Rectangle=107 162 196 172
+      Rectangle=98 144 187 154
       Create Flags=01010000000000000000000000000000
       Text=Disk Space Remaining:
       Text French=Espace disque disponible :
@@ -926,18 +1030,96 @@ item: Custom Dialog Set
       Text Italian=Spazio su disco disponibile:
     end
     item: Static
-      Rectangle=86 145 256 175
+      Rectangle=86 126 256 157
       Action=1
       Create Flags=01010000000000000000000000000111
     end
+  end
+  item: Dialog
+    Title=Advanced Options
+    Width=271
+    Height=186
+    Font Name=Helv
+    Font Size=8
+    item: Radio Button
+      Control Name=ADMIN2
+      Rectangle=9 47 72 73
+      Variable=SELECT_ADMIN
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000010000000000001001
+      Text=Admin install
+      Text=Non-Admin installl
+      Text=
+    end
+    item: Push Button
+      Rectangle=150 152 195 167
+      Variable=DIRECTION
+      Value=N
+      Create Flags=01010000000000010000000000000001
+      Text=OK
+      Text French=&Suite >
+      Text German=&Weiter >
+      Text Spanish=&Siguiente >
+      Text Italian=&Avanti >
+    end
     item: Static
-      Rectangle=86 38 256 57
+      Rectangle=4 2 261 76
+      Action=1
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000000111
+    end
+    item: Static
+      Control Name=ADMIN1
+      Rectangle=9 9 257 42
+      Enabled Color=00000000000000001111111111111111
       Create Flags=01010000000000000000000000000000
-      Text=Choose which components to install by checking the boxes below.
-      Text French=Choisissez les composants que vous voulez installer en cochant les cases ci-dessous.
-      Text German=Wählen Sie die zu installierenden Komponenten, indem Sie in die entsprechenden Kästchen klicken.
-      Text Spanish=Elija los componentes que desee instalar marcando los cuadros de abajo.
-      Text Italian=Scegliere quali componenti installare selezionando le caselle sottostanti.
+      Text=By default, the install records settings in the per-machine area of the registry (HKLM), and installs the Python and C runtime DLLs to the system directory.  Choose "Non-Admin install" if you would prefer settings made in the per-user registry (HKCU), and DLLs installed in %MAINDIR%.
+    end
+    item: Static
+      Rectangle=4 82 261 144
+      Action=1
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000000111
+    end
+    item: Checkbox
+      Rectangle=9 105 194 134
+      Variable=TASKS
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000010000000000000011
+      Text=Register file extensions (.py, .pyw, .pyo, .pyc)
+      Text=Create Start Menu shortcuts
+      Text=
+    end
+    item: Static
+      Rectangle=9 90 256 105
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000000000000000000000000000
+      Text=Choose tasks to perform by checking the boxes below.
+    end
+    item: If/While Statement
+      Variable=DLG_EVENT_TYPE
+      Value=INIT
+    end
+    item: If/While Statement
+      Variable=DOADMIN
+      Value=1
+    end
+    item: Set Control Attribute
+      Control Name=ADMIN2
+    end
+    item: Else Statement
+    end
+    item: Set Control Text
+      Control Name=ADMIN1
+      Control Text=This section is available only if logged in to an account with Administrator privileges.
+    end
+    item: Set Control Attribute
+      Control Name=ADMIN2
+      Operation=1
+    end
+    item: End Block
+    end
+    item: End Block
     end
   end
 end
@@ -1297,6 +1479,39 @@ item: Remark
 end
 item: Remark
 end
+item: If/While Statement
+  Variable=SELECT_ADMIN
+  Value=B
+end
+item: Remark
+  Text=The user chose a non-admin install in "Advanced Options".
+end
+item: Remark
+  Text=This should come after the include of Uninstal.wse above, because
+end
+item: Remark
+  Text=writing uninstall info to HKCU is ineffective except under Win2K.
+end
+item: Set Variable
+  Variable=DOADMIN
+  Value=0
+end
+item: End Block
+end
+item: Remark
+end
+item: If/While Statement
+  Variable=TASKS
+  Value=B
+  Flags=00000011
+end
+item: Set Variable
+  Variable=GROUP
+end
+item: End Block
+end
+item: Remark
+end
 item: Remark
   Text=Long section to install files.
 end
@@ -1360,7 +1575,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=A
-  Flags=00001010
+  Flags=00000010
 end
 item: Remark
   Text=Executables
@@ -1739,13 +1954,13 @@ item: Install File
   Source=%_SYS_%\MSVCIRT.DLL
   Destination=%DLLDEST%\MSVCIRT.DLL
   Description=Visual C++ Runtime DLLs
-  Flags=0000001000000011
+  Flags=0000011000010011
 end
 item: Install File
   Source=%_SYS_%\MSVCRT.DLL
   Destination=%DLLDEST%\MSVCRT.DLL
   Description=Visual C++ Runtime DLLs
-  Flags=0000001000000011
+  Flags=0000011000010011
 end
 item: End Block
 end
@@ -1757,7 +1972,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=B
-  Flags=00001010
+  Flags=00000010
 end
 item: Install File
   Source=%_DOC_%\*.*
@@ -1775,7 +1990,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=C
-  Flags=00001010
+  Flags=00000010
 end
 item: Install File
   Source=..\tools\scripts\*.py
@@ -1885,7 +2100,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=D
-  Flags=00001010
+  Flags=00000010
 end
 item: Install File
   Source=..\lib\test\audiotest.au
@@ -1958,7 +2173,12 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=A
-  Flags=00001010
+  Flags=00000010
+end
+item: If/While Statement
+  Variable=TASKS
+  Value=A
+  Flags=00000010
 end
 item: Remark
   Text=Register file extensions.  As usual, Admin privs get in the way, but with a twist:
@@ -2200,6 +2420,8 @@ item: Edit Registry
 end
 item: End Block
 end
+item: End Block
+end
 item: Remark
 end
 item: Remark
@@ -2299,7 +2521,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=B
-  Flags=00001010
+  Flags=00000010
 end
 item: If/While Statement
   Variable=DOADMIN
@@ -2409,12 +2631,15 @@ end
 item: Remark
   Text=Populate Start Menu group
 end
-item: Remark
+item: If/While Statement
+  Variable=TASKS
+  Value=B
+  Flags=00000010
 end
 item: If/While Statement
   Variable=COMPONENTS
   Value=B
-  Flags=00001010
+  Flags=00000010
 end
 item: Create Shortcut
   Source=%MAINDIR%\Doc\index.html
@@ -2430,7 +2655,7 @@ end
 item: If/While Statement
   Variable=COMPONENTS
   Value=A
-  Flags=00001010
+  Flags=00000010
 end
 item: Create Shortcut
   Source=%MAINDIR%\python.exe
@@ -2466,6 +2691,8 @@ item: Create Shortcut
   Working Directory=%MAINDIR%
   Key Type=1536
   Flags=00000001
+end
+item: End Block
 end
 item: Remark
 end
