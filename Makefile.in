@@ -251,9 +251,10 @@ maninstall:
 			$(MANDIR)/man1/python.1
 
 # Install the library
-MACHDEPS=	$(MACHDEP)
+PLATDIR=	plat-$(MACHDEP)
+MACHDEPS=	$(PLATDIR)
 LIBSUBDIRS=	lib-stdwin lib-tk test test/output $(MACHDEPS)
-libinstall:	python $(srcdir)/Lib/$(MACHDEP)
+libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 		@for i in $(SCRIPTDIR) $(LIBDEST); \
 		do \
 			if test ! -d $$i; then \
@@ -312,13 +313,13 @@ libinstall:	python $(srcdir)/Lib/$(MACHDEP)
 		PYTHONPATH=$(LIBDEST) \
 			./python -O $(LIBDEST)/compileall.py $(LIBDEST)
 
-# Create the MACHDEP source directory, if one wasn't distributed..
-$(srcdir)/Lib/$(MACHDEP):
-		mkdir $(srcdir)/Lib/$(MACHDEP)
-		cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(MACHDEP)/regen
+# Create the PLATDIR source directory, if one wasn't distributed..
+$(srcdir)/Lib/$(PLATDIR):
+		mkdir $(srcdir)/Lib/$(PLATDIR)
+		cp $(srcdir)/Lib/plat-generic/regen $(srcdir)/Lib/$(PLATDIR)/regen
 		export PATH; PATH="`pwd`:$$PATH"; \
 		export PYTHONPATH; PYTHONPATH="`pwd`/Lib"; \
-		cd $(srcdir)/Lib/$(MACHDEP); ./regen
+		cd $(srcdir)/Lib/$(PLATDIR); ./regen
 
 # Install the include files
 INCLDIRSTOMAKE=$(INCLUDEDIR) $(CONFINCLUDEDIR) $(INCLUDEPY) $(CONFINCLUDEPY)
