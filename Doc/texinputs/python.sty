@@ -1103,6 +1103,27 @@
   \end{center}%
 }
 
+% XXX Don't think we can use this yet, though it cleans up some
+% tedious markup.  There's no equivalent for the HTML transform yet,
+% and that needs to exist.  I don't know how to write it.
+%
+% This should really have something that makes it easier to bind a
+% table's ``Notes'' column and an associated tablenotes environment,
+% and generates the right magic for getting the numbers right in the
+% table.
+%
+% So this is quite incomplete.
+%
+\newcounter{py@tablenotescounter}
+\newenvironment{tablenotes}{%
+  \noindent Notes:
+  \par
+  \setcounter{py@tablenotescounter}{0}
+  \begin{list}{(\arabic{py@tablenotescounter})}%
+              {\usecounter{py@tablenotescounter}}
+}{\end{list}}
+
+
 % Cross-referencing (AMK, new impl. FLD)
 % Sample usage:
 %  \begin{seealso}
