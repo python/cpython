@@ -1329,9 +1329,13 @@ is inserted at the end.  See also the command `py-clear-queue'."
       (error "Region is empty"))
   (let* ((proc (get-process "Python"))
 	 (temp (if (memq 'broken-temp-names py-emacs-features)
-		   (prog1
-		       (format "python-%d" py-serial-number)
-		     (setq py-serial-number (1+ py-serial-number)))
+		   (let
+		       ((sn py-serial-number)
+			(pid (and (fboundp 'emacs-pid) (emacs-pid))))
+		     (setq py-serial-number (1+ py-serial-number))
+		     (if pid
+			 (format "python-%d-%d" sn pid)
+		       (format "python-%d" sn)))
 		 (make-temp-name "python-")))
 	 (file (expand-file-name temp py-temp-directory)))
     (write-region start end file nil 'nomsg)
