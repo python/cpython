@@ -1,5 +1,5 @@
 # -*- Mode: Python; tab-width: 4 -*-
-#       Id: asynchat.py,v 2.25 1999/11/18 11:01:08 rushing Exp
+#       Id: asynchat.py,v 2.26 2000/09/07 22:29:26 rushing Exp 
 #       Author: Sam Rushing <rushing@nightmare.com>
 
 # ======================================================================
@@ -279,40 +279,16 @@ class fifo:
 # f_p_a_e ("qwertydkjf", "\r\n") => 0
 
 # this could maybe be made faster with a computed regex?
-
-##def find_prefix_at_end (haystack, needle):
-##      nl = len(needle)
-##      result = 0
-##      for i in range (1,nl):
-##              if haystack[-(nl-i):] == needle[:(nl-i)]:
-##                      result = nl-i
-##                      break
-##      return result
-
-# yes, this is about twice as fast, but still seems
-# to be negligible CPU.  The previous version could do about 290
-# searches/sec. the new one about 555/sec.
-
-import regex
-
-prefix_cache = {}
-
-def prefix_regex (needle):
-    if prefix_cache.has_key (needle):
-        return prefix_cache[needle]
-    else:
-        reg = needle[-1]
-        for i in range(1,len(needle)):
-            reg = '%c\(%s\)?' % (needle[-(i+1)], reg)
-        reg = regex.compile (reg+'$')
-        prefix_cache[needle] = reg, len(needle)
-        return reg, len(needle)
+# [answer: no; circa Python-2.0, Jan 2001]
+# python:    18307/s
+# re:        12820/s
+# regex:     14035/s
 
 def find_prefix_at_end (haystack, needle):
-    reg, length = prefix_regex (needle)
-    lh = len(haystack)
-    result = reg.search (haystack, max(0,lh-length))
-    if result >= 0:
-        return (lh - result)
-    else:
-        return 0
+    nl = len(needle)
+    result = 0
+    for i in range (1,nl):
+        if haystack[-(nl-i):] == needle[:(nl-i)]:
+            result = nl-i
+            break
+    return result
