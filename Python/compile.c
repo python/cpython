@@ -659,18 +659,6 @@ com_atom(c, n)
 		}
 		com_addoparg(c, LOAD_CONST, i);
 		break;
-	case lambdef:
-		if ((v = (object *) compile(ch, c->c_filename)) == NULL) {
-			c->c_errors++;
-			i = 255;
-		}
-		else {
-			i = com_addconst(c, v);
-			DECREF(v);
-		}
-		com_addoparg(c, LOAD_CONST, i);
-		com_addbyte(c, BUILD_FUNCTION);
-		break;
 	case NAME:
 		com_addopname(c, LOAD_NAME, ch);
 		break;
@@ -1106,20 +1094,35 @@ com_test(c, n)
 	struct compiling *c;
 	node *n;
 {
-	int i;
-	int anchor;
-	REQ(n, test); /* and_test ('and' and_test)* */
-	anchor = 0;
-	i = 0;
-	for (;;) {
-		com_and_test(c, CHILD(n, i));
-		if ((i += 2) >= NCH(n))
-			break;
-		com_addfwref(c, JUMP_IF_TRUE, &anchor);
-		com_addbyte(c, POP_TOP);
+	REQ(n, test); /* and_test ('and' and_test)* | lambdef */
+	if (NCH(n) == 1 && TYPE(CHILD(n, 0)) == lambdef) {
+		object *v;
+		int i;
+		v = (object *) compile(CHILD(n, 0), c->c_filename);
+		if (v == NULL) {
+			c->c_errors++;
+			i = 255;
+		}
+		else {
+			i = com_addconst(c, v);
+			DECREF(v);
+		}
+		com_addoparg(c, LOAD_CONST, i);
+		com_addbyte(c, BUILD_FUNCTION);
 	}
-	if (anchor)
-		com_backpatch(c, anchor);
+	else {
+		int anchor = 0;
+		int i = 0;
+		for (;;) {
+			com_and_test(c, CHILD(n, i));
+			if ((i += 2) >= NCH(n))
+				break;
+			com_addfwref(c, JUMP_IF_TRUE, &anchor);
+			com_addbyte(c, POP_TOP);
+		}
+		if (anchor)
+			com_backpatch(c, anchor);
+	}
 }
 
 static void
