@@ -78,7 +78,12 @@ class PathBrowser(MultiScrolledLists):
             self.top.bell()
             return []
         try:
-            dict = pyclbr.readmodule(name, [dir] + sys.path)
+            self.top.configure(cursor="watch")
+            self.top.update_idletasks()
+            try:
+                dict = pyclbr.readmodule(name, [dir] + sys.path)
+            finally:
+                self.top.configure(cursor="")
         except ImportError, msg:
             tkMessageBox.showerror("Import error", str(msg), parent=root)
             return []
@@ -90,9 +95,12 @@ class PathBrowser(MultiScrolledLists):
                 if cl.super:
                     supers = []
                     for sup in cl.super:
-                        sname = sup.name
-                        if sup.module != cl.module:
-                            sname = "%s.%s" % (sup.module, sname)
+                        if type(sup) is type(''):
+                            sname = sup
+                        else:
+                            sname = sup.name
+                            if sup.module != cl.module:
+                                sname = "%s.%s" % (sup.module, sname)
                         supers.append(sname)
                     s = s + "(%s)" % string.join(supers, ", ")
                 items.append((cl.lineno, s))
