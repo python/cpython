@@ -198,6 +198,9 @@ def rfind(s, sub, i = 0, last=None):
 		i = i+1
 	return r
 
+# "Safe" environment for eval()
+safe_env = {"__builtins__": {}}
+
 # Convert string to float
 re = None
 def atof(str):
@@ -219,7 +222,7 @@ def atof(str):
 	if re and not re.match('[0-9]*(\.[0-9]*)?([eE][-+]?[0-9]+)?$', s):
 		raise ValueError, 'non-float argument to string.atof'
 	try:
-		return float(eval(sign + s, {}))
+		return float(eval(sign + s, safe_env))
 	except SyntaxError:
 		raise ValueError, 'non-float argument to string.atof'
 
@@ -239,7 +242,7 @@ def atoi(str, base=10):
 	for c in s:
 		if c not in digits:
 			raise ValueError, 'non-integer argument to string.atoi'
-	return eval(sign + s)
+	return eval(sign + s, safe_env)
 
 # Convert string to long integer
 def atol(str, base=10):
@@ -257,7 +260,7 @@ def atol(str, base=10):
 	for c in s:
 		if c not in digits:
 			raise ValueError, 'non-integer argument to string.atol'
-	return eval(sign + s + 'L')
+	return eval(sign + s + 'L', safe_env)
 
 # Left-justify a string
 def ljust(s, width):
