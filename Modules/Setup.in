@@ -51,7 +51,8 @@
 # Don't add any whitespace or comments!
 
 # Don't edit this (usually)
-DESTLIB=$(prefix)/lib/python
+DESTLIB=$(prefix)/lib/python$(VERSION)
+MACHDESTLIB=$(exec_prefix)/lib/python$(VERSION)
 
 # Site specific path insertions -- should begin with : if non-empty
 SITEPATH=
@@ -62,8 +63,8 @@ DESTPATH=:$(DESTLIB)
 # Standard enabled (tests are always available)
 TESTPATH=:$(DESTLIB)/test
 
-# Path for machine- or system-dependent modules (and shared libraries)
-MACHDEPPATH=:$(DESTLIB)/$(MACHDEP)
+# Path components for machine- or system-dependent modules and shared libraries
+MACHDEPPATH=:$(DESTLIB)/$(MACHDEP):$(MACHDESTLIB)/sharedmodules
 
 COREPYTHONPATH=.$(SITEPATH)$(DESTPATH)$(TESTPATH)$(MACHDEPPATH)$(STDWINPATH)$(TKPATH)
 PYTHONPATH=$(COREPYTHONPATH)
@@ -76,15 +77,13 @@ PYTHONPATH=$(COREPYTHONPATH)
 # Some modules that are normally always on:
 
 posix posixmodule.c		# posix (UNIX) system calls
-errno errnomodule.c		# posix (UNIX) errno values
 signal signalmodule.c		# signal(2)
 
 # The SGI specific GL module:
 
 #gl glmodule.c -lgl -lX11	# Graphics Library -- SGI only
 
-# Thread module -- works on selected systems only, e.g. SGI IRIX and
-# on SunOS 5.x (SOLARIS) only.
+# Thread module -- use only if Python has thread support for your OS.
 # Note that you must have configured (and built!) Python with the
 # --with-thread option passed to the configure script for this to work:
 
@@ -106,6 +105,7 @@ regex regexmodule.c regexpr.c	# Regular expressions, GNU Emacs style
 strop stropmodule.c	# fast string operations implemented in C
 struct structmodule.c	# binary structure packing/unpacking
 time timemodule.c	# time operations and variables
+operator operator.c	# operator.add() and similar goodies
 
 
 # Modules with some UNIX dependencies -- on by default:
@@ -118,6 +118,7 @@ grp grpmodule.c		# grp(3)
 crypt cryptmodule.c # -lcrypt	# crypt(3); needs -lcrypt on some systems
 select selectmodule.c	# select(2); not on ancient System V
 socket socketmodule.c	# socket(2); not on ancient System V
+errno errnomodule.c	# posix (UNIX) errno values
 
 
 # Some more UNIX dependent modules -- off by default, since these
