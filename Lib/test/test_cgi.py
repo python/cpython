@@ -31,7 +31,7 @@ class ComparableException:
         return cmp(self.err.args, anExc.args)
 
     def __getattr__(self, attr):
-        return getattr(self, self.err)
+        return getattr(self.err, attr)
 
 def do_test(buf, method):
     env = {}
