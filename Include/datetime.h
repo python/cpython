@@ -27,10 +27,20 @@
 /* # of bytes for year, month, day, hour, minute, second, and usecond. */
 #define _PyDateTime_DATETIME_DATASIZE 10
 
-#define _PyTZINFO_HEAD		\
-	PyObject_HEAD		\
-	long hashcode;		\
-	char hastzinfo;		/* boolean flag */
+
+typedef struct
+{
+	PyObject_HEAD
+	long hashcode;		/* -1 when unknown */
+	int days;		/* -MAX_DELTA_DAYS <= days <= MAX_DELTA_DAYS */
+	int seconds;		/* 0 <= seconds < 24*3600 is invariant */
+	int microseconds;	/* 0 <= microseconds < 1000000 is invariant */
+} PyDateTime_Delta;
+
+typedef struct
+{
+	PyObject_HEAD		/* a pure abstract base clase */
+} PyDateTime_TZInfo;
 
 typedef struct
 {
@@ -38,6 +48,47 @@ typedef struct
 	long hashcode;
 	unsigned char data[_PyDateTime_DATE_DATASIZE];
 } PyDateTime_Date;
+
+
+/* The datetime and time types have hashcodes, and an optional tzinfo member,
+ * present if and only if hastzinfo is true.
+ */
+#define _PyTZINFO_HEAD		\
+	PyObject_HEAD		\
+	long hashcode;		\
+	char hastzinfo;		/* boolean flag */
+
+/* No _PyDateTime_BaseTZInfo is allocated; it's just to have something
+ * convenient to cast to, when getting at the hastzinfo member of objects
+ * starting with _PyTZINFO_HEAD.
+ */
+typedef struct
+{
+	_PyTZINFO_HEAD
+} _PyDateTime_BaseTZInfo;
+
+/* All time objects are of PyDateTime_TimeType, but that can be allocated
+ * in two ways, with or without a tzinfo member.  Without is the same as
+ * tzinfo == None, but consumes less memory.  _PyDateTime_BaseTime is an
+ * internal struct used to allocate the right amount of space for the
+ * "without" case.
+ */
+#define _PyDateTime_TIMEHEAD	\
+	_PyTZINFO_HEAD		\
+	unsigned char data[_PyDateTime_TIME_DATASIZE];
+
+typedef struct
+{
+	_PyDateTime_TIMEHEAD
+} _PyDateTime_BaseTime;		/* hastzinfo false */
+
+typedef struct
+{
+	_PyDateTime_TIMEHEAD
+	PyObject *tzinfo;
+} PyDateTime_Time;		/* hastzinfo true */
+
+/* XXX The date type will be reworked similarly. */
 
 typedef struct
 {
@@ -54,37 +105,6 @@ typedef struct
 	PyObject *tzinfo;
 } PyDateTime_DateTimeTZ;
 
-
-
-#define _PyDateTime_TIMEHEAD	\
-	_PyTZINFO_HEAD		\
-	unsigned char data[_PyDateTime_TIME_DATASIZE];
-
-typedef struct
-{
-	_PyDateTime_TIMEHEAD
-} _PyDateTime_BaseTime;		/* hastzinfo false */
-
-typedef struct
-{
-	_PyDateTime_TIMEHEAD
-	PyObject *tzinfo;
-} PyDateTime_Time;		/* hastzinfo true */
-
-
-typedef struct
-{
-	PyObject_HEAD
-	long hashcode;		/* -1 when unknown */
-	int days;		/* -MAX_DELTA_DAYS <= days <= MAX_DELTA_DAYS */
-	int seconds;		/* 0 <= seconds < 24*3600 is invariant */
-	int microseconds;	/* 0 <= microseconds < 1000000 is invariant */
-} PyDateTime_Delta;
-
-typedef struct
-{
-	PyObject_HEAD		/* a pure abstract base clase */
-} PyDateTime_TZInfo;
 
 /* Apply for date, datetime, and datetimetz instances. */
 #define PyDateTime_GET_YEAR(o)     ((((PyDateTime_Date*)o)->data[0] << 8) | \
