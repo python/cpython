@@ -480,6 +480,8 @@ mfs_StandardGetFile(self, args)
 	while ( numtypes < 4 && list[numtypes] ) {
 		numtypes++;
 	}
+	if ( numtypes == 0 )
+		numtypes = -1;
 	StandardGetFile((FileFilterUPP)0, numtypes, list, &reply);
 	return mkvalue("(Oi)", newmfssobject(&reply.sfFile), reply.sfGood);
 }
