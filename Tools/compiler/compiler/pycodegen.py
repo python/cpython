@@ -9,7 +9,7 @@ import types
 from cStringIO import StringIO
 
 from compiler import ast, parse, walk
-from compiler import pyassem, misc
+from compiler import pyassem, misc, future
 from compiler.pyassem import CO_VARARGS, CO_VARKEYWORDS, CO_NEWLOCALS, TupleArg
 
 # Do we have Python 1.x or Python 2.x?
@@ -43,13 +43,13 @@ class Module:
         self.code = None
 
     def compile(self, display=0):
-        ast = parse(self.source)
+        tree = parse(self.source)
         root, filename = os.path.split(self.filename)
         gen = ModuleCodeGenerator(filename)
-        walk(ast, gen, 1)
+        walk(tree, gen, 1)
         if display:
             import pprint
-            print pprint.pprint(ast)
+            print pprint.pprint(tree)
         self.code = gen.getCode()
 
     def dump(self, f):
@@ -862,12 +862,24 @@ class CodeGenerator:
             self.emit('STORE_SUBSCR')
 
 class ModuleCodeGenerator(CodeGenerator):
-    super_init = CodeGenerator.__init__
+    __super_init = CodeGenerator.__init__
+    __super_visitModule = CodeGenerator.visitModule
     
     def __init__(self, filename):
         # XXX <module> is ? in compile.c
         self.graph = pyassem.PyFlowGraph("<module>", filename)
-        self.super_init(filename)
+        self.__super_init(filename)
+        self.symbols = None
+        self.future = None
+
+    def visitModule(self, node):
+        self.future = future.find_futures(node)
+        self.symbols = self.parseSymbols(node)
+        self.__super_visitModule(node)
+
+    def parseSymbols(self, node):
+        # XXX not implemented
+        return None
 
 class FunctionCodeGenerator(CodeGenerator):
     super_init = CodeGenerator.__init__
@@ -964,6 +976,8 @@ class LocalNameFinder:
         self.globals = misc.Set()
         for name in names:
             self.names.add(name)
+
+    # XXX list comprehensions and for loops
 
     def getLocals(self):
         for elt in self.globals.elements():
