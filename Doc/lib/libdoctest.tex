@@ -153,7 +153,7 @@ if __name__ == "__main__":
 \end{verbatim}
 
 If you want to test the module as the main module, you don't need to
-pass M to \function{testmod}; in this case, it will test the current
+pass M to \function{testmod()}; in this case, it will test the current
 module.
 
 Then running the module as a script causes the examples in the docstrings
@@ -176,11 +176,12 @@ python M.py -v
 and a detailed report of all examples tried is printed to \code{stdout},
 along with assorted summaries at the end.
 
-You can force verbose mode by passing \code{verbose=1} to testmod, or
+You can force verbose mode by passing \code{verbose=1} to
+\function{testmod()}, or
 prohibit it by passing \code{verbose=0}.  In either of those cases,
-\code{sys.argv} is not examined by testmod.
+\code{sys.argv} is not examined by \function{testmod()}.
 
-In any case, testmod returns a 2-tuple of ints \code{(\var{f},
+In any case, \function{testmod()} returns a 2-tuple of ints \code{(\var{f},
 \var{t})}, where \var{f} is the number of docstring examples that
 failed and \var{t} is the total number of docstring examples
 attempted.
@@ -210,8 +211,8 @@ from \module{M}'s globals are skipped, all names reached from
 
 \subsection{What's the Execution Context?}
 
-By default, each time testmod finds a docstring to test, it uses a
-\emph{copy} of \module{M}'s globals, so that running tests on a module
+By default, each time \function{testmod()} finds a docstring to test, it uses
+a \emph{copy} of \module{M}'s globals, so that running tests on a module
 doesn't change the module's real globals, and so that one test in
 \module{M} can't leave behind crumbs that accidentally allow another test
 to work.  This means examples can freely use any names defined at top-level
@@ -400,20 +401,19 @@ def _test():
 \end{verbatim}
 
 \item WYSIWYG isn't always the case, starting in Python 2.3.  The
-  string form of boolean results changed from \code{"0"} and
-  \code{"1"} to \code{"False"} and \code{"True"} in Python 2.3.
+  string form of boolean results changed from \code{'0'} and
+  \code{'1'} to \code{'False'} and \code{'True'} in Python 2.3.
   This makes it clumsy to write a doctest showing boolean results that
   passes under multiple versions of Python.  In Python 2.3, by default,
   and as a special case, if an expected output block consists solely
-  of \code{"0"} and the actual output block consists solely of
-  \code{"False"}, that's accepted as an exact match, and similarly for
-  \code{"1"} versus \code{"True"}.  This behavior can be turned off by
+  of \code{'0'} and the actual output block consists solely of
+  \code{'False'}, that's accepted as an exact match, and similarly for
+  \code{'1'} versus \code{'True'}.  This behavior can be turned off by
   passing the new (in 2.3) module constant
   \constant{DONT_ACCEPT_TRUE_FOR_1} as the value of \function{testmod()}'s
   new (in 2.3) optional \var{optionflags} argument.  Some years after
   the integer spellings of booleans are history, this hack will
   probably be removed again.
-
 
 \end{enumerate}
 
