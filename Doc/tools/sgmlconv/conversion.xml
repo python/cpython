@@ -184,7 +184,7 @@
 
   <!-- "See also:" sections. -->
   <macro name="seemodule">
-    <attribute name="ref" optional="yes"/>
+    <attribute name="" optional="yes"/>
     <attribute name="name"/>
     <child name="description"/>
     </macro>
@@ -279,11 +279,11 @@
     </macro>
 
   <!-- Entity management. -->
-  <macro name="include">
-    <attribute name="source"/>
+  <macro name="include" outputname="xi:include">
+    <attribute name="href"/>
     </macro>
-  <macro name="input">
-    <attribute name="source"/>
+  <macro name="input" outputname="xi:include">
+    <attribute name="href"/>
     </macro>
 
   <!-- Large-scale document structure. -->
@@ -300,7 +300,11 @@
                endcloses="chapter chapter* section section*
                           subsection subsection*
                           subsubsection subsubsection*
-                          paragraph paragraph* subparagraph subparagraph*"/>
+                          paragraph paragraph* subparagraph
+                          subparagraph*">
+    <attribute name="xmlns:xi"
+      >http://www.w3.org/2001/XInclude</attribute>
+    </environment>
 
   <macro name="chapter"
          closes="chapter chapter* section section* subsection subsection*
@@ -458,9 +462,9 @@
     <!-- not used anywhere, but it's a standard LaTeXism -->
     <attribute name="spaces">visible</attribute>
     </environment>
-  <macro name="verbatiminput" ouptutname="input">
-    <attribute name="verbatim">yes</attribute>
-    <attribute name="source"/>
+  <macro name="verbatiminput" ouptutname="xi:include">
+    <attribute name="parse">text</attribute>
+    <attribute name="href"/>
     </macro>
 
   <!-- Table markup. -->
