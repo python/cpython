@@ -89,6 +89,14 @@ class MyScanner(Scanner_OSX):
 			
 			]
 
+	def makegreylist(self):
+		return [
+			('#if TARGET_API_MAC_OSX', [
+				'FNNotifyAll',
+				'FNNotifyByPath',
+				'FNNotify',
+			])]
+			
 	def makeblacklisttypes(self):
 		return [
 			"CInfoPBPtr", # Old stuff
@@ -127,10 +135,6 @@ class MyScanner(Scanner_OSX):
 	def makerepairinstructions(self):
 		return [
 			# Various ways to give pathnames
-			([('UInt8_ptr', 'path', 'InMode')],
-			 [('stringptr', 'path', 'InMode')]
-			),
-			 
 			([('char_ptr', '*', 'InMode')],
 			 [('stringptr', '*', 'InMode')]
 			),

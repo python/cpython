@@ -46,11 +46,7 @@ FSVolumeRefNum = Type("FSVolumeRefNum", "h")
 HFSUniStr255 = OpaqueType("HFSUniStr255", "PyMac_BuildHFSUniStr255", "PyMac_GetHFSUniStr255")
 SInt64 = Type("SInt64", "L")
 UInt64 = Type("UInt64", "L")
-#UInt8_ptr
-#UniCharCount
-#char_ptr
-#void_ptr
-
+UInt8_ptr = InputOnlyType("UInt8 *", "s")
 
 includestuff = includestuff + """
 #ifdef WITHOUT_FRAMEWORKS
