@@ -138,42 +138,56 @@ class RegexObject:
         non-overlapping occurrences of the pattern in the source
         string by the replacement repl.  number is the number of
         substitutions that were made."""
-
+        
         if count < 0:
             raise error, "negative substitution count"
         if count == 0:
-            import sys
             count = sys.maxint
-        if type(repl) == type(''):
-            if '\\' in repl:
-                repl = lambda m, r=repl: pcre_expand(m, r)
-            else:
-                repl = lambda m, r=repl: r
         n = 0           # Number of matches
         pos = 0         # Where to start searching
         lastmatch = -1  # End of last match
         results = []    # Substrings making up the result
         end = len(source)
+
+        if type(repl) is type(''):
+            # See if repl contains group references
+            try:
+                repl = pcre_expand(_Dummy, repl)
+            except:
+                m = MatchObject(self, source, 0, end, [])
+                repl = lambda m, repl=repl, expand=pcre_expand: expand(m, repl)
+            else:
+                m = None
+        else:
+            m = MatchObject(self, source, 0, end, [])
+
+        match = self.code.match
+        append = results.append
         while n < count and pos <= end:
-            m = self.search(source, pos)
-            if not m:
+            regs = match(source, pos, end, 0)
+            if not regs:
                 break
-            i, j = m.span(0)
+            i, j = regs[0]
             if i == j == lastmatch:
                 # Empty match adjacent to previous match
                 pos = pos + 1
-                results.append(source[lastmatch:pos])
+                append(source[lastmatch:pos])
                 continue
             if pos < i:
-                results.append(source[pos:i])
-            results.append(repl(m))
+                append(source[pos:i])
+            if m:
+                m.pos = pos
+                m.regs = regs
+                append(repl(m))
+            else:
+                append(repl)
             pos = lastmatch = j
             if i == j:
                 # Last match was empty; don't try here again
                 pos = pos + 1
-                results.append(source[lastmatch:pos])
+                append(source[lastmatch:pos])
             n = n + 1
-        results.append(source[pos:])
+        append(source[pos:])
         return (string.join(results, ''), n)
                                                                             
     def split(self, source, maxsplit=0):
@@ -183,34 +197,40 @@ class RegexObject:
         if maxsplit < 0:
             raise error, "negative split count"
         if maxsplit == 0:
-            import sys
             maxsplit = sys.maxint
         n = 0
         pos = 0
         lastmatch = 0
         results = []
         end = len(source)
+        match = self.code.match
+        append = results.append
         while n < maxsplit:
-            m = self.search(source, pos)
-            if not m:
+            regs = match(source, pos, end, 0)
+            if not regs:
                 break
-            i, j = m.span(0)
+            i, j = regs[0]
             if i == j:
                 # Empty match
                 if pos >= end:
                     break
                 pos = pos+1
                 continue
-            results.append(source[lastmatch:i])
-            g = m.groups()
-            if g:
-                results[len(results):] = list(g)
+            append(source[lastmatch:i])
+            rest = regs[1:]
+            if rest:
+                for a, b in rest:
+                    if a == -1 or b == -1:
+                        group = None
+                    else:
+                        group = source[a:b]
+                    append(group)
             pos = lastmatch = j
             n = n + 1
-        results.append(source[lastmatch:])
+        append(source[lastmatch:])
         return results
 
-    def findall(self, string):
+    def findall(self, source):
         """Return a list of all non-overlapping matches in the string.
 
         If one or more groups are present in the pattern, return a
@@ -221,20 +241,29 @@ class RegexObject:
 
         """
         pos = 0
-        n = len(string)
-        result = []
-        while pos <= n:
-            m = self.search(string, pos)
-            if not m:
+        end = len(source)
+        results = []
+        match = self.code.match
+        append = results.append
+        while pos <= end:
+            regs = match(source, pos, end, 0)
+            if not regs:
                 break
-            gr = m.groups()
-            if not gr:
-                gr = m.group()
-            elif len(gr) == 1:
-                gr = gr[0]
-            result.append(gr)
-            pos = max(m.end(), pos+1)
-        return result
+            i, j = regs[0]
+            rest = regs[1:]
+            if not rest:
+                gr = source[i:j]
+            elif len(rest) == 1:
+                a, b = rest[0]
+                gr = source[a:b]
+            else:
+                gr = []
+                for (a, b) in rest:
+                    gr.append(source[a:b])
+                gr = tuple(gr)
+            append(gr)
+            pos = max(j, pos+1)
+        return results
 
     # The following 3 functions were contributed by Mike Fletcher, and
     # allow pickling and unpickling of RegexObject instances.
@@ -250,6 +279,10 @@ class RegexObject:
         self.flags = statetuple[1]
         self.groupindex = statetuple[2]
         self.code = apply(pcre_compile, statetuple)
+
+class _Dummy:
+    # Dummy class used by _subn_string().  Has 'group' to avoid core dump.
+    group = None
 
 class MatchObject:
 
