@@ -61,6 +61,15 @@
   <macro name="warning">
     <content/>
     </macro>
+  <environment name="notice">
+    <attribute name="role" optional="yes"/>
+    </environment>
+
+  <macro name="menuselection">
+    <content/>
+    </macro>
+  <macro name="sub"/>
+
   <!-- These are broken:  we need to re-order the optional and required
        parameters, making the optional parameter the content for the
        element.  latex2esis.py is not powerful enough to handle this.
