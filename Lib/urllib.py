@@ -183,7 +183,7 @@ class URLopener:
 		result = filename, headers
 		if self.tempcache is not None:
 			self.tempcache[url] = result
-		tfp = open(filename, 'w')
+		tfp = open(filename, 'wb')
 		bs = 1024*8
 		block = fp.read(bs)
 		while block:
@@ -284,12 +284,12 @@ class URLopener:
 	def open_local_file(self, url):
 		host, file = splithost(url)
 		if not host:
-			return addinfourl(open(url2pathname(file), 'r'), noheaders(), 'file:'+file)
+			return addinfourl(open(url2pathname(file), 'rb'), noheaders(), 'file:'+file)
 		host, port = splitport(host)
 		if not port and socket.gethostbyname(host) in (
 			  localhost(), thishost()):
 			file = unquote(file)
-			return addinfourl(open(url2pathname(file), 'r'), noheaders(), 'file:'+file)
+			return addinfourl(open(url2pathname(file), 'rb'), noheaders(), 'file:'+file)
 		raise IOError, ('local file error', 'not on local host')
 
 	# Use FTP protocol
@@ -785,7 +785,7 @@ def test():
 				print '======'
 				for k in h.keys(): print k + ':', h[k]
 				print '======'
-			fp = open(fn, 'r')
+			fp = open(fn, 'rb')
 			data = fp.read()
 			del fp
 			print regsub.gsub('\r', '', data)
