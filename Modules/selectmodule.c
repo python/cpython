@@ -48,6 +48,11 @@ extern void bzero();
 
 #include <sys/types.h>
 
+#if defined(PYOS_OS2)
+#include <sys/time.h>
+#include <utils.h>
+#endif
+
 #ifdef MS_WINDOWS
 #include <winsock.h>
 #else

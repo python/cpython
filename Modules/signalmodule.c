@@ -50,6 +50,11 @@ PERFORMANCE OF THIS SOFTWARE.
 #define SIG_ERR ((RETSIGTYPE (*)())-1)
 #endif
 
+#if defined(PYOS_OS2)
+#define NSIG 12
+#include <process.h>
+#endif
+
 #ifndef NSIG
 #ifdef _SIGMAX
 #define NSIG (_SIGMAX + 1)	/* For QNX */

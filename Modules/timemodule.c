@@ -59,7 +59,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
-#ifndef MS_WINDOWS
+#if !defined(MS_WINDOWS) && !defined(PYOS_OS2)
 extern int ftime();
 #endif /* MS_WINDOWS */
 #endif /* HAVE_FTIME */
@@ -84,6 +84,18 @@ extern int ftime();
 #include <largeint.h>
 #undef HAVE_CLOCK /* We have our own version down below */
 #endif /* MS_WIN32 */
+
+#if defined(PYOS_OS2)
+#define  INCL_DOS
+#define  INCL_DOSERRORS
+#define  INCL_NOPMAPI
+#include <os2.h>
+#endif
+
+#if defined(PYCC_VACPP)
+#include <time.h>
+#define timezone _timezone
+#endif
 
 /* Forward declarations */
 static int floatsleep Py_PROTO((double));
@@ -588,10 +600,18 @@ floatsleep(double secs)
 	Sleep((int)(secs*1000));
 	Py_END_ALLOW_THREADS
 #else /* !MS_WIN32 */
+#ifdef PYOS_OS2
+	/* This Sleep *IS* Interruptable by Exceptions */
+	if (DosSleep(secs * 1000) != NO_ERROR) {
+		PyErr_SetFromErrno(PyExc_IOError);
+		return -1;
+	}
+#else /* !PYOS_OS2 */
 	/* XXX Can't interrupt this sleep */
 	Py_BEGIN_ALLOW_THREADS
 	sleep((int)secs);
 	Py_END_ALLOW_THREADS
+#endif /* !PYOS_OS2 */
 #endif /* !MS_WIN32 */
 #endif /* !MSDOS */
 #endif /* !__WATCOMC__ */
