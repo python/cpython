@@ -222,7 +222,7 @@ following setup:
 
     Set PYTHONHOME=E:\Tau\Projects\Python
     Set PYTHONPATH=.;E:\Tau\Projects\Python\Lib; \
-                     E:\Tau\Projects\Python\Lib\Plat-OS2
+                     E:\Tau\Projects\Python\Lib\plat-win
 
 If you have questions or problems specifically with the VAC++ port
 of Python, please contact me at:
