@@ -53,7 +53,11 @@ class RCS:
 	"""
 	f = self._open(name_rev, 'rlog ' + otherflags)
 	data = f.read()
-	self._closepipe(f)
+	status = self._closepipe(f)
+	if status:
+	    data = data + "%s: %s" % status
+	elif data[-1] == '\n':
+	    data = data[:-1]
 	return data
 
     def head(self, name_rev):
@@ -84,7 +88,9 @@ class RCS:
 	    if i > 0:
 		key, value = line[:i], string.strip(line[i+1:])
 		dict[key] = value
-	self._closepipe(f)
+	status = self._closepipe(f)
+	if status:
+	    raise IOError, status
 	return dict
 
     # --- Methods that change files ---
@@ -215,7 +221,9 @@ class RCS:
 	"""
 	f = self._open(name_rev, 'rlog -L -R')
 	line = f.readline()
-	self._closepipe(f)
+	status = self._closepipe(f)
+	if status:
+	    raise IOError, status
 	if not line: return None
 	return self.realname(name_rev) == self.realname(line)
 
@@ -247,7 +255,7 @@ class RCS:
 	namev = self.rcsname(name)
 	if rev:
 	    cmd = cmd + ' ' + rflag + rev
-	return os.popen('%s %s' %  (cmd, `namev`))
+	return os.popen("%s %s" % (cmd, `namev`))
 
     def _unmangle(self, name_rev):
 	"""INTERNAL: Normalize NAME_REV argument to (NAME, REV) tuple.
@@ -270,8 +278,18 @@ class RCS:
     def _closepipe(self, f):
 	"""INTERNAL: Close PIPE and print its exit status if nonzero."""
 	sts = f.close()
-	if sts:
-	    raise IOError, "Exit status %d" % sts
+	if not sts: return None
+	detail, reason = divmod(sts, 256)
+	if reason == 0: return 'exit', detail	# Exit status
+	signal = reason&0x7F
+	if signal == 0x7F:
+	    code = 'stopped'
+	    signal = detail
+	else:
+	    code = 'killed'
+	if reason&0x80:
+	    code = code + '(coredump)'
+	return code, signal
  
     def _system(self, cmd):
 	"""INTERNAL: run COMMAND in a subshell.
