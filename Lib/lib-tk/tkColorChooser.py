@@ -60,8 +60,8 @@ def askcolor(color = None, **options):
     "Ask for a color"
 
     if color:
-	options = options.copy()
-	options["initialcolor"] = color
+        options = options.copy()
+        options["initialcolor"] = color
 
     return apply(Chooser, (), options).show()
 
@@ -72,4 +72,3 @@ def askcolor(color = None, **options):
 if __name__ == "__main__":
 
     print "color", askcolor()
-
