@@ -1,9 +1,7 @@
+from test_support import verbose
 import nis
 
-verbose = 0
-if __name__ == '__main__':
-    verbose = 1
-
+print 'nis.maps()'
 maps = nis.maps()
 done = 0
 for nismap in maps:

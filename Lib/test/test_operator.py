@@ -2,6 +2,7 @@ import operator
 import sys
 
 def test(name, input, output, *args):
+    print 'testing:', name
     f = getattr(operator, name)
     params = (input,) + args
     try:

@@ -33,6 +33,7 @@ tests = ['test_grammar',
 	 'test_imageop',
 	 'test_imgfile',
 	 'test_regex',
+	 'test_rotor',
 	 ]
 
 if __name__ == '__main__':
