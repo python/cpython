@@ -580,9 +580,9 @@ Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
  =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
  =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
  =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?b?cyBOdW5zdHVjayBnaXQgdW5k?=
- =?utf-8?b?IFNsb3Rlcm1leWVyPyBKYSEgQmVpaGVyaHVuZCBkYXMgT2Rl?=
- =?utf-8?b?ciBkaWUgRmxpcHBlcndhbGR0?=
+ =?utf-8?q?s_Nunstuck_git_und?=
+ =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
+ =?utf-8?q?r_die_Flipperwaldt?=
  =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=
 
 ''')
@@ -598,9 +598,9 @@ Subject: =?iso-8859-1?q?Die_Mieter_treten_hier_ein_werden_mit_eine?=
  =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
  =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
  =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?b?cyBOdW5zdHVjayBnaXQgdW5k?=
- =?utf-8?b?IFNsb3Rlcm1leWVyPyBKYSEgQmVpaGVyaHVuZCBkYXMgT2Rl?=
- =?utf-8?b?ciBkaWUgRmxpcHBlcndhbGR0?=
+ =?utf-8?q?s_Nunstuck_git_und?=
+ =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
+ =?utf-8?q?r_die_Flipperwaldt?=
  =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=''')
 
     def test_long_header_encode(self):
@@ -2088,9 +2088,9 @@ class TestHeader(TestEmailBase):
  =?utf-8?b?6YOo44Gv44OJ44Kk44OE6Kqe44Gn44GZ44GM?=
  =?utf-8?b?44CB44GC44Go44Gv44Gn44Gf44KJ44KB44Gn?=
  =?utf-8?b?44GZ44CC5a6f6Zqb44Gr44Gv44CMV2VubiBpc3QgZGE=?=
- =?utf-8?b?cyBOdW5zdHVjayBnaXQgdW5k?=
- =?utf-8?b?IFNsb3Rlcm1leWVyPyBKYSEgQmVpaGVyaHVuZCBkYXMgT2Rl?=
- =?utf-8?b?ciBkaWUgRmxpcHBlcndhbGR0?=
+ =?utf-8?q?s_Nunstuck_git_und?=
+ =?utf-8?q?_Slotermeyer=3F_Ja!_Beiherhund_das_Ode?=
+ =?utf-8?q?r_die_Flipperwaldt?=
  =?utf-8?b?IGdlcnNwdXQu44CN44Go6KiA44Gj44Gm44GE44G+44GZ44CC?=""")
         eq(decode_header(enc),
            [(g_head, "iso-8859-1"), (cz_head, "iso-8859-2"),
@@ -2164,6 +2164,13 @@ A very long line that must get split to something other than at the
 ##        raises(UnicodeError, h.append, u'[P\xf6stal]', 'us-ascii')
 ##        raises(UnicodeError, h.append, '[P\xf6stal]', 'us-ascii')
 ##        raises(UnicodeError, Header, u'\u83ca\u5730\u6642\u592b', 'iso-8859-1')
+
+    def test_utf8_shortest(self):
+        eq = self.assertEqual
+        h = Header(u'p\xf6stal', 'utf-8')
+        eq(h.encode(), '=?utf-8?q?p=C3=B6stal?=')
+        h = Header(u'\u83ca\u5730\u6642\u592b', 'utf-8')
+        eq(h.encode(), '=?utf-8?b?6I+K5Zyw5pmC5aSr?=')
 
 
 
