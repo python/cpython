@@ -1935,15 +1935,28 @@ static PyObject *
 find_class(PyObject *py_module_name, PyObject *py_global_name) {
     PyObject *global = 0, *module;
 
-    UNLESS(module=PySys_GetObject("modules")) return NULL;
-    UNLESS(module=PyDict_GetItem(module, py_module_name)) {
-      PyErr_Clear();
-      UNLESS(module=PyImport_Import(py_module_name)) return NULL;
+    module = PySys_GetObject("modules");
+    if (module == NULL)
+	return NULL;
+
+    module = PyDict_GetItem(module, py_module_name);
+    if (module == NULL) {
+	module = PyImport_Import(py_module_name);
+	if (!module)
+	    return NULL;
+	global = PyObject_GetAttr(module, py_global_name);
+	Py_DECREF(module);
     }
-
-    global=PyObject_GetAttr(module, py_global_name);
-    Py_DECREF(module);
-
+    else
+	global = PyObject_GetAttr(module, py_global_name);
+    if (global == NULL) {
+	char buf[256 + 37];
+	sprintf(buf, "Failed to import class %.128s from moduile %.128s",
+		PyString_AS_STRING(py_global_name),
+		PyString_AS_STRING(py_module_name));  
+	PyErr_SetString(PyExc_SystemError, buf);
+	return NULL;
+    }
     return global;
 }
 
@@ -4093,7 +4106,7 @@ cpm_loads(PyObject *self, PyObject *args) {
     PyObject *ob, *file = 0, *res = NULL;
     Unpicklerobject *unpickler = 0;
 
-    UNLESS(PyArg_ParseTuple(args, "O", &ob))
+    UNLESS(PyArg_ParseTuple(args, "S", &ob))
         goto finally;
 
     UNLESS(file = PycStringIO->NewInput(ob))
