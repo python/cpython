@@ -620,7 +620,7 @@ indexed position in the string results in an error:
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: object doesn't support item assignment
->>> word[:-1] = 'Splat'
+>>> word[:1] = 'Splat'
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: object doesn't support slice assignment
@@ -632,7 +632,7 @@ efficient:
 \begin{verbatim}
 >>> 'x' + word[1:]
 'xelpA'
->>> 'Splat' + word[-1:]
+>>> 'Splat' + word[4]
 'SplatA'
 \end{verbatim}
 
@@ -1645,7 +1645,7 @@ An example that uses most of the list methods:
 
 
 \subsection{Using Lists as Stacks \label{lists-as-stacks}}
-\sectionauthor{Ka-Ping Yee}{ping@lfs.org}
+\sectionauthor{Ka-Ping Yee}{ping@lfw.org}
 
 The list methods make it very easy to use a list as a stack, where the
 last element added is the first element retrieved (``last-in,
@@ -1673,7 +1673,7 @@ first-out'').  To add an item to the top of the stack, use
 
 
 \subsection{Using Lists as Queues \label{lists-as-queues}}
-\sectionauthor{Ka-Ping Yee}{ping@lfs.org}
+\sectionauthor{Ka-Ping Yee}{ping@lfw.org}
 
 You can also use a list conveniently as a queue, where the first
 element added is the first element retrieved (``first-in,
