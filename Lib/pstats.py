@@ -640,6 +640,8 @@ if __name__ == '__main__':
         def help_sort(self):
             print "Sort profile data according to specified keys."
             print "(Typing `sort' without arguments lists valid keys.)"
+        def complete_sort(self, text, *args):
+            return [a for a in Stats.sort_arg_dict_default.keys() if a.startswith(text)]
 
         def do_stats(self, line):
             return self.generic('print_stats', line)
