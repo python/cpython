@@ -450,6 +450,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def do_where(self, arg):
         self.print_stack_trace()
     do_w = do_where
+    do_bt = do_where
 
     def do_up(self, arg):
         if self.curindex == 0:
@@ -665,7 +666,9 @@ With a command name as argument, print help about that command
         print """w(here)
 Print a stack trace, with the most recent frame at the bottom.
 An arrow indicates the "current frame", which determines the
-context of most commands."""
+context of most commands.  'bt' is an alias for this command."""
+
+    help_bt = help_w
 
     def help_down(self):
         self.help_d()
