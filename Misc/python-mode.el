@@ -867,21 +867,13 @@ filter."
   ;; BAW - should undo be disabled in the python process buffer, if
   ;; this bug still exists?
   (interactive)
-  (if py-this-is-emacs-19-p
-      (progn
-	(require 'comint)
-	(switch-to-buffer-other-window
-	 (make-comint "Python" py-python-command)))
-    (progn
-      (require 'shell)
-      (switch-to-buffer-other-window
-       (apply (if (fboundp 'make-shell) 'make-shell 'make-comint)
-	      "Python" py-python-command nil))))
-  (make-local-variable 'shell-prompt-pattern)
-  (setq shell-prompt-pattern "^>>> \\|^\\.\\.\\. ")
-  (set-process-filter (get-buffer-process (current-buffer))
-		      'py-process-filter)
-  (set-syntax-table py-mode-syntax-table))
+  (require 'comint)
+  (switch-to-buffer-other-window (make-comint "Python" py-python-command))
+  (make-local-variable 'comint-prompt-regexp)
+  (setq comint-prompt-regexp "^>>> \\|^[.][.][.] ")
+  (set-process-filter (get-buffer-process (current-buffer)) 'py-process-filter)
+  (set-syntax-table py-mode-syntax-table)
+  (local-set-key [tab] 'self-insert-command))
 
 (defun py-execute-region (start end)
   "Send the region between START and END to a Python interpreter.
