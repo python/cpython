@@ -280,6 +280,20 @@ item: Set Variable
 end
 item: End Block
 end
+item: Remark
+end
+item: Remark
+  Text=Get a temp file, into which we'll write the summary for the "Start Installation" screen.
+end
+item: Get Temporary Filename
+  Variable=TEMPFILE
+end
+item: Set Variable
+  Variable=TEMPFILE
+  Value=%TEMP%\%TEMPFILE%
+end
+item: Remark
+end
 item: Wizard Block
   Direction Variable=DIRECTION
   Display Variable=DISPLAY
@@ -490,8 +504,8 @@ item: Custom Dialog Set
       Rectangle=113 100 212 126
       Variable=DOBACKUP
       Create Flags=01010000000000010000000000001001
-      Text=&Yes (make backups)
-      Text=N&o (do not make backups)
+      Text=&Yes, make backups
+      Text=N&o, do not make backups
       Text=
       Text French=&Oui
       Text French=N&on
@@ -972,11 +986,9 @@ item: Custom Dialog Set
       Text Italian=Pronto per l'installazione!
     end
     item: Static
-      Rectangle=86 42 256 102
+      Rectangle=86 34 256 54
       Create Flags=01010000000000000000000000000000
-      Text=You are now ready to install %APPTITLE%.
-      Text=
-      Text=Click the Next button to begin the installation, or the Back button to change choices made previously.
+      Text=Click the Next button to install %APPTITLE%, or the Back button to change choices:
       Text French=Vous êtes maintenant prêt à installer les fichiers %APPTITLE%.
       Text French=
       Text French=Cliquez sur le bouton Suite pour commencer l'installation ou sur le bouton Retour pour entrer les informations d'installation à nouveau.
@@ -990,10 +1002,30 @@ item: Custom Dialog Set
       Text Italian=
       Text Italian=Premere il pulsante Avanti per avviare l'installazione o il pulsante Indietro per reinserire le informazioni di installazione.
     end
+    item: Editbox
+      Rectangle=86 54 259 175
+      Value=%TEMPFILE%
+      Help Context=16711681
+      Enabled Color=00000000000000001111111111111111
+      Create Flags=01010000101000000001100010000100
+    end
   end
 end
 item: Remark
-  Text=This reinitializes the BACKUP directory so that it reflects the change the user made to MAINDIR
+end
+item: Remark
+  Text=If we just finished "Select Destination Directory":
+end
+item: Remark
+  Text=    %MAINDIR% is set, so reinitialize %BACKUP% to match.
+end
+item: Remark
+  Text=ElseIf we just finished "Select Program Manager Group":
+end
+item: Remark
+  Text=    "Start Installation" is next, so write out the choices to a file for "Start Installation" to display.
+end
+item: Remark
 end
 item: If/While Statement
   Variable=DISPLAY
@@ -1002,6 +1034,119 @@ end
 item: Set Variable
   Variable=BACKUP
   Value=%MAINDIR%\BACKUP
+end
+item: Remark
+end
+item: ElseIf Statement
+  Variable=DISPLAY
+  Value=Select Program Manager Group
+end
+item: Delete File
+  Pathname=%TEMPFILE%
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=Installation directory%CRLF%    %MAINDIR%
+  Line Number=0
+end
+item: Remark
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=%CRLF%Make backups?
+  Line Number=0
+end
+item: If/While Statement
+  Variable=DOBACKUP
+  Value=A
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Yes, into %BACKUP%
+  Line Number=0
+end
+item: Else Statement
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    No
+  Line Number=0
+end
+item: End Block
+end
+item: Remark
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=%CRLF%Components
+  Line Number=0
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=A
+  Flags=00000010
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Python interpreter, libraries, and Tcl/Tk
+  Line Number=0
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=B
+  Flags=00000010
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Python documentation
+  Line Number=0
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=C
+  Flags=00000010
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Tool and utility scripts
+  Line Number=0
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=D
+  Flags=00000010
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Python test suite
+  Line Number=0
+end
+item: End Block
+end
+item: If/While Statement
+  Variable=COMPONENTS
+  Value=E
+  Flags=00000010
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=    Register file extensions
+  Line Number=0
+end
+item: End Block
+end
+item: Remark
+end
+item: Insert Line into Text File
+  Pathname=%TEMPFILE%
+  New Text=%CRLF%Start Menu group%CRLF%    %GROUP%
+  Line Number=0
 end
 item: End Block
 end
