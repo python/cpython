@@ -1292,6 +1292,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 	PyObject *descr;
 	PyObject *res = NULL;
 	descrgetfunc f;
+	long dictoffset;
 	PyObject **dictptr;
 
 	if (!PyString_Check(name)){
@@ -1330,9 +1331,25 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 		}
 	}
 
-	dictptr = _PyObject_GetDictPtr(obj);
-	if (dictptr != NULL) {
-		PyObject *dict = *dictptr;
+	/* Inline _PyObject_GetDictPtr */
+	dictoffset = tp->tp_dictoffset;
+	if (dictoffset != 0) {
+		PyObject *dict;
+		if (dictoffset < 0) {
+			int tsize;
+			size_t size;
+
+			tsize = ((PyVarObject *)obj)->ob_size;
+			if (tsize < 0)
+				tsize = -tsize;
+			size = _PyObject_VAR_SIZE(tp, tsize);
+
+			dictoffset += (long)size;
+			assert(dictoffset > 0);
+			assert(dictoffset % SIZEOF_VOID_P == 0);
+		}
+		dictptr = (PyObject **) ((char *)obj + dictoffset);
+		dict = *dictptr;
 		if (dict != NULL) {
 			res = PyDict_GetItem(dict, name);
 			if (res != NULL) {
