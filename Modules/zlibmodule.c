@@ -95,13 +95,11 @@ PyZlib_compress(self, args)
                       "Out of memory while compressing data");
       free(output);
       return NULL;
-      break;
     case(Z_STREAM_ERROR):
       PyErr_SetString(ZlibError,
                       "Bad compression level");
       free(output);
       return NULL;
-      break;
     default:
       {
 	if (zst.msg == Z_NULL)
@@ -114,7 +112,6 @@ PyZlib_compress(self, args)
         free(output);
         return NULL;
       }
-      break;
     }
  
   err=deflate(&zst, Z_FINISH);
@@ -290,17 +287,14 @@ PyZlib_compressobj(selfptr, args)
     {
     case (Z_OK):
       return (PyObject*)self;
-      break;
     case (Z_MEM_ERROR):
       PyErr_SetString(PyExc_MemoryError,
                       "Can't allocate memory for compression object");
       return NULL;
-      break;
     case(Z_STREAM_ERROR):
       PyErr_SetString(PyExc_ValueError,
                       "Invalid initialization option");
       return NULL;
-      break;
     default:
       {
 	if (self->zst.msg == Z_NULL)
@@ -312,7 +306,6 @@ PyZlib_compressobj(selfptr, args)
 			 "Error %i while creating compression object: %.200s",
 			 err, self->zst.msg);  
 	return NULL;
-	break;      
       }
     }
 }
@@ -337,17 +330,14 @@ PyZlib_decompressobj(selfptr, args)
   {
     case (Z_OK):
       return (PyObject*)self;
-      break;
     case(Z_STREAM_ERROR):
       PyErr_SetString(PyExc_ValueError,
                       "Invalid initialization option");
       return NULL;
-      break;
     case (Z_MEM_ERROR):
       PyErr_SetString(PyExc_MemoryError,
                       "Can't allocate memory for decompression object");
       return NULL;
-      break;
     default:
     {
 	if (self->zst.msg == Z_NULL)
@@ -359,7 +349,6 @@ PyZlib_decompressobj(selfptr, args)
 			 "Error %i while creating decompression object: %.200s",
 			 err, self->zst.msg);  
 	return NULL;
-	break;      
     }
   }
 }
