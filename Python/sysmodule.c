@@ -383,6 +383,7 @@ _PySys_Init()
 	extern int fclose Py_PROTO((FILE *));
 	PyObject *m, *v, *sysdict;
 	PyObject *sysin, *sysout, *syserr;
+	char *s;
 
 	m = Py_InitModule3("sys", sys_methods, sys_doc);
 	sysdict = PyModule_GetDict(m);
@@ -413,21 +414,21 @@ _PySys_Init()
 	 * the field, so don't get too fancy with the pre-processor!
 	 */
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_ALPHA
-	v = PyString_FromString("alpha");
+	s = "alpha";
 #endif
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_BETA
-	v = PyString_FromString("beta");
+	s = "beta";
 #endif
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_GAMMA
-	v = PyString_FromString("candidate");
+	s = "candidate";
 #endif
 #if PY_RELEASE_LEVEL == PY_RELEASE_LEVEL_FINAL
-	v = PyString_FromString("final");
+	s = "final";
 #endif
 	PyDict_SetItemString(sysdict, "version_info",
-			     v = Py_BuildValue("iiiNi", PY_MAJOR_VERSION,
+			     v = Py_BuildValue("iiisi", PY_MAJOR_VERSION,
 					       PY_MINOR_VERSION,
-					       PY_MICRO_VERSION, v,
+					       PY_MICRO_VERSION, s,
 					       PY_RELEASE_SERIAL));
 	Py_XDECREF(v);
 	PyDict_SetItemString(sysdict, "copyright",
