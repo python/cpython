@@ -66,24 +66,33 @@ TOOLSDIR=	tools
 
 # This is the *documentation* release, and is used to construct the file
 # names of the downloadable tarballs.
-RELEASE=2.3.1
+RELEASE=2.3.2c1
 
 PYTHON=	   python
 DVIPS=	   dvips -N0 -t $(PAPER)
 
-MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
-MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+# This is ugly!  The issue here is that there are two different levels
+# in the directory tree at which we execute mkhowto, so we can't
+# define it just once using a relative path (at least not with the
+# current implementation and Makefile structure).  We use the GNUish
+# $(shell) function here to work around that restriction by
+# identifying mkhowto using an absolute path.
+#
+MKHOWTO=   $(PYTHON) $(shell pwd)/tools/mkhowto
+
+MKDVI=	   $(MKHOWTO) --paper=$(PAPER) --dvi
+MKHTML=	   $(MKHOWTO) --html --about html/stdabout.dat \
 		--iconserver ../icons --favicon ../icons/pyfav.gif \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html" --dvips-safe
-MKISILOHTML=$(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+MKISILOHTML=$(MKHOWTO) --html --about html/stdabout.dat \
 		--iconserver ../icons \
 		--l2h-init perl/isilo.perl --numeric --split 1 \
 		--dvips-safe
 MKISILO=   iSilo386 -U -y -rCR -d0
-MKPDF=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --pdf
-MKPS=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --ps
+MKPDF=	   $(MKHOWTO) --paper=$(PAPER) --pdf
+MKPS=	   $(MKHOWTO) --paper=$(PAPER) --ps
 
 BUILDINDEX=$(TOOLSDIR)/buildindex.py
 
