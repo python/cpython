@@ -41,9 +41,11 @@ def genpluginproject(architecture, module,
 		# For the time being we generate two project files. Not as nice as
 		# a single multitarget project, but easier to implement for now.
 		genpluginproject("ppc", module, project, projectdir, sources, sourcedirs,
-				libraries, extradirs, extraexportsymbols, outputdir)
+				libraries, extradirs, extraexportsymbols, outputdir, libraryflags,
+				stdlibraryflags, prefixname)
 		genpluginproject("carbon", module, project, projectdir, sources, sourcedirs,
-				libraries, extradirs, extraexportsymbols, outputdir)
+				libraries, extradirs, extraexportsymbols, outputdir, libraryflags,
+				stdlibraryflags, prefixname)
 		return
 	templatename = "template-%s" % architecture
 	targetname = "%s.%s" % (module, architecture)
@@ -162,7 +164,8 @@ def	genallprojects(force=0):
 	genpluginproject("ppc", "_Qt", libraries=["QuickTimeLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Qt", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Qdoffs", outputdir="::Lib:Carbon")
-	genpluginproject("all", "_Res", outputdir="::Lib:Carbon")
+	genpluginproject("all", "_Res", 
+			stdlibraryflags="Debug, WeakImport", outputdir="::Lib:Carbon")
 	genpluginproject("all", "_Scrap", outputdir="::Lib:Carbon")
 	genpluginproject("ppc", "_Snd", libraries=["CarbonAccessors.o", "SoundLib"], outputdir="::Lib:Carbon")
 	genpluginproject("carbon", "_Snd", outputdir="::Lib:Carbon")
