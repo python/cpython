@@ -91,6 +91,9 @@ static PyObject *DragObj_DisposeDrag(DragObjObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef DisposeDrag
+	PyMac_PRECHECK(DisposeDrag);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = DisposeDrag(_self->ob_itself);
@@ -110,6 +113,9 @@ static PyObject *DragObj_AddDragItemFlavor(DragObjObject *_self, PyObject *_args
 	long dataPtr__len__;
 	int dataPtr__in_len__;
 	FlavorFlags theFlags;
+#ifndef AddDragItemFlavor
+	PyMac_PRECHECK(AddDragItemFlavor);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&z#l",
 	                      &theItemRef,
 	                      PyMac_GetOSType, &theType,
@@ -138,6 +144,9 @@ static PyObject *DragObj_SetDragItemFlavorData(DragObjObject *_self, PyObject *_
 	long dataPtr__len__;
 	int dataPtr__in_len__;
 	UInt32 dataOffset;
+#ifndef SetDragItemFlavorData
+	PyMac_PRECHECK(SetDragItemFlavorData);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&z#l",
 	                      &theItemRef,
 	                      PyMac_GetOSType, &theType,
@@ -164,6 +173,9 @@ static PyObject *DragObj_SetDragImage(DragObjObject *_self, PyObject *_args)
 	RgnHandle imageRgn;
 	Point imageOffsetPt;
 	DragImageFlags theImageFlags;
+#ifndef SetDragImage
+	PyMac_PRECHECK(SetDragImage);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&O&l",
 	                      ResObj_Convert, &imagePixMap,
 	                      ResObj_Convert, &imageRgn,
@@ -187,6 +199,9 @@ static PyObject *DragObj_ChangeDragBehaviors(DragObjObject *_self, PyObject *_ar
 	OSErr _err;
 	DragBehaviors inBehaviorsToSet;
 	DragBehaviors inBehaviorsToClear;
+#ifndef ChangeDragBehaviors
+	PyMac_PRECHECK(ChangeDragBehaviors);
+#endif
 	if (!PyArg_ParseTuple(_args, "ll",
 	                      &inBehaviorsToSet,
 	                      &inBehaviorsToClear))
@@ -206,6 +221,9 @@ static PyObject *DragObj_TrackDrag(DragObjObject *_self, PyObject *_args)
 	OSErr _err;
 	EventRecord theEvent;
 	RgnHandle theRegion;
+#ifndef TrackDrag
+	PyMac_PRECHECK(TrackDrag);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&",
 	                      PyMac_GetEventRecord, &theEvent,
 	                      ResObj_Convert, &theRegion))
@@ -224,6 +242,9 @@ static PyObject *DragObj_CountDragItems(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	UInt16 numItems;
+#ifndef CountDragItems
+	PyMac_PRECHECK(CountDragItems);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = CountDragItems(_self->ob_itself,
@@ -240,6 +261,9 @@ static PyObject *DragObj_GetDragItemReferenceNumber(DragObjObject *_self, PyObje
 	OSErr _err;
 	UInt16 index;
 	ItemReference theItemRef;
+#ifndef GetDragItemReferenceNumber
+	PyMac_PRECHECK(GetDragItemReferenceNumber);
+#endif
 	if (!PyArg_ParseTuple(_args, "H",
 	                      &index))
 		return NULL;
@@ -258,6 +282,9 @@ static PyObject *DragObj_CountDragItemFlavors(DragObjObject *_self, PyObject *_a
 	OSErr _err;
 	ItemReference theItemRef;
 	UInt16 numFlavors;
+#ifndef CountDragItemFlavors
+	PyMac_PRECHECK(CountDragItemFlavors);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &theItemRef))
 		return NULL;
@@ -277,6 +304,9 @@ static PyObject *DragObj_GetFlavorType(DragObjObject *_self, PyObject *_args)
 	ItemReference theItemRef;
 	UInt16 index;
 	FlavorType theType;
+#ifndef GetFlavorType
+	PyMac_PRECHECK(GetFlavorType);
+#endif
 	if (!PyArg_ParseTuple(_args, "lH",
 	                      &theItemRef,
 	                      &index))
@@ -298,6 +328,9 @@ static PyObject *DragObj_GetFlavorFlags(DragObjObject *_self, PyObject *_args)
 	ItemReference theItemRef;
 	FlavorType theType;
 	FlavorFlags theFlags;
+#ifndef GetFlavorFlags
+	PyMac_PRECHECK(GetFlavorFlags);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &theItemRef,
 	                      PyMac_GetOSType, &theType))
@@ -319,6 +352,9 @@ static PyObject *DragObj_GetFlavorDataSize(DragObjObject *_self, PyObject *_args
 	ItemReference theItemRef;
 	FlavorType theType;
 	Size dataSize;
+#ifndef GetFlavorDataSize
+	PyMac_PRECHECK(GetFlavorDataSize);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &theItemRef,
 	                      PyMac_GetOSType, &theType))
@@ -343,6 +379,9 @@ static PyObject *DragObj_GetFlavorData(DragObjObject *_self, PyObject *_args)
 	long dataPtr__len__;
 	int dataPtr__in_len__;
 	UInt32 dataOffset;
+#ifndef GetFlavorData
+	PyMac_PRECHECK(GetFlavorData);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&il",
 	                      &theItemRef,
 	                      PyMac_GetOSType, &theType,
@@ -374,6 +413,9 @@ static PyObject *DragObj_GetDragItemBounds(DragObjObject *_self, PyObject *_args
 	OSErr _err;
 	ItemReference theItemRef;
 	Rect itemBounds;
+#ifndef GetDragItemBounds
+	PyMac_PRECHECK(GetDragItemBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "l",
 	                      &theItemRef))
 		return NULL;
@@ -392,6 +434,9 @@ static PyObject *DragObj_SetDragItemBounds(DragObjObject *_self, PyObject *_args
 	OSErr _err;
 	ItemReference theItemRef;
 	Rect itemBounds;
+#ifndef SetDragItemBounds
+	PyMac_PRECHECK(SetDragItemBounds);
+#endif
 	if (!PyArg_ParseTuple(_args, "lO&",
 	                      &theItemRef,
 	                      PyMac_GetRect, &itemBounds))
@@ -410,6 +455,9 @@ static PyObject *DragObj_GetDropLocation(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEDesc dropLocation;
+#ifndef GetDropLocation
+	PyMac_PRECHECK(GetDropLocation);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetDropLocation(_self->ob_itself,
@@ -425,6 +473,9 @@ static PyObject *DragObj_SetDropLocation(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	AEDesc dropLocation;
+#ifndef SetDropLocation
+	PyMac_PRECHECK(SetDropLocation);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      AEDesc_Convert, &dropLocation))
 		return NULL;
@@ -441,6 +492,9 @@ static PyObject *DragObj_GetDragAttributes(DragObjObject *_self, PyObject *_args
 	PyObject *_res = NULL;
 	OSErr _err;
 	DragAttributes flags;
+#ifndef GetDragAttributes
+	PyMac_PRECHECK(GetDragAttributes);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetDragAttributes(_self->ob_itself,
@@ -457,6 +511,9 @@ static PyObject *DragObj_GetDragMouse(DragObjObject *_self, PyObject *_args)
 	OSErr _err;
 	Point mouse;
 	Point globalPinnedMouse;
+#ifndef GetDragMouse
+	PyMac_PRECHECK(GetDragMouse);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetDragMouse(_self->ob_itself,
@@ -474,6 +531,9 @@ static PyObject *DragObj_SetDragMouse(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	Point globalPinnedMouse;
+#ifndef SetDragMouse
+	PyMac_PRECHECK(SetDragMouse);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &globalPinnedMouse))
 		return NULL;
@@ -490,6 +550,9 @@ static PyObject *DragObj_GetDragOrigin(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	Point globalInitialMouse;
+#ifndef GetDragOrigin
+	PyMac_PRECHECK(GetDragOrigin);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetDragOrigin(_self->ob_itself,
@@ -507,6 +570,9 @@ static PyObject *DragObj_GetDragModifiers(DragObjObject *_self, PyObject *_args)
 	SInt16 modifiers;
 	SInt16 mouseDownModifiers;
 	SInt16 mouseUpModifiers;
+#ifndef GetDragModifiers
+	PyMac_PRECHECK(GetDragModifiers);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = GetDragModifiers(_self->ob_itself,
@@ -527,6 +593,9 @@ static PyObject *DragObj_ShowDragHilite(DragObjObject *_self, PyObject *_args)
 	OSErr _err;
 	RgnHandle hiliteFrame;
 	Boolean inside;
+#ifndef ShowDragHilite
+	PyMac_PRECHECK(ShowDragHilite);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&b",
 	                      ResObj_Convert, &hiliteFrame,
 	                      &inside))
@@ -544,6 +613,9 @@ static PyObject *DragObj_HideDragHilite(DragObjObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef HideDragHilite
+	PyMac_PRECHECK(HideDragHilite);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = HideDragHilite(_self->ob_itself);
@@ -559,6 +631,9 @@ static PyObject *DragObj_DragPreScroll(DragObjObject *_self, PyObject *_args)
 	OSErr _err;
 	SInt16 dH;
 	SInt16 dV;
+#ifndef DragPreScroll
+	PyMac_PRECHECK(DragPreScroll);
+#endif
 	if (!PyArg_ParseTuple(_args, "hh",
 	                      &dH,
 	                      &dV))
@@ -576,6 +651,9 @@ static PyObject *DragObj_DragPostScroll(DragObjObject *_self, PyObject *_args)
 {
 	PyObject *_res = NULL;
 	OSErr _err;
+#ifndef DragPostScroll
+	PyMac_PRECHECK(DragPostScroll);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = DragPostScroll(_self->ob_itself);
@@ -590,6 +668,9 @@ static PyObject *DragObj_UpdateDragHilite(DragObjObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	RgnHandle updateRgn;
+#ifndef UpdateDragHilite
+	PyMac_PRECHECK(UpdateDragHilite);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      ResObj_Convert, &updateRgn))
 		return NULL;
@@ -701,6 +782,9 @@ static PyObject *Drag_NewDrag(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	OSErr _err;
 	DragRef theDrag;
+#ifndef NewDrag
+	PyMac_PRECHECK(NewDrag);
+#endif
 	if (!PyArg_ParseTuple(_args, ""))
 		return NULL;
 	_err = NewDrag(&theDrag);
@@ -716,6 +800,9 @@ static PyObject *Drag_GetDragHiliteColor(PyObject *_self, PyObject *_args)
 	OSErr _err;
 	WindowPtr window;
 	RGBColor color;
+#ifndef GetDragHiliteColor
+	PyMac_PRECHECK(GetDragHiliteColor);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      WinObj_Convert, &window))
 		return NULL;
@@ -732,6 +819,9 @@ static PyObject *Drag_WaitMouseMoved(PyObject *_self, PyObject *_args)
 	PyObject *_res = NULL;
 	Boolean _rv;
 	Point initialMouse;
+#ifndef WaitMouseMoved
+	PyMac_PRECHECK(WaitMouseMoved);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&",
 	                      PyMac_GetPoint, &initialMouse))
 		return NULL;
@@ -749,6 +839,9 @@ static PyObject *Drag_ZoomRects(PyObject *_self, PyObject *_args)
 	Rect toRect;
 	SInt16 zoomSteps;
 	ZoomAcceleration acceleration;
+#ifndef ZoomRects
+	PyMac_PRECHECK(ZoomRects);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&hh",
 	                      PyMac_GetRect, &fromRect,
 	                      PyMac_GetRect, &toRect,
@@ -773,6 +866,9 @@ static PyObject *Drag_ZoomRegion(PyObject *_self, PyObject *_args)
 	Point zoomDistance;
 	SInt16 zoomSteps;
 	ZoomAcceleration acceleration;
+#ifndef ZoomRegion
+	PyMac_PRECHECK(ZoomRegion);
+#endif
 	if (!PyArg_ParseTuple(_args, "O&O&hh",
 	                      ResObj_Convert, &region,
 	                      PyMac_GetPoint, &zoomDistance,
