@@ -358,7 +358,7 @@ sub do_cmd_pep{
     # Save the reference
     my $nstr = gen_index_id("Python Enhancement Proposals!PEP $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" id='$id'\n"
+    return ("<a class=\"rfc\" id='$id' xml:id='$id'\n"
             . "href=\"$href\">PEP $rfcnumber$icon</a>" . $_);
 }
 
@@ -371,7 +371,7 @@ sub do_cmd_rfc{
     # Save the reference
     my $nstr = gen_index_id("RFC!RFC $rfcnumber", '');
     $index{$nstr} .= make_half_href("$CURRENT_FILE#$id");
-    return ("<a class=\"rfc\" id='$id'\nhref=\"$href\">"
+    return ("<a class=\"rfc\" id='$id' xml:id='$id'\nhref=\"$href\">"
             . "RFC $rfcnumber$icon</a>" . $_);
 }
 
@@ -525,14 +525,14 @@ sub add_index_entry($$){
 
 sub new_link_name_info(){
     my $name = "l2h-" . ++$globals{'max_id'};
-    my $aname = "<a id='$name'>";
+    my $aname = "<a id='$name' xml:id='$name'>";
     my $ahref = gen_link($CURRENT_FILE, $name);
     return ($name, $ahref);
 }
 
 sub new_link_info(){
     my($name, $ahref) = new_link_name_info();
-    my $aname = "<a id='$name'>";
+    my $aname = "<a id='$name' xml:id='$name'>";
     return ($name, $aname, $ahref);
 }
 
@@ -762,11 +762,11 @@ sub make_str_index_entry($){
     add_index_entry($str, $ahref);
     if ($str =~ /^<[a-z]+\b/) {
         my $s = "$str";
-        $s =~ s/^<([a-z]+)\b/<$1 id='$name'/;
+        $s =~ s/^<([a-z]+)\b/<$1 id='$name' xml:id='$name'/;
         return $s;
     }
     else {
-        return "<a id='$name'>$str</a>";
+        return "<a id='$name' xml:id='$name'>$str</a>";
     }
 }
 
@@ -844,7 +844,7 @@ sub do_cmd_production{
     }
     $TokenToTargetMapping{"$CURRENT_GRAMMAR:$token"} = $target;
     return ("<tr valign=\"baseline\">\n"
-            . "    <td><code><a id='tok-$token'>"
+            . "    <td><code><a id='tok-$token' xml:id='tok-$token'>"
             . "$token</a></code></td>\n"
             . "    <td>&nbsp;::=&nbsp;</td>\n"
             . "    <td><code>"
