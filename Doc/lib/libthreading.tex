@@ -51,19 +51,19 @@ method blocks until the flag is true.
 
 \begin{classdesc*}{local}{}
 A class that represents thread-local data.  Thread-local data are data
-who's values are thread specific.  To manage thread-local data, just
+whose values are thread specific.  To manage thread-local data, just
 create an instance of \class{local} (or a subclass) and store
 attributes on it:
 
 \begin{verbatim}
-  >>> mydata = threading.local()
-  >>> mydata.x = 1
+mydata = threading.local()
+mydata.x = 1
 \end{verbatim}
 
 The instance's values will be different for separate threads.
 
 For more details and extensive examples, see the documentation string
-of the _threading_local module.
+of the \module{_threading_local} module.
 
 \versionadded{2.4}
 \end{classdesc*}
