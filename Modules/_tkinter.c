@@ -1428,11 +1428,9 @@ static PyMethodDef moduleMethods[] =
 	{NULL,                 NULL}
 };
 
-#ifdef WITH_READLINE
 static int
 EventHook()
 {
-	/* XXX Reset tty */
 	if (errorInCmd) {
 		errorInCmd = 0;
 		PyErr_Restore(excInCmd, valInCmd, trbInCmd);
@@ -1443,7 +1441,6 @@ EventHook()
 		Tcl_DoOneEvent(TCL_DONT_WAIT);
 	return 0;
 }
-#endif /* WITH_READLINE */
 
 
 /* all errors will be checked in one fell swoop in init_tkinter() */
@@ -1476,9 +1473,7 @@ ins_string(d, name, val)
 void
 init_tkinter()
 {
-#ifdef WITH_READLINE
-	extern int (*rl_event_hook) ();
-#endif /* WITH_READLINE */
+	extern int (*Py_input_hook) ();
 	PyObject *m, *d;
 
 	Tkapp_Type.ob_type = &PyType_Type;
@@ -1502,9 +1497,8 @@ init_tkinter()
 	ins_string(d, "TK_VERSION", TK_VERSION);
 	ins_string(d, "TCL_VERSION", TCL_VERSION);
 
-#ifdef WITH_READLINE
-	rl_event_hook = EventHook;
-#endif /* WITH_READLINE */
+	if (Py_input_hook == NULL)
+		Py_input_hook = EventHook;
 
 	if (PyErr_Occurred())
 		Py_FatalError("can't initialize module _tkinter");
