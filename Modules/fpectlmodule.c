@@ -188,6 +188,10 @@ static void fpe_reset(Sigfunc *handler)
     ieee_set_fp_control(fp_control);
     PyOS_setsig(SIGFPE, handler);
 
+/*-- DEC ALPHA VMS --------------------------------------------------------*/
+#elif defined(__ALPHA) && defined(__VMS)
+    PyOS_setsig(SIGFPE, handler);
+
 /*-- Cray Unicos ----------------------------------------------------------*/
 #elif defined(cray)
     /* UNICOS delivers SIGFPE by default, but no matherr */

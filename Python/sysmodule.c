@@ -32,6 +32,10 @@ extern void *PyWin_DLLhModule;
 extern const char *PyWin_DLLVersionString;
 #endif
 
+#ifdef __VMS
+#include <unixlib.h>
+#endif
+
 PyObject *
 PySys_GetObject(char *name)
 {
@@ -1050,7 +1054,22 @@ makeargvobject(int argc, char **argv)
 	if (av != NULL) {
 		int i;
 		for (i = 0; i < argc; i++) {
+#ifdef __VMS
+			PyObject *v;
+
+			/* argv[0] is the script pathname if known */
+			if (i == 0) {
+				char* fn = decc$translate_vms(argv[0]);
+				if ((fn == (char *)0) || fn == (char *)-1)
+					v = PyString_FromString(argv[0]);
+				else
+					v = PyString_FromString(
+						decc$translate_vms(argv[0]));
+			} else
+				v = PyString_FromString(argv[i]);
+#else
 			PyObject *v = PyString_FromString(argv[i]);
+#endif
 			if (v == NULL) {
 				Py_DECREF(av);
 				av = NULL;

@@ -2199,7 +2199,11 @@ static PyObject *
 socket_gethostbyname(PyObject *self, PyObject *args)
 {
 	char *name;
+#ifdef ENABLE_IPV6
 	struct sockaddr_storage addrbuf;
+#else
+        struct sockaddr_in addrbuf;
+#endif
 
 	if (!PyArg_ParseTuple(args, "s:gethostbyname", &name))
 		return NULL;
@@ -2357,7 +2361,11 @@ socket_gethostbyname_ex(PyObject *self, PyObject *args)
 {
 	char *name;
 	struct hostent *h;
-	struct sockaddr_storage addr;
+#ifdef ENABLE_IPV6
+        struct sockaddr_storage addr;
+#else
+        struct sockaddr_in addr;
+#endif
 	struct sockaddr *sa;
 	PyObject *ret;
 #ifdef HAVE_GETHOSTBYNAME_R

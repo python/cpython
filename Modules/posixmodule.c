@@ -17,18 +17,7 @@
 #include "structseq.h"
 
 #if defined(__VMS)
-#    include <ctype.h>			/* tolower() */
-#    include <descrip.h>		/* string descriptors */
-#    include <dvidef.h>			/* DVI$_name */
-#    include <file.h>			/* -> O_RDWR */
-#    include <jpidef.h>			/* JPI$_name */
-#    include <lib$routines.h>		/* LIB$name */
-#    include <ots$routines.h>		/* OTS$name */
-#    include <ssdef.h>			/* SS$_name */
 #    include <unixio.h>
-#    include <unixlib.h>
-#    include <stat.h>
-#    include <wait.h>			/* define wait() */
 #endif /* defined(__VMS) */
 
 PyDoc_STRVAR(posix__doc__,
@@ -325,63 +314,6 @@ static char **environ;
 extern char **environ;
 #endif /* !_MSC_VER */
 
-#if defined(__VMS)
-/* add some values to provide a similar environment like POSIX */
-static
-void
-vms_add_posix_env(PyObject *d)
-{
-	PyObject *o;
-	char* str;
-
-	str = getenv("LINES");
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "LINES", o);
-		Py_DECREF(o);
-	}
-
-	str = getenv("COLUMNS");
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "COLUMNS", o);
-		Py_DECREF(o);
-	}
-
-	str = getenv("USER");
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "USERNAME", o);
-		Py_DECREF(o);
-	}
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "LOGNAME", o);
-		Py_DECREF(o);
-	}
-
-	str = getenv("HOME");
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "HOME", o);
-		Py_DECREF(o);
-	}
-
-	str = getenv("PATH");
-	o = Py_BuildValue("s", str);
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "PATH", o);
-		Py_DECREF(o);
-	}
-	/* OS = "OpenVMS" */
-	o = PyString_FromString ("OpenVMS");
-	if (o != NULL) {
-		(void)PyDict_SetItemString(d, "OS", o);
-		Py_DECREF(o);
-	}
-}
-#endif /* __VMS */
-
 static PyObject *
 convertenviron(void)
 {
@@ -421,9 +353,7 @@ convertenviron(void)
 		Py_DECREF(k);
 		Py_DECREF(v);
 	}
-#if defined(__VMS)
-        vms_add_posix_env(d);
-#elif defined(PYOS_OS2)
+#if defined(PYOS_OS2)
     {
         APIRET rc;
         char   buffer[1024]; /* OS/2 Provides a Documented Max of 1024 Chars */
@@ -1133,7 +1063,7 @@ posix_ttyname(PyObject *self, PyObject *args)
 		return NULL;
 
 #if defined(__VMS)
-	/* DECC V5.0 - only about FD= 0 @@ try getname()+$getdvi(dvi$_devnam) */
+        /* file descriptor 0 only, the default input device (stdin) */
 	if (id == 0) {
 		ret = ttyname();
 	}
@@ -1339,9 +1269,6 @@ posix_getcwd(PyObject *self, PyObject *noargs)
 	Py_BEGIN_ALLOW_THREADS
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	res = _getcwd2(buf, sizeof buf);
-#elif defined(__VMS)
-	/* 0 = force Unix-style path if in the VMS DCL environment! */
-	res = getcwd(buf, sizeof buf, 0);
 #else
 	res = getcwd(buf, sizeof buf);
 #endif
@@ -1378,9 +1305,6 @@ posix_getcwdu(PyObject *self, PyObject *noargs)
 	Py_BEGIN_ALLOW_THREADS
 #if defined(PYOS_OS2) && defined(PYCC_GCC)
 	res = _getcwd2(buf, sizeof buf);
-#elif defined(__VMS)
-	/* 0 = force Unix-style path if in the VMS DCL environment! */
-	res = getcwd(buf, sizeof buf, 0);
 #else
 	res = getcwd(buf, sizeof buf);
 #endif
@@ -5183,11 +5107,7 @@ posix_pipe(PyObject *self, PyObject *noargs)
 	int fds[2];
 	int res;
 	Py_BEGIN_ALLOW_THREADS
-#if defined(__VMS)
-	res = pipe(fds,0,2100); /* bigger mailbox quota than 512 */
-#else
 	res = pipe(fds);
-#endif
 	Py_END_ALLOW_THREADS
 	if (res != 0)
 		return posix_error();

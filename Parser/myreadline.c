@@ -15,6 +15,10 @@
 #include "windows.h"
 #endif /* MS_WINDOWS */
 
+#ifdef __VMS
+extern char* vms__StdioReadline(FILE *sys_stdin, FILE *sys_stdout, char *prompt);
+#endif
+
 int (*PyOS_InputHook)(void) = NULL;
 
 #ifdef RISCOS
@@ -159,7 +163,11 @@ PyOS_Readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
 	char *rv;
 
 	if (PyOS_ReadlineFunctionPointer == NULL) {
+#ifdef __VMS
+                PyOS_ReadlineFunctionPointer = vms__StdioReadline;
+#else
                 PyOS_ReadlineFunctionPointer = PyOS_StdioReadline;
+#endif
 	}
 
 	Py_BEGIN_ALLOW_THREADS
