@@ -189,8 +189,8 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	if (unicode->str) {
 	    /* Keep-Alive optimization: we only upsize the buffer,
 	       never downsize it. */
-	    if ((unicode->length < length) &&
-		unicode_resize(unicode, length)) {
+	    if ((unicode->length < length) && 
+                unicode_resize(unicode, length) < 0) {
 		PyMem_DEL(unicode->str);
 		goto onError;
 	    }
@@ -250,8 +250,7 @@ void unicode_dealloc(register PyUnicodeObject *unicode)
     }
 }
 
-int PyUnicode_Resize(PyObject **unicode,
-		     int length)
+int PyUnicode_Resize(PyObject **unicode, int length)
 {
     register PyUnicodeObject *v;
 
@@ -753,7 +752,7 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
     if (requiredsize > outsize) {
 	if (requiredsize<2*outsize)
 	    requiredsize = 2*outsize;
-	if (PyUnicode_Resize(output, requiredsize))
+	if (PyUnicode_Resize(output, requiredsize) < 0)
 	    goto onError;
 	*outptr = PyUnicode_AS_UNICODE(*output) + *outpos;
     }
@@ -949,7 +948,7 @@ PyObject *PyUnicode_DecodeUTF7(const char *s,
            goto restart;
     }
 
-    if (_PyUnicode_Resize(&unicode, p - PyUnicode_AS_UNICODE(unicode)))
+    if (_PyUnicode_Resize(&unicode, p - PyUnicode_AS_UNICODE(unicode)) < 0)
         goto onError;
 
     Py_XDECREF(errorHandler);
@@ -1251,7 +1250,7 @@ PyObject *PyUnicode_DecodeUTF8(const char *s,
     }
 
     /* Adjust length */
-    if (_PyUnicode_Resize(&unicode, p - unicode->str))
+    if (_PyUnicode_Resize(&unicode, p - unicode->str) < 0)
         goto onError;
 
     Py_XDECREF(errorHandler);
@@ -1522,7 +1521,7 @@ PyUnicode_DecodeUTF16(const char *s,
         *byteorder = bo;
 
     /* Adjust length */
-    if (_PyUnicode_Resize(&unicode, p - unicode->str))
+    if (_PyUnicode_Resize(&unicode, p - unicode->str) < 0)
         goto onError;
 
     Py_XDECREF(errorHandler);
@@ -1832,7 +1831,7 @@ PyObject *PyUnicode_DecodeUnicodeEscape(const char *s,
         nextByte:
         ;
     }
-    if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))))
+    if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))) < 0)
         goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -2102,7 +2101,7 @@ PyObject *PyUnicode_DecodeRawUnicodeEscape(const char *s,
 	nextByte:
 	;
     }
-    if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))))
+    if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))) < 0)
 	goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -2538,7 +2537,7 @@ PyObject *PyUnicode_DecodeASCII(const char *s,
 	}
     }
     if (p - PyUnicode_AS_UNICODE(v) < PyString_GET_SIZE(v))
-	if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))))
+	if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))) < 0)
 	    goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -2735,7 +2734,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 			         (targetsize << 2);
 		    extrachars += needed;
 		    if (_PyUnicode_Resize(&v, 
-					 PyUnicode_GET_SIZE(v) + needed)) {
+					 PyUnicode_GET_SIZE(v) + needed) < 0) {
 			Py_DECREF(x);
 			goto onError;
 		    }
@@ -2760,7 +2759,7 @@ PyObject *PyUnicode_DecodeCharmap(const char *s,
 	++s;
     }
     if (p - PyUnicode_AS_UNICODE(v) < PyUnicode_GET_SIZE(v))
-	if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))))
+	if (_PyUnicode_Resize(&v, (int)(p - PyUnicode_AS_UNICODE(v))) < 0)
 	    goto onError;
     Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
@@ -3219,7 +3218,7 @@ int charmaptranslate_makespace(PyObject **outobj, Py_UNICODE **outp, int *outsiz
 	/* exponentially overallocate to minimize reallocations */
 	if (requiredsize < 2 * *outsize)
 	    requiredsize = 2 * *outsize;
-	if (_PyUnicode_Resize(outobj, requiredsize))
+	if (_PyUnicode_Resize(outobj, requiredsize) < 0)
 	    return -1;
 	*outp = PyUnicode_AS_UNICODE(*outobj) + outpos;
 	*outsize = requiredsize;
@@ -3398,7 +3397,7 @@ PyObject *PyUnicode_TranslateCharmap(const Py_UNICODE *p,
     /* Resize if we allocated to much */
     respos = str-PyUnicode_AS_UNICODE(res);
     if (respos<ressize) {
-	if (_PyUnicode_Resize(&res, respos))
+	if (_PyUnicode_Resize(&res, respos) < 0)
 	    goto onError;
     }
     Py_XDECREF(exc);
@@ -3978,7 +3977,7 @@ PyObject *PyUnicode_Join(PyObject *separator,
 	}
 	itemlen = PyUnicode_GET_SIZE(item);
 	while (reslen + itemlen + seplen >= sz) {
-	    if (_PyUnicode_Resize(&res, sz*2)) {
+	    if (_PyUnicode_Resize(&res, sz*2) < 0) {
 		Py_DECREF(item);
 		goto onError;
 	    }
@@ -3995,7 +3994,7 @@ PyObject *PyUnicode_Join(PyObject *separator,
 	reslen += itemlen;
 	Py_DECREF(item);
     }
-    if (_PyUnicode_Resize(&res, reslen))
+    if (_PyUnicode_Resize(&res, reslen) < 0)
 	goto onError;
 
     Py_XDECREF(separator);
@@ -6659,7 +6658,7 @@ PyObject *PyUnicode_Format(PyObject *format,
 	Py_DECREF(args);
     }
     Py_DECREF(uformat);
-    if (_PyUnicode_Resize(&result, reslen - rescnt))
+    if (_PyUnicode_Resize(&result, reslen - rescnt) < 0)
 	goto onError;
     return (PyObject *)result;
 
