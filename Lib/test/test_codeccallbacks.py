@@ -690,6 +690,18 @@ class CodecCallbackTest(unittest.TestCase):
         self.assertRaises(TypeError, u"\xff".translate, {0xff: sys.maxunicode+1})
         self.assertRaises(TypeError, u"\xff".translate, {0xff: ()})
 
+    def test_bug828737(self):
+        charmap = {
+            ord("&"): u"&amp;",
+            ord("<"): u"&lt;",
+            ord(">"): u"&gt;",
+            ord('"'): u"&quot;",
+        }
+        
+        for n in (1, 10, 100, 1000):
+            text = u'abc<def>ghi'*n
+            text.translate(charmap)
+
 def test_main():
     test.test_support.run_unittest(CodecCallbackTest)
 
