@@ -39,7 +39,7 @@ extern void bzero(void *, int);
 #endif
 
 #ifdef MS_WINDOWS
-#include <winsock.h>
+#include <windows.h>
 #else
 #ifdef __BEOS__
 #include <net/socket.h>
@@ -273,9 +273,15 @@ select_select(PyObject *self, PyObject *args)
 	n = select(max, &ifdset, &ofdset, &efdset, tvp);
 	Py_END_ALLOW_THREADS
 
+#ifdef MS_WINDOWS
+	if (n == SOCKET_ERROR) {
+		PyErr_SetExcFromWindowsErr(SelectError, WSAGetLastError());
+	}
+#else
 	if (n < 0) {
 		PyErr_SetFromErrno(SelectError);
 	}
+#endif
 	else if (n == 0) {
                 /* optimization */
 		ifdlist = PyList_New(0);
