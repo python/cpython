@@ -332,10 +332,22 @@ test_support provides the following useful objects:
       platform doesn't offer all the required facilities (like large
       file support), even if all the required modules are available.
 
+    * ``ResourceDenied`` - this is raised when a test requires a resource that
+      is not available.  Primarily used by 'requires'.
+
     * ``verbose`` - you can use this variable to control print output.  Many
       modules use it.  Search for "verbose" in the test_*.py files to see
       lots of examples.
 
+    * ``forget(module_name)`` - attempts to cause Python to "forget" that it
+      loaded a module and erase any PYC files.
+
+    * ``is_resource_enabled(resource)`` - Returns a boolean based on whether
+      the resource is enabled or not.
+
+    * ``requires(resource [, msg])`` - if the required resource is not
+      available the ResourceDenied exception is raised.
+    
     * ``verify(condition, reason='test failed')``.  Use this instead of::
 
           assert condition[, reason]
@@ -343,6 +355,10 @@ test_support provides the following useful objects:
       ``verify()`` has two advantages over ``assert``:  it works even in -O
       mode, and it raises ``TestFailed`` on failure instead of
       ``AssertionError``.
+
+    * ``have_unicode`` - true if Unicode is available, false otherwise.
+
+    * ``is_jython`` - true if the interpreter is Jython, false otherwise.
 
     * ``TESTFN`` - a string that should always be used as the filename when
       you need to create a temp file.  Also use ``try``/``finally`` to
@@ -359,12 +375,12 @@ test_support provides the following useful objects:
       somewhere along sys.path or in the Lib/test tree - see
       test_linuxaudiodev.py for an example of its use.
 
-    * ``use_large_resources`` - true iff tests requiring large time or space
-      should be run.
-
     * ``fcmp(x,y)`` - you can call this function to compare two floating
       point numbers when you expect them to only be approximately equal
       withing a fuzz factor (``test_support.FUZZ``, which defaults to 1e-6).
+
+    * ``check_syntax(statement)`` - make sure that the statement is *not*
+      correct Python syntax.
 
 
 Python and C statement coverage results are currently available at
