@@ -86,6 +86,34 @@ class DumbDBMTestCase(unittest.TestCase):
         self.assertEqual(keys, dkeys)
         return keys
 
+    # Perform randomized operations.  This doesn't make assumptions about
+    # what *might* fail.
+    def test_random(self):
+        import random
+        d = {}  # mirror the database
+        for dummy in range(5):
+            f = dumbdbm.open(_fname)
+            for dummy in range(100):
+                k = random.choice('abcdefghijklm')
+                if random.random() < 0.2:
+                    if k in d:
+                        del d[k]
+                        del f[k]
+                else:
+                    v = random.choice('abc') * random.randrange(10000)
+                    d[k] = v
+                    f[k] = v
+                    self.assertEqual(f[k], v)
+            f.close()
+
+            f = dumbdbm.open(_fname)
+            expected = d.items()
+            expected.sort()
+            got = f.items()
+            got.sort()
+            self.assertEqual(expected, got)
+            f.close()
+
     def tearDown(self):
         _delete_files()
 
