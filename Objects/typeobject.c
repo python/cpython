@@ -304,7 +304,7 @@ call_finalizer(PyObject *self)
 static void
 subtype_dealloc(PyObject *self)
 {
-	PyTypeObject *type, *base, *temp;
+	PyTypeObject *type, *base;
 	destructor f;
 
 	/* This exists so we can DECREF self->ob_type */
@@ -314,28 +314,28 @@ subtype_dealloc(PyObject *self)
 
 	/* Find the nearest base with a different tp_dealloc */
 	type = self->ob_type;
-	base = type;
+	base = type->tp_base;
 	while ((f = base->tp_dealloc) == subtype_dealloc) {
-		temp = base;
 		base = base->tp_base;
 		assert(base);
-		/* While we're at it, clear __slots__ variables */
-		if (temp->tp_basicsize != base->tp_basicsize &&
-		    temp->tp_itemsize == 0)
-		{
-			char *addr = ((char *)self);
-			char *p = addr + base->tp_basicsize;
-			char *q = addr + temp->tp_basicsize;
-			for (; p < q; p += sizeof(PyObject *)) {
-				PyObject **pp;
-				if (p == addr + type->tp_dictoffset ||
-				    p == addr + type->tp_weaklistoffset)
-					continue;
-				pp = (PyObject **)p;
-				if (*pp != NULL) {
-					Py_DECREF(*pp);
-					*pp = NULL;
-				}
+	}
+
+	/* Clear __slots__ variables */
+	if (type->tp_basicsize != base->tp_basicsize &&
+	    type->tp_itemsize == 0)
+	{
+		char *addr = ((char *)self);
+		char *p = addr + base->tp_basicsize;
+		char *q = addr + type->tp_basicsize;
+		for (; p < q; p += sizeof(PyObject *)) {
+			PyObject **pp;
+			if (p == addr + type->tp_dictoffset ||
+			    p == addr + type->tp_weaklistoffset)
+				continue;
+			pp = (PyObject **)p;
+			if (*pp != NULL) {
+				Py_DECREF(*pp);
+				*pp = NULL;
 			}
 		}
 	}
