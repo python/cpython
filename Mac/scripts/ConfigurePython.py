@@ -40,16 +40,6 @@ ppc_goals = [
 	("Cm.ppc.slb", "qtmodules.ppc.slb"),
 	("Qt.ppc.slb", "qtmodules.ppc.slb"),
 
-	("imgcolormap.ppc.slb", "imgmodules.ppc.slb"),
-	("imgformat.ppc.slb", "imgmodules.ppc.slb"),
-	("imggif.ppc.slb", "imgmodules.ppc.slb"),
-	("imgjpeg.ppc.slb", "imgmodules.ppc.slb"),
-	("imgop.ppc.slb", "imgmodules.ppc.slb"),
-	("imgpbm.ppc.slb", "imgmodules.ppc.slb"),
-	("imgpgm.ppc.slb", "imgmodules.ppc.slb"),
-	("imgppm.ppc.slb", "imgmodules.ppc.slb"),
-	("imgtiff.ppc.slb", "imgmodules.ppc.slb"),
-	("imgsgi.ppc.slb", "imgmodules.ppc.slb")
 ]
 
 cfm68k_goals = [
@@ -72,17 +62,6 @@ cfm68k_goals = [
 
 	("Cm.CFM68K.slb", "qtmodules.CFM68K.slb"),
 	("Qt.CFM68K.slb", "qtmodules.CFM68K.slb"),
-
-	("imgcolormap.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgformat.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imggif.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgjpeg.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgop.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgpbm.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgpgm.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgppm.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgtiff.CFM68K.slb", "imgmodules.CFM68K.slb"),
-	("imgsgi.CFM68K.slb", "imgmodules.CFM68K.slb")
 ]
 
 def gotopluginfolder():
