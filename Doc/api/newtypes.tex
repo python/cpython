@@ -388,7 +388,7 @@ Foo_Type.ob_type = &PyType_Type;
   \code{\&PyType_Type}; in Python 2.2.1 and later it will be
   initialized to the \member{ob_type} field of the base class.
   \cfunction{PyType_Ready()} will not change this field if it is
-  nonzero.
+  non-zero.
 
   In Python 2.2, this field is not inherited by subtypes.  In 2.2.1,
   and in 2.3 and beyond, it is inherited by subtypes.
@@ -480,15 +480,16 @@ Foo_Type.ob_type = &PyType_Type;
   references which the instance owns, free all memory buffers owned by
   the instance (using the freeing function corresponding to the
   allocation function used to allocate the buffer), and finally (as
-  its last action) call the type's \member{tp_free} slot.  If the type
-  is not subtypable (doesn't have the \constant{Py_TPFLAGS_BASETYPE}
-  flag bit set), it is permissible to call the object deallocator
-  directly instead of via \member{tp_free}.  The object deallocator
-  should be the one used to allocate the instance; this is normally
-  \cfunction{PyObject_Del()} if the instance was allocated using
-  \cfunction{PyObject_New()} or \cfunction{PyOject_VarNew()}, or
-  \cfunction{PyObject_GC_Del()} if the instance was allocated using
-  \cfunction{PyObject_GC_New()} or \cfunction{PyObject_GC_VarNew()}.
+  its last action) call the type's \member{tp_free} function.  If the
+  type is not subtypable (doesn't have the
+  \constant{Py_TPFLAGS_BASETYPE} flag bit set), it is permissible to
+  call the object deallocator directly instead of via
+  \member{tp_free}.  The object deallocator should be the one used to
+  allocate the instance; this is normally \cfunction{PyObject_Del()}
+  if the instance was allocated using \cfunction{PyObject_New()} or
+  \cfunction{PyOject_VarNew()}, or \cfunction{PyObject_GC_Del()} if
+  the instance was allocated using \cfunction{PyObject_GC_New()} or
+  \cfunction{PyObject_GC_VarNew()}.
 
   This field is inherited by subtypes.
 \end{cmemberdesc}
@@ -710,7 +711,7 @@ PyBufferProcs *tp_as_buffer;
   together using the \code{|} operator to form the value of the
   \member{tp_flags} field.  The macro \cfunction{PyType_HasFeature()}
   takes a type and a flags value, \var{tp} and \var{f}, and checks
-  whether \code{\var{tp}->tp_flags \& \var{f}} is nonzero.
+  whether \code{\var{tp}->tp_flags \& \var{f}} is non-zero.
 
   \begin{datadesc}{Py_TPFLAGS_HAVE_GETCHARBUFFER}
     If this bit is set, the \ctype{PyBufferProcs} struct referenced by
@@ -841,7 +842,8 @@ PyBufferProcs *tp_as_buffer;
 
 \begin{cmemberdesc}{PyTypeObject}{char*}{tp_doc}
   An optional pointer to a NUL-terminated C string giving the
-  docstring for this type object.
+  docstring for this type object.  This is exposed as the
+  \member{__doc__} attribute on the type and instances of the type.
 
   This field is \emph{not} inherited by subtypes.
 \end{cmemberdesc}
@@ -903,25 +905,442 @@ The following three fields only exist if the
 \end{cmemberdesc}
 
 The next field only exists if the \constant{Py_TPFLAGS_HAVE_WEAKREFS}
-flag bit is set.  (XXX ???)
+flag bit is set.
 
-long tp_weaklistoffset;
+\begin{cmemberdesc}{PyTypeObject}{long}{tp_weaklistoffset}
+  If the instances of this type are weakly referenceable, this field
+  is greater than zero and contains the offset in the instance
+  structure of the weak reference list head (ignoring the GC header,
+  if present); this offset is used by
+  \cfunction{PyObject_ClearWeakRefs()} and the
+  \cfunction{PyWeakref_*()} functions.  The instance structure needs
+  to include a field of type \ctype{PyObject*} which is initialized to
+  \NULL.
 
-    XXX
+  Do not confuse this field with \member{tp_weaklist}; that is the
+  list head for weak references to the type object itself.
 
+  This field is inherited by subtypes, but see the rules listed below.
+  A subtype may override this offset; this means that the subtype uses
+  a different weak reference list head than the base type.  Since the
+  list head is always found via \member{tp_weaklistoffset}, this
+  should not be a problem.
 
-The remaining fields only exist if the
+  When a type defined by a class statement has no \member{__slots__}
+  declaration, and none of its base types are weakly referenceable,
+  the type is made weakly referenceable by adding a weak reference
+  list head slot to the instance layout and setting the
+  \member{tp_weaklistoffset} of that slot's offset.
+
+  When a type's \member{__slots__} declaration contains a slot named
+  \member{__weakref__}, that slot becomes the weak reference list head
+  for instances of the type, and the slot's offset is stored in the
+  type's \member{tp_weaklistoffset}.
+
+  When a type's \member{__slots__} declaration does not contain a slot
+  named \member{__weakref__}, the type inherits its
+  \member{tp_weaklistoffset} from its base type.
+\end{cmemberdesc}
+
+The next two fields only exist if the
 \constant{Py_TPFLAGS_HAVE_CLASS} flag bit is set.
 
-/* Added in release 2.2 */
-/* Iterators */
-getiterfunc tp_iter;
+\begin{cmemberdesc}{PyTypeObject}{getiterfunc}{tp_iter}
+  An optional pointer to a function that returns an iterator for the
+  object.  Its presence normally signals that the instances of this
+  type are iterable (although sequences may be iterable without this
+  function, and classic instances always have this function, even if
+  they don't define an \method{__iter__()} method).
 
-    XXX
+  This function has the same signature as
+  \cfunction{PyObject_GetIter()}.
 
-iternextfunc tp_iternext;
+  This field is inherited by subtypes.
+\end{cmemberdesc}
 
-    XXX
+\begin{cmemberdesc}{PyTypeObject}{iternextfunc}{tp_iternext}
+  An optional pointer to a function that returns the next item in an
+  iterator, or raises \exception{StopIteration} when the iterator is
+  exhausted.  Its presence normally signals that the instances of this
+  type are iterators (although classic instances always have this
+  function, even if they don't define a \method{next()} method).
+
+  Iterator types should also define the \member{tp_iter} function, and
+  that function should return the iterator instance itself (not a new
+  iterator instance).
+
+  This function has the same signature as \cfunction{PyIter_Next()}.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+The next fields, up to and including \member{tp_weaklist}, only exist
+if the \constant{Py_TPFLAGS_HAVE_CLASS} flag bit is set.
+
+\begin{cmemberdesc}{PyTypeObject}{struct PyMethodDef*}{tp_methods}
+  An optional pointer to a static \NULL-terminated array of
+  \ctype{PyMethodDef} structures, declaring regular methods of this
+  type.
+
+  For each entry in the array, an entry is added to the type's
+  dictionary (see \member{tp_dict} below) containing a method
+  descriptor.
+
+  This field is not inherited by subtypes (methods are
+  inherited through a different mechanism).
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{struct PyMemberDef*}{tp_members}
+  An optional pointer to a static \NULL-terminated array of
+  \ctype{PyMemberDef} structures, declaring regular data members
+  (fields or slots) of instances of this type.
+
+  For each entry in the array, an entry is added to the type's
+  dictionary (see \member{tp_dict} below) containing a member
+  descriptor.
+
+  This field is not inherited by subtypes (members are inherited
+  through a different mechanism).
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{struct PyGetSetDef*}{tp_getset}
+  An optional pointer to a static \NULL-terminated array of
+  \ctype{PyGetSetDef} structures, declaring computed attributes of
+  instances of this type.
+
+  For each entry in the array, an entry is added to the type's
+  dictionary (see \member{tp_dict} below) containing a getset
+  descriptor.
+
+  This field is not inherited by subtypes (computed attributes are
+  inherited through a different mechanism).
+
+  Docs for PyGetSetDef (XXX belong elsewhere):
+
+\begin{verbatim}
+typedef PyObject *(*getter)(PyObject *, void *);
+typedef int (*setter)(PyObject *, PyObject *, void *);
+
+typedef struct PyGetSetDef {
+    char *name;    /* attribute name */
+    getter get;    /* C function to get the attribute */
+    setter set;    /* C function to set the attribute */
+    char *doc;     /* optional doc string */
+    void *closure; /* optional additional data for getter and setter */
+} PyGetSetDef;
+\end{verbatim}
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyTypeObject*}{tp_base}
+  An optional pointer to a base type from which type properties are
+  inherited.  At this level, only single inheritance is supported;
+  multiple inheritance require dynamically creating a type object by
+  calling the metatype.
+
+  This field is not inherited by subtypes (obviously), but it defaults
+  to \code{\&PyBaseObject_Type} (which to Python programmers is known
+  as the type \class{object}).
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_dict}
+  The type's dictionary is stored here by \cfunction{PyType_Ready()}.
+
+  This field should normally be initialized to \NULL{} before
+  PyType_Ready is called; it may also be initialized to a dictionary
+  containing initial attributes for the type.  Once
+  \cfunction{PyType_Ready()} has initialized the type, extra
+  attributes for the type may be added to this dictionary only if they
+  don't correspond to overloaded operations (like \method{__add__()}).
+
+  This field is not inherited by subtypes (though the attributes
+  defined in here are inherited through a different mechanism).
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{descrgetfunc}{tp_descr_get}
+  An optional pointer to a "descriptor get" function.
+
+  XXX blah, blah.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{descrsetfunc}{tp_descr_set}
+  An optional pointer to a "descriptor set" function.
+
+  XXX blah, blah.
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{long}{tp_dictoffset}
+  If the instances of this type have a dictionary containing instance
+  variables, this field is non-zero and contains the offset in the
+  instances of the type of the instance variable dictionary; this
+  offset is used by \cfunction{PyObject_GenericGetAttr()}.
+
+  Do not confuse this field with \member{tp_dict}; that is the
+  dictionary for attributes of the type object itself.
+
+  If the value of this field is greater than zero, it specifies the
+  offset from the start of the instance structure.  If the value is
+  less than zero, it specifies the offset from the *end* of the
+  instance structure.  A negative offset is more expensive to use, and
+  should only be used when the instance structure contains a
+  variable-length part.  This is used for example to add an instance
+  variable dictionary to subtypes of \class{str} or \class{tuple}.
+  Note that the \member{tp_basicsize} field should account for the
+  dictionary added to the end in that case, even though the dictionary
+  is not included in the basic object layout.  On a system with a
+  pointer size of 4 bytes, \member{tp_dictoffset} should be set to
+  \code{-4} to indicate that the dictionary is at the very end of the
+  structure.
+
+  The real dictionary offset in an instance can be computed from a
+  negative \member{tp_dictoffset} as follows:
+
+\begin{verbatim}
+dictoffset = tp_basicsize + abs(ob_size)*tp_itemsize + tp_dictoffset
+if dictoffset is not aligned on sizeof(void*):
+    round up to sizeof(void*)
+\end{verbatim}
+
+  where \member{tp_basicsize}, \member{tp_itemsize} and
+  \member{tp_dictoffset} are taken from the type object, and
+  \member{ob_size} is taken from the instance.  The absolute value is
+  taken because long ints use the sign of \member{ob_size} to store
+  the sign of the number.  (There's never a need to do this
+  calculation yourself; it is done for you by
+  \cfunction{_PyObject_GetDictPtr()}.)
+
+  This field is inherited by subtypes, but see the rules listed below.
+  A subtype may override this offset; this means that the subtype
+  instances store the dictionary at a difference offset than the base
+  type.  Since the dictionary is always found via
+  \member{tp_dictoffset}, this should not be a problem.
+
+  When a type defined by a class statement has no \member{__slots__}
+  declaration, and none of its base types has an instance variable
+  dictionary, a dictionary slot is added to the instance layout and
+  the \member{tp_dictoffset} is set to that slot's offset.
+
+  When a type defined by a class statement has a \member{__slots__}
+  declaration, the type inherits its \member{tp_dictoffset} from its
+  base type.
+
+  (Adding a slot named \member{__dict__} to the \member{__slots__}
+  declaration does not have the expected effect, it just causes
+  confusion.  Maybe this should be added as a feature just like
+  \member{__weakref__} though.)
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{initproc}{tp_init}
+  An optional pointer to an instance initialization function.
+
+  This function corresponds to the \method{__init__()} method of
+  classes.  Like \method{__init__()}, it is possible to create an
+  instance without calling \method{__init__()}, and it is possible to
+  reinitialize an instance by calling its \method{__init__()} method
+  again.
+
+  The function signature is
+
+\begin{verbatim}
+tp_init(PyObject *self, PyObject *args, PyObject *kwds)
+\end{verbatim}
+
+  The self argument is the instance to be initialized; the \var{args}
+  and \var{kwds} arguments represent positional and keyword arguments
+  of the call to \method{__init__()}.
+
+  The \member{tp_init} function, if not \NULL, is called when an
+  instance is created normally by calling its type, after the type's
+  \member{tp_new} function has returned an instance of the type.  If
+  the \member{tp_new} function returns an instance of some other type
+  that is not a subtype of the original type, no \member{tp_init}
+  function is called; if \member{tp_new} returns an instance of a
+  subtype of the original type, the subtype's \member{tp_init} is
+  called.  (VERSION NOTE: described here is what is implemented in
+  Python 2.2.1 and later.  In Python 2.2, the \member{tp_init} of the
+  type of the object returned by \member{tp_new} was always called, if
+  not \NULL.)
+
+  This field is inherited by subtypes.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{allocfunc}{tp_alloc}
+  An optional pointer to an instance allocation function.
+
+  The function signature is
+
+\begin{verbatim}
+tp_alloc(PyTypeObject *self, int nitems)
+\end{verbatim}
+
+  The purpose of this function is to separate memory allocation from
+  memory initialization.  It should return a pointer to a block of
+  memory of adequate length for the instance, suitably aligned, and
+  initialized to zeros, but with \member{ob_refcnt} set to \code{1}
+  and \member{ob_type} set to the type argument.  If the type's
+  \member{tp_itemsize} is non-zero, the object's \member{ob_size} field
+  should be initialized to \var{nitems} and the length of the
+  allocated memory block should be \code{tp_basicsize +
+  \var{nitems}*tp_itemsize}, rounded up to a multiple of
+  \code{sizeof(void*)}; otherwise, \var{nitems} is not used and the
+  length of the block should be \member{tp_basicsize}.
+
+  Do not use this function to do any other instance initialization,
+  not even to allocate additional memory; that should be done by
+  \member{tp_new}.
+
+  This field is inherited by static subtypes, but not by dynamic
+  subtypes (subtypes created by a class statement); in the latter,
+  this field is always set to \cfunction{PyType_GenericAlloc()}, to
+  force a standard heap allocation strategy.  That is also the
+  recommended value for statically defined types.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{newfunc}{tp_new}
+  An optional pointer to an instance creation function.
+
+  If this function is \NULL{} for a particular type, that type cannot
+  be called to create new instances; presumably there is some other
+  way to create instances, like a factory function.
+
+  The function signature is
+
+\begin{verbatim}
+tp_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
+\end{verbatim}
+
+  The subtype argument is the type of the object being created; the
+  \var{args} and \var{kwds} arguments represent positional and keyword
+  arguments of the call to the type.  Note that subtype doesn't have
+  to equal the type whose \member{tp_new} function is called; it may
+  be a subtype of that type (but not an unrelated type).
+
+  The \member{tp_new} function should call
+  \code{\var{subtype}->tp_alloc(\var{subtype}, \var{nitems})} to
+  allocate space for the object, and then do only as much further
+  initialization as is absolutely necessary.  Initialization that can
+  safely be ignored or repeated should be placed in the
+  \member{tp_init} handler.  A good rule of thumb is that for
+  immutable types, all initialization should take place in
+  \member{tp_new}, while for mutable types, most initialization should
+  be deferred to \member{tp_init}.
+
+  This field is inherited by subtypes, except it is not inherited by
+  static types whose \member{tp_base} is \NULL{} or
+  \code{\&PyBaseObject_Type}.  The latter exception is a precaution so
+  that old extension types don't become callable simply by being
+  linked with Python 2.2.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{destructor}{tp_free}
+  An optional pointer to an instance deallocation function.
+
+  The signature of this function has changed slightly: in Python
+  2.2 and 2.2.1, its signature is \ctype{destructor}:
+
+\begin{verbatim}
+void tp_free(PyObject *)
+\end{verbatim}
+
+  In Python 2.3 and beyond, its signature is \ctype{freefunc}:
+
+\begin{verbatim}
+void tp_free(void *)
+\end{verbatim}
+
+  The only initializer that is compatible with both versions is
+  \code{_PyObject_Del}, whose definition has suitably adapted in
+  Python 2.3.
+
+  This field is inherited by static subtypes, but not by dynamic
+  subtypes (subtypes created by a class statement); in the latter,
+  this field is set to a deallocator suitable to match
+  \cfunction{PyType_GenericAlloc()} and the value of the
+  \constant{Py_TPFLAGS_HAVE_GC} flag bit.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{inquiry}{tp_is_gc}
+  An optional pointer to a function called by the garbage collector.
+
+  The garbage collector needs to know whether a particular object is
+  collectible or not.  Normally, it is sufficient to look at the
+  object's type's \member{tp_flags} field, and check the
+  \constant{Py_TPFLAGS_HAVE_GC} flag bit.  But some types have a
+  mixture of statically and dynamically allocated instances, and the
+  statically allocated instances are not collectible.  Such types
+  should define this function; it should return \code{1} for a
+  collectible instance, and \code{0} for a non-collectible instance.
+  The signature is
+
+\begin{verbatim}
+int tp_is_gc(PyObject *self)
+\end{verbatim}
+
+  (The only example of this are types themselves.  The metatype,
+  \cdata{PyType_Type}, defines this function to distinguish between
+  statically and dynamically allocated types.)
+
+  This field is inherited by subtypes.  (VERSION NOTE: in Python
+  2.2, it was not inherited.  It is inherited in 2.2.1 and later
+  versions.)
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_bases}
+  Tuple of base types.
+
+  This is set for types created by a class statement.  It should be
+  \NULL{} for statically defined types.
+
+  This field is not inherited.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_mro}
+  Tuple containing the expanded set of base types, starting with the
+  type itself and ending with \class{object}, in Method Resolution
+  Order.
+
+  This field is not inherited; it is calculated fresh by
+  \cfunction{PyType_Ready()}.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_cache}
+  Unused.  Not inherited.  Internal use only.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_subclasses}
+  List of weak references to subclasses.  Not inherited.  Internal
+  use only.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyObject*}{tp_weaklist}
+  Weak reference list head, for weak references to this type
+  object.  Not inherited.  Internal use only.
+\end{cmemberdesc}
+
+The remaining fields are only defined if the feature test macro
+\constant{COUNT_ALLOCS} is defined, and are for internal use only.
+They are documented here for completion.  None of these fields are
+inherited by subtypes.
+
+\begin{cmemberdesc}{PyTypeObject}{int}{tp_allocs}
+  Number of allocations.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{int}{tp_frees}
+  Number of frees.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{int}{tp_maxalloc}
+  Maximum simultaneously allocated objects.
+\end{cmemberdesc}
+
+\begin{cmemberdesc}{PyTypeObject}{PyTypeObject*}{tp_next}
+  Pointer to the next type object with a non-zero \member{tp_allocs}
+  field.
+\end{cmemberdesc}
 
 
 \section{Mapping Object Structures \label{mapping-structs}}
