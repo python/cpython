@@ -490,6 +490,10 @@ class Marshaller:
                 raise TypeError, "cannot marshal recursive data structures"
             self.memo[i] = None
 
+    def endcontainer(self, value):
+        if value:
+            del self.memo[id(value)]
+
     def dump_array(self, value):
         self.container(value)
         write = self.write
@@ -497,6 +501,7 @@ class Marshaller:
         for v in value:
             self.__dump(v)
         write("</data></array></value>\n")
+        self.endcontainer(value)
     dispatch[TupleType] = dump_array
     dispatch[ListType] = dump_array
 
@@ -513,6 +518,7 @@ class Marshaller:
             self.__dump(v)
             write("</member>\n")
         write("</struct></value>\n")
+        self.endcontainer(value)
     dispatch[DictType] = dump_struct
 
     def dump_instance(self, value):
