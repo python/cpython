@@ -728,10 +728,14 @@ The most convenient way is to add a path configuration file to a
 directory that's already on Python's path, usually to the
 \file{.../site-packages/} directory.  Path configuration files have an
 extension of \file{.pth}, and each line must contain a single path
-that will be added to \code{sys.path}.  Paths can be absolute or
-relative, in which case they're relative to the directory containing
-the \file{.pth} file.  Any directories added to the search path will
-be scanned in turn for \file{.pth} files.  See
+that will be appended to \code{sys.path}.  (Because the new paths are
+appended to \code{sys.path}, modules in the added directories will not
+override standard modules.  This means you can't use this mechanism
+for installing fixed versions of standard modules.)
+
+Paths can be absolute or relative, in which case they're relative to
+the directory containing the \file{.pth} file.  Any directories added
+to the search path will be scanned in turn for \file{.pth} files.  See
 \citetitle[http://www.python.org/dev/doc/devel/lib/module-site.html]{the
 documentation for the \module{site} module} for more information.
 
