@@ -8,6 +8,13 @@ def do_test(module):
     print len(f.readlines(60))
 
     f = module.StringIO()
+    f.write('abcdef')
+    f.seek(3)
+    f.write('uvwxyz')
+    f.write('!')
+    print `f.getvalue()`
+    f.close()
+    f = module.StringIO()
     f.write(s)
     f.seek(10)
     f.truncate()
