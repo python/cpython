@@ -257,8 +257,17 @@ extern "C" {
  *	  in non-overflow cases.
  *    X is evaluated more than once.
  * Some platforms have better way to spell this, so expect some #ifdef'ery.
+ *
+ * OpenBSD uses 'isinf()' because a compiler bug on that platform causes
+ * the longer macro version to be mis-compiled. This isn't optimal, and 
+ * should be removed once a newer compiler is available on that platform.
+ * The system that had the failure was running OpenBSD 3.2 on Intel, with
+ * gcc 2.95.3.
+ *
+ * According to Tim's checkin, the FreeBSD systems use isinf() to work 
+ * around a FPE bug on that platform.
  */
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #define Py_OVERFLOWED(X) isinf(X)
 #else
 #define Py_OVERFLOWED(X) ((X) != 0.0 && (errno == ERANGE ||    \
