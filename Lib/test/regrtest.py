@@ -19,12 +19,15 @@ Command line options:
 -u: use       -- specify which special resource intensive tests to run
 -h: help      -- print this text and exit
 -t: threshold -- call gc.set_threshold(N)
+-T: coverage  -- turn on code coverage using the trace module
 
 If non-option arguments are present, they are names for tests to run,
 unless -x is given, in which case they are names for tests not to run.
 If no test names are given, all tests are run.
 
 -v is incompatible with -g and does not compare test output files.
+
+-T turns on code coverage tracing with the trace module.
 
 -s means to run only a single test and exit.  This is useful when
 doing memory analysis on the Python interpreter (which tend to consume
@@ -68,13 +71,13 @@ example, to run all the tests except for the bsddb tests, give the
 option '-uall,-bsddb'.
 """
 
-import sys
 import os
+import sys
 import getopt
-import traceback
 import random
-import cStringIO
 import warnings
+import cStringIO
+import traceback
 
 # I see no other way to suppress these warnings;
 # putting them in test_grammar.py has no effect:
@@ -113,9 +116,9 @@ def usage(code, msg=''):
     sys.exit(code)
 
 
-def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
-         exclude=0, single=0, randomize=0, fromfile=None, findleaks=0,
-         use_resources=None):
+def main(tests=None, testdir=None, verbose=0, quiet=False, generate=False,
+         exclude=False, single=False, randomize=False, fromfile=None,
+         findleaks=False, use_resources=None, trace=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -132,19 +135,19 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
     command-line will be used.  If that's empty, too, then all *.py
     files beginning with test_ will be used.
 
-    The other default arguments (verbose, quiet, generate, exclude,
-    single, randomize, findleaks, and use_resources) allow programmers
-    calling main() directly to set the values that would normally be
-    set by flags on the command line.
-
+    The other default arguments (verbose, quiet, generate, exclude, single,
+    randomize, findleaks, use_resources, and trace) allow programmers calling
+    main() directly to set the values that would normally be set by flags on
+    the command line.
     """
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvgqxsrf:lu:t:T',
                                    ['help', 'verbose', 'quiet', 'generate',
                                     'exclude', 'single', 'random', 'fromfile',
-                                    'findleaks', 'use=', 'threshold='])
+                                    'findleaks', 'use=', 'threshold=', 'trace',
+                                    ])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -157,23 +160,25 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         elif o in ('-v', '--verbose'):
             verbose += 1
         elif o in ('-q', '--quiet'):
-            quiet = 1;
+            quiet = True;
             verbose = 0
         elif o in ('-g', '--generate'):
-            generate = 1
+            generate = True
         elif o in ('-x', '--exclude'):
-            exclude = 1
+            exclude = True
         elif o in ('-s', '--single'):
-            single = 1
+            single = True
         elif o in ('-r', '--randomize'):
-            randomize = 1
+            randomize = True
         elif o in ('-f', '--fromfile'):
             fromfile = a
         elif o in ('-l', '--findleaks'):
-            findleaks = 1
+            findleaks = True
         elif o in ('-t', '--threshold'):
             import gc
             gc.set_threshold(int(a))
+        elif o in ('-T', '--coverage'):
+            trace = True
         elif o in ('-u', '--use'):
             u = [x.lower() for x in a.split(',')]
             for r in u:
@@ -206,7 +211,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
             import gc
         except ImportError:
             print 'No GC available, disabling findleaks.'
-            findleaks = 0
+            findleaks = False
         else:
             # Uncomment the line below to report garbage that is not
             # freeable by reference counting alone.  By default only
@@ -253,6 +258,11 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         tests = tests[:1]
     if randomize:
         random.shuffle(tests)
+    if trace:
+        import trace
+        tracer = trace.Trace(ignoredirs=[sys.prefix, sys.exec_prefix],
+                             trace=False, count=True)
+        coverdir = os.path.join(os.getcwd(), 'coverage')
     test_support.verbose = verbose      # Tell tests to be moderately quiet
     test_support.use_resources = use_resources
     save_modules = sys.modules.keys()
@@ -260,15 +270,21 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         if not quiet:
             print test
             sys.stdout.flush()
-        ok = runtest(test, generate, verbose, quiet, testdir)
-        if ok > 0:
-            good.append(test)
-        elif ok == 0:
-            bad.append(test)
+        if trace:
+            # If we're tracing code coverage, then we don't exit with status
+            # if on a false return value from main.
+            tracer.runctx('runtest(test, generate, verbose, quiet, testdir)',
+                          globals=globals(), locals=vars())
         else:
-            skipped.append(test)
-            if ok == -2:
-                resource_denieds.append(test)
+            ok = runtest(test, generate, verbose, quiet, testdir)
+            if ok > 0:
+                good.append(test)
+            elif ok == 0:
+                bad.append(test)
+            else:
+                skipped.append(test)
+                if ok == -2:
+                    resource_denieds.append(test)
         if findleaks:
             gc.collect()
             if gc.garbage:
@@ -330,6 +346,10 @@ def main(tests=None, testdir=None, verbose=0, quiet=0, generate=0,
         else:
             os.unlink(filename)
 
+    if trace:
+        r = tracer.results()
+        r.write_results(show_missing=True, summary=True, coverdir=coverdir)
+
     sys.exit(len(bad) > 0)
 
 
@@ -362,7 +382,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     tests.sort()
     return stdtests + tests
 
-def runtest(test, generate, verbose, quiet, testdir = None):
+def runtest(test, generate, verbose, quiet, testdir=None):
     """Run a single test.
     test -- the name of the test
     generate -- if true, generate output, instead of running the test
@@ -372,7 +392,8 @@ def runtest(test, generate, verbose, quiet, testdir = None):
     testdir -- test directory
     """
     test_support.unload(test)
-    if not testdir: testdir = findtestdir()
+    if not testdir:
+        testdir = findtestdir()
     outputdir = os.path.join(testdir, "output")
     outputfile = os.path.join(outputdir, test)
     if verbose:
