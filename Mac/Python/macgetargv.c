@@ -62,9 +62,11 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 static int arg_count;
 static char *arg_vector[256];
 
-/* Duplicate a string to the heap */
+/* Duplicate a string to the heap. We also export this since it isn't standard
+** and others use it
+*/
 
-static char *
+char *
 strdup(char *src)
 {
 	char *dst = malloc(strlen(src) + 1);
