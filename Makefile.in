@@ -164,10 +164,10 @@ LIBRARY=	libpython$(VERSION).a
 LDLIBRARY=      @LDLIBRARY@
 
 # Default target
-all:		$(LIBRARY) python sharedmods
+all:		$(LIBRARY) python$(EXE) sharedmods
 
 # Build the interpreter
-python:		$(LIBRARY) buildno Modules/python.o
+python$(EXE):		$(LIBRARY) buildno Modules/python.o
 		expr `cat buildno` + 1 >buildno1
 		mv -f buildno1 buildno
 		$(CC) -c $(CFLAGS) -DBUILD=`cat buildno` \
@@ -186,7 +186,7 @@ buildno:
 		echo 0 >buildno
 
 # Build the shared modules
-sharedmods: 	python
+sharedmods: 	python$(EXE)
 		cd Modules;  $(MAKE) OPT="$(OPT)" VERSION="$(VERSION)" \
 			prefix="$(prefix)" exec_prefix="$(exec_prefix)" \
 			sharedmods
@@ -201,9 +201,13 @@ $(LIBRARY):	$(SUBDIRS)
 
 # This rule is only here for DG/UX!!!
 libpython$(VERSION).so:	$(LIBRARY)
-		test -d dgux || mkdir dgux
-		(cd dgux;ar x ../$^;ld -G -o ../$@ * )
-		/bin/rm -rf ./dgux
+		case `uname -s | tr -d '/ ' | tr '[A-Z]' '[a-z]'` in \
+		*dgux*) \
+		    test -d dgux || mkdir dgux; \
+		    (cd dgux;ar x ../$^;ld -G -o ../$@ * ); \
+		    /bin/rm -rf ./dgux \
+		    ;; \
+		esac
 
 # This rule is here for OPENSTEP/Rhapsody/MacOSX
 libpython$(VERSION).dylib: $(LIBRARY)
@@ -230,8 +234,8 @@ Modules:	Parser Python Objects
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	./python
-test:		python
+TESTPYTHON=	./python$(EXE)
+test:		python$(EXE)
 		-rm -f $(srcdir)/Lib/test/*.py[co]
 		-PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
 		PYTHONPATH= $(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
@@ -244,15 +248,15 @@ altinstall:	altbininstall libinstall inclinstall libainstall sharedinstall
 
 # Install the interpreter (by creating a hard link to python$(VERSION))
 bininstall:	altbininstall
-		-if test -f $(BINDIR)/python; \
-		then rm -f $(BINDIR)/python; \
+		-if test -f $(BINDIR)/python$(EXE); \
+		then rm -f $(BINDIR)/python$(EXE); \
 		else true; \
 		fi
 		(cd $(BINDIR); $(LN) python$(VERSION)$(EXE) python$(EXE))
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
-altbininstall:	python
+altbininstall:	python$(EXE)
 		@for i in $(BINDIR); \
 		do \
 			if test ! -d $$i; then \
@@ -342,9 +346,9 @@ libinstall:	python $(srcdir)/Lib/$(PLATDIR)
 			done; \
 		done
 		PYTHONPATH=$(LIBDEST) \
-			./python $(LIBDEST)/compileall.py $(LIBDEST)
+			./python$(EXE) $(LIBDEST)/compileall.py $(LIBDEST)
 		PYTHONPATH=$(LIBDEST) \
-			./python -O $(LIBDEST)/compileall.py $(LIBDEST)
+			./python$(EXE) -O $(LIBDEST)/compileall.py $(LIBDEST)
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):
@@ -459,7 +463,7 @@ config.status:	$(srcdir)/configure
 		else $(SHELL) $(srcdir)/configure $(WITH); \
 		fi
 
-.PRECIOUS:	config.status python
+.PRECIOUS:	config.status python$(EXE)
 
 # Rerun configure with the same options as it was run last time,
 # provided the config.status script exists
@@ -508,7 +512,7 @@ clean:		localclean
 		done
 
 localclobber:	localclean
-		-rm -f tags TAGS python $(LIBRARY) $(LDLIBRARY) *.o
+		-rm -f tags TAGS python$(EXE) $(LIBRARY) $(LDLIBRARY) *.o
 		-rm -f config.log config.cache config.h
 
 clobber:	localclobber
