@@ -119,6 +119,14 @@ overridden with optional extra arguments.
 
 \end{description}
 
+The built-in function \verb@vars()@ returns a dictionary representing
+the current local name space.  The effect of modifications to this
+dictionary on the name space are undefined.%
+\footnote{The current implementation returns the dictionary actually
+used to implement the name space, {\em except} for functions, where
+the optimizer may cause the local name space to be implemented
+differently.}
+
 \section{Exceptions}
 
 Exceptions are a means of breaking out of the normal flow of control

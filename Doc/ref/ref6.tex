@@ -524,6 +524,7 @@ global and the local variables.  If two expressions are given, both
 must be dictionaries and they are used for the global and local
 variables, respectively.
 
-Note: dynamic evaluation of expressions is supported by the built-in
-function \verb@eval@.
-
+Hints: dynamic evaluation of expressions is supported by the built-in
+function \verb@eval()@.  The built-in function \verb@vars()@ returns
+the current local dictionary, which may be useful to pass around for
+use by \verb@exec@.
