@@ -10,10 +10,9 @@ for feature in features:
     value = getattr(__future__, feature)
     if verbose:
         print "Checking __future__ ", feature, "value", value
-    verify(type(value) is TupleType, "feature value isn't tuple")
-    verify(len(value) == 2, "feature value isn't 2-tuple")
 
-    optional, mandatory = value
+    optional = value.getOptionalRelease()
+    mandatory = value.getMandatoryRelease()
 
     verify(type(optional) is TupleType, "optional isn't tuple")
     verify(len(optional) == 5, "optional isn't 5-tuple")
