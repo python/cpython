@@ -317,7 +317,9 @@ static struct constant {
 	{"B38400", B38400},
 	{"B57600", B57600},
 	{"B115200", B115200},
+#ifdef B230400
 	{"B230400", B230400},
+#endif
 	{"CBAUDEX", CBAUDEX},
 
 	/* tcsetattr() constants */
@@ -395,7 +397,9 @@ static struct constant {
 	{"PARODD", PARODD},
 	{"HUPCL", HUPCL},
 	{"CLOCAL", CLOCAL},
+#ifdef CIBAUD
 	{"CIBAUD", CIBAUD},
+#endif
 	{"CRTSCTS", CRTSCTS},
 
 	/* struct termios.c_cflag-related values (character size) */
@@ -407,18 +411,24 @@ static struct constant {
 	/* struct termios.c_lflag constants */
 	{"ISIG", ISIG},
 	{"ICANON", ICANON},
+#ifdef XCASE
 	{"XCASE", XCASE},
+#endif
 	{"ECHO", ECHO},
 	{"ECHOE", ECHOE},
 	{"ECHOK", ECHOK},
 	{"ECHONL", ECHONL},
 	{"ECHOCTL", ECHOCTL},
+#ifdef ECHOPRT
 	{"ECHOPRT", ECHOPRT},
+#endif
 	{"ECHOKE", ECHOKE},
 	{"FLUSHO", FLUSHO},
 	{"NOFLSH", NOFLSH},
 	{"TOSTOP", TOSTOP},
+#ifdef PENDIN
 	{"PENDIN", PENDIN},
+#endif
 	{"IEXTEN", IEXTEN},
 
 	/* indexes into the control chars array returned by tcgetattr() */
