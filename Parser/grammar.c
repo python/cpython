@@ -216,7 +216,7 @@ translabel(g, lb)
 	}
 	
 	if (lb->lb_type == STRING) {
-		if (isalpha(lb->lb_str[1])) {
+		if (isalpha(lb->lb_str[1]) || lb->lb_str[1] == '_') {
 			char *p;
 			if (debugging)
 				printf("Label %s is a keyword\n", lb->lb_str);
