@@ -1726,52 +1726,27 @@ dict_tp_clear(PyObject *op)
 }
 
 
-static PyObject *dictiter_new(dictobject *, binaryfunc);
-
-static PyObject *
-select_key(PyObject *key, PyObject *value)
-{
-	Py_INCREF(key);
-	return key;
-}
-
-static PyObject *
-select_value(PyObject *key, PyObject *value)
-{
-	Py_INCREF(value);
-	return value;
-}
-
-static PyObject *
-select_item(PyObject *key, PyObject *value)
-{
-	PyObject *res = PyTuple_New(2);
-
-	if (res != NULL) {
-		Py_INCREF(key);
-		Py_INCREF(value);
-		PyTuple_SET_ITEM(res, 0, key);
-		PyTuple_SET_ITEM(res, 1, value);
-	}
-	return res;
-}
+extern PyTypeObject PyDictIterKey_Type; /* Forward */
+extern PyTypeObject PyDictIterValue_Type; /* Forward */
+extern PyTypeObject PyDictIterItem_Type; /* Forward */
+static PyObject *dictiter_new(dictobject *, PyTypeObject *);
 
 static PyObject *
 dict_iterkeys(dictobject *dict)
 {
-	return dictiter_new(dict, select_key);
+	return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
 static PyObject *
 dict_itervalues(dictobject *dict)
 {
-	return dictiter_new(dict, select_value);
+	return dictiter_new(dict, &PyDictIterValue_Type);
 }
 
 static PyObject *
 dict_iteritems(dictobject *dict)
 {
-	return dictiter_new(dict, select_item);
+	return dictiter_new(dict, &PyDictIterItem_Type);
 }
 
 
@@ -1931,7 +1906,7 @@ dict_nohash(PyObject *self)
 static PyObject *
 dict_iter(dictobject *dict)
 {
-	return dictiter_new(dict, select_key);
+	return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
 PyDoc_STRVAR(dictionary_doc,
@@ -2030,30 +2005,36 @@ PyDict_DelItemString(PyObject *v, const char *key)
 	return err;
 }
 
-/* Dictionary iterator type */
-
-extern PyTypeObject PyDictIter_Type; /* Forward */
+/* Dictionary iterator types */
 
 typedef struct {
 	PyObject_HEAD
 	dictobject *di_dict; /* Set to NULL when iterator is exhausted */
 	int di_used;
 	int di_pos;
-	binaryfunc di_select;
+	PyObject* di_result; /* reusable result tuple for iteritems */
 } dictiterobject;
 
 static PyObject *
-dictiter_new(dictobject *dict, binaryfunc select)
+dictiter_new(dictobject *dict, PyTypeObject *itertype)
 {
 	dictiterobject *di;
-	di = PyObject_New(dictiterobject, &PyDictIter_Type);
+	di = PyObject_New(dictiterobject, itertype);
 	if (di == NULL)
 		return NULL;
 	Py_INCREF(dict);
 	di->di_dict = dict;
 	di->di_used = dict->ma_used;
 	di->di_pos = 0;
-	di->di_select = select;
+	if (itertype == &PyDictIterItem_Type) {
+		di->di_result = PyTuple_Pack(2, Py_None, Py_None);
+		if (di->di_result == NULL) {
+			Py_DECREF(di);
+			return NULL;
+		}
+	}
+	else
+		di->di_result = NULL;
 	return (PyObject *)di;
 }
 
@@ -2061,34 +2042,52 @@ static void
 dictiter_dealloc(dictiterobject *di)
 {
 	Py_XDECREF(di->di_dict);
+	Py_XDECREF(di->di_result);
 	PyObject_Del(di);
 }
 
-static PyObject *dictiter_iternext(dictiterobject *di)
+static PyObject *dictiter_iternextkey(dictiterobject *di)
 {
-	PyObject *key, *value;
+	PyObject *key;
+	register int i, mask;
+	register dictentry *ep;
+	dictobject *d = di->di_dict;
 
-	if (di->di_dict == NULL)
+	if (d == NULL)
 		return NULL;
+	assert (PyDict_Check(d));
 
-	if (di->di_used != di->di_dict->ma_used) {
+	if (di->di_used != d->ma_used) {
 		PyErr_SetString(PyExc_RuntimeError,
 				"dictionary changed size during iteration");
 		di->di_used = -1; /* Make this state sticky */
 		return NULL;
 	}
-	if (PyDict_Next((PyObject *)(di->di_dict), &di->di_pos, &key, &value))
-		return (*di->di_select)(key, value);
 
-	Py_DECREF(di->di_dict);
+	i = di->di_pos;
+	if (i < 0)
+		goto fail;
+	ep = d->ma_table;
+	mask = d->ma_mask;
+	while (i <= mask && ep[i].me_value == NULL)
+		i++;
+	di->di_pos = i+1;
+	if (i > mask)
+		goto fail;
+	key = ep[i].me_key;
+	Py_INCREF(key);
+	return key;
+
+fail:
+	Py_DECREF(d);
 	di->di_dict = NULL;
 	return NULL;
 }
 
-PyTypeObject PyDictIter_Type = {
+PyTypeObject PyDictIterKey_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,					/* ob_size */
-	"dictionary-iterator",			/* tp_name */
+	"dictionary-keyiterator",			/* tp_name */
 	sizeof(dictiterobject),			/* tp_basicsize */
 	0,					/* tp_itemsize */
 	/* methods */
@@ -2114,12 +2113,158 @@ PyTypeObject PyDictIter_Type = {
 	0,					/* tp_richcompare */
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
-	(iternextfunc)dictiter_iternext,	/* tp_iternext */
-	0,					/* tp_methods */
-	0,					/* tp_members */
-	0,					/* tp_getset */
-	0,					/* tp_base */
-	0,					/* tp_dict */
-	0,					/* tp_descr_get */
-	0,					/* tp_descr_set */
+	(iternextfunc)dictiter_iternextkey,	/* tp_iternext */
+};
+
+static PyObject *dictiter_iternextvalue(dictiterobject *di)
+{
+	PyObject *value;
+	register int i, mask;
+	register dictentry *ep;
+	dictobject *d = di->di_dict;
+
+	if (d == NULL)
+		return NULL;
+	assert (PyDict_Check(d));
+
+	if (di->di_used != d->ma_used) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"dictionary changed size during iteration");
+		di->di_used = -1; /* Make this state sticky */
+		return NULL;
+	}
+
+	i = di->di_pos;
+	if (i < 0)
+		goto fail;
+	ep = d->ma_table;
+	mask = d->ma_mask;
+	while (i <= mask && (value=ep[i].me_value) == NULL)
+		i++;
+	di->di_pos = i+1;
+	if (i > mask)
+		goto fail;
+	Py_INCREF(value);
+	return value;
+
+fail:
+	Py_DECREF(d);
+	di->di_dict = NULL;
+	return NULL;
+}
+
+PyTypeObject PyDictIterValue_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"dictionary-valueiterator",		/* tp_name */
+	sizeof(dictiterobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)dictiter_dealloc, 		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)dictiter_iternextvalue,	/* tp_iternext */
+};
+
+static PyObject *dictiter_iternextitem(dictiterobject *di)
+{
+	PyObject *key, *value, *result = di->di_result;
+	register int i, mask;
+	register dictentry *ep;
+	dictobject *d = di->di_dict;
+
+	if (d == NULL)
+		return NULL;
+	assert (PyDict_Check(d));
+
+	if (di->di_used != d->ma_used) {
+		PyErr_SetString(PyExc_RuntimeError,
+				"dictionary changed size during iteration");
+		di->di_used = -1; /* Make this state sticky */
+		return NULL;
+	}
+
+	i = di->di_pos;
+	if (i < 0)
+		goto fail;
+	ep = d->ma_table;
+	mask = d->ma_mask;
+	while (i <= mask && ep[i].me_value == NULL)
+		i++;
+	di->di_pos = i+1;
+	if (i > mask)
+		goto fail;
+
+	if (result->ob_refcnt == 1) {
+		Py_INCREF(result);
+		Py_DECREF(PyTuple_GET_ITEM(result, 0));
+		Py_DECREF(PyTuple_GET_ITEM(result, 1));
+	} else {
+		result = PyTuple_New(2);
+		if (result == NULL) 
+			return NULL;
+	}
+	key = ep[i].me_key;
+	value = ep[i].me_value;
+	Py_INCREF(key);
+	Py_INCREF(value);
+	PyTuple_SET_ITEM(result, 0, key);
+	PyTuple_SET_ITEM(result, 1, value);
+	return result;
+
+fail:
+	Py_DECREF(d);
+	di->di_dict = NULL;
+	return NULL;
+}
+
+PyTypeObject PyDictIterItem_Type = {
+	PyObject_HEAD_INIT(&PyType_Type)
+	0,					/* ob_size */
+	"dictionary-itemiterator",		/* tp_name */
+	sizeof(dictiterobject),			/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)dictiter_dealloc, 		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+ 	0,					/* tp_doc */
+ 	0,					/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)dictiter_iternextitem,	/* tp_iternext */
 };
