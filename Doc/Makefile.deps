@@ -117,6 +117,7 @@ LIBFILES= $(MANSTYLES) $(COMMONTEX) \
 	../lib/librgbimg.tex \
 	../lib/libcrypto.tex \
 	../lib/libmd5.tex \
+	../lib/libsha.tex \
 	../lib/libmpz.tex \
 	../lib/librotor.tex \
 	../lib/libstdwin.tex \
