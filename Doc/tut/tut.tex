@@ -426,8 +426,8 @@ There is full support for floating point; operators with mixed type
 operands convert the integer operand to floating point:
 
 \begin{verbatim}
->>> 4 * 2.5 / 3.3
-3.0303030303030303
+>>> 3 * 3.75 / 1.5
+7.5
 >>> 7.0 / 2
 3.5
 \end{verbatim}
@@ -469,15 +469,18 @@ complex number to a real number.  Use \code{abs(\var{z})} to get its
 magnitude (as a float) or \code{z.real} to get its real part.
 
 \begin{verbatim}
->>> a=1.5+0.5j
+>>> a=3.0+4.0j
 >>> float(a)
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 TypeError: can't convert complex to float; use e.g. abs(z)
 >>> a.real
-1.5
->>> abs(a)
-1.5811388300841898
+3.0
+>>> a.imag
+4.0
+>>> abs(a)  # sqrt(a.real**2 + a.imag**2)
+5.0
+>>>
 \end{verbatim}
 
 In interactive mode, the last printed expression is assigned to the
@@ -486,14 +489,15 @@ desk calculator, it is somewhat easier to continue calculations, for
 example:
 
 \begin{verbatim}
->>> tax = 17.5 / 100
->>> price = 3.50
+>>> tax = 12.5 / 100
+>>> price = 100.50
 >>> price * tax
-0.61249999999999993
+12.5625
 >>> price + _
-4.1124999999999998
+113.0625
 >>> round(_, 2)
-4.1100000000000003
+113.06
+>>>
 \end{verbatim}
 
 This variable should be treated as read-only by the user.  Don't
@@ -2609,16 +2613,16 @@ the \function{repr()} function, or just write the value between
 reverse quotes (\code{``}).  Some examples:
 
 \begin{verbatim}
->>> x = 10 * 3.14
+>>> x = 10 * 3.25
 >>> y = 200 * 200
 >>> s = 'The value of x is ' + `x` + ', and y is ' + `y` + '...'
 >>> print s
-The value of x is 31.400000000000002, and y is 40000...
+The value of x is 32.5, and y is 40000...
 >>> # Reverse quotes work on other types besides numbers:
 ... p = [x, y]
 >>> ps = repr(p)
 >>> ps
-'[31.400000000000002, 40000]'
+'[32.5, 40000]'
 >>> # Converting a string adds string quotes and backslashes:
 ... hello = 'hello, world\n'
 >>> hellos = `hello`
@@ -2626,7 +2630,7 @@ The value of x is 31.400000000000002, and y is 40000...
 'hello, world\n'
 >>> # The argument of reverse quotes may be a tuple:
 ... `x, y, ('spam', 'eggs')`
-"(31.400000000000002, 40000, ('spam', 'eggs'))"
+"(32.5, 40000, ('spam', 'eggs'))"
 \end{verbatim}
 
 Here are two ways to write a table of squares and cubes:
@@ -3477,7 +3481,7 @@ example,
 ...         self.r = realpart
 ...         self.i = imagpart
 ... 
->>> x = Complex(3.0,-4.5)
+>>> x = Complex(3.0, -4.5)
 >>> x.r, x.i
 (3.0, -4.5)
 \end{verbatim}
