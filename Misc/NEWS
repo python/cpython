@@ -6,6 +6,11 @@ Type/class unification and new-style classes
 
 Core and builtins
 
+- Slices and repetitions of buffer objects now consistently return
+  a string.  Formerly, strings would be returned most of the time,
+  but a buffer object would be returned when the repetition count
+  was one or when the slice range was all inclusive.
+
 - The __slots__ variable can now mention "private" names, and the
   right thing will happen (e.g. __slots__ = ["__foo"]).
 
