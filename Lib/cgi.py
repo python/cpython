@@ -899,16 +899,8 @@ class FieldStorage:
             self.read_urlencoded()
         elif ctype[:10] == 'multipart/':
             self.read_multi(environ, keep_blank_values, strict_parsing)
-        elif self.outerboundary or method != 'POST':
-            # we're in an inner part, but the content-type wasn't something we 
-            # understood.  default to read_single() because the resulting
-            # FieldStorage won't be a mapping (and doesn't need to be).
-            self.read_single()
         else:
-            # we're in an outer part, but the content-type wasn't something we 
-            # understood.  we still want the resulting FieldStorage to be a
-            # mapping, so parse it as if it were urlencoded
-            self.read_urlencoded()
+            self.read_single()
 
     def __repr__(self):
         """Return a printable representation."""
