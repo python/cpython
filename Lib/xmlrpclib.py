@@ -35,6 +35,7 @@
 # 2001-10-01 fl  Use faster escape method (80% dumps speedup)
 # 2001-10-10 sm  Allow long ints to be passed as ints if they don't overflow
 # 2001-10-17 sm  test for int and long overflow (allows use on 64-bit systems)
+# 2001-11-12 fl  Use repr() to marshal doubles (from Paul Felix)
 #
 # Copyright (c) 1999-2001 by Secret Labs AB.
 # Copyright (c) 1999-2001 by Fredrik Lundh.
@@ -72,7 +73,7 @@
 # --------------------------------------------------------------------
 
 #
-# things to look into before 1.0 final:
+# things to look into:
 
 # TODO: support basic authentication (see robin's patch)
 # TODO: fix host tuple handling in the server constructor
@@ -159,7 +160,7 @@ else:
     def _stringify(string):
         return string
 
-__version__ = "1.0b4"
+__version__ = "1.0.0"
 
 # --------------------------------------------------------------------
 # Exceptions
@@ -480,7 +481,7 @@ class Marshaller:
     dispatch[LongType] = dump_long
 
     def dump_double(self, value):
-        self.write("<value><double>%s</double></value>\n" % value)
+        self.write("<value><double>%s</double></value>\n" % repr(value))
     dispatch[FloatType] = dump_double
 
     def dump_string(self, value, escape=escape):
