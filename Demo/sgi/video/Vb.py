@@ -45,9 +45,9 @@ def main():
 StopCapture = 'StopCapture'
 
 VideoFormatLabels = ['Video off', 'rgb8', 'grey8', 'grey4', 'grey2', \
-	  'grey2 dith', 'mono dith', 'mono thresh']
+	  'grey2 dith', 'mono dith', 'mono thresh', 'rgb24', 'rgb24-jpeg']
 VideoFormats = ['', 'rgb8', 'grey', 'grey4', 'grey2', \
-	  'grey2', 'mono', 'mono']
+	  'grey2', 'mono', 'mono', 'rgb', 'jpeg']
 
 VideoModeLabels = ['Continuous', 'Burst', 'Single frame', 'VCR sync']
 [VM_CONT, VM_BURST, VM_SINGLE, VM_VCR] = range(1, 5)
@@ -56,11 +56,17 @@ AudioFormatLabels = ['Audio off', \
 	  '16 bit mono', '16 bit stereo', '8 bit mono', '8 bit stereo']
 [A_OFF, A_16_MONO, A_16_STEREO, A_8_MONO, A_8_STEREO] = range(1, 6)
 
+VcrSpeedLabels = ['normal', '1/3', '1/5', '1/10', '1/30', 'single-step']
+VcrSpeeds = [None, 5, 4, 3, 2, 1, 0]
+
+RgbSizeLabels = ['full', 'quarter', 'sixteenth']
+
 class VideoBagOfTricks:
 
 	# Init/close stuff
 
 	def init(self):
+		self.window = None
 		formdef = flp.parse_form('VbForm', 'form')
 		flp.create_full_form(self, formdef)
 		self.g_cont.hide_object()
@@ -119,6 +125,15 @@ class VideoBagOfTricks:
 		self.in_nframes.set_input('0')
 		self.in_nframes_vcr.set_input('1')
 		self.in_rate_vcr.set_input('1')
+		self.c_vcrspeed.clear_choice()
+		for label in VcrSpeedLabels:
+			self.c_vcrspeed.addto_choice(label)
+		self.c_vcrspeed.set_choice(4)
+		self.c_rgb24_size.clear_choice()
+		for label in RgbSizeLabels:
+			self.c_rgb24_size.addto_choice(label)
+		self.c_rgb24_size.set_choice(1)
+		self.rgb24_size = 1
 		# Audio defaults
 		self.aout = None
 		self.aport = None
@@ -173,6 +188,17 @@ class VideoBagOfTricks:
 		gl.qdevice(DEVICE.LEFTMOUSE)
 		gl.qdevice(DEVICE.WINQUIT)
 		gl.qdevice(DEVICE.WINSHUT)
+
+	def optfullsizewindow(self):
+		if not self.window:
+			return
+		gl.winset(self.window)
+		if not self.use_24:
+			gl.winconstraints()
+			return
+		gl.prefsize(self.maxx, self.maxy)
+		gl.winconstraints()
+		self.bindvideo()
 
 	def bindvideo(self):
 		if not self.video: return
@@ -287,6 +313,14 @@ class VideoBagOfTricks:
 	def cb_rate_vcr(self, *args):
 		pass
 
+	def cb_vcrspeed(self, *args):
+		pass
+
+	def cb_rgb24_size(self, *args):
+		i = self.c_rgb24_size.get_choice()
+		if i:
+			self.rgb24_size = i
+
 	# Audio controls: format, file
 
 	def cb_aformat(self, *args):
@@ -318,7 +352,7 @@ class VideoBagOfTricks:
 		elif self.vmode == VM_BURST:
 			self.burst_capture()
 		elif self.vmode == VM_SINGLE:
-			self.single_capture()
+			self.single_capture(None, None)
 		elif self.vmode == VM_VCR:
 			self.vcr_capture()
 
@@ -338,6 +372,9 @@ class VideoBagOfTricks:
 		self.setwatch()
 		gl.winset(self.window)
 		x, y = gl.getsize()
+		if self.use_24:
+			fl.show_message('Sorry, no 24 bit continuous capture yet', '', '')
+			return
 		vformat = SV.RGB8_FRAMES
 		nframes = self.getint(self.in_nframes, 0)
 		if nframes == 0:
@@ -424,7 +461,7 @@ class VideoBagOfTricks:
 			self.reset()
 		self.b_capture.label = saved_label
 
-	def single_capture(self):
+	def single_capture(self, stepfunc, timecode):
 		self.open_if_closed()
 		self.init_cont()
 		while 1:
@@ -434,11 +471,32 @@ class VideoBagOfTricks:
 			except sv.error:
 				pass
 			sgi.nap(1)
-		data = cd.InterleaveFields(1)
+			if stepfunc:		# This might step the video
+				d=stepfunc()	# to the next frame
+		if not self.use_24:
+			data = cd.InterleaveFields(1)
+		else:
+			x, y = self.vout.getsize()
+			if self.rgb24_size == 1:
+				data = cd.YUVtoRGB(1)
+			elif self.rgb24_size == 2:
+				data = cd.YUVtoRGB_quarter(1)
+				x = x/2
+				y = y/2
+			elif self.rgb24_size == 3:
+				data = cd.YUVtoRGB_sixteenth(1)
+				x = x/4
+				y = y/4
+			else:
+				raise 'Kaboo! Kaboo!'
+			if self.use_jpeg:
+				import jpeg
+				data = jpeg.compress(data, x, y, 4)
 		cd.UnlockCaptureData()
 		self.end_cont()
-		t = (self.nframes+1) * (1000/25)
-		return self.write_frame(t, data)
+		if timecode == None:
+			timecode = (self.nframes+1) * (1000/25)
+		return self.write_frame(timecode, data)
 
 	def vcr_capture(self):
 		if not self.vcr:
@@ -462,9 +520,15 @@ class VideoBagOfTricks:
 		self.open_if_closed()
 		rate = self.getint(self.in_rate_vcr, 1)
 		rate = max(rate, 1)
+		vcrspeed = self.c_vcrspeed.get_choice()
+		vcrspeed = VcrSpeeds[vcrspeed]
+		if vcrspeed == 0:
+			stepfunc = self.vcr.step
+		else:
+			stepfunc = None
 		self.speed_factor = rate
-		addr = self.vcr.sense()
-		if not self.single_capture():
+		addr = start_addr = self.vcr.sense()
+		if not self.single_capture(None, 0):
 			return
 		print 'captured %02d:%02d:%02d:%02d' % self.vcr.addr2tc(addr)
 		count = self.getint(self.in_nframes_vcr, 1) - 1
@@ -477,7 +541,7 @@ class VideoBagOfTricks:
 					rate = rate - (here - addr)
 				addr = here
 			return
-		if not self.vcr.fwdshuttle(2):	# one tenth speed
+		if not self.vcr.fwdshuttle(vcrspeed):	# one tenth speed
 			self.vcr_error('fwd shuttle failed')
 			return
 		cycle = 0
@@ -494,7 +558,9 @@ class VideoBagOfTricks:
 					print 'frame' + 's'*(here-addr-1 <> 1)
 				cycle = (cycle+1) % rate
 				if cycle == 0:
-					if not self.single_capture():
+					tc = (here-start_addr)*40
+					if not self.single_capture(stepfunc, \
+						  tc):
 						break
 					print 'captured %02d:%02d:%02d:%02d' \
 						  % self.vcr.addr2tc(here)
@@ -516,7 +582,10 @@ class VideoBagOfTricks:
 		else:
 			self.rate = 2
 		x, y = self.vout.getsize()
-		info = (SV.RGB8_FRAMES, x, y, qsize, self.rate)
+		if self.use_24:
+			info = (SV.YUV411_FRAMES, x, y, qsize, self.rate)
+		else:
+			info = (SV.RGB8_FRAMES, x, y, qsize, self.rate)
 		info2 = self.video.InitContinuousCapture(info)
 		if info2 <> info:
 			# XXX This is really only debug info
@@ -558,6 +627,13 @@ class VideoBagOfTricks:
 		self.rgb = (format[:3] == 'rgb')
 		self.mono = (format == 'mono')
 		self.grey = (format[:4] == 'grey')
+		self.use_24 = (format in ('rgb', 'jpeg'))
+		# Does not work.... if self.use_24:
+		if 0:
+			self.g_rgb24.show_object()
+		else:
+			self.g_rgb24.hide_object()
+		self.use_jpeg = (format == 'jpeg')
 		self.mono_use_thresh = (label == 'mono thresh')
 		s = format[4:]
 		if s:
@@ -576,6 +652,7 @@ class VideoBagOfTricks:
 			elif self.greybits == -2:
 				convertor = imageop.dither2grey2
 		self.convertor = convertor
+		self.optfullsizewindow()
 
 	def get_aformat(self):
 		self.reset()
@@ -597,6 +674,11 @@ class VideoBagOfTricks:
 		self.close_video()
 		gl.winset(self.window)
 		x, y = gl.getsize()
+		if self.use_24:
+			if self.rgb24_size == 2:
+				x, y = x/2, y/2
+			elif self.rgb24_size == 4:
+				x, y = x/4, y/4
 		vout = VFile.VoutFile().init(self.vfile)
 		vout.setformat(self.vformat)
 		vout.setsize(x, y)
