@@ -93,6 +93,7 @@ static int import_from PROTO((object *, object *, object *));
 static object *build_class PROTO((object *, object *, object *));
 static int access_statement PROTO((object *, object *, frameobject *));
 static int exec_statement PROTO((object *, object *, object *));
+static object *find_from_args PROTO((frameobject *, int));
 
 
 /* Pointer to current frame, used to link new frames to */
@@ -1338,7 +1339,19 @@ eval_code(co, globals, locals, owner, arg)
 					   "__import__ not found");
 				break;
 			}
-			w = mkvalue("(O)", w);
+			if (is_methodobject(x)) {
+				u = None;
+				INCREF(u);
+			}
+			else {
+				u = find_from_args(f, INSTR_OFFSET());
+				if (u == NULL) {
+					x = u;
+					break;
+				}
+			}
+			w = mkvalue("(OOOO)", w, f->f_globals, f->f_locals, u);
+			DECREF(u);
 			if (w == NULL) {
 				x = NULL;
 				break;
@@ -1352,6 +1365,7 @@ eval_code(co, globals, locals, owner, arg)
 		case IMPORT_FROM:
 			w = GETNAMEV(oparg);
 			v = TOP();
+			fast_2_locals(f);
 			err = import_from(f->f_locals, v, w);
 			locals_2_fast(f, 0);
 			break;
@@ -2710,4 +2724,40 @@ exec_statement(prog, globals, locals)
 		return -1;
 	DECREF(v);
 	return 0;
+}
+
+/* Hack for Ken Manheimer */
+static object *
+find_from_args(f, nexti)
+	frameobject *f;
+	int nexti;
+{
+	int opcode;
+	int oparg;
+	object *list, *name;
+	unsigned char *next_instr;
+	
+	next_instr = GETUSTRINGVALUE(f->f_code->co_code) + nexti;
+	opcode = (*next_instr++);
+	if (opcode != IMPORT_FROM) {
+		printf("next opcode: %d\n", opcode);
+		INCREF(None);
+		return None;
+	}
+	
+	list = newlistobject(0);
+	if (list == NULL)
+		return NULL;
+	
+	do {
+		oparg = (next_instr += 2, (next_instr[-1]<<8) + next_instr[-2]);
+		name = Getnamev(f, oparg);
+		if (addlistitem(list, name) < 0) {
+			DECREF(list);
+			break;
+		}
+		opcode = (*next_instr++);
+	} while (opcode == IMPORT_FROM);
+	
+	return list;
 }

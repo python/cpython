@@ -47,8 +47,12 @@ builtin___import__(self, args)
 	object *args;
 {
 	char *name;
+	object *globals = NULL;
+	object *locals = NULL;
+	object *fromlist = NULL;
 
-	if (!newgetargs(args, "s:__import__", &name))
+	if (!newgetargs(args, "s|OOO:__import__",
+			&name, &globals, &locals, &fromlist))
 		return NULL;
 	return import_module(name);
 }
