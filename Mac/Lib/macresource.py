@@ -91,6 +91,8 @@ def open_pathname(pathname):
 			# Finally try decoding an AppleSingle file
 			pathname = _decode(pathname)
 			refno = Res.FSOpenResourceFile(pathname, u'', 1)
+		else:
+			raise
 	return refno
 	
 def _decode(pathname):
