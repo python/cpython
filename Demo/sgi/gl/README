@@ -8,6 +8,12 @@ backface.py	Demonstrates the 'backface' GL function.
 kites.py	Show 3 flying kites.  Demonstrates the rendering speed
 		obtainable by Python programs.
 
+kunst.py	Cute demo showing a ball suspended on four cables in
+		the central room of the CWI building.  You can specify
+		three functions Fx(t), Fy(t), Fz(t) which define the
+		movement of the ball.  Try something like sin(t),
+		cos(t), sin(2*t).
+
 mclock.py	A colorful clock with more options than you can
 		remember.  Works on 8-bit machines, but allows more
 		colors on 24-bit machines.  See mclock.doc for more
