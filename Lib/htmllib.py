@@ -14,6 +14,8 @@ from formatter import AS_IS
 
 class HTMLParser(SGMLParser):
 
+    from htmlentitydefs import entitydefs
+
     def __init__(self, formatter, verbose=0):
         SGMLParser.__init__(self, verbose)
         self.formatter = formatter
