@@ -24,16 +24,6 @@ that use HTTP and HTTPS.
   to the online docstrings for usage.
 \end{notice}
 
-The constants defined in this module are:
-
-\begin{datadesc}{HTTP_PORT}
-  The default port for the HTTP protocol (always \code{80}).
-\end{datadesc}
-
-\begin{datadesc}{HTTPS_PORT}
-  The default port for the HTTPS protocol (always \code{443}).
-\end{datadesc}
-
 The module provides the following classes:
 
 \begin{classdesc}{HTTPConnection}{host\optional{, port}}
@@ -135,6 +125,168 @@ HTTP status code that we don't understand.
 \versionadded{2.0}
 \end{excdesc}
 
+The constants defined in this module are:
+
+\begin{datadesc}{HTTP_PORT}
+  The default port for the HTTP protocol (always \code{80}).
+\end{datadesc}
+
+\begin{datadesc}{HTTPS_PORT}
+  The default port for the HTTPS protocol (always \code{443}).
+\end{datadesc}
+
+and also the following constants for integer status codes:
+
+\begin{tableiii}{l|c|l}{constant}{Constant}{Value}{Definition}
+  \lineiii{CONTINUE}{\code{100}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.1.1}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.1.1}}
+  \lineiii{SWITCHING_PROTOCOLS}{\code{101}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.1.2}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.1.2}}
+  \lineiii{PROCESSING}{\code{102}}
+    {WEBDAV, \ulink{RFC 2518, Section 10.1}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_102}}
+
+  \lineiii{OK}{\code{200}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.1}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.1}}
+  \lineiii{CREATED}{\code{201}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.2}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.2}}
+  \lineiii{ACCEPTED}{\code{202}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.3}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.3}}
+  \lineiii{NON_AUTHORITATIVE_INFORMATION}{\code{203}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.4}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.4}}
+  \lineiii{NO_CONTENT}{\code{204}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.5}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.5}}
+  \lineiii{RESET_CONTENT}{\code{205}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.6}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.6}}
+  \lineiii{PARTIAL_CONTENT}{\code{206}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.2.7}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.2.7}}
+  \lineiii{MULTI_STATUS}{\code{207}}
+    {WEBDAV \ulink{RFC 2518, Section 10.2}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_207}}
+  \lineiii{IM_USED}{\code{226}}
+    {Delta encoding in HTTP, \rfc{3229}, Section 10.4.1}
+
+  \lineiii{MULTIPLE_CHOICES}{\code{300}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.1}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.1}}
+  \lineiii{MOVED_PERMANENTLY}{\code{301}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.2}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.2}}
+  \lineiii{FOUND}{\code{302}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.3}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.3}}
+  \lineiii{SEE_OTHER}{\code{303}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.4}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.4}}
+  \lineiii{NOT_MODIFIED}{\code{304}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.5}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.5}}
+  \lineiii{USE_PROXY}{\code{305}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.6}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.6}}
+  \lineiii{TEMPORARY_REDIRECT}{\code{307}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.3.8}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.3.8}}
+
+  \lineiii{BAD_REQUEST}{\code{400}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.1}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.1}}
+  \lineiii{UNAUTHORIZED}{\code{401}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.2}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.2}}
+  \lineiii{PAYMENT_REQUIRED}{\code{402}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.3}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.3}}
+  \lineiii{FORBIDDEN}{\code{403}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.4}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.4}}
+  \lineiii{NOT_FOUND}{\code{404}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.5}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.5}}
+  \lineiii{METHOD_NOT_ALLOWED}{\code{405}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.6}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.6}}
+  \lineiii{NOT_ACCEPTABLE}{\code{406}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.7}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.7}}
+  \lineiii{PROXY_AUTHENTICATION_REQUIRED}
+    {\code{407}}{HTTP/1.1, \ulink{RFC 2616, Section 10.4.8}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.8}}
+  \lineiii{REQUEST_TIMEOUT}{\code{408}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.9}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.9}}
+  \lineiii{CONFLICT}{\code{409}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.10}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.10}}
+  \lineiii{GONE}{\code{410}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.11}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.11}}
+  \lineiii{LENGTH_REQUIRED}{\code{411}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.12}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.12}}
+  \lineiii{PRECONDITION_FAILED}{\code{412}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.13}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.13}}
+  \lineiii{REQUEST_ENTITY_TOO_LARGE}
+    {\code{413}}{HTTP/1.1, \ulink{RFC 2616, Section 10.4.14}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.14}}
+  \lineiii{REQUEST_URI_TOO_LONG}{\code{414}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.15}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.15}}
+  \lineiii{UNSUPPORTED_MEDIA_TYPE}{\code{415}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.16}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.16}}
+  \lineiii{REQUESTED_RANGE_NOT_SATISFIABLE}{\code{416}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.17}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.17}}
+  \lineiii{EXPECTATION_FAILED}{\code{417}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.4.18}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.4.18}}
+  \lineiii{UNPROCESSABLE_ENTITY}{\code{422}}
+    {WEBDAV, \ulink{RFC 2518, Section 10.3}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_422}}
+  \lineiii{LOCKED}{\code{423}}
+    {WEBDAV \ulink{RFC 2518, Section 10.4}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_423}}
+  \lineiii{FAILED_DEPENDENCY}{\code{424}}
+    {WEBDAV, \ulink{RFC 2518, Section 10.5}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_424}}
+  \lineiii{UPGRADE_REQUIRED}{\code{426}}
+    {HTTP Upgrade to TLS, \rfc{2817}, Section 6}
+
+  \lineiii{INTERNAL_SERVER_ERROR}{\code{500}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.5.1}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.1}}
+  \lineiii{NOT_IMPLEMENTED}{\code{501}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.5.2}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.2}}
+  \lineiii{BAD_GATEWAY}{\code{502}}
+    {HTTP/1.1 \ulink{RFC 2616, Section 10.5.3}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.3}}
+  \lineiii{SERVICE_UNAVAILABLE}{\code{503}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.5.4}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.4}}
+  \lineiii{GATEWAY_TIMEOUT}{\code{504}}
+    {HTTP/1.1 \ulink{RFC 2616, Section 10.5.5}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.5}}
+  \lineiii{HTTP_VERSION_NOT_SUPPORTED}{\code{505}}
+    {HTTP/1.1, \ulink{RFC 2616, Section 10.5.6}
+      {http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10.5.6}}
+  \lineiii{INSUFFICIENT_STORAGE}{\code{507}}
+    {WEBDAV, \ulink{RFC 2518, Section 10.6}
+      {http://www.webdav.org/specs/rfc2518.htm#STATUS_507}}
+  \lineiii{NOT_EXTENDED}{\code{510}}
+    {An HTTP Extension Framework, \rfc{2774}, Section 7}
+\end{tableiii}
 
 \subsection{HTTPConnection Objects \label{httpconnection-objects}}
 

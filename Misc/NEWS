@@ -22,6 +22,8 @@ Extension modules
 Library
 -------
 
+- httplib now offers symbolic constants for the HTTP status codes.
+
 - SF bug #1028306:  Trying to compare a ``datetime.date`` to a
   ``datetime.datetime`` mistakenly compared only the year, month and day.
   Now it acts like a mixed-type comparison:  ``False`` for ``==``,
