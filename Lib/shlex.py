@@ -17,7 +17,8 @@ class shlex:
             self.instream = sys.stdin
             self.infile = None
         self.commenters = '#'
-        self.wordchars = 'abcdfeghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
+        self.wordchars = ('abcdfeghijklmnopqrstuvwxyz'
+                          'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_')
         self.whitespace = ' \t\r\n'
         self.quotes = '\'"'
         self.state = ' '
@@ -25,7 +26,7 @@ class shlex:
         self.lineno = 1
         self.debug = 0
         self.token = ''
-	self.filestack = []
+        self.filestack = []
         self.source = None
         if self.debug:
             print 'shlex: reading from %s, line %d' \
@@ -45,7 +46,7 @@ class shlex:
             if self.debug >= 1:
                 print "shlex: popping token " + `tok`
             return tok
-	# No pushback.  Get a token.
+        # No pushback.  Get a token.
         raw = self.read_token()
         # Handle inclusions
         while raw == self.source:
@@ -88,18 +89,18 @@ class shlex:
             if self.debug >= 3:
                 print "shlex: in state", repr(self.state), \
                       "I see character:", repr(nextchar) 
-            if self.state == None:
-                self.token = '';	# past end of file
+            if self.state is None:
+                self.token = '';        # past end of file
                 break
             elif self.state == ' ':
                 if not nextchar:
-                    self.state = None;	# end of file
+                    self.state = None;  # end of file
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
                         print "shlex: I see whitespace in whitespace state"
                     if self.token:
-                        break	# emit current token
+                        break   # emit current token
                     else:
                         continue
                 elif nextchar in self.commenters:
@@ -114,7 +115,7 @@ class shlex:
                 else:
                     self.token = nextchar
                     if self.token:
-                        break	# emit current token
+                        break   # emit current token
                     else:
                         continue
             elif self.state in self.quotes:
@@ -124,14 +125,14 @@ class shlex:
                     break
             elif self.state == 'a':
                 if not nextchar:
-                    self.state = None;	# end of file
+                    self.state = None;  # end of file
                     break
                 elif nextchar in self.whitespace:
                     if self.debug >= 2:
                         print "shlex: I see whitespace in word state"
                     self.state = ' '
                     if self.token:
-                        break	# emit current token
+                        break   # emit current token
                     else:
                         continue
                 elif nextchar in self.commenters:
@@ -145,7 +146,7 @@ class shlex:
                         print "shlex: I see punctuation in word state"
                     self.state = ' '
                     if self.token:
-                        break	# emit current token
+                        break   # emit current token
                     else:
                         continue
         result = self.token
