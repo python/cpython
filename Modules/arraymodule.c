@@ -1039,8 +1039,8 @@ array_tofile(arrayobject *self, PyObject *args)
 		return NULL;
 	}
 	if (self->ob_size > 0) {
-		if ((int)fwrite(self->ob_item, self->ob_descr->itemsize,
-			   self->ob_size, fp) != self->ob_size) {
+		if (fwrite(self->ob_item, self->ob_descr->itemsize,
+			   self->ob_size, fp) != (size_t)self->ob_size) {
 			PyErr_SetFromErrno(PyExc_IOError);
 			clearerr(fp);
 			return NULL;
