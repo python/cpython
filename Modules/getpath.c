@@ -5,7 +5,6 @@
 #include "osdefs.h"
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <string.h>
 
 #if HAVE_UNISTD_H
@@ -137,14 +136,6 @@ reduce(char *dir)
     dir[i] = '\0';
 }
 
-
-#ifndef S_ISREG
-#define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
-#endif
-
-#ifndef S_ISDIR
-#define S_ISDIR(x) (((x) & S_IFMT) == S_IFDIR)
-#endif
 
 static int
 isfile(char *filename)		/* Is file, not directory */

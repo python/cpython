@@ -592,7 +592,7 @@ builtin_execfile(PyObject *self, PyObject *args)
 	exists = 0;
 	/* Test for existence or directory. */
 	if (!stat(filename, &s)) {
-		if ((s.st_mode & S_IFMT) == S_IFDIR)
+		if (S_ISDIR(s.st_mode))
 			errno = EISDIR;
 		else
 			exists = 1;
