@@ -55,9 +55,21 @@ class ComplexTest(unittest.TestCase):
         if x != 0:
             q = z / x
             self.assertClose(q, y)
+            q = z.__div__(x)
+            self.assertClose(q, y)
+            q = z.__truediv__(x)
+            self.assertClose(q, y)
+            q2 = z.__floordiv__(x)
+            self.assertClose(q2, math.floor(q.real)+0j)
         if y != 0:
             q = z / y
             self.assertClose(q, x)
+            q = z.__div__(y)
+            self.assertClose(q, x)
+            q = z.__truediv__(y)
+            self.assertClose(q, x)
+            q2 = z.__floordiv__(y)
+            self.assertClose(q2, math.floor(q.real)+0j)
 
     def test_div(self):
         simple_real = [float(i) for i in xrange(-5, 6)]
