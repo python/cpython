@@ -252,7 +252,8 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 #if TARGET_API_MAC_OSX
 	if ( PyMac_GetFSRef(v, &fsr) ) {
 #else
-	if ( PyArg_Parse(v, "O&", FSRef_Convert, &fsr) ) {
+	if (FSRef_Check(v)) {
+		fsr = ((FSRefObject *)v)->ob_itself;
 #endif	
 		err = FSGetCatalogInfo(&fsr, kFSCatInfoNone, NULL, NULL, spec, NULL);
 		if (err != noErr) {

@@ -5,6 +5,7 @@ import warnings
 warnings.filterwarnings("ignore", "macfs.*", DeprecationWarning, __name__)
 import macfs
 import os
+import sys
 import tempfile
 from test import test_support
 
@@ -30,9 +31,10 @@ class TestMacfs(unittest.TestCase):
         self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
         
     def test_fsref_unicode(self):
-        testfn_unicode = unicode(test_support.TESTFN)
-        fsr = macfs.FSRef(testfn_unicode)
-        self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
+        if sys.getfilesystemencoding():
+            testfn_unicode = unicode(test_support.TESTFN)
+            fsr = macfs.FSRef(testfn_unicode)
+            self.assertEqual(os.path.realpath(test_support.TESTFN), fsr.as_pathname())
 
     def test_coercion(self):
         fss = macfs.FSSpec(test_support.TESTFN)
