@@ -10,9 +10,9 @@ try:
 except:
     zlib = None
 
-class _BadZipfile(Exception):
+class BadZipfile(Exception):
     pass
-error = _BadZipfile	# The exception raised by this module
+error = BadZipfile	# The exception raised by this module
 
 # constants for Zip file compression methods
 ZIP_STORED = 0
@@ -94,7 +94,7 @@ class ZipFile:
         elif compression == ZIP_DEFLATED:
             if not zlib:
                 raise RuntimeError,\
-                "Compression requires the (missing) zlib module"
+                      "Compression requires the (missing) zlib module"
         else:
             raise RuntimeError, "That compression method is not supported"
         self.debug = 0	# Level of printing: 0 through 3
@@ -180,8 +180,8 @@ class ZipFile:
             fname = fp.read(fheader[10])
             if fname != data.filename:
                 raise RuntimeError, \
- 'File name in Central Directory "%s" and File Header "%s" differ.' % (
-                             data.filename, fname)
+                      'File name in directory "%s" and header "%s" differ.' % (
+                          data.filename, fname)
 
     def namelist(self):
         "Return a list of file names in the archive"
@@ -219,7 +219,7 @@ class ZipFile:
             raise RuntimeError, 'read() requires mode "r" or "a"'
         if not self.fp:
             raise RuntimeError, \
-            "Attempt to read ZIP archive that was already closed"
+                  "Attempt to read ZIP archive that was already closed"
         zinfo = self.getinfo(name)
         filepos = self.fp.tell()
         self.fp.seek(zinfo.file_offset, 0)
@@ -230,7 +230,7 @@ class ZipFile:
         elif zinfo.compress_type == ZIP_DEFLATED:
             if not zlib:
                 raise RuntimeError, \
-                "De-compression requires the (missing) zlib module"
+                      "De-compression requires the (missing) zlib module"
             # zlib compress/decompress code by Jeremy Hylton of CNRI
             dc = zlib.decompressobj(-15)
             bytes = dc.decompress(bytes)
@@ -240,7 +240,7 @@ class ZipFile:
                 bytes = bytes + ex
         else:
             raise BadZipfile, \
-            "Unsupported compression method %d for file %s" % \
+                  "Unsupported compression method %d for file %s" % \
             (zinfo.compress_type, name)
         crc = binascii.crc32(bytes)
         if crc != zinfo.CRC:
@@ -256,13 +256,13 @@ class ZipFile:
             raise RuntimeError, 'write() requires mode "w" or "a"'
         if not self.fp:
             raise RuntimeError, \
-            "Attempt to write ZIP archive that was already closed"
+                  "Attempt to write ZIP archive that was already closed"
         if zinfo.compress_type == ZIP_DEFLATED and not zlib:
             raise RuntimeError, \
-            "Compression requires the (missing) zlib module"
+                  "Compression requires the (missing) zlib module"
         if zinfo.compress_type not in (ZIP_STORED, ZIP_DEFLATED):
             raise RuntimeError, \
-            "That compression method is not supported"
+                  "That compression method is not supported"
 
     def write(self, filename, arcname=None, compress_type=None):
         'Put the bytes from filename into the archive under the name arcname.'
@@ -437,7 +437,7 @@ This method will compile the module.py into module.pyc if necessary."""
         else:
             if pathname[-3:] != ".py":
                 raise RuntimeError, \
-                'Files added with writepy() must end with ".py"'
+                      'Files added with writepy() must end with ".py"'
             fname, arcname = self._get_codename(pathname[0:-3], basename)
             if self.debug:
                 print "Adding file", arcname
