@@ -22,6 +22,20 @@ WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ******************************************************************/
 
+/******************************************************************
+
+Revision history:
+
+95/06/29 (Steve Clift)
+  - Changed arg parsing to use PyArg_ParseTuple.
+  - Added PyErr_Clear() call(s) where needed.
+  - Fix core dumps if user message contains format specifiers.
+  - Change openlog arg defaults to match normal syslog behaviour.
+  - Plug memory leak in openlog().
+  - Fix setlogmask() to return previous mask value.
+
+******************************************************************/
+
 /* syslog module */
 
 #include "Python.h"
@@ -33,18 +47,21 @@ syslog_openlog(self, args)
      PyObject * self;
      PyObject * args;
 {
-  char *ident = "";
-  PyObject * ident_o;
-  long logopt = LOG_PID;
+  long logopt = 0;
   long facility = LOG_USER;
-  if (!PyArg_Parse(args, "(Sll);ident string, logoption, facility", &ident_o, &logopt, &facility))
-    if (!PyArg_Parse(args, "(Sl);ident string, logoption", &ident_o, &logopt))
-      if (!PyArg_Parse(args, "S;ident string", &ident_o))
+
+  static PyObject *ident_o = NULL;
+
+  Py_XDECREF(ident_o);
+  if (!PyArg_ParseTuple(args, "S|ll;ident string [, logoption [, facility]]",
+			&ident_o, &logopt, &facility)) {
 	return NULL;
+  }
   Py_INCREF(ident_o); /* This is needed because openlog() does NOT make a copy
-		      and syslog() later uses it.. cannot trash it. */
-  ident = PyString_AsString(ident_o);
-  openlog(ident,logopt,facility);
+		         and syslog() later uses it.. cannot trash it. */
+
+  openlog(PyString_AsString(ident_o), logopt, facility);
+
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -54,13 +71,17 @@ syslog_syslog(self, args)
      PyObject * self;
      PyObject * args;
 {
-  int   priority = LOG_INFO;
-  char *message;
+  char *message, *s;
+  int   priority = LOG_INFO | LOG_USER;
 
-  if (!PyArg_Parse(args,"(is);priority, message string",&priority,&message))
-    if (!PyArg_Parse(args,"s;message string",&message))
+  if (!PyArg_ParseTuple(args, "is;[priority,] message string",
+			&priority, &message)) {
+    PyErr_Clear();
+    if (!PyArg_ParseTuple(args, "s;[priority,] message string", &message)) {
       return NULL;
-  syslog(priority, message);
+    }
+  }
+  syslog(priority, "%s", message);
   Py_INCREF(Py_None);
   return Py_None;
 }
@@ -70,7 +91,7 @@ syslog_closelog(self, args)
      PyObject * self;
      PyObject * args;
 {
-	if (!PyArg_NoArgs(args))
+	if (!PyArg_ParseTuple(args, ""))
 		return NULL;
 	closelog();
 	Py_INCREF(Py_None);
@@ -82,12 +103,12 @@ syslog_setlogmask(self, args)
      PyObject * self;
      PyObject * args;
 {
-  long maskpri;
-  if (!PyArg_Parse(args,"l;mask for priority",&maskpri))
+  long maskpri, omaskpri;
+
+  if (!PyArg_ParseTuple(args,"l;mask for priority",&maskpri))
     return NULL;
-  setlogmask(maskpri);
-  Py_INCREF(Py_None);
-  return Py_None;
+  omaskpri = setlogmask(maskpri);
+  return PyInt_FromLong(omaskpri);
 }
 
 static PyObject * 
@@ -97,7 +118,7 @@ syslog_log_mask(self, args)
 {
   long mask;
   long pri;
-  if (!PyArg_Parse(args,"l",&pri))
+  if (!PyArg_ParseTuple(args,"l",&pri))
     return NULL;
   mask = LOG_MASK(pri);
   return PyInt_FromLong(mask);
@@ -110,7 +131,7 @@ syslog_log_upto(self, args)
 {
   long mask;
   long pri;
-  if (!PyArg_Parse(args,"l",&pri))
+  if (!PyArg_ParseTuple(args,"l",&pri))
     return NULL;
   mask = LOG_UPTO(pri);
   return PyInt_FromLong(mask);
@@ -119,77 +140,68 @@ syslog_log_upto(self, args)
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-	{"openlog",		(PyCFunction)syslog_openlog},
-	{"closelog",		(PyCFunction)syslog_closelog},
-	{"syslog",              (PyCFunction)syslog_syslog},
-	{"setlogmask",          (PyCFunction)syslog_setlogmask},
-	{"LOG_MASK",            (PyCFunction)syslog_log_mask},
-	{"LOG_UPTO",            (PyCFunction)syslog_log_upto},
-	{NULL,		NULL}		/* sentinel */
+	{"openlog",	syslog_openlog,		METH_VARARGS},
+	{"closelog",	syslog_closelog,	METH_VARARGS},
+	{"syslog",	syslog_syslog,		METH_VARARGS},
+	{"setlogmask",	syslog_setlogmask,	METH_VARARGS},
+	{"LOG_MASK",	syslog_log_mask,	METH_VARARGS},
+	{"LOG_UPTO",	syslog_log_upto,	METH_VARARGS},
+	{NULL,		NULL,			0}
 };
 
 /* Initialization function for the module */
 
+#define DICT_SET_INT(d, s, x) \
+	PyDict_SetItemString(d, s, PyInt_FromLong((long) (x)))
+
 void
 initsyslog()
 {
-	PyObject *m, *d, *x;
+	PyObject *m, *d;
 
 	/* Create the module and add the functions */
 	m = Py_InitModule("syslog", syslog_methods);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
-	x = PyInt_FromLong(LOG_EMERG);
-	PyDict_SetItemString(d, "LOG_EMERG", x);
-	x = PyInt_FromLong(LOG_ALERT);
-	PyDict_SetItemString(d, "LOG_ALERT", x);
-	x = PyInt_FromLong(LOG_CRIT);
-	PyDict_SetItemString(d, "LOG_CRIT", x);
-	x = PyInt_FromLong(LOG_ERR);
-	PyDict_SetItemString(d, "LOG_ERR", x);
-	x = PyInt_FromLong(LOG_WARNING);
-	PyDict_SetItemString(d, "LOG_WARNING", x);
-	x = PyInt_FromLong(LOG_NOTICE);
-	PyDict_SetItemString(d, "LOG_NOTICE", x);
-	x = PyInt_FromLong(LOG_INFO);
-	PyDict_SetItemString(d, "LOG_INFO", x);
-	x = PyInt_FromLong(LOG_DEBUG);
-	PyDict_SetItemString(d, "LOG_DEBUG", x);
-	x = PyInt_FromLong(LOG_PID);
-	PyDict_SetItemString(d, "LOG_PID", x);
-	x = PyInt_FromLong(LOG_CONS);
-	PyDict_SetItemString(d, "LOG_CONS", x);
-	x = PyInt_FromLong(LOG_NDELAY);
-	PyDict_SetItemString(d, "LOG_NDELAY", x);
-	x = PyInt_FromLong(LOG_NOWAIT);
-	PyDict_SetItemString(d, "LOG_NOWAIT", x);
-	x = PyInt_FromLong(LOG_KERN);
-	PyDict_SetItemString(d, "LOG_KERN", x);
-	x = PyInt_FromLong(LOG_USER);
-	PyDict_SetItemString(d, "LOG_USER", x);
-	x = PyInt_FromLong(LOG_MAIL);
-	PyDict_SetItemString(d, "LOG_MAIL", x);
-	x = PyInt_FromLong(LOG_DAEMON);
-	PyDict_SetItemString(d, "LOG_DAEMON", x);
-	x = PyInt_FromLong(LOG_LPR);
-	PyDict_SetItemString(d, "LOG_LPR", x);
-	x = PyInt_FromLong(LOG_LOCAL0);
-	PyDict_SetItemString(d, "LOG_LOCAL0", x);
-	x = PyInt_FromLong(LOG_LOCAL1);
-	PyDict_SetItemString(d, "LOG_LOCAL1", x);
-	x = PyInt_FromLong(LOG_LOCAL2);
-	PyDict_SetItemString(d, "LOG_LOCAL2", x);
-	x = PyInt_FromLong(LOG_LOCAL3);
-	PyDict_SetItemString(d, "LOG_LOCAL3", x);
-	x = PyInt_FromLong(LOG_LOCAL4);
-	PyDict_SetItemString(d, "LOG_LOCAL4", x);
-	x = PyInt_FromLong(LOG_LOCAL5);
-	PyDict_SetItemString(d, "LOG_LOCAL5", x);
-	x = PyInt_FromLong(LOG_LOCAL6);
-	PyDict_SetItemString(d, "LOG_LOCAL6", x);
-	x = PyInt_FromLong(LOG_LOCAL7);
-	PyDict_SetItemString(d, "LOG_LOCAL7", x);
+
+	/* Priorities */
+	DICT_SET_INT(d, "LOG_EMERG",	LOG_EMERG);
+	DICT_SET_INT(d, "LOG_ALERT",	LOG_ALERT);
+	DICT_SET_INT(d, "LOG_CRIT",	LOG_CRIT);
+	DICT_SET_INT(d, "LOG_ERR",	LOG_ERR);
+	DICT_SET_INT(d, "LOG_WARNING",	LOG_WARNING);
+	DICT_SET_INT(d, "LOG_NOTICE",	LOG_NOTICE);
+	DICT_SET_INT(d, "LOG_INFO",	LOG_INFO);
+	DICT_SET_INT(d, "LOG_DEBUG",	LOG_DEBUG);
+
+	/* openlog() option flags */
+	DICT_SET_INT(d, "LOG_PID",	LOG_PID);
+	DICT_SET_INT(d, "LOG_CONS",	LOG_CONS);
+	DICT_SET_INT(d, "LOG_NDELAY",	LOG_NDELAY);
+	DICT_SET_INT(d, "LOG_NOWAIT",	LOG_NOWAIT);
+#ifdef LOG_PERROR
+	DICT_SET_INT(d, "LOG_PERROR",	LOG_PERROR);
+#endif
+
+	/* Facilities */
+	DICT_SET_INT(d, "LOG_KERN",	LOG_KERN);
+	DICT_SET_INT(d, "LOG_USER",	LOG_USER);
+	DICT_SET_INT(d, "LOG_MAIL",	LOG_MAIL);
+	DICT_SET_INT(d, "LOG_DAEMON",	LOG_DAEMON);
+	DICT_SET_INT(d, "LOG_AUTH",	LOG_AUTH);
+	DICT_SET_INT(d, "LOG_LPR",	LOG_LPR);
+	DICT_SET_INT(d, "LOG_NEWS",	LOG_NEWS);
+	DICT_SET_INT(d, "LOG_UUCP",	LOG_UUCP);
+	DICT_SET_INT(d, "LOG_CRON",	LOG_CRON);
+	DICT_SET_INT(d, "LOG_LOCAL0",	LOG_LOCAL0);
+	DICT_SET_INT(d, "LOG_LOCAL1",	LOG_LOCAL1);
+	DICT_SET_INT(d, "LOG_LOCAL2",	LOG_LOCAL2);
+	DICT_SET_INT(d, "LOG_LOCAL3",	LOG_LOCAL3);
+	DICT_SET_INT(d, "LOG_LOCAL4",	LOG_LOCAL4);
+	DICT_SET_INT(d, "LOG_LOCAL5",	LOG_LOCAL5);
+	DICT_SET_INT(d, "LOG_LOCAL6",	LOG_LOCAL6);
+	DICT_SET_INT(d, "LOG_LOCAL7",	LOG_LOCAL7);
 
 	/* Check for errors */
 	if (PyErr_Occurred())
