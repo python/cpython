@@ -18,8 +18,20 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(len([0]), 1)
         self.assertEqual(len([0, 1, 2]), 3)
 
-def test_main():
+def test_main(verbose=None):
     test_support.run_unittest(ListTest)
 
-if __name__=="__main__":
-    test_main()
+    # verify reference counting
+    import sys
+    if verbose and hasattr(sys, "gettotalrefcount"):
+        import gc
+        counts = [None] * 5
+        for i in xrange(len(counts)):
+            test_support.run_unittest(ListTest)
+            gc.collect()
+            counts[i] = sys.gettotalrefcount()
+        print counts
+
+
+if __name__ == "__main__":
+    test_main(verbose=True)
