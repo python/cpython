@@ -71,12 +71,12 @@ etc. and returns it in the form of
 an audio status object. This object has no methods but it contains a
 number of attributes describing the current device status. The names
 and meanings of the attributes are described in
-\file{/usr/include/sun/audioio.h} and in the \manpage{audio}{7I}
+\code{<sun/audioio.h>} and in the \manpage{audio}{7I}
 manual page.  Member names
-are slightly different from their \C{} counterparts: a status object is
+are slightly different from their C counterparts: a status object is
 only a single structure. Members of the \cdata{play} substructure have
 \samp{o_} prepended to their name and members of the \cdata{record}
-structure have \samp{i_}. So, the \C{} member \cdata{play.sample_rate} is
+structure have \samp{i_}. So, the C member \cdata{play.sample_rate} is
 accessed as \member{o_sample_rate}, \cdata{record.gain} as \member{i_gain}
 and \cdata{monitor_gain} plainly as \member{monitor_gain}.
 \end{methoddesc}
@@ -115,7 +115,7 @@ There is a companion module,
 \module{SUNAUDIODEV}\refstmodindex{SUNAUDIODEV}, which defines useful
 symbolic constants like \constant{MIN_GAIN}, \constant{MAX_GAIN},
 \constant{SPEAKER}, etc. The names of the constants are the same names
-as used in the \C{} include file \code{<sun/audioio.h>}, with the
+as used in the C include file \code{<sun/audioio.h>}, with the
 leading string \samp{AUDIO_} stripped.
 
 The audio device supports asynchronous notification of various events,
