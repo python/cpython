@@ -71,9 +71,7 @@ Microsoft Visual C++ Version 4.x (32-bit Windows)
 most recently with VC 4.2.  See below for VC 5.x.)
 
 NOTE: VC 4.2 support is eroding, as I no longer have a VC 4.2
-installation.  Some newer files need to be added to the project, in
-particular, reopmodule.c, pcremodule.c, and pypcre.c (all from the
-Modules subdirectory); this list may grow.
+installation.  Some newer files need to be added to the project.
 
 The distributed Makefile is vc40.mak.  This file is distributed with
 CRLF line separators, otherwise Developer Studio won't like it.  It
