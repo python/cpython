@@ -15,6 +15,7 @@ def test_dict():
     assert gc.collect() == 1
 
 def test_tuple():
+    # since tuples are immutable we close the loop with a list
     l = []
     t = (l,)
     l.append(t)
@@ -41,6 +42,7 @@ def test_instance():
     assert gc.collect() > 0
 
 def test_method():
+    # Tricky: self.__init__ is a bound method, it references the instance.
     class A:
         def __init__(self):
             self.init = self.__init__
@@ -50,6 +52,8 @@ def test_method():
     assert gc.collect() > 0
 
 def test_finalizer():
+    # A() is uncollectable if it is part of a cycle, make sure it shows up
+    # in gc.garbage.
     class A:
         def __del__(self): pass
     class B:
@@ -67,12 +71,29 @@ def test_finalizer():
     assert id(gc.garbage[0]) == id_a
 
 def test_function():
+    # Tricky: f -> d -> f, code should call d.clear() after the exec to
+    # break the cycle.
     d = {}
     exec("def f(): pass\n") in d
     gc.collect()
     del d
     assert gc.collect() == 2
 
+def test_del():
+    # __del__ methods can trigger collection, make this to happen
+    thresholds = gc.get_threshold()
+    gc.enable()
+    gc.set_threshold(1)
+
+    class A: 
+        def __del__(self): 
+            dir(self) 
+    a = A()
+    del a
+
+    gc.disable()
+    apply(gc.set_threshold, thresholds)
+    
 
 def test_all():
 
@@ -88,6 +109,7 @@ def test_all():
     test_method()
     test_finalizer()
     test_function()
+    test_del()
 
     # test gc.enable() even if GC is disabled by default
     gc.enable()
