@@ -9,57 +9,58 @@ Python.
 Introduction
 ------------
 
-A CGI script is invoked by an HTTP server, usually to process user input 
-submitted through an HTML <FORM> or <ISINPUT> element.
+A CGI script is invoked by an HTTP server, usually to process user
+input submitted through an HTML <FORM> or <ISINPUT> element.
 
-Most often, CGI scripts live in the server's special cgi-bin directory.  
-The HTTP server places all sorts of information about the request (such as 
-the client's hostname, the requested URL, the query string, and lots of 
-other goodies) in the script's shell environment, executes the script, and 
-sends the script's output back to the client.
+Most often, CGI scripts live in the server's special cgi-bin
+directory.  The HTTP server places all sorts of information about the
+request (such as the client's hostname, the requested URL, the query
+string, and lots of other goodies) in the script's shell environment,
+executes the script, and sends the script's output back to the client.
 
-The script's input is connected to the client too, and sometimes the form 
-data is read this way; at other times the form data is passed via the 
-"query string" part of the URL.  This module (cgi.py) is intended to take 
-care of the different cases and provide a simpler interface to the Python 
-script.  It also provides a number of utilities that help in debugging 
-scripts, and the latest addition is support for file uploads from a form
-(if your browser supports it -- Grail 0.3 and Netscape 2.0 do).
+The script's input is connected to the client too, and sometimes the
+form data is read this way; at other times the form data is passed via
+the "query string" part of the URL.  This module (cgi.py) is intended
+to take care of the different cases and provide a simpler interface to
+the Python script.  It also provides a number of utilities that help
+in debugging scripts, and the latest addition is support for file
+uploads from a form (if your browser supports it -- Grail 0.3 and
+Netscape 2.0 do).
 
-The output of a CGI script should consist of two sections, separated by a 
-blank line.  The first section contains a number of headers, telling the 
-client what kind of data is following.  Python code to generate a minimal 
-header section looks like this:
+The output of a CGI script should consist of two sections, separated
+by a blank line.  The first section contains a number of headers,
+telling the client what kind of data is following.  Python code to
+generate a minimal header section looks like this:
 
 	print "Content-type: text/html"		# HTML is following
 	print					# blank line, end of headers
 
-The second section is usually HTML, which allows the client software to 
-display nicely formatted text with header, in-line images, etc.  Here's 
-Python code that prints a simple piece of HTML:
+The second section is usually HTML, which allows the client software
+to display nicely formatted text with header, in-line images, etc.
+Here's Python code that prints a simple piece of HTML:
 
 	print "<TITLE>CGI script output</TITLE>"
 	print "<H1>This is my first CGI script</H1>"
 	print "Hello, world!"
 
-(It may not be fully legal HTML according to the letter of the standard, 
-but any browser will understand it.)
+(It may not be fully legal HTML according to the letter of the
+standard, but any browser will understand it.)
 
 
 Using the cgi module
 --------------------
 
-Begin by writing "import cgi".  Don't use "from cgi import *" -- the module 
-defines all sorts of names for its own use that you don't want in your 
-namespace.
+Begin by writing "import cgi".  Don't use "from cgi import *" -- the
+module defines all sorts of names for its own use that you don't want
+in your namespace.
 
-If you have a standard form, it's best to use the SvFormContentDict class.  
-Instantiate the SvFormContentDict class exactly once: it consumes any input 
-on standard input, which can't be wound back (it's a network connection, 
-not a disk file).
+If you have a standard form, it's best to use the SvFormContentDict
+class.  Instantiate the SvFormContentDict class exactly once: it
+consumes any input on standard input, which can't be wound back (it's
+a network connection, not a disk file).
 
-The SvFormContentDict instance can be accessed as if it were a Python 
-dictionary.  For instance, the following code checks that the fields 
+The SvFormContentDict instance can be accessed as if it were a Python
+dictionary.  For instance, the following code checks that the fields
 "name" and "addr" are both set to a non-empty string:
 
 	form = SvFormContentDict()
@@ -73,40 +74,41 @@ dictionary.  For instance, the following code checks that the fields
 		return
 	...actual form processing here...
 
-If you have an input item of type "file" in your form and the client 
-supports file uploads, the value for that field, if present in the form, 
-is not a string but a tuple of (filename, content-type, data).
+If you have an input item of type "file" in your form and the client
+supports file uploads, the value for that field, if present in the
+form, is not a string but a tuple of (filename, content-type, data).
 
 
 Overview of classes
 -------------------
 
-SvFormContentDict: single value form content as dictionary; described 
+SvFormContentDict: single value form content as dictionary; described
 above.
 
-FormContentDict: multiple value form content as dictionary (the form items 
-are lists of values).  Useful if your form contains multiple fields with 
-the same name.
+FormContentDict: multiple value form content as dictionary (the form
+items are lists of values).  Useful if your form contains multiple
+fields with the same name.
 
-Other classes (FormContent, InterpFormContentDict) are present for 
+Other classes (FormContent, InterpFormContentDict) are present for
 backwards compatibility only.
 
 
 Overview of functions
 ---------------------
 
-These are useful if you want more control, or if you want to employ some 
-of the algorithms implemented in this module in other circumstances.
+These are useful if you want more control, or if you want to employ
+some of the algorithms implemented in this module in other
+circumstances.
 
 parse(): parse a form into a Python dictionary.
 
 parse_qs(qs): parse a query string.
 
-parse_multipart(...): parse input of type multipart/form-data (for file 
-uploads).
+parse_multipart(...): parse input of type multipart/form-data (for
+file uploads).
 
-parse_header(string): parse a header like Content-type into a main value 
-and a dictionary of parameters.
+parse_header(string): parse a header like Content-type into a main
+value and a dictionary of parameters.
 
 test(): complete test program.
 
@@ -114,58 +116,62 @@ print_environ(): format the shell environment in HTML.
 
 print_form(form): format a form in HTML.
 
-print_environ_usage(): print a list of useful environment variables in HTML.
+print_environ_usage(): print a list of useful environment variables in
+HTML.
 
-escape(): convert the characters "&", "<" and ">" to HTML-safe sequences.
+escape(): convert the characters "&", "<" and ">" to HTML-safe
+sequences.  Use this if you need to display text that might contain
+such characters in HTML.  To translate URLs for inclusion in the HREF
+attribute of an <A> tag, use urllib.quote().
 
 
 Caring about security
 ---------------------
 
-There's one important rule: if you invoke an external program (e.g.  via 
-the os.system() or os.popen() functions), make very sure you don't pass 
-arbitrary strings received from the client to the shell.  This is a 
-well-known security hole whereby clever hackers anywhere on the web can 
-exploit a gullible CGI script to invoke arbitrary shell commands.  Even 
-parts of the URL or field names cannot be trusted, since the request 
-doesn't have to come from your form!
+There's one important rule: if you invoke an external program (e.g.
+via the os.system() or os.popen() functions), make very sure you don't
+pass arbitrary strings received from the client to the shell.  This is
+a well-known security hole whereby clever hackers anywhere on the web
+can exploit a gullible CGI script to invoke arbitrary shell commands.
+Even parts of the URL or field names cannot be trusted, since the
+request doesn't have to come from your form!
 
-To be on the safe side, if you must pass a string gotten from a form to a 
-shell command, you should make sure the string contains only alphanumeric 
-characters, dashes, underscores, and periods.
+To be on the safe side, if you must pass a string gotten from a form
+to a shell command, you should make sure the string contains only
+alphanumeric characters, dashes, underscores, and periods.
 
 
 Installing your CGI script on a Unix system
 -------------------------------------------
 
-Read the documentation for your HTTP server and check with your local 
-system administrator to find the directory where CGI scripts should be 
+Read the documentation for your HTTP server and check with your local
+system administrator to find the directory where CGI scripts should be
 installed; usually this is in a directory cgi-bin in the server tree.
 
-Make sure that your script is readable and executable by "others"; the Unix 
-file mode should be 755 (use "chmod 755 filename").  Make sure that the 
-first line of the script contains "#!" starting in column 1 followed by the 
-pathname of the Python interpreter, for instance:
+Make sure that your script is readable and executable by "others"; the
+Unix file mode should be 755 (use "chmod 755 filename").  Make sure
+that the first line of the script contains "#!" starting in column 1
+followed by the pathname of the Python interpreter, for instance:
 
 	#!/usr/local/bin/python
 
-Make sure the Python interpreter exists and is executable by "others".  
+Make sure the Python interpreter exists and is executable by "others".
 
-Make sure that any files your script needs to read or write are readable or 
-writable, respectively, by "others" -- their mode should be 644 for 
-readable and 666 for writable.  This is because, for security reasons, the 
-HTTP server executes your script as user "nobody", without any special 
-privileges.  It can only read (write, execute) files that everybody can 
-read (write, execute).  The current directory at execution time is also 
-different (it is usually the server's cgi-bin directory) and the set of 
-environment variables is also different from what you get at login.  in 
-particular, don't count on the shell's search path for executables ($PATH) 
-or the Python module search path ($PYTHONPATH) to be set to anything 
-interesting.
+Make sure that any files your script needs to read or write are
+readable or writable, respectively, by "others" -- their mode should
+be 644 for readable and 666 for writable.  This is because, for
+security reasons, the HTTP server executes your script as user
+"nobody", without any special privileges.  It can only read (write,
+execute) files that everybody can read (write, execute).  The current
+directory at execution time is also different (it is usually the
+server's cgi-bin directory) and the set of environment variables is
+also different from what you get at login.  in particular, don't count
+on the shell's search path for executables ($PATH) or the Python
+module search path ($PYTHONPATH) to be set to anything interesting.
 
-If you need to load modules from a directory which is not on Python's 
-default module search path, you can change the path in your script, before 
-importing other modules, e.g.:
+If you need to load modules from a directory which is not on Python's
+default module search path, you can change the path in your script,
+before importing other modules, e.g.:
 
 	import sys
 	sys.path.insert(0, "/usr/home/joe/lib/python")
@@ -173,71 +179,75 @@ importing other modules, e.g.:
 
 (This way, the directory inserted last will be searched first!)
 
-Instructions for non-Unix systems will vary; check your HTTP server's 
+Instructions for non-Unix systems will vary; check your HTTP server's
 documentation (it will usually have a section on CGI scripts).
 
 
 Testing your CGI script
 -----------------------
 
-Unfortunately, a CGI script will generally not run when you try it from the 
-command line, and a script that works perfectly from the command line may 
-fail mysteriously when run from the server.  There's one reason why you 
-should still test your script from the command line: if it contains a 
-syntax error, the python interpreter won't execute it at all, and the HTTP 
-server will most likely send a cryptic error to the client.
+Unfortunately, a CGI script will generally not run when you try it
+from the command line, and a script that works perfectly from the
+command line may fail mysteriously when run from the server.  There's
+one reason why you should still test your script from the command
+line: if it contains a syntax error, the python interpreter won't
+execute it at all, and the HTTP server will most likely send a cryptic
+error to the client.
 
-Assuming your script has no syntax errors, yet it does not work, you have 
-no choice but to read the next section:
+Assuming your script has no syntax errors, yet it does not work, you
+have no choice but to read the next section:
 
 
 Debugging CGI scripts
 ---------------------
 
-First of all, check for trivial installation errors -- reading the section 
-above on installing your CGI script carefully can save you a lot of time.  
-If you wonder whether you have understood the installation procedure 
-correctly, try installing a copy of this module file (cgi.py) as a CGI 
-script.  When invoked as a script, the file will dump its environment and 
-the contents of the form in HTML form.  Give it the right mode etc, and 
-send it a request.  If it's installed in the standard cgi-bin directory, it 
-should be possible to send it a request by entering a URL into your browser 
-of the form:
+First of all, check for trivial installation errors -- reading the
+section above on installing your CGI script carefully can save you a
+lot of time.  If you wonder whether you have understood the
+installation procedure correctly, try installing a copy of this module
+file (cgi.py) as a CGI script.  When invoked as a script, the file
+will dump its environment and the contents of the form in HTML form.
+Give it the right mode etc, and send it a request.  If it's installed
+in the standard cgi-bin directory, it should be possible to send it a
+request by entering a URL into your browser of the form:
 
 	http://yourhostname/cgi-bin/cgi.py?name=Joe+Blow&addr=At+Home
 
-If this gives an error of type 404, the server cannot find the script -- 
-perhaps you need to install it in a different directory.  If it gives 
-another error (e.g.  500), there's an installation problem that you should 
-fix before trying to go any further.  If you get a nicely formatted listing 
-of the environment and form content (in this example, the fields should be 
-listed as "addr" with value "At Home" and "name" with value "Joe Blow"), 
-the cgi.py script has been installed correctly.  If you follow the same 
-procedure for your own script, you should now be able to debug it.
+If this gives an error of type 404, the server cannot find the script
+-- perhaps you need to install it in a different directory.  If it
+gives another error (e.g.  500), there's an installation problem that
+you should fix before trying to go any further.  If you get a nicely
+formatted listing of the environment and form content (in this
+example, the fields should be listed as "addr" with value "At Home"
+and "name" with value "Joe Blow"), the cgi.py script has been
+installed correctly.  If you follow the same procedure for your own
+script, you should now be able to debug it.
 
-The next step could be to call the cgi module's test() function from your 
-script: replace its main code with the single statement
+The next step could be to call the cgi module's test() function from
+your script: replace its main code with the single statement
 
 	cgi.test()
 	
-This should produce the same results as those gotten from installing the 
-cgi.py file itself.
+This should produce the same results as those gotten from installing
+the cgi.py file itself.
 
-When an ordinary Python script raises an unhandled exception (e.g. because 
-of a typo in a module name, a file that can't be opened, etc.), the Python 
-interpreter prints a nice traceback and exits.  While the Python 
-interpreter will still do this when your CGI script raises an exception, 
-most likely the traceback will end up in one of the HTTP server's log 
-file, or be discarded altogether.
+When an ordinary Python script raises an unhandled exception
+(e.g. because of a typo in a module name, a file that can't be opened,
+etc.), the Python interpreter prints a nice traceback and exits.
+While the Python interpreter will still do this when your CGI script
+raises an exception, most likely the traceback will end up in one of
+the HTTP server's log file, or be discarded altogether.
 
-Fortunately, once you have managed to get your script to execute *some* 
-code, it is easy to catch exceptions and cause a traceback to be printed.
-The test() function below in this module is an example.  Here are the 
-rules:
+Fortunately, once you have managed to get your script to execute
+*some* code, it is easy to catch exceptions and cause a traceback to
+be printed.  The test() function below in this module is an example.
+Here are the rules:
 
-	1. Import the traceback module (before entering the try-except!)
+	1. Import the traceback module (before entering the
+	   try-except!)
 	
-	2. Make sure you finish printing the headers and the blank line early
+	2. Make sure you finish printing the headers and the blank
+	   line early
 	
 	3. Assign sys.stderr to sys.stdout
 	
@@ -258,13 +268,13 @@ For example:
 		print "\n\n<PRE>"
 		traceback.print_exc()
 
-Notes: The assignment to sys.stderr is needed because the traceback prints 
-to sys.stderr.  The print "\n\n<PRE>" statement is necessary to disable the 
-word wrapping in HTML.
+Notes: The assignment to sys.stderr is needed because the traceback
+prints to sys.stderr.  The print "\n\n<PRE>" statement is necessary to
+disable the word wrapping in HTML.
 
-If you suspect that there may be a problem in importing the traceback 
-module, you can use an even more robust approach (which only uses built-in 
-modules):
+If you suspect that there may be a problem in importing the traceback
+module, you can use an even more robust approach (which only uses
+built-in modules):
 
 	import sys
 	sys.stderr = sys.stdout
@@ -272,12 +282,13 @@ modules):
 	print
 	...your code here...
 
-This relies on the Python interpreter to print the traceback.  The content 
-type of the output is set to plain text, which disables all HTML 
-processing.  If your script works, the raw HTML will be displayed by your 
-client.  If it raises an exception, most likely after the first two lines 
-have been printed, a traceback will be displayed.  Because no HTML 
-interpretation is going on, the traceback will readable.
+This relies on the Python interpreter to print the traceback.  The
+content type of the output is set to plain text, which disables all
+HTML processing.  If your script works, the raw HTML will be displayed
+by your client.  If it raises an exception, most likely after the
+first two lines have been printed, a traceback will be displayed.
+Because no HTML interpretation is going on, the traceback will
+readable.
 
 Good luck!
 
@@ -285,40 +296,40 @@ Good luck!
 Common problems and solutions
 -----------------------------
 
-- Most HTTP servers buffer the output from CGI scripts until the script is 
-completed.  This means that it is not possible to display a progress report 
-on the client's display while the script is running.
+- Most HTTP servers buffer the output from CGI scripts until the
+script is completed.  This means that it is not possible to display a
+progress report on the client's display while the script is running.
 
 - Check the installation instructions above.
 
-- Check the HTTP server's log files.  ("tail -f logfile" in a separate 
+- Check the HTTP server's log files.  ("tail -f logfile" in a separate
 window may be useful!)
 
-- Always check a script for syntax errors first, by doing something like 
-"python script.py".
+- Always check a script for syntax errors first, by doing something
+like "python script.py".
 
 - When using any of the debugging techniques, don't forget to add
 "import sys" to the top of the script.
 
-- When invoking external programs, make sure they can be found.  Usually, 
-this means using absolute path names -- $PATH is usually not set to a 
-very useful value in a CGI script.
+- When invoking external programs, make sure they can be found.
+Usually, this means using absolute path names -- $PATH is usually not
+set to a very useful value in a CGI script.
 
-- When reading or writing external files, make sure they can be read or 
-written by every user on the system.
+- When reading or writing external files, make sure they can be read
+or written by every user on the system.
 
-- Don't try to give a CGI script a set-uid mode.  This doesn't work on most 
-systems, and is a security liability as well.
+- Don't try to give a CGI script a set-uid mode.  This doesn't work on
+most systems, and is a security liability as well.
 
 
 History
 -------
 
-Michael McLay started this module.  Steve Majewski changed the interface to 
-SvFormContentDict and FormContentDict.  The multipart parsing was inspired 
-by code submitted by Andreas Paepcke.  Guido van Rossum rewrote, 
-reformatted and documented the module and is currently responsible for its 
-maintenance.
+Michael McLay started this module.  Steve Majewski changed the
+interface to SvFormContentDict and FormContentDict.  The multipart
+parsing was inspired by code submitted by Andreas Paepcke.  Guido van
+Rossum rewrote, reformatted and documented the module and is currently
+responsible for its maintenance.
 
 """
 
@@ -376,7 +387,7 @@ def parse_qs(qs):
 		if len(nv) != 2:
 			continue
 		name = nv[0]
-		value = urllib.unquote(regsub.gsub('+',' ',nv[1]))
+		value = urllib.unquote(regsub.gsub('+', ' ', nv[1]))
 		if len(value):
 			if dict.has_key (name):
 				dict[name].append(value)
@@ -528,13 +539,13 @@ class FormContentDict:
 class SvFormContentDict(FormContentDict):
 	"""Strict single-value expecting form content as dictionary.
 	
-	IF you only expect a single value for each field, then form[key]
-	will return that single value.
-	It will raise an IndexError if that expectation is not true. 
-	IF you expect a field to have possible multiple values, than you
-	can use form.getlist(key) to get all of the values. 
-	values() and items() are a compromise: they return single strings
-	where there is a single value, and lists of strings otherwise.
+	IF you only expect a single value for each field, then
+	form[key] will return that single value.  It will raise an
+	IndexError if that expectation is not true.  IF you expect a
+	field to have possible multiple values, than you can use
+	form.getlist(key) to get all of the values.  values() and
+	items() are a compromise: they return single strings where
+	there is a single value, and lists of strings otherwise.
 	
 	"""
 	def __getitem__(self, key):
@@ -627,7 +638,7 @@ def test():
 		print_environ()
 		print_form(FormContentDict())
 		print
-		print "<H3>Current Working Directory</H3>"
+		print "<H3>Current Working Directory:</H3>"
 		try:
 			pwd = os.getcwd()
 		except os.error, msg:
