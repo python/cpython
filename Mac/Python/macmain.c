@@ -71,7 +71,7 @@ short PyMac_AppRefNum;	/* RefNum of application resource fork */
 static char **orig_argv;
 static int  orig_argc;
 
-PyMac_PrefRecord options;
+PyMac_PrefRecord PyMac_options;
 
 static void Py_Main(int, char **); /* Forward */
 void PyMac_Exit(int); /* Forward */
@@ -272,8 +272,8 @@ init_common(int *argcp, char ***argvp, int embedded)
 #endif
 
 	/* Get options from preference file (or from applet resource fork) */
-	options.keep_console = POPT_KEEPCONSOLE_OUTPUT;		/* default-default */
-	PyMac_PreferenceOptions(&options);
+	PyMac_options.keep_console = POPT_KEEPCONSOLE_OUTPUT;		/* default-default */
+	PyMac_PreferenceOptions(&PyMac_options);
 	
 	if ( embedded ) {
 		static char *emb_argv[] = {"embedded-python", 0};
@@ -282,7 +282,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 		*argvp = emb_argv;
 	} else {
 		/* Create argc/argv. Do it before we go into the options event loop. */
-		*argcp = PyMac_GetArgv(argvp, options.noargs);
+		*argcp = PyMac_GetArgv(argvp, PyMac_options.noargs);
 #ifdef USE_ARGV0_CHDIR
 		if (*argcp >= 1 && (*argvp)[0] && (*argvp)[0][0]) {
 			/* Workaround for MacOS X, which currently (DP4) doesn't set
@@ -297,17 +297,17 @@ init_common(int *argcp, char ***argvp, int embedded)
 		}
 #endif
 		/* Do interactive option setting, if allowed and <option> depressed */
-		PyMac_InteractiveOptions(&options, argcp, argvp);
+		PyMac_InteractiveOptions(&PyMac_options, argcp, argvp);
 	}
 	
 	/* Copy selected options to where the machine-independent stuff wants it */
-	Py_VerboseFlag = options.verbose;
-/*	Py_SuppressPrintingFlag = options.suppress_print; */
-	Py_OptimizeFlag = options.optimize;
-	Py_DebugFlag = options.debugging;
-	Py_NoSiteFlag = options.nosite;
-	Py_TabcheckFlag = options.tabwarn;
-	if ( options.noargs ) {
+	Py_VerboseFlag = PyMac_options.verbose;
+/*	Py_SuppressPrintingFlag = PyMac_options.suppress_print; */
+	Py_OptimizeFlag = PyMac_options.optimize;
+	Py_DebugFlag = PyMac_options.debugging;
+	Py_NoSiteFlag = PyMac_options.nosite;
+	Py_TabcheckFlag = PyMac_options.tabwarn;
+	if ( PyMac_options.noargs ) {
 		/* don't process events at all without the scripts permission */
 		PyMacSchedParams scp;
 		
@@ -319,7 +319,7 @@ init_common(int *argcp, char ***argvp, int embedded)
 	/* XXXX dispatch oldexc and nosite */
 
 	/* Set buffering */
-	if (options.unbuffered) {
+	if (PyMac_options.unbuffered) {
 #ifndef MPW
 		setbuf(stdout, (char *)NULL);
 		setbuf(stderr, (char *)NULL);
@@ -348,7 +348,7 @@ run_inspect()
 {
 	int sts = 0;
 	
-	if (options.inspect && isatty((int)fileno(stdin)))
+	if (PyMac_options.inspect && isatty((int)fileno(stdin)))
 		sts = PyRun_AnyFile(stdin, "<stdin>") != 0;
 	return sts;
 }
@@ -361,7 +361,7 @@ run_inspect()
 static void
 PyMac_InstallNavServicesForSF()
 {
-	if ( !options.nonavservice ) {
+	if ( !PyMac_options.nonavservice ) {
 		PyObject *m = PyImport_ImportModule("macfsn");
 		
 		if ( m == NULL ) {
@@ -553,7 +553,7 @@ PyMac_Exit(status)
 #endif	
 		
 #ifdef USE_SIOUX
-	switch (options.keep_console) {
+	switch (PyMac_options.keep_console) {
 	case POPT_KEEPCONSOLE_NEVER:
 		keep = 0;
 		break;
