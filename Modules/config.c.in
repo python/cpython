@@ -15,7 +15,13 @@ initargs(p_argc, p_argv)
 {
 	extern char *getenv();
 	char *display;
-	
+
+	/* Ignore an initial argument of '-s', for backward compatibility */
+	if (*p_argc > 1 && strcmp((*p_argv)[1], "-s") == 0) {
+		(*p_argv)[1] = (*p_argv)[0];
+		(*p_argc)--, (*p_argv)++;
+	}
+
 	/* Assume we have to initialize stdwin if either of the following
 	   conditions holds:
 	   - the environment variable $DISPLAY is set
@@ -45,6 +51,7 @@ initcalls()
 {
 	inittime();
 	initmath();
+	initregexp();
 	initposix();
 #ifdef USE_AUDIO
 	initaudio();
