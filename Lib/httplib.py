@@ -198,7 +198,6 @@ class HTTPMessage(mimetools.Message):
                 else:
                     self.status = self.status + '; bad seek'
                 break
-    
 
 class HTTPResponse:
 
@@ -260,7 +259,7 @@ class HTTPResponse:
             raise BadStatusLine(line)
         return version, status, reason
 
-    def _begin(self):
+    def begin(self):
         if self.msg is not None:
             # we've already started reading the response
             return
@@ -741,7 +740,7 @@ class HTTPConnection:
         else:
             response = self.response_class(self.sock, strict=self.strict)
 
-        response._begin()
+        response.begin()
         assert response.will_close != _UNKNOWN
         self.__state = _CS_IDLE
 
