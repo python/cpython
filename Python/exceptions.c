@@ -647,6 +647,7 @@ SyntaxError__doc__[] = "Invalid syntax.";
 static int
 SyntaxError__classinit__(PyObject *klass)
 {
+    int retval = 0;
     PyObject *emptystring = PyString_FromString("");
 
     /* Additional class-creation time initializations */
@@ -657,11 +658,10 @@ SyntaxError__classinit__(PyObject *klass)
 	PyObject_SetAttrString(klass, "offset", Py_None) ||
 	PyObject_SetAttrString(klass, "text", Py_None))
     {
-	Py_XDECREF(emptystring);
-	return -1;
+	retval = -1;
     }
-    Py_DECREF(emptystring);
-    return 0;
+    Py_XDECREF(emptystring);
+    return retval;
 }
 
 
