@@ -300,21 +300,5 @@ new local trace function
 Note that as an exception is propagated down the chain of callers, an
 \code{'exception'} event is generated at each level.
 
-Stack frame objects have the following read-only attributes:
-
-\begin{description}
-\item[f_code]      the code object being executed
-\item[f_lineno]    the current line number (\code{-1} for \code{'call'} events)
-\item[f_back]      the stack frame of the caller, or None
-\item[f_locals]    dictionary containing local name bindings
-\item[f_globals]   dictionary containing global name bindings
-\end{description}
-
-Code objects have the following read-only attributes:
-
-\begin{description}
-\item[co_code]     the code string
-\item[co_names]    the list of names used by the code
-\item[co_consts]   the list of (literal) constants used by the code
-\item[co_filename] the filename from which the code was compiled
-\end{description}
+For more information on code and frame objects, refer to the
+\emph{Python Reference Manual}.
