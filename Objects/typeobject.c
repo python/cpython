@@ -4196,18 +4196,14 @@ slot_nb_nonzero(PyObject *self)
 		PyObject *temp = PyObject_Call(func, args, NULL);
 		Py_DECREF(args);
 		if (temp != NULL) {
-			if (PyInt_Check(temp)) {
-				/* XXX need to guard against recursion here */
-				result = PyObject_IsTrue(temp);
-			}
-			else if (PyBool_Check(temp))
+			if (PyInt_CheckExact(temp) || PyBool_Check(temp))
 				result = PyObject_IsTrue(temp);
 			else {
 				PyErr_Format(PyExc_TypeError,
 					     "__nonzero__ should return "
 					     "bool or int, returned %s",
 					     temp->ob_type->tp_name);
-				result = NULL;
+				result = -1;
 			}
 			Py_DECREF(temp);
 		}
