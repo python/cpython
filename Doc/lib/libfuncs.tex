@@ -312,6 +312,22 @@ module from which it is called).
   Equivalent to \code{eval(raw_input(\var{prompt}))}.
 \end{funcdesc}
 
+\begin{funcdesc}{int}{x\optional{, radix}}
+  Convert a string or number to a plain integer.  If the argument is a
+  string, it must contain a possibly signed decimal number
+  representable as a Python integer, possibly embedded in whitespace;
+  this behaves identical to \code{string.atoi(\var{x}\optional{,
+  \var{radix}})}.  The \var{radix} parameter gives the base for the
+  conversion and may be any integer in the range $[2, 36]$.  If
+  \var{radix} is specified and \var{x} is not a string,
+  \exception{TypeError} is raised.
+  Otherwise, the argument may be a plain or
+  long integer or a floating point number.  Conversion of floating
+  point numbers to integers is defined by the C semantics; normally
+  the conversion truncates towards zero.\footnote{This is ugly --- the
+  language definition should require truncation towards zero.}
+\end{funcdesc}
+
 \begin{funcdesc}{intern}{string}
   Enter \var{string} in the table of ``interned'' strings and return
   the interned string -- which is \var{string} itself or a copy.
@@ -323,18 +339,6 @@ module from which it is called).
   the dictionaries used to hold module, class or instance attributes
   have interned keys.  Interned strings are immortal (i.e. never get
   garbage collected).
-\end{funcdesc}
-
-\begin{funcdesc}{int}{x}
-  Convert a string or number to a plain integer.  If the argument is a
-  string, it must contain a possibly signed decimal number
-  representable as a Python integer, possibly embedded in whitespace;
-  this behaves identical to \code{string.atoi(\var{x})}.
-  Otherwise, the argument may be a plain or
-  long integer or a floating point number.  Conversion of floating
-  point numbers to integers is defined by the C semantics; normally
-  the conversion truncates towards zero.\footnote{This is ugly --- the
-  language definition should require truncation towards zero.}
 \end{funcdesc}
 
 \begin{funcdesc}{isinstance}{object, class}
