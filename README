@@ -20,7 +20,11 @@ incrementing, that same quality makes parts of the rest of the world
 think that Python is barely out of its first alpha test.  Especially
 enterprise customers are often fearful of anything that's version 1.x!
 The new version number also clearly marks departure of Python's core
-development teal from CNRI to join BeOpen.com.
+development team from CNRI to join BeOpen.com.
+
+What happened to Python 1.6?  It was promoted and renamed Python 2.0.
+There were two alpha releases of Python 1.6 before we decided to
+increment the major version number.
 
 Previously, the version number 2.0 was associated with a mythical and
 elusive incompatible future release.  That release (still ways off,
