@@ -164,6 +164,11 @@ Extension modules
   SF bug #812202).  Generators that do not define genrandbits() now
   issue a warning when randrange() is called with a range that large.
 
+- itertools has a new function, groupby() for aggregating iterables
+  into groups sharing the same key (as determined by a key function).
+  It offers some of functionality of SQL's groupby keyword and of
+  the Unix uniq filter.
+                                                                  
 - itertools now has a new function, tee() which produces two independent
   iterators from a single iterable.
 

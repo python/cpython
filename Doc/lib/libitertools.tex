@@ -130,6 +130,54 @@ by functions or loops that truncate the stream.
   \end{verbatim}
 \end{funcdesc}
 
+\begin{funcdesc}{groupby}{iterable\optional{, key}}
+  Make an iterator that returns consecutive keys and groups from the
+  \var{iterable}.  \var{key} is function computing a key value for each
+  element.  If not specified or is \code{None}, \var{key} defaults to an
+  identity function   (returning the element unchanged).  Generally, the
+  iterable needs to already be sorted on the same key function.
+
+  The returned group is itself an iterator that shares the underlying
+  iterable with \function{groupby()}.  Because the source is shared, when
+  the \function{groupby} object is advanced, the previous group is no
+  longer visible.  So, if that data is needed later, it should be stored
+  as a list:
+
+  \begin{verbatim}
+    groups = []
+    uniquekeys = []
+    for k, g in groupby(data, keyfunc):
+        groups.append(list(g))      # Store group iterator as a list
+        uniquekeys.append(k)
+  \end{verbatim}
+
+  \function{groupby()} is equivalent to:
+
+  \begin{verbatim}
+    class groupby(object):
+        def __init__(self, iterable, key=None):
+            if key is None:
+                key = lambda x: x
+            self.keyfunc = key
+            self.it = iter(iterable)
+            self.tgtkey = self.currkey = self.currvalue = xrange(0)
+        def __iter__(self):
+            return self
+        def next(self):
+            while self.currkey == self.tgtkey:
+                self.currvalue = self.it.next() # Exit on StopIteration
+                self.currkey = self.keyfunc(self.currvalue)
+            self.tgtkey = self.currkey
+            return (self.currkey, self._grouper(self.tgtkey))
+        def _grouper(self, tgtkey):
+            while self.currkey == tgtkey:
+                yield self.currvalue
+                self.currvalue = self.it.next() # Exit on StopIteration
+                self.currkey = self.keyfunc(self.currvalue)
+  \end{verbatim}
+  \versionadded{2.4}
+\end{funcdesc}
+
 \begin{funcdesc}{ifilter}{predicate, iterable}
   Make an iterator that filters elements from iterable returning only
   those for which the predicate is \code{True}.
@@ -345,6 +393,18 @@ Laura
 Martin
 Walter
 Samuele
+
+# Show a dictionary sorted and grouped by value
+>>> from operator import itemgetter
+>>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
+>>> di = list.sorted(d.iteritems(), key=itemgetter(1))
+>>> for k, g in groupby(di, key=itemgetter(1)):
+...     print k, map(itemgetter(0), g)
+...
+1 ['a', 'c', 'e']
+2 ['b', 'd', 'f']
+3 ['g']
+
 
 \end{verbatim}
 

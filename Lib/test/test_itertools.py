@@ -61,6 +61,94 @@ class TestBasicOps(unittest.TestCase):
         self.assertRaises(TypeError, cycle, 5)
         self.assertEqual(list(islice(cycle(gen3()),10)), [0,1,2,0,1,2,0,1,2,0])
 
+    def test_groupby(self):
+        # Check whether it accepts arguments correctly
+        self.assertEqual([], list(groupby([])))
+        self.assertEqual([], list(groupby([], key=id)))
+        self.assertRaises(TypeError, list, groupby('abc', []))
+        self.assertRaises(TypeError, groupby, None)
+
+        # Check normal input
+        s = [(0, 10, 20), (0, 11,21), (0,12,21), (1,13,21), (1,14,22),
+             (2,15,22), (3,16,23), (3,17,23)]
+        dup = []
+        for k, g in groupby(s, lambda r:r[0]):
+            for elem in g:
+                self.assertEqual(k, elem[0])
+                dup.append(elem)
+        self.assertEqual(s, dup)
+
+        # Check nested case
+        dup = []
+        for k, g in groupby(s, lambda r:r[0]):
+            for ik, ig in groupby(g, lambda r:r[2]):
+                for elem in ig:
+                    self.assertEqual(k, elem[0])
+                    self.assertEqual(ik, elem[2])
+                    dup.append(elem)
+        self.assertEqual(s, dup)
+
+        # Check case where inner iterator is not used
+        keys = [k for k, g in groupby(s, lambda r:r[0])]
+        expectedkeys = set([r[0] for r in s])
+        self.assertEqual(set(keys), expectedkeys)
+        self.assertEqual(len(keys), len(expectedkeys))
+
+        # Exercise pipes and filters style
+        s = 'abracadabra'
+        # sort s | uniq
+        r = [k for k, g in groupby(list.sorted(s))]
+        self.assertEqual(r, ['a', 'b', 'c', 'd', 'r'])
+        # sort s | uniq -d
+        r = [k for k, g in groupby(list.sorted(s)) if list(islice(g,1,2))]
+        self.assertEqual(r, ['a', 'b', 'r'])
+        # sort s | uniq -c
+        r = [(len(list(g)), k) for k, g in groupby(list.sorted(s))]
+        self.assertEqual(r, [(5, 'a'), (2, 'b'), (1, 'c'), (1, 'd'), (2, 'r')])
+        # sort s | uniq -c | sort -rn | head -3
+        r = list.sorted([(len(list(g)) , k) for k, g in groupby(list.sorted(s))], reverse=True)[:3]
+        self.assertEqual(r, [(5, 'a'), (2, 'r'), (2, 'b')])
+
+        # iter.next failure
+        class ExpectedError(Exception):
+            pass
+        def delayed_raise(n=0):
+            for i in range(n):
+                yield 'yo'
+            raise ExpectedError
+        def gulp(iterable, keyp=None, func=list):
+            return [func(g) for k, g in groupby(iterable, keyp)]
+
+        # iter.next failure on outer object
+        self.assertRaises(ExpectedError, gulp, delayed_raise(0))
+        # iter.next failure on inner object
+        self.assertRaises(ExpectedError, gulp, delayed_raise(1))
+
+        # __cmp__ failure
+        class DummyCmp:
+            def __cmp__(self, dst):
+                raise ExpectedError
+        s = [DummyCmp(), DummyCmp(), None]
+
+        # __cmp__ failure on outer object
+        self.assertRaises(ExpectedError, gulp, s, func=id)
+        # __cmp__ failure on inner object
+        self.assertRaises(ExpectedError, gulp, s)
+
+        # keyfunc failure
+        def keyfunc(obj):
+            if keyfunc.skip > 0:
+                keyfunc.skip -= 1
+                return obj
+            else:
+                raise ExpectedError
+
+        # keyfunc failure on outer object
+        keyfunc.skip = 0
+        self.assertRaises(ExpectedError, gulp, [None], keyfunc)
+        keyfunc.skip = 1
+        self.assertRaises(ExpectedError, gulp, [None, None], keyfunc)
+
     def test_ifilter(self):
         self.assertEqual(list(ifilter(isEven, range(6))), [0,2,4])
         self.assertEqual(list(ifilter(None, [0,1,0,2,0])), [1,2])
@@ -268,7 +356,7 @@ class TestBasicOps(unittest.TestCase):
     def test_StopIteration(self):
         self.assertRaises(StopIteration, izip().next)
 
-        for f in (chain, cycle, izip):
+        for f in (chain, cycle, izip, groupby):
             self.assertRaises(StopIteration, f([]).next)
             self.assertRaises(StopIteration, f(StopNow()).next)
 
@@ -426,6 +514,14 @@ class TestVariousIteratorArgs(unittest.TestCase):
             self.assertRaises(TypeError, list, cycle(N(s)))
             self.assertRaises(ZeroDivisionError, list, cycle(E(s)))
 
+    def test_groupby(self):
+        for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
+            for g in (G, I, Ig, S, L, R):
+                self.assertEqual([k for k, sb in groupby(g(s))], list(g(s)))
+            self.assertRaises(TypeError, groupby, X(s))
+            self.assertRaises(TypeError, list, groupby(N(s)))
+            self.assertRaises(ZeroDivisionError, list, groupby(E(s)))
+
     def test_ifilter(self):
         for s in (range(10), range(0), range(1000), (7,11), xrange(2000,2200,5)):
             for g in (G, I, Ig, S, L, R):
@@ -570,6 +666,16 @@ Laura
 Martin
 Walter
 Samuele
+
+>>> from operator import itemgetter
+>>> d = dict(a=1, b=2, c=1, d=2, e=1, f=2, g=3)
+>>> di = list.sorted(d.iteritems(), key=itemgetter(1))
+>>> for k, g in groupby(di, itemgetter(1)):
+...     print k, map(itemgetter(0), g)
+...
+1 ['a', 'c', 'e']
+2 ['b', 'd', 'f']
+3 ['g']
 
 >>> def take(n, seq):
 ...     return list(islice(seq, n))
