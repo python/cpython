@@ -435,9 +435,17 @@ initsignal()
 	x = PyInt_FromLong(SIGCPU);
 	PyDict_SetItemString(d, "SIGCPU", x);
 #endif
+#ifdef SIGXCPU
+	x = PyInt_FromLong(SIGXCPU);
+	PyDict_SetItemString(d, "SIGXCPU", x);
+#endif
 #ifdef SIGFSZ
 	x = PyInt_FromLong(SIGFSZ);
 	PyDict_SetItemString(d, "SIGFSZ", x);
+#endif
+#ifdef SIGXFSZ
+	x = PyInt_FromLong(SIGXFSZ);
+	PyDict_SetItemString(d, "SIGXFSZ", x);
 #endif
 	/* Check for errors */
 	if (PyErr_Occurred())
