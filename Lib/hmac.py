@@ -27,7 +27,7 @@ class HMAC:
         msg:       Initial input for the hash, if provided.
         digestmod: A module supporting PEP 247. Defaults to the md5 module.
         """
-        if digestmod == None:
+        if digestmod is None:
             import md5
             digestmod = md5
 

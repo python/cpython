@@ -549,7 +549,7 @@ class SMTP:
         elif authmethod == AUTH_PLAIN:
             (code, resp) = self.docmd("AUTH",
                 AUTH_PLAIN + " " + encode_plain(user, password))
-        elif authmethod == None:
+        elif authmethod is None:
             raise SMTPException("No suitable authentication method found.")
         if code not in [235, 503]:
             # 235 == 'Authentication successful'
