@@ -12,6 +12,8 @@ What's New in Python 2.4 alpha 1?
 Core and builtins
 -----------------
 
+- Compiler flags set in PYTHONSTARTUP are now active in __main__.
+
 - Added two builtin types, set() and frozenset().
 
 - Critical bugfix, for SF bug 840829:  if cyclic garbage collection

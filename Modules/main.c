@@ -117,6 +117,19 @@ usage(int exitcode, char* program)
 	/*NOTREACHED*/
 }
 
+static void RunStartupFile(PyCompilerFlags *cf)
+{
+	char *startup = Py_GETENV("PYTHONSTARTUP");
+	if (startup != NULL && startup[0] != '\0') {
+		FILE *fp = fopen(startup, "r");
+		if (fp != NULL) {
+			(void) PyRun_SimpleFileExFlags(fp, startup, 0, cf);
+			PyErr_Clear();
+			fclose(fp);
+		}
+	}
+}
+
 
 /* Main program */
 
@@ -401,15 +414,7 @@ Py_Main(int argc, char **argv)
 	}
 	else {
 		if (filename == NULL && stdin_is_interactive) {
-			char *startup = Py_GETENV("PYTHONSTARTUP");
-			if (startup != NULL && startup[0] != '\0') {
-				FILE *fp = fopen(startup, "r");
-				if (fp != NULL) {
-					(void) PyRun_SimpleFile(fp, startup);
-					PyErr_Clear();
-					fclose(fp);
-				}
-			}
+			RunStartupFile(&cf);
 		}
 		/* XXX */
 		sts = PyRun_AnyFileExFlags(
