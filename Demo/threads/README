@@ -1,0 +1,5 @@
+This directory contains some demonstrations of the thread module.
+They are mostly "proof of concept" type applications:
+
+telnet.py	Version of ../sockets/telnet.py using threads.
+wpi.py		Version of ../scripts/pi.py using threads and stdwin.
