@@ -85,6 +85,7 @@ def my_import(name):
   subclassed further.  Its only instances are \code{False} and
   \code{True}.
 \indexii{Boolean}{type}
+\versionadded{2.2.1}
 \end{funcdesc}
 
 \begin{funcdesc}{buffer}{object\optional{, offset\optional{, size}}}
@@ -112,6 +113,29 @@ def my_import(name):
   This is the inverse of \function{ord()}.  The argument must be in
   the range [0..255], inclusive; \exception{ValueError} will be raised
   if \var{i} is outside that range.
+\end{funcdesc}
+
+\begin{funcdesc}{classmethod}{function}
+  Return a class method for \var{function}.
+
+  A class method receives the class as implicit first argument,
+  just like an instance method receives the instance.
+  To declare a class method, use this idiom:
+
+\begin{verbatim}
+class C:
+    def f(cls, arg1, arg2, ...): ...
+    f = classmethod(f)
+\end{verbatim}
+
+  It can be called either on the class (e.g. C.f()) or on an instance
+  (e.g. C().f()).  The instance is ignored except for its class.
+  If a class method is called for a derived class, the derived class
+  object is passed as the implied first argument.
+
+  Class methods are different than C++ or Java static methods.
+  If you want those, see \ref{staticmethod}.
+  \versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{cmp}{x, y}
@@ -679,6 +703,25 @@ def my_import(name):
   rounding accidents.)
 \end{funcdesc}
 
+\begin{funcdesc}{property}{\optional{fget\optional{, fset\optional{, fdel\optional{, doc}}}}}
+  Return a property attribute for new-style classes (classes that
+  derive from \function{object}.
+
+  \var{fget} is a function for getting an attribute value, likewise
+  \var{fset} is a function for setting, and \var{fdel} a function
+  for del'ing, an attribute.  Typical use is to define a managed attribute x:
+
+\begin{verbatim}
+class C(object):
+    def getx(self): return self.__x
+    def setx(self, value): self.__x = value
+    def delx(self): del self.__x
+        x = property(getx, setx, delx, "I'm the 'x' property.")
+\end{verbatim}
+
+  \versionadded{2.2}
+\end{funcdesc}
+
 \begin{funcdesc}{range}{\optional{start,} stop\optional{, step}}
   This is a versatile function to create lists containing arithmetic
   progressions.  It is most often used in \keyword{for} loops.  The
@@ -824,6 +867,41 @@ def my_import(name):
   party extensions.  Slice objects are also generated when extended
   indexing syntax is used.  For example: \samp{a[start:stop:step]} or
   \samp{a[start:stop, i]}.
+\end{funcdesc}
+
+\begin{funcdesc}{staticmethod}{function}
+  Return a static method for \var{function}.
+
+  A static method does not receive an implicit first argument.
+  To declare a static method, use this idiom:
+
+\begin{verbatim}
+class C:
+    def f(arg1, arg2, ...): ...
+    f = staticmethod(f)
+\end{verbatim}
+
+  It can be called either on the class (e.g. C.f()) or on an instance
+  (e.g. C().f()).  The instance is ignored except for its class.
+
+  Static methods in Python are similar to those found in Java or C++.
+  For a more advanced concept, see \ref{classmethod}.
+  \versionadded{2.2}
+\end{funcdesc}
+
+\begin{funcdesc}{super}{type\optional{object-or-type}}
+  Return the superclass of \var{type}.  If the second argument is omitted
+  the super object returned is unbound.  If the second argument is an
+  object, isinstance(obj, type) must be true.  If the second argument is a
+  type, issubclass(type2, type) must be true.
+
+  A typical use for calling a cooperative superclass method is:
+\begin{verbatim}
+class C(B):
+    def meth(self, arg):
+        super(C, self).meth(arg)
+\end{verbatim}
+\versionadded{2.2}
 \end{funcdesc}
 
 \begin{funcdesc}{str}{object}
