@@ -204,7 +204,7 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 			/* Check the character for legality
 			** The 64 in stead of the expected 63 is because
 			** there are a few uuencodes out there that use
-			** '@' as zero instead of space.
+			** '`' as zero instead of space.
 			*/
 			if ( this_ch < ' ' || this_ch > (' ' + 64)) {
 				PyErr_SetString(Error, "Illegal char");
@@ -232,8 +232,8 @@ binascii_a2b_uu(PyObject *self, PyObject *args)
 	*/
 	while( ascii_len-- > 0 ) {
 		this_ch = *ascii_data++;
-		/* Extra '@' may be written as padding in some cases */
-		if ( this_ch != ' ' && this_ch != '@' &&
+		/* Extra '`' may be written as padding in some cases */
+		if ( this_ch != ' ' && this_ch != ' '+64 &&
 		     this_ch != '\n' && this_ch != '\r' ) {
 			PyErr_SetString(Error, "Trailing garbage");
 			Py_DECREF(rv);
