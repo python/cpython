@@ -7,6 +7,7 @@ import stdwin
 from stdwinevents import *
 import rect
 from Buttons import *
+from Resize import *
 
 
 # Field indices in event detail
@@ -42,7 +43,7 @@ class DragSliderReactivity() = NoReactivity():
 			self.active = 0
 	#
 
-class DragSliderAppearance() = ButtonAppearance():
+class DragSliderAppearance() = NoResize(), ButtonAppearance():
 	#
 	def define(self, (win, bounds)):
 		self.min = 0
@@ -109,7 +110,7 @@ class _SubClassicButton() = ClassicButton():
 # A complex slider is a wrapper around three buttons:
 # One to step down, a dragslider, and one to step up.
 #
-class ComplexSlider() = LabelAppearance(), NoReactivity():
+class ComplexSlider() = NoResize(), LabelAppearance(), NoReactivity():
 	#
 	def define(self, (win, bounds)):
 		#
