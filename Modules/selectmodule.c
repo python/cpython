@@ -58,8 +58,7 @@ typedef struct {
 } pylist;
 
 static void
-reap_obj(fd2obj)
-	pylist fd2obj[FD_SETSIZE + 3];
+reap_obj(pylist fd2obj[FD_SETSIZE + 3])
 {
 	int i;
 	for (i = 0; i < FD_SETSIZE + 3 && fd2obj[i].sentinel >= 0; i++) {
@@ -74,10 +73,7 @@ reap_obj(fd2obj)
    returns a number >= 0
 */
 static int
-list2set(list, set, fd2obj)
-	PyObject *list;
-	fd_set *set;
-	pylist fd2obj[FD_SETSIZE + 3];
+list2set(PyObject *list, fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
 {
 	int i;
 	int max = -1;
@@ -155,9 +151,7 @@ list2set(list, set, fd2obj)
 
 /* returns NULL and sets the Python exception if an error occurred */
 static PyObject *
-set2list(set, fd2obj)
-	fd_set *set;
-	pylist fd2obj[FD_SETSIZE + 3];
+set2list(fd_set *set, pylist fd2obj[FD_SETSIZE + 3])
 {
 	int i, j, count=0;
 	PyObject *list, *o;
@@ -199,9 +193,7 @@ set2list(set, fd2obj)
 
     
 static PyObject *
-select_select(self, args)
-	PyObject *self;
-	PyObject *args;
+select_select(PyObject *self, PyObject *args)
 {
 #ifdef MS_WINDOWS
 	/* This would be an awful lot of stack space on Windows! */
