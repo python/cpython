@@ -288,9 +288,9 @@ typedef long intptr_t;
 #ifndef USE_DL_EXPORT
 /* So nobody needs to specify the .lib in their Makefile any more */
 #ifdef _DEBUG
-#pragma comment(lib,"python16_d.lib")
+#pragma comment(lib,"python20_d.lib")
 #else
-#pragma comment(lib,"python16.lib")
+#pragma comment(lib,"python20.lib")
 #endif
 #endif /* USE_DL_EXPORT */
 
