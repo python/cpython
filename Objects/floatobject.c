@@ -636,6 +636,26 @@ float_float(PyObject *v)
 }
 
 
+static PyObject *
+float_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *x = Py_False; /* Integer zero */
+	static char *kwlist[] = {"x", 0};
+
+	assert(type == &PyFloat_Type);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:float", kwlist, &x))
+		return NULL;
+	if (PyString_Check(x))
+		return PyFloat_FromString(x, NULL);
+	return PyNumber_Float(x);
+}
+
+static char float_doc[] =
+"float(x) -> floating point number\n\
+\n\
+Convert a string or number to a floating point number, if possible.";
+
+
 static PyNumberMethods float_as_number = {
 	(binaryfunc)float_add, /*nb_add*/
 	(binaryfunc)float_sub, /*nb_subtract*/
@@ -679,22 +699,40 @@ PyTypeObject PyFloat_Type = {
 	"float",
 	sizeof(PyFloatObject),
 	0,
-	(destructor)float_dealloc, /*tp_dealloc*/
-	(printfunc)float_print, /*tp_print*/
-	0,			/*tp_getattr*/
-	0,			/*tp_setattr*/
-	(cmpfunc)float_compare, /*tp_compare*/
-	(reprfunc)float_repr,	/*tp_repr*/
-	&float_as_number,	/*tp_as_number*/
-	0,			/*tp_as_sequence*/
-	0,			/*tp_as_mapping*/
-	(hashfunc)float_hash,	/*tp_hash*/
-        0,			/*tp_call*/
-        (reprfunc)float_str,	/*tp_str*/
-	0,			/*tp_getattro*/
-	0,			/*tp_setattro*/
-	0,			/*tp_as_buffer*/
-	Py_TPFLAGS_CHECKTYPES	/*tp_flags*/
+	(destructor)float_dealloc,		/* tp_dealloc */
+	(printfunc)float_print, 		/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)float_compare, 		/* tp_compare */
+	(reprfunc)float_repr,			/* tp_repr */
+	&float_as_number,			/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)float_hash,			/* tp_hash */
+	0,					/* tp_call */
+	(reprfunc)float_str,			/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	float_doc,				/* tp_doc */
+ 	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	float_new,				/* tp_new */
 };
 
 void

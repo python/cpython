@@ -2522,41 +2522,65 @@ string_methods[] = {
 };
 
 static PyObject *
-string_getattr(PyStringObject *s, char *name)
+string_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-	return Py_FindMethod(string_methods, (PyObject*)s, name);
+	PyObject *x = NULL;
+	static char *kwlist[] = {"object", 0};
+
+	assert(type == &PyString_Type);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:str", kwlist, &x))
+		return NULL;
+	if (x == NULL)
+		return PyString_FromString("");
+	return PyObject_Str(x);
 }
 
+static char string_doc[] =
+"str(object) -> string\n\
+\n\
+Return a nice string representation of the object.\n\
+If the argument is a string, the return value is the same object.";
 
 PyTypeObject PyString_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
-	"string",
+	"str",
 	sizeof(PyStringObject),
 	sizeof(char),
-	(destructor)string_dealloc, /*tp_dealloc*/
-	(printfunc)string_print, /*tp_print*/
-	(getattrfunc)string_getattr,		/*tp_getattr*/
-	0,		/*tp_setattr*/
-	0,		/*tp_compare*/
-	(reprfunc)string_repr, /*tp_repr*/
-	0,		/*tp_as_number*/
-	&string_as_sequence,	/*tp_as_sequence*/
-	0,		/*tp_as_mapping*/
-	(hashfunc)string_hash, /*tp_hash*/
-	0,		/*tp_call*/
-	(reprfunc)string_str,	/*tp_str*/
-	0,		/*tp_getattro*/
-	0,		/*tp_setattro*/
-	&string_as_buffer,	/*tp_as_buffer*/
-	Py_TPFLAGS_DEFAULT,	/*tp_flags*/
-	0,		/*tp_doc*/
-	0,		/*tp_traverse*/
-	0,		/*tp_clear*/
-	(richcmpfunc)string_richcompare,	/*tp_richcompare*/
-	0,		/*tp_weaklistoffset*/
-	0,		/*tp_iter*/
-	0,		/*tp_iternext*/
+ 	(destructor)string_dealloc, 		/* tp_dealloc */
+	(printfunc)string_print, 		/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	(reprfunc)string_repr, 			/* tp_repr */
+	0,					/* tp_as_number */
+	&string_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)string_hash, 			/* tp_hash */
+	0,					/* tp_call */
+	(reprfunc)string_str,			/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	&string_as_buffer,			/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	string_doc,				/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	(richcmpfunc)string_richcompare,	/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	string_methods,				/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	string_new,				/* tp_new */
 };
 
 void

@@ -480,6 +480,28 @@ tuplerichcompare(PyObject *v, PyObject *w, int op)
 	return PyObject_RichCompare(vt->ob_item[i], wt->ob_item[i], op);
 }
 
+static PyObject *
+tuple_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *arg = NULL;
+	static char *kwlist[] = {"sequence", 0};
+
+	assert(type == &PyTuple_Type);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O:tuple", kwlist, &arg))
+		return NULL;
+
+	if (arg == NULL)
+		return PyTuple_New(0);
+	else
+		return PySequence_Tuple(arg);
+}
+
+static char tuple_doc[] =
+"tuple(sequence) -> list\n\
+\n\
+Return a tuple whose items are the same as those of the argument sequence.\n\
+If the argument is a tuple, the return value is the same object.";
+
 static PySequenceMethods tuple_as_sequence = {
 	(inquiry)tuplelength,			/* sq_length */
 	(binaryfunc)tupleconcat,		/* sq_concat */
@@ -509,14 +531,28 @@ PyTypeObject PyTuple_Type = {
 	(hashfunc)tuplehash,			/* tp_hash */
 	0,					/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
-	0,             				/* tp_doc */
+	tuple_doc,				/* tp_doc */
  	(traverseproc)tupletraverse,		/* tp_traverse */
 	0,					/* tp_clear */
 	tuplerichcompare,			/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	tuple_new,				/* tp_new */
 };
 
 /* The following function breaks the notion that tuples are immutable:

@@ -3,8 +3,6 @@
 
 #include "Python.h"
 
-#include "token.h"
-
 static PyCFunctionObject *free_list = NULL;
 
 PyObject *
@@ -69,6 +67,23 @@ meth_dealloc(PyCFunctionObject *m)
 	free_list = m;
 }
 
+static PyObject *
+meth_get__doc__(PyCFunctionObject *m, void *closure)
+{
+	char *doc = m->m_ml->ml_doc;
+
+	if (doc != NULL)
+		return PyString_FromString(doc);
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
+static PyObject *
+meth_get__name__(PyCFunctionObject *m, void *closure)
+{
+	return PyString_FromString(m->m_ml->ml_name);
+}
+
 static int
 meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 {
@@ -79,38 +94,27 @@ meth_traverse(PyCFunctionObject *m, visitproc visit, void *arg)
 }
 
 static PyObject *
-meth_getattr(PyCFunctionObject *m, char *name)
+meth_get__self__(PyCFunctionObject *m, void *closure)
 {
-	if (strcmp(name, "__name__") == 0) {
-		return PyString_FromString(m->m_ml->ml_name);
+	PyObject *self;
+	if (PyEval_GetRestricted()) {
+		PyErr_SetString(PyExc_RuntimeError,
+			"method.__self__ not accessible in restricted mode");
+		return NULL;
 	}
-	if (strcmp(name, "__doc__") == 0) {
-		char *doc = m->m_ml->ml_doc;
-		if (doc != NULL)
-			return PyString_FromString(doc);
-		Py_INCREF(Py_None);
-		return Py_None;
-	}
-	if (strcmp(name, "__self__") == 0) {
-		PyObject *self;
-		if (PyEval_GetRestricted()) {
-			PyErr_SetString(PyExc_RuntimeError,
-			 "method.__self__ not accessible in restricted mode");
-			return NULL;
-		}
-		self = m->m_self;
-		if (self == NULL)
-			self = Py_None;
-		Py_INCREF(self);
-		return self;
-	}
-	if (strcmp(name, "__members__") == 0) {
-		return Py_BuildValue("[sss]",
-				     "__doc__", "__name__", "__self__");
-	}
-	PyErr_SetString(PyExc_AttributeError, name);
-	return NULL;
+	self = m->m_self;
+	if (self == NULL)
+		self = Py_None;
+	Py_INCREF(self);
+	return self;
 }
+
+static struct getsetlist meth_getsets [] = {
+	{"__doc__",  (getter)meth_get__doc__,  NULL, NULL},
+	{"__name__", (getter)meth_get__name__, NULL, NULL},
+	{"__self__", (getter)meth_get__self__, NULL, NULL},
+	{0}
+};
 
 static PyObject *
 meth_repr(PyCFunctionObject *m)
@@ -159,6 +163,41 @@ meth_hash(PyCFunctionObject *a)
 	return x;
 }
 
+static PyObject *
+meth_call(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyCFunctionObject* f = (PyCFunctionObject*)func;
+	PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+	PyObject *self = PyCFunction_GET_SELF(func);
+	int flags = PyCFunction_GET_FLAGS(func);
+
+	if (flags & METH_KEYWORDS) {
+		return (*(PyCFunctionWithKeywords)meth)(self, arg, kw);
+	}
+	if (kw != NULL && PyDict_Size(kw) != 0) {
+		PyErr_Format(PyExc_TypeError,
+			     "%.200s() takes no keyword arguments",
+			     f->m_ml->ml_name);
+		return NULL;
+	}
+	if (flags & METH_VARARGS) {
+		return (*meth)(self, arg);
+	}
+	if (!(flags & METH_VARARGS)) {
+		/* the really old style */
+		int size = PyTuple_GET_SIZE(arg);
+		if (size == 1)
+			arg = PyTuple_GET_ITEM(arg, 0);
+		else if (size == 0)
+			arg = NULL;
+		return (*meth)(self, arg);
+	}
+	/* should never get here ??? */
+	PyErr_BadInternalCall();
+	return NULL;
+}
+
+
 PyTypeObject PyCFunction_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -167,7 +206,7 @@ PyTypeObject PyCFunction_Type = {
 	0,
 	(destructor)meth_dealloc, 		/* tp_dealloc */
 	0,					/* tp_print */
-	(getattrfunc)meth_getattr,		/* tp_getattr */
+	0,					/* tp_getattr */
 	0,					/* tp_setattr */
 	(cmpfunc)meth_compare,			/* tp_compare */
 	(reprfunc)meth_repr,			/* tp_repr */
@@ -175,14 +214,24 @@ PyTypeObject PyCFunction_Type = {
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)meth_hash,			/* tp_hash */
-	0,					/* tp_call */
+	meth_call,				/* tp_call */
 	0,					/* tp_str */
-	0,					/* tp_getattro */
+	PyObject_GenericGetAttr,		/* tp_getattro */
 	0,					/* tp_setattro */
 	0,					/* tp_as_buffer */
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
  	0,					/* tp_doc */
  	(traverseproc)meth_traverse,		/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	meth_getsets,				/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
 };
 
 /* List all methods in a chain -- helper for findmethodinchain */

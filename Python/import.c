@@ -43,7 +43,7 @@ extern time_t PyOS_GetLastModificationTime(char *, FILE *);
 /* XXX Perhaps the magic number should be frozen and a version field
    added to the .pyc file header? */
 /* New way to come up with the magic number: (YEAR-1995), MONTH, DAY */
-#define MAGIC (60420 | ((long)'\r'<<16) | ((long)'\n'<<24))
+#define MAGIC (60717 | ((long)'\r'<<16) | ((long)'\n'<<24))
 
 /* Magic word as global; note that _PyImport_Init() can change the
    value of this global to accommodate for alterations of how the
@@ -1968,8 +1968,11 @@ PyImport_Import(PyObject *module_name)
 	}
 
 	/* Get the __import__ function from the builtins */
-	if (PyDict_Check(builtins))
+	if (PyDict_Check(builtins)) {
 		import = PyObject_GetItem(builtins, import_str);
+		if (import == NULL)
+			PyErr_SetObject(PyExc_KeyError, import_str);
+	}
 	else
 		import = PyObject_GetAttr(builtins, import_str);
 	if (import == NULL)

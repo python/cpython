@@ -62,7 +62,7 @@ class Repr:
             s = s + ': ' + self.repr1(x[key], level-1)
         if n > self.maxdict: s = s + ', ...'
         return '{' + s + '}'
-    def repr_string(self, x, level):
+    def repr_str(self, x, level):
         s = `x[:self.maxstring]`
         if len(s) > self.maxstring:
             i = max(0, (self.maxstring-3)/2)
@@ -70,7 +70,7 @@ class Repr:
             s = `x[:i] + x[len(x)-j:]`
             s = s[:i] + '...' + s[len(s)-j:]
         return s
-    def repr_long_int(self, x, level):
+    def repr_long(self, x, level):
         s = `x` # XXX Hope this isn't too slow...
         if len(s) > self.maxlong:
             i = max(0, (self.maxlong-3)/2)

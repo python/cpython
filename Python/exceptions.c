@@ -1056,23 +1056,36 @@ static struct {
 
 
 DL_EXPORT(void)
-init_exceptions(void)
+_PyExc_Init(void)
 {
     char *modulename = "exceptions";
     int modnamesz = strlen(modulename);
     int i;
+    PyObject *me, *mydict, *bltinmod, *bdict, *doc, *args;
 
-    PyObject *me = Py_InitModule(modulename, functions);
-    PyObject *mydict = PyModule_GetDict(me);
-    PyObject *bltinmod = PyImport_ImportModule("__builtin__");
-    PyObject *bdict = PyModule_GetDict(bltinmod);
-    PyObject *doc = PyString_FromString(module__doc__);
-    PyObject *args;
+    me = Py_InitModule(modulename, functions);
+    if (me == NULL)
+	goto err;
+    mydict = PyModule_GetDict(me);
+    if (mydict == NULL)
+	goto err;
+    bltinmod = PyImport_ImportModule("__builtin__");
+    if (bltinmod == NULL)
+	goto err;
+    bdict = PyModule_GetDict(bltinmod);
+    if (bdict == NULL)
+	goto err;
+    doc = PyString_FromString(module__doc__);
+    if (doc == NULL)
+	goto err;
 
-    PyDict_SetItemString(mydict, "__doc__", doc);
+    i = PyDict_SetItemString(mydict, "__doc__", doc);
     Py_DECREF(doc);
-    if (PyErr_Occurred())
+    if (i < 0) {
+ err:
 	Py_FatalError("exceptions bootstrapping error.");
+	return;
+    }
 
     /* This is the base class of all exceptions, so make it first. */
     if (make_Exception(modulename) ||
@@ -1139,7 +1152,7 @@ init_exceptions(void)
 
 
 DL_EXPORT(void)
-fini_exceptions(void)
+_PyExc_Fini(void)
 {
     int i;
 

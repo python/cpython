@@ -2031,6 +2031,43 @@ long_hex(PyObject *v)
 	return long_format(v, 16, 1);
 }
 
+static PyObject *
+long_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *x = NULL;
+	int base = -909;		     /* unlikely! */
+	static char *kwlist[] = {"x", "base", 0};
+
+	assert(type == &PyLong_Type);
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oi:long", kwlist,
+					 &x, &base))
+		return NULL;
+	if (x == NULL)
+		return PyLong_FromLong(0L);
+	if (base == -909)
+		return PyNumber_Long(x);
+	else if (PyString_Check(x))
+		return PyLong_FromString(PyString_AS_STRING(x), NULL, base);
+	else if (PyUnicode_Check(x))
+		return PyLong_FromUnicode(PyUnicode_AS_UNICODE(x),
+					  PyUnicode_GET_SIZE(x),
+					  base);
+	else {
+		PyErr_SetString(PyExc_TypeError,
+			"long() can't convert non-string with explicit base");
+		return NULL;
+	}
+}
+
+static char long_doc[] =
+"long(x[, base]) -> integer\n\
+\n\
+Convert a string or number to a long integer, if possible.  A floating\n\
+point argument will be truncated towards zero (this does not include a\n\
+string representation of a floating point number!)  When converting a\n\
+string, use the optional base.  It is an error to supply a base when\n\
+converting a non-string.";
+
 static PyNumberMethods long_as_number = {
 	(binaryfunc)	long_add,	/*nb_add*/
 	(binaryfunc)	long_sub,	/*nb_subtract*/
@@ -2070,24 +2107,42 @@ static PyNumberMethods long_as_number = {
 
 PyTypeObject PyLong_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
-	0,
-	"long int",
-	sizeof(PyLongObject) - sizeof(digit),
-	sizeof(digit),
-	(destructor)long_dealloc,	/*tp_dealloc*/
-	0,				/*tp_print*/
-	0,				/*tp_getattr*/
-	0,				/*tp_setattr*/
-	(cmpfunc)long_compare,		/*tp_compare*/
-	(reprfunc)long_repr,		/*tp_repr*/
-	&long_as_number,		/*tp_as_number*/
-	0,				/*tp_as_sequence*/
-	0,				/*tp_as_mapping*/
-	(hashfunc)long_hash,		/*tp_hash*/
-        0,              		/*tp_call*/
-        (reprfunc)long_str,		/*tp_str*/
-	0,				/*tp_getattro*/
-	0,				/*tp_setattro*/
-	0,				/*tp_as_buffer*/
-	Py_TPFLAGS_CHECKTYPES		/*tp_flags*/
+	0,					/* ob_size */
+	"long",					/* tp_name */
+	sizeof(PyLongObject) - sizeof(digit),	/* tp_basicsize */
+	sizeof(digit),				/* tp_itemsize */
+	(destructor)long_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)long_compare,			/* tp_compare */
+	(reprfunc)long_repr,			/* tp_repr */
+	&long_as_number,			/* tp_as_number */
+	0,					/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	(hashfunc)long_hash,			/* tp_hash */
+        0,              			/* tp_call */
+        (reprfunc)long_str,			/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES, /* tp_flags */
+	long_doc,				/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	long_new,				/* tp_new */
 };

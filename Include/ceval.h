@@ -45,6 +45,9 @@ DL_IMPORT(int) Py_MakePendingCalls(void);
 DL_IMPORT(void) Py_SetRecursionLimit(int);
 DL_IMPORT(int) Py_GetRecursionLimit(void);
 
+DL_IMPORT(char *) PyEval_GetFuncName(PyObject *);
+DL_IMPORT(char *) PyEval_GetFuncDesc(PyObject *);
+
 /* Interface for threads.
 
    A module that plans to do a blocking system call (or something else

@@ -36,12 +36,12 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 			return NULL;
 	}
 	if (name == NULL || !PyString_Check(name)) {
-		PyErr_SetString(PyExc_SystemError,
+		PyErr_SetString(PyExc_TypeError,
 				"PyClass_New: name must be a string");
 		return NULL;
 	}
 	if (dict == NULL || !PyDict_Check(dict)) {
-		PyErr_SetString(PyExc_SystemError,
+		PyErr_SetString(PyExc_TypeError,
 				"PyClass_New: dict must be a dictionary");
 		return NULL;
 	}
@@ -67,14 +67,14 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	else {
 		int i;
 		if (!PyTuple_Check(bases)) {
-			PyErr_SetString(PyExc_SystemError,
+			PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: bases must be a tuple");
 			return NULL;
 		}
 		i = PyTuple_Size(bases);
 		while (--i >= 0) {
 			if (!PyClass_Check(PyTuple_GetItem(bases, i))) {
-				PyErr_SetString(PyExc_SystemError,
+				PyErr_SetString(PyExc_TypeError,
 					"PyClass_New: base must be a class");
 				return NULL;
 			}
@@ -104,6 +104,18 @@ PyClass_New(PyObject *bases, PyObject *dict, PyObject *name)
 	Py_XINCREF(op->cl_delattr);
 	PyObject_GC_Init(op);
 	return (PyObject *) op;
+}
+
+static PyObject *
+class_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+	PyObject *name, *bases, *dict;
+	static char *kwlist[] = {"name", "bases", "dict", 0};
+
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "SOO", kwlist,
+					 &name, &bases, &dict))
+		return NULL;
+	return PyClass_New(bases, dict, name);
 }
 
 /* Class methods */
@@ -149,6 +161,8 @@ class_getattr(register PyClassObject *op, PyObject *name)
 	register PyObject *v;
 	register char *sname = PyString_AsString(name);
 	PyClassObject *class;
+	descrgetfunc f;
+
 	if (sname[0] == '_' && sname[1] == '_') {
 		if (strcmp(sname, "__dict__") == 0) {
 			if (PyEval_GetRestricted()) {
@@ -186,6 +200,11 @@ class_getattr(register PyClassObject *op, PyObject *name)
 		Py_DECREF(v);
 		v = w;
 	}
+	f = v->ob_type->tp_descr_get;
+	if (f == NULL)
+		Py_INCREF(v);
+	else
+		v = f(v, (PyObject *)NULL, (PyObject *)op);
 	return v;
 }
 
@@ -396,7 +415,7 @@ PyTypeObject PyClass_Type = {
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
-	0,					/* tp_call */
+	PyInstance_New,				/* tp_call */
 	(reprfunc)class_str,			/* tp_str */
 	(getattrofunc)class_getattr,		/* tp_getattro */
 	(setattrofunc)class_setattr,		/* tp_setattro */
@@ -404,6 +423,22 @@ PyTypeObject PyClass_Type = {
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC,	/* tp_flags */
 	0,					/* tp_doc */
 	(traverseproc)class_traverse,		/* tp_traverse */
+ 	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	0,					/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
+	0,					/* tp_descr_get */
+	0,					/* tp_descr_set */
+	0,					/* tp_dictoffset */
+	0,					/* tp_init */
+	0,					/* tp_alloc */
+	class_new,				/* tp_new */
 };
 
 int
@@ -531,7 +566,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	/* compensate for boost in _Py_NewReference; note that
 	 * _Py_RefTotal was also boosted; we'll knock that down later.
 	 */
-	inst->ob_type->tp_alloc--;
+	inst->ob_type->tp_allocs--;
 #endif
 #else /* !Py_TRACE_REFS */
 	/* Py_INCREF boosts _Py_RefTotal if Py_REF_DEBUG is defined */
@@ -564,7 +599,7 @@ instance_dealloc(register PyInstanceObject *inst)
 #endif
 	if (--inst->ob_refcnt > 0) {
 #ifdef COUNT_ALLOCS
-		inst->ob_type->tp_free--;
+		inst->ob_type->tp_frees--;
 #endif
 		return; /* __del__ added a reference; don't delete now */
 	}
@@ -572,7 +607,7 @@ instance_dealloc(register PyInstanceObject *inst)
 	_Py_ForgetReference((PyObject *)inst);
 #ifdef COUNT_ALLOCS
 	/* compensate for increment in _Py_ForgetReference */
-	inst->ob_type->tp_free--;
+	inst->ob_type->tp_frees--;
 #endif
 #ifndef WITH_CYCLE_GC
 	inst->ob_type = NULL;
@@ -619,6 +654,8 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 {
 	register PyObject *v;
 	PyClassObject *class;
+	descrgetfunc f;
+
 	class = NULL;
 	v = PyDict_GetItem(inst->in_dict, name);
 	if (v == NULL) {
@@ -628,17 +665,20 @@ instance_getattr2(register PyInstanceObject *inst, PyObject *name)
 	}
 	Py_INCREF(v);
 	if (class != NULL) {
-		if (PyFunction_Check(v)) {
-			PyObject *w = PyMethod_New(v, (PyObject *)inst,
-						   (PyObject *)class);
+		f = v->ob_type->tp_descr_get;
+		if (f != NULL) {
+			PyObject *w = f(v, (PyObject *)inst,
+					(PyObject *)(inst->in_class));
 			Py_DECREF(v);
 			v = w;
 		}
 		else if (PyMethod_Check(v)) {
-			PyObject *im_class = PyMethod_Class(v);
+			/* XXX This should be a tp_descr_get slot of
+			   PyMethodObjects */
+			PyObject *im_class = PyMethod_GET_CLASS(v);
 			/* Only if classes are compatible */
 			if (PyClass_IsSubclass((PyObject *)class, im_class)) {
-				PyObject *im_func = PyMethod_Function(v);
+				PyObject *im_func = PyMethod_GET_FUNCTION(v);
 				PyObject *w = PyMethod_New(im_func,
 						(PyObject *)inst, im_class);
 				Py_DECREF(v);
@@ -1814,6 +1854,23 @@ instance_iternext(PyInstanceObject *self)
 	return NULL;
 }
 
+static PyObject *
+instance_call(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyObject *res, *call = PyObject_GetAttrString(func, "__call__");
+	if (call == NULL) {
+		PyInstanceObject *inst = (PyInstanceObject*) func;
+		PyErr_Clear();
+		PyErr_Format(PyExc_AttributeError,
+			     "%.200s instance has no __call__ method",
+			     PyString_AsString(inst->in_class->cl_name));
+		return NULL;
+	}
+	res = PyObject_Call(call, arg, kw);
+	Py_DECREF(call);
+	return res;
+}
+
 
 static PyNumberMethods instance_as_number = {
 	(binaryfunc)instance_add,		/* nb_add */
@@ -1868,7 +1925,7 @@ PyTypeObject PyInstance_Type = {
 	&instance_as_sequence,			/* tp_as_sequence */
 	&instance_as_mapping,			/* tp_as_mapping */
 	(hashfunc)instance_hash,		/* tp_hash */
-	0,					/* tp_call */
+	instance_call,				/* tp_call */
 	(reprfunc)instance_str,			/* tp_str */
 	(getattrofunc)instance_getattr,		/* tp_getattro */
 	(setattrofunc)instance_setattr,		/* tp_setattro */
@@ -1919,36 +1976,6 @@ PyMethod_New(PyObject *func, PyObject *self, PyObject *class)
 	im->im_class = class;
 	PyObject_GC_Init(im);
 	return (PyObject *)im;
-}
-
-PyObject *
-PyMethod_Function(register PyObject *im)
-{
-	if (!PyMethod_Check(im)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	return ((PyMethodObject *)im)->im_func;
-}
-
-PyObject *
-PyMethod_Self(register PyObject *im)
-{
-	if (!PyMethod_Check(im)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	return ((PyMethodObject *)im)->im_self;
-}
-
-PyObject *
-PyMethod_Class(register PyObject *im)
-{
-	if (!PyMethod_Check(im)) {
-		PyErr_BadInternalCall();
-		return NULL;
-	}
-	return ((PyMethodObject *)im)->im_class;
 }
 
 /* Class method methods */
@@ -2028,43 +2055,52 @@ instancemethod_compare(PyMethodObject *a, PyMethodObject *b)
 static PyObject *
 instancemethod_repr(PyMethodObject *a)
 {
-	char buf[240];
-	PyInstanceObject *self = (PyInstanceObject *)(a->im_self);
+	char buffer[240];
+	PyObject *self = a->im_self;
 	PyObject *func = a->im_func;
-	PyClassObject *class = (PyClassObject *)(a->im_class);
-	PyObject *fclassname, *iclassname, *funcname;
-	char *fcname, *icname, *fname;
-	fclassname = class->cl_name;
-	if (PyFunction_Check(func)) {
-		funcname = ((PyFunctionObject *)func)->func_name;
-		Py_INCREF(funcname);
+	PyObject *klass = a->im_class;
+	PyObject *funcname = NULL, *klassname = NULL, *result = NULL;
+	char *sfuncname = "?", *sklassname = "?";
+
+	funcname = PyObject_GetAttrString(func, "__name__");
+	if (funcname == NULL)
+		PyErr_Clear();
+	else if (!PyString_Check(funcname)) {
+		Py_DECREF(funcname);
+		funcname = NULL;
 	}
-	else {
-		funcname = PyObject_GetAttrString(func,"__name__");
-		if (funcname == NULL)
-			PyErr_Clear();
+	else
+		sfuncname = PyString_AS_STRING(funcname);
+	klassname = PyObject_GetAttrString(klass, "__name__");
+	if (klassname == NULL)
+		PyErr_Clear();
+	else if (!PyString_Check(klassname)) {
+		Py_DECREF(klassname);
+		klassname = NULL;
 	}
-	if (funcname != NULL && PyString_Check(funcname))
-		fname = PyString_AS_STRING(funcname);
 	else
-		fname = "?";
-	if (fclassname != NULL && PyString_Check(fclassname))
-		fcname = PyString_AsString(fclassname);
-	else
-		fcname = "?";
+		sklassname = PyString_AS_STRING(klassname);
 	if (self == NULL)
-		sprintf(buf, "<unbound method %.100s.%.100s>", fcname, fname);
+		sprintf(buffer, "<unbound method %.100s.%.100s>",
+			sklassname, sfuncname);
 	else {
-		iclassname = self->in_class->cl_name;
-		if (iclassname != NULL && PyString_Check(iclassname))
-			icname = PyString_AsString(iclassname);
-		else
-			icname = "?";
-		sprintf(buf, "<method %.60s.%.60s of %.60s instance at %p>",
-			fcname, fname, icname, self);
+		/* XXX Shouldn't use repr() here! */
+		PyObject *selfrepr = PyObject_Repr(self);
+		if (selfrepr == NULL)
+			goto fail;
+		if (!PyString_Check(selfrepr)) {
+			Py_DECREF(selfrepr);
+			goto fail;
+		}
+		sprintf(buffer, "<bound method %.60s.%.60s of %.60s>",
+			sklassname, sfuncname, PyString_AS_STRING(selfrepr));
+		Py_DECREF(selfrepr);
 	}
+	result = PyString_FromString(buffer);
+  fail:
 	Py_XDECREF(funcname);
-	return PyString_FromString(buf);
+	Py_XDECREF(klassname);
+	return result;
 }
 
 static long
@@ -2105,6 +2141,57 @@ instancemethod_traverse(PyMethodObject *im, visitproc visit, void *arg)
 	return 0;
 }
 
+static PyObject *
+instancemethod_call(PyObject *func, PyObject *arg, PyObject *kw)
+{
+	PyObject *self = PyMethod_GET_SELF(func);
+	PyObject *class = PyMethod_GET_CLASS(func);
+	PyObject *result;
+
+	func = PyMethod_GET_FUNCTION(func);
+	if (self == NULL) {
+		/* Unbound methods must be called with an instance of
+		   the class (or a derived class) as first argument */
+		int ok;
+		if (PyTuple_Size(arg) >= 1)
+			self = PyTuple_GET_ITEM(arg, 0);
+		if (self == NULL)
+			ok = 0;
+		else {
+			ok = PyObject_IsInstance(self, class);
+			if (ok < 0)
+				return NULL;
+		}
+		if (!ok) {
+			PyErr_Format(PyExc_TypeError,
+				     "unbound method %s%s must be "
+				     "called with instance as first argument",
+				     PyEval_GetFuncName(func),
+				     PyEval_GetFuncDesc(func));
+			return NULL;
+		}
+		Py_INCREF(arg);
+	}
+	else {
+		int argcount = PyTuple_Size(arg);
+		PyObject *newarg = PyTuple_New(argcount + 1);
+		int i;
+		if (newarg == NULL)
+			return NULL;
+		Py_INCREF(self);
+		PyTuple_SET_ITEM(newarg, 0, self);
+		for (i = 0; i < argcount; i++) {
+			PyObject *v = PyTuple_GET_ITEM(arg, i);
+			Py_XINCREF(v);
+			PyTuple_SET_ITEM(newarg, i+1, v);
+		}
+		arg = newarg;
+	}
+	result = PyObject_Call((PyObject *)func, arg, kw);
+	Py_DECREF(arg);
+	return result;
+}
+
 PyTypeObject PyMethod_Type = {
 	PyObject_HEAD_INIT(&PyType_Type)
 	0,
@@ -2121,7 +2208,7 @@ PyTypeObject PyMethod_Type = {
 	0,					/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	(hashfunc)instancemethod_hash,		/* tp_hash */
-	0,					/* tp_call */
+	instancemethod_call,			/* tp_call */
 	0,					/* tp_str */
 	(getattrofunc)instancemethod_getattro,	/* tp_getattro */
 	(setattrofunc)instancemethod_setattro,	/* tp_setattro */

@@ -32,7 +32,7 @@ dump_counts(void)
 
 	for (tp = type_list; tp; tp = tp->tp_next)
 		fprintf(stderr, "%s alloc'd: %d, freed: %d, max in use: %d\n",
-			tp->tp_name, tp->tp_alloc, tp->tp_free,
+			tp->tp_name, tp->tp_allocs, tp->tp_frees,
 			tp->tp_maxalloc);
 	fprintf(stderr, "fast tuple allocs: %d, empty: %d\n",
 		fast_tuple_allocs, tuple_zero_allocs);
@@ -53,8 +53,8 @@ get_counts(void)
 	if (result == NULL)
 		return NULL;
 	for (tp = type_list; tp; tp = tp->tp_next) {
-		v = Py_BuildValue("(siii)", tp->tp_name, tp->tp_alloc,
-				  tp->tp_free, tp->tp_maxalloc);
+		v = Py_BuildValue("(siii)", tp->tp_name, tp->tp_allocs,
+				  tp->tp_frees, tp->tp_maxalloc);
 		if (v == NULL) {
 			Py_DECREF(result);
 			return NULL;
@@ -72,16 +72,16 @@ get_counts(void)
 void
 inc_count(PyTypeObject *tp)
 {
-	if (tp->tp_alloc == 0) {
+	if (tp->tp_allocs == 0) {
 		/* first time; insert in linked list */
 		if (tp->tp_next != NULL) /* sanity check */
 			Py_FatalError("XXX inc_count sanity check");
 		tp->tp_next = type_list;
 		type_list = tp;
 	}
-	tp->tp_alloc++;
-	if (tp->tp_alloc - tp->tp_free > tp->tp_maxalloc)
-		tp->tp_maxalloc = tp->tp_alloc - tp->tp_free;
+	tp->tp_allocs++;
+	if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
+		tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
 }
 #endif
 
@@ -93,10 +93,8 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 				"NULL object passed to PyObject_Init");
 		return op;
   	}
-#ifdef WITH_CYCLE_GC
 	if (PyType_IS_GC(tp))
 		op = (PyObject *) PyObject_FROM_GC(op);
-#endif
 	/* Any changes should be reflected in PyObject_INIT (objimpl.h) */
 	op->ob_type = tp;
 	_Py_NewReference(op);
@@ -111,10 +109,8 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, int size)
 				"NULL object passed to PyObject_InitVar");
 		return op;
 	}
-#ifdef WITH_CYCLE_GC
 	if (PyType_IS_GC(tp))
 		op = (PyVarObject *) PyObject_FROM_GC(op);
-#endif
 	/* Any changes should be reflected in PyObject_INIT_VAR */
 	op->ob_size = size;
 	op->ob_type = tp;
@@ -129,10 +125,8 @@ _PyObject_New(PyTypeObject *tp)
 	op = (PyObject *) PyObject_MALLOC(_PyObject_SIZE(tp));
 	if (op == NULL)
 		return PyErr_NoMemory();
-#ifdef WITH_CYCLE_GC
 	if (PyType_IS_GC(tp))
 		op = (PyObject *) PyObject_FROM_GC(op);
-#endif
 	return PyObject_INIT(op, tp);
 }
 
@@ -143,21 +137,17 @@ _PyObject_NewVar(PyTypeObject *tp, int size)
 	op = (PyVarObject *) PyObject_MALLOC(_PyObject_VAR_SIZE(tp, size));
 	if (op == NULL)
 		return (PyVarObject *)PyErr_NoMemory();
-#ifdef WITH_CYCLE_GC
 	if (PyType_IS_GC(tp))
 		op = (PyVarObject *) PyObject_FROM_GC(op);
-#endif
 	return PyObject_INIT_VAR(op, tp, size);
 }
 
 void
 _PyObject_Del(PyObject *op)
 {
-#ifdef WITH_CYCLE_GC
 	if (op && PyType_IS_GC(op->ob_type)) {
 		op = (PyObject *) PyObject_AS_GC(op);
 	}
-#endif
 	PyObject_FREE(op);
 }
 
@@ -994,26 +984,16 @@ PyObject_Hash(PyObject *v)
 PyObject *
 PyObject_GetAttrString(PyObject *v, char *name)
 {
-	if (v->ob_type->tp_getattro != NULL) {
-		PyObject *w, *res;
-		w = PyString_InternFromString(name);
-		if (w == NULL)
-			return NULL;
-		res = (*v->ob_type->tp_getattro)(v, w);
-		Py_XDECREF(w);
-		return res;
-	}
+	PyObject *w, *res;
 
-	if (v->ob_type->tp_getattr == NULL) {
-		PyErr_Format(PyExc_AttributeError,
-			     "'%.50s' object has no attribute '%.400s'",
-			     v->ob_type->tp_name,
-			     name);
-		return NULL;
-	}
-	else {
+	if (v->ob_type->tp_getattr != NULL)
 		return (*v->ob_type->tp_getattr)(v, name);
-	}
+	w = PyString_InternFromString(name);
+	if (w == NULL)
+		return NULL;
+	res = PyObject_GetAttr(v, w);
+	Py_XDECREF(w);
+	return res;
 }
 
 int
@@ -1031,34 +1011,24 @@ PyObject_HasAttrString(PyObject *v, char *name)
 int
 PyObject_SetAttrString(PyObject *v, char *name, PyObject *w)
 {
-	if (v->ob_type->tp_setattro != NULL) {
-		PyObject *s;
-		int res;
-		s = PyString_InternFromString(name);
-		if (s == NULL)
-			return -1;
-		res = (*v->ob_type->tp_setattro)(v, s, w);
-		Py_XDECREF(s);
-		return res;
-	}
+	PyObject *s;
+	int res;
 
-	if (v->ob_type->tp_setattr == NULL) {
-		if (v->ob_type->tp_getattr == NULL)
-			PyErr_SetString(PyExc_TypeError,
-				   "attribute-less object (assign or del)");
-		else
-			PyErr_SetString(PyExc_TypeError,
-				   "object has read-only attributes");
-		return -1;
-	}
-	else {
+	if (v->ob_type->tp_setattr != NULL)
 		return (*v->ob_type->tp_setattr)(v, name, w);
-	}
+	s = PyString_InternFromString(name);
+	if (s == NULL)
+		return -1;
+	res = PyObject_SetAttr(v, s, w);
+	Py_XDECREF(s);
+	return res;
 }
 
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
+	PyTypeObject *tp = v->ob_type;
+
 	/* The Unicode to string conversion is done here because the
 	   existing tp_getattro slots expect a string object as name
 	   and we wouldn't want to break those. */
@@ -1067,16 +1037,19 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
 		if (name == NULL)
 			return NULL;
 	}
-
 	if (!PyString_Check(name)) {
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
 		return NULL;
 	}
-	if (v->ob_type->tp_getattro != NULL)
-		return (*v->ob_type->tp_getattro)(v, name);
-	else
-		return PyObject_GetAttrString(v, PyString_AS_STRING(name));
+	if (tp->tp_getattro != NULL)
+		return (*tp->tp_getattro)(v, name);
+	if (tp->tp_getattr != NULL)
+		return (*tp->tp_getattr)(v, PyString_AS_STRING(name));
+	PyErr_Format(PyExc_AttributeError,
+		     "'%.50s' object has no attribute '%.400s'",
+		     tp->tp_name, PyString_AS_STRING(name));
+	return NULL;
 }
 
 int
@@ -1094,6 +1067,7 @@ PyObject_HasAttr(PyObject *v, PyObject *name)
 int
 PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 {
+	PyTypeObject *tp = v->ob_type;
 	int err;
 
 	/* The Unicode to string conversion is done here because the
@@ -1104,25 +1078,182 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
 		if (name == NULL)
 			return -1;
 	}
-	else
-		Py_INCREF(name);
-	
-	if (!PyString_Check(name)){
+	else if (!PyString_Check(name)){
 		PyErr_SetString(PyExc_TypeError,
 				"attribute name must be string");
-		err = -1;
+		return -1;
 	}
-	else {
-		PyString_InternInPlace(&name);
-		if (v->ob_type->tp_setattro != NULL)
-			err = (*v->ob_type->tp_setattro)(v, name, value);
-		else
-			err = PyObject_SetAttrString(v, 
-				        PyString_AS_STRING(name), value);
+	else
+		Py_INCREF(name);
+
+	PyString_InternInPlace(&name);
+	if (tp->tp_setattro != NULL) {
+		err = (*tp->tp_setattro)(v, name, value);
+		Py_DECREF(name);
+		return err;
 	}
-	
+	if (tp->tp_setattr != NULL) {
+		err = (*tp->tp_setattr)(v, PyString_AS_STRING(name), value);
+		Py_DECREF(name);
+		return err;
+	}
 	Py_DECREF(name);
-	return err;
+	if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
+		PyErr_Format(PyExc_TypeError,
+			     "'%.100s' object has no attributes "
+			     "(%s .%.100s)",
+			     tp->tp_name,
+			     value==NULL ? "del" : "assign to",
+			     PyString_AS_STRING(name));
+	else
+		PyErr_Format(PyExc_TypeError,
+			     "'%.100s' object has only read-only attributes "
+			     "(%s .%.100s)",
+			     tp->tp_name,
+			     value==NULL ? "del" : "assign to",
+			     PyString_AS_STRING(name));
+	return -1;
+}
+
+/* Helper to get a pointer to an object's __dict__ slot, if any */
+
+PyObject **
+_PyObject_GetDictPtr(PyObject *obj)
+{
+#define PTRSIZE (sizeof(PyObject *))
+
+	long dictoffset;
+	PyTypeObject *tp = obj->ob_type;
+
+	if (!(tp->tp_flags & Py_TPFLAGS_HAVE_CLASS))
+		return NULL;
+	dictoffset = tp->tp_dictoffset;
+	if (dictoffset == 0)
+		return NULL;
+	if (dictoffset < 0) {
+		dictoffset += PyType_BASICSIZE(tp);
+		assert(dictoffset > 0); /* Sanity check */
+		if (tp->tp_itemsize > 0) {
+			int n = ((PyVarObject *)obj)->ob_size;
+			if (n > 0) {
+				dictoffset += tp->tp_itemsize * n;
+				/* Round up, if necessary */
+				if (tp->tp_itemsize % PTRSIZE != 0) {
+					dictoffset += PTRSIZE - 1;
+					dictoffset /= PTRSIZE;
+					dictoffset *= PTRSIZE;
+				}
+			}
+		}
+	}
+	return (PyObject **) ((char *)obj + dictoffset);
+}
+
+/* Generic GetAttr functions - put these in your tp_[gs]etattro slot */
+
+PyObject *
+PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
+{
+	PyTypeObject *tp = obj->ob_type;
+	PyObject *descr;
+	descrgetfunc f;
+	PyObject **dictptr;
+
+	if (tp->tp_dict == NULL) {
+		if (PyType_InitDict(tp) < 0)
+			return NULL;
+	}
+
+	descr = _PyType_Lookup(tp, name);
+	f = NULL;
+	if (descr != NULL) {
+		f = descr->ob_type->tp_descr_get;
+		if (f != NULL && PyDescr_IsData(descr))
+			return f(descr, obj, (PyObject *)obj->ob_type);
+	}
+
+	dictptr = _PyObject_GetDictPtr(obj);
+	if (dictptr != NULL) {
+		PyObject *dict = *dictptr;
+		if (dict != NULL) {
+			PyObject *res = PyDict_GetItem(dict, name);
+			if (res != NULL) {
+				Py_INCREF(res);
+				return res;
+			}
+		}
+	}
+
+	if (f != NULL)
+		return f(descr, obj, (PyObject *)obj->ob_type);
+
+	if (descr != NULL) {
+		Py_INCREF(descr);
+		return descr;
+	}
+
+	PyErr_Format(PyExc_AttributeError,
+		     "'%.50s' object has no attribute '%.400s'",
+		     tp->tp_name, PyString_AS_STRING(name));
+	return NULL;
+}
+
+int
+PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
+{
+	PyTypeObject *tp = obj->ob_type;
+	PyObject *descr;
+	descrsetfunc f;
+	PyObject **dictptr;
+
+	if (tp->tp_dict == NULL) {
+		if (PyType_InitDict(tp) < 0)
+			return -1;
+	}
+
+	descr = _PyType_Lookup(tp, name);
+	f = NULL;
+	if (descr != NULL) {
+		f = descr->ob_type->tp_descr_set;
+		if (f != NULL && PyDescr_IsData(descr))
+			return f(descr, obj, value);
+	}
+
+	dictptr = _PyObject_GetDictPtr(obj);
+	if (dictptr != NULL) {
+		PyObject *dict = *dictptr;
+		if (dict == NULL && value != NULL) {
+			dict = PyDict_New();
+			if (dict == NULL)
+				return -1;
+			*dictptr = dict;
+		}
+		if (dict != NULL) {
+			int res;
+			if (value == NULL)
+				res = PyDict_DelItem(dict, name);
+			else
+				res = PyDict_SetItem(dict, name, value);
+			if (res < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
+				PyErr_SetObject(PyExc_AttributeError, name);
+			return res;
+		}
+	}
+
+	if (f != NULL)
+		return f(descr, obj, value);
+
+	if (descr == NULL) {
+		PyErr_Format(PyExc_AttributeError,
+			     "'%.50s' object has no attribute '%.400s'",
+			     tp->tp_name, PyString_AS_STRING(name));
+		return -1;
+	}
+
+	PyErr_Format(PyExc_AttributeError,
+		     "'%.50s' object attribute '%.400s' is read-only",
+		     tp->tp_name, PyString_AS_STRING(name));
+	return -1;
 }
 
 /* Test a value used as condition, e.g., in a for or if statement.
@@ -1218,12 +1349,6 @@ PyCallable_Check(PyObject *x)
 {
 	if (x == NULL)
 		return 0;
-	if (x->ob_type->tp_call != NULL ||
-	    PyFunction_Check(x) ||
-	    PyMethod_Check(x) ||
-	    PyCFunction_Check(x) ||
-	    PyClass_Check(x))
-		return 1;
 	if (PyInstance_Check(x)) {
 		PyObject *call = PyObject_GetAttrString(x, "__call__");
 		if (call == NULL) {
@@ -1235,7 +1360,9 @@ PyCallable_Check(PyObject *x)
 		Py_DECREF(call);
 		return 1;
 	}
-	return 0;
+	else {
+		return x->ob_type->tp_call != NULL;
+	}
 }
 
 
@@ -1365,7 +1492,7 @@ _Py_ForgetReference(register PyObject *op)
 	op->_ob_prev->_ob_next = op->_ob_next;
 	op->_ob_next = op->_ob_prev = NULL;
 #ifdef COUNT_ALLOCS
-	op->ob_type->tp_free++;
+	op->ob_type->tp_frees++;
 #endif
 }
 

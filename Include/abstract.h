@@ -294,6 +294,17 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
        */
 
 
+
+     DL_IMPORT(PyObject *) PyObject_Call(PyObject *callable_object,
+					 PyObject *args, PyObject *kw);
+
+       /*
+
+	 Call a callable Python object, callable_object, with
+	 arguments and keywords arguments.  The 'args' argument can not be
+	 NULL, but the 'kw' argument can be NULL.
+
+       */
      
      DL_IMPORT(PyObject *) PyObject_CallObject(PyObject *callable_object,
                                                PyObject *args);

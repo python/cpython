@@ -89,6 +89,7 @@
 #include "sliceobject.h"
 #include "cellobject.h"
 #include "iterobject.h"
+#include "descrobject.h"
 
 #include "codecs.h"
 #include "pyerrors.h"

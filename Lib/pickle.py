@@ -504,6 +504,7 @@ class Pickler:
     dispatch[ClassType] = save_global
     dispatch[FunctionType] = save_global
     dispatch[BuiltinFunctionType] = save_global
+    dispatch[TypeType] = save_global
 
 
 def _keep_alive(x, memo):

@@ -380,10 +380,16 @@ From the Iterators list, about the types of these things.
 >>> i = g()
 >>> type(i)
 <type 'generator'>
+
+XXX dir(object) *generally* doesn't return useful stuff in descr-branch.
 >>> dir(i)
+[]
+
+Was hoping to see this instead:
 ['gi_frame', 'gi_running', 'next']
+
 >>> print i.next.__doc__
-next() -- get the next value, or raise StopIteration
+x.next() -> the next value, or raise StopIteration
 >>> iter(i) is i
 1
 >>> import types
@@ -399,7 +405,7 @@ And more, added later.
 >>> i.gi_running = 42
 Traceback (most recent call last):
   ...
-TypeError: object has read-only attributes
+TypeError: 'generator' object has only read-only attributes (assign to .gi_running)
 >>> def g():
 ...     yield me.gi_running
 >>> me = g()

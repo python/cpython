@@ -14,6 +14,7 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "structmember.h"
 
 static PyObject *
 ellipsis_repr(PyObject *op)
@@ -128,32 +129,12 @@ slice_repr(PySliceObject *r)
 	return s;
 }
 
-
-static PyObject *slice_getattr(PySliceObject *self, char *name)
-{
-	PyObject *ret;
-  
-	ret = NULL;
-	if (strcmp(name, "start") == 0) {
-		ret = self->start;
-	}
-	else if (strcmp(name, "stop") == 0) {
-		ret = self->stop;
-	}
-	else if (strcmp(name, "step") == 0) {
-		ret = self->step;
-	}
-	else if (strcmp(name, "__members__") == 0) {
-		return Py_BuildValue("[sss]",
-				     "start", "stop", "step");
-	}
-	else {
-		PyErr_SetString(PyExc_AttributeError, name);
-		return NULL;
-	}
-	Py_INCREF(ret);
-	return ret;
-}
+static struct memberlist slice_members[] = {
+	{"start", T_OBJECT, offsetof(PySliceObject, start), READONLY},
+	{"stop", T_OBJECT, offsetof(PySliceObject, stop), READONLY},
+	{"step", T_OBJECT, offsetof(PySliceObject, step), READONLY},
+	{0}
+};
 
 static int
 slice_compare(PySliceObject *v, PySliceObject *w)
@@ -182,13 +163,32 @@ PyTypeObject PySlice_Type = {
 	"slice",		/* Name of this type */
 	sizeof(PySliceObject),	/* Basic object size */
 	0,			/* Item size for varobject */
-	(destructor)slice_dealloc, /*tp_dealloc*/
-	0,			/*tp_print*/
-	(getattrfunc)slice_getattr, /*tp_getattr*/
-	0,			/*tp_setattr*/
-	(cmpfunc)slice_compare, /*tp_compare*/
-	(reprfunc)slice_repr,   /*tp_repr*/
-	0,			/*tp_as_number*/
-	0,	    		/*tp_as_sequence*/
-	0,			/*tp_as_mapping*/
+	(destructor)slice_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	(cmpfunc)slice_compare, 		/* tp_compare */
+	(reprfunc)slice_repr,   		/* tp_repr */
+	0,					/* tp_as_number */
+	0,	    				/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	0,					/* tp_iter */
+	0,					/* tp_iternext */
+	0,					/* tp_methods */
+	slice_members,				/* tp_members */
+	0,					/* tp_getset */
+	0,					/* tp_base */
+	0,					/* tp_dict */
 };

@@ -1,0 +1,431 @@
+Project: core implementation
+****************************
+
+Tasks:
+
+Do binary operators properly.  nb_add should try to call self.__add__
+and other.__radd__.  I think I'll exclude base types that define any
+binary operator without setting the CHECKTYPES flag.
+
+Fix comparisons.  There's some nasty stuff here: when two types are
+not the same, and they're not instances, the fallback code doesn't
+account for the possibility that they might be subtypes of a common
+base type that defines a comparison.
+
+Fix subtype_dealloc().  This currently searches through the list of
+base types until it finds a type whose tp_dealloc is not
+subtype_dealloc.  I think this is not safe.  I think the alloc/dealloc
+policy needs to be rethought.  *** There's an idea here that I haven't
+worked out yet: just as object creation now has separate API's tp_new,
+tp_alloc, and tp_init, destruction has tp_dealloc and tp_free.  (Maybe
+tp_fini should be added to correspond to tp_init?)  Something
+could/should be done with this. ***
+
+Clean up isinstance(), issubclass() and their C equivalents.  There
+are a bunch of different APIs here and not all of them do the right
+thing yet.  There should be fewer APIs and their implementation should
+be simpler.  The old "abstract subclass" test should probably
+disappear (if we want to root out ExtensionClass).  *** I think I've
+done 90% of this by creating PyType_IsSubtype() and using it
+appropriately.  For now, the old "abstract subclass" test is still
+there, and there may be some places where PyObject_IsSubclass() is
+called where PyType_IsSubtype() would be more appropriate. ***
+
+Check for conflicts between base classes.  I fear that the rules used
+to decide whether multiple bases have conflicting instance variables
+aren't strict enough.  I think that sometimes two different classes
+adding __dict__ may be incompatible after all.
+
+Check for order conflicts.  Suppose there are two base classes X and
+Y.  Suppose class B derives from X and Y, and class C from Y and X (in
+that order).  Now suppose class D derives from B and C.  In which
+order should the base classes X and Y be searched?  This is an order
+conflict, and should be disallowed; currently the test for this is not
+implemented.
+
+Clean up the GC interface.  Currently, tp_basicsize includes the GC
+head size iff tp_flags includes the GC flag bit.  This makes object
+size math a pain (e.g. to see if two object types have the same
+instance size, you can't just compare the tp_basicsize fields -- you
+have to conditionally subtract the GC head size).  Neil has a patch
+that improves the API in this area, but it's backwards incompatible.
+(http://sf.net/tracker/?func=detail&aid=421893&group_id=5470&atid=305470)
+I think I know of a way to fix the incompatibility (by switching to a
+different flag bit).  *** Tim proposed a better idea: macros to access
+tp_basicsize while hiding the nastiness.  This is done now, so I think
+the rest of this task needn't be done. ***
+
+Make the __dict__ of types declared with Python class statements
+writable -- only statically declared types must have an immutable
+dict, because they're shared between interpreter instances.  Possibly
+trap writes to the __dict__ to update the corresponding tp_<slot> if
+an __<slot>__ name is affected.  *** Done as part of the next task. ***
+
+It should be an option (maybe a different metaclass, maybe a flag) to
+*not* merge __dict__ with all the bases, but instead search the
+__dict__ (or __introduced__?) of all bases in __mro__ order.  (This is
+needed anyway to unify classes completely.)  *** Partly done.
+Inheritance of slots from bases is still icky: (1) MRO is not always
+respected when inheriting slots; (2) dynamic classes can't add slot
+implementations in Python after creation (e.g., setting C.__hash__
+doesn't set the tp_hash slot).  ***
+
+Universal base class (object).  How can we make the object class
+subclassable and define simple default methods for everything without
+having these inherited by built-in types that don't want these
+defaults?  *** Done, really. ***
+
+Add error checking to the MRO calculation.  *** Done. ***
+
+Make __new__ overridable through a Python class method (!).  Make more
+of the sub-algorithms of type construction available as methods.  ***
+After I implemented class methods, I found that in order to be able
+to make an upcall to Base.__new__() and have it create an instance of
+your class (rather than a Base instance), you can't use class methods
+-- you must use static methods.  So I've implemented those too.  I've
+hooked up __new__ in the right places, so the first part of this is
+now done.  I've also exported the MRO calculation and made it
+overridable, as metamethod mro().  I believe that closes this topic
+for now.  I expect that some warts will only be really debugged when
+we try to use this for some, eh, interesting types such as tuples. ***
+
+More -- I'm sure new issues will crop up as we go.
+
+
+Project: loose ends and follow-through
+**************************************
+
+Tasks:
+
+Make more (most?) built-in types act as their own factory functions.
+
+Make more (most?) built-in types subtypable -- with or without
+overridable allocation.  *** This includes descriptors!  It should be
+possible to write descriptors in Python, so metaclasses can do clever
+things with them. ***
+
+Exceptions should be types.  This changes the rules, since now almost
+anything can be raised (as maybe it should).  Or should we strive for
+enforcement of the convention that all exceptions should be derived
+from Exception?  String exceptions will be another hassle, to be
+deprecated and eventually ruled out.
+
+Standardize a module containing names for all built-in types, and
+standardize on names.  E.g. should the official name of the string
+type be 'str', 'string', or 'StringType'?
+
+Create a hierarchy of types, so that e.g. int and long are both
+subtypes of an abstract base type integer, which is itself a subtype
+of number, etc.  A lot of thinking can go into this!
+
+*** NEW TASK??? ***
+Implement "signature" objects.  These are alluded to in PEP 252 but
+not yet specified.  Supposedly they provide an easily usable API to
+find out about function/method arguments.  Building these for Python
+functions is simple.  Building these for built-in functions will
+require a change to the PyMethodDef structure, so that a type can
+provide signature information for its C methods.  (This would also
+help in supporting keyword arguments for C methods with less work than
+PyArg_ParseTupleAndKeywords() currently requires.)  But should we do
+this?  It's additional work and not required for any of the other
+parts.
+
+
+Project: making classes use the new machinery
+*********************************************
+
+Tasks:
+
+Try to get rid of all code in classobject.c by deferring to the new
+mechanisms.  How far can we get without breaking backwards
+compatibility?  This is underspecified because I haven't thought much
+about it yet.  Can we lose the use of PyInstance_Check() everywhere?
+I would hope so!
+
+
+Project: backwards compatibility
+********************************
+
+Tasks:
+
+Make sure all code checks the proper tp_flags bit before accessing
+type object fields.
+
+Identify areas of incompatibility with Python 2.1.  Design solutions.
+Implement and test.
+
+Some specific areas: a fair amount of code probably depends on
+specific types having __members__ and/or __methods__ attributes.
+These are currently not present (conformant to PEP 252, which proposes
+to drop them) but we may have to add them back.  This can be done in a
+generic way with not too much effort.  Tim adds:  Perhaps that dir(object)
+rarely returns anything but [] now is a consequence of this.  I'm very
+used to doing, e.g., dir([]) or dir("") in an interactive shell to jog my
+memory; also one of the reasons test_generators failed.
+
+Another area: going all the way with classes and instances means that
+type(x) == types.InstanceType won't work any more to detect instances.
+Should there be a mode where this still works?  Maybe this should be
+the default mode, with a warning, and an explicit way to get the new
+way to work?  (Instead of a __future__ statement, I'm thinking of a
+module global __metaclass__ which would provide the default metaclass
+for baseless class statements.)
+
+
+Project: testing
+****************
+
+Tasks:
+
+Identify new functionality that needs testing.  Conceive unit tests
+for all new functionality.  Conceive stress tests for critical
+features.  Run the tests.  Fix bugs.  Repeat until satisfied.
+
+Note: this may interact with the branch integration task.
+
+
+Project: integration with main branch
+*************************************
+
+Tasks:
+
+Merge changes in the HEAD branch into the descr-branch.  Then merge
+the descr-branch back into the HEAD branch.
+
+The longer we wait, the more effort this will be -- the descr-branch
+forked off quite a long time ago, and there are changes everywhere in
+the HEAD branch (e.g. the dict object has been radically rewritten).
+
+On the other hand, if we do this too early, we'll have to do it again
+later.
+
+Note from Tim:  We should never again wait until literally 100s of files
+are out of synch.  I don't care how often I need to do this, provided only
+that it's a tractable task each time.  Once per week sounds like a good
+idea.  As is, even the trunk change to rangeobject.c created more than its
+proper share of merge headaches, because it confused all the other reasons
+include file merges were getting conflicts (the more changes there are, the
+worse diff does; indeed, I came up with the ndiff algorithm in the 80s
+precisely because the source-control diff program Cray used at the time
+produced minimal but *senseless* diffs, thus creating artificial conflicts;
+paying unbounded attention to context does a much better job of putting
+changes where they make semantic sense too; but we're stuck with Unix diff
+here, and it isn't robust in this sense; if we don't keep its job simple,
+it will make my job hell).
+
+Done:
+To undo or rename before final merge:  Modules/spam.c has worked its
+way into the branch Unix and Windows builds (pythoncore.dsp and
+PC/config.c); also imported by test_descr.py.  How about renaming to
+xxsubtype.c (whatever) now?
+
+
+Project: performance tuning
+***************************
+
+Tasks:
+
+Pick or create a general performance benchmark for Python.  Benchmark
+the new system vs. the old system.  Profile the new system.  Improve
+hotspots.  Repeat until satisfied.
+
+Note: this may interact with the branch integration task.
+
+
+Project: documentation
+**********************
+
+Tasks:
+
+Update PEP 252 (descriptors).  Describe more of the prototype
+implementation
+
+Update PEP 253 (subtyping).  Complicated architectural wrangling with
+metaclasses.  There is an interaction between implementation and
+description.
+
+Write PEP 254 (unification of classes).  This should discuss what
+changes for ordinary classes, and how we can make it more b/w
+compatible.
+
+Other documentation.  There needs to be user documentation,
+eventually.
+
+
+Project: community interaction
+******************************
+
+Tasks:
+
+Once the PEPs are written, solicit community feedback, and formulate
+responses to the feedback.  Give the community enough time to think
+over this complicated proposal.  Provide the community with a
+prototype implementation to test.  Try to do this *before* casting
+everything in stone!
+
+MERGE BEGIN ****************************************************************
+Merge details (this section is Tim's scratchpad, but should help a lot if
+he dies of frustration while wrestling with CVS <0.9 wink>).
+----------------------------------------------------------------------------
+2001-08-01  Merging descr-branch back into trunk.
+
+Tagged trunk about 22:05:
+    cvs tag date2001-08-01 python
+
+Merged trunk delta into branch:
+    cvs -q -z3 up -j date2001-07-30 -j date2001-08-01 descr
+
+No conflicts (! first time ever!) ... but problems with pythoncore.dsp.
+Resolved.
+
+Rebuilt from scratch; ran all tests; checked into branch about 22:40.
+
+Merged descr-branch back into trunk:
+    cvs -q -z3 up -j descr-branch python
+
+34 conflicts.  Hmm!  OK, looks like every file in the project with an
+embedded RCS Id is "a conflict".  Others make no sense, e.g., a dozen
+conflicts in dictobject.c, sometimes enclosing identical(!) blobs of
+source code.  And CVS remains utterly baffled by Python type object decls.
+Every line of ceval.c's generator code si in conflict blocks ... OK,
+there's no pattern or sense here, I'll just deal with it.
+
+Conflicts resolved; rebuilt from scratch; test_weakref fails.
+----------------------------------------------------------------------------
+2001-07-30
+
+Doing this again while the expat and Windows installer changes are still
+fresh on my mind.
+
+Tagged trunk about 23:50 EDT on the 29th:
+    cvs tag date2001-07-30 python
+
+Merged trunk delta into branch:
+
+    cvs -q -z3 up -j date2001-07-28 -j date2001-07-30 descr
+
+2 conflicts, resolved.
+----------------------------------------------------------------------------
+2001-07-28
+
+Tagged trunk about 00:31 EDT:
+    cvs tag date2001-07-28 python
+
+Merged trunk delta into branch:
+    cvs -q -z3 up -j date2001-07-21 -j date2001-07-28 descr
+
+4 conflicts, all RCS Ids.  Resolved.
+----------------------------------------------------------------------------
+2001-07-21
+
+Tagged trunk about 01:00 EDT:
+    cvs tag date2001-07-21 python
+
+Merged trunk delta into branch:
+    cvs -q -z3 up -j date2001-07-17b -j date2001-07-21 descr
+
+4 conflicts, mostly RCS Id thingies.  Resolved.
+
+Legit failure in new test_repr, because repr.py dispatches on the exact
+string returned by type(x).  type(1L) and type('s') differ in descr-branch
+now, and repr.py didn't realize that, falling back to the "unknown type"
+case for longs and strings.  Repaired descr-branch repr.py.
+----------------------------------------------------------------------------
+2001-07-19
+
+Removed the r22a1-branch tag (see next entry).  Turns out Guido did add a
+r22a1 tag, so the r22a1-branch tag served no point anymore.
+----------------------------------------------------------------------------
+2001-07-18  2.2a1 releaase
+
+Immediately after the merge just below, I tagged descr-branch via
+
+    cvs tag r22a1-branch descr
+
+Guido may or may not want to add another tag here (? maybe he wants to do
+some more Unix fiddling first).
+----------------------------------------------------------------------------
+2001-07-17  building 2.2a1 release, from descr-branch
+
+Tagged trunk about 22:00 EDT, like so:
+    cvs tag date2001-07-17b python
+
+Merged trunk delta into branch via:
+    cvs -q -z3 up -j date2001-07-17a -j date2001-07-17b descr
+----------------------------------------------------------------------------
+2001-07-17
+
+Tagged trunk about 00:05 EDT, like so:
+    cvs tag date2001-07-17a python
+
+Merged trunk delta into branch via:
+    cvs -q -z3 up -j date2001-07-16 -j date2001-07-17a descr
+----------------------------------------------------------------------------
+2001-07-16
+
+Tagged trunk about 15:20 EDT, like so:
+    cvs tag date2001-07-16 python
+
+Guido then added all the other dist/ directories to descr-branch from that
+trunk tag.
+
+Tim then merged trunk delta into the branch via:
+    cvs -q -z3 up -j date2001-07-15 -j date2001-07-16 descr
+----------------------------------------------------------------------------
+2001-07-15
+
+Tagged trunk about 15:44 EDT, like so:
+    cvs tag date2001-07-15 python
+
+Merged trunk delta into branch via:
+    cvs -q -z3 up -j date2001-07-13 -j date2001-07-15 descr
+
+Four files with conflicts, all artificial RCS Id & Revision thingies.
+Resolved and committed.
+----------------------------------------------------------------------------
+2001-07-13
+
+Tagged trunk about 22:13 EDT, like so:
+    cvs tag date2001-07-13 python
+
+Merged trunk delta into branch via:
+    cvs -q -z3 up -j date2001-07-06 -j date2001-07-13 descr
+
+Six(!) files with conflicts, mostly related to NeilS's generator gc patches.
+Unsure why, but CVS seems always to think there are conflicts whenever a
+line in a type object decl gets changed, and the conflict marking seems
+maximally confused in these cases.  Anyway, since I reviewed those patches
+on the trunk, good thing I'm merging them, and darned glad it's still fresh
+on my mind.
+
+Resolved the conflicts, and committed the changes in a few hours total.
+----------------------------------------------------------------------------
+2001-07-07
+
+Merge of trunk tag date2001-07-06 into descr-branch, via
+    cvs -q -z3 up -j date2001-07-06 mergedescr
+was committed on 2001-07-07.
+
+Merge issues:
+
+(all resolved -- GvR)
+----------------------------------------------------------------------------
+2001-07-06
+
+Tagged trunk a bit after midnight, like so:
+
+C:\Code>cvs tag date2001-07-06 python
+cvs server: Tagging python
+cvs server: Tagging python/dist
+cvs server: Tagging python/dist/src
+T python/dist/src/.cvsignore
+T python/dist/src/LICENSE
+T python/dist/src/Makefile.pre.in
+T python/dist/src/README
+... [& about 3000 lines more] ...
+
+This is the first trunk snapshot to be merged into the descr-branch.
+Gave it a date instead of a goofy name because there's going to be more
+than one of these, and at least it's obvious which of two ISO dates comes
+earlier.  These tags should go away after all merging is complete.
+MERGE END ******************************************************************

@@ -47,10 +47,6 @@ extern DL_IMPORT(PyObject *) PyInstance_New(PyObject *, PyObject *,
 extern DL_IMPORT(PyObject *) PyInstance_NewRaw(PyObject *, PyObject *);
 extern DL_IMPORT(PyObject *) PyMethod_New(PyObject *, PyObject *, PyObject *);
 
-extern DL_IMPORT(PyObject *) PyMethod_Function(PyObject *);
-extern DL_IMPORT(PyObject *) PyMethod_Self(PyObject *);
-extern DL_IMPORT(PyObject *) PyMethod_Class(PyObject *);
-
 /* Macros for direct access to these values. Type checks are *not*
    done, so use with care. */
 #define PyMethod_GET_FUNCTION(meth) \
