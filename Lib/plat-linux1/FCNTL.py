@@ -35,11 +35,13 @@ def __STRING(x): return "x"
 # Included from sys/types.h
 
 # Included from linux/types.h
+__FD_SETSIZE = 256
 
 # Included from asm/types.h
-__FDSET_LONGS = 8
 def __FD_ZERO(fdsetp): return \
 
+
+# Included from sys/bitypes.h
 
 # Included from gnu/types.h
 _GNU_TYPES_H = 1
@@ -55,6 +57,8 @@ def __FD_ZERO(set): return \
 
 
 # Included from linux/fcntl.h
+
+# Included from asm/fcntl.h
 O_ACCMODE = 0003
 O_RDONLY = 00
 O_WRONLY = 01
@@ -84,6 +88,12 @@ F_WRLCK = 1
 F_UNLCK = 2
 F_EXLCK = 4
 F_SHLCK = 8
+LOCK_SH = 1
+LOCK_EX = 2
+LOCK_NB = 4
+LOCK_UN = 8
+F_POSIX = 1
+F_FLOCK = 2
 FNDELAY = O_NDELAY
 F_ULOCK = 0
 F_LOCK = 1

@@ -33,13 +33,17 @@ def __STRING(x): return "x"
 # Included from sys/types.h
 
 # Included from linux/types.h
+__FD_SETSIZE = 256
 
 # Included from asm/types.h
-__FDSET_LONGS = 8
 def __FD_ZERO(fdsetp): return \
 
 
+# Included from sys/bitypes.h
+
 # Included from linux/termios.h
+
+# Included from asm/termios.h
 TCGETS = 0x5401
 TCSETS = 0x5402
 TCSETSW = 0x5403
@@ -117,6 +121,7 @@ VDISCARD = 13
 VWERASE = 14
 VLNEXT = 15
 VEOL2 = 16
+INIT_C_CC = "\003\034\177\025\004\0\1\0\021\023\032\0\022\017\027\026\0"
 IGNBRK = 0000001
 BRKINT = 0000002
 IGNPAR = 0000004
@@ -239,3 +244,27 @@ N_TTY = 0
 N_SLIP = 1
 N_MOUSE = 2
 N_PPP = 3
+def CTRL(ch): return ((ch)&0x1F)
+
+IBSHIFT = 16
+CNUL = 0
+CDEL = 0177
+CESC = ord('\\')
+CINTR = 0177
+CQUIT = 034
+CERASE = ord('#')
+CKILL = ord('@')
+CEOT = 04
+CEOL = 0
+CEOL2 = 0
+CEOF = 4
+CSTART = 021
+CSTOP = 023
+CSWTCH = 032
+NSWTCH = 0
+CSUSP = CTRL(ord('Z'))
+CDSUSP = CTRL(ord('Y'))
+CRPRNT = CTRL(ord('R'))
+CFLUSH = CTRL(ord('O'))
+CWERASE = CTRL(ord('W'))
+CLNEXT = CTRL(ord('V'))
