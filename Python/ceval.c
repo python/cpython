@@ -1543,7 +1543,7 @@ eval_frame(PyFrameObject *f)
 				why = (enum why_code) PyInt_AsLong(v);
 				if (why == WHY_RETURN ||
 				    why == WHY_YIELD ||
-				    why == CONTINUE_LOOP)
+				    why == WHY_CONTINUE)
 					retval = POP();
 			}
 			else if (PyString_Check(v) || PyClass_Check(v)) {
@@ -2293,7 +2293,7 @@ eval_frame(PyFrameObject *f)
 				}
 				else {
 					if (why == WHY_RETURN ||
-					    why == CONTINUE_LOOP)
+					    why == WHY_CONTINUE)
 						PUSH(retval);
 					v = PyInt_FromLong((long)why);
 					PUSH(v);
