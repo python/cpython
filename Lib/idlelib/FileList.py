@@ -58,8 +58,8 @@ class FileList:
         if edit is not None and lineno is not None:
             edit.gotoline(lineno)
 
-    def new(self):
-        return self.EditorWindow(self)
+    def new(self, filename=None):
+        return self.EditorWindow(self, filename)
 
     def new_callback(self, event):
         self.new()

@@ -139,7 +139,7 @@ class EditorWindow:
             flist.inversedict[self] = key
             if key:
                 flist.dict[key] = self
-            text.bind("<<open-new-window>>", self.flist.new_callback)
+            text.bind("<<open-new-window>>", self.new_callback)
             text.bind("<<close-all-windows>>", self.flist.close_all_callback)
             text.bind("<<open-class-browser>>", self.open_class_browser)
             text.bind("<<open-path-browser>>", self.open_path_browser)
@@ -182,7 +182,7 @@ class EditorWindow:
         self.UpdateRecentFilesList()
 
         if filename:
-            if os.path.exists(filename):
+            if os.path.exists(filename) and not os.path.isdir(filename):
                 io.loadfile(filename)
             else:
                 io.set_filename(filename)
@@ -209,6 +209,11 @@ class EditorWindow:
         if self.extensions.has_key('AutoIndent'):
             self.extensions['AutoIndent'].set_indentation_params(
                 self.ispythonsource(filename))
+
+    def new_callback(self, event):
+        dirname, basename = self.io.defaultfilename()
+        self.flist.new(dirname)
+        return "break"
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
