@@ -36,7 +36,6 @@ import distutils
 import doctest
 import dumbdbm
 import encodings
-import filecmp
 import fnmatch
 import formatter
 import fpformat
