@@ -1,0 +1,39 @@
+\section{\module{aetypes} ---
+         AppleEvent objects}
+
+\declaremodule{standard}{aetypes}
+  \platform{Mac}
+%\moduleauthor{Jack Jansen?}{email}
+\modulesynopsis{Python representation of the Apple Event Object Model.}
+\sectionauthor{Vincent Marchetti}{vincem@en.com}
+
+
+The \module{aetypes} defines classes used to represent Apple Event
+object specifiers. An object specifier is essentially an address of an
+object implemented in a Apple Event server. An Apple Event specifier
+is used as the direct object for an Apple Event or as the argument of
+an optional parameter. In AppleScript an object specifier is
+represented by a phrase such as:
+\code{character 23 of document "Semprini"}. The classes defined in
+this module allow this specifier to be represented by a Python object
+which is initialized as follows:
+\code{res = Document(1).Character(23)}
+
+
+The \module{AEObjects} module defines the following class:
+
+\begin{classdesc}{ObjectSpecifier}{want, form, seld, from}
+  This is the base class for representing object specifiers and is
+  generally not constructed directly by the user. Its important
+  functionality is to define an \function{__aepack__()} function,
+  which returns the Apple Event descriptor containing the object
+  specifier.  Its data members, set directly from the constructor
+  arguments, are:
+\end{classdesc}
+
+\begin{memberdesc}{want}
+  A four character string representing the class code of the
+  object. These class codes are specified in Apple Event Suites; for
+  example the standard code for a character object is the 4 bytes
+  \samp{char}.
+\end{memberdesc}

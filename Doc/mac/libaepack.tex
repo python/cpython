@@ -1,0 +1,73 @@
+\section{\module{aepack} ---
+         Conversion between Python variables and AppleEvent data containers}
+
+\declaremodule{standard}{aepack}
+  \platform{Mac}
+%\moduleauthor{Jack Jansen?}{email}
+\modulesynopsis{Conversion between Python variables and AppleEvent
+                data containers.}
+\sectionauthor{Vincent Marchetti}{vincem@en.com}
+
+
+The \module{aepack} module defines functions for converting (packing)
+Python variables to AppleEvent descriptors and back (unpacking).
+Within Python the AppleEvent descriptor is handled by Python objects
+of built-in type \pytype{AEDesc}, defined in module \refmodule{AE}.
+
+The \module{aepack} module defines the following functions:
+
+
+\begin{funcdesc}{pack}{x\optional{, forcetype}}
+Returns an \class{AEDesc} object  containing a conversion of Python
+value x. If \var{forcetype} is provided it specifies the descriptor
+type of the result. Otherwise, a default mapping of Python types to
+Apple Event descriptor types is used, as follows:
+
+\begin{tableii}{l|l}{textrm}{Python type}{descriptor type}
+  \lineii{\class{FSSpec}}{typeFSS}
+  \lineii{\class{Alias}}{typeAlias}
+  \lineii{integer}{typeLong (32 bit integer)}
+  \lineii{float}{typeFloat (64 bit floating point)}
+  \lineii{string}{typeText}
+  \lineii{list}{typeAEList}
+  \lineii{dictionary}{typeAERecord}
+  \lineii{instance}{\emph{see below}}
+\end{tableii}  
+ 
+\pytype{FSSpec} and \pytype{Alias} are built-in object types defined
+in the module \refmodule{macfs}. 
+  
+If \var{x} is a Python instance then this function attempts to call an
+\method{__aepack__()} method.  This method should return an
+\pytype{AE.AEDesc} object.
+
+If the conversion \var{x} is not defined above, this function returns
+the Python string representation of a value (the repr() function)
+encoded as a text descriptor.
+\end{funcdesc}
+
+\begin{funcdesc}{unpack}{x}
+  \var{x} must be an object of type \class{AEDesc}. This function
+  returns a Python object representation of the data in the Apple
+  Event descriptor \var{x}. Simple AppleEvent data types (integer,
+  text, float) are returned as their obvious Python counterparts.
+  Apple Event lists are returned as Python lists, and the list
+  elements are recursively unpacked.  Object references
+  (ex. \code{line 3 of document 1}) are returned as instances of
+  \class{aetypes.ObjectSpecifier}.  AppleEvent descriptors with
+  descriptor type typeFSS are returned as \class{FSSpec}
+  objects.  AppleEvent record descriptors are returned as Python
+  dictionaries, with keys of type \class{?} and elements recursively
+  unpacked.
+\end{funcdesc}
+
+
+\begin{seealso}
+  \seemodule{AE}{Built-in access to Apple Event Manager routines.}
+  \seemodule{aetypes}{Python definitions of codes for Apple Event
+                      descriptor types.}
+  \seetitle[http://developer.apple.com/techpubs/mac/IAC/IAC-2.html]{
+            Inside Macintosh: Interapplication
+            Communication}{Information about inter-process
+            communications on the Macintosh.}
+\end{seealso}
