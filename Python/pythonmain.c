@@ -59,19 +59,21 @@ initall()
 	
 	if (inited)
 		return;
+	inited = 1;
 	
 	initimport();
 	
+	/* Modules 'builtin' and 'sys' are initialized here,
+	   they are needed by random bits of the interpreter.
+	   All other modules are optional and should be initialized
+	   by the initcalls() of a specific configuration. */
+	
 	initbuiltin(); /* Also initializes builtin exceptions */
 	initsys();
-	inittime();
-	initmath();
 	
 	initcalls(); /* Configuration-dependent initializations */
 	
 	initintr(); /* For intrcheck() */
-	
-	inited = 1;
 }
 
 /* Parse input from a file and execute it */
@@ -340,14 +342,14 @@ goaway(sts)
 	fprintf(stderr, "[%ld refs]\n", ref_total);
 #endif
 
-#ifdef THINK_C
+#ifdef THINK_C_3_0
 	if (sts == 0)
 		Click_On(0);
 #endif
 
 #ifdef TRACE_REFS
 	if (askyesno("Print left references?")) {
-#ifdef THINK_C
+#ifdef THINK_C_3_0
 		Click_On(1);
 #endif
 		printrefs(stderr);
@@ -364,9 +366,9 @@ finaloutput()
 #ifdef TRACE_REFS
 	if (!askyesno("Print left references?"))
 		return;
-#ifdef THINK_C
+#ifdef THINK_C_3_0
 	Click_On(1);
-#endif /* THINK_C */
+#endif
 	printrefs(stderr);
 #endif /* TRACE_REFS */
 }
@@ -385,7 +387,7 @@ askyesno(prompt)
 	return buf[0] == 'y' || buf[0] == 'Y';
 }
 
-#ifdef THINK_C
+#ifdef THINK_C_3_0
 
 /* Check for file descriptor connected to interactive device.
    Pretend that stdin is always interactive, other files never. */
