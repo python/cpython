@@ -169,11 +169,17 @@ Build
 C API
 -----
 
+- Added PyGC_Collect(), equivalent to calling gc.collect().
+
 - PyThreadState_GetDict() was changed not to raise an exception or
   issue a fatal error when no current thread state is available.  This
   makes it possible to print dictionaries when no thread is active.
 
-- LONG_LONG was renamed to PY_LONG_LONG.
+- LONG_LONG was renamed to PY_LONG_LONG.  Extensions that use this and
+  need compatibility with previous versions can use this:
+    #ifndef  PY_LONG_LONG
+    #define  PY_LONG_LONG  LONG_LONG
+    #endif
 
 - Added PyObject_SelfIter() to fill the tp_iter slot for the
   typical case where the method returns its self argument.
