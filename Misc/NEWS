@@ -41,6 +41,9 @@ Extension modules
 Library
 -------
 
+- bug #851123: shutil.copyfile will raise an exception when trying to copy a
+  file onto a link to itself. Thanks Gregory Ball.
+
 - bug #570300: Fix inspect to resolve file locations using os.path.realpath()
   so as to properly list all functions in a module when the module itself is
   reached through a symlink.  Thanks Johannes Gijsbers.
