@@ -31,18 +31,50 @@
 \RequirePackage[Bjarne]{fncychap}\typeout{Using nice chapter headings.}
 
 
-% for PDF output, use maximal compression, revise \label{} to support named
-% targets for later linking operations.
+% for PDF output, use maximal compression
 \@ifundefined{pdfannotlink}{
-  \RequirePackage{hyperref}
+  \let\LinkColor=\relax
+  \let\NormalColor=\relax
 }{%
+  \input{pdfcolor}
+  \let\LinkColor=\NavyBlue
+  \let\NormalColor=\Black
   \pdfcompresslevel=9
+  \let\OldContentsline=\contentsline
+  \renewcommand{\contentsline}[3]{%
+    \OldContentsline{#1}{%
+      \pdfannotlink attr{/Border [0 0 0]} goto name{page.#3}%
+        \LinkColor#2\NormalColor%
+      \pdfendlink%
+    }{#3}%
+  }
   \let\OldLabel=\label
   \renewcommand{\label}[1]{%
     \OldLabel{#1}%
-    {\pdfdest name {#1} fit}%
+    {\pdfdest name{label.#1} fit}%
   }
-  \RequirePackage[pdftex]{hyperref}
+  % This stuff adds a page.# destination to every PDF page, where # has
+  % the same formatting as the displayed page number.  This doesn't really
+  % help with the frontmatter, but does fine with the body.
+  %
+  % This is *heavily* based on the hyperref package.
+  %
+  \def\@begindvi{%
+    \unvbox \@begindvibox
+    \@hyperfixhead
+    \global\let \@begindvi \@hyperfixhead
+  }
+  \def\hyperpageanchor{%
+       \hyper@anchorstart{page.\thepage}\hyper@anchorend
+   }
+  \let\HYPERPAGEANCHOR\hyperpageanchor
+  \def\@hyperfixhead{%
+   \let\H@old@thehead\@thehead
+       \gdef\@foo{\pdfdest name{page.\thepage} fit}%
+     \expandafter\ifx\expandafter\@empty\H@old@thehead
+       \def\H@old@thehead{\hfil}\fi
+    \def\@thehead{\@foo\relax\H@old@thehead}%
+  }
 }
 
 % Increase printable page size (copied from fullpage.sty)
@@ -50,7 +82,13 @@
 \advance \topmargin by -\headheight
 \advance \topmargin by -\headsep
 
-\textheight 8.7in
+% attempt to work a little better for A4 users
+\@ifundefined{paperheight}{
+  \textheight 9in
+}{
+  \textheight \paperheight
+  \advance\textheight by -2in
+}
 
 \oddsidemargin 0pt
 \evensidemargin \oddsidemargin
@@ -96,7 +134,7 @@
   % gets the plain style and not the fancy style.  This is described
   % in the documentation for the fancyhdr package by Piet von Oostrum.
   \renewcommand{\cleardoublepage}{
-    \clearpage\if@twoside \ifodd\c@page\else
+    \clearpage\if@openright \ifodd\c@page\else
     \hbox{}
     \thispagestyle{plain}
     \newpage
@@ -110,13 +148,20 @@
 % (Haven't found a new one that gets <, >, and _ right without being
 % monospaced.)
 
+
+% This sets up the {verbatim} environment to be indented and a minipage,
+% and to have all the other mostly nice properties that we want for
+% code samples.
+
 % Variable used by begin code command
 \newlength{\codewidth}
 
 \newcommand{\examplevspace}{2mm}
 \newcommand{\exampleindent}{1cm}
-% Command to start a code block (follow this by \begin{verbatim})
-\newcommand{\b@code}{%
+
+\let\OldVerbatim=\verbatim
+\let\OldEndVerbatim=\endverbatim
+\renewcommand{\verbatim}{%
   \begingroup%
   \setlength{\parindent}\exampleindent%
   % Calculate the text width for the minipage:
@@ -127,19 +172,14 @@
   \vspace\examplevspace%
   \indent%
   \begin{minipage}[t]{\codewidth}%
-  \small%
+    \small%
+    \OldVerbatim%
 }
-
-% Command to end a code block (precede this by \end{verbatim})
-\newcommand{\e@code}{%
+\renewcommand{\endverbatim}{%
+    \OldEndVerbatim%
   \end{minipage}%
   \endgroup%
 }
-
-\let\OldVerbatim=\verbatim
-\let\OldEndVerbatim=\endverbatim
-\renewcommand{\verbatim}{\b@code\OldVerbatim}
-\renewcommand{\endverbatim}{\OldEndVerbatim\e@code}
 
 % Augment the sectioning commands used to get our own font family in place:
 \renewcommand{\section}{\@startsection {section}{1}{\z@}%
@@ -230,15 +270,20 @@
 
 % support for the module index
 \newwrite\modindexfile
-\openout\modindexfile=modules.idx
+\openout\modindexfile=mod\jobname.idx
 
 % Add the defining entry for a module
 \newcommand{\defmodindex}[2]{%
   \index{#1@{\idxcode{#1}} (#2module)|textbf}%
   \write\modindexfile{#1 \thepage}}
-\newcommand{\modindex}[1]{\defmodindex{#1}{}}
+
+% built-in & Python modules in the main distribution
 \newcommand{\bimodindex}[1]{\defmodindex{#1}{built-in }}
 \newcommand{\stmodindex}[1]{\defmodindex{#1}{standard }}
+
+% Python & extension modules outside the main distribution
+\newcommand{\modindex}[1]{\defmodindex{#1}{}}
+\newcommand{\exmodindex}[1]{\defmodindex{#1}{}}
 
 % Additional string for an index entry
 \newcommand{\index@subitem}{}
@@ -355,19 +400,21 @@
 \newcommand{\strong}[1]{{\bf #1}}
 % let's experiment with a new font:
 \newcommand{\file}[1]{\mbox{`\small\textsf{#1}'}}
+
+% Use this def/redef approach for \url{} since hyperref defined this already,
+% but only if we actually used hyperref:
 \@ifundefined{pdfannotlink}{%
-  % Use \renew since hyperref defined this already:
-  \renewcommand{\url}[1]{\mbox{\small\textsf{#1}}}%
+  \newcommand{\pythonurl}[1]{\mbox{\small\textsf{#1}}}%
 }{
-  \input{pdfcolor}%			this really isn't a package
-  % Use \renew since hyperref defined this already:
-  \renewcommand{\url}[1]{{%
-    \pdfannotlink user{/C [1 1 1] /S /URI /URI (#1)}%
-    \NavyBlue%				color of the link text
+  \newcommand{\pythonurl}[1]{{%
+    \pdfannotlink attr{/Border [0 0 0]} user{/S /URI /URI (#1)}%
+    \LinkColor%				color of the link text
     \mbox{\small\textsf{#1}}%
-    \Black%				Turn it back off; these are declarative
-    \pdfendlink}}%			and don't appear bound to the current
-}%					formatting "box".
+    \NormalColor%			Turn it back off; these are declarative
+    \pdfendlink}%			and don't appear bound to the current
+  }%					formatting "box".
+}
+\let\url=\pythonurl
 \newcommand{\email}[1]{\mbox{\small\textsf{#1}}}
 
 \newcommand{\varvars}[1]{{\def\,{\/{\char`\,}}\var{#1}}}
