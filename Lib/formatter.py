@@ -2,6 +2,7 @@ import regex
 import regsub
 import string
 import sys
+from types import StringType
 
 
 AS_IS = None
@@ -12,66 +13,94 @@ class NullFormatter:
     def __init__(self): pass
     def end_paragraph(self, blankline): pass
     def add_line_break(self): pass
-    def add_hor_rule(self): pass
+    def add_hor_rule(self, abswidth=None, percentwidth=1.0,
+		     height=None, align=None): pass
     def add_label_data(self, format, counter): pass
     def add_flowing_data(self, data): pass
     def add_literal_data(self, data): pass
     def flush_softspace(self): pass
+    def push_alignment(self, align): pass
+    def pop_alignment(self): pass
     def push_font(self, x): pass
     def pop_font(self): pass
     def push_margin(self, margin): pass
     def pop_margin(self): pass
     def set_spacing(self, spacing): pass
-    def push_style(self, style): pass
-    def pop_style(self): pass
+    def push_style(self, *styles): pass
+    def pop_style(self, n=1): pass
+    def assert_line_data(self, flag=1): pass
 
 
 class AbstractFormatter:
 
     def __init__(self, writer):
 	self.writer = writer		# Output device
+	self.align = None		# Current alignment
+	self.align_stack = []		# Alignment stack
 	self.font_stack = []		# Font state
 	self.margin_stack = []		# Margin state
 	self.spacing = None		# Vertical spacing state
 	self.style_stack = []		# Other state, e.g. color
 	self.nospace = 1		# Should leading space be suppressed
 	self.softspace = 0		# Should a space be inserted
+	self.para_end = 1		# Just ended a paragraph
+	self.parskip = 0		# Skipped space between paragraphs?
+	self.hard_break = 1		# Have a hard break
+	self.have_label = 0
 
     def end_paragraph(self, blankline):
-	if not self.nospace:
-	    self.writer.send_paragraph(blankline)
-	self.nospace = 1
+	if not self.hard_break:
+	    self.writer.send_line_break()
+	    self.have_label = 0
+	if self.parskip < blankline and not self.have_label:
+	    self.writer.send_paragraph(blankline - self.parskip)
+	    self.parskip = blankline
+	    self.have_label = 0
+	self.hard_break = self.nospace = self.para_end = 1
 	self.softspace = 0
 
     def add_line_break(self):
-	self.writer.send_line_break()
-	self.nospace = 1
+	if not (self.hard_break or self.para_end):
+	    self.writer.send_line_break()
+	    self.have_label = self.parskip = 0
+	self.hard_break = self.nospace = 1
 	self.softspace = 0
 
-    def add_hor_rule(self):
-	self.writer.send_hor_rule()
-	self.nospace = 1
-	self.softspace = 0
+    def add_hor_rule(self, *args, **kw):
+	if not self.hard_break:
+	    self.writer.send_line_break()
+	apply(self.writer.send_hor_rule, args, kw)
+	self.hard_break = self.nospace = 1
+	self.have_label = self.para_end = self.softspace = self.parskip = 0
 
-    def add_label_data(self, format, counter):
-	data = self.format_counter(format, counter)
-	self.writer.send_label_data(data)
+    def add_label_data(self, format, counter, blankline = None):
+	if self.have_label or not self.hard_break:
+	    self.writer.send_line_break()
+	if not self.para_end:
+	    self.writer.send_paragraph((blankline and 1) or 0)
+	if type(format) is StringType:
+	    self.writer.send_label_data(self.format_counter(format, counter))
+	else:
+	    self.writer.send_label_data(format)
+	self.nospace = self.have_label = self.hard_break = self.para_end = 1
+	self.softspace = self.parskip = 0
 
     def format_counter(self, format, counter):
-	if counter <= 0:
-	    return format
         label = ''
         for c in format:
             try:
                 if c == '1':
-		    c = '%d' % counter
+		    label = label + ('%d' % counter)
                 elif c in 'aA':
-		    c = self.format_letter(c, counter)
+		    if counter > 0:
+			label = label + self.format_letter(c, counter)
                 elif c in 'iI':
-		    c = self.format_roman(c, counter)
+		    if counter > 0:
+			label = label + self.format_roman(c, counter)
+		else:
+		    label = label + c
             except:
-                pass
-            label = label + c
+                label = label + c
         return label
 
     def format_letter(self, case, counter):
@@ -85,15 +114,14 @@ class AbstractFormatter:
     def format_roman(self, case, counter):
         ones = ['i', 'x', 'c', 'm']
         fives = ['v', 'l', 'd']
-        label = ''
-        index = 0
+        label, index = '', 0
 	# This will die of IndexError when counter is too big
         while counter > 0:
             counter, x = divmod(counter, 10)
             if x == 9:
-                s = ones[index] + ones[index+1]
+                label = ones[index] + ones[index+1] + label
             elif x == 4:
-                s = ones[index] + fives[index]
+                label = ones[index] + fives[index] + label
             else:
                 if x >= 5:
                     s = fives[index]
@@ -101,41 +129,73 @@ class AbstractFormatter:
                 else:
                     s = ''
                 s = s + ones[index]*x
-            label = s + label
+		label = s + label
             index = index + 1
-        if case == 'I': label = string.upper(label)
+        if case == 'I':
+	    return string.upper(label)
         return label
 
-    def add_flowing_data(self, data):
+    def add_flowing_data(self, data,
+			 # These are only here to load them into locals:
+			 whitespace = string.whitespace,
+			 join = string.join, split = string.split):
 	if not data: return
 	# The following looks a bit convoluted but is a great improvement over
 	# data = regsub.gsub('[' + string.whitespace + ']+', ' ', data)
-	prespace = data[0] in string.whitespace
-	postspace = data[-1] in string.whitespace
-	data = string.join(string.split(data))
-	if self.nospace and prespace:
-	    if not data: return
-	    prespace = 0
-	elif self.softspace:
-	    prespace = 1
-	self.nospace = self.softspace = 0
-	if postspace:
-	    self.softspace = 1
-	if prespace: data = ' ' + data
+	prespace = data[:1] in whitespace
+	postspace = data[-1:] in whitespace
+	data = join(split(data))
+	if self.nospace and not data:
+	    return
+	elif prespace or self.softspace:
+	    if not data:
+		if not self.nospace:
+		    self.softspace = 1
+		    self.parskip = 0
+		return
+	    if not self.nospace:
+		data = ' ' + data
+	self.hard_break = self.nospace = self.para_end = \
+			  self.parskip = self.have_label = 0
+	self.softspace = postspace
 	self.writer.send_flowing_data(data)
 
     def add_literal_data(self, data):
-	if self.softspace and data[:1] != '\n':
-	    data = ' ' + data
-	self.nospace = self.softspace = 0
+	if not data: return
+	#  Caller is expected to cause flush_softspace() if needed.
+	self.hard_break = data[-1:] == '\n'
+	self.nospace = self.para_end = self.softspace = \
+		       self.parskip = self.have_label = 0
 	self.writer.send_literal_data(data)
 
     def flush_softspace(self):
 	if self.softspace:
-	    self.nospace = self.softspace = 0
+	    self.hard_break = self.nospace = self.para_end = self.parskip = \
+			      self.have_label = self.softspace = 0
 	    self.writer.send_flowing_data(' ')
 
+    def push_alignment(self, align):
+	if align and align != self.align:
+	    self.writer.new_alignment(align)
+	    self.align = align
+	    self.align_stack.append(align)
+	else:
+	    self.align_stack.append(self.align)
+
+    def pop_alignment(self):
+	if self.align_stack:
+	    del self.align_stack[-1]
+	if self.align_stack:
+	    self.align = align = self.align_stack[-1]
+	    self.writer.new_alignment(align)
+	else:
+	    self.align = None
+	    self.writer.new_alignment(None)
+
     def push_font(self, (size, i, b, tt)):
+	if self.softspace:
+	    self.hard_break = self.nospace = self.para_end = self.softspace = 0
+	    self.writer.send_flowing_data(' ')
 	if self.font_stack:
 	    csize, ci, cb, ctt = self.font_stack[-1]
 	    if size is AS_IS: size = csize
@@ -147,6 +207,9 @@ class AbstractFormatter:
 	self.writer.new_font(font)
 
     def pop_font(self):
+	if self.softspace:
+	    self.hard_break = self.nospace = self.para_end = self.softspace = 0
+	    self.writer.send_flowing_data(' ')
 	if self.font_stack:
 	    del self.font_stack[-1]
 	if self.font_stack:
@@ -157,35 +220,68 @@ class AbstractFormatter:
 
     def push_margin(self, margin):
 	self.margin_stack.append(margin)
-	self.writer.new_margin(margin, len(self.margin_stack))
+	fstack = filter(None, self.margin_stack)
+	if not margin and fstack:
+	    margin = fstack[-1]
+	self.writer.new_margin(margin, len(fstack))
 
     def pop_margin(self):
 	if self.margin_stack:
 	    del self.margin_stack[-1]
-	if self.margin_stack:
-	    margin = self.margin_stack[-1]
+	fstack = filter(None, self.margin_stack)
+	if fstack:
+	    margin = fstack[-1]
 	else:
 	    margin = None
-	self.writer.new_margin(margin, len(self.margin_stack))
+	self.writer.new_margin(margin, len(fstack))
 
     def set_spacing(self, spacing):
 	self.spacing = spacing
 	self.writer.new_spacing(spacing)
 
-    def push_style(self, style):
-	self.style_stack.append(style)
+    def push_style(self, *styles):
+	if self.softspace:
+	    self.hard_break = self.nospace = self.para_end = self.softspace = 0
+	    self.writer.send_flowing_data(' ')
+	for style in styles:
+	    self.style_stack.append(style)
 	self.writer.new_styles(tuple(self.style_stack))
 
-    def pop_style(self):
-	if self.style_stack:
-	    del self.style_stack[-1]
+    def pop_style(self, n=1):
+	if self.softspace:
+	    self.hard_break = self.nospace = self.para_end = self.softspace = 0
+	    self.writer.send_flowing_data(' ')
+	del self.style_stack[-n:]
 	self.writer.new_styles(tuple(self.style_stack))
+
+    def assert_line_data(self, flag=1):
+	self.nospace = self.hard_break = not flag
+	self.para_end = self.have_label = 0
+
+
+class NullWriter:
+    """Minimal writer interface to use in testing.
+    """
+    def new_alignment(self, align): pass
+    def new_font(self, font): pass
+    def new_margin(self, margin, level): pass
+    def new_spacing(self, spacing): pass
+    def new_styles(self, styles): pass
+    def send_paragraph(self, blankline): pass
+    def send_line_break(self): pass
+    def send_hor_rule(self, *args, **kw): pass
+    def send_label_data(self, data): pass
+    def send_flowing_data(self, data): pass
+    def send_literal_data(self, data): pass
 
 
 class AbstractWriter:
 
     def __init__(self):
 	pass
+
+    def new_alignment(self, align):
+	print "new_alignment(%s)" % `align`
 
     def new_font(self, font):
 	print "new_font(%s)" % `font`
@@ -205,7 +301,7 @@ class AbstractWriter:
     def send_line_break(self):
 	print "send_line_break()"
 
-    def send_hor_rule(self):
+    def send_hor_rule(self, *args, **kw):
 	print "send_hor_rule()"
 
     def send_label_data(self, data):
@@ -240,7 +336,7 @@ class DumbWriter(AbstractWriter):
 	self.col = 0
 	self.atbreak = 0
 
-    def send_hor_rule(self):
+    def send_hor_rule(self, *args, **kw):
 	self.file.write('\n')
 	self.file.write('-'*self.maxcol)
 	self.file.write('\n')
