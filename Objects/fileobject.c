@@ -639,48 +639,27 @@ file_readinto(PyFileObject *f, PyObject *args)
    Size argument interpretation:
    > 0: max length;
    = 0: read arbitrary line;
-   < 0: strip trailing '\n', raise EOFError if EOF reached immediately
+   < 0: illegal (use get_line_raw() instead)
 */
+
+#ifdef HAVE_GETC_UNLOCKED
+#define GETC(f) getc_unlocked(f)
+#define FLOCKFILE(f) flockfile(f)
+#define FUNLOCKFILE(f) funlockfile(f)
+#else
+#define GETC(f) getc(f)
+#define FLOCKFILE(f)
+#define FUNLOCKFILE(f)
+#endif
 
 static PyObject *
 get_line(PyFileObject *f, int n)
 {
-	register FILE *fp = f->f_fp;
-	register int c;
+	FILE *fp = f->f_fp;
+	int c;
 	char *buf, *end;
 	size_t n1, n2;
 	PyObject *v;
-
-#if defined(HAVE_GETLINE) && defined(_GNU_SOURCE)
-	/* Use GNU libc extension getline() for arbitrary-sized lines */
-	if (n == 0) {
-		size_t size = 0;
-		buf = NULL;
-		Py_BEGIN_ALLOW_THREADS
-		n1 = getline(&buf, &size, fp);
-		Py_END_ALLOW_THREADS
-		if (n1 == -1) {
-			if (buf){
-				free(buf);
-			}
-			clearerr(fp);
-			if (PyErr_CheckSignals()) {
-				return NULL;
-			}
-			if (n < 0 && feof(fp)) {
-				PyErr_SetString(PyExc_EOFError,
-						"EOF when reading a line");
-				return NULL;
-			}
-			return PyString_FromStringAndSize(NULL, 0);
-		}
-		/* No error */
-		
-		v = PyString_FromStringAndSize(buf, n1);
-		free(buf);
-		return v;
-	}
-#endif
 
 	n2 = n > 0 ? n : 100;
 	v = PyString_FromStringAndSize((char *)NULL, n2);
@@ -689,53 +668,64 @@ get_line(PyFileObject *f, int n)
 	buf = BUF(v);
 	end = buf + n2;
 
-	Py_BEGIN_ALLOW_THREADS
 	for (;;) {
-		if ((c = getc(fp)) == EOF) {
+		Py_BEGIN_ALLOW_THREADS
+		FLOCKFILE(fp);
+		while ((c = GETC(fp)) != EOF &&
+		       (*buf++ = c) != '\n' &&
+			buf != end)
+			;
+		FUNLOCKFILE(fp);
+		Py_END_ALLOW_THREADS
+		if (c == '\n')
+			break;
+		if (c == EOF) {
 			clearerr(fp);
-			Py_BLOCK_THREADS
 			if (PyErr_CheckSignals()) {
 				Py_DECREF(v);
 				return NULL;
 			}
-			if (n < 0 && buf == BUF(v)) {
-				Py_DECREF(v);
-				PyErr_SetString(PyExc_EOFError,
-					   "EOF when reading a line");
-				return NULL;
-			}
-			Py_UNBLOCK_THREADS
 			break;
 		}
-		if ((*buf++ = c) == '\n') {
-			if (n < 0)
-				buf--;
+		/* Must be because buf == end */
+		if (n > 0)
 			break;
+		n1 = n2;
+		n2 += 1000;
+		if (n2 > INT_MAX) {
+			PyErr_SetString(PyExc_OverflowError,
+			    "line is longer than a Python string can hold");
+			return NULL;
 		}
-		if (buf == end) {
-			if (n > 0)
-				break;
-			n1 = n2;
-			n2 += 1000;
-			if (n2 > INT_MAX) {
-				PyErr_SetString(PyExc_OverflowError,
-					"line is longer than a Python string can hold");
-				return NULL;
-			}
-			Py_BLOCK_THREADS
-			if (_PyString_Resize(&v, n2) < 0)
-				return NULL;
-			Py_UNBLOCK_THREADS
-			buf = BUF(v) + n1;
-			end = BUF(v) + n2;
-		}
+		if (_PyString_Resize(&v, n2) < 0)
+			return NULL;
+		buf = BUF(v) + n1;
+		end = BUF(v) + n2;
 	}
-	Py_END_ALLOW_THREADS
 
 	n1 = buf - BUF(v);
 	if (n1 != n2)
 		_PyString_Resize(&v, n1);
 	return v;
+}
+
+/* Internal routine to get a line for raw_input():
+   strip trailing '\n', raise EOFError if EOF reached immediately
+*/
+
+static PyObject *
+get_line_raw(PyFileObject *f)
+{
+	PyObject *line;
+
+	line = get_line(f, 0);
+	if (line == NULL || PyString_GET_SIZE(line) > 0)
+		return line;
+	else {
+		Py_DECREF(line);
+		PyErr_SetString(PyExc_EOFError, "EOF when reading a line");
+		return NULL;
+	}
 }
 
 /* External C interface */
@@ -796,7 +786,10 @@ PyFile_GetLine(PyObject *f, int n)
 	}
 	if (((PyFileObject*)f)->f_fp == NULL)
 		return err_closed();
-	return get_line((PyFileObject *)f, n);
+	if (n < 0)
+		return get_line_raw((PyFileObject *)f);
+	else
+		return get_line((PyFileObject *)f, n);
 }
 
 /* Python method */
