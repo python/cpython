@@ -1385,5 +1385,5 @@ fi
 echo "creating Makefile"
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
 			-s Modules Modules/Setup.config \
-			Modules/Setup Modules/Setup.local
+			Modules/Setup.local Modules/Setup
 mv config.c Modules
