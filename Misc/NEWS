@@ -270,10 +270,11 @@ Core and builtins
   an optional argument that specifies the characters to strip.  For
   example, "Foo!!!?!?!?".rstrip("?!") -> "Foo".
 
-- Dictionaries have a new class method, fromkeys(iterable, value=None).
-  It constructs a new dictionary with keys taken from the iterable and
-  all values set to a single value.  It is used for building membership
-  tests and for removing duplicates from sequences.
+- There's a new dictionary constructor (a class method of the dict
+  class), dict.fromkeys(iterable, value=None).  It constructs a
+  dictionary with keys taken from the iterable and all values set to a
+  single value.  It can be used for building sets and for removing
+  duplicates from sequences.
 
 - Added a new dict method pop(key).  This removes and returns the
   value corresponding to key.  [SF patch #539949]
