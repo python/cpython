@@ -132,7 +132,8 @@ int unicode_resize(register PyUnicodeObject *unicode,
        instead ! */
     if (unicode == unicode_empty || 
 	(unicode->length == 1 && 
-	 unicode->str[0] < 256 &&
+         /* XXX Is unicode->str[] always unsigned? */
+	 unicode->str[0] < 256U &&
 	 unicode_latin1[unicode->str[0]] == unicode)) {
         PyErr_SetString(PyExc_SystemError,
                         "can't resize shared unicode objects");
@@ -211,6 +212,10 @@ PyUnicodeObject *_PyUnicode_New(int length)
 	PyErr_NoMemory();
 	goto onError;
     }
+    /* Initialize the first element to guard against cases where
+       the caller fails before initializing str.
+    */
+    unicode->str[0] = 0;
     unicode->str[length] = 0;
     unicode->length = length;
     unicode->hash = -1;
@@ -2527,7 +2532,7 @@ PyObject *PyUnicode_DecodeASCII(const char *s,
 	else {
 	    startinpos = s-starts;
 	    endinpos = startinpos + 1;
-	    outpos = p-PyUnicode_AS_UNICODE(v);
+	    outpos = p - (Py_UNICODE *)PyUnicode_AS_UNICODE(v);
 	    if (unicode_decode_call_errorhandler(
 		 errors, &errorHandler,
 		 "ascii", "ordinal not in range(128)",
