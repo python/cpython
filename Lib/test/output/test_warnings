@@ -2,9 +2,9 @@ test_warnings
 ('ignore', False, 'FutureWarning', False, 0)
 ('ignore', True, 'OverflowWarning', True, 0)
 ('ignore', True, 'PendingDeprecationWarning', True, 0)
-Lib/test/test_warnings.py:31: UserWarning: hello world
-Lib/test/test_warnings.py:32: UserWarning: hello world
-Lib/test/test_warnings.py:33: DeprecationWarning: hello world
-Lib/test/test_warnings.py:35: UserWarning: hello world
+test_warnings.py:31: UserWarning: hello world
+test_warnings.py:32: UserWarning: hello world
+test_warnings.py:33: DeprecationWarning: hello world
+test_warnings.py:35: UserWarning: hello world
 Caught UserWarning: hello world
 Caught AssertionError: invalid action: 'booh'
