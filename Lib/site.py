@@ -96,14 +96,16 @@ if sys.exec_prefix != sys.prefix:
 for prefix in prefixes:
     if prefix:
 	if sys.platform[:3] in ('win', 'mac'):
-	    sitedir = prefix
+	    sitedirs = [prefix]
 	else:
-	    sitedir = os.path.join(prefix,
-				   "lib",
-				   "python" + sys.version[:3],
-				   "packages")
-	if os.path.isdir(sitedir):
-	    addsitedir(sitedir)
+	    sitedirs = [os.path.join(prefix,
+				     "lib",
+				     "python" + sys.version[:3],
+				     "packages"),
+			os.path.join(prefix, "lib", "site-python")]
+	for sitedir in sitedirs:
+	    if os.path.isdir(sitedir):
+		addsitedir(sitedir)
 
 try:
     import sitecustomize		# Run arbitrary site specific code
