@@ -70,6 +70,8 @@ PROGRAM = sys.argv[0]
 RGB_TXT = [
     # Solaris OpenWindows
     '/usr/openwin/lib/rgb.txt',
+    # Linux
+    '/usr/lib/X11/rgb.txt',
     # The X11R6.4 rgb.txt file
     os.path.join(sys.path[0], 'X/rgb.txt'),
     # add more here
