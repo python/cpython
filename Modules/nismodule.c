@@ -20,26 +20,36 @@
 #include <rpc/rpc.h>
 #include <rpcsvc/yp_prot.h>
 
+static object *NisError;
+
+static object *
+nis_error (err)
+	int err;
+{
+	err_setstr(NisError, yperr_string(err));
+	return NULL;
+}
+
 static struct nis_map {
 	char *alias;
 	char *map;
 } aliases [] = {
-{"passwd", "passwd.byname"},
-{"group", "group.byname"},
-{"networks", "networks.byaddr"},
-{"hosts", "hosts.byname"},
-{"protocols", "protocols.bynumber"},
-{"services", "services.byname"},
-{"aliases", "mail.aliases"},
-{"ethers", "ethers.byname"},
-{0L, 0L}
+	{"passwd",	"passwd.byname"},
+	{"group",	"group.byname"},
+	{"networks",	"networks.byaddr"},
+	{"hosts",	"hosts.byname"},
+	{"protocols",	"protocols.bynumber"},
+	{"services",	"services.byname"},
+	{"aliases",	"mail.aliases"},
+	{"ethers",	"ethers.byname"},
+	{0L,		0L}
 };
 
 static char *
 nis_mapname (map)
-char *map;
+	char *map;
 {
-int i;
+	int i;
 
 	for (i=0; aliases[i].alias != 0L; i++)
 		if (!strcmp (aliases[i].alias, map))
@@ -48,13 +58,13 @@ int i;
 }
 
 static int
-nis_foreach (instatus, inkey, inkeylen, inval, invallen,indata)
-int instatus;
-char *inkey;
-int inkeylen;
-char *inval;
-int invallen;
-object *indata;
+nis_foreach (instatus, inkey, inkeylen, inval, invallen, indata)
+	int instatus;
+	char *inkey;
+	int inkeylen;
+	char *inval;
+	int invallen;
+	object *indata;
 {
 	if (instatus == YP_TRUE) {
 		inkey[inkeylen]=0;
@@ -67,47 +77,59 @@ object *indata;
 
 static object *
 nis_match (self, args)
-object *self;
-object *args;
+	object *self;
+	object *args;
 {
-char *match;
-char *domain;
-int len;
-char *key, *map;
+	char *match;
+	char *domain;
+	int len;
+	char *key, *map;
+	int err;
+	object *res;
 
 	if (!getstrstrarg(args, &key, &map))
 		return NULL;
-	map = nis_mapname (map);
+	if ((err = yp_get_default_domain(&domain)) != 0)
+		return nis_error(err);
 	BGN_SAVE
-	yp_get_default_domain(&domain);
-	if (yp_match (domain, map, key, strlen (key), &match, &len) == 0)
-		match[len] = 0;
+	map = nis_mapname (map);
+	err = yp_match (domain, map, key, strlen (key), &match, &len);
 	END_SAVE
-	return newstringobject (match);
+	if (err != 0)
+		return nis_error(err);
+	res = newsizedstringobject (match, len);
+	free (match);
+	return res;
 }
 
 static object *
 nis_cat (self, args)
-object *self;
-object *args;
+	object *self;
+	object *args;
 {
-char *domain;
-char *map;
-struct ypall_callback cb;
-object *cat;
+	char *domain;
+	char *map;
+	struct ypall_callback cb;
+	object *cat;
+	int err;
 
 	if (!getstrarg(args, &map))
 		return NULL;
+	if ((err = yp_get_default_domain(&domain)) != 0)
+		return nis_error(err);
 	cat = newdictobject ();
 	if (cat == NULL)
 		return NULL;
-	map = nis_mapname (map);
 	cb.foreach = nis_foreach;
 	cb.data = (char *)cat;
-	yp_get_default_domain(&domain);
 	BGN_SAVE
-	yp_all (domain, map, &cb);
+	map = nis_mapname (map);
+	err = yp_all (domain, map, &cb);
 	END_SAVE
+	if (err != 0) {
+		DECREF(cat);
+		return nis_error(err);
+	}
 	return cat;
 }
 
@@ -223,11 +245,7 @@ nisproc_maplist_2(argp, clnt)
 {
     static nisresp_maplist res;
 
-#ifdef hpux
     memset(&res, 0, sizeof(res));
-#else  hpux
-    memset(&res, sizeof(res));
-#endif hpux
     if (clnt_call(clnt, YPPROC_MAPLIST, nis_xdr_domainname, argp, nis_xdr_ypresp_maplist
 , &res, TIMEOUT) != RPC_SUCCESS) {
         return (NULL);
@@ -239,10 +257,10 @@ static
 nismaplist *
 nis_maplist ()
 {
-nisresp_maplist *list;
-char *dom;
-CLIENT *cl, *clnt_create();
-char *server;
+	nisresp_maplist *list;
+	char *dom;
+	CLIENT *cl, *clnt_create();
+	char *server;
 
 	yp_get_default_domain (&dom);
 	yp_master (dom, aliases[0].map, &server);
@@ -261,20 +279,24 @@ char *server;
 
 static object *
 nis_maps (self, args)
-    object *self;
+	object *self;
 	object *args;
 {
-nismaplist *maps;
-object *list;
+	nismaplist *maps;
+	object *list;
 
 	if ((maps = nis_maplist ()) == NULL)
 		return NULL;
 	if ((list = newlistobject(0)) == NULL)
 		return NULL;
-	BGN_SAVE
-	for (maps = maps->next; maps; maps = maps->next)
-		addlistitem (list, newstringobject (maps->map));
-	END_SAVE
+	for (maps = maps->next; maps; maps = maps->next) {
+		if (addlistitem (list, newstringobject (maps->map)) < 0) {
+			DECREF(list);
+			list = NULL;
+			break;
+		}
+	}
+	/* XXX Shouldn't we free the list of maps now? */
 	return list;
 }
 
@@ -288,5 +310,10 @@ static struct methodlist nis_methods[] = {
 void
 initnis ()
 {
-	(void) initmodule("nis", nis_methods);
+	object *m, *d;
+	m = initmodule("nis", nis_methods);
+	d = getmoduledict(m);
+	NisError = newstringobject("nis.error");
+	if (NisError == NULL || dictinsert(d, "error", NisError) != 0)
+		fatal("Cannot define nis.error");
 }
