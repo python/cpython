@@ -211,16 +211,29 @@ info-$(RELEASE).tgz: info
 latex-$(RELEASE).tgz:
 	$(TOOLSDIR)/mktarball.sh $(RELEASE)
 
+latex-$(RELEASE).zip:
+	$(TOOLSDIR)/mktarball.sh --zip $(RELEASE)
+
 pdf-$(PAPER)-$(RELEASE).tgz: pdf
 	(cd paper-$(PAPER); tar cf - *.pdf) | gzip -9 >$@
+
+pdf-$(PAPER)-$(RELEASE).zip: pdf
+	(cd paper-$(PAPER); zip -9 ../$@ *.pdf)
 
 postscript-$(PAPER)-$(RELEASE).tgz: ps
 	(cd paper-$(PAPER); $(MAKE) README)
 	(cd paper-$(PAPER); tar cf - *.ps README) | gzip -9 >$@
 
+postscript-$(PAPER)-$(RELEASE).zip: ps
+	(cd paper-$(PAPER); $(MAKE) README)
+	(cd paper-$(PAPER); zip -9 ../$@ *.ps README)
+
 html-$(RELEASE).tgz:	html
 	(cd $(HTMLDIR); tar cf - *index.html ???/*.css ???/*.html */*.gif) \
 		| gzip -9 >$@
+
+html-$(RELEASE).zip:	html
+	(cd $(HTMLDIR); zip -9 ../$@ *index.html ???/*.css ???/*.html */*.gif)
 
 # convenience targets:
 
@@ -231,6 +244,13 @@ tarpdf:		pdf-$(PAPER)-$(RELEASE).tgz
 tarlatex:	latex-$(RELEASE).tgz
 
 tarballs:	tarpdf tarps tarhtml tarinfo tarlatex
+
+ziphtml:	html-$(RELEASE).zip
+zipps:		postscript-$(PAPER)-$(RELEASE).zip
+zippdf:		pdf-$(PAPER)-$(RELEASE).zip
+ziplatex:	latex-$(RELEASE).zip
+
+zips:		zippdf zipps ziphtml ziplatex
 
 
 # Housekeeping targets
@@ -251,7 +271,8 @@ clobber:
 	(cd $(HTMLDIR); $(MAKE) clobber)
 	rm -f html-$(RELEASE).tgz info-$(RELEASE).tgz
 	rm -f pdf-$(RELEASE).tgz postscript-$(RELEASE).tgz
-	rm -f latex-$(RELEASE).tgz
+	rm -f latex-$(RELEASE).tgz html-$(RELEASE).zip
+	rm -f pdf-$(RELEASE).zip postscript-$(RELEASE).zip
 	(cd paper-$(PAPER); $(MAKE) clobber)
 	(cd $(HTMLDIR); $(MAKE) clobber)
 	(cd $(INFODIR); $(MAKE) clobber)
