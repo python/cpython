@@ -1654,6 +1654,37 @@ class TZInfoBase(unittest.TestCase):
         self.assertRaises(ValueError, t.utcoffset)
         self.assertRaises(ValueError, t.dst)
 
+    def test_aware_compare(self):
+        cls = self.theclass
+
+        # Primarily trying to ensure that utcoffset() gets called even if
+        # the comparands have the same tzinfo member.  timetz comparison
+        # didn't used to do so, although datetimetz comparison did.
+        class OperandDependentOffset(tzinfo):
+            def utcoffset(self, t):
+                if t.minute < 10:
+                    return t.minute # d0 and d1 equal after adjustment
+                else:
+                    return 59       # d2 off in the weeds
+
+        base = cls(8, 9, 10, tzinfo=OperandDependentOffset())
+        d0 = base.replace(minute=3)
+        d1 = base.replace(minute=9)
+        d2 = base.replace(minute=11)
+        for x in d0, d1, d2:
+            for y in d0, d1, d2:
+                got = cmp(x, y)
+                if (x is d0 or x is d1) and (y is d0 or y is d1):
+                    expected = 0
+                elif x is y is d2:
+                    expected = 0
+                elif x is d2:
+                    expected = -1
+                else:
+                    assert y is d2
+                    expected = 1
+                self.assertEqual(got, expected)
+
 
 class TestTimeTZ(TestTime, TZInfoBase):
     theclass = timetz
@@ -1862,6 +1893,7 @@ class TestTimeTZ(TestTime, TZInfoBase):
         self.assertRaises(ValueError, base.replace, second=100)
         self.assertRaises(ValueError, base.replace, microsecond=1000000)
 
+
 class TestDateTimeTZ(TestDateTime, TZInfoBase):
     theclass = datetimetz
 
@@ -2043,8 +2075,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
 
         now = self.theclass.now()
         tz55 = FixedOffset(-330, "west 5:30")
-        timeaware = timetz(now.hour, now.minute, now.second,
-                           now.microsecond, tzinfo=tz55)
+        timeaware = now.timetz().replace(tzinfo=tz55)
         nowaware = self.theclass.combine(now.date(), timeaware)
         self.failUnless(nowaware.tzinfo is tz55)
         self.assertEqual(nowaware.timetz(), timeaware)
@@ -2080,13 +2111,8 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
 
         # Make up a random timezone.
         tzr = FixedOffset(random.randrange(-1439, 1440), "randomtimezone")
-        # Attach it to nowawareplus -- this is clumsy.
-        nowawareplus = self.theclass.combine(nowawareplus.date(),
-                                             timetz(nowawareplus.hour,
-                                                    nowawareplus.minute,
-                                                    nowawareplus.second,
-                                                    nowawareplus.microsecond,
-                                                    tzinfo=tzr))
+        # Attach it to nowawareplus.
+        nowawareplus = nowawareplus.replace(tzinfo=tzr)
         self.failUnless(nowawareplus.tzinfo is tzr)
         # Make sure the difference takes the timezone adjustments into account.
         got = nowaware - nowawareplus
@@ -2359,6 +2385,38 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase):
         self.assertEqual(got.timetz(), expected.timetz())
         self.failUnless(got.tzinfo is expected.tzinfo)
         self.assertEqual(got, expected)
+
+    def test_aware_subtract(self):
+        cls = self.theclass
+
+        # Primarily trying to ensure that utcoffset() gets called even if
+        # the operands have the same tzinfo member.  Subtraction didn't
+        # used to do this, and it makes a difference for DST-aware tzinfo
+        # instances.
+        class OperandDependentOffset(tzinfo):
+            def utcoffset(self, t):
+                if t.minute < 10:
+                    return t.minute # d0 and d1 equal after adjustment
+                else:
+                    return 59       # d2 off in the weeds
+
+        base = cls(8, 9, 10, 11, 12, 13, 14, tzinfo=OperandDependentOffset())
+        d0 = base.replace(minute=3)
+        d1 = base.replace(minute=9)
+        d2 = base.replace(minute=11)
+        for x in d0, d1, d2:
+            for y in d0, d1, d2:
+                got = x - y
+                if (x is d0 or x is d1) and (y is d0 or y is d1):
+                    expected = timedelta(0)
+                elif x is y is d2:
+                    expected = timedelta(0)
+                elif x is d2:
+                    expected = timedelta(minutes=(11-59)-0)
+                else:
+                    assert y is d2
+                    expected = timedelta(minutes=0-(11-59))
+                self.assertEqual(got, expected)
 
 
 def test_suite():
