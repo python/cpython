@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992, 1993, 1994 by Stichting Mathematisch Centrum,
-Amsterdam, The Netherlands.
+Copyright 1991-1995 by Stichting Mathematisch Centrum, Amsterdam,
+The Netherlands.
 
                         All Rights Reserved
 
@@ -58,8 +58,9 @@ initmodule2(name, methods, passthrough)
 			fatal("out of mem for method name");
 		sprintf(namebuf, "%s.%s", name, ml->ml_name);
 		v = newmethodobject(namebuf, ml->ml_meth,
-				    (object *)passthrough, ml->ml_varargs);
-		/* XXX The malloc'ed memory in namebuf is never freed */
+				    (object *)passthrough,
+				    (ml->ml_varargs ? METH_VARARGS : 0) |
+				    METH_FREENAME);
 		if (v == NULL || dictinsert(d, ml->ml_name, v) != 0) {
 			fprintf(stderr, "initializing module: %s\n", name);
 			fatal("can't initialize module");
