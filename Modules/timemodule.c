@@ -242,7 +242,7 @@ time_strftime(self, args)
 	/* I hate these functions that presume you know how big the output
 	 * will be ahead of time...
 	 */
-	for (i = 1024 ; i < 8192 ; i += 1024) {
+	for (i = 1024 ; i <= 8192 ; i += 1024) {
 		outbuf = malloc(i);
 		if (outbuf == NULL) {
 			return PyErr_NoMemory();
@@ -255,7 +255,9 @@ time_strftime(self, args)
 		}
 		free(outbuf);
 	}
-	return PyErr_NoMemory();
+	PyErr_SetString(PyExc_ValueError,
+			"bad strftime format or result too big");
+	return NULL;
 }
 #endif /* HAVE_STRFTIME */
 
@@ -443,6 +445,7 @@ floatsleep(double secs)
 	double secs;
 #endif /* MPW */
 {
+/* XXX Should test for MS_WIN32 first! */
 #ifdef HAVE_SELECT
 	struct timeval t;
 	double frac;
