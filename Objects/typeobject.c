@@ -1888,6 +1888,20 @@ wrap_ternaryfunc(PyObject *self, PyObject *args, void *wrapped)
 	return (*func)(self, other, third);
 }
 
+static PyObject *
+wrap_ternaryfunc_r(PyObject *self, PyObject *args, void *wrapped)
+{
+	ternaryfunc func = (ternaryfunc)wrapped;
+	PyObject *other;
+	PyObject *third = Py_None;
+
+	/* Note: This wrapper only works for __pow__() */
+
+	if (!PyArg_ParseTuple(args, "O|O", &other, &third))
+		return NULL;
+	return (*func)(other, self, third);
+}
+
 #undef TERNARY
 #define TERNARY(NAME, OP) \
 static struct wrapperbase tab_##NAME[] = { \
@@ -1895,7 +1909,7 @@ static struct wrapperbase tab_##NAME[] = { \
 	 (wrapperfunc)wrap_ternaryfunc, \
 	 "x.__" #NAME "__(y, z) <==> " #OP}, \
 	{"__r" #NAME "__", \
-	 (wrapperfunc)wrap_ternaryfunc, \
+	 (wrapperfunc)wrap_ternaryfunc_r, \
 	 "y.__r" #NAME "__(x, z) <==> " #OP}, \
 	{0} \
 }
