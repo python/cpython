@@ -70,14 +70,12 @@ import sys
 
 _keepsplashscreenopen = 0
 
-abouttext1 = """The Python Integrated Developement Environment for the MacintoshÅ
+abouttext1 = """The Python Integrated Development Environment for the MacintoshÅ
 Version: %s
 Copyright 1997-2000 Just van Rossum, Letterror. <just@letterror.com>
 
 Python %s
 %s
-Written by Guido van Rossum with Jack Jansen (and others)
-
 See: <http://www.python.org/> for information and documentation."""
 
 flauwekul = [	'Goodday, Bruce.', 
@@ -93,8 +91,11 @@ at any place . . . he is ready to become . . .
 Bicycle Repair Man!"""
 			]
 
+def skipdoublereturns(text):
+	return string.replace(text, '\n\n', '\n')
+
 def nl2return(text):
-	return string.join(string.split(text, '\n'), '\r')
+	return string.replace(text, '\n', '\r')
 
 def UpdateSplash(drawdialog = 0, what = 0):
 	if drawdialog:
@@ -109,11 +110,11 @@ def drawtext(what = 0):
 		fontID = geneva
 	Qd.TextFont(fontID)
 	Qd.TextSize(9)
-	rect = (10, 125, 390, 260)
+	rect = (10, 115, 390, 290)
 	if not what:
 		import __main__
-		abouttxt = nl2return(abouttext1  \
-			% (__main__.__version__, sys.version, sys.copyright))
+		abouttxt = nl2return(abouttext1 % (
+				__main__.__version__, sys.version, skipdoublereturns(sys.copyright)))
 	else:
 		import random
 		abouttxt = nl2return(random.choice(flauwekul))
@@ -133,7 +134,7 @@ def wait():
 	time = Evt.TickCount()
 	whattext = 0
 	while _keepsplashscreenopen:
-		ok, event = Evt.EventAvail(highLevelEventMask)
+)		ok, event = Evt.EventAvail(highLevelEventMask)
 		if ok:
 			# got apple event, back to mainloop
 			break
