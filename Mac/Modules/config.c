@@ -107,7 +107,7 @@ getversion()
 char *
 getcopyright()
 {
-	return "Copyright 1991-1994 Stichting Mathematisch Centrum, Amsterdam";
+	return "Copyright 1991-1995 Stichting Mathematisch Centrum, Amsterdam";
 }
 
 
@@ -117,6 +117,13 @@ getcopyright()
    appended.  (The Mac has no environment variables, so there the
    default path is always returned.)  The default path may be passed
    to the preprocessor; if not, a system-dependent default is used. */
+
+#define PYTHONPATH "\
+:\n\
+:Lib\n\
+:Lib:stdwin\n\
+:Lib:test\n\
+:Lib:mac"
 
 #ifndef PYTHONPATH
 #ifdef macintosh
@@ -268,7 +275,13 @@ extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
 extern void initAE();
+extern void initCtl();
+extern void initDlg();
+extern void initEvt();
+extern void initMenu();
 extern void initRes();
+extern void initSnd();
+extern void initWin();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -312,7 +325,13 @@ struct {
 #ifdef THINK_C
 /* This is really "Guido van Rossum" specific... :-) */
 	{"AE", initAE},
+	{"Ctl", initCtl},
+	{"Dlg", initDlg},
+	{"Evt", initEvt},
+	{"Menu", initMenu},
 	{"Res", initRes},
+	{"Snd", initSnd},
+	{"Win", initWin},
 #endif
 
 /* -- ADDMODULE MARKER 2 -- */
