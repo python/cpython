@@ -137,7 +137,7 @@ def fix(filename):
 	# First copy the file's mode to the temp file
 	try:
 		statbuf = posix.stat(filename)
-		posix.chmod(tempname, statbuf[ST_MODE] & 0x7777)
+		posix.chmod(tempname, statbuf[ST_MODE] & 07777)
 	except posix.error, msg:
 		err(tempname + ': warning: chmod failed (' + `msg` + ')\n')
 	# Then make a backup of the original file as filename~
