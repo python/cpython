@@ -4840,6 +4840,34 @@ symtable_add_def_o(struct symtable *st, PyObject *dict,
 
 #define symtable_add_use(ST, NAME) symtable_add_def((ST), (NAME), USE)
 
+/* Look for a yield stmt under n.  Return 1 if found, else 0. */
+static int
+look_for_yield(node *n)
+{
+	int i;
+
+	for (i = 0; i < NCH(n); ++i) {
+		node *kid = CHILD(n, i);
+
+		switch (TYPE(kid)) {
+
+		case classdef:
+		case funcdef:
+			/* Stuff in nested functions and classes can't make
+			   the parent a generator. */
+			return 0;
+
+		case yield_stmt:
+			return 1;
+
+		default:
+			if (look_for_yield(kid))
+				return 1;
+		}
+	}
+	return 0;
+}			
+
 static void
 symtable_node(struct symtable *st, node *n)
 {
@@ -4883,8 +4911,12 @@ symtable_node(struct symtable *st, node *n)
 	}
 	case if_stmt:
 		for (i = 0; i + 3 < NCH(n); i += 4) {
-			if (is_constant_false(NULL, (CHILD(n, i + 1))))
+			if (is_constant_false(NULL, (CHILD(n, i + 1)))) {
+				if (st->st_cur->ste_generator == 0)
+					st->st_cur->ste_generator =
+						look_for_yield(CHILD(n, i+3));
 				continue;
+			}
 			symtable_node(st, CHILD(n, i + 1));
 			symtable_node(st, CHILD(n, i + 3));
 		}

@@ -431,6 +431,9 @@ in increasing order, where i,j,k >= 0.  Trickier than it may look at first!
 Try writing it without generators, and correctly, and without generating
 3 internal results for each result output.
 
+XXX Suspect there's memory leaks in this one; definitely in the next
+XXX version.
+
 >>> def times(n, g):
 ...     for i in g:
 ...         yield n * i
@@ -482,6 +485,8 @@ namespace renaming trick.  The *pretty* part is that the times() and merge()
 functions can be reused as-is, because they only assume their stream
 arguments are iterable -- a LazyList is the same as a generator to times().
 
+XXX Massive memory leaks in this; see Python-Iterators.
+
 >>> class LazyList:
 ...     def __init__(self, g):
 ...         self.sofar = []
@@ -514,7 +519,8 @@ arguments are iterable -- a LazyList is the same as a generator to times().
 [400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
 """
 
-# syntax_tests mostly provokes SyntaxErrors.
+# syntax_tests mostly provokes SyntaxErrors.  Also fiddling with #if 0
+# hackery.
 
 syntax_tests = """
 
@@ -588,13 +594,128 @@ But this is fine:
 ...         return
 >>> list(f())
 [12, 666]
+
+>>> def f():
+...     if 0:
+...         yield 1
+>>> type(f())
+<type 'generator'>
+
+>>> def f():
+...    if "":
+...        yield None
+>>> type(f())
+<type 'generator'>
+
+>>> def f():
+...     return
+...     try:
+...         if x==4:
+...             pass
+...         elif 0:
+...             try:
+...                 1/0
+...             except SyntaxError:
+...                 pass
+...             else:
+...                 if 0:
+...                     while 12:
+...                         x += 1
+...                         yield 2 # don't blink
+...                         f(a, b, c, d, e)
+...         else:
+...             pass
+...     except:
+...         x = 1
+...     return
+>>> type(f())
+<type 'generator'>
+
+>>> def f():
+...     if 0:
+...         def g():
+...             yield 1
+...
+>>> type(f())
+<type 'None'>
+
+>>> def f():
+...     if 0:
+...         class C:
+...             def __init__(self):
+...                 yield 1
+...             def f(self):
+...                 yield 2
+>>> type(f())
+<type 'None'>
 """
 
-__test__ = {"tut":      tutorial_tests,
-            "pep":      pep_tests,
-            "email":    email_tests,
-            "fun":      fun_tests,
-            "syntax":   syntax_tests}
+
+x_tests = """
+
+>>> def firstn(g, n):
+...     return [g.next() for i in range(n)]
+
+>>> def times(n, g):
+...     for i in g:
+...         yield n * i
+
+>>> def merge(g, h):
+...     ng = g.next()
+...     nh = h.next()
+...     while 1:
+...         if ng < nh:
+...             yield ng
+...             ng = g.next()
+...         elif ng > nh:
+...             yield nh
+...             nh = h.next()
+...         else:
+...             yield ng
+...             ng = g.next()
+...             nh = h.next()
+
+>>> class LazyList:
+...     def __init__(self, g):
+...         self.sofar = []
+...         self.fetch = g.next
+...
+...     def __getitem__(self, i):
+...         sofar, fetch = self.sofar, self.fetch
+...         while i >= len(sofar):
+...             sofar.append(fetch())
+...         return sofar[i]
+
+>>> def m235():
+...     yield 1
+...     # Gack:  m235 below actually refers to a LazyList.
+...     me_times2 = times(2, m235)
+...     me_times3 = times(3, m235)
+...     me_times5 = times(5, m235)
+...     for i in merge(merge(me_times2,
+...                          me_times3),
+...                    me_times5):
+...         yield i
+
+>>> m235 = LazyList(m235())
+>>> for i in range(5):
+...     x = [m235[j] for j in range(15*i, 15*(i+1))]
+
+
+[1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24]
+[25, 27, 30, 32, 36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80]
+[81, 90, 96, 100, 108, 120, 125, 128, 135, 144, 150, 160, 162, 180, 192]
+[200, 216, 225, 240, 243, 250, 256, 270, 288, 300, 320, 324, 360, 375, 384]
+[400, 405, 432, 450, 480, 486, 500, 512, 540, 576, 600, 625, 640, 648, 675]
+"""
+
+__test__ = {"tut":      tutorial_tests,  # clean
+            "pep":      pep_tests,     # clean
+            "email":    email_tests,     # clean
+            "fun":      fun_tests,       # leaks
+            "syntax":   syntax_tests   # clean
+           #"x": x_tests
+}
 
 # Magic test name that regrtest.py invokes *after* importing this module.
 # This worms around a bootstrap problem.
@@ -605,7 +726,7 @@ def test_main():
     if 0:
         # Temporary block to help track down leaks.  So far, the blame
         # has fallen mostly on doctest.
-        for i in range(1000):
+        for i in range(5000):
             doctest.master = None
             doctest.testmod(test_generators)
     else:
