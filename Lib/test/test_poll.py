@@ -57,7 +57,9 @@ def test_poll1():
         buf = os.read(rd, MSG_LEN)
         assert len(buf) == MSG_LEN
         print buf
-        os.close(r2w[rd])
+        os.close(r2w[rd]) ; os.close( rd )
+        p.unregister( r2w[rd] )
+        p.unregister( rd )
         writers.remove(r2w[rd])
 
     poll_unit_tests()
@@ -145,13 +147,14 @@ def test_poll2():
         fdlist = pollster.poll(tout)
         if (fdlist == []):
             continue
-        if fdlist[0] == (p.fileno(),select.POLLHUP):
+        fd, flags = fdlist[0]
+        if flags & select.POLLHUP:
             line = p.readline()
             if line != "":
                 print 'error: pipe seems to be closed, but still returns data'
             continue
 
-        elif fdlist[0] == (p.fileno(),select.POLLIN):
+        elif flags & select.POLLIN:
             line = p.readline()
             if verbose:
                 print `line`
