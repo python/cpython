@@ -33,7 +33,6 @@ OBJS=		\
 		bltinmodule.o \
 		ceval.o cgensupport.o compile.o \
 		errors.o \
-		frozenmain.o \
 		getargs.o getmtime.o graminit.o \
 		import.o importdl.o \
 		marshal.o modsupport.o mystrtoul.o \
@@ -49,7 +48,7 @@ SYSLIBS=	-lm
 
 # === Rules ===
 
-all:		$(LIB)
+all:		$(LIB) frozenmain.o
 
 $(LIB):		$& $(OBJS)
 		-rm -f $(LIB)
