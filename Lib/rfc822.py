@@ -763,6 +763,13 @@ class AddressList(AddrlistClass):
                 newaddr.addresslist.append(x)
         return newaddr
 
+    def __iadd__(self, other):
+        # Set union, in-place
+        for x in other.addresslist:
+            if not x in self.addresslist:
+                self.addresslist.append(x)
+        return self
+
     def __sub__(self, other):
         # Set difference
         newaddr = AddressList(None)
@@ -770,6 +777,13 @@ class AddressList(AddrlistClass):
             if not x in other.addresslist:
                 newaddr.addresslist.append(x)
         return newaddr
+
+    def __isub__(self, other):
+        # Set difference, in-place
+        for x in other.addresslist:
+            if x in self.addresslist:
+                self.addresslist.remove(x)
+        return self
 
     def __getitem__(self, index):
         # Make indexing, slices, and 'in' work
