@@ -1481,6 +1481,11 @@ PySocketSock_recv(PySocketSockObject *s, PyObject *args)
 	PyObject *buf;
 	if (!PyArg_ParseTuple(args, "i|i:recv", &len, &flags))
 		return NULL;
+        if (len < 0) {
+		PyErr_SetString(PyExc_ValueError,
+				"negative buffersize in connect");
+		return NULL;
+	}
 	buf = PyString_FromStringAndSize((char *) 0, len);
 	if (buf == NULL)
 		return NULL;
