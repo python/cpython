@@ -62,7 +62,11 @@ class MyScanner(Scanner):
 			
 			([("WindowPtr", "*", "OutMode")],
 			 [("ExistingWindowPtr", "*", "*")]),
+			
+			([("WindowPtr", "FrontWindow", "ReturnMode")],
+			 [("ExistingWindowPtr", "*", "*")]),
 			]
 
 if __name__ == "__main__":
 	main()
+
