@@ -127,6 +127,7 @@ corresponding Unix manual entries for more information on calls.";
 #define HAVE_POPEN      1
 #define HAVE_SYSTEM	1
 #define HAVE_WAIT       1
+#define HAVE_TTYNAME	1
 #endif  /* _MSC_VER */
 #endif  /* __BORLANDC__ */
 #endif  /* ! __WATCOMC__ || __QNX__ */
@@ -561,6 +562,20 @@ posix_access(self, args)
 	return(PyInt_FromLong(res == 0 ? 1L : 0L));
 }
 
+#ifndef F_OK
+#define F_OK 0
+#endif
+#ifndef R_OK
+#define R_OK 4
+#endif
+#ifndef W_OK
+#define W_OK 2
+#endif
+#ifndef X_OK
+#define X_OK 1
+#endif
+
+#ifdef HAVE_TTYNAME
 static char posix_ttyname__doc__[] =
 "ttyname(fd, mode) -> String\n\
 Return the name of the terminal device connected to 'fd'.";
@@ -582,6 +597,7 @@ posix_ttyname(self, args)
 		return(posix_error());
 	return(PyString_FromString(ret));
 }
+#endif
 
 static char posix_chdir__doc__[] =
 "chdir(path) -> None\n\
@@ -2859,7 +2875,9 @@ posix_statvfs(self, args)
 
 static PyMethodDef posix_methods[] = {
 	{"access",	posix_access, 0, posix_access__doc__},
+#ifdef HAVE_TTYNAME
 	{"ttyname",	posix_ttyname, 0, posix_ttyname__doc__},
+#endif
 	{"chdir",	posix_chdir, 0, posix_chdir__doc__},
 	{"chmod",	posix_chmod, 0, posix_chmod__doc__},
 #ifdef HAVE_CHOWN
