@@ -645,6 +645,9 @@ static PySequenceMethods deque_as_sequence = {
 /* deque object ********************************************************/
 
 static PyObject *deque_iter(dequeobject *deque);
+static PyObject *deque_reviter(dequeobject *deque);
+PyDoc_STRVAR(reversed_doc, 
+	"D.__reversed__() -- return a reverse iterator over the deque");
 
 static PyMethodDef deque_methods[] = {
 	{"append",		(PyCFunction)deque_append,	
@@ -665,6 +668,8 @@ static PyMethodDef deque_methods[] = {
 		METH_NOARGS,	 popleft_doc},
 	{"__reduce__",	(PyCFunction)deque_reduce,	
 		METH_NOARGS,	 reduce_doc},
+	{"__reversed__",	(PyCFunction)deque_reviter,	
+		METH_NOARGS,	 reversed_doc},
 	{"rotate",		(PyCFunction)deque_rotate,	
 		METH_VARARGS,	rotate_doc},
 	{NULL,		NULL}	/* sentinel */
@@ -727,6 +732,7 @@ typedef struct {
 	block *b;
 	dequeobject *deque;
 	int len;
+	int counter;
 } dequeiterobject;
 
 PyTypeObject dequeiter_type;
@@ -744,6 +750,7 @@ deque_iter(dequeobject *deque)
 	Py_INCREF(deque);
 	it->deque = deque;
 	it->len = deque->len;
+	it->counter = deque->len;
 	return (PyObject *)it;
 }
 
@@ -774,9 +781,21 @@ dequeiter_next(dequeiterobject *it)
 		it->b = it->b->rightlink;
 		it->index = 0;
 	}
+	it->counter--;
 	Py_INCREF(item);
 	return item;
 }
+
+static int
+dequeiter_len(dequeiterobject *it)
+{
+	return it->counter;
+}
+
+static PySequenceMethods dequeiter_as_sequence = {
+	(inquiry)dequeiter_len,		/* sq_length */
+	0,				/* sq_concat */
+};
 
 PyTypeObject dequeiter_type = {
 	PyObject_HEAD_INIT(NULL)
@@ -792,7 +811,7 @@ PyTypeObject dequeiter_type = {
 	0,					/* tp_compare */
 	0,					/* tp_repr */
 	0,					/* tp_as_number */
-	0,					/* tp_as_sequence */
+	&dequeiter_as_sequence,			/* tp_as_sequence */
 	0,					/* tp_as_mapping */
 	0,					/* tp_hash */
 	0,					/* tp_call */
@@ -808,6 +827,85 @@ PyTypeObject dequeiter_type = {
 	0,					/* tp_weaklistoffset */
 	PyObject_SelfIter,			/* tp_iter */
 	(iternextfunc)dequeiter_next,		/* tp_iternext */
+	0,
+};
+
+/*********************** Deque Reverse Iterator **************************/
+
+PyTypeObject dequereviter_type;
+
+static PyObject *
+deque_reviter(dequeobject *deque)
+{
+	dequeiterobject *it;
+
+	it = PyObject_New(dequeiterobject, &dequereviter_type);
+	if (it == NULL)
+		return NULL;
+	it->b = deque->rightblock;
+	it->index = deque->rightindex;
+	Py_INCREF(deque);
+	it->deque = deque;
+	it->len = deque->len;
+	it->counter = deque->len;
+	return (PyObject *)it;
+}
+
+static PyObject *
+dequereviter_next(dequeiterobject *it)
+{
+	PyObject *item;
+	if (it->b == it->deque->leftblock && it->index < it->deque->leftindex)
+		return NULL;
+
+	if (it->len != it->deque->len) {
+		it->len = -1; /* Make this state sticky */
+		PyErr_SetString(PyExc_RuntimeError,
+				"deque changed size during iteration");
+		return NULL;
+	}
+
+	item = it->b->data[it->index];
+	it->index--;
+	if (it->index == -1 && it->b->leftlink != NULL) {
+		it->b = it->b->leftlink;
+		it->index = BLOCKLEN - 1;
+	}
+	it->counter--;
+	Py_INCREF(item);
+	return item;
+}
+
+PyTypeObject dequereviter_type = {
+	PyObject_HEAD_INIT(NULL)
+	0,					/* ob_size */
+	"deque_reverse_iterator",		/* tp_name */
+	sizeof(dequeiterobject),		/* tp_basicsize */
+	0,					/* tp_itemsize */
+	/* methods */
+	(destructor)dequeiter_dealloc,		/* tp_dealloc */
+	0,					/* tp_print */
+	0,					/* tp_getattr */
+	0,					/* tp_setattr */
+	0,					/* tp_compare */
+	0,					/* tp_repr */
+	0,					/* tp_as_number */
+	&dequeiter_as_sequence,			/* tp_as_sequence */
+	0,					/* tp_as_mapping */
+	0,					/* tp_hash */
+	0,					/* tp_call */
+	0,					/* tp_str */
+	PyObject_GenericGetAttr,		/* tp_getattro */
+	0,					/* tp_setattro */
+	0,					/* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,			/* tp_flags */
+	0,					/* tp_doc */
+	0,					/* tp_traverse */
+	0,					/* tp_clear */
+	0,					/* tp_richcompare */
+	0,					/* tp_weaklistoffset */
+	PyObject_SelfIter,			/* tp_iter */
+	(iternextfunc)dequereviter_next,	/* tp_iternext */
 	0,
 };
 
@@ -831,6 +929,9 @@ initcollections(void)
 
 	if (PyType_Ready(&dequeiter_type) < 0)
 		return;	
+
+	if (PyType_Ready(&dequereviter_type) < 0)
+		return;
 
 	return;
 }
