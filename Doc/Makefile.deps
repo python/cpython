@@ -5,6 +5,7 @@ COMMONSTYLES= texinputs/python.sty \
 	texinputs/python.ist
 
 COMMONTEX= texinputs/copyright.tex \
+	texinputs/license.tex \
 	texinputs/boilerplate.tex
 
 MANSTYLES= texinputs/fncychap.sty \
