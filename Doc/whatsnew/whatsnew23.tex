@@ -19,8 +19,7 @@ Python 2.3alpha1.  Please send any additions, comments or errata to
 the author.}
 
 This article explains the new features in Python 2.3.  The tentative
-release date of Python 2.3 is currently scheduled for some undefined
-time before the end of 2002.
+release date of Python 2.3 is currently scheduled for mid-2003.
 
 This article doesn't attempt to provide a complete specification of
 the new features, but instead provides a convenient overview.  For
@@ -40,11 +39,11 @@ a particular new feature.
 The new \module{sets} module contains an implementation of a set
 datatype.  The \class{Set} class is for mutable sets, sets that can
 have members added and removed.  The \class{ImmutableSet} class is for
-sets that can't be modified, and can be used as dictionary keys.  Sets
-are built on top of dictionaries, so the elements within a set must be
-hashable.
+sets that can't be modified, and instances of \class{ImmutableSet} can
+therefore be used as dictionary keys.  Sets are built on top of
+dictionaries, so the elements within a set must be hashable.
 
-As a simple example,
+Here's a simple example:
 
 \begin{verbatim}
 >>> import sets
@@ -63,8 +62,8 @@ Set([1, 2, 5])
 \end{verbatim}
 
 The union and intersection of sets can be computed with the
-\method{union()} and \method{intersection()} methods, or,
-alternatively, using the bitwise operators \code{\&} and \code{|}.
+\method{union()} and \method{intersection()} methods or
+alternatively using the bitwise operators \code{\&} and \code{|}.
 Mutable sets also have in-place versions of these methods,
 \method{union_update()} and \method{intersection_update()}.
 
@@ -90,7 +89,8 @@ It's also possible to take the symmetric difference of two sets.  This
 is the set of all elements in the union that aren't in the
 intersection.  An alternative way of expressing the symmetric
 difference is that it contains all elements that are in exactly one
-set.  Again, there's an in-place version, with the ungainly name
+set.  Again, there's an alternative notation (\code{\^}), and an
+in-place version with the ungainly name
 \method{symmetric_difference_update()}.
 
 \begin{verbatim}
@@ -103,7 +103,7 @@ Set([1, 2, 5, 6])
 >>>
 \end{verbatim}
 
-There are also methods, \method{issubset()} and \method{issuperset()},
+There are also \method{issubset()} and \method{issuperset()} methods
 for checking whether one set is a strict subset or superset of
 another:
 
@@ -138,7 +138,7 @@ enabled by a \code{from __future__ import generators} directive.  In
 always present; this means that \keyword{yield} is now always a
 keyword.  The rest of this section is a copy of the description of
 generators from the ``What's New in Python 2.2'' document; if you read
-it when 2.2 came out, you can skip the rest of this section.
+it back when Python 2.2 came out, you can skip the rest of this section.
 
 You're doubtless familiar with how function calls work in Python or C.
 When you call a function, it gets a private namespace where its local
@@ -258,7 +258,7 @@ is greater than 5, so the comparison now succeeds, and the code prints
 the value 23 to the screen.
 
 Python doesn't go nearly as far as Icon in adopting generators as a
-central concept.  Generators are considered a new part of the core
+central concept.  Generators are considered part of the core
 Python language, but learning or using them isn't compulsory; if they
 don't solve any problems that you have, feel free to ignore them.
 One novel feature of Python's interface as compared to
@@ -316,19 +316,19 @@ inaccessible.
 
 Python now allows using arbitrary Unicode strings (within the
 limitations of the file system) for all functions that expect file
-names, in particular the \function{open()} built-in. If a Unicode
-string is passed to \function{os.listdir}, Python now returns a list
+names, most notably the \function{open()} built-in function. If a Unicode
+string is passed to \function{os.listdir()}, Python now returns a list
 of Unicode strings.  A new function, \function{os.getcwdu()}, returns
 the current directory as a Unicode string.
 
-Byte strings still work as file names, and Python will transparently
-convert them to Unicode using the \code{mbcs} encoding.
+Byte strings still work as file names, and on Windows Python will
+transparently convert them to Unicode using the \code{mbcs} encoding.
 
-Other systems also allow Unicode strings as file names, but convert
-them to byte strings before passing them to the system which may cause
-a \exception{UnicodeError} to be raised. Applications can test whether
-arbitrary Unicode strings are supported as file names by checking
-\member{os.path.unicode_file_names}, a Boolean value.
+Other systems also allow Unicode strings as file names but convert
+them to byte strings before passing them to the system, which can
+cause a \exception{UnicodeError} to be raised. Applications can test
+whether arbitrary Unicode strings are supported as file names by
+checking \member{os.path.unicode_file_names}, a Boolean value.
 
 \begin{seealso}
 
@@ -345,10 +345,10 @@ Hammond.}
 The three major operating systems used today are Microsoft Windows,
 Apple's Macintosh OS, and the various \UNIX\ derivatives.  A minor
 irritation is that these three platforms all use different characters
-to mark the ends of lines in text files.  \UNIX\ uses character 10,
-the ASCII linefeed, while MacOS uses character 13, the ASCII carriage
-return, and Windows uses a two-character sequence of a carriage return
-plus a newline.
+to mark the ends of lines in text files.  \UNIX\ uses the linefeed
+(ASCII character 10), while MacOS uses the carriage return (ASCII
+character 13), and Windows uses a two-character sequence containing a
+carriage return plus a newline.
 
 Python's file objects can now support end of line conventions other
 than the one followed by the platform on which Python is running.
@@ -382,9 +382,10 @@ A new built-in function, \function{enumerate()}, will make
 certain loops a bit clearer.  \code{enumerate(thing)}, where
 \var{thing} is either an iterator or a sequence, returns a iterator
 that will return \code{(0, \var{thing[0]})}, \code{(1,
-\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  Fairly
-often you'll see code to change every element of a list that looks
-like this:
+\var{thing[1]})}, \code{(2, \var{thing[2]})}, and so forth.  
+
+Fairly often you'll see code to change every element of a list that
+looks like this:
 
 \begin{verbatim}
 for i in range(len(L)):
@@ -405,7 +406,7 @@ for i, item in enumerate(L):
 \begin{seealso}
 
 \seepep{279}{The enumerate() built-in function}{Written
-by Raymond D. Hettinger.}
+and implemented by Raymond D. Hettinger.}
 
 \end{seealso}
 
@@ -413,28 +414,29 @@ by Raymond D. Hettinger.}
 %======================================================================
 \section{PEP 282: The \module{logging} Package}
 
-A standard package for writing logs called \module{logging} has been
-added to Python 2.3.  It provides a powerful and flexible way for
+A standard package for writing logs, \module{logging}, has been added
+to Python 2.3.  It provides a powerful and flexible mechanism for
 components to generate logging output which can then be filtered and
 processed in various ways.  A standard configuration file format can
-be used to control the logging behavior of a program.  Python comes
-with handlers that will write log records to standard error or to a
-file or socket, send them to the system log, or even e-mail them to a
-particular address, and of course it's also possible to write your own
-handler classes.
+be used to control the logging behavior of a program.  Python's
+standard library includes handlers that will write log records to
+standard error or to a file or socket, send them to the system log, or
+even e-mail them to a particular address, and of course it's also
+possible to write your own handler classes.
 
+The \class{Logger} class is the primary class.
 Most application code will deal with one or more \class{Logger}
 objects, each one used by a particular subsystem of the application.
 Each \class{Logger} is identified by a name, and names are organized
 into a hierarchy using \samp{.}  as the component separator.  For
 example, you might have \class{Logger} instances named \samp{server},
 \samp{server.auth} and \samp{server.network}.  The latter two
-instances fall under the \samp{server} \class{Logger} in the
-hierarchy.  This means that if you turn up the verbosity for
-\samp{server} or direct \samp{server} messages to a different handler,
-the changes will also apply to records logged to \samp{server.auth}
-and \samp{server.network}.  There's also a root \class{Logger} that's
-the parent of all other loggers.
+instances are below \samp{server} in the hierarchy.  This means that
+if you turn up the verbosity for \samp{server} or direct \samp{server}
+messages to a different handler, the changes will also apply to
+records logged to \samp{server.auth} and \samp{server.network}.
+There's also a root \class{Logger} that's the parent of all other
+loggers.
 
 For simple uses, the \module{logging} package contains some
 convenience functions that always use the root log:
@@ -458,8 +460,9 @@ CRITICAL:root:Critical error -- shutting down
 \end{verbatim}
 
 In the default configuration, informational and debugging messages are
-suppressed and the output is sent to standard error; you can change
-this by calling the \method{setLevel()} method on the root logger.
+suppressed and the output is sent to standard error.  You can enable
+the display of information and debugging messages by calling the
+\method{setLevel()} method on the root logger.
 
 Notice the \function{warn()} call's use of string formatting
 operators; all of the functions for logging messages take the
@@ -491,8 +494,8 @@ ZeroDivisionError: integer division or modulo by zero
 \end{verbatim}
 
 Slightly more advanced programs will use a logger other than the root
-logger.  The \function{getLogger(\var{name})} is used to get a
-particular log, creating it if it doesn't exist yet; 
+logger.  The \function{getLogger(\var{name})} function is used to get
+a particular log, creating it if it doesn't exist yet.
 \function{getLogger(None)} returns the root logger.
 
 
@@ -505,24 +508,26 @@ log.critical('Disk full')
  ...
 \end{verbatim}
 
-There are more classes that can be customized.  When a \class{Logger}
-instance is told to log a message, it creates a \class{LogRecord}
-instance that is sent to any number of different \class{Handler}
-instances.  Loggers and handlers can also have an attached list of
-filters, and each filter can cause the \class{LogRecord} to be ignored
-or can modify the record before passing it along.  \class{LogRecord}
-instances are converted to text by a \class{Formatter} class.  
-
 Log records are usually propagated up the hierarchy, so a message
 logged to \samp{server.auth} is also seen by \samp{server} and
 \samp{root}, but a handler can prevent this by setting its
 \member{propagate} attribute to \code{False}.
 
+There are more classes provided by the \module{logging} package that
+can be customized.  When a \class{Logger} instance is told to log a
+message, it creates a \class{LogRecord} instance that is sent to any
+number of different \class{Handler} instances.  Loggers and handlers
+can also have an attached list of filters, and each filter can cause
+the \class{LogRecord} to be ignored or can modify the record before
+passing it along.  \class{LogRecord} instances are converted to text
+for output by a \class{Formatter} class.  All of these classes can be
+replaced by your own specially-written classes.
+
 With all of these features the \module{logging} package should provide
 enough flexibility for even the most complicated applications.  This
-is only a partial overview of the \module{logging} package's features,
-so please see the
-\ulink{package's reference documentation}{http://www.python.org/dev/doc/devel/lib/module-logging.html}
+is only a partial overview of the \module{logging} package, so please
+see the \ulink{package's reference
+documentation}{http://www.python.org/dev/doc/devel/lib/module-logging.html}
 for all of the details.  Reading \pep{282} will also be helpful.
 
 
@@ -570,20 +575,21 @@ False
 Python's Booleans were added with the primary goal of making code
 clearer.  For example, if you're reading a function and encounter the
 statement \code{return 1}, you might wonder whether the \code{1}
-represents a truth value, or whether it's an index, or whether it's a
+represents a Boolean truth value, an index, or a
 coefficient that multiplies some other quantity.  If the statement is
 \code{return True}, however, the meaning of the return value is quite
-clearly a truth value.
+clear.
 
-Python's Booleans were not added for the sake of strict type-checking.
-A very strict language such as Pascal would also prevent you
-performing arithmetic with Booleans, and would require that the
-expression in an \keyword{if} statement always evaluate to a Boolean.
-Python is not this strict, and it never will be.  (\pep{285}
-explicitly says so.)  So you can still use any expression in an
-\keyword{if}, even ones that evaluate to a list or tuple or some
-random object, and the Boolean type is a subclass of the
-\class{int} class, so arithmetic using a Boolean still works.
+Python's Booleans were \emph{not} added for the sake of strict
+type-checking.  A very strict language such as Pascal would also
+prevent you performing arithmetic with Booleans, and would require
+that the expression in an \keyword{if} statement always evaluate to a
+Boolean.  Python is not this strict, and it never will be, as
+\pep{285} explicitly says.  This means you can still use any
+expression in an \keyword{if} statement, even ones that evaluate to a
+list or tuple or some random object, and the Boolean type is a
+subclass of the \class{int} class so that arithmetic using a Boolean
+still works.
 
 \begin{verbatim}
 >>> True + 1
@@ -615,20 +621,21 @@ strings \code{'True'} and \code{'False'} instead of \code{'1'} and
 When encoding a Unicode string into a byte string, unencodable
 characters may be encountered.  So far, Python has allowed specifying
 the error processing as either ``strict'' (raising
-\exception{UnicodeError}), ``ignore'' (skip the character), or
-``replace'' (with question mark), defaulting to ``strict''. It may be
-desirable to specify an alternative processing of the error, such as 
-inserting an XML character reference or HTML entity reference into the
-converted string.
+\exception{UnicodeError}), ``ignore'' (skipping the character), or
+``replace'' (using a question mark in the output string), with
+``strict'' being the default behavior. It may be desirable to specify
+alternative processing of such errors, such as inserting an XML
+character reference or HTML entity reference into the converted
+string.
 
 Python now has a flexible framework to add different processing
 strategies.  New error handlers can be added with
 \function{codecs.register_error}. Codecs then can access the error
 handler with \function{codecs.lookup_error}. An equivalent C API has
 been added for codecs written in C. The error handler gets the
-necessary state information, such as the string being converted, the
+necessary state information such as the string being converted, the
 position in the string where the error was detected, and the target
-encoding.  The handler can then either raise an exception, or return a
+encoding.  The handler can then either raise an exception or return a
 replacement string.
 
 Two additional error handlers have been implemented using this
@@ -648,7 +655,7 @@ Walter D\"orwald.}
 \section{PEP 273: Importing Modules from Zip Archives}
 
 The new \module{zipimport} module adds support for importing
-modules from a ZIP-format archive.  You shouldn't need to import the
+modules from a ZIP-format archive.  You don't need to import the
 module explicitly; it will be automatically imported if a ZIP
 archive's filename is added to \code{sys.path}.  For example:
 
@@ -662,8 +669,6 @@ Archive:  /tmp/example.zip
      8467                   1 file
 amk@nyman:~/src/python$ ./python
 Python 2.3a0 (#1, Dec 30 2002, 19:54:32) 
-[GCC 2.96 20000731 (Red Hat Linux 7.3 2.96-113)] on linux2
-Type "help", "copyright", "credits" or "license" for more information.
 >>> import sys
 >>> sys.path.insert(0, '/tmp/example.zip')  # Add .zip file to front of path
 >>> import jwzthreading
@@ -676,17 +681,14 @@ An entry in \code{sys.path} can now be the filename of a ZIP archive.
 The ZIP archive can contain any kind of files, but only files named
 \code{*.py}, \code{*.pyc}, or \code{*.pyo} can be imported.  If an
 archive only contains \code{*.py} files, Python will not attempt to
-modify the archive by adding the corresponding {*.pyc} file.
-Therefore, if a ZIP archive doesn't contain {*.pyc} files, importing
-may be rather slow.
+modify the archive by adding the corresponding \code{*.pyc} file, meaning
+that if a ZIP archive doesn't contain \code{*.pyc} files, importing may be
+rather slow.
 
 A path within the archive can also be specified to only import from a
 subdirectory; for example, the path \file{/tmp/example.zip/lib/}
 would only import from the \file{lib/} subdirectory within the
 archive.
-
-This new feature is implemented using the new import hooks from
-\pep{302}; see section~\ref{section-pep302} for a description.
 
 \begin{seealso}
 
@@ -694,7 +696,9 @@ This new feature is implemented using the new import hooks from
 who also provided an implementation.
 Python 2.3 follows the specification in \pep{273}, 
 but uses an implementation written by Just van~Rossum 
-that uses the import hooks described in \pep{302}.}
+that uses the import hooks described in \pep{302}.
+See section~\ref{section-pep302} for a description of the new import hooks.
+}
 
 \end{seealso}
 
@@ -703,36 +707,37 @@ that uses the import hooks described in \pep{302}.}
 
 While it's been possible to write custom import hooks ever since the
 \module{ihooks} module was introduced in Python 1.3, no one has ever
-been really happy with it, because writing new import hooks is
-difficult and messy.  There have been various alternative interfaces
-proposed, such as the \module{imputil} and \module{iu} modules, but
-none has ever gained much acceptance, and none was easily usable from
-\C{} code.
+been really happy with it because writing new import hooks is
+difficult and messy.  There have been various proposed alternatives
+such as the \module{imputil} and \module{iu} modules, but none of them
+has ever gained much acceptance, and none of them were easily usable
+from \C{} code.
 
 \pep{302} borrows ideas from its predecessors, especially from
 Gordon McMillan's \module{iu} module.  Three new items 
 are added to the \module{sys} module:
 
 \begin{itemize}
-  \item[\code{sys.path_hooks}] is a list of functions.  Each function
+  \item \code{sys.path_hooks} is a list of functions.  Each function
 takes a string containing a path and returns either \code{None} or an
 importer object that will handle imports from this path.
 
-  \item[\code{sys.path_importer_cache}] caches importer objects for
+  \item \code{sys.path_importer_cache} caches importer objects for
 each path, so \code{sys.path_hooks} will only need to be traversed
 once for each path.
 
-  \item[\code{sys.meta_path}] is a list of importer objects 
-that will be traversed before \code{sys.path} is checked at all.
-This list is initially empty, but can be extended.  Additional built-in 
-and frozen modules can be imported by an object added to this list.
+  \item \code{sys.meta_path} is a list of importer objects that will
+  be traversed before \code{sys.path} is checked.  This list is
+  initially empty, but user code can add objects to it.  Additional
+  built-in and frozen modules can be imported by an object added to
+  this list.
 
 \end{itemize}
 
 Importer objects must have a single method,
 \method{find_module(\var{fullname}, \var{path}=None)}.  \var{fullname}
 will be a module or package name, e.g. \samp{string} or
-\samp{spam.ham}.  \method{find_module()} must return a loader object
+\samp{distutils.core}.  \method{find_module()} must return a loader object
 that has a single method, \method{load_module(\var{fullname})}, that
 creates and returns the corresponding module object.
 
@@ -744,13 +749,13 @@ for mp in sys.meta_path:
     loader = mp(fullname)
     if loader is not None:
         <module> = loader(fullname)
-	
+        
 for path in sys.path:
     for hook in sys.path_hooks:
         importer = hook(path)
         if importer is not None:
             loader = importer.find_module(fullname)
-	    return loader.load_module(fullname)
+            <module> = loader.load_module(fullname)
 
 # Not found!
 raise ImportError
@@ -771,12 +776,12 @@ Implemented by Just van~Rossum.
 Ever since Python 1.4, the slicing syntax has supported an optional
 third ``step'' or ``stride'' argument.  For example, these are all
 legal Python syntax: \code{L[1:10:2]}, \code{L[:-1:1]},
-\code{L[::-1]}.  This was added to Python included at the request of
-the developers of Numerical Python.  However, the built-in sequence
-types of lists, tuples, and strings have never supported this feature,
-and you got a \exception{TypeError} if you tried it.  Michael Hudson
-contributed a patch that was applied to Python 2.3 and fixed this
-shortcoming.
+\code{L[::-1]}.  This was added to Python at the request of
+the developers of Numerical Python, which uses the third argument
+extensively.  However, Python's built-in list, tuple, and string
+sequence types have never supported this feature, and you got a
+\exception{TypeError} if you tried it.  Michael Hudson contributed a
+patch to fix this shortcoming.
 
 For example, you can now easily extract the elements of a list that
 have even indexes:
@@ -787,15 +792,15 @@ have even indexes:
 [0, 2, 4, 6, 8]
 \end{verbatim}
 
-Negative values also work, so you can make a copy of the same list in
-reverse order:
+Negative values also work to make a copy of the same list in reverse
+order:
 
 \begin{verbatim}
 >>> L[::-1]
 [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
 \end{verbatim}
 
-This also works for strings:
+This also works for tuples, arrays, and strings:
 
 \begin{verbatim}
 >>> s='abcd'
@@ -805,12 +810,10 @@ This also works for strings:
 'dcba'
 \end{verbatim}
 
-as well as tuples and arrays.
-
-If you have a mutable sequence (i.e. a list or an array) you can
+If you have a mutable sequence such as a list or an array you can
 assign to or delete an extended slice, but there are some differences
-in assignment to extended and regular slices.  Assignment to a regular
-slice can be used to change the length of the sequence:
+between assignment to extended and regular slices.  Assignment to a
+regular slice can be used to change the length of the sequence:
 
 \begin{verbatim}
 >>> a = range(3)
@@ -821,9 +824,9 @@ slice can be used to change the length of the sequence:
 [0, 4, 5, 6]
 \end{verbatim}
 
-but when assigning to an extended slice the list on the right hand
-side of the statement must contain the same number of items as the
-slice it is replacing:
+Extended slices aren't this flexible.  When assigning to an extended
+slice the list on the right hand side of the statement must contain
+the same number of items as the slice it is replacing:
 
 \begin{verbatim}
 >>> a = range(4)
@@ -831,10 +834,10 @@ slice it is replacing:
 [0, 1, 2, 3]
 >>> a[::2]
 [0, 2]
->>> a[::2] = range(0, -2, -1)
+>>> a[::2] = [0, -1]
 >>> a
 [0, 1, -1, 3]
->>> a[::2] = range(3)
+>>> a[::2] = [0,1,2]
 Traceback (most recent call last):
   File "<stdin>", line 1, in ?
 ValueError: attempt to assign list of size 3 to extended slice of size 2
@@ -844,6 +847,8 @@ Deletion is more straightforward:
 
 \begin{verbatim}
 >>> a = range(4)
+>>> a
+[0, 1, 2, 3]
 >>> a[::2]
 [0, 2]
 >>> del a[::2]
@@ -851,15 +856,15 @@ Deletion is more straightforward:
 [1, 3]
 \end{verbatim}
 
-One can also now pass slice objects to builtin sequences
-\method{__getitem__} methods:
+One can also now pass slice objects to the
+\method{__getitem__} methods of the built-in sequences:
 
 \begin{verbatim}
 >>> range(10).__getitem__(slice(0, 5, 2))
 [0, 2, 4]
 \end{verbatim}
 
-or use them directly in subscripts:
+Or use slice objects directly in subscripts:
 
 \begin{verbatim}
 >>> range(10)[slice(0, 5, 2)]
@@ -882,13 +887,13 @@ class FakeSeq:
         ...
     def __getitem__(self, item):
         if isinstance(item, slice):
-            return FakeSeq([self.calc_item(i)
-                            in range(*item.indices(len(self)))])
+            indices = item.indices(len(self))
+            return FakeSeq([self.calc_item(i) in range(*indices)])
         else:
             return self.calc_item(i)
 \end{verbatim}
 
-From this example you can also see that the builtin ``\class{slice}''
+From this example you can also see that the built-in \class{slice}
 object is now the type object for the slice type, and is no longer a
 function.  This is consistent with Python 2.2, where \class{int},
 \class{str}, etc., underwent the same change.
@@ -973,8 +978,8 @@ code that doesn't execute any assertions.
 \item Most type objects are now callable, so you can use them
 to create new objects such as functions, classes, and modules.  (This
 means that the \module{new} module can be deprecated in a future
-Python version, because you can now use the type objects available
-in the \module{types} module.)
+Python version, because you can now use the type objects available in
+the \module{types} module.)
 % XXX should new.py use PendingDeprecationWarning?
 For example, you can create a new module object with the following code:
 
@@ -1017,7 +1022,7 @@ after executing N bytecodes.  The default value for N has been
 increased from 10 to 100 bytecodes, speeding up single-threaded
 applications by reducing the switching overhead.  Some multithreaded
 applications may suffer slower response time, but that's easily fixed
-by setting the limit back to a lower number by calling
+by setting the limit back to a lower number using
 \function{sys.setcheckinterval(\var{N})}.
 
 \item One minor but far-reaching change is that the names of extension
@@ -1070,8 +1075,9 @@ False
 True
 \end{verbatim}
 
-Note that this doesn't tell you where the substring starts; the
-\method{find()} method is still necessary to figure that out.
+Note that this doesn't tell you where the substring starts; if you
+need that information, you must use the \method{find()} method
+instead.
 
 \item The \method{strip()}, \method{lstrip()}, and \method{rstrip()}
 string methods now have an optional argument for specifying the
@@ -1090,7 +1096,7 @@ u'\u4001abc'
 >>>
 \end{verbatim}
 
-(Suggested by Simon Brunning, and implemented by Walter D\"orwald.)
+(Suggested by Simon Brunning and implemented by Walter D\"orwald.)
 
 \item The \method{startswith()} and \method{endswith()}
 string methods now accept negative numbers for the start and end
@@ -1119,7 +1125,7 @@ than \method{zfill()}.
    either kind of string.  It's a completely abstract type, so you
    can't create \class{basestring} instances.
 
-\item Interned strings are no longer immortal.  Interned will now be
+\item Interned strings are no longer immortal, and will now be
 garbage-collected in the usual way when the only reference to them is
 from the internal dictionary of interned strings.  (Implemented by
 Oren Tirosh.)
@@ -1146,7 +1152,8 @@ multiplication algorithm.  (Original patch by Christopher A. Craig,
 and significantly reworked by Tim Peters.)
 
 \item The \code{SET_LINENO} opcode is now gone.  This may provide a
-small speed increase, subject to your compiler's idiosyncrasies.
+small speed increase, depending on your compiler's idiosyncrasies.
+See section~\ref{section-other} for a longer explanation.
 (Removed by Michael Hudson.)
 
 \item \function{xrange()} objects now have their own iterator, making
@@ -1156,7 +1163,7 @@ small speed increase, subject to your compiler's idiosyncrasies.
 \item A number of small rearrangements have been made in various
 hotspots to improve performance, inlining a function here, removing
 some code there.  (Implemented mostly by GvR, but lots of people have
-contributed to one change or another.)
+contributed single changes.)
 
 \end{itemize}
 
@@ -1164,7 +1171,7 @@ contributed to one change or another.)
 %======================================================================
 \section{New and Improved Modules}
 
-As usual, Python's standard modules had a number of enhancements and
+As usual, Python's standard library received a number of enhancements and
 bug fixes.  Here's a partial list of the most notable changes, sorted
 alphabetically by module name. Consult the
 \file{Misc/NEWS} file in the source tree for a more
@@ -1179,7 +1186,7 @@ support using the \code{+=} assignment operator to add another array's
 contents, and the \code{*=} assignment operator to repeat an array.
 (Contributed by Jason Orendorff.)
 
-\item The \module{bsddb} module has been updated to version 4.1.1
+\item The \module{bsddb} module has been replaced by version 4.1.1
 of the \ulink{PyBSDDB}{http://pybsddb.sourceforge.net} package,
 providing a more complete interface to the transactional features of
 the BerkeleyDB library.
@@ -1245,11 +1252,11 @@ now return enhanced tuples:
 
 \item The new \module{heapq} module contains an implementation of a
 heap queue algorithm.  A heap is an array-like data structure that
-keeps items in a partially sorted order such that,
-for every index k, heap[k] <= heap[2*k+1] and heap[k] <= heap[2*k+2].
-This makes it quick to remove
-the smallest item, and inserting a new item while maintaining the heap
-property is O(lg~n).  (See
+keeps items in a partially sorted order such that, for every index
+\var{k}, \code{heap[\var{k}] <= heap[2*\var{k}+1]} and
+\code{heap[\var{k}] <= heap[2*\var{k}+2]}.  This makes it quick to
+remove the smallest item, and inserting a new item while maintaining
+the heap property is O(lg~n).  (See
 \url{http://www.nist.gov/dads/HTML/priorityque.html} for more
 information about the priority queue data structure.)
 
@@ -1272,21 +1279,6 @@ sequence type.  For example:
 3
 >>> heap
 [5, 7, 11]
->>>
->>> heapq.heappush(heap, 5)
->>> heap = []
->>> for item in [3, 7, 5, 11, 1]:
-...    heapq.heappush(heap, item)
-...
->>> heap
-[1, 3, 5, 11, 7]
->>> heapq.heappop(heap)
-1
->>> heapq.heappop(heap)
-3
->>> heap
-[5, 7, 11]
->>>
 \end{verbatim}
 
 (Contributed by Kevin O'Connor.)
@@ -1307,11 +1299,40 @@ Hettinger.)
 \module{posix} module that underlies the \module{os} module.
 (Contributed by Gustavo Niemeyer, Geert Jansen, and Denis S. Otkidach.)
 
+\item In the \module{os} module, the \function{*stat()} family of functions can now report
+fractions of a second in a timestamp.  Such time stamps are
+represented as floats, similar to \function{time.time()}.
+
+During testing, it was found that some applications will break if time
+stamps are floats.  For compatibility, when using the tuple interface
+of the \class{stat_result} time stamps will be represented as integers.
+When using named fields (a feature first introduced in Python 2.2),
+time stamps are still represented as integers, unless
+\function{os.stat_float_times()} is invoked to enable float return
+values:
+
+\begin{verbatim}
+>>> os.stat("/tmp").st_mtime
+1034791200
+>>> os.stat_float_times(True)
+>>> os.stat("/tmp").st_mtime
+1034791200.6335014
+\end{verbatim}
+
+In Python 2.4, the default will change to always returning floats.
+
+Application developers should enable this feature only if all their
+libraries work properly when confronted with floating point time
+stamps, or if they use the tuple API. If used, the feature should be
+activated on an application level instead of trying to enable it on a
+per-use basis.
+
 \item The old and never-documented \module{linuxaudiodev} module has
-been renamed to \module{ossaudiodev}, because the OSS sound drivers
-can be used on platforms other than Linux.  The interface has also
-been tidied and brought up to date in various ways. (Contributed by
-Greg Ward.)
+been deprecated, and a new version named \module{ossaudiodev} has been
+added.  The module was renamed because the OSS sound drivers can be
+used on platforms other than Linux, and the interface has also been
+tidied and brought up to date in various ways. (Contributed by Greg
+Ward.)
 
 \item The parser objects provided by the \module{pyexpat} module
 can now optionally buffer character data, resulting in fewer calls to
@@ -1340,7 +1361,7 @@ Traceback (most recent call last):
   File "random.py", line 414, in sample
       raise ValueError, "sample larger than population"
 ValueError: sample larger than population
->>> random.sample(xrange(1,10000,2), 10)   # Choose ten odds under 10000
+>>> random.sample(xrange(1,10000,2), 10)   # Choose ten odd nos. under 10000
 [3407, 3805, 1505, 7023, 2401, 2267, 9733, 3151, 8083, 9195]
 \end{verbatim}
 
@@ -1355,14 +1376,14 @@ functions: \function{get_history_item()},
 \function{get_current_history_length()}, and \function{redisplay()}.
 
 \item The \module{shutil} module gained a \function{move(\var{src},
-\var{dest})} that recursively moves a file or directory to a new
+\var{dest})} function that recursively moves a file or directory to a new
 location.
 
 \item Support for more advanced POSIX signal handling was added
 to the \module{signal} module by adding the \function{sigpending},
-\function{sigprocmask} and \function{sigsuspend} functions, where supported
+\function{sigprocmask} and \function{sigsuspend} functions where supported
 by the platform.  These functions make it possible to avoid some previously
-unavoidable race conditions.
+unavoidable race conditions with signal handling.
 
 \item The \module{socket} module now supports timeouts.  You
 can call the \method{settimeout(\var{t})} method on a socket object to
@@ -1371,10 +1392,10 @@ take longer than \var{t} seconds to complete will abort and raise a
 \exception{socket.error} exception.
 
 The original timeout implementation was by Tim O'Malley.  Michael
-Gilfix integrated it into the Python \module{socket} module, after the
-patch had undergone a lengthy review.  After it was checked in, Guido
-van~Rossum rewrote parts of it.  This is a good example of the free
-software development process in action.
+Gilfix integrated it into the Python \module{socket} module and
+shepherded it through a lengthy review.  After the code was checked
+in, Guido van~Rossum rewrote parts of it.  (This is a good example of
+a collaborative development process in action.)
 
 \item On Windows, the \module{socket} module now ships with Secure 
 Sockets Library (SSL) support.
@@ -1418,11 +1439,11 @@ documentation for details.
 (Contributed by Greg Ward.)
 
 \item The \module{thread} and \module{threading} modules now have
-companion, \module{dummy_thread} and \module{dummy_threading}, that
-provide a do-nothing implementation of the \module{thread} module's
-interface, even if threads are not supported.  The intention is to
-simplify thread-aware modules (that \emph{don't} rely on threads to
-run) by putting the following code at the top:
+companion modules, \module{dummy_thread} and \module{dummy_threading},
+that provide a do-nothing implementation of the \module{thread}
+module's interface for platforms where threads are not supported.  The
+intention is to simplify thread-aware modules (ones that \emph{don't}
+rely on threads to run) by putting the following code at the top:
 
 % XXX why as _threading?
 \begin{verbatim}
@@ -1443,7 +1464,7 @@ forever.
 long been an annoyance because it uses the platform C library's
 \function{strptime()} implementation, and different platforms
 sometimes have odd bugs.  Brett Cannon contributed a portable
-implementation that's written in pure Python, which should behave
+implementation that's written in pure Python and should behave
 identically on all platforms.
 
 \item The \module{UserDict} module has a new \class{DictMixin} class which
@@ -1500,47 +1521,19 @@ For example:
 
 \item The DOM implementation
 in \module{xml.dom.minidom} can now generate XML output in a
-particular encoding, by specifying an optional encoding argument to
+particular encoding by providing an optional encoding argument to
 the \method{toxml()} and \method{toprettyxml()} methods of DOM nodes.
-
-\item The \function{*stat()} family of functions can now report
-fractions of a second in a timestamp.  Such time stamps are
-represented as floats, similar to \function{time.time()}.
-
-During testing, it was found that some applications will break if time
-stamps are floats.  For compatibility, when using the tuple interface
-of the \class{stat_result}, time stamps are represented as integers.
-When using named fields (a feature first introduced in Python 2.2),
-time stamps are still represented as ints, unless
-\function{os.stat_float_times()} is invoked to enable float return
-values:
-
-\begin{verbatim}
->>> os.stat("/tmp").st_mtime
-1034791200
->>> os.stat_float_times(True)
->>> os.stat("/tmp").st_mtime
-1034791200.6335014
-\end{verbatim}
-
-In Python 2.4, the default will change to always returning floats.
-
-Application developers should use this feature only if all their
-libraries work properly when confronted with floating point time
-stamps, or if they use the tuple API. If used, the feature should be
-activated on an application level instead of trying to enable it on a
-per-use basis.
 
 \item The \module{Tkinter} module now works with a thread-enabled 
 version of Tcl.  Tcl's threading model requires that widgets only be
 accessed from the thread in which they're created; accesses from
 another thread can cause Tcl to panic.  For certain Tcl interfaces,
-\module{Tkinter} will now automatically avoid this by marshalling a
-command, passing it to the correct thread, and waiting for the results
-when a widget is accessed from a different thread.  Other interfaces
-can't be handled automatically but \module{Tkinter} will now raise an
-exception on such an access so that you can at least find out about
-the problem.  See
+\module{Tkinter} will now automatically avoid this 
+when a widget is accessed from a different thread by marshalling a
+command, passing it to the correct thread, and waiting for the
+results.  Other interfaces can't be handled automatically but
+\module{Tkinter} will now raise an exception on such an access so that
+at least you can find out about the problem.  See
 \url{http://mail.python.org/pipermail/python-dev/2002-December/031107.html}
 for a more detailed explanation of this change.  (Implemented by
 Martin von L\"owis.)
@@ -1578,7 +1571,7 @@ The \module{getopt} module provides simple parsing of command-line
 arguments.  The new \module{optparse} module (originally named Optik)
 provides more elaborate command-line parsing that follows the Unix
 conventions, automatically creates the output for \longprogramopt{help},
-and can perform different actions
+and can perform different actions for different options.
 
 You start by creating an instance of \class{OptionParser} and telling
 it what your program's options are.
@@ -1652,12 +1645,12 @@ the Getopt SIG.
 %======================================================================
 \section{Specialized Object Allocator (pymalloc)\label{section-pymalloc}}
 
-An experimental feature added to Python 2.1 was a specialized object
-allocator called pymalloc, written by Vladimir Marangozov.  Pymalloc
-was intended to be faster than the system \cfunction{malloc()} and have
-less memory overhead for typical allocation patterns of Python
+An experimental feature added to Python 2.1 was pymalloc, a
+specialized object allocator written by Vladimir Marangozov.  Pymalloc
+is intended to be faster than the system \cfunction{malloc()} and
+to have less memory overhead for allocation patterns typical of Python
 programs.  The allocator uses C's \cfunction{malloc()} function to get
-large pools of memory, and then fulfills smaller memory requests from
+large pools of memory and then fulfills smaller memory requests from
 these pools.
 
 In 2.1 and 2.2, pymalloc was an experimental feature and wasn't
@@ -1669,12 +1662,14 @@ enabled by default; you'll have to supply
 
 This change is transparent to code written in Python; however,
 pymalloc may expose bugs in C extensions.  Authors of C extension
-modules should test their code with the object allocator enabled,
-because some incorrect code may cause core dumps at runtime.  There
-are a bunch of memory allocation functions in Python's C API that have
-previously been just aliases for the C library's \cfunction{malloc()}
+modules should test their code with pymalloc enabled,
+because some incorrect code may cause core dumps at runtime.  
+
+There's one particularly common error that causes problems.  There are
+a number of memory allocation functions in Python's C API that have
+previously just been aliases for the C library's \cfunction{malloc()}
 and \cfunction{free()}, meaning that if you accidentally called
-mismatched functions, the error wouldn't be noticeable.  When the
+mismatched functions the error wouldn't be noticeable.  When the
 object allocator is enabled, these functions aren't aliases of
 \cfunction{malloc()} and \cfunction{free()} any more, and calling the
 wrong function to free memory may get you a core dump.  For example,
@@ -1687,10 +1682,9 @@ same problem.
 As part of this change, the confusing multiple interfaces for
 allocating memory have been consolidated down into two API families.
 Memory allocated with one family must not be manipulated with
-functions from the other family.
-
-There is another family of functions specifically for allocating
-Python \emph{objects} (as opposed to memory).
+functions from the other family.  There is one family for allocating
+chunks of memory, and another family of functions specifically for
+allocating Python objects.
 
 \begin{itemize}
   \item To allocate and free an undistinguished chunk of memory use
@@ -1710,15 +1704,15 @@ Python \emph{objects} (as opposed to memory).
 Thanks to lots of work by Tim Peters, pymalloc in 2.3 also provides
 debugging features to catch memory overwrites and doubled frees in
 both extension modules and in the interpreter itself.  To enable this
-support, turn on the Python interpreter's debugging code by running
-\program{configure} with \longprogramopt{with-pydebug}.
+support, compile a debugging version of the Python interpreter by
+running \program{configure} with \longprogramopt{with-pydebug}.
 
 To aid extension writers, a header file \file{Misc/pymemcompat.h} is
 distributed with the source to Python 2.3 that allows Python
-extensions to use the 2.3 interfaces to memory allocation and compile
-against any version of Python since 1.5.2.  You would copy the file
-from Python's source distribution and bundle it with the source of
-your extension.
+extensions to use the 2.3 interfaces to memory allocation while
+compiling against any version of Python since 1.5.2.  You would copy
+the file from Python's source distribution and bundle it with the
+source of your extension.
 
 \begin{seealso}
 
@@ -1765,7 +1759,10 @@ allocate objects, and \cfunction{PyObject_GC_Del} to deallocate them.
 
 \end{itemize}
 
-It's also no longer possible to build Python without the garbage collector.
+\item The cycle detection implementation used by the garbage collection
+has proven to be stable, so it's now being made mandatory; you can no
+longer compile Python without it, and the
+\longprogramopt{with-cycle-gc} switch to \program{configure} has been removed.
 
 \item Python can now optionally be built as a shared library
 (\file{libpython2.3.so}) by supplying \longprogramopt{enable-shared}
@@ -1785,11 +1782,6 @@ the built-in functions and modules by supplying
 This makes the Python executable about 10\% smaller, but will also
 mean that you can't get help for Python's built-ins.  (Contributed by
 Gustavo Niemeyer.)
-
-\item The cycle detection implementation used by the garbage collection
-has proven to be stable, so it's now being made mandatory; you can no
-longer compile Python without it, and the
-\longprogramopt{with-cycle-gc} switch to \program{configure} has been removed.
 
 \item The \cfunction{PyArg_NoArgs()} macro is now deprecated, and code
 that uses it should be changed.  For Python 2.2 and later, the method
@@ -1812,10 +1804,10 @@ faster way to loop over all the lines in a file, but now you can
 simply write \code{for line in file_obj}.
 
 \item File objects now manage their internal string buffer
-differently by increasing it exponentially when needed.
-This results in the benchmark tests in \file{Lib/test/test_bufio.py}
-speeding up from 57 seconds to 1.7 seconds, according to one
-measurement.
+differently, increasing it exponentially when needed.  This results in
+the benchmark tests in \file{Lib/test/test_bufio.py} speeding up
+considerably (from 57 seconds to 1.7 seconds, according to one
+measurement).
 
 \item It's now possible to define class and static methods for a C
 extension type by setting either the \constant{METH_CLASS} or
@@ -1838,24 +1830,24 @@ calendars or many fancy features, and just stick to the basics of
 representing time.
 
 The three primary types are: \class{date}, representing a day, month,
-and year; \class{time}, consisting of hour, minute, and second value;
-and \class{datetime}, which contains both a date and a time.  These
-basic types don't understand time zones, but there are subclasses
-named \class{timetz} and \class{datetimetz} that do.  There's also a
+and year; \class{time}, consisting of hour, minute, and second; and
+\class{datetime}, which contains all the attributes of both
+\class{date} and \class{time}.  These basic types don't understand
+time zones, but there are subclasses named \class{timetz} and
+\class{datetimetz} that do.  There's also a
 \class{timedelta} class representing a difference between two points
 in time, and time zone logic is implemented by classes inheriting from
 the abstract \class{tzinfo} class.
 
 You can create instances of \class{date} and \class{time} by either
-supplying keyword arguments to the constructor,
+supplying keyword arguments to the appropriate constructor,
 e.g. \code{datetime.date(year=1972, month=10, day=15)}, or by using
 one of a number of class methods.  For example, the \method{today()}
-class method returns the current local date:
-\code{datetime.date.today()}.  
+class method returns the current local date.
 
 Once created, instances of the date/time classes are all immutable.
 There are a number of methods for producing formatted strings from
-objects,
+objects:
 
 \begin{verbatim}
 >>> import datetime
@@ -1912,16 +1904,16 @@ The RPM spec files, found in the \file{Misc/RPM/} directory in the
 Python source distribution, were updated for 2.3.  (Contributed by
 Sean Reifschneider.)
 
-Python now supports AtheOS (\url{http://www.atheos.cx}), GNU/Hurd,
-OpenVMS, and OS/2 with EMX.
+Other new platforms now supported by Python include AtheOS
+(\url{http://www.atheos.cx}), GNU/Hurd, and OpenVMS.
 
 
 %======================================================================
-\section{Other Changes and Fixes}
+\section{Other Changes and Fixes \label{section-other}}
 
 As usual, there were a bunch of other improvements and bugfixes
 scattered throughout the source tree.  A search through the CVS change
-logs finds there were 289 patches applied and 323 bugs fixed between
+logs finds there were 121 patches applied and 103 bugs fixed between
 Python 2.2 and 2.3.  Both figures are likely to be underestimates.
 
 Some of the more notable changes are:
@@ -1956,11 +1948,11 @@ should instead call \code{PyCode_Addr2Line(f->f_code, f->f_lasti)}.
 This will have the added effect of making the code work as desired
 under ``python -O'' in earlier versions of Python.
 
-A nifty new feature is that trace functions can now the
-\member{f_lineno} attribute of frame objects can now be assigned to,
-changing the line that will be executed next.  A \samp{jump} command
-has been added to the \module{pdb} debugger taking advantage of this
-new feature.  (Implemented by Richie Hindle.)
+A nifty new feature is that trace functions can now assign to the
+\member{f_lineno} attribute of frame objects, changing the line that
+will be executed next.  A \samp{jump} command has been added to the
+\module{pdb} debugger taking advantage of this new feature.
+(Implemented by Richie Hindle.)
 
 \end{itemize}
 
@@ -1968,7 +1960,8 @@ new feature.  (Implemented by Richie Hindle.)
 %======================================================================
 \section{Porting to Python 2.3}
 
-This section lists changes that may actually require changes to your code:
+This section lists previously described changes that may require
+changes to your code:
 
 \begin{itemize}
 
