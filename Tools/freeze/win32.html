@@ -17,11 +17,11 @@
 <H3>Program Dependencies</H3>
 <P>The person freezing the program has control over what external DLLs are required by a frozen program.  The following dependencies are supported:</P>
 <H4>Minimal frozen programs</H4>
-<P>These programs freeze only .py files in your program.  All external DLLs are required at run-time.  This includes all .pyd/.dll modules used by your program, Python15.dll, and msvcrt.dll.  </P>
+<P>These programs freeze only .py files in your program.  All external DLLs are required at run-time.  This includes all .pyd/.dll modules used by your program, Python20.dll, and msvcrt.dll.  </P>
 <P>A small Python program would typically create a .EXE around 300kb.</P>
 <H4>Frozen Extension programs</H4>
 <B><I><P>Note:</B></I> For Python1.5.1, you must get a patch from Guido to import.c for this to work.</P>
-<P>These programs also freeze in the sources from all .pyd and .dll files used at runtime.  This means the resulting .EXE is only dependent on Python15.dll and msvcrt.dll.</P>
+<P>These programs also freeze in the sources from all .pyd and .dll files used at runtime.  This means the resulting .EXE is only dependent on Python20.dll and msvcrt.dll.</P>
 <P>A small Python program using win32api, win32con and one or 2 other win32 extensions would typically create a .EXE around 400kb.</P>
 <H4>Completely frozen programs</H4>
 <P>Completely stand-alone programs, as is the default on Unix systems.  These are currently not supported, mainly as the size of a decent Python program gets very large.  However, by tweaking the existing Unix support, this would not be difficult to do.</P>
@@ -109,7 +109,7 @@
 <H3>PipeTestService.py</H3>
 <P>This is a standard Python demo in the Win32 extensions.  It can be found in the "win32\demos\service" directory.</P>
 <H4>Command Line used</H4>
-<P>This will create a native NT Service EXE, dependent only on the main Python15.dll.  All other modules are built-in to the final .EXE</P><DIR>
+<P>This will create a native NT Service EXE, dependent only on the main Python20.dll.  All other modules are built-in to the final .EXE</P><DIR>
 <DIR>
 
 <CODE><P>\src\python-1.5.1\tools\freeze\freeze.py -s service %PYTHONEX%\win32\demos\service\pipeTestService.py</P></DIR>

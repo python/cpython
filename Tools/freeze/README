@@ -143,7 +143,7 @@ Under Windows 95 or NT, you *must* use the -p option and point it to
 the top of the Python source tree.
 
 WARNING: the resulting executable is not self-contained; it requires
-the Python DLL, currently PYTHON15.DLL (it does not require the
+the Python DLL, currently PYTHON20.DLL (it does not require the
 standard library of .py files though).  It may also require one or
 more extension modules loaded from .DLL or .PYD files; the module
 names are printed in the warning message about remaining unknown
@@ -157,11 +157,11 @@ used, since the standard DLL is used.
 
 In order for this to work, you must have built Python using the VC++
 (Developer Studio) 5.0 compiler.  The provided project builds
-python15.lib in the subdirectory pcbuild\Release of thje Python source
+python20.lib in the subdirectory pcbuild\Release of thje Python source
 tree, and this is where the generated Makefile expects it to be.  If
 this is not the case, you can edit the Makefile or (probably better)
 winmakemakefile.py (e.g., if you are using the 4.2 compiler, the
-python15.lib file is generated in the subdirectory vc40 of the Python
+python20.lib file is generated in the subdirectory vc40 of the Python
 source tree).
 
 You can freeze programs that use Tkinter, but Tcl/Tk must be installed
