@@ -314,18 +314,46 @@ select_select(self, args)
 	return ret;
 }
 
+static char select_doc[] =
+"select(rlist, wlist, xlist[, timeout]) -> (rlist, wlist, xlist)\n\
+\n\
+Wait until one or more file descriptors are ready for some kind of I/O.\n\
+The first three arguments are lists of file descriptors to be waited for:\n\
+rlist -- wait until ready for reading\n\
+wlist -- wait until ready for writing\n\
+xlist -- wait for an ``exceptional condition''\n\
+If only one kind of condition is required, pass [] for the other lists.\n\
+A file descriptor is either a socket or file object, or a small integer\n\
+gotten from a fileno() method call on one of those.\n\
+\n\
+The optional 4th argument specifies a timeout in seconds; it may be\n\
+a floating point number to specify fractions of seconds.  If it is absent\n\
+or None, the call will never time out.\n\
+\n\
+The return value is a tuple of three lists corresponding to the first three\n\
+arguments; each contains the subset of the corresponding file descriptors\n\
+that are ready.\n\
+\n\
+*** IMPORTANT NOTICE ***\n\
+On Windows, only sockets are supported; on Unix, all file descriptors.";
+
 
 static PyMethodDef select_methods[] = {
-    {"select",	select_select, 1},
+    {"select",	select_select, 1, select_doc},
     {0,  	0},			     /* sentinel */
 };
 
+static char module_doc[] =
+"This module supports asynchronous I/O on multiple file descriptors.\n\
+\n\
+*** IMPORTANT NOTICE ***\n\
+On Windows, only sockets are supported; on Unix, all file descriptors.";
 
 void
 initselect()
 {
 	PyObject *m, *d;
-	m = Py_InitModule("select", select_methods);
+	m = Py_InitModule3("select", select_methods, module_doc);
 	d = PyModule_GetDict(m);
 	SelectError = PyErr_NewException("select.error", NULL, NULL);
 	PyDict_SetItemString(d, "error", SelectError);

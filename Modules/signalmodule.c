@@ -122,6 +122,12 @@ signal_default_int_handler(self, arg)
 	return NULL;
 }
 
+static char default_int_handler_doc[] =
+"default_int_handler(...)\n\
+\n\
+The default handler for SIGINT instated by Python.\n\
+It raises KeyboardInterrupt.";
+
 
 static RETSIGTYPE
 signal_handler(sig_num)
@@ -164,6 +170,11 @@ signal_alarm(self, args)
 	/* alarm() returns the number of seconds remaining */
 	return PyInt_FromLong(alarm(t));
 }
+
+static char alarm_doc[] =
+"alarm(seconds)\n\
+\n\
+Arrange for SIGALRM to arrive after the given number of seconds."
 #endif
 
 #ifdef HAVE_PAUSE
@@ -187,6 +198,11 @@ signal_pause(self, args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+static char pause_doc[] =
+"pause()
+
+Wait until a signal arrives.";
+
 #endif
 
 
@@ -235,9 +251,20 @@ signal_signal(self, args)
 	return old_handler;
 }
 
+static char signal_doc[] =
+"signal(sig, action) -> action\n\
+\n\
+Set the action for the given signal.  The action can be SIG_DFL,\n\
+SIG_IGN, or a callable Python object.  The previous action is\n\
+returned.  See getsignal() for possible return values.\n\
+\n\
+*** IMPORTANT NOTICE ***\n\
+A signal handler function is called with two arguments:\n\
+the first is the signal number, the second is the interrupted stack frame.";
+
 
 static PyObject *
-signal_get_signal(self, args)
+signal_getsignal(self, args)
 	PyObject *self; /* Not used */
 	PyObject *args;
 {
@@ -255,24 +282,57 @@ signal_get_signal(self, args)
 	return old_handler;
 }
 
+static char getsignal_doc[] =
+"getsignal(sig) -> action\n\
+\n\
+Return the current action for the given signal.  The return value can be:\n\
+SIG_IGN -- if the signal is being ignored\n\
+SIG_DFL -- if the default action for the signal is in effect\n\
+None -- if an unknown handler is in effect\n\
+anything else -- the callable Python object used as a handler\n\
+";
 
 
 /* List of functions defined in the module */
 static PyMethodDef signal_methods[] = {
 #ifdef HAVE_ALARM
-	{"alarm",	        signal_alarm},
+	{"alarm",	        signal_alarm, 0, alarm_doc},
 #endif
-	{"signal",	        signal_signal},
-	{"getsignal",	        signal_get_signal},
+	{"signal",	        signal_signal, 0, signal_doc},
+	{"getsignal",	        signal_getsignal, 0, getsignal_doc},
 #ifdef HAVE_PAUSE
-	{"pause",	        signal_pause},
+	{"pause",	        signal_pause, 0, pause_doc},
 #endif
-	{"default_int_handler", signal_default_int_handler},
-	{NULL,		NULL}		/* sentinel */
+	{"default_int_handler", signal_default_int_handler, 0,
+				default_int_handler_doc},
+	{NULL,			NULL}		/* sentinel */
 };
 
 
 
+static char module_doc[] =
+"This module provides mechanisms to use signal handlers in Python.\n\
+\n\
+Functions:\n\
+\n\
+alarm() -- cause SIGALRM after a specified time [Unix only]\n\
+signal() -- set the action for a given signal\n\
+getsignal() -- get the signal action for a given signal\n\
+pause() -- wait until a signal arrives [Unix only]\n\
+default_int_handler() -- default SIGINT handler\n\
+\n\
+Constants:\n\
+\n\
+SIG_DFL -- used to refer to the system default handler\n\
+SIG_IGN -- used to ignore the signal\n\
+NSIG -- number of defined signals\n\
+\n\
+SIGINT, SIGTERM, etc. -- signal numbers\n\
+\n\
+*** IMPORTANT NOTICE ***\n\
+A signal handler function is called with two arguments:\n\
+the first is the signal number, the second is the interrupted stack frame.";
+
 void
 initsignal()
 {
@@ -285,7 +345,7 @@ initsignal()
 #endif
 
 	/* Create the module and add the functions */
-	m = Py_InitModule("signal", signal_methods);
+	m = Py_InitModule3("signal", signal_methods, module_doc);
 
 	/* Add some symbolic constants to the module */
 	d = PyModule_GetDict(m);
