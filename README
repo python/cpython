@@ -1,5 +1,5 @@
-This is Python release 1.5.2a2
-==============================
+This is Python version 1.5.2b1 -- released Dec 22, 1998
+=======================================================
 
 
 What's new in this release?
@@ -242,7 +242,7 @@ NeXT:   To build fat binaries, use the --with-next-archs switch
 QNX:	Chris Herborth (chrish@qnx.com) writes:
 	configure works best if you use GNU bash; a port is available on
 	ftp.qnx.com in /usr/free.  I used the following process to build,
-	test and install Python 1.5 under QNX:
+	test and install Python 1.5.x under QNX:
 
 	1) CONFIG_SHELL=/usr/local/bin/bash CC=cc RANLIB=: \
 	    ./configure --verbose --without-gcc --with-libm=""
@@ -256,11 +256,7 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 		_locale, math, md5, new, operator, parser, pcre,
 		posix, pwd, readline, regex, reop, rgbimg, rotor,
 		select, signal, socket, soundex, strop, struct,
-		syslog, termios, time, timing, zlib
-
-		Newly compiled/tested in 1.5.1:
-
-		audioop, imageop, rgbimgmodule
+		syslog, termios, time, timing, zlib, audioop, imageop, rgbimg
 
 	3) make SHELL=/usr/local/bin/bash 
 	
@@ -269,12 +265,6 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 	   make SHELL=/usr/local/bin/bash OPT="-5 -Oil+nrt"
 
 	4) make SHELL=/usr/local/bin/bash test
-
-	   The socket test might fail in the test harness; going
-	   through it by hand shows that they work.
-
-	   A good exercise for the reader: make this work "out of the
-	   box".
 
 	   Using GNU readline 2.2 seems to behave strangely, but I
 	   think that's a problem with my readline 2.2 port.  :-\
@@ -290,8 +280,7 @@ QNX:	Chris Herborth (chrish@qnx.com) writes:
 BeOS:	Chris Herborth (chrish@qnx.com) writes:
 	See BeOS/README for notes about compiling/installing Python on
 	BeOS R3 or later.  Note that only the PowerPC platform is
-	supported at this time, but feel free to try building it on
-	x86.
+	supported for R3; both PowerPC and x86 are supported for R4.
 
 Cray T3E: Konrad Hinsen writes:
 	1) Don't use gcc. It compiles Python/graminit.c into something
