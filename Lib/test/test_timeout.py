@@ -187,8 +187,7 @@ class TimeoutTestCase(unittest.TestCase):
 def test_main():
     test_support.requires('network')
 
-    suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(CreationTestCase))
+    suite = unittest.makeSuite(CreationTestCase)
     suite.addTest(unittest.makeSuite(TimeoutTestCase))
     test_support.run_suite(suite)
 
