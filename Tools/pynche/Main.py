@@ -75,7 +75,7 @@ def keepalive():
 def main():
     global app
 
-    initialcolor = (128, 128, 128)
+    initialcolor = 'grey50'
     try:
 	opts, args = getopt.getopt(sys.argv[1:],
 				   'hc:',
