@@ -342,7 +342,7 @@ determination.
 \begin{cfuncdesc}{int}{PyObject_Length}{PyObject *o}
 \cfuncline{int}{PyObject_Size}{PyObject *o}
   Return the length of object \var{o}.  If the object \var{o} provides
-  both sequence and mapping protocols, the sequence length is
+  either the sequence and mapping protocols, the sequence length is
   returned.  On error, \code{-1} is returned.  This is the equivalent
   to the Python expression \samp{len(\var{o})}.\bifuncindex{len}
 \end{cfuncdesc}
