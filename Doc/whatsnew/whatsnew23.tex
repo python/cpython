@@ -3,7 +3,7 @@
 % $Id$
 
 \title{What's New in Python 2.3}
-\release{0.09}
+\release{0.10}
 \author{A.M.\ Kuchling}
 \authoraddress{\email{amk@amk.ca}}
 
@@ -11,12 +11,13 @@
 \maketitle
 \tableofcontents
 
+% To do:
 % MacOS framework-related changes (section of its own, probably)
 
 %\section{Introduction \label{intro}}
 
 {\large This article is a draft, and is currently up to date for
-Python 2.3alpha1.  Please send any additions, comments or errata to
+Python 2.3alpha2.  Please send any additions, comments or errata to
 the author.}
 
 This article explains the new features in Python 2.3.  The tentative
@@ -511,7 +512,7 @@ log.critical('Disk full')
 
 Log records are usually propagated up the hierarchy, so a message
 logged to \samp{server.auth} is also seen by \samp{server} and
-\samp{root}, but a handler can prevent this by setting its
+\samp{root}, but a \class{Logger} can prevent this by setting its
 \member{propagate} attribute to \constant{False}.
 
 There are more classes provided by the \module{logging} package that
@@ -520,16 +521,15 @@ message, it creates a \class{LogRecord} instance that is sent to any
 number of different \class{Handler} instances.  Loggers and handlers
 can also have an attached list of filters, and each filter can cause
 the \class{LogRecord} to be ignored or can modify the record before
-passing it along.  \class{LogRecord} instances are converted to text
-for output by a \class{Formatter} class.  All of these classes can be
-replaced by your own specially-written classes.
+passing it along.  When they're finally output, \class{LogRecord}
+instances are converted to text by a \class{Formatter} class.  All of
+these classes can be replaced by your own specially-written classes.
 
 With all of these features the \module{logging} package should provide
 enough flexibility for even the most complicated applications.  This
-is only a partial overview of the \module{logging} package, so please
-see the \ulink{package's reference
-documentation}{../lib/module-logging.html} for all of the details.
-Reading \pep{282} will also be helpful.
+is only an incomplete overview of its features, so please see the
+\ulink{package's reference documentation}{../lib/module-logging.html}
+for all of the details.  Reading \pep{282} will also be helpful.
 
 
 \begin{seealso}
@@ -1085,11 +1085,11 @@ unlikely to cause problems in practice.
 \item Built-in types now support the extended slicing syntax,
 as described in section~\ref{section-slices} of this document.
 
-\item Dictionaries have a new method, \method{pop(\var{key})}, that
-returns the value corresponding to \var{key} and removes that
-key/value pair from the dictionary.  \method{pop()} will raise a
-\exception{KeyError} if the requested key isn't present in the
-dictionary:
+\item Dictionaries have a new method, \method{pop(\var{key}\optional{,
+\var{default}})}, that returns the value corresponding to \var{key}
+and removes that key/value pair from the dictionary.  If the requested
+key isn't present in the dictionary, \var{default} is returned if
+it's specified and \exception{KeyError} raised if it isn't.
 
 \begin{verbatim}
 >>> d = {1:2}
@@ -1636,9 +1636,8 @@ The module also contains a \class{TextWrapper} class that actually
 implements the text wrapping strategy.   Both the
 \class{TextWrapper} class and the \function{wrap()} and
 \function{fill()} functions support a number of additional keyword
-arguments for fine-tuning the formatting; consult the module's
-documentation for details.
-%XXX add a link to the module docs?
+arguments for fine-tuning the formatting; consult the \ulink{module's
+documentation}{../lib/module-textwrap.html} for details.
 (Contributed by Greg Ward.)
 
 \item The \module{thread} and \module{threading} modules now have
@@ -1648,7 +1647,6 @@ module's interface for platforms where threads are not supported.  The
 intention is to simplify thread-aware modules (ones that \emph{don't}
 rely on threads to run) by putting the following code at the top:
 
-% XXX why as _threading?
 \begin{verbatim}
 try:
     import threading as _threading
@@ -1661,7 +1659,9 @@ whether or not threads are supported, avoiding an \keyword{if}
 statement and making the code slightly clearer.  This module will not
 magically make multithreaded code run without threads; code that waits
 for another thread to return or to do something will simply hang
-forever.
+forever.  (In this example, \module{_threading} is used as the module
+name to make it clear that the module being used is not necessarily
+the actual \module{threading} module.)
 
 \item The \module{time} module's \function{strptime()} function has
 long been an annoyance because it uses the platform C library's
@@ -1669,6 +1669,30 @@ long been an annoyance because it uses the platform C library's
 sometimes have odd bugs.  Brett Cannon contributed a portable
 implementation that's written in pure Python and should behave
 identically on all platforms.
+
+\item The new \module{timeit} module helps measure how long snippets
+of Python code take to execute.  The \file{timeit.py} file can be run
+directly from the command line, or the module's \class{Timer} class
+can be imported and used directly.  Here's a short example that
+figures out whether it's faster to convert an 8-bit string to Unicode
+by appending an empty Unicode string to it or by using the
+\function{unicode()} function:
+
+\begin{verbatim}
+import timeit
+
+timer1 = timeit.Timer('unicode("abc")')
+timer2 = timeit.Timer('"abc" + u""')
+
+# Run three trials
+print timer1.repeat(repeat=3, number=100000)
+print timer2.repeat(repeat=3, number=100000)
+
+# On my laptop this outputs:
+# [0.36831796169281006, 0.37441694736480713, 0.35304892063140869]
+# [0.17574405670166016, 0.18193507194519043, 0.17565798759460449]
+\end{verbatim}
+
 
 \item The \module{UserDict} module has a new \class{DictMixin} class which
 defines all dictionary methods for classes that already have a minimum
@@ -1827,7 +1851,7 @@ that there's no support for parsing strings and getting back a
 \class{date} or \class{datetime}.
 
 For more information, refer to the \ulink{module's reference
-documentation}{..//lib/module-datetime.html}.
+documentation}{../lib/module-datetime.html}.
 (Contributed by Tim Peters.)
 
 
@@ -1900,16 +1924,11 @@ $
 \end{verbatim}
 % $ prevent Emacs tex-mode from getting confused
 
+See the \ulink{module's documentation}{../lib/module-optparse.html}
+for more details.
+
 Optik was written by Greg Ward, with suggestions from the readers of
 the Getopt SIG.
-
-\begin{seealso}
-\seeurl{http://optik.sourceforge.net/}
-{The Optik site has tutorial and reference documentation for 
-\module{optparse}.
-% XXX change to point to Python docs, when those docs get written.
-}
-\end{seealso}
 
 
 %======================================================================
@@ -2252,10 +2271,11 @@ name.
 
 The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
-article: Jeff Bauer, Simon Brunning, Michael Chermside, Andrew Dalke, Scott David
-Daniels, Fred~L. Drake, Jr., Kelly Gerber, Raymond Hettinger, Michael
-Hudson, Chris Lambert, Detlef Lannert, Martin von L\"owis, Andrew MacIntyre, Lalo
-Martins, Gustavo Niemeyer, Neal Norwitz, Hans Nowak, Chris Reedy,
-Vinay Sajip, Neil Schemenauer, Roman Suzi, Jason Tishler, Just van~Rossum.
+article: Jeff Bauer, Simon Brunning, Brett Cannon, Michael Chermside,
+Andrew Dalke, Scott David Daniels, Fred~L. Drake, Jr., Kelly Gerber,
+Raymond Hettinger, Michael Hudson, Chris Lambert, Detlef Lannert,
+Martin von L\"owis, Andrew MacIntyre, Lalo Martins, Gustavo Niemeyer,
+Neal Norwitz, Hans Nowak, Chris Reedy, Vinay Sajip, Neil Schemenauer,
+Roman Suzi, Jason Tishler, Just van~Rossum.
 
 \end{document}
