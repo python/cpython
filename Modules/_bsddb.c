@@ -349,6 +349,13 @@ make_key_dbt(DBObject* self, PyObject* keyobj, DBT* key, int* pflags)
 
     CLEAR_DBT(*key);
     if (keyobj == Py_None) {  /* TODO: is None really okay for keys? */
+        type = _DB_get_type(self);
+        if (type == DB_RECNO || type == DB_QUEUE) {
+            PyErr_SetString(
+                PyExc_TypeError,
+                "None keys not allowed for Recno and Queue DB's");
+            return 0;
+        }
         /* no need to do anything, the structure has already been zeroed */
     }
 
