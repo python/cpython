@@ -831,6 +831,7 @@ class TestDate(HarmlessMixedComparison):
     def test_strftime(self):
         t = self.theclass(2005, 3, 2)
         self.assertEqual(t.strftime("m:%m d:%d y:%y"), "m:03 d:02 y:05")
+        self.assertEqual(t.strftime(""), "") # SF bug #761337
 
         self.assertRaises(TypeError, t.strftime) # needs an arg
         self.assertRaises(TypeError, t.strftime, "one", "two") # too many args
