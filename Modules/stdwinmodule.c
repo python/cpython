@@ -2119,9 +2119,17 @@ stdwin_fetchcolor(self, args)
 	object *args;
 {
 	char *colorname;
+	COLOR color;
 	if (!getstrarg(args, &colorname))
 		return NULL;
-	return newintobject((long)wfetchcolor(colorname));
+	color = wfetchcolor(colorname);
+#ifdef BADCOLOR
+	if (color == BADCOLOR) {
+		err_setstr(StdwinError, "color name not found");
+		return NULL;
+	}
+#endif
+	return newintobject((long)color);
 }
 
 static object *

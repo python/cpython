@@ -1,6 +1,6 @@
 /***********************************************************
-Copyright 1991, 1992 by Stichting Mathematisch Centrum, Amsterdam, The
-Netherlands.
+Copyright 1991, 1992, 1993 by Stichting Mathematisch Centrum,
+Amsterdam, The Netherlands.
 
                         All Rights Reserved
 
@@ -1577,10 +1577,8 @@ add(v, w)
 		DECREF(w);
 		return x;
 	}
-	else {
-		err_setstr(TypeError, "+ not supported by operands");
-		return NULL;
-	}
+	err_setstr(TypeError, "bad operand type(s) for +");
+	return NULL;
 }
 
 static object *
