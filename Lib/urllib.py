@@ -19,6 +19,9 @@ import socket
 import regex
 
 
+__version__ = '1.0'
+
+
 # This really consists of two pieces:
 # (1) a class which handles opening of all sorts of URLs
 #     (plus assorted utilities etc.)
@@ -51,7 +54,8 @@ class URLopener:
 
 	# Constructor
 	def __init__(self):
-		self.addheaders = []
+		server_version = "Python-urllib/%s" % __version__
+		self.addheaders = [('User-agent', server_version)]
 		self.tempcache = None
 		# Undocumented feature: if you assign {} to tempcache,
 		# it is used to cache files retrieved with
@@ -146,9 +150,15 @@ class URLopener:
 		h = httplib.HTTP(host)
 		h.putrequest('GET', selector)
 		for args in self.addheaders: apply(h.putheader, args)
+		h.endheaders()
 		errcode, errmsg, headers = h.getreply()
-		if errcode == 200: return addinfo(h.getfile(), headers)
-		else: raise IOError, ('http error', errcode, errmsg, headers)
+		fp = h.getfile()
+		if errcode == 200:
+			return addinfo(fp, headers)
+		else:
+			n = len(fp.read())
+			fp.close()
+			raise IOError, ('http error', errcode, errmsg, headers)
 
 	# Use Gopher protocol
 	def open_gopher(self, url):
@@ -322,6 +332,7 @@ class addbase:
 		self.readline = None
 		self.readlines = None
 		self.fileno = None
+		if self.fp: self.fp.close()
 		self.fp = None
 
 # Class to add a close hook to an open file
