@@ -370,6 +370,18 @@ complex_div(v, w)
 	return newcomplexobject(quot);
 }
 
+static object *
+complex_remainder(v, w)
+	complexobject *v;
+	complexobject *w;
+{
+	err_setstr(TypeError, 
+		"remainder and divmod not implemented for complex numbers");
+	return NULL;
+}
+
+#define complex_divmod complex_remainder
+
 
 static object *
 complex_pow(v, w, z)
@@ -544,8 +556,8 @@ static number_methods complex_as_number = {
 	(binaryfunc)complex_sub, /*nb_subtract*/
 	(binaryfunc)complex_mul, /*nb_multiply*/
 	(binaryfunc)complex_div, /*nb_divide*/
-	0,		/*nb_remainder*/
-	0,		/*nb_divmod*/
+	(binaryfunc)complex_remainder,	/*nb_remainder*/
+	(binaryfunc)complex_divmod,	/*nb_divmod*/
 	(ternaryfunc)complex_pow, /*nb_power*/
 	(unaryfunc)complex_neg, /*nb_negative*/
 	(unaryfunc)complex_pos, /*nb_positive*/
