@@ -15,25 +15,25 @@ one or more library directories.  The search path of libraries is
 set up when Python starts.  To see the current Python library search
 path, start Python and enter "import sys" and "print sys.path".
 
-All PC ports except Windows 95/NT use this scheme to try to set up
-a search path:
-  1) If the Python executable (for example, py_dos.exe) is located
-     in a subdirectory of the Python root (..), then those library
-     files are used (../Lib) to generate the path.
-  2) Otherwise the environment variable PYTHONPATH is the search path.
-  3) Otherwise the directory "lib" in the directory of the executable
-     file is used to generate the path.
-  4) Otherwise, the current directory is used (not useful).
+All PC ports use this scheme to try to set up a module search path:
 
-The best installation strategy (except NT) is to put the Python
-executable in some convenient directory such as C:/python, and
-copy all library files and subdirectories (using XCOPY) to C:/python/lib.
-Then you don't need to set PYTHONPATH.  Otherwise, set the environment
-variable PYTHONPATH to your Python search path.  For example,
+  1) The script location; the current directory without script.
+  2) The PYTHONPATH variable, if set.
+  3) For Win32 platforms (NT/95), paths specified in the Registry.
+  4) Default directories lib, lib/win, lib/test, lib/tkinter;
+     these are searched relative to the environment variable
+     PYTHONHOME, if set, or relative to the executable and its
+     ancestors, if a landmark file (Lib/string.py) is found ,
+     or the current directory (not useful).
+  5) The directory containing the executable.
+
+The best installation strategy is to put the Python executable (and
+DLL, for Win32 platforms) in some convenient directory such as
+C:/python, and copy all library files and subdirectories (using XCOPY)
+to C:/python/lib.  Then you don't need to set PYTHONPATH.  Otherwise,
+set the environment variable PYTHONPATH to your Python search path.
+For example,
    set PYTHONPATH=.;d:\python\lib;d:\python\lib\win;d:\python\lib\dos_8x3
-
-Python for Windows 95/NT uses the same PYTHONPATH environment variable, plus
-the Python path recorded in the registry.
 
 There are several add-in modules to build Python programs which use
 the native Windows operating environment.  The ports here just make
@@ -53,7 +53,10 @@ config.c    The list of C modules to include in the Python PC
             remove Python modules.
 
 testpy.py   A Python test program.  Run this to test your
-            Python port.  It should say "all tests OK".
+            Python port.  It should produce copious output,
+	    ending in a report on how many tests were OK, how many
+	    failed, and how many were skipped.  Don't worry about
+	    skipped tests (these test unavailable optional features).
 
 src         A subdirectory used only for VC++ version 1.5 Python
             source files.  See below.  The other compilers do not
@@ -65,7 +68,7 @@ Microsoft Visual C++ Version 4.x (32-bit Windows)
 =================================================
 
 (For historic reasons this uses the filename "vc40"; it has been tested
-most recently with VC 4.2.  VC 5.x should be able to convert it.)
+most recently with VC 4.2.  See below for VC 5.x.)
 
 The distributed Makefile is vc40.mak.  This file is distributed with
 CRLF line separators, otherwise Developer Studio won't like it.  It
@@ -106,6 +109,30 @@ those files in the PC subdirectory.  In order to use _tkinter, the
 Tkinter.py module must be on PYTHONPATH.  It is found in the
 Lib\tkinter subdirectory.
 
+Microsoft Visual C++ Version 5.x (Developer Studio)
+===================================================
+
+For Visual C++ 5.x (Developer Studio) the instructions are somewhat
+different again.  Three project files (*.dsp) and a workspace file
+(pcbuild.dsw) are provided in the subdirectory vc5x.  (These are the
+same three subprojects as discussed for VC++ 4.x.)
+
+To use these, create a new directory (I called it "pcbuild") in the
+Python source directory, and copy the files from vc5x there.  Then
+simply open the pcbuild.dsw workspace file with Developer Studio.
+Select the Debug configuration (use Set Active Configuration... in the
+Build menu) and build the python15 and python projects (in that
+order).  If you have Tcl/Tk 8.0 installed you can also try building
+the _tkinter project.  After testing you can try building the Release
+configuration -- you must build the Debug configuration first because
+the python15.lib file created by that phase is included in the python
+project.
+
+The distributed files are text files with CRLF line terminators.  You
+can rename the workspace file (pcbuild.dsw), but since it refers to
+the project files by name, you can't rename the individual project
+files.
+
 
 Additional files and subdirectories for 32-bit Windows
 ======================================================
@@ -114,15 +141,17 @@ python_nt.def  Exports definition file for python15.dll.
 
 python_nt.rc   Resource compiler input for python15.dll.
 
-dl_nt.c, getpath_nt.c, import_nt.c
+dl_nt.c, import_nt.c
                Additional sources used for 32-bit Windows features.
 
-main_nt.c      Source for python.exe.
+getpathp.c     Default sys.path calculations (for all PC platforms).
 
 dllbase_nt.txt A (manually maintained) list of base addresses for
                various DLLs, to avoid run-time relocation.
 
 _tkinter.def   The export definitions file for _tkinter.dll.
+	       (No longer needed; the /export:init_tkinter takes care
+	       of this.)
 
 make_nt.in     Include file for nmake-based builds (unsupported).
 
