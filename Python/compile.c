@@ -565,7 +565,7 @@ parsenumber(s)
 	char *end;
 	long x;
 #ifndef WITHOUT_COMPLEX
-	complex c;
+	Py_complex c;
 	int imflag;
 #endif
 
@@ -2500,7 +2500,7 @@ com_arglist(c, n)
 			name = STR(fp);
 		else {
 			name = "";
-			complex= 1;
+			complex = 1;
 		}
 		com_newlocal(c, name);
 		c->c_argcount++;

@@ -359,7 +359,7 @@ r_object(p)
 		{
 			extern double atof PROTO((const char *));
 			char buf[256];
-			complex c;
+			Py_complex c;
 			n = r_byte(p);
 			if (r_string(buf, (int)n, p) != n) {
 				err_setstr(EOFError,
