@@ -2363,8 +2363,12 @@ class Listbox(Widget):
     def yview_scroll(self, number, what):
         """Shift the y-view according to NUMBER which is measured in "units" or "pages" (WHAT)."""
         self.tk.call(self._w, 'yview', 'scroll', number, what)
+    def itemcget(self, index, option):
+        """Return the resource value for an ITEM and an OPTION."""
+        return self.tk.call(
+            (self._w, 'itemcget') + (index, '-'+option))
     def itemconfigure(self, index, cnf=None, **kw):
-        """Configure resources of an item.
+        """Configure resources of an ITEM.
 
         The values for resources are specified as keyword arguments.
         To get an overview about the allowed keyword arguments
