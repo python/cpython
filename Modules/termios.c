@@ -139,6 +139,9 @@ termios_tcsetattr(self, args)
 		return NULL;
 	}
 
+	/* Get the old mode, in case there are any hidden fields... */
+	if (tcgetattr(fd, &mode) == -1)
+		return PyErr_SetFromErrno(TermiosError);
 	mode.c_iflag = (tcflag_t) PyInt_AsLong(PyList_GetItem(term, 0));
 	mode.c_oflag = (tcflag_t) PyInt_AsLong(PyList_GetItem(term, 1));
 	mode.c_cflag = (tcflag_t) PyInt_AsLong(PyList_GetItem(term, 2));
