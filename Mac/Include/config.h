@@ -8,6 +8,10 @@
 /* Define if on Macintosh (THINK_C, MPW or __MWERKS__ should also be defined) */
 #define macintosh
 
+#ifdef THINK_C
+#define HAVE_FOPENRF
+#endif
+
 /* Define if on AIX 3.
    System headers sometimes define this.
    We just want to avoid a redefinition error message.  */

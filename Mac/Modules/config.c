@@ -261,13 +261,14 @@ extern void initnew();
 extern void initdl();
 extern void initsyslog();
 extern void initgestalt();
-#ifdef THINK
+#ifdef THINK_C
 extern void initmacconsole();
 #endif
 extern void initctb();
 extern void initmacspeech();
 extern void initmacdnr();
 extern void initmactcp();
+extern void initAE();
 
 /* -- ADDMODULE MARKER 1 -- */
 
@@ -297,14 +298,21 @@ struct {
 	{"rotor", initrotor},
 	{"new", initnew},
 	{"gestalt", initgestalt},
-#ifdef THINK
+#ifdef THINK_C
 	{"macconsole", initmacconsole},
 #endif
 	{"ctb", initctb},
+#ifdef __MWERKS__
+/* This is really "Jack Jansen" specific for now :-) */
 	{"macspeech", initmacspeech},
 	{"imgformat", initimgformat},
 	{"macdnr", initmacdnr},
 	{"mactcp", initmactcp},
+#endif
+#ifdef THINK_C
+/* This is really "Guido van Rossum" specific... :-) */
+	{"AE", initAE},
+#endif
 
 /* -- ADDMODULE MARKER 2 -- */
 
