@@ -26,12 +26,13 @@ class CodeopTests(unittest.TestCase):
             self.assert_(code)
             if symbol == "single":
                 d,r = {},{}
+                saved_stdout = sys.stdout
                 sys.stdout = cStringIO.StringIO()
                 try:
                     exec code in d
                     exec compile(str,"<input>","single") in r
                 finally:
-                    sys.stdout = sys.__stdout__
+                    sys.stdout = saved_stdout
             elif symbol == 'eval':
                 ctx = {'a': 2}
                 d = { 'value': eval(code,ctx) }
