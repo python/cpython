@@ -254,7 +254,7 @@ def ismount(path):
 # or to impose a different order of visiting.
 
 def walk(top, func, arg):
-    """walk(top,func,args) calls func(arg, d, files) for each directory "d" 
+    """walk(top,func,arg) calls func(arg, d, files) for each directory "d" 
 in the tree  rooted at "top" (including "top" itself).  "files" is a list
 of all the files and subdirs in directory "d".
 """
