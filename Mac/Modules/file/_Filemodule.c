@@ -2671,7 +2671,9 @@ PyMac_GetFSSpec(PyObject *v, FSSpec *spec)
 		}
 		return 1;
 	}
+#if !TARGET_API_MAC_OSX
 	PyErr_SetString(PyExc_TypeError, "FSSpec, FSRef, pathname or (refnum, parid, path) required");
+#endif
 	return 0;
 }
 
