@@ -73,7 +73,7 @@ def openmcastsock(group, port):
 	s.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
 	#
 	# Bind it to the port
-	s.bind('', port)
+	s.bind(('', port))
 	#
 	# Look up multicast group address in name server
 	# (doesn't hurt if it is already in ddd.ddd.ddd.ddd format)
