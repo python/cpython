@@ -483,7 +483,7 @@ prospect as debugging continues.")
   "^> \\(.*\\)(\\([0-9]+\\))\\([?a-zA-Z0-9_]+\\)()"
   "Regular expression pdbtrack uses to find a stack trace entry.")
 
-(defconst py-pdbtrack-input-prompt "\n[(<]+pdb[>)]+ "
+(defconst py-pdbtrack-input-prompt "\n[(<]*pdb[>)]+ "
   "Regular expression pdbtrack uses to recognize a pdb prompt.")
 
 (defconst py-pdbtrack-track-range 10000
