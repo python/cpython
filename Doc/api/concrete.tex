@@ -129,6 +129,25 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \versionadded{2.2}
 \end{cfuncdesc}
 
+\begin{cfuncdesc}{PyObject*}{PyInt_FromString}{char *str, char **pend,
+                                               int base}
+  Return a new \ctype{PyIntObject} or \ctype{PyLongObject} based on the
+  string value in \var{str}, which is interpreted according to the radix in
+  \var{base}.  If \var{pend} is non-\NULL, \code{*\var{pend}} will point to
+  the first character in \var{str} which follows the representation of the
+  number.  If \var{base} is \code{0}, the radix will be determined based on
+  the leading characters of \var{str}: if \var{str} starts with \code{'0x'}
+  or \code{'0X'}, radix 16 will be used; if \var{str} starts with
+  \code{'0'}, radix 8 will be used; otherwise radix 10 will be used.  If
+  \var{base} is not \code{0}, it must be between \code{2} and \code{36},
+  inclusive.  Leading spaces are ignored.  If there are no digits,
+  \exception{ValueError} will be raised.  If the string represents a number
+  too large to be contained within the machine's \ctype{long int} type and
+  overflow warnings are being suppressed, a \ctype{PyLongObject} will be
+  returned.  If overflow warnings are not being suppressed, \NULL{} will be
+  returned in this case.
+\end{cfuncdesc}
+
 \begin{cfuncdesc}{PyObject*}{PyInt_FromLong}{long ival}
   Creates a new integer object with a value of \var{ival}.
 
@@ -214,7 +233,7 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \var{base}.  If \var{pend} is non-\NULL, \code{*\var{pend}} will
   point to the first character in \var{str} which follows the
   representation of the number.  If \var{base} is \code{0}, the radix
-  will be determined base on the leading characters of \var{str}: if
+  will be determined based on the leading characters of \var{str}: if
   \var{str} starts with \code{'0x'} or \code{'0X'}, radix 16 will be
   used; if \var{str} starts with \code{'0'}, radix 8 will be used;
   otherwise radix 10 will be used.  If \var{base} is not \code{0}, it
@@ -317,9 +336,10 @@ There is no \cfunction{PyNone_Check()} function for the same reason.
   \versionadded{2.2}
 \end{cfuncdesc}
 
-\begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str}
+\begin{cfuncdesc}{PyObject*}{PyFloat_FromString}{PyObject *str, char **pend}
   Creates a \ctype{PyFloatObject} object based on the string value in
-  \var{str}, or \NULL{} on failure.
+  \var{str}, or \NULL{} on failure.  The \var{pend} argument is ignored.  It
+  remains only for backward compatibility.
 \end{cfuncdesc}
 
 \begin{cfuncdesc}{PyObject*}{PyFloat_FromDouble}{double v}
