@@ -391,14 +391,18 @@ This \UNIX\ is also followed by a space.
 \end{verbatim}
 
     There are a number of less-used marks in \LaTeX{} which are used
-    to enter non-\ASCII{} characters, especially those used in
-    European names.  Given that these are often used adjacent to other
-    characters, the markup required to produce the proper character
-    may need to be followed by a space or an empty group, or the
-    markup can be enclosed in a group.  Some which are found in Python
-    documentation are:
+    to enter characters which are not found in \ASCII{} or which a
+    considered special, or \emph{active} in \TeX{} or \LaTeX.  Given
+    that these are often used adjacent to other characters, the markup
+    required to produce the proper character may need to be followed
+    by a space or an empty group, or the markup can be enclosed in a
+    group.  Some which are found in Python documentation are:
 
 \begin{tableii}{c|l}{textrm}{Character}{Markup}
+  \lineii{\textasciicircum}{\code{\e textasciicircum}}
+  \lineii{\textasciitilde}{\code{\e textasciitilde}}
+  \lineii{\textgreater}{\code{\e textgreater}}
+  \lineii{\textless}{\code{\e textless}}
   \lineii{\c c}{\code{\e c c}}
   \lineii{\"o}{\code{\e"o}}
   \lineii{\o}{\code{\e o}}
