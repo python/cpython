@@ -415,7 +415,7 @@ find_module(name, path, buf, buflen, p_fp)
 	struct filedescr *fdp;
 	FILE *fp = NULL;
 
-#ifdef PYTHONWIN
+#ifdef MS_COREDLL
 	if ((fp=PyWin_FindRegisteredModule(name, &fdp, buf, buflen))!=NULL) {
 		*p_fp = fp;
 		return fdp;
