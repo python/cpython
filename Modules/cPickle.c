@@ -2537,14 +2537,6 @@ find_class(PyObject *py_module_name, PyObject *py_global_name, PyObject *fc) {
     }
     else
       global = PyObject_GetAttr(module, py_global_name);
-    if (global == NULL) {
-      char buf[256 + 37];
-      sprintf(buf, "Failed to import class %.128s from module %.128s",
-              PyString_AS_STRING((PyStringObject*)py_global_name),
-              PyString_AS_STRING((PyStringObject*)py_module_name));
-      PyErr_SetString(PyExc_SystemError, buf);
-      return NULL;
-    }
     return global;
 }
 
