@@ -1000,7 +1000,7 @@ static PyObject *load_next Py_PROTO((PyObject *mod, PyObject *altmod,
 				     char **p_name, char *buf, int *p_buflen));
 static int mark_miss Py_PROTO((char *name));
 static int ensure_fromlist Py_PROTO((PyObject *mod, PyObject *fromlist,
-				     char *buf, int buflen));
+				     char *buf, int buflen, int recursive));
 static PyObject * import_submodule Py_PROTO((PyObject *mod,
 					     char *name, char *fullname));
 
@@ -1054,7 +1054,7 @@ PyImport_ImportModuleEx(name, globals, locals, fromlist)
 	}
 
 	Py_DECREF(head);
-	if (!ensure_fromlist(tail, fromlist, buf, buflen)) {
+	if (!ensure_fromlist(tail, fromlist, buf, buflen, 0)) {
 		Py_DECREF(tail);
 		return NULL;
 	}
@@ -1203,11 +1203,12 @@ mark_miss(name)
 }
 
 static int
-ensure_fromlist(mod, fromlist, buf, buflen)
+ensure_fromlist(mod, fromlist, buf, buflen, recursive)
 	PyObject *mod;
 	PyObject *fromlist;
 	char *buf;
 	int buflen;
+	int recursive;
 {
 	int i;
 
@@ -1231,7 +1232,19 @@ ensure_fromlist(mod, fromlist, buf, buflen)
 			return 0;
 		}
 		if (PyString_AS_STRING(item)[0] == '*') {
+			PyObject *all;
 			Py_DECREF(item);
+			/* See if the package defines __all__ */
+			if (recursive)
+				continue; /* Avoid endless recursion */
+			all = PyObject_GetAttrString(mod, "__all__");
+			if (all == NULL)
+				PyErr_Clear();
+			else {
+				if (!ensure_fromlist(mod, all, buf, buflen, 1))
+					return 0;
+				Py_DECREF(all);
+			}
 			continue;
 		}
 		hasit = PyObject_HasAttr(mod, item);
