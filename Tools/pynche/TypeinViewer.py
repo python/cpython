@@ -68,9 +68,7 @@ class TypeinViewer:
         ew = event.widget
         contents = ew.get()
         icursor = ew.index(INSERT)
-        if contents == '':
-            contents = '0'
-        if contents[0] in 'xX' and self.__hexp.get():
+        if contents and contents[0] in 'xX' and self.__hexp.get():
             contents = '0' + contents
         # figure out what the contents value is in the current base
         try:
@@ -89,7 +87,14 @@ class TypeinViewer:
                 icursor = icursor-1
             ew.bell()
         elif self.__hexp.get():
-            contents = hex(v)
+            # Special case: our contents were 0x0 and we just deleted the
+            # trailing 0.  We want our contents to now be 0x and not 0x0.
+            if v == 0 and contents == '0':
+                contents = '0x'
+                icursor = END
+                ew.bell()
+            elif not (v == 0 and contents == '0x'):
+                contents = hex(v)
         else:
             contents = int(v)
         ew.delete(0, END)
@@ -109,12 +114,26 @@ class TypeinViewer:
             green = string.atoi(greenstr, 16)
             blue = string.atoi(bluestr, 16)
         else:
-            red, green, blue = map(string.atoi, (redstr, greenstr, bluestr))
+            def intify(colorstr):
+                if colorstr == '':
+                    return 0
+                else:
+                    return string.atoi(colorstr)
+            red, green, blue = map(intify, (redstr, greenstr, bluestr))
         self.__sb.update_views(red, green, blue)
 
     def update_yourself(self, red, green, blue):
         if self.__hexp.get():
-            redstr, greenstr, bluestr = map(hex, (red, green, blue))
+            # Special case: our contents were 0x0 and we just deleted the
+            # trailing 0.  We want our contents to now be 0x and not 0x0.
+            def hexify((color, widget)):
+                contents = widget.get()
+                if not (color == 0 and contents == '0x'):
+                    return hex(color)
+                return contents
+            redstr, greenstr, bluestr = map(hexify, ((red, self.__x),
+                                                     (green, self.__y),
+                                                     (blue, self.__z)))
         else:
             redstr, greenstr, bluestr = red, green, blue
         x, y, z = self.__x, self.__y, self.__z
