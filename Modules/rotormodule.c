@@ -620,4 +620,8 @@ initrotor(void)
 {
 	Rotor_Type.ob_type = &PyType_Type;
 	(void)Py_InitModule("rotor", rotor_methods);
+	if (PyErr_Warn(PyExc_DeprecationWarning,
+		       "the rotor module uses an insecure algorithm "
+                       "and is deprecated") < 0)
+		return;
 }
