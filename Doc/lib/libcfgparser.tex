@@ -39,7 +39,7 @@ Return a new instance of the \class{ConfigParser} class.  When
 \var{defaults} is given, it is initialized into the dictionairy of
 intrinsic defaults.  They keys must be strings, and the values must be 
 appropriate for the \samp{\%()s} string interpolation.  Note that
-\var{__name__} is always an intrinsic default; it's value is the 
+\var{__name__} is always an intrinsic default; its value is the 
 section name.
 \end{classdesc}
 
@@ -69,6 +69,12 @@ headers.
 Exception raised when errors occur attempting to parse a file.
 \end{excdesc}
 
+
+\begin{seealso}
+  \seemodule{shlex}{Support for a creating \UNIX{} shell-like
+                    minilanguages which can be used as an alternate format
+                    for application configuration files.}
+\end{seealso}
 
 \subsection{ConfigParser Objects \label{ConfigParser-objects}}
 
