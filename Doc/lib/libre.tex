@@ -679,8 +679,12 @@ attributes:
 
   The optional parameter \var{endpos} limits how far the string will
   be searched; it will be as if the string is \var{endpos} characters
-  long, so only the characters from \var{pos} to \var{endpos} will be
-  searched for a match.
+  long, so only the characters from \var{pos} to \code{\var{endpos} -
+  1} will be searched for a match.  If \var{endpos} is less than
+  \var{pos}, no match will be found, otherwise, if \var{rx} is a
+  compiled regular expression object,
+  \code{\var{rx}.match(\var{string}, 0, 50)} is equivalent to
+  \code{\var{rx}.match(\var{string}[:50], 0)}.
 \end{methoddesc}
 
 \begin{methoddesc}[RegexObject]{split}{string\optional{,
