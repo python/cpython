@@ -1916,7 +1916,6 @@ com_augassign_attr(struct compiling *c, node *n, int opcode, node *augn)
 	com_addbyte(c, DUP_TOP);
 	com_push(c, 1);
 	com_addopname(c, LOAD_ATTR, n);
-	com_pop(c, 1);
 	com_node(c, augn);
 	com_addbyte(c, opcode);
 	com_pop(c, 1);
