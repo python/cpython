@@ -90,8 +90,11 @@ def tabulate(r):
         doit(L) # \sort
         doit(L) # /sort
         if n > 4:
-            L = map(operator.neg, map(operator.neg, L[:4]*(n/4)))
+            del L[4:]
+            L = L*(n/4)
+            L = map(lambda x: --x, L)
         doit(L) # ~sort
+        del L
         L = map(abs, [-0.5]*n)
         doit(L) # -sort
         print
