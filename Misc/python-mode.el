@@ -97,7 +97,8 @@ See the Python Mode home page for details:
 
 (defgroup python nil
   "Support for the Python programming language, <http://www.python.org/>"
-  :group 'languages)
+  :group 'languages
+  :prefix "py-")
 
 (defcustom py-python-command "python"
   "*Shell command used to start Python interpreter."
@@ -107,7 +108,8 @@ See the Python Mode home page for details:
 (defcustom py-jpython-command "jpython"
   "*Shell command used to start the JPython interpreter."
   :type 'string
-  :group 'python)
+  :group 'python
+  :tag "JPython Command")
 
 (defcustom py-default-interpreter 'cpython
   "*Which Python interpreter is used by default.
@@ -136,7 +138,8 @@ mode buffer is visited during an Emacs session.  After that, use
 (defcustom py-jpython-command-args '("-i")
   "*List of string arguments to be used when starting a JPython shell."
   :type '(repeat string)
-  :group 'python)
+  :group 'python
+  :tag "JPython Command Args")
 
 (defcustom py-indent-offset 4
   "*Amount of offset per level of indentation.
