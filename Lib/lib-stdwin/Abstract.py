@@ -27,6 +27,7 @@ class AbstractParent():
 	#
 	def begindrawing(self): return unimpl()
 	def beginmeasuring(self): return unimpl()
+	def getwindow(self): return unimpl() # Only for very special cases
 	#
 	def change(self, area): unimpl()
 	def scroll(self, (area, (dh, dv))): unimpl()
@@ -38,6 +39,7 @@ class AbstractChild():
 	#
 	def destroy(self): unimpl()
 	#
+	def realize(self): return unimpl()
 	def minsize(self, m): return unimpl()
 	def getbounds(self): return unimpl()
 	def setbounds(self, bounds): unimpl()
