@@ -101,7 +101,7 @@ def main(args):
     if rseen:
         if args:
             return fail("no args allowed with -r option")
-        if whichfile in "12":
+        if whichfile in ("1", "2"):
             restore(whichfile)
             return 1
         return fail("-r value must be 1 or 2")
