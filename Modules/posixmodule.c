@@ -156,7 +156,7 @@ posix_1str(args, func)
 {
 	char *path1;
 	int res;
-	if (!getstrarg(args, &path1))
+	if (!getargs(args, "s", &path1))
 		return NULL;
 	BGN_SAVE
 	res = (*func)(path1);
@@ -213,7 +213,7 @@ posix_do_stat(self, args, statfunc)
 	struct stat st;
 	char *path;
 	int res;
-	if (!getstrarg(args, &path))
+	if (!getargs(args, "s", &path))
 		return NULL;
 	BGN_SAVE
 	res = (*statfunc)(path, &st);
@@ -290,7 +290,7 @@ posix_listdir(self, args)
 #ifdef TURBO_C
 	struct ffblk ep;
 	int rv;
-	if (!getstrarg(args, &name))
+	if (!getargs(args, "s", &name))
 		return NULL;
 
 	if (findfirst(name, &ep, 0) == -1)
@@ -320,7 +320,7 @@ posix_listdir(self, args)
 	int attrib;
 	int num= 0;
 
-	if (!getstrarg(args, &name))
+	if (!getargs(args, "s", &name))
 		return NULL;
 	strcpy( _name, name );
 
@@ -365,7 +365,7 @@ again:
 #ifdef unix
 	DIR *dirp;
 	struct direct *ep;
-	if (!getstrarg(args, &name))
+	if (!getargs(args, "s", &name))
 		return NULL;
 	BGN_SAVE
 	if ((dirp = opendir(name)) == NULL) {
@@ -470,7 +470,7 @@ posix_system(self, args)
 {
 	char *command;
 	long sts;
-	if (!getstrarg(args, &command))
+	if (!getargs(args, "s", &command))
 		return NULL;
 	BGN_SAVE
 	sts = system(command);
@@ -587,8 +587,6 @@ posix__exit(self, args)
 	/* NOTREACHED */
 }
 
-/* XXX To do: exece, execp */
-
 static object *
 posix_execv(self, args)
 	object *self;
@@ -623,7 +621,7 @@ posix_execv(self, args)
 	if (argvlist == NULL)
 		return NULL;
 	for (i = 0; i < argc; i++) {
-		if (!getstrarg((*getitem)(argv, i), &argvlist[i])) {
+		if (!getargs((*getitem)(argv, i), "s", &argvlist[i])) {
 			DEL(argvlist);
 			goto badarg;
 		}
@@ -636,6 +634,96 @@ posix_execv(self, args)
 
 	DEL(argvlist);
 	return posix_error();
+}
+
+static object *
+posix_execve(self, args)
+	object *self;
+	object *args;
+{
+	char *path;
+	object *argv, *env;
+	char **argvlist;
+	char **envlist;
+	object *key, *val;
+	int i, pos, argc, envc;
+	object *(*getitem) PROTO((object *, int));
+
+	/* execve has three arguments: (path, argv, env), where
+	   argv is a list or tuple of strings and env is a dictionary
+	   like posix.environ. */
+
+	if (!getargs(args, "(sOO)", &path, &argv, &env))
+		return NULL;
+	if (is_listobject(argv)) {
+		argc = getlistsize(argv);
+		getitem = getlistitem;
+	}
+	else if (is_tupleobject(argv)) {
+		argc = gettuplesize(argv);
+		getitem = gettupleitem;
+	}
+	else {
+		err_setstr(TypeError, "argv must be tuple or list");
+		return NULL;
+	}
+	if (!is_dictobject(env)) {
+		err_setstr(TypeError, "env must be dictionary");
+		return NULL;
+	}
+
+	argvlist = NEW(char *, argc+1);
+	if (argvlist == NULL) {
+		err_nomem();
+		return NULL;
+	}
+	for (i = 0; i < argc; i++) {
+		if (!getargs((*getitem)(argv, i),
+			     "s;argv must be list of strings",
+			     &argvlist[i])) {
+			goto fail_1;
+		}
+	}
+	argvlist[argc] = NULL;
+
+	i = getmappingsize(env);
+	envlist = NEW(char *, i + 1);
+	if (envlist == NULL) {
+		err_nomem();
+		goto fail_1;
+	}
+	pos = 0;
+	envc = 0;
+	while (mappinggetnext(env, &pos, &key, &val)) {
+		char *p, *k, *v;
+		if (!getargs(key, "s;non-string key in env", &k) ||
+		    !getargs(val, "s;non-string value in env", &v)) {
+			goto fail_2;
+		}
+		p = NEW(char, getstringsize(key) + getstringsize(val) + 2);
+		if (p == NULL) {
+			err_nomem();
+			goto fail_2;
+		}
+		sprintf(p, "%s=%s", k, v);
+		envlist[envc++] = p;
+	}
+	envlist[envc] = 0;
+
+	execve(path, argvlist, envlist);
+	
+	/* If we get here it's definitely an error */
+
+	(void) posix_error();
+
+ fail_2:
+	while (--envc >= 0)
+		DEL(envlist[envc]);
+	DEL(envlist);
+ fail_1:
+	DEL(argvlist);
+
+	return NULL;
 }
 
 static object *
@@ -839,7 +927,7 @@ posix_readlink(self, args)
 	char buf[1024]; /* XXX Should use MAXPATHLEN */
 	char *path;
 	int n;
-	if (!getstrarg(args, &path))
+	if (!getargs(args, "s", &path))
 		return NULL;
 	BGN_SAVE
 	n = readlink(path, buf, (int) sizeof buf);
@@ -1189,6 +1277,7 @@ static struct methodlist posix_methods[] = {
 #ifndef MSDOS
 	{"_exit",	posix__exit},
 	{"execv",	posix_execv},
+	{"execve",	posix_execve},
 	{"fork",	posix_fork},
 	{"getegid",	posix_getegid},
 	{"geteuid",	posix_geteuid},
