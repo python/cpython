@@ -36,6 +36,8 @@ class bdist_wininst (Command):
                      "bitmap to use for the installer instead of python-powered logo"),
                     ('title=', 't',
                      "title to display on the installer background instead of default"),
+                    ('skip-build', None,
+                     "skip rebuilding everything (for testing/debugging)"),
                    ]
 
     boolean_options = ['keep-temp']
@@ -49,6 +51,7 @@ class bdist_wininst (Command):
         self.dist_dir = None
         self.bitmap = None
         self.title = None
+        self.skip_build = 0
 
     # initialize_options()
 
@@ -79,10 +82,12 @@ class bdist_wininst (Command):
                   ("distribution contains extensions and/or C libraries; "
                    "must be compiled on a Windows 32 platform")
 
-        self.run_command('build')
+        if not self.skip_build:
+            self.run_command('build')
 
         install = self.reinitialize_command('install')
         install.root = self.bdist_dir
+        install.skip_build = self.skip_build
 
         install_lib = self.reinitialize_command('install_lib')
         # we do not want to include pyc or pyo files

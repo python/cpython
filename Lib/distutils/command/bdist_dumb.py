@@ -30,9 +30,11 @@ class bdist_dumb (Command):
                      "creating the distribution archive"),
                     ('dist-dir=', 'd',
                      "directory to put final built distributions in"),
+                    ('skip-build', None,
+                     "skip rebuilding everything (for testing/debugging)"),
                    ]
 
-    boolean_options = ['keep-temp']
+    boolean_options = ['keep-temp', 'skip-build']
 
     default_format = { 'posix': 'gztar',
                        'nt': 'zip', }
@@ -44,6 +46,7 @@ class bdist_dumb (Command):
         self.format = None
         self.keep_temp = 0
         self.dist_dir = None
+        self.skip_build = 0
 
     # initialize_options()
 
@@ -71,10 +74,12 @@ class bdist_dumb (Command):
 
     def run (self):
 
-        self.run_command('build')
+        if not self.skip_build:
+            self.run_command('build')
 
         install = self.reinitialize_command('install', reinit_subcommands=1)
         install.root = self.bdist_dir
+        install.skip_build = self.skip_build
 
         self.announce("installing to %s" % self.bdist_dir)
         self.run_command('install')

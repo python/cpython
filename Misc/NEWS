@@ -30,6 +30,8 @@ Library
   gettext.find an optional all argument. Translations will now fallback
   on a per-message basis.
 
+- distutils bdist commands now offer a --skip-build option.
+
 Tools/Demos
 
 Build
