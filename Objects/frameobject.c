@@ -356,10 +356,7 @@ PyFrame_LocalsToFast(f, clear)
 	for (; --j >= 0; ) {
 		PyObject *key = PyTuple_GetItem(map, j);
 		PyObject *value = PyDict_GetItem(locals, key);
-		if (value == NULL)
-			PyErr_Clear();
-		else
-			Py_INCREF(value);
+		Py_XINCREF(value);
 		if (value != NULL || clear) {
 			Py_XDECREF(fast[j]);
 			fast[j] = value;
