@@ -733,7 +733,7 @@ class Distribution:
                       (source, command_name, option)
             setattr(command_obj, option, value)
 
-    def reinitialize_command (self, command):
+    def reinitialize_command (self, command, reinit_subcommands=0):
         """Reinitializes a command to the state it was in when first
         returned by 'get_command_obj()': ie., initialized but not yet
         finalized.  This provides the opportunity to sneak option
@@ -743,9 +743,18 @@ class Distribution:
         'finalize_options()' or 'ensure_finalized()') before using it for
         real.  
 
-        'command' should be a command name (string) or command object.
+        'command' should be a command name (string) or command object.  If
+        'reinit_subcommands' is true, also reinitializes the command's
+        sub-commands, as declared by the 'sub_commands' class attribute (if
+        it has one).  See the "install" command for an example.  Only
+        reinitializes the sub-commands that actually matter, ie. those
+        whose test predicates return true.
+
         Returns the reinitialized command object.
         """
+        print "reinitialize_command: command=%s" % command
+        print "  before: have_run =", self.have_run
+
         from distutils.cmd import Command
         if not isinstance(command, Command):
             command_name = command
@@ -759,6 +768,15 @@ class Distribution:
         command.finalized = 0
         self.have_run[command_name] = 0
         self._set_command_options(command)
+
+        print "  after:  have_run =", self.have_run
+
+        if reinit_subcommands:
+            print ("  reinitializing sub-commands: %s" %
+                   command.get_sub_commands())
+            for sub in command.get_sub_commands():
+                self.reinitialize_command(sub, reinit_subcommands)            
+
         return command
 
         
