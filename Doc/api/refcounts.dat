@@ -194,6 +194,11 @@ PyErr_SetString:void:::
 PyErr_SetString:PyObject*:type:+1:
 PyErr_SetString:char*:message::
 
+PyErr_Format:PyObject*::null:
+PyErr_Format:PyObject*:exception:+1:
+PyErr_Format:char*:format::
+PyErr_Format::...::
+
 PyEval_AcquireLock:void:::
 
 PyEval_AcquireThread:void:::
