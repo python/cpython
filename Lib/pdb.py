@@ -69,7 +69,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.forget()
 		self.stack, self.curindex = self.get_stack(f, t)
 		self.curframe = self.stack[self.curindex][0]
-		self.execRcLines();
+		self.execRcLines()
 
 	# Can be executed earlier than 'setup' if desired
 	def execRcLines(self):
@@ -128,7 +128,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 			print '***', exc_type_name + ':', v
 
 	def precmd(self, line):
-		# Handle alias expansion and ';' separator
+		# Handle alias expansion and ';;' separator
 		if not line:
 			return line
 		args = string.split(line)
@@ -139,18 +139,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 				line = string.replace(line, "%" + str(ii),
 						      tmpArg)
 				ii = ii + 1
-			line = string.replace (line, "%*",
-					       string.join(args[1:], ' '))
+			line = string.replace(line, "%*",
+					      string.join(args[1:], ' '))
 			args = string.split(line)
-		# split into ';' separated commands
+		# split into ';;' separated commands
 		# unless it's an alias command
 		if args[0] != 'alias':
-			semicolon = string.find(line, ';')
-			if semicolon >= 0:
-				# queue up everything after semicolon
-				next = string.lstrip(line[semicolon+1:])
+			marker = string.find(line, ';;')
+			if marker >= 0:
+				# queue up everything after marker
+				next = string.lstrip(line[marker+2:])
 				self.cmdqueue.append(next)
-				line = string.rstrip(line[:semicolon])
+				line = string.rstrip(line[:marker])
 		return line
 
 	# Command definitions, called by cmdloop()
@@ -641,7 +641,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 		self.help_b()
 
 	def help_b(self):
-		print """b(reak) ([file:]lineno | function) [, "condition"]
+		print """b(reak) ([file:]lineno | function) [, condition]
 	With a line number argument, set a break there in the current
 	file.  With a function name, set a break at first executable line
 	of that function.  Without argument, list all breaks.  If a second
