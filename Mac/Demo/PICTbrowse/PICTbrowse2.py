@@ -98,7 +98,7 @@ class PICTwindow(FrameWork.Window):
 		
 	def fitrect(self):
 		"""Return self.pictrect scaled to fit in window"""
-		graf = self.wid.GetWindowPort()
+		graf = self.dlg.GetWindowPort()
 		screenrect = graf.portRect
 		picwidth = self.pictrect[2] - self.pictrect[0]
 		picheight = self.pictrect[3] - self.pictrect[1]
@@ -119,9 +119,9 @@ class MyDialog(FrameWork.DialogWindow):
 	def open(self, id, contents):
 		self.id = id
 		FrameWork.DialogWindow.open(self, ID_MAIN)
-		self.wid.SetDialogDefaultItem(MAIN_SHOW)
+		self.dlg.SetDialogDefaultItem(MAIN_SHOW)
 		self.contents = contents
-		self.ctl = self.wid.GetDialogItemAsControl(MAIN_LIST)
+		self.ctl = self.dlg.GetDialogItemAsControl(MAIN_LIST)
 		h = self.ctl.GetControlData_Handle(Controls.kControlListBoxPart, 
 				Controls.kControlListBoxListHandleTag)
 		self.list = List.as_List(h)

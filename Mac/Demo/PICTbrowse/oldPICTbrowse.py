@@ -96,8 +96,8 @@ class MyDialog(FrameWork.DialogWindow):
 	def open(self, id, contents):
 		self.id = id
 		FrameWork.DialogWindow.open(self, ID_MAIN)
-		self.wid.SetDialogDefaultItem(MAIN_SHOW)
-		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
+		self.dlg.SetDialogDefaultItem(MAIN_SHOW)
+		tp, h, rect = self.dlg.GetDialogItem(MAIN_LIST)
 		rect2 = rect[0]+1, rect[1]+1, rect[2]-17, rect[3]-17	# Scroll bar space
 		self.list = List.LNew(rect2, (0, 0, 1, len(contents)), (0,0), 0, self.wid,
 				0, 1, 1, 1)
@@ -145,7 +145,7 @@ class MyDialog(FrameWork.DialogWindow):
 			self.parent.showPICT(resid)
 		
 	def do_rawupdate(self, window, event):
-		tp, h, rect = self.wid.GetDialogItem(MAIN_LIST)
+		tp, h, rect = self.dlg.GetDialogItem(MAIN_LIST)
 		Qd.SetPort(self.wid)
 		Qd.FrameRect(rect)
 		self.list.LUpdate(self.wid.GetWindowPort().visRgn)
