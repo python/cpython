@@ -73,10 +73,12 @@ DVIPS=	   dvips -N0 -t $(PAPER)
 
 MKDVI=	   $(PYTHON) ../tools/mkhowto --paper=$(PAPER) --dvi
 MKHTML=	   $(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+		--iconserver ../icons \
 		--address $(PYTHONDOCS) --up-link ../index.html \
 		--up-title "Python Documentation Index" \
 		--global-module-index "../modindex.html" --dvips-safe
 MKISILOHTML=$(PYTHON) tools/mkhowto --html --about html/stdabout.dat \
+		--iconserver ../icons \
 		--l2h-init perl/isilo.perl --numeric --split 1 \
 		--dvips-safe
 MKISILO=   iSilo386 -U -y -rCR -d0
