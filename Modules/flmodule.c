@@ -51,8 +51,7 @@ static int nfreeslots = 0;
 /* Add an object to the list of known objects */
 
 static void
-knowgeneric(g)
-	genericobject *g;
+knowgeneric(genericobject *g)
 {
 	int i, n;
 	/* Create the list if it doesn't already exist */
@@ -85,8 +84,7 @@ knowgeneric(g)
 /* Find an object in the list of known objects */
 
 static genericobject *
-findgeneric(generic)
-	FL_OBJECT *generic;
+findgeneric(FL_OBJECT *generic)
 {
 	int i, n;
 	genericobject *g;
@@ -105,8 +103,7 @@ findgeneric(generic)
 /* Remove an object from the list of known objects */
 
 static void
-forgetgeneric(g)
-	genericobject *g;
+forgetgeneric(genericobject *g)
 {
 	int i, n;
 	
@@ -130,8 +127,7 @@ forgetgeneric(g)
    remove all the objects that we know about from it. */
 
 static void
-releaseobjects(form)
-	FL_FORM *form;
+releaseobjects(FL_FORM *form)
 {
 	int i, n;
 	genericobject *g;
@@ -160,9 +156,7 @@ releaseobjects(form)
 /* Methods of generic objects */
 
 static PyObject *
-generic_set_call_back(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_set_call_back(genericobject *g, PyObject *args)
 {
 	if (args == NULL) {
 		Py_XDECREF(g->ob_callback);
@@ -187,10 +181,7 @@ generic_set_call_back(g, args)
 }
 
 static PyObject *
-generic_call(g, args, func)
-	genericobject *g;
-	PyObject *args;
-	void (*func)(FL_OBJECT *);
+generic_call(genericobject *g, PyObject *args, void (*func)(FL_OBJECT *))
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -200,9 +191,7 @@ generic_call(g, args, func)
 }
 
 static PyObject *
-generic_delete_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_delete_object(genericobject *g, PyObject *args)
 {
 	PyObject *res;
 	res = generic_call(g, args, fl_delete_object);
@@ -212,25 +201,19 @@ generic_delete_object(g, args)
 }
 
 static PyObject *
-generic_show_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_show_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_show_object);
 }
 
 static PyObject *
-generic_hide_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_hide_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_hide_object);
 }
 
 static PyObject *
-generic_redraw_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_redraw_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_redraw_object);
 }
@@ -242,17 +225,13 @@ generic_redraw_object(g, args)
     using, we omit them unconditionally. */
  
 static PyObject *
-generic_freeze_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_freeze_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_freeze_object);
 }
 
 static PyObject *
-generic_unfreeze_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_unfreeze_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_unfreeze_object);
 }
@@ -260,25 +239,19 @@ generic_unfreeze_object(g, args)
 #endif /* OBSOLETE_FORMS_CALLS */
 
 static PyObject *
-generic_activate_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_activate_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_activate_object);
 }
 
 static PyObject *
-generic_deactivate_object(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_deactivate_object(genericobject *g, PyObject *args)
 {
 	return generic_call(g, args, fl_deactivate_object);
 }
 
 static PyObject *
-generic_set_object_shortcut(g, args)
-	genericobject *g;
-	PyObject *args;
+generic_set_object_shortcut(genericobject *g, PyObject *args)
 {
 	char *str;
 	if (!PyArg_Parse(args, "s", &str))
@@ -305,8 +278,7 @@ static PyMethodDef generic_methods[] = {
 };
 
 static void
-generic_dealloc(g)
-	genericobject *g;
+generic_dealloc(genericobject *g)
 {
 	fl_free_object(g->ob_generic);
 	Py_XDECREF(g->ob_callback);
@@ -346,9 +318,7 @@ static struct memberlist generic_memberlist[] = {
 #undef OFF
 
 static PyObject *
-generic_getattr(g, name)
-	genericobject *g;
-	char *name;
+generic_getattr(genericobject *g, char *name)
 {
 	PyObject *meth;
 
@@ -373,10 +343,7 @@ generic_getattr(g, name)
 }
 
 static int
-generic_setattr(g, name, v)
-	genericobject *g;
-	char *name;
-	PyObject *v;
+generic_setattr(genericobject *g, char *name PyObject *v)
 {
 	int ret;
 
@@ -410,8 +377,7 @@ generic_setattr(g, name, v)
 }
 
 static PyObject *
-generic_repr(g)
-	genericobject *g;
+generic_repr(genericobject *g)
 {
 	char buf[100];
 	sprintf(buf, "<FORMS_object at %p, objclass=%d>",
@@ -435,9 +401,7 @@ static PyTypeObject GenericObjecttype = {
 };
 
 static PyObject *
-newgenericobject(generic, methods)
-	FL_OBJECT *generic;
-	PyMethodDef *methods;
+newgenericobject(FL_OBJECT *generic, PyMethodDef *methods)
 {
 	genericobject *g;
 	g = PyObject_New(genericobject, &GenericObjecttype);
@@ -456,10 +420,7 @@ newgenericobject(generic, methods)
 
 /* void func (object, float) */
 static PyObject *
-call_forms_INf (func, obj, args)
-	void (*func)(FL_OBJECT *, float);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INf (void (*func)(FL_OBJECT *, float), FL_OBJECT *obj, PyObject *args)
 {
 	float parameter;
 
@@ -473,10 +434,7 @@ call_forms_INf (func, obj, args)
 
 /* void func (object, float) */
 static PyObject *
-call_forms_INfINf (func, obj, args)
-	void (*func)(FL_OBJECT *, float, float);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INfINf (void (*func)(FL_OBJECT *, float, float), FL_OBJECT *obj, PyObject *args)
 {
 	float par1, par2;
 
@@ -490,10 +448,7 @@ call_forms_INfINf (func, obj, args)
 
 /* void func (object, int) */
 static PyObject *
-call_forms_INi (func, obj, args)
-	void (*func)(FL_OBJECT *, int);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INi (void (*func)(FL_OBJECT *, int), FL_OBJECT *obj, PyObject *args)
 {
 	int parameter;
 
@@ -507,10 +462,7 @@ call_forms_INi (func, obj, args)
 
 /* void func (object, char) */
 static PyObject *
-call_forms_INc (func, obj, args)
-	void (*func)(FL_OBJECT *, int);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INc (void (*func)(FL_OBJECT *, int), FL_OBJECT *obj, PyObject *args)
 {
 	char *a;
 
@@ -524,10 +476,7 @@ call_forms_INc (func, obj, args)
 
 /* void func (object, string) */
 static PyObject *
-call_forms_INstr (func, obj, args)
-	void (*func)(FL_OBJECT *, char *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INstr (void (*func)(FL_OBJECT *, char *), FL_OBJECT *obj, PyObject *args)
 {
 	char *a;
 
@@ -542,10 +491,7 @@ call_forms_INstr (func, obj, args)
 
 /* void func (object, int, string) */
 static PyObject *
-call_forms_INiINstr (func, obj, args)
-	void (*func)(FL_OBJECT *, int, char *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INiINstr (void (*func)(FL_OBJECT *, int, char *), FL_OBJECT *obj, PyObject *args)
 {
 	char *b;
 	int a;
@@ -561,10 +507,7 @@ call_forms_INiINstr (func, obj, args)
 #ifdef UNUSED
 /* void func (object, int, int) */
 static PyObject *
-call_forms_INiINi (func, obj, args)
-	void (*func)(FL_OBJECT *, int, int);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_INiINi (void (*func)(FL_OBJECT *, int, int), FL_OBJECT *obj, PyObject *args)
 {
 	int par1, par2;
 	
@@ -579,10 +522,7 @@ call_forms_INiINi (func, obj, args)
 
 /* int func (object) */
 static PyObject *
-call_forms_Ri (func, obj, args)
-	int (*func)(FL_OBJECT *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_Ri (int (*func)(FL_OBJECT *), FL_OBJECT *obj, PyObject *args)
 {
 	int retval;
 	
@@ -595,10 +535,7 @@ call_forms_Ri (func, obj, args)
 
 /* char * func (object) */
 static PyObject *
-call_forms_Rstr (func, obj, args)
-	char * (*func)(FL_OBJECT *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_Rstr (char * (*func)(FL_OBJECT *), FL_OBJECT *obj, PyObject *args)
 {
 	char *str;
 	
@@ -615,10 +552,7 @@ call_forms_Rstr (func, obj, args)
 
 /* int func (object) */
 static PyObject *
-call_forms_Rf (func, obj, args)
-	float (*func)(FL_OBJECT *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_Rf (float (*func)(FL_OBJECT *), FL_OBJECT *obj, PyObject *args)
 {
 	float retval;
 	
@@ -630,10 +564,7 @@ call_forms_Rf (func, obj, args)
 }
 
 static PyObject *
-call_forms_OUTfOUTf (func, obj, args)
-	void (*func)(FL_OBJECT *, float *, float *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_OUTfOUTf (void (*func)(FL_OBJECT *, float *, float *), FL_OBJECT *obj, PyObject *args)
 {
 	float f1, f2;
 	
@@ -646,10 +577,7 @@ call_forms_OUTfOUTf (func, obj, args)
 
 #ifdef UNUSED
 static PyObject *
-call_forms_OUTf (func, obj, args)
-	void (*func)(FL_OBJECT *, float *);
-	FL_OBJECT *obj;
-	PyObject *args;
+call_forms_OUTf (void (*func)(FL_OBJECT *, float *), FL_OBJECT *obj, PyObject *args)
 {
 	float f;
 
@@ -665,67 +593,51 @@ call_forms_OUTf (func, obj, args)
 /* Class : browser */
 
 static PyObject *
-set_browser_topline(g, args)
-	genericobject *g;
-	PyObject *args;
+set_browser_topline(genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_browser_topline, g-> ob_generic, args);
 }
 
 static PyObject *
-clear_browser(g, args)
-	genericobject *g;
-	PyObject *args;
+clear_browser(genericobject *g, PyObject *args)
 {
 	return generic_call (g, args, fl_clear_browser);
 }
 
 static PyObject *
-add_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+add_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_add_browser_line, g-> ob_generic, args);
 }
 
 static PyObject *
-addto_browser (g, args)
-	genericobject *g;
-	PyObject *args;
+addto_browser (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_addto_browser, g-> ob_generic, args);
 }
 
 static PyObject *
-insert_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+insert_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INiINstr (fl_insert_browser_line,
 				    g-> ob_generic, args);
 }
 
 static PyObject *
-delete_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+delete_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_delete_browser_line, g-> ob_generic, args);
 }
 
 static PyObject *
-replace_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+replace_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INiINstr (fl_replace_browser_line,
 				    g-> ob_generic, args);
 }
 
 static PyObject *
-get_browser_line(g, args)
-	genericobject *g;
-	PyObject *args;
+get_browser_line(genericobject *g, PyObject *args)
 {
 	int i;
 	char *str;
@@ -743,9 +655,7 @@ get_browser_line(g, args)
 }
 
 static PyObject *
-load_browser (g, args)
-	genericobject *g;
-	PyObject *args;
+load_browser (genericobject *g, PyObject *args)
 {
 	/* XXX strictly speaking this is wrong since fl_load_browser
 	   XXX returns int, not void */
@@ -753,41 +663,31 @@ load_browser (g, args)
 }
 
 static PyObject *
-get_browser_maxline(g, args)
-	genericobject *g;
-	PyObject *args;
+get_browser_maxline(genericobject *g, PyObject *args)
 {
 	return call_forms_Ri (fl_get_browser_maxline, g-> ob_generic, args);
 }
 
 static PyObject *
-select_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+select_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_select_browser_line, g-> ob_generic, args);
 }
 
 static PyObject *
-deselect_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+deselect_browser_line (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_deselect_browser_line, g-> ob_generic, args);
 }
 
 static PyObject *
-deselect_browser (g, args)
-	genericobject *g;
-	PyObject *args;
+deselect_browser (genericobject *g, PyObject *args)
 {
 	return generic_call (g, args, fl_deselect_browser);
 }
 
 static PyObject *
-isselected_browser_line (g, args)
-	genericobject *g;
-	PyObject *args;
+isselected_browser_line (genericobject *g, PyObject *args)
 {
 	int i, j;
 	
@@ -800,33 +700,25 @@ isselected_browser_line (g, args)
 }
 
 static PyObject *
-get_browser (g, args)
-	genericobject *g;
-	PyObject *args;
+get_browser (genericobject *g, PyObject *args)
 {
 	return call_forms_Ri (fl_get_browser, g-> ob_generic, args);
 }
 
 static PyObject *
-set_browser_fontsize (g, args)
-	genericobject *g;
-	PyObject *args;
+set_browser_fontsize (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_browser_fontsize, g-> ob_generic, args);
 }
 
 static PyObject *
-set_browser_fontstyle (g, args)
-	genericobject *g;
-	PyObject *args;
+set_browser_fontstyle (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_browser_fontstyle, g-> ob_generic, args);
 }
 
 static PyObject *
-set_browser_specialkey (g, args)
-	genericobject *g;
-	PyObject *args;
+set_browser_specialkey (genericobject *g, PyObject *args)
 {
 	return call_forms_INc(fl_set_browser_specialkey, g-> ob_generic, args);
 }
@@ -856,33 +748,25 @@ static PyMethodDef browser_methods[] = {
 /* Class: button */
 
 static PyObject *
-set_button(g, args)
-	genericobject *g;
-	PyObject *args;
+set_button(genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_button, g-> ob_generic, args);
 }
 
 static PyObject *
-get_button(g, args)
-	genericobject *g;
-	PyObject *args;
+get_button(genericobject *g, PyObject *args)
 {
 	return call_forms_Ri (fl_get_button, g-> ob_generic, args);
 }
 
 static PyObject *
-get_button_numb(g, args)
-	genericobject *g;
-	PyObject *args;
+get_button_numb(genericobject *g, PyObject *args)
 {
 	return call_forms_Ri (fl_get_button_numb, g-> ob_generic, args);
 }
 
 static PyObject *
-set_button_shortcut(g, args)
-	genericobject *g;
-	PyObject *args;
+set_button_shortcut(genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_set_button_shortcut, g-> ob_generic, args);
 }
@@ -898,73 +782,55 @@ static PyMethodDef button_methods[] = {
 /* Class: choice */
 
 static PyObject *
-set_choice(g, args)
-	genericobject *g;
-	PyObject *args;
+set_choice(genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_choice, g-> ob_generic, args);
 }
 
 static PyObject *
-get_choice(g, args)
-	genericobject *g;
-	PyObject *args;
+get_choice(genericobject *g, PyObject *args)
 {
 	return call_forms_Ri (fl_get_choice, g-> ob_generic, args);
 }
 
 static PyObject *
-clear_choice (g, args)
-	genericobject *g;
-	PyObject *args;
+clear_choice (genericobject *g, PyObject *args)
 {
 	return generic_call (g, args, fl_clear_choice);
 }
 
 static PyObject *
-addto_choice (g, args)
-	genericobject *g;
-	PyObject *args;
+addto_choice (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_addto_choice, g-> ob_generic, args);
 }
 
 static PyObject *
-replace_choice (g, args)
-	genericobject *g;
-	PyObject *args;
+replace_choice (genericobject *g, PyObject *args)
 {
 	return call_forms_INiINstr (fl_replace_choice, g-> ob_generic, args);
 }
 
 static PyObject *
-delete_choice (g, args)
-	genericobject *g;
-	PyObject *args;
+delete_choice (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_delete_choice, g-> ob_generic, args);
 }
 
 static PyObject *
-get_choice_text (g, args)
-	genericobject *g;
-	PyObject *args;
+get_choice_text (genericobject *g, PyObject *args)
 {
 	return call_forms_Rstr (fl_get_choice_text, g-> ob_generic, args);
 }
 
 static PyObject *
-set_choice_fontsize (g, args)
-	genericobject *g;
-	PyObject *args;
+set_choice_fontsize (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_choice_fontsize, g-> ob_generic, args);
 }
 
 static PyObject *
-set_choice_fontstyle (g, args)
-	genericobject *g;
-	PyObject *args;
+set_choice_fontstyle (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_choice_fontstyle, g-> ob_generic, args);
 }
@@ -985,9 +851,7 @@ static PyMethodDef choice_methods[] = {
 /* Class : Clock */
 
 static PyObject *
-get_clock(g, args)
-	genericobject *g;
-	PyObject *args;
+get_clock(genericobject *g, PyObject *args)
 {
 	int i0, i1, i2;
 
@@ -1007,49 +871,37 @@ static PyMethodDef clock_methods[] = {
 /* CLass : Counters */
 
 static PyObject *
-get_counter_value(g, args)
-	genericobject *g;
-	PyObject *args;
+get_counter_value(genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_counter_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_counter_value (g, args)
-	genericobject *g;
-	PyObject *args;
+set_counter_value (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_counter_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_counter_precision (g, args)
-	genericobject *g;
-	PyObject *args;
+set_counter_precision (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_counter_precision, g-> ob_generic, args);
 }
 
 static PyObject *
-set_counter_bounds (g, args)
-	genericobject *g;
-	PyObject *args;
+set_counter_bounds (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_counter_bounds, g-> ob_generic, args);
 }
 
 static PyObject *
-set_counter_step (g, args)
-	genericobject *g;
-	PyObject *args;
+set_counter_step (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_counter_step, g-> ob_generic, args);
 }
 
 static PyObject *
-set_counter_return (g, args)
-	genericobject *g;
-	PyObject *args;
+set_counter_return (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_counter_return, g-> ob_generic, args);
 }
@@ -1068,41 +920,31 @@ static PyMethodDef counter_methods[] = {
 /* Class: Dials */
 
 static PyObject *
-get_dial_value(g, args)
-	genericobject *g;
-	PyObject *args;
+get_dial_value(genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_dial_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_dial_value (g, args)
-	genericobject *g;
-	PyObject *args;
+set_dial_value (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_dial_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_dial_bounds (g, args)
-	genericobject *g;
-	PyObject *args;
+set_dial_bounds (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_dial_bounds, g-> ob_generic, args);
 }
 
 static PyObject *
-get_dial_bounds (g, args)
-	genericobject *g;
-	PyObject *args;
+get_dial_bounds (genericobject *g, PyObject *args)
 {
 	return call_forms_OUTfOUTf (fl_get_dial_bounds, g-> ob_generic, args);
 }
 
 static PyObject *
-set_dial_step (g, args)
-	genericobject *g;
-	PyObject *args;
+set_dial_step (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_dial_step, g-> ob_generic, args);
 }
@@ -1119,33 +961,25 @@ static PyMethodDef dial_methods[] = {
 /* Class : Input */
 
 static PyObject *
-set_input (g, args)
-	genericobject *g;
-	PyObject *args;
+set_input (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_set_input, g-> ob_generic, args);
 }
 
 static PyObject *
-get_input (g, args)
-	genericobject *g;
-	PyObject *args;
+get_input (genericobject *g, PyObject *args)
 {
 	return call_forms_Rstr (fl_get_input, g-> ob_generic, args);
 }
 
 static PyObject *
-set_input_color (g, args)
-	genericobject *g;
-	PyObject *args;
+set_input_color (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_input_color, g-> ob_generic, args);
 }
 
 static PyObject *
-set_input_return (g, args)
-	genericobject *g;
-	PyObject *args;
+set_input_return (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_input_return, g-> ob_generic, args);
 }
@@ -1162,17 +996,13 @@ static PyMethodDef input_methods[] = {
 /* Class : Menu */
 
 static PyObject *
-set_menu (g, args)
-	genericobject *g;
-	PyObject *args;
+set_menu (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_set_menu, g-> ob_generic, args);
 }
 
 static PyObject *
-get_menu (g, args)
-	genericobject *g;
-	PyObject *args;
+get_menu (genericobject *g, PyObject *args)
 {
 	/* XXX strictly speaking this is wrong since fl_get_menu
 	   XXX returns long, not int */
@@ -1180,17 +1010,13 @@ get_menu (g, args)
 }
 
 static PyObject *
-get_menu_text (g, args)
-	genericobject *g;
-	PyObject *args;
+get_menu_text (genericobject *g, PyObject *args)
 {
 	return call_forms_Rstr (fl_get_menu_text, g-> ob_generic, args);
 }
 
 static PyObject *
-addto_menu (g, args)
-	genericobject *g;
-	PyObject *args;
+addto_menu (genericobject *g, PyObject *args)
 {
 	return call_forms_INstr (fl_addto_menu, g-> ob_generic, args);
 }
@@ -1207,65 +1033,49 @@ static PyMethodDef menu_methods[] = {
 /* Class: Sliders */
 
 static PyObject *
-get_slider_value(g, args)
-	genericobject *g;
-	PyObject *args;
+get_slider_value(genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_slider_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_value (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_value (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_slider_value, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_bounds (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_bounds (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_slider_bounds, g-> ob_generic, args);
 }
 
 static PyObject *
-get_slider_bounds (g, args)
-	genericobject *g;
-	PyObject *args;
+get_slider_bounds (genericobject *g, PyObject *args)
 {
 	return call_forms_OUTfOUTf(fl_get_slider_bounds, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_return (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_return (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_slider_return, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_size (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_size (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_slider_size, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_precision (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_precision (genericobject *g, PyObject *args)
 {
 	return call_forms_INi (fl_set_slider_precision, g-> ob_generic, args);
 }
 
 static PyObject *
-set_slider_step (g, args)
-	genericobject *g;
-	PyObject *args;
+set_slider_step (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_slider_step, g-> ob_generic, args);
 }
@@ -1284,68 +1094,52 @@ static PyMethodDef slider_methods[] = {
 };
 
 static PyObject *
-set_positioner_xvalue (g, args)
-	genericobject *g;
-	PyObject *args;
+set_positioner_xvalue (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_positioner_xvalue, g-> ob_generic, args);
 }
 
 static PyObject *
-set_positioner_xbounds (g, args)
-	genericobject *g;
-	PyObject *args;
+set_positioner_xbounds (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_positioner_xbounds,
 				  g-> ob_generic, args);
 }
 
 static PyObject *
-set_positioner_yvalue (g, args)
-	genericobject *g;
-	PyObject *args;
+set_positioner_yvalue (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_positioner_yvalue, g-> ob_generic, args);
 }
 
 static PyObject *
-set_positioner_ybounds (g, args)
-	genericobject *g;
-	PyObject *args;
+set_positioner_ybounds (genericobject *g, PyObject *args)
 {
 	return call_forms_INfINf (fl_set_positioner_ybounds,
 				  g-> ob_generic, args);
 }
 
 static PyObject *
-get_positioner_xvalue (g, args)
-	genericobject *g;
-	PyObject *args;
+get_positioner_xvalue (genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_positioner_xvalue, g-> ob_generic, args);
 }
 
 static PyObject *
-get_positioner_xbounds (g, args)
-	genericobject *g;
-	PyObject *args;
+get_positioner_xbounds (genericobject *g, PyObject *args)
 {
 	return call_forms_OUTfOUTf (fl_get_positioner_xbounds,
 				    g-> ob_generic, args);
 }
 
 static PyObject *
-get_positioner_yvalue (g, args)
-	genericobject *g;
-	PyObject *args;
+get_positioner_yvalue (genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_positioner_yvalue, g-> ob_generic, args);
 }
 
 static PyObject *
-get_positioner_ybounds (g, args)
-	genericobject *g;
-	PyObject *args;
+get_positioner_ybounds (genericobject *g, PyObject *args)
 {
 	return call_forms_OUTfOUTf (fl_get_positioner_ybounds,
 				    g-> ob_generic, args);
@@ -1366,17 +1160,13 @@ static PyMethodDef positioner_methods[] = {
 /* Class timer */
 
 static PyObject *
-set_timer (g, args)
-	genericobject *g;
-	PyObject *args;
+set_timer (genericobject *g, PyObject *args)
 {
 	return call_forms_INf (fl_set_timer, g-> ob_generic, args);
 }
 
 static PyObject *
-get_timer (g, args)
-	genericobject *g;
-	PyObject *args;
+get_timer (genericobject *g, PyObject *args)
 {
 	return call_forms_Rf (fl_get_timer, g-> ob_generic, args);
 }
@@ -1399,9 +1189,7 @@ staticforward PyTypeObject Formtype;
 #define is_formobject(v) ((v)->ob_type == &Formtype)
 
 static PyObject *
-form_show_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_show_form(formobject *f, PyObject *args)
 {
 	int place, border;
 	char *name;
@@ -1413,10 +1201,7 @@ form_show_form(f, args)
 }
 
 static PyObject *
-form_call(func, f, args)
-	FL_FORM *f;
-	PyObject *args;
-	void (*func)(FL_FORM *);
+form_call(void (*func)(FL_FORM *), FL_FORM *f, PyObject *args)
 {
 	if (!PyArg_NoArgs(args)) return NULL;
 
@@ -1427,10 +1212,7 @@ form_call(func, f, args)
 }
 
 static PyObject *
-form_call_INiINi(func, f, args)
-	FL_FORM *f;
-	PyObject *args;
-	void (*func)(FL_FORM *, int, int);
+form_call_INiINi(void (*func)(FL_FORM *, int, int), FL_FORM *f, PyObject *args)
 {
 	int a, b;
 
@@ -1443,10 +1225,7 @@ form_call_INiINi(func, f, args)
 }
 
 static PyObject *
-form_call_INfINf(func, f, args)
-	FL_FORM *f;
-	PyObject *args;
-	void (*func)(FL_FORM *, float, float);
+form_call_INfINf(void (*func)(FL_FORM *, float, float), FL_FORM *f, PyObject *args)
 {
 	float a, b;
 
@@ -1459,51 +1238,37 @@ form_call_INfINf(func, f, args)
 }
 
 static PyObject *
-form_hide_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_hide_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_hide_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_redraw_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_redraw_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_redraw_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_set_form_position(f, args)
-	formobject *f;
-	PyObject *args;
+form_set_form_position(formobject *f, PyObject *args)
 {
 	return form_call_INiINi(fl_set_form_position, f-> ob_form, args);
 }
 
 static PyObject *
-form_set_form_size(f, args)
-	formobject *f;
-	PyObject *args;
+form_set_form_size(formobject *f, PyObject *args)
 {
 	return form_call_INiINi(fl_set_form_size, f-> ob_form, args);
 }
 
 static PyObject *
-form_scale_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_scale_form(formobject *f, PyObject *args)
 {
 	return form_call_INfINf(fl_scale_form, f-> ob_form, args);
 }
 
 static PyObject *
-generic_add_object(f, args, func, internal_methods)
-	formobject *f;
-	PyObject *args;
-	FL_OBJECT *(*func)(int, float, float, float, float, char*);
-	PyMethodDef *internal_methods;
+generic_add_object(formobject *f, PyObject *args, FL_OBJECT *(*func)(int, float, float, float, float, char*), PyMethodDef *internal_methods)
 {
 	int type;
 	float x, y, w, h;
@@ -1528,172 +1293,130 @@ generic_add_object(f, args, func, internal_methods)
 }
 
 static PyObject *
-form_add_button(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_button(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_button, button_methods);
 }
 
 static PyObject *
-form_add_lightbutton(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_lightbutton(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_lightbutton, button_methods);
 }
 
 static PyObject *
-form_add_roundbutton(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_roundbutton(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_roundbutton, button_methods);
 }
 
 static PyObject *
-form_add_menu (f, args)
-	formobject *f;
-	PyObject *args;
+form_add_menu (formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_menu, menu_methods);
 }
 
 static PyObject *
-form_add_slider(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_slider(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_slider, slider_methods);
 }
 
 static PyObject *
-form_add_valslider(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_valslider(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_valslider, slider_methods);
 }
 
 static PyObject *
-form_add_dial(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_dial(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_dial, dial_methods);
 }
 
 static PyObject *
-form_add_counter(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_counter(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_counter, counter_methods);
 }
 
 static PyObject *
-form_add_clock(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_clock(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_clock, clock_methods);
 }
 
 static PyObject *
-form_add_box(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_box(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_box,
 				  (PyMethodDef *)NULL);
 }
 
 static PyObject *
-form_add_choice(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_choice(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_choice, choice_methods);
 }
 
 static PyObject *
-form_add_browser(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_browser(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_browser, browser_methods);
 }
 
 static PyObject *
-form_add_positioner(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_positioner(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_positioner,
 				  positioner_methods);
 }
 
 static PyObject *
-form_add_input(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_input(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_input, input_methods);
 }
 
 static PyObject *
-form_add_text(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_text(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_text,
 				  (PyMethodDef *)NULL);
 }
 
 static PyObject *
-form_add_timer(f, args)
-	formobject *f;
-	PyObject *args;
+form_add_timer(formobject *f, PyObject *args)
 {
 	return generic_add_object(f, args, fl_add_timer, timer_methods);
 }
 
 static PyObject *
-form_freeze_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_freeze_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_freeze_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_unfreeze_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_unfreeze_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_unfreeze_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_activate_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_activate_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_activate_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_deactivate_form(f, args)
-	formobject *f;
-	PyObject *args;
+form_deactivate_form(formobject *f, PyObject *args)
 {
 	return form_call(fl_deactivate_form, f-> ob_form, args);
 }
 
 static PyObject *
-form_bgn_group(f, args)
-	formobject *f;
-	PyObject *args;
+form_bgn_group(formobject *f, PyObject *args)
 {
 	FL_OBJECT *obj;
 
@@ -1710,9 +1433,7 @@ form_bgn_group(f, args)
 }
 
 static PyObject *
-form_end_group(f, args)
-	formobject *f;
-	PyObject *args;
+form_end_group(formobject *f, PyObject *args)
 {
 	fl_addto_form(f-> ob_form);
 	fl_end_group();
@@ -1722,10 +1443,7 @@ form_end_group(f, args)
 }
 
 static PyObject *
-forms_find_first_or_last(func, f, args)
-	FL_OBJECT *(*func)(FL_FORM *, int, float, float);
-	formobject *f;
-	PyObject *args;
+forms_find_first_or_last(FL_OBJECT *(*func)(FL_FORM *, int, float, float), formobject *f, PyObject *args)
 {
 	int type;
 	float mx, my;
@@ -1753,25 +1471,19 @@ forms_find_first_or_last(func, f, args)
 }
 
 static PyObject *
-form_find_first(f, args)
-	formobject *f;
-	PyObject *args;
+form_find_first(formobject *f, PyObject *args)
 {
 	return forms_find_first_or_last(fl_find_first, f, args);
 }
 
 static PyObject *
-form_find_last(f, args)
-	formobject *f;
-	PyObject *args;
+form_find_last(formobject *f, PyObject *args)
 {
 	return forms_find_first_or_last(fl_find_last, f, args);
 }
 
 static PyObject *
-form_set_object_focus(f, args)
-	formobject *f;
-	PyObject *args;
+form_set_object_focus(formobject *f, PyObject *args)
 {
 	genericobject *g;
 	if (args == NULL || !is_genericobject(args)) {
@@ -1824,8 +1536,7 @@ static PyMethodDef form_methods[] = {
 };
 
 static void
-form_dealloc(f)
-	formobject *f;
+form_dealloc(formobject *f)
 {
 	releaseobjects(f->ob_form);
 	if (f->ob_form->visible)
@@ -1852,9 +1563,7 @@ static struct memberlist form_memberlist[] = {
 #undef OFF
 
 static PyObject *
-form_getattr(f, name)
-	formobject *f;
-	char *name;
+form_getattr(formobject *f, char *name)
 {
 	PyObject *meth;
 
@@ -1866,10 +1575,7 @@ form_getattr(f, name)
 }
 
 static int
-form_setattr(f, name, v)
-	formobject *f;
-	char *name;
-	PyObject *v;
+form_setattr(formobject *f, char *name, PyObject *v)
 {
 	if (v == NULL) {
 		PyErr_SetString(PyExc_TypeError,
@@ -1881,8 +1587,7 @@ form_setattr(f, name, v)
 }
 
 static PyObject *
-form_repr(f)
-	formobject *f;
+form_repr(formobject *f)
 {
 	char buf[100];
 	sprintf(buf, "<FORMS_form at %p, window=%ld>",
@@ -1906,8 +1611,7 @@ static PyTypeObject Formtype = {
 };
 
 static PyObject *
-newformobject(form)
-	FL_FORM *form;
+newformobject(FL_FORM *form)
 {
 	formobject *f;
 	f = PyObject_New(formobject, &Formtype);
@@ -1921,9 +1625,7 @@ newformobject(form)
 /* The "fl" module */
 
 static PyObject *
-forms_make_form(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_make_form(PyObject *dummy, PyObject *args)
 {
 	int type;
 	float w, h;
@@ -1941,9 +1643,7 @@ forms_make_form(dummy, args)
 }
 
 static PyObject *
-forms_activate_all_forms(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_activate_all_forms(PyObject *f, PyObject *args)
 {
 	fl_activate_all_forms();
 	Py_INCREF(Py_None);
@@ -1951,9 +1651,7 @@ forms_activate_all_forms(f, args)
 }
 
 static PyObject *
-forms_deactivate_all_forms(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_deactivate_all_forms(PyObject *f, PyObject *args)
 {
 	fl_deactivate_all_forms();
 	Py_INCREF(Py_None);
@@ -1963,9 +1661,7 @@ forms_deactivate_all_forms(f, args)
 static PyObject *my_event_callback = NULL;
 
 static PyObject *
-forms_set_event_call_back(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_set_event_call_back(PyObject *dummy, PyObject *args)
 {
 	if (args == Py_None)
 		args = NULL;
@@ -1976,10 +1672,7 @@ forms_set_event_call_back(dummy, args)
 }
 
 static PyObject *
-forms_do_or_check_forms(dummy, args, func)
-	PyObject *dummy;
-	PyObject *args;
-	FL_OBJECT *(*func)();
+forms_do_or_check_forms(PyObject *dummy, PyObject *args, FL_OBJECT *(*func)())
 {
 	FL_OBJECT *generic;
 	genericobject *g;
@@ -2033,42 +1726,32 @@ forms_do_or_check_forms(dummy, args, func)
 }
 
 static PyObject *
-forms_do_forms(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_do_forms(PyObject *dummy, PyObject *args)
 {
 	return forms_do_or_check_forms(dummy, args, fl_do_forms);
 }
 
 static PyObject *
-forms_check_forms(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_check_forms(PyObject *dummy, PyObject *args)
 {
 	return forms_do_or_check_forms(dummy, args, fl_check_forms);
 }
 
 static PyObject *
-forms_do_only_forms(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_do_only_forms(PyObject *dummy, PyObject *args)
 {
 	return forms_do_or_check_forms(dummy, args, fl_do_only_forms);
 }
 
 static PyObject *
-forms_check_only_forms(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_check_only_forms(PyObject *dummy, PyObject *args)
 {
 	return forms_do_or_check_forms(dummy, args, fl_check_only_forms);
 }
 
 #ifdef UNUSED
 static PyObject *
-fl_call(func, args)
-	PyObject *args;
-	void (*func)();
+fl_call(void (*func)(), PyObject *args)
 {
 	if (!PyArg_NoArgs(args))
 		return NULL;
@@ -2079,9 +1762,7 @@ fl_call(func, args)
 #endif
 
 static PyObject *
-forms_set_graphics_mode(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_set_graphics_mode(PyObject *dummy, PyObject *args)
 {
 	int rgbmode, doublebuf;
 
@@ -2093,9 +1774,7 @@ forms_set_graphics_mode(dummy, args)
 }
 
 static PyObject *
-forms_get_rgbmode(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_get_rgbmode(PyObject *dummy, PyObject *args)
 {
 	extern int fl_rgbmode;
 
@@ -2107,9 +1786,7 @@ forms_get_rgbmode(dummy, args)
 }
 
 static PyObject *
-forms_show_errors(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_show_errors(PyObject *dummy, PyObject *args)
 {
 	int show;
 	if (!PyArg_Parse(args, "i", &show))
@@ -2120,9 +1797,7 @@ forms_show_errors(dummy, args)
 }
 
 static PyObject *
-forms_set_font_name(dummy, args)
-	PyObject *dummy;
-	PyObject *args;
+forms_set_font_name(PyObject *dummy, PyObject *args)
 {
 	int numb;
 	char *name;
@@ -2135,9 +1810,7 @@ forms_set_font_name(dummy, args)
 
 
 static PyObject *
-forms_qdevice(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_qdevice(PyObject *self, PyObject *args)
 {
 	short arg1;
 	if (!PyArg_Parse(args, "h", &arg1))
@@ -2148,9 +1821,7 @@ forms_qdevice(self, args)
 }
 
 static PyObject *
-forms_unqdevice(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_unqdevice(PyObject *self, PyObject *args)
 {
 	short arg1;
 	if (!PyArg_Parse(args, "h", &arg1))
@@ -2161,9 +1832,7 @@ forms_unqdevice(self, args)
 }
 
 static PyObject *
-forms_isqueued(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_isqueued(PyObject *self, PyObject *args)
 {
 	long retval;
 	short arg1;
@@ -2175,9 +1844,7 @@ forms_isqueued(self, args)
 }
 
 static PyObject *
-forms_qtest(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_qtest(PyObject *self, PyObject *args)
 {
 	long retval;
 	retval = fl_qtest();
@@ -2186,9 +1853,7 @@ forms_qtest(self, args)
 
 
 static PyObject *
-forms_qread(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_qread(PyObject *self, PyObject *args)
 {
 	int dev;
 	short val;
@@ -2199,9 +1864,7 @@ forms_qread(self, args)
 }
 
 static PyObject *
-forms_qreset(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_qreset(PyObject *self, PyObject *args)
 {
 	if (!PyArg_NoArgs(args)) return NULL;
 
@@ -2211,9 +1874,7 @@ forms_qreset(self, args)
 }
 
 static PyObject *
-forms_qenter(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_qenter(PyObject *self, PyObject *args)
 {
 	short arg1, arg2;
 	if (!PyArg_Parse(args, "(hh)", &arg1, &arg2))
@@ -2224,9 +1885,7 @@ forms_qenter(self, args)
 }
 
 static PyObject *
-forms_color(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_color(PyObject *self, PyObject *args)
 {
 	int arg;
 
@@ -2239,9 +1898,7 @@ forms_color(self, args)
 }
 
 static PyObject *
-forms_mapcolor(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_mapcolor(PyObject *self, PyObject *args)
 {
 	int arg0, arg1, arg2, arg3;
 
@@ -2255,9 +1912,7 @@ forms_mapcolor(self, args)
 }
 
 static PyObject *
-forms_getmcolor(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_getmcolor(PyObject *self, PyObject *args)
 {
 	int arg;
 	short r, g, b;
@@ -2270,9 +1925,7 @@ forms_getmcolor(self, args)
 }
 
 static PyObject *
-forms_get_mouse(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_get_mouse(PyObject *self, PyObject *args)
 {
 	float x, y;
 
@@ -2284,9 +1937,7 @@ forms_get_mouse(self, args)
 }
 
 static PyObject *
-forms_tie(self, args)
-	PyObject *self;
-	PyObject *args;
+forms_tie(PyObject *self, PyObject *args)
 {
 	short arg1, arg2, arg3;
 	if (!PyArg_Parse(args, "(hhh)", &arg1, &arg2, &arg3))
@@ -2297,9 +1948,7 @@ forms_tie(self, args)
 }
 
 static PyObject *
-forms_show_message(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_show_message(PyObject *f, PyObject *args)
 {
 	char *a, *b, *c;
 
@@ -2314,9 +1963,7 @@ forms_show_message(f, args)
 }
 
 static PyObject *
-forms_show_choice(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_show_choice(PyObject *f, PyObject *args)
 {
 	char *m1, *m2, *m3, *b1, *b2, *b3;
 	int nb;
@@ -2357,9 +2004,7 @@ forms_show_choice(f, args)
 }
 
 static PyObject *
-forms_show_question(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_show_question(PyObject *f, PyObject *args)
 {
 	int ret;
 	char *a, *b, *c;
@@ -2374,9 +2019,7 @@ forms_show_question(f, args)
 }
 
 static PyObject *
-forms_show_input(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_show_input(PyObject *f, PyObject *args)
 {
 	char *str;
 	char *a, *b;
@@ -2395,9 +2038,7 @@ forms_show_input(f, args)
 }
 
 static PyObject *
-forms_file_selector(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_file_selector(PyObject *f, PyObject *args)
 {
 	char *str;
 	char *a, *b, *c, *d;
@@ -2417,9 +2058,7 @@ forms_file_selector(f, args)
 
 
 static PyObject *
-forms_file_selector_func(args, func)
-	PyObject *args;
-	char *(*func)();
+forms_file_selector_func(PyObject *args, char *(*func)())
 {
 	char *str;
 
@@ -2433,25 +2072,19 @@ forms_file_selector_func(args, func)
 }
 
 static PyObject *
-forms_get_directory(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_get_directory(PyObject *f, PyObject *args)
 {
 	return forms_file_selector_func(args, fl_get_directory);
 }
 
 static PyObject *
-forms_get_pattern(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_get_pattern(PyObject *f, PyObject *args)
 {
 	return forms_file_selector_func(args, fl_get_pattern);
 }
 
 static PyObject *
-forms_get_filename(f, args)
-	PyObject *f;
-	PyObject *args;
+forms_get_filename(PyObject *f, PyObject *args)
 {
 	return forms_file_selector_func(args, fl_get_filename);
 }
