@@ -40,7 +40,7 @@ extern int ftime(struct timeb *);
 #include <i86.h>
 #else
 #ifdef MS_WINDOWS
-include <windows.h>
+#include <windows.h>
 #ifdef MS_WIN16
 /* These overrides not needed for Win32 */
 #define timezone _timezone
