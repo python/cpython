@@ -561,6 +561,26 @@ extern DL_IMPORT(PyObject *) PyUnicode_TranslateCharmap(
     const char *errors		/* error handling */
     );
 
+#ifdef MS_WIN32
+/* --- MBCS codecs for Windows -------------------------------------------- */
+extern DL_IMPORT(PyObject*) PyUnicode_DecodeMBCS(
+    const char *string,         /* MBCS encoded string */
+    int length,                 /* size of string */
+    const char *errors          /* error handling */
+    );
+
+extern DL_IMPORT(PyObject*) PyUnicode_AsMBCSString(
+    PyObject *unicode           /* Unicode object */
+    );
+
+extern DL_IMPORT(PyObject*) PyUnicode_EncodeMBCS(
+    const Py_UNICODE *data,     /* Unicode char buffer */
+    int length,                 /* Number of Py_UNICODE chars to encode */
+    const char *errors          /* error handling */
+    );
+
+
+#endif /* MS_WIN32 */
 /* --- Methods & Slots ----------------------------------------------------
 
    These are capable of handling Unicode objects and strings on input
