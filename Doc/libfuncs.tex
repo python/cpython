@@ -239,8 +239,10 @@ there's no reliable way to determine whether this is the case.}
 \end{funcdesc}
 
 \begin{funcdesc}{pow}{x\, y\optional{\, z}}
-  Return \var{x} to the power \var{y}; if \var{z} is present, $x^y \bmod z$
-  is returned.  The arguments must have
+  Return \var{x} to the power \var{y}; if \var{z} is present, return
+  \var{x} to the power \var{y}, modulo \var{z} (computed more
+  efficiently that \code{pow(\var{x}, \var{y}) \% \var{z}}).
+  The arguments must have
   numeric types.  With mixed operand types, the rules for binary
   arithmetic operators apply.  The effective operand type is also the
   type of the result; if the result is not expressible in this type, the
@@ -352,6 +354,14 @@ object.  For strings, this returns the string itself.  The difference
 with \code{repr(\var{object}} is that \code{str(\var{object}} does not
 always attempt to return a string that is acceptable to \code{eval()};
 its goal is to return a printable string.
+\end{funcdesc}
+
+\begin{funcdesc}{tuple}{object}
+Return a tuple whose items are the same and in the same order as
+\var{object}'s items.  If \var{object} is alread a tuple, it
+is returned unchanged.  For instance, \code{tuple('abc')} returns
+returns \code{('a', 'b', 'c')} and \code{tuple([1, 2, 3])} returns
+\code{(1, 2, 3)}.
 \end{funcdesc}
 
 \begin{funcdesc}{type}{object}
