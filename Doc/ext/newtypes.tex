@@ -106,7 +106,7 @@ Now if you go and look up the definition of \ctype{PyTypeObject} in
 \file{object.h} you'll see that it has many more fields that the
 definition above.  The remaining fields will be filled with zeros by
 the C compiler, and it's common practice to not specify them
-explicitly unless you need them.  
+explicitly unless you need them.
 
 This is so important that we're going to pick the top of it apart still
 further:
@@ -149,7 +149,7 @@ TypeError: cannot add type "noddy.Noddy" to string
 \end{verbatim}
 
 Note that the name is a dotted name that includes both the module name
-and the name of the type within the module. The module in this case is 
+and the name of the type within the module. The module in this case is
 \module{noddy} and the type is \class{Noddy}, so we set the type name
 to \class{noddy.Noddy}.
 
@@ -180,7 +180,7 @@ This has to do with variable length objects like lists and strings.
 Ignore this for now.
 
 Skipping a number of type methods that we don't provide, we set the
-class flags to \constant{Py_TPFLAGS_DEFAULT}. 
+class flags to \constant{Py_TPFLAGS_DEFAULT}.
 
 \begin{verbatim}
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
@@ -197,8 +197,8 @@ We provide a doc string for the type in \member{tp_doc}.
 
 Now we get into the type methods, the things that make your objects
 different from the others.  We aren't going to implement any of these
-in this version of the module.  We'll expand this example later to 
-have more interesting behavior.  
+in this version of the module.  We'll expand this example later to
+have more interesting behavior.
 
 For now, all we want to be able to do is to create new \class{Noddy}
 objects. To enable object creation, we have to provide a
@@ -268,7 +268,7 @@ Of course, the current Noddy type is pretty uninteresting. It has no
 data and doesn't do anything. It can't even be subclassed.
 
 \subsection{Adding data and methods to the Basic example}
-    
+
 Let's expend the basic example to add some data and methods.  Let's
 also make the type usable as a base class. We'll create
 a new module, \module{noddy2} that adds these capabilities:
@@ -351,7 +351,7 @@ Noddy_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             Py_DECREF(self);
             return NULL;
           }
-        
+
         self->last = PyString_FromString("");
         if (self->last == NULL)
           {
@@ -417,10 +417,10 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist, 
-                                      &first, &last, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|OOi", kwlist,
+                                      &first, &last,
                                       &self->number))
-        return -1; 
+        return -1;
 
     if (first) {
         tmp = self->first;
@@ -488,7 +488,7 @@ this?
   garbage collection, there are calls that can be made to ``untrack''
   the object from garbage collection, however, these calls are
   advanced and not covered here.}
-\item 
+\item
 \end{itemize}
 
 
@@ -527,7 +527,7 @@ sure the members are initialized to non-\NULL{} values, the members can
 be set to \NULL{} if the attributes are deleted.
 
 We define a single method, \method{name}, that outputs the objects
-name as the concatenation of the first and last names.  
+name as the concatenation of the first and last names.
 
 \begin{verbatim}
 static PyObject *
@@ -558,7 +558,7 @@ Noddy_name(Noddy* self)
 
     result = PyString_Format(format, args);
     Py_DECREF(args);
-    
+
     return result;
 }
 \end{verbatim}
@@ -656,16 +656,16 @@ Noddy_setfirst(Noddy *self, PyObject *value, void *closure)
     PyErr_SetString(PyExc_TypeError, "Cannot delete the first attribute");
     return -1;
   }
-  
+
   if (! PyString_Check(value)) {
-    PyErr_SetString(PyExc_TypeError, 
+    PyErr_SetString(PyExc_TypeError,
                     "The first attribute value must be a string");
     return -1;
   }
-      
+
   Py_DECREF(self->first);
   Py_INCREF(value);
-  self->first = value;    
+  self->first = value;
 
   return 0;
 }
@@ -687,11 +687,11 @@ We create an array of \ctype{PyGetSetDef} structures:
 
 \begin{verbatim}
 static PyGetSetDef Noddy_getseters[] = {
-    {"first", 
+    {"first",
      (getter)Noddy_getfirst, (setter)Noddy_setfirst,
      "first name",
      NULL},
-    {"last", 
+    {"last",
      (getter)Noddy_getlast, (setter)Noddy_setlast,
      "last name",
      NULL},
@@ -705,7 +705,7 @@ and register it in the \member{tp_getset} slot:
     Noddy_getseters,           /* tp_getset */
 \end{verbatim}
 
-to register out attribute getters and setters.  
+to register out attribute getters and setters.
 
 The last item in a \ctype{PyGetSetDef} structure is the closure
 mentioned above. In this case, we aren't using the closure, so we just
@@ -737,10 +737,10 @@ Noddy_init(Noddy *self, PyObject *args, PyObject *kwds)
 
     static char *kwlist[] = {"first", "last", "number", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist, 
-                                      &first, &last, 
+    if (! PyArg_ParseTupleAndKeywords(args, kwds, "|SSi", kwlist,
+                                      &first, &last,
                                       &self->number))
-        return -1; 
+        return -1;
 
     if (first) {
         tmp = self->first;
@@ -838,11 +838,11 @@ For each subobject that can participate in cycles, we need to call the
 \cfunction{visit()} function, which is passed to the traversal method.
 The \cfunction{visit()} function takes as arguments the subobject and
 the extra argument \var{arg} passed to the traversal method.  It
-returns an integer value that must be returned if it is non-zero.  
+returns an integer value that must be returned if it is non-zero.
 
 
-Python 2.4 and higher provide a \cfunction{Py_VISIT()} that automates
-calling visit functions.  With \cfunction{Py_VISIT()}, the
+Python 2.4 and higher provide a \cfunction{Py_VISIT()} macro that automates
+calling visit functions.  With \cfunction{Py_VISIT()},
 \cfunction{Noddy_traverse()} can be simplified:
 
 
@@ -856,12 +856,17 @@ Noddy_traverse(Noddy *self, visitproc visit, void *arg)
 }
 \end{verbatim}
 
+\note{Note that the \member{tp_traverse} implementation must name its
+    arguments exactly \var{visit} and \var{arg} in order to use
+    \cfunction{Py_VISIT()}.  This is to encourage uniformity
+    across these boring implementations.}
+
 We also need to provide a method for clearing any subobjects that can
 participate in cycles.  We implement the method and reimplement the
 deallocator to use it:
 
 \begin{verbatim}
-static int 
+static int
 Noddy_clear(Noddy *self)
 {
     PyObject *tmp;
@@ -903,7 +908,7 @@ the careful decrementing of reference counts.  With
 simplified:
 
 \begin{verbatim}
-static int 
+static int
 Noddy_clear(Noddy *self)
 {
     Py_CLEAR(self->first);
@@ -973,7 +978,7 @@ later.
 Here you can put a string (or its address) that you want returned when
 the Python script references \code{obj.__doc__} to retrieve the
 doc string.
-   
+
 Now we come to the basic type methods---the ones most extension types
 will implement.
 
@@ -1281,7 +1286,7 @@ to retrieve the descriptor from the class object, and get the
 doc string using its \member{__doc__} attribute.
 
 As with the \member{tp_methods} table, a sentinel entry with a
-\member{name} value of \NULL{} is required.  
+\member{name} value of \NULL{} is required.
 
 
 % XXX Descriptors need to be explained in more detail somewhere, but
@@ -1345,7 +1350,7 @@ instance would be called.  When an attribute should be deleted, the
 third parameter will be \NULL.  Here is an example that simply raises
 an exception; if this were really all you wanted, the
 \member{tp_setattr} handler should be set to \NULL.
-   
+
 \begin{verbatim}
 static int
 newdatatype_setattr(newdatatypeobject *obj, char *name, PyObject *v)
@@ -1389,7 +1394,7 @@ static int
 newdatatype_compare(newdatatypeobject * obj1, newdatatypeobject * obj2)
 {
     long result;
- 
+
     if (obj1->obj_UnderlyingDatatypePtr->size <
         obj2->obj_UnderlyingDatatypePtr->size) {
         result = -1;
@@ -1489,7 +1494,7 @@ This function takes three arguments:
     this is non-\NULL, raise a \exception{TypeError} with a message
     saying that keyword arguments are not supported.
 \end{enumerate}
-       
+
 Here is a desultory example of the implementation of the call function.
 
 \begin{verbatim}

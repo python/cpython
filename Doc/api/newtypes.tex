@@ -1664,13 +1664,14 @@ The \member{tp_traverse} handler must have the following type:
 \end{ctypedesc}
 
 To simplify writing \member{tp_traverse} handlers, a
-\cfunction{Py_VISIT()} is provided:
+\cfunction{Py_VISIT()} macro is provided.  In order to use this macro,
+the \member{tp_traverse} implementation must name its arguments
+exactly \var{visit} and \var{arg}:
 
 \begin{cfuncdesc}{void}{Py_VISIT}{PyObject *o}
-  Call the \var{visit} for \var{o} with \var{arg}. If \var{visit}
-  returns a non-zero value, then return it.  Using this macro,
-  \member{tp_traverse} handlers look like:
-
+  Call the \var{visit} callback, with arguments \var{o} and \var{arg}.
+  If \var{visit} returns a non-zero value, then return it.  Using this
+  macro, \member{tp_traverse} handlers look like:
 
 \begin{verbatim}
 static int
