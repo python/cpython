@@ -35,7 +35,7 @@ class MIMEText(MIMENonMultipart):
         """
         MIMENonMultipart.__init__(self, 'text', _subtype,
                                   **{'charset': _charset})
-        if _text and _text[-1] <> '\n':
+        if _text and not _text.endswith('\n'):
             _text += '\n'
         self.set_payload(_text, _charset)
         if _encoder is not None:
