@@ -1,7 +1,18 @@
 #! /usr/bin/env python
 
-"""Generate ESIS events based on a LaTeX source document and configuration
-data.
+"""Generate ESIS events based on a LaTeX source document and
+configuration data.
+
+The conversion is not strong enough to work with arbitrary LaTeX
+documents; it has only been designed to work with the highly stylized
+markup used in the standard Python documentation.  A lot of
+information about specific markup is encoded in the control table
+passed to the convert() function; changing this table can allow this
+tool to support additional LaTeX markups.
+
+The format of the table is largely undocumented; see the commented
+headers where the table is specified in main().  There is no provision 
+to load an alternate table from an external file.
 """
 __version__ = '$Revision$'
 
@@ -27,7 +38,7 @@ class LaTeXFormatError(Error):
 
 _begin_env_rx = re.compile(r"[\\]begin{([^}]*)}")
 _end_env_rx = re.compile(r"[\\]end{([^}]*)}")
-_begin_macro_rx = re.compile(r"[\\]([a-zA-Z]+[*]?)({|\s*\n?)")
+_begin_macro_rx = re.compile(r"[\\]([a-zA-Z]+[*]?) ?({|\s*\n?)")
 _comment_rx = re.compile("%+ ?(.*)\n[ \t]*")
 _text_rx = re.compile(r"[^]%\\{}]+")
 _optional_rx = re.compile(r"\s*[[]([^]]*)[]]")
@@ -160,9 +171,6 @@ class Conversion:
                     self.write("Anumbered TOKEN no\n")
                 # rip off the macroname
                 if params:
-##                    if optional and len(params) == 1:
-##                        line = line[m.end():]
-##                    else:
                         line = line[m.end(1):]
                 elif empty:
                     line = line[m.end(1):]
@@ -196,8 +204,12 @@ class Conversion:
                                 self.write("A%s TOKEN %s\n"
                                            % (attrname, encode(m.group(1))))
                     elif type(attrname) is TupleType:
-                        # This is a sub-element; but don't place the
-                        # element we found on the stack (\section-like)
+                        # This is a sub-element; but place the and attribute
+                        # we found on the stack (\section-like); the
+                        # content of the macro will become the content 
+                        # of the attribute element, and the macro will 
+                        # have to be closed some other way (such as
+                        # auto-closing).
                         pushing(macroname, "b", len(stack) + depth)
                         stack.append(macroname)
                         self.write("(%s\n" % macroname)
@@ -371,6 +383,7 @@ def main():
         "funclineni": (["name"], 0, 0, 0, 0),
         "geq": ([], 0, 1, 0, 0),
         "hline": ([], 0, 1, 0, 0),
+        "include": (["source"], 0, 1, 0, 0),
         "indexii": (["ie1", "ie2"], 0, 1, 0, 0),
         "indexiii": (["ie1", "ie2", "ie3"], 0, 1, 0, 0),
         "indexiv": (["ie1", "ie2", "ie3", "ie4"], 0, 1, 0, 0),
