@@ -94,6 +94,7 @@ DL_IMPORT(void) init_exceptions Py_PROTO((void));
 
 /* Various internal finalizers */
 DL_IMPORT(void) fini_exceptions Py_PROTO((void));
+DL_IMPORT(void) _PyImport_Fini Py_PROTO((void));
 DL_IMPORT(void) PyMethod_Fini Py_PROTO((void));
 DL_IMPORT(void) PyFrame_Fini Py_PROTO((void));
 DL_IMPORT(void) PyCFunction_Fini Py_PROTO((void));
