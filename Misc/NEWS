@@ -345,6 +345,11 @@ Tools/Demos
 
 - The db2pickle and pickle2db scripts can now dump/load gdbm files.
 
+- The file order on the command line of the pickle2db script was reversed.
+  It is now [ picklefile ] dbfile.  This provides better symmetry with
+  db2pickle.  The file arguments to both scripts are now source followed by
+  destination in situations where both files are given.
+
 - The pydoc script will display a link to the module documentation for
   modules determined to be part of the core distribution.  The documentation
   base directory defaults to http://www.python.org/doc/current/lib/ but can
