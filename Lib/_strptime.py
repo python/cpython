@@ -363,8 +363,8 @@ def strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     # Deal with bad locale setup where timezone names are the
                     # same and yet time.daylight is true; too ambiguous to
                     # be able to tell what timezone has daylight savings
-                    if time.tzname[0] == time.tzname[1] and \
-                       time.daylight:
+                    if (time.tzname[0] == time.tzname[1] and
+                       time.daylight and found_zone not in ("utc", "gmt")):
                         break
                     else:
                         tz = value
