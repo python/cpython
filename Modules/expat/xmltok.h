@@ -281,7 +281,8 @@ int FASTCALL XmlUtf8Encode(int charNumber, char *buf);
 int FASTCALL XmlUtf16Encode(int charNumber, unsigned short *buf);
 int XmlSizeOfUnknownEncoding(void);
 
-typedef int (*CONVERTER)(void *userData, const char *p);
+
+typedef int (XMLCALL *CONVERTER) (void *userData, const char *p);
 
 ENCODING *
 XmlInitUnknownEncoding(void *mem,
