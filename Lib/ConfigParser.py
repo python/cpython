@@ -358,7 +358,7 @@ class ConfigParser:
                     if mo:
                         optname, vi, optval = mo.group('option', 'vi', 'value')
                         optname = string.lower(optname)
-                        if vi == '=' and ';' in optval:
+                        if vi in ('=', ':') and ';' in optval:
                             # ';' is a comment delimiter only if it follows
                             # a spacing character
                             pos = string.find(optval, ';')
