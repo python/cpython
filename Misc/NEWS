@@ -84,6 +84,9 @@ Core
   sortdict(dict) function for a simple way to display a dict in sorted
   order.
 
+- Many other small changes to dicts were made, resulting in faster
+  operation along the most common code paths.
+
 - Dictionary objects now support the "in" operator: "x in dict" means
   the same as dict.has_key(x).
 
@@ -119,7 +122,7 @@ Core
 
 - Collisions in dicts are resolved via a new approach, which can help
   dramatically in bad cases.  For example, looking up every key in a dict
-  d with d.keys() = [i << 16 for i in range(20000)] is approximately 500x
+  d with d.keys() == [i << 16 for i in range(20000)] is approximately 500x
   faster now.  Thanks to Christian Tismer for pointing out the cause and
   the nature of an effective cure (last December! better late than never).
 
@@ -145,8 +148,8 @@ Library
   native mode, these can be used only when the platform C compiler supports
   these types (when HAVE_LONG_LONG is #define'd by the Python config
   process), and then they inherit the sizes and alignments of the C types.
-  XXX TODO In standard mode, 'q' and 'Q' are supported on all platforms, and
-  XXX TODO are 8-byte integral types.
+  In standard mode, 'q' and 'Q' are supported on all platforms, and are
+  8-byte integral types.
 
 Tests
 
