@@ -100,6 +100,7 @@ DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # Executable suffix (.exe on Windows and Mac OS X)
 EXE=		@EXEEXT@
+BUILDEXE=	@BUILDEXEEXT@
 
 # Short name and location for Mac OS X Python framework
 PYTHONFRAMEWORK=	@PYTHONFRAMEWORK@
@@ -150,6 +151,7 @@ MACHDEP_OBJS=	@MACHDEP_OBJS@
 UNICODE_OBJS=   @UNICODE_OBJS@
 
 PYTHON=		python$(EXE)
+BUILDPYTHON=	python$(BUILDEXE)
 
 # === Definitions added by makesetup ===
 
@@ -286,23 +288,23 @@ LIBRARY_OBJS=	\
 # Rules
 
 # Default target
-all:		$(PYTHON) oldsharedmods sharedmods
+all:		$(BUILDPYTHON) oldsharedmods sharedmods
 
 # Build the interpreter
-$(PYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
+$(BUILDPYTHON):	Modules/$(MAINOBJ) $(LDLIBRARY)
 		$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) -o $@ \
 			Modules/$(MAINOBJ) \
 			$(BLDLIBRARY) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
-platform: $(PYTHON)
-	./$(PYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
+platform: $(BUILDPYTHON)
+	./$(BUILDPYTHON) -E -c 'import sys ; from distutils.util import get_platform ; print get_platform()+"-"+sys.version[0:3]' >platform
 
 
 # Build the shared modules
-sharedmods: $(PYTHON)
+sharedmods: $(BUILDPYTHON)
 	case $$MAKEFLAGS in \
-	*-s*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(PYTHON) -E $(srcdir)/setup.py -q build;; \
-	*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(PYTHON) -E $(srcdir)/setup.py build;; \
+	*-s*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py -q build;; \
+	*) CC='$(CC)' LDSHARED='$(LDSHARED)' OPT='$(OPT)' ./$(BUILDPYTHON) -E $(srcdir)/setup.py build;; \
 	esac
 
 # buildno should really depend on something like LIBRARY_SRC
@@ -484,7 +486,7 @@ $(LIBRARY_OBJS) $(MODOBJS) Modules/$(MAINOBJ): $(PYTHON_HEADERS)
 # Test the interpreter (twice, once without .pyc files, once with)
 TESTOPTS=	-l
 TESTPROG=	$(srcdir)/Lib/test/regrtest.py
-TESTPYTHON=	./$(PYTHON) -E -tt
+TESTPYTHON=	./$(BUILDPYTHON) -E -tt
 test:		all platform
 		-find $(srcdir)/Lib -name '*.py[co]' -print | xargs rm -f
 		-$(TESTPYTHON) $(TESTPROG) $(TESTOPTS)
@@ -544,7 +546,7 @@ bininstall:	altbininstall
 
 # Install the interpreter with $(VERSION) affixed
 # This goes into $(exec_prefix)
-altbininstall:	$(PYTHON)
+altbininstall:	$(BUILDPYTHON)
 	@for i in $(BINDIR); \
 	do \
 		if test ! -d $$i; then \
@@ -553,7 +555,7 @@ altbininstall:	$(PYTHON)
 		else	true; \
 		fi; \
 	done
-	$(INSTALL_PROGRAM) $(PYTHON) $(BINDIR)/python$(VERSION)$(EXE)
+	$(INSTALL_PROGRAM) $(BUILDPYTHON) $(BINDIR)/python$(VERSION)$(EXE)
 	if test -f libpython$(VERSION).so; then \
 		$(INSTALL_DATA) libpython$(VERSION).so $(LIBDIR); \
 	else	true; \
@@ -583,7 +585,7 @@ XMLLIBSUBDIRS=  xml xml/dom xml/parsers xml/sax
 LIBSUBDIRS=	lib-old lib-tk site-packages test test/output test/data \
 		encodings email compiler hotshot \
 		distutils distutils/command $(XMLLIBSUBDIRS) curses $(MACHDEPS)
-libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
+libinstall:	$(BUILDPYTHON) $(srcdir)/Lib/$(PLATDIR)
 	@for i in $(SCRIPTDIR) $(LIBDEST); \
 	do \
 		if test ! -d $$i; then \
@@ -639,10 +641,10 @@ libinstall:	$(PYTHON) $(srcdir)/Lib/$(PLATDIR)
 	done
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(LIBDEST)/LICENSE.txt
 	PYTHONPATH=$(LIBDEST) \
-		./$(PYTHON) -tt $(LIBDEST)/compileall.py -x badsyntax \
+		./$(BUILDPYTHON) -tt $(LIBDEST)/compileall.py -x badsyntax \
 	        $(LIBDEST)
 	PYTHONPATH=$(LIBDEST) \
-		./$(PYTHON) -O $(LIBDEST)/compileall.py -x badsyntax $(LIBDEST)
+		./$(BUILDPYTHON) -O $(LIBDEST)/compileall.py -x badsyntax $(LIBDEST)
 
 # Create the PLATDIR source directory, if one wasn't distributed..
 $(srcdir)/Lib/$(PLATDIR):
@@ -731,7 +733,7 @@ libainstall:	all
 # Install the dynamically loadable modules
 # This goes into $(exec_prefix)
 sharedinstall:
-	./$(PYTHON) -E $(srcdir)/setup.py install \
+	./$(BUILDPYTHON) -E $(srcdir)/setup.py install \
 		--install-scripts=$(BINDIR) \
 		--install-platlib=$(DESTSHARED)
 
@@ -802,7 +804,7 @@ Makefile.pre: Makefile.pre.in config.status
 config.status:	$(srcdir)/configure
 	$(SHELL) $(srcdir)/configure $(CONFIG_ARGS)
 
-.PRECIOUS: config.status $(PYTHON) Makefile Makefile.pre
+.PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
 # Some make's put the object file in the current directory
 .c.o:
@@ -842,7 +844,7 @@ clean:
 	find $(srcdir) -name '*.py[co]' -exec rm -f {} ';'
 
 clobber: clean
-	-rm -f $(PYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
+	-rm -f $(BUILDPYTHON) $(PGEN) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
