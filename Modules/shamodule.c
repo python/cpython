@@ -5,7 +5,7 @@
 /* See below for information about the original code this module was
    based upon. Additional work performed by:
 
-   Andrew Kuchling (akuchlin@mems-exchange.org)
+   Andrew Kuchling (amk@amk.ca)
    Greg Stein (gstein@lyra.org)
 */
 

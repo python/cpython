@@ -8,8 +8,7 @@
  *   Version 1.5b1, heavily extended for ncurses by Oliver Andrich:
  *   Copyright 1996,1997 by Oliver Andrich, Koblenz, Germany.
  *
- *   Tidied for Python 1.6, and currently maintained by
- *   <akuchlin@mems-exchange.org>.
+ *   Tidied for Python 1.6, and currently maintained by <amk@amk.ca>.
  *
  *   Permission is hereby granted, free of charge, to any person obtaining
  *   a copy of this source file to use, copy, modify, merge, or publish it
