@@ -90,9 +90,10 @@ def save():
 
 # test stuff
 if __name__ == '__main__':
+    from Tkinter import *
+
     class Tester:
         def __init__(self):
-            from Tkinter import *
             self.__root = tk = Tk()
             b = Button(tk, text='Choose Color...', command=self.__choose)
             b.pack()
