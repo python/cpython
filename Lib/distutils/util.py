@@ -746,6 +746,7 @@ def make_archive (base_name, format,
         kwargs['compress'] = 'compress'
     elif format == 'tar':
         func = make_tarball
+        kwargs['compress'] = None
     elif format == 'zip':
         func = make_zipfile
 
