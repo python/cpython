@@ -10,11 +10,12 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 #ifndef Py_OBJIMPL_H
 #define Py_OBJIMPL_H
+
+#include "pymem.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "pyport.h"
 
 /*
 Functions and macros for modules that implement new object types.
