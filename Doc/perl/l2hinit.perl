@@ -85,25 +85,38 @@ sub custom_driver_hook{
 }
 
 
-$iconsizes{'up'} = 'width="75" height="25"';
-$iconsizes{'next'} = 'width="75" height="25"';
-$iconsizes{'previous'} = 'width="75" height="25"';
-$iconsizes{'contents'} = 'width="75" height="25"';
-$iconsizes{'index'} = 'width="75" height="25"';
+sub set_icon_size{
+    my($name, $w, $h) = @_;
+    $iconsizes{$name} = "width=$w height=$h";
+}
+
+foreach $name (split(/ /, 'up next previous contents index modules')) {
+    set_icon_size($name, 32, 32);
+}
+# The '_motif' is really annoying, and makes the HTML larger with no value
+# added, so strip it off:
+foreach $name (keys %icons) {
+    my $icon = $icons{$name};
+    $icon =~ s/_motif//;
+    $icons{$name} = $icon;
+}
 
 $CUSTOM_BUTTONS = '';
 
 sub make_nav_panel{
-    ($NEXT_TITLE ? $NEXT : '')
-      . ($UP_TITLE ? $UP : '')
-      . ($PREVIOUS_TITLE ? $PREVIOUS : '')
-      . $CONTENTS
-      . $CUSTOM_BUTTONS
-      . $INDEX
-      . "\n<br>\n"
-      . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
-      . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
-      . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : '');
+    ('<table width="100%" cellpadding=0 cellspacing=0><tr><td width="20%">'
+     . ($NEXT_TITLE ? "$NEXT " : '')
+     . ($UP_TITLE ? "$UP " : '')
+     . ($PREVIOUS_TITLE ? "$PREVIOUS " : '')
+     . "</td>\n<td align=center width=\"60%\"><b>$t_title</b>"
+     . "</td>\n<td align=right width=\"20%\">"
+     . $CONTENTS
+     . ' ' . $CUSTOM_BUTTONS
+     . ' ' . $INDEX
+     . "</td></tr></table>\n<hr>\n"
+     . ($NEXT_TITLE ? "<b>Next:</b> $NEXT_TITLE\n" : '')
+     . ($UP_TITLE ? "<b>Up:</b> $UP_TITLE\n" : '')
+     . ($PREVIOUS_TITLE ? "<b>Previous:</b> $PREVIOUS_TITLE\n" : ''));
 }
 
 sub top_navigation_panel {
@@ -157,10 +170,11 @@ sub img_tag {
     my $alt;
     my $align = " align=bottom ";
 
+    # having this list hardcoded here is really bogus....
     $alt = join('|', 'up', 'next_group', 'previous_group'
 		, 'next', 'previous', 'change_begin_right', 'change_begin'
 		, 'change_end_right', 'change_end', 'change_delete_right'
-		, 'change_delete', 'contents', 'index');
+		, 'change_delete', 'contents', 'index', 'modules');
 
     if ($icon =~ /(gif|png)$/) {
 	$used_icons{$icon} = 1;
@@ -359,10 +373,8 @@ sub add_bbl_and_idx_dummy_commands {
 	         . "([\\\\]begin\\s*$O\\d+$C\\s*theindex)";
 	s/$rx/\\textohtmlmoduleindex \1 \\textohtmlindex \2/o;
 	# Add a button to the navigation areas:
-	$CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\"><img"
-			    . " src=\"$ICONSERVER$dd"
-			    . "modules_motif.gif\" width=74 height=25 border=0"
-			    . " alt=\"[Modules]\"></a>");
+	$CUSTOM_BUTTONS .= ("<a\n href=\"modindex.html\">"
+			    . img_tag('modules.'.$IMAGE_TYPE) . "</a>");
     }
     else {
 	$global{'max_id'} = $id; # not sure why....
