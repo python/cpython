@@ -123,7 +123,7 @@ UpdateSplash(1)
 
 def wait():
 	import Evt
-	from Events import *
+	import Events
 	global splash
 	try:
 		splash
@@ -133,16 +133,16 @@ def wait():
 	time = Evt.TickCount()
 	whattext = 0
 	while _keepsplashscreenopen:
-		ok, event = Evt.EventAvail(highLevelEventMask)
+		ok, event = Evt.EventAvail(Events.highLevelEventMask)
 		if ok:
 			# got apple event, back to mainloop
 			break
-		ok, event = Evt.EventAvail(mDownMask | keyDownMask | updateMask)
+		ok, event = Evt.EventAvail(Events.mDownMask | Events.keyDownMask | Events.updateMask)
 		if ok:
-			ok, event = Evt.WaitNextEvent(mDownMask | keyDownMask | updateMask, 30)
+			ok, event = Evt.WaitNextEvent(Events.mDownMask | Events.keyDownMask | Events.updateMask, 30)
 			if ok:
 				(what, message, when, where, modifiers) = event
-				if what == updateEvt:
+				if what == Events.updateEvt:
 					if Win.WhichWindow(message) == splash:
 						UpdateSplash(1, whattext)
 				else:
