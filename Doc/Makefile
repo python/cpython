@@ -74,7 +74,7 @@ qua.dvi: qua.tex quabib.bib
 	$(DVIPS) qua >qua.ps
 
 lib.texi: lib*.tex texipre.dat texipost.dat partparse.py fix.el
-	python partparse.py -o @lib.texi `whichlibs`
+	python partparse.py -o @lib.texi `./whichlibs`
 	emacs -batch -l fix.el -f save-buffer -kill
 	mv @lib.texi lib.texi
 
