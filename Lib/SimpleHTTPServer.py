@@ -59,24 +59,38 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 
         """
         path = self.translate_path(self.path)
+        f = None
         if os.path.isdir(path):
-            f = self.list_directory(path)
-            if f is None:
-                return None
-            ctype = "text/HTML"
+            for index in "index.html", "index.htm":
+                index = os.path.join(path, index)
+                if os.path.exists(index):
+                    path = index
+                    break
+            else:
+                return self.list_directory(path)
+        ctype = self.guess_type(path)
+        if ctype.startswith('text/'):
+            mode = 'r'
         else:
-            try:
-                f = open(path, 'rb')
-            except IOError:
-                self.send_error(404, "File not found")
-                return None
-            ctype = self.guess_type(path)
+            mode = 'rb'
+        try:
+            f = open(path, mode)
+        except IOError:
+            self.send_error(404, "File not found")
+            return None
         self.send_response(200)
         self.send_header("Content-type", ctype)
         self.end_headers()
         return f
 
     def list_directory(self, path):
+        """Helper to produce a directory listing (absent index.html).
+
+        Return value is either a file object, or None (indicating an
+        error).  In either case, the headers are sent, making the
+        interface the same as for send_head().
+
+        """
         try:
             list = os.listdir(path)
         except os.error:
@@ -88,15 +102,20 @@ class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         f.write("<hr>\n<ul>\n")
         for name in list:
             fullname = os.path.join(path, name)
-            displayname = name = cgi.escape(name)
+            displayname = linkname = name = cgi.escape(name)
+            # Append / for directories or @ for symbolic links
+            if os.path.isdir(fullname):
+                displayname = name + "/"
+                linkname = name + os.sep
             if os.path.islink(fullname):
                 displayname = name + "@"
-            elif os.path.isdir(fullname):
-                displayname = name + "/"
-                name = name + os.sep
-            f.write('<li><a href="%s">%s</a>\n' % (name, displayname))
+                # Note: a link to a directory displays with @ and links with /
+            f.write('<li><a href="%s">%s</a>\n' % (linkname, displayname))
         f.write("</ul>\n<hr>\n")
         f.seek(0)
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
         return f
 
     def translate_path(self, path):
