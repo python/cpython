@@ -438,11 +438,12 @@ base class of the class of which \member{im_self} is an instance);
 
 User-defined method objects are created in two ways: when getting an
 attribute of a class that is a user-defined function object, or when
-getting an attributes of a class instance that is a user-defined
-function object.  In the former case (class attribute), the
-\member{im_self} attribute is \code{None}, and the method object is said
-to be unbound; in the latter case (instance attribute), \method{im_self}
-is the instance, and the method object is said to be bound.  For
+getting an attribute of a class instance that is a user-defined
+function object defined by the class of the instance.  In the former
+case (class attribute), the \member{im_self} attribute is \code{None},
+and the method object is said to be unbound; in the latter case
+(instance attribute), \method{im_self} is the instance, and the method
+object is said to be bound.  For
 instance, when \class{C} is a class which contains a definition for a
 function \method{f()}, \code{C.f} does not yield the function object
 \code{f}; rather, it yields an unbound method object \code{m} where
@@ -452,9 +453,7 @@ instance, \code{x.f} yields a bound method object \code{m} where
 \code{m.im_class} is \code{C}, \code{m.im_func} is \method{f()}, and
 \code{m.im_self} is \code{x}.
 \withsubitem{(method attribute)}{
-  \ttindex{im_class}
-  \ttindex{im_func}
-  \ttindex{im_self}}
+  \ttindex{im_class}\ttindex{im_func}\ttindex{im_self}}
 
 When an unbound user-defined method object is called, the underlying
 function (\member{im_func}) is called, with the restriction that the
@@ -474,7 +473,10 @@ the class or instance.  In some cases, a fruitful optimization is to
 assign the attribute to a local variable and call that local variable.
 Also notice that this transformation only happens for user-defined
 functions; other callable objects (and all non-callable objects) are
-retrieved without transformation.
+retrieved without transformation.  It is also important to note that
+user-defined functions which are attributes of a class instance are
+not converted to bound methods; this \emph{only} happens when the
+function is an attribute of the class.
 
 \item[Built-in functions]
 A built-in function object is a wrapper around a \C{} function.  Examples
