@@ -14,22 +14,20 @@ from Tkinter import *
 from Tkinter import _cnfmerge
 
 class ScrolledText(Text):
-	def __init__(self, master=None, cnf={}):
-		cnf = _cnfmerge(cnf)
+	def __init__(self, master=None, **cnf):
 		fcnf = {}
-		vcnf = {'name': 'vbar',
-			Pack: {'side': 'right', 'fill': 'y'},}
 		for k in cnf.keys():
 			if type(k) == ClassType or k == 'name':
 				fcnf[k] = cnf[k]
 				del cnf[k]
-		self.frame = Frame(master, fcnf)
-		self.vbar = Scrollbar(self.frame, vcnf)
-		cnf[Pack] = {'side': 'left', 'fill': 'both', 'expand': 'yes'}
+		self.frame = apply(Frame, (master,), fcnf)
+		self.vbar = Scrollbar(self.frame, name='vbar')
+		self.vbar.pack(side=RIGHT, fill=Y)
 		cnf['name'] = 'text'
-		Text.__init__(self, self.frame, cnf)
-		self['yscrollcommand'] = (self.vbar, 'set')
-		self.vbar['command'] = (self, 'yview')
+		apply(Text.__init__, (self, self.frame), cnf)
+		self.pack(side=LEFT, fill=BOTH, expand=1)
+		self['yscrollcommand'] = self.vbar.set
+		self.vbar['command'] = self.yview
 
 		# Copy Pack methods of self.frame -- hack!
 		for m in Pack.__dict__.keys():
