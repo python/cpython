@@ -1,6 +1,9 @@
 /* zlibmodule.c -- gzip-compatible data compression */
 
 #include "Python.h"
+#ifdef MS_WIN32
+#define ZLIB_DLL
+#endif
 #include "zlib.h"
 
 /* The following parameters are copied from zutil.h, version 0.95 */
@@ -722,7 +725,7 @@ static PyMethodDef zlib_methods[] =
 };
 
 statichere PyTypeObject Comptype = {
-        PyObject_HEAD_INIT(&PyType_Type)
+        PyObject_HEAD_INIT(0)
         0,
         "Compress",
         sizeof(compobject),
@@ -739,7 +742,7 @@ statichere PyTypeObject Comptype = {
 };
 
 statichere PyTypeObject Decomptype = {
-        PyObject_HEAD_INIT(&PyType_Type)
+        PyObject_HEAD_INIT(0)
         0,
         "Decompress",
         sizeof(compobject),
@@ -797,6 +800,8 @@ void
 PyInit_zlib()
 {
         PyObject *m, *d, *ver;
+        Comptype.ob_type = &PyType_Type;
+        Decomptype.ob_type = &PyType_Type;
         m = Py_InitModule4("zlib", zlib_methods,
 			   zlib_module_documentation,
 			   (PyObject*)NULL,PYTHON_API_VERSION);
