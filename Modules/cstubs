@@ -808,6 +808,7 @@ void	RGBmode
 void	singlebuffer
 void	swapbuffers
 void	gsync
+void	gflush
 void	tpon
 void	tpoff
 void	clkon
