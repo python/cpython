@@ -54,7 +54,7 @@ getpythonregpath(HKEY keyBase, BOOL bWin32s)
 	LONG rc;
 	char *retval = NULL;
 	char *dataBuf;
-	if ((rc=RegOpenKey(keyBase, "Software\\Python\\PythonCore\\" WIN32_PATCH_LEVEL "\\PythonPath", 
+	if ((rc=RegOpenKey(keyBase, "Software\\Python\\PythonCore\\" MS_DLL_ID "\\PythonPath", 
 	                   &newKey))==ERROR_SUCCESS) {
 		RegQueryInfoKey(newKey, NULL, NULL, NULL, NULL, NULL, NULL, 
 		                &numEntries, &nameSize, &dataSize, NULL, NULL );
