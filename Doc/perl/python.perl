@@ -950,6 +950,9 @@ sub fix_font{
     elsif ($font eq 'constant') {
         $font = 'tt class="constant"';
     }
+    elsif ($font eq 'kbd') {
+        $font = 'kbd';
+    }
     return $font;
 }
 
