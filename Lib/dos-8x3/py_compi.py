@@ -51,7 +51,15 @@ def compile(file, cfile=None, dfile=None):
     f.close()
     if codestring and codestring[-1] != '\n':
         codestring = codestring + '\n'
-    codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
+    try:
+        codeobject = __builtin__.compile(codestring, dfile or file, 'exec')
+    except SyntaxError, detail:
+        import traceback, sys, string
+        lines = traceback.format_exception_only(SyntaxError, detail)
+        for line in lines:
+            sys.stderr.write(string.replace(line, 'File "<string>"',
+                                            'File "%s"' % (dfile or file)))
+        return
     if not cfile:
         cfile = file + (__debug__ and 'c' or 'o')
     fc = open(cfile, 'wb')
