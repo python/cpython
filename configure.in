@@ -1,6 +1,6 @@
-dnl Process this file with autoconf 1.8 or later to produce a configure script.
+dnl Process this file with autoconf 1.8 or later to make a configure script.
 AC_REVISION($Revision$)dnl
-AC_PREREQ(1.8)dnl
+AC_PREREQ(1.11)dnl
 AC_INIT(Include/object.h)
 AC_CONFIG_HEADER(config.h)dnl
 # Don't suppress compiler output when --verbose is specified
@@ -58,6 +58,69 @@ AC_PID_T
 AC_RETSIGTYPE
 AC_SIZE_T
 AC_UID_T
+
+# Set name for machine-dependent library files
+AC_SUBST(MACHDEP)
+if test -z "$MACHDEP"
+then
+	ac_system=`uname -s | tr '[[A-Z]]' '[[a-z]]'`
+	ac_release=`uname -r | sed 's/\..*//'`
+	MACHDEP="$ac_system$ac_release"
+	case MACHDEP in
+	'')	MACHDEP=unknown;;
+	esac
+	AC_VERBOSE(setting MACHDEP to '$MACHDEP')
+fi
+
+# Set info about shared libraries.
+# XXX This should try things out instead of testing uname!
+AC_SUBST(SO)
+AC_SUBST(LDSHARED)
+AC_SUBST(CCSHARED)
+AC_SUBST(LINKFORSHARED)
+ac_system=`uname -s`
+ac_release=`uname -r`
+# SO is the extension of shared libraries `(including the dot!)
+# -- usually .so, .sl on HP-UX
+if test -z "$SO"
+then
+	case $ac_system in
+	hp*|HP*) SO=.sl;;
+	*)	SO=.so;;
+	esac
+	AC_VERBOSE(setting SO to '$SO')
+fi
+# LDSHARED is the ld *command* used to create shared library
+# -- "ld" on SunOS 4.x.x, "ld -G" on SunOS 5.x, "ld -shared" on IRIX 5
+if test -z "$LDSHARED"
+then
+	case $ac_system/$ac_release in
+	IRIX*) LDSHARED="ld -shared";;
+	SunOS/4*) LDSHARED="ld";;
+	SunOS/5*) LDSHARED="ld -G";;
+	hp*|HP*) LDSHARED="ld -b";;
+	*)	LDSHARED="ld";;
+	esac
+	AC_VERBOSE(setting LDSHARED= to '$LDSHARED')
+fi
+# CCSHARED are the C *flags* used to create objects to go into a shared
+# library -- this is only needed for HP-UX
+if test -z "$CCSHARED"
+then
+	case $ac_system in
+	hp*|HP*) CCSHARED="+z";;
+	esac
+	AC_VERBOSE(setting CCSHARED= to '$CCSHARED')
+fi
+# LINKFORSHARED are the flags passed to the $(CC) command that links
+# the python executable -- this is only needed for HP-UX
+if test -z "$LINKFORSHARED"
+then
+	case $ac_system in
+	hp*|HP*) LINKFORSHARED="-Wl,-E";;
+	esac
+	AC_VERBOSE(setting LINKFORSHARED to '$LINKFORSHARED')
+fi
 
 # checks for libraries
 AC_HAVE_LIBRARY(dl)
@@ -151,7 +214,7 @@ AC_CHAR_UNSIGNED
 
 AC_CONST
 
-AC_COMPILE_CHECK([wheter we have signed char], [], [signed char c;], [], AC_DEFINE(signed, []))
+AC_COMPILE_CHECK([signed char], [], [signed char c;], [], AC_DEFINE(signed, []))
 
 AC_CHECKING(for prototypes)
 AC_TEST_PROGRAM([
