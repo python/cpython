@@ -4,6 +4,8 @@ __version__ = '$Revision$'
 import re
 import string
 import sys
+import xml.dom.core
+import xml.dom.esis_builder
 
 
 _data_rx = re.compile(r"[^\\][^\\]*")
@@ -37,14 +39,12 @@ def encode(s):
     return string.join(map(_charmap.get, s), '')
 
 
-import xml.dom.esis_builder
-
-
 class ExtendedEsisBuilder(xml.dom.esis_builder.EsisBuilder):
     def __init__(self, *args, **kw):
         self.__empties = {}
         self.__is_empty = 0
         apply(xml.dom.esis_builder.EsisBuilder.__init__, (self,) + args, kw)
+        self.fragment = self.document.createDocumentFragment()
 
     def feed(self, data):
         for line in string.split(data, '\n'):
@@ -76,5 +76,19 @@ class ExtendedEsisBuilder(xml.dom.esis_builder.EsisBuilder):
             else:
                 sys.stderr.write('Unknown event: %s\n' % line)
 
+    def push(self, node):
+        "Add node to current node and move to new node."
+
+        nodetype = node.get_nodeType()
+        if self.current_element:
+            self.current_element.insertBefore(node, None)
+        elif nodetype == xml.dom.core.TEXT_NODE:
+            if string.strip(node.get_nodeValue()):
+                self.fragment.appendChild(node)
+        else:
+            self.fragment.appendChild(node)
+        if nodetype == xml.dom.core.ELEMENT_NODE:
+            self.current_element = node
+        
     def get_empties(self):
         return self.__empties.keys()
