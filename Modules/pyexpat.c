@@ -977,8 +977,13 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
 #if PY_MAJOR_VERSION == 1 && PY_MINOR_VERSION < 6
     new_parser = PyObject_NEW(xmlparseobject, &Xmlparsetype);
 #else
-    /* Python versions 1.6 and later */
+#ifndef Py_TPFLAGS_HAVE_GC
+    /* Python versions 1.6 to 2.1 */
     new_parser = PyObject_New(xmlparseobject, &Xmlparsetype);
+#else
+    /* Python versions 2.2 and later */
+    new_parser = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
+#endif
 #endif
 
     if (new_parser == NULL)
@@ -990,7 +995,11 @@ xmlparse_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
     new_parser->itself = XML_ExternalEntityParserCreate(self->itself, context,
 							encoding);
     new_parser->handlers = 0;
+#ifdef Py_TPFLAGS_HAVE_GC
+    PyObject_GC_Track(new_parser);
+#else
     PyObject_GC_Init(new_parser);
+#endif
 
     if (!new_parser->itself) {
         Py_DECREF(new_parser);
@@ -1139,7 +1148,12 @@ newxmlparseobject(char *encoding, char *namespace_separator)
     self->returns_unicode = 0;
 #else
     /* Code for versions 1.6 and later */
+#ifdef Py_TPFLAGS_HAVE_GC
+    /* Code for versions 2.2 and later */
+    self = PyObject_GC_New(xmlparseobject, &Xmlparsetype);
+#else
     self = PyObject_New(xmlparseobject, &Xmlparsetype);
+#endif
     if (self == NULL)
         return NULL;
 
@@ -1155,7 +1169,11 @@ newxmlparseobject(char *encoding, char *namespace_separator)
     else {
         self->itself = XML_ParserCreate(encoding);
     }
+#ifdef Py_TPFLAGS_HAVE_GC
+    PyObject_GC_Track(self);
+#else
     PyObject_GC_Init(self);
+#endif
     if (self->itself == NULL) {
         PyErr_SetString(PyExc_RuntimeError, 
                         "XML_ParserCreate failed");
@@ -1185,7 +1203,11 @@ static void
 xmlparse_dealloc(xmlparseobject *self)
 {
     int i;
+#ifdef Py_TPFLAGS_HAVE_GC
+    PyObject_GC_UnTrack(self);
+#else
     PyObject_GC_Fini(self);
+#endif
     if (self->itself != NULL)
         XML_ParserFree(self->itself);
     self->itself = NULL;
@@ -1203,8 +1225,13 @@ xmlparse_dealloc(xmlparseobject *self)
     /* Code for versions before 1.6 */
     free(self);
 #else
-    /* Code for versions 1.6 and later */
+#ifndef Py_TPFLAGS_HAVE_GC
+    /* Code for versions 1.6 to 2.1 */
     PyObject_Del(self);
+#else
+    /* Code for versions 2.2 and later. */
+    PyObject_GC_Del(self);
+#endif
 #endif
 }
 
@@ -1370,7 +1397,11 @@ static PyTypeObject Xmlparsetype = {
 	0,		/* tp_getattro */
 	0,		/* tp_setattro */
 	0,		/* tp_as_buffer */
+#ifdef Py_TPFLAGS_HAVE_GC
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC, /*tp_flags*/	
+#else
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_GC, /*tp_flags*/	
+#endif
 	Xmlparsetype__doc__, /* Documentation string */
 #ifdef WITH_CYCLE_GC
 	(traverseproc)xmlparse_traverse,	/* tp_traverse */
