@@ -2542,10 +2542,9 @@ load_int(Unpicklerobject *self) {
     if (errno || (*endptr != '\n') || (endptr[1] != '\0')) {
         /* Hm, maybe we've got something long.  Let's try reading
            it as a Python long object. */
-        errno=0;
-        UNLESS (py_int=PyLong_FromString(s,&endptr,0)) goto finally;
-
-        if ((*endptr != '\n') || (endptr[1] != '\0')) {
+        errno = 0;
+        py_int = PyLong_FromString(s, NULL, 0);
+        if (py_int == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "could not convert string to int");
             goto finally;
