@@ -40,32 +40,37 @@ main(int argc, char **argv)
 {
 	grammar *g;
 	FILE *fp;
-	char *filename;
+	char *filename, *graminit_h, *graminit_c;
 	
 #ifdef THINK_C
 	filename = askfile();
+	graminit_h = askfile();
+	graminit_c = askfile();
 #else
-	if (argc != 2) {
-		fprintf(stderr, "usage: %s grammar\n", argv[0]);
+	if (argc != 4) {
+		fprintf(stderr,
+			"usage: %s grammar graminit.h graminit.c\n", argv[0]);
 		Py_Exit(2);
 	}
 	filename = argv[1];
+	graminit_h = argv[2];
+	graminit_c = argv[3];
 #endif
 	g = getgrammar(filename);
-	fp = fopen("graminit.c", "w");
+	fp = fopen(graminit_c, "w");
 	if (fp == NULL) {
-		perror("graminit.c");
+		perror(graminit_c);
 		Py_Exit(1);
 	}
-	printf("Writing graminit.c ...\n");
+	printf("Writing %s ...\n", graminit_c);
 	printgrammar(g, fp);
 	fclose(fp);
-	fp = fopen("graminit.h", "w");
+	fp = fopen(graminit_h, "w");
 	if (fp == NULL) {
-		perror("graminit.h");
+		perror(graminit_h);
 		Py_Exit(1);
 	}
-	printf("Writing graminit.h ...\n");
+	printf("Writing %s ...\n", graminit_h);
 	printnonterminals(g, fp);
 	fclose(fp);
 	Py_Exit(0);
