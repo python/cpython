@@ -715,9 +715,6 @@
 /* Define if you want to compile in cycle garbage collection. */
 #undef WITH_CYCLE_GC
 
-/* Define if you want to read files with foreign newlines. */
-#undef WITH_UNIVERSAL_NEWLINES
-
 /* Define if you want to emulate SGI (IRIX 4) dynamic linking. This is
    rumoured to work on VAX (Ultrix), Sun3 (SunOS 3.4), Sequent Symmetry
    (Dynix), and Atari ST. This requires the 'dl-dld' library,
@@ -746,6 +743,9 @@
 
 /* Define if you want to compile in rudimentary thread support */
 #undef WITH_THREAD
+
+/* Define if you want to read files with foreign newlines. */
+#undef WITH_UNIVERSAL_NEWLINES
 
 /* Define to 1 if your processor stores words with the most significant byte
    first (like Motorola and SPARC, unlike Intel and VAX). */
