@@ -190,8 +190,8 @@ the Emacs bell is also rung as a warning.")
     '("\\bdef\\s +\\(\\sw+\\)(" 1 font-lock-function-name-face)
     ;; classes
     '("\\bclass\\s +\\(\\sw+\\)[(:]" 1 font-lock-function-name-face)
-    )
-   "*Additional keywords to highlight `python-mode' buffers."))
+    ))
+  "*Additional keywords to highlight `python-mode' buffers.")
 
 
 ;; ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
