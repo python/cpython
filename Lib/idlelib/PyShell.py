@@ -366,6 +366,12 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         self.rpcclt.accept()
         self.transfer_path()
+        # annotate restart in shell window and mark it
+        console = self.tkconsole
+        halfbar = ((int(console.width) - 16) // 2) * '='
+        console.write(halfbar + ' RESTART ' + halfbar)
+        console.text.mark_set("restart", "end-1c")
+        console.text.mark_gravity("restart", "left")
         # restart remote debugger
         if debug:
             gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
@@ -652,8 +658,8 @@ class PyShell(OutputWindow):
     menu_specs = [
         ("file", "_File"),
         ("edit", "_Edit"),
-        ("debug", "_Debug"),
-        ("settings", "_Settings"),
+        ("shell", "_Shell"),
+        ("options", "_Options"),
         ("windows", "_Windows"),
         ("help", "_Help"),
     ]
@@ -687,6 +693,8 @@ class PyShell(OutputWindow):
         text.bind("<<toggle-debugger>>", self.toggle_debugger)
         text.bind("<<open-python-shell>>", self.flist.open_shell)
         text.bind("<<toggle-jit-stack-viewer>>", self.toggle_jit_stack_viewer)
+        text.bind("<<view-restart>>", self.view_restart_mark)
+        text.bind("<<restart-shell>>", self.restart_shell)
         #
         self.save_stdout = sys.stdout
         self.save_stderr = sys.stderr
@@ -727,7 +735,7 @@ class PyShell(OutputWindow):
         db = self.interp.getdebugger()
         self.setvar("<<toggle-debugger>>", not not db)
 
-    def toggle_jit_stack_viewer( self, event=None):
+    def toggle_jit_stack_viewer(self, event=None):
         pass # All we need is the variable
 
     def close_debugger(self):
@@ -1023,6 +1031,14 @@ class PyShell(OutputWindow):
             return
         from StackViewer import StackBrowser
         sv = StackBrowser(self.root, self.flist)
+
+    def view_restart_mark(self, event=None):
+        self.text.see("iomark")
+        self.text.see("restart")
+
+    def restart_shell(self, event=None):
+        self.interp.restart_subprocess()
+        self.showprompt()
 
     def showprompt(self):
         self.resetoutput()

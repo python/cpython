@@ -9,7 +9,7 @@ class AutoExpand:
 
     menudefs = [
         ('edit', [
-            ('E_xpand word', '<<expand-word>>'),
+            ('E_xpand Word', '<<expand-word>>'),
          ]),
     ]
 

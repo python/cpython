@@ -508,6 +508,7 @@ class IdleConf:
             '<<history-next>>': ['<Alt-n>'],
             '<<history-previous>>': ['<Alt-p>'],
             '<<interrupt-execution>>': ['<Control-c>'],
+            '<<view-restart>>': ['<F6>'],
             '<<open-class-browser>>': ['<Alt-c>'],
             '<<open-module>>': ['<Alt-m>'],
             '<<open-new-window>>': ['<Control-n>'],
