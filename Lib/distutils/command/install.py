@@ -7,8 +7,10 @@ Implements the Distutils 'install' command."""
 __rcsid__ = "$Id$"
 
 import sys, os, string
+from types import *
 from distutils import sysconfig
 from distutils.core import Command
+from distutils.util import write_file
 
 
 class Install (Command):
@@ -36,6 +38,8 @@ class Install (Command):
                 "platform-specific site directory"),
                ('install-scheme=', None,
                 "install to 'system' or 'site' library directory?"),
+               ('install-path=', None,
+                "extra intervening directories to put below install-lib"),
 
                # Where to install documentation (eventually!)
                ('doc-format=', None, "format of documentation to generate"),
@@ -73,6 +77,7 @@ class Install (Command):
         self.install_platlib = None
         self.install_site_lib = None
         self.install_site_platlib = None
+        self.install_path = None
 
         self.install_man = None
         self.install_html = None
@@ -155,19 +160,65 @@ class Install (Command):
         # really matter *which* one, of course, but I'll observe decorum
         # and do it properly.)
 
-        if self.install_site_lib is None:
-            if os.name == 'posix':
-                self.install_site_lib = \
-                    os.path.join (self.install_lib, 'site-packages')
+        # 'base' and 'platbase' are the base directories for installing
+        # site-local files, eg. "/usr/local/lib/python1.5/site-packages"
+        # or "C:\Program Files\Python"
+        if os.name == 'posix':
+            self.base = os.path.join (self.install_lib,
+                                      'site-packages')
+            self.platbase = os.path.join (self.install_platlib,
+                                          'site-packages')
+        else:
+            self.base = self.prefix
+            self.platbase = self.exec_prefix
+        
+        # 'path_file' and 'extra_dirs' are how we handle distributions
+        # that need to be installed to their own directory, but aren't
+        # package-ized yet.  'extra_dirs' is just a directory under
+        # 'base' or 'platbase' where toplevel modules will actually be
+        # installed; 'path_file' is the basename of a .pth file to drop
+        # in 'base' or 'platbase' (depending on the distribution).  Very
+        # often they will be the same, which is why we allow them to be
+        # supplied as a string or 1-tuple as well as a 2-element
+        # comma-separated string or a 2-tuple.
+        if self.install_path is None:
+            self.install_path = self.distribution.install_path
+
+        if self.install_path is not None:
+            if type (self.install_path) is StringType:
+                self.install_path = string.split (self.install_path, ',')
+
+            if len (self.install_path) == 1:
+                path_file = extra_dirs = self.install_path[0]
+            elif len (self.install_path) == 2:
+                (path_file, extra_dirs) = self.install_path
             else:
-                self.install_site_lib = self.prefix
+                raise DistutilsOptionError, \
+                      "'install_path' option must be a list, tuple, or " + \
+                      "comma-separated string with 1 or 2 elements"
+
+            # install path has slashes in it -- might need to convert to
+            # local form
+            if string.find (extra_dirs, '/') and os.name != "posix":
+                extra_dirs = string.split (extra_dirs, '/')
+                extra_dirs = apply (os.path.join, extra_dirs)
+        else:
+            path_file = None
+            extra_dirs = ''
+
+        # XXX should we warn if path_file and not extra_dirs (in which case
+        # the path file would be harmless but pointless)
+        self.path_file = path_file
+        self.extra_dirs = extra_dirs
+
+
+        if self.install_site_lib is None:
+            self.install_site_lib = os.path.join (self.base,
+                                                  extra_dirs)
 
         if self.install_site_platlib is None:
-            if os.name == 'posix':
-                self.install_site_platlib = \
-                    os.path.join (self.install_platlib, 'site-packages')
-            else:
-                self.install_site_platlib = self.exec_prefix
+            self.install_site_platlib = os.path.join (self.platbase,
+                                                      extra_dirs)
 
         #if self.install_scheme == 'site':
         #    install_lib = self.install_site_lib
@@ -234,9 +285,28 @@ class Install (Command):
         # extensions).  Note that 'install_py' is smart enough to install
         # pure Python modules in the "platlib" directory if we built any
         # extensions.
-        self.run_peer ('install_py')
-        self.run_peer ('install_ext')
+        if self.distribution.packages or self.distribution.py_modules:
+            self.run_peer ('install_py')
+        if self.distribution.ext_modules:
+            self.run_peer ('install_ext')
+
+        if self.path_file:
+            self.create_path_file ()
 
     # run ()
+
+
+    def create_path_file (self):
+
+        if self.distribution.ext_modules:
+            base = self.platbase
+        else:
+            base = self.base
+
+        filename = os.path.join (base, self.path_file + ".pth")
+        self.execute (write_file,
+                      (filename, [self.extra_dirs]),
+                      "creating %s" % filename)
+
 
 # class Install
