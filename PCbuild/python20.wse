@@ -1940,7 +1940,13 @@ item: Install File
   Source=..\lib\csv\*.py
   Destination=%MAINDIR%\Lib\csv
   Description=CSV package
-  Flags=0000000100000010
+  Flags=0000000000000010
+end
+item: Install File
+  Source=..\lib\csv\util\*.py
+  Destination=%MAINDIR%\Lib\csv\util
+  Description=CSV package
+  Flags=0000000000000010
 end
 item: Remark
 end
