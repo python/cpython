@@ -572,7 +572,7 @@ getmappingsize(mp)
 {
 	if (mp == NULL || !is_mappingobject(mp)) {
 		err_badcall();
-		return NULL;
+		return 0;
 	}
 	return ((mappingobject *)mp)->ma_used;
 }
@@ -773,7 +773,7 @@ dictlookup(v, key)
 	object *v;
 	char *key;
 {
-	if (key != last_name_char) {
+	if (key != last_name_char || strcmp(key, getstringvalue(last_name_object)) != 0) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
@@ -791,7 +791,7 @@ dictinsert(v, key, item)
 	char *key;
 	object *item;
 {
-	if (key != last_name_char) {
+	if (key != last_name_char || strcmp(key, getstringvalue(last_name_object)) != 0) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {
@@ -808,7 +808,8 @@ dictremove(v, key)
 	object *v;
 	char *key;
 {
-	if (key != last_name_char) {
+	if (key != last_name_char ||
+	    strcmp(key, getstringvalue(last_name_object)) != 0) {
 		XDECREF(last_name_object);
 		last_name_object = newstringobject(key);
 		if (last_name_object == NULL) {

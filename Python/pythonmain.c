@@ -33,7 +33,7 @@ extern int killprint; /* Defined in ceval.c */
 /* Interface to getopt(): */
 extern int optind;
 extern char *optarg;
-extern int getopt PROTO((int, char **, char *));
+extern int getopt(); /* PROTO((int, char **, char *)); -- not standardized */
 
 extern char *getenv();
 

@@ -37,7 +37,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 extern char *memcpy();
 #endif
 
-#ifdef sun
+#if defined(sun) && !defined(__STDC__)
 /* SunOS doesn't have memmove */
 #define NEED_MEMMOVE
 extern char *memcpy();

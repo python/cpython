@@ -72,6 +72,13 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #endif /* !unix */
 
 #ifdef SYSV
+#if defined(sun) && defined(__STDC__)
+/* Temporary hack for Solaris 2. */
+#define _timezone timezone
+#define _altzone altzone
+#define _daylight daylight
+#define _tzname tzname
+#endif
 /* Access timezone stuff */
 #ifdef OLDTZ				/* ANSI prepends underscore to these */
 #define _timezone	timezone	/* seconds to be added to GMT */

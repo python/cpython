@@ -58,7 +58,7 @@ static object *run_node PROTO((node *n, char *filename,
 			       object *globals, object *locals));
 static object *eval_node PROTO((node *n, char *filename,
 				object *globals, object *locals));
-void initsigs PROTO(());
+static void initsigs PROTO((void));
 
 int debugging; /* Needed by parser.c */
 int verbose; /* Needed by import.c */
