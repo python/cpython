@@ -1,4 +1,5 @@
-
+Original IDLE todo, much of it now outdated:
+============================================
 TO DO:
 
 - improve debugger:

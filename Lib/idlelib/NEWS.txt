@@ -1,3 +1,6 @@
+original IDLE NEWS.txt :
+========================
+
 (For a more detailed change log, see the file ChangeLog.)
 
 ----------------------------------------------------------------------

@@ -78,17 +78,25 @@ TK_TABWIDTH_DEFAULT = 8
 #$ unix <Control-x>
 
 
-about_title = "About IDLE"
+about_title = "About IDLEfork"
 about_text = """\
-IDLE %s
+IDLEfork %s
 
-An Integrated DeveLopment Environment for Python
+IDLE is an Integrated DeveLopment Environment for Python \
+by Guido van Rossum.
 
-by Guido van Rossum
+IDLEfork is an official experimental development version of IDLE.
+Succesful new features in IDLEfork will be mereged back in to stable IDLE.
 
-This version of IDLE has been modified by David Scherer
-  (dscherer@cmu.edu).  See readme.txt for details.
-""" % idlever.IDLE_VERSION
+This version of IDLEfork is based on the work in stable IDLE version %s, \
+IDLEfork 0.7.1 released by David Scherer, and the VPython idle fork. 
+
+See README.txt for more details on IDLEfork.
+
+WARNING: IDLEfork is at this stage alpha quality software, expect things \
+to be broken. 
+
+""" % (idlever.IDLEFORK_VERSION, idlever.IDLE_VERSION)
 
 class EditorWindow:
 
