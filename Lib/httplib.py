@@ -864,32 +864,42 @@ class SSLFile(SharedSocketClient):
 
     def read(self, size=None):
         L = [self._buf]
+        avail = len(self._buf)
+        while size is None or avail < size:
+            s = self._read()
+            if s == '':
+                break
+            L.append(s)
+            avail += len(s)
+        all = "".join(L)
         if size is None:
             self._buf = ''
-            for s in iter(self._read, ""):
-                L.append(s)
-            return "".join(L)
+            return all
         else:
-            avail = len(self._buf)
-            for s in iter(self._read, ""):
-                L.append(s)
-                avail += len(s)
-                if avail >= size:
-                    all = "".join(L)
-                    self._buf = all[size:]
-                    return all[:size]
+            self._buf = all[size:]
+            return all[:size]
 
     def readline(self):
         L = [self._buf]
         self._buf = ''
-        for s in iter(self._read, ""):
-            L.append(s)
-            if "\n" in s:
-                i = s.find("\n") + 1
-                self._buf = s[i:]
-                L[-1] = s[:i]
+        while 1:
+            i = L[-1].find("\n")
+            if i >= 0:
                 break
-        return "".join(L)
+            s = self._read()
+            if s == '':
+                break
+            L.append(s)
+        if i == -1:
+            # loop exited because there is no more data
+            return "".join(L)
+        else:
+            all = "".join(L)
+            # XXX could do enough bookkeeping not to do a 2nd search
+            i = all.find("\n") + 1
+            line = all[:i]
+            self._buf = all[i:]
+            return line
 
 class FakeSocket(SharedSocketClient):
 
