@@ -146,21 +146,19 @@ emu
 \end{funcdesc}
 
 
-\begin{funcdesc}{IS_LINE_JUNK}{line}:
-
-  Return 1 for ignorable line: iff \var{line} is blank or contains a
-  single \character{\#}.  Used as a default for parameter
+\begin{funcdesc}{IS_LINE_JUNK}{line}
+  Return true for ignorable lines.  The line \var{line} is ignorable
+  if \var{line} is blank or contains a single \character{\#},
+  otherwise it is not ignorable.  Used as a default for parameter
   \var{linejunk} in \function{ndiff()}.
-
 \end{funcdesc}
 
 
-\begin{funcdesc}{IS_CHARACTER_JUNK}{ch}:
-
-  Return 1 for ignorable character: iff \var{ch} is a space or tab.
-  Used as a default for parameter \var{charjunk} in
+\begin{funcdesc}{IS_CHARACTER_JUNK}{ch}
+  Return true for ignorable characters.  The character \var{ch} is
+  ignorable if \var{ch} is a space or tab, otherwise it is not
+  ignorable.  Used as a default for parameter \var{charjunk} in
   \function{ndiff()}.
-
 \end{funcdesc}
 
 
@@ -182,8 +180,9 @@ The \class{SequenceMatcher} class has this constructor:
   Optional argument \var{isjunk} must be \code{None} (the default) or
   a one-argument function that takes a sequence element and returns
   true if and only if the element is ``junk'' and should be ignored.
-  \code{None} is equivalent to passing \code{lambda x: 0}, i.e.\ no
-  elements are ignored.  For example, pass
+  Passing \code{None} for \var{b} is equivalent to passing
+  \code{lambda x: 0}; in other words, no elements are ignored.  For
+  example, pass:
 
 \begin{verbatim}
 lambda x: x in " \t"
@@ -445,7 +444,7 @@ The \class{Differ} class has this constructor:
   for filter functions (or \code{None}):
 
   \var{linejunk}: A function that should accept a single string
-  argument, and return true iff the string is junk. The default is
+  argument, and return true if the string is junk.  The default is
   module-level function \function{IS_LINE_JUNK()}, which filters out
   lines without visible characters, except for at most one pound
   character (\character{\#}).
