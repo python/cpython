@@ -1,7 +1,6 @@
 import time
 import string
 import zlib
-import StringIO
 import __builtin__
 
 # implements a python function that reads and writes a gzipped file
@@ -157,7 +156,7 @@ class GzipFile:
     def writelines(self,lines):
         self.write(string.join(lines))
 
-    def read(self,size=None):
+    def read(self, size=None):
         if self.extrasize <= 0 and self.fileobj is None:
             return ''
 
@@ -185,7 +184,7 @@ class GzipFile:
 
     def _unread(self, buf):
         self.extrabuf = buf + self.extrabuf
-        self.extrasize = len(buf) + self.extrasize
+        self.extrasize = len(self.extrabuf)
 
     def _read(self, size=1024):
         try:
@@ -250,7 +249,7 @@ class GzipFile:
             c = self.read(readsize)
             i = string.find(c, '\n')
             if i >= 0 or c == '':
-                bufs.append(c[:i])
+                bufs.append(c[:i+1])
                 self._unread(c[i+1:])
                 return string.join(bufs, '')
             bufs.append(c)
