@@ -10,12 +10,15 @@ $Id$
 """
 
 version = '2.0beta'
+
 #============================================================================
 #
 # HANDLER INTERFACES
 #
 #============================================================================
+
 # ===== ErrorHandler =====
+
 class ErrorHandler:
     """Basic interface for SAX error handlers. If you create an object
     that implements this interface, then register the object with your
@@ -119,20 +122,34 @@ class ContentHandler:
         of endPrefixMapping events is not otherwise guaranteed."""
 
     def startElement(self, name, attrs):
-        """Signals the start of an element.
+        """Signals the start of an element in non-namespace mode.
 
-        The name parameter contains the name of the element type as a
-        (uri ,localname) tuple, the qname parameter the raw XML 1.0
-        name used in the source document, and the attrs parameter
-        holds an instance of the Attributes class containing the
-        attributes of the element."""
+        The name parameter contains the raw XML 1.0 name of the
+        element type as a string and the attrs parameter holds an
+        instance of the Attributes class containing the attributes of
+        the element."""
 
-    def endElement(self, name ):
-        """Signals the end of an element.
+    def endElement(self, name):
+        """Signals the end of an element in non-namespace mode.
 
         The name parameter contains the name of the element type, just
         as with the startElement event."""
 
+    def startElementNS(self, name, qname, attrs):
+        """Signals the start of an element in namespace mode.
+
+        The name parameter contains the name of the element type as a
+        (uri, localname) tuple, the qname parameter the raw XML 1.0
+        name used in the source document, and the attrs parameter
+        holds an instance of the Attributes class containing the
+        attributes of the element."""
+
+    def endElementNS(self, name, qname):
+        """Signals the end of an element in namespace mode.
+
+        The name parameter contains the name of the element type, just
+        as with the startElementNS event."""
+        
     def characters(self, content):
         """Receive notification of character data.
         
