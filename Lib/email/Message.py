@@ -7,7 +7,7 @@
 import re
 import warnings
 from cStringIO import StringIO
-from types import ListType, StringType
+from types import ListType, TupleType, StringType
 
 # Intrapackage imports
 from email import Errors
@@ -27,13 +27,19 @@ tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
 
 
-# Helper function
+# Helper functions
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
 
-    Will quote the value if needed or if quote is true.
+    This will quote the value if needed or if quote is true.
     """
     if value is not None and len(value) > 0:
+        # TupleType is used for RFC 2231 encoded parameter values where items
+        # are (charset, language, value).  charset is a string, not a Charset
+        # instance.
+        if isinstance(value, TupleType):
+            # Convert to ascii, ignore language
+            value = unicode(value[2], value[0]).encode("ascii")
         # BAW: Please check this.  I think that if quote is set it should
         # force quoting even if not necessary.
         if quote or tspecials.search(value):
@@ -42,6 +48,13 @@ def _formatparam(param, value=None, quote=1):
             return '%s=%s' % (param, value)
     else:
         return param
+
+
+def _unquotevalue(value):
+    if isinstance(value, TupleType):
+       return (value[0], value[1], Utils.unquote(value[2]))
+    else:
+       return Utils.unquote(value)
 
 
 
@@ -400,6 +413,7 @@ class Message:
                 name = p
                 val = ''
             params.append((name, val))
+        params = Utils.decode_params(params)
         return params
 
     def get_params(self, failobj=None, header='content-type', unquote=1):
@@ -420,7 +434,7 @@ class Message:
         if params is missing:
             return failobj
         if unquote:
-            return [(k, Utils.unquote(v)) for k, v in params]
+            return [(k, _unquotevalue(v)) for k, v in params]
         else:
             return params
 
@@ -439,7 +453,7 @@ class Message:
         for k, v in self._get_params_preserve(failobj, header):
             if k.lower() == param.lower():
                 if unquote:
-                    return Utils.unquote(v)
+                    return _unquotevalue(v)
                 else:
                     return v
         return failobj
@@ -548,7 +562,13 @@ class Message:
         filename = self.get_param('filename', missing, 'content-disposition')
         if filename is missing:
             return failobj
-        return Utils.unquote(filename.strip())
+        if isinstance(filename, TupleType):
+            # It's an RFC 2231 encoded parameter
+            newvalue = _unquotevalue(filename)
+            return unicode(newvalue[2], newvalue[0])
+        else:
+            newvalue = _unquotevalue(filename.strip())
+            return newvalue
 
     def get_boundary(self, failobj=None):
         """Return the boundary associated with the payload if present.
@@ -560,7 +580,7 @@ class Message:
         boundary = self.get_param('boundary', missing)
         if boundary is missing:
             return failobj
-        return Utils.unquote(boundary.strip())
+        return _unquotevalue(boundary.strip())
 
     def set_boundary(self, boundary):
         """Set the boundary parameter in Content-Type: to 'boundary'.
