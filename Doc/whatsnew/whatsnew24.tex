@@ -289,7 +289,9 @@ The \code{@classmethod} is shorthand for the
 the following:
 
 \begin{verbatim}
-@A @B @C
+@A
+@B
+@C
 def f ():
     ...
 \end{verbatim}
@@ -301,16 +303,18 @@ def f(): ...
 f = A(B(C(f)))
 \end{verbatim}
 
-Decorators must come on the line before a function definition, and
-can't be on the same line, meaning that \code{@A def f(): ...} is
-illegal.  You can only decorate function definitions, either at the
-module level or inside a class; you can't decorate class definitions.
+Decorators must come on the line before a function definition, one decorator
+per line, and can't be on the same line as the def statement, meaning that
+\code{@A def f(): ...} is illegal.  You can only decorate function
+definitions, either at the module level or inside a class; you can't
+decorate class definitions.
 
-A decorator is just a function that takes the function to be decorated
-as an argument and returns either the same function or some new
-callable thing.  It's easy to write your own decorators.  The
-following simple example just sets an attribute on the function
-object:
+A decorator is just a function that takes the function to be decorated as an
+argument and returns either the same function or some new object.  The
+return value of the decorator need not be callable (though it typically is),
+unless further decorators will be applied to the result.  It's easy to write
+your own decorators.  The following simple example just sets an attribute on
+the function object:
 
 \begin{verbatim}
 >>> def deco(func):
