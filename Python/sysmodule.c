@@ -969,6 +969,9 @@ makeargvobject(int argc, char **argv)
 void
 PySys_SetArgv(int argc, char **argv)
 {
+#ifdef MS_WINDOWS
+	char fullpath[MAX_PATH];
+#endif
 	PyObject *av = makeargvobject(argc, argv);
 	PyObject *path = PySys_GetObject("path");
 	if (av == NULL)
@@ -1011,6 +1014,15 @@ PySys_SetArgv(int argc, char **argv)
 #if SEP == '\\' /* Special case for MS filename syntax */
 		if (argc > 0 && argv0 != NULL) {
 			char *q;
+#ifdef MS_WINDOWS
+			char *ptemp;
+			if (GetFullPathName(argv0,
+					   sizeof(fullpath),
+					   fullpath,
+					   &ptemp)) {
+				argv0 = fullpath;
+			}
+#endif
 			p = strrchr(argv0, SEP);
 			/* Test for alternate separator */
 			q = strrchr(p ? p : argv0, '/');
