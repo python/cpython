@@ -14,6 +14,7 @@ import WASTEconst
 import Scrap
 import os
 import macfs
+import MACFS
 
 UNDOLABELS = [ # Indexed by WEGetUndoInfo() value
 	None, "", "typing", "Cut", "Paste", "Clear", "Drag", "Style"]
@@ -212,7 +213,7 @@ class WasteWindow(ScrolledWindow):
 		try:
 			rf = Res.FSpOpenResFile(self.path, 3)
 		except Res.Error:
-			Res.CreateResFile(self.path)
+			Res.FSpCreateResFile(self.path, '????', 'TEXT', MACFS.smAllScripts)
 			rf = Res.FSpOpenResFile(self.path, 3)
 		styles = Res.Resource('')
 		soup = Res.Resource('')

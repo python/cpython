@@ -75,7 +75,6 @@ class EchoServer:
 		Menu.ClearMenuBar()
 		self.applemenu = applemenu = Menu.NewMenu(self.appleid, "\024")
 		applemenu.AppendMenu("All about echo...;(-")
-		applemenu.AppendResMenu('DRVR')
 		applemenu.InsertMenu(0)
 		
 		self.filemenu = Menu.NewMenu(self.fileid, 'File')
@@ -146,9 +145,6 @@ class EchoServer:
 			if id == self.appleid:
 				if item == 1:
 					mymessage("Echo -- echo AppleEvents")
-				elif item > 1:
-					name = self.applemenu.GetItem(item)
-					Qd.OpenDeskAcc(name)
 			elif id == self.fileid:
 				if item == 1:
 					raise Quit

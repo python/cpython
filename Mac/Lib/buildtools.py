@@ -140,7 +140,7 @@ def process_common(template, progress, code, rsrcname, destname, is_update, copy
 	try:
 		output = Res.FSpOpenResFile(dest_fss, WRITE)
 	except MacOS.Error:
-		Res.CreateResFile(destname)
+		Res.FSpCreateResFile(destname, '????', 'APPL', MACFS.smAllScripts)
 		output = Res.FSpOpenResFile(dest_fss, WRITE)
 	
 	# Copy the resources from the target specific resource template, if any
