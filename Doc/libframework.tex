@@ -2,7 +2,7 @@
 \stmodindex{FrameWork}
 \label{module-FrameWork}
 
-The \code{FrameWork} module contains classes that together provide a
+The \module{FrameWork} module contains classes that together provide a
 framework for an interactive Macintosh application. The programmer
 builds an application by creating subclasses that override various
 methods of the bases classes, thereby implementing the functionality
@@ -11,18 +11,17 @@ different levels, i.e. to handle clicks in a single dialog window in a
 non-standard way it is not necessary to override the complete event
 handling.
 
-The \code{FrameWork} is still very much work-in-progress, and the
+The \module{FrameWork} is still very much work-in-progress, and the
 documentation describes only the most important functionality, and not
 in the most logical manner at that. Examine the source or the examples
 for more details.
 
-The \code{FrameWork} module defines the following functions:
+The \module{FrameWork} module defines the following functions:
 
-\setindexsubitem{(in module FrameWork)}
 
 \begin{funcdesc}{Application}{}
 An object representing the complete application. See below for a
-description of the methods. The default \code{__init__} routine
+description of the methods. The default \method{__init__()} routine
 creates an empty window dictionary and a menu bar with an apple menu.
 \end{funcdesc}
 
@@ -88,23 +87,25 @@ Set the mouse cursor to a watch.
 Set the mouse cursor to an arrow.
 \end{funcdesc}
 
-\subsection{Application objects}
+\subsection{Application Objects}
+\label{application-objects}
+
 Application objects have the following methods, among others:
 
 \setindexsubitem{(Application method)}
 
 \begin{funcdesc}{makeusermenus}{}
 Override this method if you need menus in your application. Append the
-menus to \code{self.menubar}.
+menus to the attribute \member{menubar}.
 \end{funcdesc}
 
 \begin{funcdesc}{getabouttext}{}
 Override this method to return a text string describing your
-application. Alternatively, override the \code{do_about} method for
-more elaborate about messages.
+application.  Alternatively, override the \method{do_about()} method
+for more elaborate ``about'' messages.
 \end{funcdesc}
 
-\begin{funcdesc}{mainloop}{\optional{mask, wait}}
+\begin{funcdesc}{mainloop}{\optional{mask\optional{, wait}}}
 This routine is the main event loop, call it to set your application
 rolling. \var{Mask} is the mask of events you want to handle,
 \var{wait} is the number of ticks you want to leave to other
@@ -117,13 +118,14 @@ overridden. The default methods take care of dispatching events to
 windows and dialogs, handling drags and resizes, Apple Events, events
 for non-FrameWork windows, etc.
 
-In general, all event handlers should return 1 if the event is fully
-handled and 0 otherwise (because the front window was not a FrameWork
+In general, all event handlers should return \code{1} if the event is fully
+handled and \code{0} otherwise (because the front window was not a FrameWork
 window, for instance). This is needed so that update events and such
 can be passed on to other windows like the Sioux console window.
-Calling \code{MacOS.HandleEvent} is not allowed within \var{our_dispatch}
-or its callees, since this may result in an infinite loop if the
-code is called through the Python inner-loop event handler.
+Calling \function{MacOS.HandleEvent()} is not allowed within
+\var{our_dispatch} or its callees, since this may result in an
+infinite loop if the code is called through the Python inner-loop
+event handler.
 \end{funcdesc}
 
 \begin{funcdesc}{asyncevents}{onoff}
@@ -142,7 +144,8 @@ The old on/off value is returned.
 \end{funcdesc}
 
 \begin{funcdesc}{_quit}{}
-Terminate the event \code{mainloop} at the next convenient moment.
+Terminate the running \method{mainloop()} call at the next convenient
+moment.
 \end{funcdesc}
 
 \begin{funcdesc}{do_char}{c, event}
@@ -165,6 +168,7 @@ null-event is passed (so you can look at mouse position, etc).
 \end{funcdesc}
 
 \subsection{Window Objects}
+\label{window-objects}
 
 Window objects have the following methods, among others:
 
@@ -202,6 +206,7 @@ The window was activated (\code{activate==1}) or deactivated
 \end{funcdesc}
 
 \subsection{ControlsWindow Object}
+\label{controlswindow-object}
 
 ControlsWindow objects have the following methods besides those of
 \code{Window} objects:
@@ -214,40 +219,41 @@ user. Tracking and such has already been taken care of.
 \end{funcdesc}
 
 \subsection{ScrolledWindow Object}
+\label{scrolledwindow-object}
 
 ScrolledWindow objects are ControlsWindow objects with the following
 extra methods:
 
 \setindexsubitem{(ScrolledWindow method)}
 
-\begin{funcdesc}{scrollbars}{\optional{wantx, wanty}}
+\begin{funcdesc}{scrollbars}{\optional{wantx\optional{, wanty}}}
 Create (or destroy) horizontal and vertical scrollbars. The arguments
 specify which you want (default: both). The scrollbars always have
 minimum \code{0} and maximum \code{32767}.
 \end{funcdesc}
 
 \begin{funcdesc}{getscrollbarvalues}{}
-You must supply this method. It should return a tuple \code{x, y}
-giving the current position of the scrollbars (between \code{0} and
-\code{32767}). You can return \code{None} for either to indicate the
-whole document is visible in that direction.
+You must supply this method. It should return a tuple \code{(\var{x},
+\var{y})} giving the current position of the scrollbars (between
+\code{0} and \code{32767}). You can return \code{None} for either to
+indicate the whole document is visible in that direction.
 \end{funcdesc}
 
 \begin{funcdesc}{updatescrollbars}{}
 Call this method when the document has changed. It will call
-\code{getscrollbarvalues} and update the scrollbars.
+\method{getscrollbarvalues()} and update the scrollbars.
 \end{funcdesc}
 
 \begin{funcdesc}{scrollbar_callback}{which, what, value}
-Supplied by you and called after user interaction. \code{Which} will
-be \code{'x'} or \code{'y'}, \code{what} will be \code{'-'},
+Supplied by you and called after user interaction. \var{which} will
+be \code{'x'} or \code{'y'}, \var{what} will be \code{'-'},
 \code{'--'}, \code{'set'}, \code{'++'} or \code{'+'}. For
-\code{'set'}, \code{value} will contain the new scrollbar position.
+\code{'set'}, \var{value} will contain the new scrollbar position.
 \end{funcdesc}
 
 \begin{funcdesc}{scalebarvalues}{absmin, absmax, curmin, curmax}
 Auxiliary method to help you calculate values to return from
-\code{getscrollbarvalues}. You pass document minimum and maximum value
+\method{getscrollbarvalues()}. You pass document minimum and maximum value
 and topmost (leftmost) and bottommost (rightmost) visible values and
 it returns the correct number or \code{None}.
 \end{funcdesc}
@@ -270,6 +276,7 @@ and has been handled.
 \end{funcdesc}
 
 \subsection{DialogWindow Objects}
+\label{dialogwindow-objects}
 
 DialogWindow objects have the following methods besides those of
 \code{Window} objects:

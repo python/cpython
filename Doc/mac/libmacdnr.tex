@@ -4,8 +4,10 @@
 
 This module provides an interface to the Macintosh Domain Name
 Resolver.  It is usually used in conjunction with the \module{mactcp}
-module, to map hostnames to IP-addresses.  It may not be available in
+module, to map hostnames to IP addresses.  It may not be available in
 all Mac Python versions.
+\index{Macintosh Domain Name Resolver}
+\index{Domain Name Resolver, Macintosh}
 
 The \module{macdnr} module defines the following functions:
 
@@ -46,11 +48,12 @@ variety.
 
 \begin{funcdesc}{MXInfo}{domain}
 Query the nameservers for a mail exchanger for \var{domain}.  This is
-the hostname of a host willing to accept SMTP mail for the given
-domain.  Returns a dnr result object of the ``mx'' variety.
+the hostname of a host willing to accept SMTP\index{SMTP} mail for the
+given domain.  Returns a dnr result object of the ``mx'' variety.
 \end{funcdesc}
 
 \subsection{dnr result object}
+\label{dnr-result-object}
 
 Since the DNR calls all execute asynchronously you do not get the
 results back immediately.  Instead, you get a dnr result object.  You
@@ -64,50 +67,48 @@ The \member{rtnCode} and \member{cname} attributes are always
 available, the others depend on the type of query (address, hinfo or
 mx).
 
-\setindexsubitem{(dnr result method)}
 
 % Add args, as in {arg1, arg2 \optional{, arg3}}
-\begin{funcdesc}{wait}{}
+\begin{methoddesc}[dnr result]{wait}{}
 Wait for the query to complete.
-\end{funcdesc}
+\end{methoddesc}
 
 % Add args, as in {arg1, arg2 \optional{, arg3}}
-\begin{funcdesc}{isdone}{}
+\begin{methoddesc}[dnr result]{isdone}{}
 Return \code{1} if the query is complete.
-\end{funcdesc}
+\end{methoddesc}
 
-\setindexsubitem{(dnr result attribute)}
 
-\begin{datadesc}{rtnCode}
+\begin{memberdesc}[dnr result]{rtnCode}
 The error code returned by the query.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{cname}
+\begin{memberdesc}[dnr result]{cname}
 The canonical name of the host that was queried.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{ip0}
-\dataline{ip1}
-\dataline{ip2}
-\dataline{ip3}
+\begin{memberdesc}[dnr result]{ip0}
+\memberline[dnr result]{ip1}
+\memberline[dnr result]{ip2}
+\memberline[dnr result]{ip3}
 At most four integer IP addresses for this host.  Unused entries are
 zero.  Valid only for address queries.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{cpuType}
-\dataline{osType}
+\begin{memberdesc}[dnr result]{cpuType}
+\memberline[dnr result]{osType}
 Textual strings giving the machine type an OS name.  Valid for ``hinfo''
 queries.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{exchange}
+\begin{memberdesc}[dnr result]{exchange}
 The name of a mail-exchanger host.  Valid for ``mx'' queries.
-\end{datadesc}
+\end{memberdesc}
 
-\begin{datadesc}{preference}
+\begin{memberdesc}[dnr result]{preference}
 The preference of this mx record.  Not too useful, since the Macintosh
 will only return a single mx record.  Valid for ``mx'' queries only.
-\end{datadesc}
+\end{memberdesc}
 
 The simplest way to use the module to convert names to dotted-decimal
 strings, without worrying about idle time, etc:
