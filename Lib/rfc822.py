@@ -927,9 +927,11 @@ if __name__ == '__main__':
     print 'Subject:', m.getheader('subject')
     print 'Date:', m.getheader('date')
     date = m.getdate_tz('date')
+    tz = date[-1]
+    date = time.localtime(mktime_tz(date))
     if date:
-        print 'ParsedDate:', time.asctime(date[:-1]),
-        hhmmss = date[-1]
+        print 'ParsedDate:', time.asctime(date),
+        hhmmss = tz
         hhmm, ss = divmod(hhmmss, 60)
         hh, mm = divmod(hhmm, 60)
         print "%+03d%02d" % (hh, mm),
