@@ -376,9 +376,6 @@ class Telnet:
 	"""Interaction function, emulates a very dumb telnet client."""
 	while 1:
 	    rfd, wfd, xfd = select.select([self, sys.stdin], [], [])
-	    if sys.stdin in rfd:
-		line = sys.stdin.readline()
-		self.write(line)
 	    if self in rfd:
 		try:
 		    text = self.read_eager()
@@ -388,7 +385,11 @@ class Telnet:
 		if text:
 		    sys.stdout.write(text)
 		    sys.stdout.flush()
-	self.close()
+	    if sys.stdin in rfd:
+		line = sys.stdin.readline()
+		if not line:
+		    break
+		self.write(line)
 
     def expect(self, list, timeout=None):
 	"""Read until one from a list of a regular expressions matches.
