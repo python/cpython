@@ -71,6 +71,12 @@ Tests
   attempt to allocate any memory, but merely check that the overflow
   detection code works correctly (as was intended).
 
+- The MacOSX (both 10.1 and 10.2) tests will crash with SEGV in
+  test_re and test_sre due to the small default stack size.  Do
+  "ulimit -s 2048" before "make test" to avoid the failure.  Note that
+  this is a built-in bash command so if you're using a different
+  shell, the command may be different too.
+
 Windows
 
 - Fixed the "File version" field in the DLL.  This has apparently been
