@@ -14,9 +14,11 @@ components (addessing scheme, network location, path etc.), to combine
 the components back into a URL string, and to convert a ``relative
 URL'' to an absolute URL given a ``base URL''.
 
-The module has been designed to match the current Internet draft on
-Relative Uniform Resource Locators (and discovered a bug in an earlier
-draft!).
+The module has been designed to match the Internet RFC on Relative
+Uniform Resource Locators (and discovered a bug in an earlier
+draft!).  Refer to RFC 1808\index{RFC!1808} for details on relative
+URLs and RFC 1738\index{RFC!1738} for information on basic URL
+syntax.
 
 It defines the following functions:
 
@@ -54,7 +56,7 @@ support them.  The default value for this argument is \code{1}.
 \end{funcdesc}
 
 \begin{funcdesc}{urlunparse}{tuple}
-Construct a URL string from a tuple as returned by \code{urlparse}.
+Construct a URL string from a tuple as returned by \code{urlparse()}.
 This may result in a slightly different, but equivalent URL, if the
 URL that was parsed originally had redundant delimiters, e.g. a ? with
 an empty query (the draft states that these are equivalent).
@@ -80,5 +82,5 @@ yields the string
 \end{verbatim}\ecode
 %
 The \var{allow_fragments} argument has the same meaning as for
-\code{urlparse}.
+\code{urlparse()}.
 \end{funcdesc}
