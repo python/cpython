@@ -10,7 +10,7 @@ and platform independent windowing toolkit, that is available to
 Python programmers using the \refmodule{Tkinter} module, and its
 extension, the \refmodule{Tix} module.
 
-The \refmodule{Tkinter} module is a thin object--oriented layer on top of
+The \refmodule{Tkinter} module is a thin object-oriented layer on top of
 Tcl/Tk. To use \refmodule{Tkinter}, you don't need to write Tcl code,
 but you will need to consult the Tk documentation, and occasionally
 the Tcl documentation.  \refmodule{Tkinter} is a set of wrappers that
@@ -97,7 +97,7 @@ from Tkinter import *
 \begin{classdesc}{Tk}{screenName=None, baseName=None, className='Tk', useTk=1}
 The \class{Tk} class is instantiated without arguments.
 This creates a toplevel widget of Tk which usually is the main window
-of an appliation. Each instance has its own associated Tcl interpreter.
+of an application. Each instance has its own associated Tcl interpreter.
 % FIXME: The following keyword arguments are currently recognized:
 \versionchanged[The \var{useTk} parameter was added]{2.4}
 \end{classdesc}
@@ -461,7 +461,7 @@ fred = Button(self, fg = "red", bg = "blue")
 fred["fg"] = "red"
 fred["bg"] = "blue"
 \end{verbatim}
-\item[Use the config() method to update multiple attrs subesequent to
+\item[Use the config() method to update multiple attrs subsequent to
 object creation]:
 \begin{verbatim}
 fred.config(fg = "red", bg = "blue")
@@ -812,7 +812,7 @@ For example:
     self.button.bind("<Enter>", self.turnRed)
 \end{verbatim}
 
-Notice how the widget field of the event is being accesed in the
+Notice how the widget field of the event is being accessed in the
 \method{turnRed()} callback.  This field contains the widget that
 caught the X event.  The following table lists the other event fields
 you can access, and how they are denoted in Tk, which can be useful
@@ -1218,7 +1218,7 @@ The \ulink{HList}
 widget can be used to display any data that have a hierarchical
 structure, for example, file system directory trees. The list entries
 are indented and connected by branch lines according to their places
-in the hierachy.
+in the hierarchy.
 \end{classdesc}
 
 % Python Demo of:
@@ -1243,7 +1243,7 @@ radiobuttons.
 \begin{classdesc}{Tree}{}
 The \ulink{Tree}
 {http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixTree.htm}
-widget can be used to display hierachical data in a tree form. The
+widget can be used to display hierarchical data in a tree form. The
 user can adjust the view of the tree by opening or closing parts of
 the tree.
 \end{classdesc}
@@ -1359,7 +1359,7 @@ image types can be used to create images that consists of multiple
 horizontal lines; each line is composed of a series of items (texts,
 bitmaps, images or spaces) arranged from left to right. For example, a
 compound image can be used to display a bitmap and a text string
-simutaneously in a Tk \class{Button} widget.
+simultaneously in a Tk \class{Button} widget.
 
 % Python Demo of:
 % \ulink{Compound Image In Buttons}{http://tix.sourceforge.net/dist/current/demos/samples/CmpImg.tcl}
@@ -1486,7 +1486,7 @@ used to configure the \code{image} option of the Tk and Tix widgets.
 \end{methoddesc}
 
 \begin{methoddesc}{tix_option_get}{name}
-Gets the options manitained by the Tix scheme mechanism.
+Gets the options maintained by the Tix scheme mechanism.
 \end{methoddesc}
 
 \begin{methoddesc}{tix_resetoptions}{newScheme, newFontSet\optional{,
@@ -1547,13 +1547,13 @@ are available:
 \section{Idle \label{idle}}
 
 %\declaremodule{standard}{idle}
-%\modulesynopsis{A Python Integrated Developement Environment}
+%\modulesynopsis{A Python Integrated Development Environment}
 \moduleauthor{Guido van Rossum}{guido@Python.org}
 
 Idle is the Python IDE built with the \refmodule{Tkinter} GUI toolkit.  
 \index{Idle}
 \index{Python Editor}
-\index{Integrated Developement Environment}
+\index{Integrated Development Environment}
 
 
 IDLE has the following features:

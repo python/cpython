@@ -414,7 +414,7 @@ String literals are written in single or double quotes:
 \code{'xyzzy'}, \code{"frobozz"}.  See chapter 2 of the
 \citetitle[../ref/strings.html]{Python Reference Manual} for more about
 string literals.  Unicode strings are much like strings, but are
-specified in the syntax using a preceeding \character{u} character:
+specified in the syntax using a preceding \character{u} character:
 \code{u'abc'}, \code{u"def"}.  Lists are constructed with square brackets,
 separating items with commas: \code{[a, b, c]}.  Tuples are
 constructed by the comma operator (not within square brackets), with
@@ -546,7 +546,7 @@ for assignments of the form \code{\var{s}=\var{s}+\var{t}} or
 \code{\var{s}+=\var{t}}.  When applicable, this optimization makes
 quadratic run-time much less likely.  This optimization is both version
 and implementation dependent.  For performance sensitive code, it is
-preferrable to use the \method{str.join()} method which assures consistent
+preferable to use the \method{str.join()} method which assures consistent
 linear concatenation performance across versions and implementations.
 \versionchanged[Formerly, string concatenation never occurred in-place]{2.4}
 
@@ -932,8 +932,8 @@ The conversion types are:
   \lineiii{i}{Signed integer decimal.}{}
   \lineiii{o}{Unsigned octal.}{(1)}
   \lineiii{u}{Unsigned decimal.}{}
-  \lineiii{x}{Unsigned hexidecimal (lowercase).}{(2)}
-  \lineiii{X}{Unsigned hexidecimal (uppercase).}{(2)}
+  \lineiii{x}{Unsigned hexadecimal (lowercase).}{(2)}
+  \lineiii{X}{Unsigned hexadecimal (uppercase).}{(2)}
   \lineiii{e}{Floating point exponential format (lowercase).}{}
   \lineiii{E}{Floating point exponential format (uppercase).}{}
   \lineiii{f}{Floating point decimal format.}{}
@@ -1202,7 +1202,7 @@ subset of the second set (is a subset, but is not equal).
 A set is greater than another set if and only if the first set is a proper
 superset of the second set (is a superset, but is not equal).
 
-Instanceas of \class{set} are compared to instances of \class{frozenset} based
+Instances of \class{set} are compared to instances of \class{frozenset} based
 on their members.  For example, \samp{set('abc') == frozenset('abc')} returns
 \code{True}.     
 

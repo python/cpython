@@ -23,7 +23,7 @@ Let's create an extension module called \samp{spam} (the favorite food
 of Monty Python fans...) and let's say we want to create a Python
 interface to the C library function \cfunction{system()}.\footnote{An
 interface for this function already exists in the standard module
-\module{os} --- it was chosen as a simple and straightfoward example.}
+\module{os} --- it was chosen as a simple and straightforward example.}
 This function takes a null-terminated character string as argument and
 returns an integer.  We want this function to be callable from Python
 as follows:
@@ -1002,8 +1002,8 @@ on, it must be turned into an owned reference by calling
 \cfunction{Py_INCREF()}.
 
 The object reference returned from a C function that is called from
-Python must be an owned reference --- ownership is tranferred from the
-function to its caller.
+Python must be an owned reference --- ownership is transferred from
+the function to its caller.
 
 
 \subsection{Thin Ice
@@ -1147,7 +1147,7 @@ apply.  If the main program (the Python interpreter) is compiled and
 linked by the C compiler, global or static objects with constructors
 cannot be used.  This is not a problem if the main program is linked
 by the \Cpp{} compiler.  Functions that will be called by the
-Python interpreter (in particular, module initalization functions)
+Python interpreter (in particular, module initialization functions)
 have to be declared using \code{extern "C"}.
 It is unnecessary to enclose the Python header files in
 \code{extern "C" \{...\}} --- they use this form already if the symbol
