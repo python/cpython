@@ -418,7 +418,7 @@ class semaphore:
         self.nonzero.acquire()
         if self.count == self.maxcount:
             raise ValueError, '.v() tried to raise semaphore count above ' \
-                  'initial value %r' % (maxcount,))
+                  'initial value %r' % self.maxcount
         self.count = self.count + 1
         self.nonzero.signal()
         self.nonzero.release()
