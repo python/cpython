@@ -772,11 +772,11 @@ This is an example of string which has almost the limit of header length.
         msg['Received-2'] = h
         self.assertEqual(msg.as_string(), """\
 Received-1: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
-	hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
-	Wed, 05 Mar 2003 18:10:18 -0700
+\throthgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+\tWed, 05 Mar 2003 18:10:18 -0700
 Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
-	hrothgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
-	Wed, 05 Mar 2003 18:10:18 -0700
+\throthgar.la.mastaler.com (tmda-ofmipd) with ESMTP;
+\tWed, 05 Mar 2003 18:10:18 -0700
 
 """)
 
@@ -788,9 +788,9 @@ Received-2: from FOO.TLD (vizworld.acl.foo.tld [123.452.678.9]) by
         msg['Received-2'] = h
         self.assertEqual(msg.as_string(), """\
 Received-1: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
-	(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
 Received-2: <15975.17901.207240.414604@sgigritzmann1.mathematik.tu-muenchen.de>
-	(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
+\t(David Bremner's message of "Thu, 6 Mar 2003 13:58:21 +0100")
 
 """)
 
