@@ -566,7 +566,7 @@ The tuple items are:\n\
   day (1-31)\n\
   hours (0-23)\n\
   minutes (0-59)\n\
-  seconds (0-61, to allow for leap seconds)\n\
+  seconds (0-59)\n\
   weekday (0-6, Monday is 0)\n\
   Julian day (day in the year, 1-366)\n\
   DST (Daylight Savings Time) flag (-1, 0 or 1)\n\
