@@ -99,7 +99,7 @@ then
 	esac
 fi
 
-if test -z "$ac_arch_flags"
+if test "$ac_arch_flags"
 then
 	OPT="$OPT $ac_arch_flags"
 fi
@@ -242,20 +242,30 @@ AC_DEFINE(WITH_READLINE)
 if test -d "$withval"
 then LDFLAGS="$LDFLAGS -L$withval"
 fi
-termcap=
-AC_CHECK_LIB(termcap, tgetent, [termcap=termcap], [
-AC_CHECK_LIB(termlib, tgetent, [termcap=termlib], [
-AC_ERROR(no working termcap/termlib -- do not use --with-readline)])])
-AC_CHECK_LIB(readline, readline, [
+# first check if we can compile without lib termcap
+AC_MSG_CHECKING(for -lreadline without -ltermcap)
+# check if a libreadline exists
 LIBS="$LIBS -lreadline"
-# Avoid possible conflict between shared libraries termcap and gl
-# on IRIX 5: both contain a routine called clear.
-if test -f /usr/lib/lib$termcap.a
-then LIBS="$LIBS /usr/lib/lib$termcap.a"
-else LIBS="$LIBS -l$termcap"
-fi
-], [AC_ERROR(no working GNU readline -- do not use --with-readline)],
--l$termcap)],
+AC_TRY_LINK(extern char *readline();,char *line=readline();,[
+      AC_MSG_RESULT(yes)],[
+      AC_MSG_RESULT(no)
+      AC_CHECKING(for -lreadline that needs -ltermcap)
+      termcap=
+      AC_CHECK_LIB(termcap, tgetent, [termcap=termcap], [
+      AC_CHECK_LIB(termlib, tgetent, [termcap=termlib], [
+      AC_ERROR(no working -ltermcap/termlib found -- do not use --with-readline)])])
+      # Avoid possible conflict between shared libraries termcap and gl
+      # on IRIX 5: both contain a routine called clear.
+      if test -f /usr/lib/lib$termcap.a
+      then LIBS="$LIBS /usr/lib/lib$termcap.a"
+      else LIBS="$LIBS -l$termcap"
+      fi
+      AC_MSG_CHECKING(for -lreadline)
+      AC_TRY_LINK(extern char *readline();, char *line=readline();,[
+         AC_MSG_RESULT(yes)],[
+	 AC_ERROR(no working GNU readline library found -- do not use --with-readline)])
+      ])
+],
 AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for --with-thread)
