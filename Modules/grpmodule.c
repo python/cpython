@@ -2,17 +2,47 @@
 /* UNIX group file access module */
 
 #include "Python.h"
+#include "structseq.h"
 
 #include <sys/types.h>
 #include <grp.h>
 
+static PyStructSequence_Field struct_group_type_fields[] = {
+   {"gr_name", "group name"},
+   {"gr_passwd", "password"},
+   {"gr_gid", "group id"}, 
+   {"gr_mem", "group memebers"}, 
+   {0}
+};
+
+static char struct_group__doc__[] =
+"grp.struct_group: Results from getgr*() routines.\n\n\
+This object may be accessed either as a tuple of\n\
+  (gr_name,gr_passwd,gr_gid,gr_mem)\n\
+or via the object attributes as named in the above tuple.\n";
+
+static PyStructSequence_Desc struct_group_type_desc = {
+   "grp.struct_group",
+   struct_group__doc__,
+   struct_group_type_fields,
+   4,
+};
+
+
+static PyTypeObject StructGrpType;
 
 static PyObject *
 mkgrent(struct group *p)
 {
-    PyObject *v, *w;
+    int setIndex = 0;
+    PyObject *v = PyStructSequence_New(&StructGrpType), *w;
     char **member;
+
+    if (v == NULL)
+        return NULL;
+
     if ((w = PyList_New(0)) == NULL) {
+        Py_DECREF(v);
         return NULL;
     }
     for (member = p->gr_mem; *member != NULL; member++) {
@@ -20,16 +50,25 @@ mkgrent(struct group *p)
         if (x == NULL || PyList_Append(w, x) != 0) {
             Py_XDECREF(x);
             Py_DECREF(w);
+            Py_DECREF(v);
             return NULL;
         }
         Py_DECREF(x);
     }
-    v = Py_BuildValue("(sslO)",
-                      p->gr_name,
-                      p->gr_passwd,
-                      (long)p->gr_gid,
-                      w);
-    Py_DECREF(w);
+
+#define SET(i,val) PyStructSequence_SET_ITEM(v, i, val)
+    SET(setIndex++, PyString_FromString(p->gr_name));
+    SET(setIndex++, PyString_FromString(p->gr_passwd));
+    SET(setIndex++, PyInt_FromLong((long) p->gr_gid));
+    SET(setIndex++, w);
+#undef SET
+
+    if (PyErr_Occurred()) {
+        Py_DECREF(v);
+        Py_DECREF(w);
+        return NULL;
+    }
+
     return v;
 }
 
@@ -120,5 +159,9 @@ complete membership information.)";
 DL_EXPORT(void)
 initgrp(void)
 {
-    Py_InitModule3("grp", grp_methods, grp__doc__);
+    PyObject *m, *d;
+    m = Py_InitModule3("grp", grp_methods, grp__doc__);
+    d = PyModule_GetDict(m);
+    PyStructSequence_InitType(&StructGrpType, &struct_group_type_desc);
+    PyDict_SetItemString(d, "struct_group", (PyObject *) &StructGrpType);
 }

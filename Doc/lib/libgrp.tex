@@ -9,10 +9,11 @@
 This module provides access to the \UNIX{} group database.
 It is available on all \UNIX{} versions.
 
-Group database entries are reported as 4-tuples containing the
-following items from the group database (see \code{<grp.h>}), in order:
+Group database entries are reported as a tuple-like object, whose
+attributes correspond to the members of the \code{group} structure
+(Attribute field below, see \code{<pwd.h>}):
 
-\begin{tableiii}{r|l|l}{textrm}{Index}{Field}{Meaning}
+\begin{tableiii}{r|l|l}{textrm}{Index}{Attribute}{Meaning}
   \lineiii{0}{gr_name}{the name of the group}
   \lineiii{1}{gr_passwd}{the (encrypted) group password; often empty}
   \lineiii{2}{gr_gid}{the numerical group ID}

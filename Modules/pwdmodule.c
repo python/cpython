@@ -2,9 +2,34 @@
 /* UNIX password file access module */
 
 #include "Python.h"
+#include "structseq.h"
 
 #include <sys/types.h>
 #include <pwd.h>
+
+static PyStructSequence_Field struct_pwd_type_fields[] = {
+	{"pw_name", "user name"},
+	{"pw_passwd", "password"},
+	{"pw_uid", "user id"},
+	{"pw_gid", "group id"}, 
+	{"pw_gecos", "real name"}, 
+	{"pw_dir", "home directory"},
+	{"pw_shell", "shell program"},
+	{0}
+};
+
+static char struct_passwd__doc__[] =
+"pwd.struct_passwd: Results from getpw*() routines.\n\n\
+This object may be accessed either as a tuple of\n\
+  (pw_name,pw_passwd,pw_uid,pw_gid,pw_gecos,pw_dir,pw_shell)\n\
+or via the object attributes as named in the above tuple.\n";
+
+static PyStructSequence_Desc struct_pwd_type_desc = {
+	"pwd.struct_passwd",
+	struct_passwd__doc__,
+	struct_pwd_type_fields,
+	7,
+};
 
 static char pwd__doc__ [] = "\
 This module provides access to the Unix password database.\n\
@@ -17,22 +42,40 @@ The uid and gid items are integers, all others are strings. An\n\
 exception is raised if the entry asked for cannot be found.";
 
       
+static PyTypeObject StructPwdType;
+
 static PyObject *
 mkpwent(struct passwd *p)
 {
-	return Py_BuildValue(
-		"(ssllsss)",
-		p->pw_name,
-		p->pw_passwd,
-		(long)p->pw_uid,
-		(long)p->pw_gid,
-		p->pw_gecos,
-		p->pw_dir,
-		p->pw_shell);
+	int setIndex = 0;
+	PyObject *v = PyStructSequence_New(&StructPwdType);
+	if (v == NULL)
+		return NULL;
+
+#define SETI(i,val) PyStructSequence_SET_ITEM(v, i, PyInt_FromLong((long) val))
+#define SETS(i,val) PyStructSequence_SET_ITEM(v, i, PyString_FromString(val))
+
+	SETS(setIndex++, p->pw_name);
+	SETS(setIndex++, p->pw_passwd);
+	SETI(setIndex++, p->pw_uid);
+	SETI(setIndex++, p->pw_gid);
+	SETS(setIndex++, p->pw_gecos);
+	SETS(setIndex++, p->pw_dir);
+	SETS(setIndex++, p->pw_shell);
+
+#undef SETS
+#undef SETI
+
+	if (PyErr_Occurred()) {
+		Py_XDECREF(v);
+		return NULL;
+	}
+
+	return v;
 }
 
 static char pwd_getpwuid__doc__[] = "\
-getpwuid(uid) -> entry\n\
+getpwuid(uid) -> (pw_name,pw_passwd,pw_uid,pw_gid,pw_gecos,pw_dir,pw_shell)\n\
 Return the password database entry for the given numeric user ID.\n\
 See pwd.__doc__ for more on password database entries.";
 
@@ -51,7 +94,7 @@ pwd_getpwuid(PyObject *self, PyObject *args)
 }
 
 static char pwd_getpwnam__doc__[] = "\
-getpwnam(name) -> entry\n\
+getpwnam(name) -> (pw_name,pw_passwd,pw_uid,pw_gid,pw_gecos,pw_dir,pw_shell)\n\
 Return the password database entry for the given user name.\n\
 See pwd.__doc__ for more on password database entries.";
 
@@ -112,6 +155,10 @@ static PyMethodDef pwd_methods[] = {
 DL_EXPORT(void)
 initpwd(void)
 {
-	Py_InitModule4("pwd", pwd_methods, pwd__doc__,
+	PyObject *m, *d;
+	m = Py_InitModule4("pwd", pwd_methods, pwd__doc__,
                        (PyObject *)NULL, PYTHON_API_VERSION);
+	d = PyModule_GetDict(m);
+	PyStructSequence_InitType(&StructPwdType, &struct_pwd_type_desc);
+	PyDict_SetItemString(d, "struct_pwent", (PyObject *) &StructPwdType);
 }
