@@ -1665,20 +1665,6 @@ form_unfreeze_form(f, args)
 	return form_call(fl_unfreeze_form, f-> ob_form, args);
 }
 
-static object *
-form_display_form(f, args)
-	formobject *f;
-	object *args;
-{
-	int place, border;
-	char *name;
-	if (!getargs(args, "(iis)", &place, &border, &name))
-		return NULL;
-	fl_show_form(f->ob_form, place, border, name);
-	INCREF(None);
-	return None;
-}
-
 #ifdef FL_V15
 static object *
 form_remove_form(f, args)
@@ -1791,7 +1777,6 @@ static struct methodlist form_methods[] = {
 	{"set_form_position",   form_set_form_position},
 	{"freeze_form",		form_freeze_form},
 	{"unfreeze_form",	form_unfreeze_form},
-	{"display_form",	form_display_form},
 #ifdef FL_V15
 	{"remove_form",		form_remove_form},
 #endif /* FL_V15 */
