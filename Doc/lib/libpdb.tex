@@ -1,31 +1,27 @@
 \chapter{The Python Debugger}
+
 \declaremodule{standard}{pdb}
-
-\modulesynopsis{None}
-
-\index{debugging}
+\modulesynopsis{The Python debugger for interactive interpreters.}
 
 
-The module \code{pdb} defines an interactive source code debugger for
-Python programs.  It supports setting
-(conditional) breakpoints and single stepping
-at the source line level, inspection of stack frames, source code
-listing, and evaluation of arbitrary Python code in the context of any
-stack frame.  It also supports post-mortem debugging and can be called
-under program control.
+The module \module{pdb} defines an interactive source code
+debugger\index{debugging} for Python programs.  It supports setting
+(conditional) breakpoints and single stepping at the source line
+level, inspection of stack frames, source code listing, and evaluation
+of arbitrary Python code in the context of any stack frame.  It also
+supports post-mortem debugging and can be called under program
+control.
 
-The debugger is extensible --- it is actually defined as a class
-\class{Pdb}.
-\withsubitem{(class in pdb)}{\ttindex{Pdb}}
+The debugger is extensible --- it is actually defined as the class
+\class{Pdb}\withsubitem{(class in pdb)}{\ttindex{Pdb}}.
 This is currently undocumented but easily understood by reading the
-source.  The extension interface uses the (also undocumented) modules
-\module{bdb}\refstmodindex{bdb} and \module{cmd}\refstmodindex{cmd}.
+source.  The extension interface uses the modules
+\module{bdb}\refstmodindex{bdb} (undocumented) and
+\refmodule{cmd}\refstmodindex{cmd}.
 
 A primitive windowing version of the debugger also exists --- this is
-module \module{wdb}, which requires \module{stdwin} (see the chapter
-on STDWIN specific modules).
-\refbimodindex{stdwin}
-\refstmodindex{wdb}
+module \module{wdb}\refstmodindex{wdb}, which requires
+\module{stdwin}\refbimodindex{stdwin}.
 
 The debugger's prompt is \samp{(Pdb) }.
 Typical usage to run a program under control of the debugger is:
@@ -75,25 +71,25 @@ in a slightly different way:
 \begin{funcdesc}{run}{statement\optional{, globals\optional{, locals}}}
 Execute the \var{statement} (given as a string) under debugger
 control.  The debugger prompt appears before any code is executed; you
-can set breakpoints and type \code{continue}, or you can step through
-the statement using \code{step} or \code{next} (all these commands are
+can set breakpoints and type \samp{continue}, or you can step through
+the statement using \samp{step} or \samp{next} (all these commands are
 explained below).  The optional \var{globals} and \var{locals}
 arguments specify the environment in which the code is executed; by
-default the dictionary of the module \code{__main__} is used.  (See
-the explanation of the \code{exec} statement or the \code{eval()}
-built-in function.)
+default the dictionary of the module \module{__main__} is used.  (See
+the explanation of the \keyword{exec} statement or the
+\function{eval()} built-in function.)
 \end{funcdesc}
 
 \begin{funcdesc}{runeval}{expression\optional{, globals\optional{, locals}}}
 Evaluate the \var{expression} (given as a a string) under debugger
-control.  When \code{runeval()} returns, it returns the value of the
+control.  When \function{runeval()} returns, it returns the value of the
 expression.  Otherwise this function is similar to
-\code{run()}.
+\function{run()}.
 \end{funcdesc}
 
 \begin{funcdesc}{runcall}{function\optional{, argument, ...}}
 Call the \var{function} (a function or method object, not a string)
-with the given arguments.  When \code{runcall()} returns, it returns
+with the given arguments.  When \function{runcall()} returns, it returns
 whatever the function call returned.  The debugger prompt appears as
 soon as the function is entered.
 \end{funcdesc}
@@ -113,48 +109,51 @@ Enter post-mortem debugging of the traceback found in
 \code{sys.last_traceback}.
 \end{funcdesc}
 
-\section{Debugger Commands}
+
+\section{Debugger Commands \label{debugger-commands}}
 
 The debugger recognizes the following commands.  Most commands can be
-abbreviated to one or two letters; e.g. ``\code{h(elp)}'' means that
-either ``\code{h}'' or ``\code{help}'' can be used to enter the help
-command (but not ``\code{he}'' or ``\code{hel}'', nor ``\code{H}'' or
-``\code{Help} or ``\code{HELP}'').  Arguments to commands must be
+abbreviated to one or two letters; e.g. \samp{h(elp)} means that
+either \samp{h} or \samp{help} can be used to enter the help
+command (but not \samp{he} or \samp{hel}, nor \samp{H} or
+\samp{Help} or \samp{HELP}).  Arguments to commands must be
 separated by whitespace (spaces or tabs).  Optional arguments are
-enclosed in square brackets (``\code{[]}'') in the command syntax; the
+enclosed in square brackets (\samp{[]}) in the command syntax; the
 square brackets must not be typed.  Alternatives in the command syntax
-are separated by a vertical bar (``\code{|}'').
+are separated by a vertical bar (\samp{|}).
 
 Entering a blank line repeats the last command entered.  Exception: if
-the last command was a ``\code{list}'' command, the next 11 lines are
+the last command was a \samp{list} command, the next 11 lines are
 listed.
 
 Commands that the debugger doesn't recognize are assumed to be Python
 statements and are executed in the context of the program being
 debugged.  Python statements can also be prefixed with an exclamation
-point (``\code{!}'').  This is a powerful way to inspect the program
+point (\samp{!}).  This is a powerful way to inspect the program
 being debugged; it is even possible to change a variable or call a
 function.  When an
 exception occurs in such a statement, the exception name is printed
 but the debugger's state is not changed.
 
 Multiple commands may be entered on a single line, separated by
-''\code{;;}''.  (A single ''\code{;}'' is not used as it is
+\samp{;;}.  (A single \samp{;} is not used as it is
 the separator for multiple commands in a line that is passed to
 the Python parser.)
 No intelligence is applied to separating the commands;
-the input is split at the first ''\code{;;}'' pair, even if it is in
+the input is split at the first \samp{;;} pair, even if it is in
 the middle of a quoted string.
 
 The debugger supports aliases.  Aliases can have parameters which
 allows one a certain level of adaptability to the context under
 examination.
 
-If a file \file{.pdbrc} exists in the user's home directory or in the
-current directory, it is read in and executed as if it had been typed
-at the debugger prompt.  This is particularly useful for aliases.  If
-both files exist, the one in the home directory is read first and
-aliases defined there can be overriden by the local file.
+If a file \file{.pdbrc}
+\indexii{.pdbrc}{file}\indexiii{debugger}{configuration}{file}
+exists in the user's home directory or in the current directory, it is
+read in and executed as if it had been typed at the debugger prompt.
+This is particularly useful for aliases.  If both files exist, the one
+in the home directory is read first and aliases defined there can be
+overriden by the local file.
 
 \begin{description}
 
@@ -163,7 +162,7 @@ aliases defined there can be overriden by the local file.
 Without argument, print the list of available commands.  With a
 \var{command} as argument, print help about that command.  \samp{help
 pdb} displays the full documentation file; if the environment variable
-\code{PAGER} is defined, the file is piped through that command
+\envvar{PAGER} is defined, the file is piped through that command
 instead.  Since the \var{command} argument must be an identifier,
 \samp{help exec} must be entered to get help on the \samp{!} command.
 
@@ -247,9 +246,9 @@ current function).
 \item[n(ext)]
 
 Continue execution until the next line in the current function
-is reached or it returns.  (The difference between \code{next} and
-\code{step} is that \code{step} stops inside a called function, while
-\code{next} executes called functions at (nearly) full speed, only
+is reached or it returns.  (The difference between \samp{next} and
+\samp{step} is that \samp{step} stops inside a called function, while
+\samp{next} executes called functions at (nearly) full speed, only
 stopping at the next line in the current function.)
 
 \item[r(eturn)]
@@ -275,8 +274,8 @@ Print the argument list of the current function.
 \item[p \var{expression}]
 
 Evaluate the \var{expression} in the current context and print its
-value.  (Note: \code{print} can also be used, but is not a debugger
-command --- this executes the Python \code{print} statement.)
+value.  (Note: \samp{print} can also be used, but is not a debugger
+command --- this executes the Python \keyword{print} statement.)
 
 \item[alias \optional{\var{name} \optional{command}}]
 
@@ -315,7 +314,7 @@ the current stack frame.
 The exclamation point can be omitted unless the first word
 of the statement resembles a debugger command.
 To set a global variable, you can prefix the assignment
-command with a ``\code{global}'' command on the same line, e.g.:
+command with a \samp{global} command on the same line, e.g.:
 
 \begin{verbatim}
 (Pdb) global list_options; list_options = ['-l']
