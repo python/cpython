@@ -759,6 +759,10 @@ array_byteswap(self, args)
 {
 	char *p;
 	int i;
+
+        if (!PyArg_ParseTuple(args, ":byteswap"))
+                return NULL;
+
 	switch (self->ob_descr->itemsize) {
 	case 1:
 		break;
@@ -805,10 +809,10 @@ array_byteswap(self, args)
 }
 
 static char byteswap_doc [] =
-"byteswap(x)\n\
+"byteswap()\n\
 \n\
-Byteswap all items of the array.  This is only supported for integer\n\
-values of x, which determines the size of the blocks swapped.";
+Byteswap all items of the array.  If the items in the array are not 1, 2,\n\
+4, or 8 bytes in size, RuntimeError is raised.";
 
 static PyObject *
 array_reverse(self, args)
@@ -1139,7 +1143,8 @@ representation.";
 PyMethodDef array_methods[] = {
 	{"append",	(PyCFunction)array_append, 0, append_doc},
 	{"buffer_info", (PyCFunction)array_buffer_info, 0, buffer_info_doc},
-	{"byteswap",	(PyCFunction)array_byteswap, 0, byteswap_doc},
+	{"byteswap",	(PyCFunction)array_byteswap, METH_VARARGS,
+         byteswap_doc},
 /*	{"count",	(method)array_count},*/
 	{"fromfile",	(PyCFunction)array_fromfile, 0, fromfile_doc},
 	{"fromlist",	(PyCFunction)array_fromlist, 0, fromlist_doc},
