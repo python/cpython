@@ -465,6 +465,14 @@ Foo_Type.ob_type = &PyType_Type;
   has a non-zero \member{tp_itemsize}, it is generally not safe to set
   \member{tp_itemsize} to a different non-zero value in a subtype
   (though this depends on the implementation of the base type).
+
+  A note about alignment: if the variable items require a particular
+  alignment, this should be taken care of by the value of
+  \member{tp_basicsize}.  Example: suppose a type implements an array
+  of \code{double}. \member{tp_itemsize} is \code{sizeof(double)}.
+  It is the programmer's responsibility that \member{tp_basicsize} is
+  a multiple of \code{sizeof(double)} (assuming this is the alignment
+  requirement for \code{double}).
 \end{cmemberdesc}
 
 \begin{cmemberdesc}{PyTypeObject}{destructor}{tp_dealloc}
