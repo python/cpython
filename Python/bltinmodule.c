@@ -2381,7 +2381,8 @@ filterunicode(PyObject *func, PyObject *strobj)
 					   to avoid reallocations */
 					if (need < 2 * outlen)
 						need = 2 * outlen;
-					if (PyUnicode_Resize(&result, need)) {
+					if (PyUnicode_Resize(
+						&result, need) < 0) {
 						Py_DECREF(item);
 						goto Fail_1;
 					}
